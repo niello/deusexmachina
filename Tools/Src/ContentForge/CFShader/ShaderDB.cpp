@@ -22,6 +22,7 @@ sqlite3_stmt*	SQLFindShader = NULL;
 sqlite3_stmt*	SQLGetObjFile = NULL;
 sqlite3_stmt*	SQLFindObjFileUsage = NULL;
 sqlite3_stmt*	SQLFindObjFile = NULL;
+sqlite3_stmt*	SQLFindObjFileByID = NULL;
 sqlite3_stmt*	SQLFindFreeObjFileRec = NULL;
 sqlite3_stmt*	SQLInsertNewObjFileRec = NULL;
 sqlite3_stmt*	SQLUpdateObjFileRec = NULL;
@@ -31,6 +32,13 @@ sqlite3_stmt*	SQLUpdateShaderRec = NULL;
 sqlite3_stmt*	SQLClearDefines = NULL;
 sqlite3_stmt*	SQLInsertDefine = NULL;
 sqlite3_stmt*	SQLGetDefines = NULL;
+
+bool BuildIntermediateShaderObjectFilePath(U32 ID, const char* pExtension, CString& OutPath)
+{
+	OutPath = "Shaders:Bin/" + StringUtils::FromInt(ID) + "." + pExtension;
+	OK;
+}
+//---------------------------------------------------------------------
 
 bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
@@ -328,6 +336,7 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 	INIT_SQL(SQLGetObjFile, "SELECT * FROM Files WHERE ID=:ID");
 	INIT_SQL(SQLFindObjFileUsage, "SELECT ID FROM Shaders WHERE ObjFileID=:ID OR InputSigFileID=:ID");
 	INIT_SQL(SQLFindObjFile, "SELECT ID, Path FROM Files WHERE Size=:Size AND CRC=:CRC");
+	INIT_SQL(SQLFindObjFileByID, "SELECT * FROM Files WHERE ID=:ID");
 	INIT_SQL(SQLFindFreeObjFileRec, "SELECT ID FROM Files WHERE Size = 0 ORDER BY ID LIMIT 1");
 	INIT_SQL(SQLInsertNewObjFileRec, "INSERT INTO Files (Path, Size, CRC) VALUES (\"\", 0, 0)");
 	INIT_SQL(SQLUpdateObjFileRec, "UPDATE Files SET Path=:Path, Size=:Size, CRC=:CRC WHERE ID=:ID");
@@ -360,6 +369,7 @@ void CloseDB()
 	SAFE_RELEASE_SQL(SQLGetObjFile);
 	SAFE_RELEASE_SQL(SQLFindObjFileUsage);
 	SAFE_RELEASE_SQL(SQLFindObjFile);
+	SAFE_RELEASE_SQL(SQLFindObjFileByID);
 	SAFE_RELEASE_SQL(SQLFindFreeObjFileRec);
 	SAFE_RELEASE_SQL(SQLInsertNewObjFileRec);
 	SAFE_RELEASE_SQL(SQLUpdateObjFileRec);
@@ -563,6 +573,28 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 }
 //---------------------------------------------------------------------
 
+bool FindObjFileByID(U32 ID, CFileData& Out)
+{
+	Data::CParams Params(1);
+	Params.Set(CStrID("ID"), (int)ID);
+
+	DB::CValueTable Result;
+	if (!ExecuteStatement(SQLFindObjFileByID, &Result, &Params)) FAIL;
+	if (!Result.GetRowCount()) FAIL;
+
+	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
+	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
+	int Col_Size = Result.GetColumnIndex(CStrID("Size"));
+	int Col_CRC = Result.GetColumnIndex(CStrID("CRC"));
+	Out.ID = Result.Get<int>(Col_ID, 0);
+	Out.Path = Result.Get<CString>(Col_Path, 0);
+	Out.Size = Result.Get<int>(Col_Size, 0);
+	Out.CRC = Result.Get<int>(Col_CRC, 0);
+
+	OK; // Found
+}
+//---------------------------------------------------------------------
+
 bool RegisterObjFile(CFileData& InOut, const char* Extension)
 {
 	U32 ID;
@@ -585,7 +617,7 @@ bool RegisterObjFile(CFileData& InOut, const char* Extension)
 
 	if (InOut.Path.IsEmpty())
 	{
-		InOut.Path = "Shaders:Bin/" + StringUtils::FromInt(ID) + "." + Extension;
+		if (!BuildIntermediateShaderObjectFilePath(ID, Extension, InOut.Path)) FAIL;
 	}
 
 	Data::CParams Params(4);

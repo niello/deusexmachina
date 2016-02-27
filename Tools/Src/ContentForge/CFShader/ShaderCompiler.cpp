@@ -1,6 +1,7 @@
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/PathUtils.h>
+#include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <Data/Buffer.h>
 #include <Data/Params.h>
@@ -25,15 +26,43 @@ extern CString RootPath;
 //can even order shaders in memory and load one-by-one to minimize seek time
 //may pack by use (common, menu, game, cinematic etc) and load only used.
 //can store debug and release binary packages and read from what user wants
+//!!!can pack shaders to a bank here or in BBuilder!
+
+enum EEffectParamType
+{
+	EPT_D3D9Const = 0,
+	EPT_D3D9Resource,
+	EPT_D3D9Sampler,
+	EPT_D3D11Const,
+	EPT_D3D11Resource,
+	EPT_D3D11Sampler
+};
+
+struct CEffectParam
+{
+	EEffectParamType	Type;
+	Render::EShaderType	ShaderType;
+	union
+	{
+		CD3D9ShaderConstMeta*	pD3D9Const;
+		CD3D9ShaderRsrcMeta*	pD3D9Resource;
+		CD3D9ShaderRsrcMeta*	pD3D9Sampler;
+		CD3D11ShaderConstMeta*	pD3D11Const;
+		CD3D11ShaderRsrcMeta*	pD3D11Resource;
+		CD3D11ShaderRsrcMeta*	pD3D11Sampler;
+	};
+	CD3D11ShaderBufferMeta*		pD3D11Buffer;	// D3D11 constants must be in identical buffer, so store for comparison
+};
 
 struct CTechInfo
 {
-	CStrID				ID;
-	CStrID				InputSet;
-	UPTR				MaxLights;
-	CArray<CStrID>		Passes;
-	CFixedArray<bool>	VariationValid;
-	CFixedArray<UPTR>	PassIndices;
+	CStrID						ID;
+	CStrID						InputSet;
+	UPTR						MaxLights;
+	CArray<CStrID>				Passes;
+	CFixedArray<bool>			VariationValid;
+	CFixedArray<UPTR>			PassIndices;
+	CDict<CStrID, CEffectParam>	Params;
 };
 
 struct CRenderStateRef
@@ -41,6 +70,7 @@ struct CRenderStateRef
 	CStrID							ID;
 	UPTR							MaxLights;
 	Render::CToolRenderStateDesc	Desc;
+	U32								Target;
 	bool							UsesShader[Render::ShaderType_COUNT];
 	U32*							ShaderIDs;	// Per shader type, per light count
 
@@ -49,6 +79,16 @@ struct CRenderStateRef
 
 	bool operator ==(const CRenderStateRef& Other) { return ID == Other.ID; }
 };
+
+U32 GetTargetByFileSignature(Data::CFourCC FileSig)
+{
+	// File signature always stores target in bytes 1 and 0
+	//!!!add endian-correctness!
+	char TargetHigh = FileSig.GetChar(1) - '0';
+	char TargetLow = FileSig.GetChar(0) - '0';
+	return (TargetHigh << 8) | TargetLow;
+}
+//---------------------------------------------------------------------
 
 //???!!!decouple DB and compilation?! to allow compilation without DB tracking, for CFD shaders like CEGUI.
 int CompileShader(CShaderDBRec& Rec, bool Debug)
@@ -218,6 +258,9 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	// For vertex and geometry shaders, store input signature in a separate binary file.
 	// It saves RAM since input signatures must reside in it at the runtime.
 
+	CString ShortSrcPath(Rec.SrcFile.Path);
+	ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
+
 	if ((Rec.ShaderType == Render::ShaderType_Vertex || Rec.ShaderType == Render::ShaderType_Geometry) && Rec.Target >= 0x0400)
 	{
 		ID3DBlob* pInputSig;
@@ -231,8 +274,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			Rec.InputSigFile.CRC = Util::CalcCRC((U8*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
 			U32 OldInputSigID = Rec.InputSigFile.ID;
-			bool ObjFound = FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false);
-			if (!ObjFound)
+			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false))
 			{
 				if (!RegisterObjFile(Rec.InputSigFile, "sig")) // Fills empty ID and path inside
 				{
@@ -240,6 +282,8 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 					pInputSig->Release();
 					return ERR_MAIN_FAILED;
 				}
+
+				n_msg(VL_DETAILS, "InputSig: %s -> %s\n", ShortSrcPath.CStr(), Rec.InputSigFile.Path.CStr());
 
 				IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
 
@@ -303,9 +347,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 			return ERR_MAIN_FAILED;
 		}
 
-		CString ShortSrcPath(Rec.SrcFile.Path);
-		ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
-		n_msg(VL_DETAILS, "Shader: %s -> %s\n", ShortSrcPath.CStr(), Rec.ObjFile.Path.CStr());
+		n_msg(VL_DETAILS, "Shader:   %s -> %s\n", ShortSrcPath.CStr(), Rec.ObjFile.Path.CStr());
 
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
@@ -842,6 +884,73 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 }
 //---------------------------------------------------------------------
 
+// Since D3D9 and D3D11 metadata are different, we implement not beautiful but convenient function,
+// that returns both D3D9 and D3D11 metadata pointers. Which one is not NULL, it must be used as a return value.
+// Returns whether metadata is found in cache, which means it was already processed.
+bool LoadShaderMetadataByObjID(U32 ID,
+							   CDict<U32, CD3D9ShaderMeta>& D3D9MetaCache, CDict<U32, CD3D11ShaderMeta>& D3D11MetaCache,
+							   CD3D9ShaderMeta*& ppOutD3D9Meta, CD3D11ShaderMeta*& ppOutD3D11Meta)
+{
+	ppOutD3D9Meta = NULL;
+	ppOutD3D11Meta = NULL;
+
+	IPTR Idx = D3D9MetaCache.FindIndex(ID);
+	if (Idx != INVALID_INDEX)
+	{
+		ppOutD3D9Meta = &D3D9MetaCache.ValueAt(Idx);
+		OK;
+	}
+
+	Idx = D3D11MetaCache.FindIndex(ID);
+	if (Idx != INVALID_INDEX)
+	{
+		ppOutD3D11Meta = &D3D11MetaCache.ValueAt(Idx);
+		OK;
+	}
+
+	CFileData ObjFile;
+	if (!FindObjFileByID(ID, ObjFile)) FAIL;
+
+	IO::CFileStream File(ObjFile.Path.CStr());
+	if (!File.Open(IO::SAM_READ)) FAIL;
+	IO::CBinaryReader R(File);
+
+	Data::CFourCC FileSig;
+	R.Read(FileSig.Code);
+	U32 Target = GetTargetByFileSignature(FileSig);
+
+	R.Read<U32>();	// Binary data offset - skip
+	R.Read<U32>();	// Shader obj file ID - skip
+
+	if (Target >= 0x0400)
+	{
+		R.Read<U32>();	// Input signature obj file ID - skip
+
+		CD3D11ShaderMeta& Meta = D3D11MetaCache.Add(ID);
+		if (!D3D11LoadShaderMetadata(R, Meta))
+		{
+			D3D11MetaCache.Remove(ID);
+			FAIL;
+		}
+		
+		ppOutD3D11Meta = &Meta;
+	}
+	else
+	{
+		CD3D9ShaderMeta& Meta = D3D9MetaCache.Add(ID);
+		if (!D3D9LoadShaderMetadata(R, Meta))
+		{
+			D3D9MetaCache.Remove(ID);
+			FAIL;
+		}
+		
+		ppOutD3D9Meta = &Meta;
+	}
+
+	FAIL; // Not found in a cache
+}
+//---------------------------------------------------------------------
+
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 {
 	// Read effect source file
@@ -885,7 +994,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		{
 			CStrID PassID = Passes->Get<CStrID>(PassIdx);
 			pTechInfo->Passes.Add(PassID);
-			n_msg(VL_DETAILS, "Tech %s, Pass %d: %s, MaxLights: %d\n", Tech.GetName().CStr(), PassIdx, PassID.CStr(), MaxLights);
+			n_msg(VL_DETAILS, "Tech: %s, Pass %d: %s, MaxLights: %d\n", Tech.GetName().CStr(), PassIdx, PassID.CStr(), MaxLights);
 			IPTR Idx = UsedRenderStates.FindIndex(PassID);
 			if (Idx == INVALID_INDEX)
 			{
@@ -923,8 +1032,35 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			continue;
 		}
 
-		UPTR LightVariationCount = RSRef.MaxLights + 1;
+		// Validate shader combination
+
+		RSRef.Target = 0x0000;
 		
+		bool Failed = false;
+		
+		for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+		{
+			Data::PParams ShaderSection = ShaderSections[ShaderType];
+			if (ShaderSection.IsNullPtr()) continue;
+			int Target = 0;
+			if (!ShaderSection->Get(Target, CStrID("Target"))) continue;
+			if (!RSRef.Target) RSRef.Target = (U32)Target;
+			else if ((RSRef.Target < 0x0400 && Target >= 0x0400) || (RSRef.Target >= 0x0400 && Target < 0x0400))
+			{
+				Failed = true;
+				break;
+			}
+		}
+		
+		if (Failed)
+		{
+			n_msg(VL_ERROR, "Render state '%s' mixes sm3.0 and sm4.0+ shaders, which is invalid\n", RSRef.ID.CStr());
+			UsedRenderStates.RemoveAt(i);
+			continue;
+		}
+
+		UPTR LightVariationCount = RSRef.MaxLights + 1;
+
 		// Compile shaders from collected section for each light count variation
 		for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
 		{
@@ -950,12 +1086,15 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		++i;
 	}
 
-	// Resolve pass refs in techs, discard light count variations and whole techs where at least one render state failed to compile
-	// Reduce MaxLights if all variations above a value are invalid
+	// Resolve pass refs in techs, discard light count variations and whole techs where
+	// at least one render state failed to compile.
+	// Reduce MaxLights if all variations above a value are invalid.
+	// Validate that all tech passes are targeting the same API.
 
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount();)
 	{
 		CTechInfo& TechInfo = UsedTechs[TechIdx];
+		U32 TechTarget = 0x0000;
 
 		UPTR LightVariationCount = TechInfo.MaxLights + 1;
 		UPTR LastValidVariation = INVALID_INDEX;
@@ -975,6 +1114,16 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				break;
 			}
 			else TechInfo.PassIndices[PassIdx] = (UPTR)Idx;
+
+			U32 PassTarget = UsedRenderStates.ValueAt(Idx).Target;
+
+			if (!TechTarget) TechTarget = PassTarget;
+			else if ((TechTarget < 0x0400 && PassTarget >= 0x0400) || (TechTarget >= 0x0400 && PassTarget < 0x0400))
+			{
+				n_msg(VL_ERROR, "Tech %s mixes sm3.0 and sm4.0+ passes, which is invalid\n");
+				DiscardTech = true;
+				break;
+			}
 		}
 
 		if (DiscardTech)
@@ -1031,12 +1180,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	//!!!NB: if the same param is used in different stages and in different CBs, setting it
 	//in a tech requires passing CB instance per stage! May be restrict to use one param only
 	//in the same CB in all stages or even use one param only in one stage instead.
-
-	// Tech param is a param met in any pass, in any variation, in any shader stage
-	// Inside one tech, a param for each pass must be the same or not defined
-	// If one param in one tech is defined differently in different passes, FAIL
 	// Each shader stage that param uses may define a param differently
-	// Usage of one param more than in one shader stage should be generally avoided
+
+	CDict<U32, CD3D9ShaderMeta> D3D9MetaCache;
+	CDict<U32, CD3D11ShaderMeta> D3D11MetaCache;
+
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
 		CTechInfo& TechInfo = UsedTechs[TechIdx];
@@ -1049,31 +1197,251 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				CRenderStateRef& RSRef = UsedRenderStates.ValueAt(TechInfo.PassIndices[PassIdx]);
 				for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
 				{
-					if (RSRef.UsesShader[ShaderType])
+					if (!RSRef.UsesShader[ShaderType]) continue;
+
+					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
+					CD3D9ShaderMeta* pD3D9Meta = NULL;
+					CD3D11ShaderMeta* pD3D11Meta = NULL;
+					bool AlreadyProcessed = LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
+					if (AlreadyProcessed) continue;
+
+					//!!!add per-stage support, to map one param to different shader stages simultaneously!
+					// If tech param found:
+					// Warn if there are more than one stage that parameter uses (warn once, when we add second stage to a param desc)
+					// If not registered for this stage, add per-stage metadata
+					// If only the same metadata allowed to different stages, compare with any reference (processed) stage
+					// In this case code remains almost unchanged, but param instead of single shader stage stores stage mask.
+					if (pD3D9Meta)
 					{
-						U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
-						// If this shader is not processed yet (may appear more than once in a tech)
-						// Load shader metadata
-						// For each param of this shader
-						// If not yet added, add new tech param
-						// If first occurrence in this stage, store its metadata for a shader stage
-						// Warn if there are more than one stage that parameter uses (warn once, when we add second stage to a param desc)
-						// If already added, ensure metadata at this stage is the same
-						// Also ensure CBs are the same for SM4.0+ (CB register and size)
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Consts.GetCount(); ++ParamIdx)
+						{
+							CD3D9ShaderConstMeta& MetaObj = pD3D9Meta->Consts[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
+							
+							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
+							if (Idx == INVALID_INDEX)
+							{
+								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								Param.Type = EPT_D3D9Const;
+								Param.ShaderType = (Render::EShaderType)ShaderType;
+								Param.pD3D9Const = &MetaObj;
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+							}
+							else
+							{
+								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
+								if (Param.Type != EPT_D3D9Const || !Param.pD3D9Const)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							
+								CD3D9ShaderConstMeta& RefMetaObj = *Param.pD3D9Const;
+								if (MetaObj.RegSet != RefMetaObj.RegSet ||
+									MetaObj.BufferIndex != RefMetaObj.BufferIndex ||
+									MetaObj.Offset != RefMetaObj.Offset ||
+									MetaObj.Size != RefMetaObj.Size)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							}
+						}
+
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Samplers.GetCount(); ++ParamIdx)
+						{
+							CD3D9ShaderRsrcMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.TextureName.CStr());
+							
+							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
+							if (Idx == INVALID_INDEX)
+							{
+								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								Param.Type = EPT_D3D9Resource;
+								Param.ShaderType = (Render::EShaderType)ShaderType;
+								Param.pD3D9Resource = &MetaObj;
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (resource) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+							}
+							else
+							{
+								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
+								if (Param.Type != EPT_D3D9Resource || !Param.pD3D9Resource)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							
+								CD3D9ShaderRsrcMeta& RefMetaObj = *Param.pD3D9Resource;
+								if (MetaObj.Register != RefMetaObj.Register)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							}
+						}
+
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Samplers.GetCount(); ++ParamIdx)
+						{
+							CD3D9ShaderRsrcMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.SamplerName.CStr());
+							
+							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
+							if (Idx == INVALID_INDEX)
+							{
+								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								Param.Type = EPT_D3D9Sampler;
+								Param.ShaderType = (Render::EShaderType)ShaderType;
+								Param.pD3D9Sampler = &MetaObj;
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (sampler) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+							}
+							else
+							{
+								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
+								if (Param.Type != EPT_D3D9Sampler || !Param.pD3D9Sampler)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							
+								CD3D9ShaderRsrcMeta& RefMetaObj = *Param.pD3D9Sampler;
+								if (MetaObj.Register != RefMetaObj.Register)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							}
+						}
+					}
+					else if (pD3D11Meta)
+					{
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Consts.GetCount(); ++ParamIdx)
+						{
+							CD3D11ShaderConstMeta& MetaObj = pD3D11Meta->Consts[ParamIdx];
+							CD3D11ShaderBufferMeta& MetaBuf = pD3D11Meta->Buffers[MetaObj.BufferIndex];
+							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
+							
+							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
+							if (Idx == INVALID_INDEX)
+							{
+								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								Param.Type = EPT_D3D11Const;
+								Param.ShaderType = (Render::EShaderType)ShaderType;
+								Param.pD3D11Const = &MetaObj;
+								Param.pD3D11Buffer = &MetaBuf;
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+							}
+							else
+							{
+								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
+								if (Param.Type != EPT_D3D11Const || !Param.pD3D11Const)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							
+								CD3D11ShaderConstMeta& RefMetaObj = *Param.pD3D11Const;
+								if (MetaObj.BufferIndex != RefMetaObj.BufferIndex ||
+									MetaObj.Offset != RefMetaObj.Offset ||
+									MetaObj.Size != RefMetaObj.Size)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+
+								CD3D11ShaderBufferMeta& RefMetaBuf = *Param.pD3D11Buffer;
+								if (MetaBuf.Register != RefMetaBuf.Register ||
+									MetaBuf.ElementSize != RefMetaBuf.ElementSize ||
+									MetaBuf.ElementCount != RefMetaBuf.ElementCount)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							}
+						}
+						
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Resources.GetCount(); ++ParamIdx)
+						{
+							CD3D11ShaderRsrcMeta& MetaObj = pD3D11Meta->Resources[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
+							
+							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
+							if (Idx == INVALID_INDEX)
+							{
+								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								Param.Type = EPT_D3D11Resource;
+								Param.ShaderType = (Render::EShaderType)ShaderType;
+								Param.pD3D11Resource = &MetaObj;
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (resource) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+							}
+							else
+							{
+								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
+								if (Param.Type != EPT_D3D11Resource || !Param.pD3D11Resource)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							
+								CD3D11ShaderRsrcMeta& RefMetaObj = *Param.pD3D11Resource;
+								if (MetaObj.Register != RefMetaObj.Register)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							}
+						}
+						
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Samplers.GetCount(); ++ParamIdx)
+						{
+							CD3D11ShaderRsrcMeta& MetaObj = pD3D11Meta->Samplers[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
+							
+							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
+							if (Idx == INVALID_INDEX)
+							{
+								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								Param.Type = EPT_D3D11Sampler;
+								Param.ShaderType = (Render::EShaderType)ShaderType;
+								Param.pD3D11Sampler = &MetaObj;
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (sampler) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+							}
+							else
+							{
+								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
+								if (Param.Type != EPT_D3D11Sampler || !Param.pD3D11Sampler)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							
+								CD3D11ShaderRsrcMeta& RefMetaObj = *Param.pD3D11Sampler;
+								if (MetaObj.Register != RefMetaObj.Register)
+								{
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									return ERR_INVALID_DATA;
+								}
+							}
+						}
+					}
+					else
+					{
+						n_msg(VL_ERROR, "Failed to load shader metadata for obj ID %d\n", ShaderID);
+						return ERR_INVALID_DATA;
 					}
 				}
 			}
 		}
 	}
-	// If we are here, it is guaranteed that all tech params are gathered and valid
 
 	Data::PParams ParamsDesc;
-	if (Params->Get(Techs, CStrID("GlobalParams")))
+	if (Params->Get(ParamsDesc, CStrID("GlobalParams")))
 	{
-		//
+		NOT_IMPLEMENTED_MSG("Global params\n");
 	}
 
-	if (Params->Get(Techs, CStrID("MaterialParams")))
+	//!!!for D3D9 split $Global CB to tech and material ones! save CB metadata here (for D3D11 too?)
+	//!!!for D3D11 support only entire CBs!
+	if (Params->Get(ParamsDesc, CStrID("MaterialParams")))
 	{
 		for (UPTR ParamIdx = 0; ParamIdx < ParamsDesc->GetCount(); ++ParamIdx)
 		{
@@ -1177,7 +1545,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		}
 
 		for (int BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
-		{
+		{Sh
 			if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_Independent)) break;
 			if (Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
 

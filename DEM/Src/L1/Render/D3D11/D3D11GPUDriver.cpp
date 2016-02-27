@@ -118,38 +118,6 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	CurrSS.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT);
 
 	OK;
-
-///////////////
-/*
-    // Create the constant buffers
-    bd.Usage = D3D11_USAGE_DEFAULT;
-    bd.ByteWidth = sizeof(CBNeverChanges);
-    bd.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
-    bd.CPUAccessFlags = 0;
-    hr = g_pd3dDevice->CreateBuffer( &bd, nullptr, &g_pCBNeverChanges );
-    if( FAILED( hr ) )
-        return hr;
-    
-    bd.ByteWidth = sizeof(CBChangeOnResize);
-    hr = g_pd3dDevice->CreateBuffer( &bd, nullptr, &g_pCBChangeOnResize );
-    if( FAILED( hr ) )
-        return hr;
-    
-    bd.ByteWidth = sizeof(CBChangesEveryFrame);
-    hr = g_pd3dDevice->CreateBuffer( &bd, nullptr, &g_pCBChangesEveryFrame );
-    if( FAILED( hr ) )
-        return hr;
-
-    CBNeverChanges cbNeverChanges;
-    cbNeverChanges.mView = XMMatrixTranspose( g_View );
-    g_pImmediateContext->UpdateSubresource( g_pCBNeverChanges, 0, nullptr, &cbNeverChanges, 0, 0 );
-    
-    CBChangeOnResize cbChangesOnResize;
-    cbChangesOnResize.mProjection = XMMatrixTranspose( g_Projection );
-    g_pImmediateContext->UpdateSubresource( g_pCBChangeOnResize, 0, nullptr, &cbChangesOnResize, 0, 0 );
-///////////////
-*/
-	OK;
 }
 //---------------------------------------------------------------------
 
@@ -1690,6 +1658,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 		//!!!need constant handle metadata!
 		//!!!also need an array of values per const, to init tbuffers/structured buffers!
 		//InitData.pSysMem = pData;
+		NOT_IMPLEMENTED;
 		InitData.pSysMem = NULL; //!!!DBG TMP!
 		pInitData = &InitData;
 	}
