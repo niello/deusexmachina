@@ -38,6 +38,9 @@ struct CD3D9ShaderConstMeta
 	U32				Offset;
 	U32				Size;
 	//type, array size
+
+	bool operator ==(const CD3D9ShaderConstMeta& Other) const { return RegSet == Other.RegSet && Offset == Other.Offset && Size == Other.Size; }
+	bool operator !=(const CD3D9ShaderConstMeta& Other) const { return RegSet != Other.RegSet || Offset != Other.Offset || Size != Other.Size; }
 };
 
 struct CD3D9ShaderRsrcMeta
@@ -45,6 +48,9 @@ struct CD3D9ShaderRsrcMeta
 	CString	TextureName;
 	CString	SamplerName;
 	U32		Register;
+
+	bool operator ==(const CD3D9ShaderRsrcMeta& Other) const { return Register == Other.Register; }
+	bool operator !=(const CD3D9ShaderRsrcMeta& Other) const { return Register != Other.Register; }
 };
 
 // For textures and samplers separately
@@ -66,6 +72,9 @@ struct CD3D11ShaderBufferMeta
 	U32		Register;
 	U32		ElementSize;
 	U32		ElementCount;
+
+	bool operator ==(const CD3D11ShaderBufferMeta& Other) const { return Register == Other.Register && ElementSize == Other.ElementSize && ElementCount == Other.ElementCount; }
+	bool operator !=(const CD3D11ShaderBufferMeta& Other) const { return Register != Other.Register || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
 };
 
 struct CD3D11ShaderConstMeta
@@ -75,12 +84,18 @@ struct CD3D11ShaderConstMeta
 	U32		Offset;
 	U32		Size;
 	//type, array size
+
+	bool operator ==(const CD3D11ShaderConstMeta& Other) const { return Offset == Other.Offset && Size == Other.Size; }
+	bool operator !=(const CD3D11ShaderConstMeta& Other) const { return Offset != Other.Offset || Size != Other.Size; }
 };
 
 struct CD3D11ShaderRsrcMeta
 {
 	CString	Name;
 	U32		Register;
+
+	bool operator ==(const CD3D11ShaderRsrcMeta& Other) const { return Register == Other.Register; }
+	bool operator !=(const CD3D11ShaderRsrcMeta& Other) const { return Register != Other.Register; }
 };
 
 struct CD3D9ShaderMeta
@@ -99,6 +114,8 @@ struct CD3D11ShaderMeta
 	CArray<CD3D11ShaderRsrcMeta>	Samplers;
 };
 
+void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName);
+void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R);
 bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CD3D9ShaderMeta& Out);
 bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& Out);
 bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta);
