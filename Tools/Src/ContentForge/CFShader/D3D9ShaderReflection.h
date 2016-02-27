@@ -2,21 +2,12 @@
 #ifndef __DEM_TOOLS_D3D9_SHADER_REFLECTION_H__
 #define __DEM_TOOLS_D3D9_SHADER_REFLECTION_H__
 
-#include <Data/String.h>
+#include <ShaderReflection.h> // For ERegisterSet only
 #include <Data/Dictionary.h>
 
 // Code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
 // This version has some cosmetic changes
-
-// Don't change values, they are saved to file
-enum ERegisterSet
-{
-	RS_BOOL,
-	RS_INT4,
-	RS_FLOAT4,
-	RS_SAMPLER
-};
 
 struct CD3D9ConstantDesc
 {

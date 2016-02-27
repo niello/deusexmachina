@@ -56,7 +56,7 @@ int main(int argc, const char** argv)
 	const char* pProjPath = Args.GetStringArg("-proj");
 	CString DB(Args.GetStringArg("-db"));
 	bool Debug = Args.GetBoolArg("-d");
-	bool Rebuild = false; //Args.GetBoolArg("-r"); //!!!or if tool version changed (store in DB)!
+	bool Rebuild = Args.GetBoolArg("-r"); //!!!or if tool version changed (store in DB)!
 
 	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 

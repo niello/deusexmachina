@@ -108,6 +108,7 @@
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\D3D9ShaderReflection.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ShaderDB.h" />
+    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ShaderReflection.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ValueTable.h" />
   </ItemGroup>
@@ -117,6 +118,7 @@
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderCompiler.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\Main.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderDB.cpp" />
+    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderReflection.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ValueTable.cpp" />
   </ItemGroup>
