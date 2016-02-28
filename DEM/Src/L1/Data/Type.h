@@ -4,14 +4,16 @@
 
 #include <System/System.h>
 
+// Template data type implementation.
+
+#define INVALID_TYPE_ID (-1)
+
 #define DECLARE_TYPE(T, ID)					namespace Data { template<> class CTypeID<T> { public: enum { TypeID = ID }; enum { IsDeclared = true }; }; }
 #define DEFINE_TYPE(T, DEFAULT)				static CTypeImpl<T> DataType_##T; const CType* CTypeImpl<T>::Type = &DataType_##T; const T CTypeImpl<T>::DefaultValue = DEFAULT;
 #define DEFINE_TYPE_EX(T, Name, DEFAULT)	static CTypeImpl<T> DataType_##Name; const CType* CTypeImpl<T>::Type = &DataType_##Name; const T CTypeImpl<T>::DefaultValue = DEFAULT;
 #define DATA_TYPE(T)						(Data::CType::GetType<T>())
 #define DATA_TYPE_ID(T)						(Data::CType::GetTypeID<T>())
 #define DATA_TYPE_NV(T)						Data::CTypeImpl<T>::GetNVType()->CTypeImpl<T>
-
-// Template data type implementation.
 
 namespace Data
 {
@@ -49,7 +51,7 @@ class CTypeID
 {
 public:
 
-	enum { TypeID = -1 }; //???use fourcc?
+	enum { TypeID = INVALID_TYPE_ID }; //???use fourcc?
 	enum { IsDeclared = false };
 	//can store debug type name here
 };
@@ -62,7 +64,7 @@ public:
 	static const CType* Type;
 	static const T		DefaultValue;
 
-	CTypeImpl() { n_assert(CTypeID<T>::IsDeclared); /*n_assert(CTypeID<T>::TypeID != -1);*/ }
+	CTypeImpl() { n_assert(CTypeID<T>::IsDeclared); /*n_assert(CTypeID<T>::TypeID != INVALID_TYPE_ID);*/ }
 	
 	// Getter for non-virtual type instance (convenience method)
 	static const CTypeImpl<T>*	GetNVType() { n_assert(CTypeID<T>::IsDeclared); return (const CTypeImpl<T>*)Type; }

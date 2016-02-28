@@ -60,7 +60,7 @@ public:
 	inline void					Clear();
 
 	const CType*				GetType() const { return Type; }
-	int							GetTypeID() const { return Type ? Type->GetID() : -1; }
+	int							GetTypeID() const { return Type ? Type->GetID() : INVALID_TYPE_ID; }
 	bool						IsA(const CType* Sample) const { return Type == Sample; }
 	template<class T> bool		IsA() const { return Type == CType::GetType<T>(); }
 	bool						IsValid() const { return Type != NULL; }
@@ -222,7 +222,7 @@ DECLARE_TYPE(CString, 4) //???define char* too?
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(PVOID, 6)
 
-#define TVoid			-1
+#define TVoid			INVALID_TYPE_ID
 #define TBool			DATA_TYPE(bool)
 #define TInt			DATA_TYPE(int)
 #define TFloat			DATA_TYPE(float)

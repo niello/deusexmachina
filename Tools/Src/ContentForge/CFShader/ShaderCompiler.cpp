@@ -10,7 +10,8 @@
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
 #include <Util/UtilFwd.h> // CRC
-#include <ToolRenderStateDesc.h>
+#include <ToolRenderStateDesc.h>	// Shader references replaced with IDs
+#include <Render/SamplerDesc.h>
 #include <ConsoleApp.h>
 #include <ShaderDB.h>
 #include <ShaderReflection.h>
@@ -535,6 +536,30 @@ Render::EBlendOp StringToBlendOp(const CString& Str)
 }
 //---------------------------------------------------------------------
 
+Render::ETexAddressMode StringToTexAddressMode(const CString& Str)
+{
+	if (Str == "mirror") return Render::TexAddr_Mirror;
+	if (Str == "clamp") return Render::TexAddr_Clamp;
+	if (Str == "border") return Render::TexAddr_Border;
+	if (Str == "mirroronce") return Render::TexAddr_MirrorOnce;
+	return Render::TexAddr_Wrap;
+}
+//---------------------------------------------------------------------
+
+Render::ETexFilter StringToTexFilter(const CString& Str)
+{
+	if (Str == "minmag_point_mip_linear") return Render::TexFilter_MinMag_Point_Mip_Linear;
+	if (Str == "min_point_mag_linear_mip_point") return Render::TexFilter_Min_Point_Mag_Linear_Mip_Point;
+	if (Str == "min_point_magmip_linear") return Render::TexFilter_Min_Point_MagMip_Linear;
+	if (Str == "min_linear_magmip_point") return Render::TexFilter_Min_Linear_MagMip_Point;
+	if (Str == "min_linear_mag_point_mip_linear") return Render::TexFilter_Min_Linear_Mag_Point_Mip_Linear;
+	if (Str == "minmag_linear_mip_point") return Render::TexFilter_MinMag_Linear_Mip_Point;
+	if (Str == "minmagmip_linear") return Render::TexFilter_MinMagMip_Linear;
+	if (Str == "anisotropic") return Render::TexFilter_Anisotropic;
+	return Render::TexFilter_MinMagMip_Point;
+}
+//---------------------------------------------------------------------
+
 bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType ShaderType, bool Debug, CRenderStateRef& RSRef)
 {
 	UPTR LightVariationCount = RSRef.MaxLights + 1;
@@ -702,6 +727,61 @@ bool ProcessBlendSection(Data::PParams BlendSection, int Index, Render::CToolRen
 		if (StrValue.FindIndex('b') != INVALID_INDEX) Mask |= Render::ColorMask_Blue;
 		if (StrValue.FindIndex('a') != INVALID_INDEX) Mask |= Render::ColorMask_Alpha;
 		Blend.WriteMask = Mask;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessSamplerSection(Data::PParams SamplerSection, Render::CSamplerDesc& Desc)
+{
+	CString StrValue;
+	int IntValue;
+
+	if (SamplerSection->Get(StrValue, CStrID("AddressU")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AddressU = StringToTexAddressMode(StrValue);
+	}
+	if (SamplerSection->Get(StrValue, CStrID("AddressV")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AddressV = StringToTexAddressMode(StrValue);
+	}
+	if (SamplerSection->Get(StrValue, CStrID("AddressW")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AddressW = StringToTexAddressMode(StrValue);
+	}
+	if (SamplerSection->Get(StrValue, CStrID("Filter")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.Filter = StringToTexFilter(StrValue);
+	}
+
+	vector4 ColorRGBA;
+	if (SamplerSection->Get(ColorRGBA, CStrID("BorderColorRGBA")))
+	{
+		Desc.BorderColorRGBA[0] = ColorRGBA.v[0];
+		Desc.BorderColorRGBA[1] = ColorRGBA.v[1];
+		Desc.BorderColorRGBA[2] = ColorRGBA.v[2];
+		Desc.BorderColorRGBA[3] = ColorRGBA.v[3];
+	}
+
+	SamplerSection->Get(Desc.MipMapLODBias, CStrID("MipMapLODBias"));
+	SamplerSection->Get(Desc.FinestMipMapLOD, CStrID("FinestMipMapLOD"));
+	SamplerSection->Get(Desc.CoarsestMipMapLOD, CStrID("CoarsestMipMapLOD"));
+	if (SamplerSection->Get(IntValue, CStrID("MaxAnisotropy"))) Desc.MaxAnisotropy = IntValue;
+
+	if (SamplerSection->Get(StrValue, CStrID("CmpFunc")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.CmpFunc = StringToCmpFunc(StrValue);
 	}
 
 	OK;
@@ -1853,9 +1933,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	}
 
 	//???save SM3.0 global CB info? or only some minimal signature here and all actual data in reference global shader in RP?
-	WriteRegisterRanges(GlobalFloat4, W, "float4");
-	WriteRegisterRanges(GlobalInt4, W, "int4");
-	WriteRegisterRanges(GlobalBool, W, "bool");
+	//WriteRegisterRanges(GlobalFloat4, W, "float4");
+	//WriteRegisterRanges(GlobalInt4, W, "int4");
+	//WriteRegisterRanges(GlobalBool, W, "bool");
 
 	//!!!each material const buffer must be backed in a raw RAM block to set in a GPU material array (part of a big buffer, not a dedicated one)!
 	//if dedicated CB is needed, it can be created without RAM back-storage and can be directly transmitted to the GPU, immutable!
@@ -1873,30 +1953,85 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
 
 		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
-		if (Type == EPT_Sampler)
+		if (Type == EPT_Const)
 		{
-			if (DefaultValue.IsA<Data::PParams>())
+			//!!!validate type! SM3.0 by a register set, SM4.0 by a metadata type!
+			if (DefaultValue.IsA<CStrID>())
 			{
-				// process sampler section
-				n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+				NOT_IMPLEMENTED;
 			}
-			else if (!DefaultValue.IsNull())
+			else
 			{
-				n_msg(VL_WARNING, "Material param '%s' is a sampler, default value must be null or params section\n", Param.ID.CStr());
+				if (!DefaultValue.IsNull())
+					n_msg(VL_WARNING, "Material param '%s' is a constant, default value must be null or value of this constant's type\n", Param.ID.CStr());
+				W.Write(false);
 			}
 		}
 		else if (Type == EPT_Resource)
 		{
 			if (DefaultValue.IsA<CStrID>())
 			{
-				// process engine resource ID (texture reference)
-				n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+				CStrID ResourceID = DefaultValue.GetValue<CStrID>();
+				if (ResourceID.IsValid())
+				{
+					W.Write(true);
+					W.Write(ResourceID);
+					n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+				}
+				else W.Write(false);
 			}
-			else if (!DefaultValue.IsNull())
+			else
 			{
-				n_msg(VL_WARNING, "Material param '%s' is a resource, default value must be null or resource ID of type CStrID\n", Param.ID.CStr());
+				if (!DefaultValue.IsNull())
+					n_msg(VL_WARNING, "Material param '%s' is a resource, default value must be null or resource ID of type CStrID\n", Param.ID.CStr());
+				W.Write(false);
 			}
 		}
+		else if (Type == EPT_Sampler)
+		{
+			if (DefaultValue.IsA<Data::PParams>())
+			{
+				Data::PParams SamplerSection = DefaultValue.GetValue<Data::PParams>();
+				if (SamplerSection->GetCount())
+				{
+					Render::CSamplerDesc SamplerDesc;
+					SamplerDesc.SetDefaults();
+					if (ProcessSamplerSection(SamplerSection, SamplerDesc))
+					{
+						W.Write(true);
+						
+						W.Write<U8>(SamplerDesc.AddressU);
+						W.Write<U8>(SamplerDesc.AddressV);
+						W.Write<U8>(SamplerDesc.AddressW);
+						W.Write<U8>(SamplerDesc.Filter);
+						W.Write(SamplerDesc.BorderColorRGBA[0]);
+						W.Write(SamplerDesc.BorderColorRGBA[1]);
+						W.Write(SamplerDesc.BorderColorRGBA[2]);
+						W.Write(SamplerDesc.BorderColorRGBA[3]);
+						W.Write(SamplerDesc.MipMapLODBias);
+						W.Write(SamplerDesc.FinestMipMapLOD);
+						W.Write(SamplerDesc.CoarsestMipMapLOD);
+						W.Write<U32>(SamplerDesc.MaxAnisotropy);
+						W.Write<U8>(SamplerDesc.CmpFunc);
+
+						n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+					}
+					else
+					{
+						W.Write(false);
+						n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, default value is skipped\n", Param.ID.CStr());
+					}
+				}
+				else W.Write(false);
+			}
+			else
+			{
+				if (!DefaultValue.IsNull())
+					n_msg(VL_WARNING, "Material param '%s' is a sampler, default value must be null or params section\n", Param.ID.CStr());
+				W.Write(false);
+			}
+		}
+		else W.Write(false);
 	}
 
 	WriteRegisterRanges(MaterialFloat4, W, "float4");

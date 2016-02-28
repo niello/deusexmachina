@@ -37,6 +37,7 @@ public:
 	bool				WriteParams(const Data::CParams& Value, const Data::CDataScheme& Scheme) { UPTR Dummy; return WriteParamsByScheme(Value, Scheme, Dummy); }
 	bool				WriteParam(const Data::CParam& Value) { return Write(Value.GetName()) && Write(Value.GetRawValue()); }
 	bool				WriteData(const Data::CData& Value);
+	bool				WriteVoidData() { return Write<U8>(INVALID_TYPE_ID); }
 
 	template<class T>
 	bool				Write(const T& Value) { return Stream.Write(&Value, sizeof(T)) == sizeof(T); }

@@ -10,7 +10,7 @@ namespace IO
 
 bool CBinaryWriter::WriteData(const Data::CData& Value)
 {
-	if (!Write<char>(Value.GetTypeID())) FAIL;
+	if (!Write<U8>(Value.GetTypeID())) FAIL;
 
 	if (Value.IsVoid()) OK;
 	else if (Value.IsA<bool>()) return Write<bool>(Value);

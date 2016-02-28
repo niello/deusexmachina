@@ -17,8 +17,8 @@ struct CSamplerDesc
 	ETexAddressMode	AddressV;
 	ETexAddressMode	AddressW;
 	ETexFilter		Filter;
-	float			MipMapLODBias;
 	float			BorderColorRGBA[4];
+	float			MipMapLODBias;
 	float			FinestMipMapLOD;
 	float			CoarsestMipMapLOD;
 	unsigned int	MaxAnisotropy;
