@@ -16,10 +16,9 @@ namespace IO
 // Don't change values, they are saved to file
 enum ERegisterSet
 {
-	RS_BOOL = 0,
-	RS_INT4,
-	RS_FLOAT4,
-	RS_SAMPLER
+	RS_Bool = 0,
+	RS_Int4,
+	RS_Float4
 };
 
 struct CD3D9ShaderBufferMeta
@@ -114,7 +113,7 @@ struct CD3D11ShaderMeta
 	CArray<CD3D11ShaderRsrcMeta>	Samplers;
 };
 
-void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName);
+void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);
 void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R);
 bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CD3D9ShaderMeta& Out);
 bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& Out);

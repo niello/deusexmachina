@@ -36,16 +36,23 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		{
 			CD3D9ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
-			pMeta->RegSet = D3D9ConstDesc.RegisterSet;
 			pMeta->Offset = D3D9ConstDesc.RegisterIndex;
 			pMeta->Size = D3D9ConstDesc.RegisterCount;
+
+			switch (D3D9ConstDesc.RegisterSet)
+			{
+				case RS_FLOAT4:	pMeta->RegSet = RS_Float4; break;
+				case RS_INT4:	pMeta->RegSet = RS_Int4; break;
+				case RS_BOOL:	pMeta->RegSet = RS_Bool; break;
+				default:		pMeta->RegSet = RS_Float4; break;
+			};
 
 			// Try to get owning pseudo-buffer from extra info, else use default
 
 			pMeta->BufferIndex = 0; // Default, global buffer
 
 			CD3D9ShaderBufferMeta& BufMeta = Out.Buffers[pMeta->BufferIndex];
-			CArray<UPTR>& UsedRegs = (pMeta->RegSet == RS_FLOAT4) ? BufMeta.UsedFloat4 : ((pMeta->RegSet == RS_INT4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
+			CArray<UPTR>& UsedRegs = (pMeta->RegSet == RS_Float4) ? BufMeta.UsedFloat4 : ((pMeta->RegSet == RS_Int4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
 			for (UPTR r = D3D9ConstDesc.RegisterIndex; r < D3D9ConstDesc.RegisterIndex + D3D9ConstDesc.RegisterCount; ++r)
 			{
 				if (!UsedRegs.Contains(r)) UsedRegs.Add(r);
@@ -194,7 +201,7 @@ void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, con
 			W.Write<U32>(CurrStart);
 			W.Write<U32>(CurrCount);
 			++RangeCount;
-			n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
+			if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
 			CurrStart = Reg;
 			CurrCount = 1;
 		}
@@ -205,7 +212,7 @@ void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, con
 		W.Write<U32>(CurrStart);
 		W.Write<U32>(CurrCount);
 		++RangeCount;
-		n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
+		if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
 	}
 
 	U64 EndOffset = W.GetStream().GetPosition();
@@ -242,9 +249,9 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 		U8 RegSet;
 		switch (Obj.RegSet)
 		{
-			case RS_FLOAT4:	RegSet = 0; break;
-			case RS_INT4:	RegSet = 1; break;
-			case RS_BOOL:	RegSet = 2; break;
+			case RS_Float4:	RegSet = 0; break;
+			case RS_Int4:	RegSet = 1; break;
+			case RS_Bool:	RegSet = 2; break;
 			default:		continue;
 		};
 
@@ -257,9 +264,9 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 		const char* pRegisterSetName = NULL;
 		switch (Obj.RegSet)
 		{
-			case RS_FLOAT4:	pRegisterSetName = "float4"; break;
-			case RS_INT4:	pRegisterSetName = "int4"; break;
-			case RS_BOOL:	pRegisterSetName = "bool"; break;
+			case RS_Float4:	pRegisterSetName = "float4"; break;
+			case RS_Int4:	pRegisterSetName = "int4"; break;
+			case RS_Bool:	pRegisterSetName = "bool"; break;
 		};
 				
 		n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
@@ -341,7 +348,7 @@ void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R)
 
 	U32 RangeCount = 0;
 	R.Read<U32>(RangeCount);
-	for (UPTR r = 1; r < RangeCount; ++r)
+	for (UPTR i = 0; i < RangeCount; ++i)
 	{
 		U32 Curr;
 		U32 CurrCount;
@@ -367,9 +374,6 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CD3D9ShaderMeta& Meta)
 	for (; pBuf < Meta.Buffers.End(); ++pBuf)
 	{
 		CD3D9ShaderBufferMeta& Obj = *pBuf;
-		Obj.UsedFloat4.Sort();
-		Obj.UsedInt4.Sort();
-		Obj.UsedBool.Sort();
 
 		R.Read(Obj.Name);
 
@@ -385,27 +389,21 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CD3D9ShaderMeta& Meta)
 		CD3D9ShaderConstMeta& Obj = *pConst;
 
 		U8 RegSet;
-		switch (Obj.RegSet)
-		{
-			case RS_FLOAT4:	RegSet = 0; break;
-			case RS_INT4:	RegSet = 1; break;
-			case RS_BOOL:	RegSet = 2; break;
-			default:		continue;
-		};
 
 		R.Read(Obj.Name);
 		R.Read(Obj.BufferIndex);
 		R.Read<U8>(RegSet);
+
+		switch (RegSet)
+		{
+			case 0:		Obj.RegSet = RS_Float4; break;
+			case 1:		Obj.RegSet = RS_Int4; break;
+			case 2:		Obj.RegSet = RS_Bool; break;
+			default:	continue;
+		};
+
 		R.Read(Obj.Offset);
 		R.Read(Obj.Size);
-
-		const char* pRegisterSetName = NULL;
-		switch (Obj.RegSet)
-		{
-			case RS_FLOAT4:	pRegisterSetName = "float4"; break;
-			case RS_INT4:	pRegisterSetName = "int4"; break;
-			case RS_BOOL:	pRegisterSetName = "bool"; break;
-		};
 	}
 
 	R.Read<U32>(Count);

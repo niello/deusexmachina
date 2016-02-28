@@ -1239,6 +1239,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 		TechInfo.PassIndices.SetSize(TechInfo.Passes.GetCount());
 		TechInfo.VariationValid.SetSize(LightVariationCount);
+		TechInfo.Target = 0x0000;
 
 		bool DiscardTech = false;
 
@@ -1258,7 +1259,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			if (!TechInfo.Target) TechInfo.Target = PassTarget;
 			else if ((TechInfo.Target < 0x0400 && PassTarget >= 0x0400) || (TechInfo.Target >= 0x0400 && PassTarget < 0x0400))
 			{
-				n_msg(VL_ERROR, "Tech %s mixes sm3.0 and sm4.0+ passes, which is invalid\n");
+				n_msg(VL_ERROR, "Tech %s mixes sm3.0 and sm4.0+ passes, which is invalid\n", TechInfo.ID.CStr());
 				DiscardTech = true;
 				break;
 			}
@@ -1389,6 +1390,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Samplers.GetCount(); ++ParamIdx)
 						{
 							CD3D9ShaderRsrcMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
+							if (MetaObj.TextureName.IsEmpty()) continue;
+
 							CStrID MetaObjID = CStrID(MetaObj.TextureName.CStr());
 							
 							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
@@ -1629,8 +1632,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					}
 					else if (TechParam.Type == EPT_SM30Const)
 					{
-						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_FLOAT4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_INT4) ? GlobalInt4 : GlobalBool);
-						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_FLOAT4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_INT4) ? MaterialInt4 : MaterialBool);
+						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? MaterialInt4 : MaterialBool);
 						for (UPTR r = TechParam.pSM30Const->Offset; r < TechParam.pSM30Const->Offset + TechParam.pSM30Const->Size; ++r)
 						{
 							if (UsedMaterialRegs.Contains(r))
@@ -1695,8 +1698,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					}
 					else if (TechParam.Type == EPT_SM30Const)
 					{
-						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_FLOAT4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_INT4) ? GlobalInt4 : GlobalBool);
-						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_FLOAT4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_INT4) ? MaterialInt4 : MaterialBool);
+						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? MaterialInt4 : MaterialBool);
 						for (UPTR r = TechParam.pSM30Const->Offset; r < TechParam.pSM30Const->Offset + TechParam.pSM30Const->Size; ++r)
 						{
 							if (UsedGlobalRegs.Contains(r))
@@ -1761,8 +1764,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			}
 			else if (TechParam.Type == EPT_SM30Const)
 			{
-				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_FLOAT4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_INT4) ? GlobalInt4 : GlobalBool);
-				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_FLOAT4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_INT4) ? MaterialInt4 : MaterialBool);
+				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? MaterialInt4 : MaterialBool);
 				for (UPTR r = TechParam.pSM30Const->Offset; r < TechParam.pSM30Const->Offset + TechParam.pSM30Const->Size; ++r)
 				{
 					if (UsedGlobalRegs.Contains(r))
@@ -1955,10 +1958,23 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
 		if (Type == EPT_Const)
 		{
-			//!!!validate type! SM3.0 by a register set, SM4.0 by a metadata type!
 			if (DefaultValue.IsA<CStrID>())
 			{
-				NOT_IMPLEMENTED;
+				if (Param.Type == EPT_SM30Const)
+				{
+					// Validate by a register set and element count
+					CD3D9ShaderConstMeta& Meta = *Param.pSM30Const;
+				}
+				else if (Param.Type == EPT_SM40Const)
+				{
+					// Validate by type and element count from a metadata
+					CD3D11ShaderConstMeta& Meta = *Param.pSM40Const;
+				}
+				else
+				{
+					n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type, default value is skipped\n", Param.ID.CStr());
+					W.Write(false);
+				}
 			}
 			else
 			{
