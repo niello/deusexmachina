@@ -231,7 +231,7 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 		WriteRegisterRanges(Obj.UsedInt4, W, "int4");
 		WriteRegisterRanges(Obj.UsedBool, W, "bool");
 
-		n_msg(VL_DETAILS, "  CBuffer: %s\n", Obj.Name.CStr());
+		n_msg(VL_DETAILS, "    CBuffer: %s\n", Obj.Name.CStr());
 	}
 
 	W.Write<U32>(Meta.Consts.GetCount());
@@ -262,7 +262,7 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 			case RS_BOOL:	pRegisterSetName = "bool"; break;
 		};
 				
-		n_msg(VL_DETAILS, "  Const: %s, %s %d to %d\n",
+		n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
 				Obj.Name.CStr(), pRegisterSetName, Obj.Offset, Obj.Offset + Obj.Size - 1);
 	}
 
@@ -274,7 +274,7 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 		W.Write(Obj.TextureName);
 		W.Write(Obj.Register);		//!!!need sampler arrays! need one texture to multiple samplers!
 
-		n_msg(VL_DETAILS, "  Sampler: %s (texture %s), %d slot(s) from %d\n", Obj.SamplerName.CStr(), Obj.TextureName.CStr(), 1, Obj.Register);
+		n_msg(VL_DETAILS, "    Sampler: %s (texture %s), %d slot(s) from %d\n", Obj.SamplerName.CStr(), Obj.TextureName.CStr(), 1, Obj.Register);
 	}
 
 	OK;
@@ -292,10 +292,11 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		W.Write(Obj.Register);
 		W.Write(Obj.ElementSize);
 		W.Write(Obj.ElementCount);
-		const char* pBufferTypeStr = "CBuffer";
+		const char* pBufferTypeStr = NULL;
 		if (Obj.Register & D3D11Buffer_Texture) pBufferTypeStr = "TBuffer";
 		else if (Obj.Register & D3D11Buffer_Structured) pBufferTypeStr = "SBuffer";
-		n_msg(VL_DETAILS, "  CBuffer: %s, %d slot(s) from %d\n", Obj.Name.CStr(), 1, Obj.Register);
+		else pBufferTypeStr = "CBuffer";
+		n_msg(VL_DETAILS, "    %s: %s, %d slot(s) from %d\n", pBufferTypeStr, Obj.Name.CStr(), 1, Obj.Register);
 	}
 
 	W.Write<U32>(Meta.Consts.GetCount());
@@ -306,7 +307,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		W.Write(Obj.BufferIndex);
 		W.Write(Obj.Offset);
 		W.Write(Obj.Size);
-		n_msg(VL_DETAILS, "    Const: %s, offset %d, size %d\n", //, type %d
+		n_msg(VL_DETAILS, "      Const: %s, offset %d, size %d\n", //, type %d
 				Obj.Name.CStr(), Obj.Offset, Obj.Size); //, D3DTypeDesc.Type);
 	}
 
@@ -317,7 +318,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		const CD3D11ShaderRsrcMeta& Obj = Meta.Resources[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.Register);
-		n_msg(VL_DETAILS, "  Texture: %s, %d slot(s) from %d\n", Obj.Name.CStr(), 1, Obj.Register);
+		n_msg(VL_DETAILS, "    Texture: %s, %d slot(s) from %d\n", Obj.Name.CStr(), 1, Obj.Register);
 	}
 
 	W.Write<U32>(Meta.Samplers.GetCount());
@@ -327,7 +328,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		const CD3D11ShaderRsrcMeta& Obj = Meta.Samplers[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.Register);
-		n_msg(VL_DETAILS, "  Sampler: %s, %d slot(s) from %d\n", Obj.Name.CStr(), 1, Obj.Register);
+		n_msg(VL_DETAILS, "    Sampler: %s, %d slot(s) from %d\n", Obj.Name.CStr(), 1, Obj.Register);
 	}
 
 	OK;
