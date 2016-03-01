@@ -1,6 +1,7 @@
 #include "D3D9ShaderReflection.h"
 
 #include <Data/StringUtils.h>
+#include <ConsoleApp.h>			// For n_msg
 
 // Code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
@@ -56,6 +57,133 @@ const U32 CTAB_CONSTANT = 0x42415443;			// 'CTAB' - constant table
 
 //#define D3DXCONSTTABLE_LARGEADDRESSAWARE          0x20000
 
+bool ProcessConstant(const char* ctab,
+					 const CCTABInfo& ConstInfo,
+					 const CCTABType& TypeInfo,
+					 const char* pName,
+					 UPTR RegisterIndex,
+					 UPTR RegisterCount,
+					 CArray<CD3D9ConstantDesc>& OutConsts)
+{
+	CD3D9ConstantDesc* pDesc = NULL;
+	for (UPTR i = 0; i < OutConsts.GetCount(); ++i)
+	{
+		if (OutConsts[i].Name == pName)
+		{
+			pDesc = &OutConsts[i];
+			if (pDesc->Type.Class == PC_STRUCT)
+			{
+				// Mixed-registerset structure, not supported by DEM
+				pDesc->RegisterSet = RS_MIXED;
+				pDesc->RegisterIndex = 0;
+				pDesc->RegisterCount = 0;
+				OK;
+			}
+			else
+			{
+				n_msg(VL_ERROR, "Duplicate parameter name '%s' in SM3.0 shader\n", pName);
+				FAIL;
+			}
+			break;
+		}
+	}
+
+	if (!pDesc)
+	{
+		pDesc = OutConsts.Add();
+		pDesc->Name = pName;
+		pDesc->Type.Class = (EPARAMETER_CLASS)TypeInfo.Class;
+		pDesc->Type.Type = (EPARAMETER_TYPE)TypeInfo.Type;
+		pDesc->Type.Rows = TypeInfo.Rows;
+		pDesc->Type.Columns = TypeInfo.Columns;
+		pDesc->Type.Elements = TypeInfo.Elements > 0 ? TypeInfo.Elements : 1;
+		pDesc->Type.StructMembers = TypeInfo.StructMembers;
+	}
+ 
+	pDesc->RegisterSet = static_cast<EREGISTER_SET>(ConstInfo.RegisterSet);
+
+	//pDesc->pDefaultValue = ConstInfo.DefaultValue ? ctab + ConstInfo.DefaultValue : NULL;
+
+	UPTR ElementRegisterCount = 0;
+	if (TypeInfo.Class == PC_STRUCT)
+	{
+		pDesc->Type.Bytes = 0;
+		UPTR ChildCount = TypeInfo.StructMembers;
+		const CCTABStructMemberInfo* pMembers = (CCTABStructMemberInfo*)(ctab + TypeInfo.StructMemberInfo);
+		for (UPTR i = 0; i < ChildCount; ++i)
+		{
+			const CCTABType* pMemberTypeInfo = reinterpret_cast<const CCTABType*>(ctab + pMembers[i].TypeInfo);
+			if (!ProcessConstant(ctab, ConstInfo, *pMemberTypeInfo, ctab + pMembers[i].Name, RegisterIndex + ElementRegisterCount, RegisterCount - ElementRegisterCount, pDesc->Members)) FAIL;
+			ElementRegisterCount += pDesc->Members[i].RegisterCount;
+			pDesc->Type.Bytes += pDesc->Members[i].Type.Bytes;
+		}
+	}
+	else
+	{
+		//U16 offsetdiff = TypeInfo.Columns * TypeInfo.Rows;
+
+		switch (pDesc->RegisterSet)
+		{
+			case RS_SAMPLER:
+			{
+				ElementRegisterCount = 1;
+
+				// Sampler array where some last elements aren't referenced
+				if (pDesc->Type.Elements > RegisterCount)
+					pDesc->Type.Elements = RegisterCount;
+
+				break;
+			}
+			case RS_BOOL:
+			case RS_INT4:
+			{
+				// Do not know why, but int registers are treated as int1, not int4.
+				// They say only top-level integers behave this way, but it seems all of them do.
+				ElementRegisterCount = TypeInfo.Columns * TypeInfo.Rows;
+				break;
+			}
+			case RS_FLOAT4:
+			{
+				switch (TypeInfo.Class)
+				{
+					case PC_SCALAR:
+						//offsetdiff = TypeInfo.Rows * 4;
+						ElementRegisterCount = TypeInfo.Columns * TypeInfo.Rows;
+						break;
+ 
+					case PC_VECTOR:
+						//offsetdiff = TypeInfo.Rows * 4;
+						ElementRegisterCount = 1;
+						break;
+					
+					case PC_MATRIX_ROWS:
+						//offsetdiff = TypeInfo.Rows * 4;
+						ElementRegisterCount = TypeInfo.Rows;
+						break;
+ 
+					case PC_MATRIX_COLUMNS:
+						//offsetdiff = TypeInfo.Columns * 4;
+						ElementRegisterCount = TypeInfo.Columns;
+						break;
+				}
+			}
+		}
+
+		//if (pDefValOffset) *pDefValOffset += offsetdiff * 4; // offset in bytes => offsetdiff * sizeof(DWORD)
+
+		pDesc->Type.Bytes = 4 * pDesc->Type.Elements * pDesc->Type.Rows * pDesc->Type.Columns;
+	}
+
+	pDesc->Type.ElementRegisterCount = ElementRegisterCount;
+	pDesc->RegisterIndex = RegisterIndex;
+	pDesc->RegisterCount = ElementRegisterCount * pDesc->Type.Elements;
+
+	n_assert(pDesc->RegisterCount <= RegisterCount);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CString& OutCreator)
 {
 	const U32* ptr = static_cast<const U32*>(pData);
@@ -80,115 +208,11 @@ bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutCon
 			OutCreator.Set(ctab + header->Creator);
 
 			// Read constants
-			CD3D9ConstantDesc* pDesc = OutConsts.Reserve(header->Constants);
 			const CCTABInfo* info = reinterpret_cast<const CCTABInfo*>(ctab + header->ConstantInfo);
-			for(U32 i = 0; i < header->Constants; ++i, ++pDesc)
+			for (U32 i = 0; i < header->Constants; ++i)
 			{
 				const CCTABType* pTypeInfo = reinterpret_cast<const CCTABType*>(ctab + info[i].TypeInfo);
-
-				pDesc->Name = ctab + info[i].Name;
-				pDesc->RegisterSet = static_cast<EREGISTER_SET>(info[i].RegisterSet);
-				pDesc->RegisterIndex = info[i].RegisterIndex;
-				pDesc->RegisterCount = info[i].RegisterCount;
-				pDesc->Class = (EPARAMETER_CLASS)pTypeInfo->Class;
-				pDesc->Type = (EPARAMETER_TYPE)pTypeInfo->Type;
-				pDesc->Rows = pTypeInfo->Rows;
-				pDesc->Columns = pTypeInfo->Columns;
-				pDesc->Elements = pTypeInfo->Elements; // is_element ? 1 : pTypeInfo->Elements; top level always is_element FALSE
-				pDesc->StructMembers = pTypeInfo->StructMembers;
-				pDesc->Bytes = 4 * pDesc->Elements * pDesc->Rows * pDesc->Columns;
-
-				//pDesc->pDefaultValue = info[i].DefaultValue ? ctab + info[i].DefaultValue : NULL;
-
-				//WORD max_index = constant_info[i].RegisterIndex + constant_info[i].RegisterCount;
-
-				UPTR ChildCount;
-				if (pDesc->Elements > 1) // && !is_element
-				{
-					ChildCount = pDesc->Elements;
-/* For arrays of structs:
-//???add constants for each or accept index in an engine's SetConst method?
-may store array of constants each with its registers but indexable as it is an array actually
-         for (i = 0; i < count; ++i)
-         {
-             checkhr = parse_ctab_constant_type(ctab, typeoffset,
-                     &constant->constants[i], TRUE, index + size, max_index, offset,
-                     nameoffset, regset);
- 
-             size += constant->constants[i].desc.RegisterCount;
-         }
-*/
-				}
-				else if (pDesc->Class == PC_STRUCT && pDesc->StructMembers > 0)
-				{
-					ChildCount = pDesc->StructMembers;
-					//memberinfo = (CCTABStructMemberInfo*)(ctab + pTypeInfo->StructMemberInfo);
-/*
-         for (i = 0; i < count; ++i)
-         {
-             checkhr = parse_ctab_constant_type(ctab, memberinfo[i].TypeInfo,
-                     &constant->constants[i], FALSE, index + size, max_index, offset,
-                     memberinfo[i].Name, regset);
- 
-             size += constant->constants[i].desc.RegisterCount;
-         }
-*/
-				}
-				else
-				{
-					/*
-1878         WORD offsetdiff = pTypeInfo->Columns * pTypeInfo->Rows;
-1880 
-1881         size = pTypeInfo->Columns * pTypeInfo->Rows;
-1882 
-1883         switch (regset)
-1884         {
-1885             case D3DXRS_BOOL:
-1888                 break;
-1889 
-1890             case D3DXRS_FLOAT4:
-1891             case D3DXRS_INT4:
-1892                 switch (pTypeInfo->Class)
-1893                 {
-1894                     case D3DXPC_VECTOR:
-1895                         size = 1;
-1896                         // fall through 
-1897                     case D3DXPC_SCALAR:
-1898                         offsetdiff = pTypeInfo->Rows * 4;
-1899                         break;
-1900 
-1901                     case D3DXPC_MATRIX_ROWS:
-1902                         offsetdiff = pTypeInfo->Rows * 4;
-1903                         size = pTypeInfo->Rows;
-1904                         break;
-1905 
-1906                     case D3DXPC_MATRIX_COLUMNS:
-1907                         offsetdiff = pTypeInfo->Columns * 4;
-1908                         size = pTypeInfo->Columns;
-1909                         break;
-1914                 }
-1915                 break;
-1916 
-1917             case D3DXRS_SAMPLER:
-1918                 size = 1;
-1920                 break;
-1925         }
-1932 
-1933         
-1934         if (pDefValOffset) *pDefValOffset += offsetdiff * 4; // offset in bytes => offsetdiff * sizeof(DWORD)
-					*/
-				}
-
-/*
-1937     pDesc->RegisterCount = max(0, min(max_index - index, size));
-1938     pDesc->Bytes = 4 * pDesc->Elements * pTypeInfo->Rows * pTypeInfo->Columns;
-*/
-
-				// Top level const's register count may be 4 times bigger as as they assume register size is 1 instead of 4
-				if (pDesc->RegisterSet == RS_INT4)
-				{
-					pDesc->RegisterCount = info[i].RegisterCount;
-				}
+				if (!ProcessConstant(ctab, info[i], *pTypeInfo, ctab + info[i].Name, info[i].RegisterIndex, info[i].RegisterCount, OutConsts)) FAIL;
 			}
 
 			OK;
@@ -199,9 +223,10 @@ may store array of constants each with its registers but indexable as it is an a
 }
 //---------------------------------------------------------------------
 
-// Parse source code and find "samplerX SamplerName { Texture = TextureName; }" pattern,
+// Parse source code and find "samplerX SamplerName { Texture = TextureName; }" or
+// "sampler LinearSampler[N] { { Texture = Tex1; }, ..., { Texture = TexN; } }" pattern,
 // as HLSL texture names are not saved in a metadata
-void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CString>& OutSampToTex)
+void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CArray<CString>>& OutSampToTex)
 {
 	char* pSrc = (char*)n_malloc(Size + 1);
 	memcpy(pSrc, pSrcText, Size);
@@ -212,45 +237,85 @@ void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CSt
 	const char* pCurr = pSrc;
 	while (pCurr = strstr(pCurr, "sampler"))
 	{
-		// Keyword 'sampler[XD]' and delimiters
+		// Keyword 'sampler[XD]'
 		pCurr = strpbrk(pCurr, DEM_WHITESPACE);
 		if (!pCurr) break;
+		
+		// Skip delimiters after a keyword
 		do ++pCurr; while (strchr(DEM_WHITESPACE, *pCurr));
 		if (!*pCurr) break;
 
 		// Sampler name
 		const char* pSampName = pCurr;
-		pCurr = strpbrk(pCurr, DEM_WHITESPACE";:{}");
+		pCurr = strpbrk(pCurr, DEM_WHITESPACE"[;:{}");
 		if (!pCurr) break;
 
 		CString SamplerName(pSampName, pCurr - pSampName);
 
-		// '{' - section start or ';' - sampler declaration end
-		pCurr = strpbrk(pCurr, "{;");
+		bool IsArray = (*pCurr == '[');
+
+		// Parse optional array
+		if (IsArray)
+		{
+			// '{' - array initializer list start or ';' - sampler declaration end (we skip 'N]' part)
+			pCurr = strpbrk(pCurr, "{;");
+			if (!pCurr) break;
+			if (*pCurr == ';') continue;
+			++pCurr;
+		}
+
+		CArray<CString>* pTexNames;
+		IPTR Idx = OutSampToTex.FindIndex(SamplerName);
+		if (Idx == INVALID_INDEX) pTexNames = &OutSampToTex.Add(SamplerName);
+		else pTexNames = &OutSampToTex.ValueAt(Idx);
+
+		do
+		{
+			// '{' - section start or '}' - array initializer list end or ';' - sampler declaration end
+			const char* pTerm = IsArray ? "{}" : "{;";
+			pCurr = strpbrk(pCurr, pTerm);
+			if (!pCurr || *pCurr == ';' || *pCurr == '}') break;
+
+			// 'Texture' token or '}' - section end
+			const char* pSectionEnd = strpbrk(pCurr, "}");
+			const char* pTextureToken = strstr(pCurr, "Texture");
+			if (!pTextureToken)
+			{
+				// Nothing more to parse, as we look for 'Texture' tokens
+				pCurr = NULL;
+				break;
+			}
+			if (pSectionEnd && pSectionEnd < pTextureToken)
+			{
+				// Empty section, skip it, add empty texture name to preserve register mapping
+				pTexNames->Add(CString::Empty);
+				pCurr = pSectionEnd + 1;
+				continue;
+			}
+
+			// '=' of a texture declaration
+			pCurr = strchr(pTextureToken, '=');
+
+			// Skip delimiters after a '='
+			do ++pCurr; while (strchr(DEM_WHITESPACE, *pCurr));
+			if (!*pCurr) break;
+
+			// Texture name
+			const char* pTexName = pCurr;
+			pCurr = strpbrk(pCurr, DEM_WHITESPACE";:{}");
+			if (!pCurr) break;
+
+			CString TextureName(pTexName, pCurr - pTexName);
+			TextureName.Trim(DEM_WHITESPACE"'\"");
+
+			pTexNames->Add(TextureName);
+
+			// Proceed to the end of the section
+			pCurr = pSectionEnd + 1;
+		}
+		while (true);
+
 		if (!pCurr) break;
-		if (*pCurr == ';') continue;
-
-		// 'Texture' token or '}' - section end
-		const char* pSectionEnd = strpbrk(pCurr, "}");
-		const char* pTextureToken = strstr(pCurr, "Texture");
-		if (!pTextureToken || (pSectionEnd && pSectionEnd < pTextureToken)) continue;
-
-		// '=' of a texture declaration
-		pCurr = strchr(pTextureToken, '=');
-
-		// Skip delimiters after a '='
-		do ++pCurr; while (strchr(DEM_WHITESPACE, *pCurr));
-		if (!*pCurr) break;
-
-		// Texture name
-		const char* pTexName = pCurr;
-		pCurr = strpbrk(pCurr, DEM_WHITESPACE";:{}");
-		if (!pCurr) break;
-
-		CString TextureName(pTexName, pCurr - pTexName);
-		TextureName.Trim(DEM_WHITESPACE"'\"");
-
-		OutSampToTex.Add(SamplerName, TextureName);
 	};
 
 	n_free(pSrc);

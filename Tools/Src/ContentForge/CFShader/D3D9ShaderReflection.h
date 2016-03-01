@@ -14,7 +14,9 @@ enum EREGISTER_SET
 	RS_BOOL,
 	RS_INT4,
 	RS_FLOAT4,
-	RS_SAMPLER
+	RS_SAMPLER,
+
+	RS_MIXED	// For mixed structures
 };
 
 enum EPARAMETER_CLASS
@@ -51,23 +53,30 @@ enum EPARAMETER_TYPE
 	PT_UNSUPPORTED
 };
 
-struct CD3D9ConstantDesc
+struct CD3D9ConstantType
 {
-	CString				Name;
-	EREGISTER_SET		RegisterSet;
-	UPTR				RegisterIndex;
-	UPTR				RegisterCount;
 	EPARAMETER_CLASS	Class;
 	EPARAMETER_TYPE		Type;
 	UPTR				Rows;
 	UPTR				Columns;
-	UPTR				Elements;		// For arrays
+	UPTR				Elements;				// For arrays
 	UPTR				StructMembers;
 	UPTR				Bytes;
-	//const void*			pDefaultValue; //???CBuffer or explicit mem mgmt? or don't read?
+	UPTR				ElementRegisterCount;	// For a single array element
+};
+
+struct CD3D9ConstantDesc
+{
+	CString						Name;
+	CD3D9ConstantType			Type;
+	EREGISTER_SET				RegisterSet;
+	UPTR						RegisterIndex;
+	UPTR						RegisterCount;
+	//const void*				pDefaultValue; //???CBuffer or explicit mem mgmt? or don't read?
+	CArray<CD3D9ConstantDesc>	Members;
 };
 
 bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CString& OutCreator);
-void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CString>& OutSampToTex);
+void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CArray<CString>>& OutSampToTex);
 
 #endif

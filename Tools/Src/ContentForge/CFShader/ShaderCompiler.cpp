@@ -56,9 +56,9 @@ struct CEffectParam
 	U32					SourceShaderID;
 	union
 	{
-		CD3D9ShaderConstMeta*	pSM30Const;
-		CD3D9ShaderRsrcMeta*	pSM30Resource;
-		CD3D9ShaderRsrcMeta*	pSM30Sampler;
+		CSM30ShaderConstMeta*	pSM30Const;
+		CSM30ShaderRsrcMeta*	pSM30Resource;
+		CSM30ShaderSamplerMeta*	pSM30Sampler;
 		CD3D11ShaderConstMeta*	pSM40Const;
 		CD3D11ShaderRsrcMeta*	pSM40Resource;
 		CD3D11ShaderRsrcMeta*	pSM40Sampler;
@@ -285,6 +285,9 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 
 	// Compile shader
 
+	CString ShortSrcPath(Rec.SrcFile.Path);
+	ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
+
 	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(Rec.SrcFile.Path), RootPath);
 
 	ID3DBlob* pCode = NULL;
@@ -296,7 +299,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	if (FAILED(hr) || !pCode)
 	{
 		n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n",
-			Rec.ObjFile.Path.CStr(),
+			ShortSrcPath.CStr(),
 			pErrors ? pErrors->GetBufferPointer() : "No D3D error message.");
 		if (pCode) pCode->Release();
 		if (pErrors) pErrors->Release();
@@ -304,15 +307,12 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 	}
 	else if (pErrors)
 	{
-		n_msg(VL_WARNING, "'%s' compiled with warnings:\n\n%s\n", Rec.ObjFile.Path.CStr(), pErrors->GetBufferPointer());
+		n_msg(VL_WARNING, "'%s' compiled with warnings:\n\n%s\n", ShortSrcPath.CStr(), pErrors->GetBufferPointer());
 		pErrors->Release();
 	}
 
 	// For vertex and geometry shaders, store input signature in a separate binary file.
 	// It saves RAM since input signatures must reside in it at the runtime.
-
-	CString ShortSrcPath(Rec.SrcFile.Path);
-	ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
 
 	if ((Rec.ShaderType == Render::ShaderType_Vertex || Rec.ShaderType == Render::ShaderType_Geometry) && Rec.Target >= 0x0400)
 	{
@@ -438,7 +438,7 @@ int CompileShader(CShaderDBRec& Rec, bool Debug)
 		}
 		else
 		{
-			CD3D9ShaderMeta Meta;
+			CSM30ShaderMeta Meta;
 			MetaReflected = D3D9CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), Meta);
 			MetaSaved = MetaReflected && D3D9SaveShaderMetadata(W, Meta);
 		}
@@ -1020,8 +1020,8 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 // that returns both D3D9 and D3D11 metadata pointers. Which one is not NULL, it must be used as a return value.
 // Returns whether metadata is found in cache, which means it was already processed.
 bool LoadShaderMetadataByObjID(U32 ID,
-							   CDict<U32, CD3D9ShaderMeta>& D3D9MetaCache, CDict<U32, CD3D11ShaderMeta>& D3D11MetaCache,
-							   CD3D9ShaderMeta*& ppOutD3D9Meta, CD3D11ShaderMeta*& ppOutD3D11Meta)
+							   CDict<U32, CSM30ShaderMeta>& D3D9MetaCache, CDict<U32, CD3D11ShaderMeta>& D3D11MetaCache,
+							   CSM30ShaderMeta*& ppOutD3D9Meta, CD3D11ShaderMeta*& ppOutD3D11Meta)
 {
 	ppOutD3D9Meta = NULL;
 	ppOutD3D11Meta = NULL;
@@ -1069,7 +1069,7 @@ bool LoadShaderMetadataByObjID(U32 ID,
 	}
 	else
 	{
-		CD3D9ShaderMeta& Meta = D3D9MetaCache.Add(ID);
+		CSM30ShaderMeta& Meta = D3D9MetaCache.Add(ID);
 		if (!D3D9LoadShaderMetadata(R, Meta))
 		{
 			D3D9MetaCache.Remove(ID);
@@ -1322,7 +1322,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	//in the same CB in all stages or even use one param only in one stage instead.
 	// Each shader stage that param uses may define a param differently
 
-	CDict<U32, CD3D9ShaderMeta> D3D9MetaCache;
+	CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
 	CDict<U32, CD3D11ShaderMeta> D3D11MetaCache;
 
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
@@ -1340,7 +1340,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					if (!RSRef.UsesShader[ShaderType]) continue;
 
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
-					CD3D9ShaderMeta* pD3D9Meta = NULL;
+					CSM30ShaderMeta* pD3D9Meta = NULL;
 					CD3D11ShaderMeta* pD3D11Meta = NULL;
 					bool AlreadyProcessed = LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
 					if (AlreadyProcessed) continue;
@@ -1355,7 +1355,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					{
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Consts.GetCount(); ++ParamIdx)
 						{
-							CD3D9ShaderConstMeta& MetaObj = pD3D9Meta->Consts[ParamIdx];
+							CSM30ShaderConstMeta& MetaObj = pD3D9Meta->Consts[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
@@ -1378,7 +1378,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 									return ERR_INVALID_DATA;
 								}
 							
-								CD3D9ShaderConstMeta& RefMetaObj = *Param.pSM30Const;
+								CSM30ShaderConstMeta& RefMetaObj = *Param.pSM30Const;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1387,12 +1387,10 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 							}
 						}
 
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Samplers.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Resources.GetCount(); ++ParamIdx)
 						{
-							CD3D9ShaderRsrcMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
-							if (MetaObj.TextureName.IsEmpty()) continue;
-
-							CStrID MetaObjID = CStrID(MetaObj.TextureName.CStr());
+							CSM30ShaderRsrcMeta& MetaObj = pD3D9Meta->Resources[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
 							if (Idx == INVALID_INDEX)
@@ -1414,7 +1412,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 									return ERR_INVALID_DATA;
 								}
 							
-								CD3D9ShaderRsrcMeta& RefMetaObj = *Param.pSM30Resource;
+								CSM30ShaderRsrcMeta& RefMetaObj = *Param.pSM30Resource;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1425,8 +1423,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CD3D9ShaderRsrcMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
-							CStrID MetaObjID = CStrID(MetaObj.SamplerName.CStr());
+							CSM30ShaderSamplerMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
+							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
 							if (Idx == INVALID_INDEX)
@@ -1448,7 +1446,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 									return ERR_INVALID_DATA;
 								}
 							
-								CD3D9ShaderRsrcMeta& RefMetaObj = *Param.pSM30Sampler;
+								CSM30ShaderSamplerMeta& RefMetaObj = *Param.pSM30Sampler;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1632,9 +1630,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					}
 					else if (TechParam.Type == EPT_SM30Const)
 					{
-						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-						for (UPTR r = TechParam.pSM30Const->Offset; r < TechParam.pSM30Const->Offset + TechParam.pSM30Const->Size; ++r)
+						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+						for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
 						{
 							if (UsedMaterialRegs.Contains(r))
 							{
@@ -1698,9 +1696,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					}
 					else if (TechParam.Type == EPT_SM30Const)
 					{
-						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-						for (UPTR r = TechParam.pSM30Const->Offset; r < TechParam.pSM30Const->Offset + TechParam.pSM30Const->Size; ++r)
+						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+						for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
 						{
 							if (UsedGlobalRegs.Contains(r))
 							{
@@ -1764,9 +1762,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			}
 			else if (TechParam.Type == EPT_SM30Const)
 			{
-				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-				for (UPTR r = TechParam.pSM30Const->Offset; r < TechParam.pSM30Const->Offset + TechParam.pSM30Const->Size; ++r)
+				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+				for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
 				{
 					if (UsedGlobalRegs.Contains(r))
 					{
@@ -1963,7 +1961,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				if (Param.Type == EPT_SM30Const)
 				{
 					// Validate by a register set and element count
-					CD3D9ShaderConstMeta& Meta = *Param.pSM30Const;
+					CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
 				}
 				else if (Param.Type == EPT_SM40Const)
 				{

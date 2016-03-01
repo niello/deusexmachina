@@ -6,53 +6,94 @@
 #include <D3D9ShaderReflection.h>
 #include <D3DCompiler.inl>
 
-bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CD3D9ShaderMeta& Out)
+bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out)
 {
 	CArray<CD3D9ConstantDesc> D3D9Consts;
 	CString Creator;
 
 	if (!D3D9Reflect(pData, Size, D3D9Consts, Creator)) FAIL;
 
-	CDict<CString, CString> SampToTex;
+	CDict<CString, CArray<CString>> SampToTex;
 	D3D9FindSamplerTextures(pSource, SourceSize, SampToTex);
 
-	CD3D9ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
+	CSM30ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
 	pMeta->Name = "$Global";
 
 	for (UPTR i = 0; i < D3D9Consts.GetCount(); ++i)
 	{
 		CD3D9ConstantDesc& D3D9ConstDesc = D3D9Consts[i];
 
-		if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
+		if (D3D9ConstDesc.RegisterSet == RS_MIXED)
 		{
-			CD3D9ShaderRsrcMeta* pMeta = Out.Samplers.Reserve(1);
-			pMeta->SamplerName = D3D9ConstDesc.Name;
-			pMeta->Register = D3D9ConstDesc.RegisterIndex; //???support sampler arrays?
+			n_msg(VL_WARNING, "    SM3.0 mixed-regset structs aren't supported, '%s' skipped\n", D3D9ConstDesc.Name.CStr());
+			continue;
+		}
+		else if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
+		{
+			CSM30ShaderSamplerMeta* pMeta = Out.Samplers.Reserve(1);
+			pMeta->Name = D3D9ConstDesc.Name;
+			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
+			pMeta->RegisterCount = D3D9ConstDesc.RegisterCount;
 
+			UPTR TexCount;
 			int STIdx = SampToTex.FindIndex(D3D9ConstDesc.Name);
-			if (STIdx != INVALID_INDEX) pMeta->TextureName = SampToTex.ValueAt(STIdx);
+			if (STIdx == INVALID_INDEX) TexCount = 0;
+			else
+			{
+				const CArray<CString>& TexNames = SampToTex.ValueAt(STIdx);
+				TexCount = n_min(D3D9ConstDesc.RegisterCount, TexNames.GetCount());
+				for (UPTR TexIdx = 0; TexIdx < TexCount; ++TexIdx)
+				{
+					const CString& TexName = TexNames[TexIdx];
+					if (TexName.IsValid())
+					{
+						CSM30ShaderRsrcMeta* pMeta = Out.Resources.Reserve(1);
+						pMeta->Name = TexName;
+						pMeta->Register = D3D9ConstDesc.RegisterIndex + TexIdx;
+					}
+					else if (D3D9ConstDesc.RegisterCount > 1)
+					{
+						n_msg(VL_WARNING, "Sampler '%s[%d]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n", D3D9ConstDesc.Name.CStr(), TexIdx);
+					}
+					else
+					{
+						n_msg(VL_WARNING, "Sampler '%s' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'\n", D3D9ConstDesc.Name.CStr());
+					}
+				}
+			}
+
+			if (!TexCount)
+			{
+				n_msg(VL_WARNING, "Sampler '%s' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n", D3D9ConstDesc.Name.CStr());
+			}
 		}
 		else
 		{
-			CD3D9ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
+			// Structure layout is not saved for now, so operations on structure members aren't supported.
+			// It can be fixed as needed.
+
+			CSM30ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
-			pMeta->Offset = D3D9ConstDesc.RegisterIndex;
-			pMeta->Size = D3D9ConstDesc.RegisterCount;
+			pMeta->BufferIndex = 0; // Default, global buffer
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{
-				case RS_FLOAT4:	pMeta->RegSet = RS_Float4; break;
-				case RS_INT4:	pMeta->RegSet = RS_Int4; break;
-				case RS_BOOL:	pMeta->RegSet = RS_Bool; break;
-				default:		pMeta->RegSet = RS_Float4; break;
+				case RS_FLOAT4:	pMeta->RegisterSet = RS_Float4; break;
+				case RS_INT4:	pMeta->RegisterSet = RS_Int4; break;
+				case RS_BOOL:	pMeta->RegisterSet = RS_Bool; break;
+				default:		Sys::Error("Unsupported SM3.0 register set %d\n", D3D9ConstDesc.RegisterSet); FAIL;
 			};
 
-			// Try to get owning pseudo-buffer from extra info, else use default
+			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
+			pMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
+			pMeta->ElementCount = D3D9ConstDesc.Type.Elements;
 
-			pMeta->BufferIndex = 0; // Default, global buffer
+			pMeta->RegisterCount = pMeta->ElementRegisterCount * pMeta->ElementCount;
 
-			CD3D9ShaderBufferMeta& BufMeta = Out.Buffers[pMeta->BufferIndex];
-			CArray<UPTR>& UsedRegs = (pMeta->RegSet == RS_Float4) ? BufMeta.UsedFloat4 : ((pMeta->RegSet == RS_Int4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
+			n_assert(pMeta->RegisterCount == D3D9ConstDesc.RegisterCount);
+
+			CSM30ShaderBufferMeta& BufMeta = Out.Buffers[pMeta->BufferIndex];
+			CArray<UPTR>& UsedRegs = (pMeta->RegisterSet == RS_Float4) ? BufMeta.UsedFloat4 : ((pMeta->RegisterSet == RS_Int4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
 			for (UPTR r = D3D9ConstDesc.RegisterIndex; r < D3D9ConstDesc.RegisterIndex + D3D9ConstDesc.RegisterCount; ++r)
 			{
 				if (!UsedRegs.Contains(r)) UsedRegs.Add(r);
@@ -63,7 +104,7 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 	UPTR i = 0;
 	while (i < Out.Buffers.GetCount())
 	{
-		CD3D9ShaderBufferMeta& B = Out.Buffers[i];
+		CSM30ShaderBufferMeta& B = Out.Buffers[i];
 		if (!B.UsedFloat4.GetCount() &&
 			!B.UsedInt4.GetCount() &&
 			!B.UsedBool.GetCount())
@@ -80,23 +121,34 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& Out)
 {
 	ID3D11ShaderReflection* pReflector = NULL;
-	HRESULT hr = D3D11Reflect(pData, Size, &pReflector);
 
-	if (FAILED(hr)) FAIL;
+	if (FAILED(D3D11Reflect(pData, Size, &pReflector))) FAIL;
 
-	//!!!may save!
-	//D3D_FEATURE_LEVEL FeatureLevel;
-	//pReflector->GetMinFeatureLevel(&FeatureLevel);
+	D3D_FEATURE_LEVEL MinFeatureLevel;
+	if (FAILED(pReflector->GetMinFeatureLevel(&MinFeatureLevel)))
+	{
+		pReflector->Release();
+		FAIL;
+	}
+	Out.MinFeatureLevel = MinFeatureLevel;
 
-	//pReflector->GetRequiresFlags();
+	Out.RequiresFlags = pReflector->GetRequiresFlags();
 
 	D3D11_SHADER_DESC D3DDesc;
-	pReflector->GetDesc(&D3DDesc);
+	if (FAILED(pReflector->GetDesc(&D3DDesc)))
+	{
+		pReflector->Release();
+		FAIL;
+	}
 
 	for (UINT RsrcIdx = 0; RsrcIdx < D3DDesc.BoundResources; ++RsrcIdx)
 	{
 		D3D11_SHADER_INPUT_BIND_DESC RsrcDesc;
-		pReflector->GetResourceBindingDesc(RsrcIdx, &RsrcDesc);
+		if (FAILED(pReflector->GetResourceBindingDesc(RsrcIdx, &RsrcDesc)))
+		{
+			pReflector->Release();
+			FAIL;
+		}
 
 		// D3D_SIF_USERPACKED - may fail assertion if not set!
 
@@ -107,7 +159,7 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 				n_assert(RsrcDesc.BindCount == 1);
 				CD3D11ShaderRsrcMeta* pMeta = Out.Resources.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
-				pMeta->Register = RsrcDesc.BindPoint; //???add array support? BindCount
+				pMeta->Register = RsrcDesc.BindPoint; //???add array support? BindCount, TextureArray 1 bind point or not?
 				break;
 			}
 			case D3D_SIT_SAMPLER:
@@ -162,13 +214,41 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 					D3D11_SHADER_TYPE_DESC D3DTypeDesc;
 					pVarType->GetDesc(&D3DTypeDesc);
 
-					CD3D11ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
-					pMeta->Name = D3DVarDesc.Name;
-					pMeta->BufferIndex = Out.Buffers.GetCount() - 1;
-					pMeta->Offset = D3DVarDesc.StartOffset;
-					pMeta->Size = D3DVarDesc.Size;
+					ED3D11ConstType Type;
+					if (D3DTypeDesc.Class == D3D_SVC_STRUCT) Type = D3D11Const_Struct;
+					else
+					{
+						switch (D3DTypeDesc.Type)
+						{
+							case D3D_SVT_BOOL:	Type = D3D11Const_Bool; break;
+							case D3D_SVT_INT:	Type = D3D11Const_Int; break;
+							case D3D_SVT_FLOAT:	Type = D3D11Const_Float; break;
+							default:
+							{
+								n_msg(VL_ERROR, "Unsupported constant '%s' type '%d' in SM4.0+ buffer '%s'\n", D3DVarDesc.Name, D3DTypeDesc.Type, RsrcDesc.Name);
+								FAIL;
+							}
+						}
+					}
 
-					//D3D11_SHADER_TYPE_DESC
+					CD3D11ShaderConstMeta* pConstMeta = Out.Consts.Reserve(1);
+					pConstMeta->Name = D3DVarDesc.Name;
+					pConstMeta->BufferIndex = Out.Buffers.GetCount() - 1;
+					pConstMeta->Type = Type;
+					pConstMeta->Offset = D3DVarDesc.StartOffset;
+
+					if (D3DTypeDesc.Elements > 1)
+					{
+						// Arrays
+						pConstMeta->ElementSize = D3DVarDesc.Size / D3DTypeDesc.Elements;
+						pConstMeta->ElementCount = D3DTypeDesc.Elements;
+					}
+					else
+					{
+						// Non-arrays and arrays [1]
+						pConstMeta->ElementSize = D3DVarDesc.Size;
+						pConstMeta->ElementCount = 1;
+					}
 				}
 
 				break;
@@ -222,12 +302,12 @@ void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, con
 }
 //---------------------------------------------------------------------
 
-bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
+bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 {
 	W.Write<U32>(Meta.Buffers.GetCount());
 	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
 	{
-		CD3D9ShaderBufferMeta& Obj = Meta.Buffers[i];
+		CSM30ShaderBufferMeta& Obj = Meta.Buffers[i];
 		Obj.UsedFloat4.Sort();
 		Obj.UsedInt4.Sort();
 		Obj.UsedBool.Sort();
@@ -244,10 +324,10 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 	W.Write<U32>(Meta.Consts.GetCount());
 	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
 	{
-		const CD3D9ShaderConstMeta& Obj = Meta.Consts[i];
+		const CSM30ShaderConstMeta& Obj = Meta.Consts[i];
 
 		U8 RegSet;
-		switch (Obj.RegSet)
+		switch (Obj.RegisterSet)
 		{
 			case RS_Float4:	RegSet = 0; break;
 			case RS_Int4:	RegSet = 1; break;
@@ -258,30 +338,55 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D9ShaderMeta& Meta)
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
 		W.Write<U8>(RegSet);
-		W.Write(Obj.Offset);
-		W.Write(Obj.Size);
+		W.Write(Obj.RegisterStart);
+		W.Write(Obj.ElementRegisterCount);
+		W.Write(Obj.ElementCount);
 
 		const char* pRegisterSetName = NULL;
-		switch (Obj.RegSet)
+		switch (Obj.RegisterSet)
 		{
 			case RS_Float4:	pRegisterSetName = "float4"; break;
 			case RS_Int4:	pRegisterSetName = "int4"; break;
 			case RS_Bool:	pRegisterSetName = "bool"; break;
 		};
-				
-		n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
-				Obj.Name.CStr(), pRegisterSetName, Obj.Offset, Obj.Offset + Obj.Size - 1);
+		if (Obj.ElementCount > 1)
+		{
+			n_msg(VL_DETAILS, "    Const: %s[%d], %s %d to %d\n",
+					Obj.Name.CStr(), Obj.ElementCount, pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
+		}
+		else
+		{
+			n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
+					Obj.Name.CStr(), pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
+		}
+	}
+
+	W.Write<U32>(Meta.Resources.GetCount());
+	for (UPTR i = 0; i < Meta.Resources.GetCount(); ++i)
+	{
+		const CSM30ShaderRsrcMeta& Obj = Meta.Resources[i];
+		W.Write(Obj.Name);
+		W.Write(Obj.Register);
+
+		n_msg(VL_DETAILS, "    Texture: %s, slot %d\n", Obj.Name.CStr(), Obj.Register);
 	}
 
 	W.Write<U32>(Meta.Samplers.GetCount());
 	for (UPTR i = 0; i < Meta.Samplers.GetCount(); ++i)
 	{
-		const CD3D9ShaderRsrcMeta& Obj = Meta.Samplers[i];
-		W.Write(Obj.SamplerName);
-		W.Write(Obj.TextureName);
-		W.Write(Obj.Register);		//!!!need sampler arrays! need one texture to multiple samplers!
+		const CSM30ShaderSamplerMeta& Obj = Meta.Samplers[i];
+		W.Write(Obj.Name);
+		W.Write(Obj.RegisterStart);
+		W.Write(Obj.RegisterCount);
 
-		n_msg(VL_DETAILS, "    Sampler: %s (texture %s), %d slot(s) from %d\n", Obj.SamplerName.CStr(), Obj.TextureName.CStr(), 1, Obj.Register);
+		if (Obj.RegisterCount > 1)
+		{
+			n_msg(VL_DETAILS, "    Sampler: %s[%d], slots %d to %d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart, Obj.RegisterStart + Obj.RegisterCount - 1);
+		}
+		else
+		{
+			n_msg(VL_DETAILS, "    Sampler: %s, slot %d\n", Obj.Name.CStr(), Obj.RegisterStart);
+		}
 	}
 
 	OK;
@@ -312,10 +417,28 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		const CD3D11ShaderConstMeta& Obj = Meta.Consts[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
+		W.Write<U8>(Obj.Type);
 		W.Write(Obj.Offset);
-		W.Write(Obj.Size);
-		n_msg(VL_DETAILS, "      Const: %s, offset %d, size %d\n", //, type %d
-				Obj.Name.CStr(), Obj.Offset, Obj.Size); //, D3DTypeDesc.Type);
+		W.Write(Obj.ElementSize);
+		W.Write(Obj.ElementCount);
+
+		const char* pTypeString = "<unsupported-type>";
+		switch (Obj.Type)
+		{
+			case D3D11Const_Bool:	pTypeString = "bool"; break;
+			case D3D11Const_Int:	pTypeString = "int"; break;
+			case D3D11Const_Float:	pTypeString = "float"; break;
+		}
+		if (Obj.ElementCount > 1)
+		{
+			n_msg(VL_DETAILS, "      Const: %s %s[%d], type %d, offset %d, size %d\n",
+					pTypeString, Obj.Name.CStr(), Obj.ElementCount, Obj.Offset, Obj.ElementSize * Obj.ElementCount);
+		}
+		else
+		{
+			n_msg(VL_DETAILS, "      Const: %s %s, type %d, offset %d, size %d\n",
+					pTypeString, Obj.Name.CStr(), Obj.Offset, Obj.ElementSize);
+		}
 	}
 
 	W.Write<U32>(Meta.Resources.GetCount());
@@ -361,7 +484,7 @@ void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R)
 }
 //---------------------------------------------------------------------
 
-bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CD3D9ShaderMeta& Meta)
+bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
 {
 	Meta.Buffers.Clear();
 	Meta.Consts.Clear();
@@ -370,10 +493,10 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CD3D9ShaderMeta& Meta)
 	U32 Count;
 
 	R.Read<U32>(Count);
-	CD3D9ShaderBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
+	CSM30ShaderBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
 	for (; pBuf < Meta.Buffers.End(); ++pBuf)
 	{
-		CD3D9ShaderBufferMeta& Obj = *pBuf;
+		CSM30ShaderBufferMeta& Obj = *pBuf;
 
 		R.Read(Obj.Name);
 
@@ -383,10 +506,10 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CD3D9ShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
-	CD3D9ShaderConstMeta* pConst = Meta.Consts.Reserve(Count, false);
+	CSM30ShaderConstMeta* pConst = Meta.Consts.Reserve(Count, false);
 	for (; pConst < Meta.Consts.End(); ++pConst)
 	{
-		CD3D9ShaderConstMeta& Obj = *pConst;
+		CSM30ShaderConstMeta& Obj = *pConst;
 
 		U8 RegSet;
 
@@ -396,24 +519,34 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CD3D9ShaderMeta& Meta)
 
 		switch (RegSet)
 		{
-			case 0:		Obj.RegSet = RS_Float4; break;
-			case 1:		Obj.RegSet = RS_Int4; break;
-			case 2:		Obj.RegSet = RS_Bool; break;
+			case 0:		Obj.RegisterSet = RS_Float4; break;
+			case 1:		Obj.RegisterSet = RS_Int4; break;
+			case 2:		Obj.RegisterSet = RS_Bool; break;
 			default:	continue;
 		};
 
-		R.Read(Obj.Offset);
-		R.Read(Obj.Size);
+		R.Read(Obj.RegisterStart);
+		R.Read(Obj.ElementRegisterCount);
+		R.Read(Obj.ElementCount);
 	}
 
 	R.Read<U32>(Count);
-	CD3D9ShaderRsrcMeta* pSamp = Meta.Samplers.Reserve(Count, false);
+	CSM30ShaderRsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
+	for (; pRsrc < Meta.Resources.End(); ++pRsrc)
+	{
+		CSM30ShaderRsrcMeta& Obj = *pRsrc;
+		R.Read(Obj.Name);
+		R.Read(Obj.Register);
+	}
+
+	R.Read<U32>(Count);
+	CSM30ShaderSamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
 	for (; pSamp < Meta.Samplers.End(); ++pSamp)
 	{
-		CD3D9ShaderRsrcMeta& Obj = *pSamp;
-		R.Read(Obj.SamplerName);
-		R.Read(Obj.TextureName);
-		R.Read(Obj.Register);		//!!!need sampler arrays! need one texture to multiple samplers!
+		CSM30ShaderSamplerMeta& Obj = *pSamp;
+		R.Read(Obj.Name);
+		R.Read(Obj.RegisterStart);
+		R.Read(Obj.RegisterCount);
 	}
 
 	OK;
@@ -448,8 +581,14 @@ bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
 		CD3D11ShaderConstMeta& Obj = *pConst;
 		R.Read(Obj.Name);
 		R.Read(Obj.BufferIndex);
+
+		U8 Type;
+		R.Read<U8>(Type);
+		Obj.Type = (ED3D11ConstType)Type;
+
 		R.Read(Obj.Offset);
-		R.Read(Obj.Size);
+		R.Read(Obj.ElementSize);
+		R.Read(Obj.ElementCount);
 	}
 
 	R.Read<U32>(Count);
