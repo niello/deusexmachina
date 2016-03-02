@@ -14,6 +14,15 @@ namespace IO
 };
 
 // Don't change values, they are saved to file
+enum ESM30SamplerType
+{
+	SM30Sampler_1D		= 0,
+	SM30Sampler_2D,
+	SM30Sampler_3D,
+	SM30Sampler_CUBE
+};
+
+// Don't change values, they are saved to file
 enum ESM30RegisterSet
 {
 	RS_Bool		= 0,
@@ -59,12 +68,13 @@ struct CSM30ShaderRsrcMeta
 // Arrays supported with arbitrarily assigned textures
 struct CSM30ShaderSamplerMeta
 {
-	CString	Name;
-	U32		RegisterStart;
-	U32		RegisterCount;
+	CString				Name;
+	ESM30SamplerType	Type;
+	U32					RegisterStart;
+	U32					RegisterCount;
 
-	bool operator ==(const CSM30ShaderSamplerMeta& Other) const { return RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
-	bool operator !=(const CSM30ShaderSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart || RegisterCount != Other.RegisterCount; }
+	bool operator ==(const CSM30ShaderSamplerMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CSM30ShaderSamplerMeta& Other) const { return Type != Other.Type || RegisterStart != Other.RegisterStart || RegisterCount != Other.RegisterCount; }
 };
 
 struct CSM30ShaderMeta
@@ -79,7 +89,9 @@ struct CSM30ShaderMeta
 enum ED3D11BufferTypeMask
 {
 	D3D11Buffer_Texture		= (1 << 30),
-	D3D11Buffer_Structured	= (2 << 30)
+	D3D11Buffer_Structured	= (2 << 30),
+
+	D3D11Buffer_RegisterMask = ~(D3D11Buffer_Texture | D3D11Buffer_Structured)
 };
 
 // Don't change values, they are saved to file
@@ -93,44 +105,35 @@ enum ED3D11ConstType
 
 	D3D11Const_Invalid
 };
-//D3D_SVT_VOID	= 0,
-//D3D_SVT_STRING	= 4,
-//D3D_SVT_TEXTURE	= 5,
-//D3D_SVT_TEXTURE1D	= 6,
-//D3D_SVT_TEXTURE2D	= 7,
-//D3D_SVT_TEXTURE3D	= 8,
-//D3D_SVT_TEXTURECUBE	= 9,
-//D3D_SVT_SAMPLER	= 10,
-//D3D_SVT_SAMPLER1D	= 11,
-//D3D_SVT_SAMPLER2D	= 12,
-//D3D_SVT_SAMPLER3D	= 13,
-//D3D_SVT_SAMPLERCUBE	= 14,
-//D3D_SVT_UINT	= 19,
-//D3D_SVT_UINT8	= 20,
-//D3D_SVT_BUFFER	= 25,
-//D3D_SVT_CBUFFER	= 26,
-//D3D_SVT_TBUFFER	= 27,
-//D3D_SVT_TEXTURE1DARRAY	= 28,
-//D3D_SVT_TEXTURE2DARRAY	= 29,
-//D3D_SVT_TEXTURE2DMS	= 32,
-//D3D_SVT_TEXTURE2DMSARRAY	= 33,
-//D3D_SVT_TEXTURECUBEARRAY	= 34,
-//D3D_SVT_DOUBLE	= 39,
-//D3D_SVT_STRUCTURED_BUFFER	= 48,
+
+// Don't change values, they are saved to file
+enum ESM40ResourceType
+{
+	SM40Rsrc_Texture1D			= 0,
+	SM40Rsrc_Texture1DArray,
+	SM40Rsrc_Texture2D,
+	SM40Rsrc_Texture2DArray,
+	SM40Rsrc_Texture2DMS,
+	SM40Rsrc_Texture2DMSArray,
+	SM40Rsrc_Texture3D,
+	SM40Rsrc_TextureCUBE,
+	SM40Rsrc_TextureCUBEArray,
+
+	SM40Rsrc_Unknown
+};
 
 struct CD3D11ShaderBufferMeta
 {
 	CString	Name;
 	U32		Register;
-	U32		ElementSize;
-	U32		ElementCount;
+	U32		Size;		// For structured buffers - StructureByteStride
 
-	bool operator ==(const CD3D11ShaderBufferMeta& Other) const { return Register == Other.Register && ElementSize == Other.ElementSize && ElementCount == Other.ElementCount; }
-	bool operator !=(const CD3D11ShaderBufferMeta& Other) const { return Register != Other.Register || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
+	bool operator ==(const CD3D11ShaderBufferMeta& Other) const { return Register == Other.Register && Size == Other.Size; }
+	bool operator !=(const CD3D11ShaderBufferMeta& Other) const { return Register != Other.Register || Size != Other.Size; }
 };
 
-//???mixed-type structs?
-// Arrays supported
+// Supports SM4.0 and higher
+// Arrays and mixed-type structs supported
 struct CD3D11ShaderConstMeta
 {
 	CString			Name;
@@ -144,13 +147,27 @@ struct CD3D11ShaderConstMeta
 	bool operator !=(const CD3D11ShaderConstMeta& Other) const { return Type != Other.Type || Offset != Other.Offset || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
 };
 
-struct CD3D11ShaderRsrcMeta
+// Supports SM4.0 and higher
+struct CSM40ShaderRsrcMeta
+{
+	CString				Name;
+	ESM40ResourceType	Type;
+	U32					RegisterStart;
+	U32					RegisterCount;
+
+	bool operator ==(const CSM40ShaderRsrcMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CSM40ShaderRsrcMeta& Other) const { return Type != Other.Type && RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
+};
+
+// Supports SM4.0 and higher
+struct CSM40ShaderSamplerMeta
 {
 	CString	Name;
-	U32		Register;
+	U32		RegisterStart;
+	U32		RegisterCount;
 
-	bool operator ==(const CD3D11ShaderRsrcMeta& Other) const { return Register == Other.Register; }
-	bool operator !=(const CD3D11ShaderRsrcMeta& Other) const { return Register != Other.Register; }
+	bool operator ==(const CSM40ShaderSamplerMeta& Other) const { return RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CSM40ShaderSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
 struct CD3D11ShaderMeta
@@ -159,8 +176,8 @@ struct CD3D11ShaderMeta
 	U64								RequiresFlags;
 	CArray<CD3D11ShaderBufferMeta>	Buffers;
 	CArray<CD3D11ShaderConstMeta>	Consts;
-	CArray<CD3D11ShaderRsrcMeta>	Resources;
-	CArray<CD3D11ShaderRsrcMeta>	Samplers;
+	CArray<CSM40ShaderRsrcMeta>		Resources;
+	CArray<CSM40ShaderSamplerMeta>	Samplers;
 };
 
 void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);

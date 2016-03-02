@@ -1612,6 +1612,8 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 }
 //---------------------------------------------------------------------
 
+//!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
+//!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
 PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const Data::CParams* pData)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
@@ -2880,7 +2882,7 @@ bool CD3D11GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 }
 //---------------------------------------------------------------------
 
-//!!!may use abstract CShaderConst, CShaderConstFloatArray, CD3D11ShaderConstFloatArray etc and cache offset or any
+//!!!may use abstract CShaderConst, CShaderConstFloatArray, CD3D11ShaderConstFloatArray: public CD3D11ShaderArrayConst<float> etc and cache offset or any
 //other precomputed location there for fast setting!
 bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size)
 {

@@ -60,8 +60,8 @@ struct CEffectParam
 		CSM30ShaderRsrcMeta*	pSM30Resource;
 		CSM30ShaderSamplerMeta*	pSM30Sampler;
 		CD3D11ShaderConstMeta*	pSM40Const;
-		CD3D11ShaderRsrcMeta*	pSM40Resource;
-		CD3D11ShaderRsrcMeta*	pSM40Sampler;
+		CSM40ShaderRsrcMeta*	pSM40Resource;
+		CSM40ShaderSamplerMeta*	pSM40Sampler;
 	};
 	CD3D11ShaderBufferMeta*		pSM40Buffer;	// SM4.0 constants must be in identical buffer, so store for comparison
 
@@ -94,6 +94,11 @@ struct CTechInfo
 	CFixedArray<UPTR>			PassIndices;
 	CFixedArray<bool>			VariationValid;
 	CDict<CStrID, CEffectParam>	Params;
+
+	// SM3.0 buffer redefinition
+	CArray<UPTR>				UsedFloat4;
+	CArray<UPTR>				UsedInt4;
+	CArray<UPTR>				UsedBool;
 };
 
 struct CRenderStateRef
@@ -1502,7 +1507,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 						
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Resources.GetCount(); ++ParamIdx)
 						{
-							CD3D11ShaderRsrcMeta& MetaObj = pD3D11Meta->Resources[ParamIdx];
+							CSM40ShaderRsrcMeta& MetaObj = pD3D11Meta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
@@ -1525,7 +1530,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 									return ERR_INVALID_DATA;
 								}
 							
-								CD3D11ShaderRsrcMeta& RefMetaObj = *Param.pSM40Resource;
+								CSM40ShaderRsrcMeta& RefMetaObj = *Param.pSM40Resource;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1536,7 +1541,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 						
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CD3D11ShaderRsrcMeta& MetaObj = pD3D11Meta->Samplers[ParamIdx];
+							CSM40ShaderSamplerMeta& MetaObj = pD3D11Meta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
@@ -1559,7 +1564,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 									return ERR_INVALID_DATA;
 								}
 							
-								CD3D11ShaderRsrcMeta& RefMetaObj = *Param.pSM40Sampler;
+								CSM40ShaderSamplerMeta& RefMetaObj = *Param.pSM40Sampler;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1764,6 +1769,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			{
 				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
 				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+				CArray<UPTR>& UsedTechRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? TechInfo.UsedFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? TechInfo.UsedInt4 : TechInfo.UsedBool);
 				for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
 				{
 					if (UsedGlobalRegs.Contains(r))
@@ -1777,9 +1783,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 						return ERR_INVALID_DATA;
 					}
 
-					//???collect tech registers for each SM3.0 tech?
-					//???or in saving? or store in CTechInfo?
-					//if (!UsedMaterialRegs.Contains(r)) UsedMaterialRegs.Add(r);
+					if (!UsedTechRegs.Contains(r)) UsedTechRegs.Add(r);
 				}
 			}
 
@@ -1915,6 +1919,13 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			if (!W.Write<U8>(TechParam.ShaderType)) return ERR_IO_WRITE;
 			if (!W.Write<U32>(TechParam.SourceShaderID)) return ERR_IO_WRITE;
 		}
+
+		if (TechInfo.Target < 0x0400)
+		{
+			WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");
+			WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
+			WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
+		}
 	}
 
 	// Save global and material params tables
@@ -1956,29 +1967,188 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
 		if (Type == EPT_Const)
 		{
-			if (DefaultValue.IsA<CStrID>())
+			if (DefaultValue.IsNull()) W.Write(false);
+			else
 			{
 				if (Param.Type == EPT_SM30Const)
 				{
-					// Validate by a register set and element count
 					CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
+					switch (Meta.RegisterSet)
+					{
+						case RS_Float4:
+						{
+							if (DefaultValue.IsA<float>())
+							{
+								W.Write(true);
+								W.Write(1);
+								W.Write(DefaultValue.GetValue<float>());
+							}
+							else if (DefaultValue.IsA<int>())
+							{
+								W.Write(true);
+								W.Write(1);
+								W.Write((float)DefaultValue.GetValue<int>());
+							}
+							else if (DefaultValue.IsA<vector3>())
+							{
+								const vector3& Vec = DefaultValue.GetValue<vector3>();
+								W.Write(true);
+								W.Write(3);
+								W.Write(Vec);
+							}
+							else if (DefaultValue.IsA<vector4>())
+							{
+								const vector4& Vec = DefaultValue.GetValue<vector4>();
+								W.Write(true);
+								W.Write(4);
+								W.Write(Vec);
+							}
+							else if (DefaultValue.IsA<matrix44>())
+							{
+								const matrix44& Mtx = DefaultValue.GetValue<matrix44>();
+								W.Write(true);
+								W.Write(16);
+								W.Write(Mtx);
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
+								W.Write(false);
+								break;
+							}
+
+							n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+							break;
+						}
+						case RS_Int4:
+						{
+							if (DefaultValue.IsA<int>())
+							{
+								W.Write(true);
+								W.Write(DefaultValue.GetValue<int>());
+								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is an int, default value must be null or int\n", Param.ID.CStr());
+								W.Write(false);
+							}
+							break;
+						}
+						case RS_Bool:
+						{
+							if (DefaultValue.IsA<bool>())
+							{
+								W.Write(true);
+								W.Write(DefaultValue.GetValue<bool>());
+								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null or bool\n", Param.ID.CStr());
+								W.Write(false);
+							}
+							break;
+						}
+						default:
+						{
+							n_msg(VL_WARNING, "Material param '%s' has unsupported register set, default value is skipped\n", Param.ID.CStr());
+							W.Write(false);
+						}
+					}
 				}
 				else if (Param.Type == EPT_SM40Const)
 				{
-					// Validate by type and element count from a metadata
 					CD3D11ShaderConstMeta& Meta = *Param.pSM40Const;
+					switch (Meta.Type)
+					{
+						case D3D11Const_Float:
+						{
+							if (DefaultValue.IsA<float>())
+							{
+								W.Write(true);
+								W.Write(1);
+								W.Write(DefaultValue.GetValue<float>());
+							}
+							else if (DefaultValue.IsA<int>())
+							{
+								W.Write(true);
+								W.Write(1);
+								W.Write((float)DefaultValue.GetValue<int>());
+							}
+							else if (DefaultValue.IsA<vector3>())
+							{
+								const vector3& Vec = DefaultValue.GetValue<vector3>();
+								W.Write(true);
+								W.Write(3);
+								W.Write(Vec);
+							}
+							else if (DefaultValue.IsA<vector4>())
+							{
+								const vector4& Vec = DefaultValue.GetValue<vector4>();
+								W.Write(true);
+								W.Write(4);
+								W.Write(Vec);
+							}
+							else if (DefaultValue.IsA<matrix44>())
+							{
+								const matrix44& Mtx = DefaultValue.GetValue<matrix44>();
+								W.Write(true);
+								W.Write(16);
+								W.Write(Mtx);
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
+								W.Write(false);
+								break;
+							}
+
+							n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+							break;
+						}
+						case D3D11Const_Int:
+						{
+							if (DefaultValue.IsA<int>())
+							{
+								W.Write(true);
+								W.Write(DefaultValue.GetValue<int>());
+								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is an int, default value must be null or int\n", Param.ID.CStr());
+								W.Write(false);
+							}
+							break;
+						}
+						case D3D11Const_Bool:
+						{
+							if (DefaultValue.IsA<bool>())
+							{
+								W.Write(true);
+								W.Write(DefaultValue.GetValue<bool>());
+								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null or bool\n", Param.ID.CStr());
+								W.Write(false);
+							}
+							break;
+						}
+						default:
+						{
+							n_msg(VL_WARNING, "Material param '%s' has unsupported register set, default value is skipped\n", Param.ID.CStr());
+							W.Write(false);
+						}
+					}
 				}
 				else
 				{
 					n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type, default value is skipped\n", Param.ID.CStr());
 					W.Write(false);
 				}
-			}
-			else
-			{
-				if (!DefaultValue.IsNull())
-					n_msg(VL_WARNING, "Material param '%s' is a constant, default value must be null or value of this constant's type\n", Param.ID.CStr());
-				W.Write(false);
 			}
 		}
 		else if (Type == EPT_Resource)
