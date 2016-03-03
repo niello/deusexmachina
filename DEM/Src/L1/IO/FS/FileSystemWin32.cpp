@@ -8,19 +8,6 @@
 
 namespace IO
 {
-__ImplementSingleton(CFileSystemWin32);
-
-CFileSystemWin32::CFileSystemWin32()
-{
-	__ConstructSingleton;
-}
-//---------------------------------------------------------------------
-
-CFileSystemWin32::~CFileSystemWin32()
-{
-	__DestructSingleton;
-}
-//---------------------------------------------------------------------
 
 bool CFileSystemWin32::FileExists(const char* pPath)
 {

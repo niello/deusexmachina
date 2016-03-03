@@ -2,7 +2,7 @@
 
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
-#include <ConsoleApp.h>				// For n_msg
+//#include <ConsoleApp.h>				// For n_msg
 #include <D3D9ShaderReflection.h>
 #include <D3DCompiler.inl>
 
@@ -25,7 +25,7 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 
 		if (D3D9ConstDesc.RegisterSet == RS_MIXED)
 		{
-			n_msg(VL_WARNING, "    SM3.0 mixed-regset structs aren't supported, '%s' skipped\n", D3D9ConstDesc.Name.CStr());
+			//n_msg(VL_WARNING, "    SM3.0 mixed-regset structs aren't supported, '%s' skipped\n", D3D9ConstDesc.Name.CStr());
 			continue;
 		}
 		else if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
@@ -61,18 +61,18 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 					}
 					else if (D3D9ConstDesc.RegisterCount > 1)
 					{
-						n_msg(VL_WARNING, "Sampler '%s[%d]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n", D3D9ConstDesc.Name.CStr(), TexIdx);
+						//n_msg(VL_WARNING, "Sampler '%s[%d]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n", D3D9ConstDesc.Name.CStr(), TexIdx);
 					}
 					else
 					{
-						n_msg(VL_WARNING, "Sampler '%s' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'\n", D3D9ConstDesc.Name.CStr());
+						//n_msg(VL_WARNING, "Sampler '%s' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'\n", D3D9ConstDesc.Name.CStr());
 					}
 				}
 			}
 
 			if (!TexCount)
 			{
-				n_msg(VL_WARNING, "Sampler '%s' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n", D3D9ConstDesc.Name.CStr());
+				//n_msg(VL_WARNING, "Sampler '%s' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n", D3D9ConstDesc.Name.CStr());
 			}
 		}
 		else
@@ -273,7 +273,7 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 								case D3D_SVT_FLOAT:	Type = D3D11Const_Float; break;
 								default:
 								{
-									n_msg(VL_ERROR, "Unsupported constant '%s' type '%d' in SM4.0+ buffer '%s'\n", D3DVarDesc.Name, D3DTypeDesc.Type, RsrcDesc.Name);
+									//n_msg(VL_ERROR, "Unsupported constant '%s' type '%d' in SM4.0+ buffer '%s'\n", D3DVarDesc.Name, D3DTypeDesc.Type, RsrcDesc.Name);
 									FAIL;
 								}
 							}
@@ -330,7 +330,7 @@ void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, con
 			W.Write<U32>(CurrStart);
 			W.Write<U32>(CurrCount);
 			++RangeCount;
-			if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
+			//if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
 			CurrStart = Reg;
 			CurrCount = 1;
 		}
@@ -341,7 +341,7 @@ void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, con
 		W.Write<U32>(CurrStart);
 		W.Write<U32>(CurrCount);
 		++RangeCount;
-		if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
+		//if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
 	}
 
 	U64 EndOffset = W.GetStream().GetPosition();
@@ -367,7 +367,7 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 		WriteRegisterRanges(Obj.UsedInt4, W, "int4");
 		WriteRegisterRanges(Obj.UsedBool, W, "bool");
 
-		n_msg(VL_DETAILS, "    CBuffer: %s\n", Obj.Name.CStr());
+		//n_msg(VL_DETAILS, "    CBuffer: %s\n", Obj.Name.CStr());
 	}
 
 	W.Write<U32>(Meta.Consts.GetCount());
@@ -400,13 +400,13 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 		};
 		if (Obj.ElementCount > 1)
 		{
-			n_msg(VL_DETAILS, "    Const: %s[%d], %s %d to %d\n",
-					Obj.Name.CStr(), Obj.ElementCount, pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
+			//n_msg(VL_DETAILS, "    Const: %s[%d], %s %d to %d\n",
+			//		Obj.Name.CStr(), Obj.ElementCount, pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
 		}
 		else
 		{
-			n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
-					Obj.Name.CStr(), pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
+			//n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
+			//		Obj.Name.CStr(), pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
 		}
 	}
 
@@ -417,7 +417,7 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 		W.Write(Obj.Name);
 		W.Write(Obj.Register);
 
-		n_msg(VL_DETAILS, "    Texture: %s, slot %d\n", Obj.Name.CStr(), Obj.Register);
+		//n_msg(VL_DETAILS, "    Texture: %s, slot %d\n", Obj.Name.CStr(), Obj.Register);
 	}
 
 	W.Write<U32>(Meta.Samplers.GetCount());
@@ -431,11 +431,11 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 
 		if (Obj.RegisterCount > 1)
 		{
-			n_msg(VL_DETAILS, "    Sampler: %s[%d], slots %d to %d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart, Obj.RegisterStart + Obj.RegisterCount - 1);
+			//n_msg(VL_DETAILS, "    Sampler: %s[%d], slots %d to %d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart, Obj.RegisterStart + Obj.RegisterCount - 1);
 		}
 		else
 		{
-			n_msg(VL_DETAILS, "    Sampler: %s, slot %d\n", Obj.Name.CStr(), Obj.RegisterStart);
+			//n_msg(VL_DETAILS, "    Sampler: %s, slot %d\n", Obj.Name.CStr(), Obj.RegisterStart);
 		}
 	}
 
@@ -467,7 +467,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 			pBufferTypeStr = "SBuffer";
 			pSlotTypeStr = "t";
 		}
-		n_msg(VL_DETAILS, "    %s: %s, %d slot(s) from %s%d\n", pBufferTypeStr, Obj.Name.CStr(), 1, pSlotTypeStr, Register);
+		//n_msg(VL_DETAILS, "    %s: %s, %d slot(s) from %s%d\n", pBufferTypeStr, Obj.Name.CStr(), 1, pSlotTypeStr, Register);
 	}
 
 	W.Write<U32>(Meta.Consts.GetCount());
@@ -491,13 +491,13 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		}
 		if (Obj.ElementCount > 1)
 		{
-			n_msg(VL_DETAILS, "      Const: %s %s[%d], offset %d, size %d\n",
-					pTypeString, Obj.Name.CStr(), Obj.ElementCount, Obj.Offset, Obj.ElementSize * Obj.ElementCount);
+			//n_msg(VL_DETAILS, "      Const: %s %s[%d], offset %d, size %d\n",
+			//		pTypeString, Obj.Name.CStr(), Obj.ElementCount, Obj.Offset, Obj.ElementSize * Obj.ElementCount);
 		}
 		else
 		{
-			n_msg(VL_DETAILS, "      Const: %s %s, offset %d, size %d\n",
-					pTypeString, Obj.Name.CStr(), Obj.Offset, Obj.ElementSize);
+			//n_msg(VL_DETAILS, "      Const: %s %s, offset %d, size %d\n",
+			//		pTypeString, Obj.Name.CStr(), Obj.Offset, Obj.ElementSize);
 		}
 	}
 
@@ -509,7 +509,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		W.Write<U8>(Obj.Type);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.RegisterCount);
-		n_msg(VL_DETAILS, "    Texture: %s, %d slot(s) from t%d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart);
+		//n_msg(VL_DETAILS, "    Texture: %s, %d slot(s) from t%d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart);
 	}
 
 	W.Write<U32>(Meta.Samplers.GetCount());
@@ -519,7 +519,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 		W.Write(Obj.Name);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.RegisterCount);
-		n_msg(VL_DETAILS, "    Sampler: %s, %d slot(s) from s%d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart);
+		//n_msg(VL_DETAILS, "    Sampler: %s, %d slot(s) from s%d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart);
 	}
 
 	OK;

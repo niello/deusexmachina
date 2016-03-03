@@ -315,6 +315,28 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 }
 //---------------------------------------------------------------------
 
+bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath)
+{
+	NOT_IMPLEMENTED;
+
+	// Some descs can be loaded twice or more from different IO path assigns, avoid it
+	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
+
+	if (IsFileAdded(RealExportFilePath)) OK;
+
+	if (ExportDescs)
+	{
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
+		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(pSrcFilePath, false))) FAIL;
+	}
+	FilesToPack.InsertSorted(RealExportFilePath);
+
+	//!!!compile shaders and get IDs!
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath)
 {
 	// Some descs can be loaded twice or more from different IO path assigns, avoid it

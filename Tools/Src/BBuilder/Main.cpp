@@ -212,6 +212,12 @@ int main(int argc, const char** argv)
 	if (IOSrv->DirectoryExists("Export:cegui") && !IsFileAdded(CString("Export:cegui")))
 		FilesToPack.InsertSorted(CString("Export:cegui"));
 
+	if (!ProcessUISettingsDesc(CString("Src:UI/UI.hrd"), CString("Export:UI/UI.prm")))
+	{
+		n_msg(VL_ERROR, "Error procesing UI settings desc!\n");
+		EXIT_APP_FAIL;
+	}
+
 	if (!ProcessDesc(CString("SrcInput:Layouts.hrd"), CString("Input:Layouts.prm")))
 	{
 		n_msg(VL_ERROR, "Error procesing input layouts desc!\n");

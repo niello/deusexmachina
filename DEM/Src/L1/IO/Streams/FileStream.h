@@ -22,7 +22,7 @@ protected:
 
 public:
 
-	CFileStream(const char* pPath): FileName(pPath), hFile(NULL) {}
+	CFileStream(const char* pPath, IFileSystem* pFS = NULL): FileName(pPath), FS(pFS), hFile(NULL) {}
 	virtual ~CFileStream() { if (IsOpen()) Close(); }
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);

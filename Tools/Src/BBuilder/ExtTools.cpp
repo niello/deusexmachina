@@ -31,7 +31,9 @@ int RunExternalToolAsProcess(CStrID Name, char* pCmdLine, const char* pWorkingDi
 	STARTUPINFO SUI;
 	RtlZeroMemory(&SUI, sizeof(SUI));
 	SUI.cb = sizeof(SUI);
-	SUI.dwFlags = STARTF_FORCEOFFFEEDBACK;
+	SUI.dwFlags = STARTF_FORCEOFFFEEDBACK; // | STARTF_USESTDHANDLES
+	//SUI.hStdOutput
+
 	if (CreateProcess(Path.CStr(), pCmdLine, NULL, NULL, FALSE, 0, NULL, pWorkingDir, &SUI, &Info) == FALSE) return -1;
 
 	int Result = -1;

@@ -10,7 +10,8 @@ bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 	n_assert(!IsOpen() && !hFile);
 	if (!FileName.IsValid()) FAIL;
 	if (!CStream::Open(Mode, Pattern)) FAIL;
-	hFile = IOSrv->OpenFile(FS, FileName, Mode, Pattern);
+	if (FS.IsValidPtr()) hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
+	else hFile = IOSrv->OpenFile(FS, FileName.CStr(), Mode, Pattern);
 	if (!hFile) FAIL;
 	Flags.Set(IS_OPEN);
 	OK;

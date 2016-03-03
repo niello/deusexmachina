@@ -19,13 +19,13 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -105,22 +105,14 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\Src\CmdLineArgs.h" />
     <ClInclude Include="..\..\..\Src\ConsoleApp.h" />
-    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\D3D9ShaderReflection.h" />
-    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.h" />
-    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ShaderDB.h" />
-    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ShaderReflection.h" />
+    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\DEMShaderCompilerDLL.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.h" />
-    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ValueTable.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\D3D9ShaderReflection.cpp" />
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\DEMD3DInclude.cpp" />
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderCompiler.cpp" />
+    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\DEMShaderCompilerDLL.cpp" />
+    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\EffectCompiler.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\Main.cpp" />
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderDB.cpp" />
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ShaderReflection.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.cpp" />
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ValueTable.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

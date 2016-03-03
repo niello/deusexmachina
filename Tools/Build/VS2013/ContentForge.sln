@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Express 2013 for Windows Desktop
-VisualStudioVersion = 12.0.30723.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CFCopy", "CFCopy\CFCopy.vcxproj", "{EA8504FE-BB42-4C50-9C39-2E906D5FCA35}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -20,10 +20,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CFTerrain", "CFTerrain\CFTe
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CFShader", "CFShader\CFShader.vcxproj", "{66C1FEA6-A45B-4408-8CD7-3609401851D2}"
 	ProjectSection(ProjectDependencies) = postProject
+		{43402A15-31C4-4242-991F-5D71C788D986} = {43402A15-31C4-4242-991F-5D71C788D986}
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC} = {4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEM_L1", "..\..\..\DEM\Build\VS2013\DEM_L1.vcxproj", "{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEMShaderCompiler", "DEMShaderCompiler\DEMShaderCompiler.vcxproj", "{43402A15-31C4-4242-991F-5D71C788D986}"
+	ProjectSection(ProjectDependencies) = postProject
+		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC} = {4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -141,6 +147,26 @@ Global
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.ReleaseEditor|Mixed Platforms.Build.0 = ReleaseEditor|Win32
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.ReleaseEditor|Win32.ActiveCfg = ReleaseEditor|Win32
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.ReleaseEditor|Win32.Build.0 = ReleaseEditor|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Win32.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Win32.Build.0 = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Any CPU.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Mixed Platforms.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Mixed Platforms.Build.0 = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Win32.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Win32.Build.0 = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Any CPU.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Win32.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Win32.Build.0 = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Any CPU.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Mixed Platforms.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Mixed Platforms.Build.0 = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Win32.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

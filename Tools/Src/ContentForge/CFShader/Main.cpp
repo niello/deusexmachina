@@ -3,8 +3,8 @@
 #include <Data/Params.h>
 #include <Data/HRDParser.h>
 #include <Data/Buffer.h>
+#include <DEMShaderCompilerDLL.h>
 #include <ConsoleApp.h>
-#include <ShaderDB.h>
 
 // Debug args:
 // -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\PBR.hrd" -out "Shaders:SM_4_0\PBR.eff"
@@ -104,7 +104,13 @@ int main(int argc, const char** argv)
 	else DB = IOSrv->ResolveAssigns(DB);
 
 	if (Rebuild) IOSrv->DeleteFile(DB);
-	if (!OpenDB(DB)) return ExitApp(ERR_MAIN_FAILED, WaitKey);
+
+#ifdef _DEBUG
+	CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
+#else
+	CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
+#endif
+	if (!InitDEMShaderCompilerDLL(DLLPath.CStr(), DB.CStr())) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 
 	CArray<CString> InList, OutList;
 
@@ -151,7 +157,11 @@ int main(int argc, const char** argv)
 
 int ExitApp(int Code, bool WaitKey)
 {
-	CloseDB();
+	if (!TermDEMShaderCompilerDLL())
+	{
+		n_msg(VL_ERROR, "DEM shader compiler was not unloaded cleanly\n");
+		Code = ERR_MAIN_FAILED;
+	}
 
 	if (Code != SUCCESS) n_msg(VL_ERROR, TOOL_NAME" v"VERSION": Error occurred with code %d\n", Code);
 
