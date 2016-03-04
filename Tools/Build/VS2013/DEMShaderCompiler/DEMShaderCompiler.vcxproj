@@ -61,7 +61,7 @@
     <TargetName>$(ProjectName)_d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\Bin\</OutDir>
+    <OutDir>..\..\..\Bin\$(ProjectName)\</OutDir>
     <IntDir>..\..\..\Obj\$(ProjectName)\$(Configuration)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
