@@ -3,7 +3,7 @@
 
 #include <Scene/SceneNode.h>
 #include <IO/BinaryReader.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
 #include <Core/Factory.h>
 
 namespace Scene
@@ -58,9 +58,9 @@ bool LoadNodesFromSCN(IO::CStream& In, PSceneNode RootNode)
 
 bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode)
 {
-	IO::CFileStream File(FileName);
-	return File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
-		LoadNodesFromSCN(File, RootNode);
+	IO::PStream File = IOSrv->CreateStream(FileName);
+	return File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) &&
+		LoadNodesFromSCN(*File, RootNode);
 }
 //---------------------------------------------------------------------
 

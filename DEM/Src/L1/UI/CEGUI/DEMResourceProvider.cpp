@@ -2,7 +2,8 @@
 #include "DEMResourceProvider.h"
 
 #include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/FileSystem.h>
+#include <IO/Stream.h>
 #include <Data/StringUtils.h>
 
 namespace CEGUI
@@ -22,18 +23,18 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 		else FinalFilename = filename;
 	}
 
-	IO::CFileStream File(FinalFilename.c_str());
-	if (File.Open(IO::SAM_READ))
+	IO::PStream File = IOSrv->CreateStream(FinalFilename.c_str());
+	if (File->Open(IO::SAM_READ))
 	{
-		const UPTR Size = (UPTR)File.GetSize();
+		const UPTR Size = (UPTR)File->GetSize();
 		unsigned char* const pBuffer = n_new_array(unsigned char, Size);
-		const size_t BytesRead = File.Read(pBuffer, Size);
+		const size_t BytesRead = File->Read(pBuffer, Size);
 		if (BytesRead != Size)
 		{
 			n_delete_array(pBuffer);
 			Sys::Error("A problem occurred while reading file: %s", FinalFilename.c_str());
 		}
-		File.Close();
+		File->Close();
 
 		output.setData(pBuffer);
 		output.setSize(Size);

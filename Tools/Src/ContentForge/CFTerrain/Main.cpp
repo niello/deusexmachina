@@ -74,8 +74,8 @@ int main(int argc, const char** argv)
 		CString OutPath = PathUtils::ExtractDirName(OutFileName);
 		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
 
-		IO::CFileStream OutFile(OutFileName);
-		if (!OutFile.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		IO::PStream OutFile = IOSrv->CreateStream(OutFileName);
+		if (!OutFile->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
 			n_msg(VL_ERROR, "Can't open output file" );
 			return ExitApp(ERR_IO_WRITE, WaitKey);
@@ -92,7 +92,7 @@ int main(int argc, const char** argv)
 		}
 		TotalMinMaxDataSize *= 2 * sizeof(short);
 
-		IO::CBinaryWriter Writer(OutFile);
+		IO::CBinaryWriter Writer(*OutFile);
 		Writer.Write('CDLD');							// Magic
 		Writer.Write(CDLOD_VERSION);
 		Writer.Write(Width);
@@ -121,10 +121,10 @@ int main(int argc, const char** argv)
 			unsigned short* pHFL16 = (unsigned short*)n_malloc(HeightDataSize);
 			for (UPTR i = 0; i < BTFile.GetHeightCount(); ++i)
 				pHFL16[i] = pHeights[i] + 32768;
-			OutFile.Write(pHFL16, HeightDataSize);
+			OutFile->Write(pHFL16, HeightDataSize);
 			n_free(pHFL16);
 		}
-		else OutFile.Write(pHeights, HeightDataSize);
+		else OutFile->Write(pHeights, HeightDataSize);
 
 		PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
 		PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
@@ -162,7 +162,7 @@ int main(int argc, const char** argv)
 
 		n_free(pHeights);
 
-		OutFile.Write(pMinMaxBuffer, MinMaxDataSize);
+		OutFile->Write(pMinMaxBuffer, MinMaxDataSize);
 
 		// Generate minmax map hierarchy
 
@@ -200,7 +200,7 @@ int main(int argc, const char** argv)
 				if (Z % 2 == 1) pDst += PatchesW * 2;
 			}
 
-			OutFile.Write(pMinMaxBuffer, MinMaxDataSize);
+			OutFile->Write(pMinMaxBuffer, MinMaxDataSize);
 
 			n_free(pPrevData);
 			pPrevData = pMinMaxBuffer;

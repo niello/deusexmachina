@@ -3,7 +3,7 @@
 #include <Animation/MocapClip.h>
 #include <Render/SkinInfo.h>
 #include <Resources/Resource.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -51,9 +51,9 @@ bool CMocapClipLoaderNAX2::Load(CResource& Resource)
 
 	//???!!!setup stream outside loaders based on URI?!
 	const char* pURI = Resource.GetUID().CStr();
-	IO::CFileStream File(pURI);
-	if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(File);
+	IO::PStream File = IOSrv->CreateStream(pURI);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(*File);
 
 	CNAX2Header Header;
 	if (!Reader.Read(Header) || Header.magic != 'NAX2') FAIL;
@@ -127,7 +127,7 @@ bool CMocapClipLoaderNAX2::Load(CResource& Resource)
 
 	UPTR KeyCount = Group.numKeys * Group.keyStride;
 	vector4* pKeys = n_new_array(vector4, KeyCount);
-	File.Read(pKeys, KeyCount * sizeof(vector4));
+	File->Read(pKeys, KeyCount * sizeof(vector4));
 
 	//???load directly to Clip fields?
 	Anim::PMocapClip Clip = n_new(Anim::CMocapClip);

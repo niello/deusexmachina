@@ -1,17 +1,16 @@
 #include "FileStream.h"
 
-#include <IO/IOServer.h>
+#include <IO/FileSystem.h>
 
 namespace IO
 {
 
 bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert(!IsOpen() && !hFile);
+	n_assert(!IsOpen() && !hFile && FS.IsValidPtr());
 	if (!FileName.IsValid()) FAIL;
 	if (!CStream::Open(Mode, Pattern)) FAIL;
-	if (FS.IsValidPtr()) hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
-	else hFile = IOSrv->OpenFile(FS, FileName.CStr(), Mode, Pattern);
+	hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
 	if (!hFile) FAIL;
 	Flags.Set(IS_OPEN);
 	OK;

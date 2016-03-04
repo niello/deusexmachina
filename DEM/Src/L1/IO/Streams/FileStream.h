@@ -3,7 +3,6 @@
 #define __DEM_L1_FILE_STREAM_H__
 
 #include <IO/Stream.h>
-#include <IO/FileSystem.h>
 #include <Data/String.h>
 
 // File system file access stream
@@ -11,6 +10,7 @@
 
 namespace IO
 {
+typedef Ptr<class IFileSystem> PFileSystem;
 
 class CFileStream: public CStream
 {
@@ -22,7 +22,7 @@ protected:
 
 public:
 
-	CFileStream(const char* pPath, IFileSystem* pFS = NULL): FileName(pPath), FS(pFS), hFile(NULL) {}
+	CFileStream(const char* pPath, IFileSystem* pFS): FileName(pPath), FS(pFS), hFile(NULL) {}
 	virtual ~CFileStream() { if (IsOpen()) Close(); }
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);

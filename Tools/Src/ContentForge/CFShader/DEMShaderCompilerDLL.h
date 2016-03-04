@@ -5,7 +5,7 @@
 #include <DEMShaderCompiler/ShaderCompiler.h>
 #include <DEMShaderCompiler/ShaderReflection.h>
 
-bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBPath);
+bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBFilePath, const char* pOutputDirectory);
 bool TermDEMShaderCompilerDLL();
 bool DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 				   const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID);

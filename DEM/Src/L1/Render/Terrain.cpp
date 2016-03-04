@@ -1,7 +1,7 @@
 #include "Terrain.h"
 
 #include <IO/BinaryReader.h>
-#include <IO/Streams/FileStream.h> //???!!!move CDLOD reading into a loader!?
+#include <IO/IOServer.h> //???!!!move CDLOD reading into a loader!?
 #include <Core/Factory.h>
 
 namespace Render
@@ -131,9 +131,9 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 
 bool CTerrain::ValidateResources()
 {
-	IO::CFileStream CDLODFile(CString("Terrain:") + HeightMapUID.CStr() + ".cdlod");
-	if (!CDLODFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(CDLODFile);
+	IO::PStream CDLODFile = IOSrv->CreateStream(CString("Terrain:") + HeightMapUID.CStr() + ".cdlod");
+	if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(*CDLODFile);
 
 	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
 	n_assert(Reader.Read<int>() == 1);		// Version

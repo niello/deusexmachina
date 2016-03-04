@@ -3,8 +3,7 @@
 #include <Render/Mesh.h>
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
-//#include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -201,9 +200,9 @@ PResourceLoader CMeshLoaderNVX2::Clone()
 bool CMeshLoaderNVX2::Load(CResource& Resource)
 {
 	const char* pURI = Resource.GetUID().CStr();
-	IO::CFileStream File(pURI);
-	if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(File);
+	IO::PStream File = IOSrv->CreateStream(pURI);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(*File);
 
 	// NVX2 is always TriList and Index16
 	CNVX2Header Header;
@@ -233,12 +232,12 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 	//!!!map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
 	float* pVBData = (float*)n_malloc_aligned(DataSize, 16);
-	File.Read(pVBData, DataSize);
+	File->Read(pVBData, DataSize);
 
 	//!!!map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
 	U16* pIBData = (U16*)n_malloc_aligned(DataSize, 16);
-	File.Read(pIBData, DataSize);
+	File->Read(pIBData, DataSize);
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, Header.numVertices, Render::Access_GPU_Read, pVBData);

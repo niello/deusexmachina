@@ -7,6 +7,7 @@
 #include <Data/Buffer.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/Streams/FileStream.h>
+#include <IO/PathUtils.h>
 #include <sqlite3.h>
 
 #define INIT_SQL(Stmt, SQL) \
@@ -33,13 +34,6 @@ sqlite3_stmt*	SQLUpdateShaderRec = NULL;
 sqlite3_stmt*	SQLClearDefines = NULL;
 sqlite3_stmt*	SQLInsertDefine = NULL;
 sqlite3_stmt*	SQLGetDefines = NULL;
-
-bool BuildIntermediateShaderObjectFilePath(U32 ID, const char* pExtension, CString& OutPath)
-{
-	OutPath = "Shaders:Bin/" + StringUtils::FromInt(ID) + "." + pExtension;
-	OK;
-}
-//---------------------------------------------------------------------
 
 bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
@@ -539,8 +533,8 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 
 			if (pBinaryData)
 			{
-				IO::CFileSystemWin32 FS;
-				IO::CFileStream File(Path, &FS);
+				IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
+				IO::CFileStream File(Path, FS);
 				if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) continue;
 
 				U64 FileSize = File.GetSize();
@@ -597,7 +591,7 @@ bool FindObjFileByID(U32 ID, CFileData& Out)
 }
 //---------------------------------------------------------------------
 
-bool RegisterObjFile(CFileData& InOut, const char* Extension)
+bool RegisterObjFile(CFileData& InOut, const char* pOutputDirectory, const char* pExtension)
 {
 	U32 ID;
 	if (InOut.ID == 0)
@@ -619,7 +613,7 @@ bool RegisterObjFile(CFileData& InOut, const char* Extension)
 
 	if (InOut.Path.IsEmpty())
 	{
-		if (!BuildIntermediateShaderObjectFilePath(ID, Extension, InOut.Path)) FAIL;
+		InOut.Path = PathUtils::CollapseDots(pOutputDirectory + StringUtils::FromInt(ID) + "." + pExtension);
 	}
 
 	Data::CParams Params(4);

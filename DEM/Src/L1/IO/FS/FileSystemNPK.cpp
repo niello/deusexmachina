@@ -1,6 +1,7 @@
 #include "FileSystemNPK.h"
 
 #include <Data/StringUtils.h>
+#include <IO/IOServer.h>
 #include <IO/PathUtils.h>
 
 namespace IO
@@ -9,7 +10,7 @@ namespace IO
 bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 {
 	if (pNPKData) n_delete(pNPKData);
-	pNPKData = n_new(CFileStream)(pSource);
+	pNPKData = IOSrv->CreateStream(pSource);
 
 	if (!pNPKData->Open(SAM_READ, SAP_RANDOM)) FAIL;
 

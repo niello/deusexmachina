@@ -28,19 +28,21 @@ extern "C"
 #endif
 
 // For static loading
-DEM_DLL_EXPORT bool DEM_DLLCALL OpenShaderDatabase(const char* pDBFilePath);
+DEM_DLL_EXPORT bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory);
 DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 											  const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID);
-DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta& OutD3D9Meta, CD3D11ShaderMeta& OutD3D11Meta);
+DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta);
+DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta);
 
 #ifdef __cplusplus
 }
 #endif
 
 // For dynamic loading
-typedef bool (DEM_DLLCALL *FDEMShaderCompiler_OpenShaderDatabase)(const char* pDBFilePath);
+typedef bool (DEM_DLLCALL *FDEMShaderCompiler_InitCompiler)(const char* pDBFileName, const char* pOutputDirectory);
 typedef bool (DEM_DLLCALL *FDEMShaderCompiler_CompileShader)(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 															 const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID);
-typedef bool (DEM_DLLCALL *FDEMShaderCompiler_LoadShaderMetadataByObjectFileID)(U32 ID, U32& OutTarget, CSM30ShaderMeta& OutD3D9Meta, CD3D11ShaderMeta& OutD3D11Meta);
+typedef bool (DEM_DLLCALL *FDEMShaderCompiler_LoadShaderMetadataByObjectFileID)(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta);
+typedef void (DEM_DLLCALL *FDEMShaderCompiler_FreeShaderMetadata)(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta);
 
 #endif

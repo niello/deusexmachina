@@ -2,7 +2,7 @@
 
 #include <Animation/KeyframeClip.h>
 #include <Resources/Resource.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -20,9 +20,9 @@ bool CKeyframeClipLoaderKFA::Load(CResource& Resource)
 {
 	//???!!!setup stream outside loaders based on URI?!
 	const char* pURI = Resource.GetUID().CStr();
-	IO::CFileStream File(pURI);
-	if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(File);
+	IO::PStream File = IOSrv->CreateStream(pURI);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(*File);
 
 	U32 Magic;
 	if (!Reader.Read(Magic) || Magic != 'KFAN') FAIL;
@@ -51,7 +51,7 @@ bool CKeyframeClipLoaderKFA::Load(CResource& Resource)
 		else
 		{
 			pTrack->Keys.SetSize(KeyCount);
-			File.Read(pTrack->Keys.GetPtr(), KeyCount * sizeof(Anim::CKeyframeTrack::CKey));
+			File->Read(pTrack->Keys.GetPtr(), KeyCount * sizeof(Anim::CKeyframeTrack::CKey));
 		}
 	}
 

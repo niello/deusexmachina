@@ -59,9 +59,9 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 	}
 	else if (!n_stricmp(pExt, "prm"))
 	{
-		IO::CFileStream File(pURI);
-		if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-		IO::CBinaryReader Reader(File);
+		IO::PStream File = IOSrv->CreateStream(pURI);
+		if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+		IO::CBinaryReader Reader(*File);
 		Desc = n_new(Data::CParams);
 		if (!Reader.ReadParams(*Desc)) FAIL;
 	}
@@ -90,9 +90,9 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 		if (PathUtils::CheckExtension(FileName, "cdlod"))
 		{
 			//!!!DUPLICATE CODE! See Scene::CTerrain!
-			IO::CFileStream CDLODFile(FileName);
-			if (!CDLODFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-			IO::CBinaryReader Reader(CDLODFile);
+			IO::PStream CDLODFile = IOSrv->CreateStream(FileName);
+			if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+			IO::CBinaryReader Reader(*CDLODFile);
 
 			n_assert(Reader.Read<U32>() == 'CDLD');	// Magic
 			n_assert(Reader.Read<U32>() == 1);		// Version
@@ -112,7 +112,7 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 
 			UPTR DataSize = HFWidth * HFHeight * sizeof(U16);
 			pHFData = n_malloc(DataSize);
-			CDLODFile.Read(pHFData, DataSize);
+			CDLODFile->Read(pHFData, DataSize);
 
 			// Convert to signed
 			const unsigned short* pUData = ((unsigned short*)pHFData);

@@ -2,9 +2,9 @@
 #ifndef __DEM_L1_STREAM_H__
 #define __DEM_L1_STREAM_H__
 
-#include <System/System.h>
 #include <IO/IOFwd.h>
 #include <Data/Flags.h>
+#include <Data/RefCounted.h>
 
 // Base stream interface for byte sequence access.
 // Partially based on Nebula 3 (c) IO::Stream class
@@ -12,7 +12,7 @@
 namespace IO
 {
 
-class CStream //???refcounted?
+class CStream: public Data::CRefCounted
 {
 protected:
 
@@ -58,6 +58,8 @@ public:
 	template<class T>
 	T				Get() { T Value; Read(&Value, sizeof(T)); return Value; }
 };
+
+typedef Ptr<CStream> PStream;
 
 }
 

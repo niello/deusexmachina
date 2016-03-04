@@ -2,7 +2,8 @@
 #ifndef __DEM_L1_FILE_SYSTEM_NPK_H__
 #define __DEM_L1_FILE_SYSTEM_NPK_H__
 
-#include <IO/Streams/FileStream.h>
+#include <IO/FileSystem.h>
+#include <IO/Stream.h>
 #include "NpkTOC.h"
 
 // Original Nebula 2 NPK virtual file system.
@@ -30,7 +31,7 @@ protected:
 	};
 
 	CNpkTOC			TOC;
-	CFileStream*	pNPKData; //!!!can use MMF and create views when big files are read!
+	PStream			pNPKData; //!!!can use MMF and create views when big files are read!
 
 public:
 

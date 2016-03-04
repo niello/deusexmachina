@@ -35,9 +35,9 @@ bool CRenderPathLoader::Load(CResource& Resource)
 	}
 	else if (!n_stricmp(pExt, "prm"))
 	{
-		IO::CFileStream File(pURI);
-		if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-		IO::CBinaryReader Reader(File);
+		IO::PStream File = IOSrv->CreateStream(pURI);
+		if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+		IO::CBinaryReader Reader(*File);
 		Desc = n_new(Data::CParams);
 		if (!Reader.ReadParams(*Desc)) FAIL;
 	}

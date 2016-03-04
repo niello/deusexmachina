@@ -32,13 +32,12 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 {
 	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D11GPUDriver>()) FAIL;
 
-	//!!!open stream from URI w/optional IO cache! not necessarily a file stream!
 	//!!!some streams don't support Seek and GetSize!
-	IO::CFileStream IOStream(Resource.GetUID().CStr());
-	if (!IOStream.Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-	U64 FileSize = IOStream.GetSize();
+	IO::PStream IOStream = IOSrv->CreateStream(Resource.GetUID().CStr());
+	if (!IOStream->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
+	U64 FileSize = IOStream->GetSize();
 
-	IO::CBinaryReader R(IOStream);
+	IO::CBinaryReader R(*IOStream);
 
 	Data::CFourCC FileSig;
 	if (!R.Read(FileSig)) FAIL;
@@ -82,13 +81,13 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) FAIL;
 
-	U64 MetadataOffset = IOStream.GetPosition();
+	U64 MetadataOffset = IOStream->GetPosition();
 
 	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
 	if (!BinarySize) FAIL;
 	void* pData = n_malloc(BinarySize);
 	if (!pData) FAIL;
-	if (!IOStream.Seek(BinaryOffset, IO::Seek_Begin) || IOStream.Read(pData, BinarySize) != BinarySize)
+	if (!IOStream->Seek(BinaryOffset, IO::Seek_Begin) || IOStream->Read(pData, BinarySize) != BinarySize)
 	{
 		n_free(pData);
 		FAIL;
@@ -121,15 +120,15 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 				CString Path(pDir, sizeof(pDir) - 1, 32);
 				Path += StringUtils::FromInt(InputSignatureID);
 				Path += ".sig";
-				IO::CFileStream SigFile(Path);
-				if (!SigFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
+				IO::PStream SigFile = IOSrv->CreateStream(Path.CStr());
+				if (!SigFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
 				{
 					n_free(pData);
 					FAIL;
 				}
-				SigSize = (UPTR)SigFile.GetSize();
+				SigSize = (UPTR)SigFile->GetSize();
 				pSigData = n_malloc(SigSize);
-				if (SigFile.Read(pSigData, SigSize) != SigSize)
+				if (SigFile->Read(pSigData, SigSize) != SigSize)
 				{
 					n_free(pData);
 					n_free(pSigData);
@@ -153,7 +152,7 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 
 	Shader->InputSignatureID = InputSignatureID;
 
-	if (!IOStream.Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
+	if (!IOStream->Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
 
 	CFixedArray<Render::CD3D11Shader::CBufferMeta>& Buffers = Shader->Buffers;
 	Buffers.SetSize(R.Read<U32>());

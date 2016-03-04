@@ -3,6 +3,7 @@
 #include <Data/Buffer.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/FS/FileSystemNPK.h>
+#include <IO/Streams/FileStream.h>
 #include <IO/FSBrowser.h>
 #include <IO/PathUtils.h>
 
@@ -18,7 +19,11 @@ CIOServer::CIOServer(): Assigns(32)
 	DataPathCB = NULL;
 #endif
 
+#ifdef __WIN32__
 	DefaultFS = n_new(CFileSystemWin32);
+#else
+#error "Default FS for the target OS not defined"
+#endif
 
 	CString SysFolder;
 	if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("Home", SysFolder);
@@ -27,12 +32,6 @@ CIOServer::CIOServer(): Assigns(32)
 	if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("Temp", SysFolder);
 	if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("AppData", SysFolder);
 	if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("Programs", SysFolder);
-}
-//---------------------------------------------------------------------
-
-CIOServer::~CIOServer()
-{
-	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
@@ -112,31 +111,32 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	if (!SetFileReadOnly(AbsDestPath, false)) FAIL;
 
-	CFileStream Src(AbsSrcPath), Dest(AbsDestPath);
-	if (!Src.Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	if (!Dest.Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
+	IO::PStream Src = IOSrv->CreateStream(AbsSrcPath);
+	IO::PStream Dest = IOSrv->CreateStream(AbsDestPath);
+	if (!Src->Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	if (!Dest->Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
 
 	bool Result = true;
-	U64 Size = Src.GetSize();
+	U64 Size = Src->GetSize();
 	const U64 MaxBytesPerOp = 16 * 1024 * 1024; // 16 MB
 	void* pBuffer = n_malloc((UPTR)n_min(Size, MaxBytesPerOp));
 	while (Size > 0)
 	{
 		UPTR CurrOpBytes = (UPTR)n_min(Size, MaxBytesPerOp);
-		if (Src.Read(pBuffer, CurrOpBytes) != CurrOpBytes)
+		if (Src->Read(pBuffer, CurrOpBytes) != CurrOpBytes)
 		{
 			Result = false;
 			FAIL;
 		}
-		if (Dest.Write(pBuffer, CurrOpBytes) != CurrOpBytes)
+		if (Dest->Write(pBuffer, CurrOpBytes) != CurrOpBytes)
 		{
 			Result = false;
 			FAIL;
 		}
 		Size -= CurrOpBytes;
 	}
-	Src.Close();
-	Dest.Close();
+	Src->Close();
+	Dest->Close();
 	n_free(pBuffer);
 
 	return Result;
@@ -279,6 +279,37 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 }
 //---------------------------------------------------------------------
 
+//!!!need different schemas, like http:, ftp:, npk:, file: etc!
+//default - file at least for now
+//!!!for CreateStream() need to determine file system without opening a file!
+PStream CIOServer::CreateStream(const char* pURI) const
+{
+	CString AbsURI = ResolveAssigns(pURI);
+
+	IFileSystem* pFS = NULL;
+
+	//!!!duplicate search for NPK, finds FS record twice, here and in CStream::Open()!
+	if (DefaultFS->FileExists(AbsURI.CStr()))
+	{
+		pFS = DefaultFS.GetUnsafe();
+	}
+	else
+	{
+		for (UPTR i = 0; i < FS.GetCount(); ++i)
+		{
+			IFileSystem* pCurrFS = FS[i].GetUnsafe();
+			if (pCurrFS && pCurrFS->FileExists(AbsURI.CStr()))
+			{
+				pFS = pCurrFS;
+				break;
+			}
+		}
+	}
+
+	return n_new(CFileStream(AbsURI.CStr(), pFS));
+}
+//---------------------------------------------------------------------
+
 void CIOServer::SetAssign(const char* pAssign, const char* pPath)
 {
 	CString RealAssign(pAssign);
@@ -286,7 +317,7 @@ void CIOServer::SetAssign(const char* pAssign, const char* pPath)
 	CString& PathString = Assigns.At(RealAssign);
 	PathString = pPath;
 	PathString.Replace('\\', '/');
-	if (PathString[PathString.GetLength() - 1] != '/') PathString.Add('/');
+	PathUtils::EnsurePathHasEndingDirSeparator(PathString);
 }
 //---------------------------------------------------------------------
 
@@ -326,36 +357,14 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 
 bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
 {
-	CFileStream File(pFileName);
-	if (!File.Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	UPTR FileSize = (UPTR)File.GetSize();
+	IO::PStream File = CreateStream(pFileName);
+	if (!File->Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
+	UPTR FileSize = (UPTR)File->GetSize();
 	Buffer.Reserve(FileSize);
-	Buffer.Trim(File.Read(Buffer.GetPtr(), FileSize));
+	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
 	//Sys::Log("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
 	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------
-
-#ifdef _EDITOR
-bool CIOServer::QueryMangledPath(const char* pFileName, CString& MangledFileName) const
-{
-	if (!DataPathCB) FAIL;
-
-	char* pMangledStr = NULL;
-	if (!DataPathCB(pFileName, &pMangledStr))
-	{
-		if (pMangledStr && ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
-		FAIL;
-	}
-
-	MangledFileName.Clear();
-	if (pMangledStr)
-	{
-		MangledFileName.Set(pMangledStr);
-		if (ReleaseMemoryCB) ReleaseMemoryCB(pMangledStr);
-	}
-	OK;
-}
-#endif
 
 }

@@ -27,13 +27,12 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 {
 	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D9GPUDriver>()) FAIL;
 
-	//!!!open stream from URI w/optional IO cache! not necessarily a file stream!
 	//!!!some streams don't support Seek and GetSize!
-	IO::CFileStream IOStream(Resource.GetUID().CStr());
-	if (!IOStream.Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-	U64 FileSize = IOStream.GetSize();
+	IO::PStream IOStream = IOSrv->CreateStream(Resource.GetUID().CStr());
+	if (!IOStream->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
+	U64 FileSize = IOStream->GetSize();
 
-	IO::CBinaryReader R(IOStream);
+	IO::CBinaryReader R(*IOStream);
 
 	Data::CFourCC FileSig;
 	if (!R.Read(FileSig)) FAIL;
@@ -61,13 +60,13 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 	U32 ShaderFileID;
 	if (!R.Read(ShaderFileID)) FAIL;
 
-	U64 MetadataOffset = IOStream.GetPosition();
+	U64 MetadataOffset = IOStream->GetPosition();
 
 	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
 	if (!BinarySize) FAIL;
 	void* pData = n_malloc(BinarySize);
 	if (!pData) FAIL;
-	if (!IOStream.Seek(BinaryOffset, IO::Seek_Begin) || IOStream.Read(pData, BinarySize) != BinarySize)
+	if (!IOStream->Seek(BinaryOffset, IO::Seek_Begin) || IOStream->Read(pData, BinarySize) != BinarySize)
 	{
 		n_free(pData);
 		FAIL;
@@ -78,7 +77,7 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 
 	n_free(pData);
 
-	if (!IOStream.Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
+	if (!IOStream->Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
 
 	//???really need multiple buffers?
 	CFixedArray<Render::CD3D9ShaderBufferMeta>& Buffers = Shader->Buffers;

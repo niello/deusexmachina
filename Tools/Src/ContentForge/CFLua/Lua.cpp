@@ -5,8 +5,8 @@ extern "C"
 	#include <lualib.h>
 };
 
-#include <IO/Streams/FileStream.h>
 #include <IO/Streams/MemStream.h>
+#include <IO/IOServer.h>
 #include <IO/BinaryWriter.h>
 #include <Data/Buffer.h>
 #include <Data/Params.h>
@@ -55,11 +55,11 @@ bool LuaCompile(char* pData, U32 Size, const char* Name, const char* pFileOut)
 
 	int Result = 1;
 
-	IO::CFileStream Out(pFileOut);
-	if (Out.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+	IO::PStream Out = IOSrv->CreateStream(pFileOut);
+	if (Out->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 	{
 		Result = lua_dump(l, SaveLua, (IO::CStream*)&Out);
-		Out.Close();
+		Out->Close();
 	}
 
 	return !Result;
@@ -94,11 +94,10 @@ bool LuaCompileClass(Data::CParams& LoadedHRD, const char* Name, const char* pFi
 		else FAIL;
 	}
 
-	IO::CFileStream File(pFileOut);
-	if (!File.Open(IO::SAM_WRITE)) FAIL;
-	IO::CBinaryWriter Writer(File);
-	return Writer.WriteParams(LoadedHRD);
+	IO::PStream File = IOSrv->CreateStream(pFileOut);
+	if (!File->Open(IO::SAM_WRITE)) FAIL;
+	IO::CBinaryWriter Writer(*File);
 
-	OK;
+	return Writer.WriteParams(LoadedHRD);
 }
 //---------------------------------------------------------------------

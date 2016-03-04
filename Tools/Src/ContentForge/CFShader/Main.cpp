@@ -1,4 +1,5 @@
 #include <IO/IOServer.h>
+#include <IO/PathUtils.h>
 #include <Data/StringTokenizer.h>
 #include <Data/Params.h>
 #include <Data/HRDParser.h>
@@ -110,7 +111,8 @@ int main(int argc, const char** argv)
 #else
 	CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
 #endif
-	if (!InitDEMShaderCompilerDLL(DLLPath.CStr(), DB.CStr())) return ExitApp(ERR_MAIN_FAILED, WaitKey);
+	CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
+	if (!InitDEMShaderCompilerDLL(DLLPath.CStr(), DB.CStr(), OutputDir.CStr())) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 
 	CArray<CString> InList, OutList;
 

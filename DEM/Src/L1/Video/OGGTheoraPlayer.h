@@ -3,6 +3,7 @@
 #define __DEM_L1_OGG_THEORA_PLAYER_H__
 
 #include "VideoPlayer.h"
+#include <Data/RefCounted.h>
 #include <theora/theora.h>
 
 // A videoplayer for *.ogg files
@@ -12,7 +13,7 @@
 
 namespace IO
 {
-	class CFileStream;
+	typedef Ptr<class CStream> PStream;
 }
 
 namespace Video
@@ -40,7 +41,7 @@ protected:
 	int					frameNr;
 
 	ogg_packet			op;
-	IO::CFileStream*	infile;
+	IO::PStream			infile;
 	yuv_buffer			yuv;
 
 	unsigned char*		rgbBuffer;
@@ -50,7 +51,7 @@ protected:
 	CTime				currentTime;
 	UPTR				decodedFrames;
 
-	int buffer_data(IO::CFileStream *in,ogg_sync_state *oy);
+	int buffer_data(IO::CStream *in,ogg_sync_state *oy);
 	int queue_page(ogg_page *page);
 	void DecodeYUV(yuv_buffer& yuv,unsigned char* rgbBuffer);
 	void StopTheora();

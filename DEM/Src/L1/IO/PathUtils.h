@@ -33,6 +33,13 @@ inline int GetLastDirSeparatorIndex(const char* pPath)
 }
 //---------------------------------------------------------------------
 
+inline void EnsurePathHasEndingDirSeparator(CString& Path)
+{
+	UPTR PathLen = Path.GetLength();
+	if (PathLen && Path[PathLen - 1] != '/') Path += '/';
+}
+//---------------------------------------------------------------------
+
 // Returns pointer to extension (without the dot), or empty string (not NULL, for CRT comparison)
 inline const char* GetExtension(const char* pPath)
 {
@@ -134,6 +141,20 @@ inline CString ExtractToLastSlash(const char* pPath)
 	const char* pLastDirSep = GetLastDirSeparator(pPath);
 	if (pLastDirSep) return CString(pPath, pLastDirSep - pPath);
 	else return CString::Empty;
+}
+//---------------------------------------------------------------------
+
+// Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
+// E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
+inline CString CollapseDots(const char* pPath)
+{
+	return CString(pPath);
+}
+//---------------------------------------------------------------------
+
+inline CString GetAbsolutePath(const char* pCurrentPath, const char* pRelativePath)
+{
+	return CString(pRelativePath);
 }
 //---------------------------------------------------------------------
 

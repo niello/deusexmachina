@@ -20,6 +20,7 @@ namespace Data
 namespace IO
 {
 typedef Ptr<class IFileSystem> PFileSystem;
+typedef Ptr<class CStream> PStream;
 
 #ifdef _EDITOR
 typedef bool (__stdcall *CDataPathCallback)(const char* DataPath, char** MangledPath);
@@ -34,19 +35,14 @@ class CIOServer
 
 private:
 
-	PFileSystem							DefaultFS;
+	PFileSystem							DefaultFS; //???need? use FS[0] and priority-sorted array?
 	CArray<PFileSystem>					FS;
 	CHashTable<CString, CString>		Assigns;
 
 public:
 
-#ifdef _EDITOR
-	CDataPathCallback					DataPathCB;
-	CReleaseMemoryCallback				ReleaseMemoryCB;
-#endif
-
 	CIOServer();
-	~CIOServer();
+	~CIOServer() { __DestructSingleton; }
 
 	//???create FSs outside and mount all with priority?
 	bool			MountNPK(const char* pNPKPath, const char* pRoot = NULL);
@@ -66,14 +62,12 @@ public:
 	void*			OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
 
+	PStream			CreateStream(const char* pURI) const;
+
 	void			SetAssign(const char* pAssign, const char* pPath);
 	CString			GetAssign(const char* pAssign) const;
 	CString			ResolveAssigns(const char* pPath) const;
 	bool			LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer);
-
-#ifdef _EDITOR
-	bool			QueryMangledPath(const char* pFileName, CString& MangledFileName) const;
-#endif
 };
 
 }

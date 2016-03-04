@@ -15,8 +15,11 @@ DEM/Lib/
 DEM/Obj/
 Tools/Obj/
 
-#Debug executables
+#Debug versions of binaries
 *_d.exe
+*_d.dll
+*_d.exp
+*_d.lib
 
 #3rdParty
 3rdParty/3rdPartyHelper/*

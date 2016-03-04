@@ -18,6 +18,8 @@
 #undef CreateDirectory
 #undef DeleteFile
 
+CString OutputDir;
+
 struct CTargetParams
 {
 	const char*		pD3DTarget;
@@ -39,9 +41,21 @@ public:
 	void Set(void* pData) { pDataToFree = pData; }
 };
 
-DEM_DLL_EXPORT bool DEM_DLLCALL OpenShaderDatabase(const char* pDBFilePath)
+DEM_DLL_EXPORT bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory)
 {
-	return OpenDB(pDBFilePath);
+	if (pOutputDirectory)
+	{
+		OutputDir.Set(pOutputDirectory);
+		PathUtils::EnsurePathHasEndingDirSeparator(OutputDir);
+	}
+	else
+	{
+		OutputDir = PathUtils::ExtractDirName(pDBFileName);
+		OutputDir += "../../Export/Shaders/Bin/";
+		OutputDir = PathUtils::CollapseDots(OutputDir.CStr());
+	}
+
+	return OpenDB(pDBFileName);
 }
 //---------------------------------------------------------------------
 
@@ -196,16 +210,16 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 
 	if (!Target) Target = 0x0500;
 
-	IO::CFileSystemWin32 FS;
+	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
 
 	Data::CBuffer In;
-	void* hFile = FS.OpenFile(pSrcPath, IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	void* hFile = FS->OpenFile(pSrcPath, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!hFile) FAIL;
-	U64 CurrWriteTime = FS.GetFileWriteTime(hFile);
-	UPTR FileSize = (UPTR)FS.GetFileSize(hFile);
+	U64 CurrWriteTime = FS->GetFileWriteTime(hFile);
+	UPTR FileSize = (UPTR)FS->GetFileSize(hFile);
 	In.Reserve(FileSize);
-	UPTR ReadSize = FS.Read(hFile, In.GetPtr(), FileSize);
-	FS.CloseFile(hFile);
+	UPTR ReadSize = FS->Read(hFile, In.GetPtr(), FileSize);
+	FS->CloseFile(hFile);
 		
 	if (ReadSize != FileSize) FAIL;
 
@@ -341,7 +355,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 			U32 OldInputSigID = Rec.InputSigFile.ID;
 			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false))
 			{
-				if (!RegisterObjFile(Rec.InputSigFile, "sig")) // Fills empty ID and path inside
+				if (!RegisterObjFile(Rec.InputSigFile, OutputDir.CStr(), "sig")) // Fills empty ID and path inside
 				{
 					pCode->Release();
 					pInputSig->Release();
@@ -350,24 +364,24 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 
 				//n_msg(VL_DETAILS, "  InputSig: %s -> %s\n", ShortSrcPath.CStr(), Rec.InputSigFile.Path.CStr());
 
-				FS.CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
+				FS->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
 
-				void* hFile = FS.OpenFile(Rec.InputSigFile.Path.CStr(), IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
+				void* hFile = FS->OpenFile(Rec.InputSigFile.Path.CStr(), IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
 				if (!hFile)
 				{
 					pCode->Release();
 					pInputSig->Release();
 					FAIL;
 				}
-				FS.Write(hFile, pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
-				FS.CloseFile(hFile);
+				FS->Write(hFile, pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+				FS->CloseFile(hFile);
 			}
 
 			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
 			{
 				CString OldObjPath;
 				if (ReleaseObjFile(OldInputSigID, OldObjPath))
-					FS.DeleteFile(OldObjPath);
+					FS->DeleteFile(OldObjPath);
 			}
 
 			pInputSig->Release();
@@ -405,7 +419,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 	DWORD OldObjFileID = Rec.ObjFile.ID;
 	if (!FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer(), true))
 	{
-		if (!RegisterObjFile(Rec.ObjFile, TargetParams.pExtension)) // Fills empty ID and path inside
+		if (!RegisterObjFile(Rec.ObjFile, OutputDir.CStr(), TargetParams.pExtension)) // Fills empty ID and path inside
 		{
 			pCode->Release();
 			pFinalCode->Release();
@@ -414,9 +428,9 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 
 		//n_msg(VL_DETAILS, "  Shader:   %s -> %s\n", ShortSrcPath.CStr(), Rec.ObjFile.Path.CStr());
 
-		FS.CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
+		FS->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
-		IO::CFileStream File(Rec.ObjFile.Path, &FS);
+		IO::CFileStream File(Rec.ObjFile.Path, FS);
 		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
 			pFinalCode->Release();
@@ -483,7 +497,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 	{
 		CString OldObjPath;
 		if (ReleaseObjFile(OldObjFileID, OldObjPath))
-			FS.DeleteFile(OldObjPath);
+			FS->DeleteFile(OldObjPath);
 	}
 
 	if (!WriteShaderRec(Rec)) FAIL;
@@ -498,12 +512,14 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 // Since D3D9 and D3D11 metadata are different, we implement not beautiful but convenient function,
 // that returns both D3D9 and D3D11 metadata pointers. Which one is not NULL, it must be used as a return value.
 // Returns whether metadata is found in cache, which means it was already processed.
-DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta& OutD3D9Meta, CD3D11ShaderMeta& OutD3D11Meta)
+// Use FreeShaderMetadata() on pointers returned
+DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta)
 {
 	CFileData ObjFile;
 	if (!FindObjFileByID(ID, ObjFile)) FAIL;
 
-	IO::CFileStream File(ObjFile.Path.CStr());
+	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
+	IO::CFileStream File(ObjFile.Path.CStr(), FS);
 	if (!File.Open(IO::SAM_READ)) FAIL;
 	IO::CBinaryReader R(File);
 
@@ -514,11 +530,38 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 	R.Read<U32>();	// Binary data offset - skip
 	R.Read<U32>();	// Shader obj file ID - skip
 
+	pOutD3D9Meta = NULL;
+	pOutD3D11Meta = NULL;
+
 	if (OutTarget >= 0x0400)
 	{
 		R.Read<U32>();	// Input signature obj file ID - skip
-		return D3D11LoadShaderMetadata(R, OutD3D11Meta);
+		pOutD3D11Meta = n_new(CD3D11ShaderMeta);
+		if (D3D11LoadShaderMetadata(R, *pOutD3D11Meta)) OK;
+		else
+		{
+			n_delete(pOutD3D11Meta);
+			pOutD3D11Meta = NULL;
+			FAIL;
+		}
 	}
-	else return D3D9LoadShaderMetadata(R, OutD3D9Meta);
+	else
+	{
+		pOutD3D9Meta = n_new(CSM30ShaderMeta);
+		if (D3D9LoadShaderMetadata(R, *pOutD3D9Meta)) OK;
+		else
+		{
+			n_delete(pOutD3D9Meta);
+			pOutD3D9Meta = NULL;
+			FAIL;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta)
+{
+	if (pD3D9Meta) n_delete(pD3D9Meta);
+	if (pD3D11Meta) n_delete(pD3D11Meta);
 }
 //---------------------------------------------------------------------

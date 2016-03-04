@@ -1,16 +1,15 @@
 #include "DEMShaderCompilerDLL.h"
 
-#include <IO/IOServer.h>
-
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 HMODULE hDLL = NULL;
-FDEMShaderCompiler_OpenShaderDatabase pOpenShaderDatabase = NULL;
+FDEMShaderCompiler_InitCompiler pInitCompiler = NULL;
 FDEMShaderCompiler_CompileShader pCompileShader = NULL;
 FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
+FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
 
-bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBPath)
+bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBFilePath, const char* pOutputDirectory)
 {
 	if (!hDLL)
 	{
@@ -18,10 +17,10 @@ bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBPath)
 		if (!hDLL) FAIL;
 	}
 
-	pOpenShaderDatabase = (FDEMShaderCompiler_OpenShaderDatabase)GetProcAddress(hDLL, "OpenShaderDatabase");
-	if (!pOpenShaderDatabase) FAIL;
+	pInitCompiler = (FDEMShaderCompiler_InitCompiler)GetProcAddress(hDLL, "InitCompiler");
+	if (!pInitCompiler) FAIL;
 
-	return pOpenShaderDatabase(pDBPath);
+	return pInitCompiler(pDBFilePath, pOutputDirectory);
 }
 //---------------------------------------------------------------------
 
@@ -55,6 +54,20 @@ bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta
 		if (!pLoadShaderMetadataByObjectFileID) FAIL;
 	}
 
-	return pLoadShaderMetadataByObjectFileID(ID, OutTarget, OutD3D9Meta, OutD3D11Meta);
+	if (!pFreeShaderMetadata)
+	{
+		if (!hDLL) FAIL;
+		pFreeShaderMetadata = (FDEMShaderCompiler_FreeShaderMetadata)GetProcAddress(hDLL, "FreeShaderMetadata");
+		if (!pFreeShaderMetadata) FAIL;
+	}
+
+	CSM30ShaderMeta* pDLLAllocD3D9Meta;
+	CD3D11ShaderMeta* pDLLAllocD3D11Meta;
+	if (!pLoadShaderMetadataByObjectFileID(ID, OutTarget, pDLLAllocD3D9Meta, pDLLAllocD3D11Meta)) FAIL;
+	if (pDLLAllocD3D9Meta) OutD3D9Meta = *pDLLAllocD3D9Meta;
+	if (pDLLAllocD3D11Meta) OutD3D11Meta = *pDLLAllocD3D11Meta;
+	pFreeShaderMetadata(pDLLAllocD3D9Meta, pDLLAllocD3D11Meta);
+
+	OK;
 }
 //---------------------------------------------------------------------

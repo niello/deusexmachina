@@ -2,7 +2,7 @@
 
 #include <Render/SkinInfo.h>
 #include <Resources/Resource.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -20,9 +20,9 @@ bool CSkinInfoLoaderSKN::Load(CResource& Resource)
 {
 	//???!!!setup stream outside loaders based on URI?!
 	const char* pURI = Resource.GetUID().CStr();
-	IO::CFileStream File(pURI);
-	if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(File);
+	IO::PStream File = IOSrv->CreateStream(pURI);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(*File);
 
 	U32 Magic;
 	if (!Reader.Read(Magic) || Magic != 'SKIF') FAIL;
@@ -37,7 +37,7 @@ bool CSkinInfoLoaderSKN::Load(CResource& Resource)
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
 	SkinInfo->Create(BoneCount);
 
-	File.Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
+	File->Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
 
 	for (U32 i = 0; i < BoneCount; ++i)
 	{

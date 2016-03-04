@@ -1391,10 +1391,10 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	// Write result to a file
 
 	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
-	
-	IO::CFileStream File(pOutFilePath);
-	if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
-	IO::CBinaryWriter W(File);
+
+	IO::PStream File = IOSrv->CreateStream(pOutFilePath);
+	if (!File->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
+	IO::CBinaryWriter W(*File);
 
 	// Save header
 
@@ -1819,7 +1819,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	WriteRegisterRanges(MaterialInt4, W, "int4");
 	WriteRegisterRanges(MaterialBool, W, "bool");
 
-	File.Close();
+	File->Close();
 
 	return SUCCESS;
 }

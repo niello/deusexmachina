@@ -1,23 +1,30 @@
 #include "DEMD3DInclude.h"
 
-#include <IO/PathUtils.h>
+#undef CreateDirectory
+#undef DeleteFile
+#undef CopyFile
+
+#include <IO/FS/FileSystemWin32.h>
 #include <IO/Streams/FileStream.h>
+#include <IO/PathUtils.h>
 
 CDEMD3DInclude::CDEMD3DInclude(const CString& ShdDir, const CString& ShdRootDir):
 	ShaderDir(ShdDir),
 	ShaderRootDir(ShdRootDir)
 {
 	ShaderDir.Trim(" \r\n\t\\", false);
-	if (ShaderDir.GetLength() && ShaderDir[ShaderDir.GetLength() - 1] != '/') ShaderDir += '/';
+	PathUtils::EnsurePathHasEndingDirSeparator(ShaderDir);
 	ShaderRootDir.Trim(" \r\n\t\\", false);
-	if (ShaderRootDir.GetLength() && ShaderRootDir[ShaderRootDir.GetLength() - 1] != '/') ShaderRootDir += '/';
+	PathUtils::EnsurePathHasEndingDirSeparator(ShaderRootDir);
 }
 //---------------------------------------------------------------------
 
 HRESULT CDEMD3DInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, const char* pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes)
 {
+	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
+
 	// Try absolute path first
-	IO::CFileStream File(pFileName);
+	IO::CFileStream File(pFileName, FS);
 	bool Loaded = File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL);
 
 	// Try in shader dir
