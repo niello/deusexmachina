@@ -1,8 +1,6 @@
 #include "ShaderCompiler.h"
 
-#include <Data/FourCC.h>
 #include <Data/Buffer.h>
-#include <Data/Dictionary.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
@@ -13,12 +11,11 @@
 #include <ShaderDB.h>
 #include <ShaderReflection.h>
 
-//!!!n_msg, logging! can out to stdout / stderr
-
 #undef CreateDirectory
 #undef DeleteFile
 
 CString OutputDir;
+CString Messages;	// Last operation messages. Must be cleared at the start of every public API function.
 
 struct CTargetParams
 {
@@ -43,6 +40,8 @@ public:
 
 DEM_DLL_EXPORT bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory)
 {
+	Messages.Clear();
+
 	if (pOutputDirectory)
 	{
 		OutputDir.Set(pOutputDirectory);
@@ -56,6 +55,12 @@ DEM_DLL_EXPORT bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char
 	}
 
 	return OpenDB(pDBFileName);
+}
+//---------------------------------------------------------------------
+
+DEM_DLL_EXPORT const char* DEM_DLLCALL GetLastOperationMessages()
+{
+	return Messages.CStr();
 }
 //---------------------------------------------------------------------
 
@@ -203,10 +208,12 @@ bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
 //---------------------------------------------------------------------
 
 // pDefines - "NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]"
-DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
-											  const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID)
+DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
+											 const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID)
 {
-	if (!pSrcPath || ShaderType >= ShaderType_COUNT || !pEntryPoint) FAIL;
+	Messages.Clear();
+
+	if (!pSrcPath || ShaderType >= ShaderType_COUNT || !pEntryPoint) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
 	if (!Target) Target = 0x0500;
 
@@ -214,14 +221,14 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 
 	Data::CBuffer In;
 	void* hFile = FS->OpenFile(pSrcPath, IO::SAM_READ, IO::SAP_SEQUENTIAL);
-	if (!hFile) FAIL;
+	if (!hFile) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 	U64 CurrWriteTime = FS->GetFileWriteTime(hFile);
 	UPTR FileSize = (UPTR)FS->GetFileSize(hFile);
 	In.Reserve(FileSize);
 	UPTR ReadSize = FS->Read(hFile, In.GetPtr(), FileSize);
 	FS->CloseFile(hFile);
 		
-	if (ReadSize != FileSize) FAIL;
+	if (ReadSize != FileSize) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 
 	UPTR SrcCRC = Util::CalcCRC((U8*)In.GetPtr(), In.GetSize());
 
@@ -263,7 +270,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 		pDefineStringBuffer = (char*)n_malloc(DefinesLen);
 		strcpy_s(pDefineStringBuffer, DefinesLen, pDefines);
 		DefineStringBuffer.Set(pDefineStringBuffer);
-		if (!ParseDefineString(pDefineStringBuffer, Rec.Defines)) FAIL;
+		if (!ParseDefineString(pDefineStringBuffer, Rec.Defines)) return DEM_SHADER_COMPILER_INVALID_ARGS;
 	}
 
 	bool RecFound = FindShaderRec(Rec);
@@ -274,7 +281,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
-		OK;
+		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 
 	Rec.CompilerFlags = Flags;
@@ -285,7 +292,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 	// Determine D3D target, output file extension and file signature
 
 	CTargetParams TargetParams;
-	if (!GetTargetParams(ShaderType, Target, TargetParams)) FAIL;
+	if (!GetTargetParams(ShaderType, Target, TargetParams)) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
 	// Setup D3D shader macros
 
@@ -311,9 +318,6 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 
 	// Compile shader
 
-	//CString ShortSrcPath(pSrcPath);
-	//ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
-
 	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pSrcPath), CString::Empty); //RootPath);
 
 	ID3DBlob* pCode = NULL;
@@ -324,16 +328,16 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 
 	if (FAILED(hr) || !pCode)
 	{
-		//n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n",
-			//ShortSrcPath.CStr(),
-			//pErrors ? pErrors->GetBufferPointer() : "No D3D error message.");
+		Messages.Set(pErrors ? (const char*)pErrors->GetBufferPointer() : "<No D3D error message>");
 		if (pCode) pCode->Release();
 		if (pErrors) pErrors->Release();
-		FAIL;
+		return DEM_SHADER_COMPILER_COMPILE_ERROR;
 	}
 	else if (pErrors)
 	{
-		//n_msg(VL_WARNING, "'%s' compiled with warnings:\n\n%s\n", ShortSrcPath.CStr(), pErrors->GetBufferPointer());
+		Messages.Set("Compiled with warnings:\n\n");
+		Messages += (const char*)pErrors->GetBufferPointer();
+		Messages += '\n';
 		pErrors->Release();
 	}
 
@@ -359,10 +363,8 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 				{
 					pCode->Release();
 					pInputSig->Release();
-					FAIL;
+					return DEM_SHADER_COMPILER_DB_ERROR;
 				}
-
-				//n_msg(VL_DETAILS, "  InputSig: %s -> %s\n", ShortSrcPath.CStr(), Rec.InputSigFile.Path.CStr());
 
 				FS->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
 
@@ -371,7 +373,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 				{
 					pCode->Release();
 					pInputSig->Release();
-					FAIL;
+					return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 				}
 				FS->Write(hFile, pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 				FS->CloseFile(hFile);
@@ -406,8 +408,9 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 							&pFinalCode);
 		if (FAILED(hr))
 		{
+			Messages += "\nD3DStripShader() failed\n";
 			pCode->Release();
-			FAIL;
+			return DEM_SHADER_COMPILER_ERROR;
 		}
 	}
 
@@ -423,10 +426,8 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 		{
 			pCode->Release();
 			pFinalCode->Release();
-			FAIL;
+			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
-
-		//n_msg(VL_DETAILS, "  Shader:   %s -> %s\n", ShortSrcPath.CStr(), Rec.ObjFile.Path.CStr());
 
 		FS->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
@@ -434,7 +435,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
 			pFinalCode->Release();
-			FAIL;
+			return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 		}
 
 		IO::CBinaryWriter W(File);
@@ -473,9 +474,8 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 		
 		if (!MetaReflected || !MetaSaved)
 		{
-			//n_msg(VL_ERROR, "	Shader %s failed: '%s'\n", MetaReflected ? "metadata saving" : "reflection", Rec.ObjFile.Path.CStr());
 			pFinalCode->Release();
-			FAIL;
+			return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}
 
 		// Save shader binary
@@ -500,12 +500,12 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 			FS->DeleteFile(OldObjPath);
 	}
 
-	if (!WriteShaderRec(Rec)) FAIL;
+	if (!WriteShaderRec(Rec)) return DEM_SHADER_COMPILER_DB_ERROR;
 
 	ObjectFileID = Rec.ObjFile.ID;
 	InputSignatureFileID = Rec.InputSigFile.ID;
 
-	OK;
+	return DEM_SHADER_COMPILER_SUCCESS;
 }
 //---------------------------------------------------------------------
 
@@ -515,6 +515,8 @@ DEM_DLL_EXPORT bool DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType 
 // Use FreeShaderMetadata() on pointers returned
 DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta)
 {
+	Messages.Clear();
+
 	CFileData ObjFile;
 	if (!FindObjFileByID(ID, ObjFile)) FAIL;
 
@@ -561,6 +563,8 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 
 DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta)
 {
+	Messages.Clear();
+
 	if (pD3D9Meta) n_delete(pD3D9Meta);
 	if (pD3D11Meta) n_delete(pD3D11Meta);
 }

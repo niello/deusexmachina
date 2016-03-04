@@ -5,6 +5,7 @@
 
 HMODULE hDLL = NULL;
 FDEMShaderCompiler_InitCompiler pInitCompiler = NULL;
+FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = NULL;
 FDEMShaderCompiler_CompileShader pCompileShader = NULL;
 FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
 FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
@@ -31,21 +32,34 @@ bool TermDEMShaderCompilerDLL()
 }
 //---------------------------------------------------------------------
 
-bool DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
+const char*	DLLGetLastOperationMessages()
+{
+	if (!pGetLastOperationMessages)
+	{
+		if (!hDLL) return NULL;
+		pGetLastOperationMessages = (FDEMShaderCompiler_GetLastOperationMessages)GetProcAddress(hDLL, "GetLastOperationMessages");
+		if (!pGetLastOperationMessages) return NULL;
+	}
+
+	return pGetLastOperationMessages();
+}
+//---------------------------------------------------------------------
+
+int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 				   const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID)
 {
 	if (!pCompileShader)
 	{
-		if (!hDLL) FAIL;
+		if (!hDLL) return DEM_SHADER_COMPILER_ERROR;
 		pCompileShader = (FDEMShaderCompiler_CompileShader)GetProcAddress(hDLL, "CompileShader");
-		if (!pCompileShader) FAIL;
+		if (!pCompileShader) return DEM_SHADER_COMPILER_ERROR;
 	}
 
 	return pCompileShader(pSrcPath, ShaderType, Target, pEntryPoint, pDefines, Debug, ObjectFileID, InputSignatureFileID);
 }
 //---------------------------------------------------------------------
 
-bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta& OutD3D9Meta, CD3D11ShaderMeta& OutD3D11Meta)
+bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta)
 {
 	if (!pLoadShaderMetadataByObjectFileID)
 	{
@@ -54,6 +68,12 @@ bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta
 		if (!pLoadShaderMetadataByObjectFileID) FAIL;
 	}
 
+	return pLoadShaderMetadataByObjectFileID(ID, OutTarget, pOutD3D9Meta, pOutD3D11Meta);
+}
+//---------------------------------------------------------------------
+
+bool DLLFreeShaderMetadata(CSM30ShaderMeta* pDLLAllocD3D9Meta, CD3D11ShaderMeta* pDLLAllocD3D11Meta)
+{
 	if (!pFreeShaderMetadata)
 	{
 		if (!hDLL) FAIL;
@@ -61,11 +81,6 @@ bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta
 		if (!pFreeShaderMetadata) FAIL;
 	}
 
-	CSM30ShaderMeta* pDLLAllocD3D9Meta;
-	CD3D11ShaderMeta* pDLLAllocD3D11Meta;
-	if (!pLoadShaderMetadataByObjectFileID(ID, OutTarget, pDLLAllocD3D9Meta, pDLLAllocD3D11Meta)) FAIL;
-	if (pDLLAllocD3D9Meta) OutD3D9Meta = *pDLLAllocD3D9Meta;
-	if (pDLLAllocD3D11Meta) OutD3D11Meta = *pDLLAllocD3D11Meta;
 	pFreeShaderMetadata(pDLLAllocD3D9Meta, pDLLAllocD3D11Meta);
 
 	OK;

@@ -1,7 +1,6 @@
 #include "D3D9ShaderReflection.h"
 
 #include <Data/StringUtils.h>
-//#include <ConsoleApp.h>			// For n_msg
 
 // Code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
@@ -79,12 +78,7 @@ bool ProcessConstant(const char* ctab,
 				pDesc->RegisterCount = 0;
 				OK;
 			}
-			else
-			{
-				//n_msg(VL_ERROR, "Duplicate parameter name '%s' in SM3.0 shader\n", pName);
-				FAIL;
-			}
-			break;
+			else FAIL;
 		}
 	}
 

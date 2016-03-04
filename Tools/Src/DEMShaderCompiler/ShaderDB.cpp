@@ -1,6 +1,5 @@
 #include "ShaderDB.h"
 
-//#include <ConsoleApp.h>	// For n_msg
 #include <ValueTable.h>
 #include <Data/Params.h>
 #include <Data/StringUtils.h>
@@ -9,6 +8,8 @@
 #include <IO/Streams/FileStream.h>
 #include <IO/PathUtils.h>
 #include <sqlite3.h>
+
+extern CString Messages;
 
 #define INIT_SQL(Stmt, SQL) \
 	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, NULL) != SQLITE_OK) \
@@ -75,7 +76,7 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 		}
 		else
 		{
-			//n_msg(VL_ERROR, "BindQueryParams() > invalid parameter type!");
+			Messages += "BindQueryParams() > invalid parameter type!\n";
 			FAIL;
 		}
 
@@ -198,12 +199,18 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 			}
 			case SQLITE_ERROR:
 			{
-				//n_msg(VL_ERROR, "SQLite error during sqlite3_step(): %s\n", sqlite3_errmsg(SQLiteHandle));
+				Messages += "SQLite error during sqlite3_step(): ";
+				Messages += sqlite3_errmsg(SQLiteHandle);
+				Messages += '\n';
 				FAIL;
 			}
 			default:
 			{
-				//n_msg(VL_ERROR, "sqlite3_step() returned error code %d, %s\n", Result, sqlite3_errmsg(SQLiteHandle));
+				Messages += "sqlite3_step() returned error code ";
+				Messages += StringUtils::FromInt(Result);
+				Messages += ", ";
+				Messages += sqlite3_errmsg(SQLiteHandle);
+				Messages += '\n';
 				FAIL;
 			}
 		}
@@ -226,7 +233,9 @@ bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL, const 
 		sqlite3_stmt* SQLiteStmt = NULL;
 		if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLiteStmt, &pSQL) != SQLITE_OK)
 		{
-			//n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+			Messages += "SQLite error: ";
+			Messages += sqlite3_errmsg(SQLiteHandle);
+			Messages += '\n';
 			FAIL;
 		}
 
@@ -251,7 +260,9 @@ bool OpenDB(const char* pURI)
 	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL); //"Nebula2");
 	if (Result != SQLITE_OK)
 	{
-		//n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+		Messages += "SQLite error: ";
+		Messages += sqlite3_errmsg(SQLiteHandle);
+		Messages += '\n';
 		SQLiteHandle = NULL;
 		FAIL;
 	}
@@ -259,7 +270,9 @@ bool OpenDB(const char* pURI)
 	if (sqlite3_busy_timeout(SQLiteHandle, 100) != SQLITE_OK ||
 		sqlite3_extended_result_codes(SQLiteHandle, 1) != SQLITE_OK)
 	{
-		//n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+		Messages += "SQLite error: ";
+		Messages += sqlite3_errmsg(SQLiteHandle);
+		Messages += '\n';
 		CloseDB();
 		FAIL;
 	}
@@ -379,7 +392,9 @@ void CloseDB()
 	{
 		if (sqlite3_close(SQLiteHandle) != SQLITE_OK)
 		{
-			//n_msg(VL_ERROR, "SQLite error: %s\n", sqlite3_errmsg(SQLiteHandle));
+			Messages += "SQLite error: ";
+			Messages += sqlite3_errmsg(SQLiteHandle);
+			Messages += '\n';
 		}
 		SQLiteHandle = NULL;
 	}

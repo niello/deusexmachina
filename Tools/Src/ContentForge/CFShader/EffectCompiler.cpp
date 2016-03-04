@@ -158,14 +158,14 @@ bool LoadShaderMetadataByObjID(U32 ID,
 	}
 
 	U32 Target;
-	CSM30ShaderMeta D3D9Meta;
-	CD3D11ShaderMeta D3D11Meta;
-	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, D3D9Meta, D3D11Meta)) FAIL;
+	CSM30ShaderMeta* pD3D9Meta;
+	CD3D11ShaderMeta* pD3D11Meta;
+	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pD3D9Meta, pD3D11Meta)) FAIL;
 
-	if (Target >= 0x0400)
-		pOutD3D11Meta = &D3D11MetaCache.Add(ID, D3D11Meta);
-	else
-		pOutD3D9Meta = &D3D9MetaCache.Add(ID, D3D9Meta);
+	if (Target >= 0x0400) pOutD3D11Meta = &D3D11MetaCache.Add(ID, *pD3D11Meta);
+	else pOutD3D9Meta = &D3D9MetaCache.Add(ID, *pD3D9Meta);
+
+	DLLFreeShaderMetadata(pD3D9Meta, pD3D11Meta);
 
 	FAIL; // Not found in a cache
 }
@@ -329,9 +329,123 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 		VariationDefines += StringUtils::FromInt(LightCount);
 
 		U32 ObjID, SigID;
-		bool Result = DLLCompileShader(FullSrcPath.CStr(), (EShaderType)ShaderType, (U32)Target, EntryPoint.CStr(), VariationDefines.CStr(), Debug, ObjID, SigID);
+		int Result = DLLCompileShader(FullSrcPath.CStr(), (EShaderType)ShaderType, (U32)Target, EntryPoint.CStr(), VariationDefines.CStr(), Debug, ObjID, SigID);
 
-		RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] = Result ? ObjID : 0;
+		CString ShortSrcPath(FullSrcPath);
+		ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
+
+		if (Result == DEM_SHADER_COMPILER_SUCCESS)
+		{
+			RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] = ObjID;
+
+			n_msg(VL_DETAILS, "  Shader:   %s -> ID %d\n", ShortSrcPath.CStr(), ObjID);
+			if (SigID != 0)
+			{
+				n_msg(VL_DETAILS, "  InputSig: %s -> ID %d\n", ShortSrcPath.CStr(), SigID);
+			}
+
+			const char* pMessages = DLLGetLastOperationMessages();
+			if (pMessages) n_msg(VL_WARNING, pMessages);
+		}
+		else if (Result == DEM_SHADER_COMPILER_COMPILE_ERROR)
+		{
+			n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n", ShortSrcPath.CStr(), DLLGetLastOperationMessages());
+		}
+		else if (Result == DEM_SHADER_COMPILER_REFLECTION_ERROR)
+		{
+			n_msg(VL_ERROR, "	Shader '%s' reflection error\n", ShortSrcPath.CStr());
+		}
+		else if (Result == DEM_SHADER_COMPILER_IO_WRITE_ERROR)
+		{
+			n_msg(VL_ERROR, "	Shader '%s' result saving to HDD failed\n", ShortSrcPath.CStr());
+		}
+		else if (Result == DEM_SHADER_COMPILER_DB_ERROR)
+		{
+			n_msg(VL_ERROR, "	Shader '%s' database operation failed\n", ShortSrcPath.CStr());
+		}
+		else if (Result >= DEM_SHADER_COMPILER_ERROR)
+		{
+			n_msg(VL_ERROR, "	Shader '%s' compilation failed because of internal error in a DEMShaderCompiler DLL\n", ShortSrcPath.CStr());
+			
+			const char* pMessages = DLLGetLastOperationMessages();
+			if (pMessages) n_msg(VL_ERROR, pMessages);
+		}
+
+		/* // Metadata tracing:
+
+		//SM3.0
+
+		n_msg(VL_DETAILS, "    CBuffer: %s\n", Obj.Name.CStr());
+
+		const char* pRegisterSetName = NULL;
+		switch (Obj.RegisterSet)
+		{
+			case RS_Float4:	pRegisterSetName = "float4"; break;
+			case RS_Int4:	pRegisterSetName = "int4"; break;
+			case RS_Bool:	pRegisterSetName = "bool"; break;
+		};
+		if (Obj.ElementCount > 1)
+		{
+			n_msg(VL_DETAILS, "    Const: %s[%d], %s %d to %d\n",
+					Obj.Name.CStr(), Obj.ElementCount, pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
+		}
+		else
+		{
+			n_msg(VL_DETAILS, "    Const: %s, %s %d to %d\n",
+					Obj.Name.CStr(), pRegisterSetName, Obj.RegisterStart, Obj.RegisterStart + Obj.ElementRegisterCount * Obj.ElementCount - 1);
+		}
+
+		n_msg(VL_DETAILS, "    Texture: %s, slot %d\n", Obj.Name.CStr(), Obj.Register);
+
+		if (Obj.RegisterCount > 1)
+		{
+			n_msg(VL_DETAILS, "    Sampler: %s[%d], slots %d to %d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart, Obj.RegisterStart + Obj.RegisterCount - 1);
+		}
+		else
+		{
+			n_msg(VL_DETAILS, "    Sampler: %s, slot %d\n", Obj.Name.CStr(), Obj.RegisterStart);
+		}
+
+		// SM4.0+
+
+		const char* pBufferTypeStr = "CBuffer";
+		const char* pSlotTypeStr = "c";
+		UPTR Register = Obj.Register & D3D11Buffer_RegisterMask;
+		if (Obj.Register & D3D11Buffer_Texture)
+		{
+			pBufferTypeStr = "TBuffer";
+			pSlotTypeStr = "t";
+		}
+		else if (Obj.Register & D3D11Buffer_Structured)
+		{
+			pBufferTypeStr = "SBuffer";
+			pSlotTypeStr = "t";
+		}
+		n_msg(VL_DETAILS, "    %s: %s, %d slot(s) from %s%d\n", pBufferTypeStr, Obj.Name.CStr(), 1, pSlotTypeStr, Register);
+
+		const char* pTypeString = "<unsupported-type>";
+		switch (Obj.Type)
+		{
+			case D3D11Const_Bool:	pTypeString = "bool"; break;
+			case D3D11Const_Int:	pTypeString = "int"; break;
+			case D3D11Const_Float:	pTypeString = "float"; break;
+			case D3D11Const_Struct:	pTypeString = "struct"; break;
+		}
+		if (Obj.ElementCount > 1)
+		{
+			n_msg(VL_DETAILS, "      Const: %s %s[%d], offset %d, size %d\n",
+					pTypeString, Obj.Name.CStr(), Obj.ElementCount, Obj.Offset, Obj.ElementSize * Obj.ElementCount);
+		}
+		else
+		{
+			n_msg(VL_DETAILS, "      Const: %s %s, offset %d, size %d\n",
+					pTypeString, Obj.Name.CStr(), Obj.Offset, Obj.ElementSize);
+		}
+		
+		n_msg(VL_DETAILS, "    Texture: %s, %d slot(s) from t%d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart);
+		
+		n_msg(VL_DETAILS, "    Sampler: %s, %d slot(s) from s%d\n", Obj.Name.CStr(), Obj.RegisterCount, Obj.RegisterStart);
+		*/
 	}
 
 	OK;
