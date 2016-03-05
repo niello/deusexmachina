@@ -329,15 +329,16 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 	Data::PParams UIDesc = DataSrv->LoadHRD(pSrcFilePath, false);
 	if (UIDesc.IsNullPtr()) OK; // No UI desc
 
-	if (ExportResources)
+	Data::PParams ResourceGroupsDesc;
+	if (UIDesc->Get<Data::PParams>(ResourceGroupsDesc, CStrID("ResourceGroups")))
 	{
-		Data::PParams ResourceGroupsDesc;
-		if (UIDesc->Get<Data::PParams>(ResourceGroupsDesc, CStrID("ResourceGroups")))
+		for (UPTR i = 0; i < ResourceGroupsDesc->GetCount(); ++i)
 		{
-			for (UPTR i = 0; i < ResourceGroupsDesc->GetCount(); ++i)
+			const Data::CParam& RsrcGroup = ResourceGroupsDesc->Get(i);
+			const CString& DestDir = RsrcGroup.GetValue<CString>();
+
+			if (ExportResources)
 			{
-				const Data::CParam& RsrcGroup = ResourceGroupsDesc->Get(i);
-				const CString& DestDir = RsrcGroup.GetValue<CString>();
 				CString SrcDir = "Src" + DestDir;
 
 				if (!IOSrv->DirectoryExists(SrcDir))
@@ -347,9 +348,9 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 				}
 
 				BatchToolInOut(CStrID("CFCopy"), SrcDir, DestDir);
-
-				if (!IsFileAdded(DestDir)) FilesToPack.InsertSorted(DestDir);
 			}
+
+			if (!IsFileAdded(DestDir)) FilesToPack.InsertSorted(DestDir);
 		}
 	}
 

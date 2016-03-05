@@ -21,16 +21,15 @@
 #define ERR_IO_WRITE				7
 #define ERR_INVALID_DATA			8
 
-#define SEP_LINE "--------------------------------------------------------------------------------"
+#define SEP_LINE "------------------------------------------------------------------------------\n"
 
 // Verbosity levels
-#define VL_NEVER	0
+#define VL_ALWAYS	0	// Message is printed always
 #define VL_ERROR	1
 #define VL_WARNING	2
 #define VL_INFO		3
 #define VL_DETAILS	4
 #define VL_DEBUG	5
-#define VL_ALWAYS	999
 
 #define n_msg(Verbosity, String, ...) { if (Verbose >= Verbosity) Sys::Log(String, __VA_ARGS__); }
 

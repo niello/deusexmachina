@@ -9,7 +9,7 @@ bool					ExportDescs;
 bool					ExportResources;
 bool					ExportShaders;
 int						Verbose = VL_ERROR;
-int						ExternalVerbosity = VL_ALWAYS;
+int						ExternalVerbosity = VL_ALWAYS; // Only always printed messages by default
 
 //!!!control duplicates on add! or sort before packing and skip dups!
 // Can optimize by calculating nearest index:
@@ -53,13 +53,14 @@ int main(int argc, const char** argv)
 	BuildDir.Trim(" \r\n\t\\/", false);
 	if (BuildDir.IsEmpty()) EXIT_APP_FAIL;
 
-	n_msg(VL_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2013\n"SEP_LINE"\n");
+	n_msg(VL_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2015\n"SEP_LINE"\n");
 
 	IO::CIOServer IOServer;
+	CString WorkingDir = IOSrv->GetAssign("Home"); //???some GetWorkingDirectory() method?!
 	ProjDir = IOSrv->ResolveAssigns(ProjDir);
 	BuildDir = IOSrv->ResolveAssigns(BuildDir);
-	IOSrv->SetAssign("Proj", ProjDir);
-	IOSrv->SetAssign("Build", BuildDir);
+	IOSrv->SetAssign("Proj", PathUtils::GetAbsolutePath(WorkingDir, ProjDir));
+	IOSrv->SetAssign("Build", PathUtils::GetAbsolutePath(WorkingDir, BuildDir));
 
 	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
 
@@ -183,7 +184,7 @@ int main(int argc, const char** argv)
 	}
 	while (Browser.NextCurrDirEntry());
 
-	Sys::Log("\n"SEP_LINE"Processing entity templates:\n");
+	Sys::Log("\n"SEP_LINE"Processing entity templates:\n"SEP_LINE);
 
 	if (!ProcessEntityTplsInFolder(IOSrv->ResolveAssigns("SrcEntityTpls:"), IOSrv->ResolveAssigns("EntityTpls:")))
 	{
@@ -268,7 +269,6 @@ int main(int argc, const char** argv)
 
 	Sys::Log("\n"SEP_LINE"Running external tools:\n"SEP_LINE);
 
-	CString WorkingDir = IOSrv->GetAssign("Home");
 	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
 	if (ExportShaders)

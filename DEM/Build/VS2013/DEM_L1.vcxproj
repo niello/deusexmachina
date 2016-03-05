@@ -468,6 +468,7 @@
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrSkin.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\PathUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp" />

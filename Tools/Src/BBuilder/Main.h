@@ -11,7 +11,7 @@ typedef CDict<CStrID, CArray<CString>> CToolFileLists;
 typedef CHashTable<CString, Data::CFourCC> CPropCodeMap;
 
 #define TOOL_NAME	"BBuilder"
-#define VERSION		"3.0.1"
+#define VERSION		"3.0.2"
 
 #define EXIT_APP_FAIL	return ExitApp(false, WaitKey)
 #define EXIT_APP_OK		return ExitApp(true, WaitKey)

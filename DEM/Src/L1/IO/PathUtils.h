@@ -9,6 +9,11 @@
 namespace PathUtils
 {
 
+// Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
+// E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
+// All '\' slashes in a path must be converted to '/' before calling this function.
+CString CollapseDots(const char* pPath, UPTR PathLength = 0);
+
 // Get a pointer to the last directory separator.
 //!!!use FindLastIndex(pCharSet)!
 inline const char* GetLastDirSeparator(const char* pPath, UPTR PathLen = 0)
@@ -144,17 +149,17 @@ inline CString ExtractToLastSlash(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-// Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
-// E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
-inline CString CollapseDots(const char* pPath)
-{
-	return CString(pPath);
-}
-//---------------------------------------------------------------------
-
+// If relative path contains ':' it is considered absolute, and pCurrentPath is not used
 inline CString GetAbsolutePath(const char* pCurrentPath, const char* pRelativePath)
 {
-	return CString(pRelativePath);
+	if (!pCurrentPath || !pRelativePath || !*pCurrentPath || !*pRelativePath) return CString(pRelativePath);
+
+	if (strchr(pRelativePath, ':')) return CollapseDots(pRelativePath);
+
+	CString AbsPath(pCurrentPath);
+	EnsurePathHasEndingDirSeparator(AbsPath);
+	AbsPath += (*pRelativePath == '/') ? (pRelativePath + 1) : pRelativePath;
+	return CollapseDots(AbsPath.CStr(), AbsPath.GetLength());
 }
 //---------------------------------------------------------------------
 

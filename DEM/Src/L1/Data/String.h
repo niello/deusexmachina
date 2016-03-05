@@ -46,6 +46,7 @@ public:
 	//Remove idx + size / char / charset / substring
 	//SetLength(UPTR NewLength)
 	void			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true);
+	void			TruncateRight(UPTR CharCount);
 	CString			SubString(UPTR Start, UPTR Size = 0) const;
 
 	void			Replace(char CurrChar, char NewChar);
@@ -124,8 +125,8 @@ inline CString::CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeS
 	}
 	else
 	{
-		pString = NULL;
-		MaxLength = 0;
+		pString = PreallocatedFreeSpace ? (char*)n_malloc(PreallocatedFreeSpace + 1) : NULL;
+		MaxLength = PreallocatedFreeSpace;
 		Length = 0;
 	}
 }
@@ -179,6 +180,13 @@ inline void CString::Add(char Chr)
 	Reserve(1);
 	pString[Length] = Chr;
 	pString[++Length] = 0;
+}
+//---------------------------------------------------------------------
+
+inline void CString::TruncateRight(UPTR CharCount)
+{
+	Length = n_max(Length - CharCount, 0);
+	pString[Length] = 0;
 }
 //---------------------------------------------------------------------
 

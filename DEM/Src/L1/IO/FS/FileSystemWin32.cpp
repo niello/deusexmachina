@@ -170,7 +170,7 @@ bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
 		if (!::GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
 		CString PathToExe(pRawPath);
 		PathToExe.Replace('\\', '/');
-		OutPath = PathUtils::ExtractDirName(PathToExe);
+		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe));
 	}
 	else
 	{
