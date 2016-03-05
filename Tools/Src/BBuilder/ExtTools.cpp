@@ -26,24 +26,25 @@ int RunExternalToolAsProcess(CStrID Name, char* pCmdLine, const char* pWorkingDi
 	Path.Replace('/', '\\');
 
 	PROCESS_INFORMATION Info;
-	RtlZeroMemory(&Info, sizeof(Info));
+	::RtlZeroMemory(&Info, sizeof(Info));
 
 	STARTUPINFO SUI;
-	RtlZeroMemory(&SUI, sizeof(SUI));
+	::RtlZeroMemory(&SUI, sizeof(SUI));
 	SUI.cb = sizeof(SUI);
 	SUI.dwFlags = STARTF_FORCEOFFFEEDBACK; // | STARTF_USESTDHANDLES
 	//SUI.hStdOutput
 
-	if (CreateProcess(Path.CStr(), pCmdLine, NULL, NULL, FALSE, 0, NULL, pWorkingDir, &SUI, &Info) == FALSE) return -1;
+	if (::CreateProcess(Path.CStr(), pCmdLine, NULL, NULL, FALSE, 0, NULL, pWorkingDir, &SUI, &Info) == FALSE) return -1;
 
 	int Result = -1;
-	WaitForSingleObject(Info.hProcess, INFINITE);
+	::WaitForSingleObject(Info.hProcess, INFINITE);
 
-	GetExitCodeProcess(Info.hProcess, (DWORD*)&Result);
+	::GetExitCodeProcess(Info.hProcess, (DWORD*)&Result);
 
-	CloseHandle(Info.hThread);
-	CloseHandle(Info.hProcess);
+	::CloseHandle(Info.hThread);
+	::CloseHandle(Info.hProcess);
 
+	if (Result != SUCCESS) n_msg(VL_ERROR, "Tool %s exited with code %d\n", Name.CStr(), Result);
 	return Result;
 }
 //---------------------------------------------------------------------

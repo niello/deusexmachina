@@ -317,9 +317,9 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 	if (ShaderSection->Get(Defines, CStrID("Defines"))) Defines.Trim();
 
 	SrcPath = IOSrv->ResolveAssigns(SrcPath);
-	SrcPath.Replace(RootPath, "");
+	SrcPath.Replace(RootPath, ""); //???need? may unintentionally replace part of the path where the hierarchy is the same
 
-	CString FullSrcPath = RootPath + SrcPath;
+	CString FullSrcPath = PathUtils::GetAbsolutePath(IOSrv->GetAssign("Home"), RootPath + SrcPath);
 
 	for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 	{

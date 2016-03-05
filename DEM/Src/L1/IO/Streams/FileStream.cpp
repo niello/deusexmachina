@@ -7,8 +7,8 @@ namespace IO
 
 bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert(!IsOpen() && !hFile && FS.IsValidPtr());
-	if (!FileName.IsValid()) FAIL;
+	n_assert(!IsOpen() && !hFile);
+	if (!FileName.IsValid() || FS.IsNullPtr()) FAIL;
 	if (!CStream::Open(Mode, Pattern)) FAIL;
 	hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
 	if (!hFile) FAIL;

@@ -281,6 +281,8 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
+		ObjectFileID = Rec.ObjFile.ID;
+		InputSignatureFileID = Rec.InputSigFile.ID;
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 

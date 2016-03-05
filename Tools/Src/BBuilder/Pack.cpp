@@ -62,11 +62,11 @@ bool AddDirectoryToTOC(CString DirName, IO::CNpkTOC& TOC) //, int& Offset)
 				CString FullFilePath = FullDirName + Browser.GetCurrEntryName();
 				FilePart.ToLower();
 
-				IO::CFileStream File(FullFilePath);
-				if (File.Open(IO::SAM_READ))
+				IO::PStream File = IOSrv->CreateStream(FullFilePath);
+				if (File->Open(IO::SAM_READ))
 				{
-					U64 FileLength = File.GetSize();
-					File.Close();
+					U64 FileLength = File->GetSize();
+					File->Close();
 					TOC.AddFileEntry(FilePart.CStr(), 0, (UPTR)FileLength); //Offset, FileLength);
 					//Offset += FileLength;
 				}
@@ -95,48 +95,48 @@ bool AddDirectoryToTOC(CString DirName, IO::CNpkTOC& TOC) //, int& Offset)
 }
 //---------------------------------------------------------------------
 
-void WriteTOCEntry(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, int& Offset)
+void WriteTOCEntry(IO::CStream& Stream, IO::CNpkTOCEntry* pTOCEntry, U64& Offset)
 {
 	n_assert(pTOCEntry);
 
 	if (pTOCEntry->GetType() == IO::FSE_DIR)
 	{
-		File.Put<int>('DIR_');
-		File.Put<int>(sizeof(short) + pTOCEntry->GetName().GetLength());
-		File.Put<U16>((U16)pTOCEntry->GetName().GetLength());
-		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().GetLength());
+		Stream.Put<U32>('DIR_');
+		Stream.Put<U32>(sizeof(short) + pTOCEntry->GetName().GetLength());
+		Stream.Put<U16>((U16)pTOCEntry->GetName().GetLength());
+		Stream.Write(pTOCEntry->GetName(), pTOCEntry->GetName().GetLength());
 
 		IO::CNpkTOCEntry::CIterator ItSubEntry = pTOCEntry->GetEntryIterator();
 		while (ItSubEntry)
 		{
-			WriteTOCEntry(File, *ItSubEntry, Offset);
+			WriteTOCEntry(Stream, *ItSubEntry, Offset);
 			++ItSubEntry;
 		}
 
-		File.Put<int>('DEND');
-		File.Put<int>(0);
+		Stream.Put<U32>('DEND');
+		Stream.Put<U32>(0);
 	}
 	else if (pTOCEntry->GetType() == IO::FSE_FILE)
 	{
-		File.Put<int>('FILE');
-		File.Put<int>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetName().GetLength());
+		Stream.Put<U32>('FILE');
+		Stream.Put<U32>(2 * sizeof(int) + sizeof(short) + pTOCEntry->GetName().GetLength());
 
 		// CHashTable iterator doesn't keep insertion order due to hash table nature, so offset can't
 		// be calculated until all the TOC is formed. Now we can calculate real offset, which is
 		// order-dependent, but TOC entries take only R/O access to the offset stored. So we ignore this
 		// field at all and calculate real offset here.
 		//File.Put<int>(pTOCEntry->GetFileOffset());
-		File.Put<int>(Offset);
+		Stream.Put<U32>((U32)Offset);
 		Offset += pTOCEntry->GetFileLength();
 
-		File.Put<int>(pTOCEntry->GetFileLength());
-		File.Put<U16>((U16)pTOCEntry->GetName().GetLength());
-		File.Write(pTOCEntry->GetName(), pTOCEntry->GetName().GetLength());
+		Stream.Put<U32>(pTOCEntry->GetFileLength());
+		Stream.Put<U16>((U16)pTOCEntry->GetName().GetLength());
+		Stream.Write(pTOCEntry->GetName(), pTOCEntry->GetName().GetLength());
 	}
 }
 //---------------------------------------------------------------------
 
-bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, U64 DataOffset, U64& DataSize)
+bool WriteEntryData(IO::CStream& Stream, IO::CNpkTOCEntry* pTOCEntry, U64 DataOffset, U64& DataSize)
 {
 	n_assert(pTOCEntry);
 
@@ -145,7 +145,7 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, U64 Data
 		IO::CNpkTOCEntry::CIterator ItSubEntry = pTOCEntry->GetEntryIterator();
 		while (ItSubEntry)
 		{
-			if (!WriteEntryData(File, *ItSubEntry, DataOffset, DataSize)) FAIL;
+			if (!WriteEntryData(Stream, *ItSubEntry, DataOffset, DataSize)) FAIL;
 			++ItSubEntry;
 		}
 	}
@@ -160,7 +160,7 @@ bool WriteEntryData(IO::CFileStream& File, IO::CNpkTOCEntry* pTOCEntry, U64 Data
 		Data::CBuffer Buffer;
 		if (IOSrv->LoadFileToBuffer(FullFileName, Buffer))
 		{
-			if (File.Write(Buffer.GetPtr(), Buffer.GetSize()) != pTOCEntry->GetFileLength())
+			if (Stream.Write(Buffer.GetPtr(), Buffer.GetSize()) != pTOCEntry->GetFileLength())
 			{
 				Sys::Log("Error writing %s to NPK!\n", FullFileName.CStr());
 				FAIL;
@@ -261,11 +261,11 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 		}
 		else
 		{
-			IO::CFileStream File(FullFilePath);
-			if (File.Open(IO::SAM_READ))
+			IO::PStream File = IOSrv->CreateStream(FullFilePath);
+			if (File->Open(IO::SAM_READ))
 			{
-				U64 FileLength = File.GetSize();
-				File.Close();
+				U64 FileLength = File->GetSize();
+				File->Close();
 				TOC.AddFileEntry(FilePart.CStr(), 0, (UPTR)FileLength); //Offset, FileLength);
 				//Offset += FileLength;
 			}
@@ -283,38 +283,38 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 	n_msg(VL_INFO, "Writing NPK...\n");
 
 	IOSrv->CreateDirectory(PathUtils::ExtractDirName(PkgFileName));
-	IO::CFileStream File(PkgFileName);
-	if (!File.Open(IO::SAM_WRITE))
+	IO::PStream File = IOSrv->CreateStream(PkgFileName);
+	if (!File->Open(IO::SAM_WRITE))
 	{
 		n_msg(VL_ERROR, "Could not open file '%s' for writing!\n", PkgFileName.CStr());
 		FAIL;
 	}
 
-	File.Put<U32>('NPK0');	// Magic
-	File.Put<U32>(4);		// Block length
-	File.Put<U32>(0);		// DataBlockStart (at 8, fixed later)
+	File->Put<U32>('NPK0');	// Magic
+	File->Put<U32>(4);		// Block length
+	File->Put<U32>(0);		// DataBlockStart (at 8, fixed later)
 
 	n_msg(VL_DETAILS, " - Writing TOC...\n");
 
-	int Offset = 0;
-	WriteTOCEntry(File, TOC.GetRootEntry(), Offset);
+	U64 Offset = 0;
+	WriteTOCEntry(*File, TOC.GetRootEntry(), Offset);
 
 	n_msg(VL_DETAILS, " - Writing data...\n");
 	
-	U64 DataBlockStart = File.GetPosition();
+	U64 DataBlockStart = File->GetPosition();
 	U64 DataOffset = DataBlockStart + 4;
 
-	File.Put<U32>('DATA');
-	File.Put<U32>(0);		// DataSize (at DataOffset, fixed later)
+	File->Put<U32>('DATA');
+	File->Put<U32>(0);		// DataSize (at DataOffset, fixed later)
 
 	U64 DataSize = 0;
-	if (WriteEntryData(File, TOC.GetRootEntry(), DataOffset + 4, DataSize))
+	if (WriteEntryData(*File, TOC.GetRootEntry(), DataOffset + 4, DataSize))
 	{
-		File.Seek(8, IO::Seek_Begin);
-		File.Put<U32>(DataBlockStart);
-		File.Seek(DataOffset, IO::Seek_Begin);
-		File.Put<U32>(DataSize);
-		File.Seek(0, IO::Seek_End);
+		File->Seek(8, IO::Seek_Begin);
+		File->Put<U32>((U32)DataBlockStart);
+		File->Seek(DataOffset, IO::Seek_Begin);
+		File->Put<U32>((U32)DataSize);
+		File->Seek(0, IO::Seek_End);
 	}
 	else
 	{

@@ -58,7 +58,7 @@ bool LuaCompile(char* pData, U32 Size, const char* Name, const char* pFileOut)
 	IO::PStream Out = IOSrv->CreateStream(pFileOut);
 	if (Out->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 	{
-		Result = lua_dump(l, SaveLua, (IO::CStream*)&Out);
+		Result = lua_dump(l, SaveLua, (IO::CStream*)Out);
 		Out->Close();
 	}
 

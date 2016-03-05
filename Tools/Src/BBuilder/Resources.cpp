@@ -3,6 +3,7 @@
 #include <IO/IOServer.h>
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
+#include <DEMShaderCompilerDLL.h>
 
 //???get ID & dest from desc or from here? use some parameter in desc pathes?
 bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileName)
@@ -36,7 +37,7 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 			char CmdLine[MAX_CMDLINE_CHARS];
 			sprintf_s(CmdLine, "-v %d -patch %d -lod %d -in %s -out %s",
 				ExternalVerbosity, PatchSize, LODCount, InStr.CStr(), OutStr.CStr());
-			int ExitCode = RunExternalToolAsProcess(Tool, CmdLine);
+			int ExitCode = RunExternalToolAsProcess(Tool, CmdLine, IOSrv->GetAssign("Home").CStr());
 			if (ExitCode != 0)
 			{
 				n_msg(VL_ERROR, "External tool %s execution failed\n", Tool.CStr());
@@ -75,5 +76,41 @@ bool ProcessFrameShader(const Data::CParams& Desc)
 	//!!!Parse for textures!
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutShaderID)
+{
+	CString SrcPath;
+	Desc.Get(SrcPath, CStrID("In"));
+	CStrID Type = Desc.Get(CStrID("Type"), CStrID::Empty);
+	CString EntryPoint;
+	Desc.Get(EntryPoint, CStrID("Entry"));
+	int Target = 0;
+	Desc.Get(Target, CStrID("Target"));
+	
+	CString Defines;
+	if (Desc.Get(Defines, CStrID("Defines"))) Defines.Trim();
+
+	EShaderType ShaderType;
+	if (Type == CStrID("Vertex")) ShaderType = ShaderType_Vertex;
+	else if (Type == CStrID("Pixel")) ShaderType = ShaderType_Pixel;
+	else if (Type == CStrID("Geometry")) ShaderType = ShaderType_Geometry;
+	else if (Type == CStrID("Hull")) ShaderType = ShaderType_Hull;
+	else if (Type == CStrID("Domain")) ShaderType = ShaderType_Domain;
+	else FAIL;
+
+	SrcPath = PathUtils::GetAbsolutePath(IOSrv->GetAssign("Home"), IOSrv->ResolveAssigns(SrcPath));
+
+	U32 ObjID, SigID;
+	int Result = DLLCompileShader(SrcPath.CStr(), ShaderType, (U32)Target, EntryPoint.CStr(), Defines.CStr(), Debug, ObjID, SigID);
+
+	if (Result == DEM_SHADER_COMPILER_SUCCESS)
+	{
+		OutShaderID = ObjID;
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------

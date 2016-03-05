@@ -55,13 +55,15 @@ bool CFileSystemWin32::CopyFile(const char* pSrcPath, const char* pDestPath)
 #define CopyFile  CopyFileA
 #endif
 
-	// Make the file writable if it is not
+	// Make the file writable if it exist and is read-only
 	DWORD FileAttrs = ::GetFileAttributes(pDestPath);
-	if (FileAttrs == INVALID_FILE_ATTRIBUTES) FAIL;
-	if (FileAttrs & FILE_ATTRIBUTE_READONLY)
+	if (FileAttrs != INVALID_FILE_ATTRIBUTES)
 	{
-		FileAttrs &= ~FILE_ATTRIBUTE_READONLY;
-		if (::SetFileAttributes(pDestPath, FileAttrs) == FALSE) FAIL;
+		if (FileAttrs & FILE_ATTRIBUTE_READONLY)
+		{
+			FileAttrs &= ~FILE_ATTRIBUTE_READONLY;
+			if (::SetFileAttributes(pDestPath, FileAttrs) == FALSE) FAIL;
+		}
 	}
 
 	return ::CopyFile(pSrcPath, pDestPath, FALSE) != 0;

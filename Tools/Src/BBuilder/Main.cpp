@@ -209,9 +209,6 @@ int main(int argc, const char** argv)
 
 	Sys::Log("\n"SEP_LINE"Processing system data and resources:\n"SEP_LINE);
 
-	if (IOSrv->DirectoryExists("Export:cegui") && !IsFileAdded(CString("Export:cegui")))
-		FilesToPack.InsertSorted(CString("Export:cegui"));
-
 	if (!ProcessUISettingsDesc(CString("Src:UI/UI.hrd"), CString("Export:UI/UI.prm")))
 	{
 		n_msg(VL_ERROR, "Error procesing UI settings desc!\n");
@@ -271,15 +268,16 @@ int main(int argc, const char** argv)
 
 	Sys::Log("\n"SEP_LINE"Running external tools:\n"SEP_LINE);
 
-	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
-	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity) != 0) EXIT_APP_FAIL;
+	CString WorkingDir = IOSrv->GetAssign("Home");
+	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
+	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
 	if (ExportShaders)
 	{
 		//CString ShdRoot = IOSrv->ResolveAssigns("SrcShaders:");
 		//if (ShdRoot.FindIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
 		//CString ExtraCmdLine("-o 3 -root ");
 		//ExtraCmdLine += ShdRoot;
-		//if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr()) != 0) EXIT_APP_FAIL;
+		//if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr(), WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
 	}
 
 	Sys::Log("\n"SEP_LINE"Packing:\n"SEP_LINE);

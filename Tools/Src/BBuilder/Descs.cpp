@@ -7,6 +7,7 @@
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
+#include <DEMShaderCompilerDLL.h>
 
 void ConvertPropNamesToFourCC(Data::PDataArray Props)
 {
@@ -302,11 +303,11 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		IO::CFileStream File(ExportFilePath);
-		if (!File.Open(IO::SAM_WRITE)) FAIL;
-		IO::CBinaryWriter Writer(File);
+		IO::PStream File = IOSrv->CreateStream(ExportFilePath);
+		if (!File->Open(IO::SAM_WRITE)) FAIL;
+		IO::CBinaryWriter Writer(*File);
 		Writer.WriteParams(*Desc, *DataSrv->GetDataScheme(CStrID("SceneNode")));
-		File.Close();
+		File->Close();
 	}
 
 	FilesToPack.InsertSorted(ExportFilePath);
@@ -317,21 +318,87 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 
 bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath)
 {
-	NOT_IMPLEMENTED;
+	//???where to define?
+	bool CompileDebugShaders = false;
 
 	// Some descs can be loaded twice or more from different IO path assigns, avoid it
 	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
 
 	if (IsFileAdded(RealExportFilePath)) OK;
 
+	Data::PParams UIDesc = DataSrv->LoadHRD(pSrcFilePath, false);
+	if (UIDesc.IsNullPtr()) OK; // No UI desc
+
+	if (ExportResources)
+	{
+		Data::PParams ResourceGroupsDesc;
+		if (UIDesc->Get<Data::PParams>(ResourceGroupsDesc, CStrID("ResourceGroups")))
+		{
+			for (UPTR i = 0; i < ResourceGroupsDesc->GetCount(); ++i)
+			{
+				const Data::CParam& RsrcGroup = ResourceGroupsDesc->Get(i);
+				const CString& DestDir = RsrcGroup.GetValue<CString>();
+				CString SrcDir = "Src" + DestDir;
+
+				if (!IOSrv->DirectoryExists(SrcDir))
+				{
+					n_msg(VL_ERROR, "UI resource directory '%s' referenced in '%s' doesn't exist\n", SrcDir.CStr(), pSrcFilePath);
+					FAIL;
+				}
+
+				BatchToolInOut(CStrID("CFCopy"), SrcDir, DestDir);
+
+				if (!IsFileAdded(DestDir)) FilesToPack.InsertSorted(DestDir);
+			}
+		}
+	}
+
+	// We can't export UI settings desc without exporting UI shaders, so these shaders ignore ExportShaders flag
 	if (ExportDescs)
 	{
-		IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
-		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(pSrcFilePath, false))) FAIL;
-	}
-	FilesToPack.InsertSorted(RealExportFilePath);
+		Data::PParams ShadersDesc;
+		if (UIDesc->Get<Data::PParams>(ShadersDesc, CStrID("Shaders")))
+		{
+#ifdef _DEBUG
+			CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
+#else
+			CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
+#endif
+			CString DBFilePath = IOSrv->ResolveAssigns("SrcShaders:ShaderDB.db3");
+			CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
+			if (!InitDEMShaderCompilerDLL(DLLPath, DBFilePath, OutputDir)) FAIL;
 
-	//!!!compile shaders and get IDs!
+			for (UPTR i = 0; i < ShadersDesc->GetCount(); ++i)
+			{
+				Data::CParam& GfxAPIPrm = ShadersDesc->Get(i);
+				Data::PParams GfxAPIDesc = GfxAPIPrm.GetValue<Data::PParams>();
+				for (UPTR j = 0; j < GfxAPIDesc->GetCount(); ++j)
+				{
+					Data::CParam& Prm = GfxAPIDesc->Get(j);
+					Data::PParams ShaderSection = Prm.GetValue<Data::PParams>();
+
+					U32 ShaderID;
+					if (!ProcessShaderResourceDesc(*ShaderSection, CompileDebugShaders, ShaderID))
+					{
+						TermDEMShaderCompilerDLL();
+						FAIL;
+					}
+
+					// Substitute shader desc with a compiled shader ID
+					Prm.SetValue<int>(ShaderID);
+
+					n_msg(VL_DETAILS, "UI shader for %s: %s -> ID %d\n", GfxAPIPrm.GetName().CStr(), ShaderSection->Get<CString>(CStrID("In")).CStr(), ShaderID);
+				}
+			}
+
+			if (!TermDEMShaderCompilerDLL()) FAIL;
+
+			IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
+			if (!DataSrv->SavePRM(RealExportFilePath, UIDesc)) FAIL;
+		}
+	}
+
+	FilesToPack.InsertSorted(RealExportFilePath);
 
 	OK;
 }
@@ -424,9 +491,9 @@ bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePat
 
 	if (SkinInfo.GetCount())
 	{
-		IO::CFileStream File(ExportFilePath);
-		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) FAIL;
-		IO::CBinaryWriter Writer(File);
+		IO::PStream File = IOSrv->CreateStream(ExportFilePath);
+		if (!File->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) FAIL;
+		IO::CBinaryWriter Writer(*File);
 
 		Writer.Write<U32>('SKIF');	// Magic
 		Writer.Write<U32>(1);		// Format version
@@ -450,7 +517,7 @@ bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePat
 			Writer.Write(BoneInfo.BoneID);
 		}
 
-		File.Close();
+		File->Close();
 
 		FilesToPack.InsertSorted(ExportFilePath);
 	}
@@ -470,7 +537,7 @@ bool ProcessEntity(const Data::CParams& EntityDesc)
 	CString AttrValue;
 
 	if (Attrs->Get<CString>(AttrValue, CStrID("UIDesc")))
-		if (!ProcessDesc("SrcUI:" + AttrValue + ".hrd", "UI:" + AttrValue + ".prm"))
+		if (!ProcessDesc("SrcGameUI:" + AttrValue + ".hrd", "GameUI:" + AttrValue + ".prm"))
 		{
 			n_msg(VL_ERROR, "Error processing UI desc '%s'\n", AttrValue.CStr());
 			FAIL;

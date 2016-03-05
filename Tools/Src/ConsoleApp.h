@@ -24,12 +24,13 @@
 #define SEP_LINE "--------------------------------------------------------------------------------"
 
 // Verbosity levels
-#define VL_ALWAYS	0
+#define VL_NEVER	0
 #define VL_ERROR	1
 #define VL_WARNING	2
 #define VL_INFO		3
 #define VL_DETAILS	4
 #define VL_DEBUG	5
+#define VL_ALWAYS	999
 
 #define n_msg(Verbosity, String, ...) { if (Verbose >= Verbosity) Sys::Log(String, __VA_ARGS__); }
 

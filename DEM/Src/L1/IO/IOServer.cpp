@@ -19,6 +19,7 @@ CIOServer::CIOServer(): Assigns(32)
 	DataPathCB = NULL;
 #endif
 
+	//!!!move to app!
 #ifdef __WIN32__
 	DefaultFS = n_new(CFileSystemWin32);
 #else
