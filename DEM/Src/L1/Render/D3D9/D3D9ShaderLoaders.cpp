@@ -79,7 +79,7 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 
 	if (!IOStream->Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
 
-	//???really need multiple buffers?
+	//???really need multiple buffers in one shader? where to load overridden buffers stored in effect?
 	CFixedArray<Render::CD3D9ShaderBufferMeta>& Buffers = Shader->Buffers;
 	Buffers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
@@ -116,7 +116,7 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 
 		pMeta->SlotIndex = i;
 
-		// For non-empty buffers open handles to reference them from constants
+		// For non-empty buffers open handles at the load time to reference buffers from constants
 		pMeta->Handle =
 			(pMeta->Float4.GetCount() || pMeta->Int4.GetCount() || pMeta->Bool.GetCount()) ?
 			D3D9DrvFactory->HandleMgr.OpenHandle(pMeta) :
@@ -127,29 +127,49 @@ bool CD3D9ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shader
 	Consts.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
-		U8 RegSet;
-		U32 BufIdx;
-
 		Render::CD3D9ShaderConstMeta* pMeta = &Consts[i];
 		if (!R.Read(pMeta->Name)) return NULL;
-		if (!R.Read<U32>(BufIdx)) return NULL;
-		if (!R.Read<U8>(RegSet)) return NULL;
-		if (!R.Read<U32>(pMeta->Offset)) return NULL;
-		if (!R.Read<U32>(pMeta->Size)) return NULL;
 
+		U32 BufIdx;
+		if (!R.Read<U32>(BufIdx)) return NULL;
 		pMeta->BufferHandle = Buffers[BufIdx].Handle;
-		pMeta->RegSet = (Render::ED3D9ShaderRegisterSet)RegSet;
+
+		U8 RegSet;
+		if (!R.Read<U8>(RegSet)) return NULL;
+		pMeta->RegSet = (Render::ESM30RegisterSet)RegSet;
+
+		if (!R.Read<U32>(pMeta->RegisterStart)) return NULL;
+		if (!R.Read<U32>(pMeta->ElementRegisterCount)) return NULL;
+		if (!R.Read<U32>(pMeta->ElementCount)) return NULL;
+
 		pMeta->Handle = INVALID_HANDLE;
 	}
 
-	CFixedArray<Render::CD3D9ShaderRsrcMeta>& Samplers = Shader->Samplers;
+	CFixedArray<Render::CD3D9ShaderRsrcMeta>& Resources = Shader->Resources;
+	Resources.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	{
+		Render::CD3D9ShaderRsrcMeta* pMeta = &Resources[i];
+		if (!R.Read(pMeta->Name)) return NULL;
+		if (!R.Read<U32>(pMeta->Register)) return NULL;
+		
+		pMeta->Handle = INVALID_HANDLE;
+	}
+
+	CFixedArray<Render::CD3D9ShaderSamplerMeta>& Samplers = Shader->Samplers;
 	Samplers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		Render::CD3D9ShaderRsrcMeta* pMeta = &Samplers[i];
-		if (!R.Read(pMeta->SamplerName)) return NULL;
-		if (!R.Read(pMeta->TextureName)) return NULL;
-		if (!R.Read<U32>(pMeta->Register)) return NULL;
+		Render::CD3D9ShaderSamplerMeta* pMeta = &Samplers[i];
+		if (!R.Read(pMeta->Name)) return NULL;
+
+		U8 Type;
+		if (!R.Read<U8>(Type)) return NULL;
+		pMeta->Type = (Render::ESM30SamplerType)Type;
+		
+		if (!R.Read<U32>(pMeta->RegisterStart)) return NULL;
+		if (!R.Read<U32>(pMeta->RegisterCount)) return NULL;
+
 		pMeta->Handle = INVALID_HANDLE;
 	}
 

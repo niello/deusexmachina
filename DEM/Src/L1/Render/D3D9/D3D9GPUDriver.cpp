@@ -1673,10 +1673,10 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	n_assert_dbg(pD3DSampler);
 
 	if (!Handle) FAIL;
-	CD3D9ShaderRsrcMeta* pMeta = (CD3D9ShaderRsrcMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Handle);
+	CD3D9ShaderSamplerMeta* pMeta = (CD3D9ShaderSamplerMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
-	UPTR Index = pMeta->Register;
+	UPTR Index = pMeta->RegisterStart;
 	DWORD D3DSamplerIndex;
 	if (ShaderType == ShaderType_Vertex)
 	{
@@ -2933,15 +2933,15 @@ bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, U
 	for (UPTR i = 0; i < pRanges->GetCount(); ++i)
 	{
 		CRange& Range = pRanges->operator[](i);
-		if (Range.Start > pMeta->Offset) FAIL; // As ranges are sorted ascending
-		if (Range.Start + Range.Count <= pMeta->Offset)
+		if (Range.Start > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
+		if (Range.Start + Range.Count <= pMeta->RegisterStart)
 		{
 			Offset += Range.Count;
 			continue;
 		}
-		n_assert(Range.Start + Range.Count >= pMeta->Offset + pMeta->Size);
+		n_assert(Range.Start + Range.Count >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
 
-		Offset += pMeta->Offset - Range.Start;
+		Offset += pMeta->RegisterStart - Range.Start;
 
 		CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
 		CB9.WriteData(pMeta->RegSet, Offset, pData, Size);

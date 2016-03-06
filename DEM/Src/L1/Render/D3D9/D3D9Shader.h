@@ -28,7 +28,8 @@ public:
 
 	CFixedArray<CD3D9ShaderBufferMeta>	Buffers;
 	CFixedArray<CD3D9ShaderConstMeta>	Consts;
-	CFixedArray<CD3D9ShaderRsrcMeta>	Samplers;
+	CFixedArray<CD3D9ShaderRsrcMeta>	Resources;
+	CFixedArray<CD3D9ShaderSamplerMeta>	Samplers;
 
 	CD3D9Shader(): pD3DShader(NULL) {}
 	virtual ~CD3D9Shader() { InternalDestroy(); }

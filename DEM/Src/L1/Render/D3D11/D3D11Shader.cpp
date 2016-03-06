@@ -191,7 +191,7 @@ HSampler CD3D11Shader::GetSamplerHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		CRsrcMeta* pMeta = &Samplers[i];
+		CSamplerMeta* pMeta = &Samplers[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = D3D11DrvFactory->HandleMgr.OpenHandle(pMeta);

@@ -10,6 +10,7 @@
 #include <IO/PathUtils.h>
 #include <IO/IOServer.h>
 #include <Data/Buffer.h>
+#include <Data/StringUtils.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
@@ -21,31 +22,33 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI):
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, U32 VertexShaderID, U32 PixelShaderID):
 	GPU(&GPUDriver),
 	pDefaultRT(NULL),
 	DisplayDPI(96, 96),
 	DisplaySize(DefaultContextWidth, DefaultContextHeight)
 {
-	n_assert_dbg(pVertexShaderURI && pPixelShaderURI);
+	n_assert_dbg(VertexShaderID > 0 && PixelShaderID > 0);
 
-	Resources::PResource RVS = ResourceMgr->RegisterResource(pVertexShaderURI);
+	CString VSURI = "Shaders:Bin/" + StringUtils::FromInt(VertexShaderID) + ".vsh";
+	Resources::PResource RVS = ResourceMgr->RegisterResource(VSURI.CStr());
 	if (!RVS->IsLoaded())
 	{
 		Resources::PResourceLoader Loader = RVS->GetLoader();
 		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pVertexShaderURI));
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(VSURI.CStr()));
 		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
 		ResourceMgr->LoadResourceSync(*RVS, *Loader);
 		n_assert(RVS->IsLoaded());
 	}
 
-	Resources::PResource RPS = ResourceMgr->RegisterResource(pPixelShaderURI);
+	CString PSURI = "Shaders:Bin/" + StringUtils::FromInt(PixelShaderID) + ".psh";
+	Resources::PResource RPS = ResourceMgr->RegisterResource(PSURI.CStr());
 	if (!RPS->IsLoaded())
 	{
 		Resources::PResourceLoader Loader = RPS->GetLoader();
 		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(pPixelShaderURI));
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(PSURI.CStr()));
 		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
 		ResourceMgr->LoadResourceSync(*RPS, *Loader);
 		n_assert(RPS->IsLoaded());
@@ -165,10 +168,10 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, U32 VertexShaderID, U32 PixelShaderID, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, pVertexShaderURI, pPixelShaderURI);
+	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, VertexShaderID, PixelShaderID);
 }
 //--------------------------------------------------------------------
 

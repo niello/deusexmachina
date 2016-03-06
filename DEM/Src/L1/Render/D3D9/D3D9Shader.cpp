@@ -128,14 +128,13 @@ HConstBuffer CD3D9Shader::GetConstBufferHandle(HConst hConst) const
 }
 //---------------------------------------------------------------------
 
-//???need Texture = Name + bits for sampler registers!?
 HResource CD3D9Shader::GetResourceHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
-	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
 	{
-		CD3D9ShaderRsrcMeta* pMeta = &Samplers[i];
-		if (pMeta->TextureName == ID)
+		CD3D9ShaderRsrcMeta* pMeta = &Resources[i];
+		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
 			return pMeta->Handle;
@@ -150,8 +149,8 @@ HSampler CD3D9Shader::GetSamplerHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		CD3D9ShaderRsrcMeta* pMeta = &Samplers[i];
-		if (pMeta->SamplerName == ID)
+		CD3D9ShaderSamplerMeta* pMeta = &Samplers[i];
+		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = D3D9DrvFactory->HandleMgr.OpenHandle(pMeta);
 			return pMeta->Handle;

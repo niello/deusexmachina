@@ -51,7 +51,7 @@ public:
 	virtual bool	IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
-	void			WriteData(ED3D9ShaderRegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);
+	void			WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);
 	bool			IsDirty() const { return DirtyFlags.IsAny(); }
 	bool			IsDirtyFloat4() const { return DirtyFlags.Is(CB9_DirtyFloat4); }
 	bool			IsDirtyInt4() const { return DirtyFlags.Is(CB9_DirtyInt4); }
@@ -66,7 +66,7 @@ public:
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;
 
-inline void CD3D9ConstantBuffer::WriteData(ED3D9ShaderRegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size)
+inline void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size)
 {
 	n_assert_dbg(pData && Size);
 

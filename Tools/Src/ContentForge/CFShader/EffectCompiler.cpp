@@ -88,6 +88,8 @@ struct CTechInfo
 	CStrID						InputSet;
 	UPTR						MaxLights;
 	U32							Target;
+	U32							MinFeatureLevel;
+	U64							RequiresFlags;
 	CArray<CStrID>				Passes;
 	CFixedArray<UPTR>			PassIndices;
 	CFixedArray<bool>			VariationValid;
@@ -105,6 +107,8 @@ struct CRenderStateRef
 	UPTR							MaxLights;
 	Render::CToolRenderStateDesc	Desc;
 	U32								Target;
+	U32								MinFeatureLevel;
+	U64								RequiresFlags;
 	bool							UsesShader[Render::ShaderType_COUNT];
 	U32*							ShaderIDs;	// Per shader type, per light count
 
@@ -316,9 +320,10 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 	CString Defines;
 	if (ShaderSection->Get(Defines, CStrID("Defines"))) Defines.Trim();
 
-	//!!!need to get working directory instead of "Home:"!
+	CString WorkingDir;
+	Sys::GetWorkingDirectory(WorkingDir);
 	SrcPath = IOSrv->ResolveAssigns(SrcPath);
-	CString FullSrcPath = PathUtils::GetAbsolutePath(IOSrv->GetAssign("Home"), RootPath + SrcPath);
+	CString FullSrcPath = PathUtils::GetAbsolutePath(WorkingDir, SrcPath);
 
 	for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 	{
@@ -864,6 +869,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 	// Compile and validate used render states, unwinding their hierarchy
 
+	CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
+	CDict<U32, CD3D11ShaderMeta> D3D11MetaCache;
+
 	for (UPTR i = 0; i < UsedRenderStates.GetCount(); )
 	{
 		Data::PParams ShaderSections[Render::ShaderType_COUNT];
@@ -879,9 +887,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			continue;
 		}
 
-		// Validate shader combination
+		// Validate shader combination and collect its requirements
 
 		RSRef.Target = 0x0000;
+		RSRef.MinFeatureLevel = 0;
+		RSRef.RequiresFlags = 0;
 		
 		bool Failed = false;
 		
@@ -889,6 +899,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		{
 			Data::PParams ShaderSection = ShaderSections[ShaderType];
 			if (ShaderSection.IsNullPtr()) continue;
+			
 			int Target = 0;
 			if (!ShaderSection->Get(Target, CStrID("Target"))) continue;
 			if (!RSRef.Target) RSRef.Target = (U32)Target;
@@ -917,11 +928,34 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			// If some of used shaders failed to load in all variations, discard this render state
 			if (RSRef.UsesShader[ShaderType])
 			{
-				UPTR LightCount;
-				for (LightCount = 0; LightCount < LightVariationCount; ++LightCount)
-					if (RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] != 0) break;
+				bool AllInvalid = true;;
+				for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+				{
+					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
+					if (ShaderID != 0)
+					{
+						// Valid shader found, get its requirements and apply to render state requirements
+						AllInvalid = false;
 
-				if (LightCount == LightVariationCount)
+						CSM30ShaderMeta* pD3D9Meta = NULL;
+						CD3D11ShaderMeta* pD3D11Meta = NULL;
+						LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
+
+						if (pD3D9Meta)
+						{
+							//D3D_FEATURE_LEVEL_9_3 = 0x9300
+							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, 0x9300);
+						}
+						else if (pD3D11Meta)
+						{
+							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, pD3D11Meta->MinFeatureLevel);
+							RSRef.RequiresFlags |= pD3D11Meta->RequiresFlags;
+						}
+						else Sys::Error("FIXME: Can't read shader metadata!");
+					}
+				}
+
+				if (AllInvalid)
 				{
 					const char* pShaderNames[] = { "vertex", "pixel", "geometry", "hull", "domain" };
 					n_msg(VL_WARNING, "Render state '%s' %s shader compilation failed for all variations\n", UsedRenderStates.KeyAt(i).CStr(), pShaderNames[ShaderType]);
@@ -955,6 +989,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		TechInfo.PassIndices.SetSize(TechInfo.Passes.GetCount());
 		TechInfo.VariationValid.SetSize(LightVariationCount);
 		TechInfo.Target = 0x0000;
+		TechInfo.MinFeatureLevel = 0;
+		TechInfo.RequiresFlags = 0;
 
 		bool DiscardTech = false;
 
@@ -969,8 +1005,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			}
 			else TechInfo.PassIndices[PassIdx] = (UPTR)Idx;
 
-			U32 PassTarget = UsedRenderStates.ValueAt(Idx).Target;
-
+			CRenderStateRef& RSRef = UsedRenderStates.ValueAt(Idx);
+			
+			U32 PassTarget = RSRef.Target;
 			if (!TechInfo.Target) TechInfo.Target = PassTarget;
 			else if ((TechInfo.Target < 0x0400 && PassTarget >= 0x0400) || (TechInfo.Target >= 0x0400 && PassTarget < 0x0400))
 			{
@@ -979,6 +1016,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				break;
 			}
 			else if (PassTarget > TechInfo.Target) TechInfo.Target = PassTarget;
+
+			TechInfo.MinFeatureLevel = n_max(TechInfo.MinFeatureLevel, RSRef.MinFeatureLevel);
+			TechInfo.RequiresFlags |= RSRef.RequiresFlags;
 		}
 
 		if (DiscardTech)
@@ -1037,9 +1077,6 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	//in the same CB in all stages or even use one param only in one stage instead.
 	// Each shader stage that param uses may define a param differently
 
-	CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
-	CDict<U32, CD3D11ShaderMeta> D3D11MetaCache;
-
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
 		CTechInfo& TechInfo = UsedTechs[TechIdx];
@@ -1057,8 +1094,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
 					CSM30ShaderMeta* pD3D9Meta = NULL;
 					CD3D11ShaderMeta* pD3D11Meta = NULL;
-					bool AlreadyProcessed = LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
-					if (AlreadyProcessed) continue;
+					LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
 
 					//!!!add per-stage support, to map one param to different shader stages simultaneously!
 					// If tech param found:
@@ -1603,6 +1639,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write(TechInfo.ID)) return ERR_IO_WRITE;
 		if (!W.Write(TechInfo.InputSet)) return ERR_IO_WRITE;
 		if (!W.Write(TechInfo.Target)) return ERR_IO_WRITE;
+		if (!W.Write(TechInfo.MinFeatureLevel)) return ERR_IO_WRITE;
+		if (!W.Write(TechInfo.RequiresFlags)) return ERR_IO_WRITE;
 
 		UPTR LightVariationCount = TechInfo.MaxLights + 1;
 

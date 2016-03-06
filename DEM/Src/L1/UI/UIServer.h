@@ -23,9 +23,14 @@ namespace CEGUI
 	class TinyXML2Parser;
 }
 
+namespace Data
+{
+	typedef Ptr<class CParams> PParams;
+}
+
 namespace Render
 {
-	class CGPUDriver;
+	typedef Ptr<class CGPUDriver> PGPUDriver;
 }
 
 namespace UI
@@ -34,6 +39,20 @@ typedef Ptr<class CUIWindow> PUIWindow;
 typedef Ptr<class CUIContext> PUIContext;
 
 #define UISrv UI::CUIServer::Instance()
+
+struct CUISettings
+{
+	Render::PGPUDriver	GPUDriver;
+	U32					VertexShaderID;
+	U32					PixelShaderID;
+
+	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
+	int					SwapChainID;
+	float				DefaultContextWidth;
+	float				DefaultContextHeight;
+
+	Data::PParams		ResourceGroups;
+};
 
 class CUIServer: public Core::CObject
 {
@@ -57,8 +76,7 @@ private:
 
 public:
 
-	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
-	CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI);
+	CUIServer(const CUISettings& Settings);
 	~CUIServer();
 	
 	// Internal use, set by config

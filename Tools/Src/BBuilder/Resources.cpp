@@ -34,10 +34,13 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 			if (InStr.FindIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
 			if (OutStr.FindIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
 
+			CString WorkingDir;
+			Sys::GetWorkingDirectory(WorkingDir);
+
 			char CmdLine[MAX_CMDLINE_CHARS];
 			sprintf_s(CmdLine, "-v %d -patch %d -lod %d -in %s -out %s",
 				ExternalVerbosity, PatchSize, LODCount, InStr.CStr(), OutStr.CStr());
-			int ExitCode = RunExternalToolAsProcess(Tool, CmdLine, IOSrv->GetAssign("Home").CStr());
+			int ExitCode = RunExternalToolAsProcess(Tool, CmdLine, WorkingDir.CStr());
 			if (ExitCode != 0)
 			{
 				n_msg(VL_ERROR, "External tool %s execution failed\n", Tool.CStr());
@@ -100,7 +103,9 @@ bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutSh
 	else if (Type == CStrID("Domain")) ShaderType = ShaderType_Domain;
 	else FAIL;
 
-	SrcPath = PathUtils::GetAbsolutePath(IOSrv->GetAssign("Home"), IOSrv->ResolveAssigns(SrcPath));
+	CString WorkingDir;
+	Sys::GetWorkingDirectory(WorkingDir);
+	SrcPath = PathUtils::GetAbsolutePath(WorkingDir, IOSrv->ResolveAssigns(SrcPath));
 
 	U32 ObjID, SigID;
 	int Result = DLLCompileShader(SrcPath.CStr(), ShaderType, (U32)Target, EntryPoint.CStr(), Defines.CStr(), Debug, ObjID, SigID);

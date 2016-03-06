@@ -13,6 +13,7 @@ struct ID3D11HullShader;
 struct ID3D11DomainShader;
 struct ID3D11GeometryShader;
 struct ID3D11PixelShader;
+enum D3D_FEATURE_LEVEL;
 
 namespace Render
 {
@@ -36,39 +37,80 @@ public:
 		StructuredBuffer	= 2
 	};
 
-	struct CConstMeta
+	// Don't change values
+	enum EConstType
 	{
-		CStrID	Name;
-		HHandle	Handle;
-		HHandle	BufferHandle;
-		U32		Offset;
-		U32		Size;	//!!!arrays  vectors may need ElementCount & ElementSize!
+		D3D11Const_Bool	= 0,
+		D3D11Const_Int,
+		D3D11Const_Float,
+
+		D3D11Const_Struct,
+
+		D3D11Const_Invalid
+	};
+
+	// Don't change values
+	enum ERsrcType
+	{
+		SM40Rsrc_Texture1D			= 0,
+		SM40Rsrc_Texture1DArray,
+		SM40Rsrc_Texture2D,
+		SM40Rsrc_Texture2DArray,
+		SM40Rsrc_Texture2DMS,
+		SM40Rsrc_Texture2DMSArray,
+		SM40Rsrc_Texture3D,
+		SM40Rsrc_TextureCUBE,
+		SM40Rsrc_TextureCUBEArray,
+
+		SM40Rsrc_Unknown
 	};
 
 	struct CBufferMeta
 	{
 		CStrID		Name;
-		HHandle		Handle;
-		U32			Register;
-		U32			ElementSize;
-		U32			ElementCount;	// 1 for CB
 		EBufferType	Type;
+		U32			Register;
+		U32			Size;		// Element size for structured buffers
+		HHandle		Handle;
+	};
+
+	struct CConstMeta
+	{
+		HHandle		BufferHandle;
+		CStrID		Name;
+		EConstType	Type;
+		U32			Offset;
+		U32			ElementSize;
+		U32			ElementCount;
+		HHandle		Handle;
 	};
 
 	struct CRsrcMeta
 	{
-		CStrID	Name;
-		HHandle	Handle;
-		U32		Register;
+		CStrID		Name;
+		ERsrcType	Type;
+		U32			RegisterStart;
+		U32			RegisterCount;
+		HHandle		Handle;
+	};
+
+	struct CSamplerMeta
+	{
+		CStrID		Name;
+		U32			RegisterStart;
+		U32			RegisterCount;
+		HHandle		Handle;
 	};
 
 	//!!!must be sorted by name! //???sort in tool?
 	CFixedArray<CConstMeta>		Consts;
 	CFixedArray<CBufferMeta>	Buffers;
 	CFixedArray<CRsrcMeta>		Resources;
-	CFixedArray<CRsrcMeta>		Samplers;
+	CFixedArray<CSamplerMeta>	Samplers;
 
 	UPTR						InputSignatureID;
+	D3D_FEATURE_LEVEL			MinFeatureLevel;
+	U64							RequiresFlags;
 
 	CD3D11Shader(): pD3DShader(NULL), InputSignatureID(0) {}
 	virtual ~CD3D11Shader() { InternalDestroy(); }

@@ -2,7 +2,11 @@
 
 #include "System.h"
 
+#include <Data/String.h>
+#include <IO/PathUtils.h>
+
 #include <stdio.h>
+#include <malloc.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <dbghelp.h>
@@ -57,6 +61,27 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 		case IDCANCEL:
 		default:		return MBB_Cancel;
 	}
+}
+//---------------------------------------------------------------------
+
+bool GetWorkingDirectory(CString& Out)
+{
+	DWORD RequiredSize = ::GetCurrentDirectory(0, NULL);
+	if (!RequiredSize) FAIL;
+
+	char* pBuf = (char*)_malloca(RequiredSize + 1);
+	::GetCurrentDirectory(RequiredSize, pBuf);
+	if (pBuf[RequiredSize - 2] != '\\')
+	{
+		pBuf[RequiredSize - 1] = '\\';
+		pBuf[RequiredSize] = 0;
+		++RequiredSize;
+	}
+	Out.Set(pBuf, RequiredSize - 1);
+	Out.Replace('\\', '/');
+	_freea(pBuf);
+
+	OK;
 }
 //---------------------------------------------------------------------
 

@@ -184,8 +184,9 @@ bool PackFiles(const CArray<CString>& FilesToPack, const CString& PkgFileName, c
 
 	n_msg(VL_INFO, "Creating NPK TOC...\n");
 
-	//!!!use working directory instead of Home assign!
-	CString RootPath = PathUtils::GetAbsolutePath(IOSrv->GetAssign("Home"), IOSrv->ResolveAssigns(PkgRoot));
+	CString WorkingDir;
+	Sys::GetWorkingDirectory(WorkingDir);
+	CString RootPath = PathUtils::GetAbsolutePath(WorkingDir, IOSrv->ResolveAssigns(PkgRoot));
 	RootPath.ToLower();
 
 	PkgRootDir.ToLower();

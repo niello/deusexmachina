@@ -901,6 +901,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 }
 //---------------------------------------------------------------------
 
+//!!!???allow arrays, just add count param?! or add index with defailt 0?
 bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
 	if (!Handle) FAIL;
@@ -908,17 +909,18 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 	if (!pMeta) FAIL;
 
 	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : NULL;
-	return BindSRV(ShaderType, pMeta->Register, pSRV);
+	return BindSRV(ShaderType, pMeta->RegisterStart, pSRV);
 }
 //---------------------------------------------------------------------
 
+//!!!???allow arrays, just add count param?! or add index with defailt 0?
 bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
 {
 	if (!Handle) FAIL;
-	CD3D11Shader::CRsrcMeta* pMeta = (CD3D11Shader::CRsrcMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	CD3D11Shader::CSamplerMeta* pMeta = (CD3D11Shader::CSamplerMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
-	UPTR Index = pMeta->Register;
+	UPTR Index = pMeta->RegisterStart;
 	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
 
 	Index += ((UPTR)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
@@ -1628,7 +1630,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 	Desc.Usage = Usage;
 	Desc.CPUAccessFlags = CPUAccess;
 
-	UPTR TotalSize = pMeta->ElementSize * pMeta->ElementCount;
+	UPTR TotalSize = pMeta->Size; // * ElementCount; //!!!for StructuredBuffer!
 	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
 	{
 		UPTR ElementCount = (TotalSize + 15) >> 4;
@@ -1645,7 +1647,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 	if (pMeta->Type == CD3D11Shader::StructuredBuffer)
 	{
 		Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		Desc.StructureByteStride = pMeta->ElementSize;
+		Desc.StructureByteStride = pMeta->Size;
 	}
 	else
 	{
@@ -2899,10 +2901,14 @@ bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, 
 	if (ElementIndex)
 	{
 		CD3D11Shader::CBufferMeta* pBufMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(pMeta->BufferHandle);
-		if (!pBufMeta || ElementIndex >= pBufMeta->ElementCount) FAIL;
-		Offset += pBufMeta->ElementSize * ElementIndex;
+		if (!pBufMeta) FAIL;
+		if (pBufMeta->Type == CD3D11Shader::StructuredBuffer)
+			Offset += pBufMeta->Size * ElementIndex;
+		else if (pBufMeta->Type == CD3D11Shader::TextureBuffer)
+			Offset += pMeta->ElementSize * pMeta->ElementCount * ElementIndex;
 	}
 
+	//!!!structured buffer must validate Offset against its size inside!
 	CB11.WriteData(Offset, pData, Size);
 
 	OK;

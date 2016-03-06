@@ -154,6 +154,13 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 
 	if (!IOStream->Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
 
+	//???where to validate? will be loaded at all? mb load and check these fields before creating D3D API shader object?
+	U32 MinFeatureLevelValue;
+	R.Read<U32>(MinFeatureLevelValue);
+	Shader->MinFeatureLevel = (D3D_FEATURE_LEVEL)MinFeatureLevelValue;
+
+	R.Read<U64>(Shader->RequiresFlags);
+
 	CFixedArray<Render::CD3D11Shader::CBufferMeta>& Buffers = Shader->Buffers;
 	Buffers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
@@ -173,11 +180,10 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 
 		pMeta->Register &= 0x3fffffff; // Clear bits 30 and 31
 
-		if (!R.Read<U32>(pMeta->ElementSize)) return NULL;
-		if (!R.Read<U32>(pMeta->ElementCount)) return NULL;
+		if (!R.Read<U32>(pMeta->Size)) return NULL;
 
-		// For non-empty buffers open handles to reference them from constants
-		pMeta->Handle = (pMeta->ElementSize && pMeta->ElementCount) ? D3D11DrvFactory->HandleMgr.OpenHandle(pMeta) : INVALID_HANDLE;
+		// For non-empty buffers open handles at the load time to reference buffers from constants
+		pMeta->Handle = pMeta->Size ? D3D11DrvFactory->HandleMgr.OpenHandle(pMeta) : INVALID_HANDLE;
 	}
 
 	CFixedArray<Render::CD3D11Shader::CConstMeta>& Consts = Shader->Consts;
@@ -191,8 +197,14 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 		if (!R.Read(BufIdx)) return NULL;
 		pMeta->BufferHandle = Buffers[BufIdx].Handle;
 
+		U8 Type;
+		if (!R.Read<U8>(Type)) return NULL;
+		pMeta->Type = (Render::CD3D11Shader::EConstType)Type;
+
 		if (!R.Read<U32>(pMeta->Offset)) return NULL;
-		if (!R.Read<U32>(pMeta->Size)) return NULL;
+		if (!R.Read<U32>(pMeta->ElementSize)) return NULL;
+		if (!R.Read<U32>(pMeta->ElementCount)) return NULL;
+
 		pMeta->Handle = INVALID_HANDLE;
 	}
 
@@ -202,17 +214,26 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 	{
 		Render::CD3D11Shader::CRsrcMeta* pMeta = &Resources[i];
 		if (!R.Read(pMeta->Name)) return NULL;
-		if (!R.Read<U32>(pMeta->Register)) return NULL;
+
+		U8 Type;
+		if (!R.Read<U8>(Type)) return NULL;
+		pMeta->Type = (Render::CD3D11Shader::ERsrcType)Type;
+
+		if (!R.Read<U32>(pMeta->RegisterStart)) return NULL;
+		if (!R.Read<U32>(pMeta->RegisterCount)) return NULL;
+
 		pMeta->Handle = INVALID_HANDLE;
 	}
 
-	CFixedArray<Render::CD3D11Shader::CRsrcMeta>& Samplers = Shader->Samplers;
+	CFixedArray<Render::CD3D11Shader::CSamplerMeta>& Samplers = Shader->Samplers;
 	Samplers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		Render::CD3D11Shader::CRsrcMeta* pMeta = &Samplers[i];
+		Render::CD3D11Shader::CSamplerMeta* pMeta = &Samplers[i];
 		if (!R.Read(pMeta->Name)) return NULL;
-		if (!R.Read<U32>(pMeta->Register)) return NULL;
+		if (!R.Read<U32>(pMeta->RegisterStart)) return NULL;
+		if (!R.Read<U32>(pMeta->RegisterCount)) return NULL;
+
 		pMeta->Handle = INVALID_HANDLE;
 	}
 

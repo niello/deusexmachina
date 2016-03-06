@@ -11,11 +11,20 @@ namespace Render
 {
 
 // Don't change values
-enum ED3D9ShaderRegisterSet
+enum ESM30RegisterSet
 {
-	Reg_Float4	= 0,
-	Reg_Int4	= 1,
-	Reg_Bool	= 2
+	Reg_Bool			= 0,
+	Reg_Int4			= 1,
+	Reg_Float4			= 2
+};
+
+// Don't change values
+enum ESM30SamplerType
+{
+	SM30Sampler_1D		= 0,
+	SM30Sampler_2D,
+	SM30Sampler_3D,
+	SM30Sampler_CUBE
 };
 
 struct CD3D9ShaderBufferMeta
@@ -30,19 +39,28 @@ struct CD3D9ShaderBufferMeta
 
 struct CD3D9ShaderConstMeta
 {
-	CStrID					Name;
-	ED3D9ShaderRegisterSet	RegSet;
-	UPTR					Offset;
-	UPTR					Size;
-	HHandle					Handle;
-	HHandle					BufferHandle;
+	HHandle				BufferHandle;
+	CStrID				Name;
+	ESM30RegisterSet	RegSet;
+	U32					RegisterStart;
+	U32					ElementRegisterCount;
+	U32					ElementCount;
+	HHandle				Handle;
 };
 
 struct CD3D9ShaderRsrcMeta
 {
-	CStrID				SamplerName;
-	CStrID				TextureName;
-	UPTR				Register;
+	CStrID				Name;
+	U32					Register;
+	HHandle				Handle;
+};
+
+struct CD3D9ShaderSamplerMeta
+{
+	CStrID				Name;
+	ESM30SamplerType	Type;
+	U32					RegisterStart;
+	U32					RegisterCount;
 	HHandle				Handle;
 };
 

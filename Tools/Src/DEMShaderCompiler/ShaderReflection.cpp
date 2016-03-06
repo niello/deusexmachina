@@ -388,19 +388,9 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
 	{
 		const CSM30ShaderConstMeta& Obj = Meta.Consts[i];
-
-		U8 RegSet;
-		switch (Obj.RegisterSet)
-		{
-			case RS_Float4:	RegSet = 0; break;
-			case RS_Int4:	RegSet = 1; break;
-			case RS_Bool:	RegSet = 2; break;
-			default:		continue;
-		};
-
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
-		W.Write<U8>(RegSet);
+		W.Write<U8>(Obj.RegisterSet);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.ElementRegisterCount);
 		W.Write(Obj.ElementCount);
@@ -430,6 +420,9 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 
 bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 {
+	W.Write<U32>(Meta.MinFeatureLevel);
+	W.Write<U64>(Meta.RequiresFlags);
+
 	W.Write<U32>(Meta.Buffers.GetCount());
 	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
 	{
@@ -579,6 +572,9 @@ bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
 	Meta.Consts.Clear();
 	Meta.Resources.Clear();
 	Meta.Samplers.Clear();
+
+	R.Read<U32>(Meta.MinFeatureLevel);
+	R.Read<U64>(Meta.RequiresFlags);
 
 	U32 Count;
 

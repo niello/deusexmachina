@@ -3,7 +3,8 @@
 #include <AI/AIServer.h>
 #include <AI/Perception/Sensor.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
-#include <IO/Streams/FileStream.h>
+#include <IO/IOServer.h>
+#include <IO/Stream.h>
 #include <Events/EventServer.h>
 #include <DetourDebugDraw.h>
 #include <Debug/DebugDraw.h>
@@ -30,20 +31,20 @@ bool CAILevel::Init(const CAABB& LevelBox, U8 QuadTreeDepth)
 
 bool CAILevel::LoadNavMesh(const char* pFileName)
 {
-	IO::CFileStream File(pFileName);
-	if (!File.Open(IO::SAM_READ)) FAIL;
+	IO::PStream File = IOSrv->CreateStream(pFileName);
+	if (!File->Open(IO::SAM_READ)) FAIL;
 
-	if (File.Get<int>() != '_NM_') FAIL;
-	int Version = File.Get<int>();
+	if (File->Get<int>() != '_NM_') FAIL;
+	int Version = File->Get<int>();
 
-	int NMCount = File.Get<int>();
+	int NMCount = File->Get<int>();
 	for (int NMIdx = 0; NMIdx < NMCount; ++NMIdx)
 	{
-		float Radius = File.Get<float>();
+		float Radius = File->Get<float>();
 		CNavData& New = NavData.Add(Radius);
 		New.AgentRadius = Radius;
-		New.AgentHeight = File.Get<float>();
-		if (!New.LoadFromStream(File))
+		New.AgentHeight = File->Get<float>();
+		if (!New.LoadFromStream(*File))
 		{
 			UnloadNavMesh();
 			FAIL;

@@ -6,6 +6,8 @@
 
 // System functions and macros
 
+class CString;
+
 namespace Sys
 {
 	enum EMsgType
@@ -43,6 +45,9 @@ namespace Sys
 
 	// System UI
 	EMsgBoxButton	ShowMessageBox(EMsgType Type, const char* pHeaderText, const char* pMessage, unsigned int Buttons = MBB_OK);
+
+	// Files and pathes
+	bool			GetWorkingDirectory(CString& Out);
 
 	// Threading
 	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!

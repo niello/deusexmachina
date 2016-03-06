@@ -56,7 +56,8 @@ int main(int argc, const char** argv)
 	n_msg(VL_ALWAYS, SEP_LINE TOOL_NAME" v"VERSION" for DeusExMachina engine\n(c) Vladimir \"Niello\" Orlov 2011-2015\n"SEP_LINE"\n");
 
 	IO::CIOServer IOServer;
-	CString WorkingDir = IOSrv->GetAssign("Home"); //???some GetWorkingDirectory() method?!
+	CString WorkingDir;
+	Sys::GetWorkingDirectory(WorkingDir);
 	ProjDir = IOSrv->ResolveAssigns(ProjDir);
 	BuildDir = IOSrv->ResolveAssigns(BuildDir);
 	IOSrv->SetAssign("Proj", PathUtils::GetAbsolutePath(WorkingDir, ProjDir));

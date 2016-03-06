@@ -26,30 +26,32 @@ namespace UI
 __ImplementClassNoFactory(UI::CUIServer, Core::CObject);
 __ImplementSingleton(UI::CUIServer);
 
-CUIServer::CUIServer(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, const char* pVertexShaderURI, const char* pPixelShaderURI)
+CUIServer::CUIServer(const CUISettings& Settings)
 {
 	__ConstructSingleton;
 
 	Logger = n_new(CEGUI::CDEMLogger);
-	Renderer = &CEGUI::CDEMRenderer::create(GPUDriver, SwapChainID, DefaultContextWidth, DefaultContextHeight, pVertexShaderURI, pPixelShaderURI);
+	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warnings); //???to settings?
+
+	Renderer = &CEGUI::CDEMRenderer::create(*Settings.GPUDriver, Settings.SwapChainID, Settings.DefaultContextWidth, Settings.DefaultContextHeight, Settings.VertexShaderID, Settings.PixelShaderID);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
 
 	CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = CEGUI::System::getSingletonPtr();
 
-	CEGUI::Logger::getSingleton().setLoggingLevel(CEGUI::Warnings);
-
 	DefaultContext = n_new(CUIContext);
 	DefaultContext->Init(&CEGUISystem->getDefaultGUIContext());
 
-	//!!!to config!
-	ResourceProvider->setResourceGroupDirectory("schemes", "CEGUI:schemes/");
-	ResourceProvider->setResourceGroupDirectory("imagesets", "CEGUI:imagesets/");
-	ResourceProvider->setResourceGroupDirectory("fonts", "CEGUI:fonts/");
-	ResourceProvider->setResourceGroupDirectory("layouts", "CEGUI:layouts/");
-	ResourceProvider->setResourceGroupDirectory("looknfeels", "CEGUI:looknfeel/");
-	ResourceProvider->setResourceGroupDirectory("lua_scripts", "CEGUI:lua_scripts/");
+	if (Settings.ResourceGroups.IsValidPtr())
+	{
+		for (UPTR i = 0; i < Settings.ResourceGroups->GetCount(); ++i)
+		{
+			Data::CParam& Prm = Settings.ResourceGroups->Get(i);
+			ResourceProvider->setResourceGroupDirectory(Prm.GetName().CStr(), Prm.GetValue<CString>().CStr());
+		}
+	}
+
 	CEGUI::Font::setDefaultResourceGroup("fonts");
 	CEGUI::Scheme::setDefaultResourceGroup("schemes");
 	CEGUI::ImageManager::setImagesetDefaultResourceGroup("imagesets");
