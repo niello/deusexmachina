@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_EFFECT_H__
 #define __DEM_L1_RENDER_EFFECT_H__
 
-#include <Core/Object.h>
+#include <Resources/ResourceObject.h>
 #include <Render/Technique.h>
 #include <Data/StringID.h>
 #include <Data/Dictionary.h>
@@ -16,7 +16,7 @@
 namespace Render
 {
 
-class CEffect: public Core::CObject //???resource object?
+class CEffect: public Resources::CResourceObject
 {
 protected:
 
@@ -34,27 +34,16 @@ protected:
 
 public:
 
-	const CTechnique*	GetTechByID(CStrID ID) const;
-	const CTechnique*	GetTechByFeatures(CFeatureFlags FFlags) const;
+	const CTechnique*	GetTechByName(CStrID Name) const;
+	const CTechnique*	GetTechByInputID(CStrID InputID) const;
 };
 
 typedef Ptr<CEffect> PEffect;
 
-inline const CTechnique* CEffect::GetTechByID(CStrID ID) const
+inline const CTechnique* CEffect::GetTechByName(CStrID Name) const
 {
-	IPTR Idx = Techs.FindIndex(ID);
+	IPTR Idx = Techs.FindIndex(Name);
 	return Idx == INVALID_INDEX ? NULL : &Techs.ValueAt(Idx);
-}
-//---------------------------------------------------------------------
-
-inline const CTechnique* CEffect::GetTechByFeatures(CFeatureFlags FFlags) const
-{
-	for (int i = 0; i < Techs.GetCount(); ++i)
-	{
-		const CTechnique& Tech = Techs.ValueAt(i);
-		if (Tech.IsMatching(FFlags)) return &Tech;
-	}
-	return NULL;
 }
 //---------------------------------------------------------------------
 

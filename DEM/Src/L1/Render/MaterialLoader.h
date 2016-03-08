@@ -1,10 +1,10 @@
 #pragma once
-#ifndef __DEM_L1_EFFECT_LOADER_H__
-#define __DEM_L1_EFFECT_LOADER_H__
+#ifndef __DEM_L1_MATERIAL_LOADER_H__
+#define __DEM_L1_MATERIAL_LOADER_H__
 
 #include <Resources/ResourceLoader.h>
 
-// Loads shader effect file in DEM (.eff) format
+// Loads render material from DEM "prm" format
 
 //namespace Render
 //{
@@ -14,19 +14,20 @@
 namespace Resources
 {
 
-class CEffectLoader: public CResourceLoader
+class CMaterialLoader: public CResourceLoader
 {
+	__DeclareClassNoFactory;
 
 public:
 
-	virtual ~CEffectLoader() {}
+	virtual ~CMaterialLoader() {}
 
 	virtual const Core::CRTTI&	GetResultType() const;
 	virtual bool				IsProvidedDataValid() const { OK; } //!!!implement properly!
 	virtual bool				Load(CResource& Resource);
 };
 
-typedef Ptr<CEffectLoader> PEffectLoader;
+typedef Ptr<CMaterialLoader> PMaterialLoader;
 
 }
 

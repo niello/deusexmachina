@@ -259,6 +259,7 @@
     <ClInclude Include="..\..\Src\L1\Render\IndexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\Light.h" />
     <ClInclude Include="..\..\Src\L1\Render\Material.h" />
+    <ClInclude Include="..\..\Src\L1\Render\MaterialLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\Mesh.h" />
     <ClInclude Include="..\..\Src\L1\Render\MeshLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\MeshLoaderNVX2.h" />
@@ -507,6 +508,7 @@
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Material.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\MaterialLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Mesh.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\MeshLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\MeshLoaderNVX2.cpp" />

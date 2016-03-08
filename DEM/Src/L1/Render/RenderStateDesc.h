@@ -15,11 +15,18 @@ struct CRenderStateDesc
 {
 	// Shaders
 
-	PShader				VertexShader;
-	PShader				HullShader;
-	PShader				DomainShader;
-	PShader				GeometryShader;
-	PShader				PixelShader;
+	union
+	{
+		struct
+		{
+			PShader		VertexShader;
+			PShader		PixelShader;
+			PShader		GeometryShader;
+			PShader		HullShader;
+			PShader		DomainShader;
+		};
+		PShader*		pShaders;
+	};
 
 	Data::CFlags		Flags; // For boolean variables, see enums below
 

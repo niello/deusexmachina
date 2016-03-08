@@ -1564,18 +1564,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		//CStrID ID = UsedRenderStates.KeyAt(i);
 		//if (!W.Write(ID)) return ERR_IO_WRITE;
 
-		for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
-		{
-			bool UsesShaderStage = RSRef.UsesShader[ShaderType];
-
-			if (!W.Write(UsesShaderStage)) return ERR_IO_WRITE;
-
-			if (UsesShaderStage)
-				for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
-					if (!W.Write<U32>(RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount])) return ERR_IO_WRITE;
-		}
-
-		if (!W.Write(Desc.Flags.GetMask())) return ERR_IO_WRITE;
+		if (!W.Write<U32>(RSRef.MaxLights)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Desc.Flags.GetMask())) return ERR_IO_WRITE;
 		
 		if (!W.Write(Desc.DepthBias)) return ERR_IO_WRITE;
 		if (!W.Write(Desc.DepthBiasClamp)) return ERR_IO_WRITE;
@@ -1583,49 +1573,53 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		
 		if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_DepthEnable))
 		{
-			if (!W.Write((int)Desc.DepthFunc)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.DepthFunc)) return ERR_IO_WRITE;
 		}
 	
 		if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_StencilEnable))
 		{
 			if (!W.Write(Desc.StencilReadMask)) return ERR_IO_WRITE;
 			if (!W.Write(Desc.StencilWriteMask)) return ERR_IO_WRITE;
-			if (!W.Write(Desc.StencilRef)) return ERR_IO_WRITE;
+			if (!W.Write<U32>(Desc.StencilRef)) return ERR_IO_WRITE;
 
-			if (!W.Write((int)Desc.StencilFrontFace.StencilFailOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)Desc.StencilFrontFace.StencilDepthFailOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)Desc.StencilFrontFace.StencilPassOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)Desc.StencilFrontFace.StencilFunc)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilFrontFace.StencilFailOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilFrontFace.StencilDepthFailOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilFrontFace.StencilPassOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilFrontFace.StencilFunc)) return ERR_IO_WRITE;
 
-			if (!W.Write((int)Desc.StencilBackFace.StencilFailOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)Desc.StencilBackFace.StencilDepthFailOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)Desc.StencilBackFace.StencilPassOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)Desc.StencilBackFace.StencilFunc)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilBackFace.StencilFailOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilBackFace.StencilDepthFailOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilBackFace.StencilPassOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.StencilBackFace.StencilFunc)) return ERR_IO_WRITE;
 		}
 
-		for (int BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
 		{
 			if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_Independent)) break;
 			if (Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
 
-			Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
-			if (!W.Write((int)RTBlend.SrcBlendArg)) return ERR_IO_WRITE;
-			if (!W.Write((int)RTBlend.DestBlendArg)) return ERR_IO_WRITE;
-			if (!W.Write((int)RTBlend.BlendOp)) return ERR_IO_WRITE;
-			if (!W.Write((int)RTBlend.SrcBlendArgAlpha)) return ERR_IO_WRITE;
-			if (!W.Write((int)RTBlend.DestBlendArgAlpha)) return ERR_IO_WRITE;
-			if (!W.Write((int)RTBlend.BlendOpAlpha)) return ERR_IO_WRITE;
-			if (!W.Write((int)RTBlend.WriteMask)) return ERR_IO_WRITE;
+			const Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
+			if (!W.Write<U8>(RTBlend.SrcBlendArg)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(RTBlend.DestBlendArg)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(RTBlend.BlendOp)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(RTBlend.SrcBlendArgAlpha)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(RTBlend.DestBlendArgAlpha)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(RTBlend.BlendOpAlpha)) return ERR_IO_WRITE;
+			if (!W.Write(RTBlend.WriteMask)) return ERR_IO_WRITE;
 		}
 
 		if (!W.Write(Desc.BlendFactorRGBA[0])) return ERR_IO_WRITE;
 		if (!W.Write(Desc.BlendFactorRGBA[1])) return ERR_IO_WRITE;
 		if (!W.Write(Desc.BlendFactorRGBA[2])) return ERR_IO_WRITE;
 		if (!W.Write(Desc.BlendFactorRGBA[3])) return ERR_IO_WRITE;
-		if (!W.Write(Desc.SampleMask)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Desc.SampleMask)) return ERR_IO_WRITE;
 
 		if (!W.Write(Desc.AlphaTestRef)) return ERR_IO_WRITE;
-		if (!W.Write((int)Desc.AlphaTestFunc)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Desc.AlphaTestFunc)) return ERR_IO_WRITE;
+
+		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+				if (!W.Write<U32>(RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount])) return ERR_IO_WRITE;
 	};
 
 	// Save techniques

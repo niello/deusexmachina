@@ -2226,7 +2226,13 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 			pRS->PS == Desc.PixelShader &&
 			pRS->pRState == pRState &&
 			pRS->pDSState == pDSState &&
-			pRS->pBState == pBState)
+			pRS->pBState == pBState &&
+			pRS->StencilRef == Desc.StencilRef &&
+			pRS->BlendFactorRGBA[0] == Desc.BlendFactorRGBA[0] &&
+			pRS->BlendFactorRGBA[1] == Desc.BlendFactorRGBA[1] &&
+			pRS->BlendFactorRGBA[2] == Desc.BlendFactorRGBA[2] &&
+			pRS->BlendFactorRGBA[3] == Desc.BlendFactorRGBA[3] &&
+			pRS->SampleMask == Desc.SampleMask)
 		{
 			return pRS; //???release state interfaces?
 		}

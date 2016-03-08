@@ -920,6 +920,9 @@
     <ClInclude Include="..\..\Src\L1\Render\TerrainRenderer.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\MaterialLoader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1506,6 +1509,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\IO\PathUtils.cpp">
       <Filter>IO</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\MaterialLoader.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
