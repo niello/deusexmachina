@@ -211,13 +211,20 @@ bool ProcessMaterialDesc(const char* pName)
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
+	CStrID EffectID = Desc->Get(CStrID("Effect"), CStrID::Empty);
+	if (EffectID.IsValid())
+	{
+		CString FileName(EffectID.CStr()); //CString("Textures:") + Textures->Get(i).GetValue<CString>();
+		if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+	}
+
 	Data::PParams Textures;
 	if (Desc->Get(Textures, CStrID("Textures")))
 	{
 		//!!!when export from src, find resource desc and add source texture to CFTexture list!
 		for (UPTR i = 0; i < Textures->GetCount(); ++i)
 		{
-			CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
+			CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CString>();
 			if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 		}
 	}

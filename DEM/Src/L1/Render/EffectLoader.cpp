@@ -1,10 +1,15 @@
 #include "EffectLoader.h"
 
+#include <Render/GPUDriver.h>
 #include <Render/Effect.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/Shader.h>
+#include <Render/ShaderLoader.h>
 #include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
+#include <Data/StringUtils.h>
 
 namespace Resources
 {
@@ -15,17 +20,21 @@ const Core::CRTTI& CEffectLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
+//!!!can sort techs by InputID from best to worst! also can first load techs, then RS, not to load RS that won't be used!
 bool CEffectLoader::Load(CResource& Resource)
 {
+	if (GPU.IsNullPtr()) FAIL;
+
 	const char* pURI = Resource.GetUID().CStr();
 	IO::PStream File = IOSrv->CreateStream(pURI);
 	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
 	IO::CBinaryReader Reader(*File);
 
-	if (Reader.Read<U32>() != 'SHFX') FAIL; // Magic
+	U32 Magic;
+	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') FAIL;
 
 	U32 Version;
-	if (Reader.Read<U32>(Version)) FAIL;
+	if (!Reader.Read<U32>(Version)) FAIL;
 
 	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
 	U32 RSCount;
@@ -34,6 +43,7 @@ bool CEffectLoader::Load(CResource& Resource)
 	for (UPTR i = 0; i < RSCount; ++i)
 	{
 		Render::CRenderStateDesc Desc;
+		Desc.SetDefaults();
 
 		U32 MaxLights;
 		if (!Reader.Read(MaxLights)) FAIL;
@@ -120,6 +130,11 @@ bool CEffectLoader::Load(CResource& Resource)
 
 		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 		{
+			bool ShaderLoadingFailed = false;
+
+			//???use .shd / .csh for all?
+			const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
+			Render::PShader* pShaders[] = { &Desc.VertexShader, &Desc.PixelShader, &Desc.GeometryShader, &Desc.HullShader, &Desc.DomainShader };
 			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
 			{
 				U32 ShaderID;
@@ -127,17 +142,173 @@ bool CEffectLoader::Load(CResource& Resource)
 
 				if (!ShaderID)
 				{
-					Desc.pShaders[ShaderType] = NULL;
+					*pShaders[ShaderType] = NULL;
 					continue;
 				}
 
-				// load shader resource by ID
+				CString URI = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
+				Resources::PResource RVS = ResourceMgr->RegisterResource(URI.CStr());
+				if (!RVS->IsLoaded())
+				{
+					Resources::PResourceLoader Loader = RVS->GetLoader();
+					if (Loader.IsNullPtr())
+						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pExtension[ShaderType] + 1); // +1 to skip dot
+					Loader->As<Resources::CShaderLoader>()->GPU = GPU;
+					ResourceMgr->LoadResourceSync(*RVS, *Loader);
+					if (!RVS->IsLoaded())
+					{
+						ShaderLoadingFailed = true;
+						break;
+					}
+				}
+
+				*pShaders[ShaderType] = RVS->GetObject<Render::CShader>();
 			}
 
-			// create render state
-			// push render state into variation array, even if creation failed (NULL)
+			Variations[LightCount] = ShaderLoadingFailed ? NULL : GPU->CreateRenderState(Desc);
 		}
 	}
+
+	struct CTechInfo
+	{
+		CStrID						ID;
+		CStrID						InputSet;
+		U32							Target;
+		Render::EGPUFeatureLevel	MinFeatureLevel;
+		U64							RequiresFlags;
+		U32							MaxLights;
+	};
+
+	CDict<CStrID, CTechInfo> Techs;
+
+	Render::EGPUFeatureLevel GPULevel = GPU->GetFeatureLevel();
+
+	U32 TechCount;
+	if (!Reader.Read<U32>(TechCount) || !TechCount) FAIL;
+	for (UPTR i = 0; i < TechCount; ++i)
+	{
+		U32 U32Value;
+		CTechInfo TechInfo;
+		if (!Reader.Read(TechInfo.ID)) FAIL;
+		if (!Reader.Read(TechInfo.InputSet)) FAIL;
+		if (!Reader.Read(TechInfo.Target)) FAIL;
+		if (!Reader.Read(U32Value)) FAIL;
+		if (!Reader.Read(TechInfo.RequiresFlags)) FAIL;
+
+		TechInfo.MinFeatureLevel = (Render::EGPUFeatureLevel)U32Value;
+
+		// Check for hardware and API support
+		if (TechInfo.MinFeatureLevel > GPULevel) continue;
+		if (!GPU->SupportsShaderModel(TechInfo.Target)) continue;
+		//!!!check RequiresFlags!
+
+		// Check for already loaded tech, isn't it better
+		CTechInfo* pTechInfo = NULL;
+		IPTR Idx = Techs.FindIndex(TechInfo.InputSet);
+		if (Idx != INVALID_INDEX)
+		{
+			pTechInfo = &Techs.ValueAt(Idx);
+			if (pTechInfo->MinFeatureLevel > TechInfo.MinFeatureLevel) continue;
+		}
+
+		bool IsValidTech = true;
+
+		U32 PassCount;
+		if (!Reader.Read<U32>(PassCount)) FAIL;
+		CFixedArray<U32> PassRenderStateIndices(PassCount);
+		for (UPTR PassIdx = 0; PassIdx < PassCount; ++PassIdx)
+		{
+			U32 PassRenderStateIdx;
+			if (!Reader.Read<U32>(PassRenderStateIdx)) FAIL;
+
+			if (PassRenderStateIdx == INVALID_INDEX)
+			{
+				IsValidTech = false;
+				break;
+			}
+
+			bool HasValidVariations = false;
+			CFixedArray<Render::PRenderState>& Variations = RenderStates[PassRenderStateIdx];
+			for (UPTR VarIdx = 0; VarIdx < Variations.GetCount(); ++VarIdx)
+			{
+				if (Variations[VarIdx].IsValidPtr())
+				{
+					HasValidVariations = true;
+					break;
+				}
+			}
+
+			if (!HasValidVariations) // Completely invalid pass fails the whole tech
+			{
+				IsValidTech = false;
+				break;
+			}
+			
+			PassRenderStateIndices[PassIdx] = PassRenderStateIdx;
+		}
+
+		if (!IsValidTech) continue;
+
+		if (!Reader.Read<U32>(TechInfo.MaxLights)) FAIL;
+
+		// Truncate to ensure VariationValid flags will suit into an U32 flags
+		// This limitation can easily be avoided by using an array of bool, but
+		// in is doubtful that anyone will try to render more than 31 forward light.
+		//if (TechInfo.MaxLights > 31) TechInfo.MaxLights = 31;
+
+		//U32 LightVariationValidityFlags = 0;
+		UPTR LightVariationCount = TechInfo.MaxLights + 1;
+		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+		{
+			// Always 0 or 1
+			U8 VariationValid;
+			if (!Reader.Read<U8>(VariationValid)) FAIL;
+			//LightVariationValidityFlags |= (VariationValid << LightCount);
+
+			if (!VariationValid)
+			{
+				// add empty variation to the tech for that light count
+				continue;
+			}
+
+			// from all passes, get variation for that light count
+			// if there is NULL, add empty vatiation to the tech
+			// if LightCount is more than pass allows, truncate MaxLights to LightCount - 1
+			// if LightCount was 0 in this case, fail tech
+		}
+
+		//// Params are saved already sorted by ID due to CDictionary nature
+		//if (!Reader.Read<U32>(TechInfo.Params.GetCount())) FAIL;
+		//for (UPTR ParamIdx = 0; ParamIdx < TechInfo.Params.GetCount(); ++ParamIdx)
+		//{
+		//	CStrID ParamID = TechInfo.Params.KeyAt(ParamIdx);
+		//	CEffectParam& TechParam = TechInfo.Params.ValueAt(ParamIdx);
+
+		//	EEffectParamTypeForSaving Type = GetParamTypeForSaving(TechParam.Type);
+		//	if (Type == EPT_Invalid) return ERR_INVALID_DATA;
+
+		//	if (!Reader.Read(ParamID)) FAIL;
+		//	if (!Reader.Read<U8>(Type)) FAIL;
+		//	if (!Reader.Read<U8>(TechParam.ShaderType)) FAIL;
+		//	if (!Reader.Read<U32>(TechParam.SourceShaderID)) FAIL;
+		//}
+
+		//if (TechInfo.Target < 0x0400)
+		//{
+		//	WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");
+		//	WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
+		//	WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
+		//}
+	}
+
+	//!!!try to find by effect ID! add into it, if found!
+	//!!!now rsrc mgmt doesn't support miltiple resources per file and partial resource definitions (multiple files per resource)!
+	//may modify CEffectLoader to store all files of the effect, and use effect ID and rsrc URI separately.
+	Render::PEffect Effect = n_new(Render::CEffect);
+
+	//!!!add techs, build search indices!
+
+	Resource.Init(Effect.GetUnsafe(), this);
 
 	OK;
 }

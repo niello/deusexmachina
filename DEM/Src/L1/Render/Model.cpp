@@ -18,8 +18,18 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 	{
 		case 'MTRL':
 		{
-			//Material = RenderSrv->MaterialMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-			CStrID URI = DataReader.Read<CStrID>();
+			CString RsrcID = DataReader.Read<CString>();
+			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".prm");
+			Resources::PResource RMtl = ResourceMgr->RegisterResource(RsrcURI);
+			if (!RMtl->IsLoaded())
+			{
+				Resources::PResourceLoader Loader = RMtl->GetLoader();
+				if (Loader.IsNullPtr())
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RsrcURI.CStr()));
+				ResourceMgr->LoadResourceSync(*RMtl, *Loader);
+				n_assert(RMtl->IsLoaded());
+			}
+			Material = RMtl->GetObject<Render::CMaterial>();
 			OK;
 		}
 		case 'VARS':

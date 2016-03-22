@@ -45,6 +45,7 @@ protected:
 
 	UPTR							AdapterID;
 	EGPUDriverType					Type;
+	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
 //	UPTR							InstanceCount;	// If 0, non-instanced rendering is active //???if 1? instanced shader + 1 inst data?
 
@@ -55,14 +56,16 @@ protected:
 
 public:
 
-	CGPUDriver() {}
+	CGPUDriver(): AdapterID(Adapter_None) {}
 	virtual ~CGPUDriver() {}
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
-	virtual bool				CheckCaps(ECaps Cap) = 0;
-	virtual UPTR				GetMaxVertexStreams() = 0;
-	virtual UPTR				GetMaxTextureSize(ETextureType Type) = 0;
-	virtual UPTR				GetMaxMultipleRenderTargetCount() = 0;
+	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }
+	virtual bool				CheckCaps(ECaps Cap) const = 0;
+	virtual bool				SupportsShaderModel(U32 ShaderModel) const = 0;
+	virtual UPTR				GetMaxVertexStreams() const = 0;
+	virtual UPTR				GetMaxTextureSize(ETextureType Type) const = 0;
+	virtual UPTR				GetMaxMultipleRenderTargetCount() const = 0;
 
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
 	virtual bool				DestroySwapChain(UPTR SwapChainID) = 0;

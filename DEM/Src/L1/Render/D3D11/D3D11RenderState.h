@@ -21,10 +21,10 @@ class CD3D11RenderState: public CRenderState
 public:
 
 	PD3D11Shader				VS;
+	PD3D11Shader				PS;
+	PD3D11Shader				GS;
 	PD3D11Shader				HS;
 	PD3D11Shader				DS;
-	PD3D11Shader				GS;
-	PD3D11Shader				PS;
 	ID3D11RasterizerState*		pRState;
 	ID3D11DepthStencilState*	pDSState;
 	ID3D11BlendState*			pBState;

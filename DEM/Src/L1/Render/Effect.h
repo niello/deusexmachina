@@ -34,6 +34,8 @@ protected:
 
 public:
 
+	virtual bool		IsResourceValid() const { return !!Techs.GetCount(); }
+
 	const CTechnique*	GetTechByName(CStrID Name) const;
 	const CTechnique*	GetTechByInputID(CStrID InputID) const;
 };

@@ -66,37 +66,80 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	};
 	UPTR FeatureLevelCount = sizeof_array(FeatureLevels);
 
-	D3D_FEATURE_LEVEL FeatureLevel; //???to member or always get from device?
+	D3D_FEATURE_LEVEL D3DFeatureLevel;
 
 	HRESULT hr = D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, CreateFlags,
 								   FeatureLevels, FeatureLevelCount, D3D11_SDK_VERSION,
-								   &pD3DDevice, &FeatureLevel, &pD3DImmContext);
+								   &pD3DDevice, &D3DFeatureLevel, &pD3DImmContext);
 
 	//if (hr == E_INVALIDARG)
 	//{
 	//	// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
 	//	hr = D3D11CreateDevice(	pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, CreateFlags, FeatureLevels + 1, FeatureLevelCount - 1,
-	//							D3D11_SDK_VERSION, &pD3DDevice, &FeatureLevel, &pD3DImmContext);
+	//							D3D11_SDK_VERSION, &pD3DDevice, &D3DFeatureLevel, &pD3DImmContext);
 	//}
 
 	pAdapter->Release();
 
 	if (FAILED(hr))
 	{
-		Sys::Error("Failed to create Direct3D11 device object!\n");
+		Sys::Log("Failed to create Direct3D11 device object, hr = 0x%x!\n", hr);
 		FAIL;
 	}
 
 	if (AdapterID == 0) Type = GPU_Hardware; //???else? //!!!in D3D9 type was in device caps!
 
-	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)FeatureLevel);
+	Sys::Log("Device created: %s, feature level 0x%x\n", "HAL", (int)D3DFeatureLevel);
 
-	UPTR MRTCount = 0;
-	if (FeatureLevel >= D3D_FEATURE_LEVEL_11_0) MRTCount = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
-	else if (FeatureLevel >= D3D_FEATURE_LEVEL_10_0) MRTCount = D3D10_SIMULTANEOUS_RENDER_TARGET_COUNT;
-	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_3) MRTCount = D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT;
-	else if (FeatureLevel >= D3D_FEATURE_LEVEL_9_1) MRTCount = D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT;
-	CurrRT.SetSize(MRTCount);
+	UPTR MRTCountCaps = 0;
+	UPTR MaxViewportCountCaps = 0;
+	switch (D3DFeatureLevel)
+	{
+		case D3D_FEATURE_LEVEL_9_1:
+			FeatureLevel = GPU_Level_D3D9_1;
+			MRTCountCaps = D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = 1;
+			break;
+		case D3D_FEATURE_LEVEL_9_2:
+			FeatureLevel = GPU_Level_D3D9_2;
+			MRTCountCaps = D3D_FL9_1_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = 1;
+			break;
+		case D3D_FEATURE_LEVEL_9_3:
+			FeatureLevel = GPU_Level_D3D9_3;
+			MRTCountCaps = D3D_FL9_3_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = 1;
+			break;
+		case D3D_FEATURE_LEVEL_10_0:
+			FeatureLevel = GPU_Level_D3D10_0;
+			MRTCountCaps = D3D10_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = D3D10_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
+			break;
+		case D3D_FEATURE_LEVEL_10_1:
+			FeatureLevel = GPU_Level_D3D10_1;
+			MRTCountCaps = D3D10_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = D3D10_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
+			break;
+		case D3D_FEATURE_LEVEL_11_0:
+			FeatureLevel = GPU_Level_D3D11_0;
+			MRTCountCaps = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
+			break;
+		//case D3D_FEATURE_LEVEL_11_1:
+		default:
+			FeatureLevel = GPU_Level_D3D11_1;
+			MRTCountCaps = D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT;
+			MaxViewportCountCaps = D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
+			break;
+	}
+
+	UPTR MaxVertexStreamsCaps = GetMaxVertexStreams();
+
+	CurrRT.SetSize(MRTCountCaps);
+	CurrVB.SetSize(MaxVertexStreamsCaps);
+	CurrVBOffset.SetSize(MaxVertexStreamsCaps);
+	CurrCB.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT);
+	CurrSS.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT);
 
 	// To determine whether viewport is set or not at a particular index, we use a bitfield.
 	// So we are not only limited by a D3D11 caps but also by a bit count in a mask.
@@ -104,18 +147,10 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	//???and also one dirty flag? when set VP do D3D11 remember its SR or it resets SR size?
 	//!!!need static assert!
 	n_assert_dbg(sizeof(VPSRSetFlags) * 4 >= VP_OR_SR_SET_FLAG_COUNT);
-	UPTR MaxViewportCountCaps = 1;
-	if (FeatureLevel >= D3D_FEATURE_LEVEL_11_0) MaxViewportCountCaps = D3D10_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
-	else if (FeatureLevel >= D3D_FEATURE_LEVEL_10_0) MaxViewportCountCaps = D3D11_VIEWPORT_AND_SCISSORRECT_MAX_INDEX + 1;
 	MaxViewportCount = n_min(MaxViewportCountCaps, VP_OR_SR_SET_FLAG_COUNT);
 	CurrVP = n_new_array(D3D11_VIEWPORT, MaxViewportCount);
 	CurrSR = n_new_array(RECT, MaxViewportCount);
 	VPSRSetFlags.ClearAll();
-
-	CurrVB.SetSize(D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT);
-	CurrVBOffset.SetSize(D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT);
-	CurrCB.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT);
-	CurrSS.SetSize(ShaderType_COUNT * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT);
 
 	OK;
 }
@@ -187,7 +222,7 @@ void CD3D11GPUDriver::Release()
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
+bool CD3D11GPUDriver::CheckCaps(ECaps Cap) const
 {
 	n_assert(pD3DDevice);
 
@@ -206,7 +241,7 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
-UPTR CD3D11GPUDriver::GetMaxVertexStreams()
+UPTR CD3D11GPUDriver::GetMaxVertexStreams() const
 {
 	D3D_FEATURE_LEVEL FeatLevel = pD3DDevice->GetFeatureLevel();
 	if (FeatLevel >= D3D_FEATURE_LEVEL_11_0) return D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT;
@@ -215,7 +250,7 @@ UPTR CD3D11GPUDriver::GetMaxVertexStreams()
 }
 //---------------------------------------------------------------------
 
-UPTR CD3D11GPUDriver::GetMaxTextureSize(ETextureType Type)
+UPTR CD3D11GPUDriver::GetMaxTextureSize(ETextureType Type) const
 {
 	switch (pD3DDevice->GetFeatureLevel())
 	{
@@ -2220,10 +2255,10 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	{
 		CD3D11RenderState* pRS = RenderStates[i].GetUnsafe();
 		if (pRS->VS == Desc.VertexShader &&
+			pRS->PS == Desc.PixelShader &&
+			pRS->GS == Desc.GeometryShader &&
 			pRS->HS == Desc.HullShader &&
 			pRS->DS == Desc.DomainShader &&
-			pRS->GS == Desc.GeometryShader &&
-			pRS->PS == Desc.PixelShader &&
 			pRS->pRState == pRState &&
 			pRS->pDSState == pDSState &&
 			pRS->pBState == pBState &&
@@ -2241,10 +2276,10 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	{
 		PD3D11RenderState RS = n_new(CD3D11RenderState);
 		RS->VS = (CD3D11Shader*)Desc.VertexShader.GetUnsafe();
+		RS->PS = (CD3D11Shader*)Desc.PixelShader.GetUnsafe();
+		RS->GS = (CD3D11Shader*)Desc.GeometryShader.GetUnsafe();
 		RS->HS = (CD3D11Shader*)Desc.HullShader.GetUnsafe();
 		RS->DS = (CD3D11Shader*)Desc.DomainShader.GetUnsafe();
-		RS->GS = (CD3D11Shader*)Desc.GeometryShader.GetUnsafe();
-		RS->PS = (CD3D11Shader*)Desc.PixelShader.GetUnsafe();
 		RS->pRState = pRState;
 		RS->pDSState = pDSState;
 		RS->pBState = pBState;

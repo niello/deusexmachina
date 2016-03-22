@@ -3,6 +3,7 @@
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <Data/StringUtils.h>
+#include <Render/RenderFwd.h>		// For GPU levels enum
 #include <D3D9ShaderReflection.h>
 #include <D3DCompiler.inl>
 
@@ -145,13 +146,24 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 
 	if (FAILED(D3D11Reflect(pData, Size, &pReflector))) FAIL;
 
-	D3D_FEATURE_LEVEL MinFeatureLevel;
-	if (FAILED(pReflector->GetMinFeatureLevel(&MinFeatureLevel)))
+	D3D_FEATURE_LEVEL D3DFeatureLevel;
+	if (FAILED(pReflector->GetMinFeatureLevel(&D3DFeatureLevel)))
 	{
 		pReflector->Release();
 		FAIL;
 	}
-	Out.MinFeatureLevel = MinFeatureLevel;
+
+	switch (D3DFeatureLevel)
+	{
+		case D3D_FEATURE_LEVEL_9_1:		Out.MinFeatureLevel = Render::GPU_Level_D3D9_1; break;
+		case D3D_FEATURE_LEVEL_9_2:		Out.MinFeatureLevel = Render::GPU_Level_D3D9_2; break;
+		case D3D_FEATURE_LEVEL_9_3:		Out.MinFeatureLevel = Render::GPU_Level_D3D9_3; break;
+		case D3D_FEATURE_LEVEL_10_0:	Out.MinFeatureLevel = Render::GPU_Level_D3D10_0; break;
+		case D3D_FEATURE_LEVEL_10_1:	Out.MinFeatureLevel = Render::GPU_Level_D3D10_1; break;
+		case D3D_FEATURE_LEVEL_11_0:	Out.MinFeatureLevel = Render::GPU_Level_D3D11_0; break;
+		//case D3D_FEATURE_LEVEL_11_1:
+		default:						Out.MinFeatureLevel = Render::GPU_Level_D3D11_1; break;
+	}
 
 	Out.RequiresFlags = pReflector->GetRequiresFlags();
 

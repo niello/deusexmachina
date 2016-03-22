@@ -6,10 +6,10 @@
 
 // Loads render material from DEM "prm" format
 
-//namespace Render
-//{
-//	typedef Ptr<class CGPUDriver> PGPUDriver;
-//}
+namespace Render
+{
+	typedef Ptr<class CGPUDriver> PGPUDriver;
+}
 
 namespace Resources
 {
@@ -19,6 +19,8 @@ class CMaterialLoader: public CResourceLoader
 	__DeclareClassNoFactory;
 
 public:
+
+	Render::PGPUDriver GPU;
 
 	virtual ~CMaterialLoader() {}
 

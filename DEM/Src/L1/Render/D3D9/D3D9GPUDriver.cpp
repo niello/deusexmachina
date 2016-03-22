@@ -759,7 +759,7 @@ void CD3D9GPUDriver::ApplyShaderConstChanges()
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
+bool CD3D9GPUDriver::CheckCaps(ECaps Cap) const
 {
 	n_assert(pD3DDevice);
 
@@ -786,14 +786,14 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap)
 }
 //---------------------------------------------------------------------
 
-UPTR CD3D9GPUDriver::GetMaxVertexStreams()
+UPTR CD3D9GPUDriver::GetMaxVertexStreams() const
 {
 	n_assert(pD3DDevice);
 	return (UPTR)D3DCaps.MaxStreams;
 }
 //---------------------------------------------------------------------
 
-UPTR CD3D9GPUDriver::GetMaxTextureSize(ETextureType Type)
+UPTR CD3D9GPUDriver::GetMaxTextureSize(ETextureType Type) const
 {
 	n_assert(pD3DDevice);
 	switch (Type)
@@ -911,6 +911,16 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 		Sys::Log("Failed to create Direct3D9 device object, hr = 0x%x!\n", hr);
 		FAIL;
 	}
+
+	if (D3DCaps.VertexShaderVersion < D3DVS_VERSION(3, 0) || D3DCaps.PixelShaderVersion < D3DPS_VERSION(3, 0))
+	{
+		Sys::Log("Graphics device doesn't support shader model 3.0\n");
+		pD3DDevice->Release();
+		pD3DDevice = NULL;
+		FAIL;
+	}
+
+	FeatureLevel = GPU_Level_D3D9_3;
 
 	CurrRT.SetSize(D3DCaps.NumSimultaneousRTs);
 	CurrVB.SetSize(D3DCaps.MaxStreams);

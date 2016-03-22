@@ -13,7 +13,6 @@ struct ID3D11HullShader;
 struct ID3D11DomainShader;
 struct ID3D11GeometryShader;
 struct ID3D11PixelShader;
-enum D3D_FEATURE_LEVEL;
 
 namespace Render
 {
@@ -109,7 +108,7 @@ public:
 	CFixedArray<CSamplerMeta>	Samplers;
 
 	UPTR						InputSignatureID;
-	D3D_FEATURE_LEVEL			MinFeatureLevel;
+	EGPUFeatureLevel			MinFeatureLevel;
 	U64							RequiresFlags;
 
 	CD3D11Shader(): pD3DShader(NULL), InputSignatureID(0) {}

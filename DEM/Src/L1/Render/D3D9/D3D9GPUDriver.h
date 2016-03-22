@@ -132,10 +132,11 @@ public:
 	virtual ~CD3D9GPUDriver() { Release(); }
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType);
-	virtual bool				CheckCaps(ECaps Cap);
-	virtual UPTR				GetMaxVertexStreams();
-	virtual UPTR				GetMaxTextureSize(ETextureType Type);
-	virtual UPTR				GetMaxMultipleRenderTargetCount() { return CurrRT.GetCount(); }
+	virtual bool				CheckCaps(ECaps Cap) const;
+	virtual bool				SupportsShaderModel(U32 ShaderModel) const { return ShaderModel == 0x0300; }
+	virtual UPTR				GetMaxVertexStreams() const;
+	virtual UPTR				GetMaxTextureSize(ETextureType Type) const;
+	virtual UPTR				GetMaxMultipleRenderTargetCount() const { return CurrRT.GetCount(); }
 
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
 	virtual bool				DestroySwapChain(UPTR SwapChainID);

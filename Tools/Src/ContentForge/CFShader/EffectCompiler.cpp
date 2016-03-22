@@ -943,8 +943,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 
 						if (pD3D9Meta)
 						{
-							//D3D_FEATURE_LEVEL_9_3 = 0x9300
-							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, 0x9300);
+							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, Render::GPU_Level_D3D9_3);
 						}
 						else if (pD3D11Meta)
 						{
@@ -1636,15 +1635,15 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write(TechInfo.MinFeatureLevel)) return ERR_IO_WRITE;
 		if (!W.Write(TechInfo.RequiresFlags)) return ERR_IO_WRITE;
 
+		if (!W.Write<U32>(TechInfo.PassIndices.GetCount())) return ERR_IO_WRITE;
+		for (UPTR PassIdx = 0; PassIdx < TechInfo.PassIndices.GetCount(); ++PassIdx)
+			if (!W.Write<U32>(TechInfo.PassIndices[PassIdx])) return ERR_IO_WRITE;
+
 		UPTR LightVariationCount = TechInfo.MaxLights + 1;
 
 		if (!W.Write<U32>(TechInfo.MaxLights)) return ERR_IO_WRITE;
 		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
-			if (!W.Write<bool>(TechInfo.VariationValid[LightCount])) return ERR_IO_WRITE;
-
-		if (!W.Write<U32>(TechInfo.PassIndices.GetCount())) return ERR_IO_WRITE;
-		for (UPTR PassIdx = 0; PassIdx < TechInfo.PassIndices.GetCount(); ++PassIdx)
-			if (!W.Write<U32>(TechInfo.PassIndices[PassIdx])) return ERR_IO_WRITE;
+			if (!W.Write<U8>(TechInfo.VariationValid[LightCount] ? 1 : 0)) return ERR_IO_WRITE;
 
 		// Params are saved already sorted by ID due to CDictionary nature
 		if (!W.Write<U32>(TechInfo.Params.GetCount())) return ERR_IO_WRITE;

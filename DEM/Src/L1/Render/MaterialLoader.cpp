@@ -1,7 +1,10 @@
 #include "MaterialLoader.h"
 
 #include <Render/Material.h>
+#include <Render/Effect.h>
+#include <Render/EffectLoader.h>
 #include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
@@ -40,6 +43,31 @@ bool CMaterialLoader::Load(CResource& Resource)
 		if (!Reader.ReadParams(*Desc)) FAIL;
 	}
 	else FAIL;
+
+	CStrID EffectID = Desc->Get<CStrID>(CStrID("Effect"), CStrID::Empty);
+	if (!EffectID.IsValid()) FAIL;
+
+	//CString RsrcURI("Shaders:");
+	//RsrcURI += EffectID.CStr();
+	CString RsrcURI(EffectID.CStr());
+
+	Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
+	if (!Rsrc->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = Rsrc->GetLoader();
+		if (Loader.IsNullPtr())
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CEffect>(PathUtils::GetExtension(RsrcURI.CStr()));
+		Loader->As<Resources::CEffectLoader>()->GPU = GPU;
+		ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
+		if (!Rsrc->IsLoaded()) FAIL;
+	}
+
+	Render::PMaterial Mtl = n_new(Render::CMaterial);
+
+	// Set effect
+	// Build parameters
+
+	Resource.Init(Mtl.GetUnsafe(), this);
 
 	OK;
 }

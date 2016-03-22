@@ -6,10 +6,10 @@
 
 // Loads shader effect file in DEM (.eff) format
 
-//namespace Render
-//{
-//	typedef Ptr<class CGPUDriver> PGPUDriver;
-//}
+namespace Render
+{
+	typedef Ptr<class CGPUDriver> PGPUDriver;
+}
 
 namespace Resources
 {
@@ -18,6 +18,8 @@ class CEffectLoader: public CResourceLoader
 {
 
 public:
+
+	Render::PGPUDriver GPU;
 
 	virtual ~CEffectLoader() {}
 

@@ -157,7 +157,7 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 	//???where to validate? will be loaded at all? mb load and check these fields before creating D3D API shader object?
 	U32 MinFeatureLevelValue;
 	R.Read<U32>(MinFeatureLevelValue);
-	Shader->MinFeatureLevel = (D3D_FEATURE_LEVEL)MinFeatureLevelValue;
+	Shader->MinFeatureLevel = (Render::EGPUFeatureLevel)MinFeatureLevelValue;
 
 	R.Read<U64>(Shader->RequiresFlags);
 
