@@ -24,7 +24,8 @@ protected:
 	//???need this all per-shader or can store in driver? dynamic buffers one per size.
 	//CArray<PConstantBuffer>	DynamicBuffers;		// Map-Discard with mutable content, for frequent updating (per-object data)
 
-	CDict<CStrID, CTechnique>	Techs;
+	CDict<CStrID, PTechnique>	TechsByName;
+	CDict<UPTR, PTechnique>		TechsByInputSet;
 
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
@@ -34,18 +35,29 @@ protected:
 
 public:
 
-	virtual bool		IsResourceValid() const { return !!Techs.GetCount(); }
+	virtual bool		IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
+
+	void				BeginAddTechs(UPTR Count) { TechsByName.BeginAdd(Count); TechsByInputSet.BeginAdd(Count); }
+	void				AddTech(PTechnique Tech) { TechsByName.Add(Tech->GetName(), Tech); TechsByInputSet.Add(Tech->GetShaderInputSetID(), Tech); }
+	void				EndAddTechs() { TechsByName.EndAdd(); TechsByInputSet.EndAdd(); }
 
 	const CTechnique*	GetTechByName(CStrID Name) const;
-	const CTechnique*	GetTechByInputID(CStrID InputID) const;
+	const CTechnique*	GetTechByInputSet(UPTR InputSet) const;
 };
 
 typedef Ptr<CEffect> PEffect;
 
 inline const CTechnique* CEffect::GetTechByName(CStrID Name) const
 {
-	IPTR Idx = Techs.FindIndex(Name);
-	return Idx == INVALID_INDEX ? NULL : &Techs.ValueAt(Idx);
+	IPTR Idx = TechsByName.FindIndex(Name);
+	return Idx == INVALID_INDEX ? NULL : TechsByName.ValueAt(Idx).GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+inline const CTechnique* CEffect::GetTechByInputSet(UPTR InputSet) const
+{
+	IPTR Idx = TechsByInputSet.FindIndex(InputSet);
+	return Idx == INVALID_INDEX ? NULL : TechsByInputSet.ValueAt(Idx).GetUnsafe();
 }
 //---------------------------------------------------------------------
 

@@ -307,6 +307,27 @@ PStream CIOServer::CreateStream(const char* pURI) const
 		}
 	}
 
+	//!!!for writing new files! redesign?
+	if (!pFS)
+	{
+		if (!DefaultFS->IsReadOnly())
+		{
+			pFS = DefaultFS.GetUnsafe();
+		}
+		else
+		{
+			for (UPTR i = 0; i < FS.GetCount(); ++i)
+			{
+				IFileSystem* pCurrFS = FS[i].GetUnsafe();
+				if (pCurrFS && !pCurrFS->IsReadOnly())
+				{
+					pFS = pCurrFS;
+					break;
+				}
+			}
+		}
+	}
+
 	return n_new(CFileStream(AbsURI.CStr(), pFS));
 }
 //---------------------------------------------------------------------

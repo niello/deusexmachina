@@ -23,13 +23,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
 	//!!!can query correct squared distance to camera and/or screen size from an SPS along with object pointers!
-	//!!!mb better to use array, not linked list! pool is good for single object reallocations,
-	//here the whole array will be freed at the end of a phase
 
 	CArray<Render::CRenderNode>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
 
-	//CRenderNode* pRenderQueueHead = NULL;
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
 	{
 		Scene::CNodeAttribute* pAttr = *It;
@@ -43,8 +40,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Render::IRenderer* pRenderer = Renderers.ValueAt(Idx);
 		if (!pRenderer) continue;
 
-		//CRenderNode* pNode = CRenderNode::Pool.Construct();
-		//pNode->pNext = pRenderQueueHead;
 		Render::CRenderNode* pNode = RenderQueue.Add();
 		pNode->pRenderable = pRenderable;
 		pNode->pRenderer = pRenderer;
@@ -55,8 +50,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		{
 			//!!!add skin palette to a render node!
 		}
-
-		//pRenderQueueHead = pNode;
 	}
 
 	// Sort render queue if necessary
@@ -65,22 +58,13 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	// Bind and clear render target etc
 
-	//CRenderNode* pCurrHead = pRenderQueueHead;
-	//while (pCurrHead)
-	//	pCurrHead = pCurrHead->pRenderer->Render(pCurrHead);
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
-		ItCurr = ItCurr->pRenderer->Render(RenderQueue, ItCurr);
+		ItCurr = ItCurr->pRenderer->Render(*View.GPU, RenderQueue, ItCurr);
 
 	RenderQueue.Clear(false);
 	//???may store render queue in cache for other phases? or completely unreusable? some info like a distance to a camera may be shared
-	//while (pRenderQueueHead)
-	//{
-	//	CRenderNode* pNext = pRenderQueueHead->pNext;
-	//	CRenderNode::Pool.Destroy(pRenderQueueHead);
-	//	pRenderQueueHead = pNext;
-	//}
 
 	// Unbind render target etc
 

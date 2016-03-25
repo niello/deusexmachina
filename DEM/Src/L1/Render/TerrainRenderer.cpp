@@ -16,7 +16,7 @@ CTerrainRenderer::CTerrainRenderer()
 }
 //---------------------------------------------------------------------
 
-CArray<CRenderNode>::CIterator CTerrainRenderer::Render(CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
+CArray<CRenderNode>::CIterator CTerrainRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
 	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)

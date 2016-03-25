@@ -2,6 +2,7 @@
 #ifndef __DEM_L1_RENDER_TECHNIQUE_H__
 #define __DEM_L1_RENDER_TECHNIQUE_H__
 
+#include <Render/RenderFwd.h>
 #include <Data/FixedArray.h>
 #include <Data/StringID.h>
 #include <Data/Dictionary.h>
@@ -13,35 +14,43 @@
 // When IRenderer renders some object, it chooses a technique whose input set ID
 // matches an ID of input set the renderer provides.
 
+namespace Resources
+{
+	class CEffectLoader;
+}
+
 namespace Render
 {
 typedef Ptr<class CRenderState> PRenderState;
 typedef CFixedArray<PRenderState> CPassList;
 
-class CTechnique
+class CTechnique: public Data::CRefCounted
 {
 private:
 
-	CStrID					Name;				//???here or only as a key in an association inside a CEffect?
-	UPTR					ShaderInputSetID;	//???here or only as a key in an association inside a CEffect?
+	CStrID					Name;
+	UPTR					ShaderInputSetID;
+	EGPUFeatureLevel		MinFeatureLevel;
 	CFixedArray<CPassList>	PassesByLightCount;
 
-	UPTR					ShaderTypeCount;	// Not to store constants for all 5 shader types where some of them aren't present
-	HHandle*				pConstantTable;
-	CDict<CStrID, HHandle*>	ConstNameToHandles;
+	//UPTR					ShaderTypeCount;	// Not to store constants for all 5 shader types where some of them aren't present
+	//HHandle*				pConstantTable;
+	//CDict<CStrID, HHandle*>	ConstNameToHandles;
 
-	void				BuildConstantTable();
+	friend class Resources::CEffectLoader;
 
 public:
 
-	CTechnique(): ShaderInputSetID(INVALID_INDEX), ShaderTypeCount(0), pConstantTable(NULL) {}
+	CTechnique() {} //: ShaderTypeCount(0), pConstantTable(NULL) {}
 
 	CStrID				GetName() const { return Name; }
 	UPTR				GetShaderInputSetID() const { return ShaderInputSetID; }
 	IPTR				GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
 	const CPassList*	GetPasses(UPTR& LightCount) const;
-	IPTR				GetConstantIndex(CStrID ConstantName) const { return ConstNameToHandles.FindIndex(ConstantName); }
+	//IPTR				GetConstantIndex(CStrID ConstantName) const { return ConstNameToHandles.FindIndex(ConstantName); }
 };
+
+typedef Ptr<CTechnique> PTechnique;
 
 inline const CPassList*	CTechnique::GetPasses(UPTR& LightCount) const
 {

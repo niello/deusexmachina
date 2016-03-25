@@ -1085,7 +1085,7 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 
 UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 {
-	const Data::CFlags Update(ChangesToUpdate);
+	Data::CFlags Update(ChangesToUpdate);
 	UPTR Errors = 0;
 
 	bool InputLayoutDirty = false;
@@ -1420,6 +1420,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 					if ((UPTR)D3DVP.Width == RTWidth && (UPTR)D3DVP.Height == RTHeight) break;
 					UnsetVPFound = true;
 					CurrDirtyFlags.Set(GPU_Dirty_VP);
+					Update.Set(GPU_Dirty_VP);
 				}
 
 				// If we are here, RT dimensions were changed, so update default VP values
@@ -1434,13 +1435,11 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 	if (Update.Is(GPU_Dirty_VP) && CurrDirtyFlags.Is(GPU_Dirty_VP))
 	{
-		// Find the last set VP, as we must set all viewports from 0'th to it
-		UPTR NumVP = 0;
-		for (UPTR i = 0; i < MaxViewportCount; ++i)
-			if (VPSRSetFlags.Is(1 << i)) NumVP = i + 1;
-
-		// At least one default viewport must be specified
-		if (!NumVP) NumVP = 1;
+		// Find the last set VP, as we must set all viewports from 0'th to it.
+		// At least one default viewport must be specified, so NumVP is no less than 1.
+		UPTR NumVP = MaxViewportCount;
+		for (; NumVP > 1; --NumVP)
+			if (VPSRSetFlags.Is(1 << (NumVP - 1))) break;
 
 		pD3DImmContext->RSSetViewports(NumVP, CurrVP);
 
@@ -1453,11 +1452,10 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 	{
 		// Find the last set SR, as we must set all rects from 0'th to it
 		UPTR NumSR = 0;
-		for (UPTR i = 0; i < MaxViewportCount; ++i)
-			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + i))) NumSR = i + 1;
+		for (; NumSR > 1; --NumSR)
+			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + NumSR - 1))) break;
 
-		if (NumSR) pD3DImmContext->RSSetScissorRects(NumSR, CurrSR);
-		else pD3DImmContext->RSSetScissorRects(0, NULL);
+		pD3DImmContext->RSSetScissorRects(NumSR, NumSR ? CurrSR : NULL);
 
 		CurrDirtyFlags.Clear(GPU_Dirty_SR);
 	}

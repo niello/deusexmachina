@@ -13,6 +13,7 @@
 namespace Render
 {
 struct CRenderNode;
+class CGPUDriver;
 
 class IRenderer: public Core::CRTTIBaseClass
 {
@@ -20,7 +21,7 @@ class IRenderer: public Core::CRTTIBaseClass
 
 public:
 
-	virtual CArray<CRenderNode>::CIterator Render(CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr) = 0;
+	virtual CArray<CRenderNode>::CIterator Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr) = 0;
 };
 
 }

@@ -15,7 +15,8 @@ public:
 
 	virtual bool	Mount(const char* pSource, const char* pRoot) { OK; }
 	virtual void	Unmount() {}
-	virtual bool	ProvidesFileCursor() { OK; }
+	virtual bool	IsReadOnly() const { FAIL; }
+	virtual bool	ProvidesFileCursor() const { OK; }
 
 	virtual bool	FileExists(const char* pPath);
 	virtual bool	IsFileReadOnly(const char* pPath);

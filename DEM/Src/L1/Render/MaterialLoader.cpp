@@ -56,7 +56,10 @@ bool CMaterialLoader::Load(CResource& Resource)
 	{
 		Resources::PResourceLoader Loader = Rsrc->GetLoader();
 		if (Loader.IsNullPtr())
+		{
 			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CEffect>(PathUtils::GetExtension(RsrcURI.CStr()));
+			if (Loader.IsNullPtr()) FAIL;
+		}
 		Loader->As<Resources::CEffectLoader>()->GPU = GPU;
 		ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
 		if (!Rsrc->IsLoaded()) FAIL;
@@ -64,7 +67,8 @@ bool CMaterialLoader::Load(CResource& Resource)
 
 	Render::PMaterial Mtl = n_new(Render::CMaterial);
 
-	// Set effect
+	Mtl->Effect = Rsrc->GetObject<Render::CEffect>();
+
 	// Build parameters
 
 	Resource.Init(Mtl.GetUnsafe(), this);
