@@ -3,10 +3,12 @@
 #include <Frame/View.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrSkin.h>
+#include <Frame/NodeAttrCamera.h>
 #include <Scene/SceneNode.h>
 #include <Render/Renderable.h>
 #include <Render/Renderer.h>
 #include <Render/RenderNode.h>
+#include <Render/GPUDriver.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Core/Factory.h>
@@ -21,6 +23,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	View.UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
+
+	if (!VisibleObjects.GetCount()) OK;
 
 	//!!!can query correct squared distance to camera and/or screen size from an SPS along with object pointers!
 
@@ -45,6 +49,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		pNode->pRenderer = pRenderer;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
 		//pNode->LOD = 0; //!!!determine based on sq camera or screen size! in renderers? sphere screen size may be reduced to 2 points = len of square
+		//!!!if LOD in renderers, may store sq dist to camera and/or screen size in a render node, and use them to determine LOD!
 		Frame::CNodeAttrSkin* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
 		if (pSkinAttr)
 		{
@@ -56,7 +61,13 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	//???or sort in renderers? or build tree and sort each branch as required
 	//may write complex sorter which takes into account alpha
 
-	// Bind and clear render target etc
+	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
+		View.GPU->SetRenderTarget(i, View.RTs[i]);
+	View.GPU->SetDepthStencilBuffer(View.DSBuffer.GetUnsafe());
+
+	//!!!set camera shader params!
+	//???here or in a render path?
+	const matrix44& ViewProj = View.pCamera->GetViewProjMatrix();
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();
@@ -66,7 +77,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	RenderQueue.Clear(false);
 	//???may store render queue in cache for other phases? or completely unreusable? some info like a distance to a camera may be shared
 
-	// Unbind render target etc
+	// Unbind render target(s) etc
+	//???allow each phase to declare all its RTs and clear unused ones by itself?
+	//then unbind in the end of a CRenderPath::Render()
 
 	OK;
 }

@@ -33,15 +33,13 @@ private:
 	EGPUFeatureLevel		MinFeatureLevel;
 	CFixedArray<CPassList>	PassesByLightCount;
 
-	//UPTR					ShaderTypeCount;	// Not to store constants for all 5 shader types where some of them aren't present
-	//HHandle*				pConstantTable;
-	//CDict<CStrID, HHandle*>	ConstNameToHandles;
+	//CDict<CStrID, HHandle>	ConstNameToHandles;
 
 	friend class Resources::CEffectLoader;
 
 public:
 
-	CTechnique() {} //: ShaderTypeCount(0), pConstantTable(NULL) {}
+	CTechnique() {}
 
 	CStrID				GetName() const { return Name; }
 	UPTR				GetShaderInputSetID() const { return ShaderInputSetID; }

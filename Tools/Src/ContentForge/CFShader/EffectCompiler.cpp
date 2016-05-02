@@ -1905,6 +1905,17 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				}
 				else W.Write(false);
 			}
+			else if (DefaultValue.IsA<CString>())
+			{
+				CString ResourceID = DefaultValue.GetValue<CString>();
+				if (ResourceID.IsValid())
+				{
+					W.Write(true);
+					W.Write(ResourceID);
+					n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+				}
+				else W.Write(false);
+			}
 			else
 			{
 				if (!DefaultValue.IsNull())

@@ -6,6 +6,11 @@
 
 // Loads shader effect file in DEM (.eff) format
 
+namespace IO
+{
+	class CBinaryReader;
+}
+
 namespace Render
 {
 	typedef Ptr<class CGPUDriver> PGPUDriver;
@@ -16,6 +21,9 @@ namespace Resources
 
 class CEffectLoader: public CResourceLoader
 {
+protected:
+
+	bool						LoadEffectParams(IO::CBinaryReader& Reader, bool ReadDefaults) const;
 
 public:
 

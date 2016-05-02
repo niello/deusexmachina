@@ -32,8 +32,11 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 		CModel* pModel = ItCurr->pRenderable->As<CModel>();
 		n_assert_dbg(pModel);
 
+		CVertexBuffer* pVB = pModel->Mesh->GetVertexBuffer().GetUnsafe();
 		const CPrimitiveGroup* pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex/*, ItCurr->LOD*/);
 
+		//???do outside a renderer, in a phase, before sorting, and store in renderable?
+		//this requires a way to get material from a renderable. really need?
 		//!!!can find once, outside the render loop! store somewhere, associates object and renderer
 		const CTechnique* pTech = pModel->Material->GetEffect()->GetTechByInputSet(InputSet_Model);
 		//!!!search in fallback materials if not found!
@@ -42,9 +45,13 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 		UPTR LightCount = 0;
 
-		if (pGroup && pTech)
+		if (pVB && pGroup && pTech)
 		{
 			//set tech params
+
+			GPU.SetVertexLayout(pVB->GetVertexLayout());
+			GPU.SetVertexBuffer(0, pVB);
+			GPU.SetIndexBuffer(pModel->Mesh->GetIndexBuffer().GetUnsafe());
 
 			const CPassList* pPasses = pTech->GetPasses(LightCount);
 			if (pPasses)

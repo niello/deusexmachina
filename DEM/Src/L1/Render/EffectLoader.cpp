@@ -3,6 +3,8 @@
 #include <Render/GPUDriver.h>
 #include <Render/Effect.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/SamplerDesc.h>
+#include <Render/Texture.h>
 #include <Render/Shader.h>
 #include <Render/ShaderLoader.h>
 #include <Render/RenderFwd.h>
@@ -10,10 +12,20 @@
 #include <Resources/ResourceManager.h>
 #include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
+#include <IO/PathUtils.h>
 #include <Data/StringUtils.h>
 
 namespace Resources
 {
+
+enum EEffectParamType
+{
+	EPT_Const		= 0,
+	EPT_Resource	= 1,
+	EPT_Sampler		= 2,
+
+	EPT_Invalid
+};
 
 const Core::CRTTI& CEffectLoader::GetResultType() const
 {
@@ -149,22 +161,22 @@ bool CEffectLoader::Load(CResource& Resource)
 				}
 
 				CString URI = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
-				Resources::PResource RVS = ResourceMgr->RegisterResource(URI.CStr());
-				if (!RVS->IsLoaded())
+				Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
+				if (!RShader->IsLoaded())
 				{
-					Resources::PResourceLoader Loader = RVS->GetLoader();
+					Resources::PResourceLoader Loader = RShader->GetLoader();
 					if (Loader.IsNullPtr())
 						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pExtension[ShaderType] + 1); // +1 to skip dot
 					Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-					ResourceMgr->LoadResourceSync(*RVS, *Loader);
-					if (!RVS->IsLoaded())
+					ResourceMgr->LoadResourceSync(*RShader, *Loader);
+					if (!RShader->IsLoaded())
 					{
 						ShaderLoadingFailed = true;
 						break;
 					}
 				}
 
-				*pShaders[ShaderType] = RVS->GetObject<Render::CShader>();
+				*pShaders[ShaderType] = RShader->GetObject<Render::CShader>();
 			}
 
 			Variations[LightCount] = ShaderLoadingFailed ? NULL : GPU->CreateRenderState(Desc);
@@ -303,21 +315,9 @@ bool CEffectLoader::Load(CResource& Resource)
 		else if (NewVariationCount < LightVariationCount)
 			Tech->PassesByLightCount.SetSize(NewVariationCount, true);
 
-		//// Params are saved already sorted by ID due to CDictionary nature
-		//if (!Reader.Read<U32>(TechInfo.Params.GetCount())) FAIL;
-		//for (UPTR ParamIdx = 0; ParamIdx < TechInfo.Params.GetCount(); ++ParamIdx)
-		//{
-		//	CStrID ParamID = TechInfo.Params.KeyAt(ParamIdx);
-		//	CEffectParam& TechParam = TechInfo.Params.ValueAt(ParamIdx);
-
-		//	EEffectParamTypeForSaving Type = GetParamTypeForSaving(TechParam.Type);
-		//	if (Type == EPT_Invalid) return ERR_INVALID_DATA;
-
-		//	if (!Reader.Read(ParamID)) FAIL;
-		//	if (!Reader.Read<U8>(Type)) FAIL;
-		//	if (!Reader.Read<U8>(TechParam.ShaderType)) FAIL;
-		//	if (!Reader.Read<U32>(TechParam.SourceShaderID)) FAIL;
-		//}
+		// Load tech params info
+		
+		LoadEffectParams(Reader, false);
 
 		//if (TechInfo.Target < 0x0400)
 		//{
@@ -331,6 +331,11 @@ bool CEffectLoader::Load(CResource& Resource)
 
 	if (!Techs.GetCount()) FAIL;
 
+	// Load global and material params tables
+
+	LoadEffectParams(Reader, false); // Global
+	LoadEffectParams(Reader, true); // Material
+
 	//!!!try to find by effect ID! add into it, if found!
 	//!!!now rsrc mgmt doesn't support miltiple resources per file and partial resource definitions (multiple files per resource)!
 	//may modify CEffectLoader to store all files of the effect, and use effect ID and rsrc URI separately.
@@ -342,6 +347,127 @@ bool CEffectLoader::Load(CResource& Resource)
 	Effect->EndAddTechs();
 
 	Resource.Init(Effect.GetUnsafe(), this);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+//???save (and therefore load) default values separately? in a separate loop.
+//defaults are needed only for materials, so they are strictly a load-time feature,
+//no reason to store them attached to a main dictionary.
+bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, bool ReadDefaults) const
+{
+	//???use .shd / .csh for all?
+	const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
+
+	U32 ParamCount;
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 Type;
+		if (!Reader.Read(Type)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		//???use shader bank and simple indexing?
+		CString URI = "Shaders:Bin/" + StringUtils::FromInt(SourceShaderID) + pExtension[ShaderType];
+		Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
+		if (!RShader->IsLoaded()) FAIL; // Failed to find referenced shader
+		Render::PShader ParamShader = RShader->GetObject<Render::CShader>();
+
+		HHandle hParam = INVALID_HANDLE;
+		switch (Type)
+		{
+			case EPT_Const:		hParam = ParamShader->GetConstHandle(ParamID); break;
+			case EPT_Resource:	hParam = ParamShader->GetResourceHandle(ParamID); break;
+			case EPT_Sampler:	hParam = ParamShader->GetSamplerHandle(ParamID); break;
+			case EPT_Invalid:	FAIL;
+		}
+
+		// save ID to handle mapping, mb one dictionary per parameter type
+		// ParamID -> hParam, for const: hBuffer = Effect->GetConstBufferHandle(hParam), same as in CShader
+
+		if (ReadDefaults)
+		{
+			bool HasDefaultValue;
+			if (!Reader.Read(HasDefaultValue)) FAIL;
+			
+			if (HasDefaultValue)
+			{
+				switch (Type)
+				{
+					case EPT_Const:
+					{
+						NOT_IMPLEMENTED;
+						// get const type
+						// load default value as raw bytes
+						break;
+					}
+					case EPT_Resource:
+					{
+						CStrID ResourceID;
+						if (!Reader.Read(ResourceID)) FAIL;
+
+						Resources::PResource RTexture = ResourceMgr->RegisterResource(ResourceID.CStr());
+						if (!RTexture->IsLoaded())
+						{
+							Resources::PResourceLoader Loader = RTexture->GetLoader();
+							if (Loader.IsNullPtr())
+								Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
+							Loader->As<Resources::CShaderLoader>()->GPU = GPU;
+							ResourceMgr->LoadResourceSync(*RTexture, *Loader);
+							if (!RTexture->IsLoaded()) FAIL;
+						}
+
+						Render::PTexture DefaultTexture = RTexture->GetObject<Render::CTexture>();
+
+						//!!!save it somewhere!
+
+						break;
+					}
+					case EPT_Sampler:
+					{
+						Render::CSamplerDesc SamplerDesc;
+
+						U8 U8Value;
+						Reader.Read<U8>(U8Value);
+						SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
+						Reader.Read<U8>(U8Value);
+						SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
+						Reader.Read<U8>(U8Value);
+						SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
+						Reader.Read<U8>(U8Value);
+						SamplerDesc.Filter = (Render::ETexFilter)U8Value;
+
+						Reader.Read(SamplerDesc.BorderColorRGBA[0]);
+						Reader.Read(SamplerDesc.BorderColorRGBA[1]);
+						Reader.Read(SamplerDesc.BorderColorRGBA[2]);
+						Reader.Read(SamplerDesc.BorderColorRGBA[3]);
+						Reader.Read(SamplerDesc.MipMapLODBias);
+						Reader.Read(SamplerDesc.FinestMipMapLOD);
+						Reader.Read(SamplerDesc.CoarsestMipMapLOD);
+						Reader.Read(SamplerDesc.MaxAnisotropy);
+						
+						Reader.Read<U8>(U8Value);
+						SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
+
+						Render::PSampler DefaultSampler = GPU->CreateSampler(SamplerDesc);
+
+						//!!!save it somewhere!
+						
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	OK;
 }
