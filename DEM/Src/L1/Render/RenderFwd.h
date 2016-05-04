@@ -19,6 +19,8 @@ struct CSwapChainDesc;
 struct CRenderStateDesc;
 struct CSamplerDesc;
 class CDisplayMode;
+class CEffect;
+typedef Ptr<class CGPUDriver> PGPUDriver;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CVertexLayout> PVertexLayout;
 typedef Ptr<class CVertexBuffer> PVertexBuffer;

@@ -12,11 +12,6 @@ namespace IO
 	class CBinaryReader;
 }
 
-namespace Render
-{
-	typedef Ptr<class CGPUDriver> PGPUDriver;
-}
-
 namespace Resources
 {
 
@@ -34,7 +29,7 @@ protected:
 	};
 
 	bool						LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out) const;
-	bool						LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) const;
+	bool						LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Render::CEffect& Effect) const;
 
 public:
 

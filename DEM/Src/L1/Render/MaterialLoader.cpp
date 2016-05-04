@@ -1,5 +1,6 @@
 #include "MaterialLoader.h"
 
+#include <Render/GPUDriver.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/EffectLoader.h>
@@ -75,52 +76,84 @@ bool CMaterialLoader::Load(CResource& Resource)
 	//const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
 
 	const CFixedArray<Render::CEffectConstant>& Consts = Mtl->Effect->GetMaterialConstants();
+	Mtl->ConstBuffers.SetSize(Mtl->Effect->GetMaterialConstantBufferCount());
+	UPTR CurrCBCount = 0;
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
-		const Render::CEffectConstant& Rsrc = Consts[i];
+		const Render::CEffectConstant& Const = Consts[i];
 
-		// Find buffer instance for a Rsrc.BufferHandle in this material
-		// If not found, create CPU/RAM buffer and add record
-		Render::PConstantBuffer RAMBuffer;
-		Rsrc.ShaderType;
-		Rsrc.BufferHandle;
+		Render::CMaterial::CConstBufferRec* pRec = NULL;
+		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
+			if (Mtl->ConstBuffers[BufIdx].Handle == Const.BufferHandle)
+			{
+				pRec = &Mtl->ConstBuffers[BufIdx];
+				break;
+			}
+		
+		if (!pRec)
+		{
+			pRec = &Mtl->ConstBuffers[CurrCBCount];
+			pRec->Handle = Const.BufferHandle;
+			pRec->ShaderType = Const.ShaderType;
+			pRec->Buffer = GPU->CreateConstantBuffer(Const.BufferHandle, Render::Access_CPU_Write); //!!!must be a RAM-only buffer!
+			++CurrCBCount;
 
-		void* pValue;
-		UPTR ValueSize;
+			if (!GPU->BeginShaderConstants(*pRec->Buffer.GetUnsafe())) FAIL;
+		}
+
+		void* pValue = NULL;
+		UPTR ValueSize = 0;
 		// try to find value in a material description
-		// else use default value from an effect, even if NULL
+		if (!pValue)
+		{
+			pValue = Const.pDefaultValue;
+			//!!!size!
+		}
 
-		// Set const value to a buffer
-		RAMBuffer;
-		Rsrc.Handle;
-		pValue;
-		ValueSize;
+		if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Handle, 0, pValue, ValueSize)) FAIL;
 	}
 
-	// for each RAMBuffer created, create GPU/VRAM immutable buffer using CPU/RAM one as an initial data, destroy it then
+	for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
+	{
+		Render::CMaterial::CConstBufferRec* pRec = &Mtl->ConstBuffers[BufIdx];
+		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
+		if (!GPU->CommitShaderConstants(*RAMBuffer.GetUnsafe())) FAIL; //!!!must not do any VRAM operations inside!
+
+		//???do only if current buffer doesn't support VRAM? DX9 will support, DX11 will not.
+		//if supports VRAM, can reuse as VRAM buffer without data copying between RAMBuffer and a new one.
+		pRec->Buffer = GPU->CreateConstantBuffer(pRec->Handle, Render::Access_GPU_Read, RAMBuffer.GetUnsafe());
+	}
 
 	const CFixedArray<Render::CEffectResource>& Resources = Mtl->Effect->GetMaterialResources();
+	Mtl->Resources.SetSize(Resources.GetCount());
 	for (UPTR i = 0; i < Resources.GetCount(); ++i)
 	{
 		const Render::CEffectResource& Rsrc = Resources[i];
+		
 		Render::PTexture Value;
 		// try to find value in a material description
-		// else use default value from an effect, even if NULL
-		Rsrc.ShaderType;
-		Rsrc.Handle;
-		Value;
+		if (Value.IsNullPtr()) Value = Rsrc.DefaultValue;
+		
+		Render::CMaterial::CResourceRec& Rec = Mtl->Resources[i];
+		Rec.Handle = Rsrc.Handle;
+		Rec.ShaderType = Rsrc.ShaderType;
+		Rec.Resource = Value;
 	}
 
 	const CFixedArray<Render::CEffectSampler>& Samplers = Mtl->Effect->GetMaterialSamplers();
+	Mtl->Samplers.SetSize(Samplers.GetCount());
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
 		const Render::CEffectSampler& Sampler = Samplers[i];
+		
 		Render::PSampler Value;
 		// try to find value in a material description
-		// else use default value from an effect, even if NULL
-		Sampler.ShaderType;
-		Sampler.Handle;
-		Value;
+		if (Value.IsNullPtr()) Value = Sampler.DefaultValue;
+		
+		Render::CMaterial::CSamplerRec& Rec = Mtl->Samplers[i];
+		Rec.Handle = Sampler.Handle;
+		Rec.ShaderType = Sampler.ShaderType;
+		Rec.Sampler = Value;
 	}
 
 	Resource.Init(Mtl.GetUnsafe(), this);

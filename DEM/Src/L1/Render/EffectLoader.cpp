@@ -358,7 +358,8 @@ bool CEffectLoader::Load(CResource& Resource)
 	Effect->MaterialConsts.SetSize(ConstCount);
 	Effect->MaterialResources.SetSize(ResourceCount);
 	Effect->MaterialSamplers.SetSize(SamplerCount);
-	
+
+	CArray<Render::HConstBuffer> MtlConstBuffers;
 	ConstCount = 0;
 	ResourceCount = 0;
 	SamplerCount = 0;
@@ -375,6 +376,9 @@ bool CEffectLoader::Load(CResource& Resource)
 			Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
 			Rec.pDefaultValue = NULL;
 			++ConstCount;
+			
+			if (MtlConstBuffers.FindIndex(Prm.BufferHandle) == INVALID_INDEX)
+				MtlConstBuffers.Add(Prm.BufferHandle);
 		}
 		else if (Type == EPT_Resource)
 		{
@@ -394,7 +398,11 @@ bool CEffectLoader::Load(CResource& Resource)
 		}
 	}
 
-	if (!LoadEffectParamDefaultValues(Reader)) FAIL;
+	//???save precalc in a tool?
+	Effect->MaterialConstantBufferCount = MtlConstBuffers.GetCount();
+	MtlConstBuffers.Clear(true);
+
+	if (!LoadEffectParamDefaultValues(Reader, *Effect.GetUnsafe())) FAIL;
 
 	Effect->BeginAddTechs(Techs.GetCount());
 	for (UPTR i = 0; i < Techs.GetCount(); ++i)
@@ -456,8 +464,10 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedPa
 }
 //---------------------------------------------------------------------
 
-bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) const
+bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Render::CEffect& Effect) const
 {
+	CStrID ConstWithOffset0; // A way to distinguish between NULL (no default) and default with offset = 0
+
 	U32 ParamCount;
 	if (!Reader.Read<U32>(ParamCount)) FAIL;
 	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
@@ -475,7 +485,16 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) cons
 				U32 Offset;
 				if (!Reader.Read(Offset)) FAIL;
 
-				//!!!save it somewhere!
+				//!!!need binary search in fixed arrays!
+				for (UPTR i = 0; i < Effect.MaterialConsts.GetCount(); ++i)
+				{
+					Render::CEffectConstant& Rec = Effect.MaterialConsts[i];
+					if (Rec.ID == ParamID)
+					{
+						Rec.pDefaultValue = (void*)Offset;
+						if (!Offset) ConstWithOffset0 = ParamID;
+					}
+				}
 
 				break;
 			}
@@ -495,9 +514,12 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) cons
 					if (!RTexture->IsLoaded()) FAIL;
 				}
 
-				Render::PTexture DefaultTexture = RTexture->GetObject<Render::CTexture>();
-
-				//!!!save it somewhere!
+				//!!!need binary search in fixed arrays!
+				for (UPTR i = 0; i < Effect.MaterialResources.GetCount(); ++i)
+				{
+					Render::CEffectResource& Rec = Effect.MaterialResources[i];
+					if (Rec.ID == ParamID) Rec.DefaultValue = RTexture->GetObject<Render::CTexture>();
+				}
 
 				break;
 			}
@@ -527,9 +549,12 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) cons
 				Reader.Read<U8>(U8Value);
 				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
 
-				Render::PSampler DefaultSampler = GPU->CreateSampler(SamplerDesc);
-
-				//!!!save it somewhere!
+				//!!!need binary search in fixed arrays!
+				for (UPTR i = 0; i < Effect.MaterialSamplers.GetCount(); ++i)
+				{
+					Render::CEffectSampler& Rec = Effect.MaterialSamplers[i];
+					if (Rec.ID == ParamID) Rec.DefaultValue = GPU->CreateSampler(SamplerDesc);
+				}
 						
 				break;
 			}
@@ -540,17 +565,17 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) cons
 	if (!Reader.Read(DefValsSize)) FAIL;
 	if (DefValsSize)
 	{
-		void* pDefaultValue = n_malloc(DefValsSize);
-		Reader.GetStream().Read(pDefaultValue, DefValsSize);
+		Effect.pMaterialConstDefaultValues = (char*)n_malloc(DefValsSize);
+		Reader.GetStream().Read(Effect.pMaterialConstDefaultValues, DefValsSize);
+		//???store size in effect?
 
-		//!!!save it somewhere!
-		//!!!patch saved offsets to obtain direct pointers!
-
-		n_free(pDefaultValue);
-	}
-	else
-	{
-		void* pDefaultValue = NULL;
+		//!!!need binary search in fixed arrays!
+		for (UPTR i = 0; i < Effect.MaterialConsts.GetCount(); ++i)
+		{
+			Render::CEffectConstant& Rec = Effect.MaterialConsts[i];
+			if (Rec.ID == ConstWithOffset0) Rec.pDefaultValue = Effect.pMaterialConstDefaultValues;
+			else if (Rec.pDefaultValue) Rec.pDefaultValue = Effect.pMaterialConstDefaultValues + (U32)Rec.pDefaultValue;
+		}
 	}
 
 	OK;

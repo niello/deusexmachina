@@ -57,6 +57,7 @@ protected:
 	CFixedArray<CEffectResource>	MaterialResources;
 	CFixedArray<CEffectSampler>		MaterialSamplers;
 	char*							pMaterialConstDefaultValues;
+	UPTR							MaterialConstantBufferCount;
 
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
@@ -72,7 +73,7 @@ protected:
 
 public:
 
-	CEffect(): pMaterialConstDefaultValues(NULL) {}
+	CEffect(): pMaterialConstDefaultValues(NULL), MaterialConstantBufferCount(0) {}
 	~CEffect() { SAFE_FREE(pMaterialConstDefaultValues); }
 
 	virtual bool						IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
@@ -83,6 +84,7 @@ public:
 	const CFixedArray<CEffectConstant>&	GetMaterialConstants() const { return MaterialConsts; }
 	const CFixedArray<CEffectResource>&	GetMaterialResources() const { return MaterialResources; }
 	const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
+	UPTR								GetMaterialConstantBufferCount() const { return MaterialConstantBufferCount; }
 };
 
 typedef Ptr<CEffect> PEffect;

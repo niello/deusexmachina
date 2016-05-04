@@ -2044,7 +2044,7 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const Data::CParams* pData)
+PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CD3D9ShaderBufferMeta* pMeta = (CD3D9ShaderBufferMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(hBuffer);
