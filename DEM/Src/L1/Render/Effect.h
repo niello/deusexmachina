@@ -20,12 +20,38 @@ class CEffect: public Resources::CResourceObject
 {
 protected:
 
-	// all dynamic buffers used by any valid tech
-	//???need this all per-shader or can store in driver? dynamic buffers one per size.
-	//CArray<PConstantBuffer>	DynamicBuffers;		// Map-Discard with mutable content, for frequent updating (per-object data)
+	struct CConstRec
+	{
+		//EShaderType ShaderType; //need cbuffer identification
+		HConst		Handle;
+		void*		pDefaultValue;
+	};
+
+	struct CResourceRec
+	{
+		EShaderType ShaderType;
+		HResource	Handle;
+		PTexture	DefaultValue;
+	};
+
+	struct CSamplerRec
+	{
+		EShaderType ShaderType;
+		HSampler	Handle;
+		PSampler	DefaultValue;
+	};
 
 	CDict<CStrID, PTechnique>	TechsByName;
 	CDict<UPTR, PTechnique>		TechsByInputSet;
+
+	//global params signature for validation against a current render path
+
+	//!!!can use fixed arrays with binary search by ID!
+	//material can reference this data by index, since these arrays never change after effect loading
+	CDict<CStrID, CConstRec>	MaterialConsts;
+	CDict<CStrID, CResourceRec>	MaterialResources;
+	CDict<CStrID, CSamplerRec>	MaterialSamplers;
+	char*						pMaterialConstDefaultValues;
 
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
@@ -33,7 +59,12 @@ protected:
 	// selects material LOD inside, uses its Shader
 	//???!!!LOD distances in material itself?! per-mtl calc, if common, per-renderer/per-phase calc
 
+	//friend class Resources::CEffectLoader;
+
 public:
+
+	CEffect(): pMaterialConstDefaultValues(NULL) {}
+	~CEffect() { SAFE_FREE(pMaterialConstDefaultValues); }
 
 	virtual bool		IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
 

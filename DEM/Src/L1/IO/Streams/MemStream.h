@@ -25,6 +25,8 @@ protected:
 	UPTR	AllocSize;
 	bool	SelfAlloc;
 
+	void			Allocate(UPTR AddedBytes);
+
 public:
 
 	CMemStream(): pBuffer(NULL), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
@@ -36,6 +38,7 @@ public:
 	virtual void	Close();
 	virtual UPTR	Read(void* pData, UPTR Size);
 	virtual UPTR	Write(const void* pData, UPTR Size);
+	UPTR			Fill(U8 Value, UPTR ByteCount);
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin);
 	virtual void	Flush() {}
 	virtual void*	Map();
@@ -49,6 +52,8 @@ public:
 	virtual bool	CanSeek() const { OK; }
 	virtual bool	CanBeMapped() const { OK; }
 };
+
+typedef Ptr<CMemStream> PMemStream;
 
 inline bool CMemStream::Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {

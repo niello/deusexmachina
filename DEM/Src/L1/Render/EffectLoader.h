@@ -23,7 +23,8 @@ class CEffectLoader: public CResourceLoader
 {
 protected:
 
-	bool						LoadEffectParams(IO::CBinaryReader& Reader, bool ReadDefaults) const;
+	bool						LoadEffectParams(IO::CBinaryReader& Reader) const;
+	bool						LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) const;
 
 public:
 

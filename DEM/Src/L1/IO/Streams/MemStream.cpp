@@ -39,28 +39,42 @@ UPTR CMemStream::Read(void* pData, UPTR Size)
 }
 //---------------------------------------------------------------------
 
+void CMemStream::Allocate(UPTR AddedBytes)
+{
+	if (Pos + AddedBytes <= AllocSize) return;
+
+	AllocSize = Pos + AddedBytes;
+	if (SelfAlloc) pBuffer = (char*)n_realloc(pBuffer, AllocSize);
+	else
+	{
+		void* pOld = pBuffer;
+		pBuffer = (char*)n_malloc(AllocSize);
+		SelfAlloc = true;
+		if (pOld) memcpy(pBuffer, pOld, DataSize);
+	}
+	n_assert(pBuffer);
+}
+//---------------------------------------------------------------------
+
 UPTR CMemStream::Write(const void* pData, UPTR Size)
 {
 	n_assert(IsOpen() && !IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
-
-	if (Pos + Size > AllocSize)
-	{
-		AllocSize = Pos + Size;
-		if (SelfAlloc) pBuffer = (char*)n_realloc(pBuffer, AllocSize);
-		else
-		{
-			void* pOld = pBuffer;
-			pBuffer = (char*)n_malloc(AllocSize);
-			SelfAlloc = true;
-			if (pOld) memcpy(pBuffer, pOld, DataSize);
-		}
-		n_assert(pBuffer);
-	}
-
+	Allocate(Size);
 	memcpy(pBuffer + Pos, pData, Size);
 	Pos += Size;
 	if (Pos > DataSize) DataSize = Pos;
 	return Size;
+}
+//---------------------------------------------------------------------
+
+UPTR CMemStream::Fill(U8 Value, UPTR ByteCount)
+{
+	n_assert(IsOpen() && !IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
+	Allocate(ByteCount);
+	memset(pBuffer + Pos, Value, ByteCount);
+	Pos += ByteCount;
+	if (Pos > DataSize) DataSize = Pos;
+	return ByteCount;
 }
 //---------------------------------------------------------------------
 
@@ -88,11 +102,8 @@ bool CMemStream::IsEOF() const
 
 void* CMemStream::Map()
 {
-    //n_assert(this->IsOpen());
-    //Stream::Map();
-    //n_assert(this->GetSize() > 0);
-    //return this->buffer;
-	return NULL;
+	//Stream::Map();
+	return pBuffer;
 }
 //---------------------------------------------------------------------
 

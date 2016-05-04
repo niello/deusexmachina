@@ -12,15 +12,16 @@
 namespace Render
 {
 
-//enum EShaderParamType
-//{
-//	ShaderParam_ConstantFloat,
-//	ShaderParam_ConstantInt,
-//	ShaderParam_ConstantBool,
-//	ShaderParam_CBuffer,
-//	ShaderParam_Resource,
-//	ShaderParam_Sampler
-//};
+enum EConstType
+{
+	ConstType_Float	= 0,
+	ConstType_Int,
+	ConstType_Bool,
+
+	ConstType_Other,
+
+	ConstType_Invalid
+};
 
 class CShader: public Resources::CResourceObject
 {
@@ -41,7 +42,7 @@ public:
 	virtual HConstBuffer	GetConstBufferHandle(HConst hConst) const = 0;
 	virtual HResource		GetResourceHandle(CStrID ID) const = 0;
 	virtual HSampler		GetSamplerHandle(CStrID ID) const = 0;
-	//virtual UPTR		GetConstAddress(CStrID ID, HConstBuffer& OutHostBuffer) = 0;
+	virtual EConstType		GetConstType(HConst hConst) const = 0;
 
 	EShaderType				GetType() const { return Type; }
 };

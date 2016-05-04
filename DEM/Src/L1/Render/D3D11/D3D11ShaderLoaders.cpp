@@ -199,7 +199,7 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 
 		U8 Type;
 		if (!R.Read<U8>(Type)) return NULL;
-		pMeta->Type = (Render::CD3D11Shader::EConstType)Type;
+		pMeta->Type = (Render::CD3D11Shader::ED3D11ConstType)Type;
 
 		if (!R.Read<U32>(pMeta->Offset)) return NULL;
 		if (!R.Read<U32>(pMeta->ElementSize)) return NULL;

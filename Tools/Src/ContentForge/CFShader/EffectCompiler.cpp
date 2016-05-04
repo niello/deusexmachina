@@ -1,5 +1,6 @@
 #include <IO/IOServer.h>
 #include <IO/Streams/FileStream.h>
+#include <IO/Streams/MemStream.h>
 #include <IO/PathUtils.h>
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
@@ -1669,7 +1670,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		}
 	}
 
-	// Save global and material params tables
+	// Save global params table
 
 	if (!W.Write<U32>(GlobalParams.GetCount())) return ERR_IO_WRITE;
 	for (UPTR ParamIdx = 0; ParamIdx < GlobalParams.GetCount(); ++ParamIdx)
@@ -1690,8 +1691,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	//WriteRegisterRanges(GlobalInt4, W, "int4");
 	//WriteRegisterRanges(GlobalBool, W, "bool");
 
-	//!!!each material const buffer must be backed in a raw RAM block to set in a GPU material array (part of a big buffer, not a dedicated one)!
-	//if dedicated CB is needed, it can be created without RAM back-storage and can be directly transmitted to the GPU, immutable!
+	// Save material params table
+
 	if (!W.Write<U32>(MaterialParams.GetCount())) return ERR_IO_WRITE;
 	for (UPTR ParamIdx = 0; ParamIdx < MaterialParams.GetCount(); ++ParamIdx)
 	{
@@ -1704,193 +1705,152 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
 		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+	}
 
+	// Save material param default values: param ID, type (not to search in each collection, if they are separate), value or offset
+
+	IO::PMemStream DefaultConstValues = n_new(IO::CMemStream);
+	DefaultConstValues->Open(IO::SAM_READWRITE, IO::SAP_SEQUENTIAL);
+
+	U64 DefValCountPos = W.GetStream().GetPosition();
+	U32 DefValCount = 0;
+	if (!W.Write<U32>(0)) return ERR_IO_WRITE;
+	for (UPTR ParamIdx = 0; ParamIdx < MaterialParams.GetCount(); ++ParamIdx)
+	{
+		CEffectParam& Param = MaterialParams[ParamIdx];
+		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
 		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
+		
 		if (Type == EPT_Const)
 		{
-			if (DefaultValue.IsNull()) W.Write(false);
-			else
+			if (DefaultValue.IsNull()) continue;
+
+			// Use D3D11 enum as it suits for all APIs now
+			ED3D11ConstType ConstType = D3D11Const_Invalid;
+			U32 ConstSizeInBytes = 0;
+			U32 ValueSizeInBytes = 0;
+			U32 CurrDefValOffset = (U32)DefaultConstValues->GetPosition();
+
+			if (Param.Type == EPT_SM30Const)
 			{
-				if (Param.Type == EPT_SM30Const)
+				CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
+				switch (Meta.RegisterSet)
 				{
-					CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
-					switch (Meta.RegisterSet)
+					case RS_Float4:
 					{
-						case RS_Float4:
-						{
-							if (DefaultValue.IsA<float>())
-							{
-								W.Write(true);
-								W.Write(1);
-								W.Write(DefaultValue.GetValue<float>());
-							}
-							else if (DefaultValue.IsA<int>())
-							{
-								W.Write(true);
-								W.Write(1);
-								W.Write((float)DefaultValue.GetValue<int>());
-							}
-							else if (DefaultValue.IsA<vector3>())
-							{
-								const vector3& Vec = DefaultValue.GetValue<vector3>();
-								W.Write(true);
-								W.Write(3);
-								W.Write(Vec);
-							}
-							else if (DefaultValue.IsA<vector4>())
-							{
-								const vector4& Vec = DefaultValue.GetValue<vector4>();
-								W.Write(true);
-								W.Write(4);
-								W.Write(Vec);
-							}
-							else if (DefaultValue.IsA<matrix44>())
-							{
-								const matrix44& Mtx = DefaultValue.GetValue<matrix44>();
-								W.Write(true);
-								W.Write(16);
-								W.Write(Mtx);
-							}
-							else
-							{
-								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
-								W.Write(false);
-								break;
-							}
-
-							n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-							break;
-						}
-						case RS_Int4:
-						{
-							if (DefaultValue.IsA<int>())
-							{
-								W.Write(true);
-								W.Write(DefaultValue.GetValue<int>());
-								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-							}
-							else
-							{
-								n_msg(VL_WARNING, "Material param '%s' is an int, default value must be null or int\n", Param.ID.CStr());
-								W.Write(false);
-							}
-							break;
-						}
-						case RS_Bool:
-						{
-							if (DefaultValue.IsA<bool>())
-							{
-								W.Write(true);
-								W.Write(DefaultValue.GetValue<bool>());
-								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-							}
-							else
-							{
-								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null or bool\n", Param.ID.CStr());
-								W.Write(false);
-							}
-							break;
-						}
-						default:
-						{
-							n_msg(VL_WARNING, "Material param '%s' has unsupported register set, default value is skipped\n", Param.ID.CStr());
-							W.Write(false);
-						}
+						ConstType = D3D11Const_Float;
+						ConstSizeInBytes = 4 * sizeof(float) * Meta.ElementRegisterCount * Meta.ElementCount;
+						break;
 					}
-				}
-				else if (Param.Type == EPT_SM40Const)
-				{
-					CD3D11ShaderConstMeta& Meta = *Param.pSM40Const;
-					switch (Meta.Type)
+					case RS_Int4:
 					{
-						case D3D11Const_Float:
-						{
-							if (DefaultValue.IsA<float>())
-							{
-								W.Write(true);
-								W.Write(1);
-								W.Write(DefaultValue.GetValue<float>());
-							}
-							else if (DefaultValue.IsA<int>())
-							{
-								W.Write(true);
-								W.Write(1);
-								W.Write((float)DefaultValue.GetValue<int>());
-							}
-							else if (DefaultValue.IsA<vector3>())
-							{
-								const vector3& Vec = DefaultValue.GetValue<vector3>();
-								W.Write(true);
-								W.Write(3);
-								W.Write(Vec);
-							}
-							else if (DefaultValue.IsA<vector4>())
-							{
-								const vector4& Vec = DefaultValue.GetValue<vector4>();
-								W.Write(true);
-								W.Write(4);
-								W.Write(Vec);
-							}
-							else if (DefaultValue.IsA<matrix44>())
-							{
-								const matrix44& Mtx = DefaultValue.GetValue<matrix44>();
-								W.Write(true);
-								W.Write(16);
-								W.Write(Mtx);
-							}
-							else
-							{
-								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
-								W.Write(false);
-								break;
-							}
-
-							n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-							break;
-						}
-						case D3D11Const_Int:
-						{
-							if (DefaultValue.IsA<int>())
-							{
-								W.Write(true);
-								W.Write(DefaultValue.GetValue<int>());
-								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-							}
-							else
-							{
-								n_msg(VL_WARNING, "Material param '%s' is an int, default value must be null or int\n", Param.ID.CStr());
-								W.Write(false);
-							}
-							break;
-						}
-						case D3D11Const_Bool:
-						{
-							if (DefaultValue.IsA<bool>())
-							{
-								W.Write(true);
-								W.Write(DefaultValue.GetValue<bool>());
-								n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-							}
-							else
-							{
-								n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null or bool\n", Param.ID.CStr());
-								W.Write(false);
-							}
-							break;
-						}
-						default:
-						{
-							n_msg(VL_WARNING, "Material param '%s' has unsupported register set, default value is skipped\n", Param.ID.CStr());
-							W.Write(false);
-						}
+						ConstType = D3D11Const_Int;
+						ConstSizeInBytes = /* 4 * */ sizeof(I32) * Meta.ElementRegisterCount * Meta.ElementCount;
+						break;
 					}
-				}
-				else
-				{
-					n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type, default value is skipped\n", Param.ID.CStr());
-					W.Write(false);
+					case RS_Bool:
+					{
+						ConstType = D3D11Const_Bool;
+						ConstSizeInBytes = sizeof(bool) * Meta.ElementRegisterCount * Meta.ElementCount;
+						break;
+					}
 				}
 			}
+			else if (Param.Type == EPT_SM40Const)
+			{
+				CD3D11ShaderConstMeta& Meta = *Param.pSM40Const;
+				ConstType = Meta.Type;
+				ConstSizeInBytes = Meta.ElementSize * Meta.ElementCount;
+			}
+
+			n_assert(ConstType == D3D11Const_Invalid || ConstSizeInBytes > 0);
+
+			switch (ConstType)
+			{
+				case D3D11Const_Float:
+				{
+					if (DefaultValue.IsA<float>())
+					{
+						float DefValue = DefaultValue.GetValue<float>();
+						ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+						DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+					}
+					else if (DefaultValue.IsA<int>())
+					{
+						float DefValue = (float)DefaultValue.GetValue<int>();
+						ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+						DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+					}
+					else if (DefaultValue.IsA<vector3>())
+					{
+						const vector3& DefValue = DefaultValue.GetValue<vector3>();
+						ValueSizeInBytes = n_min(sizeof(vector3), ConstSizeInBytes);
+						DefaultConstValues->Write(DefValue.v, ValueSizeInBytes);
+					}
+					else if (DefaultValue.IsA<vector4>())
+					{
+						const vector4& DefValue = DefaultValue.GetValue<vector4>();
+						ValueSizeInBytes = n_min(sizeof(vector4), ConstSizeInBytes);
+						DefaultConstValues->Write(DefValue.v, ValueSizeInBytes);
+					}
+					else if (DefaultValue.IsA<matrix44>())
+					{
+						const matrix44& DefValue = DefaultValue.GetValue<matrix44>();
+						ValueSizeInBytes = n_min(sizeof(matrix44), ConstSizeInBytes);
+						DefaultConstValues->Write(DefValue.m, ValueSizeInBytes);
+					}
+					else
+					{
+						n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
+						continue;
+					}
+
+					break;
+				}
+				case D3D11Const_Int:
+				{
+					if (DefaultValue.IsA<int>())
+					{
+						I32 DefValue = (I32)DefaultValue.GetValue<int>();
+						ValueSizeInBytes = n_min(sizeof(I32), ConstSizeInBytes);
+						DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+					}
+					else
+					{
+						n_msg(VL_WARNING, "Material param '%s' is an int, default value must be null or int\n", Param.ID.CStr());
+						continue;
+					}
+					break;
+				}
+				case D3D11Const_Bool:
+				{
+					if (DefaultValue.IsA<bool>())
+					{
+						bool DefValue = DefaultValue.GetValue<bool>();
+						ValueSizeInBytes = n_min(sizeof(bool), ConstSizeInBytes);
+						DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+					}
+					else
+					{
+						n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null or bool\n", Param.ID.CStr());
+						continue;
+					}
+					break;
+				}
+				default:
+				{
+					n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type or register set, default value is skipped\n", Param.ID.CStr());
+					continue;
+				}
+			}
+			
+			if (ConstSizeInBytes > ValueSizeInBytes) DefaultConstValues->Fill(0, ConstSizeInBytes - ValueSizeInBytes);
+			
+			if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+			if (!W.Write<U32>(CurrDefValOffset)) return ERR_IO_WRITE;
+			++DefValCount;
+			n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 		}
 		else if (Type == EPT_Resource)
 		{
@@ -1899,29 +1859,27 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 				CStrID ResourceID = DefaultValue.GetValue<CStrID>();
 				if (ResourceID.IsValid())
 				{
-					W.Write(true);
-					W.Write(ResourceID);
+					if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+					if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+					if (!W.Write(ResourceID)) return ERR_IO_WRITE;
+					++DefValCount;
 					n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 				}
-				else W.Write(false);
 			}
 			else if (DefaultValue.IsA<CString>())
 			{
 				CString ResourceID = DefaultValue.GetValue<CString>();
 				if (ResourceID.IsValid())
 				{
-					W.Write(true);
-					W.Write(ResourceID);
+					if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+					if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+					if (!W.Write(ResourceID)) return ERR_IO_WRITE;
+					++DefValCount;
 					n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 				}
-				else W.Write(false);
 			}
-			else
-			{
-				if (!DefaultValue.IsNull())
-					n_msg(VL_WARNING, "Material param '%s' is a resource, default value must be null or resource ID of type CStrID\n", Param.ID.CStr());
-				W.Write(false);
-			}
+			else if (!DefaultValue.IsNull())
+				n_msg(VL_WARNING, "Material param '%s' is a resource, default value must be null or resource ID of type CString or CStrID\n", Param.ID.CStr());
 		}
 		else if (Type == EPT_Sampler)
 		{
@@ -1934,7 +1892,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					SamplerDesc.SetDefaults();
 					if (ProcessSamplerSection(SamplerSection, SamplerDesc))
 					{
-						W.Write(true);
+						if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
 						
 						W.Write<U8>(SamplerDesc.AddressU);
 						W.Write<U8>(SamplerDesc.AddressV);
@@ -1950,25 +1909,32 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 						W.Write<U32>(SamplerDesc.MaxAnisotropy);
 						W.Write<U8>(SamplerDesc.CmpFunc);
 
+						++DefValCount;
+						
 						n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 					}
-					else
-					{
-						W.Write(false);
-						n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, default value is skipped\n", Param.ID.CStr());
-					}
+					else n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, default value is skipped\n", Param.ID.CStr());
 				}
-				else W.Write(false);
 			}
-			else
-			{
-				if (!DefaultValue.IsNull())
-					n_msg(VL_WARNING, "Material param '%s' is a sampler, default value must be null or params section\n", Param.ID.CStr());
-				W.Write(false);
-			}
+			else if (!DefaultValue.IsNull())
+				n_msg(VL_WARNING, "Material param '%s' is a sampler, default value must be null or params section\n", Param.ID.CStr());
 		}
-		else W.Write(false);
 	}
+
+	// Write an actual default value count
+	U64 CurrPos = W.GetStream().GetPosition();
+	W.GetStream().Seek(DefValCountPos, IO::Seek_Begin);
+	W.Write(DefValCount);
+	W.GetStream().Seek(CurrPos, IO::Seek_Begin);
+
+	U32 DefaultConstValuesSize = (U32)DefaultConstValues->GetSize();
+	W.Write(DefaultConstValuesSize);
+	if (DefaultConstValuesSize)
+	{
+		W.GetStream().Write(DefaultConstValues->Map(), DefaultConstValuesSize);
+		DefaultConstValues->Unmap();
+	}
+	DefaultConstValues = NULL;
 
 	WriteRegisterRanges(MaterialFloat4, W, "float4");
 	WriteRegisterRanges(MaterialInt4, W, "int4");

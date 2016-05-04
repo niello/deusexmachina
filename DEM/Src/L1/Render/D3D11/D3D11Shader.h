@@ -37,7 +37,7 @@ public:
 	};
 
 	// Don't change values
-	enum EConstType
+	enum ED3D11ConstType
 	{
 		D3D11Const_Bool	= 0,
 		D3D11Const_Int,
@@ -75,13 +75,13 @@ public:
 
 	struct CConstMeta
 	{
-		HHandle		BufferHandle;
-		CStrID		Name;
-		EConstType	Type;
-		U32			Offset;
-		U32			ElementSize;
-		U32			ElementCount;
-		HHandle		Handle;
+		HHandle			BufferHandle;
+		CStrID			Name;
+		ED3D11ConstType	Type;
+		U32				Offset;
+		U32				ElementSize;
+		U32				ElementCount;
+		HHandle			Handle;
 	};
 
 	struct CRsrcMeta
@@ -129,6 +129,7 @@ public:
 	virtual HConstBuffer	GetConstBufferHandle(HConst hConst) const;
 	virtual HResource		GetResourceHandle(CStrID ID) const;
 	virtual HSampler		GetSamplerHandle(CStrID ID) const;
+	virtual EConstType		GetConstType(HConst hConst) const;
 
 	ID3D11DeviceChild*		GetD3DShader() const { return pD3DShader; }
 	ID3D11VertexShader*		GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return (ID3D11VertexShader*)pD3DShader; }

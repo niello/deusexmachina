@@ -160,4 +160,18 @@ HSampler CD3D9Shader::GetSamplerHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+EConstType CD3D9Shader::GetConstType(HConst hConst) const
+{
+	if (!hConst) return ConstType_Invalid;
+	CD3D9ShaderConstMeta* pMeta = (CD3D9ShaderConstMeta*)D3D9DrvFactory->HandleMgr.GetHandleData(hConst);
+	switch (pMeta->RegSet)
+	{
+		case Reg_Bool:		return ConstType_Bool;
+		case Reg_Int4:		return ConstType_Int;
+		case Reg_Float4:	return ConstType_Float;
+		default:			return ConstType_Invalid;
+	}
+}
+//---------------------------------------------------------------------
+
 }

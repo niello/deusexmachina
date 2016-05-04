@@ -202,4 +202,19 @@ HSampler CD3D11Shader::GetSamplerHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+EConstType CD3D11Shader::GetConstType(HConst hConst) const
+{
+	if (!hConst) return ConstType_Invalid;
+	CConstMeta* pMeta = (CConstMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hConst);
+	switch (pMeta->Type)
+	{
+		case D3D11Const_Bool:	return ConstType_Bool;
+		case D3D11Const_Int:	return ConstType_Int;
+		case D3D11Const_Float:	return ConstType_Float;
+		case D3D11Const_Struct:	return ConstType_Other;
+		default:				return ConstType_Invalid;
+	}
+}
+//---------------------------------------------------------------------
+
 }

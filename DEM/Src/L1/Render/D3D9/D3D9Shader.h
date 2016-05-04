@@ -46,6 +46,7 @@ public:
 	virtual HConstBuffer	GetConstBufferHandle(HConst hConst) const;
 	virtual HResource		GetResourceHandle(CStrID ID) const;
 	virtual HSampler		GetSamplerHandle(CStrID ID) const;
+	virtual EConstType		GetConstType(HConst hConst) const;
 
 	IUnknown*				GetD3DShader() const { return pD3DShader; }
 	IDirect3DVertexShader9*	GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return (IDirect3DVertexShader9*)pD3DShader; }

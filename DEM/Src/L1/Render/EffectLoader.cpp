@@ -317,7 +317,7 @@ bool CEffectLoader::Load(CResource& Resource)
 
 		// Load tech params info
 		
-		LoadEffectParams(Reader, false);
+		if (!LoadEffectParams(Reader)) continue;
 
 		//if (TechInfo.Target < 0x0400)
 		//{
@@ -331,15 +331,16 @@ bool CEffectLoader::Load(CResource& Resource)
 
 	if (!Techs.GetCount()) FAIL;
 
-	// Load global and material params tables
-
-	LoadEffectParams(Reader, false); // Global
-	LoadEffectParams(Reader, true); // Material
-
 	//!!!try to find by effect ID! add into it, if found!
 	//!!!now rsrc mgmt doesn't support miltiple resources per file and partial resource definitions (multiple files per resource)!
 	//may modify CEffectLoader to store all files of the effect, and use effect ID and rsrc URI separately.
 	Render::PEffect Effect = n_new(Render::CEffect);
+
+	// Load global and material params tables
+
+	if (!LoadEffectParams(Reader)) FAIL; // Global
+	if (!LoadEffectParams(Reader)) FAIL; // Material
+	if (!LoadEffectParamDefaultValues(Reader)) FAIL;
 
 	Effect->BeginAddTechs(Techs.GetCount());
 	for (UPTR i = 0; i < Techs.GetCount(); ++i)
@@ -355,7 +356,7 @@ bool CEffectLoader::Load(CResource& Resource)
 //???save (and therefore load) default values separately? in a separate loop.
 //defaults are needed only for materials, so they are strictly a load-time feature,
 //no reason to store them attached to a main dictionary.
-bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, bool ReadDefaults) const
+bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader) const
 {
 	//???use .shd / .csh for all?
 	const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
@@ -393,80 +394,106 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, bool ReadDefault
 
 		// save ID to handle mapping, mb one dictionary per parameter type
 		// ParamID -> hParam, for const: hBuffer = Effect->GetConstBufferHandle(hParam), same as in CShader
+	}
 
-		if (ReadDefaults)
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) const
+{
+	U32 ParamCount;
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 Type;
+		if (!Reader.Read(Type)) FAIL;
+
+		switch (Type)
 		{
-			bool HasDefaultValue;
-			if (!Reader.Read(HasDefaultValue)) FAIL;
-			
-			if (HasDefaultValue)
+			case EPT_Const:
 			{
-				switch (Type)
+				U32 Offset;
+				if (!Reader.Read(Offset)) FAIL;
+
+				//!!!save it somewhere!
+
+				break;
+			}
+			case EPT_Resource:
+			{
+				CStrID ResourceID;
+				if (!Reader.Read(ResourceID)) FAIL;
+
+				Resources::PResource RTexture = ResourceMgr->RegisterResource(ResourceID.CStr());
+				if (!RTexture->IsLoaded())
 				{
-					case EPT_Const:
-					{
-						NOT_IMPLEMENTED;
-						// get const type
-						// load default value as raw bytes
-						break;
-					}
-					case EPT_Resource:
-					{
-						CStrID ResourceID;
-						if (!Reader.Read(ResourceID)) FAIL;
-
-						Resources::PResource RTexture = ResourceMgr->RegisterResource(ResourceID.CStr());
-						if (!RTexture->IsLoaded())
-						{
-							Resources::PResourceLoader Loader = RTexture->GetLoader();
-							if (Loader.IsNullPtr())
-								Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
-							Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-							ResourceMgr->LoadResourceSync(*RTexture, *Loader);
-							if (!RTexture->IsLoaded()) FAIL;
-						}
-
-						Render::PTexture DefaultTexture = RTexture->GetObject<Render::CTexture>();
-
-						//!!!save it somewhere!
-
-						break;
-					}
-					case EPT_Sampler:
-					{
-						Render::CSamplerDesc SamplerDesc;
-
-						U8 U8Value;
-						Reader.Read<U8>(U8Value);
-						SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
-						Reader.Read<U8>(U8Value);
-						SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
-						Reader.Read<U8>(U8Value);
-						SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
-						Reader.Read<U8>(U8Value);
-						SamplerDesc.Filter = (Render::ETexFilter)U8Value;
-
-						Reader.Read(SamplerDesc.BorderColorRGBA[0]);
-						Reader.Read(SamplerDesc.BorderColorRGBA[1]);
-						Reader.Read(SamplerDesc.BorderColorRGBA[2]);
-						Reader.Read(SamplerDesc.BorderColorRGBA[3]);
-						Reader.Read(SamplerDesc.MipMapLODBias);
-						Reader.Read(SamplerDesc.FinestMipMapLOD);
-						Reader.Read(SamplerDesc.CoarsestMipMapLOD);
-						Reader.Read(SamplerDesc.MaxAnisotropy);
-						
-						Reader.Read<U8>(U8Value);
-						SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
-
-						Render::PSampler DefaultSampler = GPU->CreateSampler(SamplerDesc);
-
-						//!!!save it somewhere!
-						
-						break;
-					}
+					Resources::PResourceLoader Loader = RTexture->GetLoader();
+					if (Loader.IsNullPtr())
+						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
+					Loader->As<Resources::CShaderLoader>()->GPU = GPU;
+					ResourceMgr->LoadResourceSync(*RTexture, *Loader);
+					if (!RTexture->IsLoaded()) FAIL;
 				}
+
+				Render::PTexture DefaultTexture = RTexture->GetObject<Render::CTexture>();
+
+				//!!!save it somewhere!
+
+				break;
+			}
+			case EPT_Sampler:
+			{
+				Render::CSamplerDesc SamplerDesc;
+
+				U8 U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
+
+				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
+				Reader.Read(SamplerDesc.MipMapLODBias);
+				Reader.Read(SamplerDesc.FinestMipMapLOD);
+				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
+				Reader.Read(SamplerDesc.MaxAnisotropy);
+						
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
+
+				Render::PSampler DefaultSampler = GPU->CreateSampler(SamplerDesc);
+
+				//!!!save it somewhere!
+						
+				break;
 			}
 		}
+	}
+
+	U32 DefValsSize;
+	if (!Reader.Read(DefValsSize)) FAIL;
+	if (DefValsSize)
+	{
+		void* pDefaultValue = n_malloc(DefValsSize);
+		Reader.GetStream().Read(pDefaultValue, DefValsSize);
+
+		//!!!save it somewhere!
+
+		n_free(pDefaultValue);
+	}
+	else
+	{
+		void* pDefaultValue = NULL;
 	}
 
 	OK;
