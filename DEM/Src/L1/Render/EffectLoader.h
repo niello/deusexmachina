@@ -3,6 +3,7 @@
 #define __DEM_L1_EFFECT_LOADER_H__
 
 #include <Resources/ResourceLoader.h>
+#include <Render/RenderFwd.h>
 
 // Loads shader effect file in DEM (.eff) format
 
@@ -23,7 +24,16 @@ class CEffectLoader: public CResourceLoader
 {
 protected:
 
-	bool						LoadEffectParams(IO::CBinaryReader& Reader) const;
+	struct CLoadedParam
+	{
+		CStrID					ID;
+		U8						Type;
+		U8						ShaderType;
+		HHandle					Handle;			// May use union if handles become type-incompatible
+		Render::HConstBuffer	BufferHandle;	// For constants only
+	};
+
+	bool						LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out) const;
 	bool						LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) const;
 
 public:

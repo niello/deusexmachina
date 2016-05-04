@@ -16,42 +16,47 @@
 namespace Render
 {
 
+struct CEffectConstant
+{
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HConst			Handle;
+	HConstBuffer	BufferHandle;
+	void*			pDefaultValue;
+	//???store val size?
+};
+
+struct CEffectResource
+{
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HResource		Handle;
+	PTexture		DefaultValue;
+};
+
+struct CEffectSampler
+{
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HSampler		Handle;
+	PSampler		DefaultValue;
+};
+
 class CEffect: public Resources::CResourceObject
 {
 protected:
 
-	struct CConstRec
-	{
-		//EShaderType ShaderType; //need cbuffer identification
-		HConst		Handle;
-		void*		pDefaultValue;
-	};
-
-	struct CResourceRec
-	{
-		EShaderType ShaderType;
-		HResource	Handle;
-		PTexture	DefaultValue;
-	};
-
-	struct CSamplerRec
-	{
-		EShaderType ShaderType;
-		HSampler	Handle;
-		PSampler	DefaultValue;
-	};
-
-	CDict<CStrID, PTechnique>	TechsByName;
-	CDict<UPTR, PTechnique>		TechsByInputSet;
+	CDict<CStrID, PTechnique>		TechsByName;
+	CDict<UPTR, PTechnique>			TechsByInputSet;
 
 	//global params signature for validation against a current render path
 
 	//!!!can use fixed arrays with binary search by ID!
 	//material can reference this data by index, since these arrays never change after effect loading
-	CDict<CStrID, CConstRec>	MaterialConsts;
-	CDict<CStrID, CResourceRec>	MaterialResources;
-	CDict<CStrID, CSamplerRec>	MaterialSamplers;
-	char*						pMaterialConstDefaultValues;
+	CFixedArray<CEffectConstant>	MaterialConsts;
+	CFixedArray<CEffectResource>	MaterialResources;
+	CFixedArray<CEffectSampler>		MaterialSamplers;
+	char*							pMaterialConstDefaultValues;
 
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
@@ -59,21 +64,25 @@ protected:
 	// selects material LOD inside, uses its Shader
 	//???!!!LOD distances in material itself?! per-mtl calc, if common, per-renderer/per-phase calc
 
-	//friend class Resources::CEffectLoader;
+	void								BeginAddTechs(UPTR Count) { TechsByName.BeginAdd(Count); TechsByInputSet.BeginAdd(Count); }
+	void								AddTech(PTechnique Tech) { TechsByName.Add(Tech->GetName(), Tech); TechsByInputSet.Add(Tech->GetShaderInputSetID(), Tech); }
+	void								EndAddTechs() { TechsByName.EndAdd(); TechsByInputSet.EndAdd(); }
+
+	friend class Resources::CEffectLoader;
 
 public:
 
 	CEffect(): pMaterialConstDefaultValues(NULL) {}
 	~CEffect() { SAFE_FREE(pMaterialConstDefaultValues); }
 
-	virtual bool		IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
+	virtual bool						IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
 
-	void				BeginAddTechs(UPTR Count) { TechsByName.BeginAdd(Count); TechsByInputSet.BeginAdd(Count); }
-	void				AddTech(PTechnique Tech) { TechsByName.Add(Tech->GetName(), Tech); TechsByInputSet.Add(Tech->GetShaderInputSetID(), Tech); }
-	void				EndAddTechs() { TechsByName.EndAdd(); TechsByInputSet.EndAdd(); }
+	const CTechnique*					GetTechByName(CStrID Name) const;
+	const CTechnique*					GetTechByInputSet(UPTR InputSet) const;
 
-	const CTechnique*	GetTechByName(CStrID Name) const;
-	const CTechnique*	GetTechByInputSet(UPTR InputSet) const;
+	const CFixedArray<CEffectConstant>&	GetMaterialConstants() const { return MaterialConsts; }
+	const CFixedArray<CEffectResource>&	GetMaterialResources() const { return MaterialResources; }
+	const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
 };
 
 typedef Ptr<CEffect> PEffect;

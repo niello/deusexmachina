@@ -1,60 +1,33 @@
 #include "Material.h"
 
+#include <Render/GPUDriver.h>
+
 namespace Render
 {
 __ImplementClassNoFactory(Render::CMaterial, /*'MTRL', */Resources::CResourceObject);
 
-//bool CMaterial::Setup(CShader* pShader, UPTR ShaderFeatureFlags, const CShaderVarMap& StaticShaderVars)
-//{
-//	if (!pShader) FAIL;
-//	Shader = pShader;
-//
-//	//???try dynamic shader loading here? anyway without frame shader set this has no meaning
-//	if (!pShader->IsLoaded())
-//	{
-//		State = Resources::Rsrc_Failed;
-//		FAIL;
-//	}
-//
-//	FeatureFlags = ShaderFeatureFlags;
-//	//???set active feature for test? mb it is never used with these flags, always adding Skinned etc
-//
-//	static const CString StrTextures("Textures:");
-//
-//	StaticVars = StaticShaderVars;
-//	for (int i = 0; i < StaticVars.GetCount(); ++i)
-//	{
-//		CShaderVar& Var = StaticVars.ValueAt(i);
-//		Var.Bind(*pShader);
-//
-//		//!!!non-file textures (forex RTs) will fail to load here! ensure they are
-//		// in loaded state or they load themselvef properly!
-//		if (Var.Value.IsA<PTexture>())
-//		{
-//			PTexture Tex = Var.Value.GetValue<PTexture>();
-//			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
-//			//if (!Tex->IsLoaded() && !LoadTextureUsingD3DX(Tex->GetUID().CStr(), Tex))
-//			//{
-//			//	State = Resources::Rsrc_Failed;
-//			//	FAIL;
-//			//}
-//		}
-//	}
-//
-//	//???load textures?
-//
-//	State = Resources::Rsrc_Loaded;
-//	OK;
-//}
-////---------------------------------------------------------------------
-//
-//void CMaterial::Unload()
-//{
-//	Shader = NULL;
-//	FeatureFlags = 0;
-//	StaticVars.Clear();
-//	State = Resources::Rsrc_NotLoaded;
-//}
-////---------------------------------------------------------------------
+bool CMaterial::Apply(CGPUDriver& GPU)
+{
+	for (UPTR i = 0 ; i < ConstBuffers.GetCount(); ++i)
+	{
+		CConstBufferRec& Rec = ConstBuffers[i];
+		if (!GPU.BindConstantBuffer(Rec.ShaderType, Rec.Handle, Rec.Buffer.GetUnsafe())) FAIL;
+	}
+
+	for (UPTR i = 0 ; i < Resources.GetCount(); ++i)
+	{
+		CResourceRec& Rec = Resources[i];
+		if (!GPU.BindResource(Rec.ShaderType, Rec.Handle, Rec.Resource.GetUnsafe())) FAIL;
+	}
+
+	for (UPTR i = 0 ; i < Samplers.GetCount(); ++i)
+	{
+		CSamplerRec& Rec = Samplers[i];
+		if (!GPU.BindSampler(Rec.ShaderType, Rec.Handle, Rec.Sampler.GetUnsafe())) FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
 
 }

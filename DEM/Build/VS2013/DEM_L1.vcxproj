@@ -503,6 +503,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Effect.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\EffectLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ImageUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp" />

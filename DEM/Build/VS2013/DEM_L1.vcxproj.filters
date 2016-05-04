@@ -1513,6 +1513,9 @@
     <ClCompile Include="..\..\Src\L1\Render\MaterialLoader.cpp">
       <Filter>Render</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Effect.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Src\L1\UI\CEGUI\DEMRenderTarget.inl">

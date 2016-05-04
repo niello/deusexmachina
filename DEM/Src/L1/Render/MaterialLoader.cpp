@@ -70,6 +70,58 @@ bool CMaterialLoader::Load(CResource& Resource)
 	Mtl->Effect = Rsrc->GetObject<Render::CEffect>();
 
 	// Build parameters
+	//const CFixedArray<CEffectConstant>&	GetMaterialConstants() const { return MaterialConsts; }
+	//const CFixedArray<CEffectResource>&	GetMaterialResources() const { return MaterialResources; }
+	//const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
+
+	const CFixedArray<Render::CEffectConstant>& Consts = Mtl->Effect->GetMaterialConstants();
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	{
+		const Render::CEffectConstant& Rsrc = Consts[i];
+
+		// Find buffer instance for a Rsrc.BufferHandle in this material
+		// If not found, create CPU/RAM buffer and add record
+		Render::PConstantBuffer RAMBuffer;
+		Rsrc.ShaderType;
+		Rsrc.BufferHandle;
+
+		void* pValue;
+		UPTR ValueSize;
+		// try to find value in a material description
+		// else use default value from an effect, even if NULL
+
+		// Set const value to a buffer
+		RAMBuffer;
+		Rsrc.Handle;
+		pValue;
+		ValueSize;
+	}
+
+	// for each RAMBuffer created, create GPU/VRAM immutable buffer using CPU/RAM one as an initial data, destroy it then
+
+	const CFixedArray<Render::CEffectResource>& Resources = Mtl->Effect->GetMaterialResources();
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	{
+		const Render::CEffectResource& Rsrc = Resources[i];
+		Render::PTexture Value;
+		// try to find value in a material description
+		// else use default value from an effect, even if NULL
+		Rsrc.ShaderType;
+		Rsrc.Handle;
+		Value;
+	}
+
+	const CFixedArray<Render::CEffectSampler>& Samplers = Mtl->Effect->GetMaterialSamplers();
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		const Render::CEffectSampler& Sampler = Samplers[i];
+		Render::PSampler Value;
+		// try to find value in a material description
+		// else use default value from an effect, even if NULL
+		Sampler.ShaderType;
+		Sampler.Handle;
+		Value;
+	}
 
 	Resource.Init(Mtl.GetUnsafe(), this);
 

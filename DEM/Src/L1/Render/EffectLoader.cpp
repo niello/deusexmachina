@@ -316,8 +316,9 @@ bool CEffectLoader::Load(CResource& Resource)
 			Tech->PassesByLightCount.SetSize(NewVariationCount, true);
 
 		// Load tech params info
-		
-		if (!LoadEffectParams(Reader)) continue;
+
+		CArray<CLoadedParam> Params;
+		if (!LoadEffectParams(Reader, Params)) continue;
 
 		//if (TechInfo.Target < 0x0400)
 		//{
@@ -338,8 +339,61 @@ bool CEffectLoader::Load(CResource& Resource)
 
 	// Load global and material params tables
 
-	if (!LoadEffectParams(Reader)) FAIL; // Global
-	if (!LoadEffectParams(Reader)) FAIL; // Material
+	CArray<CLoadedParam> GlobalParams;
+	if (!LoadEffectParams(Reader, GlobalParams)) FAIL;
+
+	CArray<CLoadedParam> MtlParams;
+	if (!LoadEffectParams(Reader, MtlParams)) FAIL;
+
+	UPTR ConstCount = 0;
+	UPTR ResourceCount = 0;
+	UPTR SamplerCount = 0;
+	for (UPTR i = 0; i < MtlParams.GetCount(); ++i)
+	{
+		U8 Type = MtlParams[i].Type;
+		if (Type == EPT_Const) ++ConstCount;
+		else if (Type == EPT_Resource) ++ResourceCount;
+		else if (Type == EPT_Sampler) ++SamplerCount;
+	}
+	Effect->MaterialConsts.SetSize(ConstCount);
+	Effect->MaterialResources.SetSize(ResourceCount);
+	Effect->MaterialSamplers.SetSize(SamplerCount);
+	
+	ConstCount = 0;
+	ResourceCount = 0;
+	SamplerCount = 0;
+	for (UPTR i = 0; i < MtlParams.GetCount(); ++i)
+	{
+		CLoadedParam& Prm = MtlParams[i];
+		U8 Type = Prm.Type;
+		if (Type == EPT_Const)
+		{
+			Render::CEffectConstant& Rec = Effect->MaterialConsts[ConstCount];
+			Rec.ID = Prm.ID;
+			Rec.Handle = Prm.Handle;
+			Rec.BufferHandle = Prm.BufferHandle;
+			Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
+			Rec.pDefaultValue = NULL;
+			++ConstCount;
+		}
+		else if (Type == EPT_Resource)
+		{
+			Render::CEffectResource& Rec = Effect->MaterialResources[ResourceCount];
+			Rec.ID = Prm.ID;
+			Rec.Handle = Prm.Handle;
+			Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
+			++ResourceCount;
+		}
+		else if (Type == EPT_Sampler)
+		{
+			Render::CEffectSampler& Rec = Effect->MaterialSamplers[SamplerCount];
+			Rec.ID = Prm.ID;
+			Rec.Handle = Prm.Handle;
+			Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
+			++SamplerCount;
+		}
+	}
+
 	if (!LoadEffectParamDefaultValues(Reader)) FAIL;
 
 	Effect->BeginAddTechs(Techs.GetCount());
@@ -353,10 +407,8 @@ bool CEffectLoader::Load(CResource& Resource)
 }
 //---------------------------------------------------------------------
 
-//???save (and therefore load) default values separately? in a separate loop.
-//defaults are needed only for materials, so they are strictly a load-time feature,
-//no reason to store them attached to a main dictionary.
-bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader) const
+// Out array will be sorted by ID as parameters are saved sorted by ID
+bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out) const
 {
 	//???use .shd / .csh for all?
 	const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
@@ -392,8 +444,12 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader) const
 			case EPT_Invalid:	FAIL;
 		}
 
-		// save ID to handle mapping, mb one dictionary per parameter type
-		// ParamID -> hParam, for const: hBuffer = Effect->GetConstBufferHandle(hParam), same as in CShader
+		CLoadedParam& Prm = *Out.Add();
+		Prm.ID = ParamID;
+		Prm.Type = Type;
+		Prm.ShaderType = ShaderType;
+		Prm.Handle = hParam;
+		if (Type == EPT_Const) Prm.BufferHandle = ParamShader->GetConstBufferHandle(hParam);
 	}
 
 	OK;
@@ -488,6 +544,7 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader) cons
 		Reader.GetStream().Read(pDefaultValue, DefValsSize);
 
 		//!!!save it somewhere!
+		//!!!patch saved offsets to obtain direct pointers!
 
 		n_free(pDefaultValue);
 	}
