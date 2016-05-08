@@ -1,0 +1,13 @@
+Field;SizeInBytes;Type;Description
+Magic;4;FOURCC;MTRL' 32-bit constant in a Windows endianness
+Version;4;U32;Major (byte 1) and minor (byte 0) version, like 0x0100 = V1.0
+EffectID;2 + string length;string;ID of effect this material is suited for
+ParamValueCount;4;U32;Number of defined default values for material params
+{ParamValue};;array of structs;Parameter value description
+  ID;2 + string length;string;Parameter UID (unique human-readable name)
+  Type;1;U8;0 - constant, 1 - resource, 2 - sampler
+  [Offset];4;U32;For constants only: offset of a constant default value in a value buffer (below)
+  [ResourceID];2 + string length;string;For resources only: URI of a resource, typically a texture
+  [SamplerDesc];37;struct;For samplers only: CSamplerDesc fields serialized
+ValueBufferSize;4;U32;Size of a constant value buffer
+[ValueBuffer];ValueBufferSize;raw bytes;For ValueBufferSize > 0: buffer containing sequentially placed default values of constants

@@ -35,6 +35,6 @@ MtlParamDefaultValueCount;4;U32;Number of defined default values for material pa
   Type;1;U8;0 - constant, 1 - resource, 2 - sampler
   [Offset];4;U32;For constants only: offset of a constant default value in a value buffer (below)
   [ResourceID];2 + string length;string;For resources only: URI of a resource, typically a texture
-  [SamplerDesc];37;struct;CSamplerDesc fields serialized
+  [SamplerDesc];37;struct;For samplers only: CSamplerDesc fields serialized
 ValueBufferSize;4;U32;Size of a constant value buffer
 [ValueBuffer];ValueBufferSize;raw bytes;For ValueBufferSize > 0: buffer containing sequentially placed default values of constants
