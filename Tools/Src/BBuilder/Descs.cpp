@@ -1,8 +1,11 @@
 #include "Main.h"
 
+#include <Render/SamplerDesc.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <IO/Streams/FileStream.h>
+#include <IO/Streams/MemStream.h>
+#include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
@@ -190,44 +193,551 @@ bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportCont
 }
 //---------------------------------------------------------------------
 
+// For materials
+bool FindMaterialDataPositionsInEffectFile(IO::CStream& Stream, U64& OutParams, U64& OutDefaults)
+{
+	if (!Stream.IsOpen()) FAIL;
+
+	IO::CBinaryReader R(Stream);
+
+	U32 U32Value;
+	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
+	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+
+	U32 Count;
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		// Excerpt from a Render::CRenderStateDesc
+		enum
+		{
+			DS_DepthEnable				= 0x00000100,
+			DS_StencilEnable			= 0x00000400,
+			Blend_Independent			= 0x00010000,	// If not, only RTBlend[0] is used
+			Blend_RTBlendEnable			= 0x00020000	// Use (Blend_RTBlendEnable << Index), Index = [0 .. 7]
+			// flags from				  0x00020000
+			//       to					  0x01000000
+			// inclusive are reserved for Blend_RTBlendEnable, 8 bits total
+		};
+
+		U32 MaxLights;
+		if (!R.Read(MaxLights)) FAIL;
+		U32 Flags;
+		if (!R.Read(Flags)) FAIL;
+
+		U32 SizeToSkip = 34 + 20 * (MaxLights + 1);
+		if (Flags & DS_DepthEnable) SizeToSkip += 1;
+		if (Flags & DS_StencilEnable) SizeToSkip += 14;
+
+		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+		{
+			if (BlendIdx > 0 && !(Flags & Blend_Independent)) break;
+			if (!(Flags & (Blend_RTBlendEnable << BlendIdx))) continue;
+			SizeToSkip += 7;
+		}
+		
+		if (!Stream.Seek(SizeToSkip, IO::Seek_Current)) FAIL;
+	}
+	
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(StrValue)) FAIL;
+		if (!Stream.Seek(16, IO::Seek_Current)) FAIL;
+		
+		U32 PassCount;
+		if (!R.Read(PassCount)) FAIL;
+		if (!Stream.Seek(4 * PassCount, IO::Seek_Current)) FAIL;
+		
+		U32 MaxLights;
+		if (!R.Read(MaxLights)) FAIL;
+		if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) FAIL;
+
+		U32 ParamCount;
+		if (!R.Read(ParamCount)) FAIL;
+		for (U32 ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+		{
+			U8 Type;
+			if (!R.Read(StrValue)) FAIL;
+			if (!R.Read(Type)) FAIL;	
+			if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+		}
+	}
+
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		U8 Type;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(Type)) FAIL;	
+		if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+	}
+
+	OutParams = Stream.GetPosition();
+
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		U8 Type;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(Type)) FAIL;	
+		if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+	}
+
+	OutDefaults = Stream.GetPosition();
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// For materials //!!!DUPLICATE CODE! see CFShader
+Render::ECmpFunc StringToCmpFunc(const CString& Str)
+{
+	if (Str == "less" || Str == "l") return Render::Cmp_Less;
+	if (Str == "lessequal" || Str == "le") return Render::Cmp_LessEqual;
+	if (Str == "greater" || Str == "g") return Render::Cmp_Greater;
+	if (Str == "greaterequal" || Str == "ge") return Render::Cmp_GreaterEqual;
+	if (Str == "equal" || Str == "e") return Render::Cmp_Equal;
+	if (Str == "notequal" || Str == "ne") return Render::Cmp_NotEqual;
+	if (Str == "always") return Render::Cmp_Always;
+	return Render::Cmp_Never;
+}
+//---------------------------------------------------------------------
+
+// For materials //!!!DUPLICATE CODE! see CFShader
+Render::ETexAddressMode StringToTexAddressMode(const CString& Str)
+{
+	if (Str == "mirror") return Render::TexAddr_Mirror;
+	if (Str == "clamp") return Render::TexAddr_Clamp;
+	if (Str == "border") return Render::TexAddr_Border;
+	if (Str == "mirroronce") return Render::TexAddr_MirrorOnce;
+	return Render::TexAddr_Wrap;
+}
+//---------------------------------------------------------------------
+
+// For materials //!!!DUPLICATE CODE! see CFShader
+Render::ETexFilter StringToTexFilter(const CString& Str)
+{
+	if (Str == "minmag_point_mip_linear") return Render::TexFilter_MinMag_Point_Mip_Linear;
+	if (Str == "min_point_mag_linear_mip_point") return Render::TexFilter_Min_Point_Mag_Linear_Mip_Point;
+	if (Str == "min_point_magmip_linear") return Render::TexFilter_Min_Point_MagMip_Linear;
+	if (Str == "min_linear_magmip_point") return Render::TexFilter_Min_Linear_MagMip_Point;
+	if (Str == "min_linear_mag_point_mip_linear") return Render::TexFilter_Min_Linear_Mag_Point_Mip_Linear;
+	if (Str == "minmag_linear_mip_point") return Render::TexFilter_MinMag_Linear_Mip_Point;
+	if (Str == "minmagmip_linear") return Render::TexFilter_MinMagMip_Linear;
+	if (Str == "anisotropic") return Render::TexFilter_Anisotropic;
+	return Render::TexFilter_MinMagMip_Point;
+}
+//---------------------------------------------------------------------
+
+// For materials //!!!DUPLICATE CODE! see CFShader
+bool ProcessSamplerSection(Data::PParams SamplerSection, Render::CSamplerDesc& Desc)
+{
+	CString StrValue;
+	int IntValue;
+
+	if (SamplerSection->Get(StrValue, CStrID("AddressU")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AddressU = StringToTexAddressMode(StrValue);
+	}
+	if (SamplerSection->Get(StrValue, CStrID("AddressV")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AddressV = StringToTexAddressMode(StrValue);
+	}
+	if (SamplerSection->Get(StrValue, CStrID("AddressW")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.AddressW = StringToTexAddressMode(StrValue);
+	}
+	if (SamplerSection->Get(StrValue, CStrID("Filter")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.Filter = StringToTexFilter(StrValue);
+	}
+
+	vector4 ColorRGBA;
+	if (SamplerSection->Get(ColorRGBA, CStrID("BorderColorRGBA")))
+	{
+		Desc.BorderColorRGBA[0] = ColorRGBA.v[0];
+		Desc.BorderColorRGBA[1] = ColorRGBA.v[1];
+		Desc.BorderColorRGBA[2] = ColorRGBA.v[2];
+		Desc.BorderColorRGBA[3] = ColorRGBA.v[3];
+	}
+
+	SamplerSection->Get(Desc.MipMapLODBias, CStrID("MipMapLODBias"));
+	SamplerSection->Get(Desc.FinestMipMapLOD, CStrID("FinestMipMapLOD"));
+	SamplerSection->Get(Desc.CoarsestMipMapLOD, CStrID("CoarsestMipMapLOD"));
+	if (SamplerSection->Get(IntValue, CStrID("MaxAnisotropy"))) Desc.MaxAnisotropy = IntValue;
+
+	if (SamplerSection->Get(StrValue, CStrID("CmpFunc")))
+	{
+		StrValue.Trim();
+		StrValue.ToLower();
+		Desc.CmpFunc = StringToCmpFunc(StrValue);
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool ProcessMaterialDesc(const char* pName)
 {
+	// Materials and effects are half-descs, half-resources, export if any of 2 flags is set.
+	// Textures referenced will be exported only if ExportResources is set.
+	if (!ExportDescs && !ExportResources) OK;
+
 	CString ExportFilePath("Materials:");
 	ExportFilePath += pName;
-	ExportFilePath += ".prm";
+	ExportFilePath += ".mtl";
 
 	if (IsFileAdded(ExportFilePath)) OK;
 
-	Data::PParams Desc;
-	if (ExportDescs)
-	{
-		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(CString("SrcMaterials:") + pName + ".hrd", false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
-	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
-
+	Data::PParams Desc = DataSrv->LoadHRD(CString("SrcMaterials:") + pName + ".hrd", false);
 	if (!Desc.IsValidPtr()) FAIL;
 
-	FilesToPack.InsertSorted(ExportFilePath);
-
 	CStrID EffectID = Desc->Get(CStrID("Effect"), CStrID::Empty);
-	if (EffectID.IsValid())
+	if (!EffectID.IsValid())
 	{
-		CString FileName(EffectID.CStr()); //CString("Textures:") + Textures->Get(i).GetValue<CString>();
-		if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+		n_msg(VL_WARNING, "Material '%s' refereces no effect, skipped\n", pName);
+		FAIL;
 	}
 
-	Data::PParams Textures;
-	if (Desc->Get(Textures, CStrID("Textures")))
+	// Process referenced effect
+
+	CString EffectExportFileName("Shaders:Effects/");
+	EffectExportFileName += EffectID.CStr();
+	EffectExportFileName += ".eff";
+
+	IO::PStream EFF;
+	U64 MtlParamsOffset;
+	U64 MtlDefaultValuesOffset;
+
+	if (!IsFileAdded(EffectExportFileName))
 	{
-		//!!!when export from src, find resource desc and add source texture to CFTexture list!
-		for (UPTR i = 0; i < Textures->GetCount(); ++i)
+		// Always recompile effect as ExportDescs or ExportResources is true
+		CString EffectSrcFileName("SrcShaders:Effects/");
+		EffectSrcFileName += EffectID.CStr();
+		EffectSrcFileName += ".hrd";
+		if (!ProcessEffect(EffectSrcFileName, EffectExportFileName)) FAIL;
+
+		FilesToPack.InsertSorted(EffectExportFileName);
+
+		// Export textures from default values
+		if (ExportResources)
 		{
-			CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CString>();
-			if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+			EFF = IOSrv->CreateStream(EffectExportFileName.CStr());
+			if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
+			if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
+
+			EFF->Seek(MtlDefaultValuesOffset, IO::Seek_Begin);
+			IO::CBinaryReader R(*EFF.GetUnsafe());
+
+			U32 DefValCount;
+			if (!R.Read(DefValCount)) FAIL;
+			for (U32 i = 0; i < DefValCount; ++i)
+			{
+				CString StrValue;
+				if (!R.Read(StrValue)) FAIL;
+
+				U8 Type;
+				if (!R.Read(Type)) FAIL;
+
+				if (Type == 0) // Constant
+				{
+					if (!EFF->Seek(4, IO::Seek_Current)) FAIL;
+				}
+				else if (Type == 1) // Resource
+				{
+					//!!!when export from src, find resource desc and add source texture to CFTexture list!
+					if (!R.Read(StrValue)) FAIL;
+					CString TexFileName = CString("Textures:") + StrValue;
+					if (!IsFileAdded(TexFileName)) FilesToPack.InsertSorted(TexFileName);
+				}
+				else if (Type == 2) // Sampler
+				{
+					if (!EFF->Seek(37, IO::Seek_Current)) FAIL;
+				}
+			}
 		}
 	}
+
+	// Load EFF material param table
+
+	if (EFF.IsNullPtr())
+	{
+		EFF = IOSrv->CreateStream(EffectExportFileName.CStr());
+		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
+		if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
+	}
+
+	EFF->Seek(MtlParamsOffset, IO::Seek_Begin);
+
+	struct CConstInfo
+	{
+		U8	Type;
+		U32	SizeInBytes;
+	};
+
+	CDict<CStrID, CConstInfo> MtlConsts;
+	CArray<CStrID> MtlResources;
+	CArray<CStrID> MtlSamplers;
+
+	IO::CBinaryReader R(*EFF.GetUnsafe());
+	
+	U32 ParamCount;
+	if (!R.Read<U32>(ParamCount)) FAIL;
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!R.Read(ParamID)) FAIL;
+
+		U8 Type;
+		if (!R.Read(Type)) FAIL;
+
+		U8 ShaderType;
+		if (!R.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!R.Read(SourceShaderID)) FAIL;
+
+		if (Type == 0) // Constant
+		{
+			U8 Type;
+			if (!R.Read(Type)) FAIL;
+			U32 SizeInBytes;
+			if (!R.Read(SizeInBytes)) FAIL;
+
+			MtlConsts.Add(ParamID, { Type, SizeInBytes });
+		}
+		else if (Type == 1) // Resource
+		{
+			MtlResources.Add(ParamID);
+		}
+		else if (Type == 2) // Sampler
+		{
+			MtlSamplers.Add(ParamID);
+		}
+	}
+
+	EFF->Close();
+
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
+
+	// Save material mtl
+
+	IO::PStream File = IOSrv->CreateStream(ExportFilePath);
+	if (!File->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryWriter W(*File);
+
+	if (!W.Write('MTRL')) FAIL;
+	if (!W.Write<U32>(0x0100)) FAIL;
+
+	if (!W.Write(EffectID)) FAIL;
+
+	Data::PParams ParamValuesDesc;
+	if (Desc->Get(ParamValuesDesc, CStrID("Params")))
+	{
+		IO::PMemStream ConstValues = n_new(IO::CMemStream);
+		ConstValues->Open(IO::SAM_READWRITE, IO::SAP_SEQUENTIAL);
+
+		U64 ValCountPos = W.GetStream().GetPosition();
+		U32 ValCount = 0;
+		if (!W.Write<U32>(0)) FAIL; // Value count will be written later, when it is calculated
+		for (UPTR ParamIdx = 0; ParamIdx < ParamValuesDesc->GetCount(); ++ParamIdx)
+		{
+			CStrID ParamID = ParamValuesDesc->Get(ParamIdx).GetName();
+			const Data::CData& Value = ParamValuesDesc->Get(ParamIdx).GetRawValue();
+			if (Value.IsNull()) continue;
+
+			if (MtlConsts.Contains(ParamID)) // Constant
+			{
+				const CConstInfo& ConstInfo = MtlConsts[ParamID];
+				U8 ConstType = ConstInfo.Type;
+				U32 ConstSizeInBytes = ConstInfo.SizeInBytes;
+				U32 ValueSizeInBytes = 0;
+				U32 CurrDefValOffset = (U32)ConstValues->GetPosition();
+
+				switch (ConstType)
+				{
+					case D3D11Const_Float:
+					{
+						if (Value.IsA<float>())
+						{
+							float TypedValue = Value.GetValue<float>();
+							ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+							ConstValues->Write(&TypedValue, ValueSizeInBytes);
+						}
+						else if (Value.IsA<int>())
+						{
+							float TypedValue = (float)Value.GetValue<int>();
+							ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+							ConstValues->Write(&TypedValue, ValueSizeInBytes);
+						}
+						else if (Value.IsA<vector3>())
+						{
+							const vector3& TypedValue = Value.GetValue<vector3>();
+							ValueSizeInBytes = n_min(sizeof(vector3), ConstSizeInBytes);
+							ConstValues->Write(TypedValue.v, ValueSizeInBytes);
+						}
+						else if (Value.IsA<vector4>())
+						{
+							const vector4& TypedValue = Value.GetValue<vector4>();
+							ValueSizeInBytes = n_min(sizeof(vector4), ConstSizeInBytes);
+							ConstValues->Write(TypedValue.v, ValueSizeInBytes);
+						}
+						else if (Value.IsA<matrix44>())
+						{
+							const matrix44& TypedValue = Value.GetValue<matrix44>();
+							ValueSizeInBytes = n_min(sizeof(matrix44), ConstSizeInBytes);
+							ConstValues->Write(TypedValue.m, ValueSizeInBytes);
+						}
+						else
+						{
+							n_msg(VL_WARNING, "Material param '%s' is a bool, value must be null, float, int, vector or matrix\n", ParamID.CStr());
+							continue;
+						}
+
+						break;
+					}
+					case D3D11Const_Int:
+					{
+						if (Value.IsA<int>())
+						{
+							I32 TypedValue = (I32)Value.GetValue<int>();
+							ValueSizeInBytes = n_min(sizeof(I32), ConstSizeInBytes);
+							ConstValues->Write(&TypedValue, ValueSizeInBytes);
+						}
+						else
+						{
+							n_msg(VL_WARNING, "Material param '%s' is an int, value must be null or int\n", ParamID.CStr());
+							continue;
+						}
+						break;
+					}
+					case D3D11Const_Bool:
+					{
+						if (Value.IsA<bool>())
+						{
+							bool TypedValue = Value.GetValue<bool>();
+							ValueSizeInBytes = n_min(sizeof(bool), ConstSizeInBytes);
+							ConstValues->Write(&TypedValue, ValueSizeInBytes);
+						}
+						else
+						{
+							n_msg(VL_WARNING, "Material param '%s' is a bool, value must be null or bool\n", ParamID.CStr());
+							continue;
+						}
+						break;
+					}
+					default:
+					{
+						n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type or register set, value is skipped\n", ParamID.CStr());
+						continue;
+					}
+				}
+			
+				if (ConstSizeInBytes > ValueSizeInBytes) ConstValues->Fill(0, ConstSizeInBytes - ValueSizeInBytes);
+			
+				if (!W.Write(ParamID)) FAIL;
+				if (!W.Write<U8>(0)) FAIL;
+				if (!W.Write<U32>(CurrDefValOffset)) FAIL;
+				++ValCount;
+				n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
+			}
+			else if (MtlResources.Contains(ParamID)) // Resource
+			{
+				CString ResourceID;
+				if (Value.IsA<CStrID>()) ResourceID = CString(Value.GetValue<CStrID>().CStr());
+				else if (Value.IsA<CString>()) ResourceID = Value.GetValue<CString>();
+				else
+				{
+					n_msg(VL_WARNING, "Material param '%s' is a resource, value must be null or resource ID of type CString or CStrID\n", ParamID.CStr());
+					continue;
+				}
+
+				if (ResourceID.IsValid())
+				{
+					if (!W.Write(ParamID)) FAIL;
+					if (!W.Write<U8>(1)) FAIL;
+					if (!W.Write(ResourceID)) FAIL;
+					++ValCount;
+					n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
+
+					if (ExportResources)
+					{
+						//!!!when export from src, find resource desc and add source texture to CFTexture list!
+						CString TexFileName = CString("Textures:") + ResourceID;
+						if (!IsFileAdded(TexFileName)) FilesToPack.InsertSorted(TexFileName);
+					}
+				}
+			}
+			else if (MtlSamplers.Contains(ParamID)) // Sampler
+			{
+				if (Value.IsA<Data::PParams>())
+				{
+					Data::PParams SamplerSection = Value.GetValue<Data::PParams>();
+					if (SamplerSection->GetCount())
+					{
+						Render::CSamplerDesc SamplerDesc;
+						SamplerDesc.SetDefaults();
+						if (ProcessSamplerSection(SamplerSection, SamplerDesc))
+						{
+							if (!W.Write(ParamID)) FAIL;
+							if (!W.Write<U8>(2)) FAIL;
+						
+							if (!W.Write<U8>(SamplerDesc.AddressU)) FAIL;
+							if (!W.Write<U8>(SamplerDesc.AddressV)) FAIL;
+							if (!W.Write<U8>(SamplerDesc.AddressW)) FAIL;
+							if (!W.Write<U8>(SamplerDesc.Filter)) FAIL;
+							if (!W.Write(SamplerDesc.BorderColorRGBA[0])) FAIL;
+							if (!W.Write(SamplerDesc.BorderColorRGBA[1])) FAIL;
+							if (!W.Write(SamplerDesc.BorderColorRGBA[2])) FAIL;
+							if (!W.Write(SamplerDesc.BorderColorRGBA[3])) FAIL;
+							if (!W.Write(SamplerDesc.MipMapLODBias)) FAIL;
+							if (!W.Write(SamplerDesc.FinestMipMapLOD)) FAIL;
+							if (!W.Write(SamplerDesc.CoarsestMipMapLOD)) FAIL;
+							if (!W.Write<U32>(SamplerDesc.MaxAnisotropy)) FAIL;
+							if (!W.Write<U8>(SamplerDesc.CmpFunc)) FAIL;
+
+							++ValCount;
+						
+							n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
+						}
+						else n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, value is skipped\n", ParamID.CStr());
+					}
+				}
+				else n_msg(VL_WARNING, "Material param '%s' is a sampler, value must be null or params section\n", ParamID.CStr());
+			}
+		}
+
+		// Write an actual value count
+		U64 CurrPos = W.GetStream().GetPosition();
+		W.GetStream().Seek(ValCountPos, IO::Seek_Begin);
+		if (!W.Write(ValCount)) FAIL;
+		W.GetStream().Seek(CurrPos, IO::Seek_Begin);
+
+		U32 ConstValuesSize = (U32)ConstValues->GetSize();
+		if (!W.Write(ConstValuesSize)) FAIL;
+		if (ConstValuesSize)
+		{
+			if (W.GetStream().Write(ConstValues->Map(), ConstValuesSize) != ConstValuesSize) FAIL;
+			ConstValues->Unmap();
+		}
+	}
+
+	File->Close();
+
+	FilesToPack.InsertSorted(ExportFilePath);
 
 	OK;
 }

@@ -16,6 +16,7 @@ typedef CHashTable<CString, Data::CFourCC> CPropCodeMap;
 #define EXIT_APP_FAIL	return ExitApp(false, WaitKey)
 #define EXIT_APP_OK		return ExitApp(true, WaitKey)
 
+extern CString				ProjectDir;
 extern bool					ExportDescs;
 extern bool					ExportResources;
 extern bool					ExportShaders;
@@ -28,6 +29,7 @@ extern CPropCodeMap			PropCodes;
 
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
+bool	ProcessEffect(const CString& SrcFilePath, const CString& ExportFilePath);
 bool	ProcessFrameShader(const Data::CParams& Desc);
 bool	ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutShaderID);
 bool	ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath);

@@ -58,6 +58,33 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 }
 //---------------------------------------------------------------------
 
+//???does CFShader really need ProjectDir? why other tools don't? mb pass shader DB path and shader compiler DLL instead?
+//???cut out IOSrv assigns from it and use only absolute pathes?
+bool ProcessEffect(const CString& SrcFilePath, const CString& ExportFilePath)
+{
+	CString InStr = IOSrv->ResolveAssigns(SrcFilePath);
+	CString OutStr = IOSrv->ResolveAssigns(ExportFilePath);
+
+	if (InStr.FindIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
+	if (OutStr.FindIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
+
+	CString WorkingDir;
+	Sys::GetWorkingDirectory(WorkingDir);
+
+	char CmdLine[MAX_CMDLINE_CHARS];
+	sprintf_s(CmdLine, "-v %d -proj %s -in %s -out %s",
+		ExternalVerbosity, ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
+	int ExitCode = RunExternalToolAsProcess(CStrID("CFShader"), CmdLine, WorkingDir.CStr());
+	if (ExitCode != 0)
+	{
+		n_msg(VL_ERROR, "External tool CFShader execution failed\n");
+		FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool ProcessFrameShader(const Data::CParams& Desc)
 {
 	Data::PParams ShaderList;

@@ -5,22 +5,23 @@
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 
-bool					ExportDescs;
-bool					ExportResources;
-bool					ExportShaders;
-int						Verbose = VL_ERROR;
-int						ExternalVerbosity = VL_ALWAYS; // Only always printed messages by default
+CString			ProjectDir;
+bool			ExportDescs;
+bool			ExportResources;
+bool			ExportShaders;
+int				Verbose = VL_ERROR;
+int				ExternalVerbosity = VL_ALWAYS; // Only always printed messages by default
 
 //!!!control duplicates on add! or sort before packing and skip dups!
 // Can optimize by calculating nearest index:
 //!!!if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
-CArray<CString>			FilesToPack;
+CArray<CString>	FilesToPack;
 
 //!!!control duplicates! (immediately after mangle path, forex)
-CToolFileLists			InFileLists;
-CToolFileLists			OutFileLists;
+CToolFileLists	InFileLists;
+CToolFileLists	OutFileLists;
 
-CPropCodeMap			PropCodes;
+CPropCodeMap	PropCodes;
 
 // Debug command line:
 // -export -waitkey -v 5 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
@@ -44,9 +45,9 @@ int main(int argc, const char** argv)
 	ExternalVerbosity = Args.GetIntArg("-ev");
 
 	// Project directory, where all content is placed. Will be a base directory for all data.
-	CString ProjDir(Args.GetStringArg("-proj"));
-	ProjDir.Trim(" \r\n\t\\/", false);
-	if (ProjDir.IsEmpty()) EXIT_APP_FAIL;
+	ProjectDir = CString(Args.GetStringArg("-proj"));
+	ProjectDir.Trim(" \r\n\t\\/", false);
+	if (ProjectDir.IsEmpty()) EXIT_APP_FAIL;
 
 	// Build directory, to where final data will be saved.
 	CString BuildDir(Args.GetStringArg("-build"));
@@ -58,12 +59,12 @@ int main(int argc, const char** argv)
 	IO::CIOServer IOServer;
 	CString WorkingDir;
 	Sys::GetWorkingDirectory(WorkingDir);
-	ProjDir = IOSrv->ResolveAssigns(ProjDir);
+	ProjectDir = IOSrv->ResolveAssigns(ProjectDir);
 	BuildDir = IOSrv->ResolveAssigns(BuildDir);
-	IOSrv->SetAssign("Proj", PathUtils::GetAbsolutePath(WorkingDir, ProjDir));
+	IOSrv->SetAssign("Proj", PathUtils::GetAbsolutePath(WorkingDir, ProjectDir));
 	IOSrv->SetAssign("Build", PathUtils::GetAbsolutePath(WorkingDir, BuildDir));
 
-	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjDir.CStr(), BuildDir.CStr());
+	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjectDir.CStr(), BuildDir.CStr());
 
 	Data::CDataServer DataServer;
 
@@ -291,7 +292,7 @@ int main(int argc, const char** argv)
 	FilesToPack.Sort();
 
 	CString DestFile("Build:Export.npk");
-	if (PackFiles(FilesToPack, DestFile, ProjDir, CString("Export")))
+	if (PackFiles(FilesToPack, DestFile, ProjectDir, CString("Export")))
 	{
 		n_msg(VL_INFO, "\nNPK file:      %s\nNPK file size: %.3f MB\n",
 			IOSrv->ResolveAssigns(DestFile).CStr(),

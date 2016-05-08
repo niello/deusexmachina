@@ -1,0 +1,40 @@
+Field;SizeInBytes;Type;Description
+Magic;4;FOURCC;'SHFX' 32-bit constant in a Windows endianness
+Version;4;U32;Major (byte 1) and minor (byte 0) version, like 0x0100 = V1.0
+RenderStateCount;4;U32;Number of distinct render states used by the effect
+{RenderState};;array of structs;Render state description
+  MaxLights;4;U32;Maximum number of lights for a forward rendering pipeline supported by this render state
+  Flags;4;U32;Bit field with boolean flags of a render state
+  Other RS fields;34 + 1 (if DS_DepthEnable) + 14 (if DS_StencilEnable) + 7 * (enabled blend stages) + 20 * (MaxLights + 1);struct;Other CRenderStateDesc structure fields serialized
+TechCount;4;U32;Number of techs used by the effect
+{Tech};;array of structs;Technique description
+  ID;2 + string length;string;Technique UID (unique human-readable name)
+  InputSet;2 + string length;string;UID of an input set this tech implements
+  Target;4;U32;Highest of shader compile targets used for a tech, major (byte 1) and minor (byte 0) version, like 0x0401 = sm 4.1
+  MinFeatureLevel;4;U32;Minimal hardware feature level (hardware-supported D3D version) required to run this tech
+  RequiresFlags;8;U64;Additional hardware and API requirements (in a D3D11 terms)
+  PassCount;4;U32;Number of passes in a tech
+  PassIndices;4 * PassCount;array of U32;Indices in a {RenderState} array
+  MaxLights;4;U32;Maximum number of lights for a forward rendering pipeline supported by this tech
+  VariationValid;1 * (MaxLights + 1);array of bool 1 or 0;Each flag shows whether a corresponding LightCount is supported by a tech
+  ParamCount;4;U32;Number of effect parameters specific for this tech
+  {Param};;array of structs;Tech parameter description
+    ID;2 + string length;string;Parameter UID (unique human-readable name)
+    Type;1;U8;0 - constant, 1 - resource, 2 - sampler
+    ShaderType;1;U8;0 - vs, 1 - ps, 2 - gs, 3 - hs, 4 - ds
+    SourceShaderID;4;U32;Numeric UID of a shader file from where this parameter's metadata can be obtained
+    [ConstType];1;U8;For constants only: type of a constant
+    [SizeInBytes];4;U32;For constants only: size of a constant value in bytes
+GlobalParamCount;4;U32;Number of external global parameters, used commonly across all the techniques
+{GlobalParam};;array of structs;External global (provided by a render path) parameter desc, format is the same as in {Param} above
+MaterialParamCount;4;U32;Number of material parameters, used commonly across all the techniques
+{MaterialParam};;array of structs;Material parameter desc, format is the same as in {Param} above
+MtlParamDefaultValueCount;4;U32;Number of defined default values for material params
+{DefaultValue};;array of structs;Default value description
+  ID;2 + string length;string;Parameter UID (unique human-readable name)
+  Type;1;U8;0 - constant, 1 - resource, 2 - sampler
+  [Offset];4;U32;For constants only: offset of a constant default value in a value buffer (below)
+  [ResourceID];2 + string length;string;For resources only: URI of a resource, typically a texture
+  [SamplerDesc];37;struct;CSamplerDesc fields serialized
+ValueBufferSize;4;U32;Size of a constant value buffer
+[ValueBuffer];ValueBufferSize;raw bytes;For ValueBufferSize > 0: buffer containing sequentially placed default values of constants

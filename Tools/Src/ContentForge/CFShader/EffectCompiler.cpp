@@ -53,6 +53,8 @@ struct CEffectParam
 	EEffectParamType	Type;
 	Render::EShaderType	ShaderType;
 	U32					SourceShaderID;
+	ED3D11ConstType		ConstType;		// For consts, use D3D11 for now because it covers all needs of each supported API
+	U32					SizeInBytes;	// Cached, for consts
 	union
 	{
 		CSM30ShaderConstMeta*	pSM30Const;
@@ -1118,6 +1120,27 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
 								Param.pSM30Const = &MetaObj;
+								switch (MetaObj.RegisterSet)
+								{
+									case RS_Float4:
+									{
+										Param.ConstType = D3D11Const_Float;
+										Param.SizeInBytes = 4 * sizeof(float) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
+										break;
+									}
+									case RS_Int4:
+									{
+										Param.ConstType = D3D11Const_Int;
+										Param.SizeInBytes = /* 4 * */ sizeof(I32) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
+										break;
+									}
+									case RS_Bool:
+									{
+										Param.ConstType = D3D11Const_Bool;
+										Param.SizeInBytes = sizeof(bool) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
+										break;
+									}
+								}
 								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 							}
 							else
@@ -1224,6 +1247,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 								Param.SourceShaderID = ShaderID;
 								Param.pSM40Const = &MetaObj;
 								Param.pSM40Buffer = &MetaBuf;
+								Param.ConstType = MetaObj.Type;
+								Param.SizeInBytes = MetaObj.ElementSize * MetaObj.ElementCount;
 								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 							}
 							else
@@ -1660,14 +1685,19 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
 			if (!W.Write<U8>(TechParam.ShaderType)) return ERR_IO_WRITE;
 			if (!W.Write<U32>(TechParam.SourceShaderID)) return ERR_IO_WRITE;
+			if (Type == EPT_Const)
+			{
+				if (!W.Write<U8>(TechParam.ConstType)) return ERR_IO_WRITE;
+				if (!W.Write<U32>(TechParam.SizeInBytes)) return ERR_IO_WRITE;
+			}
 		}
 
-		if (TechInfo.Target < 0x0400)
-		{
-			WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");
-			WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
-			WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
-		}
+		//if (TechInfo.Target < 0x0400)
+		//{
+		//	WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");
+		//	WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
+		//	WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
+		//}
 	}
 
 	// Save global params table
@@ -1684,6 +1714,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
 		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+		if (Type == EPT_Const)
+		{
+			if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
+			if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+		}
 	}
 
 	//???save SM3.0 global CB info? or only some minimal signature here and all actual data in reference global shader in RP?
@@ -1705,9 +1740,18 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
 		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+		if (Type == EPT_Const)
+		{
+			if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
+			if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+		}
 	}
 
-	// Save material param default values: param ID, type (not to search in each collection, if they are separate), value or offset
+	//WriteRegisterRanges(MaterialFloat4, W, "float4");
+	//WriteRegisterRanges(MaterialInt4, W, "int4");
+	//WriteRegisterRanges(MaterialBool, W, "bool");
+
+	// Save material param default values: param ID, class, value or offset in a value buffer
 
 	IO::PMemStream DefaultConstValues = n_new(IO::CMemStream);
 	DefaultConstValues->Open(IO::SAM_READWRITE, IO::SAP_SEQUENTIAL);
@@ -1718,19 +1762,19 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	for (UPTR ParamIdx = 0; ParamIdx < MaterialParams.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = MaterialParams[ParamIdx];
-		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
-		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
 		
+		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
+		if (DefaultValue.IsNull()) continue;
+
+		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
 		if (Type == EPT_Const)
 		{
-			if (DefaultValue.IsNull()) continue;
-
 			// Use D3D11 enum as it suits for all APIs now
 			ED3D11ConstType ConstType = D3D11Const_Invalid;
-			U32 ConstSizeInBytes = 0;
+			U32 ConstSizeInBytes = Param.SizeInBytes;
 			U32 ValueSizeInBytes = 0;
 			U32 CurrDefValOffset = (U32)DefaultConstValues->GetPosition();
-
+			
 			if (Param.Type == EPT_SM30Const)
 			{
 				CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
@@ -1739,31 +1783,21 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					case RS_Float4:
 					{
 						ConstType = D3D11Const_Float;
-						ConstSizeInBytes = 4 * sizeof(float) * Meta.ElementRegisterCount * Meta.ElementCount;
 						break;
 					}
 					case RS_Int4:
 					{
 						ConstType = D3D11Const_Int;
-						ConstSizeInBytes = /* 4 * */ sizeof(I32) * Meta.ElementRegisterCount * Meta.ElementCount;
 						break;
 					}
 					case RS_Bool:
 					{
 						ConstType = D3D11Const_Bool;
-						ConstSizeInBytes = sizeof(bool) * Meta.ElementRegisterCount * Meta.ElementCount;
 						break;
 					}
 				}
 			}
-			else if (Param.Type == EPT_SM40Const)
-			{
-				CD3D11ShaderConstMeta& Meta = *Param.pSM40Const;
-				ConstType = Meta.Type;
-				ConstSizeInBytes = Meta.ElementSize * Meta.ElementCount;
-			}
-
-			n_assert(ConstType == D3D11Const_Invalid || ConstSizeInBytes > 0);
+			else if (Param.Type == EPT_SM40Const) ConstType = Param.pSM40Const->Type;
 
 			switch (ConstType)
 			{
@@ -1854,32 +1888,23 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		}
 		else if (Type == EPT_Resource)
 		{
-			if (DefaultValue.IsA<CStrID>())
+			CString ResourceID;
+			if (DefaultValue.IsA<CStrID>()) ResourceID = CString(DefaultValue.GetValue<CStrID>().CStr());
+			else if (DefaultValue.IsA<CString>()) ResourceID = DefaultValue.GetValue<CString>();
+			else
 			{
-				CStrID ResourceID = DefaultValue.GetValue<CStrID>();
-				if (ResourceID.IsValid())
-				{
-					if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-					if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
-					if (!W.Write(ResourceID)) return ERR_IO_WRITE;
-					++DefValCount;
-					n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-				}
-			}
-			else if (DefaultValue.IsA<CString>())
-			{
-				CString ResourceID = DefaultValue.GetValue<CString>();
-				if (ResourceID.IsValid())
-				{
-					if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-					if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
-					if (!W.Write(ResourceID)) return ERR_IO_WRITE;
-					++DefValCount;
-					n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
-				}
-			}
-			else if (!DefaultValue.IsNull())
 				n_msg(VL_WARNING, "Material param '%s' is a resource, default value must be null or resource ID of type CString or CStrID\n", Param.ID.CStr());
+				continue;
+			}
+
+			if (ResourceID.IsValid())
+			{
+				if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+				if (!W.Write(ResourceID)) return ERR_IO_WRITE;
+				++DefValCount;
+				n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
+			}
 		}
 		else if (Type == EPT_Sampler)
 		{
@@ -1895,19 +1920,19 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 						if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 						if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
 						
-						W.Write<U8>(SamplerDesc.AddressU);
-						W.Write<U8>(SamplerDesc.AddressV);
-						W.Write<U8>(SamplerDesc.AddressW);
-						W.Write<U8>(SamplerDesc.Filter);
-						W.Write(SamplerDesc.BorderColorRGBA[0]);
-						W.Write(SamplerDesc.BorderColorRGBA[1]);
-						W.Write(SamplerDesc.BorderColorRGBA[2]);
-						W.Write(SamplerDesc.BorderColorRGBA[3]);
-						W.Write(SamplerDesc.MipMapLODBias);
-						W.Write(SamplerDesc.FinestMipMapLOD);
-						W.Write(SamplerDesc.CoarsestMipMapLOD);
-						W.Write<U32>(SamplerDesc.MaxAnisotropy);
-						W.Write<U8>(SamplerDesc.CmpFunc);
+						if (!W.Write<U8>(SamplerDesc.AddressU)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(SamplerDesc.AddressV)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(SamplerDesc.AddressW)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(SamplerDesc.Filter)) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.BorderColorRGBA[0])) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.BorderColorRGBA[1])) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.BorderColorRGBA[2])) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.BorderColorRGBA[3])) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.MipMapLODBias)) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.FinestMipMapLOD)) return ERR_IO_WRITE;
+						if (!W.Write(SamplerDesc.CoarsestMipMapLOD)) return ERR_IO_WRITE;
+						if (!W.Write<U32>(SamplerDesc.MaxAnisotropy)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(SamplerDesc.CmpFunc)) return ERR_IO_WRITE;
 
 						++DefValCount;
 						
@@ -1916,29 +1941,24 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					else n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, default value is skipped\n", Param.ID.CStr());
 				}
 			}
-			else if (!DefaultValue.IsNull())
-				n_msg(VL_WARNING, "Material param '%s' is a sampler, default value must be null or params section\n", Param.ID.CStr());
+			else n_msg(VL_WARNING, "Material param '%s' is a sampler, default value must be null or params section\n", Param.ID.CStr());
 		}
 	}
 
 	// Write an actual default value count
 	U64 CurrPos = W.GetStream().GetPosition();
 	W.GetStream().Seek(DefValCountPos, IO::Seek_Begin);
-	W.Write(DefValCount);
+	if (!W.Write(DefValCount)) return ERR_IO_WRITE;
 	W.GetStream().Seek(CurrPos, IO::Seek_Begin);
 
 	U32 DefaultConstValuesSize = (U32)DefaultConstValues->GetSize();
-	W.Write(DefaultConstValuesSize);
+	if (!W.Write(DefaultConstValuesSize)) return ERR_IO_WRITE;
 	if (DefaultConstValuesSize)
 	{
-		W.GetStream().Write(DefaultConstValues->Map(), DefaultConstValuesSize);
+		if (W.GetStream().Write(DefaultConstValues->Map(), DefaultConstValuesSize) != DefaultConstValuesSize) return ERR_IO_WRITE;
 		DefaultConstValues->Unmap();
 	}
 	DefaultConstValues = NULL;
-
-	WriteRegisterRanges(MaterialFloat4, W, "float4");
-	WriteRegisterRanges(MaterialInt4, W, "int4");
-	WriteRegisterRanges(MaterialBool, W, "bool");
 
 	File->Close();
 

@@ -11,6 +11,9 @@
 // -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\PBR.hrd" -out "Shaders:SM_4_0\PBR.eff"
 // -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_3_0\CEGUI.hrd" -out "Shaders:SM_3_0\CEGUI.eff"
 // -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_3_0\CEGUI.hrd;SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_3_0\CEGUI.eff;Shaders:SM_4_0\CEGUI.eff"
+// -waitkey -v 5 -r -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:Effects\PBR.eff"
+// -v 0 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
+// -waitkey -v 5 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // WD = $(ProjectDir) -proj "..\..\..\..\..\InsanePoet\Content"
 // WD = $(TargetDir) -proj "..\..\..\..\InsanePoet\Content"
 
