@@ -923,6 +923,12 @@
     <ClInclude Include="..\..\Src\L1\Render\MaterialLoader.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9TextureLoaderDDS.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11TextureLoaderDDS.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1515,6 +1521,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\Effect.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9TextureLoaderDDS.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11TextureLoaderDDS.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

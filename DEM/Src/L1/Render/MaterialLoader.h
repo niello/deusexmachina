@@ -33,8 +33,9 @@ protected:
 		CDict<CStrID, void*>			Consts;
 		CDict<CStrID, Render::PTexture>	Resources;
 		CDict<CStrID, Render::PSampler>	Samplers;
-		void*							pConstValueBuffer;	// Caller must SAFE_FREE() it
+		void*							pConstValueBuffer;
 
+		CLoadedValues(): pConstValueBuffer(NULL) {}
 		~CLoadedValues() { SAFE_FREE(pConstValueBuffer); }
 	};
 

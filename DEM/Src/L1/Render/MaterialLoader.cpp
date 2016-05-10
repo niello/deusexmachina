@@ -10,8 +10,6 @@
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
-#include <Data/Buffer.h>
-#include <Data/HRDParser.h>
 
 namespace Resources
 {
@@ -42,7 +40,7 @@ bool CMaterialLoader::Load(CResource& Resource)
 	if (!Reader.Read(EffectID)) FAIL;
 	if (!EffectID.IsValid()) FAIL;
 
-	CString RsrcURI("Shaders:");
+	CString RsrcURI("Shaders:Effects/");
 	RsrcURI += EffectID.CStr();
 	RsrcURI += ".eff"; //???replace ID by full URI on export?
 

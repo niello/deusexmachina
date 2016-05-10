@@ -231,6 +231,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ShaderLoaders.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11TextureLoaderDDS.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.h" />
@@ -247,6 +248,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9TextureLoaderDDS.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h" />
     <ClInclude Include="..\..\Src\L1\Render\DepthStencilBuffer.h" />
@@ -485,6 +487,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ShaderLoaders.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11SwapChain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11TextureLoaderDDS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.cpp" />
@@ -500,6 +503,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9IndexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9TextureLoaderDDS.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp" />

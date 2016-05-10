@@ -5,9 +5,9 @@
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <Render/Texture.h>
+#include <Render/TextureLoader.h>
 #include <Render/Shader.h>
 #include <Render/ShaderLoader.h>
-#include <Render/RenderFwd.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <IO/IOServer.h>
@@ -630,7 +630,8 @@ Render::PTexture CEffectLoader::LoadTextureValue(IO::CBinaryReader& Reader, Rend
 		Resources::PResourceLoader Loader = RTexture->GetLoader();
 		if (Loader.IsNullPtr())
 			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
-		//Loader->As<Resources::CTextureLoader>()->GPU = GPU;
+		if (Loader.IsNullPtr()) return NULL;
+		Loader->As<Resources::CTextureLoader>()->GPU = GPU;
 		ResourceMgr->LoadResourceSync(*RTexture, *Loader);
 		if (!RTexture->IsLoaded()) return NULL;
 	}

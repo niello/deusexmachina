@@ -7,6 +7,11 @@
 // Texture loaders are intended to load GPU texture resources. It is a class of
 // different loaders each suited for a different image format and 3D API.
 
+namespace Render
+{
+	typedef Ptr<class CGPUDriver> PGPUDriver;
+}
+
 namespace Resources
 {
 
@@ -16,11 +21,12 @@ class CTextureLoader: public CResourceLoader
 
 public:
 
-	// GPU, Access, MipCount (-1 for from-file or full)
+	Render::PGPUDriver GPU;
+	// Access, MipCount (-1 for from-file or full)
 
-	virtual ~CTextureLoader() {}
+	//virtual ~CTextureLoader() {}
 
-	virtual const Core::CRTTI&	GetResultType() const;
+	//virtual const Core::CRTTI&	GetResultType() const;
 };
 
 typedef Ptr<CTextureLoader> PTextureLoader;
