@@ -18,22 +18,13 @@
 namespace Resources
 {
 
-enum EEffectParamType
-{
-	EPT_Const		= 0,
-	EPT_Resource	= 1,
-	EPT_Sampler		= 2,
-
-	EPT_Invalid
-};
-
 const Core::CRTTI& CEffectLoader::GetResultType() const
 {
 	return Render::CEffect::RTTI;
 }
 //---------------------------------------------------------------------
 
-//!!!can sort techs by InputID from best to worst! also can first load techs, then RS, not to load RS that won't be used!
+//!!!can first load techs, then RS, not to load RS that won't be used!
 bool CEffectLoader::Load(CResource& Resource)
 {
 	if (GPU.IsNullPtr()) FAIL;
@@ -187,12 +178,19 @@ bool CEffectLoader::Load(CResource& Resource)
 			Variations.SetSize(VariationArraySize, true);
 	}
 
+	// Load techniques
+
 	CDict<CStrID, Render::PTechnique> Techs;
 
 	Render::EGPUFeatureLevel GPULevel = GPU->GetFeatureLevel();
 
 	U32 TechCount;
 	if (!Reader.Read<U32>(TechCount) || !TechCount) FAIL;
+	
+	CStrID CurrInputSet;
+	UPTR ShaderInputSetID;
+	bool BestTechFound = false; // True if we already loaded the best tech for the current input set
+
 	for (UPTR i = 0; i < TechCount; ++i)
 	{
 		CStrID TechID;
@@ -209,34 +207,35 @@ bool CEffectLoader::Load(CResource& Resource)
 		U64 RequiresFlags;
 		if (!Reader.Read(RequiresFlags)) FAIL;
 
-		// Check for hardware and API support
-		if (MinFeatureLevel > GPULevel) continue;
-		if (!GPU->SupportsShaderModel(Target)) continue;
+		if (InputSet != CurrInputSet)
+		{
+			CurrInputSet = InputSet;
+			ShaderInputSetID = Render::RegisterShaderInputSetID(InputSet);
+			BestTechFound = false;
+		}
+
+		// Check for hardware and API support. For low-performance graphic cards with rich feature
+		// support, a better way is to measure GPU performance on driver init and choose here not
+		// only by features supported, but by performance 'score' of tech vs GPU too.
 		//!!!check RequiresFlags!
-
-		// Check for already loaded tech, isn't it better. We intentionally keep only
-		// one tech per InputSet loaded. Someone may want to load more techs for a
-		// particular InputSet and choose by name, but it is considered a rare case
-		// for a game. For low-performance graphic cards with rich feature support,
-		// a better way is to measure GPU performance on driver init and choose here
-		// not only by features supported, but by performance 'score' of tech vs GPU too.
-		//!!!sort techs from the best to the lightest, to avoid loading and then discarding!
-		Render::PTechnique Tech;
-		IPTR TechDictIdx = Techs.FindIndex(InputSet);
-		if (TechDictIdx == INVALID_INDEX)
+		if (BestTechFound || MinFeatureLevel > GPULevel || !GPU->SupportsShaderModel(Target))
 		{
-			Tech = n_new(Render::CTechnique);
-			Tech->Name = TechID;
-			Tech->ShaderInputSetID = Render::RegisterShaderInputSetID(InputSet);
-			Tech->MinFeatureLevel = MinFeatureLevel;
-		}
-		else
-		{
-			Tech = Techs.ValueAt(TechDictIdx);
-			if (Tech->MinFeatureLevel > MinFeatureLevel) continue;
+			U32 PassCount;
+			if (!Reader.Read<U32>(PassCount)) FAIL;
+			if (!File->Seek(4 * PassCount, IO::Seek_Current)) FAIL; // Pass indices
+			U32 MaxLights;
+			if (!Reader.Read<U32>(MaxLights)) FAIL;
+			if (!File->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
+			if (!SkipEffectParams(Reader)) FAIL;
+			continue;
 		}
 
-		bool IsValidTech = true;
+		Render::PTechnique Tech = n_new(Render::CTechnique);
+		Tech->Name = TechID;
+		Tech->ShaderInputSetID = ShaderInputSetID;
+		//Tech->MinFeatureLevel = MinFeatureLevel;
+
+		bool HasCompletelyInvalidPass = false;
 
 		U32 PassCount;
 		if (!Reader.Read<U32>(PassCount)) FAIL;
@@ -246,40 +245,39 @@ bool CEffectLoader::Load(CResource& Resource)
 			U32 PassRenderStateIdx;
 			if (!Reader.Read<U32>(PassRenderStateIdx)) FAIL;
 
-			//!!!if tech is loaded with errors (some variations are discarded on load), leave it loaded,
-			//but continue loading techs for this input set, to allow more lightweight tech possibly
-			//defined later to implement all variations
+			//!!!can lazy-load render states here! read desc above, but don't create GPU objects!
+			//many unused render states may be loaded unnecessarily
+
 			if (PassRenderStateIdx == INVALID_INDEX || !RenderStates[PassRenderStateIdx].GetCount())
 			{
-				IsValidTech = false;
+				HasCompletelyInvalidPass = true;
 				break;
 			}
 			
 			PassRenderStateIndices[PassIdx] = PassRenderStateIdx;
 		}
 
-		if (!IsValidTech) continue;
-
 		U32 MaxLights;
 		if (!Reader.Read<U32>(MaxLights)) FAIL;
 
-		// Truncate to ensure VariationValid flags will suit into an U32 flags
-		// This limitation can easily be avoided by using an array of bool, but
-		// in is doubtful that anyone will try to render more than 31 forward light.
-		//if (MaxLights > 31) MaxLights = 31;
+		if (HasCompletelyInvalidPass)
+		{
+			if (!File->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
+			if (!SkipEffectParams(Reader)) FAIL;
+			continue;
+		}
 
-		//U32 LightVariationValidityFlags = 0;
 		UPTR NewVariationCount = 0;
-		UPTR LightVariationCount = MaxLights + 1;
+		UPTR ValidVariationCount = 0;
+		UPTR VariationCount = MaxLights + 1;
 
-		Tech->PassesByLightCount.SetSize(LightVariationCount);
+		Tech->PassesByLightCount.SetSize(VariationCount);
 
-		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+		for (UPTR LightCount = 0; LightCount < VariationCount; ++LightCount)
 		{
 			// Always 0 or 1
 			U8 VariationValid;
 			if (!Reader.Read<U8>(VariationValid)) FAIL;
-			//LightVariationValidityFlags |= (VariationValid << LightCount);
 
 			Render::CPassList& PassList = Tech->PassesByLightCount[LightCount];
 			PassList.SetSize(PassCount);
@@ -291,6 +289,7 @@ bool CEffectLoader::Load(CResource& Resource)
 					Render::PRenderState RS = RenderStates[PassRenderStateIndices[PassIdx]][LightCount];
 					if (RS.IsNullPtr())
 					{
+						// Valid variation references failed render state
 						VariationValid = false;
 						break;
 					}
@@ -301,6 +300,7 @@ bool CEffectLoader::Load(CResource& Resource)
 			if (VariationValid)
 			{
 				NewVariationCount = LightCount + 1;
+				++ValidVariationCount;
 			}
 			else
 			{
@@ -311,14 +311,52 @@ bool CEffectLoader::Load(CResource& Resource)
 
 		}
 
-		if (!NewVariationCount) continue; // No valid variations in a tech
-		else if (NewVariationCount < LightVariationCount)
+		if (!NewVariationCount)
+		{
+			// No valid variations in a tech
+			if (!SkipEffectParams(Reader)) FAIL;
+			continue;
+		}
+		else if (NewVariationCount < VariationCount)
 			Tech->PassesByLightCount.SetSize(NewVariationCount, true);
+
+		// If all tech variations are valid, it is considered the best, because they
+		// are sorted by richness of features and all subsequent techs are not as good
+		if (VariationCount == ValidVariationCount) BestTechFound = true;
+		
+		IPTR TechDictIdx = Techs.FindIndex(InputSet);
+		if (TechDictIdx == INVALID_INDEX) Techs.Add(InputSet, Tech);
+		else
+		{
+			// Compare with already loaded tech, isn't it better. We intentionally keep only one
+			// tech per InputSet loaded. Someone may want to load more techs for a particular
+			// InputSet and choose by name, but it is considered a rare case for a game.
+			// Tech is considered better if it has more valid variations.
+			bool ReplaceExistingTech = BestTechFound;
+			if (!ReplaceExistingTech)
+			{
+				Render::PTechnique ExistingTech = Techs.ValueAt(TechDictIdx);
+				UPTR ExistingValidVariationCount = 0;
+				for (UPTR ExVarIdx = 0; ExVarIdx < ExistingTech->PassesByLightCount.GetCount(); ++ExVarIdx)
+					if (ExistingTech->PassesByLightCount[ExVarIdx].GetCount())
+						++ExistingValidVariationCount;
+				ReplaceExistingTech = (ValidVariationCount > ExistingValidVariationCount);
+			}
+
+			if (ReplaceExistingTech) Techs.ValueAt(TechDictIdx) = Tech;
+			else
+			{
+				if (!SkipEffectParams(Reader)) FAIL;
+				continue;
+			}
+		}
 
 		// Load tech params info
 
 		CArray<CLoadedParam> Params;
-		if (!LoadEffectParams(Reader, Params)) continue;
+		if (!LoadEffectParams(Reader, Params)) FAIL;
+
+		//!!!store in a tech!
 
 		//if (TechInfo.Target < 0x0400)
 		//{
@@ -326,8 +364,6 @@ bool CEffectLoader::Load(CResource& Resource)
 		//	WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
 		//	WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
 		//}
-
-		if (TechDictIdx == INVALID_INDEX) Techs.Add(InputSet, Tech);
 	}
 
 	if (!Techs.GetCount()) FAIL;
@@ -342,6 +378,8 @@ bool CEffectLoader::Load(CResource& Resource)
 	CArray<CLoadedParam> GlobalParams;
 	if (!LoadEffectParams(Reader, GlobalParams)) FAIL;
 
+	//???param table or signature? need only for compatibility check when use effect with a render path!
+
 	CArray<CLoadedParam> MtlParams;
 	if (!LoadEffectParams(Reader, MtlParams)) FAIL;
 
@@ -351,9 +389,9 @@ bool CEffectLoader::Load(CResource& Resource)
 	for (UPTR i = 0; i < MtlParams.GetCount(); ++i)
 	{
 		U8 Type = MtlParams[i].Type;
-		if (Type == EPT_Const) ++ConstCount;
-		else if (Type == EPT_Resource) ++ResourceCount;
-		else if (Type == EPT_Sampler) ++SamplerCount;
+		if (Type == Render::EPT_Const) ++ConstCount;
+		else if (Type == Render::EPT_Resource) ++ResourceCount;
+		else if (Type == Render::EPT_Sampler) ++SamplerCount;
 	}
 	Effect->MaterialConsts.SetSize(ConstCount);
 	Effect->MaterialResources.SetSize(ResourceCount);
@@ -367,7 +405,7 @@ bool CEffectLoader::Load(CResource& Resource)
 	{
 		CLoadedParam& Prm = MtlParams[i];
 		U8 Type = Prm.Type;
-		if (Type == EPT_Const)
+		if (Type == Render::EPT_Const)
 		{
 			Render::CEffectConstant& Rec = Effect->MaterialConsts[ConstCount];
 			Rec.ID = Prm.ID;
@@ -375,12 +413,13 @@ bool CEffectLoader::Load(CResource& Resource)
 			Rec.BufferHandle = Prm.BufferHandle;
 			Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
 			Rec.pDefaultValue = NULL;
+			Rec.SizeInBytes = Prm.SizeInBytes;
 			++ConstCount;
 			
 			if (MtlConstBuffers.FindIndex(Prm.BufferHandle) == INVALID_INDEX)
 				MtlConstBuffers.Add(Prm.BufferHandle);
 		}
-		else if (Type == EPT_Resource)
+		else if (Type == Render::EPT_Resource)
 		{
 			Render::CEffectResource& Rec = Effect->MaterialResources[ResourceCount];
 			Rec.ID = Prm.ID;
@@ -388,7 +427,7 @@ bool CEffectLoader::Load(CResource& Resource)
 			Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
 			++ResourceCount;
 		}
-		else if (Type == EPT_Sampler)
+		else if (Type == Render::EPT_Sampler)
 		{
 			Render::CEffectSampler& Rec = Effect->MaterialSamplers[SamplerCount];
 			Rec.ID = Prm.ID;
@@ -402,7 +441,7 @@ bool CEffectLoader::Load(CResource& Resource)
 	Effect->MaterialConstantBufferCount = MtlConstBuffers.GetCount();
 	MtlConstBuffers.Clear(true);
 
-	if (!LoadEffectParamDefaultValues(Reader, *Effect.GetUnsafe())) FAIL;
+	if (!LoadEffectParamValues(Reader, *Effect.GetUnsafe(), GPU)) FAIL;
 
 	Effect->BeginAddTechs(Techs.GetCount());
 	for (UPTR i = 0; i < Techs.GetCount(); ++i)
@@ -416,7 +455,7 @@ bool CEffectLoader::Load(CResource& Resource)
 //---------------------------------------------------------------------
 
 // Out array will be sorted by ID as parameters are saved sorted by ID
-bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out) const
+bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out)
 {
 	//???use .shd / .csh for all?
 	const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
@@ -437,6 +476,14 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedPa
 		U32 SourceShaderID;
 		if (!Reader.Read(SourceShaderID)) FAIL;
 
+		U8 ConstType;
+		U32 SizeInBytes;
+		if (Type == Render::EPT_Const)
+		{
+			if (!Reader.Read(ConstType)) FAIL;
+			if (!Reader.Read(SizeInBytes)) FAIL;
+		}
+
 		//???use shader bank and simple indexing?
 		CString URI = "Shaders:Bin/" + StringUtils::FromInt(SourceShaderID) + pExtension[ShaderType];
 		Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
@@ -446,10 +493,10 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedPa
 		HHandle hParam = INVALID_HANDLE;
 		switch (Type)
 		{
-			case EPT_Const:		hParam = ParamShader->GetConstHandle(ParamID); break;
-			case EPT_Resource:	hParam = ParamShader->GetResourceHandle(ParamID); break;
-			case EPT_Sampler:	hParam = ParamShader->GetSamplerHandle(ParamID); break;
-			case EPT_Invalid:	FAIL;
+			case Render::EPT_Const:		hParam = ParamShader->GetConstHandle(ParamID); break;
+			case Render::EPT_Resource:	hParam = ParamShader->GetResourceHandle(ParamID); break;
+			case Render::EPT_Sampler:	hParam = ParamShader->GetSamplerHandle(ParamID); break;
+			case Render::EPT_Invalid:	FAIL;
 		}
 
 		CLoadedParam& Prm = *Out.Add();
@@ -457,14 +504,19 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedPa
 		Prm.Type = Type;
 		Prm.ShaderType = ShaderType;
 		Prm.Handle = hParam;
-		if (Type == EPT_Const) Prm.BufferHandle = ParamShader->GetConstBufferHandle(hParam);
+		if (Type == Render::EPT_Const)
+		{
+			Prm.BufferHandle = ParamShader->GetConstBufferHandle(hParam);
+			Prm.ConstType = ConstType;
+			Prm.SizeInBytes = SizeInBytes;
+		}
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Render::CEffect& Effect) const
+bool CEffectLoader::LoadEffectParamValues(IO::CBinaryReader& Reader, Render::CEffect& Effect, Render::PGPUDriver GPU)
 {
 	CStrID ConstWithOffset0; // A way to distinguish between NULL (no default) and default with offset = 0
 
@@ -480,7 +532,7 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Rend
 
 		switch (Type)
 		{
-			case EPT_Const:
+			case Render::EPT_Const:
 			{
 				U32 Offset;
 				if (!Reader.Read(Offset)) FAIL;
@@ -498,62 +550,30 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Rend
 
 				break;
 			}
-			case EPT_Resource:
+			case Render::EPT_Resource:
 			{
-				CStrID ResourceID;
-				if (!Reader.Read(ResourceID)) FAIL;
-
-				Resources::PResource RTexture = ResourceMgr->RegisterResource(ResourceID.CStr());
-				if (!RTexture->IsLoaded())
-				{
-					Resources::PResourceLoader Loader = RTexture->GetLoader();
-					if (Loader.IsNullPtr())
-						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
-					Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-					ResourceMgr->LoadResourceSync(*RTexture, *Loader);
-					if (!RTexture->IsLoaded()) FAIL;
-				}
+				Render::PTexture Texture = LoadTextureValue(Reader, GPU);
+				if (Texture.IsNullPtr()) FAIL;
 
 				//!!!need binary search in fixed arrays!
 				for (UPTR i = 0; i < Effect.MaterialResources.GetCount(); ++i)
 				{
 					Render::CEffectResource& Rec = Effect.MaterialResources[i];
-					if (Rec.ID == ParamID) Rec.DefaultValue = RTexture->GetObject<Render::CTexture>();
+					if (Rec.ID == ParamID) Rec.DefaultValue = Texture;
 				}
 
 				break;
 			}
-			case EPT_Sampler:
+			case Render::EPT_Sampler:
 			{
-				Render::CSamplerDesc SamplerDesc;
-
-				U8 U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
-
-				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
-				Reader.Read(SamplerDesc.MipMapLODBias);
-				Reader.Read(SamplerDesc.FinestMipMapLOD);
-				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
-				Reader.Read(SamplerDesc.MaxAnisotropy);
-						
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
-
+				Render::PSampler Sampler = LoadSamplerValue(Reader, GPU);
+				if (Sampler.IsNullPtr()) FAIL;
+				
 				//!!!need binary search in fixed arrays!
 				for (UPTR i = 0; i < Effect.MaterialSamplers.GetCount(); ++i)
 				{
 					Render::CEffectSampler& Rec = Effect.MaterialSamplers[i];
-					if (Rec.ID == ParamID) Rec.DefaultValue = GPU->CreateSampler(SamplerDesc);
+					if (Rec.ID == ParamID) Rec.DefaultValue = Sampler;
 				}
 						
 				break;
@@ -567,7 +587,7 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Rend
 	{
 		Effect.pMaterialConstDefaultValues = (char*)n_malloc(DefValsSize);
 		Reader.GetStream().Read(Effect.pMaterialConstDefaultValues, DefValsSize);
-		//???store size in effect?
+		//???store DefValsSize in CEffect?
 
 		//!!!need binary search in fixed arrays!
 		for (UPTR i = 0; i < Effect.MaterialConsts.GetCount(); ++i)
@@ -579,6 +599,73 @@ bool CEffectLoader::LoadEffectParamDefaultValues(IO::CBinaryReader& Reader, Rend
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CEffectLoader::SkipEffectParams(IO::CBinaryReader& Reader)
+{
+	U32 Count;
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		U8 Type;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.Read(Type)) FAIL;	
+		if (!Reader.GetStream().Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+Render::PTexture CEffectLoader::LoadTextureValue(IO::CBinaryReader& Reader, Render::PGPUDriver GPU)
+{
+	CStrID ResourceID;
+	if (!Reader.Read(ResourceID)) return NULL;
+
+	Resources::PResource RTexture = ResourceMgr->RegisterResource(ResourceID.CStr());
+	if (!RTexture->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = RTexture->GetLoader();
+		if (Loader.IsNullPtr())
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
+		//Loader->As<Resources::CTextureLoader>()->GPU = GPU;
+		ResourceMgr->LoadResourceSync(*RTexture, *Loader);
+		if (!RTexture->IsLoaded()) return NULL;
+	}
+
+	return RTexture->GetObject<Render::CTexture>();
+}
+//---------------------------------------------------------------------
+
+Render::PSampler CEffectLoader::LoadSamplerValue(IO::CBinaryReader& Reader, Render::PGPUDriver GPU)
+{
+	Render::CSamplerDesc SamplerDesc;
+
+	U8 U8Value;
+	Reader.Read<U8>(U8Value);
+	SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
+	Reader.Read<U8>(U8Value);
+	SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
+	Reader.Read<U8>(U8Value);
+	SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
+	Reader.Read<U8>(U8Value);
+	SamplerDesc.Filter = (Render::ETexFilter)U8Value;
+
+	Reader.Read(SamplerDesc.BorderColorRGBA[0]);
+	Reader.Read(SamplerDesc.BorderColorRGBA[1]);
+	Reader.Read(SamplerDesc.BorderColorRGBA[2]);
+	Reader.Read(SamplerDesc.BorderColorRGBA[3]);
+	Reader.Read(SamplerDesc.MipMapLODBias);
+	Reader.Read(SamplerDesc.FinestMipMapLOD);
+	Reader.Read(SamplerDesc.CoarsestMipMapLOD);
+	Reader.Read(SamplerDesc.MaxAnisotropy);
+						
+	Reader.Read<U8>(U8Value);
+	SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
+
+	return GPU->CreateSampler(SamplerDesc);
 }
 //---------------------------------------------------------------------
 

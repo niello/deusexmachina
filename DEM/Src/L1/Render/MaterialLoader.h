@@ -3,12 +3,20 @@
 #define __DEM_L1_MATERIAL_LOADER_H__
 
 #include <Resources/ResourceLoader.h>
+#include <Data/Dictionary.h>
 
 // Loads render material from DEM "prm" format
+
+namespace IO
+{
+	class CBinaryReader;
+}
 
 namespace Render
 {
 	typedef Ptr<class CGPUDriver> PGPUDriver;
+	typedef Ptr<class CTexture> PTexture;
+	typedef Ptr<class CSampler> PSampler;
 }
 
 namespace Resources
@@ -17,6 +25,20 @@ namespace Resources
 class CMaterialLoader: public CResourceLoader
 {
 	__DeclareClassNoFactory;
+
+protected:
+
+	struct CLoadedValues
+	{
+		CDict<CStrID, void*>			Consts;
+		CDict<CStrID, Render::PTexture>	Resources;
+		CDict<CStrID, Render::PSampler>	Samplers;
+		void*							pConstValueBuffer;	// Caller must SAFE_FREE() it
+
+		~CLoadedValues() { SAFE_FREE(pConstValueBuffer); }
+	};
+
+	static bool					LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CLoadedValues& OutValues);
 
 public:
 

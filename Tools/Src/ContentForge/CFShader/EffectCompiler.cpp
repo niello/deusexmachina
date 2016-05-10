@@ -836,7 +836,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		Data::PDataArray Passes;
 		if (!TechDesc->Get(Passes, CStrID("Passes"))) continue;
 		CStrID InputSet = TechDesc->Get(CStrID("InputSet"), CStrID::Empty);
-		if (!InputSet.IsValid()) continue;
+		if (!InputSet.IsValid())
+		{
+			n_msg(VL_WARNING, "InputSet is not defined for tech '%s', tech is skipped\n", Tech.GetName().CStr());
+			continue;
+		}
 		UPTR MaxLights = (UPTR)n_max(TechDesc->Get<int>(CStrID("MaxLights"), 0), 0);
 		UPTR LightVariationCount = MaxLights + 1;
 
@@ -1648,6 +1652,27 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 	};
 
 	// Save techniques
+
+	// In each InputSet sort from the richest to the lightest tech. When loading an effect,
+	// application will choose the first suitable tech and then can skip remaining ones.
+	struct CSortTechsByInputSetAndFeatures
+	{
+		bool operator()(const CTechInfo& a, const CTechInfo& b)
+		{
+			if (a.InputSet != b.InputSet) return a.InputSet < b.InputSet;
+			if (a.Target != b.Target) return a.Target > b.Target;
+			if (a.MinFeatureLevel != b.MinFeatureLevel) return a.MinFeatureLevel > b.MinFeatureLevel;
+			UPTR AFlagCount = 0;
+			for (UPTR i = 0; i < sizeof(a.RequiresFlags) * 8; ++i)
+				if (a.RequiresFlags & (1i64 << i)) ++AFlagCount;
+			UPTR BFlagCount = 0;
+			for (UPTR i = 0; i < sizeof(b.RequiresFlags) * 8; ++i)
+				if (b.RequiresFlags & (1i64 << i)) ++BFlagCount;
+			if (AFlagCount != BFlagCount) AFlagCount > BFlagCount;
+			return a.MaxLights > b.MaxLights;
+		}
+	};
+	UsedTechs.Sort<CSortTechsByInputSetAndFeatures>();
 
 	if (!W.Write<U32>(UsedTechs.GetCount())) return ERR_IO_WRITE;
 

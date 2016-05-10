@@ -25,32 +25,26 @@ const Core::CRTTI& CMaterialLoader::GetResultType() const
 
 bool CMaterialLoader::Load(CResource& Resource)
 {
-	const char* pURI = Resource.GetUID().CStr();
-	const char* pExt = PathUtils::GetExtension(pURI);
-	Data::PParams Desc;
-	if (!n_stricmp(pExt, "hrd"))
-	{
-		Data::CBuffer Buffer;
-		if (!IOSrv->LoadFileToBuffer(pURI, Buffer)) FAIL;
-		Data::CHRDParser Parser;
-		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Desc)) FAIL;
-	}
-	else if (!n_stricmp(pExt, "prm"))
-	{
-		IO::PStream File = IOSrv->CreateStream(pURI);
-		if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-		IO::CBinaryReader Reader(*File);
-		Desc = n_new(Data::CParams);
-		if (!Reader.ReadParams(*Desc)) FAIL;
-	}
-	else FAIL;
+	if (GPU.IsNullPtr()) FAIL;
 
-	CStrID EffectID = Desc->Get<CStrID>(CStrID("Effect"), CStrID::Empty);
+	const char* pURI = Resource.GetUID().CStr();
+	IO::PStream File = IOSrv->CreateStream(pURI);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader Reader(*File);
+
+	U32 Magic;
+	if (!Reader.Read<U32>(Magic) || Magic != 'MTRL') FAIL;
+
+	U32 Version;
+	if (!Reader.Read<U32>(Version)) FAIL;
+
+	CStrID EffectID;
+	if (!Reader.Read(EffectID)) FAIL;
 	if (!EffectID.IsValid()) FAIL;
 
-	//CString RsrcURI("Shaders:");
-	//RsrcURI += EffectID.CStr();
-	CString RsrcURI(EffectID.CStr());
+	CString RsrcURI("Shaders:");
+	RsrcURI += EffectID.CStr();
+	RsrcURI += ".eff"; //???replace ID by full URI on export?
 
 	Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
 	if (!Rsrc->IsLoaded())
@@ -71,9 +65,9 @@ bool CMaterialLoader::Load(CResource& Resource)
 	Mtl->Effect = Rsrc->GetObject<Render::CEffect>();
 
 	// Build parameters
-	//const CFixedArray<CEffectConstant>&	GetMaterialConstants() const { return MaterialConsts; }
-	//const CFixedArray<CEffectResource>&	GetMaterialResources() const { return MaterialResources; }
-	//const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
+
+	CLoadedValues Values;
+	if (!LoadEffectParamValues(Reader, GPU, Values)) FAIL;
 
 	const CFixedArray<Render::CEffectConstant>& Consts = Mtl->Effect->GetMaterialConstants();
 	Mtl->ConstBuffers.SetSize(Mtl->Effect->GetMaterialConstantBufferCount());
@@ -101,16 +95,15 @@ bool CMaterialLoader::Load(CResource& Resource)
 			if (!GPU->BeginShaderConstants(*pRec->Buffer.GetUnsafe())) FAIL;
 		}
 
-		void* pValue = NULL;
-		UPTR ValueSize = 0;
-		// try to find value in a material description
-		if (!pValue)
-		{
-			pValue = Const.pDefaultValue;
-			//!!!size!
-		}
+		IPTR Idx = Values.Consts.FindIndex(Const.ID);
+		void* pValue = (Idx != INVALID_INDEX) ? Values.Consts.ValueAt(Idx) : NULL;
+		if (!pValue) pValue = Const.pDefaultValue;
 
-		if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Handle, 0, pValue, ValueSize)) FAIL;
+		if (pValue) //???fail if value is undefined? or fill with zeroes?
+		{
+			//???!!!add to SetShaderConstant() zero size support - autocalc?! tool-side validation!
+			if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Handle, 0, pValue, Const.SizeInBytes)) FAIL;
+		}
 	}
 
 	for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
@@ -130,14 +123,13 @@ bool CMaterialLoader::Load(CResource& Resource)
 	{
 		const Render::CEffectResource& Rsrc = Resources[i];
 		
-		Render::PTexture Value;
-		// try to find value in a material description
-		if (Value.IsNullPtr()) Value = Rsrc.DefaultValue;
+		IPTR Idx = Values.Resources.FindIndex(Rsrc.ID);
+		Render::PTexture Value = (Idx != INVALID_INDEX) ? Values.Resources.ValueAt(Idx) : Render::PTexture();
 		
 		Render::CMaterial::CResourceRec& Rec = Mtl->Resources[i];
 		Rec.Handle = Rsrc.Handle;
 		Rec.ShaderType = Rsrc.ShaderType;
-		Rec.Resource = Value;
+		Rec.Resource = Value.IsValidPtr() ? Value : Rsrc.DefaultValue;
 	}
 
 	const CFixedArray<Render::CEffectSampler>& Samplers = Mtl->Effect->GetMaterialSamplers();
@@ -146,17 +138,85 @@ bool CMaterialLoader::Load(CResource& Resource)
 	{
 		const Render::CEffectSampler& Sampler = Samplers[i];
 		
-		Render::PSampler Value;
-		// try to find value in a material description
-		if (Value.IsNullPtr()) Value = Sampler.DefaultValue;
+		IPTR Idx = Values.Samplers.FindIndex(Sampler.ID);
+		Render::PSampler Value = (Idx != INVALID_INDEX) ? Values.Samplers.ValueAt(Idx) : Render::PSampler();
 		
 		Render::CMaterial::CSamplerRec& Rec = Mtl->Samplers[i];
 		Rec.Handle = Sampler.Handle;
 		Rec.ShaderType = Sampler.ShaderType;
-		Rec.Sampler = Value;
+		Rec.Sampler = Value.IsValidPtr() ? Value : Sampler.DefaultValue;
 	}
 
 	Resource.Init(Mtl.GetUnsafe(), this);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CMaterialLoader::LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CLoadedValues& OutValues)
+{
+	U32 ParamCount;
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 Type;
+		if (!Reader.Read(Type)) FAIL;
+
+		switch (Type)
+		{
+			case Render::EPT_Const:
+			{
+				U32 Offset;
+				if (!Reader.Read(Offset)) FAIL;
+				
+				if (!OutValues.Consts.IsInAddMode()) OutValues.Consts.BeginAdd();
+				OutValues.Consts.Add(ParamID, (void*)Offset);
+
+				break;
+			}
+			case Render::EPT_Resource:
+			{
+				Render::PTexture Texture = CEffectLoader::LoadTextureValue(Reader, GPU);
+				if (Texture.IsNullPtr()) FAIL;
+
+				if (!OutValues.Resources.IsInAddMode()) OutValues.Resources.BeginAdd();
+				OutValues.Resources.Add(ParamID, Texture);
+
+				break;
+			}
+			case Render::EPT_Sampler:
+			{
+				Render::PSampler Sampler = CEffectLoader::LoadSamplerValue(Reader, GPU);
+				if (Sampler.IsNullPtr()) FAIL;
+				
+				if (!OutValues.Samplers.IsInAddMode()) OutValues.Samplers.BeginAdd();
+				OutValues.Samplers.Add(ParamID, Sampler);
+						
+				break;
+			}
+		}
+	}
+
+	if (OutValues.Consts.IsInAddMode()) OutValues.Consts.EndAdd();
+	if (OutValues.Resources.IsInAddMode()) OutValues.Resources.EndAdd();
+	if (OutValues.Samplers.IsInAddMode()) OutValues.Samplers.EndAdd();
+
+	U32 DefValsSize;
+	if (!Reader.Read(DefValsSize)) FAIL;
+	if (DefValsSize)
+	{
+		OutValues.pConstValueBuffer = n_malloc(DefValsSize);
+		Reader.GetStream().Read(OutValues.pConstValueBuffer, DefValsSize);
+
+		for (UPTR i = 0; i < OutValues.Consts.GetCount(); ++i)
+		{
+			void*& pValue = OutValues.Consts.ValueAt(i);
+			pValue = (char*)OutValues.pConstValueBuffer + (UPTR)pValue;
+		}
+	}
 
 	OK;
 }

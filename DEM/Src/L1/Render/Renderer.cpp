@@ -12,7 +12,7 @@ __ImplementClassNoFactory(Render::IRenderer, Core::CRTTIBaseClass);
 // "WorldMatrix". "ModelSkinned" adds BLENDINDICES, BLENDWEIGHTS and "SkinPalette" constant, etc.
 // Tracking these conventions in a dynamic dictionary allows to add new conventions at the runtime
 // and implement new renderers with corresponding shader techs without touching the base code.
-// Since without extensibility that would have been a static enum, I define it globally. Maybe
+// Since without extensibility it would have been a static enum, I define it globally. Maybe
 // later I'll figure out a better solution. Multithreading support also must be added.
 CDict<CStrID, UPTR> ShaderInputSets;
 

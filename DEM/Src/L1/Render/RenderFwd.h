@@ -275,6 +275,15 @@ enum ETexFilter
 	TexFilter_Anisotropic
 };
 
+enum EEffectParamType
+{
+	EPT_Const		= 0,
+	EPT_Resource	= 1,
+	EPT_Sampler		= 2,
+
+	EPT_Invalid
+};
+
 struct CImageData
 {
 	char*	pData;			// Data sequentially placed in memory

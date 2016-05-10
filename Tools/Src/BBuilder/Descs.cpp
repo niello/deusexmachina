@@ -392,8 +392,8 @@ bool ProcessSamplerSection(Data::PParams SamplerSection, Render::CSamplerDesc& D
 
 bool ProcessMaterialDesc(const char* pName)
 {
-	// Materials and effects are half-descs, half-resources, export if any of 2 flags is set.
-	// Textures referenced will be exported only if ExportResources is set.
+	// Materials are harder to parse than typical descs, always re-export for now.
+	//!!!may rewrite later - get EffectID and textures from src HRD if ExportDescs of from MTL if not!
 	if (!ExportDescs && !ExportResources) OK;
 
 	CString ExportFilePath("Materials:");
@@ -424,49 +424,54 @@ bool ProcessMaterialDesc(const char* pName)
 
 	if (!IsFileAdded(EffectExportFileName))
 	{
-		// Always recompile effect as ExportDescs or ExportResources is true
-		CString EffectSrcFileName("SrcShaders:Effects/");
-		EffectSrcFileName += EffectID.CStr();
-		EffectSrcFileName += ".hrd";
-		if (!ProcessEffect(EffectSrcFileName, EffectExportFileName)) FAIL;
+		if (ExportDescs)
+		{
+			CString EffectSrcFileName("SrcShaders:Effects/");
+			EffectSrcFileName += EffectID.CStr();
+			EffectSrcFileName += ".hrd";
+			if (!ProcessEffect(EffectSrcFileName, EffectExportFileName)) FAIL;
+		}
 
 		FilesToPack.InsertSorted(EffectExportFileName);
 
 		// Export textures from default values
-		if (ExportResources)
+
+		EFF = IOSrv->CreateStream(EffectExportFileName.CStr());
+		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
+		if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
+
+		EFF->Seek(MtlDefaultValuesOffset, IO::Seek_Begin);
+		IO::CBinaryReader R(*EFF.GetUnsafe());
+
+		U32 DefValCount;
+		if (!R.Read(DefValCount)) FAIL;
+		for (U32 i = 0; i < DefValCount; ++i)
 		{
-			EFF = IOSrv->CreateStream(EffectExportFileName.CStr());
-			if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-			if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
+			CString StrValue;
+			if (!R.Read(StrValue)) FAIL;
 
-			EFF->Seek(MtlDefaultValuesOffset, IO::Seek_Begin);
-			IO::CBinaryReader R(*EFF.GetUnsafe());
+			U8 Type;
+			if (!R.Read(Type)) FAIL;
 
-			U32 DefValCount;
-			if (!R.Read(DefValCount)) FAIL;
-			for (U32 i = 0; i < DefValCount; ++i)
+			if (Type == 0) // Constant
 			{
-				CString StrValue;
+				if (!EFF->Seek(4, IO::Seek_Current)) FAIL;
+			}
+			else if (Type == 1) // Resource
+			{
 				if (!R.Read(StrValue)) FAIL;
-
-				U8 Type;
-				if (!R.Read(Type)) FAIL;
-
-				if (Type == 0) // Constant
+				
+				if (ExportResources)
 				{
-					if (!EFF->Seek(4, IO::Seek_Current)) FAIL;
+					//!!!export from src, find resource desc and add source texture to CFTexture list!
 				}
-				else if (Type == 1) // Resource
-				{
-					//!!!when export from src, find resource desc and add source texture to CFTexture list!
-					if (!R.Read(StrValue)) FAIL;
-					CString TexFileName = CString("Textures:") + StrValue;
-					if (!IsFileAdded(TexFileName)) FilesToPack.InsertSorted(TexFileName);
-				}
-				else if (Type == 2) // Sampler
-				{
-					if (!EFF->Seek(37, IO::Seek_Current)) FAIL;
-				}
+				
+				CString TexExportFileName = StrValue;
+				if (!IsFileAdded(TexExportFileName)) FilesToPack.InsertSorted(TexExportFileName);
+			}
+			else if (Type == 2) // Sampler
+			{
+				if (!EFF->Seek(37, IO::Seek_Current)) FAIL;
 			}
 		}
 	}
@@ -675,10 +680,11 @@ bool ProcessMaterialDesc(const char* pName)
 
 					if (ExportResources)
 					{
-						//!!!when export from src, find resource desc and add source texture to CFTexture list!
-						CString TexFileName = CString("Textures:") + ResourceID;
-						if (!IsFileAdded(TexFileName)) FilesToPack.InsertSorted(TexFileName);
+						//!!!export from src, find resource desc and add source texture to CFTexture list!
 					}
+					
+					CString TexExportFileName = ResourceID;
+					if (!IsFileAdded(TexExportFileName)) FilesToPack.InsertSorted(TexExportFileName);
 				}
 			}
 			else if (MtlSamplers.Contains(ParamID)) // Sampler

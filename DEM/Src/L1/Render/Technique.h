@@ -30,7 +30,7 @@ private:
 
 	CStrID					Name;
 	UPTR					ShaderInputSetID;
-	EGPUFeatureLevel		MinFeatureLevel;
+	//EGPUFeatureLevel		MinFeatureLevel;
 	CFixedArray<CPassList>	PassesByLightCount;
 
 	//CDict<CStrID, HHandle>	ConstNameToHandles;

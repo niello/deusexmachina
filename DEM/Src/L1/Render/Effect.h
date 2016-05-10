@@ -23,7 +23,7 @@ struct CEffectConstant
 	HConst			Handle;
 	HConstBuffer	BufferHandle;
 	void*			pDefaultValue;
-	//???store val size?
+	U32				SizeInBytes;
 };
 
 struct CEffectResource

@@ -19,7 +19,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".prm");
+			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
 			Resources::PResource RMtl = ResourceMgr->RegisterResource(RsrcURI);
 			if (!RMtl->IsLoaded())
 			{
