@@ -21,8 +21,9 @@ class CTextureLoader: public CResourceLoader
 
 public:
 
-	Render::PGPUDriver GPU;
-	// Access, MipCount (-1 for from-file or full)
+	Render::PGPUDriver	GPU;
+	//UPTR				AccessFlags;		//!!!uncomment and define to GPU_Read in a _default_ loader!
+	//UPTR				DesiredMipCount;
 
 	//virtual ~CTextureLoader() {}
 

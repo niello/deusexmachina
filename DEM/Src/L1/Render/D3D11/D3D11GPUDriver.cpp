@@ -1669,12 +1669,12 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 		UPTR ElementCount = (TotalSize + 15) >> 4;
 		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return NULL;
 		Desc.ByteWidth = ElementCount << 4;
-		Desc.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+		Desc.BindFlags = (Usage == D3D11_USAGE_STAGING) ? 0 : D3D11_BIND_CONSTANT_BUFFER;
 	}
 	else
 	{
 		Desc.ByteWidth = TotalSize;
-		Desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
+		Desc.BindFlags = (Usage == D3D11_USAGE_STAGING) ? 0 : D3D11_BIND_SHADER_RESOURCE;
 	}
 
 	if (pMeta->Type == CD3D11Shader::StructuredBuffer)
@@ -1704,7 +1704,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
 
 	ID3D11ShaderResourceView* pSRV = NULL;
-	if (pMeta->Type != CD3D11Shader::ConstantBuffer)
+	if (Desc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
 	{
 		if (FAILED(pD3DDevice->CreateShaderResourceView(pD3DBuf, NULL, &pSRV)))
 		{
@@ -1737,6 +1737,12 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData, bool MipDataProvided)
 {
 	if (!pD3DDevice || !Desc.Width || !Desc.Height) return NULL;
+	
+	if (Desc.Type != Texture_1D && Desc.Type != Texture_2D && Desc.Type != Texture_Cube && Desc.Type != Texture_3D)
+	{
+		Sys::Error("CD3D11GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
+		return NULL;
+	}
 
 	PD3D11Texture Tex = n_new(CD3D11Texture);
 	if (Tex.IsNullPtr()) return NULL;
@@ -1775,31 +1781,37 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		UPTR BlockSize = CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat);
 
 		if (!MipLevels) MipLevels = GetMipLevelCount(Desc.Width, Desc.Height, BlockSize);
+		n_assert_dbg(MipLevels <= D3D11_REQ_MIP_LEVELS);
+		if (MipLevels > D3D11_REQ_MIP_LEVELS) MipLevels = D3D11_REQ_MIP_LEVELS;
 
 		UPTR BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 		n_assert_dbg(BPP > 0);
 
-		// To avoid dynamic allocation of pitch arrays
-		const UPTR MAX_MIPS = 16;
-		n_assert_dbg(MipLevels <= MAX_MIPS);
-		if (MipLevels > MAX_MIPS) MipLevels = MAX_MIPS;
-
+		//???truncate MipCount if 1x1 size is reached before the last mip?
 		//???texture and/or utility [inline] methods GetRowPitch(level, w, [h], fmt), GetSlicePitch(level, w, h, fmt OR rowpitch, h)?
-		UPTR Pitch[MAX_MIPS], SlicePitch[MAX_MIPS];
+		UPTR Pitch[D3D11_REQ_MIP_LEVELS], SlicePitch[D3D11_REQ_MIP_LEVELS];
 		if (BlockSize == 1)
 		{
 			for (UPTR Mip = 0; Mip < MipLevels; ++Mip)
 			{
-				Pitch[Mip] = ((Desc.Width >> Mip) * BPP) >> 3;
-				SlicePitch[Mip] = Pitch[Mip] * (Desc.Height >> Mip);
+				UPTR MipWidth = Desc.Width >> Mip;
+				UPTR MipHeight = Desc.Height >> Mip;
+				if (!MipWidth) MipWidth = 1;
+				if (!MipHeight) MipHeight = 1;
+				Pitch[Mip] = (MipWidth * BPP + 7) >> 3; // Round up to the nearest byte
+				SlicePitch[Mip] = Pitch[Mip] * MipHeight;
 			}
 		}
 		else
 		{
 			for (UPTR Mip = 0; Mip < MipLevels; ++Mip)
 			{
-				UPTR BlockCountW = ((Desc.Width >> Mip) + BlockSize - 1) / BlockSize;
-				UPTR BlockCountH = ((Desc.Height >> Mip) + BlockSize - 1) / BlockSize;
+				UPTR MipWidth = Desc.Width >> Mip;
+				UPTR MipHeight = Desc.Height >> Mip;
+				if (!MipWidth) MipWidth = 1;
+				if (!MipHeight) MipHeight = 1;
+				UPTR BlockCountW = (MipWidth + BlockSize - 1) / BlockSize;
+				UPTR BlockCountH = (MipHeight + BlockSize - 1) / BlockSize;
 				Pitch[Mip] = (BlockCountW * BlockSize * BlockSize * BPP) >> 3;
 				SlicePitch[Mip] = Pitch[Mip] * BlockCountH;
 			}
@@ -1824,35 +1836,39 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 
 		pInitData = (D3D11_SUBRESOURCE_DATA*)_malloca(MipLevels * ArraySize * sizeof(D3D11_SUBRESOURCE_DATA));
 		D3D11_SUBRESOURCE_DATA* pCurrInitData = pInitData;
-		char* pCurrData = (char*)pData;
-		for (UPTR Elm = 0; Elm < ArraySize; ++Elm, ++pCurrInitData)
+		U8* pCurrData = (U8*)pData;
+		for (UPTR Elm = 0; Elm < ArraySize; ++Elm)
 		{
 			pCurrInitData->pSysMem = pCurrData;
 			pCurrInitData->SysMemPitch = Pitch[0];
 			pCurrInitData->SysMemSlicePitch = SlicePitch[0];
-			pCurrData += SlicePitch[0];
+			pCurrData += SlicePitch[0]; //!!!* MipDepth!
+			++pCurrInitData;
 
-			for (UPTR Mip = 1; Mip < MipLevels; ++Mip, ++pCurrInitData)
+			for (UPTR Mip = 1; Mip < MipLevels; ++Mip)
 			{
 				if (MipDataProvided)
 				{
 					pCurrInitData->pSysMem = pCurrData;
 					pCurrInitData->SysMemPitch = Pitch[Mip];
 					pCurrInitData->SysMemSlicePitch = SlicePitch[Mip];
-					pCurrData += SlicePitch[Mip];
+					pCurrData += SlicePitch[Mip]; //!!!* MipDepth!
+					++pCurrInitData;
 				}
 				else if (pGeneratedMips)
 				{
 					pCurrInitData->pSysMem = pGeneratedMips;
 					pCurrInitData->SysMemPitch = Pitch[Mip];
 					pCurrInitData->SysMemSlicePitch = SlicePitch[Mip];
-					pGeneratedMips += SlicePitch[Mip];
+					pGeneratedMips += SlicePitch[Mip]; //!!!* MipDepth!
+					++pCurrInitData;
 				}
 				else
 				{
 					pCurrInitData->pSysMem = NULL;
 					pCurrInitData->SysMemPitch = 0;
 					pCurrInitData->SysMemSlicePitch = 0;
+					++pCurrInitData;
 				}
 			}
 		}
@@ -1928,11 +1944,6 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		if (pInitData) _freea(pInitData);
 		if (FAILED(hr)) return NULL;
 		pTexRsrc = pD3DTex;
-	}
-	else
-	{
-		Sys::Error("CD3D11GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
-		return NULL;
 	}
 
 	ID3D11ShaderResourceView* pSRV = NULL;

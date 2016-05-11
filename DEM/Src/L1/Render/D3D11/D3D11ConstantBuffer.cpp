@@ -16,7 +16,11 @@ bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* p
 	D3D11_BUFFER_DESC D3DDesc;
 	pCB->GetDesc(&D3DDesc);
 
-	if (!((D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) || (pSRV && (D3DDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE)))) FAIL;
+	if (!(D3DDesc.Usage & D3D11_USAGE_STAGING) &&
+		!((D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) || (pSRV && (D3DDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE))))
+	{
+		FAIL;
+	}
 
 	Flags.ClearAll();
 
