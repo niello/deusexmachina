@@ -1692,11 +1692,9 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 	D3D11_SUBRESOURCE_DATA InitData;
 	if (pData)
 	{
-		//!!!need constant handle metadata!
-		//!!!also need an array of values per const, to init tbuffers/structured buffers!
-		//InitData.pSysMem = pData;
-		NOT_IMPLEMENTED;
-		InitData.pSysMem = NULL; //!!!DBG TMP!
+		if (!pData->IsA<CD3D11ConstantBuffer>()) FAIL;
+		const CD3D11ConstantBuffer* pDataCB11 = (const CD3D11ConstantBuffer*)pData;
+		InitData.pSysMem = pDataCB11->GetRAMCopy();
 		pInitData = &InitData;
 	}
 
@@ -2975,11 +2973,11 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 
 	if (CB11.UsesRAMCopy())
 	{
-		// Commit RAM copy to VRAM
+		// Commit RAM copy to VRAM or to a staging resource
 
 		if (!CB11.IsDirty()) OK;
 
-		if (D3DUsage == D3D11_USAGE_DEFAULT)
+		if (D3DUsage == D3D11_USAGE_DEFAULT || D3DUsage == D3D11_USAGE_STAGING)
 		{
 			pD3DImmContext->UpdateSubresource(pBuffer, 0, NULL, CB11.GetRAMCopy(), 0, 0);
 		}

@@ -15,14 +15,14 @@ UPTR CTexture::GetPixelCount(bool IncludeSubsequentMips) const
 		default:			return 0;
 	}
 
-	if (!IncludeSubsequentMips) return BaseCount;
+	if (!BaseCount || !IncludeSubsequentMips) return BaseCount;
 
 	const UPTR DivShift = ((Desc.Type == Texture_3D) ? 3 : 2); // Divide by 8 or 4
 	UPTR Accum = BaseCount;
 	for (UPTR i = 1; i < Desc.MipLevels; ++i)
 	{
 		BaseCount >>= DivShift;
-		Accum += BaseCount;
+		Accum += BaseCount ? BaseCount : 1; // Each mip level takes at least 1x1 pixel
 	}
 
 	return Accum;

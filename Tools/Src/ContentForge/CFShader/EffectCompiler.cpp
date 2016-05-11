@@ -1668,7 +1668,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 			UPTR BFlagCount = 0;
 			for (UPTR i = 0; i < sizeof(b.RequiresFlags) * 8; ++i)
 				if (b.RequiresFlags & (1i64 << i)) ++BFlagCount;
-			if (AFlagCount != BFlagCount) AFlagCount > BFlagCount;
+			if (AFlagCount != BFlagCount) return AFlagCount > BFlagCount;
 			return a.MaxLights > b.MaxLights;
 		}
 	};

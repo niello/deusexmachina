@@ -64,6 +64,7 @@ public:
 	ID3D11ShaderResourceView*	GetD3DSRView() const { return pSRView; }
 	char*						GetMappedVRAM() { return Flags.Is(CB11_UsesRAMCopy) ? NULL : pMapped; }
 	char*						GetRAMCopy() { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
+	const char*					GetRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
 	D3D11_USAGE					GetD3DUsage() const { return D3DUsage; }
 	UPTR						GetSizeInBytes() const { return SizeInBytes; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }

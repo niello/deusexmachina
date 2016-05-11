@@ -45,8 +45,14 @@ bool CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Co
 	if (pRsrcType && pLoader && !pLoader->GetResultType().IsDerivedFrom(*pRsrcType)) FAIL;
 
 	CLoaderKey Key;
-	Key.Extension = CStrID(pFmtExtension);
 	Key.pRsrcType = pRsrcType;
+
+	UPTR ExtLen = strlen(pFmtExtension) + 1;
+	char* pFmtExtensionLower = (char*)_malloca(ExtLen);
+	memcpy(pFmtExtensionLower, pFmtExtension, ExtLen);
+	_strlwr_s(pFmtExtensionLower, ExtLen);
+	Key.Extension = CStrID(pFmtExtensionLower);
+	_freea(pFmtExtensionLower);
 
 	if (pLoader)
 	{
@@ -64,7 +70,17 @@ bool CResourceManager::RegisterDefaultLoader(const char* pFmtExtension, const Co
 PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType)
 {
 	CLoaderKey Key;
-	Key.Extension = CStrID(pFmtExtension);
+
+	UPTR ExtLen = strlen(pFmtExtension) + 1;
+	char* pFmtExtensionLower = (char*)_malloca(ExtLen);
+	memcpy(pFmtExtensionLower, pFmtExtension, ExtLen);
+	_strlwr_s(pFmtExtensionLower, ExtLen);
+	Key.Extension = CStrID(pFmtExtensionLower);
+	_freea(pFmtExtensionLower);
+
+#ifdef _DEBUG
+	const Core::CRTTI* pStartingRsrcType = pRsrcType;
+#endif
 
 	// Try to find loader for any resource in the class hierarchy
 	CLoaderRec* pRec = NULL;
@@ -76,7 +92,13 @@ PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension,
 		pRsrcType = pRsrcType->GetParent();
 	}
 
-	if (!pRec) return NULL;
+	if (!pRec)
+	{
+#ifdef _DEBUG
+		Sys::Error("No default loader associated for '%s' files and '%s' resource type\n", Key.Extension.CStr(), pStartingRsrcType ? pStartingRsrcType->GetName().CStr() : "<any>");
+#endif
+		return NULL;
+	}
 
 	return pRec->CloneOnCreate ? pRec->Loader->Clone() : pRec->Loader;
 }
