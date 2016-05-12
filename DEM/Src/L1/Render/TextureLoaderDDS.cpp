@@ -129,7 +129,7 @@ struct DDS_HEADER_DXT10
 
 namespace Resources
 {
-__ImplementClass(Resources::CTextureLoaderDDS, 'DDS1', Resources::CTextureLoader);
+__ImplementClass(Resources::CTextureLoaderDDS, 'DDSL', Resources::CTextureLoader);
 
 //!!!need sRGB handling!
 Render::EPixelFormat DDSFormatToPixelFormat(const DDS_PIXELFORMAT& DDSFormat)
@@ -158,6 +158,14 @@ Render::EPixelFormat DDSFormatToPixelFormat(const DDS_PIXELFORMAT& DDSFormat)
 				//if (ISBITMASK(DDSFormat, 0x3ff00000, 0x000ffc00, 0x000003ff, 0xc0000000))
 				//	return DXGI_FORMAT_R10G10B10A2_UNORM;
 
+				break;
+			}
+			case 24:
+			{
+				// Conversion will be performed
+				if (ISBITMASK(DDSFormat, 0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000) ||
+					ISBITMASK(DDSFormat, 0x00ff0000, 0x0000ff00, 0x000000ff, 0x00000000))
+					return Render::PixelFmt_B8G8R8X8;
 				break;
 			}
 			case 16:
@@ -254,7 +262,8 @@ bool CTextureLoaderDDS::Load(CResource& Resource)
 	TexDesc.MSAAQuality = Render::MSAA_None;
 	bool MipDataProvided = (Header.mipMapCount > 1);
 
-	if ((Header.ddspf.flags & DDS_FOURCC) && Header.ddspf.fourCC == MAKEFOURCC( 'D', 'X', '1', '0' ))
+	bool IsDX10 = (Header.ddspf.flags & DDS_FOURCC) && Header.ddspf.fourCC == MAKEFOURCC('D', 'X', '1', '0');
+	if (IsDX10)
 	{
 		// D3D10 and later format
 		DDS_HEADER_DXT10 Header10;
@@ -298,6 +307,55 @@ bool CTextureLoaderDDS::Load(CResource& Resource)
 	//???!!!use mapped file instead?! at least if conversion not needed.
 	void* pData = n_malloc(DataSize);
 	if (File->Read(pData, DataSize) != DataSize) FAIL;
+
+	if (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8)
+	{
+		// Perform a conversion to a PixelFmt_B8G8R8X8
+
+		const U8* pCurrData = (const U8*)pData;
+		const U8* pDataEnd = (const U8*)pData + DataSize;
+
+		DataSize = DataSize * 4 / 3;
+		U8* pNewData = (U8*)n_malloc(DataSize);
+		U8* pCurrNewData = pNewData;
+
+		const bool InvertRB = ISBITMASK(Header.ddspf, 0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
+		if (InvertRB)
+		{
+			while (pCurrData < pDataEnd)
+			{
+				*pCurrNewData = pCurrData[2];
+				++pCurrNewData;
+				*pCurrNewData = pCurrData[1];
+				++pCurrNewData;
+				*pCurrNewData = pCurrData[0];
+				++pCurrNewData;
+				*pCurrNewData = 0xff;
+				++pCurrNewData;
+				pCurrData += 3;
+			}
+		}
+		else
+		{
+			while (pCurrData < pDataEnd)
+			{
+				*pCurrNewData = *pCurrData;
+				++pCurrNewData;
+				++pCurrData;
+				*pCurrNewData = *pCurrData;
+				++pCurrNewData;
+				++pCurrData;
+				*pCurrNewData = *pCurrData;
+				++pCurrNewData;
+				++pCurrData;
+				*pCurrNewData = 0xff;
+				++pCurrNewData;
+			}
+		}
+
+		n_free(pData);
+		pData = pNewData;
+	}
 
 	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, MipDataProvided);
 

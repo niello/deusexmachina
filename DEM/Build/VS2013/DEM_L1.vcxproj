@@ -285,6 +285,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\TextureLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\TextureLoaderDDS.h" />
+    <ClInclude Include="..\..\Src\L1\Render\TextureLoaderTGA.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexComponent.h" />
     <ClInclude Include="..\..\Src\L1\Render\VertexLayout.h" />
@@ -530,6 +531,7 @@
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\TextureLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\TextureLoaderDDS.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\TextureLoaderTGA.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\VertexLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceObject.cpp" />

@@ -356,8 +356,55 @@ bool CEffectLoader::Load(CResource& Resource)
 		CArray<CLoadedParam> Params;
 		if (!LoadEffectParams(Reader, Params)) FAIL;
 
-		//!!!store in a tech!
+		UPTR ConstCount = 0;
+		UPTR ResourceCount = 0;
+		UPTR SamplerCount = 0;
+		for (UPTR i = 0; i < Params.GetCount(); ++i)
+		{
+			U8 Type = Params[i].Type;
+			if (Type == Render::EPT_Const) ++ConstCount;
+			else if (Type == Render::EPT_Resource) ++ResourceCount;
+			else if (Type == Render::EPT_Sampler) ++SamplerCount;
+		}
+		Tech->Consts.SetSize(ConstCount);
+		Tech->Resources.SetSize(ResourceCount);
+		Tech->Samplers.SetSize(SamplerCount);
 
+		ConstCount = 0;
+		ResourceCount = 0;
+		SamplerCount = 0;
+		for (UPTR i = 0; i < Params.GetCount(); ++i)
+		{
+			CLoadedParam& Prm = Params[i];
+			U8 Type = Prm.Type;
+			if (Type == Render::EPT_Const)
+			{
+				Render::CTechConstant& Rec = Tech->Consts[ConstCount];
+				Rec.ID = Prm.ID;
+				Rec.Handle = Prm.Handle;
+				Rec.BufferHandle = Prm.BufferHandle;
+				Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
+				++ConstCount;
+			}
+			else if (Type == Render::EPT_Resource)
+			{
+				Render::CTechResource& Rec = Tech->Resources[ResourceCount];
+				Rec.ID = Prm.ID;
+				Rec.Handle = Prm.Handle;
+				Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
+				++ResourceCount;
+			}
+			else if (Type == Render::EPT_Sampler)
+			{
+				Render::CTechSampler& Rec = Tech->Samplers[SamplerCount];
+				Rec.ID = Prm.ID;
+				Rec.Handle = Prm.Handle;
+				Rec.ShaderType = (Render::EShaderType)Prm.ShaderType;
+				++SamplerCount;
+			}
+		}
+
+		//!!!API-specific, don't include, use 1 CB for all in DX9 or separate buffers at the compilation stage!
 		//if (TechInfo.Target < 0x0400)
 		//{
 		//	WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");

@@ -268,7 +268,7 @@ bool CFileSystemNPK::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
 	switch (Origin)
 	{
 		case Seek_Current:	SeekPos = ((CNPKFile*)hFile)->Offset + (IPTR)Offset; break;
-		case Seek_End:		SeekPos = Len + (IPTR)Offset; break;
+		case Seek_End:		SeekPos = Len - (IPTR)Offset; break;
 		default:			SeekPos = (IPTR)Offset; break;
 	}
 

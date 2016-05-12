@@ -51,8 +51,7 @@ protected:
 
 	//global params signature for validation against a current render path
 
-	//!!!can use fixed arrays with binary search by ID!
-	//material can reference this data by index, since these arrays never change after effect loading
+	//!!!need binary search by ID!
 	CFixedArray<CEffectConstant>	MaterialConsts;
 	CFixedArray<CEffectResource>	MaterialResources;
 	CFixedArray<CEffectSampler>		MaterialSamplers;
