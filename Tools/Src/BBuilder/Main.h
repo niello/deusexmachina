@@ -19,7 +19,7 @@ typedef CHashTable<CString, Data::CFourCC> CPropCodeMap;
 extern CString				ProjectDir;
 extern bool					ExportDescs;
 extern bool					ExportResources;
-extern bool					ExportShaders;
+extern bool					ExportSM30ShadersAndEffects;
 extern int					Verbose;
 extern int					ExternalVerbosity;
 extern CArray<CString>		FilesToPack;
@@ -29,7 +29,7 @@ extern CPropCodeMap			PropCodes;
 
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
-bool	ProcessEffect(const CString& SrcFilePath, const CString& ExportFilePath);
+bool	ProcessEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
 bool	ProcessFrameShader(const Data::CParams& Desc);
 bool	ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutShaderID);
 bool	ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath);

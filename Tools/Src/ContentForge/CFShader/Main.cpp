@@ -8,10 +8,8 @@
 #include <ConsoleApp.h>
 
 // Debug args:
-// -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_4_0\PBR.hrd" -out "Shaders:SM_4_0\PBR.eff"
-// -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_3_0\CEGUI.hrd" -out "Shaders:SM_3_0\CEGUI.eff"
-// -waitkey -v 5 -r -proj "..\..\..\..\..\InsanePoet\Content" -in "SrcShaders:SM_3_0\CEGUI.hrd;SrcShaders:SM_4_0\CEGUI.hrd" -out "Shaders:SM_3_0\CEGUI.eff;Shaders:SM_4_0\CEGUI.eff"
-// -waitkey -v 5 -r -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:Effects\PBR.eff"
+// -waitkey -v 5 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:USM\Effects\PBR.eff"
+// -waitkey -v 5 -sm3 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:SM_3_0\Effects\PBR.eff"
 // -v 0 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // -waitkey -v 5 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // WD = $(ProjectDir) -proj "..\..\..\..\..\InsanePoet\Content"
@@ -24,7 +22,7 @@ int		Verbose = VL_ERROR;
 CString	RootPath;
 
 int ExitApp(int Code, bool WaitKey);
-int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug);
+int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30);
 
 int main(int argc, const char** argv)
 {
@@ -49,6 +47,8 @@ int main(int argc, const char** argv)
 				"-db [filepath]              path to persistent shader DB,\n"
 				"                            default: -root + 'ShaderDB.db3'\n"
 				"-d                          build shaders with debug info\n"
+				"-sm3                        build only old sm3.0 techs, else only\n"
+				"                            Unified Shader Model techs will be built\n"
 				"-r                          rebuild shaders even if not changed\n"
 				"-waitkey                    wait for a key press when tool has finished\n"
 				"-v [verbosity]              output verbosity level, [ 0 .. 5 ]\n");
@@ -62,7 +62,8 @@ int main(int argc, const char** argv)
 	const char* pProjPath = Args.GetStringArg("-proj");
 	CString DB(Args.GetStringArg("-db"));
 	bool Debug = Args.GetBoolArg("-d");
-	bool Rebuild = Args.GetBoolArg("-r"); //!!!or if tool version changed (store in DB)!
+	bool SM30 = Args.GetBoolArg("-sm3");
+	bool Rebuild = Args.GetBoolArg("-r"); //!!!or if tool / DLL version changed (store in DB)!
 
 	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
@@ -153,7 +154,7 @@ int main(int argc, const char** argv)
 		else
 		{
 			if (!IOSrv->FileExists(InRec)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			int Code = CompileEffect(InRec, OutRec, Debug);
+			int Code = CompileEffect(InRec, OutRec, Debug, SM30);
 			if (Code != 0) return ExitApp(Code, WaitKey);
 		}
 	}

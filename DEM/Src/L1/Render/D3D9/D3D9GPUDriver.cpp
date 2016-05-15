@@ -2061,6 +2061,8 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 {
 	if (!pD3DDevice) return NULL;
 
+	n_assert_dbg(!MipDataProvided || Desc.MipLevels);
+
 	PD3D9Texture Tex = n_new(CD3D9Texture);
 	if (Tex.IsNullPtr()) return NULL;
 
@@ -2069,7 +2071,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 	DWORD Usage;
 	D3DPOOL Pool;
 	GetUsagePool(AccessFlags, Usage, Pool);
-	if (Desc.MipLevels != 1) Usage |= D3DUSAGE_AUTOGENMIPMAP;
+	if (!MipDataProvided && Desc.MipLevels != 1) Usage |= D3DUSAGE_AUTOGENMIPMAP;
 
 	if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
 	{
@@ -2083,22 +2085,31 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 			return NULL;
 		}
 
+		UPTR MipsToLoad = MipDataProvided ? Desc.MipLevels : 1;
 		if (pData)
 		{
-			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
-			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
-			D3DLOCKED_RECT LockedRect = { 0 };
-			if (SUCCEEDED(pD3DTex->LockRect(0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
+			UPTR BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
+
+			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be modified
+			// by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
+			const char* pCurrLevelData = (const char*)pData;
+			for (UPTR Mip = 0; Mip < MipsToLoad; ++Mip)
 			{
-				UPTR BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
-				UPTR BlocksH = (BlockSize == 1) ? Height : ((Height + BlockSize - 1) / BlockSize);
-				memcpy(LockedRect.pBits, pData, LockedRect.Pitch * BlocksH);
-				n_assert(SUCCEEDED(pD3DTex->UnlockRect(0)));
-			}
-			else
-			{
-				pD3DTex->Release();
-				return NULL;
+				D3DLOCKED_RECT LockedRect = { 0 };
+				if (SUCCEEDED(pD3DTex->LockRect(Mip, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
+				{
+					UPTR MipHeight = Desc.Height >> Mip;
+					if (!MipHeight) MipHeight = 1;
+					UPTR DataSize = LockedRect.Pitch * (MipHeight + BlockSize - 1) / BlockSize;
+					memcpy(LockedRect.pBits, pCurrLevelData, DataSize);
+					n_assert(SUCCEEDED(pD3DTex->UnlockRect(Mip)));
+					pCurrLevelData += DataSize;
+				}
+				else
+				{
+					pD3DTex->Release();
+					return NULL;
+				}
 			}
 		}
 	}
@@ -2116,6 +2127,10 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 		{
 			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
 			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
+			if (MipDataProvided)
+			{
+				NOT_IMPLEMENTED_MSG("D3D9 3D texture mip levels uploading\n");
+			}
 			D3DLOCKED_BOX LockedBox = { 0 };
 			if (SUCCEEDED(pD3DTex->LockBox(0, &LockedBox, NULL, D3DLOCK_NOSYSLOCK)))
 			{

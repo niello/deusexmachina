@@ -40,7 +40,7 @@ bool CMaterialLoader::Load(CResource& Resource)
 	if (!Reader.Read(EffectID)) FAIL;
 	if (!EffectID.IsValid()) FAIL;
 
-	CString RsrcURI("Shaders:Effects/");
+	CString RsrcURI("Effects:");
 	RsrcURI += EffectID.CStr();
 	RsrcURI += ".eff"; //???replace ID by full URI on export?
 

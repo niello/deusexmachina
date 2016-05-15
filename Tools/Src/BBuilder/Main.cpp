@@ -8,9 +8,9 @@
 CString			ProjectDir;
 bool			ExportDescs;
 bool			ExportResources;
-bool			ExportShaders;
+bool			ExportSM30ShadersAndEffects;	// For legacy D3D9 API
 int				Verbose = VL_ERROR;
-int				ExternalVerbosity = VL_ALWAYS; // Only always printed messages by default
+int				ExternalVerbosity = VL_ALWAYS;	// Only always printed messages by default
 
 //!!!control duplicates on add! or sort before packing and skip dups!
 // Can optimize by calculating nearest index:
@@ -31,9 +31,10 @@ int main(int argc, const char** argv)
 	nCmdLineArgs Args(argc, argv);
 
 	// If true, will re-export files from Src to Export before packing
+	// Shaders are alway
 	ExportDescs = Args.GetBoolArg("-er") || Args.GetBoolArg("-export");
 	ExportResources = Args.GetBoolArg("-ed") || Args.GetBoolArg("-export");
-	ExportShaders = Args.GetBoolArg("-es") || Args.GetBoolArg("-export");
+	ExportSM30ShadersAndEffects = Args.GetBoolArg("-sm3");
 
 	// If true, application will wait for key before exit
 	bool WaitKey = Args.GetBoolArg("-waitkey");
@@ -226,26 +227,26 @@ int main(int argc, const char** argv)
 
 	// Process frame shaders
 
-	if (!Browser.SetAbsolutePath(ExportShaders ? "SrcShaders:" : "Shaders:"))
+	if (!Browser.SetAbsolutePath(ExportDescs ? "SrcShaders:" : "Shaders:"))
 	{
 		n_msg(VL_ERROR, "Could not open directory '%s' for reading!\n", Browser.GetCurrentPath().CStr());
 		EXIT_APP_FAIL;
 	}
 
-	if (ExportShaders) IOSrv->CreateDirectory("Shaders:");
+	if (ExportDescs) IOSrv->CreateDirectory("Shaders:");
 
 	if (!Browser.IsCurrDirEmpty()) do
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportShaders ? "hrd" : "prm")) continue;
+			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportDescs ? "hrd" : "prm")) continue;
 
 			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 			n_msg(VL_INFO, "Processing frame shader '%s'...\n", FileNoExt.CStr());
 
 			ExportFilePath = "Shaders:" + FileNoExt + ".prm";
 			Data::PParams ShdDesc;
-			if (ExportShaders)
+			if (ExportDescs)
 			{
 				ShdDesc = DataSrv->LoadHRD("SrcShaders:" + Browser.GetCurrEntryName(), false);
 				DataSrv->SavePRM(ExportFilePath, ShdDesc);
@@ -273,14 +274,14 @@ int main(int argc, const char** argv)
 
 	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
-	if (ExportShaders)
-	{
+	//if (ExportShaders)
+	//{
 		//CString ShdRoot = IOSrv->ResolveAssigns("SrcShaders:");
 		//if (ShdRoot.FindIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
 		//CString ExtraCmdLine("-o 3 -root ");
 		//ExtraCmdLine += ShdRoot;
 		//if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr(), WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
-	}
+	//}
 
 	Sys::Log("\n"SEP_LINE"Packing:\n"SEP_LINE);
 

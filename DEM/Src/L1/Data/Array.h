@@ -282,7 +282,7 @@ void CArray<T>::Move(IPTR FromIdx, IPTR ToIdx)
 	UPTR NewCount = ToIdx + MoveCount;
 	GrowTo(NewCount);
 
-	if (FromIdx > ToIdx) // Backwards
+	if (FromIdx > ToIdx) // Backward
 	{
 		T* pDataSrc = pData + FromIdx;
 		T* pDataDest = pData + ToIdx;

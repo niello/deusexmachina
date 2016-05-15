@@ -413,30 +413,41 @@ bool ProcessMaterialDesc(const char* pName)
 	}
 
 	// Process referenced effect
-
-	CString EffectExportFileName("Shaders:Effects/");
-	EffectExportFileName += EffectID.CStr();
-	EffectExportFileName += ".eff";
+	// Legacy sm3.0 effect will be compiled alongside an USM one if requested
 
 	IO::PStream EFF;
 	U64 MtlParamsOffset;
 	U64 MtlDefaultValuesOffset;
 
-	if (!IsFileAdded(EffectExportFileName))
+	CString EffectExportFileNameUSM("Shaders:USM/Effects/");
+	EffectExportFileNameUSM += EffectID.CStr();
+	EffectExportFileNameUSM += ".eff";
+
+	CString EffectExportFileNameSM30("Shaders:SM_3_0/Effects/");
+	EffectExportFileNameSM30 += EffectID.CStr();
+	EffectExportFileNameSM30 += ".eff";
+
+	if (!IsFileAdded(EffectExportFileNameUSM))
 	{
 		if (ExportDescs)
 		{
 			CString EffectSrcFileName("SrcShaders:Effects/");
 			EffectSrcFileName += EffectID.CStr();
 			EffectSrcFileName += ".hrd";
-			if (!ProcessEffect(EffectSrcFileName, EffectExportFileName)) FAIL;
+			if (!ProcessEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+
+			if (ExportSM30ShadersAndEffects)
+				if (!ProcessEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
 		}
 
-		FilesToPack.InsertSorted(EffectExportFileName);
+		FilesToPack.InsertSorted(EffectExportFileNameUSM);
+
+		if (ExportSM30ShadersAndEffects)
+			FilesToPack.InsertSorted(EffectExportFileNameSM30);
 
 		// Export textures from default values
 
-		EFF = IOSrv->CreateStream(EffectExportFileName.CStr());
+		EFF = IOSrv->CreateStream(EffectExportFileNameUSM.CStr());
 		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
 		if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
 
@@ -480,7 +491,7 @@ bool ProcessMaterialDesc(const char* pName)
 
 	if (EFF.IsNullPtr())
 	{
-		EFF = IOSrv->CreateStream(EffectExportFileName.CStr());
+		EFF = IOSrv->CreateStream(EffectExportFileNameUSM.CStr());
 		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
 		if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
 	}
@@ -841,7 +852,7 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 
 bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath)
 {
-	//???where to define?
+	//???where to define? in a desc (in a shader section)?
 	bool CompileDebugShaders = false;
 
 	// Some descs can be loaded twice or more from different IO path assigns, avoid it
@@ -877,7 +888,6 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 		}
 	}
 
-	// We can't export UI settings desc without exporting UI shaders, so these shaders ignore ExportShaders flag
 	if (ExportDescs)
 	{
 		Data::PParams ShadersDesc;

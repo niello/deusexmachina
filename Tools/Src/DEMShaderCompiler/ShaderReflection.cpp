@@ -532,13 +532,7 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
 		R.Read(Obj.BufferIndex);
 		R.Read<U8>(RegSet);
 
-		switch (RegSet)
-		{
-			case 0:		Obj.RegisterSet = RS_Float4; break;
-			case 1:		Obj.RegisterSet = RS_Int4; break;
-			case 2:		Obj.RegisterSet = RS_Bool; break;
-			default:	continue;
-		};
+		Obj.RegisterSet = (ESM30RegisterSet)RegSet;
 
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.ElementRegisterCount);

@@ -118,7 +118,22 @@ struct CRenderStateRef
 	CRenderStateRef(): ShaderIDs(NULL) {}
 	~CRenderStateRef() { if (ShaderIDs) n_free(ShaderIDs); }
 
-	bool operator ==(const CRenderStateRef& Other) { return ID == Other.ID; }
+	CRenderStateRef&	operator =(const CRenderStateRef& Other)
+	{
+		ID = Other.ID;
+		MaxLights = Other.MaxLights;
+		Desc = Other.Desc;
+		Target = Other.Target;
+		MinFeatureLevel = Other.MinFeatureLevel;
+		RequiresFlags = Other.RequiresFlags;
+		memcpy_s(UsesShader, sizeof(UsesShader), Other.UsesShader, sizeof(Other.UsesShader));
+		UPTR DataSize = Render::ShaderType_COUNT * (MaxLights + 1) * sizeof(U32);
+		ShaderIDs = (U32*)n_malloc(DataSize);
+		memcpy_s(ShaderIDs, DataSize, Other.ShaderIDs, DataSize);
+		return *this;
+	}
+
+	bool				operator ==(const CRenderStateRef& Other) { return ID == Other.ID; }
 };
 
 EEffectParamTypeForSaving GetParamTypeForSaving(EEffectParamType Type)
@@ -806,7 +821,7 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 }
 //---------------------------------------------------------------------
 
-int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
+int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30)
 {
 	// Read effect source file
 
@@ -921,6 +936,13 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		if (Failed)
 		{
 			n_msg(VL_ERROR, "Render state '%s' mixes sm3.0 and sm4.0+ shaders, which is invalid\n", RSRef.ID.CStr());
+			UsedRenderStates.RemoveAt(i);
+			continue;
+		}
+
+		if (SM30 != (RSRef.Target < 0x0400))
+		{
+			// Skip legacy sm3.0 / new USM render states based on version request
 			UsedRenderStates.RemoveAt(i);
 			continue;
 		}
@@ -1794,7 +1816,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
 		if (Type == EPT_Const)
 		{
-			// Use D3D11 enum as it suits for all APIs now
+			// Use D3D11 enum as it suits all APIs now
 			ED3D11ConstType ConstType = D3D11Const_Invalid;
 			U32 ConstSizeInBytes = Param.SizeInBytes;
 			U32 ValueSizeInBytes = 0;
@@ -1860,7 +1882,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug)
 					}
 					else
 					{
-						n_msg(VL_WARNING, "Material param '%s' is a bool, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
+						n_msg(VL_WARNING, "Material param '%s' is a float, default value must be null, float, int, vector or matrix\n", Param.ID.CStr());
 						continue;
 					}
 

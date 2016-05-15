@@ -133,8 +133,14 @@ inline bool CParams::Get(CParam*& Dest, CStrID Name) const
 template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
-		if (Params[i].GetName() == Name)
-			return ((const CData&)Params[i].GetRawValue()).GetValue<T>(Dest);
+	{
+		const CParam& Param = Params[i];
+		if (Param.GetName() == Name)
+		{
+			const CData& ParamData = (const CData&)Param.GetRawValue();
+			return ParamData.GetValue<T>(Dest);
+		}
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
