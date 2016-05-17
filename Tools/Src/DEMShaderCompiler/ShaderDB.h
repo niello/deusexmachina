@@ -5,10 +5,29 @@
 #include <Data/String.h>
 #include <Data/Array.h>
 
-struct CFileData
+namespace DB
+{
+	class CValueTable;
+}
+
+namespace Data
+{
+	class CParams;
+}
+
+struct CSrcFileData
 {
 	U32		ID;
 	U64		Size;
+	U32		CRC;
+	CString	Path;
+};
+
+struct CObjFileData
+{
+	U32		ID;
+	U64		Size;
+	U64		BytecodeSize;
 	U32		CRC;
 	CString	Path;
 };
@@ -28,22 +47,24 @@ struct CShaderDBRec
 	U32					Target;
 	U32					CompilerFlags;
 	CString				EntryPoint;
-	CFileData			SrcFile;
+	CSrcFileData		SrcFile;
 	U64					SrcModifyTimestamp;
-	CFileData			ObjFile;
-	CFileData			InputSigFile;
+	CObjFileData		ObjFile;
+	CObjFileData		InputSigFile;
 	CArray<CMacroDBRec>	Defines;
 
 	CShaderDBRec(): ID(0), Target(0) {}
 };
 
-bool OpenDB(const char* pURI);
-void CloseDB();
-bool FindShaderRec(CShaderDBRec& InOut);
-bool WriteShaderRec(CShaderDBRec& InOut);
-bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader);
-bool FindObjFileByID(U32 ID, CFileData& Out);
-bool RegisterObjFile(CFileData& InOut, const char* pOutputDirectory, const char* pExtension);
-bool ReleaseObjFile(U32 ID, CString& OutPath);
+bool	OpenDB(const char* pURI);
+void	CloseDB();
+bool	FindShaderRec(CShaderDBRec& InOut);
+bool	WriteShaderRec(CShaderDBRec& InOut);
+bool	FindObjFile(CObjFileData& InOut, const void* pBinaryData, bool SkipHeader);
+bool	FindObjFileByID(U32 ID, CObjFileData& Out);
+U32		CreateObjFileRecord();
+bool	UpdateObjFileRecord(const CObjFileData& Record);
+bool	ReleaseObjFile(U32 ID, CString& OutPath);
+bool	ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL, const Data::CParams* pParams = NULL);
 
 #endif

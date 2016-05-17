@@ -38,14 +38,14 @@ struct CTGAFooter
 	U8	Signature[18];
 };
 
+#pragma pack(pop)
+
 // For CTGAHeader.ImageDescriptor bit checking
 #define TGA_RIGHT_TO_LEFT	(1 << 4)
 #define TGA_TOP_TO_BOTTOM	(1 << 5)
 #define TGA_ATTRIBUTE_BITS	0x0f
 
 const char ReferenceSignature[] = "TRUEVISION-XFILE";
-
-#pragma pack(pop)
 
 const Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 {
@@ -87,12 +87,12 @@ bool CTextureLoaderTGA::Load(CResource& Resource)
 			HasAlpha = (AttributesType == 3 || AttributesType == 4);
 			//!!!???AttributesType == 4 is a premultiplied alpha. How to handle?
 		}
-		else HasAlpha = (Header.ImageDescriptor & TGA_ATTRIBUTE_BITS);
+		else HasAlpha = !!(Header.ImageDescriptor & TGA_ATTRIBUTE_BITS);
 	}
 	else
 	{
 		// Original TGA
-		HasAlpha = (Header.ImageDescriptor & TGA_ATTRIBUTE_BITS);
+		HasAlpha = !!(Header.ImageDescriptor & TGA_ATTRIBUTE_BITS);
 	}
 
 	Render::CTextureDesc TexDesc;

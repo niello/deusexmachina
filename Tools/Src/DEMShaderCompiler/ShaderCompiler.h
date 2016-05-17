@@ -52,6 +52,7 @@ DEM_DLL_EXPORT int DEM_DLLCALL			CompileShader(const char* pSrcPath, EShaderType
 													  const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID);
 DEM_DLL_EXPORT bool DEM_DLLCALL			LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta);
 DEM_DLL_EXPORT void DEM_DLLCALL			FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta);
+DEM_DLL_EXPORT unsigned int DEM_DLLCALL	PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 
 #ifdef __cplusplus
 }
@@ -64,5 +65,6 @@ typedef int (DEM_DLLCALL *FDEMShaderCompiler_CompileShader)(const char* pSrcPath
 															const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID);
 typedef bool (DEM_DLLCALL *FDEMShaderCompiler_LoadShaderMetadataByObjectFileID)(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta);
 typedef void (DEM_DLLCALL *FDEMShaderCompiler_FreeShaderMetadata)(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta);
+typedef unsigned int (DEM_DLLCALL *FDEMShaderCompiler_PackShaders)(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 
 #endif

@@ -9,6 +9,7 @@ FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = NULL;
 FDEMShaderCompiler_CompileShader pCompileShader = NULL;
 FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
 FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
+FDEMShaderCompiler_PackShaders pPackShaders = NULL;
 
 bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBFilePath, const char* pOutputDirectory)
 {
@@ -25,10 +26,24 @@ bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBFilePath, con
 }
 //---------------------------------------------------------------------
 
+// DB is closed inside a DLL
 bool TermDEMShaderCompilerDLL()
 {
-	// DB is closed inside a DLL
-	return !hDLL || ::FreeLibrary(hDLL) == TRUE;
+	bool Result = true;
+	if (hDLL)
+	{
+		if (::FreeLibrary(hDLL) != TRUE) Result = false;
+		hDLL = 0;
+	}
+
+	pInitCompiler = NULL;
+	pGetLastOperationMessages = NULL;
+	pCompileShader = NULL;
+	pLoadShaderMetadataByObjectFileID = NULL;
+	pFreeShaderMetadata = NULL;
+	pPackShaders = NULL;
+
+	return Result;
 }
 //---------------------------------------------------------------------
 
@@ -84,5 +99,18 @@ bool DLLFreeShaderMetadata(CSM30ShaderMeta* pDLLAllocD3D9Meta, CD3D11ShaderMeta*
 	pFreeShaderMetadata(pDLLAllocD3D9Meta, pDLLAllocD3D11Meta);
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+unsigned int DLLPackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
+{
+	if (!pPackShaders)
+	{
+		if (!hDLL) return NULL;
+		pPackShaders = (FDEMShaderCompiler_PackShaders)GetProcAddress(hDLL, "PackShaders");
+		if (!pPackShaders) return NULL;
+	}
+
+	return pPackShaders(pCommaSeparatedShaderIDs, pLibraryFilePath);
 }
 //---------------------------------------------------------------------

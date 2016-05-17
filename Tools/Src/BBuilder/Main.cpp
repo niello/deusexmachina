@@ -4,19 +4,18 @@
 #include <IO/FSBrowser.h>
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
+#include <Data/StringUtils.h>
+#include <DEMShaderCompilerDLL.h>
 
 CString			ProjectDir;
 bool			ExportDescs;
 bool			ExportResources;
-bool			ExportSM30ShadersAndEffects;	// For legacy D3D9 API
+bool			IncludeSM30ShadersAndEffects;	// For legacy D3D9 API
 int				Verbose = VL_ERROR;
 int				ExternalVerbosity = VL_ALWAYS;	// Only always printed messages by default
 
-//!!!control duplicates on add! or sort before packing and skip dups!
-// Can optimize by calculating nearest index:
-//!!!if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 CArray<CString>	FilesToPack;
-
+CArray<U32>		ShadersToPack;
 //!!!control duplicates! (immediately after mangle path, forex)
 CToolFileLists	InFileLists;
 CToolFileLists	OutFileLists;
@@ -24,7 +23,7 @@ CToolFileLists	OutFileLists;
 CPropCodeMap	PropCodes;
 
 // Debug command line:
-// -export -waitkey -v 5 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
+// -export -waitkey -v 5 -sm3 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
 
 int main(int argc, const char** argv)
 {
@@ -34,7 +33,7 @@ int main(int argc, const char** argv)
 	// Shaders are alway
 	ExportDescs = Args.GetBoolArg("-er") || Args.GetBoolArg("-export");
 	ExportResources = Args.GetBoolArg("-ed") || Args.GetBoolArg("-export");
-	ExportSM30ShadersAndEffects = Args.GetBoolArg("-sm3");
+	IncludeSM30ShadersAndEffects = Args.GetBoolArg("-sm3");
 
 	// If true, application will wait for key before exit
 	bool WaitKey = Args.GetBoolArg("-waitkey");
@@ -274,14 +273,42 @@ int main(int argc, const char** argv)
 
 	if (RunExternalToolBatch(CStrID("CFCopy"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
 	if (RunExternalToolBatch(CStrID("CFLua"), ExternalVerbosity, NULL, WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
-	//if (ExportShaders)
-	//{
-		//CString ShdRoot = IOSrv->ResolveAssigns("SrcShaders:");
-		//if (ShdRoot.FindIndex(' ') != INVALID_INDEX) ShdRoot = "\"" + ShdRoot + "\"";
-		//CString ExtraCmdLine("-o 3 -root ");
-		//ExtraCmdLine += ShdRoot;
-		//if (RunExternalToolBatch(CStrID("CFShader"), ExternalVerbosity, ExtraCmdLine.CStr(), WorkingDir.CStr()) != 0) EXIT_APP_FAIL;
-	//}
+
+	if (ShadersToPack.GetCount())
+	{
+		Sys::Log("\nPacking shader binaries...\n");
+
+#ifdef _DEBUG
+		CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
+#else
+		CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
+#endif
+		CString DBFilePath = IOSrv->ResolveAssigns("SrcShaders:ShaderDB.db3");
+		CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
+		if (!InitDEMShaderCompilerDLL(DLLPath, DBFilePath, OutputDir))
+		{
+			n_msg(VL_ERROR, "Error initializing DEMShaderCompiler.dll\n");
+			EXIT_APP_FAIL;
+		}
+
+		CString ShaderIDs = StringUtils::FromInt(ShadersToPack[0]);
+		for (UPTR i = 1; i < ShadersToPack.GetCount(); ++i)
+		{
+			ShaderIDs += ',';
+			ShaderIDs += StringUtils::FromInt(ShadersToPack[i]);
+		}
+		CString LibPath = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Shaders.slb"));
+		UPTR ShadersPacked = DLLPackShaders(ShaderIDs.CStr(), LibPath.CStr());
+
+		if (ShadersToPack.GetCount() != ShadersPacked)
+			Sys::Log("Due to an error or lack of files only %d of %d shader binaries were packed\n", ShadersPacked, ShadersToPack.GetCount());
+		else
+			Sys::Log("%d shader binaries were packed successfully\n", ShadersPacked);
+
+		FilesToPack.InsertSorted(LibPath);
+
+		TermDEMShaderCompilerDLL();
+	}
 
 	Sys::Log("\n"SEP_LINE"Packing:\n"SEP_LINE);
 

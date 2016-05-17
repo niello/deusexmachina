@@ -60,7 +60,7 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 
 //???does CFShader really need ProjectDir? why other tools don't? mb pass shader DB path and shader compiler DLL instead?
 //???cut out IOSrv assigns from it and use only absolute pathes?
-bool ProcessEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30)
+bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30)
 {
 	CString InStr = IOSrv->ResolveAssigns(SrcFilePath);
 	CString OutStr = IOSrv->ResolveAssigns(ExportFilePath);
@@ -119,7 +119,7 @@ bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutSh
 	int Target = 0;
 	Desc.Get(Target, CStrID("Target"));
 
-	if (!ExportSM30ShadersAndEffects && ((U32)Target < 0x0400))
+	if (!IncludeSM30ShadersAndEffects && ((U32)Target < 0x0400))
 	{
 		OutShaderID = 0;
 		OK;

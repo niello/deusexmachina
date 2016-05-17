@@ -7,29 +7,30 @@
 
 // Main header
 
-typedef CDict<CStrID, CArray<CString>> CToolFileLists;
-typedef CHashTable<CString, Data::CFourCC> CPropCodeMap;
-
 #define TOOL_NAME	"BBuilder"
-#define VERSION		"3.0.2"
+#define VERSION		"3.1.0"
 
 #define EXIT_APP_FAIL	return ExitApp(false, WaitKey)
 #define EXIT_APP_OK		return ExitApp(true, WaitKey)
 
-extern CString				ProjectDir;
-extern bool					ExportDescs;
-extern bool					ExportResources;
-extern bool					ExportSM30ShadersAndEffects;
-extern int					Verbose;
-extern int					ExternalVerbosity;
-extern CArray<CString>		FilesToPack;
-extern CToolFileLists		InFileLists;
-extern CToolFileLists		OutFileLists;
-extern CPropCodeMap			PropCodes;
+typedef CDict<CStrID, CArray<CString>> CToolFileLists;
+typedef CHashTable<CString, Data::CFourCC> CPropCodeMap;
+
+extern CString			ProjectDir;
+extern bool				ExportDescs;
+extern bool				ExportResources;
+extern bool				IncludeSM30ShadersAndEffects;
+extern int				Verbose;
+extern int				ExternalVerbosity;
+extern CArray<CString>	FilesToPack;
+extern CArray<U32>		ShadersToPack;
+extern CToolFileLists	InFileLists;
+extern CToolFileLists	OutFileLists;
+extern CPropCodeMap		PropCodes;
 
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
-bool	ProcessEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
+bool	ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
 bool	ProcessFrameShader(const Data::CParams& Desc);
 bool	ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutShaderID);
 bool	ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath);
@@ -48,5 +49,11 @@ int		ExitApp(bool NoError, bool WaitKey);
 inline bool IsFileAdded(const CString& File)
 {
 	return FilesToPack.FindIndexSorted(File) != INVALID_INDEX;
+}
+//---------------------------------------------------------------------
+
+inline void AddShaderToPack(U32 ID)
+{
+	if (!ShadersToPack.Contains(ID)) ShadersToPack.Add(ID);
 }
 //---------------------------------------------------------------------

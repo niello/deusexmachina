@@ -1,6 +1,7 @@
 #include "ShaderCompiler.h"
 
 #include <Data/Buffer.h>
+#include <Data/StringUtils.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
@@ -10,6 +11,7 @@
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
 #include <ShaderReflection.h>
+#include <ValueTable.h>
 
 #undef CreateDirectory
 #undef DeleteFile
@@ -356,17 +358,21 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 									 &pInputSig)))
 		{
 			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
+			Rec.InputSigFile.BytecodeSize = pInputSig->GetBufferSize();
 			Rec.InputSigFile.CRC = Util::CalcCRC((U8*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
 			U32 OldInputSigID = Rec.InputSigFile.ID;
 			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false))
 			{
-				if (!RegisterObjFile(Rec.InputSigFile, OutputDir.CStr(), "sig")) // Fills empty ID and path inside
+				Rec.InputSigFile.ID = CreateObjFileRecord();
+				if (!Rec.InputSigFile.ID)
 				{
 					pCode->Release();
 					pInputSig->Release();
 					return DEM_SHADER_COMPILER_DB_ERROR;
 				}
+
+				Rec.InputSigFile.Path = PathUtils::CollapseDots(OutputDir + StringUtils::FromInt(Rec.InputSigFile.ID) + ".sig");
 
 				FS->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
 
@@ -379,6 +385,13 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 				}
 				FS->Write(hFile, pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 				FS->CloseFile(hFile);
+
+				if (!UpdateObjFileRecord(Rec.InputSigFile))
+				{
+					pCode->Release();
+					pInputSig->Release();
+					return DEM_SHADER_COMPILER_DB_ERROR;
+				}
 			}
 
 			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
@@ -416,7 +429,7 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		}
 	}
 
-	Rec.ObjFile.Size = pFinalCode->GetBufferSize();
+	Rec.ObjFile.BytecodeSize = pFinalCode->GetBufferSize();
 	Rec.ObjFile.CRC = Util::CalcCRC((U8*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 	// Try to find exactly the same binary and reuse it, or save our result
@@ -424,18 +437,22 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 	DWORD OldObjFileID = Rec.ObjFile.ID;
 	if (!FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer(), true))
 	{
-		if (!RegisterObjFile(Rec.ObjFile, OutputDir.CStr(), TargetParams.pExtension)) // Fills empty ID and path inside
+		Rec.ObjFile.ID = CreateObjFileRecord();
+		if (!Rec.ObjFile.ID)
 		{
 			pCode->Release();
 			pFinalCode->Release();
 			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
 
+		Rec.ObjFile.Path = PathUtils::CollapseDots(OutputDir + StringUtils::FromInt(Rec.ObjFile.ID) + "." + TargetParams.pExtension);
+
 		FS->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
 
 		IO::CFileStream File(Rec.ObjFile.Path, FS);
 		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 		{
+			pCode->Release();
 			pFinalCode->Release();
 			return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 		}
@@ -484,15 +501,23 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		U64 BinaryOffset = File.GetPosition();
 		File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
+		pFinalCode->Release();
+
+		// Get total file size
+		Rec.ObjFile.Size = File.GetPosition();
+
 		// Write binary data offset for fast skipping of metadata when reading
 		File.Seek(OffsetOffset, IO::Seek_Begin);
 		W.Write<U32>((U32)BinaryOffset);
 
 		File.Close();
+
+		if (!UpdateObjFileRecord(Rec.ObjFile)) return DEM_SHADER_COMPILER_DB_ERROR;
 	}
 	else
 	{
 		pCode->Release();
+		pFinalCode->Release();
 	}
 
 	if (OldObjFileID > 0 && OldObjFileID != Rec.ObjFile.ID)
@@ -519,7 +544,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 {
 	Messages.Clear();
 
-	CFileData ObjFile;
+	CObjFileData ObjFile;
 	if (!FindObjFileByID(ID, ObjFile)) FAIL;
 
 	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
@@ -569,5 +594,88 @@ DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, C
 
 	if (pD3D9Meta) n_delete(pD3D9Meta);
 	if (pD3D11Meta) n_delete(pD3D11Meta);
+}
+//---------------------------------------------------------------------
+
+// Packs shaders in a sindle library file, big concatenated blob
+// with a lookup table ID -> Offset. Returns packed shader count.
+DEM_DLL_EXPORT unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
+{
+	Messages.Clear();
+
+	// Get files by ID, include input signatures
+	CString SQL("SELECT ID, Path, Size FROM Files WHERE ID IN(");
+	SQL += pCommaSeparatedShaderIDs;
+	SQL += ") OR ID IN (SELECT DISTINCT InputSigFileID FROM Shaders WHERE InputSigFileID <> 0 AND ObjFileID IN(";
+	SQL += pCommaSeparatedShaderIDs;
+	SQL += ")) ORDER BY ID ASC";
+
+	DB::CValueTable Result;
+	if (!ExecuteSQLQuery(SQL.CStr(), &Result)) return 0;
+	if (!Result.GetRowCount()) return 0;
+
+	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
+
+	IO::CFileStream File(pLibraryFilePath, FS);
+	if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return 0;
+
+	IO::CBinaryWriter W(File);
+
+	W.Write<U32>('SLIB');	// Magic
+	W.Write<U32>(0x0100);	// Version
+
+	// Data starts after a header (8 bytes) and a lookup table
+	// (4 bytes ID + 4 bytes offset + 4 bytes size for each record)
+	UPTR CurrDataOffset = 8 + Result.GetRowCount() * 12;
+
+	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
+	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
+	int Col_Size = Result.GetColumnIndex(CStrID("Size"));
+
+	// Write header, sorted by ID for faster lookup
+
+	for (UPTR i = 0; i < Result.GetRowCount(); ++i)
+	{
+		U32 ID = (U32)Result.Get<int>(Col_ID, i);
+		U32 Size = (U32)Result.Get<int>(Col_Size, i);
+
+		W.Write<U32>(ID);
+		W.Write<U32>(CurrDataOffset);
+		W.Write<U32>(Size);
+
+		CurrDataOffset += Size;
+	}
+
+	// Write binary data
+	//???!!!how to preserve order passed when saving binary data?! is really critical?!
+
+	for (UPTR i = 0; i < Result.GetRowCount(); ++i)
+	{
+		U32 Size = (U32)Result.Get<int>(Col_Size, i);
+		const CString& Path = Result.Get<CString>(Col_Path, i);
+		
+		IO::CFileStream ObjFile(Path, FS);
+		if (!ObjFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return i;
+
+		n_assert(ObjFile.GetSize() == Size);
+
+		//!!!can use mapped files instead!
+		void* pData = n_malloc(Size);
+		if (ObjFile.Read(pData, Size) != Size)
+		{
+			n_free(pData);
+			return i;
+		}
+		if (File.Write(pData, Size) != Size)
+		{
+			n_free(pData);
+			return i;
+		}
+		n_free(pData);
+	}
+
+	File.Close();
+
+	return Result.GetRowCount();
 }
 //---------------------------------------------------------------------

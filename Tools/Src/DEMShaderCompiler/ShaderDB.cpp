@@ -223,7 +223,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 }
 //---------------------------------------------------------------------
 
-bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = NULL, const Data::CParams* pParams = NULL)
+bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable, const Data::CParams* pParams)
 {
 	if (!pSQL) OK;
 
@@ -305,6 +305,7 @@ CREATE TABLE 'Files' (\
 	'ID' INTEGER,\
 	'Path' VARCHAR(1024) NOT NULL,\
 	'Size' INTEGER,\
+	'BytecodeSize' INTEGER,\
 	'CRC' INTEGER,\
 	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE);\
 \
@@ -343,11 +344,11 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 	INIT_SQL(SQLFindShader, "SELECT * FROM Shaders WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND EntryPoint=:Entry");
 	INIT_SQL(SQLGetObjFile, "SELECT * FROM Files WHERE ID=:ID");
 	INIT_SQL(SQLFindObjFileUsage, "SELECT ID FROM Shaders WHERE ObjFileID=:ID OR InputSigFileID=:ID");
-	INIT_SQL(SQLFindObjFile, "SELECT ID, Path FROM Files WHERE Size=:Size AND CRC=:CRC");
+	INIT_SQL(SQLFindObjFile, "SELECT ID, Path FROM Files WHERE BytecodeSize=:BytecodeSize AND CRC=:CRC");
 	INIT_SQL(SQLFindObjFileByID, "SELECT * FROM Files WHERE ID=:ID");
 	INIT_SQL(SQLFindFreeObjFileRec, "SELECT ID FROM Files WHERE Size = 0 ORDER BY ID LIMIT 1");
-	INIT_SQL(SQLInsertNewObjFileRec, "INSERT INTO Files (Path, Size, CRC) VALUES (\"\", 0, 0)");
-	INIT_SQL(SQLUpdateObjFileRec, "UPDATE Files SET Path=:Path, Size=:Size, CRC=:CRC WHERE ID=:ID");
+	INIT_SQL(SQLInsertNewObjFileRec, "INSERT INTO Files (Path, Size, BytecodeSize, CRC) VALUES (\"\", 0, 0, 0)");
+	INIT_SQL(SQLUpdateObjFileRec, "UPDATE Files SET Path=:Path, Size=:Size, BytecodeSize=:BytecodeSize, CRC=:CRC WHERE ID=:ID");
 	INIT_SQL(SQLReleaseObjFileRec, "UPDATE Files SET Size=0 WHERE ID=:ID");
 	INIT_SQL(SQLInsertNewShaderRec, "INSERT INTO Shaders (SrcPath) VALUES (\"\")");
 	INIT_SQL(SQLUpdateShaderRec,
@@ -529,12 +530,13 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 }
 //---------------------------------------------------------------------
 
-bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
+bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, bool SkipHeader)
 {
-	if (InOut.Size)
+	if (InOut.BytecodeSize)
 	{
 		Data::CParams Params(2);
-		Params.Set(CStrID("Size"), (int)InOut.Size);
+		//Params.Set(CStrID("Size"), (int)InOut.Size);
+		Params.Set(CStrID("BytecodeSize"), (int)InOut.BytecodeSize);
 		Params.Set(CStrID("CRC"), (int)InOut.CRC);
 
 		DB::CValueTable Result;
@@ -556,14 +558,14 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 
 				if (SkipHeader)
 				{
-					U32 BinaryOffset;
+					U32 BytecodeOffset;
 					if (!File.Seek(4, IO::Seek_Begin)) continue;
-					if (!File.Read(&BinaryOffset, sizeof(BinaryOffset))) continue;
-					if (!File.Seek(BinaryOffset, IO::Seek_Begin)) continue;
-					FileSize -= BinaryOffset;
+					if (!File.Read(&BytecodeOffset, sizeof(BytecodeOffset))) continue;
+					if (!File.Seek(BytecodeOffset, IO::Seek_Begin)) continue;
+					FileSize -= BytecodeOffset;
 				}
 
-				if (FileSize != InOut.Size) continue;
+				if (FileSize != InOut.BytecodeSize) continue;
 
 				Data::CBuffer Buffer((UPTR)FileSize);
 				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
@@ -584,7 +586,7 @@ bool FindObjFile(CFileData& InOut, const void* pBinaryData, bool SkipHeader)
 }
 //---------------------------------------------------------------------
 
-bool FindObjFileByID(U32 ID, CFileData& Out)
+bool FindObjFileByID(U32 ID, CObjFileData& Out)
 {
 	Data::CParams Params(1);
 	Params.Set(CStrID("ID"), (int)ID);
@@ -596,50 +598,47 @@ bool FindObjFileByID(U32 ID, CFileData& Out)
 	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
 	int Col_Size = Result.GetColumnIndex(CStrID("Size"));
+	int Col_BytecodeSize = Result.GetColumnIndex(CStrID("BytecodeSize"));
 	int Col_CRC = Result.GetColumnIndex(CStrID("CRC"));
 	Out.ID = Result.Get<int>(Col_ID, 0);
 	Out.Path = Result.Get<CString>(Col_Path, 0);
 	Out.Size = Result.Get<int>(Col_Size, 0);
+	Out.BytecodeSize = Result.Get<int>(Col_BytecodeSize, 0);
 	Out.CRC = Result.Get<int>(Col_CRC, 0);
 
 	OK; // Found
 }
 //---------------------------------------------------------------------
 
-bool RegisterObjFile(CFileData& InOut, const char* pOutputDirectory, const char* pExtension)
+U32 CreateObjFileRecord()
 {
-	U32 ID;
-	if (InOut.ID == 0)
-	{
-		DB::CValueTable Result;
-		if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) FAIL;
+	DB::CValueTable Result;
+	if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) FAIL;
 
-		if (Result.GetRowCount())
-		{
-			ID = Result.Get<int>(CStrID("ID"), 0);
-		}
-		else
-		{
-			if (!ExecuteStatement(SQLInsertNewObjFileRec)) FAIL;
-			ID = (U32)sqlite3_last_insert_rowid(SQLiteHandle);
-		}
-	}
-	else ID = InOut.ID;
-
-	if (InOut.Path.IsEmpty())
+	if (Result.GetRowCount())
 	{
-		InOut.Path = PathUtils::CollapseDots(pOutputDirectory + StringUtils::FromInt(ID) + "." + pExtension);
+		return Result.Get<int>(CStrID("ID"), 0);
 	}
+	else
+	{
+		if (!ExecuteStatement(SQLInsertNewObjFileRec)) FAIL;
+		return (U32)sqlite3_last_insert_rowid(SQLiteHandle);
+	}
+}
+//---------------------------------------------------------------------
+
+bool UpdateObjFileRecord(const CObjFileData& Record)
+{
+	if (!Record.ID || Record.Path.IsEmpty()) FAIL;
 
 	Data::CParams Params(4);
-	Params.Set(CStrID("Path"), InOut.Path);
-	Params.Set(CStrID("Size"), (int)InOut.Size);
-	Params.Set(CStrID("CRC"), (int)InOut.CRC);
-	Params.Set(CStrID("ID"), (int)ID);
+	Params.Set(CStrID("Path"), Record.Path);
+	Params.Set(CStrID("Size"), (int)Record.Size);
+	Params.Set(CStrID("BytecodeSize"), (int)Record.BytecodeSize);
+	Params.Set(CStrID("CRC"), (int)Record.CRC);
+	Params.Set(CStrID("ID"), (int)Record.ID);
 
 	if (!ExecuteStatement(SQLUpdateObjFileRec, NULL, &Params)) FAIL;
-
-	InOut.ID = ID;
 
 	OK;
 }

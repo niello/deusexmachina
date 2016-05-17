@@ -1,5 +1,6 @@
 #include "Main.h"
 
+#include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
@@ -194,7 +195,7 @@ bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportCont
 //---------------------------------------------------------------------
 
 // For materials
-bool FindMaterialDataPositionsInEffectFile(IO::CStream& Stream, U64& OutParams, U64& OutDefaults)
+bool EFFSeekToMaterialParams(IO::CStream& Stream)
 {
 	if (!Stream.IsOpen()) FAIL;
 
@@ -275,20 +276,6 @@ bool FindMaterialDataPositionsInEffectFile(IO::CStream& Stream, U64& OutParams, 
 		if (!R.Read(Type)) FAIL;	
 		if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
 	}
-
-	OutParams = Stream.GetPosition();
-
-	if (!R.Read(Count)) FAIL;
-	for (U32 i = 0; i < Count; ++i)
-	{
-		CString StrValue;
-		U8 Type;
-		if (!R.Read(StrValue)) FAIL;
-		if (!R.Read(Type)) FAIL;	
-		if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-	}
-
-	OutDefaults = Stream.GetPosition();
 
 	OK;
 }
@@ -390,34 +377,471 @@ bool ProcessSamplerSection(Data::PParams SamplerSection, Render::CSamplerDesc& D
 }
 //---------------------------------------------------------------------
 
+bool ProcessEffect(const char* pExportFileName)
+{
+	IO::PStream EFF = IOSrv->CreateStream(pExportFileName);
+	if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader R(*EFF.GetUnsafe());
+
+	U32 U32Value;
+	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
+	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+
+	U32 Count;
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		U32 MaxLights;
+		if (!R.Read(MaxLights)) FAIL;
+		U32 Flags;
+		if (!R.Read(Flags)) FAIL;
+
+		U32 SizeToSkip = 34;
+		if (Flags & Render::CRenderStateDesc::DS_DepthEnable) SizeToSkip += 1;
+		if (Flags & Render::CRenderStateDesc::DS_StencilEnable) SizeToSkip += 14;
+
+		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+		{
+			if (BlendIdx > 0 && !(Flags & Render::CRenderStateDesc::Blend_Independent)) break;
+			if (!(Flags & (Render::CRenderStateDesc::Blend_RTBlendEnable << BlendIdx))) continue;
+			SizeToSkip += 7;
+		}
+		
+		if (!EFF->Seek(SizeToSkip, IO::Seek_Current)) FAIL;
+
+		// Pack referenced shaders
+		UPTR ShaderCount = Render::ShaderType_COUNT * (MaxLights + 1);
+		for (UPTR ShaderIdx = 0; ShaderIdx < ShaderCount; ++ShaderIdx)
+		{
+			U32 ShaderID;
+			if (!R.Read(ShaderID)) FAIL;
+			if (ShaderID != 0) AddShaderToPack(ShaderID);
+		}
+	}
+
+	// Skip techs
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(StrValue)) FAIL;
+		if (!EFF->Seek(16, IO::Seek_Current)) FAIL;
+		
+		U32 PassCount;
+		if (!R.Read(PassCount)) FAIL;
+		if (!EFF->Seek(4 * PassCount, IO::Seek_Current)) FAIL;
+		
+		U32 MaxLights;
+		if (!R.Read(MaxLights)) FAIL;
+		if (!EFF->Seek(MaxLights + 1, IO::Seek_Current)) FAIL;
+
+		U32 ParamCount;
+		if (!R.Read(ParamCount)) FAIL;
+		for (U32 ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+		{
+			U8 Type;
+			if (!R.Read(StrValue)) FAIL;
+			if (!R.Read(Type)) FAIL;	
+			if (!EFF->Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+		}
+	}
+
+	// Skip global params
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		U8 Type;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(Type)) FAIL;	
+		if (!EFF->Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+	}
+
+	// Skip material params
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		U8 Type;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(Type)) FAIL;	
+		if (!EFF->Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+	}
+
+	// Gather textures from default values
+	U32 DefValCount;
+	if (!R.Read(DefValCount)) FAIL;
+	for (U32 i = 0; i < DefValCount; ++i)
+	{
+		CString StrValue;
+		if (!R.Read(StrValue)) FAIL;
+
+		U8 Type;
+		if (!R.Read(Type)) FAIL;
+
+		if (Type == 0) // Constant
+		{
+			if (!EFF->Seek(4, IO::Seek_Current)) FAIL;
+		}
+		else if (Type == 1) // Resource
+		{
+			if (!R.Read(StrValue)) FAIL;
+				
+			if (ExportResources)
+			{
+				//!!!export from src, find resource desc and add source texture to CFTexture list!
+			}
+				
+			CString TexExportFileName = StrValue;
+			if (!IsFileAdded(TexExportFileName)) FilesToPack.InsertSorted(TexExportFileName);
+		}
+		else if (Type == 2) // Sampler
+		{
+			if (!EFF->Seek(37, IO::Seek_Current)) FAIL;
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+//!!!DUPLICATE CODE in effect skipping!
 bool ProcessMaterialDesc(const char* pName)
 {
-	// Materials are harder to parse than typical descs, always re-export for now.
-	//!!!may rewrite later - get EffectID and textures from src HRD if ExportDescs of from MTL if not!
-	if (!ExportDescs && !ExportResources) OK;
-
 	CString ExportFilePath("Materials:");
 	ExportFilePath += pName;
 	ExportFilePath += ".mtl";
 
 	if (IsFileAdded(ExportFilePath)) OK;
 
-	Data::PParams Desc = DataSrv->LoadHRD(CString("SrcMaterials:") + pName + ".hrd", false);
-	if (!Desc.IsValidPtr()) FAIL;
+	// Will be set to true if we detect that an effect was not parsed yet
+	bool GatherEffectReferencesUSM = false;
+	bool GatherEffectReferencesSM30 = false;
 
-	CStrID EffectID = Desc->Get(CStrID("Effect"), CStrID::Empty);
-	if (!EffectID.IsValid())
+	// Since texture sources are referenced only in desc sources,
+	// we must export descs even if only texture export is required.
+	if (ExportDescs || ExportResources)
 	{
-		n_msg(VL_WARNING, "Material '%s' refereces no effect, skipped\n", pName);
-		FAIL;
+		Data::PParams Desc = DataSrv->LoadHRD(CString("SrcMaterials:") + pName + ".hrd", false);
+		if (!Desc.IsValidPtr()) FAIL;
+
+		CStrID EffectID = Desc->Get(CStrID("Effect"), CStrID::Empty);
+		if (!EffectID.IsValid())
+		{
+			n_msg(VL_WARNING, "Material '%s' refereces no effect, skipped\n", pName);
+			FAIL;
+		}
+
+		CString EffectSrcFileName("SrcShaders:Effects/");
+		EffectSrcFileName += EffectID.CStr();
+		EffectSrcFileName += ".hrd";
+
+		CString EffectExportFileNameUSM("Shaders:USM/Effects/");
+		EffectExportFileNameUSM += EffectID.CStr();
+		EffectExportFileNameUSM += ".eff";
+
+		CString EffectExportFileNameSM30("Shaders:SM_3_0/Effects/");
+		EffectExportFileNameSM30 += EffectID.CStr();
+		EffectExportFileNameSM30 += ".eff";
+
+		//!!!must export textures inside ExportEffect() if requested! now we have no info about texture source in EFF!
+		//BBuilder & CFShader conflict at the texture/effect/material exporting task
+		//Since effect is a desc, it must be exported from BBuilder for correct reference processing!
+		//Or CFShader will be responsible for exporting EFF default textures from source.
+		//Also we may parse EFF desc here, export textures and then export effect.
+
+		if (!IsFileAdded(EffectExportFileNameUSM))
+		{
+			if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+			FilesToPack.InsertSorted(EffectExportFileNameUSM);
+			GatherEffectReferencesUSM = true;
+		}
+
+		if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
+		{
+			if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+			FilesToPack.InsertSorted(EffectExportFileNameSM30);
+			GatherEffectReferencesSM30 = true;
+		}
+
+		// Load EFF material param table
+
+		IO::PStream EFF = IOSrv->CreateStream(EffectExportFileNameUSM.CStr());
+		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
+		if (!EFFSeekToMaterialParams(*EFF.GetUnsafe())) FAIL;
+
+		struct CConstInfo
+		{
+			U8	Type;
+			U32	SizeInBytes;
+		};
+
+		CDict<CStrID, CConstInfo> MtlConsts;
+		CArray<CStrID> MtlResources;
+		CArray<CStrID> MtlSamplers;
+
+		IO::CBinaryReader R(*EFF.GetUnsafe());
+	
+		U32 ParamCount;
+		if (!R.Read<U32>(ParamCount)) FAIL;
+		for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+		{
+			CStrID ParamID;
+			if (!R.Read(ParamID)) FAIL;
+
+			U8 Type;
+			if (!R.Read(Type)) FAIL;
+
+			U8 ShaderType;
+			if (!R.Read(ShaderType)) FAIL;
+
+			U32 SourceShaderID;
+			if (!R.Read(SourceShaderID)) FAIL;
+
+			if (Type == 0) // Constant
+			{
+				U8 Type;
+				if (!R.Read(Type)) FAIL;
+				U32 SizeInBytes;
+				if (!R.Read(SizeInBytes)) FAIL;
+
+				MtlConsts.Add(ParamID, { Type, SizeInBytes });
+			}
+			else if (Type == 1) // Resource
+			{
+				MtlResources.Add(ParamID);
+			}
+			else if (Type == 2) // Sampler
+			{
+				MtlSamplers.Add(ParamID);
+			}
+		}
+
+		EFF->Close();
+
+		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
+
+		// Save material mtl
+
+		IO::PStream File = IOSrv->CreateStream(ExportFilePath);
+		if (!File->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) FAIL;
+		IO::CBinaryWriter W(*File);
+
+		if (!W.Write('MTRL')) FAIL;
+		if (!W.Write<U32>(0x0100)) FAIL;
+
+		if (!W.Write(EffectID)) FAIL;
+
+		Data::PParams ParamValuesDesc;
+		if (Desc->Get(ParamValuesDesc, CStrID("Params")))
+		{
+			IO::PMemStream ConstValues = n_new(IO::CMemStream);
+			ConstValues->Open(IO::SAM_READWRITE, IO::SAP_SEQUENTIAL);
+
+			U64 ValCountPos = W.GetStream().GetPosition();
+			U32 ValCount = 0;
+			if (!W.Write<U32>(0)) FAIL; // Value count will be written later, when it is calculated
+			for (UPTR ParamIdx = 0; ParamIdx < ParamValuesDesc->GetCount(); ++ParamIdx)
+			{
+				CStrID ParamID = ParamValuesDesc->Get(ParamIdx).GetName();
+				const Data::CData& Value = ParamValuesDesc->Get(ParamIdx).GetRawValue();
+				if (Value.IsNull()) continue;
+
+				if (MtlConsts.Contains(ParamID)) // Constant
+				{
+					const CConstInfo& ConstInfo = MtlConsts[ParamID];
+					U8 ConstType = ConstInfo.Type;
+					U32 ConstSizeInBytes = ConstInfo.SizeInBytes;
+					U32 ValueSizeInBytes = 0;
+					U32 CurrDefValOffset = (U32)ConstValues->GetPosition();
+
+					switch (ConstType)
+					{
+						case D3D11Const_Float:
+						{
+							if (Value.IsA<float>())
+							{
+								float TypedValue = Value.GetValue<float>();
+								ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+								ConstValues->Write(&TypedValue, ValueSizeInBytes);
+							}
+							else if (Value.IsA<int>())
+							{
+								float TypedValue = (float)Value.GetValue<int>();
+								ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+								ConstValues->Write(&TypedValue, ValueSizeInBytes);
+							}
+							else if (Value.IsA<vector3>())
+							{
+								const vector3& TypedValue = Value.GetValue<vector3>();
+								ValueSizeInBytes = n_min(sizeof(vector3), ConstSizeInBytes);
+								ConstValues->Write(TypedValue.v, ValueSizeInBytes);
+							}
+							else if (Value.IsA<vector4>())
+							{
+								const vector4& TypedValue = Value.GetValue<vector4>();
+								ValueSizeInBytes = n_min(sizeof(vector4), ConstSizeInBytes);
+								ConstValues->Write(TypedValue.v, ValueSizeInBytes);
+							}
+							else if (Value.IsA<matrix44>())
+							{
+								const matrix44& TypedValue = Value.GetValue<matrix44>();
+								ValueSizeInBytes = n_min(sizeof(matrix44), ConstSizeInBytes);
+								ConstValues->Write(TypedValue.m, ValueSizeInBytes);
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is a bool, value must be null, float, int, vector or matrix\n", ParamID.CStr());
+								continue;
+							}
+
+							break;
+						}
+						case D3D11Const_Int:
+						{
+							if (Value.IsA<int>())
+							{
+								I32 TypedValue = (I32)Value.GetValue<int>();
+								ValueSizeInBytes = n_min(sizeof(I32), ConstSizeInBytes);
+								ConstValues->Write(&TypedValue, ValueSizeInBytes);
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is an int, value must be null or int\n", ParamID.CStr());
+								continue;
+							}
+							break;
+						}
+						case D3D11Const_Bool:
+						{
+							if (Value.IsA<bool>())
+							{
+								bool TypedValue = Value.GetValue<bool>();
+								ValueSizeInBytes = n_min(sizeof(bool), ConstSizeInBytes);
+								ConstValues->Write(&TypedValue, ValueSizeInBytes);
+							}
+							else
+							{
+								n_msg(VL_WARNING, "Material param '%s' is a bool, value must be null or bool\n", ParamID.CStr());
+								continue;
+							}
+							break;
+						}
+						default:
+						{
+							n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type or register set, value is skipped\n", ParamID.CStr());
+							continue;
+						}
+					}
+			
+					if (ConstSizeInBytes > ValueSizeInBytes) ConstValues->Fill(0, ConstSizeInBytes - ValueSizeInBytes);
+			
+					if (!W.Write(ParamID)) FAIL;
+					if (!W.Write<U8>(0)) FAIL;
+					if (!W.Write<U32>(CurrDefValOffset)) FAIL;
+					++ValCount;
+					n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
+				}
+				else if (MtlResources.Contains(ParamID)) // Resource
+				{
+					CString ResourceID;
+					if (Value.IsA<CStrID>()) ResourceID = CString(Value.GetValue<CStrID>().CStr());
+					else if (Value.IsA<CString>()) ResourceID = Value.GetValue<CString>();
+					else
+					{
+						n_msg(VL_WARNING, "Material param '%s' is a resource, value must be null or resource ID of type CString or CStrID\n", ParamID.CStr());
+						continue;
+					}
+
+					if (ResourceID.IsValid())
+					{
+						if (!W.Write(ParamID)) FAIL;
+						if (!W.Write<U8>(1)) FAIL;
+						if (!W.Write(ResourceID)) FAIL;
+						++ValCount;
+						n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
+
+						if (ExportResources)
+						{
+							//!!!export from src, find resource desc and add source texture to CFTexture list!
+						}
+					
+						CString TexExportFileName = ResourceID;
+						if (!IsFileAdded(TexExportFileName)) FilesToPack.InsertSorted(TexExportFileName);
+					}
+				}
+				else if (MtlSamplers.Contains(ParamID)) // Sampler
+				{
+					if (Value.IsA<Data::PParams>())
+					{
+						Data::PParams SamplerSection = Value.GetValue<Data::PParams>();
+						if (SamplerSection->GetCount())
+						{
+							Render::CSamplerDesc SamplerDesc;
+							SamplerDesc.SetDefaults();
+							if (ProcessSamplerSection(SamplerSection, SamplerDesc))
+							{
+								if (!W.Write(ParamID)) FAIL;
+								if (!W.Write<U8>(2)) FAIL;
+						
+								if (!W.Write<U8>(SamplerDesc.AddressU)) FAIL;
+								if (!W.Write<U8>(SamplerDesc.AddressV)) FAIL;
+								if (!W.Write<U8>(SamplerDesc.AddressW)) FAIL;
+								if (!W.Write<U8>(SamplerDesc.Filter)) FAIL;
+								if (!W.Write(SamplerDesc.BorderColorRGBA[0])) FAIL;
+								if (!W.Write(SamplerDesc.BorderColorRGBA[1])) FAIL;
+								if (!W.Write(SamplerDesc.BorderColorRGBA[2])) FAIL;
+								if (!W.Write(SamplerDesc.BorderColorRGBA[3])) FAIL;
+								if (!W.Write(SamplerDesc.MipMapLODBias)) FAIL;
+								if (!W.Write(SamplerDesc.FinestMipMapLOD)) FAIL;
+								if (!W.Write(SamplerDesc.CoarsestMipMapLOD)) FAIL;
+								if (!W.Write<U32>(SamplerDesc.MaxAnisotropy)) FAIL;
+								if (!W.Write<U8>(SamplerDesc.CmpFunc)) FAIL;
+
+								++ValCount;
+						
+								n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
+							}
+							else n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, value is skipped\n", ParamID.CStr());
+						}
+					}
+					else n_msg(VL_WARNING, "Material param '%s' is a sampler, value must be null or params section\n", ParamID.CStr());
+				}
+			}
+
+			// Write an actual value count
+			U64 CurrPos = W.GetStream().GetPosition();
+			W.GetStream().Seek(ValCountPos, IO::Seek_Begin);
+			if (!W.Write(ValCount)) FAIL;
+			W.GetStream().Seek(CurrPos, IO::Seek_Begin);
+
+			U32 ConstValuesSize = (U32)ConstValues->GetSize();
+			if (!W.Write(ConstValuesSize)) FAIL;
+			if (ConstValuesSize)
+			{
+				if (W.GetStream().Write(ConstValues->Map(), ConstValuesSize) != ConstValuesSize) FAIL;
+				ConstValues->Unmap();
+			}
+		}
+
+		File->Close();
+
+		FilesToPack.InsertSorted(ExportFilePath);
 	}
 
-	// Process referenced effect
-	// Legacy sm3.0 effect will be compiled alongside an USM one if requested
+	// Process .mtl binary
 
-	IO::PStream EFF;
-	U64 MtlParamsOffset;
-	U64 MtlDefaultValuesOffset;
+	IO::PStream MTL = IOSrv->CreateStream(ExportFilePath);
+	if (!MTL->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader RMtl(*MTL.GetUnsafe());
+
+	U32 U32Value;
+	if (!RMtl.Read(U32Value) || U32Value != 'MTRL') FAIL;	// Magic
+	if (!RMtl.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+
+	CStrID EffectID;
+	if (!RMtl.Read(EffectID)) FAIL;	// Magic
 
 	CString EffectExportFileNameUSM("Shaders:USM/Effects/");
 	EffectExportFileNameUSM += EffectID.CStr();
@@ -427,50 +851,38 @@ bool ProcessMaterialDesc(const char* pName)
 	EffectExportFileNameSM30 += EffectID.CStr();
 	EffectExportFileNameSM30 += ".eff";
 
-	if (!IsFileAdded(EffectExportFileNameUSM))
+	// Gather referenced effect and textures from a material, if weren't packed when exporting MTL
+	if (!ExportDescs && !ExportResources)
 	{
-		if (ExportDescs)
+		if (!IsFileAdded(EffectExportFileNameUSM))
 		{
-			CString EffectSrcFileName("SrcShaders:Effects/");
-			EffectSrcFileName += EffectID.CStr();
-			EffectSrcFileName += ".hrd";
-			if (!ProcessEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
-
-			if (ExportSM30ShadersAndEffects)
-				if (!ProcessEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+			FilesToPack.InsertSorted(EffectExportFileNameUSM);
+			GatherEffectReferencesUSM = true;
 		}
 
-		FilesToPack.InsertSorted(EffectExportFileNameUSM);
-
-		if (ExportSM30ShadersAndEffects)
+		if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
+		{
 			FilesToPack.InsertSorted(EffectExportFileNameSM30);
+			GatherEffectReferencesSM30 = true;
+		}
 
-		// Export textures from default values
-
-		EFF = IOSrv->CreateStream(EffectExportFileNameUSM.CStr());
-		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-		if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
-
-		EFF->Seek(MtlDefaultValuesOffset, IO::Seek_Begin);
-		IO::CBinaryReader R(*EFF.GetUnsafe());
-
-		U32 DefValCount;
-		if (!R.Read(DefValCount)) FAIL;
-		for (U32 i = 0; i < DefValCount; ++i)
+		U32 ParamCount;
+		if (!RMtl.Read(ParamCount)) FAIL;
+		for (U32 i = 0; i < ParamCount; ++i)
 		{
 			CString StrValue;
-			if (!R.Read(StrValue)) FAIL;
+			if (!RMtl.Read(StrValue)) FAIL;
 
 			U8 Type;
-			if (!R.Read(Type)) FAIL;
+			if (!RMtl.Read(Type)) FAIL;
 
 			if (Type == 0) // Constant
 			{
-				if (!EFF->Seek(4, IO::Seek_Current)) FAIL;
+				if (!MTL->Seek(4, IO::Seek_Current)) FAIL;
 			}
 			else if (Type == 1) // Resource
 			{
-				if (!R.Read(StrValue)) FAIL;
+				if (!RMtl.Read(StrValue)) FAIL;
 				
 				if (ExportResources)
 				{
@@ -482,279 +894,22 @@ bool ProcessMaterialDesc(const char* pName)
 			}
 			else if (Type == 2) // Sampler
 			{
-				if (!EFF->Seek(37, IO::Seek_Current)) FAIL;
+				if (!MTL->Seek(37, IO::Seek_Current)) FAIL;
 			}
 		}
 	}
 
-	// Load EFF material param table
+	// Gather referenced shaders and textures from effect default values
 
-	if (EFF.IsNullPtr())
+	if (GatherEffectReferencesUSM)
 	{
-		EFF = IOSrv->CreateStream(EffectExportFileNameUSM.CStr());
-		if (!EFF->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-		if (!FindMaterialDataPositionsInEffectFile(*EFF.GetUnsafe(), MtlParamsOffset, MtlDefaultValuesOffset)) FAIL;
+		if (!ProcessEffect(EffectExportFileNameUSM)) FAIL;
 	}
 
-	EFF->Seek(MtlParamsOffset, IO::Seek_Begin);
-
-	struct CConstInfo
+	if (GatherEffectReferencesSM30)
 	{
-		U8	Type;
-		U32	SizeInBytes;
-	};
-
-	CDict<CStrID, CConstInfo> MtlConsts;
-	CArray<CStrID> MtlResources;
-	CArray<CStrID> MtlSamplers;
-
-	IO::CBinaryReader R(*EFF.GetUnsafe());
-	
-	U32 ParamCount;
-	if (!R.Read<U32>(ParamCount)) FAIL;
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!R.Read(ParamID)) FAIL;
-
-		U8 Type;
-		if (!R.Read(Type)) FAIL;
-
-		U8 ShaderType;
-		if (!R.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!R.Read(SourceShaderID)) FAIL;
-
-		if (Type == 0) // Constant
-		{
-			U8 Type;
-			if (!R.Read(Type)) FAIL;
-			U32 SizeInBytes;
-			if (!R.Read(SizeInBytes)) FAIL;
-
-			MtlConsts.Add(ParamID, { Type, SizeInBytes });
-		}
-		else if (Type == 1) // Resource
-		{
-			MtlResources.Add(ParamID);
-		}
-		else if (Type == 2) // Sampler
-		{
-			MtlSamplers.Add(ParamID);
-		}
+		if (!ProcessEffect(EffectExportFileNameSM30)) FAIL;
 	}
-
-	EFF->Close();
-
-	IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-
-	// Save material mtl
-
-	IO::PStream File = IOSrv->CreateStream(ExportFilePath);
-	if (!File->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryWriter W(*File);
-
-	if (!W.Write('MTRL')) FAIL;
-	if (!W.Write<U32>(0x0100)) FAIL;
-
-	if (!W.Write(EffectID)) FAIL;
-
-	Data::PParams ParamValuesDesc;
-	if (Desc->Get(ParamValuesDesc, CStrID("Params")))
-	{
-		IO::PMemStream ConstValues = n_new(IO::CMemStream);
-		ConstValues->Open(IO::SAM_READWRITE, IO::SAP_SEQUENTIAL);
-
-		U64 ValCountPos = W.GetStream().GetPosition();
-		U32 ValCount = 0;
-		if (!W.Write<U32>(0)) FAIL; // Value count will be written later, when it is calculated
-		for (UPTR ParamIdx = 0; ParamIdx < ParamValuesDesc->GetCount(); ++ParamIdx)
-		{
-			CStrID ParamID = ParamValuesDesc->Get(ParamIdx).GetName();
-			const Data::CData& Value = ParamValuesDesc->Get(ParamIdx).GetRawValue();
-			if (Value.IsNull()) continue;
-
-			if (MtlConsts.Contains(ParamID)) // Constant
-			{
-				const CConstInfo& ConstInfo = MtlConsts[ParamID];
-				U8 ConstType = ConstInfo.Type;
-				U32 ConstSizeInBytes = ConstInfo.SizeInBytes;
-				U32 ValueSizeInBytes = 0;
-				U32 CurrDefValOffset = (U32)ConstValues->GetPosition();
-
-				switch (ConstType)
-				{
-					case D3D11Const_Float:
-					{
-						if (Value.IsA<float>())
-						{
-							float TypedValue = Value.GetValue<float>();
-							ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
-							ConstValues->Write(&TypedValue, ValueSizeInBytes);
-						}
-						else if (Value.IsA<int>())
-						{
-							float TypedValue = (float)Value.GetValue<int>();
-							ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
-							ConstValues->Write(&TypedValue, ValueSizeInBytes);
-						}
-						else if (Value.IsA<vector3>())
-						{
-							const vector3& TypedValue = Value.GetValue<vector3>();
-							ValueSizeInBytes = n_min(sizeof(vector3), ConstSizeInBytes);
-							ConstValues->Write(TypedValue.v, ValueSizeInBytes);
-						}
-						else if (Value.IsA<vector4>())
-						{
-							const vector4& TypedValue = Value.GetValue<vector4>();
-							ValueSizeInBytes = n_min(sizeof(vector4), ConstSizeInBytes);
-							ConstValues->Write(TypedValue.v, ValueSizeInBytes);
-						}
-						else if (Value.IsA<matrix44>())
-						{
-							const matrix44& TypedValue = Value.GetValue<matrix44>();
-							ValueSizeInBytes = n_min(sizeof(matrix44), ConstSizeInBytes);
-							ConstValues->Write(TypedValue.m, ValueSizeInBytes);
-						}
-						else
-						{
-							n_msg(VL_WARNING, "Material param '%s' is a bool, value must be null, float, int, vector or matrix\n", ParamID.CStr());
-							continue;
-						}
-
-						break;
-					}
-					case D3D11Const_Int:
-					{
-						if (Value.IsA<int>())
-						{
-							I32 TypedValue = (I32)Value.GetValue<int>();
-							ValueSizeInBytes = n_min(sizeof(I32), ConstSizeInBytes);
-							ConstValues->Write(&TypedValue, ValueSizeInBytes);
-						}
-						else
-						{
-							n_msg(VL_WARNING, "Material param '%s' is an int, value must be null or int\n", ParamID.CStr());
-							continue;
-						}
-						break;
-					}
-					case D3D11Const_Bool:
-					{
-						if (Value.IsA<bool>())
-						{
-							bool TypedValue = Value.GetValue<bool>();
-							ValueSizeInBytes = n_min(sizeof(bool), ConstSizeInBytes);
-							ConstValues->Write(&TypedValue, ValueSizeInBytes);
-						}
-						else
-						{
-							n_msg(VL_WARNING, "Material param '%s' is a bool, value must be null or bool\n", ParamID.CStr());
-							continue;
-						}
-						break;
-					}
-					default:
-					{
-						n_msg(VL_WARNING, "Material param '%s' is a constant of unsupported type or register set, value is skipped\n", ParamID.CStr());
-						continue;
-					}
-				}
-			
-				if (ConstSizeInBytes > ValueSizeInBytes) ConstValues->Fill(0, ConstSizeInBytes - ValueSizeInBytes);
-			
-				if (!W.Write(ParamID)) FAIL;
-				if (!W.Write<U8>(0)) FAIL;
-				if (!W.Write<U32>(CurrDefValOffset)) FAIL;
-				++ValCount;
-				n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
-			}
-			else if (MtlResources.Contains(ParamID)) // Resource
-			{
-				CString ResourceID;
-				if (Value.IsA<CStrID>()) ResourceID = CString(Value.GetValue<CStrID>().CStr());
-				else if (Value.IsA<CString>()) ResourceID = Value.GetValue<CString>();
-				else
-				{
-					n_msg(VL_WARNING, "Material param '%s' is a resource, value must be null or resource ID of type CString or CStrID\n", ParamID.CStr());
-					continue;
-				}
-
-				if (ResourceID.IsValid())
-				{
-					if (!W.Write(ParamID)) FAIL;
-					if (!W.Write<U8>(1)) FAIL;
-					if (!W.Write(ResourceID)) FAIL;
-					++ValCount;
-					n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
-
-					if (ExportResources)
-					{
-						//!!!export from src, find resource desc and add source texture to CFTexture list!
-					}
-					
-					CString TexExportFileName = ResourceID;
-					if (!IsFileAdded(TexExportFileName)) FilesToPack.InsertSorted(TexExportFileName);
-				}
-			}
-			else if (MtlSamplers.Contains(ParamID)) // Sampler
-			{
-				if (Value.IsA<Data::PParams>())
-				{
-					Data::PParams SamplerSection = Value.GetValue<Data::PParams>();
-					if (SamplerSection->GetCount())
-					{
-						Render::CSamplerDesc SamplerDesc;
-						SamplerDesc.SetDefaults();
-						if (ProcessSamplerSection(SamplerSection, SamplerDesc))
-						{
-							if (!W.Write(ParamID)) FAIL;
-							if (!W.Write<U8>(2)) FAIL;
-						
-							if (!W.Write<U8>(SamplerDesc.AddressU)) FAIL;
-							if (!W.Write<U8>(SamplerDesc.AddressV)) FAIL;
-							if (!W.Write<U8>(SamplerDesc.AddressW)) FAIL;
-							if (!W.Write<U8>(SamplerDesc.Filter)) FAIL;
-							if (!W.Write(SamplerDesc.BorderColorRGBA[0])) FAIL;
-							if (!W.Write(SamplerDesc.BorderColorRGBA[1])) FAIL;
-							if (!W.Write(SamplerDesc.BorderColorRGBA[2])) FAIL;
-							if (!W.Write(SamplerDesc.BorderColorRGBA[3])) FAIL;
-							if (!W.Write(SamplerDesc.MipMapLODBias)) FAIL;
-							if (!W.Write(SamplerDesc.FinestMipMapLOD)) FAIL;
-							if (!W.Write(SamplerDesc.CoarsestMipMapLOD)) FAIL;
-							if (!W.Write<U32>(SamplerDesc.MaxAnisotropy)) FAIL;
-							if (!W.Write<U8>(SamplerDesc.CmpFunc)) FAIL;
-
-							++ValCount;
-						
-							n_msg(VL_DEBUG, "Material param '%s' value processed\n", ParamID.CStr());
-						}
-						else n_msg(VL_WARNING, "Material param '%s' sampler description is invalid, value is skipped\n", ParamID.CStr());
-					}
-				}
-				else n_msg(VL_WARNING, "Material param '%s' is a sampler, value must be null or params section\n", ParamID.CStr());
-			}
-		}
-
-		// Write an actual value count
-		U64 CurrPos = W.GetStream().GetPosition();
-		W.GetStream().Seek(ValCountPos, IO::Seek_Begin);
-		if (!W.Write(ValCount)) FAIL;
-		W.GetStream().Seek(CurrPos, IO::Seek_Begin);
-
-		U32 ConstValuesSize = (U32)ConstValues->GetSize();
-		if (!W.Write(ConstValuesSize)) FAIL;
-		if (ConstValuesSize)
-		{
-			if (W.GetStream().Write(ConstValues->Map(), ConstValuesSize) != ConstValuesSize) FAIL;
-			ConstValues->Unmap();
-		}
-	}
-
-	File->Close();
-
-	FilesToPack.InsertSorted(ExportFilePath);
 
 	OK;
 }
@@ -920,6 +1075,8 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 
 					// Substitute shader desc with a compiled shader ID
 					Prm.SetValue<int>(ShaderID);
+
+					AddShaderToPack(ShaderID);
 
 					n_msg(VL_DETAILS, "UI shader for %s: %s -> ID %d\n", GfxAPIPrm.GetName().CStr(), ShaderSection->Get<CString>(CStrID("In")).CStr(), ShaderID);
 				}

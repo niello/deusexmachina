@@ -10,6 +10,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BBuilder", "BBuilder.vcxpro
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEM_L1", "..\..\..\DEM\Build\VS2013\DEM_L1.vcxproj", "{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DEMShaderCompiler", "DEMShaderCompiler\DEMShaderCompiler.vcxproj", "{43402A15-31C4-4242-991F-5D71C788D986}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -34,6 +36,14 @@ Global
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.Release|Win32.Build.0 = Release|Win32
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.ReleaseEditor|Win32.ActiveCfg = ReleaseEditor|Win32
 		{4F501CE0-D811-4D3B-B36D-778F0FB2A5BC}.ReleaseEditor|Win32.Build.0 = ReleaseEditor|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Win32.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Debug|Win32.Build.0 = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Win32.ActiveCfg = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.DebugEditor|Win32.Build.0 = Debug|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Win32.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.Release|Win32.Build.0 = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Win32.ActiveCfg = Release|Win32
+		{43402A15-31C4-4242-991F-5D71C788D986}.ReleaseEditor|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
