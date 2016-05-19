@@ -1,8 +1,6 @@
 #include "ShaderLibraryLoaderSLB.h"
 
 #include <Render/ShaderLibrary.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -16,22 +14,18 @@ const Core::CRTTI& CShaderLibraryLoaderSLB::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CShaderLibraryLoaderSLB::Load(CResource& Resource)
+PResourceObject CShaderLibraryLoaderSLB::Load(IO::CStream& Stream)
 {
-	//???!!!setup stream outside loaders based on URI?!
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'SLIB') FAIL;
+	if (!Reader.Read(Magic) || Magic != 'SLIB') return NULL;
 
 	U32 FormatVersion;
-	if (!Reader.Read(FormatVersion)) FAIL;
+	if (!Reader.Read(FormatVersion)) return NULL;
 
 	U32 ShaderCount;
-	if (!Reader.Read(ShaderCount)) FAIL;
+	if (!Reader.Read(ShaderCount)) return NULL;
 
 	Render::PShaderLibrary ShaderLibrary = n_new(Render::CShaderLibrary);
 
@@ -39,14 +33,12 @@ bool CShaderLibraryLoaderSLB::Load(CResource& Resource)
 	for (U32 i = 0; i < ShaderCount; ++i)
 	{
 		Render::CShaderLibrary::CRecord& Rec = ShaderLibrary->TOC[i];
-		if (!Reader.Read(Rec.ID)) FAIL;
-		if (!Reader.Read(Rec.Offset)) FAIL;
-		if (!Reader.Read(Rec.Size)) FAIL;
+		if (!Reader.Read(Rec.ID)) return NULL;
+		if (!Reader.Read(Rec.Offset)) return NULL;
+		if (!Reader.Read(Rec.Size)) return NULL;
 	}
 
-	Resource.Init(ShaderLibrary.GetUnsafe(), this);
-
-	OK;
+	return ShaderLibrary.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

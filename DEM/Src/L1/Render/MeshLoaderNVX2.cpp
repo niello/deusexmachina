@@ -197,17 +197,13 @@ PResourceLoader CMeshLoaderNVX2::Clone()
 }
 //---------------------------------------------------------------------
 
-bool CMeshLoaderNVX2::Load(CResource& Resource)
+PResourceObject CMeshLoaderNVX2::Load(IO::CStream& Stream)
 {
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	// NVX2 is always TriList and Index16
 	CNVX2Header Header;
-	Reader.Read(Header);
-	if (Header.magic != 'NVX2') FAIL;
+	if (!Reader.Read(Header) || Header.magic != 'NVX2') return NULL;
 	Header.numIndices *= 3;
 
 	CArray<Render::CPrimitiveGroup> MeshGroups(Header.numGroups, 0);
@@ -232,12 +228,12 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 	//!!!map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
 	float* pVBData = (float*)n_malloc_aligned(DataSize, 16);
-	File->Read(pVBData, DataSize);
+	Stream.Read(pVBData, DataSize);
 
 	//!!!map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
 	U16* pIBData = (U16*)n_malloc_aligned(DataSize, 16);
-	File->Read(pIBData, DataSize);
+	Stream.Read(pIBData, DataSize);
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, Header.numVertices, Render::Access_GPU_Read, pVBData);
@@ -272,9 +268,7 @@ bool CMeshLoaderNVX2::Load(CResource& Resource)
 	Render::PMesh Mesh = n_new(Render::CMesh);
 	Mesh->Create(InitData);
 
-	Resource.Init(Mesh.GetUnsafe(), this);
-
-	OK;
+	return Mesh.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

@@ -1,8 +1,6 @@
 #include "SkinInfoLoaderSKN.h"
 
 #include <Render/SkinInfo.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -16,41 +14,35 @@ const Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CSkinInfoLoaderSKN::Load(CResource& Resource)
+PResourceObject CSkinInfoLoaderSKN::Load(IO::CStream& Stream)
 {
-	//???!!!setup stream outside loaders based on URI?!
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'SKIF') FAIL;
+	if (!Reader.Read(Magic) || Magic != 'SKIF') return NULL;
 
 	U32 FormatVersion;
-	if (!Reader.Read(FormatVersion)) FAIL;
+	if (!Reader.Read(FormatVersion)) return NULL;
 
 	U32 BoneCount;
-	if (!Reader.Read(BoneCount)) FAIL;
+	if (!Reader.Read(BoneCount)) return NULL;
 
 	//!!!may use MMF for bind pose matrices!
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
 	SkinInfo->Create(BoneCount);
 
-	File->Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
+	Stream.Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
 
 	for (U32 i = 0; i < BoneCount; ++i)
 	{
 		Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfoEditable(i);
 		U16 ParentIndex;
-		if (!Reader.Read(ParentIndex)) FAIL;
+		if (!Reader.Read(ParentIndex)) return NULL;
 		BoneInfo.ParentIndex = (ParentIndex == (U16)INVALID_INDEX) ? INVALID_INDEX : ParentIndex;
-		if (!Reader.Read(BoneInfo.ID)) FAIL;
+		if (!Reader.Read(BoneInfo.ID)) return NULL;
 	}
 
-	Resource.Init(SkinInfo.GetUnsafe(), this);
-
-	OK;
+	return SkinInfo.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

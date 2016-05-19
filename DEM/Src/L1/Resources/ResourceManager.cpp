@@ -2,6 +2,8 @@
 
 #include <Resources/Resource.h>
 #include <Resources/ResourceLoader.h>
+#include <IO/IOServer.h>
+#include <IO/Stream.h>
 
 namespace Resources
 {
@@ -106,20 +108,32 @@ PResourceLoader CResourceManager::CreateDefaultLoader(const char* pFmtExtension,
 
 void CResourceManager::LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader)
 {
-	//???process URI and IO here as common code? setup IO::CStream
-
 	Rsrc.SetState(Rsrc_LoadingInProgress);
-	if (Loader.Load(Rsrc)) Rsrc.SetState(Rsrc_Loaded);
-	else Rsrc.SetState(Rsrc_LoadingFailed);
+
+	const char* pURI = Rsrc.GetUID().CStr();
+	IO::PStream Stream = IOSrv->CreateStream(pURI);
+
+	if (Stream.IsNullPtr() || !Stream->Open(IO::SAM_READ, Loader.GetStreamAccessPattern()) || !Stream->CanRead())
+	{
+		Rsrc.SetState(Rsrc_LoadingFailed);
+		return;
+	}
+
+	PResourceObject Obj = Loader.Load(*Stream.GetUnsafe());
+
+	Stream->Close();
+
+	Rsrc.Init(Obj.GetUnsafe(), &Loader);
+	Rsrc.SetState(Obj.IsValidPtr() && Obj->IsResourceValid() ? Rsrc_Loaded : Rsrc_LoadingFailed);
 }
 //---------------------------------------------------------------------
 
 void CResourceManager::LoadResourceAsync(CResource& Rsrc, CResourceLoader& Loader)
 {
 	Sys::Error("IMPLEMENT ME!!!\n");
-	//create job(task) that will call this method with Async = false from another thread
+	//create job(task) that will call LoadResourceSync() from another thread
 	//must return some handle to cancel/wait/check task
-	//???store async handle in a resource?
+	//???store async handle in a resource? or in a loader?
 	Rsrc.SetState(Rsrc_LoadingRequested);
 }
 //---------------------------------------------------------------------

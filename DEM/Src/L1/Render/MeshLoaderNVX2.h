@@ -19,9 +19,10 @@ public:
 
 	virtual ~CMeshLoaderNVX2() {}
 
-	virtual PResourceLoader	Clone();
-	virtual bool			IsProvidedDataValid() const { OK; } //!!!implement properly!
-	virtual bool			Load(CResource& Resource);
+	virtual PResourceLoader				Clone();
+	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
+	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
+	virtual PResourceObject				Load(IO::CStream& Stream);
 };
 
 typedef Ptr<CMeshLoaderNVX2> PMeshLoaderNVX2;

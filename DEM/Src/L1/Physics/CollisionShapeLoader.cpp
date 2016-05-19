@@ -45,8 +45,19 @@ const Core::CRTTI& CCollisionShapeLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CCollisionShapeLoader::Load(CResource& Resource)
+PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
 {
+	void* pData = NULL;
+	if (Stream.CanBeMapped()) pData = Stream.Map();
+	bool Mapped = !!pData;
+	if (!Mapped)
+	{
+		UPTR DataSize = Stream.GetSize();
+		pData = n_malloc(DataSize);
+		if (Stream.Read(pData, DataSize) != DataSize) return NULL;
+	}
+
+	//!!!two loaders or dynamic format detection! may use FOURCC 'PRMx' where 'x' is some non-printable character!
 	const char* pURI = Resource.GetUID().CStr();
 	const char* pExt = PathUtils::GetExtension(pURI);
 	Data::PParams Desc;
@@ -66,6 +77,9 @@ bool CCollisionShapeLoader::Load(CResource& Resource)
 		if (!Reader.ReadParams(*Desc)) FAIL;
 	}
 	else FAIL;
+
+	if (Mapped) Stream.Unmap();
+	else n_free(pData);
 
 	CStrID Type = Desc->Get<CStrID>(Str::Type);
 	if (Type == Str::StaticMesh)

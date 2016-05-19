@@ -6,6 +6,7 @@
 
 namespace IO
 {
+typedef Ptr<class CStream> PStream;
 
 enum EStreamAccessMode
 {

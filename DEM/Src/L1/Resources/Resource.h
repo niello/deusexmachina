@@ -47,10 +47,10 @@ public:
 	CStrID				GetUID() const { return UID; }
 	UPTR				GetSizeInBytes() const { return ByteSize; }
 	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
-	bool				IsLoaded() const { return State == Rsrc_Loaded; }
+	bool				IsLoaded() const { return State == Rsrc_Loaded; } //!!!must be thread-safe!
 	CResourceLoader*	GetLoader() const { return Loader.GetUnsafe(); }
 
-	// For internal use by loaders and manager
+	// For internal use by CResourceManager
 	void				SetUID(CStrID NewUID) { UID = NewUID; }
 	void				SetState(EResourceState NewState) const { State = NewState; } //!!!must be thread-safe!
 	void				Init(PResourceObject NewObject, PResourceLoader NewLoader = NULL) { Object = NewObject; Loader = NewLoader;} //!!!must be thread-safe!

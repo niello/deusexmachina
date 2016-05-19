@@ -2,9 +2,6 @@
 
 #include <Render/Texture.h>
 #include <Render/GPUDriver.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -235,24 +232,20 @@ const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CTextureLoaderDDS::Load(CResource& Resource)
+PResourceObject CTextureLoaderDDS::Load(IO::CStream& Stream)
 {
-	if (GPU.IsNullPtr()) FAIL;
+	if (GPU.IsNullPtr()) return NULL;
 
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	U64 FileSize = Stream.GetSize();
+	if (FileSize < sizeof(DDS_HEADER) + 4) return NULL; // Too small to be a valid DDS
 
-	U64 FileSize = File->GetSize();
-	if (FileSize < sizeof(DDS_HEADER) + 4) FAIL; // Too small to be a valid DDS
-
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
-	if (!Reader.Read<U32>(Magic) || Magic != DDS_MAGIC) FAIL;
+	if (!Reader.Read<U32>(Magic) || Magic != DDS_MAGIC) return NULL;
 
 	DDS_HEADER Header;
-	if (!Reader.Read(Header) || Header.size != sizeof(DDS_HEADER) || Header.ddspf.size != sizeof(DDS_PIXELFORMAT)) FAIL;
+	if (!Reader.Read(Header) || Header.size != sizeof(DDS_HEADER) || Header.ddspf.size != sizeof(DDS_PIXELFORMAT)) return NULL;
 
 	Render::CTextureDesc TexDesc;
 	TexDesc.Width = Header.width;
@@ -267,11 +260,11 @@ bool CTextureLoaderDDS::Load(CResource& Resource)
 	{
 		// D3D10 and later format
 		DDS_HEADER_DXT10 Header10;
-		if (!Reader.Read(Header10) || Header10.arraySize == 0) FAIL;
+		if (!Reader.Read(Header10) || Header10.arraySize == 0) return NULL;
 		TexDesc.ArraySize = Header10.arraySize;
 
 		TexDesc.Format = DDSDX10FormatToPixelFormat(Header10.dxgiFormat);
-		if (TexDesc.Format == Render::PixelFmt_Invalid) FAIL;
+		if (TexDesc.Format == Render::PixelFmt_Invalid) return NULL;
 
 		switch (Header10.resourceDimension)
 		{
@@ -279,7 +272,7 @@ bool CTextureLoaderDDS::Load(CResource& Resource)
 			case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
 				TexDesc.Type = (Header10.miscFlag & D3D11_RESOURCE_MISC_TEXTURECUBE) ? Render::Texture_Cube : Render::Texture_2D; break;
 			case D3D11_RESOURCE_DIMENSION_TEXTURE3D:	TexDesc.Type = Render::Texture_3D; break;
-			default:									FAIL;
+			default:									return NULL;
 		}
 	}
 	else
@@ -288,27 +281,34 @@ bool CTextureLoaderDDS::Load(CResource& Resource)
 		TexDesc.ArraySize = 1;
 
 		TexDesc.Format = DDSFormatToPixelFormat(Header.ddspf);
-		if (TexDesc.Format == Render::PixelFmt_Invalid) FAIL;
+		if (TexDesc.Format == Render::PixelFmt_Invalid) return NULL;
 
 		if (Header.flags & DDS_HEADER_FLAGS_VOLUME) TexDesc.Type = Render::Texture_3D;
 		else if (Header.caps2 & DDS_CUBEMAP)
 		{
 			// All cube faces must be defined
-			if ((Header.caps2 & DDS_CUBEMAP_ALLFACES) != DDS_CUBEMAP_ALLFACES) FAIL;
+			if ((Header.caps2 & DDS_CUBEMAP_ALLFACES) != DDS_CUBEMAP_ALLFACES) return NULL;
 			Render::Texture_Cube;
 		}
 		else TexDesc.Type = Render::Texture_2D;
 	}
 
-	U64 DataSize64 = FileSize - File->GetPosition();
+	U64 DataSize64 = FileSize - Stream.GetPosition();
 	UPTR DataSize = (UPTR)DataSize64;
-	if ((U64)DataSize != DataSize64) FAIL;
+	if ((U64)DataSize != DataSize64) return NULL;
 
-	//???!!!use mapped file instead?! at least if conversion not needed.
-	void* pData = n_malloc(DataSize);
-	if (File->Read(pData, DataSize) != DataSize) FAIL;
+	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 
-	if (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8)
+	void* pData = NULL;
+	if (!ConversionRequired && Stream.CanBeMapped()) pData = Stream.Map();
+	bool Mapped = !!pData;
+	if (!Mapped)
+	{
+		pData = n_malloc(DataSize);
+		if (Stream.Read(pData, DataSize) != DataSize) return NULL;
+	}
+
+	if (ConversionRequired)
 	{
 		// Perform a conversion to a PixelFmt_B8G8R8X8
 
@@ -359,14 +359,10 @@ bool CTextureLoaderDDS::Load(CResource& Resource)
 
 	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, MipDataProvided);
 
-	//???!!!use mapped file instead?! at least if conversion not needed.
-	n_free(pData);
+	if (Mapped) Stream.Unmap();
+	else n_free(pData);
 
-	if (Texture.IsNullPtr()) FAIL;
-
-	Resource.Init(Texture.GetUnsafe(), this);
-
-	OK;
+	return Texture.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

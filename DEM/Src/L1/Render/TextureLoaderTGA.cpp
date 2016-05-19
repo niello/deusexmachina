@@ -2,9 +2,6 @@
 
 #include <Render/Texture.h>
 #include <Render/GPUDriver.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -53,25 +50,21 @@ const Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CTextureLoaderTGA::Load(CResource& Resource)
+PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 {
-	if (GPU.IsNullPtr()) FAIL;
+	if (GPU.IsNullPtr()) return NULL;
 
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	CTGAHeader Header;
-	if (!Reader.Read(Header)) FAIL;
+	if (!Reader.Read(Header)) return NULL;
 
 	//???!!!add monochrome and RLE?!
-	if (Header.ImageType != 2) FAIL;
+	if (Header.ImageType != 2) return NULL;
 
-	if (!File->Seek(26, IO::Seek_End)) FAIL;
+	if (!Stream.Seek(26, IO::Seek_End)) return NULL;
 	CTGAFooter Footer;
-	if (!Reader.Read(Footer)) FAIL;
+	if (!Reader.Read(Footer)) return NULL;
 
 	bool HasAlpha;
 	if (!memcmp(Footer.Signature, ReferenceSignature, sizeof(ReferenceSignature) - 1))
@@ -79,10 +72,10 @@ bool CTextureLoaderTGA::Load(CResource& Resource)
 		// New TGA
 		if (Footer.ExtensionAreaOffset)
 		{
-			if (!File->Seek(Footer.ExtensionAreaOffset + 494, IO::Seek_Begin)) FAIL;
+			if (!Stream.Seek(Footer.ExtensionAreaOffset + 494, IO::Seek_Begin)) return NULL;
 
 			U8 AttributesType;
-			if (!Reader.Read(AttributesType)) FAIL;
+			if (!Reader.Read(AttributesType)) return NULL;
 
 			HasAlpha = (AttributesType == 3 || AttributesType == 4);
 			//!!!???AttributesType == 4 is a premultiplied alpha. How to handle?
@@ -114,30 +107,30 @@ bool CTextureLoaderTGA::Load(CResource& Resource)
 		//	TexDesc.Format = greyscale;
 		//	break;
 		default:
-			FAIL;
+			return NULL;
 	}
 
 	//	TexDesc.Format = DDSDX10FormatToPixelFormat(Header10.dxgiFormat);
 	//	if (TexDesc.Format == Render::PixelFmt_Invalid) FAIL;
 
-	if (!File->Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) FAIL;
+	if (!Stream.Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return NULL;
 
-	UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
-
-	////???!!!use mapped file instead?! at least if conversion not needed.
-	void* pData = n_malloc(DataSize);
-	if (File->Read(pData, DataSize) != DataSize) FAIL;
+	void* pData = NULL;
+	if (Stream.CanBeMapped()) pData = Stream.Map();
+	bool Mapped = !!pData;
+	if (!Mapped)
+	{
+		UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
+		pData = n_malloc(DataSize);
+		if (Stream.Read(pData, DataSize) != DataSize) return NULL;
+	}
 
 	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, false);
 
-	//???!!!use mapped file instead?! at least if conversion not needed.
-	n_free(pData);
+	if (Mapped) Stream.Unmap();
+	else n_free(pData);
 
-	if (Texture.IsNullPtr()) FAIL;
-
-	Resource.Init(Texture.GetUnsafe(), this);
-
-	OK;
+	return Texture.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

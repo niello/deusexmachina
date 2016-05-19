@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/StringID.h>
+#include <IO/IOFwd.h>
 
 // Resource loader incapsulates an algorithm of loading a particular resource
 // object type from a particular data format. It also stores all data necessary
@@ -12,11 +13,9 @@
 // it automatically on resource lost. Derive from this class to implement different
 // resource object loader groups and loading algorithms.
 
-//???pass stream to loader, process URI and IO in Mgr->LoadResource? common code.
-
 namespace Resources
 {
-typedef Ptr<class CResource> PResource;
+typedef Ptr<class CResourceObject> PResourceObject;
 typedef Ptr<class CResourceLoader> PResourceLoader;
 
 class CResourceLoader: public Core::CObject
@@ -27,10 +26,11 @@ public:
 
 	//virtual ~CResourceLoader() {}
 
-	virtual PResourceLoader		Clone() { return this; } // Reimplement for loaders with state
-	virtual const Core::CRTTI&	GetResultType() const = 0;
-	virtual bool				IsProvidedDataValid() const = 0;
-	virtual bool				Load(CResource& Resource) = 0; //???assert resource is NotLoaded? //???async? //!!!call Mgr->LoadResource!
+	virtual PResourceLoader				Clone() { return this; } // Reimplement for loaders with state
+	virtual const Core::CRTTI&			GetResultType() const = 0;
+	virtual bool						IsProvidedDataValid() const = 0;
+	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_DEFAULT; }
+	virtual PResourceObject				Load(IO::CStream& Stream) = 0; //???assert resource is NotLoaded? //???async? //!!!call Mgr->LoadResource!
 	//???Unload() - responsibility, ownership
 };
 
