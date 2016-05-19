@@ -929,6 +929,12 @@
     <ClInclude Include="..\..\Src\L1\Render\TextureLoaderTGA.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderLibrary.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderLibraryLoaderSLB.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1526,6 +1532,12 @@
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\TextureLoaderTGA.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\ShaderLibrary.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\ShaderLibraryLoaderSLB.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

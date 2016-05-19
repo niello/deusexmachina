@@ -6,7 +6,7 @@
 #include <Render/RenderFwd.h>
 #include <Data/StringID.h>
 
-// Shader resource object, created from a compiled shader binary and used
+// Shader resource object, created from a compiled shader (HLSL etc) program and used
 // by GPU as a part of CRenderState to configure programmable pipeline parts.
 
 namespace Render
