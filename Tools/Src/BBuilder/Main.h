@@ -31,7 +31,7 @@ extern CPropCodeMap		PropCodes;
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
 bool	ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
-bool	ProcessFrameShader(const Data::CParams& Desc);
+bool	ProcessRenderPathDesc(const Data::CParams& Desc);
 bool	ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutShaderID);
 bool	ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath);
 bool	ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath);

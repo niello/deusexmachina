@@ -224,7 +224,7 @@ int main(int argc, const char** argv)
 		EXIT_APP_FAIL;
 	}
 
-	// Process frame shaders
+	// Process render path descs
 
 	if (!Browser.SetAbsolutePath(ExportDescs ? "SrcShaders:" : "Shaders:"))
 	{
@@ -241,28 +241,28 @@ int main(int argc, const char** argv)
 			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportDescs ? "hrd" : "prm")) continue;
 
 			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
-			n_msg(VL_INFO, "Processing frame shader '%s'...\n", FileNoExt.CStr());
+			n_msg(VL_INFO, "Processing render path desc '%s'...\n", FileNoExt.CStr());
 
 			ExportFilePath = "Shaders:" + FileNoExt + ".prm";
-			Data::PParams ShdDesc;
+			Data::PParams RPDesc;
 			if (ExportDescs)
 			{
-				ShdDesc = DataSrv->LoadHRD("SrcShaders:" + Browser.GetCurrEntryName(), false);
-				DataSrv->SavePRM(ExportFilePath, ShdDesc);
+				RPDesc = DataSrv->LoadHRD("SrcShaders:" + Browser.GetCurrEntryName(), false);
+				DataSrv->SavePRM(ExportFilePath, RPDesc);
 			}
-			else ShdDesc = DataSrv->LoadPRM(ExportFilePath, false);
+			else RPDesc = DataSrv->LoadPRM(ExportFilePath, false);
 
-			if (!ShdDesc.IsValidPtr())
+			if (!RPDesc.IsValidPtr())
 			{
-				n_msg(VL_ERROR, "Error loading frame shader '%s' desc\n", FileNoExt.CStr());
+				n_msg(VL_ERROR, "Error loading render path '%s' desc\n", FileNoExt.CStr());
 				continue;
 			}
 
 			FilesToPack.InsertSorted(ExportFilePath);
 
-			if (!ProcessFrameShader(*ShdDesc))
+			if (!ProcessRenderPathDesc(*RPDesc))
 			{
-				n_msg(VL_ERROR, "Error processing frame shader '%s'\n", FileNoExt.CStr());
+				n_msg(VL_ERROR, "Error processing render path '%s'\n", FileNoExt.CStr());
 				continue;
 			}
 		}

@@ -85,26 +85,10 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 }
 //---------------------------------------------------------------------
 
-bool ProcessFrameShader(const Data::CParams& Desc)
+bool ProcessRenderPathDesc(const Data::CParams& Desc)
 {
-	Data::PParams ShaderList;
-	if (Desc.Get(ShaderList, CStrID("Shaders")))
-	{
-		for (UPTR i = 0; i < ShaderList->GetCount(); ++i)
-		{
-			CString ExportFilePath = "Shaders:" + ShaderList->Get<CString>(i) + ".fxo";
-
-			if (IsFileAdded(ExportFilePath)) continue;
-
-			if (ExportDescs)
-				BatchToolInOut(CStrID("CFShader"), "SrcShaders:" + ShaderList->Get<CString>(i) + ".fx", ExportFilePath);
-
-			FilesToPack.InsertSorted(ExportFilePath);
-		}
-	}
-
-	//!!!Parse for textures!
-
+	// Nothing to export from current render path descs
+	// because they referece no other resources.
 	OK;
 }
 //---------------------------------------------------------------------
