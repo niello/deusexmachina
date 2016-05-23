@@ -2,8 +2,6 @@
 
 #include <Render/Mesh.h>
 #include <Render/GPUDriver.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 

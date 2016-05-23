@@ -216,6 +216,7 @@
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrSkin.h" />
     <ClInclude Include="..\..\Src\L1\Frame\View.h" />
     <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
+    <ClInclude Include="..\..\Src\L1\IO\Streams\ScopedStream.h" />
     <ClInclude Include="..\..\Src\L1\Physics\CollisionShapeLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h" />
@@ -474,6 +475,7 @@
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrSkin.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
     <ClCompile Include="..\..\Src\L1\IO\PathUtils.cpp" />
+    <ClCompile Include="..\..\Src\L1\IO\Streams\ScopedStream.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp" />

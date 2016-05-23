@@ -8,15 +8,24 @@
 #include <Render/TextureLoader.h>
 #include <Render/Shader.h>
 #include <Render/ShaderLoader.h>
+#include <Render/ShaderLibrary.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Data/StringUtils.h>
 
 namespace Resources
 {
+
+PResourceLoader CEffectLoader::Clone()
+{
+	PEffectLoader NewLoader = n_new(CEffectLoader);
+	NewLoader->GPU = GPU;
+	NewLoader->ShaderLibrary = ShaderLibrary;
+	return NewLoader.GetUnsafe();
+}
+//---------------------------------------------------------------------
 
 const Core::CRTTI& CEffectLoader::GetResultType() const
 {
@@ -25,24 +34,21 @@ const Core::CRTTI& CEffectLoader::GetResultType() const
 //---------------------------------------------------------------------
 
 //!!!can first load techs, then RS, not to load RS that won't be used!
-bool CEffectLoader::Load(CResource& Resource)
+PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 {
-	if (GPU.IsNullPtr()) FAIL;
+	if (GPU.IsNullPtr()) return NULL;
 
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
-	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') FAIL;
+	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') return NULL;
 
 	U32 Version;
-	if (!Reader.Read<U32>(Version)) FAIL;
+	if (!Reader.Read<U32>(Version)) return NULL;
 
 	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
 	U32 RSCount;
-	if (!Reader.Read<U32>(RSCount)) FAIL;
+	if (!Reader.Read<U32>(RSCount)) return NULL;
 	RenderStates.SetSize(RSCount);
 	for (UPTR i = 0; i < RSCount; ++i)
 	{
@@ -50,48 +56,48 @@ bool CEffectLoader::Load(CResource& Resource)
 		Desc.SetDefaults();
 
 		U32 MaxLights;
-		if (!Reader.Read(MaxLights)) FAIL;
+		if (!Reader.Read(MaxLights)) return NULL;
 		UPTR LightVariationCount = MaxLights + 1;
 
 		U8 U8Value;
 		U32 U32Value;
 
-		if (!Reader.Read(U32Value)) FAIL;
+		if (!Reader.Read(U32Value)) return NULL;
 		Desc.Flags.ResetTo(U32Value);
 		
-		if (!Reader.Read(Desc.DepthBias)) FAIL;
-		if (!Reader.Read(Desc.DepthBiasClamp)) FAIL;
-		if (!Reader.Read(Desc.SlopeScaledDepthBias)) FAIL;
+		if (!Reader.Read(Desc.DepthBias)) return NULL;
+		if (!Reader.Read(Desc.DepthBiasClamp)) return NULL;
+		if (!Reader.Read(Desc.SlopeScaledDepthBias)) return NULL;
 		
 		if (Desc.Flags.Is(Render::CRenderStateDesc::DS_DepthEnable))
 		{
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.DepthFunc = (Render::ECmpFunc)U8Value;
 		}
 
 		if (Desc.Flags.Is(Render::CRenderStateDesc::DS_StencilEnable))
 		{
-			if (!Reader.Read(Desc.StencilReadMask)) FAIL;
-			if (!Reader.Read(Desc.StencilWriteMask)) FAIL;
-			if (!Reader.Read<U32>(U32Value)) FAIL;
+			if (!Reader.Read(Desc.StencilReadMask)) return NULL;
+			if (!Reader.Read(Desc.StencilWriteMask)) return NULL;
+			if (!Reader.Read<U32>(U32Value)) return NULL;
 			Desc.StencilRef = U32Value;
 
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilFrontFace.StencilFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilFrontFace.StencilDepthFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilFrontFace.StencilPassOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilFrontFace.StencilFunc = (Render::ECmpFunc)U8Value;
 
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilBackFace.StencilFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilBackFace.StencilDepthFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilBackFace.StencilPassOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			Desc.StencilBackFace.StencilFunc = (Render::ECmpFunc)U8Value;
 		}
 
@@ -102,31 +108,31 @@ bool CEffectLoader::Load(CResource& Resource)
 
 			Render::CRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
 
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.SrcBlendArg = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.DestBlendArg = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.BlendOp = (Render::EBlendOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.SrcBlendArgAlpha = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.DestBlendArgAlpha = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
+			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.BlendOpAlpha = (Render::EBlendOp)U8Value;
 
-			if (!Reader.Read(RTBlend.WriteMask)) FAIL;
+			if (!Reader.Read(RTBlend.WriteMask)) return NULL;
 		}
 
-		if (!Reader.Read(Desc.BlendFactorRGBA[0])) FAIL;
-		if (!Reader.Read(Desc.BlendFactorRGBA[1])) FAIL;
-		if (!Reader.Read(Desc.BlendFactorRGBA[2])) FAIL;
-		if (!Reader.Read(Desc.BlendFactorRGBA[3])) FAIL;
-		if (!Reader.Read<U32>(U32Value)) FAIL;
+		if (!Reader.Read(Desc.BlendFactorRGBA[0])) return NULL;
+		if (!Reader.Read(Desc.BlendFactorRGBA[1])) return NULL;
+		if (!Reader.Read(Desc.BlendFactorRGBA[2])) return NULL;
+		if (!Reader.Read(Desc.BlendFactorRGBA[3])) return NULL;
+		if (!Reader.Read<U32>(U32Value)) return NULL;
 		Desc.SampleMask = U32Value;
 
-		if (!Reader.Read(Desc.AlphaTestRef)) FAIL;
-		if (!Reader.Read<U8>(U8Value)) FAIL;
+		if (!Reader.Read(Desc.AlphaTestRef)) return NULL;
+		if (!Reader.Read<U8>(U8Value)) return NULL;
 		Desc.AlphaTestFunc = (Render::ECmpFunc)U8Value;
 
 		CFixedArray<Render::PRenderState>& Variations = RenderStates[i];
@@ -143,7 +149,7 @@ bool CEffectLoader::Load(CResource& Resource)
 			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
 			{
 				U32 ShaderID;
-				if (!Reader.Read<U32>(ShaderID)) FAIL;
+				if (!Reader.Read<U32>(ShaderID)) return NULL;
 
 				if (!ShaderID)
 				{
@@ -151,23 +157,25 @@ bool CEffectLoader::Load(CResource& Resource)
 					continue;
 				}
 
-				CString URI = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
-				Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
-				if (!RShader->IsLoaded())
-				{
-					Resources::PResourceLoader Loader = RShader->GetLoader();
-					if (Loader.IsNullPtr())
-						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pExtension[ShaderType] + 1); // +1 to skip dot
-					Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-					ResourceMgr->LoadResourceSync(*RShader, *Loader);
-					if (!RShader->IsLoaded())
-					{
-						ShaderLoadingFailed = true;
-						break;
-					}
-				}
+				//???try this way if no library or not loaded from library?
+				//CString URI = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
+				//Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
+				//if (!RShader->IsLoaded())
+				//{
+				//	Resources::PResourceLoader Loader = RShader->GetLoader();
+				//	if (Loader.IsNullPtr())
+				//		Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pExtension[ShaderType] + 1); // +1 to skip dot
+				//	Loader->As<Resources::CShaderLoader>()->GPU = GPU;
+				//	ResourceMgr->LoadResourceSync(*RShader, *Loader);
+				//	if (!RShader->IsLoaded())
+				//	{
+				//		ShaderLoadingFailed = true;
+				//		break;
+				//	}
+				//}
 
-				*pShaders[ShaderType] = RShader->GetObject<Render::CShader>();
+				//*pShaders[ShaderType] = RShader->GetObject<Render::CShader>();
+				*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
 			}
 
 			Variations[LightCount] = ShaderLoadingFailed ? NULL : GPU->CreateRenderState(Desc);
@@ -185,7 +193,7 @@ bool CEffectLoader::Load(CResource& Resource)
 	Render::EGPUFeatureLevel GPULevel = GPU->GetFeatureLevel();
 
 	U32 TechCount;
-	if (!Reader.Read<U32>(TechCount) || !TechCount) FAIL;
+	if (!Reader.Read<U32>(TechCount) || !TechCount) return NULL;
 	
 	CStrID CurrInputSet;
 	UPTR ShaderInputSetID;
@@ -196,16 +204,16 @@ bool CEffectLoader::Load(CResource& Resource)
 		CStrID TechID;
 		CStrID InputSet;
 		U32 Target;
-		if (!Reader.Read(TechID)) FAIL;
-		if (!Reader.Read(InputSet)) FAIL;
-		if (!Reader.Read(Target)) FAIL;
+		if (!Reader.Read(TechID)) return NULL;
+		if (!Reader.Read(InputSet)) return NULL;
+		if (!Reader.Read(Target)) return NULL;
 		
 		U32 U32Value;
-		if (!Reader.Read(U32Value)) FAIL;
+		if (!Reader.Read(U32Value)) return NULL;
 		Render::EGPUFeatureLevel MinFeatureLevel = (Render::EGPUFeatureLevel)U32Value;
 
 		U64 RequiresFlags;
-		if (!Reader.Read(RequiresFlags)) FAIL;
+		if (!Reader.Read(RequiresFlags)) return NULL;
 
 		if (InputSet != CurrInputSet)
 		{
@@ -221,12 +229,12 @@ bool CEffectLoader::Load(CResource& Resource)
 		if (BestTechFound || MinFeatureLevel > GPULevel || !GPU->SupportsShaderModel(Target))
 		{
 			U32 PassCount;
-			if (!Reader.Read<U32>(PassCount)) FAIL;
-			if (!File->Seek(4 * PassCount, IO::Seek_Current)) FAIL; // Pass indices
+			if (!Reader.Read<U32>(PassCount)) return NULL;
+			if (!Stream.Seek(4 * PassCount, IO::Seek_Current)) return NULL; // Pass indices
 			U32 MaxLights;
-			if (!Reader.Read<U32>(MaxLights)) FAIL;
-			if (!File->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
-			if (!SkipEffectParams(Reader)) FAIL;
+			if (!Reader.Read<U32>(MaxLights)) return NULL;
+			if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) return NULL; // VariationValid flags
+			if (!SkipEffectParams(Reader)) return NULL;
 			continue;
 		}
 
@@ -238,12 +246,12 @@ bool CEffectLoader::Load(CResource& Resource)
 		bool HasCompletelyInvalidPass = false;
 
 		U32 PassCount;
-		if (!Reader.Read<U32>(PassCount)) FAIL;
+		if (!Reader.Read<U32>(PassCount)) return NULL;
 		CFixedArray<U32> PassRenderStateIndices(PassCount);
 		for (UPTR PassIdx = 0; PassIdx < PassCount; ++PassIdx)
 		{
 			U32 PassRenderStateIdx;
-			if (!Reader.Read<U32>(PassRenderStateIdx)) FAIL;
+			if (!Reader.Read<U32>(PassRenderStateIdx)) return NULL;
 
 			//!!!can lazy-load render states here! read desc above, but don't create GPU objects!
 			//many unused render states may be loaded unnecessarily
@@ -258,12 +266,12 @@ bool CEffectLoader::Load(CResource& Resource)
 		}
 
 		U32 MaxLights;
-		if (!Reader.Read<U32>(MaxLights)) FAIL;
+		if (!Reader.Read<U32>(MaxLights)) return NULL;
 
 		if (HasCompletelyInvalidPass)
 		{
-			if (!File->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
-			if (!SkipEffectParams(Reader)) FAIL;
+			if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) return NULL; // VariationValid flags
+			if (!SkipEffectParams(Reader)) return NULL;
 			continue;
 		}
 
@@ -277,7 +285,7 @@ bool CEffectLoader::Load(CResource& Resource)
 		{
 			// Always 0 or 1
 			U8 VariationValid;
-			if (!Reader.Read<U8>(VariationValid)) FAIL;
+			if (!Reader.Read<U8>(VariationValid)) return NULL;
 
 			Render::CPassList& PassList = Tech->PassesByLightCount[LightCount];
 			PassList.SetSize(PassCount);
@@ -314,7 +322,7 @@ bool CEffectLoader::Load(CResource& Resource)
 		if (!NewVariationCount)
 		{
 			// No valid variations in a tech
-			if (!SkipEffectParams(Reader)) FAIL;
+			if (!SkipEffectParams(Reader)) return NULL;
 			continue;
 		}
 		else if (NewVariationCount < VariationCount)
@@ -346,7 +354,7 @@ bool CEffectLoader::Load(CResource& Resource)
 			if (ReplaceExistingTech) Techs.ValueAt(TechDictIdx) = Tech;
 			else
 			{
-				if (!SkipEffectParams(Reader)) FAIL;
+				if (!SkipEffectParams(Reader)) return NULL;
 				continue;
 			}
 		}
@@ -354,7 +362,7 @@ bool CEffectLoader::Load(CResource& Resource)
 		// Load tech params info
 
 		CArray<CLoadedParam> Params;
-		if (!LoadEffectParams(Reader, Params)) FAIL;
+		if (!LoadEffectParams(Reader, ShaderLibrary, Params)) return NULL;
 
 		UPTR ConstCount = 0;
 		UPTR ResourceCount = 0;
@@ -403,17 +411,9 @@ bool CEffectLoader::Load(CResource& Resource)
 				++SamplerCount;
 			}
 		}
-
-		//!!!API-specific, don't include, use 1 CB for all in DX9 or separate buffers at the compilation stage!
-		//if (TechInfo.Target < 0x0400)
-		//{
-		//	WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");
-		//	WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
-		//	WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
-		//}
 	}
 
-	if (!Techs.GetCount()) FAIL;
+	if (!Techs.GetCount()) return NULL;
 
 	//!!!try to find by effect ID! add into it, if found!
 	//!!!now rsrc mgmt doesn't support miltiple resources per file and partial resource definitions (multiple files per resource)!
@@ -423,12 +423,12 @@ bool CEffectLoader::Load(CResource& Resource)
 	// Load global and material params tables
 
 	CArray<CLoadedParam> GlobalParams;
-	if (!LoadEffectParams(Reader, GlobalParams)) FAIL;
+	if (!LoadEffectParams(Reader, ShaderLibrary, GlobalParams)) return NULL;
 
 	//???param table or signature? need only for compatibility check when use effect with a render path!
 
 	CArray<CLoadedParam> MtlParams;
-	if (!LoadEffectParams(Reader, MtlParams)) FAIL;
+	if (!LoadEffectParams(Reader, ShaderLibrary, MtlParams)) return NULL;
 
 	UPTR ConstCount = 0;
 	UPTR ResourceCount = 0;
@@ -488,21 +488,19 @@ bool CEffectLoader::Load(CResource& Resource)
 	Effect->MaterialConstantBufferCount = MtlConstBuffers.GetCount();
 	MtlConstBuffers.Clear(true);
 
-	if (!LoadEffectParamValues(Reader, *Effect.GetUnsafe(), GPU)) FAIL;
+	if (!LoadEffectParamValues(Reader, *Effect.GetUnsafe(), GPU)) return NULL;
 
 	Effect->BeginAddTechs(Techs.GetCount());
 	for (UPTR i = 0; i < Techs.GetCount(); ++i)
 		Effect->AddTech(Techs.ValueAt(i));
 	Effect->EndAddTechs();
 
-	Resource.Init(Effect.GetUnsafe(), this);
-
-	OK;
+	return Effect.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
 // Out array will be sorted by ID as parameters are saved sorted by ID
-bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out)
+bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLibrary, CArray<CLoadedParam>& Out)
 {
 	//???use .shd / .csh for all?
 	const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
@@ -531,11 +529,7 @@ bool CEffectLoader::LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedPa
 			if (!Reader.Read(SizeInBytes)) FAIL;
 		}
 
-		//???use shader bank and simple indexing?
-		CString URI = "Shaders:Bin/" + StringUtils::FromInt(SourceShaderID) + pExtension[ShaderType];
-		Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
-		if (!RShader->IsLoaded()) FAIL; // Failed to find referenced shader
-		Render::PShader ParamShader = RShader->GetObject<Render::CShader>();
+		Render::PShader ParamShader = ShaderLibrary->GetShaderByID(SourceShaderID);
 
 		HHandle hParam = INVALID_HANDLE;
 		switch (Type)

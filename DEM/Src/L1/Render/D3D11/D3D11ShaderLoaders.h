@@ -13,38 +13,19 @@ namespace Resources
 
 class CD3D11ShaderLoader: public CShaderLoader
 {
+	__DeclareClass(CD3D11ShaderLoader);
+
 protected:
 
-	bool						LoadImpl(CResource& Resource, Render::EShaderType ShaderType);
+	PResourceObject						LoadImpl(IO::CStream& Stream, Render::EShaderType ShaderType);
 
 public:
 
-	virtual const Core::CRTTI&	GetResultType() const;
+	virtual bool						IsProvidedDataValid() const { OK; } //!!!???write?!
+	virtual const Core::CRTTI&			GetResultType() const;
+	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_RANDOM; }
+	virtual PResourceObject				Load(IO::CStream& Stream) { return LoadImpl(Stream, Render::ShaderType_Unknown); }
 };
-
-class CD3D11VertexShaderLoader: public CD3D11ShaderLoader
-{
-	__DeclareClass(CD3D11VertexShaderLoader);
-
-public:
-
-	virtual bool	IsProvidedDataValid() const;
-	virtual bool	Load(CResource& Resource) { return LoadImpl(Resource, Render::ShaderType_Vertex); }
-};
-
-typedef Ptr<CD3D11VertexShaderLoader> PD3D11VertexShaderLoader;
-
-class CD3D11PixelShaderLoader: public CD3D11ShaderLoader
-{
-	__DeclareClass(CD3D11PixelShaderLoader);
-
-public:
-
-	virtual bool	IsProvidedDataValid() const;
-	virtual bool	Load(CResource& Resource) { return LoadImpl(Resource, Render::ShaderType_Pixel); }
-};
-
-typedef Ptr<CD3D11PixelShaderLoader> PD3D11PixelShaderLoader;
 
 }
 

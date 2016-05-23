@@ -621,19 +621,19 @@ DEM_DLL_EXPORT unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedS
 
 	IO::CBinaryWriter W(File);
 
-	W.Write<U32>('SLIB');	// Magic
-	W.Write<U32>(0x0100);	// Version
+	W.Write<U32>('SLIB');				// Magic
+	W.Write<U32>(0x0100);				// Version
+	W.Write<U32>(Result.GetRowCount());	// Record count
 
-	// Data starts after a header (8 bytes) and a lookup table
+	// Data starts after a header (12 bytes) and a lookup table
 	// (4 bytes ID + 4 bytes offset + 4 bytes size for each record)
-	UPTR CurrDataOffset = 8 + Result.GetRowCount() * 12;
+	UPTR CurrDataOffset = 12 + Result.GetRowCount() * 12;
 
 	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
 	int Col_Size = Result.GetColumnIndex(CStrID("Size"));
 
-	// Write header, sorted by ID for faster lookup
-
+	// Write TOC, sorted by ID for faster lookup
 	for (UPTR i = 0; i < Result.GetRowCount(); ++i)
 	{
 		U32 ID = (U32)Result.Get<int>(Col_ID, i);

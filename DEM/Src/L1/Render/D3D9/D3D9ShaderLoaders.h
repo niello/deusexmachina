@@ -17,13 +17,14 @@ class CD3D9ShaderLoader: public CShaderLoader
 
 protected:
 
-	bool						LoadImpl(CResource& Resource, Render::EShaderType ShaderType);
+	PResourceObject						LoadImpl(IO::CStream& Stream, Render::EShaderType ShaderType);
 
 public:
 
-	virtual bool				IsProvidedDataValid() const { OK; } //!!!???write?!
-	virtual const Core::CRTTI&	GetResultType() const;
-	virtual bool				Load(CResource& Resource) { return LoadImpl(Resource, Render::ShaderType_Unknown); }
+	virtual bool						IsProvidedDataValid() const { OK; } //!!!???write?!
+	virtual const Core::CRTTI&			GetResultType() const;
+	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_RANDOM; }
+	virtual PResourceObject				Load(IO::CStream& Stream) { return LoadImpl(Stream, Render::ShaderType_Unknown); }
 };
 
 typedef Ptr<CD3D9ShaderLoader> PD3D9ShaderLoader;

@@ -3,7 +3,6 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/Shader.h>
-#include <Render/ShaderLoader.h>
 #include <Render/SamplerDesc.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -22,43 +21,19 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, U32 VertexShaderID, U32 PixelShaderID):
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader):
 	GPU(&GPUDriver),
 	pDefaultRT(NULL),
 	DisplayDPI(96, 96),
 	DisplaySize(DefaultContextWidth, DefaultContextHeight)
 {
-	n_assert_dbg(VertexShaderID > 0 && PixelShaderID > 0);
-
-	CString VSURI = "Shaders:Bin/" + StringUtils::FromInt(VertexShaderID) + ".vsh";
-	Resources::PResource RVS = ResourceMgr->RegisterResource(VSURI.CStr());
-	if (!RVS->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RVS->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(VSURI.CStr()));
-		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-		ResourceMgr->LoadResourceSync(*RVS, *Loader);
-		n_assert(RVS->IsLoaded());
-	}
-
-	CString PSURI = "Shaders:Bin/" + StringUtils::FromInt(PixelShaderID) + ".psh";
-	Resources::PResource RPS = ResourceMgr->RegisterResource(PSURI.CStr());
-	if (!RPS->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RPS->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(PathUtils::GetExtension(PSURI.CStr()));
-		Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-		ResourceMgr->LoadResourceSync(*RPS, *Loader);
-		n_assert(RPS->IsLoaded());
-	}
+	n_assert_dbg(VertexShader.IsValidPtr() && PixelShader.IsValidPtr() && VertexShader->IsResourceValid() && PixelShader->IsResourceValid());
 
 	Render::CRenderStateDesc RSDesc;
 	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
 	RSDesc.SetDefaults();
-	RSDesc.VertexShader = RVS->GetObject<Render::CShader>();
-	RSDesc.PixelShader = RPS->GetObject<Render::CShader>();
+	RSDesc.VertexShader = VertexShader;
+	RSDesc.PixelShader = PixelShader;
 	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
 	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
 					   Render::CRenderStateDesc::DS_DepthWriteEnable |
@@ -102,8 +77,8 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
-	Render::CShader* pVS = RVS->GetObject<Render::CShader>();
-	Render::CShader* pPS = RPS->GetObject<Render::CShader>();
+	Render::CShader* pVS = VertexShader.GetUnsafe();
+	Render::CShader* pPS = PixelShader.GetUnsafe();
 
 	hWorldMatrix = pVS->GetConstHandle(CStrID("WorldMatrix"));
 	hProjMatrix = pVS->GetConstHandle(CStrID("ProjectionMatrix"));
@@ -168,10 +143,10 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, U32 VertexShaderID, U32 PixelShaderID, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, VertexShaderID, PixelShaderID);
+	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, VertexShader, PixelShader);
 }
 //--------------------------------------------------------------------
 

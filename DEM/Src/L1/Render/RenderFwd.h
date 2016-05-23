@@ -29,6 +29,7 @@ typedef Ptr<class CRenderTarget> PRenderTarget;
 typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 typedef Ptr<class CRenderState> PRenderState;
 typedef Ptr<class CShader> PShader;
+typedef Ptr<class CShaderLibrary> PShaderLibrary;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
 typedef Ptr<class CTexture> PTexture;
 typedef Ptr<class CSampler> PSampler;

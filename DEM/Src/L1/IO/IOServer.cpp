@@ -286,6 +286,7 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 PStream CIOServer::CreateStream(const char* pURI) const
 {
 	CString AbsURI = ResolveAssigns(pURI);
+	if (AbsURI.IsEmpty()) return NULL;
 
 	IFileSystem* pFS = NULL;
 

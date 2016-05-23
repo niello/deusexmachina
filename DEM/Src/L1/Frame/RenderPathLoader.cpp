@@ -2,18 +2,16 @@
 
 #include <Frame/RenderPath.h>
 #include <Frame/RenderPhase.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
-#include <IO/PathUtils.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
 #include <Core/Factory.h>
 
 namespace Resources
 {
-__ImplementClass(Resources::CRenderPathLoader, 'RPLD', Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CRenderPathLoader, Resources::CResourceLoader);
+__ImplementClass(Resources::CRenderPathLoaderHRD, 'RPLH', Resources::CRenderPathLoader);
+__ImplementClass(Resources::CRenderPathLoaderPRM, 'RPLP', Resources::CRenderPathLoader);
 
 const Core::CRTTI& CRenderPathLoader::GetResultType() const
 {
@@ -21,27 +19,9 @@ const Core::CRTTI& CRenderPathLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CRenderPathLoader::Load(CResource& Resource)
+PResourceObject CRenderPathLoader::LoadImpl(Data::PParams Desc)
 {
-	const char* pURI = Resource.GetUID().CStr();
-	const char* pExt = PathUtils::GetExtension(pURI);
-	Data::PParams Desc;
-	if (!n_stricmp(pExt, "hrd"))
-	{
-		Data::CBuffer Buffer;
-		if (!IOSrv->LoadFileToBuffer(pURI, Buffer)) FAIL;
-		Data::CHRDParser Parser;
-		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Desc)) FAIL;
-	}
-	else if (!n_stricmp(pExt, "prm"))
-	{
-		IO::PStream File = IOSrv->CreateStream(pURI);
-		if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-		IO::CBinaryReader Reader(*File);
-		Desc = n_new(Data::CParams);
-		if (!Reader.ReadParams(*Desc)) FAIL;
-	}
-	else FAIL;
+	if (Desc.IsNullPtr()) return NULL;
 
 	Frame::PRenderPath RP = n_new(Frame::CRenderPath);
 
@@ -60,15 +40,50 @@ bool CRenderPathLoader::Load(CResource& Resource)
 			CString ClassName = "Frame::CRenderPhase" + PhaseType;
 			Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
 
-			if (!CurrPhase->Init(Prm.GetName(), PhaseDesc)) FAIL;
+			if (!CurrPhase->Init(Prm.GetName(), PhaseDesc)) return NULL;
 
 			RP->Phases[i] = CurrPhase;
 		}
 	}
 
-	Resource.Init(RP.GetUnsafe(), this);
+	return RP.GetUnsafe();
+}
+//---------------------------------------------------------------------
 
-	OK;
+PResourceObject CRenderPathLoaderHRD::Load(IO::CStream& Stream)
+{
+	UPTR DataSize = (UPTR)Stream.GetSize();
+
+	void* pData = NULL;
+	if (Stream.CanBeMapped()) pData = Stream.Map();
+	bool Mapped = !!pData;
+	if (!Mapped)
+	{
+		pData = n_malloc(DataSize);
+		if (Stream.Read(pData, DataSize) != DataSize)
+		{
+			n_free(pData);
+			return NULL;
+		}
+	}
+
+	Data::PParams Desc;
+	Data::CHRDParser Parser;
+	bool Result = Parser.ParseBuffer((const char*)pData, DataSize, Desc);
+
+	if (Mapped) Stream.Unmap();
+	else n_free(pData);
+
+	return Result ? LoadImpl(Desc) : PResourceObject();
+}
+//---------------------------------------------------------------------
+
+PResourceObject CRenderPathLoaderPRM::Load(IO::CStream& Stream)
+{
+	IO::CBinaryReader Reader(Stream);
+	Data::PParams Desc = n_new(Data::CParams);
+	if (!Reader.ReadParams(*Desc)) return NULL;
+	return LoadImpl(Desc);
 }
 //---------------------------------------------------------------------
 

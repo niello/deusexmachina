@@ -1,22 +1,15 @@
 #include "D3D11ShaderLoaders.h"
 
-#include <Resources/Resource.h>
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11GPUDriver.h>
 #include <Render/D3D11/D3D11Shader.h>
-#include <IO/IOServer.h>
+#include <Render/ShaderLibrary.h>
 #include <IO/BinaryReader.h>
-#include <IO/Streams/FileStream.h>
-#include <Data/StringUtils.h>
 #include <Core/Factory.h>
-#define WIN32_LEAN_AND_MEAN
-#include <d3d11.h>
-#undef GetObject
 
 namespace Resources
 {
-__ImplementClass(Resources::CD3D11VertexShaderLoader, 'VSL1', Resources::CD3D11ShaderLoader);
-__ImplementClass(Resources::CD3D11PixelShaderLoader, 'PSL1', Resources::CD3D11ShaderLoader);
+__ImplementClass(Resources::CD3D11ShaderLoader, 'SHL1', Resources::CShaderLoader);
 
 ///////////////////////////////////////////////////////////////////////
 // CD3D11ShaderLoader
@@ -28,16 +21,11 @@ const Core::CRTTI& CD3D11ShaderLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType ShaderType)
+PResourceObject CD3D11ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShaderType ShaderType)
 {
 	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D11GPUDriver>()) FAIL;
 
-	//!!!some streams don't support Seek and GetSize!
-	IO::PStream IOStream = IOSrv->CreateStream(Resource.GetUID().CStr());
-	if (!IOStream->Open(IO::SAM_READ, IO::SAP_RANDOM)) FAIL;
-	U64 FileSize = IOStream->GetSize();
-
-	IO::CBinaryReader R(*IOStream);
+	IO::CBinaryReader R(Stream);
 
 	Data::CFourCC FileSig;
 	if (!R.Read(FileSig)) FAIL;
@@ -81,30 +69,22 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) FAIL;
 
-	U64 MetadataOffset = IOStream->GetPosition();
-
+	U64 MetadataOffset = Stream.GetPosition();
+	U64 FileSize = Stream.GetSize();
 	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
 	if (!BinarySize) FAIL;
 	void* pData = n_malloc(BinarySize);
 	if (!pData) FAIL;
-	if (!IOStream->Seek(BinaryOffset, IO::Seek_Begin) || IOStream->Read(pData, BinarySize) != BinarySize)
+	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
 	{
 		n_free(pData);
 		FAIL;
 	}
 
 	void* pSigData = NULL;
-	if (ShaderType == Render::ShaderType_Vertex)
+	if (ShaderType == Render::ShaderType_Vertex) // || ShaderType == Render::ShaderType_Geometry)
 	{
-		if (InputSignatureID)
-		{
-			// StrID = URI formed with InputSignatureID
-		}
-		else
-		{
-			InputSignatureID = ShaderFileID;
-			// StrID = Shader URI
-		}
+		if (!InputSignatureID) InputSignatureID = ShaderFileID;
 
 		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
 		{
@@ -114,26 +94,10 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 				pSigData = pData;
 				SigSize = BinarySize;
 			}
-			else
+			else if (!ShaderLibrary->GetRawDataByID(InputSignatureID, pSigData, SigSize))
 			{
-				const char pDir[] = "Shaders:Bin/";
-				CString Path(pDir, sizeof(pDir) - 1, 32);
-				Path += StringUtils::FromInt(InputSignatureID);
-				Path += ".sig";
-				IO::PStream SigFile = IOSrv->CreateStream(Path.CStr());
-				if (!SigFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
-				{
-					n_free(pData);
-					FAIL;
-				}
-				SigSize = (UPTR)SigFile->GetSize();
-				pSigData = n_malloc(SigSize);
-				if (SigFile->Read(pSigData, SigSize) != SigSize)
-				{
-					n_free(pData);
-					n_free(pSigData);
-					FAIL;
-				}
+				n_free(pData);
+				FAIL;
 			}
 
 			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, pSigData, SigSize))
@@ -152,7 +116,7 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 
 	Shader->InputSignatureID = InputSignatureID;
 
-	if (!IOStream->Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
+	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
 
 	//???where to validate? will be loaded at all? mb load and check these fields before creating D3D API shader object?
 	U32 MinFeatureLevelValue;
@@ -237,41 +201,7 @@ bool CD3D11ShaderLoader::LoadImpl(CResource& Resource, Render::EShaderType Shade
 		pMeta->Handle = INVALID_HANDLE;
 	}
 
-	Resource.Init(Shader.GetUnsafe(), this);
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-///////////////////////////////////////////////////////////////////////
-// CD3D11VertexShaderLoader
-///////////////////////////////////////////////////////////////////////
-
-bool CD3D11VertexShaderLoader::IsProvidedDataValid() const
-{
-	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D11GPUDriver>()) FAIL;
-
-	//!!!can read raw data to IO cache! or, if stream is mapped, can open and close stream outside these methods!
-	//GPU->ValidateShaderBinary(ShaderType);
-	//	return SUCCEEDED(pGPU->GetD3DDevice()->CreateVertexShader(buf, buflen, NULL, NULL));
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-///////////////////////////////////////////////////////////////////////
-// CD3D11PixelShaderLoader
-///////////////////////////////////////////////////////////////////////
-
-bool CD3D11PixelShaderLoader::IsProvidedDataValid() const
-{
-	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D11GPUDriver>()) FAIL;
-
-	//!!!can read raw data to IO cache! or, if stream is mapped, can open and close stream outside these methods!
-	//GPU->ValidateShaderBinary(ShaderType);
-	//	return SUCCEEDED(pGPU->GetD3DDevice()->CreatePixelShader(buf, buflen, NULL, NULL));
-
-	OK;
+	return Shader.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

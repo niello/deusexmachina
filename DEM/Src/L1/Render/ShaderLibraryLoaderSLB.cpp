@@ -38,6 +38,12 @@ PResourceObject CShaderLibraryLoaderSLB::Load(IO::CStream& Stream)
 		if (!Reader.Read(Rec.Size)) return NULL;
 	}
 
+	// Own initialization stream for lazy loading of shaders.
+	// Ensure Stream is properly ref-counted (not created on stack).
+	n_assert_dbg(Stream.GetRefCount() > 0);
+	if ((Stream.GetRefCount() > 0))
+		ShaderLibrary->Storage = &Stream;
+
 	return ShaderLibrary.GetUnsafe();
 }
 //---------------------------------------------------------------------

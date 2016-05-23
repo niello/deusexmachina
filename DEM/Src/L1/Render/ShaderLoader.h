@@ -10,6 +10,7 @@
 namespace Render
 {
 	typedef Ptr<class CGPUDriver> PGPUDriver;
+	typedef Ptr<class CShaderLibrary> PShaderLibrary;
 }
 
 namespace Resources
@@ -21,10 +22,12 @@ class CShaderLoader: public CResourceLoader
 
 public:
 
-	Render::PGPUDriver GPU;
+	Render::PGPUDriver		GPU;
+	Render::PShaderLibrary	ShaderLibrary; //!!!only for input signatures in D3D11 vertex shaders! redesign?
 
 	//virtual ~CShaderLoader() {}
 
+	virtual PResourceLoader			Clone();
 	//virtual const Core::CRTTI&	GetResultType() const;
 };
 

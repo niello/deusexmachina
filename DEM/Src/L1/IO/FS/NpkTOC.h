@@ -74,7 +74,7 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 {
 	n_assert(pRootDir && RootPath.IsValid());
 
-	if (_strnicmp(RootPath.CStr(), pAbsPath, RootPath.GetLength())) return NULL;
+	if (!pAbsPath || _strnicmp(RootPath.CStr(), pAbsPath, RootPath.GetLength())) return NULL;
 
 	UPTR PathLen = strlen(pAbsPath);
 	UPTR RootPathLen = RootPath.GetLength() + 1; // 1 is for a directory separator

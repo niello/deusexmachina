@@ -54,7 +54,7 @@ protected:
 	Render::HResource					hTexture;
 	Render::HSampler					hLinearSampler;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, U32 VertexShaderID, U32 PixelShaderID);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -62,7 +62,7 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, U32 VertexShaderID, U32 PixelShaderID, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }

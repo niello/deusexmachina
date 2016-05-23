@@ -6,8 +6,6 @@
 #include <Render/EffectLoader.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 
@@ -21,14 +19,11 @@ const Core::CRTTI& CMaterialLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CMaterialLoader::Load(CResource& Resource)
+PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 {
 	if (GPU.IsNullPtr()) FAIL;
 
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
 	if (!Reader.Read<U32>(Magic) || Magic != 'MTRL') FAIL;
@@ -145,9 +140,7 @@ bool CMaterialLoader::Load(CResource& Resource)
 		Rec.Sampler = Value.IsValidPtr() ? Value : Sampler.DefaultValue;
 	}
 
-	Resource.Init(Mtl.GetUnsafe(), this);
-
-	OK;
+	return Mtl.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

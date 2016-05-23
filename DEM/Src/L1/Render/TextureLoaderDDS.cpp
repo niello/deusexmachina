@@ -305,7 +305,11 @@ PResourceObject CTextureLoaderDDS::Load(IO::CStream& Stream)
 	if (!Mapped)
 	{
 		pData = n_malloc(DataSize);
-		if (Stream.Read(pData, DataSize) != DataSize) return NULL;
+		if (Stream.Read(pData, DataSize) != DataSize)
+		{
+			n_free(pData);
+			return NULL;
+		}
 	}
 
 	if (ConversionRequired)

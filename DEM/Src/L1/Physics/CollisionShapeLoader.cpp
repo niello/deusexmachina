@@ -4,7 +4,6 @@
 #include <Physics/BulletConv.h>
 #include <Resources/Resource.h>
 #include <IO/IOServer.h>
-#include <IO/Streams/FileStream.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Math/AABB.h>
@@ -37,49 +36,19 @@ namespace Str
 
 namespace Resources
 {
-__ImplementClass(Resources::CCollisionShapeLoader, 'CSLD', Resources::CResourceLoader);
+__ImplementClass(Resources::CCollisionShapeLoaderPRM, 'CSLD', Resources::CResourceLoader);
 
-const Core::CRTTI& CCollisionShapeLoader::GetResultType() const
+const Core::CRTTI& CCollisionShapeLoaderPRM::GetResultType() const
 {
 	return Physics::CCollisionShape::RTTI;
 }
 //---------------------------------------------------------------------
 
-PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
+PResourceObject CCollisionShapeLoaderPRM::Load(IO::CStream& Stream)
 {
-	void* pData = NULL;
-	if (Stream.CanBeMapped()) pData = Stream.Map();
-	bool Mapped = !!pData;
-	if (!Mapped)
-	{
-		UPTR DataSize = Stream.GetSize();
-		pData = n_malloc(DataSize);
-		if (Stream.Read(pData, DataSize) != DataSize) return NULL;
-	}
-
-	//!!!two loaders or dynamic format detection! may use FOURCC 'PRMx' where 'x' is some non-printable character!
-	const char* pURI = Resource.GetUID().CStr();
-	const char* pExt = PathUtils::GetExtension(pURI);
-	Data::PParams Desc;
-	if (!n_stricmp(pExt, "hrd"))
-	{
-		Data::CBuffer Buffer;
-		if (!IOSrv->LoadFileToBuffer(pURI, Buffer)) FAIL;
-		Data::CHRDParser Parser;
-		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Desc)) FAIL;
-	}
-	else if (!n_stricmp(pExt, "prm"))
-	{
-		IO::PStream File = IOSrv->CreateStream(pURI);
-		if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-		IO::CBinaryReader Reader(*File);
-		Desc = n_new(Data::CParams);
-		if (!Reader.ReadParams(*Desc)) FAIL;
-	}
-	else FAIL;
-
-	if (Mapped) Stream.Unmap();
-	else n_free(pData);
+	IO::CBinaryReader Reader(Stream);
+	Data::PParams Desc = n_new(Data::CParams);
+	if (!Reader.ReadParams(*Desc)) return NULL;
 
 	CStrID Type = Desc->Get<CStrID>(Str::Type);
 	if (Type == Str::StaticMesh)
@@ -88,12 +57,12 @@ PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
 		//create btStridingMeshInterface*
 		//???can get interface pointer from the shape?
 		NOT_IMPLEMENTED;
-		FAIL;
+		return NULL;
 	}
 	else if (Type == Str::Heightfield)
 	{
 		CString FileName = Desc->Get<CString>(Str::CDLODFile, CString::Empty);
-		if (!FileName.IsValid()) FAIL;
+		if (!FileName.IsValid()) return NULL;
 		FileName = "Terrain:" + FileName + ".cdlod";
 
 		void* pHFData = NULL;
@@ -105,7 +74,7 @@ PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
 		{
 			//!!!DUPLICATE CODE! See Scene::CTerrain!
 			IO::PStream CDLODFile = IOSrv->CreateStream(FileName);
-			if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+			if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return NULL;
 			IO::CBinaryReader Reader(*CDLODFile);
 
 			n_assert(Reader.Read<U32>() == 'CDLD');	// Magic
@@ -139,7 +108,7 @@ PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
 				++pSData;
 			}
 		}
-		else FAIL;
+		else return NULL;
 
 		Physics::PHeightfieldShape HFShape = n_new(Physics::CHeightfieldShape);
 		if (HFShape.IsValidPtr())
@@ -151,11 +120,8 @@ PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
 			pBtShape->setLocalScaling(LocalScaling);
 
 			vector3 Offset((AABB.Max.x - AABB.Min.x) * 0.5f, (AABB.Min.y + AABB.Max.y) * 0.5f, (AABB.Max.z - AABB.Min.z) * 0.5f);
-			if (HFShape->Setup(pBtShape, pHFData, Offset))
-			{
-				Resource.Init(HFShape.GetUnsafe(), this);
-				OK;
-			}
+
+			if (HFShape->Setup(pBtShape, pHFData, Offset)) return HFShape.GetUnsafe();
 
 			delete pBtShape;
 		}
@@ -180,19 +146,15 @@ PResourceObject CCollisionShapeLoader::Load(IO::CStream& Stream)
 		{
 			pBtShape = new btCapsuleShape(Desc->Get<float>(Str::Radius, 1.f), Desc->Get<float>(Str::Height, 1.f));
 		}
-		else FAIL;
+		else return NULL;
 
 		Physics::PCollisionShape Shape = n_new(Physics::CCollisionShape);
-		if (Shape.IsValidPtr() && Shape->Setup(pBtShape))
-		{
-			Resource.Init(Shape.GetUnsafe(), this);
-			OK;
-		}
+		if (Shape.IsValidPtr() && Shape->Setup(pBtShape)) return Shape.GetUnsafe();
 
 		delete pBtShape;
 	}
 
-	FAIL;
+	return NULL;
 }
 //---------------------------------------------------------------------
 

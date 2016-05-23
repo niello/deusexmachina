@@ -24,9 +24,10 @@ public:
 
 	//virtual ~CMocapClipLoaderNAX2() {}
 
-	virtual const Core::CRTTI&	GetResultType() const;
-	virtual bool				IsProvidedDataValid() const { OK; } //!!!implement properly!
-	virtual bool				Load(CResource& Resource);
+	virtual const Core::CRTTI&			GetResultType() const;
+	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
+	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
+	virtual PResourceObject				Load(IO::CStream& Stream);
 };
 
 typedef Ptr<CMocapClipLoaderNAX2> PMocapClipLoaderNAX2;

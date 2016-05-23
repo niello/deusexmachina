@@ -30,7 +30,7 @@ protected:
 		U32						SizeInBytes;	// For constants only
 	};
 
-	static bool					LoadEffectParams(IO::CBinaryReader& Reader, CArray<CLoadedParam>& Out);
+	static bool					LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLibrary, CArray<CLoadedParam>& Out);
 	static bool					LoadEffectParamValues(IO::CBinaryReader& Reader, Render::CEffect& Effect, Render::PGPUDriver GPU);
 	static bool					SkipEffectParams(IO::CBinaryReader& Reader);
 
@@ -39,13 +39,16 @@ public:
 	static Render::PTexture		LoadTextureValue(IO::CBinaryReader& Reader, Render::PGPUDriver GPU);
 	static Render::PSampler		LoadSamplerValue(IO::CBinaryReader& Reader, Render::PGPUDriver GPU);
 
-	Render::PGPUDriver GPU;
+	Render::PGPUDriver		GPU;
+	Render::PShaderLibrary	ShaderLibrary;
 
 	virtual ~CEffectLoader() {}
 
-	virtual const Core::CRTTI&	GetResultType() const;
-	virtual bool				IsProvidedDataValid() const { OK; } //!!!implement properly!
-	virtual bool				Load(CResource& Resource);
+	virtual PResourceLoader				Clone();
+	virtual const Core::CRTTI&			GetResultType() const;
+	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
+	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
+	virtual PResourceObject				Load(IO::CStream& Stream);
 };
 
 typedef Ptr<CEffectLoader> PEffectLoader;

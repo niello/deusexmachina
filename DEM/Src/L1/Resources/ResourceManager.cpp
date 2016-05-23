@@ -119,9 +119,18 @@ void CResourceManager::LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader
 		return;
 	}
 
+	// Some resources (like a shader library) may want to own their
+	// initialization stream to lazy load data from it. To support such
+	// behavior we allow resources to store PStream passed on initialization,
+	// which leads to increment of its refcount. If stream could provide
+	// us with an info whether it is persistent or temporary, we could add
+	// a check here to allow resources to own only persistent streams.
+	UPTR StreamRefCount = Stream->GetRefCount();
+
 	PResourceObject Obj = Loader.Load(*Stream.GetUnsafe());
 
-	Stream->Close();
+	if (Stream->GetRefCount() == StreamRefCount) Stream->Close();
+	Stream = NULL;
 
 	Rsrc.Init(Obj.GetUnsafe(), &Loader);
 	Rsrc.SetState(Obj.IsValidPtr() && Obj->IsResourceValid() ? Rsrc_Loaded : Rsrc_LoadingFailed);

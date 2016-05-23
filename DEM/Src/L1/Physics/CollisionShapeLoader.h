@@ -9,13 +9,13 @@
 namespace Resources
 {
 
-class CCollisionShapeLoader: public CResourceLoader
+class CCollisionShapeLoaderPRM: public CResourceLoader
 {
 	__DeclareClass(CCollisionShapeLoader);
 
 public:
 
-	virtual ~CCollisionShapeLoader() {}
+	virtual ~CCollisionShapeLoaderPRM() {}
 
 	virtual const Core::CRTTI&			GetResultType() const;
 	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
@@ -23,7 +23,7 @@ public:
 	virtual PResourceObject				Load(IO::CStream& Stream);
 };
 
-typedef Ptr<CCollisionShapeLoader> PCollisionShapeLoader;
+typedef Ptr<CCollisionShapeLoaderPRM> PCollisionShapeLoaderPRM;
 
 }
 

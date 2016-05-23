@@ -2,6 +2,8 @@
 #ifndef __DEM_L1_IO_H__
 #define __DEM_L1_IO_H__
 
+#include <Data/Ptr.h>
+
 // IO forward declarations
 
 namespace IO

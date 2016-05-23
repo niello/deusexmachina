@@ -2,8 +2,6 @@
 
 #include <Animation/MocapClip.h>
 #include <Render/SkinInfo.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -45,27 +43,23 @@ const Core::CRTTI& CMocapClipLoaderNAX2::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CMocapClipLoaderNAX2::Load(CResource& Resource)
+PResourceObject CMocapClipLoaderNAX2::Load(IO::CStream& Stream)
 {
-	if (ReferenceSkinInfo.IsNullPtr()) FAIL;
+	if (ReferenceSkinInfo.IsNullPtr()) return NULL;
 
-	//???!!!setup stream outside loaders based on URI?!
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	CNAX2Header Header;
-	if (!Reader.Read(Header) || Header.magic != 'NAX2') FAIL;
+	if (!Reader.Read(Header) || Header.magic != 'NAX2') return NULL;
 
 	CNAX2Group Group;
-	if (!Reader.Read(Group)) FAIL;
+	if (!Reader.Read(Group)) return NULL;
 
 	UPTR TotalCurves = Group.numCurves;
 	for (UPTR i = 1; i < Header.numGroups; ++i)
 	{
 		CNAX2Group TmpGroup;
-		if (!Reader.Read(TmpGroup)) FAIL;
+		if (!Reader.Read(TmpGroup)) return NULL;
 		TotalCurves += TmpGroup.numCurves;
 	}
 
@@ -78,7 +72,7 @@ bool CMocapClipLoaderNAX2::Load(CResource& Resource)
 	for (UPTR i = 0; i < Group.numCurves; ++i)
 	{
 		CNAX2Curve Curve;
-		if (!Reader.Read(Curve)) FAIL;
+		if (!Reader.Read(Curve)) return NULL;
 		if (!Curve.isAnimated) continue;
 		
 		Scene::ETransformChannel Channel;
@@ -127,15 +121,13 @@ bool CMocapClipLoaderNAX2::Load(CResource& Resource)
 
 	UPTR KeyCount = Group.numKeys * Group.keyStride;
 	vector4* pKeys = n_new_array(vector4, KeyCount);
-	File->Read(pKeys, KeyCount * sizeof(vector4));
+	Stream.Read(pKeys, KeyCount * sizeof(vector4));
 
 	//???load directly to Clip fields?
 	Anim::PMocapClip Clip = n_new(Anim::CMocapClip);
 	Clip->Setup(Tracks, TrackMapping, NULL, pKeys, Group.numKeys, Group.keyStride, Group.keyTime);
 
-	Resource.Init(Clip.GetUnsafe(), this);
-
-	OK;
+	return Clip.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

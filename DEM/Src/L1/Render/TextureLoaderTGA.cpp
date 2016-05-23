@@ -122,7 +122,11 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 	{
 		UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
 		pData = n_malloc(DataSize);
-		if (Stream.Read(pData, DataSize) != DataSize) return NULL;
+		if (Stream.Read(pData, DataSize) != DataSize)
+		{
+			n_free(pData);
+			return NULL;
+		}
 	}
 
 	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, false);

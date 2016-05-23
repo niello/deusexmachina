@@ -71,9 +71,9 @@ template<class T> inline T* Ptr<T>::operator->() const
 }
 //---------------------------------------------------------------------
 
-template<class T> inline T& Ptr<T>::operator*() const
+template<class T> inline T& Ptr<T>::operator *() const
 {
-	n_assert2(pObj, "NULL pointer access in Ptr::operator*()!");
+	n_assert2(pObj, "NULL pointer access in Ptr::operator *()!");
 	return *pObj;
 }
 //---------------------------------------------------------------------

@@ -31,6 +31,7 @@ namespace Data
 namespace Render
 {
 	typedef Ptr<class CGPUDriver> PGPUDriver;
+	typedef Ptr<class CShader> PShader;
 }
 
 namespace UI
@@ -43,8 +44,8 @@ typedef Ptr<class CUIContext> PUIContext;
 struct CUISettings
 {
 	Render::PGPUDriver	GPUDriver;
-	U32					VertexShaderID;
-	U32					PixelShaderID;
+	Render::PShader		VertexShader;
+	Render::PShader		PixelShader;
 
 	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
 	int					SwapChainID;

@@ -1,8 +1,6 @@
 #include "KeyframeClipLoaderKFA.h"
 
 #include <Animation/KeyframeClip.h>
-#include <Resources/Resource.h>
-#include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -16,22 +14,18 @@ const Core::CRTTI& CKeyframeClipLoaderKFA::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-bool CKeyframeClipLoaderKFA::Load(CResource& Resource)
+PResourceObject CKeyframeClipLoaderKFA::Load(IO::CStream& Stream)
 {
-	//???!!!setup stream outside loaders based on URI?!
-	const char* pURI = Resource.GetUID().CStr();
-	IO::PStream File = IOSrv->CreateStream(pURI);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*File);
+	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'KFAN') FAIL;
+	if (!Reader.Read(Magic) || Magic != 'KFAN') return NULL;
 
 	float Duration;
-	if (!Reader.Read(Duration)) FAIL;
+	if (!Reader.Read(Duration)) return NULL;
 
 	U32 TrackCount;
-	if (!Reader.Read(TrackCount)) FAIL;
+	if (!Reader.Read(TrackCount)) return NULL;
 
 	CArray<Anim::CKeyframeTrack> Tracks;
 	CArray<CStrID> TrackMapping;
@@ -45,13 +39,13 @@ bool CKeyframeClipLoaderKFA::Load(CResource& Resource)
 		pTrack->Channel = (Scene::ETransformChannel)Reader.Read<int>();
 
 		U32 KeyCount;
-		if (!Reader.Read(KeyCount)) FAIL;
+		if (!Reader.Read(KeyCount)) return NULL;
 
 		if (!KeyCount) Reader.Read(pTrack->ConstValue);
 		else
 		{
 			pTrack->Keys.SetSize(KeyCount);
-			File->Read(pTrack->Keys.GetPtr(), KeyCount * sizeof(Anim::CKeyframeTrack::CKey));
+			Stream.Read(pTrack->Keys.GetPtr(), KeyCount * sizeof(Anim::CKeyframeTrack::CKey));
 		}
 	}
 
@@ -74,9 +68,7 @@ bool CKeyframeClipLoaderKFA::Load(CResource& Resource)
 	Anim::PKeyframeClip Clip = n_new(Anim::CKeyframeClip);
 	Clip->Setup(Tracks, TrackMapping, &EventTracks, Duration);
 
-	Resource.Init(Clip.GetUnsafe(), this);
-
-	OK;
+	return Clip.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

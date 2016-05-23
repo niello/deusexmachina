@@ -5,8 +5,7 @@
 #include <IO/Stream.h>
 #include <Data/String.h>
 
-// File system file access stream
-// Partially based on Nebula 3 (c) IO::FileStream class
+// Stream that accesses data from a file stored in some file system
 
 namespace IO
 {
@@ -44,6 +43,8 @@ public:
 	virtual bool	CanSeek() const { OK; }
 	virtual bool	CanBeMapped() const { OK; }
 };
+
+typedef Ptr<CFileStream> PFileStream;
 
 }
 

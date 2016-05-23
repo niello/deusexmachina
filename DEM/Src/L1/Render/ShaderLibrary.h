@@ -10,8 +10,6 @@
 // its underlying SLB format store shaders sequentially and access
 // them fast through a table of contents.
 
-//!!!temporary solution, should be redesigned to work with resource management code!
-
 namespace IO
 {
 	typedef Ptr<class CStream> PStream;
@@ -20,6 +18,7 @@ namespace IO
 namespace Resources
 {
 	class CShaderLibraryLoaderSLB;
+	typedef Ptr<class CShaderLoader> PShaderLoader;
 }
 
 namespace Render
@@ -41,16 +40,19 @@ protected:
 		PShader	LoadedShader;
 	};
 
-	CFixedArray<CRecord>	TOC;		// Sorted by ID
-	IO::PStream				Storage;
+	CFixedArray<CRecord>		TOC;			// Sorted by ID
+	IO::PStream					Storage;
+	Resources::PShaderLoader	ShaderLoader;
 
 	friend class Resources::CShaderLibraryLoaderSLB;
 
 public:
 
-	//virtual ~CShaderLibrary() {}
+	virtual ~CShaderLibrary();
 
-	PShader			GetShaderByID(PGPUDriver GPU, U32 ID);
+	void			SetLoader(Resources::PShaderLoader Loader);
+	PShader			GetShaderByID(U32 ID);
+	bool			GetRawDataByID(U32 ID, void*& pOutData, UPTR& OutSize);
 
 	virtual bool	IsResourceValid() const { return Storage.IsValidPtr(); }
 };
