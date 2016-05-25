@@ -1,7 +1,5 @@
 #include "D3D9ShaderReflection.h"
 
-#include <Data/StringUtils.h>
-
 // Code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
 // This version has some cosmetic changes
@@ -217,18 +215,13 @@ bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutCon
 }
 //---------------------------------------------------------------------
 
-// Parse source code and find "samplerX SamplerName { Texture = TextureName; }" or
+// Use StringUtils::StripComments(pSrc) to remove comments from the HLSL source before caling this function.
+// Parses source code and finds "samplerX SamplerName { Texture = TextureName; }" or
 // "sampler LinearSampler[N] { { Texture = Tex1; }, ..., { Texture = TexN; } }" pattern,
-// as HLSL texture names are not saved in a metadata
-void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CArray<CString>>& OutSampToTex)
+// as HLSL texture names are not saved in a metadata. Doesn't support annotations.
+void D3D9FindSamplerTextures(const char* pSrcText, CDict<CString, CArray<CString>>& OutSampToTex)
 {
-	char* pSrc = (char*)n_malloc(Size + 1);
-	memcpy(pSrc, pSrcText, Size);
-	pSrc[Size] = 0;
-
-	Size = StringUtils::StripComments(pSrc);
-
-	const char* pCurr = pSrc;
+	const char* pCurr = pSrcText;
 	while (pCurr = strstr(pCurr, "sampler"))
 	{
 		// Keyword 'sampler[XD]'
@@ -310,8 +303,67 @@ void D3D9FindSamplerTextures(const char* pSrcText, UPTR Size, CDict<CString, CAr
 		while (true);
 
 		if (!pCurr) break;
-	};
+	}
+}
+//---------------------------------------------------------------------
 
-	n_free(pSrc);
+// Use StringUtils::StripComments(pSrc) to remove comments from the HLSL source before caling this function.
+// Parses source code, finds annotations of shader constats and fills additional constant metadata.
+void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName)
+{
+	const char* pCurr = pSrcText;
+	while (pCurr = strstr(pCurr, ConstName.CStr()))
+	{
+		// Ensure it is a whole word, if not, search next
+		if (!strchr(DEM_WHITESPACE, *(pCurr - 1)) || !strchr(DEM_WHITESPACE"=:<", *(pCurr + ConstName.GetLength())))
+		{
+			pCurr += ConstName.GetLength();
+			continue;
+		}
+
+		// Annotation start or statement/declaration end
+		pCurr = strpbrk(pCurr, "<;");
+		if (!pCurr) break;
+		if (*pCurr != '<') continue;
+
+		// Annotation end
+		++pCurr;
+		const char* pAnnotationEnd = strpbrk(pCurr, ">");
+		if (!pAnnotationEnd) break;
+
+		// Find 'CBuffer' annotation
+		while (pCurr = strstr(pCurr, "CBuffer"))
+		{
+			// Reached the end of annotation
+			if (pCurr >= pAnnotationEnd) break;
+
+			// Ensure it is a whole word, if not, search for next matching annotation
+			if (!strchr(DEM_WHITESPACE, *(pCurr - 1)) || !strchr(DEM_WHITESPACE"=", *(pCurr + 7)))
+			{
+				pCurr = strpbrk(pCurr + 7, ";");
+				if (!pCurr) break;
+				continue;
+			}
+
+			// Find string value start or 'CBuffer' annotation end
+			pCurr = strpbrk(pCurr, "\";");
+			if (!pCurr || *pCurr == ';') break;
+
+			++pCurr;
+			const char* pNameStart = pCurr;
+
+			// Find string value end or 'CBuffer' annotation end (which means no closing '\"' exist)
+			pCurr = strpbrk(pCurr, "\";");
+			if (!pCurr || *pCurr == ';') break;
+
+			OutBufferName.Set(pNameStart, pCurr - pNameStart);
+			return;
+		}
+
+		// Annotation was found, no chance to find another one
+		break;
+	}
+
+	OutBufferName = "$Global";
 }
 //---------------------------------------------------------------------

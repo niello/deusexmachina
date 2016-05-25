@@ -4,6 +4,7 @@
 #include <Data/StringUtils.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/Streams/FileStream.h>
+#include <IO/Streams/MemStream.h>
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <IO/PathUtils.h>
@@ -362,7 +363,7 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 			Rec.InputSigFile.CRC = Util::CalcCRC((U8*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
 			U32 OldInputSigID = Rec.InputSigFile.ID;
-			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), false))
+			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), Target, Cmp_All))
 			{
 				Rec.InputSigFile.ID = CreateObjFileRecord();
 				if (!Rec.InputSigFile.ID)
@@ -435,7 +436,45 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 	// Try to find exactly the same binary and reuse it, or save our result
 
 	DWORD OldObjFileID = Rec.ObjFile.ID;
-	if (!FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer(), true))
+	bool ObjFound;
+	IO::PMemStream ObjStream;
+	U64 BinaryOffset;
+	if (Target < 0x0400)
+	{
+		// Collect and compare metadata for sm3.0 shaders. Binary file may differ even if a shader blob part
+		// is the same, because constant buffers are defined in annotations and aren't reflected in a shader blob.
+		ObjStream = n_new(IO::CMemStream);
+		ObjStream->Open(IO::SAM_READWRITE);
+		IO::CBinaryWriter W(*ObjStream.GetUnsafe());
+
+		CSM30ShaderMeta Meta;
+		bool MetaReflected = D3D9CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), Meta);
+		bool MetaSaved = MetaReflected && D3D9SaveShaderMetadata(W, Meta);
+
+		pCode->Release();
+		
+		if (!MetaReflected || !MetaSaved)
+		{
+			pFinalCode->Release();
+			return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
+		}
+
+		BinaryOffset = ObjStream->GetPosition();
+
+		ObjStream->Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+
+		pFinalCode->Release();
+
+		ObjFound = FindObjFile(Rec.ObjFile, ObjStream->Map(), Target, Cmp_ShaderAndMetadata);
+		ObjStream->Unmap();
+	}
+	else
+	{
+		// Compare only a shader blob for USM shaders
+		ObjFound = FindObjFile(Rec.ObjFile, pFinalCode->GetBufferPointer(), Target, Cmp_Shader);
+	}
+
+	if (!ObjFound)
 	{
 		Rec.ObjFile.ID = CreateObjFileRecord();
 		if (!Rec.ObjFile.ID)
@@ -459,7 +498,7 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 
 		IO::CBinaryWriter W(File);
 
-		W.Write(TargetParams.FileSignature);
+		W.Write<U32>(TargetParams.FileSignature.Code);
 
 		// Offset of a shader binary, will fill later
 		U64 OffsetOffset = File.GetPosition();
@@ -472,36 +511,38 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 			W.Write<U32>(Rec.InputSigFile.ID);
 		}
 
-		// Save metadata
-
-		bool MetaReflected;
-		bool MetaSaved;
-		if (Target >= 0x0400)
+		if (ObjStream.IsValidPtr())
 		{
-			CD3D11ShaderMeta Meta;
-			MetaReflected = D3D11CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta);
-			MetaSaved = MetaReflected && D3D11SaveShaderMetadata(W, Meta);
+			// Data is already serialized into a memory, just save it
+			BinaryOffset += File.GetPosition();
+			File.Write(ObjStream->Map(), (UPTR)ObjStream->GetSize());
+			ObjStream->Unmap();
+			ObjStream = NULL;
 		}
 		else
 		{
-			CSM30ShaderMeta Meta;
-			MetaReflected = D3D9CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), Meta);
-			MetaSaved = MetaReflected && D3D9SaveShaderMetadata(W, Meta);
-		}
+			n_assert(Target >= 0x0400);
 
-		pCode->Release();
+			// Save metadata
+			
+			CD3D11ShaderMeta Meta;
+			bool MetaReflected = D3D11CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta);
+			bool MetaSaved = MetaReflected && D3D11SaveShaderMetadata(W, Meta);
+
+			pCode->Release();
 		
-		if (!MetaReflected || !MetaSaved)
-		{
+			if (!MetaReflected || !MetaSaved)
+			{
+				pFinalCode->Release();
+				return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
+			}
+
+			// Save shader binary
+			BinaryOffset = File.GetPosition();
+			File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+
 			pFinalCode->Release();
-			return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}
-
-		// Save shader binary
-		U64 BinaryOffset = File.GetPosition();
-		File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
-
-		pFinalCode->Release();
 
 		// Get total file size
 		Rec.ObjFile.Size = File.GetPosition();
@@ -516,10 +557,17 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 	}
 	else
 	{
-		pCode->Release();
-		pFinalCode->Release();
+		// Object file found, no additional actions needed.
+		// sm3.0 code has already released these buffers. 
+		if (Target >= 0x0400)
+		{
+			pCode->Release();
+			pFinalCode->Release();
+		}
 	}
 
+	// If object file changed, remove reference to the old one
+	// and delete it if no references left.
 	if (OldObjFileID > 0 && OldObjFileID != Rec.ObjFile.ID)
 	{
 		CString OldObjPath;

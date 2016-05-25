@@ -56,11 +56,18 @@ struct CShaderDBRec
 	CShaderDBRec(): ID(0), Target(0) {}
 };
 
+enum EObjCompareMode
+{
+	Cmp_All,
+	Cmp_ShaderAndMetadata,
+	Cmp_Shader
+};
+
 bool	OpenDB(const char* pURI);
 void	CloseDB();
 bool	FindShaderRec(CShaderDBRec& InOut);
 bool	WriteShaderRec(CShaderDBRec& InOut);
-bool	FindObjFile(CObjFileData& InOut, const void* pBinaryData, bool SkipHeader);
+bool	FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjCompareMode Mode);
 bool	FindObjFileByID(U32 ID, CObjFileData& Out);
 U32		CreateObjFileRecord();
 bool	UpdateObjFileRecord(const CObjFileData& Record);

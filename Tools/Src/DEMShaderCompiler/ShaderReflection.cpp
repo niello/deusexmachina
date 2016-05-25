@@ -16,11 +16,15 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 
 	if (!D3D9Reflect(pData, Size, D3D9Consts, Creator)) FAIL;
 
-	CDict<CString, CArray<CString>> SampToTex;
-	D3D9FindSamplerTextures(pSource, SourceSize, SampToTex);
+	char* pSourceWithoutComments = (char*)n_malloc(SourceSize + 1);
+	memcpy(pSourceWithoutComments, pSource, SourceSize);
+	pSourceWithoutComments[SourceSize] = 0;
+	UPTR SourceWithoutCommentsSize = StringUtils::StripComments(pSourceWithoutComments);
 
-	CSM30ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
-	pMeta->Name = "$Global";
+	CDict<CString, CArray<CString>> SampToTex;
+	D3D9FindSamplerTextures(pSourceWithoutComments, SampToTex);
+
+	CDict<CString, CString> ConstToBuf;
 
 	for (UPTR i = 0; i < D3D9Consts.GetCount(); ++i)
 	{
@@ -88,21 +92,39 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 				Messages += "has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 			}
 		}
-		else
+		else // Constants
 		{
 			// Structure layout is not saved for now, so operations on structure members aren't supported.
 			// It can be fixed as needed.
 
+			CString BufferName;
+			D3D9FindConstantBuffer(pSourceWithoutComments, D3D9ConstDesc.Name, BufferName);
+
+			UPTR BufferIndex = 0;
+			for (; BufferIndex < Out.Buffers.GetCount(); ++BufferIndex)
+				if (Out.Buffers[BufferIndex].Name == BufferName) break;
+
+			if (BufferIndex == Out.Buffers.GetCount())
+			{
+				CSM30ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
+				pMeta->Name = BufferName;
+			}
+
 			CSM30ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
-			pMeta->BufferIndex = 0; // Default, global buffer
+			pMeta->BufferIndex = BufferIndex;
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{
 				case RS_FLOAT4:	pMeta->RegisterSet = RS_Float4; break;
 				case RS_INT4:	pMeta->RegisterSet = RS_Int4; break;
 				case RS_BOOL:	pMeta->RegisterSet = RS_Bool; break;
-				default:		Sys::Error("Unsupported SM3.0 register set %d\n", D3D9ConstDesc.RegisterSet); FAIL;
+				default:
+				{
+					Sys::Error("Unsupported SM3.0 register set %d\n", D3D9ConstDesc.RegisterSet);
+					n_free(pSourceWithoutComments);
+					FAIL;
+				}
 			};
 
 			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
@@ -135,6 +157,8 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		}
 		else ++i;
 	};
+
+	n_free(pSourceWithoutComments);
 
 	OK;
 }

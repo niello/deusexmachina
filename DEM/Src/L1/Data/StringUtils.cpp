@@ -119,6 +119,7 @@ bool ToBool(const char* pStr)
 //---------------------------------------------------------------------
 
 //!!!non-optimal, can rewrite in a reverse order to minimize memmove sizes!
+// Adds space for each multiline comment stripped to preserve token delimiting in a "name1/*comment*/name2" case
 UPTR StripComments(char* pStr, const char* pSingleLineComment, const char* pMultiLineCommentStart, const char* pMultiLineCommentEnd)
 {
 	UPTR Len = strlen(pStr);
@@ -134,6 +135,8 @@ UPTR StripComments(char* pStr, const char* pSingleLineComment, const char* pMult
 			if (pEnd)
 			{
 				const char* pFirstValid = pEnd + MLCELen;
+				*pFound = ' ';
+				++pFound;
 				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
 				Len -= (pFirstValid - pFound);
 				pStr[Len] = 0;

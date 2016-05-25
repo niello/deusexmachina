@@ -39,6 +39,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 		//this requires a way to get material from a renderable. really need?
 		//!!!can find once, outside the render loop! store somewhere, associates object and renderer
 		const CTechnique* pTech = pModel->Material->GetEffect()->GetTechByInputSet(InputSet_Model);
+		//HConst hWorld = pTech->GetParam(CStrID("WorldMatrix")); //???or find index and then reference by index?
 		//!!!search in fallback materials if not found!
 
 		// If tech supports instancing, try to collect more objects
@@ -47,7 +48,10 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 		if (pVB && pGroup && pTech)
 		{
-			//set tech params
+			//!!!DBG TMP!
+			pModel->Material->Apply(GPU);
+			//set tech params (feed shader according to an input set)
+			//GPU.SetShaderConstant(TmpCB, hWorld, 0, ItCurr->Transform.m, sizeof(matrix44));
 
 			GPU.SetVertexLayout(pVB->GetVertexLayout());
 			GPU.SetVertexBuffer(0, pVB);

@@ -530,7 +530,7 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 }
 //---------------------------------------------------------------------
 
-bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, bool SkipHeader)
+bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjCompareMode Mode)
 {
 	if (InOut.BytecodeSize)
 	{
@@ -556,16 +556,21 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, bool SkipHeader)
 
 				U64 FileSize = File.GetSize();
 
-				if (SkipHeader)
+				if (Mode == Cmp_ShaderAndMetadata)
+				{
+					U32 Offset = (Target >= 0x0400) ? 16 : 12;
+					if (!File.Seek(Offset, IO::Seek_Begin)) continue;
+					FileSize -= Offset;
+				}
+				else if (Mode == Cmp_Shader)
 				{
 					U32 BytecodeOffset;
 					if (!File.Seek(4, IO::Seek_Begin)) continue;
 					if (!File.Read(&BytecodeOffset, sizeof(BytecodeOffset))) continue;
 					if (!File.Seek(BytecodeOffset, IO::Seek_Begin)) continue;
 					FileSize -= BytecodeOffset;
+					if (FileSize != InOut.BytecodeSize) continue;
 				}
-
-				if (FileSize != InOut.BytecodeSize) continue;
 
 				Data::CBuffer Buffer((UPTR)FileSize);
 				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
