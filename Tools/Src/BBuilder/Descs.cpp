@@ -20,7 +20,7 @@ void ConvertPropNamesToFourCC(Data::PDataArray Props)
 		if (!Props->Get(i).IsA<CString>()) continue;
 		const CString& Name = Props->Get<CString>(i);
 		Data::CFourCC Value;
-		if (PropCodes.Get(Name, Value)) Props->At(i) = (int)Value.Code;
+		if (ClassToFOURCC.Get(Name, Value)) Props->At(i) = (int)Value.Code;
 	}
 }
 //---------------------------------------------------------------------

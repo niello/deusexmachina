@@ -20,7 +20,7 @@ CArray<U32>		ShadersToPack;
 CToolFileLists	InFileLists;
 CToolFileLists	OutFileLists;
 
-CPropCodeMap	PropCodes;
+CClassCodeMap	ClassToFOURCC;
 
 // Debug command line:
 // -export -waitkey -v 5 -sm3 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
@@ -87,20 +87,20 @@ int main(int argc, const char** argv)
 	}
 
 	//???rewrite HRD/PRM to return CData? change root symbol in grammar, so could store array and anything else
-	Data::PParams PropCodesDesc = DataSrv->LoadHRD("Proj:PropCodes.hrd", false);
-	Data::PDataArray PropCodesList;
-	if (PropCodesDesc.IsValidPtr() &&
-		PropCodesDesc->Get<Data::PDataArray>(PropCodesList, CStrID("List")) &&
-		PropCodesList->GetCount())
+	Data::PParams ClassToFOURCCDesc = DataSrv->LoadHRD("Proj:ClassToFOURCC.hrd", false);
+	Data::PDataArray ClassToFOURCCArray;
+	if (ClassToFOURCCDesc.IsValidPtr() &&
+		ClassToFOURCCDesc->Get<Data::PDataArray>(ClassToFOURCCArray, CStrID("List")) &&
+		ClassToFOURCCArray->GetCount())
 	{
-		for (UPTR i = 0; i < PropCodesList->GetCount(); ++i)
+		for (UPTR i = 0; i < ClassToFOURCCArray->GetCount(); ++i)
 		{
-			Data::PParams Prm = PropCodesList->Get<Data::PParams>(i);
-			PropCodes.Add(Prm->Get<CString>(CStrID("Name")), Data::CFourCC(Prm->Get<CString>(CStrID("Code")).CStr()));
+			Data::PParams Prm = ClassToFOURCCArray->Get<Data::PParams>(i);
+			ClassToFOURCC.Add(Prm->Get<CString>(CStrID("Name")), Data::CFourCC(Prm->Get<CString>(CStrID("Code")).CStr()));
 		}
 	}
-	PropCodesList = NULL;
-	PropCodesDesc = NULL;
+	ClassToFOURCCArray = NULL;
+	ClassToFOURCCDesc = NULL;
 
 	if (!DataSrv->LoadDataSchemes("Home:DataSchemes/SceneNodes.dss"))
 	{

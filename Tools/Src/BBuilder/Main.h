@@ -14,7 +14,7 @@
 #define EXIT_APP_OK		return ExitApp(true, WaitKey)
 
 typedef CDict<CStrID, CArray<CString>> CToolFileLists;
-typedef CHashTable<CString, Data::CFourCC> CPropCodeMap;
+typedef CHashTable<CString, Data::CFourCC> CClassCodeMap;
 
 extern CString			ProjectDir;
 extern bool				ExportDescs;
@@ -26,7 +26,7 @@ extern CArray<CString>	FilesToPack;
 extern CArray<U32>		ShadersToPack;
 extern CToolFileLists	InFileLists;
 extern CToolFileLists	OutFileLists;
-extern CPropCodeMap		PropCodes;
+extern CClassCodeMap	ClassToFOURCC;
 
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
