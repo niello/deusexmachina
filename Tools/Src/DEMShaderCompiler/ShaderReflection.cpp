@@ -213,23 +213,23 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 		{
 			case D3D_SIT_TEXTURE:
 			{
-				CSM40ShaderRsrcMeta* pMeta = Out.Resources.Reserve(1);
+				CUSMShaderRsrcMeta* pMeta = Out.Resources.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
 				pMeta->RegisterStart = RsrcDesc.BindPoint;
 				pMeta->RegisterCount = RsrcDesc.BindCount;
 
 				switch (RsrcDesc.Dimension)
 				{
-					case D3D_SRV_DIMENSION_TEXTURE1D:			pMeta->Type = SM40Rsrc_Texture1D; break;
-					case D3D_SRV_DIMENSION_TEXTURE1DARRAY:		pMeta->Type = SM40Rsrc_Texture1DArray; break;
-					case D3D_SRV_DIMENSION_TEXTURE2D:			pMeta->Type = SM40Rsrc_Texture2D; break;
-					case D3D_SRV_DIMENSION_TEXTURE2DARRAY:		pMeta->Type = SM40Rsrc_Texture2DArray; break;
-					case D3D_SRV_DIMENSION_TEXTURE2DMS:			pMeta->Type = SM40Rsrc_Texture2DMS; break;
-					case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:	pMeta->Type = SM40Rsrc_Texture2DMSArray; break;
-					case D3D_SRV_DIMENSION_TEXTURE3D:			pMeta->Type = SM40Rsrc_Texture3D; break;
-					case D3D_SRV_DIMENSION_TEXTURECUBE:			pMeta->Type = SM40Rsrc_TextureCUBE; break;
-					case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:	pMeta->Type = SM40Rsrc_TextureCUBEArray; break;
-					default:									pMeta->Type = SM40Rsrc_Unknown; break;
+					case D3D_SRV_DIMENSION_TEXTURE1D:			pMeta->Type = USMRsrc_Texture1D; break;
+					case D3D_SRV_DIMENSION_TEXTURE1DARRAY:		pMeta->Type = USMRsrc_Texture1DArray; break;
+					case D3D_SRV_DIMENSION_TEXTURE2D:			pMeta->Type = USMRsrc_Texture2D; break;
+					case D3D_SRV_DIMENSION_TEXTURE2DARRAY:		pMeta->Type = USMRsrc_Texture2DArray; break;
+					case D3D_SRV_DIMENSION_TEXTURE2DMS:			pMeta->Type = USMRsrc_Texture2DMS; break;
+					case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:	pMeta->Type = USMRsrc_Texture2DMSArray; break;
+					case D3D_SRV_DIMENSION_TEXTURE3D:			pMeta->Type = USMRsrc_Texture3D; break;
+					case D3D_SRV_DIMENSION_TEXTURECUBE:			pMeta->Type = USMRsrc_TextureCUBE; break;
+					case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:	pMeta->Type = USMRsrc_TextureCUBEArray; break;
+					default:									pMeta->Type = USMRsrc_Unknown; break;
 				}
 
 				break;
@@ -237,7 +237,7 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 			case D3D_SIT_SAMPLER:
 			{
 				// D3D_SIF_COMPARISON_SAMPLER
-				CSM40ShaderSamplerMeta* pMeta = Out.Samplers.Reserve(1);
+				CUSMShaderSamplerMeta* pMeta = Out.Samplers.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
 				pMeta->RegisterStart = RsrcDesc.BindPoint;
 				pMeta->RegisterCount = RsrcDesc.BindCount;
@@ -333,7 +333,7 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 							}
 						}
 
-						CD3D11ShaderConstMeta* pConstMeta = Out.Consts.Reserve(1);
+						CUSMShaderConstMeta* pConstMeta = Out.Consts.Reserve(1);
 						pConstMeta->Name = D3DVarDesc.Name;
 						pConstMeta->BufferIndex = Out.Buffers.GetCount() - 1;
 						pConstMeta->Type = Type;
@@ -472,7 +472,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 	W.Write<U32>(Meta.Consts.GetCount());
 	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
 	{
-		const CD3D11ShaderConstMeta& Obj = Meta.Consts[i];
+		const CUSMShaderConstMeta& Obj = Meta.Consts[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
 		W.Write<U8>(Obj.Type);
@@ -484,7 +484,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 	W.Write<U32>(Meta.Resources.GetCount());
 	for (UPTR i = 0; i < Meta.Resources.GetCount(); ++i)
 	{
-		const CSM40ShaderRsrcMeta& Obj = Meta.Resources[i];
+		const CUSMShaderRsrcMeta& Obj = Meta.Resources[i];
 		W.Write(Obj.Name);
 		W.Write<U8>(Obj.Type);
 		W.Write(Obj.RegisterStart);
@@ -494,7 +494,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 	W.Write<U32>(Meta.Samplers.GetCount());
 	for (UPTR i = 0; i < Meta.Samplers.GetCount(); ++i)
 	{
-		const CSM40ShaderSamplerMeta& Obj = Meta.Samplers[i];
+		const CUSMShaderSamplerMeta& Obj = Meta.Samplers[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.RegisterCount);
@@ -621,10 +621,10 @@ bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
-	CD3D11ShaderConstMeta* pConst = Meta.Consts.Reserve(Count, false);
+	CUSMShaderConstMeta* pConst = Meta.Consts.Reserve(Count, false);
 	for (; pConst < Meta.Consts.End(); ++pConst)
 	{
-		CD3D11ShaderConstMeta& Obj = *pConst;
+		CUSMShaderConstMeta& Obj = *pConst;
 		R.Read(Obj.Name);
 		R.Read(Obj.BufferIndex);
 
@@ -638,25 +638,25 @@ bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
-	CSM40ShaderRsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
+	CUSMShaderRsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
 	for (; pRsrc < Meta.Resources.End(); ++pRsrc)
 	{
-		CSM40ShaderRsrcMeta& Obj = *pRsrc;
+		CUSMShaderRsrcMeta& Obj = *pRsrc;
 		R.Read(Obj.Name);
 
 		U8 Type;
 		R.Read<U8>(Type);
-		Obj.Type = (ESM40ResourceType)Type;
+		Obj.Type = (EUSMResourceType)Type;
 
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.RegisterCount);
 	}
 
 	R.Read<U32>(Count);
-	CSM40ShaderSamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
+	CUSMShaderSamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
 	for (; pSamp < Meta.Samplers.End(); ++pSamp)
 	{
-		CSM40ShaderSamplerMeta& Obj = *pSamp;
+		CUSMShaderSamplerMeta& Obj = *pSamp;
 		R.Read(Obj.Name);
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.RegisterCount);

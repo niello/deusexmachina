@@ -4,7 +4,7 @@
 #include <Data/Params.h>
 #include <Data/HRDParser.h>
 #include <Data/Buffer.h>
-#include <DEMShaderCompilerDLL.h>
+#include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 #include <ConsoleApp.h>
 
 // Debug args:

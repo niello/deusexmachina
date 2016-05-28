@@ -101,18 +101,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\Src\BBuilder\DEMShaderCompilerDLL.h" />
     <ClInclude Include="..\..\Src\BBuilder\Main.h" />
     <ClInclude Include="..\..\Src\CmdLineArgs.h" />
     <ClInclude Include="..\..\Src\ConsoleApp.h" />
+    <ClInclude Include="..\..\Src\DEMShaderCompiler\DEMShaderCompilerDLL.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\Src\BBuilder\DEMShaderCompilerDLL.cpp" />
     <ClCompile Include="..\..\Src\BBuilder\Descs.cpp" />
     <ClCompile Include="..\..\Src\BBuilder\ExtTools.cpp" />
     <ClCompile Include="..\..\Src\BBuilder\Main.cpp" />
     <ClCompile Include="..\..\Src\BBuilder\Pack.cpp" />
     <ClCompile Include="..\..\Src\BBuilder\Resources.cpp" />
+    <ClCompile Include="..\..\Src\DEMShaderCompiler\DEMShaderCompilerDLL.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

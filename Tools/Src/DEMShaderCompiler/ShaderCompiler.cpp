@@ -212,7 +212,7 @@ bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
 
 // pDefines - "NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]"
 DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
-											 const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID)
+											 const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID)
 {
 	Messages.Clear();
 
@@ -349,7 +349,7 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 	// For vertex and geometry shaders, store input signature in a separate binary file.
 	// It saves RAM since input signatures must reside in it at the runtime.
 
-	if ((ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Geometry) && Target >= 0x0400)
+	if (!OnlyMetadata && (ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Geometry) && Target >= 0x0400)
 	{
 		ID3DBlob* pInputSig;
 		if (SUCCEEDED(D3DGetBlobPart(pCode->GetBufferPointer(),
@@ -459,9 +459,15 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 			return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}
 
-		BinaryOffset = ObjStream->GetPosition();
-
-		ObjStream->Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+		if (OnlyMetadata)
+		{
+			BinaryOffset = 0; // Means that no binary shader bytecode included
+		}
+		else
+		{
+			BinaryOffset = ObjStream->GetPosition();
+			ObjStream->Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+		}
 
 		pFinalCode->Release();
 
@@ -537,9 +543,16 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 				return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
 			}
 
-			// Save shader binary
-			BinaryOffset = File.GetPosition();
-			File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+			if (OnlyMetadata)
+			{
+				BinaryOffset = 0; // Means that no binary shader bytecode included
+			}
+			else
+			{
+				// Save shader binary
+				BinaryOffset = File.GetPosition();
+				File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+			}
 
 			pFinalCode->Release();
 		}
@@ -547,9 +560,12 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		// Get total file size
 		Rec.ObjFile.Size = File.GetPosition();
 
-		// Write binary data offset for fast skipping of metadata when reading
-		File.Seek(OffsetOffset, IO::Seek_Begin);
-		W.Write<U32>((U32)BinaryOffset);
+		if (BinaryOffset)
+		{
+			// Write binary data offset for fast skipping of metadata when reading
+			File.Seek(OffsetOffset, IO::Seek_Begin);
+			W.Write<U32>((U32)BinaryOffset);
+		}
 
 		File.Close();
 

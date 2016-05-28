@@ -105,14 +105,14 @@
   <ItemGroup>
     <ClInclude Include="..\..\..\Src\CmdLineArgs.h" />
     <ClInclude Include="..\..\..\Src\ConsoleApp.h" />
-    <ClInclude Include="..\..\..\Src\ContentForge\CFShader\DEMShaderCompilerDLL.h" />
     <ClInclude Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.h" />
+    <ClInclude Include="..\..\..\Src\DEMShaderCompiler\DEMShaderCompilerDLL.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\..\Src\ContentForge\CFShader\DEMShaderCompilerDLL.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\EffectCompiler.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\Main.cpp" />
     <ClCompile Include="..\..\..\Src\ContentForge\CFShader\ToolRenderStateDesc.cpp" />
+    <ClCompile Include="..\..\..\Src\DEMShaderCompiler\DEMShaderCompilerDLL.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

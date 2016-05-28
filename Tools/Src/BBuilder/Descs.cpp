@@ -11,7 +11,7 @@
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-#include <DEMShaderCompilerDLL.h>
+#include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 
 void ConvertPropNamesToFourCC(Data::PDataArray Props)
 {
@@ -1005,6 +1005,72 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 }
 //---------------------------------------------------------------------
 
+bool ProcessRenderPathDesc(const char* pSrcFilePath, const char* pExportFilePath)
+{
+	// Some descs can be loaded twice or more from different IO path assigns, avoid it
+	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
+
+	if (IsFileAdded(RealExportFilePath)) OK;
+
+	if (ExportDescs)
+	{
+		Data::PParams RPDesc = DataSrv->LoadHRD(pSrcFilePath, false);
+
+		if (!RPDesc.IsValidPtr())
+		{
+			n_msg(VL_ERROR, "Error loading render path '%s' desc\n", RealExportFilePath.CStr());
+			FAIL;
+		}
+
+		Data::PParams ParamShadersDesc;
+		if (RPDesc->Get(ParamShadersDesc, CStrID("GlobalParamShaders")))
+		{
+	#ifdef _DEBUG
+			CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
+	#else
+			CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
+	#endif
+			CString DBFilePath = IOSrv->ResolveAssigns("SrcShaders:ShaderDB.db3");
+			CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
+			if (!InitDEMShaderCompilerDLL(DLLPath, DBFilePath, OutputDir)) FAIL;
+
+			for (UPTR j = 0; j < ParamShadersDesc->GetCount(); ++j)
+			{
+				Data::CParam& Prm = ParamShadersDesc->Get(j);
+				Data::PParams ShaderSection = Prm.GetValue<Data::PParams>();
+
+				U32 ShaderID;
+				if (!ProcessShaderResourceDesc(*ShaderSection, false, true, ShaderID))
+				{
+					TermDEMShaderCompilerDLL();
+					FAIL;
+				}
+
+				// Substitute shader desc with a compiled shader ID
+				Prm.SetValue<int>(ShaderID);
+
+				AddShaderToPack(ShaderID);
+
+				n_msg(VL_DETAILS, "Global params shader: %s -> ID %d\n", ShaderSection->Get<CString>(CStrID("In")).CStr(), ShaderID);
+			}
+
+			if (!TermDEMShaderCompilerDLL()) FAIL;
+
+			//!!!save .rp!
+
+			IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
+			if (!DataSrv->SavePRM(RealExportFilePath, RPDesc)) FAIL;
+		}
+	}
+
+	FilesToPack.InsertSorted(RealExportFilePath);
+
+	//!!!open .rp and parse for shader references!
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath)
 {
 	//???where to define? in a desc (in a shader section)?
@@ -1067,7 +1133,7 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 					Data::PParams ShaderSection = Prm.GetValue<Data::PParams>();
 
 					U32 ShaderID;
-					if (!ProcessShaderResourceDesc(*ShaderSection, CompileDebugShaders, ShaderID))
+					if (!ProcessShaderResourceDesc(*ShaderSection, CompileDebugShaders, false, ShaderID))
 					{
 						TermDEMShaderCompilerDLL();
 						FAIL;
@@ -1090,6 +1156,26 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 	}
 
 	FilesToPack.InsertSorted(RealExportFilePath);
+
+	// If desc was not re-exported, we need to find shader references in a .prm
+	if (ExportDescs)
+	{
+		UIDesc = DataSrv->LoadPRM(RealExportFilePath, false);
+
+		Data::PParams ShadersDesc;
+		if (UIDesc->Get<Data::PParams>(ShadersDesc, CStrID("Shaders")))
+		{
+			for (UPTR i = 0; i < ShadersDesc->GetCount(); ++i)
+			{
+				Data::PParams GfxAPIDesc = ShadersDesc->Get<Data::PParams>(i);
+				for (UPTR j = 0; j < GfxAPIDesc->GetCount(); ++j)
+				{
+					U32 ShaderID = (U32)GfxAPIDesc->Get<int>(j);
+					if (ShaderID) AddShaderToPack(ShaderID);
+				}
+			}
+		}
+	}
 
 	OK;
 }

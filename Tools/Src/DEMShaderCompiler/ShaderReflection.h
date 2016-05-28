@@ -107,19 +107,19 @@ enum ED3D11ConstType
 };
 
 // Don't change values, they are saved to file
-enum ESM40ResourceType
+enum EUSMResourceType
 {
-	SM40Rsrc_Texture1D			= 0,
-	SM40Rsrc_Texture1DArray,
-	SM40Rsrc_Texture2D,
-	SM40Rsrc_Texture2DArray,
-	SM40Rsrc_Texture2DMS,
-	SM40Rsrc_Texture2DMSArray,
-	SM40Rsrc_Texture3D,
-	SM40Rsrc_TextureCUBE,
-	SM40Rsrc_TextureCUBEArray,
+	USMRsrc_Texture1D			= 0,
+	USMRsrc_Texture1DArray,
+	USMRsrc_Texture2D,
+	USMRsrc_Texture2DArray,
+	USMRsrc_Texture2DMS,
+	USMRsrc_Texture2DMSArray,
+	USMRsrc_Texture3D,
+	USMRsrc_TextureCUBE,
+	USMRsrc_TextureCUBEArray,
 
-	SM40Rsrc_Unknown
+	USMRsrc_Unknown
 };
 
 struct CD3D11ShaderBufferMeta
@@ -134,7 +134,7 @@ struct CD3D11ShaderBufferMeta
 
 // Supports SM4.0 and higher
 // Arrays and mixed-type structs supported
-struct CD3D11ShaderConstMeta
+struct CUSMShaderConstMeta
 {
 	CString			Name;
 	U32				BufferIndex;
@@ -143,31 +143,31 @@ struct CD3D11ShaderConstMeta
 	U32				ElementSize;
 	U32				ElementCount;
 
-	bool operator ==(const CD3D11ShaderConstMeta& Other) const { return Type == Other.Type && Offset == Other.Offset && ElementSize == Other.ElementSize && ElementCount == Other.ElementCount; }
-	bool operator !=(const CD3D11ShaderConstMeta& Other) const { return Type != Other.Type || Offset != Other.Offset || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
+	bool operator ==(const CUSMShaderConstMeta& Other) const { return Type == Other.Type && Offset == Other.Offset && ElementSize == Other.ElementSize && ElementCount == Other.ElementCount; }
+	bool operator !=(const CUSMShaderConstMeta& Other) const { return Type != Other.Type || Offset != Other.Offset || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
 };
 
 // Supports SM4.0 and higher
-struct CSM40ShaderRsrcMeta
+struct CUSMShaderRsrcMeta
 {
 	CString				Name;
-	ESM40ResourceType	Type;
+	EUSMResourceType	Type;
 	U32					RegisterStart;
 	U32					RegisterCount;
 
-	bool operator ==(const CSM40ShaderRsrcMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
-	bool operator !=(const CSM40ShaderRsrcMeta& Other) const { return Type != Other.Type && RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
+	bool operator ==(const CUSMShaderRsrcMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CUSMShaderRsrcMeta& Other) const { return Type != Other.Type && RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
 // Supports SM4.0 and higher
-struct CSM40ShaderSamplerMeta
+struct CUSMShaderSamplerMeta
 {
 	CString	Name;
 	U32		RegisterStart;
 	U32		RegisterCount;
 
-	bool operator ==(const CSM40ShaderSamplerMeta& Other) const { return RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
-	bool operator !=(const CSM40ShaderSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
+	bool operator ==(const CUSMShaderSamplerMeta& Other) const { return RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CUSMShaderSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
 struct CD3D11ShaderMeta
@@ -175,9 +175,9 @@ struct CD3D11ShaderMeta
 	U32								MinFeatureLevel;
 	U64								RequiresFlags;
 	CArray<CD3D11ShaderBufferMeta>	Buffers;
-	CArray<CD3D11ShaderConstMeta>	Consts;
-	CArray<CSM40ShaderRsrcMeta>		Resources;
-	CArray<CSM40ShaderSamplerMeta>	Samplers;
+	CArray<CUSMShaderConstMeta>	Consts;
+	CArray<CUSMShaderRsrcMeta>		Resources;
+	CArray<CUSMShaderSamplerMeta>	Samplers;
 };
 
 void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);

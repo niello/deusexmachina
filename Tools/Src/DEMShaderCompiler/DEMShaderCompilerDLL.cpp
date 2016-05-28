@@ -61,7 +61,7 @@ const char*	DLLGetLastOperationMessages()
 //---------------------------------------------------------------------
 
 int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
-				   const char* pDefines, bool Debug, U32& ObjectFileID, U32& InputSignatureFileID)
+				   const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID)
 {
 	if (!pCompileShader)
 	{
@@ -70,7 +70,7 @@ int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, c
 		if (!pCompileShader) return DEM_SHADER_COMPILER_ERROR;
 	}
 
-	return pCompileShader(pSrcPath, ShaderType, Target, pEntryPoint, pDefines, Debug, ObjectFileID, InputSignatureFileID);
+	return pCompileShader(pSrcPath, ShaderType, Target, pEntryPoint, pDefines, Debug, OnlyMetadata, ObjectFileID, InputSignatureFileID);
 }
 //---------------------------------------------------------------------
 

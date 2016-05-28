@@ -5,7 +5,7 @@
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
 #include <Data/StringUtils.h>
-#include <DEMShaderCompilerDLL.h>
+#include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 
 CString			ProjectDir;
 bool			ExportDescs;
@@ -243,24 +243,7 @@ int main(int argc, const char** argv)
 			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 			n_msg(VL_INFO, "Processing render path desc '%s'...\n", FileNoExt.CStr());
 
-			ExportFilePath = "Shaders:" + FileNoExt + ".prm";
-			Data::PParams RPDesc;
-			if (ExportDescs)
-			{
-				RPDesc = DataSrv->LoadHRD("SrcShaders:" + Browser.GetCurrEntryName(), false);
-				DataSrv->SavePRM(ExportFilePath, RPDesc);
-			}
-			else RPDesc = DataSrv->LoadPRM(ExportFilePath, false);
-
-			if (!RPDesc.IsValidPtr())
-			{
-				n_msg(VL_ERROR, "Error loading render path '%s' desc\n", FileNoExt.CStr());
-				continue;
-			}
-
-			FilesToPack.InsertSorted(ExportFilePath);
-
-			if (!ProcessRenderPathDesc(*RPDesc))
+			if (!ProcessRenderPathDesc("SrcShaders:" + Browser.GetCurrEntryName(), "Shaders:" + FileNoExt + ".prm"))
 			{
 				n_msg(VL_ERROR, "Error processing render path '%s'\n", FileNoExt.CStr());
 				continue;

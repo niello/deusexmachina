@@ -51,17 +51,17 @@ public:
 	// Don't change values
 	enum ERsrcType
 	{
-		SM40Rsrc_Texture1D			= 0,
-		SM40Rsrc_Texture1DArray,
-		SM40Rsrc_Texture2D,
-		SM40Rsrc_Texture2DArray,
-		SM40Rsrc_Texture2DMS,
-		SM40Rsrc_Texture2DMSArray,
-		SM40Rsrc_Texture3D,
-		SM40Rsrc_TextureCUBE,
-		SM40Rsrc_TextureCUBEArray,
+		USMRsrc_Texture1D			= 0,
+		USMRsrc_Texture1DArray,
+		USMRsrc_Texture2D,
+		USMRsrc_Texture2DArray,
+		USMRsrc_Texture2DMS,
+		USMRsrc_Texture2DMSArray,
+		USMRsrc_Texture3D,
+		USMRsrc_TextureCUBE,
+		USMRsrc_TextureCUBEArray,
 
-		SM40Rsrc_Unknown
+		USMRsrc_Unknown
 	};
 
 	struct CBufferMeta

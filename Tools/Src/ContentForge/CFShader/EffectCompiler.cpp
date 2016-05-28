@@ -13,7 +13,7 @@
 #include <Util/UtilFwd.h> // CRC
 #include <ToolRenderStateDesc.h>	// Shader references replaced with IDs
 #include <Render/SamplerDesc.h>
-#include <DEMShaderCompilerDLL.h>
+#include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 #include <ConsoleApp.h>
 
 #undef CreateDirectory
@@ -28,29 +28,27 @@ extern CString RootPath;
 //can store debug and release binary packages and read from what user wants
 //!!!can pack shaders to a bank here or in BBuilder!
 
-enum EEffectParamType
+enum EEffectParamClass
 {
-	EPT_SM30Const = 0,
-	EPT_SM30Resource,
-	EPT_SM30Sampler,
-	EPT_SM40Const,
-	EPT_SM40Resource,
-	EPT_SM40Sampler
+	EPC_SM30Const = 0,
+	EPC_SM30Resource,
+	EPC_SM30Sampler,
+	EPC_USMConst,
+	EPC_USMResource,
+	EPC_USMSampler
 };
 
-enum EEffectParamTypeForSaving
+enum EEffectParamClassForSaving
 {
-	EPT_Const		= 0,
-	EPT_Resource	= 1,
-	EPT_Sampler		= 2,
-
-	EPT_Invalid
+	EPC_Const		= 0,
+	EPC_Resource	= 1,
+	EPC_Sampler		= 2
 };
 
 struct CEffectParam
 {
 	CStrID				ID;
-	EEffectParamType	Type;
+	EEffectParamClass	Class;
 	Render::EShaderType	ShaderType;
 	U32					SourceShaderID;
 	ED3D11ConstType		ConstType;		// For consts, use D3D11 for now because it covers all needs of each supported API
@@ -60,24 +58,24 @@ struct CEffectParam
 		CSM30ShaderConstMeta*	pSM30Const;
 		CSM30ShaderRsrcMeta*	pSM30Resource;
 		CSM30ShaderSamplerMeta*	pSM30Sampler;
-		CD3D11ShaderConstMeta*	pSM40Const;
-		CSM40ShaderRsrcMeta*	pSM40Resource;
-		CSM40ShaderSamplerMeta*	pSM40Sampler;
+		CUSMShaderConstMeta*	pUSMConst;
+		CUSMShaderRsrcMeta*		pUSMResource;
+		CUSMShaderSamplerMeta*	pUSMSampler;
 	};
-	CD3D11ShaderBufferMeta*		pSM40Buffer;	// SM4.0 constants must be in identical buffer, so store for comparison
+	CD3D11ShaderBufferMeta*		pUSMBuffer;	// SM4.0 constants must be in identical buffer, so store for comparison
 
 	bool operator ==(const CEffectParam& Other) const
 	{
-		if (Type != Other.Type) FAIL;
+		if (Class != Other.Class) FAIL;
 		if (ShaderType != Other.ShaderType) FAIL;
-		switch (Type)
+		switch (Class)
 		{
-			case EPT_SM30Const:		return *pSM30Const == *Other.pSM30Const;
-			case EPT_SM30Resource:	return *pSM30Resource == *Other.pSM30Resource;
-			case EPT_SM30Sampler:	return *pSM30Sampler == *Other.pSM30Sampler;
-			case EPT_SM40Const:		return (*pSM40Const == *Other.pSM40Const) && (*pSM40Buffer == *Other.pSM40Buffer);
-			case EPT_SM40Resource:	return *pSM40Resource == *Other.pSM40Resource;
-			case EPT_SM40Sampler:	return *pSM40Sampler == *Other.pSM40Sampler;
+			case EPC_SM30Const:		return *pSM30Const == *Other.pSM30Const;
+			case EPC_SM30Resource:	return *pSM30Resource == *Other.pSM30Resource;
+			case EPC_SM30Sampler:	return *pSM30Sampler == *Other.pSM30Sampler;
+			case EPC_USMConst:		return (*pUSMConst == *Other.pUSMConst) && (*pUSMBuffer == *Other.pUSMBuffer);
+			case EPC_USMResource:	return *pUSMResource == *Other.pUSMResource;
+			case EPC_USMSampler:	return *pUSMSampler == *Other.pUSMSampler;
 		}
 		FAIL;
 	}
@@ -87,21 +85,21 @@ struct CEffectParam
 
 struct CTechInfo
 {
-	CStrID						ID;
-	CStrID						InputSet;
-	UPTR						MaxLights;
-	U32							Target;
-	U32							MinFeatureLevel;
-	U64							RequiresFlags;
-	CArray<CStrID>				Passes;
-	CFixedArray<UPTR>			PassIndices;
-	CFixedArray<bool>			VariationValid;
-	CDict<CStrID, CEffectParam>	Params;
+	CStrID					ID;
+	CStrID					InputSet;
+	UPTR					MaxLights;
+	U32						Target;
+	U32						MinFeatureLevel;
+	U64						RequiresFlags;
+	CArray<CStrID>			Passes;
+	CFixedArray<UPTR>		PassIndices;
+	CFixedArray<bool>		VariationValid;
+	CArray<CEffectParam>	Params;
 
-	// SM3.0 buffer redefinition
-	CArray<UPTR>				UsedFloat4;
-	CArray<UPTR>				UsedInt4;
-	CArray<UPTR>				UsedBool;
+	// For SM3.0 register usage check
+	CArray<UPTR>			UsedFloat4;
+	CArray<UPTR>			UsedInt4;
+	CArray<UPTR>			UsedBool;
 };
 
 struct CRenderStateRef
@@ -135,28 +133,6 @@ struct CRenderStateRef
 
 	bool				operator ==(const CRenderStateRef& Other) { return ID == Other.ID; }
 };
-
-EEffectParamTypeForSaving GetParamTypeForSaving(EEffectParamType Type)
-{
-	EEffectParamTypeForSaving TypeForSaving;
-	switch (Type)
-	{
-		case EPT_SM30Const:
-		case EPT_SM40Const:		TypeForSaving = EPT_Const; break;
-		case EPT_SM30Resource:
-		case EPT_SM40Resource:	TypeForSaving = EPT_Resource; break;
-		case EPT_SM30Sampler:
-		case EPT_SM40Sampler:	TypeForSaving = EPT_Sampler; break;
-		default:
-		{
-			n_msg(VL_ERROR, "Unknown tech param type %d\n", (U32)Type);
-			return EPT_Invalid;
-		}
-	};
-
-	return TypeForSaving;
-}
-//---------------------------------------------------------------------
 
 bool LoadShaderMetadataByObjID(U32 ID,
 							   CDict<U32, CSM30ShaderMeta>& D3D9MetaCache, CDict<U32, CD3D11ShaderMeta>& D3D11MetaCache,
@@ -351,7 +327,7 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 		VariationDefines += StringUtils::FromInt(LightCount);
 
 		U32 ObjID, SigID;
-		int Result = DLLCompileShader(FullSrcPath.CStr(), (EShaderType)ShaderType, (U32)Target, EntryPoint.CStr(), VariationDefines.CStr(), Debug, ObjID, SigID);
+		int Result = DLLCompileShader(FullSrcPath.CStr(), (EShaderType)ShaderType, (U32)Target, EntryPoint.CStr(), VariationDefines.CStr(), Debug, false, ObjID, SigID);
 
 		CString ShortSrcPath(FullSrcPath);
 		ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
@@ -821,6 +797,44 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 }
 //---------------------------------------------------------------------
 
+int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
+{
+	if (!W.Write<U32>(Params.GetCount())) return ERR_IO_WRITE;
+	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
+	{
+		CEffectParam& Param = Params[ParamIdx];
+
+		EEffectParamClassForSaving Class;
+		switch (Param.Class)
+		{
+			case EPC_SM30Const:
+			case EPC_USMConst:		Class = EPC_Const; break;
+			case EPC_SM30Resource:
+			case EPC_USMResource:	Class = EPC_Resource; break;
+			case EPC_SM30Sampler:
+			case EPC_USMSampler:	Class = EPC_Sampler; break;
+			default:
+			{
+				n_msg(VL_ERROR, "Unknown tech param class %d\n", (U32)Class);
+				return ERR_INVALID_DATA;
+			}
+		};
+
+		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Class)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+		if (Class == EPC_Const)
+		{
+			if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
+			if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+		}
+	}
+
+	return SUCCESS;
+}
+//---------------------------------------------------------------------
+
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30)
 {
 	// Read effect source file
@@ -1137,12 +1151,14 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							CSM30ShaderConstMeta& MetaObj = pD3D9Meta->Consts[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
-							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
-							if (Idx == INVALID_INDEX)
+							UPTR Idx = 0;
+							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+							if (Idx == TechInfo.Params.GetCount())
 							{
-								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								CEffectParam& Param = *TechInfo.Params.Reserve(1);
 								Param.ID = MetaObjID;
-								Param.Type = EPT_SM30Const;
+								Param.Class = EPC_SM30Const;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
 								Param.pSM30Const = &MetaObj;
@@ -1171,8 +1187,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 							else
 							{
-								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
-								if (Param.Type != EPT_SM30Const || !Param.pSM30Const)
+								const CEffectParam& Param = TechInfo.Params[Idx];
+								if (Param.Class != EPC_SM30Const || !Param.pSM30Const)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
@@ -1192,12 +1208,14 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							CSM30ShaderRsrcMeta& MetaObj = pD3D9Meta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
-							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
-							if (Idx == INVALID_INDEX)
+							UPTR Idx = 0;
+							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+							if (Idx == TechInfo.Params.GetCount())
 							{
-								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								CEffectParam& Param = *TechInfo.Params.Reserve(1);
 								Param.ID = MetaObjID;
-								Param.Type = EPT_SM30Resource;
+								Param.Class = EPC_SM30Resource;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
 								Param.pSM30Resource = &MetaObj;
@@ -1205,8 +1223,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 							else
 							{
-								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
-								if (Param.Type != EPT_SM30Resource || !Param.pSM30Resource)
+								const CEffectParam& Param = TechInfo.Params[Idx];
+								if (Param.Class != EPC_SM30Resource || !Param.pSM30Resource)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
@@ -1226,12 +1244,14 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							CSM30ShaderSamplerMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
-							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
-							if (Idx == INVALID_INDEX)
+							UPTR Idx = 0;
+							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+							if (Idx == TechInfo.Params.GetCount())
 							{
-								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								CEffectParam& Param = *TechInfo.Params.Reserve(1);
 								Param.ID = MetaObjID;
-								Param.Type = EPT_SM30Sampler;
+								Param.Class = EPC_SM30Sampler;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
 								Param.pSM30Sampler = &MetaObj;
@@ -1239,8 +1259,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 							else
 							{
-								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
-								if (Param.Type != EPT_SM30Sampler || !Param.pSM30Sampler)
+								const CEffectParam& Param = TechInfo.Params[Idx];
+								if (Param.Class != EPC_SM30Sampler || !Param.pSM30Sampler)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
@@ -1259,41 +1279,43 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					{
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Consts.GetCount(); ++ParamIdx)
 						{
-							CD3D11ShaderConstMeta& MetaObj = pD3D11Meta->Consts[ParamIdx];
+							CUSMShaderConstMeta& MetaObj = pD3D11Meta->Consts[ParamIdx];
 							CD3D11ShaderBufferMeta& MetaBuf = pD3D11Meta->Buffers[MetaObj.BufferIndex];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
-							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
-							if (Idx == INVALID_INDEX)
+							UPTR Idx = 0;
+							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+							if (Idx == TechInfo.Params.GetCount())
 							{
-								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								CEffectParam& Param = *TechInfo.Params.Reserve(1);
 								Param.ID = MetaObjID;
-								Param.Type = EPT_SM40Const;
+								Param.Class = EPC_USMConst;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
-								Param.pSM40Const = &MetaObj;
-								Param.pSM40Buffer = &MetaBuf;
+								Param.pUSMConst = &MetaObj;
+								Param.pUSMBuffer = &MetaBuf;
 								Param.ConstType = MetaObj.Type;
 								Param.SizeInBytes = MetaObj.ElementSize * MetaObj.ElementCount;
 								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 							}
 							else
 							{
-								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
-								if (Param.Type != EPT_SM40Const || !Param.pSM40Const)
+								const CEffectParam& Param = TechInfo.Params[Idx];
+								if (Param.Class != EPC_USMConst || !Param.pUSMConst)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
 								}
 							
-								CD3D11ShaderConstMeta& RefMetaObj = *Param.pSM40Const;
+								CUSMShaderConstMeta& RefMetaObj = *Param.pUSMConst;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
 								}
 
-								CD3D11ShaderBufferMeta& RefMetaBuf = *Param.pSM40Buffer;
+								CD3D11ShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
 								if (MetaBuf != RefMetaBuf)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1304,30 +1326,32 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Resources.GetCount(); ++ParamIdx)
 						{
-							CSM40ShaderRsrcMeta& MetaObj = pD3D11Meta->Resources[ParamIdx];
+							CUSMShaderRsrcMeta& MetaObj = pD3D11Meta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
-							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
-							if (Idx == INVALID_INDEX)
+							UPTR Idx = 0;
+							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+							if (Idx == TechInfo.Params.GetCount())
 							{
-								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								CEffectParam& Param = *TechInfo.Params.Reserve(1);
 								Param.ID = MetaObjID;
-								Param.Type = EPT_SM40Resource;
+								Param.Class = EPC_USMResource;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
-								Param.pSM40Resource = &MetaObj;
+								Param.pUSMResource = &MetaObj;
 								n_msg(VL_DEBUG, "Tech '%s': param '%s' (resource) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 							}
 							else
 							{
-								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
-								if (Param.Type != EPT_SM40Resource || !Param.pSM40Resource)
+								const CEffectParam& Param = TechInfo.Params[Idx];
+								if (Param.Class != EPC_USMResource || !Param.pUSMResource)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
 								}
 							
-								CSM40ShaderRsrcMeta& RefMetaObj = *Param.pSM40Resource;
+								CUSMShaderRsrcMeta& RefMetaObj = *Param.pUSMResource;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1338,30 +1362,32 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						
 						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CSM40ShaderSamplerMeta& MetaObj = pD3D11Meta->Samplers[ParamIdx];
+							CUSMShaderSamplerMeta& MetaObj = pD3D11Meta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
-							IPTR Idx = TechInfo.Params.FindIndex(MetaObjID);
-							if (Idx == INVALID_INDEX)
+							UPTR Idx = 0;
+							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+							if (Idx == TechInfo.Params.GetCount())
 							{
-								CEffectParam& Param = TechInfo.Params.Add(MetaObjID);
+								CEffectParam& Param = *TechInfo.Params.Reserve(1);
 								Param.ID = MetaObjID;
-								Param.Type = EPT_SM40Sampler;
+								Param.Class = EPC_USMSampler;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
-								Param.pSM40Sampler = &MetaObj;
+								Param.pUSMSampler = &MetaObj;
 								n_msg(VL_DEBUG, "Tech '%s': param '%s' (sampler) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 							}
 							else
 							{
-								const CEffectParam& Param = TechInfo.Params.ValueAt(Idx);
-								if (Param.Type != EPT_SM40Sampler || !Param.pSM40Sampler)
+								const CEffectParam& Param = TechInfo.Params[Idx];
+								if (Param.Class != EPC_USMSampler || !Param.pUSMSampler)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
 								}
 							
-								CSM40ShaderSamplerMeta& RefMetaObj = *Param.pSM40Sampler;
+								CUSMShaderSamplerMeta& RefMetaObj = *Param.pUSMSampler;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1410,19 +1436,21 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			{
 				CTechInfo& TechInfo = UsedTechs[TechIdx];
 
-				IPTR Idx = TechInfo.Params.FindIndex(ParamID);
-				if (Idx == INVALID_INDEX) continue;
+				UPTR Idx = 0;
+				for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+					if (TechInfo.Params[Idx].ID == ParamID) break;
+				if (Idx == TechInfo.Params.GetCount()) continue;
 
-				CEffectParam& TechParam = TechInfo.Params.ValueAt(Idx);
+				CEffectParam& TechParam = TechInfo.Params[Idx];
 
 				if (GlobalParamIdx == INVALID_INDEX)
 				{
 					GlobalParamIdx = GlobalParams.IndexOf(GlobalParams.Add(TechParam));
 					n_msg(VL_DEBUG, "Global param '%s' added\n", ParamID.CStr());
 
-					if (TechParam.Type == EPT_SM40Const)
+					if (TechParam.Class == EPC_USMConst)
 					{
-						U32 BufferRegister = TechParam.pSM40Buffer->Register;
+						U32 BufferRegister = TechParam.pUSMBuffer->Register;
 						if (MaterialRegisters.Contains(BufferRegister))
 						{
 							n_msg(VL_ERROR, "Global param '%s' is placed in a buffer with material params\n", ParamID.CStr());
@@ -1430,7 +1458,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						}
 						if (!GlobalRegisters.Contains(BufferRegister)) GlobalRegisters.Add(BufferRegister);
 					}
-					else if (TechParam.Type == EPT_SM30Const)
+					else if (TechParam.Class == EPC_SM30Const)
 					{
 						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
 						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
@@ -1476,19 +1504,21 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			{
 				CTechInfo& TechInfo = UsedTechs[TechIdx];
 
-				IPTR Idx = TechInfo.Params.FindIndex(ParamID);
-				if (Idx == INVALID_INDEX) continue;
+				UPTR Idx = 0;
+				for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
+					if (TechInfo.Params[Idx].ID == ParamID) break;
+				if (Idx == TechInfo.Params.GetCount()) continue;
 
-				CEffectParam& TechParam = TechInfo.Params.ValueAt(Idx);
+				CEffectParam& TechParam = TechInfo.Params[Idx];
 
 				if (MaterialParamIdx == INVALID_INDEX)
 				{
 					MaterialParamIdx = MaterialParams.IndexOf(MaterialParams.Add(TechParam));
 					n_msg(VL_DEBUG, "Material param '%s' added\n", ParamID.CStr());
 
-					if (TechParam.Type == EPT_SM40Const)
+					if (TechParam.Class == EPC_USMConst)
 					{
-						U32 BufferRegister = TechParam.pSM40Buffer->Register;
+						U32 BufferRegister = TechParam.pUSMBuffer->Register;
 						if (GlobalRegisters.Contains(BufferRegister))
 						{
 							n_msg(VL_ERROR, "Material param '%s' is placed in a buffer with global params\n", ParamID.CStr());
@@ -1496,7 +1526,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						}
 						if (!MaterialRegisters.Contains(BufferRegister)) MaterialRegisters.Add(BufferRegister);
 					}
-					else if (TechParam.Type == EPT_SM30Const)
+					else if (TechParam.Class == EPC_SM30Const)
 					{
 						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
 						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
@@ -1536,8 +1566,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 		CTechInfo& TechInfo = UsedTechs[TechIdx];
 		for (UPTR ParamIdx = 0; ParamIdx < TechInfo.Params.GetCount();)
 		{
-			CStrID ParamID = TechInfo.Params.KeyAt(ParamIdx);
-			CEffectParam& TechParam = TechInfo.Params.ValueAt(ParamIdx);
+			CEffectParam& TechParam = TechInfo.Params[ParamIdx];
+			CStrID ParamID = TechParam.ID;
 
 			if ((GlobalParamsDesc.IsValidPtr() && GlobalParamsDesc->Has(ParamID)) ||
 				(MaterialParamsDesc.IsValidPtr() && MaterialParamsDesc->Has(ParamID)))
@@ -1548,9 +1578,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 			n_msg(VL_DEBUG, "Per-object param '%s' added\n", ParamID.CStr());
 
-			if (TechParam.Type == EPT_SM40Const)
+			if (TechParam.Class == EPC_USMConst)
 			{
-				U32 BufferRegister = TechParam.pSM40Buffer->Register;
+				U32 BufferRegister = TechParam.pUSMBuffer->Register;
 				if (GlobalRegisters.Contains(BufferRegister))
 				{
 					n_msg(VL_ERROR, "Tech param '%s' is placed in a buffer with global params\n", ParamID.CStr());
@@ -1562,7 +1592,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					return ERR_INVALID_DATA;
 				}
 			}
-			else if (TechParam.Type == EPT_SM30Const)
+			else if (TechParam.Class == EPC_SM30Const)
 			{
 				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
 				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
@@ -1604,16 +1634,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	// Save render states, each with all light count variations
 
 	if (!W.Write<U32>(UsedRenderStates.GetCount())) return ERR_IO_WRITE;
-
 	for (UPTR i = 0; i < UsedRenderStates.GetCount(); ++i)
 	{
 		CRenderStateRef& RSRef = UsedRenderStates.ValueAt(i);
 		Render::CToolRenderStateDesc& Desc = RSRef.Desc;
 		UPTR LightVariationCount = RSRef.MaxLights + 1;
-
-		// Not necessary, passes are referenced by index
-		//CStrID ID = UsedRenderStates.KeyAt(i);
-		//if (!W.Write(ID)) return ERR_IO_WRITE;
 
 		if (!W.Write<U32>(RSRef.MaxLights)) return ERR_IO_WRITE;
 		if (!W.Write<U32>(Desc.Flags.GetMask())) return ERR_IO_WRITE;
@@ -1673,7 +1698,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 				if (!W.Write<U32>(RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount])) return ERR_IO_WRITE;
 	};
 
-	// Save techniques
+	// Sort techniques
 
 	// In each InputSet sort from the richest to the lightest tech. When loading an effect,
 	// application will choose the first suitable tech and then can skip remaining ones.
@@ -1696,8 +1721,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	};
 	UsedTechs.Sort<CSortTechsByInputSetAndFeatures>();
 
-	if (!W.Write<U32>(UsedTechs.GetCount())) return ERR_IO_WRITE;
+	// Save techniques
 
+	if (!W.Write<U32>(UsedTechs.GetCount())) return ERR_IO_WRITE;
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
 		CTechInfo& TechInfo = UsedTechs[TechIdx];
@@ -1718,85 +1744,19 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 			if (!W.Write<U8>(TechInfo.VariationValid[LightCount] ? 1 : 0)) return ERR_IO_WRITE;
 
-		// Params are saved already sorted by ID due to CDictionary nature
-		if (!W.Write<U32>(TechInfo.Params.GetCount())) return ERR_IO_WRITE;
-		for (UPTR ParamIdx = 0; ParamIdx < TechInfo.Params.GetCount(); ++ParamIdx)
-		{
-			CStrID ParamID = TechInfo.Params.KeyAt(ParamIdx);
-			CEffectParam& TechParam = TechInfo.Params.ValueAt(ParamIdx);
-
-			EEffectParamTypeForSaving Type = GetParamTypeForSaving(TechParam.Type);
-			if (Type == EPT_Invalid) return ERR_INVALID_DATA;
-
-			if (!W.Write(ParamID)) return ERR_IO_WRITE;
-			if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
-			if (!W.Write<U8>(TechParam.ShaderType)) return ERR_IO_WRITE;
-			if (!W.Write<U32>(TechParam.SourceShaderID)) return ERR_IO_WRITE;
-			if (Type == EPT_Const)
-			{
-				if (!W.Write<U8>(TechParam.ConstType)) return ERR_IO_WRITE;
-				if (!W.Write<U32>(TechParam.SizeInBytes)) return ERR_IO_WRITE;
-			}
-		}
-
-		//if (TechInfo.Target < 0x0400)
-		//{
-		//	WriteRegisterRanges(TechInfo.UsedFloat4, W, "float4");
-		//	WriteRegisterRanges(TechInfo.UsedInt4, W, "int4");
-		//	WriteRegisterRanges(TechInfo.UsedBool, W, "bool");
-		//}
+		int SaveResult = SaveEffectParams(W, TechInfo.Params);
+		if (SaveResult != SUCCESS) return SaveResult;
 	}
 
 	// Save global params table
 
-	if (!W.Write<U32>(GlobalParams.GetCount())) return ERR_IO_WRITE;
-	for (UPTR ParamIdx = 0; ParamIdx < GlobalParams.GetCount(); ++ParamIdx)
-	{
-		CEffectParam& Param = GlobalParams[ParamIdx];
-
-		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
-		if (Type == EPT_Invalid) return ERR_INVALID_DATA;
-
-		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-		if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
-		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
-		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
-		if (Type == EPT_Const)
-		{
-			if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
-			if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
-		}
-	}
-
-	//???save SM3.0 global CB info? or only some minimal signature here and all actual data in reference global shader in RP?
-	//WriteRegisterRanges(GlobalFloat4, W, "float4");
-	//WriteRegisterRanges(GlobalInt4, W, "int4");
-	//WriteRegisterRanges(GlobalBool, W, "bool");
+	int SaveResult = SaveEffectParams(W, GlobalParams);
+	if (SaveResult != SUCCESS) return SaveResult;
 
 	// Save material params table
 
-	if (!W.Write<U32>(MaterialParams.GetCount())) return ERR_IO_WRITE;
-	for (UPTR ParamIdx = 0; ParamIdx < MaterialParams.GetCount(); ++ParamIdx)
-	{
-		CEffectParam& Param = MaterialParams[ParamIdx];
-
-		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
-		if (Type == EPT_Invalid) return ERR_INVALID_DATA;
-
-		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-		if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
-		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
-		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
-		if (Type == EPT_Const)
-		{
-			if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
-			if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
-		}
-	}
-
-	//WriteRegisterRanges(MaterialFloat4, W, "float4");
-	//WriteRegisterRanges(MaterialInt4, W, "int4");
-	//WriteRegisterRanges(MaterialBool, W, "bool");
+	SaveResult = SaveEffectParams(W, MaterialParams);
+	if (SaveResult != SUCCESS) return SaveResult;
 
 	// Save material param default values: param ID, class, value or offset in a value buffer
 
@@ -1813,8 +1773,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
 		if (DefaultValue.IsNull()) continue;
 
-		EEffectParamTypeForSaving Type = GetParamTypeForSaving(Param.Type);
-		if (Type == EPT_Const)
+		if (Param.Class == EPC_SM30Const || Param.Class == EPC_USMConst)
 		{
 			// Use D3D11 enum as it suits all APIs now
 			ED3D11ConstType ConstType = D3D11Const_Invalid;
@@ -1822,7 +1781,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			U32 ValueSizeInBytes = 0;
 			U32 CurrDefValOffset = (U32)DefaultConstValues->GetPosition();
 			
-			if (Param.Type == EPT_SM30Const)
+			if (Param.Class == EPC_SM30Const)
 			{
 				CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
 				switch (Meta.RegisterSet)
@@ -1844,7 +1803,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					}
 				}
 			}
-			else if (Param.Type == EPT_SM40Const) ConstType = Param.pSM40Const->Type;
+			else if (Param.Class == EPC_USMConst) ConstType = Param.pUSMConst->Type;
 
 			switch (ConstType)
 			{
@@ -1928,12 +1887,12 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			if (ConstSizeInBytes > ValueSizeInBytes) DefaultConstValues->Fill(0, ConstSizeInBytes - ValueSizeInBytes);
 			
 			if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-			if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(EPC_Const)) return ERR_IO_WRITE;
 			if (!W.Write<U32>(CurrDefValOffset)) return ERR_IO_WRITE;
 			++DefValCount;
 			n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 		}
-		else if (Type == EPT_Resource)
+		else if (Param.Class == EPC_SM30Resource || Param.Class == EPC_USMResource)
 		{
 			CString ResourceID;
 			if (DefaultValue.IsA<CStrID>()) ResourceID = CString(DefaultValue.GetValue<CStrID>().CStr());
@@ -1947,13 +1906,13 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			if (ResourceID.IsValid())
 			{
 				if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(EPC_Resource)) return ERR_IO_WRITE;
 				if (!W.Write(ResourceID)) return ERR_IO_WRITE;
 				++DefValCount;
 				n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 			}
 		}
-		else if (Type == EPT_Sampler)
+		else if (Param.Class == EPC_SM30Sampler || Param.Class == EPC_USMSampler)
 		{
 			if (DefaultValue.IsA<Data::PParams>())
 			{
@@ -1965,7 +1924,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					if (ProcessSamplerSection(SamplerSection, SamplerDesc))
 					{
 						if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-						if (!W.Write<U8>(Type)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(EPC_Sampler)) return ERR_IO_WRITE;
 						
 						if (!W.Write<U8>(SamplerDesc.AddressU)) return ERR_IO_WRITE;
 						if (!W.Write<U8>(SamplerDesc.AddressV)) return ERR_IO_WRITE;

@@ -3,7 +3,7 @@
 #include <IO/IOServer.h>
 #include <IO/PathUtils.h>
 #include <Data/DataServer.h>
-#include <DEMShaderCompilerDLL.h>
+#include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 
 //???get ID & dest from desc or from here? use some parameter in desc pathes?
 bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileName)
@@ -85,15 +85,7 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 }
 //---------------------------------------------------------------------
 
-bool ProcessRenderPathDesc(const Data::CParams& Desc)
-{
-	// Nothing to export from current render path descs
-	// because they referece no other resources.
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutShaderID)
+bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, bool OnlyMetadata, U32& OutShaderID)
 {
 	CString SrcPath;
 	Desc.Get(SrcPath, CStrID("In"));
@@ -125,7 +117,7 @@ bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, U32& OutSh
 	SrcPath = PathUtils::GetAbsolutePath(WorkingDir, IOSrv->ResolveAssigns(SrcPath));
 
 	U32 ObjID, SigID;
-	int Result = DLLCompileShader(SrcPath.CStr(), ShaderType, (U32)Target, EntryPoint.CStr(), Defines.CStr(), Debug, ObjID, SigID);
+	int Result = DLLCompileShader(SrcPath.CStr(), ShaderType, (U32)Target, EntryPoint.CStr(), Defines.CStr(), Debug, OnlyMetadata, ObjID, SigID);
 
 	if (Result == DEM_SHADER_COMPILER_SUCCESS)
 	{
