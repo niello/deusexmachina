@@ -13,6 +13,10 @@ namespace IO
 	class CBinaryWriter;
 };
 
+///////////////////////////////////////////////////////////////////////
+// Legacy Shader Model 3.0 (SM3.0)
+///////////////////////////////////////////////////////////////////////
+
 // Don't change values, they are saved to file
 enum ESM30SamplerType
 {
@@ -85,6 +89,10 @@ struct CSM30ShaderMeta
 	CArray<CSM30ShaderSamplerMeta>	Samplers;
 };
 
+///////////////////////////////////////////////////////////////////////
+// Universal Shader Model (SM4.0 and higher)
+///////////////////////////////////////////////////////////////////////
+
 // Don't change values, they are saved to file
 enum EUSMBufferTypeMask
 {
@@ -132,7 +140,6 @@ struct CUSMShaderBufferMeta
 	bool operator !=(const CUSMShaderBufferMeta& Other) const { return Register != Other.Register || Size != Other.Size; }
 };
 
-// Supports SM4.0 and higher
 // Arrays and mixed-type structs supported
 struct CUSMShaderConstMeta
 {
@@ -147,7 +154,6 @@ struct CUSMShaderConstMeta
 	bool operator !=(const CUSMShaderConstMeta& Other) const { return Type != Other.Type || Offset != Other.Offset || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
 };
 
-// Supports SM4.0 and higher
 struct CUSMShaderRsrcMeta
 {
 	CString				Name;
@@ -159,7 +165,6 @@ struct CUSMShaderRsrcMeta
 	bool operator !=(const CUSMShaderRsrcMeta& Other) const { return Type != Other.Type && RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
-// Supports SM4.0 and higher
 struct CUSMShaderSamplerMeta
 {
 	CString	Name;
@@ -175,7 +180,7 @@ struct CUSMShaderMeta
 	U32								MinFeatureLevel;
 	U64								RequiresFlags;
 	CArray<CUSMShaderBufferMeta>	Buffers;
-	CArray<CUSMShaderConstMeta>	Consts;
+	CArray<CUSMShaderConstMeta>		Consts;
 	CArray<CUSMShaderRsrcMeta>		Resources;
 	CArray<CUSMShaderSamplerMeta>	Samplers;
 };

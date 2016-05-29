@@ -844,9 +844,283 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 }
 //---------------------------------------------------------------------
 
+bool EFFSeekToGlobalParams(IO::CStream& Stream)
+{
+	if (!Stream.IsOpen()) FAIL;
+
+	IO::CBinaryReader R(Stream);
+
+	U32 U32Value;
+	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
+	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+
+	U32 Count;
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		// Excerpt from a Render::CRenderStateDesc
+		enum
+		{
+			DS_DepthEnable				= 0x00000100,
+			DS_StencilEnable			= 0x00000400,
+			Blend_Independent			= 0x00010000,	// If not, only RTBlend[0] is used
+			Blend_RTBlendEnable			= 0x00020000	// Use (Blend_RTBlendEnable << Index), Index = [0 .. 7]
+			// flags from				  0x00020000
+			//       to					  0x01000000
+			// inclusive are reserved for Blend_RTBlendEnable, 8 bits total
+		};
+
+		U32 MaxLights;
+		if (!R.Read(MaxLights)) FAIL;
+		U32 Flags;
+		if (!R.Read(Flags)) FAIL;
+
+		U32 SizeToSkip = 34 + 20 * (MaxLights + 1);
+		if (Flags & DS_DepthEnable) SizeToSkip += 1;
+		if (Flags & DS_StencilEnable) SizeToSkip += 14;
+
+		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+		{
+			if (BlendIdx > 0 && !(Flags & Blend_Independent)) break;
+			if (!(Flags & (Blend_RTBlendEnable << BlendIdx))) continue;
+			SizeToSkip += 7;
+		}
+		
+		if (!Stream.Seek(SizeToSkip, IO::Seek_Current)) FAIL;
+	}
+	
+	if (!R.Read(Count)) FAIL;
+	for (U32 i = 0; i < Count; ++i)
+	{
+		CString StrValue;
+		if (!R.Read(StrValue)) FAIL;
+		if (!R.Read(StrValue)) FAIL;
+		if (!Stream.Seek(16, IO::Seek_Current)) FAIL;
+		
+		U32 PassCount;
+		if (!R.Read(PassCount)) FAIL;
+		if (!Stream.Seek(4 * PassCount, IO::Seek_Current)) FAIL;
+		
+		U32 MaxLights;
+		if (!R.Read(MaxLights)) FAIL;
+		if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) FAIL;
+
+		U32 ParamCount;
+		if (!R.Read(ParamCount)) FAIL;
+		for (U32 ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+		{
+			U8 Type;
+			if (!R.Read(StrValue)) FAIL;
+			if (!R.Read(Type)) FAIL;	
+			if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 {
-	//...
+	// Read render path source file
+
+	Data::CBuffer Buffer;
+	if (!IOSrv->LoadFileToBuffer(pInFilePath, Buffer)) return ERR_IO_READ;
+
+	Data::PParams Params;
+	{
+		Data::CHRDParser Parser;
+		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Params)) return ERR_IO_READ;
+	}
+
+	// Process phases
+
+	Data::PParams Phases;
+	if (!Params->Get(Phases, CStrID("EffectsWithGlobals"))) return ERR_INVALID_DATA;
+	for (UPTR i = 0; i < Phases->GetCount(); ++i)
+	{
+		//!!!replace class names with FourCC where possible!
+	}
+
+	// Build globals table and accompanying metadata
+
+	CArray<CEffectParam> GlobalParams;
+
+	Data::PDataArray EffectsWithGlobals;
+	if (!Params->Get(EffectsWithGlobals, CStrID("EffectsWithGlobals"))) return ERR_INVALID_DATA;
+
+	CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
+	CDict<U32, CUSMShaderMeta> USMMetaCache;
+
+	U32 Target = 0;
+
+	// All referenced effects must be already exported
+	//???or compile them here?
+	for (UPTR i = 0; i < EffectsWithGlobals->GetCount(); ++i)
+	{
+		IO::PStream EFF = IOSrv->CreateStream(EffectsWithGlobals->Get<CString>(i));
+		if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return ERR_IO_READ;
+		if (!EFFSeekToGlobalParams(*EFF.GetUnsafe())) return ERR_INVALID_DATA;
+
+		IO::CBinaryReader R(*EFF.GetUnsafe());
+
+		U32 GlobalCount;
+		if (!R.Read(GlobalCount)) FAIL;
+		for (U32 i = 0; i < GlobalCount; ++i)
+		{
+			CEffectParam Param;
+			if (!R.Read(Param.ID)) FAIL;
+
+			U8 Class;
+			if (!R.Read(Class)) FAIL;
+
+			U8 ShaderType;
+			if (!R.Read(ShaderType)) FAIL;
+			Param.ShaderType = (Render::EShaderType)ShaderType;
+
+			if (!R.Read(Param.SourceShaderID)) FAIL;	
+
+			if (Class == EPC_Const)
+			{
+				U8 ConstType;
+				if (!R.Read<U8>(ConstType)) return ERR_IO_WRITE;
+				Param.ConstType = (EUSMConstType)ConstType;
+				if (!R.Read<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+			}
+
+			CSM30ShaderMeta* pD3D9Meta = NULL;
+			CUSMShaderMeta* pUSMMeta = NULL;
+			if (!LoadShaderMetadataByObjID(Param.SourceShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta) || (!pD3D9Meta && !pUSMMeta))
+			{
+				n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", Param.SourceShaderID);
+				FAIL;
+			}
+
+			U32 CurrTarget = 0;
+
+			if (pD3D9Meta)
+			{
+				CurrTarget = 0x0300;
+
+				switch (Class)
+				{
+					case EPC_Const:
+					{
+						UPTR Idx = 0;
+						for (; Idx < pD3D9Meta->Consts.GetCount(); ++ Idx)
+							if (pD3D9Meta->Consts[Idx].Name == Param.ID.CStr()) break;
+						if (Idx == pD3D9Meta->Consts.GetCount()) return ERR_INVALID_DATA;
+						Param.Class = EPC_SM30Const;
+						Param.pSM30Const = &pD3D9Meta->Consts[Idx];
+						break;
+					}
+					case EPC_Resource:
+					{
+						UPTR Idx = 0;
+						for (; Idx < pD3D9Meta->Resources.GetCount(); ++ Idx)
+							if (pD3D9Meta->Resources[Idx].Name == Param.ID.CStr()) break;
+						if (Idx == pD3D9Meta->Resources.GetCount()) return ERR_INVALID_DATA;
+						Param.Class = EPC_SM30Resource;
+						Param.pSM30Resource = &pD3D9Meta->Resources[Idx];
+						break;
+					}
+					case EPC_Sampler:
+					{
+						UPTR Idx = 0;
+						for (; Idx < pD3D9Meta->Samplers.GetCount(); ++ Idx)
+							if (pD3D9Meta->Samplers[Idx].Name == Param.ID.CStr()) break;
+						if (Idx == pD3D9Meta->Samplers.GetCount()) return ERR_INVALID_DATA;
+						Param.Class = EPC_SM30Sampler;
+						Param.pSM30Sampler = &pD3D9Meta->Samplers[Idx];
+						break;
+					}
+				}
+			}
+			else if (pUSMMeta)
+			{
+				// May actually be higher than 0x0400, but it is needed only
+				// for checking that no SM3.0 + USM mixing occurs.
+				CurrTarget = 0x0400;
+
+				switch (Class)
+				{
+					case EPC_Const:
+					{
+						UPTR Idx = 0;
+						for (; Idx < pUSMMeta->Consts.GetCount(); ++ Idx)
+							if (pUSMMeta->Consts[Idx].Name == Param.ID.CStr()) break;
+						if (Idx == pUSMMeta->Consts.GetCount()) return ERR_INVALID_DATA;
+						Param.Class = EPC_USMConst;
+						Param.pUSMConst = &pUSMMeta->Consts[Idx];
+						Param.pUSMBuffer = &pUSMMeta->Buffers[Param.pUSMConst->BufferIndex];
+						break;
+					}
+					case EPC_Resource:
+					{
+						UPTR Idx = 0;
+						for (; Idx < pUSMMeta->Resources.GetCount(); ++ Idx)
+							if (pUSMMeta->Resources[Idx].Name == Param.ID.CStr()) break;
+						if (Idx == pUSMMeta->Resources.GetCount()) return ERR_INVALID_DATA;
+						Param.Class = EPC_USMResource;
+						Param.pUSMResource = &pUSMMeta->Resources[Idx];
+						break;
+					}
+					case EPC_Sampler:
+					{
+						UPTR Idx = 0;
+						for (; Idx < pUSMMeta->Samplers.GetCount(); ++ Idx)
+							if (pUSMMeta->Samplers[Idx].Name == Param.ID.CStr()) break;
+						if (Idx == pUSMMeta->Samplers.GetCount()) return ERR_INVALID_DATA;
+						Param.Class = EPC_USMSampler;
+						Param.pUSMSampler = &pUSMMeta->Samplers[Idx];
+						break;
+					}
+				}
+			}
+
+			UPTR Idx = 0;
+			for (; Idx < GlobalParams.GetCount(); ++ Idx)
+				if (GlobalParams[Idx].ID == Param.ID) break;
+			if (Idx == GlobalParams.GetCount())
+			{
+				if (!Target) Target = CurrTarget;
+				else if ((Target < 0x0400 && CurrTarget >= 0x0400) || (Target >= 0x0400 && CurrTarget < 0x0400))
+				{
+					n_msg(VL_ERROR, "Render path '%s' mixes USM and SM3.0 effects in globals section\n", pInFilePath);
+					return ERR_INVALID_DATA;
+				}
+				else if (CurrTarget > Target) Target = CurrTarget;
+				
+				GlobalParams.Add(Param);
+			}
+			else
+			{
+				// Found, compare
+				/*
+				const CEffectParam& Param = TechInfo.Params[Idx];
+				if (Param.Class != EPC_USMConst || !Param.pUSMConst)
+				{
+					n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+					return ERR_INVALID_DATA;
+				}
+							
+				CUSMShaderConstMeta& RefMetaObj = *Param.pUSMConst;
+				if (MetaObj != RefMetaObj)
+				{
+					n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+					return ERR_INVALID_DATA;
+				}
+
+				CUSMShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
+				if (MetaBuf != RefMetaBuf)
+				{
+					n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+					return ERR_INVALID_DATA;
+				}
+				*/
+			}
+		}
+	}
 	/*
 	U32 ObjID, SigID;
 	int Result = DLLCompileShader(FullSrcPath.CStr(), (EShaderType)ShaderType, (U32)Target, EntryPoint.CStr(), VariationDefines.CStr(), Debug, false, ObjID, SigID);
@@ -866,10 +1140,6 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 	}
 
 	PrintShaderCompilerMessages(Result, ShortSrcPath.CStr());
-
-	CSM30ShaderMeta* pD3D9Meta = NULL;
-	CUSMShaderMeta* pUSMMeta = NULL;
-	LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta);
 	*/
 
 	// Write result to a file
@@ -884,6 +1154,16 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 
 	if (!W.Write('RPTH')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
+
+	// Save phases
+
+	//!!!unnecessarily references TinyXML!
+	//if (!W.WriteParams(*Phases)) return ERR_IO_WRITE;
+
+	// Save global params
+
+	//... table
+	//... metadata binary, load by shader loader
 
 	File->Close();
 
@@ -1173,7 +1453,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	//!!!NB: if the same param is used in different stages and in different CBs, setting it
 	//in a tech requires passing CB instance per stage! May be restrict to use one param only
 	//in the same CB in all stages or even use one param only in one stage instead.
-	// Each shader stage that param uses may define a param differently
+	// Each shader stage that uses a param may define it differently
 
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
