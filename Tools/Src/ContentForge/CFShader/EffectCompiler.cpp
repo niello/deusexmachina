@@ -51,7 +51,7 @@ struct CEffectParam
 	EEffectParamClass	Class;
 	Render::EShaderType	ShaderType;
 	U32					SourceShaderID;
-	ED3D11ConstType		ConstType;		// For consts, use D3D11 for now because it covers all needs of each supported API
+	EUSMConstType		ConstType;		// For consts, use USM for now because it covers all needs of each supported API
 	U32					SizeInBytes;	// Cached, for consts
 	union
 	{
@@ -62,7 +62,7 @@ struct CEffectParam
 		CUSMShaderRsrcMeta*		pUSMResource;
 		CUSMShaderSamplerMeta*	pUSMSampler;
 	};
-	CD3D11ShaderBufferMeta*		pUSMBuffer;	// SM4.0 constants must be in identical buffer, so store for comparison
+	CUSMShaderBufferMeta*		pUSMBuffer;	// SM4.0 constants must be in identical buffer, so store for comparison
 
 	bool operator ==(const CEffectParam& Other) const
 	{
@@ -135,11 +135,11 @@ struct CRenderStateRef
 };
 
 bool LoadShaderMetadataByObjID(U32 ID,
-							   CDict<U32, CSM30ShaderMeta>& D3D9MetaCache, CDict<U32, CD3D11ShaderMeta>& D3D11MetaCache,
-							   CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta)
+							   CDict<U32, CSM30ShaderMeta>& D3D9MetaCache, CDict<U32, CUSMShaderMeta>& USMMetaCache,
+							   CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta)
 {
 	pOutD3D9Meta = NULL;
-	pOutD3D11Meta = NULL;
+	pOutUSMMeta = NULL;
 
 	IPTR Idx = D3D9MetaCache.FindIndex(ID);
 	if (Idx != INVALID_INDEX)
@@ -148,22 +148,22 @@ bool LoadShaderMetadataByObjID(U32 ID,
 		OK;
 	}
 
-	Idx = D3D11MetaCache.FindIndex(ID);
+	Idx = USMMetaCache.FindIndex(ID);
 	if (Idx != INVALID_INDEX)
 	{
-		pOutD3D11Meta = &D3D11MetaCache.ValueAt(Idx);
+		pOutUSMMeta = &USMMetaCache.ValueAt(Idx);
 		OK;
 	}
 
 	U32 Target;
 	CSM30ShaderMeta* pD3D9Meta;
-	CD3D11ShaderMeta* pD3D11Meta;
-	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pD3D9Meta, pD3D11Meta)) FAIL;
+	CUSMShaderMeta* pUSMMeta;
+	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pD3D9Meta, pUSMMeta)) FAIL;
 
-	if (Target >= 0x0400) pOutD3D11Meta = &D3D11MetaCache.Add(ID, *pD3D11Meta);
+	if (Target >= 0x0400) pOutUSMMeta = &USMMetaCache.Add(ID, *pUSMMeta);
 	else pOutD3D9Meta = &D3D9MetaCache.Add(ID, *pD3D9Meta);
 
-	DLLFreeShaderMetadata(pD3D9Meta, pD3D11Meta);
+	DLLFreeShaderMetadata(pD3D9Meta, pUSMMeta);
 
 	FAIL; // Not found in a cache
 }
@@ -291,6 +291,39 @@ Render::ETexFilter StringToTexFilter(const CString& Str)
 }
 //---------------------------------------------------------------------
 
+void PrintShaderCompilerMessages(int Result, const char* pPath)
+{
+	if (Result == DEM_SHADER_COMPILER_SUCCESS)
+	{
+		const char* pMessages = DLLGetLastOperationMessages();
+		if (pMessages) n_msg(VL_WARNING, pMessages);
+	}
+	else if (Result == DEM_SHADER_COMPILER_COMPILE_ERROR)
+	{
+		n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n", pPath, DLLGetLastOperationMessages());
+	}
+	else if (Result == DEM_SHADER_COMPILER_REFLECTION_ERROR)
+	{
+		n_msg(VL_ERROR, "	Shader '%s' reflection error\n", pPath);
+	}
+	else if (Result == DEM_SHADER_COMPILER_IO_WRITE_ERROR)
+	{
+		n_msg(VL_ERROR, "	Shader '%s' result writing to disk failed\n", pPath);
+	}
+	else if (Result == DEM_SHADER_COMPILER_DB_ERROR)
+	{
+		n_msg(VL_ERROR, "	Shader '%s' database operation failed\n", pPath);
+	}
+	else if (Result >= DEM_SHADER_COMPILER_ERROR)
+	{
+		n_msg(VL_ERROR, "	Shader '%s' compilation failed because of internal error in a DEMShaderCompiler DLL\n", pPath);
+			
+		const char* pMessages = DLLGetLastOperationMessages();
+		if (pMessages) n_msg(VL_ERROR, pMessages);
+	}
+}
+//---------------------------------------------------------------------
+
 bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType ShaderType, bool Debug, CRenderStateRef& RSRef)
 {
 	UPTR LightVariationCount = RSRef.MaxLights + 1;
@@ -341,33 +374,9 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 			{
 				n_msg(VL_DETAILS, "  InputSig: %s -> ID %d\n", ShortSrcPath.CStr(), SigID);
 			}
+		}
 
-			const char* pMessages = DLLGetLastOperationMessages();
-			if (pMessages) n_msg(VL_WARNING, pMessages);
-		}
-		else if (Result == DEM_SHADER_COMPILER_COMPILE_ERROR)
-		{
-			n_msg(VL_ERROR, "Failed to compile '%s' with:\n\n%s\n", ShortSrcPath.CStr(), DLLGetLastOperationMessages());
-		}
-		else if (Result == DEM_SHADER_COMPILER_REFLECTION_ERROR)
-		{
-			n_msg(VL_ERROR, "	Shader '%s' reflection error\n", ShortSrcPath.CStr());
-		}
-		else if (Result == DEM_SHADER_COMPILER_IO_WRITE_ERROR)
-		{
-			n_msg(VL_ERROR, "	Shader '%s' result saving to HDD failed\n", ShortSrcPath.CStr());
-		}
-		else if (Result == DEM_SHADER_COMPILER_DB_ERROR)
-		{
-			n_msg(VL_ERROR, "	Shader '%s' database operation failed\n", ShortSrcPath.CStr());
-		}
-		else if (Result >= DEM_SHADER_COMPILER_ERROR)
-		{
-			n_msg(VL_ERROR, "	Shader '%s' compilation failed because of internal error in a DEMShaderCompiler DLL\n", ShortSrcPath.CStr());
-			
-			const char* pMessages = DLLGetLastOperationMessages();
-			if (pMessages) n_msg(VL_ERROR, pMessages);
-		}
+		PrintShaderCompilerMessages(Result, ShortSrcPath.CStr());
 
 		/* // Metadata tracing:
 
@@ -404,17 +413,17 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 			n_msg(VL_DETAILS, "    Sampler: %s, slot %d\n", Obj.Name.CStr(), Obj.RegisterStart);
 		}
 
-		// SM4.0+
+		// USM
 
 		const char* pBufferTypeStr = "CBuffer";
 		const char* pSlotTypeStr = "c";
-		UPTR Register = Obj.Register & D3D11Buffer_RegisterMask;
-		if (Obj.Register & D3D11Buffer_Texture)
+		UPTR Register = Obj.Register & USMBuffer_RegisterMask;
+		if (Obj.Register & USMBuffer_Texture)
 		{
 			pBufferTypeStr = "TBuffer";
 			pSlotTypeStr = "t";
 		}
-		else if (Obj.Register & D3D11Buffer_Structured)
+		else if (Obj.Register & USMBuffer_Structured)
 		{
 			pBufferTypeStr = "SBuffer";
 			pSlotTypeStr = "t";
@@ -424,10 +433,10 @@ bool ProcessShaderSection(Data::PParams ShaderSection, Render::EShaderType Shade
 		const char* pTypeString = "<unsupported-type>";
 		switch (Obj.Type)
 		{
-			case D3D11Const_Bool:	pTypeString = "bool"; break;
-			case D3D11Const_Int:	pTypeString = "int"; break;
-			case D3D11Const_Float:	pTypeString = "float"; break;
-			case D3D11Const_Struct:	pTypeString = "struct"; break;
+			case USMConst_Bool:	pTypeString = "bool"; break;
+			case USMConst_Int:	pTypeString = "int"; break;
+			case USMConst_Float:	pTypeString = "float"; break;
+			case USMConst_Struct:	pTypeString = "struct"; break;
 		}
 		if (Obj.ElementCount > 1)
 		{
@@ -835,6 +844,53 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 }
 //---------------------------------------------------------------------
 
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
+{
+	//...
+	/*
+	U32 ObjID, SigID;
+	int Result = DLLCompileShader(FullSrcPath.CStr(), (EShaderType)ShaderType, (U32)Target, EntryPoint.CStr(), VariationDefines.CStr(), Debug, false, ObjID, SigID);
+
+	CString ShortSrcPath(FullSrcPath);
+	ShortSrcPath.Replace(IOSrv->ResolveAssigns("SrcShaders:") + "/", "SrcShaders:");
+
+	if (Result == DEM_SHADER_COMPILER_SUCCESS)
+	{
+		RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount] = ObjID;
+
+		n_msg(VL_DETAILS, "  Shader:   %s -> ID %d\n", ShortSrcPath.CStr(), ObjID);
+		if (SigID != 0)
+		{
+			n_msg(VL_DETAILS, "  InputSig: %s -> ID %d\n", ShortSrcPath.CStr(), SigID);
+		}
+	}
+
+	PrintShaderCompilerMessages(Result, ShortSrcPath.CStr());
+
+	CSM30ShaderMeta* pD3D9Meta = NULL;
+	CUSMShaderMeta* pUSMMeta = NULL;
+	LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta);
+	*/
+
+	// Write result to a file
+
+	IOSrv->CreateDirectory(PathUtils::ExtractDirName(pOutFilePath));
+
+	IO::PStream File = IOSrv->CreateStream(pOutFilePath);
+	if (!File->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return ERR_IO_WRITE;
+	IO::CBinaryWriter W(*File);
+
+	// Save header
+
+	if (!W.Write('RPTH')) return ERR_IO_WRITE;
+	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
+
+	File->Close();
+
+	return SUCCESS;
+}
+//---------------------------------------------------------------------
+
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30)
 {
 	// Read effect source file
@@ -906,7 +962,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	// Compile and validate used render states, unwinding their hierarchy
 
 	CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
-	CDict<U32, CD3D11ShaderMeta> D3D11MetaCache;
+	CDict<U32, CUSMShaderMeta> USMMetaCache;
 
 	for (UPTR i = 0; i < UsedRenderStates.GetCount(); )
 	{
@@ -981,17 +1037,17 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						AllInvalid = false;
 
 						CSM30ShaderMeta* pD3D9Meta = NULL;
-						CD3D11ShaderMeta* pD3D11Meta = NULL;
-						LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
+						CUSMShaderMeta* pUSMMeta = NULL;
+						LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta);
 
 						if (pD3D9Meta)
 						{
 							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, Render::GPU_Level_D3D9_3);
 						}
-						else if (pD3D11Meta)
+						else if (pUSMMeta)
 						{
-							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, pD3D11Meta->MinFeatureLevel);
-							RSRef.RequiresFlags |= pD3D11Meta->RequiresFlags;
+							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, pUSMMeta->MinFeatureLevel);
+							RSRef.RequiresFlags |= pUSMMeta->RequiresFlags;
 						}
 						else Sys::Error("FIXME: Can't read shader metadata!");
 					}
@@ -1135,8 +1191,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
 					CSM30ShaderMeta* pD3D9Meta = NULL;
-					CD3D11ShaderMeta* pD3D11Meta = NULL;
-					LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, D3D11MetaCache, pD3D9Meta, pD3D11Meta);
+					CUSMShaderMeta* pUSMMeta = NULL;
+					LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta);
 
 					//!!!add per-stage support, to map one param to different shader stages simultaneously!
 					// If tech param found:
@@ -1166,19 +1222,19 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 								{
 									case RS_Float4:
 									{
-										Param.ConstType = D3D11Const_Float;
+										Param.ConstType = USMConst_Float;
 										Param.SizeInBytes = 4 * sizeof(float) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
 										break;
 									}
 									case RS_Int4:
 									{
-										Param.ConstType = D3D11Const_Int;
+										Param.ConstType = USMConst_Int;
 										Param.SizeInBytes = /* 4 * */ sizeof(I32) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
 										break;
 									}
 									case RS_Bool:
 									{
-										Param.ConstType = D3D11Const_Bool;
+										Param.ConstType = USMConst_Bool;
 										Param.SizeInBytes = sizeof(bool) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
 										break;
 									}
@@ -1275,12 +1331,12 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 						}
 					}
-					else if (pD3D11Meta)
+					else if (pUSMMeta)
 					{
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Consts.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Consts.GetCount(); ++ParamIdx)
 						{
-							CUSMShaderConstMeta& MetaObj = pD3D11Meta->Consts[ParamIdx];
-							CD3D11ShaderBufferMeta& MetaBuf = pD3D11Meta->Buffers[MetaObj.BufferIndex];
+							CUSMShaderConstMeta& MetaObj = pUSMMeta->Consts[ParamIdx];
+							CUSMShaderBufferMeta& MetaBuf = pUSMMeta->Buffers[MetaObj.BufferIndex];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1315,7 +1371,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 
-								CD3D11ShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
+								CUSMShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
 								if (MetaBuf != RefMetaBuf)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1324,9 +1380,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 						}
 						
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Resources.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Resources.GetCount(); ++ParamIdx)
 						{
-							CUSMShaderRsrcMeta& MetaObj = pD3D11Meta->Resources[ParamIdx];
+							CUSMShaderRsrcMeta& MetaObj = pUSMMeta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1360,9 +1416,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 						}
 						
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D11Meta->Samplers.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CUSMShaderSamplerMeta& MetaObj = pD3D11Meta->Samplers[ParamIdx];
+							CUSMShaderSamplerMeta& MetaObj = pUSMMeta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1411,7 +1467,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	CArray<CEffectParam> GlobalParams;
 	CArray<CEffectParam> MaterialParams;
 
-	// SM4.0+
+	// USM
 	CArray<U32> GlobalRegisters;
 	CArray<U32> MaterialRegisters;
 
@@ -1775,8 +1831,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 		if (Param.Class == EPC_SM30Const || Param.Class == EPC_USMConst)
 		{
-			// Use D3D11 enum as it suits all APIs now
-			ED3D11ConstType ConstType = D3D11Const_Invalid;
+			// Use USM enum as it suits all APIs now
+			EUSMConstType ConstType = USMConst_Invalid;
 			U32 ConstSizeInBytes = Param.SizeInBytes;
 			U32 ValueSizeInBytes = 0;
 			U32 CurrDefValOffset = (U32)DefaultConstValues->GetPosition();
@@ -1788,17 +1844,17 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 				{
 					case RS_Float4:
 					{
-						ConstType = D3D11Const_Float;
+						ConstType = USMConst_Float;
 						break;
 					}
 					case RS_Int4:
 					{
-						ConstType = D3D11Const_Int;
+						ConstType = USMConst_Int;
 						break;
 					}
 					case RS_Bool:
 					{
-						ConstType = D3D11Const_Bool;
+						ConstType = USMConst_Bool;
 						break;
 					}
 				}
@@ -1807,7 +1863,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 			switch (ConstType)
 			{
-				case D3D11Const_Float:
+				case USMConst_Float:
 				{
 					if (DefaultValue.IsA<float>())
 					{
@@ -1847,7 +1903,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 					break;
 				}
-				case D3D11Const_Int:
+				case USMConst_Int:
 				{
 					if (DefaultValue.IsA<int>())
 					{
@@ -1862,7 +1918,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					}
 					break;
 				}
-				case D3D11Const_Bool:
+				case USMConst_Bool:
 				{
 					if (DefaultValue.IsA<bool>())
 					{

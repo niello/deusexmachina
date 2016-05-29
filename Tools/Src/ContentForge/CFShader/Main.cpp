@@ -23,6 +23,7 @@ CString	RootPath;
 
 int ExitApp(int Code, bool WaitKey);
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30);
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath);
 
 int main(int argc, const char** argv)
 {
@@ -30,6 +31,7 @@ int main(int argc, const char** argv)
 
 	bool WaitKey = Args.GetBoolArg("-waitkey");
 	Verbose = Args.GetIntArg("-v");
+	bool RenderPathes = Args.GetBoolArg("-rp");
 
 	bool Help = Args.GetBoolArg("-help") || Args.GetBoolArg("/?");
 
@@ -49,6 +51,7 @@ int main(int argc, const char** argv)
 				"-d                          build shaders with debug info\n"
 				"-sm3                        build only old sm3.0 techs, else only\n"
 				"                            Unified Shader Model techs will be built\n"
+				"-rp                         render path compilation requested\n"
 				"-r                          rebuild shaders even if not changed\n"
 				"-waitkey                    wait for a key press when tool has finished\n"
 				"-v [verbosity]              output verbosity level, [ 0 .. 5 ]\n");
@@ -71,6 +74,11 @@ int main(int argc, const char** argv)
 
 	if (pProjPath) IOSrv->SetAssign("Proj", pProjPath);
 	else IOSrv->SetAssign("Proj", IOSrv->GetAssign("Home"));
+
+	if (RenderPathes)
+	{
+		//load ClassToFourCC
+	}
 
 	{
 		Data::CBuffer Buffer;
@@ -154,7 +162,7 @@ int main(int argc, const char** argv)
 		else
 		{
 			if (!IOSrv->FileExists(InRec)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			int Code = CompileEffect(InRec, OutRec, Debug, SM30);
+			int Code = RenderPathes ? CompileRenderPath(InRec, OutRec) : CompileEffect(InRec, OutRec, Debug, SM30);
 			if (Code != 0) return ExitApp(Code, WaitKey);
 		}
 	}

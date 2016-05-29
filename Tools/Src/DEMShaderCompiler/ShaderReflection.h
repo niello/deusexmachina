@@ -5,7 +5,7 @@
 #include <Data/String.h>
 #include <Data/Array.h>
 
-// Data and functions for shader metadata manipulation in both SM3.0 and SM4.0+
+// Data and functions for shader metadata manipulation in both SM3.0 and USM
 
 namespace IO
 {
@@ -86,24 +86,24 @@ struct CSM30ShaderMeta
 };
 
 // Don't change values, they are saved to file
-enum ED3D11BufferTypeMask
+enum EUSMBufferTypeMask
 {
-	D3D11Buffer_Texture		= (1 << 30),
-	D3D11Buffer_Structured	= (2 << 30),
+	USMBuffer_Texture		= (1 << 30),
+	USMBuffer_Structured	= (2 << 30),
 
-	D3D11Buffer_RegisterMask = ~(D3D11Buffer_Texture | D3D11Buffer_Structured)
+	USMBuffer_RegisterMask = ~(USMBuffer_Texture | USMBuffer_Structured)
 };
 
 // Don't change values, they are saved to file
-enum ED3D11ConstType
+enum EUSMConstType
 {
-	D3D11Const_Bool	= 0,
-	D3D11Const_Int,
-	D3D11Const_Float,
+	USMConst_Bool	= 0,
+	USMConst_Int,
+	USMConst_Float,
 
-	D3D11Const_Struct,
+	USMConst_Struct,
 
-	D3D11Const_Invalid
+	USMConst_Invalid
 };
 
 // Don't change values, they are saved to file
@@ -122,14 +122,14 @@ enum EUSMResourceType
 	USMRsrc_Unknown
 };
 
-struct CD3D11ShaderBufferMeta
+struct CUSMShaderBufferMeta
 {
 	CString	Name;
 	U32		Register;
 	U32		Size;		// For structured buffers - StructureByteStride
 
-	bool operator ==(const CD3D11ShaderBufferMeta& Other) const { return Register == Other.Register && Size == Other.Size; }
-	bool operator !=(const CD3D11ShaderBufferMeta& Other) const { return Register != Other.Register || Size != Other.Size; }
+	bool operator ==(const CUSMShaderBufferMeta& Other) const { return Register == Other.Register && Size == Other.Size; }
+	bool operator !=(const CUSMShaderBufferMeta& Other) const { return Register != Other.Register || Size != Other.Size; }
 };
 
 // Supports SM4.0 and higher
@@ -138,7 +138,7 @@ struct CUSMShaderConstMeta
 {
 	CString			Name;
 	U32				BufferIndex;
-	ED3D11ConstType	Type;
+	EUSMConstType	Type;
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
@@ -170,11 +170,11 @@ struct CUSMShaderSamplerMeta
 	bool operator !=(const CUSMShaderSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
-struct CD3D11ShaderMeta
+struct CUSMShaderMeta
 {
 	U32								MinFeatureLevel;
 	U64								RequiresFlags;
-	CArray<CD3D11ShaderBufferMeta>	Buffers;
+	CArray<CUSMShaderBufferMeta>	Buffers;
 	CArray<CUSMShaderConstMeta>	Consts;
 	CArray<CUSMShaderRsrcMeta>		Resources;
 	CArray<CUSMShaderSamplerMeta>	Samplers;
@@ -183,10 +183,10 @@ struct CD3D11ShaderMeta
 void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);
 void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R);
 bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out);
-bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& Out);
+bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out);
 bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta);
-bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta);
+bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta);
 bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta);
-bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta);
+bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta);
 
 #endif

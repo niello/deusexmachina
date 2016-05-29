@@ -85,6 +85,31 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 }
 //---------------------------------------------------------------------
 
+bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath)
+{
+	CString InStr = IOSrv->ResolveAssigns(SrcFilePath);
+	CString OutStr = IOSrv->ResolveAssigns(ExportFilePath);
+
+	if (InStr.FindIndex(' ') != INVALID_INDEX) InStr = "\"" + InStr + "\"";
+	if (OutStr.FindIndex(' ') != INVALID_INDEX) OutStr = "\"" + OutStr + "\"";
+
+	CString WorkingDir;
+	Sys::GetWorkingDirectory(WorkingDir);
+
+	char CmdLine[MAX_CMDLINE_CHARS];
+	sprintf_s(CmdLine, "-v %d -rp -proj %s -in %s -out %s",
+		ExternalVerbosity, ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
+	int ExitCode = RunExternalToolAsProcess(CStrID("CFShader"), CmdLine, WorkingDir.CStr());
+	if (ExitCode != 0)
+	{
+		n_msg(VL_ERROR, "External tool CFShader execution failed\n");
+		FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, bool OnlyMetadata, U32& OutShaderID)
 {
 	CString SrcPath;

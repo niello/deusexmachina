@@ -74,7 +74,7 @@ int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, c
 }
 //---------------------------------------------------------------------
 
-bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta)
+bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta)
 {
 	if (!pLoadShaderMetadataByObjectFileID)
 	{
@@ -83,11 +83,11 @@ bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta
 		if (!pLoadShaderMetadataByObjectFileID) FAIL;
 	}
 
-	return pLoadShaderMetadataByObjectFileID(ID, OutTarget, pOutD3D9Meta, pOutD3D11Meta);
+	return pLoadShaderMetadataByObjectFileID(ID, OutTarget, pOutD3D9Meta, pOutUSMMeta);
 }
 //---------------------------------------------------------------------
 
-bool DLLFreeShaderMetadata(CSM30ShaderMeta* pDLLAllocD3D9Meta, CD3D11ShaderMeta* pDLLAllocD3D11Meta)
+bool DLLFreeShaderMetadata(CSM30ShaderMeta* pDLLAllocD3D9Meta, CUSMShaderMeta* pDLLAllocUSMMeta)
 {
 	if (!pFreeShaderMetadata)
 	{
@@ -96,7 +96,7 @@ bool DLLFreeShaderMetadata(CSM30ShaderMeta* pDLLAllocD3D9Meta, CD3D11ShaderMeta*
 		if (!pFreeShaderMetadata) FAIL;
 	}
 
-	pFreeShaderMetadata(pDLLAllocD3D9Meta, pDLLAllocD3D11Meta);
+	pFreeShaderMetadata(pDLLAllocD3D9Meta, pDLLAllocUSMMeta);
 
 	OK;
 }

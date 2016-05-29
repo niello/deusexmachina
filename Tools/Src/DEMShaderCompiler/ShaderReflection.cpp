@@ -164,7 +164,7 @@ bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 }
 //---------------------------------------------------------------------
 
-bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& Out)
+bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 {
 	ID3D11ShaderReflection* pReflector = NULL;
 
@@ -277,11 +277,11 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 				//D3DBufDesc.uFlags & D3D_CBF_USERPACKED
 
 				DWORD TypeMask;
-				if (RsrcDesc.Type == D3D_SIT_TBUFFER) TypeMask = D3D11Buffer_Texture;
-				else if (RsrcDesc.Type == D3D_SIT_STRUCTURED) TypeMask = D3D11Buffer_Structured;
+				if (RsrcDesc.Type == D3D_SIT_TBUFFER) TypeMask = USMBuffer_Texture;
+				else if (RsrcDesc.Type == D3D_SIT_STRUCTURED) TypeMask = USMBuffer_Structured;
 				else TypeMask = 0;
 
-				CD3D11ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
+				CUSMShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
 				pMeta->Register = (RsrcDesc.BindPoint | TypeMask);
 				pMeta->Size = D3DBufDesc.Size;
@@ -307,25 +307,25 @@ bool D3D11CollectShaderMetadata(const void* pData, UPTR Size, CD3D11ShaderMeta& 
 						D3D11_SHADER_TYPE_DESC D3DTypeDesc;
 						pVarType->GetDesc(&D3DTypeDesc);
 
-						ED3D11ConstType Type;
+						EUSMConstType Type;
 						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)
 						{
-							Type = D3D11Const_Struct; // D3DTypeDesc.Type is 'void'
+							Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
 						}
 						else
 						{
 							switch (D3DTypeDesc.Type)
 							{
-								case D3D_SVT_BOOL:	Type = D3D11Const_Bool; break;
-								case D3D_SVT_INT:	Type = D3D11Const_Int; break;
-								case D3D_SVT_FLOAT:	Type = D3D11Const_Float; break;
+								case D3D_SVT_BOOL:	Type = USMConst_Bool; break;
+								case D3D_SVT_INT:	Type = USMConst_Int; break;
+								case D3D_SVT_FLOAT:	Type = USMConst_Float; break;
 								default:
 								{
 									Messages += "Unsupported constant '";
 									Messages += D3DVarDesc.Name;
 									Messages += "' type '";
 									Messages += StringUtils::FromInt(D3DTypeDesc.Type);
-									Messages += "' in SM4.0+ buffer '";
+									Messages += "' in USM buffer '";
 									Messages += RsrcDesc.Name;
 									Messages += "'\n";
 									FAIL;
@@ -454,7 +454,7 @@ bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 }
 //---------------------------------------------------------------------
 
-bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
+bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 {
 	W.Write<U32>(Meta.MinFeatureLevel);
 	W.Write<U64>(Meta.RequiresFlags);
@@ -462,7 +462,7 @@ bool D3D11SaveShaderMetadata(IO::CBinaryWriter& W, const CD3D11ShaderMeta& Meta)
 	W.Write<U32>(Meta.Buffers.GetCount());
 	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
 	{
-		const CD3D11ShaderBufferMeta& Obj = Meta.Buffers[i];
+		const CUSMShaderBufferMeta& Obj = Meta.Buffers[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.Register);
 		W.Write(Obj.Size);
@@ -596,7 +596,7 @@ bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
 }
 //---------------------------------------------------------------------
 
-bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
+bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 {
 	Meta.Buffers.Clear();
 	Meta.Consts.Clear();
@@ -609,11 +609,11 @@ bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
 	U32 Count;
 
 	R.Read<U32>(Count);
-	CD3D11ShaderBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
+	CUSMShaderBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
 	for (; pBuf < Meta.Buffers.End(); ++pBuf)
 	{
 		//!!!arrays, tbuffers & sbuffers aren't supported for now!
-		CD3D11ShaderBufferMeta& Obj = *pBuf;
+		CUSMShaderBufferMeta& Obj = *pBuf;
 		R.Read(Obj.Name);
 		R.Read(Obj.Register);
 		R.Read(Obj.Size);
@@ -630,7 +630,7 @@ bool D3D11LoadShaderMetadata(IO::CBinaryReader& R, CD3D11ShaderMeta& Meta)
 
 		U8 Type;
 		R.Read<U8>(Type);
-		Obj.Type = (ED3D11ConstType)Type;
+		Obj.Type = (EUSMConstType)Type;
 
 		R.Read(Obj.Offset);
 		R.Read(Obj.ElementSize);

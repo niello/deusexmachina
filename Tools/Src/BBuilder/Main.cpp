@@ -238,12 +238,12 @@ int main(int argc, const char** argv)
 	{
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportDescs ? "hrd" : "prm")) continue;
+			if (!PathUtils::CheckExtension(Browser.GetCurrEntryName(), ExportDescs ? "hrd" : "rp")) continue;
 
 			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
-			n_msg(VL_INFO, "Processing render path desc '%s'...\n", FileNoExt.CStr());
+			n_msg(VL_INFO, "Processing render path '%s'...\n", FileNoExt.CStr());
 
-			if (!ProcessRenderPathDesc("SrcShaders:" + Browser.GetCurrEntryName(), "Shaders:" + FileNoExt + ".prm"))
+			if (!ProcessRenderPath("SrcShaders:" + FileNoExt + ".hrd", "Shaders:" + FileNoExt + ".rp"))
 			{
 				n_msg(VL_ERROR, "Error processing render path '%s'\n", FileNoExt.CStr());
 				continue;
@@ -283,10 +283,10 @@ int main(int argc, const char** argv)
 		CString LibPath = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Shaders.slb"));
 		UPTR ShadersPacked = DLLPackShaders(ShaderIDs.CStr(), LibPath.CStr());
 
-		if (ShadersToPack.GetCount() != ShadersPacked)
+		if (ShadersToPack.GetCount() > ShadersPacked)
 			Sys::Log("Due to an error or lack of files only %d of %d shader binaries were packed\n", ShadersPacked, ShadersToPack.GetCount());
 		else
-			Sys::Log("%d shader binaries were packed successfully\n", ShadersPacked);
+			Sys::Log("%d shader binaries were packed successfully (%d requested + input signatures)\n", ShadersPacked, ShadersToPack.GetCount());
 
 		FilesToPack.InsertSorted(LibPath);
 

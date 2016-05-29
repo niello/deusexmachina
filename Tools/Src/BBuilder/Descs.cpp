@@ -506,7 +506,6 @@ bool ProcessEffect(const char* pExportFileName)
 }
 //---------------------------------------------------------------------
 
-//!!!DUPLICATE CODE in effect skipping!
 bool ProcessMaterialDesc(const char* pName)
 {
 	CString ExportFilePath("Materials:");
@@ -658,7 +657,7 @@ bool ProcessMaterialDesc(const char* pName)
 
 					switch (ConstType)
 					{
-						case D3D11Const_Float:
+						case USMConst_Float:
 						{
 							if (Value.IsA<float>())
 							{
@@ -698,7 +697,7 @@ bool ProcessMaterialDesc(const char* pName)
 
 							break;
 						}
-						case D3D11Const_Int:
+						case USMConst_Int:
 						{
 							if (Value.IsA<int>())
 							{
@@ -713,7 +712,7 @@ bool ProcessMaterialDesc(const char* pName)
 							}
 							break;
 						}
-						case D3D11Const_Bool:
+						case USMConst_Bool:
 						{
 							if (Value.IsA<bool>())
 							{
@@ -915,6 +914,34 @@ bool ProcessMaterialDesc(const char* pName)
 }
 //---------------------------------------------------------------------
 
+bool ProcessRenderPath(const char* pSrcFilePath, const char* pExportFilePath)
+{
+	// Some descs can be loaded twice or more from different IO path assigns, avoid it
+	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
+
+	if (IsFileAdded(RealExportFilePath)) OK;
+
+	if (ExportDescs)
+	{
+		if (!ExportRenderPath(CString(pSrcFilePath), RealExportFilePath)) FAIL;
+	}
+
+	FilesToPack.InsertSorted(RealExportFilePath);
+
+	// Process .rp binary
+
+	IO::PStream RP = IOSrv->CreateStream(RealExportFilePath);
+	if (!RP->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::CBinaryReader R(*RP.GetUnsafe());
+
+	U32 U32Value;
+	if (!R.Read(U32Value) || U32Value != 'RPTH') FAIL;	// Magic
+	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 {
 	Data::PDataArray Attrs;
@@ -1002,72 +1029,6 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 	FilesToPack.InsertSorted(ExportFilePath);
 
 	return ProcessSceneNodeRefs(*Desc);
-}
-//---------------------------------------------------------------------
-
-bool ProcessRenderPathDesc(const char* pSrcFilePath, const char* pExportFilePath)
-{
-	// Some descs can be loaded twice or more from different IO path assigns, avoid it
-	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
-
-	if (IsFileAdded(RealExportFilePath)) OK;
-
-	if (ExportDescs)
-	{
-		Data::PParams RPDesc = DataSrv->LoadHRD(pSrcFilePath, false);
-
-		if (!RPDesc.IsValidPtr())
-		{
-			n_msg(VL_ERROR, "Error loading render path '%s' desc\n", RealExportFilePath.CStr());
-			FAIL;
-		}
-
-		Data::PParams ParamShadersDesc;
-		if (RPDesc->Get(ParamShadersDesc, CStrID("GlobalParamShaders")))
-		{
-	#ifdef _DEBUG
-			CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
-	#else
-			CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
-	#endif
-			CString DBFilePath = IOSrv->ResolveAssigns("SrcShaders:ShaderDB.db3");
-			CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
-			if (!InitDEMShaderCompilerDLL(DLLPath, DBFilePath, OutputDir)) FAIL;
-
-			for (UPTR j = 0; j < ParamShadersDesc->GetCount(); ++j)
-			{
-				Data::CParam& Prm = ParamShadersDesc->Get(j);
-				Data::PParams ShaderSection = Prm.GetValue<Data::PParams>();
-
-				U32 ShaderID;
-				if (!ProcessShaderResourceDesc(*ShaderSection, false, true, ShaderID))
-				{
-					TermDEMShaderCompilerDLL();
-					FAIL;
-				}
-
-				// Substitute shader desc with a compiled shader ID
-				Prm.SetValue<int>(ShaderID);
-
-				AddShaderToPack(ShaderID);
-
-				n_msg(VL_DETAILS, "Global params shader: %s -> ID %d\n", ShaderSection->Get<CString>(CStrID("In")).CStr(), ShaderID);
-			}
-
-			if (!TermDEMShaderCompilerDLL()) FAIL;
-
-			//!!!save .rp!
-
-			IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
-			if (!DataSrv->SavePRM(RealExportFilePath, RPDesc)) FAIL;
-		}
-	}
-
-	FilesToPack.InsertSorted(RealExportFilePath);
-
-	//!!!open .rp and parse for shader references!
-
-	OK;
 }
 //---------------------------------------------------------------------
 

@@ -531,9 +531,9 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 
 			// Save metadata
 			
-			CD3D11ShaderMeta Meta;
-			bool MetaReflected = D3D11CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta);
-			bool MetaSaved = MetaReflected && D3D11SaveShaderMetadata(W, Meta);
+			CUSMShaderMeta Meta;
+			bool MetaReflected = USMCollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta);
+			bool MetaSaved = MetaReflected && USMSaveShaderMetadata(W, Meta);
 
 			pCode->Release();
 		
@@ -600,11 +600,11 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 }
 //---------------------------------------------------------------------
 
-// Since D3D9 and D3D11 metadata are different, we implement not beautiful but convenient function,
-// that returns both D3D9 and D3D11 metadata pointers. Which one is not NULL, it must be used as a return value.
+// Since D3D9 and USM metadata are different, we implement not beautiful but convenient function,
+// that returns both D3D9 and USM metadata pointers. Which one is not NULL, it must be used as a return value.
 // Returns whether metadata is found in cache, which means it was already processed.
 // Use FreeShaderMetadata() on pointers returned
-DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CD3D11ShaderMeta*& pOutD3D11Meta)
+DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta)
 {
 	Messages.Clear();
 
@@ -624,17 +624,17 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 	R.Read<U32>();	// Shader obj file ID - skip
 
 	pOutD3D9Meta = NULL;
-	pOutD3D11Meta = NULL;
+	pOutUSMMeta = NULL;
 
 	if (OutTarget >= 0x0400)
 	{
 		R.Read<U32>();	// Input signature obj file ID - skip
-		pOutD3D11Meta = n_new(CD3D11ShaderMeta);
-		if (D3D11LoadShaderMetadata(R, *pOutD3D11Meta)) OK;
+		pOutUSMMeta = n_new(CUSMShaderMeta);
+		if (USMLoadShaderMetadata(R, *pOutUSMMeta)) OK;
 		else
 		{
-			n_delete(pOutD3D11Meta);
-			pOutD3D11Meta = NULL;
+			n_delete(pOutUSMMeta);
+			pOutUSMMeta = NULL;
 			FAIL;
 		}
 	}
@@ -652,12 +652,12 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 }
 //---------------------------------------------------------------------
 
-DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CD3D11ShaderMeta* pD3D11Meta)
+DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CUSMShaderMeta* pUSMMeta)
 {
 	Messages.Clear();
 
 	if (pD3D9Meta) n_delete(pD3D9Meta);
-	if (pD3D11Meta) n_delete(pD3D11Meta);
+	if (pUSMMeta) n_delete(pUSMMeta);
 }
 //---------------------------------------------------------------------
 
