@@ -1,7 +1,6 @@
 #include "DataServer.h"
 
 #include <Data/HRDParser.h>
-#include <Data/XMLDocument.h>
 #include <Data/Buffer.h>
 #include <IO/IOServer.h>
 #include <IO/HRDWriter.h>
@@ -100,26 +99,6 @@ bool CDataServer::SavePRM(const char* pFileName, const CParams* pContent)
 	if (!File->Open(IO::SAM_WRITE)) FAIL;
 	IO::CBinaryWriter Writer(*File);
 	return Writer.WriteParams(*pContent);
-}
-//---------------------------------------------------------------------
-
-PXMLDocument CDataServer::LoadXML(const char* pFileName) //, bool Cache)
-{
-	CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) FAIL;
-
-	PXMLDocument XML = n_new(CXMLDocument);
-	if (XML->Parse((const char*)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS)
-	{
-		//if (Cache) XMLCache.Add(FileName.CStr(), XML); //!!!???mangle/unmangle path to avoid duplicates?
-	}
-	else
-	{
-		//Sys::Log("FileIO: XML parsing of \"%s\" failed: %s. %s.\n", FileName.CStr(), XML->GetErrorStr1(), XML->GetErrorStr2());
-		XML = NULL;
-	}
-
-	return XML;
 }
 //---------------------------------------------------------------------
 

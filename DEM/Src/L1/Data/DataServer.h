@@ -16,7 +16,6 @@
 namespace Data
 {
 typedef Ptr<class CParams> PParams;
-typedef Ptr<class CXMLDocument> PXMLDocument;
 
 #define DataSrv Data::CDataServer::Instance()
 
@@ -28,7 +27,7 @@ private:
 
 	CHashTable<CString, PParams>	HRDCache; //!!!need better hashmap with Clear, Find etc!
 	//!!!Desc cache!
-	CDict<CStrID, PDataScheme>			DataSchemes;
+	CDict<CStrID, PDataScheme>		DataSchemes;
 
 public:
 
@@ -46,8 +45,6 @@ public:
 	PParams			LoadPRM(const char* pFileName, bool Cache = true);
 	PParams			ReloadPRM(const char* pFileName, bool Cache = true);	// Force reloading from file
 	bool			SavePRM(const char* pFileName, const CParams* pContent);
-	
-	PXMLDocument	LoadXML(const char* pFileName); //, bool Cache = true);
 
 	bool			LoadDesc(PParams& Out, const char* pContext, const char* pName, bool Cache = true);
 

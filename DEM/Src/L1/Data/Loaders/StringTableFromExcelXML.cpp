@@ -5,7 +5,9 @@
 #include <Data/TableT.h>
 #include <Data/XMLDocument.h>
 #include <Data/String.h>
-#include <TinyXML2/Src/tinyxml2.h>
+#include <Data/Buffer.h>
+#include <Data/XMLDocument.h>
+#include <IO/IOServer.h>
 
 namespace Load
 {
@@ -151,7 +153,13 @@ bool StringTableFromExcelXML(const CString& FileName,
 							 bool FirstRowAsColNames,
 							 bool FirstColAsRowNames)
 {
-	return StringTableFromExcelXML(DataSrv->LoadXML(FileName), Out, pWorksheetName, FirstRowAsColNames, FirstColAsRowNames);
+	Data::CBuffer Buffer;
+	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
+
+	Data::PXMLDocument XML = n_new(Data::CXMLDocument);
+	if (!XML->Parse((const char*)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS) FAIL;
+
+	return StringTableFromExcelXML(XML, Out, pWorksheetName, FirstRowAsColNames, FirstColAsRowNames);
 }
 //---------------------------------------------------------------------
 

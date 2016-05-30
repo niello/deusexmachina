@@ -19,6 +19,7 @@ typedef Ptr<CXMLDocument> PXMLDocument;
 
 }
 
+//???declare PObject instead?
 //DECLARE_TYPE(PXMLDocument, 13)
 //#define TXMLDocument	DATA_TYPE(PXMLDocument)
 
