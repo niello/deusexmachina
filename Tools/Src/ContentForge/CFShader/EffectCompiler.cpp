@@ -20,6 +20,7 @@
 #undef DeleteFile
 
 extern CString RootPath;
+extern CHashTable<CString, Data::CFourCC> ClassToFOURCC;
 
 //???maybe pack shaders to some 'DB' file which maps DB ID to offset
 //and reference shaders by DB ID, not by a file name?
@@ -132,6 +133,14 @@ struct CRenderStateRef
 	}
 
 	bool				operator ==(const CRenderStateRef& Other) { return ID == Other.ID; }
+};
+
+struct CSortParamsByID
+{
+	bool operator()(const CEffectParam& a, const CEffectParam& b)
+	{
+		return strcmp(a.ID.CStr(), b.ID.CStr()) < 0;
+	}
 };
 
 bool LoadShaderMetadataByObjID(U32 ID,
@@ -920,7 +929,7 @@ bool EFFSeekToGlobalParams(IO::CStream& Stream)
 }
 //---------------------------------------------------------------------
 
-int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath /*, bool SM30*/)
 {
 	// Read render path source file
 
@@ -939,22 +948,39 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 	if (!Params->Get(Phases, CStrID("Phases"))) return ERR_INVALID_DATA;
 	for (UPTR i = 0; i < Phases->GetCount(); ++i)
 	{
-		//!!!replace class names with FourCC where possible!
+		Data::PParams PhaseDesc = Phases->Get<Data::PParams>(i);
+		Data::PDataArray Renderers;
+		if (!PhaseDesc->Get(Renderers, CStrID("Renderers"))) continue;
+
+		// Replace class names with FourCC codes where possible
+		for (UPTR j = 0; j < Renderers->GetCount(); ++j)
+		{
+			Data::PParams Elm = Renderers->Get<Data::PParams>(j);
+			Data::CFourCC Value;
+
+			const CString& ObjectClassName = Elm->Get<CString>(CStrID("Object"));
+			if (ClassToFOURCC.Get(ObjectClassName, Value)) Elm->Set<int>(CStrID("Object"), (int)Value.Code);
+
+			const CString& RendererClassName = Elm->Get<CString>(CStrID("Renderer"));
+			if (ClassToFOURCC.Get(RendererClassName, Value)) Elm->Set<int>(CStrID("Renderer"), (int)Value.Code);
+		}
 	}
 
 	// Build globals table and accompanying metadata
 
 	CArray<CEffectParam> GlobalParams;
-	CArray<CUSMShaderBufferMeta*> USMBuffers;
-	CSM30ShaderBufferMeta SM30Buffer;
+	CUSMShaderMeta USMMeta;
+	CSM30ShaderMeta SM30Meta;
+	U32 Target = 0;
+
+	USMMeta.MinFeatureLevel = 0;
+	USMMeta.RequiresFlags = 0;
 
 	Data::PDataArray EffectsWithGlobals;
 	if (Params->Get(EffectsWithGlobals, CStrID("EffectsWithGlobals")))
 	{
 		CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
 		CDict<U32, CUSMShaderMeta> USMMetaCache;
-
-		U32 Target = 0;
 
 		// All referenced effects must be already exported
 		//???or compile them here?
@@ -1057,6 +1083,9 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 				}
 				else if (pUSMMeta)
 				{
+					USMMeta.MinFeatureLevel = n_max(USMMeta.MinFeatureLevel, pUSMMeta->MinFeatureLevel);
+					USMMeta.RequiresFlags |= pUSMMeta->RequiresFlags;
+
 					switch (Class)
 					{
 						case EPC_Const:
@@ -1109,6 +1138,16 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 				{
 					// Not found in the list, add it here
 					pAddedParam = GlobalParams.Add(Param);
+
+					switch (Param.Class)
+					{
+						case EPC_SM30Const:		SM30Meta.Consts.Add(*Param.pSM30Const); break;
+						case EPC_SM30Resource:	SM30Meta.Resources.Add(*Param.pSM30Resource); break;
+						case EPC_SM30Sampler:	SM30Meta.Samplers.Add(*Param.pSM30Sampler); break;
+						case EPC_USMConst:		USMMeta.Consts.Add(*Param.pUSMConst); break;
+						case EPC_USMResource:	USMMeta.Resources.Add(*Param.pUSMResource); break;
+						case EPC_USMSampler:	USMMeta.Samplers.Add(*Param.pUSMSampler); break;
+					}
 				}
 				else
 				{
@@ -1150,36 +1189,47 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 					}
 				}
 
+				// No source shader is used, all metadata will be included into an RP file
+				pAddedParam->SourceShaderID = 0;
+
 				// For constants, process containing buffer
 
 				if (Param.Class == EPC_USMConst)
 				{
 					UPTR Idx = 0;
-					for (; Idx < USMBuffers.GetCount(); ++ Idx)
-						if (USMBuffers[Idx]->Register == pAddedParam->pUSMBuffer->Register) break;
-					if (Idx == USMBuffers.GetCount())
+					for (; Idx < USMMeta.Buffers.GetCount(); ++ Idx)
+						if (USMMeta.Buffers[Idx].Register == pAddedParam->pUSMBuffer->Register) break;
+					if (Idx == USMMeta.Buffers.GetCount())
 					{
-						USMBuffers.Add(pAddedParam->pUSMBuffer);
+						USMMeta.Buffers.Add(*pAddedParam->pUSMBuffer);
 					}
 					else
 					{
 						// Use a bigger buffer
-						if (USMBuffers[Idx]->Size < pAddedParam->pUSMBuffer->Size)
-							USMBuffers[Idx] = pAddedParam->pUSMBuffer;
+						if (USMMeta.Buffers[Idx].Size < pAddedParam->pUSMBuffer->Size)
+							USMMeta.Buffers[Idx] = *pAddedParam->pUSMBuffer;
 					}
 
 					pAddedParam->pUSMConst->BufferIndex = Idx;
 				}
 				else if (Param.Class == EPC_SM30Const)
 				{
-					CArray<UPTR>& UsedRegs = (pAddedParam->pSM30Const->RegisterSet == RS_Float4) ? SM30Buffer.UsedFloat4 : ((pAddedParam->pSM30Const->RegisterSet == RS_Int4) ? SM30Buffer.UsedInt4 : SM30Buffer.UsedBool);
-					for (UPTR r = pAddedParam->pSM30Const->RegisterStart; r < pAddedParam->pSM30Const->RegisterStart + pAddedParam->pSM30Const->RegisterCount; ++r)
+					// The only constant buffer is used for SM3.0 RP globals
+					if (!SM30Meta.Buffers.GetCount())
+					{
+						CSM30ShaderBufferMeta* pBuffer = SM30Meta.Buffers.Reserve(1);
+						pBuffer->Name = "_RenderPathGlobals_";
+					}
+
+					CSM30ShaderConstMeta* pSM30Const = pAddedParam->pSM30Const;
+					CSM30ShaderBufferMeta& SM30Buffer = SM30Meta.Buffers[0];
+					CArray<UPTR>& UsedRegs = (pSM30Const->RegisterSet == RS_Float4) ? SM30Buffer.UsedFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? SM30Buffer.UsedInt4 : SM30Buffer.UsedBool);
+					for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
 					{
 						if (!UsedRegs.Contains(r)) UsedRegs.Add(r);
 					}
 
-					// The only buffer used for SM3.0
-					pAddedParam->pSM30Const->BufferIndex = 0;
+					pSM30Const->BufferIndex = 0;
 				}
 			}
 		}
@@ -1204,8 +1254,18 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath)
 
 	// Save global params
 
-	//... metadata binary, load by shader loader or just some loading routine
-	//... table
+	if (Target == 0x0300)
+	{
+		if (!DLLSaveSM30ShaderMetadata(W, SM30Meta)) return ERR_IO_WRITE;
+	}
+	else if (Target >= 0x0400)
+	{
+		if (!DLLSaveUSMShaderMetadata(W, USMMeta)) return ERR_IO_WRITE;
+	}
+
+	GlobalParams.Sort<CSortParamsByID>();
+	int SaveResult = SaveEffectParams(W, GlobalParams);
+	if (SaveResult != SUCCESS) return SaveResult;
 
 	File->Close();
 
@@ -2122,17 +2182,20 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 			if (!W.Write<U8>(TechInfo.VariationValid[LightCount] ? 1 : 0)) return ERR_IO_WRITE;
 
+		TechInfo.Params.Sort<CSortParamsByID>();
 		int SaveResult = SaveEffectParams(W, TechInfo.Params);
 		if (SaveResult != SUCCESS) return SaveResult;
 	}
 
 	// Save global params table
 
+	GlobalParams.Sort<CSortParamsByID>();
 	int SaveResult = SaveEffectParams(W, GlobalParams);
 	if (SaveResult != SUCCESS) return SaveResult;
 
 	// Save material params table
 
+	MaterialParams.Sort<CSortParamsByID>();
 	SaveResult = SaveEffectParams(W, MaterialParams);
 	if (SaveResult != SUCCESS) return SaveResult;
 

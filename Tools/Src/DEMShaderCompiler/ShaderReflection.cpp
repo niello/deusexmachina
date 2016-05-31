@@ -9,7 +9,7 @@
 
 extern CString Messages;
 
-bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out)
+bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out)
 {
 	CArray<CD3D9ConstantDesc> D3D9Consts;
 	CString Creator;
@@ -403,7 +403,7 @@ void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, con
 }
 //---------------------------------------------------------------------
 
-bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
+bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 {
 	W.Write<U32>(Meta.Buffers.GetCount());
 	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
@@ -523,7 +523,7 @@ void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R)
 }
 //---------------------------------------------------------------------
 
-bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
+bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
 {
 	Meta.Buffers.Clear();
 	Meta.Consts.Clear();

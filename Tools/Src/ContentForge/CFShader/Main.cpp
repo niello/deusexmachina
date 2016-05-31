@@ -2,6 +2,7 @@
 #include <IO/PathUtils.h>
 #include <Data/StringTokenizer.h>
 #include <Data/Params.h>
+#include <Data/DataArray.h>
 #include <Data/HRDParser.h>
 #include <Data/Buffer.h>
 #include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
@@ -19,8 +20,9 @@
 #define TOOL_NAME	"CFShader"
 #define VERSION		"1.0"
 
-int		Verbose = VL_ERROR;
-CString	RootPath;
+int									Verbose = VL_ERROR;
+CString								RootPath;
+CHashTable<CString, Data::CFourCC>	ClassToFOURCC;
 
 int ExitApp(int Code, bool WaitKey);
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30);
@@ -78,7 +80,24 @@ int main(int argc, const char** argv)
 
 	if (RenderPathes)
 	{
-		//load ClassToFourCC
+		Data::CBuffer Buffer;
+		if (!IOSrv->LoadFileToBuffer("Proj:ClassToFOURCC.hrd", Buffer)) return ERR_INVALID_DATA;
+
+		Data::PParams ClassToFOURCCDesc;
+		Data::CHRDParser Parser;
+		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), ClassToFOURCCDesc)) return ERR_INVALID_DATA;
+
+		Data::PDataArray ClassToFOURCCArray;
+		if (ClassToFOURCCDesc.IsValidPtr() &&
+			ClassToFOURCCDesc->Get<Data::PDataArray>(ClassToFOURCCArray, CStrID("List")) &&
+			ClassToFOURCCArray->GetCount())
+		{
+			for (UPTR i = 0; i < ClassToFOURCCArray->GetCount(); ++i)
+			{
+				Data::PParams Prm = ClassToFOURCCArray->Get<Data::PParams>(i);
+				ClassToFOURCC.Add(Prm->Get<CString>(CStrID("Name")), Data::CFourCC(Prm->Get<CString>(CStrID("Code")).CStr()));
+			}
+		}
 	}
 
 	{

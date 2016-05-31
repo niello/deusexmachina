@@ -187,11 +187,11 @@ struct CUSMShaderMeta
 
 void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);
 void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R);
-bool D3D9CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out);
+bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out);
 bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out);
-bool D3D9SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta);
+bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta);
 bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta);
-bool D3D9LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta);
+bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta);
 bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta);
 
 #endif

@@ -448,8 +448,8 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		IO::CBinaryWriter W(*ObjStream.GetUnsafe());
 
 		CSM30ShaderMeta Meta;
-		bool MetaReflected = D3D9CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), Meta);
-		bool MetaSaved = MetaReflected && D3D9SaveShaderMetadata(W, Meta);
+		bool MetaReflected = SM30CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), Meta);
+		bool MetaSaved = MetaReflected && SM30SaveShaderMetadata(W, Meta);
 
 		pCode->Release();
 		
@@ -601,9 +601,8 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 //---------------------------------------------------------------------
 
 // Since D3D9 and USM metadata are different, we implement not beautiful but convenient function,
-// that returns both D3D9 and USM metadata pointers. Which one is not NULL, it must be used as a return value.
-// Returns whether metadata is found in cache, which means it was already processed.
-// Use FreeShaderMetadata() on pointers returned
+// that returns both D3D9 and USM metadata pointers. The one that is not NULL is used as a return value.
+// Use FreeShaderMetadata() on pointers returned.
 DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta)
 {
 	Messages.Clear();
@@ -641,7 +640,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 	else
 	{
 		pOutD3D9Meta = n_new(CSM30ShaderMeta);
-		if (D3D9LoadShaderMetadata(R, *pOutD3D9Meta)) OK;
+		if (SM30LoadShaderMetadata(R, *pOutD3D9Meta)) OK;
 		else
 		{
 			n_delete(pOutD3D9Meta);
@@ -658,6 +657,18 @@ DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, C
 
 	if (pD3D9Meta) n_delete(pD3D9Meta);
 	if (pUSMMeta) n_delete(pUSMMeta);
+}
+//---------------------------------------------------------------------
+
+DEM_DLL_EXPORT bool DEM_DLLCALL SaveSM30ShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
+{
+	return SM30SaveShaderMetadata(W, Meta);
+}
+//---------------------------------------------------------------------
+
+DEM_DLL_EXPORT bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
+{
+	return USMSaveShaderMetadata(W, Meta);
 }
 //---------------------------------------------------------------------
 
