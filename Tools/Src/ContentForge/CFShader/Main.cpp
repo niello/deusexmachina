@@ -11,7 +11,8 @@
 // Debug args:
 // -waitkey -v 5 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:USM\Effects\PBR.eff"
 // -waitkey -v 5 -sm3 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:SM_3_0\Effects\PBR.eff"
-// -waitkey -v 5 -rp -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:D3D11Forward.rp"
+// -waitkey -v 5 -rp -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:USM\D3D11Forward.rp"
+// -waitkey -v 5 -rp -sm3 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:SM_3_0\D3D11Forward.rp"
 // -v 0 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // -waitkey -v 5 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // WD = $(ProjectDir) -proj "..\..\..\..\..\InsanePoet\Content"
@@ -26,7 +27,7 @@ CHashTable<CString, Data::CFourCC>	ClassToFOURCC;
 
 int ExitApp(int Code, bool WaitKey);
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30);
-int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath);
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM30);
 
 int main(int argc, const char** argv)
 {
@@ -182,7 +183,7 @@ int main(int argc, const char** argv)
 		else
 		{
 			if (!IOSrv->FileExists(InRec)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			int Code = RenderPathes ? CompileRenderPath(InRec, OutRec) : CompileEffect(InRec, OutRec, Debug, SM30);
+			int Code = RenderPathes ? CompileRenderPath(InRec, OutRec, SM30) : CompileEffect(InRec, OutRec, Debug, SM30);
 			if (Code != 0) return ExitApp(Code, WaitKey);
 		}
 	}

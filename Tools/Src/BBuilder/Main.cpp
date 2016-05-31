@@ -243,11 +243,38 @@ int main(int argc, const char** argv)
 			CString FileNoExt = PathUtils::ExtractFileNameWithoutExtension(Browser.GetCurrEntryName());
 			n_msg(VL_INFO, "Processing render path '%s'...\n", FileNoExt.CStr());
 
-			if (!ProcessRenderPath("SrcShaders:" + FileNoExt + ".hrd", "Shaders:" + FileNoExt + ".rp"))
+			if (ExportDescs)
 			{
-				n_msg(VL_ERROR, "Error processing render path '%s'\n", FileNoExt.CStr());
-				continue;
+				CString SrcFilePath = Browser.GetCurrentPath() + Browser.GetCurrEntryName();
+				CString RealExportFilePath = IOSrv->ResolveAssigns("Shaders:USM/" + FileNoExt + ".rp");
+				if (!IsFileAdded(RealExportFilePath))
+				{
+					if (!ExportRenderPath(SrcFilePath, RealExportFilePath, false)) EXIT_APP_FAIL;
+					FilesToPack.InsertSorted(RealExportFilePath);
+				}
+
+				if (IncludeSM30ShadersAndEffects)
+				{
+					RealExportFilePath = IOSrv->ResolveAssigns("Shaders:SM_3_0/" + FileNoExt + ".rp");
+					if (!IsFileAdded(RealExportFilePath))
+					{
+						if (!ExportRenderPath(SrcFilePath, RealExportFilePath, true)) EXIT_APP_FAIL;
+						FilesToPack.InsertSorted(RealExportFilePath);
+					}
+				}
 			}
+
+			/*
+			if (!ProcessRenderPath("Shaders:USM/" + FileNoExt + ".rp"))
+			{
+				n_msg(VL_ERROR, "Error processing USM render path '%s'\n", FileNoExt.CStr());
+			}
+
+			if (IncludeSM30ShadersAndEffects && !ProcessRenderPath("Shaders:SM_3_0/" + FileNoExt + ".rp"))
+			{
+				n_msg(VL_ERROR, "Error processing SM3.0 render path '%s'\n", FileNoExt.CStr());
+			}
+			*/
 		}
 	}
 	while (Browser.NextCurrDirEntry());

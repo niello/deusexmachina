@@ -204,6 +204,7 @@ bool EFFSeekToMaterialParams(IO::CStream& Stream)
 	U32 U32Value;
 	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
 	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+	if (!R.Read(U32Value)) FAIL;						// Shader model
 
 	U32 Count;
 	if (!R.Read(Count)) FAIL;
@@ -386,6 +387,7 @@ bool ProcessEffect(const char* pExportFileName)
 	U32 U32Value;
 	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
 	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
+	if (!R.Read(U32Value)) FAIL;						// Shader model
 
 	U32 Count;
 	if (!R.Read(Count)) FAIL;
@@ -914,30 +916,9 @@ bool ProcessMaterialDesc(const char* pName)
 }
 //---------------------------------------------------------------------
 
-bool ProcessRenderPath(const char* pSrcFilePath, const char* pExportFilePath)
+bool ProcessRenderPath(const char* pExportFilePath)
 {
-	// Some descs can be loaded twice or more from different IO path assigns, avoid it
-	CString RealExportFilePath = IOSrv->ResolveAssigns(pExportFilePath);
-
-	if (IsFileAdded(RealExportFilePath)) OK;
-
-	if (ExportDescs)
-	{
-		if (!ExportRenderPath(CString(pSrcFilePath), RealExportFilePath)) FAIL;
-	}
-
-	FilesToPack.InsertSorted(RealExportFilePath);
-
-	// Process .rp binary
-
-	IO::PStream RP = IOSrv->CreateStream(RealExportFilePath);
-	if (!RP->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader R(*RP.GetUnsafe());
-
-	U32 U32Value;
-	if (!R.Read(U32Value) || U32Value != 'RPTH') FAIL;	// Magic
-	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
-
+	// No external resources referenced here for now
 	OK;
 }
 //---------------------------------------------------------------------

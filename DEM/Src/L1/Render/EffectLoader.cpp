@@ -46,6 +46,9 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	U32 Version;
 	if (!Reader.Read<U32>(Version)) return NULL;
 
+	U32 ShaderModel;
+	if (!Reader.Read<U32>(ShaderModel)) return NULL; // 0 for SM3.0, 1 for USM
+
 	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
 	U32 RSCount;
 	if (!Reader.Read<U32>(RSCount)) return NULL;

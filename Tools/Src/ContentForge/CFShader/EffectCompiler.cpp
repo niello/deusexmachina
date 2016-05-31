@@ -853,15 +853,12 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 }
 //---------------------------------------------------------------------
 
+// Header must be already read or skipped
 bool EFFSeekToGlobalParams(IO::CStream& Stream)
 {
 	if (!Stream.IsOpen()) FAIL;
 
 	IO::CBinaryReader R(Stream);
-
-	U32 U32Value;
-	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
-	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
 
 	U32 Count;
 	if (!R.Read(Count)) FAIL;
@@ -929,7 +926,7 @@ bool EFFSeekToGlobalParams(IO::CStream& Stream)
 }
 //---------------------------------------------------------------------
 
-int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath /*, bool SM30*/)
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM30)
 {
 	// Read render path source file
 
@@ -986,36 +983,53 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath /*, bool
 		//???or compile them here?
 		for (UPTR i = 0; i < EffectsWithGlobals->GetCount(); ++i)
 		{
-			IO::PStream EFF = IOSrv->CreateStream(EffectsWithGlobals->Get<CString>(i));
+			const CString& EffectPath = EffectsWithGlobals->Get<CString>(i);
+			IO::PStream EFF = IOSrv->CreateStream(EffectPath);
 			if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return ERR_IO_READ;
-			if (!EFFSeekToGlobalParams(*EFF.GetUnsafe())) return ERR_INVALID_DATA;
 
 			IO::CBinaryReader R(*EFF.GetUnsafe());
 
+			U32 U32Value;
+			if (!R.Read(U32Value)) return ERR_IO_READ;
+			if (U32Value != 'SHFX') return ERR_INVALID_DATA;	// Magic
+			if (!R.Read(U32Value)) return ERR_IO_READ;
+			if (U32Value != 0x0100) return ERR_INVALID_DATA;	// Version, fail if unsupported
+			if (!R.Read(U32Value)) return ERR_IO_READ;			// Shader model
+
+			U32 DesiredShaderModelValue = SM30 ? 0 : 1;
+			if (U32Value != DesiredShaderModelValue)
+			{
+				EFF->Close();
+				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", EffectPath.CStr());
+				continue;
+			}
+			
+			if (!EFFSeekToGlobalParams(*EFF.GetUnsafe())) return ERR_INVALID_DATA;
+
 			U32 GlobalCount;
-			if (!R.Read(GlobalCount)) FAIL;
+			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
 				// Load parameter desc
 
 				CEffectParam Param;
-				if (!R.Read(Param.ID)) FAIL;
+				if (!R.Read(Param.ID)) return ERR_IO_READ;
 
 				U8 Class;
-				if (!R.Read(Class)) FAIL;
+				if (!R.Read(Class)) return ERR_IO_READ;
 
 				U8 ShaderType;
-				if (!R.Read(ShaderType)) FAIL;
+				if (!R.Read(ShaderType)) return ERR_IO_READ;
 				Param.ShaderType = (Render::EShaderType)ShaderType;
 
-				if (!R.Read(Param.SourceShaderID)) FAIL;	
+				if (!R.Read(Param.SourceShaderID)) return ERR_IO_READ;	
 
 				if (Class == EPC_Const)
 				{
 					U8 ConstType;
-					if (!R.Read<U8>(ConstType)) return ERR_IO_WRITE;
+					if (!R.Read<U8>(ConstType)) return ERR_IO_READ;
 					Param.ConstType = (EUSMConstType)ConstType;
-					if (!R.Read<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+					if (!R.Read<U32>(Param.SizeInBytes)) return ERR_IO_READ;
 				}
 
 				// Load API-specific parameter metadata
@@ -1025,7 +1039,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath /*, bool
 				if (!LoadShaderMetadataByObjID(Param.SourceShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta) || (!pD3D9Meta && !pUSMMeta))
 				{
 					n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", Param.SourceShaderID);
-					FAIL;
+					return ERR_INVALID_DATA;
 				}
 
 				// May actually be higher than 0x0400, but it is needed only
@@ -1247,6 +1261,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath /*, bool
 
 	if (!W.Write('RPTH')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
+	if (!W.Write<U32>(SM30 ? 0 : 1)) return ERR_IO_WRITE;
 
 	// Save phases
 
@@ -2068,6 +2083,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 	if (!W.Write('SHFX')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
+	if (!W.Write<U32>(SM30 ? 0 : 1)) return ERR_IO_WRITE;
 
 	// Save render states, each with all light count variations
 

@@ -72,8 +72,8 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 	Sys::GetWorkingDirectory(WorkingDir);
 
 	char CmdLine[MAX_CMDLINE_CHARS];
-	sprintf_s(CmdLine, "-v %d %s -proj %s -in %s -out %s",
-		ExternalVerbosity, LegacySM30 ? "-sm3" : "", ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
+	sprintf_s(CmdLine, "-v %d %s-proj %s -in %s -out %s",
+		ExternalVerbosity, LegacySM30 ? "-sm3 " : "", ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
 	int ExitCode = RunExternalToolAsProcess(CStrID("CFShader"), CmdLine, WorkingDir.CStr());
 	if (ExitCode != 0)
 	{
@@ -85,7 +85,7 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 }
 //---------------------------------------------------------------------
 
-bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath)
+bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30)
 {
 	CString InStr = IOSrv->ResolveAssigns(SrcFilePath);
 	CString OutStr = IOSrv->ResolveAssigns(ExportFilePath);
@@ -97,8 +97,8 @@ bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath)
 	Sys::GetWorkingDirectory(WorkingDir);
 
 	char CmdLine[MAX_CMDLINE_CHARS];
-	sprintf_s(CmdLine, "-v %d -rp -proj %s -in %s -out %s",
-		ExternalVerbosity, ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
+	sprintf_s(CmdLine, "-v %d -rp %s-proj %s -in %s -out %s",
+		ExternalVerbosity, LegacySM30 ? "-sm3 " : "", ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
 	int ExitCode = RunExternalToolAsProcess(CStrID("CFShader"), CmdLine, WorkingDir.CStr());
 	if (ExitCode != 0)
 	{
