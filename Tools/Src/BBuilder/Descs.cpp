@@ -194,6 +194,40 @@ bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportCont
 }
 //---------------------------------------------------------------------
 
+bool SkipEffectParams(IO::CBinaryReader& Reader)
+{
+	// Constants
+	U32 Count;
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 Idx = 0; Idx < Count; ++Idx)
+	{
+		CString StrValue;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.GetStream().Seek(10, IO::Seek_Current)) FAIL;
+	}
+
+	// Resources
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 Idx = 0; Idx < Count; ++Idx)
+	{
+		CString StrValue;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.GetStream().Seek(5, IO::Seek_Current)) FAIL;
+	}
+
+	// Samplers
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 Idx = 0; Idx < Count; ++Idx)
+	{
+		CString StrValue;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.GetStream().Seek(5, IO::Seek_Current)) FAIL;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 // For materials
 bool EFFSeekToMaterialParams(IO::CStream& Stream)
 {
@@ -257,26 +291,10 @@ bool EFFSeekToMaterialParams(IO::CStream& Stream)
 		if (!R.Read(MaxLights)) FAIL;
 		if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) FAIL;
 
-		U32 ParamCount;
-		if (!R.Read(ParamCount)) FAIL;
-		for (U32 ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-		{
-			U8 Type;
-			if (!R.Read(StrValue)) FAIL;
-			if (!R.Read(Type)) FAIL;	
-			if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-		}
+		if (!SkipEffectParams(R)) FAIL;
 	}
 
-	if (!R.Read(Count)) FAIL;
-	for (U32 i = 0; i < Count; ++i)
-	{
-		CString StrValue;
-		U8 Type;
-		if (!R.Read(StrValue)) FAIL;
-		if (!R.Read(Type)) FAIL;	
-		if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-	}
+	if (!SkipEffectParams(R)) FAIL;
 
 	OK;
 }
@@ -438,38 +456,11 @@ bool ProcessEffect(const char* pExportFileName)
 		if (!R.Read(MaxLights)) FAIL;
 		if (!EFF->Seek(MaxLights + 1, IO::Seek_Current)) FAIL;
 
-		U32 ParamCount;
-		if (!R.Read(ParamCount)) FAIL;
-		for (U32 ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-		{
-			U8 Type;
-			if (!R.Read(StrValue)) FAIL;
-			if (!R.Read(Type)) FAIL;	
-			if (!EFF->Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-		}
+		if (!SkipEffectParams(R)) FAIL;
 	}
 
-	// Skip global params
-	if (!R.Read(Count)) FAIL;
-	for (U32 i = 0; i < Count; ++i)
-	{
-		CString StrValue;
-		U8 Type;
-		if (!R.Read(StrValue)) FAIL;
-		if (!R.Read(Type)) FAIL;	
-		if (!EFF->Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-	}
-
-	// Skip material params
-	if (!R.Read(Count)) FAIL;
-	for (U32 i = 0; i < Count; ++i)
-	{
-		CString StrValue;
-		U8 Type;
-		if (!R.Read(StrValue)) FAIL;
-		if (!R.Read(Type)) FAIL;	
-		if (!EFF->Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-	}
+	if (!SkipEffectParams(R)) FAIL;
+	if (!SkipEffectParams(R)) FAIL;
 
 	// Gather textures from default values
 	U32 DefValCount;
@@ -583,40 +574,50 @@ bool ProcessMaterialDesc(const char* pName)
 		CArray<CStrID> MtlSamplers;
 
 		IO::CBinaryReader R(*EFF.GetUnsafe());
-	
+
 		U32 ParamCount;
 		if (!R.Read<U32>(ParamCount)) FAIL;
 		for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
 		{
 			CStrID ParamID;
 			if (!R.Read(ParamID)) FAIL;
-
-			U8 Type;
-			if (!R.Read(Type)) FAIL;
-
 			U8 ShaderType;
 			if (!R.Read(ShaderType)) FAIL;
-
 			U32 SourceShaderID;
 			if (!R.Read(SourceShaderID)) FAIL;
 
-			if (Type == 0) // Constant
-			{
-				U8 Type;
-				if (!R.Read(Type)) FAIL;
-				U32 SizeInBytes;
-				if (!R.Read(SizeInBytes)) FAIL;
+			U8 Type;
+			if (!R.Read(Type)) FAIL;
+			U32 SizeInBytes;
+			if (!R.Read(SizeInBytes)) FAIL;
 
-				MtlConsts.Add(ParamID, { Type, SizeInBytes });
-			}
-			else if (Type == 1) // Resource
-			{
-				MtlResources.Add(ParamID);
-			}
-			else if (Type == 2) // Sampler
-			{
-				MtlSamplers.Add(ParamID);
-			}
+			MtlConsts.Add(ParamID, { Type, SizeInBytes });
+		}
+
+		if (!R.Read<U32>(ParamCount)) FAIL;
+		for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+		{
+			CStrID ParamID;
+			if (!R.Read(ParamID)) FAIL;
+			U8 ShaderType;
+			if (!R.Read(ShaderType)) FAIL;
+			U32 SourceShaderID;
+			if (!R.Read(SourceShaderID)) FAIL;
+			
+			MtlResources.Add(ParamID);
+		}
+
+		if (!R.Read<U32>(ParamCount)) FAIL;
+		for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+		{
+			CStrID ParamID;
+			if (!R.Read(ParamID)) FAIL;
+			U8 ShaderType;
+			if (!R.Read(ShaderType)) FAIL;
+			U32 SourceShaderID;
+			if (!R.Read(SourceShaderID)) FAIL;
+
+			MtlSamplers.Add(ParamID);
 		}
 
 		EFF->Close();

@@ -11,17 +11,7 @@
 
 namespace Render
 {
-
-enum EConstType
-{
-	ConstType_Float	= 0,
-	ConstType_Int,
-	ConstType_Bool,
-
-	ConstType_Other,
-
-	ConstType_Invalid
-};
+class IShaderMetadata;
 
 class CShader: public Resources::CResourceObject
 {
@@ -35,16 +25,9 @@ public:
 
 	CShader(): Type(ShaderType_Invalid) {}
 
-	virtual void			Destroy() = 0;
-
-	virtual HConst			GetConstHandle(CStrID ID) const = 0;
-	virtual HConstBuffer	GetConstBufferHandle(CStrID ID) const = 0;
-	virtual HConstBuffer	GetConstBufferHandle(HConst hConst) const = 0;
-	virtual HResource		GetResourceHandle(CStrID ID) const = 0;
-	virtual HSampler		GetSamplerHandle(CStrID ID) const = 0;
-	virtual EConstType		GetConstType(HConst hConst) const = 0;
-
-	EShaderType				GetType() const { return Type; }
+	virtual void					Destroy() = 0;
+	virtual const IShaderMetadata*	GetMetadata() const = 0;
+	EShaderType						GetType() const { return Type; }
 };
 
 typedef Ptr<CShader> PShader;

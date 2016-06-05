@@ -52,8 +52,6 @@ protected:
 
 public:
 
-	Data::CHandleManager	HandleMgr;			// Primarily for shader metadata handles
-
 	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0), ShaderSignatures(0, 16) { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
 

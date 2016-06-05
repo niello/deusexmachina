@@ -1,5 +1,6 @@
 #include "D3D9ConstantBuffer.h"
 
+#include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -10,7 +11,7 @@ namespace Render
 __ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
 
 //!!!???assert destroyed?!
-bool CD3D9ConstantBuffer::Create(const CD3D9ShaderBufferMeta& Meta)
+bool CD3D9ConstantBuffer::Create(const CSM30ShaderBufferMeta& Meta)
 {
 	Float4Count = 0;
 	const CFixedArray<CRange>& Float4 = Meta.Float4;

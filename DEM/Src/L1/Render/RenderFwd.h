@@ -12,6 +12,10 @@
 #define DEM_RENDER_DEBUG (1)
 #define DEM_RENDER_USENVPERFHUD (0)
 
+// Error codes
+#define ERR_CREATION_ERROR ((UPTR)-1);
+#define ERR_DRIVER_TYPE_NOT_SUPPORTED ((UPTR)-2);
+
 namespace Render
 {
 struct CTextureDesc;
@@ -20,6 +24,7 @@ struct CRenderStateDesc;
 struct CSamplerDesc;
 class CDisplayMode;
 class CEffect;
+class IShaderMetadata;
 typedef Ptr<class CGPUDriver> PGPUDriver;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CVertexLayout> PVertexLayout;
@@ -322,9 +327,28 @@ struct CPrimitiveGroup
 	CAABB				AABB;
 };
 
-// Error codes
-#define ERR_CREATION_ERROR ((UPTR)-1);
-#define ERR_DRIVER_TYPE_NOT_SUPPORTED ((UPTR)-2);
+struct CEffectConstant
+{
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HConst			Handle;
+	HConstBuffer	BufferHandle;
+	U32				SizeInBytes;
+};
+
+struct CEffectResource
+{
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HResource		Handle;
+};
+
+struct CEffectSampler
+{
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HSampler		Handle;
+};
 
 inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 {

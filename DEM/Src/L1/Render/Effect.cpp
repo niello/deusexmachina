@@ -2,4 +2,5 @@
 
 namespace Render
 {
+__ImplementClassNoFactory(Render::CEffect, Resources::CResourceObject);
 }

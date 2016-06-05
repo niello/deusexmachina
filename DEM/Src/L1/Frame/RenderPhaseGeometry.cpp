@@ -93,8 +93,19 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 	for (UPTR i = 0; i < RenderersDesc.GetCount(); ++i)
 	{
 		Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
-		const Core::CRTTI* pObjType = Factory->GetRTTI(RendererDesc.Get<CString>(CStrID("Object")));
-		const Core::CRTTI* pRendererType = Factory->GetRTTI(RendererDesc.Get<CString>(CStrID("Renderer")));
+
+		const Core::CRTTI* pObjType = NULL;
+		const Data::CParam& PrmObject = RendererDesc.Get(CStrID("Object"));
+		if (PrmObject.IsA<int>()) pObjType = Factory->GetRTTI(Data::CFourCC((I32)PrmObject.GetValue<int>()));
+		else if (PrmObject.IsA<CString>()) pObjType = Factory->GetRTTI(PrmObject.GetValue<CString>());
+		if (!pObjType) FAIL;
+
+		const Core::CRTTI* pRendererType = NULL;
+		const Data::CParam& PrmRenderer = RendererDesc.Get(CStrID("Renderer"));
+		if (PrmRenderer.IsA<int>()) pRendererType = Factory->GetRTTI(Data::CFourCC((I32)PrmRenderer.GetValue<int>()));
+		else if (PrmRenderer.IsA<CString>()) pRendererType = Factory->GetRTTI(PrmRenderer.GetValue<CString>());
+		if (!pRendererType) FAIL;
+
 		Render::IRenderer* pRenderer = NULL;
 		for (UPTR j = 0; j < Renderers.GetCount(); ++j)
 			if (Renderers.ValueAt(j)->GetRTTI() == pRendererType)

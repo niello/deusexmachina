@@ -26,21 +26,6 @@ class CMaterialLoader: public CResourceLoader
 {
 	__DeclareClassNoFactory;
 
-protected:
-
-	struct CLoadedValues
-	{
-		CDict<CStrID, void*>			Consts;
-		CDict<CStrID, Render::PTexture>	Resources;
-		CDict<CStrID, Render::PSampler>	Samplers;
-		void*							pConstValueBuffer;
-
-		CLoadedValues(): pConstValueBuffer(NULL) {}
-		~CLoadedValues() { SAFE_FREE(pConstValueBuffer); }
-	};
-
-	static bool					LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CLoadedValues& OutValues);
-
 public:
 
 	Render::PGPUDriver GPU;

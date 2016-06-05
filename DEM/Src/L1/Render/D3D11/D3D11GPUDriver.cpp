@@ -909,12 +909,12 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	if (!Handle) FAIL;
-	CD3D11Shader::CBufferMeta* pMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	UPTR Index = pMeta->Register;
 
-	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
+	if (pMeta->Type == USMBuffer_Constant)
 	{
 		if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
@@ -940,7 +940,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
 	if (!Handle) FAIL;
-	CD3D11Shader::CRsrcMeta* pMeta = (CD3D11Shader::CRsrcMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	CUSMResourceMeta* pMeta = (CUSMResourceMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : NULL;
@@ -952,7 +952,7 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
 {
 	if (!Handle) FAIL;
-	CD3D11Shader::CSamplerMeta* pMeta = (CD3D11Shader::CSamplerMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(Handle);
+	CUSMSamplerMeta* pMeta = (CUSMSamplerMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	UPTR Index = pMeta->RegisterStart;
@@ -1652,7 +1652,7 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
-	CD3D11Shader::CBufferMeta* pMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hBuffer);
+	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
 	if (!pMeta) return NULL;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
@@ -1664,7 +1664,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 	Desc.CPUAccessFlags = CPUAccess;
 
 	UPTR TotalSize = pMeta->Size; // * ElementCount; //!!!for StructuredBuffer!
-	if (pMeta->Type == CD3D11Shader::ConstantBuffer)
+	if (pMeta->Type == USMBuffer_Constant)
 	{
 		UPTR ElementCount = (TotalSize + 15) >> 4;
 		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return NULL;
@@ -1677,7 +1677,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 		Desc.BindFlags = (Usage == D3D11_USAGE_STAGING) ? 0 : D3D11_BIND_SHADER_RESOURCE;
 	}
 
-	if (pMeta->Type == CD3D11Shader::StructuredBuffer)
+	if (pMeta->Type == USMBuffer_Structured)
 	{
 		Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
 		Desc.StructureByteStride = pMeta->Size;
@@ -2941,18 +2941,18 @@ bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, 
 	n_assert_dbg(Buffer.IsA<CD3D11ConstantBuffer>());
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
 
-	CD3D11Shader::CConstMeta* pMeta = (CD3D11Shader::CConstMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(hConst);
+	CUSMConstMeta* pMeta = (CUSMConstMeta*)IShaderMetadata::GetHandleData(hConst);
 	if (!pMeta) FAIL;
 
 	UPTR Offset = pMeta->Offset; 
 
 	if (ElementIndex)
 	{
-		CD3D11Shader::CBufferMeta* pBufMeta = (CD3D11Shader::CBufferMeta*)D3D11DrvFactory->HandleMgr.GetHandleData(pMeta->BufferHandle);
+		CUSMBufferMeta* pBufMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
 		if (!pBufMeta) FAIL;
-		if (pBufMeta->Type == CD3D11Shader::StructuredBuffer)
+		if (pBufMeta->Type == USMBuffer_Structured)
 			Offset += pBufMeta->Size * ElementIndex;
-		else if (pBufMeta->Type == CD3D11Shader::TextureBuffer)
+		else if (pBufMeta->Type == USMBuffer_Texture)
 			Offset += pMeta->ElementSize * pMeta->ElementCount * ElementIndex;
 	}
 

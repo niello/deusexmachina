@@ -28,7 +28,7 @@ typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
 typedef Ptr<class CD3D9ConstantBuffer> PD3D9ConstantBuffer;
 typedef Ptr<class CD3D9Sampler> PD3D9Sampler;
 typedef Ptr<class CD3D9Texture> PD3D9Texture;
-struct CD3D9ShaderBufferMeta;
+struct CSM30ShaderBufferMeta;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -59,7 +59,7 @@ protected:
 		Data::CFlags					ApplyFlags;
 		UPTR							NextRange;
 		UPTR							CurrRangeOffset;
-		const CD3D9ShaderBufferMeta*	pMeta;		// Request from handle before use, may not persist over the frame if host shader destroyed
+		const CSM30ShaderBufferMeta*	pMeta;		// Request from handle before use, may not persist over the frame if host shader destroyed
 	};
 
 	PD3D9VertexLayout					CurrVL;

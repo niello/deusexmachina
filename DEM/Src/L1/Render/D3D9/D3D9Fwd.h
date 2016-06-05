@@ -27,43 +27,6 @@ enum ESM30SamplerType
 	SM30Sampler_CUBE
 };
 
-struct CD3D9ShaderBufferMeta
-{
-	CStrID				Name;
-	CFixedArray<CRange>	Float4;
-	CFixedArray<CRange>	Int4;
-	CFixedArray<CRange>	Bool;
-	UPTR				SlotIndex;	// Pseudoregister, always equal to an index in a shader buffers metadata array
-	HHandle				Handle;
-};
-
-struct CD3D9ShaderConstMeta
-{
-	HHandle				BufferHandle;
-	CStrID				Name;
-	ESM30RegisterSet	RegSet;
-	U32					RegisterStart;
-	U32					ElementRegisterCount;
-	U32					ElementCount;
-	HHandle				Handle;
-};
-
-struct CD3D9ShaderRsrcMeta
-{
-	CStrID				Name;
-	U32					Register;
-	HHandle				Handle;
-};
-
-struct CD3D9ShaderSamplerMeta
-{
-	CStrID				Name;
-	ESM30SamplerType	Type;
-	U32					RegisterStart;
-	U32					RegisterCount;
-	HHandle				Handle;
-};
-
 }
 
 #endif

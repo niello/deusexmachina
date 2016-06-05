@@ -3,15 +3,15 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-HMODULE hDLL = NULL;
-FDEMShaderCompiler_InitCompiler pInitCompiler = NULL;
-FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = NULL;
-FDEMShaderCompiler_CompileShader pCompileShader = NULL;
-FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
-FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
-FDEMShaderCompiler_SaveSM30ShaderMetadata pSaveSM30ShaderMetadata = NULL;
-FDEMShaderCompiler_SaveUSMShaderMetadata pSaveUSMShaderMetadata = NULL;
-FDEMShaderCompiler_PackShaders pPackShaders = NULL;
+static HMODULE hDLL = NULL;
+static FDEMShaderCompiler_InitCompiler pInitCompiler = NULL;
+static FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = NULL;
+static FDEMShaderCompiler_CompileShader pCompileShader = NULL;
+static FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
+static FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
+static FDEMShaderCompiler_SaveSM30ShaderMetadata pSaveSM30ShaderMetadata = NULL;
+static FDEMShaderCompiler_SaveUSMShaderMetadata pSaveUSMShaderMetadata = NULL;
+static FDEMShaderCompiler_PackShaders pPackShaders = NULL;
 
 bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBFilePath, const char* pOutputDirectory)
 {

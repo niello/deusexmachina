@@ -3,6 +3,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/Shader.h>
+#include <Render/ShaderMetadata.h>
 #include <Render/SamplerDesc.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -77,22 +78,22 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
-	Render::CShader* pVS = VertexShader.GetUnsafe();
-	Render::CShader* pPS = PixelShader.GetUnsafe();
+	const Render::IShaderMetadata* pVSMeta = VertexShader->GetMetadata();
+	const Render::IShaderMetadata* pPSMeta = PixelShader->GetMetadata();
 
-	hWorldMatrix = pVS->GetConstHandle(CStrID("WorldMatrix"));
-	hProjMatrix = pVS->GetConstHandle(CStrID("ProjectionMatrix"));
+	hWorldMatrix = pVSMeta->GetConstHandle(CStrID("WorldMatrix"));
+	hProjMatrix = pVSMeta->GetConstHandle(CStrID("ProjectionMatrix"));
 
-	hWMCB = pVS->GetConstBufferHandle(hWorldMatrix);
-	hPMCB = pVS->GetConstBufferHandle(hProjMatrix);
+	hWMCB = pVSMeta->GetConstBufferHandle(hWorldMatrix);
+	hPMCB = pVSMeta->GetConstBufferHandle(hProjMatrix);
 	n_assert(hWMCB && hPMCB);
 
 	WMCB = GPU->CreateConstantBuffer(hWMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
 	if (hWMCB == hPMCB) PMCB = WMCB;
 	else PMCB = GPU->CreateConstantBuffer(hPMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
 
-	hTexture = pPS->GetResourceHandle(CStrID("BoundTexture"));
-	hLinearSampler = pPS->GetSamplerHandle(CStrID("LinearSampler"));
+	hTexture = pPSMeta->GetResourceHandle(CStrID("BoundTexture"));
+	hLinearSampler = pPSMeta->GetSamplerHandle(CStrID("LinearSampler"));
 
 	Render::CSamplerDesc SampDesc;
 	SampDesc.SetDefaults();

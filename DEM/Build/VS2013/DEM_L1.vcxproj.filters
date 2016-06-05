@@ -851,9 +851,6 @@
     <ClInclude Include="..\..\Src\L1\Frame\View.h">
       <Filter>Frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoader.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\UI\UIContext.h">
       <Filter>UI</Filter>
     </ClInclude>
@@ -937,6 +934,18 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\IO\Streams\ScopedStream.h">
       <Filter>IO\Streams</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\ShaderMetadata.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.h">
+      <Filter>Render\D3D9</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\USMShaderMetadata.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoaderRP.h">
+      <Filter>Frame</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1456,9 +1465,6 @@
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp">
       <Filter>Frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoader.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\UIContext.cpp">
       <Filter>UI</Filter>
     </ClCompile>
@@ -1545,6 +1551,21 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\IO\Streams\ScopedStream.cpp">
       <Filter>IO\Streams</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\ShaderMetadata.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\USMShaderMetadata.cpp">
+      <Filter>Render\D3D11</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoaderRP.cpp">
+      <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\EffectLoadingUtils.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

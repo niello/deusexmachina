@@ -224,7 +224,7 @@ int main(int argc, const char** argv)
 		EXIT_APP_FAIL;
 	}
 
-	// Process render path descs
+	// Process render path descs (must be processed after effects)
 
 	if (!Browser.SetAbsolutePath(ExportDescs ? "SrcShaders:" : "Shaders:"))
 	{

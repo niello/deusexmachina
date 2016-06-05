@@ -16,45 +16,22 @@
 namespace Render
 {
 
-struct CEffectConstant
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HConst			Handle;
-	HConstBuffer	BufferHandle;
-	void*			pDefaultValue;
-	U32				SizeInBytes;
-};
-
-struct CEffectResource
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HResource		Handle;
-	PTexture		DefaultValue;
-};
-
-struct CEffectSampler
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HSampler		Handle;
-	PSampler		DefaultValue;
-};
-
 class CEffect: public Resources::CResourceObject
 {
+	__DeclareClassNoFactory;
+
 protected:
 
 	CDict<CStrID, PTechnique>		TechsByName;
 	CDict<UPTR, PTechnique>			TechsByInputSet;
 
-	//global params signature for validation against a current render path
-
-	//!!!need binary search by ID!
+	//!!!need binary search by ID in fixed arrays!
 	CFixedArray<CEffectConstant>	MaterialConsts;
 	CFixedArray<CEffectResource>	MaterialResources;
 	CFixedArray<CEffectSampler>		MaterialSamplers;
+	CDict<CStrID, void*>			DefaultConsts;
+	CDict<CStrID, PTexture>			DefaultResources;
+	CDict<CStrID, PSampler>			DefaultSamplers;
 	char*							pMaterialConstDefaultValues;
 	UPTR							MaterialConstantBufferCount;
 
@@ -84,6 +61,9 @@ public:
 	const CFixedArray<CEffectResource>&	GetMaterialResources() const { return MaterialResources; }
 	const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
 	UPTR								GetMaterialConstantBufferCount() const { return MaterialConstantBufferCount; }
+	void*								GetConstantDefaultValue(CStrID ID) const;
+	PTexture							GetResourceDefaultValue(CStrID ID) const;
+	PSampler							GetSamplerDefaultValue(CStrID ID) const;
 };
 
 typedef Ptr<CEffect> PEffect;
@@ -99,6 +79,27 @@ inline const CTechnique* CEffect::GetTechByInputSet(UPTR InputSet) const
 {
 	IPTR Idx = TechsByInputSet.FindIndex(InputSet);
 	return Idx == INVALID_INDEX ? NULL : TechsByInputSet.ValueAt(Idx).GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+inline void* CEffect::GetConstantDefaultValue(CStrID ID) const
+{
+	IPTR Idx = DefaultConsts.FindIndex(ID);
+	return Idx == INVALID_INDEX ? NULL : DefaultConsts.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
+
+inline PTexture CEffect::GetResourceDefaultValue(CStrID ID) const
+{
+	IPTR Idx = DefaultResources.FindIndex(ID);
+	return Idx == INVALID_INDEX ? NULL : DefaultResources.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
+
+inline PSampler CEffect::GetSamplerDefaultValue(CStrID ID) const
+{
+	IPTR Idx = DefaultSamplers.FindIndex(ID);
+	return Idx == INVALID_INDEX ? NULL : DefaultSamplers.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

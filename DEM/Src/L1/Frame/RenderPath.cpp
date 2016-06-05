@@ -3,10 +3,17 @@
 #include <Frame/RenderPhase.h>
 #include <Frame/View.h>
 #include <Render/GPUDriver.h>
+#include <Render/ShaderMetadata.h>
 
 namespace Frame
 {
 __ImplementClassNoFactory(Frame::CRenderPath, Resources::CResourceObject);
+
+CRenderPath::~CRenderPath()
+{
+	if (pGlobals) n_delete(pGlobals);
+}
+//---------------------------------------------------------------------
 
 bool CRenderPath::Render(CView& View)
 {

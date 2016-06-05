@@ -208,7 +208,7 @@
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrLight.h" />
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrRenderable.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPath.h" />
-    <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoader.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoaderRP.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhase.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h" />
@@ -234,6 +234,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\USMShaderMetadata.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.h" />
@@ -250,6 +251,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.h" />
     <ClInclude Include="..\..\Src\L1\Render\DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h" />
@@ -279,6 +281,7 @@
     <ClInclude Include="..\..\Src\L1\Render\ShaderLibrary.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLibraryLoaderSLB.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderMetadata.h" />
     <ClInclude Include="..\..\Src\L1\Render\Technique.h" />
     <ClInclude Include="..\..\Src\L1\Render\SkinInfo.h" />
     <ClInclude Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.h" />
@@ -467,7 +470,7 @@
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrLight.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrRenderable.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPath.cpp" />
-    <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoaderRP.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhase.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp" />
@@ -493,6 +496,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\USMShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DisplayDriver.cpp" />
@@ -508,9 +512,11 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Effect.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\EffectLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\EffectLoadingUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ImageUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\GPUDriver.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Light.cpp" />
@@ -529,6 +535,7 @@
     <ClCompile Include="..\..\Src\L1\Render\ShaderLibrary.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ShaderLibraryLoaderSLB.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ShaderLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\ShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Technique.cpp" />

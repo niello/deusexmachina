@@ -10,8 +10,8 @@
 #include <Data/HRDParser.h>
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
-#include <Util/UtilFwd.h> // CRC
-#include <ToolRenderStateDesc.h>	// Shader references replaced with IDs
+#include <Util/UtilFwd.h>			// CRC
+#include <ToolRenderStateDesc.h>	// As a CRenderStateDesc, but shader references are replaced with IDs
 #include <Render/SamplerDesc.h>
 #include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 #include <ConsoleApp.h>
@@ -21,13 +21,6 @@
 
 extern CString RootPath;
 extern CHashTable<CString, Data::CFourCC> ClassToFOURCC;
-
-//???maybe pack shaders to some 'DB' file which maps DB ID to offset
-//and reference shaders by DB ID, not by a file name?
-//can even order shaders in memory and load one-by-one to minimize seek time
-//may pack by use (common, menu, game, cinematic etc) and load only used.
-//can store debug and release binary packages and read from what user wants
-//!!!can pack shaders to a bank here or in BBuilder!
 
 enum EEffectParamClass
 {
@@ -817,39 +810,93 @@ bool ReadRenderStateDesc(Data::PParams RenderStates, CStrID ID, Render::CToolRen
 
 int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 {
-	if (!W.Write<U32>(Params.GetCount())) return ERR_IO_WRITE;
+	UPTR ConstCount = 0;
+	UPTR ResourceCount = 0;
+	UPTR SamplerCount = 0;
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-
-		EEffectParamClassForSaving Class;
 		switch (Param.Class)
 		{
 			case EPC_SM30Const:
-			case EPC_USMConst:		Class = EPC_Const; break;
+			case EPC_USMConst:		++ConstCount; break;
 			case EPC_SM30Resource:
-			case EPC_USMResource:	Class = EPC_Resource; break;
+			case EPC_USMResource:	++ResourceCount; break;
 			case EPC_SM30Sampler:
-			case EPC_USMSampler:	Class = EPC_Sampler; break;
-			default:
-			{
-				n_msg(VL_ERROR, "Unknown tech param class %d\n", (U32)Class);
-				return ERR_INVALID_DATA;
-			}
-		};
-
-		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-		if (!W.Write<U8>(Class)) return ERR_IO_WRITE;
-		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
-		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
-		if (Class == EPC_Const)
-		{
-			if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
-			if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+			case EPC_USMSampler:	++SamplerCount; break;
 		}
 	}
 
+	if (!W.Write<U32>(ConstCount)) return ERR_IO_WRITE;
+	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
+	{
+		CEffectParam& Param = Params[ParamIdx];
+		if (Param.Class != EPC_SM30Const && Param.Class != EPC_USMConst) continue;
+
+		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Param.ConstType)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Param.SizeInBytes)) return ERR_IO_WRITE;
+	}
+
+	if (!W.Write<U32>(ResourceCount)) return ERR_IO_WRITE;
+	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
+	{
+		CEffectParam& Param = Params[ParamIdx];
+		if (Param.Class != EPC_SM30Resource && Param.Class != EPC_USMResource) continue;
+
+		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+	}
+
+	if (!W.Write<U32>(SamplerCount)) return ERR_IO_WRITE;
+	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
+	{
+		CEffectParam& Param = Params[ParamIdx];
+		if (Param.Class != EPC_SM30Sampler && Param.Class != EPC_USMSampler) continue;
+
+		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
+		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
+		if (!W.Write<U32>(Param.SourceShaderID)) return ERR_IO_WRITE;
+	}
+
 	return SUCCESS;
+}
+//---------------------------------------------------------------------
+
+bool SkipEffectParams(IO::CBinaryReader& Reader)
+{
+	// Constants
+	U32 Count;
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 Idx = 0; Idx < Count; ++Idx)
+	{
+		CString StrValue;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.GetStream().Seek(10, IO::Seek_Current)) FAIL;
+	}
+
+	// Resources
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 Idx = 0; Idx < Count; ++Idx)
+	{
+		CString StrValue;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.GetStream().Seek(5, IO::Seek_Current)) FAIL;
+	}
+
+	// Samplers
+	if (!Reader.Read(Count)) FAIL;
+	for (U32 Idx = 0; Idx < Count; ++Idx)
+	{
+		CString StrValue;
+		if (!Reader.Read(StrValue)) FAIL;
+		if (!Reader.GetStream().Seek(5, IO::Seek_Current)) FAIL;
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -911,18 +958,249 @@ bool EFFSeekToGlobalParams(IO::CStream& Stream)
 		if (!R.Read(MaxLights)) FAIL;
 		if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) FAIL;
 
-		U32 ParamCount;
-		if (!R.Read(ParamCount)) FAIL;
-		for (U32 ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-		{
-			U8 Type;
-			if (!R.Read(StrValue)) FAIL;
-			if (!R.Read(Type)) FAIL;	
-			if (!Stream.Seek(Type == 0 ? 10 : 5, IO::Seek_Current)) FAIL;
-		}
+		if (!SkipEffectParams(R)) FAIL;
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Class, CArray<CEffectParam>& GlobalParams,
+							 CDict<U32, CSM30ShaderMeta>& D3D9MetaCache, CDict<U32, CUSMShaderMeta>& USMMetaCache,
+							 CUSMShaderMeta& USMMeta, CSM30ShaderMeta& SM30Meta, U32& Target)
+{
+	CEffectParam Param;
+	if (!R.Read(Param.ID)) return ERR_IO_READ;
+
+	U8 ShaderType;
+	if (!R.Read(ShaderType)) return ERR_IO_READ;
+	Param.ShaderType = (Render::EShaderType)ShaderType;
+
+	if (!R.Read(Param.SourceShaderID)) return ERR_IO_READ;	
+
+	if (Class == EPC_Const)
+	{
+		U8 ConstType;
+		if (!R.Read<U8>(ConstType)) return ERR_IO_READ;
+		Param.ConstType = (EUSMConstType)ConstType;
+		if (!R.Read<U32>(Param.SizeInBytes)) return ERR_IO_READ;
+	}
+
+	// Load API-specific parameter metadata
+
+	CSM30ShaderMeta* pD3D9Meta = NULL;
+	CUSMShaderMeta* pUSMMeta = NULL;
+	if (!LoadShaderMetadataByObjID(Param.SourceShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta) || (!pD3D9Meta && !pUSMMeta))
+	{
+		n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", Param.SourceShaderID);
+		return ERR_INVALID_DATA;
+	}
+
+	// May actually be higher than 0x0400, but it is needed only
+	// for checking that no SM3.0 + USM mixing occurs.
+	U32 CurrTarget = pD3D9Meta ? 0x0300 : 0x0400;
+
+	if (!Target) Target = CurrTarget;
+	else if ((Target < 0x0400 && CurrTarget >= 0x0400) || (Target >= 0x0400 && CurrTarget < 0x0400))
+	{
+		n_msg(VL_ERROR, "Render path mixes USM and SM3.0 effects in globals section\n");
+		return ERR_INVALID_DATA;
+	}
+	else if (CurrTarget > Target) Target = CurrTarget;
+
+	if (pD3D9Meta)
+	{
+		switch (Class)
+		{
+			case EPC_Const:
+			{
+				UPTR Idx = 0;
+				for (; Idx < pD3D9Meta->Consts.GetCount(); ++ Idx)
+					if (pD3D9Meta->Consts[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pD3D9Meta->Consts.GetCount()) return ERR_INVALID_DATA;
+				Param.Class = EPC_SM30Const;
+				Param.pSM30Const = &pD3D9Meta->Consts[Idx];
+				break;
+			}
+			case EPC_Resource:
+			{
+				UPTR Idx = 0;
+				for (; Idx < pD3D9Meta->Resources.GetCount(); ++ Idx)
+					if (pD3D9Meta->Resources[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pD3D9Meta->Resources.GetCount()) return ERR_INVALID_DATA;
+				Param.Class = EPC_SM30Resource;
+				Param.pSM30Resource = &pD3D9Meta->Resources[Idx];
+				break;
+			}
+			case EPC_Sampler:
+			{
+				UPTR Idx = 0;
+				for (; Idx < pD3D9Meta->Samplers.GetCount(); ++ Idx)
+					if (pD3D9Meta->Samplers[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pD3D9Meta->Samplers.GetCount()) return ERR_INVALID_DATA;
+				Param.Class = EPC_SM30Sampler;
+				Param.pSM30Sampler = &pD3D9Meta->Samplers[Idx];
+				break;
+			}
+			default:
+			{
+				n_msg(VL_ERROR, "Unsupported parameter class %d\n", Class);
+				return ERR_INVALID_DATA;
+			}
+		}
+	}
+	else if (pUSMMeta)
+	{
+		USMMeta.MinFeatureLevel = n_max(USMMeta.MinFeatureLevel, pUSMMeta->MinFeatureLevel);
+		USMMeta.RequiresFlags |= pUSMMeta->RequiresFlags;
+
+		switch (Class)
+		{
+			case EPC_Const:
+			{
+				UPTR Idx = 0;
+				for (; Idx < pUSMMeta->Consts.GetCount(); ++ Idx)
+					if (pUSMMeta->Consts[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pUSMMeta->Consts.GetCount()) return ERR_INVALID_DATA;
+				Param.Class = EPC_USMConst;
+				Param.pUSMConst = &pUSMMeta->Consts[Idx];
+				Param.pUSMBuffer = &pUSMMeta->Buffers[Param.pUSMConst->BufferIndex];
+				break;
+			}
+			case EPC_Resource:
+			{
+				UPTR Idx = 0;
+				for (; Idx < pUSMMeta->Resources.GetCount(); ++ Idx)
+					if (pUSMMeta->Resources[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pUSMMeta->Resources.GetCount()) return ERR_INVALID_DATA;
+				Param.Class = EPC_USMResource;
+				Param.pUSMResource = &pUSMMeta->Resources[Idx];
+				break;
+			}
+			case EPC_Sampler:
+			{
+				UPTR Idx = 0;
+				for (; Idx < pUSMMeta->Samplers.GetCount(); ++ Idx)
+					if (pUSMMeta->Samplers[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pUSMMeta->Samplers.GetCount()) return ERR_INVALID_DATA;
+				Param.Class = EPC_USMSampler;
+				Param.pUSMSampler = &pUSMMeta->Samplers[Idx];
+				break;
+			}
+			default:
+			{
+				n_msg(VL_ERROR, "Unsupported parameter class %d\n", Class);
+				return ERR_INVALID_DATA;
+			}
+		}
+	}
+
+	// Add a parameter to the list, verify its compatibility across all referenced effects
+
+	CEffectParam* pAddedParam = NULL;
+
+	UPTR Idx = 0;
+	for (; Idx < GlobalParams.GetCount(); ++ Idx)
+		if (GlobalParams[Idx].ID == Param.ID) break;
+	if (Idx == GlobalParams.GetCount())
+	{
+		// Not found in the list, add it here
+		pAddedParam = GlobalParams.Add(Param);
+
+		switch (Param.Class)
+		{
+			case EPC_SM30Const:		SM30Meta.Consts.Add(*Param.pSM30Const); break;
+			case EPC_SM30Resource:	SM30Meta.Resources.Add(*Param.pSM30Resource); break;
+			case EPC_SM30Sampler:	SM30Meta.Samplers.Add(*Param.pSM30Sampler); break;
+			case EPC_USMConst:		USMMeta.Consts.Add(*Param.pUSMConst); break;
+			case EPC_USMResource:	USMMeta.Resources.Add(*Param.pUSMResource); break;
+			case EPC_USMSampler:	USMMeta.Samplers.Add(*Param.pUSMSampler); break;
+		}
+	}
+	else
+	{
+		// Found in the list, compare with existing to verify compatibility
+		pAddedParam = &GlobalParams[Idx];
+
+		if (Param.Class != pAddedParam->Class)
+		{
+			n_msg(VL_ERROR, "Global param '%s' has different class in different effects\n", Param.ID.CStr());
+			return ERR_INVALID_DATA;
+		}
+
+		bool Compatible = false;
+		switch (Param.Class)
+		{
+			case EPC_SM30Const:		Compatible = ((*Param.pSM30Const) == (*pAddedParam->pSM30Const)); break;
+			case EPC_SM30Resource:	Compatible = ((*Param.pSM30Resource) == (*pAddedParam->pSM30Resource)); break;
+			case EPC_SM30Sampler:	Compatible = ((*Param.pSM30Sampler) == (*pAddedParam->pSM30Sampler)); break;
+			case EPC_USMConst:		Compatible = ((*Param.pUSMConst) == (*pAddedParam->pUSMConst)); break;
+			case EPC_USMResource:	Compatible = ((*Param.pUSMResource) == (*pAddedParam->pUSMResource)); break;
+			case EPC_USMSampler:	Compatible = ((*Param.pUSMSampler) == (*pAddedParam->pUSMSampler)); break;
+		}
+
+		if (!Compatible)
+		{
+			n_msg(VL_ERROR, "Global param '%s' has different description in different effects\n", Param.ID.CStr());
+			return ERR_INVALID_DATA;
+		}
+
+		if (Param.Class == EPC_USMConst)
+		{
+			// For USM constants we also compare containing buffer registers
+			CUSMShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
+			if (Param.pUSMBuffer->Register != pAddedParam->pUSMBuffer->Register)
+			{
+				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers in different effects\n", Param.ID.CStr());
+				return ERR_INVALID_DATA;
+			}
+		}
+	}
+
+	// No source shader is used, all metadata will be included into an RP file
+	pAddedParam->SourceShaderID = 0;
+
+	// For constants, process containing buffer
+
+	if (Param.Class == EPC_USMConst)
+	{
+		UPTR Idx = 0;
+		for (; Idx < USMMeta.Buffers.GetCount(); ++ Idx)
+			if (USMMeta.Buffers[Idx].Register == pAddedParam->pUSMBuffer->Register) break;
+		if (Idx == USMMeta.Buffers.GetCount())
+		{
+			USMMeta.Buffers.Add(*pAddedParam->pUSMBuffer);
+		}
+		else
+		{
+			// Use a bigger buffer
+			if (USMMeta.Buffers[Idx].Size < pAddedParam->pUSMBuffer->Size)
+				USMMeta.Buffers[Idx] = *pAddedParam->pUSMBuffer;
+		}
+
+		pAddedParam->pUSMConst->BufferIndex = Idx;
+	}
+	else if (Param.Class == EPC_SM30Const)
+	{
+		// The only constant buffer is used for SM3.0 RP globals
+		if (!SM30Meta.Buffers.GetCount())
+		{
+			CSM30ShaderBufferMeta* pBuffer = SM30Meta.Buffers.Reserve(1);
+			pBuffer->Name = "_RenderPathGlobals_";
+		}
+
+		CSM30ShaderConstMeta* pSM30Const = pAddedParam->pSM30Const;
+		CSM30ShaderBufferMeta& SM30Buffer = SM30Meta.Buffers[0];
+		CArray<UPTR>& UsedRegs = (pSM30Const->RegisterSet == RS_Float4) ? SM30Buffer.UsedFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? SM30Buffer.UsedInt4 : SM30Buffer.UsedBool);
+		for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
+		{
+			if (!UsedRegs.Contains(r)) UsedRegs.Add(r);
+		}
+
+		pSM30Const->BufferIndex = 0;
+	}
+
+	return SUCCESS;
 }
 //---------------------------------------------------------------------
 
@@ -1010,241 +1288,22 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				// Load parameter desc
+				int CallResult = ProcessGlobalEffectParam(R, EPC_Const, GlobalParams, D3D9MetaCache, USMMetaCache, USMMeta, SM30Meta, Target);
+				if (CallResult != SUCCESS) return CallResult;
+			}
 
-				CEffectParam Param;
-				if (!R.Read(Param.ID)) return ERR_IO_READ;
+			if (!R.Read(GlobalCount)) return ERR_IO_READ;
+			for (U32 i = 0; i < GlobalCount; ++i)
+			{
+				int CallResult = ProcessGlobalEffectParam(R, EPC_Resource, GlobalParams, D3D9MetaCache, USMMetaCache, USMMeta, SM30Meta, Target);
+				if (CallResult != SUCCESS) return CallResult;
+			}
 
-				U8 Class;
-				if (!R.Read(Class)) return ERR_IO_READ;
-
-				U8 ShaderType;
-				if (!R.Read(ShaderType)) return ERR_IO_READ;
-				Param.ShaderType = (Render::EShaderType)ShaderType;
-
-				if (!R.Read(Param.SourceShaderID)) return ERR_IO_READ;	
-
-				if (Class == EPC_Const)
-				{
-					U8 ConstType;
-					if (!R.Read<U8>(ConstType)) return ERR_IO_READ;
-					Param.ConstType = (EUSMConstType)ConstType;
-					if (!R.Read<U32>(Param.SizeInBytes)) return ERR_IO_READ;
-				}
-
-				// Load API-specific parameter metadata
-
-				CSM30ShaderMeta* pD3D9Meta = NULL;
-				CUSMShaderMeta* pUSMMeta = NULL;
-				if (!LoadShaderMetadataByObjID(Param.SourceShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta) || (!pD3D9Meta && !pUSMMeta))
-				{
-					n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", Param.SourceShaderID);
-					return ERR_INVALID_DATA;
-				}
-
-				// May actually be higher than 0x0400, but it is needed only
-				// for checking that no SM3.0 + USM mixing occurs.
-				U32 CurrTarget = pD3D9Meta ? 0x0300 : 0x0400;
-
-				if (!Target) Target = CurrTarget;
-				else if ((Target < 0x0400 && CurrTarget >= 0x0400) || (Target >= 0x0400 && CurrTarget < 0x0400))
-				{
-					n_msg(VL_ERROR, "Render path '%s' mixes USM and SM3.0 effects in globals section\n", pInFilePath);
-					return ERR_INVALID_DATA;
-				}
-				else if (CurrTarget > Target) Target = CurrTarget;
-
-				if (pD3D9Meta)
-				{
-					switch (Class)
-					{
-						case EPC_Const:
-						{
-							UPTR Idx = 0;
-							for (; Idx < pD3D9Meta->Consts.GetCount(); ++ Idx)
-								if (pD3D9Meta->Consts[Idx].Name == Param.ID.CStr()) break;
-							if (Idx == pD3D9Meta->Consts.GetCount()) return ERR_INVALID_DATA;
-							Param.Class = EPC_SM30Const;
-							Param.pSM30Const = &pD3D9Meta->Consts[Idx];
-							break;
-						}
-						case EPC_Resource:
-						{
-							UPTR Idx = 0;
-							for (; Idx < pD3D9Meta->Resources.GetCount(); ++ Idx)
-								if (pD3D9Meta->Resources[Idx].Name == Param.ID.CStr()) break;
-							if (Idx == pD3D9Meta->Resources.GetCount()) return ERR_INVALID_DATA;
-							Param.Class = EPC_SM30Resource;
-							Param.pSM30Resource = &pD3D9Meta->Resources[Idx];
-							break;
-						}
-						case EPC_Sampler:
-						{
-							UPTR Idx = 0;
-							for (; Idx < pD3D9Meta->Samplers.GetCount(); ++ Idx)
-								if (pD3D9Meta->Samplers[Idx].Name == Param.ID.CStr()) break;
-							if (Idx == pD3D9Meta->Samplers.GetCount()) return ERR_INVALID_DATA;
-							Param.Class = EPC_SM30Sampler;
-							Param.pSM30Sampler = &pD3D9Meta->Samplers[Idx];
-							break;
-						}
-						default:
-						{
-							n_msg(VL_ERROR, "Unsupported parameter class %d\n", Class);
-							return ERR_INVALID_DATA;
-						}
-					}
-				}
-				else if (pUSMMeta)
-				{
-					USMMeta.MinFeatureLevel = n_max(USMMeta.MinFeatureLevel, pUSMMeta->MinFeatureLevel);
-					USMMeta.RequiresFlags |= pUSMMeta->RequiresFlags;
-
-					switch (Class)
-					{
-						case EPC_Const:
-						{
-							UPTR Idx = 0;
-							for (; Idx < pUSMMeta->Consts.GetCount(); ++ Idx)
-								if (pUSMMeta->Consts[Idx].Name == Param.ID.CStr()) break;
-							if (Idx == pUSMMeta->Consts.GetCount()) return ERR_INVALID_DATA;
-							Param.Class = EPC_USMConst;
-							Param.pUSMConst = &pUSMMeta->Consts[Idx];
-							Param.pUSMBuffer = &pUSMMeta->Buffers[Param.pUSMConst->BufferIndex];
-							break;
-						}
-						case EPC_Resource:
-						{
-							UPTR Idx = 0;
-							for (; Idx < pUSMMeta->Resources.GetCount(); ++ Idx)
-								if (pUSMMeta->Resources[Idx].Name == Param.ID.CStr()) break;
-							if (Idx == pUSMMeta->Resources.GetCount()) return ERR_INVALID_DATA;
-							Param.Class = EPC_USMResource;
-							Param.pUSMResource = &pUSMMeta->Resources[Idx];
-							break;
-						}
-						case EPC_Sampler:
-						{
-							UPTR Idx = 0;
-							for (; Idx < pUSMMeta->Samplers.GetCount(); ++ Idx)
-								if (pUSMMeta->Samplers[Idx].Name == Param.ID.CStr()) break;
-							if (Idx == pUSMMeta->Samplers.GetCount()) return ERR_INVALID_DATA;
-							Param.Class = EPC_USMSampler;
-							Param.pUSMSampler = &pUSMMeta->Samplers[Idx];
-							break;
-						}
-						default:
-						{
-							n_msg(VL_ERROR, "Unsupported parameter class %d\n", Class);
-							return ERR_INVALID_DATA;
-						}
-					}
-				}
-
-				// Add a parameter to the list, verify its compatibility across all referenced effects
-
-				CEffectParam* pAddedParam = NULL;
-
-				UPTR Idx = 0;
-				for (; Idx < GlobalParams.GetCount(); ++ Idx)
-					if (GlobalParams[Idx].ID == Param.ID) break;
-				if (Idx == GlobalParams.GetCount())
-				{
-					// Not found in the list, add it here
-					pAddedParam = GlobalParams.Add(Param);
-
-					switch (Param.Class)
-					{
-						case EPC_SM30Const:		SM30Meta.Consts.Add(*Param.pSM30Const); break;
-						case EPC_SM30Resource:	SM30Meta.Resources.Add(*Param.pSM30Resource); break;
-						case EPC_SM30Sampler:	SM30Meta.Samplers.Add(*Param.pSM30Sampler); break;
-						case EPC_USMConst:		USMMeta.Consts.Add(*Param.pUSMConst); break;
-						case EPC_USMResource:	USMMeta.Resources.Add(*Param.pUSMResource); break;
-						case EPC_USMSampler:	USMMeta.Samplers.Add(*Param.pUSMSampler); break;
-					}
-				}
-				else
-				{
-					// Found in the list, compare with existing to verify compatibility
-					pAddedParam = &GlobalParams[Idx];
-
-					if (Param.Class != pAddedParam->Class)
-					{
-						n_msg(VL_ERROR, "Global param '%s' has different class in different effects\n", Param.ID.CStr());
-						return ERR_INVALID_DATA;
-					}
-
-					bool Compatible = false;
-					switch (Param.Class)
-					{
-						case EPC_SM30Const:		Compatible = ((*Param.pSM30Const) == (*pAddedParam->pSM30Const)); break;
-						case EPC_SM30Resource:	Compatible = ((*Param.pSM30Resource) == (*pAddedParam->pSM30Resource)); break;
-						case EPC_SM30Sampler:	Compatible = ((*Param.pSM30Sampler) == (*pAddedParam->pSM30Sampler)); break;
-						case EPC_USMConst:		Compatible = ((*Param.pUSMConst) == (*pAddedParam->pUSMConst)); break;
-						case EPC_USMResource:	Compatible = ((*Param.pUSMResource) == (*pAddedParam->pUSMResource)); break;
-						case EPC_USMSampler:	Compatible = ((*Param.pUSMSampler) == (*pAddedParam->pUSMSampler)); break;
-					}
-
-					if (!Compatible)
-					{
-						n_msg(VL_ERROR, "Global param '%s' has different description in different effects\n", Param.ID.CStr());
-						return ERR_INVALID_DATA;
-					}
-
-					if (Param.Class == EPC_USMConst)
-					{
-						// For USM constants we also compare containing buffer registers
-						CUSMShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
-						if (Param.pUSMBuffer->Register != pAddedParam->pUSMBuffer->Register)
-						{
-							n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers in different effects\n", Param.ID.CStr());
-							return ERR_INVALID_DATA;
-						}
-					}
-				}
-
-				// No source shader is used, all metadata will be included into an RP file
-				pAddedParam->SourceShaderID = 0;
-
-				// For constants, process containing buffer
-
-				if (Param.Class == EPC_USMConst)
-				{
-					UPTR Idx = 0;
-					for (; Idx < USMMeta.Buffers.GetCount(); ++ Idx)
-						if (USMMeta.Buffers[Idx].Register == pAddedParam->pUSMBuffer->Register) break;
-					if (Idx == USMMeta.Buffers.GetCount())
-					{
-						USMMeta.Buffers.Add(*pAddedParam->pUSMBuffer);
-					}
-					else
-					{
-						// Use a bigger buffer
-						if (USMMeta.Buffers[Idx].Size < pAddedParam->pUSMBuffer->Size)
-							USMMeta.Buffers[Idx] = *pAddedParam->pUSMBuffer;
-					}
-
-					pAddedParam->pUSMConst->BufferIndex = Idx;
-				}
-				else if (Param.Class == EPC_SM30Const)
-				{
-					// The only constant buffer is used for SM3.0 RP globals
-					if (!SM30Meta.Buffers.GetCount())
-					{
-						CSM30ShaderBufferMeta* pBuffer = SM30Meta.Buffers.Reserve(1);
-						pBuffer->Name = "_RenderPathGlobals_";
-					}
-
-					CSM30ShaderConstMeta* pSM30Const = pAddedParam->pSM30Const;
-					CSM30ShaderBufferMeta& SM30Buffer = SM30Meta.Buffers[0];
-					CArray<UPTR>& UsedRegs = (pSM30Const->RegisterSet == RS_Float4) ? SM30Buffer.UsedFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? SM30Buffer.UsedInt4 : SM30Buffer.UsedBool);
-					for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
-					{
-						if (!UsedRegs.Contains(r)) UsedRegs.Add(r);
-					}
-
-					pSM30Const->BufferIndex = 0;
-				}
+			if (!R.Read(GlobalCount)) return ERR_IO_READ;
+			for (U32 i = 0; i < GlobalCount; ++i)
+			{
+				int CallResult = ProcessGlobalEffectParam(R, EPC_Sampler, GlobalParams, D3D9MetaCache, USMMetaCache, USMMeta, SM30Meta, Target);
+				if (CallResult != SUCCESS) return CallResult;
 			}
 		}
 	}

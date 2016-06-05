@@ -6,8 +6,7 @@
 #include <Data/Singleton.h>
 #include <Data/HandleManager.h>
 
-// Central object to enumerate video hardware and obtain driver objects to control it.
-// This class should be subclassed and implemented via some video subsystem API like D3D9 or DXGI.
+// D3D9 implementation of CVideoDriverFactory
 
 struct IDirect3D9;
 typedef enum _D3DFORMAT D3DFORMAT;
@@ -29,8 +28,6 @@ protected:
 	UPTR			AdapterCount;	// Valid during a lifetime of the D3D9 object
 
 public:
-
-	Data::CHandleManager	HandleMgr;			// Primarily for shader metadata handles
 
 	CD3D9DriverFactory(): pD3D9(NULL), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D9DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }

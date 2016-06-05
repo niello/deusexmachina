@@ -3,6 +3,7 @@
 #define __DEM_L1_FRAME_RENDER_PATH_H__
 
 #include <Resources/ResourceObject.h>
+#include <Render/RenderFwd.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 
@@ -31,11 +32,15 @@ class CRenderPath: public Resources::CResourceObject //???need to be a resource?
 
 public:
 
-	//!!!global shader variables!
+	CFixedArray<PRenderPhase>				Phases;
+	Render::IShaderMetadata*				pGlobals;
+	CFixedArray<Render::CEffectConstant>	Consts;
+	CFixedArray<Render::CEffectResource>	Resources;
+	CFixedArray<Render::CEffectSampler>		Samplers;
 
-	CFixedArray<PRenderPhase>	Phases;
+	CRenderPath(): pGlobals(NULL) {}
+	virtual ~CRenderPath();
 
-	//bool Init(CGPUDriver& Driver, const Data::CParams& Desc);
 	bool Render(CView& View);
 
 	virtual bool IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?

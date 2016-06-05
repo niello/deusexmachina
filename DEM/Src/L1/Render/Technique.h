@@ -21,45 +21,22 @@ namespace Resources
 
 namespace Render
 {
-typedef Ptr<class CRenderState> PRenderState;
 typedef CFixedArray<PRenderState> CPassList;
-
-struct CTechConstant
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HConst			Handle;
-	HConstBuffer	BufferHandle;
-};
-
-struct CTechResource
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HResource		Handle;
-};
-
-struct CTechSampler
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HSampler		Handle;
-};
 
 class CTechnique: public Data::CRefCounted
 {
 private:
 
-	CStrID						Name;
-	UPTR						ShaderInputSetID;
-	//EGPUFeatureLevel			MinFeatureLevel;
-	CFixedArray<CPassList>		PassesByLightCount;
+	CStrID							Name;
+	UPTR							ShaderInputSetID;
+	//EGPUFeatureLevel				MinFeatureLevel;
+	CFixedArray<CPassList>			PassesByLightCount; // Light count is an index
 
 	//!!!need binary search by ID!
 	//!!!once found, can be referenced by index!
-	CFixedArray<CTechConstant>	Consts;
-	CFixedArray<CTechResource>	Resources;
-	CFixedArray<CTechSampler>	Samplers;
+	CFixedArray<CEffectConstant>	Consts;
+	CFixedArray<CEffectResource>	Resources;
+	CFixedArray<CEffectSampler>		Samplers;
 
 	friend class Resources::CEffectLoader;
 
