@@ -11,6 +11,9 @@
 #include <IO/PathUtils.h>
 #include <Data/FixedArray.h>
 
+// Utility functions for loading data blocks common to several effect-related formats (EFF, RP, MTL).
+// No header file exist, include function declarations into other translation units instead.
+
 namespace Resources
 {
 

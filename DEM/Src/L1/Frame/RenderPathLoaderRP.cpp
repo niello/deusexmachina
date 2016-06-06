@@ -73,7 +73,6 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 		}
 	}
 
-	// const Render::IShaderMetadata* pDefaultShaderMeta = RP->pGlobals; instead of a shader library, for shader ID 0
 	if (!LoadEffectParams(Reader, NULL, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
 
 	return RP.GetUnsafe();

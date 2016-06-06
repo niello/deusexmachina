@@ -21,6 +21,11 @@ namespace Data
 	class CParams;
 }
 
+namespace Resources
+{
+	class CRenderPathLoaderRP;
+}
+
 namespace Frame
 {
 class CView;
@@ -30,7 +35,7 @@ class CRenderPath: public Resources::CResourceObject //???need to be a resource?
 {
 	__DeclareClassNoFactory;
 
-public:
+protected:
 
 	CFixedArray<PRenderPhase>				Phases;
 	Render::IShaderMetadata*				pGlobals;
@@ -38,12 +43,18 @@ public:
 	CFixedArray<Render::CEffectResource>	Resources;
 	CFixedArray<Render::CEffectSampler>		Samplers;
 
+	friend class Resources::CRenderPathLoaderRP;
+
+public:
+
 	CRenderPath(): pGlobals(NULL) {}
 	virtual ~CRenderPath();
 
-	bool Render(CView& View);
+	bool										Render(CView& View);
 
-	virtual bool IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
+	virtual bool								IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
+	//const Render::IShaderMetadata*	GetGlobalsMetadata() const { return pGlobals; }
+	const CFixedArray<Render::CEffectConstant>&	GetGlobalConstants() const { return Consts; }
 };
 
 typedef Ptr<CRenderPath> PRenderPath;

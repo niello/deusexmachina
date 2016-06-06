@@ -17,7 +17,7 @@ bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 
 const vector3& CGameLevelView::GetCenterOfInterest() const
 {
-	return View.pCamera->GetNode()->GetWorldPosition();
+	return View.GetCamera()->GetNode()->GetWorldPosition();
 }
 //---------------------------------------------------------------------
 

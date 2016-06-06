@@ -2,6 +2,7 @@
 
 #include <Frame/RenderPhase.h>
 #include <Frame/View.h>
+#include <Frame/NodeAttrCamera.h>
 #include <Render/GPUDriver.h>
 #include <Render/ShaderMetadata.h>
 
@@ -23,6 +24,10 @@ bool CRenderPath::Render(CView& View)
 	//render into or RT already contains this frame data
 	//!!!DBG TMP!
 	View.GPU->ClearRenderTarget(*View.RTs[0], vector4(0.1f, 0.7f, 0.1f, 1.f));
+
+	//!!!set camera shader params!
+	//???here or in a render path?
+	const matrix44& ViewProj = View.GetCamera()->GetViewProjMatrix();
 
 	for (UPTR i = 0; i < Phases.GetCount(); ++i)
 	{

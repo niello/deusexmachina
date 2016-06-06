@@ -3,7 +3,6 @@
 #include <Frame/View.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrSkin.h>
-#include <Frame/NodeAttrCamera.h>
 #include <Scene/SceneNode.h>
 #include <Render/Renderable.h>
 #include <Render/Renderer.h>
@@ -19,7 +18,7 @@ __ImplementClass(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
 bool CRenderPhaseGeometry::Render(CView& View)
 {
-	if (!View.pSPS || !View.pCamera) OK;
+	if (!View.pSPS || !View.GetCamera()) OK;
 
 	View.UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
@@ -64,10 +63,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
 		View.GPU->SetRenderTarget(i, View.RTs[i]);
 	View.GPU->SetDepthStencilBuffer(View.DSBuffer.GetUnsafe());
-
-	//!!!set camera shader params!
-	//???here or in a render path?
-	const matrix44& ViewProj = View.pCamera->GetViewProjMatrix();
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();

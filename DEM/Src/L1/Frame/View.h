@@ -2,6 +2,7 @@
 #ifndef __DEM_L1_FRAME_VIEW_H__
 #define __DEM_L1_FRAME_VIEW_H__
 
+#include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
@@ -14,13 +15,6 @@ namespace Scene
 {
 	class CSPS;
 	class CNodeAttribute;
-};
-
-namespace Render
-{
-	typedef Ptr<class CGPUDriver> PGPUDriver;
-	typedef Ptr<class CRenderTarget> PRenderTarget;
-	typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 };
 
 namespace UI
@@ -37,24 +31,27 @@ class CView
 {
 protected:
 
+	PRenderPath							RenderPath;
+	CNodeAttrCamera*					pCamera; //???smart ptr?
+
 	CArray<Scene::CNodeAttribute*>		VisibilityCache;
 	bool								VisibilityCacheDirty;
 
 public:
 
+	typedef CDict<Render::HConstBuffer, Render::PConstantBuffer> CConstBufferMap;
+
 	//???add viewport settings here? to render multiple views into one RT
 
 	//???scene start node? if NULL, render all nodes, else only that and its children
 	Scene::CSPS*						pSPS;
-	CNodeAttrCamera*							pCamera; //???smart ptr?
 	UI::PUIContext						UIContext;
 
 	Render::PGPUDriver					GPU;
 	CFixedArray<Render::PRenderTarget>	RTs;
 	Render::PDepthStencilBuffer			DSBuffer;	//???or named? may require more than one in one view?
+	CConstBufferMap						GlobalCBs;
 
-	//???store here or outside?
-	PRenderPath							RenderPath;
 	CArray<Render::CRenderNode>			RenderQueue;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true) {}
@@ -68,7 +65,10 @@ public:
 	//shadow map buffers
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
+	bool							SetRenderPath(CRenderPath* pNewRenderPath);
+	CRenderPath*					GetRenderPath() const { return RenderPath.GetUnsafe(); }
 	bool							SetCamera(CNodeAttrCamera* pNewCamera);
+	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; } //???if dirty update right here?
 	bool							Render();
