@@ -23,7 +23,8 @@ public:
 
 	CModelRenderer();
 
-	virtual CArray<CRenderNode>::CIterator Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr);
+	virtual void							PrepareNode(CRenderNode& Node);
+	virtual CArray<CRenderNode>::CIterator	Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr);
 };
 
 }

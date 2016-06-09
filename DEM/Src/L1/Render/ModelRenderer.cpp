@@ -22,6 +22,20 @@ CModelRenderer::CModelRenderer()
 }
 //---------------------------------------------------------------------
 
+//???return bool, if false, remove node from queue
+//(array tail removal is very fast in CArray, can even delay removal in a case next RQ node will be added inplace)?
+void CModelRenderer::PrepareNode(CRenderNode& Node)
+{
+	CModel* pModel = Node.pRenderable->As<CModel>();
+	n_assert_dbg(pModel);
+
+	//!!!can find once, outside the render loop! store somewhere in a persistent render node.
+	//But this associates object and renderer, as other renderer may request other input set.
+	Node.pMaterial = pModel->Material.GetUnsafe();
+	Node.pTech = pModel->Material->GetEffect()->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
+}
+//---------------------------------------------------------------------
+
 CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
 	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
@@ -30,15 +44,10 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 		if (ItCurr->pRenderer != this) return ItCurr;
 
 		CModel* pModel = ItCurr->pRenderable->As<CModel>();
-		n_assert_dbg(pModel);
 
 		CVertexBuffer* pVB = pModel->Mesh->GetVertexBuffer().GetUnsafe();
 		const CPrimitiveGroup* pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex/*, ItCurr->LOD*/);
 
-		//???do outside a renderer, in a phase, before sorting, and store in renderable?
-		//this requires a way to get material from a renderable. really need?
-		//!!!can find once, outside the render loop! store somewhere, associates object and renderer
-		const CTechnique* pTech = pModel->Material->GetEffect()->GetTechByInputSet(InputSet_Model);
 		//HConst hWorld = pTech->GetParam(CStrID("WorldMatrix")); //???or find index and then reference by index?
 		//!!!search in fallback materials if not found!
 
@@ -46,18 +55,21 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 		UPTR LightCount = 0;
 
-		if (pVB && pGroup && pTech)
+		if (pVB && pGroup && ItCurr->pTech)
 		{
-			//!!!DBG TMP!
-			pModel->Material->Apply(GPU);
+			//!!!DBG TMP! move outside, not to redundantly reset!
+			ItCurr->pMaterial->Apply(GPU);
+
+			// Per-instance params
 			//set tech params (feed shader according to an input set)
 			//GPU.SetShaderConstant(TmpCB, hWorld, 0, ItCurr->Transform.m, sizeof(matrix44));
+			//if (ItCurr->pSkinPalette) GPU.SetShaderConstant(TmpCB, hSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
 
 			GPU.SetVertexLayout(pVB->GetVertexLayout());
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pModel->Mesh->GetIndexBuffer().GetUnsafe());
 
-			const CPassList* pPasses = pTech->GetPasses(LightCount);
+			const CPassList* pPasses = ItCurr->pTech->GetPasses(LightCount);
 			if (pPasses)
 			{
 				for (UPTR i = 0; i < pPasses->GetCount(); ++i)
@@ -66,7 +78,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 					GPU.Draw(*pGroup);
 				}
 
-				Sys::DbgOut("CModel rendered, tech '%s'\n", pTech->GetName().CStr());
+				Sys::DbgOut("CModel rendered, tech '%s'\n", ItCurr->pTech->GetName().CStr());
 			}
 		}
 

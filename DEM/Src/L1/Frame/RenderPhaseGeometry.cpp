@@ -7,6 +7,7 @@
 #include <Render/Renderable.h>
 #include <Render/Renderer.h>
 #include <Render/RenderNode.h>
+#include <Render/SkinInfo.h>
 #include <Render/GPUDriver.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
@@ -52,13 +53,25 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Frame::CNodeAttrSkin* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
 		if (pSkinAttr)
 		{
-			//!!!add skin palette to a render node!
+			pNode->pSkinPalette = pSkinAttr->GetSkinPalette();
+			pNode->BoneCount = pSkinAttr->GetSkinInfo()->GetBoneCount();
 		}
+		else pNode->pSkinPalette = NULL;
+
+		pRenderer->PrepareNode(*pNode);
 	}
 
 	// Sort render queue if necessary
-	//???or sort in renderers? or build tree and sort each branch as required
-	//may write complex sorter which takes into account alpha
+	//!!!may write complex sorter which takes alpha into account!
+
+	struct CRenderQueueCmp_DBGTMP
+	{
+		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+		{
+			return a.pMaterial > b.pMaterial;
+		}
+	};
+	RenderQueue.Sort<CRenderQueueCmp_DBGTMP>();
 
 	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
 		View.GPU->SetRenderTarget(i, View.RTs[i]);

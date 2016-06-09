@@ -14,18 +14,21 @@ namespace Render
 {
 class IRenderable;
 class IRenderer;
+class CMaterial;
+class CTechnique;
 
 struct CRenderNode
 {
-	IRenderable*	pRenderable; //???PRenderable?
-	IRenderer*		pRenderer;
-	//float			SqDistanceToCamera;
-	matrix44		Transform;
-	//UPTR			LOD; // (selected by a camera distance or a screen size, if available - can project AABB)
-	//skin data
-	//material (selected by LOD)
+	IRenderable*		pRenderable; //???PRenderable?
+	IRenderer*			pRenderer;
+	//float				SqDistanceToCamera; / OnScreenSize
+	matrix44			Transform;
+	const matrix44*		pSkinPalette;	// NULL if no skin
+	UPTR				BoneCount;		// Undefined if no skin
+	//UPTR				LOD; // (selected by a camera distance or a screen size, if available - can project AABB)
 	//geometry (selected by LOD) - or get in renderer?
-	//effect technique (selected by material and geometry)
+	const CMaterial*	pMaterial;		// Chosen by LOD
+	const CTechnique*	pTech;			// Chosen by material, renderable and renderer
 	//light indices, if lighting enabled
 };
 

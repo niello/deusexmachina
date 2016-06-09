@@ -7,8 +7,8 @@
 
 // An object that provides an interface to a rendering algorithm, which operates on render nodes.
 // It renders nodes from the passed one to the first not suitable for it, and returns that unprocessed
-// node as a new head. In case of a render tree, renderer must return node of the same level to that a
-// passed node belongs. Therefore, if renderer accepts a render tree node, it must accept all its children.
+// node as a new head. In case of a render tree, renderer must return node of the same level as a
+// passed node. Therefore, if renderer accepts a render tree node, it must accept all its children.
 
 namespace Render
 {
@@ -21,7 +21,8 @@ class IRenderer: public Core::CRTTIBaseClass
 
 public:
 
-	virtual CArray<CRenderNode>::CIterator Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr) = 0;
+	virtual void							PrepareNode(CRenderNode& Node) = 0;
+	virtual CArray<CRenderNode>::CIterator	Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr) = 0;
 };
 
 }

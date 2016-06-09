@@ -59,7 +59,7 @@ public:
 
 	//virtual ~CMaterial();
 
-	bool			Apply(CGPUDriver& GPU);
+	bool			Apply(CGPUDriver& GPU) const;
 
 	virtual bool	IsResourceValid() const { return Effect.IsValidPtr(); }
 	CEffect*		GetEffect() const { return Effect.GetUnsafe(); }

@@ -45,6 +45,7 @@ public:
 	virtual void		Update(const vector3* pCOIArray, UPTR COICount);
 
 	Render::PSkinInfo	GetSkinInfo() const { return SkinInfo; }
+	const matrix44*		GetSkinPalette() const { return pSkinPalette; }
 };
 
 typedef Ptr<CNodeAttrSkin> PSkin;

@@ -25,9 +25,23 @@ bool CRenderPath::Render(CView& View)
 	//!!!DBG TMP!
 	View.GPU->ClearRenderTarget(*View.RTs[0], vector4(0.1f, 0.7f, 0.1f, 1.f));
 
-	//!!!set camera shader params!
-	//???here or in a render path?
-	const matrix44& ViewProj = View.GetCamera()->GetViewProjMatrix();
+	if (View.GetCamera())
+	{
+		CStrID sidViewProj("ViewProj");
+		UPTR i = 0;
+		for (; i < Consts.GetCount(); ++i)
+			if (Consts[i].ID == sidViewProj) break;
+		if (i < Consts.GetCount())
+		{
+			const matrix44& ViewProj = View.GetCamera()->GetViewProjMatrix();
+			const Render::CEffectConstant& Const = Consts[i];
+			Render::CConstantBuffer& ViewProjCB = *View.GlobalCBs[Const.BufferHandle];
+			//View.GPU->BeginShaderConstants(ViewProjCB);
+			//View.GPU->SetShaderConstant(ViewProjCB, Const.Handle, 0, ViewProj.m, sizeof(ViewProj));
+			//View.GPU->CommitShaderConstants(ViewProjCB);
+			//View.GPU->BindConstantBuffer(Const.ShaderType, Const.BufferHandle, &ViewProjCB);
+		}
+	}
 
 	for (UPTR i = 0; i < Phases.GetCount(); ++i)
 	{
