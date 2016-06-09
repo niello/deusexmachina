@@ -2977,14 +2977,14 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 
 		if (!CB11.IsDirty()) OK;
 
-		if (D3DUsage == D3D11_USAGE_DEFAULT || D3DUsage == D3D11_USAGE_STAGING)
+		if (D3DUsage == D3D11_USAGE_DEFAULT)
 		{
 			pD3DImmContext->UpdateSubresource(pBuffer, 0, NULL, CB11.GetRAMCopy(), 0, 0);
 		}
-		else if (D3DUsage == D3D11_USAGE_DYNAMIC)
+		else if (D3DUsage == D3D11_USAGE_DYNAMIC || D3DUsage == D3D11_USAGE_STAGING)
 		{
 			D3D11_MAPPED_SUBRESOURCE MappedSubRsrc;
-			if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
+			if (FAILED(pD3DImmContext->Map(pBuffer, 0, (D3DUsage == D3D11_USAGE_DYNAMIC) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE, 0, &MappedSubRsrc))) FAIL;
 			memcpy(MappedSubRsrc.pData, CB11.GetRAMCopy(), CB11.GetSizeInBytes());
 			pD3DImmContext->Unmap(pBuffer, 0);
 		}

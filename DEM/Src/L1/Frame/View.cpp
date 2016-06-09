@@ -3,6 +3,7 @@
 #include <Frame/NodeAttrCamera.h>
 #include <Frame/RenderPath.h>
 #include <Scene/SPS.h>
+#include <Render/RenderTarget.h>
 #include <Render/GPUDriver.h>
 
 namespace Frame
@@ -73,6 +74,76 @@ void CView::UpdateVisibilityCache()
 		VisibilityCache.Clear();
 
 	VisibilityCacheDirty = false;
+}
+//---------------------------------------------------------------------
+
+UPTR CView::GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const
+{
+	switch (MeshLODType)
+	{
+		case LOD_None:
+		{
+			return 0;
+		}
+		case LOD_Distance:
+		{
+			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
+				if (SqDistanceToCamera < MeshLODScale[i]) return i;
+			return MeshLODScale.GetCount();
+		}
+		case LOD_ScreenSizeRelative:
+		{
+			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
+				if (ScreenSpaceOccupiedRel > MeshLODScale[i]) return i;
+			return MeshLODScale.GetCount();
+		}
+		case LOD_ScreenSizeAbsolute:
+		{
+			if (RTs[0].IsNullPtr()) return 0;
+			const Render::CRenderTargetDesc& RTDesc = RTs[0]->GetDesc();
+			float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height; //!!!may cache float WMulH, on each RT set!
+			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
+				if (ScreenSpaceOccupiedAbs > MeshLODScale[i]) return i;
+			return MeshLODScale.GetCount();
+		}
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
+UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const
+{
+	switch (MaterialLODType)
+	{
+		case LOD_None:
+		{
+			return 0;
+		}
+		case LOD_Distance:
+		{
+			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
+				if (SqDistanceToCamera < MaterialLODScale[i]) return i;
+			return MaterialLODScale.GetCount();
+		}
+		case LOD_ScreenSizeRelative:
+		{
+			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
+				if (ScreenSpaceOccupiedRel > MaterialLODScale[i]) return i;
+			return MaterialLODScale.GetCount();
+		}
+		case LOD_ScreenSizeAbsolute:
+		{
+			if (RTs[0].IsNullPtr()) return 0;
+			const Render::CRenderTargetDesc& RTDesc = RTs[0]->GetDesc();
+			float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height; //!!!may cache float WMulH, on each RT set!
+			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
+				if (ScreenSpaceOccupiedAbs > MaterialLODScale[i]) return i;
+			return MaterialLODScale.GetCount();
+		}
+	}
+
+	return 0;
 }
 //---------------------------------------------------------------------
 

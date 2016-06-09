@@ -24,15 +24,16 @@ CModelRenderer::CModelRenderer()
 
 //???return bool, if false, remove node from queue
 //(array tail removal is very fast in CArray, can even delay removal in a case next RQ node will be added inplace)?
-void CModelRenderer::PrepareNode(CRenderNode& Node)
+void CModelRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialLOD)
 {
 	CModel* pModel = Node.pRenderable->As<CModel>();
 	n_assert_dbg(pModel);
 
 	//!!!can find once, outside the render loop! store somewhere in a persistent render node.
 	//But this associates object and renderer, as other renderer may request other input set.
-	Node.pMaterial = pModel->Material.GetUnsafe();
+	Node.pMaterial = pModel->Material.GetUnsafe(); //!!!Get by MaterialLOD!
 	Node.pTech = pModel->Material->GetEffect()->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
+	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, MeshLOD);
 }
 //---------------------------------------------------------------------
 
@@ -46,7 +47,6 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 		CModel* pModel = ItCurr->pRenderable->As<CModel>();
 
 		CVertexBuffer* pVB = pModel->Mesh->GetVertexBuffer().GetUnsafe();
-		const CPrimitiveGroup* pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex/*, ItCurr->LOD*/);
 
 		//HConst hWorld = pTech->GetParam(CStrID("WorldMatrix")); //???or find index and then reference by index?
 		//!!!search in fallback materials if not found!
@@ -55,7 +55,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 		UPTR LightCount = 0;
 
-		if (pVB && pGroup && ItCurr->pTech)
+		if (pVB && ItCurr->pGroup && ItCurr->pTech)
 		{
 			//!!!DBG TMP! move outside, not to redundantly reset!
 			ItCurr->pMaterial->Apply(GPU);
@@ -75,7 +75,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 				for (UPTR i = 0; i < pPasses->GetCount(); ++i)
 				{
 					GPU.SetRenderState((*pPasses)[i]);
-					GPU.Draw(*pGroup);
+					GPU.Draw(*ItCurr->pGroup);
 				}
 
 				Sys::DbgOut("CModel rendered, tech '%s'\n", ItCurr->pTech->GetName().CStr());

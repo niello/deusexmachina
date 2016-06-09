@@ -38,6 +38,7 @@ class CRenderPath: public Resources::CResourceObject //???need to be a resource?
 protected:
 
 	CFixedArray<PRenderPhase>				Phases;
+
 	Render::IShaderMetadata*				pGlobals;
 	CFixedArray<Render::CEffectConstant>	Consts;
 	CFixedArray<Render::CEffectResource>	Resources;

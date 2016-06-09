@@ -146,12 +146,9 @@ bool CModel::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
 	n_assert_dbg(Mesh->IsResourceValid());
 	const Render::CPrimitiveGroup* pGroup = Mesh->GetGroup(MeshGroupIndex, LOD);
-	if (pGroup)
-	{
-		OutBox = pGroup->AABB;
-		OK;
-	}
-	else FAIL;
+	if (!pGroup) FAIL;
+	OutBox = pGroup->AABB;
+	OK;
 }
 //---------------------------------------------------------------------
 

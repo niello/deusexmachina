@@ -6,9 +6,7 @@
 #include <Math/Matrix44.h>
 //#include <System/Allocators/PoolAllocator.h>
 
-// An element of a render queue or tree
-
-//!!!if will be decoupled from Scene::, can move renderers and render nodes to a Render:: instead of Frame::
+// An element of a render queue or tree. Caches some values for faster sorting and rendering.
 
 namespace Render
 {
@@ -16,19 +14,19 @@ class IRenderable;
 class IRenderer;
 class CMaterial;
 class CTechnique;
+struct CPrimitiveGroup;
 
 struct CRenderNode
 {
-	IRenderable*		pRenderable; //???PRenderable?
-	IRenderer*			pRenderer;
-	//float				SqDistanceToCamera; / OnScreenSize
-	matrix44			Transform;
-	const matrix44*		pSkinPalette;	// NULL if no skin
-	UPTR				BoneCount;		// Undefined if no skin
-	//UPTR				LOD; // (selected by a camera distance or a screen size, if available - can project AABB)
-	//geometry (selected by LOD) - or get in renderer?
-	const CMaterial*	pMaterial;		// Chosen by LOD
-	const CTechnique*	pTech;			// Chosen by material, renderable and renderer
+	matrix44				Transform;
+	IRenderable*			pRenderable; //???PRenderable?
+	IRenderer*				pRenderer;
+	const matrix44*			pSkinPalette;	// NULL if no skin
+	UPTR					BoneCount;		// Undefined if no skin
+	const CPrimitiveGroup*	pGroup;
+	const CMaterial*		pMaterial;
+	const CTechnique*		pTech;
+	float					SqDistanceToCamera;
 	//light indices, if lighting enabled
 };
 

@@ -21,7 +21,7 @@ class IRenderer: public Core::CRTTIBaseClass
 
 public:
 
-	virtual void							PrepareNode(CRenderNode& Node) = 0;
+	virtual void							PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialLOD) = 0;
 	virtual CArray<CRenderNode>::CIterator	Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr) = 0;
 };
 

@@ -1,6 +1,7 @@
 #include "RenderPhaseGeometry.h"
 
 #include <Frame/View.h>
+#include <Frame/NodeAttrCamera.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrSkin.h>
 #include <Scene/SceneNode.h>
@@ -26,7 +27,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (!VisibleObjects.GetCount()) OK;
 
-	//!!!can query correct squared distance to camera and/or screen size from an SPS along with object pointers!
+	const vector3& CameraPos = View.GetCamera()->GetPosition();
 
 	CArray<Render::CRenderNode>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
@@ -37,7 +38,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		const Core::CRTTI* pAttrType = pAttr->GetRTTI();
 		if (!pAttrType->IsDerivedFrom(Frame::CNodeAttrRenderable::RTTI)) continue; //!!!also need a light list! at the visibility cache construction?
 
-		Render::IRenderable* pRenderable = ((Frame::CNodeAttrRenderable*)pAttr)->GetRenderable();
+		Frame::CNodeAttrRenderable* pAttrRenderable = (Frame::CNodeAttrRenderable*)pAttr;
+		Render::IRenderable* pRenderable = pAttrRenderable->GetRenderable();
 
 		IPTR Idx = Renderers.FindIndex(pRenderable->GetRTTI());
 		if (Idx == INVALID_INDEX) continue;
@@ -48,8 +50,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		pNode->pRenderable = pRenderable;
 		pNode->pRenderer = pRenderer;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
-		//pNode->LOD = 0; //!!!determine based on sq camera or screen size! in renderers? sphere screen size may be reduced to 2 points = len of square
-		//!!!if LOD in renderers, may store sq dist to camera and/or screen size in a render node, and use them to determine LOD!
+
 		Frame::CNodeAttrSkin* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
 		if (pSkinAttr)
 		{
@@ -58,20 +59,46 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 		else pNode->pSkinPalette = NULL;
 
-		pRenderer->PrepareNode(*pNode);
+		UPTR MeshLOD;
+		UPTR MaterialLOD;
+		CAABB GlobalAABB;
+		if (pAttrRenderable->GetGlobalAABB(GlobalAABB, 0))
+		{
+			//!!!here we can calc screen size only if required!
+			//???or even pass AABB inside Get...LOD()?
+
+			float SqDistanceToCamera = vector3::SqDistance(GlobalAABB.Center(), CameraPos); //!!!DistancePointAABB(CameraPos, GlobalAABB)!
+			pNode->SqDistanceToCamera = SqDistanceToCamera;
+			MeshLOD = View.GetMeshLOD(SqDistanceToCamera, 0.f);
+			MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, 0.f);
+		}
+		else
+		{
+			pNode->SqDistanceToCamera = 0.f;
+			MeshLOD = 0;
+			MaterialLOD = 0;
+		}
+
+		// bool DiscardNode = 
+		pRenderer->PrepareNode(*pNode, MeshLOD, MaterialLOD);
+
+		//!!!if pNode->Material->AlphaType not compatible with this->AllowedAlphaTypes discard node!
 	}
 
-	// Sort render queue if necessary
+	// Sort render queue (if requested, using requested sorter, FtB for depth, complex for color)
 	//!!!may write complex sorter which takes alpha into account!
+	//!!!for depth geometry phase skip alpha-blended objects! //???sort AND filter here? or filter in PrepareNode, or after. Using some flags.
+	//!!!may also move all tmp values not used in sorting, like LOD, into some second tmp structure, and discard when it's done with it!
 
-	struct CRenderQueueCmp_DBGTMP
+	//???PERF: sort indices into a render queue? structure is big enough to be moved during sorting
+	struct CRenderQueueCmp_FrontToBackDBGTMP
 	{
 		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
 		{
-			return a.pMaterial > b.pMaterial;
+			return a.SqDistanceToCamera < b.SqDistanceToCamera;
 		}
 	};
-	RenderQueue.Sort<CRenderQueueCmp_DBGTMP>();
+	RenderQueue.Sort<CRenderQueueCmp_FrontToBackDBGTMP>();
 
 	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
 		View.GPU->SetRenderTarget(i, View.RTs[i]);
