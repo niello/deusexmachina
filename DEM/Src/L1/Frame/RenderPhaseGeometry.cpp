@@ -28,6 +28,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	if (!VisibleObjects.GetCount()) OK;
 
 	const vector3& CameraPos = View.GetCamera()->GetPosition();
+	const bool CalcScreenSize = View.RequiresScreenSize();
 
 	CArray<Render::CRenderNode>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
@@ -64,13 +65,18 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		CAABB GlobalAABB;
 		if (pAttrRenderable->GetGlobalAABB(GlobalAABB, 0))
 		{
-			//!!!here we can calc screen size only if required!
-			//???or even pass AABB inside Get...LOD()?
+			float ScreenSizeRel;
+			if (CalcScreenSize)
+			{
+				NOT_IMPLEMENTED_MSG("SCREEN SIZE CALCULATION!");
+				ScreenSizeRel = 0.f;
+			}
+			else ScreenSizeRel = 0.f;
 
-			float SqDistanceToCamera = vector3::SqDistance(GlobalAABB.Center(), CameraPos); //!!!DistancePointAABB(CameraPos, GlobalAABB)!
+			float SqDistanceToCamera = GlobalAABB.SqDistance(CameraPos);
 			pNode->SqDistanceToCamera = SqDistanceToCamera;
-			MeshLOD = View.GetMeshLOD(SqDistanceToCamera, 0.f);
-			MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, 0.f);
+			MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
+			MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
 		}
 		else
 		{
@@ -82,7 +88,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		// bool DiscardNode = 
 		pRenderer->PrepareNode(*pNode, MeshLOD, MaterialLOD);
 
-		//!!!if pNode->Material->AlphaType not compatible with this->AllowedAlphaTypes discard node!
+		//!!!if pNode->pMaterial->AlphaType not compatible with this->AllowedAlphaTypes discard node!
 	}
 
 	// Sort render queue (if requested, using requested sorter, FtB for depth, complex for color)

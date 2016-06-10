@@ -69,6 +69,7 @@ public:
 	bool		PointInPolyX(const vector3& p) const { return p.y >= Min.y && p.y <= Max.y && p.z >= Min.z && p.z <= Max.z; }
 	bool		PointInPolyY(const vector3& p) const { return p.x >= Min.x && p.x <= Max.x && p.z >= Min.z && p.z <= Max.z; }
 	bool		PointInPolyZ(const vector3& p) const { return p.x >= Min.x && p.x <= Max.x && p.y >= Min.y && p.y <= Max.y; }
+	float		SqDistance(const vector3& Point) const;
 };
 
 // Construct a bounding box around a 4x4 matrix. The translational part defines the

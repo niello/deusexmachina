@@ -88,6 +88,7 @@ public:
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; } //???if dirty update right here?
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
+	bool							RequiresScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }
 	bool							Render();
 };
 

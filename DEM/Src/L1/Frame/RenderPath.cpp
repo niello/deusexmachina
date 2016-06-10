@@ -25,6 +25,8 @@ bool CRenderPath::Render(CView& View)
 	//!!!DBG TMP!
 	View.GPU->ClearRenderTarget(*View.RTs[0], vector4(0.1f, 0.7f, 0.1f, 1.f));
 
+	//???move to a phase? user then may implement it using knowledge about its global shader params.
+	//as RP is not overridable, it is not a good place to reference global param names
 	if (View.GetCamera())
 	{
 		CStrID sidViewProj("ViewProj");
