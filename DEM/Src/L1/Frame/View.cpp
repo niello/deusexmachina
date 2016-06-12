@@ -27,7 +27,12 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	for (UPTR i = 0; i < GlobalConsts.GetCount(); ++i)
 	{
 		const Render::CEffectConstant& Const = GlobalConsts[i];
-		if (!GlobalCBs.Contains(Const.BufferHandle))
+		
+		UPTR j = 0;
+		for (; j < GlobalCBs.GetCount(); ++j)
+			if (GlobalCBs[j].Handle == Const.BufferHandle) break;
+		
+		if (j == GlobalCBs.GetCount())
 		{
 			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(Const.BufferHandle, Render::Access_CPU_Write | Render::Access_GPU_Read);
 			if (CB.IsNullPtr())
@@ -35,7 +40,10 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 				GlobalCBs.Clear();
 				FAIL;
 			}
-			GlobalCBs.Add(Const.BufferHandle, CB);
+			CConstBufferRec* pRec = GlobalCBs.Add();
+			pRec->Handle = Const.BufferHandle;
+			pRec->Buffer = CB;
+			pRec->ShaderTypes = 0; // Filled when const values are written, not to bind unnecessarily to all possibly requiring stages
 		}
 	}
 

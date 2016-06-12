@@ -153,6 +153,16 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 				//set tech params (feed shader according to an input set)
 				//GPU.SetShaderConstant(TmpCB, hWorld, 0, ItCurr->Transform.m, sizeof(matrix44));
 				//if (ItCurr->pSkinPalette) GPU.SetShaderConstant(TmpCB, hSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
+				const CEffectConstant* pConst = pTech->GetConstant(CStrID("WorldMatrix"));
+				if (pConst)
+				{
+					static Render::PConstantBuffer Buffer = GPU.CreateConstantBuffer(pConst->BufferHandle, Access_CPU_Write | Access_GPU_Read);
+
+					GPU.BeginShaderConstants(*Buffer);
+					GPU.SetShaderConstant(*Buffer, pConst->Handle, 0, ItCurr->Transform.m, sizeof(matrix44));
+					GPU.CommitShaderConstants(*Buffer);
+					GPU.BindConstantBuffer(pConst->ShaderType, pConst->BufferHandle, Buffer);
+				}
 
 				//???loop by pass, then by instance? possibly less render state switches, but possibly more data binding. Does order matter?
 				for (UPTR i = 0; i < pPasses->GetCount(); ++i)

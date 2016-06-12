@@ -107,7 +107,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	RenderQueue.Sort<CRenderQueueCmp_FrontToBackDBGTMP>();
 
 	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
-		View.GPU->SetRenderTarget(i, View.RTs[i]);
+		View.GPU->SetRenderTarget(i, View.RTs[i].GetUnsafe());
 	View.GPU->SetDepthStencilBuffer(View.DSBuffer.GetUnsafe());
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();

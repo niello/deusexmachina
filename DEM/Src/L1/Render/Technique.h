@@ -44,11 +44,12 @@ public:
 
 	CTechnique() {}
 
-	CStrID				GetName() const { return Name; }
-	UPTR				GetShaderInputSetID() const { return ShaderInputSetID; }
-	IPTR				GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
-	const CPassList*	GetPasses(UPTR& LightCount) const;
-	//IPTR				GetConstantIndex(CStrID ConstantName) const { return ConstNameToHandles.FindIndex(ConstantName); }
+	CStrID					GetName() const { return Name; }
+	UPTR					GetShaderInputSetID() const { return ShaderInputSetID; }
+	IPTR					GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
+	const CPassList*		GetPasses(UPTR& LightCount) const;
+	//IPTR					GetConstantIndex(CStrID ConstantName) const { return ConstNameToHandles.FindIndex(ConstantName); }
+	const CEffectConstant*	GetConstant(CStrID Name) const;
 };
 
 typedef Ptr<CTechnique> PTechnique;
@@ -68,6 +69,18 @@ inline const CPassList*	CTechnique::GetPasses(UPTR& LightCount) const
 
 	LightCount = Idx;
 	return &PassesByLightCount[Idx];
+}
+//---------------------------------------------------------------------
+
+inline const CEffectConstant* CTechnique::GetConstant(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Consts.GetCount(); ++i)
+	{
+		const CEffectConstant& CurrConst = Consts[i];
+		if (CurrConst.ID == Name) return &CurrConst;
+	}
+	return NULL;
 }
 //---------------------------------------------------------------------
 

@@ -8,7 +8,7 @@
 // Animation controller, that implements logic of third-person camera.
 // This controller updates transform only when it has changed, saving
 // lots of recalculations. To force update use ForceNextUpdate().
-// All angles are in radians.
+// NB: All angles are in radians.
 
 namespace Scene
 {

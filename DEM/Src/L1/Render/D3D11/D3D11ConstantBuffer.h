@@ -49,6 +49,7 @@ public:
 	bool						Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV);
 	virtual void				Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
 	virtual bool				IsValid() const { return !!pBuffer; }
+	virtual bool				IsInEditMode() const { return (Flags.IsNot(CB11_UsesRAMCopy) && pMapped) || Flags.Is(CB11_Dirty); }
 
 	bool						CreateRAMCopy();
 	void						ResetRAMCopy(const void* pVRAMData);

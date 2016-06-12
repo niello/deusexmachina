@@ -13,16 +13,11 @@ namespace Render
 
 class CConstantBuffer: public Core::CObject
 {
-protected:
-
-	//???store handle?
-
 public:
 
 	virtual void	Destroy() = 0;
 	virtual bool	IsValid() const = 0;
-
-	//???variable creation methods?
+	virtual bool	IsInEditMode() const = 0;
 };
 
 typedef Ptr<CConstantBuffer> PConstantBuffer;

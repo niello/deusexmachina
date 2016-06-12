@@ -7,7 +7,7 @@
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 
-// View is a data required to render a frame. It is defined by a scene (what to render),
+// View is a data context required to render a frame. It is defined by a scene (what to render),
 // a camera (from where), render target(s) (to where), a render path (how) and some other
 // parameters. NULL scene is valid and has meaning for example for GUI-only views.
 // Customizable frame properties like a screen resolution, color depth, depth buffer bits
@@ -54,7 +54,13 @@ protected:
 
 public:
 
-	typedef CDict<Render::HConstBuffer, Render::PConstantBuffer> CConstBufferMap;
+	//!!!ALMOST DUPLICATE STRUCTURE! see CMaterial!
+	struct CConstBufferRec
+	{
+		Render::HConstBuffer	Handle;
+		Render::PConstantBuffer	Buffer;
+		U32						ShaderTypes; // 1 << Render::EShaderType
+	};
 
 	//???add viewport settings here? to render multiple views into one RT
 
@@ -65,7 +71,7 @@ public:
 	Render::PGPUDriver					GPU;
 	CFixedArray<Render::PRenderTarget>	RTs;
 	Render::PDepthStencilBuffer			DSBuffer;	//???or named? may require more than one in one view?
-	CConstBufferMap						GlobalCBs;
+	CArray<CConstBufferRec>				GlobalCBs;
 
 	CArray<Render::CRenderNode>			RenderQueue;	// Cached to avoid per-frame allocations
 
