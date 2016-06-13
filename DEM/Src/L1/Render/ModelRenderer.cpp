@@ -59,7 +59,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
-			pMaterial->Apply(GPU);
+			n_verify_dbg(pMaterial->Apply(GPU));
 			pCurrMaterial = pMaterial;
 
 			//!!!DBG TMP!

@@ -47,7 +47,7 @@ public:
 	CD3D9ConstantBuffer(): pFloat4Data(NULL), pInt4Data(NULL), pBoolData(NULL), Float4Count(0), Int4Count(0), BoolCount(0), Handle(INVALID_HANDLE) {}
 	virtual ~CD3D9ConstantBuffer() { InternalDestroy(); }
 
-	bool			Create(const CSM30ShaderBufferMeta& Meta);
+	bool			Create(const CSM30ShaderBufferMeta& Meta, const CD3D9ConstantBuffer* pInitData);
 	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
 	virtual bool	IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
 	virtual bool	IsInEditMode() const { return IsDirty(); }

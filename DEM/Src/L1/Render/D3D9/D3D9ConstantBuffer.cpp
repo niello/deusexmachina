@@ -11,7 +11,7 @@ namespace Render
 __ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
 
 //!!!???assert destroyed?!
-bool CD3D9ConstantBuffer::Create(const CSM30ShaderBufferMeta& Meta)
+bool CD3D9ConstantBuffer::Create(const CSM30ShaderBufferMeta& Meta, const CD3D9ConstantBuffer* pInitData)
 {
 	Float4Count = 0;
 	const CFixedArray<CRange>& Float4 = Meta.Float4;
@@ -33,6 +33,8 @@ bool CD3D9ConstantBuffer::Create(const CSM30ShaderBufferMeta& Meta)
 	UPTR BoolSize = BoolCount * sizeof(BOOL);
 	UPTR TotalSize = Float4Size + Int4Size + BoolSize;
 	if (!TotalSize) FAIL;
+	
+	if (pInitData && (Float4Count != pInitData->Float4Count || Int4Count != pInitData->Int4Count || BoolCount != pInitData->BoolCount)) FAIL;
 
 	char* pData = (char*)n_malloc_aligned(TotalSize, 16);
 	if (!pData)
@@ -43,8 +45,18 @@ bool CD3D9ConstantBuffer::Create(const CSM30ShaderBufferMeta& Meta)
 		FAIL;
 	}
 
-	// Documented SM 3.0 defaults are 0, 0.f and FALSE
-	memset(pData, 0, TotalSize);
+	if (pInitData)
+	{
+		const void* pInitDataPtr = pInitData->pFloat4Data ?
+			(const void*)pInitData->pFloat4Data :
+			(pInitData->pInt4Data ? (const void*)pInitData->pInt4Data : (const void*)pInitData->pBoolData);
+		memcpy(pData, pInitDataPtr, TotalSize);
+	}
+	else
+	{
+		// Documented SM 3.0 defaults are 0, 0.f and FALSE
+		memset(pData, 0, TotalSize);
+	}
 
 	if (Float4Size)
 	{

@@ -2037,12 +2037,14 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 
 PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
 {
+	n_assert_dbg(!pData || pData->IsA<CD3D9ConstantBuffer>());
+
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CSM30ShaderBufferMeta* pMeta = (CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
 	if (!pMeta) return NULL;
 
 	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
-	if (!CB->Create(*pMeta)) return NULL;
+	if (!CB->Create(*pMeta, (const CD3D9ConstantBuffer*)pData)) return NULL;
 	return CB.GetUnsafe();
 }
 //---------------------------------------------------------------------
@@ -2091,7 +2093,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 				{
 					UPTR MipHeight = Desc.Height >> Mip;
 					if (!MipHeight) MipHeight = 1;
-					UPTR DataSize = LockedRect.Pitch * (MipHeight + BlockSize - 1) / BlockSize;
+					UPTR DataSize = LockedRect.Pitch * ((MipHeight + BlockSize - 1) / BlockSize);
 					memcpy(LockedRect.pBits, pCurrLevelData, DataSize);
 					n_assert(SUCCEEDED(pD3DTex->UnlockRect(Mip)));
 					pCurrLevelData += DataSize;
