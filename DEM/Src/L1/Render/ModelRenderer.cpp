@@ -33,6 +33,7 @@ void CModelRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialL
 	//But this associates object and renderer, as other renderer may request other input set.
 	Node.pMaterial = pModel->Material.GetUnsafe(); //!!!Get by MaterialLOD!
 	Node.pTech = pModel->Material->GetEffect()->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
+	Node.pMesh = pModel->Mesh.GetUnsafe();
 	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, MeshLOD);
 }
 //---------------------------------------------------------------------
@@ -144,6 +145,9 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 		}
 		else
 		{
+			//!!!DBG TMP!
+			if (ItInstEnd - ItCurr > 1) Sys::DbgOut("Instancing might be possible, instances: %d\n", (ItInstEnd - ItCurr));
+
 			for (; ItCurr != ItInstEnd; ++ItCurr)
 			{
 				// Per-instance params
@@ -171,7 +175,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 					GPU.Draw(*pGroup);
 				}
 
-				Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X\n", ItCurr->pTech->GetName().CStr(), pGroup);
+				Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X, primitives: %d\n", ItCurr->pTech->GetName().CStr(), pGroup, pGroup->IndexCount);
 			}
 		}
 

@@ -181,7 +181,7 @@ public:
 	virtual void				EndFrame();
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1);
 
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
 	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);

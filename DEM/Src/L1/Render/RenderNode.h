@@ -14,6 +14,7 @@ class IRenderable;
 class IRenderer;
 class CMaterial;
 class CTechnique;
+class CMesh;
 struct CPrimitiveGroup;
 
 struct CRenderNode
@@ -23,9 +24,10 @@ struct CRenderNode
 	IRenderer*				pRenderer;
 	const matrix44*			pSkinPalette;	// NULL if no skin
 	UPTR					BoneCount;		// Undefined if no skin
-	const CPrimitiveGroup*	pGroup;
 	const CMaterial*		pMaterial;
 	const CTechnique*		pTech;
+	const CMesh*			pMesh;
+	const CPrimitiveGroup*	pGroup;
 	float					SqDistanceToCamera;
 	//light indices, if lighting enabled
 };

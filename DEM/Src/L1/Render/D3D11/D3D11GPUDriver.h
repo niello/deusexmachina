@@ -203,7 +203,7 @@ public:
 	virtual void				EndFrame();
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup); //???instance count?
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1);
 
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
 	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object

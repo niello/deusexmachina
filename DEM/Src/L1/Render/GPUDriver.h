@@ -111,7 +111,7 @@ public:
 	virtual void				EndFrame() = 0;
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil) = 0;
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) = 0;
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) = 0;
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1) = 0;
 
 	//!!!???need copy subresource?! (has meaning for textures only! ArraySlice, MipLevel)
 	//???allow copying subresource region? to CopySubresource as optional arg

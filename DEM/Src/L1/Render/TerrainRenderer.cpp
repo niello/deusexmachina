@@ -29,6 +29,7 @@ void CTerrainRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR Materia
 	//Node.pTech = pTerrain->Material->GetEffect()->GetTechByInputSet(InputSet_CDLOD);
 	Node.pMaterial = NULL;
 	Node.pTech = NULL;
+	Node.pMesh = pTerrain->GetPatchMesh();
 	Node.pGroup = NULL; // pTerrain->GetPatchMesh()->GetGroup(0, 0); // For sorting, different terrain objects with the same mesh will be rendered sequentially
 }
 //---------------------------------------------------------------------

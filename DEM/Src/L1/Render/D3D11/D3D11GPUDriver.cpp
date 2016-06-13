@@ -1017,40 +1017,25 @@ void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorR
 }
 //---------------------------------------------------------------------
 
-//???instance count as param?
-bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 {
-	n_assert_dbg(pD3DDevice); // && IsInsideFrame);
+	n_assert_dbg(pD3DDevice && InstanceCount); // && IsInsideFrame);
 
-	//!!!not used by Draw(), statistics only! wrap with _DEBUG/DEM_STATS!
-	UPTR PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
 	if (CurrPT != PrimGroup.Topology)
 	{
 		D3D11_PRIMITIVE_TOPOLOGY D3DPrimType;
 		switch (PrimGroup.Topology)
 		{
 			case Prim_PointList:	D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_POINTLIST; break;
-			case Prim_LineList:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; PrimCount >>= 1; break;
-			case Prim_LineStrip:	D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; --PrimCount; break;
-			case Prim_TriList:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; PrimCount /= 3; break;
-			case Prim_TriStrip:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; PrimCount -= 2; break;
+			case Prim_LineList:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_LINELIST; break;
+			case Prim_LineStrip:	D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_LINESTRIP; break;
+			case Prim_TriList:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
+			case Prim_TriStrip:		D3DPrimType = D3D11_PRIMITIVE_TOPOLOGY_TRIANGLESTRIP; break;
 			default:				Sys::Error("CD3D11GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
 		}
 
 		pD3DImmContext->IASetPrimitiveTopology(D3DPrimType);
 		CurrPT = PrimGroup.Topology;
-	}
-	else
-	{
-		switch (CurrPT)
-		{
-			case Prim_PointList:	break;
-			case Prim_LineList:		PrimCount >>= 1; break;
-			case Prim_LineStrip:	--PrimCount; break;
-			case Prim_TriList:		PrimCount /= 3; break;
-			case Prim_TriStrip:		PrimCount -= 2; break;
-			default:				Sys::Error("CD3D11GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
-		}
 	}
 
 	if (CurrDirtyFlags.IsAny() && ApplyChanges(CurrDirtyFlags.GetMask()) != 0) FAIL;
@@ -1058,26 +1043,35 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
 
 	if (PrimGroup.IndexCount > 0)
 	{
-		//!!!if InstanceCount < 2!
-//StartIndexLocation [in]
-//Type: UPTR
-//The location of the first index read by the GPU from the index buffer.
-//BaseVertexLocation [in]
-//Type: INT
-//A value added to each index before reading a vertex from the vertex buffer.
-		pD3DImmContext->DrawIndexed(PrimGroup.IndexCount, PrimGroup.FirstIndex, PrimGroup.FirstVertex);
+		if (InstanceCount > 1)
+			pD3DImmContext->DrawIndexedInstanced(PrimGroup.IndexCount, InstanceCount, PrimGroup.FirstIndex, 0, 0);
+		else
+			pD3DImmContext->DrawIndexed(PrimGroup.IndexCount, PrimGroup.FirstIndex, 0);
 	}
 	else
 	{
-		//!!!if InstanceCount < 2!
-//StartVertexLocation [in]
-//Type: UPTR
-//Index of the first vertex, which is usually an offset in a vertex buffer.
-		pD3DImmContext->Draw(PrimGroup.VertexCount, PrimGroup.FirstVertex);
+		if (InstanceCount > 1)
+			pD3DImmContext->DrawInstanced(PrimGroup.VertexCount, InstanceCount, PrimGroup.FirstVertex, 0);
+		else
+			pD3DImmContext->Draw(PrimGroup.VertexCount, PrimGroup.FirstVertex);
 	}
 
-	//PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
-	//++DIPsRendered;
+/*
+#ifdef DEM_STATS
+	UPTR PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
+	switch (CurrPT)
+	{
+		case Prim_PointList:	break;
+		case Prim_LineList:		PrimCount >>= 1; break;
+		case Prim_LineStrip:	--PrimCount; break;
+		case Prim_TriList:		PrimCount /= 3; break;
+		case Prim_TriStrip:		PrimCount -= 2; break;
+		default:				Sys::Error("CD3D11GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+	}
+	PrimsRendered += InstanceCount * PrimCount;
+	++DIPsRendered;
+#endif
+*/
 
 	OK;
 }

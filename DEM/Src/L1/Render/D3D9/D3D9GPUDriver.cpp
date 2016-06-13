@@ -1791,29 +1791,20 @@ void CD3D9GPUDriver::Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8
 void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA)
 {
 	if (!RT.IsValid()) return;
-
 	const D3DCOLOR ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
-
 	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
 	pD3DDevice->ColorFill(D3D9RT.GetD3DSurface(), NULL, ColorARGB);
-
-	//pD3DDevice->SetRenderTarget(0, D3D9RT.GetD3DSurface());
-
-	//for (UPTR i = 1; i < CurrRT.GetCount(); ++i)
-	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
-	//		pD3DDevice->SetRenderTarget(i, NULL);
-
-	//Clear(Clear_Color, ColorRGBA, 1.f, 0);
-
-	//for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
-	//	if (CurrRT[i].IsValidPtr() && CurrRT[i]->IsValid())
-	//		pD3DDevice->SetRenderTarget(i, CurrRT[i]->GetD3DSurface());
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 {
-	n_assert_dbg(pD3DDevice && IsInsideFrame);
+	n_assert_dbg(pD3DDevice && InstanceCount && IsInsideFrame);
+
+	if (InstanceCount > 1)
+	{
+		NOT_IMPLEMENTED_MSG("INSTANCING FOR D3D9!!!");
+	}
 
 	D3DPRIMITIVETYPE D3DPrimType;
 	UPTR PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;

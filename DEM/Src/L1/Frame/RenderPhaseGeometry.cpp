@@ -97,14 +97,27 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	//!!!may also move all tmp values not used in sorting, like LOD, into some second tmp structure, and discard when it's done with it!
 
 	//???PERF: sort indices into a render queue? structure is big enough to be moved during sorting
-	struct CRenderQueueCmp_FrontToBackDBGTMP
+	struct CRenderQueueCmp_FrontToBack
 	{
 		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
 		{
 			return a.SqDistanceToCamera < b.SqDistanceToCamera;
 		}
 	};
-	RenderQueue.Sort<CRenderQueueCmp_FrontToBackDBGTMP>();
+	struct CRenderQueueCmp_Material
+	{
+		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+		{
+			//!!!if pMaterial->IsAlphaBlended(), then BtF!
+			//if one obj alpha and one opaque, sort opaque before alpha (a.pMaterial->IsAlphaBlended() < b.pMaterial->IsAlphaBlended())
+			if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
+			if (a.pTech != b.pTech) return a.pTech < b.pTech;
+			if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
+			if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
+			return a.SqDistanceToCamera < b.SqDistanceToCamera;
+		}
+	};
+	RenderQueue.Sort<CRenderQueueCmp_Material>();
 
 	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
 		View.GPU->SetRenderTarget(i, View.RTs[i].GetUnsafe());
