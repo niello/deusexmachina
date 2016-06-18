@@ -887,7 +887,7 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 	D3DDEVTYPE D3DDriverType = GetD3DDriverType(CurrDriverType);
 
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
-	n_assert(SUCCEEDED(pD3D9->GetDeviceCaps((UINT)CurrAdapterID, D3DDriverType, &D3DCaps)));
+	n_verify(SUCCEEDED(pD3D9->GetDeviceCaps((UINT)CurrAdapterID, D3DDriverType, &D3DCaps)));
 
 #if DEM_RENDER_DEBUG
 	DWORD BhvFlags = D3DCREATE_FPU_PRESERVE | D3DCREATE_SOFTWARE_VERTEXPROCESSING;
@@ -1751,7 +1751,7 @@ bool CD3D9GPUDriver::BeginFrame()
 void CD3D9GPUDriver::EndFrame()
 {
 	n_assert_dbg(IsInsideFrame);
-	n_assert(SUCCEEDED(pD3DDevice->EndScene()));
+	n_verify(SUCCEEDED(pD3DDevice->EndScene()));
 	IsInsideFrame = false;
 
 //	//???is all below necessary? PIX requires it for debugging frame
@@ -1784,7 +1784,7 @@ void CD3D9GPUDriver::Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8
 	}
 
 	DWORD ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
-	n_assert(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, ColorARGB, Depth, Stencil)));
+	n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, ColorARGB, Depth, Stencil)));
 }
 //---------------------------------------------------------------------
 
@@ -1794,6 +1794,30 @@ void CD3D9GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRG
 	const D3DCOLOR ColorARGB = D3DCOLOR_COLORVALUE(ColorRGBA.x, ColorRGBA.y, ColorRGBA.z, ColorRGBA.w);
 	CD3D9RenderTarget& D3D9RT = (CD3D9RenderTarget&)RT;
 	pD3DDevice->ColorFill(D3D9RT.GetD3DSurface(), NULL, ColorARGB);
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil)
+{
+	if (!DS.IsValid()) return;
+	CD3D9DepthStencilBuffer& D3D9DS = (CD3D9DepthStencilBuffer&)DS;
+
+	DWORD D3DFlags = 0;
+	if (Flags & Clear_Depth) D3DFlags |= D3DCLEAR_ZBUFFER;
+
+	D3DFORMAT Fmt = CD3D9DriverFactory::PixelFormatToD3DFormat(D3D9DS.GetDesc().Format);
+	if ((Flags & Clear_Stencil) && CD3D9DriverFactory::D3DFormatStencilBits(Fmt) > 0)
+		D3DFlags |= D3DCLEAR_STENCIL;
+
+	if (D3DFlags)
+	{
+		CD3D9DepthStencilBuffer* pOldDS = CurrDS.GetUnsafe();
+		if (pOldDS != &D3D9DS)
+			if (FAILED(pD3DDevice->SetDepthStencilSurface(D3D9DS.GetD3DSurface()))) return;
+		n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, 0, Depth, Stencil)));
+		if (pOldDS != &D3D9DS)
+			if (FAILED(pD3DDevice->SetDepthStencilSurface(pOldDS->GetD3DSurface()))) return;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -2095,7 +2119,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 					if (!MipHeight) MipHeight = 1;
 					UPTR DataSize = LockedRect.Pitch * ((MipHeight + BlockSize - 1) / BlockSize);
 					memcpy(LockedRect.pBits, pCurrLevelData, DataSize);
-					n_assert(SUCCEEDED(pD3DTex->UnlockRect(Mip)));
+					n_verify(SUCCEEDED(pD3DTex->UnlockRect(Mip)));
 					pCurrLevelData += DataSize;
 				}
 				else
@@ -2128,7 +2152,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 			if (SUCCEEDED(pD3DTex->LockBox(0, &LockedBox, NULL, D3DLOCK_NOSYSLOCK)))
 			{
 				memcpy(LockedBox.pBits, pData, LockedBox.SlicePitch * Desc.Depth);
-				n_assert(SUCCEEDED(pD3DTex->UnlockBox(0)));
+				n_verify(SUCCEEDED(pD3DTex->UnlockBox(0)));
 			}
 			else
 			{

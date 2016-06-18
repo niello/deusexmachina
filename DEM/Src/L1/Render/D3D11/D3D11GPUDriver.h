@@ -203,6 +203,7 @@ public:
 	virtual void				EndFrame();
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
+	virtual void				ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1);
 
 	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?

@@ -5,7 +5,6 @@
 #include <Resources/ResourceObject.h>
 #include <Render/RenderFwd.h>
 #include <Data/FixedArray.h>
-#include <Data/Array.h>
 
 // Render path incapsulates a full algorithm to render a frame, allowing to
 // define it in a data-driven manner and therefore avoid hardcoding frame rendering.
@@ -31,7 +30,7 @@ namespace Frame
 class CView;
 typedef Ptr<class CRenderPhase> PRenderPhase;
 
-class CRenderPath: public Resources::CResourceObject //???need to be a resource?
+class CRenderPath: public Resources::CResourceObject
 {
 	__DeclareClassNoFactory;
 
@@ -54,11 +53,24 @@ public:
 	bool										Render(CView& View);
 
 	virtual bool								IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
-	//const Render::IShaderMetadata*	GetGlobalsMetadata() const { return pGlobals; }
 	const CFixedArray<Render::CEffectConstant>&	GetGlobalConstants() const { return Consts; }
+	const Render::CEffectConstant*				GetGlobalConstant(CStrID Name) const;
 };
 
 typedef Ptr<CRenderPath> PRenderPath;
+
+//!!!EFFECT CONSTS DUPLICATE!
+inline const Render::CEffectConstant* CRenderPath::GetGlobalConstant(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Consts.GetCount(); ++i)
+	{
+		const Render::CEffectConstant& CurrConst = Consts[i];
+		if (CurrConst.ID == Name) return &CurrConst;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
 
 }
 

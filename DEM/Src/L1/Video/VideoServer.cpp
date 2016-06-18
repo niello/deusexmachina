@@ -112,9 +112,9 @@ n_assert(false);
 		FAIL;
 	}
 
-	n_assert(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IMediaControl, (void**)&pMediaCtl)));
-	n_assert(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IMediaEvent, (void**)&pMediaEvent)));
-	n_assert(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IVideoWindow, (void**)&pVideoWnd)));
+	n_verify(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IMediaControl, (void**)&pMediaCtl)));
+	n_verify(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IMediaEvent, (void**)&pMediaEvent)));
+	n_verify(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IVideoWindow, (void**)&pVideoWnd)));
 	pGraphBuilder->QueryInterface(IID_IBasicVideo, (void**)&pBasicVideo);
 
 	OAHWND OwnerHWnd = NULL;
@@ -133,20 +133,20 @@ n_assert(false);
 	else
 	{
 		// Render Video in original size, centered
-		n_assert(SUCCEEDED(pBasicVideo->GetVideoSize(&VideoWidth, &VideoHeight)));
+		n_verify(SUCCEEDED(pBasicVideo->GetVideoSize(&VideoWidth, &VideoHeight)));
 		VideoLeft = (Rect.right + Rect.left - VideoWidth) / 2;
 		VideoTop = (Rect.bottom + Rect.top - VideoHeight) / 2;
 	}
 
 	// Setup Video window
-	n_assert(SUCCEEDED(pVideoWnd->put_AutoShow(OATRUE)));
-	n_assert(SUCCEEDED(pVideoWnd->put_Owner(OwnerHWnd)));
-	n_assert(SUCCEEDED(pVideoWnd->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN)));
-	n_assert(SUCCEEDED(pVideoWnd->SetWindowPosition(VideoLeft, VideoTop, VideoWidth, VideoHeight)));
-	n_assert(SUCCEEDED(pVideoWnd->put_MessageDrain(OwnerHWnd)));
-	n_assert(SUCCEEDED(pVideoWnd->HideCursor(OATRUE)));
+	n_verify(SUCCEEDED(pVideoWnd->put_AutoShow(OATRUE)));
+	n_verify(SUCCEEDED(pVideoWnd->put_Owner(OwnerHWnd)));
+	n_verify(SUCCEEDED(pVideoWnd->put_WindowStyle(WS_CHILD | WS_CLIPSIBLINGS | WS_CLIPCHILDREN)));
+	n_verify(SUCCEEDED(pVideoWnd->SetWindowPosition(VideoLeft, VideoTop, VideoWidth, VideoHeight)));
+	n_verify(SUCCEEDED(pVideoWnd->put_MessageDrain(OwnerHWnd)));
+	n_verify(SUCCEEDED(pVideoWnd->HideCursor(OATRUE)));
 
-	n_assert(SUCCEEDED(pMediaCtl->Run()));
+	n_verify(SUCCEEDED(pMediaCtl->Run()));
 
 	_IsPlaying = true;
 	OK;

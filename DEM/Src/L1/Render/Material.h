@@ -27,13 +27,6 @@ class CMaterial: public Resources::CResourceObject
 
 protected:
 
-	struct CConstBufferRec
-	{
-		EShaderType		ShaderType;
-		HConstBuffer	Handle;
-		PConstantBuffer	Buffer;
-	};
-
 	struct CResourceRec
 	{
 		EShaderType		ShaderType;
@@ -49,7 +42,7 @@ protected:
 	};
 
 	PEffect							Effect;
-	CFixedArray<CConstBufferRec>	ConstBuffers;
+	CFixedArray<CConstBufferRecord>	ConstBuffers;
 	CFixedArray<CResourceRec>		Resources;
 	CFixedArray<CSamplerRec>		Samplers;
 

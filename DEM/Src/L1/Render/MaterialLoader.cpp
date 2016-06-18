@@ -76,7 +76,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		const Render::CEffectConstant& Const = Consts[i];
 
-		Render::CMaterial::CConstBufferRec* pRec = NULL;
+		Render::CConstBufferRecord* pRec = NULL;
 		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 			if (Mtl->ConstBuffers[BufIdx].Handle == Const.BufferHandle)
 			{
@@ -110,7 +110,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 
 	for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 	{
-		Render::CMaterial::CConstBufferRec* pRec = &Mtl->ConstBuffers[BufIdx];
+		Render::CConstBufferRecord* pRec = &Mtl->ConstBuffers[BufIdx];
 		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
 		if (!GPU->CommitShaderConstants(*RAMBuffer.GetUnsafe())) FAIL; //!!!must not do any VRAM operations inside!
 

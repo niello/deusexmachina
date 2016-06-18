@@ -38,11 +38,65 @@ void CModelRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialL
 }
 //---------------------------------------------------------------------
 
+bool WriteEffectConstValue(CGPUDriver& GPU, CConstBufferRecord* Buffers, U32& BufferCount, U32 MaxBufferCount, const CEffectConstant* pConst, const void* pValue, UPTR Size)
+{
+	// Number of buffers is typically very small, so linear search is not performance-critical
+	U32 BufferIdx = 0;
+	for (; BufferIdx < BufferCount; ++BufferIdx)
+		if (Buffers[BufferIdx].Handle == pConst->BufferHandle) break;
+
+	if (BufferIdx == BufferCount)
+	{
+		if (BufferCount >= MaxBufferCount) FAIL;
+
+		//!!!request temporary buffer from the pool instead!
+		static Render::PConstantBuffer Buffer = GPU.CreateConstantBuffer(pConst->BufferHandle, Access_CPU_Write | Access_GPU_Read);
+
+		++BufferCount;
+		Buffers[BufferIdx].Handle = pConst->BufferHandle;
+		Buffers[BufferIdx].Buffer = Buffer;
+		Buffers[BufferIdx].ShaderTypes = (1 << pConst->ShaderType);
+						
+		if (!GPU.BeginShaderConstants(*Buffer)) FAIL;
+	}
+	else Buffers[BufferIdx].ShaderTypes |= (1 << pConst->ShaderType);
+
+	return GPU.SetShaderConstant(*Buffers[BufferIdx].Buffer, pConst->Handle, 0, pValue, Size);
+}
+//---------------------------------------------------------------------
+
+bool ApplyConstBuffers(CGPUDriver& GPU, CConstBufferRecord* Buffers, U32 BufferCount)
+{
+	for (U32 BufferIdx = 0; BufferIdx < BufferCount; ++BufferIdx)
+	{
+		const Render::CConstBufferRecord& CBRec = Buffers[BufferIdx];
+		n_assert_dbg(CBRec.ShaderTypes);
+		
+		Render::CConstantBuffer& Buffer = *CBRec.Buffer;
+
+		//Buffer.IsInEditMode()
+		if (CBRec.ShaderTypes) GPU.CommitShaderConstants(Buffer);
+		
+		for (UPTR j = 0; j < Render::ShaderType_COUNT; ++j)
+			if (CBRec.ShaderTypes & (1 << j))
+				GPU.BindConstantBuffer((Render::EShaderType)j, CBRec.Handle, &Buffer);
+
+		//???!!!where to reset shader types?! here?
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 // Optimal sorting for the color phase is Material-Tech-Mesh-Group for opaque and then BtF for transparent
 CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
 	const CMaterial* pCurrMaterial = NULL;
 	const CMesh* pCurrMesh = NULL;
+	const CTechnique* pCurrTech = NULL;
+
+	const CEffectConstant* pConstWorldMatrix = NULL; // Model, ModelSkinned
+	const CEffectConstant* pConstSkinPalette = NULL; // ModelSkinned
 
 	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
@@ -148,25 +202,34 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 			//!!!DBG TMP!
 			if (ItInstEnd - ItCurr > 1) Sys::DbgOut("Instancing might be possible, instances: %d\n", (ItInstEnd - ItCurr));
 
+			if (pTech != pCurrTech)
+			{
+				pConstWorldMatrix = pTech->GetConstant(CStrID("WorldMatrix"));
+				pConstSkinPalette = pTech->GetConstant(CStrID("SkinPalette"));
+				pCurrTech = pTech;
+
+				//!!!DBG TMP!
+				Sys::DbgOut("Tech params requested by ID\n");
+			}
+
 			for (; ItCurr != ItInstEnd; ++ItCurr)
 			{
 				// Per-instance params
-				// Write per-instance params into tech params
-				//HConst hWorld = pTech->GetParam(CStrID("WorldMatrix")); //???or find index and then reference by index?
-				//!!!search in fallback materials if not found!
-				//set tech params (feed shader according to an input set)
-				//GPU.SetShaderConstant(TmpCB, hWorld, 0, ItCurr->Transform.m, sizeof(matrix44));
-				//if (ItCurr->pSkinPalette) GPU.SetShaderConstant(TmpCB, hSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
-				const CEffectConstant* pConst = pTech->GetConstant(CStrID("WorldMatrix"));
-				if (pConst)
-				{
-					static Render::PConstantBuffer Buffer = GPU.CreateConstantBuffer(pConst->BufferHandle, Access_CPU_Write | Access_GPU_Read);
 
-					GPU.BeginShaderConstants(*Buffer);
-					GPU.SetShaderConstant(*Buffer, pConst->Handle, 0, ItCurr->Transform.m, sizeof(matrix44));
-					GPU.CommitShaderConstants(*Buffer);
-					GPU.BindConstantBuffer(pConst->ShaderType, pConst->BufferHandle, Buffer);
-				}
+				//!!!may precreate const block with buffer slots allocated and counted, and if tmp buffers are required, request them each frame!
+				const U32 MAX_CONST_BUFFER_COUNT = 2; // Equal to the number of per-instance constants
+				CConstBufferRecord Buffers[MAX_CONST_BUFFER_COUNT];
+				U32 BufferCount = 0;
+
+				if (pConstWorldMatrix)
+					WriteEffectConstValue(GPU, Buffers, BufferCount, MAX_CONST_BUFFER_COUNT, pConstWorldMatrix, ItCurr->Transform.m, sizeof(matrix44));
+
+				if (pConstSkinPalette && ItCurr->pSkinPalette)
+					WriteEffectConstValue(GPU, Buffers, BufferCount, MAX_CONST_BUFFER_COUNT, pConstSkinPalette, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
+
+				ApplyConstBuffers(GPU, Buffers, BufferCount);
+
+				// Rendering
 
 				//???loop by pass, then by instance? possibly less render state switches, but possibly more data binding. Does order matter?
 				for (UPTR i = 0; i < pPasses->GetCount(); ++i)

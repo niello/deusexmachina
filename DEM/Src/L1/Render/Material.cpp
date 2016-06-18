@@ -10,7 +10,7 @@ bool CMaterial::Apply(CGPUDriver& GPU) const
 {
 	for (UPTR i = 0 ; i < ConstBuffers.GetCount(); ++i)
 	{
-		const CConstBufferRec& Rec = ConstBuffers[i];
+		const CConstBufferRecord& Rec = ConstBuffers[i];
 		if (!GPU.BindConstantBuffer(Rec.ShaderType, Rec.Handle, Rec.Buffer.GetUnsafe())) FAIL;
 	}
 

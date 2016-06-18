@@ -48,7 +48,6 @@ public:
 	UPTR					GetShaderInputSetID() const { return ShaderInputSetID; }
 	IPTR					GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
 	const CPassList*		GetPasses(UPTR& LightCount) const;
-	//IPTR					GetConstantIndex(CStrID ConstantName) const { return ConstNameToHandles.FindIndex(ConstantName); }
 	const CEffectConstant*	GetConstant(CStrID Name) const;
 };
 

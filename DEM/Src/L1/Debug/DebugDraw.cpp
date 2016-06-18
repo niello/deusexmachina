@@ -69,9 +69,9 @@ __ImplementSingleton(CDebugDraw);
 //	if (Shapes->IsLoaded()) OK;
 //
 //	ID3DXMesh* pDXMesh[ShapeCount];
-//	n_assert(SUCCEEDED(D3DXCreateBox(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, &pDXMesh[0], NULL)));
-//	n_assert(SUCCEEDED(D3DXCreateSphere(RenderSrv->GetD3DDevice(), 1.0f, 12, 6, &pDXMesh[1], NULL)));
-//	n_assert(SUCCEEDED(D3DXCreateCylinder(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, 18, 1, &pDXMesh[2], NULL)));
+//	n_verify(SUCCEEDED(D3DXCreateBox(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, &pDXMesh[0], NULL)));
+//	n_verify(SUCCEEDED(D3DXCreateSphere(RenderSrv->GetD3DDevice(), 1.0f, 12, 6, &pDXMesh[1], NULL)));
+//	n_verify(SUCCEEDED(D3DXCreateCylinder(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, 18, 1, &pDXMesh[2], NULL)));
 //
 //	UPTR VCount = 0, ICount = 0;
 //	for (int i = 0; i < ShapeCount; ++i)
@@ -111,13 +111,13 @@ __ImplementSingleton(CDebugDraw);
 //		UPTR IndexCount = pDXMesh[i]->GetNumFaces() * 3;
 //
 //		char* pDXVB;
-//		n_assert(SUCCEEDED(pDXMesh[i]->LockVertexBuffer(0, (LPVOID*)&pDXVB)));
+//		n_verify(SUCCEEDED(pDXMesh[i]->LockVertexBuffer(0, (LPVOID*)&pDXVB)));
 //		for (UPTR j = 0; j < VertexCount; ++j, pDXVB += pDXMesh[i]->GetNumBytesPerVertex())
 //			*pVBData++ = *(vector3*)pDXVB;
 //		pDXMesh[i]->UnlockVertexBuffer();
 //
 //		U16* pDXIB;
-//		n_assert(SUCCEEDED(pDXMesh[i]->LockIndexBuffer(0, (LPVOID*)&pDXIB)));
+//		n_verify(SUCCEEDED(pDXMesh[i]->LockIndexBuffer(0, (LPVOID*)&pDXIB)));
 //		for (UPTR j = 0; j < IndexCount; ++j, ++pDXIB)
 //			*pIBData++ = (*pDXIB) + (U16)VertexOffset;
 //		pDXMesh[i]->UnlockIndexBuffer();

@@ -40,7 +40,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 				GlobalCBs.Clear();
 				FAIL;
 			}
-			CConstBufferRec* pRec = GlobalCBs.Add();
+			Render::CConstBufferRecord* pRec = GlobalCBs.Add();
 			pRec->Handle = Const.BufferHandle;
 			pRec->Buffer = CB;
 			pRec->ShaderTypes = 0; // Filled when const values are written, not to bind unnecessarily to all possibly requiring stages

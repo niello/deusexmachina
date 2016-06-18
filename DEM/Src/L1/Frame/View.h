@@ -54,14 +54,6 @@ protected:
 
 public:
 
-	//!!!ALMOST DUPLICATE STRUCTURE! see CMaterial!
-	struct CConstBufferRec
-	{
-		Render::HConstBuffer	Handle;
-		Render::PConstantBuffer	Buffer;
-		U32						ShaderTypes; // 1 << Render::EShaderType
-	};
-
 	//???add viewport settings here? to render multiple views into one RT
 
 	//???scene start node? if NULL, render all nodes, else only that and its children
@@ -71,7 +63,7 @@ public:
 	Render::PGPUDriver					GPU;
 	CFixedArray<Render::PRenderTarget>	RTs;
 	Render::PDepthStencilBuffer			DSBuffer;	//???or named? may require more than one in one view?
-	CArray<CConstBufferRec>				GlobalCBs;
+	CArray<Render::CConstBufferRecord>	GlobalCBs;
 
 	CArray<Render::CRenderNode>			RenderQueue;	// Cached to avoid per-frame allocations
 

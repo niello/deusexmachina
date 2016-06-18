@@ -350,6 +350,17 @@ struct CEffectSampler
 	HSampler		Handle;
 };
 
+struct CConstBufferRecord
+{
+	HConstBuffer	Handle;
+	PConstantBuffer	Buffer;
+	union
+	{
+		U32			ShaderTypes;	// For CRenderPath and CTechnique, 1 << Render::EShaderType bitfield
+		EShaderType	ShaderType;		// For CMaterial, it now supports binding to one stage at a time
+	};
+};
+
 inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 {
 	UPTR MaxDim = n_max(Width, Height);

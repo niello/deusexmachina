@@ -996,16 +996,7 @@ void CD3D11GPUDriver::Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U
 	}
 
 	if (CurrDS.IsValidPtr() && ((Flags & Clear_Depth) || (Flags & Clear_Stencil)))
-	{
-		UINT D3DFlags = 0;
-		if (Flags & Clear_Depth) D3DFlags |= D3D11_CLEAR_DEPTH;
-
-		DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(CurrDS->GetDesc().Format);
-		if ((Flags & Clear_Stencil) && CD3D11DriverFactory::DXGIFormatStencilBits(Fmt) > 0)
-			D3DFlags |= D3D11_CLEAR_STENCIL;
-
-		pD3DImmContext->ClearDepthStencilView(CurrDS->GetD3DDSView(), D3DFlags, Depth, Stencil);
-	}
+		ClearDepthStencilBuffer(*CurrDS.GetUnsafe(), Flags, Depth, Stencil);
 }
 //---------------------------------------------------------------------
 
@@ -1014,6 +1005,23 @@ void CD3D11GPUDriver::ClearRenderTarget(CRenderTarget& RT, const vector4& ColorR
 	if (!RT.IsValid()) return;
 	CD3D11RenderTarget& D3D11RT = (CD3D11RenderTarget&)RT;
 	pD3DImmContext->ClearRenderTargetView(D3D11RT.GetD3DRTView(), ColorRGBA.v);
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil)
+{
+	if (!DS.IsValid()) return;
+	CD3D11DepthStencilBuffer& D3D11DS = (CD3D11DepthStencilBuffer&)DS;
+
+	UINT D3DFlags = 0;
+	if (Flags & Clear_Depth) D3DFlags |= D3D11_CLEAR_DEPTH;
+
+	DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(D3D11DS.GetDesc().Format);
+	if ((Flags & Clear_Stencil) && CD3D11DriverFactory::DXGIFormatStencilBits(Fmt) > 0)
+		D3DFlags |= D3D11_CLEAR_STENCIL;
+
+	if (D3DFlags)
+		pD3DImmContext->ClearDepthStencilView(D3D11DS.GetD3DDSView(), D3DFlags, Depth, Stencil);
 }
 //---------------------------------------------------------------------
 
