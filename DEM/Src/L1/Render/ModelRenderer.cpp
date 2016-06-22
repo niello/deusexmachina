@@ -5,6 +5,7 @@
 #include <Render/Model.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Render/EffectConstSetValues.h>
 #include <Render/Mesh.h>
 #include <Render/GPUDriver.h>
 #include <Core/Factory.h>
@@ -38,57 +39,7 @@ void CModelRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialL
 }
 //---------------------------------------------------------------------
 
-bool WriteEffectConstValue(CGPUDriver& GPU, CConstBufferRecord* Buffers, U32& BufferCount, U32 MaxBufferCount, const CEffectConstant* pConst, const void* pValue, UPTR Size)
-{
-	// Number of buffers is typically very small, so linear search is not performance-critical
-	U32 BufferIdx = 0;
-	for (; BufferIdx < BufferCount; ++BufferIdx)
-		if (Buffers[BufferIdx].Handle == pConst->BufferHandle) break;
-
-	if (BufferIdx == BufferCount)
-	{
-		if (BufferCount >= MaxBufferCount) FAIL;
-
-		//!!!request temporary buffer from the pool instead!
-		static Render::PConstantBuffer Buffer = GPU.CreateConstantBuffer(pConst->BufferHandle, Access_CPU_Write | Access_GPU_Read);
-
-		++BufferCount;
-		Buffers[BufferIdx].Handle = pConst->BufferHandle;
-		Buffers[BufferIdx].Buffer = Buffer;
-		Buffers[BufferIdx].ShaderTypes = (1 << pConst->ShaderType);
-						
-		if (!GPU.BeginShaderConstants(*Buffer)) FAIL;
-	}
-	else Buffers[BufferIdx].ShaderTypes |= (1 << pConst->ShaderType);
-
-	return GPU.SetShaderConstant(*Buffers[BufferIdx].Buffer, pConst->Handle, 0, pValue, Size);
-}
-//---------------------------------------------------------------------
-
-bool ApplyConstBuffers(CGPUDriver& GPU, CConstBufferRecord* Buffers, U32 BufferCount)
-{
-	for (U32 BufferIdx = 0; BufferIdx < BufferCount; ++BufferIdx)
-	{
-		const Render::CConstBufferRecord& CBRec = Buffers[BufferIdx];
-		n_assert_dbg(CBRec.ShaderTypes);
-		
-		Render::CConstantBuffer& Buffer = *CBRec.Buffer;
-
-		//Buffer.IsInEditMode()
-		if (CBRec.ShaderTypes) GPU.CommitShaderConstants(Buffer);
-		
-		for (UPTR j = 0; j < Render::ShaderType_COUNT; ++j)
-			if (CBRec.ShaderTypes & (1 << j))
-				GPU.BindConstantBuffer((Render::EShaderType)j, CBRec.Handle, &Buffer);
-
-		//???!!!where to reset shader types?! here?
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-// Optimal sorting for the color phase is Material-Tech-Mesh-Group for opaque and then BtF for transparent
+// Optimal sorting for the color phase is Tech-Material-Mesh-Group for opaque and then BtF for transparent
 CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
 	const CMaterial* pCurrMaterial = NULL;
@@ -216,18 +167,34 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 			{
 				// Per-instance params
 
-				//!!!may precreate const block with buffer slots allocated and counted, and if tmp buffers are required, request them each frame!
-				const U32 MAX_CONST_BUFFER_COUNT = 2; // Equal to the number of per-instance constants
-				CConstBufferRecord Buffers[MAX_CONST_BUFFER_COUNT];
-				U32 BufferCount = 0;
+				//???use persistent, create once and store associatively Tech->Values?
+				CEffectConstSetValues PerInstanceConstValues;
+				PerInstanceConstValues.SetGPU(&GPU);
 
 				if (pConstWorldMatrix)
-					WriteEffectConstValue(GPU, Buffers, BufferCount, MAX_CONST_BUFFER_COUNT, pConstWorldMatrix, ItCurr->Transform.m, sizeof(matrix44));
+				{
+					PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->BufferHandle, NULL);
+					PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, ItCurr->Transform.m, sizeof(matrix44));
+				}
 
 				if (pConstSkinPalette && ItCurr->pSkinPalette)
-					WriteEffectConstValue(GPU, Buffers, BufferCount, MAX_CONST_BUFFER_COUNT, pConstSkinPalette, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
+				{
+					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->BufferHandle, NULL);
+					if (pModel->BoneIndices.GetCount())
+					{
+						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
+						{
+							int BoneIdx = pModel->BoneIndices[BoneIdxIdx];
+							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdx, ItCurr->pSkinPalette + sizeof(matrix44) * BoneIdx, sizeof(matrix44));
+						}
+					}
+					else
+					{
+						PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
+					}
+				}
 
-				ApplyConstBuffers(GPU, Buffers, BufferCount);
+				PerInstanceConstValues.ApplyConstantBuffers();
 
 				// Rendering
 

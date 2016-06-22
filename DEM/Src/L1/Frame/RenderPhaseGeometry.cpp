@@ -109,9 +109,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
 		{
 			//!!!if pMaterial->IsAlphaBlended(), then BtF!
+			//???who is alpha-blended, material, effect or tech?
 			//if one obj alpha and one opaque, sort opaque before alpha (a.pMaterial->IsAlphaBlended() < b.pMaterial->IsAlphaBlended())
-			if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
 			if (a.pTech != b.pTech) return a.pTech < b.pTech;
+			if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
 			if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
 			if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
 			return a.SqDistanceToCamera < b.SqDistanceToCamera;

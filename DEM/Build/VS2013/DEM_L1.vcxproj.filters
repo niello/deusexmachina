@@ -947,6 +947,9 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoaderRP.h">
       <Filter>Frame</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\EffectConstSetValues.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1565,6 +1568,9 @@
       <Filter>Frame</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\EffectLoadingUtils.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\EffectConstSetValues.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

@@ -9,16 +9,24 @@
 namespace Frame
 {
 
+CView::~CView()
+{
+	Globals.UnbindAndClear();
+}
+//---------------------------------------------------------------------
+
 bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 {
 	// GPU must be valid in order to create global constant buffers
 	if (GPU.IsNullPtr()) FAIL;
 
 	if (RenderPath.GetUnsafe() == pNewRenderPath) OK;
+
+	Globals.UnbindAndClear();
+	Globals.SetGPU(GPU);
+
 	if (!pNewRenderPath)
 	{
-		//!!!unbind CBs!
-		GlobalCBs.Clear();
 		RenderPath = NULL;
 		OK;
 	}
@@ -27,23 +35,16 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	for (UPTR i = 0; i < GlobalConsts.GetCount(); ++i)
 	{
 		const Render::CEffectConstant& Const = GlobalConsts[i];
-		
-		UPTR j = 0;
-		for (; j < GlobalCBs.GetCount(); ++j)
-			if (GlobalCBs[j].Handle == Const.BufferHandle) break;
-		
-		if (j == GlobalCBs.GetCount())
+
+		if (!Globals.IsConstantBufferRegistered(Const.BufferHandle))
 		{
 			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(Const.BufferHandle, Render::Access_CPU_Write | Render::Access_GPU_Read);
 			if (CB.IsNullPtr())
 			{
-				GlobalCBs.Clear();
+				Globals.UnbindAndClear();
 				FAIL;
 			}
-			Render::CConstBufferRecord* pRec = GlobalCBs.Add();
-			pRec->Handle = Const.BufferHandle;
-			pRec->Buffer = CB;
-			pRec->ShaderTypes = 0; // Filled when const values are written, not to bind unnecessarily to all possibly requiring stages
+			Globals.RegisterConstantBuffer(Const.BufferHandle, CB);
 		}
 	}
 

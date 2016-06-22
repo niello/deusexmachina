@@ -4,6 +4,7 @@
 
 #include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
+#include <Render/EffectConstSetValues.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 
@@ -63,19 +64,19 @@ public:
 	Render::PGPUDriver					GPU;
 	CFixedArray<Render::PRenderTarget>	RTs;
 	Render::PDepthStencilBuffer			DSBuffer;	//???or named? may require more than one in one view?
-	CArray<Render::CConstBufferRecord>	GlobalCBs;
+	Render::CEffectConstSetValues		Globals;
 
 	CArray<Render::CRenderNode>			RenderQueue;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true), MeshLODType(LOD_None), MaterialLODType(LOD_None) {}
+	~CView();
 
-	//visible objects cache
-	//visible lights cache (can separate by callback/visitor passed to SPS, along with LOD prerequisites calculation)
-	//named texture RTs and mb named readonly system textures and named shader vars
+	//visible lights cache (can separate by callback/visitor passed to SPS)
+	//named/indexed texture RTs and mb named readonly system textures and named shader vars
 	//!!!named resources in view bound to RP must be resolved by order number (index in array)
 	//instead of looking up by name every time!
 	//shadow cameras (?are generated from lights in a shadow phase?)
-	//shadow map buffers
+	//shadow map buffers (sort of RT / DS, no special case?)
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
 	bool							SetRenderPath(CRenderPath* pNewRenderPath);

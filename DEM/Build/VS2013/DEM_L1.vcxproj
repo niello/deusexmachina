@@ -256,6 +256,7 @@
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayMode.h" />
     <ClInclude Include="..\..\Src\L1\Render\Effect.h" />
+    <ClInclude Include="..\..\Src\L1\Render\EffectConstSetValues.h" />
     <ClInclude Include="..\..\Src\L1\Render\EffectLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ImageUtils.h" />
     <ClInclude Include="..\..\Src\L1\Render\GPUDriver.h" />
@@ -515,6 +516,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Effect.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\EffectConstSetValues.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\EffectLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\EffectLoadingUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\ImageUtils.cpp" />

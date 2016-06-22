@@ -36,6 +36,7 @@ protected:
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets
+	//!!!may allocate joint palette matrix44 array inside a model!
 
 public:
 
@@ -48,7 +49,7 @@ public:
 	const matrix44*		GetSkinPalette() const { return pSkinPalette; }
 };
 
-typedef Ptr<CNodeAttrSkin> PSkin;
+typedef Ptr<CNodeAttrSkin> PNodeAttrSkin;
 
 }
 
