@@ -76,7 +76,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		const Render::CEffectConstant& Const = Consts[i];
 
-		Render::CConstBufferRecord* pRec = NULL;
+		Render::CMaterial::CConstBufferRecord* pRec = NULL;
 		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 			if (Mtl->ConstBuffers[BufIdx].Handle == Const.BufferHandle)
 			{
@@ -110,7 +110,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 
 	for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 	{
-		Render::CConstBufferRecord* pRec = &Mtl->ConstBuffers[BufIdx];
+		Render::CMaterial::CConstBufferRecord* pRec = &Mtl->ConstBuffers[BufIdx];
 		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
 		if (!GPU->CommitShaderConstants(*RAMBuffer.GetUnsafe())) FAIL; //!!!must not do any VRAM operations inside!
 
@@ -128,7 +128,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		IPTR Idx = ResourceValues.FindIndex(Rsrc.ID);
 		Render::PTexture Value = (Idx != INVALID_INDEX) ? ResourceValues.ValueAt(Idx) : Render::PTexture();
 		
-		Render::CMaterial::CResourceRec& Rec = Mtl->Resources[i];
+		Render::CMaterial::CResourceRecord& Rec = Mtl->Resources[i];
 		Rec.Handle = Rsrc.Handle;
 		Rec.ShaderType = Rsrc.ShaderType;
 		Rec.Resource = Value.IsValidPtr() ? Value : Mtl->Effect->GetResourceDefaultValue(Rsrc.ID);
@@ -143,7 +143,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		IPTR Idx = SamplerValues.FindIndex(Sampler.ID);
 		Render::PSampler Value = (Idx != INVALID_INDEX) ? SamplerValues.ValueAt(Idx) : Render::PSampler();
 		
-		Render::CMaterial::CSamplerRec& Rec = Mtl->Samplers[i];
+		Render::CMaterial::CSamplerRecord& Rec = Mtl->Samplers[i];
 		Rec.Handle = Sampler.Handle;
 		Rec.ShaderType = Sampler.ShaderType;
 		Rec.Sampler = Value.IsValidPtr() ? Value : Mtl->Effect->GetSamplerDefaultValue(Sampler.ID);

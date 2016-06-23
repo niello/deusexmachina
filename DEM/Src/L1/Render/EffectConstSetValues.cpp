@@ -11,7 +11,7 @@ bool CEffectConstSetValues::SetGPU(PGPUDriver NewGPU)
 	if (NewGPU == GPU) OK;
 
 	//!!!unbind and kill all buffers stored!
-	//!!!recreate all non-tmp buffers!
+	//!!!recreate all non-tmp buffers with the new GPU!
 
 	GPU = NewGPU;
 	OK;
@@ -26,10 +26,9 @@ bool CEffectConstSetValues::RegisterConstantBuffer(HConstBuffer Handle, CConstan
 	IPTR BufferIdx = Buffers.FindIndex(Handle);
 	if (BufferIdx != INVALID_INDEX) OK;
 
-	Render::CConstBufferRecord& Rec = Buffers.Add(Handle);
-	Rec.Handle = Handle;
+	CConstBufferRecord& Rec = Buffers.Add(Handle);
 	Rec.Buffer = pBuffer;
-	Rec.ShaderTypes = 0; // Filled when const values are written, not to bind unnecessarily to all possibly requiring stages
+	Rec.Flags = 0;
 
 	OK;
 }
@@ -43,11 +42,17 @@ bool CEffectConstSetValues::SetConstantValue(const CEffectConstant* pConst, UPTR
 	CConstBufferRecord& CBRec = Buffers.ValueAt(BufferIdx);
 
 	//if (!Buffers[BufferIdx].Buffer->IsInEditMode())
-	if (!CBRec.ShaderTypes)
+	if (!CBRec.Flags)
 	{
+		if (CBRec.Buffer.IsNullPtr())
+		{
+			CBRec.Buffer = GPU->CreateTemporaryConstantBuffer(pConst->BufferHandle);
+			if (CBRec.Buffer.IsNullPtr()) FAIL;
+			CBRec.Flags |= ECSV_TmpBuffer;
+		}
 		if (!GPU->BeginShaderConstants(*CBRec.Buffer)) FAIL;
 	}
-	CBRec.ShaderTypes |= (1 << pConst->ShaderType);
+	CBRec.Flags |= (1 << pConst->ShaderType);
 
 	return GPU->SetShaderConstant(*CBRec.Buffer, pConst->Handle, ElementIndex, pValue, Size);
 }
@@ -58,19 +63,27 @@ bool CEffectConstSetValues::ApplyConstantBuffers()
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{
 		CConstBufferRecord& CBRec = Buffers.ValueAt(i);
-		if (!CBRec.ShaderTypes) continue;
+		if (!CBRec.Flags) continue;
 		
 		CConstantBuffer& Buffer = *CBRec.Buffer;
 
-		//Buffer.IsInEditMode()
-		if (CBRec.ShaderTypes) GPU->CommitShaderConstants(Buffer);
+		if (CBRec.Flags) GPU->CommitShaderConstants(Buffer);
 		
+		HConstBuffer hCB = Buffers.KeyAt(i);
 		for (UPTR j = 0; j < Render::ShaderType_COUNT; ++j)
-			if (CBRec.ShaderTypes & (1 << j))
-				GPU->BindConstantBuffer((Render::EShaderType)j, CBRec.Handle, &Buffer);
+			if (CBRec.Flags & (1 << j))
+				GPU->BindConstantBuffer((Render::EShaderType)j, hCB, &Buffer);
 
-		//???!!!where to reset shader types?! here?
-		CBRec.ShaderTypes = 0;
+		if (CBRec.Flags & ECSV_TmpBuffer)
+		{
+			//???should tmp buffer exist until rendered? killing reference may
+			//result in a destruction of tmp CB when another one is bound to GPU!
+			//GPU must store ref inside until it is not required any more!
+			GPU->FreeTemporaryConstantBuffer(Buffer);
+			CBRec.Buffer = NULL;
+		}
+
+		CBRec.Flags = 0;
 	}
 
 	OK;

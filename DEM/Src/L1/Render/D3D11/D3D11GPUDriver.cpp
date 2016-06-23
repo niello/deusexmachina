@@ -1731,6 +1731,19 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 }
 //---------------------------------------------------------------------
 
+PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuffer)
+{
+	//!!!rewrite, use pool or smth! dynamically growing ring buffer or generic pool may be a good idea.
+	return CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
+{
+	//???mb store buffer ref until all render operations with it are finished?
+}
+//---------------------------------------------------------------------
+
 // pData - initial data to be uploaded to a texture.
 // if MipDataProvided, order is ArrayElement[0] { Mip[0] ... Mip[N] } ... ArrayElement[M] { Mip[0] ... Mip[N] },
 // else order is ArrayElement[0] { Mip[0] } ... ArrayElement[M] { Mip[0] }, where Mip[0] is an original data.

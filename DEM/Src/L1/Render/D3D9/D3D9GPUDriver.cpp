@@ -1596,9 +1596,20 @@ bool CD3D9GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 {
 	if (CurrDS.GetUnsafe() == pDS) OK;
-	IDirect3DSurface9* pDSSurface = pDS ? ((CD3D9DepthStencilBuffer*)pDS)->GetD3DSurface() : NULL;
+
+	CD3D9DepthStencilBuffer* pD3D9DS = (CD3D9DepthStencilBuffer*)pDS;
+	IDirect3DSurface9* pDSSurface = pD3D9DS ? pD3D9DS->GetD3DSurface() : NULL;
 	if (FAILED(pD3DDevice->SetDepthStencilSurface(pDSSurface))) FAIL;
-	CurrDS = (CD3D9DepthStencilBuffer*)pDS;
+
+	// Execute delayed clear operation
+	if (pD3D9DS->D3D9ClearFlags)
+	{
+		n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, pD3D9DS->D3D9ClearFlags, 0, pD3D9DS->ZClearValue, pD3D9DS->StencilClearValue)));
+		pD3D9DS->D3D9ClearFlags = 0;
+	}
+
+	CurrDS = pD3D9DS;
+
 	OK;
 
 	//!!!COMPATIBILITY TEST! (separate method)
@@ -1811,12 +1822,17 @@ void CD3D9GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags
 
 	if (D3DFlags)
 	{
-		CD3D9DepthStencilBuffer* pOldDS = CurrDS.GetUnsafe();
-		if (pOldDS != &D3D9DS)
-			if (FAILED(pD3DDevice->SetDepthStencilSurface(D3D9DS.GetD3DSurface()))) return;
-		n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, 0, Depth, Stencil)));
-		if (pOldDS != &D3D9DS)
-			if (FAILED(pD3DDevice->SetDepthStencilSurface(pOldDS->GetD3DSurface()))) return;
+		if (CurrDS.GetUnsafe() == &D3D9DS)
+		{
+			n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, 0, Depth, Stencil)));
+		}
+		else
+		{
+			// Delay clear. See more info in these fields declaration.
+			D3D9DS.D3D9ClearFlags |= D3DFlags;
+			if (D3DFlags & D3DCLEAR_ZBUFFER) D3D9DS.ZClearValue = Depth;
+			if (D3DFlags & D3DCLEAR_STENCIL) D3D9DS.StencilClearValue = Stencil;
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -2070,6 +2086,21 @@ PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR 
 	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
 	if (!CB->Create(*pMeta, (const CD3D9ConstantBuffer*)pData)) return NULL;
 	return CB.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuffer)
+{
+	//!!!rewrite, use pool or smth!
+	return CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
+{
+	//!!!for D3D9 there is no need to store reference, as all data is passed to a command buffer!
+	//if buffer was unbound, it is good if all its data will be lost
+	//???mb store buffer ref until all render operations with it are finished?
 }
 //---------------------------------------------------------------------
 

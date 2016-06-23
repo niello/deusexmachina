@@ -27,14 +27,21 @@ class CMaterial: public Resources::CResourceObject
 
 protected:
 
-	struct CResourceRec
+	struct CConstBufferRecord
+	{
+		HConstBuffer	Handle;
+		PConstantBuffer	Buffer;
+		EShaderType		ShaderType;		// Now supports binding to one stage at a time
+	};
+
+	struct CResourceRecord
 	{
 		EShaderType		ShaderType;
 		HResource		Handle;
 		PTexture		Resource;
 	};
 
-	struct CSamplerRec
+	struct CSamplerRecord
 	{
 		EShaderType		ShaderType;
 		HSampler		Handle;
@@ -43,8 +50,8 @@ protected:
 
 	PEffect							Effect;
 	CFixedArray<CConstBufferRecord>	ConstBuffers;
-	CFixedArray<CResourceRec>		Resources;
-	CFixedArray<CSamplerRec>		Samplers;
+	CFixedArray<CResourceRecord>	Resources;
+	CFixedArray<CSamplerRecord>		Samplers;
 
 	friend class Resources::CMaterialLoader;
 

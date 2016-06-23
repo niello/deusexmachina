@@ -85,6 +85,8 @@ public:
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
 	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, UPTR Size) = 0;
 	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) = 0;
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer) = 0;
+	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) = 0;
 	virtual PTexture			CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData = NULL, bool MipDataProvided = false) = 0;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;

@@ -20,11 +20,22 @@ protected:
 
 	IDirect3DSurface9* pDSSurface;
 
+	// Requested clear operation parameters. For some strange reason in D3D9 we can't
+	// clear RT, clear DS, then set RT and set DS. Setting a new RT results in breaking
+	// of the depth buffer in a such way that it must be cleared again. Until reasons of
+	// this behaviour remain unknown, I will cache ClearDepthStencilBuffer() request and
+	// delay actual clear to the moment of setting DS surface.
+	U32					D3D9ClearFlags;
+	float				ZClearValue;
+	U8					StencilClearValue;
+
 	void				InternalDestroy();
+
+	friend class CD3D9GPUDriver; // For delayed clearing only, not to pollute an interface with setters and getters
 
 public:
 
-	CD3D9DepthStencilBuffer(): pDSSurface(NULL) {}
+	CD3D9DepthStencilBuffer(): pDSSurface(NULL), D3D9ClearFlags(0), ZClearValue(1.f), StencilClearValue(0) {}
 	virtual ~CD3D9DepthStencilBuffer() { InternalDestroy(); }
 
 	bool				Create(IDirect3DSurface9* pSurface); // For internal use

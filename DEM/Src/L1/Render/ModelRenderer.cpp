@@ -39,7 +39,11 @@ void CModelRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialL
 }
 //---------------------------------------------------------------------
 
-// Optimal sorting for the color phase is Tech-Material-Mesh-Group for opaque and then BtF for transparent
+// Optimal sorting for the color phase is Tech-Material-Mesh-Group for opaque and then BtF for transparent.
+// Tech is sorted before Material because it is more likely that many materials will be rendered with the same
+// single-pass tech, than that the same material will be used with many different techs. We have great chances
+// to set render state only once as our tech is single-pass, and to render many materials without switching it,
+// just rebinding constants, resources and samplers.
 CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
 	const CMaterial* pCurrMaterial = NULL;
