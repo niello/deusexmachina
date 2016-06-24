@@ -18,14 +18,26 @@ CRenderPath::~CRenderPath()
 
 bool CRenderPath::Render(CView& View)
 {
-	//!!!clear all phases' render targets and DS surfaces at the beginning
-	//of the frame, as recommended, especially for SLI, also it helps rendering
-	//as phases must not clear RTs and therefore know are they the first to
-	//render into or RT/DS already contains this frame data
-	//!!!DBG TMP!
-	View.GPU->ClearRenderTarget(*View.RTs[0], vector4(0.1f, 0.7f, 0.1f, 1.f));
-	if (View.DSBuffer.IsValidPtr())
-		View.GPU->ClearDepthStencilBuffer(*View.DSBuffer, Render::Clear_Depth, 1.f, 0);
+	// We clear all phases' render targets and DS surfaces at the beginning of
+	// the frame, as recommended, especially for SLI. It also serves for a better
+	// rendering architecture, as phases must not clear RTs and therefore know
+	// whether they are the first writers of these targets this frame.
+
+	for (UPTR i = 0; i < RTSlots.GetCount(); ++i)
+	{
+		Render::CRenderTarget* pRT = View.RTs[i].GetUnsafe();
+		if (pRT) View.GPU->ClearRenderTarget(*pRT, RTSlots[i].ClearValue);
+	}
+
+	for (UPTR i = 0; i < DSSlots.GetCount(); ++i)
+	{
+		Render::CDepthStencilBuffer* pDS = View.DSBuffers[i].GetUnsafe();
+		if (pDS)
+		{
+			const CDepthStencilSlot& Slot = DSSlots[i];
+			View.GPU->ClearDepthStencilBuffer(*pDS, Slot.ClearFlags, Slot.DepthClearValue, Slot.StencilClearValue);
+		}
+	}
 
 	// Global params
 	//???move to a separate phase? user then may implement it using knowledge about its global shader params.

@@ -5,6 +5,7 @@
 #include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Render/D3D11/USMShaderMetadata.h>
 #include <IO/BinaryReader.h>
+#include <Data/DataArray.h>
 #include <Core/Factory.h>
 
 namespace Resources
@@ -33,10 +34,46 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 	U32 ShaderModel;
 	if (!Reader.Read<U32>(ShaderModel)) return NULL; // 0 for SM3.0, 1 for USM
 
+	Data::CDataArray RTSlots;
+	if (!Reader.Read(RTSlots)) return NULL;
+
+	Data::CDataArray DSSlots;
+	if (!Reader.Read(DSSlots)) return NULL;
+
 	Data::PParams Phases = n_new(Data::CParams);
 	if (!Reader.ReadParams(*Phases)) return NULL;
 
 	Frame::PRenderPath RP = n_new(Frame::CRenderPath);
+
+	RP->RTSlots.SetSize(RTSlots.GetCount());
+	for (UPTR i = 0; i < RTSlots.GetCount(); ++i)
+	{
+		Frame::CRenderPath::CRenderTargetSlot& Slot = RP->RTSlots[i];
+		Slot.ClearValue = RTSlots[i].GetValue<Data::PParams>()->Get<vector4>(CStrID("ClearValue"), vector4(0.5f, 0.5f, 0.f, 1.f));
+	}
+
+	RP->DSSlots.SetSize(DSSlots.GetCount());
+	for (UPTR i = 0; i < DSSlots.GetCount(); ++i)
+	{
+		Frame::CRenderPath::CDepthStencilSlot& Slot = RP->DSSlots[i];
+		Data::PParams SlotParams = DSSlots[i].GetValue<Data::PParams>();
+
+		Slot.ClearFlags = 0;
+
+		float ZClear;
+		if (SlotParams->Get(ZClear, CStrID("DepthClearValue")))
+		{
+			Slot.DepthClearValue = ZClear;
+			Slot.ClearFlags |= Render::Clear_Depth;
+		}
+
+		int StencilClear;
+		if (SlotParams->Get(StencilClear, CStrID("StencilClearValue")))
+		{
+			Slot.StencilClearValue = StencilClear;
+			Slot.ClearFlags |= Render::Clear_Stencil;
+		}
+	}
 
 	RP->Phases.SetSize(Phases->GetCount());
 	for (UPTR i = 0; i < Phases->GetCount(); ++i)

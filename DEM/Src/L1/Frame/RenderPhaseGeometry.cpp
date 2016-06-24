@@ -120,9 +120,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	};
 	RenderQueue.Sort<CRenderQueueCmp_Material>();
 
+	//!!!set by indices! clear unused?
 	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
 		View.GPU->SetRenderTarget(i, View.RTs[i].GetUnsafe());
-	View.GPU->SetDepthStencilBuffer(View.DSBuffer.GetUnsafe());
+	View.GPU->SetDepthStencilBuffer(View.DSBuffers[0].GetUnsafe());
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();

@@ -42,31 +42,31 @@ class CView
 {
 protected:
 
-	PRenderPath							RenderPath;
-	CNodeAttrCamera*					pCamera; //???smart ptr?
+	PRenderPath									RenderPath;
+	CNodeAttrCamera*							pCamera; //???smart ptr?
 
-	CArray<Scene::CNodeAttribute*>		VisibilityCache;
-	bool								VisibilityCacheDirty; //???to flags?
+	CArray<Scene::CNodeAttribute*>				VisibilityCache;
+	bool										VisibilityCacheDirty; //???to flags?
 
-	ELODType							MeshLODType;
-	CFixedArray<float>					MeshLODScale;
-	ELODType							MaterialLODType;
-	CFixedArray<float>					MaterialLODScale;
+	ELODType									MeshLODType;
+	CFixedArray<float>							MeshLODScale;
+	ELODType									MaterialLODType;
+	CFixedArray<float>							MaterialLODScale;
 
 public:
 
 	//???add viewport settings here? to render multiple views into one RT
 
 	//???scene start node? if NULL, render all nodes, else only that and its children
-	Scene::CSPS*						pSPS;
-	UI::PUIContext						UIContext;
+	Scene::CSPS*								pSPS;
+	UI::PUIContext								UIContext;
 
-	Render::PGPUDriver					GPU;
-	CFixedArray<Render::PRenderTarget>	RTs;
-	Render::PDepthStencilBuffer			DSBuffer;	//???or named? may require more than one in one view?
-	Render::CEffectConstSetValues		Globals;
+	Render::PGPUDriver							GPU;
+	CFixedArray<Render::PRenderTarget>			RTs;
+	CFixedArray<Render::PDepthStencilBuffer>	DSBuffers;
+	Render::CEffectConstSetValues				Globals;
 
-	CArray<Render::CRenderNode>			RenderQueue;	// Cached to avoid per-frame allocations
+	CArray<Render::CRenderNode>					RenderQueue;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true), MeshLODType(LOD_None), MaterialLODType(LOD_None) {}
 	~CView();

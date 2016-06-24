@@ -1322,7 +1322,13 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
 	if (!W.Write<U32>(SM30 ? 0 : 1)) return ERR_IO_WRITE;
 
-	// Save phases
+	// Save pluggable object slots and rendering phases
+
+	Data::PDataArray DataToSave;
+	Params->Get(DataToSave, CStrID("RenderTargets"));
+	if (!W.Write(DataToSave)) return ERR_IO_WRITE;
+	Params->Get(DataToSave, CStrID("DepthStencilBuffers"));
+	if (!W.Write(DataToSave)) return ERR_IO_WRITE;
 
 	if (!W.WriteParams(*Phases)) return ERR_IO_WRITE;
 

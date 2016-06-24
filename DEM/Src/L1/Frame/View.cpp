@@ -27,9 +27,18 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 
 	if (!pNewRenderPath)
 	{
+		RTs.SetSize(0);
 		RenderPath = NULL;
 		OK;
 	}
+
+	// Allocate RT and DS slots
+	//!!!may fill with default RTs and DSs if descs are provided in RP!
+
+	RTs.SetSize(pNewRenderPath->GetRenderTargetCount());
+	DSBuffers.SetSize(pNewRenderPath->GetDepthStencilBufferCount());
+
+	// Allocate storage for global shader params
 
 	const CFixedArray<Render::CEffectConstant>& GlobalConsts = pNewRenderPath->GetGlobalConstants();
 	for (UPTR i = 0; i < GlobalConsts.GetCount(); ++i)

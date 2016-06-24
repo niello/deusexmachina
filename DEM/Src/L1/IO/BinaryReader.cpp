@@ -136,4 +136,15 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 }
 //---------------------------------------------------------------------
 
-} //namespace IO
+bool CBinaryReader::ReadDataArray(Data::CDataArray& OutValue)
+{
+	U16 Count;
+	if (!Read<U16>(Count)) FAIL;
+	OutValue.Resize(Count);
+	for (UPTR i = 0; i < Count; ++i)
+		if (!ReadData(*OutValue.Add())) FAIL;
+	OK;
+}
+//---------------------------------------------------------------------
+
+}

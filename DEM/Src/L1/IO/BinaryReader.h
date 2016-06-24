@@ -13,6 +13,7 @@ class CString;
 namespace Data
 {
 	class CDataScheme;
+	typedef Ptr<class CDataArray> PDataArray;
 }
 
 namespace IO
@@ -30,6 +31,7 @@ public:
 	bool				ReadParams(Data::CParams& OutValue);
 	bool				ReadParam(Data::CParam& OutValue);
 	bool				ReadData(Data::CData& OutValue);
+	bool				ReadDataArray(Data::CDataArray& OutValue);
 
 	template<class T>
 	T					Read() { T Val; n_assert(Read<T>(Val)); return Val; }
@@ -38,8 +40,10 @@ public:
 	template<> bool		Read<char*>(char*& OutValue) { return ReadString(OutValue); }
 	template<> bool		Read<CString>(CString& OutValue) { return ReadString(OutValue); }
 	template<> bool		Read<CStrID>(CStrID& OutValue);
+	template<> bool		Read<Data::CDataArray>(Data::CDataArray& OutValue) { return ReadDataArray(OutValue); }
+	template<> bool		Read<Data::PDataArray>(Data::PDataArray& OutValue) { return OutValue.IsValidPtr() ? ReadDataArray(*OutValue) : true; }
 	//template<> bool		Read<CParams>(const CParams& OutValue) { return WriteParams(OutValue); }
-	//template<> bool		Read<PParams>(const PParams& OutValue) { return OutValue.IsValid() ? WriteParams(*OutValue) : true; }
+	//template<> bool		Read<PParams>(const PParams& OutValue) { return OutValue.IsValid() ? Read(*OutValue) : true; }
 	//template<> bool		Read<CParam>(const CParam& OutValue) { return WriteParam(OutValue); }
 	template<> bool		Read<Data::CData>(Data::CData& OutValue) { return ReadData(OutValue); }
 };

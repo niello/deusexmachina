@@ -36,6 +36,21 @@ class CRenderPath: public Resources::CResourceObject
 
 protected:
 
+	struct CRenderTargetSlot
+	{
+		vector4	ClearValue;
+	};
+
+	struct CDepthStencilSlot
+	{
+		U32		ClearFlags;
+		float	DepthClearValue;
+		U8		StencilClearValue;
+	};
+
+	CFixedArray<CRenderTargetSlot>			RTSlots;
+	CFixedArray<CDepthStencilSlot>			DSSlots;
+
 	CFixedArray<PRenderPhase>				Phases;
 
 	Render::IShaderMetadata*				pGlobals;
@@ -53,6 +68,8 @@ public:
 	bool										Render(CView& View);
 
 	virtual bool								IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
+	UPTR										GetRenderTargetCount() const { return RTSlots.GetCount(); }
+	UPTR										GetDepthStencilBufferCount() const { return DSSlots.GetCount(); }
 	const CFixedArray<Render::CEffectConstant>&	GetGlobalConstants() const { return Consts; }
 	const Render::CEffectConstant*				GetGlobalConstant(CStrID Name) const;
 };
