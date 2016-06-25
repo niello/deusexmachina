@@ -120,10 +120,12 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	};
 	RenderQueue.Sort<CRenderQueueCmp_Material>();
 
-	//!!!set by indices! clear unused?
-	for (UPTR i = 0; i < View.RTs.GetCount(); ++i)
-		View.GPU->SetRenderTarget(i, View.RTs[i].GetUnsafe());
-	View.GPU->SetDepthStencilBuffer(View.DSBuffers[0].GetUnsafe());
+	//???unbind unused or leave bound?
+	for (UPTR i = 0; i < RenderTargetIndices.GetCount(); ++i)
+		View.GPU->SetRenderTarget(i, View.RTs[RenderTargetIndices[i]].GetUnsafe());
+	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].GetUnsafe());
+	//View.GPU->SetRenderTarget(0, View.RTs[0].GetUnsafe());
+	//View.GPU->SetDepthStencilBuffer(View.DSBuffers[0].GetUnsafe());
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();
@@ -144,6 +146,30 @@ bool CRenderPhaseGeometry::Render(CView& View)
 bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 {
 	if (!CRenderPhase::Init(PhaseName, Desc)) FAIL;
+
+	const Data::CData& RTValue = Desc.Get(CStrID("RenderTarget")).GetRawValue();
+	if (RTValue.IsNull()) RenderTargetIndices.SetSize(0);
+	else if (RTValue.IsA<Data::PDataArray>())
+	{
+		Data::PDataArray RTArray = RTValue.GetValue<Data::PDataArray>();
+		RenderTargetIndices.SetSize(RTArray->GetCount());
+		for (UPTR i = 0; i < RTArray->GetCount(); ++i)
+			RenderTargetIndices[i] = (I32)RTArray->Get<int>(i);
+	}
+	else if (RTValue.IsA<int>())
+	{
+		RenderTargetIndices.SetSize(1);
+		RenderTargetIndices[0] = (I32)RTValue.GetValue<int>();
+	}
+	else FAIL;
+
+	const Data::CData& DSValue = Desc.Get(CStrID("DepthStencilBuffer")).GetRawValue();
+	if (DSValue.IsNull()) DepthStencilIndex = INVALID_INDEX;
+	else if (DSValue.IsA<int>())
+	{
+		DepthStencilIndex = (I32)DSValue.GetValue<int>();
+	}
+	else FAIL;
 
 	Data::CDataArray& RenderersDesc = *Desc.Get<Data::PDataArray>(CStrID("Renderers"));
 	for (UPTR i = 0; i < RenderersDesc.GetCount(); ++i)

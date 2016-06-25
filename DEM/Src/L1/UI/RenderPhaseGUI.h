@@ -13,8 +13,13 @@ class CRenderPhaseGUI: public CRenderPhase
 {
 	__DeclareClass(CRenderPhaseGUI);
 
+private:
+
+	I32 RenderTargetIndex;
+
 public:
 
+	virtual bool Init(CStrID PhaseName, const Data::CParams& Desc);
 	virtual bool Render(CView& View);
 };
 

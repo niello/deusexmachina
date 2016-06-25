@@ -64,8 +64,8 @@ public:
 	bool						IsA(const CType* Sample) const { return Type == Sample; }
 	template<class T> bool		IsA() const { return Type == CType::GetType<T>(); }
 	bool						IsValid() const { return Type != NULL; }
-	bool						IsVoid() const { return !Type /*|| Type == TVoid*/; }
-	bool						IsNull() const { return IsVoid() || !Value; } //!!!returns true for <bool>=false!
+	bool						IsVoid() const { return !Type /*|| Type->GetID() == INVALID_TYPE_ID*/; }
+	bool						IsNull() const { return IsVoid() || (!Value && Type != DATA_TYPE(bool) && Type != DATA_TYPE(int)); }
 
 	// Overwrites type
 	void						SetType(const CType* SrcType);

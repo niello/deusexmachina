@@ -22,7 +22,9 @@ class CRenderPhaseGeometry: public CRenderPhase
 
 protected:
 
-	CDict<const Core::CRTTI*, Render::IRenderer*> Renderers;
+	CFixedArray<I32>								RenderTargetIndices;
+	I32												DepthStencilIndex;
+	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;
 
 public:
 

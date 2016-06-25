@@ -4,6 +4,7 @@
 #include <UI/UIContext.h>
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
+#include <Data/Params.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -24,6 +25,16 @@ bool CRenderPhaseGUI::Render(CView& View)
 	float ViewportRelRight = 1.f;
 	float ViewportRelBottom = 1.f;
 	return View.UIContext->Render(ViewportRelLeft * RTWidth, ViewportRelTop * RTHeight, ViewportRelRight * RTWidth, ViewportRelBottom * RTHeight);
+}
+//---------------------------------------------------------------------
+
+bool CRenderPhaseGUI::Init(CStrID PhaseName, const Data::CParams& Desc)
+{
+	if (!CRenderPhase::Init(PhaseName, Desc)) FAIL;
+
+	RenderTargetIndex = (I32)Desc.Get(CStrID("RenderTarget")).GetValue<int>();
+
+	OK;
 }
 //---------------------------------------------------------------------
 
