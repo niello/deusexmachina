@@ -239,6 +239,7 @@ bool EFFSeekToMaterialParams(IO::CStream& Stream)
 	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
 	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
 	if (!R.Read(U32Value)) FAIL;						// Shader model
+	if (!R.Read(U32Value)) FAIL;						// Effect type
 
 	U32 Count;
 	if (!R.Read(Count)) FAIL;
@@ -406,6 +407,7 @@ bool ProcessEffect(const char* pExportFileName)
 	if (!R.Read(U32Value) || U32Value != 'SHFX') FAIL;	// Magic
 	if (!R.Read(U32Value) || U32Value != 0x0100) FAIL;	// Version, fail if unsupported
 	if (!R.Read(U32Value)) FAIL;						// Shader model
+	if (!R.Read(U32Value)) FAIL;						// Effect type
 
 	U32 Count;
 	if (!R.Read(Count)) FAIL;

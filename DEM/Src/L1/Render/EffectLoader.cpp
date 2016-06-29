@@ -44,7 +44,6 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	U32 ShaderModel;
 	if (!Reader.Read<U32>(ShaderModel)) return NULL; // 0 for SM3.0, 1 for USM
 
-	NOT_IMPLEMENTED;
 	U32 EffectType;
 	if (!Reader.Read<U32>(EffectType)) return NULL;
 

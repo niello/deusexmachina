@@ -18,6 +18,14 @@ class CRenderPhaseGeometry: public CRenderPhase
 
 protected:
 
+	enum ESortingType
+	{
+		Sort_None,
+		Sort_FrontToBack,
+		Sort_Material
+	};
+
+	ESortingType									SortingType;
 	CFixedArray<I32>								RenderTargetIndices;
 	I32												DepthStencilIndex;
 	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;

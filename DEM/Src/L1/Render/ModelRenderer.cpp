@@ -40,7 +40,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 		for (UPTR i = 0; i < Context.pMaterialOverrides->GetCount(); ++i)
 			if (Context.pMaterialOverrides->KeyAt(i) == EffType)
 			{
-				pMaterial = Context.pMaterialOverrides->ValueAt(i);
+				pMaterial = Context.pMaterialOverrides->ValueAt(i).GetUnsafe();
 				break;
 			}
 

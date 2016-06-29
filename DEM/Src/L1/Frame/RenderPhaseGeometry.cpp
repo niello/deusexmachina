@@ -20,6 +20,37 @@ namespace Frame
 {
 __ImplementClass(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
+struct CRenderQueueCmp_FrontToBack
+{
+	inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+	{
+		if (a.Order != b.Order) return a.Order < b.Order;
+		return a.SqDistanceToCamera < b.SqDistanceToCamera;
+	}
+};
+//---------------------------------------------------------------------
+
+struct CRenderQueueCmp_Material
+{
+	inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+	{
+		if (a.Order != b.Order) return a.Order < b.Order;
+		if (a.Order >= 40)
+		{
+			return a.SqDistanceToCamera > b.SqDistanceToCamera;
+		}
+		else
+		{
+			if (a.pTech != b.pTech) return a.pTech < b.pTech;
+			if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
+			if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
+			if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
+			return a.SqDistanceToCamera < b.SqDistanceToCamera;
+		}
+	}
+};
+//---------------------------------------------------------------------
+
 bool CRenderPhaseGeometry::Render(CView& View)
 {
 	if (!View.pSPS || !View.GetCamera()) OK;
@@ -109,35 +140,11 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	// Sort render queue if requested
 
 	//???PERF: sort ptrs or indices into a render queue? CRenderNode structure may bee to big to be moved
-	//may store pointer and order field, not to store order in a main struct, as it is not required for rendering?
-	struct CRenderQueueCmp_FrontToBack
+	switch (SortingType)
 	{
-		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
-		{
-			//???use order? opaque before atest even in a depth phase.
-			return a.SqDistanceToCamera < b.SqDistanceToCamera;
-		}
-	};
-	struct CRenderQueueCmp_Material
-	{
-		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
-		{
-			if (a.Order != b.Order) return a.Order < b.Order;
-			if (a.Order >= 40)
-			{
-				return a.SqDistanceToCamera > b.SqDistanceToCamera;
-			}
-			else
-			{
-				if (a.pTech != b.pTech) return a.pTech < b.pTech;
-				if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
-				if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
-				if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
-				return a.SqDistanceToCamera < b.SqDistanceToCamera;
-			}
-		}
-	};
-	RenderQueue.Sort<CRenderQueueCmp_Material>();
+		case Sort_FrontToBack:	RenderQueue.Sort<CRenderQueueCmp_FrontToBack>(); break;
+		case Sort_Material:		RenderQueue.Sort<CRenderQueueCmp_Material>(); break;
+	}
 
 	//???unbind unused or leave bound?
 	for (UPTR i = 0; i < RenderTargetIndices.GetCount(); ++i)
@@ -163,6 +170,13 @@ bool CRenderPhaseGeometry::Render(CView& View)
 bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 {
 	if (!CRenderPhase::Init(PhaseName, Desc)) FAIL;
+
+	CString SortStr = Desc.Get<CString>(CStrID("Sort"), CString::Empty);
+	SortStr.Trim();
+	SortStr.ToLower();
+	if (SortStr == "ftb" || SortStr == "fronttoback") SortingType = Sort_FrontToBack;
+	else if (SortStr == "material") SortingType = Sort_Material;
+	else SortingType = Sort_None;
 
 	const Data::CData& RTValue = Desc.Get(CStrID("RenderTarget")).GetRawValue();
 	if (RTValue.IsNull()) RenderTargetIndices.SetSize(0);
@@ -214,6 +228,30 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 			}
 		if (!pRenderer) pRenderer = (Render::IRenderer*)pRendererType->CreateClassInstance();
 		if (pObjType && pRenderer) Renderers.Add(pObjType, pRenderer);
+	}
+
+	n_assert_dbg(!MaterialOverrides.GetCount());
+	Data::PParams MaterialsDesc;
+	if (Desc.Get(MaterialsDesc, CStrID("Materials")))
+	{
+		for (UPTR i = 0; i < MaterialsDesc->GetCount(); ++i)
+		{
+			const Data::CParam& Prm = MaterialsDesc->Get(i);
+
+			Render::EEffectType EffectType;
+			CStrID Key = Prm.GetName();
+			if (Key == "Opaque") EffectType = Render::EffectType_Opaque;
+			else if (Key == "AlphaTest") EffectType = Render::EffectType_AlphaTest;
+			else if (Key == "Skybox") EffectType = Render::EffectType_Skybox;
+			else if (Key == "AlphaBlend") EffectType = Render::EffectType_AlphaBlend;
+			else if (Key == "Other") EffectType = Render::EffectType_Other;
+			else FAIL;
+
+			Render::PMaterial Material;
+			//load material
+
+			MaterialOverrides.Add(EffectType, Material);
+		}
 	}
 
 	OK;

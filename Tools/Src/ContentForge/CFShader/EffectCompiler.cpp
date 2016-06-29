@@ -1272,10 +1272,12 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 			if (U32Value != 'SHFX') return ERR_INVALID_DATA;	// Magic
 			if (!R.Read(U32Value)) return ERR_IO_READ;
 			if (U32Value != 0x0100) return ERR_INVALID_DATA;	// Version, fail if unsupported
-			if (!R.Read(U32Value)) return ERR_IO_READ;			// Shader model
+			U32 ShaderModel;
+			if (!R.Read(ShaderModel)) return ERR_IO_READ;		// Shader model
+			if (!R.Read(U32Value)) return ERR_IO_READ;			// Effect type
 
 			U32 DesiredShaderModelValue = SM30 ? 0 : 1;
-			if (U32Value != DesiredShaderModelValue)
+			if (ShaderModel != DesiredShaderModelValue)
 			{
 				EFF->Close();
 				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", EffectPath.CStr());
@@ -1364,6 +1366,21 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	{
 		Data::CHRDParser Parser;
 		if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), Params)) return ERR_IO_READ;
+	}
+
+	CString TypeStr = Params->Get(CStrID("Type"), CString::Empty);
+	TypeStr.Trim();
+	TypeStr.ToLower();
+
+	U32 EffectType;
+	if (TypeStr == "opaque") EffectType = 0;
+	else if (TypeStr == "atest" || TypeStr == "alphatest") EffectType = 1;
+	else if (TypeStr == "skybox") EffectType = 2;
+	else if (TypeStr == "alpha" || TypeStr == "alphablend" || TypeStr == "transparent") EffectType = 3;
+	else
+	{
+		n_msg(VL_WARNING, "Effect type is not specified through an 'EffectType' parameter, use default value 'Other'");
+		EffectType = 999;
 	}
 
 	Data::PParams Techs;
@@ -2149,6 +2166,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	if (!W.Write('SHFX')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
 	if (!W.Write<U32>(SM30 ? 0 : 1)) return ERR_IO_WRITE;
+	if (!W.Write<U32>(EffectType)) return ERR_IO_WRITE;
 
 	// Save render states, each with all light count variations
 
