@@ -8,6 +8,8 @@
 #include <Render/Renderable.h>
 #include <Render/Renderer.h>
 #include <Render/RenderNode.h>
+#include <Render/Material.h>
+#include <Render/Effect.h>
 #include <Render/SkinInfo.h>
 #include <Render/GPUDriver.h>
 #include <Data/Params.h>
@@ -32,6 +34,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	CArray<Render::CRenderNode>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
+
+	Render::CRenderNodeContext Context;
+	Context.pMaterialOverrides = MaterialOverrides.GetCount() ? &MaterialOverrides : NULL;
 
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
 	{
@@ -60,8 +65,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 		else pNode->pSkinPalette = NULL;
 
-		UPTR MeshLOD;
-		UPTR MaterialLOD;
 		CAABB GlobalAABB;
 		if (pAttrRenderable->GetGlobalAABB(GlobalAABB, 0))
 		{
@@ -75,32 +78,43 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 			float SqDistanceToCamera = GlobalAABB.SqDistance(CameraPos);
 			pNode->SqDistanceToCamera = SqDistanceToCamera;
-			MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
-			MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
+			Context.MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
+			Context.MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
 		}
 		else
 		{
 			pNode->SqDistanceToCamera = 0.f;
-			MeshLOD = 0;
-			MaterialLOD = 0;
+			Context.MeshLOD = 0;
+			Context.MaterialLOD = 0;
 		}
 
-		// bool DiscardNode = 
-		pRenderer->PrepareNode(*pNode, MeshLOD, MaterialLOD);
+		if (!pRenderer->PrepareNode(*pNode, Context) || !pNode->pTech)
+		{
+			RenderQueue.Remove(pNode);
+			continue;
+		}
 
-		//!!!if pNode->pMaterial->AlphaType not compatible with this->AllowedAlphaTypes discard node!
+		n_assert_dbg(pNode->pMaterial);
+		Render::EEffectType Type = pNode->pMaterial->GetEffect()->GetType();
+		switch (Type)
+		{
+			case Render::EffectType_Opaque:		pNode->Order = 10; break;
+			case Render::EffectType_AlphaTest:	pNode->Order = 20; break;
+			case Render::EffectType_Skybox:		pNode->Order = 30; break;
+			case Render::EffectType_AlphaBlend:	pNode->Order = 40; break;
+			default:							pNode->Order = 100; break;
+		}
 	}
 
-	// Sort render queue (if requested, using requested sorter, FtB for depth, complex for color)
-	//!!!may write complex sorter which takes alpha into account!
-	//!!!for depth geometry phase skip alpha-blended objects! //???sort AND filter here? or filter in PrepareNode, or after. Using some flags.
-	//!!!may also move all tmp values not used in sorting, like LOD, into some second tmp structure, and discard when it's done with it!
+	// Sort render queue if requested
 
-	//???PERF: sort indices into a render queue? structure is big enough to be moved during sorting
+	//???PERF: sort ptrs or indices into a render queue? CRenderNode structure may bee to big to be moved
+	//may store pointer and order field, not to store order in a main struct, as it is not required for rendering?
 	struct CRenderQueueCmp_FrontToBack
 	{
 		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
 		{
+			//???use order? opaque before atest even in a depth phase.
 			return a.SqDistanceToCamera < b.SqDistanceToCamera;
 		}
 	};
@@ -108,14 +122,19 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
 		{
-			//!!!if pMaterial->IsAlphaBlended(), then BtF!
-			//???who is alpha-blended, material, effect or tech?
-			//if one obj alpha and one opaque, sort opaque before alpha (a.pMaterial->IsAlphaBlended() < b.pMaterial->IsAlphaBlended())
-			if (a.pTech != b.pTech) return a.pTech < b.pTech;
-			if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
-			if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
-			if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
-			return a.SqDistanceToCamera < b.SqDistanceToCamera;
+			if (a.Order != b.Order) return a.Order < b.Order;
+			if (a.Order >= 40)
+			{
+				return a.SqDistanceToCamera > b.SqDistanceToCamera;
+			}
+			else
+			{
+				if (a.pTech != b.pTech) return a.pTech < b.pTech;
+				if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
+				if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
+				if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
+				return a.SqDistanceToCamera < b.SqDistanceToCamera;
+			}
 		}
 	};
 	RenderQueue.Sort<CRenderQueueCmp_Material>();
@@ -124,8 +143,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (UPTR i = 0; i < RenderTargetIndices.GetCount(); ++i)
 		View.GPU->SetRenderTarget(i, View.RTs[RenderTargetIndices[i]].GetUnsafe());
 	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].GetUnsafe());
-	//View.GPU->SetRenderTarget(0, View.RTs[0].GetUnsafe());
-	//View.GPU->SetDepthStencilBuffer(View.DSBuffers[0].GetUnsafe());
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();

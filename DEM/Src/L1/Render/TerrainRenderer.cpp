@@ -18,7 +18,7 @@ CTerrainRenderer::CTerrainRenderer()
 
 //???return bool, if false, remove node from queue
 //(array tail removal is very fast in CArray, can even delay removal in a case next RQ node will be added inplace)?
-void CTerrainRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialLOD)
+bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
 {
 	CTerrain* pTerrain = Node.pRenderable->As<CTerrain>();
 	n_assert_dbg(pTerrain);
@@ -27,10 +27,14 @@ void CTerrainRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR Materia
 	//But this associates object and renderer, as other renderer may request other input set.
 	//Node.pMaterial = pTerrain->Material.GetUnsafe();
 	//Node.pTech = pTerrain->Material->GetEffect()->GetTechByInputSet(InputSet_CDLOD);
+	//!!!DBG TMP!
 	Node.pMaterial = NULL;
 	Node.pTech = NULL;
 	Node.pMesh = pTerrain->GetPatchMesh();
 	Node.pGroup = NULL; // pTerrain->GetPatchMesh()->GetGroup(0, 0); // For sorting, different terrain objects with the same mesh will be rendered sequentially
+	FAIL;
+
+	OK;
 }
 //---------------------------------------------------------------------
 

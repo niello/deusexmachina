@@ -24,7 +24,11 @@ struct CRenderStateDesc;
 struct CSamplerDesc;
 class CDisplayMode;
 class CEffect;
+class CTechnique;
 class IShaderMetadata;
+class IRenderable;
+class IRenderer;
+enum EEffectType;
 typedef Ptr<class CGPUDriver> PGPUDriver;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;
 typedef Ptr<class CVertexLayout> PVertexLayout;
@@ -38,6 +42,9 @@ typedef Ptr<class CShaderLibrary> PShaderLibrary;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
 typedef Ptr<class CTexture> PTexture;
 typedef Ptr<class CSampler> PSampler;
+typedef Ptr<class CMesh> PMesh;
+typedef Ptr<class CMaterial> PMaterial;
+typedef CDict<EEffectType, PMaterial> CMaterialMap; //!!!name is a subject to change!
 
 const UPTR Adapter_AutoSelect = (UPTR)-2;
 const UPTR Adapter_None = (UPTR)-1;

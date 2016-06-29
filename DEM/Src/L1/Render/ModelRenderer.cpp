@@ -25,17 +25,31 @@ CModelRenderer::CModelRenderer()
 
 //???return bool, if false, remove node from queue
 //(array tail removal is very fast in CArray, can even delay removal in a case next RQ node will be added inplace)?
-void CModelRenderer::PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialLOD)
+bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
 {
 	CModel* pModel = Node.pRenderable->As<CModel>();
 	n_assert_dbg(pModel);
 
 	//!!!can find once, outside the render loop! store somewhere in a persistent render node.
 	//But this associates object and renderer, as other renderer may request other input set.
-	Node.pMaterial = pModel->Material.GetUnsafe(); //!!!Get by MaterialLOD!
+	CMaterial* pMaterial = pModel->Material.GetUnsafe(); //!!!Get by MaterialLOD!
+	if (!pMaterial) FAIL;
+
+	EEffectType EffType = pMaterial->GetEffect()->GetType();
+	if (Context.pMaterialOverrides)
+		for (UPTR i = 0; i < Context.pMaterialOverrides->GetCount(); ++i)
+			if (Context.pMaterialOverrides->KeyAt(i) == EffType)
+			{
+				pMaterial = Context.pMaterialOverrides->ValueAt(i);
+				break;
+			}
+
+	Node.pMaterial = pMaterial;
 	Node.pTech = pModel->Material->GetEffect()->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
 	Node.pMesh = pModel->Mesh.GetUnsafe();
-	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, MeshLOD);
+	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
+
+	OK;
 }
 //---------------------------------------------------------------------
 

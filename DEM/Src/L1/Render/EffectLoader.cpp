@@ -44,6 +44,10 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	U32 ShaderModel;
 	if (!Reader.Read<U32>(ShaderModel)) return NULL; // 0 for SM3.0, 1 for USM
 
+	NOT_IMPLEMENTED;
+	U32 EffectType;
+	if (!Reader.Read<U32>(EffectType)) return NULL;
+
 	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
 	U32 RSCount;
 	if (!Reader.Read<U32>(RSCount)) return NULL;
@@ -368,6 +372,15 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	//!!!now rsrc mgmt doesn't support miltiple resources per file and partial resource definitions (multiple files per resource)!
 	//may modify CEffectLoader to store all files of the effect, and use effect ID and rsrc URI separately.
 	Render::PEffect Effect = n_new(Render::CEffect);
+
+	switch (EffectType)
+	{
+		case 0:		Effect->Type = Render::EffectType_Opaque; break;
+		case 1:		Effect->Type = Render::EffectType_AlphaTest; break;
+		case 2:		Effect->Type = Render::EffectType_Skybox; break;
+		case 3:		Effect->Type = Render::EffectType_AlphaBlend; break;
+		default:	Effect->Type = Render::EffectType_Other; break;
+	}
 
 	// Skip global params
 

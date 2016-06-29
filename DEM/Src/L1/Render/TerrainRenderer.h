@@ -21,7 +21,7 @@ public:
 
 	CTerrainRenderer();
 
-	virtual void							PrepareNode(CRenderNode& Node, UPTR MeshLOD, UPTR MaterialLOD);
+	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
 	virtual CArray<CRenderNode>::CIterator	Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr);
 };
 
