@@ -30,8 +30,8 @@ public:
 	const CData&				GetRawValue() const { return Value; }
 	template<class T> T&		GetValue() { return Value.GetValue<T>(); }
 	template<class T> const T&	GetValue() const { return Value.GetValue<T>(); }
-	template<class T> T*		GetValuePtr() { return Value.GetValuePtr<T>(); }
-	template<class T> const T*	GetValuePtr() const { return Value.GetValuePtr<T>(); }
+	//template<class T> T*		GetValuePtr() { return Value.GetValuePtr<T>(); }
+	//template<class T> const T*	GetValuePtr() const { return Value.GetValuePtr<T>(); }
 
 	void						SetName(CStrID name) { Name = name; }
 	void						SetValue(const CData& value) { Value = value; }
