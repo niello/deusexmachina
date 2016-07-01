@@ -2112,7 +2112,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	for (UPTR TechIdx = 0; TechIdx < UsedTechs.GetCount(); ++TechIdx)
 	{
 		CTechInfo& TechInfo = UsedTechs[TechIdx];
-		for (UPTR ParamIdx = 0; ParamIdx < TechInfo.Params.GetCount();)
+		for (UPTR ParamIdx = 0; ParamIdx < TechInfo.Params.GetCount(); /*incremented inside*/)
 		{
 			CEffectParam& TechParam = TechInfo.Params[ParamIdx];
 			CStrID ParamID = TechParam.ID;

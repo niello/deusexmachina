@@ -980,7 +980,7 @@ bool ProcessRenderPathDesc(const char* pSrcFilePath)
 
 			for (UPTR j = 0; j < EffectOverrides->GetCount(); ++j)
 			{
-				const Data::CData& Value = EffectOverrides->Get(i).GetRawValue();
+				const Data::CData& Value = EffectOverrides->Get(j).GetRawValue();
 				const char* pEffectID;
 				if (Value.IsA<CString>()) pEffectID = Value.GetValue<CString>().CStr();
 				else if (Value.IsA<CStrID>()) pEffectID = Value.GetValue<CStrID>().CStr();
