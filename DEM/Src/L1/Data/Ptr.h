@@ -28,15 +28,52 @@ public:
 
 	void	operator =(const Ptr<T>& Other);
 	void	operator =(T* Other);
-	bool	operator ==(const Ptr<T>& Other) const { return pObj == Other.pObj; }
-	bool	operator !=(const Ptr<T>& Other) const { return pObj != Other.pObj; }
-	bool	operator ==(const T* pOtherObj) const { return pObj == pOtherObj; }
-	bool	operator !=(const T* pOtherObj) const { return pObj != pOtherObj; }
 	T*		operator ->() const;
 	T&		operator *() const;
 			operator T*() const;
 			operator bool() const { return !!pObj; }
 };
+
+template<class T1, class T2>
+inline bool operator ==(const Ptr<T1>& Left, const Ptr<T2>& Right)
+{
+	return Left.GetUnsafe() == Right.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+template<class T1, class T2>
+inline bool operator ==(const Ptr<T1>& Left, T2* pRight)
+{
+	return Left.GetUnsafe() == pRight;
+}
+//---------------------------------------------------------------------
+
+template<class T1, class T2>
+inline bool operator ==(T1* pLeft, const Ptr<T2>& Right)
+{
+	return pLeft == Right.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+template<class T1, class T2>
+inline bool operator !=(const Ptr<T1>& Left, const Ptr<T2>& Right)
+{
+	return Left.GetUnsafe() != Right.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+template<class T1, class T2>
+inline bool operator !=(const Ptr<T1>& Left, T2* pRight)
+{
+	return Left.GetUnsafe() != pRight;
+}
+//---------------------------------------------------------------------
+
+template<class T1, class T2>
+inline bool operator !=(T1* pLeft, const Ptr<T2>& Right)
+{
+	return pLeft != Right.GetUnsafe();
+}
 //---------------------------------------------------------------------
 
 template<class T>

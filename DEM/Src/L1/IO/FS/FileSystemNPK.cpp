@@ -9,7 +9,7 @@ namespace IO
 
 bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 {
-	if (pNPKData) n_delete(pNPKData);
+	if (pNPKData.IsValidPtr()) n_delete(pNPKData);
 	pNPKData = IOSrv->CreateStream(pSource);
 
 	if (!pNPKData->Open(SAM_READ, SAP_RANDOM)) FAIL;

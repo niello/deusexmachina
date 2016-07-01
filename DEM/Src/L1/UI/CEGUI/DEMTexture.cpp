@@ -258,7 +258,7 @@ void CDEMTexture::updateCachedScaleValues()
 
 void CDEMTexture::updateTextureSize()
 {
-	if (DEMTexture)
+	if (DEMTexture.GetUnsafe())
 	{
 		const Render::CTextureDesc& Desc = DEMTexture->GetDesc();
 		Size.d_width  = static_cast<float>(Desc.Width);
