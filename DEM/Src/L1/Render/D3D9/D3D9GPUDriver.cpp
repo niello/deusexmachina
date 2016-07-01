@@ -1602,7 +1602,7 @@ bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 	if (FAILED(pD3DDevice->SetDepthStencilSurface(pDSSurface))) FAIL;
 
 	// Execute delayed clear operation
-	if (pD3D9DS->D3D9ClearFlags)
+	if (pD3D9DS && pD3D9DS->D3D9ClearFlags)
 	{
 		n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, pD3D9DS->D3D9ClearFlags, 0, pD3D9DS->ZClearValue, pD3D9DS->StencilClearValue)));
 		pD3D9DS->D3D9ClearFlags = 0;
@@ -1764,6 +1764,11 @@ void CD3D9GPUDriver::EndFrame()
 	n_assert_dbg(IsInsideFrame);
 	n_verify(SUCCEEDED(pD3DDevice->EndScene()));
 	IsInsideFrame = false;
+
+	// Don't know why but it is required at least for depth pre-pass
+	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		SetRenderTarget(i, NULL);
+	//SetDepthStencilBuffer(NULL);
 
 //	//???is all below necessary? PIX requires it for debugging frame
 //	for (int i = 0; i < MaxVertexStreamCount; ++i)

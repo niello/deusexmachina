@@ -149,9 +149,18 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		case Sort_Material:		RenderQueue.Sort<CRenderQueueCmp_Material>(); break;
 	}
 
+	UPTR i = 0;
+	for (; i < RenderTargetIndices.GetCount(); ++i)
+	{
+		I32 RTIdx = RenderTargetIndices[i];
+		View.GPU->SetRenderTarget(i, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].GetUnsafe());
+	}
+
 	//???unbind unused or leave bound?
-	for (UPTR i = 0; i < RenderTargetIndices.GetCount(); ++i)
-		View.GPU->SetRenderTarget(i, View.RTs[RenderTargetIndices[i]].GetUnsafe());
+	//UPTR MaxRTCount = View.GPU->GetMaxMultipleRenderTargetCount();
+	//for (; i < MaxRTCount; ++i)
+	//	View.GPU->SetRenderTarget(i, NULL);
+
 	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].GetUnsafe());
 
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
@@ -188,7 +197,12 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 		Data::PDataArray RTArray = RTValue.GetValue<Data::PDataArray>();
 		RenderTargetIndices.SetSize(RTArray->GetCount());
 		for (UPTR i = 0; i < RTArray->GetCount(); ++i)
-			RenderTargetIndices[i] = (I32)RTArray->Get<int>(i);
+		{
+			const Data::CData& RTElm = RTArray->Get<int>(i);
+			if (RTElm.IsNull()) RenderTargetIndices[i] = INVALID_INDEX;
+			else if (RTElm.IsA<int>()) RenderTargetIndices[i] = (I32)RTArray->Get<int>(i);
+			else FAIL;
+		}
 	}
 	else if (RTValue.IsA<int>())
 	{
