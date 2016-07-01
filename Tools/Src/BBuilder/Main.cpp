@@ -264,6 +264,7 @@ int main(int argc, const char** argv)
 				}
 			}
 
+			//!!!material overrides require exporting override effects!
 			/*
 			if (!ProcessRenderPath("Shaders:USM/" + FileNoExt + ".rp"))
 			{

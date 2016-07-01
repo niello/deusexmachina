@@ -11,8 +11,8 @@
 // Debug args:
 // -waitkey -v 5 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:USM\Effects\PBR.eff"
 // -waitkey -v 5 -sm3 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:SM_3_0\Effects\PBR.eff"
-// -waitkey -v 5 -rp -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:USM\D3D11Forward.rp"
-// -waitkey -v 5 -rp -sm3 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:SM_3_0\D3D11Forward.rp"
+// -waitkey -v 5 -rp -proj "..\..\..\..\InsanePoet\Content" -eff "Shaders:USM/Effects" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:USM\D3D11Forward.rp"
+// -waitkey -v 5 -rp -sm3 -proj "..\..\..\..\InsanePoet\Content" -eff "Shaders:SM_3_0/Effects" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:SM_3_0\D3D11Forward.rp"
 // -v 0 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // -waitkey -v 5 -proj C:/Niello/Projects/GameDev/Dev/InsanePoet/Content -in C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Src/Shaders/Effects/PBR.hrd -out C:/Niello/Projects/GameDev/Dev/InsanePoet/Content/Export/Shaders/Effects/PBR.eff
 // WD = $(ProjectDir) -proj "..\..\..\..\..\InsanePoet\Content"
@@ -48,6 +48,7 @@ int main(int argc, const char** argv)
 				"-proj [path]                project path\n"
 				"-root [path]                root path to shaders, typically the same as\n"
 				"                            'Shaders:' assign\n"
+				"-eff [path]                 'Effects:' assign for render path compilation\n"
 				"-in [filepath{;filepath}]   input file(s)\n"
 				"-out [filepath{;filepath}]  output file(s), count must be the same\n"
 				"-db [filepath]              path to persistent shader DB,\n"
@@ -81,6 +82,10 @@ int main(int argc, const char** argv)
 
 	if (RenderPathes)
 	{
+		const char* pEffPath = Args.GetStringArg("-eff");
+		if (pEffPath) IOSrv->SetAssign("Effects", pEffPath);
+		else IOSrv->SetAssign("Effects", IOSrv->GetAssign("Shaders"));
+	
 		Data::CBuffer Buffer;
 		if (!IOSrv->LoadFileToBuffer("Proj:ClassToFOURCC.hrd", Buffer)) return ERR_INVALID_DATA;
 

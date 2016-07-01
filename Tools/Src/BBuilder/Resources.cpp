@@ -96,9 +96,16 @@ bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath,
 	CString WorkingDir;
 	Sys::GetWorkingDirectory(WorkingDir);
 
+	CString EffDir = IOSrv->ResolveAssigns(LegacySM30 ? "Shaders:SM_3_0/Effects" : "Shaders:USM/Effects");
+
 	char CmdLine[MAX_CMDLINE_CHARS];
-	sprintf_s(CmdLine, "-v %d -rp %s-proj %s -in %s -out %s",
-		ExternalVerbosity, LegacySM30 ? "-sm3 " : "", ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
+	sprintf_s(CmdLine, "-v %d -rp %s-proj \"%s\" -eff \"%s\" -in \"%s\" -out \"%s\"",
+		ExternalVerbosity,
+		LegacySM30 ? "-sm3 " : "",
+		ProjectDir.CStr(),
+		EffDir.CStr(),
+		InStr.CStr(),
+		OutStr.CStr());
 	int ExitCode = RunExternalToolAsProcess(CStrID("CFShader"), CmdLine, WorkingDir.CStr());
 	if (ExitCode != 0)
 	{

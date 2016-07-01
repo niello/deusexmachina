@@ -1261,7 +1261,8 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 		//???or compile them here?
 		for (UPTR i = 0; i < EffectsWithGlobals->GetCount(); ++i)
 		{
-			const CString& EffectPath = EffectsWithGlobals->Get<CString>(i);
+			const CString& EffectID = EffectsWithGlobals->Get<CString>(i);
+			CString EffectPath = "Effects:" + EffectID + ".eff";
 			IO::PStream EFF = IOSrv->CreateStream(EffectPath);
 			if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return ERR_IO_READ;
 
@@ -1280,7 +1281,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 			if (ShaderModel != DesiredShaderModelValue)
 			{
 				EFF->Close();
-				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", EffectPath.CStr());
+				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", EffectID.CStr());
 				continue;
 			}
 			
