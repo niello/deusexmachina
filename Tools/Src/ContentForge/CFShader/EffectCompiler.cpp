@@ -1261,10 +1261,22 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 		//???or compile them here?
 		for (UPTR i = 0; i < EffectsWithGlobals->GetCount(); ++i)
 		{
-			const CString& EffectID = EffectsWithGlobals->Get<CString>(i);
-			CString EffectPath = "Effects:" + EffectID + ".eff";
+			const Data::CData& Value = EffectsWithGlobals->Get(i);
+			const char* pEffectID;
+			if (Value.IsA<CString>()) pEffectID = Value.GetValue<CString>().CStr();
+			else if (Value.IsA<CStrID>()) pEffectID = Value.GetValue<CStrID>().CStr();
+			else continue;
+
+			CString EffectPath("Effects:");
+			EffectPath += pEffectID;
+			EffectPath += ".eff";
+			
 			IO::PStream EFF = IOSrv->CreateStream(EffectPath);
-			if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return ERR_IO_READ;
+			if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
+			{
+				n_msg(VL_INFO, "Effect '%s' skipped as its file '%s' is not found\n", pEffectID, EffectPath.CStr());
+				continue;
+			}
 
 			IO::CBinaryReader R(*EFF.GetUnsafe());
 
@@ -1281,7 +1293,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM
 			if (ShaderModel != DesiredShaderModelValue)
 			{
 				EFF->Close();
-				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", EffectID.CStr());
+				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", pEffectID);
 				continue;
 			}
 			

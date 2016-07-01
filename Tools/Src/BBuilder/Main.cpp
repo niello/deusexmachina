@@ -246,6 +246,14 @@ int main(int argc, const char** argv)
 			if (ExportDescs)
 			{
 				CString SrcFilePath = Browser.GetCurrentPath() + Browser.GetCurrEntryName();
+
+				// Export referenced effects (EffectsWithGlobals and per-phase effect overrides)
+				if (!ProcessRenderPathDesc(SrcFilePath))
+				{
+					n_msg(VL_ERROR, "Error processing render path desc '%s'\n", FileNoExt.CStr());
+					EXIT_APP_FAIL;
+				}
+
 				CString RealExportFilePath = IOSrv->ResolveAssigns("Shaders:USM/" + FileNoExt + ".rp");
 				if (!IsFileAdded(RealExportFilePath))
 				{
@@ -263,19 +271,6 @@ int main(int argc, const char** argv)
 					}
 				}
 			}
-
-			//!!!material overrides require exporting override effects!
-			/*
-			if (!ProcessRenderPath("Shaders:USM/" + FileNoExt + ".rp"))
-			{
-				n_msg(VL_ERROR, "Error processing USM render path '%s'\n", FileNoExt.CStr());
-			}
-
-			if (IncludeSM30ShadersAndEffects && !ProcessRenderPath("Shaders:SM_3_0/" + FileNoExt + ".rp"))
-			{
-				n_msg(VL_ERROR, "Error processing SM3.0 render path '%s'\n", FileNoExt.CStr());
-			}
-			*/
 		}
 	}
 	while (Browser.NextCurrDirEntry());

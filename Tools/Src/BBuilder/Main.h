@@ -34,7 +34,7 @@ bool	ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 bool	ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
 bool	ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, bool OnlyMetadata, U32& OutShaderID);
 bool	ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath);
-bool	ProcessRenderPath(const char* pSrcFilePath);
+bool	ProcessRenderPathDesc(const char* pSrcFilePath);
 bool	ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath);
 bool	ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileName);
 bool	ProcessDescsInFolder(const CString& SrcPath, const CString& ExportPath);

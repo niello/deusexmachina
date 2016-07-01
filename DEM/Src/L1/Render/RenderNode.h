@@ -34,7 +34,7 @@ struct CRenderNodeContext
 {
 	UPTR					MeshLOD;
 	UPTR					MaterialLOD;
-	CMaterialMap*			pMaterialOverrides;
+	CEffectOverrideMap*		pEffectOverrides;
 };
 
 }

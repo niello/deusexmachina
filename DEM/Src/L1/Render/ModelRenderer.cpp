@@ -30,22 +30,25 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	CModel* pModel = Node.pRenderable->As<CModel>();
 	n_assert_dbg(pModel);
 
-	//!!!can find once, outside the render loop! store somewhere in a persistent render node.
-	//But this associates object and renderer, as other renderer may request other input set.
 	CMaterial* pMaterial = pModel->Material.GetUnsafe(); //!!!Get by MaterialLOD!
 	if (!pMaterial) FAIL;
 
-	EEffectType EffType = pMaterial->GetEffect()->GetType();
-	if (Context.pMaterialOverrides)
-		for (UPTR i = 0; i < Context.pMaterialOverrides->GetCount(); ++i)
-			if (Context.pMaterialOverrides->KeyAt(i) == EffType)
+	CEffect* pEffect = pMaterial->GetEffect();
+	EEffectType EffType = pEffect->GetType();
+	if (Context.pEffectOverrides)
+		for (UPTR i = 0; i < Context.pEffectOverrides->GetCount(); ++i)
+			if (Context.pEffectOverrides->KeyAt(i) == EffType)
 			{
-				pMaterial = Context.pMaterialOverrides->ValueAt(i).GetUnsafe();
+				pEffect = Context.pEffectOverrides->ValueAt(i).GetUnsafe();
 				break;
 			}
 
+	if (!pEffect) FAIL;
+
 	Node.pMaterial = pMaterial;
-	Node.pTech = pModel->Material->GetEffect()->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
+	Node.pTech = pEffect->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
+	if (!Node.pTech) FAIL;
+
 	Node.pMesh = pModel->Mesh.GetUnsafe();
 	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
 

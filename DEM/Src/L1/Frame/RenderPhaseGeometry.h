@@ -29,7 +29,7 @@ protected:
 	CFixedArray<I32>								RenderTargetIndices;
 	I32												DepthStencilIndex;
 	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;
-	Render::CMaterialMap							MaterialOverrides;
+	Render::CEffectOverrideMap						EffectOverrides;
 
 public:
 

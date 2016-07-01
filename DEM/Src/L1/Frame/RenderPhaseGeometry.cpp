@@ -70,7 +70,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	RenderQueue.Resize(VisibleObjects.GetCount());
 
 	Render::CRenderNodeContext Context;
-	Context.pMaterialOverrides = MaterialOverrides.GetCount() ? &MaterialOverrides : NULL;
+	Context.pEffectOverrides = EffectOverrides.GetCount() ? &EffectOverrides : NULL;
 
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
 	{
@@ -122,7 +122,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			Context.MaterialLOD = 0;
 		}
 
-		if (!pRenderer->PrepareNode(*pNode, Context) || !pNode->pTech)
+		if (!pRenderer->PrepareNode(*pNode, Context))
 		{
 			RenderQueue.Remove(pNode);
 			continue;
@@ -233,13 +233,16 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 		if (pObjType && pRenderer) Renderers.Add(pObjType, pRenderer);
 	}
 
-	n_assert_dbg(!MaterialOverrides.GetCount());
-	Data::PParams MaterialsDesc;
-	if (Desc.Get(MaterialsDesc, CStrID("Materials")))
+	//!!!remember only IDs here, load effect in a View, as they reference a GPU!
+	//anyway only one loaded copy of resource if possible now, so there can't be
+	//two effect instances created with different GPUs
+	n_assert_dbg(!EffectOverrides.GetCount());
+	Data::PParams EffectsDesc;
+	if (Desc.Get(EffectsDesc, CStrID("Effects")))
 	{
-		for (UPTR i = 0; i < MaterialsDesc->GetCount(); ++i)
+		for (UPTR i = 0; i < EffectsDesc->GetCount(); ++i)
 		{
-			const Data::CParam& Prm = MaterialsDesc->Get(i);
+			const Data::CParam& Prm = EffectsDesc->Get(i);
 
 			Render::EEffectType EffectType;
 			CStrID Key = Prm.GetName();
@@ -250,24 +253,29 @@ bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
 			else if (Key == "Other") EffectType = Render::EffectType_Other;
 			else FAIL;
 
-			Render::PMaterial Material;
+			Render::PEffect Effect;
 			if (!Prm.GetRawValue().IsNull())
 			{
-				CStrID MaterialID = Prm.GetValue<CStrID>();
-				CStrID RsrcURI = CStrID(CString("Materials:") + MaterialID.CStr() + ".mtl"); //???replace ID by full URI on export?
-				Resources::PResource RMtl = ResourceMgr->RegisterResource(RsrcURI);
-				if (!RMtl->IsLoaded())
+				CString RsrcURI("Effects:");
+				RsrcURI += Prm.GetValue<CStrID>().CStr();
+				RsrcURI += ".eff"; //???replace ID by full URI on export?
+
+				Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
+				if (!Rsrc->IsLoaded())
 				{
-					Resources::PResourceLoader Loader = RMtl->GetLoader();
+					Resources::PResourceLoader Loader = Rsrc->GetLoader();
 					if (Loader.IsNullPtr())
-						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RsrcURI.CStr()));
-					ResourceMgr->LoadResourceSync(*RMtl, *Loader);
-					n_assert(RMtl->IsLoaded());
+					{
+						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CEffect>(PathUtils::GetExtension(RsrcURI.CStr()));
+						if (Loader.IsNullPtr()) FAIL;
+					}
+					ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
+					if (!Rsrc->IsLoaded()) FAIL;
 				}
-				Material = RMtl->GetObject<Render::CMaterial>();
+				Effect = Rsrc->GetObject<Render::CEffect>();
 			}
 
-			MaterialOverrides.Add(EffectType, Material);
+			EffectOverrides.Add(EffectType, Effect);
 		}
 	}
 

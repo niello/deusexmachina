@@ -919,9 +919,108 @@ bool ProcessMaterialDesc(const char* pName)
 }
 //---------------------------------------------------------------------
 
-bool ProcessRenderPath(const char* pExportFilePath)
+bool ProcessRenderPathDesc(const char* pSrcFilePath)
 {
-	// No external resources referenced here for now
+	Data::PParams Desc = DataSrv->LoadHRD(pSrcFilePath, false);
+	if (Desc.IsNullPtr()) FAIL;
+
+	Data::PDataArray EffectsWithGlobals;
+	if (Desc->Get(EffectsWithGlobals, CStrID("EffectsWithGlobals")))
+	{
+		for (UPTR i = 0; i < EffectsWithGlobals->GetCount(); ++i)
+		{
+			const Data::CData& Value = EffectsWithGlobals->Get(i);
+			const char* pEffectID;
+			if (Value.IsA<CString>()) pEffectID = Value.GetValue<CString>().CStr();
+			else if (Value.IsA<CStrID>()) pEffectID = Value.GetValue<CStrID>().CStr();
+			else continue;
+
+			CString EffectSrcFileName("SrcShaders:Effects/");
+			EffectSrcFileName += pEffectID;
+			EffectSrcFileName += ".hrd";
+
+			CString EffectExportFileNameUSM("Shaders:USM/Effects/");
+			EffectExportFileNameUSM += pEffectID;
+			EffectExportFileNameUSM += ".eff";
+
+			CString EffectExportFileNameSM30("Shaders:SM_3_0/Effects/");
+			EffectExportFileNameSM30 += pEffectID;
+			EffectExportFileNameSM30 += ".eff";
+
+			//!!!must export textures inside ExportEffect() if requested! now we have no info about texture source in EFF!
+			//BBuilder & CFShader conflict at the texture/effect/material exporting task
+			//Since effect is a desc, it must be exported from BBuilder for correct reference processing!
+			//Or CFShader will be responsible for exporting EFF default textures from source.
+			//Also we may parse EFF desc here, export textures and then export effect.
+
+			if (!IsFileAdded(EffectExportFileNameUSM))
+			{
+				if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+				if (!ProcessEffect(EffectExportFileNameUSM)) FAIL;
+				FilesToPack.InsertSorted(EffectExportFileNameUSM);
+			}
+
+			if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
+			{
+				if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+				if (!ProcessEffect(EffectExportFileNameSM30)) FAIL;
+				FilesToPack.InsertSorted(EffectExportFileNameSM30);
+			}
+		}
+	}
+
+	Data::PParams Phases;
+	if (Desc->Get(Phases, CStrID("Phases")))
+	{
+		for (UPTR i = 0; i < Phases->GetCount(); ++i)
+		{
+			Data::PParams PhaseDesc = Phases->Get<Data::PParams>(i);
+			Data::PParams EffectOverrides;
+			if (!PhaseDesc->Get(EffectOverrides, CStrID("Effects"))) continue;
+
+			for (UPTR j = 0; j < EffectOverrides->GetCount(); ++j)
+			{
+				const Data::CData& Value = EffectOverrides->Get(i).GetRawValue();
+				const char* pEffectID;
+				if (Value.IsA<CString>()) pEffectID = Value.GetValue<CString>().CStr();
+				else if (Value.IsA<CStrID>()) pEffectID = Value.GetValue<CStrID>().CStr();
+				else continue;
+
+				CString EffectSrcFileName("SrcShaders:Effects/");
+				EffectSrcFileName += pEffectID;
+				EffectSrcFileName += ".hrd";
+
+				CString EffectExportFileNameUSM("Shaders:USM/Effects/");
+				EffectExportFileNameUSM += pEffectID;
+				EffectExportFileNameUSM += ".eff";
+
+				CString EffectExportFileNameSM30("Shaders:SM_3_0/Effects/");
+				EffectExportFileNameSM30 += pEffectID;
+				EffectExportFileNameSM30 += ".eff";
+
+				//!!!must export textures inside ExportEffect() if requested! now we have no info about texture source in EFF!
+				//BBuilder & CFShader conflict at the texture/effect/material exporting task
+				//Since effect is a desc, it must be exported from BBuilder for correct reference processing!
+				//Or CFShader will be responsible for exporting EFF default textures from source.
+				//Also we may parse EFF desc here, export textures and then export effect.
+
+				if (!IsFileAdded(EffectExportFileNameUSM))
+				{
+					if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+					if (!ProcessEffect(EffectExportFileNameUSM)) FAIL;
+					FilesToPack.InsertSorted(EffectExportFileNameUSM);
+				}
+
+				if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
+				{
+					if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+					if (!ProcessEffect(EffectExportFileNameSM30)) FAIL;
+					FilesToPack.InsertSorted(EffectExportFileNameSM30);
+				}
+			}
+		}
+	}
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -998,7 +1097,7 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 	if (IsFileAdded(ExportFilePath)) OK;
 
 	Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
-	if (!Desc.IsValidPtr()) FAIL;
+	if (Desc.IsNullPtr()) FAIL;
 
 	if (ExportDescs)
 	{

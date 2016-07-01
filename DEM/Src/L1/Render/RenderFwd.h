@@ -23,7 +23,6 @@ struct CSwapChainDesc;
 struct CRenderStateDesc;
 struct CSamplerDesc;
 class CDisplayMode;
-class CEffect;
 class CTechnique;
 class IShaderMetadata;
 class IRenderable;
@@ -39,12 +38,13 @@ typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 typedef Ptr<class CRenderState> PRenderState;
 typedef Ptr<class CShader> PShader;
 typedef Ptr<class CShaderLibrary> PShaderLibrary;
+typedef Ptr<class CEffect> PEffect;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
 typedef Ptr<class CTexture> PTexture;
 typedef Ptr<class CSampler> PSampler;
 typedef Ptr<class CMesh> PMesh;
 typedef Ptr<class CMaterial> PMaterial;
-typedef CDict<EEffectType, PMaterial> CMaterialMap; //!!!name is a subject to change!
+typedef CDict<EEffectType, PEffect> CEffectOverrideMap;
 
 const UPTR Adapter_AutoSelect = (UPTR)-2;
 const UPTR Adapter_None = (UPTR)-1;
