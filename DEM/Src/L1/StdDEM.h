@@ -93,8 +93,19 @@ template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T
 
 template <class T> inline T Clamp(T Value, T Min, T Max) { return (Value < Min) ? Min : ((Value > Max) ? Max : Value); }
 inline float Saturate(float Value) { return Clamp(Value, 0.f, 1.f); }
-
 inline bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
+template <class T> inline T NextPow2(T x)
+{
+	// For unsigned only, else uncomment the next line
+	//if (x < 0) return 0;
+	--x;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	return x + 1;
+}
 
 // Only for power-of-2 alignment //!!!C++11 static_assert may help!
 template <unsigned int Alignment> inline bool IsAligned(const void* Pointer) { return !((unsigned int)Pointer) & (Alignment - 1); }

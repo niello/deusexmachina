@@ -1651,12 +1651,8 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 
 //!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
-PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
+PConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData)
 {
-	if (!pD3DDevice || !hBuffer) return NULL;
-	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta) return NULL;
-
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
 	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
@@ -1731,16 +1727,66 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 }
 //---------------------------------------------------------------------
 
+//!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
+//!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
+PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
+{
+	if (!pD3DDevice || !hBuffer) return NULL;
+	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
+	if (!pMeta) return NULL;
+	return InternalCreateConstantBuffer(pMeta, AccessFlags, pData);
+}
+//---------------------------------------------------------------------
+
 PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuffer)
 {
-	//!!!rewrite, use pool or smth! dynamically growing ring buffer or generic pool may be a good idea.
-	return CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
+	if (!pD3DDevice || !hBuffer) return NULL;
+	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
+	if (!pMeta) return NULL;
+
+	UPTR NextPow2Size = NextPow2(pMeta->Size); // * ElementCount; //!!!for StructuredBuffer!
+	IPTR Idx = TmpConstBuffers.FindIndex(NextPow2Size);
+	if (Idx != INVALID_INDEX)
+	{
+		CTmpCB* pHead = TmpConstBuffers.ValueAt(Idx);
+		if (pHead)
+		{
+			TmpConstBuffers.ValueAt(Idx) = pHead->pNext;
+			PConstantBuffer CB = pHead->CB.GetUnsafe();
+			n_delete(pHead); //!!!use pool or small allocator!
+			return CB;
+		}
+	}
+
+	CUSMBufferMeta Meta = *pMeta;
+	Meta.Size = NextPow2Size;
+	return InternalCreateConstantBuffer(&Meta, Access_CPU_Write | Access_GPU_Read, NULL);
 }
 //---------------------------------------------------------------------
 
 void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 {
-	//???mb store buffer ref until all render operations with it are finished?
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CBuffer;
+
+	UPTR BufferSize = CB11.GetSizeInBytes();
+#ifdef _DEBUG
+	n_assert(BufferSize == NextPow2(CB11.GetSizeInBytes()));
+#endif
+
+	CTmpCB* pNewNode = n_new(CTmpCB); //!!!use pool or small allocator!
+	pNewNode->CB = &CB11;
+
+	IPTR Idx = TmpConstBuffers.FindIndex(BufferSize);
+	if (Idx != INVALID_INDEX)
+	{
+		pNewNode->pNext = TmpConstBuffers.ValueAt(Idx);
+		TmpConstBuffers.ValueAt(Idx) = pNewNode;
+	}
+	else
+	{
+		pNewNode->pNext = NULL;
+		TmpConstBuffers.Add(BufferSize, pNewNode);
+	}
 }
 //---------------------------------------------------------------------
 

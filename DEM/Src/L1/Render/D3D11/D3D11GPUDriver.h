@@ -39,6 +39,7 @@ typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
 typedef Ptr<class CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 typedef Ptr<class CD3D11Sampler> PD3D11Sampler;
 typedef Ptr<class CD3D11Texture> PD3D11Texture;
+struct CUSMBufferMeta;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
@@ -110,6 +111,14 @@ protected:
 //!!!ID3D11ShaderResourceView* or PObject!
 	UPTR								MaxSRVSlotIndex;
 
+	struct CTmpCB
+	{
+		PD3D11ConstantBuffer	CB;
+		CTmpCB*					pNext;
+	};
+
+	CDict<UPTR, CTmpCB*>				TmpConstBuffers;	// Key is a size (pow2), value is a linked list
+
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
 	CArray<PD3D11RenderState>			RenderStates;
@@ -130,6 +139,7 @@ protected:
 
 	bool								InitSwapChainRenderTarget(CD3D11SwapChain& SC);
 	void								Release();
+	PConstantBuffer						InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData);
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
 	static EGPUDriverType				GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
