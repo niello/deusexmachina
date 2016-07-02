@@ -2435,6 +2435,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		D3DCOLOR_COLORVALUE(Desc.BlendFactorRGBA[0], Desc.BlendFactorRGBA[1], Desc.BlendFactorRGBA[2], Desc.BlendFactorRGBA[3]);
 
 	const CRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[0];
+	pValues[CD3D9RenderState::D3D9_COLORWRITEENABLE] = RTBlend.WriteMask & 0x0f; //!!!can add D3D9_COLORWRITEENABLE1, 2, 3!
 	pValues[CD3D9RenderState::D3D9_ALPHABLENDENABLE] = Desc.Flags.Is(CRenderStateDesc::Blend_RTBlendEnable << 0) ? TRUE : FALSE;
 	pValues[CD3D9RenderState::D3D9_SEPARATEALPHABLENDENABLE] = TRUE;
 	pValues[CD3D9RenderState::D3D9_SRCBLEND] = GetD3DBlendArg(RTBlend.SrcBlendArg);
@@ -2443,9 +2444,6 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	pValues[CD3D9RenderState::D3D9_SRCBLENDALPHA] = GetD3DBlendArg(RTBlend.SrcBlendArgAlpha);
 	pValues[CD3D9RenderState::D3D9_DESTBLENDALPHA] = GetD3DBlendArg(RTBlend.DestBlendArgAlpha);
 	pValues[CD3D9RenderState::D3D9_BLENDOPALPHA] = GetD3DBlendOp(RTBlend.BlendOpAlpha);
-	pValues[CD3D9RenderState::D3D9_COLORWRITEENABLE] = RTBlend.WriteMask & 0x0f;
-
-	//!!!can add D3D9_COLORWRITEENABLE1, 2, 3!
 
 	// Misc
 

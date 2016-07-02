@@ -105,9 +105,12 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
 		{
 			if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CRenderStateDesc::Blend_Independent)) break;
-			if (Desc.Flags.IsNot(Render::CRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
 
 			Render::CRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
+
+			if (!Reader.Read(RTBlend.WriteMask)) return NULL;
+
+			if (Desc.Flags.IsNot(Render::CRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
 
 			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.SrcBlendArg = (Render::EBlendArg)U8Value;
@@ -121,8 +124,6 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 			RTBlend.DestBlendArgAlpha = (Render::EBlendArg)U8Value;
 			if (!Reader.Read<U8>(U8Value)) return NULL;
 			RTBlend.BlendOpAlpha = (Render::EBlendOp)U8Value;
-
-			if (!Reader.Read(RTBlend.WriteMask)) return NULL;
 		}
 
 		if (!Reader.Read(Desc.BlendFactorRGBA[0])) return NULL;

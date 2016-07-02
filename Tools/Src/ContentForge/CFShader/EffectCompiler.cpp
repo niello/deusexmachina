@@ -510,15 +510,29 @@ bool ProcessBlendSection(Data::PParams BlendSection, int Index, Render::CToolRen
 		Blend.BlendOpAlpha = StringToBlendOp(StrValue);
 	}
 
-	if (BlendSection->Get(StrValue, CStrID("WriteMask")))
+	Data::CData RawValue;
+	if (BlendSection->Get(RawValue, CStrID("WriteMask")))
 	{
 		unsigned char Mask = 0;
-		StrValue.ToLower();
-		if (StrValue.FindIndex('r') != INVALID_INDEX) Mask |= Render::ColorMask_Red;
-		if (StrValue.FindIndex('g') != INVALID_INDEX) Mask |= Render::ColorMask_Green;
-		if (StrValue.FindIndex('b') != INVALID_INDEX) Mask |= Render::ColorMask_Blue;
-		if (StrValue.FindIndex('a') != INVALID_INDEX) Mask |= Render::ColorMask_Alpha;
-		Blend.WriteMask = Mask;
+		if (RawValue.IsA<CString>())
+		{
+			StrValue = RawValue.GetValue<CString>();
+			StrValue.ToLower();
+			if (StrValue.FindIndex('r') != INVALID_INDEX) Mask |= Render::ColorMask_Red;
+			if (StrValue.FindIndex('g') != INVALID_INDEX) Mask |= Render::ColorMask_Green;
+			if (StrValue.FindIndex('b') != INVALID_INDEX) Mask |= Render::ColorMask_Blue;
+			if (StrValue.FindIndex('a') != INVALID_INDEX) Mask |= Render::ColorMask_Alpha;
+			Blend.WriteMask = Mask;
+		}
+		else if (RawValue.IsNull() || (RawValue.IsA<int>() && RawValue == 0))
+		{
+			Blend.WriteMask = 0;
+		}
+		else
+		{
+			n_msg(VL_ERROR, "WriteMask is defined improperly\n");
+			FAIL;
+		}
 	}
 
 	OK;
@@ -935,8 +949,9 @@ bool EFFSeekToGlobalParams(IO::CStream& Stream)
 		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
 		{
 			if (BlendIdx > 0 && !(Flags & Blend_Independent)) break;
+			SizeToSkip += 1; // WriteMask
 			if (!(Flags & (Blend_RTBlendEnable << BlendIdx))) continue;
-			SizeToSkip += 7;
+			SizeToSkip += 6; // Blend fields
 		}
 		
 		if (!Stream.Seek(SizeToSkip, IO::Seek_Current)) FAIL;
@@ -2222,16 +2237,18 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
 		{
 			if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_Independent)) break;
+			
+			const Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
+			if (!W.Write<U8>(RTBlend.WriteMask)) return ERR_IO_WRITE;
+			
 			if (Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
 
-			const Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
 			if (!W.Write<U8>(RTBlend.SrcBlendArg)) return ERR_IO_WRITE;
 			if (!W.Write<U8>(RTBlend.DestBlendArg)) return ERR_IO_WRITE;
 			if (!W.Write<U8>(RTBlend.BlendOp)) return ERR_IO_WRITE;
 			if (!W.Write<U8>(RTBlend.SrcBlendArgAlpha)) return ERR_IO_WRITE;
 			if (!W.Write<U8>(RTBlend.DestBlendArgAlpha)) return ERR_IO_WRITE;
 			if (!W.Write<U8>(RTBlend.BlendOpAlpha)) return ERR_IO_WRITE;
-			if (!W.Write(RTBlend.WriteMask)) return ERR_IO_WRITE;
 		}
 
 		if (!W.Write(Desc.BlendFactorRGBA[0])) return ERR_IO_WRITE;

@@ -269,8 +269,9 @@ bool EFFSeekToMaterialParams(IO::CStream& Stream)
 		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
 		{
 			if (BlendIdx > 0 && !(Flags & Blend_Independent)) break;
+			SizeToSkip += 1; // WriteMask
 			if (!(Flags & (Blend_RTBlendEnable << BlendIdx))) continue;
-			SizeToSkip += 7;
+			SizeToSkip += 6; // Blend fields
 		}
 		
 		if (!Stream.Seek(SizeToSkip, IO::Seek_Current)) FAIL;
@@ -425,8 +426,9 @@ bool ProcessEffect(const char* pExportFileName)
 		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
 		{
 			if (BlendIdx > 0 && !(Flags & Render::CRenderStateDesc::Blend_Independent)) break;
+			SizeToSkip += 1; // WriteMask
 			if (!(Flags & (Render::CRenderStateDesc::Blend_RTBlendEnable << BlendIdx))) continue;
-			SizeToSkip += 7;
+			SizeToSkip += 6; // Blend fields
 		}
 		
 		if (!EFF->Seek(SizeToSkip, IO::Seek_Current)) FAIL;
