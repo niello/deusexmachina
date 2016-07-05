@@ -19,6 +19,7 @@ enum D3D11_USAGE;
 
 namespace Render
 {
+enum EUSMBufferType;
 
 class CD3D11ConstantBuffer: public CConstantBuffer
 {
@@ -35,6 +36,7 @@ protected:
 	ID3D11Buffer*				pBuffer;
 	ID3D11ShaderResourceView*	pSRView;
 	char*						pMapped;
+	EUSMBufferType				Type;
 	D3D11_USAGE					D3DUsage;
 	Data::CFlags				Flags;
 	UPTR						SizeInBytes;
@@ -68,6 +70,7 @@ public:
 	const char*					GetRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
 	D3D11_USAGE					GetD3DUsage() const { return D3DUsage; }
 	UPTR						GetSizeInBytes() const { return SizeInBytes; }
+	EUSMBufferType				GetType() const { return Type; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
 

@@ -1745,15 +1745,19 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuf
 	if (!pMeta) return NULL;
 
 	UPTR NextPow2Size = NextPow2(pMeta->Size); // * ElementCount; //!!!for StructuredBuffer!
-	IPTR Idx = TmpConstBuffers.FindIndex(NextPow2Size);
+	CDict<UPTR, CTmpCB*>& BufferPool = 
+		pMeta->Type == USMBuffer_Structured ? TmpStructuredBuffers :
+		(pMeta->Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+
+	IPTR Idx = BufferPool.FindIndex(NextPow2Size);
 	if (Idx != INVALID_INDEX)
 	{
-		CTmpCB* pHead = TmpConstBuffers.ValueAt(Idx);
+		CTmpCB* pHead = BufferPool.ValueAt(Idx);
 		if (pHead)
 		{
-			TmpConstBuffers.ValueAt(Idx) = pHead->pNext;
+			BufferPool.ValueAt(Idx) = pHead->pNext;
 			PConstantBuffer CB = pHead->CB.GetUnsafe();
-			n_delete(pHead); //!!!use pool or small allocator!
+			TmpCBPool.Destroy(pHead);
 			return CB;
 		}
 	}
@@ -1773,19 +1777,23 @@ void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	n_assert(BufferSize == NextPow2(CB11.GetSizeInBytes()));
 #endif
 
-	CTmpCB* pNewNode = n_new(CTmpCB); //!!!use pool or small allocator!
+	CTmpCB* pNewNode = TmpCBPool.Construct();
 	pNewNode->CB = &CB11;
 
-	IPTR Idx = TmpConstBuffers.FindIndex(BufferSize);
+	EUSMBufferType Type = CB11.GetType();
+	CDict<UPTR, CTmpCB*>& BufferPool = 
+		Type == USMBuffer_Structured ? TmpStructuredBuffers :
+		(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+	IPTR Idx = BufferPool.FindIndex(BufferSize);
 	if (Idx != INVALID_INDEX)
 	{
-		pNewNode->pNext = TmpConstBuffers.ValueAt(Idx);
-		TmpConstBuffers.ValueAt(Idx) = pNewNode;
+		pNewNode->pNext = BufferPool.ValueAt(Idx);
+		BufferPool.ValueAt(Idx) = pNewNode;
 	}
 	else
 	{
 		pNewNode->pNext = NULL;
-		TmpConstBuffers.Add(BufferSize, pNewNode);
+		BufferPool.Add(BufferSize, pNewNode);
 	}
 }
 //---------------------------------------------------------------------

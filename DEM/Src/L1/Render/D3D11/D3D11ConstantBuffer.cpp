@@ -1,5 +1,6 @@
 #include "D3D11ConstantBuffer.h"
 
+#include <Render/D3D11/USMShaderMetadata.h> // For EUSMBufferType only
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
@@ -28,6 +29,10 @@ bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* p
 	pSRView = pSRV;
 	D3DUsage = D3DDesc.Usage;
 	SizeInBytes = D3DDesc.ByteWidth;
+
+	if (D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) Type = USMBuffer_Constant;
+	else if (D3DDesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED) Type = USMBuffer_Structured;
+	else Type = USMBuffer_Texture;
 
 	OK;
 }

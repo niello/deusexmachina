@@ -6,6 +6,7 @@
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
 #include <Data/Buffer.h>
+#include <System/Allocators/PoolAllocator.h>
 
 // Direct3D11 GPU device driver.
 
@@ -111,14 +112,6 @@ protected:
 //!!!ID3D11ShaderResourceView* or PObject!
 	UPTR								MaxSRVSlotIndex;
 
-	struct CTmpCB
-	{
-		PD3D11ConstantBuffer	CB;
-		CTmpCB*					pNext;
-	};
-
-	CDict<UPTR, CTmpCB*>				TmpConstBuffers;	// Key is a size (pow2), value is a linked list
-
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
 	CArray<PD3D11RenderState>			RenderStates;
@@ -129,6 +122,17 @@ protected:
 	ID3D11Device*						pD3DDevice;
 	ID3D11DeviceContext*				pD3DImmContext;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
+
+	struct CTmpCB
+	{
+		PD3D11ConstantBuffer	CB;
+		CTmpCB*					pNext;
+	};
+
+	CPoolAllocator<CTmpCB>				TmpCBPool;
+	CDict<UPTR, CTmpCB*>				TmpConstantBuffers;	// Key is a size (pow2), value is a linked list
+	CDict<UPTR, CTmpCB*>				TmpTextureBuffers;	// Key is a size (pow2), value is a linked list
+	CDict<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list
 
 	CD3D11GPUDriver();
 

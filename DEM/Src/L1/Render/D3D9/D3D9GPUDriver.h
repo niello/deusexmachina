@@ -5,6 +5,8 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D9/D3D9SwapChain.h>
 #include <Data/FixedArray.h>
+#include <Data/HashTable.h>
+#include <System/Allocators/PoolAllocator.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -92,6 +94,15 @@ protected:
 
 	D3DCAPS9							D3DCaps;
 	IDirect3DDevice9*					pD3DDevice;
+
+	struct CTmpCB
+	{
+		PD3D9ConstantBuffer	CB;
+		CTmpCB*				pNext;
+	};
+
+	CPoolAllocator<CTmpCB>				TmpCBPool;
+	CHashTable<HConstBuffer, CTmpCB*>	TmpConstantBuffers;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 

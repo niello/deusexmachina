@@ -39,12 +39,13 @@ protected:
 
 	HConstBuffer	Handle;		//!!!strictly bounds D3D9 CB to the host Shader! may copy relevant metadata instead, if inacceptable
 	Data::CFlags	DirtyFlags;
+	bool			Temporary;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9ConstantBuffer(): pFloat4Data(NULL), pInt4Data(NULL), pBoolData(NULL), Float4Count(0), Int4Count(0), BoolCount(0), Handle(INVALID_HANDLE) {}
+	CD3D9ConstantBuffer(): pFloat4Data(NULL), pInt4Data(NULL), pBoolData(NULL), Float4Count(0), Int4Count(0), BoolCount(0), Handle(INVALID_HANDLE), Temporary(false) {}
 	virtual ~CD3D9ConstantBuffer() { InternalDestroy(); }
 
 	bool			Create(const CSM30ShaderBufferMeta& Meta, const CD3D9ConstantBuffer* pInitData);
@@ -58,12 +59,14 @@ public:
 	bool			IsDirtyFloat4() const { return DirtyFlags.Is(CB9_DirtyFloat4); }
 	bool			IsDirtyInt4() const { return DirtyFlags.Is(CB9_DirtyInt4); }
 	bool			IsDirtyBool() const { return DirtyFlags.Is(CB9_DirtyBool); }
+	bool			IsTemporary() const { return Temporary; }
 	HConstBuffer	GetHandle() const { return Handle; }
 	const float*	GetFloat4Data() const { return pFloat4Data; }
 	const int*		GetInt4Data() const { return pInt4Data; }
 	const BOOL*		GetBoolData() const { return pBoolData; }
 
 	void			OnCommit() { DirtyFlags.ClearAll(); }	// For internal use by the GPUDriver
+	void			SetTemporary(bool TmpBuffer) { Temporary = TmpBuffer; }	// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;

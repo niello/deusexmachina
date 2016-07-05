@@ -2096,16 +2096,46 @@ PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR 
 
 PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuffer)
 {
-	//!!!rewrite, use pool or smth!
-	return CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
+	if (!pD3DDevice || !hBuffer) return NULL;
+
+	CTmpCB** ppHead = TmpConstantBuffers.Get(hBuffer);
+	if (ppHead)
+	{
+		CTmpCB* pHead = *ppHead;
+		if (pHead)
+		{
+			*ppHead = pHead->pNext;
+			PConstantBuffer CB = pHead->CB.GetUnsafe();
+			TmpCBPool.Destroy(pHead);
+			return CB;
+		}
+	}
+
+	PConstantBuffer CB = CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
+	((CD3D9ConstantBuffer*)CB.GetUnsafe())->SetTemporary(true);
+	return CB;
 }
 //---------------------------------------------------------------------
 
 void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 {
-	//!!!for D3D9 there is no need to store reference, as all data is passed to a command buffer!
-	//if buffer was unbound, it is good if all its data will be lost
-	//???mb store buffer ref until all render operations with it are finished?
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CBuffer;
+	n_assert_dbg(CB9.IsTemporary());
+
+	CTmpCB* pNewNode = TmpCBPool.Construct();
+	pNewNode->CB = &CB9;
+
+	CTmpCB** ppHead = TmpConstantBuffers.Get(CB9.GetHandle());
+	if (ppHead)
+	{
+		pNewNode->pNext = *ppHead;
+		*ppHead = pNewNode;
+	}
+	else
+	{
+		pNewNode->pNext = NULL;
+		TmpConstantBuffers.Add(CB9.GetHandle(), pNewNode);
+	}
 }
 //---------------------------------------------------------------------
 
