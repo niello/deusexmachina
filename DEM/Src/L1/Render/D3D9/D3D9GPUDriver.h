@@ -103,6 +103,7 @@ protected:
 
 	CPoolAllocator<CTmpCB>				TmpCBPool;
 	CHashTable<HConstBuffer, CTmpCB*>	TmpConstantBuffers;
+	CTmpCB*								pPendingCBHead;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
@@ -234,6 +235,7 @@ inline CD3D9GPUDriver::CD3D9GPUDriver():
 	pCurrPSFloat4(NULL),
 	pCurrPSInt4(NULL),
 	pCurrPSBool(NULL),
+	pPendingCBHead(NULL),
 	IsInsideFrame(false)
 {
 }

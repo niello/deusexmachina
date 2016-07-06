@@ -1638,10 +1638,52 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 		default:				FAIL;
 	};
 
-	//???control user not to bound the same CB to different stages?
+	//???control user not to bind the same CB to different stages?
 
 	CCBRec& CurrCBRec = CurrCB[Index];
-	if (CurrCBRec.CB.GetUnsafe() == pCBuffer) OK;
+	CD3D9ConstantBuffer* pCurrBuffer = CurrCBRec.CB.GetUnsafe();
+	if (pCurrBuffer == pCBuffer) OK;
+
+	// Free temporary buffer, if not bound to other stages
+	if (pPendingCBHead && pCurrBuffer && pCurrBuffer->IsTemporary())
+	{
+		UPTR SecondIndex;
+		switch (ShaderType)
+		{
+			case ShaderType_Vertex:	SecondIndex = CB_Slot_Count + pMeta->SlotIndex; break;
+			case ShaderType_Pixel:	SecondIndex = pMeta->SlotIndex; break;
+		};
+		const bool IsBound = (CurrCB[SecondIndex].CB.GetUnsafe() == pCurrBuffer);
+		if (!IsBound)
+		{
+			CTmpCB* pPrevNode = NULL;
+			CTmpCB* pCurrNode = pPendingCBHead;
+			while (pCurrNode)
+			{
+				if (pCurrNode->CB == pCurrBuffer)
+				{
+					if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
+					else pPendingCBHead = pCurrNode->pNext;
+
+					CTmpCB** ppHead = TmpConstantBuffers.Get(Handle);
+					if (ppHead)
+					{
+						pCurrNode->pNext = *ppHead;
+						*ppHead = pCurrNode;
+					}
+					else
+					{
+						pCurrNode->pNext = NULL;
+						TmpConstantBuffers.Add(Handle, pCurrNode);
+					}
+					break;
+				}
+				pPrevNode = pCurrNode;
+				pCurrNode = pCurrNode->pNext;
+			}
+		}
+	}
+
 	CurrCBRec.CB = (CD3D9ConstantBuffer*)pCBuffer;
 	if (pCBuffer) CurrCBRec.ApplyFlags.Set(CB_ApplyAll);
 	else CurrCBRec.ApplyFlags.ClearAll();
@@ -2122,19 +2164,32 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CBuffer;
 	n_assert_dbg(CB9.IsTemporary());
 
+	HConstBuffer Handle = CB9.GetHandle();
+	CSM30ShaderBufferMeta* pMeta = (CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(Handle);
+	n_assert_dbg(pMeta);
+
 	CTmpCB* pNewNode = TmpCBPool.Construct();
 	pNewNode->CB = &CB9;
 
-	CTmpCB** ppHead = TmpConstantBuffers.Get(CB9.GetHandle());
-	if (ppHead)
+	const bool IsBound = (CurrCB[pMeta->SlotIndex].CB.GetUnsafe() == &CB9 || CurrCB[CB_Slot_Count + pMeta->SlotIndex].CB.GetUnsafe() == &CB9);
+	if (IsBound)
 	{
-		pNewNode->pNext = *ppHead;
-		*ppHead = pNewNode;
+		pNewNode->pNext = pPendingCBHead;
+		pPendingCBHead = pNewNode;
 	}
 	else
 	{
-		pNewNode->pNext = NULL;
-		TmpConstantBuffers.Add(CB9.GetHandle(), pNewNode);
+		CTmpCB** ppHead = TmpConstantBuffers.Get(Handle);
+		if (ppHead)
+		{
+			pNewNode->pNext = *ppHead;
+			*ppHead = pNewNode;
+		}
+		else
+		{
+			pNewNode->pNext = NULL;
+			TmpConstantBuffers.Add(Handle, pNewNode);
+		}
 	}
 }
 //---------------------------------------------------------------------
