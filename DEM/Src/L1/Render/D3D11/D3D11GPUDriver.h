@@ -204,7 +204,7 @@ public:
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect);
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
-	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0);
+	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex = 0);
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
 	//virtual bool				SetInstanceBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Instances, UPTR OffsetVertex = 0);
 	virtual bool				SetRenderState(CRenderState* pState);
@@ -222,8 +222,7 @@ public:
 	virtual void				ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil);
 	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1);
 
-	//???virtual to unify interface? no-op where is not applicable. or only apply on draw etc here?
-	//can also set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
+	//can set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
 	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
 	UPTR						ApplyChanges(UPTR ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occurred
 

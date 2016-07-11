@@ -3,11 +3,17 @@
 #define __DEM_L1_FRAME_MODEL_RENDERER_H__
 
 #include <Render/Renderer.h>
+#include <Render/VertexComponent.h>
+#include <Data/FixedArray.h>
+#include <Data/Dictionary.h>
+#include <Data/Ptr.h>
 
 // Default renderer for CModel render objects
 
 namespace Render
 {
+typedef Ptr<class CVertexLayout> PVertexLayout;
+typedef Ptr<class CVertexBuffer> PVertexBuffer;
 
 class CModelRenderer: public IRenderer
 {
@@ -15,9 +21,16 @@ class CModelRenderer: public IRenderer
 
 protected:
 
-	UPTR	InputSet_Model;
-	UPTR	InputSet_ModelSkinned;
-	UPTR	InputSet_ModelInstanced;
+	const U32								INSTANCE_BUFFER_STREAM_INDEX = 1;
+
+	UPTR									InputSet_Model;
+	UPTR									InputSet_ModelSkinned;
+	UPTR									InputSet_ModelInstanced;
+
+	CFixedArray<CVertexComponent>			InstanceDataDecl;
+	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;
+	PVertexBuffer							InstanceVB;
+	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 public:
 

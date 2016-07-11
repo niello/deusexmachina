@@ -55,6 +55,13 @@ protected:
 		CB_ApplyAll		= (CB_ApplyFloat4 | CB_ApplyInt4 | CB_ApplyBool)
 	};
 
+	struct CVBRec
+	{
+		PD3D9VertexBuffer				VB;
+		UPTR							Offset;
+		UINT							Frequency;
+	};
+
 	struct CCBRec
 	{
 		PD3D9ConstantBuffer				CB;
@@ -65,8 +72,8 @@ protected:
 	};
 
 	PD3D9VertexLayout					CurrVL;
-	CFixedArray<PD3D9VertexBuffer>		CurrVB;
-	CFixedArray<UPTR>					CurrVBOffset;
+	CFixedArray<CVBRec>					CurrVB;
+	Data::CFlags						CurrVBInstanced;	// Bit (1 << stream index) is set if VB contains per-instance data
 	PD3D9IndexBuffer					CurrIB;
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
@@ -86,9 +93,9 @@ protected:
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
 	CArray<PD3D9RenderState>			RenderStates;
-	PD3D9RenderState					DefaultRenderState; //!!!destroy along with RenderStates[]!
+	PD3D9RenderState					DefaultRenderState;
 	CArray<PD3D9Sampler>				Samplers;
-	PD3D9Sampler						DefaultSampler; //!!!destroy along with Samplers[]!
+	PD3D9Sampler						DefaultSampler;
 	bool								IsInsideFrame;
 	//bool								Wireframe;
 
@@ -180,9 +187,8 @@ public:
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect);
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
-	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0);
+	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex = 0);
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
-	//virtual bool				SetInstanceBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Instances, UPTR OffsetVertex = 0);
 	virtual bool				SetRenderState(CRenderState* pState);
 	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);

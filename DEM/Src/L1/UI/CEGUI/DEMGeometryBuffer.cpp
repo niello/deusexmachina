@@ -55,7 +55,7 @@ void CDEMGeometryBuffer::draw() const
 		d_bufferIsSync = true;
 	}
 
-	pGPU->SetVertexBuffer(0, d_vertexBuffer.GetUnsafe());
+	pGPU->SetVertexBuffer(0, d_vertexBuffer.GetUnsafe(), false);
 
 	Data::CRect SR;
 	SR.X = (int)d_clipRect.left();

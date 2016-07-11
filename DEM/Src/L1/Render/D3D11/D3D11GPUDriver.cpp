@@ -823,7 +823,7 @@ bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
+bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex)
 {
 	if (Index >= CurrVB.GetCount()) FAIL;
 	if (CurrVB[Index].GetUnsafe() == pVB) OK;
@@ -973,6 +973,10 @@ bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSamp
 
 bool CD3D11GPUDriver::BeginFrame()
 {
+#ifdef DEM_STATS
+	PrimitivesRendered = 0;
+	DrawsRendered = 0;
+#endif
 	OK;
 }
 //---------------------------------------------------------------------
@@ -1064,7 +1068,6 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 			pD3DImmContext->Draw(PrimGroup.VertexCount, PrimGroup.FirstVertex);
 	}
 
-/*
 #ifdef DEM_STATS
 	UPTR PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
 	switch (CurrPT)
@@ -1074,12 +1077,11 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 		case Prim_LineStrip:	--PrimCount; break;
 		case Prim_TriList:		PrimCount /= 3; break;
 		case Prim_TriStrip:		PrimCount -= 2; break;
-		default:				Sys::Error("CD3D11GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+		default:				PrimCount = 0; break;
 	}
-	PrimsRendered += InstanceCount * PrimCount;
-	++DIPsRendered;
+	PrimitivesRendered += InstanceCount * PrimCount;
+	++DrawsRendered;
 #endif
-*/
 
 	OK;
 }

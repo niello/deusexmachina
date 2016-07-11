@@ -47,10 +47,10 @@ protected:
 	EGPUDriverType					Type;
 	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
-//	UPTR							InstanceCount;	// If 0, non-instanced rendering is active //???if 1? instanced shader + 1 inst data?
-
-	//UPTR							PrimsRendered;
-	//UPTR							DIPsRendered;
+#ifdef DEM_STATS
+	UPTR							PrimitivesRendered;
+	UPTR							DrawsRendered;
+#endif
 
 	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UPTR& Width, UPTR& Height);
 
@@ -98,7 +98,7 @@ public:
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect) = 0;
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) = 0;
-	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0) = 0;
+	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex = 0) = 0;
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB) = 0;
 	//virtual bool				SetInstanceBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Instances, UPTR OffsetVertex = 0) = 0;
 	virtual bool				SetRenderState(CRenderState* pState) = 0;

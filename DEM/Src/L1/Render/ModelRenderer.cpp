@@ -20,11 +20,26 @@ CModelRenderer::CModelRenderer()
 	InputSet_Model = RegisterShaderInputSetID(CStrID("Model"));
 	InputSet_ModelSkinned = RegisterShaderInputSetID(CStrID("ModelSkinned"));
 	InputSet_ModelInstanced = RegisterShaderInputSetID(CStrID("ModelInstanced"));
+
+	InstanceDataDecl.SetSize(4);
+
+	// World matrix
+	for (U32 i = 0; i < 4; ++i)
+	{
+		CVertexComponent& Cmp = InstanceDataDecl[i];
+		Cmp.Semantic = VCSem_TexCoord;
+		Cmp.UserDefinedName = NULL;
+		Cmp.Index = i + 4;
+		Cmp.Format = VCFmt_Float32_4;
+		Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
+		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	}
+
+	//!!!DBG TMP! //???where to define?
+	MaxInstanceCount = 30;
 }
 //---------------------------------------------------------------------
 
-//???return bool, if false, remove node from queue
-//(array tail removal is very fast in CArray, can even delay removal in a case next RQ node will be added inplace)?
 bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
 {
 	CModel* pModel = Node.pRenderable->As<CModel>();
@@ -66,9 +81,12 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 	const CMaterial* pCurrMaterial = NULL;
 	const CMesh* pCurrMesh = NULL;
 	const CTechnique* pCurrTech = NULL;
+	CVertexLayout* pVL = NULL;
+	CVertexLayout* pVLInstanced = NULL;
 
-	const CEffectConstant* pConstWorldMatrix = NULL; // Model, ModelSkinned
-	const CEffectConstant* pConstSkinPalette = NULL; // ModelSkinned
+	const CEffectConstant* pConstWorldMatrix = NULL;	// Model, ModelSkinned
+	const CEffectConstant* pConstSkinPalette = NULL;	// ModelSkinned
+	const CEffectConstant* pConstInstanceData = NULL;	// ModelInstanced
 
 	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
@@ -101,10 +119,12 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 			n_assert_dbg(pMesh);
 			CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
 			n_assert_dbg(pVB);
-			GPU.SetVertexLayout(pVB->GetVertexLayout());
-			GPU.SetVertexBuffer(0, pVB);
+			GPU.SetVertexBuffer(0, pVB, false);
 			GPU.SetIndexBuffer(pModel->Mesh->GetIndexBuffer().GetUnsafe());
 			pCurrMesh = pMesh;
+
+			pVL = pVB->GetVertexLayout();
+			pVLInstanced = NULL;
 
 			//!!!DBG TMP!
 			Sys::DbgOut("Mesh changed: 0x%X\n", pMesh);
@@ -141,6 +161,8 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 			}
 		}
 
+		// Gather lights and select corresponding tech variation
+
 		UPTR LightCount = 0;
 		//!!!calc lights!
 		//for instances may select maximum of light counts and use black lights for ones not used, or use per-instance count and dynamic loop
@@ -156,24 +178,113 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 		if (HardwareInstancing)
 		{
-			// Per-instance params
-			// Write per-instance params into an instance buffer whatever form it takes
+			n_assert_dbg(MaxInstanceCount);
 
-			for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+			//!!!DBG TMP!
+			if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCount)
+				Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCount);
+
+			if (pTech != pCurrTech)
 			{
-				GPU.SetRenderState((*pPasses)[i]);
-				GPU.Draw(*pGroup/*, ItInstEnd - ItCurr*/);
+				pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
+				pCurrTech = pTech;
+
+				//!!!DBG TMP!
+				Sys::DbgOut("Tech params requested by ID\n");
 			}
 
-			Sys::DbgOut("CModel rendered instanced, tech '%s', group 0x%X, instances: %d\n", ItCurr->pTech->GetName().CStr(), pGroup, (ItInstEnd - ItCurr));
+			if (pConstInstanceData)
+			{
+				NOT_IMPLEMENTED;
+				// Write per-instance params into a CB
+
+				for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+				{
+					GPU.SetRenderState((*pPasses)[i]);
+					GPU.Draw(*pGroup/*, ItInstEnd - ItCurr*/);
+				}
+			}
+			else
+			{
+				// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
+				if (InstanceVB.IsNullPtr())
+				{
+					PVertexLayout VLInstanceDataOnly = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount());
+					InstanceVB = GPU.CreateVertexBuffer(*VLInstanceDataOnly, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
+				}
+
+				if (!pVLInstanced)
+				{
+					IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
+					if (VLIdx == INVALID_INDEX)
+					{
+						UPTR BaseComponentCount = pVL->GetComponentCount();
+						UPTR DescComponentCount = BaseComponentCount + InstanceDataDecl.GetCount();
+						CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
+						memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
+						memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount() * sizeof(CVertexComponent));
+
+						PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
+
+						_freea(pInstancedDecl);
+
+						pVLInstanced = VLInstanced.GetUnsafe();
+						n_assert_dbg(pVLInstanced);
+						InstancedLayouts.Add(pVL, VLInstanced);
+					}
+					else pVLInstanced = InstancedLayouts.ValueAt(VLIdx).GetUnsafe();
+				}
+
+				GPU.SetVertexLayout(pVLInstanced);
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), true);
+
+				void* pInstData;
+				n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?
+				CArray<CRenderNode>::CIterator ItInstCurr = ItCurr;
+				UPTR InstanceCount = 0;
+				while (ItInstCurr != ItInstEnd)
+				{
+					memcpy(pInstData, ItInstCurr->Transform.m, sizeof(matrix44));
+					pInstData = (char*)pInstData + sizeof(matrix44);
+					++InstanceCount;
+					++ItInstCurr;
+
+					if (InstanceCount == MaxInstanceCount)
+					{
+						GPU.UnmapResource(*InstanceVB);
+						for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+						{
+							GPU.SetRenderState((*pPasses)[i]);
+							GPU.Draw(*pGroup, InstanceCount);
+						}
+						InstanceCount = 0;
+						if (ItInstCurr == ItInstEnd) break;
+						n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?
+					}
+				}
+
+				//???!!!what if 1 left?! system will try to render non-instanced!
+				//may leave at least 2 instances if such a situation occurs, or render the last instance as a single (non-inst) from a main loop
+				if (InstanceCount)
+				{
+					//!!!FIXME!
+					n_assert(InstanceCount > 1); //!!!implement properly!
+
+					GPU.UnmapResource(*InstanceVB);
+					for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+					{
+						GPU.SetRenderState((*pPasses)[i]);
+						GPU.Draw(*pGroup, InstanceCount);
+					}
+				}
+			}
+
+			Sys::DbgOut("CModel rendered instanced, tech '%s', group 0x%X, instances: %d\n", pTech->GetName().CStr(), pGroup, (ItInstEnd - ItCurr));
 
 			ItCurr = ItInstEnd;
 		}
 		else
 		{
-			//!!!DBG TMP!
-			if (ItInstEnd - ItCurr > 1) Sys::DbgOut("Instancing might be possible, instances: %d\n", (ItInstEnd - ItCurr));
-
 			if (pTech != pCurrTech)
 			{
 				pConstWorldMatrix = pTech->GetConstant(CStrID("WorldMatrix"));
@@ -183,6 +294,8 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 				//!!!DBG TMP!
 				Sys::DbgOut("Tech params requested by ID\n");
 			}
+
+			GPU.SetVertexLayout(pVL);
 
 			for (; ItCurr != ItInstEnd; ++ItCurr)
 			{
@@ -226,7 +339,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 					GPU.Draw(*pGroup);
 				}
 
-				Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X, primitives: %d\n", ItCurr->pTech->GetName().CStr(), pGroup, pGroup->IndexCount);
+				Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X, primitives: %d\n", pTech->GetName().CStr(), pGroup, pGroup->IndexCount);
 			}
 		}
 

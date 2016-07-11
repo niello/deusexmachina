@@ -217,6 +217,10 @@ void CD3D9GPUDriver::Release()
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
 
+	//for (int i = 1; i < MaxRenderTargetCount; ++i)
+	//	pD3DDevice->SetRenderTarget(i, NULL);
+	pD3DDevice->SetDepthStencilSurface(NULL);
+
 	SAFE_FREE_ALIGNED(pCurrShaderConsts);
 	pCurrVSFloat4 = NULL;
 	pCurrVSInt4 = NULL;
@@ -229,17 +233,12 @@ void CD3D9GPUDriver::Release()
 	CurrSS.SetSize(0);
 	CurrTex.SetSize(0);
 	CurrVB.SetSize(0);
-	CurrVBOffset.SetSize(0);
 	VertexLayouts.Clear();
 	CurrRT.SetSize(0);
 
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
-
-	//for (int i = 1; i < MaxRenderTargetCount; ++i)
-	//	pD3DDevice->SetRenderTarget(i, NULL);
-	pD3DDevice->SetDepthStencilSurface(NULL);
 
 	//EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
 
@@ -923,11 +922,17 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 	FeatureLevel = GPU_Level_D3D9_3;
 
 	CurrRT.SetSize(D3DCaps.NumSimultaneousRTs);
-	CurrVB.SetSize(D3DCaps.MaxStreams);
-	CurrVBOffset.SetSize(D3DCaps.MaxStreams);
 	CurrCB.SetSize(2 * CB_Slot_Count);
 	CurrSS.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
 	CurrTex.SetSize(SM30_PS_SamplerCount + SM30_VS_SamplerCount);
+
+	CurrVB.SetSize(D3DCaps.MaxStreams);
+	for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
+	{
+		CVBRec& VBRec = CurrVB[i];
+		VBRec.Offset = 0;
+		VBRec.Frequency = 1;
+	}
 
 	UPTR ConstsSizeTotal =
 		(D3DCaps.MaxVertexShaderConst + SM30_PS_Float4Count) * sizeof(float) * 4 +
@@ -1513,17 +1518,19 @@ bool CD3D9GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
+bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex)
 {
 	if (Index >= CurrVB.GetCount() || (pVB && OffsetVertex >= pVB->GetVertexCount())) FAIL;
 
-	if (CurrVB[Index].GetUnsafe() == pVB && CurrVBOffset[Index] == OffsetVertex) OK;
+	CVBRec& VBRec = CurrVB[Index];
+	if (VBRec.VB.GetUnsafe() == pVB && VBRec.Offset == OffsetVertex) OK;
 
 	IDirect3DVertexBuffer9* pD3DVB = pVB ? ((CD3D9VertexBuffer*)pVB)->GetD3DBuffer() : NULL;
 	UPTR VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
 	if (FAILED(pD3DDevice->SetStreamSource(Index, pD3DVB, VertexSize * OffsetVertex, VertexSize))) FAIL;
-	CurrVB[Index] = (CD3D9VertexBuffer*)pVB;
-	CurrVBOffset[Index] = OffsetVertex;
+	VBRec.VB = (CD3D9VertexBuffer*)pVB;
+	VBRec.Offset = OffsetVertex;
+	CurrVBInstanced.SetTo(1 << Index, InstanceData);
 
 	OK;
 }
@@ -1780,24 +1787,15 @@ bool CD3D9GPUDriver::BeginFrame()
 {
 	n_assert_dbg(!IsInsideFrame);
 	if (!pD3DDevice) FAIL;
-	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
-	return IsInsideFrame;
 
-//	PrimsRendered = 0;
-//	DIPsRendered = 0;
-//
-//	//???where? once per frame shader change
-//	if (!SharedShader.IsValid())
-//	{
-//		SharedShader = ShaderMgr.GetTypedResource(CStrID("Shared"));
-//		n_assert(SharedShader->IsLoaded());
-//		hLightAmbient = SharedShader->GetVarHandleByName(CStrID("LightAmbient"));
-//		hEyePos = SharedShader->GetVarHandleByName(CStrID("EyePos"));
-//		hViewProj = SharedShader->GetVarHandleByName(CStrID("ViewProjection"));
-//	}
-//
-//	// CEGUI D3D9 renderer overwrites this value without restoring it, so restore each frame
-//	pD3DDevice->SetRenderState(D3DRS_FILLMODE, Wireframe ? D3DFILL_WIREFRAME : D3DFILL_SOLID);
+	IsInsideFrame = SUCCEEDED(pD3DDevice->BeginScene());
+
+#ifdef DEM_STATS
+	PrimitivesRendered = 0;
+	DrawsRendered = 0;
+#endif
+
+	return IsInsideFrame;
 }
 //---------------------------------------------------------------------
 
@@ -1890,7 +1888,44 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 
 	if (InstanceCount > 1)
 	{
-		NOT_IMPLEMENTED_MSG("INSTANCING FOR D3D9!!!");
+		UINT VertexDataFreq;
+		UINT InstanceDataFreq;
+		if (PrimGroup.IndexCount > 0)
+		{
+			VertexDataFreq = D3DSTREAMSOURCE_INDEXEDDATA | InstanceCount;
+			InstanceDataFreq = D3DSTREAMSOURCE_INSTANCEDATA | 1;
+		}
+		else
+		{
+			VertexDataFreq = 1;
+			InstanceDataFreq = PrimGroup.VertexCount;
+		}
+
+		for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
+		{
+			CVBRec& VBRec = CurrVB[i];
+			if (VBRec.VB.IsValidPtr())
+			{
+				UINT Freq = CurrVBInstanced.Is(1 << i) ? InstanceDataFreq : VertexDataFreq;
+				if (VBRec.Frequency != Freq)
+				{
+					pD3DDevice->SetStreamSourceFreq(i, Freq);
+					VBRec.Frequency = Freq;
+				}
+			}
+		}
+	}
+	else
+	{
+		for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
+		{
+			CVBRec& VBRec = CurrVB[i];
+			if (VBRec.VB.IsValidPtr() && VBRec.Frequency != 1)
+			{
+				pD3DDevice->SetStreamSourceFreq(i, 1);
+				VBRec.Frequency = 1;
+			}
+		}
 	}
 
 	D3DPRIMITIVETYPE D3DPrimType;
@@ -1911,7 +1946,6 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 	if (PrimGroup.IndexCount > 0)
 	{
 		n_assert_dbg(CurrIB.IsValidPtr());
-		//n_assert_dbg(!InstanceCount || CurrVB[0].IsValid());
 		hr = pD3DDevice->DrawIndexedPrimitive(	D3DPrimType,
 												0,
 												PrimGroup.FirstVertex,
@@ -1921,12 +1955,13 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 	}
 	else
 	{
-		//n_assert2_dbg(!InstanceCount, "Non-indexed instanced rendereng is not supported by design!");
 		hr = pD3DDevice->DrawPrimitive(D3DPrimType, PrimGroup.FirstVertex, PrimCount);
 	}
 
-	//PrimsRendered += InstanceCount ? InstanceCount * PrimCount : PrimCount;
-	//++DIPsRendered;
+#ifdef DEM_STATS
+	PrimitivesRendered += InstanceCount * PrimCount;
+	++DrawsRendered;
+#endif
 
 	return SUCCEEDED(hr);
 }

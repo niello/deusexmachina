@@ -56,6 +56,9 @@ struct CRenderQueueCmp_Material
 
 bool CRenderPhaseGeometry::Render(CView& View)
 {
+	//!!!DBG TMP!
+	Sys::DbgOut("--- CRenderPhaseGeometry ---\n");
+
 	if (!View.pSPS || !View.GetCamera()) OK;
 
 	View.UpdateVisibilityCache();
