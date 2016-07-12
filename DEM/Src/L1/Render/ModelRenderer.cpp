@@ -33,6 +33,7 @@ CModelRenderer::CModelRenderer()
 		Cmp.Format = VCFmt_Float32_4;
 		Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Cmp.PerInstanceData = true;
 	}
 
 	//!!!DBG TMP! //???where to define?
@@ -119,7 +120,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 			n_assert_dbg(pMesh);
 			CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
 			n_assert_dbg(pVB);
-			GPU.SetVertexBuffer(0, pVB, false);
+			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pModel->Mesh->GetIndexBuffer().GetUnsafe());
 			pCurrMesh = pMesh;
 
@@ -209,8 +210,8 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 				// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
 				if (InstanceVB.IsNullPtr())
 				{
-					PVertexLayout VLInstanceDataOnly = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount());
-					InstanceVB = GPU.CreateVertexBuffer(*VLInstanceDataOnly, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
+					PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount());
+					InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
 				}
 
 				if (!pVLInstanced)
@@ -236,7 +237,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 				}
 
 				GPU.SetVertexLayout(pVLInstanced);
-				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), true);
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe());
 
 				void* pInstData;
 				n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?

@@ -98,7 +98,7 @@ public:
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect) = 0;
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) = 0;
-	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex = 0) = 0;
+	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0) = 0;
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB) = 0;
 	//virtual bool				SetInstanceBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Instances, UPTR OffsetVertex = 0) = 0;
 	virtual bool				SetRenderState(CRenderState* pState) = 0;

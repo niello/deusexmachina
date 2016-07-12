@@ -104,9 +104,9 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	n_assert(LinearSampler.IsValidPtr());
 
 	Render::CVertexComponent Components[] = {
-			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0 },
-			{ Render::VCSem_Color, NULL, 0, Render::VCFmt_UInt8_4_Norm, 0, 12 },
-			{ Render::VCSem_TexCoord, NULL, 0, Render::VCFmt_Float32_2, 0, 16 } };
+			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0, false },
+			{ Render::VCSem_Color, NULL, 0, Render::VCFmt_UInt8_4_Norm, 0, 12, false },
+			{ Render::VCSem_TexCoord, NULL, 0, Render::VCFmt_Float32_2, 0, 16, false } };
 
 	VertexLayout = GPU->CreateVertexLayout(Components, sizeof_array(Components));
 	n_assert(VertexLayout.IsValidPtr());

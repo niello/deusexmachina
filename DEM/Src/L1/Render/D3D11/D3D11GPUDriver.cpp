@@ -823,7 +823,7 @@ bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex)
+bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
 {
 	if (Index >= CurrVB.GetCount()) FAIL;
 	if (CurrVB[Index].GetUnsafe() == pVB) OK;
@@ -1564,8 +1564,16 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 		DeclElement.InputSlot = StreamIndex;
 		DeclElement.AlignedByteOffset =
 			(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? D3D11_APPEND_ALIGNED_ELEMENT : Component.OffsetInVertex;
-		DeclElement.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-		DeclElement.InstanceDataStepRate = 0;
+		if (Component.PerInstanceData)
+		{
+			DeclElement.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+			DeclElement.InstanceDataStepRate = 1;
+		}
+		else
+		{
+			DeclElement.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+			DeclElement.InstanceDataStepRate = 0;
+		}
 	}
 
 	PD3D11VertexLayout Layout = n_new(CD3D11VertexLayout);

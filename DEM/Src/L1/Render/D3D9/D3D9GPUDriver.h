@@ -73,7 +73,6 @@ protected:
 
 	PD3D9VertexLayout					CurrVL;
 	CFixedArray<CVBRec>					CurrVB;
-	Data::CFlags						CurrVBInstanced;	// Bit (1 << stream index) is set if VB contains per-instance data
 	PD3D9IndexBuffer					CurrIB;
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
@@ -187,7 +186,7 @@ public:
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect);
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
-	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex = 0);
+	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0);
 	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
 	virtual bool				SetRenderState(CRenderState* pState);
 	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT);

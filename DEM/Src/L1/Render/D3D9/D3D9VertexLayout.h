@@ -17,13 +17,14 @@ class CD3D9VertexLayout: public CVertexLayout
 
 protected:
 
-	IDirect3DVertexDeclaration9* pDecl;
+	IDirect3DVertexDeclaration9*	pDecl;
+	U32								InstanceStreamFlags;	// (1 << StreamIndex) is set if it is an instance data stream
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9VertexLayout(): pDecl(NULL) {}
+	CD3D9VertexLayout(): pDecl(NULL), InstanceStreamFlags(0) {}
 	virtual ~CD3D9VertexLayout() { InternalDestroy(); }
 
 	bool							Create(const CVertexComponent* pComponents, UPTR Count, IDirect3DVertexDeclaration9* pD3DDecl);
@@ -31,6 +32,7 @@ public:
 	virtual bool					IsValid() const { return !!pDecl; }
 
 	IDirect3DVertexDeclaration9*	GetD3DVertexDeclaration() const { return pDecl; }
+	U32								GetInstanceStreamFlags() const { return InstanceStreamFlags; }
 };
 
 typedef Ptr<CD3D9VertexLayout> PD3D9VertexLayout;

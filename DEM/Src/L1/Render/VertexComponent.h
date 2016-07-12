@@ -55,6 +55,7 @@ struct CVertexComponent
 	EVertexComponentFormat		Format;
 	U32							Stream;
 	U32							OffsetInVertex;
+	bool						PerInstanceData;
 
 	const char*	GetSemanticString() const { n_assert_dbg(Semantic < VCSem_Invalid); return Semantic >= VCSem_UserDefined ? UserDefinedName : SemanticNames[Semantic]; }
 	const char*	GetFormatString() const { n_assert_dbg(Format < VCFmt_Invalid); return FormatNames[Format]; }

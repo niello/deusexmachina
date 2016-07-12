@@ -1511,14 +1511,20 @@ bool CD3D9GPUDriver::GetScissorRect(UPTR Index, Data::CRect& OutScissorRect)
 bool CD3D9GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 {
 	if (CurrVL.GetUnsafe() == pVLayout) OK;
-	IDirect3DVertexDeclaration9* pDecl = pVLayout ? ((CD3D9VertexLayout*)pVLayout)->GetD3DVertexDeclaration() : NULL;
+	IDirect3DVertexDeclaration9* pDecl;
+	if (pVLayout)
+	{
+		pDecl = ((CD3D9VertexLayout*)pVLayout)->GetD3DVertexDeclaration();
+		n_assert_dbg(pDecl); // Must not set instance-only layouts
+	}
+	else pDecl = NULL;
 	if (FAILED(pD3DDevice->SetVertexDeclaration(pDecl))) FAIL;
 	CurrVL = (CD3D9VertexLayout*)pVLayout;
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool InstanceData, UPTR OffsetVertex)
+bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
 {
 	if (Index >= CurrVB.GetCount() || (pVB && OffsetVertex >= pVB->GetVertexCount())) FAIL;
 
@@ -1530,7 +1536,6 @@ bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, bool Instan
 	if (FAILED(pD3DDevice->SetStreamSource(Index, pD3DVB, VertexSize * OffsetVertex, VertexSize))) FAIL;
 	VBRec.VB = (CD3D9VertexBuffer*)pVB;
 	VBRec.Offset = OffsetVertex;
-	CurrVBInstanced.SetTo(1 << Index, InstanceData);
 
 	OK;
 }
@@ -1884,7 +1889,7 @@ void CD3D9GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags
 
 bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 {
-	n_assert_dbg(pD3DDevice && InstanceCount && IsInsideFrame);
+	n_assert_dbg(pD3DDevice && InstanceCount && IsInsideFrame && CurrVL.IsValidPtr());
 
 	if (InstanceCount > 1)
 	{
@@ -1901,12 +1906,13 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 			InstanceDataFreq = PrimGroup.VertexCount;
 		}
 
+		U32 InstanceStreamFlags = CurrVL.GetUnsafe()->GetInstanceStreamFlags();
 		for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
 		{
 			CVBRec& VBRec = CurrVB[i];
 			if (VBRec.VB.IsValidPtr())
 			{
-				UINT Freq = CurrVBInstanced.Is(1 << i) ? InstanceDataFreq : VertexDataFreq;
+				UINT Freq = (InstanceStreamFlags & (1 << i)) ? InstanceDataFreq : VertexDataFreq;
 				if (VBRec.Frequency != Freq)
 				{
 					pD3DDevice->SetStreamSourceFreq(i, Freq);
@@ -1983,79 +1989,91 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 	UPTR* StreamOffset = (UPTR*)_malloca(D3DCaps.MaxStreams * sizeof(UPTR));
 	ZeroMemory(StreamOffset, D3DCaps.MaxStreams * sizeof(UPTR));
 
-	UPTR i = 0;
-	for (i = 0; i < Count; ++i)
+	bool InstanceDataOnly = true;
+	for (UPTR i = 0; i < Count; ++i)
 	{
-		const CVertexComponent& Component = pComponents[i];
-
-		WORD StreamIndex = (WORD)Component.Stream;
-		if (StreamIndex >= D3DCaps.MaxStreams)
+		if (!pComponents[i].PerInstanceData)
 		{
-			_freea(StreamOffset);
-			return NULL;
+			InstanceDataOnly = false;
+			break;
 		}
-
-		D3DVERTEXELEMENT9& DeclElement = DeclData[i];
-
-		DeclElement.Stream = StreamIndex;
-
-		DeclElement.Offset =
-			(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? (WORD)StreamOffset[StreamIndex] : (WORD)Component.OffsetInVertex;
-		StreamOffset[StreamIndex] = DeclElement.Offset + Component.GetSize();
-
-		switch (Component.Format)
-		{
-			case VCFmt_Float32_1:		DeclElement.Type = D3DDECLTYPE_FLOAT1; break;
-			case VCFmt_Float32_2:		DeclElement.Type = D3DDECLTYPE_FLOAT2; break;
-			case VCFmt_Float32_3:		DeclElement.Type = D3DDECLTYPE_FLOAT3; break;
-			case VCFmt_Float32_4:		DeclElement.Type = D3DDECLTYPE_FLOAT4; break;
-			case VCFmt_Float16_2:		DeclElement.Type = D3DDECLTYPE_FLOAT16_2; break;
-			case VCFmt_Float16_4:		DeclElement.Type = D3DDECLTYPE_FLOAT16_4; break;
-			case VCFmt_UInt8_4:			DeclElement.Type = D3DDECLTYPE_UBYTE4; break;
-			case VCFmt_UInt8_4_Norm:	DeclElement.Type = D3DDECLTYPE_UBYTE4N; break;
-			case VCFmt_SInt16_2:		DeclElement.Type = D3DDECLTYPE_SHORT2; break;
-			case VCFmt_SInt16_4:		DeclElement.Type = D3DDECLTYPE_SHORT4; break;
-			case VCFmt_SInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT2N; break;
-			case VCFmt_SInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT4N; break;
-			case VCFmt_UInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT2N; break;
-			case VCFmt_UInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT4N; break;
-			default:
-			{
-				_freea(StreamOffset);
-				return NULL;
-			}
-		}
-
-		DeclElement.Method = D3DDECLMETHOD_DEFAULT;
-
-		//???D3DDECLUSAGE_PSIZE?
-		switch (Component.Semantic)
-		{
-			case VCSem_Position:	DeclElement.Usage = D3DDECLUSAGE_POSITION; break;
-			case VCSem_Normal:		DeclElement.Usage = D3DDECLUSAGE_NORMAL; break;
-			case VCSem_Tangent:		DeclElement.Usage = D3DDECLUSAGE_TANGENT; break;
-			case VCSem_Bitangent:	DeclElement.Usage = D3DDECLUSAGE_BINORMAL; break;
-			case VCSem_TexCoord:	DeclElement.Usage = D3DDECLUSAGE_TEXCOORD; break;
-			case VCSem_Color:		DeclElement.Usage = D3DDECLUSAGE_COLOR; break;
-			case VCSem_BoneWeights:	DeclElement.Usage = D3DDECLUSAGE_BLENDWEIGHT; break;
-			case VCSem_BoneIndices:	DeclElement.Usage = D3DDECLUSAGE_BLENDINDICES; break;
-			default:
-			{
-				_freea(StreamOffset);
-				return NULL;
-			}
-		}
-
-		DeclElement.UsageIndex = (BYTE)Component.Index;
 	}
 
-	_freea(StreamOffset);
-
-	DeclData[i].Stream = 0xff;
-	DeclData[i].Type = D3DDECLTYPE_UNUSED;
-
 	IDirect3DVertexDeclaration9* pDecl = NULL;
-	if (FAILED(pD3DDevice->CreateVertexDeclaration(DeclData, &pDecl))) return NULL;
+	if (!InstanceDataOnly)
+	{
+		for (UPTR i = 0; i < Count; ++i)
+		{
+			const CVertexComponent& Component = pComponents[i];
+
+			WORD StreamIndex = (WORD)Component.Stream;
+			if (StreamIndex >= D3DCaps.MaxStreams)
+			{
+				_freea(StreamOffset);
+				return NULL;
+			}
+
+			D3DVERTEXELEMENT9& DeclElement = DeclData[i];
+
+			DeclElement.Stream = StreamIndex;
+
+			DeclElement.Offset =
+				(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? (WORD)StreamOffset[StreamIndex] : (WORD)Component.OffsetInVertex;
+			StreamOffset[StreamIndex] = DeclElement.Offset + Component.GetSize();
+
+			switch (Component.Format)
+			{
+				case VCFmt_Float32_1:		DeclElement.Type = D3DDECLTYPE_FLOAT1; break;
+				case VCFmt_Float32_2:		DeclElement.Type = D3DDECLTYPE_FLOAT2; break;
+				case VCFmt_Float32_3:		DeclElement.Type = D3DDECLTYPE_FLOAT3; break;
+				case VCFmt_Float32_4:		DeclElement.Type = D3DDECLTYPE_FLOAT4; break;
+				case VCFmt_Float16_2:		DeclElement.Type = D3DDECLTYPE_FLOAT16_2; break;
+				case VCFmt_Float16_4:		DeclElement.Type = D3DDECLTYPE_FLOAT16_4; break;
+				case VCFmt_UInt8_4:			DeclElement.Type = D3DDECLTYPE_UBYTE4; break;
+				case VCFmt_UInt8_4_Norm:	DeclElement.Type = D3DDECLTYPE_UBYTE4N; break;
+				case VCFmt_SInt16_2:		DeclElement.Type = D3DDECLTYPE_SHORT2; break;
+				case VCFmt_SInt16_4:		DeclElement.Type = D3DDECLTYPE_SHORT4; break;
+				case VCFmt_SInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT2N; break;
+				case VCFmt_SInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_SHORT4N; break;
+				case VCFmt_UInt16_2_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT2N; break;
+				case VCFmt_UInt16_4_Norm:	DeclElement.Type = D3DDECLTYPE_USHORT4N; break;
+				default:
+				{
+					_freea(StreamOffset);
+					return NULL;
+				}
+			}
+
+			DeclElement.Method = D3DDECLMETHOD_DEFAULT;
+
+			//???D3DDECLUSAGE_PSIZE?
+			switch (Component.Semantic)
+			{
+				case VCSem_Position:	DeclElement.Usage = D3DDECLUSAGE_POSITION; break;
+				case VCSem_Normal:		DeclElement.Usage = D3DDECLUSAGE_NORMAL; break;
+				case VCSem_Tangent:		DeclElement.Usage = D3DDECLUSAGE_TANGENT; break;
+				case VCSem_Bitangent:	DeclElement.Usage = D3DDECLUSAGE_BINORMAL; break;
+				case VCSem_TexCoord:	DeclElement.Usage = D3DDECLUSAGE_TEXCOORD; break;
+				case VCSem_Color:		DeclElement.Usage = D3DDECLUSAGE_COLOR; break;
+				case VCSem_BoneWeights:	DeclElement.Usage = D3DDECLUSAGE_BLENDWEIGHT; break;
+				case VCSem_BoneIndices:	DeclElement.Usage = D3DDECLUSAGE_BLENDINDICES; break;
+				default:
+				{
+					_freea(StreamOffset);
+					return NULL;
+				}
+			}
+
+			DeclElement.UsageIndex = (BYTE)Component.Index;
+		}
+
+		_freea(StreamOffset);
+
+		DeclData[Count].Stream = 0xff;
+		DeclData[Count].Type = D3DDECLTYPE_UNUSED;
+
+		if (FAILED(pD3DDevice->CreateVertexDeclaration(DeclData, &pDecl))) return NULL;
+	}
 
 	PD3D9VertexLayout Layout = n_new(CD3D9VertexLayout);
 	if (!Layout->Create(pComponents, Count, pDecl))
