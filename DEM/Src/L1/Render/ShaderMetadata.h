@@ -45,6 +45,7 @@ public:
 	virtual HResource			GetResourceHandle(CStrID ID) const = 0;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const = 0;
 	virtual EConstType			GetConstType(HConst hConst) const = 0;
+	virtual U32					GetConstElementCount(HConst hConst) const = 0;
 
 	//???IShaderVariable* CreateVariable(HConst hConst)? cache offset, size etc inside a variable object
 };

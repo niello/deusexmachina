@@ -144,6 +144,7 @@ protected:
 	bool								InitSwapChainRenderTarget(CD3D11SwapChain& SC);
 	void								Release();
 	PConstantBuffer						InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData);
+	bool								InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instanced, UPTR InstanceCount);
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
 	static EGPUDriverType				GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
@@ -220,7 +221,8 @@ public:
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual void				ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil);
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1);
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) { return InternalDraw(PrimGroup, false, 1); }
+	virtual bool				DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount) { return InternalDraw(PrimGroup, true, InstanceCount); }
 
 	//can set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
 	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.

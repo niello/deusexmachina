@@ -75,6 +75,7 @@ public:
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;
 	virtual EConstType			GetConstType(HConst hConst) const;
+	virtual U32					GetConstElementCount(HConst hConst) const;
 };
 
 }

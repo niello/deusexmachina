@@ -1029,9 +1029,9 @@ void CD3D11GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flag
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
+bool CD3D11GPUDriver::InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instanced, UPTR InstanceCount)
 {
-	n_assert_dbg(pD3DDevice && InstanceCount); // && IsInsideFrame);
+	n_assert_dbg(pD3DDevice && InstanceCount && (Instanced || InstanceCount == 1));
 
 	if (CurrPT != PrimGroup.Topology)
 	{
@@ -1055,14 +1055,14 @@ bool CD3D11GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 
 	if (PrimGroup.IndexCount > 0)
 	{
-		if (InstanceCount > 1)
+		if (Instanced)
 			pD3DImmContext->DrawIndexedInstanced(PrimGroup.IndexCount, InstanceCount, PrimGroup.FirstIndex, 0, 0);
 		else
 			pD3DImmContext->DrawIndexed(PrimGroup.IndexCount, PrimGroup.FirstIndex, 0);
 	}
 	else
 	{
-		if (InstanceCount > 1)
+		if (Instanced)
 			pD3DImmContext->DrawInstanced(PrimGroup.VertexCount, InstanceCount, PrimGroup.FirstVertex, 0);
 		else
 			pD3DImmContext->Draw(PrimGroup.VertexCount, PrimGroup.FirstVertex);
@@ -3028,14 +3028,15 @@ bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, 
 	if (ElementIndex)
 	{
 		CUSMBufferMeta* pBufMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
-		if (!pBufMeta) FAIL;
-		if (pBufMeta->Type == USMBuffer_Structured)
-			Offset += pBufMeta->Size * ElementIndex;
-		else if (pBufMeta->Type == USMBuffer_Texture)
-			Offset += pMeta->ElementSize * pMeta->ElementCount * ElementIndex;
+		n_assert_dbg(pBufMeta);
+		switch (pBufMeta->Type)
+		{
+			case USMBuffer_Constant:	Offset += pMeta->ElementSize * ElementIndex; break;
+			case USMBuffer_Texture:		Offset += pMeta->ElementSize * pMeta->ElementCount * ElementIndex; break;
+			case USMBuffer_Structured:	Offset += pBufMeta->Size * ElementIndex; break;
+		}
 	}
 
-	//!!!structured buffer must validate Offset against its size inside!
 	CB11.WriteData(Offset, pData, Size);
 
 	OK;

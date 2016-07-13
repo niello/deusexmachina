@@ -179,12 +179,6 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 		if (HardwareInstancing)
 		{
-			n_assert_dbg(MaxInstanceCount);
-
-			//!!!DBG TMP!
-			if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCount)
-				Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCount);
-
 			if (pTech != pCurrTech)
 			{
 				pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
@@ -196,17 +190,55 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 			if (pConstInstanceData)
 			{
-				NOT_IMPLEMENTED;
-				// Write per-instance params into a CB
+				UPTR MaxInstanceCountConst = pConstInstanceData->ElementCount;
+				n_assert_dbg(MaxInstanceCountConst > 1);
 
-				for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+				//!!!DBG TMP!
+				if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCountConst)
+					Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCountConst);
+
+				CEffectConstSetValues PerInstanceConstValues;
+				PerInstanceConstValues.SetGPU(&GPU);
+				PerInstanceConstValues.RegisterConstantBuffer(pConstInstanceData->BufferHandle, NULL);
+
+				UPTR InstanceCount = 0;
+				while (ItCurr != ItInstEnd)
 				{
-					GPU.SetRenderState((*pPasses)[i]);
-					GPU.Draw(*pGroup/*, ItInstEnd - ItCurr*/);
+					PerInstanceConstValues.SetConstantValue(pConstInstanceData, InstanceCount, ItCurr->Transform.m, sizeof(matrix44));
+					++InstanceCount;
+					++ItCurr;
+
+					if (InstanceCount == MaxInstanceCountConst)
+					{
+						PerInstanceConstValues.ApplyConstantBuffers();
+						for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+						{
+							GPU.SetRenderState((*pPasses)[i]);
+							GPU.DrawInstanced(*pGroup, InstanceCount);
+						}
+						InstanceCount = 0;
+						if (ItCurr == ItInstEnd) break;
+					}
+				}
+
+				if (InstanceCount)
+				{
+					PerInstanceConstValues.ApplyConstantBuffers();
+					for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+					{
+						GPU.SetRenderState((*pPasses)[i]);
+						GPU.DrawInstanced(*pGroup, InstanceCount);
+					}
 				}
 			}
 			else
 			{
+				n_assert_dbg(MaxInstanceCount > 1);
+
+				//!!!DBG TMP!
+				if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCount)
+					Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCount);
+
 				// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
 				if (InstanceVB.IsNullPtr())
 				{
@@ -241,14 +273,13 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 				void* pInstData;
 				n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?
-				CArray<CRenderNode>::CIterator ItInstCurr = ItCurr;
 				UPTR InstanceCount = 0;
-				while (ItInstCurr != ItInstEnd)
+				while (ItCurr != ItInstEnd)
 				{
-					memcpy(pInstData, ItInstCurr->Transform.m, sizeof(matrix44));
+					memcpy(pInstData, ItCurr->Transform.m, sizeof(matrix44));
 					pInstData = (char*)pInstData + sizeof(matrix44);
 					++InstanceCount;
-					++ItInstCurr;
+					++ItCurr;
 
 					if (InstanceCount == MaxInstanceCount)
 					{
@@ -256,33 +287,26 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 						for (UPTR i = 0; i < pPasses->GetCount(); ++i)
 						{
 							GPU.SetRenderState((*pPasses)[i]);
-							GPU.Draw(*pGroup, InstanceCount);
+							GPU.DrawInstanced(*pGroup, InstanceCount);
 						}
 						InstanceCount = 0;
-						if (ItInstCurr == ItInstEnd) break;
+						if (ItCurr == ItInstEnd) break;
 						n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?
 					}
 				}
 
-				//???!!!what if 1 left?! system will try to render non-instanced!
-				//may leave at least 2 instances if such a situation occurs, or render the last instance as a single (non-inst) from a main loop
 				if (InstanceCount)
 				{
-					//!!!FIXME!
-					n_assert(InstanceCount > 1); //!!!implement properly!
-
 					GPU.UnmapResource(*InstanceVB);
 					for (UPTR i = 0; i < pPasses->GetCount(); ++i)
 					{
 						GPU.SetRenderState((*pPasses)[i]);
-						GPU.Draw(*pGroup, InstanceCount);
+						GPU.DrawInstanced(*pGroup, InstanceCount);
 					}
 				}
 			}
 
 			Sys::DbgOut("CModel rendered instanced, tech '%s', group 0x%X, instances: %d\n", pTech->GetName().CStr(), pGroup, (ItInstEnd - ItCurr));
-
-			ItCurr = ItInstEnd;
 		}
 		else
 		{

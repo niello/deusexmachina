@@ -1887,53 +1887,8 @@ void CD3D9GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
+UPTR CD3D9GPUDriver::InternalDraw(const CPrimitiveGroup& PrimGroup)
 {
-	n_assert_dbg(pD3DDevice && InstanceCount && IsInsideFrame && CurrVL.IsValidPtr());
-
-	if (InstanceCount > 1)
-	{
-		UINT VertexDataFreq;
-		UINT InstanceDataFreq;
-		if (PrimGroup.IndexCount > 0)
-		{
-			VertexDataFreq = D3DSTREAMSOURCE_INDEXEDDATA | InstanceCount;
-			InstanceDataFreq = D3DSTREAMSOURCE_INSTANCEDATA | 1;
-		}
-		else
-		{
-			VertexDataFreq = 1;
-			InstanceDataFreq = PrimGroup.VertexCount;
-		}
-
-		U32 InstanceStreamFlags = CurrVL.GetUnsafe()->GetInstanceStreamFlags();
-		for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
-		{
-			CVBRec& VBRec = CurrVB[i];
-			if (VBRec.VB.IsValidPtr())
-			{
-				UINT Freq = (InstanceStreamFlags & (1 << i)) ? InstanceDataFreq : VertexDataFreq;
-				if (VBRec.Frequency != Freq)
-				{
-					pD3DDevice->SetStreamSourceFreq(i, Freq);
-					VBRec.Frequency = Freq;
-				}
-			}
-		}
-	}
-	else
-	{
-		for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
-		{
-			CVBRec& VBRec = CurrVB[i];
-			if (VBRec.VB.IsValidPtr() && VBRec.Frequency != 1)
-			{
-				pD3DDevice->SetStreamSourceFreq(i, 1);
-				VBRec.Frequency = 1;
-			}
-		}
-	}
-
 	D3DPRIMITIVETYPE D3DPrimType;
 	UPTR PrimCount = (PrimGroup.IndexCount > 0) ? PrimGroup.IndexCount : PrimGroup.VertexCount;
 	switch (PrimGroup.Topology)
@@ -1943,7 +1898,7 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 		case Prim_LineStrip:	D3DPrimType = D3DPT_LINESTRIP; --PrimCount; break;
 		case Prim_TriList:		D3DPrimType = D3DPT_TRIANGLELIST; PrimCount /= 3; break;
 		case Prim_TriStrip:		D3DPrimType = D3DPT_TRIANGLESTRIP; PrimCount -= 2; break;
-		default:				Sys::Error("CD3D9GPUDriver::Draw() -> Invalid primitive topology!"); FAIL;
+		default:				Sys::Error("CD3D9GPUDriver::InternalDraw() -> Invalid primitive topology!"); FAIL;
 	}
 
 	ApplyShaderConstChanges();
@@ -1964,12 +1919,77 @@ bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
 		hr = pD3DDevice->DrawPrimitive(D3DPrimType, PrimGroup.FirstVertex, PrimCount);
 	}
 
+	return SUCCEEDED(hr) ? PrimCount : 0;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::Draw(const CPrimitiveGroup& PrimGroup)
+{
+	n_assert_dbg(pD3DDevice && IsInsideFrame && CurrVL.IsValidPtr());
+
+	for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
+	{
+		CVBRec& VBRec = CurrVB[i];
+		if (VBRec.VB.IsValidPtr() && VBRec.Frequency != 1)
+		{
+			pD3DDevice->SetStreamSourceFreq(i, 1);
+			VBRec.Frequency = 1;
+		}
+	}
+
+	UPTR PrimCount = InternalDraw(PrimGroup);
+	if (!PrimCount) FAIL;
+
+#ifdef DEM_STATS
+	PrimitivesRendered += PrimCount;
+	++DrawsRendered;
+#endif
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CD3D9GPUDriver::DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount)
+{
+	n_assert_dbg(pD3DDevice && InstanceCount && IsInsideFrame && CurrVL.IsValidPtr());
+
+	UINT VertexDataFreq;
+	UINT InstanceDataFreq;
+	if (PrimGroup.IndexCount > 0)
+	{
+		VertexDataFreq = D3DSTREAMSOURCE_INDEXEDDATA | InstanceCount;
+		InstanceDataFreq = D3DSTREAMSOURCE_INSTANCEDATA | 1;
+	}
+	else
+	{
+		VertexDataFreq = 1;
+		InstanceDataFreq = PrimGroup.VertexCount;
+	}
+
+	U32 InstanceStreamFlags = CurrVL.GetUnsafe()->GetInstanceStreamFlags();
+	for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
+	{
+		CVBRec& VBRec = CurrVB[i];
+		if (VBRec.VB.IsValidPtr())
+		{
+			UINT Freq = (InstanceStreamFlags & (1 << i)) ? InstanceDataFreq : VertexDataFreq;
+			if (VBRec.Frequency != Freq)
+			{
+				pD3DDevice->SetStreamSourceFreq(i, Freq);
+				VBRec.Frequency = Freq;
+			}
+		}
+	}
+
+	UPTR PrimCount = InternalDraw(PrimGroup);
+	if (!PrimCount) FAIL;
+
 #ifdef DEM_STATS
 	PrimitivesRendered += InstanceCount * PrimCount;
 	++DrawsRendered;
 #endif
 
-	return SUCCEEDED(hr);
+	OK;
 }
 //---------------------------------------------------------------------
 

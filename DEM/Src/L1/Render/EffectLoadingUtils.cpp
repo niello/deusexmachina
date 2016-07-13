@@ -57,6 +57,7 @@ bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLi
 		Rec.BufferHandle = pShaderMeta->GetConstBufferHandle(Rec.Handle);
 		Rec.ShaderType = (Render::EShaderType)ShaderType;
 		Rec.SizeInBytes = SizeInBytes;
+		Rec.ElementCount = pShaderMeta->GetConstElementCount(Rec.Handle);
 	}
 
 	if (!Reader.Read<U32>(ParamCount)) FAIL;

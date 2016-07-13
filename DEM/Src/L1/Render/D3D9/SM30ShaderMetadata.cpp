@@ -222,4 +222,12 @@ EConstType CSM30ShaderMetadata::GetConstType(HConst hConst) const
 }
 //---------------------------------------------------------------------
 
+U32 CSM30ShaderMetadata::GetConstElementCount(HConst hConst) const
+{
+	if (!hConst) return ConstType_Invalid;
+	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)HandleMgr.GetHandleData(hConst);
+	return pMeta->ElementCount;
+}
+//---------------------------------------------------------------------
+
 }

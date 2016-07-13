@@ -129,6 +129,7 @@ protected:
 	void						Release();
 	bool						FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR CurrConst, UPTR ApplyFlag, UPTR& FoundRangeStart, UPTR& FoundRangeEnd, CCBRec*& pFoundRec);
 	void						ApplyShaderConstChanges();
+	UPTR						InternalDraw(const CPrimitiveGroup& PrimGroup);
 
 	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
@@ -201,7 +202,8 @@ public:
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
 	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
 	virtual void				ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil);
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount = 1);
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup);
+	virtual bool				DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount);
 
 	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
 	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);

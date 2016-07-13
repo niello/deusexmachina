@@ -211,4 +211,12 @@ EConstType CUSMShaderMetadata::GetConstType(HConst hConst) const
 }
 //---------------------------------------------------------------------
 
+U32 CUSMShaderMetadata::GetConstElementCount(HConst hConst) const
+{
+	if (!hConst) return ConstType_Invalid;
+	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
+	return pMeta->ElementCount;
+}
+//---------------------------------------------------------------------
+
 }

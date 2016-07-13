@@ -341,6 +341,7 @@ struct CEffectConstant
 	HConst			Handle;
 	HConstBuffer	BufferHandle;
 	U32				SizeInBytes;
+	U32				ElementCount;
 };
 
 struct CEffectResource

@@ -73,8 +73,7 @@ inline const CPassList*	CTechnique::GetPasses(UPTR& LightCount) const
 
 inline const CEffectConstant* CTechnique::GetConstant(CStrID Name) const
 {
-	UPTR i = 0;
-	for (; i < Consts.GetCount(); ++i)
+	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
 		const CEffectConstant& CurrConst = Consts[i];
 		if (CurrConst.ID == Name) return &CurrConst;
@@ -86,21 +85,3 @@ inline const CEffectConstant* CTechnique::GetConstant(CStrID Name) const
 }
 
 #endif
-
-//PShaderParamsDesc		ParamsDesc;
-//CArray<PConstantBuffer>	ConstBuffers;		// References to constant buffers used by this tech, not used buffers are NULL
-
-//	//SetConst
-//	//SetResource
-//	//SetSampler
-//	//ApplyParams
-//	virtual void			SetBool(HShaderParam Handle, const bool* pValues, UPTR Count) = 0;
-//	virtual void			SetIntAsBool(HShaderParam Handle, const int* pValues, UPTR Count) = 0;
-//	virtual void			SetInt(HShaderParam Handle, const int* pValues, UPTR Count) = 0;
-//	virtual void			SetFloat(HShaderParam Handle, const float* pValues, UPTR Count) = 0;
-//	virtual void			SetVector4(HShaderParam Handle, const vector4* pValues, UPTR Count) = 0;
-//	virtual void			SetMatrix44(HShaderParam Handle, const matrix44* pValues, UPTR Count) = 0;
-//	//???need? virtual void			SetMatrix44Transpose(HShaderParam Handle, const matrix44* pValues, UPTR Count) = 0;
-////	virtual void			SetTexture(HShaderParam Handle, CTexture* pTexture) = 0;
-//	//???virtual void			SetBuffer(HShaderParam Handle, CTexture* pTexture) = 0;
-////	virtual void			SetSamplerState(HShaderParam Handle, CSamplerState* pSamplerState) = 0;
