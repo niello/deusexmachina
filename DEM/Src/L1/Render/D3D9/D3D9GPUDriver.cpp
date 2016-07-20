@@ -766,13 +766,17 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap) const
 	{
 		case Caps_VSTexFiltering_Linear:
 			return (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MINFLINEAR) && (D3DCaps.VertexTextureFilterCaps & D3DPTFILTERCAPS_MAGFLINEAR);
-		case Caps_VSTex_L16:
-			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
-																				GetD3DDriverType(Type),
-																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
-																				D3DUSAGE_QUERY_VERTEXTEXTURE,
-																				D3DRTYPE_TEXTURE,
-																				D3DFMT_L16));
+		case Caps_VSTex_R16:
+		{
+			// return SUCCEEDED(...) returns false for some reason
+			HRESULT hr = SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
+																						GetD3DDriverType(Type),
+																						D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
+																						D3DUSAGE_QUERY_VERTEXTEXTURE,
+																						D3DRTYPE_TEXTURE,
+																						D3DFMT_L16));
+			return SUCCEEDED(hr);
+		}
 		case Caps_ReadDepthAsTexture:
 			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
 																				GetD3DDriverType(Type),

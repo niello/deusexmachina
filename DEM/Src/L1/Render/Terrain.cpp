@@ -1,7 +1,10 @@
 #include "Terrain.h"
 
+#include <Render/Material.h>
+#include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <IO/IOServer.h> //???!!!move CDLOD reading into a loader!?
+#include <IO/PathUtils.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -14,8 +17,17 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 	{
 		case 'CDLD':
 		{
-			//HeightMap = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-			HeightMapUID = DataReader.Read<CStrID>();
+			CString RsrcURI("Terrain:");
+			RsrcURI += DataReader.Read<CStrID>().CStr();
+			RsrcURI += ".cdlod";
+			RCDLODData = ResourceMgr->RegisterResource(RsrcURI);
+			OK;
+		}
+		case 'MTRL':
+		{
+			CString RsrcID = DataReader.Read<CString>();
+			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+			RMaterial = ResourceMgr->RegisterResource(RsrcURI);
 			OK;
 		}
 		case 'TSSX':
@@ -28,41 +40,12 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 			InvSplatSizeZ = 1.f / DataReader.Read<float>();
 			OK;
 		}
-		case 'VARS':
-		{
-			short Count;
-			if (!DataReader.Read(Count)) FAIL;
-			for (short i = 0; i < Count; ++i)
-			{
-				CStrID VarName;
-				DataReader.Read(VarName);
-				//CShaderVar& Var = ShaderVars.Add(VarName);
-				//Var.SetName(VarName);
-				//DataReader.Read(Var.Value);
-				Data::CData Value = DataReader.Read<Data::CData>();
-			}
-			OK;
-		}
-		case 'TEXS':
-		{
-			short Count;
-			if (!DataReader.Read(Count)) FAIL;
-			for (short i = 0; i < Count; ++i)
-			{
-				CStrID VarName;
-				DataReader.Read(VarName);
-				//CShaderVar& Var = ShaderVars.Add(VarName);
-				//Var.SetName(VarName);
-				//Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-				CStrID URI = DataReader.Read<CStrID>();
-			}
-			OK;
-		}
 		default: FAIL;
 	}
 }
 //---------------------------------------------------------------------
 
+//???here?
 //CMesh* CTerrain::GetPatchMesh(UPTR Size)
 //{
 //	if (!IsPow2(Size) || Size < 2) return NULL;
@@ -131,77 +114,30 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 
 bool CTerrain::ValidateResources()
 {
-	IO::PStream CDLODFile = IOSrv->CreateStream(CString("Terrain:") + HeightMapUID.CStr() + ".cdlod");
-	if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
-	IO::CBinaryReader Reader(*CDLODFile);
+	if (!RCDLODData->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = RCDLODData->GetLoader();
+		if (Loader.IsNullPtr())
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CCDLODData>(PathUtils::GetExtension(RCDLODData->GetUID()));
+		ResourceMgr->LoadResourceSync(*RCDLODData, *Loader);
+		if (!RCDLODData->IsLoaded()) FAIL;
+	}
+	CDLODData = RCDLODData->GetObject<Render::CCDLODData>();
 
-	n_assert(Reader.Read<int>() == 'CDLD');	// Magic
-	n_assert(Reader.Read<int>() == 1);		// Version
+	//!!!if CDLOD will not include texture, just height data, create texture here, if not created!
 
-	Reader.Read(HFWidth);
-	Reader.Read(HFHeight);
-	Reader.Read(PatchSize);
-	Reader.Read(LODCount);
-	UPTR MinMaxDataSize = Reader.Read<UPTR>();
-	Reader.Read(VerticalScale);
-	Reader.Read(Box.Min.x);
-	Reader.Read(Box.Min.y);
-	Reader.Read(Box.Min.z);
-	Reader.Read(Box.Max.x);
-	Reader.Read(Box.Max.y);
-	Reader.Read(Box.Max.z);
+	if (!RMaterial->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = RMaterial->GetLoader();
+		if (Loader.IsNullPtr())
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RMaterial->GetUID()));
+		ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
+		n_assert(RMaterial->IsLoaded());
+	}
+	Material = RMaterial->GetObject<Render::CMaterial>();
 
-//	if (!HeightMap->IsLoaded())
-//	{
-//		//!!!write R32F variant!
-//		n_assert(RenderSrv->CheckCaps(Render::Caps_VSTex_L16));
-//
-//		if (!HeightMap->Create(Render::CTexture::Texture2D, D3DFMT_L16, HFWidth, HFHeight, 0, 1, Render::Usage_Immutable, Render::CPU_NoAccess))
-//			FAIL;
-//
-//		Render::CTexture::CMapInfo MapInfo;
-//		if (!HeightMap->Map(0, Map_Setup, MapInfo)) FAIL;
-//		CDLODFile.Read(MapInfo.pData, HFWidth * HFHeight * sizeof(unsigned short));
-//		HeightMap->Unmap(0);
-//	}
-//	else CDLODFile.Seek(HFWidth * HFHeight * sizeof(unsigned short), IO::Seek_Current);
-//
-//	pMinMaxData = (short*)n_malloc(MinMaxDataSize);
-//	CDLODFile.Read(pMinMaxData, MinMaxDataSize);
-//
-//	//???store dimensions along with a pointer?
-//	UPTR PatchesW = (HFWidth - 1 + PatchSize - 1) / PatchSize;
-//	UPTR PatchesH = (HFHeight - 1 + PatchSize - 1) / PatchSize;
-//	UPTR Offset = 0;
-//	CMinMaxMap* pMMMap = MinMaxMaps.Reserve(LODCount);
-//	for (UPTR LOD = 0; LOD < LODCount; ++LOD, ++pMMMap)
-//	{
-//		pMMMap->PatchesW = PatchesW;
-//		pMMMap->PatchesH = PatchesH;
-//		pMMMap->pData = pMinMaxData + Offset;
-//		Offset += PatchesW * PatchesH * 2;
-//		PatchesW = (PatchesW + 1) / 2;
-//		PatchesH = (PatchesH + 1) / 2;
-//	}
-//
-//	UPTR TopPatchSize = PatchSize << (LODCount - 1);
-//	TopPatchCountX = (HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
-//	TopPatchCountZ = (HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
-//
-//	static const CString StrTextures("Textures:");
-//
-//	for (int i = 0; i < ShaderVars.GetCount(); ++i)
-//	{
-//		CShaderVar& Var = ShaderVars.ValueAt(i);
-//		if (Var.Value.IsA<PTexture>())
-//		{
-//			PTexture Tex = Var.Value.GetValue<PTexture>();
-//			if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
-//		}
-//	}
-//
-//	PatchMesh = GetPatchMesh(PatchSize);
-//	QuarterPatchMesh = GetPatchMesh(PatchSize >> 1);
+	//	PatchMesh = GetPatchMesh(PatchSize);
+	//	QuarterPatchMesh = GetPatchMesh(PatchSize >> 1);
 
 	OK;
 }

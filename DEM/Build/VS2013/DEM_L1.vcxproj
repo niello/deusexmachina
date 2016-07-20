@@ -218,6 +218,8 @@
     <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
     <ClInclude Include="..\..\Src\L1\IO\Streams\ScopedStream.h" />
     <ClInclude Include="..\..\Src\L1\Physics\CollisionShapeLoader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\CDLODData.h" />
+    <ClInclude Include="..\..\Src\L1\Render\CDLODDataLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.h" />
@@ -482,6 +484,8 @@
     <ClCompile Include="..\..\Src\L1\IO\Streams\ScopedStream.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\CDLODData.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\CDLODDataLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11DriverFactory.cpp" />

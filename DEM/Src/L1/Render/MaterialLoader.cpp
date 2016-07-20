@@ -24,19 +24,19 @@ const Core::CRTTI& CMaterialLoader::GetResultType() const
 
 PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 {
-	if (GPU.IsNullPtr()) FAIL;
+	if (GPU.IsNullPtr()) return NULL;
 
 	IO::CBinaryReader Reader(Stream);
 
 	U32 Magic;
-	if (!Reader.Read<U32>(Magic) || Magic != 'MTRL') FAIL;
+	if (!Reader.Read<U32>(Magic) || Magic != 'MTRL') return NULL;
 
 	U32 Version;
-	if (!Reader.Read<U32>(Version)) FAIL;
+	if (!Reader.Read<U32>(Version)) return NULL;
 
 	CStrID EffectID;
-	if (!Reader.Read(EffectID)) FAIL;
-	if (!EffectID.IsValid()) FAIL;
+	if (!Reader.Read(EffectID)) return NULL;
+	if (!EffectID.IsValid()) return NULL;
 
 	CString RsrcURI("Effects:");
 	RsrcURI += EffectID.CStr();
@@ -49,11 +49,11 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		if (Loader.IsNullPtr())
 		{
 			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CEffect>(PathUtils::GetExtension(RsrcURI.CStr()));
-			if (Loader.IsNullPtr()) FAIL;
+			if (Loader.IsNullPtr()) return NULL;
 		}
 		Loader->As<Resources::CEffectLoader>()->GPU = GPU;
 		ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-		if (!Rsrc->IsLoaded()) FAIL;
+		if (!Rsrc->IsLoaded()) return NULL;
 	}
 
 	Render::PMaterial Mtl = n_new(Render::CMaterial);
@@ -67,7 +67,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	CDict<CStrID, Render::PSampler>	SamplerValues;
 	void*							pConstValueBuffer;	// Must be n_free()'d if not NULL
 
-	if (!LoadEffectParamValues(Reader, GPU, ConstValues, ResourceValues, SamplerValues, pConstValueBuffer)) FAIL;
+	if (!LoadEffectParamValues(Reader, GPU, ConstValues, ResourceValues, SamplerValues, pConstValueBuffer)) return NULL;
 
 	const CFixedArray<Render::CEffectConstant>& Consts = Mtl->Effect->GetMaterialConstants();
 	Mtl->ConstBuffers.SetSize(Mtl->Effect->GetMaterialConstantBufferCount());
@@ -92,7 +92,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 			pRec->Buffer = GPU->CreateConstantBuffer(Const.BufferHandle, Render::Access_CPU_Write); //!!!must be a RAM-only buffer!
 			++CurrCBCount;
 
-			if (!GPU->BeginShaderConstants(*pRec->Buffer.GetUnsafe())) FAIL;
+			if (!GPU->BeginShaderConstants(*pRec->Buffer.GetUnsafe())) return NULL;
 		}
 
 		IPTR Idx = ConstValues.FindIndex(Const.ID);
@@ -102,7 +102,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		if (pValue) //???fail if value is undefined? or fill with zeroes?
 		{
 			//???!!!add to SetShaderConstant() zero size support - autocalc?! tool-side validation!
-			if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Handle, 0, pValue, Const.SizeInBytes)) FAIL;
+			if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Handle, 0, pValue, Const.SizeInBytes)) return NULL;
 		}
 	}
 
@@ -112,7 +112,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		Render::CMaterial::CConstBufferRecord* pRec = &Mtl->ConstBuffers[BufIdx];
 		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
-		if (!GPU->CommitShaderConstants(*RAMBuffer.GetUnsafe())) FAIL; //!!!must not do any VRAM operations inside!
+		if (!GPU->CommitShaderConstants(*RAMBuffer.GetUnsafe())) return NULL; //!!!must not do any VRAM operations inside!
 
 		//???do only if current buffer doesn't support VRAM? DX9 will support, DX11 will not.
 		//if supports VRAM, can reuse as VRAM buffer without data copying between RAMBuffer and a new one.

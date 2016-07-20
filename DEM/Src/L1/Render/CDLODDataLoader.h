@@ -1,11 +1,10 @@
 #pragma once
-#ifndef __DEM_L1_MATERIAL_LOADER_H__
-#define __DEM_L1_MATERIAL_LOADER_H__
+#ifndef __DEM_L1_CDLOD_DATA_LOADER_H__
+#define __DEM_L1_CDLOD_DATA_LOADER_H__
 
 #include <Resources/ResourceLoader.h>
-#include <Data/Dictionary.h>
 
-// Loads render material from DEM "prm" format
+// Loads CDLOD terrain rendering data from DEM "cdlod" format
 
 namespace Render
 {
@@ -15,15 +14,15 @@ namespace Render
 namespace Resources
 {
 
-class CMaterialLoader: public CResourceLoader
+class CCDLODDataLoader: public CResourceLoader
 {
 	__DeclareClassNoFactory;
 
 public:
 
-	Render::PGPUDriver GPU;
+	Render::PGPUDriver GPU; // For heightfield texture only
 
-	virtual ~CMaterialLoader() {}
+	virtual ~CCDLODDataLoader() {}
 
 	virtual const Core::CRTTI&			GetResultType() const;
 	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
@@ -31,7 +30,7 @@ public:
 	virtual PResourceObject				Load(IO::CStream& Stream);
 };
 
-typedef Ptr<CMaterialLoader> PMaterialLoader;
+typedef Ptr<CCDLODDataLoader> PCDLODDataLoader;
 
 }
 

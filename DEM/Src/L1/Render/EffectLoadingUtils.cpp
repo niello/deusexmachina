@@ -232,6 +232,7 @@ bool LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CD
 			pValue = (char*)pOutConstValueBuffer + (U32)pValue;
 		}
 	}
+	else pOutConstValueBuffer = NULL;
 
 	OK;
 }

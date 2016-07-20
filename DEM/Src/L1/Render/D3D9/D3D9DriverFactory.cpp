@@ -97,6 +97,7 @@ D3DFORMAT CD3D9DriverFactory::PixelFormatToD3DFormat(EPixelFormat Format)
 		case PixelFmt_B8G8R8X8:					return D3DFMT_X8R8G8B8;
 		case PixelFmt_B8G8R8A8:					return D3DFMT_A8R8G8B8;
 		case PixelFmt_B5G6R5:					return D3DFMT_R5G6B5;
+		case PixelFmt_R16:						return D3DFMT_L16;
 		case PixelFmt_DXT1:						return D3DFMT_DXT1;
 		case PixelFmt_DXT3:						return D3DFMT_DXT3;
 		case PixelFmt_DXT5:						return D3DFMT_DXT5;

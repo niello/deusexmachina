@@ -401,7 +401,7 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	Effect->MaterialConstantBufferCount = MtlConstBuffers.GetCount();
 	MtlConstBuffers.Clear(true);
 
-	void* pVoidBuffer = NULL;
+	void* pVoidBuffer;
 	if (!LoadEffectParamValues(Reader, GPU, Effect->DefaultConsts, Effect->DefaultResources, Effect->DefaultSamplers, pVoidBuffer)) return NULL;
 	Effect->pMaterialConstDefaultValues = (char*)pVoidBuffer;
 

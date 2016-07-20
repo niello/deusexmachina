@@ -232,7 +232,7 @@ bool CD3D11GPUDriver::CheckCaps(ECaps Cap) const
 
 	switch (Cap)
 	{
-		case Caps_VSTex_L16:
+		case Caps_VSTex_R16:
 		case Caps_VSTexFiltering_Linear:
 		case Caps_ReadDepthAsTexture:		OK;
 	}

@@ -11,6 +11,7 @@
 // Debug args:
 // -waitkey -v 5 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:USM\Effects\PBR.eff"
 // -waitkey -v 5 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBRAlphaTest.hrd" -out "Shaders:USM\Effects\PBRAlphaTest.eff"
+// -waitkey -v 5 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBRSplatting.hrd" -out "Shaders:USM\Effects\PBRSplatting.eff"
 // -waitkey -v 5 -sm3 -proj "..\..\..\..\InsanePoet\Content" -in "SrcShaders:Effects\PBR.hrd" -out "Shaders:SM_3_0\Effects\PBR.eff"
 // -waitkey -v 5 -rp -proj "..\..\..\..\InsanePoet\Content" -eff "Shaders:USM/Effects" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:USM\D3D11Forward.rp"
 // -waitkey -v 5 -rp -sm3 -proj "..\..\..\..\InsanePoet\Content" -eff "Shaders:SM_3_0/Effects" -in "SrcShaders:D3D11Forward.hrd" -out "Shaders:SM_3_0\D3D11Forward.rp"

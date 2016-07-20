@@ -1746,7 +1746,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 										break;
 									}
 								}
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at slot %d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), pD3D9Meta->Buffers[MetaObj.BufferIndex].Name.CStr(), MetaObj.BufferIndex);
 							}
 							else
 							{
@@ -1860,7 +1860,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 								Param.pUSMBuffer = &MetaBuf;
 								Param.ConstType = MetaObj.Type;
 								Param.SizeInBytes = MetaObj.ElementSize * MetaObj.ElementCount;
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at b%d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), MetaBuf.Name.CStr(), MetaBuf.Register);
 							}
 							else
 							{

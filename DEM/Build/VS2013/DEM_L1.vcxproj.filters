@@ -950,6 +950,12 @@
     <ClInclude Include="..\..\Src\L1\Render\EffectConstSetValues.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\CDLODDataLoader.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\CDLODData.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1571,6 +1577,12 @@
       <Filter>Render</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\EffectConstSetValues.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\CDLODDataLoader.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\CDLODData.cpp">
       <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>

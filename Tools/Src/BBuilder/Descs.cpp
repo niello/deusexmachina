@@ -79,21 +79,21 @@ bool ProcessCollisionShape(const CString& SrcFilePath, const CString& ExportFile
 
 	FilesToPack.InsertSorted(ExportFilePath);
 
-	// Add terrain file for heightfield shapes (always exported) //???or allow building from L3DT src?
-	CString CDLODFile = Desc->Get(CStrID("CDLODFile"), CString::Empty);
-	if (CDLODFile.IsValid())
+	// Add terrain file for heightfield shapes
+	CString HeightMapFile = Desc->Get(CStrID("HeightMapFile"), CString::Empty);
+	if (HeightMapFile.IsValid())
 	{
-		CString CDLODFilePath = "Terrain:" + CDLODFile + ".cdlod";
-		if (!IsFileAdded(CDLODFilePath))
+		CString HeightMapFilePath = "Terrain:" + HeightMapFile + ".cdlod";
+		if (!IsFileAdded(HeightMapFilePath))
 		{
 			if (ExportResources &&
-				!ProcessResourceDesc("SrcTerrain:" + CDLODFile + ".cfd", CDLODFilePath) &&
-				!IOSrv->FileExists(CDLODFilePath))
+				!ProcessResourceDesc("SrcTerrain:" + HeightMapFile + ".cfd", HeightMapFilePath) &&
+				!IOSrv->FileExists(HeightMapFilePath))
 			{
-				n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", PathUtils::GetExtension(CDLODFilePath));
+				n_msg(VL_ERROR, "Referenced resource '%s' doesn't exist and isn't exportable through CFD\n", PathUtils::GetExtension(HeightMapFilePath));
 				FAIL;
 			}
-			FilesToPack.InsertSorted(CDLODFilePath);
+			FilesToPack.InsertSorted(HeightMapFilePath);
 		}
 	}
 

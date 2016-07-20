@@ -129,7 +129,7 @@ enum EIndexType
 
 enum ECaps
 {
-	Caps_VSTex_L16,				// Unsigned short 16-bit texture as a vertex texture
+	Caps_VSTex_R16,				// Unsigned short 16-bit texture as a vertex texture
 	Caps_VSTexFiltering_Linear,	// Bilinear min & mag filtering for vertex textures
 	Caps_ReadDepthAsTexture		// Use depth buffer as a shader input
 };
@@ -153,6 +153,7 @@ enum EPixelFormat
 	PixelFmt_B8G8R8X8,
 	PixelFmt_B8G8R8A8,
 	PixelFmt_B5G6R5,
+	PixelFmt_R16,
 	PixelFmt_DXT1,
 	PixelFmt_DXT3,
 	PixelFmt_DXT5,

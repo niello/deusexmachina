@@ -31,7 +31,7 @@ namespace Str
 	DEFINE_STRID(Height)
 	DEFINE_STRID(StaticMesh)
 	DEFINE_STRID(Heightfield)
-	DEFINE_STRID(CDLODFile)
+	DEFINE_STRID(HeightMapFile)
 }
 
 namespace Resources
@@ -61,7 +61,7 @@ PResourceObject CCollisionShapeLoaderPRM::Load(IO::CStream& Stream)
 	}
 	else if (Type == Str::Heightfield)
 	{
-		CString FileName = Desc->Get<CString>(Str::CDLODFile, CString::Empty);
+		CString FileName = Desc->Get<CString>(Str::HeightMapFile, CString::Empty);
 		if (!FileName.IsValid()) return NULL;
 		FileName = "Terrain:" + FileName + ".cdlod";
 
@@ -72,7 +72,7 @@ PResourceObject CCollisionShapeLoaderPRM::Load(IO::CStream& Stream)
 
 		if (PathUtils::CheckExtension(FileName, "cdlod"))
 		{
-			//!!!DUPLICATE CODE! See Scene::CTerrain!
+			//!!!DUPLICATE CODE! See CCDLODDataLoader!
 			IO::PStream CDLODFile = IOSrv->CreateStream(FileName);
 			if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return NULL;
 			IO::CBinaryReader Reader(*CDLODFile);

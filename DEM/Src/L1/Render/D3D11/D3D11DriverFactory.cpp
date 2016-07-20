@@ -173,6 +173,7 @@ DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 		case PixelFmt_B8G8R8X8:					return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
 		case PixelFmt_B8G8R8A8:					return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
 		case PixelFmt_B5G6R5:					return DXGI_FORMAT_B5G6R5_UNORM;
+		case PixelFmt_R16:						return DXGI_FORMAT_R16_UNORM;
 		case PixelFmt_DXT1:						return DXGI_FORMAT_BC1_UNORM;
 		case PixelFmt_DXT3:						return DXGI_FORMAT_BC2_UNORM;
 		case PixelFmt_DXT5:						return DXGI_FORMAT_BC3_UNORM;

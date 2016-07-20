@@ -54,6 +54,14 @@ bool CRenderPath::Render(CView& View)
 			const matrix44& ViewProj = View.GetCamera()->GetViewProjMatrix();
 			View.Globals.SetConstantValue(pConstViewProj, 0, ViewProj.m, sizeof(matrix44));
 		}
+
+		//!!!in a separate virtual phase can find once on init!
+		const Render::CEffectConstant* pConstEyePos = GetGlobalConstant(CStrID("EyePos"));
+		if (pConstEyePos)
+		{
+			const vector3& EyePos = View.GetCamera()->GetPosition();
+			View.Globals.SetConstantValue(pConstEyePos, 0, EyePos.v, sizeof(vector3));
+		}
 	}
 
 	View.Globals.ApplyConstantBuffers();
