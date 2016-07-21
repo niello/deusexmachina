@@ -242,6 +242,7 @@ bool CGameServer::ValidateLevel(CGameLevel& Level)
 	if (Level.GetSceneRoot())
 	{
 		Frame::CSceneNodeValidateResources Visitor;
+		//!!!Visitor.GPU = Level.
 		Result = Level.GetSceneRoot()->AcceptVisitor(Visitor);
 	}
 	else Result = true; // Nothing to validate

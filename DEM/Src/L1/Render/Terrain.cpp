@@ -1,6 +1,8 @@
 #include "Terrain.h"
 
 #include <Render/Material.h>
+#include <Render/GPUDriver.h>
+#include <Render/MeshGenerators.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
@@ -45,74 +47,7 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 }
 //---------------------------------------------------------------------
 
-//???here?
-//CMesh* CTerrain::GetPatchMesh(UPTR Size)
-//{
-//	if (!IsPow2(Size) || Size < 2) return NULL;
-//
-//	CString PatchName;
-//	PatchName.Format("Patch%dx%d", Size, Size);
-//	PMesh Patch = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID(PatchName.CStr()));
-//
-//	if (!Patch->IsLoaded())
-//	{
-//		float InvEdgeSize = 1.f / (float)Size;
-//		UPTR VerticesPerEdge = Size + 1;
-//		UPTR VertexCount = VerticesPerEdge * VerticesPerEdge;
-//		n_assert(VertexCount <= 65535); // because of 16-bit index buffer
-//
-//		CArray<CVertexComponent> PatchVC;
-//		CVertexComponent& Cmp = *PatchVC.Reserve(1);
-//		Cmp.Format = CVertexComponent::Float2;
-//		Cmp.Semantic = CVertexComponent::Position;
-//		Cmp.Index = 0;
-//		Cmp.Stream = 0;
-//		PVertexLayout PatchVertexLayout = RenderSrv->GetVertexLayout(PatchVC);
-//
-//		PVertexBuffer VB = n_new(CVertexBuffer);
-//		n_assert(VB->Create(PatchVertexLayout, VertexCount, Usage_Immutable, CPU_NoAccess));
-//		vector2* pVBData = (vector2*)VB->Map(Map_Setup);
-//		for (UPTR z = 0; z < VerticesPerEdge; ++z)
-//			for (UPTR x = 0; x < VerticesPerEdge; ++x)
-//				pVBData[z * VerticesPerEdge + x].set(x * InvEdgeSize, z * InvEdgeSize);
-//		VB->Unmap();
-//
-//		//???use TriStrip?
-//		UPTR IndexCount = Size * Size * 6;
-//
-//		PIndexBuffer IB = n_new(CIndexBuffer);
-//		n_assert(IB->Create(CIndexBuffer::Index16, IndexCount, Usage_Immutable, CPU_NoAccess));
-//		ushort* pIBData = (ushort*)IB->Map(Map_Setup);
-//		for (UPTR z = 0; z < Size; ++z)
-//			for (UPTR x = 0; x < Size; ++x)
-//			{
-//				*pIBData++ = (ushort)(z * VerticesPerEdge + x);
-//				*pIBData++ = (ushort)(z * VerticesPerEdge + (x + 1));
-//				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + x);
-//				*pIBData++ = (ushort)(z * VerticesPerEdge + (x + 1));
-//				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + (x + 1));
-//				*pIBData++ = (ushort)((z + 1) * VerticesPerEdge + x);
-//			}
-//		IB->Unmap();
-//
-//		CArray<CPrimitiveGroup> MeshGroups(1, 0);
-//		CPrimitiveGroup& Group = *MeshGroups.Reserve(1);
-//		Group.Topology = TriList;
-//		Group.FirstVertex = 0;
-//		Group.VertexCount = VertexCount;
-//		Group.FirstIndex = 0;
-//		Group.IndexCount = IndexCount;
-//		Group.AABB.Min = vector3::Zero;
-//		Group.AABB.Max.set(1.f, 0.f, 1.f);
-//
-//		n_assert(Patch->Setup(VB, IB, MeshGroups));
-//	}
-//
-//	return Patch;
-//}
-////---------------------------------------------------------------------
-
-bool CTerrain::ValidateResources()
+bool CTerrain::ValidateResources(PGPUDriver GPU)
 {
 	if (!RCDLODData->IsLoaded())
 	{
@@ -136,8 +71,35 @@ bool CTerrain::ValidateResources()
 	}
 	Material = RMaterial->GetObject<Render::CMaterial>();
 
-	//	PatchMesh = GetPatchMesh(PatchSize);
-	//	QuarterPatchMesh = GetPatchMesh(PatchSize >> 1);
+	U32 PatchSize = CDLODData->GetPatchSize();
+	if (GPU.IsValidPtr() && IsPow2(PatchSize) && PatchSize >= 4)
+	{
+		CString PatchName;
+		PatchName.Format("Patch%dx%d", PatchSize, PatchSize);
+		Resources::PResource RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
+		if (!RPatch->IsLoaded())
+		{
+			//???!!!check current loader or generator, if empty, init?!
+			Resources::PMeshGeneratorQuadPatch Gen = n_new(Resources::CMeshGeneratorQuadPatch);
+			Gen->QuadsPerEdge = PatchSize;
+			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
+			n_assert(RPatch->IsLoaded());
+		}
+		PatchMesh = RPatch->GetObject<CMesh>();
+
+		PatchSize >>= 1;
+		PatchName.Format("Patch%dx%d", PatchSize, PatchSize);
+		RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
+		if (!RPatch->IsLoaded())
+		{
+			//???!!!check current loader or generator, if empty, init?!
+			Resources::PMeshGeneratorQuadPatch Gen = n_new(Resources::CMeshGeneratorQuadPatch);
+			Gen->QuadsPerEdge = PatchSize;
+			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
+			n_assert(RPatch->IsLoaded());
+		}
+		PatchMesh = RPatch->GetObject<CMesh>();
+	}
 
 	OK;
 }

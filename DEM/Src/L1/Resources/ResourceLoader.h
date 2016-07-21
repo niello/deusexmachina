@@ -3,7 +3,6 @@
 #define __DEM_L1_RESOURCE_LOADER_H__
 
 #include <Core/Object.h>
-#include <Data/StringID.h>
 #include <IO/IOFwd.h>
 
 // Resource loader incapsulates an algorithm of loading a particular resource
@@ -30,7 +29,7 @@ public:
 	virtual const Core::CRTTI&			GetResultType() const = 0;
 	virtual bool						IsProvidedDataValid() const = 0;
 	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_DEFAULT; }
-	virtual PResourceObject				Load(IO::CStream& Stream) = 0; //???assert resource is NotLoaded? //???async? //!!!call Mgr->LoadResource!
+	virtual PResourceObject				Load(IO::CStream& Stream) = 0;
 	//???Unload() - responsibility, ownership
 };
 

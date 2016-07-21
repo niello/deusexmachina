@@ -956,6 +956,12 @@
     <ClInclude Include="..\..\Src\L1\Render\CDLODData.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\MeshGenerators.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Resources\ResourceGenerator.h">
+      <Filter>Resources</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1531,9 +1537,6 @@
     <ClCompile Include="..\..\Src\L1\Render\Renderer.cpp">
       <Filter>Render</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Render\Technique.cpp">
-      <Filter>Render</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\TerrainRenderer.cpp">
       <Filter>Render</Filter>
     </ClCompile>
@@ -1584,6 +1587,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\CDLODData.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\MeshGenerators.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Resources\ResourceGenerator.cpp">
+      <Filter>Resources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -3,6 +3,7 @@
 #define __DEM_L1_RENDER_RENDERABLE_H__
 
 #include <Core/RTTIBaseClass.h>
+#include <Data/Ptr.h>
 
 // An interface class for any renderable objects, like regular models, particle systems, terrain patches etc.
 
@@ -15,6 +16,7 @@ namespace IO
 
 namespace Render
 {
+typedef Ptr<class CGPUDriver> PGPUDriver;
 
 class IRenderable: public Core::CRTTIBaseClass //???or CObject?
 {
@@ -38,7 +40,7 @@ public:
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) = 0;
 	virtual bool	GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
-	virtual bool	ValidateResources() = 0;
+	virtual bool	ValidateResources(PGPUDriver GPU) = 0;
 };
 
 //typedef Ptr<IRenderable> PRenderable;

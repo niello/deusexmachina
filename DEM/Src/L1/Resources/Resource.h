@@ -12,6 +12,7 @@
 namespace Resources
 {
 typedef Ptr<class CResourceLoader> PResourceLoader;
+typedef Ptr<class CResourceGenerator> PResourceGenerator;
 
 enum EResourceState
 {
@@ -35,6 +36,7 @@ protected:
 	PResourceObject			Object;			// Actual object, such as a texture or a game object description
 	//???PResourceObject		Placeholder; //???here or register per RTTI in Mgr?
 	PResourceLoader			Loader;			// Optional, for recreation of lost resource object
+	PResourceGenerator		Generator;		// Optional, for recreation of lost resource object
 
 public:
 
@@ -53,7 +55,7 @@ public:
 	// For internal use by CResourceManager
 	void				SetUID(CStrID NewUID) { UID = NewUID; }
 	void				SetState(EResourceState NewState) const { State = NewState; } //!!!must be thread-safe!
-	void				Init(PResourceObject NewObject, PResourceLoader NewLoader = NULL) { Object = NewObject; Loader = NewLoader;} //!!!must be thread-safe!
+	void				Init(PResourceObject NewObject, PResourceLoader NewLoader = NULL, PResourceGenerator NewGenerator = NULL) { Object = NewObject; Loader = NewLoader; Generator = NewGenerator; } //!!!must be thread-safe!
 };
 
 typedef Ptr<CResource> PResource;

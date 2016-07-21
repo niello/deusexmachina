@@ -98,19 +98,12 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 			CStrID BatchType;
 			return DataReader.Read(BatchType);
 		}
-		case 'FFLG':
-		{
-			CString FeatFlagsStr;
-			if (!DataReader.ReadString(FeatFlagsStr)) FAIL;
-			//FeatureFlags = RenderSrv->ShaderFeatures.GetMask(FeatFlagsStr);
-			OK;
-		}
 		default: FAIL;
 	}
 }
 //---------------------------------------------------------------------
 
-bool CModel::ValidateResources()
+bool CModel::ValidateResources(PGPUDriver GPU)
 {
 //	static const CString StrMaterials("Materials:");
 //	static const CString StrMeshes("Meshes:");

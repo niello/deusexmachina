@@ -22,8 +22,9 @@
 namespace Resources
 {
 typedef Ptr<class CResource> PResource;
-typedef Ptr<class CResourceLoader> PResourceLoader;
 typedef Ptr<class CResourceObject> PResourceObject;
+typedef Ptr<class CResourceLoader> PResourceLoader;
+typedef Ptr<class CResourceGenerator> PResourceGenerator;
 
 #define ResourceMgr Resources::CResourceManager::Instance()
 
@@ -68,10 +69,10 @@ public:
 
 	PResource		RegisterResource(CStrID URI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
 	PResource		RegisterResource(const char* pURI); //!!!use URI structure, pre-parsed! one string w/ptrs to parts
-	PResource		RegisterResource(const char* pURN, CResourceObject* pObject); //!!!assert valid URN!
 
 	void			LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader);
 	void			LoadResourceAsync(CResource& Rsrc, CResourceLoader& Loader);
+	void			GenerateResourceSync(CResource& Rsrc, CResourceGenerator& Generator);
 };
 
 }

@@ -21,21 +21,19 @@ class CModel: public IRenderable
 
 protected:
 
-	virtual bool	ValidateResources();
+	virtual bool	ValidateResources(PGPUDriver GPU);
 
 public:
 
 	PMesh				Mesh;
 	UPTR				MeshGroupIndex;
 	PMaterial			Material; //???!!!materialset!?
-	U32					FeatureFlags;	// Model shader flags like Skinned, must be ORed with material flags before use
-//	CShaderVarMap		ShaderVars;		// Animable per-object vars
 	CFixedArray<int>	BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 	//can use Flags field of CNodeAttribute
 
-	CModel(): MeshGroupIndex(0), FeatureFlags(0) {}
+	CModel(): MeshGroupIndex(0) {}
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual bool	GetLocalAABB(CAABB& OutBox, UPTR LOD) const;

@@ -33,20 +33,19 @@ protected:
 	float					InvSplatSizeX;
 	float					InvSplatSizeZ;
 
-	virtual bool		ValidateResources();
-	static CMesh*		GetPatchMesh(UPTR Size);
+	virtual bool	ValidateResources(PGPUDriver GPU);
 
 public:
 
 	CTerrain(): InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) {}
 
-	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual bool		GetLocalAABB(CAABB& OutBox, UPTR LOD) const { OutBox = CDLODData->GetAABB(); OK; }
+	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool	GetLocalAABB(CAABB& OutBox, UPTR LOD) const { OutBox = CDLODData->GetAABB(); OK; }
 
-	Render::CMesh*		GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
-	Render::CMesh*		GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
-	float				GetInvSplatSizeX() const { return InvSplatSizeX; }
-	float				GetInvSplatSizeZ() const { return InvSplatSizeZ; }
+	Render::CMesh*	GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
+	Render::CMesh*	GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
+	float			GetInvSplatSizeX() const { return InvSplatSizeX; }
+	float			GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };
 
 typedef Ptr<CTerrain> PTerrain;

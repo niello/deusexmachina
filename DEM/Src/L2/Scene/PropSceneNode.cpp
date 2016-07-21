@@ -214,7 +214,7 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CNodeAttrRenderable>())
 		{
 			CAABB AttrBox;
-			((Frame::CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources();
+			//!!!((Frame::CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources(GPU);
 			((Frame::CNodeAttrRenderable&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}

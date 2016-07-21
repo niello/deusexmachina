@@ -2,6 +2,7 @@
 
 #include <Resources/Resource.h>
 #include <Resources/ResourceLoader.h>
+#include <Resources/ResourceGenerator.h>
 #include <IO/IOServer.h>
 #include <IO/Stream.h>
 
@@ -132,7 +133,7 @@ void CResourceManager::LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader
 	if (Stream->GetRefCount() == StreamRefCount) Stream->Close();
 	Stream = NULL;
 
-	Rsrc.Init(Obj.GetUnsafe(), &Loader);
+	Rsrc.Init(Obj.GetUnsafe(), &Loader, NULL);
 	Rsrc.SetState(Obj.IsValidPtr() && Obj->IsResourceValid() ? Rsrc_Loaded : Rsrc_LoadingFailed);
 }
 //---------------------------------------------------------------------
@@ -144,6 +145,17 @@ void CResourceManager::LoadResourceAsync(CResource& Rsrc, CResourceLoader& Loade
 	//must return some handle to cancel/wait/check task
 	//???store async handle in a resource? or in a loader?
 	Rsrc.SetState(Rsrc_LoadingRequested);
+}
+//---------------------------------------------------------------------
+
+void CResourceManager::GenerateResourceSync(CResource& Rsrc, CResourceGenerator& Generator)
+{
+	Rsrc.SetState(Rsrc_LoadingInProgress);
+
+	PResourceObject Obj = Generator.Generate();
+
+	Rsrc.Init(Obj.GetUnsafe(), NULL, &Generator);
+	Rsrc.SetState(Obj.IsValidPtr() && Obj->IsResourceValid() ? Rsrc_Loaded : Rsrc_LoadingFailed);
 }
 //---------------------------------------------------------------------
 

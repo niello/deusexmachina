@@ -51,12 +51,12 @@ public:
 	//virtual ~CCDLODData();
 
 	virtual bool		IsResourceValid() const { return HeightMap.IsValidPtr(); }
-	UPTR				GetHeightMapWidth() const { return HFWidth; }
-	UPTR				GetHeightMapHeight() const { return HFHeight; }
-	UPTR				GetPatchSize() const { return PatchSize; }
-	UPTR				GetTopPatchCountW() const { return TopPatchCountW; }
-	UPTR				GetTopPatchCountH() const { return TopPatchCountH; }
-	UPTR				GetLODCount() const { return LODCount; }
+	U32					GetHeightMapWidth() const { return HFWidth; }
+	U32					GetHeightMapHeight() const { return HFHeight; }
+	U32					GetPatchSize() const { return PatchSize; }
+	U32					GetTopPatchCountW() const { return TopPatchCountW; }
+	U32					GetTopPatchCountH() const { return TopPatchCountH; }
+	U32					GetLODCount() const { return LODCount; }
 	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
 	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }

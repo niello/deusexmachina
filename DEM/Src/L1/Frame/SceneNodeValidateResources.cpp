@@ -14,7 +14,7 @@ bool CSceneNodeValidateResources::Visit(Scene::CSceneNode& Node)
 	{
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (Attr.IsA<CNodeAttrRenderable>())
-			if (!((CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources()) FAIL;
+			if (!((CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources(GPU)) FAIL;
 	}
 
 	OK;
