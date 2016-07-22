@@ -10,6 +10,11 @@
 // Model represents a piece of visible polygonal geometry.
 // It ties together a mesh group, a material and per-object rendering params.
 
+namespace Resources
+{
+	typedef Ptr<class CResource> PResource;
+}
+
 namespace Render
 {
 typedef Ptr<class CMesh> PMesh;
@@ -25,10 +30,12 @@ protected:
 
 public:
 
-	PMesh				Mesh;
-	UPTR				MeshGroupIndex;
-	PMaterial			Material; //???!!!materialset!?
-	CFixedArray<int>	BoneIndices;	// For skinning splits due to shader constants limit only
+	Resources::PResource	RMesh;
+	PMesh					Mesh;
+	UPTR					MeshGroupIndex;
+	Resources::PResource	RMaterial;
+	PMaterial				Material; //???!!!materialset!?
+	CFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 	//can use Flags field of CNodeAttribute

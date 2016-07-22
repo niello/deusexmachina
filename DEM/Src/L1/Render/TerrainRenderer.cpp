@@ -1,8 +1,10 @@
 #include "TerrainRenderer.h"
 
-#include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
+#include <Render/GPUDriver.h>
 #include <Render/Terrain.h>
+#include <Render/Material.h>
+#include <Render/Effect.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -23,16 +25,27 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	CTerrain* pTerrain = Node.pRenderable->As<CTerrain>();
 	n_assert_dbg(pTerrain);
 
-	//!!!can find once, outside the render loop! store somewhere in a persistent render node.
-	//But this associates object and renderer, as other renderer may request other input set.
-	//Node.pMaterial = pTerrain->Material.GetUnsafe();
-	//Node.pTech = pTerrain->Material->GetEffect()->GetTechByInputSet(InputSet_CDLOD);
-	//!!!DBG TMP!
-	Node.pMaterial = NULL;
-	Node.pTech = NULL;
+	CMaterial* pMaterial = pTerrain->GetMaterial(); //!!!Get by MaterialLOD!
+	if (!pMaterial) FAIL;
+
+	CEffect* pEffect = pMaterial->GetEffect();
+	EEffectType EffType = pEffect->GetType();
+	if (Context.pEffectOverrides)
+		for (UPTR i = 0; i < Context.pEffectOverrides->GetCount(); ++i)
+			if (Context.pEffectOverrides->KeyAt(i) == EffType)
+			{
+				pEffect = Context.pEffectOverrides->ValueAt(i).GetUnsafe();
+				break;
+			}
+
+	if (!pEffect) FAIL;
+
+	Node.pMaterial = pMaterial;
+	Node.pTech = pEffect->GetTechByInputSet(InputSet_CDLOD);
+	if (!Node.pTech) FAIL;
+
 	Node.pMesh = pTerrain->GetPatchMesh();
-	Node.pGroup = NULL; // pTerrain->GetPatchMesh()->GetGroup(0, 0); // For sorting, different terrain objects with the same mesh will be rendered sequentially
-	FAIL;
+	Node.pGroup = pTerrain->GetPatchMesh()->GetGroup(0, 0); // For sorting, different terrain objects with the same mesh will be rendered sequentially
 
 	OK;
 }
@@ -40,10 +53,14 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 
 CArray<CRenderNode>::CIterator CTerrainRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
+	const bool GPUSupportsVSTextureLinearFiltering = GPU.CheckCaps(Caps_VSTexFiltering_Linear);
+
 	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
 	{
 		if (ItCurr->pRenderer != this) return ItCurr;
+
+		if (!GPUSupportsVSTextureLinearFiltering) continue;
 
 		Sys::DbgOut("CTerrain rendered\n");
 

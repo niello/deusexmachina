@@ -235,19 +235,20 @@ void CGameServer::UnloadLevel(CStrID ID)
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::ValidateLevel(CGameLevel& Level)
+bool CGameServer::ValidateLevel(CGameLevel& Level, Render::CGPUDriver* pGPU)
 {
 	bool Result;
 	
 	if (Level.GetSceneRoot())
 	{
 		Frame::CSceneNodeValidateResources Visitor;
-		//!!!Visitor.GPU = Level.
+		Visitor.GPU = pGPU;
 		Result = Level.GetSceneRoot()->AcceptVisitor(Visitor);
 	}
 	else Result = true; // Nothing to validate
 
 	//!!!???activate entities here and not in level loading?!
+	//really, props that require AABBs depend on scene resources
 
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("ID"), Level.GetID());

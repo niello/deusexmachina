@@ -20,48 +20,19 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		{
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			Resources::PResource RMtl = ResourceMgr->RegisterResource(RsrcURI);
-			if (!RMtl->IsLoaded())
+			RMaterial = ResourceMgr->RegisterResource(RsrcURI);
+
+			//!!!move to Validate!
+			if (!RMaterial->IsLoaded())
 			{
-				Resources::PResourceLoader Loader = RMtl->GetLoader();
+				Resources::PResourceLoader Loader = RMaterial->GetLoader();
 				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RsrcURI.CStr()));
-				ResourceMgr->LoadResourceSync(*RMtl, *Loader);
-				n_assert(RMtl->IsLoaded());
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RMaterial->GetUID()));
+				ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
+				n_assert(RMaterial->IsLoaded());
 			}
-			Material = RMtl->GetObject<Render::CMaterial>();
-			OK;
-		}
-		case 'VARS':
-		{
-			U16 Count;
-			if (!DataReader.Read(Count)) FAIL;
-			for (short i = 0; i < Count; ++i)
-			{
-				CStrID VarName;
-				DataReader.Read(VarName);
-				//CShaderVar& Var = ShaderVars.Add(VarName);
-				//Var.SetName(VarName);
-				Data::CData Value = DataReader.Read<Data::CData>();
-				//???check type if bound? use SetValue for it?
-				//Can set CData type at var creation and set value to it by SetValue, so type will be asserted
-				//???WHERE? if (Material.IsValid()) Var.Bind(*Material->GetShader());
-			}
-			OK;
-		}
-		case 'TEXS':
-		{
-			U16 Count;
-			if (!DataReader.Read(Count)) FAIL;
-			for (short i = 0; i < Count; ++i)
-			{
-				CStrID VarName;
-				DataReader.Read(VarName);
-				//CShaderVar& Var = ShaderVars.Add(VarName);
-				//Var.SetName(VarName);
-				//Var.Value = RenderSrv->TextureMgr.GetOrCreateTypedResource(DataReader.Read<CStrID>());
-				CStrID URI = DataReader.Read<CStrID>();
-			}
+			Material = RMaterial->GetObject<Render::CMaterial>();
+			
 			OK;
 		}
 		case 'JPLT':
@@ -74,29 +45,26 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MESH':
 		{
 			//???!!!store the whole URI in a file?!
-			//???store RMesh in a CModel? to allow resource validation. Or really no need?
 			CString MeshID = DataReader.Read<CString>();
 			CStrID MeshURI = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
-			Resources::PResource RMesh = ResourceMgr->RegisterResource(MeshURI);
+
+			//!!!move to Validate!
+			RMesh = ResourceMgr->RegisterResource(MeshURI);
 			if (!RMesh->IsLoaded())
 			{
 				Resources::PResourceLoader Loader = RMesh->GetLoader();
 				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMesh>(PathUtils::GetExtension(MeshURI.CStr()));
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMesh>(PathUtils::GetExtension(RMesh->GetUID()));
 				ResourceMgr->LoadResourceSync(*RMesh, *Loader);
 				n_assert(RMesh->IsLoaded());
 			}
 			Mesh = RMesh->GetObject<Render::CMesh>();
+
 			OK;
 		}
 		case 'MSGR':
 		{
 			return DataReader.Read(MeshGroupIndex);
-		}
-		case 'BTYP':
-		{
-			CStrID BatchType;
-			return DataReader.Read(BatchType);
 		}
 		default: FAIL;
 	}
@@ -105,31 +73,27 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 
 bool CModel::ValidateResources(PGPUDriver GPU)
 {
-//	static const CString StrMaterials("Materials:");
-//	static const CString StrMeshes("Meshes:");
-//	static const CString StrTextures("Textures:");
-//
-//	if (Material.IsValid())
-//	{
-//		if (!Material->IsLoaded() && !Render::LoadMaterialFromPRM(StrMaterials + Material->GetUID().CStr() + ".prm", Material)) FAIL;
-//
-//		for (int i = 0; i < ShaderVars.GetCount(); ++i)
-//		{
-//			CShaderVar& Var = ShaderVars.ValueAt(i);
-//			if (!Var.IsBound()) Var.Bind(*Material->GetShader());
-//
-//			//!!!non-file textures (forex RTs) will fail to load here! ensure they are
-//			// in loaded state or they load themselvef properly!
-//			if (Var.Value.IsA<PTexture>())
-//			{
-//				PTexture Tex = Var.Value.GetValue<PTexture>();
-//				if (!Tex->IsLoaded()) LoadTextureUsingD3DX(StrTextures + Tex->GetUID().CStr(), Tex);
-//			}
-//		}
-//	}
-//
-//	//!!!change extension!
-//	if (Mesh.IsValid() && !Mesh->IsLoaded() && !Render::LoadMeshFromNVX2(StrMeshes + Mesh->GetUID().CStr() + ".nvx2", Usage_Immutable, CPU_NoAccess, Mesh)) FAIL;
+	/*
+	if (!RMesh->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = RMesh->GetLoader();
+		if (Loader.IsNullPtr())
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMesh>(PathUtils::GetExtension(RMesh->GetUID()));
+		ResourceMgr->LoadResourceSync(*RMesh, *Loader);
+		n_assert(RMesh->IsLoaded());
+	}
+	Mesh = RMesh->GetObject<Render::CMesh>();
+
+	if (!RMaterial->IsLoaded())
+	{
+		Resources::PResourceLoader Loader = RMaterial->GetLoader();
+		if (Loader.IsNullPtr())
+			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RMaterial->GetUID()));
+		ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
+		n_assert(RMaterial->IsLoaded());
+	}
+	Material = RMaterial->GetObject<Render::CMaterial>();
+	*/
 
 	OK;
 }

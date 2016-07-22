@@ -79,9 +79,14 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 		Resources::PResource RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{
-			//???!!!check current loader or generator, if empty, init?!
-			Resources::PMeshGeneratorQuadPatch Gen = n_new(Resources::CMeshGeneratorQuadPatch);
-			Gen->QuadsPerEdge = PatchSize;
+			Resources::PResourceGenerator Gen = RPatch->GetGenerator();
+			if (Gen.IsNullPtr())
+			{
+				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
+				GenQuad->GPU = GPU;
+				GenQuad->QuadsPerEdge = PatchSize;
+				Gen = GenQuad.GetUnsafe();
+			}
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());
 		}
@@ -92,9 +97,14 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 		RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{
-			//???!!!check current loader or generator, if empty, init?!
-			Resources::PMeshGeneratorQuadPatch Gen = n_new(Resources::CMeshGeneratorQuadPatch);
-			Gen->QuadsPerEdge = PatchSize;
+			Resources::PResourceGenerator Gen = RPatch->GetGenerator();
+			if (Gen.IsNullPtr())
+			{
+				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
+				GenQuad->GPU = GPU;
+				GenQuad->QuadsPerEdge = PatchSize;
+				Gen = GenQuad.GetUnsafe();
+			}
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());
 		}

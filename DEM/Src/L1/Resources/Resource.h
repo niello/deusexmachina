@@ -51,6 +51,7 @@ public:
 	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
 	bool				IsLoaded() const { return State == Rsrc_Loaded; } //!!!must be thread-safe!
 	CResourceLoader*	GetLoader() const { return Loader.GetUnsafe(); }
+	CResourceGenerator*	GetGenerator() const { return Generator.GetUnsafe(); }
 
 	// For internal use by CResourceManager
 	void				SetUID(CStrID NewUID) { UID = NewUID; }

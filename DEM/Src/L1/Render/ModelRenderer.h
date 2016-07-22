@@ -29,7 +29,7 @@ protected:
 
 	CFixedArray<CVertexComponent>			InstanceDataDecl;
 	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;
-	PVertexBuffer							InstanceVB;
+	PVertexBuffer							InstanceVB; //!!!binds an RP to a specific GPU!
 	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 public:

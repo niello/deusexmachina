@@ -15,6 +15,11 @@
 
 //!!!!!!on exit game, if profile is set, write SGCommon to continue data, now only levels are in continue!
 
+namespace Render
+{
+	class CGPUDriver;	// For level validation only //???redesign?
+}
+
 namespace Game
 {
 class CGameLevelView;
@@ -45,7 +50,7 @@ protected:
 	Data::CHandleManager			LevelViewHandles;
 	CArray<Scene::CSceneNode*>		DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
-	bool ValidateLevel(CGameLevel& Level);
+	bool ValidateLevel(CGameLevel& Level, Render::CGPUDriver* pGPU);
 	bool CommitContinueData();
 	bool CommitLevelDiff(CGameLevel& Level);
 
@@ -65,8 +70,8 @@ public:
 	void			UnloadLevel(CStrID ID);
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
-	bool			ValidateLevel(CStrID ID);
-	bool			ValidateAllLevels();
+	bool			ValidateLevel(CStrID ID, Render::CGPUDriver* pGPU);
+	bool			ValidateAllLevels(Render::CGPUDriver* pGPU);
 
 	HHandle			CreateLevelView(CStrID LevelID);
 	void			DestroyLevelView(HHandle hView);
@@ -120,17 +125,17 @@ inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-inline bool CGameServer::ValidateLevel(CStrID ID)
+inline bool CGameServer::ValidateLevel(CStrID ID, Render::CGPUDriver* pGPU)
 {
 	CGameLevel* pLevel = GetLevel(ID);
-	return pLevel && ValidateLevel(*pLevel);
+	return pLevel && ValidateLevel(*pLevel, pGPU);
 }
 //---------------------------------------------------------------------
 
-inline bool CGameServer::ValidateAllLevels()
+inline bool CGameServer::ValidateAllLevels(Render::CGPUDriver* pGPU)
 {
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
-		if (!ValidateLevel(*Levels.ValueAt(i))) FAIL;
+		if (!ValidateLevel(*Levels.ValueAt(i), pGPU)) FAIL;
 	OK;
 }
 //---------------------------------------------------------------------
