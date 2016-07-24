@@ -64,7 +64,6 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(CGPUDriver& GPU, CArray<
 
 		Sys::DbgOut("CTerrain rendered\n");
 
-		// Find tech
 		// Render CTerrain
 
 		++ItCurr;

@@ -67,7 +67,14 @@ struct CEffectParam
 			case EPC_SM30Const:		return *pSM30Const == *Other.pSM30Const;
 			case EPC_SM30Resource:	return *pSM30Resource == *Other.pSM30Resource;
 			case EPC_SM30Sampler:	return *pSM30Sampler == *Other.pSM30Sampler;
-			case EPC_USMConst:		return (*pUSMConst == *Other.pUSMConst) && (*pUSMBuffer == *Other.pUSMBuffer);
+			case EPC_USMConst:
+			{
+				U32 MinBufferSize = pUSMConst->Offset + pUSMConst->ElementSize * pUSMConst->ElementCount;
+				return (*pUSMConst == *Other.pUSMConst) &&
+					pUSMBuffer->Register == Other.pUSMBuffer->Register &&
+					pUSMBuffer->Size >= MinBufferSize &&
+					Other.pUSMBuffer->Size >= MinBufferSize;
+			}
 			case EPC_USMResource:	return *pUSMResource == *Other.pUSMResource;
 			case EPC_USMSampler:	return *pUSMSampler == *Other.pUSMSampler;
 		}
@@ -2038,8 +2045,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 				}
 				else
 				{
-					CEffectParam& MaterialParam = GlobalParams[GlobalParamIdx];
-					if (TechParam != MaterialParam)
+					CEffectParam& GlobalParam = GlobalParams[GlobalParamIdx];
+					if (TechParam != GlobalParam)
 					{
 						n_msg(VL_ERROR, "Global param '%s' is defined differently in different techs, which is invalid\n", ParamID.CStr());
 						return ERR_INVALID_DATA;
