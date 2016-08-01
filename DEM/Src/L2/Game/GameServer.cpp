@@ -2,6 +2,7 @@
 
 #include <Game/EntityLoaderCommon.h>
 #include <Game/GameLevelView.h>
+#include <Game/SceneNodeValidateAttrs.h>
 #include <AI/AIServer.h>
 #include <Frame/SceneNodeValidateResources.h>
 #include <Frame/SceneNodeUpdateInSPS.h>
@@ -140,6 +141,10 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 
 	PGameLevel Level = n_new(CGameLevel);
 	if (!Level->Init(ID, Desc)) FAIL;
+
+	Game::CSceneNodeValidateAttrs Visitor;
+	Visitor.Level = Level;
+	Visitor.Visit(*Level->GetSceneRoot());
 
 	Levels.Add(Level->GetID(), Level);
 

@@ -21,6 +21,19 @@ bool CNodeAttrCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& Dat
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CNodeAttrCamera::Clone()
+{
+	PNodeAttrCamera ClonedAttr = n_new(CNodeAttrCamera);
+	ClonedAttr->FOV = FOV;
+	ClonedAttr->Width = Width;
+	ClonedAttr->Height = Height;
+	ClonedAttr->NearPlane = NearPlane;
+	ClonedAttr->FarPlane = FarPlane;
+	ClonedAttr->Flags.SetTo(Orthogonal, IsOrthogonal());
+	return ClonedAttr.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 void CNodeAttrCamera::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);

@@ -29,8 +29,9 @@ protected:
 
 public:
 
-	virtual bool LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void Update(const vector3* pCOIArray, UPTR COICount);
+	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual PNodeAttribute	Clone();
+	virtual void			Update(const vector3* pCOIArray, UPTR COICount);
 };
 
 typedef Ptr<CLODGroup> PLODGroup;

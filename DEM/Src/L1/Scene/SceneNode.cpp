@@ -105,6 +105,35 @@ void CSceneNode::UpdateLocalFromWorld()
 }
 //---------------------------------------------------------------------
 
+PSceneNode CSceneNode::Clone(bool CloneChildren)
+{
+	PSceneNode ClonedNode = n_new(CSceneNode(Name));
+	ClonedNode->SetScale(Tfm.Scale);
+	ClonedNode->SetRotation(Tfm.Rotation);
+	ClonedNode->SetPosition(Tfm.Translation);
+
+	ClonedNode->Attrs.Resize(Attrs.GetCount());
+	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
+		ClonedNode->AddAttribute(*Attrs[i]->Clone().GetUnsafe());
+
+	if (CloneChildren)
+	{
+		ClonedNode->Children.BeginAdd(Children.GetCount());
+		for (UPTR i = 0; i < Children.GetCount(); ++i)
+		{
+			PSceneNode CurrChild = Children.ValueAt(i);
+			ClonedNode->Children.Add(CurrChild->GetName(), CurrChild->Clone(true));
+		}
+		ClonedNode->Children.EndAdd();
+	}
+
+	//???clone controller?
+
+	ClonedNode->Activate(IsActive());
+	return ClonedNode;
+}
+//---------------------------------------------------------------------
+
 CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 {
 	IPTR Idx = Children.FindIndex(ChildName);
@@ -130,6 +159,14 @@ CSceneNode* CSceneNode::CreateChildChain(const char* pPath)
 		pCurrNode = pCurrNode->CreateChild(CStrID(StrTok.GetCurrToken()));
 
 	return pCurrNode;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node)
+{
+	Node.Name = ChildName;
+	Node.pParent = this;
+	Children.Add(ChildName, &Node);
 }
 //---------------------------------------------------------------------
 

@@ -1,16 +1,16 @@
 #include "StaticObject.h"
 
 #include <Game/GameLevel.h>
+#include <Game/SceneNodeValidateAttrs.h>
+#include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <Scene/SceneNode.h>
+#include <Scene/SceneNodeLoaderSCN.h>
 #include <Physics/CollisionObjStatic.h>
 #include <Physics/PhysicsLevel.h>
 #include <Data/DataServer.h>
 #include <Data/DataArray.h>
-
-namespace Scene
-{
-	bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode);
-}
+#include <IO/PathUtils.h>
 
 namespace Game
 {
@@ -46,20 +46,46 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 	CString NodePath;
 	Desc->Get<CString>(NodePath, CStrID("ScenePath"));
 	CString NodeFile;
-	Desc->Get<CString>(NodeFile, CStrID("SceneFile"));
+	bool CreateNode = Desc->Get<CString>(NodeFile, CStrID("SceneFile"));
 
-	if (NodePath.IsEmpty() && NodeFile.IsValid())
-		NodePath = UID.CStr();
+	const char* pUnresolved;
+	Scene::PSceneNode PathNode = Level->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
+	ExistingNode = !pUnresolved;
+	if (pUnresolved) PathNode = PathNode->CreateChildChain(pUnresolved);
+	n_assert(PathNode.IsValidPtr());
 
-	if (NodePath.IsValid())
+	if (CreateNode)
 	{
-		const char* pUnresolved;
-		Node = Level->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
-		ExistingNode = !pUnresolved;
-		if (pUnresolved) Node = Node->CreateChildChain(pUnresolved);
-		n_assert(Node.IsValidPtr());
+		// Create node at runtime
 
-		if (NodeFile.IsValid()) n_verify(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
+		if (NodeFile.IsValid())
+		{
+			CString RsrcURI = "Scene:" + NodeFile + ".scn";
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
+			if (!Rsrc->IsLoaded())
+			{
+				Resources::PResourceLoader Loader = Rsrc->GetLoader();
+				if (Loader.IsNullPtr())
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Scene::CSceneNode>(PathUtils::GetExtension(RsrcURI.CStr()));
+				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
+				n_assert(Rsrc->IsLoaded());
+			}
+			Node = Rsrc->GetObject<Scene::CSceneNode>()->Clone(true);
+			PathNode->AddChild(UID, *Node.GetUnsafe());
+		}
+		else
+		{
+			Node = PathNode->CreateChild(UID);
+		}
+
+		Game::CSceneNodeValidateAttrs Visitor;
+		Visitor.Level = Level;
+		Visitor.Visit(*Node.GetUnsafe());
+	}
+	else
+	{
+		// Use node created in a tool. It was already validated.
+		Node = PathNode;
 	}
 
 	const matrix44& EntityTfm = Desc->Get<matrix44>(CStrID("Transform"));

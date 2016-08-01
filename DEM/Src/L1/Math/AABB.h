@@ -55,6 +55,7 @@ public:
 	vector3		GetCorner(UPTR index) const;
 	void		GetClipPlanes(const matrix44& ViewProj, plane outPlanes[6]) const;
 
+	bool		IsEmpty() const;
 	bool		contains(const CAABB& box) const;
 	bool		contains(const vector3& pos) const;
 	EClipStatus	GetClipStatus(const CAABB& other) const;
@@ -260,6 +261,12 @@ inline bool CAABB::intersects(const CAABB& box) const
 	return	Max.x >= box.Min.x && Min.x <= box.Max.x &&
 			Max.y >= box.Min.y && Min.y <= box.Max.y &&
 			Max.z >= box.Min.z && Min.z <= box.Max.z;
+}
+//---------------------------------------------------------------------
+
+inline bool CAABB::IsEmpty() const
+{
+	return Min.x >= Max.x || Min.y >= Max.y || Min.z >= Max.z;
 }
 //---------------------------------------------------------------------
 

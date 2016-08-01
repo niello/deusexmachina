@@ -55,6 +55,7 @@ public:
 	TValue&			ValueAt(IPTR Idx) { return Pairs[Idx].GetValue(); }
 	const TValue&	ValueAt(IPTR Idx) const { return Pairs[Idx].GetValue(); }
 
+	void			Copy(CDictionary<TKey, TValue>& Out) const;
 	void			CopyToArray(CArray<TValue>& Out) const;
 
 	void			operator =(const CDictionary<TKey, TValue>& Other) { Pairs = Other.Pairs; }
@@ -117,6 +118,13 @@ void CDictionary<TKey, TValue>::Set(const TKey& Key, const TValue& Value)
 	IPTR Idx = Pairs.FindIndexSorted(Key);
 	if (Idx == INVALID_INDEX) Add(Key, Value);
 	else ValueAt(Idx) = Value;
+}
+//---------------------------------------------------------------------
+
+template<class TKey, class TValue>
+void CDictionary<TKey, TValue>::Copy(CDictionary<TKey, TValue>& Out) const
+{
+	Out.Pairs.Copy(Pairs);
 }
 //---------------------------------------------------------------------
 

@@ -38,9 +38,10 @@ protected:
 
 public:
 
-	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) = 0;
-	virtual bool	GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
-	virtual bool	ValidateResources(PGPUDriver GPU) = 0;
+	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) = 0;
+	virtual IRenderable*	Clone() = 0;
+	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
+	virtual bool			ValidateResources(PGPUDriver GPU) = 0;
 };
 
 //typedef Ptr<IRenderable> PRenderable;

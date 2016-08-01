@@ -4,6 +4,7 @@
 
 #include <Events/EventDispatcher.h>
 #include <Scene/SPS.h>
+#include <Render/GPUDriver.h>
 #include <Data/Regions.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
@@ -64,6 +65,7 @@ protected:
 	Scene::CSPS					SPS;			// Spatial partitioning structure
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
+	Render::PGPUDriver			HostGPU;
 
 	vector4						AmbientLight;
 	//Fog settings
@@ -109,6 +111,7 @@ public:
 	Scene::CSPS*			GetSPS() { return &SPS; }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.GetUnsafe(); }
 	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }
+	Render::CGPUDriver*		GetHostGPU() const { return HostGPU.GetUnsafe(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

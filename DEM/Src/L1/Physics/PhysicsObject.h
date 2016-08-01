@@ -30,8 +30,8 @@ protected:
 
 	PCollisionShape		Shape;
 	vector3				ShapeOffset;	// Offset between a center of mass and a graphics
-	U16				Group;
-	U16				Mask;
+	U16					Group;
+	U16					Mask;
 	btCollisionObject*	pBtCollObj;
 	CPhysicsLevel*		pWorld;
 	void*				pUserPtr;

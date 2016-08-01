@@ -2,6 +2,7 @@
 #ifndef __DEM_L1_SCENE_NODE_H__
 #define __DEM_L1_SCENE_NODE_H__
 
+#include <Resources/ResourceObject.h>
 #include <Scene/NodeAttribute.h> // definition is required by FindFirstAttr()
 #include <Scene/NodeVisitor.h>
 #include <Data/Dictionary.h>
@@ -23,7 +24,7 @@ namespace Scene
 typedef Ptr<class CSceneNode> PSceneNode;
 typedef Ptr<class CNodeController> PNodeController;
 
-class CSceneNode: public Core::CObject
+class CSceneNode: public Resources::CResourceObject
 {
 protected:
 
@@ -54,11 +55,13 @@ public:
 	CSceneNode(CStrID NodeName);
 	virtual ~CSceneNode();
 
+	virtual bool			IsResourceValid() const { OK; }
+
 	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = NULL);
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
-	CSceneNode*				Clone(bool CloneChildren);
+	PSceneNode				Clone(bool CloneChildren);
 	void					Remove() { if (pParent) pParent->RemoveChild(*this); }
 
 	bool					AcceptVisitor(INodeVisitor& Visitor);
@@ -67,7 +70,7 @@ public:
 
 	CSceneNode*				CreateChild(CStrID ChildName);
 	CSceneNode*				CreateChildChain(const char* pPath);
-	void					AddChild(CSceneNode& Node);
+	void					AddChild(CStrID ChildName, CSceneNode& Node);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(UPTR Idx);
 	void					RemoveChild(CStrID ChildName);

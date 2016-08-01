@@ -42,11 +42,10 @@ public:
 
 	CModel(): MeshGroupIndex(0) {}
 
-	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual bool	GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
+	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual IRenderable*	Clone();
+	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
 };
-
-typedef Ptr<CModel> PModel;
 
 }
 

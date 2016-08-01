@@ -212,8 +212,8 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhase.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h" />
-    <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrSkin.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Frame\View.h" />
     <ClInclude Include="..\..\Src\L1\IO\PathUtils.h" />
     <ClInclude Include="..\..\Src\L1\IO\Streams\ScopedStream.h" />
@@ -304,6 +304,7 @@
     <ClInclude Include="..\..\Src\L1\Resources\ResourceLoader.h" />
     <ClInclude Include="..\..\Src\L1\Resources\ResourceObject.h" />
     <ClInclude Include="..\..\Src\L1\Scene\NodeVisitor.h" />
+    <ClInclude Include="..\..\Src\L1\Scene\SceneNodeLoaderSCN.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.h" />
     <ClInclude Include="..\..\Src\L1\Scene\SPS.h" />
     <ClInclude Include="..\..\Src\L1\System\Allocators\PoolAllocator.h" />
@@ -479,8 +480,8 @@
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhase.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp" />
-    <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrSkin.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
     <ClCompile Include="..\..\Src\L1\IO\PathUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\IO\Streams\ScopedStream.cpp" />
@@ -557,6 +558,7 @@
     <ClCompile Include="..\..\Src\L1\Resources\ResourceGenerator.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceObject.cpp" />
+    <ClCompile Include="..\..\Src\L1\Scene\SceneNodeLoaderSCN.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SceneNodeRenderDebug.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\SPS.cpp" />
     <ClCompile Include="..\..\Src\L1\System\Events\OSInput.cpp" />
@@ -610,7 +612,6 @@
     <ClCompile Include="..\..\Src\L1\Events\EventServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\Resource.cpp" />
     <ClCompile Include="..\..\Src\L1\Resources\ResourceManager.cpp" />
-    <ClCompile Include="..\..\Src\L1\Scene\LoadNodesFromSCN.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\LODGroup.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\NodeAttribute.cpp" />
     <ClCompile Include="..\..\Src\L1\Scene\NodeController.cpp" />

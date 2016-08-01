@@ -14,6 +14,14 @@ bool CNodeAttrLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& Data
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CNodeAttrLight::Clone()
+{
+	PNodeAttrLight ClonedAttr = n_new(CNodeAttrLight);
+	ClonedAttr->Light = Light;
+	return ClonedAttr.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 void CNodeAttrLight::OnDetachFromNode()
 {
 	//???do it on deactivation of an attribute? even it is not detached from node

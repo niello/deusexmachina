@@ -42,11 +42,14 @@ public:
 
 	CNodeAttrSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
 
-	virtual bool		LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	virtual void		Update(const vector3* pCOIArray, UPTR COICount);
+	bool							Initialize();
 
-	Render::PSkinInfo	GetSkinInfo() const { return SkinInfo; }
-	const matrix44*		GetSkinPalette() const { return pSkinPalette; }
+	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual Scene::PNodeAttribute	Clone();
+	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
+
+	Render::PSkinInfo				GetSkinInfo() const { return SkinInfo; }
+	const matrix44*					GetSkinPalette() const { return pSkinPalette; }
 };
 
 typedef Ptr<CNodeAttrSkin> PNodeAttrSkin;

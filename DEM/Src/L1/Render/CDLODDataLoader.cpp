@@ -3,10 +3,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/CDLODData.h>
 #include <Render/Texture.h>
-#include <Resources/Resource.h>
-#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <IO/PathUtils.h>
 
 namespace Resources
 {

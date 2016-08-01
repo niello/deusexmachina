@@ -71,6 +71,17 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 }
 //---------------------------------------------------------------------
 
+IRenderable* CModel::Clone()
+{
+	CModel* pCloned = n_new(CModel);
+	pCloned->RMesh = RMesh;
+	pCloned->RMaterial = RMaterial;
+	pCloned->MeshGroupIndex = MeshGroupIndex;
+	pCloned->BoneIndices.RawCopyFrom(BoneIndices.GetPtr(), BoneIndices.GetCount());
+	return pCloned;
+}
+//---------------------------------------------------------------------
+
 bool CModel::ValidateResources(PGPUDriver GPU)
 {
 	/*
@@ -101,7 +112,7 @@ bool CModel::ValidateResources(PGPUDriver GPU)
 
 bool CModel::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	n_assert_dbg(Mesh->IsResourceValid());
+	if (Mesh.IsNullPtr() || !Mesh->IsResourceValid()) FAIL;
 	const Render::CPrimitiveGroup* pGroup = Mesh->GetGroup(MeshGroupIndex, LOD);
 	if (!pGroup) FAIL;
 	OutBox = pGroup->AABB;

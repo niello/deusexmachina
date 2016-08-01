@@ -10,6 +10,12 @@ namespace Frame
 {
 __ImplementClass(Frame::CNodeAttrRenderable, 'NARE', Scene::CNodeAttribute);
 
+CNodeAttrRenderable::~CNodeAttrRenderable()
+{
+	SAFE_DELETE(pRenderable);
+}
+//---------------------------------------------------------------------
+
 bool CNodeAttrRenderable::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
 	switch (FourCC.Code)
@@ -27,43 +33,53 @@ bool CNodeAttrRenderable::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader&
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CNodeAttrRenderable::Clone()
+{
+	//???or clone renderable?
+	PNodeAttrRenderable ClonedAttr = n_new(CNodeAttrRenderable);
+	ClonedAttr->pRenderable = pRenderable->Clone();
+	return ClonedAttr.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 {
-	// Moved to another SPS (one scene - one SPS for now)
-	bool SPSChanged = (pSPS != &SPS);
-	if (SPSChanged)
-	{
-		if (pSPS)
-		{
-			if (pSPSRecord)
-			{
-				pSPS->RemoveRecord(pSPSRecord);
-				pSPSRecord = NULL;
-			}
-			else pSPS->OversizedObjects.RemoveByValue(this);
-		}
+	CAABB AABB;
+	const bool AABBIsValid = pRenderable->GetLocalAABB(AABB);
+	const bool SPSChanged = (pSPS != &SPS);
 
-		pSPS = &SPS;
+	// Remove record, if AABB is invalid or object is moved to another SPS (one scene - one SPS for now)
+	if (pSPS && (SPSChanged || !AABBIsValid))
+	{
+		if (pSPSRecord)
+		{
+			pSPS->RemoveRecord(pSPSRecord);
+			pSPSRecord = NULL;
+		}
+		else pSPS->OversizedObjects.RemoveByValue(this);
 	}
 
-	CAABB GlobalAABB;
-	if (pRenderable->GetLocalAABB(GlobalAABB))
+	// If AABB is valid, add/update SPS record
+	if (AABBIsValid)
 	{
-		if (!pSPSRecord)
+		pSPS = &SPS;
+
+		if (AABB.IsEmpty())
 		{
-			GlobalAABB.Transform(pNode->GetWorldMatrix());
-			pSPSRecord = SPS.AddRecord(GlobalAABB, this);
+			if (SPSChanged) SPS.OversizedObjects.Add(this);
+		}
+		else if (!pSPSRecord)
+		{
+			AABB.Transform(pNode->GetWorldMatrix());
+			pSPSRecord = SPS.AddRecord(AABB, this);
 		}
 		else if (Flags.Is(WorldMatrixChanged)) //!!! || LocalBox changed!
 		{
-			GlobalAABB.Transform(pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
+			AABB.Transform(pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
 			SPS.UpdateRecord(pSPSRecord);
 		}
 	}
-	else
-	{
-		if (SPSChanged) SPS.OversizedObjects.Add(this);
-	}
+	else pSPS = NULL;
 
 	Flags.Clear(WorldMatrixChanged);
 }
@@ -71,6 +87,7 @@ void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 
 bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
+	n_assert_dbg(pNode);
 	if (pSPSRecord && Flags.IsNot(WorldMatrixChanged)) //!!! && LocalBox not changed!
 	{
 		OutBox = pSPSRecord->GlobalBox;

@@ -24,8 +24,9 @@ public:
 
 	PCollisionObjMoving	CollObj;
 
-	virtual void	Update(const vector3* pCOIArray, UPTR COICount);
-	void			GetGlobalAABB(CAABB& OutBox) const { CollObj->GetGlobalAABB(OutBox); }
+	virtual Scene::PNodeAttribute	Clone();
+	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
+	void							GetGlobalAABB(CAABB& OutBox) const { CollObj->GetGlobalAABB(OutBox); }
 };
 
 typedef Ptr<CNodeAttrCollision> PNodeAttrCollision;

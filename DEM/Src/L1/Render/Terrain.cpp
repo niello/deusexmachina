@@ -47,6 +47,19 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 }
 //---------------------------------------------------------------------
 
+IRenderable* CTerrain::Clone()
+{
+	CTerrain* pCloned = n_new(CTerrain);
+	pCloned->RCDLODData = RCDLODData;
+	pCloned->RMaterial = RMaterial;
+	pCloned->PatchMesh = PatchMesh;
+	pCloned->QuarterPatchMesh = QuarterPatchMesh;
+	pCloned->InvSplatSizeX = InvSplatSizeX;
+	pCloned->InvSplatSizeZ = InvSplatSizeZ;
+	return pCloned;
+}
+//---------------------------------------------------------------------
+
 bool CTerrain::ValidateResources(PGPUDriver GPU)
 {
 	if (!RCDLODData->IsLoaded())

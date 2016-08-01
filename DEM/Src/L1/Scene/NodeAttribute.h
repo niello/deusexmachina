@@ -18,6 +18,7 @@ namespace IO
 namespace Scene
 {
 class CSceneNode;
+typedef Ptr<class CNodeAttribute> PNodeAttribute;
 
 class CNodeAttribute: public Core::CObject
 {
@@ -42,20 +43,19 @@ public:
 
 	CNodeAttribute(): pNode(NULL), Flags(Active) {}
 
-	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; Flags.Set(WorldMatrixChanged); return !!pNode; }
-	virtual void	OnDetachFromNode() { pNode = NULL; }
+	virtual bool			OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; Flags.Set(WorldMatrixChanged); return !!pNode; }
+	virtual void			OnDetachFromNode() { pNode = NULL; }
 
-	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
-	virtual void	Update(const vector3* pCOIArray, UPTR COICount);
-	void			RemoveFromNode();
+	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
+	virtual PNodeAttribute	Clone() = 0;
+	virtual void			Update(const vector3* pCOIArray, UPTR COICount);
+	void					RemoveFromNode();
 
-	bool			IsAttachedToNode() const { return !!pNode; }
-	CSceneNode*		GetNode() const { return pNode; }
-	void			Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
-	bool			IsActive() const { return Flags.Is(Active); }
+	bool					IsAttachedToNode() const { return !!pNode; }
+	CSceneNode*				GetNode() const { return pNode; }
+	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
+	bool					IsActive() const { return Flags.Is(Active); }
 };
-
-typedef Ptr<CNodeAttribute> PNodeAttribute;
 
 }
 

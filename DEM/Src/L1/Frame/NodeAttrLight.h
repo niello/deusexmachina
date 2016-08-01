@@ -40,14 +40,15 @@ public:
 
 	CNodeAttrLight(): pSPS(NULL), pSPSRecord(NULL) {}
 
-	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	void			UpdateInSPS(Scene::CSPS& SPS);
+	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual Scene::PNodeAttribute	Clone();
+	void							UpdateInSPS(Scene::CSPS& SPS);
 
-	void			CalcFrustum(matrix44& OutFrustum);
-	bool			GetGlobalAABB(CAABB& OutBox) const;
-	const vector3&	GetPosition() const { return pNode->GetWorldMatrix().Translation(); }
-	vector3			GetDirection() const { return -pNode->GetWorldMatrix().AxisZ(); }
-	const vector3&	GetReverseDirection() const { return pNode->GetWorldMatrix().AxisZ(); }
+	void							CalcFrustum(matrix44& OutFrustum);
+	bool							GetGlobalAABB(CAABB& OutBox) const;
+	const vector3&					GetPosition() const { return pNode->GetWorldMatrix().Translation(); }
+	vector3							GetDirection() const { return -pNode->GetWorldMatrix().AxisZ(); }
+	const vector3&					GetReverseDirection() const { return pNode->GetWorldMatrix().AxisZ(); }
 };
 
 typedef Ptr<CNodeAttrLight> PNodeAttrLight;

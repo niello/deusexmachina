@@ -37,12 +37,14 @@ protected:
 public:
 
 	CNodeAttrRenderable(): pRenderable(NULL), pSPS(NULL), pSPSRecord(NULL) {}
+	~CNodeAttrRenderable();
 
-	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
-	void					UpdateInSPS(Scene::CSPS& SPS);
+	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual Scene::PNodeAttribute	Clone();
+	void							UpdateInSPS(Scene::CSPS& SPS);
 
-	bool					GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const; //!!!can get from a spatial record!
-	Render::IRenderable*	GetRenderable() const { return pRenderable; }
+	bool							GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const; //!!!can get from a spatial record!
+	Render::IRenderable*			GetRenderable() const { return pRenderable; }
 };
 
 typedef Ptr<CNodeAttrRenderable> PNodeAttrRenderable;

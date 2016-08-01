@@ -2,19 +2,18 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
+#include <Game/SceneNodeValidateAttrs.h>
 #include <Scripting/PropScriptable.h>
 #include <Scene/Events/SetTransform.h>
 #include <Render/Model.h>
+#include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>
+#include <IO/PathUtils.h>
 #include <Debug/DebugDraw.h>
 #include <Core/Factory.h>
-
-namespace Scene
-{
-	bool LoadNodesFromSCN(const CString& FileName, PSceneNode RootNode);
-}
 
 namespace Prop
 {
@@ -23,6 +22,14 @@ __ImplementPropertyStorage(CPropSceneNode);
 
 IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 
+//???do scene graph saving independently from entities? is this possible?
+//save level & all scene graph tfms, load level, apply tfms on nodes found?
+//64 (matrix) or 40 (SRT) bytes per node, no ChildTransforms attribute
+//Transform attr will be required because of many code abstracted from SceneNode is using Transform,
+//but this attribute won't be required to save. even if saved, it is not too much overhead
+//save scene graph as binary format (list or tree), either diff or overwrite, mb overwrite is better
+//after loading transforms UpdateTransform or smth must be fired, and no prop should use tfm before this happens
+
 bool CPropSceneNode::InternalActivate()
 {
 	if (!GetEntity()->GetLevel()->GetSceneRoot()) FAIL;
@@ -30,62 +37,83 @@ bool CPropSceneNode::InternalActivate()
 	CString NodePath;
 	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
 	CString NodeFile;
-	GetEntity()->GetAttr<CString>(NodeFile, CStrID("SceneFile"));
+	bool CreateNode = GetEntity()->GetAttr<CString>(NodeFile, CStrID("SceneFile"));
 
-	if (NodePath.IsEmpty() && NodeFile.IsValid())
-		NodePath = GetEntity()->GetUID().CStr();
-	
-	if (NodePath.IsValid())
+	const char* pUnresolved;
+	Scene::PSceneNode PathNode = GetEntity()->GetLevel()->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
+	ExistingNode = !pUnresolved;
+	if (pUnresolved) PathNode = PathNode->CreateChildChain(pUnresolved);
+	n_assert(PathNode.IsValidPtr());
+
+	if (CreateNode)
 	{
-		const char* pUnresolved;
-		Node = GetEntity()->GetLevel()->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
-		ExistingNode = !pUnresolved;
-		if (pUnresolved) Node = Node->CreateChildChain(pUnresolved);
-		n_assert(Node.IsValidPtr());
+		// Create node at runtime
 
-		if (NodeFile.IsValid()) n_assert(Scene::LoadNodesFromSCN("Scene:" + NodeFile + ".scn", Node));
+		CStrID EntityID = GetEntity()->GetUID();
 
-		//???or do scene graph saving independently from entities? is this possible?
-		//save level & all scene graph tfms, load level, apply tfms on nodes found?
-		//64 (matrix) or 40 (SRT) bytes per node, no ChildTransforms attribute
-		//Transform attr will be required because of many code abstracted from SceneNode is using Transform,
-		//but this attribute won't be required to save. even if saved, it is not too much overhead
-		//save scene graph as binary format (list or tree), either diff or overwrite, mb overwrite is better
-		//after loading transforms UpdateTransform or smth must be fired, and no prop should use tfm before this happens
-
-		if (ExistingNode)
-			GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
+		if (NodeFile.IsValid())
+		{
+			CString RsrcURI = "Scene:" + NodeFile + ".scn";
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
+			if (!Rsrc->IsLoaded())
+			{
+				Resources::PResourceLoader Loader = Rsrc->GetLoader();
+				if (Loader.IsNullPtr())
+					Loader = ResourceMgr->CreateDefaultLoaderFor<Scene::CSceneNode>(PathUtils::GetExtension(RsrcURI.CStr()));
+				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
+				if (!Rsrc->IsLoaded()) FAIL;
+			}
+			Node = Rsrc->GetObject<Scene::CSceneNode>()->Clone(true);
+			PathNode->AddChild(EntityID, *Node.GetUnsafe());
+		}
 		else
 		{
-			// Add children to the save-load list. All nodes externally attached won't be saved, which is desirable.
-			ChildCache.BeginAdd();
-			FillSaveLoadList(Node.GetUnsafe(), CString::Empty);
-			ChildCache.EndAdd();
+			Node = PathNode->CreateChild(EntityID);
+		}
 
-			Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+		Game::CSceneNodeValidateAttrs Visitor;
+		Visitor.Level = GetEntity()->GetLevel();
+		Visitor.Visit(*Node.GetUnsafe());
+	}
+	else
+	{
+		// Use node created in a tool. It was already validated.
+		Node = PathNode;
+	}
 
-			// Load child local transforms
-			Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), NULL);
-			if (ChildTfms.IsValidPtr() && ChildTfms->GetCount())
+	//???why we think WorldMatrix is valid here? never tested code?
+	if (ExistingNode)
+		GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
+	else
+	{
+		// Add children to the save-load list. All nodes externally attached won't be saved, which is desirable.
+		ChildCache.BeginAdd();
+		FillSaveLoadList(Node.GetUnsafe(), CString::Empty);
+		ChildCache.EndAdd();
+
+		Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+
+		// Load child local transforms
+		Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), NULL);
+		if (ChildTfms.IsValidPtr() && ChildTfms->GetCount())
+		{
+			for (UPTR i = 0; i < ChildTfms->GetCount(); ++i)
 			{
-				for (UPTR i = 0; i < ChildTfms->GetCount(); ++i)
+				Data::PParams ChildTfm = ChildTfms->Get<Data::PParams>(i);
+				CStrID ChildID = ChildTfm->Get<CStrID>(CStrID("ID"));
+				Scene::CSceneNode* pNode = GetChildNode(ChildID);
+				if (pNode)
 				{
-					Data::PParams ChildTfm = ChildTfms->Get<Data::PParams>(i);
-					CStrID ChildID = ChildTfm->Get<CStrID>(CStrID("ID"));
-					Scene::CSceneNode* pNode = GetChildNode(ChildID);
-					if (pNode)
-					{
-						pNode->SetScale(ChildTfm->Get<vector3>(CStrID("S")));
-						const vector4& Rot = ChildTfm->Get<vector4>(CStrID("R"));
-						pNode->SetRotation(quaternion(Rot.x, Rot.y, Rot.z, Rot.w));
-						pNode->SetPosition(ChildTfm->Get<vector3>(CStrID("T")));
-					}
+					pNode->SetScale(ChildTfm->Get<vector3>(CStrID("S")));
+					const vector4& Rot = ChildTfm->Get<vector4>(CStrID("R"));
+					pNode->SetRotation(quaternion(Rot.x, Rot.y, Rot.z, Rot.w));
+					pNode->SetPosition(ChildTfm->Get<vector3>(CStrID("T")));
 				}
 			}
 		}
-
-		GetEntity()->FireEvent(CStrID("UpdateTransform"));
 	}
+
+	GetEntity()->FireEvent(CStrID("UpdateTransform"));
 
 	//???for each other active property of this entity call InitDependency(Prop)?
 	//switchcase of prop type and dependent code, centralized!

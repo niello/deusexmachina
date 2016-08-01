@@ -43,6 +43,22 @@ bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataR
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CNodeAttrSkin::Clone()
+{
+	PNodeAttrSkin ClonedAttr = n_new(CNodeAttrSkin);
+	ClonedAttr->SkinInfo = SkinInfo;
+	ClonedAttr->Flags.SetTo(AutocreateBones, Flags.Is(AutocreateBones));
+	return ClonedAttr.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+bool CNodeAttrSkin::Initialize()
+{
+	NOT_IMPLEMENTED;
+	OK;
+}
+//---------------------------------------------------------------------
+
 /*
 bool CNodeAttrSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 {

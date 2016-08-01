@@ -833,9 +833,6 @@
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h">
       <Filter>Frame</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h">
-      <Filter>Frame</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\UI\RenderPhaseGUI.h">
       <Filter>UI</Filter>
     </ClInclude>
@@ -961,6 +958,12 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Resources\ResourceGenerator.h">
       <Filter>Resources</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Scene\SceneNodeLoaderSCN.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h">
+      <Filter>Frame</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -1107,9 +1110,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Resources\ResourceManager.cpp">
       <Filter>Resources</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Scene\LoadNodesFromSCN.cpp">
-      <Filter>Scene</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Scene\LODGroup.cpp">
       <Filter>Scene</Filter>
@@ -1465,9 +1465,6 @@
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp">
       <Filter>Frame</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp">
-      <Filter>Frame</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\UI\RenderPhaseGUI.cpp">
       <Filter>UI</Filter>
     </ClCompile>
@@ -1593,6 +1590,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Resources\ResourceGenerator.cpp">
       <Filter>Resources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Scene\SceneNodeLoaderSCN.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp">
+      <Filter>Frame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

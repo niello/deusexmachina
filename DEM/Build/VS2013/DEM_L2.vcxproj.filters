@@ -276,6 +276,9 @@
     <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h">
       <Filter>Game</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.h">
+      <Filter>Game</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L2\AI\AILevel.cpp">
@@ -498,6 +501,9 @@
       <Filter>Animation</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp">
+      <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.cpp">
       <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>

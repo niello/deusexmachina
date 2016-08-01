@@ -34,6 +34,14 @@ bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReade
 }
 //---------------------------------------------------------------------
 
+PNodeAttribute CLODGroup::Clone()
+{
+	PLODGroup ClonedAttr = n_new(CLODGroup);
+	SqThresholds.Copy(ClonedAttr->SqThresholds);
+	return ClonedAttr.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	if (!pNode || !pCOIArray || !COICount) return;
