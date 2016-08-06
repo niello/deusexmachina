@@ -207,9 +207,6 @@
     <ClInclude Include="..\..\Src\L2\Scripting\PropScriptable.h" />
     <ClInclude Include="..\..\Src\L2\UI\PropUIControl.h" />
     <ClInclude Include="..\..\Src\L2\Game\Entity.h" />
-    <ClInclude Include="..\..\Src\L2\Game\EntityLoader.h" />
-    <ClInclude Include="..\..\Src\L2\Game\EntityLoaderCommon.h" />
-    <ClInclude Include="..\..\Src\L2\Game\EntityLoaderStatic.h" />
     <ClInclude Include="..\..\Src\L2\Game\EntityManager.h" />
     <ClInclude Include="..\..\Src\L2\Game\GameLevel.h" />
     <ClInclude Include="..\..\Src\L2\Game\GameServer.h" />
@@ -280,9 +277,6 @@
     <ClCompile Include="..\..\Src\L2\UI\PropUIControl.cpp" />
     <ClCompile Include="..\..\Src\L2\UI\PropUIControlSI.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\Entity.cpp" />
-    <ClCompile Include="..\..\Src\L2\Game\EntityLoader.cpp" />
-    <ClCompile Include="..\..\Src\L2\Game\EntityLoaderCommon.cpp" />
-    <ClCompile Include="..\..\Src\L2\Game\EntityLoaderStatic.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\EntityManager.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\GameLevel.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\GameServer.cpp" />

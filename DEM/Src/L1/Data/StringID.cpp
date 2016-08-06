@@ -7,11 +7,11 @@ CStringIDStorage CStringID::Storage;
 
 const CStringID CStringID::Empty;
 
-CStringID::CStringID(const char* pString, bool OnlyExisting)
+CStringID::CStringID(const char* pStr, bool OnlyExisting)
 {
-	if (pString && *pString)
-		String = OnlyExisting ? Storage.Get(pString) : Storage.GetOrAdd(pString);
-	else String = CStringID::Empty.CStr();
+	if (pStr && *pStr)
+		pString = OnlyExisting ? Storage.Get(pStr) : Storage.GetOrAdd(pStr);
+	else pString = CStringID::Empty.CStr();
 }
 //---------------------------------------------------------------------
 

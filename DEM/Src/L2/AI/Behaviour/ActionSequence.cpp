@@ -20,8 +20,10 @@ bool CActionSequence::Activate(CActor* pActor)
 {
 	n_assert(!ppCurrChild);
 	if (Child.GetCount() < 1) FAIL;
-	ppCurrChild = Child.Begin();
-	return (*ppCurrChild)->Activate(pActor);
+	CArray<PAction>::CIterator ItFirst = Child.Begin();
+	if (!(*ItFirst)->Activate(pActor)) FAIL;
+	ppCurrChild = ItFirst;
+	OK;
 }
 //---------------------------------------------------------------------
 

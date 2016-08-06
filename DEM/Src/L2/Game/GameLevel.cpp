@@ -6,6 +6,7 @@
 #include <Game/StaticEnvManager.h>
 #include <Game/Entity.h>
 #include <Game/StaticObject.h>
+#include <Game/SceneNodeValidateAttrs.h>
 #include <Scripting/ScriptObject.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
@@ -55,6 +56,8 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 	CString PathBase("Levels:");
 	PathBase += LevelID.CStr();
 
+	// Load level script
+
 	CString ScriptFile = PathBase + ".lua";
 	if (IOSrv->FileExists(ScriptFile))
 	{
@@ -64,19 +67,28 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 			Sys::Log("Error loading script for level %s\n", ID.CStr());
 	}
 
+	// Create scene and spatial partitioning structure (always)
+
+	vector3 SceneCenter(vector3::Zero);
+	vector3 SceneExtents(512.f, 128.f, 512.f);
+	int SPSHierarchyDepth = 3;
+
 	Data::PParams SubDesc;
 	if (Desc.Get(SubDesc, CStrID("Scene")))
 	{
-		SceneRoot = n_new(Scene::CSceneNode(CStrID::Empty));
-
-		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
-		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
-		BBox.Set(Center, Extents);
-
-		int SPSHierarchyDepth = SubDesc->Get<int>(CStrID("QuadTreeDepth"), 3);
-
-		SPS.Init(Center, Extents * 2.f, (U8)SPSHierarchyDepth);
+		SubDesc->Get(SceneCenter, CStrID("Center"));
+		SubDesc->Get(SceneExtents, CStrID("Extents"));
+		SubDesc->Get(SPSHierarchyDepth, CStrID("QuadTreeDepth"));
 	}
+
+	SceneRoot = n_new(Scene::CSceneNode(CStrID::Empty));
+
+	//!!!Can load base scene here instead of creating empty root!
+	//(loading is especially useful for baking static objects)
+
+	SPS.Init(SceneCenter, SceneExtents * 2.f, (UPTR)SPSHierarchyDepth);
+
+	// Create physics layer, if requested
 
 	if (Desc.Get(SubDesc, CStrID("Physics")))
 	{
@@ -87,9 +99,13 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		PhysicsLevel = n_new(Physics::CPhysicsLevel);
 		if (!PhysicsLevel->Init(Bounds)) FAIL;
 
+		//???load .bullet base contents, useful for static collisions?
+
 		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsPreTick, this, true);
 		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsTick, this, false);
 	}
+
+	// Create AI and navigation layer, if requested
 
 	if (Desc.Get(SubDesc, CStrID("AI")))
 	{
@@ -114,9 +130,121 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 		}
 	}
 
+	// Create entities, initially inactive
+
+	if (Desc.Get(SubDesc, CStrID("Entities")))
+	{
+		FireEvent(CStrID("OnEntitiesLoading"));
+
+		for (UPTR i = 0; i < SubDesc->GetCount(); ++i)
+		{
+			const Data::CParam& EntityPrm = SubDesc->Get(i);
+			if (!EntityPrm.IsA<Data::PParams>()) continue;
+			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
+
+			//!!!move to separate function to allow creating entities after level is loaded!
+
+			const CString& TplName = EntityDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
+			if (TplName.IsValid())
+			{
+				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
+				if (Tpl.IsNullPtr())
+				{
+					Sys::Log("Entity template '%s' not found for entity %s in level %s\n",
+						TplName.CStr(), EntityPrm.GetName().CStr(), ID.CStr());
+					continue;
+				}
+				Data::PParams MergedDesc = n_new(Data::CParams(EntityDesc->GetCount() + Tpl->GetCount()));
+				Tpl->MergeDiff(*MergedDesc, *EntityDesc);
+				EntityDesc = MergedDesc;
+			}
+
+			Data::CParams& RefEntityDesc = *EntityDesc.GetUnsafe();
+
+			//???need, or statics and entities will be separated? may be statics should be moved to base scene graph, physics and AI layers.
+			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
+			if (LoadingGroup == "Static")
+			{
+				if (!StaticEnvMgr->CanEntityBeStatic(RefEntityDesc))
+				{
+					Sys::Log("Static object %s in a level %s can't be static\n", EntityPrm.GetName().CStr(), ID.CStr());
+					continue; //???or try to add as common?
+				}
+
+				PStaticObject Obj = StaticEnvMgr->CreateStaticObject(EntityPrm.GetName(), *this);
+				if (Obj.IsNullPtr())
+				{
+					Sys::Log("Static object %s in a level %s not loaded\n", EntityPrm.GetName().CStr(), ID.CStr());
+					continue;
+				}
+
+				Obj->Init(RefEntityDesc);
+			}
+			else
+			{
+				PEntity Entity = EntityMgr->CreateEntity(EntityPrm.GetName(), *this);
+				if (Entity.IsNullPtr())
+				{
+					Sys::Log("Entity %s in a level %s not loaded\n", EntityPrm.GetName().CStr(), ID.CStr());
+					continue;
+				}
+
+				Data::PParams AttrsDesc;
+				if (RefEntityDesc.Get(AttrsDesc, CStrID("Attrs")) && AttrsDesc->GetCount())
+				{
+					Entity->BeginNewAttrs(AttrsDesc->GetCount());
+					for (UPTR i = 0; i < AttrsDesc->GetCount(); ++i)
+					{
+						const Data::CParam& Attr = AttrsDesc->Get(i);
+						Entity->AddNewAttr(Attr.GetName(), Attr.GetRawValue());
+					}
+					Entity->EndNewAttrs();
+				}
+
+				Data::PDataArray Props;
+				if (RefEntityDesc.Get(Props, CStrID("Props")))
+					for (UPTR i = 0; i < Props->GetCount(); ++i)
+					{
+						const Data::CData& PropID = Props->Get(i);
+						if (PropID.IsA<int>()) EntityMgr->AttachProperty(*Entity, (Data::CFourCC)PropID.GetValue<int>());
+						else if (PropID.IsA<CString>()) EntityMgr->AttachProperty(*Entity, PropID.GetValue<CString>());
+						else Sys::Log("Failed to attach property #%d to entity %s at level %s\n", i, EntityPrm.GetName().CStr(), ID.CStr());
+					}
+			}
+		}
+
+		FireEvent(CStrID("OnEntitiesLoaded"));
+	}
+
+	// Broadcast all global events to the level script and hosted entities
+
 	EventSrv->Subscribe(NULL, this, &CGameLevel::OnEvent, &GlobalSub);
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevel::Validate(Render::CGPUDriver* pGPU)
+{
+	HostGPU = pGPU;
+
+	bool Result;
+	if (SceneRoot.IsValidPtr())
+	{
+		CSceneNodeValidateAttrs Visitor;
+		Visitor.Level = this;
+		Result = SceneRoot->AcceptVisitor(Visitor);
+	}
+	else Result = true; // Nothing to validate
+
+	//!!!???activate entities here and not in level loading?!
+	//really, props that require AABBs depend on scene resources
+
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("ID"), ID);
+	EventSrv->FireEvent(CStrID("OnLevelValidated"), P); //???global or internal?
+
+	return Result;
 }
 //---------------------------------------------------------------------
 

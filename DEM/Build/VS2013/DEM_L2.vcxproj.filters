@@ -207,15 +207,6 @@
     <ClInclude Include="..\..\Src\L2\Game\Entity.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\EntityLoader.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\EntityLoaderCommon.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\EntityLoaderStatic.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\EntityManager.h">
       <Filter>Game</Filter>
     </ClInclude>
@@ -420,15 +411,6 @@
       <Filter>UI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\Entity.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\EntityLoader.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\EntityLoaderCommon.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\EntityLoaderStatic.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\EntityManager.cpp">

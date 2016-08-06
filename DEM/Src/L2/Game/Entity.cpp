@@ -122,11 +122,11 @@ bool CEntity::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEven
 {
 	CStrID EvID = ((Events::CEvent&)Event).ID;
 
-	if (EvID == CStrID("OnEntitiesLoaded"))
-	{
-		Activate();
-		OK;
-	}
+	//if (EvID == CStrID("OnEntitiesLoaded"))
+	//{
+	//	Activate();
+	//	OK;
+	//}
 
 	if (EvID == CStrID("OnEntitiesUnloading"))
 	{

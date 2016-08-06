@@ -1,6 +1,5 @@
 #include "GameServer.h"
 
-#include <Game/EntityLoaderCommon.h>
 #include <Game/GameLevelView.h>
 #include <Game/SceneNodeValidateAttrs.h>
 #include <AI/AIServer.h>
@@ -29,8 +28,6 @@ bool CGameServer::Open()
 
 	GameTimeSrc = n_new(Time::CTimeSource);
 	TimeSrv->AttachTimeSource(CStrID("Game"), GameTimeSrc);
-
-	if (DefaultLoader.IsNullPtr()) DefaultLoader = n_new(CEntityLoaderCommon);
 
 	IsOpen = true;
 	OK;
@@ -111,21 +108,6 @@ void CGameServer::Trigger()
 }
 //---------------------------------------------------------------------
 
-// If group loader exists and is set to NULL, group will be skipped
-void CGameServer::SetEntityLoader(CStrID Group, PEntityLoader Loader)
-{
-	if (Group.IsValid()) Loaders.Set(Group, Loader);
-	else DefaultLoader = Loader;
-}
-//---------------------------------------------------------------------
-
-void CGameServer::ClearEntityLoader(CStrID Group)
-{
-	if (Group.IsValid()) Loaders.Remove(Group);
-	else DefaultLoader = NULL; //???allow?
-}
-//---------------------------------------------------------------------
-
 bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 {
 	IPTR LevelIdx = Levels.FindIndex(ID);
@@ -135,59 +117,19 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 		FAIL;
 	}
 
-	Data::PParams P = n_new(Data::CParams);
-	P->Set(CStrID("ID"), ID);
-	EventSrv->FireEvent(CStrID("OnLevelLoading"), P); //???or after a level is added, but entities aren't loaded?
-
 	PGameLevel Level = n_new(CGameLevel);
 	if (!Level->Init(ID, Desc)) FAIL;
+	Levels.Add(Level->GetID(), Level);
+
+	//???here or in separate method?
+	// Validate scene graph
+	// Activate entities //???scene graph parts are validated inside or behave as their nodes aren't attached to SG?
+
+//////////////////////////
 
 	Game::CSceneNodeValidateAttrs Visitor;
 	Visitor.Level = Level;
 	Visitor.Visit(*Level->GetSceneRoot());
-
-	Levels.Add(Level->GetID(), Level);
-
-	Data::PParams SubDesc;
-	if (Desc.Get(SubDesc, CStrID("Entities")))
-	{
-		Level->FireEvent(CStrID("OnEntitiesLoading"));
-
-		for (UPTR i = 0; i < SubDesc->GetCount(); ++i)
-		{
-			const Data::CParam& EntityPrm = SubDesc->Get(i);
-			if (!EntityPrm.IsA<Data::PParams>()) continue;
-			Data::PParams EntityDesc = EntityPrm.GetValue<Data::PParams>();
-
-			//!!!move to separate function to allow creating entities after level is loaded!
-
-			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
-			IPTR LoaderIdx = Loaders.FindIndex(LoadingGroup);
-			PEntityLoader Loader = (LoaderIdx == INVALID_INDEX) ? DefaultLoader : Loaders.ValueAt(LoaderIdx);
-			if (Loader.IsNullPtr()) continue;
-
-			const CString& TplName = EntityDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
-			if (TplName.IsValid())
-			{
-				Data::PParams Tpl = DataSrv->LoadPRM("EntityTpls:" + TplName + ".prm");
-				if (Tpl.IsNullPtr())
-				{
-					Sys::Log("Entity template '%s' not found for entity %s in level %s\n",
-						TplName.CStr(), EntityPrm.GetName().CStr(), Level->GetID().CStr());
-					continue;
-				}
-				Data::PParams MergedDesc = n_new(Data::CParams(EntityDesc->GetCount() + Tpl->GetCount()));
-				Tpl->MergeDiff(*MergedDesc, *EntityDesc);
-				EntityDesc = MergedDesc;
-			}
-
-			if (!Loader->Load(EntityPrm.GetName(), *Level, *EntityDesc))
-				Sys::Log("Entity %s not loaded in level %s, group is %s\n",
-					EntityPrm.GetName().CStr(), Level->GetID().CStr(), LoadingGroup.CStr());
-		}
-
-		Level->FireEvent(CStrID("OnEntitiesLoaded"));
-	}
 
 	//!!!to view loading!
 	//Data::PDataArray SelArray;
@@ -195,6 +137,8 @@ bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 	//	for (UPTR i = 0; i < SelArray->GetCount(); ++i)
 	//		Level->AddToSelection(SelArray->Get<CStrID>(i));
 
+	Data::PParams P = n_new(Data::CParams);
+	P->Set(CStrID("ID"), ID);
 	EventSrv->FireEvent(CStrID("OnLevelLoaded"), P);
 
 	OK;
@@ -237,28 +181,6 @@ void CGameServer::UnloadLevel(CStrID ID)
 	EventSrv->FireEvent(CStrID("OnLevelUnloaded"), P);
 
 	n_assert_dbg(Level->GetRefCount() == 1);
-}
-//---------------------------------------------------------------------
-
-bool CGameServer::ValidateLevel(CGameLevel& Level, Render::CGPUDriver* pGPU)
-{
-	bool Result;
-	
-	if (Level.GetSceneRoot())
-	{
-		Frame::CSceneNodeValidateResources Visitor;
-		Visitor.GPU = pGPU;
-		Result = Level.GetSceneRoot()->AcceptVisitor(Visitor);
-	}
-	else Result = true; // Nothing to validate
-
-	//!!!???activate entities here and not in level loading?!
-	//really, props that require AABBs depend on scene resources
-
-	Data::PParams P = n_new(Data::CParams(1));
-	P->Set(CStrID("ID"), Level.GetID());
-	EventSrv->FireEvent(CStrID("OnLevelValidated"), P);
-	return Result;
 }
 //---------------------------------------------------------------------
 

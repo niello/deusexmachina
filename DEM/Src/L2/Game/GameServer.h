@@ -4,7 +4,6 @@
 
 #include <Time/TimeSource.h>
 #include <Game/GameLevel.h>
-#include <Game/EntityLoader.h> //???really need? or maybe write one loader for entities and static objects?
 #include <Game/EntityManager.h>	//???need to be a singleton?
 #include <Game/StaticEnvManager.h>	//???need to be a singleton?
 #include <Data/HandleManager.h>
@@ -42,15 +41,12 @@ protected:
 	CEntityManager					EntityManager;
 	CStaticEnvManager				StaticEnvManager;
 	//CCameraManager				CameraManager;
-	CDict<CStrID, PEntityLoader>	Loaders;
-	PEntityLoader					DefaultLoader;
 
 	CDict<CStrID, PGameLevel>		Levels;
 	CArray<CGameLevelView*>			LevelViews;
 	Data::CHandleManager			LevelViewHandles;
 	CArray<Scene::CSceneNode*>		DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
-	bool ValidateLevel(CGameLevel& Level, Render::CGPUDriver* pGPU);
 	bool CommitContinueData();
 	bool CommitLevelDiff(CGameLevel& Level);
 
@@ -63,14 +59,10 @@ public:
 	void			Close();
 	void			Trigger();
 
-	void			SetEntityLoader(CStrID Group, PEntityLoader Loader);
-	void			ClearEntityLoader(CStrID Group);
-
 	bool			LoadLevel(CStrID ID, const Data::CParams& Desc);
 	void			UnloadLevel(CStrID ID);
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
-	bool			ValidateLevel(CStrID ID, Render::CGPUDriver* pGPU);
 	bool			ValidateAllLevels(Render::CGPUDriver* pGPU);
 
 	HHandle			CreateLevelView(CStrID LevelID);
@@ -125,17 +117,10 @@ inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-inline bool CGameServer::ValidateLevel(CStrID ID, Render::CGPUDriver* pGPU)
-{
-	CGameLevel* pLevel = GetLevel(ID);
-	return pLevel && ValidateLevel(*pLevel, pGPU);
-}
-//---------------------------------------------------------------------
-
 inline bool CGameServer::ValidateAllLevels(Render::CGPUDriver* pGPU)
 {
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
-		if (!ValidateLevel(*Levels.ValueAt(i), pGPU)) FAIL;
+		if (!Levels.ValueAt(i)->Validate(pGPU)) FAIL;
 	OK;
 }
 //---------------------------------------------------------------------

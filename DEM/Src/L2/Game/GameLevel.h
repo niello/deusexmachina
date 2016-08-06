@@ -57,7 +57,6 @@ protected:
 
 	CStrID						ID;
 	CString						Name;
-	CAABB						BBox;			// Now primarily for culling through a spatial partitioning structure
 	Events::PSub				GlobalSub;
 	Scripting::PScriptObject	Script;
 
@@ -80,6 +79,7 @@ public:
 	virtual ~CGameLevel() { Term(); }
 
 	bool					Init(CStrID LevelID, const Data::CParams& Desc);
+	bool					Validate(Render::CGPUDriver* pGPU);
 	void					Term();
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
 	//void					RenderDebug();

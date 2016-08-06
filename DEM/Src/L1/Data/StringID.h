@@ -20,40 +20,40 @@ protected:
 	friend class CStringIDStorage;
 	static class CStringIDStorage Storage;
 
-	const char* String;
+	const char* pString;
 
-	explicit CStringID(const char* pString, int, int) { String = pString; }
+	explicit CStringID(const char* pStr, int, int) { pString = pStr; }
 
 public:
 
 	static const CStringID Empty;
 
-	CStringID(): String(NULL) {}
+	CStringID(): pString(NULL) {}
 #ifdef _DEBUG
 	explicit // So I can later search all static StrIDs and predefine them
 #endif
-	CStringID(const char* pString, bool OnlyExisting = false);
-	explicit CStringID(void* StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
-	explicit CStringID(UPTR StrID): String((const char*)StrID) {} // Direct constructor. Be careful.
+	CStringID(const char* pStr, bool OnlyExisting = false);
+	explicit CStringID(void* StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
+	explicit CStringID(UPTR StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
 
-	UPTR		GetID() const { return (UPTR)String; }
-	const char*	CStr() const { return String; }
+	UPTR		GetID() const { return (UPTR)pString; }
+	const char*	CStr() const { return pString; }
 
-	operator	UPTR() const { return (UPTR)String; }
-	operator	const char*() const { return String; }
+	operator	UPTR() const { return (UPTR)pString; }
+	operator	const char*() const { return pString; }
 	//operator	bool() const { return IsValid(); }
 
-	bool		IsValid() const { return String && *String; }
+	bool		IsValid() const { return pString && *pString; }
 
-	bool		operator <(const CStringID& Other) const { return String < Other.String; }
-	bool		operator >(const CStringID& Other) const { return String > Other.String; }
-	bool		operator <=(const CStringID& Other) const { return String <= Other.String; }
-	bool		operator >=(const CStringID& Other) const { return String >= Other.String; }
-	bool		operator ==(const CStringID& Other) const { return String == Other.String; }
-	bool		operator !=(const CStringID& Other) const { return String != Other.String; }
-	bool		operator ==(const char* Str) const { return !strcmp(String, Str); }
-	bool		operator !=(const char* Str) const { return !!strcmp(String, Str); }
-	CStringID&	operator =(const CStringID& Other) { String = Other.String; return *this; }
+	bool		operator <(const CStringID& Other) const { return pString < Other.pString; }
+	bool		operator >(const CStringID& Other) const { return pString > Other.pString; }
+	bool		operator <=(const CStringID& Other) const { return pString <= Other.pString; }
+	bool		operator >=(const CStringID& Other) const { return pString >= Other.pString; }
+	bool		operator ==(const CStringID& Other) const { return pString == Other.pString; }
+	bool		operator !=(const CStringID& Other) const { return pString != Other.pString; }
+	bool		operator ==(const char* pOther) const { return pString == pOther || (pString && pOther && !strcmp(pString, pOther)); }
+	bool		operator !=(const char* pOther) const { return pString != pOther && (!pString || !pOther || strcmp(pString, pOther)); }
+	CStringID&	operator =(const CStringID& Other) { pString = Other.pString; return *this; }
 };
 
 }
