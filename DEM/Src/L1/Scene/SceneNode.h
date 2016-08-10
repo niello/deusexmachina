@@ -52,7 +52,7 @@ protected:
 
 public:
 
-	CSceneNode(CStrID NodeName);
+	CSceneNode(CStrID NodeName = CStrID::Empty);
 	virtual ~CSceneNode();
 
 	virtual bool			IsResourceValid() const { OK; }

@@ -78,7 +78,7 @@ public:
 	CGameLevel(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f) {}
 	virtual ~CGameLevel() { Term(); }
 
-	bool					Init(CStrID LevelID, const Data::CParams& Desc);
+	bool					Load(CStrID LevelID, const Data::CParams& Desc);
 	bool					Validate(Render::CGPUDriver* pGPU);
 	void					Term();
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);

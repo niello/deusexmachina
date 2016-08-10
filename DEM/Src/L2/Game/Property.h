@@ -38,6 +38,7 @@ public:
 	CProperty(): Active(false), pEntity(NULL) {}
 	virtual ~CProperty() {}
 
+	virtual bool				Initialize() { OK; }
 	void						Activate();
 	void						Deactivate();
 	virtual CPropertyStorage*	GetStorage() const { return NULL; }

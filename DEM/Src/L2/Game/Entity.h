@@ -22,14 +22,15 @@ protected:
 
 	enum
 	{
-		Active				= 0x01,
-		ChangingActivity	= 0x02	// If set: Active set - in Deactivate(), Active not set - in Activate()
+		Active						= 0x01,
+		ChangingActivity			= 0x02,	// If set: Active set - in Deactivate(), Active not set - in Activate()
+		WaitingForLevelActivation	= 0x04	// Typically set for just created entities that weren't activated before
 	};
 
 	CStrID			UID;
 	PGameLevel		Level;
 	Data::CFlags	Flags;
-	Events::PSub	LevelSub;
+	Events::PSub	LevelSub;	// Subscription to level events
 	CDataDict		Attrs;		//???use hash map?
 
 	void SetUID(CStrID NewUID);

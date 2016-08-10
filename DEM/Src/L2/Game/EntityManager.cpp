@@ -140,6 +140,9 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 		pStorage->Add(Entity.GetUID(), Prop);
 		Prop->SetEntity(&Entity);
 	}
+
+	n_verify(Prop->Initialize());
+
 	return Prop.GetUnsafe();
 }
 //---------------------------------------------------------------------

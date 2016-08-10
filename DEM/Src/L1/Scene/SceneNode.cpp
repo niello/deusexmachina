@@ -116,13 +116,15 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 		ClonedNode->AddAttribute(*Attrs[i]->Clone().GetUnsafe());
 
-	if (CloneChildren)
+	UPTR ChildCount = Children.GetCount();
+	if (CloneChildren && ChildCount)
 	{
-		ClonedNode->Children.BeginAdd(Children.GetCount());
-		for (UPTR i = 0; i < Children.GetCount(); ++i)
+		ClonedNode->Children.BeginAdd(ChildCount);
+		for (UPTR i = 0; i < ChildCount; ++i)
 		{
-			PSceneNode CurrChild = Children.ValueAt(i);
-			ClonedNode->Children.Add(CurrChild->GetName(), CurrChild->Clone(true));
+			PSceneNode CurrChild = Children.ValueAt(i)->Clone(true);
+			CurrChild->pParent = ClonedNode.GetUnsafe();
+			ClonedNode->Children.Add(CurrChild->GetName(), CurrChild);
 		}
 		ClonedNode->Children.EndAdd();
 	}

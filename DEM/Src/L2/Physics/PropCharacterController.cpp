@@ -200,24 +200,6 @@ bool CPropCharacterController::OnSetTransform(Events::CEventDispatcher* pDispatc
 }
 //---------------------------------------------------------------------
 
-/*
-void CPropActorPhysics::GetAABB(CAABB& AABB) const
-{
-	Physics::CEntity* pEnt = GetPhysicsEntity();
-	if (pEnt && pEnt->GetComposite()) pEnt->GetComposite()->GetAABB(AABB);
-	else
-	{
-		AABB.Min.x = 
-		AABB.Min.y = 
-		AABB.Min.z = 
-		AABB.Max.x = 
-		AABB.Max.y = 
-		AABB.Max.z = 0.f;
-	}
-}
-//---------------------------------------------------------------------
-*/
-
 bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) OK;

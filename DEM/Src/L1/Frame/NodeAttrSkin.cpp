@@ -8,9 +8,19 @@
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
 
+// See CNodeAttrSkin::Initialize()
+#define NOT_PROCESSED_NODE (pNode)
+
 namespace Frame
 {
 __ImplementClass(Frame::CNodeAttrSkin, 'SKIN', Scene::CNodeAttribute);
+
+CNodeAttrSkin::~CNodeAttrSkin()
+{
+	SAFE_DELETE_ARRAY(pBoneNodes);
+	SAFE_FREE_ALIGNED(pSkinPalette);
+}
+//---------------------------------------------------------------------
 
 bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {
@@ -19,6 +29,7 @@ bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataR
 		case 'SKIF':
 		{
 			//???!!!store the whole URI in a file?!
+			//???store resource locally for reloading?
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RsrcURI = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
 			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI);
@@ -35,7 +46,7 @@ bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataR
 		}
 		case 'ACBN':
 		{
-			Flags.SetTo(AutocreateBones, DataReader.Read<bool>());
+			Flags.SetTo(Skin_AutocreateBones, DataReader.Read<bool>());
 			OK;
 		}
 		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);
@@ -47,76 +58,61 @@ Scene::PNodeAttribute CNodeAttrSkin::Clone()
 {
 	PNodeAttrSkin ClonedAttr = n_new(CNodeAttrSkin);
 	ClonedAttr->SkinInfo = SkinInfo;
-	ClonedAttr->Flags.SetTo(AutocreateBones, Flags.Is(AutocreateBones));
+	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
 	return ClonedAttr.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+Scene::CSceneNode* CNodeAttrSkin::GetBoneNode(UPTR BoneIndex)
+{
+	if (pBoneNodes[BoneIndex] == NOT_PROCESSED_NODE)
+	{
+		const Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(BoneIndex);
+		Scene::CSceneNode* pParentBoneNode = (BoneInfo.ParentIndex == INVALID_INDEX) ? pNode : GetBoneNode(BoneInfo.ParentIndex);
+		if (pParentBoneNode)
+		{
+			Scene::CSceneNode* pBoneNode = pParentBoneNode->GetChild(BoneInfo.ID);
+			if (!pBoneNode && Flags.Is(Skin_AutocreateBones)) pBoneNode = pParentBoneNode->CreateChild(BoneInfo.ID);
+			pBoneNodes[BoneIndex] = pBoneNode;
+		}
+		else pBoneNodes[BoneIndex] = NULL;
+	}
+	return pBoneNodes[BoneIndex];
 }
 //---------------------------------------------------------------------
 
 bool CNodeAttrSkin::Initialize()
 {
-	NOT_IMPLEMENTED;
-	OK;
-}
-//---------------------------------------------------------------------
+	if (!pNode || SkinInfo.IsNullPtr()) FAIL;
 
-/*
-bool CNodeAttrSkin::OnAttachToNode(Scene::CSceneNode* pSceneNode)
-{
-	if (!CNodeAttribute::OnAttachToNode(pSceneNode)) FAIL;
+	UPTR BoneCount = SkinInfo->GetBoneCount();
+	pSkinPalette = (matrix44*)n_malloc_aligned(BoneCount * sizeof(matrix44), 16);
+	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
 
-	SkinMatrix.ident();
+	// Here we fill an array of scene nodes associated with bones of this skin instance. NULL values
+	// are valid for the case when bone doesn't exist and must not be autocreated. To make distinstion
+	// between NULL and not processed nodes we fill not processed ones with the value of pNode (skin
+	// owner). No bone can use this node, so this value means 'not processed yet'. Hacky but convenient.
+	// Since processing is recursive and random-access, we must clear array in a first pass and then
+	// process it in a second pass.
 
-	// Since SkinMatrix is Identity and node position doesn't change, it is not necessary:
-	// To undo inv. bind pose in initial state
-	pNode->SetLocalTransform(BindPoseLocal);
+	for (UPTR i = 0; i < BoneCount; ++i)
+		pBoneNodes[i] = NOT_PROCESSED_NODE;
 
-	BindPoseLocal.ToMatrix(BindPoseWorld);
-
-	CBone* pParentBone = GetParentBone();
-	if (pParentBone) BindPoseWorld.mult_simple(pParentBone->GetBindPoseMatrix());
-
-	BindPoseWorld.invert_simple(InvBindPose);
-
-	CBone* pRootBone = GetRootBone();
-	Scene::CSceneNode* pModelNode = pRootBone->pNode->GetParent() ? pRootBone->pNode->GetParent() : pRootBone->pNode;
-
-	static CStrID sidJointPalette("JointPalette");
-	// Find all models in model node and setup matrix pointers in a JointPalette shader var
-	for (UPTR i = 0; i < pModelNode->GetAttributeCount(); ++i)
+	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		CNodeAttribute* pAttr = pModelNode->GetAttribute(i);
-		if (pAttr->IsA(CModel::RTTI) &&
-			(((CModel*)pAttr)->FeatureFlags & RenderSrv->GetFeatureFlagSkinned()) &&
-			((CModel*)pAttr)->Material.IsValid())
-		{
-			CModel* pModel = (CModel*)pAttr;
-			IPTR PaletteIdx = pModel->ShaderVars.FindIndex(sidJointPalette);
-			CMatrixPtrArray* pPalette;
-			if (PaletteIdx == INVALID_INDEX)
-			{
-				CShaderVar& Var = pModel->ShaderVars.Add(sidJointPalette);
-				Var.SetName(sidJointPalette);
-				pPalette = &Var.Value.New<CMatrixPtrArray>();
-				pPalette->SetGrowSize(1);
-				Var.Bind(*pModel->Material->GetShader());
-			}
-			else pPalette = &pModel->ShaderVars.ValueAt(PaletteIdx).Value.GetValue<CMatrixPtrArray>();
+		pBoneNodes[i] = GetBoneNode(i);
 
-			if (!pModel->BoneIndices.GetCount())
-				pPalette->At(Index) = &SkinMatrix;
-			else
-				for (UPTR j = 0; j < pModel->BoneIndices.GetCount(); ++j)
-					if (pModel->BoneIndices[j] == Index)
-					{
-						pPalette->At(j) = &SkinMatrix;
-						break;
-					}
-		}
+		// Set skinned mesh into a bind pose initially
+		pSkinPalette[i].ident();
+		matrix44 BindPoseWorld;
+		SkinInfo->GetInvBindPose(i).invert_simple(BindPoseWorld);
+		pBoneNodes[i]->SetWorldTransform(BindPoseWorld);
 	}
+
 	OK;
 }
 //---------------------------------------------------------------------
-*/
 
 void CNodeAttrSkin::Update(const vector3* pCOIArray, UPTR COICount)
 {

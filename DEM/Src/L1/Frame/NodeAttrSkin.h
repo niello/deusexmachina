@@ -27,12 +27,14 @@ protected:
 	{
 		// Active
 		// WorldMatrixChanged
-		AutocreateBones = 0x04
+		Skin_AutocreateBones = 0x04
 	};
 
 	Render::PSkinInfo	SkinInfo;
-	matrix44*			pSkinPalette; //!!!allocate aligned skin palette!
+	matrix44*			pSkinPalette;
 	Scene::CSceneNode**	pBoneNodes; //???strong refs?
+
+	Scene::CSceneNode*	GetBoneNode(UPTR BoneIndex);
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets
@@ -41,6 +43,7 @@ protected:
 public:
 
 	CNodeAttrSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
+	~CNodeAttrSkin();
 
 	bool							Initialize();
 

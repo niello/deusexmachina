@@ -46,7 +46,7 @@ void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
 }
 //---------------------------------------------------------------------
 
-bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
+bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 {
 	//n_assert(!Initialized);
 
@@ -224,6 +224,8 @@ bool CGameLevel::Init(CStrID LevelID, const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
+//???validation or activation? activation must be one-time, validation must only validate resources!
+//!!!OnLevelValidated and OnLevelActivated must be separate events!
 bool CGameLevel::Validate(Render::CGPUDriver* pGPU)
 {
 	HostGPU = pGPU;
@@ -237,8 +239,7 @@ bool CGameLevel::Validate(Render::CGPUDriver* pGPU)
 	}
 	else Result = true; // Nothing to validate
 
-	//!!!???activate entities here and not in level loading?!
-	//really, props that require AABBs depend on scene resources
+	FireEvent(CStrID("ValidateEntities"));
 
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("ID"), ID);
@@ -489,7 +490,7 @@ void CGameLevel::RenderDebug()
 	if (SceneRoot.IsValidPtr())
 	{
 		Scene::CSceneNodeRenderDebug RD;
-		RD.Visit(*SceneRoot);
+		SceneRoot->AcceptVisitor(RD);
 	}
 }
 //---------------------------------------------------------------------

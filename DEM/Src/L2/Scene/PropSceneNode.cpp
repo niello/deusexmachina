@@ -30,27 +30,16 @@ IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)
 //save scene graph as binary format (list or tree), either diff or overwrite, mb overwrite is better
 //after loading transforms UpdateTransform or smth must be fired, and no prop should use tfm before this happens
 
-bool CPropSceneNode::InternalActivate()
+bool CPropSceneNode::Initialize()
 {
-	if (!GetEntity()->GetLevel()->GetSceneRoot()) FAIL;
+	// Scene graph must be already initialized, or no scene is present in the level
+	Scene::CSceneNode* pRootNode = GetEntity()->GetLevel()->GetSceneRoot();
+	if (!pRootNode) FAIL;
 
-	CString NodePath;
-	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
+	// Create new node hierarchy from SCN file if file is specified
 	CString NodeFile;
-	bool CreateNode = GetEntity()->GetAttr<CString>(NodeFile, CStrID("SceneFile"));
-
-	const char* pUnresolved;
-	Scene::PSceneNode PathNode = GetEntity()->GetLevel()->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
-	ExistingNode = !pUnresolved;
-	if (pUnresolved) PathNode = PathNode->CreateChildChain(pUnresolved);
-	n_assert(PathNode.IsValidPtr());
-
-	if (CreateNode)
+	if (GetEntity()->GetAttr<CString>(NodeFile, CStrID("SceneFile")))
 	{
-		// Create node at runtime
-
-		CStrID EntityID = GetEntity()->GetUID();
-
 		if (NodeFile.IsValid())
 		{
 			CString RsrcURI = "Scene:" + NodeFile + ".scn";
@@ -64,20 +53,51 @@ bool CPropSceneNode::InternalActivate()
 				if (!Rsrc->IsLoaded()) FAIL;
 			}
 			Node = Rsrc->GetObject<Scene::CSceneNode>()->Clone(true);
-			PathNode->AddChild(EntityID, *Node.GetUnsafe());
 		}
 		else
 		{
-			Node = PathNode->CreateChild(EntityID);
+			Node = n_new(Scene::CSceneNode);
 		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CPropSceneNode::InternalActivate()
+{
+	CString NodePath;
+	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
+
+	const char* pUnresolved;
+	Scene::PSceneNode PathNode = GetEntity()->GetLevel()->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
+	if (pUnresolved)
+	{
+#ifdef _DEBUG
+		Sys::Log("CPropSceneNode::InternalActivate() > ScenePath chain incomplete, created '%s'\n", pUnresolved);
+#endif
+		PathNode = PathNode->CreateChildChain(pUnresolved);
+	}
+	n_assert(PathNode.IsValidPtr());
+
+	if (Node.IsValidPtr())
+	{
+		// Use new node created by the property. It requires attribute validation to
+		// load referenced resources and prepare itself to work.
+		ExistingNode = false;
+
+		PathNode->AddChild(GetEntity()->GetUID(), *Node.GetUnsafe());
 
 		Game::CSceneNodeValidateAttrs Visitor;
 		Visitor.Level = GetEntity()->GetLevel();
-		Visitor.Visit(*Node.GetUnsafe());
+		Node->AcceptVisitor(Visitor);
 	}
 	else
 	{
-		// Use node created in a tool. It was already validated.
+		// Use node included into a base scene graph of the level. It was already validated
+		// as a part of base scene graph during the game level validation. We will not
+		// destroy this node on deactivation even if we restored a part of ScenePath chain.
+		ExistingNode = true;
 		Node = PathNode;
 	}
 
@@ -113,6 +133,7 @@ bool CPropSceneNode::InternalActivate()
 		}
 	}
 
+	//???!!!OnAttrChanged / OnTransformChanged?! universal for all attrs.
 	GetEntity()->FireEvent(CStrID("UpdateTransform"));
 
 	//???for each other active property of this entity call InitDependency(Prop)?
@@ -146,11 +167,8 @@ void CPropSceneNode::InternalDeactivate()
 	ChildCache.Clear();
 	ChildrenToSave.Clear();
 
-	if (Node.IsValidPtr() && !ExistingNode)
-	{
-		Node->Remove();
-		Node = NULL;
-	}
+	// Remove node if we created it in a property
+	if (Node.IsValidPtr() && !ExistingNode) Node->Remove();
 }
 //---------------------------------------------------------------------
 
@@ -242,7 +260,7 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CNodeAttrRenderable>())
 		{
 			CAABB AttrBox;
-			//!!!((Frame::CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources(GPU);
+			((Frame::CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources(GetEntity()->GetLevel()->GetHostGPU());
 			((Frame::CNodeAttrRenderable&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}

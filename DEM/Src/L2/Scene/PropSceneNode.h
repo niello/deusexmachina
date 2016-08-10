@@ -46,6 +46,8 @@ public:
 		AABB_Phys	= 0x02
 	};
 
+	virtual bool		Initialize();
+
 	Scene::CSceneNode*	GetNode() const { return Node.GetUnsafe(); }
 	Scene::CSceneNode*	GetChildNode(CStrID ID);
 	void				GetAABB(CAABB& OutBox, UPTR TypeFlags = AABB_Gfx | AABB_Phys) const;

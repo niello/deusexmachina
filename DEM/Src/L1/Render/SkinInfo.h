@@ -24,7 +24,6 @@ class CSkinInfo: public Resources::CResourceObject
 
 protected:
 
-	//!!!allocate aligned!
 	matrix44*				pInvBindPose;
 	CFixedArray<CBoneInfo>	Bones;
 	//???root and terminal node indices?

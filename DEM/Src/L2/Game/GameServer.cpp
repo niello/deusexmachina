@@ -110,26 +110,13 @@ void CGameServer::Trigger()
 
 bool CGameServer::LoadLevel(CStrID ID, const Data::CParams& Desc)
 {
+	//???update already existing objects or unload the level?
 	IPTR LevelIdx = Levels.FindIndex(ID);
-	if (LevelIdx != INVALID_INDEX)
-	{
-		//???update already existing objects or unload the level?
-		FAIL;
-	}
+	if (LevelIdx != INVALID_INDEX) FAIL;
 
 	PGameLevel Level = n_new(CGameLevel);
-	if (!Level->Init(ID, Desc)) FAIL;
+	if (!Level->Load(ID, Desc)) FAIL;
 	Levels.Add(Level->GetID(), Level);
-
-	//???here or in separate method?
-	// Validate scene graph
-	// Activate entities //???scene graph parts are validated inside or behave as their nodes aren't attached to SG?
-
-//////////////////////////
-
-	Game::CSceneNodeValidateAttrs Visitor;
-	Visitor.Level = Level;
-	Visitor.Visit(*Level->GetSceneRoot());
 
 	//!!!to view loading!
 	//Data::PDataArray SelArray;

@@ -43,21 +43,14 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 
 	Desc = Attrs; //&ObjDesc;
 
-	CString NodePath;
-	Desc->Get<CString>(NodePath, CStrID("ScenePath"));
+	// Scene graph must be already initialized, or no scene is present in the level
+	Scene::CSceneNode* pRootNode = Level->GetSceneRoot();
+	n_assert(pRootNode);
+
+	// Create new node hierarchy from SCN file if file is specified
 	CString NodeFile;
-	bool CreateNode = Desc->Get<CString>(NodeFile, CStrID("SceneFile"));
-
-	const char* pUnresolved;
-	Scene::PSceneNode PathNode = Level->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
-	ExistingNode = !pUnresolved;
-	if (pUnresolved) PathNode = PathNode->CreateChildChain(pUnresolved);
-	n_assert(PathNode.IsValidPtr());
-
-	if (CreateNode)
+	if (Desc->Get<CString>(NodeFile, CStrID("SceneFile")))
 	{
-		// Create node at runtime
-
 		if (NodeFile.IsValid())
 		{
 			CString RsrcURI = "Scene:" + NodeFile + ".scn";
@@ -71,20 +64,45 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 				n_assert(Rsrc->IsLoaded());
 			}
 			Node = Rsrc->GetObject<Scene::CSceneNode>()->Clone(true);
-			PathNode->AddChild(UID, *Node.GetUnsafe());
 		}
 		else
 		{
-			Node = PathNode->CreateChild(UID);
+			Node = n_new(Scene::CSceneNode);
 		}
+	}
+
+	CString NodePath;
+	Desc->Get<CString>(NodePath, CStrID("ScenePath"));
+
+	const char* pUnresolved;
+	Scene::PSceneNode PathNode = pRootNode->FindDeepestChild(NodePath.CStr(), pUnresolved);
+	if (pUnresolved)
+	{
+#ifdef _DEBUG
+		Sys::Log("CStaticObject::Init() > ScenePath chain incomplete, created '%s'\n", pUnresolved);
+#endif
+		PathNode = PathNode->CreateChildChain(pUnresolved);
+	}
+	n_assert(PathNode.IsValidPtr());
+
+	if (Node.IsValidPtr())
+	{
+		// Use new node created by the property. It requires attribute validation to
+		// load referenced resources and prepare itself to work.
+		ExistingNode = false;
+
+		PathNode->AddChild(UID, *Node.GetUnsafe());
 
 		Game::CSceneNodeValidateAttrs Visitor;
 		Visitor.Level = Level;
-		Visitor.Visit(*Node.GetUnsafe());
+		Node->AcceptVisitor(Visitor);
 	}
 	else
 	{
-		// Use node created in a tool. It was already validated.
+		// Use node included into a base scene graph of the level. It was already validated
+		// as a part of base scene graph during the game level validation. We will not
+		// destroy this node on deactivation even if we restored a part of ScenePath chain.
+		ExistingNode = true;
 		Node = PathNode;
 	}
 

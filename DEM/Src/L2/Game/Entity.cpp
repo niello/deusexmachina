@@ -9,7 +9,7 @@ namespace Game
 {
 __ImplementClassNoFactory(Game::CEntity, Core::CObject);
 
-CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID)
+CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID), Flags(WaitingForLevelActivation)
 {
 }
 //---------------------------------------------------------------------
@@ -47,7 +47,7 @@ void CEntity::Activate()
 	FireEvent(CStrID("OnPropsActivated")); // Needed for initialization of properties dependent on other properties
 
 	Flags.Set(Active);
-	Flags.Clear(ChangingActivity);
+	Flags.Clear(ChangingActivity | WaitingForLevelActivation);
 }
 //---------------------------------------------------------------------
 
@@ -120,18 +120,23 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 bool CEntity::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	CStrID EvID = ((Events::CEvent&)Event).ID;
-
-	//if (EvID == CStrID("OnEntitiesLoaded"))
-	//{
-	//	Activate();
-	//	OK;
-	//}
-
-	if (EvID == CStrID("OnEntitiesUnloading"))
+	if (Event.IsA<Events::CEvent>())
 	{
-		Deactivate(); //???if (IsActive())?
-		OK;
+		CStrID EvID = ((Events::CEvent&)Event).ID;
+
+		// Internal event of the level
+		if (Flags.Is(WaitingForLevelActivation) && EvID == CStrID("ValidateEntities"))
+		{
+			Activate();
+			OK;
+		}
+
+		// Internal event of the level
+		if (EvID == CStrID("OnEntitiesUnloading"))
+		{
+			Deactivate(); //???if (IsActive())?
+			OK;
+		}
 	}
 
 	return !!FireEvent(Event);
