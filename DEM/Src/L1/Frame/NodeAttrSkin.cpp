@@ -63,17 +63,25 @@ Scene::PNodeAttribute CNodeAttrSkin::Clone()
 }
 //---------------------------------------------------------------------
 
-Scene::CSceneNode* CNodeAttrSkin::GetBoneNode(UPTR BoneIndex)
+Scene::CSceneNode* CNodeAttrSkin::SetupBoneNode(UPTR BoneIndex)
 {
 	if (pBoneNodes[BoneIndex] == NOT_PROCESSED_NODE)
 	{
 		const Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(BoneIndex);
-		Scene::CSceneNode* pParentBoneNode = (BoneInfo.ParentIndex == INVALID_INDEX) ? pNode : GetBoneNode(BoneInfo.ParentIndex);
+		Scene::CSceneNode* pParentBoneNode = (BoneInfo.ParentIndex == INVALID_INDEX) ? pNode : SetupBoneNode(BoneInfo.ParentIndex);
 		if (pParentBoneNode)
 		{
 			Scene::CSceneNode* pBoneNode = pParentBoneNode->GetChild(BoneInfo.ID);
 			if (!pBoneNode && Flags.Is(Skin_AutocreateBones)) pBoneNode = pParentBoneNode->CreateChild(BoneInfo.ID);
 			pBoneNodes[BoneIndex] = pBoneNode;
+			n_assert_dbg(pBoneNode);
+
+			// Set skinned mesh into a bind pose initially
+			matrix44 BindPoseLocal;
+			SkinInfo->GetInvBindPose(BoneIndex).invert_simple(BindPoseLocal);
+			if (BoneInfo.ParentIndex != INVALID_INDEX)
+				BindPoseLocal.mult_simple(SkinInfo->GetInvBindPose(BoneInfo.ParentIndex));
+			pBoneNode->SetLocalTransform(BindPoseLocal);
 		}
 		else pBoneNodes[BoneIndex] = NULL;
 	}
@@ -100,15 +108,7 @@ bool CNodeAttrSkin::Initialize()
 		pBoneNodes[i] = NOT_PROCESSED_NODE;
 
 	for (UPTR i = 0; i < BoneCount; ++i)
-	{
-		pBoneNodes[i] = GetBoneNode(i);
-
-		// Set skinned mesh into a bind pose initially
-		pSkinPalette[i].ident();
-		matrix44 BindPoseWorld;
-		SkinInfo->GetInvBindPose(i).invert_simple(BindPoseWorld);
-		pBoneNodes[i]->SetWorldTransform(BindPoseWorld);
-	}
+		pBoneNodes[i] = SetupBoneNode(i);
 
 	OK;
 }

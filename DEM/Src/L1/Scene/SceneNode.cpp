@@ -94,9 +94,9 @@ void CSceneNode::UpdateLocalFromWorld()
 {
 	if (pParent)
 	{
-		matrix44 InvParentPos;
-		pParent->WorldMatrix.invert_simple(InvParentPos);
-		LocalMatrix.mult2_simple(InvParentPos, WorldMatrix);
+		matrix44 InvParentTfm;
+		pParent->WorldMatrix.invert_simple(InvParentTfm);
+		LocalMatrix.mult2_simple(InvParentTfm, WorldMatrix);
 	}
 	else LocalMatrix = WorldMatrix;
 	Tfm.FromMatrix(LocalMatrix);

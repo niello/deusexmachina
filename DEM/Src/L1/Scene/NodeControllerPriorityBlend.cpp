@@ -37,10 +37,10 @@ bool CNodeControllerPriorityBlend::ApplyTo(Math::CTransformSRT& DestTfm)
 				}
 				else
 				{
-					matrix44 InvParentPos;
-					pNode->GetParent()->GetWorldMatrix().invert_simple(InvParentPos);
-					InvParentPos.mult_simple(CurrMatrix);
-					Src.SRT.FromMatrix(InvParentPos);
+					matrix44 InvParentTfm;
+					pNode->GetParent()->GetWorldMatrix().invert_simple(InvParentTfm);
+					InvParentTfm.mult_simple(CurrMatrix);
+					Src.SRT.FromMatrix(InvParentTfm);
 				}
 			}
 		}

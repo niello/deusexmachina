@@ -344,7 +344,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
 						{
 							int BoneIdx = pModel->BoneIndices[BoneIdxIdx];
-							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdx, ItCurr->pSkinPalette + sizeof(matrix44) * BoneIdx, sizeof(matrix44));
+							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, ItCurr->pSkinPalette + BoneIdx, sizeof(matrix44));
 						}
 					}
 					else

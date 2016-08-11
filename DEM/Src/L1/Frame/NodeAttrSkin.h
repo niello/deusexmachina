@@ -34,7 +34,7 @@ protected:
 	matrix44*			pSkinPalette;
 	Scene::CSceneNode**	pBoneNodes; //???strong refs?
 
-	Scene::CSceneNode*	GetBoneNode(UPTR BoneIndex);
+	Scene::CSceneNode*	SetupBoneNode(UPTR BoneIndex);
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets

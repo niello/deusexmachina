@@ -1712,7 +1712,12 @@ PConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMeta* pM
 	ID3D11ShaderResourceView* pSRV = NULL;
 	if (Desc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
 	{
-		if (FAILED(pD3DDevice->CreateShaderResourceView(pD3DBuf, NULL, &pSRV)))
+		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
+		SRVDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+		SRVDesc.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+		SRVDesc.Buffer.FirstElement = 0;
+		SRVDesc.Buffer.NumElements = TotalSize / (4 * sizeof(float));
+		if (FAILED(pD3DDevice->CreateShaderResourceView(pD3DBuf, &SRVDesc, &pSRV)))
 		{
 			pD3DBuf->Release();
 			return NULL;
@@ -3031,8 +3036,8 @@ bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, 
 		n_assert_dbg(pBufMeta);
 		switch (pBufMeta->Type)
 		{
-			case USMBuffer_Constant:	Offset += pMeta->ElementSize * ElementIndex; break;
-			case USMBuffer_Texture:		Offset += pMeta->ElementSize * pMeta->ElementCount * ElementIndex; break;
+			case USMBuffer_Constant:	//Offset += pMeta->ElementSize * ElementIndex; break;
+			case USMBuffer_Texture:		Offset += pMeta->ElementSize * ElementIndex; break;
 			case USMBuffer_Structured:	Offset += pBufMeta->Size * ElementIndex; break;
 		}
 	}

@@ -134,7 +134,7 @@ inline void CSceneNode::RemoveChild(CSceneNode& Node)
 inline CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
 {
 	IPTR Idx = Children.FindIndex(ChildName);
-	return Idx == INVALID_INDEX ? NULL : Children.ValueAt(Idx);
+	return Idx == INVALID_INDEX ? NULL : Children.ValueAt(Idx).GetUnsafe();
 }
 //---------------------------------------------------------------------
 
