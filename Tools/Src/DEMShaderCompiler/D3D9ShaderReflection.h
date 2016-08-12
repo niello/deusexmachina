@@ -78,6 +78,6 @@ struct CD3D9ConstantDesc
 
 bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CString& OutCreator);
 void D3D9FindSamplerTextures(const char* pSrcText, CDict<CString, CArray<CString>>& OutSampToTex);
-void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName);
+void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName, U32& OutSlotIndex);
 
 #endif

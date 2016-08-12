@@ -100,9 +100,8 @@ inline void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR Offset,
 	};
 
 	n_assert_dbg(pDest);
+	n_assert_dbg(pDest + Offset + Size <= (char*)pFloat4Data + Float4Count * sizeof(float) * 4 + Int4Count * sizeof(int) * 4 + BoolCount * sizeof(BOOL));
 
-	//!!!???PERF:?!
-	//if (memcmp(pMapped + Offset, pData, Size) == 0) return;
 	memcpy(pDest + Offset, pData, Size);
 	DirtyFlags.Set(Flag);
 }

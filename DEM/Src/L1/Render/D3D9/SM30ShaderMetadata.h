@@ -23,10 +23,10 @@ enum ESM30ConstFlags
 struct CSM30ShaderBufferMeta
 {
 	CStrID				Name;
+	U32					SlotIndex;			// Pseudo-register
 	CFixedArray<CRange>	Float4;
 	CFixedArray<CRange>	Int4;
 	CFixedArray<CRange>	Bool;
-	UPTR				SlotIndex;			// Pseudoregister, always equal to an index in a shader buffers metadata array
 	HHandle				Handle;
 };
 

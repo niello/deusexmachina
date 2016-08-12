@@ -89,7 +89,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			{
 				Messages += "Sampler '";
 				Messages += D3D9ConstDesc.Name;
-				Messages += "has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
+				Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 			}
 		}
 		else // Constants
@@ -98,7 +98,8 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			// It can be fixed as needed.
 
 			CString BufferName;
-			D3D9FindConstantBuffer(pSourceWithoutComments, D3D9ConstDesc.Name, BufferName);
+			U32 SlotIndex = (U32)(INVALID_INDEX);
+			D3D9FindConstantBuffer(pSourceWithoutComments, D3D9ConstDesc.Name, BufferName, SlotIndex);
 
 			UPTR BufferIndex = 0;
 			for (; BufferIndex < Out.Buffers.GetCount(); ++BufferIndex)
@@ -108,6 +109,25 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			{
 				CSM30ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
 				pMeta->Name = BufferName;
+				pMeta->SlotIndex = SlotIndex;
+			}
+			else
+			{
+				CSM30ShaderBufferMeta& Meta = Out.Buffers[BufferIndex];
+				if (Meta.SlotIndex == (U32)(INVALID_INDEX))
+					Meta.SlotIndex = SlotIndex;
+				else if (Meta.SlotIndex != SlotIndex)
+				{
+					Messages += "CBuffer '";
+					Messages += Meta.Name;
+					Messages += "' is bound to different SlotIndex values (at least ";
+					Messages += StringUtils::FromInt(Meta.SlotIndex);
+					Messages += " and ";
+					Messages += StringUtils::FromInt(SlotIndex);
+					Messages += ") in the same shader, please fix it\n";
+					n_free(pSourceWithoutComments);
+					FAIL;
+				}
 			}
 
 			CSM30ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
@@ -149,6 +169,11 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		}
 	}
 
+	n_free(pSourceWithoutComments);
+
+	// Remove empty constant buffers and set free SlotIndices where no explicit value was specified
+
+	CArray<U32> UsedSlotIndices;
 	UPTR i = 0;
 	while (i < Out.Buffers.GetCount())
 	{
@@ -159,10 +184,27 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		{
 			Out.Buffers.RemoveAt(i);
 		}
-		else ++i;
+		else
+		{
+			UsedSlotIndices.Add(B.SlotIndex);
+			++i;
+		}
 	};
 
-	n_free(pSourceWithoutComments);
+	UsedSlotIndices.Sort();
+
+	U32 NewSlotIndex = 0;
+	for (UPTR i = 0; i < Out.Buffers.GetCount(); ++i)
+	{
+		CSM30ShaderBufferMeta& B = Out.Buffers[i];
+		if (B.SlotIndex == (U32)(INVALID_INDEX))
+		{
+			while (UsedSlotIndices.ContainsSorted(NewSlotIndex))
+				++NewSlotIndex;
+			B.SlotIndex = NewSlotIndex;
+			++NewSlotIndex;
+		}
+	}
 
 	OK;
 }
@@ -418,6 +460,7 @@ bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 		Obj.UsedBool.Sort();
 
 		W.Write(Obj.Name);
+		W.Write(Obj.SlotIndex);
 
 		WriteRegisterRanges(Obj.UsedFloat4, W, "float4");
 		WriteRegisterRanges(Obj.UsedInt4, W, "int4");
@@ -543,6 +586,7 @@ bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
 		CSM30ShaderBufferMeta& Obj = *pBuf;
 
 		R.Read(Obj.Name);
+		R.Read(Obj.SlotIndex);
 
 		ReadRegisterRanges(Obj.UsedFloat4, R);
 		ReadRegisterRanges(Obj.UsedInt4, R);

@@ -14,6 +14,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	{
 		CSM30ShaderBufferMeta* pMeta = &Buffers[i];
 		if (!R.Read(pMeta->Name)) FAIL;
+		if (!R.Read(pMeta->SlotIndex)) FAIL;
 
 		CFixedArray<CRange>& Ranges1 = pMeta->Float4;
 		Ranges1.SetSize(R.Read<U32>());
@@ -41,8 +42,6 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 			if (!R.Read<U32>(Range.Start)) FAIL;
 			if (!R.Read<U32>(Range.Count)) FAIL;
 		}
-
-		pMeta->SlotIndex = i;
 
 		// For non-empty buffers open handles at the load time to reference buffers from constants
 		pMeta->Handle =

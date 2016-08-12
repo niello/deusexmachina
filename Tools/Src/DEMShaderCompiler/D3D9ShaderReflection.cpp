@@ -1,6 +1,8 @@
 #include "D3D9ShaderReflection.h"
 
-// Code is obtained from
+#include <Data/StringUtils.h>
+
+// ProcessConstant() and D3D9Reflect() code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
 // This version has some cosmetic changes
 
@@ -309,8 +311,9 @@ void D3D9FindSamplerTextures(const char* pSrcText, CDict<CString, CArray<CString
 
 // Use StringUtils::StripComments(pSrc) to remove comments from the HLSL source before caling this function.
 // Parses source code, finds annotations of shader constats and fills additional constant metadata.
-void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName)
+void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName, U32& OutSlotIndex)
 {
+	bool CBufferFound = false;
 	const char* pCurr = pSrcText;
 	while (pCurr = strstr(pCurr, ConstName.CStr()))
 	{
@@ -325,9 +328,10 @@ void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CStr
 		pCurr = strpbrk(pCurr, "<;");
 		if (!pCurr) break;
 		if (*pCurr != '<') continue;
+		++pCurr;
+		const char* pAnnotationStart = pCurr;
 
 		// Annotation end
-		++pCurr;
 		const char* pAnnotationEnd = strpbrk(pCurr, ">");
 		if (!pAnnotationEnd) break;
 
@@ -357,13 +361,50 @@ void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CStr
 			if (!pCurr || *pCurr == ';') break;
 
 			OutBufferName.Set(pNameStart, pCurr - pNameStart);
-			return;
+			CBufferFound = true;
+			break;
 		}
 
-		// Annotation was found, no chance to find another one
+		// Find 'SlotIndex' annotation
+		pCurr = pAnnotationStart;
+		while (pCurr = strstr(pCurr, "SlotIndex"))
+		{
+			// Reached the end of annotation
+			if (pCurr >= pAnnotationEnd) break;
+
+			// Ensure it is a whole word, if not, search for next matching annotation
+			if (!strchr(DEM_WHITESPACE, *(pCurr - 1)) || !strchr(DEM_WHITESPACE"=", *(pCurr + 9)))
+			{
+				pCurr = strpbrk(pCurr + 9, ";");
+				if (!pCurr) break;
+				continue;
+			}
+
+			// Find value start
+			pCurr = strpbrk(pCurr, "=");
+			if (!pCurr) break;
+			++pCurr;
+			if (!*pCurr) break;
+
+			const char* pIntValueStart = pCurr;
+
+			// Find 'SlotIndex' annotation end
+			pCurr = strpbrk(pCurr, ";");
+			if (!pCurr) break;
+
+			const char* pIntValueEnd = pCurr;
+
+			CString IntValue(pIntValueStart, pIntValueEnd - pIntValueStart);
+			IntValue.Trim();
+
+			OutSlotIndex = StringUtils::ToInt(IntValue.CStr());
+			break;
+		}
+
+		// Annotation block was found, no chance to find another one
 		break;
 	}
 
-	OutBufferName = "$Global";
+	if (!CBufferFound) OutBufferName = "$Global";
 }
 //---------------------------------------------------------------------

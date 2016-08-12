@@ -56,7 +56,8 @@ struct CEffectParam
 		CUSMShaderRsrcMeta*		pUSMResource;
 		CUSMShaderSamplerMeta*	pUSMSampler;
 	};
-	CUSMShaderBufferMeta*		pUSMBuffer;	// SM4.0 constants must be in identical buffer, so store for comparison
+	CUSMShaderBufferMeta*		pUSMBuffer;		// SM4.0 constants must be in identical buffer, so store for comparison
+	CSM30ShaderBufferMeta*		pSM30Buffer;	// For SlotIndex comparison (much like registers of USM buffers)
 
 	bool operator ==(const CEffectParam& Other) const
 	{
@@ -165,14 +166,14 @@ bool LoadShaderMetadataByObjID(U32 ID,
 	}
 
 	U32 Target;
-	CSM30ShaderMeta* pD3D9Meta;
+	CSM30ShaderMeta* pSM30Meta;
 	CUSMShaderMeta* pUSMMeta;
-	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pD3D9Meta, pUSMMeta)) FAIL;
+	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pSM30Meta, pUSMMeta)) FAIL;
 
 	if (Target >= 0x0400) pOutUSMMeta = &USMMetaCache.Add(ID, *pUSMMeta);
-	else pOutD3D9Meta = &D3D9MetaCache.Add(ID, *pD3D9Meta);
+	else pOutD3D9Meta = &D3D9MetaCache.Add(ID, *pSM30Meta);
 
-	DLLFreeShaderMetadata(pD3D9Meta, pUSMMeta);
+	DLLFreeShaderMetadata(pSM30Meta, pUSMMeta);
 
 	OK;
 }
@@ -1010,9 +1011,9 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 
 	// Load API-specific parameter metadata
 
-	CSM30ShaderMeta* pD3D9Meta = NULL;
+	CSM30ShaderMeta* pSM30Meta = NULL;
 	CUSMShaderMeta* pUSMMeta = NULL;
-	if (!LoadShaderMetadataByObjID(Param.SourceShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta) || (!pD3D9Meta && !pUSMMeta))
+	if (!LoadShaderMetadataByObjID(Param.SourceShaderID, D3D9MetaCache, USMMetaCache, pSM30Meta, pUSMMeta) || (!pSM30Meta && !pUSMMeta))
 	{
 		n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", Param.SourceShaderID);
 		return ERR_INVALID_DATA;
@@ -1020,7 +1021,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 
 	// May actually be higher than 0x0400, but it is needed only
 	// for checking that no SM3.0 + USM mixing occurs.
-	U32 CurrTarget = pD3D9Meta ? 0x0300 : 0x0400;
+	U32 CurrTarget = pSM30Meta ? 0x0300 : 0x0400;
 
 	if (!Target) Target = CurrTarget;
 	else if ((Target < 0x0400 && CurrTarget >= 0x0400) || (Target >= 0x0400 && CurrTarget < 0x0400))
@@ -1030,38 +1031,39 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 	}
 	else if (CurrTarget > Target) Target = CurrTarget;
 
-	if (pD3D9Meta)
+	if (pSM30Meta)
 	{
 		switch (Class)
 		{
 			case EPC_Const:
 			{
 				UPTR Idx = 0;
-				for (; Idx < pD3D9Meta->Consts.GetCount(); ++ Idx)
-					if (pD3D9Meta->Consts[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pD3D9Meta->Consts.GetCount()) return ERR_INVALID_DATA;
+				for (; Idx < pSM30Meta->Consts.GetCount(); ++ Idx)
+					if (pSM30Meta->Consts[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pSM30Meta->Consts.GetCount()) return ERR_INVALID_DATA;
 				Param.Class = EPC_SM30Const;
-				Param.pSM30Const = &pD3D9Meta->Consts[Idx];
+				Param.pSM30Const = &pSM30Meta->Consts[Idx];
+				Param.pSM30Buffer = &pSM30Meta->Buffers[Param.pSM30Const->BufferIndex];
 				break;
 			}
 			case EPC_Resource:
 			{
 				UPTR Idx = 0;
-				for (; Idx < pD3D9Meta->Resources.GetCount(); ++ Idx)
-					if (pD3D9Meta->Resources[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pD3D9Meta->Resources.GetCount()) return ERR_INVALID_DATA;
+				for (; Idx < pSM30Meta->Resources.GetCount(); ++ Idx)
+					if (pSM30Meta->Resources[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pSM30Meta->Resources.GetCount()) return ERR_INVALID_DATA;
 				Param.Class = EPC_SM30Resource;
-				Param.pSM30Resource = &pD3D9Meta->Resources[Idx];
+				Param.pSM30Resource = &pSM30Meta->Resources[Idx];
 				break;
 			}
 			case EPC_Sampler:
 			{
 				UPTR Idx = 0;
-				for (; Idx < pD3D9Meta->Samplers.GetCount(); ++ Idx)
-					if (pD3D9Meta->Samplers[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pD3D9Meta->Samplers.GetCount()) return ERR_INVALID_DATA;
+				for (; Idx < pSM30Meta->Samplers.GetCount(); ++ Idx)
+					if (pSM30Meta->Samplers[Idx].Name == Param.ID.CStr()) break;
+				if (Idx == pSM30Meta->Samplers.GetCount()) return ERR_INVALID_DATA;
 				Param.Class = EPC_SM30Sampler;
-				Param.pSM30Sampler = &pD3D9Meta->Samplers[Idx];
+				Param.pSM30Sampler = &pSM30Meta->Samplers[Idx];
 				break;
 			}
 			default:
@@ -1169,11 +1171,17 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 
 		if (Param.Class == EPC_USMConst)
 		{
-			// For USM constants we also compare containing buffer registers
-			CUSMShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
 			if (Param.pUSMBuffer->Register != pAddedParam->pUSMBuffer->Register)
 			{
 				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers in different effects\n", Param.ID.CStr());
+				return ERR_INVALID_DATA;
+			}
+		}
+		else if (Param.Class == EPC_SM30Const)
+		{
+			if (Param.pSM30Buffer->SlotIndex != pAddedParam->pSM30Buffer->SlotIndex)
+			{
+				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different slot indices in different effects\n", Param.ID.CStr());
 				return ERR_INVALID_DATA;
 			}
 		}
@@ -1195,7 +1203,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 		}
 		else
 		{
-			// Use a bigger buffer
+			// Use a bigger of conflicting buffers
 			if (USMMeta.Buffers[Idx].Size < pAddedParam->pUSMBuffer->Size)
 				USMMeta.Buffers[Idx] = *pAddedParam->pUSMBuffer;
 		}
@@ -1204,11 +1212,22 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 	}
 	else if (Param.Class == EPC_SM30Const)
 	{
+		UPTR Idx = 0;
+		for (; Idx < SM30Meta.Buffers.GetCount(); ++ Idx)
+			if (SM30Meta.Buffers[Idx].SlotIndex == pAddedParam->pSM30Buffer->SlotIndex) break;
+		if (Idx == SM30Meta.Buffers.GetCount())
+		{
+			SM30Meta.Buffers.Add(*pAddedParam->pSM30Buffer);
+		}
+
+		pAddedParam->pUSMConst->BufferIndex = Idx;
+		/*
 		// The only constant buffer is used for SM3.0 RP globals
 		if (!SM30Meta.Buffers.GetCount())
 		{
 			CSM30ShaderBufferMeta* pBuffer = SM30Meta.Buffers.Reserve(1);
 			pBuffer->Name = "_RenderPathGlobals_";
+			pBuffer->SlotIndex = 0;
 		}
 
 		CSM30ShaderConstMeta* pSM30Const = pAddedParam->pSM30Const;
@@ -1220,6 +1239,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 		}
 
 		pSM30Const->BufferIndex = 0;
+		*/
 	}
 
 	return SUCCESS;
@@ -1550,11 +1570,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						// Valid shader found, get its requirements and apply to render state requirements
 						AllInvalid = false;
 
-						CSM30ShaderMeta* pD3D9Meta = NULL;
+						CSM30ShaderMeta* pSM30Meta = NULL;
 						CUSMShaderMeta* pUSMMeta = NULL;
-						LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta);
+						LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pSM30Meta, pUSMMeta);
 
-						if (pD3D9Meta)
+						if (pSM30Meta)
 						{
 							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, Render::GPU_Level_D3D9_3);
 						}
@@ -1704,9 +1724,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					if (!RSRef.UsesShader[ShaderType]) continue;
 
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
-					CSM30ShaderMeta* pD3D9Meta = NULL;
+					CSM30ShaderMeta* pSM30Meta = NULL;
 					CUSMShaderMeta* pUSMMeta = NULL;
-					LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pD3D9Meta, pUSMMeta);
+					LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pSM30Meta, pUSMMeta);
 
 					//!!!add per-stage support, to map one param to different shader stages simultaneously!
 					// If tech param found:
@@ -1714,11 +1734,11 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					// If not registered for this stage, add per-stage metadata
 					// If only the same metadata allowed to different stages, compare with any reference (processed) stage
 					// In this case code remains almost unchanged, but param instead of single shader stage stores stage mask.
-					if (pD3D9Meta)
+					if (pSM30Meta)
 					{
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Consts.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Consts.GetCount(); ++ParamIdx)
 						{
-							CSM30ShaderConstMeta& MetaObj = pD3D9Meta->Consts[ParamIdx];
+							CSM30ShaderConstMeta& MetaObj = pSM30Meta->Consts[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1753,7 +1773,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 										break;
 									}
 								}
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at slot %d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), pD3D9Meta->Buffers[MetaObj.BufferIndex].Name.CStr(), MetaObj.BufferIndex);
+								CSM30ShaderBufferMeta& BufferMeta = pSM30Meta->Buffers[MetaObj.BufferIndex];
+								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at slot %d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), BufferMeta.Name.CStr(), BufferMeta.SlotIndex);
 							}
 							else
 							{
@@ -1773,9 +1794,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 						}
 
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Resources.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Resources.GetCount(); ++ParamIdx)
 						{
-							CSM30ShaderRsrcMeta& MetaObj = pD3D9Meta->Resources[ParamIdx];
+							CSM30ShaderRsrcMeta& MetaObj = pSM30Meta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1809,9 +1830,9 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 							}
 						}
 
-						for (UPTR ParamIdx = 0; ParamIdx < pD3D9Meta->Samplers.GetCount(); ++ParamIdx)
+						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CSM30ShaderSamplerMeta& MetaObj = pD3D9Meta->Samplers[ParamIdx];
+							CSM30ShaderSamplerMeta& MetaObj = pSM30Meta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;

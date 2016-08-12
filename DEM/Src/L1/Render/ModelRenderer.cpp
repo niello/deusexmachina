@@ -349,7 +349,8 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 						if (pModel->BoneIndices.GetCount())
 						{
-							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
+							UPTR BoneCount = n_min(pModel->BoneIndices.GetCount(), pConstSkinPalette->Desc.ElementCount);
+							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 							{
 								float* pCurrData = pTransposedData;
 								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
@@ -364,7 +365,8 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 						}
 						else
 						{
-							for (UPTR BoneIdx = 0; BoneIdx < ItCurr->BoneCount; ++BoneIdx)
+							UPTR BoneCount = n_min(ItCurr->BoneCount, pConstSkinPalette->Desc.ElementCount);
+							for (UPTR BoneIdx = 0; BoneIdx < BoneCount; ++BoneIdx)
 							{
 								float* pCurrData = pTransposedData;
 								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + BoneIdx;
@@ -384,13 +386,18 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 					{
 						if (pModel->BoneIndices.GetCount())
 						{
-							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
+							UPTR BoneCount = n_min(pModel->BoneIndices.GetCount(), pConstSkinPalette->Desc.ElementCount);
+							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 							{
 								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
 								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pBoneMatrix, sizeof(matrix44));
 							}
 						}
-						else PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
+						else
+						{
+							UPTR BoneCount = n_min(ItCurr->BoneCount, pConstSkinPalette->Desc.ElementCount);
+							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * BoneCount);
+						}
 					}
 				}
 

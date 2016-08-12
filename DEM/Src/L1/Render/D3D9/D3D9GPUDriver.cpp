@@ -1663,12 +1663,15 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 	// Free temporary buffer, if not bound to other stages
 	if (pPendingCBHead && pCurrBuffer && pCurrBuffer->IsTemporary())
 	{
+		// We have only two slots where the buffer may be bound (one in VS and one in PS)
 		UPTR SecondIndex;
 		switch (ShaderType)
 		{
 			case ShaderType_Vertex:	SecondIndex = CB_Slot_Count + pMeta->SlotIndex; break;
 			case ShaderType_Pixel:	SecondIndex = pMeta->SlotIndex; break;
 		};
+
+		// Is this buffer bound to the other shader stage
 		const bool IsBound = (CurrCB[SecondIndex].CB.GetUnsafe() == pCurrBuffer);
 		if (!IsBound)
 		{
@@ -1681,7 +1684,8 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 					if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 					else pPendingCBHead = pCurrNode->pNext;
 
-					CTmpCB** ppHead = TmpConstantBuffers.Get(Handle);
+					HConstBuffer hCurrCB = pCurrNode->CB->GetHandle();
+					CTmpCB** ppHead = TmpConstantBuffers.Get(hCurrCB);
 					if (ppHead)
 					{
 						pCurrNode->pNext = *ppHead;
@@ -1690,7 +1694,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 					else
 					{
 						pCurrNode->pNext = NULL;
-						TmpConstantBuffers.Add(Handle, pCurrNode);
+						TmpConstantBuffers.Add(hCurrCB, pCurrNode);
 					}
 					break;
 				}
@@ -2232,6 +2236,7 @@ PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuff
 
 	PConstantBuffer CB = CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
 	((CD3D9ConstantBuffer*)CB.GetUnsafe())->SetTemporary(true);
+
 	return CB;
 }
 //---------------------------------------------------------------------

@@ -42,9 +42,13 @@ enum ESM30ConstFlags
 struct CSM30ShaderBufferMeta
 {
 	CString			Name;
+	U32				SlotIndex;	// Pseudo-register, two buffers at the same slot will conflict
 	CArray<UPTR>	UsedFloat4;
 	CArray<UPTR>	UsedInt4;
 	CArray<UPTR>	UsedBool;
+
+	//bool operator ==(const CUSMShaderBufferMeta& Other) const { return SlotIndex == Other.SlotIndex; }
+	//bool operator !=(const CUSMShaderBufferMeta& Other) const { return SlotIndex != Other.SlotIndex; }
 };
 
 // Arrays and single-type structures are supported
