@@ -18,6 +18,7 @@ bool CEffectConstSetValues::SetGPU(PGPUDriver NewGPU)
 }
 //---------------------------------------------------------------------
 
+//???!!!return buffer and use as arg in latter calls to SetConstantValue()!?
 bool CEffectConstSetValues::RegisterConstantBuffer(HConstBuffer Handle, CConstantBuffer* pBuffer)
 {
 	if (Handle == INVALID_HANDLE) FAIL;
@@ -36,7 +37,8 @@ bool CEffectConstSetValues::RegisterConstantBuffer(HConstBuffer Handle, CConstan
 
 bool CEffectConstSetValues::SetConstantValue(const CEffectConstant* pConst, UPTR ElementIndex, const void* pValue, UPTR Size)
 {
-	IPTR BufferIdx = Buffers.FindIndex(pConst->BufferHandle);
+	const HConstBuffer hCB = pConst->Desc.BufferHandle;
+	IPTR BufferIdx = Buffers.FindIndex(hCB);
 	if (BufferIdx == INVALID_INDEX) FAIL;
 
 	CConstBufferRecord& CBRec = Buffers.ValueAt(BufferIdx);
@@ -46,7 +48,7 @@ bool CEffectConstSetValues::SetConstantValue(const CEffectConstant* pConst, UPTR
 	{
 		if (CBRec.Buffer.IsNullPtr())
 		{
-			CBRec.Buffer = GPU->CreateTemporaryConstantBuffer(pConst->BufferHandle);
+			CBRec.Buffer = GPU->CreateTemporaryConstantBuffer(hCB);
 			if (CBRec.Buffer.IsNullPtr()) FAIL;
 			CBRec.Flags |= ECSV_TmpBuffer;
 		}
@@ -54,7 +56,7 @@ bool CEffectConstSetValues::SetConstantValue(const CEffectConstant* pConst, UPTR
 	}
 	CBRec.Flags |= (1 << pConst->ShaderType);
 
-	return GPU->SetShaderConstant(*CBRec.Buffer, pConst->Handle, ElementIndex, pValue, Size);
+	return GPU->SetShaderConstant(*CBRec.Buffer, pConst->Desc.Handle, ElementIndex, pValue, Size);
 }
 //---------------------------------------------------------------------
 

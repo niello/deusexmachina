@@ -81,12 +81,16 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	const Render::IShaderMetadata* pVSMeta = VertexShader->GetMetadata();
 	const Render::IShaderMetadata* pPSMeta = PixelShader->GetMetadata();
 
-	hWorldMatrix = pVSMeta->GetConstHandle(CStrID("WorldMatrix"));
-	hProjMatrix = pVSMeta->GetConstHandle(CStrID("ProjectionMatrix"));
+	Render::CShaderConstDesc ConstDesc;
+	n_verify(pVSMeta->GetConstDesc(CStrID("WorldMatrix"), ConstDesc));
+	hWorldMatrix = ConstDesc.Handle;
+	hWMCB = ConstDesc.BufferHandle;
+	n_assert(hWMCB != INVALID_HANDLE);
 
-	hWMCB = pVSMeta->GetConstBufferHandle(hWorldMatrix);
-	hPMCB = pVSMeta->GetConstBufferHandle(hProjMatrix);
-	n_assert(hWMCB && hPMCB);
+	n_verify(pVSMeta->GetConstDesc(CStrID("ProjectionMatrix"), ConstDesc));
+	hProjMatrix = ConstDesc.Handle;
+	hPMCB = ConstDesc.BufferHandle;
+	n_assert(hWMCB != INVALID_HANDLE);
 
 	WMCB = GPU->CreateConstantBuffer(hWMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
 	if (hWMCB == hPMCB) PMCB = WMCB;

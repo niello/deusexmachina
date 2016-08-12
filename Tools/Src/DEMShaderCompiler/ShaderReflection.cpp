@@ -130,6 +130,10 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
 			pMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			pMeta->ElementCount = D3D9ConstDesc.Type.Elements;
+			pMeta->Flags = 0;
+
+			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
+				pMeta->Flags |= SM30Const_ColumnMajor;
 
 			// Cache value
 			pMeta->RegisterCount = pMeta->ElementRegisterCount * pMeta->ElementCount;
@@ -430,6 +434,7 @@ bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.ElementRegisterCount);
 		W.Write(Obj.ElementCount);
+		W.Write(Obj.Flags);
 	}
 
 	W.Write<U32>(Meta.Resources.GetCount());
@@ -561,6 +566,7 @@ bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.ElementRegisterCount);
 		R.Read(Obj.ElementCount);
+		R.Read(Obj.Flags);
 
 		// Cache value
 		Obj.RegisterCount = Obj.ElementRegisterCount * Obj.ElementCount;

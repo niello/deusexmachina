@@ -53,14 +53,21 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 
 CArray<CRenderNode>::CIterator CTerrainRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
-	const bool GPUSupportsVSTextureLinearFiltering = GPU.CheckCaps(Caps_VSTexFiltering_Linear);
-
 	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
+
+	if (!GPU.CheckCaps(Caps_VSTexFiltering_Linear))
+	{
+		while (ItCurr != ItEnd)
+		{
+			if (ItCurr->pRenderer != this) return ItCurr;
+			++ItCurr;
+		}
+		return ItEnd;
+	}
+
 	while (ItCurr != ItEnd)
 	{
 		if (ItCurr->pRenderer != this) return ItCurr;
-
-		if (!GPUSupportsVSTextureLinearFiltering) continue;
 
 		Sys::DbgOut("CTerrain rendered\n");
 

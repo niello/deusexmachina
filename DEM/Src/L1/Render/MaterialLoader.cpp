@@ -76,9 +76,10 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		const Render::CEffectConstant& Const = Consts[i];
 
+		const Render::HConstBuffer hCB = Const.Desc.BufferHandle;
 		Render::CMaterial::CConstBufferRecord* pRec = NULL;
 		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
-			if (Mtl->ConstBuffers[BufIdx].Handle == Const.BufferHandle)
+			if (Mtl->ConstBuffers[BufIdx].Handle == hCB)
 			{
 				pRec = &Mtl->ConstBuffers[BufIdx];
 				break;
@@ -87,9 +88,9 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		if (!pRec)
 		{
 			pRec = &Mtl->ConstBuffers[CurrCBCount];
-			pRec->Handle = Const.BufferHandle;
+			pRec->Handle = hCB;
 			pRec->ShaderType = Const.ShaderType;
-			pRec->Buffer = GPU->CreateConstantBuffer(Const.BufferHandle, Render::Access_CPU_Write); //!!!must be a RAM-only buffer!
+			pRec->Buffer = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write); //!!!must be a RAM-only buffer!
 			++CurrCBCount;
 
 			if (!GPU->BeginShaderConstants(*pRec->Buffer.GetUnsafe())) return NULL;
@@ -102,7 +103,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		if (pValue) //???fail if value is undefined? or fill with zeroes?
 		{
 			//???!!!add to SetShaderConstant() zero size support - autocalc?! tool-side validation!
-			if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Handle, 0, pValue, Const.SizeInBytes)) return NULL;
+			if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Desc.Handle, 0, pValue, Const.SizeInBytes)) return NULL;
 		}
 	}
 

@@ -156,14 +156,6 @@ HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(HConst hConst) const
-{
-	if (!hConst) return INVALID_HANDLE;
-	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
-	return pMeta ? pMeta->BufferHandle : INVALID_HANDLE;
-}
-//---------------------------------------------------------------------
-
 HResource CUSMShaderMetadata::GetResourceHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
@@ -196,10 +188,23 @@ HSampler CUSMShaderMetadata::GetSamplerHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-EConstType CUSMShaderMetadata::GetConstType(HConst hConst) const
+bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 {
-	if (!hConst) return ConstType_Invalid;
-	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
+	HConst Handle = GetConstHandle(ID);
+	if (Handle == INVALID_HANDLE) FAIL;
+	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(Handle);
+	Out.Handle = Handle;
+	Out.BufferHandle = pMeta->BufferHandle;
+	Out.ElementCount = pMeta->ElementCount;
+	Out.Flags = 0;
+
+	//!!!IMPLEMENT!
+	//if (pMeta->Flags & USMConst_ColumnMajor)
+	//	Out.Flags |= Const_ColumnMajor;
+	Out.Rows = 0;
+	Out.Columns = 0;
+
+	/*
 	switch (pMeta->Type)
 	{
 		case USMConst_Bool:		return ConstType_Bool;
@@ -208,14 +213,8 @@ EConstType CUSMShaderMetadata::GetConstType(HConst hConst) const
 		case USMConst_Struct:	return ConstType_Other;
 		default:				return ConstType_Invalid;
 	}
-}
-//---------------------------------------------------------------------
-
-U32 CUSMShaderMetadata::GetConstElementCount(HConst hConst) const
-{
-	if (!hConst) return ConstType_Invalid;
-	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
-	return pMeta->ElementCount;
+	*/
+	OK;
 }
 //---------------------------------------------------------------------
 

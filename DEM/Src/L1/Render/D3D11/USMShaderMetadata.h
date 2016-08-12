@@ -110,11 +110,9 @@ public:
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return MinFeatureLevel; }
 	virtual HConst				GetConstHandle(CStrID ID) const;
 	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const;
-	virtual HConstBuffer		GetConstBufferHandle(HConst hConst) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;
-	virtual EConstType			GetConstType(HConst hConst) const;
-	virtual U32					GetConstElementCount(HConst hConst) const;
+	virtual bool				GetConstDesc(CStrID ID, CShaderConstDesc& Out) const;
 };
 
 }

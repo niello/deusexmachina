@@ -190,7 +190,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 			if (pConstInstanceData)
 			{
-				UPTR MaxInstanceCountConst = pConstInstanceData->ElementCount;
+				UPTR MaxInstanceCountConst = pConstInstanceData->Desc.ElementCount;
 				n_assert_dbg(MaxInstanceCountConst > 1);
 
 				//!!!DBG TMP!
@@ -199,7 +199,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 				CEffectConstSetValues PerInstanceConstValues;
 				PerInstanceConstValues.SetGPU(&GPU);
-				PerInstanceConstValues.RegisterConstantBuffer(pConstInstanceData->BufferHandle, NULL);
+				PerInstanceConstValues.RegisterConstantBuffer(pConstInstanceData->Desc.BufferHandle, NULL);
 
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
@@ -332,24 +332,65 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CR
 
 				if (pConstWorldMatrix)
 				{
-					PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->BufferHandle, NULL);
+					PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->Desc.BufferHandle, NULL);
 					PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, ItCurr->Transform.m, sizeof(matrix44));
 				}
 
 				if (pConstSkinPalette && ItCurr->pSkinPalette)
 				{
-					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->BufferHandle, NULL);
-					if (pModel->BoneIndices.GetCount())
+					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->Desc.BufferHandle, NULL);
+					if (pConstSkinPalette->Desc.Flags & Const_ColumnMajor) //???hide in a class/function?
 					{
-						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
+						// Transpose and truncate if necessary
+						U32 Columns = pConstSkinPalette->Desc.Columns;
+						U32 Rows = pConstSkinPalette->Desc.Rows;
+						UPTR MatrixSize = Columns * Rows * sizeof(float);
+						float* pTransposedData = (float*)_malloca(MatrixSize);
+
+						if (pModel->BoneIndices.GetCount())
 						{
-							int BoneIdx = pModel->BoneIndices[BoneIdxIdx];
-							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, ItCurr->pSkinPalette + BoneIdx, sizeof(matrix44));
+							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
+							{
+								float* pCurrData = pTransposedData;
+								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
+								for (U32 Col = 0; Col < Columns; ++Col)
+									for (U32 Row = 0; Row < Rows; ++Row)
+									{
+										*pCurrData = pBoneMatrix->m[Row][Col];
+										++pCurrData;
+									}
+								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pTransposedData, MatrixSize);
+							}
 						}
+						else
+						{
+							for (UPTR BoneIdx = 0; BoneIdx < ItCurr->BoneCount; ++BoneIdx)
+							{
+								float* pCurrData = pTransposedData;
+								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + BoneIdx;
+								for (U32 Col = 0; Col < Columns; ++Col)
+									for (U32 Row = 0; Row < Rows; ++Row)
+									{
+										*pCurrData = pBoneMatrix->m[Row][Col];
+										++pCurrData;
+									}
+								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdx, pTransposedData, MatrixSize);
+							}
+						}
+
+						_freea(pTransposedData);
 					}
 					else
 					{
-						PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
+						if (pModel->BoneIndices.GetCount())
+						{
+							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < pModel->BoneIndices.GetCount(); ++BoneIdxIdx)
+							{
+								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
+								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pBoneMatrix, sizeof(matrix44));
+							}
+						}
+						else PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * ItCurr->BoneCount);
 					}
 				}
 

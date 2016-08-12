@@ -34,6 +34,11 @@ enum ESM30RegisterSet
 	RS_Float4	= 2
 };
 
+enum ESM30ConstFlags
+{
+	SM30Const_ColumnMajor	= 0x01 // Only for matrix types
+};
+
 struct CSM30ShaderBufferMeta
 {
 	CString			Name;
@@ -51,11 +56,12 @@ struct CSM30ShaderConstMeta
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
 	U32					ElementCount;
+	U8					Flags;					// See ESM30ConstFlags
 
-	U32					RegisterCount; // Cache, not saved
+	U32					RegisterCount;			// Cache, not saved
 
-	bool operator ==(const CSM30ShaderConstMeta& Other) const { return RegisterSet == Other.RegisterSet && RegisterStart == Other.RegisterStart && ElementRegisterCount == Other.ElementRegisterCount && ElementCount == Other.ElementCount; }
-	bool operator !=(const CSM30ShaderConstMeta& Other) const { return RegisterSet != Other.RegisterSet || RegisterStart != Other.RegisterStart || ElementRegisterCount != Other.ElementRegisterCount || ElementCount != Other.ElementCount; }
+	bool operator ==(const CSM30ShaderConstMeta& Other) const { return RegisterSet == Other.RegisterSet && RegisterStart == Other.RegisterStart && ElementRegisterCount == Other.ElementRegisterCount && ElementCount == Other.ElementCount && Flags == Other.Flags; }
+	bool operator !=(const CSM30ShaderConstMeta& Other) const { return RegisterSet != Other.RegisterSet || RegisterStart != Other.RegisterStart || ElementRegisterCount != Other.ElementRegisterCount || ElementCount != Other.ElementCount || Flags != Other.Flags; }
 };
 
 // Arrays aren't supported, one texture to multiple samplers isn't supported yet

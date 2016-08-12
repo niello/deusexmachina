@@ -64,10 +64,12 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 		U8 RegSet;
 		if (!R.Read<U8>(RegSet)) FAIL;
 		pMeta->RegSet = (ESM30RegisterSet)RegSet;
+		n_assert_dbg(RegSet == Reg_Bool || RegSet == Reg_Int4 || RegSet == Reg_Float4);
 
 		if (!R.Read<U32>(pMeta->RegisterStart)) FAIL;
 		if (!R.Read<U32>(pMeta->ElementRegisterCount)) FAIL;
 		if (!R.Read<U32>(pMeta->ElementCount)) FAIL;
+		if (!R.Read<U8>(pMeta->Flags)) FAIL;
 
 		pMeta->Handle = INVALID_HANDLE;
 	}
@@ -168,14 +170,6 @@ HConstBuffer CSM30ShaderMetadata::GetConstBufferHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstBuffer CSM30ShaderMetadata::GetConstBufferHandle(HConst hConst) const
-{
-	if (!hConst) return INVALID_HANDLE;
-	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)HandleMgr.GetHandleData(hConst);
-	return pMeta ? pMeta->BufferHandle : INVALID_HANDLE;
-}
-//---------------------------------------------------------------------
-
 HResource CSM30ShaderMetadata::GetResourceHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
@@ -208,25 +202,45 @@ HSampler CSM30ShaderMetadata::GetSamplerHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-EConstType CSM30ShaderMetadata::GetConstType(HConst hConst) const
+bool CSM30ShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 {
-	if (!hConst) return ConstType_Invalid;
-	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)HandleMgr.GetHandleData(hConst);
+	HConst Handle = GetConstHandle(ID);
+	if (Handle == INVALID_HANDLE) FAIL;
+	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)HandleMgr.GetHandleData(Handle);
+	Out.Handle = Handle;
+	Out.BufferHandle = pMeta->BufferHandle;
+	Out.ElementCount = pMeta->ElementCount;
+	Out.Flags = 0;
+
+	U32 RegisterElements;
 	switch (pMeta->RegSet)
 	{
-		case Reg_Bool:		return ConstType_Bool;
-		case Reg_Int4:		return ConstType_Int;
-		case Reg_Float4:	return ConstType_Float;
-		default:			return ConstType_Invalid;
+		case Reg_Bool:		//ConstType_Bool;
+		{
+			RegisterElements = 1;
+			break;
+		}
+		case Reg_Int4:		//ConstType_Int;
+		case Reg_Float4:	//ConstType_Float;
+		{
+			RegisterElements = 4;
+			break;
+		}
 	}
-}
-//---------------------------------------------------------------------
 
-U32 CSM30ShaderMetadata::GetConstElementCount(HConst hConst) const
-{
-	if (!hConst) return ConstType_Invalid;
-	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)HandleMgr.GetHandleData(hConst);
-	return pMeta->ElementCount;
+	if (pMeta->Flags & SM30Const_ColumnMajor)
+	{
+		Out.Flags |= Const_ColumnMajor;
+		Out.Rows = RegisterElements;
+		Out.Columns = pMeta->ElementRegisterCount;
+	}
+	else
+	{
+		Out.Rows = pMeta->ElementRegisterCount;
+		Out.Columns = RegisterElements;
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

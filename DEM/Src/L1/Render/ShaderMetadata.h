@@ -10,17 +10,6 @@
 namespace Render
 {
 
-enum EConstType
-{
-	ConstType_Float	= 0,
-	ConstType_Int,
-	ConstType_Bool,
-
-	ConstType_Other,
-
-	ConstType_Invalid
-};
-
 class IShaderMetadata
 {
 protected:
@@ -41,11 +30,9 @@ public:
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const = 0;
 	virtual HConst				GetConstHandle(CStrID ID) const = 0;
 	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const = 0;
-	virtual HConstBuffer		GetConstBufferHandle(HConst hConst) const = 0;
 	virtual HResource			GetResourceHandle(CStrID ID) const = 0;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const = 0;
-	virtual EConstType			GetConstType(HConst hConst) const = 0;
-	virtual U32					GetConstElementCount(HConst hConst) const = 0;
+	virtual bool				GetConstDesc(CStrID ID, CShaderConstDesc& Out) const = 0;
 
 	//???IShaderVariable* CreateVariable(HConst hConst)? cache offset, size etc inside a variable object
 };

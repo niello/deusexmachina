@@ -315,7 +315,7 @@ void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CStr
 	while (pCurr = strstr(pCurr, ConstName.CStr()))
 	{
 		// Ensure it is a whole word, if not, search next
-		if (!strchr(DEM_WHITESPACE, *(pCurr - 1)) || !strchr(DEM_WHITESPACE"=:<", *(pCurr + ConstName.GetLength())))
+		if (!strchr(DEM_WHITESPACE, *(pCurr - 1)) || !strchr(DEM_WHITESPACE"=:<[", *(pCurr + ConstName.GetLength())))
 		{
 			pCurr += ConstName.GetLength();
 			continue;

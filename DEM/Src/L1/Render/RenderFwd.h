@@ -335,14 +335,38 @@ struct CPrimitiveGroup
 	CAABB				AABB;
 };
 
-struct CEffectConstant
+enum EShaderConstType
 {
-	CStrID			ID;
-	EShaderType		ShaderType;
+	ConstType_Float	= 0,
+	ConstType_Int,
+	ConstType_Bool,
+
+	ConstType_Other,
+
+	ConstType_Invalid
+};
+
+enum EShaderConstFlags
+{
+	Const_ColumnMajor	= 0x01 // Matrix only
+};
+
+struct CShaderConstDesc
+{
 	HConst			Handle;
 	HConstBuffer	BufferHandle;
-	U32				SizeInBytes;
+	U32				Columns;
+	U32				Rows;
 	U32				ElementCount;
+	U8				Flags;
+};
+
+struct CEffectConstant
+{
+	CStrID				ID;
+	EShaderType			ShaderType;
+	U32					SizeInBytes;
+	CShaderConstDesc	Desc;
 };
 
 struct CEffectResource

@@ -3179,7 +3179,7 @@ bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, U
 		}
 		n_assert(Range.Start + Range.Count >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
 
-		Offset += pMeta->RegisterStart - Range.Start;
+		Offset += pMeta->RegisterStart - Range.Start + ElementIndex * pMeta->ElementRegisterCount;
 
 		CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
 		CB9.WriteData(pMeta->RegSet, Offset, pData, Size);

@@ -45,15 +45,16 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	{
 		const Render::CEffectConstant& Const = GlobalConsts[i];
 
-		if (!Globals.IsConstantBufferRegistered(Const.BufferHandle))
+		const Render::HConstBuffer hCB = Const.Desc.BufferHandle;
+		if (!Globals.IsConstantBufferRegistered(hCB))
 		{
-			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(Const.BufferHandle, Render::Access_CPU_Write | Render::Access_GPU_Read);
+			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
 			if (CB.IsNullPtr())
 			{
 				Globals.UnbindAndClear();
 				FAIL;
 			}
-			Globals.RegisterConstantBuffer(Const.BufferHandle, CB);
+			Globals.RegisterConstantBuffer(hCB, CB);
 		}
 	}
 

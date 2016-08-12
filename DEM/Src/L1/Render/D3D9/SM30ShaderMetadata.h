@@ -15,13 +15,18 @@ namespace IO
 namespace Render
 {
 
+enum ESM30ConstFlags
+{
+	SM30Const_ColumnMajor	= 0x01			// Only for matrix types
+};
+
 struct CSM30ShaderBufferMeta
 {
 	CStrID				Name;
 	CFixedArray<CRange>	Float4;
 	CFixedArray<CRange>	Int4;
 	CFixedArray<CRange>	Bool;
-	UPTR				SlotIndex;	// Pseudoregister, always equal to an index in a shader buffers metadata array
+	UPTR				SlotIndex;			// Pseudoregister, always equal to an index in a shader buffers metadata array
 	HHandle				Handle;
 };
 
@@ -33,6 +38,7 @@ struct CSM30ShaderConstMeta
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
 	U32					ElementCount;
+	U8					Flags;				// See ESM30ConstFlags
 	HHandle				Handle;
 };
 
@@ -71,11 +77,9 @@ public:
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return GPU_Level_D3D9_3; }
 	virtual HConst				GetConstHandle(CStrID ID) const;
 	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const;
-	virtual HConstBuffer		GetConstBufferHandle(HConst hConst) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;
-	virtual EConstType			GetConstType(HConst hConst) const;
-	virtual U32					GetConstElementCount(HConst hConst) const;
+	virtual bool				GetConstDesc(CStrID ID, CShaderConstDesc& Out) const;
 };
 
 }

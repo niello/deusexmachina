@@ -896,7 +896,8 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	}
 	else
 	{
-		if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
+		// Conflicts with CurrSRV.FindIndex()
+		//if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
 		CurrSRV.Add(SlotIndex, pSRV);
 	}
 

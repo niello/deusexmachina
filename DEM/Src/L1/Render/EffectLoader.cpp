@@ -394,7 +394,7 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	CArray<HHandle> MtlConstBuffers;
 	for (UPTR i = 0; i < Effect->MaterialConsts.GetCount(); ++i)
 	{
-		HHandle hCB = Effect->MaterialConsts[i].BufferHandle;
+		const Render::HConstBuffer hCB = Effect->MaterialConsts[i].Desc.BufferHandle;
 		if (MtlConstBuffers.FindIndex(hCB) == INVALID_INDEX)
 			MtlConstBuffers.Add(hCB);
 	}
