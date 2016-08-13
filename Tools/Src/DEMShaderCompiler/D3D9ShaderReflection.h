@@ -16,7 +16,8 @@ enum EREGISTER_SET
 	RS_FLOAT4,
 	RS_SAMPLER,
 
-	RS_MIXED	// For mixed structures
+	// Added
+	RS_MIXED	// For mixed-type structures
 };
 
 enum EPARAMETER_CLASS
@@ -50,7 +51,10 @@ enum EPARAMETER_TYPE
 	PT_VERTEXSHADER,
 	PT_PIXELFRAGMENT,
 	PT_VERTEXFRAGMENT,
-	PT_UNSUPPORTED
+	PT_UNSUPPORTED,
+
+	// Added
+	PT_MIXED	// For mixed-type structures
 };
 
 struct CD3D9ConstantType

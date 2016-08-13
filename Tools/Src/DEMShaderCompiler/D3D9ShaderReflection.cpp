@@ -110,6 +110,14 @@ bool ProcessConstant(const char* ctab,
 			if (!ProcessConstant(ctab, ConstInfo, *pMemberTypeInfo, ctab + pMembers[i].Name, RegisterIndex + ElementRegisterCount, RegisterCount - ElementRegisterCount, pDesc->Members)) FAIL;
 			ElementRegisterCount += pDesc->Members[i].RegisterCount;
 			pDesc->Type.Bytes += pDesc->Members[i].Type.Bytes;
+
+			if (pDesc->Type.Type == PT_VOID)
+				pDesc->Type.Type = pDesc->Members[i].Type.Type;
+			else if (pDesc->Type.Type != pDesc->Members[i].Type.Type)
+			{
+				pDesc->Type.Type = PT_MIXED;
+				pDesc->RegisterSet = RS_MIXED;
+			}
 		}
 	}
 	else

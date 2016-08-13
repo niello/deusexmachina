@@ -1133,12 +1133,12 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 
 		switch (Param.Class)
 		{
-			case EPC_SM30Const:		SM30Meta.Consts.Add(*Param.pSM30Const); break;
-			case EPC_SM30Resource:	SM30Meta.Resources.Add(*Param.pSM30Resource); break;
-			case EPC_SM30Sampler:	SM30Meta.Samplers.Add(*Param.pSM30Sampler); break;
-			case EPC_USMConst:		USMMeta.Consts.Add(*Param.pUSMConst); break;
-			case EPC_USMResource:	USMMeta.Resources.Add(*Param.pUSMResource); break;
-			case EPC_USMSampler:	USMMeta.Samplers.Add(*Param.pUSMSampler); break;
+			case EPC_SM30Const:		pAddedParam->pSM30Const = SM30Meta.Consts.Add(*Param.pSM30Const); break;
+			case EPC_SM30Resource:	pAddedParam->pSM30Resource = SM30Meta.Resources.Add(*Param.pSM30Resource); break;
+			case EPC_SM30Sampler:	pAddedParam->pSM30Sampler = SM30Meta.Samplers.Add(*Param.pSM30Sampler); break;
+			case EPC_USMConst:		pAddedParam->pUSMConst = USMMeta.Consts.Add(*Param.pUSMConst); break;
+			case EPC_USMResource:	pAddedParam->pUSMResource = USMMeta.Resources.Add(*Param.pUSMResource); break;
+			case EPC_USMSampler:	pAddedParam->pUSMSampler = USMMeta.Samplers.Add(*Param.pUSMSampler); break;
 		}
 	}
 	else
@@ -1199,7 +1199,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 			if (USMMeta.Buffers[Idx].Register == pAddedParam->pUSMBuffer->Register) break;
 		if (Idx == USMMeta.Buffers.GetCount())
 		{
-			USMMeta.Buffers.Add(*pAddedParam->pUSMBuffer);
+			pAddedParam->pUSMBuffer = USMMeta.Buffers.Add(*pAddedParam->pUSMBuffer);
 		}
 		else
 		{
@@ -1217,10 +1217,37 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 			if (SM30Meta.Buffers[Idx].SlotIndex == pAddedParam->pSM30Buffer->SlotIndex) break;
 		if (Idx == SM30Meta.Buffers.GetCount())
 		{
-			SM30Meta.Buffers.Add(*pAddedParam->pSM30Buffer);
+			pAddedParam->pSM30Buffer = SM30Meta.Buffers.Add(*pAddedParam->pSM30Buffer);
+		}
+		else
+		{
+			// Merge used registers from the conflicting buffer
+			CSM30ShaderBufferMeta& CurrBuffer = SM30Meta.Buffers[Idx];
+			CSM30ShaderBufferMeta& NewBuffer = *pAddedParam->pSM30Buffer;
+			for (UPTR r = 0; r < NewBuffer.UsedFloat4.GetCount(); ++r)
+			{
+				UPTR Register = NewBuffer.UsedFloat4[r];
+				if (!CurrBuffer.UsedFloat4.Contains(Register))
+					CurrBuffer.UsedFloat4.Add(Register);
+			}
+			CurrBuffer.UsedFloat4.Sort();
+			for (UPTR r = 0; r < NewBuffer.UsedInt4.GetCount(); ++r)
+			{
+				UPTR Register = NewBuffer.UsedInt4[r];
+				if (!CurrBuffer.UsedInt4.Contains(Register))
+					CurrBuffer.UsedInt4.Add(Register);
+			}
+			CurrBuffer.UsedInt4.Sort();
+			for (UPTR r = 0; r < NewBuffer.UsedBool.GetCount(); ++r)
+			{
+				UPTR Register = NewBuffer.UsedBool[r];
+				if (!CurrBuffer.UsedBool.Contains(Register))
+					CurrBuffer.UsedBool.Add(Register);
+			}
+			CurrBuffer.UsedBool.Sort();
 		}
 
-		pAddedParam->pUSMConst->BufferIndex = Idx;
+		pAddedParam->pSM30Const->BufferIndex = Idx;
 		/*
 		// The only constant buffer is used for SM3.0 RP globals
 		if (!SM30Meta.Buffers.GetCount())

@@ -303,6 +303,9 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 	}
 
 	const CMaterial* pCurrMaterial = NULL;
+	const CTechnique* pCurrTech = NULL;
+
+	const CEffectConstant* pConstCDLODParams = NULL;
 
 	//!!!
 	//GPU.SetVertexLayout(pVLInstanced);
@@ -310,8 +313,6 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 	while (ItCurr != ItEnd)
 	{
 		if (ItCurr->pRenderer != this) return ItCurr;
-
-		Sys::DbgOut("CTerrain rendered\n");
 
 		CTerrain* pTerrain = ItCurr->pRenderable->As<CTerrain>();
 
@@ -417,6 +418,15 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
 		const CTechnique* pTech = ItCurr->pTech;
+		if (pTech != pCurrTech)
+		{
+			pConstCDLODParams = pTech->GetConstant(CStrID("CDLODParams"));
+			pCurrTech = pTech;
+
+			//!!!DBG TMP!
+			Sys::DbgOut("Tech params requested by ID\n");
+		}
+
 		const CPassList* pPasses = pTech->GetPasses(LightCount);
 		n_assert_dbg(pPasses); // To test if it could happen at all
 		if (!pPasses)
@@ -432,6 +442,9 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			GPU.Draw(*pGroup);
 		}
 		*/
+
+		//!!!DBG TMP!
+		Sys::DbgOut("CTerrain rendered: %d patches, %d quarterpatches\n", PatchCount, QuarterPatchCount);
 
 		++ItCurr;
 	};
