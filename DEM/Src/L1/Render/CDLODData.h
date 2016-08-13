@@ -26,12 +26,12 @@ protected:
 	{
 		UPTR	PatchesW;
 		UPTR	PatchesH;
-		U16*	pData;
+		I16*	pData;		//???!!!I16 or U16?!
 	};
 
 	PTexture				HeightMap;
 
-	U16*					pMinMaxData;
+	I16*					pMinMaxData;
 	CFixedArray<CMinMaxMap>	MinMaxMaps;
 
 	U32						HFWidth;
@@ -60,27 +60,28 @@ public:
 	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
 	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
-	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, U16& MinY, U16& MaxY) const;
-	//bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
+	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
+	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
 };
 
 typedef Ptr<CCDLODData> PCDLODData;
 
-inline void CCDLODData::GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, U16& MinY, U16& MaxY) const
+inline void CCDLODData::GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const
 {
 	CMinMaxMap& MMMap = MinMaxMaps[LOD];
-	const U16* pMMRec = MMMap.pData + ((Z * MMMap.PatchesW + X) << 1);
+	n_assert_dbg(X < MMMap.PatchesW && Z < MMMap.PatchesH);
+	const I16* pMMRec = MMMap.pData + ((Z * MMMap.PatchesW + X) << 1);
 	MinY = *pMMRec;
 	MaxY = *(pMMRec + 1);
 }
 //---------------------------------------------------------------------
 
-//inline bool CCDLODData::HasNode(UPTR X, UPTR Z, UPTR LOD) const
-//{
-//	CMinMaxMap& MMMap = MinMaxMaps[LOD];
-//	return X < MMMap.PatchesW && Z < MMMap.PatchesH;
-//}
-////---------------------------------------------------------------------
+inline bool CCDLODData::HasNode(UPTR X, UPTR Z, UPTR LOD) const
+{
+	CMinMaxMap& MMMap = MinMaxMaps[LOD];
+	return X < MMMap.PatchesW && Z < MMMap.PatchesH;
+}
+//---------------------------------------------------------------------
 
 }
 

@@ -166,10 +166,15 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].GetUnsafe());
 
+	Render::IRenderer::CRenderContext Ctx;
+	Ctx.pGPU = View.GPU.Get();
+	Ctx.CameraPosition = CameraPos;
+	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
+
 	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
-		ItCurr = ItCurr->pRenderer->Render(*View.GPU, RenderQueue, ItCurr);
+		ItCurr = ItCurr->pRenderer->Render(Ctx, RenderQueue, ItCurr);
 
 	RenderQueue.Clear(false);
 	//???may store render queue in cache for other phases? or completely unreusable? some info like a distance to a camera may be shared

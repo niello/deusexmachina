@@ -76,7 +76,7 @@ PResourceObject CCDLODDataLoader::Load(IO::CStream& Stream)
 
 	if (Obj->HeightMap.IsNullPtr()) return NULL;
 
-	Obj->pMinMaxData = (U16*)n_malloc(MinMaxDataSize);
+	Obj->pMinMaxData = (I16*)n_malloc(MinMaxDataSize);
 	Reader.GetStream().Read(Obj->pMinMaxData, MinMaxDataSize);
 
 	UPTR PatchesW = (Obj->HFWidth - 1 + Obj->PatchSize - 1) / Obj->PatchSize;

@@ -77,8 +77,10 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 // single-pass tech, than that the same material will be used with many different techs. We have great chances
 // to set render state only once as our tech is single-pass, and to render many materials without switching it,
 // just rebinding constants, resources and samplers.
-CArray<CRenderNode>::CIterator CModelRenderer::Render(CGPUDriver& GPU, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
+CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Context, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
 {
+	CGPUDriver& GPU = *Context.pGPU;
+
 	const CMaterial* pCurrMaterial = NULL;
 	const CMesh* pCurrMesh = NULL;
 	const CTechnique* pCurrTech = NULL;
