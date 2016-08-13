@@ -5,6 +5,7 @@
 #include <Render/Terrain.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Render/EffectConstSetValues.h>
 #include <Math/Sphere.h>
 #include <Core/Factory.h>
 
@@ -319,7 +320,8 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		float VisibilityRange = 1000.f;
 		float MorphStartRatio = 0.7f;
 
-		U32 LODCount = pTerrain->GetCDLODData()->GetLODCount();
+		const CCDLODData* pCDLOD = pTerrain->GetCDLODData();
+		U32 LODCount = pCDLOD->GetLODCount();
 
 		// Calculate morph constants
 
@@ -353,6 +355,10 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		CAABB AABB;
 		n_verify_dbg(pTerrain->GetLocalAABB(AABB, 0));
 		AABB.Transform(ItCurr->Transform);
+		float AABBMinX = AABB.Min.x;
+		float AABBMinZ = AABB.Min.z;
+		float AABBSizeX = AABB.Max.x - AABBMinX;
+		float AABBSizeZ = AABB.Max.z - AABBMinZ;
 
 		CProcessTerrainNodeArgs Args;
 		Args.pTerrain = pTerrain;
@@ -361,13 +367,13 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		Args.pViewProj = &Context.ViewProjection;
 		Args.pCameraPos = &Context.CameraPosition;
 		Args.MaxInstanceCount = MaxInstanceCount;
-		Args.AABBMinX = AABB.Min.x;
-		Args.AABBMinZ = AABB.Min.z;
-		Args.ScaleBaseX = (AABB.Max.x - AABB.Min.x) / (float)(pTerrain->GetCDLODData()->GetHeightMapWidth() - 1);
-		Args.ScaleBaseZ = (AABB.Max.z - AABB.Min.z) / (float)(pTerrain->GetCDLODData()->GetHeightMapHeight() - 1);
+		Args.AABBMinX = AABBMinX;
+		Args.AABBMinZ = AABBMinZ;
+		Args.ScaleBaseX = AABBSizeX / (float)(pCDLOD->GetHeightMapWidth() - 1);
+		Args.ScaleBaseZ = AABBSizeZ / (float)(pCDLOD->GetHeightMapHeight() - 1);
 
-		const U32 TopPatchesW = pTerrain->GetCDLODData()->GetTopPatchCountW();
-		const U32 TopPatchesH = pTerrain->GetCDLODData()->GetTopPatchCountH();
+		const U32 TopPatchesW = pCDLOD->GetTopPatchCountW();
+		const U32 TopPatchesH = pCDLOD->GetTopPatchCountH();
 		const U32 TopLOD = LODCount - 1;
 		for (U32 Z = 0; Z < TopPatchesH; ++Z)
 			for (U32 X = 0; X < TopPatchesW; ++X)
@@ -408,14 +414,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
-		// Pass data to GPU
-
-		//...
-		//!!!if VB instancing and no instance buffer, create instance buffer!
-		//!!!upload data to instance buffer!
-		//...
-
-		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
+		// Pass consts and instance data to GPU
 
 		const CTechnique* pTech = ItCurr->pTech;
 		if (pTech != pCurrTech)
@@ -426,6 +425,49 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			//!!!DBG TMP!
 			Sys::DbgOut("Tech params requested by ID\n");
 		}
+
+		CEffectConstSetValues PerInstanceConstValues;
+		PerInstanceConstValues.SetGPU(&GPU);
+
+		if (pConstCDLODParams)
+		{
+			struct
+			{
+				float WorldToHM[4];
+				float TerrainYScale;
+				float TerrainYOffset;
+				float InvSplatSizeX;
+				float InvSplatSizeZ;
+				float GridHalfSize;		//!!!changes for quarter patches!
+				float InvGridHalfSize;	//!!!changes for quarter patches!
+				float TexelSize[2];
+			} CDLODParams;
+
+			CDLODParams.WorldToHM[0] = 1.f / AABBSizeX;
+			CDLODParams.WorldToHM[1] = 1.f / AABBSizeZ;
+			CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
+			CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
+			CDLODParams.TerrainYScale = 65535.f * pCDLOD->GetVerticalScale();
+			CDLODParams.TerrainYOffset = -32767.f * pCDLOD->GetVerticalScale() + ItCurr->Transform.m[3][1]; // [3][1] = Translation.y
+			CDLODParams.InvSplatSizeX = pTerrain->GetInvSplatSizeX();
+			CDLODParams.InvSplatSizeZ = pTerrain->GetInvSplatSizeZ();
+			CDLODParams.GridHalfSize = pCDLOD->GetPatchSize() * 0.5f;
+			CDLODParams.InvGridHalfSize = 1.f / CDLODParams.GridHalfSize;
+			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
+			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
+
+			PerInstanceConstValues.RegisterConstantBuffer(pConstCDLODParams->Desc.BufferHandle, NULL);
+			PerInstanceConstValues.SetConstantValue(pConstCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
+		}
+
+		PerInstanceConstValues.ApplyConstantBuffers();
+
+		//...
+		//!!!if VB instancing and no instance buffer, create instance buffer!
+		//!!!upload data to instance buffer!
+		//...
+
+		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
 		const CPassList* pPasses = pTech->GetPasses(LightCount);
 		n_assert_dbg(pPasses); // To test if it could happen at all

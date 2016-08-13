@@ -83,8 +83,6 @@ typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 inline void CD3D11ConstantBuffer::WriteData(UPTR Offset, const void* pData, UPTR Size)
 {
 	n_assert_dbg(pData && Size && pMapped && (Offset + Size <= SizeInBytes));
-	//!!!???PERF:?! at least must NEVER read from mapped VRAM!
-	//if (memcmp(pMapped + Offset, pData, Size) == 0) return;
 	memcpy(pMapped + Offset, pData, Size);
 	Flags.Set(CB11_Dirty);
 }
