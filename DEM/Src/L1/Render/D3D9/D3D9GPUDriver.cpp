@@ -1780,10 +1780,11 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	}
 	else FAIL;
 
-	for (U32 i = 0; i < pMeta->RegisterCount; ++i)
+	U32 LastIndex = Index + pMeta->RegisterCount;
+	for (; Index < LastIndex; ++Index, ++D3DSamplerIndex)
 	{
 		CD3D9Sampler* pCurrSampler = CurrSS[Index].GetUnsafe();
-		if (pCurrSampler == pD3DSampler) OK;
+		if (pCurrSampler == pD3DSampler) continue;
 
 		DWORD* pValues = pD3DSampler->D3DStateValues;
 		for (int i = 0; i < CD3D9Sampler::D3D9_SS_COUNT; ++i)
@@ -1794,7 +1795,6 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 		}
 
 		CurrSS[Index] = pD3DSampler;
-		++Index;
 	}
 
 	OK;
