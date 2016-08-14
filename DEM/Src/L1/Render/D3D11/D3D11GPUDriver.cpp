@@ -1766,6 +1766,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuf
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
 	if (!pMeta) return NULL;
 
+	// We create temporary buffers sized by powers of 2, to make reuse easier (the same principle as for a small allocator)
 	UPTR NextPow2Size = NextPow2(pMeta->Size); // * ElementCount; //!!!for StructuredBuffer!
 	CDict<UPTR, CTmpCB*>& BufferPool = 
 		pMeta->Type == USMBuffer_Structured ? TmpStructuredBuffers :

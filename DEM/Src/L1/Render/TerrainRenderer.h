@@ -8,7 +8,8 @@
 #include <Data/FixedArray.h>
 #include <Data/Ptr.h>
 
-// Default renderer for CTerrain render objects
+// Default renderer for CTerrain render objects.
+// Currently supports only the translation part of the transformation.
 
 namespace Render
 {
