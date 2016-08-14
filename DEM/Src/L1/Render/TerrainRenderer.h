@@ -4,6 +4,7 @@
 
 #include <Render/Renderer.h>
 #include <Render/VertexComponent.h>
+#include <Render/SamplerDesc.h>
 #include <Data/FixedArray.h>
 #include <Data/Ptr.h>
 
@@ -12,8 +13,6 @@
 namespace Render
 {
 class CTerrain;
-//typedef Ptr<class CVertexLayout> PVertexLayout;
-typedef Ptr<class CVertexBuffer> PVertexBuffer;
 
 class CTerrainRenderer: public IRenderer
 {
@@ -48,14 +47,18 @@ protected:
 		float			ScaleBaseZ;
 	};
 
-	const U32						INSTANCE_BUFFER_STREAM_INDEX = 1;
+	const U32								INSTANCE_BUFFER_STREAM_INDEX = 1;
 
-	UPTR							InputSet_CDLOD;
+	UPTR									InputSet_CDLOD;
 
-	CFixedArray<CVertexComponent>	InstanceDataDecl;
-	PVertexBuffer					InstanceVB;			//!!!binds an RP to a specific GPU!
-	CPatchInstance*					pInstances;			// CPU mirror of GPU buffer, used to prepare data and pass into GPU in one shot
-	UPTR							MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
+	CSamplerDesc							HMSamplerDesc;
+	PSampler								HMSampler;			//!!!binds an RP to a specific GPU!
+
+	CFixedArray<CVertexComponent>			InstanceDataDecl;
+	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
+	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
+	CPatchInstance*							pInstances;			// CPU mirror of GPU buffer, used to prepare data and pass into GPU in one shot
+	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 	static ENodeStatus ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, EClipStatus Clip = Clipped);
 		//CTerrain& Terrain, const CAABB& AABB, U32 X, U32 Z, U32 LOD, float LODRange, CPatchInstance* pInstances, U32& PatchCount, U32& QPatchCount, EClipStatus Clip = Clipped);

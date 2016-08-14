@@ -33,7 +33,6 @@ private:
 	CFixedArray<CPassList>			PassesByLightCount; // Light count is an index
 
 	//!!!need binary search by ID!
-	//!!!once found, can be referenced by index!
 	CFixedArray<CEffectConstant>	Consts;
 	CFixedArray<CEffectResource>	Resources;
 	CFixedArray<CEffectSampler>		Samplers;
@@ -49,6 +48,8 @@ public:
 	IPTR					GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
 	const CPassList*		GetPasses(UPTR& LightCount) const;
 	const CEffectConstant*	GetConstant(CStrID Name) const;
+	const CEffectResource*	GetResource(CStrID Name) const;
+	const CEffectSampler*	GetSampler(CStrID Name) const;
 };
 
 typedef Ptr<CTechnique> PTechnique;
@@ -76,6 +77,28 @@ inline const CEffectConstant* CTechnique::GetConstant(CStrID Name) const
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
 		const CEffectConstant& CurrConst = Consts[i];
+		if (CurrConst.ID == Name) return &CurrConst;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+inline const CEffectResource* CTechnique::GetResource(CStrID Name) const
+{
+	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	{
+		const CEffectResource& CurrConst = Resources[i];
+		if (CurrConst.ID == Name) return &CurrConst;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+inline const CEffectSampler* CTechnique::GetSampler(CStrID Name) const
+{
+	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	{
+		const CEffectSampler& CurrConst = Samplers[i];
 		if (CurrConst.ID == Name) return &CurrConst;
 	}
 	return NULL;

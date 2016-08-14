@@ -57,7 +57,8 @@ struct CRenderQueueCmp_Material
 bool CRenderPhaseGeometry::Render(CView& View)
 {
 	//!!!DBG TMP!
-	Sys::DbgOut("--- CRenderPhaseGeometry ---\n");
+	if (EffectOverrides.GetCount()) Sys::DbgOut("--- CRenderPhaseGeometry DEPTH ---\n");
+	else Sys::DbgOut("--- CRenderPhaseGeometry COLOR ---\n");
 
 	if (!View.pSPS || !View.GetCamera()) OK;
 
@@ -152,17 +153,16 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		case Sort_Material:		RenderQueue.Sort<CRenderQueueCmp_Material>(); break;
 	}
 
-	UPTR i = 0;
-	for (; i < RenderTargetIndices.GetCount(); ++i)
+	UPTR RTIdxIdx = 0;
+	for (; RTIdxIdx < RenderTargetIndices.GetCount(); ++RTIdxIdx)
 	{
-		I32 RTIdx = RenderTargetIndices[i];
-		View.GPU->SetRenderTarget(i, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].GetUnsafe());
+		I32 RTIdx = RenderTargetIndices[RTIdxIdx];
+		View.GPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].GetUnsafe());
 	}
 
-	//???unbind unused or leave bound?
-	//UPTR MaxRTCount = View.GPU->GetMaxMultipleRenderTargetCount();
-	//for (; i < MaxRTCount; ++i)
-	//	View.GPU->SetRenderTarget(i, NULL);
+	UPTR MaxRTCount = View.GPU->GetMaxMultipleRenderTargetCount();
+	for (; RTIdxIdx < MaxRTCount; ++RTIdxIdx)
+		View.GPU->SetRenderTarget(RTIdxIdx, NULL);
 
 	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].GetUnsafe());
 

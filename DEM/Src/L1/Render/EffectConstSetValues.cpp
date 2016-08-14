@@ -78,9 +78,6 @@ bool CEffectConstSetValues::ApplyConstantBuffers()
 
 		if (CBRec.Flags & ECSV_TmpBuffer)
 		{
-			//???should tmp buffer exist until rendered? killing reference may
-			//result in a destruction of tmp CB when another one is bound to GPU!
-			//GPU must store ref inside until it is not required any more!
 			GPU->FreeTemporaryConstantBuffer(Buffer);
 			CBRec.Buffer = NULL;
 		}

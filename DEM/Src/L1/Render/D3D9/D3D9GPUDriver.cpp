@@ -1818,7 +1818,8 @@ void CD3D9GPUDriver::EndFrame()
 	n_verify(SUCCEEDED(pD3DDevice->EndScene()));
 	IsInsideFrame = false;
 
-	// Don't know why but it is required at least for depth pre-pass
+	// It seems that pipeline fails to render depth pre-pass if current RT mismatches
+	// DS buffer, which may happen, for example, during a multi-window rendering
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		SetRenderTarget(i, NULL);
 	//SetDepthStencilBuffer(NULL);

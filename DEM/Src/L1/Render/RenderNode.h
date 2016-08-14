@@ -23,6 +23,7 @@ struct CRenderNode
 	UPTR					BoneCount;		// Undefined if no skin
 	UPTR					Order;			// Rendering order, used to sort by alpha etc
 	const CMaterial*		pMaterial;
+	const CEffect*			pEffect;		// For searching instanced tech in a model renderer only (for now)
 	const CTechnique*		pTech;
 	const CMesh*			pMesh;
 	const CPrimitiveGroup*	pGroup;

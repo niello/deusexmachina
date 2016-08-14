@@ -984,6 +984,12 @@ bool CD3D11GPUDriver::BeginFrame()
 
 void CD3D11GPUDriver::EndFrame()
 {
+	/*
+	//!!!may clear render targets in RP phases, this is not a solution!
+	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		SetRenderTarget(i, NULL);
+	SetDepthStencilBuffer(NULL);
+	*/
 }
 //---------------------------------------------------------------------
 

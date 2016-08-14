@@ -28,8 +28,8 @@ protected:
 	UPTR									InputSet_ModelInstanced;
 
 	CFixedArray<CVertexComponent>			InstanceDataDecl;
-	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;
-	PVertexBuffer							InstanceVB; //!!!binds an RP to a specific GPU!
+	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
+	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
 	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 public:

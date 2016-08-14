@@ -10,6 +10,9 @@
 #include <Render/GPUDriver.h>
 #include <Core/Factory.h>
 
+//!!!DBG TMP!
+#include <Render/D3D11/D3D11RenderState.h>
+
 namespace Render
 {
 __ImplementClass(Render::CModelRenderer, 'MDLR', Render::IRenderer);
@@ -62,6 +65,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	if (!pEffect) FAIL;
 
 	Node.pMaterial = pMaterial;
+	Node.pEffect = pEffect;
 	Node.pTech = pEffect->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
 	if (!Node.pTech) FAIL;
 
@@ -123,7 +127,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 			CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
 			n_assert_dbg(pVB);
 			GPU.SetVertexBuffer(0, pVB);
-			GPU.SetIndexBuffer(pModel->Mesh->GetIndexBuffer().GetUnsafe());
+			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
 			pCurrMesh = pMesh;
 
 			pVL = pVB->GetVertexLayout();
@@ -155,7 +159,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 
 			if (ItInstEnd - ItCurr > 1)
 			{
-				const CTechnique* pInstancedTech = pMaterial->GetEffect()->GetTechByInputSet(InputSet_ModelInstanced);
+				const CTechnique* pInstancedTech = ItCurr->pEffect->GetTechByInputSet(InputSet_ModelInstanced);
 				if (pInstancedTech)
 				{
 					pTech = pInstancedTech;
@@ -198,6 +202,8 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				//!!!DBG TMP!
 				if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCountConst)
 					Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCountConst);
+
+				GPU.SetVertexLayout(pVL);
 
 				CEffectConstSetValues PerInstanceConstValues;
 				PerInstanceConstValues.SetGPU(&GPU);

@@ -18,27 +18,32 @@ CTerrainRenderer::CTerrainRenderer(): pInstances(NULL)
 	// Setup dynamic enumeration
 	InputSet_CDLOD = RegisterShaderInputSetID(CStrID("CDLOD"));
 
+	HMSamplerDesc.SetDefaults();
+	HMSamplerDesc.AddressU = TexAddr_Clamp;
+	HMSamplerDesc.AddressV = TexAddr_Clamp;
+	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
+
 	InstanceDataDecl.SetSize(2);
 
 	// Patch offset and scale in XZ
-	CVertexComponent& Cmp = InstanceDataDecl[0];
-	Cmp.Semantic = VCSem_TexCoord;
-	Cmp.UserDefinedName = NULL;
-	Cmp.Index = 0;
-	Cmp.Format = VCFmt_Float32_4;
-	Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
-	Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-	Cmp.PerInstanceData = true;
+	CVertexComponent* pCmp = &InstanceDataDecl[0];
+	pCmp->Semantic = VCSem_TexCoord;
+	pCmp->UserDefinedName = NULL;
+	pCmp->Index = 0;
+	pCmp->Format = VCFmt_Float32_4;
+	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
+	pCmp->OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	pCmp->PerInstanceData = true;
 
 	// Morph constants
-	Cmp = InstanceDataDecl[1];
-	Cmp.Semantic = VCSem_TexCoord;
-	Cmp.UserDefinedName = NULL;
-	Cmp.Index = 1;
-	Cmp.Format = VCFmt_Float32_2;
-	Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
-	Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-	Cmp.PerInstanceData = true;
+	pCmp = &InstanceDataDecl[1];
+	pCmp->Semantic = VCSem_TexCoord;
+	pCmp->UserDefinedName = NULL;
+	pCmp->Index = 1;
+	pCmp->Format = VCFmt_Float32_2;
+	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
+	pCmp->OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	pCmp->PerInstanceData = true;
 
 	//!!!DBG TMP! //???where to define?
 	MaxInstanceCount = 64;
@@ -72,6 +77,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	if (!pEffect) FAIL;
 
 	Node.pMaterial = pMaterial;
+	Node.pEffect = pEffect;
 	Node.pTech = pEffect->GetTechByInputSet(InputSet_CDLOD);
 	if (!Node.pTech) FAIL;
 
@@ -307,9 +313,11 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 	const CTechnique* pCurrTech = NULL;
 
 	const CEffectConstant* pConstCDLODParams = NULL;
+	const CEffectConstant* pConstGridConsts = NULL;
+	const CEffectConstant* pConstInstanceData = NULL;
+	const CEffectResource* pResourceHeightMap = NULL;
 
-	//!!!
-	//GPU.SetVertexLayout(pVLInstanced);
+	if (HMSampler.IsNullPtr()) HMSampler = GPU.CreateSampler(HMSamplerDesc);
 
 	while (ItCurr != ItEnd)
 	{
@@ -389,17 +397,35 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		// Sort patches
 
-		//...
-		//!!!can sort by distance (min dist to camera) before rendering!
-		//or can sort by LOD!
-		//if so, don't write instance data into the video memory directly,
-		//write to tmp storage (with additional fields for sorting), sort, then send to GPU
-		//...
+		//!!!need additional fields + understanding of patch sorting benefits, read paper to refresh knowledge!
+		/*
+		struct CPatchInstanceCmp
+		{
+			// Sort by distance and / or by LOD
+			inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+			{
+				if (a.Order != b.Order) return a.Order < b.Order;
+				return a.SqDistanceToCamera < b.SqDistanceToCamera;
+			}
+		};
+
+		std::sort(pInstances, pInstances + PatchCount, CPatchInstanceCmp());
+		*/
 
 		// Setup lights //???here or in ProcessTerrainNode()?
 
 		UPTR LightCount = 0;
 		//...
+		//Collect lights for each patch / quarterpatch, add count and indices
+
+		const CTechnique* pTech = ItCurr->pTech;
+		const CPassList* pPasses = pTech->GetPasses(LightCount);
+		n_assert_dbg(pPasses); // To test if it could happen at all
+		if (!pPasses)
+		{
+			++ItCurr;
+			continue;
+		}
 
 		// Apply material, if changed
 
@@ -414,17 +440,27 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
-		// Pass consts and instance data to GPU
+		// Pass tech params to GPU
 
-		const CTechnique* pTech = ItCurr->pTech;
 		if (pTech != pCurrTech)
 		{
-			pConstCDLODParams = pTech->GetConstant(CStrID("CDLODParams"));
 			pCurrTech = pTech;
+
+			pConstCDLODParams = pTech->GetConstant(CStrID("CDLODParams"));
+			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
+			pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
+			pResourceHeightMap = pTech->GetResource(CStrID("HeightMap"));
+
+			const CEffectSampler* pVSHeightSampler = pTech->GetSampler(CStrID("VSHeightSampler"));
+			if (pVSHeightSampler)
+				GPU.BindSampler(pVSHeightSampler->ShaderType, pVSHeightSampler->Handle, HMSampler.GetUnsafe());
 
 			//!!!DBG TMP!
 			Sys::DbgOut("Tech params requested by ID\n");
 		}
+
+		if (pResourceHeightMap)
+			GPU.BindResource(pResourceHeightMap->ShaderType, pResourceHeightMap->Handle, pCDLOD->GetHeightMap());
 
 		CEffectConstSetValues PerInstanceConstValues;
 		PerInstanceConstValues.SetGPU(&GPU);
@@ -438,9 +474,8 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 				float TerrainYOffset;
 				float InvSplatSizeX;
 				float InvSplatSizeZ;
-				float GridHalfSize;		//!!!changes for quarter patches!
-				float InvGridHalfSize;	//!!!changes for quarter patches!
 				float TexelSize[2];
+				//float TextureSize[2]; // For manual bilinear filtering in VS
 			} CDLODParams;
 
 			CDLODParams.WorldToHM[0] = 1.f / AABBSizeX;
@@ -451,8 +486,6 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			CDLODParams.TerrainYOffset = -32767.f * pCDLOD->GetVerticalScale() + ItCurr->Transform.m[3][1]; // [3][1] = Translation.y
 			CDLODParams.InvSplatSizeX = pTerrain->GetInvSplatSizeX();
 			CDLODParams.InvSplatSizeZ = pTerrain->GetInvSplatSizeZ();
-			CDLODParams.GridHalfSize = pCDLOD->GetPatchSize() * 0.5f;
-			CDLODParams.InvGridHalfSize = 1.f / CDLODParams.GridHalfSize;
 			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
 			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
 
@@ -460,28 +493,113 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			PerInstanceConstValues.SetConstantValue(pConstCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
 		}
 
-		PerInstanceConstValues.ApplyConstantBuffers();
+		if (pConstGridConsts)
+			PerInstanceConstValues.RegisterConstantBuffer(pConstGridConsts->Desc.BufferHandle, NULL);
 
-		//...
-		//!!!if VB instancing and no instance buffer, create instance buffer!
-		//!!!upload data to instance buffer!
-		//...
+		//!!!implement looping if instance buffer is too small!
+		if (pConstInstanceData)
+		{
+			// For D3D11 constant instancing
+			NOT_IMPLEMENTED;
+		}
+		else
+		{
+			if (InstanceVB.IsNullPtr())
+			{
+				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount());
+				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
+			}
+
+			void* pInstData;
+			n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard));
+			if (PatchCount)
+			{
+				UPTR InstDataSize = sizeof(CPatchInstance) * PatchCount;
+				memcpy(pInstData, pInstances, InstDataSize);
+				pInstData = (char*)pInstData + InstDataSize;
+			}
+			if (QuarterPatchCount)
+				memcpy(pInstData, pInstances + MaxInstanceCount - QuarterPatchCount, sizeof(CPatchInstance) * QuarterPatchCount);
+			GPU.UnmapResource(*InstanceVB);
+
+			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe());
+		}
 
 		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
-		const CPassList* pPasses = pTech->GetPasses(LightCount);
-		n_assert_dbg(pPasses); // To test if it could happen at all
-		if (!pPasses)
+		//???!!!to subroutine?! to avoid duplication with quarter-patches!
+		if (PatchCount)
 		{
-			++ItCurr;
-			continue;
+			if (pConstGridConsts)
+			{
+				float GridConsts[2];
+				GridConsts[0] = pCDLOD->GetPatchSize() * 0.5f;
+				GridConsts[1] = 1.f / GridConsts[0];
+				PerInstanceConstValues.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
+			}
+
+			PerInstanceConstValues.ApplyConstantBuffers();
+
+			const CMesh* pMesh = pTerrain->GetPatchMesh();
+			n_assert_dbg(pMesh);
+			CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
+			n_assert_dbg(pVB);
+			CVertexLayout* pVL = pVB->GetVertexLayout();
+
+			GPU.SetVertexBuffer(0, pVB);
+			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
+
+			//!!!implement looping if instance buffer is too small!
+			if (pConstInstanceData) GPU.SetVertexLayout(pVL);
+			else
+			{
+				IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
+				if (VLIdx == INVALID_INDEX)
+				{
+					UPTR BaseComponentCount = pVL->GetComponentCount();
+					UPTR DescComponentCount = BaseComponentCount + InstanceDataDecl.GetCount();
+					CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
+					memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
+					memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount() * sizeof(CVertexComponent));
+
+					PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
+
+					_freea(pInstancedDecl);
+
+					n_assert_dbg(VLInstanced.IsValidPtr());
+					InstancedLayouts.Add(pVL, VLInstanced);
+
+					GPU.SetVertexLayout(VLInstanced.GetUnsafe());
+				}
+				else GPU.SetVertexLayout(InstancedLayouts.ValueAt(VLIdx).GetUnsafe());
+			}
+
+			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
+			for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)
+			{
+				GPU.SetRenderState((*pPasses)[PassIdx]);
+				GPU.DrawInstanced(*pGroup, PatchCount);
+			}
 		}
 
-		/* render patches, then quarters!
-		for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+		/* render quarters!
+
+		if (QuarterPatchCount)
 		{
-			GPU.SetRenderState((*pPasses)[i]);
-			GPU.Draw(*pGroup);
+			GridConsts[0] = Terrain.GetPatchSize() * 0.25f;
+			GridConsts[1] = 1.f / GridConsts[0];
+			Shader->SetFloatArray(hGridConsts, GridConsts, 2);
+
+			if (ObjIdx == 0 && !PatchCount) Shader->BeginPass(0);
+			else Shader->CommitChanges();
+
+			CMesh* pPatch = Terrain.GetQuarterPatchMesh();
+			n_assert_dbg(pPatch);
+			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, QuarterPatchCount, MaxInstanceCount - QuarterPatchCount);
+			RenderSrv->SetVertexBuffer(0, pPatch->GetVertexBuffer());
+			RenderSrv->SetIndexBuffer(pPatch->GetIndexBuffer());
+			RenderSrv->SetPrimitiveGroup(pPatch->GetGroup(0));
+			RenderSrv->Draw();
 		}
 		*/
 
