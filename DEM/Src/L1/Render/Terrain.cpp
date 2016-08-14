@@ -121,7 +121,7 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());
 		}
-		PatchMesh = RPatch->GetObject<CMesh>();
+		QuarterPatchMesh = RPatch->GetObject<CMesh>();
 	}
 
 	OK;

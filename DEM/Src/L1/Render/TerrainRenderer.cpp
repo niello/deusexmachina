@@ -46,7 +46,7 @@ CTerrainRenderer::CTerrainRenderer(): pInstances(NULL)
 	pCmp->PerInstanceData = true;
 
 	//!!!DBG TMP! //???where to define?
-	MaxInstanceCount = 64;
+	MaxInstanceCount = 128;
 }
 //---------------------------------------------------------------------
 
@@ -88,6 +88,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 }
 //---------------------------------------------------------------------
 
+//!!!recalculation required only on viewer's position / look vector change!
 CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProcessTerrainNodeArgs& Args,
 																   U32 X, U32 Z, U32 LOD, float LODRange,
 																   U32& PatchCount, U32& QPatchCount, EClipStatus Clip)
@@ -116,6 +117,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 	if (Clip == Clipped)
 	{
+		// NB: Visibility is tested for the current camera, NOT always for the main
 		Clip = NodeAABB.GetClipStatus(*Args.pViewProj);
 		if (Clip == Outside) return Node_Invisible;
 	}
@@ -124,7 +126,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 	sphere LODSphere(*Args.pCameraPos, LODRange);
 	if (LODSphere.GetClipStatus(NodeAABB) == Outside) return Node_NotInLOD;
 
-	// Bits 0 to 3 - if set, add child[0 .. 3]
+	// Bits 0 to 3 - if set, add quarterpatch for child[0 .. 3]
 	U8 ChildFlags = 0;
 	enum
 	{
@@ -146,21 +148,25 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 		// NB: Always must check the main frame camera, even if some special camera is used for intermediate rendering
 		sphere LODSphere(*Args.pCameraPos, NextLODRange);
-		EClipStatus NextClip = LODSphere.GetClipStatus(NodeAABB);
-		if (NextClip != Outside)
+		if (LODSphere.GetClipStatus(NodeAABB) == Outside)
 		{
-			U32 XNext = X << 1, ZNext = Z << 1;
+			// Add the whole node to the current LOD
+			ChildFlags = Child_All;
+		}
+		else
+		{
+			const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
 
-			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
 			if (Status != Node_Invisible)
 			{
 				IsVisible = true;
 				if (Status == Node_NotInLOD) ChildFlags |= Child_TopLeft;
 			}
 
-			if (pCDLOD->HasNode(XNext + 1, ZNext, LOD - 1))
+			if (pCDLOD->HasNode(XNext + 1, ZNext, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -168,9 +174,9 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 				}
 			}
 
-			if (pCDLOD->HasNode(XNext, ZNext + 1, LOD - 1))
+			if (pCDLOD->HasNode(XNext, ZNext + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -178,9 +184,9 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 				}
 			}
 
-			if (pCDLOD->HasNode(XNext + 1, ZNext + 1, LOD - 1))
+			if (pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, LOD - 1, NextLODRange, PatchCount, QPatchCount, NextClip);
+				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -325,8 +331,8 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		CTerrain* pTerrain = ItCurr->pRenderable->As<CTerrain>();
 
-		float VisibilityRange = 1000.f;
-		float MorphStartRatio = 0.7f;
+		const float VisibilityRange = 1000.f;
+		const float MorphStartRatio = 0.7f;
 
 		const CCDLODData* pCDLOD = pTerrain->GetCDLODData();
 		U32 LODCount = pCDLOD->GetLODCount();
@@ -397,7 +403,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		// Sort patches
 
-		//!!!need additional fields + understanding of patch sorting benefits, read paper to refresh knowledge!
+		//!!!sort by distance to camera and by scale = LOD
 		/*
 		struct CPatchInstanceCmp
 		{
@@ -521,8 +527,42 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			if (QuarterPatchCount)
 				memcpy(pInstData, pInstances + MaxInstanceCount - QuarterPatchCount, sizeof(CPatchInstance) * QuarterPatchCount);
 			GPU.UnmapResource(*InstanceVB);
+		}
 
-			GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe());
+		// Set vertex layout
+
+		// In the real world we don't want to use differently laid out meshes
+		n_assert_dbg(pTerrain->GetPatchMesh()->GetVertexBuffer()->GetVertexLayout() == pTerrain->GetQuarterPatchMesh()->GetVertexBuffer()->GetVertexLayout());
+
+		const CMesh* pMesh = pTerrain->GetPatchMesh();
+		n_assert_dbg(pMesh);
+		CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
+		n_assert_dbg(pVB);
+		CVertexLayout* pVL = pVB->GetVertexLayout();
+
+		//!!!implement looping if instance buffer is too small!
+		if (pConstInstanceData) GPU.SetVertexLayout(pVL);
+		else
+		{
+			IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
+			if (VLIdx == INVALID_INDEX)
+			{
+				UPTR BaseComponentCount = pVL->GetComponentCount();
+				UPTR DescComponentCount = BaseComponentCount + InstanceDataDecl.GetCount();
+				CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
+				memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
+				memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount() * sizeof(CVertexComponent));
+
+				PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
+
+				_freea(pInstancedDecl);
+
+				n_assert_dbg(VLInstanced.IsValidPtr());
+				InstancedLayouts.Add(pVL, VLInstanced);
+
+				GPU.SetVertexLayout(VLInstanced.GetUnsafe());
+			}
+			else GPU.SetVertexLayout(InstancedLayouts.ValueAt(VLIdx).GetUnsafe());
 		}
 
 		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
@@ -540,39 +580,11 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 			PerInstanceConstValues.ApplyConstantBuffers();
 
-			const CMesh* pMesh = pTerrain->GetPatchMesh();
-			n_assert_dbg(pMesh);
-			CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
-			n_assert_dbg(pVB);
-			CVertexLayout* pVL = pVB->GetVertexLayout();
-
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
 
-			//!!!implement looping if instance buffer is too small!
-			if (pConstInstanceData) GPU.SetVertexLayout(pVL);
-			else
-			{
-				IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
-				if (VLIdx == INVALID_INDEX)
-				{
-					UPTR BaseComponentCount = pVL->GetComponentCount();
-					UPTR DescComponentCount = BaseComponentCount + InstanceDataDecl.GetCount();
-					CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
-					memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-					memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount() * sizeof(CVertexComponent));
-
-					PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
-
-					_freea(pInstancedDecl);
-
-					n_assert_dbg(VLInstanced.IsValidPtr());
-					InstancedLayouts.Add(pVL, VLInstanced);
-
-					GPU.SetVertexLayout(VLInstanced.GetUnsafe());
-				}
-				else GPU.SetVertexLayout(InstancedLayouts.ValueAt(VLIdx).GetUnsafe());
-			}
+			if (!pConstInstanceData)
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), 0);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 			for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)
@@ -582,26 +594,39 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			}
 		}
 
-		/* render quarters!
-
 		if (QuarterPatchCount)
 		{
-			GridConsts[0] = Terrain.GetPatchSize() * 0.25f;
-			GridConsts[1] = 1.f / GridConsts[0];
-			Shader->SetFloatArray(hGridConsts, GridConsts, 2);
+			//!!!THIS CODE NEEDS TESTING!
+			n_assert(false);
 
-			if (ObjIdx == 0 && !PatchCount) Shader->BeginPass(0);
-			else Shader->CommitChanges();
+			if (pConstGridConsts)
+			{
+				float GridConsts[2];
+				GridConsts[0] = pCDLOD->GetPatchSize() * 0.25f;
+				GridConsts[1] = 1.f / GridConsts[0];
+				PerInstanceConstValues.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
+			}
 
-			CMesh* pPatch = Terrain.GetQuarterPatchMesh();
-			n_assert_dbg(pPatch);
-			RenderSrv->SetInstanceBuffer(1, InstanceBuffer, QuarterPatchCount, MaxInstanceCount - QuarterPatchCount);
-			RenderSrv->SetVertexBuffer(0, pPatch->GetVertexBuffer());
-			RenderSrv->SetIndexBuffer(pPatch->GetIndexBuffer());
-			RenderSrv->SetPrimitiveGroup(pPatch->GetGroup(0));
-			RenderSrv->Draw();
+			PerInstanceConstValues.ApplyConstantBuffers();
+
+			pMesh = pTerrain->GetQuarterPatchMesh();
+			n_assert_dbg(pMesh);
+			pVB = pMesh->GetVertexBuffer().GetUnsafe();
+			n_assert_dbg(pVB);
+
+			GPU.SetVertexBuffer(0, pVB);
+			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
+
+			if (!pConstInstanceData)
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), PatchCount);
+
+			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
+			for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)
+			{
+				GPU.SetRenderState((*pPasses)[PassIdx]);
+				GPU.DrawInstanced(*pGroup, QuarterPatchCount);
+			}
 		}
-		*/
 
 		//!!!DBG TMP!
 		Sys::DbgOut("CTerrain rendered: %d patches, %d quarterpatches\n", PatchCount, QuarterPatchCount);

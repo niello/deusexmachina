@@ -26,7 +26,7 @@ protected:
 	{
 		UPTR	PatchesW;
 		UPTR	PatchesH;
-		I16*	pData;		//???!!!I16 or U16?!
+		I16*	pData;
 	};
 
 	PTexture				HeightMap;
