@@ -1780,18 +1780,23 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	}
 	else FAIL;
 
-	CD3D9Sampler* pCurrSampler = CurrSS[Index].GetUnsafe();
-	if (pCurrSampler == pD3DSampler) OK;
-
-	DWORD* pValues = pD3DSampler->D3DStateValues;
-	for (int i = 0; i < CD3D9Sampler::D3D9_SS_COUNT; ++i)
+	for (U32 i = 0; i < pMeta->RegisterCount; ++i)
 	{
-		DWORD Value = pValues[i];
-		if (Value != pCurrSampler->D3DStateValues[i])
-			n_verify_dbg(SUCCEEDED(pD3DDevice->SetSamplerState(D3DSamplerIndex, CD3D9Sampler::D3DStates[i], Value)));
+		CD3D9Sampler* pCurrSampler = CurrSS[Index].GetUnsafe();
+		if (pCurrSampler == pD3DSampler) OK;
+
+		DWORD* pValues = pD3DSampler->D3DStateValues;
+		for (int i = 0; i < CD3D9Sampler::D3D9_SS_COUNT; ++i)
+		{
+			DWORD Value = pValues[i];
+			if (Value != pCurrSampler->D3DStateValues[i])
+				n_verify_dbg(SUCCEEDED(pD3DDevice->SetSamplerState(D3DSamplerIndex, CD3D9Sampler::D3DStates[i], Value)));
+		}
+
+		CurrSS[Index] = pD3DSampler;
+		++Index;
 	}
 
-	CurrSS[Index] = pD3DSampler;
 	OK;
 }
 //---------------------------------------------------------------------

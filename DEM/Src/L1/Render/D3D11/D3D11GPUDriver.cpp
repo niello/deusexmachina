@@ -1764,10 +1764,11 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuf
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta) return NULL;
+	if (!pMeta || !pMeta->Size) return NULL;
 
-	// We create temporary buffers sized by powers of 2, to make reuse easier (the same principle as for a small allocator)
-	UPTR NextPow2Size = NextPow2(pMeta->Size); // * ElementCount; //!!!for StructuredBuffer!
+	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
+	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
+	UPTR NextPow2Size = n_max(16, NextPow2(pMeta->Size)/* * ElementCount; //!!!for StructuredBuffer!*/); 
 	CDict<UPTR, CTmpCB*>& BufferPool = 
 		pMeta->Type == USMBuffer_Structured ? TmpStructuredBuffers :
 		(pMeta->Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);

@@ -227,7 +227,7 @@ bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutCon
 
 // Use StringUtils::StripComments(pSrc) to remove comments from the HLSL source before caling this function.
 // Parses source code and finds "samplerX SamplerName { Texture = TextureName; }" or
-// "sampler LinearSampler[N] { { Texture = Tex1; }, ..., { Texture = TexN; } }" pattern,
+// "sampler SamplerName[N] { { Texture = Tex1; }, ..., { Texture = TexN; } }" pattern,
 // as HLSL texture names are not saved in a metadata. Doesn't support annotations.
 void D3D9FindSamplerTextures(const char* pSrcText, CDict<CString, CArray<CString>>& OutSampToTex)
 {

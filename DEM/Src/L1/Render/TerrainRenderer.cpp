@@ -318,7 +318,8 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 	const CMaterial* pCurrMaterial = NULL;
 	const CTechnique* pCurrTech = NULL;
 
-	const CEffectConstant* pConstCDLODParams = NULL;
+	const CEffectConstant* pConstVSCDLODParams = NULL;
+	const CEffectConstant* pConstPSCDLODParams = NULL;
 	const CEffectConstant* pConstGridConsts = NULL;
 	const CEffectConstant* pConstInstanceData = NULL;
 	const CEffectResource* pResourceHeightMap = NULL;
@@ -452,7 +453,8 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		{
 			pCurrTech = pTech;
 
-			pConstCDLODParams = pTech->GetConstant(CStrID("CDLODParams"));
+			pConstVSCDLODParams = pTech->GetConstant(CStrID("VSCDLODParams"));
+			pConstPSCDLODParams = pTech->GetConstant(CStrID("PSCDLODParams"));
 			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
 			pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
 			pResourceHeightMap = pTech->GetResource(CStrID("HeightMap"));
@@ -471,7 +473,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		CEffectConstSetValues PerInstanceConstValues;
 		PerInstanceConstValues.SetGPU(&GPU);
 
-		if (pConstCDLODParams)
+		if (pConstVSCDLODParams)
 		{
 			struct
 			{
@@ -495,8 +497,14 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
 			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
 
-			PerInstanceConstValues.RegisterConstantBuffer(pConstCDLODParams->Desc.BufferHandle, NULL);
-			PerInstanceConstValues.SetConstantValue(pConstCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
+			PerInstanceConstValues.RegisterConstantBuffer(pConstVSCDLODParams->Desc.BufferHandle, NULL);
+			PerInstanceConstValues.SetConstantValue(pConstVSCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
+		
+			if (pConstPSCDLODParams)
+			{
+				PerInstanceConstValues.RegisterConstantBuffer(pConstPSCDLODParams->Desc.BufferHandle, NULL);
+				PerInstanceConstValues.SetConstantValue(pConstPSCDLODParams, 0, CDLODParams.WorldToHM, sizeof(float) * 4);
+			}
 		}
 
 		if (pConstGridConsts)

@@ -195,9 +195,11 @@ struct CUSMShaderMeta
 	CArray<CUSMShaderSamplerMeta>	Samplers;
 };
 
+class CDEMD3DInclude;
+
 void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);
 void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R);
-bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out);
+bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler, CSM30ShaderMeta& Out);
 bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out);
 bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta);
 bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta);

@@ -448,7 +448,7 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		IO::CBinaryWriter W(*ObjStream.GetUnsafe());
 
 		CSM30ShaderMeta Meta;
-		bool MetaReflected = SM30CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), Meta);
+		bool MetaReflected = SM30CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), IncHandler, Meta);
 		bool MetaSaved = MetaReflected && SM30SaveShaderMetadata(W, Meta);
 
 		pCode->Release();

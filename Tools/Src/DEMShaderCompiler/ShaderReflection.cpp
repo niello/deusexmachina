@@ -4,25 +4,98 @@
 #include <IO/BinaryWriter.h>
 #include <Data/StringUtils.h>
 #include <Render/RenderFwd.h>		// For GPU levels enum
+#include <DEMD3DInclude.h>
 #include <D3D9ShaderReflection.h>
 #include <D3DCompiler.inl>
 
 extern CString Messages;
 
-bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CSM30ShaderMeta& Out)
+bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler, CSM30ShaderMeta& Out)
 {
 	CArray<CD3D9ConstantDesc> D3D9Consts;
 	CString Creator;
 
 	if (!D3D9Reflect(pData, Size, D3D9Consts, Creator)) FAIL;
 
-	char* pSourceWithoutComments = (char*)n_malloc(SourceSize + 1);
-	memcpy(pSourceWithoutComments, pSource, SourceSize);
-	pSourceWithoutComments[SourceSize] = 0;
-	UPTR SourceWithoutCommentsSize = StringUtils::StripComments(pSourceWithoutComments);
+	// Process source code includes and remove comments
+
+	CString Source(pSource, SourceSize);
+
+	//!!!DIRTY HACK! Need valid way to edit CString inplace by StripComments()!
+	UPTR NewLength = StringUtils::StripComments(&Source[0]);
+	Source.TruncateRight(Source.GetLength() - NewLength);
+
+	int CurrIdx = 0;
+	int IncludeIdx;
+	while ((IncludeIdx = Source.FindIndex("#include", CurrIdx)) != INVALID_INDEX)
+	{
+		int FileNameStartSys = Source.FindIndex('<');
+		int FileNameStartLocal = Source.FindIndex('\"');
+		if (FileNameStartSys == INVALID_INDEX && FileNameStartLocal == INVALID_INDEX)
+		{
+			Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
+			break;
+		}
+
+		if (FileNameStartSys != INVALID_INDEX && FileNameStartLocal != INVALID_INDEX)
+		{
+			if (FileNameStartSys < FileNameStartLocal) FileNameStartLocal = INVALID_INDEX;
+			else FileNameStartSys = INVALID_INDEX;
+		}
+
+		D3D_INCLUDE_TYPE IncludeType;
+		int FileNameStart;
+		int FileNameEnd;
+		if (FileNameStartSys != INVALID_INDEX)
+		{
+			IncludeType = D3D_INCLUDE_SYSTEM; // <FileName>
+			FileNameStart = FileNameStartSys + 1;
+			FileNameEnd = Source.FindIndex('>', FileNameStart);
+		}
+		else
+		{
+			IncludeType = D3D_INCLUDE_LOCAL; // "FileName"
+			FileNameStart = FileNameStartLocal + 1;
+			FileNameEnd = Source.FindIndex('\"', FileNameStart);
+		}
+
+		if (FileNameEnd == INVALID_INDEX)
+		{
+			Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
+			break;
+		}
+
+		CString IncludeFileName = Source.SubString(FileNameStart, FileNameEnd - FileNameStart);
+
+		const void* pData;
+		UINT Bytes;
+		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.CStr(), NULL, &pData, &Bytes)))
+		{
+			Messages += "SM30CollectShaderMetadata() > Failed to #include '";
+			Messages += IncludeFileName;
+			Messages += "', skipped\n";
+			CurrIdx = FileNameEnd;
+			continue;
+		}
+
+		Source =
+			Source.SubString(0, IncludeIdx) +
+			CString((const char*)pData, Bytes) +
+			Source.SubString(FileNameEnd + 1, Source.GetLength() - FileNameEnd - 1);
+		
+		IncludeHandler.Close(pData);
+
+		CurrIdx = FileNameStart;
+
+		//!!!DIRTY HACK! Need valid way to edit CString inplace by StripComments()!
+		NewLength = StringUtils::StripComments(&Source[0]);
+		Source.TruncateRight(Source.GetLength() - NewLength);
+	}
+
+	// Collect metadata
 
 	CDict<CString, CArray<CString>> SampToTex;
-	D3D9FindSamplerTextures(pSourceWithoutComments, SampToTex);
+	D3D9FindSamplerTextures(Source.CStr(), SampToTex);
 
 	CDict<CString, CString> ConstToBuf;
 
@@ -89,7 +162,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			{
 				Messages += "Sampler '";
 				Messages += D3D9ConstDesc.Name;
-				Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
+				Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }' or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 			}
 		}
 		else // Constants
@@ -99,7 +172,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 
 			CString BufferName;
 			U32 SlotIndex = (U32)(INVALID_INDEX);
-			D3D9FindConstantBuffer(pSourceWithoutComments, D3D9ConstDesc.Name, BufferName, SlotIndex);
+			D3D9FindConstantBuffer(Source.CStr(), D3D9ConstDesc.Name, BufferName, SlotIndex);
 
 			UPTR BufferIndex = 0;
 			for (; BufferIndex < Out.Buffers.GetCount(); ++BufferIndex)
@@ -125,7 +198,6 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 					Messages += " and ";
 					Messages += StringUtils::FromInt(SlotIndex);
 					Messages += ") in the same shader, please fix it\n";
-					n_free(pSourceWithoutComments);
 					FAIL;
 				}
 			}
@@ -142,7 +214,6 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 				default:
 				{
 					Sys::Error("Unsupported SM3.0 register set %d\n", D3D9ConstDesc.RegisterSet);
-					n_free(pSourceWithoutComments);
 					FAIL;
 				}
 			};
@@ -168,8 +239,6 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			}
 		}
 	}
-
-	n_free(pSourceWithoutComments);
 
 	// Remove empty constant buffers and set free SlotIndices where no explicit value was specified
 
