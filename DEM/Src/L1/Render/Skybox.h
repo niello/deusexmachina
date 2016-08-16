@@ -33,7 +33,7 @@ public:
 
 	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual IRenderable*	Clone();
-	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const { FAIL; }	// Infinite size
+	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const { OutBox = CAABB::Empty; OK; }	// Infinite size
 
 	CMaterial*				GetMaterial() const { return Material.GetUnsafe(); }
 	CMesh*					GetMesh() const { return Mesh.GetUnsafe(); }

@@ -288,7 +288,7 @@ PResourceObject CTextureLoaderDDS::Load(IO::CStream& Stream)
 		{
 			// All cube faces must be defined
 			if ((Header.caps2 & DDS_CUBEMAP_ALLFACES) != DDS_CUBEMAP_ALLFACES) return NULL;
-			Render::Texture_Cube;
+			TexDesc.Type = Render::Texture_Cube;
 		}
 		else TexDesc.Type = Render::Texture_2D;
 	}

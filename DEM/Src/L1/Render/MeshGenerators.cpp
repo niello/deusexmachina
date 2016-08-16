@@ -8,6 +8,7 @@ namespace Resources
 {
 __ImplementClassNoFactory(Resources::CMeshGenerator, Resources::CResourceGenerator);
 __ImplementClassNoFactory(Resources::CMeshGeneratorQuadPatch, Resources::CMeshGenerator);
+__ImplementClassNoFactory(Resources::CMeshGeneratorSkybox, Resources::CMeshGenerator);
 
 const Core::CRTTI& CMeshGenerator::GetResultType() const
 {
@@ -119,16 +120,17 @@ PResourceObject CMeshGeneratorSkybox::Generate()
 	VC.PerInstanceData = false;
 	Render::PVertexLayout VertexLayout = GPU->CreateVertexLayout(&VC, 1);
 
+	// Unit cube -0.5f .. +0.5f is too small for the near clip plane 0.1 in D3D9
 	float VBData[24] =
 	{
-		-0.5f, -0.5f, -0.5f,
-		+0.5f, -0.5f, -0.5f,
-		-0.5f, +0.5f, -0.5f,
-		+0.5f, +0.5f, -0.5f,
-		-0.5f, -0.5f, +0.5f,
-		+0.5f, -0.5f, +0.5f,
-		-0.5f, +0.5f, +0.5f,
-		+0.5f, +0.5f, +0.5f
+		-1.0f, -1.0f, -1.0f,
+		+1.0f, -1.0f, -1.0f,
+		-1.0f, +1.0f, -1.0f,
+		+1.0f, +1.0f, -1.0f,
+		-1.0f, -1.0f, +1.0f,
+		+1.0f, -1.0f, +1.0f,
+		-1.0f, +1.0f, +1.0f,
+		+1.0f, +1.0f, +1.0f
 	};
 	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout.GetUnsafe(), 8, Render::Access_GPU_Read, &VBData);
 

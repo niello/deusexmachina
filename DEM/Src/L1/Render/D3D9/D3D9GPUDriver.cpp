@@ -2351,12 +2351,10 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 
 		if (pData)
 		{
+			if (MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 3D texture mip levels uploading\n");
+
 			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
 			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
-			if (MipDataProvided)
-			{
-				NOT_IMPLEMENTED_MSG("D3D9 3D texture mip levels uploading\n");
-			}
 			D3DLOCKED_BOX LockedBox = { 0 };
 			if (SUCCEEDED(pD3DTex->LockBox(0, &LockedBox, NULL, D3DLOCK_NOSYSLOCK)))
 			{
@@ -2382,8 +2380,30 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 
 		if (pData)
 		{
-			Sys::Error("CD3D9GPUDriver::CreateTexture() > Cubemap loading face by face - IMPLEMENT ME!\n");
-			//!!!faces must be loaded in ECubemapFace/D3D enum order!
+			UPTR BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
+
+			if (MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 cube texture mip levels uploading\n");
+
+			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
+			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
+			const char* pCurrFaceData = (const char*)pData;
+			for (U32 i = 0; i < 6; ++i)
+			{
+				D3DCUBEMAP_FACES Face = (D3DCUBEMAP_FACES)i;
+				D3DLOCKED_RECT LockedRect = { 0 };
+				if (SUCCEEDED(pD3DTex->LockRect(Face, 0, &LockedRect, NULL, D3DLOCK_NOSYSLOCK)))
+				{
+					UPTR DataSize = LockedRect.Pitch * ((Desc.Height + BlockSize - 1) / BlockSize);
+					memcpy(LockedRect.pBits, pCurrFaceData, DataSize);
+					n_verify(SUCCEEDED(pD3DTex->UnlockRect(Face, 0)));
+					pCurrFaceData += DataSize;
+				}
+				else
+				{
+					pD3DTex->Release();
+					return NULL;
+				}
+			}
 		}
 	}
 	else

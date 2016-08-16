@@ -1916,9 +1916,8 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		char* pGeneratedMips = NULL;
 		if (!MipDataProvided && MipLevels > 1)
 		{
-			Sys::Error("IMPLEMENT ME!\n");
+			NOT_IMPLEMENTED;
 			//!!!generate mips by DirectXTex code or smth like that!
-			//!!!take this into account when setting pointers below!
 #ifdef _DEBUG
 			if (!pGeneratedMips)
 				Sys::DbgOut("CD3D11GPUDriver::CreateTexture() > Mipmaps are not generated\n");

@@ -93,6 +93,7 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 
 		PathNode->AddChild(UID, *Node.GetUnsafe());
 
+		//!!!must be called on level validation, not on loading! REDESIGN!
 		Game::CSceneNodeValidateAttrs Visitor;
 		Visitor.Level = Level;
 		Node->AcceptVisitor(Visitor);
