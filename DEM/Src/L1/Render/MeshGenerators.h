@@ -21,7 +21,10 @@ class CMeshGenerator: public CResourceGenerator
 
 public:
 
-	Render::PGPUDriver GPU;
+	Render::PGPUDriver	GPU;
+	bool				FrontClockWise;
+
+	CMeshGenerator(): FrontClockWise(true) {}
 
 	//virtual ~CMeshGenerator() {}
 
@@ -44,6 +47,20 @@ public:
 };
 
 typedef Ptr<CMeshGeneratorQuadPatch> PMeshGeneratorQuadPatch;
+
+//???rename to box? use for paceholder boxes too?
+class CMeshGeneratorSkybox: public CMeshGenerator
+{
+	__DeclareClassNoFactory;
+
+public:
+
+	//virtual ~CMeshGeneratorSkybox() {}
+
+	virtual PResourceObject Generate();
+};
+
+typedef Ptr<CMeshGeneratorSkybox> PMeshGeneratorSkybox;
 
 }
 

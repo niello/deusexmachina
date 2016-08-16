@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_TERRAIN_H__
-#define __DEM_L1_FRAME_TERRAIN_H__
+#ifndef __DEM_L1_RENDER_TERRAIN_H__
+#define __DEM_L1_RENDER_TERRAIN_H__
 
 #include <Render/Renderable.h>
 #include <Render/CDLODData.h>

@@ -1,7 +1,6 @@
 #include "Terrain.h"
 
 #include <Render/Material.h>
-#include <Render/GPUDriver.h>
 #include <Render/MeshGenerators.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
@@ -88,7 +87,7 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 	if (GPU.IsValidPtr() && IsPow2(PatchSize) && PatchSize >= 4)
 	{
 		CString PatchName;
-		PatchName.Format("Patch%dx%d", PatchSize, PatchSize);
+		PatchName.Format("Mesh_Patch%dx%d", PatchSize, PatchSize);
 		Resources::PResource RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{
@@ -106,7 +105,7 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 		PatchMesh = RPatch->GetObject<CMesh>();
 
 		PatchSize >>= 1;
-		PatchName.Format("Patch%dx%d", PatchSize, PatchSize);
+		PatchName.Format("Mesh_Patch%dx%d", PatchSize, PatchSize);
 		RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{

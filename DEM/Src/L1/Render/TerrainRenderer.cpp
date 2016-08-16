@@ -404,26 +404,28 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		// Sort patches
 
-		//!!!sort by distance to camera and by scale = LOD
-		/*
+		// We sort by LOD (the more is scale, the coarser is LOD), and therefore we
+		// almost sort by distance to the camera, as LOD depends solely on it.
 		struct CPatchInstanceCmp
 		{
-			// Sort by distance and / or by LOD
-			inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+			inline bool operator()(const CPatchInstance& a, const CPatchInstance& b) const
 			{
-				if (a.Order != b.Order) return a.Order < b.Order;
-				return a.SqDistanceToCamera < b.SqDistanceToCamera;
+				return a.ScaleOffset[0] < b.ScaleOffset[0];
 			}
 		};
 
-		std::sort(pInstances, pInstances + PatchCount, CPatchInstanceCmp());
-		*/
+		if (PatchCount)
+			std::sort(pInstances, pInstances + PatchCount, CPatchInstanceCmp());
+		if (QuarterPatchCount)
+			std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, CPatchInstanceCmp());
 
 		// Setup lights //???here or in ProcessTerrainNode()?
 
 		UPTR LightCount = 0;
 		//...
 		//Collect lights for each patch / quarterpatch, add count and indices
+
+		// Apply material, if changed
 
 		const CTechnique* pTech = ItCurr->pTech;
 		const CPassList* pPasses = pTech->GetPasses(LightCount);
@@ -433,8 +435,6 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			++ItCurr;
 			continue;
 		}
-
-		// Apply material, if changed
 
 		const CMaterial* pMaterial = ItCurr->pMaterial;
 		if (pMaterial != pCurrMaterial)

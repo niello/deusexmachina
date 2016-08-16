@@ -1,6 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_MODEL_RENDERER_H__
-#define __DEM_L1_FRAME_MODEL_RENDERER_H__
+#ifndef __DEM_L1_RENDER_MODEL_RENDERER_H__
+#define __DEM_L1_RENDER_MODEL_RENDERER_H__
 
 #include <Render/Renderer.h>
 #include <Render/VertexComponent.h>

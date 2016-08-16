@@ -965,6 +965,12 @@
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h">
       <Filter>Frame</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\Skybox.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\SkyboxRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1596,6 +1602,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp">
       <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\Skybox.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\SkyboxRenderer.cpp">
+      <Filter>Render</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

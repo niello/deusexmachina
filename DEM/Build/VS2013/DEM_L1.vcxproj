@@ -286,6 +286,8 @@
     <ClInclude Include="..\..\Src\L1\Render\ShaderLibraryLoaderSLB.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderMetadata.h" />
+    <ClInclude Include="..\..\Src\L1\Render\Skybox.h" />
+    <ClInclude Include="..\..\Src\L1\Render\SkyboxRenderer.h" />
     <ClInclude Include="..\..\Src\L1\Render\Technique.h" />
     <ClInclude Include="..\..\Src\L1\Render\SkinInfo.h" />
     <ClInclude Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.h" />
@@ -548,6 +550,8 @@
     <ClCompile Include="..\..\Src\L1\Render\ShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfo.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\SkinInfoLoaderSKN.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\Skybox.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\SkyboxRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Terrain.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\TerrainRenderer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Texture.cpp" />
