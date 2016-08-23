@@ -3,13 +3,6 @@
 #include <CEGUI/RenderTarget.h>
 #include <Events/EventDispatcher.h>
 #include <System/Events/OSInput.h>
-#include <Input/Events/KeyDown.h>
-#include <Input/Events/KeyUp.h>
-#include <Input/Events/CharInput.h>
-#include <Input/Events/MouseMove.h>
-#include <Input/Events/MouseBtnDown.h>
-#include <Input/Events/MouseBtnUp.h>
-#include <Input/Events/MouseWheel.h>
 
 namespace UI
 {
@@ -134,16 +127,42 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 		case Event::OSInput::CharInput:
 			return pCtx->injectChar(Ev.Char);
 
+		//!!!generates mouse move internally!
 		case Event::OSInput::MouseMove:
 			return pCtx->injectMousePosition((float)Ev.MouseInfo.x, (float)Ev.MouseInfo.y);
 
 		case Event::OSInput::MouseDown:
-			return pCtx->injectMouseButtonDown((CEGUI::MouseButton)Ev.MouseInfo.Button);
+		{
+			CEGUI::MouseButton Button;
+			switch (Ev.MouseInfo.Button)
+			{
+				case 0:		Button = CEGUI::LeftButton; break;
+				case 1:		Button = CEGUI::RightButton; break;
+				case 2:		Button = CEGUI::MiddleButton; break;
+				case 3:		Button = CEGUI::X1Button; break;
+				case 4:		Button = CEGUI::X2Button; break;
+				default:	FAIL;
+			}
+			return pCtx->injectMouseButtonDown(Button);
+		}
 
 		case Event::OSInput::MouseUp:
-			return pCtx->injectMouseButtonUp((CEGUI::MouseButton)Ev.MouseInfo.Button);
+		{
+			CEGUI::MouseButton Button;
+			switch (Ev.MouseInfo.Button)
+			{
+				case 0:		Button = CEGUI::LeftButton; break;
+				case 1:		Button = CEGUI::RightButton; break;
+				case 2:		Button = CEGUI::MiddleButton; break;
+				case 3:		Button = CEGUI::X1Button; break;
+				case 4:		Button = CEGUI::X2Button; break;
+				default:	FAIL;
+			}
+			return pCtx->injectMouseButtonUp(Button);
+		}
 
-		case Event::OSInput::MouseWheel:
+		case Event::OSInput::MouseWheelVertical:
+		case Event::OSInput::MouseWheelHorizontal:
 			return pCtx->injectMouseWheelChange((float)Ev.WheelDelta);
 	}
 

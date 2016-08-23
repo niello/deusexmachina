@@ -1,15 +1,6 @@
 #include "InputServer.h"
 
 #include <System/Events/OSInput.h>
-#include <Input/Events/KeyDown.h>
-#include <Input/Events/KeyUp.h>
-#include <Input/Events/CharInput.h>
-#include <Input/Events/MouseMove.h>
-#include <Input/Events/MouseMoveRaw.h>
-#include <Input/Events/MouseBtnDown.h>
-#include <Input/Events/MouseBtnUp.h>
-#include <Input/Events/MouseDoubleClick.h>
-#include <Input/Events/MouseWheel.h>
 #include <Events/EventServer.h>
 #include <Data/DataServer.h>
 #include <Time/TimeServer.h>
@@ -199,7 +190,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 	const Event::OSInput& Ev = (const Event::OSInput&)Event;
 
 	Sys::COSWindow* pCurrWnd = (Sys::COSWindow*)pDispatcher;
-
+/*
 	switch (Ev.Type)
 	{
 		case Event::OSInput::KeyDown:
@@ -269,7 +260,7 @@ bool CInputServer::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const 
 			FireEvent(Event::MouseWheel(Ev.WheelDelta), EV_TERM_ON_HANDLED);
 			break;
 	}
-
+*/
 	OK;
 }
 //---------------------------------------------------------------------

@@ -31,9 +31,6 @@
     <Filter Include="Input">
       <UniqueIdentifier>{b911e57a-e25b-4f4a-af87-b56794e6d66f}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Input\Events">
-      <UniqueIdentifier>{530e334f-da65-45ce-9457-df30811d0b29}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Audio">
       <UniqueIdentifier>{98875e22-2b26-41e7-a8eb-e08ce0660fbe}</UniqueIdentifier>
     </Filter>
@@ -260,33 +257,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Input\Keys.h">
       <Filter>Input</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\CharInput.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\KeyDown.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\KeyUp.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\MouseBtnDown.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\MouseBtnUp.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\MouseDoubleClick.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\MouseMove.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\MouseMoveRaw.h">
-      <Filter>Input\Events</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Events\MouseWheel.h">
-      <Filter>Input\Events</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Video\OGGTheoraPlayer.h">
       <Filter>Video</Filter>
@@ -971,6 +941,15 @@
     <ClInclude Include="..\..\Src\L1\Render\SkyboxRenderer.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputDevice.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\OSWindowMouse.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputEvents.h">
+      <Filter>Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1062,33 +1041,6 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\InputServer.cpp">
       <Filter>Input</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\CharInput.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\KeyDown.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\KeyUp.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\MouseBtnDown.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\MouseBtnUp.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\MouseDoubleClick.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\MouseMove.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\MouseMoveRaw.cpp">
-      <Filter>Input\Events</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\Events\MouseWheel.cpp">
-      <Filter>Input\Events</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Video\OGGTheoraPlayer.cpp">
       <Filter>Video</Filter>
@@ -1608,6 +1560,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\SkyboxRenderer.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\OSWindowMouse.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputEvents.cpp">
+      <Filter>Input</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

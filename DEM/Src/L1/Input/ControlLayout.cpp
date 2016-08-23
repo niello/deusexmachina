@@ -1,13 +1,6 @@
 #include "ControlLayout.h"
 
 #include <Input/InputServer.h>
-#include <Input/Events/KeyDown.h>
-#include <Input/Events/KeyUp.h>
-#include <Input/Events/CharInput.h>
-#include <Input/Events/MouseBtnDown.h>
-#include <Input/Events/MouseBtnUp.h>
-#include <Input/Events/MouseDoubleClick.h>
-#include <Input/Events/MouseWheel.h>
 #include <Events/EventServer.h>
 
 namespace Input
@@ -78,4 +71,4 @@ void CControlLayout::Reset()
 }
 //---------------------------------------------------------------------
 
-} // namespace Input
+}

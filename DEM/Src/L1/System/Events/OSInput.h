@@ -3,7 +3,6 @@
 #define __DEM_L1_EVENT_DISPLAY_INPUT_H__
 
 #include <Events/EventNative.h>
-#include <Input/Keys.h>
 
 // Fired when input is received by the display (application window)
 
@@ -18,9 +17,9 @@ protected:
 
 	struct CMouseInfo
 	{
-		int					x;
-		int					y;
-		Input::EMouseButton	Button;
+		IPTR	x;
+		IPTR	y;
+		U8		Button;
 	};
 
 public:
@@ -32,21 +31,22 @@ public:
 		KeyUp,
 		CharInput,
 		MouseMoveRaw,	// Raw device movement
-		MouseMove,		// Cursor movement
+		MouseMove,		// Cursor movement //???need? how to process mouse in UI?
 		MouseDown,
 		MouseUp,
 		MouseDblClick,
-		MouseWheel
+		MouseWheelVertical,
+		MouseWheelHorizontal
 	};
 
 	EType			Type;
 
 	union
 	{
-		Input::EKey	KeyCode;	// Keyboard scan code
-		U16		Char;		// UTF-16 character
+		U8			KeyCode;	// Keyboard scan code
+		U16			Char;		// UTF-16 character
 		CMouseInfo	MouseInfo;
-		int			WheelDelta;
+		IPTR		WheelDelta;
 	};
 };
 

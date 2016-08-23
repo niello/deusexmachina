@@ -113,9 +113,8 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 		n_assert_dbg(pMesh);
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
 		n_assert_dbg(pVB);
-		CVertexLayout* pVL = pVB->GetVertexLayout();
 
-		GPU.SetVertexLayout(pVL);
+		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
 

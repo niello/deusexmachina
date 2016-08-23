@@ -268,8 +268,8 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case WM_MOVE:
 		{
-			unsigned int X = (unsigned int)(short)LOWORD(lParam);
-			unsigned int Y = (unsigned int)(short)HIWORD(lParam);
+			IPTR X = (IPTR)LOWORD(lParam);
+			IPTR Y = (IPTR)HIWORD(lParam);
 
 			if (Rect.X != X || Rect.Y != Y)
 			{
@@ -290,7 +290,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				{
 					Flags.Set(Wnd_Minimized);
 					FireEvent(CStrID("OnMinimized"));
-					ReleaseCapture();
+					::ReleaseCapture();
 				}
 			}
 			else
@@ -299,11 +299,11 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				{
 					Flags.Clear(Wnd_Minimized);
 					FireEvent(CStrID("OnRestored"));
-					ReleaseCapture();
+					::ReleaseCapture();
 				}
 
-				unsigned int W = (unsigned int)(short)LOWORD(lParam);
-				unsigned int H = (unsigned int)(short)HIWORD(lParam);
+				UPTR W = (UPTR)LOWORD(lParam);
+				UPTR H = (UPTR)HIWORD(lParam);
 
 				if (Rect.W != W || Rect.H != H)
 				{
@@ -326,12 +326,12 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case WM_SETFOCUS:
 			FireEvent(CStrID("OnSetFocus"));
-			ReleaseCapture();
+			::ReleaseCapture();
 			break;
 
 		case WM_KILLFOCUS:
 			FireEvent(CStrID("OnKillFocus"));
-			ReleaseCapture();
+			::ReleaseCapture();
 			break;
 
 		case WM_CLOSE:
@@ -350,10 +350,15 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		{
+			//???!!!use scan codes or virtual key codes?!
+			//???ignore repeats? always or not? mb store repeat in an event?
+			// First byte is a repeat count!
+			//30 The previous key state. The value is 1 if the key is down before the message is sent, or it is zero if the key is up.
+			//30 The previous key state. The value is always 1 for a WM_KEYUP message. 
 			Event::OSInput Ev;
 			Ev.Type = (uMsg == WM_KEYDOWN) ? Event::OSInput::KeyDown : Event::OSInput::KeyUp;
-			Ev.KeyCode = (Input::EKey)((U8*)&lParam)[2];
-			if (lParam & (1 << 24)) Ev.KeyCode = (Input::EKey)(Ev.KeyCode | 0x80);
+			Ev.KeyCode = ((U8*)&lParam)[2];
+			if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
 			FireEvent(Ev);
 			break;
 		}
@@ -362,7 +367,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_CHAR:
 		{
 			WCHAR CharUTF16[2];
-			MultiByteToWideChar(CP_ACP, 0, (const char*)&wParam, 1, CharUTF16, 1);
+			::MultiByteToWideChar(CP_ACP, 0, (const char*)&wParam, 1, CharUTF16, 1);
 
 			Event::OSInput Ev;
 			Ev.Type = Event::OSInput::CharInput;
@@ -377,8 +382,11 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			PRAWINPUT pData = &Data;
 			UINT DataSize = sizeof(Data);
 
-			GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pData, &DataSize, sizeof(RAWINPUTHEADER));
+			if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pData, &DataSize, sizeof(RAWINPUTHEADER)) == (UINT)-1) FAIL;
 
+			//!!!???process mouse buttons here?!
+			//???call defproc if processed?
+			//!!!can process all devices here and send UID in an OSInput event!
 			if (Data.header.dwType == RIM_TYPEMOUSE && (Data.data.mouse.lLastX || Data.data.mouse.lLastY)) 
 			{
 				Event::OSInput Ev;
@@ -388,7 +396,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				FireEvent(Ev);
 			}
 
-			DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
+			::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
 			Result = 0;
 			OK;
 		}
@@ -396,14 +404,17 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_LBUTTONDBLCLK:
 		case WM_RBUTTONDBLCLK:
 		case WM_MBUTTONDBLCLK:
+		case WM_XBUTTONDBLCLK:
 		case WM_LBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 		case WM_MBUTTONDOWN:
+		case WM_XBUTTONDOWN:
 		case WM_LBUTTONUP:
 		case WM_RBUTTONUP:
 		case WM_MBUTTONUP:
+		case WM_XBUTTONUP:
 		{
-			if (pParent) SetFocus(hWnd);
+			if (pParent) ::SetFocus(hWnd);
 
 			Event::OSInput Ev;
 
@@ -412,21 +423,24 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				case WM_LBUTTONDBLCLK:
 				case WM_RBUTTONDBLCLK:
 				case WM_MBUTTONDBLCLK:
+				case WM_XBUTTONDBLCLK:
 					Ev.Type = Event::OSInput::MouseDblClick;
 					break;
 
 				case WM_LBUTTONDOWN:
 				case WM_RBUTTONDOWN:
 				case WM_MBUTTONDOWN:
+				case WM_XBUTTONDOWN:
 					Ev.Type = Event::OSInput::MouseDown;
-					SetCapture(hWnd);
+					::SetCapture(hWnd);
 					break;
 
 				case WM_LBUTTONUP:
 				case WM_RBUTTONUP:
 				case WM_MBUTTONUP:
+				case WM_XBUTTONUP:
 					Ev.Type = Event::OSInput::MouseUp;
-					ReleaseCapture();
+					::ReleaseCapture();
 					break;
 			}
 
@@ -435,20 +449,33 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				case WM_LBUTTONDBLCLK:
 				case WM_LBUTTONDOWN:
 				case WM_LBUTTONUP:
-					Ev.MouseInfo.Button = Input::MBLeft;
+					Ev.MouseInfo.Button = 0;
 					break;
 
 				case WM_RBUTTONDBLCLK:
 				case WM_RBUTTONDOWN:
 				case WM_RBUTTONUP:
-					Ev.MouseInfo.Button = Input::MBRight;
+					Ev.MouseInfo.Button = 1;
 					break;
 
 				case WM_MBUTTONDBLCLK:
 				case WM_MBUTTONDOWN:
 				case WM_MBUTTONUP:
-					Ev.MouseInfo.Button = Input::MBMiddle;
+					Ev.MouseInfo.Button = 2;
 					break;
+
+				case WM_XBUTTONDBLCLK:
+				case WM_XBUTTONDOWN:
+				case WM_XBUTTONUP:
+				{
+					switch (GET_XBUTTON_WPARAM(wParam))
+					{
+						case XBUTTON1:	Ev.MouseInfo.Button = 3; break;
+						case XBUTTON2:	Ev.MouseInfo.Button = 4; break;
+						default:		Ev.MouseInfo.Button = 5; break;
+					}
+					break;
+				}
 			}
 
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
@@ -468,9 +495,10 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 
 		case WM_MOUSEWHEEL:
+		case WM_MOUSEHWHEEL:
 		{
 			Event::OSInput Ev;
-			Ev.Type = Event::OSInput::MouseWheel;
+			Ev.Type = (uMsg == WM_MOUSEWHEEL) ? Event::OSInput::MouseWheelVertical : Event::OSInput::MouseWheelHorizontal;
 			Ev.WheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
 			FireEvent(Ev);
 			break;
