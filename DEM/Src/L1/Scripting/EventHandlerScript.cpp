@@ -30,7 +30,7 @@ bool CEventHandlerScript::Invoke(CEventDispatcher* pDispatcher, const CEventBase
 		{
 			lua_pushstring(l, "_EV_UID");
 			lua_rawget(l, -2);
-			CacheIsActual = (lua_type(l, -1) == LUA_TNUMBER && lua_tointeger(l, -1) == EventSrv->GetFiredEventsCount());
+			CacheIsActual = (lua_type(l, -1) == LUA_TNUMBER && ((UPTR)lua_tointeger(l, -1)) == EventSrv->GetFiredEventsCount());
 			lua_pop(l, 2);
 		}
 		else lua_pop(l, 1);
@@ -43,7 +43,7 @@ bool CEventHandlerScript::Invoke(CEventDispatcher* pDispatcher, const CEventBase
 			lua_pushstring(l, e.GetID().ID);
 			lua_rawset(l, -3);
 			lua_pushstring(l, "_EV_UID");
-			lua_pushinteger(l, EventSrv->GetFiredEventsCount());
+			lua_pushinteger(l, (lua_Integer)EventSrv->GetFiredEventsCount());
 			lua_rawset(l, -3);
 			lua_setglobal(l, "CurrEventParams");
 		}

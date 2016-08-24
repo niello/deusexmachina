@@ -4,9 +4,9 @@
 
 namespace Events
 {
-int CEventDispatcher::EventsFiredTotal = 0;
+UPTR CEventDispatcher::EventsFiredTotal = 0;
 
-UPTR CEventDispatcher::FireEvent(const CEventBase& Event)
+UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 {
 	UPTR HandledCounter = 0;
 	PEventHandler Sub;
@@ -18,21 +18,21 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event)
 		if (Sub->Invoke(this, Event))
 		{
 			++HandledCounter;
-			if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
+			if (Flags & Event_TermOnHandled) return HandledCounter;
 		}
 		Sub = Sub->Next;
 	}
 	while (Sub.IsValidPtr());
 
 	// Look for subscriptions to any event
-	if (!(Event.Flags & EV_IGNORE_NULL_SUBS))
+	if (!(Flags & Event_IgnoreNULLSubs))
 	{
 		if (Subscriptions.Get(NULL, Sub)) do
 		{
 			if (Sub->Invoke(this, Event))
 			{
 				++HandledCounter;
-				if (Event.Flags & EV_TERM_ON_HANDLED) return HandledCounter;
+				if (Flags & Event_TermOnHandled) return HandledCounter;
 			}
 			Sub = Sub->Next;
 		}

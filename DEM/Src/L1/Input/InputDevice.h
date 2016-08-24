@@ -2,14 +2,15 @@
 #ifndef __DEM_L1_INPUT_DEVICE_H__
 #define __DEM_L1_INPUT_DEVICE_H__
 
-#include <StdDEM.h>
+#include <Events/EventDispatcher.h>
 
-// An interface for various input devices such as keyboards, mouses and gamepads
+// An interface for various input devices such as keyboards, mouses and gamepads.
+// Converts specific input to AxisMove, ButtonDown and ButtonUp native events.
 
 namespace Input
 {
 
-class IInputDevice //: public Core::CRefCounted (or event dispatcher?)
+class IInputDevice: public Events::CEventDispatcher
 {
 private:
 
@@ -24,8 +25,6 @@ public:
 	virtual U8			GetButtonCode(const char* pAlias) const = 0;
 	virtual const char*	GetButtonAlias(U8 Code) const = 0;
 };
-
-//typedef Ptr<CControlLayout> PControlLayout;
 
 }
 

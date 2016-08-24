@@ -26,7 +26,7 @@ public:
 	Data::PParams	Params;	// Event parameters
 
 	CEvent(CStrID _ID): ID(_ID) {}
-	CEvent(CStrID _ID, char _Flags, Data::PParams _Params = NULL): CEventBase(_Flags), ID(_ID), Params(_Params) {}
+	CEvent(CStrID _ID, Data::PParams _Params = NULL): ID(_ID), Params(_Params) {}
 
 	virtual CEventID GetID() const { return ID; }
 

@@ -72,7 +72,7 @@ void CInputMappingEvent::Enable()
 {
 	if (Sub_InputEvent.IsValidPtr()) return;
 
-	bool(CInputMappingEvent::*CB)(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	//bool(CInputMappingEvent::*CB)(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 	//if (InEventID == &Event::KeyDown::RTTI) CB = &CInputMappingEvent::OnKeyDown;
 	//else if (InEventID == &Event::KeyUp::RTTI) CB = &CInputMappingEvent::OnKeyUp;

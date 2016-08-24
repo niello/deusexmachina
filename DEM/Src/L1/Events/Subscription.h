@@ -14,19 +14,19 @@ class CSubscription: public Core::CObject
 {
 private:
 
-	PEventDispatcher	Dispatcher; // Sometimes dispatcher is deleted while some subscriptions exist. Use weak ptr?
+	CEventDispatcher*	pDispatcher;
 	CEventID			Event;
 	PEventHandler		Handler;
 
 public:
 
 	CSubscription(CEventDispatcher* d, CEventID e, PEventHandler h):
-		Dispatcher(d), Event(e), Handler(h) {}
-	virtual ~CSubscription() { Dispatcher->Unsubscribe(Event, Handler); }
+		pDispatcher(d), Event(e), Handler(h) {}
+	virtual ~CSubscription() { pDispatcher->Unsubscribe(Event, Handler); }
 
 	CEventID				GetEvent() const { return Event; }
 	const CEventHandler*	GetHandler() const { return Handler; }
-	const CEventDispatcher*	GetDispatcher() const { return Dispatcher; }
+	const CEventDispatcher*	GetDispatcher() const { return pDispatcher; }
 };
 
 typedef Ptr<CSubscription> PSub;

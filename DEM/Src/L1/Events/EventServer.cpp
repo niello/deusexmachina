@@ -4,16 +4,16 @@
 
 namespace Events
 {
-__ImplementClassNoFactory(Events::CEventServer, Core::CObject);
 __ImplementSingleton(Events::CEventServer);
 
-void CEventServer::ScheduleEvent(CEventBase& Event, CEventDispatcher* pDisp, float RelTime)
+void CEventServer::ScheduleEvent(CEventBase& Event, U8 Flags, CEventDispatcher* pDisp, float RelTime)
 {
-	CEventNode* pNewNode = EventSrv->CreateNode();
+	CEventNode* pNewNode = EventNodes.Construct();
 	n_assert2(pNewNode, "Nervous system of the engine was paralyzed! Can't allocate event node");
-	pNewNode->Event = &Event;
-	pNewNode->Dispatcher = pDisp ? pDisp : this;
 	pNewNode->FireTime = (float)TimeSrv->GetTime() + RelTime;
+	pNewNode->Event = &Event;
+	pNewNode->pDispatcher = pDisp ? pDisp : this;
+	pNewNode->Flags = Flags;
 	if (PendingEventsTail)
 	{
 		n_assert(PendingEventsHead);
@@ -63,23 +63,7 @@ UPTR CEventServer::RemoveScheduledEvents(CEventDispatcher* pDisp)
 	CEventDispatcher* pRealDisp = pDisp ? pDisp : this;
 	UPTR Total = 0;
 
-	Sys::Error("CEventServer::RemoveScheduledEvents() > IMPLEMENT ME!!!");
-
-	//while (PendingEventsHead)
-	//{
-	//	CEventNode* Next = PendingEventsHead->Next;
-	//	EventSrv->DestroyNode(PendingEventsHead);
-	//	PendingEventsHead = Next;
-	//	++Total;
-	//}
-
-	//while (EventsToAdd)
-	//{
-	//	CEventNode* Next = EventsToAdd->Next;
-	//	EventSrv->DestroyNode(EventsToAdd);
-	//	EventsToAdd = Next;
-	//	++Total;
-	//}
+	NOT_IMPLEMENTED;
 
 	return Total;
 }
@@ -92,7 +76,7 @@ UPTR CEventServer::RemoveAllScheduledEvents()
 	while (PendingEventsHead)
 	{
 		CEventNode* Next = PendingEventsHead->Next;
-		EventSrv->DestroyNode(PendingEventsHead);
+		EventNodes.Destroy(PendingEventsHead);
 		PendingEventsHead = Next;
 		++Total;
 	}
@@ -100,7 +84,7 @@ UPTR CEventServer::RemoveAllScheduledEvents()
 	while (EventsToAdd)
 	{
 		CEventNode* Next = EventsToAdd->Next;
-		EventSrv->DestroyNode(EventsToAdd);
+		EventNodes.Destroy(EventsToAdd);
 		EventsToAdd = Next;
 		++Total;
 	}
@@ -144,9 +128,9 @@ void CEventServer::ProcessPendingEvents()
 	while (PendingEventsHead && PendingEventsHead->FireTime <= CurrTime)
 	{
 		n_assert(PendingEventsHead->Event);
-		PendingEventsHead->Dispatcher->FireEvent(*PendingEventsHead->Event);
+		PendingEventsHead->pDispatcher->FireEvent(*PendingEventsHead->Event, PendingEventsHead->Flags);
 		CEventNode* Next = PendingEventsHead->Next;
-		EventSrv->DestroyNode(PendingEventsHead);
+		EventNodes.Destroy(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
 	if (!PendingEventsHead) PendingEventsTail = NULL;

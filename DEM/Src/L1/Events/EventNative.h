@@ -4,9 +4,9 @@
 
 #include <Events/EventBase.h>
 
-// Native event uniquely identified by RTTI. Subclass it adding fields for parameters.
+// Native event uniquely identified by RTTI. Subclass it and add fields for parameters.
 // Native events are compile-time objects that offer more performance over parametrized
-// ones for the cost of additional class declaration.
+// ones for the cost of additional class declaration and no runtime flexibility.
 
 // NB: this MUST be declared in all native event classes!
 #define __DeclareNativeEventClass \

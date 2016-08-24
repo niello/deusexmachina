@@ -15,7 +15,7 @@ namespace Sys
 {
 typedef Ptr<class COSWindowClassWin32> POSWindowClassWin32;
 
-class COSWindowWin32: public Events::CEventDispatcher
+class COSWindowWin32: public Events::CEventDispatcher, public Data::CRefCounted
 {
 protected:
 

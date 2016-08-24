@@ -49,7 +49,6 @@ enum EInputPriority
 
 class CInputServer: public Events::CEventDispatcher
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CInputServer);
 
 public:

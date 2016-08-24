@@ -19,7 +19,7 @@ public:
 	float	AmountRel;
 	float	AmountAbs;
 
-	AxisMove(U8 ScanCode, float AmountRelative, float AmountAbsolute): Code(ScanCode), AmountRel(AmountRelative), AmountAbs(AmountAbsolute) {}
+	AxisMove(U8 AxisCode, float AmountRelative, float AmountAbsolute): Code(AxisCode), AmountRel(AmountRelative), AmountAbs(AmountAbsolute) {}
 };
 
 class ButtonDown: public Events::CEventNative
@@ -30,7 +30,7 @@ public:
 
 	U8 Code;
 
-	ButtonDown(U8 ScanCode): Code(ScanCode) {}
+	ButtonDown(U8 ButtonCode): Code(ButtonCode) {}
 };
 
 class ButtonUp: public Events::CEventNative
@@ -41,7 +41,7 @@ public:
 
 	U8 Code;
 
-	ButtonUp(U8 ScanCode): Code(ScanCode) {}
+	ButtonUp(U8 ButtonCode): Code(ButtonCode) {}
 };
 
 }

@@ -51,7 +51,7 @@ struct CSurfaceInfo
 	//???how to check is point inside world geom?
 };
 
-class CGameLevel: public Events::CEventDispatcher
+class CGameLevel: public Events::CEventDispatcher, public Data::CRefCounted
 {
 protected:
 

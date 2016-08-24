@@ -8,7 +8,6 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputServer, Core::CObject);
 __ImplementSingleton(Input::CInputServer);
 
 CInputServer::~CInputServer()

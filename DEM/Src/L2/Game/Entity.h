@@ -12,7 +12,7 @@ namespace Game
 {
 typedef Ptr<class CGameLevel> PGameLevel;
 
-class CEntity: public Events::CEventDispatcher
+class CEntity: public Events::CEventDispatcher, public Data::CRefCounted
 {
 	__DeclareClassNoFactory;
 
@@ -36,11 +36,11 @@ protected:
 	void SetUID(CStrID NewUID);
 	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	CEntity(CStrID _UID);
+	CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID), Flags(WaitingForLevelActivation) {}
 
 public:
 
-	virtual ~CEntity();
+	~CEntity() { n_assert_dbg(IsInactive()); }
 
 	void						SetLevel(CGameLevel* pNewLevel);
 	void						Activate();
