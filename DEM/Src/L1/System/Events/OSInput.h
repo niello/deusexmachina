@@ -13,15 +13,6 @@ class OSInput: public Events::CEventNative
 {
 	__DeclareNativeEventClass;
 
-protected:
-
-	struct CMouseInfo
-	{
-		IPTR	x;
-		IPTR	y;
-		U8		Button;
-	};
-
 public:
 
 	enum EType
@@ -29,7 +20,6 @@ public:
 		Invalid,
 		KeyDown,
 		KeyUp,
-		CharInput,
 		MouseMoveRaw,	// Raw device movement
 		MouseMove,		// Cursor movement //???need? how to process mouse in UI?
 		MouseDown,
@@ -43,9 +33,20 @@ public:
 
 	union
 	{
-		U8			KeyCode;	// Keyboard scan code
-		U16			Char;		// UTF-16 character
-		CMouseInfo	MouseInfo;
+		struct
+		{
+			U32			Char;		// UTF-16 or UTF-32 character
+			U8			ScanCode;
+			U8			VirtualKey;
+			bool		IsRepeated;	// True if key was already down before this KeyDown event (autorepeat feature)
+			//???need repeat count?
+		}			KeyboardInfo;
+		struct
+		{
+			IPTR		x;
+			IPTR		y;
+			U8			Button;
+		}			MouseInfo;
 		IPTR		WheelDelta;
 	};
 };

@@ -10,9 +10,6 @@
 #include <Render/GPUDriver.h>
 #include <Core/Factory.h>
 
-//!!!DBG TMP!
-#include <Render/D3D11/D3D11RenderState.h>
-
 namespace Render
 {
 __ImplementClass(Render::CModelRenderer, 'MDLR', Render::IRenderer);
@@ -114,7 +111,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 			pCurrMaterial = pMaterial;
 
 			//!!!DBG TMP!
-			Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
+			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
 		// Apply geometry, if changed
@@ -134,7 +131,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 			pVLInstanced = NULL;
 
 			//!!!DBG TMP!
-			Sys::DbgOut("Mesh changed: 0x%X\n", pMesh);
+			//Sys::DbgOut("Mesh changed: 0x%X\n", pMesh);
 		}
 
 		// Gather instances (no skinned instancing supported)
@@ -191,7 +188,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				pCurrTech = pTech;
 
 				//!!!DBG TMP!
-				Sys::DbgOut("Tech params requested by ID\n");
+				//Sys::DbgOut("Tech params requested by ID\n");
 			}
 
 			if (pConstInstanceData)
@@ -314,7 +311,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				}
 			}
 
-			Sys::DbgOut("CModel rendered instanced, tech '%s', group 0x%X, instances: %d\n", pTech->GetName().CStr(), pGroup, (ItInstEnd - ItCurr));
+			//Sys::DbgOut("CModel rendered instanced, tech '%s', group 0x%X, instances: %d\n", pTech->GetName().CStr(), pGroup, (ItInstEnd - ItCurr));
 		}
 		else
 		{
@@ -325,7 +322,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				pCurrTech = pTech;
 
 				//!!!DBG TMP!
-				Sys::DbgOut("Tech params requested by ID\n");
+				//Sys::DbgOut("Tech params requested by ID\n");
 			}
 
 			GPU.SetVertexLayout(pVL);
@@ -420,7 +417,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 					GPU.Draw(*pGroup);
 				}
 
-				Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X, primitives: %d\n", pTech->GetName().CStr(), pGroup, pGroup->IndexCount);
+				//Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X, primitives: %d\n", pTech->GetName().CStr(), pGroup, pGroup->IndexCount);
 			}
 		}
 

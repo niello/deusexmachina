@@ -17,7 +17,7 @@ public:
 
 	U8		Code;
 	float	AmountRel;
-	float	AmountAbs;
+	float	AmountAbs; //???I16/I32?
 
 	AxisMove(U8 AxisCode, float AmountRelative, float AmountAbsolute): Code(AxisCode), AmountRel(AmountRelative), AmountAbs(AmountAbsolute) {}
 };

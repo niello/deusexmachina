@@ -119,13 +119,16 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 	switch (Ev.Type)
 	{
 		case Event::OSInput::KeyDown:
-			return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyCode);
+		{
+			//!!!DBG TMP!
+			Sys::DbgOut("OSInput::KeyDown scan %d vk %d char %d\n", Ev.KeyboardInfo.ScanCode, Ev.KeyboardInfo.VirtualKey, Ev.KeyboardInfo.Char);
+
+			if (Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char)) OK;
+			return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
+		}
 
 		case Event::OSInput::KeyUp:
-			return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyCode);
-
-		case Event::OSInput::CharInput:
-			return pCtx->injectChar(Ev.Char);
+			return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
 
 		//!!!generates mouse move internally!
 		case Event::OSInput::MouseMove:

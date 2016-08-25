@@ -76,7 +76,7 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 			pCurrMaterial = pMaterial;
 
 			//!!!DBG TMP!
-			Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
+			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
 		const CTechnique* pTech = ItCurr->pTech;
@@ -86,7 +86,7 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 			pConstWorldMatrix = pTech->GetConstant(CStrID("WorldMatrix"));
 
 			//!!!DBG TMP!
-			Sys::DbgOut("Tech params requested by ID\n");
+			//Sys::DbgOut("Tech params requested by ID\n");
 		}
 
 		UPTR LightCount = 0;
@@ -126,7 +126,7 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 		}
 
 		//!!!DBG TMP!
-		Sys::DbgOut("CSkybox rendered\n");
+		//Sys::DbgOut("CSkybox rendered\n");
 
 		++ItCurr;
 	};

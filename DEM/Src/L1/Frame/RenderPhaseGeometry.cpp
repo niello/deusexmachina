@@ -57,8 +57,8 @@ struct CRenderQueueCmp_Material
 bool CRenderPhaseGeometry::Render(CView& View)
 {
 	//!!!DBG TMP!
-	if (EffectOverrides.GetCount()) Sys::DbgOut("--- CRenderPhaseGeometry DEPTH ---\n");
-	else Sys::DbgOut("--- CRenderPhaseGeometry COLOR ---\n");
+	//if (EffectOverrides.GetCount()) Sys::DbgOut("--- CRenderPhaseGeometry DEPTH ---\n");
+	//else Sys::DbgOut("--- CRenderPhaseGeometry COLOR ---\n");
 
 	if (!View.pSPS || !View.GetCamera()) OK;
 

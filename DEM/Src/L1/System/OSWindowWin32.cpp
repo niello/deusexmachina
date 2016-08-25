@@ -9,10 +9,13 @@
 #include <WindowsX.h>
 
 #ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC	((USHORT) 0x01)
+#define HID_USAGE_PAGE_GENERIC		((USHORT) 0x01)
 #endif
 #ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE	((USHORT) 0x02)
+#define HID_USAGE_GENERIC_MOUSE		((USHORT) 0x02)
+#endif
+#ifndef HID_USAGE_GENERIC_KEYBOARD
+#define HID_USAGE_GENERIC_KEYBOARD	((USHORT) 0x06)
 #endif
 
 #define ACCEL_TOGGLEFULLSCREEN	1001
@@ -78,15 +81,6 @@ bool COSWindowWin32::Open()
 	::ClientToScreen(hWnd, &p);
 	Rect.X = p.x;
 	Rect.Y = p.y;
-
-	RAWINPUTDEVICE RawInputDevices;
-	RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC; 
-	RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE; 
-	RawInputDevices.dwFlags = RIDEV_INPUTSINK;
-	RawInputDevices.hwndTarget = hWnd;
-
-	if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-		Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
 
 	if (!hAccel)
 	{
@@ -227,6 +221,18 @@ LONG COSWindowWin32::GetWin32Style() const
 }
 //---------------------------------------------------------------------
 
+static inline void ProcessKey(U8& ScanCode, UINT& VirtualKey)
+{
+	// Corrections from:
+	// https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
+	//!!!see more there, implement!
+	if (VirtualKey == VK_SHIFT)
+		VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+	else if (VirtualKey == VK_NUMLOCK)
+		ScanCode = (::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC) | 0x100);
+}
+//---------------------------------------------------------------------
+
 bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result)
 {
 	switch (uMsg)
@@ -325,9 +331,27 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			break;
 
 		case WM_SETFOCUS:
+		{
 			FireEvent(CStrID("OnSetFocus"));
 			::ReleaseCapture();
+
+			//???here or globally? Globally no inputsink flag and hWnd = NULL
+			//RIDEV_INPUTSINK - receive input even if not foreground, must specify hWnd
+			//RIDEV_NOLEGACY - to prevent WM_KEYDOWN etc generation
+			//???or switch in WM_MOUSEMOVE?
+			RAWINPUTDEVICE RawInputDevices;
+			RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC; 
+			RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE; 
+			RawInputDevices.dwFlags = RIDEV_INPUTSINK;
+			RawInputDevices.hwndTarget = hWnd;
+			if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
+				Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
+
+			//!!!DBG TMP!
+			//Sys::DbgOut("WM_SETFOCUS\n");
+
 			break;
+		}
 
 		case WM_KILLFOCUS:
 			FireEvent(CStrID("OnKillFocus"));
@@ -348,31 +372,65 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			OK;
 
 		case WM_KEYDOWN:
-		case WM_KEYUP:
 		{
-			//???!!!use scan codes or virtual key codes?!
-			//???ignore repeats? always or not? mb store repeat in an event?
-			// First byte is a repeat count!
-			//30 The previous key state. The value is 1 if the key is down before the message is sent, or it is zero if the key is up.
-			//30 The previous key state. The value is always 1 for a WM_KEYUP message. 
-			Event::OSInput Ev;
-			Ev.Type = (uMsg == WM_KEYDOWN) ? Event::OSInput::KeyDown : Event::OSInput::KeyUp;
-			Ev.KeyCode = ((U8*)&lParam)[2];
-			if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
-			FireEvent(Ev);
+			// If this keydown generated WM_CHAR, skip it and fire event from WM_CHAR
+			MSG NextMessage;
+			if (!::PeekMessage(&NextMessage, hWnd, 0, 0, PM_NOREMOVE) || NextMessage.message != WM_CHAR)
+			{
+				U8 ScanCode = ((U8*)&lParam)[2];
+				UINT VirtualKey = wParam;
+				ProcessKey(ScanCode, VirtualKey);
+
+				Event::OSInput Ev;
+				Ev.Type = Event::OSInput::KeyDown;
+				Ev.KeyboardInfo.ScanCode = ScanCode;
+				Ev.KeyboardInfo.VirtualKey = VirtualKey;
+				Ev.KeyboardInfo.Char = 0;
+				Ev.KeyboardInfo.IsRepeated = ((lParam & (1 << 30)) != 0);
+				//if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
+				FireEvent(Ev, Events::Event_TermOnHandled);
+			}
 			break;
 		}
 
-		//???how to handle situation when KeyDown was processed and Char should not be processed?
-		case WM_CHAR:
+		case WM_KEYUP:
 		{
+			U8 ScanCode = ((U8*)&lParam)[2];
+			UINT VirtualKey = wParam;
+			ProcessKey(ScanCode, VirtualKey);
+
+			Event::OSInput Ev;
+			Ev.Type = Event::OSInput::KeyUp;
+			Ev.KeyboardInfo.ScanCode = ScanCode;
+			Ev.KeyboardInfo.VirtualKey = VirtualKey;
+			Ev.KeyboardInfo.Char = 0;
+			Ev.KeyboardInfo.IsRepeated = false;
+			//if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
+			FireEvent(Ev, Events::Event_TermOnHandled);
+			break;
+		}
+
+		case WM_CHAR:
+		case WM_UNICHAR:
+		{
+			n_assert_dbg(uMsg != WM_UNICHAR); //!!!implement!
+
+			//???is valid? WM_CHAR must use UTF-16 itself. Always?
 			WCHAR CharUTF16[2];
 			::MultiByteToWideChar(CP_ACP, 0, (const char*)&wParam, 1, CharUTF16, 1);
 
+			U8 ScanCode = ((U8*)&lParam)[2];
+			UINT VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+			//ProcessKey(ScanCode, VirtualKey); //???maps left shift twice?
+
 			Event::OSInput Ev;
-			Ev.Type = Event::OSInput::CharInput;
-			Ev.Char = CharUTF16[0];
-			FireEvent(Ev);
+			Ev.Type = Event::OSInput::KeyDown;
+			Ev.KeyboardInfo.ScanCode = ScanCode;
+			Ev.KeyboardInfo.VirtualKey = VirtualKey;
+			Ev.KeyboardInfo.Char = CharUTF16[0];
+			Ev.KeyboardInfo.IsRepeated = ((lParam & (1 << 30)) != 0);
+			//if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
+			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
 		}
 
@@ -381,6 +439,8 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			RAWINPUT Data;
 			PRAWINPUT pData = &Data;
 			UINT DataSize = sizeof(Data);
+
+			// IsForeground: GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT
 
 			if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pData, &DataSize, sizeof(RAWINPUTHEADER)) == (UINT)-1) FAIL;
 

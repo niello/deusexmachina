@@ -444,7 +444,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			pCurrMaterial = pMaterial;
 
 			//!!!DBG TMP!
-			Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
+			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
 		// Pass tech params to GPU
@@ -464,7 +464,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 				GPU.BindSampler(pVSHeightSampler->ShaderType, pVSHeightSampler->Handle, HMSampler.GetUnsafe());
 
 			//!!!DBG TMP!
-			Sys::DbgOut("Tech params requested by ID\n");
+			//Sys::DbgOut("Tech params requested by ID\n");
 		}
 
 		if (pResourceHeightMap)
@@ -637,7 +637,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 		}
 
 		//!!!DBG TMP!
-		Sys::DbgOut("CTerrain rendered: %d patches, %d quarterpatches\n", PatchCount, QuarterPatchCount);
+		//Sys::DbgOut("CTerrain rendered: %d patches, %d quarterpatches\n", PatchCount, QuarterPatchCount);
 
 		++ItCurr;
 	};

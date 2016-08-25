@@ -17,6 +17,7 @@ void COSWindowMouse::Attach(Sys::COSWindow* pOSWindow, U16 Priority)
 	{
 		UNSUBSCRIBE_EVENT(OSInput);
 	}
+	pWindow = pOSWindow;
 }
 //---------------------------------------------------------------------
 
@@ -103,6 +104,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 				Event::AxisMove Ev(0, RelMove, (float)MoveX);
 				FireEvent(Ev);
 			}
+
 			IPTR MoveY = OSInputEvent.MouseInfo.y;
 			if (MoveY != 0)
 			{
@@ -110,13 +112,14 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 				Event::AxisMove Ev(1, RelMove, (float)MoveY);
 				FireEvent(Ev);
 			}
+
 			OK;
 		}
 
 		case Event::OSInput::MouseWheelVertical:
 		{
 			IPTR Move = OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(2, Move * 0.125f, (float)Move);
+			Event::AxisMove Ev(2, (float)Move, (float)Move);
 			FireEvent(Ev);
 			OK;
 		}
@@ -124,7 +127,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 		case Event::OSInput::MouseWheelHorizontal:
 		{
 			IPTR Move = OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(3, Move * 0.125f, (float)Move);
+			Event::AxisMove Ev(3, (float)Move, (float)Move);
 			FireEvent(Ev);
 			OK;
 		}
