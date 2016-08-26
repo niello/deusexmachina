@@ -52,6 +52,9 @@ namespace Sys
 	// Threading
 	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!
 
+	// Input
+	bool			GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName);
+
 	// Timing
 	double			GetAppTime();
 }

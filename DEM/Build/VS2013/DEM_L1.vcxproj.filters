@@ -950,6 +950,9 @@
     <ClInclude Include="..\..\Src\L1\Input\InputEvents.h">
       <Filter>Input</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\OSWindowKeyboard.h">
+      <Filter>Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1565,6 +1568,9 @@
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\InputEvents.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\OSWindowKeyboard.cpp">
       <Filter>Input</Filter>
     </ClCompile>
   </ItemGroup>

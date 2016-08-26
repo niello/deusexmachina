@@ -29,6 +29,12 @@ public:
 		MouseWheelHorizontal
 	};
 
+	enum EKeyFlags
+	{
+		Key_Repeated	= 0x01,
+		Key_Extended	= 0x02
+	};
+
 	EType			Type;
 
 	union
@@ -38,7 +44,7 @@ public:
 			U32			Char;		// UTF-16 or UTF-32 character
 			U8			ScanCode;
 			U8			VirtualKey;
-			bool		IsRepeated;	// True if key was already down before this KeyDown event (autorepeat feature)
+			U8			Flags;
 			//???need repeat count?
 		}			KeyboardInfo;
 		struct

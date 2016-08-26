@@ -81,8 +81,6 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 	{
 		case Event::OSInput::MouseDown:
 		{
-			//???use queue and store until requiested? user will pick events, only one user is normally possible
-			//???!!!not event, just a special structure?! or use async events?
 			Event::ButtonDown Ev(OSInputEvent.MouseInfo.Button);
 			FireEvent(Ev);
 			OK;
@@ -131,8 +129,6 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 			FireEvent(Ev);
 			OK;
 		}
-
-		default: FAIL;
 	}
 
 	FAIL;

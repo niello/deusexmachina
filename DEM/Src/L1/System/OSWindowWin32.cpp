@@ -221,15 +221,18 @@ LONG COSWindowWin32::GetWin32Style() const
 }
 //---------------------------------------------------------------------
 
-static inline void ProcessKey(U8& ScanCode, UINT& VirtualKey)
+static inline void FixKeyCodes(U8& ScanCode, UINT& VirtualKey, bool& IsExtended)
 {
 	// Corrections from:
 	// https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
 	//!!!see more there, implement!
-	if (VirtualKey == VK_SHIFT)
+	if (VirtualKey == 0 || VirtualKey == VK_SHIFT)
 		VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
 	else if (VirtualKey == VK_NUMLOCK)
-		ScanCode = (::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC) | 0x100);
+	{
+		ScanCode = ::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC);
+		IsExtended = true;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -379,15 +382,17 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			{
 				U8 ScanCode = ((U8*)&lParam)[2];
 				UINT VirtualKey = wParam;
-				ProcessKey(ScanCode, VirtualKey);
+				bool IsExtended = (lParam & (1 << 24)) != 0;
+				FixKeyCodes(ScanCode, VirtualKey, IsExtended);
 
 				Event::OSInput Ev;
 				Ev.Type = Event::OSInput::KeyDown;
 				Ev.KeyboardInfo.ScanCode = ScanCode;
 				Ev.KeyboardInfo.VirtualKey = VirtualKey;
 				Ev.KeyboardInfo.Char = 0;
-				Ev.KeyboardInfo.IsRepeated = ((lParam & (1 << 30)) != 0);
-				//if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
+				Ev.KeyboardInfo.Flags = 0;
+				if ((lParam & (1 << 30))) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Repeated;
+				if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
 				FireEvent(Ev, Events::Event_TermOnHandled);
 			}
 			break;
@@ -397,15 +402,16 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			U8 ScanCode = ((U8*)&lParam)[2];
 			UINT VirtualKey = wParam;
-			ProcessKey(ScanCode, VirtualKey);
+			bool IsExtended = (lParam & (1 << 24)) != 0;
+			FixKeyCodes(ScanCode, VirtualKey, IsExtended);
 
 			Event::OSInput Ev;
 			Ev.Type = Event::OSInput::KeyUp;
 			Ev.KeyboardInfo.ScanCode = ScanCode;
 			Ev.KeyboardInfo.VirtualKey = VirtualKey;
 			Ev.KeyboardInfo.Char = 0;
-			Ev.KeyboardInfo.IsRepeated = false;
-			//if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
+			Ev.KeyboardInfo.Flags = 0;
+			if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
 			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
 		}
@@ -420,16 +426,18 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			::MultiByteToWideChar(CP_ACP, 0, (const char*)&wParam, 1, CharUTF16, 1);
 
 			U8 ScanCode = ((U8*)&lParam)[2];
-			UINT VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
-			//ProcessKey(ScanCode, VirtualKey); //???maps left shift twice?
+			UINT VirtualKey = 0;
+			bool IsExtended = (lParam & (1 << 24)) != 0;
+			FixKeyCodes(ScanCode, VirtualKey, IsExtended);
 
 			Event::OSInput Ev;
 			Ev.Type = Event::OSInput::KeyDown;
 			Ev.KeyboardInfo.ScanCode = ScanCode;
 			Ev.KeyboardInfo.VirtualKey = VirtualKey;
 			Ev.KeyboardInfo.Char = CharUTF16[0];
-			Ev.KeyboardInfo.IsRepeated = ((lParam & (1 << 30)) != 0);
-			//if (lParam & (1 << 24)) Ev.KeyCode = (Ev.KeyCode | 0x80); // Extended key //???need to change scan code?
+			Ev.KeyboardInfo.Flags = 0;
+			if ((lParam & (1 << 30))) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Repeated;
+			if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
 			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
 		}

@@ -120,9 +120,6 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 	{
 		case Event::OSInput::KeyDown:
 		{
-			//!!!DBG TMP!
-			Sys::DbgOut("OSInput::KeyDown scan %d vk %d char %d\n", Ev.KeyboardInfo.ScanCode, Ev.KeyboardInfo.VirtualKey, Ev.KeyboardInfo.Char);
-
 			if (Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char)) OK;
 			return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
 		}

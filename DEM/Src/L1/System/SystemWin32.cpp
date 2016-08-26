@@ -92,6 +92,19 @@ void Sleep(unsigned long MSec)
 }
 //---------------------------------------------------------------------
 
+bool GetKeyName(U8 ScanCode, bool ExtendedKey, CString& OutName)
+{
+	//???build DEM KeyCode -> Key name table?
+	LONG lParam = (ScanCode << 16);
+	if (ExtendedKey) lParam |= (1 << 24);
+	char Buffer[512];
+	int Len = ::GetKeyNameText(lParam, Buffer, sizeof(Buffer));
+	if (!Len) FAIL;
+	OutName.Set(Buffer, Len);
+	OK;
+}
+//---------------------------------------------------------------------
+
 double GetAppTime()
 {
 	LONGLONG PerfTime, PerfFreq;
