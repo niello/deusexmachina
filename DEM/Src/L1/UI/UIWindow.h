@@ -45,6 +45,8 @@ public:
 	void			SetFocus() { pWnd->activate(); }
 
 	CEGUI::Window*	GetWnd() const { return pWnd; }
+
+	inline bool		operator ==(const CUIWindow& Other) const { return this == &Other || (pWnd && pWnd == Other.pWnd); }
 };
 
 typedef Ptr<CUIWindow> PUIWindow;

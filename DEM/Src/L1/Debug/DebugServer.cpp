@@ -1,7 +1,7 @@
 #include "DebugServer.h"
 
 #include <UI/UIServer.h>
-#include <Input/InputServer.h>
+#include <UI/UIContext.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
 
@@ -102,11 +102,9 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 	if (!pPlugin) return;
 
 	UI::CUIWindow& UI = *pPlugin->Window;
+	UI::CUIWindow& RootWnd = *UISrv->GetDefaultContext()->GetRootWindow();
 
-	NOT_IMPLEMENTED;
-
-	/*
-	if (UI.GetWnd() && UI.GetWnd()->getParent() == UISrv->GetRootScreen()->GetWnd())
+	if (UI.GetWnd() && UI.GetWnd()->getParent() == RootWnd.GetWnd())
 		UI.ToggleVisibility();
 	else
 	{
@@ -115,16 +113,15 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 			UI.Load(CString(pPlugin->UIResource.CStr()));
 			n_assert(UI.GetWnd());
 		}
-		if (UI.GetWnd()->getParent() != UISrv->GetRootScreen()->GetWnd())
+		if (UI.GetWnd()->getParent() != RootWnd.GetWnd())
 		{
-			UISrv->GetRootScreen()->GetWnd()->addChild(UI.GetWnd());
+			RootWnd.GetWnd()->addChild(UI.GetWnd());
 			UI.Hide(); // To force OnShow event
 			UI.Show();
 		}
 	}
-	*/
 
-	//UI.SetInputFocus();
+	UI.SetFocus();
 }
 //---------------------------------------------------------------------
 
@@ -133,4 +130,4 @@ void CDebugServer::Trigger()
 }
 //---------------------------------------------------------------------
 
-} //namespace Debug
+}

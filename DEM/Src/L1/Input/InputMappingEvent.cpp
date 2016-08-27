@@ -1,6 +1,5 @@
 #include "InputMappingEvent.h"
 
-#include <Input/InputServer.h>
 #include <Events/EventServer.h>
 #include <Data/Params.h>
 

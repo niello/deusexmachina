@@ -29,9 +29,12 @@ public:
 
 	void				Attach(Sys::COSWindow* pOSWindow, U16 Priority);
 
+	virtual EDeviceType	GetType() const { return Dev_Keyboard; }
 	virtual U8			GetAxisCount() const { return 0; }
 	virtual U8			GetAxisCode(const char* pAlias) const { return InvalidCode; }
 	virtual const char*	GetAxisAlias(U8 Code) const { return NULL; }
+	virtual void		SetAxisSensitivity(U8 Code, float Sensitivity) {}
+	virtual float		GetAxisSensitivity(U8 Code) const { return 1.f; }
 	virtual U8			GetButtonCount() const { return 255; }
 	virtual U8			GetButtonCode(const char* pAlias) const;
 	virtual const char*	GetButtonAlias(U8 Code) const;

@@ -20,19 +20,25 @@ class COSWindowMouse: public IInputDevice
 {
 private:
 
+	static const U8 AxisCount = 4;
+
 	Sys::COSWindow*	pWindow;
+	float			AxisSensitivity[AxisCount];
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 
 public:
 
-	COSWindowMouse(): pWindow(NULL) {}
+	COSWindowMouse();
 
 	void				Attach(Sys::COSWindow* pOSWindow, U16 Priority);
 
-	virtual U8			GetAxisCount() const { return 4; }
+	virtual EDeviceType	GetType() const { return Dev_Mouse; }
+	virtual U8			GetAxisCount() const { return AxisCount; }
 	virtual U8			GetAxisCode(const char* pAlias) const;
 	virtual const char*	GetAxisAlias(U8 Code) const;
+	virtual void		SetAxisSensitivity(U8 Code, float Sensitivity);
+	virtual float		GetAxisSensitivity(U8 Code) const;
 	virtual U8			GetButtonCount() const { return 6; }
 	virtual U8			GetButtonCode(const char* pAlias) const;
 	virtual const char*	GetButtonAlias(U8 Code) const;

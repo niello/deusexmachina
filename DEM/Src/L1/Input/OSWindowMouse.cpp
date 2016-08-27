@@ -7,6 +7,15 @@
 namespace Input
 {
 
+COSWindowMouse::COSWindowMouse(): pWindow(NULL)
+{
+	AxisSensitivity[0] = 1.f;
+	AxisSensitivity[1] = 1.f;
+	AxisSensitivity[2] = 1.f;
+	AxisSensitivity[3] = 1.f;
+}
+//---------------------------------------------------------------------
+
 void COSWindowMouse::Attach(Sys::COSWindow* pOSWindow, U16 Priority)
 {
 	if (pOSWindow)
@@ -41,6 +50,20 @@ const char* COSWindowMouse::GetAxisAlias(U8 Code) const
 		case 3:		return "Wheel2";
 		default:	return NULL;
 	}
+}
+//---------------------------------------------------------------------
+
+void COSWindowMouse::SetAxisSensitivity(U8 Code, float Sensitivity)
+{
+	n_assert(Code < AxisCount);
+	AxisSensitivity[Code] = Sensitivity;
+}
+//---------------------------------------------------------------------
+
+float COSWindowMouse::GetAxisSensitivity(U8 Code) const
+{
+	n_assert(Code < AxisCount);
+	return AxisSensitivity[Code];
 }
 //---------------------------------------------------------------------
 
@@ -95,19 +118,19 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 
 		case Event::OSInput::MouseMoveRaw:
 		{
-			IPTR MoveX = OSInputEvent.MouseInfo.x;
-			if (MoveX != 0)
+			float MoveX = AxisSensitivity[0] * (float)OSInputEvent.MouseInfo.x;
+			if (MoveX != 0.f)
 			{
 				float RelMove = MoveX / (float)n_max(pWindow->GetWidth(), 1);
-				Event::AxisMove Ev(0, RelMove, (float)MoveX);
+				Event::AxisMove Ev(0, RelMove, MoveX);
 				FireEvent(Ev);
 			}
 
-			IPTR MoveY = OSInputEvent.MouseInfo.y;
-			if (MoveY != 0)
+			float MoveY = AxisSensitivity[1] * (float)OSInputEvent.MouseInfo.y;
+			if (MoveY != 0.f)
 			{
 				float RelMove = MoveY / (float)n_max(pWindow->GetHeight(), 1);
-				Event::AxisMove Ev(1, RelMove, (float)MoveY);
+				Event::AxisMove Ev(1, RelMove, MoveY);
 				FireEvent(Ev);
 			}
 
@@ -116,16 +139,16 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 
 		case Event::OSInput::MouseWheelVertical:
 		{
-			IPTR Move = OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(2, (float)Move, (float)Move);
+			float Move = AxisSensitivity[2] * (float)OSInputEvent.WheelDelta;
+			Event::AxisMove Ev(2, Move, Move);
 			FireEvent(Ev);
 			OK;
 		}
 
 		case Event::OSInput::MouseWheelHorizontal:
 		{
-			IPTR Move = OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(3, (float)Move, (float)Move);
+			float Move = AxisSensitivity[2] * (float)OSInputEvent.WheelDelta;
+			Event::AxisMove Ev(3, Move, Move);
 			FireEvent(Ev);
 			OK;
 		}

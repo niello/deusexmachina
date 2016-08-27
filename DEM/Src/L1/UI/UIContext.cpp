@@ -4,6 +4,9 @@
 #include <Events/EventDispatcher.h>
 #include <System/Events/OSInput.h>
 
+//!!!DBG TMP!
+#include <Events/EventServer.h>
+
 namespace UI
 {
 
@@ -125,7 +128,17 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 		}
 
 		case Event::OSInput::KeyUp:
-			return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
+		{
+			if (pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode)) OK;
+
+			//!!!DBG TMP!
+			if (Ev.KeyboardInfo.ScanCode == 0x29) // ~
+			{
+				EventSrv->FireEvent(CStrID("ShowDebugConsole"));
+				OK;
+			}
+			FAIL;
+		}
 
 		//!!!generates mouse move internally!
 		case Event::OSInput::MouseMove:

@@ -1,6 +1,5 @@
 #include "InputMappingState.h"
 
-#include <Input/InputServer.h>
 #include <Events/EventServer.h>
 #include <Data/Params.h>
 
@@ -21,8 +20,8 @@ bool CInputMappingState::Init(CStrID Name, const Data::CParams& Desc)
 
 void CInputMappingState::Enable()
 {
-	if (!IS_SUBSCRIBED(OnInputUpdated))
-		DISP_SUBSCRIBE_PEVENT(InputSrv, OnInputUpdated, CInputMappingState, OnInputUpdated);
+	//if (!IS_SUBSCRIBED(OnInputUpdated))
+	//	DISP_SUBSCRIBE_PEVENT(InputSrv, OnInputUpdated, CInputMappingState, OnInputUpdated);
 }
 //---------------------------------------------------------------------
 
@@ -39,13 +38,14 @@ bool CInputMappingState::OnInputUpdated(Events::CEventDispatcher* pDispatcher, c
 	for (CArray<CCondition>::CIterator It = Conditions.Begin(); It != Conditions.End(); ++It)
 	{
 		bool CndState;
-		switch (It->Type)
-		{
-			case CT_Key:		CndState = InputSrv->CheckKeyState(It->Key, It->KeyBtnState); break;
-			case CT_MouseBtn:	CndState = InputSrv->CheckMouseBtnState(It->MouseBtn, It->KeyBtnState); break;
-			case CT_Wheel:		CndState = (It->WheelFwd) ? InputSrv->GetWheelForward() > 0 : InputSrv->GetWheelBackward() > 0; break;
-			default:			CndState = false;
-		}
+		//switch (It->Type)
+		//{
+			//case CT_Key:		CndState = InputSrv->CheckKeyState(It->Key, It->KeyBtnState); break;
+			//case CT_MouseBtn:	CndState = InputSrv->CheckMouseBtnState(It->MouseBtn, It->KeyBtnState); break;
+			//case CT_Wheel:		CndState = (It->WheelFwd) ? InputSrv->GetWheelForward() > 0 : InputSrv->GetWheelBackward() > 0; break;
+		//	default:			CndState = false;
+		//}
+		CndState = false;
 
 		It->State = CndState;
 

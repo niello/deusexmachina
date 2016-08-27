@@ -23,7 +23,7 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 
 	ConnOnShow = pWnd->subscribeEvent(CEGUI::Window::EventShown, CEGUI::Event::Subscriber(&CLuaConsole::OnShow, this));
 
-	pInputLine = (CEGUI::Editbox*)pWnd->getChild(pWnd->getName() + "/InputLine");
+	pInputLine = (CEGUI::Editbox*)pWnd->getChild("InputLine");
 	pInputLine->subscribeEvent(CEGUI::Editbox::EventTextAccepted,
 		CEGUI::Event::Subscriber(&CLuaConsole::OnCommand, this));
 	pInputLine->subscribeEvent(CEGUI::Editbox::EventKeyDown,
@@ -32,7 +32,7 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 		CEGUI::Event::Subscriber(&CLuaConsole::OnChar, this));
 	pInputLine->activate();
 
-	pOutputWnd = (CEGUI::Listbox*)pWnd->getChild(pWnd->getName() + "/OutputList");
+	pOutputWnd = (CEGUI::Listbox*)pWnd->getChild("OutputList");
 	pVertScroll = pOutputWnd->getVertScrollbar();
 
 	//CLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();

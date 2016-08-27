@@ -10,7 +10,6 @@
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <UI/UIServer.h>
-#include <Input/InputServer.h>
 #include <Time/TimeServer.h>
 #include <Scripting/ScriptObject.h>
 #include <Data/DataServer.h>

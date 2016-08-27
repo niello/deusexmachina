@@ -4,7 +4,6 @@
 #include <Debug/DebugServer.h>
 #include <Events/EventServer.h>
 #include <Video/VideoServer.h>
-#include <Input/InputServer.h>
 #include <Core/CoreServer.h>
 
 namespace App
@@ -34,7 +33,6 @@ CStrID CAppStateVideo::OnFrame()
 
 	//???AudioSrv?
 	VideoSrv->Trigger();
-	InputSrv->Trigger();
 
 	if (!VideoSrv->IsPlaying()) ReturnState = NextState; // Video has finished
 
@@ -46,4 +44,4 @@ CStrID CAppStateVideo::OnFrame()
 }
 //---------------------------------------------------------------------
 
-} // namespace Application
+}

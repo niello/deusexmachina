@@ -9,6 +9,12 @@
 
 namespace Input
 {
+enum EDeviceType
+{
+	Dev_Keyboard,
+	Dev_Mouse,
+	Dev_Gamepad
+};
 
 class IInputDevice: public Events::CEventDispatcher
 {
@@ -18,9 +24,12 @@ public:
 
 	static const U8 InvalidCode = 0xff;
 
+	virtual EDeviceType	GetType() const = 0;
 	virtual U8			GetAxisCount() const = 0;
 	virtual U8			GetAxisCode(const char* pAlias) const = 0;
 	virtual const char*	GetAxisAlias(U8 Code) const = 0;
+	virtual void		SetAxisSensitivity(U8 Code, float Sensitivity) = 0;
+	virtual float		GetAxisSensitivity(U8 Code) const = 0;
 	virtual U8			GetButtonCount() const = 0;
 	virtual U8			GetButtonCode(const char* pAlias) const = 0;
 	virtual const char*	GetButtonAlias(U8 Code) const = 0;

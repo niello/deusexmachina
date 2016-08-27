@@ -1,6 +1,5 @@
 #include "ControlLayout.h"
 
-#include <Input/InputServer.h>
 #include <Events/EventServer.h>
 
 namespace Input
