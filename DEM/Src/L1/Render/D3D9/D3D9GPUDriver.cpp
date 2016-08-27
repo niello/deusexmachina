@@ -1640,6 +1640,18 @@ bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
+CRenderTarget* CD3D9GPUDriver::GetRenderTarget(UPTR Index) const
+{
+	return CurrRT[Index].GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
+{
+	return CurrDS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	if (!Handle) FAIL;

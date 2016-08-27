@@ -98,28 +98,22 @@ void CDEMTextureTarget::resizeRenderTexture()
 
 void CDEMTextureTarget::enableRenderTexture()
 {
-	//???don't store prev?
-	//d_device.d_context->OMGetRenderTargets(1, &d_previousRenderTargetView, &d_previousDepthStencilView);
+	PrevRT = d_owner.getGPUDriver()->GetRenderTarget(0);
+	PrevDS = d_owner.getGPUDriver()->GetDepthStencilBuffer();
 	d_owner.getGPUDriver()->SetRenderTarget(0, RT.GetUnsafe());
-	UPTR MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
-	for (UPTR i = 1; i < MaxRT; ++i)
-		d_owner.getGPUDriver()->SetRenderTarget(i, NULL);
+	//UPTR MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
+	//for (UPTR i = 1; i < MaxRT; ++i)
+	//	d_owner.getGPUDriver()->SetRenderTarget(i, NULL);
 	d_owner.getGPUDriver()->SetDepthStencilBuffer(NULL);
 }
 //---------------------------------------------------------------------
 
 void CDEMTextureTarget::disableRenderTexture()
 {
-	//if (d_previousRenderTargetView) d_previousRenderTargetView->Release();
-	//if (d_previousDepthStencilView) d_previousDepthStencilView->Release();
-
-	//d_device.d_context->OMSetRenderTargets(1, &d_previousRenderTargetView, d_previousDepthStencilView);
-
-	//d_previousRenderTargetView = 0;
-	//d_previousDepthStencilView = 0;
-
-	//OR
-	//d_owner.getGPUDriver()->SetRenderTarget(0, NULL); // with defaulting to implicit SC backbuffer for D3D9
+	d_owner.getGPUDriver()->SetRenderTarget(0, PrevRT.GetUnsafe());
+	d_owner.getGPUDriver()->SetDepthStencilBuffer(PrevDS.GetUnsafe());
+	PrevRT = NULL;
+	PrevDS = NULL;
 }
 //---------------------------------------------------------------------
 

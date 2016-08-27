@@ -147,6 +147,9 @@ public:
 	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
+	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;
+	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const = 0;
+
 	EGPUDriverType				GetType() const { return Type; }
 };
 

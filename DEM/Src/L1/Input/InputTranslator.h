@@ -22,6 +22,10 @@ private:
 
 	CArray<Events::PSub>	Subscriptions;
 
+	//context: ID, enabled, layout
+	//layout: array of virtual mappings (event, state, range and any other), can be loaded and saved
+	//mapping: processes an event, returns if it was consumed, fires event (or fills state?)
+
 	//???or one sub and distinguish by RTTI inside?
 	bool	OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool	OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -31,9 +35,12 @@ public:
 
 	CInputTranslator(U8 PlayerID): PlayerUID(PlayerID) {}
 
-	//LoadContext(CStrID ID, source);
+	//SetContextLayout(CStrID ID, control layout source);
 	void	EnableContext(CStrID ID);
 	void	DisableContext(CStrID ID);
+	void	EnableAllContexts();
+	void	DisableAllContexts();
+	bool	IsContextEnabled(CStrID ID) const;
 
 	void	ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void	DisconnectFromDevice(const IInputDevice* pDevice);

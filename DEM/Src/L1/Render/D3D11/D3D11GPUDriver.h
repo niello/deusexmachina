@@ -211,6 +211,8 @@ public:
 	virtual bool				SetRenderState(CRenderState* pState);
 	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT);
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
+	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const;
+	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const;
 
 	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer);
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);

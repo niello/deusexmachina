@@ -879,6 +879,18 @@ bool CD3D11GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 }
 //---------------------------------------------------------------------
 
+CRenderTarget* CD3D11GPUDriver::GetRenderTarget(UPTR Index) const
+{
+	return CurrRT[Index].GetUnsafe();
+}
+//---------------------------------------------------------------------
+
+CDepthStencilBuffer* CD3D11GPUDriver::GetDepthStencilBuffer() const
+{
+	return CurrDS.GetUnsafe();
+}
+//---------------------------------------------------------------------
+
 //!!!ID3D11ShaderResourceView* or PObject!
 bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV)
 {
@@ -2839,7 +2851,12 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 	}
 	else
 	{
-		D3D11_MAP MapType = (Usage == D3D11_USAGE_DYNAMIC && UpdateWhole) ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+		const int IsDynamic = (Usage == D3D11_USAGE_DYNAMIC);
+#ifdef _DEBUG
+		if (IsDynamic && !UpdateWhole)
+			Sys::Log("Render, Warning: partial write-discard to D3D11 dynamic buffer\n");
+#endif
+		D3D11_MAP MapType = IsDynamic ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
 		D3D11_MAPPED_SUBRESOURCE D3DData;
 		if (FAILED(pD3DImmContext->Map(pBuf, 0, MapType, 0, &D3DData))) FAIL;
 		memcpy(((char*)D3DData.pData) + Offset, pData, SizeToCopy);
