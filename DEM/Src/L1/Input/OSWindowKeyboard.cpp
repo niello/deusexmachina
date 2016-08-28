@@ -55,12 +55,16 @@ bool COSWindowKeyboard::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, c
 	{
 		case Event::OSInput::KeyDown:
 		{
-			U8 KeyCode = ConvertToKeyCode(
-				OSInputEvent.KeyboardInfo.ScanCode,
-				OSInputEvent.KeyboardInfo.VirtualKey,
-				(OSInputEvent.KeyboardInfo.Flags & Event::OSInput::Key_Extended) != 0);
-			Event::ButtonDown Ev(KeyCode);
-			FireEvent(Ev);
+			// We are interested only in actual key down events
+			if (!(OSInputEvent.KeyboardInfo.Flags & Event::OSInput::Key_Repeated))
+			{
+				U8 KeyCode = ConvertToKeyCode(
+					OSInputEvent.KeyboardInfo.ScanCode,
+					OSInputEvent.KeyboardInfo.VirtualKey,
+					(OSInputEvent.KeyboardInfo.Flags & Event::OSInput::Key_Extended) != 0);
+				Event::ButtonDown Ev(KeyCode);
+				FireEvent(Ev);
+			}
 			OK;
 		}
 

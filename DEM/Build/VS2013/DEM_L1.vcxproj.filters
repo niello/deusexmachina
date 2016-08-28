@@ -956,6 +956,12 @@
     <ClInclude Include="..\..\Src\L1\Input\InputTranslator.h">
       <Filter>Input</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditions.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputFwd.h">
+      <Filter>Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1577,6 +1583,9 @@
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\InputTransator.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditions.cpp">
       <Filter>Input</Filter>
     </ClCompile>
   </ItemGroup>

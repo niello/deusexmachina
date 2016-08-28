@@ -2,6 +2,7 @@
 #ifndef __DEM_L1_INPUT_DEVICE_H__
 #define __DEM_L1_INPUT_DEVICE_H__
 
+#include <Input/InputFwd.h>
 #include <Events/EventDispatcher.h>
 
 // An interface for various input devices such as keyboards, mouses and gamepads.
@@ -9,12 +10,6 @@
 
 namespace Input
 {
-enum EDeviceType
-{
-	Dev_Keyboard,
-	Dev_Mouse,
-	Dev_Gamepad
-};
 
 class IInputDevice: public Events::CEventDispatcher
 {

@@ -46,18 +46,48 @@ void CInputTranslator::DisconnectFromDevice(const IInputDevice* pDevice)
 
 bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
+	const Event::AxisMove& Ev = (const Event::AxisMove&)Event;
+
+	//for each active context
+	//  for each mapping in a context
+	//    evaluate mapping condition
+	//    if true
+	//      fill output event with axis movement amount
+	//      //???apply axis inversion here? or device property?
+	//      queue output event and consume input event (break)
+
+	//!!!can also "queue" states for latter polling, like pInputTranslator->CheckState("CameraRotateV")!
+	//very simple to implement, difference is right here, fire event or store string -> bool (or axis amount) state
+
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
+	const Event::ButtonDown& Ev = (const Event::ButtonDown&)Event;
+
+	//for each active context
+	//  for each mapping in a context
+	//    evaluate mapping condition
+	//    if true queue output event and consume input event (break)
+
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
+	const Event::ButtonUp& Ev = (const Event::ButtonUp&)Event;
+
+	//for each active context
+	//  for each mapping in a context
+	//    evaluate mapping condition
+	//    if true queue output event and consume input event (break)
+
 	FAIL;
 }
 //---------------------------------------------------------------------

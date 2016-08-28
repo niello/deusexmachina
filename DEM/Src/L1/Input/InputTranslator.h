@@ -44,6 +44,10 @@ public:
 
 	void	ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void	DisconnectFromDevice(const IInputDevice* pDevice);
+
+	//FireQueuedEvents(/*max count*/)
+	//CheckState()
+	//Reset(/*device type*/)
 };
 
 }

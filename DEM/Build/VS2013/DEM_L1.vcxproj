@@ -215,8 +215,10 @@
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrSkin.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
     <ClInclude Include="..\..\Src\L1\Frame\View.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputConditions.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputDevice.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputEvents.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputFwd.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputTranslator.h" />
     <ClInclude Include="..\..\Src\L1\Input\OSWindowKeyboard.h" />
     <ClInclude Include="..\..\Src\L1\Input\OSWindowMouse.h" />
@@ -481,6 +483,7 @@
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrSkin.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\View.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputConditions.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputEvents.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputTransator.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\OSWindowKeyboard.cpp" />
