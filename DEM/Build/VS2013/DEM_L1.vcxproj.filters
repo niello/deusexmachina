@@ -974,6 +974,15 @@
     <ClInclude Include="..\..\Src\L1\Input\InputConditionComboEvent.h">
       <Filter>Input</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionPressed.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionReleased.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionComboState.h">
+      <Filter>Input</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1613,6 +1622,15 @@
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\InputCondition.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionPressed.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionReleased.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionComboState.cpp">
       <Filter>Input</Filter>
     </ClCompile>
   </ItemGroup>

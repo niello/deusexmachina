@@ -14,6 +14,8 @@ namespace Input
 
 class CInputConditionHold: public CInputConditionEvent
 {
+	__DeclareClass(CInputConditionHold);
+
 protected:
 
 	enum

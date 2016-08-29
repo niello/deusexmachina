@@ -2,14 +2,15 @@
 
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
+#include <Core/Factory.h>
 
 namespace Input
 {
+__ImplementClass(Input::CInputConditionComboEvent, 'ICCE', Input::CInputConditionEvent);
 
 bool CInputConditionComboEvent::Initialize(const Data::CParams& Desc)
 {
-	SAFE_DELETE(pEvent);
-	SAFE_DELETE(pState);
+	Clear();
 
 	Data::PParams SubDesc;
 	if (Desc.Get<Data::PParams>(SubDesc, CStrID("Event")))
@@ -25,6 +26,13 @@ bool CInputConditionComboEvent::Initialize(const Data::CParams& Desc)
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CInputConditionComboEvent::Clear()
+{
+	SAFE_DELETE(pEvent);
+	SAFE_DELETE(pState);
 }
 //---------------------------------------------------------------------
 

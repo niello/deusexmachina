@@ -11,6 +11,8 @@ namespace Input
 
 class CInputConditionMove: public CInputConditionEvent
 {
+	__DeclareClass(CInputConditionMove);
+
 protected:
 
 	EDeviceType	DeviceType;

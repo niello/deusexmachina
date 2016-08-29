@@ -11,6 +11,8 @@ namespace Input
 
 class CInputConditionUp: public CInputConditionEvent
 {
+	__DeclareClass(CInputConditionUp);
+
 protected:
 
 	EDeviceType	DeviceType;
@@ -18,8 +20,11 @@ protected:
 
 public:
 
-	virtual bool Initialize(const Data::CParams& Desc);
-	virtual bool OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event);
+	virtual bool	Initialize(const Data::CParams& Desc);
+	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event);
+
+	EDeviceType		GetDeviceType() const { return DeviceType; }
+	U8				GetButton() const { return Button; }
 };
 
 }

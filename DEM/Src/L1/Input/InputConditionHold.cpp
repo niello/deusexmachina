@@ -2,9 +2,11 @@
 
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
+#include <Core/Factory.h>
 
 namespace Input
 {
+__ImplementClass(Input::CInputConditionHold, 'ICHL', Input::CInputConditionEvent);
 
 bool CInputConditionHold::Initialize(const Data::CParams& Desc)
 {

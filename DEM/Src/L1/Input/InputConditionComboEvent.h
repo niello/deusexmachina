@@ -13,15 +13,19 @@ namespace Input
 
 class CInputConditionComboEvent: public CInputConditionEvent
 {
+	__DeclareClass(CInputConditionComboEvent);
+
 protected:
 
 	CInputConditionEvent*	pEvent;
 	CInputConditionState*	pState;
 
+	void			Clear();
+
 public:
 
 	CInputConditionComboEvent(): pEvent(NULL), pState(NULL) {}
-	~CInputConditionComboEvent(); //!!!n_delete() child conditions!
+	virtual ~CInputConditionComboEvent() { Clear(); }
 
 	virtual bool	Initialize(const Data::CParams& Desc);
 	virtual void	Reset();

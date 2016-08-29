@@ -26,7 +26,6 @@ private:
 	//layout: array of virtual mappings (event, state, range and any other), can be loaded and saved
 	//mapping: processes an event, returns if it was consumed, fires event (or fills state?)
 
-	//???or one sub and distinguish by RTTI inside?
 	bool	OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool	OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool	OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -46,7 +45,7 @@ public:
 	void	DisconnectFromDevice(const IInputDevice* pDevice);
 
 	//FireQueuedEvents(/*max count*/)
-	//CheckState()
+	//CheckState(CStrID State) // search in all active contexts, false of not found
 	//Reset(/*device type*/)
 };
 

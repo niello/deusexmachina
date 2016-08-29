@@ -25,6 +25,8 @@ public:
 
 	static CInputConditionEvent* CreateByType(const char* pType);
 
+	virtual ~CInputConditionEvent() {}
+
 	virtual bool	Initialize(const Data::CParams& Desc) = 0;
 	virtual void	Reset() {}
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) { FAIL; }
@@ -46,9 +48,10 @@ public:
 	static CInputConditionState* CreateByType(const char* pType);
 
 	CInputConditionState(): On(false) {}
+	virtual ~CInputConditionState() {}
 
 	virtual bool	Initialize(const Data::CParams& Desc) = 0;
-	virtual void	Reset() {}
+	virtual void	Reset() = 0;
 	virtual void	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) {}
 	virtual void	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) {}
 	virtual void	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) {}

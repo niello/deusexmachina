@@ -217,8 +217,11 @@
     <ClInclude Include="..\..\Src\L1\Frame\View.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputCondition.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionComboEvent.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionComboState.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionHold.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionMove.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionPressed.h" />
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionReleased.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionSequence.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionUp.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputDevice.h" />
@@ -490,8 +493,11 @@
     <ClCompile Include="..\..\Src\L1\Input\Input.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputCondition.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputConditionComboEvent.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionComboState.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputConditionHold.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputConditionMove.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionPressed.cpp" />
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionReleased.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputConditionSequence.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputConditionUp.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputEvents.cpp" />
