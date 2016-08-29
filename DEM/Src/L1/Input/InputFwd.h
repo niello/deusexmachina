@@ -6,17 +6,36 @@
 
 // Input system forward declarations
 
-//???rename to keys/keycodes?
-
 namespace Input
 {
+class IInputDevice;
 
 enum EDeviceType
 {
 	Dev_Keyboard,
 	Dev_Mouse,
-	Dev_Gamepad
+	Dev_Gamepad,
+
+	Dev_Count,
+	Dev_Invalid
 };
+
+const char*	DeviceTypeToString(EDeviceType Type);
+EDeviceType	StringToDeviceType(const char* pName);
+
+enum EMouseAxis
+{
+	MA_X		= 0,
+	MA_Y		= 1,
+	MA_Wheel1	= 2,
+	MA_Wheel2	= 3,
+
+	MA_Count,
+	MA_Invalid
+};
+
+const char*	MouseAxisToString(EMouseAxis Axis);
+EMouseAxis	StringToMouseAxis(const char* pName);
 
 enum EMouseButton
 {
@@ -25,12 +44,21 @@ enum EMouseButton
 	MB_Middle	= 2,
 	MB_X1		= 3,
 	MB_X2		= 4,
-	MB_Other	= 5	// User values (MB_Other + N), N = 0 .. X
+	MB_User		= 5,	// User values (MB_User + N), N = 0 .. X
+
+	MB_Invalid	= 255
 };
 
 const char*		MouseButtonToString(EMouseButton Button);
 EMouseButton	StringToMouseButton(const char* pName);
 
+}
+
+namespace Event
+{
+	class AxisMove;
+	class ButtonDown;
+	class ButtonUp;
 }
 
 #endif

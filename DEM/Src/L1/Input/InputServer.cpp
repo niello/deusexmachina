@@ -69,7 +69,7 @@ void CInputServer::Trigger()
 
 	CharCount = 0;
 
-	for (int i = 0; i < MouseBtnCount; ++i)
+	for (int i = 0; i < 5; ++i)
 		if (MouseBtnState[i] & KEY_IS_UP) MouseBtnState[i] &= ~(KEY_IS_DOWN | KEY_IS_UP | KEY_IS_PRESSED | KEY_IS_DBL_CLICKED);
 		else MouseBtnState[i] &= ~(KEY_IS_DOWN | KEY_IS_DBL_CLICKED);
 
@@ -97,7 +97,7 @@ CControlLayout* CInputServer::LoadControlLayout(CStrID Name)
 	Desc = Desc->Get<Data::PParams>(Name);
 	if (Desc.IsNullPtr()) return NULL;
 	PControlLayout New = n_new(CControlLayout);
-	if (!New->Init(*Desc.GetUnsafe())) return NULL;
+	if (!New->Initialize(*Desc.GetUnsafe())) return NULL;
 	Layouts.Add(Name, New);
 	return New.GetUnsafe();
 }
@@ -105,7 +105,7 @@ CControlLayout* CInputServer::LoadControlLayout(CStrID Name)
 
 bool CInputServer::SetContextLayout(CStrID Context, CStrID Layout)
 {
-	PControlLayout pNewCtx = GetControlLayout(Layout);
+	/*PControlLayout pNewCtx = GetControlLayout(Layout);
 	if (!pNewCtx) FAIL;
 
 	bool WasEnabled;
@@ -123,7 +123,7 @@ bool CInputServer::SetContextLayout(CStrID Context, CStrID Layout)
 		WasEnabled = false;
 	}
 
-	if (WasEnabled)	pNewCtx->Enable();
+	if (WasEnabled)	pNewCtx->Enable();*/
 
 	OK;
 }
@@ -138,29 +138,30 @@ CControlLayout* CInputServer::GetContextLayout(CStrID Context) const
 
 bool CInputServer::EnableContext(CStrID Context, bool DisableOthers)
 {
-	if (DisableOthers)
+	/*if (DisableOthers)
 		for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 			if (Contexts.KeyAt(i) != Context)
 				Contexts.ValueAt(i)->Disable();
 
 	PControlLayout* ppCtx = Contexts.Get(Context);
 	if (!ppCtx) FAIL;
-	(*ppCtx)->Enable();
+	(*ppCtx)->Enable();*/
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CInputServer::DisableContext(CStrID Context)
 {
-	PControlLayout* ppCtx = Contexts.Get(Context);
-	if (ppCtx) (*ppCtx)->Disable();
+	//PControlLayout* ppCtx = Contexts.Get(Context);
+	//if (ppCtx) (*ppCtx)->Disable();
 }
 //---------------------------------------------------------------------
 
 bool CInputServer::IsContextEnabled(CStrID Context) const
 {
-	PControlLayout* ppCtx = Contexts.Get(Context);
-	return (ppCtx) ? (*ppCtx)->IsEnabled() : false;
+	//PControlLayout* ppCtx = Contexts.Get(Context);
+	//return (ppCtx) ? (*ppCtx)->IsEnabled() : false;
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -171,7 +172,7 @@ void CInputServer::Reset()
 
 	CharCount = 0;
 
-	for (int i = 0; i < MouseBtnCount; ++i)
+	for (int i = 0; i < 5; ++i)
 		MouseBtnState[i] = (MouseBtnState[i] & KEY_IS_PRESSED) ? KEY_IS_UP : 0;
 
 	WheelFwd =

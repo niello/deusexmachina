@@ -32,24 +32,14 @@ void COSWindowMouse::Attach(Sys::COSWindow* pOSWindow, U16 Priority)
 
 U8 COSWindowMouse::GetAxisCode(const char* pAlias) const
 {
-	if (!n_stricmp(pAlias, "x")) return 0;
-	if (!n_stricmp(pAlias, "y")) return 1;
-	if (!n_stricmp(pAlias, "wheel1")) return 2;
-	if (!n_stricmp(pAlias, "wheel2")) return 3;
-	return InvalidCode;
+	EMouseAxis Axis = StringToMouseAxis(pAlias);
+	return (Axis == MA_Invalid) ? InvalidCode : (U8)Axis;
 }
 //---------------------------------------------------------------------
 
 const char* COSWindowMouse::GetAxisAlias(U8 Code) const
 {
-	switch (Code)
-	{
-		case 0:		return "X";
-		case 1:		return "Y";
-		case 2:		return "Wheel1";
-		case 3:		return "Wheel2";
-		default:	return NULL;
-	}
+	return MouseAxisToString((EMouseAxis)Code);
 }
 //---------------------------------------------------------------------
 
@@ -69,28 +59,14 @@ float COSWindowMouse::GetAxisSensitivity(U8 Code) const
 
 U8 COSWindowMouse::GetButtonCode(const char* pAlias) const
 {
-	if (!n_stricmp(pAlias, "lmb")) return 0;
-	if (!n_stricmp(pAlias, "rmb")) return 1;
-	if (!n_stricmp(pAlias, "mmb")) return 2;
-	if (!n_stricmp(pAlias, "x1")) return 3;
-	if (!n_stricmp(pAlias, "x2")) return 4;
-	if (!n_stricmp(pAlias, "other")) return 5;
-	return InvalidCode;
+	EMouseButton Button = StringToMouseButton(pAlias);
+	return (Button == MB_Invalid) ? InvalidCode : (U8)Button;
 }
 //---------------------------------------------------------------------
 
 const char* COSWindowMouse::GetButtonAlias(U8 Code) const
 {
-	switch (Code)
-	{
-		case 0:		return "LMB";
-		case 1:		return "RMB";
-		case 2:		return "MMB";
-		case 3:		return "X1";
-		case 4:		return "X2";
-		case 5:		return "Other";
-		default:	return NULL;
-	}
+	return MouseButtonToString((EMouseButton)Code);
 }
 //---------------------------------------------------------------------
 
@@ -104,6 +80,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 	{
 		case Event::OSInput::MouseDown:
 		{
+			// Button codes received from OSWindow are the same as EMouseButton codes, no conversion needed
 			Event::ButtonDown Ev(OSInputEvent.MouseInfo.Button);
 			FireEvent(Ev);
 			OK;
@@ -111,6 +88,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 
 		case Event::OSInput::MouseUp:
 		{
+			// Button codes received from OSWindow are the same as EMouseButton codes, no conversion needed
 			Event::ButtonUp Ev(OSInputEvent.MouseInfo.Button);
 			FireEvent(Ev);
 			OK;

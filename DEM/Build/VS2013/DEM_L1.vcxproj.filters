@@ -246,12 +246,6 @@
     <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h">
       <Filter>Input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\InputMappingEvent.h">
-      <Filter>Input</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\InputMappingState.h">
-      <Filter>Input</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Input\InputServer.h">
       <Filter>Input</Filter>
     </ClInclude>
@@ -956,10 +950,28 @@
     <ClInclude Include="..\..\Src\L1\Input\InputTranslator.h">
       <Filter>Input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\InputConditions.h">
+    <ClInclude Include="..\..\Src\L1\Input\InputFwd.h">
       <Filter>Input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\InputFwd.h">
+    <ClInclude Include="..\..\Src\L1\Input\InputCondition.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionDown.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionMove.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionUp.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionHold.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionSequence.h">
+      <Filter>Input</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Input\InputConditionComboEvent.h">
       <Filter>Input</Filter>
     </ClInclude>
   </ItemGroup>
@@ -1043,12 +1055,6 @@
       <Filter>Debug</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\ControlLayout.cpp">
-      <Filter>Input</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\InputMappingEvent.cpp">
-      <Filter>Input</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\InputMappingState.cpp">
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\InputServer.cpp">
@@ -1585,7 +1591,28 @@
     <ClCompile Include="..\..\Src\L1\Input\InputTransator.cpp">
       <Filter>Input</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\InputConditions.cpp">
+    <ClCompile Include="..\..\Src\L1\Input\Input.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionDown.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionMove.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionUp.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionHold.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionSequence.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputConditionComboEvent.cpp">
+      <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Input\InputCondition.cpp">
       <Filter>Input</Filter>
     </ClCompile>
   </ItemGroup>

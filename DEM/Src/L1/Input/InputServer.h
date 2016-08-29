@@ -66,7 +66,7 @@ private:
 	U16		Chars[CharBufferSize];
 	int		CharCount;
 
-	U8		MouseBtnState[MouseBtnCount];
+	U8		MouseBtnState[5];
 	int		WheelFwd;
 	int		WheelBack;
 	int		RawMouseMoveX;

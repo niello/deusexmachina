@@ -5,10 +5,11 @@
 namespace Input
 {
 
-bool CControlLayout::Init(const Data::CParams& Desc)
+bool CControlLayout::Initialize(const Data::CParams& Desc)
 {
 	Data::PParams Mappings;
 
+	/*
 	EventMappings.Clear();
 	if (Desc.Get<Data::PParams>(Mappings, CStrID("Events")) && Mappings->GetCount())
 	{
@@ -37,36 +38,18 @@ bool CControlLayout::Init(const Data::CParams& Desc)
 	}
 
 	Enabled = false;
+	*/
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CControlLayout::Enable()
-{
-	if (Enabled) return;
-	for (CArray<CInputMappingEvent>::CIterator It = EventMappings.Begin(); It != EventMappings.End(); ++It)
-		It->Enable();
-	for (CArray<CInputMappingState>::CIterator It = StateMappings.Begin(); It != StateMappings.End(); ++It)
-		It->Enable();
-	Enabled = true;
-}
-//---------------------------------------------------------------------
-
-void CControlLayout::Disable()
-{
-	if (!Enabled) return;
-	for (CArray<CInputMappingEvent>::CIterator It = EventMappings.Begin(); It != EventMappings.End(); ++It)
-		It->Disable();
-	for (CArray<CInputMappingState>::CIterator It = StateMappings.Begin(); It != StateMappings.End(); ++It)
-		It->Disable();
-	Enabled = false;
-}
-//---------------------------------------------------------------------
-
 void CControlLayout::Reset()
 {
-	//!!!WRITE IT!
+	for (CDict<CStrID, CInputConditionState*>::CIterator It = States.Begin(); It != States.End(); ++It)
+		(*It).GetValue()->Reset();
+	for (CArray<CInputConditionEvent*>::CIterator It = Events.Begin(); It != Events.End(); ++It)
+		(*It)->Reset();
 }
 //---------------------------------------------------------------------
 

@@ -28,6 +28,8 @@ private:
 
 public:
 
+	typedef typename CArray<CPair>::CIterator CIterator;
+
 	CDictionary() {}
 	CDictionary(UPTR Alloc, UPTR Grow, bool DoubleGrow = false): Pairs(Alloc, Grow) { Pairs.Flags.Set(Array_DoubleGrowSize); }
 	CDictionary(const CDictionary<TKey, TValue>& Other): Pairs(Other.Pairs) {}
@@ -54,6 +56,9 @@ public:
 	const TKey&		KeyAt(IPTR Idx) const { return Pairs[Idx].GetKey(); }
 	TValue&			ValueAt(IPTR Idx) { return Pairs[Idx].GetValue(); }
 	const TValue&	ValueAt(IPTR Idx) const { return Pairs[Idx].GetValue(); }
+
+	CIterator		Begin() const { return Pairs.Begin(); }
+	CIterator		End() const { return Pairs.End(); }
 
 	void			Copy(CDictionary<TKey, TValue>& Out) const;
 	void			CopyToArray(CArray<TValue>& Out) const;

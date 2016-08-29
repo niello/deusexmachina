@@ -158,15 +158,6 @@ enum EKey
 	KeyCount // For key state array, we need last index + 1, not real scancode count
 };
 
-enum EMouseButton
-{
-	MBLeft		= 0,
-	MBRight		= 1,
-	MBMiddle	= 2,
-
-	MouseBtnCount
-};
-
 }
 
 #endif

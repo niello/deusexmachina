@@ -2,9 +2,10 @@
 #ifndef __DEM_L1_INPUT_CONTROL_LAYOUT_H__
 #define __DEM_L1_INPUT_CONTROL_LAYOUT_H__
 
-#include <Input/InputMappingEvent.h>
-#include <Input/InputMappingState.h>
-#include <Data/Array.h>
+#include <Core/Object.h>
+#include <Input/InputCondition.h>
+#include <Data/Dictionary.h>
+#include <Data/StringID.h>
 
 // Control layout is a set of mappings, each of which translates input
 // into abstract events and states.
@@ -16,23 +17,15 @@ class CControlLayout: public Core::CObject
 {
 private:
 
-	bool						Enabled;
-	CArray<CInputMappingEvent>	EventMappings;
-	CArray<CInputMappingState>	StateMappings;
-
-	//???listen ResetInput?
+	CArray<CInputConditionEvent*>			Events; //???event IDs inside? processing order is important
+	CDict<CStrID, CInputConditionState*>	States;	// Order is not important
 
 public:
 
-	CControlLayout(): Enabled(false) {}
+	~CControlLayout(); //!!!n_delete() conditions!
 
-	bool Init(const Data::CParams& Desc);
-	void Enable();
-	void Disable();
-	bool IsEnabled() const { return Enabled; }
-	void Reset();	// Reset all states
-
-	//!!!need R/O access to states to check them!
+	bool Initialize(const Data::CParams& Desc);
+	void Reset();
 };
 
 typedef Ptr<CControlLayout> PControlLayout;
