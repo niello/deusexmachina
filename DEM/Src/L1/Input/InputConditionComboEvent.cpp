@@ -45,28 +45,44 @@ void CInputConditionComboEvent::Reset()
 
 bool CInputConditionComboEvent::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	if (pState && !pState->IsOn()) FAIL;
+	if (pState)
+	{
+		pState->OnAxisMove(pDevice, Event);
+		if (!pState->IsOn()) FAIL;
+	}
 	return pEvent->OnAxisMove(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
-	if (pState && !pState->IsOn()) FAIL;
+	if (pState)
+	{
+		pState->OnButtonDown(pDevice, Event);
+		if (!pState->IsOn()) FAIL;
+	}
 	return pEvent->OnButtonDown(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
-	if (pState && !pState->IsOn()) FAIL;
+	if (pState)
+	{
+		pState->OnButtonUp(pDevice, Event);
+		if (!pState->IsOn()) FAIL;
+	}
 	return pEvent->OnButtonUp(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnTimeElapsed(float ElapsedTime)
 {
-	if (pState && !pState->IsOn()) FAIL;
+	if (pState)
+	{
+		pState->OnTimeElapsed(ElapsedTime);
+		if (!pState->IsOn()) FAIL;
+	}
 	return pEvent->OnTimeElapsed(ElapsedTime);
 }
 //---------------------------------------------------------------------

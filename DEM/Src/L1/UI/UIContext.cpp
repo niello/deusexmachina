@@ -123,6 +123,10 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 	{
 		case Event::OSInput::KeyDown:
 		{
+			//!!!FIXME!
+			// Ignore '`' key which is typically used for console
+			if (Ev.KeyboardInfo.Char == 96 || Ev.KeyboardInfo.Char == 1105) FAIL;
+
 			if (Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char)) OK;
 			return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
 		}

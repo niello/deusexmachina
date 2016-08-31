@@ -25,6 +25,7 @@ public:
 	CStrID			ID;		// Event ID (string like "OnItemPicked")
 	Data::PParams	Params;	// Event parameters
 
+	CEvent() {}
 	CEvent(CStrID _ID): ID(_ID) {}
 	CEvent(CStrID _ID, Data::PParams _Params = NULL): ID(_ID), Params(_Params) {}
 

@@ -29,8 +29,7 @@ private:
 	U8						PlayerUID;
 	CArray<CInputContext>	Contexts;
 	CArray<Events::PSub>	DeviceSubs;
-
-	//event queue: ID, possible axis amount value
+	CArray<Events::CEvent>	EventQueue;
 
 	void			Clear();
 
@@ -58,9 +57,10 @@ public:
 	void			ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void			DisconnectFromDevice(const IInputDevice* pDevice);
 
-	//FireQueuedEvents(/*max count*/)
-	//CheckState(CStrID State) // search in all active contexts, false of not found
-	//Reset(/*device type*/)
+	void			Trigger(float ElapsedTime);
+	void			FireQueuedEvents(/*max count*/);
+	bool			CheckState(CStrID StateID) const;
+	void			Reset(/*device type*/);
 };
 
 }

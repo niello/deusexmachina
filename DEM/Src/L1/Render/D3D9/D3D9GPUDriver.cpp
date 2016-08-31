@@ -19,6 +19,10 @@
 #include <IO/Stream.h>
 #include <System/OSWindow.h>
 #include <Core/Factory.h>
+#ifdef DEM_STATS
+#include <Core/CoreServer.h>
+#include <Data/StringUtils.h>
+#endif
 
 namespace Render
 {
@@ -1835,6 +1839,15 @@ void CD3D9GPUDriver::EndFrame()
 	n_verify(SUCCEEDED(pD3DDevice->EndScene()));
 	IsInsideFrame = false;
 
+#ifdef DEM_STATS
+	CString RTString;
+	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		if (CurrRT[i].IsValidPtr())
+			RTString += StringUtils::FromInt((int)CurrRT[i].GetUnsafe());
+	CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
+	CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+#endif
+
 	// It seems that pipeline fails to render depth pre-pass if current RT mismatches
 	// DS buffer, which may happen, for example, during a multi-window rendering
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
@@ -1847,9 +1860,6 @@ void CD3D9GPUDriver::EndFrame()
 //	CurrVLayout = NULL;
 //	CurrIB = NULL;
 //	//!!!UnbindD3D9Resources()
-//
-//	CoreSrv->SetGlobal<int>("Render_Prim", PrimsRendered);
-//	CoreSrv->SetGlobal<int>("Render_DIP", DIPsRendered);
 }
 //---------------------------------------------------------------------
 

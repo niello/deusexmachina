@@ -29,9 +29,9 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 {
 	CUIWindow::Init(pWindow);
 
-	pPatternEdit = (CEGUI::Editbox*)pWnd->getChild(pWnd->getName() + "/PatternEdit");
+	pPatternEdit = (CEGUI::Editbox*)pWnd->getChild("PatternEdit");
 
-	pList = (CEGUI::MultiColumnList*)pWnd->getChild(pWnd->getName() + "/List");
+	pList = (CEGUI::MultiColumnList*)pWnd->getChild("List");
 	pList->addColumn("Name", COL_NAME, CEGUI::UDim(0, 300));
 	pList->addColumn("Type", COL_TYPE, CEGUI::UDim(0, 100));
 	pList->addColumn("Value", COL_VALUE, CEGUI::UDim(0, 200));
@@ -39,22 +39,22 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 	pList->subscribeEvent(CEGUI::MultiColumnList::EventKeyDown,
 		CEGUI::Event::Subscriber(&CWatcherWindow::OnListKeyDown, this));
 
-	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild(pWnd->getName() + "/RBNEnv");
+	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild("RBNEnv");
 	pRBNEnv->setGroupID(0);
 
-	CEGUI::RadioButton* pRBLua = (CEGUI::RadioButton*)pWnd->getChild(pWnd->getName() + "/RBLua");
+	CEGUI::RadioButton* pRBLua = (CEGUI::RadioButton*)pWnd->getChild("RBLua");
 	pRBLua->setGroupID(0);
 
 	pRBNEnv->setSelected(true);
 
-	pNewWatchEdit = (CEGUI::Editbox*)pWnd->getChild(pWnd->getName() + "/NewWatchEdit");
+	pNewWatchEdit = (CEGUI::Editbox*)pWnd->getChild("NewWatchEdit");
 	pNewWatchEdit->subscribeEvent(CEGUI::Editbox::EventTextAccepted,
 		CEGUI::Event::Subscriber(&CWatcherWindow::OnNewWatchedAccept, this));
 
-	pWnd->getChild(pWnd->getName() + "/BtnClear")->subscribeEvent(CEGUI::PushButton::EventClicked,
+	pWnd->getChild("BtnClear")->subscribeEvent(CEGUI::PushButton::EventClicked,
 		CEGUI::Event::Subscriber(&CWatcherWindow::OnClearClick, this));
 
-	pWnd->getChild(pWnd->getName() + "/BtnAllVars")->subscribeEvent(CEGUI::PushButton::EventClicked,
+	pWnd->getChild("BtnAllVars")->subscribeEvent(CEGUI::PushButton::EventClicked,
 		CEGUI::Event::Subscriber(&CWatcherWindow::OnAddVarsClick, this));
 
 	if (IsVisible()) SUBSCRIBE_PEVENT(OnUIUpdate, CWatcherWindow, OnUIUpdate);
@@ -130,7 +130,7 @@ bool CWatcherWindow::OnNewWatchedAccept(const CEGUI::EventArgs& e)
 	const char* pName = pNewWatchEdit->getText().c_str();
 	if (!pName || !*pName) OK;
 
-	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild(pWnd->getName() + "/RBNEnv");
+	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild("RBNEnv");
 	AddWatched(pRBNEnv->isSelected() ? DEM : Lua, pName);
 
 	OK;

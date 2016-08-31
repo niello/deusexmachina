@@ -14,10 +14,8 @@ void CInputTranslator::Clear()
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 		if (Contexts[i].pLayout) n_delete(Contexts[i].pLayout);
 	Contexts.Clear();
-
 	DeviceSubs.Clear();
-
-	//!!!clear event queue!
+	EventQueue.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -103,6 +101,7 @@ void CInputTranslator::DisableContext(CStrID ID)
 		if (Contexts[i].ID == ID)
 		{
 			Contexts[i].Enabled = false;
+			Contexts[i].pLayout->Reset();
 			break;
 		}
 }
@@ -141,16 +140,34 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
 	const Event::AxisMove& Ev = (const Event::AxisMove&)Event;
 
-	//for each active context
-	//  for each mapping in a context
-	//    evaluate mapping condition
-	//    if true
-	//      fill output event with axis movement amount
-	//      //???apply axis inversion here? or device property?
-	//      queue output event and consume input event (break)
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		CInputContext& Ctx = Contexts[i];
+		if (!Ctx.Enabled) continue;
 
-	//!!!can also "queue" states for latter polling, like pInputTranslator->CheckState("CameraRotateV")!
-	//very simple to implement, difference is right here, fire event or store string -> bool (or axis amount) state
+		CControlLayout* pLayout = Ctx.pLayout;
+
+		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+			pLayout->States.ValueAt(StateIdx)->OnAxisMove(pDevice, Ev);
+
+		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		{
+			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+			if (EvRec.pEvent->OnAxisMove(pDevice, Ev))
+			{
+				Events::CEvent& NewEvent = *EventQueue.Add();
+				NewEvent.ID = EvRec.OutEventID;
+				NewEvent.Params = n_new(Data::CParams(2));
+				NewEvent.Params->Set<float>(CStrID("AmountRel"), Ev.AmountRel);
+				NewEvent.Params->Set<float>(CStrID("AmountAbs"), Ev.AmountAbs);
+
+				//!!!DBG TMP!
+				Sys::DbgOut("Translated:%s (%.4lf / %.1lf)\n", EvRec.OutEventID.CStr(), Ev.AmountRel, Ev.AmountAbs);
+
+				OK;
+			}
+		}
+	}
 
 	FAIL;
 }
@@ -161,10 +178,31 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
 	const Event::ButtonDown& Ev = (const Event::ButtonDown&)Event;
 
-	//for each active context
-	//  for each mapping in a context
-	//    evaluate mapping condition
-	//    if true queue output event and consume input event (break)
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		CInputContext& Ctx = Contexts[i];
+		if (!Ctx.Enabled) continue;
+
+		CControlLayout* pLayout = Ctx.pLayout;
+
+		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+			pLayout->States.ValueAt(StateIdx)->OnButtonDown(pDevice, Ev);
+
+		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		{
+			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+			if (EvRec.pEvent->OnButtonDown(pDevice, Ev))
+			{
+				Events::CEvent& NewEvent = *EventQueue.Add();
+				NewEvent.ID = EvRec.OutEventID;
+
+				//!!!DBG TMP!
+				Sys::DbgOut("Translated:%s\n", EvRec.OutEventID.CStr());
+
+				OK;
+			}
+		}
+	}
 
 	FAIL;
 }
@@ -175,12 +213,94 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
 	const Event::ButtonUp& Ev = (const Event::ButtonUp&)Event;
 
-	//for each active context
-	//  for each mapping in a context
-	//    evaluate mapping condition
-	//    if true queue output event and consume input event (break)
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		CInputContext& Ctx = Contexts[i];
+		if (!Ctx.Enabled) continue;
+
+		CControlLayout* pLayout = Ctx.pLayout;
+
+		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+			pLayout->States.ValueAt(StateIdx)->OnButtonUp(pDevice, Ev);
+
+		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		{
+			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+			if (EvRec.pEvent->OnButtonUp(pDevice, Ev))
+			{
+				Events::CEvent& NewEvent = *EventQueue.Add();
+				NewEvent.ID = EvRec.OutEventID;
+
+				//!!!DBG TMP!
+				Sys::DbgOut("Translated:%s\n", EvRec.OutEventID.CStr());
+
+				OK;
+			}
+		}
+	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CInputTranslator::Trigger(float ElapsedTime)
+{
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		CInputContext& Ctx = Contexts[i];
+		if (!Ctx.Enabled) continue;
+
+		CControlLayout* pLayout = Ctx.pLayout;
+
+		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+			pLayout->States.ValueAt(StateIdx)->OnTimeElapsed(ElapsedTime);
+
+		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		{
+			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+			if (EvRec.pEvent->OnTimeElapsed(ElapsedTime))
+			{
+				Events::CEvent& NewEvent = *EventQueue.Add();
+				NewEvent.ID = EvRec.OutEventID;
+
+				//!!!DBG TMP!
+				Sys::DbgOut("Translated:%s\n", EvRec.OutEventID.CStr());
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CInputTranslator::FireQueuedEvents(/*max count*/)
+{
+	for (UPTR i = 0; i < EventQueue.GetCount(); ++i)
+		FireEvent(EventQueue[i]);
+	EventQueue.Clear();
+}
+//---------------------------------------------------------------------
+
+bool CInputTranslator::CheckState(CStrID StateID) const
+{
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		CInputContext& Ctx = Contexts[i];
+		if (!Ctx.Enabled) continue;
+
+		const CDict<CStrID, CInputConditionState*>& States = Ctx.pLayout->States;
+
+		for (UPTR StateIdx = 0; StateIdx < States.GetCount(); ++StateIdx)
+			if (States.KeyAt(StateIdx) == StateID && States.ValueAt(StateIdx)->IsOn()) OK;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CInputTranslator::Reset(/*device type*/)
+{
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+		if (Contexts[i].Enabled)
+			Contexts[i].pLayout->Reset();
 }
 //---------------------------------------------------------------------
 

@@ -58,13 +58,13 @@ void CDebugServer::AllowUI(bool Allow)
 
 	if (UIAllowed)
 	{
-		SUBSCRIBE_PEVENT(ShowDebugConsole, CDebugServer, OnShowDebugConsole);
-		SUBSCRIBE_PEVENT(ShowDebugWatcher, CDebugServer, OnShowDebugWatcher);
+		//SUBSCRIBE_PEVENT(ShowDebugConsole, CDebugServer, OnShowDebugConsole);
+		//SUBSCRIBE_PEVENT(ShowDebugWatcher, CDebugServer, OnShowDebugWatcher);
 	}
 	else
 	{
-		UNSUBSCRIBE_EVENT(ShowDebugConsole);
-		UNSUBSCRIBE_EVENT(ShowDebugWatcher);
+		//UNSUBSCRIBE_EVENT(ShowDebugConsole);
+		//UNSUBSCRIBE_EVENT(ShowDebugWatcher);
 
 		for (UPTR i = 0; i < Plugins.GetCount(); ++i)
 			if (Plugins.ValueAt(i).UIResource.IsValid())
@@ -78,20 +78,6 @@ bool CDebugServer::OnDebugBreak(Events::CEventDispatcher* pDispatcher, const Eve
 #ifdef _DEBUG
 	__debugbreak();
 #endif
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CDebugServer::OnShowDebugConsole(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	TogglePluginWindow(CStrID("Console"));
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CDebugServer::OnShowDebugWatcher(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	TogglePluginWindow(CStrID("Watcher"));
 	OK;
 }
 //---------------------------------------------------------------------

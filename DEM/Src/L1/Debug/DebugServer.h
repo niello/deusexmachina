@@ -30,10 +30,6 @@ private:
 	bool					UIAllowed;
 	CDict<CStrID, CPlugin>	Plugins;
 
-	void TogglePluginWindow(CStrID Name);
-
-	DECLARE_EVENT_HANDLER(ShowDebugConsole, OnShowDebugConsole);
-	DECLARE_EVENT_HANDLER(ShowDebugWatcher, OnShowDebugWatcher);
 	DECLARE_EVENT_HANDLER(DebugBreak, OnDebugBreak);
 
 public:
@@ -44,6 +40,7 @@ public:
 	bool RegisterPlugin(CStrID Name, const char* CppClassName, const char* UIResource);
 	void AllowUI(bool Allow);
 	void Trigger();
+	void TogglePluginWindow(CStrID Name);
 };
 
 }

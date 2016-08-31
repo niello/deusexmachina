@@ -17,8 +17,11 @@
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/OSWindow.h>
-#include <Data/StringID.h>
 #include <Core/Factory.h>
+#ifdef DEM_STATS
+#include <Core/CoreServer.h>
+#include <Data/StringUtils.h>
+#endif
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
@@ -996,6 +999,15 @@ bool CD3D11GPUDriver::BeginFrame()
 
 void CD3D11GPUDriver::EndFrame()
 {
+#ifdef DEM_STATS
+	CString RTString;
+	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
+		if (CurrRT[i].IsValidPtr())
+			RTString += StringUtils::FromInt((int)CurrRT[i].GetUnsafe());
+	CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
+	CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+#endif
+
 	/*
 	//!!!may clear render targets in RP phases, this is not a solution!
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
