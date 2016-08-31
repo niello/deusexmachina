@@ -461,7 +461,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				Ev.Type = Event::OSInput::MouseMoveRaw;
 				Ev.MouseInfo.x = Data.data.mouse.lLastX;
 				Ev.MouseInfo.y = Data.data.mouse.lLastY;
-				FireEvent(Ev);
+				FireEvent(Ev, Events::Event_TermOnHandled);
 			}
 
 			::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
@@ -548,7 +548,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
 			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			FireEvent(Ev);
+			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
 		}
 
@@ -558,7 +558,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			Ev.Type = Event::OSInput::MouseMove;
 			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
 			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			FireEvent(Ev);
+			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
 		}
 
@@ -568,7 +568,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			Event::OSInput Ev;
 			Ev.Type = (uMsg == WM_MOUSEWHEEL) ? Event::OSInput::MouseWheelVertical : Event::OSInput::MouseWheelHorizontal;
 			Ev.WheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-			FireEvent(Ev);
+			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
 		}
 	}

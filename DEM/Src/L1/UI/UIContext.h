@@ -36,8 +36,6 @@ public:
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
 	void				UnsubscribeFromInput();
 
-	//!!!GetCursorPosition()!
-
 	void				SetRootWindow(CUIWindow* pWindow);
 	CUIWindow*			GetRootWindow() const { return RootWindow.GetUnsafe(); }
 	void				ShowGUI();
@@ -45,6 +43,8 @@ public:
 	void				ShowMouseCursor();
 	void				HideMouseCursor();
 	void				SetDefaultMouseCursor(const char* pImageName); //???also add SetMouseCursor?
+	bool				GetCursorPosition(float& X, float& Y) const;
+	bool				GetCursorPositionRel(float& X, float& Y) const;
 	bool				IsGUIVisible() const;
 	bool				IsMouseCursorVisible() const;
 	bool				IsMouseOverGUI() const;

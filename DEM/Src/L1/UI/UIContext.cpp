@@ -106,6 +106,33 @@ void CUIContext::SetDefaultMouseCursor(const char* pImageName)
 }
 //---------------------------------------------------------------------
 
+bool CUIContext::GetCursorPosition(float& X, float& Y) const
+{
+	if (pCtx)
+	{
+		CEGUI::Vector2f CursorPos = pCtx->getMouseCursor().getPosition();
+		X = CursorPos.d_x;
+		Y = CursorPos.d_y;
+		OK;
+	}
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::GetCursorPositionRel(float& X, float& Y) const
+{
+	if (pCtx)
+	{
+		CEGUI::Sizef CtxSize = pCtx->getRootWindow()->getPixelSize();
+		CEGUI::Vector2f CursorPos = pCtx->getMouseCursor().getPosition();
+		X = CursorPos.d_x / CtxSize.d_width;
+		Y = CursorPos.d_y / CtxSize.d_height;
+		OK;
+	}
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 //???does work in all cases?
 bool CUIContext::IsMouseOverGUI() const
 {
@@ -125,7 +152,7 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 		{
 			//!!!FIXME!
 			// Ignore '`' key which is typically used for console
-			if (Ev.KeyboardInfo.Char == 96 || Ev.KeyboardInfo.Char == 1105) FAIL;
+			if (Ev.KeyboardInfo.ScanCode == 0x29) FAIL;
 
 			if (Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char)) OK;
 			return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
