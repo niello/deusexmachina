@@ -205,7 +205,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 	float* pLODMorphConsts = Args.pMorphConsts + 2 * LOD;
 
-	if (ChildFlags & Child_All)
+	if (ChildFlags == Child_All)
 	{
 		// Add whole patch
 		n_assert(PatchCount + QPatchCount < Args.MaxInstanceCount);
@@ -604,9 +604,6 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		if (QuarterPatchCount)
 		{
-			//!!!THIS CODE NEEDS TESTING!
-			n_assert(false);
-
 			if (pConstGridConsts)
 			{
 				float GridConsts[2];

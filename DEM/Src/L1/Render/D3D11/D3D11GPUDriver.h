@@ -108,8 +108,15 @@ protected:
 	static const UPTR					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11ConstantBuffer>	CurrCB;
 	CFixedArray<PD3D11Sampler>			CurrSS;
-	CDict<UPTR, ID3D11ShaderResourceView*>	CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
-//!!!ID3D11ShaderResourceView* or PObject!
+
+	struct CSRVRecord
+	{
+		ID3D11ShaderResourceView*	pSRV;
+		PD3D11ConstantBuffer		CB;		// NULL if SRV is not a buffer //???or store PObject - SRV source?
+	};
+
+	CDict<UPTR, CSRVRecord>				CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
+
 	UPTR								MaxSRVSlotIndex;
 
 	CArray<CD3D11SwapChain>				SwapChains;
@@ -133,6 +140,7 @@ protected:
 	CDict<UPTR, CTmpCB*>				TmpConstantBuffers;	// Key is a size (pow2), value is a linked list
 	CDict<UPTR, CTmpCB*>				TmpTextureBuffers;	// Key is a size (pow2), value is a linked list
 	CDict<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list
+	CTmpCB*								pPendingCBHead;
 
 	CD3D11GPUDriver();
 
@@ -143,7 +151,7 @@ protected:
 
 	bool								InitSwapChainRenderTarget(CD3D11SwapChain& SC);
 	void								Release();
-	PConstantBuffer						InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData);
+	PD3D11ConstantBuffer				InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData);
 	bool								InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instanced, UPTR InstanceCount);
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
@@ -160,7 +168,8 @@ protected:
 	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, UPTR Size, UPTR Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
-	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV); //!!!ID3D11ShaderResourceView* or PObject!
+	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);
+	bool								IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage = ShaderType_Invalid, UPTR ExceptSlot = 0);
 
 	friend class CD3D11DriverFactory;
 
@@ -264,6 +273,7 @@ inline CD3D11GPUDriver::CD3D11GPUDriver():
 	CurrPT(Prim_Invalid),
 	CurrVP(NULL),
 	CurrSR(NULL),
+	pPendingCBHead(NULL),
 	CurrSRV(16, 16),
 	MaxSRVSlotIndex(0),
 	RenderStates(32, 32),

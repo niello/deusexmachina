@@ -829,9 +829,10 @@ bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 bool CD3D11GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex)
 {
 	if (Index >= CurrVB.GetCount()) FAIL;
-	if (CurrVB[Index].GetUnsafe() == pVB) OK;
+	UPTR Offset = pVB ? OffsetVertex * pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
+	if (CurrVB[Index].GetUnsafe() == pVB && CurrVBOffset[Index] == Offset) OK;
 	CurrVB[Index] = (CD3D11VertexBuffer*)pVB;
-	CurrVBOffset[Index] = pVB ? OffsetVertex * pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
+	CurrVBOffset[Index] = Offset;
 	CurrDirtyFlags.Set(GPU_Dirty_VB);
 	OK;
 }
@@ -895,7 +896,7 @@ CDepthStencilBuffer* CD3D11GPUDriver::GetDepthStencilBuffer() const
 //---------------------------------------------------------------------
 
 //!!!ID3D11ShaderResourceView* or PObject!
-bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV)
+bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB)
 {
 	if (!pSRV || SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
 
@@ -905,15 +906,18 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	IPTR DictIdx = CurrSRV.FindIndex(SlotIndex);
 	if (DictIdx != INVALID_INDEX)
 	{
-		ID3D11ShaderResourceView*& pCurrSRV = CurrSRV.ValueAt(DictIdx);
-		if (pCurrSRV == pSRV) OK;
-		pCurrSRV = pSRV;
+		CSRVRecord& SRVRec = CurrSRV.ValueAt(DictIdx);
+		if (SRVRec.pSRV == pSRV) OK;
+		SRVRec.pSRV = pSRV;
+		SRVRec.CB = pCB;
 	}
 	else
 	{
 		// Conflicts with CurrSRV.FindIndex()
 		//if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
-		CurrSRV.Add(SlotIndex, pSRV);
+		CSRVRecord& SRVRec = CurrSRV.Add(SlotIndex);
+		SRVRec.pSRV = pSRV;
+		SRVRec.CB = pCB;
 	}
 
 	CurrDirtyFlags.Set(GPU_Dirty_SRV);
@@ -929,6 +933,54 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 	if (!pMeta) FAIL;
 
 	UPTR Index = pMeta->Register;
+
+	const CD3D11ConstantBuffer* pCurrBuffer;	
+	if (pMeta->Type == USMBuffer_Constant)
+		pCurrBuffer = CurrCB[Index + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT].GetUnsafe();
+	else
+	{
+		IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
+		pCurrBuffer = (DictIdx == INVALID_INDEX) ? NULL : CurrSRV.ValueAt(DictIdx).CB.GetUnsafe();
+	}
+
+	// Free temporary buffer, if not bound to other stages
+	if (pPendingCBHead && pCurrBuffer && pCurrBuffer->IsTemporary() && !IsConstantBufferBound(pCurrBuffer, ShaderType, Index))
+	{
+		EUSMBufferType Type = pCurrBuffer->GetType();
+		CDict<UPTR, CTmpCB*>& BufferPool = 
+			Type == USMBuffer_Structured ? TmpStructuredBuffers :
+			(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+
+		CTmpCB* pPrevNode = NULL;
+		CTmpCB* pCurrNode = pPendingCBHead;
+		while (pCurrNode)
+		{
+			if (pCurrNode->CB == pCurrBuffer)
+			{
+				if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
+				else pPendingCBHead = pCurrNode->pNext;
+
+				UPTR BufferSize = pCurrBuffer->GetSizeInBytes();
+#ifdef _DEBUG
+				n_assert(BufferSize == NextPow2(pCurrBuffer->GetSizeInBytes()));
+#endif
+				IPTR Idx = BufferPool.FindIndex(BufferSize);
+				if (Idx != INVALID_INDEX)
+				{
+					pCurrNode->pNext = BufferPool.ValueAt(Idx);
+					BufferPool.ValueAt(Idx) = pCurrNode;
+				}
+				else
+				{
+					pCurrNode->pNext = NULL;
+					BufferPool.Add(BufferSize, pCurrNode);
+				}
+				break;
+			}
+			pPrevNode = pCurrNode;
+			pCurrNode = pCurrNode->pNext;
+		}
+	}
 
 	if (pMeta->Type == USMBuffer_Constant)
 	{
@@ -947,7 +999,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 	else
 	{
 		ID3D11ShaderResourceView* pSRV = pCBuffer ? ((CD3D11ConstantBuffer*)pCBuffer)->GetD3DSRView() : NULL;
-		return BindSRV(ShaderType, pMeta->Register, pSRV);
+		return BindSRV(ShaderType, pMeta->Register, pSRV, (CD3D11ConstantBuffer*)pCBuffer);
 	}
 }
 //---------------------------------------------------------------------
@@ -960,7 +1012,7 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 	if (!pMeta) FAIL;
 
 	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : NULL;
-	return BindSRV(ShaderType, pMeta->RegisterStart, pSRV);
+	return BindSRV(ShaderType, pMeta->RegisterStart, pSRV, NULL);
 }
 //---------------------------------------------------------------------
 
@@ -1350,9 +1402,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 				if (SkipShaderType) continue;
 
-				//const CD3D11Texture* pTex = CurrSRV.ValueAt(i).GetUnsafe();
-				//ppSRV[SRVSlot] = pTex ? pTex->GetD3DSRView() : NULL;
-				ppSRV[SRVSlot] = CurrSRV.ValueAt(i);
+				ppSRV[SRVSlot] = CurrSRV.ValueAt(i).pSRV;
 				CurrSRVSlot = SRVSlot;
 			}
 
@@ -1692,7 +1742,7 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 
 //!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
-PConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData)
+PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1769,7 +1819,7 @@ PConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMeta* pM
 		if (!CB->CreateRAMCopy()) return NULL;
 	}
 
-	return CB.GetUnsafe();
+	return CB;
 }
 //---------------------------------------------------------------------
 
@@ -1780,7 +1830,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
 	if (!pMeta) return NULL;
-	return InternalCreateConstantBuffer(pMeta, AccessFlags, pData);
+	return InternalCreateConstantBuffer(pMeta, AccessFlags, pData).GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -1812,7 +1862,9 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuf
 
 	CUSMBufferMeta Meta = *pMeta;
 	Meta.Size = NextPow2Size;
-	return InternalCreateConstantBuffer(&Meta, Access_CPU_Write | Access_GPU_Read, NULL);
+	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(&Meta, Access_CPU_Write | Access_GPU_Read, NULL);
+	CB->SetTemporary(true);
+	return CB.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
@@ -1828,21 +1880,72 @@ void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	CTmpCB* pNewNode = TmpCBPool.Construct();
 	pNewNode->CB = &CB11;
 
-	EUSMBufferType Type = CB11.GetType();
-	CDict<UPTR, CTmpCB*>& BufferPool = 
-		Type == USMBuffer_Structured ? TmpStructuredBuffers :
-		(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
-	IPTR Idx = BufferPool.FindIndex(BufferSize);
-	if (Idx != INVALID_INDEX)
+	if (IsConstantBufferBound(&CB11))
 	{
-		pNewNode->pNext = BufferPool.ValueAt(Idx);
-		BufferPool.ValueAt(Idx) = pNewNode;
+		pNewNode->pNext = pPendingCBHead;
+		pPendingCBHead = pNewNode;
 	}
 	else
 	{
-		pNewNode->pNext = NULL;
-		BufferPool.Add(BufferSize, pNewNode);
+		EUSMBufferType Type = CB11.GetType();
+		CDict<UPTR, CTmpCB*>& BufferPool = 
+			Type == USMBuffer_Structured ? TmpStructuredBuffers :
+			(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+		IPTR Idx = BufferPool.FindIndex(BufferSize);
+		if (Idx != INVALID_INDEX)
+		{
+			pNewNode->pNext = BufferPool.ValueAt(Idx);
+			BufferPool.ValueAt(Idx) = pNewNode;
+		}
+		else
+		{
+			pNewNode->pNext = NULL;
+			BufferPool.Add(BufferSize, pNewNode);
+		}
 	}
+}
+//---------------------------------------------------------------------
+
+bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage, UPTR ExceptSlot)
+{
+	if (!pCBuffer) FAIL;
+
+	if (pCBuffer->GetType() == USMBuffer_Constant)
+	{
+		if (ExceptStage == ShaderType_Invalid)
+		{
+			for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+				if (CurrCB[i].GetUnsafe() == pCBuffer) OK;
+		}
+		else
+		{
+			UPTR ExceptIndex = ExceptSlot + ((UPTR)ExceptStage) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
+			for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
+			{
+				if (i == ExceptIndex) continue;
+				if (CurrCB[i].GetUnsafe() == pCBuffer) OK;
+			}
+		}
+	}
+	else
+	{
+		if (ExceptStage == ShaderType_Invalid)
+		{
+			for (UPTR i = 0; i < CurrSRV.GetCount(); ++i)
+				if (CurrSRV.ValueAt(i).CB.GetUnsafe() == pCBuffer) OK;
+		}
+		else
+		{
+			UPTR ExceptIndex = ExceptSlot | (ExceptStage << 16);
+			for (UPTR i = 0; i < CurrSRV.GetCount(); ++i)
+			{
+				if (CurrSRV.KeyAt(i) == ExceptIndex) continue;
+				if (CurrSRV.ValueAt(i).CB.GetUnsafe() == pCBuffer) OK;
+			}
+		}
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

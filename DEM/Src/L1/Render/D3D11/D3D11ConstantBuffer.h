@@ -40,12 +40,13 @@ protected:
 	D3D11_USAGE					D3DUsage;
 	Data::CFlags				Flags;
 	UPTR						SizeInBytes;
+	bool						Temporary;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D11ConstantBuffer(): pBuffer(NULL), pSRView(NULL), pMapped(NULL) {}
+	CD3D11ConstantBuffer(): pBuffer(NULL), pSRView(NULL), pMapped(NULL), Temporary(false) {}
 	virtual ~CD3D11ConstantBuffer() { InternalDestroy(); }
 
 	bool						Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV);
@@ -73,9 +74,11 @@ public:
 	EUSMBufferType				GetType() const { return Type; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
+	bool						IsTemporary() const { return Temporary; }
 
 	void						OnBegin(void* pMappedVRAM = NULL);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver
+	void						SetTemporary(bool TmpBuffer) { Temporary = TmpBuffer; }	// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
