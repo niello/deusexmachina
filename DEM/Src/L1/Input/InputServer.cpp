@@ -52,8 +52,8 @@ void CInputServer::Close()
 	UNSUBSCRIBE_EVENT(OnKillFocus);
 
 	//UnsubscribeAll();
-	Contexts.Clear();
-	Layouts.Clear();
+	//Contexts.Clear();
+	//Layouts.Clear();
 
 	_IsOpen = false;
 }
@@ -63,9 +63,9 @@ void CInputServer::Trigger()
 {
 	n_assert(_IsOpen);
 
-	for (int i = 0; i < KeyCount; ++i)
-		if (KeyState[i] & KEY_IS_UP) KeyState[i] &= ~(KEY_IS_DOWN | KEY_IS_UP | KEY_IS_PRESSED);
-		else KeyState[i] &= ~KEY_IS_DOWN;
+	//for (int i = 0; i < KeyCount; ++i)
+	//	if (KeyState[i] & KEY_IS_UP) KeyState[i] &= ~(KEY_IS_DOWN | KEY_IS_UP | KEY_IS_PRESSED);
+	//	else KeyState[i] &= ~KEY_IS_DOWN;
 
 	CharCount = 0;
 
@@ -84,22 +84,24 @@ void CInputServer::Trigger()
 
 CControlLayout* CInputServer::GetControlLayout(CStrID Name)
 {
-	IPTR Idx = Layouts.FindIndex(Name);
-	if (Idx == INVALID_INDEX) return LoadControlLayout(Name);
-	else return Layouts.ValueAt(Idx);
+	//IPTR Idx = Layouts.FindIndex(Name);
+	//if (Idx == INVALID_INDEX) return LoadControlLayout(Name);
+	//else return Layouts.ValueAt(Idx);
+	return NULL;
 }
 //---------------------------------------------------------------------
 
 CControlLayout* CInputServer::LoadControlLayout(CStrID Name)
 {
-	Data::PParams Desc = DataSrv->LoadPRM("Input:Layouts.prm");
-	if (Desc.IsNullPtr()) return NULL;
-	Desc = Desc->Get<Data::PParams>(Name);
-	if (Desc.IsNullPtr()) return NULL;
-	PControlLayout New = n_new(CControlLayout);
-	if (!New->Initialize(*Desc.GetUnsafe())) return NULL;
-	Layouts.Add(Name, New);
-	return New.GetUnsafe();
+	//Data::PParams Desc = DataSrv->LoadPRM("Input:Layouts.prm");
+	//if (Desc.IsNullPtr()) return NULL;
+	//Desc = Desc->Get<Data::PParams>(Name);
+	//if (Desc.IsNullPtr()) return NULL;
+	//PControlLayout New = n_new(CControlLayout);
+	//if (!New->Initialize(*Desc.GetUnsafe())) return NULL;
+	//Layouts.Add(Name, New);
+	//return New.GetUnsafe();
+	return NULL;
 }
 //---------------------------------------------------------------------
 
@@ -131,8 +133,9 @@ bool CInputServer::SetContextLayout(CStrID Context, CStrID Layout)
 
 CControlLayout* CInputServer::GetContextLayout(CStrID Context) const
 {
-	PControlLayout* ppCtx = Contexts.Get(Context);
-	return (ppCtx) ? *ppCtx : NULL;
+	//PControlLayout* ppCtx = Contexts.Get(Context);
+	//return (ppCtx) ? *ppCtx : NULL;
+	return NULL;
 }
 //---------------------------------------------------------------------
 
@@ -167,8 +170,8 @@ bool CInputServer::IsContextEnabled(CStrID Context) const
 
 void CInputServer::Reset()
 {
-	for (int i = 0; i < KeyCount; ++i)
-		KeyState[i] = (KeyState[i] & KEY_IS_PRESSED) ? KEY_IS_UP : 0;
+	//for (int i = 0; i < KeyCount; ++i)
+	//	KeyState[i] = (KeyState[i] & KEY_IS_PRESSED) ? KEY_IS_UP : 0;
 
 	CharCount = 0;
 

@@ -17,8 +17,6 @@ private:
 
 public:
 
-	static const U8 InvalidCode = 0xff;
-
 	virtual EDeviceType	GetType() const = 0;
 	virtual U8			GetAxisCount() const = 0;
 	//virtual U8			GetAxisCode(const char* pAlias) const = 0;

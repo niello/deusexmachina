@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_INPUT_TRANSLATOR_H__
 #define __DEM_L1_INPUT_TRANSLATOR_H__
 
-#include <Events/Subscription.h>
+#include <Events/EventDispatcher.h>
 #include <Data/StringID.h>
 #include <Data/Array.h>
 
@@ -13,36 +13,50 @@
 namespace Input
 {
 class IInputDevice;
+class CControlLayout;
 
-class CInputTranslator
+class CInputTranslator: public Events::CEventDispatcher
 {
 private:
 
+	struct CInputContext
+	{
+		CStrID			ID;
+		CControlLayout*	pLayout;
+		bool			Enabled;
+	};
+
 	U8						PlayerUID;
+	CArray<CInputContext>	Contexts;
+	CArray<Events::PSub>	DeviceSubs;
 
-	CArray<Events::PSub>	Subscriptions;
+	//event queue: ID, possible axis amount value
 
-	//context: ID, enabled, layout
-	//layout: array of virtual mappings (event, state, range and any other), can be loaded and saved
-	//mapping: processes an event, returns if it was consumed, fires event (or fills state?)
+	void			Clear();
 
-	bool	OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool	OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool	OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 public:
 
-	CInputTranslator(U8 PlayerID): PlayerUID(PlayerID) {}
+	CInputTranslator(U8 PlayerID): PlayerUID(PlayerID) { Contexts.SetKeepOrder(true); }
+	~CInputTranslator() { Clear(); }
 
-	//SetContextLayout(CStrID ID, control layout source);
-	void	EnableContext(CStrID ID);
-	void	DisableContext(CStrID ID);
-	void	EnableAllContexts();
-	void	DisableAllContexts();
-	bool	IsContextEnabled(CStrID ID) const;
+	bool			LoadSettings(const Data::CParams& Desc);
+	bool			SaveSettings(Data::CParams& OutDesc) const;
 
-	void	ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
-	void	DisconnectFromDevice(const IInputDevice* pDevice);
+	bool			CreateContext(CStrID ID);
+	void			DestroyContext(CStrID ID);
+	CControlLayout*	GetContextLayout(CStrID ID);	// Intentionally editable
+	void			EnableContext(CStrID ID);
+	void			DisableContext(CStrID ID);
+	void			EnableAllContexts();
+	void			DisableAllContexts();
+	bool			IsContextEnabled(CStrID ID) const;
+
+	void			ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
+	void			DisconnectFromDevice(const IInputDevice* pDevice);
 
 	//FireQueuedEvents(/*max count*/)
 	//CheckState(CStrID State) // search in all active contexts, false of not found

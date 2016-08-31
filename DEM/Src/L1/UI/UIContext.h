@@ -36,6 +36,8 @@ public:
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
 	void				UnsubscribeFromInput();
 
+	//!!!GetCursorPosition()!
+
 	void				SetRootWindow(CUIWindow* pWindow);
 	CUIWindow*			GetRootWindow() const { return RootWindow.GetUnsafe(); }
 	void				ShowGUI();

@@ -11,7 +11,11 @@ __ImplementClass(Input::CInputConditionUp, 'ICUP', Input::CInputConditionEvent);
 bool CInputConditionUp::Initialize(const Data::CParams& Desc)
 {
 	DeviceType = StringToDeviceType(Desc.Get<CString>(CStrID("Device"), CString::Empty));
-	Button = StringToMouseButton(Desc.Get<CString>(CStrID("Button"), CString::Empty));
+
+	const Data::CData& ButtonData = Desc.Get(CStrID("Button")).GetRawValue();
+	if (ButtonData.IsA<int>()) Button = (U8)ButtonData.GetValue<int>();
+	else if (ButtonData.IsA<CString>()) Button = StringToButton(DeviceType, ButtonData.GetValue<CString>());
+
 	OK;
 }
 //---------------------------------------------------------------------

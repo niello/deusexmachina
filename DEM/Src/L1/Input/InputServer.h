@@ -62,7 +62,7 @@ private:
 
 	bool	_IsOpen;
 
-	U8		KeyState[KeyCount];
+	U8		KeyState[1024]; //KeyCount];
 	U16		Chars[CharBufferSize];
 	int		CharCount;
 
@@ -76,8 +76,8 @@ private:
 	float	MouseXRel;
 	float	MouseYRel;
 
-	CDict<CStrID, PControlLayout>	Layouts;
-	CDict<CStrID, PControlLayout>	Contexts;
+	//CDict<CStrID, PControlLayout>	Layouts;
+	//CDict<CStrID, PControlLayout>	Contexts;
 
 	//!!!save & load mappings for profile!
 

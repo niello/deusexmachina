@@ -12,7 +12,11 @@ bool CInputConditionPressed::Initialize(const Data::CParams& Desc)
 {
 	On = false;
 	DeviceType = StringToDeviceType(Desc.Get<CString>(CStrID("Device"), CString::Empty));
-	Button = StringToMouseButton(Desc.Get<CString>(CStrID("Button"), CString::Empty));
+
+	const Data::CData& ButtonData = Desc.Get(CStrID("Button")).GetRawValue();
+	if (ButtonData.IsA<int>()) Button = (U8)ButtonData.GetValue<int>();
+	else if (ButtonData.IsA<CString>()) Button = StringToButton(DeviceType, ButtonData.GetValue<CString>());
+
 	OK;
 }
 //---------------------------------------------------------------------

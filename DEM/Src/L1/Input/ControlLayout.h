@@ -7,28 +7,37 @@
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
 
-// Control layout is a set of mappings, each of which translates input
-// into abstract events and states.
+// Control layout is a set of mappings that generate events or switch states
+// in response to incoming input events.
+
+namespace Data
+{
+	class CDataArray;
+}
 
 namespace Input
 {
 
-class CControlLayout: public Core::CObject
+class CControlLayout
 {
-private:
-
-	CArray<CInputConditionEvent*>			Events; //???event IDs inside? processing order is important
-	CDict<CStrID, CInputConditionState*>	States;	// Order is not important
-
 public:
 
-	~CControlLayout(); //!!!n_delete() conditions!
+	struct CEventRecord
+	{
+		CStrID					OutEventID;
+		CInputConditionEvent*	pEvent;
+	};
 
-	bool Initialize(const Data::CParams& Desc);
+	CArray<CEventRecord>					Events; // Order is important, so we don't use dictionary
+	CDict<CStrID, CInputConditionState*>	States;	// Order is not important
+
+	CControlLayout() { Events.SetKeepOrder(true); }
+	~CControlLayout() { Clear(); }
+
+	bool Initialize(const Data::CDataArray& Desc);
+	void Clear();
 	void Reset();
 };
-
-typedef Ptr<CControlLayout> PControlLayout;
 
 }
 

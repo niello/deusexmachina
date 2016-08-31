@@ -128,19 +128,8 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 		}
 
 		case Event::OSInput::KeyUp:
-		{
-			if (pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode)) OK;
+			return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
 
-			//!!!DBG TMP!
-			if (Ev.KeyboardInfo.ScanCode == 0x29) // ~
-			{
-				EventSrv->FireEvent(CStrID("ShowDebugConsole"));
-				OK;
-			}
-			FAIL;
-		}
-
-		//!!!generates mouse move internally!
 		case Event::OSInput::MouseMove:
 			return pCtx->injectMousePosition((float)Ev.MouseInfo.x, (float)Ev.MouseInfo.y);
 
