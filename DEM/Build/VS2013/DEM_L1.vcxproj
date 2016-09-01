@@ -211,6 +211,7 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPathLoaderRP.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhase.h" />
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGeometry.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGlobalSetup.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.h" />
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrSkin.h" />
     <ClInclude Include="..\..\Src\L1\Frame\SceneNodeValidateResources.h" />
@@ -348,6 +349,7 @@
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\DEMViewportTarget.h" />
     <ClInclude Include="..\..\Src\L1\UI\RenderPhaseGUI.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIContext.h" />
+    <ClInclude Include="..\..\Src\L1\UI\UIFwd.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIServer.h" />
     <ClInclude Include="..\..\Src\L1\UI\UIWindow.h" />
     <ClInclude Include="..\..\Src\L1\UI\CEGUI\FmtLbTextItem.h" />
@@ -486,6 +488,7 @@
     <ClCompile Include="..\..\Src\L1\Frame\RenderPathLoaderRP.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhase.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGeometry.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGlobalSetup.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeUpdateInSPS.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrSkin.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\SceneNodeValidateResources.cpp" />

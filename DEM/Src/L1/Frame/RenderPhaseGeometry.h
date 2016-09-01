@@ -35,7 +35,7 @@ public:
 
 	//virtual ~CRenderPhaseGeometry() {}
 
-	virtual bool Init(CStrID PhaseName, const Data::CParams& Desc);
+	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc);
 	virtual bool Render(CView& View);
 };
 

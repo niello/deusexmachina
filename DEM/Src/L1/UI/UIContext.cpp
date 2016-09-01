@@ -24,7 +24,7 @@ void CUIContext::Init(CEGUI::GUIContext* pContext)
 }
 //---------------------------------------------------------------------
 
-bool CUIContext::Render(float Left, float Top, float Right, float Bottom)
+bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom)
 {
 	if (!pCtx) FAIL;
 	CEGUI::Renderer* pRenderer = CEGUI::System::getSingleton().getRenderer();
@@ -35,7 +35,7 @@ bool CUIContext::Render(float Left, float Top, float Right, float Bottom)
 		pCtx->getRenderTarget().setArea(ViewportArea);
 
 	pRenderer->beginRendering();
-	pCtx->draw();
+	pCtx->draw();//((CEGUI::uint32)Mode) | CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
 	pRenderer->endRendering();
 
 	OK;

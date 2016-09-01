@@ -31,7 +31,7 @@ public:
 	//CEGUI::GUIContext*	GetCEGUIContext() const { return pCtx; }
 
 	// Pass absolute viewport coordinates here
-	bool				Render(float Left, float Top, float Right, float Bottom);
+	bool				Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom);
 
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
 	void				UnsubscribeFromInput();

@@ -12,12 +12,21 @@ void CUIWindow::Init(CEGUI::Window* pWindow)
 {
 	n_assert(!pWnd && pWindow);
 	pWnd = pWindow;
+
+	// Set the window transparent by default, it guarantees correct rendering
+	//if (pWnd) pWnd->setDrawMode(((U32)DrawMode_Transparent) | CEGUI::Window::DrawModeFlagWindowRegular);
 }
 //---------------------------------------------------------------------
 
 void CUIWindow::Load(const char* pResourceFile)
 {
 	Init(CEGUI::WindowManager::getSingleton().loadLayoutFromFile(pResourceFile));
+}
+//---------------------------------------------------------------------
+
+void CUIWindow::SetDrawMode(EDrawMode Mode)
+{
+	if (pWnd) pWnd->setDrawMode(((U32)Mode) | CEGUI::Window::DrawModeFlagWindowRegular);
 }
 //---------------------------------------------------------------------
 

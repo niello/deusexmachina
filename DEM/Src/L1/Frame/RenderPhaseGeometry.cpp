@@ -1,6 +1,7 @@
 #include "RenderPhaseGeometry.h"
 
 #include <Frame/View.h>
+#include <Frame/RenderPath.h>
 #include <Frame/NodeAttrCamera.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrSkin.h>
@@ -66,6 +67,38 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
 	if (!VisibleObjects.GetCount()) OK;
+
+//////////////////////////////////////////////////////////////
+	// Global params
+	//???move to a separate phase? user then may implement it using knowledge about its global shader params.
+	//as RP is not overridable, it is not a good place to reference global param names
+	//some Globals phase with an association Const -> Shader param name
+	//then find const Render::CEffectConstant* for each used const by name
+
+	//!!!to a separate phase, because it must not be set twice in a frame!
+
+	//!!!set only when changed, rebind always, if !bound (checked in GPU)!
+	if (View.GetCamera())
+	{
+		//!!!in a separate virtual phase can find once on init!
+		const Render::CEffectConstant* pConstViewProj = View.GetRenderPath()->GetGlobalConstant(CStrID("ViewProj"));
+		if (pConstViewProj)
+		{
+			const matrix44& ViewProj = View.GetCamera()->GetViewProjMatrix();
+			View.Globals.SetConstantValue(pConstViewProj, 0, ViewProj.m, sizeof(matrix44));
+		}
+
+		//!!!in a separate virtual phase can find once on init!
+		const Render::CEffectConstant* pConstEyePos = View.GetRenderPath()->GetGlobalConstant(CStrID("EyePos"));
+		if (pConstEyePos)
+		{
+			const vector3& EyePos = View.GetCamera()->GetPosition();
+			View.Globals.SetConstantValue(pConstEyePos, 0, EyePos.v, sizeof(vector3));
+		}
+	}
+
+	View.Globals.ApplyConstantBuffers();
+//////////////////////////////////////////////////////////////
 
 	const vector3& CameraPos = View.GetCamera()->GetPosition();
 	const bool CalcScreenSize = View.RequiresScreenSize();
@@ -187,9 +220,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 }
 //---------------------------------------------------------------------
 
-bool CRenderPhaseGeometry::Init(CStrID PhaseName, const Data::CParams& Desc)
+bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc)
 {
-	if (!CRenderPhase::Init(PhaseName, Desc)) FAIL;
+	if (!CRenderPhase::Init(Owner, PhaseName, Desc)) FAIL;
 
 	CString SortStr = Desc.Get<CString>(CStrID("Sort"), CString::Empty);
 	SortStr.Trim();

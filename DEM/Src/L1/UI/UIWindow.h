@@ -3,6 +3,7 @@
 #define __DEM_L1_UI_WINDOW_H__
 
 #include <Core/Object.h>
+#include <UI/UIFwd.h>
 #include <CEGUI/Window.h>
 #include <Math/Vector2.h>
 
@@ -36,6 +37,7 @@ public:
 	void			ToggleVisibility() { SetVisible(!IsVisible()); }
 	//???virtual or listen OnShow/OnHide and perform custom actions there?
 	virtual void	SetVisible(bool Visible) { n_assert(pWnd); pWnd->setVisible(Visible); }
+	void			SetDrawMode(EDrawMode Mode);
 	
 	void			SetPosition(const CEGUI::UVector2& Pos) { n_assert(pWnd); pWnd->setPosition(Pos); }
 	void			SetPosition(const vector2& Pos) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(0.f, Pos.x), CEGUI::UDim(0.f, Pos.y))); }

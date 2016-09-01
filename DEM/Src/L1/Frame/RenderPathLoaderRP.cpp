@@ -75,21 +75,6 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 		}
 	}
 
-	RP->Phases.SetSize(Phases->GetCount());
-	for (UPTR i = 0; i < Phases->GetCount(); ++i)
-	{
-		const Data::CParam& Prm = Phases->Get(i);
-		Data::CParams& PhaseDesc = *Prm.GetValue<Data::PParams>();
-
-		const CString& PhaseType = PhaseDesc.Get<CString>(CStrID("Type"), CString::Empty); //???use FourCC in PRM?
-		CString ClassName = "Frame::CRenderPhase" + PhaseType;
-		Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
-
-		if (!CurrPhase->Init(Prm.GetName(), PhaseDesc)) return NULL;
-
-		RP->Phases[i] = CurrPhase;
-	}
-
 	// Breaks API independence. Honestly, RP file format breaks it even earlier,
 	// by including API-specific metadata. Subject to redesign.
 	switch (ShaderModel)
@@ -111,6 +96,22 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 	}
 
 	if (!LoadEffectParams(Reader, NULL, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
+
+	// Phases are intentionally initialized at the end, because they may access global params etc
+	RP->Phases.SetSize(Phases->GetCount());
+	for (UPTR i = 0; i < Phases->GetCount(); ++i)
+	{
+		const Data::CParam& Prm = Phases->Get(i);
+		Data::CParams& PhaseDesc = *Prm.GetValue<Data::PParams>();
+
+		const CString& PhaseType = PhaseDesc.Get<CString>(CStrID("Type"), CString::Empty); //???use FourCC in PRM?
+		CString ClassName = "Frame::CRenderPhase" + PhaseType;
+		Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
+
+		if (!CurrPhase->Init(*RP.GetUnsafe(), Prm.GetName(), PhaseDesc)) return NULL;
+
+		RP->Phases[i] = CurrPhase;
+	}
 
 	return RP.GetUnsafe();
 }

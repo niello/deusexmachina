@@ -3,6 +3,7 @@
 #define __DEM_L1_UI_RENDERER_H__
 
 #include <Frame/RenderPhase.h>
+#include <UI/UIFwd.h>
 
 // Frame rendering phase 
 
@@ -15,11 +16,12 @@ class CRenderPhaseGUI: public CRenderPhase
 
 private:
 
-	I32 RenderTargetIndex;
+	I32				RenderTargetIndex;
+	UI::EDrawMode	DrawMode;
 
 public:
 
-	virtual bool Init(CStrID PhaseName, const Data::CParams& Desc);
+	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc);
 	virtual bool Render(CView& View);
 };
 

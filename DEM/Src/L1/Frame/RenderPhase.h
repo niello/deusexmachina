@@ -19,6 +19,7 @@ namespace Data
 namespace Frame
 {
 class CView;
+class CRenderPath;
 
 class CRenderPhase: public Core::CObject //???need? lives only in RP!
 {
@@ -42,7 +43,7 @@ public:
 
 	virtual ~CRenderPhase() {}
 
-	virtual bool Init(CStrID PhaseName, const Data::CParams& Desc) { Name = PhaseName; OK; }
+	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc) { Name = PhaseName; OK; }
 	virtual bool Render(CView& View) = 0;
 };
 

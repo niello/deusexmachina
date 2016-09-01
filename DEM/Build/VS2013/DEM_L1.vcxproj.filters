@@ -983,6 +983,12 @@
     <ClInclude Include="..\..\Src\L1\Input\InputConditionComboState.h">
       <Filter>Input</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\UI\UIFwd.h">
+      <Filter>UI</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGlobalSetup.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1632,6 +1638,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\InputConditionComboState.cpp">
       <Filter>Input</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGlobalSetup.cpp">
+      <Filter>Frame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
