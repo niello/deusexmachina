@@ -28,20 +28,10 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 		CEGUI::Event::Subscriber(&CLuaConsole::OnCommand, this));
 	pInputLine->subscribeEvent(CEGUI::Editbox::EventKeyDown,
 		CEGUI::Event::Subscriber(&CLuaConsole::OnKeyDown, this));
-	pInputLine->subscribeEvent(CEGUI::Editbox::EventCharacterKey,
-		CEGUI::Event::Subscriber(&CLuaConsole::OnChar, this));
 	pInputLine->activate();
 
 	pOutputWnd = (CEGUI::Listbox*)pWnd->getChild("OutputList");
 	pVertScroll = pOutputWnd->getVertScrollbar();
-
-	//CLineBuffer* pLineBuffer = CoreLogger->GetLineBuffer();
-	//if (pLineBuffer)
-	//{
-	//	const char* Lines[MAX_LINES_START];
-	//	int Count = pLineBuffer->GetLines(Lines, MAX_LINES_START);
-	//	while (--Count >= 0) Print(Lines[Count], 0xffb0b0b0);
-	//}
 
 	SUBSCRIBE_PEVENT(OnLogMsg, CLuaConsole, OnLogMsg);
 }
@@ -53,10 +43,7 @@ void CLuaConsole::Term()
 
 	if (ConnOnShow.isValid()) ConnOnShow->disconnect();
 
-	if (pWnd && pWnd->getParent())
-		pWnd->getParent()->removeChild(pWnd);
-
-	//CUIWindow::Term();
+	CUIWindow::Term();
 }
 //---------------------------------------------------------------------
 
@@ -103,14 +90,6 @@ bool CLuaConsole::OnShow(const CEGUI::EventArgs& e)
 {
 	pInputLine->activate();
 	OK;
-}
-//---------------------------------------------------------------------
-
-//!!!Hack, key can change in layout HRD!
-bool CLuaConsole::OnChar(const CEGUI::EventArgs& e)
-{
-	const CEGUI::KeyEventArgs& ke = (const CEGUI::KeyEventArgs&)e;
-	return ke.codepoint == 96 || ke.codepoint == 1105; // Grave || ¸
 }
 //---------------------------------------------------------------------
 
@@ -162,8 +141,11 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 		if (RetVal.IsValid()) Sys::Log("Return value: %s\n", RetVal.ToString());
 	}
 
-	if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
-	CmdHistory.Add(CString(pCmd));
+	if (CmdHistoryCursor + 1 != CmdHistory.GetCount())
+	{
+		if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
+		CmdHistory.Add(CString(pCmd));
+	}
 	CmdHistoryCursor = CmdHistory.GetCount();
 
 	pInputLine->setText("");
@@ -178,12 +160,22 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 
 	if (ke.scancode == CEGUI::Key::ArrowDown)
 	{
-		if (CmdHistory.GetCount())
+		if (CmdHistory.GetCount() > CmdHistoryCursor + 1)
 		{
-			if (++CmdHistoryCursor >= (IPTR)CmdHistory.GetCount())
-				CmdHistoryCursor = CmdHistory.GetCount() - 1;
+			++CmdHistoryCursor;
 			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
 			pInputLine->setCaretIndex(pInputLine->getText().length());
+		}
+		else if (pInputLine->getText().c_str() && *pInputLine->getText().c_str())
+		{
+			if (CmdHistory.GetCount() == CmdHistoryCursor)
+			{
+				if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
+				CmdHistory.Add(CString(pInputLine->getText().c_str()));
+			}
+			CmdHistoryCursor = CmdHistory.GetCount();
+
+			pInputLine->setText("");
 		}
 		OK;
 	}
@@ -191,8 +183,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 	{
 		if (CmdHistory.GetCount())
 		{
-			if (--CmdHistoryCursor < 0)
-				CmdHistoryCursor = 0;
+			if (CmdHistoryCursor > 0) --CmdHistoryCursor;
 			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
 			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
@@ -200,7 +191,8 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 	}
 	else if (ke.scancode == CEGUI::Key::Grave)
 	{
-		//++ke.handled;
+		//!!!HACK, key can change in a control layout!
+		pWnd->hide();
 		OK;
 	}
 

@@ -12,9 +12,15 @@ void CUIWindow::Init(CEGUI::Window* pWindow)
 {
 	n_assert(!pWnd && pWindow);
 	pWnd = pWindow;
+	//if (pWnd) pWnd->setDrawMode(CEGUI::Window::DrawModeFlagWindowRegular);
+}
+//---------------------------------------------------------------------
 
-	// Set the window transparent by default, it guarantees correct rendering
-	//if (pWnd) pWnd->setDrawMode(((U32)DrawMode_Transparent) | CEGUI::Window::DrawModeFlagWindowRegular);
+void CUIWindow::Term()
+{
+	if (pWnd && pWnd->getParent())
+		pWnd->getParent()->removeChild(pWnd);
+	//???unload / delete?
 }
 //---------------------------------------------------------------------
 
@@ -26,7 +32,10 @@ void CUIWindow::Load(const char* pResourceFile)
 
 void CUIWindow::SetDrawMode(EDrawMode Mode)
 {
-	if (pWnd) pWnd->setDrawMode(((U32)Mode) | CEGUI::Window::DrawModeFlagWindowRegular);
+	CEGUI::uint32 CEGUIDrawMode = 0;
+	if (Mode & DrawMode_Opaque) CEGUIDrawMode |= 0x04;
+	if (Mode & DrawMode_Transparent) CEGUIDrawMode |= CEGUI::Window::DrawModeFlagWindowRegular;
+	if (pWnd) pWnd->setDrawMode(CEGUIDrawMode);
 }
 //---------------------------------------------------------------------
 

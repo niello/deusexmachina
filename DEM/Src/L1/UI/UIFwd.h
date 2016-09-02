@@ -9,8 +9,8 @@ namespace UI
 
 enum EDrawMode
 {
-	DrawMode_Opaque			= 0x0100,
-	DrawMode_Transparent	= 0x0200,
+	DrawMode_Opaque			= 0x01,
+	DrawMode_Transparent	= 0x02,
 	DrawMode_All			= (DrawMode_Opaque | DrawMode_Transparent)
 };
 

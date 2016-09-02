@@ -28,7 +28,7 @@ public:
 	virtual ~CUIWindow() {}
 
 	virtual void	Init(CEGUI::Window* pWindow);
-	virtual void	Term() {} //!!!if attached to parent, remove. Then unload.
+	virtual void	Term();
 	void			Load(const char* pResourceFile);
 	
 	bool			IsVisible() const { return pWnd->isVisible(); }

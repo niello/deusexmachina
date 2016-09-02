@@ -221,17 +221,38 @@ LONG COSWindowWin32::GetWin32Style() const
 }
 //---------------------------------------------------------------------
 
+//!!!translate to DEM key code right here! OSInput must use my keys (may keep scan and virtual key codes)!
 static inline void FixKeyCodes(U8& ScanCode, UINT& VirtualKey, bool& IsExtended)
 {
 	// Corrections from:
 	// https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
-	//!!!see more there, implement!
+	//!!!see more there, implement! //???use raw input as there?
 	if (VirtualKey == 0 || VirtualKey == VK_SHIFT)
+	{
 		VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+	}
 	else if (VirtualKey == VK_NUMLOCK)
 	{
 		ScanCode = ::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC);
 		IsExtended = true;
+	}
+	else
+	{
+		switch (VirtualKey)
+		{
+			case VK_UP:
+				if (IsExtended) ScanCode = 0xC8; // ArrowUp
+				break;
+			case VK_DOWN:
+				if (IsExtended) ScanCode = 0xD0; // ArrowDown
+				break;
+			case VK_RIGHT:
+				if (IsExtended) ScanCode = 0xCD; // ArrowRight
+				break;
+			case VK_LEFT:
+				if (IsExtended) ScanCode = 0xCB; // ArrowLeft
+				break;
+		};
 	}
 }
 //---------------------------------------------------------------------

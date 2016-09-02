@@ -30,15 +30,13 @@ protected:
 	CEGUI::Scrollbar*			pVertScroll;
 
 	CEGUI::Event::Connection	ConnOnShow;
-	//CEGUI::Event::Connection	ConnOnChar;
 
 	CArray<CString>				CmdHistory;
-	IPTR						CmdHistoryCursor;
+	UPTR						CmdHistoryCursor;
 
 	void Print(const char* pMsg, U32 ColorARGB);
 
 	bool OnShow(const CEGUI::EventArgs& e);
-	bool OnChar(const CEGUI::EventArgs& e);
 	bool OnCommand(const CEGUI::EventArgs& e);
 	bool OnKeyDown(const CEGUI::EventArgs& e);
 

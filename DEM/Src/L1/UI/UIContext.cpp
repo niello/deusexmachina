@@ -34,9 +34,20 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 	if (pCtx->getRenderTarget().getArea() != ViewportArea)
 		pCtx->getRenderTarget().setArea(ViewportArea);
 
-	pRenderer->beginRendering();
-	pCtx->draw();//((CEGUI::uint32)Mode) | CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
-	pRenderer->endRendering();
+	CEGUI::uint32 CEGUIDrawMode = 0;
+	if (Mode & DrawMode_Opaque) CEGUIDrawMode |= 0x04;
+	if (Mode & DrawMode_Transparent) CEGUIDrawMode |= (CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
+
+	//!!!TMP! until CEGUI drawMode is fixed
+	CEGUIDrawMode = 0;
+	if (Mode & DrawMode_Transparent) CEGUIDrawMode = (0x04 | CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
+
+	if (CEGUIDrawMode > 0)
+	{
+		pRenderer->beginRendering();
+		pCtx->draw(CEGUIDrawMode);
+		pRenderer->endRendering();
+	}
 
 	OK;
 }
@@ -133,7 +144,6 @@ bool CUIContext::GetCursorPositionRel(float& X, float& Y) const
 }
 //---------------------------------------------------------------------
 
-//???does work in all cases?
 bool CUIContext::IsMouseOverGUI() const
 {
 	if (!pCtx) FAIL;
@@ -150,12 +160,8 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 	{
 		case Event::OSInput::KeyDown:
 		{
-			//!!!FIXME!
-			// Ignore '`' key which is typically used for console
-			if (Ev.KeyboardInfo.ScanCode == 0x29) FAIL;
-
-			if (Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char)) OK;
-			return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
+			if (pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode)) OK;
+			return Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char);
 		}
 
 		case Event::OSInput::KeyUp:
