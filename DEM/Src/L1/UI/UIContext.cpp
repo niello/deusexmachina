@@ -27,22 +27,27 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 	if (!pCtx) FAIL;
 	CEGUI::Renderer* pRenderer = CEGUI::System::getSingleton().getRenderer();
 	if (!pRenderer) FAIL;
+	if (!Mode) OK;
 
 	CEGUI::Rectf ViewportArea(Left, Top, Right, Bottom);
 	if (pCtx->getRenderTarget().getArea() != ViewportArea)
 		pCtx->getRenderTarget().setArea(ViewportArea);
 
-	CEGUI::uint32 CEGUIDrawMode = 0;
-	if (Mode & DrawMode_Opaque) CEGUIDrawMode |= DrawModeFlagWindowOpaque;
-	if (Mode & DrawMode_Transparent) CEGUIDrawMode |= (CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
+	pRenderer->beginRendering();
 
-	if (CEGUIDrawMode > 0)
+	if (Mode & DrawMode_Opaque)
 	{
-		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(CEGUIDrawMode == DrawModeFlagWindowOpaque);
-		pRenderer->beginRendering();
-		pCtx->draw(CEGUIDrawMode);
-		pRenderer->endRendering();
+		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(true);
+		pCtx->draw(DrawModeFlagWindowOpaque);
 	}
+
+	if (Mode & DrawMode_Transparent)
+	{
+		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(false);
+		pCtx->draw(CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
+	}
+
+	pRenderer->endRendering();
 
 	OK;
 }
