@@ -7,7 +7,7 @@
 
 // Animation controller, that implements logic of third-person camera.
 // This controller updates transform only when it has changed, saving
-// lots of recalculations. To force update use ForceNextUpdate().
+// lots of recalculations.
 // NB: All angles are in radians.
 
 namespace Scene
@@ -44,7 +44,6 @@ public:
 	void			OrbitHorizontal(float Angle);
 	void			Zoom(float Amount);
 	void			Move(const vector3& Translation);
-	void			ForceNextUpdate() { Dirty = true; } //???normal dirty-on-Set instead?
 
 	float			GetVerticalAngleMin() const { return MinVertAngle; }
 	float			GetVerticalAngleMax() const { return MaxVertAngle; }

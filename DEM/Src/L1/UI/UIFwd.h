@@ -14,6 +14,8 @@ enum EDrawMode
 	DrawMode_All			= (DrawMode_Opaque | DrawMode_Transparent)
 };
 
+static const U32 DrawModeFlagWindowOpaque = 1U << 2;
+
 }
 
 #endif

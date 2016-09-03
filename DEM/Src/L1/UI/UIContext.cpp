@@ -1,11 +1,9 @@
 #include "UIContext.h"
 
 #include <CEGUI/RenderTarget.h>
+#include <UI/CEGUI/DEMRenderer.h>
 #include <Events/EventDispatcher.h>
 #include <System/Events/OSInput.h>
-
-//!!!DBG TMP!
-#include <Events/EventServer.h>
 
 namespace UI
 {
@@ -35,15 +33,12 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 		pCtx->getRenderTarget().setArea(ViewportArea);
 
 	CEGUI::uint32 CEGUIDrawMode = 0;
-	if (Mode & DrawMode_Opaque) CEGUIDrawMode |= 0x04;
+	if (Mode & DrawMode_Opaque) CEGUIDrawMode |= DrawModeFlagWindowOpaque;
 	if (Mode & DrawMode_Transparent) CEGUIDrawMode |= (CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
-
-	//!!!TMP! until CEGUI drawMode is fixed
-	CEGUIDrawMode = 0;
-	if (Mode & DrawMode_Transparent) CEGUIDrawMode = (0x04 | CEGUI::Window::DrawModeFlagWindowRegular | CEGUI::Window::DrawModeFlagMouseCursor);
 
 	if (CEGUIDrawMode > 0)
 	{
+		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(CEGUIDrawMode == DrawModeFlagWindowOpaque);
 		pRenderer->beginRendering();
 		pCtx->draw(CEGUIDrawMode);
 		pRenderer->endRendering();

@@ -44,6 +44,8 @@ protected:
 	Render::PRenderState				NormalClipped;
 	Render::PRenderState				PremultipliedUnclipped;
 	Render::PRenderState				PremultipliedClipped;
+	Render::PRenderState				OpaqueUnclipped;
+	Render::PRenderState				OpaqueClipped;
 	Render::PConstantBuffer				WMCB;
 	Render::PConstantBuffer				PMCB;
 	Render::PSampler					LinearSampler;
@@ -54,7 +56,10 @@ protected:
 	Render::HResource					hTexture;
 	Render::HSampler					hLinearSampler;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader);
+	// For now it is the only way to know the draw mode in a CDEMGeometryBuffer::draw()
+	bool								OpaqueMode;
+
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShaderRegular, Render::PShader PixelShaderOpaque);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -62,11 +67,13 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShaderRegular, Render::PShader PixelShaderOpaque, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }
 	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, UPTR VertexCount);
+	void					setOpaqueMode(bool Opaque) { OpaqueMode = Opaque; }
+	bool					isInOpaqueMode() const { return OpaqueMode; }
 	void					setRenderState(BlendMode BlendMode, bool Clipped);
 	Render::HResource		getTextureHandle() const { return hTexture; }
 	void					setWorldMatrix(const matrix44& Matrix);

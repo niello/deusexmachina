@@ -49,6 +49,7 @@ public:
 	const vector3&					GetPosition() const { return pNode->GetWorldMatrix().Translation(); }
 	vector3							GetDirection() const { return -pNode->GetWorldMatrix().AxisZ(); }
 	const vector3&					GetReverseDirection() const { return pNode->GetWorldMatrix().AxisZ(); }
+	const Render::CLight&			GetLight() const { return Light; }
 };
 
 typedef Ptr<CNodeAttrLight> PNodeAttrLight;

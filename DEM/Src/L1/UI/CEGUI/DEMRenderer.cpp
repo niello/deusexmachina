@@ -22,19 +22,33 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader):
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain,
+						   float DefaultContextWidth, float DefaultContextHeight,
+						   Render::PShader VertexShader,
+						   Render::PShader PixelShaderRegular,
+						   Render::PShader PixelShaderOpaque):
 	GPU(&GPUDriver),
 	pDefaultRT(NULL),
 	DisplayDPI(96, 96),
-	DisplaySize(DefaultContextWidth, DefaultContextHeight)
+	DisplaySize(DefaultContextWidth, DefaultContextHeight),
+	OpaqueMode(false)
 {
-	n_assert_dbg(VertexShader.IsValidPtr() && PixelShader.IsValidPtr() && VertexShader->IsResourceValid() && PixelShader->IsResourceValid());
+	n_assert_dbg(VertexShader.IsValidPtr() &&
+				 PixelShaderRegular.IsValidPtr() &&
+				 PixelShaderOpaque.IsValidPtr() &&
+				 VertexShader->IsResourceValid() &&
+				 PixelShaderRegular->IsResourceValid() &&
+				 PixelShaderOpaque->IsResourceValid());
+
+	//=================================================================
+	// Render states
+	//=================================================================
 
 	Render::CRenderStateDesc RSDesc;
 	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
 	RSDesc.SetDefaults();
 	RSDesc.VertexShader = VertexShader;
-	RSDesc.PixelShader = PixelShader;
+	RSDesc.PixelShader = PixelShaderRegular;
 	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
 	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
 					   Render::CRenderStateDesc::DS_DepthWriteEnable |
@@ -69,6 +83,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	RTBlendDesc.SrcBlendArg = Render::BlendArg_One;
 	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
 
+	// Clipped
 	PremultipliedClipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedClipped.IsValidPtr());
 
@@ -78,8 +93,30 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
 	n_assert(PremultipliedUnclipped.IsValidPtr());
 
+	// Opaque
+	RSDesc.PixelShader = PixelShaderOpaque;
+	RSDesc.Flags.Clear(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
+	RSDesc.Flags.Set(Render::CRenderStateDesc::DS_DepthEnable |
+					 Render::CRenderStateDesc::DS_DepthWriteEnable);
+	RSDesc.DepthFunc = Render::Cmp_Always;
+
+	// Unclipped
+	OpaqueUnclipped = GPU->CreateRenderState(RSDesc);
+	n_assert(OpaqueUnclipped.IsValidPtr());
+
+	// Clipped
+	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
+
+	OpaqueClipped = GPU->CreateRenderState(RSDesc);
+	n_assert(OpaqueClipped.IsValidPtr());
+
+	//=================================================================
+	// Shader constants
+	//=================================================================
+
+	// NB: regular and opaque pixel shaders must be compatible
 	const Render::IShaderMetadata* pVSMeta = VertexShader->GetMetadata();
-	const Render::IShaderMetadata* pPSMeta = PixelShader->GetMetadata();
+	const Render::IShaderMetadata* pPSMeta = PixelShaderRegular->GetMetadata();
 
 	Render::CShaderConstDesc ConstDesc;
 	n_verify(pVSMeta->GetConstDesc(CStrID("WorldMatrix"), ConstDesc));
@@ -106,6 +143,10 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float D
 	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
 	LinearSampler = GPU->CreateSampler(SampDesc);
 	n_assert(LinearSampler.IsValidPtr());
+
+	//=================================================================
+	// Vertex declaration
+	//=================================================================
 
 	Render::CVertexComponent Components[] = {
 			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0, false },
@@ -148,10 +189,14 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShader, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain,
+								   float DefaultContextWidth, float DefaultContextHeight,
+								   Render::PShader VertexShader,
+								   Render::PShader PixelShaderRegular,
+								   Render::PShader PixelShaderOpaque, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, VertexShader, PixelShader);
+	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, VertexShader, PixelShaderRegular, PixelShaderOpaque);
 }
 //--------------------------------------------------------------------
 
@@ -211,10 +256,17 @@ Render::PVertexBuffer CDEMRenderer::createVertexBuffer(D3DVertex* pVertexData, U
 
 void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
 {
-	if (BlendMode == BM_RTT_PREMULTIPLIED)
-		GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
+	if (OpaqueMode)
+	{
+		GPU->SetRenderState(Clipped ? OpaqueClipped : OpaqueUnclipped);
+	}
 	else
-		GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
+	{
+		if (BlendMode == BM_RTT_PREMULTIPLIED)
+			GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
+		else
+			GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
+	}
 }
 //--------------------------------------------------------------------
 

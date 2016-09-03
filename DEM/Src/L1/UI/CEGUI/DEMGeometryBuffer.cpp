@@ -67,9 +67,6 @@ void CDEMGeometryBuffer::draw() const
 	if (!d_matrixValid) updateMatrix();
 	d_owner.setWorldMatrix(d_matrix);
 
-	//???where to bind, where to commit changes?
-	//!!!Docs: performPreRenderFunctions() must be called AFTER all state changes!
-
 	Render::CPrimitiveGroup	primGroup;
 	primGroup.FirstVertex = 0;
 	primGroup.FirstIndex = 0;
@@ -80,6 +77,7 @@ void CDEMGeometryBuffer::draw() const
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
 	{
+		//!!!Docs: performPreRenderFunctions() must be called AFTER all state changes!
 		if (d_effect) d_effect->performPreRenderFunctions(pass);
 
 		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)

@@ -45,7 +45,8 @@ struct CUISettings
 {
 	Render::PGPUDriver	GPUDriver;
 	Render::PShader		VertexShader;
-	Render::PShader		PixelShader;
+	Render::PShader		PixelShaderRegular;
+	Render::PShader		PixelShaderOpaque;
 
 	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
 	int					SwapChainID;
