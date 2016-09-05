@@ -51,11 +51,11 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 }
 //---------------------------------------------------------------------
 
-CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Context, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
+CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
-	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
+	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 
 	const CMaterial* pCurrMaterial = NULL;
 	const CTechnique* pCurrTech = NULL;
@@ -64,11 +64,13 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 
 	while (ItCurr != ItEnd)
 	{
-		if (ItCurr->pRenderer != this) return ItCurr;
+		CRenderNode* pRenderNode = *ItCurr;
 
-		CSkybox* pSkybox = ItCurr->pRenderable->As<CSkybox>();
+		if (pRenderNode->pRenderer != this) return ItCurr;
 
-		const CMaterial* pMaterial = ItCurr->pMaterial;
+		CSkybox* pSkybox = pRenderNode->pRenderable->As<CSkybox>();
+
+		const CMaterial* pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
@@ -79,7 +81,7 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
-		const CTechnique* pTech = ItCurr->pTech;
+		const CTechnique* pTech = pRenderNode->pTech;
 		if (pTech != pCurrTech)
 		{
 			pCurrTech = pTech;
@@ -102,7 +104,7 @@ CArray<CRenderNode>::CIterator CSkyboxRenderer::Render(const CRenderContext& Con
 		PerInstanceConstValues.SetGPU(&GPU);
 		if (pConstWorldMatrix)
 		{
-			matrix44 Tfm = ItCurr->Transform;
+			matrix44 Tfm = pRenderNode->Transform;
 			Tfm.set_translation(Context.CameraPosition);
 			PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->Desc.BufferHandle, NULL);
 			PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, Tfm.m, sizeof(matrix44));

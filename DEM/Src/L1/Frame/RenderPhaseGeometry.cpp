@@ -24,30 +24,30 @@ __ImplementClass(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
 struct CRenderQueueCmp_FrontToBack
 {
-	inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
 	{
-		if (a.Order != b.Order) return a.Order < b.Order;
-		return a.SqDistanceToCamera < b.SqDistanceToCamera;
+		if (a->Order != b->Order) return a->Order < b->Order;
+		return a->SqDistanceToCamera < b->SqDistanceToCamera;
 	}
 };
 //---------------------------------------------------------------------
 
 struct CRenderQueueCmp_Material
 {
-	inline bool operator()(const Render::CRenderNode& a, const Render::CRenderNode& b) const
+	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
 	{
-		if (a.Order != b.Order) return a.Order < b.Order;
-		if (a.Order >= 40)
+		if (a->Order != b->Order) return a->Order < b->Order;
+		if (a->Order >= 40)
 		{
-			return a.SqDistanceToCamera > b.SqDistanceToCamera;
+			return a->SqDistanceToCamera > b->SqDistanceToCamera;
 		}
 		else
 		{
-			if (a.pTech != b.pTech) return a.pTech < b.pTech;
-			if (a.pMaterial != b.pMaterial) return a.pMaterial < b.pMaterial;
-			if (a.pMesh != b.pMesh) return a.pMesh < b.pMesh;
-			if (a.pGroup != b.pGroup) return a.pGroup < b.pGroup;
-			return a.SqDistanceToCamera < b.SqDistanceToCamera;
+			if (a->pTech != b->pTech) return a->pTech < b->pTech;
+			if (a->pMaterial != b->pMaterial) return a->pMaterial < b->pMaterial;
+			if (a->pMesh != b->pMesh) return a->pMesh < b->pMesh;
+			if (a->pGroup != b->pGroup) return a->pGroup < b->pGroup;
+			return a->SqDistanceToCamera < b->SqDistanceToCamera;
 		}
 	}
 };
@@ -65,31 +65,31 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	const vector3& CameraPos = View.GetCamera()->GetPosition();
 	const bool CalcScreenSize = View.RequiresObjectScreenSize();
 
-	CArray<Render::CRenderNode>& RenderQueue = View.RenderQueue;
+	CArray<Render::CRenderNode*>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
 
 	Render::CRenderNodeContext Context;
 	Context.pEffectOverrides = EffectOverrides.GetCount() ? &EffectOverrides : NULL;
 
+	struct CLightRecord
+	{
+		const Render::CLight*	pLight;
+		IPTR					Index;	// Index in a global light info buffer, if used
+	};
+	CArray<CLightRecord> Lights; //!!!PERF: need cache to avoid per-frame allocations!
+
 	//???separate lights and renderables in View.UpdateVisibilityCache()?
 	if (EnableLighting)
 	{
-		for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
+		CArray<CNodeAttrLight*>& VisibleLights = View.GetLightCache();
+
+		for (CArray<CNodeAttrLight*>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
 		{
-			Scene::CNodeAttribute* pAttr = *It;
-			const Core::CRTTI* pAttrType = pAttr->GetRTTI();
-			if (!pAttrType->IsDerivedFrom(Frame::CNodeAttrLight::RTTI)) continue;
-
-			Frame::CNodeAttrLight* pAttrLight = (Frame::CNodeAttrLight*)pAttr;
-
-			//...
-			Sys::DbgOut("Light: type %d\n", pAttrLight->GetLight().Type);
+			Frame::CNodeAttrLight* pAttrLight = (CNodeAttrLight*)(*It);
+			CLightRecord& LightRec = *Lights.Add();
+			LightRec.pLight = &pAttrLight->GetLight();
+			LightRec.Index = INVALID_INDEX;
 		}
-
-		//!!!
-		// if lights are stored in a global buffer, can fill it here!
-		// on Init(), request effect const from RP like in GlobalSetup phase
-		// pass light buffer to a GPU here
 	}
 
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
@@ -106,7 +106,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Render::IRenderer* pRenderer = Renderers.ValueAt(Idx);
 		if (!pRenderer) continue;
 
-		Render::CRenderNode* pNode = RenderQueue.Add();
+		Render::CRenderNode* pNode = View.RenderNodePool.Construct();
 		pNode->pRenderable = pRenderable;
 		pNode->pRenderer = pRenderer;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
@@ -142,11 +142,28 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			Context.MaterialLOD = 0;
 		}
 
+		if (EnableLighting)
+		{
+			// check lights that touch this objects
+			// select MaxLights with the highest priority
+			// if global buffer exists, fill it and set light indices to a node
+			// else set light info to a node
+			//!!!may always pass indices here, and only expand to light data when passed to a shader without global buffer!
+
+			//!!!render nodes are too heavy, sort pointers!
+			//View may have pool allocator for them, for the great reuse without thread syncs!
+			//so here we will not host render nodes but only store pointers
+			//???profile sorting?
+			//if so, removal from render queue on refuse won't be needed, as we can add to queue after PrepareNode!
+		}
+
 		if (!pRenderer->PrepareNode(*pNode, Context))
 		{
-			RenderQueue.Remove(pNode);
+			View.RenderNodePool.Destroy(pNode);
 			continue;
 		}
+
+		RenderQueue.Add(pNode);
 
 		n_assert_dbg(pNode->pMaterial);
 		Render::EEffectType Type = pNode->pMaterial->GetEffect()->GetType();
@@ -187,11 +204,14 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Ctx.CameraPosition = CameraPos;
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 
-	CArray<Render::CRenderNode>::CIterator ItCurr = RenderQueue.Begin();
-	CArray<Render::CRenderNode>::CIterator ItEnd = RenderQueue.End();
+	CArray<Render::CRenderNode*>::CIterator ItCurr = RenderQueue.Begin();
+	CArray<Render::CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
-		ItCurr = ItCurr->pRenderer->Render(Ctx, RenderQueue, ItCurr);
+		ItCurr = (*ItCurr)->pRenderer->Render(Ctx, RenderQueue, ItCurr);
 
+	//!!!hide in a private method of CView!
+	for (UPTR i = 0; i < RenderQueue.GetCount(); ++i)
+		View.RenderNodePool.Destroy(RenderQueue[i]);
 	RenderQueue.Clear(false);
 	//???may store render queue in cache for other phases? or completely unreusable? some info like a distance to a camera may be shared
 

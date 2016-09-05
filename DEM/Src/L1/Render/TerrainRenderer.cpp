@@ -298,18 +298,18 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 }
 //---------------------------------------------------------------------
 
-CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Context, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
+CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
-	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
+	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 
 	if (!GPU.CheckCaps(Caps_VSTexFiltering_Linear))
 	{
 		// Skip terrain rendering. Can fall back to manual 4-sample filtering in a shader instead.
 		while (ItCurr != ItEnd)
 		{
-			if (ItCurr->pRenderer != this) return ItCurr;
+			if ((*ItCurr)->pRenderer != this) return ItCurr;
 			++ItCurr;
 		}
 		return ItEnd;
@@ -328,9 +328,11 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 	while (ItCurr != ItEnd)
 	{
-		if (ItCurr->pRenderer != this) return ItCurr;
+		CRenderNode* pRenderNode = *ItCurr;
 
-		CTerrain* pTerrain = ItCurr->pRenderable->As<CTerrain>();
+		if (pRenderNode->pRenderer != this) return ItCurr;
+
+		CTerrain* pTerrain = pRenderNode->pRenderable->As<CTerrain>();
 
 		const float VisibilityRange = 1000.f;
 		const float MorphStartRatio = 0.7f;
@@ -369,7 +371,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		CAABB AABB;
 		n_verify_dbg(pTerrain->GetLocalAABB(AABB, 0));
-		AABB.Transform(ItCurr->Transform);
+		AABB.Transform(pRenderNode->Transform);
 		float AABBMinX = AABB.Min.x;
 		float AABBMinZ = AABB.Min.z;
 		float AABBSizeX = AABB.Max.x - AABBMinX;
@@ -427,7 +429,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 
 		// Apply material, if changed
 
-		const CTechnique* pTech = ItCurr->pTech;
+		const CTechnique* pTech = pRenderNode->pTech;
 		const CPassList* pPasses = pTech->GetPasses(LightCount);
 		n_assert_dbg(pPasses); // To test if it could happen at all
 		if (!pPasses)
@@ -436,7 +438,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			continue;
 		}
 
-		const CMaterial* pMaterial = ItCurr->pMaterial;
+		const CMaterial* pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
@@ -491,7 +493,7 @@ CArray<CRenderNode>::CIterator CTerrainRenderer::Render(const CRenderContext& Co
 			CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
 			CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
 			CDLODParams.TerrainYScale = 65535.f * pCDLOD->GetVerticalScale();
-			CDLODParams.TerrainYOffset = -32767.f * pCDLOD->GetVerticalScale() + ItCurr->Transform.m[3][1]; // [3][1] = Translation.y
+			CDLODParams.TerrainYOffset = -32767.f * pCDLOD->GetVerticalScale() + pRenderNode->Transform.m[3][1]; // [3][1] = Translation.y
 			CDLODParams.InvSplatSizeX = pTerrain->GetInvSplatSizeX();
 			CDLODParams.InvSplatSizeZ = pTerrain->GetInvSplatSizeZ();
 			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();

@@ -7,6 +7,7 @@
 #include <Render/EffectConstSetValues.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
+#include <System/Allocators/PoolAllocator.h>
 
 // View is a data context required to render a frame. It is defined by a scene (what to render),
 // a camera (from where), render target(s) (to where), a render path (how) and some other
@@ -28,6 +29,7 @@ namespace UI
 namespace Frame
 {
 class CNodeAttrCamera;
+class CNodeAttrLight;
 typedef Ptr<class CRenderPath> PRenderPath;
 
 enum ELODType
@@ -46,6 +48,7 @@ protected:
 	CNodeAttrCamera*							pCamera; //???smart ptr?
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
+	CArray<Frame::CNodeAttrLight*>				LightCache;
 	bool										VisibilityCacheDirty; //???to flags?
 
 	ELODType									MeshLODType;
@@ -66,7 +69,8 @@ public:
 	CFixedArray<Render::PDepthStencilBuffer>	DSBuffers;
 	Render::CEffectConstSetValues				Globals;
 
-	CArray<Render::CRenderNode>					RenderQueue;	// Cached to avoid per-frame allocations
+	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
+	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true), MeshLODType(LOD_None), MaterialLODType(LOD_None) {}
 	~CView();
@@ -84,7 +88,8 @@ public:
 	bool							SetCamera(CNodeAttrCamera* pNewCamera);
 	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
 	void							UpdateVisibilityCache();
-	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; } //???if dirty update right here?
+	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
+	CArray<Frame::CNodeAttrLight*>&	GetLightCache() { return LightCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }

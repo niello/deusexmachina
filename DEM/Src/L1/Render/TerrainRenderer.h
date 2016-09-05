@@ -70,7 +70,7 @@ public:
 	~CTerrainRenderer();
 
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
-	virtual CArray<CRenderNode>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr);
+	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr);
 };
 
 }

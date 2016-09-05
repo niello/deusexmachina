@@ -1,6 +1,7 @@
 #include "View.h"
 
 #include <Frame/NodeAttrCamera.h>
+#include <Frame/NodeAttrLight.h>
 #include <Frame/RenderPath.h>
 #include <Scene/SPS.h>
 #include <Render/RenderTarget.h>
@@ -88,9 +89,25 @@ void CView::UpdateVisibilityCache()
 	if (!VisibilityCacheDirty) return;
 
 	if (pSPS && pCamera)
+	{
 		pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
+
+		for (UPTR i = 0; i < VisibilityCache.GetCount();)
+		{
+			Scene::CNodeAttribute* pAttr = VisibilityCache[i];
+			if (pAttr->IsA<Frame::CNodeAttrLight>())
+			{
+				LightCache.Add((Frame::CNodeAttrLight*)pAttr);
+				VisibilityCache.RemoveAt(i);
+			}
+			else ++i;
+		}
+	}
 	else
+	{
 		VisibilityCache.Clear();
+		LightCache.Clear();
+	}
 
 	VisibilityCacheDirty = false;
 }
@@ -169,6 +186,7 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 bool CView::Render()
 {
 	VisibilityCache.Clear();
+	LightCache.Clear();
 	VisibilityCacheDirty = true;
 	if (!GPU->BeginFrame() || !RenderPath->Render(*this)) FAIL;
 	GPU->EndFrame();

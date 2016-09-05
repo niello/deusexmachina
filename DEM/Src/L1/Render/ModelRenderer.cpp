@@ -78,7 +78,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 // single-pass tech, than that the same material will be used with many different techs. We have great chances
 // to set render state only once as our tech is single-pass, and to render many materials without switching it,
 // just rebinding constants, resources and samplers.
-CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Context, CArray<CRenderNode>& RenderQueue, CArray<CRenderNode>::CIterator ItCurr)
+CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
@@ -92,18 +92,20 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 	const CEffectConstant* pConstSkinPalette = NULL;	// ModelSkinned
 	const CEffectConstant* pConstInstanceData = NULL;	// ModelInstanced
 
-	CArray<CRenderNode>::CIterator ItEnd = RenderQueue.End();
+	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
 	{
-		if (ItCurr->pRenderer != this) return ItCurr;
+		CRenderNode* pRenderNode = *ItCurr;
 
-		const CTechnique* pTech = ItCurr->pTech;
-		const CPrimitiveGroup* pGroup = ItCurr->pGroup;
+		if (pRenderNode->pRenderer != this) return ItCurr;
+
+		const CTechnique* pTech = pRenderNode->pTech;
+		const CPrimitiveGroup* pGroup = pRenderNode->pGroup;
 		n_assert_dbg(pGroup && pTech);
 
 		// Apply material, if changed
 
-		const CMaterial* pMaterial = ItCurr->pMaterial;
+		const CMaterial* pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
@@ -116,7 +118,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 
 		// Apply geometry, if changed
 
-		CModel* pModel = ItCurr->pRenderable->As<CModel>();
+		CModel* pModel = pRenderNode->pRenderable->As<CModel>();
 		const CMesh* pMesh = pModel->Mesh.GetUnsafe();
 		if (pMesh != pCurrMesh)
 		{
@@ -137,15 +139,15 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 		// Gather instances (no skinned instancing supported)
 
 		bool HardwareInstancing = false;
-		CArray<CRenderNode>::CIterator ItInstEnd = ItCurr + 1;
-		if (!ItCurr->pSkinPalette)
+		CArray<CRenderNode*>::CIterator ItInstEnd = ItCurr + 1;
+		if (!pRenderNode->pSkinPalette)
 		{
 			while (ItInstEnd != ItEnd &&
-				   ItInstEnd->pRenderer == this &&
-				   ItInstEnd->pMaterial == pMaterial &&
-				   ItInstEnd->pTech == pTech &&
-				   ItInstEnd->pGroup == pGroup &&
-				   !ItInstEnd->pSkinPalette)
+				   (*ItInstEnd)->pRenderer == this &&
+				   (*ItInstEnd)->pMaterial == pMaterial &&
+				   (*ItInstEnd)->pTech == pTech &&
+				   (*ItInstEnd)->pGroup == pGroup &&
+				   !(*ItInstEnd)->pSkinPalette)
 			{
 				// We don't try to find an instanced tech version here, and don't break if
 				// it is not found, because if we did, the next object will try to do all
@@ -156,7 +158,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 
 			if (ItInstEnd - ItCurr > 1)
 			{
-				const CTechnique* pInstancedTech = ItCurr->pEffect->GetTechByInputSet(InputSet_ModelInstanced);
+				const CTechnique* pInstancedTech = pRenderNode->pEffect->GetTechByInputSet(InputSet_ModelInstanced);
 				if (pInstancedTech)
 				{
 					pTech = pInstancedTech;
@@ -209,9 +211,10 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
 				{
-					PerInstanceConstValues.SetConstantValue(pConstInstanceData, InstanceCount, ItCurr->Transform.m, sizeof(matrix44));
+					PerInstanceConstValues.SetConstantValue(pConstInstanceData, InstanceCount, pRenderNode->Transform.m, sizeof(matrix44));
 					++InstanceCount;
 					++ItCurr;
+					pRenderNode = *ItCurr;
 
 					if (InstanceCount == MaxInstanceCountConst)
 					{
@@ -281,10 +284,11 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
 				{
-					memcpy(pInstData, ItCurr->Transform.m, sizeof(matrix44));
+					memcpy(pInstData, pRenderNode->Transform.m, sizeof(matrix44));
 					pInstData = (char*)pInstData + sizeof(matrix44);
 					++InstanceCount;
 					++ItCurr;
+					pRenderNode = *ItCurr;
 
 					if (InstanceCount == MaxInstanceCount)
 					{
@@ -327,7 +331,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 
 			GPU.SetVertexLayout(pVL);
 
-			for (; ItCurr != ItInstEnd; ++ItCurr)
+			for (; ItCurr != ItInstEnd; ++ItCurr, pRenderNode = *ItCurr)
 			{
 				// Per-instance params
 
@@ -338,10 +342,10 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 				if (pConstWorldMatrix)
 				{
 					PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->Desc.BufferHandle, NULL);
-					PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, ItCurr->Transform.m, sizeof(matrix44));
+					PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, pRenderNode->Transform.m, sizeof(matrix44));
 				}
 
-				if (pConstSkinPalette && ItCurr->pSkinPalette)
+				if (pConstSkinPalette && pRenderNode->pSkinPalette)
 				{
 					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->Desc.BufferHandle, NULL);
 					if (pConstSkinPalette->Desc.Flags & Const_ColumnMajor) //???hide in a class/function?
@@ -358,7 +362,7 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 							{
 								float* pCurrData = pTransposedData;
-								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
+								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
 								for (U32 Col = 0; Col < Columns; ++Col)
 									for (U32 Row = 0; Row < Rows; ++Row)
 									{
@@ -370,11 +374,11 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 						}
 						else
 						{
-							UPTR BoneCount = n_min(ItCurr->BoneCount, pConstSkinPalette->Desc.ElementCount);
+							UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
 							for (UPTR BoneIdx = 0; BoneIdx < BoneCount; ++BoneIdx)
 							{
 								float* pCurrData = pTransposedData;
-								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + BoneIdx;
+								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + BoneIdx;
 								for (U32 Col = 0; Col < Columns; ++Col)
 									for (U32 Row = 0; Row < Rows; ++Row)
 									{
@@ -394,14 +398,14 @@ CArray<CRenderNode>::CIterator CModelRenderer::Render(const CRenderContext& Cont
 							UPTR BoneCount = n_min(pModel->BoneIndices.GetCount(), pConstSkinPalette->Desc.ElementCount);
 							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 							{
-								const matrix44* pBoneMatrix = ItCurr->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
+								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
 								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pBoneMatrix, sizeof(matrix44));
 							}
 						}
 						else
 						{
-							UPTR BoneCount = n_min(ItCurr->BoneCount, pConstSkinPalette->Desc.ElementCount);
-							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, ItCurr->pSkinPalette, sizeof(matrix44) * BoneCount);
+							UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
+							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, pRenderNode->pSkinPalette, sizeof(matrix44) * BoneCount);
 						}
 					}
 				}
