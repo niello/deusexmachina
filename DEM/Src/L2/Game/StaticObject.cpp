@@ -8,7 +8,7 @@
 #include <Scene/SceneNodeLoaderSCN.h>
 #include <Physics/CollisionObjStatic.h>
 #include <Physics/PhysicsLevel.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <IO/PathUtils.h>
 
@@ -118,7 +118,8 @@ void CStaticObject::Init(const Data::CParams& ObjDesc)
 	const CString& PhysicsDescFile = Desc->Get<CString>(CStrID("Physics"), CString::Empty);    
 	if (PhysicsDescFile.IsValid() && Level->GetPhysics())
 	{
-		Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
+		Data::PParams PhysicsDesc;
+		ParamsUtils::LoadParamsFromPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm", PhysicsDesc);
 		if (PhysicsDesc.IsValidPtr())
 		{
 			const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));

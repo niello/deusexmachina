@@ -25,28 +25,12 @@ class CDataServer
 
 private:
 
-	CHashTable<CString, PParams>	HRDCache; //!!!need better hashmap with Clear, Find etc!
-	//!!!Desc cache!
 	CDict<CStrID, PDataScheme>		DataSchemes;
 
 public:
 
-	CDataServer();
+	CDataServer() { __ConstructSingleton; }
 	~CDataServer() { __DestructSingleton; }
-
-	//???to resource managers? the same cache can br implemented. or special class C...Cache?
-	PParams			LoadHRD(const char* pFileName, bool Cache = true);
-	PParams			ReloadHRD(const char* pFileName, bool Cache = true);	// Force reloading from file
-	void			SaveHRD(const char* pFileName, const CParams* pContent);
-	//???void			UnloadHRD(CParams* Data);
-	void			UnloadHRD(const char* pFileName);
-	//void			ClearHRDCache() { HRDCache. }
-
-	PParams			LoadPRM(const char* pFileName, bool Cache = true);
-	PParams			ReloadPRM(const char* pFileName, bool Cache = true);	// Force reloading from file
-	bool			SavePRM(const char* pFileName, const CParams* pContent);
-
-	bool			LoadDesc(PParams& Out, const char* pContext, const char* pName, bool Cache = true);
 
 	bool			LoadDataSchemes(const char* pFileName);
 	CDataScheme*	GetDataScheme(CStrID ID);

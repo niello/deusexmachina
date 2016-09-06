@@ -14,7 +14,7 @@
 #include <Animation/NodeControllerMocap.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <IO/PathUtils.h>
 
 namespace Prop
@@ -109,7 +109,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 //!!!move it all to Activate() + (NAX2 loader requires ref-skeleton to remap bone indices to nodes)
 	Data::PParams Desc;
 	const CString& AnimDesc = GetEntity()->GetAttr<CString>(CStrID("AnimDesc"));
-	if (AnimDesc.IsValid()) Desc = DataSrv->LoadPRM(CString("GameAnim:") + AnimDesc + ".prm");
+	if (AnimDesc.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("GameAnim:") + AnimDesc + ".prm", Desc);
 
 	if (Desc.IsValidPtr())
 	{

@@ -165,6 +165,7 @@
     <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
+    <ClInclude Include="..\..\Src\L1\Data\ParamsUtils.h" />
     <ClInclude Include="..\..\Src\L1\Data\HandleManager.h" />
     <ClInclude Include="..\..\Src\L1\Data\MurmurHash3.h" />
     <ClInclude Include="..\..\Src\L1\Data\Regions.h" />
@@ -362,7 +363,6 @@
     <ClInclude Include="..\..\Src\L1\Debug\WatcherWindow.h" />
     <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionDown.h" />
-    <ClInclude Include="..\..\Src\L1\Input\InputServer.h" />
     <ClInclude Include="..\..\Src\L1\Input\Keys.h" />
     <ClInclude Include="..\..\Src\L1\Video\OGGTheoraPlayer.h" />
     <ClInclude Include="..\..\Src\L1\Video\VideoPlayer.h" />
@@ -475,6 +475,7 @@
     <ClCompile Include="..\..\Src\L1\Data\HRDParser.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\MurmurHash3.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Params.cpp" />
+    <ClCompile Include="..\..\Src\L1\Data\ParamsUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\String.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\StringID.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\StringIDStorage.cpp" />
@@ -618,7 +619,6 @@
     <ClCompile Include="..\..\Src\L1\Debug\WatcherWindow.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\ControlLayout.cpp" />
     <ClCompile Include="..\..\Src\L1\Input\InputConditionDown.cpp" />
-    <ClCompile Include="..\..\Src\L1\Input\InputServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Video\OGGTheoraPlayer.cpp" />
     <ClCompile Include="..\..\Src\L1\Video\VideoPlayer.cpp" />
     <ClCompile Include="..\..\Src\L1\Video\VideoServer.cpp" />

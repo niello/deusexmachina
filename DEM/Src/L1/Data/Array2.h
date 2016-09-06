@@ -3,6 +3,7 @@
 #define __DEM_L1_ARRAY2_H__
 
 #include <StdDEM.h>
+#include <System/System.h>
 
 // Fixed size two-dimensional array.
 

@@ -5,7 +5,7 @@
 #include <Events/EventServer.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <IO/IOServer.h>
 
 const CString StrQuests("Quests");
@@ -56,7 +56,8 @@ void CQuestManager::Trigger()
 
 bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 {
-	Data::PParams QuestDesc = DataSrv->LoadPRM(CString("Quests:") + QuestID.CStr() + "/_Quest.prm", false);
+	Data::PParams QuestDesc;
+	ParamsUtils::LoadParamsFromPRM(CString("Quests:") + QuestID.CStr() + "/_Quest.prm", QuestDesc);
 	if (QuestDesc.IsNullPtr()) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);

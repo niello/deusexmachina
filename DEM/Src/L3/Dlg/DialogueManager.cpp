@@ -4,7 +4,7 @@
 #include <Factions/FactionManager.h>
 #include <Game/EntityManager.h>
 #include <Data/DataArray.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Events/EventServer.h>
 
 namespace Story
@@ -70,7 +70,8 @@ PDlgGraph CDialogueManager::GetDialogueGraph(CStrID ID)
 	if (Idx > -1) return DlgRegistry.ValueAt(Idx);
 	else
 	{
-		Data::PParams Desc = DataSrv->LoadPRM(CString("Dlg:") + ID.CStr() + ".prm", false);
+		Data::PParams Desc;
+		if (!ParamsUtils::LoadParamsFromPRM(CString("Dlg:") + ID.CStr() + ".prm", Desc)) return NULL;
 		return Desc.IsValidPtr() ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : NULL;
 	}
 }

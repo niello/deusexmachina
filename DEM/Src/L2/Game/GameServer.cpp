@@ -12,7 +12,7 @@
 #include <UI/UIServer.h>
 #include <Time/TimeServer.h>
 #include <Scripting/ScriptObject.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <Events/EventServer.h>
 
@@ -312,10 +312,12 @@ bool CGameServer::ContinueGame(const char* pFileName)
 {
 	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
 
-	Data::PParams InitialCommon = DataSrv->LoadPRM(pFileName);
+	Data::PParams InitialCommon;
+	if (!ParamsUtils::LoadParamsFromPRM(pFileName, InitialCommon)) FAIL;
 	if (InitialCommon.IsNullPtr()) FAIL;
 
-	Data::PParams SGCommon = DataSrv->ReloadPRM("AppData:Profiles/" + CurrProfile + "/Continue/Main.prm", false);
+	Data::PParams SGCommon;
+	ParamsUtils::LoadParamsFromPRM("AppData:Profiles/" + CurrProfile + "/Continue/Main.prm", SGCommon);
 
 	Data::PParams GameDesc;
 	if (SGCommon.IsValidPtr())
@@ -360,11 +362,13 @@ bool CGameServer::LoadGameLevel(CStrID ID)
 
 	CString RelLevelPath = CString(ID.CStr()) + ".prm";
 
-	Data::PParams InitialLvl = DataSrv->LoadPRM("Levels:" + RelLevelPath);
+	Data::PParams InitialLvl;
+	if (!ParamsUtils::LoadParamsFromPRM("Levels:" + RelLevelPath, InitialLvl)) FAIL;
 	n_assert(InitialLvl.IsValidPtr());
 
 	CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
-	Data::PParams SGLvl = DataSrv->ReloadPRM(DiffPath + RelLevelPath, false);
+	Data::PParams SGLvl;
+	ParamsUtils::LoadParamsFromPRM(DiffPath + RelLevelPath, SGLvl);
 
 	Data::PParams LevelDesc;
 	if (SGLvl.IsValidPtr())
@@ -413,7 +417,8 @@ bool CGameServer::CommitContinueData()
 		LoadedLevels->Add(Levels.KeyAt(i));
 	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
-	Data::PParams GameDesc = DataSrv->LoadPRM(GameFileName);
+	Data::PParams GameDesc;
+	if (!ParamsUtils::LoadParamsFromPRM(GameFileName, GameDesc)) FAIL;
 	if (GameDesc.IsNullPtr()) FAIL;
 
 	// Save main game file with common data
@@ -447,10 +452,10 @@ bool CGameServer::CommitContinueData()
 
 	CString Path = "AppData:Profiles/" + CurrProfile + "/Continue";
 	IOSrv->CreateDirectory(Path);
-	DataSrv->SavePRM(Path + "/Main.prm", SGCommon);
+	if (!ParamsUtils::SaveParamsToPRM(Path + "/Main.prm", *SGCommon.GetUnsafe())) FAIL;
 
 	//!!!DBG TMP!
-	DataSrv->SaveHRD(Path + "/Main.hrd", SGCommon);
+	if (!ParamsUtils::SaveParamsToHRD(Path + "/Main.hrd", *SGCommon.GetUnsafe())) FAIL;
 
 	// Save diffs of each level
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
@@ -465,16 +470,17 @@ bool CGameServer::CommitLevelDiff(CGameLevel& Level)
 	EntityManager.DeferredDeleteEntities();
 
 	Data::PParams SGLevel = n_new(Data::CParams);
-	Data::PParams LevelDesc = DataSrv->LoadPRM(CString("Levels:") + Level.GetID().CStr() + ".prm");
+	Data::PParams LevelDesc;
+	if (!ParamsUtils::LoadParamsFromPRM(CString("Levels:") + Level.GetID().CStr() + ".prm", LevelDesc)) FAIL;
 	if (!Level.Save(*SGLevel, LevelDesc)) FAIL;
 	if (SGLevel->GetCount())
 	{
 		CString DirName = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
 		IOSrv->CreateDirectory(DirName);
-		DataSrv->SavePRM(DirName + Level.GetID().CStr() + ".prm", SGLevel);
+		if (!ParamsUtils::SaveParamsToPRM(DirName + Level.GetID().CStr() + ".prm", *SGLevel.GetUnsafe())) FAIL;
 
 		//!!!DBG TMP!
-		DataSrv->SaveHRD(DirName + Level.GetID().CStr() + ".hrd", SGLevel);
+		if (!ParamsUtils::SaveParamsToHRD(DirName + Level.GetID().CStr() + ".hrd", *SGLevel.GetUnsafe())) FAIL;
 	}
 
 	OK;

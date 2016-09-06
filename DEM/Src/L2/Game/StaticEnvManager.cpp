@@ -1,6 +1,6 @@
 #include "StaticEnvManager.h"
 
-#include <Data/DataServer.h>
+#include <Data/Params.h>
 #include <Data/DataArray.h>
 
 namespace Game

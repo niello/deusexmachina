@@ -3,7 +3,7 @@
 #include "ScriptObject.h"
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/Buffer.h>
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
@@ -392,7 +392,8 @@ bool CScriptServer::LoadClass(const char* Name)
 	n_assert2(Name, "Invalid class name to register");
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
-	Data::PParams ClassDesc = DataSrv->LoadPRM(CString("ScriptClasses:") + Name + ".cls", false);
+	Data::PParams ClassDesc;
+	ParamsUtils::LoadParamsFromPRM(CString("ScriptClasses:") + Name + ".cls", ClassDesc);
 	if (ClassDesc.IsNullPtr()) FAIL;
 
 	const CString& BaseClass = ClassDesc->Get<CString>(CStrID("Base"), CString::Empty);

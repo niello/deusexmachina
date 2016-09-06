@@ -13,7 +13,7 @@
 #include <Scripting/EventHandlerScript.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
 
@@ -31,7 +31,8 @@ bool CPropUIControl::InternalActivate()
 	ReflectSOActions = false;
 
 	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
-	Data::PParams Desc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
+	Data::PParams Desc;
+	if (UIDescPath.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("UI:") + UIDescPath + ".prm", Desc);
 	if (Desc.IsValidPtr())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), CString::Empty);
@@ -191,7 +192,8 @@ bool CPropUIControl::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, c
 void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
 	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
-	Data::PParams UIDesc = UIDescPath.IsValid() ? DataSrv->LoadPRM(CString("UI:") + UIDescPath + ".prm") : NULL;
+	Data::PParams UIDesc;
+	if (UIDescPath.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("UI:") + UIDescPath + ".prm", UIDesc);
 	Data::PParams Desc = UIDesc.IsValidPtr() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
 	if (Desc.IsNullPtr()) return;
 

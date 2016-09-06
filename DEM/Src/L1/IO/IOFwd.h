@@ -49,7 +49,6 @@ enum ESystemFolder
 	SF_PROGRAMS
 };
 
-
 }
 
 #endif

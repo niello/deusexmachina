@@ -246,9 +246,6 @@
     <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h">
       <Filter>Input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\InputServer.h">
-      <Filter>Input</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Input\Keys.h">
       <Filter>Input</Filter>
     </ClInclude>
@@ -989,6 +986,9 @@
     <ClInclude Include="..\..\Src\L1\Frame\RenderPhaseGlobalSetup.h">
       <Filter>Frame</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Data\ParamsUtils.h">
+      <Filter>Data</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1070,9 +1070,6 @@
       <Filter>Debug</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Input\ControlLayout.cpp">
-      <Filter>Input</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Input\InputServer.cpp">
       <Filter>Input</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Video\OGGTheoraPlayer.cpp">
@@ -1641,6 +1638,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\RenderPhaseGlobalSetup.cpp">
       <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Data\ParamsUtils.cpp">
+      <Filter>Data</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

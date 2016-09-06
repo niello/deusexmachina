@@ -1,7 +1,6 @@
 // Loads CTableT<CString> from Excel 2003 table saved in XML format.
 // Use function declaration instead of header file where you want to call this loader.
 
-#include <Data/DataServer.h>
 #include <Data/TableT.h>
 #include <Data/XMLDocument.h>
 #include <Data/String.h>

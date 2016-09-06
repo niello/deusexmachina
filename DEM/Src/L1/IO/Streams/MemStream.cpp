@@ -1,7 +1,5 @@
 #include "MemStream.h"
 
-#include <Data/DataServer.h>
-
 namespace IO
 {
 

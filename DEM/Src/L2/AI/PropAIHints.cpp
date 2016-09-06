@@ -7,7 +7,7 @@
 #include <Scripting/PropScriptable.h>
 #include <AI/AIServer.h>
 #include <Debug/DebugDraw.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Core/Factory.h>
 
 namespace Prop
@@ -99,7 +99,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 	//???need to cache?
 	Data::PParams Desc;
 	const CString& DescName = GetEntity()->GetAttr<CString>(CStrID("AIHintsDesc"), CString::Empty);
-	if (DescName.IsValid()) Desc = DataSrv->LoadPRM(CString("AIHints:") + DescName + ".prm");
+	if (DescName.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("AIHints:") + DescName + ".prm", Desc);
 
 	if (Desc.IsValidPtr())
 	{

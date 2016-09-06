@@ -6,7 +6,7 @@
 #include <Animation/PropAnimation.h>
 #include <Scripting/PropScriptable.h>
 #include <Events/EventServer.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <Math/Math.h>
 
@@ -19,7 +19,7 @@ bool CPropSmartObject::InternalActivate()
 {
 	Data::PParams Desc;
 	const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
-	if (DescResource.IsValid()) Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
+	if (DescResource.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("Smarts:") + DescResource + ".prm", Desc);
 
 	if (Desc.IsValidPtr())
 	{
@@ -126,7 +126,8 @@ bool CPropSmartObject::OnPropsActivated(Events::CEventDispatcher* pDispatcher, c
 	else
 	{
 		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
-		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
+		Data::PParams Desc;
+		ParamsUtils::LoadParamsFromPRM(CString("Smarts:") + DescResource + ".prm", Desc);
 		SetState(Desc->Get<CStrID>(CStrID("DefaultState"), CStrID::Empty), TrActionID, -1.f, TrManualControl);
 	}
 	OK;
@@ -148,7 +149,8 @@ bool CPropSmartObject::OnPropActivated(Events::CEventDispatcher* pDispatcher, co
 	if (pProp->IsA<CPropAnimation>())
 	{
 		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
-		Data::PParams Desc = DataSrv->LoadPRM(CString("Smarts:") + DescResource + ".prm");
+		Data::PParams Desc;
+		ParamsUtils::LoadParamsFromPRM(CString("Smarts:") + DescResource + ".prm", Desc);
 		InitAnimation(Desc, *(CPropAnimation*)pProp);
 		OK;
 	}

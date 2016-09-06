@@ -5,7 +5,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/Events/SetTransform.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <Core/Factory.h>
@@ -82,7 +82,8 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), CString::Empty);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
-	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
+	Data::PParams PhysicsDesc;
+	if (!ParamsUtils::LoadParamsFromPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm", PhysicsDesc)) return;
 	if (PhysicsDesc.IsNullPtr()) return;
 
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.

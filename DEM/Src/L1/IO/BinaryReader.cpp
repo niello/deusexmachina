@@ -1,6 +1,5 @@
 #include "BinaryReader.h"
 
-#include <Data/DataServer.h>
 #include <Data/DataArray.h>
 #include <Data/Buffer.h>
 #include <Math/Matrix44.h>

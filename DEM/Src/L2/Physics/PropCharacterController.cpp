@@ -4,7 +4,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/Events/SetTransform.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <Debug/DebugDraw.h>
 #include <Core/Factory.h>
@@ -60,7 +60,8 @@ void CPropCharacterController::CreateController()
 	const CString& PhysicsDescFile = GetEntity()->GetAttr<CString>(CStrID("Physics"), CString::Empty);    
 	if (PhysicsDescFile.IsEmpty()) return;
 
-	Data::PParams PhysicsDesc = DataSrv->LoadPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm");
+	Data::PParams PhysicsDesc;
+	if (!ParamsUtils::LoadParamsFromPRM(CString("Physics:") + PhysicsDescFile.CStr() + ".prm", PhysicsDesc)) return;
 	if (PhysicsDesc.IsNullPtr()) return;
 
 	//???init by entity attrs like R & H instead?

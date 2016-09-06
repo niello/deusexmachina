@@ -1,7 +1,7 @@
 #include "ItemManager.h"
 
 #include <Data/Params.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Core/Factory.h>
 
 namespace Items
@@ -24,7 +24,8 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
 	else
 	{
-		Data::PParams HRD = DataSrv->LoadPRM(CString("Items:") + ID.CStr() + ".prm", false);
+		Data::PParams HRD;
+		if (!ParamsUtils::LoadParamsFromPRM(CString("Items:") + ID.CStr() + ".prm", HRD)) FAIL;
 		if (HRD.IsValidPtr())
 		{
 			Tpl = CreateItemTpl(ID, *HRD);

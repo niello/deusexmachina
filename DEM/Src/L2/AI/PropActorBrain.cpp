@@ -5,7 +5,7 @@
 #include <AI/Behaviour/Action.h>
 #include <Physics/PropCharacterController.h>
 #include <Scripting/PropScriptable.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <Game/EntityManager.h>
 #include <Game/GameServer.h>
@@ -68,7 +68,7 @@ bool CPropActorBrain::InternalActivate()
 
 	//???need to cache?
 	PParams Desc;
-	if (DataSrv->LoadDesc(Desc, CString("Actors:"), GetEntity()->GetAttr<CString>(CStrID("ActorDesc"))))
+	if (ParamsUtils::LoadDescFromPRM(CString("Actors:"), GetEntity()->GetAttr<CString>(CStrID("ActorDesc")) + ".prm", Desc))
 	{
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))
