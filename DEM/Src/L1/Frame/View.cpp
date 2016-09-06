@@ -97,7 +97,12 @@ void CView::UpdateVisibilityCache()
 			Scene::CNodeAttribute* pAttr = VisibilityCache[i];
 			if (pAttr->IsA<Frame::CNodeAttrLight>())
 			{
-				LightCache.Add((Frame::CNodeAttrLight*)pAttr);
+				Render::CLightRecord& Rec = *LightCache.Add();
+				Rec.pLight = &((Frame::CNodeAttrLight*)pAttr)->GetLight();
+				Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
+				Rec.UseCount = 0;
+				Rec.IndexInGlobalBuffer = INVALID_INDEX;
+
 				VisibilityCache.RemoveAt(i);
 			}
 			else ++i;

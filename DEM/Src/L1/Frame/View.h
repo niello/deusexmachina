@@ -48,7 +48,7 @@ protected:
 	CNodeAttrCamera*							pCamera; //???smart ptr?
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
-	CArray<Frame::CNodeAttrLight*>				LightCache;
+	CArray<Render::CLightRecord>				LightCache;
 	bool										VisibilityCacheDirty; //???to flags?
 
 	ELODType									MeshLODType;
@@ -71,6 +71,8 @@ public:
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
+	//CLightInfo array Lights;
+	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true), MeshLODType(LOD_None), MaterialLODType(LOD_None) {}
 	~CView();
@@ -89,7 +91,7 @@ public:
 	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
-	CArray<Frame::CNodeAttrLight*>&	GetLightCache() { return LightCache; }
+	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }

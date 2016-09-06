@@ -44,7 +44,7 @@ public:
 	virtual Scene::PNodeAttribute	Clone();
 	void							UpdateInSPS(Scene::CSPS& SPS);
 
-	void							CalcFrustum(matrix44& OutFrustum);
+	void							CalcFrustum(matrix44& OutFrustum) const;
 	bool							GetGlobalAABB(CAABB& OutBox) const;
 	const vector3&					GetPosition() const { return pNode->GetWorldMatrix().Translation(); }
 	vector3							GetDirection() const { return -pNode->GetWorldMatrix().AxisZ(); }

@@ -8,6 +8,8 @@
 
 // Light describes light source properties, including type, color, range, shadow casting flags etc
 
+class matrix44;
+
 namespace IO
 {
 	class CBinaryReader;
@@ -54,6 +56,8 @@ public:
 	CLight();
 
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+
+	void			CalcLocalFrustum(matrix44& OutFrustum) const; // Spot only
 
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);

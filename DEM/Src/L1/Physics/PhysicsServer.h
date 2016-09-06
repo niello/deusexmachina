@@ -3,7 +3,6 @@
 #define __DEM_L1_PHYSICS_SERVER_H__
 
 #include <Data/Singleton.h>
-#include <Resources/ResourceManager.h>
 #include <Physics/CollisionShape.h>
 #include <Data/DynamicEnum.h>
 

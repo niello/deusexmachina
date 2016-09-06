@@ -15,10 +15,6 @@ CIOServer::CIOServer(): Assigns(32)
 {
 	__ConstructSingleton;
 
-#ifdef _EDITOR
-	DataPathCB = NULL;
-#endif
-
 	//!!!move to app!
 #ifdef __WIN32__
 	DefaultFS = n_new(CFileSystemWin32);
@@ -363,9 +359,6 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 	// Ignore one character "assigns" because they are really DOS drive letters
 	while ((ColonIdx = PathString.FindIndex(':')) > 1)
 	{
-#ifdef _EDITOR
-		if (QueryMangledPath(PathString, PathString)) continue;
-#endif
 		CString Assign = PathString.SubString(0, ColonIdx);
 		Assign.ToLower();
 		CString AssignValue;

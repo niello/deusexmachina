@@ -68,28 +68,30 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	CArray<Render::CRenderNode*>& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
 
+	n_assert_dbg(!View.LightIndices.GetCount());
+
 	Render::CRenderNodeContext Context;
 	Context.pEffectOverrides = EffectOverrides.GetCount() ? &EffectOverrides : NULL;
-
-	struct CLightRecord
-	{
-		const Render::CLight*	pLight;
-		IPTR					Index;	// Index in a global light info buffer, if used
-	};
-	CArray<CLightRecord> Lights; //!!!PERF: need cache to avoid per-frame allocations!
-
-	//???separate lights and renderables in View.UpdateVisibilityCache()?
 	if (EnableLighting)
 	{
-		CArray<CNodeAttrLight*>& VisibleLights = View.GetLightCache();
+		Context.pLights = &View.GetLightCache();
+		Context.pLightIndices = &View.LightIndices;
+	}
+	else
+	{
+		Context.pLights = NULL;
+		Context.pLightIndices = NULL;
+	}
 
-		for (CArray<CNodeAttrLight*>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
+	if (EnableLighting)
+	{
+		/*for (CArray<CNodeAttrLight*>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
 		{
 			Frame::CNodeAttrLight* pAttrLight = (CNodeAttrLight*)(*It);
 			CLightRecord& LightRec = *Lights.Add();
 			LightRec.pLight = &pAttrLight->GetLight();
 			LightRec.Index = INVALID_INDEX;
-		}
+		}*/
 	}
 
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
@@ -119,8 +121,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 		else pNode->pSkinPalette = NULL;
 
-		CAABB GlobalAABB;
-		if (pAttrRenderable->GetGlobalAABB(GlobalAABB, 0))
+		if (pAttrRenderable->GetGlobalAABB(Context.AABB, 0))
 		{
 			float ScreenSizeRel;
 			if (CalcScreenSize)
@@ -130,7 +131,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			}
 			else ScreenSizeRel = 0.f;
 
-			float SqDistanceToCamera = GlobalAABB.SqDistance(CameraPos);
+			float SqDistanceToCamera = Context.AABB.SqDistance(CameraPos);
 			pNode->SqDistanceToCamera = SqDistanceToCamera;
 			Context.MeshLOD = View.GetMeshLOD(SqDistanceToCamera, ScreenSizeRel);
 			Context.MaterialLOD = View.GetMaterialLOD(SqDistanceToCamera, ScreenSizeRel);
@@ -142,20 +143,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			Context.MaterialLOD = 0;
 		}
 
-		if (EnableLighting)
-		{
-			// check lights that touch this objects
-			// select MaxLights with the highest priority
-			// if global buffer exists, fill it and set light indices to a node
-			// else set light info to a node
-			//!!!may always pass indices here, and only expand to light data when passed to a shader without global buffer!
-
-			//!!!render nodes are too heavy, sort pointers!
-			//View may have pool allocator for them, for the great reuse without thread syncs!
-			//so here we will not host render nodes but only store pointers
-			//???profile sorting?
-			//if so, removal from render queue on refuse won't be needed, as we can add to queue after PrepareNode!
-		}
+		//!!!PERF: needs testing!
+		//!!!may send lights subset selected by:
+		//if (pAttrRenderable->pSPSRecord->pSPSNode->SharesSpaceWith(*pAttrLight->pSPSRecord->pSPSNode))
+		//if (pAttrRenderable->CheckPotentialIntersection(*pAttrLight / pSPSNode)) // true if some of pSPSNodes is NULL
 
 		if (!pRenderer->PrepareNode(*pNode, Context))
 		{
@@ -179,7 +170,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	// Sort render queue if requested
 
-	//???PERF: sort ptrs or indices into a render queue? CRenderNode structure may bee to big to be moved
 	switch (SortingType)
 	{
 		case Sort_FrontToBack:	RenderQueue.Sort<CRenderQueueCmp_FrontToBack>(); break;
@@ -210,6 +200,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		ItCurr = (*ItCurr)->pRenderer->Render(Ctx, RenderQueue, ItCurr);
 
 	//!!!hide in a private method of CView!
+	View.LightIndices.Clear(false);
 	for (UPTR i = 0; i < RenderQueue.GetCount(); ++i)
 		View.RenderNodePool.Destroy(RenderQueue[i]);
 	RenderQueue.Clear(false);

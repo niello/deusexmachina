@@ -363,7 +363,6 @@
     <ClInclude Include="..\..\Src\L1\Debug\WatcherWindow.h" />
     <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h" />
     <ClInclude Include="..\..\Src\L1\Input\InputConditionDown.h" />
-    <ClInclude Include="..\..\Src\L1\Input\Keys.h" />
     <ClInclude Include="..\..\Src\L1\Video\OGGTheoraPlayer.h" />
     <ClInclude Include="..\..\Src\L1\Video\VideoPlayer.h" />
     <ClInclude Include="..\..\Src\L1\Video\VideoServer.h" />

@@ -68,8 +68,6 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
-		CSkybox* pSkybox = pRenderNode->pRenderable->As<CSkybox>();
-
 		const CMaterial* pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
 		{
@@ -111,7 +109,7 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 		}
 		PerInstanceConstValues.ApplyConstantBuffers();
 
-		const CMesh* pMesh = pSkybox->GetMesh();
+		const CMesh* pMesh = pRenderNode->pMesh;
 		n_assert_dbg(pMesh);
 		CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
 		n_assert_dbg(pVB);

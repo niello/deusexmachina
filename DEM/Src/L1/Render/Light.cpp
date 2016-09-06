@@ -1,6 +1,7 @@
 #include "Light.h"
 
 #include <IO/BinaryReader.h>
+#include <Math/Matrix44.h>
 
 namespace Render
 {
@@ -45,6 +46,12 @@ bool CLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		}
 		default: FAIL;
 	}
+}
+//---------------------------------------------------------------------
+
+void CLight::CalcLocalFrustum(matrix44& OutFrustum) const
+{
+	OutFrustum.perspFovRh(ConeOuter, 1.f, 0.f, Range);
 }
 //---------------------------------------------------------------------
 

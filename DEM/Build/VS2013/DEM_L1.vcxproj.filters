@@ -246,9 +246,6 @@
     <ClInclude Include="..\..\Src\L1\Input\ControlLayout.h">
       <Filter>Input</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Input\Keys.h">
-      <Filter>Input</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Video\OGGTheoraPlayer.h">
       <Filter>Video</Filter>
     </ClInclude>

@@ -225,6 +225,18 @@ inline float n_angulardistance(float from, float to)
 namespace Math
 {
 
+// Quake inverse sqrt
+//https://en.wikipedia.org/wiki/Fast_inverse_square_root
+inline float RSqrt(float Value)
+{
+	float x2 = Value * 0.5F;
+	float y = Value;
+	long i = *(long*)&y;
+	i = 0x5f3759df - (i >> 1);
+	y = *(float*)&i;
+	return y * (1.5f - (x2 * y * y));
+}
+
 // Solves ax^2 + bx + c = 0 equation. Returns a number of real roots and optionally root values.
 inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = NULL, float* pOutX2 = NULL)
 {

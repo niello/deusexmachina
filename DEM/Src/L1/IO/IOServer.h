@@ -22,11 +22,6 @@ namespace IO
 typedef Ptr<class IFileSystem> PFileSystem;
 typedef Ptr<class CStream> PStream;
 
-#ifdef _EDITOR
-typedef bool (__stdcall *CDataPathCallback)(const char* DataPath, char** MangledPath);
-typedef void (__stdcall *CReleaseMemoryCallback)(void* p);
-#endif
-
 #define IOSrv IO::CIOServer::Instance()
 
 class CIOServer

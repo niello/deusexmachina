@@ -21,7 +21,8 @@ class CModelRenderer: public IRenderer
 
 protected:
 
-	const U32								INSTANCE_BUFFER_STREAM_INDEX = 1;
+	static const U32						INSTANCE_BUFFER_STREAM_INDEX = 1;
+	static const U16						MAX_LIGHT_COUNT_PER_OBJECT = 8;
 
 	UPTR									InputSet_Model;
 	UPTR									InputSet_ModelSkinned;

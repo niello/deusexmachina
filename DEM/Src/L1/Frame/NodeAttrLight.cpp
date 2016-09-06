@@ -123,14 +123,10 @@ bool CNodeAttrLight::GetGlobalAABB(CAABB& OutBox) const
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrLight::CalcFrustum(matrix44& OutFrustum)
+void CNodeAttrLight::CalcFrustum(matrix44& OutFrustum) const
 {
-	//???cache local frustum in a CLight?
-	//!!!use frustum to cull spotlights! also can cull point lights by sphere! can do on CView visibility cache collection!
-	float Range = Light.GetRange();
-	float ConeOuter = Light.GetSpotOuterAngle();
 	matrix44 LocalFrustum;
-	LocalFrustum.perspFovRh(ConeOuter, 1.f, 0.f, Range);
+	Light.CalcLocalFrustum(LocalFrustum);
 	pNode->GetWorldMatrix().invert_simple(OutFrustum);
 	OutFrustum *= LocalFrustum;
 }

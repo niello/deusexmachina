@@ -7,7 +7,9 @@
 #include <Render/Effect.h>
 #include <Render/EffectConstSetValues.h>
 #include <Render/Mesh.h>
+#include <Render/Light.h>
 #include <Render/GPUDriver.h>
+#include <Math/Sphere.h>	//!!!for light testing only, refactor and optimize!
 #include <Core/Factory.h>
 
 namespace Render
@@ -41,6 +43,31 @@ CModelRenderer::CModelRenderer()
 }
 //---------------------------------------------------------------------
 
+//???use object pos or AABB and closest point?!
+//???!!!precalculate object-invariant values on light cache filling?!
+// NB: always returns positive number.
+static float CalcLightPriority(const vector3& ObjectPos, const vector3& LightPos, const vector3& LightInvDir, const CLight& Light)
+{
+	float SqIntensity = Light.Intensity * Light.Intensity;
+	if (Light.Type == Light_Directional) return SqIntensity;
+
+	float SqDistance = vector3::SqDistance(ObjectPos, LightPos);
+	float Attenuation = (1.f - SqDistance * (Light.GetInvRange() * Light.GetInvRange()));
+
+	if (Light.Type == Light_Spot && SqDistance != 0.f)
+	{
+		vector3 ModelLight = ObjectPos - LightPos;
+		//ModelLight /= n_sqrt(SqDistance);
+		ModelLight *= Math::RSqrt(SqDistance); //!!!TEST IT!
+		float CosAlpha = ModelLight.Dot(LightInvDir);
+		float Falloff = (CosAlpha - Light.GetCosHalfPhi()) / (Light.GetCosHalfTheta() - Light.GetCosHalfPhi());
+		return SqIntensity * Attenuation * Clamp(Falloff, 0.f, 1.f);
+	}
+
+	return SqIntensity * Attenuation;
+}
+//---------------------------------------------------------------------
+
 bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
 {
 	CModel* pModel = Node.pRenderable->As<CModel>();
@@ -69,6 +96,112 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	Node.pMesh = pModel->Mesh.GetUnsafe();
 	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
 
+	if (pModel->BoneIndices.GetCount())
+	{
+		Node.pSkinMapping = pModel->BoneIndices.GetPtr();
+		Node.BoneCount = pModel->BoneIndices.GetCount();
+	}
+	else Node.pSkinMapping = NULL;
+
+	U8 LightCount = 0;
+
+	if (Context.pLights && MAX_LIGHT_COUNT_PER_OBJECT)
+	{
+		n_assert_dbg(Context.pLightIndices);
+
+		CArray<U16>& LightIndices = *Context.pLightIndices;
+		Node.LightIndexBase = LightIndices.GetCount();
+
+		float LightPriority[MAX_LIGHT_COUNT_PER_OBJECT];
+		bool LightOverflow = false;
+
+		const CArray<CLightRecord>& Lights = *Context.pLights;
+		for (UPTR i = 0; i < Lights.GetCount(); ++i)
+		{
+			CLightRecord& LightRec = Lights[i];
+			const CLight* pLight = LightRec.pLight;
+			switch (pLight->Type)
+			{
+				case Light_Point:
+				{
+					//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
+					sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
+					if (!LightBounds.GetClipStatus(Context.AABB)) continue;
+					break;
+				}
+				case Light_Spot:
+				{
+					//!!!???PERF: test against sphere before?!
+					//???cache GlobalFrustum in a light record?
+					matrix44 LocalFrustum;
+					pLight->CalcLocalFrustum(LocalFrustum);
+					matrix44 GlobalFrustum;
+					LightRec.Transform.invert_simple(GlobalFrustum);
+					GlobalFrustum *= LocalFrustum;
+					if (!Context.AABB.GetClipStatus(GlobalFrustum)) continue;
+					break;
+				}
+			}
+
+			if (LightCount < MAX_LIGHT_COUNT_PER_OBJECT)
+			{				
+				LightIndices.Add(i);
+				++LightCount;
+				++LightRec.UseCount;
+			}
+			else
+			{
+				if (!LightOverflow)
+				{
+					// Calculate light priorities for already collected lights
+					for (U16 j = 0; j < LightCount; ++j)
+					{
+						const CLightRecord& CurrRec = Lights[LightIndices[Node.LightIndexBase + j]];
+						LightPriority[j] = CalcLightPriority(
+							Node.Transform.Translation(),
+							CurrRec.Transform.Translation(),
+							CurrRec.Transform.AxisZ(),
+							*pLight);
+					}
+
+					LightOverflow = true;
+				}
+
+				float CurrLightPriority = CalcLightPriority(
+					Node.Transform.Translation(),
+					LightRec.Transform.Translation(),
+					LightRec.Transform.AxisZ(),
+					*pLight);
+
+				//PERF: faster but less precise approach is to replace the first light with lower priority
+				float MinPriority = LightPriority[0];
+				U16 MinPriorityIndex = 0;
+				for (U16 j = 1; j < LightCount; ++j)
+				{
+					if (LightPriority[j] < MinPriority)
+					{
+						MinPriority = LightPriority[j];
+						MinPriorityIndex = j;
+					}
+				}
+				
+				if (CurrLightPriority > MinPriority)
+				{
+					U16& LightIndex = LightIndices[Node.LightIndexBase + MinPriorityIndex];
+					--Lights[LightIndex].UseCount;
+
+					LightIndex = i;
+					LightPriority[MinPriorityIndex] = CurrLightPriority;
+					++LightRec.UseCount;
+				}
+
+				//break; // - if don't want to calculate priorities, just skip all remaining lights
+			}
+		}
+	}
+
+	Node.LightCount = LightCount;
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -78,7 +211,9 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 // single-pass tech, than that the same material will be used with many different techs. We have great chances
 // to set render state only once as our tech is single-pass, and to render many materials without switching it,
 // just rebinding constants, resources and samplers.
-CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr)
+CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Context,
+													   CArray<CRenderNode*>& RenderQueue,
+													   CArray<CRenderNode*>::CIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
@@ -118,8 +253,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 		// Apply geometry, if changed
 
-		CModel* pModel = pRenderNode->pRenderable->As<CModel>();
-		const CMesh* pMesh = pModel->Mesh.GetUnsafe();
+		const CMesh* pMesh = pRenderNode->pMesh;
 		if (pMesh != pCurrMesh)
 		{
 			n_assert_dbg(pMesh);
@@ -347,6 +481,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				if (pConstSkinPalette && pRenderNode->pSkinPalette)
 				{
+					UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
+
 					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->Desc.BufferHandle, NULL);
 					if (pConstSkinPalette->Desc.Flags & Const_ColumnMajor) //???hide in a class/function?
 					{
@@ -356,13 +492,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						UPTR MatrixSize = Columns * Rows * sizeof(float);
 						float* pTransposedData = (float*)_malloca(MatrixSize);
 
-						if (pModel->BoneIndices.GetCount())
+						if (pRenderNode->pSkinMapping)
 						{
-							UPTR BoneCount = n_min(pModel->BoneIndices.GetCount(), pConstSkinPalette->Desc.ElementCount);
 							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 							{
 								float* pCurrData = pTransposedData;
-								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
+								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
 								for (U32 Col = 0; Col < Columns; ++Col)
 									for (U32 Row = 0; Row < Rows; ++Row)
 									{
@@ -374,7 +509,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						}
 						else
 						{
-							UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
 							for (UPTR BoneIdx = 0; BoneIdx < BoneCount; ++BoneIdx)
 							{
 								float* pCurrData = pTransposedData;
@@ -393,18 +527,16 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					}
 					else
 					{
-						if (pModel->BoneIndices.GetCount())
+						if (pRenderNode->pSkinMapping)
 						{
-							UPTR BoneCount = n_min(pModel->BoneIndices.GetCount(), pConstSkinPalette->Desc.ElementCount);
 							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 							{
-								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pModel->BoneIndices[BoneIdxIdx];
+								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
 								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pBoneMatrix, sizeof(matrix44));
 							}
 						}
 						else
 						{
-							UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
 							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, pRenderNode->pSkinPalette, sizeof(matrix44) * BoneCount);
 						}
 					}

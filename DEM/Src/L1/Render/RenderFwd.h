@@ -23,6 +23,7 @@ struct CSwapChainDesc;
 struct CRenderStateDesc;
 struct CSamplerDesc;
 class CDisplayMode;
+class CLight;
 class CTechnique;
 class IShaderMetadata;
 class IRenderable;
