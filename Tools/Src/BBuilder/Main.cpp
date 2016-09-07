@@ -3,8 +3,8 @@
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <IO/PathUtils.h>
-#include <Data/DataServer.h>
 #include <Data/StringUtils.h>
+#include <Data/ParamsUtils.h>
 #include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 
 CString			ProjectDir;
@@ -21,6 +21,7 @@ CToolFileLists	InFileLists;
 CToolFileLists	OutFileLists;
 
 CClassCodeMap	ClassToFOURCC;
+CDict<CStrID, Data::PDataScheme> Schemes;
 
 // Debug command line:
 // -export -waitkey -v 5 -sm3 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
@@ -66,9 +67,8 @@ int main(int argc, const char** argv)
 
 	n_msg(VL_INFO, "Project directory: %s\nBuild directory: %s\n", ProjectDir.CStr(), BuildDir.CStr());
 
-	Data::CDataServer DataServer;
-
-	Data::PParams PathList = DataSrv->LoadHRD("Proj:SrcPathList.hrd", false);
+	Data::PParams PathList;
+	ParamsUtils::LoadParamsFromHRD("Proj:SrcPathList.hrd", PathList);
 	if (PathList.IsValidPtr())
 	{
 		for (UPTR i = 0; i < PathList->GetCount(); ++i)
@@ -76,7 +76,7 @@ int main(int argc, const char** argv)
 		PathList = NULL;
 	}
 
-	PathList = DataSrv->LoadHRD("Proj:PathList.hrd", false);
+	ParamsUtils::LoadParamsFromHRD("Proj:PathList.hrd", PathList);
 	if (PathList.IsValidPtr())
 	{
 		for (UPTR i = 0; i < PathList->GetCount(); ++i)
@@ -87,7 +87,8 @@ int main(int argc, const char** argv)
 	}
 
 	//???rewrite HRD/PRM to return CData? change root symbol in grammar, so could store array and anything else
-	Data::PParams ClassToFOURCCDesc = DataSrv->LoadHRD("Proj:ClassToFOURCC.hrd", false);
+	Data::PParams ClassToFOURCCDesc;
+	ParamsUtils::LoadParamsFromHRD("Proj:ClassToFOURCC.hrd", ClassToFOURCCDesc);
 	Data::PDataArray ClassToFOURCCArray;
 	if (ClassToFOURCCDesc.IsValidPtr() &&
 		ClassToFOURCCDesc->Get<Data::PDataArray>(ClassToFOURCCArray, CStrID("List")) &&
@@ -102,7 +103,7 @@ int main(int argc, const char** argv)
 	ClassToFOURCCArray = NULL;
 	ClassToFOURCCDesc = NULL;
 
-	if (!DataSrv->LoadDataSchemes("Home:DataSchemes/SceneNodes.dss"))
+	if (!ParamsUtils::LoadDataSerializationSchemesFromDSS("Home:DataSchemes/SceneNodes.dss", Schemes))
 	{
 		n_msg(VL_ERROR, "BBuilder: Failed to read 'Home:DataSchemes/SceneNodes.dss'\n");
 		EXIT_APP_FAIL;
@@ -117,10 +118,10 @@ int main(int argc, const char** argv)
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory("Levels:");
-		Desc = DataSrv->LoadHRD("SrcGame:Main.hrd", false);
-		DataSrv->SavePRM(ExportFilePath, Desc);
+		ParamsUtils::LoadParamsFromHRD("SrcGame:Main.hrd", Desc);
+		ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc);
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath, false);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr())
 	{
@@ -150,7 +151,7 @@ int main(int argc, const char** argv)
 			Data::PParams LevelDesc;
 			if (ExportDescs)
 			{
-				LevelDesc = DataSrv->LoadHRD("SrcLevels:" + Browser.GetCurrEntryName(), false);
+				ParamsUtils::LoadParamsFromHRD("SrcLevels:" + Browser.GetCurrEntryName(), LevelDesc);
 
 				// Convert entity props from names to FourCC
 				Data::PParams SubDesc;
@@ -165,9 +166,9 @@ int main(int argc, const char** argv)
 					}
 				}
 
-				DataSrv->SavePRM(ExportFilePath, LevelDesc);
+				ParamsUtils::SaveParamsToPRM(ExportFilePath, *LevelDesc);
 			}
-			else LevelDesc = DataSrv->LoadPRM(ExportFilePath, false);
+			else ParamsUtils::LoadParamsFromPRM(ExportFilePath, LevelDesc);
 
 			if (!LevelDesc.IsValidPtr())
 			{
@@ -351,6 +352,8 @@ int ExitApp(bool NoError, bool WaitKey)
 		Sys::Log("\nPress any key to exit...\n");
 		_getch();
 	}
+
+	Schemes.Clear();
 
 	return NoError ? 0 : 1;
 }

@@ -108,9 +108,6 @@
     <ClInclude Include="..\..\Src\L1\Data\DataScheme.h">
       <Filter>Data</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Data\DataServer.h">
-      <Filter>Data</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\Dictionary.h">
       <Filter>Data</Filter>
     </ClInclude>
@@ -998,9 +995,6 @@
       <Filter>Data</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Data\DataScheme.cpp">
-      <Filter>Data</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Data\DataServer.cpp">
       <Filter>Data</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Data\HRDParser.cpp">

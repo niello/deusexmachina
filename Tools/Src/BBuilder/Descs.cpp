@@ -9,7 +9,7 @@
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <IO/PathUtils.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 
@@ -35,10 +35,10 @@ bool ProcessDialogue(const CString& SrcContext, const CString& ExportContext, co
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(SrcContext + Name + ".hrd", false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+		if (!ParamsUtils::LoadParamsFromHRD(SrcContext + Name + ".hrd", Desc)) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc)) FAIL;
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr()) FAIL;
 
@@ -70,10 +70,10 @@ bool ProcessCollisionShape(const CString& SrcFilePath, const CString& ExportFile
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(SrcFilePath, false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+		ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc);
+		if (!ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc)) FAIL;
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr()) FAIL;
 
@@ -109,10 +109,10 @@ bool ProcessPhysicsDesc(const CString& SrcFilePath, const CString& ExportFilePat
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(SrcFilePath, false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+		if (!ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc)) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc)) FAIL;
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr()) FAIL;
 
@@ -148,10 +148,10 @@ bool ProcessAnimDesc(const CString& SrcFilePath, const CString& ExportFilePath)
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(SrcFilePath, false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+		if (!ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc)) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc)) FAIL;
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr()) FAIL;
 
@@ -180,10 +180,10 @@ bool ProcessDescWithParents(const CString& SrcContext, const CString& ExportCont
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(SrcContext + Name + ".hrd", false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+		if (!ParamsUtils::LoadParamsFromHRD(SrcContext + Name + ".hrd", Desc)) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc)) FAIL;
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr()) FAIL;
 
@@ -519,7 +519,8 @@ bool ProcessMaterialDesc(const char* pName)
 	// we must export descs even if only texture export is required.
 	if (ExportDescs || ExportResources)
 	{
-		Data::PParams Desc = DataSrv->LoadHRD(CString("SrcMaterials:") + pName + ".hrd", false);
+		Data::PParams Desc;
+		ParamsUtils::LoadParamsFromHRD(CString("SrcMaterials:") + pName + ".hrd", Desc);
 		if (!Desc.IsValidPtr()) FAIL;
 
 		CStrID EffectID = Desc->Get(CStrID("Effect"), CStrID::Empty);
@@ -923,7 +924,8 @@ bool ProcessMaterialDesc(const char* pName)
 
 bool ProcessRenderPathDesc(const char* pSrcFilePath)
 {
-	Data::PParams Desc = DataSrv->LoadHRD(pSrcFilePath, false);
+	Data::PParams Desc;
+	ParamsUtils::LoadParamsFromHRD(pSrcFilePath, Desc);
 	if (Desc.IsNullPtr()) FAIL;
 
 	Data::PDataArray EffectsWithGlobals;
@@ -1098,7 +1100,8 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
-	Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
+	Data::PParams Desc;
+	ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc);
 	if (Desc.IsNullPtr()) FAIL;
 
 	if (ExportDescs)
@@ -1107,7 +1110,9 @@ bool ProcessSceneResource(const CString& SrcFilePath, const CString& ExportFileP
 		IO::PStream File = IOSrv->CreateStream(ExportFilePath);
 		if (!File->Open(IO::SAM_WRITE)) FAIL;
 		IO::CBinaryWriter Writer(*File);
-		Writer.WriteParams(*Desc, *DataSrv->GetDataScheme(CStrID("SceneNode")));
+		IPTR Idx = Schemes.FindIndex(CStrID("SceneNode"));
+		if (Idx == INVALID_INDEX) FAIL;
+		Writer.WriteParams(*Desc, *Schemes.ValueAt(Idx).GetUnsafe(), Schemes);
 		File->Close();
 	}
 
@@ -1127,7 +1132,8 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 
 	if (IsFileAdded(RealExportFilePath)) OK;
 
-	Data::PParams UIDesc = DataSrv->LoadHRD(pSrcFilePath, false);
+	Data::PParams UIDesc;
+	ParamsUtils::LoadParamsFromHRD(pSrcFilePath, UIDesc);
 	if (UIDesc.IsNullPtr()) OK; // No UI desc
 
 	Data::PParams ResourceGroupsDesc;
@@ -1197,7 +1203,7 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 			if (!TermDEMShaderCompilerDLL()) FAIL;
 
 			IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
-			if (!DataSrv->SavePRM(RealExportFilePath, UIDesc)) FAIL;
+			if (!ParamsUtils::SaveParamsToPRM(RealExportFilePath, *UIDesc)) FAIL;
 		}
 	}
 
@@ -1206,7 +1212,7 @@ bool ProcessUISettingsDesc(const char* pSrcFilePath, const char* pExportFilePath
 	// If desc was not re-exported, we need to find shader references in a .prm
 	if (ExportDescs)
 	{
-		UIDesc = DataSrv->LoadPRM(RealExportFilePath, false);
+		ParamsUtils::LoadParamsFromPRM(RealExportFilePath, UIDesc);
 
 		Data::PParams ShadersDesc;
 		if (UIDesc->Get<Data::PParams>(ShadersDesc, CStrID("Shaders")))
@@ -1237,7 +1243,9 @@ bool ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath)
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
-		if (!DataSrv->SavePRM(RealExportFilePath, DataSrv->LoadHRD(pSrcFilePath, false))) FAIL;
+		Data::PParams Desc;
+		if (!ParamsUtils::LoadParamsFromHRD(pSrcFilePath, Desc)) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(RealExportFilePath, *Desc)) FAIL;
 	}
 	FilesToPack.InsertSorted(RealExportFilePath);
 
@@ -1305,7 +1313,8 @@ bool ConvertOldSkinInfo(const CString& SrcFilePath, const CString& ExportFilePat
 {
 	if (IsFileAdded(ExportFilePath)) OK;
 
-	Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
+	Data::PParams Desc;
+	ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc);
 	if (!Desc.IsValidPtr()) FAIL;
 
 	CArray<CBoneInfo> SkinInfo;
@@ -1606,7 +1615,8 @@ bool ProcessEntityTplsInFolder(const CString& SrcPath, const CString& ExportPath
 
 			if (ExportDescs)
 			{
-				Data::PParams Desc = DataSrv->LoadHRD(SrcFilePath, false);
+				Data::PParams Desc;
+				ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc);
 				if (!Desc.IsValidPtr())
 				{
 					n_msg(VL_ERROR, "Error loading entity tpl '%s'\n", DescName.CStr());
@@ -1618,7 +1628,7 @@ bool ProcessEntityTplsInFolder(const CString& SrcPath, const CString& ExportPath
 					ConvertPropNamesToFourCC(Props);
 
 				IOSrv->CreateDirectory(PathUtils::ExtractDirName(RealExportFilePath));
-				if (!DataSrv->SavePRM(RealExportFilePath, Desc))
+				if (!ParamsUtils::SaveParamsToPRM(RealExportFilePath, *Desc))
 				{
 					n_msg(VL_ERROR, "Error saving entity tpl '%s'\n", DescName.CStr());
 					FAIL;
@@ -1677,10 +1687,10 @@ bool ProcessQuestsInFolder(const CString& SrcPath, const CString& ExportPath)
 			Data::PParams Desc;
 			if (ExportDescs)
 			{
-				Desc = DataSrv->LoadHRD(SrcPath + "/_Quest.hrd", false);
-				DataSrv->SavePRM(ExportFilePath, Desc);
+				ParamsUtils::LoadParamsFromHRD(SrcPath + "/_Quest.hrd", Desc);
+				ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc);
 			}
-			else Desc = DataSrv->LoadPRM(ExportFilePath, false);
+			else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 			if (!Desc.IsValidPtr())
 			{
@@ -1729,10 +1739,10 @@ bool ProcessSOActionTplsDesc(const CString& SrcFilePath, const CString& ExportFi
 	if (ExportDescs)
 	{
 		IOSrv->CreateDirectory(PathUtils::ExtractDirName(ExportFilePath));
-		Desc = DataSrv->LoadHRD(SrcFilePath, false);
-		if (!DataSrv->SavePRM(ExportFilePath, Desc)) FAIL;
+		if (!ParamsUtils::LoadParamsFromHRD(SrcFilePath, Desc)) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(ExportFilePath, *Desc)) FAIL;
 	}
-	else Desc = DataSrv->LoadPRM(ExportFilePath);
+	else ParamsUtils::LoadParamsFromPRM(ExportFilePath, Desc);
 
 	if (!Desc.IsValidPtr()) FAIL;
 

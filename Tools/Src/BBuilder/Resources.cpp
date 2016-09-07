@@ -2,7 +2,7 @@
 
 #include <IO/IOServer.h>
 #include <IO/PathUtils.h>
-#include <Data/DataServer.h>
+#include <Data/ParamsUtils.h>
 #include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
 
 //???get ID & dest from desc or from here? use some parameter in desc pathes?
@@ -10,7 +10,8 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 {
 	//!!!check if aready was exported!
 
-	Data::PParams Desc = DataSrv->LoadHRD(RsrcFileName, false);
+	Data::PParams Desc;
+	ParamsUtils::LoadParamsFromHRD(RsrcFileName, Desc);
 	if (!Desc.IsValidPtr()) FAIL;
 
 	CString RsrcDir = PathUtils::ExtractDirName(RsrcFileName);

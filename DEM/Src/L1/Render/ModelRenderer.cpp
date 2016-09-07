@@ -270,6 +270,13 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			//Sys::DbgOut("Mesh changed: 0x%X\n", pMesh);
 		}
 
+		// Select corresponding tech variation
+
+		UPTR LightCount = pRenderNode->LightCount;
+		//!!!calc lights!
+		//for instances may select maximum of light counts and use black lights for ones not used, or use per-instance count and dynamic loop
+		//tech with a dynamic light count will be found at LightCount = 0
+
 		// Gather instances (no skinned instancing supported)
 
 		bool HardwareInstancing = false;
@@ -301,12 +308,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			}
 		}
 
-		// Gather lights and select corresponding tech variation
-
-		UPTR LightCount = 0;
-		//!!!calc lights!
-		//for instances may select maximum of light counts and use black lights for ones not used, or use per-instance count and dynamic loop
-		//tech with a dynamic light count will be found at LightCount = 0
+		// Select tech variation for the current instancing mode and light count
 
 		const CPassList* pPasses = pTech->GetPasses(LightCount);
 		n_assert_dbg(pPasses); // To test if it could happen at all

@@ -3,6 +3,7 @@
 #include <Data/HashTable.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
+#include <Data/DataScheme.h>
 #include <Data/FourCC.h>
 
 // Main header
@@ -27,6 +28,7 @@ extern CArray<U32>		ShadersToPack;
 extern CToolFileLists	InFileLists;
 extern CToolFileLists	OutFileLists;
 extern CClassCodeMap	ClassToFOURCC;
+extern CDict<CStrID, Data::PDataScheme> Schemes;
 
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);

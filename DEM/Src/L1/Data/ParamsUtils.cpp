@@ -2,6 +2,7 @@
 
 #include <Data/HRDParser.h>
 #include <Data/Buffer.h>
+#include <Data/DataScheme.h>
 #include <IO/IOServer.h>
 #include <IO/HRDWriter.h>
 #include <IO/BinaryReader.h>
@@ -48,6 +49,29 @@ bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data:
 		OutParams->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!
 	}
 	else OutParams = n_new(Data::CParams(*Main));
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool LoadDataSerializationSchemesFromDSS(const char* pFileName, CDict<CStrID, Data::PDataScheme>& OutSchemes)
+{
+	Data::PParams SchemeDescs;
+	if (!ParamsUtils::LoadParamsFromHRD(pFileName, SchemeDescs)) FAIL;
+	if (SchemeDescs.IsNullPtr()) FAIL;
+
+	for (UPTR i = 0; i < SchemeDescs->GetCount(); ++i)
+	{
+		const Data::CParam& Prm = SchemeDescs->Get(i);
+		if (!Prm.IsA<Data::PParams>()) FAIL;
+
+		IPTR Idx = OutSchemes.FindIndex(Prm.GetName());
+		if (Idx != INVALID_INDEX) OutSchemes.RemoveAt(Idx);
+
+		Data::PDataScheme Scheme = n_new(Data::CDataScheme);
+		if (!Scheme->Init(*Prm.GetValue<Data::PParams>())) FAIL;
+		OutSchemes.Add(Prm.GetName(), Scheme);
+	}
 
 	OK;
 }

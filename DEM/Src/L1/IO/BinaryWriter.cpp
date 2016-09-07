@@ -1,7 +1,7 @@
 #include "BinaryWriter.h"
 
-#include <Data/DataServer.h>
 #include <Data/DataArray.h>
+#include <Data/DataScheme.h>
 #include <Data/Buffer.h>
 #include <Math/Matrix44.h>
 
@@ -45,7 +45,10 @@ template<> bool CBinaryWriter::Write<Data::CBuffer>(const Data::CBuffer& Value)
 }
 //---------------------------------------------------------------------
 
-bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value, const Data::CDataScheme& Scheme, UPTR& Written)
+bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
+										const Data::CDataScheme& Scheme,
+										const CDict<CStrID, Data::PDataScheme>& Schemes,
+										UPTR& Written)
 {
 	Written = 0;
 
@@ -84,7 +87,9 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value, const Data::
 			Data::PDataScheme SubScheme;
 			if (Rec.SchemeID.IsValid())
 			{
-				SubScheme = DataSrv->GetDataScheme(Rec.SchemeID);
+				IPTR Idx = Schemes.FindIndex(Rec.SchemeID);
+				if (Idx == INVALID_INDEX) FAIL;
+				SubScheme = Schemes.ValueAt(Idx);
 				if (SubScheme.IsNullPtr()) FAIL;
 			}
 			else SubScheme = Rec.Scheme;
@@ -108,7 +113,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value, const Data::
 				{
 					// Apply scheme on self, then fix element count of self
 					UPTR Count;
-					if (!WriteParamsByScheme(PrmParams, *SubScheme, Count)) FAIL;
+					if (!WriteParamsByScheme(PrmParams, *SubScheme, Schemes, Count)) FAIL;
 
 					if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT) && Count != CountWritten)
 					{
@@ -145,7 +150,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value, const Data::
 						{
 							// If subscheme is declared, write this child by subscheme and fix its element count
 							UPTR Count;
-							if (!WriteParamsByScheme(SubPrmParams, *SubScheme, Count)) FAIL;
+							if (!WriteParamsByScheme(SubPrmParams, *SubScheme, Schemes, Count)) FAIL;
 
 							if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT) && Count != CountWritten)
 							{
@@ -197,7 +202,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value, const Data::
 							if (!Write<short>(SubPrmParams.GetCount())) FAIL;
 
 						// If element is {} and subscheme is declared, save element by subscheme
-						if (!WriteParams(SubPrmParams, *SubScheme)) FAIL;
+						if (!WriteParams(SubPrmParams, *SubScheme, Schemes)) FAIL;
 					}
 					else if (!WriteDataAsOfType(Element, Rec.TypeID, Rec.Flags)) FAIL;
 				}
