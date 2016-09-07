@@ -29,6 +29,11 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 {
 	CUIWindow::Init(pWindow);
 
+	pWnd->setDrawMode(UI::DrawModeFlagWindowOpaque);
+	UPTR CEGUIChildCount = pWnd->getChildCount();
+	for (UPTR i = 0; i < CEGUIChildCount; ++i)
+		pWnd->getChildAtIdx(i)->setDrawMode(UI::DrawModeFlagWindowOpaque);
+
 	pPatternEdit = (CEGUI::Editbox*)pWnd->getChild("PatternEdit");
 
 	pList = (CEGUI::MultiColumnList*)pWnd->getChild("List");
