@@ -1,6 +1,7 @@
 #include "RenderPhaseGeometry.h"
 
 #include <Frame/View.h>
+#include <Frame/RenderPath.h>
 #include <Frame/NodeAttrCamera.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrLight.h>
@@ -83,17 +84,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Context.pLightIndices = NULL;
 	}
 
-	if (EnableLighting)
-	{
-		/*for (CArray<CNodeAttrLight*>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
-		{
-			Frame::CNodeAttrLight* pAttrLight = (CNodeAttrLight*)(*It);
-			CLightRecord& LightRec = *Lights.Add();
-			LightRec.pLight = &pAttrLight->GetLight();
-			LightRec.Index = INVALID_INDEX;
-		}*/
-	}
-
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
 	{
 		Scene::CNodeAttribute* pAttr = *It;
@@ -168,6 +158,60 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 	}
 
+	// Fill global light buffer, if present
+
+	if (EnableLighting && pConstGlobalLightBuffer)
+	{
+		//!!!for a structured buffer, max count may be not applicable! must then use the same value
+		//as was used to allocate structured buffer instance!
+		UPTR GlobalLightCount = 0;
+		const UPTR MaxLightCount = pConstGlobalLightBuffer->Desc.ElementCount;
+		n_assert_dbg(MaxLightCount > 0);
+
+		const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
+		for (CArray<Render::CLightRecord>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
+		{
+			Render::CLightRecord& LightRec = (Render::CLightRecord&)(*It);
+			if (LightRec.UseCount)
+			{
+				const Render::CLight& Light = *LightRec.pLight;
+
+				struct
+				{
+					vector3	Color;
+					float	Intensity;
+					vector3	Position;
+					float	InvRange;	// For attenuation
+					vector3	Direction;	// Pre-inverted for directional lights
+					float	_PAD1;
+					vector4	Params;		// Spot: x - cos inner, y - cos outer
+					U32		Type;
+					U32		_PAD2[3];
+				} GPULight;
+
+				GPULight.Color = Light.Color;
+				GPULight.Intensity = Light.Intensity;
+				GPULight.Position = LightRec.Transform.Translation();
+				GPULight.InvRange = Light.GetInvRange();
+				GPULight.Direction = (Light.Type == Render::Light_Directional) ? LightRec.Transform.AxisZ() : -LightRec.Transform.AxisZ();
+				if (Light.Type == Render::Light_Spot)
+				{
+					GPULight.Params.x = Light.GetCosHalfTheta();
+					GPULight.Params.y = Light.GetCosHalfPhi();
+				}
+				GPULight.Type = Light.Type;
+
+				n_verify_dbg(View.Globals.SetConstantValue(pConstGlobalLightBuffer, 0, &GPULight, sizeof(GPULight)));
+
+				LightRec.IndexInGlobalBuffer = GlobalLightCount;
+				++GlobalLightCount;
+				if (GlobalLightCount >= MaxLightCount) break;
+			}
+		}
+
+		if (GlobalLightCount) View.Globals.ApplyConstantBuffers();
+	}
+
 	// Sort render queue if requested
 
 	switch (SortingType)
@@ -193,6 +237,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Ctx.pGPU = View.GPU.Get();
 	Ctx.CameraPosition = CameraPos;
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
+	if (EnableLighting)
+	{
+		//lights array, does system use global light buffer bool flag
+	}
 
 	CArray<Render::CRenderNode*>::CIterator ItCurr = RenderQueue.Begin();
 	CArray<Render::CRenderNode*>::CIterator ItEnd = RenderQueue.End();
@@ -329,6 +377,9 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 			EffectOverrides.Add(EffectType, Effect);
 		}
 	}
+
+	CStrID GlobalLightBufferName = Desc.Get<CStrID>(CStrID("GlobalLightBufferName"), CStrID::Empty);
+	if (GlobalLightBufferName.IsValid()) pConstGlobalLightBuffer = Owner.GetGlobalConstant(GlobalLightBufferName);
 
 	OK;
 }

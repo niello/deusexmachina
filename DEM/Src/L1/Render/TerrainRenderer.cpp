@@ -458,7 +458,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			pConstVSCDLODParams = pTech->GetConstant(CStrID("VSCDLODParams"));
 			pConstPSCDLODParams = pTech->GetConstant(CStrID("PSCDLODParams"));
 			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
-			pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
+			pConstInstanceData = pTech->GetConstant(CStrID("InstanceDataArray"));
 			pResourceHeightMap = pTech->GetResource(CStrID("HeightMap"));
 
 			const CEffectSampler* pVSHeightSampler = pTech->GetSampler(CStrID("VSHeightSampler"));

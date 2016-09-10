@@ -151,6 +151,8 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 			}
 			else
 			{
+				//break; // - if don't want to calculate priorities, just skip all remaining lights
+
 				if (!LightOverflow)
 				{
 					// Calculate light priorities for already collected lights
@@ -194,8 +196,6 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 					LightPriority[MinPriorityIndex] = CurrLightPriority;
 					++LightRec.UseCount;
 				}
-
-				//break; // - if don't want to calculate priorities, just skip all remaining lights
 			}
 		}
 	}
@@ -270,14 +270,9 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			//Sys::DbgOut("Mesh changed: 0x%X\n", pMesh);
 		}
 
-		// Select corresponding tech variation
+		// Gather instances (no skinned instancing supported)
 
 		UPTR LightCount = pRenderNode->LightCount;
-		//!!!calc lights!
-		//for instances may select maximum of light counts and use black lights for ones not used, or use per-instance count and dynamic loop
-		//tech with a dynamic light count will be found at LightCount = 0
-
-		// Gather instances (no skinned instancing supported)
 
 		bool HardwareInstancing = false;
 		CArray<CRenderNode*>::CIterator ItInstEnd = ItCurr + 1;
@@ -294,6 +289,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				// it is not found, because if we did, the next object will try to do all
 				// this again, not knowing that there is no chance to success. If there is
 				// no instanced tech version, we render instances in a loop manually instead.
+				U8 CurrInstLightCount = (*ItInstEnd)->LightCount;
+				if (CurrInstLightCount > LightCount) LightCount = CurrInstLightCount;
 				++ItInstEnd;
 			}
 
@@ -318,11 +315,13 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			continue;
 		}
 
+		// Upload per-instance data and draw object(s)
+
 		if (HardwareInstancing)
 		{
 			if (pTech != pCurrTech)
 			{
-				pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
+				pConstInstanceData = pTech->GetConstant(CStrID("InstanceDataArray"));
 				pCurrTech = pTech;
 
 				//!!!DBG TMP!
@@ -457,7 +456,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		{
 			if (pTech != pCurrTech)
 			{
-				pConstWorldMatrix = pTech->GetConstant(CStrID("WorldMatrix"));
+				pConstWorldMatrix = pTech->GetConstant(CStrID("InstanceData"));
 				pConstSkinPalette = pTech->GetConstant(CStrID("SkinPalette"));
 				pCurrTech = pTech;
 

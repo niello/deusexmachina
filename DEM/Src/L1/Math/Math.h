@@ -225,7 +225,7 @@ inline float n_angulardistance(float from, float to)
 namespace Math
 {
 
-// Quake inverse sqrt
+// Quake inverse sqrt //???use rcpss?
 //https://en.wikipedia.org/wiki/Fast_inverse_square_root
 inline float RSqrt(const float Value)
 {

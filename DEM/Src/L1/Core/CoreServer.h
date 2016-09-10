@@ -8,8 +8,8 @@
 
 // Core server manages low-level object framework
 
-//???!!!move to application bas class?! too little functionality and will not be more
-//doesn't worth a dedicated singleton
+//???!!!move to application base class?! too little functionality and will not be more
+//isn't worth a dedicated singleton
 
 namespace Core
 {
@@ -21,9 +21,9 @@ class CCoreServer
 
 protected:
 
-	CString Mem_HighWaterSize;
-	CString Mem_TotalSize;
-	CString Mem_TotalCount;
+	static const CString Mem_HighWaterSize;
+	static const CString Mem_TotalSize;
+	static const CString Mem_TotalCount;
 
 public:
 
@@ -32,12 +32,12 @@ public:
 	CCoreServer();
 	~CCoreServer();
 
-	void Trigger();
+	void					Trigger();
 
-	template<class T> void		SetGlobal(const CString& Name, const T& Value) { Globals.At(Name) = Value; }
-	template<class T> T&		GetGlobal(const CString& Name) { return Globals[Name].GetValue<T>(); }
-	template<class T> bool		GetGlobal(const CString& Name, T& OutValue) const;
-	template<> bool				GetGlobal(const CString& Name, Data::CData& OutValue) const { return Globals.Get(Name, OutValue); }
+	template<class T> void	SetGlobal(const CString& Name, const T& Value) { Globals.At(Name) = Value; }
+	template<class T> T&	GetGlobal(const CString& Name) { return Globals[Name].GetValue<T>(); }
+	template<class T> bool	GetGlobal(const CString& Name, T& OutValue) const;
+	template<> bool			GetGlobal(const CString& Name, Data::CData& OutValue) const { return Globals.Get(Name, OutValue); }
 };
 
 template<class T> inline bool CCoreServer::GetGlobal(const CString& Name, T& OutValue) const
