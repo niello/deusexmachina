@@ -321,7 +321,7 @@ void CD3D9GPUDriver::ApplyShaderConstChanges()
 		CCBRec& Rec = CurrCB[i];
 		if (Rec.ApplyFlags.IsAny())
 		{
-			Rec.pMeta = (const CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(Rec.CB->GetHandle());
+			Rec.pMeta = (const CSM30BufferMeta*)IShaderMetadata::GetHandleData(Rec.CB->GetHandle());
 			if (!Rec.pMeta)
 			{
 				// Unbind this buffer immediately if metadata is inaccessible (host shader is destroyed)
@@ -1659,7 +1659,7 @@ CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
 bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	if (!Handle) FAIL;
-	CSM30ShaderBufferMeta* pMeta = (CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(Handle);
+	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	UPTR Index;
@@ -1732,7 +1732,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
 	if (!Handle) FAIL;
-	CSM30ShaderRsrcMeta* pMeta = (CSM30ShaderRsrcMeta*)IShaderMetadata::GetHandleData(Handle);
+	CSM30RsrcMeta* pMeta = (CSM30RsrcMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	UPTR Index = pMeta->Register;
@@ -1772,7 +1772,7 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	n_assert_dbg(pD3DSampler);
 
 	if (!Handle) FAIL;
-	CSM30ShaderSamplerMeta* pMeta = (CSM30ShaderSamplerMeta*)IShaderMetadata::GetHandleData(Handle);
+	CSM30SamplerMeta* pMeta = (CSM30SamplerMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	UPTR Index = pMeta->RegisterStart;
@@ -2236,7 +2236,7 @@ PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR 
 	n_assert_dbg(!pData || pData->IsA<CD3D9ConstantBuffer>());
 
 	if (!pD3DDevice || !hBuffer) return NULL;
-	CSM30ShaderBufferMeta* pMeta = (CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
+	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
 	if (!pMeta) return NULL;
 
 	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
@@ -2275,7 +2275,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	n_assert_dbg(CB9.IsTemporary());
 
 	HConstBuffer Handle = CB9.GetHandle();
-	CSM30ShaderBufferMeta* pMeta = (CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(Handle);
+	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(Handle);
 	n_assert_dbg(pMeta);
 
 	CTmpCB* pNewNode = TmpCBPool.Construct();
@@ -3205,10 +3205,10 @@ bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, U
 	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
 
 	if (!hConst) FAIL;
-	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)IShaderMetadata::GetHandleData(hConst);
+	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)IShaderMetadata::GetHandleData(hConst);
 	if (!pMeta) FAIL;
 
-	CSM30ShaderBufferMeta* pBufferMeta = (CSM30ShaderBufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
+	CSM30BufferMeta* pBufferMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
 	if (!pBufferMeta) FAIL;
 
 	CFixedArray<CRange>* pRanges = NULL;

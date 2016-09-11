@@ -11,7 +11,7 @@ namespace Render
 __ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
 
 //!!!???assert destroyed?!
-bool CD3D9ConstantBuffer::Create(const CSM30ShaderBufferMeta& Meta, const CD3D9ConstantBuffer* pInitData)
+bool CD3D9ConstantBuffer::Create(const CSM30BufferMeta& Meta, const CD3D9ConstantBuffer* pInitData)
 {
 	Float4Count = 0;
 	const CFixedArray<CRange>& Float4 = Meta.Float4;

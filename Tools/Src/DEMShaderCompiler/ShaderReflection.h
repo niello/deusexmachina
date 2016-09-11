@@ -13,6 +13,11 @@ namespace IO
 	class CBinaryWriter;
 };
 
+enum EShaderConstFlags
+{
+	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
+};
+
 ///////////////////////////////////////////////////////////////////////
 // Legacy Shader Model 3.0 (SM3.0)
 ///////////////////////////////////////////////////////////////////////
@@ -34,12 +39,7 @@ enum ESM30RegisterSet
 	RS_Float4	= 2
 };
 
-enum ESM30ConstFlags
-{
-	SM30Const_ColumnMajor	= 0x01 // Only for matrix types
-};
-
-struct CSM30ShaderBufferMeta
+struct CSM30BufferMeta
 {
 	CString			Name;
 	U32				SlotIndex;	// Pseudo-register, two buffers at the same slot will conflict
@@ -47,8 +47,8 @@ struct CSM30ShaderBufferMeta
 	CArray<UPTR>	UsedInt4;
 	CArray<UPTR>	UsedBool;
 
-	//bool operator ==(const CSM30ShaderBufferMeta& Other) const { return SlotIndex == Other.SlotIndex; }
-	//bool operator !=(const CSM30ShaderBufferMeta& Other) const { return SlotIndex != Other.SlotIndex; }
+	//bool operator ==(const CSM30BufferMeta& Other) const { return SlotIndex == Other.SlotIndex; }
+	//bool operator !=(const CSM30BufferMeta& Other) const { return SlotIndex != Other.SlotIndex; }
 };
 
 struct CSM30StructMemberMeta
@@ -58,7 +58,7 @@ struct CSM30StructMemberMeta
 	U32				RegisterOffset;
 	U32				ElementRegisterCount;
 	U32				ElementCount;
-	U8				Flags;					// See ESM30ConstFlags
+	U8				Flags;					// See EShaderConstFlags
 	//???store register set and support mixed structs?
 };
 
@@ -69,7 +69,7 @@ struct CSM30StructMeta
 };
 
 // Arrays and single-type structures are supported
-struct CSM30ShaderConstMeta
+struct CSM30ConstMeta
 {
 	CString				Name;
 	U32					BufferIndex;
@@ -78,44 +78,44 @@ struct CSM30ShaderConstMeta
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
 	U32					ElementCount;
-	U8					Flags;					// See ESM30ConstFlags
+	U8					Flags;					// See EShaderConstFlags
 
 	U32					RegisterCount;			// Cache, not saved
 
-	bool operator ==(const CSM30ShaderConstMeta& Other) const { return RegisterSet == Other.RegisterSet && RegisterStart == Other.RegisterStart && ElementRegisterCount == Other.ElementRegisterCount && ElementCount == Other.ElementCount && Flags == Other.Flags; }
-	bool operator !=(const CSM30ShaderConstMeta& Other) const { return RegisterSet != Other.RegisterSet || RegisterStart != Other.RegisterStart || ElementRegisterCount != Other.ElementRegisterCount || ElementCount != Other.ElementCount || Flags != Other.Flags; }
+	bool operator ==(const CSM30ConstMeta& Other) const { return RegisterSet == Other.RegisterSet && RegisterStart == Other.RegisterStart && ElementRegisterCount == Other.ElementRegisterCount && ElementCount == Other.ElementCount && Flags == Other.Flags; }
+	bool operator !=(const CSM30ConstMeta& Other) const { return RegisterSet != Other.RegisterSet || RegisterStart != Other.RegisterStart || ElementRegisterCount != Other.ElementRegisterCount || ElementCount != Other.ElementCount || Flags != Other.Flags; }
 };
 
 // Arrays aren't supported, one texture to multiple samplers isn't supported yet
 //???what about one tex to multiple samplers? store register bit mask or 'UsedRegisters' array?
-struct CSM30ShaderRsrcMeta
+struct CSM30RsrcMeta
 {
 	CString	Name;
 	U32		Register;
 
-	bool operator ==(const CSM30ShaderRsrcMeta& Other) const { return Register == Other.Register; }
-	bool operator !=(const CSM30ShaderRsrcMeta& Other) const { return Register != Other.Register; }
+	bool operator ==(const CSM30RsrcMeta& Other) const { return Register == Other.Register; }
+	bool operator !=(const CSM30RsrcMeta& Other) const { return Register != Other.Register; }
 };
 
 // Arrays supported with arbitrarily assigned textures
-struct CSM30ShaderSamplerMeta
+struct CSM30SamplerMeta
 {
 	CString				Name;
 	ESM30SamplerType	Type;
 	U32					RegisterStart;
 	U32					RegisterCount;
 
-	bool operator ==(const CSM30ShaderSamplerMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
-	bool operator !=(const CSM30ShaderSamplerMeta& Other) const { return Type != Other.Type || RegisterStart != Other.RegisterStart || RegisterCount != Other.RegisterCount; }
+	bool operator ==(const CSM30SamplerMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CSM30SamplerMeta& Other) const { return Type != Other.Type || RegisterStart != Other.RegisterStart || RegisterCount != Other.RegisterCount; }
 };
 
 struct CSM30ShaderMeta
 {
-	CArray<CSM30ShaderBufferMeta>	Buffers;
-	CArray<CSM30StructMeta>			Structs;
-	CArray<CSM30ShaderConstMeta>	Consts;
-	CArray<CSM30ShaderRsrcMeta>		Resources;
-	CArray<CSM30ShaderSamplerMeta>	Samplers;
+	CArray<CSM30BufferMeta>		Buffers;
+	CArray<CSM30StructMeta>		Structs;
+	CArray<CSM30ConstMeta>		Consts;
+	CArray<CSM30RsrcMeta>		Resources;
+	CArray<CSM30SamplerMeta>	Samplers;
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -159,70 +159,89 @@ enum EUSMResourceType
 	USMRsrc_Unknown
 };
 
-struct CUSMShaderBufferMeta
+struct CUSMBufferMeta
 {
 	CString	Name;
 	U32		Register;
 	U32		Size;		// For structured buffers - StructureByteStride
 
-	bool operator ==(const CUSMShaderBufferMeta& Other) const { return Register == Other.Register && Size == Other.Size; }
-	bool operator !=(const CUSMShaderBufferMeta& Other) const { return Register != Other.Register || Size != Other.Size; }
+	bool operator ==(const CUSMBufferMeta& Other) const { return Register == Other.Register && Size == Other.Size; }
+	bool operator !=(const CUSMBufferMeta& Other) const { return Register != Other.Register || Size != Other.Size; }
 };
 
-// Arrays and mixed-type structs supported
-struct CUSMShaderConstMeta
+struct CUSMStructMemberMeta
 {
 	CString			Name;
-	U32				BufferIndex;
+	U32				StructIndex;
 	EUSMConstType	Type;
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
-
-	bool operator ==(const CUSMShaderConstMeta& Other) const { return Type == Other.Type && Offset == Other.Offset && ElementSize == Other.ElementSize && ElementCount == Other.ElementCount; }
-	bool operator !=(const CUSMShaderConstMeta& Other) const { return Type != Other.Type || Offset != Other.Offset || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
+	U8				Flags;			// See EShaderConstFlags
 };
 
-struct CUSMShaderRsrcMeta
+struct CUSMStructMeta
+{
+	//CString						Name;
+	CArray<CUSMStructMemberMeta>	Members;
+};
+
+// Arrays and mixed-type structs supported
+struct CUSMConstMeta
+{
+	CString			Name;
+	U32				BufferIndex;
+	U32				StructIndex;
+	EUSMConstType	Type;
+	U32				Offset;
+	U32				ElementSize;
+	U32				ElementCount;
+	U8				Flags;			// See EShaderConstFlags
+
+	bool operator ==(const CUSMConstMeta& Other) const { return Type == Other.Type && Offset == Other.Offset && ElementSize == Other.ElementSize && ElementCount == Other.ElementCount; }
+	bool operator !=(const CUSMConstMeta& Other) const { return Type != Other.Type || Offset != Other.Offset || ElementSize != Other.ElementSize || ElementCount != Other.ElementCount; }
+};
+
+struct CUSMRsrcMeta
 {
 	CString				Name;
 	EUSMResourceType	Type;
 	U32					RegisterStart;
 	U32					RegisterCount;
 
-	bool operator ==(const CUSMShaderRsrcMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
-	bool operator !=(const CUSMShaderRsrcMeta& Other) const { return Type != Other.Type && RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
+	bool operator ==(const CUSMRsrcMeta& Other) const { return Type == Other.Type && RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CUSMRsrcMeta& Other) const { return Type != Other.Type && RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
-struct CUSMShaderSamplerMeta
+struct CUSMSamplerMeta
 {
 	CString	Name;
 	U32		RegisterStart;
 	U32		RegisterCount;
 
-	bool operator ==(const CUSMShaderSamplerMeta& Other) const { return RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
-	bool operator !=(const CUSMShaderSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
+	bool operator ==(const CUSMSamplerMeta& Other) const { return RegisterStart == Other.RegisterStart && RegisterCount == Other.RegisterCount; }
+	bool operator !=(const CUSMSamplerMeta& Other) const { return RegisterStart != Other.RegisterStart && RegisterCount != Other.RegisterCount; }
 };
 
 struct CUSMShaderMeta
 {
-	U32								MinFeatureLevel;
-	U64								RequiresFlags;
-	CArray<CUSMShaderBufferMeta>	Buffers;
-	CArray<CUSMShaderConstMeta>		Consts;
-	CArray<CUSMShaderRsrcMeta>		Resources;
-	CArray<CUSMShaderSamplerMeta>	Samplers;
+	U32						MinFeatureLevel;
+	U64						RequiresFlags;
+	CArray<CUSMBufferMeta>	Buffers;
+	CArray<CUSMStructMeta>	Structs;
+	CArray<CUSMConstMeta>	Consts;
+	CArray<CUSMRsrcMeta>	Resources;
+	CArray<CUSMSamplerMeta>	Samplers;
 };
 
 class CDEMD3DInclude;
 
-void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName = NULL);
-void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R);
 bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler, CSM30ShaderMeta& Out);
-bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out);
 bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta);
-bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta);
 bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta);
+
+bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out);
+bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta);
 bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta);
 
 #endif

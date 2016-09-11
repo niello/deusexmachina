@@ -10,6 +10,63 @@
 
 extern CString Messages;
 
+static void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
+{
+	U64 RangeCountOffset = W.GetStream().GetPosition();
+	W.Write<U32>(0);
+
+	if (!UsedRegs.GetCount()) return;
+
+	U32 RangeCount = 0;
+	UPTR CurrStart = UsedRegs[0], CurrCount = 1;
+	for (UPTR r = 1; r < UsedRegs.GetCount(); ++r)
+	{
+		UPTR Reg = UsedRegs[r];
+		if (Reg == CurrStart + CurrCount) ++CurrCount;
+		else
+		{
+			// New range detected
+			W.Write<U32>(CurrStart);
+			W.Write<U32>(CurrCount);
+			++RangeCount;
+			CurrStart = Reg;
+			CurrCount = 1;
+		}
+	}
+
+	if (CurrStart != (UPTR)-1)
+	{
+		W.Write<U32>(CurrStart);
+		W.Write<U32>(CurrCount);
+		++RangeCount;
+	}
+
+	U64 EndOffset = W.GetStream().GetPosition();
+	W.GetStream().Seek(RangeCountOffset, IO::Seek_Begin);
+	W.Write<U32>(RangeCount);
+	W.GetStream().Seek(EndOffset, IO::Seek_Begin);
+}
+//---------------------------------------------------------------------
+
+static void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R)
+{
+	UsedRegs.Clear();
+
+	U32 RangeCount = 0;
+	R.Read<U32>(RangeCount);
+	for (UPTR i = 0; i < RangeCount; ++i)
+	{
+		U32 Curr;
+		U32 CurrCount;
+		R.Read<U32>(Curr);
+		R.Read<U32>(CurrCount);
+		U32 CurrEnd = Curr + CurrCount;
+		for (; Curr < CurrEnd; ++Curr)
+			UsedRegs.Add((UPTR)Curr);
+	}
+}
+//---------------------------------------------------------------------
+
 bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler, CSM30ShaderMeta& Out)
 {
 	CArray<CD3D9ConstantDesc> D3D9Consts;
@@ -114,7 +171,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			pMemberMeta->Flags = 0;
 
 			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
-				pMemberMeta->Flags |= SM30Const_ColumnMajor;
+				pMemberMeta->Flags |= ShaderConst_ColumnMajor;
 
 			n_assert(pMemberMeta->ElementRegisterCount * pMemberMeta->ElementCount == D3D9ConstDesc.RegisterCount);
 		}
@@ -140,7 +197,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		}
 		else if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
 		{
-			CSM30ShaderSamplerMeta* pMeta = Out.Samplers.Reserve(1);
+			CSM30SamplerMeta* pMeta = Out.Samplers.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
 			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
 			pMeta->RegisterCount = D3D9ConstDesc.RegisterCount;
@@ -165,7 +222,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 					const CString& TexName = TexNames[TexIdx];
 					if (TexName.IsValid())
 					{
-						CSM30ShaderRsrcMeta* pMeta = Out.Resources.Reserve(1);
+						CSM30RsrcMeta* pMeta = Out.Resources.Reserve(1);
 						pMeta->Name = TexName;
 						pMeta->Register = D3D9ConstDesc.RegisterIndex + TexIdx;
 					}
@@ -205,13 +262,13 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 
 			if (BufferIndex == Out.Buffers.GetCount())
 			{
-				CSM30ShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
+				CSM30BufferMeta* pMeta = Out.Buffers.Reserve(1);
 				pMeta->Name = BufferName;
 				pMeta->SlotIndex = SlotIndex;
 			}
 			else
 			{
-				CSM30ShaderBufferMeta& Meta = Out.Buffers[BufferIndex];
+				CSM30BufferMeta& Meta = Out.Buffers[BufferIndex];
 				if (Meta.SlotIndex == (U32)(INVALID_INDEX))
 					Meta.SlotIndex = SlotIndex;
 				else if (Meta.SlotIndex != SlotIndex)
@@ -227,7 +284,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 				}
 			}
 
-			CSM30ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
+			CSM30ConstMeta* pMeta = Out.Consts.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
 			pMeta->BufferIndex = BufferIndex;
 			pMeta->StructIndex = (U32)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
@@ -250,14 +307,14 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			pMeta->Flags = 0;
 
 			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
-				pMeta->Flags |= SM30Const_ColumnMajor;
+				pMeta->Flags |= ShaderConst_ColumnMajor;
 
 			// Cache value
 			pMeta->RegisterCount = pMeta->ElementRegisterCount * pMeta->ElementCount;
 
 			n_assert(pMeta->RegisterCount == D3D9ConstDesc.RegisterCount);
 
-			CSM30ShaderBufferMeta& BufMeta = Out.Buffers[pMeta->BufferIndex];
+			CSM30BufferMeta& BufMeta = Out.Buffers[pMeta->BufferIndex];
 			CArray<UPTR>& UsedRegs = (pMeta->RegisterSet == RS_Float4) ? BufMeta.UsedFloat4 : ((pMeta->RegisterSet == RS_Int4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
 			for (UPTR r = D3D9ConstDesc.RegisterIndex; r < D3D9ConstDesc.RegisterIndex + D3D9ConstDesc.RegisterCount; ++r)
 			{
@@ -272,7 +329,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 	UPTR i = 0;
 	while (i < Out.Buffers.GetCount())
 	{
-		CSM30ShaderBufferMeta& B = Out.Buffers[i];
+		CSM30BufferMeta& B = Out.Buffers[i];
 		if (!B.UsedFloat4.GetCount() &&
 			!B.UsedInt4.GetCount() &&
 			!B.UsedBool.GetCount())
@@ -291,13 +348,271 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 	U32 NewSlotIndex = 0;
 	for (UPTR i = 0; i < Out.Buffers.GetCount(); ++i)
 	{
-		CSM30ShaderBufferMeta& B = Out.Buffers[i];
+		CSM30BufferMeta& B = Out.Buffers[i];
 		if (B.SlotIndex == (U32)(INVALID_INDEX))
 		{
 			while (UsedSlotIndices.ContainsSorted(NewSlotIndex))
 				++NewSlotIndex;
 			B.SlotIndex = NewSlotIndex;
 			++NewSlotIndex;
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
+{
+	W.Write<U32>(Meta.Buffers.GetCount());
+	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
+	{
+		CSM30BufferMeta& Obj = Meta.Buffers[i];
+		Obj.UsedFloat4.Sort();
+		Obj.UsedInt4.Sort();
+		Obj.UsedBool.Sort();
+
+		W.Write(Obj.Name);
+		W.Write(Obj.SlotIndex);
+
+		WriteRegisterRanges(Obj.UsedFloat4, W, "float4");
+		WriteRegisterRanges(Obj.UsedInt4, W, "int4");
+		WriteRegisterRanges(Obj.UsedBool, W, "bool");
+	}
+
+	W.Write<U32>(Meta.Structs.GetCount());
+	for (UPTR i = 0; i < Meta.Structs.GetCount(); ++i)
+	{
+		CSM30StructMeta& Obj = Meta.Structs[i];
+
+		W.Write<U32>(Obj.Members.GetCount());
+		for (UPTR j = 0; j < Obj.Members.GetCount(); ++j)
+		{
+			CSM30StructMemberMeta& Member = Obj.Members[j];
+			W.Write(Member.Name);
+			W.Write(Member.StructIndex);
+			W.Write(Member.RegisterOffset);
+			W.Write(Member.ElementRegisterCount);
+			W.Write(Member.ElementCount);
+			W.Write(Member.Flags);
+		}
+	}
+
+	W.Write<U32>(Meta.Consts.GetCount());
+	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
+	{
+		const CSM30ConstMeta& Obj = Meta.Consts[i];
+		W.Write(Obj.Name);
+		W.Write(Obj.BufferIndex);
+		W.Write(Obj.StructIndex);
+		W.Write<U8>(Obj.RegisterSet);
+		W.Write(Obj.RegisterStart);
+		W.Write(Obj.ElementRegisterCount);
+		W.Write(Obj.ElementCount);
+		W.Write(Obj.Flags);
+	}
+
+	W.Write<U32>(Meta.Resources.GetCount());
+	for (UPTR i = 0; i < Meta.Resources.GetCount(); ++i)
+	{
+		const CSM30RsrcMeta& Obj = Meta.Resources[i];
+		W.Write(Obj.Name);
+		W.Write(Obj.Register);
+	}
+
+	W.Write<U32>(Meta.Samplers.GetCount());
+	for (UPTR i = 0; i < Meta.Samplers.GetCount(); ++i)
+	{
+		const CSM30SamplerMeta& Obj = Meta.Samplers[i];
+		W.Write(Obj.Name);
+		W.Write<U8>(Obj.Type);
+		W.Write(Obj.RegisterStart);
+		W.Write(Obj.RegisterCount);
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
+{
+	Meta.Buffers.Clear();
+	Meta.Consts.Clear();
+	Meta.Samplers.Clear();
+
+	U32 Count;
+
+	R.Read<U32>(Count);
+	CSM30BufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
+	for (; pBuf < Meta.Buffers.End(); ++pBuf)
+	{
+		CSM30BufferMeta& Obj = *pBuf;
+
+		R.Read(Obj.Name);
+		R.Read(Obj.SlotIndex);
+
+		ReadRegisterRanges(Obj.UsedFloat4, R);
+		ReadRegisterRanges(Obj.UsedInt4, R);
+		ReadRegisterRanges(Obj.UsedBool, R);
+	}
+
+	R.Read<U32>(Count);
+	CSM30StructMeta* pStruct = Meta.Structs.Reserve(Count, false);
+	for (; pStruct < Meta.Structs.End(); ++pStruct)
+	{
+		CSM30StructMeta& Obj = *pStruct;
+
+		R.Read<U32>(Count);
+		CSM30StructMemberMeta* pMember = Obj.Members.Reserve(Count, false);
+		for (; pMember < Obj.Members.End(); ++pMember)
+		{
+			CSM30StructMemberMeta& Member = *pMember;
+			R.Read(Member.Name);
+			R.Read(Member.StructIndex);
+			R.Read(Member.RegisterOffset);
+			R.Read(Member.ElementRegisterCount);
+			R.Read(Member.ElementCount);
+			R.Read(Member.Flags);
+		}
+	}
+
+	R.Read<U32>(Count);
+	CSM30ConstMeta* pConst = Meta.Consts.Reserve(Count, false);
+	for (; pConst < Meta.Consts.End(); ++pConst)
+	{
+		CSM30ConstMeta& Obj = *pConst;
+
+		U8 RegSet;
+
+		R.Read(Obj.Name);
+		R.Read(Obj.BufferIndex);
+		R.Read(Obj.StructIndex);
+		R.Read<U8>(RegSet);
+
+		Obj.RegisterSet = (ESM30RegisterSet)RegSet;
+
+		R.Read(Obj.RegisterStart);
+		R.Read(Obj.ElementRegisterCount);
+		R.Read(Obj.ElementCount);
+		R.Read(Obj.Flags);
+
+		// Cache value
+		Obj.RegisterCount = Obj.ElementRegisterCount * Obj.ElementCount;
+	}
+
+	R.Read<U32>(Count);
+	CSM30RsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
+	for (; pRsrc < Meta.Resources.End(); ++pRsrc)
+	{
+		CSM30RsrcMeta& Obj = *pRsrc;
+		R.Read(Obj.Name);
+		R.Read(Obj.Register);
+		//???store sampler type or index for texture type validation on set?
+		//???how to reference texture object in SM3.0 shader for it to be included in params list?
+	}
+
+	R.Read<U32>(Count);
+	CSM30SamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
+	for (; pSamp < Meta.Samplers.End(); ++pSamp)
+	{
+		CSM30SamplerMeta& Obj = *pSamp;
+		R.Read(Obj.Name);
+		
+		U8 Type;
+		R.Read<U8>(Type);
+		Obj.Type = (ESM30SamplerType)Type;
+		
+		R.Read(Obj.RegisterStart);
+		R.Read(Obj.RegisterCount);
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// StructCache stores D3D11 type to metadata index mapping, where metadata index is an index in the Out.Structs array
+static bool USMProcessStructure(ID3D11ShaderReflectionType* pType, U32 StructSize, CUSMShaderMeta& Out, CDict<ID3D11ShaderReflectionType*, UPTR>& StructCache)
+{
+	if (!pType) FAIL;
+
+	// Already processed
+	if (StructCache.FindIndex(pType) != INVALID_INDEX) OK;
+
+	D3D11_SHADER_TYPE_DESC D3DTypeDesc;
+	pType->GetDesc(&D3DTypeDesc);
+
+	// Has no members
+	if (D3DTypeDesc.Members == 0) OK;
+
+	// Add and fill new structure layout metadata
+	StructCache.Add(pType, Out.Structs.GetCount());
+	CUSMStructMeta& Meta = *Out.Structs.Add();
+
+	CUSMStructMemberMeta* pMemberMeta = Meta.Members.Reserve(D3DTypeDesc.Members);
+	for (UINT MemberIdx = 0; MemberIdx < D3DTypeDesc.Members; ++MemberIdx, ++pMemberMeta)
+	{
+		LPCSTR pMemberName = pType->GetMemberTypeName(MemberIdx);
+
+		ID3D11ShaderReflectionType* pMemberType = pType->GetMemberTypeByIndex(MemberIdx);
+		D3D11_SHADER_TYPE_DESC D3DMemberTypeDesc;
+		pMemberType->GetDesc(&D3DMemberTypeDesc);
+
+		pMemberMeta->Name = pMemberName;
+		pMemberMeta->Offset = D3DMemberTypeDesc.Offset;
+		pMemberMeta->Flags = 0;
+
+		U32 MemberSize;
+		if (MemberIdx + 1 < D3DTypeDesc.Members)
+		{
+			ID3D11ShaderReflectionType* pNextMemberType = pType->GetMemberTypeByIndex(MemberIdx + 1);
+			D3D11_SHADER_TYPE_DESC D3DNextMemberTypeDesc;
+			pNextMemberType->GetDesc(&D3DNextMemberTypeDesc);
+			MemberSize = D3DNextMemberTypeDesc.Offset - D3DMemberTypeDesc.Offset;
+		}
+		else MemberSize = StructSize - D3DMemberTypeDesc.Offset;
+
+		if (D3DTypeDesc.Elements > 1)
+		{
+			// Arrays
+			pMemberMeta->ElementSize = MemberSize / D3DMemberTypeDesc.Elements;
+			pMemberMeta->ElementCount = D3DMemberTypeDesc.Elements;
+		}
+		else
+		{
+			// Non-arrays and arrays [1]
+			pMemberMeta->ElementSize = MemberSize;
+			pMemberMeta->ElementCount = 1;
+		}
+
+		if (D3DMemberTypeDesc.Class == D3D_SVC_STRUCT)
+		{
+			pMemberMeta->Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
+			if (!USMProcessStructure(pMemberType, pMemberMeta->ElementSize, Out, StructCache)) continue;
+			pMemberMeta->StructIndex = StructCache[pMemberType];
+		}
+		else
+		{
+			pMemberMeta->StructIndex = (U32)(-1);
+			switch (D3DMemberTypeDesc.Type)
+			{
+				case D3D_SVT_BOOL:	pMemberMeta->Type = USMConst_Bool; break;
+				case D3D_SVT_INT:	pMemberMeta->Type = USMConst_Int; break;
+				case D3D_SVT_FLOAT:	pMemberMeta->Type = USMConst_Float; break;
+				default:
+				{
+					Messages += "Unsupported constant '";
+					Messages += pMemberName;
+					Messages += "' type '";
+					Messages += StringUtils::FromInt(D3DMemberTypeDesc.Type);
+					Messages += "' in a structure '";
+					Messages += D3DTypeDesc.Name;
+					Messages += "'\n";
+					FAIL;
+				}
+			}
+
+			if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
+				pMemberMeta->Flags |= ShaderConst_ColumnMajor;
 		}
 	}
 
@@ -339,6 +654,8 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 		FAIL;
 	}
 
+	CDict<ID3D11ShaderReflectionType*, UPTR> StructCache;
+
 	for (UINT RsrcIdx = 0; RsrcIdx < D3DDesc.BoundResources; ++RsrcIdx)
 	{
 		D3D11_SHADER_INPUT_BIND_DESC RsrcDesc;
@@ -354,7 +671,7 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 		{
 			case D3D_SIT_TEXTURE:
 			{
-				CUSMShaderRsrcMeta* pMeta = Out.Resources.Reserve(1);
+				CUSMRsrcMeta* pMeta = Out.Resources.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
 				pMeta->RegisterStart = RsrcDesc.BindPoint;
 				pMeta->RegisterCount = RsrcDesc.BindCount;
@@ -378,7 +695,7 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 			case D3D_SIT_SAMPLER:
 			{
 				// D3D_SIF_COMPARISON_SAMPLER
-				CUSMShaderSamplerMeta* pMeta = Out.Samplers.Reserve(1);
+				CUSMSamplerMeta* pMeta = Out.Samplers.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
 				pMeta->RegisterStart = RsrcDesc.BindPoint;
 				pMeta->RegisterCount = RsrcDesc.BindCount;
@@ -422,13 +739,11 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 				else if (RsrcDesc.Type == D3D_SIT_STRUCTURED) TypeMask = USMBuffer_Structured;
 				else TypeMask = 0;
 
-				CUSMShaderBufferMeta* pMeta = Out.Buffers.Reserve(1);
+				CUSMBufferMeta* pMeta = Out.Buffers.Reserve(1);
 				pMeta->Name = RsrcDesc.Name;
 				pMeta->Register = (RsrcDesc.BindPoint | TypeMask);
 				pMeta->Size = D3DBufDesc.Size;
 
-				// Structured buffer has only '$Element' structure, we don't process it now.
-				// It may be useful if we will add support of structure layouts/members.
 				if (RsrcDesc.Type != D3D_SIT_STRUCTURED)
 				{
 					for (UINT VarIdx = 0; VarIdx < D3DBufDesc.Variables; ++VarIdx)
@@ -448,37 +763,11 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 						D3D11_SHADER_TYPE_DESC D3DTypeDesc;
 						pVarType->GetDesc(&D3DTypeDesc);
 
-						EUSMConstType Type;
-						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)
-						{
-							Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-						}
-						else
-						{
-							switch (D3DTypeDesc.Type)
-							{
-								case D3D_SVT_BOOL:	Type = USMConst_Bool; break;
-								case D3D_SVT_INT:	Type = USMConst_Int; break;
-								case D3D_SVT_FLOAT:	Type = USMConst_Float; break;
-								default:
-								{
-									Messages += "Unsupported constant '";
-									Messages += D3DVarDesc.Name;
-									Messages += "' type '";
-									Messages += StringUtils::FromInt(D3DTypeDesc.Type);
-									Messages += "' in USM buffer '";
-									Messages += RsrcDesc.Name;
-									Messages += "'\n";
-									FAIL;
-								}
-							}
-						}
-
-						CUSMShaderConstMeta* pConstMeta = Out.Consts.Reserve(1);
+						CUSMConstMeta* pConstMeta = Out.Consts.Reserve(1);
 						pConstMeta->Name = D3DVarDesc.Name;
 						pConstMeta->BufferIndex = Out.Buffers.GetCount() - 1;
-						pConstMeta->Type = Type;
 						pConstMeta->Offset = D3DVarDesc.StartOffset;
+						pConstMeta->Flags = 0;
 
 						if (D3DTypeDesc.Elements > 1)
 						{
@@ -491,6 +780,37 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 							// Non-arrays and arrays [1]
 							pConstMeta->ElementSize = D3DVarDesc.Size;
 							pConstMeta->ElementCount = 1;
+						}
+
+						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)
+						{
+							pConstMeta->Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
+							if (!USMProcessStructure(pVarType, pConstMeta->ElementSize, Out, StructCache)) continue;
+							pConstMeta->StructIndex = StructCache[pVarType];
+						}
+						else
+						{
+							pConstMeta->StructIndex = (U32)(-1);
+							switch (D3DTypeDesc.Type)
+							{
+								case D3D_SVT_BOOL:	pConstMeta->Type = USMConst_Bool; break;
+								case D3D_SVT_INT:	pConstMeta->Type = USMConst_Int; break;
+								case D3D_SVT_FLOAT:	pConstMeta->Type = USMConst_Float; break;
+								default:
+								{
+									Messages += "Unsupported constant '";
+									Messages += D3DVarDesc.Name;
+									Messages += "' type '";
+									Messages += StringUtils::FromInt(D3DTypeDesc.Type);
+									Messages += "' in USM buffer '";
+									Messages += RsrcDesc.Name;
+									Messages += "'\n";
+									FAIL;
+								}
+							}
+
+							if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
+								pConstMeta->Flags |= ShaderConst_ColumnMajor;
 						}
 					}
 				}
@@ -506,97 +826,6 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 }
 //---------------------------------------------------------------------
 
-void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
-{
-	U64 RangeCountOffset = W.GetStream().GetPosition();
-	W.Write<U32>(0);
-
-	if (!UsedRegs.GetCount()) return;
-
-	U32 RangeCount = 0;
-	UPTR CurrStart = UsedRegs[0], CurrCount = 1;
-	for (UPTR r = 1; r < UsedRegs.GetCount(); ++r)
-	{
-		UPTR Reg = UsedRegs[r];
-		if (Reg == CurrStart + CurrCount) ++CurrCount;
-		else
-		{
-			// New range detected
-			W.Write<U32>(CurrStart);
-			W.Write<U32>(CurrCount);
-			++RangeCount;
-			CurrStart = Reg;
-			CurrCount = 1;
-		}
-	}
-
-	if (CurrStart != (UPTR)-1)
-	{
-		W.Write<U32>(CurrStart);
-		W.Write<U32>(CurrCount);
-		++RangeCount;
-	}
-
-	U64 EndOffset = W.GetStream().GetPosition();
-	W.GetStream().Seek(RangeCountOffset, IO::Seek_Begin);
-	W.Write<U32>(RangeCount);
-	W.GetStream().Seek(EndOffset, IO::Seek_Begin);
-}
-//---------------------------------------------------------------------
-
-bool SM30SaveShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
-{
-	W.Write<U32>(Meta.Buffers.GetCount());
-	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
-	{
-		CSM30ShaderBufferMeta& Obj = Meta.Buffers[i];
-		Obj.UsedFloat4.Sort();
-		Obj.UsedInt4.Sort();
-		Obj.UsedBool.Sort();
-
-		W.Write(Obj.Name);
-		W.Write(Obj.SlotIndex);
-
-		WriteRegisterRanges(Obj.UsedFloat4, W, "float4");
-		WriteRegisterRanges(Obj.UsedInt4, W, "int4");
-		WriteRegisterRanges(Obj.UsedBool, W, "bool");
-	}
-
-	W.Write<U32>(Meta.Consts.GetCount());
-	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
-	{
-		const CSM30ShaderConstMeta& Obj = Meta.Consts[i];
-		W.Write(Obj.Name);
-		W.Write(Obj.BufferIndex);
-		W.Write<U8>(Obj.RegisterSet);
-		W.Write(Obj.RegisterStart);
-		W.Write(Obj.ElementRegisterCount);
-		W.Write(Obj.ElementCount);
-		W.Write(Obj.Flags);
-	}
-
-	W.Write<U32>(Meta.Resources.GetCount());
-	for (UPTR i = 0; i < Meta.Resources.GetCount(); ++i)
-	{
-		const CSM30ShaderRsrcMeta& Obj = Meta.Resources[i];
-		W.Write(Obj.Name);
-		W.Write(Obj.Register);
-	}
-
-	W.Write<U32>(Meta.Samplers.GetCount());
-	for (UPTR i = 0; i < Meta.Samplers.GetCount(); ++i)
-	{
-		const CSM30ShaderSamplerMeta& Obj = Meta.Samplers[i];
-		W.Write(Obj.Name);
-		W.Write<U8>(Obj.Type);
-		W.Write(Obj.RegisterStart);
-		W.Write(Obj.RegisterCount);
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 {
 	W.Write<U32>(Meta.MinFeatureLevel);
@@ -605,7 +834,7 @@ bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 	W.Write<U32>(Meta.Buffers.GetCount());
 	for (UPTR i = 0; i < Meta.Buffers.GetCount(); ++i)
 	{
-		const CUSMShaderBufferMeta& Obj = Meta.Buffers[i];
+		const CUSMBufferMeta& Obj = Meta.Buffers[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.Register);
 		W.Write(Obj.Size);
@@ -615,7 +844,7 @@ bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 	W.Write<U32>(Meta.Consts.GetCount());
 	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
 	{
-		const CUSMShaderConstMeta& Obj = Meta.Consts[i];
+		const CUSMConstMeta& Obj = Meta.Consts[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
 		W.Write<U8>(Obj.Type);
@@ -627,7 +856,7 @@ bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 	W.Write<U32>(Meta.Resources.GetCount());
 	for (UPTR i = 0; i < Meta.Resources.GetCount(); ++i)
 	{
-		const CUSMShaderRsrcMeta& Obj = Meta.Resources[i];
+		const CUSMRsrcMeta& Obj = Meta.Resources[i];
 		W.Write(Obj.Name);
 		W.Write<U8>(Obj.Type);
 		W.Write(Obj.RegisterStart);
@@ -637,104 +866,10 @@ bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 	W.Write<U32>(Meta.Samplers.GetCount());
 	for (UPTR i = 0; i < Meta.Samplers.GetCount(); ++i)
 	{
-		const CUSMShaderSamplerMeta& Obj = Meta.Samplers[i];
+		const CUSMSamplerMeta& Obj = Meta.Samplers[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.RegisterCount);
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R)
-{
-	UsedRegs.Clear();
-
-	U32 RangeCount = 0;
-	R.Read<U32>(RangeCount);
-	for (UPTR i = 0; i < RangeCount; ++i)
-	{
-		U32 Curr;
-		U32 CurrCount;
-		R.Read<U32>(Curr);
-		R.Read<U32>(CurrCount);
-		U32 CurrEnd = Curr + CurrCount;
-		for (; Curr < CurrEnd; ++Curr)
-			UsedRegs.Add((UPTR)Curr);
-	}
-}
-//---------------------------------------------------------------------
-
-bool SM30LoadShaderMetadata(IO::CBinaryReader& R, CSM30ShaderMeta& Meta)
-{
-	Meta.Buffers.Clear();
-	Meta.Consts.Clear();
-	Meta.Samplers.Clear();
-
-	U32 Count;
-
-	R.Read<U32>(Count);
-	CSM30ShaderBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
-	for (; pBuf < Meta.Buffers.End(); ++pBuf)
-	{
-		CSM30ShaderBufferMeta& Obj = *pBuf;
-
-		R.Read(Obj.Name);
-		R.Read(Obj.SlotIndex);
-
-		ReadRegisterRanges(Obj.UsedFloat4, R);
-		ReadRegisterRanges(Obj.UsedInt4, R);
-		ReadRegisterRanges(Obj.UsedBool, R);
-	}
-
-	R.Read<U32>(Count);
-	CSM30ShaderConstMeta* pConst = Meta.Consts.Reserve(Count, false);
-	for (; pConst < Meta.Consts.End(); ++pConst)
-	{
-		CSM30ShaderConstMeta& Obj = *pConst;
-
-		U8 RegSet;
-
-		R.Read(Obj.Name);
-		R.Read(Obj.BufferIndex);
-		R.Read<U8>(RegSet);
-
-		Obj.RegisterSet = (ESM30RegisterSet)RegSet;
-
-		R.Read(Obj.RegisterStart);
-		R.Read(Obj.ElementRegisterCount);
-		R.Read(Obj.ElementCount);
-		R.Read(Obj.Flags);
-
-		// Cache value
-		Obj.RegisterCount = Obj.ElementRegisterCount * Obj.ElementCount;
-	}
-
-	R.Read<U32>(Count);
-	CSM30ShaderRsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
-	for (; pRsrc < Meta.Resources.End(); ++pRsrc)
-	{
-		CSM30ShaderRsrcMeta& Obj = *pRsrc;
-		R.Read(Obj.Name);
-		R.Read(Obj.Register);
-		//???store sampler type or index for texture type validation on set?
-		//???how to reference texture object in SM3.0 shader for it to be included in params list?
-	}
-
-	R.Read<U32>(Count);
-	CSM30ShaderSamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
-	for (; pSamp < Meta.Samplers.End(); ++pSamp)
-	{
-		CSM30ShaderSamplerMeta& Obj = *pSamp;
-		R.Read(Obj.Name);
-		
-		U8 Type;
-		R.Read<U8>(Type);
-		Obj.Type = (ESM30SamplerType)Type;
-		
-		R.Read(Obj.RegisterStart);
-		R.Read(Obj.RegisterCount);
 	}
 
 	OK;
@@ -754,11 +889,11 @@ bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 	U32 Count;
 
 	R.Read<U32>(Count);
-	CUSMShaderBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
+	CUSMBufferMeta* pBuf = Meta.Buffers.Reserve(Count, false);
 	for (; pBuf < Meta.Buffers.End(); ++pBuf)
 	{
 		//!!!arrays, tbuffers & sbuffers aren't supported for now!
-		CUSMShaderBufferMeta& Obj = *pBuf;
+		CUSMBufferMeta& Obj = *pBuf;
 		R.Read(Obj.Name);
 		R.Read(Obj.Register);
 		R.Read(Obj.Size);
@@ -766,10 +901,10 @@ bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
-	CUSMShaderConstMeta* pConst = Meta.Consts.Reserve(Count, false);
+	CUSMConstMeta* pConst = Meta.Consts.Reserve(Count, false);
 	for (; pConst < Meta.Consts.End(); ++pConst)
 	{
-		CUSMShaderConstMeta& Obj = *pConst;
+		CUSMConstMeta& Obj = *pConst;
 		R.Read(Obj.Name);
 		R.Read(Obj.BufferIndex);
 
@@ -783,10 +918,10 @@ bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
-	CUSMShaderRsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
+	CUSMRsrcMeta* pRsrc = Meta.Resources.Reserve(Count, false);
 	for (; pRsrc < Meta.Resources.End(); ++pRsrc)
 	{
-		CUSMShaderRsrcMeta& Obj = *pRsrc;
+		CUSMRsrcMeta& Obj = *pRsrc;
 		R.Read(Obj.Name);
 
 		U8 Type;
@@ -798,10 +933,10 @@ bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
-	CUSMShaderSamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
+	CUSMSamplerMeta* pSamp = Meta.Samplers.Reserve(Count, false);
 	for (; pSamp < Meta.Samplers.End(); ++pSamp)
 	{
-		CUSMShaderSamplerMeta& Obj = *pSamp;
+		CUSMSamplerMeta& Obj = *pSamp;
 		R.Read(Obj.Name);
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.RegisterCount);

@@ -49,15 +49,15 @@ struct CEffectParam
 	U32					SizeInBytes;	// Cached, for consts
 	union
 	{
-		CSM30ShaderConstMeta*	pSM30Const;
-		CSM30ShaderRsrcMeta*	pSM30Resource;
-		CSM30ShaderSamplerMeta*	pSM30Sampler;
-		CUSMShaderConstMeta*	pUSMConst;
-		CUSMShaderRsrcMeta*		pUSMResource;
-		CUSMShaderSamplerMeta*	pUSMSampler;
+		CSM30ConstMeta*	pSM30Const;
+		CSM30RsrcMeta*	pSM30Resource;
+		CSM30SamplerMeta*	pSM30Sampler;
+		CUSMConstMeta*	pUSMConst;
+		CUSMRsrcMeta*		pUSMResource;
+		CUSMSamplerMeta*	pUSMSampler;
 	};
-	CUSMShaderBufferMeta*		pUSMBuffer;		// SM4.0 constants must be in identical buffer, so store for comparison
-	CSM30ShaderBufferMeta*		pSM30Buffer;	// For SlotIndex comparison (much like registers of USM buffers)
+	CUSMBufferMeta*		pUSMBuffer;		// SM4.0 constants must be in identical buffer, so store for comparison
+	CSM30BufferMeta*		pSM30Buffer;	// For SlotIndex comparison (much like registers of USM buffers)
 
 	bool operator ==(const CEffectParam& Other) const
 	{
@@ -176,46 +176,6 @@ bool LoadShaderMetadataByObjID(U32 ID,
 	DLLFreeShaderMetadata(pSM30Meta, pUSMMeta);
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
-{
-	U64 RangeCountOffset = W.GetStream().GetPosition();
-	W.Write<U32>(0);
-
-	if (!UsedRegs.GetCount()) return;
-
-	U32 RangeCount = 0;
-	UPTR CurrStart = UsedRegs[0], CurrCount = 1;
-	for (UPTR r = 1; r < UsedRegs.GetCount(); ++r)
-	{
-		UPTR Reg = UsedRegs[r];
-		if (Reg == CurrStart + CurrCount) ++CurrCount;
-		else
-		{
-			// New range detected
-			W.Write<U32>(CurrStart);
-			W.Write<U32>(CurrCount);
-			++RangeCount;
-			if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
-			CurrStart = Reg;
-			CurrCount = 1;
-		}
-	}
-
-	if (CurrStart != (UPTR)-1)
-	{
-		W.Write<U32>(CurrStart);
-		W.Write<U32>(CurrCount);
-		++RangeCount;
-		if (pRegisterSetName) n_msg(VL_DETAILS, "    Range: %s %d to %d\n", pRegisterSetName, CurrStart, CurrStart + CurrCount - 1);
-	}
-
-	U64 EndOffset = W.GetStream().GetPosition();
-	W.GetStream().Seek(RangeCountOffset, IO::Seek_Begin);
-	W.Write<U32>(RangeCount);
-	W.GetStream().Seek(EndOffset, IO::Seek_Begin);
 }
 //---------------------------------------------------------------------
 
@@ -1222,8 +1182,8 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 		else
 		{
 			// Merge used registers from the conflicting buffer
-			CSM30ShaderBufferMeta& CurrBuffer = SM30Meta.Buffers[Idx];
-			CSM30ShaderBufferMeta& NewBuffer = *pAddedParam->pSM30Buffer;
+			CSM30BufferMeta& CurrBuffer = SM30Meta.Buffers[Idx];
+			CSM30BufferMeta& NewBuffer = *pAddedParam->pSM30Buffer;
 			for (UPTR r = 0; r < NewBuffer.UsedFloat4.GetCount(); ++r)
 			{
 				UPTR Register = NewBuffer.UsedFloat4[r];
@@ -1252,13 +1212,13 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R, EEffectParamClassForSaving Cl
 		// The only constant buffer is used for SM3.0 RP globals
 		if (!SM30Meta.Buffers.GetCount())
 		{
-			CSM30ShaderBufferMeta* pBuffer = SM30Meta.Buffers.Reserve(1);
+			CSM30BufferMeta* pBuffer = SM30Meta.Buffers.Reserve(1);
 			pBuffer->Name = "_RenderPathGlobals_";
 			pBuffer->SlotIndex = 0;
 		}
 
-		CSM30ShaderConstMeta* pSM30Const = pAddedParam->pSM30Const;
-		CSM30ShaderBufferMeta& SM30Buffer = SM30Meta.Buffers[0];
+		CSM30ConstMeta* pSM30Const = pAddedParam->pSM30Const;
+		CSM30BufferMeta& SM30Buffer = SM30Meta.Buffers[0];
 		CArray<UPTR>& UsedRegs = (pSM30Const->RegisterSet == RS_Float4) ? SM30Buffer.UsedFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? SM30Buffer.UsedInt4 : SM30Buffer.UsedBool);
 		for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
 		{
@@ -1765,7 +1725,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					{
 						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Consts.GetCount(); ++ParamIdx)
 						{
-							CSM30ShaderConstMeta& MetaObj = pSM30Meta->Consts[ParamIdx];
+							CSM30ConstMeta& MetaObj = pSM30Meta->Consts[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1800,7 +1760,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 										break;
 									}
 								}
-								CSM30ShaderBufferMeta& BufferMeta = pSM30Meta->Buffers[MetaObj.BufferIndex];
+								CSM30BufferMeta& BufferMeta = pSM30Meta->Buffers[MetaObj.BufferIndex];
 								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at slot %d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), BufferMeta.Name.CStr(), BufferMeta.SlotIndex);
 							}
 							else
@@ -1812,7 +1772,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 							
-								CSM30ShaderConstMeta& RefMetaObj = *Param.pSM30Const;
+								CSM30ConstMeta& RefMetaObj = *Param.pSM30Const;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1823,7 +1783,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Resources.GetCount(); ++ParamIdx)
 						{
-							CSM30ShaderRsrcMeta& MetaObj = pSM30Meta->Resources[ParamIdx];
+							CSM30RsrcMeta& MetaObj = pSM30Meta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1848,7 +1808,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 							
-								CSM30ShaderRsrcMeta& RefMetaObj = *Param.pSM30Resource;
+								CSM30RsrcMeta& RefMetaObj = *Param.pSM30Resource;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1859,7 +1819,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CSM30ShaderSamplerMeta& MetaObj = pSM30Meta->Samplers[ParamIdx];
+							CSM30SamplerMeta& MetaObj = pSM30Meta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1884,7 +1844,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 							
-								CSM30ShaderSamplerMeta& RefMetaObj = *Param.pSM30Sampler;
+								CSM30SamplerMeta& RefMetaObj = *Param.pSM30Sampler;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1897,8 +1857,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					{
 						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Consts.GetCount(); ++ParamIdx)
 						{
-							CUSMShaderConstMeta& MetaObj = pUSMMeta->Consts[ParamIdx];
-							CUSMShaderBufferMeta& MetaBuf = pUSMMeta->Buffers[MetaObj.BufferIndex];
+							CUSMConstMeta& MetaObj = pUSMMeta->Consts[ParamIdx];
+							CUSMBufferMeta& MetaBuf = pUSMMeta->Buffers[MetaObj.BufferIndex];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1926,14 +1886,14 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 							
-								CUSMShaderConstMeta& RefMetaObj = *Param.pUSMConst;
+								CUSMConstMeta& RefMetaObj = *Param.pUSMConst;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
 									return ERR_INVALID_DATA;
 								}
 
-								CUSMShaderBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
+								CUSMBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
 								if (MetaBuf != RefMetaBuf)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1944,7 +1904,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						
 						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Resources.GetCount(); ++ParamIdx)
 						{
-							CUSMShaderRsrcMeta& MetaObj = pUSMMeta->Resources[ParamIdx];
+							CUSMRsrcMeta& MetaObj = pUSMMeta->Resources[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -1969,7 +1929,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 							
-								CUSMShaderRsrcMeta& RefMetaObj = *Param.pUSMResource;
+								CUSMRsrcMeta& RefMetaObj = *Param.pUSMResource;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -1980,7 +1940,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						
 						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Samplers.GetCount(); ++ParamIdx)
 						{
-							CUSMShaderSamplerMeta& MetaObj = pUSMMeta->Samplers[ParamIdx];
+							CUSMSamplerMeta& MetaObj = pUSMMeta->Samplers[ParamIdx];
 							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
 							
 							UPTR Idx = 0;
@@ -2005,7 +1965,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 									return ERR_INVALID_DATA;
 								}
 							
-								CUSMShaderSamplerMeta& RefMetaObj = *Param.pUSMSampler;
+								CUSMSamplerMeta& RefMetaObj = *Param.pUSMSampler;
 								if (MetaObj != RefMetaObj)
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
@@ -2408,7 +2368,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			
 			if (Param.Class == EPC_SM30Const)
 			{
-				CSM30ShaderConstMeta& Meta = *Param.pSM30Const;
+				CSM30ConstMeta& Meta = *Param.pSM30Const;
 				switch (Meta.RegisterSet)
 				{
 					case RS_Float4:

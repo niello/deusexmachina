@@ -20,7 +20,7 @@ enum ESM30ConstFlags
 	SM30Const_ColumnMajor	= 0x01			// Only for matrix types
 };
 
-struct CSM30ShaderBufferMeta
+struct CSM30BufferMeta
 {
 	CStrID				Name;
 	U32					SlotIndex;			// Pseudo-register
@@ -30,7 +30,7 @@ struct CSM30ShaderBufferMeta
 	HHandle				Handle;
 };
 
-struct CSM30ShaderConstMeta
+struct CSM30ConstMeta
 {
 	HHandle				BufferHandle;
 	CStrID				Name;
@@ -42,14 +42,14 @@ struct CSM30ShaderConstMeta
 	HHandle				Handle;
 };
 
-struct CSM30ShaderRsrcMeta
+struct CSM30RsrcMeta
 {
 	CStrID				Name;
 	U32					Register;
 	HHandle				Handle;
 };
 
-struct CSM30ShaderSamplerMeta
+struct CSM30SamplerMeta
 {
 	CStrID				Name;
 	ESM30SamplerType	Type;
@@ -62,10 +62,10 @@ class CSM30ShaderMetadata: public IShaderMetadata
 {
 private:
 
-	CFixedArray<CSM30ShaderBufferMeta>	Buffers;
-	CFixedArray<CSM30ShaderConstMeta>	Consts;
-	CFixedArray<CSM30ShaderRsrcMeta>	Resources;
-	CFixedArray<CSM30ShaderSamplerMeta>	Samplers;
+	CFixedArray<CSM30BufferMeta>	Buffers;
+	CFixedArray<CSM30ConstMeta>	Consts;
+	CFixedArray<CSM30RsrcMeta>	Resources;
+	CFixedArray<CSM30SamplerMeta>	Samplers;
 
 public:
 

@@ -12,7 +12,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	Buffers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{
-		CSM30ShaderBufferMeta* pMeta = &Buffers[i];
+		CSM30BufferMeta* pMeta = &Buffers[i];
 		if (!R.Read(pMeta->Name)) FAIL;
 		if (!R.Read(pMeta->SlotIndex)) FAIL;
 
@@ -53,7 +53,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	Consts.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
-		CSM30ShaderConstMeta* pMeta = &Consts[i];
+		CSM30ConstMeta* pMeta = &Consts[i];
 		if (!R.Read(pMeta->Name)) FAIL;
 
 		U32 BufIdx;
@@ -76,7 +76,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	Resources.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Resources.GetCount(); ++i)
 	{
-		CSM30ShaderRsrcMeta* pMeta = &Resources[i];
+		CSM30RsrcMeta* pMeta = &Resources[i];
 		if (!R.Read(pMeta->Name)) FAIL;
 		if (!R.Read<U32>(pMeta->Register)) FAIL;
 		
@@ -86,7 +86,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	Samplers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		CSM30ShaderSamplerMeta* pMeta = &Samplers[i];
+		CSM30SamplerMeta* pMeta = &Samplers[i];
 		if (!R.Read(pMeta->Name)) FAIL;
 
 		U8 Type;
@@ -133,7 +133,7 @@ HConst CSM30ShaderMetadata::GetConstHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
-		CSM30ShaderConstMeta* pMeta = &Consts[i];
+		CSM30ConstMeta* pMeta = &Consts[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);
@@ -149,7 +149,7 @@ HConstBuffer CSM30ShaderMetadata::GetConstBufferHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{
-		CSM30ShaderBufferMeta* pMeta = &Buffers[i];
+		CSM30BufferMeta* pMeta = &Buffers[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);
@@ -160,7 +160,7 @@ HConstBuffer CSM30ShaderMetadata::GetConstBufferHandle(CStrID ID) const
 	if (Buffers.GetCount())
 	{
 		// Default buffer
-		CSM30ShaderBufferMeta* pMeta = &Buffers[0];
+		CSM30BufferMeta* pMeta = &Buffers[0];
 		if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);
 		return pMeta->Handle;
 	}
@@ -174,7 +174,7 @@ HResource CSM30ShaderMetadata::GetResourceHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Resources.GetCount(); ++i)
 	{
-		CSM30ShaderRsrcMeta* pMeta = &Resources[i];
+		CSM30RsrcMeta* pMeta = &Resources[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);
@@ -190,7 +190,7 @@ HSampler CSM30ShaderMetadata::GetSamplerHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		CSM30ShaderSamplerMeta* pMeta = &Samplers[i];
+		CSM30SamplerMeta* pMeta = &Samplers[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);
@@ -205,7 +205,7 @@ bool CSM30ShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 {
 	HConst Handle = GetConstHandle(ID);
 	if (Handle == INVALID_HANDLE) FAIL;
-	CSM30ShaderConstMeta* pMeta = (CSM30ShaderConstMeta*)HandleMgr.GetHandleData(Handle);
+	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)HandleMgr.GetHandleData(Handle);
 	Out.Handle = Handle;
 	Out.BufferHandle = pMeta->BufferHandle;
 	Out.ElementCount = pMeta->ElementCount;
