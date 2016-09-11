@@ -13,9 +13,10 @@ extern CString Messages;
 bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler, CSM30ShaderMeta& Out)
 {
 	CArray<CD3D9ConstantDesc> D3D9Consts;
+	CDict<U32, CD3D9StructDesc> D3D9Structs;
 	CString Creator;
 
-	if (!D3D9Reflect(pData, Size, D3D9Consts, Creator)) FAIL;
+	if (!D3D9Reflect(pData, Size, D3D9Consts, D3D9Structs, Creator)) FAIL;
 
 	// Process source code includes and remove comments
 
@@ -92,7 +93,34 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		Source.TruncateRight(Source.GetLength() - NewLength);
 	}
 
-	// Collect metadata
+	// Collect structure layout metadata
+
+	const UPTR StructCount = D3D9Structs.GetCount();
+	CSM30StructMeta* pStructMeta = Out.Structs.Reserve(StructCount);
+	for (UPTR i = 0; i < StructCount; ++i, ++pStructMeta)
+	{
+		const CD3D9StructDesc& D3D9StructDesc = D3D9Structs.ValueAt(i);
+
+		const UPTR MemberCount = D3D9StructDesc.Members.GetCount();
+		CSM30StructMemberMeta* pMemberMeta = pStructMeta->Members.Reserve(MemberCount);
+		for (UPTR j = 0; j < MemberCount; ++j, ++pMemberMeta)
+		{
+			const CD3D9ConstantDesc& D3D9ConstDesc = D3D9StructDesc.Members[j];
+			pMemberMeta->Name = D3D9ConstDesc.Name;
+			pMemberMeta->StructIndex = (U32)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
+			pMemberMeta->RegisterOffset = D3D9ConstDesc.RegisterIndex;
+			pMemberMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
+			pMemberMeta->ElementCount = D3D9ConstDesc.Type.Elements;
+			pMemberMeta->Flags = 0;
+
+			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
+				pMemberMeta->Flags |= SM30Const_ColumnMajor;
+
+			n_assert(pMemberMeta->ElementRegisterCount * pMemberMeta->ElementCount == D3D9ConstDesc.RegisterCount);
+		}
+	}
+
+	// Collect constant metadata
 
 	CDict<CString, CArray<CString>> SampToTex;
 	D3D9FindSamplerTextures(Source.CStr(), SampToTex);
@@ -167,9 +195,6 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		}
 		else // Constants
 		{
-			// Structure layout is not saved for now, so operations on structure members aren't supported.
-			// It can be fixed as needed.
-
 			CString BufferName;
 			U32 SlotIndex = (U32)(INVALID_INDEX);
 			D3D9FindConstantBuffer(Source.CStr(), D3D9ConstDesc.Name, BufferName, SlotIndex);
@@ -205,6 +230,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 			CSM30ShaderConstMeta* pMeta = Out.Consts.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
 			pMeta->BufferIndex = BufferIndex;
+			pMeta->StructIndex = (U32)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{

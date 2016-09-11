@@ -73,14 +73,21 @@ struct CD3D9ConstantDesc
 {
 	CString						Name;
 	CD3D9ConstantType			Type;
+	U32							StructID;
 	EREGISTER_SET				RegisterSet;
 	UPTR						RegisterIndex;
 	UPTR						RegisterCount;
 	//const void*				pDefaultValue; //???CBuffer or explicit mem mgmt? or don't read?
+};
+
+struct CD3D9StructDesc
+{
+	UPTR						Bytes;
+	EPARAMETER_TYPE				Type;
 	CArray<CD3D9ConstantDesc>	Members;
 };
 
-bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CString& OutCreator);
+bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CDict<U32, CD3D9StructDesc>& OutStructs, CString& OutCreator);
 void D3D9FindSamplerTextures(const char* pSrcText, CDict<CString, CArray<CString>>& OutSampToTex);
 void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName, U32& OutSlotIndex);
 

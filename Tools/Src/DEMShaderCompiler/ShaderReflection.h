@@ -47,8 +47,25 @@ struct CSM30ShaderBufferMeta
 	CArray<UPTR>	UsedInt4;
 	CArray<UPTR>	UsedBool;
 
-	//bool operator ==(const CUSMShaderBufferMeta& Other) const { return SlotIndex == Other.SlotIndex; }
-	//bool operator !=(const CUSMShaderBufferMeta& Other) const { return SlotIndex != Other.SlotIndex; }
+	//bool operator ==(const CSM30ShaderBufferMeta& Other) const { return SlotIndex == Other.SlotIndex; }
+	//bool operator !=(const CSM30ShaderBufferMeta& Other) const { return SlotIndex != Other.SlotIndex; }
+};
+
+struct CSM30StructMemberMeta
+{
+	CString			Name;
+	U32				StructIndex;
+	U32				RegisterOffset;
+	U32				ElementRegisterCount;
+	U32				ElementCount;
+	U8				Flags;					// See ESM30ConstFlags
+	//???store register set and support mixed structs?
+};
+
+struct CSM30StructMeta
+{
+	//CString						Name;
+	CArray<CSM30StructMemberMeta>	Members;
 };
 
 // Arrays and single-type structures are supported
@@ -56,6 +73,7 @@ struct CSM30ShaderConstMeta
 {
 	CString				Name;
 	U32					BufferIndex;
+	U32					StructIndex;
 	ESM30RegisterSet	RegisterSet;
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
@@ -94,6 +112,7 @@ struct CSM30ShaderSamplerMeta
 struct CSM30ShaderMeta
 {
 	CArray<CSM30ShaderBufferMeta>	Buffers;
+	CArray<CSM30StructMeta>			Structs;
 	CArray<CSM30ShaderConstMeta>	Consts;
 	CArray<CSM30ShaderRsrcMeta>		Resources;
 	CArray<CSM30ShaderSamplerMeta>	Samplers;

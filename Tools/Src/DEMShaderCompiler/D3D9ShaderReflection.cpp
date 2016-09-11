@@ -62,7 +62,8 @@ bool ProcessConstant(const char* ctab,
 					 const char* pName,
 					 UPTR RegisterIndex,
 					 UPTR RegisterCount,
-					 CArray<CD3D9ConstantDesc>& OutConsts)
+					 CArray<CD3D9ConstantDesc>& OutConsts,
+					 CDict<U32, CD3D9StructDesc>& OutStructs)
 {
 	CD3D9ConstantDesc* pDesc = NULL;
 	for (UPTR i = 0; i < OutConsts.GetCount(); ++i)
@@ -72,7 +73,7 @@ bool ProcessConstant(const char* ctab,
 			pDesc = &OutConsts[i];
 			if (pDesc->Type.Class == PC_STRUCT)
 			{
-				// Mixed-registerset structure, not supported by DEM
+				// Mixed register set structure, not supported by DEM
 				pDesc->RegisterSet = RS_MIXED;
 				pDesc->RegisterIndex = 0;
 				pDesc->RegisterCount = 0;
@@ -101,28 +102,48 @@ bool ProcessConstant(const char* ctab,
 	UPTR ElementRegisterCount = 0;
 	if (TypeInfo.Class == PC_STRUCT)
 	{
-		pDesc->Type.Bytes = 0;
-		UPTR ChildCount = TypeInfo.StructMembers;
-		const CCTABStructMemberInfo* pMembers = (CCTABStructMemberInfo*)(ctab + TypeInfo.StructMemberInfo);
-		for (UPTR i = 0; i < ChildCount; ++i)
-		{
-			const CCTABType* pMemberTypeInfo = reinterpret_cast<const CCTABType*>(ctab + pMembers[i].TypeInfo);
-			if (!ProcessConstant(ctab, ConstInfo, *pMemberTypeInfo, ctab + pMembers[i].Name, RegisterIndex + ElementRegisterCount, RegisterCount - ElementRegisterCount, pDesc->Members)) FAIL;
-			ElementRegisterCount += pDesc->Members[i].RegisterCount;
-			pDesc->Type.Bytes += pDesc->Members[i].Type.Bytes;
+		// If happens, search 'not a struct' and correct value in else section right below
+		n_assert(TypeInfo.StructMemberInfo != 0);
 
-			if (pDesc->Type.Type == PT_VOID)
-				pDesc->Type.Type = pDesc->Members[i].Type.Type;
-			else if (pDesc->Type.Type != pDesc->Members[i].Type.Type)
+		pDesc->StructID = TypeInfo.StructMemberInfo;
+
+		CD3D9StructDesc* pStructDesc;
+		IPTR Idx = OutStructs.FindIndex(TypeInfo.StructMemberInfo);
+		if (Idx == INVALID_INDEX)
+		{
+			CD3D9StructDesc NewStructDesc;
+			NewStructDesc.Bytes = 0;
+			NewStructDesc.Type = PT_VOID;
+
+			const CCTABStructMemberInfo* pMembers = (CCTABStructMemberInfo*)(ctab + TypeInfo.StructMemberInfo);
+			for (U16 i = 0; i < TypeInfo.StructMembers; ++i)
 			{
-				pDesc->Type.Type = PT_MIXED;
-				pDesc->RegisterSet = RS_MIXED;
+				const CCTABType* pMemberTypeInfo = reinterpret_cast<const CCTABType*>(ctab + pMembers[i].TypeInfo);
+				if (!ProcessConstant(ctab, ConstInfo, *pMemberTypeInfo, ctab + pMembers[i].Name, ElementRegisterCount, RegisterCount - ElementRegisterCount, NewStructDesc.Members, OutStructs)) FAIL;
+				ElementRegisterCount += NewStructDesc.Members[i].RegisterCount;
+				NewStructDesc.Bytes += NewStructDesc.Members[i].Type.Bytes;
+
+				if (NewStructDesc.Type == PT_VOID)
+					NewStructDesc.Type = NewStructDesc.Members[i].Type.Type;
+				else if (NewStructDesc.Type != NewStructDesc.Members[i].Type.Type)
+					NewStructDesc.Type = PT_MIXED;
 			}
+
+			// Dictionary may be modified in recursive calls, pointer may become invalid, so
+			// we fill structure on a stack and add only when done.
+			pStructDesc = &OutStructs.Add(TypeInfo.StructMemberInfo, NewStructDesc);
 		}
+		else pStructDesc = &OutStructs.ValueAt(Idx);
+
+		pDesc->Type.Bytes = pStructDesc->Bytes;
+		pDesc->Type.Type = pStructDesc->Type;
+		if (pStructDesc->Type == PT_MIXED) pDesc->RegisterSet = RS_MIXED;
 	}
 	else
 	{
 		//U16 offsetdiff = TypeInfo.Columns * TypeInfo.Rows;
+
+		pDesc->StructID = 0; // not a struct
 
 		switch (pDesc->RegisterSet)
 		{
@@ -186,7 +207,7 @@ bool ProcessConstant(const char* ctab,
 }
 //---------------------------------------------------------------------
 
-bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CString& OutCreator)
+bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CDict<U32, CD3D9StructDesc>& OutStructs, CString& OutCreator)
 {
 	const U32* ptr = static_cast<const U32*>(pData);
 	while (*++ptr != SIO_END)
@@ -214,7 +235,7 @@ bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutCon
 			for (U32 i = 0; i < header->Constants; ++i)
 			{
 				const CCTABType* pTypeInfo = reinterpret_cast<const CCTABType*>(ctab + info[i].TypeInfo);
-				if (!ProcessConstant(ctab, info[i], *pTypeInfo, ctab + info[i].Name, info[i].RegisterIndex, info[i].RegisterCount, OutConsts)) FAIL;
+				if (!ProcessConstant(ctab, info[i], *pTypeInfo, ctab + info[i].Name, info[i].RegisterIndex, info[i].RegisterCount, OutConsts, OutStructs)) FAIL;
 			}
 
 			OK;
