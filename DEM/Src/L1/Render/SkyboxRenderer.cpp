@@ -84,9 +84,6 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 		{
 			pCurrTech = pTech;
 			pConstWorldMatrix = pTech->GetConstant(CStrID("WorldMatrix"));
-
-			//!!!DBG TMP!
-			//Sys::DbgOut("Tech params requested by ID\n");
 		}
 
 		UPTR LightCount = 0;

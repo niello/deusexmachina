@@ -47,7 +47,7 @@ public:
 	//SetLength(UPTR NewLength)
 	void			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true);
 	void			TruncateRight(UPTR CharCount);
-	CString			SubString(UPTR Start, UPTR Size = 0) const;
+	CString			SubString(UPTR Start, UPTR Size) const;
 
 	void			Replace(char CurrChar, char NewChar);
 	void			Replace(const char* pCurrCharSet, char NewChar);
@@ -55,8 +55,8 @@ public:
 	void			ToLower() { if (pString) _strlwr_s(pString, Length + 1); }
 	void			ToUpper() { if (pString) _strupr_s(pString, Length + 1); }
 
-	int				FindIndex(char Chr, UPTR StartIdx = 0) const;
-	int				FindIndex(const char* pStr, UPTR StartIdx = 0) const;
+	IPTR			FindIndex(char Chr, UPTR StartIdx = 0) const;
+	IPTR			FindIndex(const char* pStr, UPTR StartIdx = 0) const;
 	bool			ContainsAny(const char* pCharSet) const { return pCharSet && pString && !!strpbrk(pString, pCharSet); }
 	bool			ContainsOnly(const char* pCharSet) const;
 
@@ -85,6 +85,8 @@ public:
 	CString&		operator +=(const CString& Other) { Add(Other); return *this; }
 	char			operator [](int i) const { n_assert_dbg(i >= 0 && i <= (int)Length); return pString[i]; }
 	char&			operator [](int i) { n_assert_dbg(i >= 0 && i <= (int)Length); return pString[i]; }
+	//char			operator [](UPTR i) const { n_assert_dbg(i <= Length); return pString[i]; }
+	//char&			operator [](UPTR i) { n_assert_dbg(i <= Length); return pString[i]; }
 };
 
 template<> inline unsigned int Hash<CString>(const CString& Key)
@@ -192,8 +194,8 @@ inline void CString::TruncateRight(UPTR CharCount)
 
 inline CString CString::SubString(UPTR Start, UPTR Size) const
 {
-	if (Start >= Length) return CString();
-	if (!Size || Start + Size > Length) Size = Length - Start;
+	if (!Size || Start >= Length) return CString();
+	if (Start + Size > Length) Size = Length - Start;
 	return CString(pString + Start, Size);
 }
 //---------------------------------------------------------------------
@@ -224,7 +226,7 @@ inline void CString::Replace(const char* pCurrCharSet, char NewChar)
 }
 //---------------------------------------------------------------------
 
-inline int CString::FindIndex(char Chr, UPTR StartIdx) const
+inline IPTR CString::FindIndex(char Chr, UPTR StartIdx) const
 {
 	if (StartIdx >= Length) return INVALID_INDEX;
 	const char* pChar = strchr(pString + StartIdx, Chr);
@@ -232,7 +234,7 @@ inline int CString::FindIndex(char Chr, UPTR StartIdx) const
 }
 //---------------------------------------------------------------------
 
-inline int CString::FindIndex(const char* pStr, UPTR StartIdx) const
+inline IPTR CString::FindIndex(const char* pStr, UPTR StartIdx) const
 {
 	if (StartIdx >= Length) return INVALID_INDEX;
 	const char* pChar = strstr(pString + StartIdx, pStr);
@@ -350,7 +352,7 @@ inline void CString::Strip(const char* CharSet)
 inline CString CString::Concatenate(const CArray<CString>& Strings, const CString& WhiteSpace)
 {
 	CString Result;
-	for (int i = 0; i < Strings.GetCount(); ++i)
+	for (UPTR i = 0; i < Strings.GetCount(); ++i)
 	{
 		Result.Add(Strings[i]);
 		if (i < Strings.GetCount() - 1)

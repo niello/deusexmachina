@@ -464,9 +464,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			const CEffectSampler* pVSHeightSampler = pTech->GetSampler(CStrID("VSHeightSampler"));
 			if (pVSHeightSampler)
 				GPU.BindSampler(pVSHeightSampler->ShaderType, pVSHeightSampler->Handle, HMSampler.GetUnsafe());
-
-			//!!!DBG TMP!
-			//Sys::DbgOut("Tech params requested by ID\n");
 		}
 
 		if (pResourceHeightMap)

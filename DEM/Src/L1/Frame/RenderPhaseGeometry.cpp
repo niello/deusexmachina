@@ -182,11 +182,11 @@ bool CRenderPhaseGeometry::Render(CView& View)
 					float	Intensity;
 					vector3	Position;
 					float	InvRange;	// For attenuation
-					vector3	Direction;	// Pre-inverted for directional lights
-					float	_PAD1;
 					vector4	Params;		// Spot: x - cos inner, y - cos outer
+					vector3	Direction;	// Pre-inverted for directional lights
+					float	_PAD1;		//???need this padding?
 					U32		Type;
-					U32		_PAD2[3];
+					//U32		_PAD2[3]; // Offset calculation in SetConstantValue() handles this
 				} GPULight;
 
 				GPULight.Color = Light.Color;

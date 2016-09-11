@@ -25,12 +25,12 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 	UPTR NewLength = StringUtils::StripComments(&Source[0]);
 	Source.TruncateRight(Source.GetLength() - NewLength);
 
-	int CurrIdx = 0;
-	int IncludeIdx;
+	IPTR CurrIdx = 0;
+	IPTR IncludeIdx;
 	while ((IncludeIdx = Source.FindIndex("#include", CurrIdx)) != INVALID_INDEX)
 	{
-		int FileNameStartSys = Source.FindIndex('<');
-		int FileNameStartLocal = Source.FindIndex('\"');
+		IPTR FileNameStartSys = Source.FindIndex('<', IncludeIdx);
+		IPTR FileNameStartLocal = Source.FindIndex('\"', IncludeIdx);
 		if (FileNameStartSys == INVALID_INDEX && FileNameStartLocal == INVALID_INDEX)
 		{
 			Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
@@ -44,8 +44,8 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		}
 
 		D3D_INCLUDE_TYPE IncludeType;
-		int FileNameStart;
-		int FileNameEnd;
+		IPTR FileNameStart;
+		IPTR FileNameEnd;
 		if (FileNameStartSys != INVALID_INDEX)
 		{
 			IncludeType = D3D_INCLUDE_SYSTEM; // <FileName>
@@ -85,7 +85,7 @@ bool SM30CollectShaderMetadata(const void* pData, UPTR Size, const char* pSource
 		
 		IncludeHandler.Close(pData);
 
-		CurrIdx = FileNameStart;
+		CurrIdx = IncludeIdx;
 
 		//!!!DIRTY HACK! Need valid way to edit CString inplace by StripComments()!
 		NewLength = StringUtils::StripComments(&Source[0]);

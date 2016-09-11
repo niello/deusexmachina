@@ -54,6 +54,7 @@ public:
 
 typedef Ptr<CTechnique> PTechnique;
 
+// NB: Always reduces LightCount if exact requested value can't be used
 inline const CPassList*	CTechnique::GetPasses(UPTR& LightCount) const
 {
 	UPTR DifferentLightCounts = PassesByLightCount.GetCount();

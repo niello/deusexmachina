@@ -269,6 +269,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9Shader.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D9\SM30ShaderConstant.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.h" />
     <ClInclude Include="..\..\Src\L1\Render\DepthStencilBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\DisplayDriver.h" />
@@ -298,6 +299,7 @@
     <ClInclude Include="..\..\Src\L1\Render\Sampler.h" />
     <ClInclude Include="..\..\Src\L1\Render\SamplerDesc.h" />
     <ClInclude Include="..\..\Src\L1\Render\Shader.h" />
+    <ClInclude Include="..\..\Src\L1\Render\ShaderConstant.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLibrary.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLibraryLoaderSLB.h" />
     <ClInclude Include="..\..\Src\L1\Render\ShaderLoader.h" />

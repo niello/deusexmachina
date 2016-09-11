@@ -323,9 +323,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			{
 				pConstInstanceData = pTech->GetConstant(CStrID("InstanceDataArray"));
 				pCurrTech = pTech;
-
-				//!!!DBG TMP!
-				//Sys::DbgOut("Tech params requested by ID\n");
 			}
 
 			if (pConstInstanceData)
@@ -342,6 +339,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				CEffectConstSetValues PerInstanceConstValues;
 				PerInstanceConstValues.SetGPU(&GPU);
 				PerInstanceConstValues.RegisterConstantBuffer(pConstInstanceData->Desc.BufferHandle, NULL);
+
+				//!!!PERF: use constant interface with precalculated location in buffer to set complex members (InstData[M].LightIndex[N])!
+				//reconstruct instance data structure
+				// matrix - always
+				// light count - if LightCount == 0 and tech is lit (???)
+				// light indices, if effective light count > 0
 
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
@@ -459,9 +462,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				pConstWorldMatrix = pTech->GetConstant(CStrID("InstanceData"));
 				pConstSkinPalette = pTech->GetConstant(CStrID("SkinPalette"));
 				pCurrTech = pTech;
-
-				//!!!DBG TMP!
-				//Sys::DbgOut("Tech params requested by ID\n");
 			}
 
 			GPU.SetVertexLayout(pVL);
