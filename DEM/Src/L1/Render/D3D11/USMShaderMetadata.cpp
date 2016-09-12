@@ -1,5 +1,6 @@
 #include "USMShaderMetadata.h"
 
+#include <Render/D3D11/USMShaderConstant.h>
 #include <IO/BinaryReader.h>
 
 namespace Render
@@ -41,6 +42,15 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 	}
 
 	Structs.SetSize(R.Read<U32>());
+
+	// Open handles at the load time to reference structs from constants and members
+	for (UPTR i = 0; i < Structs.GetCount(); ++i)
+	{
+		CUSMStructMeta* pMeta = &Structs[i];
+		pMeta->Handle = HandleMgr.OpenHandle(pMeta);
+	}
+
+	// Load members
 	for (UPTR i = 0; i < Structs.GetCount(); ++i)
 	{
 		CUSMStructMeta* pMeta = &Structs[i];
@@ -51,7 +61,10 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 			CUSMStructMemberMeta* pMemberMeta = &pMeta->Members[j];
 
 			if (!R.Read(pMemberMeta->Name)) FAIL;
-			if (!R.Read<U32>(pMemberMeta->StructIndex)) FAIL;
+
+			U32 StructIndex;
+			if (!R.Read<U32>(StructIndex)) FAIL;
+			pMemberMeta->StructHandle = (StructIndex == (U32)(-1)) ? INVALID_HANDLE : Structs[StructIndex].Handle;
 
 			U8 Type;
 			if (!R.Read<U8>(Type)) FAIL;
@@ -74,7 +87,9 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 		if (!R.Read(BufIdx)) FAIL;
 		pMeta->BufferHandle = Buffers[BufIdx].Handle;
 
-		if (!R.Read<U32>(pMeta->StructIndex)) FAIL;
+		U32 StructIndex;
+		if (!R.Read<U32>(StructIndex)) FAIL;
+		pMeta->StructHandle = (StructIndex == (U32)(-1)) ? INVALID_HANDLE : Structs[StructIndex].Handle;
 
 		U8 Type;
 		if (!R.Read<U8>(Type)) FAIL;
@@ -128,6 +143,13 @@ void CUSMShaderMetadata::Clear()
 	}
 	Consts.Clear();
 
+	for (UPTR i = 0; i < Structs.GetCount(); ++i)
+	{
+		HHandle Handle = Structs[i].Handle;
+		if (Handle) HandleMgr.CloseHandle(Handle);
+	}
+	Structs.Clear();
+
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{
 		HHandle Handle = Buffers[i].Handle;
@@ -167,8 +189,11 @@ HConst CUSMShaderMetadata::GetConstHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(CStrID ID) const
+HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(HConst hConst) const
 {
+	//!!!search by ID and search by constant are DIFFERENT!
+	NOT_IMPLEMENTED;
+
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{
@@ -215,6 +240,7 @@ HSampler CUSMShaderMetadata::GetSamplerHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+/*
 bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 {
 	HConst Handle = GetConstHandle(ID);
@@ -236,17 +262,32 @@ bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 	{
 	}
 
-	/*
-	switch (pMeta->Type)
-	{
-		case USMConst_Bool:		return ConstType_Bool;
-		case USMConst_Int:		return ConstType_Int;
-		case USMConst_Float:	return ConstType_Float;
-		case USMConst_Struct:	return ConstType_Other;
-		default:				return ConstType_Invalid;
-	}
-	*/
+	//switch (pMeta->Type)
+	//{
+	//	case USMConst_Bool:		return ConstType_Bool;
+	//	case USMConst_Int:		return ConstType_Int;
+	//	case USMConst_Float:	return ConstType_Float;
+	//	case USMConst_Struct:	return ConstType_Other;
+	//	default:				return ConstType_Invalid;
+	//}
 	OK;
+}
+//---------------------------------------------------------------------
+*/
+
+PShaderConstant CUSMShaderMetadata::GetConstant(HConst hConst) const
+{
+	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
+	if (!pMeta) return NULL;
+
+	if (pMeta->ConstObject.IsNullPtr())
+	{
+		PUSMShaderConstant Const = n_new(CUSMShaderConstant);
+		if (!Const->Init(hConst)) return NULL;
+		pMeta->ConstObject = Const.GetUnsafe();
+	}
+
+	return pMeta->ConstObject;
 }
 //---------------------------------------------------------------------
 

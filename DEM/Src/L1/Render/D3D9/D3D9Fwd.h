@@ -15,7 +15,9 @@ enum ESM30RegisterSet
 {
 	Reg_Bool			= 0,
 	Reg_Int4			= 1,
-	Reg_Float4			= 2
+	Reg_Float4			= 2,
+
+	Reg_Invalid
 };
 
 // Don't change values

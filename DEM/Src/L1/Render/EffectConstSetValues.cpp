@@ -37,7 +37,7 @@ bool CEffectConstSetValues::RegisterConstantBuffer(HConstBuffer Handle, CConstan
 
 bool CEffectConstSetValues::SetConstantValue(const CEffectConstant* pConst, UPTR ElementIndex, const void* pValue, UPTR Size)
 {
-	const HConstBuffer hCB = pConst->Desc.BufferHandle;
+	const HConstBuffer hCB = pConst->hCB;
 	IPTR BufferIdx = Buffers.FindIndex(hCB);
 	if (BufferIdx == INVALID_INDEX) FAIL;
 

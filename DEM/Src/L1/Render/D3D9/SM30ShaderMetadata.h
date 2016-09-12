@@ -28,7 +28,7 @@ struct CSM30BufferMeta
 struct CSM30StructMemberMeta
 {
 	CStrID			Name;
-	U32				StructIndex;			// (U32)(-1) if not a structure
+	HHandle			StructHandle;
 	U32				RegisterOffset;
 	U32				ElementRegisterCount;
 	U32				ElementCount;
@@ -38,20 +38,22 @@ struct CSM30StructMemberMeta
 
 struct CSM30StructMeta
 {
+	HHandle								Handle;
 	CFixedArray<CSM30StructMemberMeta>	Members;
 };
 
 struct CSM30ConstMeta
 {
-	HHandle				BufferHandle;
 	CStrID				Name;
-	U32					StructIndex;		// (U32)(-1) if not a structure
+	HHandle				BufferHandle;
+	HHandle				StructHandle;
 	ESM30RegisterSet	RegSet;
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
 	U32					ElementCount;
 	U8					Flags;				// See ESM30ConstFlags
 	HHandle				Handle;
+	PShaderConstant		ConstObject;
 };
 
 struct CSM30RsrcMeta
@@ -89,10 +91,10 @@ public:
 
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return GPU_Level_D3D9_3; }
 	virtual HConst				GetConstHandle(CStrID ID) const;
-	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const;
+	virtual HConstBuffer		GetConstBufferHandle(HConst hConst) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;
-	virtual bool				GetConstDesc(CStrID ID, CShaderConstDesc& Out) const;
+	virtual PShaderConstant		GetConstant(HConst hConst) const;
 };
 
 }

@@ -252,6 +252,7 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11Texture.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.h" />
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\USMShaderConstant.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D11\USMShaderMetadata.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.h" />
     <ClInclude Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.h" />
@@ -528,6 +529,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11Texture.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\D3D11VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\USMShaderConstant.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D11\USMShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9ConstantBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9DepthStencilBuffer.cpp" />
@@ -544,6 +546,7 @@
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9Shader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\D3D9VertexLayout.cpp" />
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\SM30ShaderConstant.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\D3D9\SM30ShaderMetadata.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\DepthStencilBuffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\Effect.cpp" />

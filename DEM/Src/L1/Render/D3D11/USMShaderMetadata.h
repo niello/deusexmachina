@@ -63,7 +63,7 @@ struct CUSMBufferMeta
 struct CUSMStructMemberMeta
 {
 	CStrID			Name;
-	U32				StructIndex;	// (U32)(-1) if not a structure
+	HHandle			StructHandle;
 	EUSMConstType	Type;
 	U32				Offset;
 	U32				ElementSize;
@@ -73,20 +73,22 @@ struct CUSMStructMemberMeta
 
 struct CUSMStructMeta
 {
+	HHandle								Handle;
 	CFixedArray<CUSMStructMemberMeta>	Members;
 };
 
 struct CUSMConstMeta
 {
-	HHandle			BufferHandle;
 	CStrID			Name;
-	U32				StructIndex;	// (U32)(-1) if not a structure
+	HHandle			BufferHandle;
+	HHandle			StructHandle;
 	EUSMConstType	Type;
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
-	HHandle			Handle;
 	U8				Flags;			// See EShaderConstFlags
+	HHandle			Handle;
+	PShaderConstant	ConstObject;
 };
 
 struct CUSMResourceMeta
@@ -128,10 +130,10 @@ public:
 
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return MinFeatureLevel; }
 	virtual HConst				GetConstHandle(CStrID ID) const;
-	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const;
+	virtual HConstBuffer		GetConstBufferHandle(HConst hConst) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;
-	virtual bool				GetConstDesc(CStrID ID, CShaderConstDesc& Out) const;
+	virtual PShaderConstant		GetConstant(HConst hConst) const;
 };
 
 }

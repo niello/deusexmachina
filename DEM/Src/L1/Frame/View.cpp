@@ -46,7 +46,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	{
 		const Render::CEffectConstant& Const = GlobalConsts[i];
 
-		const Render::HConstBuffer hCB = Const.Desc.BufferHandle;
+		const Render::HConstBuffer hCB = Const.hCB;
 		if (!Globals.IsConstantBufferRegistered(hCB))
 		{
 			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);

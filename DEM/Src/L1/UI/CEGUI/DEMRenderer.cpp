@@ -4,6 +4,7 @@
 #include <Render/RenderStateDesc.h>
 #include <Render/Shader.h>
 #include <Render/ShaderMetadata.h>
+#include <Render/ShaderConstant.h>
 #include <Render/SamplerDesc.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -118,16 +119,15 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain,
 	const Render::IShaderMetadata* pVSMeta = VertexShader->GetMetadata();
 	const Render::IShaderMetadata* pPSMeta = PixelShaderRegular->GetMetadata();
 
-	Render::CShaderConstDesc ConstDesc;
-	n_verify(pVSMeta->GetConstDesc(CStrID("WorldMatrix"), ConstDesc));
-	hWorldMatrix = ConstDesc.Handle;
-	hWMCB = ConstDesc.BufferHandle;
+	Render::HConst hConst = pVSMeta->GetConstHandle(CStrID("WorldMatrix"));
+	n_assert(hConst != INVALID_HANDLE);
+	hWMCB = pVSMeta->GetConstBufferHandle(hConst);
 	n_assert(hWMCB != INVALID_HANDLE);
 
-	n_verify(pVSMeta->GetConstDesc(CStrID("ProjectionMatrix"), ConstDesc));
-	hProjMatrix = ConstDesc.Handle;
-	hPMCB = ConstDesc.BufferHandle;
-	n_assert(hWMCB != INVALID_HANDLE);
+	hConst = pVSMeta->GetConstHandle(CStrID("ProjectionMatrix"));
+	n_assert(hConst != INVALID_HANDLE);
+	hPMCB = pVSMeta->GetConstBufferHandle(hConst);
+	n_assert(hPMCB != INVALID_HANDLE);
 
 	WMCB = GPU->CreateConstantBuffer(hWMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
 	if (hWMCB == hPMCB) PMCB = WMCB;
@@ -171,8 +171,8 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllGeometryBuffers();
 	n_delete(pDefaultRT);
 
-	hWorldMatrix = INVALID_HANDLE;
-	hProjMatrix = INVALID_HANDLE;
+	ConstWorldMatrix = NULL;
+	ConstProjMatrix = NULL;
 	hWMCB = INVALID_HANDLE;
 	hPMCB = INVALID_HANDLE;
 	hTexture = INVALID_HANDLE;
@@ -370,14 +370,14 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
 {
 	if (WMCB.IsValidPtr())
-		GPU->SetShaderConstant(*WMCB.GetUnsafe(), hWorldMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+		ConstWorldMatrix->SetRawValue(*WMCB.GetUnsafe(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
 {
 	if (PMCB.IsValidPtr())
-		GPU->SetShaderConstant(*PMCB.GetUnsafe(), hProjMatrix, 0, reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+		ConstProjMatrix->SetRawValue(*PMCB.GetUnsafe(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
 }
 //--------------------------------------------------------------------
 

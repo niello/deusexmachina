@@ -4,6 +4,7 @@
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/EffectLoader.h>
+#include <Render/ShaderConstant.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
@@ -76,7 +77,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		const Render::CEffectConstant& Const = Consts[i];
 
-		const Render::HConstBuffer hCB = Const.Desc.BufferHandle;
+		const Render::HConstBuffer hCB = Const.hCB;
 		Render::CMaterial::CConstBufferRecord* pRec = NULL;
 		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 			if (Mtl->ConstBuffers[BufIdx].Handle == hCB)
@@ -102,8 +103,8 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 
 		if (pValue) //???fail if value is undefined? or fill with zeroes?
 		{
-			//???!!!add to SetShaderConstant() zero size support - autocalc?! tool-side validation!
-			if (!GPU->SetShaderConstant(*pRec->Buffer.GetUnsafe(), Const.Desc.Handle, 0, pValue, Const.SizeInBytes)) return NULL;
+			if (Const.Const.IsNullPtr()) return NULL;
+			Const.Const->SetRawValue(*pRec->Buffer.GetUnsafe(), pValue, Render::CShaderConstant::WholeSize);
 		}
 	}
 

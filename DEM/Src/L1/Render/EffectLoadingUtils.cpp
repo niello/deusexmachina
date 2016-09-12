@@ -18,7 +18,12 @@ namespace Resources
 {
 
 // Out array will be sorted by ID as parameters are saved sorted by ID
-bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers)
+bool LoadEffectParams(IO::CBinaryReader& Reader,
+					  Render::PShaderLibrary ShaderLibrary,
+					  const Render::IShaderMetadata* pDefaultShaderMeta,
+					  CFixedArray<Render::CEffectConstant>& OutConsts,
+					  CFixedArray<Render::CEffectResource>& OutResources,
+					  CFixedArray<Render::CEffectSampler>& OutSamplers)
 {
 	U32 ParamCount;
 
@@ -38,6 +43,7 @@ bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLi
 		U8 ConstType;
 		if (!Reader.Read(ConstType)) FAIL;
 
+		//???!!!need to save-load?!
 		U32 SizeInBytes;
 		if (!Reader.Read(SizeInBytes)) FAIL;
 
@@ -51,11 +57,14 @@ bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLi
 		else pShaderMeta = pDefaultShaderMeta;
 		if (!pShaderMeta) FAIL;
 
+		Render::HConst hConst = pShaderMeta->GetConstHandle(ParamID);
+		if (hConst == INVALID_HANDLE) FAIL;
+
 		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
-		if (!pShaderMeta->GetConstDesc(ParamID, Rec.Desc)) FAIL;
 		Rec.ID = ParamID;
 		Rec.ShaderType = (Render::EShaderType)ShaderType;
-		Rec.SizeInBytes = SizeInBytes;
+		Rec.hCB = pShaderMeta->GetConstBufferHandle(hConst); //???or store in a constant?
+		Rec.Const = pShaderMeta->GetConstant(hConst);
 	}
 
 	if (!Reader.Read<U32>(ParamCount)) FAIL;

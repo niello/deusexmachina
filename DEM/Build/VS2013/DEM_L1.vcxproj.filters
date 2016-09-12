@@ -989,6 +989,9 @@
     <ClInclude Include="..\..\Src\L1\Render\D3D9\SM30ShaderConstant.h">
       <Filter>Render\D3D9</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Render\D3D11\USMShaderConstant.h">
+      <Filter>Render\D3D11</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1638,6 +1641,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Data\ParamsUtils.cpp">
       <Filter>Data</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D9\SM30ShaderConstant.cpp">
+      <Filter>Render\D3D9</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Render\D3D11\USMShaderConstant.cpp">
+      <Filter>Render\D3D11</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -38,6 +38,7 @@ typedef Ptr<class CRenderTarget> PRenderTarget;
 typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 typedef Ptr<class CRenderState> PRenderState;
 typedef Ptr<class CShader> PShader;
+typedef Ptr<class CShaderConstant> PShaderConstant;
 typedef Ptr<class CShaderLibrary> PShaderLibrary;
 typedef Ptr<class CEffect> PEffect;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
@@ -352,22 +353,12 @@ enum EShaderConstType
 	ConstType_Invalid
 };
 
-struct CShaderConstDesc
-{
-	HConst			Handle;
-	HConstBuffer	BufferHandle;
-	U32				Columns;
-	U32				Rows;
-	U32				ElementCount;
-	U8				Flags;
-};
-
 struct CEffectConstant
 {
-	CStrID				ID;
-	EShaderType			ShaderType;
-	U32					SizeInBytes;
-	CShaderConstDesc	Desc;
+	CStrID			ID;
+	EShaderType		ShaderType;
+	HConstBuffer	hCB;		//???store inside a const?
+	PShaderConstant	Const;		//!!!may store array of const objects, indexed by shader type! multi-stage support!
 };
 
 struct CEffectResource

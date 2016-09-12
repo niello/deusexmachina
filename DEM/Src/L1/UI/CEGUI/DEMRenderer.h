@@ -51,8 +51,8 @@ protected:
 	Render::PSampler					LinearSampler;
 	Render::HConstBuffer				hWMCB;
 	Render::HConstBuffer				hPMCB;
-	Render::HConst						hWorldMatrix;
-	Render::HConst						hProjMatrix;
+	Render::PShaderConstant				ConstWorldMatrix;
+	Render::PShaderConstant				ConstProjMatrix;
 	Render::HResource					hTexture;
 	Render::HSampler					hLinearSampler;
 
