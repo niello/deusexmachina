@@ -873,6 +873,7 @@ bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 		W.Write(Obj.Offset);
 		W.Write(Obj.ElementSize);
 		W.Write(Obj.ElementCount);
+		W.Write(Obj.Flags);
 	}
 
 	W.Write<U32>(Meta.Resources.GetCount());
@@ -963,6 +964,7 @@ bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 		R.Read(Obj.Offset);
 		R.Read(Obj.ElementSize);
 		R.Read(Obj.ElementCount);
+		R.Read(Obj.Flags);
 	}
 
 	R.Read<U32>(Count);

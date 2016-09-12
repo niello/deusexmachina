@@ -51,12 +51,12 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 			CUSMStructMemberMeta* pMemberMeta = &pMeta->Members[j];
 
 			if (!R.Read(pMemberMeta->Name)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->StructIndex)) FAIL;
 
 			U8 Type;
 			if (!R.Read<U8>(Type)) FAIL;
 			pMemberMeta->Type = (EUSMConstType)Type;
 
-			if (!R.Read<U32>(pMemberMeta->StructIndex)) FAIL;
 			if (!R.Read<U32>(pMemberMeta->Offset)) FAIL;
 			if (!R.Read<U32>(pMemberMeta->ElementSize)) FAIL;
 			if (!R.Read<U32>(pMemberMeta->ElementCount)) FAIL;
@@ -73,6 +73,8 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 		U32 BufIdx;
 		if (!R.Read(BufIdx)) FAIL;
 		pMeta->BufferHandle = Buffers[BufIdx].Handle;
+
+		if (!R.Read<U32>(pMeta->StructIndex)) FAIL;
 
 		U8 Type;
 		if (!R.Read<U8>(Type)) FAIL;
