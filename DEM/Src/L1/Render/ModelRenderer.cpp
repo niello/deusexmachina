@@ -485,7 +485,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
 
 					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->Desc.BufferHandle, NULL);
-					if (pConstSkinPalette->Desc.Flags & Const_ColumnMajor) //???hide in a class/function?
+					if (pConstSkinPalette->Desc.Flags & ShaderConst_ColumnMajor) //???hide in a class/function?
 					{
 						// Transpose and truncate if necessary
 						U32 Columns = pConstSkinPalette->Desc.Columns;

@@ -336,6 +336,11 @@ struct CPrimitiveGroup
 	CAABB				AABB;
 };
 
+enum EShaderConstFlags
+{
+	ShaderConst_ColumnMajor	= 0x01			// Only for matrix types
+};
+
 enum EShaderConstType
 {
 	ConstType_Float	= 0,
@@ -345,11 +350,6 @@ enum EShaderConstType
 	ConstType_Other,
 
 	ConstType_Invalid
-};
-
-enum EShaderConstFlags
-{
-	Const_ColumnMajor	= 0x01 // Matrix only
 };
 
 struct CShaderConstDesc

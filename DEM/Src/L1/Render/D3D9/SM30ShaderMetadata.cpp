@@ -50,6 +50,25 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 			INVALID_HANDLE;
 	}
 
+	Structs.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Structs.GetCount(); ++i)
+	{
+		CSM30StructMeta* pMeta = &Structs[i];
+		pMeta->Members.SetSize(R.Read<U32>());
+
+		for (UPTR j = 0; j < pMeta->Members.GetCount(); ++j)
+		{
+			CSM30StructMemberMeta* pMemberMeta = &pMeta->Members[j];
+
+			if (!R.Read(pMemberMeta->Name)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->StructIndex)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->RegisterOffset)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->ElementRegisterCount)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->ElementCount)) FAIL;
+			if (!R.Read<U8>(pMemberMeta->Flags)) FAIL;
+		}
+	}
+
 	Consts.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
@@ -59,6 +78,8 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 		U32 BufIdx;
 		if (!R.Read<U32>(BufIdx)) FAIL;
 		pMeta->BufferHandle = Buffers[BufIdx].Handle;
+
+		if (!R.Read<U32>(pMeta->StructIndex)) FAIL;
 
 		U8 RegSet;
 		if (!R.Read<U8>(RegSet)) FAIL;
@@ -227,9 +248,9 @@ bool CSM30ShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 		}
 	}
 
-	if (pMeta->Flags & SM30Const_ColumnMajor)
+	if (pMeta->Flags & ShaderConst_ColumnMajor)
 	{
-		Out.Flags |= Const_ColumnMajor;
+		Out.Flags |= ShaderConst_ColumnMajor;
 		Out.Rows = RegisterElements;
 		Out.Columns = pMeta->ElementRegisterCount;
 	}

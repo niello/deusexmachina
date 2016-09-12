@@ -40,6 +40,30 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 		pMeta->Handle = pMeta->Size ? HandleMgr.OpenHandle(pMeta) : INVALID_HANDLE;
 	}
 
+	Structs.SetSize(R.Read<U32>());
+	for (UPTR i = 0; i < Structs.GetCount(); ++i)
+	{
+		CUSMStructMeta* pMeta = &Structs[i];
+		pMeta->Members.SetSize(R.Read<U32>());
+
+		for (UPTR j = 0; j < pMeta->Members.GetCount(); ++j)
+		{
+			CUSMStructMemberMeta* pMemberMeta = &pMeta->Members[j];
+
+			if (!R.Read(pMemberMeta->Name)) FAIL;
+
+			U8 Type;
+			if (!R.Read<U8>(Type)) FAIL;
+			pMemberMeta->Type = (EUSMConstType)Type;
+
+			if (!R.Read<U32>(pMemberMeta->StructIndex)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->Offset)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->ElementSize)) FAIL;
+			if (!R.Read<U32>(pMemberMeta->ElementCount)) FAIL;
+			if (!R.Read<U8>(pMemberMeta->Flags)) FAIL;
+		}
+	}
+
 	Consts.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
@@ -57,6 +81,7 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 		if (!R.Read<U32>(pMeta->Offset)) FAIL;
 		if (!R.Read<U32>(pMeta->ElementSize)) FAIL;
 		if (!R.Read<U32>(pMeta->ElementCount)) FAIL;
+		if (!R.Read<U8>(pMeta->Flags)) FAIL;
 
 		pMeta->Handle = INVALID_HANDLE;
 	}
@@ -199,10 +224,15 @@ bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 	Out.Flags = 0;
 
 	//!!!IMPLEMENT!
-	//if (pMeta->Flags & USMConst_ColumnMajor)
-	//	Out.Flags |= Const_ColumnMajor;
 	Out.Rows = 0;
 	Out.Columns = 0;
+	if (pMeta->Flags & ShaderConst_ColumnMajor)
+	{
+		Out.Flags |= ShaderConst_ColumnMajor;
+	}
+	else
+	{
+	}
 
 	/*
 	switch (pMeta->Type)

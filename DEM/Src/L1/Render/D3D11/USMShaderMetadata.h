@@ -56,19 +56,37 @@ struct CUSMBufferMeta
 	CStrID			Name;
 	EUSMBufferType	Type;
 	U32				Register;
-	U32				Size;		// Element size for structured buffers
+	U32				Size;			// Element size for structured buffers
 	HHandle			Handle;
+};
+
+struct CUSMStructMemberMeta
+{
+	CStrID			Name;
+	U32				StructIndex;	// (U32)(-1) if not a structure
+	EUSMConstType	Type;
+	U32				Offset;
+	U32				ElementSize;
+	U32				ElementCount;
+	U8				Flags;			// See EShaderConstFlags
+};
+
+struct CUSMStructMeta
+{
+	CFixedArray<CUSMStructMemberMeta>	Members;
 };
 
 struct CUSMConstMeta
 {
 	HHandle			BufferHandle;
 	CStrID			Name;
+	U32				StructIndex;	// (U32)(-1) if not a structure
 	EUSMConstType	Type;
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
 	HHandle			Handle;
+	U8				Flags;			// See EShaderConstFlags
 };
 
 struct CUSMResourceMeta
@@ -96,6 +114,7 @@ private:
 	EGPUFeatureLevel				MinFeatureLevel;
 	U64								RequiresFlags;	//!!!add getter!
 	CFixedArray<CUSMConstMeta>		Consts;
+	CFixedArray<CUSMStructMeta>		Structs;
 	CFixedArray<CUSMBufferMeta>		Buffers;
 	CFixedArray<CUSMResourceMeta>	Resources;
 	CFixedArray<CUSMSamplerMeta>	Samplers;

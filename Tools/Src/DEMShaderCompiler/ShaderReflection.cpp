@@ -571,7 +571,7 @@ static bool USMProcessStructure(ID3D11ShaderReflectionType* pType, U32 StructSiz
 		}
 		else MemberSize = StructSize - D3DMemberTypeDesc.Offset;
 
-		if (D3DTypeDesc.Elements > 1)
+		if (D3DMemberTypeDesc.Elements > 1)
 		{
 			// Arrays
 			pMemberMeta->ElementSize = MemberSize / D3DMemberTypeDesc.Elements;
@@ -596,7 +596,8 @@ static bool USMProcessStructure(ID3D11ShaderReflectionType* pType, U32 StructSiz
 			switch (D3DMemberTypeDesc.Type)
 			{
 				case D3D_SVT_BOOL:	pMemberMeta->Type = USMConst_Bool; break;
-				case D3D_SVT_INT:	pMemberMeta->Type = USMConst_Int; break;
+				case D3D_SVT_INT:
+				case D3D_SVT_UINT:	pMemberMeta->Type = USMConst_Int; break;
 				case D3D_SVT_FLOAT:	pMemberMeta->Type = USMConst_Float; break;
 				default:
 				{
@@ -605,7 +606,7 @@ static bool USMProcessStructure(ID3D11ShaderReflectionType* pType, U32 StructSiz
 					Messages += "' type '";
 					Messages += StringUtils::FromInt(D3DMemberTypeDesc.Type);
 					Messages += "' in a structure '";
-					Messages += D3DTypeDesc.Name;
+					Messages += (D3DTypeDesc.Name ? D3DTypeDesc.Name : "");
 					Messages += "'\n";
 					FAIL;
 				}
@@ -794,7 +795,8 @@ bool USMCollectShaderMetadata(const void* pData, UPTR Size, CUSMShaderMeta& Out)
 							switch (D3DTypeDesc.Type)
 							{
 								case D3D_SVT_BOOL:	pConstMeta->Type = USMConst_Bool; break;
-								case D3D_SVT_INT:	pConstMeta->Type = USMConst_Int; break;
+								case D3D_SVT_INT:
+								case D3D_SVT_UINT:	pConstMeta->Type = USMConst_Int; break;
 								case D3D_SVT_FLOAT:	pConstMeta->Type = USMConst_Float; break;
 								default:
 								{
@@ -841,12 +843,32 @@ bool USMSaveShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
 		//W.Write(Obj.ElementCount);
 	}
 
+	W.Write<U32>(Meta.Structs.GetCount());
+	for (UPTR i = 0; i < Meta.Structs.GetCount(); ++i)
+	{
+		CUSMStructMeta& Obj = Meta.Structs[i];
+
+		W.Write<U32>(Obj.Members.GetCount());
+		for (UPTR j = 0; j < Obj.Members.GetCount(); ++j)
+		{
+			CUSMStructMemberMeta& Member = Obj.Members[j];
+			W.Write(Member.Name);
+			W.Write(Member.StructIndex);
+			W.Write<U8>(Member.Type);
+			W.Write(Member.Offset);
+			W.Write(Member.ElementSize);
+			W.Write(Member.ElementCount);
+			W.Write(Member.Flags);
+		}
+	}
+
 	W.Write<U32>(Meta.Consts.GetCount());
 	for (UPTR i = 0; i < Meta.Consts.GetCount(); ++i)
 	{
 		const CUSMConstMeta& Obj = Meta.Consts[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
+		W.Write(Obj.StructIndex);
 		W.Write<U8>(Obj.Type);
 		W.Write(Obj.Offset);
 		W.Write(Obj.ElementSize);
@@ -901,12 +923,38 @@ bool USMLoadShaderMetadata(IO::CBinaryReader& R, CUSMShaderMeta& Meta)
 	}
 
 	R.Read<U32>(Count);
+	CUSMStructMeta* pStruct = Meta.Structs.Reserve(Count, false);
+	for (; pStruct < Meta.Structs.End(); ++pStruct)
+	{
+		CUSMStructMeta& Obj = *pStruct;
+
+		R.Read<U32>(Count);
+		CUSMStructMemberMeta* pMember = Obj.Members.Reserve(Count, false);
+		for (; pMember < Obj.Members.End(); ++pMember)
+		{
+			CUSMStructMemberMeta& Member = *pMember;
+			R.Read(Member.Name);
+			R.Read(Member.StructIndex);
+
+			U8 Type;
+			R.Read<U8>(Type);
+			Member.Type = (EUSMConstType)Type;
+
+			R.Read(Member.Offset);
+			R.Read(Member.ElementSize);
+			R.Read(Member.ElementCount);
+			R.Read(Member.Flags);
+		}
+	}
+
+	R.Read<U32>(Count);
 	CUSMConstMeta* pConst = Meta.Consts.Reserve(Count, false);
 	for (; pConst < Meta.Consts.End(); ++pConst)
 	{
 		CUSMConstMeta& Obj = *pConst;
 		R.Read(Obj.Name);
 		R.Read(Obj.BufferIndex);
+		R.Read(Obj.StructIndex);
 
 		U8 Type;
 		R.Read<U8>(Type);

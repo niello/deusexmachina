@@ -15,11 +15,6 @@ namespace IO
 namespace Render
 {
 
-enum ESM30ConstFlags
-{
-	SM30Const_ColumnMajor	= 0x01			// Only for matrix types
-};
-
 struct CSM30BufferMeta
 {
 	CStrID				Name;
@@ -30,10 +25,27 @@ struct CSM30BufferMeta
 	HHandle				Handle;
 };
 
+struct CSM30StructMemberMeta
+{
+	CStrID			Name;
+	U32				StructIndex;			// (U32)(-1) if not a structure
+	U32				RegisterOffset;
+	U32				ElementRegisterCount;
+	U32				ElementCount;
+	U8				Flags;					// See EShaderConstFlags
+	//???store register set and support mixed structs?
+};
+
+struct CSM30StructMeta
+{
+	CFixedArray<CSM30StructMemberMeta>	Members;
+};
+
 struct CSM30ConstMeta
 {
 	HHandle				BufferHandle;
 	CStrID				Name;
+	U32					StructIndex;		// (U32)(-1) if not a structure
 	ESM30RegisterSet	RegSet;
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
@@ -63,8 +75,9 @@ class CSM30ShaderMetadata: public IShaderMetadata
 private:
 
 	CFixedArray<CSM30BufferMeta>	Buffers;
-	CFixedArray<CSM30ConstMeta>	Consts;
-	CFixedArray<CSM30RsrcMeta>	Resources;
+	CFixedArray<CSM30StructMeta>	Structs;
+	CFixedArray<CSM30ConstMeta>		Consts;
+	CFixedArray<CSM30RsrcMeta>		Resources;
 	CFixedArray<CSM30SamplerMeta>	Samplers;
 
 public:
