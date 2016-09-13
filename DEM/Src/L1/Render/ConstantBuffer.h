@@ -17,7 +17,6 @@ public:
 
 	virtual void	Destroy() = 0;
 	virtual bool	IsValid() const = 0;
-	virtual bool	IsInEditMode() const = 0;
 };
 
 typedef Ptr<CConstantBuffer> PConstantBuffer;

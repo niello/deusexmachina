@@ -2,6 +2,7 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/Effect.h>
+#include <Render/ShaderConstant.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/ShaderLibrary.h>
 #include <IO/BinaryReader.h>
@@ -394,9 +395,8 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 	CArray<HHandle> MtlConstBuffers;
 	for (UPTR i = 0; i < Effect->MaterialConsts.GetCount(); ++i)
 	{
-		const Render::HConstBuffer hCB = Effect->MaterialConsts[i].Desc.BufferHandle;
-		if (MtlConstBuffers.FindIndex(hCB) == INVALID_INDEX)
-			MtlConstBuffers.Add(hCB);
+		const Render::HConstBuffer hCB = Effect->MaterialConsts[i].Const->GetConstantBufferHandle();
+		if (!MtlConstBuffers.Contains(hCB)) MtlConstBuffers.Add(hCB);
 	}
 	Effect->MaterialConstantBufferCount = MtlConstBuffers.GetCount();
 	MtlConstBuffers.Clear(true);

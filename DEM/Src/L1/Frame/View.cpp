@@ -5,6 +5,7 @@
 #include <Frame/RenderPath.h>
 #include <Scene/SPS.h>
 #include <Render/RenderTarget.h>
+#include <Render/ShaderConstant.h>
 #include <Render/GPUDriver.h>
 
 namespace Frame
@@ -46,8 +47,8 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	{
 		const Render::CEffectConstant& Const = GlobalConsts[i];
 
-		const Render::HConstBuffer hCB = Const.hCB;
-		if (!Globals.IsConstantBufferRegistered(hCB))
+		const Render::HConstBuffer hCB = Const.Const->GetConstantBufferHandle();
+		if (!Globals.IsBufferRegistered(hCB))
 		{
 			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
 			if (CB.IsNullPtr())
@@ -55,7 +56,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 				Globals.UnbindAndClear();
 				FAIL;
 			}
-			Globals.RegisterConstantBuffer(hCB, CB);
+			Globals.RegisterPermanentBuffer(hCB, *CB.GetUnsafe());
 		}
 	}
 

@@ -91,7 +91,7 @@ public:
 
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return GPU_Level_D3D9_3; }
 	virtual HConst				GetConstHandle(CStrID ID) const;
-	virtual HConstBuffer		GetConstBufferHandle(HConst hConst) const;
+	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;
 	virtual PShaderConstant		GetConstant(HConst hConst) const;

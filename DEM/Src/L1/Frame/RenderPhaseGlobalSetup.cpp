@@ -3,6 +3,7 @@
 #include <Frame/View.h>
 #include <Frame/RenderPath.h>
 #include <Frame/NodeAttrCamera.h>
+#include <Render/ShaderConstant.h>
 #include <Data/Params.h>
 #include <Core/Factory.h>
 
@@ -18,17 +19,19 @@ bool CRenderPhaseGlobalSetup::Render(CView& View)
 		if (pConstViewProjection)
 		{
 			const matrix44& ViewProj = View.GetCamera()->GetViewProjMatrix();
-			View.Globals.SetConstantValue(pConstViewProjection, 0, ViewProj.m, sizeof(matrix44));
+			Render::CConstantBuffer* pCB = View.Globals.RequestBuffer(pConstViewProjection->Const->GetConstantBufferHandle(), pConstViewProjection->ShaderType);
+			pConstViewProjection->Const->SetMatrix(*pCB, &ViewProj);
 		}
 
 		if (pConstCameraPosition)
 		{
 			const vector3& EyePos = View.GetCamera()->GetPosition();
-			View.Globals.SetConstantValue(pConstCameraPosition, 0, EyePos.v, sizeof(vector3));
+			Render::CConstantBuffer* pCB = View.Globals.RequestBuffer(pConstCameraPosition->Const->GetConstantBufferHandle(), pConstCameraPosition->ShaderType);
+			pConstCameraPosition->Const->SetFloat(*pCB, EyePos.v, 3);
 		}
 	}
 
-	View.Globals.ApplyConstantBuffers();
+	View.Globals.CommitChanges();
 
 	OK;
 }

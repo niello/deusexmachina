@@ -8,29 +8,43 @@
 // Interface to a shader constant, piece of data on a GPU side. Write-only.
 // Doesn't represent a piece of data, but a location inside a constant buffer.
 
+class matrix44;
+
 namespace Render
 {
 typedef Ptr<class CShaderConstant> PShaderConstant;
 
 class CShaderConstant: public Data::CRefCounted
 {
+protected:
+
+	HConstBuffer	hCB;
+
 public:
 
 	// Pass as the Size to SetRawValue() to specify Size = size of this constant
 	static const UPTR WholeSize = 0;
 
+	CShaderConstant(): hCB(INVALID_HANDLE) {}
 	virtual ~CShaderConstant() {}
 
 	virtual bool			Init(HConst hConst) = 0;
+
+	virtual UPTR			GetSizeInBytes() const = 0;
 	virtual UPTR			GetElementCount() const = 0;
 	virtual UPTR			GetMemberCount() const = 0;
 	virtual PShaderConstant	GetElement(U32 Index) const = 0;
 	virtual PShaderConstant	GetMember(CStrID Name) const = 0;
-	virtual void			SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const = 0;
+	HConstBuffer			GetConstantBufferHandle() const { return hCB; }
 
-	//???or separate SetBool, SetFloat(values*, count), SetMatrix[RowMajor](matrix44), SetMatrixColumnMajor() etc
-	//template<typename T>
-	//void						SetValue(const CConstantBuffer& CB, const T& Value) { return SetRawValue(CB, &Value, sizeof(Value)); }
+	//!!!???add SetBool, SetInt, SetUInt, SetFloat for single value with pass-by-value?!
+	virtual void			SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const = 0;
+	//virtual void			SetBool(const CConstantBuffer& CB, const bool* pValues, UPTR Count = 1) const = 0;
+	//virtual void			SetBool(const CConstantBuffer& CB, const U32* pValues, UPTR Count = 1) const = 0;
+	//virtual void			SetInt(const CConstantBuffer& CB, const I32* pValues, UPTR Count = 1) const = 0;
+	//virtual void			SetUInt(const CConstantBuffer& CB, const U32* pValues, UPTR Count = 1) const = 0;
+	virtual void			SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count = 1) const = 0;
+	virtual void			SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count = 1, U32 StartIndex = 0) const = 0;
 };
 
 }

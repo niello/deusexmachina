@@ -13,7 +13,16 @@ bool CUSMShaderConstant::Init(HConst hConst)
 	CUSMConstMeta* pMeta = (CUSMConstMeta*)IShaderMetadata::GetHandleData(hConst);
 	if (!pMeta) FAIL;
 
-	Offset = pMeta->Offset; 
+	Offset = pMeta->Offset;
+	StructHandle = pMeta->StructHandle;
+	ElementCount = pMeta->ElementCount;
+	ElementSize = pMeta->ElementSize;
+	Flags = pMeta->Flags;
+
+//!!!FILL!
+Columns = 0;
+Rows = 0;
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -38,18 +47,15 @@ PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
 	Const->ElementSize = ElementSize;
 
 	//!!!add structured buffer support (always is an array with 'any' number of elements, $Element is a type, may be struct, may be not!
+	// Structured buffer has only '$Element' structure(?)
 	/*
 	if (ElementIndex)
 	{
 		CUSMBufferMeta* pBufMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
-		n_assert_dbg(pBufMeta);
-		switch (pBufMeta->Type)
-		{
-			case USMBuffer_Structured:	pConst->Offset = Offset + pBufMeta->Size * ElementIndex; break;
-		}
+		if (pBufMeta->Type == USMBuffer_Structured)
+			pConst->Offset = Offset + pBufMeta->Size * ElementIndex; break;
 	}
 	*/
-
 
 	return Const.GetUnsafe();
 }
@@ -60,6 +66,7 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 	CUSMStructMeta* pStructMeta = (CUSMStructMeta*)IShaderMetadata::GetHandleData(StructHandle);
 	if (!pStructMeta) return NULL;
 
+	//???sort?
 	for (CFixedArray<CUSMStructMemberMeta>::CIterator It = pStructMeta->Members.Begin(); It < pStructMeta->Members.End(); ++It)
 		if (It->Name == Name)
 		{
@@ -83,6 +90,50 @@ void CUSMShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pDat
 	if (Size == WholeSize) Size = ElementCount * ElementSize;
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
 	CB11.WriteData(Offset, pData, Size);
+}
+//---------------------------------------------------------------------
+
+void CUSMShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
+{
+	//???switch type, convert to int?
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+	CB11.WriteData(Offset, pValues, sizeof(float) * Count);
+}
+//---------------------------------------------------------------------
+
+void CUSMShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
+{
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+
+	if (Flags & ShaderConst_ColumnMajor)
+	{
+		n_assert_dbg(Columns > 0 && Rows > 0);
+
+		 // The maximum is 16 floats, may be less
+		float TransposedData[16];
+		const UPTR MatrixSize = Columns * Rows * sizeof(float);
+
+		const matrix44* pCurrMatrix = pValues;
+		const matrix44* pEndMatrix = pValues + Count;
+		for (; pCurrMatrix < pEndMatrix; ++pCurrMatrix)
+		{
+			float* pCurrData = TransposedData;
+			for (U32 Col = 0; Col < Columns; ++Col)
+				for (U32 Row = 0; Row < Rows; ++Row)
+				{
+					*pCurrData = pCurrMatrix->m[Row][Col];
+					++pCurrData;
+				}
+
+			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
+			CB11.WriteData(Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
+		}
+	}
+	else
+	{
+		//!!!check columns and rows! (really need to check only rows, as all columns are used)
+		CB11.WriteData(Offset + sizeof(matrix44) * StartIndex, pValues, sizeof(matrix44) * Count);
+	}
 }
 //---------------------------------------------------------------------
 

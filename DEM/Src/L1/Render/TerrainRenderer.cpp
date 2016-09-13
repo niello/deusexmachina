@@ -5,7 +5,7 @@
 #include <Render/Terrain.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
-#include <Render/EffectConstSetValues.h>
+#include <Render/ConstantBufferSet.h>
 #include <Math/Sphere.h>
 #include <Core/Factory.h>
 
@@ -469,8 +469,8 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		if (pResourceHeightMap)
 			GPU.BindResource(pResourceHeightMap->ShaderType, pResourceHeightMap->Handle, pCDLOD->GetHeightMap());
 
-		CEffectConstSetValues PerInstanceConstValues;
-		PerInstanceConstValues.SetGPU(&GPU);
+		CConstantBufferSet PerInstanceBuffers;
+		PerInstanceBuffers.SetGPU(&GPU);
 
 		if (pConstVSCDLODParams)
 		{
@@ -496,18 +496,18 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
 			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
 
-			PerInstanceConstValues.RegisterConstantBuffer(pConstVSCDLODParams->Desc.BufferHandle, NULL);
-			PerInstanceConstValues.SetConstantValue(pConstVSCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
+			PerInstanceBuffers.RegisterConstantBuffer(pConstVSCDLODParams->Desc.BufferHandle, NULL);
+			PerInstanceBuffers.SetConstantValue(pConstVSCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
 		
 			if (pConstPSCDLODParams)
 			{
-				PerInstanceConstValues.RegisterConstantBuffer(pConstPSCDLODParams->Desc.BufferHandle, NULL);
-				PerInstanceConstValues.SetConstantValue(pConstPSCDLODParams, 0, CDLODParams.WorldToHM, sizeof(float) * 4);
+				PerInstanceBuffers.RegisterConstantBuffer(pConstPSCDLODParams->Desc.BufferHandle, NULL);
+				PerInstanceBuffers.SetConstantValue(pConstPSCDLODParams, 0, CDLODParams.WorldToHM, sizeof(float) * 4);
 			}
 		}
 
 		if (pConstGridConsts)
-			PerInstanceConstValues.RegisterConstantBuffer(pConstGridConsts->Desc.BufferHandle, NULL);
+			PerInstanceBuffers.RegisterConstantBuffer(pConstGridConsts->Desc.BufferHandle, NULL);
 
 		//!!!implement looping if instance buffer is too small!
 		if (pConstInstanceData)
@@ -582,10 +582,10 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 				float GridConsts[2];
 				GridConsts[0] = pCDLOD->GetPatchSize() * 0.5f;
 				GridConsts[1] = 1.f / GridConsts[0];
-				PerInstanceConstValues.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
+				PerInstanceBuffers.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
 			}
 
-			PerInstanceConstValues.ApplyConstantBuffers();
+			PerInstanceBuffers.CommitChanges();
 
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
@@ -608,10 +608,10 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 				float GridConsts[2];
 				GridConsts[0] = pCDLOD->GetPatchSize() * 0.25f;
 				GridConsts[1] = 1.f / GridConsts[0];
-				PerInstanceConstValues.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
+				PerInstanceBuffers.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
 			}
 
-			PerInstanceConstValues.ApplyConstantBuffers();
+			PerInstanceBuffers.CommitChanges();
 
 			pMesh = pTerrain->GetQuarterPatchMesh();
 			n_assert_dbg(pMesh);

@@ -77,7 +77,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		const Render::CEffectConstant& Const = Consts[i];
 
-		const Render::HConstBuffer hCB = Const.hCB;
+		const Render::HConstBuffer hCB = Const.Const->GetConstantBufferHandle();
 		Render::CMaterial::CConstBufferRecord* pRec = NULL;
 		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 			if (Mtl->ConstBuffers[BufIdx].Handle == hCB)

@@ -5,7 +5,8 @@
 #include <Render/Model.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
-#include <Render/EffectConstSetValues.h>
+#include <Render/ShaderConstant.h>
+#include <Render/ConstantBufferSet.h>
 #include <Render/Mesh.h>
 #include <Render/Light.h>
 #include <Render/GPUDriver.h>
@@ -327,7 +328,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 			if (pConstInstanceData)
 			{
-				UPTR MaxInstanceCountConst = pConstInstanceData->Desc.ElementCount;
+				UPTR MaxInstanceCountConst = pConstInstanceData->Const->GetElementCount();
 				n_assert_dbg(MaxInstanceCountConst > 1);
 
 				//!!!DBG TMP!
@@ -336,9 +337,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				GPU.SetVertexLayout(pVL);
 
-				CEffectConstSetValues PerInstanceConstValues;
-				PerInstanceConstValues.SetGPU(&GPU);
-				PerInstanceConstValues.RegisterConstantBuffer(pConstInstanceData->Desc.BufferHandle, NULL);
+				CConstantBufferSet PerInstanceBuffers;
+				PerInstanceBuffers.SetGPU(&GPU);
 
 				//!!!PERF: use constant interface with precalculated location in buffer to set complex members (InstData[M].LightIndex[N])!
 				//reconstruct instance data structure
@@ -349,14 +349,16 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
 				{
-					PerInstanceConstValues.SetConstantValue(pConstInstanceData, InstanceCount, pRenderNode->Transform.m, sizeof(matrix44));
+					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstInstanceData->Const->GetConstantBufferHandle(), pConstInstanceData->ShaderType);
+					pConstInstanceData->Const->SetMatrix(*pCB, &pRenderNode->Transform, 1, InstanceCount);
+
 					++InstanceCount;
 					++ItCurr;
 					pRenderNode = *ItCurr;
 
 					if (InstanceCount == MaxInstanceCountConst)
 					{
-						PerInstanceConstValues.ApplyConstantBuffers();
+						PerInstanceBuffers.CommitChanges();
 						for (UPTR i = 0; i < pPasses->GetCount(); ++i)
 						{
 							GPU.SetRenderState((*pPasses)[i]);
@@ -369,7 +371,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				if (InstanceCount)
 				{
-					PerInstanceConstValues.ApplyConstantBuffers();
+					PerInstanceBuffers.CommitChanges();
 					for (UPTR i = 0; i < pPasses->GetCount(); ++i)
 					{
 						GPU.SetRenderState((*pPasses)[i]);
@@ -452,8 +454,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					}
 				}
 			}
-
-			//Sys::DbgOut("CModel rendered instanced, tech '%s', group 0x%X, instances: %d\n", pTech->GetName().CStr(), pGroup, (ItInstEnd - ItCurr));
 		}
 		else
 		{
@@ -471,79 +471,35 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				// Per-instance params
 
 				//???use persistent, create once and store associatively Tech->Values?
-				CEffectConstSetValues PerInstanceConstValues;
-				PerInstanceConstValues.SetGPU(&GPU);
+				CConstantBufferSet PerInstanceBuffers;
+				PerInstanceBuffers.SetGPU(&GPU);
 
 				if (pConstWorldMatrix)
 				{
-					PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->Desc.BufferHandle, NULL);
-					PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, pRenderNode->Transform.m, sizeof(matrix44));
+					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstWorldMatrix->Const->GetConstantBufferHandle(), pConstWorldMatrix->ShaderType);
+					pConstWorldMatrix->Const->SetMatrix(*pCB, &pRenderNode->Transform);
 				}
 
 				if (pConstSkinPalette && pRenderNode->pSkinPalette)
 				{
-					UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Desc.ElementCount);
-
-					PerInstanceConstValues.RegisterConstantBuffer(pConstSkinPalette->Desc.BufferHandle, NULL);
-					if (pConstSkinPalette->Desc.Flags & ShaderConst_ColumnMajor) //???hide in a class/function?
+					const UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Const->GetElementCount());
+					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstSkinPalette->Const->GetConstantBufferHandle(), pConstSkinPalette->ShaderType);
+					if (pRenderNode->pSkinMapping)
 					{
-						// Transpose and truncate if necessary
-						U32 Columns = pConstSkinPalette->Desc.Columns;
-						U32 Rows = pConstSkinPalette->Desc.Rows;
-						UPTR MatrixSize = Columns * Rows * sizeof(float);
-						float* pTransposedData = (float*)_malloca(MatrixSize);
-
-						if (pRenderNode->pSkinMapping)
+						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 						{
-							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
-							{
-								float* pCurrData = pTransposedData;
-								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
-								for (U32 Col = 0; Col < Columns; ++Col)
-									for (U32 Row = 0; Row < Rows; ++Row)
-									{
-										*pCurrData = pBoneMatrix->m[Row][Col];
-										++pCurrData;
-									}
-								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pTransposedData, MatrixSize);
-							}
+							const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
+							pConstSkinPalette->Const->SetMatrix(*pCB, pBoneMatrix, 1, BoneIdxIdx);
 						}
-						else
-						{
-							for (UPTR BoneIdx = 0; BoneIdx < BoneCount; ++BoneIdx)
-							{
-								float* pCurrData = pTransposedData;
-								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + BoneIdx;
-								for (U32 Col = 0; Col < Columns; ++Col)
-									for (U32 Row = 0; Row < Rows; ++Row)
-									{
-										*pCurrData = pBoneMatrix->m[Row][Col];
-										++pCurrData;
-									}
-								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdx, pTransposedData, MatrixSize);
-							}
-						}
-
-						_freea(pTransposedData);
 					}
 					else
 					{
-						if (pRenderNode->pSkinMapping)
-						{
-							for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
-							{
-								const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
-								PerInstanceConstValues.SetConstantValue(pConstSkinPalette, BoneIdxIdx, pBoneMatrix, sizeof(matrix44));
-							}
-						}
-						else
-						{
-							PerInstanceConstValues.SetConstantValue(pConstSkinPalette, 0, pRenderNode->pSkinPalette, sizeof(matrix44) * BoneCount);
-						}
+						// No mapping, use skin palette directly
+						pConstSkinPalette->Const->SetMatrix(*pCB, pRenderNode->pSkinPalette, BoneCount);
 					}
 				}
 
-				PerInstanceConstValues.ApplyConstantBuffers();
+				PerInstanceBuffers.CommitChanges();
 
 				// Rendering
 
@@ -553,8 +509,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					GPU.SetRenderState((*pPasses)[i]);
 					GPU.Draw(*pGroup);
 				}
-
-				//Sys::DbgOut("CModel rendered non-instanced, tech '%s', group 0x%X, primitives: %d\n", pTech->GetName().CStr(), pGroup, pGroup->IndexCount);
 			}
 		}
 

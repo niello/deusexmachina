@@ -4,7 +4,7 @@
 
 #include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
-#include <Render/EffectConstSetValues.h>
+#include <Render/ConstantBufferSet.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 #include <System/Allocators/PoolAllocator.h>
@@ -67,7 +67,7 @@ public:
 	Render::PGPUDriver							GPU;
 	CFixedArray<Render::PRenderTarget>			RTs;
 	CFixedArray<Render::PDepthStencilBuffer>	DSBuffers;
-	Render::CEffectConstSetValues				Globals;
+	Render::CConstantBufferSet				Globals;
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations

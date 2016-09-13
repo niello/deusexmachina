@@ -342,6 +342,7 @@ enum EShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01			// Only for matrix types
 };
 
+/*
 enum EShaderConstType
 {
 	ConstType_Float	= 0,
@@ -352,12 +353,12 @@ enum EShaderConstType
 
 	ConstType_Invalid
 };
+*/
 
 struct CEffectConstant
 {
 	CStrID			ID;
 	EShaderType		ShaderType;
-	HConstBuffer	hCB;		//???store inside a const?
 	PShaderConstant	Const;		//!!!may store array of const objects, indexed by shader type! multi-stage support!
 };
 

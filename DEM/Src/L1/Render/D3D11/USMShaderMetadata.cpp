@@ -189,11 +189,8 @@ HConst CUSMShaderMetadata::GetConstHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(HConst hConst) const
+HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(CStrID ID) const
 {
-	//!!!search by ID and search by constant are DIFFERENT!
-	NOT_IMPLEMENTED;
-
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{

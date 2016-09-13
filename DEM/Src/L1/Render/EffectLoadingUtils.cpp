@@ -63,7 +63,6 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
 		Rec.ID = ParamID;
 		Rec.ShaderType = (Render::EShaderType)ShaderType;
-		Rec.hCB = pShaderMeta->GetConstBufferHandle(hConst); //???or store in a constant?
 		Rec.Const = pShaderMeta->GetConstant(hConst);
 	}
 

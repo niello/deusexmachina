@@ -40,10 +40,23 @@ bool CSM30ShaderConstant::Init(HConst hConst)
 		//Handle = hConst;
 		Offset += pMeta->RegisterStart - Range.Start;
 		RegSet = pMeta->RegSet;
+		StructHandle = pMeta->StructHandle;
 		ElementCount = pMeta->ElementCount;
 		ElementRegisterCount = pMeta->ElementRegisterCount;
-		StructHandle = pMeta->StructHandle;
-		//???calc size for verification of Set*** calls?
+		Flags = pMeta->Flags;
+
+//!!!FILL!
+Columns = 0;
+Rows = 0;
+
+		//!!!for mixed calculate per-member!
+		SizeInBytes = ElementCount * ElementRegisterCount;
+		switch (RegSet)
+		{
+			case Reg_Float4:	SizeInBytes *= sizeof(float) * 4; break;
+			case Reg_Int4:		SizeInBytes *= sizeof(int) * 4; break;
+			case Reg_Bool:		SizeInBytes *= sizeof(BOOL); break;
+		}
 
 		OK;
 	}
@@ -81,6 +94,7 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 	CSM30StructMeta* pStructMeta = (CSM30StructMeta*)IShaderMetadata::GetHandleData(StructHandle);
 	if (!pStructMeta) return NULL;
 
+	//???sort?
 	for (CFixedArray<CSM30StructMemberMeta>::CIterator It = pStructMeta->Members.Begin(); It < pStructMeta->Members.End(); ++It)
 		if (It->Name == Name)
 		{
@@ -102,14 +116,74 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 void CSM30ShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
 {
 	n_assert_dbg(RegSet != Reg_Invalid && CB.IsA<CD3D9ConstantBuffer>());
-	if (Size == WholeSize)
-	{
-		//!!!calc whole size in bytes and store!
-		NOT_IMPLEMENTED;
-		//Size = ElementCount * ElementRegisterCount * sizeof(register);
-	}
+	if (Size == WholeSize) Size = SizeInBytes;
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 	CB9.WriteData(RegSet, Offset, pData, Size);
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
+{
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+
+	switch (RegSet)
+	{
+		case Reg_Invalid:
+		case Reg_Bool:		return;
+		case Reg_Int4:
+		{
+			U32 CurrOffset = Offset;
+			for (UPTR i = 0; i < Count; ++i)
+			{
+				U32 IntValue = (U32)pValues[i];
+				CB9.WriteData(Reg_Int4, CurrOffset, &IntValue, sizeof(U32));
+				CurrOffset += sizeof(U32);
+			}
+			break;
+		}
+		case Reg_Float4:
+		{
+			CB9.WriteData(Reg_Float4, Offset, pValues, sizeof(float) * Count);
+			break;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
+{
+	if (RegSet != Reg_Float4) return;
+
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+
+	if (Flags & ShaderConst_ColumnMajor)
+	{
+		n_assert_dbg(Columns > 0 && Rows > 0);
+
+		 // The maximum is 16 floats, may be less
+		float TransposedData[16];
+		const UPTR MatrixSize = Columns * Rows * sizeof(float);
+
+		const matrix44* pCurrMatrix = pValues;
+		const matrix44* pEndMatrix = pValues + Count;
+		for (; pCurrMatrix < pEndMatrix; ++pCurrMatrix)
+		{
+			float* pCurrData = TransposedData;
+			for (U32 Col = 0; Col < Columns; ++Col)
+				for (U32 Row = 0; Row < Rows; ++Row)
+				{
+					*pCurrData = pCurrMatrix->m[Row][Col];
+					++pCurrData;
+				}
+			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
+			CB9.WriteData(RegSet, Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
+		}
+	}
+	else
+	{
+		//!!!check columns and rows! (really need to check only rows, as all columns are used)
+		CB9.WriteData(RegSet, Offset + sizeof(matrix44) * StartIndex, pValues, sizeof(matrix44) * Count);
+	}
 }
 //---------------------------------------------------------------------
 

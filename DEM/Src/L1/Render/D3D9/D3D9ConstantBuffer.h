@@ -51,7 +51,6 @@ public:
 	bool			Create(const CSM30BufferMeta& Meta, const CD3D9ConstantBuffer* pInitData);
 	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
 	virtual bool	IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
-	virtual bool	IsInEditMode() const { return IsDirty(); }
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
 	void			WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);

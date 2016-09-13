@@ -10,6 +10,7 @@
 #include <Render/Renderer.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Render/ShaderConstant.h>
 #include <Render/SkinInfo.h>
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
@@ -165,7 +166,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		//!!!for a structured buffer, max count may be not applicable! must then use the same value
 		//as was used to allocate structured buffer instance!
 		UPTR GlobalLightCount = 0;
-		const UPTR MaxLightCount = pConstGlobalLightBuffer->Desc.ElementCount;
+		const UPTR MaxLightCount = pConstGlobalLightBuffer->Const->GetElementCount();
 		n_assert_dbg(MaxLightCount > 0);
 
 		const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
@@ -201,7 +202,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 				}
 				GPULight.Type = Light.Type;
 
-				n_verify_dbg(View.Globals.SetConstantValue(pConstGlobalLightBuffer, 0, &GPULight, sizeof(GPULight)));
+				Render::CConstantBuffer* pCB = View.Globals.RequestBuffer(pConstGlobalLightBuffer->Const->GetConstantBufferHandle(), pConstGlobalLightBuffer->ShaderType);
+				pConstGlobalLightBuffer->Const->SetRawValue(*pCB, &GPULight, sizeof(GPULight));
 
 				LightRec.IndexInGlobalBuffer = GlobalLightCount;
 				++GlobalLightCount;
@@ -209,7 +211,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			}
 		}
 
-		if (GlobalLightCount) View.Globals.ApplyConstantBuffers();
+		if (GlobalLightCount) View.Globals.CommitChanges();
 	}
 
 	// Sort render queue if requested

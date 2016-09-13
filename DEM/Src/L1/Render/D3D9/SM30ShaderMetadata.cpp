@@ -188,11 +188,8 @@ HConst CSM30ShaderMetadata::GetConstHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstBuffer CSM30ShaderMetadata::GetConstBufferHandle(HConst hConst) const
+HConstBuffer CSM30ShaderMetadata::GetConstBufferHandle(CStrID ID) const
 {
-	//!!!search by ID and search by constant are DIFFERENT!
-	NOT_IMPLEMENTED;
-
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{

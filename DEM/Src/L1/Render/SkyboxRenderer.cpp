@@ -5,7 +5,8 @@
 #include <Render/Skybox.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
-#include <Render/EffectConstSetValues.h>
+#include <Render/ConstantBufferSet.h>
+#include <Render/ShaderConstant.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -95,16 +96,16 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 			continue;
 		}
 
-		CEffectConstSetValues PerInstanceConstValues;
-		PerInstanceConstValues.SetGPU(&GPU);
+		CConstantBufferSet PerInstanceBuffers;
+		PerInstanceBuffers.SetGPU(&GPU);
 		if (pConstWorldMatrix)
 		{
 			matrix44 Tfm = pRenderNode->Transform;
 			Tfm.set_translation(Context.CameraPosition);
-			PerInstanceConstValues.RegisterConstantBuffer(pConstWorldMatrix->Desc.BufferHandle, NULL);
-			PerInstanceConstValues.SetConstantValue(pConstWorldMatrix, 0, Tfm.m, sizeof(matrix44));
+			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstWorldMatrix->Const->GetConstantBufferHandle(), pConstWorldMatrix->ShaderType);
+			pConstWorldMatrix->Const->SetMatrix(*pCB, &Tfm);
 		}
-		PerInstanceConstValues.ApplyConstantBuffers();
+		n_verify_dbg(PerInstanceBuffers.CommitChanges());
 
 		const CMesh* pMesh = pRenderNode->pMesh;
 		n_assert_dbg(pMesh);
