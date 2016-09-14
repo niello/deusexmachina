@@ -5,6 +5,7 @@
 #include <Render/Terrain.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Render/ShaderConstant.h>
 #include <Render/ConstantBufferSet.h>
 #include <Math/Sphere.h>
 #include <Core/Factory.h>
@@ -496,18 +497,15 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
 			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
 
-			PerInstanceBuffers.RegisterConstantBuffer(pConstVSCDLODParams->Desc.BufferHandle, NULL);
-			PerInstanceBuffers.SetConstantValue(pConstVSCDLODParams, 0, &CDLODParams, sizeof(CDLODParams));
+			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstVSCDLODParams->Const->GetConstantBufferHandle(), pConstVSCDLODParams->ShaderType);
+			pConstVSCDLODParams->Const->SetRawValue(*pCB, &CDLODParams, sizeof(CDLODParams));
 		
 			if (pConstPSCDLODParams)
 			{
-				PerInstanceBuffers.RegisterConstantBuffer(pConstPSCDLODParams->Desc.BufferHandle, NULL);
-				PerInstanceBuffers.SetConstantValue(pConstPSCDLODParams, 0, CDLODParams.WorldToHM, sizeof(float) * 4);
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstPSCDLODParams->Const->GetConstantBufferHandle(), pConstPSCDLODParams->ShaderType);
+				pConstPSCDLODParams->Const->SetRawValue(*pCB, CDLODParams.WorldToHM, sizeof(float) * 4);
 			}
 		}
-
-		if (pConstGridConsts)
-			PerInstanceBuffers.RegisterConstantBuffer(pConstGridConsts->Desc.BufferHandle, NULL);
 
 		//!!!implement looping if instance buffer is too small!
 		if (pConstInstanceData)
@@ -582,7 +580,8 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 				float GridConsts[2];
 				GridConsts[0] = pCDLOD->GetPatchSize() * 0.5f;
 				GridConsts[1] = 1.f / GridConsts[0];
-				PerInstanceBuffers.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstGridConsts->Const->GetConstantBufferHandle(), pConstGridConsts->ShaderType);
+				pConstGridConsts->Const->SetRawValue(*pCB, &GridConsts, sizeof(GridConsts));
 			}
 
 			PerInstanceBuffers.CommitChanges();
@@ -608,7 +607,8 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 				float GridConsts[2];
 				GridConsts[0] = pCDLOD->GetPatchSize() * 0.25f;
 				GridConsts[1] = 1.f / GridConsts[0];
-				PerInstanceBuffers.SetConstantValue(pConstGridConsts, 0, &GridConsts, sizeof(GridConsts));
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstGridConsts->Const->GetConstantBufferHandle(), pConstGridConsts->ShaderType);
+				pConstGridConsts->Const->SetRawValue(*pCB, &GridConsts, sizeof(GridConsts));
 			}
 
 			PerInstanceBuffers.CommitChanges();

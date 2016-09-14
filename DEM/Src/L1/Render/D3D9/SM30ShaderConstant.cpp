@@ -40,6 +40,7 @@ bool CSM30ShaderConstant::Init(HConst hConst)
 		//Handle = hConst;
 		Offset += pMeta->RegisterStart - Range.Start;
 		RegSet = pMeta->RegSet;
+		BufferHandle = pMeta->BufferHandle;
 		StructHandle = pMeta->StructHandle;
 		ElementCount = pMeta->ElementCount;
 		ElementRegisterCount = pMeta->ElementRegisterCount;
@@ -153,6 +154,8 @@ void CSM30ShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValu
 void CSM30ShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
 {
 	if (RegSet != Reg_Float4) return;
+
+	n_assert_dbg(StartIndex < ElementCount);
 
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 

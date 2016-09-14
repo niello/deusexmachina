@@ -14,6 +14,7 @@ bool CUSMShaderConstant::Init(HConst hConst)
 	if (!pMeta) FAIL;
 
 	Offset = pMeta->Offset;
+	BufferHandle = pMeta->BufferHandle;
 	StructHandle = pMeta->StructHandle;
 	ElementCount = pMeta->ElementCount;
 	ElementSize = pMeta->ElementSize;
@@ -104,6 +105,8 @@ void CUSMShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValue
 void CUSMShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
 {
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+
+	n_assert_dbg(StartIndex < ElementCount);
 
 	if (Flags & ShaderConst_ColumnMajor)
 	{

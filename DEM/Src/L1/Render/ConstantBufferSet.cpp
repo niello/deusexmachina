@@ -38,26 +38,32 @@ bool CConstantBufferSet::RegisterPermanentBuffer(HConstBuffer Handle, CConstantB
 CConstantBuffer* CConstantBufferSet::RequestBuffer(HConstBuffer Handle, EShaderType Stage)
 {
 	IPTR BufferIdx = Buffers.FindIndex(Handle);
-	CConstBufferRecord& Rec = (BufferIdx == INVALID_INDEX) ? Buffers.Add(Handle) : Buffers.ValueAt(BufferIdx);
+	CConstBufferRecord* pRec;
+	if ((BufferIdx == INVALID_INDEX))
+	{
+		pRec = &Buffers.Add(Handle);
+		pRec->Flags = 0;
+	}
+	else pRec = &Buffers.ValueAt(BufferIdx);
 
 	// If buffer is still not used
-	if (!Rec.Flags)
+	if (!pRec->Flags)
 	{
-		if (Rec.Buffer.IsNullPtr())
+		if (pRec->Buffer.IsNullPtr())
 		{
 			// No permanent buffer registered, create temporary buffer and mark it for later deletion
-			Rec.Buffer = GPU->CreateTemporaryConstantBuffer(Handle);
-			if (Rec.Buffer.IsNullPtr()) return NULL;
-			Rec.Flags |= ECSV_TmpBuffer;
+			pRec->Buffer = GPU->CreateTemporaryConstantBuffer(Handle);
+			if (pRec->Buffer.IsNullPtr()) return NULL;
+			pRec->Flags |= ECSV_TmpBuffer;
 		}
 
-		if (!GPU->BeginShaderConstants(*Rec.Buffer)) return NULL;
+		if (!GPU->BeginShaderConstants(*pRec->Buffer)) return NULL;
 	}
 
 	// Mark buffer as used at the Stage
-	Rec.Flags |= (1 << Stage);
+	pRec->Flags |= (1 << Stage);
 
-	return Rec.Buffer.GetUnsafe();
+	return pRec->Buffer.GetUnsafe();
 }
 //---------------------------------------------------------------------
 
