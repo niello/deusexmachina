@@ -46,6 +46,9 @@ PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
 	Const->StructHandle = StructHandle;
 	Const->ElementCount = 1;
 	Const->ElementSize = ElementSize;
+	Const->Columns = Columns;
+	Const->Rows = Rows;
+	Const->Flags = Flags;
 
 	//!!!add structured buffer support (always is an array with 'any' number of elements, $Element is a type, may be struct, may be not!
 	// Structured buffer has only '$Element' structure(?)
@@ -77,6 +80,9 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 			Const->StructHandle = It->StructHandle;
 			Const->ElementCount = It->ElementCount;
 			Const->ElementSize = It->ElementSize;
+			Const->Columns = 0; //It->Columns;
+			Const->Rows = 0; //It->Rows;
+			Const->Flags = It->Flags;
 
 			return Const.GetUnsafe();
 		}
@@ -94,9 +100,17 @@ void CUSMShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pDat
 }
 //---------------------------------------------------------------------
 
+void CUSMShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
+{
+	//???switch type, convert to const type?
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+	CB11.WriteData(Offset, &Value, sizeof(U32));
+}
+//---------------------------------------------------------------------
+
 void CUSMShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
 {
-	//???switch type, convert to int?
+	//???switch type, convert to const type?
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
 	CB11.WriteData(Offset, pValues, sizeof(float) * Count);
 }

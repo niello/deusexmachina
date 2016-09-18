@@ -290,7 +290,7 @@ int main(int argc, const char** argv)
 #else
 		CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
 #endif
-		CString DBFilePath = IOSrv->ResolveAssigns("SrcShaders:ShaderDB.db3");
+		CString DBFilePath = IOSrv->ResolveAssigns("Shaders:ShaderDB.db3");
 		CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
 		if (!InitDEMShaderCompilerDLL(DLLPath, DBFilePath, OutputDir))
 		{

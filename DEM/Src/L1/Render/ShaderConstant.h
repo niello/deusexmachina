@@ -42,6 +42,7 @@ public:
 	//virtual void			SetBool(const CConstantBuffer& CB, const bool* pValues, UPTR Count = 1) const = 0;
 	//virtual void			SetBool(const CConstantBuffer& CB, const U32* pValues, UPTR Count = 1) const = 0;
 	//virtual void			SetInt(const CConstantBuffer& CB, const I32* pValues, UPTR Count = 1) const = 0;
+	virtual void			SetUInt(const CConstantBuffer& CB, U32 Value) const = 0;
 	//virtual void			SetUInt(const CConstantBuffer& CB, const U32* pValues, UPTR Count = 1) const = 0;
 	virtual void			SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count = 1) const = 0;
 	virtual void			SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count = 1, U32 StartIndex = 0) const = 0;

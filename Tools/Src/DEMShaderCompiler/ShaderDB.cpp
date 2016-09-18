@@ -257,7 +257,12 @@ bool OpenDB(const char* pURI)
 {
 	n_assert(!SQLiteHandle);
 
-	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL); //"Nebula2");
+	CString DirName = PathUtils::ExtractDirName(pURI);
+	IO::CFileSystemWin32 FS;
+	if (!FS.DirectoryExists(DirName.CStr()))
+		FS.CreateDirectory(DirName.CStr());
+
+	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
 	if (Result != SQLITE_OK)
 	{
 		Messages += "SQLite error: ";
@@ -550,6 +555,7 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjC
 
 			if (pBinaryData)
 			{
+				// Dynamic allocation required due to smart pointer stored inside a stream
 				IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
 				IO::CFileStream File(Path, FS);
 				if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) continue;

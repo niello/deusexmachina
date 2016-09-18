@@ -903,22 +903,22 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	if (MaxSRVSlotIndex < SlotIndex) MaxSRVSlotIndex = SlotIndex;
 	SlotIndex |= (ShaderType << 16); // Encode shader type in a high word
 
+	CSRVRecord* pSRVRec;
 	IPTR DictIdx = CurrSRV.FindIndex(SlotIndex);
 	if (DictIdx != INVALID_INDEX)
 	{
-		CSRVRecord& SRVRec = CurrSRV.ValueAt(DictIdx);
-		if (SRVRec.pSRV == pSRV) OK;
-		SRVRec.pSRV = pSRV;
-		SRVRec.CB = pCB;
+		pSRVRec = &CurrSRV.ValueAt(DictIdx);
+		if (pSRVRec->pSRV == pSRV) OK;
 	}
 	else
 	{
 		// Conflicts with CurrSRV.FindIndex()
 		//if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
-		CSRVRecord& SRVRec = CurrSRV.Add(SlotIndex);
-		SRVRec.pSRV = pSRV;
-		SRVRec.CB = pCB;
+		pSRVRec = &CurrSRV.Add(SlotIndex);
 	}
+
+	pSRVRec->pSRV = pSRV;
+	pSRVRec->CB = pCB;
 
 	CurrDirtyFlags.Set(GPU_Dirty_SRV);
 	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
@@ -1342,10 +1342,10 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		{
 			const UPTR SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
 			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)_malloca(SRVArrayMemSize);
+			::ZeroMemory(ppSRV, SRVArrayMemSize);
 
 			UPTR CurrShaderType = ShaderType_Invalid;
-			UPTR ShdDirtyFlag = 0;
-			bool SkipShaderType = false;
+			bool SkipShaderType = true;
 			UPTR FirstSRVSlot;
 			UPTR CurrSRVSlot;
 			for (UPTR i = 0; ; ++i)
@@ -1357,7 +1357,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 				{
 					const UPTR CurrKey = CurrSRV.KeyAt(i);
 					ShaderType = (CurrKey >> 16);
-					SRVSlot = (CurrKey & 0x0000ffff);
+					SRVSlot = (CurrKey & 0xffff);
 				}
 
 				if (AtTheEnd || ShaderType != CurrShaderType)
@@ -1368,36 +1368,35 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 						{
 							case ShaderType_Vertex:
 								pD3DImmContext->VSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
-								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
 								break;
 							case ShaderType_Pixel:
 								pD3DImmContext->PSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
-								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
 								break;
 							case ShaderType_Geometry:
 								pD3DImmContext->GSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
-								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
 								break;
 							case ShaderType_Hull:
 								pD3DImmContext->HSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
-								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
 								break;
 							case ShaderType_Domain:
 								pD3DImmContext->DSSetShaderResources(FirstSRVSlot, CurrSRVSlot - FirstSRVSlot + 1, ppSRV + FirstSRVSlot);
-								ShaderParamsDirtyFlags.Clear(ShdDirtyFlag);
 								break;
 						};
+
+						ShaderParamsDirtyFlags.Clear(1 << (Shader_Dirty_Resources + CurrShaderType));
 					}
 
 					if (AtTheEnd) break;
 
-					ZeroMemory(ppSRV, SRVArrayMemSize);
+					if (!SkipShaderType)
+					{
+						::ZeroMemory(ppSRV, SRVArrayMemSize);
+					}
 
 					CurrShaderType = ShaderType;
 					FirstSRVSlot = SRVSlot;
 
-					ShdDirtyFlag = (1 << (Shader_Dirty_Resources + CurrShaderType));
-					SkipShaderType = ShaderParamsDirtyFlags.IsNot(ShdDirtyFlag);
+					SkipShaderType = ShaderParamsDirtyFlags.IsNot(1 << (Shader_Dirty_Resources + CurrShaderType));
 				}
 
 				if (SkipShaderType) continue;
@@ -1536,7 +1535,8 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 	if (Update.Is(GPU_Dirty_SR) && CurrDirtyFlags.Is(GPU_Dirty_SR))
 	{
 		// Find the last set SR, as we must set all rects from 0'th to it
-		UPTR NumSR = 0;
+		// 16 high bits of VPSRSetFlags are SR flags
+		UPTR NumSR = VP_OR_SR_SET_FLAG_COUNT;
 		for (; NumSR > 1; --NumSR)
 			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + NumSR - 1))) break;
 

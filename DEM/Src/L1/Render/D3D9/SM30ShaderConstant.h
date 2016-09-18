@@ -35,6 +35,7 @@ public:
 	virtual PShaderConstant	GetElement(U32 Index) const;
 	virtual PShaderConstant	GetMember(CStrID Name) const;
 	virtual void			SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const;
+	virtual void			SetUInt(const CConstantBuffer& CB, U32 Value) const;
 	virtual void			SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count = 1) const;
 	virtual void			SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count = 1, U32 StartIndex = 0) const;
 };

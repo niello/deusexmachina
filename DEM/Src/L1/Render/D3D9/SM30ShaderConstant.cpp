@@ -85,6 +85,9 @@ PShaderConstant CSM30ShaderConstant::GetElement(U32 Index) const
 	Const->StructHandle = StructHandle;
 	Const->ElementCount = 1;
 	Const->ElementRegisterCount = ElementRegisterCount;
+	Const->Columns = Columns;
+	Const->Rows = Rows;
+	Const->Flags = Flags;
 
 	return Const.GetUnsafe();
 }
@@ -106,6 +109,9 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 			Const->StructHandle = It->StructHandle;
 			Const->ElementCount = It->ElementCount;
 			Const->ElementRegisterCount = It->ElementRegisterCount;
+			Const->Columns = 0; //It->Columns;
+			Const->Rows = 0; //It->Rows;
+			Const->Flags = It->Flags;
 
 			return Const.GetUnsafe();
 		}
@@ -123,14 +129,43 @@ void CSM30ShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pDa
 }
 //---------------------------------------------------------------------
 
+void CSM30ShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
+{
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+	switch (RegSet)
+	{
+		case Reg_Int4:
+		{
+			CB9.WriteData(Reg_Int4, Offset, &Value, sizeof(U32));
+			break;
+		}
+		case Reg_Float4:
+		{
+			float FloatValue = (float)Value;
+			CB9.WriteData(Reg_Float4, Offset, &FloatValue, sizeof(float));
+			break;
+		}
+		case Reg_Bool:
+		{
+			BOOL BoolValue = (Value != 0);
+			CB9.WriteData(Reg_Bool, Offset, &BoolValue, sizeof(BOOL));
+			break;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void CSM30ShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
 {
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 
 	switch (RegSet)
 	{
-		case Reg_Invalid:
-		case Reg_Bool:		return;
+		case Reg_Float4:
+		{
+			CB9.WriteData(Reg_Float4, Offset, pValues, sizeof(float) * Count);
+			break;
+		}
 		case Reg_Int4:
 		{
 			U32 CurrOffset = Offset;
@@ -140,11 +175,6 @@ void CSM30ShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValu
 				CB9.WriteData(Reg_Int4, CurrOffset, &IntValue, sizeof(U32));
 				CurrOffset += sizeof(U32);
 			}
-			break;
-		}
-		case Reg_Float4:
-		{
-			CB9.WriteData(Reg_Float4, Offset, pValues, sizeof(float) * Count);
 			break;
 		}
 	}

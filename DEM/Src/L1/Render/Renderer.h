@@ -15,6 +15,7 @@ namespace Render
 {
 struct CRenderNode;
 struct CRenderNodeContext;
+struct CLightRecord;
 class CGPUDriver;
 
 class IRenderer: public Core::CRTTIBaseClass
@@ -25,9 +26,12 @@ public:
 
 	struct CRenderContext
 	{
-		Render::CGPUDriver* pGPU;
-		vector3				CameraPosition;
-		matrix44			ViewProjection;
+		Render::CGPUDriver*		pGPU;
+		vector3					CameraPosition;
+		matrix44				ViewProjection;
+		CArray<CLightRecord>*	pLights;
+		const CArray<U16>*		pLightIndices;
+		bool					UsesGlobalLightBuffer;
 	};
 
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) = 0;

@@ -225,7 +225,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	UPTR RTIdxIdx = 0;
 	for (; RTIdxIdx < RenderTargetIndices.GetCount(); ++RTIdxIdx)
 	{
-		I32 RTIdx = RenderTargetIndices[RTIdxIdx];
+		const I32 RTIdx = RenderTargetIndices[RTIdxIdx];
 		View.GPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].GetUnsafe());
 	}
 
@@ -241,7 +241,15 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 	if (EnableLighting)
 	{
-		//lights array, does system use global light buffer bool flag
+		Ctx.pLights = &View.GetLightCache();
+		Ctx.pLightIndices = &View.LightIndices;
+		Ctx.UsesGlobalLightBuffer = (pConstGlobalLightBuffer != NULL);
+	}
+	else
+	{
+		Ctx.pLights = NULL;
+		Ctx.pLightIndices = NULL;
+		Ctx.UsesGlobalLightBuffer = false;
 	}
 
 	CArray<Render::CRenderNode*>::CIterator ItCurr = RenderQueue.Begin();

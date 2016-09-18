@@ -55,7 +55,7 @@ int main(int argc, const char** argv)
 				"-in [filepath{;filepath}]   input file(s)\n"
 				"-out [filepath{;filepath}]  output file(s), count must be the same\n"
 				"-db [filepath]              path to persistent shader DB,\n"
-				"                            default: -root + 'ShaderDB.db3'\n"
+				"                            default: 'Shaders:ShaderDB.db3'\n"
 				"-d                          build shaders with debug info\n"
 				"-sm3                        build only old sm3.0 techs, else only\n"
 				"                            Unified Shader Model techs will be built\n"
@@ -140,12 +140,8 @@ int main(int argc, const char** argv)
 	if (RootPath[RootPath.GetLength() - 1] != '/') RootPath += '/';
 	if (RootPath.IsEmpty()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
-	if (DB.IsEmpty())
-	{
-		DB = RootPath;
-		DB += "ShaderDB.db3";
-	}
-	else DB = IOSrv->ResolveAssigns(DB);
+	if (DB.IsEmpty()) DB = "Shaders:ShaderDB.db3";
+	DB = IOSrv->ResolveAssigns(DB);
 
 	if (Rebuild) IOSrv->DeleteFile(DB);
 

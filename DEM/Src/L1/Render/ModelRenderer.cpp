@@ -224,9 +224,14 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 	CVertexLayout* pVL = NULL;
 	CVertexLayout* pVLInstanced = NULL;
 
-	const CEffectConstant* pConstWorldMatrix = NULL;	// Model, ModelSkinned
+	// Effect constants
+	const CEffectConstant* pConstInstanceData = NULL;	// Model, ModelSkinned, ModelInstanced
 	const CEffectConstant* pConstSkinPalette = NULL;	// ModelSkinned
-	const CEffectConstant* pConstInstanceData = NULL;	// ModelInstanced
+
+	// Subsequent shader constants for single-instance case
+	PShaderConstant ConstWorldMatrix;
+	PShaderConstant ConstLightCount;
+	PShaderConstant ConstLightIndices;
 
 	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
@@ -247,9 +252,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			n_assert_dbg(pMaterial);
 			n_verify_dbg(pMaterial->Apply(GPU));
 			pCurrMaterial = pMaterial;
-
-			//!!!DBG TMP!
-			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
 		// Apply geometry, if changed
@@ -266,9 +268,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 			pVL = pVB->GetVertexLayout();
 			pVLInstanced = NULL;
-
-			//!!!DBG TMP!
-			//Sys::DbgOut("Mesh changed: 0x%X\n", pMesh);
 		}
 
 		// Gather instances (no skinned instancing supported)
@@ -290,8 +289,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				// it is not found, because if we did, the next object will try to do all
 				// this again, not knowing that there is no chance to success. If there is
 				// no instanced tech version, we render instances in a loop manually instead.
-				U8 CurrInstLightCount = (*ItInstEnd)->LightCount;
-				if (CurrInstLightCount > LightCount) LightCount = CurrInstLightCount;
+				const U8 CurrInstLightCount = (*ItInstEnd)->LightCount;
+				if (LightCount < CurrInstLightCount) LightCount = CurrInstLightCount;
 				++ItInstEnd;
 			}
 
@@ -316,7 +315,28 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			continue;
 		}
 
+		const bool LightingEnabled = (Context.pLights != NULL);
+		if (LightingEnabled && !Context.UsesGlobalLightBuffer)
+		{
+			NOT_IMPLEMENTED;
+			if (HardwareInstancing)
+			{
+				//collect the most used lights for the instance block (or split instances)
+				//set these most important lights
+				//fix instance indices (or use pVisibleLights' IndexInGlobalBuffer?)
+			}
+			else
+			{
+				//set referenced lights
+			}
+		}
+
 		// Upload per-instance data and draw object(s)
+
+		static const CStrID sidWorldMatrix("WorldMatrix");
+		static const CStrID sidLightCount("LightCount");
+		static const CStrID sidLightIndices("LightIndices");
+		const U32 EMPTY_LIGHT_INDEX = (U32)(-1);
 
 		if (HardwareInstancing)
 		{
@@ -331,30 +351,76 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				UPTR MaxInstanceCountConst = pConstInstanceData->Const->GetElementCount();
 				n_assert_dbg(MaxInstanceCountConst > 1);
 
-				//!!!DBG TMP!
-				if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCountConst)
-					Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCountConst);
-
 				GPU.SetVertexLayout(pVL);
 
 				CConstantBufferSet PerInstanceBuffers;
 				PerInstanceBuffers.SetGPU(&GPU);
 
-				//!!!PERF: use constant interface with precalculated location in buffer to set complex members (InstData[M].LightIndex[N])!
-				//reconstruct instance data structure
-				// matrix - always
-				// light count - if LightCount == 0 and tech is lit (???)
-				// light indices, if effective light count > 0
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstInstanceData->Const->GetConstantBufferHandle(), pConstInstanceData->ShaderType);
 
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
 				{
-					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstInstanceData->Const->GetConstantBufferHandle(), pConstInstanceData->ShaderType);
-					pConstInstanceData->Const->SetMatrix(*pCB, &pRenderNode->Transform, 1, InstanceCount);
+					// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
+					PShaderConstant CurrInstanceData = pConstInstanceData->Const->GetElement(InstanceCount);
+
+					// Setup instance transformation
+
+					PShaderConstant CurrWorldMatrix = CurrInstanceData->GetMember(sidWorldMatrix);
+					if (CurrWorldMatrix.IsValidPtr())
+						CurrWorldMatrix->SetMatrix(*pCB, &pRenderNode->Transform, 1);
+
+					// Setup instance lights
+
+					if (LightingEnabled)
+					{
+						PShaderConstant CurrLightIndices = CurrInstanceData->GetMember(sidLightIndices);
+						if (CurrLightIndices.IsValidPtr())
+						{
+							//!!!mul elm count on columns!
+							UPTR TechLightCount = CurrLightIndices->GetElementCount(); //!!!const, may be obtained from shader metadata outside the loop!
+							U32 ActualLightCount;
+
+							if (LightCount == 0)
+							{
+								// If tech is variable-light-count, set it per instance
+								ActualLightCount = (U32)n_min(TechLightCount, pRenderNode->LightCount);
+								PShaderConstant CurrLightCount = CurrInstanceData->GetMember(sidLightCount);
+								if (CurrLightCount.IsValidPtr())
+									CurrLightCount->SetUInt(*pCB, ActualLightCount);
+							}
+							else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
+
+							// Set per-instance light indices
+							if (ActualLightCount)
+							{
+								CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(pRenderNode->LightIndexBase);
+								U32 InstLightIdx;
+								for (InstLightIdx = 0; InstLightIdx < pRenderNode->LightCount; ++InstLightIdx, ++ItIdx)
+								{
+									if (!Context.UsesGlobalLightBuffer)
+									{
+										NOT_IMPLEMENTED;
+										//!!!???what with batch-local indices?!
+									}
+									const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
+									CurrLightIndices->SetUInt(*pCB, LightRec.IndexInGlobalBuffer);
+								}
+								if (LightCount)
+								{
+									// If tech is fixed-light-count, fill unused light indices with the special value
+									for (; InstLightIdx < TechLightCount; ++InstLightIdx)
+										CurrLightIndices->SetUInt(*pCB, EMPTY_LIGHT_INDEX);
+								}
+							}
+						}
+					}
 
 					++InstanceCount;
 					++ItCurr;
 					pRenderNode = *ItCurr;
+
+					// If instance buffer is full, render it
 
 					if (InstanceCount == MaxInstanceCountConst)
 					{
@@ -369,6 +435,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					}
 				}
 
+				// If instance buffer has instances to render, render them
+
 				if (InstanceCount)
 				{
 					PerInstanceBuffers.CommitChanges();
@@ -382,10 +450,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			else
 			{
 				n_assert_dbg(MaxInstanceCount > 1);
-
-				//!!!DBG TMP!
-				if ((ItInstEnd - ItCurr) > (IPTR)MaxInstanceCount)
-					Sys::DbgOut("Instance buffer overflow (%d of %d), data will be split\n", (ItInstEnd - ItCurr), MaxInstanceCount);
 
 				// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
 				if (InstanceVB.IsNullPtr())
@@ -459,8 +523,20 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		{
 			if (pTech != pCurrTech)
 			{
-				pConstWorldMatrix = pTech->GetConstant(CStrID("InstanceData"));
+				pConstInstanceData = pTech->GetConstant(CStrID("InstanceData"));
 				pConstSkinPalette = pTech->GetConstant(CStrID("SkinPalette"));
+
+				// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
+				if (pConstInstanceData)
+				{
+					ConstWorldMatrix = pConstInstanceData->Const->GetMember(sidWorldMatrix);
+					if (LightingEnabled)
+					{
+						ConstLightCount = pConstInstanceData->Const->GetMember(sidLightCount);
+						ConstLightIndices = pConstInstanceData->Const->GetMember(sidLightIndices);
+					}
+				}
+
 				pCurrTech = pTech;
 			}
 
@@ -468,16 +544,60 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 			for (; ItCurr != ItInstEnd; ++ItCurr, pRenderNode = *ItCurr)
 			{
-				// Per-instance params
-
 				//???use persistent, create once and store associatively Tech->Values?
 				CConstantBufferSet PerInstanceBuffers;
 				PerInstanceBuffers.SetGPU(&GPU);
 
-				if (pConstWorldMatrix)
+				// Setup per-instance information
+
+				if (pConstInstanceData)
 				{
-					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstWorldMatrix->Const->GetConstantBufferHandle(), pConstWorldMatrix->ShaderType);
-					pConstWorldMatrix->Const->SetMatrix(*pCB, &pRenderNode->Transform);
+					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstInstanceData->Const->GetConstantBufferHandle(), pConstInstanceData->ShaderType);
+
+					if (ConstWorldMatrix.IsValidPtr())
+						ConstWorldMatrix->SetMatrix(*pCB, &pRenderNode->Transform);
+
+					if (LightingEnabled)
+					{
+						if (ConstLightIndices.IsValidPtr())
+						{
+							//!!!mul elm count on columns!
+							UPTR TechLightCount = ConstLightIndices->GetElementCount(); //!!!const, may be obtained from shader metadata outside the loop!
+							U32 ActualLightCount;
+
+							if (LightCount == 0)
+							{
+								// If tech is variable-light-count, set it per instance
+								ActualLightCount = (U32)n_min(TechLightCount, pRenderNode->LightCount);
+								if (ConstLightCount.IsValidPtr())
+									ConstLightCount->SetUInt(*pCB, ActualLightCount);
+							}
+							else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
+
+							// Set per-instance light indices
+							if (ActualLightCount)
+							{
+								CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(pRenderNode->LightIndexBase);
+								U32 InstLightIdx;
+								for (InstLightIdx = 0; InstLightIdx < pRenderNode->LightCount; ++InstLightIdx, ++ItIdx)
+								{
+									if (!Context.UsesGlobalLightBuffer)
+									{
+										NOT_IMPLEMENTED;
+										//!!!???what with batch-local indices?!
+									}
+									const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
+									ConstLightIndices->SetUInt(*pCB, LightRec.IndexInGlobalBuffer);
+								}
+								if (LightCount)
+								{
+									// If tech is fixed-light-count, fill unused light indices with the special value
+									for (; InstLightIdx < TechLightCount; ++InstLightIdx)
+										ConstLightIndices->SetUInt(*pCB, EMPTY_LIGHT_INDEX);
+								}
+							}
+						}
+					}
 				}
 
 				if (pConstSkinPalette && pRenderNode->pSkinPalette)
