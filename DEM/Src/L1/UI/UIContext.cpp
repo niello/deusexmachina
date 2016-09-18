@@ -197,7 +197,12 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 				case 4:		Button = CEGUI::X2Button; break;
 				default:	FAIL;
 			}
-			return pCtx->injectMouseButtonUp(Button);
+
+			//FIXME: as CEGUI currently marks all mouse button events as handled, we have to do the opposite here
+			//to track mouse up events properly. Mouse down events are handled without this hack.
+			//return pCtx->injectMouseButtonUp(Button);
+			pCtx->injectMouseButtonUp(Button);
+			FAIL;
 		}
 
 		case Event::OSInput::MouseWheelVertical:

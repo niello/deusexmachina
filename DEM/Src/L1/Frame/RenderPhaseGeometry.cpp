@@ -182,9 +182,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 					vector3	Color;
 					float	Intensity;
 					vector3	Position;
-					float	InvRange;	// For attenuation
-					vector4	Params;		// Spot: x - cos inner, y - cos outer
-					vector3	Direction;	// Pre-inverted for directional lights
+					float	InvRange;		// For attenuation
+					vector4	Params;			// Spot: x - cos inner, y - cos outer
+					vector3	InvDirection;
 					U32		Type;
 				} GPULight;
 
@@ -192,7 +192,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 				GPULight.Intensity = Light.Intensity;
 				GPULight.Position = LightRec.Transform.Translation();
 				GPULight.InvRange = Light.GetInvRange();
-				GPULight.Direction = (Light.Type == Render::Light_Directional) ? LightRec.Transform.AxisZ() : -LightRec.Transform.AxisZ();
+				GPULight.InvDirection = LightRec.Transform.AxisZ();
 				if (Light.Type == Render::Light_Spot)
 				{
 					GPULight.Params.x = Light.GetCosHalfTheta();
