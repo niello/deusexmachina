@@ -41,7 +41,7 @@ struct CLightRecord
 	const Render::CLight*	pLight;
 	matrix44				Transform;
 	UPTR					UseCount;
-	IPTR					IndexInGlobalBuffer;
+	IPTR					GPULightIndex;
 };
 
 struct CRenderNodeContext

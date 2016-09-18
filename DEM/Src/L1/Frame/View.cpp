@@ -102,7 +102,7 @@ void CView::UpdateVisibilityCache()
 				Rec.pLight = &((Frame::CNodeAttrLight*)pAttr)->GetLight();
 				Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
 				Rec.UseCount = 0;
-				Rec.IndexInGlobalBuffer = INVALID_INDEX;
+				Rec.GPULightIndex = INVALID_INDEX;
 
 				VisibilityCache.RemoveAt(i);
 			}

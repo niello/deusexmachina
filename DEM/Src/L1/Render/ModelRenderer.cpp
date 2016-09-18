@@ -315,6 +315,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			continue;
 		}
 
+		// Send lights to GPU if global light buffer is not used
+
 		const bool LightingEnabled = (Context.pLights != NULL);
 		if (LightingEnabled && !Context.UsesGlobalLightBuffer)
 		{
@@ -322,12 +324,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			if (HardwareInstancing)
 			{
 				//collect the most used lights for the instance block (or split instances)
-				//set these most important lights
-				//fix instance indices (or use pVisibleLights' IndexInGlobalBuffer?)
+				//send these most important lights to GPU (up to max supported by tech)
+				//fill pLights' GPULightIndex with batch-local light indices
 			}
 			else
 			{
-				//set referenced lights
+				//send referenced lights to GPU (up to max supported by tech)
 			}
 		}
 
@@ -404,7 +406,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 										//!!!???what with batch-local indices?!
 									}
 									const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-									CurrLightIndices->SetUInt(*pCB, LightRec.IndexInGlobalBuffer);
+									CurrLightIndices->SetUInt(*pCB, LightRec.GPULightIndex);
 								}
 								if (LightCount)
 								{
@@ -587,7 +589,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 										//!!!???what with batch-local indices?!
 									}
 									const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-									ConstLightIndices->SetUInt(*pCB, LightRec.IndexInGlobalBuffer);
+									ConstLightIndices->SetUInt(*pCB, LightRec.GPULightIndex);
 								}
 								if (LightCount)
 								{
