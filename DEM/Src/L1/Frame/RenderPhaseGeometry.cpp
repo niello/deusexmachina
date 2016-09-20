@@ -180,18 +180,17 @@ bool CRenderPhaseGeometry::Render(CView& View)
 				struct
 				{
 					vector3	Color;
-					float	Intensity;
+					float	_PAD1;
 					vector3	Position;
-					float	InvRange;		// For attenuation
+					float	SqInvRange;		// For attenuation
 					vector4	Params;			// Spot: x - cos inner, y - cos outer
 					vector3	InvDirection;
 					U32		Type;
 				} GPULight;
 
-				GPULight.Color = Light.Color;
-				GPULight.Intensity = Light.Intensity;
+				GPULight.Color = Light.Color * Light.Intensity; //???pre-multiply and don't store separately at all?
 				GPULight.Position = LightRec.Transform.Translation();
-				GPULight.InvRange = Light.GetInvRange();
+				GPULight.SqInvRange = Light.GetInvRange() * Light.GetInvRange();
 				GPULight.InvDirection = LightRec.Transform.AxisZ();
 				if (Light.Type == Render::Light_Spot)
 				{
