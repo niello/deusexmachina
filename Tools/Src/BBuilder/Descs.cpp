@@ -550,14 +550,14 @@ bool ProcessMaterialDesc(const char* pName)
 
 		if (!IsFileAdded(EffectExportFileNameUSM))
 		{
-			if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+			if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false, DebugShaders)) FAIL;
 			FilesToPack.InsertSorted(EffectExportFileNameUSM);
 			GatherEffectReferencesUSM = true;
 		}
 
 		if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
 		{
-			if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+			if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true, DebugShaders)) FAIL;
 			FilesToPack.InsertSorted(EffectExportFileNameSM30);
 			GatherEffectReferencesSM30 = true;
 		}
@@ -959,14 +959,14 @@ bool ProcessRenderPathDesc(const char* pSrcFilePath)
 
 			if (!IsFileAdded(EffectExportFileNameUSM))
 			{
-				if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+				if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false, DebugShaders)) FAIL;
 				if (!ProcessEffect(EffectExportFileNameUSM)) FAIL;
 				FilesToPack.InsertSorted(EffectExportFileNameUSM);
 			}
 
 			if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
 			{
-				if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+				if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true, DebugShaders)) FAIL;
 				if (!ProcessEffect(EffectExportFileNameSM30)) FAIL;
 				FilesToPack.InsertSorted(EffectExportFileNameSM30);
 			}
@@ -1010,14 +1010,14 @@ bool ProcessRenderPathDesc(const char* pSrcFilePath)
 
 				if (!IsFileAdded(EffectExportFileNameUSM))
 				{
-					if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false)) FAIL;
+					if (!ExportEffect(EffectSrcFileName, EffectExportFileNameUSM, false, DebugShaders)) FAIL;
 					if (!ProcessEffect(EffectExportFileNameUSM)) FAIL;
 					FilesToPack.InsertSorted(EffectExportFileNameUSM);
 				}
 
 				if (IncludeSM30ShadersAndEffects && !IsFileAdded(EffectExportFileNameSM30))
 				{
-					if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true)) FAIL;
+					if (!ExportEffect(EffectSrcFileName, EffectExportFileNameSM30, true, DebugShaders)) FAIL;
 					if (!ProcessEffect(EffectExportFileNameSM30)) FAIL;
 					FilesToPack.InsertSorted(EffectExportFileNameSM30);
 				}

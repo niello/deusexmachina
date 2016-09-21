@@ -61,7 +61,7 @@ bool ProcessResourceDesc(const CString& RsrcFileName, const CString& ExportFileN
 
 //???does CFShader really need ProjectDir? why other tools don't? mb pass shader DB path and shader compiler DLL instead?
 //???cut out IOSrv assigns from it and use only absolute pathes?
-bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30)
+bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30, bool Debug)
 {
 	CString InStr = IOSrv->ResolveAssigns(SrcFilePath);
 	CString OutStr = IOSrv->ResolveAssigns(ExportFilePath);
@@ -73,8 +73,13 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 	Sys::GetWorkingDirectory(WorkingDir);
 
 	char CmdLine[MAX_CMDLINE_CHARS];
-	sprintf_s(CmdLine, "-v %d %s-proj %s -in %s -out %s",
-		ExternalVerbosity, LegacySM30 ? "-sm3 " : "", ProjectDir.CStr(), InStr.CStr(), OutStr.CStr());
+	sprintf_s(CmdLine, "-v %d %s%s-proj %s -in %s -out %s",
+		ExternalVerbosity,
+		LegacySM30 ? "-sm3 " : "",
+		Debug ? "-d " : "",
+		ProjectDir.CStr(),
+		InStr.CStr(),
+		OutStr.CStr());
 	int ExitCode = RunExternalToolAsProcess(CStrID("CFShader"), CmdLine, WorkingDir.CStr());
 	if (ExitCode != 0)
 	{
@@ -86,7 +91,7 @@ bool ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, boo
 }
 //---------------------------------------------------------------------
 
-bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30)
+bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30, bool Debug)
 {
 	CString InStr = IOSrv->ResolveAssigns(SrcFilePath);
 	CString OutStr = IOSrv->ResolveAssigns(ExportFilePath);
@@ -100,9 +105,10 @@ bool ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath,
 	CString EffDir = IOSrv->ResolveAssigns(LegacySM30 ? "Shaders:SM_3_0/Effects" : "Shaders:USM/Effects");
 
 	char CmdLine[MAX_CMDLINE_CHARS];
-	sprintf_s(CmdLine, "-v %d -rp %s-proj \"%s\" -eff \"%s\" -in \"%s\" -out \"%s\"",
+	sprintf_s(CmdLine, "-v %d -rp %s%s-proj \"%s\" -eff \"%s\" -in \"%s\" -out \"%s\"",
 		ExternalVerbosity,
 		LegacySM30 ? "-sm3 " : "",
+		Debug ? "-d " : "",
 		ProjectDir.CStr(),
 		EffDir.CStr(),
 		InStr.CStr(),

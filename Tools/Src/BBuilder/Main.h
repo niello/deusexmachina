@@ -21,6 +21,7 @@ extern CString			ProjectDir;
 extern bool				ExportDescs;
 extern bool				ExportResources;
 extern bool				IncludeSM30ShadersAndEffects;
+extern bool				DebugShaders;
 extern int				Verbose;
 extern int				ExternalVerbosity;
 extern CArray<CString>	FilesToPack;
@@ -32,8 +33,8 @@ extern CDict<CStrID, Data::PDataScheme> Schemes;
 
 void	ConvertPropNamesToFourCC(Data::PDataArray Props);
 bool	ProcessLevel(const Data::CParams& LevelDesc, const CString& Name);
-bool	ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
-bool	ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30);
+bool	ExportEffect(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30, bool Debug);
+bool	ExportRenderPath(const CString& SrcFilePath, const CString& ExportFilePath, bool LegacySM30, bool Debug);
 bool	ProcessShaderResourceDesc(const Data::CParams& Desc, bool Debug, bool OnlyMetadata, U32& OutShaderID);
 bool	ProcessDesc(const char* pSrcFilePath, const char* pExportFilePath);
 bool	ProcessRenderPathDesc(const char* pSrcFilePath);

@@ -11,6 +11,7 @@ CString			ProjectDir;
 bool			ExportDescs;
 bool			ExportResources;
 bool			IncludeSM30ShadersAndEffects;	// For legacy D3D9 API
+bool			DebugShaders;
 int				Verbose = VL_ERROR;
 int				ExternalVerbosity = VL_ALWAYS;	// Only always printed messages by default
 
@@ -24,17 +25,17 @@ CClassCodeMap	ClassToFOURCC;
 CDict<CStrID, Data::PDataScheme> Schemes;
 
 // Debug command line:
-// -export -waitkey -v 5 -sm3 -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
+// -export -waitkey -v 5 -sm3 -ds -proj ../../../../InsanePoet/Content -build ../../../../InsanePoet/Bin
 
 int main(int argc, const char** argv)
 {
 	nCmdLineArgs Args(argc, argv);
 
 	// If true, will re-export files from Src to Export before packing
-	// Shaders are alway
 	ExportDescs = Args.GetBoolArg("-er") || Args.GetBoolArg("-export");
 	ExportResources = Args.GetBoolArg("-ed") || Args.GetBoolArg("-export");
 	IncludeSM30ShadersAndEffects = Args.GetBoolArg("-sm3");
+	DebugShaders = Args.GetBoolArg("-ds");
 
 	// If true, application will wait for key before exit
 	bool WaitKey = Args.GetBoolArg("-waitkey");
@@ -258,7 +259,7 @@ int main(int argc, const char** argv)
 				CString RealExportFilePath = IOSrv->ResolveAssigns("Shaders:USM/" + FileNoExt + ".rp");
 				if (!IsFileAdded(RealExportFilePath))
 				{
-					if (!ExportRenderPath(SrcFilePath, RealExportFilePath, false)) EXIT_APP_FAIL;
+					if (!ExportRenderPath(SrcFilePath, RealExportFilePath, false, DebugShaders)) EXIT_APP_FAIL;
 					FilesToPack.InsertSorted(RealExportFilePath);
 				}
 
@@ -267,7 +268,7 @@ int main(int argc, const char** argv)
 					RealExportFilePath = IOSrv->ResolveAssigns("Shaders:SM_3_0/" + FileNoExt + ".rp");
 					if (!IsFileAdded(RealExportFilePath))
 					{
-						if (!ExportRenderPath(SrcFilePath, RealExportFilePath, true)) EXIT_APP_FAIL;
+						if (!ExportRenderPath(SrcFilePath, RealExportFilePath, true, DebugShaders)) EXIT_APP_FAIL;
 						FilesToPack.InsertSorted(RealExportFilePath);
 					}
 				}

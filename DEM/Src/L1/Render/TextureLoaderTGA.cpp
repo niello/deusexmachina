@@ -59,8 +59,10 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 	CTGAHeader Header;
 	if (!Reader.Read(Header)) return NULL;
 
-	//???!!!add monochrome and RLE?!
-	if (Header.ImageType != 2) return NULL;
+	// Only 32-bit TrueColor compressed and uncompressed images are supported for now
+	if (Header.ImageType != 2 && Header.ImageType != 10) return NULL;
+
+	const bool IsRLECompressed = (Header.ImageType == 10);
 
 	if (!Stream.Seek(26, IO::Seek_End)) return NULL;
 	CTGAFooter Footer;
@@ -110,22 +112,88 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 			return NULL;
 	}
 
-	//	TexDesc.Format = DDSDX10FormatToPixelFormat(Header10.dxgiFormat);
-	//	if (TexDesc.Format == Render::PixelFmt_Invalid) FAIL;
-
 	if (!Stream.Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return NULL;
 
-	void* pData = NULL;
-	if (Stream.CanBeMapped()) pData = Stream.Map();
-	bool Mapped = !!pData;
-	if (!Mapped)
+	U8* pData = NULL;
+	bool Mapped;
+	if (IsRLECompressed)
 	{
+		Mapped = false;
 		UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
-		pData = n_malloc(DataSize);
-		if (Stream.Read(pData, DataSize) != DataSize)
+		pData = (U8*)n_malloc(DataSize);
+		U8* pCurrPixel = pData;
+		const U8* pDataEnd = pData + DataSize;
+
+		UPTR BytesPerPixel = Header.BitsPerPixel >> 3;
+		n_assert_dbg(BytesPerPixel <= 4); // We never expect TGA with more than 32 bpp
+		while (pCurrPixel < pDataEnd)
 		{
-			n_free(pData);
-			return NULL;
+			U8 ChunkHeader;
+			if (Stream.Read(&ChunkHeader, sizeof(U8)) != sizeof(U8))
+			{
+				n_free(pData);
+				return NULL;
+			}
+
+			if (ChunkHeader & 0x80)
+			{
+				// RLE
+				U32 PixelValue;
+				if (Stream.Read(&PixelValue, BytesPerPixel) != BytesPerPixel)
+				{
+					n_free(pData);
+					return NULL;
+				}
+
+				const U8 ChunkPixelCount = ChunkHeader - 127; // (ChunkHeader & 0x7f) + 1
+				if (BytesPerPixel == 4)
+				{
+					const U8* pChunkEnd = pCurrPixel + BytesPerPixel * ChunkPixelCount;
+					while (pCurrPixel < pChunkEnd)
+					{
+						*((U32*)pCurrPixel) = PixelValue;
+						pCurrPixel += BytesPerPixel;
+					}
+				}
+				else
+				{
+					const U8* pChunkEnd = pCurrPixel + BytesPerPixel * ChunkPixelCount;
+					while (pCurrPixel < pChunkEnd)
+					{
+						pCurrPixel[0] = ((U8*)&PixelValue)[0];
+						if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
+						if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
+						pCurrPixel += BytesPerPixel;
+					}
+				}
+			}
+			else
+			{
+				// Raw
+				const U8 ChunkPixelCount = ChunkHeader + 1;
+				const UPTR ChunkSize = BytesPerPixel * ChunkPixelCount;
+				if (Stream.Read(pCurrPixel, ChunkSize) != ChunkSize)
+				{
+					n_free(pData);
+					return NULL;
+				}
+				pCurrPixel += ChunkSize;
+			}
+		}
+	}
+	else
+	{
+		if (Stream.CanBeMapped()) pData = (U8*)Stream.Map();
+		Mapped = !!pData;
+		if (!Mapped)
+		{
+			UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
+			pData = (U8*)n_malloc(DataSize);
+			if (Stream.Read(pData, DataSize) != DataSize)
+			{
+				n_free(pData);
+				return NULL;
+			}
 		}
 	}
 
