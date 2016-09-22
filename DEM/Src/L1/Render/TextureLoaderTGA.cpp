@@ -99,18 +99,26 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 	TexDesc.MipLevels = 1; //!!!set DesiredMipCount, if provided! some value for 'as in file', some for 'full chain' 
 	TexDesc.MSAAQuality = Render::MSAA_None;
 
+	UPTR BytesPerTargetPixel;
 	switch (Header.BitsPerPixel)
 	{
 		case 32:
 			TexDesc.Format = HasAlpha ? Render::PixelFmt_B8G8R8A8 : Render::PixelFmt_B8G8R8X8;
+			BytesPerTargetPixel = 4;
 			break;
-		//???D3D11 24-bit support?
+		case 24:
+			TexDesc.Format = Render::PixelFmt_B8G8R8X8;
+			BytesPerTargetPixel = 4;
+			break;
 		//case 8:
 		//	TexDesc.Format = greyscale;
 		//	break;
 		default:
 			return NULL;
 	}
+
+	UPTR BytesPerPixel = Header.BitsPerPixel >> 3;
+	n_assert_dbg(BytesPerPixel <= BytesPerTargetPixel);
 
 	if (!Stream.Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return NULL;
 
@@ -119,12 +127,11 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 	if (IsRLECompressed)
 	{
 		Mapped = false;
-		UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
+		UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
 		pData = (U8*)n_malloc(DataSize);
 		U8* pCurrPixel = pData;
 		const U8* pDataEnd = pData + DataSize;
 
-		UPTR BytesPerPixel = Header.BitsPerPixel >> 3;
 		n_assert_dbg(BytesPerPixel <= 4); // We never expect TGA with more than 32 bpp
 		while (pCurrPixel < pDataEnd)
 		{
@@ -148,22 +155,23 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 				const U8 ChunkPixelCount = ChunkHeader - 127; // (ChunkHeader & 0x7f) + 1
 				if (BytesPerPixel == 4)
 				{
-					const U8* pChunkEnd = pCurrPixel + BytesPerPixel * ChunkPixelCount;
+					const U8* pChunkEnd = pCurrPixel + BytesPerTargetPixel * ChunkPixelCount;
 					while (pCurrPixel < pChunkEnd)
 					{
 						*((U32*)pCurrPixel) = PixelValue;
-						pCurrPixel += BytesPerPixel;
+						pCurrPixel += BytesPerTargetPixel;
 					}
 				}
 				else
 				{
-					const U8* pChunkEnd = pCurrPixel + BytesPerPixel * ChunkPixelCount;
+					const U8* pChunkEnd = pCurrPixel + BytesPerTargetPixel * ChunkPixelCount;
 					while (pCurrPixel < pChunkEnd)
 					{
 						pCurrPixel[0] = ((U8*)&PixelValue)[0];
 						if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
 						if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
-						pCurrPixel += BytesPerPixel;
+						if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
+						pCurrPixel += BytesPerTargetPixel;
 					}
 				}
 			}
@@ -171,13 +179,33 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 			{
 				// Raw
 				const U8 ChunkPixelCount = ChunkHeader + 1;
-				const UPTR ChunkSize = BytesPerPixel * ChunkPixelCount;
-				if (Stream.Read(pCurrPixel, ChunkSize) != ChunkSize)
+				if (BytesPerPixel == BytesPerTargetPixel)
 				{
-					n_free(pData);
-					return NULL;
+					const UPTR ChunkSize = BytesPerPixel * ChunkPixelCount;
+					if (Stream.Read(pCurrPixel, ChunkSize) != ChunkSize)
+					{
+						n_free(pData);
+						return NULL;
+					}
+					pCurrPixel += ChunkSize;
 				}
-				pCurrPixel += ChunkSize;
+				else
+				{
+					for (UPTR Curr = 0; Curr < ChunkPixelCount; ++Curr)
+					{
+						U32 PixelValue;
+						if (Stream.Read(&PixelValue, BytesPerPixel) != BytesPerPixel)
+						{
+							n_free(pData);
+							return NULL;
+						}
+						pCurrPixel[0] = ((U8*)&PixelValue)[0];
+						if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
+						if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
+						if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
+						pCurrPixel += BytesPerTargetPixel;
+					}
+				}
 			}
 		}
 	}
@@ -187,12 +215,34 @@ PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
 		Mapped = !!pData;
 		if (!Mapped)
 		{
-			UPTR DataSize = (Header.ImageWidth * Header.ImageHeight * Header.BitsPerPixel) >> 3;
-			pData = (U8*)n_malloc(DataSize);
-			if (Stream.Read(pData, DataSize) != DataSize)
+			UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
+			if (BytesPerPixel == BytesPerTargetPixel)
 			{
-				n_free(pData);
-				return NULL;
+				pData = (U8*)n_malloc(DataSize);
+				if (Stream.Read(pData, DataSize) != DataSize)
+				{
+					n_free(pData);
+					return NULL;
+				}
+			}
+			else
+			{
+				U8* pCurrPixel = (U8*)pData;
+				UPTR PixelCount = Header.ImageWidth * Header.ImageHeight;
+				for (UPTR Curr = 0; Curr < PixelCount; ++Curr)
+				{
+					U32 PixelValue;
+					if (Stream.Read(&PixelValue, BytesPerPixel) != BytesPerPixel)
+					{
+						n_free(pData);
+						return NULL;
+					}
+					pCurrPixel[0] = ((U8*)&PixelValue)[0];
+					if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
+					if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
+					if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
+					pCurrPixel += BytesPerTargetPixel;
+				}
 			}
 		}
 	}
