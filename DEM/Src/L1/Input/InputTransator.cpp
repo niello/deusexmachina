@@ -160,10 +160,6 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 				NewEvent.Params = n_new(Data::CParams(2));
 				NewEvent.Params->Set<float>(CStrID("AmountRel"), Ev.AmountRel);
 				NewEvent.Params->Set<float>(CStrID("AmountAbs"), Ev.AmountAbs);
-
-				//!!!DBG TMP!
-				Sys::DbgOut("Translated:%s (%.4lf / %.1lf)\n", EvRec.OutEventID.CStr(), Ev.AmountRel, Ev.AmountAbs);
-
 				OK;
 			}
 		}
@@ -195,10 +191,6 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 			{
 				Events::CEvent& NewEvent = *EventQueue.Add();
 				NewEvent.ID = EvRec.OutEventID;
-
-				//!!!DBG TMP!
-				Sys::DbgOut("Translated:%s\n", EvRec.OutEventID.CStr());
-
 				OK;
 			}
 		}
@@ -230,10 +222,6 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 			{
 				Events::CEvent& NewEvent = *EventQueue.Add();
 				NewEvent.ID = EvRec.OutEventID;
-
-				//!!!DBG TMP!
-				Sys::DbgOut("Translated:%s\n", EvRec.OutEventID.CStr());
-
 				OK;
 			}
 		}
@@ -262,9 +250,6 @@ void CInputTranslator::Trigger(float ElapsedTime)
 			{
 				Events::CEvent& NewEvent = *EventQueue.Add();
 				NewEvent.ID = EvRec.OutEventID;
-
-				//!!!DBG TMP!
-				Sys::DbgOut("Translated:%s\n", EvRec.OutEventID.CStr());
 			}
 		}
 	}

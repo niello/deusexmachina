@@ -75,9 +75,6 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 			n_assert_dbg(pMaterial);
 			n_verify_dbg(pMaterial->Apply(GPU));
 			pCurrMaterial = pMaterial;
-
-			//!!!DBG TMP!
-			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
 		const CTechnique* pTech = pRenderNode->pTech;
@@ -122,9 +119,6 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 			GPU.SetRenderState((*pPasses)[PassIdx]);
 			GPU.Draw(*pGroup);
 		}
-
-		//!!!DBG TMP!
-		//Sys::DbgOut("CSkybox rendered\n");
 
 		++ItCurr;
 	};

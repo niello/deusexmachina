@@ -170,6 +170,7 @@ protected:
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
 	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);
 	bool								IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage = ShaderType_Invalid, UPTR ExceptSlot = 0);
+	void								FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot);
 
 	friend class CD3D11DriverFactory;
 

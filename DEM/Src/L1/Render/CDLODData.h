@@ -30,6 +30,7 @@ protected:
 	};
 
 	PTexture				HeightMap;
+	PTexture				NormalMap;
 
 	I16*					pMinMaxData;
 	CFixedArray<CMinMaxMap>	MinMaxMaps;
@@ -60,6 +61,7 @@ public:
 	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
 	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
+	Render::CTexture*	GetNormalMap() const { return NormalMap.GetUnsafe(); }
 	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
 };

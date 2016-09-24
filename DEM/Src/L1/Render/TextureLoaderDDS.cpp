@@ -57,6 +57,8 @@ enum
 	DXGI_FORMAT_B8G8R8A8_UNORM              = 87,
 	//DXGI_FORMAT_B8G8R8A8_UNORM_SRGB         = 91,
 	DXGI_FORMAT_B5G6R5_UNORM                = 85,
+    DXGI_FORMAT_R16_UNORM                   = 56,
+    DXGI_FORMAT_R8_UNORM                    = 61,
 	DXGI_FORMAT_BC1_UNORM                   = 71,
 	//DXGI_FORMAT_BC1_UNORM_SRGB              = 72,
 	DXGI_FORMAT_BC2_UNORM                   = 74,
@@ -174,6 +176,14 @@ Render::EPixelFormat DDSFormatToPixelFormat(const DDS_PIXELFORMAT& DDSFormat)
 			}
 		}
 	}
+	else if (DDSFormat.flags & DDS_LUMINANCE)
+	{
+		switch (DDSFormat.RGBBitCount)
+		{
+			case 16:	return Render::PixelFmt_R16;
+			case 8:		return Render::PixelFmt_R8;
+		}
+	}
 	else if (DDSFormat.flags & DDS_FOURCC)
 	{
 		//???rename DXT to BC?
@@ -214,6 +224,8 @@ Render::EPixelFormat DDSDX10FormatToPixelFormat(U32 DDSDX10Format)
 		case DXGI_FORMAT_B8G8R8X8_UNORM:		return Render::PixelFmt_B8G8R8X8; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
 		case DXGI_FORMAT_B8G8R8A8_UNORM:		return Render::PixelFmt_B8G8R8A8; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
 		case DXGI_FORMAT_B5G6R5_UNORM:			return Render::PixelFmt_B5G6R5;
+		case DXGI_FORMAT_R8_UNORM:				return Render::PixelFmt_R8;
+		case DXGI_FORMAT_R16_UNORM:				return Render::PixelFmt_R16;
 		case DXGI_FORMAT_BC1_UNORM:				return Render::PixelFmt_DXT1;
 		case DXGI_FORMAT_BC2_UNORM:				return Render::PixelFmt_DXT3;
 		case DXGI_FORMAT_BC3_UNORM:				return Render::PixelFmt_DXT5;

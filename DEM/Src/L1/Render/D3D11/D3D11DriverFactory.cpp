@@ -173,6 +173,7 @@ DXGI_FORMAT CD3D11DriverFactory::PixelFormatToDXGIFormat(EPixelFormat Format)
 		case PixelFmt_B8G8R8X8:					return DXGI_FORMAT_B8G8R8X8_UNORM; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
 		case PixelFmt_B8G8R8A8:					return DXGI_FORMAT_B8G8R8A8_UNORM; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
 		case PixelFmt_B5G6R5:					return DXGI_FORMAT_B5G6R5_UNORM;
+		case PixelFmt_R8:						return DXGI_FORMAT_R8_UNORM;
 		case PixelFmt_R16:						return DXGI_FORMAT_R16_UNORM;
 		case PixelFmt_DXT1:						return DXGI_FORMAT_BC1_UNORM;
 		case PixelFmt_DXT3:						return DXGI_FORMAT_BC2_UNORM;
@@ -197,6 +198,8 @@ EPixelFormat CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat)
 		case DXGI_FORMAT_B8G8R8X8_UNORM:		return PixelFmt_B8G8R8X8; //DXGI_FORMAT_B8G8R8X8_UNORM_SRGB
 		case DXGI_FORMAT_B8G8R8A8_UNORM:		return PixelFmt_B8G8R8A8; //DXGI_FORMAT_B8G8R8A8_UNORM_SRGB
 		case DXGI_FORMAT_B5G6R5_UNORM:			return PixelFmt_B5G6R5;
+		case DXGI_FORMAT_R8_UNORM:				return PixelFmt_R8;
+		case DXGI_FORMAT_R16_UNORM:				return PixelFmt_R16;
 		case DXGI_FORMAT_BC1_UNORM:				return PixelFmt_DXT1;
 		case DXGI_FORMAT_BC2_UNORM:				return PixelFmt_DXT3;
 		case DXGI_FORMAT_BC3_UNORM:				return PixelFmt_DXT5;

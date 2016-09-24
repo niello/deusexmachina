@@ -97,6 +97,7 @@ D3DFORMAT CD3D9DriverFactory::PixelFormatToD3DFormat(EPixelFormat Format)
 		case PixelFmt_B8G8R8X8:					return D3DFMT_X8R8G8B8;
 		case PixelFmt_B8G8R8A8:					return D3DFMT_A8R8G8B8;
 		case PixelFmt_B5G6R5:					return D3DFMT_R5G6B5;
+		case PixelFmt_R8:						return D3DFMT_L8;
 		case PixelFmt_R16:						return D3DFMT_L16;
 		case PixelFmt_DXT1:						return D3DFMT_DXT1;
 		case PixelFmt_DXT3:						return D3DFMT_DXT3;
@@ -121,6 +122,8 @@ EPixelFormat CD3D9DriverFactory::D3DFormatToPixelFormat(D3DFORMAT D3DFormat)
 		case D3DFMT_X8R8G8B8:	return PixelFmt_B8G8R8X8;
 		case D3DFMT_A8R8G8B8:	return PixelFmt_B8G8R8A8;
 		case D3DFMT_R5G6B5:		return PixelFmt_B5G6R5;
+		case D3DFMT_L8:			return PixelFmt_R8;
+		case D3DFMT_L16:		return PixelFmt_R16;
 		case D3DFMT_DXT1:		return PixelFmt_DXT1;
 		case D3DFMT_DXT3:		return PixelFmt_DXT3;
 		case D3DFMT_DXT5:		return PixelFmt_DXT5;

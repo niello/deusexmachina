@@ -155,6 +155,7 @@ enum EPixelFormat
 	PixelFmt_B8G8R8X8,
 	PixelFmt_B8G8R8A8,
 	PixelFmt_B5G6R5,
+	PixelFmt_R8,
 	PixelFmt_R16,
 	PixelFmt_DXT1,
 	PixelFmt_DXT3,

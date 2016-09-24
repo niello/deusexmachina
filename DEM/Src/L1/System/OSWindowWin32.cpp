@@ -371,9 +371,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
 				Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
 
-			//!!!DBG TMP!
-			//Sys::DbgOut("WM_SETFOCUS\n");
-
 			break;
 		}
 

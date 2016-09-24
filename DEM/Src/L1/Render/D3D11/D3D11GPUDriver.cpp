@@ -943,44 +943,8 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Ha
 		pCurrBuffer = (DictIdx == INVALID_INDEX) ? NULL : CurrSRV.ValueAt(DictIdx).CB.GetUnsafe();
 	}
 
-	// Free temporary buffer, if not bound to other stages
-	if (pPendingCBHead && pCurrBuffer && pCurrBuffer->IsTemporary() && !IsConstantBufferBound(pCurrBuffer, ShaderType, Index))
-	{
-		EUSMBufferType Type = pCurrBuffer->GetType();
-		CDict<UPTR, CTmpCB*>& BufferPool = 
-			Type == USMBuffer_Structured ? TmpStructuredBuffers :
-			(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
-
-		CTmpCB* pPrevNode = NULL;
-		CTmpCB* pCurrNode = pPendingCBHead;
-		while (pCurrNode)
-		{
-			if (pCurrNode->CB == pCurrBuffer)
-			{
-				if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
-				else pPendingCBHead = pCurrNode->pNext;
-
-				UPTR BufferSize = pCurrBuffer->GetSizeInBytes();
-#ifdef _DEBUG
-				n_assert(BufferSize == NextPow2(pCurrBuffer->GetSizeInBytes()));
-#endif
-				IPTR Idx = BufferPool.FindIndex(BufferSize);
-				if (Idx != INVALID_INDEX)
-				{
-					pCurrNode->pNext = BufferPool.ValueAt(Idx);
-					BufferPool.ValueAt(Idx) = pCurrNode;
-				}
-				else
-				{
-					pCurrNode->pNext = NULL;
-					BufferPool.Add(BufferSize, pCurrNode);
-				}
-				break;
-			}
-			pPrevNode = pCurrNode;
-			pCurrNode = pCurrNode->pNext;
-		}
-	}
+	// Free temporary buffer previously bound to this slot
+	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, Index);
 
 	if (pMeta->Type == USMBuffer_Constant)
 	{
@@ -1011,8 +975,15 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 	CUSMResourceMeta* pMeta = (CUSMResourceMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
+	UPTR Index = pMeta->RegisterStart;
+
+	// Free temporary buffer previously bound to this slot
+	IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
+	const CD3D11ConstantBuffer* pCurrBuffer = (DictIdx == INVALID_INDEX) ? NULL : CurrSRV.ValueAt(DictIdx).CB.GetUnsafe();
+	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, Index);
+
 	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : NULL;
-	return BindSRV(ShaderType, pMeta->RegisterStart, pSRV, NULL);
+	return BindSRV(ShaderType, Index, pSRV, NULL);
 }
 //---------------------------------------------------------------------
 
@@ -1781,7 +1752,7 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 	D3D11_SUBRESOURCE_DATA InitData;
 	if (pData)
 	{
-		if (!pData->IsA<CD3D11ConstantBuffer>()) FAIL;
+		if (!pData->IsA<CD3D11ConstantBuffer>()) return NULL;
 		const CD3D11ConstantBuffer* pDataCB11 = (const CD3D11ConstantBuffer*)pData;
 		InitData.pSysMem = pDataCB11->GetRAMCopy();
 		pInitData = &InitData;
@@ -1946,6 +1917,48 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer
 	}
 
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot)
+{
+	// Check whether there are pending buffer, this buffer is temporary and this buffer is not bound
+	if (!pPendingCBHead || !pCBuffer || !pCBuffer->IsTemporary() || IsConstantBufferBound(pCBuffer, Stage, Slot)) return;
+
+	EUSMBufferType Type = pCBuffer->GetType();
+	CDict<UPTR, CTmpCB*>& BufferPool = 
+		Type == USMBuffer_Structured ? TmpStructuredBuffers :
+		(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+
+	CTmpCB* pPrevNode = NULL;
+	CTmpCB* pCurrNode = pPendingCBHead;
+	while (pCurrNode)
+	{
+		if (pCurrNode->CB == pCBuffer)
+		{
+			if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
+			else pPendingCBHead = pCurrNode->pNext;
+
+			UPTR BufferSize = pCBuffer->GetSizeInBytes();
+			n_assert_dbg(BufferSize == NextPow2(pCBuffer->GetSizeInBytes()));
+			IPTR Idx = BufferPool.FindIndex(BufferSize);
+			if (Idx != INVALID_INDEX)
+			{
+				pCurrNode->pNext = BufferPool.ValueAt(Idx);
+				BufferPool.ValueAt(Idx) = pCurrNode;
+			}
+			else
+			{
+				pCurrNode->pNext = NULL;
+				BufferPool.Add(BufferSize, pCurrNode);
+			}
+
+			break;
+		}
+
+		pPrevNode = pCurrNode;
+		pCurrNode = pCurrNode->pNext;
+	}
 }
 //---------------------------------------------------------------------
 

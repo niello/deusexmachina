@@ -445,9 +445,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			n_assert_dbg(pMaterial);
 			n_verify_dbg(pMaterial->Apply(GPU));
 			pCurrMaterial = pMaterial;
-
-			//!!!DBG TMP!
-			//Sys::DbgOut("Material changed: 0x%X\n", pMaterial);
 		}
 
 		// Pass tech params to GPU
@@ -460,7 +457,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			pConstPSCDLODParams = pTech->GetConstant(CStrID("PSCDLODParams"));
 			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
 			pConstInstanceData = pTech->GetConstant(CStrID("InstanceDataArray"));
-			pResourceHeightMap = pTech->GetResource(CStrID("HeightMap"));
+			pResourceHeightMap = pTech->GetResource(CStrID("HeightMapVS"));
 
 			const CEffectSampler* pVSHeightSampler = pTech->GetSampler(CStrID("VSHeightSampler"));
 			if (pVSHeightSampler)
@@ -572,7 +569,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
 
-		//???!!!to subroutine?! to avoid duplication with quarter-patches!
 		if (PatchCount)
 		{
 			if (pConstGridConsts)
@@ -631,9 +627,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 				GPU.DrawInstanced(*pGroup, QuarterPatchCount);
 			}
 		}
-
-		//!!!DBG TMP!
-		//Sys::DbgOut("CTerrain rendered: %d patches, %d quarterpatches\n", PatchCount, QuarterPatchCount);
 
 		++ItCurr;
 	};
