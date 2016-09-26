@@ -29,7 +29,7 @@ namespace UI
 namespace Frame
 {
 class CNodeAttrCamera;
-class CNodeAttrLight;
+class CNodeAttrAmbientLight;
 typedef Ptr<class CRenderPath> PRenderPath;
 
 enum ELODType
@@ -49,6 +49,7 @@ protected:
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
+	CArray<CNodeAttrAmbientLight*>				EnvironmentCache;
 	bool										VisibilityCacheDirty; //???to flags?
 
 	ELODType									MeshLODType;
@@ -67,17 +68,16 @@ public:
 	Render::PGPUDriver							GPU;
 	CFixedArray<Render::PRenderTarget>			RTs;
 	CFixedArray<Render::PDepthStencilBuffer>	DSBuffers;
-	Render::CConstantBufferSet				Globals;
+	Render::CConstantBufferSet					Globals;
+	Render::PSampler							TrilinearCubeSampler; // For IBL
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
-	//CLightInfo array Lights;
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true), MeshLODType(LOD_None), MaterialLODType(LOD_None) {}
 	~CView();
 
-	//visible lights cache (can separate by callback/visitor passed to SPS)
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars
 	//!!!named resources in view bound to RP must be resolved by order number (index in array)
 	//instead of looking up by name every time!
@@ -92,6 +92,7 @@ public:
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
+	CArray<CNodeAttrAmbientLight*>&	GetEnvironmentCache() { return EnvironmentCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }

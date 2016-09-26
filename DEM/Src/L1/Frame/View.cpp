@@ -1,12 +1,15 @@
 #include "View.h"
 
 #include <Frame/NodeAttrCamera.h>
+#include <Frame/NodeAttrAmbientLight.h>
 #include <Frame/NodeAttrLight.h>
 #include <Frame/RenderPath.h>
 #include <Scene/SPS.h>
 #include <Render/RenderTarget.h>
 #include <Render/ShaderConstant.h>
 #include <Render/GPUDriver.h>
+#include <Render/Sampler.h>
+#include <Render/SamplerDesc.h>
 
 namespace Frame
 {
@@ -19,7 +22,7 @@ CView::~CView()
 
 bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 {
-	// GPU must be valid in order to create global constant buffers
+	// GPU must be valid in order to create global shader params and buffers
 	if (GPU.IsNullPtr()) FAIL;
 
 	if (RenderPath.GetUnsafe() == pNewRenderPath) OK;
@@ -60,6 +63,16 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 		}
 	}
 
+	// Create rlinear cube sampler for image-based lighting
+
+	Render::CSamplerDesc SamplerDesc;
+	SamplerDesc.SetDefaults();
+	SamplerDesc.AddressU = Render::TexAddr_Clamp;
+	SamplerDesc.AddressV = Render::TexAddr_Clamp;
+	SamplerDesc.AddressW = Render::TexAddr_Clamp;
+	SamplerDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+	TrilinearCubeSampler = GPU->CreateSampler(SamplerDesc);
+
 	RenderPath = pNewRenderPath;
 	OK;
 }
@@ -96,14 +109,19 @@ void CView::UpdateVisibilityCache()
 		for (UPTR i = 0; i < VisibilityCache.GetCount();)
 		{
 			Scene::CNodeAttribute* pAttr = VisibilityCache[i];
-			if (pAttr->IsA<Frame::CNodeAttrLight>())
+			if (pAttr->IsA<CNodeAttrLight>())
 			{
 				Render::CLightRecord& Rec = *LightCache.Add();
-				Rec.pLight = &((Frame::CNodeAttrLight*)pAttr)->GetLight();
+				Rec.pLight = &((CNodeAttrLight*)pAttr)->GetLight();
 				Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
 				Rec.UseCount = 0;
 				Rec.GPULightIndex = INVALID_INDEX;
 
+				VisibilityCache.RemoveAt(i);
+			}
+			else if (pAttr->IsA<CNodeAttrAmbientLight>())
+			{
+				EnvironmentCache.Add(pAttr->As<CNodeAttrAmbientLight>());
 				VisibilityCache.RemoveAt(i);
 			}
 			else ++i;
@@ -113,6 +131,7 @@ void CView::UpdateVisibilityCache()
 	{
 		VisibilityCache.Clear();
 		LightCache.Clear();
+		EnvironmentCache.Clear();
 	}
 
 	VisibilityCacheDirty = false;
@@ -193,6 +212,7 @@ bool CView::Render()
 {
 	VisibilityCache.Clear();
 	LightCache.Clear();
+	EnvironmentCache.Clear();
 	VisibilityCacheDirty = true;
 	if (!GPU->BeginFrame() || !RenderPath->Render(*this)) FAIL;
 	GPU->EndFrame();

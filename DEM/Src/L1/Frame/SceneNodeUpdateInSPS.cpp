@@ -3,6 +3,7 @@
 #include <Scene/SceneNode.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrLight.h>
+#include <Frame/NodeAttrAmbientLight.h>
 
 namespace Frame
 {
@@ -18,6 +19,7 @@ bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 		{
 			if (Attr.IsA<CNodeAttrRenderable>()) ((CNodeAttrRenderable&)Attr).UpdateInSPS(*pSPS);
 			else if (Attr.IsA<CNodeAttrLight>()) ((CNodeAttrLight&)Attr).UpdateInSPS(*pSPS);
+			else if (Attr.IsA<CNodeAttrAmbientLight>()) ((CNodeAttrAmbientLight&)Attr).UpdateInSPS(*pSPS);
 		}
 	}
 

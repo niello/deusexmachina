@@ -1038,17 +1038,6 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 		{
 			Data::PParams AttrDesc = Attrs->Get<Data::PParams>(i);
 
-			Data::PParams Textures;
-			if (AttrDesc->Get(Textures, CStrID("Textures")))
-			{
-				//!!!when export from src, find resource desc and add source texture to CFTexture list!
-				for (UPTR i = 0; i < Textures->GetCount(); ++i)
-				{
-					CString FileName = CString("Textures:") + Textures->Get(i).GetValue<CStrID>().CStr();
-					if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
-				}
-			}
-
 			Data::CData* pValue;
 
 			if (AttrDesc->Get(pValue, CStrID("Material")))
@@ -1082,6 +1071,18 @@ bool ProcessSceneNodeRefs(const Data::CParams& NodeDesc)
 					}
 					FilesToPack.InsertSorted(CDLODFilePath);
 				}
+			}
+
+			if (AttrDesc->Get(pValue, CStrID("IrradianceMap")))
+			{
+				const CString& FileName = pValue->GetValue<CString>();
+				if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
+			}
+
+			if (AttrDesc->Get(pValue, CStrID("RadianceEnvMap")))
+			{
+				const CString& FileName = pValue->GetValue<CString>();
+				if (!IsFileAdded(FileName)) FilesToPack.InsertSorted(FileName);
 			}
 		}
 	}

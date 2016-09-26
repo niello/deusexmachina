@@ -992,6 +992,9 @@
     <ClInclude Include="..\..\Src\L1\Render\ConstantBufferSet.h">
       <Filter>Render</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Frame\NodeAttrAmbientLight.h">
+      <Filter>Frame</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1647,6 +1650,9 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Render\ConstantBufferSet.cpp">
       <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Frame\NodeAttrAmbientLight.cpp">
+      <Filter>Frame</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

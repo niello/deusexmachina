@@ -72,18 +72,43 @@ public:
 	UPTR										GetDepthStencilBufferCount() const { return DSSlots.GetCount(); }
 	const CFixedArray<Render::CEffectConstant>&	GetGlobalConstants() const { return Consts; }
 	const Render::CEffectConstant*				GetGlobalConstant(CStrID Name) const;
+	const Render::CEffectResource*				GetGlobalResource(CStrID Name) const;
+	const Render::CEffectSampler*				GetGlobalSampler(CStrID Name) const;
 };
 
 typedef Ptr<CRenderPath> PRenderPath;
 
-//!!!EFFECT CONSTS DUPLICATE!
 inline const Render::CEffectConstant* CRenderPath::GetGlobalConstant(CStrID Name) const
 {
 	UPTR i = 0;
 	for (; i < Consts.GetCount(); ++i)
 	{
-		const Render::CEffectConstant& CurrConst = Consts[i];
-		if (CurrConst.ID == Name) return &CurrConst;
+		const Render::CEffectConstant& Curr = Consts[i];
+		if (Curr.ID == Name) return &Curr;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+inline const Render::CEffectResource* CRenderPath::GetGlobalResource(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Resources.GetCount(); ++i)
+	{
+		const Render::CEffectResource& Curr = Resources[i];
+		if (Curr.ID == Name) return &Curr;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+inline const Render::CEffectSampler* CRenderPath::GetGlobalSampler(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Samplers.GetCount(); ++i)
+	{
+		const Render::CEffectSampler& Curr = Samplers[i];
+		if (Curr.ID == Name) return &Curr;
 	}
 	return NULL;
 }

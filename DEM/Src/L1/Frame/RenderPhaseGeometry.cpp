@@ -4,6 +4,7 @@
 #include <Frame/RenderPath.h>
 #include <Frame/NodeAttrCamera.h>
 #include <Frame/NodeAttrRenderable.h>
+#include <Frame/NodeAttrAmbientLight.h>
 #include <Frame/NodeAttrLight.h>
 #include <Frame/NodeAttrSkin.h>
 #include <Render/Renderable.h>
@@ -159,56 +160,79 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		}
 	}
 
-	// Fill global light buffer, if present
+	// Setup global lighting params, both ambient and direct
 
-	if (EnableLighting && pConstGlobalLightBuffer)
+	if (EnableLighting)
 	{
-		//!!!for a structured buffer, max count may be not applicable! must then use the same value
-		//as was used to allocate structured buffer instance!
-		UPTR GlobalLightCount = 0;
-		const UPTR MaxLightCount = pConstGlobalLightBuffer->Const->GetElementCount();
-		n_assert_dbg(MaxLightCount > 0);
-
-		const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
-		for (CArray<Render::CLightRecord>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
+		if (pConstGlobalLightBuffer)
 		{
-			Render::CLightRecord& LightRec = (Render::CLightRecord&)(*It);
-			if (LightRec.UseCount)
+			//!!!for a structured buffer, max count may be not applicable! must then use the same value
+			//as was used to allocate structured buffer instance!
+			UPTR GlobalLightCount = 0;
+			const UPTR MaxLightCount = pConstGlobalLightBuffer->Const->GetElementCount();
+			n_assert_dbg(MaxLightCount > 0);
+
+			const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
+			for (CArray<Render::CLightRecord>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
 			{
-				const Render::CLight& Light = *LightRec.pLight;
-
-				struct
+				Render::CLightRecord& LightRec = (Render::CLightRecord&)(*It);
+				if (LightRec.UseCount)
 				{
-					vector3	Color;
-					float	_PAD1;
-					vector3	Position;
-					float	SqInvRange;		// For attenuation
-					vector4	Params;			// Spot: x - cos inner, y - cos outer
-					vector3	InvDirection;
-					U32		Type;
-				} GPULight;
+					const Render::CLight& Light = *LightRec.pLight;
 
-				GPULight.Color = Light.Color * Light.Intensity; //???pre-multiply and don't store separately at all?
-				GPULight.Position = LightRec.Transform.Translation();
-				GPULight.SqInvRange = Light.GetInvRange() * Light.GetInvRange();
-				GPULight.InvDirection = LightRec.Transform.AxisZ();
-				if (Light.Type == Render::Light_Spot)
-				{
-					GPULight.Params.x = Light.GetCosHalfTheta();
-					GPULight.Params.y = Light.GetCosHalfPhi();
+					struct
+					{
+						vector3	Color;
+						float	_PAD1;
+						vector3	Position;
+						float	SqInvRange;		// For attenuation
+						vector4	Params;			// Spot: x - cos inner, y - cos outer
+						vector3	InvDirection;
+						U32		Type;
+					} GPULight;
+
+					GPULight.Color = Light.Color * Light.Intensity; //???pre-multiply and don't store separately at all?
+					GPULight.Position = LightRec.Transform.Translation();
+					GPULight.SqInvRange = Light.GetInvRange() * Light.GetInvRange();
+					GPULight.InvDirection = LightRec.Transform.AxisZ();
+					if (Light.Type == Render::Light_Spot)
+					{
+						GPULight.Params.x = Light.GetCosHalfTheta();
+						GPULight.Params.y = Light.GetCosHalfPhi();
+					}
+					GPULight.Type = Light.Type;
+
+					Render::CConstantBuffer* pCB = View.Globals.RequestBuffer(pConstGlobalLightBuffer->Const->GetConstantBufferHandle(), pConstGlobalLightBuffer->ShaderType);
+					pConstGlobalLightBuffer->Const->SetRawValue(*pCB, &GPULight, sizeof(GPULight));
+
+					LightRec.GPULightIndex = GlobalLightCount;
+					++GlobalLightCount;
+					if (GlobalLightCount >= MaxLightCount) break;
 				}
-				GPULight.Type = Light.Type;
-
-				Render::CConstantBuffer* pCB = View.Globals.RequestBuffer(pConstGlobalLightBuffer->Const->GetConstantBufferHandle(), pConstGlobalLightBuffer->ShaderType);
-				pConstGlobalLightBuffer->Const->SetRawValue(*pCB, &GPULight, sizeof(GPULight));
-
-				LightRec.GPULightIndex = GlobalLightCount;
-				++GlobalLightCount;
-				if (GlobalLightCount >= MaxLightCount) break;
 			}
+
+			if (GlobalLightCount) View.Globals.CommitChanges();
 		}
 
-		if (GlobalLightCount) View.Globals.CommitChanges();
+		// Setup IBL (ambient cubemaps)
+		// Later we can implement local weight-blended parallax-corrected cubemaps selected by COI here
+		//https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
+
+		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
+		CArray<CNodeAttrAmbientLight*>& EnvCache = View.GetEnvironmentCache();
+		if (EnvCache.GetCount())
+		{
+			CNodeAttrAmbientLight* pGlobalAmbientLight = EnvCache[0];
+
+			if (pRsrcIrradianceMap)
+				View.GPU->BindResource(pRsrcIrradianceMap->ShaderType, pRsrcIrradianceMap->Handle, pGlobalAmbientLight->GetIrradianceMap());
+
+			if (pRsrcRadianceEnvMap)
+				View.GPU->BindResource(pRsrcRadianceEnvMap->ShaderType, pRsrcRadianceEnvMap->Handle, pGlobalAmbientLight->GetRadianceEnvMap());
+
+			if (pSampTrilinearCube)
+				View.GPU->BindSampler(pSampTrilinearCube->ShaderType, pSampTrilinearCube->Handle, View.TrilinearCubeSampler.GetUnsafe());
+		}
 	}
 
 	// Sort render queue if requested
@@ -387,6 +411,15 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 
 	CStrID GlobalLightBufferName = Desc.Get<CStrID>(CStrID("GlobalLightBufferName"), CStrID::Empty);
 	if (GlobalLightBufferName.IsValid()) pConstGlobalLightBuffer = Owner.GetGlobalConstant(GlobalLightBufferName);
+
+	CStrID IrradianceMapName = Desc.Get<CStrID>(CStrID("IrradianceMapName"), CStrID::Empty);
+	if (IrradianceMapName.IsValid()) pRsrcIrradianceMap = Owner.GetGlobalResource(IrradianceMapName);
+
+	CStrID RadianceEnvMapName = Desc.Get<CStrID>(CStrID("RadianceEnvMapName"), CStrID::Empty);
+	if (RadianceEnvMapName.IsValid()) pRsrcRadianceEnvMap = Owner.GetGlobalResource(RadianceEnvMapName);
+
+	CStrID TrilinearCubeSamplerName = Desc.Get<CStrID>(CStrID("TrilinearCubeSamplerName"), CStrID::Empty);
+	if (TrilinearCubeSamplerName.IsValid()) pSampTrilinearCube = Owner.GetGlobalSampler(TrilinearCubeSamplerName);
 
 	OK;
 }

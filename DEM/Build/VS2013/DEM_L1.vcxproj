@@ -204,6 +204,7 @@
     <ClInclude Include="..\..\Src\L1\Data\Type.h" />
     <ClInclude Include="..\..\Src\L1\Data\XMLDocument.h" />
     <ClInclude Include="..\..\Src\L1\Debug\DebugDraw.h" />
+    <ClInclude Include="..\..\Src\L1\Frame\NodeAttrAmbientLight.h" />
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrCamera.h" />
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrLight.h" />
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrRenderable.h" />
@@ -482,6 +483,7 @@
     <ClCompile Include="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\StringUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\Debug\DebugDraw.cpp" />
+    <ClCompile Include="..\..\Src\L1\Frame\NodeAttrAmbientLight.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrCamera.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrLight.cpp" />
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrRenderable.cpp" />

@@ -28,17 +28,17 @@ SceneNodeAttr
 	Range			{ FourCC = "LRNG" Type = "float" }
 	ConeInner		{ FourCC = "LCIN" Type = "float" }
 	ConeOuter		{ FourCC = "LCOU" Type = "float" }
-	
+
+	// Ambient light
+	IrradianceMap	{ FourCC = "IRRM" Type = "string" }
+	RadianceEnvMap	{ FourCC = "PMRM" Type = "string" } // Prefiltered mipmapped REM
+
 	// Camera
 	
 	// Mesh and material
-	Textures		{ FourCC = "TEXS" Type = "string" WriteChildKeys = true } // Shader vars too, but applicable only to material
-	//Shader			{ FourCC = "SHDR" Type = "string" }
 	Material		{ FourCC = "MTRL" Type = "string" }
 	Mesh			{ FourCC = "MESH" Type = "string" }
 	MeshGroupIndex	{ FourCC = "MSGR" Type = "int" }
-	BatchType		{ FourCC = "BTYP" Type = "string" }
-	FeatFlags		{ FourCC = "FFLG" Type = "string" }
 	JointPalette	{ FourCC = "JPLT" Type = "int" }		// Array
 
 	// Skin
