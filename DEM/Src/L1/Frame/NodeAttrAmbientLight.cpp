@@ -99,6 +99,7 @@ void CNodeAttrAmbientLight::UpdateInSPS(Scene::CSPS& SPS)
 	else
 	{
 		NOT_IMPLEMENTED;
+		//???need per-frame? leave only add & remove? env maps are static
 		/*
 		if (pSPS != &SPS)
 		{

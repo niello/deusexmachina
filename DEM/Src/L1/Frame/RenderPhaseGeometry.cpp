@@ -219,6 +219,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		//https://seblagarde.wordpress.com/2012/09/29/image-based-lighting-approaches-and-parallax-corrected-cubemap/
 
 		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
+		//may refresh only when COI changes, because maps are considered static
 		CArray<CNodeAttrAmbientLight*>& EnvCache = View.GetEnvironmentCache();
 		if (EnvCache.GetCount())
 		{

@@ -127,7 +127,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 				{
 					//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
 					sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
-					if (!LightBounds.GetClipStatus(Context.AABB)) continue;
+					if (LightBounds.GetClipStatus(Context.AABB) == Outside) continue;
 					break;
 				}
 				case Light_Spot:
@@ -139,7 +139,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 					matrix44 GlobalFrustum;
 					LightRec.Transform.invert_simple(GlobalFrustum);
 					GlobalFrustum *= LocalFrustum;
-					if (!Context.AABB.GetClipStatus(GlobalFrustum)) continue;
+					if (Context.AABB.GetClipStatus(GlobalFrustum) == Outside) continue;
 					break;
 				}
 			}

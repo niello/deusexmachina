@@ -3,6 +3,7 @@
 #include <Render/RenderNode.h>
 #include <Render/GPUDriver.h>
 #include <Render/Terrain.h>
+#include <Render/Light.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/ShaderConstant.h>
@@ -57,6 +58,90 @@ CTerrainRenderer::~CTerrainRenderer()
 }
 //---------------------------------------------------------------------
 
+bool CTerrainRenderer::CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter)
+{
+	I16 MinY, MaxY;
+	Args.pCDLOD->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
+
+	// Node has no data, can't intersect with it
+	if (MaxY < MinY) FAIL;
+
+	U32 NodeSize = Args.pCDLOD->GetPatchSize() << LOD;
+	float ScaleX = NodeSize * Args.ScaleBaseX;
+	float ScaleZ = NodeSize * Args.ScaleBaseZ;
+	float NodeMinX = Args.AABBMinX + X * ScaleX;
+	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
+
+	CAABB NodeAABB;
+	NodeAABB.Min.x = NodeMinX;
+	NodeAABB.Min.y = MinY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Min.z = NodeMinZ;
+	NodeAABB.Max.x = NodeMinX + ScaleX;
+	NodeAABB.Max.y = MaxY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Max.z = NodeMinZ + ScaleZ;
+
+	if (Sphere.GetClipStatus(NodeAABB) == Outside) FAIL;
+
+	// Leaf node reached
+	if (LOD == 0) OK;
+
+	++AABBTestCounter;
+	if (AABBTestCounter >= LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS) OK;
+
+	const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
+
+	if (CheckNodeSphereIntersection(Args, Sphere, XNext, ZNext, NextLOD, AABBTestCounter)) OK;
+	if (Args.pCDLOD->HasNode(XNext + 1, ZNext, NextLOD) && CheckNodeSphereIntersection(Args, Sphere, XNext + 1, ZNext, NextLOD, AABBTestCounter)) OK;
+	if (Args.pCDLOD->HasNode(XNext, ZNext + 1, NextLOD) && CheckNodeSphereIntersection(Args, Sphere, XNext, ZNext + 1, NextLOD, AABBTestCounter)) OK;
+	if (Args.pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD) && CheckNodeSphereIntersection(Args, Sphere, XNext + 1, ZNext + 1, NextLOD, AABBTestCounter)) OK;
+
+	// No child node touches the volume
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, const matrix44& Frustum, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter)
+{
+	I16 MinY, MaxY;
+	Args.pCDLOD->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
+
+	// Node has no data, can't intersect with it
+	if (MaxY < MinY) FAIL;
+
+	U32 NodeSize = Args.pCDLOD->GetPatchSize() << LOD;
+	float ScaleX = NodeSize * Args.ScaleBaseX;
+	float ScaleZ = NodeSize * Args.ScaleBaseZ;
+	float NodeMinX = Args.AABBMinX + X * ScaleX;
+	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
+
+	CAABB NodeAABB;
+	NodeAABB.Min.x = NodeMinX;
+	NodeAABB.Min.y = MinY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Min.z = NodeMinZ;
+	NodeAABB.Max.x = NodeMinX + ScaleX;
+	NodeAABB.Max.y = MaxY * Args.pCDLOD->GetVerticalScale();
+	NodeAABB.Max.z = NodeMinZ + ScaleZ;
+
+	if (NodeAABB.GetClipStatus(Frustum) == Outside) FAIL;
+
+	// Leaf node reached
+	if (LOD == 0) OK;
+
+	++AABBTestCounter;
+	if (AABBTestCounter >= LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS) OK;
+
+	const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
+
+	if (CheckNodeFrustumIntersection(Args, Frustum, XNext, ZNext, NextLOD, AABBTestCounter)) OK;
+	if (Args.pCDLOD->HasNode(XNext + 1, ZNext, NextLOD) && CheckNodeFrustumIntersection(Args, Frustum, XNext + 1, ZNext, NextLOD, AABBTestCounter)) OK;
+	if (Args.pCDLOD->HasNode(XNext, ZNext + 1, NextLOD) && CheckNodeFrustumIntersection(Args, Frustum, XNext, ZNext + 1, NextLOD, AABBTestCounter)) OK;
+	if (Args.pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD) && CheckNodeFrustumIntersection(Args, Frustum, XNext + 1, ZNext + 1, NextLOD, AABBTestCounter)) OK;
+
+	// No child node touches the volume
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
 {
 	CTerrain* pTerrain = Node.pRenderable->As<CTerrain>();
@@ -85,6 +170,113 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	Node.pMesh = pTerrain->GetPatchMesh();
 	Node.pGroup = pTerrain->GetPatchMesh()->GetGroup(0, 0); // For sorting, different terrain objects with the same mesh will be rendered sequentially
 
+	U8 LightCount = 0;
+
+	// Collect all lights that potentially touch the terrain, no limit here, limit is
+	// applied to the light count of a terrain patch instance.
+	if (Context.pLights)
+	{
+		n_assert_dbg(Context.pLightIndices);
+
+		const CCDLODData& CDLOD = *pTerrain->GetCDLODData();
+		const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
+		const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
+		const U32 TopLOD = CDLOD.GetLODCount() - 1;
+
+		float AABBMinX = Context.AABB.Min.x;
+		float AABBMinZ = Context.AABB.Min.z;
+		float AABBSizeX = Context.AABB.Max.x - AABBMinX;
+		float AABBSizeZ = Context.AABB.Max.z - AABBMinZ;
+
+		CLightTestArgs Args;
+		Args.pCDLOD = pTerrain->GetCDLODData();
+		Args.AABBMinX = AABBMinX;
+		Args.AABBMinZ = AABBMinZ;
+		Args.ScaleBaseX = AABBSizeX / (float)(pTerrain->GetCDLODData()->GetHeightMapWidth() - 1);
+		Args.ScaleBaseZ = AABBSizeZ / (float)(pTerrain->GetCDLODData()->GetHeightMapHeight() - 1);
+
+		CArray<U16>& LightIndices = *Context.pLightIndices;
+		Node.LightIndexBase = LightIndices.GetCount();
+
+		const CArray<CLightRecord>& Lights = *Context.pLights;
+		for (UPTR i = 0; i < Lights.GetCount(); ++i)
+		{
+			CLightRecord& LightRec = Lights[i];
+			const CLight* pLight = LightRec.pLight;
+
+			switch (pLight->Type)
+			{
+				case Light_Point:
+				{
+					//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
+					sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
+					if (LightBounds.GetClipStatus(Context.AABB) == Outside) continue;
+
+					// Perform coarse test on quadtree
+					if (LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS > 1)
+					{
+						bool Intersects = false;
+						UPTR AABBTestCounter = 1;
+						for (U32 Z = 0; Z < TopPatchesH; ++Z)
+						{
+							for (U32 X = 0; X < TopPatchesW; ++X)
+								if (CheckNodeSphereIntersection(Args, LightBounds, X, Z, TopLOD, AABBTestCounter))
+								{
+									Intersects = true;
+									break;
+								}
+
+							if (Intersects) break;
+						}
+
+						if (!Intersects) continue;
+					}
+
+					break;
+				}
+				case Light_Spot:
+				{
+					//!!!???PERF: test against sphere before?!
+					//???cache GlobalFrustum in a light record?
+					matrix44 LocalFrustum;
+					pLight->CalcLocalFrustum(LocalFrustum);
+					matrix44 GlobalFrustum;
+					LightRec.Transform.invert_simple(GlobalFrustum);
+					GlobalFrustum *= LocalFrustum;
+					if (Context.AABB.GetClipStatus(GlobalFrustum) == Outside) continue;
+
+					// Perform coarse test on quadtree
+					if (LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS > 1)
+					{
+						bool Intersects = false;
+						UPTR AABBTestCounter = 1;
+						for (U32 Z = 0; Z < TopPatchesH; ++Z)
+						{
+							for (U32 X = 0; X < TopPatchesW; ++X)
+								if (CheckNodeFrustumIntersection(Args, GlobalFrustum, X, Z, TopLOD, AABBTestCounter))
+								{
+									Intersects = true;
+									break;
+								}
+
+							if (Intersects) break;
+						}
+
+						if (!Intersects) continue;
+					}
+
+					break;
+				}
+			}
+
+			LightIndices.Add(i);
+			++LightCount;
+			++LightRec.UseCount;
+		}
+	}
+
+	Node.LightCount = LightCount;
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -94,7 +286,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 																   U32 X, U32 Z, U32 LOD, float LODRange,
 																   U32& PatchCount, U32& QPatchCount, EClipStatus Clip)
 {
-	const CCDLODData* pCDLOD = Args.pTerrain->GetCDLODData();
+	const CCDLODData* pCDLOD = Args.pCDLOD;
 
 	I16 MinY, MaxY;
 	pCDLOD->GetMinMaxHeight(X, Z, LOD, MinY, MaxY);
@@ -379,7 +571,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		float AABBSizeZ = AABB.Max.z - AABBMinZ;
 
 		CProcessTerrainNodeArgs Args;
-		Args.pTerrain = pTerrain;
+		Args.pCDLOD = pTerrain->GetCDLODData();
 		Args.pInstances = pInstances;
 		Args.pMorphConsts = pMorphConsts;
 		Args.pViewProj = &Context.ViewProjection;
