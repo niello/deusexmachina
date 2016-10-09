@@ -311,7 +311,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 }
 //---------------------------------------------------------------------
 
-void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB)
+void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB, U8& MaxLightCount)
 {
 	n_assert_dbg(Args.pRenderContext->pLightIndices);
 
@@ -356,13 +356,17 @@ void CTerrainRenderer::FillNodeLightIndices(const CProcessTerrainNodeArgs& Args,
 
 	if (LightCount < INSTANCE_MAX_LIGHT_COUNT)
 		Patch.LightIndex[LightCount] = -1;
+
+	if (MaxLightCount < LightCount)
+		MaxLightCount = LightCount;
 }
 //---------------------------------------------------------------------
 
 //!!!recalculation required only on viewer's position / look vector change!
 CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProcessTerrainNodeArgs& Args,
 																   U32 X, U32 Z, U32 LOD, float LODRange,
-																   U32& PatchCount, U32& QPatchCount, EClipStatus Clip)
+																   U32& PatchCount, U32& QPatchCount,
+																   U8& MaxLightCount, EClipStatus Clip)
 {
 	const CCDLODData* pCDLOD = Args.pCDLOD;
 
@@ -428,7 +432,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		{
 			const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
 
-			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
+			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
 			if (Status != Node_Invisible)
 			{
 				IsVisible = true;
@@ -437,7 +441,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 			if (pCDLOD->HasNode(XNext + 1, ZNext, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
+				Status = ProcessTerrainNode(Args, XNext + 1, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -447,7 +451,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 			if (pCDLOD->HasNode(XNext, ZNext + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
+				Status = ProcessTerrainNode(Args, XNext, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -457,7 +461,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 
 			if (pCDLOD->HasNode(XNext + 1, ZNext + 1, NextLOD))
 			{
-				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, Clip);
+				Status = ProcessTerrainNode(Args, XNext + 1, ZNext + 1, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
 				if (Status != Node_Invisible)
 				{
 					IsVisible = true;
@@ -491,7 +495,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		Patch.MorphConsts[1] = pLODMorphConsts[1];
 
 		if (LightingEnabled && INSTANCE_MAX_LIGHT_COUNT)
-			FillNodeLightIndices(Args, Patch, NodeAABB);
+			FillNodeLightIndices(Args, Patch, NodeAABB, MaxLightCount);
 
 		++PatchCount;
 	}
@@ -528,7 +532,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 				QuarterNodeAABB.Min.z = NodeMinZ;
 				QuarterNodeAABB.Max.x = NodeMinX + HalfScaleX;
 				QuarterNodeAABB.Max.z = NodeMinZ + HalfScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB);
+				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
 			}
 
 			++QPatchCount;
@@ -551,7 +555,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 				QuarterNodeAABB.Min.z = NodeMinZ;
 				QuarterNodeAABB.Max.x = NodeMinX + ScaleX;
 				QuarterNodeAABB.Max.z = NodeMinZ + HalfScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB);
+				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
 			}
 
 			++QPatchCount;
@@ -574,7 +578,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 				QuarterNodeAABB.Min.z = NodeMinZ + HalfScaleZ;
 				QuarterNodeAABB.Max.x = NodeMinX + HalfScaleX;
 				QuarterNodeAABB.Max.z = NodeMinZ + ScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB);
+				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
 			}
 
 			++QPatchCount;
@@ -597,7 +601,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 				QuarterNodeAABB.Min.z = NodeMinZ + HalfScaleZ;
 				QuarterNodeAABB.Max.x = NodeMinX + ScaleX;
 				QuarterNodeAABB.Max.z = NodeMinZ + ScaleZ;
-				FillNodeLightIndices(Args, Patch, QuarterNodeAABB);
+				FillNodeLightIndices(Args, Patch, QuarterNodeAABB, MaxLightCount);
 			}
 
 			++QPatchCount;
@@ -645,7 +649,8 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 	const CEffectConstant* pConstVSCDLODParams = NULL;
 	const CEffectConstant* pConstPSCDLODParams = NULL;
 	const CEffectConstant* pConstGridConsts = NULL;
-	const CEffectConstant* pConstInstanceData = NULL;
+	const CEffectConstant* pConstInstanceDataVS = NULL;
+	const CEffectConstant* pConstInstanceDataPS = NULL;
 	const CEffectResource* pResourceHeightMap = NULL;
 
 	const bool LightingEnabled = (Context.pLights != NULL);
@@ -716,12 +721,20 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		Args.LightIndexBase = pRenderNode->LightIndexBase;
 		Args.LightCount = pRenderNode->LightCount;
 
+		U8 MaxLightCount = 0;
 		const U32 TopPatchesW = pCDLOD->GetTopPatchCountW();
 		const U32 TopPatchesH = pCDLOD->GetTopPatchCountH();
 		const U32 TopLOD = LODCount - 1;
 		for (U32 Z = 0; Z < TopPatchesH; ++Z)
 			for (U32 X = 0; X < TopPatchesW; ++X)
-				ProcessTerrainNode(Args, X, Z, TopLOD, VisibilityRange, PatchCount, QuarterPatchCount);
+				ProcessTerrainNode(Args, X, Z, TopLOD, VisibilityRange, PatchCount, QuarterPatchCount, MaxLightCount);
+
+		// Since we allocate instance stream based on maximum light count, we never reallocate it when frame max light count
+		// drops compared to the previous frame, to avoid per-frame VB recreation. Instead we remember the biggest light
+		// count ever requested, allocate VB for it, and live without VB reallocations until more lights are required.
+		// The first unused light index is always equal -1 so no matter how much lights are, all unused ones are ignored.
+		// For constant instancing this value never gets used, tech with LightCount = 0 is always selected.
+		if (CurrMaxLightCount > MaxLightCount) MaxLightCount = CurrMaxLightCount;
 
 		_freea(pMorphConsts);
 
@@ -748,17 +761,9 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		if (QuarterPatchCount)
 			std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, CPatchInstanceCmp());
 
-		// Setup lights
+		// Select tech for the maximal light count used per-patch
 
-		UPTR LightCount = 0;
-		//...
-		//Calculate max light count
-
-		//!!!If no global light buffer, set max count of the most used lights here as tech params
-		//pass them before processing patches to have GPULightIndex filled?!
-
-		// Apply material, if changed
-
+		UPTR LightCount = MaxLightCount;
 		const CTechnique* pTech = pRenderNode->pTech;
 		const CPassList* pPasses = pTech->GetPasses(LightCount);
 		n_assert_dbg(pPasses); // To test if it could happen at all
@@ -767,6 +772,10 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			++ItCurr;
 			continue;
 		}
+
+		if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
+
+		// Apply material, if changed
 
 		const CMaterial* pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
@@ -785,7 +794,8 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			pConstVSCDLODParams = pTech->GetConstant(CStrID("VSCDLODParams"));
 			pConstPSCDLODParams = pTech->GetConstant(CStrID("PSCDLODParams"));
 			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
-			pConstInstanceData = pTech->GetConstant(CStrID("InstanceDataArray"));
+			pConstInstanceDataVS = pTech->GetConstant(CStrID("InstanceDataVS"));
+			pConstInstanceDataPS = pTech->GetConstant(CStrID("InstanceDataPS"));
 			pResourceHeightMap = pTech->GetResource(CStrID("HeightMapVS"));
 
 			const CEffectSampler* pVSHeightSampler = pTech->GetSampler(CStrID("VSHeightSampler"));
@@ -834,29 +844,76 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		}
 
 		//!!!implement looping if instance buffer is too small!
-		if (pConstInstanceData)
+		if (pConstInstanceDataVS)
 		{
 			// For D3D11 constant instancing
 			NOT_IMPLEMENTED;
 		}
 		else
 		{
-			if (InstanceVB.IsNullPtr())
+			// Calculate int4 light index vector count supported by both tech and vertex declaration.
+			// Vertex declaration size will be 2 elements for VS data + one element per vector.
+			const UPTR LightVectorCount = (LightCount + 3) / 4;
+			const UPTR DeclSize = 2 + LightVectorCount;
+			n_assert_dbg(DeclSize <= InstanceDataDecl.GetCount());
+
+			// If current buffer doesn't suit the tech, recreate it. Since we only grow tech LightCount and never
+			// shrink it, buffer reallocation will be requested only if can't handle desired light count.
+			if (InstanceVB.IsNullPtr() || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
 			{
-				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(&InstanceDataDecl[0], InstanceDataDecl.GetCount());
+				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), DeclSize);
+				InstanceVB = NULL; // Drop before allocating new buffer
 				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
+
+				//!!!DBG TMP!
+				Sys::DbgOut("New terrain instance buffer allocated, %d vertex decl elements\n", DeclSize);
 			}
+
+			// Upload instance data to IA stream
+
+			//???what about D3D11_APPEND_ALIGNED_ELEMENT in D3D11 and float2?
+			const UPTR InstanceElementSize = InstanceVB->GetVertexLayout()->GetVertexSizeInBytes();
 
 			void* pInstData;
 			n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard));
+			
 			if (PatchCount)
 			{
-				UPTR InstDataSize = sizeof(CPatchInstance) * PatchCount;
-				memcpy(pInstData, pInstances, InstDataSize);
+				UPTR InstDataSize = InstanceElementSize * PatchCount;
+				if (sizeof(CPatchInstance) == InstanceElementSize)
+				{
+					memcpy(pInstData, pInstances, InstDataSize);
+				}
+				else
+				{
+					char* pCurrInstData = (char*)pInstData;
+					for (UPTR PatchIdx = 0; PatchIdx < PatchCount; ++PatchIdx)
+					{
+						memcpy(pCurrInstData, pInstances + PatchIdx, InstanceElementSize);
+						pCurrInstData += InstanceElementSize;
+					}
+				}
 				pInstData = (char*)pInstData + InstDataSize;
 			}
+			
 			if (QuarterPatchCount)
-				memcpy(pInstData, pInstances + MaxInstanceCount - QuarterPatchCount, sizeof(CPatchInstance) * QuarterPatchCount);
+			{
+				const CPatchInstance* pQInstances = pInstances + MaxInstanceCount - QuarterPatchCount;
+				if (sizeof(CPatchInstance) == InstanceElementSize)
+				{
+					memcpy(pInstData, pQInstances, InstanceElementSize * QuarterPatchCount);
+				}
+				else
+				{
+					char* pCurrInstData = (char*)pInstData;
+					for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx)
+					{
+						memcpy(pCurrInstData, pQInstances + PatchIdx, InstanceElementSize);
+						pCurrInstData += InstanceElementSize;
+					}
+				}
+			}
+
 			GPU.UnmapResource(*InstanceVB);
 		}
 
@@ -872,7 +929,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		CVertexLayout* pVL = pVB->GetVertexLayout();
 
 		//!!!implement looping if instance buffer is too small!
-		if (pConstInstanceData) GPU.SetVertexLayout(pVL);
+		if (pConstInstanceDataVS) GPU.SetVertexLayout(pVL);
 		else
 		{
 			IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
@@ -914,7 +971,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
 
-			if (!pConstInstanceData)
+			if (!pConstInstanceDataVS)
 				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), 0);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
@@ -946,7 +1003,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
 
-			if (!pConstInstanceData)
+			if (!pConstInstanceDataVS)
 				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), PatchCount);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);

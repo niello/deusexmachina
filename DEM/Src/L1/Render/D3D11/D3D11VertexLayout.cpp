@@ -21,6 +21,7 @@ bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, UPTR Count,
 	UPTR SemanticNamesLen = Count; // Reserve bytes for terminating NULL-characters
 	for (UPTR i = 0; i < Count; ++i)
 	{
+		//???what about D3D11_APPEND_ALIGNED_ELEMENT?
 		VSize += Components[i].GetSize();
 		SemanticNamesLen += strlen(pD3DElementDesc[i].SemanticName);
 	}

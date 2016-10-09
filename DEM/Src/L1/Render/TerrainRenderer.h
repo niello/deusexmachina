@@ -82,20 +82,21 @@ protected:
 	CSamplerDesc							HMSamplerDesc;
 	PSampler								HMSampler;			//!!!binds an RP to a specific GPU!
 
+	UPTR									CurrMaxLightCount;
 	CFixedArray<CVertexComponent>			InstanceDataDecl;
 	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
 	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
 	CPatchInstance*							pInstances;
 	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
-	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, EClipStatus Clip = Clipped);
+	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, U8& MaxLightCount, EClipStatus Clip = Clipped);
 	static bool			CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
 	static bool			CheckNodeFrustumIntersection(const CLightTestArgs& Args, const matrix44& Frustum, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
-	static void			FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB);
+	static void			FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB, U8& MaxLightCount);
 
 public:
 
-	CTerrainRenderer(): pInstances(NULL) {}
+	CTerrainRenderer(): pInstances(NULL), CurrMaxLightCount(0) {}
 	~CTerrainRenderer();
 
 	virtual bool							Init(bool LightingEnabled);
