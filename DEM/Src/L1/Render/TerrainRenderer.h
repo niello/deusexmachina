@@ -24,6 +24,17 @@ class CTerrainRenderer: public IRenderer
 
 protected:
 
+	static const U32	INSTANCE_BUFFER_STREAM_INDEX = 1;
+	static const U32	INSTANCE_MAX_LIGHT_COUNT = 7;
+	//static const U32	INSTANCE_PADDING_SIZE = (7 - INSTANCE_MAX_LIGHT_COUNT % 8); // To preserve align-16 compatible structure size
+
+	// Controls how much AABB tests per light are allowed at the coarse lighting test.
+	// Light intersection recurse through CDLOD quadtree until the light is thrown out,
+	// all quadtree nodes are tested or this value is reached. When it is reached, all
+	// other possibly touching lights are added to be processed in the narrow phase.
+	// Actual test count may slightly exceed from this value.
+	static const UPTR	LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS = 64;
+
 	enum ENodeStatus
 	{
 		Node_Invisible,
@@ -33,8 +44,13 @@ protected:
 
 	struct CPatchInstance
 	{
-		float ScaleOffset[4];
-		float MorphConsts[2];
+		// Vertex shader instance data
+		float	ScaleOffset[4];
+		float	MorphConsts[2];
+		//float	_PAD1[2];								// To preserve align-16 of PS data
+
+		// Pixel shader instance data
+		I16		LightIndex[INSTANCE_MAX_LIGHT_COUNT]; // + INSTANCE_PADDING_SIZE];
 	};
 
 	struct CLightTestArgs
@@ -48,26 +64,18 @@ protected:
 
 	struct CProcessTerrainNodeArgs
 	{
-		const CCDLODData*	pCDLOD;
-		CPatchInstance*		pInstances;
-		float*				pMorphConsts;
-		const matrix44*		pViewProj;
-		const vector3*		pCameraPos;
-		UPTR				MaxInstanceCount;
-		float				AABBMinX;
-		float				AABBMinZ;
-		float				ScaleBaseX;
-		float				ScaleBaseZ;
+		const CCDLODData*		pCDLOD;
+		const CRenderContext*	pRenderContext;
+		CPatchInstance*			pInstances;
+		float*					pMorphConsts;
+		UPTR					MaxInstanceCount;
+		float					AABBMinX;
+		float					AABBMinZ;
+		float					ScaleBaseX;
+		float					ScaleBaseZ;
+		U16						LightIndexBase;
+		U8						LightCount;
 	};
-
-	static const U32						INSTANCE_BUFFER_STREAM_INDEX = 1;
-
-	// Controls how much AABB tests per light are allowed at the coarse lighting test.
-	// Light intersection recurse through CDLOD quadtree until the light is thrown out,
-	// all quadtree nodes are tested or this value is reached. When it is reached, all
-	// other possibly touching lights are added to be processed in the narrow phase.
-	// Actual test count may slightly exceed from this value.
-	static const UPTR						LIGHT_INTERSECTION_COARSE_TEST_MAX_AABBS = 64;
 
 	UPTR									InputSet_CDLOD;
 
@@ -77,18 +85,20 @@ protected:
 	CFixedArray<CVertexComponent>			InstanceDataDecl;
 	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
 	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
-	CPatchInstance*							pInstances;			// CPU mirror of GPU buffer, used to prepare data and pass into GPU in one shot
+	CPatchInstance*							pInstances;
 	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, EClipStatus Clip = Clipped);
 	static bool			CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
 	static bool			CheckNodeFrustumIntersection(const CLightTestArgs& Args, const matrix44& Frustum, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
+	static void			FillNodeLightIndices(const CProcessTerrainNodeArgs& Args, CPatchInstance& Patch, const CAABB& NodeAABB);
 
 public:
 
-	CTerrainRenderer();
+	CTerrainRenderer(): pInstances(NULL) {}
 	~CTerrainRenderer();
 
+	virtual bool							Init(bool LightingEnabled);
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
 	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr);
 };

@@ -58,6 +58,7 @@ public:
 	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 
 	void			CalcLocalFrustum(matrix44& OutFrustum) const; // Spot only
+	float			CalcLightPriority(const vector3& ObjectPos, const vector3& LightPos, const vector3& LightInvDir) const;
 
 	void			SetRange(float NewRange);
 	void			SetSpotInnerAngle(float NewAngle);

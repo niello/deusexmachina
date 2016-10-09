@@ -360,7 +360,11 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 				pRenderer = Renderers.ValueAt(j);
 				break;
 			}
-		if (!pRenderer) pRenderer = (Render::IRenderer*)pRendererType->CreateClassInstance();
+		if (!pRenderer)
+		{
+			pRenderer = (Render::IRenderer*)pRendererType->CreateClassInstance();
+			if (!pRenderer->Init(EnableLighting)) FAIL;
+		}
 		if (pObjType && pRenderer) Renderers.Add(pObjType, pRenderer);
 	}
 

@@ -35,8 +35,7 @@ protected:
 
 public:
 
-	CModelRenderer();
-
+	virtual bool							Init(bool LightingEnabled);
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
 	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr);
 };
