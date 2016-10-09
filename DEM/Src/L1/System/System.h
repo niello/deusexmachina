@@ -32,6 +32,7 @@ namespace Sys
 	typedef void (*FLogHandler)(EMsgType Type, const char* pMessage);
 
 	// Assertions and program termination
+	void			DebugBreak();
 	void			Crash(const char* pFile, int Line, const char* pMessage);
 	bool			TraceStack(char* pTrace, unsigned int MaxLength);
 	bool			ReportAssertionFailure(const char* pExpression, const char* pMessage, const char* pFile, int Line, const char* pFunc = NULL);

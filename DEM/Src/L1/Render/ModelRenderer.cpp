@@ -540,10 +540,14 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				if (pConstInstanceDataVS)
 				{
 					CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(pConstInstanceDataVS->Const->GetConstantBufferHandle(), pConstInstanceDataVS->ShaderType);
-					CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : NULL;
-
+					
 					if (ConstWorldMatrix.IsValidPtr())
 						ConstWorldMatrix->SetMatrix(*pVSCB, &pRenderNode->Transform);
+				}
+
+				if (pConstInstanceDataPS)
+				{
+					CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : NULL;
 
 					if (LightingEnabled && pConstInstanceDataPS)
 					{

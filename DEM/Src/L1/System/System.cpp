@@ -9,6 +9,12 @@ static FLogHandler pLogHandler = NULL;
 
 extern void DefaultLogHandler(EMsgType Type, const char* pMessage);
 
+void DebugBreak()
+{
+	__debugbreak();
+}
+//---------------------------------------------------------------------
+
 void Crash(const char* pFile, int Line, const char* pMessage)
 {
 #ifdef _DEBUG

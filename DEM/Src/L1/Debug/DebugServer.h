@@ -30,8 +30,6 @@ private:
 	bool					UIAllowed;
 	CDict<CStrID, CPlugin>	Plugins;
 
-	DECLARE_EVENT_HANDLER(DebugBreak, OnDebugBreak);
-
 public:
 
 	CDebugServer();

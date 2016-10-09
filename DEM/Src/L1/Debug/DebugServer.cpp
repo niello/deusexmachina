@@ -27,13 +27,11 @@ __ImplementSingleton(Debug::CDebugServer);
 CDebugServer::CDebugServer(): UIAllowed(false)
 {
 	__ConstructSingleton;
-	SUBSCRIBE_PEVENT(DebugBreak, CDebugServer, OnDebugBreak);
 }
 //---------------------------------------------------------------------
 
 CDebugServer::~CDebugServer()
 {
-	UNSUBSCRIBE_EVENT(DebugBreak);
 	__DestructSingleton;
 }
 //---------------------------------------------------------------------
@@ -70,15 +68,6 @@ void CDebugServer::AllowUI(bool Allow)
 			if (Plugins.ValueAt(i).UIResource.IsValid())
 				Plugins.ValueAt(i).Window->Term();
 	}
-}
-//---------------------------------------------------------------------
-
-bool CDebugServer::OnDebugBreak(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-#ifdef _DEBUG
-	__debugbreak();
-#endif
-	OK;
 }
 //---------------------------------------------------------------------
 

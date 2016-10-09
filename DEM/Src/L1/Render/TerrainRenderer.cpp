@@ -773,7 +773,15 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			continue;
 		}
 
-		if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
+		if (LightingEnabled)
+		{
+			if (CurrMaxLightCount < LightCount) CurrMaxLightCount = LightCount;
+
+			if (!Context.UsesGlobalLightBuffer)
+			{
+				NOT_IMPLEMENTED;
+			}
+		}
 
 		// Apply material, if changed
 
@@ -936,10 +944,11 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			if (VLIdx == INVALID_INDEX)
 			{
 				UPTR BaseComponentCount = pVL->GetComponentCount();
-				UPTR DescComponentCount = BaseComponentCount + InstanceDataDecl.GetCount();
+				UPTR InstComponentCount = InstanceVB->GetVertexLayout()->GetComponentCount();
+				UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
 				CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
 				memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-				memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount() * sizeof(CVertexComponent));
+				memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstComponentCount * sizeof(CVertexComponent));
 
 				PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
 
