@@ -28,6 +28,8 @@ enum EShaderParamClass
 	ShaderParam_Resource	= 1,
 	ShaderParam_Sampler		= 2,
 
+	ShaderParam_COUNT,
+
 	ShaderParam_None	// Buffers, structures and other non-param metadata objects
 };
 
@@ -64,11 +66,14 @@ class CShaderMetadata//: public Data::CRefCounted //!!!check internal/external m
 {
 public:
 
-	virtual bool			Load(IO::CBinaryReader& R) = 0;
-	virtual bool			Save(IO::CBinaryWriter& W) const = 0;
-	virtual EShaderModel	GetShaderModel() const = 0;
-	virtual U32				GetMinFeatureLevel() const = 0;
-	virtual U64				GetRequiresFlags() const = 0;
+	virtual bool				Load(IO::CBinaryReader& R) = 0;
+	virtual bool				Save(IO::CBinaryWriter& W) const = 0;
+	virtual EShaderModel		GetShaderModel() const = 0;
+	virtual U32					GetMinFeatureLevel() const = 0;
+	virtual U64					GetRequiresFlags() const = 0;
+	virtual UPTR				GetParamCount(EShaderParamClass Class) const = 0;
+	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, UPTR Index) = 0;
+	virtual CMetadataObject*	GetContainingConstantBuffer(CMetadataObject* pMetaObject) = 0;
 };
 
 #endif

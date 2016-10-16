@@ -156,12 +156,15 @@ public:
 	CArray<CUSMRsrcMeta>		Resources;
 	CArray<CUSMSamplerMeta>		Samplers;
 
-	bool					CollectFromBinary(const void* pData, UPTR Size);
-	virtual bool			Load(IO::CBinaryReader& R);
-	virtual bool			Save(IO::CBinaryWriter& W) const;
-	virtual EShaderModel	GetShaderModel() const { return ShaderModel_USM; }
-	virtual U32				GetMinFeatureLevel() const { return MinFeatureLevel; }
-	virtual U64				GetRequiresFlags() const { return RequiresFlags; }
+	bool						CollectFromBinary(const void* pData, UPTR Size);
+	virtual bool				Load(IO::CBinaryReader& R);
+	virtual bool				Save(IO::CBinaryWriter& W) const;
+	virtual EShaderModel		GetShaderModel() const { return ShaderModel_USM; }
+	virtual U32					GetMinFeatureLevel() const { return MinFeatureLevel; }
+	virtual U64					GetRequiresFlags() const { return RequiresFlags; }
+	virtual UPTR				GetParamCount(EShaderParamClass Class) const;
+	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, UPTR Index);
+	virtual CMetadataObject*	GetContainingConstantBuffer(CMetadataObject* pMetaObject);
 };
 
 #endif

@@ -135,12 +135,15 @@ public:
 	CArray<CSM30RsrcMeta>		Resources;
 	CArray<CSM30SamplerMeta>	Samplers;
 
-	bool					CollectFromBinaryAndSource(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler);
-	virtual bool			Load(IO::CBinaryReader& R);
-	virtual bool			Save(IO::CBinaryWriter& W) const;
-	virtual EShaderModel	GetShaderModel() const { return ShaderModel_30; }
-	virtual U32				GetMinFeatureLevel() const;
-	virtual U64				GetRequiresFlags() const { return 0; }
+	bool						CollectFromBinaryAndSource(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler);
+	virtual bool				Load(IO::CBinaryReader& R);
+	virtual bool				Save(IO::CBinaryWriter& W) const;
+	virtual EShaderModel		GetShaderModel() const { return ShaderModel_30; }
+	virtual U32					GetMinFeatureLevel() const;
+	virtual U64					GetRequiresFlags() const { return 0; }
+	virtual UPTR				GetParamCount(EShaderParamClass Class) const;
+	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, UPTR Index);
+	virtual CMetadataObject*	GetContainingConstantBuffer(CMetadataObject* pMetaObject);
 };
 
 #endif

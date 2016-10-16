@@ -510,3 +510,34 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 	OK;
 }
 //---------------------------------------------------------------------
+
+UPTR CUSMShaderMeta::GetParamCount(EShaderParamClass Class) const
+{
+	switch (Class)
+	{
+		case ShaderParam_Const:		return Consts.GetCount();
+		case ShaderParam_Resource:	return Resources.GetCount();
+		case ShaderParam_Sampler:	return Samplers.GetCount();
+		default:					return 0;
+	}
+}
+//---------------------------------------------------------------------
+
+CMetadataObject* CUSMShaderMeta::GetParamObject(EShaderParamClass Class, UPTR Index)
+{
+	switch (Class)
+	{
+		case ShaderParam_Const:		return &Consts[Index];
+		case ShaderParam_Resource:	return &Resources[Index];
+		case ShaderParam_Sampler:	return &Samplers[Index];
+		default:					return NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+CMetadataObject* CUSMShaderMeta::GetContainingConstantBuffer(CMetadataObject* pMetaObject)
+{
+	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;
+	return &Buffers[((CUSMConstMeta*)pMetaObject)->BufferIndex];
+}
+//---------------------------------------------------------------------

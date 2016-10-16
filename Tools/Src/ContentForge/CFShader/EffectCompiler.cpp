@@ -40,8 +40,8 @@ struct CEffectParam
 	CStrID				ID;
 	Render::EShaderType	ShaderType;
 	U32					SourceShaderID;
-	//!!!get from metadata object! EShaderConstType	ConstType;		// For consts, use USM for now because it covers all needs of each supported API
-	U32					SizeInBytes;	// Cached, for consts
+	//EShaderConstType	ConstType;		// For consts, use USM for now because it covers all needs of each supported API
+	//U32					SizeInBytes;	// Cached, for consts
 	CMetadataObject*	pMetaObject;
 	CMetadataObject*	pMetaBuffer;	// Constant must be in identical buffer in all shaders, so store for comparison
 	//???get buffer and const type from const metadata object?! use persistent handlers! use handle mgr?
@@ -121,36 +121,34 @@ struct CSortParamsByID
 	}
 };
 
-bool LoadShaderMetadataByObjID(U32 ID,
-							   CDict<U32, CSM30ShaderMeta>& D3D9MetaCache, CDict<U32, CUSMShaderMeta>& USMMetaCache,
-							   CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta)
+//!!!REFACTORING: free metadata cache through the DLL! keep DLL loaded! or clonemetadata to cache!
+bool LoadShaderMetadataByObjID(U32 ID, CDict<U32, CShaderMetadata*>& MetaCache, CShaderMetadata*& pOutMeta)
 {
-	pOutD3D9Meta = NULL;
-	pOutUSMMeta = NULL;
+	pOutMeta = NULL;
 
-	IPTR Idx = D3D9MetaCache.FindIndex(ID);
+	IPTR Idx = MetaCache.FindIndex(ID);
 	if (Idx != INVALID_INDEX)
 	{
-		pOutD3D9Meta = &D3D9MetaCache.ValueAt(Idx);
-		OK;
-	}
-
-	Idx = USMMetaCache.FindIndex(ID);
-	if (Idx != INVALID_INDEX)
-	{
-		pOutUSMMeta = &USMMetaCache.ValueAt(Idx);
+		pOutMeta = MetaCache.ValueAt(Idx);
 		OK;
 	}
 
 	U32 Target;
-	CSM30ShaderMeta* pSM30Meta;
-	CUSMShaderMeta* pUSMMeta;
-	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pSM30Meta, pUSMMeta)) FAIL;
+	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pOutMeta)) FAIL;
 
-	if (Target >= 0x0400) pOutUSMMeta = &USMMetaCache.Add(ID, *pUSMMeta);
-	else pOutD3D9Meta = &D3D9MetaCache.Add(ID, *pSM30Meta);
+	MetaCache.Add(ID, pOutMeta);
+	OK;
 
-	DLLFreeShaderMetadata(pSM30Meta, pUSMMeta);
+	/*
+	U32 Target;
+	CShaderMetadata* pMeta;
+	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pMeta)) FAIL;
+
+	//!!!deep copy instead!
+	//pOutMeta = MetaCache.Add(ID, pMeta);
+
+	DLLFreeShaderMetadata(pMeta);
+	*/
 
 	OK;
 }
@@ -1007,8 +1005,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 	// Compile and validate used render states, unwinding their hierarchy
 
-	CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
-	CDict<U32, CUSMShaderMeta> USMMetaCache;
+	// Metadata objects are allocated in DLL and must be freed through DLL before it is closed
+	CDict<U32, CShaderMetadata*> MetaCache;
 
 	for (UPTR i = 0; i < UsedRenderStates.GetCount(); )
 	{
@@ -1077,26 +1075,20 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 				for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
 				{
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
-					if (ShaderID != 0)
+					if (ShaderID == 0) continue;
+
+					CShaderMetadata* pMeta = NULL;
+					if (!LoadShaderMetadataByObjID(ShaderID, MetaCache, pMeta) || !pMeta)
 					{
-						// Valid shader found, get its requirements and apply to render state requirements
-						AllInvalid = false;
-
-						CSM30ShaderMeta* pSM30Meta = NULL;
-						CUSMShaderMeta* pUSMMeta = NULL;
-						LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pSM30Meta, pUSMMeta);
-
-						if (pSM30Meta)
-						{
-							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, Render::GPU_Level_D3D9_3);
-						}
-						else if (pUSMMeta)
-						{
-							RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, pUSMMeta->MinFeatureLevel);
-							RSRef.RequiresFlags |= pUSMMeta->RequiresFlags;
-						}
-						else Sys::Error("FIXME: Can't read shader metadata!");
+						n_msg(VL_ERROR, "Failed to load shader metadata for ID %d, binary may be missing or corrupted\n", ShaderID);
+						continue;
 					}
+
+					// Valid shader found, get its requirements and apply to render state requirements
+					AllInvalid = false;
+
+					RSRef.MinFeatureLevel = n_max(RSRef.MinFeatureLevel, pMeta->GetMinFeatureLevel());
+					RSRef.RequiresFlags |= pMeta->GetRequiresFlags();
 				}
 
 				if (AllInvalid)
@@ -1236,273 +1228,136 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					if (!RSRef.UsesShader[ShaderType]) continue;
 
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
-					CSM30ShaderMeta* pSM30Meta = NULL;
-					CUSMShaderMeta* pUSMMeta = NULL;
-					LoadShaderMetadataByObjID(ShaderID, D3D9MetaCache, USMMetaCache, pSM30Meta, pUSMMeta);
+					CShaderMetadata* pMeta = NULL;
+					if (!LoadShaderMetadataByObjID(ShaderID, MetaCache, pMeta) || !pMeta)
+					{
+						n_msg(VL_ERROR, "Failed to load shader metadata for ID %d, binary may be missing or corrupted\n", ShaderID);
+						return ERR_INVALID_DATA;
+					}
 
 					//!!!add per-stage support, to map one param to different shader stages simultaneously!
 					// If tech param found:
 					// Warn if there are more than one stage that parameter uses (warn once, when we add second stage to a param desc)
 					// If not registered for this stage, add per-stage metadata
-					// If only the same metadata allowed to different stages, compare with any reference (processed) stage
+					// If only the identical metadata is allowed in different stages, compare with any already processed stage used as a reference
 					// In this case code remains almost unchanged, but param instead of single shader stage stores stage mask.
-					if (pSM30Meta)
-					{
-						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Consts.GetCount(); ++ParamIdx)
-						{
-							CSM30ConstMeta& MetaObj = pSM30Meta->Consts[ParamIdx];
-							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
-							
-							UPTR Idx = 0;
-							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
-								if (TechInfo.Params[Idx].ID == MetaObjID) break;
-							if (Idx == TechInfo.Params.GetCount())
-							{
-								CEffectParam& Param = *TechInfo.Params.Reserve(1);
-								Param.ID = MetaObjID;
-								Param.Class = EPC_SM30Const;
-								Param.ShaderType = (Render::EShaderType)ShaderType;
-								Param.SourceShaderID = ShaderID;
-								Param.pSM30Const = &MetaObj;
-								switch (MetaObj.RegisterSet)
-								{
-									case RS_Float4:
-									{
-										Param.ConstType = USMConst_Float;
-										Param.SizeInBytes = 4 * sizeof(float) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
-										break;
-									}
-									case RS_Int4:
-									{
-										Param.ConstType = USMConst_Int;
-										Param.SizeInBytes = /* 4 * */ sizeof(I32) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
-										break;
-									}
-									case RS_Bool:
-									{
-										Param.ConstType = USMConst_Bool;
-										Param.SizeInBytes = sizeof(bool) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
-										break;
-									}
-								}
-								CSM30BufferMeta& BufferMeta = pSM30Meta->Buffers[MetaObj.BufferIndex];
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at slot %d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), BufferMeta.Name.CStr(), BufferMeta.SlotIndex);
-							}
-							else
-							{
-								const CEffectParam& Param = TechInfo.Params[Idx];
-								if (Param.Class != EPC_SM30Const || !Param.pSM30Const)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							
-								CSM30ConstMeta& RefMetaObj = *Param.pSM30Const;
-								if (MetaObj != RefMetaObj)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							}
-						}
 
-						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Resources.GetCount(); ++ParamIdx)
-						{
-							CSM30RsrcMeta& MetaObj = pSM30Meta->Resources[ParamIdx];
-							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
-							
-							UPTR Idx = 0;
-							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
-								if (TechInfo.Params[Idx].ID == MetaObjID) break;
-							if (Idx == TechInfo.Params.GetCount())
-							{
-								CEffectParam& Param = *TechInfo.Params.Reserve(1);
-								Param.ID = MetaObjID;
-								Param.Class = EPC_SM30Resource;
-								Param.ShaderType = (Render::EShaderType)ShaderType;
-								Param.SourceShaderID = ShaderID;
-								Param.pSM30Resource = &MetaObj;
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (resource) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-							}
-							else
-							{
-								const CEffectParam& Param = TechInfo.Params[Idx];
-								if (Param.Class != EPC_SM30Resource || !Param.pSM30Resource)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							
-								CSM30RsrcMeta& RefMetaObj = *Param.pSM30Resource;
-								if (MetaObj != RefMetaObj)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							}
-						}
+					// Loop through all constants, resources and samplers in a shader
+					// If there is no effect param with the same name, add new param
+					// Else check compatibility of the effect param and fail if incompatible
 
-						for (UPTR ParamIdx = 0; ParamIdx < pSM30Meta->Samplers.GetCount(); ++ParamIdx)
-						{
-							CSM30SamplerMeta& MetaObj = pSM30Meta->Samplers[ParamIdx];
-							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
-							
-							UPTR Idx = 0;
-							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
-								if (TechInfo.Params[Idx].ID == MetaObjID) break;
-							if (Idx == TechInfo.Params.GetCount())
-							{
-								CEffectParam& Param = *TechInfo.Params.Reserve(1);
-								Param.ID = MetaObjID;
-								Param.Class = EPC_SM30Sampler;
-								Param.ShaderType = (Render::EShaderType)ShaderType;
-								Param.SourceShaderID = ShaderID;
-								Param.pSM30Sampler = &MetaObj;
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (sampler) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-							}
-							else
-							{
-								const CEffectParam& Param = TechInfo.Params[Idx];
-								if (Param.Class != EPC_SM30Sampler || !Param.pSM30Sampler)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							
-								CSM30SamplerMeta& RefMetaObj = *Param.pSM30Sampler;
-								if (MetaObj != RefMetaObj)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							}
-						}
-					}
-					else if (pUSMMeta)
+					for (UPTR ShaderParamClassIdx = ShaderParam_Const; ShaderParamClassIdx < ShaderParam_COUNT; ++ShaderParamClassIdx)
 					{
-						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Consts.GetCount(); ++ParamIdx)
+						EShaderParamClass ShaderParamClass = (EShaderParamClass)ShaderParamClassIdx;
+						UPTR ParamCount = pMeta->GetParamCount(ShaderParamClass);
+						for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
 						{
-							CUSMConstMeta& MetaObj = pUSMMeta->Consts[ParamIdx];
-							CUSMBufferMeta& MetaBuf = pUSMMeta->Buffers[MetaObj.BufferIndex];
-							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
-							
+							CMetadataObject* pMetaObject = pMeta->GetParamObject(ShaderParamClass, ParamIdx);
+							CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
+							CStrID MetaObjectID = CStrID(pMetaObject->GetName());
+
+							// Try to find existing effect param by name ID
 							UPTR Idx = 0;
 							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
-								if (TechInfo.Params[Idx].ID == MetaObjID) break;
+								if (TechInfo.Params[Idx].ID == MetaObjectID) break;
+
 							if (Idx == TechInfo.Params.GetCount())
 							{
+								// Not found, create new param
+
 								CEffectParam& Param = *TechInfo.Params.Reserve(1);
-								Param.ID = MetaObjID;
-								Param.Class = EPC_USMConst;
+								Param.ID = MetaObjectID;
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
-								Param.pUSMConst = &MetaObj;
-								Param.pUSMBuffer = &MetaBuf;
-								Param.ConstType = MetaObj.Type;
-								Param.SizeInBytes = MetaObj.ElementSize * MetaObj.ElementCount;
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (const) added (buffer '%s' at b%d)\n", TechInfo.ID.CStr(), MetaObjID.CStr(), MetaBuf.Name.CStr(), MetaBuf.Register);
+
+								//???or store metadata ptr, class and index of param?
+								//if so, can obtain buffer on demand, don't store
+								Param.pMetaObject = pMetaObject;
+								Param.pMetaBuffer = pMetaBuffer;
+
+								// Must be equal to ShaderParamClass, but we request it anyway
+								EShaderParamClass MetaObjectClass = pMetaObject->GetClass();
+
+								/*
+								if (MetaObjectClass == ShaderParam_Const)
+								{
+									EShaderModel MetaObjectModel = pMetaObject->GetShaderModel();
+									switch (MetaObjectModel)
+									{
+										case ShaderModel_30:
+										{
+											switch (MetaObj.RegisterSet)
+											{
+												case RS_Float4:
+												{
+													Param.ConstType = USMConst_Float;
+													Param.SizeInBytes = 4 * sizeof(float) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
+													break;
+												}
+												case RS_Int4:
+												{
+													Param.ConstType = USMConst_Int;
+													Param.SizeInBytes = sizeof(I32) * MetaObj.ElementRegisterCount * MetaObj.ElementCount; // * 4 - if int4!
+													break;
+												}
+												case RS_Bool:
+												{
+													Param.ConstType = USMConst_Bool;
+													Param.SizeInBytes = sizeof(bool) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
+													break;
+												}
+											}
+											break;
+										}
+										case ShaderModel_USM:
+										{
+											Param.ConstType = MetaObj.Type;
+											Param.SizeInBytes = MetaObj.ElementSize * MetaObj.ElementCount;
+											break;
+										}
+									}
+								}
+								*/
+
+								// Debug output
+								const char* pClassName = "";
+								CString BufferString;
+								switch (MetaObjectClass)
+								{
+									case ShaderParam_Const:
+										pClassName = "const";
+										BufferString.Format(" (buffer '%s')", pMetaBuffer->GetName());
+										break;
+									case ShaderParam_Resource:
+										pClassName = "resource";
+										break;
+									case ShaderParam_Sampler:
+										pClassName = "sampler";
+										break;
+								}
+								n_msg(VL_DEBUG, "Tech '%s': %s '%s' added%s\n", TechInfo.ID.CStr(), pClassName, MetaObjectID.CStr(), BufferString.CStr());
 							}
 							else
 							{
+								// Found, check compatibility
+
 								const CEffectParam& Param = TechInfo.Params[Idx];
-								if (Param.Class != EPC_USMConst || !Param.pUSMConst)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
+
+								n_assert(Param.pMetaObject->GetShaderModel() == pMetaObject->GetShaderModel());
 							
-								CUSMConstMeta& RefMetaObj = *Param.pUSMConst;
-								if (MetaObj != RefMetaObj)
+								if (!pMetaObject->IsEqual(*Param.pMetaObject))
 								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
 									return ERR_INVALID_DATA;
 								}
 
-								CUSMBufferMeta& RefMetaBuf = *Param.pUSMBuffer;
-								if (MetaBuf != RefMetaBuf)
+								if (pMetaBuffer && !pMetaBuffer->IsEqual(*Param.pMetaBuffer)) //???must be equal or compatible?
 								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
+									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
 									return ERR_INVALID_DATA;
 								}
 							}
 						}
-						
-						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Resources.GetCount(); ++ParamIdx)
-						{
-							CUSMRsrcMeta& MetaObj = pUSMMeta->Resources[ParamIdx];
-							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
-							
-							UPTR Idx = 0;
-							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
-								if (TechInfo.Params[Idx].ID == MetaObjID) break;
-							if (Idx == TechInfo.Params.GetCount())
-							{
-								CEffectParam& Param = *TechInfo.Params.Reserve(1);
-								Param.ID = MetaObjID;
-								Param.Class = EPC_USMResource;
-								Param.ShaderType = (Render::EShaderType)ShaderType;
-								Param.SourceShaderID = ShaderID;
-								Param.pUSMResource = &MetaObj;
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (resource) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-							}
-							else
-							{
-								const CEffectParam& Param = TechInfo.Params[Idx];
-								if (Param.Class != EPC_USMResource || !Param.pUSMResource)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							
-								CUSMRsrcMeta& RefMetaObj = *Param.pUSMResource;
-								if (MetaObj != RefMetaObj)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							}
-						}
-						
-						for (UPTR ParamIdx = 0; ParamIdx < pUSMMeta->Samplers.GetCount(); ++ParamIdx)
-						{
-							CUSMSamplerMeta& MetaObj = pUSMMeta->Samplers[ParamIdx];
-							CStrID MetaObjID = CStrID(MetaObj.Name.CStr());
-							
-							UPTR Idx = 0;
-							for (; Idx < TechInfo.Params.GetCount(); ++ Idx)
-								if (TechInfo.Params[Idx].ID == MetaObjID) break;
-							if (Idx == TechInfo.Params.GetCount())
-							{
-								CEffectParam& Param = *TechInfo.Params.Reserve(1);
-								Param.ID = MetaObjID;
-								Param.Class = EPC_USMSampler;
-								Param.ShaderType = (Render::EShaderType)ShaderType;
-								Param.SourceShaderID = ShaderID;
-								Param.pUSMSampler = &MetaObj;
-								n_msg(VL_DEBUG, "Tech '%s': param '%s' (sampler) added\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-							}
-							else
-							{
-								const CEffectParam& Param = TechInfo.Params[Idx];
-								if (Param.Class != EPC_USMSampler || !Param.pUSMSampler)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different class in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							
-								CUSMSamplerMeta& RefMetaObj = *Param.pUSMSampler;
-								if (MetaObj != RefMetaObj)
-								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjID.CStr());
-									return ERR_INVALID_DATA;
-								}
-							}
-						}
-					}
-					else
-					{
-						n_msg(VL_ERROR, "Failed to load shader metadata for obj ID %d\n", ShaderID);
-						return ERR_INVALID_DATA;
 					}
 				}
 			}

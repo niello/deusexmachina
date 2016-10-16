@@ -9,12 +9,12 @@
 
 extern CString Messages;
 
-// REFACTORING: WAS NOT USED!
 bool CSM30BufferMeta::IsEqual(const CMetadataObject& Other) const
 {
 	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
-	const CSM30BufferMeta& TypedOther = (const CSM30BufferMeta&)Other;
-	return SlotIndex == TypedOther.SlotIndex;
+	//const CSM30BufferMeta& TypedOther = (const CSM30BufferMeta&)Other;
+	//return SlotIndex == TypedOther.SlotIndex;
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -571,5 +571,36 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 U32 CSM30ShaderMeta::GetMinFeatureLevel() const
 {
 	return Render::GPU_Level_D3D9_3;
+}
+//---------------------------------------------------------------------
+
+UPTR CSM30ShaderMeta::GetParamCount(EShaderParamClass Class) const
+{
+	switch (Class)
+	{
+		case ShaderParam_Const:		return Consts.GetCount();
+		case ShaderParam_Resource:	return Resources.GetCount();
+		case ShaderParam_Sampler:	return Samplers.GetCount();
+		default:					return 0;
+	}
+}
+//---------------------------------------------------------------------
+
+CMetadataObject* CSM30ShaderMeta::GetParamObject(EShaderParamClass Class, UPTR Index)
+{
+	switch (Class)
+	{
+		case ShaderParam_Const:		return &Consts[Index];
+		case ShaderParam_Resource:	return &Resources[Index];
+		case ShaderParam_Sampler:	return &Samplers[Index];
+		default:					return NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(CMetadataObject* pMetaObject)
+{
+	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;
+	return &Buffers[((CSM30ConstMeta*)pMetaObject)->BufferIndex];
 }
 //---------------------------------------------------------------------
