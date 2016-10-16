@@ -660,9 +660,66 @@ bool CSM30ShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char*
 }
 //---------------------------------------------------------------------
 
-CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(CMetadataObject* pMetaObject)
+UPTR CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
+{
+	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (UPTR)(INVALID_INDEX);
+
+	const CSM30BufferMeta* pSM30Buffer = (const CSM30BufferMeta*)pMetaBuffer;
+	UPTR Idx = 0;
+	for (; Idx < Buffers.GetCount(); ++ Idx)
+		if (Buffers[Idx].SlotIndex == pSM30Buffer->SlotIndex) break;
+	if (Idx == Buffers.GetCount())
+	{
+		Buffers.Add(*pSM30Buffer);
+		return Buffers.GetCount() - 1;
+	}
+	else
+	{
+		// Merge used registers from the conflicting buffer
+		
+		CSM30BufferMeta& CurrBuffer = Buffers[Idx];
+		const CSM30BufferMeta& NewBuffer = *pSM30Buffer;
+		
+		for (UPTR r = 0; r < NewBuffer.UsedFloat4.GetCount(); ++r)
+		{
+			UPTR Register = NewBuffer.UsedFloat4[r];
+			if (!CurrBuffer.UsedFloat4.Contains(Register))
+				CurrBuffer.UsedFloat4.Add(Register);
+		}
+		CurrBuffer.UsedFloat4.Sort();
+		
+		for (UPTR r = 0; r < NewBuffer.UsedInt4.GetCount(); ++r)
+		{
+			UPTR Register = NewBuffer.UsedInt4[r];
+			if (!CurrBuffer.UsedInt4.Contains(Register))
+				CurrBuffer.UsedInt4.Add(Register);
+		}
+		CurrBuffer.UsedInt4.Sort();
+		
+		for (UPTR r = 0; r < NewBuffer.UsedBool.GetCount(); ++r)
+		{
+			UPTR Register = NewBuffer.UsedBool[r];
+			if (!CurrBuffer.UsedBool.Contains(Register))
+				CurrBuffer.UsedBool.Add(Register);
+		}
+		CurrBuffer.UsedBool.Sort();
+
+		return Idx;
+	}
+}
+//---------------------------------------------------------------------
+
+CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const
 {
 	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;
 	return &Buffers[((CSM30ConstMeta*)pMetaObject)->BufferIndex];
+}
+//---------------------------------------------------------------------
+
+bool CSM30ShaderMeta::SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx)
+{
+	if (ConstIdx >= Consts.GetCount()) FAIL;
+	Consts[ConstIdx].BufferIndex = BufferIdx;
+	OK;
 }
 //---------------------------------------------------------------------

@@ -597,9 +597,40 @@ bool CUSMShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* 
 }
 //---------------------------------------------------------------------
 
-CMetadataObject* CUSMShaderMeta::GetContainingConstantBuffer(CMetadataObject* pMetaObject)
+UPTR CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
+{
+	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (UPTR)(INVALID_INDEX);
+
+	const CUSMBufferMeta* pUSMBuffer = (const CUSMBufferMeta*)pMetaBuffer;
+	UPTR Idx = 0;
+	for (; Idx < Buffers.GetCount(); ++ Idx)
+		if (Buffers[Idx].Register == pUSMBuffer->Register) break;
+	if (Idx == Buffers.GetCount())
+	{
+		Buffers.Add(*pUSMBuffer);
+		return Buffers.GetCount() - 1;
+	}
+	else
+	{
+		// Use a bigger of conflicting buffers
+		if (Buffers[Idx].Size < pUSMBuffer->Size)
+			Buffers[Idx] = *pUSMBuffer;
+		return Idx;
+	}
+}
+//---------------------------------------------------------------------
+
+CMetadataObject* CUSMShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const
 {
 	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;
 	return &Buffers[((CUSMConstMeta*)pMetaObject)->BufferIndex];
+}
+//---------------------------------------------------------------------
+
+bool CUSMShaderMeta::SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx)
+{
+	if (ConstIdx >= Consts.GetCount()) FAIL;
+	Consts[ConstIdx].BufferIndex = BufferIdx;
+	OK;
 }
 //---------------------------------------------------------------------

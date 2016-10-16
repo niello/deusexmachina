@@ -36,6 +36,18 @@ enum EEffectParamClass
 };
 */
 
+class CAutoDelete
+{
+private:
+
+	void* pData;
+
+public:
+
+	CAutoDelete(void* pNewData): pData(pNewData) {}
+	~CAutoDelete() { if (pData) n_delete(pData); }
+};
+
 struct CEffectParam
 {
 	CStrID				ID;
@@ -57,6 +69,8 @@ struct CEffectParam
 
 	bool operator ==(const CEffectParam& Other) const
 	{
+		NOT_IMPLEMENTED_MSG("REFACTORING: If never used, may remove!");
+
 		if (ShaderType != Other.ShaderType) FAIL;
 
 		const CMetadataObject* pMetaObject = GetMetadataObject();
@@ -2067,6 +2081,9 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 		// Not found in the list, add new global param
 		pAddedParam = GlobalParams.Add(Param);
 
+		// No source shader is used, all metadata will be included into an RP file
+		pAddedParam->SourceShaderID = 0;
+
 		// Add parameter metadata from source shader to global metadata collection
 		pAddedParam->pMeta = pGlobalMeta;
 		pAddedParam->Index = pGlobalMeta->AddParamObject(Class, Param.GetMetadataObject());
@@ -2081,151 +2098,101 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 		// Found in the list, compare with existing to verify compatibility
 		pAddedParam = &GlobalParams[Idx];
 
-		if (Param.Class != pAddedParam->Class)
-		{
-			n_msg(VL_ERROR, "Global param '%s' has different class in different effects\n", Param.ID.CStr());
-			return ERR_INVALID_DATA;
-		}
+		const CMetadataObject* pExistingMeta = Param.GetMetadataObject();
+		const CMetadataObject* pAddedMeta = pAddedParam->GetMetadataObject();
 
-		bool Compatible = false;
-		switch (Param.Class)
-		{
-			case EPC_SM30Const:		Compatible = ((*Param.pSM30Const) == (*pAddedParam->pSM30Const)); break;
-			case EPC_SM30Resource:	Compatible = ((*Param.pSM30Resource) == (*pAddedParam->pSM30Resource)); break;
-			case EPC_SM30Sampler:	Compatible = ((*Param.pSM30Sampler) == (*pAddedParam->pSM30Sampler)); break;
-			case EPC_USMConst:		Compatible = ((*Param.pUSMConst) == (*pAddedParam->pUSMConst)); break;
-			case EPC_USMResource:	Compatible = ((*Param.pUSMResource) == (*pAddedParam->pUSMResource)); break;
-			case EPC_USMSampler:	Compatible = ((*Param.pUSMSampler) == (*pAddedParam->pUSMSampler)); break;
-		}
+		EShaderModel CurrModel = pExistingMeta->GetShaderModel();
+		n_assert(CurrModel == pAddedMeta->GetShaderModel());
 
-		if (!Compatible)
+		if (!pExistingMeta->IsEqual(*pAddedMeta))
 		{
 			n_msg(VL_ERROR, "Global param '%s' has different description in different effects\n", Param.ID.CStr());
 			return ERR_INVALID_DATA;
 		}
 
-		if (Param.Class == EPC_USMConst)
+		// Check buffer compatibility for constants, given that we can extend global buffers if required,
+		// so only binding address (register / slot) matters
+
+		if (Param.Class == ShaderParam_Const)
 		{
-			if (Param.pUSMBuffer->Register != pAddedParam->pUSMBuffer->Register)
+			const CMetadataObject* pExistingBuffer = Param.GetContainingBuffer();
+			const CMetadataObject* pAddedBuffer = pAddedParam->GetContainingBuffer();
+			if (CurrModel == ShaderModel_USM)
 			{
-				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers (0x%x %s:b%d, 0x%x %s:b%d) in different effects\n",
-					  Param.ID.CStr(), Param.pUSMBuffer, Param.pUSMBuffer->Name.CStr(), Param.pUSMBuffer->Register,
-					  pAddedParam->pUSMBuffer, pAddedParam->pUSMBuffer->Name.CStr(), pAddedParam->pUSMBuffer->Register);
-				return ERR_INVALID_DATA;
+				const CUSMBufferMeta* pExistingUSMBuffer = (const CUSMBufferMeta*)pExistingBuffer;
+				const CUSMBufferMeta* pAddedUSMBuffer = (const CUSMBufferMeta*)pAddedBuffer;
+				if (pExistingUSMBuffer->Register != pAddedUSMBuffer->Register)
+				{
+					n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers (0x%x %s:b%d, 0x%x %s:b%d) in different effects\n",
+						  Param.ID.CStr(), pExistingUSMBuffer, pExistingUSMBuffer->Name.CStr(), pExistingUSMBuffer->Register,
+						  pAddedUSMBuffer, pAddedUSMBuffer->Name.CStr(), pAddedUSMBuffer->Register);
+					return ERR_INVALID_DATA;
+				}
 			}
-		}
-		else if (Param.Class == EPC_SM30Const)
-		{
-			if (Param.pSM30Buffer->SlotIndex != pAddedParam->pSM30Buffer->SlotIndex)
+			else if (CurrModel == ShaderModel_30)
 			{
-				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different slot indices in different effects\n", Param.ID.CStr());
-				return ERR_INVALID_DATA;
+				const CSM30BufferMeta* pExistingSM30Buffer = (const CSM30BufferMeta*)pExistingBuffer;
+				const CSM30BufferMeta* pAddedSM30Buffer = (const CSM30BufferMeta*)pAddedBuffer;
+				if (pExistingSM30Buffer->SlotIndex != pAddedSM30Buffer->SlotIndex)
+				{
+					n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different slot indices in different effects\n", Param.ID.CStr());
+					return ERR_INVALID_DATA;
+				}
 			}
 		}
 	}
 
-	// No source shader is used, all metadata will be included into an RP file
-	pAddedParam->SourceShaderID = 0;
+	// For resources and samplers we have done
+	if (Param.Class != ShaderParam_Const) return SUCCESS;
 
-	// For constants, process containing buffer and referenced structures
+	// For constants, add to global metadata containing buffer and referenced structures
 
 	// High part of 64-bit integer, for structure mapping key generation
 	const U64 SourceShaderID64 = (((U64)SourceShaderID) << 32);
 
-	if (Param.Class == EPC_USMConst)
+	// Add buffer containing this constant. If buffer already exist at this register, merge them.
+
+	const CMetadataObject* pMetaBuffer = Param.GetContainingBuffer();
+	UPTR BufferIdx = pGlobalMeta->AddOrMergeBuffer(pMetaBuffer);
+	if (BufferIdx == (UPTR)INVALID_INDEX)
 	{
-		// Add buffer containing this constant. If buffer already exist at this register, merge them.
-
-		UPTR Idx = 0;
-		for (; Idx < USMMeta.Buffers.GetCount(); ++ Idx)
-			if (USMMeta.Buffers[Idx].Register == pAddedParam->pUSMBuffer->Register) break;
-		if (Idx == USMMeta.Buffers.GetCount())
-		{
-			pAddedParam->pUSMBuffer = USMMeta.Buffers.Add(*pAddedParam->pUSMBuffer);
-		}
-		else
-		{
-			// Use a bigger of conflicting buffers
-			if (USMMeta.Buffers[Idx].Size < pAddedParam->pUSMBuffer->Size)
-				USMMeta.Buffers[Idx] = *pAddedParam->pUSMBuffer;
-		}
-
-		pAddedParam->pUSMConst->BufferIndex = Idx;
-
-		// Add structure layout of this constant if it is a structure, process nested structures
-
-		U32 StructIndex = pAddedParam->pUSMConst->StructIndex;
-		if (StructIndex != (U32)(-1))
-		{
-			const U64 StructKey = SourceShaderID64 | ((U64)StructIndex);
-			IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-			if (StructIdxIdx == INVALID_INDEX)
-			{
-				USMAddStructMetadata(USMMeta, *pUSMMeta, StructKey, StructIndexMapping);
-				StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-				n_assert(StructIdxIdx != INVALID_INDEX);
-			}
-
-			pAddedParam->pUSMConst->StructIndex = StructIndexMapping.ValueAt(StructIdxIdx);
-		}
+		n_msg(VL_ERROR, "Failed to add or merge constant buffer for const '%s'\n", Param.ID.CStr());
+		return ERR_INVALID_DATA;
 	}
-	else if (Param.Class == EPC_SM30Const)
+	pGlobalMeta->SetContainingConstantBuffer(Param.Index, BufferIdx);
+
+	// Add structure layout of this constant if it is a structure, process nested structures
+
+	U32 StructIndex = pAddedParam->pUSMConst->StructIndex;
+	if (StructIndex != (U32)(-1))
 	{
-		// Add buffer containing this constant. If buffer already exist at this register, merge them.
-
-		UPTR Idx = 0;
-		for (; Idx < SM30Meta.Buffers.GetCount(); ++ Idx)
-			if (SM30Meta.Buffers[Idx].SlotIndex == pAddedParam->pSM30Buffer->SlotIndex) break;
-		if (Idx == SM30Meta.Buffers.GetCount())
+		const U64 StructKey = SourceShaderID64 | ((U64)StructIndex);
+		IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+		if (StructIdxIdx == INVALID_INDEX)
 		{
-			pAddedParam->pSM30Buffer = SM30Meta.Buffers.Add(*pAddedParam->pSM30Buffer);
-		}
-		else
-		{
-			// Merge used registers from the conflicting buffer
-			CSM30BufferMeta& CurrBuffer = SM30Meta.Buffers[Idx];
-			CSM30BufferMeta& NewBuffer = *pAddedParam->pSM30Buffer;
-			for (UPTR r = 0; r < NewBuffer.UsedFloat4.GetCount(); ++r)
-			{
-				UPTR Register = NewBuffer.UsedFloat4[r];
-				if (!CurrBuffer.UsedFloat4.Contains(Register))
-					CurrBuffer.UsedFloat4.Add(Register);
-			}
-			CurrBuffer.UsedFloat4.Sort();
-			for (UPTR r = 0; r < NewBuffer.UsedInt4.GetCount(); ++r)
-			{
-				UPTR Register = NewBuffer.UsedInt4[r];
-				if (!CurrBuffer.UsedInt4.Contains(Register))
-					CurrBuffer.UsedInt4.Add(Register);
-			}
-			CurrBuffer.UsedInt4.Sort();
-			for (UPTR r = 0; r < NewBuffer.UsedBool.GetCount(); ++r)
-			{
-				UPTR Register = NewBuffer.UsedBool[r];
-				if (!CurrBuffer.UsedBool.Contains(Register))
-					CurrBuffer.UsedBool.Add(Register);
-			}
-			CurrBuffer.UsedBool.Sort();
+			USMAddStructMetadata(USMMeta, *pUSMMeta, StructKey, StructIndexMapping);
+			StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+			n_assert(StructIdxIdx != INVALID_INDEX);
 		}
 
-		pAddedParam->pSM30Const->BufferIndex = Idx;
+		pAddedParam->pUSMConst->StructIndex = StructIndexMapping.ValueAt(StructIdxIdx);
+	}
 
-		// Add structure layout of this constant if it is a structure, process nested structures
+	// Add structure layout of this constant if it is a structure, process nested structures
 
-		U32 StructIndex = pAddedParam->pSM30Const->StructIndex;
-		if (StructIndex != (U32)(-1))
+	U32 StructIndex = pAddedParam->pSM30Const->StructIndex;
+	if (StructIndex != (U32)(-1))
+	{
+		const U64 StructKey = SourceShaderID64 | ((U64)StructIndex);
+		IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+		if (StructIdxIdx == INVALID_INDEX)
 		{
-			const U64 StructKey = SourceShaderID64 | ((U64)StructIndex);
-			IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-			if (StructIdxIdx == INVALID_INDEX)
-			{
-				SM30AddStructMetadata(SM30Meta, *pSM30Meta, StructKey, StructIndexMapping);
-				StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-				n_assert(StructIdxIdx != INVALID_INDEX);
-			}
-
-			pAddedParam->pSM30Const->StructIndex = StructIndexMapping.ValueAt(StructIdxIdx);
+			SM30AddStructMetadata(SM30Meta, *pSM30Meta, StructKey, StructIndexMapping);
+			StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+			n_assert(StructIdxIdx != INVALID_INDEX);
 		}
+
+		pAddedParam->pSM30Const->StructIndex = StructIndexMapping.ValueAt(StructIdxIdx);
 	}
 
 	return SUCCESS;
@@ -2272,18 +2239,19 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 	// Build globals table and accompanying metadata
 
 	CArray<CEffectParam> GlobalParams;
-	CUSMShaderMeta USMMeta;
-	CSM30ShaderMeta SM30Meta;
-	U32 Target = 0;
+	CShaderMetadata* pGlobalMeta;
+	U32 Target = 0; //???!!!REFACTORING: NEED?!
 
-	USMMeta.MinFeatureLevel = 0;
-	USMMeta.RequiresFlags = 0;
+	if (ShaderModel == ShaderModel_30) pGlobalMeta = n_new(CSM30ShaderMeta);
+	else if (ShaderModel == ShaderModel_USM) pGlobalMeta = n_new(CUSMShaderMeta);
+	else return ERR_INVALID_DATA;
+	
+	CAutoDelete GlobalMetaScopedKiller(pGlobalMeta);
 
 	Data::PDataArray EffectsWithGlobals;
 	if (Params->Get(EffectsWithGlobals, CStrID("EffectsWithGlobals")))
 	{
-		CDict<U32, CSM30ShaderMeta> D3D9MetaCache;
-		CDict<U32, CUSMShaderMeta> USMMetaCache;
+		CShaderMetadataCache MetaCache;
 		CDict<U64, U32> StructIndexMapping;			// Key is (ShaderID << 32) | StructIndex
 
 		// All referenced effects must be already exported
@@ -2314,12 +2282,11 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 			if (U32Value != 'SHFX') return ERR_INVALID_DATA;	// Magic
 			if (!R.Read(U32Value)) return ERR_IO_READ;
 			if (U32Value != 0x0100) return ERR_INVALID_DATA;	// Version, fail if unsupported
-			U32 ShaderModel;
-			if (!R.Read(ShaderModel)) return ERR_IO_READ;		// Shader model
+			U32 EffectShaderModel;
+			if (!R.Read(EffectShaderModel)) return ERR_IO_READ;	// Shader model
 			if (!R.Read(U32Value)) return ERR_IO_READ;			// Effect type
 
-			U32 DesiredShaderModelValue = SM30 ? 0 : 1;
-			if (ShaderModel != DesiredShaderModelValue)
+			if (EffectShaderModel != ShaderModel)
 			{
 				EFF->Close();
 				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", pEffectID);
@@ -2332,21 +2299,21 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				int CallResult = ProcessGlobalEffectParam(R, EPC_Const, GlobalParams, D3D9MetaCache, USMMetaCache, StructIndexMapping, USMMeta, SM30Meta, Target);
+				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Const, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta, Target);
 				if (CallResult != SUCCESS) return CallResult;
 			}
 
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				int CallResult = ProcessGlobalEffectParam(R, EPC_Resource, GlobalParams, D3D9MetaCache, USMMetaCache, StructIndexMapping, USMMeta, SM30Meta, Target);
+				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Resource, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta, Target);
 				if (CallResult != SUCCESS) return CallResult;
 			}
 
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				int CallResult = ProcessGlobalEffectParam(R, EPC_Sampler, GlobalParams, D3D9MetaCache, USMMetaCache, StructIndexMapping, USMMeta, SM30Meta, Target);
+				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Sampler, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta, Target);
 				if (CallResult != SUCCESS) return CallResult;
 			}
 		}
@@ -2364,7 +2331,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 
 	if (!W.Write('RPTH')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
-	if (!W.Write<U32>(SM30 ? 0 : 1)) return ERR_IO_WRITE;
+	if (!W.Write<U32>(ShaderModel)) return ERR_IO_WRITE;
 
 	// Save pluggable object slots and rendering phases
 
@@ -2378,14 +2345,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 
 	// Save global params
 
-	if (Target == 0x0300)
-	{
-		if (!DLLSaveSM30ShaderMetadata(W, SM30Meta)) return ERR_IO_WRITE;
-	}
-	else if (Target >= 0x0400)
-	{
-		if (!DLLSaveUSMShaderMetadata(W, USMMeta)) return ERR_IO_WRITE;
-	}
+	if (!pGlobalMeta->Save(W)) return ERR_IO_WRITE;
 
 	GlobalParams.Sort<CSortParamsByID>();
 	int SaveResult = SaveEffectParams(W, GlobalParams);
