@@ -11,7 +11,8 @@
 #include <Util/UtilFwd.h>
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
-#include <ShaderReflection.h>
+#include <ShaderReflectionSM30.h>
+#include <ShaderReflectionUSM.h>
 #include <ValueTable.h>
 
 #undef CreateDirectory
@@ -448,8 +449,8 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 		IO::CBinaryWriter W(*ObjStream.GetUnsafe());
 
 		CSM30ShaderMeta Meta;
-		bool MetaReflected = SM30CollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), IncHandler, Meta);
-		bool MetaSaved = MetaReflected && SM30SaveShaderMetadata(W, Meta);
+		bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), IncHandler);
+		bool MetaSaved = MetaReflected && Meta.Save(W);
 
 		pCode->Release();
 		
@@ -532,8 +533,8 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 			// Save metadata
 			
 			CUSMShaderMeta Meta;
-			bool MetaReflected = USMCollectShaderMetadata(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta);
-			bool MetaSaved = MetaReflected && USMSaveShaderMetadata(W, Meta);
+			bool MetaReflected = Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize());
+			bool MetaSaved = MetaReflected && Meta.Save(W);
 
 			pCode->Release();
 		
@@ -600,10 +601,8 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 }
 //---------------------------------------------------------------------
 
-// Since D3D9 and USM metadata are different, we implement not beautiful but convenient function,
-// that returns both D3D9 and USM metadata pointers. The one that is not NULL is used as a return value.
-// Use FreeShaderMetadata() on pointers returned.
-DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta)
+// Use FreeShaderMetadata() on the pointer returned.
+DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta)
 {
 	Messages.Clear();
 
@@ -622,53 +621,38 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 	R.Read<U32>();	// Binary data offset - skip
 	R.Read<U32>();	// Shader obj file ID - skip
 
-	pOutD3D9Meta = NULL;
-	pOutUSMMeta = NULL;
+	pOutMeta = NULL;
 
 	if (OutTarget >= 0x0400)
 	{
 		R.Read<U32>();	// Input signature obj file ID - skip
-		pOutUSMMeta = n_new(CUSMShaderMeta);
-		if (USMLoadShaderMetadata(R, *pOutUSMMeta)) OK;
-		else
-		{
-			n_delete(pOutUSMMeta);
-			pOutUSMMeta = NULL;
-			FAIL;
-		}
+		pOutMeta = n_new(CUSMShaderMeta);
 	}
+	else pOutMeta = n_new(CSM30ShaderMeta);
+
+	if (!pOutMeta) FAIL;
+
+	if (pOutMeta->Load(R)) OK;
 	else
 	{
-		pOutD3D9Meta = n_new(CSM30ShaderMeta);
-		if (SM30LoadShaderMetadata(R, *pOutD3D9Meta)) OK;
-		else
-		{
-			n_delete(pOutD3D9Meta);
-			pOutD3D9Meta = NULL;
-			FAIL;
-		}
+		n_delete(pOutMeta);
+		pOutMeta = NULL;
+		FAIL;
 	}
 }
 //---------------------------------------------------------------------
 
-DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CSM30ShaderMeta* pD3D9Meta, CUSMShaderMeta* pUSMMeta)
+DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 {
 	Messages.Clear();
-
-	if (pD3D9Meta) n_delete(pD3D9Meta);
-	if (pUSMMeta) n_delete(pUSMMeta);
+	n_delete(pMeta);
 }
 //---------------------------------------------------------------------
 
-DEM_DLL_EXPORT bool DEM_DLLCALL SaveSM30ShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta)
+DEM_DLL_EXPORT bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
 {
-	return SM30SaveShaderMetadata(W, Meta);
-}
-//---------------------------------------------------------------------
-
-DEM_DLL_EXPORT bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta)
-{
-	return USMSaveShaderMetadata(W, Meta);
+	Messages.Clear();
+	return Meta.Save(W);
 }
 //---------------------------------------------------------------------
 

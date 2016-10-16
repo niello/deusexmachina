@@ -13,10 +13,9 @@ bool			TermDEMShaderCompilerDLL();
 const char*		DLLGetLastOperationMessages();
 int				DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 								 const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID);
-bool			DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CSM30ShaderMeta*& pOutD3D9Meta, CUSMShaderMeta*& pOutUSMMeta);
-bool			DLLFreeShaderMetadata(CSM30ShaderMeta* pDLLAllocD3D9Meta, CUSMShaderMeta* pDLLAllocUSMMeta);
-bool			DLLSaveSM30ShaderMetadata(IO::CBinaryWriter& W, const CSM30ShaderMeta& Meta);
-bool			DLLSaveUSMShaderMetadata(IO::CBinaryWriter& W, const CUSMShaderMeta& Meta);
+bool			DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta);
+bool			DLLFreeShaderMetadata(CShaderMetadata* pDLLAllocMeta);
+//bool			DLLSaveShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta);
 unsigned int	DLLPackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 
 #endif

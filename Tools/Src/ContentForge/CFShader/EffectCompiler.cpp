@@ -22,6 +22,8 @@
 extern CString RootPath;
 extern CHashTable<CString, Data::CFourCC> ClassToFOURCC;
 
+//???need?
+/*
 enum EEffectParamClass
 {
 	EPC_SM30Const = 0,
@@ -31,58 +33,30 @@ enum EEffectParamClass
 	EPC_USMResource,
 	EPC_USMSampler
 };
-
-enum EEffectParamClassForSaving
-{
-	EPC_Const		= 0,
-	EPC_Resource	= 1,
-	EPC_Sampler		= 2
-};
+*/
 
 struct CEffectParam
 {
 	CStrID				ID;
-	EEffectParamClass	Class;
 	Render::EShaderType	ShaderType;
 	U32					SourceShaderID;
-	EUSMConstType		ConstType;		// For consts, use USM for now because it covers all needs of each supported API
+	//!!!get from metadata object! EShaderConstType	ConstType;		// For consts, use USM for now because it covers all needs of each supported API
 	U32					SizeInBytes;	// Cached, for consts
-	union
-	{
-		CSM30ConstMeta*		pSM30Const;
-		CSM30RsrcMeta*		pSM30Resource;
-		CSM30SamplerMeta*	pSM30Sampler;
-		CUSMConstMeta*		pUSMConst;
-		CUSMRsrcMeta*		pUSMResource;
-		CUSMSamplerMeta*	pUSMSampler;
-	};
-	union
-	{
-		CUSMBufferMeta*		pUSMBuffer;		// SM4.0 constants must be in identical buffer, so store for comparison
-		CSM30BufferMeta*	pSM30Buffer;	// For SlotIndex comparison (much like registers of USM buffers)
-	};
+	CMetadataObject*	pMetaObject;
+	CMetadataObject*	pMetaBuffer;	// Constant must be in identical buffer in all shaders, so store for comparison
+	//???get buffer and const type from const metadata object?! use persistent handlers! use handle mgr?
 
 	bool operator ==(const CEffectParam& Other) const
 	{
-		if (Class != Other.Class) FAIL;
-		if (ShaderType != Other.ShaderType) FAIL;
-		switch (Class)
-		{
-			case EPC_SM30Const:		return *pSM30Const == *Other.pSM30Const;
-			case EPC_SM30Resource:	return *pSM30Resource == *Other.pSM30Resource;
-			case EPC_SM30Sampler:	return *pSM30Sampler == *Other.pSM30Sampler;
-			case EPC_USMConst:
-			{
+		return ShaderType == Other.ShaderType && pMetaObject->IsEqual(*Other.pMetaObject);
+		//!!!REFACTORING: check buffer compatibility!
+		/* SM30: no special check
+		USM:
 				U32 MinBufferSize = pUSMConst->Offset + pUSMConst->ElementSize * pUSMConst->ElementCount;
-				return (*pUSMConst == *Other.pUSMConst) &&
-					pUSMBuffer->Register == Other.pUSMBuffer->Register &&
+				return pUSMBuffer->Register == Other.pUSMBuffer->Register &&
 					pUSMBuffer->Size >= MinBufferSize &&
 					Other.pUSMBuffer->Size >= MinBufferSize;
-			}
-			case EPC_USMResource:	return *pUSMResource == *Other.pUSMResource;
-			case EPC_USMSampler:	return *pUSMSampler == *Other.pUSMSampler;
-		}
-		FAIL;
+		*/
 	}
 
 	bool operator !=(const CEffectParam& Other) const { return !(*this == Other); }
@@ -801,14 +775,11 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		switch (Param.Class)
+		switch (Param.pMetaObject->GetClass())
 		{
-			case EPC_SM30Const:
-			case EPC_USMConst:		++ConstCount; break;
-			case EPC_SM30Resource:
-			case EPC_USMResource:	++ResourceCount; break;
-			case EPC_SM30Sampler:
-			case EPC_USMSampler:	++SamplerCount; break;
+			case ShaderParam_Const:		++ConstCount; break;
+			case ShaderParam_Resource:	++ResourceCount; break;
+			case ShaderParam_Sampler:	++SamplerCount; break;
 		}
 	}
 
@@ -816,7 +787,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		if (Param.Class != EPC_SM30Const && Param.Class != EPC_USMConst) continue;
+		if (Param.pMetaObject->GetClass() != ShaderParam_Const) continue;
 
 		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
@@ -829,7 +800,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		if (Param.Class != EPC_SM30Resource && Param.Class != EPC_USMResource) continue;
+		if (Param.pMetaObject->GetClass() != ShaderParam_Resource) continue;
 
 		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
@@ -840,7 +811,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		if (Param.Class != EPC_SM30Sampler && Param.Class != EPC_USMSampler) continue;
+		if (Param.pMetaObject->GetClass() != ShaderParam_Sampler) continue;
 
 		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
@@ -2340,7 +2311,9 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 		{
 			if (Param.pUSMBuffer->Register != pAddedParam->pUSMBuffer->Register)
 			{
-				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers in different effects\n", Param.ID.CStr());
+				n_msg(VL_ERROR, "Global param '%s' containing buffer is bound to different registers (0x%x %s:b%d, 0x%x %s:b%d) in different effects\n",
+					  Param.ID.CStr(), Param.pUSMBuffer, Param.pUSMBuffer->Name.CStr(), Param.pUSMBuffer->Register,
+					  pAddedParam->pUSMBuffer, pAddedParam->pUSMBuffer->Name.CStr(), pAddedParam->pUSMBuffer->Register);
 				return ERR_INVALID_DATA;
 			}
 		}
