@@ -70,9 +70,13 @@ public:
 	virtual bool				Save(IO::CBinaryWriter& W) const = 0;
 	virtual EShaderModel		GetShaderModel() const = 0;
 	virtual U32					GetMinFeatureLevel() const = 0;
+	virtual void				SetMinFeatureLevel(U32 NewLevel) = 0;
 	virtual U64					GetRequiresFlags() const = 0;
+	virtual void				SetRequiresFlags(U64 NewFlags) = 0;
 	virtual UPTR				GetParamCount(EShaderParamClass Class) const = 0;
 	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, UPTR Index) = 0;
+	virtual UPTR				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject) = 0;
+	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, UPTR& OutIndex) const = 0;
 	virtual CMetadataObject*	GetContainingConstantBuffer(CMetadataObject* pMetaObject) = 0;
 };
 

@@ -598,6 +598,68 @@ CMetadataObject* CSM30ShaderMeta::GetParamObject(EShaderParamClass Class, UPTR I
 }
 //---------------------------------------------------------------------
 
+UPTR CSM30ShaderMeta::AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject)
+{
+	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class) return (UPTR)(INVALID_INDEX);
+
+	switch (Class)
+	{
+		case ShaderParam_Const:
+		{
+			Consts.Add(*(const CSM30ConstMeta*)pMetaObject);
+			return Consts.GetCount() - 1;
+		}
+		case ShaderParam_Resource:
+		{
+			Resources.Add(*(const CSM30RsrcMeta*)pMetaObject);
+			return Resources.GetCount() - 1;
+		}
+		case ShaderParam_Sampler:
+		{
+			Samplers.Add(*(const CSM30SamplerMeta*)pMetaObject);
+			return Samplers.GetCount() - 1;
+		}
+		default:	return (UPTR)(INVALID_INDEX);
+	}
+}
+//---------------------------------------------------------------------
+
+bool CSM30ShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* pName, UPTR& OutIndex) const
+{
+	switch (Class)
+	{
+		case ShaderParam_Const:
+		{
+			UPTR Idx = 0;
+			for (; Idx < Consts.GetCount(); ++ Idx)
+				if (Consts[Idx].Name == pName) break;
+			if (Idx == Consts.GetCount()) FAIL;
+			OutIndex = Idx;
+			OK;
+		}
+		case ShaderParam_Resource:
+		{
+			UPTR Idx = 0;
+			for (; Idx < Resources.GetCount(); ++ Idx)
+				if (Resources[Idx].Name == pName) break;
+			if (Idx == Resources.GetCount()) FAIL;
+			OutIndex = Idx;
+			OK;
+		}
+		case ShaderParam_Sampler:
+		{
+			UPTR Idx = 0;
+			for (; Idx < Samplers.GetCount(); ++ Idx)
+				if (Samplers[Idx].Name == pName) break;
+			if (Idx == Samplers.GetCount()) FAIL;
+			OutIndex = Idx;
+			OK;
+		}
+		default:					FAIL;
+	}
+}
+//---------------------------------------------------------------------
+
 CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(CMetadataObject* pMetaObject)
 {
 	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;

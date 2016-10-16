@@ -161,9 +161,13 @@ public:
 	virtual bool				Save(IO::CBinaryWriter& W) const;
 	virtual EShaderModel		GetShaderModel() const { return ShaderModel_USM; }
 	virtual U32					GetMinFeatureLevel() const { return MinFeatureLevel; }
+	virtual void				SetMinFeatureLevel(U32 NewLevel) { MinFeatureLevel = NewLevel; }
 	virtual U64					GetRequiresFlags() const { return RequiresFlags; }
+	virtual void				SetRequiresFlags(U64 NewFlags) { RequiresFlags = NewFlags; }
 	virtual UPTR				GetParamCount(EShaderParamClass Class) const;
 	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, UPTR Index);
+	virtual UPTR				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject);
+	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, UPTR& OutIndex) const;
 	virtual CMetadataObject*	GetContainingConstantBuffer(CMetadataObject* pMetaObject);
 };
 

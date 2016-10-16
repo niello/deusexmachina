@@ -29,8 +29,8 @@ CString								RootPath;
 CHashTable<CString, Data::CFourCC>	ClassToFOURCC;
 
 int ExitApp(int Code, bool WaitKey);
-int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30);
-int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM30);
+int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, EShaderModel ShaderModel);
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShaderModel ShaderModel);
 
 int main(int argc, const char** argv)
 {
@@ -75,6 +75,8 @@ int main(int argc, const char** argv)
 	bool Debug = Args.GetBoolArg("-d");
 	bool SM30 = Args.GetBoolArg("-sm3");
 	bool Rebuild = Args.GetBoolArg("-r"); //!!!or if tool / DLL version changed (store in DB)!
+
+	EShaderModel ShaderModel = SM30 ? ShaderModel_30 : ShaderModel_USM;
 
 	if (!pIn || !pOut || !*pIn || !*pOut) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
@@ -187,7 +189,7 @@ int main(int argc, const char** argv)
 		else
 		{
 			if (!IOSrv->FileExists(InRec)) return ExitApp(ERR_IN_NOT_FOUND, WaitKey);
-			int Code = RenderPathes ? CompileRenderPath(InRec, OutRec, SM30) : CompileEffect(InRec, OutRec, Debug, SM30);
+			int Code = RenderPathes ? CompileRenderPath(InRec, OutRec, ShaderModel) : CompileEffect(InRec, OutRec, Debug, ShaderModel);
 			if (Code != 0) return ExitApp(Code, WaitKey);
 		}
 	}

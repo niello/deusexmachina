@@ -2,8 +2,9 @@
 #ifndef __DEM_TOOLS_DEM_SHADER_COMPILER_DLL_H__
 #define __DEM_TOOLS_DEM_SHADER_COMPILER_DLL_H__
 
-#include <DEMShaderCompiler/ShaderCompiler.h>
-#include <DEMShaderCompiler/ShaderReflection.h>
+#include <ShaderCompiler.h>
+#include <ShaderReflectionSM30.h>
+#include <ShaderReflectionUSM.h>
 
 // Convenient wrappers for calling shader compiler DLL functions from an application.
 // Include accompanying DEMShaderCompilerDLL.cpp file into a project from where a DLL will be called.

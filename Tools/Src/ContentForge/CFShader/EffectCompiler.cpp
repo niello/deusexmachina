@@ -12,8 +12,9 @@
 #include <Data/StringUtils.h>
 #include <Util/UtilFwd.h>			// CRC
 #include <ToolRenderStateDesc.h>	// As a CRenderStateDesc, but shader references are replaced with IDs
-#include <Render/SamplerDesc.h>
+#include <ShaderMetadataCache.h>
 #include <DEMShaderCompiler/DEMShaderCompilerDLL.h>
+#include <Render/SamplerDesc.h>
 #include <ConsoleApp.h>
 
 #undef CreateDirectory
@@ -40,15 +41,30 @@ struct CEffectParam
 	CStrID				ID;
 	Render::EShaderType	ShaderType;
 	U32					SourceShaderID;
-	//EShaderConstType	ConstType;		// For consts, use USM for now because it covers all needs of each supported API
-	//U32					SizeInBytes;	// Cached, for consts
-	CMetadataObject*	pMetaObject;
-	CMetadataObject*	pMetaBuffer;	// Constant must be in identical buffer in all shaders, so store for comparison
-	//???get buffer and const type from const metadata object?! use persistent handlers! use handle mgr?
+
+	// Indirect metadata reference, it remains stable even if arrays inside pMeta are moved in memory
+	CShaderMetadata*	pMeta;
+	EShaderParamClass	Class;
+	UPTR				Index;
+
+	// For default value processing
+	EShaderConstType	ConstType;
+	U32					SizeInBytes;	// Cached, for consts
+
+	CMetadataObject*		GetMetadataObject() { return pMeta ? pMeta->GetParamObject(Class, Index) : NULL; }
+	const CMetadataObject*	GetMetadataObject() const { return pMeta ? pMeta->GetParamObject(Class, Index) : NULL; }
+	const CMetadataObject*	GetContainingBuffer() const { return pMeta ? pMeta->GetContainingConstantBuffer(pMeta->GetParamObject(Class, Index)) : NULL; }
 
 	bool operator ==(const CEffectParam& Other) const
 	{
-		return ShaderType == Other.ShaderType && pMetaObject->IsEqual(*Other.pMetaObject);
+		if (ShaderType != Other.ShaderType) FAIL;
+
+		const CMetadataObject* pMetaObject = GetMetadataObject();
+		const CMetadataObject* pOtherMetaObject = Other.GetMetadataObject();
+		if (!pMetaObject && !pOtherMetaObject) OK;
+
+		return pMetaObject && pOtherMetaObject && pMetaObject->IsEqual(*pOtherMetaObject);
+
 		//!!!REFACTORING: check buffer compatibility!
 		/* SM30: no special check
 		USM:
@@ -120,39 +136,6 @@ struct CSortParamsByID
 		return strcmp(a.ID.CStr(), b.ID.CStr()) < 0;
 	}
 };
-
-//!!!REFACTORING: free metadata cache through the DLL! keep DLL loaded! or clonemetadata to cache!
-bool LoadShaderMetadataByObjID(U32 ID, CDict<U32, CShaderMetadata*>& MetaCache, CShaderMetadata*& pOutMeta)
-{
-	pOutMeta = NULL;
-
-	IPTR Idx = MetaCache.FindIndex(ID);
-	if (Idx != INVALID_INDEX)
-	{
-		pOutMeta = MetaCache.ValueAt(Idx);
-		OK;
-	}
-
-	U32 Target;
-	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pOutMeta)) FAIL;
-
-	MetaCache.Add(ID, pOutMeta);
-	OK;
-
-	/*
-	U32 Target;
-	CShaderMetadata* pMeta;
-	if (!DLLLoadShaderMetadataByObjectFileID(ID, Target, pMeta)) FAIL;
-
-	//!!!deep copy instead!
-	//pOutMeta = MetaCache.Add(ID, pMeta);
-
-	DLLFreeShaderMetadata(pMeta);
-	*/
-
-	OK;
-}
-//---------------------------------------------------------------------
 
 Render::ECmpFunc StringToCmpFunc(const CString& Str)
 {
@@ -773,7 +756,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		switch (Param.pMetaObject->GetClass())
+		switch (Param.Class)
 		{
 			case ShaderParam_Const:		++ConstCount; break;
 			case ShaderParam_Resource:	++ResourceCount; break;
@@ -785,7 +768,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		if (Param.pMetaObject->GetClass() != ShaderParam_Const) continue;
+		if (Param.Class != ShaderParam_Const) continue;
 
 		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
@@ -798,7 +781,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		if (Param.pMetaObject->GetClass() != ShaderParam_Resource) continue;
+		if (Param.Class != ShaderParam_Resource) continue;
 
 		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
@@ -809,7 +792,7 @@ int SaveEffectParams(IO::CBinaryWriter& W, const CArray<CEffectParam>& Params)
 	for (UPTR ParamIdx = 0; ParamIdx < Params.GetCount(); ++ParamIdx)
 	{
 		CEffectParam& Param = Params[ParamIdx];
-		if (Param.pMetaObject->GetClass() != ShaderParam_Sampler) continue;
+		if (Param.Class != ShaderParam_Sampler) continue;
 
 		if (!W.Write(Param.ID)) return ERR_IO_WRITE;
 		if (!W.Write<U8>(Param.ShaderType)) return ERR_IO_WRITE;
@@ -920,7 +903,7 @@ bool EFFSeekToGlobalParams(IO::CStream& Stream)
 }
 //---------------------------------------------------------------------
 
-int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, bool SM30)
+int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, EShaderModel ShaderModel)
 {
 	// Read effect source file
 
@@ -1006,7 +989,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 	// Compile and validate used render states, unwinding their hierarchy
 
 	// Metadata objects are allocated in DLL and must be freed through DLL before it is closed
-	CDict<U32, CShaderMetadata*> MetaCache;
+	CShaderMetadataCache MetaCache;
 
 	for (UPTR i = 0; i < UsedRenderStates.GetCount(); )
 	{
@@ -1054,9 +1037,12 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			continue;
 		}
 
-		if (SM30 != (RSRef.Target < 0x0400))
+		// Process only requested shader model
+		const bool IsRequestedShaderModel =
+			(ShaderModel == ShaderModel_30 && RSRef.Target < 0x0400) ||
+			(ShaderModel == ShaderModel_USM && RSRef.Target >= 0x0400);
+		if (!IsRequestedShaderModel)
 		{
-			// Skip legacy sm3.0 / new USM render states based on version request
 			UsedRenderStates.RemoveAt(i);
 			continue;
 		}
@@ -1077,8 +1063,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
 					if (ShaderID == 0) continue;
 
-					CShaderMetadata* pMeta = NULL;
-					if (!LoadShaderMetadataByObjID(ShaderID, MetaCache, pMeta) || !pMeta)
+					CShaderMetadata* pMeta = MetaCache.GetMetadata(ShaderID);
+					if (!pMeta)
 					{
 						n_msg(VL_ERROR, "Failed to load shader metadata for ID %d, binary may be missing or corrupted\n", ShaderID);
 						continue;
@@ -1228,8 +1214,8 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					if (!RSRef.UsesShader[ShaderType]) continue;
 
 					U32 ShaderID = RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount];
-					CShaderMetadata* pMeta = NULL;
-					if (!LoadShaderMetadataByObjID(ShaderID, MetaCache, pMeta) || !pMeta)
+					CShaderMetadata* pMeta = MetaCache.GetMetadata(ShaderID);
+					if (!pMeta)
 					{
 						n_msg(VL_ERROR, "Failed to load shader metadata for ID %d, binary may be missing or corrupted\n", ShaderID);
 						return ERR_INVALID_DATA;
@@ -1253,7 +1239,6 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 						for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
 						{
 							CMetadataObject* pMetaObject = pMeta->GetParamObject(ShaderParamClass, ParamIdx);
-							CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
 							CStrID MetaObjectID = CStrID(pMetaObject->GetName());
 
 							// Try to find existing effect param by name ID
@@ -1270,39 +1255,40 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 								Param.ShaderType = (Render::EShaderType)ShaderType;
 								Param.SourceShaderID = ShaderID;
 
-								//???or store metadata ptr, class and index of param?
-								//if so, can obtain buffer on demand, don't store
-								Param.pMetaObject = pMetaObject;
-								Param.pMetaBuffer = pMetaBuffer;
+								Param.pMeta = pMeta;
+								Param.Class = ShaderParamClass;
+								Param.Index = ParamIdx;
 
-								// Must be equal to ShaderParamClass, but we request it anyway
-								EShaderParamClass MetaObjectClass = pMetaObject->GetClass();
+								CString BufferString;
 
-								/*
-								if (MetaObjectClass == ShaderParam_Const)
+								if (ShaderParamClass == ShaderParam_Const)
 								{
+									CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
+									BufferString.Format(" (buffer '%s')", pMetaBuffer->GetName());
+									
 									EShaderModel MetaObjectModel = pMetaObject->GetShaderModel();
 									switch (MetaObjectModel)
 									{
 										case ShaderModel_30:
 										{
+											const CSM30ConstMeta& MetaObj = (const CSM30ConstMeta&)pMetaObject;
 											switch (MetaObj.RegisterSet)
 											{
 												case RS_Float4:
 												{
-													Param.ConstType = USMConst_Float;
+													Param.ConstType = ShaderConst_Float;
 													Param.SizeInBytes = 4 * sizeof(float) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
 													break;
 												}
 												case RS_Int4:
 												{
-													Param.ConstType = USMConst_Int;
+													Param.ConstType = ShaderConst_Int;
 													Param.SizeInBytes = sizeof(I32) * MetaObj.ElementRegisterCount * MetaObj.ElementCount; // * 4 - if int4!
 													break;
 												}
 												case RS_Bool:
 												{
-													Param.ConstType = USMConst_Bool;
+													Param.ConstType = ShaderConst_Bool;
 													Param.SizeInBytes = sizeof(bool) * MetaObj.ElementRegisterCount * MetaObj.ElementCount;
 													break;
 												}
@@ -1311,22 +1297,27 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 										}
 										case ShaderModel_USM:
 										{
-											Param.ConstType = MetaObj.Type;
+											const CUSMConstMeta& MetaObj = (const CUSMConstMeta&)pMetaObject;
+											switch (MetaObj.Type)
+											{
+												case USMConst_Bool:		Param.ConstType = ShaderConst_Bool; break;
+												case USMConst_Int:		Param.ConstType = ShaderConst_Int; break;
+												case USMConst_Float:	Param.ConstType = ShaderConst_Float; break;
+												case USMConst_Struct:	Param.ConstType = ShaderConst_Struct; break;
+												case USMConst_Invalid:	Param.ConstType = ShaderConst_Invalid; break;
+											}
 											Param.SizeInBytes = MetaObj.ElementSize * MetaObj.ElementCount;
 											break;
 										}
 									}
 								}
-								*/
 
 								// Debug output
 								const char* pClassName = "";
-								CString BufferString;
-								switch (MetaObjectClass)
+								switch (ShaderParamClass)
 								{
 									case ShaderParam_Const:
 										pClassName = "const";
-										BufferString.Format(" (buffer '%s')", pMetaBuffer->GetName());
 										break;
 									case ShaderParam_Resource:
 										pClassName = "resource";
@@ -1342,19 +1333,27 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 								// Found, check compatibility
 
 								const CEffectParam& Param = TechInfo.Params[Idx];
+								const CMetadataObject* pExistingMetaObject = Param.GetMetadataObject();
+								
+								n_assert(pExistingMetaObject);
+								n_assert(pExistingMetaObject->GetShaderModel() == pMetaObject->GetShaderModel());
 
-								n_assert(Param.pMetaObject->GetShaderModel() == pMetaObject->GetShaderModel());
-							
-								if (!pMetaObject->IsEqual(*Param.pMetaObject))
+								if (!pMetaObject->IsEqual(*pExistingMetaObject))
 								{
 									n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
 									return ERR_INVALID_DATA;
 								}
 
-								if (pMetaBuffer && !pMetaBuffer->IsEqual(*Param.pMetaBuffer)) //???must be equal or compatible?
+								if (ShaderParamClass == ShaderParam_Const)
 								{
-									n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
-									return ERR_INVALID_DATA;
+									const CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
+									const CMetadataObject* pExistingBuffer = Param.GetContainingBuffer();
+									n_assert(pMetaBuffer && pExistingBuffer);
+									if (!pMetaBuffer->IsEqual(*pExistingBuffer)) //???must be equal or compatible?
+									{
+										n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
+										return ERR_INVALID_DATA;
+									}
 								}
 							}
 						}
@@ -1406,28 +1405,34 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					GlobalParamIdx = GlobalParams.IndexOf(GlobalParams.Add(TechParam));
 					n_msg(VL_DEBUG, "Global param '%s' added\n", ParamID.CStr());
 
-					if (TechParam.Class == EPC_USMConst)
+					if (TechParam.Class == ShaderParam_Const)
 					{
-						U32 BufferRegister = TechParam.pUSMBuffer->Register;
-						if (MaterialRegisters.Contains(BufferRegister))
+						CMetadataObject* pMetaObject = TechParam.GetMetadataObject();
+						EShaderModel ParamModel = pMetaObject->GetShaderModel();
+						if (ParamModel == ShaderModel_USM)
 						{
-							n_msg(VL_ERROR, "Global param '%s' is placed in a buffer with material params\n", ParamID.CStr());
-							return ERR_INVALID_DATA;
-						}
-						if (!GlobalRegisters.Contains(BufferRegister)) GlobalRegisters.Add(BufferRegister);
-					}
-					else if (TechParam.Class == EPC_SM30Const)
-					{
-						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-						for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
-						{
-							if (UsedMaterialRegs.Contains(r))
+							U32 BufferRegister = ((CUSMBufferMeta*)TechParam.GetContainingBuffer())->Register;
+							if (MaterialRegisters.Contains(BufferRegister))
 							{
-								n_msg(VL_ERROR, "Global param '%s' uses a register used by material params\n", ParamID.CStr());
+								n_msg(VL_ERROR, "Global param '%s' is placed in a buffer with material params\n", ParamID.CStr());
 								return ERR_INVALID_DATA;
 							}
-							if (!UsedGlobalRegs.Contains(r)) UsedGlobalRegs.Add(r);
+							if (!GlobalRegisters.Contains(BufferRegister)) GlobalRegisters.Add(BufferRegister);
+						}
+						else if (ParamModel == ShaderModel_30)
+						{
+							CSM30ConstMeta* pSM30Const = (CSM30ConstMeta*)pMetaObject;
+							CArray<UPTR>& UsedGlobalRegs = (pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+							CArray<UPTR>& UsedMaterialRegs = (pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+							for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
+							{
+								if (UsedMaterialRegs.Contains(r))
+								{
+									n_msg(VL_ERROR, "Global param '%s' uses a register used by material params\n", ParamID.CStr());
+									return ERR_INVALID_DATA;
+								}
+								if (!UsedGlobalRegs.Contains(r)) UsedGlobalRegs.Add(r);
+							}
 						}
 					}
 				}
@@ -1474,28 +1479,34 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					MaterialParamIdx = MaterialParams.IndexOf(MaterialParams.Add(TechParam));
 					n_msg(VL_DEBUG, "Material param '%s' added\n", ParamID.CStr());
 
-					if (TechParam.Class == EPC_USMConst)
+					if (TechParam.Class == ShaderParam_Const)
 					{
-						U32 BufferRegister = TechParam.pUSMBuffer->Register;
-						if (GlobalRegisters.Contains(BufferRegister))
+						CMetadataObject* pMetaObject = TechParam.GetMetadataObject();
+						EShaderModel ParamModel = pMetaObject->GetShaderModel();
+						if (ParamModel == ShaderModel_USM)
 						{
-							n_msg(VL_ERROR, "Material param '%s' is placed in a buffer with global params\n", ParamID.CStr());
-							return ERR_INVALID_DATA;
-						}
-						if (!MaterialRegisters.Contains(BufferRegister)) MaterialRegisters.Add(BufferRegister);
-					}
-					else if (TechParam.Class == EPC_SM30Const)
-					{
-						CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-						CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-						for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
-						{
-							if (UsedGlobalRegs.Contains(r))
+							U32 BufferRegister = ((CUSMBufferMeta*)TechParam.GetContainingBuffer())->Register;
+							if (GlobalRegisters.Contains(BufferRegister))
 							{
-								n_msg(VL_ERROR, "Material param '%s' uses a register used by global params\n", ParamID.CStr());
+								n_msg(VL_ERROR, "Material param '%s' is placed in a buffer with global params\n", ParamID.CStr());
 								return ERR_INVALID_DATA;
 							}
-							if (!UsedMaterialRegs.Contains(r)) UsedMaterialRegs.Add(r);
+							if (!MaterialRegisters.Contains(BufferRegister)) MaterialRegisters.Add(BufferRegister);
+						}
+						else if (ParamModel == ShaderModel_30)
+						{
+							CSM30ConstMeta* pSM30Const = (CSM30ConstMeta*)pMetaObject;
+							CArray<UPTR>& UsedGlobalRegs = (pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+							CArray<UPTR>& UsedMaterialRegs = (pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+							for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
+							{
+								if (UsedGlobalRegs.Contains(r))
+								{
+									n_msg(VL_ERROR, "Material param '%s' uses a register used by global params\n", ParamID.CStr());
+									return ERR_INVALID_DATA;
+								}
+								if (!UsedMaterialRegs.Contains(r)) UsedMaterialRegs.Add(r);
+							}
 						}
 					}
 				}
@@ -1536,39 +1547,45 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 			n_msg(VL_DEBUG, "Per-object param '%s' added\n", ParamID.CStr());
 
-			if (TechParam.Class == EPC_USMConst)
+			if (TechParam.Class == ShaderParam_Const)
 			{
-				U32 BufferRegister = TechParam.pUSMBuffer->Register;
-				if (GlobalRegisters.Contains(BufferRegister))
+				CMetadataObject* pMetaObject = TechParam.GetMetadataObject();
+				EShaderModel ParamModel = pMetaObject->GetShaderModel();
+				if (ParamModel == ShaderModel_USM)
 				{
-					n_msg(VL_ERROR, "Tech param '%s' is placed in a buffer with global params\n", ParamID.CStr());
-					return ERR_INVALID_DATA;
-				}
-				if (MaterialRegisters.Contains(BufferRegister))
-				{
-					n_msg(VL_ERROR, "Tech param '%s' is placed in a buffer with material params\n", ParamID.CStr());
-					return ERR_INVALID_DATA;
-				}
-			}
-			else if (TechParam.Class == EPC_SM30Const)
-			{
-				CArray<UPTR>& UsedGlobalRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-				CArray<UPTR>& UsedMaterialRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-				CArray<UPTR>& UsedTechRegs = (TechParam.pSM30Const->RegisterSet == RS_Float4) ? TechInfo.UsedFloat4 : ((TechParam.pSM30Const->RegisterSet == RS_Int4) ? TechInfo.UsedInt4 : TechInfo.UsedBool);
-				for (UPTR r = TechParam.pSM30Const->RegisterStart; r < TechParam.pSM30Const->RegisterStart + TechParam.pSM30Const->RegisterCount; ++r)
-				{
-					if (UsedGlobalRegs.Contains(r))
+					U32 BufferRegister = ((CUSMBufferMeta*)TechParam.GetContainingBuffer())->Register;
+					if (GlobalRegisters.Contains(BufferRegister))
 					{
-						n_msg(VL_ERROR, "Tech param '%s' uses a register used by global params\n", ParamID.CStr());
+						n_msg(VL_ERROR, "Tech param '%s' is placed in a buffer with global params\n", ParamID.CStr());
 						return ERR_INVALID_DATA;
 					}
-					if (UsedMaterialRegs.Contains(r))
+					if (MaterialRegisters.Contains(BufferRegister))
 					{
-						n_msg(VL_ERROR, "Tech param '%s' uses a register used by material params\n", ParamID.CStr());
+						n_msg(VL_ERROR, "Tech param '%s' is placed in a buffer with material params\n", ParamID.CStr());
 						return ERR_INVALID_DATA;
 					}
+				}
+				else if (ParamModel == ShaderModel_30)
+				{
+					CSM30ConstMeta* pSM30Const = (CSM30ConstMeta*)pMetaObject;
+					CArray<UPTR>& UsedGlobalRegs = (pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
+					CArray<UPTR>& UsedMaterialRegs = (pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
+					CArray<UPTR>& UsedTechRegs = (pSM30Const->RegisterSet == RS_Float4) ? TechInfo.UsedFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? TechInfo.UsedInt4 : TechInfo.UsedBool);
+					for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
+					{
+						if (UsedGlobalRegs.Contains(r))
+						{
+							n_msg(VL_ERROR, "Tech param '%s' uses a register used by global params\n", ParamID.CStr());
+							return ERR_INVALID_DATA;
+						}
+						if (UsedMaterialRegs.Contains(r))
+						{
+							n_msg(VL_ERROR, "Tech param '%s' uses a register used by material params\n", ParamID.CStr());
+							return ERR_INVALID_DATA;
+						}
 
-					if (!UsedTechRegs.Contains(r)) UsedTechRegs.Add(r);
+						if (!UsedTechRegs.Contains(r)) UsedTechRegs.Add(r);
+					}
 				}
 			}
 
@@ -1588,7 +1605,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 	if (!W.Write('SHFX')) return ERR_IO_WRITE;
 	if (!W.Write<U32>(0x0100)) return ERR_IO_WRITE;
-	if (!W.Write<U32>(SM30 ? 0 : 1)) return ERR_IO_WRITE;
+	if (!W.Write<U32>(ShaderModel)) return ERR_IO_WRITE;
 	if (!W.Write<U32>(EffectType)) return ERR_IO_WRITE;
 
 	// Save render states, each with all light count variations
@@ -1738,41 +1755,41 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 		const Data::CData& DefaultValue = MaterialParamsDesc->Get(Param.ID).GetRawValue();
 		if (DefaultValue.IsNull()) continue;
 
-		if (Param.Class == EPC_SM30Const || Param.Class == EPC_USMConst)
+		const CMetadataObject* pMetaObject = Param.GetMetadataObject();
+		EShaderModel ParamModel = pMetaObject->GetShaderModel();
+		if (Param.Class == ShaderParam_Const)
 		{
-			// Use USM enum as it suits all APIs now
-			EUSMConstType ConstType = USMConst_Invalid;
+			EShaderConstType ConstType = ShaderConst_Invalid;
 			U32 ConstSizeInBytes = Param.SizeInBytes;
 			U32 ValueSizeInBytes = 0;
 			U32 CurrDefValOffset = (U32)DefaultConstValues->GetPosition();
 			
-			if (Param.Class == EPC_SM30Const)
+			if (ParamModel == ShaderModel_30)
 			{
-				CSM30ConstMeta& Meta = *Param.pSM30Const;
-				switch (Meta.RegisterSet)
+				const CSM30ConstMeta& MetaObj = *(const CSM30ConstMeta*)pMetaObject;
+				switch (MetaObj.RegisterSet)
 				{
-					case RS_Float4:
-					{
-						ConstType = USMConst_Float;
-						break;
-					}
-					case RS_Int4:
-					{
-						ConstType = USMConst_Int;
-						break;
-					}
-					case RS_Bool:
-					{
-						ConstType = USMConst_Bool;
-						break;
-					}
+					case RS_Float4:	ConstType = ShaderConst_Float; break;
+					case RS_Int4:	ConstType = ShaderConst_Int; break;
+					case RS_Bool:	ConstType = ShaderConst_Bool; break;
 				}
 			}
-			else if (Param.Class == EPC_USMConst) ConstType = Param.pUSMConst->Type;
+			else if (ParamModel == ShaderModel_USM)
+			{
+				const CUSMConstMeta& MetaObj = *(const CUSMConstMeta*)pMetaObject;
+				switch (MetaObj.Type)
+				{
+					case USMConst_Bool:		ConstType = ShaderConst_Bool; break;
+					case USMConst_Int:		ConstType = ShaderConst_Int; break;
+					case USMConst_Float:	ConstType = ShaderConst_Float; break;
+					case USMConst_Struct:	ConstType = ShaderConst_Struct; break;
+					case USMConst_Invalid:	ConstType = ShaderConst_Invalid; break;
+				}
+			}
 
 			switch (ConstType)
 			{
-				case USMConst_Float:
+				case ShaderConst_Float:
 				{
 					if (DefaultValue.IsA<float>())
 					{
@@ -1812,7 +1829,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 
 					break;
 				}
-				case USMConst_Int:
+				case ShaderConst_Int:
 				{
 					if (DefaultValue.IsA<int>())
 					{
@@ -1827,7 +1844,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					}
 					break;
 				}
-				case USMConst_Bool:
+				case ShaderConst_Bool:
 				{
 					if (DefaultValue.IsA<bool>())
 					{
@@ -1852,12 +1869,12 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			if (ConstSizeInBytes > ValueSizeInBytes) DefaultConstValues->Fill(0, ConstSizeInBytes - ValueSizeInBytes);
 			
 			if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-			if (!W.Write<U8>(EPC_Const)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(ShaderParam_Const)) return ERR_IO_WRITE;
 			if (!W.Write<U32>(CurrDefValOffset)) return ERR_IO_WRITE;
 			++DefValCount;
 			n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 		}
-		else if (Param.Class == EPC_SM30Resource || Param.Class == EPC_USMResource)
+		else if (Param.Class == ShaderParam_Resource)
 		{
 			CString ResourceID;
 			if (DefaultValue.IsA<CStrID>()) ResourceID = CString(DefaultValue.GetValue<CStrID>().CStr());
@@ -1871,13 +1888,13 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 			if (ResourceID.IsValid())
 			{
 				if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(EPC_Resource)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(ShaderParam_Resource)) return ERR_IO_WRITE;
 				if (!W.Write(ResourceID)) return ERR_IO_WRITE;
 				++DefValCount;
 				n_msg(VL_DEBUG, "Material param '%s' default value processed\n", Param.ID.CStr());
 			}
 		}
-		else if (Param.Class == EPC_SM30Sampler || Param.Class == EPC_USMSampler)
+		else if (Param.Class == ShaderParam_Sampler)
 		{
 			if (DefaultValue.IsA<Data::PParams>())
 			{
@@ -1889,7 +1906,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 					if (ProcessSamplerSection(SamplerSection, SamplerDesc))
 					{
 						if (!W.Write(Param.ID)) return ERR_IO_WRITE;
-						if (!W.Write<U8>(EPC_Sampler)) return ERR_IO_WRITE;
+						if (!W.Write<U8>(ShaderParam_Sampler)) return ERR_IO_WRITE;
 						
 						if (!W.Write<U8>(SamplerDesc.AddressU)) return ERR_IO_WRITE;
 						if (!W.Write<U8>(SamplerDesc.AddressV)) return ERR_IO_WRITE;
@@ -1974,15 +1991,15 @@ void SM30AddStructMetadata(CSM30ShaderMeta& OutMeta, const CSM30ShaderMeta& InMe
 //---------------------------------------------------------------------
 
 int ProcessGlobalEffectParam(IO::CBinaryReader& R,
-							 EEffectParamClassForSaving Class,
+							 EShaderParamClass Class,
 							 CArray<CEffectParam>& GlobalParams,
-							 CDict<U32, CSM30ShaderMeta>& D3D9MetaCache,
-							 CDict<U32, CUSMShaderMeta>& USMMetaCache,
+							 CShaderMetadataCache& MetaCache,
 							 CDict<U64, U32>& StructIndexMapping,
-							 CUSMShaderMeta& USMMeta,
-							 CSM30ShaderMeta& SM30Meta,
+							 CShaderMetadata* pGlobalMeta,
 							 U32& Target)
 {
+	// Load API-independent effect parameter description
+
 	CEffectParam Param;
 	if (!R.Read(Param.ID)) return ERR_IO_READ;
 
@@ -1994,19 +2011,18 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 
 	const U32 SourceShaderID = Param.SourceShaderID;
 
-	if (Class == EPC_Const)
+	if (Class == ShaderParam_Const)
 	{
 		U8 ConstType;
 		if (!R.Read<U8>(ConstType)) return ERR_IO_READ;
-		Param.ConstType = (EUSMConstType)ConstType;
+		Param.ConstType = (EShaderConstType)ConstType;
 		if (!R.Read<U32>(Param.SizeInBytes)) return ERR_IO_READ;
 	}
 
 	// Load API-specific parameter metadata
 
-	CSM30ShaderMeta* pSM30Meta = NULL;
-	CUSMShaderMeta* pUSMMeta = NULL;
-	if (!LoadShaderMetadataByObjID(SourceShaderID, D3D9MetaCache, USMMetaCache, pSM30Meta, pUSMMeta) || (!pSM30Meta && !pUSMMeta))
+	CShaderMetadata* pMeta = MetaCache.GetMetadata(SourceShaderID);
+	if (!pMeta)
 	{
 		n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", SourceShaderID);
 		return ERR_INVALID_DATA;
@@ -2014,7 +2030,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 
 	// May actually be higher than 0x0400, but it is needed only
 	// for checking that no SM3.0 + USM mixing occurs.
-	U32 CurrTarget = pSM30Meta ? 0x0300 : 0x0400;
+	U32 CurrTarget = (pMeta->GetShaderModel() == ShaderModel_30) ? 0x0300 : 0x0400;
 
 	if (!Target) Target = CurrTarget;
 	else if ((Target < 0x0400 && CurrTarget >= 0x0400) || (Target >= 0x0400 && CurrTarget < 0x0400))
@@ -2024,114 +2040,40 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 	}
 	else if (CurrTarget > Target) Target = CurrTarget;
 
-	if (pSM30Meta)
-	{
-		switch (Class)
-		{
-			case EPC_Const:
-			{
-				UPTR Idx = 0;
-				for (; Idx < pSM30Meta->Consts.GetCount(); ++ Idx)
-					if (pSM30Meta->Consts[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pSM30Meta->Consts.GetCount()) return ERR_INVALID_DATA;
-				Param.Class = EPC_SM30Const;
-				Param.pSM30Const = &pSM30Meta->Consts[Idx];
-				Param.pSM30Buffer = &pSM30Meta->Buffers[Param.pSM30Const->BufferIndex];
-				break;
-			}
-			case EPC_Resource:
-			{
-				UPTR Idx = 0;
-				for (; Idx < pSM30Meta->Resources.GetCount(); ++ Idx)
-					if (pSM30Meta->Resources[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pSM30Meta->Resources.GetCount()) return ERR_INVALID_DATA;
-				Param.Class = EPC_SM30Resource;
-				Param.pSM30Resource = &pSM30Meta->Resources[Idx];
-				break;
-			}
-			case EPC_Sampler:
-			{
-				UPTR Idx = 0;
-				for (; Idx < pSM30Meta->Samplers.GetCount(); ++ Idx)
-					if (pSM30Meta->Samplers[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pSM30Meta->Samplers.GetCount()) return ERR_INVALID_DATA;
-				Param.Class = EPC_SM30Sampler;
-				Param.pSM30Sampler = &pSM30Meta->Samplers[Idx];
-				break;
-			}
-			default:
-			{
-				n_msg(VL_ERROR, "Unsupported parameter class %d\n", Class);
-				return ERR_INVALID_DATA;
-			}
-		}
-	}
-	else if (pUSMMeta)
-	{
-		USMMeta.MinFeatureLevel = n_max(USMMeta.MinFeatureLevel, pUSMMeta->MinFeatureLevel);
-		USMMeta.RequiresFlags |= pUSMMeta->RequiresFlags;
+	// Extend requirements of global metadata with requirements of the current shader
+	pGlobalMeta->SetMinFeatureLevel(n_max(pGlobalMeta->GetMinFeatureLevel(), pMeta->GetMinFeatureLevel()));
+	pGlobalMeta->SetRequiresFlags(pGlobalMeta->GetRequiresFlags() | pMeta->GetRequiresFlags());
 
-		switch (Class)
-		{
-			case EPC_Const:
-			{
-				UPTR Idx = 0;
-				for (; Idx < pUSMMeta->Consts.GetCount(); ++ Idx)
-					if (pUSMMeta->Consts[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pUSMMeta->Consts.GetCount()) return ERR_INVALID_DATA;
-				Param.Class = EPC_USMConst;
-				Param.pUSMConst = &pUSMMeta->Consts[Idx];
-				Param.pUSMBuffer = &pUSMMeta->Buffers[Param.pUSMConst->BufferIndex];
-				break;
-			}
-			case EPC_Resource:
-			{
-				UPTR Idx = 0;
-				for (; Idx < pUSMMeta->Resources.GetCount(); ++ Idx)
-					if (pUSMMeta->Resources[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pUSMMeta->Resources.GetCount()) return ERR_INVALID_DATA;
-				Param.Class = EPC_USMResource;
-				Param.pUSMResource = &pUSMMeta->Resources[Idx];
-				break;
-			}
-			case EPC_Sampler:
-			{
-				UPTR Idx = 0;
-				for (; Idx < pUSMMeta->Samplers.GetCount(); ++ Idx)
-					if (pUSMMeta->Samplers[Idx].Name == Param.ID.CStr()) break;
-				if (Idx == pUSMMeta->Samplers.GetCount()) return ERR_INVALID_DATA;
-				Param.Class = EPC_USMSampler;
-				Param.pUSMSampler = &pUSMMeta->Samplers[Idx];
-				break;
-			}
-			default:
-			{
-				n_msg(VL_ERROR, "Unsupported parameter class %d\n", Class);
-				return ERR_INVALID_DATA;
-			}
-		}
+	// Fill shader parameter metadata of an effect parameter
+	UPTR Idx;
+	if (!pMeta->FindParamObjectByName(Class, Param.ID.CStr(), Idx))
+	{
+		n_msg(VL_ERROR, "Parameter '%s' not found in shader %d\n", Param.ID.CStr(), SourceShaderID);
+		return ERR_INVALID_DATA;
 	}
+	Param.pMeta = pMeta;
+	Param.Class = Class;
+	Param.Index = Idx;
 
 	// Add a parameter to the list, verify its compatibility across all referenced effects
 
 	CEffectParam* pAddedParam = NULL;
 
-	UPTR Idx = 0;
+	Idx = 0;
 	for (; Idx < GlobalParams.GetCount(); ++ Idx)
 		if (GlobalParams[Idx].ID == Param.ID) break;
 	if (Idx == GlobalParams.GetCount())
 	{
-		// Not found in the list, add it here
+		// Not found in the list, add new global param
 		pAddedParam = GlobalParams.Add(Param);
 
-		switch (Param.Class)
+		// Add parameter metadata from source shader to global metadata collection
+		pAddedParam->pMeta = pGlobalMeta;
+		pAddedParam->Index = pGlobalMeta->AddParamObject(Class, Param.GetMetadataObject());
+		if (pAddedParam->Index == (UPTR)(INVALID_INDEX))
 		{
-			case EPC_SM30Const:		pAddedParam->pSM30Const = SM30Meta.Consts.Add(*Param.pSM30Const); break;
-			case EPC_SM30Resource:	pAddedParam->pSM30Resource = SM30Meta.Resources.Add(*Param.pSM30Resource); break;
-			case EPC_SM30Sampler:	pAddedParam->pSM30Sampler = SM30Meta.Samplers.Add(*Param.pSM30Sampler); break;
-			case EPC_USMConst:		pAddedParam->pUSMConst = USMMeta.Consts.Add(*Param.pUSMConst); break;
-			case EPC_USMResource:	pAddedParam->pUSMResource = USMMeta.Resources.Add(*Param.pUSMResource); break;
-			case EPC_USMSampler:	pAddedParam->pUSMSampler = USMMeta.Samplers.Add(*Param.pUSMSampler); break;
+			n_msg(VL_ERROR, "Failed to add param '%s' to global metadata\n", Param.ID.CStr());
+			return ERR_INVALID_DATA;
 		}
 	}
 	else
@@ -2290,7 +2232,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 }
 //---------------------------------------------------------------------
 
-int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, bool SM30)
+int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShaderModel ShaderModel)
 {
 	// Read render path source file
 
