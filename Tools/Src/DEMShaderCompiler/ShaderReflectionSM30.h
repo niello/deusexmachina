@@ -154,6 +154,10 @@ public:
 	virtual UPTR				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer);
 	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const;
 	virtual bool				SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx);
+
+	virtual U32					AddStructure(const CShaderMetadata& SourceMeta, U64 StructKey, CDict<U64, U32>& StructIndexMapping);
+	virtual U32					GetStructureIndex(UPTR ConstIdx) const;
+	virtual bool				SetStructureIndex(UPTR ConstIdx, U32 StructIdx);
 };
 
 #endif

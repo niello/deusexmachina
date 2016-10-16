@@ -3,10 +3,11 @@
 #define __DEM_TOOLS_SHADER_REFLECTION_H__
 
 #include <Data/String.h>
-#include <Data/Array.h>
-#include <Data/RefCounted.h>
+#include <Data/Dictionary.h>
 
 // Data and functions for shader metadata manipulation in both SM3.0 and USM
+
+//#define DEM_DLL_EXPORT	__declspec(dllexport)
 
 namespace IO
 {
@@ -49,7 +50,7 @@ enum EShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-class CMetadataObject //???refcounted?
+class CMetadataObject
 {
 public:
 
@@ -62,7 +63,7 @@ public:
 	bool operator !=(const CMetadataObject& Other) const { return !IsEqual(Other); }
 };
 
-class CShaderMetadata//: public Data::CRefCounted //!!!check internal/external memory mgmt!
+class CShaderMetadata
 {
 public:
 
@@ -83,6 +84,10 @@ public:
 	virtual UPTR				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer) = 0;
 	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const = 0;
 	virtual bool				SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx) = 0;
+
+	virtual U32					AddStructure(const CShaderMetadata& SourceMeta, U64 StructKey, CDict<U64, U32>& StructIndexMapping) = 0;
+	virtual U32					GetStructureIndex(UPTR ConstIdx) const = 0;
+	virtual bool				SetStructureIndex(UPTR ConstIdx, U32 StructIdx) = 0;
 };
 
 #endif

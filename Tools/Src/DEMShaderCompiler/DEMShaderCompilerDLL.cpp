@@ -7,6 +7,7 @@ static HMODULE hDLL = NULL;
 static FDEMShaderCompiler_InitCompiler pInitCompiler = NULL;
 static FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = NULL;
 static FDEMShaderCompiler_CompileShader pCompileShader = NULL;
+static FDEMShaderCompiler_CreateShaderMetadata pCreateShaderMetadata = NULL;
 static FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
 static FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
 //static FDEMShaderCompiler_SaveShaderMetadata pSaveShaderMetadata = NULL;
@@ -72,6 +73,19 @@ int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, c
 	}
 
 	return pCompileShader(pSrcPath, ShaderType, Target, pEntryPoint, pDefines, Debug, OnlyMetadata, ObjectFileID, InputSignatureFileID);
+}
+//---------------------------------------------------------------------
+
+void DLLCreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta)
+{
+	if (!pCreateShaderMetadata)
+	{
+		if (!hDLL) return;
+		pCreateShaderMetadata = (FDEMShaderCompiler_CreateShaderMetadata)GetProcAddress(hDLL, "CreateShaderMetadata");
+		if (!pCreateShaderMetadata) return;
+	}
+
+	pCreateShaderMetadata(ShaderModel, pOutMeta);
 }
 //---------------------------------------------------------------------
 

@@ -723,3 +723,43 @@ bool CSM30ShaderMeta::SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx)
 	OK;
 }
 //---------------------------------------------------------------------
+
+U32 CSM30ShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, U64 StructKey, CDict<U64, U32>& StructIndexMapping)
+{
+	IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+	if (StructIdxIdx != INVALID_INDEX) return StructIndexMapping.ValueAt(StructIdxIdx);
+
+	const U32 StructIndex = (U32)(StructKey & 0xffffffff);
+	const CSM30StructMeta& StructMeta = ((const CSM30ShaderMeta&)SourceMeta).Structs[StructIndex];
+	Structs.Add(StructMeta);
+	StructIndexMapping.Add(StructKey, Structs.GetCount() - 1);
+
+	for (UPTR i = 0; i < StructMeta.Members.GetCount(); ++i)
+	{
+		const CSM30StructMemberMeta& MemberMeta = StructMeta.Members[i];
+		if (MemberMeta.StructIndex == (U32)(-1)) continue;
+
+		const U64 MemberKey = (StructKey & 0xffffffff00000000) | ((U64)MemberMeta.StructIndex);
+		AddStructure(SourceMeta, MemberKey, StructIndexMapping);
+	}
+
+	StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+	n_assert(StructIdxIdx != INVALID_INDEX);
+	return StructIndexMapping.ValueAt(StructIdxIdx);
+}
+//---------------------------------------------------------------------
+
+U32 CSM30ShaderMeta::GetStructureIndex(UPTR ConstIdx) const
+{
+	if (ConstIdx >= Consts.GetCount()) return (U32)(-1);
+	return Consts[ConstIdx].StructIndex;
+}
+//---------------------------------------------------------------------
+
+bool CSM30ShaderMeta::SetStructureIndex(UPTR ConstIdx, U32 StructIdx)
+{
+	if (ConstIdx >= Consts.GetCount()) FAIL;
+	Consts[ConstIdx].StructIndex = StructIdx;
+	OK;
+}
+//---------------------------------------------------------------------

@@ -42,7 +42,7 @@ public:
 	void Set(void* pData) { pDataToFree = pData; }
 };
 
-DEM_DLL_EXPORT bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory)
+DEM_DLL_API bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory)
 {
 	Messages.Clear();
 
@@ -62,7 +62,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char
 }
 //---------------------------------------------------------------------
 
-DEM_DLL_EXPORT const char* DEM_DLLCALL GetLastOperationMessages()
+DEM_DLL_API const char* DEM_DLLCALL GetLastOperationMessages()
 {
 	return Messages.CStr();
 }
@@ -212,7 +212,7 @@ bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
 //---------------------------------------------------------------------
 
 // pDefines - "NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]"
-DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
+DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 											 const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID)
 {
 	Messages.Clear();
@@ -601,8 +601,16 @@ DEM_DLL_EXPORT int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType S
 }
 //---------------------------------------------------------------------
 
+DEM_DLL_API void DEM_DLLCALL CreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta)
+{
+	if (ShaderModel == ShaderModel_30) pOutMeta = n_new(CSM30ShaderMeta);
+	else if (ShaderModel == ShaderModel_USM) pOutMeta = n_new(CUSMShaderMeta);
+	else pOutMeta = NULL;
+}
+//---------------------------------------------------------------------
+
 // Use FreeShaderMetadata() on the pointer returned.
-DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta)
+DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta)
 {
 	Messages.Clear();
 
@@ -642,14 +650,14 @@ DEM_DLL_EXPORT bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& Ou
 }
 //---------------------------------------------------------------------
 
-DEM_DLL_EXPORT void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
+DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 {
 	Messages.Clear();
 	n_delete(pMeta);
 }
 //---------------------------------------------------------------------
 
-DEM_DLL_EXPORT bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
+DEM_DLL_API bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
 {
 	Messages.Clear();
 	return Meta.Save(W);
@@ -658,7 +666,7 @@ DEM_DLL_EXPORT bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, cons
 
 // Packs shaders in a sindle library file, big concatenated blob
 // with a lookup table ID -> Offset. Returns packed shader count.
-DEM_DLL_EXPORT unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
+DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
 {
 	Messages.Clear();
 

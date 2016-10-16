@@ -6,11 +6,16 @@
 
 // Main public API header
 
-#define DEM_DLL_EXPORT	__declspec(dllexport)
+#ifdef _WINDLL
+#define DEM_DLL_API	__declspec(dllexport)
+#else
+#define DEM_DLL_API	__declspec(dllimport)
+#endif
 #define DEM_DLLCALL		__cdecl
 
 typedef uint32_t U32;	// Unsigned 32-bit integer
 class CShaderMetadata;
+enum EShaderModel;
 
 namespace IO
 {
@@ -50,14 +55,15 @@ extern "C"
 #endif
 
 // For static loading
-DEM_DLL_EXPORT bool DEM_DLLCALL			InitCompiler(const char* pDBFileName, const char* pOutputDirectory);
-DEM_DLL_EXPORT const char* DEM_DLLCALL	GetLastOperationMessages();
-DEM_DLL_EXPORT int DEM_DLLCALL			CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
+DEM_DLL_API bool DEM_DLLCALL			InitCompiler(const char* pDBFileName, const char* pOutputDirectory);
+DEM_DLL_API const char* DEM_DLLCALL		GetLastOperationMessages();
+DEM_DLL_API int DEM_DLLCALL				CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 													  const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID);
-DEM_DLL_EXPORT bool DEM_DLLCALL			LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta);
-DEM_DLL_EXPORT void DEM_DLLCALL			FreeShaderMetadata(CShaderMetadata* pMeta);
+DEM_DLL_API void DEM_DLLCALL			CreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta);
+DEM_DLL_API bool DEM_DLLCALL			LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta);
+DEM_DLL_API void DEM_DLLCALL			FreeShaderMetadata(CShaderMetadata* pMeta);
 //DEM_DLL_EXPORT bool DEM_DLLCALL			SaveShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta);
-DEM_DLL_EXPORT unsigned int DEM_DLLCALL	PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
+DEM_DLL_API unsigned int DEM_DLLCALL	PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 
 #ifdef __cplusplus
 }
@@ -68,6 +74,7 @@ typedef bool (DEM_DLLCALL *FDEMShaderCompiler_InitCompiler)(const char* pDBFileN
 typedef const char* (DEM_DLLCALL *FDEMShaderCompiler_GetLastOperationMessages)();
 typedef int (DEM_DLLCALL *FDEMShaderCompiler_CompileShader)(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
 															const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID);
+typedef void (DEM_DLLCALL *FDEMShaderCompiler_CreateShaderMetadata)(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta);
 typedef bool (DEM_DLLCALL *FDEMShaderCompiler_LoadShaderMetadataByObjectFileID)(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta);
 typedef void (DEM_DLLCALL *FDEMShaderCompiler_FreeShaderMetadata)(CShaderMetadata* pMeta);
 //typedef bool (DEM_DLLCALL *FDEMShaderCompiler_SaveShaderMetadata)(IO::CBinaryWriter& W, const CShaderMetadata& Meta);

@@ -36,16 +36,16 @@ enum EEffectParamClass
 };
 */
 
-class CAutoDelete
+class CAutoDLLFree
 {
 private:
 
-	void* pData;
+	CShaderMetadata* pData;
 
 public:
 
-	CAutoDelete(void* pNewData): pData(pNewData) {}
-	~CAutoDelete() { if (pData) n_delete(pData); }
+	CAutoDLLFree(CShaderMetadata* pNewData): pData(pNewData) {}
+	~CAutoDLLFree() { if (pData) DLLFreeShaderMetadata(pData); }
 };
 
 struct CEffectParam
@@ -1968,49 +1968,12 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 }
 //---------------------------------------------------------------------
 
-void USMAddStructMetadata(CUSMShaderMeta& OutMeta, const CUSMShaderMeta& InMeta, const U64 StructKey, CDict<U64, U32>& StructIndexMapping)
-{
-	const U32 StructIndex = (U32)(StructKey & 0xffffffff);
-	const CUSMStructMeta& StructMeta = InMeta.Structs[StructIndex];
-	OutMeta.Structs.Add(StructMeta);
-	StructIndexMapping.Add(StructKey, OutMeta.Structs.GetCount() - 1);
-
-	for (UPTR i = 0; i < StructMeta.Members.GetCount(); ++i)
-	{
-		const CUSMStructMemberMeta& MemberMeta = StructMeta.Members[i];
-		if (MemberMeta.StructIndex == (U32)(-1)) continue;
-
-		const U64 MemberKey = (StructKey & 0xffffffff00000000) | ((U64)MemberMeta.StructIndex);
-		USMAddStructMetadata(OutMeta, InMeta, MemberKey, StructIndexMapping);
-	}
-}
-//---------------------------------------------------------------------
-
-void SM30AddStructMetadata(CSM30ShaderMeta& OutMeta, const CSM30ShaderMeta& InMeta, const U64 StructKey, CDict<U64, U32>& StructIndexMapping)
-{
-	const U32 StructIndex = (U32)(StructKey & 0xffffffff);
-	const CSM30StructMeta& StructMeta = InMeta.Structs[StructIndex];
-	OutMeta.Structs.Add(StructMeta);
-	StructIndexMapping.Add(StructKey, OutMeta.Structs.GetCount() - 1);
-
-	for (UPTR i = 0; i < StructMeta.Members.GetCount(); ++i)
-	{
-		const CSM30StructMemberMeta& MemberMeta = StructMeta.Members[i];
-		if (MemberMeta.StructIndex == (U32)(-1)) continue;
-
-		const U64 MemberKey = (StructKey & 0xffffffff00000000) | ((U64)MemberMeta.StructIndex);
-		SM30AddStructMetadata(OutMeta, InMeta, MemberKey, StructIndexMapping);
-	}
-}
-//---------------------------------------------------------------------
-
 int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 							 EShaderParamClass Class,
 							 CArray<CEffectParam>& GlobalParams,
 							 CShaderMetadataCache& MetaCache,
 							 CDict<U64, U32>& StructIndexMapping,
-							 CShaderMetadata* pGlobalMeta,
-							 U32& Target)
+							 CShaderMetadata* pGlobalMeta)
 {
 	// Load API-independent effect parameter description
 
@@ -2023,7 +1986,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 
 	if (!R.Read(Param.SourceShaderID)) return ERR_IO_READ;	
 
-	const U32 SourceShaderID = Param.SourceShaderID;
+	const U32 ShaderID = Param.SourceShaderID;
 
 	if (Class == ShaderParam_Const)
 	{
@@ -2035,24 +1998,18 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 
 	// Load API-specific parameter metadata
 
-	CShaderMetadata* pMeta = MetaCache.GetMetadata(SourceShaderID);
+	CShaderMetadata* pMeta = MetaCache.GetMetadata(ShaderID);
 	if (!pMeta)
 	{
-		n_msg(VL_ERROR, "No metadata loaded for shader ID %d\n", SourceShaderID);
+		n_msg(VL_ERROR, "Failed to load shader metadata for ID %d, binary may be missing or corrupted\n", ShaderID);
 		return ERR_INVALID_DATA;
 	}
 
-	// May actually be higher than 0x0400, but it is needed only
-	// for checking that no SM3.0 + USM mixing occurs.
-	U32 CurrTarget = (pMeta->GetShaderModel() == ShaderModel_30) ? 0x0300 : 0x0400;
-
-	if (!Target) Target = CurrTarget;
-	else if ((Target < 0x0400 && CurrTarget >= 0x0400) || (Target >= 0x0400 && CurrTarget < 0x0400))
+	if (pMeta->GetShaderModel() != pGlobalMeta->GetShaderModel())
 	{
-		n_msg(VL_ERROR, "Render path mixes USM and SM3.0 effects in globals section\n");
+		n_msg(VL_ERROR, "Render path mixes effects with different shader models in globals section\n");
 		return ERR_INVALID_DATA;
 	}
-	else if (CurrTarget > Target) Target = CurrTarget;
 
 	// Extend requirements of global metadata with requirements of the current shader
 	pGlobalMeta->SetMinFeatureLevel(n_max(pGlobalMeta->GetMinFeatureLevel(), pMeta->GetMinFeatureLevel()));
@@ -2062,7 +2019,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 	UPTR Idx;
 	if (!pMeta->FindParamObjectByName(Class, Param.ID.CStr(), Idx))
 	{
-		n_msg(VL_ERROR, "Parameter '%s' not found in shader %d\n", Param.ID.CStr(), SourceShaderID);
+		n_msg(VL_ERROR, "Parameter '%s' not found in shader %d\n", Param.ID.CStr(), ShaderID);
 		return ERR_INVALID_DATA;
 	}
 	Param.pMeta = pMeta;
@@ -2145,11 +2102,6 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 	// For resources and samplers we have done
 	if (Param.Class != ShaderParam_Const) return SUCCESS;
 
-	// For constants, add to global metadata containing buffer and referenced structures
-
-	// High part of 64-bit integer, for structure mapping key generation
-	const U64 SourceShaderID64 = (((U64)SourceShaderID) << 32);
-
 	// Add buffer containing this constant. If buffer already exist at this register, merge them.
 
 	const CMetadataObject* pMetaBuffer = Param.GetContainingBuffer();
@@ -2163,36 +2115,12 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 
 	// Add structure layout of this constant if it is a structure, process nested structures
 
-	U32 StructIndex = pAddedParam->pUSMConst->StructIndex;
+	U32 StructIndex = pGlobalMeta->GetStructureIndex(Param.Index);
 	if (StructIndex != (U32)(-1))
 	{
-		const U64 StructKey = SourceShaderID64 | ((U64)StructIndex);
-		IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-		if (StructIdxIdx == INVALID_INDEX)
-		{
-			USMAddStructMetadata(USMMeta, *pUSMMeta, StructKey, StructIndexMapping);
-			StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-			n_assert(StructIdxIdx != INVALID_INDEX);
-		}
-
-		pAddedParam->pUSMConst->StructIndex = StructIndexMapping.ValueAt(StructIdxIdx);
-	}
-
-	// Add structure layout of this constant if it is a structure, process nested structures
-
-	U32 StructIndex = pAddedParam->pSM30Const->StructIndex;
-	if (StructIndex != (U32)(-1))
-	{
-		const U64 StructKey = SourceShaderID64 | ((U64)StructIndex);
-		IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-		if (StructIdxIdx == INVALID_INDEX)
-		{
-			SM30AddStructMetadata(SM30Meta, *pSM30Meta, StructKey, StructIndexMapping);
-			StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-			n_assert(StructIdxIdx != INVALID_INDEX);
-		}
-
-		pAddedParam->pSM30Const->StructIndex = StructIndexMapping.ValueAt(StructIdxIdx);
+		const U64 StructKey = (((U64)ShaderID) << 32) | ((U64)StructIndex);
+		U32 GlobalStructIndex = pGlobalMeta->AddStructure(*pMeta, StructKey, StructIndexMapping);
+		pGlobalMeta->SetStructureIndex(Param.Index, GlobalStructIndex);
 	}
 
 	return SUCCESS;
@@ -2239,14 +2167,11 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 	// Build globals table and accompanying metadata
 
 	CArray<CEffectParam> GlobalParams;
-	CShaderMetadata* pGlobalMeta;
-	U32 Target = 0; //???!!!REFACTORING: NEED?!
 
-	if (ShaderModel == ShaderModel_30) pGlobalMeta = n_new(CSM30ShaderMeta);
-	else if (ShaderModel == ShaderModel_USM) pGlobalMeta = n_new(CUSMShaderMeta);
-	else return ERR_INVALID_DATA;
-	
-	CAutoDelete GlobalMetaScopedKiller(pGlobalMeta);
+	CShaderMetadata* pGlobalMeta;
+	DLLCreateShaderMetadata(ShaderModel, pGlobalMeta);
+	if (!pGlobalMeta) return ERR_INVALID_DATA;
+	CAutoDLLFree GlobalMetaScopedKiller(pGlobalMeta);
 
 	Data::PDataArray EffectsWithGlobals;
 	if (Params->Get(EffectsWithGlobals, CStrID("EffectsWithGlobals")))
@@ -2299,21 +2224,21 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Const, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta, Target);
+				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Const, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta);
 				if (CallResult != SUCCESS) return CallResult;
 			}
 
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Resource, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta, Target);
+				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Resource, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta);
 				if (CallResult != SUCCESS) return CallResult;
 			}
 
 			if (!R.Read(GlobalCount)) return ERR_IO_READ;
 			for (U32 i = 0; i < GlobalCount; ++i)
 			{
-				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Sampler, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta, Target);
+				int CallResult = ProcessGlobalEffectParam(R, ShaderParam_Sampler, GlobalParams, MetaCache, StructIndexMapping, pGlobalMeta);
 				if (CallResult != SUCCESS) return CallResult;
 			}
 		}
