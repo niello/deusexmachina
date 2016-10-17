@@ -805,10 +805,11 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			pConstInstanceDataVS = pTech->GetConstant(CStrID("InstanceDataVS"));
 			pConstInstanceDataPS = pTech->GetConstant(CStrID("InstanceDataPS"));
 			pResourceHeightMap = pTech->GetResource(CStrID("HeightMapVS"));
+			//???normal map?! now in material, must not be there!
 
-			const CEffectSampler* pVSHeightSampler = pTech->GetSampler(CStrID("VSHeightSampler"));
-			if (pVSHeightSampler)
-				GPU.BindSampler(pVSHeightSampler->ShaderType, pVSHeightSampler->Handle, HMSampler.GetUnsafe());
+			const CEffectSampler* pVSLinearSampler = pTech->GetSampler(CStrID("VSLinearSampler"));
+			if (pVSLinearSampler)
+				GPU.BindSampler(pVSLinearSampler->ShaderType, pVSLinearSampler->Handle, HMSampler.GetUnsafe());
 		}
 
 		if (pResourceHeightMap)
