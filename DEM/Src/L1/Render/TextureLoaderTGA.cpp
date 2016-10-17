@@ -20,8 +20,11 @@ struct CTGAHeader
 	U8	IDLength;
 	U8	ColorMapType;
 	U8	ImageType;
-	U8	ColorMapSpecUnusedPart[5];
-	U8	ImageSpecUnusedPart[4];
+	U16	ColorMapFirstEntryIndex;
+	U16	ColorMapLength;
+	U8	ColorMapEntrySize;
+	U16	XOrigin;
+	U16	YOrigin;
 	U16	ImageWidth;
 	U16	ImageHeight;
 	U8	BitsPerPixel;

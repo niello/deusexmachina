@@ -898,7 +898,7 @@ CDepthStencilBuffer* CD3D11GPUDriver::GetDepthStencilBuffer() const
 //!!!ID3D11ShaderResourceView* or PObject!
 bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB)
 {
-	if (!pSRV || SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
+	if (SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
 
 	if (MaxSRVSlotIndex < SlotIndex) MaxSRVSlotIndex = SlotIndex;
 	SlotIndex |= (ShaderType << 16); // Encode shader type in a high word
