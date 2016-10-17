@@ -67,29 +67,39 @@ struct CEffectParam
 	const CMetadataObject*	GetMetadataObject() const { return pMeta ? pMeta->GetParamObject(Class, Index) : NULL; }
 	const CMetadataObject*	GetContainingBuffer() const { return pMeta ? pMeta->GetContainingConstantBuffer(pMeta->GetParamObject(Class, Index)) : NULL; }
 
-	bool operator ==(const CEffectParam& Other) const
+	bool IsEqual(const CEffectParam& Other) const
 	{
-		NOT_IMPLEMENTED_MSG("REFACTORING: If never used, may remove!");
-
 		if (ShaderType != Other.ShaderType) FAIL;
 
 		const CMetadataObject* pMetaObject = GetMetadataObject();
 		const CMetadataObject* pOtherMetaObject = Other.GetMetadataObject();
 		if (!pMetaObject && !pOtherMetaObject) OK;
 
-		return pMetaObject && pOtherMetaObject && pMetaObject->IsEqual(*pOtherMetaObject);
+		if (!(pMetaObject && pOtherMetaObject && pMetaObject->IsEqual(*pOtherMetaObject))) FAIL;
 
-		//!!!REFACTORING: check buffer compatibility!
-		/* SM30: no special check
-		USM:
-				U32 MinBufferSize = pUSMConst->Offset + pUSMConst->ElementSize * pUSMConst->ElementCount;
-				return pUSMBuffer->Register == Other.pUSMBuffer->Register &&
-					pUSMBuffer->Size >= MinBufferSize &&
-					Other.pUSMBuffer->Size >= MinBufferSize;
-		*/
+		if (pMetaObject->GetClass() == ShaderParam_Const && pMetaObject->GetShaderModel() == ShaderModel_USM)
+		{
+			const CMetadataObject* pBuffer = (const CUSMBufferMeta*)pMeta->GetContainingConstantBuffer(pMetaObject);
+			const CMetadataObject* pOtherBuffer = (const CUSMBufferMeta*)Other.pMeta->GetContainingConstantBuffer(pOtherMetaObject);
+			return pBuffer->IsEqual(*pOtherBuffer);
+			/*
+			const CUSMConstMeta* pUSMConst = (const CUSMConstMeta*)pMetaObject;
+			U32 MinBufferSize = pUSMConst->Offset + pUSMConst->ElementSize * pUSMConst->ElementCount;
+
+			const CUSMBufferMeta* pUSMBuffer = (const CUSMBufferMeta*)pMeta->GetContainingConstantBuffer(pMetaObject);
+			const CUSMBufferMeta* pOtherUSMBuffer = (const CUSMBufferMeta*)Other.pMeta->GetContainingConstantBuffer(pOtherMetaObject);
+
+			return pUSMBuffer->Register == pOtherUSMBuffer->Register &&
+				pUSMBuffer->Size >= MinBufferSize &&
+				pOtherUSMBuffer->Size >= MinBufferSize;
+			*/
+		}
+
+		OK;
 	}
 
-	bool operator !=(const CEffectParam& Other) const { return !(*this == Other); }
+	bool operator ==(const CEffectParam& Other) const { return IsEqual(Other); }
+	bool operator !=(const CEffectParam& Other) const { return !IsEqual(Other); }
 };
 
 struct CTechInfo
@@ -1340,7 +1350,7 @@ int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug,
 										pClassName = "sampler";
 										break;
 								}
-								n_msg(VL_DEBUG, "Tech '%s': %s '%s' added%s\n", TechInfo.ID.CStr(), pClassName, MetaObjectID.CStr(), BufferString.CStr());
+								n_msg(VL_DEBUG, "Tech '%s': %s '%s' added%s\n", TechInfo.ID.CStr(), pClassName, MetaObjectID.CStr(), BufferString.IsValid() ? BufferString.CStr() : "");
 							}
 							else
 							{
@@ -2102,6 +2112,8 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 	// For resources and samplers we have done
 	if (Param.Class != ShaderParam_Const) return SUCCESS;
 
+	UPTR AddedConstIndex = pAddedParam->Index;
+
 	// Add buffer containing this constant. If buffer already exist at this register, merge them.
 
 	const CMetadataObject* pMetaBuffer = Param.GetContainingBuffer();
@@ -2111,16 +2123,16 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 		n_msg(VL_ERROR, "Failed to add or merge constant buffer for const '%s'\n", Param.ID.CStr());
 		return ERR_INVALID_DATA;
 	}
-	pGlobalMeta->SetContainingConstantBuffer(Param.Index, BufferIdx);
+	pGlobalMeta->SetContainingConstantBuffer(AddedConstIndex, BufferIdx);
 
 	// Add structure layout of this constant if it is a structure, process nested structures
 
-	U32 StructIndex = pGlobalMeta->GetStructureIndex(Param.Index);
+	U32 StructIndex = pGlobalMeta->GetStructureIndex(AddedConstIndex);
 	if (StructIndex != (U32)(-1))
 	{
 		const U64 StructKey = (((U64)ShaderID) << 32) | ((U64)StructIndex);
 		U32 GlobalStructIndex = pGlobalMeta->AddStructure(*pMeta, StructKey, StructIndexMapping);
-		pGlobalMeta->SetStructureIndex(Param.Index, GlobalStructIndex);
+		pGlobalMeta->SetStructureIndex(AddedConstIndex, GlobalStructIndex);
 	}
 
 	return SUCCESS;
@@ -2196,7 +2208,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 			IO::PStream EFF = IOSrv->CreateStream(EffectPath);
 			if (!EFF->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL))
 			{
-				n_msg(VL_INFO, "Effect '%s' skipped as its file '%s' is not found\n", pEffectID, EffectPath.CStr());
+				n_msg(VL_INFO, "Effect '%s' skipped because its file '%s' is not found\n", pEffectID, EffectPath.CStr());
 				continue;
 			}
 
@@ -2214,7 +2226,7 @@ int CompileRenderPath(const char* pInFilePath, const char* pOutFilePath, EShader
 			if (EffectShaderModel != ShaderModel)
 			{
 				EFF->Close();
-				n_msg(VL_INFO, "Effect '%s' skipped as its shader model doesn't match a requested one\n", pEffectID);
+				n_msg(VL_INFO, "Effect '%s' skipped because its shader model doesn't match a requested one\n", pEffectID);
 				continue;
 			}
 			
