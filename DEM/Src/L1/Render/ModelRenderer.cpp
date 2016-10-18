@@ -364,7 +364,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						PShaderConstant CurrLightIndices = CurrInstanceDataPS->GetMember(sidLightIndices);
 						if (CurrLightIndices.IsValidPtr())
 						{
-							//!!!mul elm count on columns!
+							//!!!mul elm count on columns, say int4 LightIndices[2] must be 4 * 2 = 8, not just 2!
 							UPTR TechLightCount = CurrLightIndices->GetElementCount(); //!!!const, may be obtained from shader metadata outside the loop!
 							U32 ActualLightCount;
 
@@ -391,13 +391,13 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 										//!!!???what with batch-local indices?!
 									}
 									const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-									CurrLightIndices->SetUInt(*pPSCB, LightRec.GPULightIndex);
+									CurrLightIndices->SetUInt(*pPSCB, LightRec.GPULightIndex); //!!!FIXME: always the same idx is rewritten!
 								}
 								if (LightCount)
 								{
-									// If tech is fixed-light-count, fill unused light indices with the special value
-									for (; InstLightIdx < TechLightCount; ++InstLightIdx)
-										CurrLightIndices->SetUInt(*pPSCB, EMPTY_LIGHT_INDEX);
+									// If tech is fixed-light-count, fill the first unused light index with the special value
+									if (InstLightIdx < TechLightCount)
+										CurrLightIndices->SetUInt(*pPSCB, EMPTY_LIGHT_INDEX); //!!!FIXME: always the same idx is rewritten!
 								}
 							}
 						}
@@ -579,13 +579,13 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 										//!!!???what with batch-local indices?!
 									}
 									const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-									ConstLightIndices->SetUInt(*pPSCB, LightRec.GPULightIndex);
+									ConstLightIndices->SetUInt(*pPSCB, LightRec.GPULightIndex); //!!!FIXME: always the same idx is rewritten!
 								}
 								if (LightCount)
 								{
-									// If tech is fixed-light-count, fill unused light indices with the special value
-									for (; InstLightIdx < TechLightCount; ++InstLightIdx)
-										ConstLightIndices->SetUInt(*pPSCB, EMPTY_LIGHT_INDEX);
+									// If tech is fixed-light-count, fill the first unused light index with the special value
+									if (InstLightIdx < TechLightCount)
+										ConstLightIndices->SetUInt(*pPSCB, EMPTY_LIGHT_INDEX); //!!!FIXME: always the same idx is rewritten!
 								}
 							}
 						}
