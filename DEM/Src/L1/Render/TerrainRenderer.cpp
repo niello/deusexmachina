@@ -647,7 +647,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 	const CTechnique* pCurrTech = NULL;
 
 	const CEffectConstant* pConstVSCDLODParams = NULL;
-	const CEffectConstant* pConstPSCDLODParams = NULL;
 	const CEffectConstant* pConstGridConsts = NULL;
 	const CEffectConstant* pConstInstanceDataVS = NULL;
 	const CEffectConstant* pConstInstanceDataPS = NULL;
@@ -800,7 +799,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			pCurrTech = pTech;
 
 			pConstVSCDLODParams = pTech->GetConstant(CStrID("VSCDLODParams"));
-			pConstPSCDLODParams = pTech->GetConstant(CStrID("PSCDLODParams"));
 			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
 			pConstInstanceDataVS = pTech->GetConstant(CStrID("InstanceDataVS"));
 			pConstInstanceDataPS = pTech->GetConstant(CStrID("InstanceDataPS"));
@@ -844,12 +842,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstVSCDLODParams->Const->GetConstantBufferHandle(), pConstVSCDLODParams->ShaderType);
 			pConstVSCDLODParams->Const->SetRawValue(*pCB, &CDLODParams, sizeof(CDLODParams));
-		
-			if (pConstPSCDLODParams)
-			{
-				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstPSCDLODParams->Const->GetConstantBufferHandle(), pConstPSCDLODParams->ShaderType);
-				pConstPSCDLODParams->Const->SetRawValue(*pCB, CDLODParams.WorldToHM, sizeof(float) * 4);
-			}
 		}
 
 		//!!!implement looping if instance buffer is too small!

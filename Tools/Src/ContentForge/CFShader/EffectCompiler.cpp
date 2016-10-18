@@ -2127,7 +2127,7 @@ int ProcessGlobalEffectParam(IO::CBinaryReader& R,
 
 	// Add structure layout of this constant if it is a structure, process nested structures
 
-	U32 StructIndex = pGlobalMeta->GetStructureIndex(AddedConstIndex);
+	U32 StructIndex = pMeta->GetStructureIndex(Param.Index);
 	if (StructIndex != (U32)(-1))
 	{
 		const U64 StructKey = (((U64)ShaderID) << 32) | ((U64)StructIndex);
