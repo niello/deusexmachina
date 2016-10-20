@@ -44,11 +44,9 @@ bool CSM30ShaderConstant::Init(HConst hConst)
 		StructHandle = pMeta->StructHandle;
 		ElementCount = pMeta->ElementCount;
 		ElementRegisterCount = pMeta->ElementRegisterCount;
+		Columns = pMeta->Columns;
+		Rows = pMeta->Rows;
 		Flags = pMeta->Flags;
-
-//!!!FILL!
-Columns = 0;
-Rows = 0;
 
 		//!!!for mixed calculate per-member!
 		SizeInBytes = ElementCount * ElementRegisterCount;
@@ -109,8 +107,8 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 			Const->StructHandle = It->StructHandle;
 			Const->ElementCount = It->ElementCount;
 			Const->ElementRegisterCount = It->ElementRegisterCount;
-			Const->Columns = 0; //It->Columns;
-			Const->Rows = 0; //It->Rows;
+			Const->Columns = It->Columns;
+			Const->Rows = It->Rows;
 			Const->Flags = It->Flags;
 
 			return Const.GetUnsafe();
@@ -208,13 +206,16 @@ void CSM30ShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* p
 					*pCurrData = pCurrMatrix->m[Row][Col];
 					++pCurrData;
 				}
+
 			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
+			NOT_IMPLEMENTED;
 			CB9.WriteData(RegSet, Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
 		}
 	}
 	else
 	{
 		//!!!check columns and rows! (really need to check only rows, as all columns are used)
+		NOT_IMPLEMENTED;
 		CB9.WriteData(RegSet, Offset + sizeof(matrix44) * StartIndex, pValues, sizeof(matrix44) * Count);
 	}
 }

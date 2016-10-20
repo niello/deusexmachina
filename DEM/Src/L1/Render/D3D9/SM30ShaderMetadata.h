@@ -32,6 +32,8 @@ struct CSM30StructMemberMeta
 	U32				RegisterOffset;
 	U32				ElementRegisterCount;
 	U32				ElementCount;
+	U8				Columns;
+	U8				Rows;
 	U8				Flags;					// See EShaderConstFlags
 	//???store register set and support mixed structs?
 };
@@ -51,6 +53,8 @@ struct CSM30ConstMeta
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
 	U32					ElementCount;
+	U8					Columns;
+	U8					Rows;
 	U8					Flags;				// See ESM30ConstFlags
 	HHandle				Handle;
 	PShaderConstant		ConstObject;

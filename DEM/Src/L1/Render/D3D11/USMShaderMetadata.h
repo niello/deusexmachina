@@ -68,6 +68,8 @@ struct CUSMStructMemberMeta
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
+	U8				Columns;
+	U8				Rows;
 	U8				Flags;			// See EShaderConstFlags
 };
 
@@ -86,6 +88,8 @@ struct CUSMConstMeta
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
+	U8				Columns;
+	U8				Rows;
 	U8				Flags;			// See EShaderConstFlags
 	HHandle			Handle;
 	PShaderConstant	ConstObject;

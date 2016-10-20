@@ -76,10 +76,12 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 			if (!R.Read<U32>(StructIndex)) FAIL;
 			pMemberMeta->StructHandle = (StructIndex == (U32)(-1)) ? INVALID_HANDLE : Structs[StructIndex].Handle;
 
-			if (!R.Read<U32>(pMemberMeta->RegisterOffset)) FAIL;
-			if (!R.Read<U32>(pMemberMeta->ElementRegisterCount)) FAIL;
-			if (!R.Read<U32>(pMemberMeta->ElementCount)) FAIL;
-			if (!R.Read<U8>(pMemberMeta->Flags)) FAIL;
+			if (!R.Read(pMemberMeta->RegisterOffset)) FAIL;
+			if (!R.Read(pMemberMeta->ElementRegisterCount)) FAIL;
+			if (!R.Read(pMemberMeta->ElementCount)) FAIL;
+			if (!R.Read(pMemberMeta->Columns)) FAIL;
+			if (!R.Read(pMemberMeta->Rows)) FAIL;
+			if (!R.Read(pMemberMeta->Flags)) FAIL;
 		}
 	}
 
@@ -102,10 +104,12 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 		pMeta->RegSet = (ESM30RegisterSet)RegSet;
 		n_assert_dbg(RegSet == Reg_Bool || RegSet == Reg_Int4 || RegSet == Reg_Float4);
 
-		if (!R.Read<U32>(pMeta->RegisterStart)) FAIL;
-		if (!R.Read<U32>(pMeta->ElementRegisterCount)) FAIL;
-		if (!R.Read<U32>(pMeta->ElementCount)) FAIL;
-		if (!R.Read<U8>(pMeta->Flags)) FAIL;
+		if (!R.Read(pMeta->RegisterStart)) FAIL;
+		if (!R.Read(pMeta->ElementRegisterCount)) FAIL;
+		if (!R.Read(pMeta->ElementCount)) FAIL;
+		if (!R.Read(pMeta->Columns)) FAIL;
+		if (!R.Read(pMeta->Rows)) FAIL;
+		if (!R.Read(pMeta->Flags)) FAIL;
 
 		pMeta->Handle = INVALID_HANDLE;
 	}

@@ -206,6 +206,8 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 			pMemberMeta->RegisterOffset = D3D9ConstDesc.RegisterIndex;
 			pMemberMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			pMemberMeta->ElementCount = D3D9ConstDesc.Type.Elements;
+			pMemberMeta->Columns = D3D9ConstDesc.Type.Columns;
+			pMemberMeta->Rows = D3D9ConstDesc.Type.Rows;
 			pMemberMeta->Flags = 0;
 
 			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
@@ -342,6 +344,8 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
 			pMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			pMeta->ElementCount = D3D9ConstDesc.Type.Elements;
+			pMeta->Columns = D3D9ConstDesc.Type.Columns;
+			pMeta->Rows = D3D9ConstDesc.Type.Rows;
 			pMeta->Flags = 0;
 
 			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
@@ -432,6 +436,8 @@ bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 			W.Write(Member.RegisterOffset);
 			W.Write(Member.ElementRegisterCount);
 			W.Write(Member.ElementCount);
+			W.Write(Member.Columns);
+			W.Write(Member.Rows);
 			W.Write(Member.Flags);
 		}
 	}
@@ -447,6 +453,8 @@ bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.ElementRegisterCount);
 		W.Write(Obj.ElementCount);
+		W.Write(Obj.Columns);
+		W.Write(Obj.Rows);
 		W.Write(Obj.Flags);
 	}
 
@@ -510,6 +518,8 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 			R.Read(Member.RegisterOffset);
 			R.Read(Member.ElementRegisterCount);
 			R.Read(Member.ElementCount);
+			R.Read(Member.Columns);
+			R.Read(Member.Rows);
 			R.Read(Member.Flags);
 		}
 	}
@@ -532,6 +542,8 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.ElementRegisterCount);
 		R.Read(Obj.ElementCount);
+		R.Read(Obj.Columns);
+		R.Read(Obj.Rows);
 		R.Read(Obj.Flags);
 
 		// Cache value

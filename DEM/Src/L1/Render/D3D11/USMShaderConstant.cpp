@@ -18,11 +18,9 @@ bool CUSMShaderConstant::Init(HConst hConst)
 	StructHandle = pMeta->StructHandle;
 	ElementCount = pMeta->ElementCount;
 	ElementSize = pMeta->ElementSize;
+	Columns = pMeta->Columns;
+	Rows = pMeta->Rows;
 	Flags = pMeta->Flags;
-
-//!!!FILL!
-Columns = 0;
-Rows = 0;
 
 	OK;
 }
@@ -80,8 +78,8 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 			Const->StructHandle = It->StructHandle;
 			Const->ElementCount = It->ElementCount;
 			Const->ElementSize = It->ElementSize;
-			Const->Columns = 0; //It->Columns;
-			Const->Rows = 0; //It->Rows;
+			Const->Columns = It->Columns;
+			Const->Rows = It->Rows;
 			Const->Flags = It->Flags;
 
 			return Const.GetUnsafe();
@@ -143,13 +141,28 @@ void CUSMShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pV
 				}
 
 			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
+			NOT_IMPLEMENTED;
 			CB11.WriteData(Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
 		}
 	}
 	else
 	{
-		//!!!check columns and rows! (really need to check only rows, as all columns are used)
-		CB11.WriteData(Offset + sizeof(matrix44) * StartIndex, pValues, sizeof(matrix44) * Count);
+		const UPTR DataSize = 4 * Rows * sizeof(float);
+		UPTR CurrOffset = Offset + DataSize * StartIndex;
+		if (DataSize == sizeof(matrix44))
+		{
+			CB11.WriteData(CurrOffset, pValues, sizeof(matrix44) * Count);
+		}
+		else
+		{
+			const matrix44* pCurrValue = pValues;
+			for (UPTR i = 0; i < Count; ++i)
+			{
+				CB11.WriteData(CurrOffset, pValues, DataSize);
+				CurrOffset += DataSize;
+				pCurrValue += sizeof(matrix44);
+			}
+		}
 	}
 }
 //---------------------------------------------------------------------

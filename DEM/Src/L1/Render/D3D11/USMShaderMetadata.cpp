@@ -70,10 +70,12 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 			if (!R.Read<U8>(Type)) FAIL;
 			pMemberMeta->Type = (EUSMConstType)Type;
 
-			if (!R.Read<U32>(pMemberMeta->Offset)) FAIL;
-			if (!R.Read<U32>(pMemberMeta->ElementSize)) FAIL;
-			if (!R.Read<U32>(pMemberMeta->ElementCount)) FAIL;
-			if (!R.Read<U8>(pMemberMeta->Flags)) FAIL;
+			if (!R.Read(pMemberMeta->Offset)) FAIL;
+			if (!R.Read(pMemberMeta->ElementSize)) FAIL;
+			if (!R.Read(pMemberMeta->ElementCount)) FAIL;
+			if (!R.Read(pMemberMeta->Columns)) FAIL;
+			if (!R.Read(pMemberMeta->Rows)) FAIL;
+			if (!R.Read(pMemberMeta->Flags)) FAIL;
 		}
 	}
 
@@ -95,10 +97,12 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 		if (!R.Read<U8>(Type)) FAIL;
 		pMeta->Type = (EUSMConstType)Type;
 
-		if (!R.Read<U32>(pMeta->Offset)) FAIL;
-		if (!R.Read<U32>(pMeta->ElementSize)) FAIL;
-		if (!R.Read<U32>(pMeta->ElementCount)) FAIL;
-		if (!R.Read<U8>(pMeta->Flags)) FAIL;
+		if (!R.Read(pMeta->Offset)) FAIL;
+		if (!R.Read(pMeta->ElementSize)) FAIL;
+		if (!R.Read(pMeta->ElementCount)) FAIL;
+		if (!R.Read(pMeta->Columns)) FAIL;
+		if (!R.Read(pMeta->Rows)) FAIL;
+		if (!R.Read(pMeta->Flags)) FAIL;
 
 		pMeta->Handle = INVALID_HANDLE;
 	}

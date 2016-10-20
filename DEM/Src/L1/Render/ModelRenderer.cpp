@@ -208,6 +208,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 	PShaderConstant ConstWorldMatrix;
 	PShaderConstant ConstLightCount;
 	PShaderConstant ConstLightIndices;
+	UPTR TechLightCount;
 
 	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
@@ -518,10 +519,13 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				if (pConstInstanceDataVS)
 					ConstWorldMatrix = pConstInstanceDataVS->Const->GetMember(sidWorldMatrix);
 
+				TechLightCount = 0;
 				if (LightingEnabled && pConstInstanceDataPS)
 				{
 					ConstLightCount = pConstInstanceDataPS->Const->GetMember(sidLightCount);
 					ConstLightIndices = pConstInstanceDataPS->Const->GetMember(sidLightIndices);
+					if (ConstLightIndices.IsValidPtr())
+						TechLightCount = ConstLightIndices->GetElementCount() * ConstLightIndices->GetColumnCount() * ConstLightIndices->GetRowCount();
 				}
 
 				pCurrTech = pTech;
@@ -553,8 +557,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					{
 						if (ConstLightIndices.IsValidPtr())
 						{
-							//!!!mul elm count on columns!
-							UPTR TechLightCount = ConstLightIndices->GetElementCount(); //!!!const, may be obtained from shader metadata outside the loop!
 							U32 ActualLightCount;
 
 							if (LightCount == 0)

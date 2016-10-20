@@ -127,7 +127,10 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, U32 Str
 				}
 			}
 
-			if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
+			pMemberMeta->Columns = D3DMemberTypeDesc.Columns;
+			pMemberMeta->Rows = D3DMemberTypeDesc.Rows;
+
+			if (D3DMemberTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
 				pMemberMeta->Flags |= ShaderConst_ColumnMajor;
 		}
 	}
@@ -326,6 +329,9 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 								}
 							}
 
+							pConstMeta->Columns = D3DTypeDesc.Columns;
+							pConstMeta->Rows = D3DTypeDesc.Rows;
+
 							if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
 								pConstMeta->Flags |= ShaderConst_ColumnMajor;
 						}
@@ -373,6 +379,8 @@ bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 			W.Write(Member.Offset);
 			W.Write(Member.ElementSize);
 			W.Write(Member.ElementCount);
+			W.Write(Member.Columns);
+			W.Write(Member.Rows);
 			W.Write(Member.Flags);
 		}
 	}
@@ -388,6 +396,8 @@ bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 		W.Write(Obj.Offset);
 		W.Write(Obj.ElementSize);
 		W.Write(Obj.ElementCount);
+		W.Write(Obj.Columns);
+		W.Write(Obj.Rows);
 		W.Write(Obj.Flags);
 	}
 
@@ -459,6 +469,8 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 			R.Read(Member.Offset);
 			R.Read(Member.ElementSize);
 			R.Read(Member.ElementCount);
+			R.Read(Member.Columns);
+			R.Read(Member.Rows);
 			R.Read(Member.Flags);
 		}
 	}
@@ -479,6 +491,8 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 		R.Read(Obj.Offset);
 		R.Read(Obj.ElementSize);
 		R.Read(Obj.ElementCount);
+		R.Read(Obj.Columns);
+		R.Read(Obj.Rows);
 		R.Read(Obj.Flags);
 	}
 

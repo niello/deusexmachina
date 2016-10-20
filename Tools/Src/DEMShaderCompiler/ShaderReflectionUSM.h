@@ -70,6 +70,8 @@ public:
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
+	U8				Columns;
+	U8				Rows;
 	U8				Flags;			// See EShaderConstFlags
 
 	virtual const char*			GetName() const { return Name.CStr(); }
@@ -103,6 +105,8 @@ public:
 	U32				Offset;
 	U32				ElementSize;
 	U32				ElementCount;
+	U8				Columns;
+	U8				Rows;
 	U8				Flags;			// See EShaderConstFlags
 
 	virtual const char*			GetName() const { return Name.CStr(); }

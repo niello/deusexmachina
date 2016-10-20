@@ -31,6 +31,8 @@ public:
 	virtual bool			Init(HConst hConst) = 0;
 
 	virtual UPTR			GetSizeInBytes() const = 0;
+	virtual UPTR			GetColumnCount() const = 0;
+	virtual UPTR			GetRowCount() const = 0;
 	virtual UPTR			GetElementCount() const = 0;
 	virtual UPTR			GetMemberCount() const = 0;
 	virtual PShaderConstant	GetElement(U32 Index) const = 0;

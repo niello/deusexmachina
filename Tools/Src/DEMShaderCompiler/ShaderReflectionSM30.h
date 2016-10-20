@@ -48,6 +48,8 @@ public:
 	U32				RegisterOffset;
 	U32				ElementRegisterCount;
 	U32				ElementCount;
+	U8				Columns;
+	U8				Rows;
 	U8				Flags;					// See EShaderConstFlags
 	//???store register set and support mixed structs?
 
@@ -82,6 +84,8 @@ public:
 	U32					RegisterStart;
 	U32					ElementRegisterCount;
 	U32					ElementCount;
+	U8					Columns;
+	U8					Rows;
 	U8					Flags;					// See EShaderConstFlags
 
 	U32					RegisterCount;			// Cache, not saved
