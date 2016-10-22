@@ -64,6 +64,24 @@ bool CSM30ShaderConstant::Init(HConst hConst)
 }
 //---------------------------------------------------------------------
 
+//???process column-major differently?
+U32 CSM30ShaderConstant::GetComponentOffset(U32 ComponentIndex) const
+{
+	n_assert_dbg(StructHandle == INVALID_HANDLE);
+
+	const U32 ComponentsPerElement = Columns * Rows;
+	const U32 Elm = ComponentIndex / ComponentsPerElement;
+	ComponentIndex = ComponentIndex - Elm * ComponentsPerElement;
+	const U32 Row = ComponentIndex / Columns;
+	const U32 Col = ComponentIndex - Row * Columns;
+
+	const U32 ComponentSize = 4; // Always 32-bit, even bool
+	const U32 ComponentsPerAlignedRow = 4; // Even for, say, float3x3, each row uses full 4-component register
+
+	return Offset + Elm * ComponentsPerElement + Row * ComponentsPerAlignedRow + Col; // In register components
+}
+//---------------------------------------------------------------------
+
 UPTR CSM30ShaderConstant::GetMemberCount() const
 {
 	if (StructHandle == INVALID_HANDLE) return 0;
@@ -127,29 +145,83 @@ void CSM30ShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pDa
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
+void CSM30ShaderConstant::InternalSetUInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, U32 Value) const
 {
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 	switch (RegSet)
 	{
 		case Reg_Int4:
 		{
-			CB9.WriteData(Reg_Int4, Offset, &Value, sizeof(U32));
+			CB9.WriteData(Reg_Int4, ValueOffset, &Value, sizeof(U32));
 			break;
 		}
 		case Reg_Float4:
 		{
 			float FloatValue = (float)Value;
-			CB9.WriteData(Reg_Float4, Offset, &FloatValue, sizeof(float));
+			CB9.WriteData(Reg_Float4, ValueOffset, &FloatValue, sizeof(float));
 			break;
 		}
 		case Reg_Bool:
 		{
 			BOOL BoolValue = (Value != 0);
-			CB9.WriteData(Reg_Bool, Offset, &BoolValue, sizeof(BOOL));
+			CB9.WriteData(Reg_Bool, ValueOffset, &BoolValue, sizeof(BOOL));
 			break;
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::InternalSetSInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, I32 Value) const
+{
+	switch (RegSet)
+	{
+		case Reg_Int4:
+		{
+			CB9.WriteData(Reg_Int4, ValueOffset, &Value, sizeof(I32));
+			break;
+		}
+		case Reg_Float4:
+		{
+			float FloatValue = (float)Value;
+			CB9.WriteData(Reg_Float4, ValueOffset, &FloatValue, sizeof(float));
+			break;
+		}
+		case Reg_Bool:
+		{
+			BOOL BoolValue = (Value != 0);
+			CB9.WriteData(Reg_Bool, ValueOffset, &BoolValue, sizeof(BOOL));
+			break;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
+{
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+	InternalSetUInt(CB9, Offset, Value);
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
+{
+	if (StructHandle != INVALID_HANDLE) return;
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+	InternalSetUInt(CB9, GetComponentOffset(ComponentIndex), Value);
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
+{
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+	InternalSetSInt(CB9, Offset, Value);
+}
+//---------------------------------------------------------------------
+
+void CSM30ShaderConstant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
+{
+	if (StructHandle != INVALID_HANDLE) return;
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
+	InternalSetSInt(CB9, GetComponentOffset(ComponentIndex), Value);
 }
 //---------------------------------------------------------------------
 

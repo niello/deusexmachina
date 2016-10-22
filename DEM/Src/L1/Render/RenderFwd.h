@@ -301,6 +301,18 @@ enum EEffectParamType
 	EPT_Invalid
 };
 
+enum EConstComponent
+{
+	Comp_X	= 0,
+	Comp_Y	= 1,
+	Comp_Z	= 2,
+	Comp_W	= 3,
+	Comp_R	= 0,
+	Comp_G	= 1,
+	Comp_B	= 2,
+	Comp_A	= 3
+};
+
 struct CImageData
 {
 	char*	pData;			// Data sequentially placed in memory

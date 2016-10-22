@@ -9,20 +9,25 @@
 
 namespace Render
 {
+class CD3D9ConstantBuffer;
 
 class CSM30ShaderConstant: public CShaderConstant
 {
 protected:
 
-	U32					Offset;
-	ESM30RegisterSet	RegSet;
 	HHandle				StructHandle;
+	ESM30RegisterSet	RegSet;
+	U32					Offset;
 	U32					ElementCount;
 	U32					ElementRegisterCount;
 	U32					SizeInBytes;
 	U8					Columns;
 	U8					Rows;
 	U8					Flags;
+
+	U32						GetComponentOffset(U32 ComponentIndex) const;
+	void					InternalSetUInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, U32 Value) const;
+	void					InternalSetSInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, I32 Value) const;
 
 public:
 
@@ -38,6 +43,9 @@ public:
 	virtual PShaderConstant	GetMember(CStrID Name) const;
 	virtual void			SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const;
 	virtual void			SetUInt(const CConstantBuffer& CB, U32 Value) const;
+	virtual void			SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const;
+	virtual void			SetSInt(const CConstantBuffer& CB, I32 Value) const;
+	virtual void			SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const;
 	virtual void			SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count = 1) const;
 	virtual void			SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count = 1, U32 StartIndex = 0) const;
 };

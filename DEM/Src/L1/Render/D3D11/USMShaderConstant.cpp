@@ -26,6 +26,24 @@ bool CUSMShaderConstant::Init(HConst hConst)
 }
 //---------------------------------------------------------------------
 
+//???process column-major differently?
+U32 CUSMShaderConstant::GetComponentOffset(U32 ComponentIndex) const
+{
+	n_assert_dbg(StructHandle == INVALID_HANDLE);
+
+	const U32 ComponentsPerElement = Columns * Rows;
+	const U32 Elm = ComponentIndex / ComponentsPerElement;
+	ComponentIndex = ComponentIndex - Elm * ComponentsPerElement;
+	const U32 Row = ComponentIndex / Columns;
+	const U32 Col = ComponentIndex - Row * Columns;
+
+	const U32 ComponentSize = 4; // 32-bit components only for now, really must depend on const element type
+	const U32 ComponentsPerAlignedRow = 4; // Even for, say, float3x3, each row uses full 4-component register
+
+	return Offset + ElementSize * Elm + (Row * ComponentsPerAlignedRow + Col) * ComponentSize; // In bytes
+}
+//---------------------------------------------------------------------
+
 UPTR CUSMShaderConstant::GetMemberCount() const
 {
 	if (StructHandle == INVALID_HANDLE) return 0;
@@ -103,6 +121,32 @@ void CUSMShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
 	//???switch type, convert to const type?
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
 	CB11.WriteData(Offset, &Value, sizeof(U32));
+}
+//---------------------------------------------------------------------
+
+void CUSMShaderConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
+{
+	//???switch type, convert to const type?
+	if (StructHandle != INVALID_HANDLE) return;
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+	CB11.WriteData(GetComponentOffset(ComponentIndex), &Value, sizeof(U32));
+}
+//---------------------------------------------------------------------
+
+void CUSMShaderConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
+{
+	//???switch type, convert to const type?
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+	CB11.WriteData(Offset, &Value, sizeof(U32));
+}
+//---------------------------------------------------------------------
+
+void CUSMShaderConstant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
+{
+	//???switch type, convert to const type?
+	if (StructHandle != INVALID_HANDLE) return;
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
+	CB11.WriteData(GetComponentOffset(ComponentIndex), &Value, sizeof(U32));
 }
 //---------------------------------------------------------------------
 
