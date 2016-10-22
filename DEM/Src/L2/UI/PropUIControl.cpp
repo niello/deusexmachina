@@ -260,7 +260,8 @@ bool CPropUIControl::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const 
 
 bool CPropUIControl::OnMouseEnter(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	ShowTip();
+	CGameLevelView* pView = (CGameLevelView*)((const Events::CEvent&)Event).Params->Get<PVOID>(CStrID("LevelViewPtr"));
+	ShowTip(pView);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -300,15 +301,16 @@ void CPropUIControl::SetUIName(const char* pNewName)
 {
 	//???use attribute?
 	UIName = pNewName;
-	if (TipVisible) ShowTip();
+	if (TipVisible) ShowTip(NULL);
 }
 //---------------------------------------------------------------------
 
-void CPropUIControl::ShowTip()
+void CPropUIControl::ShowTip(CGameLevelView* pView)
 {
 	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("Text"), UIName.IsValid() ? UIName : CString(GetEntity()->GetUID().CStr()));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
+	P->Set<PVOID>(CStrID("LevelViewPtr"), pView);
 	TipVisible = (EventSrv->FireEvent(CStrID("ShowIAOTip"), P) > 0);
 }
 //---------------------------------------------------------------------

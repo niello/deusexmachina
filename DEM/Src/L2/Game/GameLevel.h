@@ -90,13 +90,12 @@ public:
 	// Screen queries
 	//???pass camera? or move to view? here is more universal, but may need renaming as there is no "screen" at the server part
 	//can add shortcut methods to a View, with these names, calling renamed level methods with a view camera
-	bool					GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
 	UPTR					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const;
 	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
-	bool					GetEntityScreenRect(Data::CRect& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
 
 	// Physics-based queries
+	bool					GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
 	UPTR					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
 	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;

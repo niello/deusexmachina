@@ -58,6 +58,8 @@ void CGameServer::Trigger()
 
 	float FrameTime = (float)GameTimeSrc->GetFrameTime();
 
+	// Update levels
+
 	UPTR ViewCount = LevelViews.GetCount();
 	vector3* pCOIArray = ViewCount ? (vector3*)_malloca(sizeof(vector3) * ViewCount) : NULL;
 
@@ -102,6 +104,11 @@ void CGameServer::Trigger()
 	}
 
 	if (pCOIArray) _freea(pCOIArray);
+
+	// Update level views
+
+	for (UPTR i = 0; i < ViewCount; ++i)
+		LevelViews[i]->Trigger();
 
 	EventSrv->FireEvent(CStrID("OnEndFrame"));
 }

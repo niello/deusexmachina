@@ -43,6 +43,19 @@ struct CRect
 	IPTR Bottom() const { return Y + H; }
 };
 
+struct CRectF //???use templates?
+{
+	float X, Y, W, H;
+
+	CRectF(): X(0), Y(0), W(0), H(0) {}
+	CRectF(float x, float y, float w, float h): X(x), Y(y), W(w), H(h) {}
+
+	float Left() const { return X; }
+	float Top() const { return Y; }
+	float Right() const { return X + W; }
+	float Bottom() const { return Y + H; }
+};
+
 struct CBox
 {
 	IPTR X, Y, Z;

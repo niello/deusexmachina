@@ -54,10 +54,8 @@ vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 	CEGUI::Window* pWndParent = pWindow->getParent();
 	if (!pWndParent)
 	{
-n_assert(false);
-return vector2();
-//		const CDisplayMode& Disp = RenderSrv->GetDisplay().GetDisplayMode();
-//		return vector2((float)Disp.Width, (float)Disp.Height);
+		const CEGUI::Sizef& ContextSize = pWindow->getGUIContext().getSurfaceSize();
+		return vector2(ContextSize.d_width, ContextSize.d_height);
 	}
 
 	vector2 GrandParentSize = GetParentBaseSize(pWndParent);

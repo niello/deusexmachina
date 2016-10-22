@@ -23,6 +23,7 @@ namespace Prop
 {
 class CPropSmartObject;
 class CPropSceneNode;
+class CGameLevelView;
 
 class CPropUIControl: public Game::CProperty
 {
@@ -94,7 +95,7 @@ public:
 	void					Enable(bool SetEnabled);
 	bool					IsEnabled() const { return Enabled; }
 	void					SetUIName(const char* pNewName);
-	void					ShowTip();
+	void					ShowTip(CGameLevelView* pView);
 	void					HideTip();
 
 	bool					AddActionHandler(CStrID ID, const char* UIName, Events::CEventCallback Callback, int Priority = Priority_Default, bool IsSOAction = false);

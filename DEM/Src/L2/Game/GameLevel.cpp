@@ -351,38 +351,6 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 //---------------------------------------------------------------------
 
 /*
-//!!!need to know what view to test!
-void CGameServer::UpdateMouseIntersectionInfo()
-{
-	//!!!DBG TMP!
-	return;
-
-	CStrID OldEntityUnderMouse = EntityUnderMouse;
-
-	if (UISrv->IsMouseOverGUI() || ActiveLevel.IsNullPtr()) HasMouseIsect = false;
-	else
-	{
-		float XRel, YRel;
-		InputSrv->GetMousePosRel(XRel, YRel);
-		HasMouseIsect = ActiveLevel->GetIntersectionAtScreenPos(XRel, YRel, &MousePos3D, &EntityUnderMouse);
-	}
-
-	if (!HasMouseIsect)
-	{
-		EntityUnderMouse = CStrID::Empty;
-		MousePos3D.set(0.0f, 0.0f, 0.0f);
-	}
-
-	if (OldEntityUnderMouse != EntityUnderMouse)
-	{
-		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
-		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseLeave"));
-		pEntityUnderMouse = GetEntityUnderMouse();
-		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseEnter"));
-	}
-}
-//---------------------------------------------------------------------
-
 bool CGameServer::SetActiveLevel(CStrID ID)
 {
 	PGameLevel NewLevel;
@@ -499,13 +467,9 @@ void CGameLevel::RenderDebug()
 */
 
 //???write 2 versions, physics-based and mesh-based?
-bool CGameLevel::GetIntersectionAtScreenPos(float XRel, float YRel, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
+bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
-	if (MainCamera.IsNullPtr() || PhysicsLevel.IsNullPtr()) FAIL;
-
-	line3 Ray;
-	MainCamera->GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
+	if (PhysicsLevel.IsNullPtr()) FAIL;
 
 	U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
@@ -556,59 +520,6 @@ bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Enti
 	pNode->GetAABB(AABB);
 	vector3 Center = AABB.Center();
 	MainCamera->GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CGameLevel::GetEntityScreenRect(Data::CRect& Out, const Game::CEntity& Entity, const vector3* Offset) const
-{
-	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
-	if (MainCamera.IsNullPtr()) FAIL;
-
-	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
-	if (!pNode)
-	{
-		matrix44 Tfm;
-		if (!Entity.GetAttr(Tfm, CStrID("Transform"))) FAIL;
-		float X, Y;
-		MainCamera->GetPoint2D(Tfm.Translation(), X, Y);
-		Out.X = (IPTR)X;
-		Out.Y = (IPTR)Y;
-		Out.W = 0;
-		Out.H = 0;
-		OK;
-	}
-
-	CAABB AABB;
-	pNode->GetAABB(AABB);
-
-	if (Offset)
-	{
-		AABB.Max += *Offset;
-		AABB.Min += *Offset;
-	}
-
-	float X, Y;
-	MainCamera->GetPoint2D(AABB.GetCorner(0), X, Y);
-
-	float Right = X, Top = Y;
-	vector2 ScreenPos;
-	for (UPTR i = 1; i < 8; ++i)
-	{
-		MainCamera->GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
-
-		if (ScreenPos.x < X) X = ScreenPos.x;
-		else if (ScreenPos.x > Right) Right = ScreenPos.x;
-
-		if (ScreenPos.y < Y) Y = ScreenPos.y;
-		else if (ScreenPos.y > Top) Top = ScreenPos.y;
-	}
-
-	Out.X = (IPTR)X;
-	Out.Y = (IPTR)Y;
-	Out.W = (UPTR)(Right - X);
-	Out.H = (UPTR)(Top - Y);
-
 	OK;
 }
 //---------------------------------------------------------------------

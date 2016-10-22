@@ -1,7 +1,12 @@
 #include "GameLevelView.h"
 
 #include <Game/GameLevel.h>
+#include <Game/EntityManager.h>
+#include <Scene/PropSceneNode.h>
 #include <Frame/NodeAttrCamera.h>
+#include <Render/RenderTarget.h>
+#include <UI/UIContext.h>
+#include <Data/Regions.h>
 
 namespace Game
 {
@@ -12,6 +17,44 @@ bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 	View.pSPS = GameLevel.GetSPS();
 	//???fill other fields?
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CGameLevelView::Trigger()
+{
+	CStrID OldEntityUnderMouse = EntityUnderMouse;
+
+	if (Level.IsNullPtr() || View.UIContext->IsMouseOverGUI()) HasMouseIsect = false;
+	else
+	{
+		float XRel, YRel;
+		View.UIContext->GetCursorPositionRel(XRel, YRel);
+
+		const Frame::CNodeAttrCamera* pCamera = View.GetCamera();
+		if (pCamera)
+		{
+			line3 Ray;
+			pCamera->GetRay3D(XRel, YRel, 5000.f, Ray); //???ray length to far plane or infinite?
+			HasMouseIsect = Level->GetFirstIntersectedEntity(Ray, &MousePos3D, &EntityUnderMouse);
+		}
+		else HasMouseIsect = false;
+	}
+
+	if (!HasMouseIsect)
+	{
+		EntityUnderMouse = CStrID::Empty;
+		MousePos3D.set(0.0f, 0.0f, 0.0f);
+	}
+
+	if (OldEntityUnderMouse != EntityUnderMouse)
+	{
+		Data::PParams P = n_new(Data::CParams(1));
+		P->Set<PVOID>(CStrID("LevelViewPtr"), this);
+		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
+		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseLeave"), P);
+		pEntityUnderMouse = EntityMgr->GetEntity(EntityUnderMouse);
+		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseEnter"), P);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -38,6 +81,59 @@ bool CGameLevelView::RemoveFromSelection(CStrID EntityID)
 	Data::PParams P = n_new(Data::CParams(1));
 	P->Set(CStrID("EntityID"), EntityID);
 	Level->FireEvent(CStrID("OnEntityDeselected"), P);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevelView::GetEntityScreenRectRel(Data::CRectF& Out, const Game::CEntity& Entity, const vector3* Offset) const
+{
+	const Frame::CNodeAttrCamera* pCamera = View.GetCamera();
+	if (!pCamera) FAIL;
+
+	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
+	if (!pNode)
+	{
+		matrix44 Tfm;
+		if (!Entity.GetAttr(Tfm, CStrID("Transform"))) FAIL;
+		float X, Y;
+		pCamera->GetPoint2D(Tfm.Translation(), X, Y);
+		Out.X = X;
+		Out.Y = Y;
+		Out.W = 0.f;
+		Out.H = 0.f;
+		OK;
+	}
+
+	CAABB AABB;
+	pNode->GetAABB(AABB);
+
+	if (Offset)
+	{
+		AABB.Max += *Offset;
+		AABB.Min += *Offset;
+	}
+
+	float X, Y;
+	pCamera->GetPoint2D(AABB.GetCorner(0), X, Y);
+
+	float Right = X, Top = Y;
+	vector2 ScreenPos;
+	for (UPTR i = 1; i < 8; ++i)
+	{
+		pCamera->GetPoint2D(AABB.GetCorner(i), ScreenPos.x, ScreenPos.y);
+
+		if (ScreenPos.x < X) X = ScreenPos.x;
+		else if (ScreenPos.x > Right) Right = ScreenPos.x;
+
+		if (ScreenPos.y < Y) Y = ScreenPos.y;
+		else if (ScreenPos.y > Top) Top = ScreenPos.y;
+	}
+
+	Out.X = X;
+	Out.Y = Y;
+	Out.W = Right - X;
+	Out.H = Top - Y;
+
 	OK;
 }
 //---------------------------------------------------------------------
