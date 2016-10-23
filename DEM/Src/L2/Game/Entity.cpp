@@ -32,7 +32,7 @@ void CEntity::Activate()
 	n_assert(IsInactive() && Level.IsValidPtr());
 	Flags.Set(ChangingActivity);
 
-	FireEvent(CStrID("OnEntityActivated"));
+	FireEvent(CStrID("OnActivated"));
 	FireEvent(CStrID("OnPropsActivated")); // Needed for initialization of properties dependent on other properties
 
 	Flags.Set(Active);
@@ -45,9 +45,11 @@ void CEntity::Deactivate()
 	n_assert(IsActive());
 	Flags.Set(ChangingActivity);
 
-	NOT_IMPLEMENTED;
-	//Level->RemoveFromSelection(UID); //???fire event Level->OnEntityRemoved and react in views?
-	FireEvent(CStrID("OnEntityDeactivated"));
+	FireEvent(CStrID("OnDeactivated"));
+
+	Data::PParams P = n_new(Data::CParams(1));
+	P->Set(CStrID("EntityID"), UID);
+	Level->FireEvent(CStrID("OnEntityDeactivated"), P);
 
 	Flags.Clear(Active | ChangingActivity);
 }

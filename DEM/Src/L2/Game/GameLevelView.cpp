@@ -16,6 +16,7 @@ bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 	Level = &GameLevel;
 	View.pSPS = GameLevel.GetSPS();
 	//???fill other fields?
+	DISP_SUBSCRIBE_PEVENT(Level.GetUnsafe(), OnEntityDeactivated, CGameLevelView, OnEntityDeactivated);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -134,6 +135,14 @@ bool CGameLevelView::GetEntityScreenRectRel(Data::CRectF& Out, const Game::CEnti
 	Out.W = Right - X;
 	Out.H = Top - Y;
 
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGameLevelView::OnEntityDeactivated(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	Data::PParams P = ((const Events::CEvent&)Event).Params;
+	SelectedEntities.RemoveByValue(P->Get<CStrID>(CStrID("EntityID"))); 
 	OK;
 }
 //---------------------------------------------------------------------

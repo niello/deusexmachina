@@ -45,7 +45,7 @@ bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data:
 	if (Main->Get(BaseName, CStrID("_Base_")))
 	{
 		n_assert(BaseName != pRelativeFileName);
-		if (!LoadDescFromPRM(pRootPath, BaseName, OutParams)) FAIL;
+		if (!LoadDescFromPRM(pRootPath, BaseName + ".prm", OutParams)) FAIL;
 		OutParams->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!
 	}
 	else OutParams = n_new(Data::CParams(*Main));

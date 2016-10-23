@@ -14,14 +14,14 @@ void CProperty::SetEntity(CEntity* pNewEntity)
 	if (pEntity)
 	{
 		if (Active) Deactivate();
-		UNSUBSCRIBE_EVENT(OnEntityActivated);
-		UNSUBSCRIBE_EVENT(OnEntityDeactivated);
+		UNSUBSCRIBE_EVENT(OnActivated);
+		UNSUBSCRIBE_EVENT(OnDeactivated);
 	}
 	pEntity = pNewEntity;
 	if (pEntity)
 	{
-		PROP_SUBSCRIBE_PEVENT(OnEntityActivated, CProperty, OnEntityActivated);
-		PROP_SUBSCRIBE_PEVENT(OnEntityDeactivated, CProperty, OnEntityDeactivated);
+		PROP_SUBSCRIBE_PEVENT(OnActivated, CProperty, OnEntityActivated);
+		PROP_SUBSCRIBE_PEVENT(OnDeactivated, CProperty, OnEntityDeactivated);
 		if (WasActive) Activate();
 	}
 }

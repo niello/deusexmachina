@@ -5,6 +5,7 @@
 #include <Frame/View.h>
 #include <Data/StringID.h>
 #include <Math/Vector3.h>
+#include <Events/EventsFwd.h>
 
 // Represents a client view of a game location. Manages rendering and input.
 // In MVC pattern level view would be a View.
@@ -33,6 +34,8 @@ protected:
 	CStrID				EntityUnderMouse;
 	bool				HasMouseIsect;
 	vector3				MousePos3D;
+
+	DECLARE_EVENT_HANDLER(OnEntityDeactivated, OnEntityDeactivated);
 
 public:
 

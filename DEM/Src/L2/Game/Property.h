@@ -30,8 +30,8 @@ protected:
 	virtual void	InternalDeactivate() = 0;
 	void			SetEntity(CEntity* pNewEntity);
 
-	DECLARE_EVENT_HANDLER(OnEntityActivated, OnEntityActivated);
-	DECLARE_EVENT_HANDLER(OnEntityDeactivated, OnEntityDeactivated);
+	DECLARE_EVENT_HANDLER(OnActivated, OnEntityActivated);
+	DECLARE_EVENT_HANDLER(OnDeactivated, OnEntityDeactivated);
 
 public:
 

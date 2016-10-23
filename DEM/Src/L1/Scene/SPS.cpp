@@ -6,7 +6,11 @@ namespace Scene
 CSPSCell::CIterator CSPSCell::Add(CSPSRecord* Object)
 {
 	n_assert_dbg(Object && !Object->pPrev);
-	if (pFront) Object->pNext = pFront;
+	if (pFront)
+	{
+		Object->pNext = pFront;
+		pFront->pPrev = Object;
+	}
 	pFront = Object;
 	return CIterator(Object);
 }
