@@ -9,22 +9,22 @@ namespace IO
 
 bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 {
-	if (pNPKData.IsValidPtr()) n_delete(pNPKData);
-	pNPKData = IOSrv->CreateStream(pSource);
+	if (NPKStream.IsValidPtr()) n_delete(NPKStream);
+	NPKStream = IOSrv->CreateStream(pSource);
 
-	if (!pNPKData->Open(SAM_READ, SAP_RANDOM)) FAIL;
+	if (!NPKStream->Open(SAM_READ, SAP_RANDOM)) FAIL;
 
 	TOC.SetRootPath(pRoot);
 
 	int Value;
-	pNPKData->Read(&Value, sizeof(int));
+	NPKStream->Read(&Value, sizeof(int));
 	if (Value != 'NPK0') // Check magic
 	{
-		n_delete(pNPKData);
+		n_delete(NPKStream);
 		FAIL;
 	}
-	pNPKData->Read(&Value, sizeof(int)); // Skip int (block length)
-	pNPKData->Read(&Value, sizeof(int));
+	NPKStream->Read(&Value, sizeof(int)); // Skip int (block length)
+	NPKStream->Read(&Value, sizeof(int));
 	int DataOffset = Value + 8;
 
 	char NameBuffer[DEM_MAX_PATH];
@@ -33,15 +33,15 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 	while (InsideTOC)
 	{
 		int FourCC;
-		pNPKData->Read(&FourCC, sizeof(int));
-		pNPKData->Read(&Value, sizeof(int)); // Skip int (block length)
+		NPKStream->Read(&FourCC, sizeof(int));
+		NPKStream->Read(&Value, sizeof(int)); // Skip int (block length)
 
 		if (FourCC == 'DIR_')
 		{
 			short NameLen;
-			pNPKData->Read(&NameLen, sizeof(short));
+			NPKStream->Read(&NameLen, sizeof(short));
 			n_assert(NameLen < DEM_MAX_PATH);
-			pNPKData->Read(NameBuffer, NameLen);
+			NPKStream->Read(NameBuffer, NameLen);
 			NameBuffer[NameLen] = 0;
 
 			// Placeholder root directory name
@@ -58,13 +58,13 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 		else if (FourCC == 'FILE')
 		{
 			int Offset, Len;
-			pNPKData->Read(&Offset, sizeof(int));
-			pNPKData->Read(&Len, sizeof(int));
+			NPKStream->Read(&Offset, sizeof(int));
+			NPKStream->Read(&Len, sizeof(int));
 
 			short NameLen;
-			pNPKData->Read(&NameLen, sizeof(short));
+			NPKStream->Read(&NameLen, sizeof(short));
 			n_assert(NameLen < DEM_MAX_PATH);
-			pNPKData->Read(NameBuffer, NameLen);
+			NPKStream->Read(NameBuffer, NameLen);
 			NameBuffer[NameLen] = 0;
 
 			Offset += DataOffset;
@@ -79,8 +79,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 
 void CFileSystemNPK::Unmount()
 {
-	n_delete(pNPKData);
-	pNPKData = NULL;
+	NPKStream = NULL;
 	//???clear toc?
 }
 //---------------------------------------------------------------------
@@ -232,8 +231,8 @@ UPTR CFileSystemNPK::Read(void* hFile, void* pData, UPTR Size)
 	UPTR EndPos = Pos + Size;
 	if (EndPos >= Len) Size = Len - Pos;
 
-	pNPKData->Seek(pTE->GetFileOffset() + Pos, Seek_Begin);
-	UPTR BytesRead = pNPKData->Read(pData, Size);
+	NPKStream->Seek(pTE->GetFileOffset() + Pos, Seek_Begin);
+	UPTR BytesRead = NPKStream->Read(pData, Size);
 	Pos += BytesRead;
 	return BytesRead;
 }

@@ -49,7 +49,7 @@ protected:
 public:
 
 	CCDLODData(): pMinMaxData(NULL) {}
-	//virtual ~CCDLODData();
+	virtual ~CCDLODData();
 
 	virtual bool		IsResourceValid() const { return HeightMap.IsValidPtr(); }
 	U32					GetHeightMapWidth() const { return HFWidth; }

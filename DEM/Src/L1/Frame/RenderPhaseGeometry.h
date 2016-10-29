@@ -40,7 +40,7 @@ protected:
 public:
 
 	CRenderPhaseGeometry();
-	//virtual ~CRenderPhaseGeometry() {}
+	virtual ~CRenderPhaseGeometry();
 
 	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc);
 	virtual bool Render(CView& View);

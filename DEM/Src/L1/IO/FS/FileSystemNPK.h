@@ -31,12 +31,12 @@ protected:
 	};
 
 	CNpkTOC			TOC;
-	PStream			pNPKData; //!!!can use MMF and create views when big files are read!
+	PStream			NPKStream; //!!!can use MMF and create views when big files are read!
 
 public:
 
-	CFileSystemNPK(): pNPKData(NULL) {}
-	virtual ~CFileSystemNPK() { if (pNPKData) Unmount(); }
+	CFileSystemNPK(): NPKStream(NULL) {}
+	virtual ~CFileSystemNPK() { if (NPKStream) Unmount(); }
 
 	virtual bool	Mount(const char* pSource, const char* pRoot);
 	virtual void	Unmount();

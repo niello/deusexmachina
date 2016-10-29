@@ -182,6 +182,8 @@ CDEMRenderer::~CDEMRenderer()
 	NormalClipped = NULL;
 	PremultipliedUnclipped = NULL;
 	PremultipliedClipped = NULL;
+	OpaqueUnclipped = NULL;
+	OpaqueClipped = NULL;
 	WMCB = NULL;
 	PMCB = NULL;
 	LinearSampler = NULL;

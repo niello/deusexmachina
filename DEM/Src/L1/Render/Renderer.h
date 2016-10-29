@@ -34,6 +34,8 @@ public:
 		bool					UsesGlobalLightBuffer;
 	};
 
+	virtual ~IRenderer() {}
+
 	virtual bool							Init(bool LightingEnabled) = 0;
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) = 0;
 	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr) = 0;

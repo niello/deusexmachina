@@ -56,6 +56,13 @@ struct CRenderQueueCmp_Material
 };
 //---------------------------------------------------------------------
 
+CRenderPhaseGeometry::~CRenderPhaseGeometry()
+{
+	for (UPTR i = 0; i < Renderers.GetCount(); ++i)
+		n_delete(Renderers.ValueAt(i));
+}
+//---------------------------------------------------------------------
+
 bool CRenderPhaseGeometry::Render(CView& View)
 {
 	if (!View.pSPS || !View.GetCamera()) OK;

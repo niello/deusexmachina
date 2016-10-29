@@ -98,7 +98,7 @@ PResourceObject CCDLODDataLoader::Load(IO::CStream& Stream)
 	Obj->TopPatchCountW = (Obj->HFWidth - 1 + TopPatchSize - 1) / TopPatchSize;
 	Obj->TopPatchCountH = (Obj->HFHeight - 1 + TopPatchSize - 1) / TopPatchSize;
 
-	//load normal map
+	//???load normal map? now in material!
 
 	return Obj.GetUnsafe();
 }

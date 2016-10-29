@@ -38,6 +38,8 @@ public:
 	CStrID			GetID() const { return ID; }
 };
 
+typedef Ptr<CStateHandler> PStateHandler;
+
 }
 
 #endif

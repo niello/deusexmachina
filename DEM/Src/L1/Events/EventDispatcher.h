@@ -35,6 +35,7 @@ protected:
 public:
 
 	CEventDispatcher(UPTR HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE): Subscriptions(HashTableCapacity) {}
+	virtual ~CEventDispatcher() {}
 
 	static UPTR				GetFiredEventsCount() { return EventsFiredTotal; }
 

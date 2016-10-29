@@ -189,6 +189,51 @@ void CD3D11GPUDriver::Release()
 {
 	if (!pD3DDevice) return;
 
+	for (UPTR i = 0; i < TmpStructuredBuffers.GetCount(); ++i)
+	{
+		CTmpCB* pHead = TmpStructuredBuffers.ValueAt(i);
+		while (pHead)
+		{
+			CTmpCB* pNextHead = pHead->pNext;
+			TmpCBPool.Destroy(pHead);
+			pHead = pNextHead;
+		}
+	}
+	TmpStructuredBuffers.Clear();
+
+	for (UPTR i = 0; i < TmpTextureBuffers.GetCount(); ++i)
+	{
+		CTmpCB* pHead = TmpTextureBuffers.ValueAt(i);
+		while (pHead)
+		{
+			CTmpCB* pNextHead = pHead->pNext;
+			TmpCBPool.Destroy(pHead);
+			pHead = pNextHead;
+		}
+	}
+	TmpTextureBuffers.Clear();
+
+	for (UPTR i = 0; i < TmpConstantBuffers.GetCount(); ++i)
+	{
+		CTmpCB* pHead = TmpConstantBuffers.ValueAt(i);
+		while (pHead)
+		{
+			CTmpCB* pNextHead = pHead->pNext;
+			TmpCBPool.Destroy(pHead);
+			pHead = pNextHead;
+		}
+	}
+	TmpConstantBuffers.Clear();
+
+	while (pPendingCBHead)
+	{
+		CTmpCB* pNextHead = pPendingCBHead->pNext;
+		TmpCBPool.Destroy(pPendingCBHead);
+		pPendingCBHead = pNextHead;
+	}
+
+	TmpCBPool.Clear();
+
 	VertexLayouts.Clear();
 	RenderStates.Clear();
 	Samplers.Clear();
@@ -196,6 +241,7 @@ void CD3D11GPUDriver::Release()
 	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
 	for (UPTR i = 0; i < SwapChains.GetCount() ; ++i)
 		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
+	SwapChains.Clear();
 
 	SAFE_DELETE_ARRAY(CurrVP);
 	SAFE_DELETE_ARRAY(CurrSR);
@@ -206,7 +252,6 @@ void CD3D11GPUDriver::Release()
 	CurrSS.SetSize(0);
 	CurrRT.SetSize(0);
 
-	//ctx->ClearState()
 	//!!!UnbindD3DResources();
 	//!!!can call the same event as on lost device!
 
@@ -218,8 +263,27 @@ void CD3D11GPUDriver::Release()
 
 	//!!!ReleaseQueries();
 
+	pD3DImmContext->ClearState();
+
+//#if (DEM_RENDER_DEBUG != 0)
+//	pD3DImmContext->Flush();
+//#endif
+
 	SAFE_RELEASE(pD3DImmContext);
+
+//#if (DEM_RENDER_DEBUG != 0)
+//	ID3D11Debug* pD3D11Debug = NULL;
+//	pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pD3D11Debug));
+//	if (pD3D11Debug)
+//	{
+//		pD3D11Debug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
+//		pD3D11Debug->Release();
+//	}
+//#endif
+
 	SAFE_RELEASE(pD3DDevice);
+
+	//!!!MUST somehow release all shared resources depengent on this GPU (shaders, meshes etc)!
 
 //	IsInsideFrame = false;
 }

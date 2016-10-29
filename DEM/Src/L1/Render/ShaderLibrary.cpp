@@ -10,15 +10,14 @@ __ImplementClass(Render::CShaderLibrary, 'SLIB', Resources::CResourceObject);
 
 CShaderLibrary::~CShaderLibrary()
 {
-	if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency
+	//if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency
 }
 //---------------------------------------------------------------------
 
 void CShaderLibrary::SetLoader(Resources::PShaderLoader Loader)
 {
-	if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency
+	//if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency
 	ShaderLoader = (Resources::CShaderLoader*)Loader->Clone().GetUnsafe();
-	ShaderLoader->ShaderLibrary = this;
 }
 //---------------------------------------------------------------------
 
@@ -45,7 +44,12 @@ PShader CShaderLibrary::GetShaderByID(U32 ID)
 
 	IO::PScopedStream Stream = n_new(IO::CScopedStream)(Storage);
 	Stream->SetScope(Rec.Offset, Rec.Size);
+
+	// Introduce temporary cyclic dependency, loader requires access to library to load input signatures by ID
+	ShaderLoader->ShaderLibrary = this;
 	Rec.LoadedShader = (CShader*)ShaderLoader->Load(*Stream.GetUnsafe()).GetUnsafe();
+	ShaderLoader->ShaderLibrary = NULL;
+
 	Stream = NULL;
 
 	Storage->Seek(CurrOffset, IO::Seek_Begin);
@@ -57,7 +61,7 @@ PShader CShaderLibrary::GetShaderByID(U32 ID)
 // Used primarily for input signatures of D3D11 vertex/geometry shaders
 bool CShaderLibrary::GetRawDataByID(U32 ID, void*& pOutData, UPTR& OutSize)
 {
-	if (!ID || ShaderLoader.IsNullPtr()) return NULL;
+	if (!ID) return NULL;
 
 	//!!!PERF:!
 	//!!!need find index sorted for fixed arrays! move to algorithm?

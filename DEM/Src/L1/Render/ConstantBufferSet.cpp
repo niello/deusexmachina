@@ -105,6 +105,7 @@ void CConstantBufferSet::UnbindAndClear()
 	if (GPU.IsValidPtr())
 	{
 		//NOT_IMPLEMENTED; //!!!unbind!
+		//can unbind only non-tmp buffers here, unbind tmp inside a GPU!
 	}
 	Buffers.Clear(true);
 	GPU = NULL;

@@ -10,17 +10,17 @@
 
 namespace App
 {
-class CStateHandler;
+typedef Ptr<class CStateHandler> PStateHandler;
 
 class CAppFSM
 {
 protected:
 
-	CStrID						CurrState;
-	CStrID						RequestedState;
-	CArray<Ptr<CStateHandler>>	StateHandlers;
-	CStateHandler*				CurrStateHandler;
-	Data::PParams				TransitionParams;
+	CStrID					CurrState;
+	CStrID					RequestedState;
+	CArray<PStateHandler>	StateHandlers;
+	CStateHandler*			pCurrStateHandler;
+	Data::PParams			TransitionParams;
 
 	void ChangeState(CStrID NextState);
 
@@ -28,7 +28,7 @@ protected:
 
 public:
 
-	CAppFSM(): CurrStateHandler(NULL) {}
+	CAppFSM(): pCurrStateHandler(NULL) {}
 
 	void			Init(CStrID InitialState);
 	bool			Advance();
@@ -40,7 +40,7 @@ public:
 	CStateHandler*	FindStateHandlerByID(CStrID ID) const;
 	CStateHandler*	FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const;
 	CStateHandler*	GetStateHandlerAt(IPTR Idx) const { return StateHandlers[Idx]; }
-	CStateHandler*	GetCurrentStateHandler() const { return CurrStateHandler; }
+	CStateHandler*	GetCurrentStateHandler() const { return pCurrStateHandler; }
 	CStrID			GetCurrentStateID() const { return CurrState; }
 };
 

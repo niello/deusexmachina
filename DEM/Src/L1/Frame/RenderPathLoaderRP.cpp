@@ -99,6 +99,7 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 
 	// Phases are intentionally initialized at the end, because they may access global params etc
 	RP->Phases.SetSize(Phases->GetCount());
+
 	for (UPTR i = 0; i < Phases->GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Phases->Get(i);

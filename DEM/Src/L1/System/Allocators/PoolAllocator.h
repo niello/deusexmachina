@@ -154,7 +154,11 @@ inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Clear()
 		Sys::Error("Pool reports %d unreleased records", CurrAllocatedCount);
 #endif
 
-	if (Chunks) n_delete(Chunks);
+	if (Chunks)
+	{
+		n_delete(Chunks);
+		Chunks = NULL;
+	}
 }
 //---------------------------------------------------------------------
 
