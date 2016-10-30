@@ -50,6 +50,8 @@ protected:
 	CDict<CStrID, PSceneNode>	Children;	//???or sorted array? don't store IDs twice if possible
 	CArray<PNodeAttribute>		Attrs; //???or list? List seems to be better //???WHY?
 
+	void					OnDetachFromScene();
+
 public:
 
 	CSceneNode(CStrID NodeName = CStrID::Empty);
@@ -126,7 +128,9 @@ inline CSceneNode::CSceneNode(CStrID NodeName):
 
 inline void CSceneNode::RemoveChild(CSceneNode& Node)
 {
-	n_assert(Node.pParent == this && Children.Remove(Node.Name));
+	n_assert(Node.pParent == this);
+	Node.OnDetachFromScene();
+	Children.Remove(Node.Name);
 	Node.pParent = NULL;
 }
 //---------------------------------------------------------------------

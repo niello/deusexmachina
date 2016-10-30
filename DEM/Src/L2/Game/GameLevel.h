@@ -66,16 +66,10 @@ protected:
 	AI::PAILevel				AILevel;
 	Render::PGPUDriver			HostGPU;
 
-	vector4						AmbientLight;
-	//Fog settings
-	//???shadow settings?
-	//!!!to World::CNatureManager or smth like (weather, time of day etc) and set to the render server directly!
-
 	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 public:
 
-	CGameLevel(): AmbientLight(0.2f, 0.2f, 0.2f, 1.f) {}
 	virtual ~CGameLevel() { Term(); }
 
 	bool					Load(CStrID LevelID, const Data::CParams& Desc);

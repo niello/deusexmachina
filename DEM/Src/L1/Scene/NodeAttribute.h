@@ -45,6 +45,7 @@ public:
 
 	virtual bool			OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; Flags.Set(WorldMatrixChanged); return !!pNode; }
 	virtual void			OnDetachFromNode() { pNode = NULL; }
+	virtual void			OnDetachFromScene() { }
 
 	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
 	virtual PNodeAttribute	Clone() = 0;

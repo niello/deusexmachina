@@ -14,11 +14,11 @@ bool CNodeControllerComposite::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 }
 //---------------------------------------------------------------------
 
-void CNodeControllerComposite::OnDetachFromNode()
+void CNodeControllerComposite::OnDetachFromScene()
 {
 	for (UPTR i = 0; i < Sources.GetCount(); ++i)
-		Sources[i].Ctlr->OnDetachFromNode();
-	CNodeController::OnDetachFromNode();
+		Sources[i].Ctlr->OnDetachFromScene();
+	CNodeController::OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 
@@ -61,7 +61,7 @@ bool CNodeControllerComposite::RemoveSource(const Scene::CNodeController& Ctlr)
 		CSource& Src = Sources[i];
 		if (Src.Ctlr.GetUnsafe() == &Ctlr)
 		{
-			if (pNode) Src.Ctlr->OnDetachFromNode();
+			if (pNode) Src.Ctlr->OnDetachFromScene();
 
 			Sources.RemoveAt(i);
 

@@ -36,7 +36,7 @@ protected:
 public:
 
 	virtual bool	OnAttachToNode(Scene::CSceneNode* pSceneNode);
-	virtual void	OnDetachFromNode();
+	virtual void	OnDetachFromScene();
 
 	bool			AddSource(Scene::CNodeController& Ctlr, UPTR Priority, float Weight);
 	bool			RemoveSource(const Scene::CNodeController& Ctlr);

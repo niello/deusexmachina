@@ -472,6 +472,7 @@ void CArray<T>::Clear(bool FreeMemory)
 	{
 		n_free(pData);
 		pData = NULL;
+		Allocated = 0;
 	}
 }
 //---------------------------------------------------------------------

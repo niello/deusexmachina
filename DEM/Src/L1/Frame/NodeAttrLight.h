@@ -34,7 +34,7 @@ protected:
 	Scene::CSPS*		pSPS;
 	Scene::CSPSRecord*	pSPSRecord;		// NULL if oversized
 
-	virtual void	OnDetachFromNode();
+	virtual void	OnDetachFromScene();
 
 public:
 

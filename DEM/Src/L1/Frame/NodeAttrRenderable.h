@@ -32,7 +32,7 @@ protected:
 	Scene::CSPS*			pSPS;
 	Scene::CSPSRecord*		pSPSRecord;
 
-	virtual void			OnDetachFromNode();
+	virtual void			OnDetachFromScene();
 
 public:
 

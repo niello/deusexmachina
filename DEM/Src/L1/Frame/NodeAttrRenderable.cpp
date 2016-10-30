@@ -102,7 +102,7 @@ bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrRenderable::OnDetachFromNode()
+void CNodeAttrRenderable::OnDetachFromScene()
 {
 //	//???do it on deactivation of an attribute? even it is not detached from node
 	if (pSPSRecord)
@@ -117,7 +117,7 @@ void CNodeAttrRenderable::OnDetachFromNode()
 		pSPS = NULL;
 	}
 
-	CNodeAttribute::OnDetachFromNode();
+	CNodeAttribute::OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 

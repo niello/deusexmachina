@@ -11,10 +11,10 @@ CSceneNode::~CSceneNode()
 {
 	Children.Clear();
 
-	if (Controller.IsValidPtr()) Controller->OnDetachFromNode();
+	if (Controller.IsValidPtr()) Controller->OnDetachFromScene();
 
 	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
-		(*It)->OnDetachFromNode();
+		(*It)->OnDetachFromScene();
 	Attrs.Clear();
 }
 //---------------------------------------------------------------------
@@ -213,7 +213,7 @@ bool CSceneNode::SetController(CNodeController* pCtlr)
 	if (Controller.IsValidPtr())
 	{
 		n_assert(Controller->GetNode() == this);
-		Controller->OnDetachFromNode();
+		Controller->OnDetachFromScene();
 	}
 
 	if (pCtlr && !pCtlr->OnAttachToNode(this)) FAIL;
@@ -235,6 +235,7 @@ bool CSceneNode::AddAttribute(CNodeAttribute& Attr)
 void CSceneNode::RemoveAttribute(CNodeAttribute& Attr)
 {
 	n_assert(Attr.GetNode() == this);
+	Attr.OnDetachFromScene();
 	Attr.OnDetachFromNode();
 	Attrs.RemoveByValue(&Attr);
 }
@@ -244,8 +245,21 @@ void CSceneNode::RemoveAttribute(UPTR Idx)
 {
 	n_assert(Idx < Attrs.GetCount());
 	CNodeAttribute& Attr = *Attrs[Idx];
+	Attr.OnDetachFromScene();
 	Attr.OnDetachFromNode();
 	Attrs.RemoveAt(Idx);
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::OnDetachFromScene()
+{
+	for (UPTR i = 0; i < Children.GetCount(); ++i)
+		Children.ValueAt(i)->OnDetachFromScene();
+
+	if (Controller.IsValidPtr()) Controller->OnDetachFromScene();
+
+	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
+		(*It)->OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 

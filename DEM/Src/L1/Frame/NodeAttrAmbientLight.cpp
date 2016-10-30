@@ -60,7 +60,7 @@ Scene::PNodeAttribute CNodeAttrAmbientLight::Clone()
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrAmbientLight::OnDetachFromNode()
+void CNodeAttrAmbientLight::OnDetachFromScene()
 {
 	//???do it on deactivation of an attribute? even it is not detached from node
 	if (pSPS)
@@ -75,7 +75,7 @@ void CNodeAttrAmbientLight::OnDetachFromNode()
 		pSPS = NULL;
 	}
 
-	CNodeAttribute::OnDetachFromNode();
+	CNodeAttribute::OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 
