@@ -12,6 +12,11 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 	PEventHandler Sub;
 	CEventID EvID = Event.GetID();
 
+	//!!!MT! need interlocked operation for MT safety!
+	++EventsFiredTotal;
+
+	Event.UniqueNimber = EventsFiredTotal;
+
 	// Look for subscriptions to this event
 	if (Subscriptions.Get(EvID, Sub)) do
 	{
@@ -38,9 +43,6 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 		}
 		while (Sub.IsValidPtr());
 	}
-
-	//!!!MT! need interlocked operation for MT safety!
-	++EventsFiredTotal;
 
 	return HandledCounter;
 }

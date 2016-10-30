@@ -12,9 +12,16 @@ namespace Events
 
 class CEventBase: public Core::CObject
 {
+protected:
+
+	mutable UPTR UniqueNimber;
+
+	friend class CEventDispatcher; // For unique number setting
+
 public:
 
-	virtual CEventID GetID() const = 0;
+	virtual CEventID	GetID() const = 0;
+	UPTR				GetUniqueNumber() const { return UniqueNimber; }
 };
 
 typedef Ptr<CEventBase> PEventBase;
