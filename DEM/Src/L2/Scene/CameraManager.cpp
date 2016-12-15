@@ -33,8 +33,8 @@ bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 	// that we get a smooth interpolation to the new position
 	//Graphics::CCameraEntity* pCamera = RenderSrv->GetDisplay().GetCamera();
 	//const matrix44& Tfm = pCamera->GetTransform();
-	//Position.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->GetAttr<float>(CStrID("CameraLinearGain), Tfm.Translation());
-	//Lookat.Reset(TimeSrv->GetTime(), 0.0001f, GetEntity()->GetAttr<float>(CStrID("CameraAngularGain),
+	//Position.Reset(CoreSrv->GetTime(), 0.0001f, GetEntity()->GetAttr<float>(CStrID("CameraLinearGain), Tfm.Translation());
+	//Lookat.Reset(CoreSrv->GetTime(), 0.0001f, GetEntity()->GetAttr<float>(CStrID("CameraAngularGain),
 	//	Tfm.Translation() - (Tfm.AxisZ() * 10.0f));
 
 	GetEntity()->GetLevel().GetScene()->SetMainCamera(Camera);
@@ -99,7 +99,7 @@ bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 	//!!!define constant somewhere!
 	if ((lookatPoint - CorrectedGoalPos).SqLength() > 1.5f * 1.5f) goalPos = CorrectedGoalPos;
 
-	CTime Time = TimeSrv->GetTime();
+	CTime Time = CoreSrv->GetTime();
 
 	// check if the pCamera is currently at the origin, if yes it is in its initial
 	// position and should not interpolate towards its target position

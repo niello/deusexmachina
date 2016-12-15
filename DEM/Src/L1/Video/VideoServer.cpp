@@ -1,7 +1,7 @@
 #include "VideoServer.h"
 
 #include <Video/OGGTheoraPlayer.h>
-#include <Time/TimeServer.h>
+#include <Core/CoreServer.h>
 #include <IO/IOServer.h>
 #include <Core/CoreServer.h>
 
@@ -55,10 +55,10 @@ void CVideoServer::Trigger()
 {
 	n_assert(_IsOpen);
 
-	float FrameTime = (float)TimeSrv->GetFrameTime();
+	float FrameTime = (float)CoreSrv->GetFrameTime();
 
 	// Rewind players on time reset
-	// Now can't happen due to the wrapping in the TimeSrv
+	// Now can't happen due to the wrapping in the CoreSrv
 	if (FrameTime < 0.f)
 		for (UPTR i = 0; i < Players.GetCount(); ++i)
 			if (Players[i]->IsOpen()) Players[i]->Rewind();

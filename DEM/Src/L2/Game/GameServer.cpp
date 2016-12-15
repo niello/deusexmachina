@@ -10,8 +10,8 @@
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <UI/UIServer.h>
-#include <Time/TimeServer.h>
 #include <Scripting/ScriptObject.h>
+#include <Core/CoreServer.h>
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <Events/EventServer.h>
@@ -25,8 +25,8 @@ bool CGameServer::Open()
 {
 	n_assert(!IsOpen);
 
-	GameTimeSrc = n_new(Time::CTimeSource);
-	TimeSrv->AttachTimeSource(CStrID("Game"), GameTimeSrc);
+	GameTimeSrc = n_new(Core::CTimeSource);
+	CoreSrv->AttachTimeSource(CStrID("Game"), GameTimeSrc);
 
 	IsOpen = true;
 	OK;
@@ -41,7 +41,7 @@ void CGameServer::Close()
 	LevelViews.Clear();
 	LevelViewHandles.Clear();
 
-	TimeSrv->RemoveTimeSource(CStrID("Game"));
+	CoreSrv->RemoveTimeSource(CStrID("Game"));
 	GameTimeSrc = NULL;
 
 	IsOpen = false;
@@ -339,8 +339,8 @@ bool CGameServer::ContinueGame(const char* pFileName)
 		SubSection->ToDataDict(Attrs);
 
 	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Time")) && SubSection->GetCount())
-		TimeSrv->Load(*SubSection);
-	else TimeSrv->ResetAll();
+		CoreSrv->Load(*SubSection);
+	else CoreSrv->ResetAll();
 
 	// Allow custom gameplay managers to load their data
 	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc->Get<Data::PParams>(CStrID("Managers"), NULL));
@@ -441,7 +441,7 @@ bool CGameServer::CommitContinueData()
 
 	// Time data is never present in the initial game file, so save without diff
 	Data::PParams SGTime = n_new(Data::CParams);
-	TimeSrv->Save(*SGTime);
+	CoreSrv->Save(*SGTime);
 	if (SGTime->GetCount()) SGCommon->Set(CStrID("Time"), SGTime);
 
 	// Allow custom gameplay managers to save their data

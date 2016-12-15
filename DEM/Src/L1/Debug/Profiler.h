@@ -1,7 +1,7 @@
 #ifndef N_PROFILER_H
 #define N_PROFILER_H
 
-#include <Time/TimeServer.h>
+#include <Core/CoreServer.h>
 #include <Core/CoreServer.h>
 
 // Profiler provides an easy way to measure time intervals.

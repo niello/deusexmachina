@@ -7,9 +7,6 @@
     <Filter Include="Data\Loaders">
       <UniqueIdentifier>{e35e141c-5185-43d4-b44a-e8073ebb595d}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Time">
-      <UniqueIdentifier>{1d35060e-972a-4c46-8979-1e1299b61eab}</UniqueIdentifier>
-    </Filter>
     <Filter Include="SI">
       <UniqueIdentifier>{1b6147f9-6e21-41fb-b299-9516b8f09dab}</UniqueIdentifier>
     </Filter>
@@ -194,12 +191,6 @@
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\Data\XMLDocument.h">
       <Filter>Data</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Time\TimeServer.h">
-      <Filter>Time</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L1\Time\TimeSource.h">
-      <Filter>Time</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L1\SI\SI_L1.h">
       <Filter>SI</Filter>
@@ -995,6 +986,9 @@
     <ClInclude Include="..\..\Src\L1\Frame\NodeAttrAmbientLight.h">
       <Filter>Frame</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L1\Core\TimeSource.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp">
@@ -1027,19 +1021,10 @@
     <ClCompile Include="..\..\Src\L1\Data\Loaders\StringTableFromExcelXML.cpp">
       <Filter>Data\Loaders</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp">
-      <Filter>Time</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp">
-      <Filter>Time</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L1\SI\SIEventServer.cpp">
       <Filter>SI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\SI\SIGlobals.cpp">
-      <Filter>SI</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L1\SI\SITimeServer.cpp">
       <Filter>SI</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Core\CoreServer.cpp">
@@ -1653,6 +1638,12 @@
     </ClCompile>
     <ClCompile Include="..\..\Src\L1\Frame\NodeAttrAmbientLight.cpp">
       <Filter>Frame</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\Core\TimeSource.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L1\SI\SITime.cpp">
+      <Filter>SI</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

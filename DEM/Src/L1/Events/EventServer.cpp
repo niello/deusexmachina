@@ -1,6 +1,6 @@
 #include "EventServer.h"
 
-#include <Time/TimeServer.h>
+#include <Core/CoreServer.h>
 
 namespace Events
 {
@@ -10,7 +10,7 @@ void CEventServer::ScheduleEvent(CEventBase& Event, U8 Flags, CEventDispatcher* 
 {
 	CEventNode* pNewNode = EventNodes.Construct();
 	n_assert2(pNewNode, "Nervous system of the engine was paralyzed! Can't allocate event node");
-	pNewNode->FireTime = (float)TimeSrv->GetTime() + RelTime;
+	pNewNode->FireTime = (float)CoreSrv->GetTime() + RelTime;
 	pNewNode->Event = &Event;
 	pNewNode->pDispatcher = pDisp ? pDisp : this;
 	pNewNode->Flags = Flags;
@@ -123,7 +123,7 @@ void CEventServer::ProcessPendingEvents()
 		}
 	}
 
-	float CurrTime = (float)TimeSrv->GetTime();
+	float CurrTime = (float)CoreSrv->GetTime();
 
 	while (PendingEventsHead && PendingEventsHead->FireTime <= CurrTime)
 	{

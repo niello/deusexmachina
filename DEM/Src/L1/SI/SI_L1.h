@@ -9,7 +9,7 @@ namespace SI
 {
 	bool RegisterGlobals();
 	bool RegisterEventServer();
-	bool RegisterTimeServer();
+	bool RegisterTime();
 }
 
 #endif

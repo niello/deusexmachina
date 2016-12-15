@@ -6,7 +6,7 @@
 #include <Data/FixedArray.h>
 
 // Event condition that is triggered when the child state is on and the child event is triggered.
-// Useful for combinations like [Ctrl + Shift] + Click or [MMB] + Mouse move.
+// Useful for combinations like "[Ctrl + Shift] + Click" or "[MMB] + Mouse move".
 
 namespace Input
 {

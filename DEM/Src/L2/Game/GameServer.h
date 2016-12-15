@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_GAME_SERVER_H__
 #define __DEM_L2_GAME_SERVER_H__
 
-#include <Time/TimeSource.h>
+#include <Core/TimeSource.h>
 #include <Game/GameLevel.h>
 #include <Game/EntityManager.h>	//???need to be a singleton?
 #include <Game/StaticEnvManager.h>	//???need to be a singleton?
@@ -37,7 +37,7 @@ protected:
 	CString							CurrProfile;
 	CDataDict						Attrs;
 
-	Time::PTimeSource				GameTimeSrc;
+	Core::PTimeSource				GameTimeSrc;
 	CEntityManager					EntityManager;
 	CStaticEnvManager				StaticEnvManager;
 	//CCameraManager				CameraManager;

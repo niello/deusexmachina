@@ -163,6 +163,7 @@
     <ClInclude Include="..\..\Src\L1\Animation\KeyframeClipLoaderKFA.h" />
     <ClInclude Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.h" />
     <ClInclude Include="..\..\Src\L1\Core\RTTIBaseClass.h" />
+    <ClInclude Include="..\..\Src\L1\Core\TimeSource.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
     <ClInclude Include="..\..\Src\L1\Data\ParamsUtils.h" />
@@ -335,8 +336,6 @@
     <ClInclude Include="..\..\Src\L1\System\OSWindowClass.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindowClassWin32.h" />
     <ClInclude Include="..\..\Src\L1\System\OSWindowWin32.h" />
-    <ClInclude Include="..\..\Src\L1\Time\TimeServer.h" />
-    <ClInclude Include="..\..\Src\L1\Time\TimeSource.h" />
     <ClInclude Include="..\..\Src\L1\SI\SI_L1.h" />
     <ClInclude Include="..\..\Src\L1\Core\CoreServer.h" />
     <ClInclude Include="..\..\Src\L1\Core\Factory.h" />
@@ -468,6 +467,7 @@
     <ClCompile Include="..\..\Src\L1\Animation\KeyframeClipLoaderKFA.cpp" />
     <ClCompile Include="..\..\Src\L1\Animation\MocapClipLoaderNAX2.cpp" />
     <ClCompile Include="..\..\Src\L1\Core\RTTIBaseClass.cpp" />
+    <ClCompile Include="..\..\Src\L1\Core\TimeSource.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Buffer.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\Data.cpp" />
     <ClCompile Include="..\..\Src\L1\Data\DataArray.cpp" />
@@ -595,11 +595,9 @@
     <ClCompile Include="..\..\Src\L1\System\Events\OSInput.cpp" />
     <ClCompile Include="..\..\Src\L1\System\OSWindowClassWin32.cpp" />
     <ClCompile Include="..\..\Src\L1\System\OSWindowWin32.cpp" />
-    <ClCompile Include="..\..\Src\L1\Time\TimeServer.cpp" />
-    <ClCompile Include="..\..\Src\L1\Time\TimeSource.cpp" />
     <ClCompile Include="..\..\Src\L1\SI\SIEventServer.cpp" />
     <ClCompile Include="..\..\Src\L1\SI\SIGlobals.cpp" />
-    <ClCompile Include="..\..\Src\L1\SI\SITimeServer.cpp" />
+    <ClCompile Include="..\..\Src\L1\SI\SITime.cpp" />
     <ClCompile Include="..\..\Src\L1\Core\CoreServer.cpp" />
     <ClCompile Include="..\..\Src\L1\Core\Factory.cpp" />
     <ClCompile Include="..\..\Src\L1\Core\Object.cpp" />
