@@ -2,11 +2,11 @@
 #ifndef __DEM_L2_GAME_SERVER_H__
 #define __DEM_L2_GAME_SERVER_H__
 
+#include <Data/Singleton.h>
 #include <Core/TimeSource.h>
-#include <Game/GameLevel.h>
-#include <Game/EntityManager.h>	//???need to be a singleton?
-#include <Game/StaticEnvManager.h>	//???need to be a singleton?
+#include <Game/EntityManager.h>
 #include <Data/HandleManager.h>
+#include <Data/Data.h>
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
@@ -14,13 +14,24 @@
 
 //!!!!!!on exit game, if profile is set, write SGCommon to continue data, now only levels are in continue!
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace Render
 {
 	class CGPUDriver;	// For level validation only //???redesign?
 }
 
+namespace Scene
+{
+	class CSceneNode;
+}
+
 namespace Game
 {
+typedef Ptr<class CGameLevel> PGameLevel;
 class CGameLevelView;
 
 #define GameSrv Game::CGameServer::Instance()
@@ -39,7 +50,6 @@ protected:
 
 	Core::PTimeSource				GameTimeSrc;
 	CEntityManager					EntityManager;
-	CStaticEnvManager				StaticEnvManager;
 	//CCameraManager				CameraManager;
 
 	CDict<CStrID, PGameLevel>		Levels;
@@ -102,6 +112,7 @@ public:
 	bool			GetGlobalAttr(Data::CData& Out, CStrID ID) const;
 	bool			HasGlobalAttr(CStrID ID) const { return Attrs.FindIndex(ID) != INVALID_INDEX; }
 
+	CEntityManager*	GetEntityMgr() { return &EntityManager; }
 	CTime			GetTime() const { return GameTimeSrc->GetTime(); }
 	CTime			GetFrameTime() const { return GameTimeSrc->GetFrameTime(); }
 	UPTR			GetFrameID() const { return GameTimeSrc->GetFrameID(); }
@@ -114,14 +125,6 @@ inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
 {
 	IPTR Idx = Levels.FindIndex(ID);
 	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
-}
-//---------------------------------------------------------------------
-
-inline bool CGameServer::ValidateAllLevels(Render::CGPUDriver* pGPU)
-{
-	for (UPTR i = 0; i < Levels.GetCount(); ++i)
-		if (!Levels.ValueAt(i)->Validate(pGPU)) FAIL;
-	OK;
 }
 //---------------------------------------------------------------------
 

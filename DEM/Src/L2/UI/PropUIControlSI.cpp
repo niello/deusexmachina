@@ -3,7 +3,7 @@
 #include <Scripting/ScriptServer.h>
 #include <Scripting/EntityScriptObject.h>
 #include <Scripting/PropScriptable.h>
-#include <Game/EntityManager.h>
+#include <Game/Entity.h>
 
 extern "C"
 {

@@ -2,7 +2,8 @@
 
 #include <Dlg/PropTalking.h>
 #include <Factions/FactionManager.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
+#include <Game/Entity.h>
 #include <Data/DataArray.h>
 #include <Data/ParamsUtils.h>
 #include <Events/EventServer.h>
@@ -87,9 +88,9 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		FAIL;
 	}
 
-	n_assert_dbg(EntityMgr->EntityExists(Initiator));
+	n_assert_dbg(GameSrv->GetEntityMgr()->EntityExists(Initiator));
 
-	Game::CEntity* pTargetEnt = EntityMgr->GetEntity(Target);
+	Game::CEntity* pTargetEnt = GameSrv->GetEntityMgr()->GetEntity(Target);
 	if (!pTargetEnt)
 	{
 		Sys::Log("Error,Dlg: Entity '%s' doesn't exist\n", Target.CStr());
@@ -113,7 +114,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	if (TargetIsPlr == InitiatorIsPlr) // Plr-Plr & NPC-NPC
 	{
-		NewDlg.Dlg = EntityMgr->GetEntity(Target)->GetProperty<Prop::CPropTalking>()->GetDialogue();
+		NewDlg.Dlg = GameSrv->GetEntityMgr()->GetEntity(Target)->GetProperty<Prop::CPropTalking>()->GetDialogue();
 		if (NewDlg.Dlg.IsValidPtr())
 		{
 			NewDlg.DlgOwner = Target;
@@ -121,7 +122,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		}
 		else
 		{
-			NewDlg.Dlg = EntityMgr->GetEntity(Initiator)->GetProperty<Prop::CPropTalking>()->GetDialogue();
+			NewDlg.Dlg = GameSrv->GetEntityMgr()->GetEntity(Initiator)->GetProperty<Prop::CPropTalking>()->GetDialogue();
 			if (NewDlg.Dlg.IsValidPtr())
 			{
 				NewDlg.DlgOwner = Initiator;
@@ -133,7 +134,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 	{
 		CStrID NPC = TargetIsPlr ? Initiator : Target;
 		CStrID Plr = TargetIsPlr ? Target : Initiator;
-		NewDlg.Dlg = EntityMgr->GetEntity(NPC)->GetProperty<Prop::CPropTalking>()->GetDialogue();
+		NewDlg.Dlg = GameSrv->GetEntityMgr()->GetEntity(NPC)->GetProperty<Prop::CPropTalking>()->GetDialogue();
 		if (NewDlg.Dlg.IsValidPtr())
 		{
 			NewDlg.DlgOwner = NPC;
@@ -141,7 +142,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		}
 		else //???need? NPC talking with Player with player-attached dlg
 		{
-			NewDlg.Dlg = EntityMgr->GetEntity(Plr)->GetProperty<Prop::CPropTalking>()->GetDialogue();
+			NewDlg.Dlg = GameSrv->GetEntityMgr()->GetEntity(Plr)->GetProperty<Prop::CPropTalking>()->GetDialogue();
 			if (NewDlg.Dlg.IsValidPtr())
 			{
 				NewDlg.DlgOwner = Plr;

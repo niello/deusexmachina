@@ -4,8 +4,7 @@
 #include <AI/PropSmartObject.h>
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Stimuli/StimulusVisible.h>
-#include <Game/GameServer.h> //???separate time source for AI?
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
 
 namespace AI
 {
@@ -18,7 +17,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 	//???special SO stimulus, may be one per action or with action list?
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
-		Game::PEntity Ent = EntityMgr->GetEntity(pStimulus->SourceEntityID);
+		Game::PEntity Ent = GameSrv->GetEntityMgr()->GetEntity(pStimulus->SourceEntityID);
 		CPropSmartObject* pSO = Ent->GetProperty<CPropSmartObject>();
 
 		if (!pSO) return;

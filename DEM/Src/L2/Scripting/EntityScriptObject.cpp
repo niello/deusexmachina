@@ -2,7 +2,7 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
 #include <Events/Subscription.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
@@ -79,7 +79,7 @@ int CEntityScriptObject_AttachProperty(lua_State* l)
 	SETUP_ENT_SI_ARGS(2)
 	if (lua_isstring(l, 2))
 	{
-		Game::CProperty* pProp = EntityMgr->AttachProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
+		Game::CProperty* pProp = GameSrv->GetEntityMgr()->AttachProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
 		pProp->Activate();
 	}
 	return 0;
@@ -90,7 +90,7 @@ int CEntityScriptObject_RemoveProperty(lua_State* l)
 {
 	// Args: EntityScriptObject's this table, property class name
 	SETUP_ENT_SI_ARGS(2)
-	if (lua_isstring(l, 2)) EntityMgr->RemoveProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
+	if (lua_isstring(l, 2)) GameSrv->GetEntityMgr()->RemoveProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -112,9 +112,9 @@ int CEntityScriptObject_HasProperty(lua_State* l)
 	Game::CProperty* pProp;
 	const char* pClassName = lua_tostring(l, 2);
 	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
-		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
+		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
 	else
-		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pClassName));
+		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pClassName));
 
 	lua_pushboolean(l, pProp != NULL);
 	return 1;
@@ -138,9 +138,9 @@ int CEntityScriptObject_IsPropertyActive(lua_State* l)
 	Game::CProperty* pProp;
 	const char* pClassName = lua_tostring(l, 2);
 	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
-		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
+		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
 	else
-		pProp = EntityMgr->GetProperty(*This->GetEntity(), CString(pClassName));
+		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pClassName));
 
 	lua_pushboolean(l, pProp && pProp->IsActive());
 	return 1;

@@ -1,7 +1,8 @@
 #include "GameLevelView.h"
 
 #include <Game/GameLevel.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
+#include <Game/Entity.h>
 #include <Scene/PropSceneNode.h>
 #include <Frame/NodeAttrCamera.h>
 #include <Render/RenderTarget.h>
@@ -51,9 +52,9 @@ void CGameLevelView::Trigger()
 	{
 		Data::PParams P = n_new(Data::CParams(1));
 		P->Set<PVOID>(CStrID("LevelViewPtr"), this);
-		Game::CEntity* pEntityUnderMouse = EntityMgr->GetEntity(OldEntityUnderMouse);
+		Game::CEntity* pEntityUnderMouse = GameSrv->GetEntityMgr()->GetEntity(OldEntityUnderMouse);
 		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseLeave"), P);
-		pEntityUnderMouse = EntityMgr->GetEntity(EntityUnderMouse);
+		pEntityUnderMouse = GameSrv->GetEntityMgr()->GetEntity(EntityUnderMouse);
 		if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseEnter"), P);
 	}
 }

@@ -7,8 +7,8 @@
 #include <Scripting/PropScriptable.h>
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
-#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
+#include <Game/GameLevel.h>
 
 namespace Prop
 {

@@ -3,15 +3,7 @@
 #include <AI/PropActorBrain.h>
 #include <Combat/Event/ObjDamageDone.h>
 #include <AI/AIServer.h>
-#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
-
-//BEGIN_ATTRS_REGISTRATION(PropWeapon)
-//    RegisterFloatWithDefault(WpnROF, ReadOnly, 2.0f);
-//    RegisterFloatWithDefault(WpnRangeMin, ReadOnly, 0.1f);
-//    RegisterFloatWithDefault(WpnRangeMax, ReadOnly, 0.8f);
-//    RegisterFloatWithDefault(WpnLastStrikeTime, ReadOnly, -2.1f); //???!!! check bhv
-//END_ATTRS_REGISTRATION
 
 namespace Prop
 {
@@ -53,8 +45,8 @@ bool CPropWeapon::OnChrStrike(Events::CEventDispatcher* pDispatcher, const Event
 	//???or get from attr?
 	//CStrID TargetEntityID = (*((CEvent&)Event).Params).Get<CStrID>(CStrID("TargetEntityID"));
 	//
-	//if (EntityMgr->EntityExists(TargetEntityID))
-	//	Strike(*EntityMgr->GetEntity(TargetEntityID));
+	//if (GameSrv->GetEntityMgr()->EntityExists(TargetEntityID))
+	//	Strike(*GameSrv->GetEntityMgr()->GetEntity(TargetEntityID));
 
 	OK;
 }

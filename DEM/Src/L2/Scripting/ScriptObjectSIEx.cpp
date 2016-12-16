@@ -1,8 +1,7 @@
 #include <Scripting/ScriptServer.h>
 #include <Scripting/ScriptObject.h>
-#include <Game/EntityManager.h>
-//#include <Scripting/EventHandlerScript.h>
-//#include <Events/EventServer.h>
+#include <Game/GameServer.h>
+#include <Game/Entity.h>
 
 extern "C"
 {
@@ -29,7 +28,7 @@ int CScriptObject_SubscribeEntityEvent(lua_State* l)
 	CScriptObject* This = CScriptObject::GetFromStack(l, 1);
 	if (This)
 	{
-		Game::CEntity* pEntity = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
+		Game::CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(CStrID(lua_tostring(l, 2)));
 		if (pEntity) This->SubscribeEvent(CStrID(lua_tostring(l, 3)), lua_tostring(l, -2), pEntity, Priority_Default);
 	}
 	return 0;
@@ -44,7 +43,7 @@ int CScriptObject_UnsubscribeEntityEvent(lua_State* l)
 	CScriptObject* This = CScriptObject::GetFromStack(l, 1);
 	if (This)
 	{
-		Game::CEntity* pEntity = EntityMgr->GetEntity(CStrID(lua_tostring(l, 2)));
+		Game::CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(CStrID(lua_tostring(l, 2)));
 		if (pEntity) This->UnsubscribeEvent(CStrID(lua_tostring(l, 3)), lua_tostring(l, -2), pEntity);
 	}
 	return 0;

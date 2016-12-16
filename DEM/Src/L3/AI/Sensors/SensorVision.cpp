@@ -4,7 +4,7 @@
 #include <AI/Perception/Perceptor.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
 #include <Math/sphere.h>
 
 namespace AI

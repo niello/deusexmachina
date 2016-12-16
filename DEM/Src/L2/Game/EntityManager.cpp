@@ -6,7 +6,6 @@
 
 namespace Game
 {
-__ImplementSingleton(Game::CEntityManager);
 
 CEntityManager::~CEntityManager()
 {
@@ -21,8 +20,6 @@ CEntityManager::~CEntityManager()
 		*PropStorages.ValueAt(i) = NULL;
 	}
 	PropStorages.Clear();
-
-	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 

@@ -2,7 +2,6 @@
 
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
-#include <Game/EntityManager.h>
 #include <Game/GameServer.h>
 
 namespace AI
@@ -29,7 +28,7 @@ UPTR CActionUseSmartObj::SetDone(CActor* pActor, CPropSmartObject* pSO, const CS
 
 bool CActionUseSmartObj::Activate(CActor* pActor)
 {
-	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
@@ -94,7 +93,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 UPTR CActionUseSmartObj::Update(CActor* pActor)
 {
 	//!!!IsValid() checks that values, second test may be not necessary!
-	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return Failure;
@@ -151,7 +150,7 @@ UPTR CActionUseSmartObj::Update(CActor* pActor)
 
 void CActionUseSmartObj::Deactivate(CActor* pActor)
 {
-	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	if (!pSO) return;
@@ -207,7 +206,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 bool CActionUseSmartObj::IsValid(CActor* pActor) const
 {
-	Game::CEntity* pSOEntity = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
 	return pSO && pSO->IsActionEnabled(ActionID);

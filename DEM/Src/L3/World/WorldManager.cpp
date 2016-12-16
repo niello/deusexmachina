@@ -1,7 +1,9 @@
 #include "WorldManager.h"
 
 #include <Game/GameServer.h>
+#include <Game/Entity.h>
 #include <Events/EventServer.h>
+#include <Math/Matrix44.h>
 
 namespace RPG
 {
@@ -45,7 +47,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
 	for (UPTR i = 0; i < EntityIDs.GetCount(); ++i)
 	{
-		Game::CEntity* pEnt = EntityMgr->GetEntity(EntityIDs[i]);
+		Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(EntityIDs[i]);
 		if (pEnt)
 		{
 			Entities.Add(pEnt);
@@ -66,7 +68,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 
 	if (!GameSrv->IsLevelLoaded(LevelID) && !GameSrv->LoadGameLevel(LevelID)) FAIL;
 
-	Game::CEntity* pMarker = EntityMgr->GetEntity(MarkerID);
+	Game::CEntity* pMarker = GameSrv->GetEntityMgr()->GetEntity(MarkerID);
 	n_assert(pMarker);
 
 	const matrix44& DestTfm = pMarker->GetAttr<matrix44>(CStrID("Transform"));

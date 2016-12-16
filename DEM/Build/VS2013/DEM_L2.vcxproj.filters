@@ -219,12 +219,6 @@
     <ClInclude Include="..\..\Src\L2\Game\Property.h">
       <Filter>Game</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\StaticEnvManager.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\StaticObject.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L2\App\AppFSM.h">
       <Filter>App</Filter>
     </ClInclude>
@@ -423,12 +417,6 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\Property.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\StaticEnvManager.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\StaticObject.cpp">
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\App\AppFSM.cpp">

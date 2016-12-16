@@ -1,7 +1,8 @@
 #include "PropTrigger.h"
 
-#include <Game/EntityManager.h>
+#include <Game/Entity.h>
 #include <Game/GameServer.h>
+#include <Game/GameLevel.h>
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/TriggerContactCallback.h>
@@ -14,11 +15,6 @@ namespace Prop
 {
 __ImplementClass(Prop::CPropTrigger, 'PTRG', Game::CProperty);
 __ImplementPropertyStorage(CPropTrigger);
-
-//CPropTrigger::~CPropTrigger()
-//{
-//}
-////---------------------------------------------------------------------
 
 bool CPropTrigger::InternalActivate()
 {
@@ -161,7 +157,7 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 		for (UPTR i = 0; i < CurrInsiders.GetCount(); ++i)
 		{
 			CStrID EntityID = CurrInsiders[i];
-			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX && EntityMgr->EntityExists(EntityID))
+			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX && GameSrv->GetEntityMgr()->EntityExists(EntityID))
 				pScriptObj->RunFunctionOneArg("OnTriggerLeave", CString(EntityID.CStr()));
 		}
 

@@ -3,8 +3,9 @@
 #include <Dlg/DialogueManager.h>
 #include <Scripting/PropScriptable.h>
 #include <AI/PropSmartObject.h>
-#include <Game/EntityManager.h>
+#include <Game/Entity.h>
 #include <Events/EventServer.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

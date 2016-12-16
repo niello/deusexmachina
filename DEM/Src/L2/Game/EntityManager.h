@@ -2,25 +2,26 @@
 #ifndef __DEM_L2_ENTITY_MANAGER_H__
 #define __DEM_L2_ENTITY_MANAGER_H__
 
-#include <Core/Object.h>
-#include <Data/Singleton.h>
-#include <Game/Entity.h>
 #include <Game/Property.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
 #include <Core/Factory.h>
 
 // The entity manager creates and manages entities and allows to
-// register properties to be usable by entities.
+// register properties to be used by entities.
+
+namespace Data
+{
+	class CData;
+}
 
 namespace Game
 {
-#define EntityMgr Game::CEntityManager::Instance()
+typedef Ptr<class CEntity> PEntity;
+class CGameLevel;
 
 class CEntityManager
 {
-	__DeclareSingleton(CEntityManager);
-
 protected:
 
 	CDict<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
@@ -33,7 +34,7 @@ protected:
 
 public:
 
-	CEntityManager(): Entities(256, 256), UIDToEntity(512) { __ConstructSingleton; Entities.Flags.Clear(Array_KeepOrder); }
+	CEntityManager(): Entities(256, 256), UIDToEntity(512) { Entities.Flags.Clear(Array_KeepOrder); }
 	~CEntityManager();
 
 	PEntity		CreateEntity(CStrID UID, CGameLevel& Level);

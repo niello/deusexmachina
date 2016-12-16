@@ -3,7 +3,8 @@
 #include <Items/ItemManager.h>
 #include <Items/Prop/PropItem.h>
 #include <Scripting/PropScriptable.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
+#include <Game/Entity.h>
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Math/Math.h>
@@ -148,7 +149,7 @@ bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const
 	if (ActionID == CStrID("PickItem"))
 	{
 		CStrID SOID = P->Get<CStrID>(CStrID("SO"));
-		Game::CEntity* pItemEnt = EntityMgr->GetEntity(SOID);
+		Game::CEntity* pItemEnt = GameSrv->GetEntityMgr()->GetEntity(SOID);
 		CPropItem* pPropItem = pItemEnt ? pItemEnt->GetProperty<CPropItem>() : NULL;
 		if (!pPropItem || !pPropItem->Items.IsValid()) OK;
 
@@ -157,7 +158,7 @@ bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const
 		if (!pPropItem->Items.IsValid())
 		{
 			pPropItem->Items.Clear();
-			EntityMgr->RequestDestruction(SOID);
+			GameSrv->GetEntityMgr()->RequestDestruction(SOID);
 		}
 	}
 

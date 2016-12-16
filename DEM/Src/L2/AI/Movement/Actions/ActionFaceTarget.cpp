@@ -1,7 +1,7 @@
 #include "ActionFaceTarget.h"
 
 #include <AI/PropActorBrain.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
 
 namespace AI
 {
@@ -33,7 +33,7 @@ UPTR CActionFaceTarget::Update(CActor* pActor)
 
 bool CActionFaceTarget::SetupDirFromTarget(CActor* pActor)
 {
-	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pEnt) FAIL;
 	vector3 FaceDir = pEnt->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 	FaceDir.norm();
@@ -42,4 +42,4 @@ bool CActionFaceTarget::SetupDirFromTarget(CActor* pActor)
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

@@ -1,6 +1,7 @@
 #include <Scripting/ScriptServer.h>
 #include <AI/AIServer.h>
 #include <Game/GameServer.h>
+#include <Game/GameLevel.h>
 
 extern "C"
 {

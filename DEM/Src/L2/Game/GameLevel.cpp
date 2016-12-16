@@ -2,10 +2,8 @@
 
 #include <Frame/View.h>
 #include <Frame/NodeAttrCamera.h>
-#include <Game/EntityManager.h>
-#include <Game/StaticEnvManager.h>
+#include <Game/GameServer.h>
 #include <Game/Entity.h>
-#include <Game/StaticObject.h>
 #include <Game/SceneNodeValidateAttrs.h>
 #include <Scripting/ScriptObject.h>
 #include <Scene/SceneNodeRenderDebug.h>
@@ -162,56 +160,34 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 			Data::CParams& RefEntityDesc = *EntityDesc.GetUnsafe();
 
-			//???need, or statics and entities will be separated? may be statics should be moved to base scene graph, physics and AI layers.
-			CStrID LoadingGroup = EntityDesc->Get<CStrID>(CStrID("LoadingGroup"), CStrID::Empty);
-			if (LoadingGroup == "Static")
+			PEntity Entity = GameSrv->GetEntityMgr()->CreateEntity(EntityPrm.GetName(), *this);
+			if (Entity.IsNullPtr())
 			{
-				if (!StaticEnvMgr->CanEntityBeStatic(RefEntityDesc))
-				{
-					Sys::Log("Static object %s in a level %s can't be static\n", EntityPrm.GetName().CStr(), ID.CStr());
-					continue; //???or try to add as common?
-				}
-
-				PStaticObject Obj = StaticEnvMgr->CreateStaticObject(EntityPrm.GetName(), *this);
-				if (Obj.IsNullPtr())
-				{
-					Sys::Log("Static object %s in a level %s not loaded\n", EntityPrm.GetName().CStr(), ID.CStr());
-					continue;
-				}
-
-				Obj->Init(RefEntityDesc);
+				Sys::Log("Entity %s in a level %s not loaded\n", EntityPrm.GetName().CStr(), ID.CStr());
+				continue;
 			}
-			else
+
+			Data::PParams AttrsDesc;
+			if (RefEntityDesc.Get(AttrsDesc, CStrID("Attrs")) && AttrsDesc->GetCount())
 			{
-				PEntity Entity = EntityMgr->CreateEntity(EntityPrm.GetName(), *this);
-				if (Entity.IsNullPtr())
+				Entity->BeginNewAttrs(AttrsDesc->GetCount());
+				for (UPTR i = 0; i < AttrsDesc->GetCount(); ++i)
 				{
-					Sys::Log("Entity %s in a level %s not loaded\n", EntityPrm.GetName().CStr(), ID.CStr());
-					continue;
+					const Data::CParam& Attr = AttrsDesc->Get(i);
+					Entity->AddNewAttr(Attr.GetName(), Attr.GetRawValue());
 				}
-
-				Data::PParams AttrsDesc;
-				if (RefEntityDesc.Get(AttrsDesc, CStrID("Attrs")) && AttrsDesc->GetCount())
-				{
-					Entity->BeginNewAttrs(AttrsDesc->GetCount());
-					for (UPTR i = 0; i < AttrsDesc->GetCount(); ++i)
-					{
-						const Data::CParam& Attr = AttrsDesc->Get(i);
-						Entity->AddNewAttr(Attr.GetName(), Attr.GetRawValue());
-					}
-					Entity->EndNewAttrs();
-				}
-
-				Data::PDataArray Props;
-				if (RefEntityDesc.Get(Props, CStrID("Props")))
-					for (UPTR i = 0; i < Props->GetCount(); ++i)
-					{
-						const Data::CData& PropID = Props->Get(i);
-						if (PropID.IsA<int>()) EntityMgr->AttachProperty(*Entity, (Data::CFourCC)PropID.GetValue<int>());
-						else if (PropID.IsA<CString>()) EntityMgr->AttachProperty(*Entity, PropID.GetValue<CString>());
-						else Sys::Log("Failed to attach property #%d to entity %s at level %s\n", i, EntityPrm.GetName().CStr(), ID.CStr());
-					}
+				Entity->EndNewAttrs();
 			}
+
+			Data::PDataArray Props;
+			if (RefEntityDesc.Get(Props, CStrID("Props")))
+				for (UPTR i = 0; i < Props->GetCount(); ++i)
+				{
+					const Data::CData& PropID = Props->Get(i);
+					if (PropID.IsA<int>()) GameSrv->GetEntityMgr()->AttachProperty(*Entity, (Data::CFourCC)PropID.GetValue<int>());
+					else if (PropID.IsA<CString>()) GameSrv->GetEntityMgr()->AttachProperty(*Entity, PropID.GetValue<CString>());
+					else Sys::Log("Failed to attach property #%d to entity %s at level %s\n", i, EntityPrm.GetName().CStr(), ID.CStr());
+				}
 		}
 
 		FireEvent(CStrID("OnEntitiesLoaded"));
@@ -306,20 +282,15 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		for (UPTR i = 0; i < InitialEntities->GetCount(); ++i)
 		{
 			CStrID EntityID = InitialEntities->Get(i).GetName();
-			CEntity* pEntity = EntityMgr->GetEntity(EntityID, false);
+			CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(EntityID, false);
 			if (!pEntity || pEntity->GetLevel() != this)
-			{
-				// Static objects never change, so we need no diff of them
-				CStaticObject* pStaticObj = StaticEnvMgr->GetStaticObject(EntityID);
-				if (!pStaticObj || &pStaticObj->GetLevel() != this)
-					SGEntities->Set(EntityID, Data::CData());
-			}
+				SGEntities->Set(EntityID, Data::CData());
 		}
 	}
 
 	//???is there any better way to iterate over all entities of this level? mb send them an event?
 	CArray<CEntity*> Entities(128, 128);
-	EntityMgr->GetEntitiesByLevel(this, Entities);
+	GameSrv->GetEntityMgr()->GetEntitiesByLevel(this, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
 	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
 	for (UPTR i = 0; i < Entities.GetCount(); ++i)
@@ -564,7 +535,7 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 
 bool CGameLevel::HostsEntity(CStrID EntityID) const
 {
-	CEntity* pEnt = EntityMgr->GetEntity(EntityID);
+	CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(EntityID);
 	return pEnt && pEnt->GetLevel() == this;
 }
 //---------------------------------------------------------------------

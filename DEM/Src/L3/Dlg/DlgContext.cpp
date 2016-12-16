@@ -1,6 +1,7 @@
 #include "DlgContext.h"
 
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
+#include <Game/Entity.h>
 #include <Events/EventServer.h>
 #include <Math/Math.h>
 
@@ -64,7 +65,7 @@ void CDlgContext::Trigger(bool IsForeground)
 				CStrID SpeakerEntity = pCurrNode->SpeakerEntity;
 				if (SpeakerEntity == CStrID("$DlgOwner")) SpeakerEntity = DlgOwner;
 				else if (SpeakerEntity == CStrID("$PlrSpeaker")) SpeakerEntity = PlrSpeaker;
-				Game::PEntity Speaker = EntityMgr->GetEntity(SpeakerEntity, true);
+				Game::PEntity Speaker = GameSrv->GetEntityMgr()->GetEntity(SpeakerEntity, true);
 				if (Speaker.IsNullPtr())
 					Sys::Error("CDialogueManager::SayPhrase -> speaker entity '%s' not found", SpeakerEntity.CStr());
 

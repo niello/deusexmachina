@@ -1,5 +1,6 @@
 #include "GameServer.h"
 
+#include <Game/GameLevel.h>
 #include <Game/GameLevelView.h>
 #include <Game/SceneNodeValidateAttrs.h>
 #include <AI/AIServer.h>
@@ -50,7 +51,7 @@ void CGameServer::Close()
 
 void CGameServer::Trigger()
 {
-	EntityMgr->DeferredDeleteEntities();
+	GameSrv->GetEntityMgr()->DeferredDeleteEntities();
 
 	EventSrv->FireEvent(CStrID("OnBeginFrame"));
 
@@ -163,8 +164,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 	}
 
 	Level->FireEvent(CStrID("OnEntitiesUnloading"));
-	EntityMgr->DeleteEntities(*Level);
-	StaticEnvMgr->DeleteStaticObjects(*Level);
+	EntityManager.DeleteEntities(*Level);
 	Level->FireEvent(CStrID("OnEntitiesUnloaded"));
 
 	Levels.RemoveAt(LevelIdx);
@@ -174,6 +174,14 @@ void CGameServer::UnloadLevel(CStrID ID)
 	EventSrv->FireEvent(CStrID("OnLevelUnloaded"), P);
 
 	n_assert_dbg(Level->GetRefCount() == 1);
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::ValidateAllLevels(Render::CGPUDriver* pGPU)
+{
+	for (UPTR i = 0; i < Levels.GetCount(); ++i)
+		if (!Levels.ValueAt(i)->Validate(pGPU)) FAIL;
+	OK;
 }
 //---------------------------------------------------------------------
 

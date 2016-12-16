@@ -211,8 +211,6 @@
     <ClInclude Include="..\..\Src\L2\Game\GameLevel.h" />
     <ClInclude Include="..\..\Src\L2\Game\GameServer.h" />
     <ClInclude Include="..\..\Src\L2\Game\Property.h" />
-    <ClInclude Include="..\..\Src\L2\Game\StaticEnvManager.h" />
-    <ClInclude Include="..\..\Src\L2\Game\StaticObject.h" />
     <ClInclude Include="..\..\Src\L2\App\AppFSM.h" />
     <ClInclude Include="..\..\Src\L2\App\AppStateVideo.h" />
     <ClInclude Include="..\..\Src\L2\App\StateHandler.h" />
@@ -281,8 +279,6 @@
     <ClCompile Include="..\..\Src\L2\Game\GameLevel.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\GameServer.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\Property.cpp" />
-    <ClCompile Include="..\..\Src\L2\Game\StaticEnvManager.cpp" />
-    <ClCompile Include="..\..\Src\L2\Game\StaticObject.cpp" />
     <ClCompile Include="..\..\Src\L2\App\AppFSM.cpp" />
     <ClCompile Include="..\..\Src\L2\App\AppStateVideo.cpp" />
     <ClCompile Include="..\..\Src\L2\App\StateHandler.cpp" />

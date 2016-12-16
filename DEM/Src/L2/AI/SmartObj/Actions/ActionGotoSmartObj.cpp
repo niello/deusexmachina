@@ -3,7 +3,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <Game/GameServer.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
 
 namespace AI
 {
@@ -11,7 +11,7 @@ __ImplementClass(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
 
 bool CActionGotoSmartObj::Activate(CActor* pActor)
 {
-	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pEnt) FAIL;
 	Prop::CPropSmartObject* pSO = pEnt->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
@@ -30,7 +30,7 @@ bool CActionGotoSmartObj::Activate(CActor* pActor)
 
 UPTR CActionGotoSmartObj::Update(CActor* pActor)
 {
-	Game::CEntity* pEnt = EntityMgr->GetEntity(TargetID);
+	Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pEnt) return Failure;
 	Prop::CPropSmartObject* pSO = pEnt->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL; //???IsActionAvailable() - some interval instead of every frame check?

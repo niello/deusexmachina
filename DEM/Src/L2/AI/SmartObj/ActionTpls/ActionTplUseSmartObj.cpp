@@ -3,7 +3,8 @@
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
 #include <AI/PropSmartObject.h>
 #include <AI/Planning/WorldStateSource.h>
-#include <Game/EntityManager.h>
+#include <Game/GameServer.h>
+#include <Game/Entity.h>
 
 namespace AI
 {
@@ -30,7 +31,7 @@ bool CActionTplUseSmartObj::GetPreconditions(CActor* pActor, CWorldState& WS, co
 
 bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, CStrID SOEntityID, CStrID ActionID) const
 {
-	Game::CEntity* pEntity = EntityMgr->GetEntity(SOEntityID, true);
+	Game::CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(SOEntityID, true);
 	if (pEntity)
 	{
 		Prop::CPropSmartObject* pSO = pEntity->GetProperty<Prop::CPropSmartObject>();

@@ -3,7 +3,8 @@
 #include <Items/ItemManager.h>
 #include <AI/PropSmartObject.h>
 #include <UI/PropUIControl.h>
-#include <Game/EntityManager.h>
+#include <Game/Entity.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {
