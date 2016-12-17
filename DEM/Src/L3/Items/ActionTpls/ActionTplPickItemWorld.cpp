@@ -6,12 +6,11 @@
 #include <AI/Memory/MemFactSmartObj.h>
 #include <Game/GameServer.h>
 #include <Items/Prop/PropItem.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
 __ImplementClass(AI::CActionTplPickItemWorld, 'ATIW', AI::CActionTpl);
-
-using namespace Prop;
 
 void CActionTplPickItemWorld::Init(Data::PParams Params)
 {
@@ -40,7 +39,7 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 		if (pSOFact->TypeID == CStrID("Item"))
 		{
 			Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);
-			CPropItem* pItemProp = pEnt ? pEnt->GetProperty<CPropItem>() : NULL;
+			Prop::CPropItem* pItemProp = pEnt ? pEnt->GetProperty<Prop::CPropItem>() : NULL;
 			if (pItemProp &&
 				pSOFact->Confidence > MaxConf &&
 				pItemProp->Items.GetItemID() == (CStrID)WSGoal.GetProp(WSP_HasItem))

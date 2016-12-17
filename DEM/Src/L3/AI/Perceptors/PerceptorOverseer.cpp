@@ -5,6 +5,7 @@
 #include <AI/Stimuli/StimulusVisible.h>
 #include <Game/GameServer.h> //???separate time source for AI?
 #include <Data/DataArray.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

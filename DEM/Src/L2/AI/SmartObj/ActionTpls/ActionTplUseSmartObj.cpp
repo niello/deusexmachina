@@ -5,6 +5,7 @@
 #include <AI/Planning/WorldStateSource.h>
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
@@ -31,7 +32,7 @@ bool CActionTplUseSmartObj::GetPreconditions(CActor* pActor, CWorldState& WS, co
 
 bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, CStrID SOEntityID, CStrID ActionID) const
 {
-	Game::CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(SOEntityID, true);
+	Game::CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(SOEntityID);
 	if (pEntity)
 	{
 		Prop::CPropSmartObject* pSO = pEntity->GetProperty<Prop::CPropSmartObject>();

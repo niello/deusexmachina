@@ -5,12 +5,11 @@
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <Game/GameServer.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
 __ImplementClass(AI::CPerceptorSmartObj, 'PESO', AI::CPerceptor);
-
-using namespace Prop;
 
 void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {
@@ -18,7 +17,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
 		Game::PEntity Ent = GameSrv->GetEntityMgr()->GetEntity(pStimulus->SourceEntityID);
-		CPropSmartObject* pSO = Ent->GetProperty<CPropSmartObject>();
+		Prop::CPropSmartObject* pSO = Ent->GetProperty<Prop::CPropSmartObject>();
 
 		if (!pSO) return;
 
@@ -43,4 +42,4 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

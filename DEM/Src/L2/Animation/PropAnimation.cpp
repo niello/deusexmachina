@@ -16,6 +16,7 @@
 #include <Resources/Resource.h>
 #include <Data/ParamsUtils.h>
 #include <IO/PathUtils.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

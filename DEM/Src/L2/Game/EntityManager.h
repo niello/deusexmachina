@@ -5,7 +5,6 @@
 #include <Game/Property.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
-#include <Core/Factory.h>
 
 // The entity manager creates and manages entities and allows to
 // register properties to be used by entities.
@@ -27,7 +26,6 @@ protected:
 	CDict<const Core::CRTTI*, CPropertyStorage**>	PropStorages;
 	CArray<PEntity>									Entities;
 	CHashTable<CStrID, CEntity*>					UIDToEntity;
-	CDict<CStrID, CStrID>							Aliases;
 	CArray<CStrID>									EntitiesToDelete;
 
 	void		DeleteEntity(IPTR Idx);
@@ -44,38 +42,26 @@ public:
 	void		DeleteEntity(CStrID UID);
 	void		DeleteEntities(const CGameLevel& Level);
 	void		DeleteAllEntities() { while (Entities.GetCount() > 0) DeleteEntity(*Entities.Back()); }
-	void		RequestDestruction(CStrID UID) { EntitiesToDelete.Add(UID); }
+	void		RequestDestruction(CStrID UID) { EntitiesToDelete.Add(UID); } //???deactivate? test with item picking!
 	void		DeferredDeleteEntities();
 
-	int			GetEntityCount() const { return Entities.GetCount(); }
+	UPTR		GetEntityCount() const { return Entities.GetCount(); }
 	CEntity*	GetEntity(IPTR Idx) const { return Entities[Idx].GetUnsafe(); }
-	CEntity*	GetEntity(CStrID UID, bool SearchInAliases = false) const;
-	bool		EntityExists(CStrID UID, bool SearchInAliases = false) const { return !!GetEntity(UID, SearchInAliases); }
-
-	CEntity*	FindEntityByAttr(CStrID AttrID, const Data::CData& Value) const; //???find first - find next?
-	void		FindEntitiesByAttr(CStrID AttrID, const Data::CData& Value, CArray<CEntity*>& Out) const;
+	CEntity*	GetEntity(CStrID UID) const;
+	bool		EntityExists(CStrID UID) const { return !!GetEntity(UID); }
 	void		GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity*>& Out) const;
-
-	//???find first/all by property? - in fact iterates through the storage / CopyToArray
-
-	bool		SetEntityAlias(CStrID Alias, CStrID UID) { if (!UID.IsValid()) FAIL; Aliases.Set(Alias, UID); OK; }
-	void		RemoveEntityAlias(CStrID Alias) { Aliases.Remove(Alias); }
 
 	template<class T>
 	bool		RegisterProperty(UPTR TableCapacity = 32);
 	template<class T>
 	bool		UnregisterProperty();
-	CProperty*	AttachProperty(CEntity& Entity, const char* pClassName) const { return AttachProperty(Entity, Factory->GetRTTI(pClassName)); }
-	CProperty*	AttachProperty(CEntity& Entity, Data::CFourCC ClassFourCC) const { return AttachProperty(Entity, Factory->GetRTTI(ClassFourCC)); }
 	CProperty*	AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	template<class T>
 	T*			AttachProperty(CEntity& Entity) const;
-	void		RemoveProperty(CEntity& Entity, const char* pClassName) const { RemoveProperty(Entity, Factory->GetRTTI(pClassName)); }
 	void		RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
-	CProperty*	GetProperty(CEntity& Entity, const char* pClassName) const { return GetProperty(Entity, Factory->GetRTTI(pClassName)); }
-	CProperty*	GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const;
+	CProperty*	GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI) const;
 	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
 };
 
@@ -88,7 +74,7 @@ inline void CEntityManager::DeleteEntity(CEntity& Entity)
 
 inline void CEntityManager::DeleteEntity(CStrID UID)
 {
-	CEntity* pEnt = GetEntity(UID, true);
+	CEntity* pEnt = GetEntity(UID);
 	if (pEnt) DeleteEntity(*pEnt);
 }
 //---------------------------------------------------------------------

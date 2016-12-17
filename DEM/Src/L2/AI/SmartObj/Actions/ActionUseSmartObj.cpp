@@ -3,19 +3,17 @@
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <Game/GameServer.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
 __ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 
-using namespace Prop;
-using namespace Data;
-
-UPTR CActionUseSmartObj::SetDone(CActor* pActor, CPropSmartObject* pSO, const CSmartAction& ActTpl)
+UPTR CActionUseSmartObj::SetDone(CActor* pActor, Prop::CPropSmartObject* pSO, const CSmartAction& ActTpl)
 {
 	WasDone = true;
 
-	PParams P = n_new(CParams(3));
+	Data::PParams P = n_new(Data::CParams(3));
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
@@ -30,9 +28,9 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 {
 	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
-	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
-	CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
 	WasDone = false;
@@ -68,11 +66,11 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 	}
 	else Sys::Error("CActionUseSmartObj::StartSOAction(): Unknown ProgressDriver!");
 
-	CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
 	if (pActorSO)
 		pActorSO->SetState(CStrID("UsingSO"), ActionID); //!!!SYNC_ACTOR_ANIMATION ? Duration : -1.f
 
-	PParams P = n_new(CParams(3));
+	Data::PParams P = n_new(Data::CParams(3));
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
@@ -95,9 +93,9 @@ UPTR CActionUseSmartObj::Update(CActor* pActor)
 	//!!!IsValid() checks that values, second test may be not necessary!
 	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
-	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO) return Failure;
-	CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	if (!pSOAction) return Failure;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
@@ -133,7 +131,7 @@ UPTR CActionUseSmartObj::Update(CActor* pActor)
 		if (IsDone) return SetDone(pActor, pSO, ActTpl);
 		else if (ActTpl.SendProgressEvent() && Progress != PrevProgress)
 		{
-			PParams P = n_new(CParams(5));
+			Data::PParams P = n_new(Data::CParams(5));
 			P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 			P->Set(CStrID("SO"), TargetID);
 			P->Set(CStrID("Action"), ActionID);
@@ -152,13 +150,13 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 {
 	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
-	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO) return;
-	CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
 	if (!pSOAction) return;
 	const CSmartAction& ActTpl = *pSOAction->pTpl;
 
-	PParams P = n_new(CParams(3));
+	Data::PParams P = n_new(Data::CParams(3));
 	P->Set(CStrID("Actor"), pActor->GetEntity()->GetUID());
 	P->Set(CStrID("SO"), TargetID);
 	P->Set(CStrID("Action"), ActionID);
@@ -195,7 +193,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 	}
 
 	// Abort might be caused by an actor state change, so don't affect that change
-	CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pActorSO = pActor->GetEntity()->GetProperty<Prop::CPropSmartObject>();
 	if (pActorSO && pActorSO->GetCurrState() == CStrID("UsingSO"))
 		pActorSO->SetState(CStrID("Idle"), ActionID);
 	//???if in transition to UsingSO, reset to Idle too?
@@ -208,7 +206,7 @@ bool CActionUseSmartObj::IsValid(CActor* pActor) const
 {
 	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
-	CPropSmartObject* pSO = pSOEntity->GetProperty<CPropSmartObject>();
+	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	return pSO && pSO->IsActionEnabled(ActionID);
 }
 //---------------------------------------------------------------------

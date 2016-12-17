@@ -84,14 +84,8 @@ void CEntityManager::DeleteEntities(const CGameLevel& Level)
 }
 //---------------------------------------------------------------------
 
-CEntity* CEntityManager::GetEntity(CStrID UID, bool SearchInAliases) const
+CEntity* CEntityManager::GetEntity(CStrID UID) const
 {
-	if (SearchInAliases)
-	{
-		IPTR Idx = Aliases.FindIndex(UID);
-		if (Idx != INVALID_INDEX) UID = Aliases.ValueAt(Idx);
-	}
-
 	CEntity* pEnt = NULL;
 	UIDToEntity.Get(UID, pEnt);
 	return pEnt;
@@ -164,9 +158,9 @@ void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) c
 }
 //---------------------------------------------------------------------
 
-CProperty* CEntityManager::GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
+CProperty* CEntityManager::GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI) const
 {
-	if (!pRTTI) return NULL;
+	if (!pRTTI || !EntityID.IsValid()) return NULL;
 	IPTR Idx = PropStorages.FindIndex(pRTTI);
 
 	const Core::CRTTI* pStorageRTTI = pRTTI;
@@ -182,7 +176,7 @@ CProperty* CEntityManager::GetProperty(CEntity& Entity, const Core::CRTTI* pRTTI
 	n_assert_dbg(pStorage);
 
 	PProperty Prop;
-	pStorage->Get(Entity.GetUID(), Prop);
+	pStorage->Get(EntityID, Prop);
 	return pRTTI == pStorageRTTI || Prop->IsA(*pRTTI) ? Prop.GetUnsafe() : NULL;
 }
 //---------------------------------------------------------------------

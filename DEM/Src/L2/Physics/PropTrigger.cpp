@@ -10,6 +10,7 @@
 #include <Events/Subscription.h>
 #include <Debug/DebugDraw.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

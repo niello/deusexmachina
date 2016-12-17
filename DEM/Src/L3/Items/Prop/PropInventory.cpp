@@ -8,6 +8,7 @@
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Math/Math.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

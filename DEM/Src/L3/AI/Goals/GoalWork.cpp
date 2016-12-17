@@ -6,12 +6,11 @@
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Memory/MemFactOverseer.h>
 #include <Game/GameServer.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
 __ImplementClass(AI::CGoalWork, 'GWRK', AI::CGoal);
-
-using namespace Prop;
 
 void CGoalWork::Init(Data::PParams Params)
 {
@@ -49,7 +48,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 		if (Idx != INVALID_INDEX)
 		{
 			Game::PEntity Ent = GameSrv->GetEntityMgr()->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);
-			CPropSmartObject* pSO = Ent->GetProperty<CPropSmartObject>();
+			Prop::CPropSmartObject* pSO = Ent->GetProperty<Prop::CPropSmartObject>();
 			n_assert(pSO);
 
 			//!!!check not only HasAction, but also is action available for this actor in this SO state now!

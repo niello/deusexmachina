@@ -4,6 +4,7 @@
 #include <Combat/Event/ObjDamageDone.h>
 #include <AI/AIServer.h>
 #include <Game/GameServer.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

@@ -13,7 +13,7 @@ namespace ArrayUtils
 template<class T>
 IPTR FindIndexSorted(const T* pData, UPTR Count, const T& Val)
 {
-	if (!Count) return INVALID_INDEX;
+	if (!pData || !Count) return INVALID_INDEX;
 
 	IPTR Idx = &Val - pData;
 	if ((UPTR)Idx < Count) return Idx;
@@ -48,12 +48,12 @@ IPTR FindIndexSorted(const T* pData, UPTR Count, const T& Val)
 }
 //---------------------------------------------------------------------
 
-//!!!UPTR, invalid index (UPTR)(-1)!
+//!!!UPTR!
 // Returns where this element should be inserted to keep array sorted
 template<class T>
 IPTR FindClosestIndexSorted(const T* pData, UPTR Count, const T& Val, bool* pHasEqualElement)
 {
-	if (!Count)
+	if (!pData || !Count)
 	{
 		if (pHasEqualElement) *pHasEqualElement = false;
 		return 0;

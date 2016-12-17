@@ -3,7 +3,7 @@
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <Game/GameServer.h>
-#include <Game/GameServer.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

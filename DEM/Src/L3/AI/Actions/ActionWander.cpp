@@ -4,15 +4,11 @@
 #include <AI/Movement/Actions/ActionGoto.h>
 #include <AI/Movement/Actions/ActionFace.h>
 #include <AI/PropActorBrain.h>
+#include <Core/Factory.h>
 
 namespace AI
 {
 __ImplementClass(AI::CActionWander, 'AWDR', AI::CAction);
-
-//void CActionWander::Init()
-//{
-//}
-////---------------------------------------------------------------------
 
 bool CActionWander::SelectAction(CActor* pActor)
 {

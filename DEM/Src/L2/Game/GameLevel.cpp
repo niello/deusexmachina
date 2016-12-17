@@ -16,6 +16,7 @@
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <Core/Factory.h>
 
 namespace Game
 {
@@ -184,8 +185,11 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 				for (UPTR i = 0; i < Props->GetCount(); ++i)
 				{
 					const Data::CData& PropID = Props->Get(i);
-					if (PropID.IsA<int>()) GameSrv->GetEntityMgr()->AttachProperty(*Entity, (Data::CFourCC)PropID.GetValue<int>());
-					else if (PropID.IsA<CString>()) GameSrv->GetEntityMgr()->AttachProperty(*Entity, PropID.GetValue<CString>());
+					const Core::CRTTI* pRTTI = NULL;
+					if (PropID.IsA<int>()) pRTTI = Factory->GetRTTI((Data::CFourCC)PropID.GetValue<int>());
+					else if (PropID.IsA<CString>()) pRTTI = Factory->GetRTTI(PropID.GetValue<CString>());
+
+					if (pRTTI) GameSrv->GetEntityMgr()->AttachProperty(*Entity, pRTTI);
 					else Sys::Log("Failed to attach property #%d to entity %s at level %s\n", i, EntityPrm.GetName().CStr(), ID.CStr());
 				}
 		}
@@ -282,7 +286,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		for (UPTR i = 0; i < InitialEntities->GetCount(); ++i)
 		{
 			CStrID EntityID = InitialEntities->Get(i).GetName();
-			CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(EntityID, false);
+			CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(EntityID);
 			if (!pEntity || pEntity->GetLevel() != this)
 				SGEntities->Set(EntityID, Data::CData());
 		}

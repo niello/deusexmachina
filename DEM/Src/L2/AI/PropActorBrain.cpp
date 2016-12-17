@@ -9,6 +9,7 @@
 #include <Data/DataArray.h>
 #include <Game/GameServer.h>
 #include <Game/GameLevel.h>
+#include <Core/Factory.h>
 
 namespace Prop
 {

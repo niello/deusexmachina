@@ -3,6 +3,7 @@
 #define __DEM_L1_DYNAMIC_ENUM_H__
 
 #include <StdDEM.h>
+#include <Data/StringID.h>
 #include <Data/StringTokenizer.h>
 #include <Data/Dictionary.h>
 

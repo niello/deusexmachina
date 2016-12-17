@@ -5,29 +5,35 @@
 #include <Data/Flags.h>
 #include <Data/Params.h>
 
-// Ability determines an interaction context. Actor may have many abilities,
-// each can be applied to targets to launch execution of an action.
-// For example, "Repair" is an ability that can be applied to some broken objects
-// to execute actions that will effect in repairing of that objects.
+// Ability resembles a way to interact with a game object. User must select
+// an ability and apply it to a target, so concrete action is determined.
+// For example, "Repair" ability can be applied to Entity targets which
+// resemble broken mechanical objects. Each of these broken objects reacts
+// on "Repair" request by returning Action that contains game logic of
+// repairing this actual object.
+
+//!!!must have a way to know if ability is targeted on self or any other predetermined
+//target, so that target can be automatically selected! ("self" scenario)
 
 namespace Game
 {
-class CGameAction; //???rename to CAction later?
+class IAction;
 
 class CAbility
 {
 protected:
 
 	CStrID			ID;
-	CGameAction*	pAction;
-	Data::CFlags	TargetFlags; //???or RTTI list or CStrID list? use dynamic enum?
+	IAction*		pAction;		// May be NULL, in this case smart object must provide an action
+	Data::CFlags	TargetFlags;	//???or RTTI list or CStrID list? use dynamic enum?
 	Data::PParams	Params;
 
 public:
 
 	CAbility(): pAction(NULL) {}
 
-	bool	AcceptsTargetType(UPTR TargetTypeFlag) const { return TargetFlags.Is(TargetTypeFlag); }
+	bool		AcceptsTargetType(UPTR TargetTypeFlag) const { return TargetFlags.Is(TargetTypeFlag); }
+	IAction*	GetAction() { return pAction; }
 };
 
 }

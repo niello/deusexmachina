@@ -4,6 +4,7 @@
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <AI/Stimuli/StimulusVisible.h>
 #include <Game/GameServer.h> //???separate time source for AI?
+#include <Core/Factory.h>
 
 namespace AI
 {

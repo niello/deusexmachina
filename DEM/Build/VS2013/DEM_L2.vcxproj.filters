@@ -67,10 +67,10 @@
     <Filter Include="Animation">
       <UniqueIdentifier>{a33b833d-90f8-455f-ab67-809fd5b0ae94}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\Core">
+    <Filter Include="Game\&lt;Core&gt;">
       <UniqueIdentifier>{4bf7823b-b4d8-42ad-91ab-2a4d2218bdd9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Game\Interactions">
+    <Filter Include="Game\&lt;Interactions&gt;">
       <UniqueIdentifier>{0587767d-2a4d-42d9-b300-7718769adb17}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -253,25 +253,40 @@
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\Entity.h">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\EntityManager.h">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\GameLevel.h">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\Property.h">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\GameServer.h">
       <Filter>Game</Filter>
     </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\Ability.h">
-      <Filter>Game\Interactions</Filter>
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\Target.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\ActionContext.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\Action.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\TargetEntity.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\TargetGround.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -468,22 +483,28 @@
       <Filter>Game</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\Entity.cpp">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\EntityManager.cpp">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\GameLevel.cpp">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\Property.cpp">
-      <Filter>Game\Core</Filter>
+      <Filter>Game\&lt;Core&gt;</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\GameServer.cpp">
       <Filter>Game</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\TargetEntity.cpp">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\TargetGround.cpp">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

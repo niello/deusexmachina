@@ -2,6 +2,7 @@
 
 #include <AI/PropActorBrain.h>
 #include <Game/GameServer.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

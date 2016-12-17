@@ -6,6 +6,7 @@
 #include <Events/Subscription.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
+#include <Core/Factory.h>
 
 extern "C"
 {
@@ -79,7 +80,8 @@ int CEntityScriptObject_AttachProperty(lua_State* l)
 	SETUP_ENT_SI_ARGS(2)
 	if (lua_isstring(l, 2))
 	{
-		Game::CProperty* pProp = GameSrv->GetEntityMgr()->AttachProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
+		const Core::CRTTI* pRTTI = Factory->GetRTTI(lua_tostring(l, 2));
+		Game::CProperty* pProp = GameSrv->GetEntityMgr()->AttachProperty(*This->GetEntity(), pRTTI);
 		pProp->Activate();
 	}
 	return 0;
@@ -90,7 +92,11 @@ int CEntityScriptObject_RemoveProperty(lua_State* l)
 {
 	// Args: EntityScriptObject's this table, property class name
 	SETUP_ENT_SI_ARGS(2)
-	if (lua_isstring(l, 2)) GameSrv->GetEntityMgr()->RemoveProperty(*This->GetEntity(), CString(lua_tostring(l, 2)));
+	if (lua_isstring(l, 2))
+	{
+		const Core::CRTTI* pRTTI = Factory->GetRTTI(lua_tostring(l, 2));
+		GameSrv->GetEntityMgr()->RemoveProperty(*This->GetEntity(), pRTTI);
+	}
 	return 0;
 }
 //---------------------------------------------------------------------
@@ -108,13 +114,12 @@ int CEntityScriptObject_HasProperty(lua_State* l)
 	}
 
 	static const char* pPrefix = "Prop::CProp";
+	CString ClassName(lua_tostring(l, 2));
+	if (strncmp(ClassName.CStr(), pPrefix, sizeof(pPrefix) - 1))
+		ClassName = pPrefix + ClassName;
 
-	Game::CProperty* pProp;
-	const char* pClassName = lua_tostring(l, 2);
-	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
-		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
-	else
-		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pClassName));
+	const Core::CRTTI* pRTTI = Factory->GetRTTI(ClassName.CStr());
+	Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
 	lua_pushboolean(l, pProp != NULL);
 	return 1;
@@ -134,13 +139,12 @@ int CEntityScriptObject_IsPropertyActive(lua_State* l)
 	}
 
 	static const char* pPrefix = "Prop::CProp";
+	CString ClassName(lua_tostring(l, 2));
+	if (strncmp(ClassName.CStr(), pPrefix, sizeof(pPrefix) - 1))
+		ClassName = pPrefix + ClassName;
 
-	Game::CProperty* pProp;
-	const char* pClassName = lua_tostring(l, 2);
-	if (strncmp(pClassName, pPrefix, sizeof(pPrefix) - 1))
-		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pPrefix) + pClassName);
-	else
-		pProp = GameSrv->GetEntityMgr()->GetProperty(*This->GetEntity(), CString(pClassName));
+	const Core::CRTTI* pRTTI = Factory->GetRTTI(ClassName.CStr());
+	Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
 	lua_pushboolean(l, pProp && pProp->IsActive());
 	return 1;

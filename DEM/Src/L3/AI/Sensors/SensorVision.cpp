@@ -6,6 +6,7 @@
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Game/GameServer.h>
 #include <Math/sphere.h>
+#include <Core/Factory.h>
 
 namespace AI
 {

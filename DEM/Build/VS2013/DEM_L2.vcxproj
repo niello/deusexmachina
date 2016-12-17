@@ -202,8 +202,13 @@
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\ActionIdle.h" />
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\ActionSequence.h" />
     <ClInclude Include="..\..\Src\L2\Game\Ability.h" />
+    <ClInclude Include="..\..\Src\L2\Game\Action.h" />
+    <ClInclude Include="..\..\Src\L2\Game\ActionContext.h" />
     <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h" />
     <ClInclude Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.h" />
+    <ClInclude Include="..\..\Src\L2\Game\Target.h" />
+    <ClInclude Include="..\..\Src\L2\Game\TargetEntity.h" />
+    <ClInclude Include="..\..\Src\L2\Game\TargetGround.h" />
     <ClInclude Include="..\..\Src\L2\Scripting\EntityScriptObject.h" />
     <ClInclude Include="..\..\Src\L2\Scripting\PropScriptable.h" />
     <ClInclude Include="..\..\Src\L2\UI\PropUIControl.h" />
@@ -270,6 +275,8 @@
     <ClCompile Include="..\..\Src\L2\AI\Behaviour\ActionSequence.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.cpp" />
+    <ClCompile Include="..\..\Src\L2\Game\TargetEntity.cpp" />
+    <ClCompile Include="..\..\Src\L2\Game\TargetGround.cpp" />
     <ClCompile Include="..\..\Src\L2\Scripting\EntityScriptObject.cpp" />
     <ClCompile Include="..\..\Src\L2\Scripting\PropScriptable.cpp" />
     <ClCompile Include="..\..\Src\L2\Scripting\ScriptObjectSIEx.cpp" />
