@@ -195,11 +195,12 @@ TVal* CHashTable<TKey, TVal>::Get(const TKey& Key) const
 		CChain& Chain = Chains[HashedKey.GetKeyHash() % Chains.GetCount()];
 		if (Chain.GetCount() == 1)
 		{
-			if (Chain[0] == HashedKey) return &Chain[0].GetValue();
+			CPair& CurrPair = Chain[0];
+			if (CurrPair == HashedKey) return &CurrPair.GetValue();
 		}
 		else if (Chain.GetCount() > 1)
 		{
-			IPTR Idx = Chain.FindIndexSorted(HashedKey);
+			IPTR Idx = ArrayUtils::FindIndexSorted<CPair>(&Chain.Front(), Chain.GetCount(), HashedKey);
 			if (Idx != INVALID_INDEX) return &Chain[Idx].GetValue();
 		}
 	}

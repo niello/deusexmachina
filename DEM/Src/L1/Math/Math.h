@@ -33,6 +33,8 @@
 #define TINY (0.0000001f)
 #endif
 
+#define M_RAN_INVM32 2.32830643653869628906e-010f // For random number conversion from int to float
+
 const float LN_2 = 0.693147180559945f;
 const float INV_LN_2 = 1.442695040888964f;
 
@@ -137,25 +139,6 @@ inline float n_smooth(float newVal, float curVal, float maxChange)
 }
 //---------------------------------------------------------------------
 
-// Return a pseudo random number between 0 and 1.
-inline float n_rand()
-{
-	return float(rand()) / float(RAND_MAX);
-}
-//---------------------------------------------------------------------
-
-inline float n_rand(float min, float max)
-{
-	return min + (float(rand()) / RAND_MAX) * (max - min);
-}
-//---------------------------------------------------------------------
-
-inline int n_rand_int(int min, int max)
-{
-	return min + rand() % (max - min + 1);
-}
-//---------------------------------------------------------------------
-
 inline float n_lerp(float x, float y, float l)
 {
 	return x + l * (y - x);
@@ -225,6 +208,9 @@ inline float n_angulardistance(float from, float to)
 namespace Math
 {
 
+void InitRandomNumberGenerator();
+U32 RandomU32();
+
 // Quake inverse sqrt //???use rcpss?
 //https://en.wikipedia.org/wiki/Fast_inverse_square_root
 inline float RSqrt(const float Value)
@@ -256,6 +242,25 @@ inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = NU
 	if (pOutX1) *pOutX1 = (-b - SqrtD) * InvDenom;
 	if (pOutX2) *pOutX2 = (SqrtD - b) * InvDenom;
 	return 2;
+}
+//---------------------------------------------------------------------
+
+// Returns random float in [0; 1) range
+inline float RandomFloat()
+{
+	return ((I32)RandomU32()) * M_RAN_INVM32 + 0.5f;
+}
+//---------------------------------------------------------------------
+
+inline float RandomFloat(float Min, float Max)
+{
+	return Min + RandomFloat() * (Max - Min);
+}
+//---------------------------------------------------------------------
+
+inline U32 RandomU32(U32 Min, U32 Max)
+{
+	return Min + RandomU32() % (Max - Min + 1);
 }
 //---------------------------------------------------------------------
 

@@ -67,6 +67,12 @@
     <Filter Include="Animation">
       <UniqueIdentifier>{a33b833d-90f8-455f-ab67-809fd5b0ae94}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Game\Core">
+      <UniqueIdentifier>{4bf7823b-b4d8-42ad-91ab-2a4d2218bdd9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Game\Interactions">
+      <UniqueIdentifier>{0587767d-2a4d-42d9-b300-7718769adb17}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\Src\L2\AI\ActorFwd.h">
@@ -204,21 +210,6 @@
     <ClInclude Include="..\..\Src\L2\UI\PropUIControl.h">
       <Filter>UI</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\Entity.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\EntityManager.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\GameLevel.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\GameServer.h">
-      <Filter>Game</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\Property.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L2\App\AppFSM.h">
       <Filter>App</Filter>
     </ClInclude>
@@ -258,11 +249,29 @@
     <ClInclude Include="..\..\Src\L2\Animation\PropAnimation.h">
       <Filter>Animation</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h">
-      <Filter>Game</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.h">
       <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\Entity.h">
+      <Filter>Game\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\EntityManager.h">
+      <Filter>Game\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\GameLevel.h">
+      <Filter>Game\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h">
+      <Filter>Game\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\Property.h">
+      <Filter>Game\Core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\GameServer.h">
+      <Filter>Game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\Ability.h">
+      <Filter>Game\Interactions</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -404,21 +413,6 @@
     <ClCompile Include="..\..\Src\L2\UI\PropUIControlSI.cpp">
       <Filter>UI</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\Entity.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\EntityManager.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\GameLevel.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\GameServer.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\Property.cpp">
-      <Filter>Game</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\Src\L2\App\AppFSM.cpp">
       <Filter>App</Filter>
     </ClCompile>
@@ -470,10 +464,25 @@
     <ClCompile Include="..\..\Src\L2\Animation\PropAnimationSI.cpp">
       <Filter>Animation</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp">
+    <ClCompile Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.cpp">
       <Filter>Game</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.cpp">
+    <ClCompile Include="..\..\Src\L2\Game\Entity.cpp">
+      <Filter>Game\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\EntityManager.cpp">
+      <Filter>Game\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\GameLevel.cpp">
+      <Filter>Game\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp">
+      <Filter>Game\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\Property.cpp">
+      <Filter>Game\Core</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\GameServer.cpp">
       <Filter>Game</Filter>
     </ClCompile>
   </ItemGroup>

@@ -166,6 +166,7 @@
     <ClInclude Include="..\..\Src\L1\Core\TimeSource.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array.h" />
     <ClInclude Include="..\..\Src\L1\Data\Array2.h" />
+    <ClInclude Include="..\..\Src\L1\Data\ArrayUtils.h" />
     <ClInclude Include="..\..\Src\L1\Data\ParamsUtils.h" />
     <ClInclude Include="..\..\Src\L1\Data\HandleManager.h" />
     <ClInclude Include="..\..\Src\L1\Data\MurmurHash3.h" />
@@ -513,6 +514,7 @@
     <ClCompile Include="..\..\Src\L1\IO\PathUtils.cpp" />
     <ClCompile Include="..\..\Src\L1\IO\Streams\ScopedStream.cpp" />
     <ClCompile Include="..\..\Src\L1\Math\AABB.cpp" />
+    <ClCompile Include="..\..\Src\L1\Math\Math.cpp" />
     <ClCompile Include="..\..\Src\L1\Physics\CollisionShapeLoader.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\CDLODData.cpp" />
     <ClCompile Include="..\..\Src\L1\Render\CDLODDataLoader.cpp" />

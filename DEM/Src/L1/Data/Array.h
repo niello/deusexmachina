@@ -4,7 +4,8 @@
 
 #include <Data/Flags.h>
 #include <System/System.h>
-#include <algorithm> // std::sort
+#include <Data/ArrayUtils.h>	// Search and closest index
+#include <algorithm>			// std::sort
 
 // A dynamic array template class
 
@@ -74,12 +75,12 @@ public:
 
 	CIterator	Find(const T& Val) const { IPTR Idx = FindIndex(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
 	IPTR		FindIndex(const T& Val) const;
-	CIterator	FindSorted(const T& Val) const { IPTR Idx = FindIndexSorted(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
-	IPTR		FindIndexSorted(const T& Val) const;
+	CIterator	FindSorted(const T& Val) const { IPTR Idx = ArrayUtils::FindIndexSorted(pData, Count, Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
+	IPTR		FindIndexSorted(const T& Val) const { return ArrayUtils::FindIndexSorted(pData, Count, Val); }
 	CIterator	FindClosestSorted(const T& Val, bool* pHasEqualElement = NULL) const { return IteratorAt(FindClosestIndexSorted(Val, pHasEqualElement)); }
-	IPTR		FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const;
+	IPTR		FindClosestIndexSorted(const T& Val, bool* pHasEqualElement = NULL) const { return ArrayUtils::FindClosestIndexSorted(pData, Count, Val, pHasEqualElement); }
 	bool		Contains(const T& Val) const { return FindIndex(Val) != INVALID_INDEX; }
-	bool		ContainsSorted(const T& Val) const { return FindIndexSorted(Val) != INVALID_INDEX; }
+	bool		ContainsSorted(const T& Val) const { return ArrayUtils::FindIndexSorted(pData, Count, Val) != INVALID_INDEX; }
 	bool		IsIndexValid(IPTR Idx) const { return ((UPTR)Idx) < Count; }
 
 	void		Resize(UPTR NewAllocSize);
@@ -435,7 +436,7 @@ bool CArray<T>::RemoveByValue(const T& Val)
 template<class T>
 bool CArray<T>::RemoveByValueSorted(const T& Val)
 {
-	IPTR Idx = FindIndexSorted(Val);
+	IPTR Idx = ArrayUtils::FindIndexSorted(pData, Count, Val);
 	if (Idx == INVALID_INDEX) FAIL;
 	RemoveAt(Idx);
 	OK;
@@ -485,95 +486,6 @@ IPTR CArray<T>::FindIndex(const T& Val) const
 	for (UPTR i = 0; i < Count; ++i)
 		if (pData[i] == Val) return i;
 	return INVALID_INDEX;
-}
-//---------------------------------------------------------------------
-
-template<class T>
-IPTR CArray<T>::FindIndexSorted(const T& Val) const
-{
-	if (!Count) return INVALID_INDEX;
-
-	IPTR Idx = &Val - pData;
-	if (IsIndexValid(Idx)) return Idx;
-
-	IPTR Num = Count, Low = 0, High = Num - 1;
-	while (Low <= High)
-	{
-		IPTR Half = (Num >> 1);
-		if (Half)
-		{
-			IPTR Mid = Low + Half - 1 + (Num & 1);
-			if (Val < pData[Mid])
-			{
-				High = Mid - 1;
-				Num = Mid - Low;
-			}
-			else if (Val > pData[Mid])
-			{
-				Low = Mid + 1;
-				Num = Half;
-			}
-			else return Mid;
-		}
-		else
-		{
-			n_assert_dbg(Num);
-			return (Val == pData[Low]) ? Low : INVALID_INDEX;
-		}
-	}
-
-	return INVALID_INDEX;
-}
-//---------------------------------------------------------------------
-
-// Returns where this element should be inserted to keep array sorted
-template<class T>
-IPTR CArray<T>::FindClosestIndexSorted(const T& Val, bool* pHasEqualElement) const
-{
-	if (!Count)
-	{
-		if (pHasEqualElement) *pHasEqualElement = false;
-		return 0;
-	}
-
-	IPTR Num = Count, Low = 0, High = Num - 1;
-	while (Low <= High)
-	{
-		IPTR Half = (Num >> 1);
-		if (Half)
-		{
-			IPTR Mid = Low + Half - 1 + (Num & 1);
-			if (Val < pData[Mid])
-			{
-				High = Mid - 1;
-				Num = Mid - Low;
-			}
-			else if (Val > pData[Mid])
-			{
-				Low = Mid + 1;
-				Num = Half;
-			}
-			else
-			{
-				if (pHasEqualElement) *pHasEqualElement = true;
-				return Mid + 1;
-			}
-		}
-		else
-		{
-			if (pHasEqualElement)
-			{
-				// The only place where == is required, may rewrite througn >, but it is less optimal (see CHashPairT)
-				bool IsEqual = (Val == pData[Low]);
-				*pHasEqualElement = IsEqual;
-				if (IsEqual) return Low + 1;
-			}
-			return (Val < pData[Low]) ? Low : Low + 1;
-		}
-	}
-
-	if (pHasEqualElement) *pHasEqualElement = false;
-	return Low;
 }
 //---------------------------------------------------------------------
 

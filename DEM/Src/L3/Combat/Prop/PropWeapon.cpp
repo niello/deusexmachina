@@ -68,7 +68,7 @@ void CPropWeapon::Strike(Game::CEntity& Target)
 
 	Event.Amount = z;
 	for (int i = 0; i < x; ++i)
-		Event.Amount += n_rand_int(1, y);
+		Event.Amount += Math::RandomU32(1, y);
 
 	//!!!set flags like SuppresResistance etc!
 

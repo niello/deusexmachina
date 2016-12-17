@@ -46,7 +46,7 @@ void CDlgContext::Trigger(bool IsForeground)
 				int ValidLinkCount = ValidLinkIndices.GetCount();
 				if (ValidLinkCount == 0) LinkIdx = -1;
 				else if (ValidLinkCount == 1) LinkIdx = ValidLinkIndices[0];
-				else LinkIdx = ValidLinkIndices[n_rand_int(0, ValidLinkCount - 1)];
+				else LinkIdx = ValidLinkIndices[Math::RandomU32(0, ValidLinkCount - 1)];
 			}
 
 			// Handle node enter externally

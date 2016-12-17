@@ -19,16 +19,16 @@ bool CActionWander::SelectAction(CActor* pActor)
 	if (CurrAction.IsValidPtr()) CurrAction->Deactivate(pActor);
 
 	//!!!can tune all these probabilities and timings!
-	float Rnd = n_rand();
+	float Rnd = Math::RandomFloat();
 	if (Rnd < 0.6f)
 	{
 		// Can also start from current direction & limit angle
 		vector2 Dest(0.f, -1.f);
-		Dest.rotate(n_rand(-PI, PI));
+		Dest.rotate(Math::RandomFloat(-PI, PI));
 		if (Rnd < 0.3f)
 		{
 			// NavSystem automatically clamps a destination to the navmesh
-			Dest *= (n_rand() * 11.5f + 3.5f);
+			Dest *= (Math::RandomFloat() * 11.5f + 3.5f);
 			pActor->GetNavSystem().SetDestPoint(vector3(Dest.x + InitialPos.x, pActor->Position.y, Dest.y + InitialPos.y));
 			CurrAction = n_new(CActionGoto);		
 			//vector3 Loc;
@@ -47,7 +47,7 @@ bool CActionWander::SelectAction(CActor* pActor)
 	else
 	{
 		CurrAction = NULL;
-		NextActSelectioCTime = (float)GameSrv->GetTime() + n_rand() * 5.f + 5.f;
+		NextActSelectioCTime = (float)GameSrv->GetTime() + Math::RandomFloat() * 5.f + 5.f;
 		OK;
 	}
 

@@ -201,6 +201,7 @@
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\Action.h" />
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\ActionIdle.h" />
     <ClInclude Include="..\..\Src\L2\AI\Behaviour\ActionSequence.h" />
+    <ClInclude Include="..\..\Src\L2\Game\Ability.h" />
     <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h" />
     <ClInclude Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.h" />
     <ClInclude Include="..\..\Src\L2\Scripting\EntityScriptObject.h" />

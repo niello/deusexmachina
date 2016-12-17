@@ -6,7 +6,8 @@
 #include <Data/Ptr.h>
 
 // Scene traversal that validates attributes of scene nodes. All lazy loading is done there.
-// Level is provided as current context for resource initialization.
+// Level is provided as a context for resource initialization, because level now knows the
+// GPU it is rendered with. It is a huge architecture flaw but I leave it as is for now.
 
 namespace Game
 {

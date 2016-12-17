@@ -3044,7 +3044,7 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 	else
 	{
 		const int IsDynamic = (Usage == D3D11_USAGE_DYNAMIC);
-#ifdef _DEBUG
+#if defined(_DEBUG) && DEM_RENDER_DEBUG
 		if (IsDynamic && !UpdateWhole)
 			Sys::Log("Render, Warning: partial write-discard to D3D11 dynamic buffer\n");
 #endif

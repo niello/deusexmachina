@@ -3,7 +3,8 @@
 #define __DEM_L1_FIXED_ARRAY_H__
 
 #include <System/System.h>
-#include <algorithm> // std::sort
+#include <Data/ArrayUtils.h>	// Search and closest index
+#include <algorithm>			// std::sort
 
 // A fixed count, bounds-checked array.
 
@@ -29,10 +30,13 @@ public:
 
 	CIterator	Begin() const { return pData; }
 	CIterator	End() const { return pData + Count; }
+	CIterator	IteratorAt(IPTR Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
 
 	void		Clear(T Elm = T()) { for (UPTR i = 0; i < Count; ++i) pData[i] = Elm; }
+	CIterator	Find(const T& Val) const { IPTR Idx = FindIndex(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
 	IPTR		FindIndex(const T& Elm) const;
-	//!!!need find sorted!
+	CIterator	FindSorted(const T& Val) const { IPTR Idx = ArrayUtils::FindIndexSorted(pData, Count, Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
+	IPTR		FindIndexSorted(const T& Val) const { return ArrayUtils::FindIndexSorted(pData, Count, Val); }
 	bool		Contains(const T& Elm) const { return FindIndex(Elm) != -1; }
 	void		Sort() { std::sort(pData, pData + Count); }
 	template<class TCmp>
