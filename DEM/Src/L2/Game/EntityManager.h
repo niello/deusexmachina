@@ -62,6 +62,8 @@ public:
 	template<class T>
 	void		RemoveProperty(CEntity& Entity) const;
 	CProperty*	GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI) const;
+	template<class T>
+	T*			GetProperty(CStrID EntityID) const;
 	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
 };
 
@@ -152,6 +154,16 @@ void CEntityManager::RemoveProperty(Game::CEntity& Entity) const
 		//!!!remove by iterator!
 		T::pStorage->Remove(Entity.GetUID());
 	}
+}
+//---------------------------------------------------------------------
+
+template<class T>
+T* CEntityManager::GetProperty(CStrID EntityID) const
+{
+	PProperty Prop;
+	if (T::pStorage && T::pStorage->Get(EntityID, Prop))
+		if (!Prop->IsA(T::RTTI)) return NULL;
+	return (T*)Prop.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

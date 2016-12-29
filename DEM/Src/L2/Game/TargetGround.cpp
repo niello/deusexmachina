@@ -3,7 +3,6 @@
 #include <Game/ActionContext.h>
 #include <Game/Ability.h>
 #include <Game/Action.h>
-//#include <Data/Params.h>
 
 namespace Game
 {
@@ -22,7 +21,7 @@ UPTR CTargetGround::GetAvailableActions(const CActionContext& Context, CArray<IA
 	if (!Context.pAbility || !Context.pAbility->AcceptsTargetType(TypeFlag)) return 0;
 
 	IAction* pAction = Context.pAbility->GetAction();
-	if (!pAction || !pAction->IsAvailable(Context, *this)) return 0;
+	if (!pAction || !pAction->IsAvailable(Context/*, *this*/)) return 0;
 
 	OutActions.Add(pAction);
 	return 1;

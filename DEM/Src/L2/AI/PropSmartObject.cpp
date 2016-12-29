@@ -456,7 +456,7 @@ void CPropSmartObject::EnableAction(CStrID ID, bool Enable)
 	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("ActionID"), ID);
 	P->Set(CStrID("Enabled"), Enable);
-	GetEntity()->FireEvent(CStrID("OnSOActionAvailabile"), P);
+	GetEntity()->FireEvent(CStrID("OnSOActionAvailable"), P);
 }
 //---------------------------------------------------------------------
 

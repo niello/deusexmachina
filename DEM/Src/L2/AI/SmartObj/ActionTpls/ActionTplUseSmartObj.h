@@ -13,10 +13,6 @@ class CActionTplUseSmartObj: public CActionTpl
 {
 	__DeclareClass(CActionTplUseSmartObj);
 
-protected:
-
-	bool				GetSOPreconditions(CActor* pActor, CWorldState& WS, CStrID SOEntityID, CStrID ActionID) const;
-
 public:
 
 	virtual void		Init(Data::PParams Params);

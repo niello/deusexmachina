@@ -1,13 +1,11 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_SKIN_H__
-#define __DEM_L1_FRAME_SKIN_H__
+#ifndef __DEM_L1_FRAME_NODE_ATTR_SKIN_H__
+#define __DEM_L1_FRAME_NODE_ATTR_SKIN_H__
 
 #include <Scene/NodeAttribute.h>
 #include <Math/Matrix44.h>
 
 // Skin attribute adds a skinned rendering capability to sibling models, providing the skin palette for them
-
-//!!!need post-load instance initialization to map/create bones and allocate a palette!
 
 namespace Render
 {

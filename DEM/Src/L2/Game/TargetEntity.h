@@ -13,7 +13,8 @@ class CTargetEntity: public ITarget
 {
 protected:
 
-	CStrID EntityID;
+	UPTR	TypeFlag;
+	CStrID	EntityID;
 
 public:
 

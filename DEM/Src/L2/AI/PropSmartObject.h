@@ -7,7 +7,7 @@
 #include <AI/SmartObj/SmartAction.h>
 #include <AI/ActorFwd.h>
 #include <Data/Dictionary.h>
-#include <DetourNavMesh.h> // for PolyCache
+#include <DetourNavMesh.h> // for dtPolyRef
 
 // Smart object provides set of actions that can be executed on it by actor either through command or AI.
 

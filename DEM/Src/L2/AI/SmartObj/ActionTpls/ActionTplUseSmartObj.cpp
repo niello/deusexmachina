@@ -24,26 +24,17 @@ bool CActionTplUseSmartObj::GetPreconditions(CActor* pActor, CWorldState& WS, co
 	//???check here is current position valid? or check somewhere else and DepartNode there?
 	WS.SetProp(WSP_AtEntityPos, WSP_UsingSmartObj);
 
-	GetSOPreconditions(pActor, WS, WSGoal.GetProp(WSP_UsingSmartObj), WSGoal.GetProp(WSP_Action));
+	// Request additional preconditions from SO action
+	CStrID SOEntityID = WSGoal.GetProp(WSP_UsingSmartObj);
+	CStrID ActionID = WSGoal.GetProp(WSP_Action);
+	Prop::CPropSmartObject* pSO = GameSrv->GetEntityMgr()->GetProperty<Prop::CPropSmartObject>(SOEntityID);
+	if (!pSO) OK;
+
+	const Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
+	if (pSOAction && pSOAction->pTpl->Preconditions.IsValidPtr())
+		pSOAction->pTpl->Preconditions->FillWorldState(pActor, pSO, WS);
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CActionTplUseSmartObj::GetSOPreconditions(CActor* pActor, CWorldState& WS, CStrID SOEntityID, CStrID ActionID) const
-{
-	Game::CEntity* pEntity = GameSrv->GetEntityMgr()->GetEntity(SOEntityID);
-	if (pEntity)
-	{
-		Prop::CPropSmartObject* pSO = pEntity->GetProperty<Prop::CPropSmartObject>();
-		n_assert(pSO);
-
-		const Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);
-		if (pSOAction && pSOAction->pTpl->Preconditions.IsValidPtr())
-			return pSOAction->pTpl->Preconditions->FillWorldState(pActor, pSO, WS);
-	}
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 

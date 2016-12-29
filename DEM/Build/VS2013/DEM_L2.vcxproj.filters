@@ -288,6 +288,12 @@
     <ClInclude Include="..\..\Src\L2\Game\TargetGround.h">
       <Filter>Game\&lt;Interactions&gt;</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\Process.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\Src\L2\Game\ProcessContext.h">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\Src\L2\AI\AILevel.cpp">
@@ -504,6 +510,9 @@
       <Filter>Game\&lt;Interactions&gt;</Filter>
     </ClCompile>
     <ClCompile Include="..\..\Src\L2\Game\TargetGround.cpp">
+      <Filter>Game\&lt;Interactions&gt;</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\Src\L2\Game\Process.cpp">
       <Filter>Game\&lt;Interactions&gt;</Filter>
     </ClCompile>
   </ItemGroup>

@@ -150,8 +150,7 @@ bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const
 	if (ActionID == CStrID("PickItem"))
 	{
 		CStrID SOID = P->Get<CStrID>(CStrID("SO"));
-		Game::CEntity* pItemEnt = GameSrv->GetEntityMgr()->GetEntity(SOID);
-		CPropItem* pPropItem = pItemEnt ? pItemEnt->GetProperty<CPropItem>() : NULL;
+		CPropItem* pPropItem = GameSrv->GetEntityMgr()->GetProperty<CPropItem>(SOID);
 		if (!pPropItem || !pPropItem->Items.IsValid()) OK;
 
 		pPropItem->Items.Remove(AddItem(pPropItem->Items, true));
@@ -233,7 +232,7 @@ U16 CPropInventory::RemoveItem(ItItemStack Stack, U16 Count, bool AsManyAsCan)
 	CurrWeight -= Stack->GetTpl()->Weight * ToRemove;
 	CurrVolume -= Stack->GetVolume();
 	
-	Data::PParams P = n_new(Data::CParams);
+	Data::PParams P = n_new(Data::CParams(3));
 	P->Set(CStrID("Item"), Stack->GetItemID());
 	P->Set(CStrID("Count"), (int)ToRemove);
 	P->Set(CStrID("Entity"), GetEntity()->GetUID());

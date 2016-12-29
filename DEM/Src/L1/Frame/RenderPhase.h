@@ -31,16 +31,6 @@ protected:
 
 public:
 
-	//CFixedArray<PRenderTarget>	RenderTargets;
-	//PDepthStencilBuffer			DepthStencil;
-
-	//Data::CFlags				ClearFlags;
-	//CFixedArray<U32>			RTClearColors;		// 32-bit ARGB each
-	//float						DepthClearValue;	// 0.f .. 1.f
-	//U8						StencilClearValue;
-
-	//CRenderPhase(): ClearFlags(0), DepthClearValue(1.f), StencilClearValue(0) {}
-
 	virtual ~CRenderPhase() {}
 
 	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc) { Name = PhaseName; OK; }

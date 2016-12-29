@@ -29,4 +29,4 @@ PAction CActionTplGotoSmartObj::CreateInstance(const CWorldState& Context) const
 }
 //---------------------------------------------------------------------
 
-} //namespace AI
+}

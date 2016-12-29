@@ -14,6 +14,7 @@ class CTargetGround: public ITarget
 {
 protected:
 
+	UPTR	TypeFlag;
 	vector3 Position;
 	//???other info about the ground at the point of interaction?
 

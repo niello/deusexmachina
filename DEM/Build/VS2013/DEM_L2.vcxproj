@@ -204,7 +204,9 @@
     <ClInclude Include="..\..\Src\L2\Game\Ability.h" />
     <ClInclude Include="..\..\Src\L2\Game\Action.h" />
     <ClInclude Include="..\..\Src\L2\Game\ActionContext.h" />
+    <ClInclude Include="..\..\Src\L2\Game\Process.h" />
     <ClInclude Include="..\..\Src\L2\Game\GameLevelView.h" />
+    <ClInclude Include="..\..\Src\L2\Game\ProcessContext.h" />
     <ClInclude Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.h" />
     <ClInclude Include="..\..\Src\L2\Game\Target.h" />
     <ClInclude Include="..\..\Src\L2\Game\TargetEntity.h" />
@@ -273,6 +275,7 @@
     <ClCompile Include="..\..\Src\L2\AI\SmartObj\ActionTpls\ActionTplUseSmartObj.cpp" />
     <ClCompile Include="..\..\Src\L2\AI\Behaviour\ActionIdle.cpp" />
     <ClCompile Include="..\..\Src\L2\AI\Behaviour\ActionSequence.cpp" />
+    <ClCompile Include="..\..\Src\L2\Game\Process.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\GameLevelView.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\SceneNodeValidateAttrs.cpp" />
     <ClCompile Include="..\..\Src\L2\Game\TargetEntity.cpp" />

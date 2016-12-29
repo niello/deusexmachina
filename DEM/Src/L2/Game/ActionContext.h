@@ -10,11 +10,15 @@
 namespace Game
 {
 class CAbility;
+class ITarget;
 
 struct CActionContext
 {
 	CAbility*		pAbility;
+	ITarget*		pTarget;
 	Data::PParams	Params;
+
+	CActionContext(): pAbility(NULL), pTarget(NULL) {}
 };
 
 }

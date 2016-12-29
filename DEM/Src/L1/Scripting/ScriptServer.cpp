@@ -87,6 +87,37 @@ int CScriptServer::DataToLuaStack(const Data::CData& Data)
 		lua_pushstring(l, pStr ? pStr : "");
 	}
 	else if (Data.IsA<PVOID>()) lua_pushlightuserdata(l, Data.GetValue<PVOID>());
+	else if (Data.IsA<vector3>())
+	{
+		const vector3& Vector = Data.GetValue<vector3>();
+		lua_createtable(l, 0, 3);
+		lua_pushstring(l, "x");
+		lua_pushnumber(l, Vector.x);
+		lua_rawset(l, -3);
+		lua_pushstring(l, "y");
+		lua_pushnumber(l, Vector.y);
+		lua_rawset(l, -3);
+		lua_pushstring(l, "z");
+		lua_pushnumber(l, Vector.z);
+		lua_rawset(l, -3);
+	}
+	else if (Data.IsA<vector4>())
+	{
+		const vector4& Vector = Data.GetValue<vector4>();
+		lua_createtable(l, 0, 4);
+		lua_pushstring(l, "x");
+		lua_pushnumber(l, Vector.x);
+		lua_rawset(l, -3);
+		lua_pushstring(l, "y");
+		lua_pushnumber(l, Vector.y);
+		lua_rawset(l, -3);
+		lua_pushstring(l, "z");
+		lua_pushnumber(l, Vector.z);
+		lua_rawset(l, -3);
+		lua_pushstring(l, "w");
+		lua_pushnumber(l, Vector.w);
+		lua_rawset(l, -3);
+	}
 	else if (Data.IsA<Data::PDataArray>())
 	{
 		const Data::CDataArray& A = *Data.GetValue<Data::PDataArray>();

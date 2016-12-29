@@ -7,7 +7,7 @@
 #include <Data/FixedArray.h>
 
 // Render path incapsulates a full algorithm to render a frame, allowing to
-// define it in a data-driven manner and therefore avoid hardcoding frame rendering.
+// define it in a data-driven manner and therefore to avoid hardcoding frame rendering.
 // It describes, how to use what shaders on what objects. The final output
 // is a complete frame, rendered in an output render target.
 // Render path consists of phases, each of which fills RT, MRT and/or DS,

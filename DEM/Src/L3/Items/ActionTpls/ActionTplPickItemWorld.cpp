@@ -32,17 +32,18 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 	CMemFactSmartObj* pBest = NULL;
 	float MaxConf = 0.f;
 
+	CStrID DesiredItemID = (CStrID)WSGoal.GetProp(WSP_HasItem);
+
 	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactSmartObj::RTTI);
 	for (; It; ++It)
 	{
 		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)It->Get();
 		if (pSOFact->TypeID == CStrID("Item"))
 		{
-			Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);
-			Prop::CPropItem* pItemProp = pEnt ? pEnt->GetProperty<Prop::CPropItem>() : NULL;
+			Prop::CPropItem* pItemProp = GameSrv->GetEntityMgr()->GetProperty<Prop::CPropItem>(pSOFact->pSourceStimulus->SourceEntityID);
 			if (pItemProp &&
 				pSOFact->Confidence > MaxConf &&
-				pItemProp->Items.GetItemID() == (CStrID)WSGoal.GetProp(WSP_HasItem))
+				pItemProp->Items.GetItemID() == DesiredItemID)
 			{
 				pBest = pSOFact;
 				MaxConf = pSOFact->Confidence;

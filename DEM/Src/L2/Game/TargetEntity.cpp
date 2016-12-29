@@ -5,7 +5,6 @@
 #include <Game/Action.h>
 #include <Game/GameServer.h>
 #include <AI/PropSmartObject.h> //!!!must be in Game, not AI!
-#include <Data/Params.h>
 
 namespace Game
 {
@@ -40,7 +39,7 @@ UPTR CTargetEntity::GetAvailableActions(const CActionContext& Context, CArray<IA
 	}
 
 	IAction* pAction = Context.pAbility->GetAction();
-	if (!pAction || !pAction->IsAvailable(Context, *this)) return 0;
+	if (!pAction || !pAction->IsAvailable(Context/*, *this*/)) return 0;
 
 	OutActions.Add(pAction);
 	return 1;

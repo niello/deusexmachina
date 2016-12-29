@@ -27,7 +27,7 @@ bool RegisterEntityManager()
 
 	lua_createtable(l, 0, 2);
 	ScriptSrv->ExportCFunction("DeleteEntity", CEntityManager_DeleteEntity);
-	lua_setglobal(l, "GameSrv->GetEntityMgr()");
+	lua_setglobal(l, "EntityMgr");
 
 	OK;
 }

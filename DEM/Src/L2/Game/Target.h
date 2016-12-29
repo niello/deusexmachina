@@ -22,15 +22,9 @@ class IAction;
 
 class ITarget
 {
-protected:
-
-	UPTR	TypeFlag;
-
 public:
 
 	static Data::CDynamicEnum TargetTypes;
-
-	ITarget(): TypeFlag(0) {}
 
 	virtual CStrID	GetTypeID() const = 0;
 	virtual UPTR	GetAvailableActions(const CActionContext& Context, CArray<IAction*>& OutActions) const = 0;
