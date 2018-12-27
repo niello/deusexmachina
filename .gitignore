@@ -22,19 +22,11 @@ Tools/Obj/
 *_d.lib
 
 #3rdParty
-3rdParty/3rdPartyHelper/*
-3rdParty/Bullet/*
-!3rdParty/Bullet/_Readme_Dependency.txt
-3rdParty/CEGUI/*
-!3rdParty/CEGUI/_Readme_Dependency.txt
-3rdParty/Lua/Lib/
-3rdParty/Lua/Obj/
-3rdParty/Recast/Lib/
-3rdParty/Recast/Obj/
-3rdParty/SQLite/Lib/
-3rdParty/SQLite/Obj/
-3rdParty/TinyXML2/Lib/
-3rdParty/TinyXML2/Obj/
-3rdParty/Xiph/ogg/
-3rdParty/Xiph/theora/
-3rdParty/Xiph/vorbis/
+/Deps/bullet/examples
+/Deps/bullet/data
+/Deps/bullet/docs
+/Deps/bullet/test
+/Deps/CEGUI/datafiles
+/Deps/CEGUI/samples_framework
+/Deps/CEGUI/samples
+/Deps/DevIL/DevIL-docs
