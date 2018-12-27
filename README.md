@@ -1,6 +1,5 @@
-===============================================================================
-Deus Ex Machina readme
-===============================================================================
+Deus Ex Machina
+===============
 
 This is a full-featured (at least developing to be so) game engine. Its main
 purpose is to provide easy-to-use framework to game developers who like to have

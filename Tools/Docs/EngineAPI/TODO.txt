@@ -1,8 +1,0 @@
-Read tpl attr values
-Rename tpls
-Don't write to EntityCats.hrd table names if they are default
-Make graphics-physics attaching order independent!
-!Fix screen coords in ClickCB!!!
-Keep camera distance
-Drag from cats/templates to entities window (create new entity)
-Drag to engine window (create new entity)
