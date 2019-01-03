@@ -1,3 +1,0 @@
-. "$myScriptsDir/common"
-export JAVA_HOME="$javaHomeDir"
-export PATH="$androidNdkDir:$androidSdkDir/tools:$androidSdkDir/platform-tools:$javaHomeDir/bin${PATH+:}$PATH"

@@ -62,6 +62,17 @@ set( CEGUI_ABI_VERSION ${CEGUI_SOVERSION}.${CEGUI_ABI_AGE}.${CEGUI_ABI_REVISION}
 cegui_check_mingw()
 
 ################################################################################
+# Define the configurable options that influence usage of other packages
+################################################################################
+option( CEGUI_BUILD_DYNAMIC_CONFIGURATION "DEM: we disable dynamic configuration by default" FALSE)
+option( CEGUI_BUILD_STATIC_CONFIGURATION "Specifies whether the static configs will be built." TRUE)
+option( CEGUI_BUILD_STATIC_FACTORY_MODULE "For static CEGUI builds, specifies whether to include the getWindoFactoryModule method.  When false, the developer must provide a custom implementation of the method" ${CEGUI_BUILD_STATIC_CONFIGURATION})
+# sanity check on static build option for factory method
+if (CEGUI_BUILD_STATIC_FACTORY_MODULE AND NOT CEGUI_BUILD_STATIC_CONFIGURATION)
+  message(SEND_ERROR "You may not enable CEGUI_BUILD_STATIC_FACTORY_MODULE without CEGUI_BUILD_STATIC_CONFIGURATION enabled.  CEGUI needs to be built statically if building the static factory method.")
+endif()
+
+################################################################################
 # Check for libs and other packages we might use.
 ################################################################################
 # be sure to search the provided dependencies on Win32 and Mac OS X platforms
@@ -105,20 +116,7 @@ find_package(SFML 2.3 COMPONENTS ${CEGUI_SFML_COMPONENTS})
 find_package(DirectXSDK)
 find_package(D3DX11Effects)
 find_package(Irrlicht)
-
-find_package(OGRE)
-if(NOT ${OGRE_FOUND})
-    find_package(Ogre)
-endif()
-if(${OGRE_FOUND} AND ${OGRE_VERSION} VERSION_GREATER 1.11)
-    set(CMAKE_CXX_STANDARD 11)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    set(CMAKE_CXX_EXTENSIONS OFF)
-
-    set(CEGUI_FOUND_OGRE_VERSION_MAJOR ${OGRE_VERSION_MAJOR})
-    set(CEGUI_FOUND_OGRE_VERSION_MINOR ${OGRE_VERSION_MINOR})
-    set(CEGUI_FOUND_OGRE_VERSION_PATCH ${OGRE_VERSION_PATCH})
-endif()
+find_package(Ogre)
 
 find_package(OIS)
 find_package(DirectFB)
@@ -131,6 +129,12 @@ find_package(LibXml2)
 find_package(TinyXML)
 find_package(TinyXML2)
 find_package(RapidXML)
+
+# DEM: use tinyxml2 from DEM dependencies
+if(NOT TINYXML2_FOUND)
+    set(TINYXML2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2")
+    set(TINYXML2_FOUND TRUE)
+endif()
 
 find_package(DevIL)
 find_package(FreeImage)
@@ -180,12 +184,6 @@ dependency libs over the shared/dynamic ones.  NOTE: On Windows you also need to
 be mindful of which C/C++ runtime setting has been used to compile the various
 components - they must all match or you will get crashes, heap corruption and/or
 other issues." FALSE "WIN32 OR APPLE" FALSE)
-option( CEGUI_BUILD_STATIC_CONFIGURATION "Specifies whether the static configs will be built.  (NB: Shared configs are always built)" FALSE)
-option( CEGUI_BUILD_STATIC_FACTORY_MODULE "For static CEGUI builds, specifies whether to include the getWindoFactoryModule method.  When false, the developer must provide a custom implementation of the method" FALSE)
-# sanity check on static build option for factory method
-if (CEGUI_BUILD_STATIC_FACTORY_MODULE AND NOT CEGUI_BUILD_STATIC_CONFIGURATION)
-  message(SEND_ERROR "You may not enable CEGUI_BUILD_STATIC_FACTORY_MODULE without CEGUI_BUILD_STATIC_CONFIGURATION enabled.  CEGUI needs to be built statically if building the static factory method.")
-endif()
 option( CEGUI_CUSTOM_ALLOCATORS "If checked, CEGUI can use custom allocation. (for experienced developers only!)" FALSE )
 cmake_dependent_option( CEGUI_CUSTOM_ALLOCATORS_DEBUG "If checked, CEGUI allocations will pass debug info to allocators. (only used if CEGUI_CUSTOM_ALLOCATORS is checked)" FALSE "CEGUI_CUSTOM_ALLOCATORS" FALSE )
 set( CEGUI_CUSTOM_ALLOCATORS_INCLUDE "CEGUI/MemoryStdAllocator.h" CACHE STRING "Which include file contains memory allocators and allocation configuration. (only used if CEGUI_CUSTOM_ALLOCATORS is checked)
@@ -386,7 +384,7 @@ if (UNIX AND NOT APPLE AND NOT WIN32)
 endif()
 
 # Option wether to build application templates; default off
-option(CEGUI_BUILD_APPLICATION_TEMPLATES "Specifies whether to build the application templates." TRUE)
+option(CEGUI_BUILD_APPLICATION_TEMPLATES "Specifies whether to build the application templates." FALSE)
 
 if (WIN32 OR APPLE)
     set (CEGUI_BUILD_SUFFIX "_d" CACHE STRING "String holding a suffix appended to the name of output binaries (under CMake build, only used for debug).")
@@ -514,12 +512,14 @@ You should ensure that CEGUI_OPTION_DEFAULT_XMLPARSER is set to something
 appropriate.")
 endif()
 
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CEGUI_BUILD_XMLPARSER_EXPAT)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "XercesParser" CEGUI_BUILD_XMLPARSER_XERCES)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CEGUI_BUILD_XMLPARSER_LIBXML2)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CEGUI_BUILD_XMLPARSER_RAPIDXML)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXMLParser" CEGUI_BUILD_XMLPARSER_TINYXML)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CEGUI_BUILD_XMLPARSER_TINYXML2)
+if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "ExpatParser" CEGUI_BUILD_XMLPARSER_EXPAT)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "XercesParser" CEGUI_BUILD_XMLPARSER_XERCES)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "LibXMLParser" CEGUI_BUILD_XMLPARSER_LIBXML2)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "RapidXMLParser" CEGUI_BUILD_XMLPARSER_RAPIDXML)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXMLParser" CEGUI_BUILD_XMLPARSER_TINYXML)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_XMLPARSER "TinyXML2Parser" CEGUI_BUILD_XMLPARSER_TINYXML2)
+endif()
 
 if (CEGUI_BUILD_STATIC_CONFIGURATION)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_XMLPARSER_MODULE ${CEGUI_EXPAT_PARSER_LIBNAME} CEGUI_BUILD_XMLPARSER_EXPAT)
@@ -561,13 +561,15 @@ You should ensure that CEGUI_OPTION_DEFAULT_IMAGECODEC is set to something
 appropriate.")
 endif()
 
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SILLYImageCodec" CEGUI_BUILD_IMAGECODEC_SILLY)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "DevILImageCodec" CEGUI_BUILD_IMAGECODEC_DEVIL)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "FreeImageImageCodec" CEGUI_BUILD_IMAGECODEC_FREEIMAGE)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "STBImageCodec" CEGUI_BUILD_IMAGECODEC_STB)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "CoronaImageCodec" CEGUI_BUILD_IMAGECODEC_CORONA)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "TGAImageCodec" CEGUI_BUILD_IMAGECODEC_TGA)
-cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SDL2ImageCodec" CEGUI_BUILD_IMAGECODEC_SDL2)
+if(CEGUI_BUILD_DYNAMIC_CONFIGURATION)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SILLYImageCodec" CEGUI_BUILD_IMAGECODEC_SILLY)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "DevILImageCodec" CEGUI_BUILD_IMAGECODEC_DEVIL)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "FreeImageImageCodec" CEGUI_BUILD_IMAGECODEC_FREEIMAGE)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "STBImageCodec" CEGUI_BUILD_IMAGECODEC_STB)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "CoronaImageCodec" CEGUI_BUILD_IMAGECODEC_CORONA)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "TGAImageCodec" CEGUI_BUILD_IMAGECODEC_TGA)
+	cegui_defaultmodule_sanity_test(CEGUI_OPTION_DEFAULT_IMAGECODEC "SDL2ImageCodec" CEGUI_BUILD_IMAGECODEC_SDL2)
+endif()
 
 if (CEGUI_BUILD_STATIC_CONFIGURATION)
     cegui_defaultmodule_sanity_test(CEGUI_STATIC_IMAGECODEC_MODULE ${CEGUI_SILLY_IMAGECODEC_LIBNAME} CEGUI_BUILD_IMAGECODEC_SILLY)
@@ -666,8 +668,6 @@ endif()
 configure_file( cegui/include/CEGUI/Version.h.in cegui/include/CEGUI/Version.h )
 configure_file( cegui/include/CEGUI/Config.h.in cegui/include/CEGUI/Config.h )
 configure_file( cegui/include/CEGUI/ModuleConfig.h.in cegui/include/CEGUI/ModuleConfig.h )
-configure_file( samples/common/include/CEGUISamplesConfig.h.in samples/common/include/CEGUISamplesConfig.h )
-configure_file( doc/doxygen/doxyfile.in doc/doxygen/doxyfile )
 
 ################################################################################
 # Perhaps install pkg-config ("*.pc") files.
@@ -730,7 +730,7 @@ if (CEGUI_BUILD_APPLICATION_TEMPLATES)
     add_subdirectory(application_templates)
 endif()
 
-add_subdirectory(datafiles)
+#add_subdirectory(datafiles)
 
 if (DOXYGEN_FOUND)
     add_custom_target(html

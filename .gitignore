@@ -31,3 +31,4 @@ Tools/Obj/
 /Deps/CEGUI/samples
 /Deps/DevIL/DevIL-docs
 /Build/*
+/Deps/CEGUI/build

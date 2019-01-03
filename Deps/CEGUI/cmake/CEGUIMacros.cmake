@@ -49,7 +49,9 @@ endmacro()
 # Add libs to a target, and correctly handles static versions of libs built by the project
 #
 macro (cegui_target_link_libraries _TARGET_NAME)
+if (CEGUI_BUILD_DYNAMIC_CONFIGURATION)
     target_link_libraries(${_TARGET_NAME} ${ARGN})
+endif()
 
     get_target_property(_TARGET_EXISTS ${_TARGET_NAME}_Static TYPE)
     if (_TARGET_EXISTS)
@@ -252,6 +254,7 @@ macro (cegui_add_library_impl _LIB_NAME _IS_MODULE _SOURCE_FILES_VAR _HEADER_FIL
     ###########################################################################
     #                       SHARED LIBRARY SET UP
     ###########################################################################
+if (CEGUI_BUILD_DYNAMIC_CONFIGURATION)
     add_library(${_LIB_NAME} ${_LIB_TYPE} ${${_SOURCE_FILES_VAR}} ${${_HEADER_FILES_VAR}})
     set_target_properties(${_LIB_NAME} PROPERTIES DEFINE_SYMBOL ${_CEGUI_EXPORT_DEFINE})
 
@@ -297,10 +300,12 @@ macro (cegui_add_library_impl _LIB_NAME _IS_MODULE _SOURCE_FILES_VAR _HEADER_FIL
             )
         endif()
     endif()
+endif()
 
     ###########################################################################
     #                           INSTALLATION
     ###########################################################################
+if (CEGUI_BUILD_DYNAMIC_CONFIGURATION)
     if (${_INSTALL_BIN})
         if (${_IS_MODULE})
             set(_CEGUI_LIB_DEST ${CEGUI_MODULE_INSTALL_DIR})
@@ -322,6 +327,7 @@ macro (cegui_add_library_impl _LIB_NAME _IS_MODULE _SOURCE_FILES_VAR _HEADER_FIL
             )
         endif()
     endif()
+endif()
 
     if (${_INSTALL_HEADERS})
         string (REPLACE "cegui/src/" "" _REL_HEADER_DIR ${_REL_SRC_DIR})
@@ -658,7 +664,7 @@ macro (cegui_find_package_handle_standard_args _PKGNAME _LIBBASENAMEVAR)
                 list(APPEND _FPHSA_LIBS ${_LIBBASENAMEVAR}_STATIC_DBG)
             endif()
         endif ()
-        if (NOT CEGUI_BUILD_SHARED_LIBS_WITH_STATIC_DEPENDENCIES)
+        if (NOT CEGUI_BUILD_SHARED_LIBS_WITH_STATIC_DEPENDENCIES AND CEGUI_BUILD_DYNAMIC_CONFIGURATION)
             if ((_WANT_REL_LIBS AND ${_LIBBASENAMEVAR}) OR NOT ${_LIBBASENAMEVAR}_DBG)
                 list(APPEND _FPHSA_LIBS ${_LIBBASENAMEVAR})
             endif()

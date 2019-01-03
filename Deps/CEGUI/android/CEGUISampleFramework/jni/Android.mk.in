@@ -1,6 +1,0 @@
-ceguiDepsInstallDir := $ceguiDepsInstallDir
-ceguiVerMajor := $ceguiVerMajor
-ceguiVerMajorMinor := $ceguiVerMajor.$ceguiVerMinor
-ceguiInstallDir := $ceguiInstallDir
-
-include \$(call all-subdir-makefiles)
