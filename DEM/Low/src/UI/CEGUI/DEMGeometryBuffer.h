@@ -59,7 +59,7 @@ public:
 	const matrix44*			getMatrix() const;
 
 	// Implement GeometryBuffer interface.
-	virtual void			draw() const;
+	virtual void			draw(uint32 drawModeMask = DrawModeMaskAll) const;
 	virtual void			setTranslation(const Vector3f& v) { d_translation = v; d_matrixValid = false; }
 	virtual void			setRotation(const Quaternion& r) { d_rotation = r; d_matrixValid = false; }
 	virtual void			setPivot(const Vector3f& p) { d_pivot = p; d_matrixValid = false; }

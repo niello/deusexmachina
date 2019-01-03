@@ -29,7 +29,7 @@ CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner):
 }
 //--------------------------------------------------------------------
 
-void CDEMGeometryBuffer::draw() const
+void CDEMGeometryBuffer::draw(uint32 drawModeMask) const
 {
 	Render::CGPUDriver* pGPU = d_owner.getGPUDriver();
 	n_assert_dbg(pGPU);
