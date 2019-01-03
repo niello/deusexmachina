@@ -19,7 +19,7 @@ CDEMRenderTarget<T>::CDEMRenderTarget(CDEMRenderer& owner):
 template <typename T>
 void CDEMRenderTarget<T>::draw(const GeometryBuffer& buffer, uint32 drawModeMask)
 {
-	buffer.draw();
+	buffer.draw(drawModeMask);
 }
 //---------------------------------------------------------------------
 
