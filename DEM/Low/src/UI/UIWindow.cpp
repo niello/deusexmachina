@@ -34,8 +34,8 @@ void CUIWindow::SetDrawMode(EDrawMode Mode)
 {
 	CEGUI::uint32 CEGUIDrawMode = 0;
 	if (Mode & DrawMode_Opaque) CEGUIDrawMode |= DrawModeFlagWindowOpaque;
-	if (Mode & DrawMode_Transparent) CEGUIDrawMode |= CEGUI::Window::DrawModeFlagWindowRegular;
-	if (pWnd) pWnd->setDrawMode(CEGUIDrawMode);
+	if (Mode & DrawMode_Transparent) CEGUIDrawMode |= CEGUI::DrawModeFlagWindowRegular;
+	if (pWnd) pWnd->setDrawModeMask(CEGUIDrawMode);
 }
 //---------------------------------------------------------------------
 

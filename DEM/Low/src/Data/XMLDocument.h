@@ -3,7 +3,7 @@
 #define __DEM_L1_XML_DOCUMENT_H__
 
 #include <Data/RefCounted.h>
-#include <TinyXML2/Src/tinyxml2.h>
+#include <tinyxml2.h>
 
 // TinyXML-2 document wrapper with refcounting
 

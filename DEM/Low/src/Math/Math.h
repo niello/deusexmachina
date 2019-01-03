@@ -98,7 +98,7 @@ inline int n_frnd(float f)
 }
 //---------------------------------------------------------------------
 
-#define n_fabs fabs
+#define n_fabs fabsf
 /*
 // fast float absolute value
 // NB: this relies on IEEE floating point standard.

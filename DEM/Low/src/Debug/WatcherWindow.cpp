@@ -29,10 +29,10 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 {
 	CUIWindow::Init(pWindow);
 
-	pWnd->setDrawMode(UI::DrawModeFlagWindowOpaque);
+	pWnd->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
 	UPTR CEGUIChildCount = pWnd->getChildCount();
 	for (UPTR i = 0; i < CEGUIChildCount; ++i)
-		pWnd->getChildAtIdx(i)->setDrawMode(UI::DrawModeFlagWindowOpaque);
+		pWnd->getChildAtIdx(i)->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
 
 	pPatternEdit = (CEGUI::Editbox*)pWnd->getChild("PatternEdit");
 
@@ -250,7 +250,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 			else if (It->Type == Lua)
 			{
 				char Script[256];	
-				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName);
+				_snprintf(Script, sizeof(Script) - 1, "return %s", It->VarName.CStr());
 				Data::CData Output;
 				ScriptSrv->RunScript(Script, -1, &Output);
 

@@ -1,4 +1,5 @@
 #include "MemStream.h"
+#include <memory.h>
 
 namespace IO
 {

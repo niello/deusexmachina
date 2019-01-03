@@ -10,10 +10,11 @@
 *.vcproj.*.user
 *.ib_pdb_index
 
-#IDE and compiler intermediate directories
+#Intermediate directories
 DEM/Lib/
 DEM/Obj/
 Tools/Obj/
+/Build
 
 #Debug versions of binaries
 *_d.exe
@@ -30,5 +31,7 @@ Tools/Obj/
 /Deps/CEGUI/samples_framework
 /Deps/CEGUI/samples
 /Deps/DevIL/DevIL-docs
-/Build/*
 /Deps/CEGUI/build
+/Deps/Downloads
+/Deps/CEGUI-Deps
+/Deps/CEGUI/dependencies

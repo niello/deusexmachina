@@ -1,4 +1,5 @@
 #include "InputFwd.h"
+#include <string.h>
 
 namespace Input
 {

@@ -14,6 +14,15 @@ if(MSVC AND DEM_DISABLE_CXX_EXCEPTIONS)
 	endif()
 endif()
 
+function(get_all_targets _result _dir)
+	get_property(_subdirs DIRECTORY "${_dir}" PROPERTY SUBDIRECTORIES)
+	foreach(_subdir IN LISTS _subdirs)
+		get_all_targets(${_result} "${_subdir}")
+	endforeach()
+	get_property(_sub_targets DIRECTORY "${_dir}" PROPERTY BUILDSYSTEM_TARGETS)
+	set(${_result} ${${_result}} ${_sub_targets} PARENT_SCOPE)
+endfunction()
+
 #???run python script to update cmake src lists?
 
 # Dependency: Lua
@@ -21,7 +30,7 @@ endif()
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/lua" "${CMAKE_BINARY_DIR}/Deps/lua")
 set_target_properties(lua PROPERTIES FOLDER "Deps")
 
-# Dependency: TinyXML2 (all unnecessary stuff is stripped out)
+# Dependency: TinyXML2 (all unnecessary stuff is stripped out, so we don't use subdirectory's CMakeLists.txt)
 
 #add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2" "${CMAKE_BINARY_DIR}/tinyxml2")
 add_library(tinyxml2 "${CMAKE_CURRENT_SOURCE_DIR}/Deps/tinyxml2/tinyxml2.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Deps/tinyxml2/tinyxml2.h")
@@ -55,6 +64,10 @@ endif()
 
 if(DEM_CEGUI_DEPS_FOUND)
 	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI" "${CMAKE_BINARY_DIR}/Deps/CEGUI")
+	get_all_targets(DEM_CEGUI_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI")
+	foreach(TARGET_NAME IN LISTS DEM_CEGUI_TARGETS)
+		set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Deps/CEGUI")
+	endforeach()
 endif()
 
 # DEMLow
@@ -63,7 +76,11 @@ include(CMake/DEMLow.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Low/src" FILES ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 add_library(DEMLow ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 target_include_directories(DEMLow PUBLIC DEM/Low/src)
-target_link_libraries(DEMLow lua)
+target_link_libraries(DEMLow lua tinyxml2)
+if(DEM_CEGUI_TARGETS)
+	target_include_directories(DEMLow PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI/cegui/include" "${CMAKE_CURRENT_BINARY_DIR}/Deps/CEGUI/cegui/include")
+	target_link_libraries(DEMLow ${DEM_CEGUI_TARGETS})
+endif()
 if(MSVC AND DEM_DISABLE_CXX_RTTI)
 	target_compile_options(DEMLow PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
 endif()

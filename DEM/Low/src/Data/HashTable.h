@@ -106,7 +106,7 @@ public:
 };
 
 template<class TKey, class TVal>
-inline CHashTable<TKey, TVal>::CHashTable(UPTR Capacity = DEFAULT_SIZE): Chains(Capacity), Count(0)
+inline CHashTable<TKey, TVal>::CHashTable(UPTR Capacity): Chains(Capacity), Count(0)
 {
 	// Since collision is more of exception, set grow size to 1 to economy memory
 	for (UPTR i = 0; i < Chains.GetCount(); ++i)

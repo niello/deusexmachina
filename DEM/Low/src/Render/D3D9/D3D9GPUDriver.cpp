@@ -23,6 +23,8 @@
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>
 #endif
+#include <xmmintrin.h>
+#include <emmintrin.h>
 
 namespace Render
 {
@@ -3175,8 +3177,14 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 	{
 		if (SUCCEEDED(pSrcSurf->UnlockRect()))
 		{
-			RECT r = { OffsetX, OffsetY, OffsetX + SizeX, OffsetY + SizeY };
-			POINT p = { OffsetX, OffsetY };
+			RECT r =
+			{
+				static_cast<LONG>(OffsetX),
+				static_cast<LONG>(OffsetY),
+				static_cast<LONG>(OffsetX + SizeX),
+				static_cast<LONG>(OffsetY + SizeY)
+			};
+			POINT p = { static_cast<LONG>(OffsetX), static_cast<LONG>(OffsetY) };
 			Result = SUCCEEDED(pD3DDevice->UpdateSurface(pSrcSurf, &r, pDestSurf, &p));
 		}
 		else Result = false;
