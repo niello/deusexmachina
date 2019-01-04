@@ -44,7 +44,7 @@ bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 	if (!pTexture) FAIL;
 
 	D3DSURFACE_DESC D3DDesc;
-	ZeroMemory(&D3DDesc, sizeof(Desc));
+	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
 	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
 
 	Desc.Type = Texture_2D;
@@ -86,7 +86,7 @@ bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
 	if (!pTexture) FAIL;
 
 	D3DSURFACE_DESC D3DDesc;
-	ZeroMemory(&D3DDesc, sizeof(Desc));
+	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
 	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
 
 	Desc.Type = Texture_Cube;
