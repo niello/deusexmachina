@@ -6,6 +6,8 @@ project(deusexmachina) # VERSION 0.1.0)
 # TODO: try to use find_package for transparent handling of installed / source packages? Or always compile from source on any system?
 # TODO: rewrite DEM_DISABLE_CXX_EXCEPTIONS in a target level instead of patching CMAKE_CXX_FLAGS
 # TODO: use ARCHIVE_OUTPUT_DIRECTORY, LIBRARY_OUTPUT_DIRECTORY, RUNTIME_OUTPUT_DIRECTORY
+# TODO: bullet variables must be with BULLET_ prefix even if we will build it separately
+# TODO: option - reference dependencies by find_package and build separately or include as subdirs
 
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 #SET(CMAKE_SUPPRESS_REGENERATION  1)
