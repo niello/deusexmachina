@@ -83,6 +83,9 @@ if(DEM_CEGUI_DEPS_FOUND)
 	get_all_targets(DEM_CEGUI_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI")
 	foreach(_TARGET_NAME IN LISTS DEM_CEGUI_TARGETS)
 		set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/CEGUI")
+		if(MSVC AND DEM_DISABLE_CXX_EXCEPTIONS)
+			target_compile_options(${_TARGET_NAME} PRIVATE "/wd4530") # Don't complain about exception unwinding
+		endif()
 	endforeach()
 endif()
 
