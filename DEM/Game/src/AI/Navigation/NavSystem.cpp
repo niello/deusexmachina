@@ -215,7 +215,8 @@ void CNavSystem::Update(float FrameTime)
 			if (Path[PathSize - 1] != DestRef)
 			{
 				// Partial path, constrain target position inside the last polygon
-				QueryStatus = pNavQuery->closestPointOnPoly(Path[PathSize - 1], DestPoint.v, TargetPos);
+				bool IsOverPoly;
+				QueryStatus = pNavQuery->closestPointOnPoly(Path[PathSize - 1], DestPoint.v, TargetPos, &IsOverPoly);
 				if (dtStatusFailed(QueryStatus)) PathSize = 0;
 			}
 			else dtVcopy(TargetPos, DestPoint.v);
@@ -303,7 +304,10 @@ void CNavSystem::Update(float FrameTime)
 					bool Valid = true;
 
 					if (Path[PathSize - 1] != DestRef)
-						Valid = dtStatusSucceed(pNavQuery->closestPointOnPoly(Path[PathSize - 1], DestPoint.v, TargetPoint));
+					{
+						bool IsOverPoly;
+						Valid = dtStatusSucceed(pNavQuery->closestPointOnPoly(Path[PathSize - 1], DestPoint.v, TargetPoint, &IsOverPoly));
+					}
 					else dtVcopy(TargetPoint, DestPoint.v);
 
 					if (Valid)
@@ -681,7 +685,8 @@ dtPolyRef CNavSystem::GetNearestPoly(dtPolyRef* pPolys, int PolyCount, vector3& 
 	{
 		dtPolyRef NearRef = pPolys[i];
 		float ClosestPtPoly[3];
-		pNavQuery->closestPointOnPoly(NearRef, pPos, ClosestPtPoly);
+		bool IsOverPoly;
+		pNavQuery->closestPointOnPoly(NearRef, pPos, ClosestPtPoly, &IsOverPoly);
 		float SqDist = dtVdistSqr(pPos, ClosestPtPoly); //???dtVdist2DSqr
 		if (SqDist < MinSqDist)
 		{
@@ -863,7 +868,8 @@ bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, const
 	// shortest path from an actor to the Center along the nearest poly surface.
 
 	vector3 ProjCenter;
-	pNavQuery->closestPointOnPoly(NearestPoly, Center.v, ProjCenter.v);
+	bool IsOverPoly;
+	pNavQuery->closestPointOnPoly(NearestPoly, Center.v, ProjCenter.v, &IsOverPoly);
 
 	vector3 SegDir = OutPos - ProjCenter;
 	vector3 RelProjCenter = ProjCenter - Center;

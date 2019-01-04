@@ -2,7 +2,9 @@ cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 #cmake_policy(SET CMP0048 NEW)
 project(deusexmachina) # VERSION 0.1.0)
 
-# TODO: tinyxml2 etc headers must be namespaced into a directory
+# TODO: tinyxml2, Detour's DebugDraw.h etc headers must be namespaced into a directory
+# TODO: rename Detour's DebugUtils target!
+# TODO: link only Detour, DetourCrowd & DebugUtils, don't link Recast & DetourTileCache if not used by main code
 # TODO: try to use find_package for transparent handling of installed / source packages? Or always compile from source on any system?
 # TODO: rewrite DEM_DISABLE_CXX_EXCEPTIONS in a target level instead of patching CMAKE_CXX_FLAGS
 # TODO: use ARCHIVE_OUTPUT_DIRECTORY, LIBRARY_OUTPUT_DIRECTORY, RUNTIME_OUTPUT_DIRECTORY
@@ -12,6 +14,8 @@ project(deusexmachina) # VERSION 0.1.0)
 #       where user builds deps manually and then find_package finds them, and other is cleared of all unnecessary stuff, stored
 #       in our special DEM-Deps (deusexmachina-dependencies) repo, added to DEM projects as subdirectories
 # TODO: optional(?) exclude from all for third-party libs, script for rebuilding after dependency update
+# TODO: disable RTTI & exceptions per target and in dependencies too!
+# TODO: Configuration for debug DEM + release Deps
 
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 #SET(CMAKE_SUPPRESS_REGENERATION  1)
@@ -98,6 +102,19 @@ foreach(_TARGET_NAME IN LISTS DEM_BULLET_TARGETS)
 	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/bullet")
 endforeach()
 
+# Dependency: Recast navigation libs
+
+set(RECASTNAVIGATION_DEMO OFF CACHE INTERNAL "" FORCE)
+set(RECASTNAVIGATION_TESTS OFF CACHE INTERNAL "" FORCE)
+set(RECASTNAVIGATION_EXAMPLES OFF CACHE INTERNAL "" FORCE)
+set(RECASTNAVIGATION_STATIC ON CACHE INTERNAL "" FORCE)
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/recastnavigation" "${CMAKE_BINARY_DIR}/Deps/recastnavigation")
+get_all_targets(DEM_RECASTNAV_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps/recastnavigation")
+foreach(_TARGET_NAME IN LISTS DEM_RECASTNAV_TARGETS)
+	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/recastnavigation")
+endforeach()
+
 # DEMLow
 
 include(CMake/DEMLow.cmake)
@@ -112,6 +129,9 @@ endif()
 if(DEM_BULLET_TARGETS)
 	target_include_directories(DEMLow PUBLIC "${BULLET_PHYSICS_SOURCE_DIR}/src")
 	target_link_libraries(DEMLow PUBLIC ${DEM_BULLET_TARGETS})
+endif()
+if(DEM_RECASTNAV_TARGETS)
+	target_link_libraries(DEMLow PUBLIC ${DEM_RECASTNAV_TARGETS})
 endif()
 if(MSVC AND DEM_DISABLE_CXX_RTTI)
 	target_compile_options(DEMLow PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)

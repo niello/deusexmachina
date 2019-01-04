@@ -128,7 +128,7 @@ bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
 	if (!pTexture) FAIL;
 
 	D3DVOLUME_DESC D3DDesc;
-	ZeroMemory(&D3DDesc, sizeof(Desc));
+	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
 	n_verify(SUCCEEDED(pTexture->GetLevelDesc(0, &D3DDesc)));
 
 	Desc.Type = Texture_2D;

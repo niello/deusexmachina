@@ -3,8 +3,9 @@
 #define __DEM_L1_CORE_SERVER_H__
 
 #include <Data/Singleton.h>
+#include <Data/Ptr.h>
 #include <Data/StringID.h>
-#include <Data/Data.h>
+#include <Data/Params.h>
 #include <Data/HashTable.h>
 #include <Data/Dictionary.h>
 
@@ -56,7 +57,7 @@ public:
 	CCoreServer();
 	~CCoreServer();
 
-	void					Trigger();
+	void			Trigger();
 	void			Save(Data::CParams& TimeParams);
 	void			Load(const Data::CParams& TimeParams);
 
