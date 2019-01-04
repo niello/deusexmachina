@@ -1,27 +1,27 @@
 cmake_minimum_required(VERSION 3.8.2) # source_group TREE
-project(deusexmachina)
+#cmake_policy(SET CMP0048 NEW)
+project(deusexmachina) # VERSION 0.1.0)
+
+# TODO: tinyxml2 headers must be namespaced into a directory
+# TODO: try to use find_package for transparent handling of installed / source packages? Or always compile from source on any system?
+# TODO: rewrite DEM_DISABLE_CXX_EXCEPTIONS in a target level instead of patching CMAKE_CXX_FLAGS
+# TODO: use ARCHIVE_OUTPUT_DIRECTORY, LIBRARY_OUTPUT_DIRECTORY, RUNTIME_OUTPUT_DIRECTORY
 
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+#SET(CMAKE_SUPPRESS_REGENERATION  1)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG") # Not working for some reason...
 
 option(DEM_DISABLE_CXX_EXCEPTIONS "Disable C++ exceptions" ON)
 option(DEM_DISABLE_CXX_RTTI "Disable C++ RTTI" ON)
 
+include(CMake/DEMCMakeUtils.cmake)
+
 if(MSVC AND DEM_DISABLE_CXX_EXCEPTIONS)
 	if(CMAKE_CXX_FLAGS MATCHES "/EHsc")
 		string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	endif()
 endif()
-
-function(get_all_targets _result _dir)
-	get_property(_subdirs DIRECTORY "${_dir}" PROPERTY SUBDIRECTORIES)
-	foreach(_subdir IN LISTS _subdirs)
-		get_all_targets(${_result} "${_subdir}")
-	endforeach()
-	get_property(_sub_targets DIRECTORY "${_dir}" PROPERTY BUILDSYSTEM_TARGETS)
-	set(${_result} ${${_result}} ${_sub_targets} PARENT_SCOPE)
-endfunction()
 
 #???run python script to update cmake src lists?
 
@@ -65,10 +65,19 @@ endif()
 if(DEM_CEGUI_DEPS_FOUND)
 	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI" "${CMAKE_BINARY_DIR}/Deps/CEGUI")
 	get_all_targets(DEM_CEGUI_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI")
-	foreach(TARGET_NAME IN LISTS DEM_CEGUI_TARGETS)
-		set_target_properties(${TARGET_NAME} PROPERTIES FOLDER "Deps/CEGUI")
+	foreach(_TARGET_NAME IN LISTS DEM_CEGUI_TARGETS)
+		set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/CEGUI")
 	endforeach()
 endif()
+
+# Dependency: Bullet Physics
+
+#find_package(Bullet)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/bullet" "${CMAKE_BINARY_DIR}/Deps/bullet")
+get_all_targets(DEM_BULLET_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps/bullet")
+foreach(_TARGET_NAME IN LISTS DEM_BULLET_TARGETS)
+	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/bullet")
+endforeach()
 
 # DEMLow
 
@@ -76,10 +85,14 @@ include(CMake/DEMLow.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Low/src" FILES ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 add_library(DEMLow ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 target_include_directories(DEMLow PUBLIC DEM/Low/src)
-target_link_libraries(DEMLow lua tinyxml2)
+target_link_libraries(DEMLow PUBLIC lua tinyxml2)
 if(DEM_CEGUI_TARGETS)
 	target_include_directories(DEMLow PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI/cegui/include" "${CMAKE_CURRENT_BINARY_DIR}/Deps/CEGUI/cegui/include")
-	target_link_libraries(DEMLow ${DEM_CEGUI_TARGETS})
+	target_link_libraries(DEMLow PUBLIC ${DEM_CEGUI_TARGETS})
+endif()
+if(DEM_BULLET_TARGETS)
+	target_include_directories(DEMLow PUBLIC "${BULLET_PHYSICS_SOURCE_DIR}/src")
+	target_link_libraries(DEMLow PUBLIC ${DEM_BULLET_TARGETS})
 endif()
 if(MSVC AND DEM_DISABLE_CXX_RTTI)
 	target_compile_options(DEMLow PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)

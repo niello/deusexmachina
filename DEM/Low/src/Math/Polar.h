@@ -36,16 +36,16 @@ inline void CPolar::Set(const vector3& vec)
 	vector3 LookNorm(vec);
 	LookNorm.norm();
 
-	Theta = acos(LookNorm.y);
+	Theta = acosf(LookNorm.y);
 
 	vector2 XZNorm(LookNorm.x, LookNorm.z);
 	XZNorm.norm();
 
 	// Adjust Phi based on the quadrant we are in (1, 2, 3, 4)
-	if (XZNorm.x >= 0.f && XZNorm.y >= 0.f) Phi = asin(XZNorm.x);
-	else if (XZNorm.x < 0.f && XZNorm.y >= 0.f) Phi = asin(XZNorm.y) + PI + HALF_PI;
-	else if (XZNorm.x < 0.f && XZNorm.y < 0.f) Phi = asin(-XZNorm.x) + PI;
-	else Phi = asin(-XZNorm.y) + HALF_PI;
+	if (XZNorm.x >= 0.f && XZNorm.y >= 0.f) Phi = asinf(XZNorm.x);
+	else if (XZNorm.x < 0.f && XZNorm.y >= 0.f) Phi = asinf(XZNorm.y) + PI + HALF_PI;
+	else if (XZNorm.x < 0.f && XZNorm.y < 0.f) Phi = asinf(-XZNorm.x) + PI;
+	else Phi = asinf(-XZNorm.y) + HALF_PI;
 }
 //---------------------------------------------------------------------
 
