@@ -58,3 +58,4 @@ set(LUA_SOURCES
 	src/lzio.c
 	src/print.c
 )
+

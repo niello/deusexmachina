@@ -86,3 +86,4 @@ set(DEM_L3_RPG_SOURCES
 	DEM/RPG/src/SI/SIQuestManager.cpp
 	DEM/RPG/src/World/WorldManager.cpp
 )
+

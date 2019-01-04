@@ -2,12 +2,16 @@ cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 #cmake_policy(SET CMP0048 NEW)
 project(deusexmachina) # VERSION 0.1.0)
 
-# TODO: tinyxml2 headers must be namespaced into a directory
+# TODO: tinyxml2 etc headers must be namespaced into a directory
 # TODO: try to use find_package for transparent handling of installed / source packages? Or always compile from source on any system?
 # TODO: rewrite DEM_DISABLE_CXX_EXCEPTIONS in a target level instead of patching CMAKE_CXX_FLAGS
 # TODO: use ARCHIVE_OUTPUT_DIRECTORY, LIBRARY_OUTPUT_DIRECTORY, RUNTIME_OUTPUT_DIRECTORY
 # TODO: bullet variables must be with BULLET_ prefix even if we will build it separately
 # TODO: option - reference dependencies by find_package and build separately or include as subdirs
+# TODO: erase unnecessary options from third party CMake files. Deps submodule can come in two forms - one is completely untouched,
+#       where user builds deps manually and then find_package finds them, and other is cleared of all unnecessary stuff, stored
+#       in our special DEM-Deps (deusexmachina-dependencies) repo, added to DEM projects as subdirectories
+# TODO: optional(?) exclude from all for third-party libs, script for rebuilding after dependency update
 
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 #SET(CMAKE_SUPPRESS_REGENERATION  1)
@@ -31,6 +35,16 @@ endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/lua" "${CMAKE_BINARY_DIR}/Deps/lua")
 set_target_properties(lua PROPERTIES FOLDER "Deps")
+
+# Dependency: OGG & Theora
+
+set(OGG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/Deps/ogg")
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/ogg" "${CMAKE_BINARY_DIR}/Deps/ogg")
+set_target_properties(ogg PROPERTIES FOLDER "Deps")
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/theora" "${CMAKE_BINARY_DIR}/Deps/theora")
+set_target_properties(theora PROPERTIES FOLDER "Deps")
 
 # Dependency: TinyXML2 (all unnecessary stuff is stripped out, so we don't use subdirectory's CMakeLists.txt)
 
@@ -87,7 +101,7 @@ include(CMake/DEMLow.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Low/src" FILES ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 add_library(DEMLow ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 target_include_directories(DEMLow PUBLIC DEM/Low/src)
-target_link_libraries(DEMLow PUBLIC lua tinyxml2)
+target_link_libraries(DEMLow PUBLIC lua theora tinyxml2)
 if(DEM_CEGUI_TARGETS)
 	target_include_directories(DEMLow PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Deps/CEGUI/cegui/include" "${CMAKE_CURRENT_BINARY_DIR}/Deps/CEGUI/cegui/include")
 	target_link_libraries(DEMLow PUBLIC ${DEM_CEGUI_TARGETS})
