@@ -2,7 +2,8 @@ cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 #cmake_policy(SET CMP0048 NEW)
 project(deusexmachina) # VERSION 0.1.0)
 
-# TODO: tinyxml2, Detour's DebugDraw.h etc headers must be namespaced into a directory
+# TODO: make project version work without breaking deps
+# TODO: Detour's DebugDraw.h etc headers must be namespaced into a directory
 # TODO: rename Detour's DebugUtils target!
 # TODO: link only Detour, DetourCrowd & DebugUtils, don't link Recast & DetourTileCache if not used by main code
 # TODO: try to use find_package for transparent handling of installed / source packages? Or always compile from source on any system?
@@ -16,6 +17,7 @@ project(deusexmachina) # VERSION 0.1.0)
 # TODO: optional(?) exclude from all for third-party libs, script for rebuilding after dependency update
 # TODO: disable RTTI & exceptions per target and in dependencies too!
 # TODO: Configuration for debug DEM + release Deps
+# TODO: lib output directories and names must be convenient (one dir, common debug prefix?)
 
 #set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 #SET(CMAKE_SUPPRESS_REGENERATION  1)
@@ -52,14 +54,8 @@ set_target_properties(theora PROPERTIES FOLDER "Deps")
 
 # Dependency: TinyXML2 (all unnecessary stuff is stripped out, so we don't use subdirectory's CMakeLists.txt)
 
-#add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2" "${CMAKE_BINARY_DIR}/tinyxml2")
-add_library(tinyxml2 "${CMAKE_CURRENT_SOURCE_DIR}/Deps/tinyxml2/tinyxml2.cpp" "${CMAKE_CURRENT_SOURCE_DIR}/Deps/tinyxml2/tinyxml2.h")
-set_target_properties(tinyxml2 PROPERTIES FOLDER "Deps" DEBUG_POSTFIX "_d")
-target_include_directories(tinyxml2 PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/Deps/tinyxml2")
-target_compile_definitions(tinyxml2 PUBLIC TINYXML2_EXPORT $<$<CONFIG:Debug>:TINYXML2_DEBUG>) #???need TINYXML2_EXPORT for static lib?
-if(MSVC)
-	target_compile_definitions(tinyxml2 PUBLIC _CRT_SECURE_NO_WARNINGS)
-endif()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/tinyxml2" "${CMAKE_BINARY_DIR}/Deps/tinyxml2")
+set_target_properties(tinyxml2 PROPERTIES FOLDER "Deps")
 
 # Dependency: CEGUI
 
@@ -94,6 +90,9 @@ if(DEM_CEGUI_DEPS_FOUND)
 endif()
 
 # Dependency: Bullet Physics
+
+set(BUILD_CLSOCKET OFF CACHE INTERNAL "" FORCE)
+set(BUILD_ENET OFF CACHE INTERNAL "" FORCE)
 
 #find_package(Bullet)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps/bullet" "${CMAKE_BINARY_DIR}/Deps/bullet")
