@@ -2,7 +2,7 @@
 # DeusExMachina team provides this own minimal CMakeLists.txt to minimize engine dependency weight and setup effort.
 # Source and header moved to another "tinyxml2" folder for external code to use #include <tinyxml2/tinyxml2.h>
 # Install mode is not supported yet but will be added in the future.
-cmake_minimum_required(VERSION 3.0.2)
+cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 
 set(GENERIC_LIB_VERSION "7.0.1")
 set(GENERIC_LIB_SOVERSION "7")
@@ -12,7 +12,8 @@ set(GENERIC_LIB_SOVERSION "7")
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-add_library(tinyxml2 tinyxml2/tinyxml2.cpp tinyxml2/tinyxml2.h)
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2" FILES tinyxml2/tinyxml2.h tinyxml2/tinyxml2.cpp)
+add_library(tinyxml2 tinyxml2/tinyxml2.h tinyxml2/tinyxml2.cpp)
 
 set_target_properties(tinyxml2 PROPERTIES
 	VERSION "${GENERIC_LIB_VERSION}"
