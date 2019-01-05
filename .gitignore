@@ -21,17 +21,3 @@ Tools/Obj/
 *_d.dll
 *_d.exp
 *_d.lib
-
-#3rdParty
-/Deps/bullet/examples
-/Deps/bullet/data
-/Deps/bullet/docs
-/Deps/bullet/test
-/Deps/CEGUI/datafiles
-/Deps/CEGUI/samples_framework
-/Deps/CEGUI/samples
-/Deps/DevIL/DevIL-docs
-/Deps/CEGUI/build
-/Deps/Downloads
-/Deps/CEGUI-Deps
-/Deps/CEGUI/dependencies
