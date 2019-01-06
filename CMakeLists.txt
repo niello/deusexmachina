@@ -59,10 +59,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Low/src" FILES ${DEM_L1_LOW_H
 add_library(DEMLow ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 target_include_directories(DEMLow PUBLIC DEM/Low/src)
 target_link_libraries(DEMLow PUBLIC ${DEM_DEPS_TARGETS})
-
-if(MSVC AND DEM_DISABLE_CXX_RTTI)
-	target_compile_options(DEMLow PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
+list(APPEND DEM_TARGETS DEMLow)
 
 # DEMGame
 
@@ -71,9 +68,7 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Game/src" FILES ${DEM_L2_GAME
 add_library(DEMGame ${DEM_L2_GAME_HEADERS} ${DEM_L2_GAME_SOURCES})
 target_include_directories(DEMGame PUBLIC DEM/Game/src)
 target_link_libraries(DEMGame DEMLow)
-if(MSVC AND DEM_DISABLE_CXX_RTTI)
-	target_compile_options(DEMGame PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
+list(APPEND DEM_TARGETS DEMGame)
 
 # DEMRPG
 
@@ -82,6 +77,35 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/RPG/src" FILES ${DEM_L3_RPG_H
 add_library(DEMRPG ${DEM_L3_RPG_HEADERS} ${DEM_L3_RPG_SOURCES})
 target_include_directories(DEMRPG PUBLIC DEM/RPG/src)
 target_link_libraries(DEMRPG DEMGame DEMLow)
-if(MSVC AND DEM_DISABLE_CXX_RTTI)
-	target_compile_options(DEMRPG PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
+list(APPEND DEM_TARGETS DEMRPG)
+
+# Processing common settings for all dependency targets
+
+# HACK: empty generator expressions are used for config suffix suppression
+set(DEM_DEPS_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib/$<$<BOOL:FALSE>:>")
+set(DEM_DEPS_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin/$<$<BOOL:FALSE>:>")
+
+foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
+
+	set_target_properties(${_TARGET_NAME} PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
+		LIBRARY_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
+		RUNTIME_OUTPUT_DIRECTORY ${DEM_DEPS_BIN_DIR}
+		DEBUG_POSTFIX "_d"
+	)
+
+	foreach(_CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+		string(TOUPPER "${_CONFIG}" _CONFIG)
+		set_target_properties(${_TARGET_NAME} PROPERTIES
+			ARCHIVE_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_LIB_DIR}
+			LIBRARY_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_LIB_DIR}
+			RUNTIME_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_BIN_DIR}
+		)
+	endforeach()
+
+	# Disable C++ RTTI if requested
+	if(MSVC AND DEM_DISABLE_CXX_RTTI)
+		target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
+	endif()
+
+endforeach()

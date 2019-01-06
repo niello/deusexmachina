@@ -39,30 +39,18 @@ endif()
 # Dependency: Lua
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/lua" "${CMAKE_CURRENT_BINARY_DIR}/lua")
-if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI)
-	target_compile_options(lua PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
 
 # Dependency: OGG & Theora
 
 set(OGG_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/ogg")
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ogg" "${CMAKE_CURRENT_BINARY_DIR}/ogg")
-if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI)
-	target_compile_options(ogg PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/theora" "${CMAKE_CURRENT_BINARY_DIR}/theora")
-if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI)
-	target_compile_options(theora PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
 
 # Dependency: TinyXML2 (all unnecessary stuff is stripped out, so we don't use subdirectory's CMakeLists.txt)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/tinyxml2" "${CMAKE_CURRENT_BINARY_DIR}/tinyxml2")
-if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI)
-	target_compile_options(tinyxml2 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-endif()
 
 # Dependency: CEGUI
 
@@ -86,7 +74,6 @@ else()
 	endif()
 endif()
 
-# NB: CEGUI ignores DEM_DEPS_DISABLE_CXX_RTTI because it uses dynamic_cast
 if(DEM_CEGUI_DEPS_FOUND)
 	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/CEGUI" "${CMAKE_CURRENT_BINARY_DIR}/CEGUI")
 	get_all_targets(DEM_CEGUI_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/CEGUI")
@@ -109,9 +96,6 @@ get_all_targets(DEM_BULLET_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/bullet")
 foreach(_TARGET_NAME IN LISTS DEM_BULLET_TARGETS)
 	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "bullet")
 	target_include_directories(${_TARGET_NAME} INTERFACE "${BULLET_PHYSICS_SOURCE_DIR}/src")
-	if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI)
-		target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
-	endif()
 endforeach()
 
 # Dependency: Recast navigation libs
@@ -125,7 +109,37 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation" "${CMAKE_CURRENT
 get_all_targets(DEM_RECASTNAV_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation")
 foreach(_TARGET_NAME IN LISTS DEM_RECASTNAV_TARGETS)
 	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "recastnavigation")
-	if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI)
+endforeach()
+
+# Processing common settings for all dependency targets
+# NB: CEGUI ignores DEM_DEPS_DISABLE_CXX_RTTI because it uses dynamic_cast
+
+# HACK: empty generator expressions are used for config suffix suppression
+set(DEM_DEPS_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib/$<$<BOOL:FALSE>:>")
+set(DEM_DEPS_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin/$<$<BOOL:FALSE>:>")
+
+get_all_targets(DEM_DEPS_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}")
+foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
+
+	set_target_properties(${_TARGET_NAME} PROPERTIES
+		ARCHIVE_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
+		LIBRARY_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
+		RUNTIME_OUTPUT_DIRECTORY ${DEM_DEPS_BIN_DIR}
+		DEBUG_POSTFIX "_d"
+	)
+
+	foreach(_CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+		string(TOUPPER "${_CONFIG}" _CONFIG)
+		set_target_properties(${_TARGET_NAME} PROPERTIES
+			ARCHIVE_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_LIB_DIR}
+			LIBRARY_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_LIB_DIR}
+			RUNTIME_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_BIN_DIR}
+		)
+	endforeach()
+
+	# Disable C++ RTTI if requested
+	if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI AND NOT ${_TARGET_NAME} IN_LIST DEM_CEGUI_TARGETS)
 		target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
 	endif()
+
 endforeach()
