@@ -17,7 +17,6 @@ project(deusexmachina) # VERSION 0.1.0)
 # TODO: optional(?) exclude from all for third-party libs, script for rebuilding after dependency update
 # TODO: disable RTTI & exceptions per target and in dependencies too!
 # TODO: Configuration for debug DEM + release Deps
-# TODO: lib output directories and names must be convenient (one dir, common debug prefix?)
 
 #SET(CMAKE_SUPPRESS_REGENERATION  1)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
@@ -25,6 +24,8 @@ set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
 
 option(DEM_DISABLE_CXX_EXCEPTIONS "Disable C++ exceptions" ON)
 option(DEM_DISABLE_CXX_RTTI "Disable C++ RTTI" ON)
+option(DEM_PREBUILT_DEPS "Use prebuilt dependencies" ON)
+set(DEM_PREBUILT_DEPS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Deps/Build" CACHE STRING "Prebuilt dependency package location")
 
 include(CMake/DEMCMakeUtils.cmake)
 
@@ -38,19 +39,38 @@ endif()
 
 # Dependencies
 
-#set(DEM_DEPS_DISABLE_CXX_EXCEPTIONS ${DEM_DISABLE_CXX_EXCEPTIONS} CACHE INTERNAL "" FORCE)
-#set(DEM_DEPS_DISABLE_CXX_RTTI ${DEM_DISABLE_CXX_RTTI} CACHE INTERNAL "" FORCE)
+if(DEM_PREBUILT_DEPS)
+	# Prebuild dependency package can be built from source once for necessary configuration and
+	# its targets will not appear in a build system. It is recommended for game app development.
+	#set(DEMDeps_ROOT ${DEM_PREBUILT_DEPS_PATH})
+	set(DEMDeps_DIR "${DEM_PREBUILT_DEPS_PATH}" CACHE INTERNAL "" FORCE) # Suppress GUI entry without DEM_ prefix as it is not grouped to DEM
+	find_package(DEMDeps)
+	set(DEM_DEPS_POSSIBLE_TARGETS DEMDeps::lua DEMDeps::ogg DEMDeps::theora DEMDeps::tinyxml2 DEMDeps::CEGUIBase-0_Static DEMDeps::CEGUITinyXML2Parser_Static DEMDeps::CEGUISILLYImageCodec_Static DEMDeps::CEGUICoreWindowRendererSet_Static DEMDeps::CEGUICommonDialogs-0_Static DEMDeps::LinearMath DEMDeps::BulletCollision DEMDeps::BulletDynamics DEMDeps::DebugUtils DEMDeps::Detour DEMDeps::DetourCrowd DEMDeps::DetourTileCache DEMDeps::Recast)
+	foreach(_TARGET_NAME IN LISTS DEM_DEPS_POSSIBLE_TARGETS)
+		if(TARGET ${_TARGET_NAME})
+			list(APPEND DEM_DEPS_TARGETS ${_TARGET_NAME})
+		endif()
+	endforeach()
+else()
+	# Dependencies are built from sources as a part of DEM engine with the same configuration and
+	# appear in a build system. It is recommended for engine development and 3rd-party debugging.
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps" "${CMAKE_CURRENT_BINARY_DIR}/Deps")
-get_all_targets(DEM_DEPS_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps")
-foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
-	get_target_property(_TARGET_FOLDER ${_TARGET_NAME} FOLDER)
-	if(_TARGET_FOLDER)
-		set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/${_TARGET_FOLDER}")
-	else()
-		set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps")
-	endif()
-endforeach()
+	#set(DEM_DEPS_DISABLE_CXX_EXCEPTIONS ${DEM_DISABLE_CXX_EXCEPTIONS} CACHE INTERNAL "" FORCE)
+	#set(DEM_DEPS_DISABLE_CXX_RTTI ${DEM_DISABLE_CXX_RTTI} CACHE INTERNAL "" FORCE)
+
+	add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Deps" "${CMAKE_CURRENT_BINARY_DIR}/Deps")
+	get_all_targets(DEM_DEPS_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/Deps")
+	foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
+		get_target_property(_TARGET_FOLDER ${_TARGET_NAME} FOLDER)
+		if(_TARGET_FOLDER)
+			set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps/${_TARGET_FOLDER}")
+		else()
+			set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "Deps")
+		endif()
+	endforeach()
+
+	#???set aliases with namespace DEMDeps:: for all targets? or use namespaces DEM_DEPS_TARGETS in prebuilt case instead?
+endif()
 
 # DEMLow
 
@@ -79,27 +99,27 @@ target_include_directories(DEMRPG PUBLIC DEM/RPG/src)
 target_link_libraries(DEMRPG DEMGame DEMLow)
 list(APPEND DEM_TARGETS DEMRPG)
 
-# Processing common settings for all dependency targets
+# Processing common settings for all DEM targets
 
 # HACK: empty generator expressions are used for config suffix suppression
-set(DEM_DEPS_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib/$<$<BOOL:FALSE>:>")
-set(DEM_DEPS_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin/$<$<BOOL:FALSE>:>")
+set(DEM_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib/$<$<BOOL:FALSE>:>")
+set(DEM_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin/$<$<BOOL:FALSE>:>")
 
 foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 
 	set_target_properties(${_TARGET_NAME} PROPERTIES
-		ARCHIVE_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
-		LIBRARY_OUTPUT_DIRECTORY ${DEM_DEPS_LIB_DIR}
-		RUNTIME_OUTPUT_DIRECTORY ${DEM_DEPS_BIN_DIR}
+		ARCHIVE_OUTPUT_DIRECTORY ${DEM_LIB_DIR}
+		LIBRARY_OUTPUT_DIRECTORY ${DEM_LIB_DIR}
+		RUNTIME_OUTPUT_DIRECTORY ${DEM_BIN_DIR}
 		DEBUG_POSTFIX "_d"
 	)
 
 	foreach(_CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
 		string(TOUPPER "${_CONFIG}" _CONFIG)
 		set_target_properties(${_TARGET_NAME} PROPERTIES
-			ARCHIVE_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_LIB_DIR}
-			LIBRARY_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_LIB_DIR}
-			RUNTIME_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_DEPS_BIN_DIR}
+			ARCHIVE_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_LIB_DIR}
+			LIBRARY_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_LIB_DIR}
+			RUNTIME_OUTPUT_DIRECTORY_${_CONFIG} ${DEM_BIN_DIR}
 		)
 	endforeach()
 

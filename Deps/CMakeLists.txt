@@ -17,7 +17,16 @@ project(DEM-Deps) # VERSION 0.1.0)
 # TODO: optional(?) exclude from all for third-party libs, script for rebuilding after dependency update
 # TODO: disable RTTI & exceptions per target and in dependencies too!
 # TODO: Configuration for debug DEM + release Deps
-# TODO: lib output directories and names must be convenient (one dir, common debug prefix?)
+
+# Directory structure is copied verbatim. Relative dest is relative to CMAKE_INSTALL_PREFIX.
+#install(DIRECTORY src/ DESTINATION include/myproj FILES_MATCHING PATTERN "*.h")
+#install(TARGETS ... EXPORT <export_name> ...)
+#install(EXPORT <export_name> ...)
+# The install() command generates a file, cmake_install.cmake, inside the build directory
+# cmake -DBUILD_TYPE=Debug -P cmake_install.cmake
+# cmake --build . --target install
+#export(TARGETS [target1 [target2 [...]]] [NAMESPACE <namespace>] [APPEND] FILE <filename> [EXPORT_LINK_INTERFACE_LIBRARIES])
+#export(EXPORT <export-name> [NAMESPACE <namespace>] [FILE <filename>])
 
 #SET(CMAKE_SUPPRESS_REGENERATION  1)
 #CMAKE_VS_INCLUDE_INSTALL_TO_DEFAULT_BUILD ON
@@ -143,3 +152,12 @@ foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
 	endif()
 
 endforeach()
+
+# Package
+
+#???try installable package? try relocatable package?
+
+#???Create interface imported target with all other targets listed? No way to obtain deps list otherwise.
+
+export(TARGETS ${DEM_DEPS_TARGETS} NAMESPACE DEMDeps:: FILE DEMDepsConfig.cmake)
+
