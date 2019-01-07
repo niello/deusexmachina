@@ -4,7 +4,7 @@
 #
 import os
 
-PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
+PROJECT_FOLDER = os.path.dirname(os.path.realpath(__file__))
 
 def update_lists_cpp(var_name, out_file_path, source_folder, append=False):
 	root_folder = os.path.commonprefix([os.path.dirname(out_file_path), source_folder])
@@ -29,6 +29,4 @@ def update_lists_cpp(var_name, out_file_path, source_folder, append=False):
 
 
 if __name__ == "__main__":
-	update_lists_cpp("DEM_L1_LOW", os.path.join(PROJECT_FOLDER, "CMake", "DEMLow.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "Low", "src"))
-	update_lists_cpp("DEM_L2_GAME", os.path.join(PROJECT_FOLDER, "CMake", "DEMGame.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "Game", "src"))
-	update_lists_cpp("DEM_L3_RPG", os.path.join(PROJECT_FOLDER, "CMake", "DEMRPG.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "RPG", "src"))
+	update_lists_cpp("LUA", os.path.join(PROJECT_FOLDER, "lua", "src.cmake"), os.path.join(PROJECT_FOLDER, "lua", "src"))

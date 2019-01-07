@@ -2,23 +2,8 @@ cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 #cmake_policy(SET CMP0048 NEW)
 project(deusexmachina) # VERSION 0.1.0)
 
-# TODO: make project version work without breaking deps
-# TODO: Detour's DebugDraw.h etc headers must be namespaced into a directory
-# TODO: rename Detour's DebugUtils target!
-# TODO: link only Detour, DetourCrowd & DebugUtils, don't link Recast & DetourTileCache if not used by main code
-# TODO: try to use find_package for transparent handling of installed / source packages? Or always compile from source on any system?
-# TODO: rewrite DEM_DISABLE_CXX_EXCEPTIONS in a target level instead of patching CMAKE_CXX_FLAGS
-# TODO: use ARCHIVE_OUTPUT_DIRECTORY, LIBRARY_OUTPUT_DIRECTORY, RUNTIME_OUTPUT_DIRECTORY
-# TODO: bullet variables must be with BULLET_ prefix even if we will build it separately
-# TODO: option - reference dependencies by find_package and build separately or include as subdirs
-# TODO: erase unnecessary options from third party CMake files. Deps submodule can come in two forms - one is completely untouched,
-#       where user builds deps manually and then find_package finds them, and other is cleared of all unnecessary stuff, stored
-#       in our special DEM-Deps (deusexmachina-dependencies) repo, added to DEM projects as subdirectories
-# TODO: optional(?) exclude from all for third-party libs, script for rebuilding after dependency update
-# TODO: disable RTTI & exceptions per target and in dependencies too!
-# TODO: Configuration for debug DEM + release Deps
+# TODO: make project version work without breaking deps (CMP0048)
 
-#SET(CMAKE_SUPPRESS_REGENERATION  1)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
 
@@ -34,8 +19,6 @@ if(MSVC AND DEM_DISABLE_CXX_EXCEPTIONS)
 		string(REPLACE "/EHsc" "" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 	endif()
 endif()
-
-#???run python script to update cmake src lists? check changed before touching
 
 # Dependencies
 
