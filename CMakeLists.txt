@@ -9,8 +9,12 @@ set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
 
 option(DEM_DISABLE_CXX_EXCEPTIONS "Disable C++ exceptions" ON)
 option(DEM_DISABLE_CXX_RTTI "Disable C++ RTTI" ON)
-option(DEM_PREBUILT_DEPS "Use prebuilt dependencies" ON)
 set(DEM_PREBUILT_DEPS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Deps/Build" CACHE STRING "Prebuilt dependency package location")
+if(EXISTS ${DEM_PREBUILT_DEPS_PATH})
+	option(DEM_PREBUILT_DEPS "Use prebuilt dependencies" ON)
+else()
+	option(DEM_PREBUILT_DEPS "Use prebuilt dependencies" OFF)
+endif()
 
 include(CMake/DEMCMakeUtils.cmake)
 
