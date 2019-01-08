@@ -13,6 +13,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/MocapTrack.h
 	DEM/Low/src/Animation/NodeControllerKeyframe.h
 	DEM/Low/src/Animation/NodeControllerMocap.h
+	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/CoreServer.h
 	DEM/Low/src/Core/Factory.h
 	DEM/Low/src/Core/Object.h
@@ -315,6 +316,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/MocapTrack.cpp
 	DEM/Low/src/Animation/NodeControllerKeyframe.cpp
 	DEM/Low/src/Animation/NodeControllerMocap.cpp
+	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/CoreServer.cpp
 	DEM/Low/src/Core/Factory.cpp
 	DEM/Low/src/Core/Object.cpp
