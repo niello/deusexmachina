@@ -45,7 +45,7 @@ void* n_realloc_aligned_dbg(void* memblock, size_t size, size_t Alignment, const
 void n_free_dbg(void* memblock, const char* file, int line);
 void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 
-#if defined(_DEBUG) && defined(__WIN32__)
+#if defined(_DEBUG) && DEM_PLATFORM_WIN32
 #define n_new(type) new(__FILE__,__LINE__) type
 #define n_placement_new(place, type) new(place, __FILE__,__LINE__) type
 #define n_new_array(type,size) new(__FILE__,__LINE__) type[size]

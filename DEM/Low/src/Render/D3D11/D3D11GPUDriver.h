@@ -185,7 +185,7 @@ public:
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const;
 	virtual UPTR				GetMaxMultipleRenderTargetCount() const { return CurrRT.GetCount(); }
 
-	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
+	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow);
 	virtual bool				DestroySwapChain(UPTR SwapChainID);
 	virtual bool				SwapChainExists(UPTR SwapChainID) const;
 	virtual bool				ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height);

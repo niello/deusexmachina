@@ -1,15 +1,11 @@
 #pragma once
-
-#include <Data/Singleton.h>
+//#include <Data/Singleton.h>
 #include <Data/Ptr.h>
-#include <Data/StringID.h>
-#include <Data/Params.h>
-#include <Data/HashTable.h>
-#include <Data/Dictionary.h>
+#include <Data/Array.h>
+//#include <vector>
 
-// DEM application base class
-
-//???use CApplicationWin32 : public CApplicationBase + typedef CApplicationWin32 CApplication; ?
+// DEM application base class. Application serves as a state machine,
+// OS interface and a global service container.
 
 // OS-specific:
 // - file IO
@@ -28,20 +24,48 @@
 // - callbacks / virtual methods for application lifecycle control in derived applications
 // - factory
 
-namespace DEM { namespace Core
+namespace DEM
+{
+namespace Sys
+{
+	class IPlatform;
+	typedef Ptr<class COSWindow> POSWindow;
+}
+
+namespace Core
 {
 
 class CApplication
 {
 protected:
 
-	//
+	Sys::IPlatform& Platform; //???use unique ptr and heap-allocated platform?
+
+	//CArray<Sys::POSWindow> Windows;
+
+	double BaseTime = 0.0;
+	double PrevTime = 0.0;
+	double FrameTime = 0.0;
+	float TimeScale = 1.f;
 
 public:
 
-	//
+	CApplication(Sys::IPlatform& _Platform);
 
-	void Start();
+	Sys::IPlatform& GetPlatform() const { return Platform; }
+
+	bool Run();
+	bool Update();
+	void Close();
+	// Update, RequestState, RequestExit
+
+	//allow multiple instances
+	//exit when last window closed
+
+	//???store windows inside app?
+	Sys::POSWindow CreateRenderWindow(); // bool close app on close this window?
+	//POSConsoleWindow CreateConsoleWindow(); // bool close app on close this window?
 };
 
-}};
+}
+};

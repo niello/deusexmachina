@@ -1,8 +1,6 @@
-#ifdef __WIN32__
-
+#if DEM_PLATFORM_WIN32
 #include "OSWindowWin32.h"
 
-#include <System/OSWindowClassWin32.h>
 #include <System/Events/OSInput.h>
 
 #include <Uxtheme.h>
@@ -23,33 +21,19 @@
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
 #define STYLE_CHILD				(WS_CHILD | WS_TABSTOP | WS_VISIBLE)
 
-namespace Sys
+namespace DEM { namespace Sys
 {
+__ImplementClassNoFactory(DEM::Sys::COSWindowWin32, Core::CObject);
 
-COSWindowWin32::~COSWindowWin32()
+COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin32* pParentWnd)
 {
-	if (Flags.Is(Wnd_Open)) Close();
-
-	if (hAccel)
-	{
-		DestroyAcceleratorTable(hAccel);
-		hAccel = NULL;
-	}
-}
-//---------------------------------------------------------------------
-
-bool COSWindowWin32::Open()
-{
-	n_assert(!hWnd && (!pParent || pParent->GetHWND()));
-
-	if (Flags.Is(Wnd_Open)) OK;
-
 	LONG WndStyle;
 	RECT r;
-	if (pParent)
+	if (pParentWnd)
 	{
+		n_assert(pParentWnd->GetHWND());
 		WndStyle = STYLE_CHILD;
-		::GetClientRect(pParent->GetHWND(), &r);
+		::GetClientRect(pParentWnd->GetHWND(), &r);
 		Flags.Clear(Wnd_Fullscreen);
 	}
 	else
@@ -63,14 +47,15 @@ bool COSWindowWin32::Open()
 	}
 
 	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
-							(const char*)(DWORD_PTR)WndClass->GetWin32WindowClass(), WindowTitle.CStr(), WndStyle,
-							r.left, r.top, r.right - r.left, r.bottom - r.top,
-							pParent ? pParent->GetHWND() : NULL, NULL, WndClass->GetWin32HInstance(), NULL);
-	if (!hWnd) FAIL;
+		(const char*)(DWORD_PTR)aWndClass, WindowTitle.CStr(), WndStyle,
+		r.left, r.top, r.right - r.left, r.bottom - r.top,
+		pParentWnd ? pParentWnd->GetHWND() : NULL, NULL, hInstance, NULL);
+
+	if (!hWnd) return;
+
+	pParent = pParentWnd;
 
 	::SetWindowLongPtr(hWnd, 0, (LONG)this);
-
-	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 
 	::GetClientRect(hWnd, &r);
 	Rect.W = r.right - r.left;
@@ -93,8 +78,37 @@ bool COSWindowWin32::Open()
 		n_assert(hAccel);
 	}
 
-	Flags.Set(Wnd_Open);
+	// Set to initial state
+	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
+}
+//---------------------------------------------------------------------
+
+COSWindowWin32::~COSWindowWin32()
+{
+	if (hWnd) ::SendMessage(hWnd, WM_CLOSE, 0, 0);
+
+	if (hAccel)
+	{
+		DestroyAcceleratorTable(hAccel);
+		hAccel = NULL;
+	}
+}
+//---------------------------------------------------------------------
+
+//!!!Open, Close -> Show, Hide, Destroy!
+//???open = ::ShowWindow(hWnd, SW_SHOWDEFAULT)? Close = destroy window? don't create in constructor?
+//need to close manually even if references are left, without resurrection possibility!
+
+bool COSWindowWin32::Open()
+{
+	if (!hWnd) FAIL;
+
+	if (Flags.Is(Wnd_Opened)) OK;
+
+	::ShowWindow(hWnd, SW_SHOWDEFAULT);
+
+	Flags.Set(Wnd_Opened);
 
 	FireEvent(CStrID("OnOpened"));
 
@@ -104,14 +118,14 @@ bool COSWindowWin32::Open()
 
 void COSWindowWin32::Close()
 {
-	if (!Flags.Is(Wnd_Open)) return;
+	if (!Flags.Is(Wnd_Opened)) return;
 	::SendMessage(hWnd, WM_CLOSE, 0, 0);
 }
 //---------------------------------------------------------------------
 
 void COSWindowWin32::Minimize()
 {
-	n_assert_dbg(hWnd && Flags.Is(Wnd_Open));
+	n_assert_dbg(hWnd && Flags.Is(Wnd_Opened));
 	if (!Flags.Is(Wnd_Minimized) && !pParent)
 		::ShowWindow(hWnd, SW_MINIMIZE);
 }
@@ -119,7 +133,7 @@ void COSWindowWin32::Minimize()
 
 void COSWindowWin32::Restore()
 {
-	n_assert_dbg(hWnd && Flags.Is(Wnd_Open));
+	n_assert_dbg(hWnd && Flags.Is(Wnd_Opened));
 	::ShowWindow(hWnd, SW_RESTORE);
 }
 //---------------------------------------------------------------------
@@ -138,14 +152,14 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 
 	LONG PrevWndStyle = (LONG)::GetWindowLongPtr(hWnd, GWL_STYLE);
 	LONG NewWndStyle = pParent ? STYLE_CHILD : (FullscreenMode ? STYLE_FULLSCREEN : STYLE_WINDOWED);
-	
+
 	if (NewWndStyle != PrevWndStyle)
 	{
 		if (::SetWindowLongPtr(hWnd, GWL_STYLE, NewWndStyle) == 0) FAIL;
 		Flags.SetTo(Wnd_Fullscreen, FullscreenMode && !pParent);
 
 		SWPFlags |= SWP_FRAMECHANGED;
-		
+
 		// Fullscreen mode breaks theme (at least aero glass) on Win7, so restore it when returned from the fullscreen mode
 		if (PrevWndStyle == STYLE_FULLSCREEN) ::SetWindowTheme(hWnd, NULL, NULL);
 	}
@@ -163,13 +177,6 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 }
 //---------------------------------------------------------------------
 
-void COSWindowWin32::SetWindowClass(COSWindowClassWin32& WindowClass)
-{
-	n_assert2(!hWnd, "COSWindowWin32::SetWindowClass() > Can't change a class of a created window");
-	WndClass = &WindowClass;
-}
-//---------------------------------------------------------------------
-
 void COSWindowWin32::SetTitle(const char* pTitle)
 {
 	WindowTitle = pTitle;
@@ -183,7 +190,8 @@ void COSWindowWin32::SetIcon(const char* pIconName)
 	if (hWnd && IconName.IsValid())
 	{
 		//???delete prev icon?
-		HICON hIcon = ::LoadIcon(WndClass->GetWin32HInstance(), IconName.CStr());
+		HINSTANCE hInst = (HINSTANCE)::GetWindowLongPtr(hWnd, GWL_HINSTANCE);
+		HICON hIcon = ::LoadIcon(hInst, IconName.CStr());
 		if (hIcon) ::SendMessage(hWnd, WM_SETICON, ICON_BIG, (LONG_PTR)hIcon);
 	}
 }
@@ -200,10 +208,10 @@ bool COSWindowWin32::SetTopmost(bool Topmost)
 		if (Topmost) hWndInsertAfter = HWND_TOPMOST;
 		else if (pParent) hWndInsertAfter = pParent->GetHWND();
 		else hWndInsertAfter = HWND_NOTOPMOST;
-	
+
 		if (::SetWindowPos(hWnd, hWndInsertAfter, 0, 0, 0, 0, SWP_NOSIZE | SWP_NOMOVE) == FALSE) FAIL;
 	}
-	
+
 	Flags.SetTo(Wnd_Topmost, Topmost);
 	OK;
 }
@@ -308,13 +316,13 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 				Rect.Y = Y;
 				FireEvent(CStrID("OnMoved"));
 			}
-			
+
 			break;
 		}
 
 		//???does a child window receive this message from, say, .NET control? how to catch and handle resizing on parent resize?
 		case WM_SIZE:
-		{	
+		{
 			if (wParam == SIZE_MAXHIDE || wParam == SIZE_MINIMIZED)
 			{
 				if (!Flags.Is(Wnd_Minimized))
@@ -343,7 +351,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 					FireEvent(CStrID("OnSizeChanged"));
 				}
 			}
-			
+
 			break;
 		}
 
@@ -365,12 +373,12 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			//RIDEV_NOLEGACY - to prevent WM_KEYDOWN etc generation
 			//???or switch in WM_MOUSEMOVE?
 			RAWINPUTDEVICE RawInputDevices;
-			RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC; 
-			RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE; 
+			RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC;
+			RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE;
 			RawInputDevices.dwFlags = RIDEV_INPUTSINK;
 			RawInputDevices.hwndTarget = hWnd;
 			if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-				Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
+				::Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
 
 			break;
 		}
@@ -387,7 +395,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			OK;
 
 		case WM_DESTROY:
-			Flags.Clear(Wnd_Open);
+			Flags.Clear(Wnd_Opened);
 			FireEvent(CStrID("OnClosed"));
 			hWnd = NULL;
 			Result = 0;
@@ -474,7 +482,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			//!!!???process mouse buttons here?!
 			//???call defproc if processed?
 			//!!!can process all devices here and send UID in an OSInput event!
-			if (Data.header.dwType == RIM_TYPEMOUSE && (Data.data.mouse.lLastX || Data.data.mouse.lLastY)) 
+			if (Data.header.dwType == RIM_TYPEMOUSE && (Data.data.mouse.lLastX || Data.data.mouse.lLastY))
 			{
 				Event::OSInput Ev;
 				Ev.Type = Event::OSInput::MouseMoveRaw;
@@ -596,6 +604,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 }
 //---------------------------------------------------------------------
 
-}
+}}
 
-#endif //__WIN32__
+#endif

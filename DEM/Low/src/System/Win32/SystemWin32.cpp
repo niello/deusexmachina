@@ -1,6 +1,5 @@
-#ifdef __WIN32__
-
-#include "System.h"
+#if DEM_PLATFORM_WIN32
+#include <System/System.h>
 
 #include <Data/String.h>
 #include <IO/PathUtils.h>

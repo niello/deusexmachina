@@ -11,10 +11,10 @@
 // buffer becomes a front buffer, and a former front buffer becomes the last back buffer, and so on.
 // Inherit from CSwapChain to create API-specific implementationsþ
 
-namespace Sys
+namespace DEM { namespace Sys
 {
 	typedef Ptr<class COSWindow> POSWindow;
-}
+}}
 
 namespace Render
 {
@@ -54,7 +54,7 @@ class CSwapChain
 public:
 
 	PRenderTarget	BackBufferRT;
-	Sys::POSWindow	TargetWindow;	//???to desc?
+	DEM::Sys::POSWindow	TargetWindow;	//???to desc?
 	Data::CRect		LastWindowRect;	// Stores a window size in a windowed mode
 	PDisplayDriver	TargetDisplay;
 	//CDisplayMode	DisplayMode;	//???store as (p)LastDisplayMode? to preserve selected mode when full -> wnd -> full

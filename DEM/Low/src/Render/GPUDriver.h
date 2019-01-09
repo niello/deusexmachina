@@ -31,10 +31,10 @@ namespace Data
 	class CParams;
 }
 
-namespace Sys
+namespace DEM { namespace Sys
 {
 	typedef Ptr<class COSWindow> POSWindow;
-}
+}}
 
 namespace Render
 {
@@ -52,7 +52,7 @@ protected:
 	UPTR							DrawsRendered;
 #endif
 
-	static void					PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UPTR& Width, UPTR& Height);
+	static void					PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32& Width, U32& Height);
 
 public:
 
@@ -67,7 +67,7 @@ public:
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const = 0;
 	virtual UPTR				GetMaxMultipleRenderTargetCount() const = 0;
 
-	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow) = 0;
+	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow) = 0;
 	virtual bool				DestroySwapChain(UPTR SwapChainID) = 0;
 	virtual bool				SwapChainExists(UPTR SwapChainID) const = 0;
 	virtual bool				SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;

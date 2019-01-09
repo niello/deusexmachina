@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 project(deusexmachina) # VERSION 0.1.0)
 
 # TODO: make project version work without breaking deps (CMP0048)
+# TODO: exclude platform-specific sources & headers from unsupported platforms,?hide DEM_PLATFORM_WIN32 etc to PRIVATE?
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
@@ -66,6 +67,10 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/DEM/Low/src" FILES ${DEM_L1_LOW_H
 add_library(DEMLow ${DEM_L1_LOW_HEADERS} ${DEM_L1_LOW_SOURCES})
 target_include_directories(DEMLow PUBLIC DEM/Low/src)
 target_link_libraries(DEMLow PUBLIC ${DEM_DEPS_TARGETS})
+if(WIN32)
+	target_compile_definitions(DEMLow PUBLIC DEM_PLATFORM_WIN32=1) # Public because app uses headers. Exclude headers when not Win32!
+	target_link_libraries(DEMLow PUBLIC "UxTheme.lib")
+endif()
 list(APPEND DEM_TARGETS DEMLow)
 
 # DEMGame

@@ -8,10 +8,10 @@
 // Mouse device that processes mouse messages from an OS window.
 // Supports up to 4 axes (x, y and 2 wheels) and up to 6 buttons (L, R, M, X1, X2, any other).
 
-namespace Sys
+namespace DEM { namespace Sys
 {
-	class COSWindow;
-}
+	typedef Ptr<class COSWindow> POSWindow;
+}}
 
 namespace Input
 {
@@ -22,7 +22,7 @@ private:
 
 	static const U8 AxisCount = 4;
 
-	Sys::COSWindow*	pWindow;
+	DEM::Sys::COSWindow*	pWindow;
 	float			AxisSensitivity[AxisCount];
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
@@ -31,7 +31,7 @@ public:
 
 	COSWindowMouse();
 
-	void				Attach(Sys::COSWindow* pOSWindow, U16 Priority);
+	void				Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority);
 
 	virtual EDeviceType	GetType() const { return Dev_Mouse; }
 	virtual U8			GetAxisCount() const { return AxisCount; }

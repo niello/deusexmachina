@@ -7,7 +7,7 @@
 namespace Input
 {
 
-void COSWindowKeyboard::Attach(Sys::COSWindow* pOSWindow, U16 Priority)
+void COSWindowKeyboard::Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority)
 {
 	if (pOSWindow)
 	{

@@ -35,7 +35,7 @@ public:
 
 //	void* operator new (size_t size) { return Pool.Allocate(); }
 //	void* operator new (size_t size, void* Place) { return Place; }
-//#if defined(_DEBUG) && defined(__WIN32__)
+//#if defined(_DEBUG) && DEM_PLATFORM_WIN32
 //	void* operator new (size_t size, const char* File, int Line) { return Pool.Allocate(); }
 //	void* operator new (size_t size, void* Place, const char* File, int Line) { return Place; }
 //#endif

@@ -1,16 +1,48 @@
 #pragma once
-#ifndef __DEM_L1_SYS_OS_WINDOW_H__
-#define __DEM_L1_SYS_OS_WINDOW_H__
+#include <Events/EventDispatcher.h>
+#include <Data/Regions.h>
 
-// Operating system window
+// Operating system window base
 
-#if (defined __WIN32__)
-#include <System/OSWindowWin32.h>
-namespace Sys { class COSWindow: public COSWindowWin32 {}; }
-#else
-#error "COSWindow is not defined for the target OS"
-#endif
+namespace DEM { namespace Sys
+{
+typedef Ptr<class COSWindow> POSWindow;
 
-namespace Sys { typedef Ptr<COSWindow> POSWindow; }
+class COSWindow : public Events::CEventDispatcher, public ::Core::CObject
+{
+protected:
 
-#endif
+	enum
+	{
+		Wnd_Opened = 0x01,
+		Wnd_Minimized = 0x02,
+		Wnd_Topmost = 0x04,
+		Wnd_Fullscreen = 0x08
+	};
+
+	CString			WindowTitle;
+	CString			IconName;
+
+	Data::CRect		Rect;					// Client rect
+	Data::CFlags	Flags;
+
+public:
+
+	virtual bool			SetRect(const Data::CRect& NewRect, bool FullscreenMode = false) = 0;
+	virtual bool			SetInputFocus() = 0;
+
+	virtual COSWindow*		GetParent() const = 0;
+
+	const char*				GetTitle() const { return WindowTitle; }
+	const char*				GetIcon() const { return IconName; }
+	const Data::CRect&		GetRect() const { return Rect; }
+	unsigned int			GetWidth() const { return Rect.W; }
+	unsigned int			GetHeight() const { return Rect.H; }
+	bool					IsChild() const { return !!GetParent(); }
+	bool					IsOpen() const { return Flags.Is(Wnd_Opened); }
+	bool					IsMinimized() const { return Flags.Is(Wnd_Minimized); }
+	bool					IsTopmost() const { return Flags.Is(Wnd_Topmost); }
+	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
+};
+
+}}

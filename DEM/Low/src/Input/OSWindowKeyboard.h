@@ -7,10 +7,10 @@
 
 // Keyboard device that processes keyboard messages from an OS window.
 
-namespace Sys
+namespace DEM { namespace Sys
 {
-	class COSWindow;
-}
+	typedef Ptr<class COSWindow> POSWindow;
+}}
 
 namespace Input
 {
@@ -19,7 +19,7 @@ class COSWindowKeyboard: public IInputDevice
 {
 private:
 
-	Sys::COSWindow*	pWindow;
+	DEM::Sys::COSWindow*	pWindow;
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 
@@ -27,7 +27,7 @@ public:
 
 	COSWindowKeyboard(): pWindow(NULL) {}
 
-	void				Attach(Sys::COSWindow* pOSWindow, U16 Priority);
+	void				Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority);
 
 	virtual EDeviceType	GetType() const { return Dev_Keyboard; }
 	virtual U8			GetAxisCount() const { return 0; }

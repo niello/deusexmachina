@@ -66,9 +66,9 @@ namespace Sys
 	#define n_assert(exp)			do { (void)sizeof(exp); } while(0)
 	#define n_assert2(exp, msg)		do { (void)sizeof(exp); } while(0)
 #else
-	#define n_verify(exp)			do { if (!(exp)) if (Sys::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
-	#define n_assert(exp)			do { if (!(exp)) if (Sys::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
-	#define n_assert2(exp, msg)		do { if (!(exp)) if (Sys::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_verify(exp)			do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_assert(exp)			do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, NULL, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
+	#define n_assert2(exp, msg)		do { if (!(exp)) if (::Sys::ReportAssertionFailure(#exp, msg, __FILE__, __LINE__, __FUNCTION__)) __debugbreak(); } while(0)
 #endif
 
 #ifdef _DEBUG
@@ -83,8 +83,8 @@ namespace Sys
 	#define DBG_ONLY(call)
 #endif
 
-#define NOT_IMPLEMENTED				do { Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n"); } while(0)
-#define NOT_IMPLEMENTED_MSG(msg)	do { Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n" ## msg ## "\n"); } while(0)
+#define NOT_IMPLEMENTED				do { ::Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n"); } while(0)
+#define NOT_IMPLEMENTED_MSG(msg)	do { ::Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n" ## msg ## "\n"); } while(0)
 
 #endif
 

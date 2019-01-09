@@ -131,7 +131,7 @@ protected:
 	void						ApplyShaderConstChanges();
 	UPTR						InternalDraw(const CPrimitiveGroup& PrimGroup);
 
-	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
+	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, HWND hWnd, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	static D3DDEVTYPE			GetD3DDriverType(EGPUDriverType DriverType);
 	static void					GetUsagePool(UPTR InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
@@ -157,7 +157,7 @@ public:
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const;
 	virtual UPTR				GetMaxMultipleRenderTargetCount() const { return CurrRT.GetCount(); }
 
-	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow);
+	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow);
 	virtual bool				DestroySwapChain(UPTR SwapChainID);
 	virtual bool				SwapChainExists(UPTR SwapChainID) const;
 	virtual bool				ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height);

@@ -274,11 +274,12 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/System/Memory.h
 	DEM/Low/src/System/OSWindow.h
 	DEM/Low/src/System/OSWindowClass.h
-	DEM/Low/src/System/OSWindowClassWin32.h
-	DEM/Low/src/System/OSWindowWin32.h
+	DEM/Low/src/System/Platform.h
 	DEM/Low/src/System/System.h
 	DEM/Low/src/System/Allocators/PoolAllocator.h
 	DEM/Low/src/System/Events/OSInput.h
+	DEM/Low/src/System/Win32/OSWindowWin32.h
+	DEM/Low/src/System/Win32/PlatformWin32.h
 	DEM/Low/src/UI/RenderPhaseGUI.h
 	DEM/Low/src/UI/UIContext.h
 	DEM/Low/src/UI/UIFwd.h
@@ -504,11 +505,11 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/SI/SIGlobals.cpp
 	DEM/Low/src/SI/SITime.cpp
 	DEM/Low/src/System/Memory.cpp
-	DEM/Low/src/System/OSWindowClassWin32.cpp
-	DEM/Low/src/System/OSWindowWin32.cpp
 	DEM/Low/src/System/System.cpp
-	DEM/Low/src/System/SystemWin32.cpp
 	DEM/Low/src/System/Events/OSInput.cpp
+	DEM/Low/src/System/Win32/OSWindowWin32.cpp
+	DEM/Low/src/System/Win32/PlatformWin32.cpp
+	DEM/Low/src/System/Win32/SystemWin32.cpp
 	DEM/Low/src/UI/RenderPhaseGUI.cpp
 	DEM/Low/src/UI/UIContext.cpp
 	DEM/Low/src/UI/UIServer.cpp

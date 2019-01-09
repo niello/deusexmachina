@@ -16,7 +16,7 @@ CIOServer::CIOServer(): Assigns(32)
 	__ConstructSingleton;
 
 	//!!!move to app!
-#ifdef __WIN32__
+#if DEM_PLATFORM_WIN32
 	DefaultFS = n_new(CFileSystemWin32);
 #else
 #error "Default FS for the target OS not defined"

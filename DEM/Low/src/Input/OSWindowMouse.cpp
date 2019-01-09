@@ -16,7 +16,7 @@ COSWindowMouse::COSWindowMouse(): pWindow(NULL)
 }
 //---------------------------------------------------------------------
 
-void COSWindowMouse::Attach(Sys::COSWindow* pOSWindow, U16 Priority)
+void COSWindowMouse::Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority)
 {
 	if (pOSWindow)
 	{

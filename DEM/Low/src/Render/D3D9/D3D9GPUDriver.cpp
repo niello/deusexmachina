@@ -17,7 +17,7 @@
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <IO/Stream.h>
-#include <System/OSWindow.h>
+#include <System/Win32/OSWindowWin32.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
@@ -814,8 +814,8 @@ UPTR CD3D9GPUDriver::GetMaxTextureSize(ETextureType Type) const
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc,
-										  const Sys::COSWindow* pWindow, D3DPRESENT_PARAMETERS& D3DPresentParams) const
+void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, HWND hWnd,
+										  D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
 	D3DPresentParams.Flags = 0;
 
@@ -842,7 +842,7 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDes
 		D3DPresentParams.MultiSampleQuality = 0;
 	}
 
-	D3DPresentParams.hDeviceWindow = pWindow->GetHWND();
+	D3DPresentParams.hDeviceWindow = hWnd;
 	D3DPresentParams.BackBufferCount = BackBufferCount; //!!!N3 always sets 1 in windowed mode! why?
 	D3DPresentParams.EnableAutoDepthStencil = FALSE;
 	D3DPresentParams.AutoDepthStencilFormat = D3DFMT_UNKNOWN;
@@ -863,7 +863,8 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDes
 
 bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
-	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, SC.TargetWindow, D3DPresentParams);
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.GetUnsafe());
+	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	if (SC.IsFullscreen())
 	{
@@ -1069,10 +1070,17 @@ void CD3D9GPUDriver::SetDefaultSamplers()
 //---------------------------------------------------------------------
 
 // If device exists, creates additional swap chain. If device does not exist, creates a device with an implicit swap chain.
-int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
+int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow)
 {
 	n_assert2(!BackBufferDesc.UseAsShaderInput, "D3D9 backbuffer reading in shaders currently not supported!");
-	n_assert(pWindow);
+
+	if (!pWindow || !pWindow->IsA<DEM::Sys::COSWindowWin32>())
+	{
+		n_assert2(false, "CD3D9GPUDriver::CreateSwapChain() > invalid or unsupported window passed");
+		return -1;
+	}
+
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(pWindow);
 
 	//???or destroy and recreate with new params?
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
@@ -1082,7 +1090,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 	PrepareWindowAndBackBufferSize(*pWindow, BBWidth, BBHeight);
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(BackBufferDesc, SwapChainDesc, pWindow, D3DPresentParams);
+	FillD3DPresentParams(BackBufferDesc, SwapChainDesc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
 	D3DPresentParams.BackBufferWidth = BBWidth;
@@ -1279,7 +1287,8 @@ bool CD3D9GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDispl
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, SC.TargetWindow, D3DPresentParams);
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.GetUnsafe());
+	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	D3DPresentParams.Windowed = FALSE;
 	D3DPresentParams.BackBufferWidth = pMode->Width;
@@ -1329,7 +1338,8 @@ bool CD3D9GPUDriver::SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWind
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, SC.TargetWindow, D3DPresentParams);
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.GetUnsafe());
+	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
 	D3DPresentParams.BackBufferWidth = SC.LastWindowRect.W;
@@ -3524,7 +3534,7 @@ bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMU
 
 bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
@@ -3540,7 +3550,7 @@ bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, co
 
 bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
@@ -3560,7 +3570,7 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 
 bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
@@ -3578,7 +3588,7 @@ bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispa
 bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 #ifdef _DEBUG // Check that it is fullscreen and SC is implicit
-	Sys::COSWindow* pWnd = (Sys::COSWindow*)pDispatcher;
+	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
 	Sys::DbgOut("CD3D9GPUDriver::OnOSWindowPaint() from %s\n", pWnd->GetTitle());
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{

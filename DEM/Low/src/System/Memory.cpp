@@ -1,4 +1,4 @@
-#if defined(__WIN32__) || defined(DOXYGEN)
+#if DEM_PLATFORM_WIN32
 
 #include "Memory.h"
 

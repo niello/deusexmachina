@@ -5,7 +5,7 @@
 // Operating system window class. Window class is a template for possibly
 // multiple window instances. Store shared properties here.
 
-#if (defined __WIN32__)
+#if DEM_PLATFORM_WIN32
 #include <System/OSWindowClassWin32.h>
 namespace Sys { class COSWindowClass: public COSWindowClassWin32 {}; }
 #else

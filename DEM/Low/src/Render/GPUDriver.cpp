@@ -7,7 +7,7 @@
 namespace Render
 {
 
-void CGPUDriver::PrepareWindowAndBackBufferSize(Sys::COSWindow& Window, UINT& Width, UINT& Height)
+void CGPUDriver::PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32& Width, U32& Height)
 {
 	// Zero Width or Height means backbuffer matching window or display size.
 	// But if at least one of these values specified, we should adjst window size.
