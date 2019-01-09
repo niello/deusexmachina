@@ -24,7 +24,7 @@ protected:
 	HINSTANCE			hInst;
 	ATOM				aWndClass;
 
-	static LONG WINAPI	WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	static LONG WINAPI	WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 public:
 

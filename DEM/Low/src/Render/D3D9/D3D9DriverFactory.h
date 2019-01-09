@@ -24,7 +24,6 @@ class CD3D9DriverFactory: public CVideoDriverFactory
 protected:
 
 	IDirect3D9*		pD3D9;
-	Sys::COSWindow*	pFocusWindow;	// Focus window for fullscreen responses, see device creation
 	UPTR			AdapterCount;	// Valid during a lifetime of the D3D9 object
 
 public:
@@ -40,7 +39,7 @@ public:
 	static UPTR				D3DFormatStencilBits(D3DFORMAT D3DFormat);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE MultiSampleType, UPTR MultiSampleQuality);
 
-	bool					Open(Sys::COSWindow* pWindow);
+	bool					Open();
 	void					Close();
 	bool					IsOpened() const { return !!pD3D9; }
 
@@ -53,7 +52,6 @@ public:
 	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
 	IDirect3D9*				GetDirect3D9() const { return pD3D9; }
-	Sys::COSWindow*			GetFocusWindow() const { return pFocusWindow; }
 };
 
 typedef Ptr<CD3D9DriverFactory> PD3D9DriverFactory;

@@ -907,10 +907,12 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 		D3DCREATE_SOFTWARE_VERTEXPROCESSING);
 #endif
 
-	// NB: May fail if can't create requested number of backbuffers
+	// NB: May fail if can't create requested number of backbuffers.
+	// hDeviceWindow must be top-level for a fillscreen mode, and we
+	// never go fullscreen from child windows.
 	HRESULT hr = pD3D9->CreateDevice(CurrAdapterID,
 									D3DDriverType,
-									D3D9DrvFactory->GetFocusWindow()->GetHWND(),
+									D3DPresentParams.hDeviceWindow,
 									BhvFlags,
 									&D3DPresentParams,
 									&pD3DDevice);
@@ -1070,19 +1072,17 @@ void CD3D9GPUDriver::SetDefaultSamplers()
 int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
 	n_assert2(!BackBufferDesc.UseAsShaderInput, "D3D9 backbuffer reading in shaders currently not supported!");
-
-	Sys::COSWindow* pWnd = pWindow ? pWindow : D3D9DrvFactory->GetFocusWindow();
-	n_assert(pWnd);
+	n_assert(pWindow);
 
 	//???or destroy and recreate with new params?
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
-		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd) return ERR_CREATION_ERROR;
+		if (SwapChains[i].TargetWindow.GetUnsafe() == pWindow) return ERR_CREATION_ERROR;
 
 	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
-	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
+	PrepareWindowAndBackBufferSize(*pWindow, BBWidth, BBHeight);
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	FillD3DPresentParams(BackBufferDesc, SwapChainDesc, pWnd, D3DPresentParams);
+	FillD3DPresentParams(BackBufferDesc, SwapChainDesc, pWindow, D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
 	D3DPresentParams.BackBufferWidth = BBWidth;
@@ -1159,15 +1159,15 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 		return ERR_CREATION_ERROR;
 	}
 
-	ItSC->TargetWindow = pWnd;
-	ItSC->LastWindowRect = pWnd->GetRect();
+	ItSC->TargetWindow = pWindow;
+	ItSC->LastWindowRect = pWindow->GetRect();
 	ItSC->TargetDisplay = NULL;
 	ItSC->Desc = SwapChainDesc;
 
-	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
-	pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
+	pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
+	pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
 	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		pWnd->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
+		pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -3566,8 +3566,8 @@ bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispa
 		CD3D9SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
 		{
-			if (SC.IsFullscreen()) n_assert(SwitchToWindowed(i));
-			else n_assert(SwitchToFullscreen(i));
+			if (SC.IsFullscreen()) n_verify(SwitchToWindowed(i));
+			else n_verify(SwitchToFullscreen(i));
 			OK;
 		}
 	}

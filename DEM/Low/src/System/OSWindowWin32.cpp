@@ -50,6 +50,7 @@ bool COSWindowWin32::Open()
 	{
 		WndStyle = STYLE_CHILD;
 		::GetClientRect(pParent->GetHWND(), &r);
+		Flags.Clear(Wnd_Fullscreen);
 	}
 	else
 	{
@@ -176,14 +177,14 @@ void COSWindowWin32::SetTitle(const char* pTitle)
 }
 //---------------------------------------------------------------------
 
-// Changes class icon, but needs hWnd, so placed here
 void COSWindowWin32::SetIcon(const char* pIconName)
 {
 	IconName = pIconName;
 	if (hWnd && IconName.IsValid())
 	{
+		//???delete prev icon?
 		HICON hIcon = ::LoadIcon(WndClass->GetWin32HInstance(), IconName.CStr());
-		if (hIcon) ::SetClassLongPtr(hWnd, GCLP_HICON, (LONG_PTR)hIcon);
+		if (hIcon) ::SendMessage(hWnd, WM_SETICON, ICON_BIG, (LONG_PTR)hIcon);
 	}
 }
 //---------------------------------------------------------------------
@@ -282,7 +283,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			switch (LOWORD(wParam))
 			{
 				case ACCEL_TOGGLEFULLSCREEN:
-					FireEvent(CStrID("OnToggleFullscreen"));
+					if (!pParent) FireEvent(CStrID("OnToggleFullscreen"));
 					break;
 			}
 			break;

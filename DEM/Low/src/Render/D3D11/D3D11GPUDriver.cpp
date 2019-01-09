@@ -379,15 +379,14 @@ UPTR CD3D11GPUDriver::GetMaxTextureSize(ETextureType Type) const
 
 int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, Sys::COSWindow* pWindow)
 {
-	Sys::COSWindow* pWnd = pWindow; //???the same as for D3D9? - pWindow ? pWindow : D3D11DrvFactory->GetFocusWindow();
-	n_assert(pWnd);
+	n_assert(pWindow);
 
 	//???or destroy and recreate with new params?
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
-		if (SwapChains[i].TargetWindow.GetUnsafe() == pWnd) return ERR_CREATION_ERROR;
+		if (SwapChains[i].TargetWindow.GetUnsafe() == pWindow) return ERR_CREATION_ERROR;
 
 	UPTR BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
-	PrepareWindowAndBackBufferSize(*pWnd, BBWidth, BBHeight);
+	PrepareWindowAndBackBufferSize(*pWindow, BBWidth, BBHeight);
 
 	// If VSync, use triple buffering by default, else double //!!! + 1 if front buffer must be included!
 	UPTR BackBufferCount = SwapChainDesc.BackBufferCount ?
@@ -432,7 +431,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	SCDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	if (BackBufferDesc.UseAsShaderInput) SCDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
 	SCDesc.Windowed = TRUE; // Recommended, use SwitchToFullscreen()
-	SCDesc.OutputWindow = pWnd->GetHWND();
+	SCDesc.OutputWindow = pWindow->GetHWND();
 	SCDesc.Flags = 0; //DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH; // Allows automatic display mode switch on wnd->fullscr
 
 	if (SCDesc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD)
@@ -481,18 +480,18 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 		return ERR_CREATION_ERROR;
 	}
 
-	ItSC->TargetWindow = pWnd;
-	ItSC->LastWindowRect = pWnd->GetRect();
+	ItSC->TargetWindow = pWindow;
+	ItSC->LastWindowRect = pWindow->GetRect();
 	ItSC->TargetDisplay = NULL;
 	ItSC->Desc = SwapChainDesc;
 
 	//DXGI_MWA_NO_WINDOW_CHANGES, DXGI_MWA_NO_ALT_ENTER
-	pDXGIFactory->MakeWindowAssociation(pWnd->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES);
+	pDXGIFactory->MakeWindowAssociation(pWindow->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES);
 
-	pWnd->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
-	pWnd->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
+	pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
+	pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
 	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		pWnd->Subscribe<CD3D11GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D11GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
+		pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnSizeChanged"), this, &CD3D11GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -3557,8 +3556,8 @@ bool CD3D11GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDisp
 		CD3D11SwapChain& SC = SwapChains[i];
 		if (SC.TargetWindow.GetUnsafe() == pWnd)
 		{
-			if (SC.IsFullscreen()) n_assert(SwitchToWindowed(i));
-			else n_assert(SwitchToFullscreen(i));
+			if (SC.IsFullscreen()) n_verify(SwitchToWindowed(i));
+			else n_verify(SwitchToFullscreen(i));
 			OK;
 		}
 	}

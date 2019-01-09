@@ -7,7 +7,7 @@
 namespace Sys
 {
 
-LONG WINAPI COSWindowClassWin32::WinProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+LONG WINAPI COSWindowClassWin32::WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLong(hWnd, 0);
 	LONG Result = 0;
@@ -30,17 +30,17 @@ bool COSWindowClassWin32::Create(const char* pClassName, const char* pIconName)
 	WNDCLASSEX WndClass;
 	memset(&WndClass, 0, sizeof(WndClass));
 	WndClass.cbSize        = sizeof(WndClass);
-	WndClass.style         = CS_DBLCLKS;
-	WndClass.lpfnWndProc   = WinProc;
+	WndClass.style         = CS_DBLCLKS; // | CS_HREDRAW | CS_VREDRAW;
+	WndClass.lpfnWndProc   = WindowProc;
 	WndClass.cbClsExtra    = 0;
 	WndClass.cbWndExtra    = sizeof(void*); // used to hold 'this' pointer
 	WndClass.hInstance     = hInst;
 	WndClass.hIcon         = hIcon;
+	WndClass.hIconSm       = NULL; // set it too?
 	WndClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
 	WndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 	WndClass.lpszMenuName  = NULL;
 	WndClass.lpszClassName = Name.CStr();
-	WndClass.hIconSm       = NULL;
 	aWndClass = ::RegisterClassEx(&WndClass);
 	return !!aWndClass;
 }

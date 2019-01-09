@@ -12,12 +12,10 @@ namespace Render
 __ImplementClassNoFactory(Render::CD3D9DriverFactory, Render::CVideoDriverFactory);
 __ImplementSingleton(Render::CD3D9DriverFactory);
 
-bool CD3D9DriverFactory::Open(Sys::COSWindow* pWindow)
+bool CD3D9DriverFactory::Open()
 {
-	if (!pWindow) FAIL;
 	pD3D9 = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!pD3D9) FAIL;
-	pFocusWindow = pWindow;
 	AdapterCount = pD3D9->GetAdapterCount();
 	OK;
 }
