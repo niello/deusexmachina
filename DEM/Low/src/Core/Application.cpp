@@ -69,6 +69,9 @@ bool CApplication::Update()
 	// Update current application state
 	// ...
 
+	//!!!DBG TMP!
+	if (Exiting) FAIL;
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -77,6 +80,32 @@ void CApplication::Close()
 {
 	//???here or in destructor?
 	if (Events::CEventServer::HasInstance()) n_delete(EventSrv);
+}
+//---------------------------------------------------------------------
+
+void CApplication::ExitOnWindowClosed(Sys::COSWindow* pWindow)
+{
+	if (pWindow)
+	{
+		DISP_SUBSCRIBE_PEVENT(pWindow, OnClosing, CApplication, OnMainWindowClosing);
+	}
+	else
+	{
+		UNSUBSCRIBE_EVENT(OnClosing);
+	}
+}
+//---------------------------------------------------------------------
+
+bool CApplication::OnMainWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	UNSUBSCRIBE_EVENT(OnClosing);
+
+	//FSM.RequestState(CStrID::Empty);
+
+	//!!!DBG TMP!
+	Exiting = true;
+
+	OK;
 }
 //---------------------------------------------------------------------
 

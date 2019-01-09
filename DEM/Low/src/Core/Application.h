@@ -2,6 +2,7 @@
 //#include <Data/Singleton.h>
 #include <Data/Ptr.h>
 #include <Data/Array.h>
+#include <Events/EventsFwd.h>
 //#include <vector>
 
 // DEM application base class. Application serves as a state machine,
@@ -48,6 +49,11 @@ protected:
 	double FrameTime = 0.0;
 	float TimeScale = 1.f;
 
+	//!!!DBG TMP! Will be state!
+	bool Exiting = false;
+
+	DECLARE_EVENT_HANDLER(OnClosing, OnMainWindowClosing);
+
 public:
 
 	CApplication(Sys::IPlatform& _Platform);
@@ -61,6 +67,8 @@ public:
 
 	//allow multiple instances
 	//exit when last window closed
+
+	void ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
 	Sys::POSWindow CreateRenderWindow(); // bool close app on close this window?
