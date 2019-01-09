@@ -13,7 +13,7 @@ public:
 
 	virtual double GetSystemTime() const = 0; // In seconds
 
-	virtual POSWindow CreateGUIWindow(const char* pTitle, const char* pIconName) = 0;
+	virtual POSWindow CreateGUIWindow() = 0;
 	//virtual POSConsoleWindow CreateConsoleWindow() = 0;
 
 	virtual void Update() = 0;

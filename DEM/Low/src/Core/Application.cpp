@@ -1,5 +1,7 @@
 #include "Application.h"
 
+#include <Events/EventServer.h>
+#include <Math/Math.h>
 #include <System/Platform.h>
 #include <System/Win32/OSWindowWin32.h>
 
@@ -9,6 +11,11 @@ namespace DEM { namespace Core
 CApplication::CApplication(Sys::IPlatform& _Platform)
 	: Platform(_Platform)
 {
+	//???move RNG instance to an application? pass system time inside?
+	Math::InitRandomNumberGenerator();
+
+	// create default file system from platform
+	// setup hard assigns from platform and application
 }
 //---------------------------------------------------------------------
 
@@ -17,7 +24,7 @@ Sys::POSWindow CApplication::CreateRenderWindow()
 	//!!!DBG TMP! fix title & icon!
 	//???subscribe on destroying / closing?
 	//???pass size here to create in a final size?
-	auto Wnd = Platform.CreateGUIWindow("TestWnd", nullptr);
+	auto Wnd = Platform.CreateGUIWindow();
 	//Windows.Add(Wnd);
 	return Wnd;
 }
@@ -25,6 +32,9 @@ Sys::POSWindow CApplication::CreateRenderWindow()
 
 bool CApplication::Run()
 {
+	//???here or in constructor?
+	n_new(Events::CEventServer);
+
 	BaseTime = Platform.GetSystemTime();
 	PrevTime = BaseTime;
 	FrameTime = 0.0;
@@ -56,12 +66,17 @@ bool CApplication::Update()
 
 	// ...
 
+	// Update current application state
+	// ...
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CApplication::Close()
 {
+	//???here or in destructor?
+	if (Events::CEventServer::HasInstance()) n_delete(EventSrv);
 }
 //---------------------------------------------------------------------
 

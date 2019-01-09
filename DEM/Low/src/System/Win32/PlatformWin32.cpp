@@ -42,7 +42,7 @@ LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 }
 //---------------------------------------------------------------------
 
-POSWindow CPlatformWin32::CreateGUIWindow(const char* pTitle, const char* pIconName)
+POSWindow CPlatformWin32::CreateGUIWindow()
 {
 	if (!aGUIWndClass)
 	{
@@ -66,15 +66,7 @@ POSWindow CPlatformWin32::CreateGUIWindow(const char* pTitle, const char* pIconN
 	}
 
 	POSWindowWin32 Wnd = n_new(COSWindowWin32(hInst, aGUIWndClass));
-	if (!Wnd->GetHWND()) return nullptr;
-
-	//???here or in app? is a base window interface part?
-	Wnd->SetTitle(pTitle);
-	Wnd->SetIcon(pIconName);
-	//Wnd->SetRect(Data::CRect(50, 50, 1024, 768));
-	//Wnd->Open();
-
-	return Wnd.GetUnsafe();
+	return Wnd->GetHWND() ? Wnd.GetUnsafe() : nullptr;
 }
 //---------------------------------------------------------------------
 

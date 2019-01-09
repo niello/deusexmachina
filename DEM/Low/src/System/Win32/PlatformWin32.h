@@ -25,13 +25,12 @@ public:
 
 	virtual double GetSystemTime() const override;
 
-	virtual POSWindow CreateGUIWindow(const char* pTitle, const char* pIconName) override;
-	//virtual POSConsoleWindow CreateConsoleWindow() override;
+	virtual POSWindow CreateGUIWindow() override;
+	//virtual POSConsoleWindow CreateConsoleWindow() override; // AllocConsole, SetConsoleTitle etc
 
 	virtual void Update() override;
 };
 
-}
-};
+}}
 
 #endif

@@ -26,22 +26,25 @@ public:
 	COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin32* pParentWnd = nullptr);
 	~COSWindowWin32();
 
+	virtual void			SetTitle(const char* pTitle) override;
+	virtual void			SetIcon(const char* pIconName) override;
 	virtual bool			SetRect(const Data::CRect& NewRect, bool FullscreenMode = false) override;
 	virtual bool			SetInputFocus() override;
 
-	virtual COSWindow*		GetParent() const override { return pParent; }
+	virtual bool			Show() override;
+	virtual bool			Hide() override;
+	virtual void			Close() override;
 
-	bool					Open();
-	void					Close();
+	virtual bool			IsValid() const override { return !!hWnd; }
+	virtual COSWindow*		GetParent() const override { return pParent; }
+	virtual CString			GetTitle() const override;
+
 	void					Minimize();
 	void					Restore();
 	bool					HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result); // Mainly for internal use
 
 	bool					GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
 	bool					GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;
-
-	void					SetTitle(const char* pTitle);
-	void					SetIcon(const char* pIconName);
 
 	bool					SetTopmost(bool Topmost);
 

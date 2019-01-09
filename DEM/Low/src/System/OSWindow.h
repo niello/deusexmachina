@@ -12,15 +12,14 @@ class COSWindow : public Events::CEventDispatcher, public ::Core::CObject
 {
 protected:
 
+	//!!!make booleans!
 	enum
 	{
-		Wnd_Opened = 0x01,
 		Wnd_Minimized = 0x02,
 		Wnd_Topmost = 0x04,
 		Wnd_Fullscreen = 0x08
 	};
 
-	CString			WindowTitle;
 	CString			IconName;
 
 	Data::CRect		Rect;					// Client rect
@@ -28,18 +27,26 @@ protected:
 
 public:
 
+	virtual void			SetTitle(const char* pTitle) = 0;
+	virtual void			SetIcon(const char* pIconName) = 0;
 	virtual bool			SetRect(const Data::CRect& NewRect, bool FullscreenMode = false) = 0;
 	virtual bool			SetInputFocus() = 0;
 
-	virtual COSWindow*		GetParent() const = 0;
+	virtual bool			Show() = 0;
+	virtual bool			Hide() = 0;
+	virtual void			Close() = 0;
 
-	const char*				GetTitle() const { return WindowTitle; }
+	virtual bool			IsValid() const = 0;
+	virtual COSWindow*		GetParent() const = 0;
+	virtual CString			GetTitle() const = 0;
+
+	bool					IsChild() const { return !!GetParent(); }
+
+	//???what is virtual, what is not? make it a pure interface?
 	const char*				GetIcon() const { return IconName; }
 	const Data::CRect&		GetRect() const { return Rect; }
 	unsigned int			GetWidth() const { return Rect.W; }
 	unsigned int			GetHeight() const { return Rect.H; }
-	bool					IsChild() const { return !!GetParent(); }
-	bool					IsOpen() const { return Flags.Is(Wnd_Opened); }
 	bool					IsMinimized() const { return Flags.Is(Wnd_Minimized); }
 	bool					IsTopmost() const { return Flags.Is(Wnd_Topmost); }
 	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }

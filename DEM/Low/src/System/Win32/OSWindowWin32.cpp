@@ -47,7 +47,7 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 	}
 
 	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
-		(const char*)(DWORD_PTR)aWndClass, WindowTitle.CStr(), WndStyle,
+		(const char*)(DWORD_PTR)aWndClass, "", WndStyle,
 		r.left, r.top, r.right - r.left, r.bottom - r.top,
 		pParentWnd ? pParentWnd->GetHWND() : NULL, NULL, hInstance, NULL);
 
@@ -81,6 +81,8 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 	// Set to initial state
 	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
+
+	FireEvent(CStrID("OnOpened"));
 }
 //---------------------------------------------------------------------
 
@@ -96,55 +98,56 @@ COSWindowWin32::~COSWindowWin32()
 }
 //---------------------------------------------------------------------
 
-//!!!Open, Close -> Show, Hide, Destroy!
-//???open = ::ShowWindow(hWnd, SW_SHOWDEFAULT)? Close = destroy window? don't create in constructor?
-//need to close manually even if references are left, without resurrection possibility!
-
-bool COSWindowWin32::Open()
+bool COSWindowWin32::Show()
 {
-	if (!hWnd) FAIL;
+	n_assert_dbg(hWnd);
+	if (!hWnd || ::ShowWindow(hWnd, SW_SHOW) == FALSE) FAIL;
 
-	if (Flags.Is(Wnd_Opened)) OK;
+	//???need to redraw frame right now?
+	//::UpdateWindow(hWnd);
+	// or
+	//::RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE | RDW_INTERNALPAINT | RDW_UPDATENOW);
 
-	::ShowWindow(hWnd, SW_SHOWDEFAULT);
+	// event, state?
 
-	Flags.Set(Wnd_Opened);
+	OK;
+}
+//---------------------------------------------------------------------
 
-	FireEvent(CStrID("OnOpened"));
-
+bool COSWindowWin32::Hide()
+{
+	n_assert_dbg(hWnd);
+	if (!hWnd || ::ShowWindow(hWnd, SW_HIDE) == FALSE) FAIL;
+	// event, state?
 	OK;
 }
 //---------------------------------------------------------------------
 
 void COSWindowWin32::Close()
 {
-	if (!Flags.Is(Wnd_Opened)) return;
-	::SendMessage(hWnd, WM_CLOSE, 0, 0);
+	if (hWnd) ::SendMessage(hWnd, WM_CLOSE, 0, 0);
 }
 //---------------------------------------------------------------------
 
 void COSWindowWin32::Minimize()
 {
-	n_assert_dbg(hWnd && Flags.Is(Wnd_Opened));
-	if (!Flags.Is(Wnd_Minimized) && !pParent)
+	n_assert_dbg(hWnd);
+	if (hWnd && !Flags.Is(Wnd_Minimized) && !pParent)
 		::ShowWindow(hWnd, SW_MINIMIZE);
 }
 //---------------------------------------------------------------------
 
 void COSWindowWin32::Restore()
 {
-	n_assert_dbg(hWnd && Flags.Is(Wnd_Opened));
-	::ShowWindow(hWnd, SW_RESTORE);
+	n_assert_dbg(hWnd);
+	if (hWnd) ::ShowWindow(hWnd, SW_RESTORE);
 }
 //---------------------------------------------------------------------
 
 bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 {
-	if (!hWnd)
-	{
-		Rect = NewRect;
-		OK;
-	}
+	n_assert_dbg(hWnd);
+	if (!hWnd) FAIL;
 
 	//???set empty rect values to default? zero w & h at least.
 
@@ -179,8 +182,23 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 
 void COSWindowWin32::SetTitle(const char* pTitle)
 {
-	WindowTitle = pTitle;
+	n_assert_dbg(hWnd);
 	if (hWnd) ::SetWindowText(hWnd, pTitle);
+}
+//---------------------------------------------------------------------
+
+CString COSWindowWin32::GetTitle() const
+{
+	CString Out;
+	if (!hWnd) return Out;
+
+	const int Len = ::GetWindowTextLength(hWnd) + 1;
+	Out.Reserve(Len);
+	char* pBuf = n_new_array(char, Len);
+	::GetWindowText(hWnd, pBuf, Len);
+	Out = pBuf;
+	n_delete_array(pBuf);
+	return Out;
 }
 //---------------------------------------------------------------------
 
@@ -395,7 +413,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			OK;
 
 		case WM_DESTROY:
-			Flags.Clear(Wnd_Opened);
 			FireEvent(CStrID("OnClosed"));
 			hWnd = NULL;
 			Result = 0;

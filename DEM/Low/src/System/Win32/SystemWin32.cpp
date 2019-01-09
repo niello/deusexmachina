@@ -20,14 +20,14 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 	// Find app window, and minimize it. This is necessary when in fullscreen mode, otherwise
 	// the message box may not be visible.
 	//???Use D3D device DialogBoxMode? or externally before calling this?
-	HWND hWnd = GetForegroundWindow(); //???GetActiveWindow [ + GetParent()]?
-	if (hWnd) ShowWindow(hWnd, SW_MINIMIZE);
+	HWND hWnd = ::GetForegroundWindow(); //???GetActiveWindow [ + GetParent()]?
+	if (hWnd) ::ShowWindow(hWnd, SW_MINIMIZE);
 
 	char HeaderBuf[256];
 	if (!pHeaderText)
 	{
-		if (!hWnd) hWnd = GetActiveWindow();
-		pHeaderText = (hWnd && GetWindowText(hWnd, HeaderBuf, sizeof(HeaderBuf)) > 0) ? HeaderBuf : "";
+		if (!hWnd) hWnd = ::GetActiveWindow();
+		pHeaderText = (hWnd && ::GetWindowText(hWnd, HeaderBuf, sizeof(HeaderBuf)) > 0) ? HeaderBuf : "";
 	}
 
 	UINT BoxType = MB_APPLMODAL | MB_SETFOREGROUND | MB_TOPMOST;
@@ -47,7 +47,7 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 		default:									BoxType |= MB_OK; break;
 	}
 
-	int Ret = MessageBox(NULL, pMessage, pHeaderText, BoxType);
+	int Ret = ::MessageBox(NULL, pMessage, pHeaderText, BoxType);
 
 	switch (Ret)
 	{
