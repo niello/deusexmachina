@@ -29,7 +29,7 @@ protected:
 public:
 
 	CD3D9DriverFactory(): pD3D9(NULL), AdapterCount(0) { __ConstructSingleton; }
-	virtual ~CD3D9DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
+	virtual ~CD3D9DriverFactory() { if (IsOpened()) Release(); __DestructSingleton; }
 
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
 	static EPixelFormat		D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
@@ -39,8 +39,8 @@ public:
 	static UPTR				D3DFormatStencilBits(D3DFORMAT D3DFormat);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(D3DMULTISAMPLE_TYPE MultiSampleType, UPTR MultiSampleQuality);
 
-	bool					Open();
-	void					Close();
+	virtual bool			Create() override;
+	virtual void			Release() override;
 	bool					IsOpened() const { return !!pD3D9; }
 
 	virtual bool			AdapterExists(UPTR Adapter) const { return Adapter < AdapterCount; }

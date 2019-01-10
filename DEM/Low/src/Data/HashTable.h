@@ -110,7 +110,10 @@ inline CHashTable<TKey, TVal>::CHashTable(UPTR Capacity): Chains(Capacity), Coun
 {
 	// Since collision is more of exception, set grow size to 1 to economy memory
 	for (UPTR i = 0; i < Chains.GetCount(); ++i)
+	{
+		Chains[i].SetKeepOrder(true);
 		Chains[i].SetGrowSize(1);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -121,6 +124,11 @@ void CHashTable<TKey, TVal>::Grow(UPTR NewCapacity)
 	CChain Tmp;
 	CopyToArray(Tmp);
 	Chains.SetSize(NewCapacity);
+	for (UPTR i = 0; i < Chains.GetCount(); ++i)
+	{
+		Chains[i].SetKeepOrder(true);
+		Chains[i].SetGrowSize(1);
+	}
 	for (UPTR i = 0; i < Tmp.GetCount(); ++i) Add(Tmp[i]);
 }
 //---------------------------------------------------------------------

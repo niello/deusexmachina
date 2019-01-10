@@ -12,8 +12,10 @@ namespace Render
 __ImplementClassNoFactory(Render::CD3D9DriverFactory, Render::CVideoDriverFactory);
 __ImplementSingleton(Render::CD3D9DriverFactory);
 
-bool CD3D9DriverFactory::Open()
+bool CD3D9DriverFactory::Create()
 {
+	Release();
+
 	pD3D9 = Direct3DCreate9(D3D_SDK_VERSION);
 	if (!pD3D9) FAIL;
 	AdapterCount = pD3D9->GetAdapterCount();
@@ -21,7 +23,7 @@ bool CD3D9DriverFactory::Open()
 }
 //---------------------------------------------------------------------
 
-void CD3D9DriverFactory::Close()
+void CD3D9DriverFactory::Release()
 {
 	AdapterCount = 0;
 	SAFE_RELEASE(pD3D9);

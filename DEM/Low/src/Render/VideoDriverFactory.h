@@ -47,15 +47,10 @@ public:
 		bool	IsSoftware;
 	};
 
-protected:
-
-	//???default/focus window? or D3D-only?
-
-public:
-
-	CVideoDriverFactory() { }
 	virtual ~CVideoDriverFactory() { }
 
+	virtual bool			Create() = 0;
+	virtual void			Release() = 0;
 	virtual bool			AdapterExists(UPTR Adapter) const = 0;
 	virtual UPTR			GetAdapterCount() const = 0;
 	virtual bool			GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) const = 0;

@@ -24,7 +24,7 @@ protected:
 public:
 
 	COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin32* pParentWnd = nullptr);
-	~COSWindowWin32();
+	virtual ~COSWindowWin32();
 
 	virtual void			SetTitle(const char* pTitle) override;
 	virtual void			SetIcon(const char* pIconName) override;

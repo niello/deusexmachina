@@ -4,6 +4,7 @@ project(deusexmachina) # VERSION 0.1.0)
 
 # TODO: make project version work without breaking deps (CMP0048)
 # TODO: exclude platform-specific sources & headers from unsupported platforms,?hide DEM_PLATFORM_WIN32 etc to PRIVATE?
+# TODO: conditional addition of Win32, D3D9, D3D11 sources, headers & libs
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set_property(DIRECTORY PROPERTY VS_STARTUP_PROJECT "DEMRPG")
@@ -69,7 +70,9 @@ target_include_directories(DEMLow PUBLIC DEM/Low/src)
 target_link_libraries(DEMLow PUBLIC ${DEM_DEPS_TARGETS})
 if(WIN32)
 	target_compile_definitions(DEMLow PUBLIC DEM_PLATFORM_WIN32=1) # Public because app uses headers. Exclude headers when not Win32!
-	target_link_libraries(DEMLow PUBLIC "UxTheme.lib")
+	target_link_libraries(DEMLow PUBLIC UxTheme.lib) # Win32 window
+	target_link_libraries(DEMLow PUBLIC DXGI.lib D3D11.lib) # TODO: only when D3D11 renderer is built
+	target_link_libraries(DEMLow PUBLIC D3d9.lib dxguid.lib) # TODO: only when D3D9 renderer is built
 endif()
 list(APPEND DEM_TARGETS DEMLow)
 

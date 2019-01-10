@@ -11,8 +11,10 @@ namespace Render
 __ImplementClassNoFactory(Render::CD3D11DriverFactory, Render::CVideoDriverFactory);
 __ImplementSingleton(Render::CD3D11DriverFactory);
 
-bool CD3D11DriverFactory::Open()
+bool CD3D11DriverFactory::Create()
 {
+	Release();
+
 	if (!SUCCEEDED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory))) FAIL;
 	IDXGIAdapter1* pAdapter;
 	while (pDXGIFactory->EnumAdapters1(AdapterCount, &pAdapter) != DXGI_ERROR_NOT_FOUND)
@@ -24,7 +26,7 @@ bool CD3D11DriverFactory::Open()
 }
 //---------------------------------------------------------------------
 
-void CD3D11DriverFactory::Close()
+void CD3D11DriverFactory::Release()
 {
 	AdapterCount = 0;
 	SAFE_RELEASE(pDXGIFactory);

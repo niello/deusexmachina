@@ -53,7 +53,7 @@ protected:
 public:
 
 	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0), ShaderSignatures(0, 16) { __ConstructSingleton; }
-	virtual ~CD3D11DriverFactory() { if (IsOpened()) Close(); __DestructSingleton; }
+	virtual ~CD3D11DriverFactory() { if (IsOpened()) Release(); __DestructSingleton; }
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
 	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);
@@ -64,8 +64,8 @@ public:
 	static DXGI_FORMAT		GetCorrespondingFormat(DXGI_FORMAT D3DFormat, EFormatType Type, bool PreferSRGB = false);
 	static EMSAAQuality		D3DMSAAParamsToMSAAQuality(DXGI_SAMPLE_DESC SampleDesc);
 
-	bool					Open();
-	void					Close();
+	virtual bool			Create() override;
+	virtual void			Release() override;
 	bool					IsOpened() const { return !!pDXGIFactory; }
 
 	virtual bool			AdapterExists(UPTR Adapter) const { return Adapter < AdapterCount; }
