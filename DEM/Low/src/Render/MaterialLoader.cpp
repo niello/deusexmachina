@@ -4,7 +4,10 @@
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/EffectLoader.h>
+#include <Render/ConstantBuffer.h>
 #include <Render/ShaderConstant.h>
+#include <Render/Sampler.h>
+#include <Render/Texture.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>

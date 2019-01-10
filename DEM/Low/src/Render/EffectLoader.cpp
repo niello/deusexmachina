@@ -15,6 +15,8 @@ bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLi
 bool LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
 bool SkipEffectParams(IO::CBinaryReader& Reader);
 
+CEffectLoader::~CEffectLoader() {}
+
 PResourceLoader CEffectLoader::Clone()
 {
 	PEffectLoader NewLoader = n_new(CEffectLoader);

@@ -19,13 +19,11 @@ class COSWindowKeyboard: public IInputDevice
 {
 private:
 
-	DEM::Sys::COSWindow*	pWindow;
+	DEM::Sys::COSWindow*	pWindow = nullptr;
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 
 public:
-
-	COSWindowKeyboard(): pWindow(NULL) {}
 
 	void				Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority);
 

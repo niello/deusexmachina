@@ -32,7 +32,7 @@ protected:
 	PTexture				HeightMap;
 	PTexture				NormalMap;
 
-	I16*					pMinMaxData;
+	I16*					pMinMaxData = nullptr;
 	CFixedArray<CMinMaxMap>	MinMaxMaps;
 
 	U32						HFWidth;
@@ -51,7 +51,7 @@ public:
 	CCDLODData();
 	virtual ~CCDLODData();
 
-	virtual bool		IsResourceValid() const { return HeightMap.IsValidPtr(); }
+	virtual bool		IsResourceValid() const;
 	U32					GetHeightMapWidth() const { return HFWidth; }
 	U32					GetHeightMapHeight() const { return HFHeight; }
 	U32					GetPatchSize() const { return PatchSize; }
@@ -60,8 +60,8 @@ public:
 	U32					GetLODCount() const { return LODCount; }
 	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
-	Render::CTexture*	GetHeightMap() const { return HeightMap.GetUnsafe(); }
-	Render::CTexture*	GetNormalMap() const { return NormalMap.GetUnsafe(); }
+	Render::CTexture*	GetHeightMap() const;
+	Render::CTexture*	GetNormalMap() const;
 	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
 };

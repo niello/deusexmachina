@@ -59,7 +59,7 @@ protected:
 	// For now it is the only way to know the draw mode in a CDEMGeometryBuffer::draw()
 	bool								OpaqueMode;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShaderRegular, Render::PShader PixelShaderOpaque);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::CShader* pVertexShader, Render::CShader* pPixelShaderRegular, Render::CShader* pPixelShaderOpaque);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -67,7 +67,7 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::PShader VertexShader, Render::PShader PixelShaderRegular, Render::PShader PixelShaderOpaque, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::CShader* pVertexShader, Render::CShader* pPixelShaderRegular, Render::CShader* pPixelShaderOpaque, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }

@@ -23,7 +23,7 @@ public:
 	Render::PGPUDriver		GPU;
 	Render::PShaderLibrary	ShaderLibrary;
 
-	virtual ~CEffectLoader() {}
+	virtual ~CEffectLoader();
 
 	virtual PResourceLoader				Clone();
 	virtual const Core::CRTTI&			GetResultType() const;

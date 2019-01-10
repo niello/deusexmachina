@@ -7,7 +7,7 @@
 namespace Input
 {
 
-COSWindowMouse::COSWindowMouse(): pWindow(NULL)
+COSWindowMouse::COSWindowMouse()
 {
 	AxisSensitivity[0] = 1.f;
 	AxisSensitivity[1] = 1.f;

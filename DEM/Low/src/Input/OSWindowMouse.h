@@ -22,7 +22,7 @@ private:
 
 	static const U8 AxisCount = 4;
 
-	DEM::Sys::COSWindow*	pWindow;
+	DEM::Sys::COSWindow*	pWindow = nullptr;
 	float			AxisSensitivity[AxisCount];
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
