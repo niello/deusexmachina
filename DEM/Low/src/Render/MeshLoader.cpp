@@ -1,6 +1,7 @@
 #include "MeshLoader.h"
 
 #include <Render/Mesh.h>
+#include <Render/GPUDriver.h>
 
 namespace Resources
 {

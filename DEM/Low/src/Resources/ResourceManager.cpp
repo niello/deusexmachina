@@ -10,6 +10,18 @@ namespace Resources
 {
 __ImplementSingleton(CResourceManager);
 
+CResourceManager::CResourceManager(UPTR HashTableCapacity): Registry(HashTableCapacity)
+{
+	__ConstructSingleton;
+}
+//---------------------------------------------------------------------
+
+CResourceManager::~CResourceManager()
+{
+	__DestructSingleton;
+}
+//---------------------------------------------------------------------
+
 PResource CResourceManager::RegisterResource(CStrID URI) //???need? avoid recreating StrID of already registered resource, but mb create only here?
 {
 	//!!!TODO!

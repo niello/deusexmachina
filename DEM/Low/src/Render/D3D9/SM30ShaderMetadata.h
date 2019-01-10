@@ -88,6 +88,7 @@ private:
 
 public:
 
+	CSM30ShaderMetadata();
 	virtual ~CSM30ShaderMetadata();
 
 	bool						Load(IO::CStream& Stream);

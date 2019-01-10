@@ -1,8 +1,13 @@
 #include "ShaderLoader.h"
+#include <Render/GPUDriver.h>
+#include <Render/ShaderLibrary.h>
 
 namespace Resources
 {
 __ImplementClassNoFactory(Resources::CShaderLoader, Resources::CResourceLoader);
+
+CShaderLoader::CShaderLoader() {}
+CShaderLoader::~CShaderLoader() {}
 
 PResourceLoader CShaderLoader::Clone()
 {

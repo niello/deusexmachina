@@ -2,6 +2,7 @@
 
 #include <Render/Material.h>
 #include <Render/MeshGenerators.h>
+#include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceLoader.h>

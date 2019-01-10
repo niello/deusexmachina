@@ -1,6 +1,7 @@
 #include "OSWindowKeyboard.h"
 
 #include <Input/InputEvents.h>
+#include <Events/Subscription.h>
 #include <System/Events/OSInput.h>
 #include <System/OSWindow.h>
 

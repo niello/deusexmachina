@@ -1,5 +1,6 @@
 #include "ShaderLibraryLoaderSLB.h"
 
+#include <Render/Shader.h>
 #include <Render/ShaderLibrary.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>

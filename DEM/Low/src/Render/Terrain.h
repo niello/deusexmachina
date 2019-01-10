@@ -30,14 +30,15 @@ protected:
 	PMesh					PatchMesh;
 	PMesh					QuarterPatchMesh;
 
-	float					InvSplatSizeX;
-	float					InvSplatSizeZ;
+	float					InvSplatSizeX = 0.1f;
+	float					InvSplatSizeZ = 0.1f;
 
 	virtual bool			ValidateResources(CGPUDriver* pGPU);
 
 public:
 
-	CTerrain(): InvSplatSizeX(0.1f), InvSplatSizeZ(0.1f) {}
+	CTerrain();
+	virtual ~CTerrain();
 
 	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual IRenderable*	Clone();

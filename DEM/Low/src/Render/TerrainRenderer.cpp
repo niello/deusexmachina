@@ -6,6 +6,7 @@
 #include <Render/Light.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
+#include <Render/Sampler.h>
 #include <Render/ShaderConstant.h>
 #include <Render/ConstantBufferSet.h>
 #include <Math/Sphere.h>
@@ -14,6 +15,8 @@
 namespace Render
 {
 __ImplementClass(Render::CTerrainRenderer, 'TRNR', Render::IRenderer);
+
+CTerrainRenderer::CTerrainRenderer() {}
 
 CTerrainRenderer::~CTerrainRenderer()
 {

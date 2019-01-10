@@ -5,13 +5,14 @@
 #include <Render/Shader.h>
 #include <Render/ShaderConstant.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/RenderState.h>
 #include <Render/ShaderLibrary.h>
 #include <IO/BinaryReader.h>
 
 namespace Resources
 {
 // Defined in Render/EffectLoadingUtils.cpp
-bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
+bool LoadEffectParams(IO::CBinaryReader& Reader, Render::CShaderLibrary* pShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
 bool LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
 bool SkipEffectParams(IO::CBinaryReader& Reader);
 
@@ -184,7 +185,7 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 				*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
 			}
 
-			Variations[LightCount] = ShaderLoadingFailed ? NULL : GPU->CreateRenderState(Desc);
+			Variations[LightCount] = ShaderLoadingFailed ? nullptr : GPU->CreateRenderState(Desc);
 			if (Variations[LightCount].IsValidPtr()) VariationArraySize = LightCount + 1;
 		}
 

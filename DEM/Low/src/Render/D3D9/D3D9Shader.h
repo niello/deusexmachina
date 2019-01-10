@@ -34,7 +34,7 @@ protected:
 
 public:
 
-	virtual ~CD3D9Shader() { InternalDestroy(); }
+	virtual ~CD3D9Shader();
 
 	bool							Create(IUnknown* pShader); 
 	bool							Create(IDirect3DVertexShader9* pShader);

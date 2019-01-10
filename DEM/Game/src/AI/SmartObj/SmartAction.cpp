@@ -6,6 +6,8 @@
 
 namespace AI
 {
+CSmartAction::CSmartAction() {}
+CSmartAction::~CSmartAction() {}
 
 void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 {

@@ -59,8 +59,8 @@ protected:
 
 public:
 
-	CResourceManager(UPTR HashTableCapacity = 256): Registry(HashTableCapacity) { __ConstructSingleton; }
-	~CResourceManager() { __DestructSingleton; }
+	CResourceManager(UPTR HashTableCapacity = 256);
+	~CResourceManager();
 
 	bool			RegisterDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType, CResourceLoader* pLoader, bool CloneOnCreate = false);
 	PResourceLoader	CreateDefaultLoader(const char* pFmtExtension, const Core::CRTTI* pRsrcType = NULL);

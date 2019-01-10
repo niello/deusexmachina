@@ -5,6 +5,7 @@
 
 namespace Render
 {
+CSM30ShaderMetadata::CSM30ShaderMetadata() {}
 
 CSM30ShaderMetadata::~CSM30ShaderMetadata()
 {

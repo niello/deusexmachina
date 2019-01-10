@@ -1,6 +1,7 @@
 #include "ConstantBufferSet.h"
 
 #include <Render/ShaderConstant.h>
+#include <Render/ConstantBuffer.h>
 #include <Render/GPUDriver.h>
 
 namespace Render

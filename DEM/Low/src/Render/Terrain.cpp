@@ -2,8 +2,10 @@
 
 #include <Render/Material.h>
 #include <Render/MeshGenerators.h>
+#include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/ResourceLoader.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
@@ -11,6 +13,9 @@
 namespace Render
 {
 __ImplementClass(Render::CTerrain, 'TERR', Render::IRenderable);
+
+CTerrain::CTerrain() {}
+CTerrain::~CTerrain() {}
 
 bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 {

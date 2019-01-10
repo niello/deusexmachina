@@ -21,7 +21,7 @@ namespace Resources
 
 // Out array will be sorted by ID as parameters are saved sorted by ID
 bool LoadEffectParams(IO::CBinaryReader& Reader,
-					  Render::PShaderLibrary ShaderLibrary,
+					  Render::CShaderLibrary* pShaderLibrary,
 					  const Render::IShaderMetadata* pDefaultShaderMeta,
 					  CFixedArray<Render::CEffectConstant>& OutConsts,
 					  CFixedArray<Render::CEffectResource>& OutResources,
@@ -50,10 +50,10 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		if (!Reader.Read(SizeInBytes)) FAIL;
 
 		const Render::IShaderMetadata* pShaderMeta;
-		if (SourceShaderID && ShaderLibrary.IsValidPtr())
+		if (SourceShaderID && pShaderLibrary)
 		{
 			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = ShaderLibrary->GetShaderByID(SourceShaderID);
+			Render::PShader ParamShader = pShaderLibrary->GetShaderByID(SourceShaderID);
 			pShaderMeta = ParamShader->GetMetadata();
 		}
 		else pShaderMeta = pDefaultShaderMeta;
@@ -82,10 +82,10 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		if (!Reader.Read(SourceShaderID)) FAIL;
 
 		const Render::IShaderMetadata* pShaderMeta;
-		if (SourceShaderID && ShaderLibrary.IsValidPtr())
+		if (SourceShaderID && pShaderLibrary)
 		{
 			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = ShaderLibrary->GetShaderByID(SourceShaderID);
+			Render::PShader ParamShader = pShaderLibrary->GetShaderByID(SourceShaderID);
 			pShaderMeta = ParamShader->GetMetadata();
 		}
 		else pShaderMeta = pDefaultShaderMeta;
@@ -111,10 +111,10 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		if (!Reader.Read(SourceShaderID)) FAIL;
 
 		const Render::IShaderMetadata* pShaderMeta;
-		if (SourceShaderID && ShaderLibrary.IsValidPtr())
+		if (SourceShaderID && pShaderLibrary)
 		{
 			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = ShaderLibrary->GetShaderByID(SourceShaderID);
+			Render::PShader ParamShader = pShaderLibrary->GetShaderByID(SourceShaderID);
 			pShaderMeta = ParamShader->GetMetadata();
 		}
 		else pShaderMeta = pDefaultShaderMeta;

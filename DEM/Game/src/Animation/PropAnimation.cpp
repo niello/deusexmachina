@@ -12,6 +12,7 @@
 #include <Frame/NodeAttrSkin.h> //!!!DBG TMP! NAX2 requires skin info!
 #include <Animation/NodeControllerKeyframe.h>
 #include <Animation/NodeControllerMocap.h>
+#include <Render/SkinInfo.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Data/ParamsUtils.h>

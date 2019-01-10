@@ -4,15 +4,20 @@
 #include <Frame/NodeAttrAmbientLight.h>
 #include <Frame/NodeAttrLight.h>
 #include <Frame/RenderPath.h>
+#include <Events/Subscription.h>
 #include <Scene/SPS.h>
 #include <Render/RenderTarget.h>
 #include <Render/ShaderConstant.h>
+#include <Render/ConstantBuffer.h>
 #include <Render/GPUDriver.h>
+#include <Render/DepthStencilBuffer.h>
 #include <Render/Sampler.h>
 #include <Render/SamplerDesc.h>
+#include <UI/UIContext.h>
 
 namespace Frame
 {
+CView::CView() {}
 
 CView::~CView()
 {

@@ -1,6 +1,7 @@
 #include "ShaderLibrary.h"
 
 #include <Render/ShaderLoader.h>
+#include <Render/Shader.h>
 #include <IO/Streams/ScopedStream.h>
 #include <Core/Factory.h>
 
@@ -19,16 +20,17 @@ CShaderLibrary::~CShaderLibrary()
 }
 //---------------------------------------------------------------------
 
-void CShaderLibrary::SetLoader(Resources::PShaderLoader Loader)
+void CShaderLibrary::SetLoader(Resources::CShaderLoader* pLoader)
 {
 	//if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency
-	ShaderLoader = (Resources::CShaderLoader*)Loader->Clone().GetUnsafe();
+	if (pLoader) ShaderLoader = (Resources::CShaderLoader*)pLoader->Clone().GetUnsafe();
+	else ShaderLoader.Reset();
 }
 //---------------------------------------------------------------------
 
 PShader CShaderLibrary::GetShaderByID(U32 ID)
 {
-	if (!ID || ShaderLoader.IsNullPtr()) return NULL;
+	if (!ID || ShaderLoader.IsNullPtr()) return nullptr;
 
 	//!!!PERF:!
 	//!!!need find index sorted for fixed arrays! move to algorithm?
@@ -39,7 +41,7 @@ PShader CShaderLibrary::GetShaderByID(U32 ID)
 			Idx = i;
 			break;
 		}
-	if (Idx == INVALID_INDEX) return NULL;
+	if (Idx == INVALID_INDEX) return nullptr;
 
 	CRecord& Rec = TOC[Idx];
 	if (Rec.LoadedShader.IsValidPtr()) return Rec.LoadedShader;
@@ -53,9 +55,9 @@ PShader CShaderLibrary::GetShaderByID(U32 ID)
 	// Introduce temporary cyclic dependency, loader requires access to library to load input signatures by ID
 	ShaderLoader->ShaderLibrary = this;
 	Rec.LoadedShader = (CShader*)ShaderLoader->Load(*Stream.GetUnsafe()).GetUnsafe();
-	ShaderLoader->ShaderLibrary = NULL;
+	ShaderLoader->ShaderLibrary = nullptr;
 
-	Stream = NULL;
+	Stream = nullptr;
 
 	Storage->Seek(CurrOffset, IO::Seek_Begin);
 

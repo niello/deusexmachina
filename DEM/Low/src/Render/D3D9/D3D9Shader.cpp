@@ -10,6 +10,12 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9Shader, 'SHD9', Render::CShader);
 
+CD3D9Shader::~CD3D9Shader()
+{
+	InternalDestroy();
+}
+//---------------------------------------------------------------------
+
 bool CD3D9Shader::Create(IUnknown* pShader)
 {
 	if (!pShader) FAIL;

@@ -13,7 +13,7 @@ namespace Resources
 __ImplementClass(Resources::CRenderPathLoaderRP, 'RPLD', Resources::CResourceLoader);
 
 // Defined in Render/EffectLoadingUtils.cpp
-bool LoadEffectParams(IO::CBinaryReader& Reader, Render::PShaderLibrary ShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
+bool LoadEffectParams(IO::CBinaryReader& Reader, Render::CShaderLibrary* pShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
 
 const Core::CRTTI& CRenderPathLoaderRP::GetResultType() const
 {
@@ -95,7 +95,7 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 		}
 	}
 
-	if (!LoadEffectParams(Reader, NULL, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
+	if (!LoadEffectParams(Reader, nullptr, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
 
 	// Phases are intentionally initialized at the end, because they may access global params etc
 	RP->Phases.SetSize(Phases->GetCount());

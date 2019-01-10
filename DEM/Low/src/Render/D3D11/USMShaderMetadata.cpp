@@ -5,6 +5,13 @@
 
 namespace Render
 {
+CUSMShaderMetadata::CUSMShaderMetadata() {}
+
+CUSMShaderMetadata::~CUSMShaderMetadata()
+{
+	Clear();
+}
+//---------------------------------------------------------------------
 
 bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 {

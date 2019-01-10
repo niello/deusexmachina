@@ -51,7 +51,7 @@ public:
 	CShaderLibrary();
 	virtual ~CShaderLibrary();
 
-	void			SetLoader(Resources::PShaderLoader Loader);
+	void			SetLoader(Resources::CShaderLoader* pLoader);
 	PShader			GetShaderByID(U32 ID);
 	bool			GetRawDataByID(U32 ID, void*& pOutData, UPTR& OutSize);
 

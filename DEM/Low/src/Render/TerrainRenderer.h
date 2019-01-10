@@ -82,11 +82,11 @@ protected:
 	CSamplerDesc							HMSamplerDesc;
 	PSampler								HMSampler;			//!!!binds an RP to a specific GPU!
 
-	UPTR									CurrMaxLightCount;
+	UPTR									CurrMaxLightCount = 0;
 	CFixedArray<CVertexComponent>			InstanceDataDecl;
 	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
 	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
-	CPatchInstance*							pInstances;
+	CPatchInstance*							pInstances = nullptr;
 	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
 
 	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, U8& MaxLightCount, EClipStatus Clip = Clipped);
@@ -96,8 +96,8 @@ protected:
 
 public:
 
-	CTerrainRenderer(): pInstances(NULL), CurrMaxLightCount(0) {}
-	~CTerrainRenderer();
+	CTerrainRenderer();
+	virtual ~CTerrainRenderer();
 
 	virtual bool							Init(bool LightingEnabled);
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);

@@ -4,6 +4,7 @@
 #include <Render/Material.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/ResourceLoader.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>

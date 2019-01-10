@@ -68,6 +68,9 @@ public:
 	// AI
 	PWorldStateSource	Preconditions;
 
+	CSmartAction();
+	~CSmartAction();
+
 	void	Init(CStrID ActionID, const Data::CParams& Desc);
 
 	bool	IsValid(CStrID ActorID, CStrID SOID) const;

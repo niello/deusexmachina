@@ -53,7 +53,8 @@ class CSwapChain
 {
 public:
 
-	virtual ~CSwapChain() {}
+	CSwapChain();
+	virtual ~CSwapChain();
 
 	PRenderTarget	BackBufferRT;
 	DEM::Sys::POSWindow	TargetWindow;	//???to desc?

@@ -127,7 +127,8 @@ private:
 
 public:
 
-	virtual ~CUSMShaderMetadata() { Clear(); }
+	CUSMShaderMetadata();
+	virtual ~CUSMShaderMetadata();
 
 	bool						Load(IO::CStream& Stream);
 	void						Clear();
