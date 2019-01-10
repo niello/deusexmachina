@@ -7,6 +7,12 @@
 namespace Game
 {
 
+CEntityManager::CEntityManager(): Entities(256, 256), UIDToEntity(512)
+{
+	Entities.Flags.Clear(Array_KeepOrder);
+}
+//---------------------------------------------------------------------
+
 CEntityManager::~CEntityManager()
 {
 	DeleteAllEntities();
@@ -88,6 +94,13 @@ void CEntityManager::DeleteEntities(const CGameLevel& Level)
 	for (int i = Entities.GetCount() - 1; i >= 0; --i)
 		if (Entities[i]->GetLevel() == &Level)
 			DeleteEntity(i);
+}
+//---------------------------------------------------------------------
+
+void CEntityManager::DeleteAllEntities()
+{
+	while (Entities.GetCount() > 0)
+		DeleteEntity(*Entities.Back());
 }
 //---------------------------------------------------------------------
 

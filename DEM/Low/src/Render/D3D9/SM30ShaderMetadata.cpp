@@ -6,6 +6,12 @@
 namespace Render
 {
 
+CSM30ShaderMetadata::~CSM30ShaderMetadata()
+{
+	Clear();
+}
+//---------------------------------------------------------------------
+
 bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 {
 	IO::CBinaryReader R(Stream);

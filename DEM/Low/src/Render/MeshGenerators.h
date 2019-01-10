@@ -22,11 +22,10 @@ class CMeshGenerator: public CResourceGenerator
 public:
 
 	Render::PGPUDriver	GPU;
-	bool				FrontClockWise;
+	bool				FrontClockWise = true;
 
-	CMeshGenerator(): FrontClockWise(true) {}
-
-	//virtual ~CMeshGenerator() {}
+	CMeshGenerator();
+	virtual ~CMeshGenerator();
 
 	virtual const Core::CRTTI& GetResultType() const;
 };

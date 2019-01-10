@@ -5,14 +5,53 @@
 #include <Frame/NodeAttrCamera.h>
 #include <Render/GPUDriver.h>
 #include <Render/ShaderMetadata.h>
+#include <Render/ShaderConstant.h>
 
 namespace Frame
 {
 __ImplementClassNoFactory(Frame::CRenderPath, Resources::CResourceObject);
 
+CRenderPath::CRenderPath() {}
+
 CRenderPath::~CRenderPath()
 {
 	if (pGlobals) n_delete(pGlobals);
+}
+//---------------------------------------------------------------------
+
+const Render::CEffectConstant* CRenderPath::GetGlobalConstant(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Consts.GetCount(); ++i)
+	{
+		const Render::CEffectConstant& Curr = Consts[i];
+		if (Curr.ID == Name) return &Curr;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+const Render::CEffectResource* CRenderPath::GetGlobalResource(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Resources.GetCount(); ++i)
+	{
+		const Render::CEffectResource& Curr = Resources[i];
+		if (Curr.ID == Name) return &Curr;
+	}
+	return NULL;
+}
+//---------------------------------------------------------------------
+
+const Render::CEffectSampler* CRenderPath::GetGlobalSampler(CStrID Name) const
+{
+	UPTR i = 0;
+	for (; i < Samplers.GetCount(); ++i)
+	{
+		const Render::CEffectSampler& Curr = Samplers[i];
+		if (Curr.ID == Name) return &Curr;
+	}
+	return NULL;
 }
 //---------------------------------------------------------------------
 

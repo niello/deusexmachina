@@ -34,7 +34,7 @@ protected:
 	const String		Name;
 
 	CDEMTexture(CDEMRenderer& Renderer, const String& name);
-	virtual ~CDEMTexture() {}
+	virtual ~CDEMTexture();
 
 	void updateCachedScaleValues();
 	void updateTextureSize();

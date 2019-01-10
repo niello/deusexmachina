@@ -22,7 +22,8 @@ public:
 
 	Render::PSkinInfo ReferenceSkinInfo; // NAX2 is bound to a particular skin
 
-	//virtual ~CMocapClipLoaderNAX2() {}
+	CMocapClipLoaderNAX2();
+	virtual ~CMocapClipLoaderNAX2();
 
 	virtual const Core::CRTTI&			GetResultType() const;
 	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!

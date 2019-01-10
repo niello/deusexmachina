@@ -53,6 +53,8 @@ class CSwapChain
 {
 public:
 
+	virtual ~CSwapChain() {}
+
 	PRenderTarget	BackBufferRT;
 	DEM::Sys::POSWindow	TargetWindow;	//???to desc?
 	Data::CRect		LastWindowRect;	// Stores a window size in a windowed mode

@@ -443,6 +443,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/SkinInfoLoaderSKN.cpp
 	DEM/Low/src/Render/Skybox.cpp
 	DEM/Low/src/Render/SkyboxRenderer.cpp
+	DEM/Low/src/Render/Technique.cpp
 	DEM/Low/src/Render/Terrain.cpp
 	DEM/Low/src/Render/TerrainRenderer.cpp
 	DEM/Low/src/Render/Texture.cpp

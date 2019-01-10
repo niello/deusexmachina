@@ -88,7 +88,7 @@ private:
 
 public:
 
-	virtual ~CSM30ShaderMetadata() { Clear(); }
+	virtual ~CSM30ShaderMetadata();
 
 	bool						Load(IO::CStream& Stream);
 	void						Clear();

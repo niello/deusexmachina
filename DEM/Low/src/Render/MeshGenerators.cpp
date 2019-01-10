@@ -10,6 +10,9 @@ __ImplementClassNoFactory(Resources::CMeshGenerator, Resources::CResourceGenerat
 __ImplementClassNoFactory(Resources::CMeshGeneratorQuadPatch, Resources::CMeshGenerator);
 __ImplementClassNoFactory(Resources::CMeshGeneratorSkybox, Resources::CMeshGenerator);
 
+CMeshGenerator::CMeshGenerator() {}
+CMeshGenerator::~CMeshGenerator() {}
+
 const Core::CRTTI& CMeshGenerator::GetResultType() const
 {
 	return Render::CMesh::RTTI;

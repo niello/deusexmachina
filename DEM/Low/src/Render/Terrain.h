@@ -33,7 +33,7 @@ protected:
 	float					InvSplatSizeX;
 	float					InvSplatSizeZ;
 
-	virtual bool			ValidateResources(PGPUDriver GPU);
+	virtual bool			ValidateResources(CGPUDriver* pGPU);
 
 public:
 

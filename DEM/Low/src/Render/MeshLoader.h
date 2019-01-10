@@ -22,7 +22,7 @@ public:
 
 	Render::PGPUDriver GPU;
 
-	virtual ~CMeshLoader() {}
+	virtual ~CMeshLoader();
 
 	virtual const Core::CRTTI&	GetResultType() const;
 };

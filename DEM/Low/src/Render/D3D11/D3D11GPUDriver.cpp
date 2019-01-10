@@ -32,6 +32,23 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11GPUDriver, '11GD', Render::CGPUDriver);
 
+CD3D11GPUDriver::CD3D11GPUDriver():
+	SwapChains(1, 1),
+	CurrSRV(16, 16),
+	MaxSRVSlotIndex(0),
+	RenderStates(32, 32),
+	Samplers(16, 16),
+	MaxViewportCount(0) /*, IsInsideFrame(false)*/
+{
+}
+//---------------------------------------------------------------------
+
+CD3D11GPUDriver::~CD3D11GPUDriver()
+{
+	Release();
+}
+//---------------------------------------------------------------------
+
 bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 {
 	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;

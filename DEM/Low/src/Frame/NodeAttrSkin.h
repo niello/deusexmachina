@@ -48,7 +48,7 @@ public:
 	virtual Scene::PNodeAttribute	Clone();
 	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
 
-	Render::PSkinInfo				GetSkinInfo() const { return SkinInfo; }
+	Render::CSkinInfo*				GetSkinInfo() const;
 	const matrix44*					GetSkinPalette() const { return pSkinPalette; }
 };
 

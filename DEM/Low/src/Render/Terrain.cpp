@@ -59,7 +59,7 @@ IRenderable* CTerrain::Clone()
 }
 //---------------------------------------------------------------------
 
-bool CTerrain::ValidateResources(PGPUDriver GPU)
+bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 {
 	if (!RCDLODData->IsLoaded())
 	{
@@ -84,7 +84,7 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 	Material = RMaterial->GetObject<Render::CMaterial>();
 
 	U32 PatchSize = CDLODData->GetPatchSize();
-	if (GPU.IsValidPtr() && IsPow2(PatchSize) && PatchSize >= 4)
+	if (pGPU && IsPow2(PatchSize) && PatchSize >= 4)
 	{
 		CString PatchName;
 		PatchName.Format("Mesh_Patch%dx%d", PatchSize, PatchSize);
@@ -95,7 +95,7 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 			if (Gen.IsNullPtr())
 			{
 				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
-				GenQuad->GPU = GPU;
+				GenQuad->GPU = pGPU;
 				GenQuad->QuadsPerEdge = PatchSize;
 				Gen = GenQuad.GetUnsafe();
 			}
@@ -113,7 +113,7 @@ bool CTerrain::ValidateResources(PGPUDriver GPU)
 			if (Gen.IsNullPtr())
 			{
 				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
-				GenQuad->GPU = GPU;
+				GenQuad->GPU = pGPU;
 				GenQuad->QuadsPerEdge = PatchSize;
 				Gen = GenQuad.GetUnsafe();
 			}

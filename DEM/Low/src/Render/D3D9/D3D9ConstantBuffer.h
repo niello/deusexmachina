@@ -28,25 +28,25 @@ protected:
 		CB9_DirtyBool	= 0x04
 	};
 
-	float*			pFloat4Data; //???or one ptr and offsets ??on the fly?? ?
-	UPTR			Float4Count;
+	float*			pFloat4Data = nullptr; //???or one ptr and offsets ??on the fly?? ?
+	UPTR			Float4Count = 0;
 
-	int*			pInt4Data;
-	UPTR			Int4Count;
+	int*			pInt4Data = nullptr;
+	UPTR			Int4Count = 0;
 
-	BOOL*			pBoolData;
-	UPTR			BoolCount;
+	BOOL*			pBoolData = nullptr;
+	UPTR			BoolCount = 0;
 
-	HConstBuffer	Handle;		//!!!strictly bounds D3D9 CB to the host Shader! may copy relevant metadata instead, if inacceptable
+	HConstBuffer	Handle = INVALID_HANDLE; //!!!strictly bounds D3D9 CB to the host Shader! may copy relevant metadata instead, if inacceptable
 	Data::CFlags	DirtyFlags;
-	bool			Temporary;
+	bool			Temporary = false;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9ConstantBuffer(): pFloat4Data(NULL), pInt4Data(NULL), pBoolData(NULL), Float4Count(0), Int4Count(0), BoolCount(0), Handle(INVALID_HANDLE), Temporary(false) {}
-	virtual ~CD3D9ConstantBuffer() { InternalDestroy(); }
+	CD3D9ConstantBuffer();
+	virtual ~CD3D9ConstantBuffer();
 
 	bool			Create(const CSM30BufferMeta& Meta, const CD3D9ConstantBuffer* pInitData);
 	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }

@@ -16,14 +16,13 @@ class CD3D9SwapChain: public CSwapChain
 {
 public:
 
-	IDirect3DSwapChain9*	pSwapChain; // NULL for implicit swap chain, device methods will be called
+	virtual ~CD3D9SwapChain();
+
+	IDirect3DSwapChain9*	pSwapChain = nullptr; // NULL for implicit swap chain, device methods will be called
 
 	Events::PSub			Sub_OnToggleFullscreen;
 	Events::PSub			Sub_OnSizeChanged;
 	Events::PSub			Sub_OnClosing;
-
-	CD3D9SwapChain(): pSwapChain(NULL) {}
-	~CD3D9SwapChain() { if (IsValid()) Destroy(); }
 
 	void Release();
 	void Destroy();

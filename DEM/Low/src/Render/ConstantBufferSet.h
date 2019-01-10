@@ -43,7 +43,7 @@ public:
 
 	bool				SetGPU(PGPUDriver NewGPU);
 	bool				RegisterPermanentBuffer(HConstBuffer Handle, CConstantBuffer& Buffer);
-	bool				IsBufferRegistered(HConstBuffer Handle) const { return Buffers.Contains(Handle); }
+	bool				IsBufferRegistered(HConstBuffer Handle) const;
 	CConstantBuffer*	RequestBuffer(HConstBuffer Handle, EShaderType Stage);
 	bool				CommitChanges();
 	void				UnbindAndClear();

@@ -25,7 +25,7 @@ class CD3D9Shader: public CShader
 
 protected:
 
-	IUnknown*			pD3DShader;
+	IUnknown*			pD3DShader = nullptr;
 	CSM30ShaderMetadata	Metadata;
 
 	void							InternalDestroy();
@@ -34,7 +34,6 @@ protected:
 
 public:
 
-	CD3D9Shader(): pD3DShader(NULL) {}
 	virtual ~CD3D9Shader() { InternalDestroy(); }
 
 	bool							Create(IUnknown* pShader); 

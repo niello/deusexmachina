@@ -53,7 +53,7 @@ protected:
 
 	CFixedArray<PRenderPhase>				Phases;
 
-	Render::IShaderMetadata*				pGlobals;
+	Render::IShaderMetadata*				pGlobals = nullptr;
 	CFixedArray<Render::CEffectConstant>	Consts;
 	CFixedArray<Render::CEffectResource>	Resources;
 	CFixedArray<Render::CEffectSampler>		Samplers;
@@ -62,7 +62,7 @@ protected:
 
 public:
 
-	CRenderPath(): pGlobals(NULL) {}
+	CRenderPath();
 	virtual ~CRenderPath();
 
 	bool										Render(CView& View);
@@ -77,42 +77,6 @@ public:
 };
 
 typedef Ptr<CRenderPath> PRenderPath;
-
-inline const Render::CEffectConstant* CRenderPath::GetGlobalConstant(CStrID Name) const
-{
-	UPTR i = 0;
-	for (; i < Consts.GetCount(); ++i)
-	{
-		const Render::CEffectConstant& Curr = Consts[i];
-		if (Curr.ID == Name) return &Curr;
-	}
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-inline const Render::CEffectResource* CRenderPath::GetGlobalResource(CStrID Name) const
-{
-	UPTR i = 0;
-	for (; i < Resources.GetCount(); ++i)
-	{
-		const Render::CEffectResource& Curr = Resources[i];
-		if (Curr.ID == Name) return &Curr;
-	}
-	return NULL;
-}
-//---------------------------------------------------------------------
-
-inline const Render::CEffectSampler* CRenderPath::GetGlobalSampler(CStrID Name) const
-{
-	UPTR i = 0;
-	for (; i < Samplers.GetCount(); ++i)
-	{
-		const Render::CEffectSampler& Curr = Samplers[i];
-		if (Curr.ID == Name) return &Curr;
-	}
-	return NULL;
-}
-//---------------------------------------------------------------------
 
 }
 

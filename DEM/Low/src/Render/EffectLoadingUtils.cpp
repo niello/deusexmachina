@@ -1,9 +1,11 @@
 #include <Render/Shader.h>
 #include <Render/ShaderLibrary.h>
 #include <Render/ShaderMetadata.h>
+#include <Render/ShaderConstant.h>
 #include <Render/Texture.h>
 #include <Render/TextureLoader.h>
 #include <Render/SamplerDesc.h>
+#include <Render/Sampler.h>
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>

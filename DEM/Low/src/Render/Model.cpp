@@ -58,7 +58,7 @@ IRenderable* CModel::Clone()
 }
 //---------------------------------------------------------------------
 
-bool CModel::ValidateResources(PGPUDriver GPU)
+bool CModel::ValidateResources(CGPUDriver* pGPU)
 {
 	if (!RMesh->IsLoaded())
 	{

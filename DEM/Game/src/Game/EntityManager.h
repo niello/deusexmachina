@@ -32,7 +32,7 @@ protected:
 
 public:
 
-	CEntityManager(): Entities(256, 256), UIDToEntity(512) { Entities.Flags.Clear(Array_KeepOrder); }
+	CEntityManager();
 	~CEntityManager();
 
 	PEntity		CreateEntity(CStrID UID, CGameLevel& Level);
@@ -41,7 +41,7 @@ public:
 	void		DeleteEntity(CEntity& Entity);
 	void		DeleteEntity(CStrID UID);
 	void		DeleteEntities(const CGameLevel& Level);
-	void		DeleteAllEntities() { while (Entities.GetCount() > 0) DeleteEntity(*Entities.Back()); }
+	void		DeleteAllEntities();
 	void		RequestDestruction(CStrID UID) { EntitiesToDelete.Add(UID); } //???deactivate? test with item picking!
 	void		DeferredDeleteEntities();
 

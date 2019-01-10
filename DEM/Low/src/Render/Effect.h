@@ -49,8 +49,8 @@ protected:
 	CDict<CStrID, void*>			DefaultConsts;
 	CDict<CStrID, PTexture>			DefaultResources;
 	CDict<CStrID, PSampler>			DefaultSamplers;
-	char*							pMaterialConstDefaultValues;
-	UPTR							MaterialConstantBufferCount;
+	char*							pMaterialConstDefaultValues = nullptr;
+	UPTR							MaterialConstantBufferCount = 0;
 
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
@@ -66,8 +66,8 @@ protected:
 
 public:
 
-	CEffect(): pMaterialConstDefaultValues(NULL), MaterialConstantBufferCount(0) {}
-	~CEffect() { SAFE_FREE(pMaterialConstDefaultValues); }
+	CEffect();
+	~CEffect();
 
 	virtual bool						IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
 
@@ -104,20 +104,6 @@ inline void* CEffect::GetConstantDefaultValue(CStrID ID) const
 {
 	IPTR Idx = DefaultConsts.FindIndex(ID);
 	return Idx == INVALID_INDEX ? NULL : DefaultConsts.ValueAt(Idx);
-}
-//---------------------------------------------------------------------
-
-inline PTexture CEffect::GetResourceDefaultValue(CStrID ID) const
-{
-	IPTR Idx = DefaultResources.FindIndex(ID);
-	return Idx == INVALID_INDEX ? NULL : DefaultResources.ValueAt(Idx);
-}
-//---------------------------------------------------------------------
-
-inline PSampler CEffect::GetSamplerDefaultValue(CStrID ID) const
-{
-	IPTR Idx = DefaultSamplers.FindIndex(ID);
-	return Idx == INVALID_INDEX ? NULL : DefaultSamplers.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

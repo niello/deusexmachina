@@ -133,4 +133,10 @@ void CNodeAttrSkin::Update(const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
+Render::CSkinInfo* CNodeAttrSkin::GetSkinInfo() const
+{
+	return SkinInfo;
+}
+//---------------------------------------------------------------------
+
 }

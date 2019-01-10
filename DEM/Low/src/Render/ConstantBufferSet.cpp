@@ -37,6 +37,12 @@ bool CConstantBufferSet::RegisterPermanentBuffer(HConstBuffer Handle, CConstantB
 }
 //---------------------------------------------------------------------
 
+bool CConstantBufferSet::IsBufferRegistered(HConstBuffer Handle) const
+{
+	return Buffers.Contains(Handle);
+}
+//---------------------------------------------------------------------
+
 CConstantBuffer* CConstantBufferSet::RequestBuffer(HConstBuffer Handle, EShaderType Stage)
 {
 	IPTR BufferIdx = Buffers.FindIndex(Handle);

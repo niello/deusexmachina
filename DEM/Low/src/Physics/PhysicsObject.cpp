@@ -4,6 +4,7 @@
 #include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/ResourceLoader.h>
 #include <Resources/Resource.h>
 #include <Data/Params.h>
 #include <IO/PathUtils.h>

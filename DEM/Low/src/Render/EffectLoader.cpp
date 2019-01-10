@@ -2,6 +2,7 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/Effect.h>
+#include <Render/Shader.h>
 #include <Render/ShaderConstant.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/ShaderLibrary.h>

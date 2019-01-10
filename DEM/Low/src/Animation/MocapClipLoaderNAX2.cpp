@@ -37,6 +37,9 @@ struct CNAX2Curve
 };
 #pragma pack(pop)
 
+CMocapClipLoaderNAX2::CMocapClipLoaderNAX2() {}
+CMocapClipLoaderNAX2::~CMocapClipLoaderNAX2() {}
+
 const Core::CRTTI& CMocapClipLoaderNAX2::GetResultType() const
 {
 	return Anim::CMocapClip::RTTI;

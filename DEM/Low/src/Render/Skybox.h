@@ -27,7 +27,7 @@ protected:
 	PMaterial				Material;	//???NEED?
 	PMesh					Mesh;		//???NEED?
 
-	virtual bool			ValidateResources(PGPUDriver GPU);
+	virtual bool			ValidateResources(CGPUDriver* pGPU);
 
 public:
 

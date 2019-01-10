@@ -26,21 +26,19 @@ class CModel: public IRenderable
 
 protected:
 
-	virtual bool	ValidateResources(PGPUDriver GPU);
+	virtual bool	ValidateResources(CGPUDriver* pGPU);
 
 public:
 
 	Resources::PResource	RMesh;
 	PMesh					Mesh;
-	UPTR					MeshGroupIndex;
+	UPTR					MeshGroupIndex = 0;
 	Resources::PResource	RMaterial;
 	PMaterial				Material; //???!!!materialset!?
 	CFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 	//can use Flags field of CNodeAttribute
-
-	CModel(): MeshGroupIndex(0) {}
 
 	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual IRenderable*	Clone();

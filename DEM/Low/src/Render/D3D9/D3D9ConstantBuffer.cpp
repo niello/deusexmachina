@@ -10,6 +10,14 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
 
+CD3D9ConstantBuffer::CD3D9ConstantBuffer() {}
+
+CD3D9ConstantBuffer::~CD3D9ConstantBuffer()
+{
+	InternalDestroy();
+}
+//---------------------------------------------------------------------
+
 //!!!???assert destroyed?!
 bool CD3D9ConstantBuffer::Create(const CSM30BufferMeta& Meta, const CD3D9ConstantBuffer* pInitData)
 {

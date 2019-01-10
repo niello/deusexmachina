@@ -92,17 +92,17 @@ protected:
 	Data::CFlags						CurrDirtyFlags;
 	Data::CFlags						ShaderParamsDirtyFlags;
 	PD3D11VertexLayout					CurrVL;
-	ID3D11InputLayout*					pCurrIL;
+	ID3D11InputLayout*					pCurrIL = nullptr;
 	CFixedArray<PD3D11VertexBuffer>		CurrVB;
 	CFixedArray<UPTR>					CurrVBOffset;
 	PD3D11IndexBuffer					CurrIB;
-	EPrimitiveTopology					CurrPT;
+	EPrimitiveTopology					CurrPT = Prim_Invalid;
 	CFixedArray<PD3D11RenderTarget>		CurrRT;
 	PD3D11DepthStencilBuffer			CurrDS;
 	PD3D11RenderState					CurrRS;
 	PD3D11RenderState					NewRS;
-	D3D11_VIEWPORT*						CurrVP;
-	RECT*								CurrSR;				//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
+	D3D11_VIEWPORT*						CurrVP = nullptr;
+	RECT*								CurrSR = nullptr;	//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
 	UPTR								MaxViewportCount;
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const UPTR					VP_OR_SR_SET_FLAG_COUNT = 16;
@@ -126,8 +126,8 @@ protected:
 	//bool								IsInsideFrame;
 	//bool								Wireframe;
 
-	ID3D11Device*						pD3DDevice;
-	ID3D11DeviceContext*				pD3DImmContext;
+	ID3D11Device*						pD3DDevice = nullptr;
+	ID3D11DeviceContext*				pD3DImmContext = nullptr;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
 
 	struct CTmpCB
@@ -140,7 +140,7 @@ protected:
 	CDict<UPTR, CTmpCB*>				TmpConstantBuffers;	// Key is a size (pow2), value is a linked list
 	CDict<UPTR, CTmpCB*>				TmpTextureBuffers;	// Key is a size (pow2), value is a linked list
 	CDict<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list
-	CTmpCB*								pPendingCBHead;
+	CTmpCB*								pPendingCBHead = nullptr;
 
 	CD3D11GPUDriver();
 
@@ -176,7 +176,7 @@ protected:
 
 public:
 
-	virtual ~CD3D11GPUDriver() { Release(); }
+	virtual ~CD3D11GPUDriver();
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap) const;
@@ -265,24 +265,6 @@ public:
 };
 
 typedef Ptr<CD3D11GPUDriver> PD3D11GPUDriver;
-
-inline CD3D11GPUDriver::CD3D11GPUDriver():
-	SwapChains(1, 1),
-	pD3DDevice(NULL),
-	pD3DImmContext(NULL),
-	pCurrIL(NULL),
-	CurrPT(Prim_Invalid),
-	CurrVP(NULL),
-	CurrSR(NULL),
-	pPendingCBHead(NULL),
-	CurrSRV(16, 16),
-	MaxSRVSlotIndex(0),
-	RenderStates(32, 32),
-	Samplers(16, 16),
-	MaxViewportCount(0) /*, IsInsideFrame(false)*/
-{
-}
-//---------------------------------------------------------------------
 
 }
 

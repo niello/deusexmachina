@@ -8,6 +8,7 @@
 #include <Render/Model.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/ResourceLoader.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>

@@ -10,6 +10,7 @@
 
 namespace CEGUI
 {
+CDEMTexture::~CDEMTexture() {}
 
 static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFormat fmt)
 {

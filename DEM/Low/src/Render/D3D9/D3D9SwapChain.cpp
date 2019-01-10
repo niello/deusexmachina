@@ -9,6 +9,12 @@
 namespace Render
 {
 
+CD3D9SwapChain::~CD3D9SwapChain()
+{
+	if (IsValid()) Destroy();
+}
+//---------------------------------------------------------------------
+
 void CD3D9SwapChain::Release()
 {
 	Sub_OnClosing = NULL;

@@ -4,6 +4,7 @@
 #include <Render/MeshGenerators.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/ResourceLoader.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
@@ -36,7 +37,7 @@ IRenderable* CSkybox::Clone()
 }
 //---------------------------------------------------------------------
 
-bool CSkybox::ValidateResources(PGPUDriver GPU)
+bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 {
 	if (!RMaterial->IsLoaded())
 	{
@@ -55,7 +56,7 @@ bool CSkybox::ValidateResources(PGPUDriver GPU)
 		if (Gen.IsNullPtr())
 		{
 			Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);
-			GenSkybox->GPU = GPU;
+			GenSkybox->GPU = pGPU;
 			Gen = GenSkybox.GetUnsafe();
 		}
 		ResourceMgr->GenerateResourceSync(*RMesh, *Gen);
