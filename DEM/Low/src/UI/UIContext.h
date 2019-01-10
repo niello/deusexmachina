@@ -17,14 +17,14 @@ class CUIContext: public Core::CObject
 private:
 
 	PUIWindow			RootWindow;
-	CEGUI::GUIContext*	pCtx;
+	CEGUI::GUIContext*	pCtx = nullptr;
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 
 public:
 
 	//!!!pass OS window and render target params, either intermediate RT or swap chain index! or unify?
-	CUIContext(): pCtx(NULL) {}
+	CUIContext();
 	~CUIContext();
 
 	void				Init(CEGUI::GUIContext* pContext);

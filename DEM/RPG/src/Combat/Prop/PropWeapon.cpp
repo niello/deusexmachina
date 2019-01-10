@@ -2,6 +2,7 @@
 
 #include <AI/PropActorBrain.h>
 #include <Combat/Event/ObjDamageDone.h>
+#include <Events/Subscription.h>
 #include <AI/AIServer.h>
 #include <Game/GameServer.h>
 #include <Core/Factory.h>

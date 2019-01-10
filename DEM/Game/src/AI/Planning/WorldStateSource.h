@@ -18,7 +18,8 @@ namespace Prop
 
 namespace AI
 {
-using namespace Prop;
+
+class CWorldState;
 
 class CWorldStateSource: public Core::CObject
 {
@@ -27,7 +28,7 @@ class CWorldStateSource: public Core::CObject
 public:
 
 	virtual void Init(Data::PParams Desc) = 0;
-	virtual bool FillWorldState(const CActor* pActor, const CPropSmartObject* pSO, CWorldState& WS) = 0;
+	virtual bool FillWorldState(const CActor* pActor, const Prop::CPropSmartObject* pSO, CWorldState& WS) = 0;
 };
 
 typedef Ptr<CWorldStateSource> PWorldStateSource;

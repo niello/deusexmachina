@@ -8,6 +8,7 @@
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
+#include <Events/Subscription.h>
 #include <Core/Factory.h>
 
 namespace Prop

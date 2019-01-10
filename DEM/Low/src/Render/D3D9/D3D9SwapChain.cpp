@@ -1,6 +1,9 @@
 #include "D3D9SwapChain.h"
 
+#include <Render/DisplayDriver.h>
 #include <Render/RenderTarget.h>
+#include <System/OSWindow.h>
+#include <Events/Subscription.h>
 
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -8,6 +11,7 @@
 
 namespace Render
 {
+CD3D9SwapChain::CD3D9SwapChain() {}
 
 CD3D9SwapChain::~CD3D9SwapChain()
 {
@@ -17,9 +21,9 @@ CD3D9SwapChain::~CD3D9SwapChain()
 
 void CD3D9SwapChain::Release()
 {
-	Sub_OnClosing = NULL;
-	Sub_OnSizeChanged = NULL;
-	Sub_OnToggleFullscreen = NULL;
+	Sub_OnClosing = nullptr;
+	Sub_OnSizeChanged = nullptr;
+	Sub_OnToggleFullscreen = nullptr;
 
 	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();
 
@@ -30,9 +34,9 @@ void CD3D9SwapChain::Release()
 void CD3D9SwapChain::Destroy()
 {
 	Release();
-	TargetDisplay = NULL;
-	TargetWindow = NULL;
-	BackBufferRT = NULL;
+	TargetDisplay = nullptr;
+	TargetWindow = nullptr;
+	BackBufferRT = nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -29,12 +29,12 @@ static EWSProp GetPropKeyByName(const char* KeyName)
 }
 //---------------------------------------------------------------------
 
-bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const CPropSmartObject* pSO, CWorldState& WS)
+bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const Prop::CPropSmartObject* pSO, CWorldState& WS)
 {
 	if (!Func.IsValid()) OK;
 
-	CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<CPropScriptable>();
-	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
+	Prop::CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<Prop::CPropScriptable>();
+	Prop::CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
 	if (!pScriptObj) OK;
 
 	Data::CData RetVal;

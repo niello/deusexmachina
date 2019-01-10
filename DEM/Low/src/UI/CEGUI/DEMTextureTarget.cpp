@@ -3,6 +3,7 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/RenderTarget.h>
+#include <Render/DepthStencilBuffer.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMTexture.h>
 

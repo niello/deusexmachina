@@ -1,5 +1,6 @@
 #include "D3D9RenderState.h"
 
+#include <Render/D3D9/D3D9Shader.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
@@ -8,6 +9,9 @@
 namespace Render
 {
 __ImplementClass(Render::CD3D9RenderState, 'RS09', Render::CRenderState);
+
+CD3D9RenderState::CD3D9RenderState() {}
+CD3D9RenderState::~CD3D9RenderState() {}
 
 const D3DRENDERSTATETYPE CD3D9RenderState::D3DStates[D3D9_RS_COUNT] =
 {

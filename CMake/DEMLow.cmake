@@ -273,7 +273,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/SI/SI_L1.h
 	DEM/Low/src/System/Memory.h
 	DEM/Low/src/System/OSWindow.h
-	DEM/Low/src/System/OSWindowClass.h
 	DEM/Low/src/System/Platform.h
 	DEM/Low/src/System/System.h
 	DEM/Low/src/System/Allocators/PoolAllocator.h

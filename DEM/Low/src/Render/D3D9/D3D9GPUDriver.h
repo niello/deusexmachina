@@ -77,17 +77,17 @@ protected:
 	CFixedArray<PD3D9RenderTarget>		CurrRT;
 	PD3D9DepthStencilBuffer				CurrDS;
 	PD3D9RenderState					CurrRS;
-	CFixedArray<CCBRec>					CurrCB;				// CB_Slot_Count vertex, then CB_Slot_Count pixel
-	CFixedArray<PD3D9Sampler>			CurrSS;				// Pixel, then vertex
-	CFixedArray<PD3D9Texture>			CurrTex;			// Pixel, then vertex
+	CFixedArray<CCBRec>					CurrCB;		// CB_Slot_Count vertex, then CB_Slot_Count pixel
+	CFixedArray<PD3D9Sampler>			CurrSS;		// Pixel, then vertex
+	CFixedArray<PD3D9Texture>			CurrTex;	// Pixel, then vertex
 
-	char*								pCurrShaderConsts;	// Main aligned pointer, for deallocation, next ones are offset pointers
-	float*								pCurrVSFloat4;		// D3DCaps.MaxVertexShaderConst * float4
-	int*								pCurrVSInt4;		// 16 * int4
-	BOOL*								pCurrVSBool;		// 16 * BOOL
-	float*								pCurrPSFloat4;		// 224 * float4
-	int*								pCurrPSInt4;		// 16 * int4
-	BOOL*								pCurrPSBool;		// 16 * BOOL
+	char*								pCurrShaderConsts = nullptr;	// Main aligned pointer, for deallocation, next ones are offset pointers
+	float*								pCurrVSFloat4 = nullptr;		// D3DCaps.MaxVertexShaderConst * float4
+	int*								pCurrVSInt4 = nullptr;			// 16 * int4
+	BOOL*								pCurrVSBool = nullptr;			// 16 * BOOL
+	float*								pCurrPSFloat4 = nullptr;		// 224 * float4
+	int*								pCurrPSInt4 = nullptr;			// 16 * int4
+	BOOL*								pCurrPSBool = nullptr;			// 16 * BOOL
 
 	CArray<CD3D9SwapChain>				SwapChains;
 	CDict<CStrID, PD3D9VertexLayout>	VertexLayouts;
@@ -95,11 +95,10 @@ protected:
 	PD3D9RenderState					DefaultRenderState;
 	CArray<PD3D9Sampler>				Samplers;
 	PD3D9Sampler						DefaultSampler;
-	bool								IsInsideFrame;
-	//bool								Wireframe;
+	bool								IsInsideFrame = false;
 
 	D3DCAPS9							D3DCaps;
-	IDirect3DDevice9*					pD3DDevice;
+	IDirect3DDevice9*					pD3DDevice = nullptr;
 
 	struct CTmpCB
 	{
@@ -109,7 +108,7 @@ protected:
 
 	CPoolAllocator<CTmpCB>				TmpCBPool;
 	CHashTable<HConstBuffer, CTmpCB*>	TmpConstantBuffers;
-	CTmpCB*								pPendingCBHead;
+	CTmpCB*								pPendingCBHead = nullptr;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
@@ -148,7 +147,7 @@ protected:
 
 public:
 
-	virtual ~CD3D9GPUDriver() { Release(); }
+	virtual ~CD3D9GPUDriver();
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType);
 	virtual bool				CheckCaps(ECaps Cap) const;
@@ -233,22 +232,6 @@ public:
 };
 
 typedef Ptr<CD3D9GPUDriver> PD3D9GPUDriver;
-
-inline CD3D9GPUDriver::CD3D9GPUDriver():
-	SwapChains(1, 1),
-	pD3DDevice(NULL),
-	pCurrShaderConsts(NULL),
-	pCurrVSFloat4(NULL),
-	pCurrVSInt4(NULL),
-	pCurrVSBool(NULL),
-	pCurrPSFloat4(NULL),
-	pCurrPSInt4(NULL),
-	pCurrPSBool(NULL),
-	pPendingCBHead(NULL),
-	IsInsideFrame(false)
-{
-}
-//---------------------------------------------------------------------
 
 }
 

@@ -2,10 +2,14 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/RenderState.h>
 #include <Render/Shader.h>
 #include <Render/ShaderMetadata.h>
 #include <Render/ShaderConstant.h>
 #include <Render/SamplerDesc.h>
+#include <Render/Sampler.h>
+#include <Render/ConstantBuffer.h>
+#include <Render/VertexBuffer.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <IO/PathUtils.h>

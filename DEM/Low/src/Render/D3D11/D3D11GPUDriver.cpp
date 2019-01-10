@@ -1113,8 +1113,11 @@ void CD3D11GPUDriver::EndFrame()
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		if (CurrRT[i].IsValidPtr())
 			RTString += StringUtils::FromInt((int)CurrRT[i].GetUnsafe());
-	CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
-	CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+	if (Core::CCoreServer::HasInstance())
+	{
+		CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
+		CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+	}
 #endif
 
 	/*

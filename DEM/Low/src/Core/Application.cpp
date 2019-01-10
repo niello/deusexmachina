@@ -20,6 +20,11 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 }
 //---------------------------------------------------------------------
 
+CApplication::~CApplication()
+{
+}
+//---------------------------------------------------------------------
+
 Sys::POSWindow CApplication::CreateRenderWindow()
 {
 	//!!!DBG TMP! fix title & icon!

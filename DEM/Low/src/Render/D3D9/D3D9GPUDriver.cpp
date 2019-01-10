@@ -16,6 +16,7 @@
 #include <Render/SamplerDesc.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
+#include <Events/Subscription.h>
 #include <IO/Stream.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <Core/Factory.h>
@@ -29,6 +30,18 @@
 namespace Render
 {
 __ImplementClass(Render::CD3D9GPUDriver, 'D9GD', Render::CGPUDriver);
+
+CD3D9GPUDriver::CD3D9GPUDriver():
+	SwapChains(1, 1)
+{
+}
+//---------------------------------------------------------------------
+
+CD3D9GPUDriver::~CD3D9GPUDriver()
+{
+	Release();
+}
+//---------------------------------------------------------------------
 
 bool CD3D9GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 {

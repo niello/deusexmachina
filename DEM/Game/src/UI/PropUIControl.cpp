@@ -23,6 +23,10 @@ namespace Prop
 __ImplementClass(Prop::CPropUIControl, 'PUIC', Game::CProperty);
 __ImplementPropertyStorage(CPropUIControl);
 
+CPropUIControl::CAction::CAction() {}
+CPropUIControl::CAction::CAction(CStrID _ID, const char* Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority) {}
+CPropUIControl::CPropUIControl() {}
+
 bool CPropUIControl::InternalActivate()
 {
 	Enable(GetEntity()->GetAttr<bool>(CStrID("UIEnabled"), true));

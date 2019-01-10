@@ -2,6 +2,8 @@
 
 #include <AI/Planning/ActionTpl.h>
 #include <AI/Behaviour/Action.h>
+#include <AI/Planning/WorldStateSource.h>
+#include <Scripting/ScriptObject.h> // Used when adding new record to SOActTpls. TODO: use std collections?
 #include <Data/Params.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
@@ -75,7 +77,7 @@ void CAIServer::AddSmartAction(CStrID ID, const Data::CParams& Desc)
 const CSmartAction* CAIServer::GetSmartAction(CStrID ID) const
 {
 	IPTR Idx = SOActTpls.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAt(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? &SOActTpls.ValueAt(Idx) : nullptr;
 }
 //---------------------------------------------------------------------
 

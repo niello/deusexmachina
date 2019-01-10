@@ -1,18 +1,20 @@
 #pragma once
-#ifndef __DEM_L2_PROP_SMART_OBJECT_H__
-#define __DEM_L2_PROP_SMART_OBJECT_H__
-
 #include <Game/Property.h>
 #include <Data/Params.h>
-#include <AI/SmartObj/SmartAction.h>
 #include <AI/ActorFwd.h>
 #include <Data/Dictionary.h>
+#include <Math/Vector3.h>
 #include <DetourNavMesh.h> // for dtPolyRef
 
 // Smart object provides set of actions that can be executed on it by actor either through command or AI.
 
 // Dev info:
 // Can make this class inherited from the AINode analog.
+
+namespace AI
+{
+	class CSmartAction;
+}
 
 namespace Prop
 {
@@ -87,7 +89,7 @@ public:
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);
 	void				SetTransitionProgress(float Time);
-	void				StopTransition() { UNSUBSCRIBE_EVENT(OnBeginFrame); TrManualControl = true; }
+	void				StopTransition();
 	void				AbortTransition(float Duration = 0.f);
 	bool				IsInTransition() const { return CurrState != TargetState; }
 	CStrID				GetCurrState() const { return CurrState; }
@@ -109,29 +111,4 @@ public:
 	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };
 
-inline CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
-{
-	IPTR Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
 }
-//---------------------------------------------------------------------
-
-inline const CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID) const
-{
-	IPTR Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
-}
-//---------------------------------------------------------------------
-
-inline bool CPropSmartObject::IsActionEnabled(CStrID ID) const
-{
-	IPTR Idx = Actions.FindIndex(ID);
-	if (Idx == INVALID_INDEX) FAIL;
-	const CAction& Action = Actions.ValueAt(Idx);
-	return Action.Enabled && Action.pTpl;
-}
-//---------------------------------------------------------------------
-
-}
-
-#endif

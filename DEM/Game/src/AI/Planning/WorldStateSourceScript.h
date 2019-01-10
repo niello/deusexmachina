@@ -20,7 +20,7 @@ protected:
 public:
 
 	virtual void Init(Data::PParams Desc);
-	virtual bool FillWorldState(const CActor* pActor, const CPropSmartObject* pSO, CWorldState& WS);
+	virtual bool FillWorldState(const CActor* pActor, const Prop::CPropSmartObject* pSO, CWorldState& WS);
 };
 
 typedef Ptr<CWorldStateSourceScript> PWorldStateSourceScript;

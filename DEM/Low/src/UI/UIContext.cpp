@@ -3,10 +3,12 @@
 #include <CEGUI/RenderTarget.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <Events/EventDispatcher.h>
+#include <Events/Subscription.h>
 #include <System/Events/OSInput.h>
 
 namespace UI
 {
+CUIContext::CUIContext() {}
 
 CUIContext::~CUIContext()
 {

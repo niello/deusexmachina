@@ -33,17 +33,17 @@ protected:
 	};
 
 	CDEMRenderer&					d_owner;
-	CDEMTexture*					d_activeTexture;
+	CDEMTexture*					d_activeTexture = nullptr;
 	mutable Render::PVertexBuffer	d_vertexBuffer;
-	mutable UPTR					d_bufferSize;
-	mutable bool					d_bufferIsSync;
+	mutable UPTR					d_bufferSize = 0;
+	mutable bool					d_bufferIsSync = false;
 	CArray<BatchInfo>				d_batches;
 	CArray<D3DVertex>				d_vertices;
 	Rectf							d_clipRect;
-	bool							d_clippingActive;
-	RenderEffect*					d_effect;
+	bool							d_clippingActive = true;
+	RenderEffect*					d_effect = nullptr;
 	mutable matrix44				d_matrix;
-	mutable bool					d_matrixValid;
+	mutable bool					d_matrixValid = false;
 
 	Vector3f						d_translation;
 	Quaternion						d_rotation;

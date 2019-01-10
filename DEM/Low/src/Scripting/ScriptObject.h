@@ -51,7 +51,7 @@ public:
 
 	friend class CScriptServer;
 
-	CScriptObject(const char* ObjName, const char* TableName = NULL): Name(ObjName), Table(TableName) {}
+	CScriptObject(const char* ObjName, const char* TableName = nullptr): Name(ObjName), Table(TableName) {}
 	virtual ~CScriptObject();
 
 	static CScriptObject* GetFromStack(lua_State* l, int StackIdx);

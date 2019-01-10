@@ -53,9 +53,6 @@ class CSwapChain
 {
 public:
 
-	CSwapChain();
-	virtual ~CSwapChain();
-
 	PRenderTarget	BackBufferRT;
 	DEM::Sys::POSWindow	TargetWindow;	//???to desc?
 	Data::CRect		LastWindowRect;	// Stores a window size in a windowed mode
@@ -65,6 +62,9 @@ public:
 
 	//???need? what about other statistics?
 	UPTR			FrameID = 0;
+
+	CSwapChain();
+	virtual ~CSwapChain();
 
 	bool IsValid() const { return TargetWindow.IsValidPtr(); }
 	bool IsFullscreen() const { return TargetDisplay.IsValidPtr(); }

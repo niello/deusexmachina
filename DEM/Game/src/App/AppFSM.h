@@ -19,7 +19,7 @@ protected:
 	CStrID					CurrState;
 	CStrID					RequestedState;
 	CArray<PStateHandler>	StateHandlers;
-	CStateHandler*			pCurrStateHandler;
+	CStateHandler*			pCurrStateHandler = nullptr;
 	Data::PParams			TransitionParams;
 
 	void ChangeState(CStrID NextState);
@@ -28,7 +28,8 @@ protected:
 
 public:
 
-	CAppFSM(): pCurrStateHandler(NULL) {}
+	CAppFSM();
+	~CAppFSM();
 
 	void			Init(CStrID InitialState);
 	bool			Advance();

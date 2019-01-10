@@ -3,6 +3,7 @@
 #include <Game/Property.h>
 #include <Game/GameLevel.h>
 #include <Game/GameServer.h>
+#include <Events/Subscription.h>
 #include <Data/DataArray.h>
 
 namespace Game

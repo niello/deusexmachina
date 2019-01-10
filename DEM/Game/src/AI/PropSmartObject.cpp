@@ -2,6 +2,7 @@
 
 #include <Game/GameServer.h>
 #include <AI/AIServer.h>
+#include <AI/SmartObj/SmartAction.h>
 #include <AI/PropActorBrain.h> // For GetEntity() only
 #include <Animation/PropAnimation.h>
 #include <Scripting/PropScriptable.h>
@@ -392,6 +393,13 @@ void CPropSmartObject::SetTransitionProgress(float Time)
 }
 //---------------------------------------------------------------------
 
+void CPropSmartObject::StopTransition()
+{
+	UNSUBSCRIBE_EVENT(OnBeginFrame);
+	TrManualControl = true;
+}
+//---------------------------------------------------------------------
+
 void CPropSmartObject::AbortTransition(float Duration)
 {
 	//!!!implement nonzero duration!
@@ -607,6 +615,29 @@ bool CPropSmartObject::GetRequiredActorFacing(CStrID ActionID, const AI::CActor*
 	OutFaceDir = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation() - pActor->Position;
 	OutFaceDir.norm();
 	OK;
+}
+//---------------------------------------------------------------------
+
+CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
+{
+	IPTR Idx = Actions.FindIndex(ID);
+	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
+}
+//---------------------------------------------------------------------
+
+const CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID) const
+{
+	IPTR Idx = Actions.FindIndex(ID);
+	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
+}
+//---------------------------------------------------------------------
+
+bool CPropSmartObject::IsActionEnabled(CStrID ID) const
+{
+	IPTR Idx = Actions.FindIndex(ID);
+	if (Idx == INVALID_INDEX) FAIL;
+	const CAction& Action = Actions.ValueAt(Idx);
+	return Action.Enabled && Action.pTpl;
 }
 //---------------------------------------------------------------------
 

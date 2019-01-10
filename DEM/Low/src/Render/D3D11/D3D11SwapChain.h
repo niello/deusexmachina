@@ -21,10 +21,10 @@ public:
 	Events::PSub		Sub_OnSizeChanged;
 	Events::PSub		Sub_OnClosing;
 
-	IDXGISwapChain*		pSwapChain;
+	IDXGISwapChain*		pSwapChain = nullptr;
 
-	CD3D11SwapChain(): pSwapChain(NULL) {}
-	~CD3D11SwapChain() { if (IsValid()) Destroy(); }
+	CD3D11SwapChain();
+	virtual ~CD3D11SwapChain();
 
 	void Destroy();
 };

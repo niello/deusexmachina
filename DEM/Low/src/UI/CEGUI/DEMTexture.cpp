@@ -10,7 +10,19 @@
 
 namespace CEGUI
 {
+
+CDEMTexture::CDEMTexture(CDEMRenderer& Renderer, const String& name):
+	Owner(Renderer),
+	Size(0, 0),
+	DataSize(0, 0),
+	TexelScaling(0, 0),
+	Name(name)
+{
+}
+//--------------------------------------------------------------------
+
 CDEMTexture::~CDEMTexture() {}
+//--------------------------------------------------------------------
 
 static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFormat fmt)
 {

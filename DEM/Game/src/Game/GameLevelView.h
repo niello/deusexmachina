@@ -39,6 +39,9 @@ protected:
 
 public:
 
+	CGameLevelView();
+	~CGameLevelView();
+
 	bool					Setup(CGameLevel& GameLevel, HHandle hView);
 	void					Trigger();
 

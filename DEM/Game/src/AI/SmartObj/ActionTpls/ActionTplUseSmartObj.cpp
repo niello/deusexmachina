@@ -3,6 +3,7 @@
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
 #include <AI/PropSmartObject.h>
 #include <AI/Planning/WorldStateSource.h>
+#include <AI/SmartObj/SmartAction.h>
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Core/Factory.h>

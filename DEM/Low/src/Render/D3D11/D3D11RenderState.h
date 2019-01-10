@@ -25,14 +25,14 @@ public:
 	PD3D11Shader				GS;
 	PD3D11Shader				HS;
 	PD3D11Shader				DS;
-	ID3D11RasterizerState*		pRState;
-	ID3D11DepthStencilState*	pDSState;
-	ID3D11BlendState*			pBState;
+	ID3D11RasterizerState*		pRState = nullptr;
+	ID3D11DepthStencilState*	pDSState = nullptr;
+	ID3D11BlendState*			pBState = nullptr;
 	unsigned int				StencilRef; //???get from stored desc?
 	float						BlendFactorRGBA[4]; //???get from stored desc?
 	unsigned int				SampleMask; //???get from stored desc?
 
-	CD3D11RenderState(): pRState(NULL), pDSState(NULL), pBState(NULL) {}
+	CD3D11RenderState();
 	virtual ~CD3D11RenderState();
 };
 

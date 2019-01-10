@@ -4,6 +4,7 @@
 #include <UI/CEGUI/DEMTexture.h>
 #include <Render/GPUDriver.h>
 #include <Render/VertexBuffer.h>
+#include <Render/Texture.h>
 #include <Data/Regions.h>
 
 #include <CEGUI/RenderEffect.h>
@@ -14,14 +15,7 @@ namespace CEGUI
 
 CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner):
 	d_owner(owner),
-	d_activeTexture(0),
-	d_vertexBuffer(0),
-	d_bufferSize(0),
-	d_bufferIsSync(false),
 	d_clipRect(0, 0, 0, 0),
-	d_clippingActive(true),
-	d_effect(NULL),
-	d_matrixValid(false),
 	d_translation(0, 0, 0),
 	d_rotation(1, 0, 0, 0),
 	d_pivot(0, 0, 0)

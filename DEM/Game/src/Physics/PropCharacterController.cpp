@@ -4,6 +4,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/Events/SetTransform.h>
+#include <Events/Subscription.h>
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
 #include <Debug/DebugDraw.h>

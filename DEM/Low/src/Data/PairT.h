@@ -18,6 +18,7 @@ public:
 
 	CPairT() {}
 	CPairT(const TKey& _Key, const TVal& _Value):  Key(_Key), Value(_Value) {}
+	CPairT(TKey&& _Key, TVal&& _Value):  Key(std::move(_Key)), Value(std::move(_Value)) {}
 	CPairT(const TKey& _Key): Key(_Key) {}
 	CPairT(const CPairT<TKey, TVal>& Other): Key(Other.Key), Value(Other.Value) {}
 

@@ -4,6 +4,7 @@
 #include <AI/PropSmartObject.h>
 #include <UI/PropUIControl.h>
 #include <Game/Entity.h>
+#include <Events/Subscription.h>
 #include <Core/Factory.h>
 
 namespace Prop

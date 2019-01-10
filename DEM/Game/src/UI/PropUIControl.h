@@ -38,16 +38,16 @@ public:
 		CStrID			EventID;	// cached
 		CString			UIName;		//???use CString to reduce size of struct?
 		short			Priority;	// The higher is value the closer an action to the top of the list
-		bool			Enabled;	//!!!add methods to control it!
-		bool			Visible;
-		bool			IsSOAction;
+		bool			Enabled = true;	//!!!add methods to control it!
+		bool			Visible = true;
+		bool			IsSOAction = true;
 		//???picture, or associate with ID? if so, UIName & Priority can also be associated with ID
 
 		//!!!can also store handler HandleAction(CStrID ActionID)! (template functor?)
 		Events::PSub	Sub;
 
-		CAction(): Enabled(true), Visible(true), IsSOAction(false) {}
-		CAction(CStrID _ID, const char* Name, int _Priority): ID(_ID), UIName(Name), Priority(_Priority), Enabled(true), Visible(true) {}
+		CAction();
+		CAction(CStrID _ID, const char* Name, int _Priority);
 
 		const char*	GetUIName() const { return UIName.IsValid() ? UIName.CStr() : ID.CStr(); }
 		bool	operator <(const CAction& Other) const { return (Enabled != Other.Enabled) ? Enabled : (Priority > Other.Priority); }
@@ -61,8 +61,8 @@ protected:
 	CString						UIName;	//???use attribute?
 	CString						UIDesc;	//???use attribute?
 	CArray<CAction>				Actions;
-	bool						Enabled;
-	bool						TipVisible;
+	bool						Enabled = true;
+	bool						TipVisible = false;
 	bool						ReflectSOActions;
 
 	virtual bool	InternalActivate();
@@ -90,7 +90,7 @@ public:
 
 	enum { Priority_Default = 20, Priority_Top = 100 };
 
-	CPropUIControl(): TipVisible(false), Enabled(true) { }
+	CPropUIControl();
 
 	void					Enable(bool SetEnabled);
 	bool					IsEnabled() const { return Enabled; }

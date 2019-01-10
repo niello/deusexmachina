@@ -57,6 +57,7 @@ protected:
 public:
 
 	CApplication(Sys::IPlatform& _Platform);
+	virtual ~CApplication();
 
 	Sys::IPlatform& GetPlatform() const { return Platform; }
 

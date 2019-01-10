@@ -32,7 +32,7 @@ class CAIServer: public Core::CObject
 private:
 
 	CPlanner							Planner; //???or singleton?
-	CDict<CStrID, CSmartAction>	SOActTpls;
+	CDict<CStrID, CSmartAction>			SOActTpls;
 	CDict<CStrID, dtQueryFilter*>		NavQueryFilters;
 	dtQueryFilter*						pDebugFilter;
 	CDict<CStrID, COAParams*>			ObstacleAvoidanceParams;

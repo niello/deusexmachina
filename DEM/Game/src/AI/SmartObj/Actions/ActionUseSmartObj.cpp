@@ -2,6 +2,7 @@
 
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
+#include <AI/SmartObj/SmartAction.h>
 #include <Game/GameServer.h>
 #include <Core/Factory.h>
 

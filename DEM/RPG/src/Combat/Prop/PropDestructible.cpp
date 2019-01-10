@@ -1,6 +1,7 @@
 #include "PropDestructible.h"
 
 #include <Combat/Event/ObjDamageDone.h>
+#include <Events/Subscription.h>
 #include <Game/Entity.h>
 #include <Core/Factory.h>
 

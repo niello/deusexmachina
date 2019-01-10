@@ -93,7 +93,8 @@ public:
 	PD3D9Shader	PS;
 	DWORD		D3DStateValues[D3D9_RS_COUNT];
 
-	//virtual ~CD3D9RenderState();
+	CD3D9RenderState();
+	virtual ~CD3D9RenderState();
 };
 
 typedef Ptr<CD3D9RenderState> PD3D9RenderState;

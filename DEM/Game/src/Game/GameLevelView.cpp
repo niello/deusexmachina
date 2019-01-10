@@ -7,10 +7,13 @@
 #include <Frame/NodeAttrCamera.h>
 #include <Render/RenderTarget.h>
 #include <UI/UIContext.h>
+#include <Events/Subscription.h>
 #include <Data/Regions.h>
 
 namespace Game
 {
+CGameLevelView::CGameLevelView() {}
+CGameLevelView::~CGameLevelView() {}
 
 bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 {

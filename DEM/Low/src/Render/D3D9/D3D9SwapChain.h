@@ -16,6 +16,7 @@ class CD3D9SwapChain: public CSwapChain
 {
 public:
 
+	CD3D9SwapChain();
 	virtual ~CD3D9SwapChain();
 
 	IDirect3DSwapChain9*	pSwapChain = nullptr; // NULL for implicit swap chain, device methods will be called

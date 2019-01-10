@@ -1,9 +1,12 @@
 #include "AppFSM.h"
 
 #include <Events/EventServer.h>
+#include <Events/Subscription.h>
 
 namespace App
 {
+CAppFSM::CAppFSM() {}
+CAppFSM::~CAppFSM() {}
 
 void CAppFSM::Init(CStrID InitialState)
 {
