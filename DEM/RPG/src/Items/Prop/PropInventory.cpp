@@ -1,11 +1,11 @@
 #include "PropInventory.h"
 
-#include <Items/ItemManager.h>
 #include <Items/Prop/PropItem.h>
 #include <Scripting/PropScriptable.h>
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Events/EventServer.h>
+#include <Events/Subscription.h>
 #include <Data/DataArray.h>
 #include <Math/Math.h>
 #include <Core/Factory.h>
@@ -14,6 +14,11 @@ namespace Prop
 {
 __ImplementClass(Prop::CPropInventory, 'PINV', Game::CProperty);
 __ImplementPropertyStorage(CPropInventory);
+
+CPropInventory::~CPropInventory()
+{
+}
+//---------------------------------------------------------------------
 
 bool CPropInventory::InternalActivate()
 {
@@ -150,16 +155,16 @@ bool CPropInventory::OnSOActionDone(Events::CEventDispatcher* pDispatcher, const
 	if (ActionID == CStrID("PickItem"))
 	{
 		CStrID SOID = P->Get<CStrID>(CStrID("SO"));
-		CPropItem* pPropItem = GameSrv->GetEntityMgr()->GetProperty<CPropItem>(SOID);
-		if (!pPropItem || !pPropItem->Items.IsValid()) OK;
-
-		pPropItem->Items.Remove(AddItem(pPropItem->Items, true));
-
-		if (!pPropItem->Items.IsValid())
-		{
-			pPropItem->Items.Clear();
-			GameSrv->GetEntityMgr()->RequestDestruction(SOID);
-		}
+//		CPropItem* pPropItem = GameSrv->GetEntityMgr()->GetProperty<CPropItem>(SOID);
+//		if (!pPropItem || !pPropItem->Items.IsValid()) OK;
+//
+//		pPropItem->Items.Remove(AddItem(pPropItem->Items, true));
+//
+//		if (!pPropItem->Items.IsValid())
+//		{
+//			pPropItem->Items.Clear();
+//			GameSrv->GetEntityMgr()->RequestDestruction(SOID);
+//		}
 	}
 
 	OK;

@@ -40,7 +40,8 @@ protected:
 
 public:
 
-	CResource(): ByteSize(0), State(Rsrc_NotLoaded) {}
+	CResource();
+	~CResource();
 
 	CResourceObject*	GetObject() const;
 	template<class T>
@@ -56,7 +57,7 @@ public:
 	// For internal use by CResourceManager
 	void				SetUID(CStrID NewUID) { UID = NewUID; }
 	void				SetState(EResourceState NewState) const { State = NewState; } //!!!must be thread-safe!
-	void				Init(PResourceObject NewObject, PResourceLoader NewLoader = NULL, PResourceGenerator NewGenerator = NULL) { Object = NewObject; Loader = NewLoader; Generator = NewGenerator; } //!!!must be thread-safe!
+	void				Init(PResourceObject NewObject, PResourceLoader NewLoader = nullptr, PResourceGenerator NewGenerator = nullptr);
 };
 
 typedef Ptr<CResource> PResource;

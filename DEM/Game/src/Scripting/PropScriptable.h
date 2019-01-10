@@ -29,8 +29,8 @@ protected:
 
 public:
 
-	//CPropScriptable() {}
-	//virtual ~CPropScriptable();
+	CPropScriptable();
+	virtual ~CPropScriptable();
 
 	//???or hide & add RunFunction calls here?
 	PEntityScriptObject GetScriptObject() const { return Obj; }

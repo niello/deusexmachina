@@ -5,6 +5,7 @@
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
+#include <Data/Array.h>
 
 // Nebula variable watcher with pattern-matching filter
 

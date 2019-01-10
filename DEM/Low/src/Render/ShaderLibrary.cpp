@@ -8,6 +8,11 @@ namespace Render
 {
 __ImplementClass(Render::CShaderLibrary, 'SLIB', Resources::CResourceObject);
 
+CShaderLibrary::CShaderLibrary()
+{
+}
+//---------------------------------------------------------------------
+
 CShaderLibrary::~CShaderLibrary()
 {
 	//if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency

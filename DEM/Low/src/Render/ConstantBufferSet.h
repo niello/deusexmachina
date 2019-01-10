@@ -38,6 +38,9 @@ protected:
 
 public:
 
+	CConstantBufferSet();
+	~CConstantBufferSet();
+
 	bool				SetGPU(PGPUDriver NewGPU);
 	bool				RegisterPermanentBuffer(HConstBuffer Handle, CConstantBuffer& Buffer);
 	bool				IsBufferRegistered(HConstBuffer Handle) const { return Buffers.Contains(Handle); }

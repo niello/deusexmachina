@@ -45,6 +45,17 @@ void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
 }
 //---------------------------------------------------------------------
 
+CGameLevel::CGameLevel()
+{
+}
+//---------------------------------------------------------------------
+
+CGameLevel::~CGameLevel()
+{
+	Term();
+}
+//---------------------------------------------------------------------
+
 bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 {
 	//n_assert(!Initialized);

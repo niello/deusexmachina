@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/Array.h>
+#include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 
 // Script object is a base for all scripted objects. It can interact with scripts in both directions.

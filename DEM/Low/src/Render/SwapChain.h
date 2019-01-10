@@ -61,9 +61,7 @@ public:
 	CSwapChainDesc	Desc;
 
 	//???need? what about other statistics?
-	UPTR			FrameID;
-
-	CSwapChain(): FrameID(0) {}
+	UPTR			FrameID = 0;
 
 	bool IsValid() const { return TargetWindow.IsValidPtr(); }
 	bool IsFullscreen() const { return TargetDisplay.IsValidPtr(); }

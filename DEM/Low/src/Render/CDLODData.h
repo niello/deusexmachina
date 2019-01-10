@@ -48,7 +48,7 @@ protected:
 
 public:
 
-	CCDLODData(): pMinMaxData(NULL) {}
+	CCDLODData();
 	virtual ~CCDLODData();
 
 	virtual bool		IsResourceValid() const { return HeightMap.IsValidPtr(); }

@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_GAME_PROPERTY_H__
-#define __DEM_L2_GAME_PROPERTY_H__
 
 // Properties are attached to game entities to add specific functionality or behaviors to the entity.
 
@@ -35,13 +33,13 @@ protected:
 
 public:
 
-	CProperty(): Active(false), pEntity(NULL) {}
-	virtual ~CProperty() {}
+	CProperty();
+	virtual ~CProperty();
 
 	virtual bool				Initialize() { OK; }
 	void						Activate();
 	void						Deactivate();
-	virtual CPropertyStorage*	GetStorage() const { return NULL; }
+	virtual CPropertyStorage*	GetStorage() const { return nullptr; }
 	CEntity*					GetEntity() const { n_assert(pEntity); return pEntity; }
 	bool						IsActive() const { return Active; }
 };
@@ -66,5 +64,3 @@ public:
 	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
 #define PROP_SUBSCRIBE_PEVENT_PRIORITY(EventName, Class, Handler, Priority) \
 	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
-
-#endif

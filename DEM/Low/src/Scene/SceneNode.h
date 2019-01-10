@@ -117,15 +117,6 @@ public:
 	const vector3&			GetWorldPosition() const { return WorldMatrix.Translation(); }
 };
 
-inline CSceneNode::CSceneNode(CStrID NodeName):
-	pParent(NULL),
-	Name(NodeName),
-	Flags(Active | LocalMatrixDirty | LocalTransformValid)
-{
-	Attrs.Flags.Clear(Array_KeepOrder);
-}
-//---------------------------------------------------------------------
-
 inline void CSceneNode::RemoveChild(CSceneNode& Node)
 {
 	n_assert(Node.pParent == this);

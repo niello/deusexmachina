@@ -1,10 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_PTR_H__
-#define __DEM_L1_PTR_H__
-
 #include <System/System.h>
 
-// Smart pointer class which manages the life time of Data::CRefCounted objects.
+// Intrusive smart pointer class.
 // Can be used like a normal C++ pointer in most cases.
 
 template<class T>
@@ -16,122 +13,102 @@ private:
 
 public:
 
-	Ptr(): pObj(NULL) {}
-	Ptr(T* pSrcObj): pObj(pSrcObj) { if (pObj) ((Data::CRefCounted*)pObj)->AddRef(); }
-	Ptr(const Ptr<T>& pSrcPtr): pObj(pSrcPtr.pObj) { if (pObj) ((Data::CRefCounted*)pObj)->AddRef(); }
-	~Ptr() { if (pObj) ((Data::CRefCounted*)pObj)->Release(); }
+	//template<class U> friend class Ptr;
 
-	bool	IsValidPtr() const { return !!pObj; }
-	bool	IsNullPtr() const { return !pObj; }
-	T*		Get() const;
-	T*		GetUnsafe() const { return pObj; }
+	constexpr Ptr() noexcept : pObj(nullptr) {}
 
-	void	operator =(const Ptr<T>& Other);
-	void	operator =(T* Other);
-	T*		operator ->() const;
-	T&		operator *() const;
-			operator T*() const;
-			operator bool() const { return !!pObj; }
+	Ptr(T* pOther): pObj(pOther) { if (pObj) DEMPtrAddRef(pObj); }
+
+	Ptr(Ptr const& Other): pObj(Other.pObj) { if (pObj) DEMPtrAddRef(pObj); }
+	template<class U>
+	Ptr(Ptr<U> const& Other) : pObj(Other.GetUnsafe()) { if (pObj) DEMPtrAddRef(pObj); }
+
+	Ptr(Ptr&& Other) noexcept : pObj(Other.pObj) { Other.pObj = nullptr; }
+	template<class U>
+	Ptr(Ptr<U>&& Other) : pObj(Other.pObj) { Other.pObj = nullptr; }
+
+	~Ptr() { if (pObj) DEMPtrRelease(pObj); }
+
+	bool	IsValidPtr() const noexcept { return !!pObj; }
+	bool	IsNullPtr() const noexcept { return !pObj; }
+	T*		Get() const { n_assert(pObj); return pObj; }
+	T*		GetUnsafe() const noexcept { return pObj; }
+	void	Reset() { Ptr().Swap(*this); }
+
+	void	Swap(Ptr& Other) noexcept
+	{
+		T* pTmp = pObj;
+		pObj = Other.pObj;
+		Other.pObj = pTmp;
+	}
+
+	Ptr& operator =(T* pOther) { Ptr(pOther).Swap(*this); return *this; }
+
+	Ptr& operator =(Ptr const& Other) { Ptr(Other).Swap(*this); return *this; }
+	template<class U>
+	Ptr& operator =(Ptr<U> const& Other) { Ptr(Other).Swap(*this); return *this; }
+
+	Ptr& operator =(Ptr&& Other) noexcept { Ptr(static_cast<Ptr&&>(Other)).Swap(*this); return *this; }
+	template<class U>
+	Ptr& operator =(Ptr<U>&& Other) noexcept { Ptr(static_cast<Ptr<U>&&>(Other)).Swap(*this); return *this; }
+
+	T*		operator ->() const { n_assert(pObj); return pObj; }
+	T&		operator *() const { n_assert(pObj); return *pObj; }
+			operator T*() const { n_assert(pObj); return pObj; }
+			operator bool() const noexcept { return !!pObj; }
 };
 
-template<class T1, class T2>
-inline bool operator ==(const Ptr<T1>& Left, const Ptr<T2>& Right)
+template<class T, class U> inline bool operator ==(Ptr<T> const& a, Ptr<U> const& b) noexcept
 {
-	return Left.GetUnsafe() == Right.GetUnsafe();
+	return a.GetUnsafe() == b.GetUnsafe();
 }
-//---------------------------------------------------------------------
 
-template<class T1, class T2>
-inline bool operator ==(const Ptr<T1>& Left, T2* pRight)
+template<class T, class U> inline bool operator !=(Ptr<T> const& a, Ptr<U> const& b) noexcept
 {
-	return Left.GetUnsafe() == pRight;
+	return a.GetUnsafe() != b.GetUnsafe();
 }
-//---------------------------------------------------------------------
 
-template<class T1, class T2>
-inline bool operator ==(T1* pLeft, const Ptr<T2>& Right)
+template<class T, class U> inline bool operator ==(Ptr<T> const& a, U* b) noexcept
 {
-	return pLeft == Right.GetUnsafe();
+	return a.GetUnsafe() == b;
 }
-//---------------------------------------------------------------------
 
-template<class T1, class T2>
-inline bool operator !=(const Ptr<T1>& Left, const Ptr<T2>& Right)
+template<class T, class U> inline bool operator !=(Ptr<T> const& a, U* b) noexcept
 {
-	return Left.GetUnsafe() != Right.GetUnsafe();
+	return a.GetUnsafe() != b;
 }
-//---------------------------------------------------------------------
 
-template<class T1, class T2>
-inline bool operator !=(const Ptr<T1>& Left, T2* pRight)
+template<class T, class U> inline bool operator ==(T* a, Ptr<U> const& b) noexcept
 {
-	return Left.GetUnsafe() != pRight;
+	return a == b.GetUnsafe();
 }
-//---------------------------------------------------------------------
 
-template<class T1, class T2>
-inline bool operator !=(T1* pLeft, const Ptr<T2>& Right)
+template<class T, class U> inline bool operator !=(T* a, Ptr<U> const& b) noexcept
 {
-	return pLeft != Right.GetUnsafe();
+	return a != b.GetUnsafe();
 }
-//---------------------------------------------------------------------
 
-template<class T>
-void Ptr<T>::operator =(const Ptr<T>& Other)
+template<class T> inline bool operator ==(Ptr<T> const& p, std::nullptr_t) noexcept
 {
-	if (pObj != Other.pObj)
-	{
-		T* pNewPtr = Other.pObj;
-		if (pNewPtr) ((Data::CRefCounted*)pNewPtr)->AddRef();
-		if (pObj) ((Data::CRefCounted*)pObj)->Release();		// Here Other can be destructed so we remember it's ptr before
-		pObj = pNewPtr;
-	}
+	return p.GetUnsafe() == 0;
 }
-//---------------------------------------------------------------------
 
-template<class T>
-void Ptr<T>::operator =(T* Ptr)
+template<class T> inline bool operator ==(std::nullptr_t, Ptr<T> const& p) noexcept
 {
-	if (pObj != Ptr)
-	{
-		if (Ptr) ((Data::CRefCounted*)Ptr)->AddRef();
-		if (pObj) ((Data::CRefCounted*)pObj)->Release();
-		pObj = Ptr;
-	}
+	return p.GetUnsafe() == 0;
 }
-//---------------------------------------------------------------------
 
-template<class T> inline T* Ptr<T>::operator->() const
+template<class T> inline bool operator !=(Ptr<T> const& p, std::nullptr_t) noexcept
 {
-	n_assert2(pObj, "NULL pointer access in Ptr::operator->()!");
-	return pObj;
+	return p.GetUnsafe() != 0;
 }
-//---------------------------------------------------------------------
 
-template<class T> inline T& Ptr<T>::operator *() const
+template<class T> inline bool operator !=(std::nullptr_t, Ptr<T> const& p) noexcept
 {
-	n_assert2(pObj, "NULL pointer access in Ptr::operator *()!");
-	return *pObj;
+	return p.GetUnsafe() != 0;
 }
-//---------------------------------------------------------------------
 
-template<class T> inline Ptr<T>::operator T*() const
+template<class T> inline bool operator <(Ptr<T> const& a, Ptr<T> const& b) noexcept
 {
-	n_assert2(pObj, "NULL pointer access in Ptr::operator T*()!");
-	return pObj;
+	return std::less<T *>()(a.GetUnsafe(), b.GetUnsafe());
 }
-//---------------------------------------------------------------------
-
-template<class T> inline T* Ptr<T>::Get() const
-{
-	n_assert2(pObj, "NULL pointer access in Ptr::Get()!");
-	return pObj;
-}
-//---------------------------------------------------------------------
-
-#endif
-
-
-
-
-

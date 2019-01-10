@@ -37,7 +37,7 @@ private:
 public:
 
 	CIOServer();
-	~CIOServer() { __DestructSingleton; }
+	~CIOServer();
 
 	//???create FSs outside and mount all with priority?
 	bool			MountNPK(const char* pNPKPath, const char* pRoot = NULL);

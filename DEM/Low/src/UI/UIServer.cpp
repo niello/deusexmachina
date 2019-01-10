@@ -109,6 +109,13 @@ void CUIServer::LoadFont(const char* pResourceFile)
 }
 //---------------------------------------------------------------------
 
+//???get rid of it with CEGUI 1.0?
+PUIContext CUIServer::GetDefaultContext() const
+{
+	return DefaultContext;
+}
+//---------------------------------------------------------------------
+
 bool CUIServer::OnDeviceLost(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//Renderer->preD3DReset();

@@ -11,6 +11,9 @@ namespace Prop
 __ImplementClass(Prop::CPropItem, 'PITM', Game::CProperty);
 __ImplementPropertyStorage(CPropItem);
 
+CPropItem::CPropItem() {}
+CPropItem::~CPropItem() {}
+
 bool CPropItem::InternalActivate()
 {
 	Items::PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();

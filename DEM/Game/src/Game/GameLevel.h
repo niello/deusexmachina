@@ -70,7 +70,8 @@ protected:
 
 public:
 
-	virtual ~CGameLevel() { Term(); }
+	CGameLevel();
+	virtual ~CGameLevel();
 
 	bool					Load(CStrID LevelID, const Data::CParams& Desc);
 	bool					Validate(Render::CGPUDriver* pGPU);

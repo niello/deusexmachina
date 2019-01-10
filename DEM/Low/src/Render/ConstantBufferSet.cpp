@@ -5,6 +5,8 @@
 
 namespace Render
 {
+CConstantBufferSet::CConstantBufferSet() {}
+CConstantBufferSet::~CConstantBufferSet() {}
 
 bool CConstantBufferSet::SetGPU(PGPUDriver NewGPU)
 {

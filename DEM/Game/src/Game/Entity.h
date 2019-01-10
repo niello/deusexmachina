@@ -36,11 +36,11 @@ protected:
 	void SetUID(CStrID NewUID);
 	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID), Flags(WaitingForLevelActivation) {}
+	CEntity(CStrID _UID);
 
 public:
 
-	~CEntity() { n_assert_dbg(IsInactive()); }
+	~CEntity();
 
 	void						SetLevel(CGameLevel* pNewLevel);
 	void						Activate();
@@ -51,7 +51,7 @@ public:
 	template<class T> bool		HasProperty() const { return GetProperty<T>() != NULL; }
 
 	CStrID						GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
-	CGameLevel*					GetLevel() const { return Level.GetUnsafe(); }
+	CGameLevel*					GetLevel() const;
 
 	//???!!!need GetAttr with default?!
 	void						BeginNewAttrs(UPTR Count) { Attrs.BeginAdd(Count); }

@@ -14,7 +14,7 @@ class CRefCounted
 {
 private:
 
-	mutable int RefCount; // volatile
+	mutable int RefCount; // volatile for threading?
 
 public:
 
@@ -29,5 +29,8 @@ public:
 typedef Ptr<CRefCounted> PRefCounted;
 
 }
+
+inline void DEMPtrAddRef(Data::CRefCounted* p) noexcept { p->AddRef(); }
+inline void DEMPtrRelease(Data::CRefCounted* p) noexcept { p->Release(); }
 
 #endif

@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include <Events/EventServer.h>
+#include <Events/Subscription.h>
 #include <Math/Math.h>
 #include <System/Platform.h>
 #include <System/Win32/OSWindowWin32.h>

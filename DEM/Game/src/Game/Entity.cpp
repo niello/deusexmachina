@@ -9,6 +9,17 @@ namespace Game
 {
 __ImplementClassNoFactory(Game::CEntity, Core::CObject);
 
+CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID), Flags(WaitingForLevelActivation)
+{
+}
+//---------------------------------------------------------------------
+
+CEntity::~CEntity()
+{
+	n_assert_dbg(IsInactive());
+}
+//---------------------------------------------------------------------
+
 void CEntity::SetUID(CStrID NewUID)
 {
 	n_assert(NewUID.IsValid());
@@ -24,6 +35,12 @@ void CEntity::SetLevel(CGameLevel* pNewLevel)
 	Level = pNewLevel;
 	if (pNewLevel) Level->Subscribe(NULL, this, &CEntity::OnEvent, &LevelSub);
 	else LevelSub = NULL;
+}
+//---------------------------------------------------------------------
+
+CGameLevel* CEntity::GetLevel() const
+{
+	return Level.GetUnsafe();
 }
 //---------------------------------------------------------------------
 

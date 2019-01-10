@@ -124,7 +124,7 @@ public:
 
 // END Blackboard
 	
-	CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSystem(this) {}
+	CPropActorBrain();
 	//virtual ~CPropActorBrain();
 
 	bool				IsActionAvailable(const CActionTpl* pAction) const;

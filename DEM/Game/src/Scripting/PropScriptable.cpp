@@ -9,6 +9,9 @@ namespace Prop
 __ImplementClass(Prop::CPropScriptable, 'PSCR', Game::CProperty);
 __ImplementPropertyStorage(CPropScriptable);
 
+CPropScriptable::CPropScriptable() {}
+CPropScriptable::~CPropScriptable() {}
+
 bool CPropScriptable::InternalActivate()
 {
 	CString LuaClass;

@@ -1,16 +1,16 @@
 #pragma once
-#ifndef __DEM_L1_EVENT_SUB_H__
-#define __DEM_L1_EVENT_SUB_H__
-
-#include <Events/EventDispatcher.h>
+#include <Data/RefCounted.h>
+#include <Events/EventID.h>
 
 // Subscription handle is handy to automatically unsubscribe from event
 // NB: Subscription prevents its dispatcher from being destroyed (mb weak pointer would be better)
 
 namespace Events
 {
+class CEventDispatcher;
+typedef Ptr<class CEventHandler> PEventHandler;
 
-class CSubscription: public Core::CObject
+class CSubscription: public Data::CRefCounted
 {
 private:
 
@@ -20,9 +20,8 @@ private:
 
 public:
 
-	CSubscription(CEventDispatcher* d, CEventID e, PEventHandler h):
-		pDispatcher(d), Event(e), Handler(h) {}
-	virtual ~CSubscription() { pDispatcher->Unsubscribe(Event, Handler); }
+	CSubscription(CEventDispatcher* d, CEventID e, PEventHandler h);
+	virtual ~CSubscription();
 
 	CEventID				GetEvent() const { return Event; }
 	const CEventHandler*	GetHandler() const { return Handler; }
@@ -32,5 +31,3 @@ public:
 typedef Ptr<CSubscription> PSub;
 
 }
-
-#endif

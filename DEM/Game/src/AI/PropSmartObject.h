@@ -57,8 +57,8 @@ protected:
 	float				TrDuration;
 	CStrID				TrActionID;
 	bool				TrManualControl;
-	UPTR				AnimTaskID;
-	const CAnimInfo*	pCurrAnimInfo;
+	UPTR				AnimTaskID = INVALID_INDEX;
+	const CAnimInfo*	pCurrAnimInfo = nullptr;
 
 	// Game object stuff
 	CStrID				TypeID;
@@ -81,7 +81,8 @@ protected:
 
 public:
 
-	CPropSmartObject(): Actions(1, 2), Anims(0, 2), ActionAnimIndices(0, 2), StateAnimIndices(0, 2), AnimTaskID(INVALID_INDEX), pCurrAnimInfo(NULL) {}
+	CPropSmartObject();
+	virtual ~CPropSmartObject();
 
 	bool				SetState(CStrID StateID, CStrID ActionID = CStrID::Empty, float TransitionDuration = -1.f, bool ManualControl = false);
 	void				SetTransitionDuration(float Time);

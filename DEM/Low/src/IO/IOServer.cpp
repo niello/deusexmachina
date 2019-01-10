@@ -32,6 +32,12 @@ CIOServer::CIOServer(): Assigns(32)
 }
 //---------------------------------------------------------------------
 
+CIOServer::~CIOServer()
+{
+	__DestructSingleton;
+}
+//---------------------------------------------------------------------
+
 bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 {
 	PFileSystem NewFS = n_new(CFileSystemNPK);

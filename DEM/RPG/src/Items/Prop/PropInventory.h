@@ -46,14 +46,13 @@ protected:
 
 public:
 
-	float	MaxWeight; // < 0 = not limited
-	float	MaxVolume; // < 0 = not limited
-	float	CurrWeight;
-	float	CurrVolume;
+	float	MaxWeight = -1.f; // < 0 = not limited
+	float	MaxVolume = -1.f; // < 0 = not limited
+	float	CurrWeight = 0.f;
+	float	CurrVolume = 0.f;
 
 	//???MaxWV to attrs?
-	CPropInventory(): MaxWeight(82.f), MaxVolume(146.f), CurrWeight(0.f), CurrVolume(0.f) {}
-	//virtual ~CPropInventory();
+	virtual ~CPropInventory();
 
 	U16					AddItem(Items::PItem NewItem, U16 Count = 1, bool AsManyAsCan = false);
 	U16					AddItem(CStrID ItemID, U16 Count = 1, bool AsManyAsCan = false);

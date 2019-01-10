@@ -45,16 +45,16 @@ class CView
 protected:
 
 	PRenderPath									RenderPath;
-	CNodeAttrCamera*							pCamera; //???smart ptr?
+	CNodeAttrCamera*							pCamera = nullptr; //???smart ptr?
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<CNodeAttrAmbientLight*>				EnvironmentCache;
-	bool										VisibilityCacheDirty; //???to flags?
+	bool										VisibilityCacheDirty = true; //???to flags?
 
-	ELODType									MeshLODType;
+	ELODType									MeshLODType = LOD_None;
 	CFixedArray<float>							MeshLODScale;
-	ELODType									MaterialLODType;
+	ELODType									MaterialLODType = LOD_None;
 	CFixedArray<float>							MaterialLODScale;
 
 public:
@@ -62,7 +62,7 @@ public:
 	//???add viewport settings here? to render multiple views into one RT
 
 	//???scene start node? if NULL, render all nodes, else only that and its children
-	Scene::CSPS*								pSPS;
+	Scene::CSPS*								pSPS = nullptr;
 	UI::PUIContext								UIContext;
 
 	Render::PGPUDriver							GPU;
@@ -75,7 +75,7 @@ public:
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
-	CView(): pSPS(NULL), pCamera(NULL), VisibilityCacheDirty(true), MeshLODType(LOD_None), MaterialLODType(LOD_None) {}
+	CView();
 	~CView();
 
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars

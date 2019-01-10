@@ -59,6 +59,13 @@ PEntity CEntityManager::CloneEntity(const CEntity& Entity, CStrID UID)
 }
 //---------------------------------------------------------------------
 
+void CEntityManager::DeleteEntity(CEntity& Entity)
+{
+	IPTR Idx = Entities.FindIndex(&Entity);
+	if (Idx != INVALID_INDEX) DeleteEntity(Idx);
+}
+//---------------------------------------------------------------------
+
 void CEntityManager::DeleteEntity(IPTR Idx)
 {
 	CEntity& Entity = *Entities[Idx];

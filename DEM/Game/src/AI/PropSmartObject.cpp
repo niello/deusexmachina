@@ -16,6 +16,16 @@ namespace Prop
 __ImplementClass(Prop::CPropSmartObject, 'PRSO', Game::CProperty);
 __ImplementPropertyStorage(CPropSmartObject);
 
+CPropSmartObject::CPropSmartObject(): Actions(1, 2), Anims(0, 2), ActionAnimIndices(0, 2), StateAnimIndices(0, 2)
+{
+}
+//---------------------------------------------------------------------
+
+CPropSmartObject::~CPropSmartObject()
+{
+}
+//---------------------------------------------------------------------
+
 bool CPropSmartObject::InternalActivate()
 {
 	Data::PParams Desc;

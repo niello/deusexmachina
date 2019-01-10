@@ -7,6 +7,15 @@ namespace Scene
 {
 const UPTR MAX_NODE_NAME_LEN = 64;
 
+CSceneNode::CSceneNode(CStrID NodeName):
+	pParent(NULL),
+	Name(NodeName),
+	Flags(Active | LocalMatrixDirty | LocalTransformValid)
+{
+	Attrs.Flags.Clear(Array_KeepOrder);
+}
+//---------------------------------------------------------------------
+
 CSceneNode::~CSceneNode()
 {
 	Children.Clear();

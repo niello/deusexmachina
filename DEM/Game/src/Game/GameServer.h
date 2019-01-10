@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_GAME_SERVER_H__
-#define __DEM_L2_GAME_SERVER_H__
-
 #include <Data/Singleton.h>
 #include <Core/TimeSource.h>
 #include <Game/EntityManager.h>
@@ -43,7 +40,7 @@ class CGameServer
 
 protected:
 
-	bool							IsOpen;
+	bool							IsOpen = false;
 	CString							GameFileName;
 	CString							CurrProfile;
 	CDataDict						Attrs;
@@ -62,8 +59,8 @@ protected:
 
 public:
 
-	CGameServer(): IsOpen(false), LevelViews(0, 1), LevelViewHandles(1) { __ConstructSingleton; }
-	~CGameServer() { n_assert(!IsOpen); __DestructSingleton; }
+	CGameServer();
+	~CGameServer();
 
 	bool			Open();
 	void			Close();
@@ -72,7 +69,7 @@ public:
 	bool			LoadLevel(CStrID ID, const Data::CParams& Desc);
 	void			UnloadLevel(CStrID ID);
 	CGameLevel*		GetLevel(CStrID ID) const;
-	bool			IsLevelLoaded(CStrID ID) const { return Levels.FindIndex(ID) != INVALID_INDEX; }
+	bool			IsLevelLoaded(CStrID ID) const;
 	bool			ValidateAllLevels(Render::CGPUDriver* pGPU);
 
 	HHandle			CreateLevelView(CStrID LevelID);
@@ -93,7 +90,7 @@ public:
 	bool			LoadGame(const char* pName);
 	bool			LoadGameLevel(CStrID ID);
 	void			UnloadGameLevel(CStrID ID);
-	void			UnloadAllGameLevels() { while (Levels.GetCount()) UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1)); }
+	void			UnloadAllGameLevels();
 	void			ExitGame();
 	bool			IsGameStarted() const { return GameFileName.IsValid(); }
 
@@ -120,13 +117,6 @@ public:
 	void			PauseGame(bool Pause = true) const;
 	void			ToggleGamePause() const { PauseGame(!IsGamePaused()); }
 };
-
-inline CGameLevel* CGameServer::GetLevel(CStrID ID) const
-{
-	IPTR Idx = Levels.FindIndex(ID);
-	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
-}
-//---------------------------------------------------------------------
 
 template<class T>
 inline void CGameServer::SetGlobalAttr(CStrID ID, const T& Value)
@@ -179,6 +169,3 @@ inline bool CGameServer::GetGlobalAttr(Data::CData& Out, CStrID ID) const
 //---------------------------------------------------------------------
 
 }
-
-#endif
-

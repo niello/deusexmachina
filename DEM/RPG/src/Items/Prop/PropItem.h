@@ -25,6 +25,9 @@ protected:
 
 public:
 
+	CPropItem();
+	virtual ~CPropItem();
+
 	Items::CItemStack Items;
 };
 

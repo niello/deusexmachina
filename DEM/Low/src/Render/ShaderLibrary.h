@@ -48,6 +48,7 @@ protected:
 
 public:
 
+	CShaderLibrary();
 	virtual ~CShaderLibrary();
 
 	void			SetLoader(Resources::PShaderLoader Loader);

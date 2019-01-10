@@ -1,7 +1,28 @@
 #include "Resource.h"
+#include <Resources/ResourceGenerator.h>
+#include <Resources/ResourceLoader.h>
 
 namespace Resources
 {
+
+CResource::CResource(): ByteSize(0), State(Rsrc_NotLoaded)
+{
+}
+//--------------------------------------------------------------------
+
+CResource::~CResource()
+{
+}
+//--------------------------------------------------------------------
+
+//!!!must be thread-safe!
+void CResource::Init(PResourceObject NewObject, PResourceLoader NewLoader, PResourceGenerator NewGenerator)
+{
+	Object = NewObject;
+	Loader = NewLoader;
+	Generator = NewGenerator;
+}
+//--------------------------------------------------------------------
 
 CResourceObject* CResource::GetObject() const
 {

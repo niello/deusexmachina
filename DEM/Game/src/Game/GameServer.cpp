@@ -22,6 +22,19 @@ namespace Game
 __ImplementClassNoFactory(Game::CGameServer, Core::CObject);
 __ImplementSingleton(CGameServer);
 
+CGameServer::CGameServer(): LevelViews(0, 1), LevelViewHandles(1)
+{
+	__ConstructSingleton;
+}
+//---------------------------------------------------------------------
+
+CGameServer::~CGameServer()
+{
+	n_assert(!IsOpen);
+	__DestructSingleton;
+}
+//---------------------------------------------------------------------
+
 bool CGameServer::Open()
 {
 	n_assert(!IsOpen);
@@ -174,6 +187,19 @@ void CGameServer::UnloadLevel(CStrID ID)
 	EventSrv->FireEvent(CStrID("OnLevelUnloaded"), P);
 
 	n_assert_dbg(Level->GetRefCount() == 1);
+}
+//---------------------------------------------------------------------
+
+CGameLevel* CGameServer::GetLevel(CStrID ID) const
+{
+	IPTR Idx = Levels.FindIndex(ID);
+	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
+}
+//---------------------------------------------------------------------
+
+bool CGameServer::IsLevelLoaded(CStrID ID) const
+{
+	return Levels.FindIndex(ID) != INVALID_INDEX;
 }
 //---------------------------------------------------------------------
 
@@ -404,6 +430,13 @@ void CGameServer::UnloadGameLevel(CStrID ID)
 	n_assert(CurrProfile.IsValid());
 	n_verify(CommitLevelDiff(*Levels.ValueAt(LevelIdx)));
 	UnloadLevel(ID);
+}
+//---------------------------------------------------------------------
+
+void CGameServer::UnloadAllGameLevels()
+{
+	while (Levels.GetCount())
+		UnloadGameLevel(Levels.KeyAt(Levels.GetCount() - 1));
 }
 //---------------------------------------------------------------------
 

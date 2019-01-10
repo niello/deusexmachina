@@ -42,6 +42,11 @@ const float CPropActorBrain::LinearArrivalTolerance = 0.009f;
 // In radians
 const float CPropActorBrain::AngularArrivalTolerance = 0.005f;
 
+CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSystem(this)
+{
+}
+//---------------------------------------------------------------------
+
 bool CPropActorBrain::InternalActivate()
 {
 	if (!GetEntity()->GetLevel()->GetAI()) FAIL;

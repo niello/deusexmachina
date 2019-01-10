@@ -29,8 +29,8 @@ protected:
 	};
 
 	Render::PSkinInfo	SkinInfo;
-	matrix44*			pSkinPalette;
-	Scene::CSceneNode**	pBoneNodes; //???strong refs?
+	matrix44*			pSkinPalette = nullptr;
+	Scene::CSceneNode**	pBoneNodes = nullptr; //???strong refs?
 
 	Scene::CSceneNode*	SetupBoneNode(UPTR BoneIndex);
 
@@ -40,8 +40,7 @@ protected:
 
 public:
 
-	CNodeAttrSkin(): pSkinPalette(NULL), pBoneNodes(NULL) {}
-	~CNodeAttrSkin();
+	virtual ~CNodeAttrSkin();
 
 	bool							Initialize();
 

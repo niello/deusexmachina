@@ -67,13 +67,6 @@ public:
 	void		GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& Out) const;
 };
 
-inline void CEntityManager::DeleteEntity(CEntity& Entity)
-{
-	IPTR Idx = Entities.FindIndex(&Entity);
-	if (Idx != INVALID_INDEX) DeleteEntity(Idx);
-}
-//---------------------------------------------------------------------
-
 inline void CEntityManager::DeleteEntity(CStrID UID)
 {
 	CEntity* pEnt = GetEntity(UID);

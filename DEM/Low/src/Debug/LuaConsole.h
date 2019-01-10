@@ -5,6 +5,7 @@
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
+#include <Data/Array.h>
 
 // Lua console window, that allows to see engine output and to execute Lua commands.
 

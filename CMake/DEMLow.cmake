@@ -345,6 +345,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/EventDispatcher.cpp
 	DEM/Low/src/Events/EventNative.cpp
 	DEM/Low/src/Events/EventServer.cpp
+	DEM/Low/src/Events/Subscription.cpp
 	DEM/Low/src/Frame/NodeAttrAmbientLight.cpp
 	DEM/Low/src/Frame/NodeAttrCamera.cpp
 	DEM/Low/src/Frame/NodeAttrLight.cpp

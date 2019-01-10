@@ -88,7 +88,7 @@ public:
 
 	void			Trigger(float FrameTime);
 
-	PUIContext		GetDefaultContext() const { return DefaultContext; } //???get rid of it with CEGUI 1.0?
+	PUIContext		GetDefaultContext() const; //???get rid of it with CEGUI 1.0?
 	PUIContext		CreateContext(); //!!!params!
 	void			DestroyContext(PUIContext Context); //!!!params!
 	
