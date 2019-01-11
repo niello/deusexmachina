@@ -46,7 +46,7 @@ public:
 	void			Disable();
 	bool			IsEnabled() const { return NodeCtlr.IsValidPtr() && NodeCtlr->IsActive(); }
 
-	Physics::CCharacterController* GetController() const { return CharCtlr.GetUnsafe(); }
+	Physics::CCharacterController* GetController() const { return CharCtlr.Get(); }
 	//!!!WRITE!
 	void			GetAABB(CAABB& AABB) const { Sys::Error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
 };

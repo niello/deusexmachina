@@ -60,7 +60,7 @@ Scene::PNodeAttribute CNodeAttrSkin::Clone()
 	PNodeAttrSkin ClonedAttr = n_new(CNodeAttrSkin);
 	ClonedAttr->SkinInfo = SkinInfo;
 	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
-	return ClonedAttr.GetUnsafe();
+	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 

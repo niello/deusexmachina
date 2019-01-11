@@ -29,7 +29,7 @@ bool CInputTranslator::LoadSettings(const Data::CParams& Desc)
 		for (UPTR i = 0; i < ContextsDesc->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = ContextsDesc->Get(i);
-			const Data::CDataArray& ContextLayoutDesc = *Prm.GetValue<Data::PDataArray>().GetUnsafe();
+			const Data::CDataArray& ContextLayoutDesc = *Prm.GetValue<Data::PDataArray>().Get();
 
 			CStrID ContextID = Prm.GetName();
 			if (!CreateContext(ContextID)) FAIL;

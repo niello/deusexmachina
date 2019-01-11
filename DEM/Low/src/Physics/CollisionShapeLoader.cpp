@@ -121,7 +121,7 @@ PResourceObject CCollisionShapeLoaderPRM::Load(IO::CStream& Stream)
 
 			vector3 Offset((AABB.Max.x - AABB.Min.x) * 0.5f, (AABB.Min.y + AABB.Max.y) * 0.5f, (AABB.Max.z - AABB.Min.z) * 0.5f);
 
-			if (HFShape->Setup(pBtShape, pHFData, Offset)) return HFShape.GetUnsafe();
+			if (HFShape->Setup(pBtShape, pHFData, Offset)) return HFShape.Get();
 
 			delete pBtShape;
 		}
@@ -149,7 +149,7 @@ PResourceObject CCollisionShapeLoaderPRM::Load(IO::CStream& Stream)
 		else return NULL;
 
 		Physics::PCollisionShape Shape = n_new(Physics::CCollisionShape);
-		if (Shape.IsValidPtr() && Shape->Setup(pBtShape)) return Shape.GetUnsafe();
+		if (Shape.IsValidPtr() && Shape->Setup(pBtShape)) return Shape.Get();
 
 		delete pBtShape;
 	}

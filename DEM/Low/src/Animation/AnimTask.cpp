@@ -133,13 +133,13 @@ void CAnimTask::Update()
 		float IpolFactor;
 		((Anim::CMocapClip*)Clip.Get())->GetSamplingParams(CursorPos, Loop, KeyIndex, IpolFactor);
 		for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CNodeControllerMocap*)Ctlrs[i].GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
+			((Anim::CNodeControllerMocap*)Ctlrs[i].Get())->SetSamplingParams(KeyIndex, IpolFactor);
 	}
 	else if (Clip->IsA<Anim::CKeyframeClip>())
 	{
 		float Time = Clip->AdjustCursorPos(CursorPos, Loop);
 		for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
-			((Anim::CNodeControllerKeyframe*)Ctlrs[i].GetUnsafe())->SetTime(Time);
+			((Anim::CNodeControllerKeyframe*)Ctlrs[i].Get())->SetTime(Time);
 	}
 
 	// Fire animation events

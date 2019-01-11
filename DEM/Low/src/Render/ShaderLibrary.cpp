@@ -23,7 +23,7 @@ CShaderLibrary::~CShaderLibrary()
 void CShaderLibrary::SetLoader(Resources::CShaderLoader* pLoader)
 {
 	//if (ShaderLoader.IsValidPtr()) ShaderLoader->ShaderLibrary = NULL; // Resolve cyclic dependency
-	if (pLoader) ShaderLoader = (Resources::CShaderLoader*)pLoader->Clone().GetUnsafe();
+	if (pLoader) ShaderLoader = (Resources::CShaderLoader*)pLoader->Clone().Get();
 	else ShaderLoader.Reset();
 }
 //---------------------------------------------------------------------
@@ -54,7 +54,7 @@ PShader CShaderLibrary::GetShaderByID(U32 ID)
 
 	// Introduce temporary cyclic dependency, loader requires access to library to load input signatures by ID
 	ShaderLoader->ShaderLibrary = this;
-	Rec.LoadedShader = (CShader*)ShaderLoader->Load(*Stream.GetUnsafe()).GetUnsafe();
+	Rec.LoadedShader = (CShader*)ShaderLoader->Load(*Stream.Get()).Get();
 	ShaderLoader->ShaderLibrary = nullptr;
 
 	Stream = nullptr;

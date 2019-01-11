@@ -23,7 +23,7 @@ bool CInputConditionSequence::Initialize(const Data::CParams& Desc)
 	{
 		Data::PParams SubDesc = EventDescArray->Get<Data::PParams>(i);
 		CInputConditionEvent* pEvent = CInputConditionEvent::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pEvent || !pEvent->Initialize(*SubDesc.GetUnsafe())) FAIL;
+		if (!pEvent || !pEvent->Initialize(*SubDesc.Get())) FAIL;
 		Children[i] = pEvent;
 	}
 

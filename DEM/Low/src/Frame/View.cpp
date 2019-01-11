@@ -30,7 +30,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	// GPU must be valid in order to create global shader params and buffers
 	if (GPU.IsNullPtr()) FAIL;
 
-	if (RenderPath.GetUnsafe() == pNewRenderPath) OK;
+	if (RenderPath.Get() == pNewRenderPath) OK;
 
 	Globals.UnbindAndClear();
 	Globals.SetGPU(GPU);
@@ -64,7 +64,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 				Globals.UnbindAndClear();
 				FAIL;
 			}
-			Globals.RegisterPermanentBuffer(hCB, *CB.GetUnsafe());
+			Globals.RegisterPermanentBuffer(hCB, *CB.Get());
 		}
 	}
 

@@ -39,7 +39,7 @@ public:
 	void			SetEquippedCount(U16 NewCount) { n_assert(NewCount <= Count); EquippedCount = NewCount; }
 	CStrID			GetItemID() const { return Item->GetID(); }
 	Ptr<CItemTpl>	GetTpl() const { return Item->GetTpl(); }
-	CItem*			GetItem() const { return Item.GetUnsafe(); }
+	CItem*			GetItem() const { return Item.Get(); }
 	U16				GetCount() const { return Count; }
 	U16				GetEquippedCount() const { return EquippedCount; }
 	U16				GetNotEquippedCount() const { return Count - EquippedCount; }

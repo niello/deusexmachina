@@ -84,7 +84,7 @@ public:
 	//void PreserveDistance(); // When object/terrain is under a camera, follow its surface
 
 	CSceneNode*			GetCameraNode() const { return pCameraNode; }
-	CNodeController*	GetCameraController() const { return Ctlr.GetUnsafe(); }
+	CNodeController*	GetCameraController() const { return Ctlr.Get(); }
 	bool				IsCameraThirdPerson() const { return IsThirdPerson; }
 
 	//???force COI in parent space for 3P camera? default is zero vector

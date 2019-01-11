@@ -295,13 +295,13 @@ PStream CIOServer::CreateStream(const char* pURI) const
 	//!!!duplicate search for NPK, finds FS record twice, here and in CStream::Open()!
 	if (DefaultFS->FileExists(AbsURI.CStr()))
 	{
-		pFS = DefaultFS.GetUnsafe();
+		pFS = DefaultFS.Get();
 	}
 	else
 	{
 		for (UPTR i = 0; i < FS.GetCount(); ++i)
 		{
-			IFileSystem* pCurrFS = FS[i].GetUnsafe();
+			IFileSystem* pCurrFS = FS[i].Get();
 			if (pCurrFS && pCurrFS->FileExists(AbsURI.CStr()))
 			{
 				pFS = pCurrFS;
@@ -315,13 +315,13 @@ PStream CIOServer::CreateStream(const char* pURI) const
 	{
 		if (!DefaultFS->IsReadOnly())
 		{
-			pFS = DefaultFS.GetUnsafe();
+			pFS = DefaultFS.Get();
 		}
 		else
 		{
 			for (UPTR i = 0; i < FS.GetCount(); ++i)
 			{
-				IFileSystem* pCurrFS = FS[i].GetUnsafe();
+				IFileSystem* pCurrFS = FS[i].Get();
 				if (pCurrFS && !pCurrFS->IsReadOnly())
 				{
 					pFS = pCurrFS;

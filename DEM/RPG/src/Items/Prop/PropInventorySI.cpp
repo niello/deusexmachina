@@ -69,7 +69,7 @@ int CPropInventory_HasItem(lua_State* l)
 
 void CPropInventory::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("AddItem", CPropInventory_AddItem);
 	ScriptSrv->ExportCFunction("RemoveItem", CPropInventory_RemoveItem);
 	ScriptSrv->ExportCFunction("HasItem", CPropInventory_HasItem);
@@ -79,7 +79,7 @@ void CPropInventory::EnableSI(CPropScriptable& Prop)
 
 void CPropInventory::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("AddItem");
 	ScriptSrv->ClearField("RemoveItem");
 	ScriptSrv->ClearField("HasItem");

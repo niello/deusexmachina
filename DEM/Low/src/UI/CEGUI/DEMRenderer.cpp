@@ -376,39 +376,39 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
 {
 	if (WMCB.IsValidPtr())
-		ConstWorldMatrix->SetRawValue(*WMCB.GetUnsafe(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+		ConstWorldMatrix->SetRawValue(*WMCB.Get(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
 {
 	if (PMCB.IsValidPtr())
-		ConstProjMatrix->SetRawValue(*PMCB.GetUnsafe(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
+		ConstProjMatrix->SetRawValue(*PMCB.Get(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::commitChangedConsts()
 {
 	if (WMCB.IsValidPtr())
-		GPU->CommitShaderConstants(*WMCB.GetUnsafe());
+		GPU->CommitShaderConstants(*WMCB.Get());
 	if (hWMCB != hPMCB && PMCB.IsValidPtr())
-		GPU->CommitShaderConstants(*PMCB.GetUnsafe());
+		GPU->CommitShaderConstants(*PMCB.Get());
 }
 //--------------------------------------------------------------------
 
 void CDEMRenderer::beginRendering()
 {
-	GPU->SetVertexLayout(VertexLayout.GetUnsafe());
+	GPU->SetVertexLayout(VertexLayout.Get());
 
-	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hWMCB, WMCB.GetUnsafe());
-	GPU->BeginShaderConstants(*WMCB.GetUnsafe());
+	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hWMCB, WMCB.Get());
+	GPU->BeginShaderConstants(*WMCB.Get());
 	if (hWMCB != hPMCB)
 	{
-		GPU->BindConstantBuffer(Render::ShaderType_Vertex, hPMCB, PMCB.GetUnsafe());
-		GPU->BeginShaderConstants(*PMCB.GetUnsafe());
+		GPU->BindConstantBuffer(Render::ShaderType_Vertex, hPMCB, PMCB.Get());
+		GPU->BeginShaderConstants(*PMCB.Get());
 	}
 
-	GPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.GetUnsafe());
+	GPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.Get());
 }
 //---------------------------------------------------------------------
 

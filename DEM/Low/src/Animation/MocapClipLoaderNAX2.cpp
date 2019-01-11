@@ -130,7 +130,7 @@ PResourceObject CMocapClipLoaderNAX2::Load(IO::CStream& Stream)
 	Anim::PMocapClip Clip = n_new(Anim::CMocapClip);
 	Clip->Setup(Tracks, TrackMapping, NULL, pKeys, Group.numKeys, Group.keyStride, Group.keyTime);
 
-	return Clip.GetUnsafe();
+	return Clip.Get();
 }
 //---------------------------------------------------------------------
 

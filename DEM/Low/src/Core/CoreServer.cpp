@@ -188,7 +188,7 @@ void CCoreServer::Load(const Data::CParams& TimeParams)
 CTimeSource* CCoreServer::GetTimeSource(CStrID Name) const
 {
 	IPTR Idx = TimeSources.FindIndex(Name);
-	return (Idx != INVALID_INDEX) ? TimeSources.ValueAt(Idx).GetUnsafe() : NULL;
+	return (Idx != INVALID_INDEX) ? TimeSources.ValueAt(Idx).Get() : NULL;
 }
 //---------------------------------------------------------------------
 

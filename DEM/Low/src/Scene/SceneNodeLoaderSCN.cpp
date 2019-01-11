@@ -63,7 +63,7 @@ PResourceObject CSceneNodeLoaderSCN::Load(IO::CStream& Stream)
 	IO::CBinaryReader Reader(Stream);
 	Scene::PSceneNode Root = RootNode.IsValidPtr() ? RootNode : n_new(Scene::CSceneNode);
 	if (Root.IsNullPtr() || !LoadNode(Reader, Root)) return NULL;
-	return Root.GetUnsafe();
+	return Root.Get();
 }
 //---------------------------------------------------------------------
 

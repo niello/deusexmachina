@@ -34,7 +34,7 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 		for (UPTR i = 0; i < Context.pEffectOverrides->GetCount(); ++i)
 			if (Context.pEffectOverrides->KeyAt(i) == EffType)
 			{
-				pEffect = Context.pEffectOverrides->ValueAt(i).GetUnsafe();
+				pEffect = Context.pEffectOverrides->ValueAt(i).Get();
 				break;
 			}
 
@@ -106,12 +106,12 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 
 		const CMesh* pMesh = pRenderNode->pMesh;
 		n_assert_dbg(pMesh);
-		CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
+		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 		n_assert_dbg(pVB);
 
 		GPU.SetVertexLayout(pVB->GetVertexLayout());
 		GPU.SetVertexBuffer(0, pVB);
-		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
+		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 		for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)

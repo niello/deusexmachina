@@ -79,7 +79,7 @@ T* CEntity::GetProperty() const
 	PProperty Prop;
 	if (T::pStorage && T::pStorage->Get(UID, Prop))
 		if (!Prop->IsA(T::RTTI)) return nullptr;
-	return (T*)Prop.GetUnsafe();
+	return (T*)Prop.Get();
 }
 //---------------------------------------------------------------------
 

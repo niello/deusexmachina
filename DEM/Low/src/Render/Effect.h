@@ -89,14 +89,14 @@ typedef Ptr<CEffect> PEffect;
 inline const CTechnique* CEffect::GetTechByName(CStrID Name) const
 {
 	IPTR Idx = TechsByName.FindIndex(Name);
-	return Idx == INVALID_INDEX ? NULL : TechsByName.ValueAt(Idx).GetUnsafe();
+	return Idx == INVALID_INDEX ? NULL : TechsByName.ValueAt(Idx).Get();
 }
 //---------------------------------------------------------------------
 
 inline const CTechnique* CEffect::GetTechByInputSet(UPTR InputSet) const
 {
 	IPTR Idx = TechsByInputSet.FindIndex(InputSet);
-	return Idx == INVALID_INDEX ? NULL : TechsByInputSet.ValueAt(Idx).GetUnsafe();
+	return Idx == INVALID_INDEX ? NULL : TechsByInputSet.ValueAt(Idx).Get();
 }
 //---------------------------------------------------------------------
 

@@ -64,13 +64,13 @@ bool CRenderPath::Render(CView& View)
 
 	for (UPTR i = 0; i < RTSlots.GetCount(); ++i)
 	{
-		Render::CRenderTarget* pRT = View.RTs[i].GetUnsafe();
+		Render::CRenderTarget* pRT = View.RTs[i].Get();
 		if (pRT) View.GPU->ClearRenderTarget(*pRT, RTSlots[i].ClearValue);
 	}
 
 	for (UPTR i = 0; i < DSSlots.GetCount(); ++i)
 	{
-		Render::CDepthStencilBuffer* pDS = View.DSBuffers[i].GetUnsafe();
+		Render::CDepthStencilBuffer* pDS = View.DSBuffers[i].Get();
 		if (pDS)
 		{
 			const CDepthStencilSlot& Slot = DSSlots[i];

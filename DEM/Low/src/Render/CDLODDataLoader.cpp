@@ -100,7 +100,7 @@ PResourceObject CCDLODDataLoader::Load(IO::CStream& Stream)
 
 	//???load normal map? now in material!
 
-	return Obj.GetUnsafe();
+	return Obj.Get();
 }
 //---------------------------------------------------------------------
 

@@ -42,7 +42,7 @@ protected:
 public:
 
 	void					setTexture(Render::CTexture* tex);
-	Render::CTexture*		getTexture() const { return DEMTexture.GetUnsafe(); }
+	Render::CTexture*		getTexture() const { return DEMTexture.Get(); }
 	void					setOriginalDataSize(const Sizef& sz) { DataSize = sz; updateCachedScaleValues(); }
 
 	void					createEmptyTexture(const Sizef& sz);

@@ -46,7 +46,7 @@ public:
 	void		DeferredDeleteEntities();
 
 	UPTR		GetEntityCount() const { return Entities.GetCount(); }
-	CEntity*	GetEntity(IPTR Idx) const { return Entities[Idx].GetUnsafe(); }
+	CEntity*	GetEntity(IPTR Idx) const { return Entities[Idx].Get(); }
 	CEntity*	GetEntity(CStrID UID) const;
 	bool		EntityExists(CStrID UID) const { return !!GetEntity(UID); }
 	void		GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity*>& Out) const;
@@ -102,7 +102,7 @@ bool CEntityManager::UnregisterProperty()
 	if (T::pStorage->GetCount())
 	{
 		for (CPropertyStorage::CIterator It = T::pStorage->Begin(); It; ++It)
-			It->GetUnsafe()->Deactivate();
+			It->Get()->Deactivate();
 		T::pStorage->Clear();
 	}
 
@@ -128,7 +128,7 @@ T* CEntityManager::AttachProperty(Game::CEntity& Entity) const
 		T::pStorage->Add(Entity.GetUID(), Prop);
 		Prop->SetEntity(&Entity);
 	}
-	return (T*)Prop.GetUnsafe();
+	return (T*)Prop.Get();
 }
 //---------------------------------------------------------------------
 
@@ -156,7 +156,7 @@ T* CEntityManager::GetProperty(CStrID EntityID) const
 	PProperty Prop;
 	if (T::pStorage && T::pStorage->Get(EntityID, Prop))
 		if (!Prop->IsA(T::RTTI)) return NULL;
-	return (T*)Prop.GetUnsafe();
+	return (T*)Prop.Get();
 }
 //---------------------------------------------------------------------
 

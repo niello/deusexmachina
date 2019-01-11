@@ -48,7 +48,7 @@ int CPropSceneNode_GetPosition(lua_State* l)
 
 void CPropSceneNode::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("SetPosition", CPropSceneNode_SetPosition);
 	ScriptSrv->ExportCFunction("GetPosition", CPropSceneNode_GetPosition);
 	ScriptSrv->EndMixin();
@@ -57,7 +57,7 @@ void CPropSceneNode::EnableSI(CPropScriptable& Prop)
 
 void CPropSceneNode::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("AddItem");
 	ScriptSrv->ClearField("RemoveItem");
 	ScriptSrv->ClearField("HasItem");

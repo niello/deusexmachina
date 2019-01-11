@@ -86,7 +86,7 @@ public:
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
 	bool							SetRenderPath(CRenderPath* pNewRenderPath);
-	CRenderPath*					GetRenderPath() const { return RenderPath.GetUnsafe(); }
+	CRenderPath*					GetRenderPath() const { return RenderPath.Get(); }
 	bool							SetCamera(CNodeAttrCamera* pNewCamera);
 	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
 	void							UpdateVisibilityCache();

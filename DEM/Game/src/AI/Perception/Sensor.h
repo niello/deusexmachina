@@ -51,7 +51,7 @@ typedef Ptr<CSensor> PSensor;
 inline void CSensor::AddPerceptor(CPerceptor* pPerceptor)
 {
 	for (CArray<PPerceptor>::CIterator It = Perceptors.Begin(); It != Perceptors.End(); ++It)
-		if ((*It).GetUnsafe() == pPerceptor) return;
+		if ((*It).Get() == pPerceptor) return;
 	Perceptors.Add(pPerceptor);
 }
 //---------------------------------------------------------------------
@@ -59,7 +59,7 @@ inline void CSensor::AddPerceptor(CPerceptor* pPerceptor)
 inline void CSensor::RemovePerceptor(const CPerceptor* pPerceptor)
 {
 	for (CArray<PPerceptor>::CIterator It = Perceptors.Begin(); It != Perceptors.End(); ++It)
-		if ((*It).GetUnsafe() == pPerceptor)
+		if ((*It).Get() == pPerceptor)
 		{
 			Perceptors.Remove(It);
 			return;

@@ -14,7 +14,7 @@ PResourceLoader CShaderLoader::Clone()
 	PShaderLoader NewLoader = (CShaderLoader*)GetRTTI()->CreateClassInstance();
 	NewLoader->GPU = GPU;
 	NewLoader->ShaderLibrary = ShaderLibrary;
-	return NewLoader.GetUnsafe();
+	return NewLoader.Get();
 }
 //---------------------------------------------------------------------
 

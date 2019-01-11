@@ -134,7 +134,7 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 				if (Loader->IsA<Resources::CMocapClipLoaderNAX2>())
 				{
 					Frame::CNodeAttrSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
-					if (pSkin) ((Resources::CMocapClipLoaderNAX2*)Loader.GetUnsafe())->ReferenceSkinInfo = pSkin->GetSkinInfo();
+					if (pSkin) ((Resources::CMocapClipLoaderNAX2*)Loader.Get())->ReferenceSkinInfo = pSkin->GetSkinInfo();
 				}
 
 				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
@@ -366,9 +366,9 @@ bool CPropAnimation::SetPose(CStrID ClipID, float CursorPos, bool WrapPos) const
 		Scene::PNodeController pCtlr = Clip->CreateController(i); //???!!!PERF: use pools inside?!
 
 		if (IsMocap)
-			((Anim::CNodeControllerMocap*)pCtlr.GetUnsafe())->SetSamplingParams(KeyIndex, IpolFactor);
+			((Anim::CNodeControllerMocap*)pCtlr.Get())->SetSamplingParams(KeyIndex, IpolFactor);
 		else if (IsKeyframe)
-			((Anim::CNodeControllerKeyframe*)pCtlr.GetUnsafe())->SetTime(AdjTime);
+			((Anim::CNodeControllerKeyframe*)pCtlr.Get())->SetTime(AdjTime);
 
 		// Controller may animate not all channels, so we want other channels to keep their value
 		Math::CTransform Tfm = pNode->GetLocalTransform();

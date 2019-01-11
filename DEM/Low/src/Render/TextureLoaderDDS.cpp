@@ -378,7 +378,7 @@ PResourceObject CTextureLoaderDDS::Load(IO::CStream& Stream)
 	if (Mapped) Stream.Unmap();
 	else n_free(pData);
 
-	return Texture.GetUnsafe();
+	return Texture.Get();
 }
 //---------------------------------------------------------------------
 

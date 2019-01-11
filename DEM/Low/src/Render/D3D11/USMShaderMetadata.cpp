@@ -292,7 +292,7 @@ PShaderConstant CUSMShaderMetadata::GetConstant(HConst hConst) const
 	{
 		PUSMShaderConstant Const = n_new(CUSMShaderConstant);
 		if (!Const->Init(hConst)) return NULL;
-		pMeta->ConstObject = Const.GetUnsafe();
+		pMeta->ConstObject = Const.Get();
 	}
 
 	return pMeta->ConstObject;

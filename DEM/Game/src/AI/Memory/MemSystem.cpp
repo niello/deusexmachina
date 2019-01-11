@@ -27,7 +27,7 @@ void CMemSystem::Update()
 
 		for (CMemFactNode ItCurr = Facts.GetHeadAt(i); ItCurr; /* empty */)
 		{
-			CMemFact* pFact = ItCurr->GetUnsafe();
+			CMemFact* pFact = ItCurr->Get();
 
 			if (pFact->LastUpdateTime < Now)
 			{

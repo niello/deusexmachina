@@ -109,12 +109,12 @@ PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
 		CString ClassName = "Frame::CRenderPhase" + PhaseType;
 		Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
 
-		if (!CurrPhase->Init(*RP.GetUnsafe(), Prm.GetName(), PhaseDesc)) return NULL;
+		if (!CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return NULL;
 
 		RP->Phases[i] = CurrPhase;
 	}
 
-	return RP.GetUnsafe();
+	return RP.Get();
 }
 //---------------------------------------------------------------------
 

@@ -42,7 +42,7 @@ public:
 
 	virtual void		SayPhrase(CStrID PhraseID);
 
-	Story::CDlgGraph*	GetDialogue() { return Dialogue.GetUnsafe(); }
+	Story::CDlgGraph*	GetDialogue() { return Dialogue.Get(); }
 };
 
 }

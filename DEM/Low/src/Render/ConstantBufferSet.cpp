@@ -72,7 +72,7 @@ CConstantBuffer* CConstantBufferSet::RequestBuffer(HConstBuffer Handle, EShaderT
 	// Mark buffer as used at the Stage
 	pRec->Flags |= (1 << Stage);
 
-	return pRec->Buffer.GetUnsafe();
+	return pRec->Buffer.Get();
 }
 //---------------------------------------------------------------------
 

@@ -109,7 +109,7 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShade
 		}
 	}
 
-	Render::PD3D11Shader Shader = (Render::CD3D11Shader*)GPU->CreateShader(ShaderType, pData, BinarySize).GetUnsafe();
+	Render::PD3D11Shader Shader = (Render::CD3D11Shader*)GPU->CreateShader(ShaderType, pData, BinarySize).Get();
 	if (Shader.IsNullPtr()) FAIL;
 
 	if (pSigData != pData) n_free(pData);
@@ -120,7 +120,7 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShade
 
 	if (!Shader->Metadata.Load(Stream)) FAIL;
 
-	return Shader.GetUnsafe();
+	return Shader.Get();
 }
 //---------------------------------------------------------------------
 

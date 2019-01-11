@@ -79,7 +79,7 @@ bool CDEMTexture::isPixelFormatSupported(const PixelFormat fmt) const
 
 void CDEMTexture::setTexture(Render::CTexture* tex)
 {
-	if (DEMTexture.GetUnsafe() == tex) return;
+	if (DEMTexture.Get() == tex) return;
 	DEMTexture = tex;
 	updateTextureSize();
 	DataSize = Size;
@@ -271,7 +271,7 @@ void CDEMTexture::updateCachedScaleValues()
 
 void CDEMTexture::updateTextureSize()
 {
-	if (DEMTexture.GetUnsafe())
+	if (DEMTexture.Get())
 	{
 		const Render::CTextureDesc& Desc = DEMTexture->GetDesc();
 		Size.d_width  = static_cast<float>(Desc.Width);

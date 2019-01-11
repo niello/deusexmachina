@@ -97,7 +97,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 			pRec->Buffer = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write); //!!!must be a RAM-only buffer!
 			++CurrCBCount;
 
-			if (!GPU->BeginShaderConstants(*pRec->Buffer.GetUnsafe())) return NULL;
+			if (!GPU->BeginShaderConstants(*pRec->Buffer.Get())) return NULL;
 		}
 
 		IPTR Idx = ConstValues.FindIndex(Const.ID);
@@ -107,7 +107,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		if (pValue) //???fail if value is undefined? or fill with zeroes?
 		{
 			if (Const.Const.IsNullPtr()) return NULL;
-			Const.Const->SetRawValue(*pRec->Buffer.GetUnsafe(), pValue, Render::CShaderConstant::WholeSize);
+			Const.Const->SetRawValue(*pRec->Buffer.Get(), pValue, Render::CShaderConstant::WholeSize);
 		}
 	}
 
@@ -117,11 +117,11 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 	{
 		Render::CMaterial::CConstBufferRecord* pRec = &Mtl->ConstBuffers[BufIdx];
 		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
-		if (!GPU->CommitShaderConstants(*RAMBuffer.GetUnsafe())) return NULL; //!!!must not do any VRAM operations inside!
+		if (!GPU->CommitShaderConstants(*RAMBuffer.Get())) return NULL; //!!!must not do any VRAM operations inside!
 
 		//???do only if current buffer doesn't support VRAM? DX9 will support, DX11 will not.
 		//if supports VRAM, can reuse as VRAM buffer without data copying between RAMBuffer and a new one.
-		pRec->Buffer = GPU->CreateConstantBuffer(pRec->Handle, Render::Access_GPU_Read, RAMBuffer.GetUnsafe());
+		pRec->Buffer = GPU->CreateConstantBuffer(pRec->Handle, Render::Access_GPU_Read, RAMBuffer.Get());
 	}
 
 	const CFixedArray<Render::CEffectResource>& Resources = Mtl->Effect->GetMaterialResources();
@@ -154,7 +154,7 @@ PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
 		Rec.Sampler = Value.IsValidPtr() ? Value : Mtl->Effect->GetSamplerDefaultValue(Sampler.ID);
 	}
 
-	return Mtl.GetUnsafe();
+	return Mtl.Get();
 }
 //---------------------------------------------------------------------
 

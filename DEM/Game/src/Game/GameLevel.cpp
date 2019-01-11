@@ -170,7 +170,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 				EntityDesc = MergedDesc;
 			}
 
-			Data::CParams& RefEntityDesc = *EntityDesc.GetUnsafe();
+			Data::CParams& RefEntityDesc = *EntityDesc.Get();
 
 			PEntity Entity = GameSrv->GetEntityMgr()->CreateEntity(EntityPrm.GetName(), *this);
 			if (Entity.IsNullPtr())
@@ -307,12 +307,12 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	CArray<CEntity*> Entities(128, 128);
 	GameSrv->GetEntityMgr()->GetEntitiesByLevel(this, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
-	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.GetUnsafe() : NULL;
+	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.Get() : NULL;
 	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i];
 		if (SGEntity->GetCount()) SGEntity = n_new(Data::CParams);
-		Data::PParams InitialDesc = pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).GetUnsafe() : NULL;
+		Data::PParams InitialDesc = pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).Get() : NULL;
 		if (InitialDesc.IsValidPtr())
 		{
 			const CString& TplName = InitialDesc->Get<CString>(CStrID("Tpl"), CString::Empty);

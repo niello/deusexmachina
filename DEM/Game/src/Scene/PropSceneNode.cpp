@@ -87,7 +87,7 @@ bool CPropSceneNode::InternalActivate()
 		// load referenced resources and prepare itself to work.
 		ExistingNode = false;
 
-		PathNode->AddChild(GetEntity()->GetUID(), *Node.GetUnsafe());
+		PathNode->AddChild(GetEntity()->GetUID(), *Node.Get());
 
 		Game::CSceneNodeValidateAttrs Visitor;
 		Visitor.Level = GetEntity()->GetLevel();
@@ -109,7 +109,7 @@ bool CPropSceneNode::InternalActivate()
 	{
 		// Add children to the save-load list. All nodes externally attached won't be saved, which is desirable.
 		ChildCache.BeginAdd();
-		FillSaveLoadList(Node.GetUnsafe(), CString::Empty);
+		FillSaveLoadList(Node.Get(), CString::Empty);
 		ChildCache.EndAdd();
 
 		Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));

@@ -23,7 +23,7 @@ PResourceLoader CEffectLoader::Clone()
 	PEffectLoader NewLoader = n_new(CEffectLoader);
 	NewLoader->GPU = GPU;
 	NewLoader->ShaderLibrary = ShaderLibrary;
-	return NewLoader.GetUnsafe();
+	return NewLoader.Get();
 }
 //---------------------------------------------------------------------
 
@@ -414,7 +414,7 @@ PResourceObject CEffectLoader::Load(IO::CStream& Stream)
 		Effect->AddTech(Techs.ValueAt(i));
 	Effect->EndAddTechs();
 
-	return Effect.GetUnsafe();
+	return Effect.Get();
 }
 //---------------------------------------------------------------------
 

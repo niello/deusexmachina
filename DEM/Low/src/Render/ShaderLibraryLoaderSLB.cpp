@@ -45,7 +45,7 @@ PResourceObject CShaderLibraryLoaderSLB::Load(IO::CStream& Stream)
 	if ((Stream.GetRefCount() > 0))
 		ShaderLibrary->Storage = &Stream;
 
-	return ShaderLibrary.GetUnsafe();
+	return ShaderLibrary.Get();
 }
 //---------------------------------------------------------------------
 

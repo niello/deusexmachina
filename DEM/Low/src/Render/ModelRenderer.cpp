@@ -51,7 +51,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	CModel* pModel = Node.pRenderable->As<CModel>();
 	n_assert_dbg(pModel);
 
-	CMaterial* pMaterial = pModel->Material.GetUnsafe(); //!!!Get by MaterialLOD!
+	CMaterial* pMaterial = pModel->Material.Get(); //!!!Get by MaterialLOD!
 	if (!pMaterial) FAIL;
 
 	CEffect* pEffect = pMaterial->GetEffect();
@@ -60,7 +60,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 		for (UPTR i = 0; i < Context.pEffectOverrides->GetCount(); ++i)
 			if (Context.pEffectOverrides->KeyAt(i) == EffType)
 			{
-				pEffect = Context.pEffectOverrides->ValueAt(i).GetUnsafe();
+				pEffect = Context.pEffectOverrides->ValueAt(i).Get();
 				break;
 			}
 
@@ -71,7 +71,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	Node.pTech = pEffect->GetTechByInputSet(Node.pSkinPalette ? InputSet_ModelSkinned : InputSet_Model);
 	if (!Node.pTech) FAIL;
 
-	Node.pMesh = pModel->Mesh.GetUnsafe();
+	Node.pMesh = pModel->Mesh.Get();
 	Node.pGroup = pModel->Mesh->GetGroup(pModel->MeshGroupIndex, Context.MeshLOD);
 
 	if (pModel->BoneIndices.GetCount())
@@ -244,10 +244,10 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		if (pMesh != pCurrMesh)
 		{
 			n_assert_dbg(pMesh);
-			CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
+			CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 			n_assert_dbg(pVB);
 			GPU.SetVertexBuffer(0, pVB);
-			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
+			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 			pCurrMesh = pMesh;
 
 			pVL = pVB->GetVertexLayout();
@@ -464,15 +464,15 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 						_freea(pInstancedDecl);
 
-						pVLInstanced = VLInstanced.GetUnsafe();
+						pVLInstanced = VLInstanced.Get();
 						n_assert_dbg(pVLInstanced);
 						InstancedLayouts.Add(pVL, VLInstanced);
 					}
-					else pVLInstanced = InstancedLayouts.ValueAt(VLIdx).GetUnsafe();
+					else pVLInstanced = InstancedLayouts.ValueAt(VLIdx).Get();
 				}
 
 				GPU.SetVertexLayout(pVLInstanced);
-				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe());
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get());
 
 				void* pInstData;
 				n_verify(GPU.MapResource(&pInstData, *InstanceVB, Map_WriteDiscard)); //???use big buffer + no overwrite?

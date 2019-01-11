@@ -74,7 +74,7 @@ public:
 	float			GetRadius() const { return Radius; }
 	float			GetHeight() const { return Height; }
 	float			GetHover() const { return Hover; }
-	CRigidBody*		GetBody() const { return Body.GetUnsafe(); }
+	CRigidBody*		GetBody() const { return Body.Get(); }
 	bool			GetLinearVelocity(vector3& Out) const;
 	const vector3&	GetRequestedLinearVelocity() const { return ReqLinVel; }
 	float			GetAngularVelocity() const;

@@ -101,11 +101,11 @@ public:
 	CStrID					GetID() const { return ID; }
 	const CString&			GetName() const { return Name; }
 
-	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.GetUnsafe(); }
+	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.Get(); }
 	Scene::CSPS*			GetSPS() { return &SPS; }
-	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.GetUnsafe(); }
-	AI::CAILevel*			GetAI() const { return AILevel.GetUnsafe(); }
-	Render::CGPUDriver*		GetHostGPU() const { return HostGPU.GetUnsafe(); }
+	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
+	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
+	Render::CGPUDriver*		GetHostGPU() const { return HostGPU.Get(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;

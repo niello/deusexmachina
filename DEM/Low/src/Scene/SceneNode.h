@@ -84,7 +84,7 @@ public:
 	CSceneNode*				FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const;
 
 	bool					SetController(CNodeController* pCtlr);
-	CNodeController*		GetController() const { return Controller.GetUnsafe(); }
+	CNodeController*		GetController() const { return Controller.Get(); }
 
 	bool					AddAttribute(CNodeAttribute& Attr);
 	void					RemoveAttribute(CNodeAttribute& Attr);
@@ -129,7 +129,7 @@ inline void CSceneNode::RemoveChild(CSceneNode& Node)
 inline CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
 {
 	IPTR Idx = Children.FindIndex(ChildName);
-	return Idx == INVALID_INDEX ? NULL : Children.ValueAt(Idx).GetUnsafe();
+	return Idx == INVALID_INDEX ? NULL : Children.ValueAt(Idx).Get();
 }
 //---------------------------------------------------------------------
 

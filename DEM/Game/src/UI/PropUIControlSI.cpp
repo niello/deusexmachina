@@ -78,7 +78,7 @@ int CPropUIControl_RemoveActionHandler(lua_State* l)
 
 void CPropUIControl::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("EnableUI", CPropUIControl_EnableUI);
 	ScriptSrv->ExportCFunction("IsUIEnabled", CPropUIControl_IsUIEnabled);
 	ScriptSrv->ExportCFunction("SetUIName", CPropUIControl_SetUIName);
@@ -90,7 +90,7 @@ void CPropUIControl::EnableSI(CPropScriptable& Prop)
 
 void CPropUIControl::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("EnableUI");
 	ScriptSrv->ClearField("IsUIEnabled");
 	ScriptSrv->ClearField("SetUIName");

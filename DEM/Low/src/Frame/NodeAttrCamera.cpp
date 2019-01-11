@@ -30,7 +30,7 @@ Scene::PNodeAttribute CNodeAttrCamera::Clone()
 	ClonedAttr->NearPlane = NearPlane;
 	ClonedAttr->FarPlane = FarPlane;
 	ClonedAttr->Flags.SetTo(Orthogonal, IsOrthogonal());
-	return ClonedAttr.GetUnsafe();
+	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 

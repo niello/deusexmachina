@@ -44,10 +44,10 @@ public:
 	virtual IRenderable*	Clone();
 	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const { OutBox = CDLODData->GetAABB(); OK; }
 
-	CCDLODData*				GetCDLODData() const { return CDLODData.GetUnsafe(); }
-	CMaterial*				GetMaterial() const { return Material.GetUnsafe(); }
-	CMesh*					GetPatchMesh() const { return PatchMesh.GetUnsafe(); }
-	CMesh*					GetQuarterPatchMesh() const { return QuarterPatchMesh.GetUnsafe(); }
+	CCDLODData*				GetCDLODData() const { return CDLODData.Get(); }
+	CMaterial*				GetMaterial() const { return Material.Get(); }
+	CMesh*					GetPatchMesh() const { return PatchMesh.Get(); }
+	CMesh*					GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
 	float					GetInvSplatSizeX() const { return InvSplatSizeX; }
 	float					GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };

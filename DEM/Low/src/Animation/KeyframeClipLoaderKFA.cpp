@@ -68,7 +68,7 @@ PResourceObject CKeyframeClipLoaderKFA::Load(IO::CStream& Stream)
 	Anim::PKeyframeClip Clip = n_new(Anim::CKeyframeClip);
 	Clip->Setup(Tracks, TrackMapping, &EventTracks, Duration);
 
-	return Clip.GetUnsafe();
+	return Clip.Get();
 }
 //---------------------------------------------------------------------
 

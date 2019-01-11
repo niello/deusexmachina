@@ -37,7 +37,7 @@ public:
 	void				UnsubscribeFromInput();
 
 	void				SetRootWindow(CUIWindow* pWindow);
-	CUIWindow*			GetRootWindow() const { return RootWindow.GetUnsafe(); }
+	CUIWindow*			GetRootWindow() const { return RootWindow.Get(); }
 	void				ShowGUI();
 	void				HideGUI();
 	void				ShowMouseCursor();

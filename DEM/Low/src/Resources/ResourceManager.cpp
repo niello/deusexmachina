@@ -140,12 +140,12 @@ void CResourceManager::LoadResourceSync(CResource& Rsrc, CResourceLoader& Loader
 	// a check here to allow resources to own only persistent streams.
 	UPTR StreamRefCount = Stream->GetRefCount();
 
-	PResourceObject Obj = Loader.Load(*Stream.GetUnsafe());
+	PResourceObject Obj = Loader.Load(*Stream.Get());
 
 	if (Stream->GetRefCount() == StreamRefCount) Stream->Close();
 	Stream = NULL;
 
-	Rsrc.Init(Obj.GetUnsafe(), &Loader, NULL);
+	Rsrc.Init(Obj.Get(), &Loader, NULL);
 	Rsrc.SetState(Obj.IsValidPtr() && Obj->IsResourceValid() ? Rsrc_Loaded : Rsrc_LoadingFailed);
 }
 //---------------------------------------------------------------------
@@ -166,7 +166,7 @@ void CResourceManager::GenerateResourceSync(CResource& Rsrc, CResourceGenerator&
 
 	PResourceObject Obj = Generator.Generate();
 
-	Rsrc.Init(Obj.GetUnsafe(), NULL, &Generator);
+	Rsrc.Init(Obj.Get(), NULL, &Generator);
 	Rsrc.SetState(Obj.IsValidPtr() && Obj->IsResourceValid() ? Rsrc_Loaded : Rsrc_LoadingFailed);
 }
 //---------------------------------------------------------------------

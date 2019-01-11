@@ -82,7 +82,7 @@ bool CD3D9GPUDriver::InitSwapChainRenderTarget(CD3D9SwapChain& SC)
 	{
 		IDirect3DSurface9* pCurrRTSurface = NULL;
 		if (SUCCEEDED(pD3DDevice->GetRenderTarget(0, &pCurrRTSurface)) && pCurrRTSurface == pRTSurface)
-			CurrRT[0] = (CD3D9RenderTarget*)(SC.BackBufferRT.GetUnsafe());
+			CurrRT[0] = (CD3D9RenderTarget*)(SC.BackBufferRT.Get());
 		if (pCurrRTSurface) pCurrRTSurface->Release();
 	}
 
@@ -100,7 +100,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, UPTR TargetS
 
 	//for (int i = 0; i < VertexLayouts.GetCount() ; ++i)
 	//{
-	//	CVertexLayout* pVL = VertexLayouts.ValueAt(i).GetUnsafe();
+	//	CVertexLayout* pVL = VertexLayouts.ValueAt(i).Get();
 	//	if (pVL) pVL->Destroy();
 	//}
 	//VertexLayouts.Clear();
@@ -876,7 +876,7 @@ void CD3D9GPUDriver::FillD3DPresentParams(const CRenderTargetDesc& BackBufferDes
 
 bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const
 {
-	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.GetUnsafe());
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.Get());
 	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	if (SC.IsFullscreen())
@@ -1097,7 +1097,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 
 	//???or destroy and recreate with new params?
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
-		if (SwapChains[i].TargetWindow.GetUnsafe() == pWindow) return ERR_CREATION_ERROR;
+		if (SwapChains[i].TargetWindow.Get() == pWindow) return ERR_CREATION_ERROR;
 
 	UINT BBWidth = BackBufferDesc.Width, BBHeight = BackBufferDesc.Height;
 	PrepareWindowAndBackBufferSize(*pWindow, BBWidth, BBHeight);
@@ -1202,7 +1202,7 @@ bool CD3D9GPUDriver::DestroySwapChain(UPTR SwapChainID)
 
 	// Never unset 0'th RT
 	for (UPTR i = 1; i < CurrRT.GetCount(); ++i)
-		if (CurrRT[i].GetUnsafe() == SC.BackBufferRT.GetUnsafe())
+		if (CurrRT[i].Get() == SC.BackBufferRT.Get())
 			SetRenderTarget(i, NULL);
 
 	if (SwapChainID != 0 && SC.IsFullscreen()) SwitchToWindowed(SwapChainID);
@@ -1222,7 +1222,7 @@ bool CD3D9GPUDriver::SwapChainExists(UPTR SwapChainID) const
 }
 //---------------------------------------------------------------------
 
-// Does not resize an OS window, since often is called in response to an OS window resize
+// Does not resize an OS window, because often is called in response to an OS window resize
 //???bool ResizeOSWindow?
 bool CD3D9GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height)
 {
@@ -1300,7 +1300,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDispl
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.GetUnsafe());
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.Get());
 	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	D3DPresentParams.Windowed = FALSE;
@@ -1351,7 +1351,7 @@ bool CD3D9GPUDriver::SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWind
 	}
 
 	D3DPRESENT_PARAMETERS D3DPresentParams = { 0 };
-	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.GetUnsafe());
+	auto pWndWin32 = static_cast<DEM::Sys::COSWindowWin32*>(SC.TargetWindow.Get());
 	FillD3DPresentParams(SC.BackBufferRT->GetDesc(), SC.Desc, pWndWin32->GetHWND(), D3DPresentParams);
 
 	D3DPresentParams.Windowed = TRUE;
@@ -1376,6 +1376,12 @@ bool CD3D9GPUDriver::IsFullscreen(UPTR SwapChainID) const
 PRenderTarget CD3D9GPUDriver::GetSwapChainRenderTarget(UPTR SwapChainID) const
 {
 	return SwapChainExists(SwapChainID) ? SwapChains[SwapChainID].BackBufferRT : PRenderTarget();
+}
+//---------------------------------------------------------------------
+
+DEM::Sys::COSWindow* CD3D9GPUDriver::GetSwapChainWindow(UPTR SwapChainID) const
+{
+	return SwapChainExists(SwapChainID) ? SwapChains[SwapChainID].TargetWindow.Get() : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -1425,7 +1431,7 @@ bool CD3D9GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream)
 	if (!pD3DDevice || IsInsideFrame || !SwapChainExists(SwapChainID)) FAIL;
 
 	CD3D9SwapChain& SC = SwapChains[SwapChainID];
-	const CD3D9RenderTarget* pRT = (const CD3D9RenderTarget*)SC.BackBufferRT.GetUnsafe();
+	const CD3D9RenderTarget* pRT = (const CD3D9RenderTarget*)SC.BackBufferRT.Get();
 	if (!pRT) FAIL;
 
 	const CRenderTargetDesc& Desc = pRT->GetDesc();
@@ -1543,7 +1549,7 @@ bool CD3D9GPUDriver::GetScissorRect(UPTR Index, Data::CRect& OutScissorRect)
 
 bool CD3D9GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 {
-	if (CurrVL.GetUnsafe() == pVLayout) OK;
+	if (CurrVL.Get() == pVLayout) OK;
 	IDirect3DVertexDeclaration9* pDecl;
 	if (pVLayout)
 	{
@@ -1562,7 +1568,7 @@ bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Offset
 	if (Index >= CurrVB.GetCount() || (pVB && OffsetVertex >= pVB->GetVertexCount())) FAIL;
 
 	CVBRec& VBRec = CurrVB[Index];
-	if (VBRec.VB.GetUnsafe() == pVB && VBRec.Offset == OffsetVertex) OK;
+	if (VBRec.VB.Get() == pVB && VBRec.Offset == OffsetVertex) OK;
 
 	IDirect3DVertexBuffer9* pD3DVB = pVB ? ((CD3D9VertexBuffer*)pVB)->GetD3DBuffer() : NULL;
 	UPTR VertexSize = pVB ? pVB->GetVertexLayout()->GetVertexSizeInBytes() : 0;
@@ -1576,7 +1582,7 @@ bool CD3D9GPUDriver::SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Offset
 
 bool CD3D9GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 {
-	if (CurrIB.GetUnsafe() == pIB) OK;
+	if (CurrIB.Get() == pIB) OK;
 	IDirect3DIndexBuffer9* pD3DIB = pIB ? ((CD3D9IndexBuffer*)pIB)->GetD3DBuffer() : NULL;
 	if (FAILED(pD3DDevice->SetIndices(pD3DIB))) FAIL;
 	CurrIB = (CD3D9IndexBuffer*)pIB;
@@ -1586,15 +1592,15 @@ bool CD3D9GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 
 bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
 {
-	CD3D9RenderState* pD3DState = pState ? (CD3D9RenderState*)pState : DefaultRenderState.GetUnsafe();
+	CD3D9RenderState* pD3DState = pState ? (CD3D9RenderState*)pState : DefaultRenderState.Get();
 	n_assert_dbg(pD3DState);
 
-	if (CurrRS.GetUnsafe() == pD3DState) OK;
+	if (CurrRS.Get() == pD3DState) OK;
 
 	if (pD3DState->VS != CurrRS->VS)
-		pD3DDevice->SetVertexShader(pD3DState->VS.IsValidPtr() ? pD3DState->VS.GetUnsafe()->GetD3DVertexShader() : NULL);
+		pD3DDevice->SetVertexShader(pD3DState->VS.IsValidPtr() ? pD3DState->VS.Get()->GetD3DVertexShader() : NULL);
 	if (pD3DState->PS != CurrRS->PS)
-		pD3DDevice->SetPixelShader(pD3DState->PS.IsValidPtr() ? pD3DState->PS.GetUnsafe()->GetD3DPixelShader() : NULL);
+		pD3DDevice->SetPixelShader(pD3DState->PS.IsValidPtr() ? pD3DState->PS.Get()->GetD3DPixelShader() : NULL);
 
 	DWORD* pValues = pD3DState->D3DStateValues;
 	for (int i = 0; i < CD3D9RenderState::D3D9_RS_COUNT; ++i)
@@ -1612,7 +1618,7 @@ bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
 bool CD3D9GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 {
 	if (Index >= CurrRT.GetCount()) FAIL;
-	if (CurrRT[Index].GetUnsafe() == pRT) OK;
+	if (CurrRT[Index].Get() == pRT) OK;
 
 	if (!pRT && Index == 0)
 	{
@@ -1622,7 +1628,7 @@ bool CD3D9GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 			CD3D9SwapChain& SC = SwapChains[i];
 			if (SC.IsValid() && !SC.pSwapChain)
 			{
-				pRT = SC.BackBufferRT.GetUnsafe();
+				pRT = SC.BackBufferRT.Get();
 				break;
 			}
 		}
@@ -1630,7 +1636,7 @@ bool CD3D9GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 
 	n_assert_dbg(pRT || Index > 0); // D3D9 can't set NULL to 0'th RT
 
-	IDirect3DSurface9* pRTSurface = pRT ? ((CD3D9RenderTarget*)pRT)->GetD3DSurface() : NULL;
+	IDirect3DSurface9* pRTSurface = pRT ? ((CD3D9RenderTarget*)pRT)->GetD3DSurface() : nullptr;
 	if (FAILED(pD3DDevice->SetRenderTarget(Index, pRTSurface))) FAIL;
 	CurrRT[Index] = (CD3D9RenderTarget*)pRT;
 
@@ -1640,7 +1646,7 @@ bool CD3D9GPUDriver::SetRenderTarget(UPTR Index, CRenderTarget* pRT)
 
 bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 {
-	if (CurrDS.GetUnsafe() == pDS) OK;
+	if (CurrDS.Get() == pDS) OK;
 
 	CD3D9DepthStencilBuffer* pD3D9DS = (CD3D9DepthStencilBuffer*)pDS;
 	IDirect3DSurface9* pDSSurface = pD3D9DS ? pD3D9DS->GetD3DSurface() : NULL;
@@ -1671,13 +1677,13 @@ bool CD3D9GPUDriver::SetDepthStencilBuffer(CDepthStencilBuffer* pDS)
 
 CRenderTarget* CD3D9GPUDriver::GetRenderTarget(UPTR Index) const
 {
-	return CurrRT[Index].GetUnsafe();
+	return CurrRT[Index].Get();
 }
 //---------------------------------------------------------------------
 
 CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
 {
-	return CurrDS.GetUnsafe();
+	return CurrDS.Get();
 }
 //---------------------------------------------------------------------
 
@@ -1698,7 +1704,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 	//???control user not to bind the same CB to different stages?
 
 	CCBRec& CurrCBRec = CurrCB[Index];
-	CD3D9ConstantBuffer* pCurrBuffer = CurrCBRec.CB.GetUnsafe();
+	CD3D9ConstantBuffer* pCurrBuffer = CurrCBRec.CB.Get();
 	if (pCurrBuffer == pCBuffer) OK;
 
 	// Free temporary buffer, if not bound to other stages
@@ -1713,7 +1719,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 		};
 
 		// Is this buffer bound to the other shader stage
-		const bool IsBound = (CurrCB[SecondIndex].CB.GetUnsafe() == pCurrBuffer);
+		const bool IsBound = (CurrCB[SecondIndex].CB.Get() == pCurrBuffer);
 		if (!IsBound)
 		{
 			CTmpCB* pPrevNode = NULL;
@@ -1781,7 +1787,7 @@ bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTex
 	}
 	else FAIL;
 
-	CD3D9Texture* pCurrTex = CurrTex[Index].GetUnsafe();
+	CD3D9Texture* pCurrTex = CurrTex[Index].Get();
 	if (pCurrTex == pResource) OK;
 
 	if (FAILED(pD3DDevice->SetTexture(D3DSamplerIndex, pResource ? ((CD3D9Texture*)pResource)->GetD3DBaseTexture() : NULL))) FAIL;
@@ -1793,7 +1799,7 @@ bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTex
 
 bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
 {
-	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.GetUnsafe();
+	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.Get();
 	n_assert_dbg(pD3DSampler);
 
 	if (!Handle) FAIL;
@@ -1824,7 +1830,7 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	U32 LastIndex = Index + pMeta->RegisterCount;
 	for (; Index < LastIndex; ++Index, ++D3DSamplerIndex)
 	{
-		CD3D9Sampler* pCurrSampler = CurrSS[Index].GetUnsafe();
+		CD3D9Sampler* pCurrSampler = CurrSS[Index].Get();
 		if (pCurrSampler == pD3DSampler) continue;
 
 		DWORD* pValues = pD3DSampler->D3DStateValues;
@@ -1868,9 +1874,12 @@ void CD3D9GPUDriver::EndFrame()
 	CString RTString;
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		if (CurrRT[i].IsValidPtr())
-			RTString += StringUtils::FromInt((int)CurrRT[i].GetUnsafe());
-	CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
-	CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+			RTString += StringUtils::FromInt((int)CurrRT[i].Get());
+	if (Core::CCoreServer::HasInstance())
+	{
+		CoreSrv->SetGlobal<int>(CString("Render_Primitives_") + RTString, PrimitivesRendered);
+		CoreSrv->SetGlobal<int>(CString("Render_Draws_") + RTString, DrawsRendered);
+	}
 #endif
 
 	// It seems that pipeline fails to render depth pre-pass if current RT mismatches
@@ -1933,7 +1942,7 @@ void CD3D9GPUDriver::ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags
 
 	if (D3DFlags)
 	{
-		if (CurrDS.GetUnsafe() == &D3D9DS)
+		if (CurrDS.Get() == &D3D9DS)
 		{
 			n_verify(SUCCEEDED(pD3DDevice->Clear(0, NULL, D3DFlags, 0, Depth, Stencil)));
 		}
@@ -2027,7 +2036,7 @@ bool CD3D9GPUDriver::DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR Instan
 		InstanceDataFreq = PrimGroup.VertexCount;
 	}
 
-	U32 InstanceStreamFlags = CurrVL.GetUnsafe()->GetInstanceStreamFlags();
+	U32 InstanceStreamFlags = CurrVL.Get()->GetInstanceStreamFlags();
 	for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
 	{
 		CVBRec& VBRec = CurrVB[i];
@@ -2063,7 +2072,7 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
 
 	IPTR Idx = VertexLayouts.FindIndex(Signature);
-	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).GetUnsafe();
+	if (Idx != INVALID_INDEX) return VertexLayouts.ValueAt(Idx).Get();
 
 	D3DVERTEXELEMENT9 DeclData[MAX_VERTEX_COMPONENTS] = { 0 };
 
@@ -2165,7 +2174,7 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 
 	VertexLayouts.Add(Signature, Layout);
 
-	return Layout.GetUnsafe();
+	return Layout.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2208,7 +2217,7 @@ PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, UP
 		return NULL;
 	}
 
-	return VB.GetUnsafe();
+	return VB.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2252,7 +2261,7 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 		return NULL;
 	}
 
-	return IB.GetUnsafe();
+	return IB.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2266,7 +2275,7 @@ PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR 
 
 	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
 	if (!CB->Create(*pMeta, (const CD3D9ConstantBuffer*)pData)) return NULL;
-	return CB.GetUnsafe();
+	return CB.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2281,14 +2290,14 @@ PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuff
 		if (pHead)
 		{
 			*ppHead = pHead->pNext;
-			PConstantBuffer CB = pHead->CB.GetUnsafe();
+			PConstantBuffer CB = pHead->CB.Get();
 			TmpCBPool.Destroy(pHead);
 			return CB;
 		}
 	}
 
 	PConstantBuffer CB = CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
-	((CD3D9ConstantBuffer*)CB.GetUnsafe())->SetTemporary(true);
+	((CD3D9ConstantBuffer*)CB.Get())->SetTemporary(true);
 
 	return CB;
 }
@@ -2306,7 +2315,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	CTmpCB* pNewNode = TmpCBPool.Construct();
 	pNewNode->CB = &CB9;
 
-	const bool IsBound = (CurrCB[pMeta->SlotIndex].CB.GetUnsafe() == &CB9 || CurrCB[CB_Slot_Count + pMeta->SlotIndex].CB.GetUnsafe() == &CB9);
+	const bool IsBound = (CurrCB[pMeta->SlotIndex].CB.Get() == &CB9 || CurrCB[CB_Slot_Count + pMeta->SlotIndex].CB.Get() == &CB9);
 	if (IsBound)
 	{
 		pNewNode->pNext = pPendingCBHead;
@@ -2459,7 +2468,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 		return NULL;
 	}
 
-	return Tex.GetUnsafe();
+	return Tex.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2489,13 +2498,13 @@ PSampler CD3D9GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	// serves both for memory saving and early exits on redundant binding.
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
-		CD3D9Sampler* pSamp = Samplers[i].GetUnsafe();
+		CD3D9Sampler* pSamp = Samplers[i].Get();
 		if (memcmp(pSamp->D3DStateValues, pValues, sizeof(pSamp->D3DStateValues)) == 0) return pSamp;
 	}
 
 	Samplers.Add(Samp);
 
-	return Samp.GetUnsafe();
+	return Samp.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2561,7 +2570,7 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 		pSurface->Release();
 		return NULL;
 	}
-	return RT.GetUnsafe();
+	return RT.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2603,7 +2612,7 @@ PDepthStencilBuffer CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 		pSurface->Release();
 		return NULL;
 	}
-	return DS.GetUnsafe();
+	return DS.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2618,8 +2627,8 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	//with final shader file names? can even use DSS for effects!
 
 	PD3D9RenderState RS = n_new(CD3D9RenderState);
-	RS->VS = (CD3D9Shader*)Desc.VertexShader.GetUnsafe();
-	RS->PS = (CD3D9Shader*)Desc.PixelShader.GetUnsafe();
+	RS->VS = (CD3D9Shader*)Desc.VertexShader.Get();
+	RS->PS = (CD3D9Shader*)Desc.PixelShader.Get();
 
 	DWORD* pValues = RS->D3DStateValues;
 
@@ -2704,7 +2713,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	// skip this and create new CRenderState, sorting will consider them as different state sets.
 	for (UPTR i = 0; i < RenderStates.GetCount(); ++i)
 	{
-		CD3D9RenderState* pRS = RenderStates[i].GetUnsafe();
+		CD3D9RenderState* pRS = RenderStates[i].Get();
 		if (pRS->VS == Desc.VertexShader &&
 			pRS->PS == Desc.PixelShader &&
 			memcmp(pRS->D3DStateValues, pValues, sizeof(pRS->D3DStateValues)) == 0)
@@ -2715,7 +2724,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 	RenderStates.Add(RS);
 
-	return RS.GetUnsafe();
+	return RS.Get();
 }
 //---------------------------------------------------------------------
 
@@ -2753,7 +2762,7 @@ PShader CD3D9GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, 
 		return NULL;
 	}
 
-	return Shader.GetUnsafe();
+	return Shader.Get();
 }
 //---------------------------------------------------------------------
 
@@ -3285,7 +3294,7 @@ bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 		for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
 		{
 			CCBRec& Rec = CurrCB[i];
-			CD3D9ConstantBuffer* pCurrCB = Rec.CB.GetUnsafe();
+			CD3D9ConstantBuffer* pCurrCB = Rec.CB.Get();
 			if (pCurrCB == &CB9)
 			{
 				if (CB9.IsDirtyFloat4()) Rec.ApplyFlags.Set(CB_ApplyFloat4);
@@ -3551,7 +3560,7 @@ bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, co
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		if (SC.TargetWindow.Get() == pWnd)
 		{
 			DestroySwapChain(i);
 			OK; // Only one swap chain is allowed for each window
@@ -3567,7 +3576,7 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		if (SC.TargetWindow.Get() == pWnd)
 		{
 			// May not fire in fullscreen mode by design, this assert checks it
 			// If assertion failed, we should rewrite this handler and maybe some other code
@@ -3587,7 +3596,7 @@ bool CD3D9GPUDriver::OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispa
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		if (SC.TargetWindow.Get() == pWnd)
 		{
 			if (SC.IsFullscreen()) n_verify(SwitchToWindowed(i));
 			else n_verify(SwitchToFullscreen(i));
@@ -3606,7 +3615,7 @@ bool CD3D9GPUDriver::OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, cons
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
 		CD3D9SwapChain& SC = SwapChains[i];
-		if (SC.TargetWindow.GetUnsafe() == pWnd)
+		if (SC.TargetWindow.Get() == pWnd)
 		{
 			n_assert(SC.IsFullscreen() && !SC.pSwapChain);
 			break;

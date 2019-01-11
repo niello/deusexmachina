@@ -48,8 +48,8 @@ public:
 	void							UpdateInSPS(Scene::CSPS& SPS);
 
 	bool							GetGlobalAABB(CAABB& OutBox) const;
-	Render::CTexture*				GetIrradianceMap() const { return IrradianceMap.GetUnsafe(); }
-	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.GetUnsafe(); }
+	Render::CTexture*				GetIrradianceMap() const { return IrradianceMap.Get(); }
+	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }
 };
 
 typedef Ptr<CNodeAttrAmbientLight> PNodeAttrAmbientLight;

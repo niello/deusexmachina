@@ -21,7 +21,7 @@ public:
 	//???on deactivation forceActivationState(DISABLE_SIMULATION) or let the object be simulated?
 
 	void			SetBody(CRigidBody& RigidBody);
-	CRigidBody*		GetBody() const { return Body.GetUnsafe(); }
+	CRigidBody*		GetBody() const { return Body.Get(); }
 	void			Clear();
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
 };

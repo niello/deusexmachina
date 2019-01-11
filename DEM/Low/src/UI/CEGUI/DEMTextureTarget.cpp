@@ -101,7 +101,7 @@ void CDEMTextureTarget::enableRenderTexture()
 {
 	PrevRT = d_owner.getGPUDriver()->GetRenderTarget(0);
 	PrevDS = d_owner.getGPUDriver()->GetDepthStencilBuffer();
-	d_owner.getGPUDriver()->SetRenderTarget(0, RT.GetUnsafe());
+	d_owner.getGPUDriver()->SetRenderTarget(0, RT.Get());
 	//UPTR MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
 	//for (UPTR i = 1; i < MaxRT; ++i)
 	//	d_owner.getGPUDriver()->SetRenderTarget(i, NULL);
@@ -111,8 +111,8 @@ void CDEMTextureTarget::enableRenderTexture()
 
 void CDEMTextureTarget::disableRenderTexture()
 {
-	d_owner.getGPUDriver()->SetRenderTarget(0, PrevRT.GetUnsafe());
-	d_owner.getGPUDriver()->SetDepthStencilBuffer(PrevDS.GetUnsafe());
+	d_owner.getGPUDriver()->SetRenderTarget(0, PrevRT.Get());
+	d_owner.getGPUDriver()->SetDepthStencilBuffer(PrevDS.Get());
 	PrevRT = NULL;
 	PrevDS = NULL;
 }

@@ -53,7 +53,7 @@ bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, co
 
 		//!!!???Faction->Load()? good way to load without events
 
-		n_verify(ScriptSrv->CreateInterface(Prm.GetName().CStr(), "Factions", "CFaction", Faction.GetUnsafe()));
+		n_verify(ScriptSrv->CreateInterface(Prm.GetName().CStr(), "Factions", "CFaction", Faction.Get()));
 
 		//!!!without OnFactionMemberAdopted etc events!
 
@@ -80,7 +80,7 @@ bool CFactionManager::OnGameSaving(Events::CEventDispatcher* pDispatcher, const 
 	Data::PParams SGFactions = n_new(Data::CParams);
 	for (UPTR i = 0; i < Factions.GetCount(); ++i)
 	{
-		CFaction* pFaction = Factions.ValueAt(i).GetUnsafe();
+		CFaction* pFaction = Factions.ValueAt(i).Get();
 
 		//???to pFaction->Save()?
 		Data::PParams SGFaction = n_new(Data::CParams);

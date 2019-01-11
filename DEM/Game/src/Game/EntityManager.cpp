@@ -36,7 +36,7 @@ PEntity CEntityManager::CreateEntity(CStrID UID, CGameLevel& Level)
 	PEntity Entity = n_new(CEntity(UID));
 	Entity->SetLevel(&Level);
 	Entities.Add(Entity);
-	UIDToEntity.Add(Entity->GetUID(), Entity.GetUnsafe());
+	UIDToEntity.Add(Entity->GetUID(), Entity.Get());
 	return Entity;
 }
 //---------------------------------------------------------------------
@@ -116,7 +116,7 @@ void CEntityManager::GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity
 {
 	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 	{
-		CEntity* pEntity = Entities[i].GetUnsafe();
+		CEntity* pEntity = Entities[i].Get();
 		if (pEntity && pEntity->GetLevel() == pLevel)
 			Out.Add(pEntity);
 	}
@@ -154,7 +154,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 
 	n_verify(Prop->Initialize());
 
-	return Prop.GetUnsafe();
+	return Prop.Get();
 }
 //---------------------------------------------------------------------
 
@@ -197,7 +197,7 @@ CProperty* CEntityManager::GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI
 
 	PProperty Prop;
 	pStorage->Get(EntityID, Prop);
-	return pRTTI == pStorageRTTI || Prop->IsA(*pRTTI) ? Prop.GetUnsafe() : NULL;
+	return pRTTI == pStorageRTTI || Prop->IsA(*pRTTI) ? Prop.Get() : NULL;
 }
 //---------------------------------------------------------------------
 
@@ -207,7 +207,7 @@ void CEntityManager::GetPropertiesOfEntity(CStrID EntityID, CArray<CProperty*>& 
 	{
 		PProperty Prop;
 		if ((*PropStorages.ValueAt(i))->Get(EntityID, Prop))
-			Out.Add(Prop.GetUnsafe());
+			Out.Add(Prop.Get());
 	}
 }
 //---------------------------------------------------------------------

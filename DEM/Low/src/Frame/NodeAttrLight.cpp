@@ -18,7 +18,7 @@ Scene::PNodeAttribute CNodeAttrLight::Clone()
 {
 	PNodeAttrLight ClonedAttr = n_new(CNodeAttrLight);
 	ClonedAttr->Light = Light;
-	return ClonedAttr.GetUnsafe();
+	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 

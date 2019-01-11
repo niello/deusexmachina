@@ -16,13 +16,13 @@ bool CInputConditionComboEvent::Initialize(const Data::CParams& Desc)
 	if (Desc.Get<Data::PParams>(SubDesc, CStrID("ChildEvent")))
 	{
 		pEvent = CInputConditionEvent::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pEvent || !pEvent->Initialize(*SubDesc.GetUnsafe())) FAIL;
+		if (!pEvent || !pEvent->Initialize(*SubDesc.Get())) FAIL;
 	}
 
 	if (Desc.Get<Data::PParams>(SubDesc, CStrID("ChildState")))
 	{
 		pState = CInputConditionState::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pState || !pState->Initialize(*SubDesc.GetUnsafe())) FAIL;
+		if (!pState || !pState->Initialize(*SubDesc.Get())) FAIL;
 	}
 
 	OK;

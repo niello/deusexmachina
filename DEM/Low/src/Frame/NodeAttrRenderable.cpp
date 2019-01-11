@@ -38,7 +38,7 @@ Scene::PNodeAttribute CNodeAttrRenderable::Clone()
 	//???or clone renderable?
 	PNodeAttrRenderable ClonedAttr = n_new(CNodeAttrRenderable);
 	ClonedAttr->pRenderable = pRenderable->Clone();
-	return ClonedAttr.GetUnsafe();
+	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 

@@ -117,7 +117,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		else
 		{
 			pCurrNode = Prop.GetNode();
-			if (RootBody.IsNullPtr() && IsDynamic) RootBody = (Physics::CRigidBody*)Obj.GetUnsafe();
+			if (RootBody.IsNullPtr() && IsDynamic) RootBody = (Physics::CRigidBody*)Obj.Get();
 		}
 
 		if (IsDynamic)
@@ -125,7 +125,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			Obj->SetTransform(pCurrNode->GetWorldMatrix());
 
 			Physics::PNodeControllerRigidBody Ctlr = n_new(Physics::CNodeControllerRigidBody);
-			Ctlr->SetBody(*(Physics::CRigidBody*)Obj.GetUnsafe());
+			Ctlr->SetBody(*(Physics::CRigidBody*)Obj.Get());
 			pCurrNode->SetController(Ctlr);
 			Ctlr->Activate(true);
 
@@ -134,7 +134,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		else
 		{
 			Physics::PNodeAttrCollision Attr = n_new(Physics::CNodeAttrCollision);
-			Attr->CollObj = (Physics::CCollisionObjMoving*)Obj.GetUnsafe();
+			Attr->CollObj = (Physics::CCollisionObjMoving*)Obj.Get();
 			pCurrNode->AddAttribute(*Attr);
 			Attrs.Add(Attr);
 		}

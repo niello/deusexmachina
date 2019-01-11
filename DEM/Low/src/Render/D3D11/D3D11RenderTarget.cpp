@@ -74,7 +74,7 @@ bool CD3D11RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 	n_assert_dbg(Dest->IsA<CD3D11Texture>());
 
 	if (Dest.IsNullPtr()) FAIL;
-	ID3D11Texture2D* pDestTex = ((CD3D11Texture*)Dest.GetUnsafe())->GetD3DTexture2D();
+	ID3D11Texture2D* pDestTex = ((CD3D11Texture*)Dest.Get())->GetD3DTexture2D();
 
 	ID3D11Device* pDev = NULL;
 	pDestTex->GetDevice(&pDev);
@@ -108,7 +108,7 @@ CTexture* CD3D11RenderTarget::GetShaderResource() const
 	//???resolve to single-AA texture with possible mips, or may reuse as multisapled input?
 	//can resolve manually when needed using CopyResolveToTexture()!
 	//!!!on render to texture end, if MipLevels > 0, generate mips!
-	return Texture.GetUnsafe();
+	return Texture.Get();
 }
 //---------------------------------------------------------------------
 

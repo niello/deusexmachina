@@ -64,7 +64,7 @@ PResourceObject CD3D9ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShader
 		return NULL;
 	}
 
-	Render::PD3D9Shader Shader = (Render::CD3D9Shader*)GPU->CreateShader(ShaderType, pData, BinarySize).GetUnsafe();
+	Render::PD3D9Shader Shader = (Render::CD3D9Shader*)GPU->CreateShader(ShaderType, pData, BinarySize).Get();
 	if (Shader.IsNullPtr()) return NULL;
 
 	n_free(pData);
@@ -73,7 +73,7 @@ PResourceObject CD3D9ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShader
 
 	if (!Shader->Metadata.Load(Stream)) return NULL;
 
-	return Shader.GetUnsafe();
+	return Shader.Get();
 }
 //---------------------------------------------------------------------
 

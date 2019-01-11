@@ -24,13 +24,13 @@ bool CCDLODData::IsResourceValid() const
 
 Render::CTexture* CCDLODData::GetHeightMap() const
 {
-	return HeightMap.GetUnsafe();
+	return HeightMap.Get();
 }
 //---------------------------------------------------------------------
 
 Render::CTexture* CCDLODData::GetNormalMap() const
 { 
-	return NormalMap.GetUnsafe();
+	return NormalMap.Get();
 }
 //---------------------------------------------------------------------
 

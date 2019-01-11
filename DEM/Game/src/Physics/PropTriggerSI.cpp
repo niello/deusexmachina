@@ -36,7 +36,7 @@ int CPropTrigger_DisableTrigger(lua_State* l)
 
 void CPropTrigger::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("EnableTrigger", CPropTrigger_EnableTrigger);
 	ScriptSrv->ExportCFunction("DisableTrigger", CPropTrigger_DisableTrigger);
 	ScriptSrv->EndMixin();
@@ -45,7 +45,7 @@ void CPropTrigger::EnableSI(CPropScriptable& Prop)
 
 void CPropTrigger::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("EnableTrigger");
 	ScriptSrv->ClearField("DisableTrigger");
 	ScriptSrv->EndMixin();

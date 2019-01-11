@@ -240,7 +240,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 				View.GPU->BindResource(pRsrcRadianceEnvMap->ShaderType, pRsrcRadianceEnvMap->Handle, pGlobalAmbientLight->GetRadianceEnvMap());
 
 			if (pSampTrilinearCube)
-				View.GPU->BindSampler(pSampTrilinearCube->ShaderType, pSampTrilinearCube->Handle, View.TrilinearCubeSampler.GetUnsafe());
+				View.GPU->BindSampler(pSampTrilinearCube->ShaderType, pSampTrilinearCube->Handle, View.TrilinearCubeSampler.Get());
 		}
 	}
 
@@ -256,17 +256,17 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (; RTIdxIdx < RenderTargetIndices.GetCount(); ++RTIdxIdx)
 	{
 		const I32 RTIdx = RenderTargetIndices[RTIdxIdx];
-		View.GPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].GetUnsafe());
+		View.GPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].Get());
 	}
 
 	UPTR MaxRTCount = View.GPU->GetMaxMultipleRenderTargetCount();
 	for (; RTIdxIdx < MaxRTCount; ++RTIdxIdx)
 		View.GPU->SetRenderTarget(RTIdxIdx, NULL);
 
-	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].GetUnsafe());
+	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].Get());
 
 	Render::IRenderer::CRenderContext Ctx;
-	Ctx.pGPU = View.GPU.Get();
+	Ctx.pGPU = View.GPU;
 	Ctx.CameraPosition = CameraPos;
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 	if (EnableLighting)

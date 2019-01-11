@@ -54,7 +54,7 @@ PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Output
 	n_assert2(Output == 0, "D3D9 supports only one output (0) per video adapter");
 	PD3D9DisplayDriver Driver = n_new(CD3D9DisplayDriver);
 	if (!Driver->Init(Adapter, Output)) Driver = NULL;
-	return Driver.GetUnsafe();
+	return Driver.Get();
 }
 //---------------------------------------------------------------------
 
@@ -82,8 +82,8 @@ PGPUDriver CD3D9DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Driv
 
 	// Since device is actually created only in CD3D9GPUDriver::CreateSwapChain(), creation logic is moved there
 	PD3D9GPUDriver Driver = n_new(CD3D9GPUDriver);
-	if (!Driver->Init(Adapter, DriverType)) Driver = NULL;
-	return Driver.GetUnsafe();
+	if (!Driver->Init(Adapter, DriverType)) Driver = nullptr;
+	return Driver;
 }
 //---------------------------------------------------------------------
 

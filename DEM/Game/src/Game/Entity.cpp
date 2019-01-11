@@ -32,7 +32,7 @@ void CEntity::SetUID(CStrID NewUID)
 void CEntity::SetLevel(CGameLevel* pNewLevel)
 {
 	n_assert(IsInactive());
-	if (pNewLevel == Level.GetUnsafe()) return;
+	if (pNewLevel == Level.Get()) return;
 	Level = pNewLevel;
 	if (pNewLevel) Level->Subscribe(NULL, this, &CEntity::OnEvent, &LevelSub);
 	else LevelSub = NULL;
@@ -41,7 +41,7 @@ void CEntity::SetLevel(CGameLevel* pNewLevel)
 
 CGameLevel* CEntity::GetLevel() const
 {
-	return Level.GetUnsafe();
+	return Level.Get();
 }
 //---------------------------------------------------------------------
 

@@ -58,7 +58,7 @@ bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 		{
 			Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);
 			GenSkybox->GPU = pGPU;
-			Gen = GenSkybox.GetUnsafe();
+			Gen = GenSkybox.Get();
 		}
 		ResourceMgr->GenerateResourceSync(*RMesh, *Gen);
 		n_assert(RMesh->IsLoaded());

@@ -102,7 +102,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
 				GenQuad->GPU = pGPU;
 				GenQuad->QuadsPerEdge = PatchSize;
-				Gen = GenQuad.GetUnsafe();
+				Gen = GenQuad.Get();
 			}
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());
@@ -120,7 +120,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
 				GenQuad->GPU = pGPU;
 				GenQuad->QuadsPerEdge = PatchSize;
-				Gen = GenQuad.GetUnsafe();
+				Gen = GenQuad.Get();
 			}
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());

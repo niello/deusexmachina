@@ -203,7 +203,7 @@ PResourceLoader CMeshLoaderNVX2::Clone()
 {
 	PMeshLoaderNVX2 NewLoader = n_new(CMeshLoaderNVX2);
 	NewLoader->GPU = GPU;
-	return NewLoader.GetUnsafe();
+	return NewLoader.Get();
 }
 //---------------------------------------------------------------------
 
@@ -278,7 +278,7 @@ PResourceObject CMeshLoaderNVX2::Load(IO::CStream& Stream)
 	Render::PMesh Mesh = n_new(Render::CMesh);
 	Mesh->Create(InitData);
 
-	return Mesh.GetUnsafe();
+	return Mesh.Get();
 }
 //---------------------------------------------------------------------
 

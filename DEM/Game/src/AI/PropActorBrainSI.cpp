@@ -128,7 +128,7 @@ int CPropActorBrain_AbortCurrAction(lua_State* l)
 
 void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("EnqueueTask", CPropActorBrain_EnqueueTask);
 	ScriptSrv->ExportCFunction("ClearTaskQueue", CPropActorBrain_ClearTaskQueue);
 	ScriptSrv->ExportCFunction("DoAction", CPropActorBrain_DoAction);
@@ -140,7 +140,7 @@ void CPropActorBrain::EnableSI(CPropScriptable& Prop)
 
 void CPropActorBrain::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("EnqueueTask");
 	ScriptSrv->ClearField("ClearTaskQueue");
 	ScriptSrv->ClearField("DoAction");

@@ -13,7 +13,7 @@ private:
 
 public:
 
-	//template<class U> friend class Ptr;
+	template<class U> friend class Ptr;
 
 	constexpr Ptr() noexcept : pObj(nullptr) {}
 
@@ -21,7 +21,7 @@ public:
 
 	Ptr(Ptr const& Other): pObj(Other.pObj) { if (pObj) DEMPtrAddRef(pObj); }
 	template<class U>
-	Ptr(Ptr<U> const& Other) : pObj(Other.GetUnsafe()) { if (pObj) DEMPtrAddRef(pObj); }
+	Ptr(Ptr<U> const& Other) : pObj(Other.Get()) { if (pObj) DEMPtrAddRef(pObj); }
 
 	Ptr(Ptr&& Other) noexcept : pObj(Other.pObj) { Other.pObj = nullptr; }
 	template<class U>
@@ -31,8 +31,7 @@ public:
 
 	bool	IsValidPtr() const noexcept { return !!pObj; }
 	bool	IsNullPtr() const noexcept { return !pObj; }
-	T*		Get() const { n_assert(pObj); return pObj; }
-	T*		GetUnsafe() const noexcept { return pObj; }
+	T*		Get() const noexcept { return pObj; }
 	void	Reset() { Ptr().Swap(*this); }
 
 	void	Swap(Ptr& Other) noexcept
@@ -60,55 +59,55 @@ public:
 
 template<class T, class U> inline bool operator ==(Ptr<T> const& a, Ptr<U> const& b) noexcept
 {
-	return a.GetUnsafe() == b.GetUnsafe();
+	return a.Get() == b.Get();
 }
 
 template<class T, class U> inline bool operator !=(Ptr<T> const& a, Ptr<U> const& b) noexcept
 {
-	return a.GetUnsafe() != b.GetUnsafe();
+	return a.Get() != b.Get();
 }
 
 template<class T, class U> inline bool operator ==(Ptr<T> const& a, U* b) noexcept
 {
-	return a.GetUnsafe() == b;
+	return a.Get() == b;
 }
 
 template<class T, class U> inline bool operator !=(Ptr<T> const& a, U* b) noexcept
 {
-	return a.GetUnsafe() != b;
+	return a.Get() != b;
 }
 
 template<class T, class U> inline bool operator ==(T* a, Ptr<U> const& b) noexcept
 {
-	return a == b.GetUnsafe();
+	return a == b.Get();
 }
 
 template<class T, class U> inline bool operator !=(T* a, Ptr<U> const& b) noexcept
 {
-	return a != b.GetUnsafe();
+	return a != b.Get();
 }
 
 template<class T> inline bool operator ==(Ptr<T> const& p, std::nullptr_t) noexcept
 {
-	return p.GetUnsafe() == 0;
+	return p.Get() == 0;
 }
 
 template<class T> inline bool operator ==(std::nullptr_t, Ptr<T> const& p) noexcept
 {
-	return p.GetUnsafe() == 0;
+	return p.Get() == 0;
 }
 
 template<class T> inline bool operator !=(Ptr<T> const& p, std::nullptr_t) noexcept
 {
-	return p.GetUnsafe() != 0;
+	return p.Get() != 0;
 }
 
 template<class T> inline bool operator !=(std::nullptr_t, Ptr<T> const& p) noexcept
 {
-	return p.GetUnsafe() != 0;
+	return p.Get() != 0;
 }
 
 template<class T> inline bool operator <(Ptr<T> const& a, Ptr<T> const& b) noexcept
 {
-	return std::less<T *>()(a.GetUnsafe(), b.GetUnsafe());
+	return std::less<T *>()(a.Get(), b.Get());
 }

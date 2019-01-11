@@ -71,7 +71,7 @@ int CPropSmartObject_IsActionEnabled(lua_State* l)
 
 void CPropSmartObject::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("SetState", CPropSmartObject_SetState);
 	ScriptSrv->ExportCFunction("GetState", CPropSmartObject_GetState);
 	ScriptSrv->ExportCFunction("IsInState", CPropSmartObject_IsInState);
@@ -83,7 +83,7 @@ void CPropSmartObject::EnableSI(CPropScriptable& Prop)
 
 void CPropSmartObject::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("SetState");
 	ScriptSrv->ClearField("GetState");
 	ScriptSrv->ClearField("IsInState");

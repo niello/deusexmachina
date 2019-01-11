@@ -100,7 +100,7 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Outpu
 {
 	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
 	if (!Driver->Init(Adapter, Output)) Driver = NULL;
-	return Driver.GetUnsafe();
+	return Driver.Get();
 }
 //---------------------------------------------------------------------
 
@@ -111,7 +111,7 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(IDXGIOutput* pOutput)
 	Driver->pDXGIOutput = pOutput;
 	//???determine adapter and output?
 	//if (!Driver->Init(Adapter, Output)) Driver = NULL;
-	return Driver.GetUnsafe();
+	return Driver.Get();
 }
 //---------------------------------------------------------------------
 
@@ -142,7 +142,7 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 
 	PD3D11GPUDriver Driver = n_new(CD3D11GPUDriver);
 	if (!Driver->Init(Adapter, DriverType)) Driver = NULL;
-	return Driver.GetUnsafe();
+	return Driver.Get();
 }
 //---------------------------------------------------------------------
 

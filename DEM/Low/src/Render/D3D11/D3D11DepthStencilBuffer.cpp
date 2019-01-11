@@ -21,7 +21,10 @@ bool CD3D11DepthStencilBuffer::Create(ID3D11DepthStencilView* pDSV, ID3D11Shader
 	if (RTDesc.ViewDimension != D3D11_DSV_DIMENSION_TEXTURE2D &&
 		RTDesc.ViewDimension != D3D11_DSV_DIMENSION_TEXTURE2DARRAY &&
 		RTDesc.ViewDimension != D3D11_DSV_DIMENSION_TEXTURE2DMS &&
-		RTDesc.ViewDimension != D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY) FAIL;
+		RTDesc.ViewDimension != D3D11_DSV_DIMENSION_TEXTURE2DMSARRAY)
+	{
+		FAIL;
+	}
 	Desc.Format = CD3D11DriverFactory::DXGIFormatToPixelFormat(RTDesc.Format);
 
 	ID3D11Resource* pTexRsrc = NULL;
@@ -68,7 +71,7 @@ void CD3D11DepthStencilBuffer::InternalDestroy()
 
 CTexture* CD3D11DepthStencilBuffer::GetShaderResource() const
 {
-	return Texture.GetUnsafe();
+	return Texture.Get();
 }
 //---------------------------------------------------------------------
 

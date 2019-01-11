@@ -80,7 +80,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 		PEventHandler Prev, Curr = *pCurrSlot;
 		do
 		{
-			if (Curr.GetUnsafe() == pHandler)
+			if (Curr.Get() == pHandler)
 			{
 				if (Prev.IsValidPtr()) Prev->Next = pHandler->Next;
 				else

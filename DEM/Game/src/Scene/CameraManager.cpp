@@ -135,7 +135,7 @@ PEntity CCameraManager::CreateEntity(CStrID UID, CGameLevel& Level)
 	n_assert(!EntityExists(UID)); //???return NULL or existing entity?
 	PEntity Entity = n_new(CEntity(UID, Level));
 	Entities.Add(Entity);
-	UIDToEntity.Add(Entity->GetUID(), Entity.GetUnsafe());
+	UIDToEntity.Add(Entity->GetUID(), Entity.Get());
 	return Entity;
 }
 //---------------------------------------------------------------------

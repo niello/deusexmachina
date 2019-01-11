@@ -309,7 +309,7 @@ PShaderConstant CSM30ShaderMetadata::GetConstant(HConst hConst) const
 	{
 		PSM30ShaderConstant Const = n_new(CSM30ShaderConstant);
 		if (!Const->Init(hConst)) return NULL;
-		pMeta->ConstObject = Const.GetUnsafe();
+		pMeta->ConstObject = Const.Get();
 	}
 
 	return pMeta->ConstObject;

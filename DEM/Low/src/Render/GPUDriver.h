@@ -75,6 +75,7 @@ public:
 	virtual bool				ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height) = 0;
 	virtual bool				IsFullscreen(UPTR SwapChainID) const = 0;
 	virtual PRenderTarget		GetSwapChainRenderTarget(UPTR SwapChainID) const = 0;
+	virtual DEM::Sys::COSWindow*	GetSwapChainWindow(UPTR SwapChainID) const = 0;
 	virtual bool				Present(UPTR SwapChainID) = 0;
 	bool						PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA);
 	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const = 0;
@@ -154,19 +155,6 @@ public:
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;
-
-inline bool CGPUDriver::PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA)
-{
-	if (BeginFrame())
-	{
-		Clear(Clear_Color, ColorRGBA, 1.f, 0);
-		EndFrame();
-		Present(SwapChainID);
-		OK;
-	}
-	FAIL;
-}
-//---------------------------------------------------------------------
 
 }
 

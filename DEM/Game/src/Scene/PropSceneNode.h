@@ -48,14 +48,14 @@ public:
 
 	virtual bool		Initialize();
 
-	Scene::CSceneNode*	GetNode() const { return Node.GetUnsafe(); }
+	Scene::CSceneNode*	GetNode() const { return Node.Get(); }
 	Scene::CSceneNode*	GetChildNode(CStrID ID);
 	void				GetAABB(CAABB& OutBox, UPTR TypeFlags = AABB_Gfx | AABB_Phys) const;
 };
 
 inline Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
 {
-	if (!ID.IsValid()) return Node.GetUnsafe();
+	if (!ID.IsValid()) return Node.Get();
 	if (Node.IsNullPtr()) return NULL;
 
 	IPTR NodeIdx = ChildCache.FindIndex(ID);

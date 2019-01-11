@@ -21,7 +21,7 @@ bool CInputConditionComboState::Initialize(const Data::CParams& Desc)
 	{
 		Data::PParams SubDesc = StateDescArray->Get<Data::PParams>(i);
 		CInputConditionState* pState = CInputConditionState::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pState || !pState->Initialize(*SubDesc.GetUnsafe())) FAIL;
+		if (!pState || !pState->Initialize(*SubDesc.Get())) FAIL;
 		Children[i] = pState;
 	}
 

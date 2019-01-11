@@ -31,7 +31,7 @@ public:
 
 	virtual void	Destroy() { InternalDestroy(); }
 
-	CVertexLayout*	GetVertexLayout() const { return VertexLayout.GetUnsafe(); }
+	CVertexLayout*	GetVertexLayout() const { return VertexLayout.Get(); }
 	UPTR			GetVertexCount() const { return VertexCount; }
 	Data::CFlags	GetAccess() const { return Access; }
 	UPTR			GetSizeInBytes() const { return VertexLayout.IsValidPtr() ? VertexLayout->GetVertexSizeInBytes() * VertexCount : 0; }

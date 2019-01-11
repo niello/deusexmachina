@@ -51,7 +51,7 @@ PAction CActionTplUseSmartObj::CreateInstance(const CWorldState& Context) const
 {
 	PActionUseSmartObj Act = n_new(CActionUseSmartObj);
 	Act->Init(Context.GetProp(WSP_UsingSmartObj), Context.GetProp(WSP_Action));
-	return Act.GetUnsafe();
+	return Act.Get();
 }
 //---------------------------------------------------------------------
 

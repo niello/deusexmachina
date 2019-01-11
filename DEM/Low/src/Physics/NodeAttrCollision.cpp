@@ -11,7 +11,7 @@ Scene::PNodeAttribute CNodeAttrCollision::Clone()
 	//???or clone collision object? will CNodeAttrCollision::Clone() ever be called?
 	PNodeAttrCollision ClonedAttr = n_new(CNodeAttrCollision);
 	ClonedAttr->CollObj = CollObj;
-	return ClonedAttr.GetUnsafe();
+	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 

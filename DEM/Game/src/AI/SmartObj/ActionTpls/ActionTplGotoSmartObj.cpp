@@ -25,7 +25,7 @@ PAction CActionTplGotoSmartObj::CreateInstance(const CWorldState& Context) const
 {
 	PActionGotoSmartObj Act = n_new(CActionGotoSmartObj);
 	Act->Init(Context.GetProp(WSP_AtEntityPos), Context.GetProp(WSP_Action));
-	return Act.GetUnsafe();
+	return Act.Get();
 }
 //---------------------------------------------------------------------
 

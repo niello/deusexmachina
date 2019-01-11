@@ -189,7 +189,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 		for (UPTR i = 0; i < Context.pEffectOverrides->GetCount(); ++i)
 			if (Context.pEffectOverrides->KeyAt(i) == EffType)
 			{
-				pEffect = Context.pEffectOverrides->ValueAt(i).GetUnsafe();
+				pEffect = Context.pEffectOverrides->ValueAt(i).Get();
 				break;
 			}
 
@@ -838,7 +838,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 			const CEffectSampler* pVSLinearSampler = pTech->GetSampler(CStrID("VSLinearSampler"));
 			if (pVSLinearSampler)
-				GPU.BindSampler(pVSLinearSampler->ShaderType, pVSLinearSampler->Handle, HMSampler.GetUnsafe());
+				GPU.BindSampler(pVSLinearSampler->ShaderType, pVSLinearSampler->Handle, HMSampler.Get());
 		}
 
 		if (pResourceHeightMap)
@@ -1058,7 +1058,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 		const CMesh* pMesh = pTerrain->GetPatchMesh();
 		n_assert_dbg(pMesh);
-		CVertexBuffer* pVB = pMesh->GetVertexBuffer().GetUnsafe();
+		CVertexBuffer* pVB = pMesh->GetVertexBuffer().Get();
 		n_assert_dbg(pVB);
 		CVertexLayout* pVL = pVB->GetVertexLayout();
 
@@ -1082,9 +1082,9 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 				n_assert_dbg(VLInstanced.IsValidPtr());
 				InstancedLayouts.Add(pVL, VLInstanced);
 
-				GPU.SetVertexLayout(VLInstanced.GetUnsafe());
+				GPU.SetVertexLayout(VLInstanced.Get());
 			}
-			else GPU.SetVertexLayout(InstancedLayouts.ValueAt(VLIdx).GetUnsafe());
+			else GPU.SetVertexLayout(InstancedLayouts.ValueAt(VLIdx).Get());
 		}
 
 		// Render patches //!!!may collect patches of different CTerrains if material is the same and instance buffer is big enough!
@@ -1109,10 +1109,10 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			PerInstanceBuffers.CommitChanges();
 
 			GPU.SetVertexBuffer(0, pVB);
-			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
+			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 			if (!pConstInstanceDataVS)
-				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), 0);
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), 0);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 			for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)
@@ -1143,14 +1143,14 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 			pMesh = pTerrain->GetQuarterPatchMesh();
 			n_assert_dbg(pMesh);
-			pVB = pMesh->GetVertexBuffer().GetUnsafe();
+			pVB = pMesh->GetVertexBuffer().Get();
 			n_assert_dbg(pVB);
 
 			GPU.SetVertexBuffer(0, pVB);
-			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().GetUnsafe());
+			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 			if (!pConstInstanceDataVS)
-				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.GetUnsafe(), PatchCount);
+				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), PatchCount);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 			for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)

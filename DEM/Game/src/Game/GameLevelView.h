@@ -46,7 +46,7 @@ public:
 	void					Trigger();
 
 	HHandle					GetHandle() const { return Handle; }
-	CGameLevel*				GetLevel() const { return Level.GetUnsafe(); }
+	CGameLevel*				GetLevel() const { return Level.Get(); }
 	Frame::CView&			GetFrameView() { return View; }
 	const vector3&			GetCenterOfInterest() const;
 

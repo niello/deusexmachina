@@ -42,7 +42,7 @@ PResourceObject CSkinInfoLoaderSKN::Load(IO::CStream& Stream)
 		if (!Reader.Read(BoneInfo.ID)) return NULL;
 	}
 
-	return SkinInfo.GetUnsafe();
+	return SkinInfo.Get();
 }
 //---------------------------------------------------------------------
 

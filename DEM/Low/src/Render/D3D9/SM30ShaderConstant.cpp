@@ -105,7 +105,7 @@ PShaderConstant CSM30ShaderConstant::GetElement(U32 Index) const
 	Const->Rows = Rows;
 	Const->Flags = Flags;
 
-	return Const.GetUnsafe();
+	return Const.Get();
 }
 //---------------------------------------------------------------------
 
@@ -129,7 +129,7 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 			Const->Rows = It->Rows;
 			Const->Flags = It->Flags;
 
-			return Const.GetUnsafe();
+			return Const.Get();
 		}
 
 	return NULL;

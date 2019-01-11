@@ -77,7 +77,7 @@ PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
 	}
 	*/
 
-	return Const.GetUnsafe();
+	return Const.Get();
 }
 //---------------------------------------------------------------------
 
@@ -100,7 +100,7 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 			Const->Rows = It->Rows;
 			Const->Flags = It->Flags;
 
-			return Const.GetUnsafe();
+			return Const.Get();
 		}
 
 	return NULL;

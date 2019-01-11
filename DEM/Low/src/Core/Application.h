@@ -25,6 +25,11 @@
 // - callbacks / virtual methods for application lifecycle control in derived applications
 // - factory
 
+namespace Render
+{
+	class CGPUDriver;
+}
+
 namespace DEM
 {
 namespace Sys
@@ -63,7 +68,7 @@ public:
 
 	bool Run();
 	bool Update();
-	void Close();
+	void Term();
 	// Update, RequestState, RequestExit
 
 	//allow multiple instances
@@ -72,8 +77,8 @@ public:
 	void ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
-	Sys::POSWindow CreateRenderWindow(); // bool close app on close this window?
-	//POSConsoleWindow CreateConsoleWindow(); // bool close app on close this window?
+	int CreateRenderWindow(Render::CGPUDriver* pGPU, U32 Width, U32 Height);
+	//POSConsoleWindow CreateConsoleWindow();
 };
 
 }

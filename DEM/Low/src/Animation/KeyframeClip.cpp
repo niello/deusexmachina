@@ -48,7 +48,7 @@ Scene::PNodeController CKeyframeClip::CreateController(UPTR SamplerIdx) const
 {
 	Anim::PNodeControllerKeyframe Ctlr = n_new(Anim::CNodeControllerKeyframe);
 	Ctlr->SetSampler(&Samplers.ValueAt(SamplerIdx));
-	return Ctlr.GetUnsafe();
+	return Ctlr.Get();
 }
 //---------------------------------------------------------------------
 

@@ -49,7 +49,7 @@ template<class T> inline T* CMemSystem::AddFact()
 	// remember list count
 	CMemFactNode Node = Facts.Add(n_new(T));
 	// if list count changed, build validation sensor list for Type
-	return (T*)Node->GetUnsafe();
+	return (T*)Node->Get();
 }
 //---------------------------------------------------------------------
 

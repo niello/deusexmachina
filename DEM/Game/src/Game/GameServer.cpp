@@ -500,10 +500,10 @@ bool CGameServer::CommitContinueData()
 
 	CString Path = "AppData:Profiles/" + CurrProfile + "/Continue";
 	IOSrv->CreateDirectory(Path);
-	if (!ParamsUtils::SaveParamsToPRM(Path + "/Main.prm", *SGCommon.GetUnsafe())) FAIL;
+	if (!ParamsUtils::SaveParamsToPRM(Path + "/Main.prm", *SGCommon.Get())) FAIL;
 
 	//!!!DBG TMP!
-	if (!ParamsUtils::SaveParamsToHRD(Path + "/Main.hrd", *SGCommon.GetUnsafe())) FAIL;
+	if (!ParamsUtils::SaveParamsToHRD(Path + "/Main.hrd", *SGCommon.Get())) FAIL;
 
 	// Save diffs of each level
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
@@ -525,10 +525,10 @@ bool CGameServer::CommitLevelDiff(CGameLevel& Level)
 	{
 		CString DirName = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
 		IOSrv->CreateDirectory(DirName);
-		if (!ParamsUtils::SaveParamsToPRM(DirName + Level.GetID().CStr() + ".prm", *SGLevel.GetUnsafe())) FAIL;
+		if (!ParamsUtils::SaveParamsToPRM(DirName + Level.GetID().CStr() + ".prm", *SGLevel.Get())) FAIL;
 
 		//!!!DBG TMP!
-		if (!ParamsUtils::SaveParamsToHRD(DirName + Level.GetID().CStr() + ".hrd", *SGLevel.GetUnsafe())) FAIL;
+		if (!ParamsUtils::SaveParamsToHRD(DirName + Level.GetID().CStr() + ".hrd", *SGLevel.Get())) FAIL;
 	}
 
 	OK;

@@ -66,7 +66,7 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 	}
 
 	POSWindowWin32 Wnd = n_new(COSWindowWin32(hInst, aGUIWndClass));
-	return Wnd->GetHWND() ? Wnd.GetUnsafe() : nullptr;
+	return Wnd->GetHWND() ? Wnd.Get() : nullptr;
 }
 //---------------------------------------------------------------------
 

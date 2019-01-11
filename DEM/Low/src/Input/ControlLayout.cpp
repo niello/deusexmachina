@@ -23,12 +23,12 @@ bool CControlLayout::Initialize(const Data::CDataArray& Desc)
 			CEventRecord& NewRec = *Events.Add();
 			NewRec.OutEventID = CStrID(OutputName.CStr());
 			NewRec.pEvent = CInputConditionEvent::CreateByType(ConditionType);
-			if (!NewRec.pEvent || !NewRec.pEvent->Initialize(*MappingDesc.GetUnsafe())) FAIL;
+			if (!NewRec.pEvent || !NewRec.pEvent->Initialize(*MappingDesc.Get())) FAIL;
 		}
 		else if (MappingDesc->Get(OutputName, CStrID("State")))
 		{
 			CInputConditionState* pState = CInputConditionState::CreateByType(ConditionType);
-			if (!pState || !pState->Initialize(*MappingDesc.GetUnsafe())) FAIL;
+			if (!pState || !pState->Initialize(*MappingDesc.Get())) FAIL;
 			States.Add(CStrID(OutputName.CStr()), pState);
 		}
 		//else FAIL;

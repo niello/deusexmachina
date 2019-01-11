@@ -47,7 +47,7 @@ PResourceObject CMeshGeneratorQuadPatch::Generate()
 			*pVBCurr++ = x * InvEdgeSize;
 			*pVBCurr++ = z * InvEdgeSize;
 		}
-	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*PatchVertexLayout.GetUnsafe(), VertexCount, Render::Access_GPU_Read, pVBData);
+	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*PatchVertexLayout.Get(), VertexCount, Render::Access_GPU_Read, pVBData);
 	n_free_aligned(pVBData);
 
 	//???use TriStrip?
@@ -94,8 +94,8 @@ PResourceObject CMeshGeneratorQuadPatch::Generate()
 	Group.AABB.Max.set(1.f, 0.f, 1.f);
 
 	Render::CMeshInitData InitData;
-	InitData.pVertexBuffer = VB.GetUnsafe();
-	InitData.pIndexBuffer = IB.GetUnsafe();
+	InitData.pVertexBuffer = VB.Get();
+	InitData.pIndexBuffer = IB.Get();
 	InitData.pMeshGroupData = &Group;
 	InitData.SubMeshCount = 1;
 	InitData.LODCount = 1;
@@ -104,7 +104,7 @@ PResourceObject CMeshGeneratorQuadPatch::Generate()
 
 	Render::PMesh Patch = n_new(Render::CMesh);
 	if (!Patch->Create(InitData)) return NULL;
-	return Patch.GetUnsafe();
+	return Patch.Get();
 }
 //---------------------------------------------------------------------
 
@@ -135,7 +135,7 @@ PResourceObject CMeshGeneratorSkybox::Generate()
 		-1.0f, +1.0f, +1.0f,
 		+1.0f, +1.0f, +1.0f
 	};
-	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout.GetUnsafe(), 8, Render::Access_GPU_Read, &VBData);
+	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout.Get(), 8, Render::Access_GPU_Read, &VBData);
 
 	// Front side is inside a cube
 	U16 IBDataCW[36] =
@@ -168,8 +168,8 @@ PResourceObject CMeshGeneratorSkybox::Generate()
 	Group.AABB.Max.set(0.5f, 0.5f, 0.5f);
 
 	Render::CMeshInitData InitData;
-	InitData.pVertexBuffer = VB.GetUnsafe();
-	InitData.pIndexBuffer = IB.GetUnsafe();
+	InitData.pVertexBuffer = VB.Get();
+	InitData.pIndexBuffer = IB.Get();
 	InitData.pMeshGroupData = &Group;
 	InitData.SubMeshCount = 1;
 	InitData.LODCount = 1;
@@ -178,7 +178,7 @@ PResourceObject CMeshGeneratorSkybox::Generate()
 
 	Render::PMesh Mesh = n_new(Render::CMesh);
 	if (!Mesh->Create(InitData)) return NULL;
-	return Mesh.GetUnsafe();
+	return Mesh.Get();
 }
 //---------------------------------------------------------------------
 

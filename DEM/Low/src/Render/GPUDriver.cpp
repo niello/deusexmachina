@@ -7,6 +7,15 @@
 namespace Render
 {
 
+bool CGPUDriver::PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA)
+{
+	if (!BeginFrame()) FAIL;
+	Clear(Clear_Color, ColorRGBA, 1.f, 0);
+	EndFrame();
+	return Present(SwapChainID);
+}
+//---------------------------------------------------------------------
+
 void CGPUDriver::PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32& Width, U32& Height)
 {
 	// Zero Width or Height means backbuffer matching window or display size.

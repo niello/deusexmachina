@@ -49,7 +49,7 @@ void CDEMGeometryBuffer::draw(uint32 drawModeMask) const
 		d_bufferIsSync = true;
 	}
 
-	pGPU->SetVertexBuffer(0, d_vertexBuffer.GetUnsafe());
+	pGPU->SetVertexBuffer(0, d_vertexBuffer.Get());
 
 	Data::CRect SR;
 	SR.X = (int)d_clipRect.left();
@@ -79,7 +79,7 @@ void CDEMGeometryBuffer::draw(uint32 drawModeMask) const
 			primGroup.VertexCount = i->vertexCount;
 			d_owner.setRenderState(d_blendMode, i->clip);
 			d_owner.commitChangedConsts();
-			pGPU->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.GetUnsafe());
+			pGPU->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.Get());
 			pGPU->Draw(primGroup);
 			primGroup.FirstVertex += primGroup.VertexCount;
 		}

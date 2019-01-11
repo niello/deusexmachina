@@ -39,7 +39,7 @@ PAction CActionTplEquipItem::CreateInstance(const CWorldState& Context) const
 {
 	PActionEquipItem Act = n_new(CActionEquipItem);
 	Act->Init(Context.GetProp(WSP_ItemEquipped));
-	return Act.GetUnsafe();
+	return Act.Get();
 }
 //---------------------------------------------------------------------
 

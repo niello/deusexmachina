@@ -26,7 +26,7 @@ bool CNodeControllerComposite::AddSource(Scene::CNodeController& Ctlr, UPTR Prio
 {
 #ifdef _DEBUG
 	for (UPTR i = 0; i < Sources.GetCount(); ++i)
-		n_assert(Sources[i].Ctlr.GetUnsafe() != &Ctlr);
+		n_assert(Sources[i].Ctlr.Get() != &Ctlr);
 #endif
 
 	if (Sources.GetCount())
@@ -59,7 +59,7 @@ bool CNodeControllerComposite::RemoveSource(const Scene::CNodeController& Ctlr)
 	for (UPTR i = 0; i < Sources.GetCount(); ++i)
 	{
 		CSource& Src = Sources[i];
-		if (Src.Ctlr.GetUnsafe() == &Ctlr)
+		if (Src.Ctlr.Get() == &Ctlr)
 		{
 			if (pNode) Src.Ctlr->OnDetachFromScene();
 

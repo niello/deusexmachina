@@ -70,7 +70,7 @@ public:
 	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, Render::CShader* pVertexShader, Render::CShader* pPixelShaderRegular, Render::CShader* pPixelShaderOpaque, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
-	Render::CGPUDriver*		getGPUDriver() { return GPU.GetUnsafe(); }
+	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
 	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, UPTR VertexCount);
 	void					setOpaqueMode(bool Opaque) { OpaqueMode = Opaque; }
 	bool					isInOpaqueMode() const { return OpaqueMode; }

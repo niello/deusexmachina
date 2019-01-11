@@ -106,7 +106,7 @@ int CPropAnimation_SetPose(lua_State* l)
 
 void CPropAnimation::EnableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("GetAnimLength", CPropAnimation_GetAnimLength);
 	ScriptSrv->ExportCFunction("StartAnim", CPropAnimation_StartAnim);
 	ScriptSrv->ExportCFunction("PauseAnim", CPropAnimation_PauseAnim);
@@ -119,7 +119,7 @@ void CPropAnimation::EnableSI(CPropScriptable& Prop)
 
 void CPropAnimation::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("GetAnimLength");
 	ScriptSrv->ClearField("StartAnim");
 	ScriptSrv->ClearField("PauseAnim");

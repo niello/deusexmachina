@@ -171,8 +171,8 @@ bool CPropActorBrain::InternalActivate()
 
 		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
 		
-		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), NULL).GetUnsafe());
-		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).GetUnsafe());
+		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), NULL).Get());
+		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).Get());
 	}
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -259,7 +259,7 @@ void CPropActorBrain::ClearTaskQueue()
 
 void CPropActorBrain::AbortCurrAction(UPTR Result)
 {
-	SetPlan(NULL, CurrGoal.GetUnsafe(), Running);
+	SetPlan(NULL, CurrGoal.Get(), Running);
 	RequestBehaviourUpdate();
 }
 //---------------------------------------------------------------------
@@ -285,7 +285,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, UPTR PrevPlanRe
 				else TaskQueue.RemoveFront();
 			}
 		}
-		else if (CurrGoal.GetUnsafe() != pPrevGoal) // Goal was active and now is not
+		else if (CurrGoal.Get() != pPrevGoal) // Goal was active and now is not
 		{
 			n_assert(pPrevGoal); // Prevoius plan is not set by task, so it MUST have been set by goal
 			// [Deactivate pCurrGoal]
@@ -301,7 +301,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, UPTR PrevPlanRe
 			//!!!activate task!
 			//???event task activated? use task UID?
 		}
-		else if (CurrGoal.GetUnsafe() != pPrevGoal) // Goal becomes active
+		else if (CurrGoal.Get() != pPrevGoal) // Goal becomes active
 		{
 			n_assert(CurrGoal.IsValidPtr()); // New plan is not set by task, so it MUST have been set by goal
 			// [Activate CurrGoal]
@@ -326,7 +326,7 @@ void CPropActorBrain::UpdateBehaviour()
 
 	Flags.Clear(AIMind_SelectAction | AIMind_InvalidatePlan);
 
-	CGoal* pPrevGoal = CurrGoal.GetUnsafe();
+	CGoal* pPrevGoal = CurrGoal.Get();
 	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
 
 	//???!!!check can task action be interrupted, if task active?
@@ -382,7 +382,7 @@ void CPropActorBrain::UpdateBehaviour()
 			pTopGoal->InvalidateRelevance();
 		}
 
-		//???n_assert2(CurrGoal.GetUnsafe() || pTask, "Actor has no goal, even GoalIdle, nor task");
+		//???n_assert2(CurrGoal.Get() || pTask, "Actor has no goal, even GoalIdle, nor task");
 	}
 
 	if (NewPlan.IsNullPtr())
@@ -423,7 +423,7 @@ bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const 
 		UPTR PlanResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
 		if (PlanResult != Running)
 		{
-			SetPlan(NULL, CurrGoal.GetUnsafe(), PlanResult);
+			SetPlan(NULL, CurrGoal.Get(), PlanResult);
 			RequestBehaviourUpdate();
 		}
 	}

@@ -40,7 +40,7 @@ int CPropEquipment_GetEquippedItemID(lua_State* l)
 void CPropEquipment::EnableSI(CPropScriptable& Prop)
 {
 	CPropInventory::EnableSI(Prop);
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ExportCFunction("GetEquippedItemID", CPropEquipment_GetEquippedItemID);
 	ScriptSrv->EndMixin();
 }
@@ -48,7 +48,7 @@ void CPropEquipment::EnableSI(CPropScriptable& Prop)
 
 void CPropEquipment::DisableSI(CPropScriptable& Prop)
 {
-	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().GetUnsafe()));
+	n_verify_dbg(ScriptSrv->BeginMixin(Prop.GetScriptObject().Get()));
 	ScriptSrv->ClearField("GetEquippedItemID");
 	ScriptSrv->EndMixin();
 	CPropInventory::DisableSI(Prop);

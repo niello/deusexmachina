@@ -123,7 +123,7 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 
 	ClonedNode->Attrs.Resize(Attrs.GetCount());
 	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
-		ClonedNode->AddAttribute(*Attrs[i]->Clone().GetUnsafe());
+		ClonedNode->AddAttribute(*Attrs[i]->Clone().Get());
 
 	UPTR ChildCount = Children.GetCount();
 	if (CloneChildren && ChildCount)
@@ -132,7 +132,7 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 		for (UPTR i = 0; i < ChildCount; ++i)
 		{
 			PSceneNode CurrChild = Children.ValueAt(i)->Clone(true);
-			CurrChild->pParent = ClonedNode.GetUnsafe();
+			CurrChild->pParent = ClonedNode.Get();
 			ClonedNode->Children.Add(CurrChild->GetName(), CurrChild);
 		}
 		ClonedNode->Children.EndAdd();
@@ -216,7 +216,7 @@ CSceneNode* CSceneNode::FindDeepestChild(const char* pPath, char const* & pUnres
 
 bool CSceneNode::SetController(CNodeController* pCtlr)
 {
-	if (Controller.GetUnsafe() == pCtlr) OK;
+	if (Controller.Get() == pCtlr) OK;
 	if (pCtlr && pCtlr->IsAttachedToNode()) FAIL;
 
 	if (Controller.IsValidPtr())

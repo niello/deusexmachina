@@ -57,7 +57,7 @@ Scene::PNodeAttribute CNodeAttrAmbientLight::Clone()
 	PNodeAttrAmbientLight ClonedAttr = n_new(CNodeAttrAmbientLight);
 	ClonedAttr->IrradianceMap = IrradianceMap;
 	ClonedAttr->RadianceEnvMap = RadianceEnvMap;
-	return ClonedAttr.GetUnsafe();
+	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 
