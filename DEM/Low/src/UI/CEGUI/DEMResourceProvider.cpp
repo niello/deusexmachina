@@ -74,8 +74,8 @@ void CDEMResourceProvider::clearResourceGroupDirectory(const String& resourceGro
 //---------------------------------------------------------------------
 
 size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_vec,
-														   const String& file_pattern,
-														   const String& resource_group)
+													   const String& file_pattern,
+													   const String& resource_group)
 {
 	String DirName;
 	if (resource_group.empty()) DirName = d_defaultResourceGroup;

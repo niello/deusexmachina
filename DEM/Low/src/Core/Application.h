@@ -1,9 +1,8 @@
 #pragma once
 //#include <Data/Singleton.h>
 #include <Data/Ptr.h>
-#include <Data/Array.h>
 #include <Events/EventsFwd.h>
-//#include <vector>
+#include <memory>
 
 // DEM application base class. Application serves as a state machine,
 // OS interface and a global service container.
@@ -30,6 +29,11 @@ namespace Render
 	class CGPUDriver;
 }
 
+namespace IO
+{
+	class CIOServer;
+}
+
 namespace DEM
 {
 namespace Sys
@@ -47,7 +51,7 @@ protected:
 
 	Sys::IPlatform& Platform; //???use unique ptr and heap-allocated platform?
 
-	//CArray<Sys::POSWindow> Windows;
+	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 
 	double BaseTime = 0.0;
 	double PrevTime = 0.0;
@@ -65,6 +69,8 @@ public:
 	virtual ~CApplication();
 
 	Sys::IPlatform& GetPlatform() const { return Platform; }
+
+	IO::CIOServer& IO() const;
 
 	bool Run();
 	bool Update();

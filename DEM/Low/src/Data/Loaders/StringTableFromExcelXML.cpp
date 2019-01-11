@@ -7,6 +7,7 @@
 #include <Data/Buffer.h>
 #include <Data/XMLDocument.h>
 #include <IO/IOServer.h>
+#include <IO/Stream.h>
 
 namespace Load
 {
@@ -153,7 +154,12 @@ bool StringTableFromExcelXML(const CString& FileName,
 							 bool FirstColAsRowNames)
 {
 	Data::CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(FileName, Buffer)) FAIL;
+	IO::PStream File = IOSrv->CreateStream(FileName);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
+	Buffer.Reserve(FileSize);
+	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
+	if (Buffer.GetSize() != FileSize) FAIL;
 
 	Data::PXMLDocument XML = n_new(Data::CXMLDocument);
 	if (!XML->Parse((const char*)Buffer.GetPtr(), Buffer.GetSize()) == tinyxml2::XML_SUCCESS) FAIL;

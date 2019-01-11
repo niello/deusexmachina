@@ -8,7 +8,7 @@ namespace IO
 bool CFSBrowser::ForceToFirstEntry()
 {
 	if (hDir) FS->CloseDirectory(hDir);
-	hDir = IOSrv->OpenDirectory(CurrPath, NULL, FS, CurrEntryName, CurrEntryType);
+	hDir = IOSrv->OpenDirectory(CurrPath, nullptr, FS, CurrEntryName, CurrEntryType);
 	AtFirstEntry = true;
 	return !!hDir;
 }

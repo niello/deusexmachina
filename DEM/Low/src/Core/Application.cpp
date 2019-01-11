@@ -1,5 +1,6 @@
 #include "Application.h"
 
+#include <IO/IOServer.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 #include <Math/Math.h>
@@ -25,12 +26,19 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	// setup hard assigns from platform and application
 
 	n_new(Events::CEventServer);
+	IOServer.reset(n_new(IO::CIOServer));
 }
 //---------------------------------------------------------------------
 
 CApplication::~CApplication()
 {
 	if (Events::CEventServer::HasInstance()) n_delete(EventSrv);
+}
+//---------------------------------------------------------------------
+
+IO::CIOServer& CApplication::IO() const
+{
+	return *IOServer;
 }
 //---------------------------------------------------------------------
 

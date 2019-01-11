@@ -1,21 +1,12 @@
 #pragma once
-#ifndef __DEM_L1_IO_SERVER_H__
-#define __DEM_L1_IO_SERVER_H__
-
-#include <Core/Object.h>
 #include <Data/Singleton.h>
 #include <IO/IOFwd.h>
 #include <Data/HashTable.h>
+#include <Data/String.h>
+#include <vector>
 
-// IO server manages input/output, file systems, generic file caching, path assigns
+// IO server manages input/output, file systems and path assigns
 // NB: file times are seconds from 1970-01-01
-
-//!!!implement file caching if needed!
-
-namespace Data
-{
-	class CBuffer;
-}
 
 namespace IO
 {
@@ -30,14 +21,24 @@ class CIOServer
 
 private:
 
-	PFileSystem							DefaultFS; //???need? use FS[0] and priority-sorted array?
-	CArray<PFileSystem>					FS;
-	CHashTable<CString, CString>		Assigns;
+	struct CFSRecord
+	{
+		PFileSystem	FS;
+		CString		Name;
+		CString		RootPath;
+	};
+
+	std::vector<CFSRecord>			FileSystems;
+	CHashTable<CString, CString>	Assigns;
 
 public:
 
 	CIOServer();
 	~CIOServer();
+
+	bool			MountFileSystem(IO::IFileSystem* pFS, const char* pRoot, IO::IFileSystem* pPlaceBefore = nullptr);
+	bool			UnmountFileSystem(IO::IFileSystem* pFS);
+	UPTR			UnmountFileSystems(const char* pName);
 
 	bool			FileExists(const char* pPath) const;
 	bool			IsFileReadOnly(const char* pPath) const;
@@ -59,9 +60,6 @@ public:
 	void			SetAssign(const char* pAssign, const char* pPath);
 	CString			GetAssign(const char* pAssign) const;
 	CString			ResolveAssigns(const char* pPath) const;
-	bool			LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer);
 };
 
 }
-
-#endif

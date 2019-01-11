@@ -8,6 +8,7 @@
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
 #include <IO/IOServer.h>
+#include <IO/Stream.h>
 
 extern const CString StrLuaObjects;
 
@@ -253,7 +254,13 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 UPTR CScriptServer::RunScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return Error;
+	IO::PStream File = IOSrv->CreateStream(pFileName);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
+	Buffer.Reserve(FileSize);
+	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
+	if (Buffer.GetSize() != FileSize) FAIL;
+
 	return RunScript((const char*)Buffer.GetPtr(), Buffer.GetSize());
 }
 //---------------------------------------------------------------------

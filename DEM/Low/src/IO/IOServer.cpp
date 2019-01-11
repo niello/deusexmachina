@@ -21,46 +21,76 @@ CIOServer::~CIOServer()
 }
 //---------------------------------------------------------------------
 
+// pRoot takes the form "Name:RootPath"
+bool CIOServer::MountFileSystem(IO::IFileSystem* pFS, const char* pRoot, IO::IFileSystem* pPlaceBefore)
+{
+	if (!pFS || !pFS->Init()) FAIL;
+
+	const char* pRootPath = strchr(pRoot, ':');
+
+	CFSRecord Rec;
+	Rec.FS = pFS;
+	if (pRootPath)
+	{
+		Rec.Name.Set(pRoot, pRootPath - pRoot);
+		Rec.RootPath.Set(pRootPath + 1);
+	}
+	else Rec.Name.Set(pRoot);
+
+	auto it = std::find_if(FileSystems.begin(), FileSystems.end(), [pPlaceBefore](const CFSRecord& Rec) { return Rec.FS == pPlaceBefore; });
+	FileSystems.insert(it, std::move(Rec));
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CIOServer::UnmountFileSystem(IO::IFileSystem* pFS)
+{
+	FAIL; //return FileSystems.RemoveByValue(pFS);
+}
+//---------------------------------------------------------------------
+
+// Unmounts all systems associated with the name provided. Returns unmounted system count.
+UPTR CIOServer::UnmountFileSystems(const char* pName)
+{
+	return 0;
+}
+//---------------------------------------------------------------------
+
 bool CIOServer::FileExists(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->FileExists(AbsPath)) OK;
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->FileExists(AbsPath)) OK;
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->FileExists(AbsPath)) OK;
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::IsFileReadOnly(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->FileExists(AbsPath))
-		return DefaultFS->IsFileReadOnly(AbsPath);
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->FileExists(AbsPath))
-			return FS[i]->IsFileReadOnly(AbsPath);
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->FileExists(AbsPath))
+			return Rec.FS->IsFileReadOnly(AbsPath);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->FileExists(AbsPath))
-		return DefaultFS->SetFileReadOnly(AbsPath, ReadOnly);
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->FileExists(AbsPath))
-			return FS[i]->SetFileReadOnly(AbsPath, ReadOnly);
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->FileExists(AbsPath))
+			return Rec.FS->SetFileReadOnly(AbsPath, ReadOnly);
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::DeleteFile(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->DeleteFile(AbsPath)) OK;
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->DeleteFile(AbsPath)) OK;
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->DeleteFile(AbsPath)) OK;
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -72,16 +102,15 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	// Try to copy inside a single FS
 
-	if (DefaultFS->CopyFile(AbsSrcPath, AbsDestPath)) OK;
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->CopyFile(AbsSrcPath, AbsDestPath)) OK;
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->CopyFile(AbsSrcPath, AbsDestPath)) OK;
 
 	// Cross-FS copying
 
 	if (!SetFileReadOnly(AbsDestPath, false)) FAIL;
 
-	IO::PStream Src = IOSrv->CreateStream(AbsSrcPath);
-	IO::PStream Dest = IOSrv->CreateStream(AbsDestPath);
+	IO::PStream Src = CreateStream(AbsSrcPath);
+	IO::PStream Dest = CreateStream(AbsDestPath);
 	if (!Src->Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
 	if (!Dest->Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
 
@@ -142,30 +171,27 @@ U64 CIOServer::GetFileWriteTime(const char* pPath) const
 
 bool CIOServer::DirectoryExists(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->DirectoryExists(AbsPath)) OK;
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->DirectoryExists(AbsPath)) OK;
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->DirectoryExists(AbsPath)) OK;
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::CreateDirectory(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->CreateDirectory(AbsPath)) OK;
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->CreateDirectory(AbsPath)) OK;
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->CreateDirectory(AbsPath)) OK;
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::DeleteDirectory(const char* pPath) const
 {
-	CString AbsPath = IOSrv->ResolveAssigns(pPath);
-	if (DefaultFS->DeleteDirectory(AbsPath)) OK;
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-		if (FS[i]->DeleteDirectory(AbsPath)) OK;
+	CString AbsPath = ResolveAssigns(pPath);
+	for (auto& Rec : FileSystems)
+		if (Rec.FS->DeleteDirectory(AbsPath)) OK;
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -202,24 +228,17 @@ void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMo
 {
 	CString AbsPath = ResolveAssigns(pPath);
 
-	void* hFile = DefaultFS->OpenFile(AbsPath, Mode, Pattern);
-	if (hFile)
+	for (auto& Rec : FileSystems)
 	{
-		OutFS = DefaultFS;
-		return hFile;
-	}
-
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-	{
-		hFile = FS[i]->OpenFile(AbsPath, Mode, Pattern);
+		void* hFile = Rec.FS->OpenFile(AbsPath, Mode, Pattern);
 		if (hFile)
 		{
-			OutFS = FS[i];
+			OutFS = Rec.FS;
 			return hFile;
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -227,24 +246,17 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 {
 	CString AbsPath = ResolveAssigns(pPath);
 
-	void* hDir = DefaultFS->OpenDirectory(AbsPath, pFilter, OutName, OutType);
-	if (hDir)
+	for (auto& Rec : FileSystems)
 	{
-		OutFS = DefaultFS;
-		return hDir;
-	}
-
-	for (UPTR i = 0; i < FS.GetCount(); ++i)
-	{
-		hDir = FS[i]->OpenDirectory(AbsPath, pFilter, OutName, OutType);
+		void* hDir = Rec.FS->OpenDirectory(AbsPath, pFilter, OutName, OutType);
 		if (hDir)
 		{
-			OutFS = FS[i];
+			OutFS = Rec.FS;
 			return hDir;
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -254,45 +266,31 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 PStream CIOServer::CreateStream(const char* pURI) const
 {
 	CString AbsURI = ResolveAssigns(pURI);
-	if (AbsURI.IsEmpty()) return NULL;
+	if (AbsURI.IsEmpty()) return nullptr;
 
-	IFileSystem* pFS = NULL;
+	IFileSystem* pFS = nullptr;
 
 	//!!!duplicate search for NPK, finds FS record twice, here and in CStream::Open()!
-	if (DefaultFS->FileExists(AbsURI.CStr()))
+	for (auto& Rec : FileSystems)
 	{
-		pFS = DefaultFS.Get();
-	}
-	else
-	{
-		for (UPTR i = 0; i < FS.GetCount(); ++i)
+		IFileSystem* pCurrFS = Rec.FS.Get();
+		if (pCurrFS && pCurrFS->FileExists(AbsURI.CStr()))
 		{
-			IFileSystem* pCurrFS = FS[i].Get();
-			if (pCurrFS && pCurrFS->FileExists(AbsURI.CStr()))
-			{
-				pFS = pCurrFS;
-				break;
-			}
+			pFS = pCurrFS;
+			break;
 		}
 	}
 
 	//!!!for writing new files! redesign?
 	if (!pFS)
 	{
-		if (!DefaultFS->IsReadOnly())
+		for (auto& Rec : FileSystems)
 		{
-			pFS = DefaultFS.Get();
-		}
-		else
-		{
-			for (UPTR i = 0; i < FS.GetCount(); ++i)
+			IFileSystem* pCurrFS = Rec.FS.Get();
+			if (pCurrFS && !pCurrFS->IsReadOnly())
 			{
-				IFileSystem* pCurrFS = FS[i].Get();
-				if (pCurrFS && !pCurrFS->IsReadOnly())
-				{
-					pFS = pCurrFS;
-					break;
-				}
+				pFS = pCurrFS;
+				break;
 			}
 		}
 	}
@@ -340,17 +338,6 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 
 	PathString.Trim(" \r\n\t\\/", false);
 	return PathString;
-}
-//---------------------------------------------------------------------
-
-bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
-{
-	IO::PStream File = CreateStream(pFileName);
-	if (!File->Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	UPTR FileSize = (UPTR)File->GetSize();
-	Buffer.Reserve(FileSize);
-	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
-	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------
 

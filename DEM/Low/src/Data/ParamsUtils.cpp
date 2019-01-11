@@ -14,7 +14,12 @@ namespace ParamsUtils
 bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams)
 {
 	Data::CBuffer Buffer;
-	if (!IOSrv->LoadFileToBuffer(pFileName, Buffer)) return NULL;
+	IO::PStream File = IOSrv->CreateStream(pFileName);
+	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
+	Buffer.Reserve(FileSize);
+	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
+	if (Buffer.GetSize() != FileSize) FAIL;
 
 	Data::PParams Params;
 	Data::CHRDParser Parser;

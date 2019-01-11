@@ -2,10 +2,10 @@
 #include <Data/RefCounted.h>
 #include <IO/IOFwd.h>
 
-// File system interface. Maps any hierarchical data storage to engine-accessible path.
+// File system interface. Maps any hierarchical data storage to an engine-accessible path.
 // Can be implemented over a typical OS file system, package (like NPK) and archive (like ZIP)
-// files and even databases.
-// NB: file times are seconds from 1970-01-01
+// files, HTTP, databases and any other sources.
+// NB: file times are seconds from 1970-01-01 (Unix epoch)
 
 namespace IO
 {

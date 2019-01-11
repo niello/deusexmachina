@@ -17,11 +17,11 @@ protected:
 
 	CString		FileName;
 	PFileSystem	FS;
-	void*		hFile;
+	void*		hFile = nullptr;
 
 public:
 
-	CFileStream(const char* pPath, IFileSystem* pFS): FileName(pPath), FS(pFS), hFile(NULL) {}
+	CFileStream(const char* pPath, IFileSystem* pFS): FileName(pPath), FS(pFS) {}
 	virtual ~CFileStream() { if (IsOpen()) Close(); }
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);

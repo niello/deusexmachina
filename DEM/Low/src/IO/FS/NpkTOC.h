@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_NPK_TOC_H__
-#define __DEM_L1_NPK_TOC_H__
-
 #include "NpkTOCEntry.h"
 #include <Data/String.h>
 #include <Data/StringTokenizer.h>
@@ -16,11 +13,14 @@ class CNpkTOC
 {
 private:
 
+	CNpkTOCEntry*	pRootDir = nullptr;	// the top level directory
+
+	// TODO: all 'private' below is needed only at construction time. Optimize it away to stack variables?
+
 	enum { STACKSIZE = 16 };
 
-	CNpkTOCEntry*	pRootDir;      // the top level directory
-	CNpkTOCEntry*	pCurrDir;       // current directory (only valid during BeginDirEntry());
-	int				CurrStackIdx;
+	CNpkTOCEntry*	pCurrDir = nullptr;	// current directory (only valid during BeginDirEntry());
+	int				CurrStackIdx = 0;
 	CNpkTOCEntry*	Stack[STACKSIZE];
 
 	void			Push(CNpkTOCEntry* pEntry) { n_assert(CurrStackIdx < STACKSIZE); Stack[CurrStackIdx++] = pEntry; }
@@ -28,7 +28,6 @@ private:
 
 public:
 
-	CNpkTOC(): pRootDir(NULL), pCurrDir(NULL), CurrStackIdx(0) { /*memset(Stack, 0, sizeof(Stack));*/ }
 	~CNpkTOC() { if (pRootDir) n_delete(pRootDir); }
 
 	CNpkTOCEntry*	BeginDirEntry(const char* pDirName);
@@ -36,9 +35,7 @@ public:
 	void			EndDirEntry() { n_assert(pCurrDir); pCurrDir = Pop(); }
 
 	CNpkTOCEntry*	FindEntry(const char* pPath);
-
 	CNpkTOCEntry*	GetRootEntry() const { return pRootDir; }
-	CNpkTOCEntry*	GetCurrentDirEntry() { return pCurrDir; }
 };
 
 inline CNpkTOCEntry* CNpkTOC::BeginDirEntry(const char* pDirName)
@@ -95,5 +92,3 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pPath)
 //---------------------------------------------------------------------
 
 }
-
-#endif
