@@ -4,6 +4,7 @@
 
 #include <IO/FileSystem.h>
 #include <Data/Array.h>
+#include <Data/String.h>
 
 // Utility class that encapsulates file system browsing session.
 // Use it to browse file system(s) and to retrieve directory contents and params.

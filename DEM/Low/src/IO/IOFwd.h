@@ -39,16 +39,6 @@ enum EFSEntryType
 	FSE_NONE	= 0x04	// No entry at all or invalid entry
 };
 
-enum ESystemFolder
-{
-	SF_USER,		// For saves and configs, must have write access
-	SF_HOME,
-	SF_TEMP,
-	SF_BIN,
-	SF_APP_DATA,
-	SF_PROGRAMS
-};
-
 }
 
 #endif

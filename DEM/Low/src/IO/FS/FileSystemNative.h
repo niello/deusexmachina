@@ -1,19 +1,32 @@
 #pragma once
-#ifndef __DEM_L1_FILE_SYSTEM_WIN32_H__
-#define __DEM_L1_FILE_SYSTEM_WIN32_H__
-
 #include <IO/FileSystem.h>
+#include <Data/String.h>
 
-// Win32 file system wrapper.
+// Native OS file system. Use empty path to mount the whole host file system,
+// though it is not recommended. Better mount only folders your app uses.
+
+namespace DEM { namespace Sys
+{
+	class IOSFileSystem;
+}}
 
 namespace IO
 {
 
-class CFileSystemWin32: public IFileSystem
+class CFileSystemNative: public IFileSystem
 {
+protected:
+
+	DEM::Sys::IOSFileSystem* pFS;
+	CString Root;
+
 public:
 
-	virtual bool	Mount(const char* pSource, const char* pRoot) { OK; }
+	//!!!platform interface required!
+	CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath);
+
+	virtual bool	Init() override;
+
 	virtual void	Unmount() {}
 	virtual bool	IsReadOnly() const { FAIL; }
 	virtual bool	ProvidesFileCursor() const { OK; }
@@ -26,7 +39,6 @@ public:
 	virtual bool	DirectoryExists(const char* pPath);
 	virtual bool	CreateDirectory(const char* pPath);
 	virtual bool	DeleteDirectory(const char* pPath);
-	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath);
 
 	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType);
 	virtual void	CloseDirectory(void* hDir);
@@ -45,5 +57,3 @@ public:
 };
 
 }
-
-#endif

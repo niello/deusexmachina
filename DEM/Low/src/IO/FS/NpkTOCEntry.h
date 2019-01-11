@@ -4,6 +4,7 @@
 
 #include <IO/FileSystem.h>
 #include <Data/HashTable.h>
+#include <Data/String.h>
 
 // A table of content entry in a CNpkTOC object. Toc entries are organized
 // in a tree of nodes. A node can be a dir node, or a file node. File nodes
@@ -21,7 +22,7 @@ public:
 
 private:
 
-	CString	Name;
+	CString				Name;
 	const char*			pRoot;		// Root path string (not owned!)
 	CNpkTOCEntry*		pParent;
 	EFSEntryType		Type;

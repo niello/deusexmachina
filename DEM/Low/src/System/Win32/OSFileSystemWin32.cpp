@@ -1,29 +1,28 @@
-#include "FileSystemWin32.h"
-
-#include <Data/Array.h>
+#if DEM_PLATFORM_WIN32
+#include "OSFileSystemWin32.h"
 #include <IO/PathUtils.h>
+#include <Data/Array.h>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <shlobj.h>
 
-namespace IO
+namespace DEM { namespace Sys
 {
 
-bool CFileSystemWin32::FileExists(const char* pPath)
+bool COSFileSystemWin32::FileExists(const char* pPath)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::IsFileReadOnly(const char* pPath)
+bool COSFileSystemWin32::IsFileReadOnly(const char* pPath)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_READONLY);
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::SetFileReadOnly(const char* pPath, bool ReadOnly)
+bool COSFileSystemWin32::SetFileReadOnly(const char* pPath, bool ReadOnly)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES) FAIL;
@@ -35,7 +34,7 @@ bool CFileSystemWin32::SetFileReadOnly(const char* pPath, bool ReadOnly)
 //---------------------------------------------------------------------
 
 #undef DeleteFile
-bool CFileSystemWin32::DeleteFile(const char* pPath)
+bool COSFileSystemWin32::DeleteFile(const char* pPath)
 {
 #ifdef UNICODE
 #define DeleteFile  DeleteFileW
@@ -47,7 +46,7 @@ bool CFileSystemWin32::DeleteFile(const char* pPath)
 //---------------------------------------------------------------------
 
 #undef CopyFile
-bool CFileSystemWin32::CopyFile(const char* pSrcPath, const char* pDestPath)
+bool COSFileSystemWin32::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
 #ifdef UNICODE
 #define CopyFile  CopyFileW
@@ -70,7 +69,7 @@ bool CFileSystemWin32::CopyFile(const char* pSrcPath, const char* pDestPath)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::DirectoryExists(const char* pPath)
+bool COSFileSystemWin32::DirectoryExists(const char* pPath)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
@@ -78,7 +77,7 @@ bool CFileSystemWin32::DirectoryExists(const char* pPath)
 //---------------------------------------------------------------------
 
 #undef CreateDirectory
-bool CFileSystemWin32::CreateDirectory(const char* pPath)
+bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 {
 #ifdef UNICODE
 #define CreateDirectory  CreateDirectoryW
@@ -116,7 +115,7 @@ bool CFileSystemWin32::CreateDirectory(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::DeleteDirectory(const char* pPath)
+bool COSFileSystemWin32::DeleteDirectory(const char* pPath)
 {
 	if (::RemoveDirectory(pPath) != FALSE) OK;
 
@@ -156,43 +155,7 @@ bool CFileSystemWin32::DeleteDirectory(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
-{
-    char pRawPath[DEM_MAX_PATH];
-	if (Code == SF_TEMP)
-	{
-		if (!::GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
-		OutPath = pRawPath;
-		OutPath.Replace('\\', '/');
-	}
-	else if (Code == SF_HOME || Code == SF_BIN)
-	{
-		if (!::GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
-		CString PathToExe(pRawPath);
-		PathToExe.Replace('\\', '/');
-		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe));
-	}
-	else
-	{
-		int CSIDL;
-		switch (Code)
-		{
-			case SF_USER:		CSIDL = CSIDL_PERSONAL | CSIDL_FLAG_CREATE; break;
-			case SF_APP_DATA:	CSIDL = CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE; break;
-			case SF_PROGRAMS:	CSIDL = CSIDL_PROGRAM_FILES; break;
-			default:			FAIL;
-		}
-
-		if (FAILED(::SHGetFolderPath(0, CSIDL, NULL, 0, pRawPath))) FAIL;
-		OutPath = pRawPath;
-		OutPath.Replace('\\', '/');
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
+void* COSFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, IO::EFSEntryType& OutType)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
 	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
@@ -208,7 +171,7 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 	if (hDir == INVALID_HANDLE_VALUE)
 	{
 		OutName.Clear();
-		OutType = FSE_NONE;
+		OutType = IO::FSE_NONE;
 		return NULL; //???return bool success instead? mb NULL handle is valid?
 	}
 
@@ -216,73 +179,73 @@ void* CFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CS
 		if (!::FindNextFile(hDir, &FindData))
 		{
 			OutName.Clear();
-			OutType = FSE_NONE;
+			OutType = IO::FSE_NONE;
 			return hDir;
 		}
 
 	OutName = FindData.cFileName;
-	OutType = (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? FSE_DIR : FSE_FILE;
+	OutType = (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? IO::FSE_DIR : IO::FSE_FILE;
 
 	return hDir;
 }
 //---------------------------------------------------------------------
 
-void CFileSystemWin32::CloseDirectory(void* hDir)
+void COSFileSystemWin32::CloseDirectory(void* hDir)
 {
 	n_assert(hDir);
 	::FindClose(hDir);
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryType& OutType)
+bool COSFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, IO::EFSEntryType& OutType)
 {
 	n_assert(hDir);
 	WIN32_FIND_DATA FindData;
 	if (::FindNextFile(hDir, &FindData) != 0)
 	{
 		OutName = FindData.cFileName;
-		OutType = (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? FSE_DIR : FSE_FILE;
+		OutType = (FindData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ? IO::FSE_DIR : IO::FSE_FILE;
 		OK;
 	}
 	OutName.Clear();
-	OutType = FSE_NONE;
+	OutType = IO::FSE_NONE;
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+void* COSFileSystemWin32::OpenFile(const char* pPath, IO::EStreamAccessMode Mode, IO::EStreamAccessPattern Pattern)
 {
 	if (!pPath || !*pPath) return NULL;
 
 	DWORD Access = 0;
-	if ((Mode & SAM_READ) || (Mode & SAM_APPEND)) Access |= GENERIC_READ;
-	if ((Mode & SAM_WRITE) || (Mode & SAM_APPEND)) Access |= GENERIC_WRITE;
+	if ((Mode & IO::SAM_READ) || (Mode & IO::SAM_APPEND)) Access |= GENERIC_READ;
+	if ((Mode & IO::SAM_WRITE) || (Mode & IO::SAM_APPEND)) Access |= GENERIC_WRITE;
 
 	//!!!MSDN recommends MMF to be opened exclusively!
 	//???mb set ShareMode = 0 for release builds? is there any PERF gain?
 	DWORD ShareMode = FILE_SHARE_READ;
-	if (!(Mode & SAM_WRITE) || (Mode & SAM_READ)) ShareMode |= FILE_SHARE_WRITE;
+	if (!(Mode & IO::SAM_WRITE) || (Mode & IO::SAM_READ)) ShareMode |= FILE_SHARE_WRITE;
 
 	DWORD Disposition = 0;
 	switch (Mode)
 	{
-		case SAM_READ:		Disposition = OPEN_EXISTING; break;
-		case SAM_WRITE:		Disposition = CREATE_ALWAYS; break;
-		case SAM_READWRITE:
-		case SAM_APPEND:	Disposition = OPEN_ALWAYS; break;
+		case IO::SAM_READ:		Disposition = OPEN_EXISTING; break;
+		case IO::SAM_WRITE:		Disposition = CREATE_ALWAYS; break;
+		case IO::SAM_READWRITE:
+		case IO::SAM_APPEND:	Disposition = OPEN_ALWAYS; break;
 	}
 
 	HANDLE hFile = ::CreateFile(pPath,
-								Access,
-								ShareMode,
-								0,
-								Disposition,
-								(Pattern == SAP_RANDOM) ? FILE_FLAG_RANDOM_ACCESS : FILE_FLAG_SEQUENTIAL_SCAN,
-								NULL);
+		Access,
+		ShareMode,
+		0,
+		Disposition,
+		(Pattern == IO::SAP_RANDOM) ? FILE_FLAG_RANDOM_ACCESS : FILE_FLAG_SEQUENTIAL_SCAN,
+		NULL);
 
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		if (Mode == SAM_APPEND) ::SetFilePointer(hFile, 0, NULL, FILE_END);
+		if (Mode == IO::SAM_APPEND) ::SetFilePointer(hFile, 0, NULL, FILE_END);
 		return hFile;
 	}
 
@@ -290,14 +253,14 @@ void* CFileSystemWin32::OpenFile(const char* pPath, EStreamAccessMode Mode, EStr
 }
 //---------------------------------------------------------------------
 
-void CFileSystemWin32::CloseFile(void* hFile)
+void COSFileSystemWin32::CloseFile(void* hFile)
 {
 	n_assert(hFile);
 	::CloseHandle(hFile);
 }
 //---------------------------------------------------------------------
 
-UPTR CFileSystemWin32::Read(void* hFile, void* pData, UPTR Size)
+UPTR COSFileSystemWin32::Read(void* hFile, void* pData, UPTR Size)
 {
 	n_assert(hFile && pData && Size > 0 && Size <= ULONG_MAX);
 	DWORD BytesRead;
@@ -306,7 +269,7 @@ UPTR CFileSystemWin32::Read(void* hFile, void* pData, UPTR Size)
 }
 //---------------------------------------------------------------------
 
-UPTR CFileSystemWin32::Write(void* hFile, const void* pData, UPTR Size)
+UPTR COSFileSystemWin32::Write(void* hFile, const void* pData, UPTR Size)
 {
 	n_assert(hFile && pData && Size > 0 && Size <= ULONG_MAX);
 	DWORD BytesWritten;
@@ -315,15 +278,15 @@ UPTR CFileSystemWin32::Write(void* hFile, const void* pData, UPTR Size)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
+bool COSFileSystemWin32::Seek(void* hFile, I64 Offset, IO::ESeekOrigin Origin)
 {
 	n_assert(hFile);
 	DWORD SeekOrigin;
 	switch (Origin)
 	{
-		case Seek_Current:	SeekOrigin = FILE_CURRENT; break;
-		case Seek_End:		SeekOrigin = FILE_END; break;
-		default:			SeekOrigin = FILE_BEGIN; break;
+		case IO::Seek_Current:	SeekOrigin = FILE_CURRENT; break;
+		case IO::Seek_End:		SeekOrigin = FILE_END; break;
+		default:				SeekOrigin = FILE_BEGIN; break;
 	}
 	LARGE_INTEGER LIOffset;
 	LIOffset.QuadPart = Offset;
@@ -331,14 +294,14 @@ bool CFileSystemWin32::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
 }
 //---------------------------------------------------------------------
 
-void CFileSystemWin32::Flush(void* hFile)
+void COSFileSystemWin32::Flush(void* hFile)
 {
 	n_assert(hFile);
 	::FlushFileBuffers(hFile);
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemWin32::IsEOF(void* hFile) const
+bool COSFileSystemWin32::IsEOF(void* hFile) const
 {
 	n_assert(hFile);
 	LARGE_INTEGER Pos;
@@ -351,7 +314,7 @@ bool CFileSystemWin32::IsEOF(void* hFile) const
 }
 //---------------------------------------------------------------------
 
-U64 CFileSystemWin32::GetFileSize(void* hFile) const
+U64 COSFileSystemWin32::GetFileSize(void* hFile) const
 {
 	n_assert_dbg(hFile);
 	LARGE_INTEGER Size;
@@ -360,7 +323,7 @@ U64 CFileSystemWin32::GetFileSize(void* hFile) const
 }
 //---------------------------------------------------------------------
 
-U64 CFileSystemWin32::GetFileWriteTime(void* hFile) const
+U64 COSFileSystemWin32::GetFileWriteTime(void* hFile) const
 {
 	FILETIME WriteTime;
 	if (!::GetFileTime(hFile, NULL, NULL, &WriteTime)) return 0;
@@ -373,7 +336,7 @@ U64 CFileSystemWin32::GetFileWriteTime(void* hFile) const
 }
 //---------------------------------------------------------------------
 
-U64 CFileSystemWin32::Tell(void* hFile) const
+U64 COSFileSystemWin32::Tell(void* hFile) const
 {
 	n_assert(hFile);
 	LARGE_INTEGER Pos;
@@ -384,4 +347,6 @@ U64 CFileSystemWin32::Tell(void* hFile) const
 }
 //---------------------------------------------------------------------
 
-}
+}};
+
+#endif

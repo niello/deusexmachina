@@ -1,23 +1,23 @@
 #pragma once
-#ifndef __DEM_L1_FILE_SYSTEM_H__
-#define __DEM_L1_FILE_SYSTEM_H__
-
-#include <Core/Object.h>
+#include <Data/RefCounted.h>
 #include <IO/IOFwd.h>
 
-// File system interface. Implementation can be real OS file system or any VFS.
+// File system interface. Maps any hierarchical data storage to engine-accessible path.
+// Can be implemented over a typical OS file system, package (like NPK) and archive (like ZIP)
+// files and even databases.
 // NB: file times are seconds from 1970-01-01
 
 namespace IO
 {
 
-class IFileSystem: public Core::CObject
+class IFileSystem: public Data::CRefCounted
 {
 public:
 
 	virtual ~IFileSystem() {}
 
-	virtual bool	Mount(const char* pSource, const char* pRoot) = 0;
+	virtual bool	Init() = 0;
+
 	virtual void	Unmount() = 0;
 	virtual bool	IsReadOnly() const = 0;
 	virtual bool	ProvidesFileCursor() const = 0;
@@ -30,7 +30,6 @@ public:
 	virtual bool	DirectoryExists(const char* pPath) = 0;
 	virtual bool	CreateDirectory(const char* pPath) = 0;
 	virtual bool	DeleteDirectory(const char* pPath) = 0;
-	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath) = 0;
 
 	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType) = 0;
 	virtual void	CloseDirectory(void* hDir) = 0;
@@ -64,5 +63,3 @@ typedef Ptr<IFileSystem> PFileSystem;
     bool IsDeviceName(const Util::String& str);
 */
 }
-
-#endif

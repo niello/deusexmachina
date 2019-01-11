@@ -17,18 +17,18 @@ CIOServer::CIOServer(): Assigns(32)
 
 	//!!!move to app!
 #if DEM_PLATFORM_WIN32
-	DefaultFS = n_new(CFileSystemWin32);
+	DefaultFS = n_new(CFileSystemWin32(""));
 #else
 #error "Default FS for the target OS not defined"
 #endif
 
-	CString SysFolder;
-	if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("Home", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_BIN, SysFolder))	SetAssign("Bin", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_USER, SysFolder))	SetAssign("User", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("Temp", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("AppData", SysFolder);
-	if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("Programs", SysFolder);
+	//CString SysFolder;
+	//if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("Home", SysFolder);
+	//if (DefaultFS->GetSystemFolderPath(SF_BIN, SysFolder))	SetAssign("Bin", SysFolder);
+	//if (DefaultFS->GetSystemFolderPath(SF_USER, SysFolder))	SetAssign("User", SysFolder);
+	//if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("Temp", SysFolder);
+	//if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("AppData", SysFolder);
+	//if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("Programs", SysFolder);
 }
 //---------------------------------------------------------------------
 
@@ -40,7 +40,7 @@ CIOServer::~CIOServer()
 
 bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 {
-	PFileSystem NewFS = n_new(CFileSystemNPK);
+	PFileSystem NewFS = n_new(CFileSystemNPK(pNPKPath));
 
 	CString AbsNPKPath = IOSrv->ResolveAssigns(pNPKPath);
 	//!!!check if this NPK is already mounted!
@@ -49,8 +49,8 @@ bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
 	if (pRoot && *pRoot) RealRoot = IOSrv->ResolveAssigns(pRoot);
 	else RealRoot = PathUtils::ExtractDirName(AbsNPKPath);
 
-	if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
-	FS.Add(NewFS);
+	//if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
+	//FS.Add(NewFS);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -384,7 +384,6 @@ bool CIOServer::LoadFileToBuffer(const char* pFileName, Data::CBuffer& Buffer)
 	UPTR FileSize = (UPTR)File->GetSize();
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
-	//Sys::Log("FileIO: File \"%s\" successfully loaded from HDD\n", FileName.CStr());
 	return Buffer.GetSize() == FileSize;
 }
 //---------------------------------------------------------------------

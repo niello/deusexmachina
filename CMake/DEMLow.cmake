@@ -118,8 +118,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/IO/StreamReader.h
 	DEM/Low/src/IO/StreamWriter.h
 	DEM/Low/src/IO/TextReader.h
+	DEM/Low/src/IO/FS/FileSystemNative.h
 	DEM/Low/src/IO/FS/FileSystemNPK.h
-	DEM/Low/src/IO/FS/FileSystemWin32.h
 	DEM/Low/src/IO/FS/NpkTOC.h
 	DEM/Low/src/IO/FS/NpkTOCEntry.h
 	DEM/Low/src/IO/Streams/FileStream.h
@@ -272,11 +272,13 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scripting/ScriptServer.h
 	DEM/Low/src/SI/SI_L1.h
 	DEM/Low/src/System/Memory.h
+	DEM/Low/src/System/OSFileSystem.h
 	DEM/Low/src/System/OSWindow.h
 	DEM/Low/src/System/Platform.h
 	DEM/Low/src/System/System.h
 	DEM/Low/src/System/Allocators/PoolAllocator.h
 	DEM/Low/src/System/Events/OSInput.h
+	DEM/Low/src/System/Win32/OSFileSystemWin32.h
 	DEM/Low/src/System/Win32/OSWindowWin32.h
 	DEM/Low/src/System/Win32/PlatformWin32.h
 	DEM/Low/src/UI/RenderPhaseGUI.h
@@ -383,8 +385,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/IO/PathUtils.cpp
 	DEM/Low/src/IO/Stream.cpp
 	DEM/Low/src/IO/TextReader.cpp
+	DEM/Low/src/IO/FS/FileSystemNative.cpp
 	DEM/Low/src/IO/FS/FileSystemNPK.cpp
-	DEM/Low/src/IO/FS/FileSystemWin32.cpp
 	DEM/Low/src/IO/Streams/FileStream.cpp
 	DEM/Low/src/IO/Streams/MemStream.cpp
 	DEM/Low/src/IO/Streams/ScopedStream.cpp
@@ -509,6 +511,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/System/Memory.cpp
 	DEM/Low/src/System/System.cpp
 	DEM/Low/src/System/Events/OSInput.cpp
+	DEM/Low/src/System/Win32/OSFileSystemWin32.cpp
 	DEM/Low/src/System/Win32/OSWindowWin32.cpp
 	DEM/Low/src/System/Win32/PlatformWin32.cpp
 	DEM/Low/src/System/Win32/SystemWin32.cpp

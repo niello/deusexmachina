@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FILE_SYSTEM_NPK_H__
-#define __DEM_L1_FILE_SYSTEM_NPK_H__
-
 #include <IO/FileSystem.h>
 #include <IO/Stream.h>
 #include "NpkTOC.h"
@@ -30,15 +27,19 @@ protected:
 		CNPKDir(CNpkTOCEntry* pEntry): pTOCEntry(pEntry), It(pTOCEntry->GetEntryIterator()) {}
 	};
 
+	CString			Source;
 	CNpkTOC			TOC;
 	PStream			NPKStream; //!!!can use MMF and create views when big files are read!
 
 public:
 
-	CFileSystemNPK(): NPKStream(NULL) {}
-	virtual ~CFileSystemNPK() { if (NPKStream) Unmount(); }
+	//???can use engine path? would be convenient!
+	//???or construct from stream?
+	CFileSystemNPK(const char* pOSFilePath) : Source(pOSFilePath) {}
+	virtual ~CFileSystemNPK();
 
-	virtual bool	Mount(const char* pSource, const char* pRoot);
+	virtual bool	Init() override;
+
 	virtual void	Unmount();
 	virtual bool	IsReadOnly() const { OK; }
 	virtual bool	ProvidesFileCursor() const { OK; }
@@ -51,7 +52,6 @@ public:
 	virtual bool	DirectoryExists(const char* pPath);
 	virtual bool	CreateDirectory(const char* pPath);
 	virtual bool	DeleteDirectory(const char* pPath);
-	virtual bool	GetSystemFolderPath(ESystemFolder Code, CString& OutPath);
 
 	virtual void*	OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType);
 	virtual void	CloseDirectory(void* hDir);
@@ -70,5 +70,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,6 +1,9 @@
 #if DEM_PLATFORM_WIN32
+#include <System/Win32/OSFileSystemWin32.h>
 #include "PlatformWin32.h"
 #include <System/Win32/OSWindowWin32.h>
+#include <IO/PathUtils.h>
+#include <shlobj.h>
 
 namespace DEM { namespace Sys
 {
@@ -11,6 +14,8 @@ CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	LONGLONG PerfFreq;
 	QueryPerformanceFrequency((LARGE_INTEGER*)&PerfFreq);
 	PerfFreqMul = 1.0 / PerfFreq;
+
+	FileSystemInterface.reset(n_new(COSFileSystemWin32));
 }
 //---------------------------------------------------------------------
 
@@ -91,6 +96,48 @@ void CPlatformWin32::Update()
 		::TranslateMessage(&Msg);
 		::DispatchMessage(&Msg);
 	}
+}
+//---------------------------------------------------------------------
+
+IOSFileSystem* CPlatformWin32::GetFileSystemInterface() const
+{
+	return FileSystemInterface.get();
+}
+//---------------------------------------------------------------------
+
+bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const
+{
+	char pRawPath[DEM_MAX_PATH];
+	if (Code == SysFolder_Temp)
+	{
+		if (!::GetTempPath(sizeof(pRawPath), pRawPath)) FAIL;
+		OutPath = pRawPath;
+		OutPath.Replace('\\', '/');
+	}
+	else if (Code == SysFolder_Home || Code == SysFolder_Bin)
+	{
+		if (!::GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
+		CString PathToExe(pRawPath);
+		PathToExe.Replace('\\', '/');
+		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe));
+	}
+	else
+	{
+		int CSIDL;
+		switch (Code)
+		{
+			case SysFolder_User:		CSIDL = CSIDL_MYDOCUMENTS | CSIDL_FLAG_CREATE; break;
+			case SysFolder_AppData:		CSIDL = CSIDL_LOCAL_APPDATA | CSIDL_FLAG_CREATE; break;
+			case SysFolder_Programs:	CSIDL = CSIDL_PROGRAM_FILES; break;
+			default:					FAIL;
+		}
+
+		if (FAILED(::SHGetFolderPath(0, CSIDL, NULL, 0, pRawPath))) FAIL;
+		OutPath = pRawPath;
+		OutPath.Replace('\\', '/');
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

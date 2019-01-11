@@ -6,15 +6,14 @@
 
 namespace IO
 {
+CFileSystemNPK::~CFileSystemNPK() {}
 
-bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
+bool CFileSystemNPK::Init()
 {
-	if (NPKStream.IsValidPtr()) n_delete(NPKStream);
-	NPKStream = IOSrv->CreateStream(pSource);
+	//???use platform file access methods?
+	NPKStream = IOSrv->CreateStream(Source);
 
 	if (!NPKStream->Open(SAM_READ, SAP_RANDOM)) FAIL;
-
-	TOC.SetRootPath(pRoot);
 
 	int Value;
 	NPKStream->Read(&Value, sizeof(int));
@@ -28,9 +27,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 	int DataOffset = Value + 8;
 
 	char NameBuffer[DEM_MAX_PATH];
-
-	bool InsideTOC = true;
-	while (InsideTOC)
+	while (true)
 	{
 		int FourCC;
 		NPKStream->Read(&FourCC, sizeof(int));
@@ -47,7 +44,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 			// Placeholder root directory name
 			if (!strcmp(NameBuffer, "<noname>"))
 			{
-				CString NewName = PathUtils::ExtractFileNameWithoutExtension(pSource);
+				CString NewName = PathUtils::ExtractFileNameWithoutExtension(Source);
 				NewName.ToLower();
 				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), _TRUNCATE);
 			}
@@ -70,7 +67,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 			Offset += DataOffset;
 			TOC.AddFileEntry(NameBuffer, Offset, Len);
 		}
-		else InsideTOC = false;
+		else break;
 	}
 
 	OK;
@@ -79,7 +76,7 @@ bool CFileSystemNPK::Mount(const char* pSource, const char* pRoot)
 
 void CFileSystemNPK::Unmount()
 {
-	NPKStream = NULL;
+	NPKStream = nullptr;
 	//???clear toc?
 }
 //---------------------------------------------------------------------
@@ -128,14 +125,6 @@ bool CFileSystemNPK::DeleteDirectory(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-bool CFileSystemNPK::GetSystemFolderPath(ESystemFolder Code, CString& OutPath)
-{
-	// VFS doesn't provide any system directories
-	OutPath.Clear();
-	FAIL;
-}
-//---------------------------------------------------------------------
-
 void* CFileSystemNPK::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, EFSEntryType& OutType)
 {
 	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
@@ -163,7 +152,7 @@ void* CFileSystemNPK::OpenDirectory(const char* pPath, const char* pFilter, CStr
 
 	OutName.Clear();
 	OutType = FSE_NONE;
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -201,7 +190,7 @@ bool CFileSystemNPK::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntryTy
 
 void* CFileSystemNPK::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern /*Pattern*/)
 {
-	if (!pPath || !*pPath) return NULL;
+	if (!pPath || !*pPath) return nullptr;
 	CNpkTOCEntry* pTE = TOC.FindEntry(pPath);
 	if (pTE && pTE->GetType() == FSE_FILE)
 	{
@@ -210,7 +199,7 @@ void* CFileSystemNPK::OpenFile(const char* pPath, EStreamAccessMode Mode, EStrea
 		pFile->Offset = 0;
 		return pFile;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -254,7 +243,7 @@ void CFileSystemNPK::Flush(void* hFile)
 U64 CFileSystemNPK::GetFileSize(void* hFile) const
 {
 	n_assert(hFile);
-	return (U64)((CNPKFile*)hFile)->pTOCEntry->GetFileLength();
+	return static_cast<U64>(((CNPKFile*)hFile)->pTOCEntry->GetFileLength());
 }
 //---------------------------------------------------------------------
 
