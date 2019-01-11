@@ -1,8 +1,6 @@
 #include "IOServer.h"
 
 #include <Data/Buffer.h>
-#include <IO/FS/FileSystemWin32.h>
-#include <IO/FS/FileSystemNPK.h>
 #include <IO/Streams/FileStream.h>
 #include <IO/FSBrowser.h>
 #include <IO/PathUtils.h>
@@ -14,44 +12,12 @@ __ImplementSingleton(IO::CIOServer);
 CIOServer::CIOServer(): Assigns(32)
 {
 	__ConstructSingleton;
-
-	//!!!move to app!
-#if DEM_PLATFORM_WIN32
-	DefaultFS = n_new(CFileSystemWin32(""));
-#else
-#error "Default FS for the target OS not defined"
-#endif
-
-	//CString SysFolder;
-	//if (DefaultFS->GetSystemFolderPath(SF_HOME, SysFolder))	SetAssign("Home", SysFolder);
-	//if (DefaultFS->GetSystemFolderPath(SF_BIN, SysFolder))	SetAssign("Bin", SysFolder);
-	//if (DefaultFS->GetSystemFolderPath(SF_USER, SysFolder))	SetAssign("User", SysFolder);
-	//if (DefaultFS->GetSystemFolderPath(SF_TEMP, SysFolder))	SetAssign("Temp", SysFolder);
-	//if (DefaultFS->GetSystemFolderPath(SF_APP_DATA, SysFolder))	SetAssign("AppData", SysFolder);
-	//if (DefaultFS->GetSystemFolderPath(SF_PROGRAMS, SysFolder))	SetAssign("Programs", SysFolder);
 }
 //---------------------------------------------------------------------
 
 CIOServer::~CIOServer()
 {
 	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
-bool CIOServer::MountNPK(const char* pNPKPath, const char* pRoot)
-{
-	PFileSystem NewFS = n_new(CFileSystemNPK(pNPKPath));
-
-	CString AbsNPKPath = IOSrv->ResolveAssigns(pNPKPath);
-	//!!!check if this NPK is already mounted!
-
-	CString RealRoot;
-	if (pRoot && *pRoot) RealRoot = IOSrv->ResolveAssigns(pRoot);
-	else RealRoot = PathUtils::ExtractDirName(AbsNPKPath);
-
-	//if (!NewFS->Mount(AbsNPKPath, RealRoot)) FAIL;
-	//FS.Add(NewFS);
-	OK;
 }
 //---------------------------------------------------------------------
 

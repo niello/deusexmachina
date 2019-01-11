@@ -14,13 +14,14 @@ CFileSystemNative::CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const cha
 	: pFS(pHostFS)
 	, Root(pRootPath)
 {
-	if (Root.IsValid()) PathUtils::EnsurePathHasEndingDirSeparator(Root);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::Init()
 {
 	if (!pFS) FAIL;
+
+	if (!Root.IsValid()) PathUtils::EnsurePathHasEndingDirSeparator(Root);
 
 	// Empty root mounts all the host FS, which always exists logically
 	return Root.IsValid() ? pFS->DirectoryExists(Root.CStr()) : true;

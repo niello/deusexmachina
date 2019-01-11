@@ -23,7 +23,6 @@ public:
 private:
 
 	CString				Name;
-	const char*			pRoot;		// Root path string (not owned!)
 	CNpkTOCEntry*		pParent;
 	EFSEntryType		Type;
 	union
@@ -38,13 +37,13 @@ private:
 
 public:
 
-	CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName);
-	CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName, UPTR FileOffset, UPTR FileLength);
+	CNpkTOCEntry(CNpkTOCEntry* pParentEntry, const char* pName);
+	CNpkTOCEntry(CNpkTOCEntry* pParentEntry, const char* pName, UPTR FileOffset, UPTR FileLength);
 	~CNpkTOCEntry();
 
 	CNpkTOCEntry*				AddDirEntry(const char* pName);
 	CNpkTOCEntry*				AddFileEntry(const char* pName, UPTR FileOffset, UPTR FileLength);
-	CNpkTOCEntry*				FindEntry(const char* name);
+	CNpkTOCEntry*				FindEntry(const char* pName);
 	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(NULL); }
 
 	const CString&	GetName() const { return Name; }
@@ -55,12 +54,10 @@ public:
 	bool						IsDir() const { return Type == IO::FSE_DIR; }
 	UPTR						GetFileOffset() const { n_assert(IsFile()); return Offset; }
 	UPTR						GetFileLength() const { n_assert(IsFile()); return Length; }
-	const char*					GetRootPath() const { return pRoot; }
 };
 
-inline CNpkTOCEntry::CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName):
+inline CNpkTOCEntry::CNpkTOCEntry(CNpkTOCEntry* pParentEntry, const char* pName):
 	Name(pName),
-	pRoot(pRootPath),
 	pParent(pParentEntry),
 	Type(FSE_DIR),
 	pEntries(NULL)
@@ -68,9 +65,8 @@ inline CNpkTOCEntry::CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEn
 }
 //---------------------------------------------------------------------
 
-inline CNpkTOCEntry::CNpkTOCEntry(const char* pRootPath, CNpkTOCEntry* pParentEntry, const char* pName, UPTR FileOffset, UPTR FileLength):
+inline CNpkTOCEntry::CNpkTOCEntry(CNpkTOCEntry* pParentEntry, const char* pName, UPTR FileOffset, UPTR FileLength):
 	Name(pName),
-	pRoot(pRootPath),
 	pParent(pParentEntry),
 	Type(FSE_FILE),
 	Offset(FileOffset),
@@ -95,7 +91,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddDirEntry(const char* pName)
 	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);
 	if (!pEntries) pEntries = n_new(CEntryTable(32));
-	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(pRoot, this, pName));
+	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(this, pName));
 	pEntries->Add(pNew->GetName(), pNew);
 	return pNew;
 }
@@ -106,7 +102,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddFileEntry(const char* pName, UPTR FileOffs
 	n_assert_dbg(pName);
 	n_assert(Type == FSE_DIR);
 	if (!pEntries) pEntries = n_new(CEntryTable(32));
-	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(pRoot, this, pName, FileOffset, FileLength));
+	CNpkTOCEntry* pNew = n_new(CNpkTOCEntry(this, pName, FileOffset, FileLength));
 	pEntries->Add(pNew->GetName(), pNew);
 	return pNew;
 }
@@ -115,8 +111,13 @@ inline CNpkTOCEntry* CNpkTOCEntry::AddFileEntry(const char* pName, UPTR FileOffs
 inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName)
 {
 	n_assert(Type == FSE_DIR);
+	if (!pEntries) return nullptr;
+
+	CString Name(pName);
+	Name.ToLower();
+
 	CNpkTOCEntry* pResult;
-	return (pEntries && pEntries->Get(CString(pName), pResult)) ? pResult : NULL;
+	return pEntries->Get(Name, pResult) ? pResult : NULL;
 }
 //---------------------------------------------------------------------
 
@@ -134,12 +135,6 @@ inline CString CNpkTOCEntry::GetFullName() const
 	}
 
 	CString Result;
-	if (pRoot)
-	{
-		Result = pRoot;
-		Result.Add("/");
-	}
-
 	for (--Depth; Depth >= 0; --Depth)
 	{
 		Result.Add(TraceStack[Depth]->GetName());

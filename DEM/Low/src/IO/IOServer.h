@@ -39,9 +39,6 @@ public:
 	CIOServer();
 	~CIOServer();
 
-	//???create FSs outside and mount all with priority?
-	bool			MountNPK(const char* pNPKPath, const char* pRoot = NULL);
-
 	bool			FileExists(const char* pPath) const;
 	bool			IsFileReadOnly(const char* pPath) const;
 	bool			SetFileReadOnly(const char* pPath, bool ReadOnly) const;

@@ -26,8 +26,6 @@ public:
 	CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath);
 
 	virtual bool	Init() override;
-
-	virtual void	Unmount() {}
 	virtual bool	IsReadOnly() const { FAIL; }
 	virtual bool	ProvidesFileCursor() const { OK; }
 

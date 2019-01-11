@@ -27,20 +27,17 @@ protected:
 		CNPKDir(CNpkTOCEntry* pEntry): pTOCEntry(pEntry), It(pTOCEntry->GetEntryIterator()) {}
 	};
 
-	CString			Source;
-	CNpkTOC			TOC;
-	PStream			NPKStream; //!!!can use MMF and create views when big files are read!
+	CNpkTOC	TOC;
+	PStream	NPKStream; //!!!can use MMF and create views when big files are read!
 
 public:
 
 	//???can use engine path? would be convenient!
 	//???or construct from stream?
-	CFileSystemNPK(const char* pOSFilePath) : Source(pOSFilePath) {}
+	CFileSystemNPK(CStream* pSource);
 	virtual ~CFileSystemNPK();
 
 	virtual bool	Init() override;
-
-	virtual void	Unmount();
 	virtual bool	IsReadOnly() const { OK; }
 	virtual bool	ProvidesFileCursor() const { OK; }
 

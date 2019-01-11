@@ -17,8 +17,6 @@ public:
 	virtual ~IFileSystem() {}
 
 	virtual bool	Init() = 0;
-
-	virtual void	Unmount() = 0;
 	virtual bool	IsReadOnly() const = 0;
 	virtual bool	ProvidesFileCursor() const = 0;
 

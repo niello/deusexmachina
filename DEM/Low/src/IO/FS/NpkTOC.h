@@ -5,6 +5,7 @@
 #include "NpkTOCEntry.h"
 #include <Data/String.h>
 #include <Data/StringTokenizer.h>
+#include <Data/StringUtils.h>
 
 // Holds table of content entries for NPK files.
 
@@ -18,7 +19,6 @@ private:
 	enum { STACKSIZE = 16 };
 
 	CNpkTOCEntry*	pRootDir;      // the top level directory
-	CString			RootPath;           // filesystem pPath to the root pEntry (i.e. d:/nomads)
 	CNpkTOCEntry*	pCurrDir;       // current directory (only valid during BeginDirEntry());
 	int				CurrStackIdx;
 	CNpkTOCEntry*	Stack[STACKSIZE];
@@ -35,12 +35,10 @@ public:
 	CNpkTOCEntry*	AddFileEntry(const char* pName, UPTR Offset, UPTR Length);
 	void			EndDirEntry() { n_assert(pCurrDir); pCurrDir = Pop(); }
 
-	CNpkTOCEntry*	FindEntry(const char* name);
+	CNpkTOCEntry*	FindEntry(const char* pPath);
 
 	CNpkTOCEntry*	GetRootEntry() const { return pRootDir; }
 	CNpkTOCEntry*	GetCurrentDirEntry() { return pCurrDir; }
-	void			SetRootPath(const char* pPath) { n_assert(pPath); RootPath = pPath; RootPath.Trim(" \r\n\t\\/", false); RootPath.Replace('\\', '/'); }
-	const char*		GetRootPath() const { return RootPath.IsEmpty() ? NULL : RootPath.CStr(); }
 };
 
 inline CNpkTOCEntry* CNpkTOC::BeginDirEntry(const char* pDirName)
@@ -52,7 +50,7 @@ inline CNpkTOCEntry* CNpkTOC::BeginDirEntry(const char* pDirName)
 	else
 	{
 		n_assert(!pRootDir);
-		pEntry = n_new(CNpkTOCEntry(GetRootPath(), 0, pDirName));
+		pEntry = n_new(CNpkTOCEntry(nullptr, pDirName));
 		pRootDir = pEntry;
 	}
 
@@ -70,29 +68,18 @@ inline CNpkTOCEntry* CNpkTOC::AddFileEntry(const char* pName, UPTR Offset, UPTR 
 }
 //---------------------------------------------------------------------
 
-inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
+inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pPath)
 {
-	n_assert(pRootDir && RootPath.IsValid());
+	n_assert(pRootDir);
 
-	if (!pAbsPath || _strnicmp(RootPath.CStr(), pAbsPath, RootPath.GetLength())) return NULL;
-
-	UPTR PathLen = strlen(pAbsPath);
-	UPTR RootPathLen = RootPath.GetLength() + 1; // 1 is for a directory separator
-	if (PathLen <= RootPathLen) return NULL;
-	PathLen = PathLen - RootPathLen + 1; // 1 is for a terminating null
-	char* pLocalPath = (char*)_malloca(PathLen);
-	memcpy(pLocalPath, pAbsPath + RootPathLen, PathLen);
-	_strlwr_s(pLocalPath, PathLen);
+	if (!pPath) return nullptr;
 
 	CNpkTOCEntry* pCurrEntry = pRootDir;
 
 	char Buf[DEM_MAX_PATH];
-	Data::CStringTokenizer StrTok(pLocalPath, Buf, DEM_MAX_PATH);
-	if (pCurrEntry->GetName() != StrTok.GetNextToken("/\\"))
-	{
-		_freea(pLocalPath);
-		return NULL;
-	}
+	Data::CStringTokenizer StrTok(pPath, Buf, DEM_MAX_PATH);
+
+	if (!StringUtils::AreEqualCaseInsensitive(pCurrEntry->GetName(), StrTok.GetNextToken("/\\"))) return nullptr;
 
 	while (pCurrEntry && !StrTok.IsLast())
 	{
@@ -103,7 +90,6 @@ inline CNpkTOCEntry* CNpkTOC::FindEntry(const char* pAbsPath)
 			pCurrEntry = pCurrEntry->FindEntry(StrTok.GetCurrToken());
 	}
 
-	_freea(pLocalPath);
 	return pCurrEntry;
 }
 //---------------------------------------------------------------------

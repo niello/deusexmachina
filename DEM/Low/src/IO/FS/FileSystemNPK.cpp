@@ -1,19 +1,23 @@
 #include "FileSystemNPK.h"
 
 #include <Data/StringUtils.h>
-#include <IO/IOServer.h>
 #include <IO/PathUtils.h>
 
 namespace IO
 {
+
+CFileSystemNPK::CFileSystemNPK(CStream* pSource)
+	: NPKStream(pSource)
+{
+}
+//---------------------------------------------------------------------
+
 CFileSystemNPK::~CFileSystemNPK() {}
+//---------------------------------------------------------------------
 
 bool CFileSystemNPK::Init()
 {
-	//???use platform file access methods?
-	NPKStream = IOSrv->CreateStream(Source);
-
-	if (!NPKStream->Open(SAM_READ, SAP_RANDOM)) FAIL;
+	if (!NPKStream || !NPKStream->Open(SAM_READ, SAP_RANDOM)) FAIL;
 
 	int Value;
 	NPKStream->Read(&Value, sizeof(int));
@@ -40,15 +44,6 @@ bool CFileSystemNPK::Init()
 			n_assert(NameLen < DEM_MAX_PATH);
 			NPKStream->Read(NameBuffer, NameLen);
 			NameBuffer[NameLen] = 0;
-
-			// Placeholder root directory name
-			if (!strcmp(NameBuffer, "<noname>"))
-			{
-				CString NewName = PathUtils::ExtractFileNameWithoutExtension(Source);
-				NewName.ToLower();
-				strncpy_s(NameBuffer, sizeof(NameBuffer), NewName.CStr(), _TRUNCATE);
-			}
-
 			TOC.BeginDirEntry(NameBuffer);
 		}
 		else if (FourCC == 'DEND') TOC.EndDirEntry();
@@ -71,13 +66,6 @@ bool CFileSystemNPK::Init()
 	}
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-void CFileSystemNPK::Unmount()
-{
-	NPKStream = nullptr;
-	//???clear toc?
 }
 //---------------------------------------------------------------------
 

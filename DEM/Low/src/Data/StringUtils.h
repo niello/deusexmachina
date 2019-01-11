@@ -26,6 +26,11 @@ namespace StringUtils
 	//CString			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true) const;
 
 	UPTR			StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/"); 
+
+	inline bool		AreEqualCaseInsensitive(const char* pStr1, const char* pStr2)
+	{
+		return pStr1 == pStr2 || (pStr1 && pStr2 && !n_stricmp(pStr1, pStr2));
+	}
 }
 
 #endif
