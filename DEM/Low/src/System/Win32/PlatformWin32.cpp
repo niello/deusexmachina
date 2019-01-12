@@ -137,6 +137,8 @@ bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) c
 		OutPath.Replace('\\', '/');
 	}
 
+	PathUtils::EnsurePathHasEndingDirSeparator(OutPath);
+
 	OK;
 }
 //---------------------------------------------------------------------

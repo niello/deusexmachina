@@ -17,6 +17,9 @@ CFileSystemNPK::~CFileSystemNPK() {}
 
 bool CFileSystemNPK::Init()
 {
+	// Already initialized
+	if (TOC.GetRootEntry()) OK;
+
 	if (!NPKStream || !NPKStream->Open(SAM_READ, SAP_RANDOM)) FAIL;
 
 	int Value;

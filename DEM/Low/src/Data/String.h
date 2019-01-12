@@ -47,6 +47,7 @@ public:
 	//SetLength(UPTR NewLength)
 	void			Trim(const char* CharSet = DEM_WHITESPACE, bool Left = true, bool Right = true);
 	void			TruncateRight(UPTR CharCount);
+	CString			SubString(UPTR Start) const;
 	CString			SubString(UPTR Start, UPTR Size) const;
 
 	void			Replace(char CurrChar, char NewChar);
@@ -189,6 +190,13 @@ inline void CString::TruncateRight(UPTR CharCount)
 {
 	Length = n_max(Length - CharCount, 0);
 	pString[Length] = 0;
+}
+//---------------------------------------------------------------------
+
+inline CString CString::SubString(UPTR Start) const
+{
+	if (Start >= Length) return CString();
+	return CString(pString + Start);
 }
 //---------------------------------------------------------------------
 

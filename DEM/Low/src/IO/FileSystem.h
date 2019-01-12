@@ -17,6 +17,7 @@ public:
 	virtual ~IFileSystem() {}
 
 	virtual bool	Init() = 0;
+	virtual bool	IsCaseSensitive() const = 0;
 	virtual bool	IsReadOnly() const = 0;
 	virtual bool	ProvidesFileCursor() const = 0;
 

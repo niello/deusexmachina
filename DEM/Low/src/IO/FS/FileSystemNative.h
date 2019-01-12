@@ -26,6 +26,7 @@ public:
 	CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath);
 
 	virtual bool	Init() override;
+	virtual bool	IsCaseSensitive() const override { FAIL; }
 	virtual bool	IsReadOnly() const { FAIL; }
 	virtual bool	ProvidesFileCursor() const { OK; }
 

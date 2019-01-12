@@ -34,6 +34,7 @@ bool CIOServer::MountFileSystem(IO::IFileSystem* pFS, const char* pRoot, IO::IFi
 	{
 		Rec.Name.Set(pRoot, pRootPath - pRoot);
 		Rec.RootPath.Set(pRootPath + 1);
+		PathUtils::EnsurePathHasEndingDirSeparator(Rec.RootPath);
 	}
 	else Rec.Name.Set(pRoot);
 
@@ -57,60 +58,102 @@ UPTR CIOServer::UnmountFileSystems(const char* pName)
 }
 //---------------------------------------------------------------------
 
+const char* CIOServer::GetFSLocalPath(const CFSRecord& Rec, const char* pPath, IPTR ColonIndex) const
+{
+	if (ColonIndex > 0 && Rec.Name.IsValid() && strncmp(pPath, Rec.Name.CStr(), ColonIndex)) return nullptr;
+
+	const char* pLocalPath = pPath + (ColonIndex + 1);
+	if (!Rec.RootPath.IsValid()) return pLocalPath;
+
+	const UPTR RootPathLen = Rec.RootPath.GetLength();
+	if (Rec.FS->IsCaseSensitive())
+	{
+		if (strncmp(Rec.RootPath.CStr(), pLocalPath, RootPathLen)) return nullptr;
+	}
+	else
+	{
+		if (_strnicmp(Rec.RootPath.CStr(), pLocalPath, RootPathLen)) return nullptr;
+	}
+	return pLocalPath + RootPathLen;
+}
+//---------------------------------------------------------------------
+
 bool CIOServer::FileExists(const char* pPath) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->FileExists(AbsPath)) OK;
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->FileExists(pLocalPath)) OK;
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::IsFileReadOnly(const char* pPath) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->FileExists(AbsPath))
-			return Rec.FS->IsFileReadOnly(AbsPath);
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->FileExists(pLocalPath))
+			return Rec.FS->IsFileReadOnly(pLocalPath);
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::SetFileReadOnly(const char* pPath, bool ReadOnly) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->FileExists(AbsPath))
-			return Rec.FS->SetFileReadOnly(AbsPath, ReadOnly);
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->FileExists(pLocalPath))
+			return Rec.FS->SetFileReadOnly(pLocalPath, ReadOnly);
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::DeleteFile(const char* pPath) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->DeleteFile(AbsPath)) OK;
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->DeleteFile(pLocalPath)) OK;
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
-	CString AbsSrcPath = ResolveAssigns(pSrcPath);
-	CString AbsDestPath = ResolveAssigns(pDestPath);
+	const CString SrcPath = ResolveAssigns(pSrcPath);
+	const CString DestPath = ResolveAssigns(pDestPath);
 
 	// Try to copy inside a single FS
 
+	const IPTR SrcColonIdx = SrcPath.FindIndex(':');
+	const IPTR DestColonIdx = DestPath.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->CopyFile(AbsSrcPath, AbsDestPath)) OK;
+	{
+		const char* pLocalSrcPath = GetFSLocalPath(Rec, SrcPath.CStr(), SrcColonIdx);
+		const char* pLocalDestPath = GetFSLocalPath(Rec, DestPath.CStr(), DestColonIdx);
+		if (Rec.FS->CopyFile(pLocalSrcPath, pLocalDestPath)) OK;
+	}
 
 	// Cross-FS copying
 
-	if (!SetFileReadOnly(AbsDestPath, false)) FAIL;
+	if (!SetFileReadOnly(DestPath, false)) FAIL;
 
-	IO::PStream Src = CreateStream(AbsSrcPath);
-	IO::PStream Dest = CreateStream(AbsDestPath);
+	IO::PStream Src = CreateStream(SrcPath);
+	IO::PStream Dest = CreateStream(DestPath);
 	if (!Src->Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
 	if (!Dest->Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
 
@@ -171,51 +214,64 @@ U64 CIOServer::GetFileWriteTime(const char* pPath) const
 
 bool CIOServer::DirectoryExists(const char* pPath) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->DirectoryExists(AbsPath)) OK;
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->DirectoryExists(pLocalPath)) OK;
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::CreateDirectory(const char* pPath) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->CreateDirectory(AbsPath)) OK;
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->CreateDirectory(pLocalPath)) OK;
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::DeleteDirectory(const char* pPath) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 	for (auto& Rec : FileSystems)
-		if (Rec.FS->DeleteDirectory(AbsPath)) OK;
+	{
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->DeleteDirectory(pLocalPath)) OK;
+	}
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool Recursively)
 {
-	CString AbsSrcPath = ResolveAssigns(pSrcPath);
-	CString AbsDestPath = ResolveAssigns(pDestPath);
+	const CString SrcBasePath = ResolveAssigns(pSrcPath);
+	const CString DestBasePath = ResolveAssigns(pDestPath);
 
 	CFSBrowser Browser;
-	if (!Browser.SetAbsolutePath(AbsSrcPath)) FAIL;
+	if (!Browser.SetAbsolutePath(SrcBasePath)) FAIL;
 
-	if (!CreateDirectory(AbsDestPath)) FAIL;
+	if (!CreateDirectory(DestBasePath)) FAIL;
 
 	if (!Browser.IsCurrDirEmpty()) do
 	{
-		CString EntryName = "/" + Browser.GetCurrEntryName();
 		if (Browser.IsCurrEntryFile())
 		{
-			if (!CopyFile(AbsSrcPath + EntryName, AbsDestPath + EntryName)) FAIL;
+			const CString EntryName = "/" + Browser.GetCurrEntryName();
+			if (!CopyFile(SrcBasePath + EntryName, DestBasePath + EntryName)) FAIL;
 		}
 		else if (Recursively && Browser.IsCurrEntryDir())
 		{
-			if (!CopyDirectory(AbsSrcPath + EntryName, AbsDestPath + EntryName, Recursively)) FAIL;
+			const CString EntryName = "/" + Browser.GetCurrEntryName();
+			if (!CopyDirectory(SrcBasePath + EntryName, DestBasePath + EntryName, Recursively)) FAIL;
 		}
 	}
 	while (Browser.NextCurrDirEntry());
@@ -226,11 +282,15 @@ bool CIOServer::CopyDirectory(const char* pSrcPath, const char* pDestPath, bool 
 
 void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 
 	for (auto& Rec : FileSystems)
 	{
-		void* hFile = Rec.FS->OpenFile(AbsPath, Mode, Pattern);
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (!pLocalPath) continue;
+
+		void* hFile = Rec.FS->OpenFile(pLocalPath, Mode, Pattern);
 		if (hFile)
 		{
 			OutFS = Rec.FS;
@@ -244,11 +304,15 @@ void* CIOServer::OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMo
 
 void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const
 {
-	CString AbsPath = ResolveAssigns(pPath);
+	const CString Path = ResolveAssigns(pPath);
+	const IPTR ColonIdx = Path.FindIndex(':');
 
 	for (auto& Rec : FileSystems)
 	{
-		void* hDir = Rec.FS->OpenDirectory(AbsPath, pFilter, OutName, OutType);
+		const char* pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (!pLocalPath) continue;
+
+		void* hDir = Rec.FS->OpenDirectory(pLocalPath, pFilter, OutName, OutType);
 		if (hDir)
 		{
 			OutFS = Rec.FS;
@@ -260,23 +324,23 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 }
 //---------------------------------------------------------------------
 
-//!!!need different schemas, like http:, ftp:, npk:, file: etc!
-//default - file at least for now
-//!!!for CreateStream() need to determine file system without opening a file!
-PStream CIOServer::CreateStream(const char* pURI) const
+PStream CIOServer::CreateStream(const char* pPath) const
 {
-	CString AbsURI = ResolveAssigns(pURI);
-	if (AbsURI.IsEmpty()) return nullptr;
+	const CString Path = ResolveAssigns(pPath);
+	if (Path.IsEmpty()) return nullptr;
+
+	const IPTR ColonIdx = Path.FindIndex(':');
 
 	IFileSystem* pFS = nullptr;
+	const char* pLocalPath = nullptr;
 
 	//!!!duplicate search for NPK, finds FS record twice, here and in CStream::Open()!
 	for (auto& Rec : FileSystems)
 	{
-		IFileSystem* pCurrFS = Rec.FS.Get();
-		if (pCurrFS && pCurrFS->FileExists(AbsURI.CStr()))
+		pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+		if (pLocalPath && Rec.FS->FileExists(pLocalPath))
 		{
-			pFS = pCurrFS;
+			pFS = Rec.FS;
 			break;
 		}
 	}
@@ -286,16 +350,16 @@ PStream CIOServer::CreateStream(const char* pURI) const
 	{
 		for (auto& Rec : FileSystems)
 		{
-			IFileSystem* pCurrFS = Rec.FS.Get();
-			if (pCurrFS && !pCurrFS->IsReadOnly())
+			pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);
+			if (pLocalPath && !Rec.FS->IsReadOnly())
 			{
-				pFS = pCurrFS;
+				pFS = Rec.FS;
 				break;
 			}
 		}
 	}
 
-	return n_new(CFileStream(AbsURI.CStr(), pFS));
+	return pFS ? n_new(CFileStream(pLocalPath, pFS)) : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -332,7 +396,7 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 		CString Assign = PathString.SubString(0, ColonIdx);
 		Assign.ToLower();
 		CString AssignValue;
-		if (!Assigns.Get(Assign, AssignValue)) return CString::Empty;
+		if (!Assigns.Get(Assign, AssignValue)) break;
 		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.GetLength() - (ColonIdx + 1));
 	}
 

@@ -38,6 +38,7 @@ public:
 	virtual ~CFileSystemNPK();
 
 	virtual bool	Init() override;
+	virtual bool	IsCaseSensitive() const override { FAIL; }
 	virtual bool	IsReadOnly() const { OK; }
 	virtual bool	ProvidesFileCursor() const { OK; }
 

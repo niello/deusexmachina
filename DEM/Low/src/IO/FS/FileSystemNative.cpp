@@ -21,10 +21,14 @@ bool CFileSystemNative::Init()
 {
 	if (!pFS) FAIL;
 
-	if (!Root.IsValid()) PathUtils::EnsurePathHasEndingDirSeparator(Root);
-
 	// Empty root mounts all the host FS, which always exists logically
-	return Root.IsValid() ? pFS->DirectoryExists(Root.CStr()) : true;
+	if (!Root.IsValid()) OK;
+
+	PathUtils::EnsurePathHasEndingDirSeparator(Root);
+
+	if (pFS->DirectoryExists(Root.CStr())) OK;
+
+	return pFS->CreateDirectory(Root.CStr());
 }
 //---------------------------------------------------------------------
 
