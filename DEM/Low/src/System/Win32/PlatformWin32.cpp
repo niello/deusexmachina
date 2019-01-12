@@ -114,12 +114,18 @@ bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) c
 		OutPath = pRawPath;
 		OutPath.Replace('\\', '/');
 	}
-	else if (Code == SysFolder_Home || Code == SysFolder_Bin)
+	else if (Code == SysFolder_Bin || Code == SysFolder_Home)
 	{
 		if (!::GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
 		CString PathToExe(pRawPath);
 		PathToExe.Replace('\\', '/');
 		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe));
+	}
+	else if (Code == SysFolder_WorkingDir)
+	{
+		if (!::GetCurrentDirectory(sizeof(pRawPath), pRawPath)) FAIL;
+		OutPath = pRawPath;
+		OutPath.Replace('\\', '/');
 	}
 	else
 	{

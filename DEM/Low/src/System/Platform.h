@@ -10,12 +10,13 @@ class IOSFileSystem;
 
 enum ESystemFolder
 {
-	SysFolder_User,		// OS user docs folder. Used for saves and configs so must have write access.
-	SysFolder_Home,		// Application root directory
-	SysFolder_Temp,		// OS temporary files location
-	SysFolder_Bin,		// Application executable directory
-	SysFolder_AppData,	// Application-wide read-write data location
-	SysFolder_Programs	// OS folder where applications are installed
+	SysFolder_Bin,			// Application executable directory
+	SysFolder_Home,			// Application home directory
+	SysFolder_WorkingDir,	// Application working directory
+	SysFolder_User,			// OS user documents folder
+	SysFolder_AppData,		// OS location for app's read-write data
+	SysFolder_Temp,			// OS temporary files location
+	SysFolder_Programs		// OS folder where applications are installed
 };
 
 class IPlatform

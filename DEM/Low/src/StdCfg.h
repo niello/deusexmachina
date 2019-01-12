@@ -7,7 +7,7 @@
 
 const int DEM_THREAD_COUNT = 1;
 
-#define DEM_MAX_PATH	(512)		// Maximum length for complete path
+#define DEM_MAX_PATH	(1024)		// Maximum length for complete path
 #define DEM_WHITESPACE	" \r\n\t"
 
 #if DEM_PLATFORM_WIN32

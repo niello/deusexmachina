@@ -146,7 +146,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	//!!!there was some benefit to create script obj before event (close task before notifying it's opened?)
 	//remember it!
 
-	// Run script at last cause we want to have up-to-date current task status
+	// Run script at last because we want to have up-to-date current task status
 	// This way we can immediately close the task we're starting now by it's own script
 	CString TaskScriptFile = CString("Quests:") + QuestID.CStr() + "/" + TaskID.CStr() + ".lua";
 	if (IOSrv->FileExists(TaskScriptFile)) //???is optimal?

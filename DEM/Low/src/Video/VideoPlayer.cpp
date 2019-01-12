@@ -8,7 +8,6 @@ namespace Video
 CVideoPlayer::CVideoPlayer():
 	_IsOpen(false),
 	FileName(""),
-	//pTexture(NULL),
 	loopType(Repeat)
 {
 }
@@ -26,12 +25,6 @@ void CVideoPlayer::Close()
 {
 	n_assert(_IsOpen);
 	_IsOpen = false;
-}
-//---------------------------------------------------------------------
-
-void CVideoPlayer::SetFilename(const char* pFileName)
-{
-	FileName = IOSrv->ResolveAssigns(pFileName);
 }
 //---------------------------------------------------------------------
 

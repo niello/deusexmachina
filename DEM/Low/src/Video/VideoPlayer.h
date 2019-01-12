@@ -15,7 +15,6 @@ protected:
 
 	bool		_IsOpen;
 	CString		FileName;
-	//nTexture2*	pTexture;
 
 	UPTR		videoWidth;
 	UPTR		videoHeight;
@@ -48,10 +47,9 @@ public:
 	UPTR			GetHeight() const { return videoHeight; }
 	float			GetFpS() const { return videoFpS; }
 	UPTR			GetFrameCount() const { return videoFrameCount; }
-	void			SetFilename(const char* pFileName);
+	void			SetFilename(const char* pFileName) { FileName = pFileName; }
 	const CString&	GetFilename() const { return FileName; }
-	//void			SetTexture(nTexture2* pTex) { pTexture = pTex; }
-	//nTexture2*		GetTexture() const { return pTexture; }
+	// SetTexture, GetTexture
 };
 
 }
