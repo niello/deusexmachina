@@ -63,27 +63,6 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 }
 //---------------------------------------------------------------------
 
-bool GetWorkingDirectory(CString& Out)
-{
-	DWORD RequiredSize = ::GetCurrentDirectory(0, NULL);
-	if (!RequiredSize) FAIL;
-
-	char* pBuf = (char*)_malloca(RequiredSize + 1);
-	::GetCurrentDirectory(RequiredSize, pBuf);
-	if (pBuf[RequiredSize - 2] != '\\')
-	{
-		pBuf[RequiredSize - 1] = '\\';
-		pBuf[RequiredSize] = 0;
-		++RequiredSize;
-	}
-	Out.Set(pBuf, RequiredSize - 1);
-	Out.Replace('\\', '/');
-	_freea(pBuf);
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 //!!!???to Thread namespace/class?!
 void Sleep(unsigned long MSec)
 {
@@ -122,27 +101,27 @@ void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt
 	{
 		case MsgType_Message:
 		{
-			ShowMessageBox(Type, NULL, pMessage);
+			ShowMessageBox(Type, nullptr, pMessage);
 			// Fallback to MsgType_Log intentionally
 		}
 		case MsgType_Log:
 		{
-			HANDLE hStdOut = GetStdHandle(STD_OUTPUT_HANDLE);
+			HANDLE hStdOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
 			if (hStdOut && hStdOut != INVALID_HANDLE_VALUE)
 			{
-				WriteFile(hStdOut, pMessage, strlen(pMessage), NULL, NULL);
-				FlushFileBuffers(hStdOut); //PERF //???always? isn't too slow?
+				::WriteFile(hStdOut, pMessage, strlen(pMessage), NULL, NULL);
+				::FlushFileBuffers(hStdOut); //PERF //???always? isn't too slow?
 				return;
 			}
 			break;
 		}
 		case MsgType_Error:
 		{
-			HANDLE hStdErr = GetStdHandle(STD_ERROR_HANDLE);
+			HANDLE hStdErr = ::GetStdHandle(STD_ERROR_HANDLE);
 			if (hStdErr && hStdErr != INVALID_HANDLE_VALUE)
 			{
-				WriteFile(hStdErr, pMessage, strlen(pMessage), NULL, NULL);
-				FlushFileBuffers(hStdErr);
+				::WriteFile(hStdErr, pMessage, strlen(pMessage), NULL, NULL);
+				::FlushFileBuffers(hStdErr);
 				return;
 			}
 			break;
@@ -181,27 +160,30 @@ static BOOL CALLBACK EnumSymbolsCallback(PSYMBOL_INFO pSymInfo, ULONG SymbolSize
 bool TraceStack(char* pTrace, unsigned int MaxLength)
 {
 	if (!pTrace || !MaxLength) FAIL;
+
 	*pTrace = 0;
 
-	HANDLE hProcess = GetCurrentProcess();
-	HANDLE hThread = GetCurrentThread();
+	HANDLE hProcess = ::GetCurrentProcess();
+	HANDLE hThread = ::GetCurrentThread();
 	CONTEXT ThreadCtx;
 	ZeroMemory(&ThreadCtx, sizeof(ThreadCtx));
 	ThreadCtx.ContextFlags = CONTEXT_FULL;
 
 	// Works since WinXP
-	RtlCaptureContext(&ThreadCtx);
+	::RtlCaptureContext(&ThreadCtx);
 
 	// Add executable's directory to the search path in case working dir is not exe dir
 	char PathBuf[DEM_MAX_PATH];
-	GetModuleFileName(0,  PathBuf, sizeof(PathBuf));
+	::GetModuleFileName(0,  PathBuf, sizeof(PathBuf));
 	for (int i = DEM_MAX_PATH - 1; i >= 0; --i)
+	{
 		if (PathBuf[i] == '\\' || PathBuf[i] == '/')
 		{
 			PathBuf[i] = 0;
 			break;
 		}
-	if (!SymInitialize(hProcess, (PCSTR)PathBuf, true)) FAIL;
+	}
+	if (!::SymInitialize(hProcess, (PCSTR)PathBuf, true)) FAIL;
 
 	STACKFRAME64 Frame = { 0 };
 	Frame.AddrPC.Offset = ThreadCtx.Eip;
@@ -216,15 +198,15 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 	const int MAX_NAME_LEN = 512;
 	SYMBOL_INFO* pSymInfo = (SYMBOL_INFO*)n_malloc(sizeof(SYMBOL_INFO) + MAX_NAME_LEN);
 
-	while (StackWalk64(
+	while (::StackWalk64(
 				IMAGE_FILE_MACHINE_I386, // IMAGE_FILE_MACHINE_AMD64 for x64
 				hProcess,
 				hThread,
 				&Frame,
 				&ThreadCtx,
 				0,
-				SymFunctionTableAccess64,
-				SymGetModuleBase64,
+				::SymFunctionTableAccess64,
+				::SymGetModuleBase64,
 				NULL))
 	{
 		ZeroMemory(pSymInfo, sizeof(SYMBOL_INFO) + MAX_NAME_LEN);
@@ -234,7 +216,7 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 		if (Frame.AddrPC.Offset)
 		{
 			DWORD64 Offset;
-			if (SymFromAddr(hProcess, Frame.AddrPC.Offset, &Offset, pSymInfo))
+			if (::SymFromAddr(hProcess, Frame.AddrPC.Offset, &Offset, pSymInfo))
 			{
 				pOut += _snprintf_s(pOut, MaxLength - 1 + pTrace - pOut, _TRUNCATE, "%s(", pSymInfo->Name);
 
@@ -253,10 +235,10 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 				SF.Params[3]            = Frame.Params[3];
 				SF.Virtual              = Frame.Virtual;
 
-				if (SymSetContext(hProcess, &SF, 0) == TRUE || GetLastError() == ERROR_SUCCESS)
+				if (::SymSetContext(hProcess, &SF, 0) == TRUE || GetLastError() == ERROR_SUCCESS)
 				{
 					CStackTraceUserCtx UserCtx = { pTrace, pOut, MaxLength, Frame.AddrStack.Offset };
-					if (SymEnumSymbols(hProcess, 0, "[a-zA-Z0-9_]*", EnumSymbolsCallback, &UserCtx))
+					if (::SymEnumSymbols(hProcess, 0, "[a-zA-Z0-9_]*", EnumSymbolsCallback, &UserCtx))
 						pOut = UserCtx.pOut;
 					else pOut += _snprintf_s(pOut, MaxLength - 1 + pTrace - pOut, _TRUNCATE, "no symbols available");
 				}
@@ -270,7 +252,7 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 			ZeroMemory(&Line, sizeof(Line));
 			Line.SizeOfStruct = sizeof(Line);
 			DWORD LineOffset;
-			if (SymGetLineFromAddr64(hProcess, Frame.AddrPC.Offset, &LineOffset, &Line))
+			if (::SymGetLineFromAddr64(hProcess, Frame.AddrPC.Offset, &LineOffset, &Line))
 				pOut += _snprintf_s(pOut, MaxLength - 1 + pTrace - pOut, _TRUNCATE, "<%s, %d>\n", Line.FileName, Line.LineNumber);
 		}
 		else pOut += _snprintf_s(pOut, MaxLength - 1 + pTrace - pOut, _TRUNCATE, "Error: EIP=0\n");
@@ -278,7 +260,7 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 
 	n_free(pSymInfo);
 
-	return SymCleanup(hProcess) == TRUE;
+	return ::SymCleanup(hProcess) == TRUE;
 }
 //---------------------------------------------------------------------
 

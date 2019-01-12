@@ -1,7 +1,13 @@
 #pragma once
 #include <Data/Ptr.h>
+#include <Data/Array.h>
 
 // Platform-dependent functionality interface. Implemented per-platform / OS.
+
+namespace Input
+{
+	class IInputDevice;
+}
 
 namespace DEM { namespace Sys
 {
@@ -23,15 +29,17 @@ class IPlatform
 {
 public:
 
-	virtual double GetSystemTime() const = 0; // In seconds
+	virtual double			GetSystemTime() const = 0; // In seconds
 
-	virtual POSWindow CreateGUIWindow() = 0;
+	virtual UPTR			EnumInputDevices(CArray<Input::IInputDevice*>& Out) = 0;
+
+	virtual POSWindow		CreateGUIWindow() = 0;
 	//virtual POSConsoleWindow CreateConsoleWindow() = 0;
 
-	virtual IOSFileSystem* GetFileSystemInterface() const = 0;
-	virtual bool GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const = 0;
+	virtual IOSFileSystem*	GetFileSystemInterface() const = 0;
+	virtual bool			GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const = 0;
 
-	virtual void Update() = 0;
+	virtual void			Update() = 0;
 };
 
 }

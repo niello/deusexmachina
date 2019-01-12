@@ -55,7 +55,7 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 
 	pParent = pParentWnd;
 
-	::SetWindowLongPtr(hWnd, 0, (LONG)this);
+	::SetWindowLongPtr(hWnd, 0, (LONG_PTR)this);
 
 	::GetClientRect(hWnd, &r);
 	Rect.W = r.right - r.left;
@@ -393,10 +393,11 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			RAWINPUTDEVICE RawInputDevices;
 			RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC;
 			RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE;
-			RawInputDevices.dwFlags = RIDEV_INPUTSINK;
+			RawInputDevices.dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
 			RawInputDevices.hwndTarget = hWnd;
 			if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
 				::Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
+::Sys::DbgOut("***DBG WM_SETFOCUS\n");
 
 			break;
 		}
@@ -483,6 +484,23 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			if ((lParam & (1 << 30))) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Repeated;
 			if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
 			FireEvent(Ev, Events::Event_TermOnHandled);
+			break;
+		}
+
+		case WM_INPUT_DEVICE_CHANGE:
+		{
+			HANDLE hDevice = (HANDLE)lParam;
+
+			char NameBuf[512];
+			UINT size = 512;
+			if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &size) <= 0) FAIL;
+::Sys::DbgOut(CString("***DBG WM_INPUT_DEVICE_CHANGE: ") + NameBuf + (wParam == 1 ? " arrived\n" : " removed\n"));
+
+			RID_DEVICE_INFO DeviceInfo;
+			DeviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
+			size = sizeof(RID_DEVICE_INFO);
+			if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICEINFO, &DeviceInfo, &size) <= 0) FAIL;
+
 			break;
 		}
 

@@ -327,19 +327,19 @@ static U8 pKeyCode[] =
 
 const char*	DeviceTypeToString(EDeviceType Type)
 {
-	if (Type >= Dev_Count) return NULL;
+	if (Type >= Device_Count) return NULL;
 	return pDeviceTypeString[Type];
 }
 //---------------------------------------------------------------------
 
 EDeviceType	StringToDeviceType(const char* pName)
 {
-	for (UPTR i = 0; i < Dev_Count; ++i)
+	for (UPTR i = 0; i < Device_Count; ++i)
 		if (!n_stricmp(pName, pDeviceTypeString[i]))
 			return (EDeviceType)i;
-	if (!n_stricmp(pName, "kb")) return Dev_Keyboard;
-	if (!n_stricmp(pName, "xbox")) return Dev_Gamepad;
-	return Dev_Invalid;
+	if (!n_stricmp(pName, "kb")) return Device_Keyboard;
+	if (!n_stricmp(pName, "xbox")) return Device_Gamepad;
+	return Device_Invalid;
 }
 //---------------------------------------------------------------------
 
@@ -408,8 +408,8 @@ U8 StringToButton(EDeviceType DeviceType, const char* pName)
 {
 	switch (DeviceType)
 	{
-		case Dev_Keyboard:	return StringToKey(pName);
-		case Dev_Mouse:		return StringToMouseButton(pName);
+		case Device_Keyboard:	return StringToKey(pName);
+		case Device_Mouse:		return StringToMouseButton(pName);
 	}
 	return InvalidCode;
 }

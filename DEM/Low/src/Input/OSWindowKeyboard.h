@@ -27,7 +27,7 @@ public:
 
 	void				Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority);
 
-	virtual EDeviceType	GetType() const { return Dev_Keyboard; }
+	virtual EDeviceType	GetType() const { return Device_Keyboard; }
 	virtual U8			GetAxisCount() const { return 0; }
 	virtual U8			GetAxisCode(const char* pAlias) const { return InvalidCode; }
 	virtual const char*	GetAxisAlias(U8 Code) const { return NULL; }

@@ -14,12 +14,12 @@ static const U8 InvalidCode = 0xff;
 
 enum EDeviceType
 {
-	Dev_Keyboard,
-	Dev_Mouse,
-	Dev_Gamepad,
+	Device_Keyboard,
+	Device_Mouse,
+	Device_Gamepad,
 
-	Dev_Count,
-	Dev_Invalid
+	Device_Count,
+	Device_Invalid
 };
 
 const char*	DeviceTypeToString(EDeviceType Type);
@@ -54,7 +54,7 @@ enum EMouseButton
 const char*		MouseButtonToString(EMouseButton Button);
 EMouseButton	StringToMouseButton(const char* pName);
 
-// Taken from CEGUI, which customized table taken from Ogre, which in turn took them from DirectInput...
+// Taken from CEGUI, which customized table is taken from Ogre, which in turn took them from DirectInput...
 enum EKey
 {
 	Escape          =0x01,

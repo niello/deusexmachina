@@ -33,7 +33,7 @@ public:
 
 	void				Attach(DEM::Sys::COSWindow* pOSWindow, U16 Priority);
 
-	virtual EDeviceType	GetType() const { return Dev_Mouse; }
+	virtual EDeviceType	GetType() const { return Device_Mouse; }
 	virtual U8			GetAxisCount() const { return AxisCount; }
 	virtual U8			GetAxisCode(const char* pAlias) const;
 	virtual const char*	GetAxisAlias(U8 Code) const;

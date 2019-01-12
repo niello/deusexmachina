@@ -38,6 +38,30 @@ double CPlatformWin32::GetSystemTime() const
 }
 //---------------------------------------------------------------------
 
+UPTR CPlatformWin32::EnumInputDevices(CArray<Input::IInputDevice*>& Out)
+{
+	UINT Count;
+	if (::GetRawInputDeviceList(NULL, &Count, sizeof(RAWINPUTDEVICELIST)) != 0 || !Count)
+	{
+		// clear internal storage / mark all as disconnected
+		return 0;
+	}
+
+	PRAWINPUTDEVICELIST pList = n_new_array(RAWINPUTDEVICELIST, Count);
+	if (::GetRawInputDeviceList(pList, &Count, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1)
+	{
+		// clear internal storage / mark all as disconnected
+		n_delete_array(pList);
+		return 0;
+	}
+
+	//...
+
+	n_delete_array(pList);
+	return Count;
+}
+//---------------------------------------------------------------------
+
 LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLong(hWnd, 0);

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_CORE_H__
-#define __DEM_L1_CORE_H__
-
 #include <StdDEM.h>
 
 // System functions and macros
@@ -47,9 +44,6 @@ namespace Sys
 	// System UI
 	EMsgBoxButton	ShowMessageBox(EMsgType Type, const char* pHeaderText, const char* pMessage, unsigned int Buttons = MBB_OK);
 
-	// Files and pathes
-	bool			GetWorkingDirectory(CString& Out);
-
 	// Threading
 	void			Sleep(unsigned long MSec); //!!!???to Thread namespace/class?!
 
@@ -85,6 +79,3 @@ namespace Sys
 
 #define NOT_IMPLEMENTED				do { ::Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n"); } while(0)
 #define NOT_IMPLEMENTED_MSG(msg)	do { ::Sys::Error(DEM_FUNCTION_NAME ## " > IMPLEMENT ME!!!\n" ## msg ## "\n"); } while(0)
-
-#endif
-
