@@ -26,10 +26,15 @@ private:
 	std::vector<Input::PInputDeviceWin32> InputDevices;
 
 	double		PerfFreqMul;
+
 	HINSTANCE	hInst;
-	HWND		hWndMessageOnly = 0;
+
 	ATOM		aGUIWndClass = 0;
 	ATOM		aMessageOnlyWndClass = 0;
+	HWND		hWndMessageOnly = 0;
+
+	void*		pRawInputBuffer = nullptr;
+	UPTR		RawInputBufferSize = 0;
 	bool		RawInputRegistered = false;
 
 	bool RegisterRawInput();

@@ -157,9 +157,8 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 			{
 				Events::CEvent& NewEvent = *EventQueue.Add();
 				NewEvent.ID = EvRec.OutEventID;
-				NewEvent.Params = n_new(Data::CParams(2));
-				NewEvent.Params->Set<float>(CStrID("AmountRel"), Ev.AmountRel);
-				NewEvent.Params->Set<float>(CStrID("AmountAbs"), Ev.AmountAbs);
+				NewEvent.Params = n_new(Data::CParams(1));
+				NewEvent.Params->Set<float>(CStrID("Amount"), Ev.Amount);
 				OK;
 			}
 		}

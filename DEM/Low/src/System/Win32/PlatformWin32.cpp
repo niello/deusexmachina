@@ -41,45 +41,57 @@ LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CPlatformWin32* pSelf = (CPlatformWin32*)::GetWindowLongPtr(hWnd, 0);
+	if (!pSelf) return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+
 	if (uMsg == WM_INPUT_DEVICE_CHANGE)
 	{
-		if (pSelf)
-		{
-			if (wParam == GIDC_ARRIVAL) pSelf->OnInputDeviceArrived((HANDLE)lParam);
-			else if (wParam == GIDC_REMOVAL) pSelf->OnInputDeviceRemoved((HANDLE)lParam);
-		}
+		if (wParam == GIDC_ARRIVAL) pSelf->OnInputDeviceArrived((HANDLE)lParam);
+		else if (wParam == GIDC_REMOVAL) pSelf->OnInputDeviceRemoved((HANDLE)lParam);
 		return 0;
 	}
 	else if (uMsg == WM_INPUT)
 	{
-		RAWINPUT Data;
-		UINT DataSize = sizeof(Data);
-		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &Data, &DataSize, sizeof(RAWINPUTHEADER)) != (UINT)-1)
+		UINT DataSize;
+		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, nullptr, &DataSize, sizeof(RAWINPUTHEADER)) == (UINT)-1 ||
+			!DataSize)
 		{
-			bool Handled = false;
+			return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+		}
 
-			const bool IsForeground = (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT);
-			if (IsForeground)
+		if (DataSize > pSelf->RawInputBufferSize)
+		{
+			pSelf->pRawInputBuffer = n_realloc(pSelf->pRawInputBuffer, DataSize);
+			pSelf->RawInputBufferSize = DataSize;
+		}
+
+		if (!pSelf->pRawInputBuffer ||
+			::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pSelf->pRawInputBuffer, &DataSize, sizeof(RAWINPUTHEADER)) == (UINT)-1)
+		{
+			return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+		}
+
+		PRAWINPUT pData = (PRAWINPUT)pSelf->pRawInputBuffer;
+		bool Handled = false;
+		const bool IsForeground = (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT); // Can enable background input for some cases
+		if (IsForeground)
+		{
+			for (auto& Device : pSelf->InputDevices)
 			{
-				for (auto& Device : pSelf->InputDevices)
+				if (Device->GetWin32Handle() == pData->header.hDevice)
 				{
-					if (Device->GetWin32Handle() == Data.header.hDevice)
-					{
-						n_assert_dbg(Device->IsOperational());
-						Handled = Device->HandleRawInput(Data);
-						// Proceed to ::DefWindowProc as required
-						break;
-					}
+					n_assert_dbg(Device->IsOperational());
+					Handled = Device->HandleRawInput(*pData);
+					// Proceed to ::DefWindowProc as required
+					break;
 				}
 			}
+		}
 
-			if (!Handled)
-			{
-				// Pass to the default procedure if was not processed
-				PRAWINPUT pData = &Data;
-				::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
-				// Proceed to ::DefWindowProc as required
-			}
+		if (!Handled)
+		{
+			// Pass to the default procedure if was not processed
+			::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
+			// Proceed to ::DefWindowProc as required
 		}
 	}
 
@@ -100,6 +112,8 @@ CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 
 CPlatformWin32::~CPlatformWin32()
 {
+	SAFE_FREE(pRawInputBuffer);
+
 	UnregisterRawInput();
 
 	if (hWndMessageOnly)
@@ -231,8 +245,6 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &NameBufSize) <= 0) FAIL;
 	const CString DeviceName(NameBuf);
 
-	::Sys::DbgOut("CPlatformWin32::OnInputDeviceArrived() > " + DeviceName + '\n');
-
 	for (auto& Device : InputDevices)
 	{
 		if (!Device->IsOperational() && Device->GetName() == DeviceName)
@@ -255,7 +267,6 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 		{
 			Input::PMouseWin32 Device = n_new(Input::CMouseWin32);
 			if (!Device->Init(hDevice, DeviceName, DeviceInfo.mouse)) FAIL;
-			::Sys::DbgOut("CPlatformWin32::OnInputDeviceArrived() > mouse added: " + DeviceName + '\n');
 			InputDevices.push_back(Device);
 			OK;
 		}
@@ -263,7 +274,6 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 		{
 			Input::PKeyboardWin32 Device = n_new(Input::CKeyboardWin32);
 			if (!Device->Init(hDevice, DeviceName, DeviceInfo.keyboard)) FAIL;
-			::Sys::DbgOut("CPlatformWin32::OnInputDeviceArrived() > keyboard added: " + DeviceName + '\n');
 			InputDevices.push_back(Device);
 			OK;
 		}
@@ -284,7 +294,6 @@ bool CPlatformWin32::OnInputDeviceRemoved(HANDLE hDevice)
 	{
 		if (Device->IsOperational() && Device->GetWin32Handle() == hDevice)
 		{
-			::Sys::DbgOut("CPlatformWin32::OnInputDeviceRemoved() > " + Device->GetName() + '\n');
 			Device->SetOperational(false, 0);
 			OK;
 		}
@@ -339,7 +348,13 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 	}
 
 	n_delete_array(pList);
-	return Count;
+
+	const UPTR PrevSize = Out.GetCount();
+	for (auto& Device : InputDevices)
+	{
+		if (Device->IsOperational()) Out.Add(Device);
+	}
+	return Out.GetCount() - PrevSize;
 }
 //---------------------------------------------------------------------
 

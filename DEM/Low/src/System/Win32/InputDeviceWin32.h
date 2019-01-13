@@ -19,14 +19,14 @@ protected:
 
 public:
 
-	HANDLE			GetWin32Handle() const { return _hDevice; }
-	const CString&	GetName() const { return Name; }
-	virtual bool	IsOperational() const override { return Operational; }
+	HANDLE				GetWin32Handle() const { return _hDevice; }
+	virtual const char*	GetName() const override { return Name.CStr(); }
+	virtual bool		IsOperational() const override { return Operational; }
 
-	virtual bool	HandleRawInput(const RAWINPUT& Data) = 0;
+	virtual bool		HandleRawInput(const RAWINPUT& Data) = 0;
 
 	// For internal use only
-	void			SetOperational(bool Op, HANDLE NewHandle) { Operational = Op; _hDevice = NewHandle; }
+	void				SetOperational(bool Op, HANDLE NewHandle) { Operational = Op; _hDevice = NewHandle; }
 };
 
 }

@@ -15,6 +15,7 @@ class IInputDevice: public Data::CRefCounted, public Events::CEventDispatcher
 public:
 
 	virtual EDeviceType	GetType() const = 0;
+	virtual const char*	GetName() const = 0;
 	virtual bool		IsOperational() const = 0;
 	virtual U8			GetAxisCount() const = 0;
 	virtual U8			GetAxisCode(const char* pAlias) const = 0;

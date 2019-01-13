@@ -26,6 +26,9 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 {
 	if (Data.header.dwType != RIM_TYPEKEYBOARD) FAIL;
 
+	// No one reads our input
+	if (Subscriptions.IsEmpty()) FAIL;
+
 	::Sys::DbgOut("CKeyboardWin32::HandleRawInput()\n");
 
 	FAIL;

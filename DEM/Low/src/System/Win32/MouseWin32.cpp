@@ -5,6 +5,8 @@
 #include <System/Events/OSInput.h>
 #include <System/OSWindow.h>
 
+#define RI_MOUSE_HWHEEL 0x0800
+
 namespace Input
 {
 CMouseWin32::CMouseWin32() {}
@@ -35,9 +37,47 @@ bool CMouseWin32::HandleRawInput(const RAWINPUT& Data)
 {
 	if (Data.header.dwType != RIM_TYPEMOUSE) FAIL;
 
-	::Sys::DbgOut("CMouseWin32::HandleRawInput()\n");
+	// No one reads our input
+	if (Subscriptions.IsEmpty()) FAIL;
 
-	FAIL;
+	const RAWMOUSE& MouseData = Data.data.mouse;
+
+	// MouseData.usFlags & MOUSE_ATTRIBUTES_CHANGED - must query mouse attributes. Axis & button count might change?
+
+	// TODO: process it correctly? or never happens?
+	n_assert(!(MouseData.usFlags & MOUSE_MOVE_ABSOLUTE) && !(MouseData.usFlags & MOUSE_VIRTUAL_DESKTOP));
+
+	if (MouseData.usButtonFlags & RI_MOUSE_LEFT_BUTTON_DOWN) FireEvent(Event::ButtonDown(0));
+	if (MouseData.usButtonFlags & RI_MOUSE_LEFT_BUTTON_UP) FireEvent(Event::ButtonUp(0));
+	if (MouseData.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_DOWN) FireEvent(Event::ButtonDown(1));
+	if (MouseData.usButtonFlags & RI_MOUSE_RIGHT_BUTTON_UP) FireEvent(Event::ButtonUp(1));
+	if (MouseData.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_DOWN) FireEvent(Event::ButtonDown(2));
+	if (MouseData.usButtonFlags & RI_MOUSE_MIDDLE_BUTTON_UP) FireEvent(Event::ButtonUp(2));
+	if (MouseData.usButtonFlags & RI_MOUSE_BUTTON_4_DOWN) FireEvent(Event::ButtonDown(3));
+	if (MouseData.usButtonFlags & RI_MOUSE_BUTTON_4_UP) FireEvent(Event::ButtonUp(3));
+	if (MouseData.usButtonFlags & RI_MOUSE_BUTTON_5_DOWN) FireEvent(Event::ButtonDown(4));
+	if (MouseData.usButtonFlags & RI_MOUSE_BUTTON_5_UP) FireEvent(Event::ButtonUp(4));
+
+	const float MoveX = AxisSensitivity[0] * MouseData.lLastX;
+	if (MoveX != 0.f) FireEvent(Event::AxisMove(0, MoveX));
+
+	const float MoveY = AxisSensitivity[1] * MouseData.lLastY;
+	if (MoveY != 0.f) FireEvent(Event::AxisMove(1, MoveY));
+
+	if (MouseData.usButtonFlags & RI_MOUSE_WHEEL)
+	{
+		const float Move = AxisSensitivity[2] * (static_cast<SHORT>(MouseData.usButtonData) / WHEEL_DELTA);
+		if (Move != 0.f) FireEvent(Event::AxisMove(2, Move));
+	}
+
+	if (MouseData.usButtonFlags & RI_MOUSE_HWHEEL)
+	{
+		const UPTR AxisIndex = (AxisCount > 3) ? 3 : 2;
+		const float Move = AxisSensitivity[AxisIndex] * (static_cast<SHORT>(MouseData.usButtonData) / WHEEL_DELTA);
+		if (Move != 0.f) FireEvent(Event::AxisMove(AxisIndex, Move));
+	}
+
+	OK; //???or return false if no messages were processed?
 }
 //---------------------------------------------------------------------
 
@@ -88,72 +128,6 @@ U8 CMouseWin32::GetButtonCode(const char* pAlias) const
 const char* CMouseWin32::GetButtonAlias(U8 Code) const
 {
 	return MouseButtonToString((EMouseButton)Code);
-}
-//---------------------------------------------------------------------
-
-bool CMouseWin32::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	n_assert_dbg(Event.IsA<Event::OSInput>());
-
-	const Event::OSInput& OSInputEvent = (const Event::OSInput&)Event;
-
-	switch (OSInputEvent.Type)
-	{
-		case Event::OSInput::MouseDown:
-		{
-			// Button codes received from OSWindow are the same as EMouseButton codes, no conversion needed
-			Event::ButtonDown Ev(OSInputEvent.MouseInfo.Button);
-			FireEvent(Ev);
-			OK;
-		}
-
-		case Event::OSInput::MouseUp:
-		{
-			// Button codes received from OSWindow are the same as EMouseButton codes, no conversion needed
-			Event::ButtonUp Ev(OSInputEvent.MouseInfo.Button);
-			FireEvent(Ev);
-			OK;
-		}
-
-		case Event::OSInput::MouseMoveRaw:
-		{
-			float MoveX = AxisSensitivity[0] * (float)OSInputEvent.MouseInfo.x;
-			if (MoveX != 0.f)
-			{
-				float RelMove = MoveX;// / (float)n_max(pWindow->GetWidth(), 1);
-				Event::AxisMove Ev(0, RelMove, MoveX);
-				FireEvent(Ev);
-			}
-
-			float MoveY = AxisSensitivity[1] * (float)OSInputEvent.MouseInfo.y;
-			if (MoveY != 0.f)
-			{
-				float RelMove = MoveY;// / (float)n_max(pWindow->GetHeight(), 1);
-				Event::AxisMove Ev(1, RelMove, MoveY);
-				FireEvent(Ev);
-			}
-
-			OK;
-		}
-
-		case Event::OSInput::MouseWheelVertical:
-		{
-			float Move = AxisSensitivity[2] * (float)OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(2, Move, Move);
-			FireEvent(Ev);
-			OK;
-		}
-
-		case Event::OSInput::MouseWheelHorizontal:
-		{
-			float Move = AxisSensitivity[2] * (float)OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(3, Move, Move);
-			FireEvent(Ev);
-			OK;
-		}
-	}
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 

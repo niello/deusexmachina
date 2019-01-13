@@ -101,7 +101,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 			if (MoveX != 0.f)
 			{
 				float RelMove = MoveX / (float)n_max(pWindow->GetWidth(), 1);
-				Event::AxisMove Ev(0, RelMove, MoveX);
+				Event::AxisMove Ev(0, MoveX);
 				FireEvent(Ev);
 			}
 
@@ -109,7 +109,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 			if (MoveY != 0.f)
 			{
 				float RelMove = MoveY / (float)n_max(pWindow->GetHeight(), 1);
-				Event::AxisMove Ev(1, RelMove, MoveY);
+				Event::AxisMove Ev(1, MoveY);
 				FireEvent(Ev);
 			}
 
@@ -119,7 +119,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 		case Event::OSInput::MouseWheelVertical:
 		{
 			float Move = AxisSensitivity[2] * (float)OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(2, Move, Move);
+			Event::AxisMove Ev(2, Move);
 			FireEvent(Ev);
 			OK;
 		}
@@ -127,7 +127,7 @@ bool COSWindowMouse::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, cons
 		case Event::OSInput::MouseWheelHorizontal:
 		{
 			float Move = AxisSensitivity[2] * (float)OSInputEvent.WheelDelta;
-			Event::AxisMove Ev(3, Move, Move);
+			Event::AxisMove Ev(3, Move);
 			FireEvent(Ev);
 			OK;
 		}

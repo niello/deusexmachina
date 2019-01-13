@@ -16,10 +16,9 @@ class AxisMove: public Events::CEventNative
 public:
 
 	U8		Code;
-	float	AmountRel;
-	float	AmountAbs; //???I16/I32?
+	float	Amount; //???I16/I32?
 
-	AxisMove(U8 AxisCode, float AmountRelative, float AmountAbsolute): Code(AxisCode), AmountRel(AmountRelative), AmountAbs(AmountAbsolute) {}
+	AxisMove(U8 AxisCode, float MoveAmount): Code(AxisCode), Amount(MoveAmount) {}
 };
 
 class ButtonDown: public Events::CEventNative

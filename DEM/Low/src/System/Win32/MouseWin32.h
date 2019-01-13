@@ -1,6 +1,5 @@
 #pragma once
 #include <System/Win32/InputDeviceWin32.h>
-#include <Events/EventsFwd.h>
 #include <memory>
 
 // Win32 mouse device implementation
@@ -17,8 +16,6 @@ protected:
 	std::unique_ptr<float[]>	AxisSensitivity;
 	U32							AxisCount = 0;
 	U32							ButtonCount = 0;
-
-	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 
 public:
 
