@@ -1,9 +1,6 @@
 #include "MouseWin32.h"
 
 #include <Input/InputEvents.h>
-#include <Events/Subscription.h>
-#include <System/Events/OSInput.h>
-#include <System/OSWindow.h>
 
 #define RI_MOUSE_HWHEEL 0x0800
 
@@ -81,28 +78,18 @@ bool CMouseWin32::HandleRawInput(const RAWINPUT& Data)
 }
 //---------------------------------------------------------------------
 
-// TODO: system-wide aliases for typical controls!
-
 U8 CMouseWin32::GetAxisCode(const char* pAlias) const
 {
-	if (!strcmp(pAlias, "Mouse_Axis_X")) return 0;
-	if (!strcmp(pAlias, "Mouse_Axis_Y")) return 1;
-	if (!strcmp(pAlias, "Mouse_Axis_Wheel")) return 2;
-	if (AxisCount > 3 && !strcmp(pAlias, "Mouse_Axis_HWheel")) return 3;
-	return InvalidCode;
+	// Typical codes and names are used
+	EMouseAxis Axis = StringToMouseAxis(pAlias);
+	return (Axis == MouseAxis_Invalid) ? InvalidCode : (U8)Axis;
 }
 //---------------------------------------------------------------------
 
 const char* CMouseWin32::GetAxisAlias(U8 Code) const
 {
-	switch (Code)
-	{
-		case 0: return "Mouse_Axis_X";
-		case 1: return "Mouse_Axis_Y";
-		case 2: return "Mouse_Axis_Wheel";
-		case 3: return (AxisCount > 3) ? "Mouse_Axis_HWheel" : nullptr;
-	}
-	return nullptr;
+	// Typical codes and names are used
+	return MouseAxisToString((EMouseAxis)Code);
 }
 //---------------------------------------------------------------------
 
@@ -120,13 +107,15 @@ float CMouseWin32::GetAxisSensitivity(U8 Code) const
 
 U8 CMouseWin32::GetButtonCode(const char* pAlias) const
 {
+	// Typical codes and names are used
 	EMouseButton Button = StringToMouseButton(pAlias);
-	return (Button == MB_Invalid) ? InvalidCode : (U8)Button;
+	return (Button == MouseButton_Invalid) ? InvalidCode : (U8)Button;
 }
 //---------------------------------------------------------------------
 
 const char* CMouseWin32::GetButtonAlias(U8 Code) const
 {
+	// Typical codes and names are used
 	return MouseButtonToString((EMouseButton)Code);
 }
 //---------------------------------------------------------------------

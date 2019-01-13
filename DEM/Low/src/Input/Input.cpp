@@ -6,27 +6,26 @@ namespace Input
 
 static const char* pDeviceTypeString[] =
 {
-	"Keyboard",
-	"Mouse",
-	"Gamepad"
+	"ID_Keyboard",
+	"ID_Mouse",
+	"ID_Gamepad"
 };
 
 static const char* pMouseAxisString[] =
 {
-	"X",
-	"Y",
-	"Wheel1",
-	"Wheel2"
+	"ID_Mouse_Axis_X",
+	"ID_Mouse_Axis_Y",
+	"ID_Mouse_Wheel_1",
+	"ID_Mouse_Wheel_2"
 };
 
 static const char* pMouseButtonString[] =
 {
-	"LMB",
-	"RMB",
-	"MMB",
-	"X1",
-	"X2",
-	"User"
+	"ID_Mouse_Btn_Left",
+	"ID_Mouse_Btn_Right",
+	"ID_Mouse_Btn_Middle",
+	"ID_Mouse_Btn_X1",
+	"ID_Mouse_Btn_X2"
 };
 
 static const char* pKeyString[] =
@@ -345,40 +344,33 @@ EDeviceType	StringToDeviceType(const char* pName)
 
 const char*	MouseAxisToString(EMouseAxis Axis)
 {
-	if (Axis >= MA_Count) return NULL;
+	if (Axis >= MouseAxis_Count) return nullptr;
 	return pMouseAxisString[Axis];
 }
 //---------------------------------------------------------------------
 
 EMouseAxis StringToMouseAxis(const char* pName)
 {
-	for (UPTR i = 0; i < MA_Count; ++i)
+	for (UPTR i = 0; i < MouseAxis_Count; ++i)
 		if (!n_stricmp(pName, pMouseAxisString[i]))
 			return (EMouseAxis)i;
-	return MA_Invalid;
+	return MouseAxis_Invalid;
 }
 //---------------------------------------------------------------------
 
 const char*	MouseButtonToString(EMouseButton Button)
 {
-	if (Button > MB_User)
-	{
-		//UPTR UserIndex = Button - MB_User;
-		//if (UserIndex > 99) return NULL;
-		//char Buffer[]
-		//will return ptr to local, implement through external buffer if needed at all
-		return NULL;
-	}
+	if (Button >= MouseButton_Count) return nullptr;
 	return pMouseButtonString[Button];
 }
 //---------------------------------------------------------------------
 
 EMouseButton StringToMouseButton(const char* pName)
 {
-	for (UPTR i = 0; i <= MB_User; ++i)
+	for (UPTR i = 0; i < MouseButton_Count; ++i)
 		if (!n_stricmp(pName, pMouseButtonString[i]))
 			return (EMouseButton)i;
-	return MB_Invalid;
+	return MouseButton_Invalid;
 }
 //---------------------------------------------------------------------
 
@@ -387,7 +379,7 @@ const char* KeyToString(EKey Key)
 	for (UPTR i = 0; i < Key_Count; ++i)
 		if (Key == pKeyCode[i])
 			return pKeyString[Key];
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -103,8 +103,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Input/InputEvents.h
 	DEM/Low/src/Input/InputFwd.h
 	DEM/Low/src/Input/InputTranslator.h
-	DEM/Low/src/Input/OSWindowKeyboard.h
-	DEM/Low/src/Input/OSWindowMouse.h
 	DEM/Low/src/IO/BinaryReader.h
 	DEM/Low/src/IO/BinaryWriter.h
 	DEM/Low/src/IO/BTFile.h
@@ -377,8 +375,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputConditionUp.cpp
 	DEM/Low/src/Input/InputEvents.cpp
 	DEM/Low/src/Input/InputTransator.cpp
-	DEM/Low/src/Input/OSWindowKeyboard.cpp
-	DEM/Low/src/Input/OSWindowMouse.cpp
 	DEM/Low/src/IO/BinaryReader.cpp
 	DEM/Low/src/IO/BinaryWriter.cpp
 	DEM/Low/src/IO/BTFile.cpp

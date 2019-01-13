@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_FWD_H__
-#define __DEM_L1_INPUT_FWD_H__
-
 #include <StdDEM.h>
 
 // Input system forward declarations
@@ -10,7 +7,9 @@ namespace Input
 {
 class IInputDevice;
 
-static const U8 InvalidCode = 0xff;
+constexpr U8 InvalidCode = 0xff;
+
+// Input device types supported by an engine
 
 enum EDeviceType
 {
@@ -25,36 +24,46 @@ enum EDeviceType
 const char*	DeviceTypeToString(EDeviceType Type);
 EDeviceType	StringToDeviceType(const char* pName);
 
+// Typical mouse axes with corresponding codes and name text IDs.
+// Provided for consistency between different mouse implementations,
+// but your IInputDevice-based implementation may use other values
+// for both codes and names.
+
 enum EMouseAxis
 {
-	MA_X		= 0,
-	MA_Y		= 1,
-	MA_Wheel1	= 2,
-	MA_Wheel2	= 3,
+	MouseAxis_X			= 0,
+	MouseAxis_Y			= 1,
+	MouseAxis_Wheel1	= 2,
+	MouseAxis_Wheel2	= 3,
 
-	MA_Count,
-	MA_Invalid	= InvalidCode
+	MouseAxis_Count,
+	MouseAxis_Invalid	= InvalidCode
 };
 
 const char*	MouseAxisToString(EMouseAxis Axis);
 EMouseAxis	StringToMouseAxis(const char* pName);
 
+// Typical mouse buttons with corresponding codes and name text IDs.
+// See EMouseAxis comment above, the same applies here.
+
 enum EMouseButton
 {
-	MB_Left		= 0,
-	MB_Right	= 1,
-	MB_Middle	= 2,
-	MB_X1		= 3,
-	MB_X2		= 4,
-	MB_User		= 5,	// User values (MB_User + N), N = 0 .. X
+	MouseButton_Left	= 0,
+	MouseButton_Right	= 1,
+	MouseButton_Middle	= 2,
+	MouseButton_X1		= 3,
+	MouseButton_X2		= 4,
 
-	MB_Invalid	= InvalidCode
+	MouseButton_Count,
+	MouseButton_Invalid	= InvalidCode
 };
 
 const char*		MouseButtonToString(EMouseButton Button);
 EMouseButton	StringToMouseButton(const char* pName);
 
-// Taken from CEGUI, which customized table is taken from Ogre, which in turn took them from DirectInput...
+// Typical keyboard keys with corresponding codes and name text IDs.
+// See EMouseAxis comment above, the same applies here.
+// List is taken from CEGUI <- Ogre <- DirectInput
 enum EKey
 {
 	Escape          =0x01,
@@ -220,5 +229,3 @@ namespace Event
 	class ButtonDown;
 	class ButtonUp;
 }
-
-#endif
