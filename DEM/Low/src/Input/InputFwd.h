@@ -79,7 +79,7 @@ enum EKey
 	Zero            =0x0B,
 	Minus           =0x0C,    /* - on main keyboard */
 	Equals			=0x0D,
-	Backspace		=0x0E,    /* backspace */
+	Backspace		=0x0E,
 	Tab				=0x0F,
 	Q               =0x10,
 	W               =0x11,
@@ -121,7 +121,7 @@ enum EKey
 	Slash           =0x35,    /* '/' on main keyboard */
 	RightShift      =0x36,
 	Multiply        =0x37,    /* * on numeric keypad */
-	LeftAlt         =0x38,    /* left Alt */
+	LeftAlt         =0x38,
 	Space           =0x39,
 	Capital         =0x3A,
 	F1              =0x3B,
@@ -135,7 +135,7 @@ enum EKey
 	F9              =0x43,
 	F10             =0x44,
 	NumLock         =0x45,
-	ScrollLock      =0x46,    /* Scroll Lock */
+	ScrollLock      =0x46,
 	Numpad7         =0x47,
 	Numpad8         =0x48,
 	Numpad9         =0x49,

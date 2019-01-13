@@ -70,9 +70,7 @@ public:
 	operator		bool() const { return pString && *pString; }
 
 	//???simplify by using const "" instead of NULL in CString::pString?
-	bool			operator ==(const char* pOther) const { return pString == pOther || (pString && pOther && !strcmp(pString, pOther)); }
 	bool			operator ==(const CString& Other) const { return Length == Other.Length && (pString == Other.pString || (pString && Other.pString && !strcmp(pString, Other.pString))); }
-	bool			operator !=(const char* pOther) const { return pString != pOther && (!pString || !pOther || strcmp(pString, pOther)); }
 	bool			operator !=(const CString& Other) const { return Length != Other.Length || (pString != Other.pString && (!pString || !Other.pString || strcmp(pString, Other.pString))); }
 	bool			operator >(const char* pOther) const { return pString && (!pOther || strcmp(pString, pOther) > 0); }
 	bool			operator <(const char* pOther) const { return pOther && (!pString || strcmp(pString, pOther) < 0); }
@@ -89,6 +87,30 @@ public:
 	//char			operator [](UPTR i) const { n_assert_dbg(i <= Length); return pString[i]; }
 	//char&			operator [](UPTR i) { n_assert_dbg(i <= Length); return pString[i]; }
 };
+
+inline bool operator ==(const CString& Str1, const char* pStr2)
+{
+	return Str1.CStr() == pStr2 || (Str1.CStr() && pStr2 && !strcmp(Str1.CStr(), pStr2));
+}
+//---------------------------------------------------------------------
+
+inline bool operator ==(const char* pStr1, const CString& Str2)
+{
+	return Str2 == pStr1;
+}
+//---------------------------------------------------------------------
+
+inline bool operator !=(const CString& Str1, const char* pStr2)
+{
+	return !(Str1 == pStr2);
+}
+//---------------------------------------------------------------------
+
+inline bool operator !=(const char* pStr1, const CString& Str2)
+{
+	return Str2 != pStr1;
+}
+//---------------------------------------------------------------------
 
 template<> inline unsigned int Hash<CString>(const CString& Key)
 {

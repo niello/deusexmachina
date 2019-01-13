@@ -16,7 +16,7 @@ bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_D
 	Type = DeviceInfo.dwType;
 	Subtype = DeviceInfo.dwSubType;
 	_hDevice = hDevice;
-	ButtonCount = DeviceInfo.dwNumberOfKeysTotal;
+	ButtonCount = EKey::Key_Count; // We want a virtual key space, not a physical key count from DeviceInfo.dwNumberOfKeysTotal
 	Operational = true;
 	OK;
 }
