@@ -34,7 +34,7 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 	const RAWKEYBOARD& KbData = Data.data.keyboard;
 
 	// discard "fake keys" which are part of an escaped sequence
-	if (KbData.VKey == 0xff) FAIL;
+	if (KbData.VKey == KEYBOARD_OVERRUN_MAKE_CODE) FAIL;
 
 	// e0 and e1 are escape sequences used for certain special keys, such as PRINT and PAUSE/BREAK.
 	// see http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
@@ -44,20 +44,6 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 	UINT VKey = KbData.VKey;
 	UINT ScanCode = KbData.MakeCode;
 	U8 ResultCode = EKey::Key_Invalid;
-
-	if (VKey >= 'A' && VKey <= 'Z' ||
-		VKey >= '0' && VKey <= '9' ||
-		VKey >= VK_F1 && VKey <= VK_F12 ||
-		VKey == VK_ESCAPE)
-	{
-		ResultCode = ScanCode;
-	}
-	else if (VKey == VK_SHIFT)
-	{
-		// correct left-hand / right-hand SHIFT
-		VKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
-		ResultCode = (VKey == VK_RSHIFT) ? EKey::RightShift : EKey::LeftShift;
-	}
 
 	if (VKey == VK_NUMLOCK)
 	{
@@ -73,8 +59,25 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 		else ScanCode = ::MapVirtualKey(VKey, MAPVK_VK_TO_VSC);
 	}
 
-	switch (VKey)
+	if (VKey >= 'A' && VKey <= 'Z' ||
+		VKey >= '0' && VKey <= '9' ||
+		VKey >= VK_F1 && VKey <= VK_F12)
 	{
+		ResultCode = ScanCode;
+	}
+	else switch (VKey)
+	{
+		case VK_ESCAPE:		ResultCode = EKey::Escape; break; // Scan code
+		case VK_BACK:		ResultCode = EKey::Backspace; break;
+		case VK_PAUSE:		ResultCode = EKey::Pause; break;
+
+		case VK_NUMLOCK:	ResultCode = EKey::NumLock; break;
+		case VK_SCROLL:		ResultCode = EKey::ScrollLock; break;
+		case VK_CAPITAL:	ResultCode = EKey::Capital; break;
+
+		case VK_SUBTRACT:	ResultCode = EKey::Subtract; break; // Scan code
+
+		case VK_OEM_MINUS:	ResultCode = EKey::Minus; break;
 		case VK_NUMPAD0:	ResultCode = EKey::Numpad0; break;
 		case VK_NUMPAD1:	ResultCode = EKey::Numpad1; break;
 		case VK_NUMPAD2:	ResultCode = EKey::Numpad2; break;
@@ -85,6 +88,14 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 		case VK_NUMPAD7:	ResultCode = EKey::Numpad7; break;
 		case VK_NUMPAD8:	ResultCode = EKey::Numpad8; break;
 		case VK_NUMPAD9:	ResultCode = EKey::Numpad9; break;
+
+		case VK_SHIFT:
+		{
+			// correct left-hand / right-hand SHIFT
+			VKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+			ResultCode = (VKey == VK_RSHIFT) ? EKey::RightShift : EKey::LeftShift;
+			break;
+		}
 
 		// right-hand CONTROL and ALT have their e0 bit set
 		case VK_CONTROL:	ResultCode = IsE0 ? EKey::RightControl : EKey::LeftControl; break;
@@ -119,6 +130,8 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 	::GetKeyNameText(KeyForText, Buffer, 512);
 	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput() ") + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
 	//*/
+
+	if (ResultCode == EKey::Key_Invalid) FAIL;
 
 	if (KbData.Flags & RI_KEY_BREAK) return FireEvent(Event::ButtonUp(ResultCode)) > 0;
 	else return FireEvent(Event::ButtonDown(ResultCode)) > 0;
