@@ -2,8 +2,13 @@
 #include <System/Win32/OSFileSystemWin32.h>
 #include "PlatformWin32.h"
 #include <System/Win32/OSWindowWin32.h>
+#include <System/Win32/MouseWin32.h>
+#include <System/Win32/KeyboardWin32.h>
 #include <IO/PathUtils.h>
 #include <shlobj.h>
+
+//!!!DBG TMP!
+#include <Data/StringUtils.h>
 
 namespace DEM { namespace Sys
 {
@@ -38,24 +43,109 @@ double CPlatformWin32::GetSystemTime() const
 }
 //---------------------------------------------------------------------
 
-UPTR CPlatformWin32::EnumInputDevices(CArray<Input::IInputDevice*>& Out)
+bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
+{
+	// Try to find operational device by hDevice. If found, don't create a new device.
+
+	for (auto& Device : InputDevices)
+	{
+		if (Device->IsOperational() && Device->GetWin32Handle() == hDevice) OK;
+	}
+
+	// Try to find non-operational device by DeviceName. If found, return it to operational state and update handle.
+
+	char NameBuf[512];
+	UINT NameBufSize = 512;
+	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &NameBufSize) <= 0) FAIL;
+	const CString DeviceName(NameBuf);
+
+	for (auto& Device : InputDevices)
+	{
+		if (!Device->IsOperational() && Device->GetName() == DeviceName)
+		{
+			Device->SetOperational(true, hDevice);
+			OK;
+		}
+	}
+
+	// Device not found and must be created
+
+	RID_DEVICE_INFO DeviceInfo;
+	DeviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
+	UINT DevInfoSize = sizeof(RID_DEVICE_INFO);
+	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICEINFO, &DeviceInfo, &DevInfoSize) <= 0) FAIL;
+
+	switch (DeviceInfo.dwType)
+	{
+		case RIM_TYPEMOUSE:
+		{
+			Input::PMouseWin32 Device = n_new(Input::CMouseWin32);
+			if (!Device->Init(hDevice)) FAIL;
+			InputDevices.push_back(Device);
+			OK;
+		}
+		case RIM_TYPEKEYBOARD:
+		{
+			Input::PKeyboardWin32 Device = n_new(Input::CKeyboardWin32);
+			if (!Device->Init(hDevice)) FAIL;
+			InputDevices.push_back(Device);
+			OK;
+		}
+		//case RIM_TYPEHID:
+		//{
+		//	// detect & register gamepads, skip other devices
+		//	break;
+		//}
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 {
 	UINT Count;
 	if (::GetRawInputDeviceList(NULL, &Count, sizeof(RAWINPUTDEVICELIST)) != 0 || !Count)
 	{
-		// clear internal storage / mark all as disconnected
+		for (auto& Device : InputDevices)
+			Device->SetOperational(false, 0);
 		return 0;
 	}
 
 	PRAWINPUTDEVICELIST pList = n_new_array(RAWINPUTDEVICELIST, Count);
 	if (::GetRawInputDeviceList(pList, &Count, sizeof(RAWINPUTDEVICELIST)) == (UINT)-1)
 	{
-		// clear internal storage / mark all as disconnected
 		n_delete_array(pList);
+		for (auto& Device : InputDevices)
+			Device->SetOperational(false, 0);
 		return 0;
 	}
 
-	//...
+	for (UINT i = 0; i < Count; ++i)
+	{
+		OnInputDeviceArrived(pList[i].hDevice);
+	}
+
+	// Disable all operational devices that aren't present in a new list
+	for (auto& Device : InputDevices)
+	{
+		if (!Device->IsOperational()) continue;
+
+		bool Found = false;
+		for (UINT i = 0; i < Count; ++i)
+		{
+			if (Device->GetWin32Handle() == pList[i].hDevice)
+			{
+				Found = true;
+				break;
+			}
+		}
+
+		if (!Found) Device->SetOperational(false, 0);
+	}
+
+	//???remove all non-operational devices without users?
+	//!!!check operational devices with users & register / unregister raw input appropriately!
 
 	n_delete_array(pList);
 	return Count;
@@ -104,6 +194,18 @@ void CPlatformWin32::Update()
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
+		if (Msg.message == WM_INPUT_DEVICE_CHANGE)
+		{
+			HANDLE hDevice = (HANDLE)Msg.lParam;
+			//if (Msg.wParam == GIDC_ARRIVAL) OnInputDeviceArrived(hDevice);
+			//else if (Msg.wParam == GIDC_REMOVAL) OnInputDeviceRemoved(hDevice);
+
+			//!!!DBG TMP!
+			::Sys::DbgOut(CString("***DBG CPlatformWin32::Update() > WM_INPUT_DEVICE_CHANGE ") + StringUtils::FromInt((int)Msg.hwnd) + "\n");
+
+			continue;
+		}
+
 		// Process accelerators of our own windows
 		if (aGUIWndClass && Msg.hwnd)
 		{
@@ -111,7 +213,7 @@ void CPlatformWin32::Update()
 			if (aClass == aGUIWndClass)
 			{
 				// Only our windows store engine window pointer at 0
-				COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLong(Msg.hwnd, 0);
+				const COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLong(Msg.hwnd, 0);
 				HACCEL hAccel = pWnd ? pWnd->GetWin32AcceleratorTable() : 0;
 				if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
 			}

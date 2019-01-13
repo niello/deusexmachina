@@ -41,7 +41,7 @@ public:
 
 	void					Minimize();
 	void					Restore();
-	bool					HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result); // Mainly for internal use
+	bool					HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& OutResult); // Mainly for internal use
 
 	bool					GetAbsoluteXY(float XRel, float YRel, int& XAbs, int& YAbs) const;
 	bool					GetRelativeXY(int XAbs, int YAbs, float& XRel, float& YRel) const;

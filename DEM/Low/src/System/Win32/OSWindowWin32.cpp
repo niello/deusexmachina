@@ -6,16 +6,6 @@
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
-#ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC		((USHORT) 0x01)
-#endif
-#ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE		((USHORT) 0x02)
-#endif
-#ifndef HID_USAGE_GENERIC_KEYBOARD
-#define HID_USAGE_GENERIC_KEYBOARD	((USHORT) 0x06)
-#endif
-
 #define ACCEL_TOGGLEFULLSCREEN	1001
 #define STYLE_WINDOWED			(WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE)
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
@@ -284,7 +274,7 @@ static inline void FixKeyCodes(U8& ScanCode, UINT& VirtualKey, bool& IsExtended)
 }
 //---------------------------------------------------------------------
 
-bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& Result)
+bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& OutResult)
 {
 	switch (uMsg)
 	{
@@ -299,7 +289,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 					case SC_MAXIMIZE:
 					case SC_KEYMENU:
 					case SC_MONITORPOWER:
-						Result = 0; //1
+						OutResult = 0; //1
 						OK;
 				}
 			}
@@ -320,7 +310,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case WM_ERASEBKGND:
 			// Prevent Windows from erasing the background
-			Result = 1;
+			OutResult = 1;
 			OK;
 
 		case WM_MOVE:
@@ -376,31 +366,15 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_SETCURSOR:
 			if (FireEvent(CStrID("OnSetCursor")))
 			{
-				Result = TRUE;
+				OutResult = TRUE;
 				OK;
 			}
 			break;
 
 		case WM_SETFOCUS:
-		{
 			FireEvent(CStrID("OnSetFocus"));
 			::ReleaseCapture();
-
-			//???here or globally? Globally no inputsink flag and hWnd = NULL
-			//RIDEV_INPUTSINK - receive input even if not foreground, must specify hWnd
-			//RIDEV_NOLEGACY - to prevent WM_KEYDOWN etc generation
-			//???or switch in WM_MOUSEMOVE?
-			RAWINPUTDEVICE RawInputDevices;
-			RawInputDevices.usUsagePage = HID_USAGE_PAGE_GENERIC;
-			RawInputDevices.usUsage = HID_USAGE_GENERIC_MOUSE;
-			RawInputDevices.dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
-			RawInputDevices.hwndTarget = hWnd;
-			if (::RegisterRawInputDevices(&RawInputDevices, 1, sizeof(RAWINPUTDEVICE)) == FALSE)
-				::Sys::Log("COSWindowWin32: High-definition (raw) mouse device registration failed!\n");
-::Sys::DbgOut("***DBG WM_SETFOCUS\n");
-
 			break;
-		}
 
 		case WM_KILLFOCUS:
 			FireEvent(CStrID("OnKillFocus"));
@@ -410,13 +384,13 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_CLOSE:
 			FireEvent(CStrID("OnClosing"));
 			::DestroyWindow(hWnd);
-			Result = 0;
+			OutResult = 0;
 			OK;
 
 		case WM_DESTROY:
 			FireEvent(CStrID("OnClosed"));
 			hWnd = NULL;
-			Result = 0;
+			OutResult = 0;
 			OK;
 
 		case WM_KEYDOWN:
@@ -485,50 +459,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
 			FireEvent(Ev, Events::Event_TermOnHandled);
 			break;
-		}
-
-		case WM_INPUT_DEVICE_CHANGE:
-		{
-			HANDLE hDevice = (HANDLE)lParam;
-
-			char NameBuf[512];
-			UINT size = 512;
-			if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &size) <= 0) FAIL;
-::Sys::DbgOut(CString("***DBG WM_INPUT_DEVICE_CHANGE: ") + NameBuf + (wParam == 1 ? " arrived\n" : " removed\n"));
-
-			RID_DEVICE_INFO DeviceInfo;
-			DeviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
-			size = sizeof(RID_DEVICE_INFO);
-			if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICEINFO, &DeviceInfo, &size) <= 0) FAIL;
-
-			break;
-		}
-
-		case WM_INPUT:
-		{
-			RAWINPUT Data;
-			PRAWINPUT pData = &Data;
-			UINT DataSize = sizeof(Data);
-
-			// IsForeground: GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT
-
-			if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, pData, &DataSize, sizeof(RAWINPUTHEADER)) == (UINT)-1) FAIL;
-
-			//!!!???process mouse buttons here?!
-			//???call defproc if processed?
-			//!!!can process all devices here and send UID in an OSInput event!
-			if (Data.header.dwType == RIM_TYPEMOUSE && (Data.data.mouse.lLastX || Data.data.mouse.lLastY))
-			{
-				Event::OSInput Ev;
-				Ev.Type = Event::OSInput::MouseMoveRaw;
-				Ev.MouseInfo.x = Data.data.mouse.lLastX;
-				Ev.MouseInfo.y = Data.data.mouse.lLastY;
-				FireEvent(Ev, Events::Event_TermOnHandled);
-			}
-
-			::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
-			Result = 0;
-			OK;
 		}
 
 		case WM_LBUTTONDBLCLK:

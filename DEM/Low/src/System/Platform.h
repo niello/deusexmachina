@@ -6,7 +6,7 @@
 
 namespace Input
 {
-	class IInputDevice;
+	typedef Ptr<class IInputDevice> PInputDevice;
 }
 
 namespace DEM { namespace Sys
@@ -31,7 +31,7 @@ public:
 
 	virtual double			GetSystemTime() const = 0; // In seconds
 
-	virtual UPTR			EnumInputDevices(CArray<Input::IInputDevice*>& Out) = 0;
+	virtual UPTR			EnumInputDevices(CArray<Input::PInputDevice>& Out) = 0;
 
 	virtual POSWindow		CreateGUIWindow() = 0;
 	//virtual POSConsoleWindow CreateConsoleWindow() = 0;

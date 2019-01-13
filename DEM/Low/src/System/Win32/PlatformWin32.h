@@ -4,8 +4,14 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <memory>
+#include <vector>
 
 // Win32 platform-dependent functionality
+
+namespace Input
+{
+	typedef Ptr<class CInputDeviceWin32> PInputDeviceWin32;
+}
 
 namespace DEM { namespace Sys
 {
@@ -17,10 +23,15 @@ private:
 
 	std::unique_ptr<COSFileSystemWin32>	FileSystemInterface;
 
+	std::vector<Input::PInputDeviceWin32> InputDevices;
+
 	double		PerfFreqMul;
 	HINSTANCE	hInst;
 
 	ATOM		aGUIWndClass = 0;
+
+	bool OnInputDeviceArrived(HANDLE hDevice);
+	bool OnInputDeviceRemoved(HANDLE hDevice);
 
 public:
 
@@ -29,7 +40,7 @@ public:
 
 	virtual double GetSystemTime() const override;
 
-	virtual UPTR EnumInputDevices(CArray<Input::IInputDevice*>& Out) override;
+	virtual UPTR EnumInputDevices(CArray<Input::PInputDevice>& Out) override;
 
 	virtual POSWindow CreateGUIWindow() override;
 	//virtual POSConsoleWindow CreateConsoleWindow() override; // AllocConsole, SetConsoleTitle etc
