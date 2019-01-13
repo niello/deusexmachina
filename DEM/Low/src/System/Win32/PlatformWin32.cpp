@@ -52,21 +52,24 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 	}
 	else if (uMsg == WM_INPUT)
 	{
-		// IsForeground: GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT
 		RAWINPUT Data;
 		UINT DataSize = sizeof(Data);
 		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &Data, &DataSize, sizeof(RAWINPUTHEADER)) != (UINT)-1)
 		{
 			bool Handled = false;
 
-			for (auto& Device : pSelf->InputDevices)
+			const bool IsForeground = (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT);
+			if (IsForeground)
 			{
-				if (Device->GetWin32Handle() == Data.header.hDevice)
+				for (auto& Device : pSelf->InputDevices)
 				{
-					n_assert_dbg(Device->IsOperational());
-					Handled = Device->HandleRawInput(Data);
-					// Proceed to ::DefWindowProc as required
-					break;
+					if (Device->GetWin32Handle() == Data.header.hDevice)
+					{
+						n_assert_dbg(Device->IsOperational());
+						Handled = Device->HandleRawInput(Data);
+						// Proceed to ::DefWindowProc as required
+						break;
+					}
 				}
 			}
 

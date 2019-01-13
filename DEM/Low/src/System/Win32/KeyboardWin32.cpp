@@ -24,7 +24,10 @@ bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_D
 
 bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 {
+	if (Data.header.dwType != RIM_TYPEKEYBOARD) FAIL;
+
 	::Sys::DbgOut("CKeyboardWin32::HandleRawInput()\n");
+
 	FAIL;
 }
 //---------------------------------------------------------------------

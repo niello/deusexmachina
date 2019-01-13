@@ -33,7 +33,10 @@ bool CMouseWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVI
 
 bool CMouseWin32::HandleRawInput(const RAWINPUT& Data)
 {
+	if (Data.header.dwType != RIM_TYPEMOUSE) FAIL;
+
 	::Sys::DbgOut("CMouseWin32::HandleRawInput()\n");
+
 	FAIL;
 }
 //---------------------------------------------------------------------
