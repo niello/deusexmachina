@@ -154,6 +154,7 @@ bool CUIContext::IsMouseOverGUI() const
 }
 //---------------------------------------------------------------------
 
+// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
 bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const Event::OSInput& Ev = (const Event::OSInput&)Event;

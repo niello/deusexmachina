@@ -211,7 +211,6 @@ enum EKey
 	Mail			=0xEC,    /* Mail */
 	MediaSelect		=0xED,    /* Media Select */
 
-	Key_ScanCodeEnd,				// The last used scan code + 1
 	Key_Count		= 144,			// Real key count
 	Key_Invalid		= InvalidCode
 };

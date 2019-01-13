@@ -378,7 +378,7 @@ const char* KeyToString(EKey Key)
 {
 	for (UPTR i = 0; i < Key_Count; ++i)
 		if (Key == pKeyCode[i])
-			return pKeyString[Key];
+			return pKeyString[i];
 	return nullptr;
 }
 //---------------------------------------------------------------------

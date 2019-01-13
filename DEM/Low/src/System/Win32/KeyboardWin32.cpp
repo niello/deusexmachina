@@ -33,67 +33,95 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 
 	const RAWKEYBOARD& KbData = Data.data.keyboard;
 
-	UINT VirtualKey = KbData.VKey;
-	UINT ScanCode = KbData.MakeCode;
+	// discard "fake keys" which are part of an escaped sequence
+	if (KbData.VKey == 0xff) FAIL;
 
 	// e0 and e1 are escape sequences used for certain special keys, such as PRINT and PAUSE/BREAK.
 	// see http://www.win.tue.nl/~aeb/linux/kbd/scancodes-1.html
 	const bool IsE0 = ((KbData.Flags & RI_KEY_E0) != 0);
-	switch (VirtualKey)
+	const bool IsE1 = ((KbData.Flags & RI_KEY_E1) != 0);
+
+	UINT VKey = KbData.VKey;
+	UINT ScanCode = KbData.MakeCode;
+	U8 ResultCode = EKey::Key_Invalid;
+
+	if (VKey >= 'A' && VKey <= 'Z' ||
+		VKey >= '0' && VKey <= '9' ||
+		VKey >= VK_F1 && VKey <= VK_F12 ||
+		VKey == VK_ESCAPE)
 	{
-		// discard "fake keys" which are part of an escaped sequence
-		case 255:			FAIL;
-
+		ResultCode = ScanCode;
+	}
+	else if (VKey == VK_SHIFT)
+	{
 		// correct left-hand / right-hand SHIFT
-		case VK_SHIFT:		VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX); break;
-
-		// correct PAUSE/BREAK and NUM LOCK silliness, and set the extended bit
-		case VK_NUMLOCK:	ScanCode = (::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC) | 0x100); break;
-
-		// right-hand CONTROL and ALT have their e0 bit set
-		case VK_CONTROL:	VirtualKey = IsE0 ? VK_RCONTROL : VK_LCONTROL; break;
-		case VK_MENU:		VirtualKey = IsE0 ? VK_RMENU : VK_LMENU; break;
-
-		// NUMPAD ENTER has its e0 bit set
-		case VK_RETURN:		if (IsE0) VirtualKey = VK_SEPARATOR; break; // VK_SEPARATOR is not a numpad Enter but we use it as such
-
-		// the standard INSERT, DELETE, HOME, END, PRIOR and NEXT keys will always have their e0 bit set, but the
-		// corresponding keys on the NUMPAD will not.
-		case VK_INSERT:		if (!IsE0) VirtualKey = VK_NUMPAD0; break;
-		case VK_DELETE:		if (!IsE0) VirtualKey = VK_DECIMAL; break;
-		case VK_HOME:		if (!IsE0) VirtualKey = VK_NUMPAD7; break;
-		case VK_END:		if (!IsE0) VirtualKey = VK_NUMPAD1; break;
-		case VK_PRIOR:		if (!IsE0) VirtualKey = VK_NUMPAD9; break;
-		case VK_NEXT:		if (!IsE0) VirtualKey = VK_NUMPAD3; break;
-
-		// the standard arrow keys will always have their e0 bit set, but the
-		// corresponding keys on the NUMPAD will not.
-		case VK_LEFT:		if (!IsE0) VirtualKey = VK_NUMPAD4; break;
-		case VK_RIGHT:		if (!IsE0) VirtualKey = VK_NUMPAD6; break;
-		case VK_UP:			if (!IsE0) VirtualKey = VK_NUMPAD8; break;
-		case VK_DOWN:		if (!IsE0) VirtualKey = VK_NUMPAD2; break;
-
-		// NUMPAD 5 doesn't have its e0 bit set
-		case VK_CLEAR:		if (!IsE0) VirtualKey = VK_NUMPAD5; break;
+		VKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+		ResultCode = (VKey == VK_RSHIFT) ? EKey::RightShift : EKey::LeftShift;
 	}
 
-	if (KbData.Flags & RI_KEY_E1)
+	if (VKey == VK_NUMLOCK)
+	{
+		// correct PAUSE/BREAK and NUM LOCK silliness, and set the extended bit
+		ScanCode = (::MapVirtualKey(VKey, MAPVK_VK_TO_VSC) | 0x100);
+	}
+
+	if (IsE1)
 	{
 		// for escaped sequences, turn the virtual key into the correct scan code using MapVirtualKey.
 		// however, MapVirtualKey is unable to map VK_PAUSE (this is a known bug), hence we map that by hand.
-		if (VirtualKey == VK_PAUSE) ScanCode = 0x45;
-		else ScanCode = ::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC);
+		if (VKey == VK_PAUSE) ScanCode = 0x45;
+		else ScanCode = ::MapVirtualKey(VKey, MAPVK_VK_TO_VSC);
 	}
 
-	const bool IsKeyUp = ((KbData.Flags & RI_KEY_BREAK) != 0);
+	switch (VKey)
+	{
+		case VK_NUMPAD0:	ResultCode = EKey::Numpad0; break;
+		case VK_NUMPAD1:	ResultCode = EKey::Numpad1; break;
+		case VK_NUMPAD2:	ResultCode = EKey::Numpad2; break;
+		case VK_NUMPAD3:	ResultCode = EKey::Numpad3; break;
+		case VK_NUMPAD4:	ResultCode = EKey::Numpad4; break;
+		case VK_NUMPAD5:	ResultCode = EKey::Numpad5; break;
+		case VK_NUMPAD6:	ResultCode = EKey::Numpad6; break;
+		case VK_NUMPAD7:	ResultCode = EKey::Numpad7; break;
+		case VK_NUMPAD8:	ResultCode = EKey::Numpad8; break;
+		case VK_NUMPAD9:	ResultCode = EKey::Numpad9; break;
 
-	//!!!DBG TMP!
-	UINT key = (ScanCode << 16) | (IsE0 << 24);
-	char buffer[512] = {};
-	::GetKeyNameText((LONG)key, buffer, 512);
-	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput() ") + buffer + (IsKeyUp ? " up\n" : " down\n"));
+		// right-hand CONTROL and ALT have their e0 bit set
+		case VK_CONTROL:	ResultCode = IsE0 ? EKey::RightControl : EKey::LeftControl; break;
+		case VK_MENU:		ResultCode = IsE0 ? EKey::RightAlt : EKey::LeftAlt; break;
 
-	FAIL;
+		// NUMPAD ENTER has its e0 bit set
+		case VK_RETURN:		ResultCode = IsE0 ? EKey::NumpadEnter : EKey::Return; break;
+
+		// the standard INSERT, DELETE, HOME, END, PRIOR and NEXT keys will always have their e0 bit set, but the
+		// corresponding keys on the NUMPAD will not.
+		case VK_INSERT:		ResultCode = IsE0 ? EKey::Insert : EKey::Numpad0; break;
+		case VK_DELETE:		ResultCode = IsE0 ? EKey::Delete : EKey::Decimal; break;
+		case VK_HOME:		ResultCode = IsE0 ? EKey::Home : EKey::Numpad7; break;
+		case VK_END:		ResultCode = IsE0 ? EKey::End : EKey::Numpad1; break;
+		case VK_PRIOR:		ResultCode = IsE0 ? EKey::PageUp : EKey::Numpad9; break;
+		case VK_NEXT:		ResultCode = IsE0 ? EKey::PageDown : EKey::Numpad3; break;
+
+		// the standard arrow keys will always have their e0 bit set, but the
+		// corresponding keys on the NUMPAD will not.
+		case VK_LEFT:		ResultCode = IsE0 ? EKey::ArrowLeft : EKey::Numpad4; break;
+		case VK_RIGHT:		ResultCode = IsE0 ? EKey::ArrowRight : EKey::Numpad6; break;
+		case VK_UP:			ResultCode = IsE0 ? EKey::ArrowUp : EKey::Numpad8; break;
+		case VK_DOWN:		ResultCode = IsE0 ? EKey::ArrowDown : EKey::Numpad2; break;
+
+		// NUMPAD 5 doesn't have its e0 bit set
+		case VK_CLEAR:		if (!IsE0) ResultCode = EKey::Numpad5; break;
+	}
+
+	///* Correct human-readable key names:
+	LONG KeyForText = (ScanCode << 16) | (IsE0 << 24);
+	char Buffer[512] = {};
+	::GetKeyNameText(KeyForText, Buffer, 512);
+	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput() ") + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
+	//*/
+
+	if (KbData.Flags & RI_KEY_BREAK) return FireEvent(Event::ButtonUp(ResultCode)) > 0;
+	else return FireEvent(Event::ButtonDown(ResultCode)) > 0;
 }
 //---------------------------------------------------------------------
 
