@@ -10,33 +10,20 @@ namespace Input
 CMouseWin32::CMouseWin32() {}
 CMouseWin32::~CMouseWin32() {}
 
-bool CMouseWin32::Init(HANDLE hDevice)
+bool CMouseWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo)
 {
-	RID_DEVICE_INFO DeviceInfo;
-	DeviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
-	UINT Size = sizeof(RID_DEVICE_INFO);
-	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICEINFO, &DeviceInfo, &Size) <= 0) FAIL;
-
-	if (DeviceInfo.dwType != RIM_TYPEMOUSE) FAIL;
-
-	char NameBuf[512];
-	Size = 512;
-	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &Size) > 0)
-	{
-		Name = NameBuf;
-	}
-
-	ID = DeviceInfo.mouse.dwId;
+	Name = DeviceName;
+	ID = DeviceInfo.dwId;
 	_hDevice = hDevice;
 
-	AxisCount = DeviceInfo.mouse.fHasHorizontalWheel ? 4 : 3;
+	AxisCount = DeviceInfo.fHasHorizontalWheel ? 4 : 3;
 	AxisSensitivity.reset(n_new_array(float, AxisCount));
 	for (UPTR i = 0; i < AxisCount; ++i)
 	{
 		AxisSensitivity[i] = 1.f;
 	}
 
-	ButtonCount = DeviceInfo.mouse.dwNumberOfButtons;
+	ButtonCount = DeviceInfo.dwNumberOfButtons;
 
 	Operational = true;
 

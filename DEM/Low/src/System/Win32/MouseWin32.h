@@ -25,7 +25,7 @@ public:
 	CMouseWin32();
 	virtual ~CMouseWin32();
 
-	bool				Init(HANDLE hDevice);
+	bool				Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo);
 
 	virtual EDeviceType	GetType() const override { return Device_Mouse; }
 	virtual U8			GetAxisCount() const override { return AxisCount; }

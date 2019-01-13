@@ -23,7 +23,7 @@ public:
 	CKeyboardWin32();
 	virtual ~CKeyboardWin32();
 
-	bool				Init(HANDLE hDevice);
+	bool				Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_KEYBOARD& DeviceInfo);
 
 	virtual EDeviceType	GetType() const override { return Device_Keyboard; }
 	virtual U8			GetAxisCount() const override { return 0; }

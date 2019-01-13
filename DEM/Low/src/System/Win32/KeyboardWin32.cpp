@@ -10,30 +10,14 @@ namespace Input
 CKeyboardWin32::CKeyboardWin32() {}
 CKeyboardWin32::~CKeyboardWin32() {}
 
-bool CKeyboardWin32::Init(HANDLE hDevice)
+bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_KEYBOARD& DeviceInfo)
 {
-	RID_DEVICE_INFO DeviceInfo;
-	DeviceInfo.cbSize = sizeof(RID_DEVICE_INFO);
-	UINT Size = sizeof(RID_DEVICE_INFO);
-	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICEINFO, &DeviceInfo, &Size) <= 0) FAIL;
-
-	if (DeviceInfo.dwType != RIM_TYPEKEYBOARD) FAIL;
-
-	char NameBuf[512];
-	Size = 512;
-	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &Size) > 0)
-	{
-		Name = NameBuf;
-	}
-
-	Type = DeviceInfo.keyboard.dwType;
-	Subtype = DeviceInfo.keyboard.dwSubType;
+	Name = DeviceName;
+	Type = DeviceInfo.dwType;
+	Subtype = DeviceInfo.dwSubType;
 	_hDevice = hDevice;
-
-	ButtonCount = DeviceInfo.keyboard.dwNumberOfKeysTotal;
-
+	ButtonCount = DeviceInfo.dwNumberOfKeysTotal;
 	Operational = true;
-
 	OK;
 }
 //---------------------------------------------------------------------

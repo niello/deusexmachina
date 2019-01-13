@@ -27,7 +27,6 @@ private:
 
 	double		PerfFreqMul;
 	HINSTANCE	hInst;
-
 	ATOM		aGUIWndClass = 0;
 
 	bool OnInputDeviceArrived(HANDLE hDevice);
