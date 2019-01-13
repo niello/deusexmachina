@@ -22,6 +22,13 @@ bool CKeyboardWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_D
 }
 //---------------------------------------------------------------------
 
+bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
+{
+	::Sys::DbgOut("CKeyboardWin32::HandleRawInput()\n");
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 U8 CKeyboardWin32::GetButtonCode(const char* pAlias) const
 {
 	//!!!IMPLEMENT!

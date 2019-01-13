@@ -26,6 +26,64 @@
 namespace DEM { namespace Sys
 {
 
+// Window procedure for GUI windows
+LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(hWnd, 0);
+	LONG Result = 0;
+	if (pWnd && pWnd->HandleWindowMessage(uMsg, wParam, lParam, Result)) return Result;
+	return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+//---------------------------------------------------------------------
+
+// Window procedure for a message-only window (primarily for raw input processing,
+// because RIDEV_DEVNOTIFY / WM_INPUT_DEVICE_CHANGE doesn't work with NULL hWnd
+LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+{
+	CPlatformWin32* pSelf = (CPlatformWin32*)::GetWindowLongPtr(hWnd, 0);
+	if (uMsg == WM_INPUT_DEVICE_CHANGE)
+	{
+		if (pSelf)
+		{
+			if (wParam == GIDC_ARRIVAL) pSelf->OnInputDeviceArrived((HANDLE)lParam);
+			else if (wParam == GIDC_REMOVAL) pSelf->OnInputDeviceRemoved((HANDLE)lParam);
+		}
+		return 0;
+	}
+	else if (uMsg == WM_INPUT)
+	{
+		// IsForeground: GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT
+		RAWINPUT Data;
+		UINT DataSize = sizeof(Data);
+		if (::GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &Data, &DataSize, sizeof(RAWINPUTHEADER)) != (UINT)-1)
+		{
+			bool Handled = false;
+
+			for (auto& Device : pSelf->InputDevices)
+			{
+				if (Device->GetWin32Handle() == Data.header.hDevice)
+				{
+					n_assert_dbg(Device->IsOperational());
+					Handled = Device->HandleRawInput(Data);
+					// Proceed to ::DefWindowProc as required
+					break;
+				}
+			}
+
+			if (!Handled)
+			{
+				// Pass to the default procedure if was not processed
+				PRAWINPUT pData = &Data;
+				::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
+				// Proceed to ::DefWindowProc as required
+			}
+		}
+	}
+
+	return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+}
+//---------------------------------------------------------------------
+
 CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	: hInst(hInstance)
 {
@@ -34,33 +92,105 @@ CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	PerfFreqMul = 1.0 / PerfFreq;
 
 	FileSystemInterface.reset(n_new(COSFileSystemWin32));
-
-	//RIDEV_NOLEGACY - to prevent WM_KEYDOWN etc generation
-	RAWINPUTDEVICE RawInputDevices[3];
-
-	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
-	RawInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE;
-	RawInputDevices[0].dwFlags = RIDEV_DEVNOTIFY;
-	RawInputDevices[0].hwndTarget = NULL;
-
-	RawInputDevices[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
-	RawInputDevices[1].usUsage = HID_USAGE_GENERIC_KEYBOARD;
-	RawInputDevices[1].dwFlags = RIDEV_DEVNOTIFY;
-	RawInputDevices[1].hwndTarget = NULL;
-
-	RawInputDevices[2].usUsagePage = HID_USAGE_PAGE_GENERIC;
-	RawInputDevices[2].usUsage = HID_USAGE_GENERIC_GAMEPAD;
-	RawInputDevices[2].dwFlags = RIDEV_DEVNOTIFY;
-	RawInputDevices[2].hwndTarget = NULL;
-
-	if (::RegisterRawInputDevices(RawInputDevices, 3, sizeof(RAWINPUTDEVICE)) == FALSE)
-		::Sys::Log("CPlatformWin32::CPlatformWin32() > raw input device registration failed!\n");
 }
 //---------------------------------------------------------------------
 
 CPlatformWin32::~CPlatformWin32()
 {
-	//RIDEV_NOLEGACY - to prevent WM_KEYDOWN etc generation
+	UnregisterRawInput();
+
+	if (hWndMessageOnly)
+	{
+		::DestroyWindow(hWndMessageOnly);
+		hWndMessageOnly = 0;
+	}
+
+	if (aGUIWndClass)
+	{
+		if (!::UnregisterClass((const char*)aGUIWndClass, hInst))
+			::Sys::Error("CPlatformWin32::~CPlatformWin32() > UnregisterClass(aGUIWndClass) failed!\n");
+		aGUIWndClass = 0;
+	}
+
+	if (aMessageOnlyWndClass)
+	{
+		if (!::UnregisterClass((const char*)aMessageOnlyWndClass, hInst))
+			::Sys::Error("CPlatformWin32::~CPlatformWin32() > UnregisterClass(aMessageOnlyWndClass) failed!\n");
+		aMessageOnlyWndClass = 0;
+	}
+}
+//---------------------------------------------------------------------
+
+double CPlatformWin32::GetSystemTime() const
+{
+	LONGLONG PerfTime;
+	QueryPerformanceCounter((LARGE_INTEGER*)&PerfTime);
+	return PerfTime * PerfFreqMul;
+}
+//---------------------------------------------------------------------
+
+bool CPlatformWin32::RegisterRawInput()
+{
+	if (RawInputRegistered) OK;
+
+	if (!aMessageOnlyWndClass)
+	{
+		WNDCLASSEX WndClass;
+		memset(&WndClass, 0, sizeof(WndClass));
+		WndClass.cbSize        = sizeof(WndClass);
+		WndClass.style         = 0;
+		WndClass.lpfnWndProc   = MessageOnlyWindowProc;
+		WndClass.cbClsExtra    = 0;
+		WndClass.cbWndExtra    = sizeof(void*); // used to hold 'this' pointer
+		WndClass.hInstance     = hInst;
+		WndClass.hIcon         = NULL;
+		WndClass.hIconSm       = NULL;
+		WndClass.hCursor       = NULL;
+		WndClass.hbrBackground = NULL;
+		WndClass.lpszMenuName  = NULL;
+		WndClass.lpszClassName = "DeusExMachina::MessageOnlyWindow";
+		aMessageOnlyWndClass = ::RegisterClassEx(&WndClass);
+
+		if (!aMessageOnlyWndClass) FAIL;
+	}
+
+	if (!hWndMessageOnly)
+	{
+		hWndMessageOnly = ::CreateWindowEx(0, (const char*)aMessageOnlyWndClass, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
+		if (!hWndMessageOnly) FAIL;
+		::SetWindowLongPtr(hWndMessageOnly, 0, (LONG_PTR)this);
+	}
+
+	// RIDEV_NOLEGACY - to prevent WM_KEYDOWN etc generation
+
+	RAWINPUTDEVICE RawInputDevices[3];
+
+	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
+	RawInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE;
+	RawInputDevices[0].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
+	RawInputDevices[0].hwndTarget = hWndMessageOnly;
+
+	RawInputDevices[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
+	RawInputDevices[1].usUsage = HID_USAGE_GENERIC_KEYBOARD;
+	RawInputDevices[1].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
+	RawInputDevices[1].hwndTarget = hWndMessageOnly;
+
+	RawInputDevices[2].usUsagePage = HID_USAGE_PAGE_GENERIC;
+	RawInputDevices[2].usUsage = HID_USAGE_GENERIC_GAMEPAD;
+	RawInputDevices[2].dwFlags = RIDEV_INPUTSINK | RIDEV_DEVNOTIFY;
+	RawInputDevices[2].hwndTarget = hWndMessageOnly;
+
+	RawInputRegistered = (::RegisterRawInputDevices(RawInputDevices, 3, sizeof(RAWINPUTDEVICE)) != FALSE);
+	return RawInputRegistered;
+}
+//---------------------------------------------------------------------
+
+bool CPlatformWin32::UnregisterRawInput()
+{
+	if (!RawInputRegistered) OK;
+
+	RawInputRegistered = false;
+
 	RAWINPUTDEVICE RawInputDevices[3];
 
 	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
@@ -78,23 +208,7 @@ CPlatformWin32::~CPlatformWin32()
 	RawInputDevices[2].dwFlags = RIDEV_REMOVE;
 	RawInputDevices[2].hwndTarget = NULL;
 
-	if (::RegisterRawInputDevices(RawInputDevices, 3, sizeof(RAWINPUTDEVICE)) == FALSE)
-		::Sys::Log("CPlatformWin32::~CPlatformWin32() > raw input device unregistration failed!\n");
-
-	if (aGUIWndClass)
-	{
-		if (!UnregisterClass((const char*)aGUIWndClass, hInst))
-			::Sys::Error("CPlatformWin32::~CPlatformWin32() > UnregisterClass() failed!\n");
-		aGUIWndClass = 0;
-	}
-}
-//---------------------------------------------------------------------
-
-double CPlatformWin32::GetSystemTime() const
-{
-	LONGLONG PerfTime;
-	QueryPerformanceCounter((LARGE_INTEGER*)&PerfTime);
-	return PerfTime * PerfFreqMul;
+	return ::RegisterRawInputDevices(RawInputDevices, 3, sizeof(RAWINPUTDEVICE)) != FALSE;
 }
 //---------------------------------------------------------------------
 
@@ -113,6 +227,8 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 	UINT NameBufSize = 512;
 	if (::GetRawInputDeviceInfo(hDevice, RIDI_DEVICENAME, NameBuf, &NameBufSize) <= 0) FAIL;
 	const CString DeviceName(NameBuf);
+
+	::Sys::DbgOut("CPlatformWin32::OnInputDeviceArrived() > " + DeviceName + '\n');
 
 	for (auto& Device : InputDevices)
 	{
@@ -165,7 +281,7 @@ bool CPlatformWin32::OnInputDeviceRemoved(HANDLE hDevice)
 	{
 		if (Device->IsOperational() && Device->GetWin32Handle() == hDevice)
 		{
-			::Sys::DbgOut("CPlatformWin32::OnInputDeviceRemoved() > keyboard added: " + Device->GetName() + '\n');
+			::Sys::DbgOut("CPlatformWin32::OnInputDeviceRemoved() > " + Device->GetName() + '\n');
 			Device->SetOperational(false, 0);
 			OK;
 		}
@@ -177,6 +293,8 @@ bool CPlatformWin32::OnInputDeviceRemoved(HANDLE hDevice)
 
 UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 {
+	RegisterRawInput();
+
 	UINT Count;
 	if (::GetRawInputDeviceList(NULL, &Count, sizeof(RAWINPUTDEVICELIST)) != 0 || !Count)
 	{
@@ -222,15 +340,6 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 }
 //---------------------------------------------------------------------
 
-LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-{
-	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(hWnd, 0);
-	LONG Result = 0;
-	if (pWnd && pWnd->HandleWindowMessage(uMsg, wParam, lParam, Result)) return Result;
-	return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
-}
-//---------------------------------------------------------------------
-
 POSWindow CPlatformWin32::CreateGUIWindow()
 {
 	if (!aGUIWndClass)
@@ -264,43 +373,17 @@ void CPlatformWin32::Update()
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
-		if (Msg.message == WM_INPUT_DEVICE_CHANGE)
+		// Process accelerators of our own windows
+		if (aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
 		{
-			if (Msg.wParam == GIDC_ARRIVAL) OnInputDeviceArrived((HANDLE)Msg.lParam);
-			else if (Msg.wParam == GIDC_REMOVAL) OnInputDeviceRemoved((HANDLE)Msg.lParam);
+			// Only our windows store engine window pointer at 0
+			const COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(Msg.hwnd, 0);
+			HACCEL hAccel = pWnd ? pWnd->GetWin32AcceleratorTable() : 0;
+			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
 		}
-		else if (Msg.message == WM_INPUT)
-		{
-			// IsForeground: GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT
-			RAWINPUT Data;
-			UINT DataSize = sizeof(Data);
-			if (::GetRawInputData((HRAWINPUT)Msg.lParam, RID_INPUT, &Data, &DataSize, sizeof(RAWINPUTHEADER)) != (UINT)-1)
-			{
-				for (auto& Device : InputDevices)
-				{
-					if (Device->IsOperational() && Device->GetWin32Handle() == Data.header.hDevice)
-					{
-						// pass to device along with a target window
-						// if device has no clients it will skip event and generate no output
-						break;
-					}
-				}
-			}
-		}
-		else
-		{
-			// Process accelerators of our own windows
-			if (aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
-			{
-				// Only our windows store engine window pointer at 0
-				const COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(Msg.hwnd, 0);
-				HACCEL hAccel = pWnd ? pWnd->GetWin32AcceleratorTable() : 0;
-				if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
-			}
 
-			::TranslateMessage(&Msg);
-			::DispatchMessage(&Msg);
-		}
+		::TranslateMessage(&Msg);
+		::DispatchMessage(&Msg);
 	}
 }
 //---------------------------------------------------------------------

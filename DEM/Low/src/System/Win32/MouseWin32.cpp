@@ -31,6 +31,13 @@ bool CMouseWin32::Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVI
 }
 //---------------------------------------------------------------------
 
+bool CMouseWin32::HandleRawInput(const RAWINPUT& Data)
+{
+	::Sys::DbgOut("CMouseWin32::HandleRawInput()\n");
+	FAIL;
+}
+//---------------------------------------------------------------------
+
 // TODO: system-wide aliases for typical controls!
 
 U8 CMouseWin32::GetAxisCode(const char* pAlias) const

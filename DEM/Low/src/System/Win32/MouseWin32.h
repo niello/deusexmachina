@@ -27,6 +27,8 @@ public:
 
 	bool				Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo);
 
+	virtual bool		HandleRawInput(const RAWINPUT& Data);
+
 	virtual EDeviceType	GetType() const override { return Device_Mouse; }
 	virtual U8			GetAxisCount() const override { return AxisCount; }
 	virtual U8			GetAxisCode(const char* pAlias) const override;

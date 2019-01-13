@@ -21,14 +21,21 @@ class CPlatformWin32 : public IPlatform
 {
 private:
 
+	friend LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+
 	std::unique_ptr<COSFileSystemWin32>	FileSystemInterface;
 
 	std::vector<Input::PInputDeviceWin32> InputDevices;
 
 	double		PerfFreqMul;
 	HINSTANCE	hInst;
+	HWND		hWndMessageOnly = 0;
 	ATOM		aGUIWndClass = 0;
+	ATOM		aMessageOnlyWndClass = 0;
+	bool		RawInputRegistered = false;
 
+	bool RegisterRawInput();
+	bool UnregisterRawInput();
 	bool OnInputDeviceArrived(HANDLE hDevice);
 	bool OnInputDeviceRemoved(HANDLE hDevice);
 

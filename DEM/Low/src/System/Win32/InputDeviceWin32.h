@@ -23,6 +23,8 @@ public:
 	const CString&	GetName() const { return Name; }
 	virtual bool	IsOperational() const override { return Operational; }
 
+	virtual bool	HandleRawInput(const RAWINPUT& Data) = 0;
+
 	// For internal use only
 	void			SetOperational(bool Op, HANDLE NewHandle) { Operational = Op; _hDevice = NewHandle; }
 };
