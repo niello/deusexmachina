@@ -1,6 +1,5 @@
 #pragma once
 #include <System/Win32/InputDeviceWin32.h>
-#include <Events/EventsFwd.h>
 
 // Win32 keyboard device implementation
 
@@ -15,8 +14,6 @@ protected:
 	DWORD	Type = 0;
 	DWORD	Subtype = 0;
 	U32		ButtonCount = 0;
-
-	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 
 public:
 
