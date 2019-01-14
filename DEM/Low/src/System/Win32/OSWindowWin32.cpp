@@ -243,9 +243,6 @@ LONG COSWindowWin32::GetWin32Style() const
 
 bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& OutResult)
 {
-	//!!!DBG TMP!
-	::Sys::DbgOut(CString("MESSAGE: ") + StringUtils::FromUInt(uMsg) + '\n');
-
 	switch (uMsg)
 	{
 		case WM_SYSCOMMAND:
@@ -363,22 +360,11 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			OutResult = 0;
 			OK;
 
-			//!!!DBG TMP!
-		case WM_KEYDOWN: ::Sys::DbgOut(CString("WM_KEYDOWN ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
-		case WM_SYSKEYDOWN: ::Sys::DbgOut(CString("WM_SYSKEYDOWN ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
-		case WM_KEYUP: ::Sys::DbgOut(CString("WM_KEYUP ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
-		case WM_SYSKEYUP: ::Sys::DbgOut(CString("WM_SYSKEYUP ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
-
 		case WM_CHAR:
 		case WM_SYSCHAR:
 		case WM_UNICHAR:
 		{
 			n_assert_dbg(uMsg != WM_UNICHAR); //!!!implement!
-
-			if (uMsg == WM_CHAR)
-				::Sys::DbgOut(CString("WM_CHAR ") + static_cast<char>(wParam) + '\n');
-			else
-				::Sys::DbgOut(CString("WM_SYSCHAR ") + static_cast<char>(wParam) + '\n');
 
 			//???is valid? WM_CHAR must use UTF-16 itself. Always?
 			WCHAR CharUTF16[2];

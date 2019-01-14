@@ -141,7 +141,7 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 				// SendMessage result looks more like a native queue than PostMessage result
 				HWND hWndReceiver = hWndFocus ? hWndFocus : ::GetActiveWindow();
-				if (hWndReceiver) ::SendMessage(hWndReceiver, KbData.Message, KbData.VKey, KbLParam);
+				if (hWndReceiver) ::PostMessage(hWndReceiver, KbData.Message, KbData.VKey, KbLParam);
 			}
 		}
 	}
@@ -441,13 +441,45 @@ void CPlatformWin32::Update()
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
+		//!!!DBG TMP!
+		switch (Msg.message)
+		{
+			case WM_KEYDOWN: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_KEYDOWN ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
+			case WM_SYSKEYDOWN: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSKEYDOWN ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
+			case WM_KEYUP: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_KEYUP ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
+			case WM_SYSKEYUP: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSKEYUP ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
+			case WM_CHAR: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_CHAR ") + static_cast<char>(Msg.wParam) + '\n'); break;
+			case WM_SYSCHAR: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSCHAR ") + static_cast<char>(Msg.wParam) + '\n'); break;
+			case WM_INPUT: break;
+			case WM_MOUSEMOVE: break;
+			case WM_MOUSEHOVER: break;
+			case WM_MOUSELEAVE: break;
+			case WM_NCMOUSEHOVER: break;
+			case WM_NCMOUSELEAVE: break;
+			case WM_NCMOUSEMOVE: break;
+			case WM_TIMER: break;
+			case WM_PAINT: break;
+			case WM_DWMNCRENDERINGCHANGED: break;
+			default: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("MESSAGE: 0x") + StringUtils::FromUInt(Msg.message, true) + " " + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n');
+		}
+
 		// Process accelerators of our own windows
 		if (aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
 		{
 			// Only our windows store engine window pointer at 0
 			const COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(Msg.hwnd, 0);
 			HACCEL hAccel = pWnd ? pWnd->GetWin32AcceleratorTable() : 0;
-			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
+
+			//!!!DBG TMP!
+			n_assert(hAccel);
+
+			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE)
+			{
+				//!!!DBG TMP!
+				::Sys::DbgOut("Accelerator translated\n");
+
+				continue;
+			}
 		}
 
 		::TranslateMessage(&Msg);
