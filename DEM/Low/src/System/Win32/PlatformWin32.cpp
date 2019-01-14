@@ -95,40 +95,43 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
 
 			// Keyboard must generate legacy messages only if no one processed a raw input.
-			// We don't count repeats here but it can be added if necessary. A primary goal of this
-			// code is to provide WM_CHAR and system key messages, and there is no much profit
+			// We don't count repeats here but it can be added if necessary. There is no much profit
 			// from a correct repeat count since we generate a separate message for each repeat.
 			if (pData->header.dwType == RIM_TYPEKEYBOARD)
 			{
-				constexpr U16 RepeatCount = 1;
+				// For now we always assume key was not down. Might be fixed if necessary.
 				constexpr bool WasDown = false;
 
 				HWND hWndFocus = ::GetFocus();
 				RAWKEYBOARD& KbData = pData->data.keyboard;
-				LPARAM KbLParam = (KbData.MakeCode << 16) | ((KbData.Flags & RI_KEY_E0) << 24);
+
+				BYTE KeyState;
+				LPARAM KbLParam = 1 | (KbData.MakeCode << 16) | ((KbData.Flags & RI_KEY_E0) << 24);
 				switch (KbData.Message)
 				{
 					case WM_KEYDOWN:
 					{
-						KbLParam |= RepeatCount;
+						KeyState = 0x80;
 						if (WasDown) KbLParam |= (1 << 30);
 						break;
 					}
 					case WM_KEYUP:
 					{
-						KbLParam |= (1 | (1 << 30) | (1 << 31));
+						KeyState = 0;
+						KbLParam |= ((1 << 30) | (1 << 31));
 						break;
 					}
 					case WM_SYSKEYDOWN:
 					{
-						KbLParam |= RepeatCount;
+						KeyState = 0x80;
 						if (hWndFocus) KbLParam |= (1 << 29);
 						if (WasDown) KbLParam |= (1 << 30);
 						break;
 					}
 					case WM_SYSKEYUP:
 					{
-						KbLParam |= (1 | (1 << 30) | (1 << 31));
+						KeyState = 0;
+						KbLParam |= ((1 << 30) | (1 << 31));
 						if (hWndFocus) KbLParam |= (1 << 29);
 						break;
 					}
@@ -141,7 +144,20 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 				// SendMessage result looks more like a native queue than PostMessage result
 				HWND hWndReceiver = hWndFocus ? hWndFocus : ::GetActiveWindow();
-				if (hWndReceiver) ::PostMessage(hWndReceiver, KbData.Message, KbData.VKey, KbLParam);
+				if (hWndReceiver)
+				{
+					// Posted keyboard messages don't change thread keyboard state
+					// so we must update it manually
+					if (KbData.VKey < 256)
+					{
+						BYTE Keys[256];
+						::GetKeyboardState(Keys);
+						Keys[KbData.VKey] = KeyState;
+						::SetKeyboardState(Keys);
+					}
+
+					::PostMessage(hWndReceiver, KbData.Message, KbData.VKey, KbLParam);
+				}
 			}
 		}
 	}
@@ -442,6 +458,7 @@ void CPlatformWin32::Update()
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
 		//!!!DBG TMP!
+		bool DBGSkip = false;
 		switch (Msg.message)
 		{
 			case WM_KEYDOWN: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_KEYDOWN ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
@@ -450,16 +467,22 @@ void CPlatformWin32::Update()
 			case WM_SYSKEYUP: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSKEYUP ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
 			case WM_CHAR: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_CHAR ") + static_cast<char>(Msg.wParam) + '\n'); break;
 			case WM_SYSCHAR: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSCHAR ") + static_cast<char>(Msg.wParam) + '\n'); break;
-			case WM_INPUT: break;
-			case WM_MOUSEMOVE: break;
-			case WM_MOUSEHOVER: break;
-			case WM_MOUSELEAVE: break;
-			case WM_NCMOUSEHOVER: break;
-			case WM_NCMOUSELEAVE: break;
-			case WM_NCMOUSEMOVE: break;
-			case WM_TIMER: break;
-			case WM_PAINT: break;
-			case WM_DWMNCRENDERINGCHANGED: break;
+
+			case WM_INPUT:
+			case WM_MOUSEMOVE:
+			case WM_MOUSEHOVER:
+			case WM_MOUSELEAVE:
+			case WM_NCMOUSEHOVER:
+			case WM_NCMOUSELEAVE:
+			case WM_NCMOUSEMOVE:
+			case WM_TIMER:
+			case WM_PAINT:
+			case WM_DWMNCRENDERINGCHANGED:
+			{
+				DBGSkip = true;
+				break;
+			}
+
 			default: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("MESSAGE: 0x") + StringUtils::FromUInt(Msg.message, true) + " " + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n');
 		}
 
@@ -472,13 +495,32 @@ void CPlatformWin32::Update()
 
 			//!!!DBG TMP!
 			n_assert(hAccel);
+			const bool AltPressed = (::GetKeyState(VK_MENU) & 0x8000);
+			const bool LAltPressed = (::GetKeyState(VK_LMENU) & 0x8000);
+			const bool AltPressedA = (::GetAsyncKeyState(VK_MENU) & 0x8000);
+			const bool LAltPressedA = (::GetAsyncKeyState(VK_LMENU) & 0x8000);
 
 			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE)
 			{
 				//!!!DBG TMP!
-				::Sys::DbgOut("Accelerator translated\n");
+				::Sys::DbgOut("Accelerator translated:");
+				if (AltPressed) ::Sys::DbgOut(" alt");
+				if (LAltPressed) ::Sys::DbgOut(" l.alt");
+				if (AltPressedA) ::Sys::DbgOut(" alt (async)");
+				if (LAltPressedA) ::Sys::DbgOut(" l.alt (async)");
+				::Sys::DbgOut("\n");
 
 				continue;
+			}
+			//!!!DBG TMP!
+			else if (!DBGSkip)
+			{
+				::Sys::DbgOut("Accelerator NOT translated:");
+				if (AltPressed) ::Sys::DbgOut(" alt");
+				if (LAltPressed) ::Sys::DbgOut(" l.alt");
+				if (AltPressedA) ::Sys::DbgOut(" alt (async)");
+				if (LAltPressedA) ::Sys::DbgOut(" l.alt (async)");
+				::Sys::DbgOut("\n");
 			}
 		}
 

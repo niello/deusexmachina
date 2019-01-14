@@ -64,7 +64,7 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 	if (!hAccel)
 	{
 		ACCEL Acc[1];
-		Acc[0].fVirt = FALT | FNOINVERT | FVIRTKEY;
+		Acc[0].fVirt = FALT | FVIRTKEY;
 		Acc[0].key = VK_RETURN;
 		Acc[0].cmd = ACCEL_TOGGLEFULLSCREEN;
 		hAccel = CreateAcceleratorTable(Acc, 1);
