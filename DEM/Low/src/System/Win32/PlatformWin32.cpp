@@ -5,10 +5,8 @@
 #include <System/Win32/MouseWin32.h>
 #include <System/Win32/KeyboardWin32.h>
 #include <IO/PathUtils.h>
-#include <shlobj.h>
-
-//!!!DBG TMP!
 #include <Data/StringUtils.h>
+#include <shlobj.h>
 
 #ifndef HID_USAGE_PAGE_GENERIC
 #define HID_USAGE_PAGE_GENERIC		((USHORT) 0x01)
@@ -142,12 +140,12 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 					}
 				}
 
-				// SendMessage result looks more like a native queue than PostMessage result
 				HWND hWndReceiver = hWndFocus ? hWndFocus : ::GetActiveWindow();
 				if (hWndReceiver)
 				{
-					// Posted keyboard messages don't change thread keyboard state
-					// so we must update it manually
+					// Posted keyboard messages don't change the thread keyboard state
+					// so we must update it manually for accelerators and some other
+					// windows internals (like alt codes Alt + Numpad NNN) to work
 					if (KbData.VKey < 256)
 					{
 						BYTE Keys[256];
@@ -457,71 +455,13 @@ void CPlatformWin32::Update()
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
-		//!!!DBG TMP!
-		bool DBGSkip = false;
-		switch (Msg.message)
-		{
-			case WM_KEYDOWN: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_KEYDOWN ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
-			case WM_SYSKEYDOWN: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSKEYDOWN ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
-			case WM_KEYUP: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_KEYUP ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
-			case WM_SYSKEYUP: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSKEYUP ") + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n'); break;
-			case WM_CHAR: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_CHAR ") + static_cast<char>(Msg.wParam) + '\n'); break;
-			case WM_SYSCHAR: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("WM_SYSCHAR ") + static_cast<char>(Msg.wParam) + '\n'); break;
-
-			case WM_INPUT:
-			case WM_MOUSEMOVE:
-			case WM_MOUSEHOVER:
-			case WM_MOUSELEAVE:
-			case WM_NCMOUSEHOVER:
-			case WM_NCMOUSELEAVE:
-			case WM_NCMOUSEMOVE:
-			case WM_TIMER:
-			case WM_PAINT:
-			case WM_DWMNCRENDERINGCHANGED:
-			{
-				DBGSkip = true;
-				break;
-			}
-
-			default: ::Sys::DbgOut("HWND " + StringUtils::FromUInt((U32)Msg.hwnd, true) + ": " + CString("MESSAGE: 0x") + StringUtils::FromUInt(Msg.message, true) + " " + StringUtils::FromUInt(Msg.wParam, true) + " " + StringUtils::FromUInt(Msg.lParam, true) + '\n');
-		}
-
 		// Process accelerators of our own windows
 		if (aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
 		{
 			// Only our windows store engine window pointer at 0
 			const COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(Msg.hwnd, 0);
 			HACCEL hAccel = pWnd ? pWnd->GetWin32AcceleratorTable() : 0;
-
-			//!!!DBG TMP!
-			n_assert(hAccel);
-			const bool AltPressed = (::GetKeyState(VK_MENU) & 0x8000);
-			const bool LAltPressed = (::GetKeyState(VK_LMENU) & 0x8000);
-			const bool AltPressedA = (::GetAsyncKeyState(VK_MENU) & 0x8000);
-			const bool LAltPressedA = (::GetAsyncKeyState(VK_LMENU) & 0x8000);
-
-			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE)
-			{
-				//!!!DBG TMP!
-				::Sys::DbgOut("Accelerator translated:");
-				if (AltPressed) ::Sys::DbgOut(" alt");
-				if (LAltPressed) ::Sys::DbgOut(" l.alt");
-				if (AltPressedA) ::Sys::DbgOut(" alt (async)");
-				if (LAltPressedA) ::Sys::DbgOut(" l.alt (async)");
-				::Sys::DbgOut("\n");
-
-				continue;
-			}
-			//!!!DBG TMP!
-			else if (!DBGSkip)
-			{
-				::Sys::DbgOut("Accelerator NOT translated:");
-				if (AltPressed) ::Sys::DbgOut(" alt");
-				if (LAltPressed) ::Sys::DbgOut(" l.alt");
-				if (AltPressedA) ::Sys::DbgOut(" alt (async)");
-				if (LAltPressedA) ::Sys::DbgOut(" l.alt (async)");
-				::Sys::DbgOut("\n");
-			}
+			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
 		}
 
 		::TranslateMessage(&Msg);

@@ -6,9 +6,6 @@
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
-//!!!DBG TMP!
-#include <Data/StringUtils.h>
-
 #define ACCEL_TOGGLEFULLSCREEN	1001
 #define STYLE_WINDOWED			(WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE)
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
@@ -365,6 +362,8 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		case WM_UNICHAR:
 		{
 			n_assert_dbg(uMsg != WM_UNICHAR); //!!!implement!
+
+			//::Sys::DbgOut(CString("WM_CHAR ") + static_cast<char>(wParam) + '\n');
 
 			//???is valid? WM_CHAR must use UTF-16 itself. Always?
 			WCHAR CharUTF16[2];
