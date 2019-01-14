@@ -62,8 +62,8 @@ const char*		MouseButtonToString(EMouseButton Button);
 EMouseButton	StringToMouseButton(const char* pName);
 
 // Typical keyboard keys with corresponding codes and name text IDs.
-// See EMouseAxis comment above, the same applies here.
-// List is taken from CEGUI <- Ogre <- DirectInput
+// Values are based on standard scan codes, but some mapping may still be needed in a device code.
+// List is taken from CEGUI <- Ogre <- DirectInput, some names changed for unambiguity and evidence.
 enum EKey
 {
 	Escape          =0x01,

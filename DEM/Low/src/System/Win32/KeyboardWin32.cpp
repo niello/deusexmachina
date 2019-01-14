@@ -109,12 +109,12 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 		default:			ResultCode = ScanCode; break;
 	}
 
-	///* Correct human-readable key names:
+	/* Correct human-readable key names:
 	LONG KeyForText = (ScanCode << 16) | (IsE0 << 24);
 	char Buffer[512] = {};
 	::GetKeyNameText(KeyForText, Buffer, 512);
 	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput(") + StringUtils::FromInt(KbData.Message) + ") " + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
-	//*/
+	*/
 
 	if (ResultCode == EKey::Key_Invalid || !ResultCode) FAIL;
 

@@ -374,7 +374,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputConditionSequence.cpp
 	DEM/Low/src/Input/InputConditionUp.cpp
 	DEM/Low/src/Input/InputEvents.cpp
-	DEM/Low/src/Input/InputTransator.cpp
+	DEM/Low/src/Input/InputTranslator.cpp
 	DEM/Low/src/IO/BinaryReader.cpp
 	DEM/Low/src/IO/BinaryWriter.cpp
 	DEM/Low/src/IO/BTFile.cpp
