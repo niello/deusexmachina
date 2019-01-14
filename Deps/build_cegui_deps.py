@@ -81,6 +81,8 @@ if __name__ == "__main__":
 	dest_folder = os.path.join(PROJECT_FOLDER, 'Deps', 'CEGUI-Deps')
 	unpack_repo(archive_path, dest_folder, True)
 
-	check_call(['cmake', '-G', cmake_generator_name, '-DCMAKE_CONFIGURATION_TYPES:STRING=Debug;Release', '-S', 'Deps/CEGUI-Deps', '-BDeps/CEGUI-Deps/build'])
-	check_call(['cmake', '--build', 'Deps/CEGUI-Deps/build', '--target', 'ALL_BUILD', '--config', 'Debug'])
-	check_call(['cmake', '--build', 'Deps/CEGUI-Deps/build', '--target', 'ALL_BUILD', '--config', 'Release'])
+	build_folder = os.path.join(dest_folder, 'build')
+
+	check_call(['cmake', '-G', cmake_generator_name, '-DCMAKE_CONFIGURATION_TYPES:STRING=Debug;Release', '-S', dest_folder, '-B' + build_folder])
+	check_call(['cmake', '--build', build_folder, '--target', 'ALL_BUILD', '--config', 'Debug'])
+	check_call(['cmake', '--build', build_folder, '--target', 'ALL_BUILD', '--config', 'Release'])
