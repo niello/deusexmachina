@@ -93,7 +93,7 @@ enum EKey
 	P               =0x19,
 	LeftBracket     =0x1A,
 	RightBracket    =0x1B,
-	Return			=0x1C,    /* Enter on main keyboard */
+	Enter			=0x1C,    /* Enter on main keyboard */
 	LeftControl		=0x1D,
 	A               =0x1E,
 	S               =0x1F,
@@ -120,7 +120,7 @@ enum EKey
 	Period          =0x34,    /* . on main keyboard */
 	Slash           =0x35,    /* '/' on main keyboard */
 	RightShift      =0x36,
-	Multiply        =0x37,    /* * on numeric keypad */
+	NumpadMul       =0x37,    /* * on numeric keypad */
 	LeftAlt         =0x38,
 	Space           =0x39,
 	Capital         =0x3A,
@@ -139,11 +139,11 @@ enum EKey
 	Numpad7         =0x47,
 	Numpad8         =0x48,
 	Numpad9         =0x49,
-	Subtract        =0x4A,    /* - on numeric keypad */
+	NumpadMinus     =0x4A,    /* - on numeric keypad */
 	Numpad4         =0x4B,
 	Numpad5         =0x4C,
 	Numpad6         =0x4D,
-	Add				=0x4E,    /* + on numeric keypad */
+	NumpadPlus		=0x4E,    /* + on numeric keypad */
 	Numpad1         =0x4F,
 	Numpad2         =0x50,
 	Numpad3         =0x51,
@@ -182,7 +182,7 @@ enum EKey
 	WebHome         =0xB2,    /* Web home */
 	NumpadComma     =0xB3,    /* , on numeric keypad (NEC PC98) */
 	Divide          =0xB5,    /* / on numeric keypad */
-	SysRq           =0xB7,
+	PrintScreen     =0xB7,	  /* Print Screen / Sys Rq */
 	RightAlt        =0xB8,    /* right Alt */
 	Pause           =0xC5,    /* Pause */
 	Home            =0xC7,    /* Home on arrow keypad */

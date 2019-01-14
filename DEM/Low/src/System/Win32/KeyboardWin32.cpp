@@ -5,6 +5,9 @@
 #include <System/Events/OSInput.h>
 #include <System/OSWindow.h>
 
+//!!!DBG TMP!
+#include <Data/StringUtils.h>
+
 namespace Input
 {
 CKeyboardWin32::CKeyboardWin32() {}
@@ -41,7 +44,7 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 	const bool IsE0 = ((KbData.Flags & RI_KEY_E0) != 0);
 	const bool IsE1 = ((KbData.Flags & RI_KEY_E1) != 0);
 
-	UINT VKey = KbData.VKey;
+	const UINT VKey = KbData.VKey;
 	UINT ScanCode = KbData.MakeCode;
 	U8 ResultCode = EKey::Key_Invalid;
 
@@ -59,41 +62,21 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 		else ScanCode = ::MapVirtualKey(VKey, MAPVK_VK_TO_VSC);
 	}
 
-	if (VKey >= 'A' && VKey <= 'Z' ||
-		VKey >= '0' && VKey <= '9' ||
-		VKey >= VK_F1 && VKey <= VK_F12)
+	switch (VKey)
 	{
-		ResultCode = ScanCode;
-	}
-	else switch (VKey)
-	{
-		case VK_ESCAPE:		ResultCode = EKey::Escape; break; // Scan code
-		case VK_BACK:		ResultCode = EKey::Backspace; break;
+		case VK_LWIN:		ResultCode = EKey::LeftWindows; break;
+		case VK_RWIN:		ResultCode = EKey::RightWindows; break;
+		case VK_APPS:		ResultCode = EKey::AppMenu; break;
 		case VK_PAUSE:		ResultCode = EKey::Pause; break;
-
 		case VK_NUMLOCK:	ResultCode = EKey::NumLock; break;
-		case VK_SCROLL:		ResultCode = EKey::ScrollLock; break;
-		case VK_CAPITAL:	ResultCode = EKey::Capital; break;
-
-		case VK_SUBTRACT:	ResultCode = EKey::Subtract; break; // Scan code
-
-		case VK_OEM_MINUS:	ResultCode = EKey::Minus; break;
-		case VK_NUMPAD0:	ResultCode = EKey::Numpad0; break;
-		case VK_NUMPAD1:	ResultCode = EKey::Numpad1; break;
-		case VK_NUMPAD2:	ResultCode = EKey::Numpad2; break;
-		case VK_NUMPAD3:	ResultCode = EKey::Numpad3; break;
-		case VK_NUMPAD4:	ResultCode = EKey::Numpad4; break;
-		case VK_NUMPAD5:	ResultCode = EKey::Numpad5; break;
-		case VK_NUMPAD6:	ResultCode = EKey::Numpad6; break;
-		case VK_NUMPAD7:	ResultCode = EKey::Numpad7; break;
-		case VK_NUMPAD8:	ResultCode = EKey::Numpad8; break;
-		case VK_NUMPAD9:	ResultCode = EKey::Numpad9; break;
+		case VK_SNAPSHOT:	ResultCode = EKey::PrintScreen; break;
+		case VK_DIVIDE:		ResultCode = EKey::Divide; break;
 
 		case VK_SHIFT:
 		{
 			// correct left-hand / right-hand SHIFT
-			VKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
-			ResultCode = (VKey == VK_RSHIFT) ? EKey::RightShift : EKey::LeftShift;
+			const UINT VKeyShift = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+			ResultCode = (VKeyShift == VK_RSHIFT) ? EKey::RightShift : EKey::LeftShift;
 			break;
 		}
 
@@ -102,7 +85,7 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 		case VK_MENU:		ResultCode = IsE0 ? EKey::RightAlt : EKey::LeftAlt; break;
 
 		// NUMPAD ENTER has its e0 bit set
-		case VK_RETURN:		ResultCode = IsE0 ? EKey::NumpadEnter : EKey::Return; break;
+		case VK_RETURN:		ResultCode = IsE0 ? EKey::NumpadEnter : EKey::Enter; break;
 
 		// the standard INSERT, DELETE, HOME, END, PRIOR and NEXT keys will always have their e0 bit set, but the
 		// corresponding keys on the NUMPAD will not.
@@ -122,16 +105,18 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 
 		// NUMPAD 5 doesn't have its e0 bit set
 		case VK_CLEAR:		if (!IsE0) ResultCode = EKey::Numpad5; break;
+
+		default:			ResultCode = ScanCode; break;
 	}
 
 	///* Correct human-readable key names:
 	LONG KeyForText = (ScanCode << 16) | (IsE0 << 24);
 	char Buffer[512] = {};
 	::GetKeyNameText(KeyForText, Buffer, 512);
-	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput() ") + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
+	::Sys::DbgOut(CString("CKeyboardWin32::HandleRawInput(") + StringUtils::FromInt(KbData.Message) + ") " + Buffer + ((KbData.Flags & RI_KEY_BREAK) ? " up\n" : " down\n"));
 	//*/
 
-	if (ResultCode == EKey::Key_Invalid) FAIL;
+	if (ResultCode == EKey::Key_Invalid || !ResultCode) FAIL;
 
 	if (KbData.Flags & RI_KEY_BREAK) return FireEvent(Event::ButtonUp(ResultCode)) > 0;
 	else return FireEvent(Event::ButtonDown(ResultCode)) > 0;

@@ -1,13 +1,10 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_TRANSLATOR_H__
-#define __DEM_L1_INPUT_TRANSLATOR_H__
-
 #include <Events/EventDispatcher.h>
 #include <Data/StringID.h>
 #include <Data/Array.h>
 
 // Input translator receives events from input devices and translates it into
-// general-purpose events accompanied with a player context translator is linked to.
+// general-purpose events accompanied with a user ID to which a translator belongs.
 // Mappings are separated into input contexts which can be enabled or disabled individually.
 
 namespace Input
@@ -26,7 +23,7 @@ private:
 		bool			Enabled;
 	};
 
-	U8						PlayerUID;
+	U8						_UserID;
 	CArray<CInputContext>	Contexts;
 	CArray<Events::PSub>	DeviceSubs;
 	CArray<Events::CEvent>	EventQueue;
@@ -39,7 +36,7 @@ private:
 
 public:
 
-	CInputTranslator(U8 PlayerID): PlayerUID(PlayerID) { Contexts.SetKeepOrder(true); }
+	CInputTranslator(U8 UserID): _UserID(UserID) { Contexts.SetKeepOrder(true); }
 	~CInputTranslator() { Clear(); }
 
 	bool			LoadSettings(const Data::CParams& Desc);
@@ -64,5 +61,3 @@ public:
 };
 
 }
-
-#endif
