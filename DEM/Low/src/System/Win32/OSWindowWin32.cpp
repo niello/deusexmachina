@@ -6,6 +6,9 @@
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
+//!!!DBG TMP!
+#include <Data/StringUtils.h>
+
 #define ACCEL_TOGGLEFULLSCREEN	1001
 #define STYLE_WINDOWED			(WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE)
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
@@ -238,44 +241,11 @@ LONG COSWindowWin32::GetWin32Style() const
 }
 //---------------------------------------------------------------------
 
-//!!!translate to DEM key code right here! OSInput must use my keys (may keep scan and virtual key codes)!
-static inline void FixKeyCodes(U8& ScanCode, UINT& VirtualKey, bool& IsExtended)
-{
-	// Corrections from:
-	// https://blog.molecular-matters.com/2011/09/05/properly-handling-keyboard-input/
-	//!!!see more there, implement! //???use raw input as there?
-	if (VirtualKey == 0 || VirtualKey == VK_SHIFT)
-	{
-		VirtualKey = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
-	}
-	else if (VirtualKey == VK_NUMLOCK)
-	{
-		ScanCode = ::MapVirtualKey(VirtualKey, MAPVK_VK_TO_VSC);
-		IsExtended = true;
-	}
-	else
-	{
-		switch (VirtualKey)
-		{
-			case VK_UP:
-				if (IsExtended) ScanCode = 0xC8; // ArrowUp
-				break;
-			case VK_DOWN:
-				if (IsExtended) ScanCode = 0xD0; // ArrowDown
-				break;
-			case VK_RIGHT:
-				if (IsExtended) ScanCode = 0xCD; // ArrowRight
-				break;
-			case VK_LEFT:
-				if (IsExtended) ScanCode = 0xCB; // ArrowLeft
-				break;
-		};
-	}
-}
-//---------------------------------------------------------------------
-
 bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam, LONG& OutResult)
 {
+	//!!!DBG TMP!
+	::Sys::DbgOut(CString("MESSAGE: ") + StringUtils::FromUInt(uMsg) + '\n');
+
 	switch (uMsg)
 	{
 		case WM_SYSCOMMAND:
@@ -393,52 +363,22 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			OutResult = 0;
 			OK;
 
-		case WM_KEYDOWN:
-		{
-			// If this keydown generated WM_CHAR, skip it and fire event from WM_CHAR
-			MSG NextMessage;
-			if (!::PeekMessage(&NextMessage, hWnd, 0, 0, PM_NOREMOVE) || NextMessage.message != WM_CHAR)
-			{
-				U8 ScanCode = ((U8*)&lParam)[2];
-				UINT VirtualKey = wParam;
-				bool IsExtended = (lParam & (1 << 24)) != 0;
-				FixKeyCodes(ScanCode, VirtualKey, IsExtended);
-
-				Event::OSInput Ev;
-				Ev.Type = Event::OSInput::KeyDown;
-				Ev.KeyboardInfo.ScanCode = ScanCode;
-				Ev.KeyboardInfo.VirtualKey = VirtualKey;
-				Ev.KeyboardInfo.Char = 0;
-				Ev.KeyboardInfo.Flags = 0;
-				if ((lParam & (1 << 30))) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Repeated;
-				if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
-				FireEvent(Ev, Events::Event_TermOnHandled);
-			}
-			break;
-		}
-
-		case WM_KEYUP:
-		{
-			U8 ScanCode = ((U8*)&lParam)[2];
-			UINT VirtualKey = wParam;
-			bool IsExtended = (lParam & (1 << 24)) != 0;
-			FixKeyCodes(ScanCode, VirtualKey, IsExtended);
-
-			Event::OSInput Ev;
-			Ev.Type = Event::OSInput::KeyUp;
-			Ev.KeyboardInfo.ScanCode = ScanCode;
-			Ev.KeyboardInfo.VirtualKey = VirtualKey;
-			Ev.KeyboardInfo.Char = 0;
-			Ev.KeyboardInfo.Flags = 0;
-			if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
-			FireEvent(Ev, Events::Event_TermOnHandled);
-			break;
-		}
+			//!!!DBG TMP!
+		case WM_KEYDOWN: ::Sys::DbgOut(CString("WM_KEYDOWN ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
+		case WM_SYSKEYDOWN: ::Sys::DbgOut(CString("WM_SYSKEYDOWN ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
+		case WM_KEYUP: ::Sys::DbgOut(CString("WM_KEYUP ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
+		case WM_SYSKEYUP: ::Sys::DbgOut(CString("WM_SYSKEYUP ") + StringUtils::FromUInt(wParam, true) + " " + StringUtils::FromUInt(lParam, true) + '\n'); break;
 
 		case WM_CHAR:
+		case WM_SYSCHAR:
 		case WM_UNICHAR:
 		{
 			n_assert_dbg(uMsg != WM_UNICHAR); //!!!implement!
+
+			if (uMsg == WM_CHAR)
+				::Sys::DbgOut(CString("WM_CHAR ") + static_cast<char>(wParam) + '\n');
+			else
+				::Sys::DbgOut(CString("WM_SYSCHAR ") + static_cast<char>(wParam) + '\n');
 
 			//???is valid? WM_CHAR must use UTF-16 itself. Always?
 			WCHAR CharUTF16[2];
@@ -447,7 +387,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			U8 ScanCode = ((U8*)&lParam)[2];
 			UINT VirtualKey = 0;
 			bool IsExtended = (lParam & (1 << 24)) != 0;
-			FixKeyCodes(ScanCode, VirtualKey, IsExtended);
+			//FixKeyCodes(ScanCode, VirtualKey, IsExtended);
 
 			Event::OSInput Ev;
 			Ev.Type = Event::OSInput::KeyDown;

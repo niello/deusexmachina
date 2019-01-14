@@ -10,7 +10,8 @@
 
 namespace StringUtils
 {
-	inline CString	FromInt(int Value) { CString Str; Str.Format("%d", Value); return Str; }
+	inline CString	FromInt(I32 Value) { CString Str; Str.Format("%ld", Value); return Str; }
+	inline CString	FromUInt(U32 Value, bool Hex = false) { CString Str; Str.Format(Hex ? "%lx" : "%lu", Value); return Str; }
 	inline CString	FromFloat(float Value) { CString Str; Str.Format("%.6f", Value); return Str; }
 	inline CString	FromBool(bool Value) { return CString(Value ? "true" : "false"); }
 	inline CString	FromVector3(const vector3& v) { CString Str; Str.Format("%.6f,%.6f,%.6f", v.x, v.y, v.z); return Str; }
