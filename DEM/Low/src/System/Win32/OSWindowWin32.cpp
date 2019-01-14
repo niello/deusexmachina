@@ -363,7 +363,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			n_assert_dbg(uMsg != WM_UNICHAR); //!!!implement!
 
-			//::Sys::DbgOut(CString("WM_CHAR ") + static_cast<char>(wParam) + '\n');
+			::Sys::DbgOut(CString("WM_CHAR ") + ((wParam == '%') ? "%" : "") + static_cast<char>(wParam) + '\n');
 
 			//???is valid? WM_CHAR must use UTF-16 itself. Always?
 			WCHAR CharUTF16[2];
