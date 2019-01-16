@@ -5,7 +5,7 @@
 #include <Events/Subscription.h>
 #include <Math/Math.h>
 #include <System/Platform.h>
-#include <System/Win32/OSWindowWin32.h>
+#include <System/OSWindow.h>
 #include <Render/SwapChain.h>
 #include <Render/GPUDriver.h>
 #include <Data/ParamsUtils.h>
@@ -40,6 +40,35 @@ CApplication::~CApplication()
 IO::CIOServer& CApplication::IO() const
 {
 	return *IOServer;
+}
+//---------------------------------------------------------------------
+
+bool CApplication::CreateUserProfile(const char* pUserID)
+{
+	CString UserStr(pUserID);
+	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) FAIL;
+
+	CString Path = "AppData:" + UserStr;
+	if (IO().DirectoryExists(Path)) FAIL;
+
+	if (!IO().CreateDirectory(Path)) FAIL;
+	if (!IO().CreateDirectory(Path + "/saves")) FAIL;
+	if (!IO().CreateDirectory(Path + "/screenshots")) FAIL;
+	if (!IO().CreateDirectory(Path + "/current")) FAIL;
+
+	//!!!DBG TMP!
+	//!!!template must be packed into NPK or reside in bin/data or smth!
+	if (!IO().CopyFile("../content/DefaultUserSettings.hrd", Path + "/Settings.hrd")) FAIL;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+CStrID CApplication::ActivateUser(CStrID UserID)
+{
+	// if active, return ID
+	// if no profile, return empty
+	return CStrID::Empty;
 }
 //---------------------------------------------------------------------
 

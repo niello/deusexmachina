@@ -77,6 +77,8 @@ public:
 
 	IO::CIOServer&	IO() const;
 
+	// enum profiles - fill array of IDs
+	bool			CreateUserProfile(const char* pUserID);
 	CStrID			ActivateUser(CStrID UserID = CStrID::Empty);
 	CStrID			GetCurrentUserID() const { return CurrentUserID; }
 

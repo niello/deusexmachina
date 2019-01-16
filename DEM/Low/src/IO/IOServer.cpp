@@ -150,7 +150,7 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	// Cross-FS copying
 
-	if (!SetFileReadOnly(DestPath, false)) FAIL;
+	if (FileExists(DestPath) && !SetFileReadOnly(DestPath, false)) FAIL;
 
 	IO::PStream Src = CreateStream(SrcPath);
 	IO::PStream Dest = CreateStream(DestPath);

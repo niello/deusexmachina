@@ -6,7 +6,10 @@
 #include <System/Win32/KeyboardWin32.h>
 #include <IO/PathUtils.h>
 #include <Data/StringUtils.h>
+
 #include <shlobj.h>
+#define SECURITY_WIN32
+#include <Security.h>
 
 #ifndef HID_USAGE_PAGE_GENERIC
 #define HID_USAGE_PAGE_GENERIC		((USHORT) 0x01)
@@ -271,6 +274,16 @@ CPlatformWin32::~CPlatformWin32()
 		::CloseHandle(hRunOnceMutex);
 		hRunOnceMutex = 0;
 	}
+}
+//---------------------------------------------------------------------
+
+CString CPlatformWin32::GetOSUserName() const
+{
+	char Buf[256];
+	DWORD BufSize = sizeof(Buf);
+	//if (!::GetUserName(Buf, &BufSize)) return CString();
+	if (!::GetUserNameEx(NameDisplay, Buf, &BufSize)) return CString();
+	return CString(Buf);
 }
 //---------------------------------------------------------------------
 

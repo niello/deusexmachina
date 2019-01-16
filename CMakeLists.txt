@@ -70,7 +70,7 @@ target_include_directories(DEMLow PUBLIC DEM/Low/src)
 target_link_libraries(DEMLow PUBLIC ${DEM_DEPS_TARGETS})
 if(WIN32)
 	target_compile_definitions(DEMLow PUBLIC DEM_PLATFORM_WIN32=1) # Public because app uses headers. Exclude headers when not Win32!
-	target_link_libraries(DEMLow PUBLIC UxTheme.lib) # Win32 window
+	target_link_libraries(DEMLow PUBLIC UxTheme.lib Secur32.lib) # Win32 platform & window
 	target_link_libraries(DEMLow PUBLIC DXGI.lib D3D11.lib) # TODO: only when D3D11 renderer is built
 	target_link_libraries(DEMLow PUBLIC D3d9.lib dxguid.lib) # TODO: only when D3D9 renderer is built
 endif()

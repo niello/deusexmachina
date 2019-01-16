@@ -53,19 +53,20 @@ public:
 	CPlatformWin32(HINSTANCE hInstance);
 	~CPlatformWin32();
 
-	virtual bool CheckAlreadyRunning(const char* pAppName) override;
+	virtual CString			GetOSUserName() const override;
+	virtual bool			CheckAlreadyRunning(const char* pAppName) override;
 
-	virtual double GetSystemTime() const override;
+	virtual double			GetSystemTime() const override;
 
-	virtual UPTR EnumInputDevices(CArray<Input::PInputDevice>& Out) override;
+	virtual UPTR			EnumInputDevices(CArray<Input::PInputDevice>& Out) override;
 
-	virtual POSWindow CreateGUIWindow() override;
+	virtual POSWindow		CreateGUIWindow() override;
 	//virtual POSConsoleWindow CreateConsoleWindow() override; // AllocConsole, SetConsoleTitle etc
 
-	virtual IOSFileSystem* GetFileSystemInterface() const override;
-	virtual bool GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const override;
+	virtual IOSFileSystem*	GetFileSystemInterface() const override;
+	virtual bool			GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const override;
 
-	virtual void Update() override;
+	virtual void			Update() override;
 };
 
 }}
