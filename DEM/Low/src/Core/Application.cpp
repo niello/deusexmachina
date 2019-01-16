@@ -67,6 +67,28 @@ bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserI
 }
 //---------------------------------------------------------------------
 
+int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
+{
+	if (OverrideSettings)
+	{
+		Data::CData OverrideData;
+		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<float>())
+		{
+			return OverrideData.GetValue<int>();
+		}
+	}
+
+	if (UserID.IsValid())
+	{
+		// check user loaded
+		// if not, assert and return default
+		// if settings is set for user, return user's value
+	}
+
+	return GlobalSettings ? GlobalSettings->Get<int>(CStrID(pKey), Default) : Default;
+}
+//---------------------------------------------------------------------
+
 float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID UserID)
 {
 	if (OverrideSettings)
@@ -86,6 +108,28 @@ float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID User
 	}
 
 	return GlobalSettings ? GlobalSettings->Get<float>(CStrID(pKey), Default) : Default;
+}
+//---------------------------------------------------------------------
+
+const CString& CApplication::GetStringSetting(const char* pKey, const CString& Default, CStrID UserID)
+{
+	if (OverrideSettings)
+	{
+		Data::CData OverrideData;
+		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<float>())
+		{
+			return OverrideData.GetValue<CString>();
+		}
+	}
+
+	if (UserID.IsValid())
+	{
+		// check user loaded
+		// if not, assert and return default
+		// if settings is set for user, return user's value
+	}
+
+	return GlobalSettings ? GlobalSettings->Get<CString>(CStrID(pKey), Default) : Default;
 }
 //---------------------------------------------------------------------
 

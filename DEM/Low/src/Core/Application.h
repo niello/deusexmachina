@@ -73,31 +73,33 @@ public:
 	CApplication(Sys::IPlatform& _Platform);
 	virtual ~CApplication();
 
-	Sys::IPlatform& GetPlatform() const { return Platform; }
+	Sys::IPlatform&	GetPlatform() const { return Platform; }
 
-	IO::CIOServer& IO() const;
+	IO::CIOServer&	IO() const;
 
-	CStrID ActivateUser(CStrID UserID = CStrID::Empty);
-	CStrID GetCurrentUserID() const { return CurrentUserID; }
+	CStrID			ActivateUser(CStrID UserID = CStrID::Empty);
+	CStrID			GetCurrentUserID() const { return CurrentUserID; }
 
-	void ParseCommandLine(const char* pCmdLine);
-	bool LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
+	void			ParseCommandLine(const char* pCmdLine);
+	bool			LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
 	//CData GetSetting()
 	//template<class T> T GetSetting()
-	float GetFloatSetting(const char* pKey, float Default, CStrID UserID);
-	bool SetFloatSetting(const char* pKey, float Value, CStrID UserID);
+	int				GetIntSetting(const char* pKey, int Default, CStrID UserID);
+	float			GetFloatSetting(const char* pKey, float Default, CStrID UserID);
+	const CString&	GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
+	bool			SetFloatSetting(const char* pKey, float Value, CStrID UserID);
 
-	bool Run();
-	bool Update();
-	void Term();
+	bool			Run();
+	bool			Update();
+	void			Term();
 	// Update, RequestState, RequestExit
 
 	//allow multiple instances
 
-	void ExitOnWindowClosed(Sys::COSWindow* pWindow);
+	void			ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
-	int CreateRenderWindow(Render::CGPUDriver* pGPU, U32 Width, U32 Height);
+	int				CreateRenderWindow(Render::CGPUDriver* pGPU, U32 Width, U32 Height);
 	//POSConsoleWindow CreateConsoleWindow();
 };
 
