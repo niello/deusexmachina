@@ -1,6 +1,7 @@
 #include "Application.h"
 
 #include <IO/IOServer.h>
+#include <IO/FSBrowser.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 #include <Math/Math.h>
@@ -48,7 +49,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 	CString UserStr(pUserID);
 	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
 
-	CString Path = "AppData:" + UserStr;
+	CString Path = "AppData:profiles/" + UserStr;
 	if (IO().DirectoryExists(Path)) return CStrID::Empty;
 
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
@@ -64,6 +65,26 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 }
 //---------------------------------------------------------------------
 
+UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
+{
+	CString ProfilesDir("AppData:profiles/");
+	if (!IO().DirectoryExists(ProfilesDir)) return 0;
+
+	const UPTR OldCount = Out.GetCount();
+
+	IO::CFSBrowser Browser;
+	Browser.SetAbsolutePath(ProfilesDir);
+	if (!Browser.IsCurrDirEmpty()) do
+	{
+		if (Browser.IsCurrEntryDir())
+			Out.Add(CStrID(Browser.GetCurrEntryName()));
+	}
+	while (Browser.NextCurrDirEntry());
+
+	return Out.GetCount() - OldCount;
+}
+//---------------------------------------------------------------------
+
 CStrID CApplication::ActivateUser(CStrID UserID)
 {
 	// if active, return ID
@@ -71,7 +92,7 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 	// - load user settings (or store inside a profile)
 	// - register input translator
 	// - connect all input devices to this user if it is the first user loaded (and now it is)
-	return CStrID::Empty;
+	return UserID;
 }
 //---------------------------------------------------------------------
 

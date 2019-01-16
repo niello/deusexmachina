@@ -79,6 +79,7 @@ public:
 
 	// enum profiles - fill array of IDs
 	CStrID			CreateUserProfile(const char* pUserID);
+	UPTR			EnumUserProfiles(CArray<CStrID>& Out) const;
 	CStrID			ActivateUser(CStrID UserID = CStrID::Empty);
 	CStrID			GetCurrentUserID() const { return CurrentUserID; }
 
