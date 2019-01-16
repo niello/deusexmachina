@@ -19,15 +19,16 @@ protected:
 
 	DEM::Sys::IOSFileSystem* pFS;
 	CString Root;
+	bool _ReadOnly;
 
 public:
 
 	//!!!platform interface required!
-	CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath);
+	CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath, bool ReadOnly = false);
 
 	virtual bool	Init() override;
 	virtual bool	IsCaseSensitive() const override { FAIL; }
-	virtual bool	IsReadOnly() const { FAIL; }
+	virtual bool	IsReadOnly() const { return _ReadOnly; }
 	virtual bool	ProvidesFileCursor() const { OK; }
 
 	virtual bool	FileExists(const char* pPath);

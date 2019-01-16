@@ -10,9 +10,10 @@
 namespace IO
 {
 
-CFileSystemNative::CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath)
+CFileSystemNative::CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath, bool ReadOnly)
 	: pFS(pHostFS)
 	, Root(pRootPath)
+	, _ReadOnly(ReadOnly)
 {
 }
 //---------------------------------------------------------------------
@@ -40,25 +41,25 @@ bool CFileSystemNative::FileExists(const char* pPath)
 
 bool CFileSystemNative::IsFileReadOnly(const char* pPath)
 {
-	return pFS->IsFileReadOnly(Root + pPath);
+	return _ReadOnly || pFS->IsFileReadOnly(Root + pPath);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::SetFileReadOnly(const char* pPath, bool ReadOnly)
 {
-	return pFS->SetFileReadOnly(Root + pPath, ReadOnly);
+	return (!_ReadOnly || ReadOnly) && pFS->SetFileReadOnly(Root + pPath, ReadOnly);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DeleteFile(const char* pPath)
 {
-	return pFS->DeleteFile(Root + pPath);
+	return !_ReadOnly && pFS->DeleteFile(Root + pPath);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::CopyFile(const char* pSrcPath, const char* pDestPath)
 {
-	return pFS->CopyFile(Root + pSrcPath, Root + pDestPath);
+	return !_ReadOnly && pFS->CopyFile(Root + pSrcPath, Root + pDestPath);
 }
 //---------------------------------------------------------------------
 
@@ -70,13 +71,13 @@ bool CFileSystemNative::DirectoryExists(const char* pPath)
 
 bool CFileSystemNative::CreateDirectory(const char* pPath)
 {
-	return pFS->CreateDirectory(Root + pPath);
+	return !_ReadOnly && pFS->CreateDirectory(Root + pPath);
 }
 //---------------------------------------------------------------------
 
 bool CFileSystemNative::DeleteDirectory(const char* pPath)
 {
-	return pFS->DeleteDirectory(Root + pPath);
+	return !_ReadOnly && pFS->DeleteDirectory(Root + pPath);
 }
 //---------------------------------------------------------------------
 
@@ -100,6 +101,7 @@ bool CFileSystemNative::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntr
 
 void* CFileSystemNative::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
+	if (_ReadOnly && (Mode & (EStreamAccessMode::SAM_READ | EStreamAccessMode::SAM_APPEND))) return nullptr;
 	return pFS->OpenFile(Root + pPath, Mode, Pattern);
 }
 //---------------------------------------------------------------------
@@ -118,7 +120,7 @@ UPTR CFileSystemNative::Read(void* hFile, void* pData, UPTR Size)
 
 UPTR CFileSystemNative::Write(void* hFile, const void* pData, UPTR Size)
 {
-	return pFS->Write(hFile, pData, Size);
+	return _ReadOnly ? 0 : pFS->Write(hFile, pData, Size);
 }
 //---------------------------------------------------------------------
 
@@ -130,7 +132,7 @@ bool CFileSystemNative::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
 
 void CFileSystemNative::Flush(void* hFile)
 {
-	pFS->Flush(hFile);
+	if (!_ReadOnly) pFS->Flush(hFile);
 }
 //---------------------------------------------------------------------
 
