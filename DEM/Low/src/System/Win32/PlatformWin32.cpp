@@ -21,12 +21,51 @@
 #define HID_USAGE_GENERIC_KEYBOARD	((USHORT) 0x06)
 #endif
 
+// Keyboard raw input with RIDEV_NOLEGACY kills language switching hotkey, so we reimplement it by hand
+constexpr int INPUT_LOCALE_HOTKEY_ALT_SHIFT = 1;
+constexpr int INPUT_LOCALE_HOTKEY_CTRL_SHIFT = 2;
+constexpr int INPUT_LOCALE_HOTKEY_NOT_SET = 3;
+constexpr int INPUT_LOCALE_HOTKEY_GRAVE = 4;
+
 namespace DEM { namespace Sys
 {
+
+static void SetKeyState(BYTE& KeyState, bool IsDown)
+{
+	// Set or clear 'down' bit 0x80, on down toggle 'toggle' bit 0x01
+	if (IsDown) KeyState = 0x80 | (0x01 ^ (KeyState & 0x01));
+	else KeyState &= ~0x80;
+}
+//---------------------------------------------------------------------
 
 // Window procedure for GUI windows
 LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
+	// Some app-wide messages are sent to window directly, so we intercept them here
+	switch (uMsg)
+	{
+		case WM_ACTIVATEAPP:
+		{
+			CPlatformWin32* pPlatform = (CPlatformWin32*)::GetWindowLongPtr(hWnd, sizeof(void*));
+			if (pPlatform && pPlatform->RawInputRegistered) pPlatform->ReadInputLocaleHotkey();
+			break;
+		}
+		case WM_SETTINGCHANGE:
+		{
+			if (wParam == SPI_SETLANGTOGGLE)
+			{
+				CPlatformWin32* pPlatform = (CPlatformWin32*)::GetWindowLongPtr(hWnd, sizeof(void*));
+				if (pPlatform && pPlatform->RawInputRegistered) pPlatform->ReadInputLocaleHotkey();
+			}
+			break;
+		}
+		case WM_INPUTLANGCHANGE:
+		{
+			//::Sys::DbgOut("Language changed\n");
+			break;
+		}
+	}
+
 	COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(hWnd, 0);
 	LONG Result = 0;
 	if (pWnd && pWnd->HandleWindowMessage(uMsg, wParam, lParam, Result)) return Result;
@@ -90,7 +129,12 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		// Pass to the default procedure if was not processed
 		if (!Handled)
 		{
-			::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
+			LRESULT lr = ::DefRawInputProc(&pData, 1, sizeof(RAWINPUTHEADER));
+			if (lr != S_OK)
+			{
+				n_assert2_dbg(false, "MessageOnlyWindowProc() > raw input default processing error");
+				return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+			}
 
 			// Keyboard must generate legacy messages only if no one processed a raw input.
 			// We don't count repeats here but it can be added if necessary. There is no much profit
@@ -102,9 +146,12 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 				HWND hWndFocus = ::GetFocus();
 				RAWKEYBOARD& KbData = pData->data.keyboard;
+				const SHORT VKey = KbData.VKey;
+				const BYTE ScanCode = static_cast<BYTE>(KbData.MakeCode);
+				const bool IsExt = (KbData.Flags & RI_KEY_E0);
 
-				LPARAM KbLParam = (1 << 0) | (KbData.MakeCode << 16);
-				if (KbData.Flags & RI_KEY_E0) KbLParam |= (1 << 24);
+				LPARAM KbLParam = (1 << 0) | (ScanCode << 16);
+				if (IsExt) KbLParam |= (1 << 24);
 
 				switch (KbData.Message)
 				{
@@ -132,13 +179,47 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 					}
 					default:
 					{
-						::Sys::Error("MessageOnlyWindowProc() > unknown raw input keyboard message " + StringUtils::FromInt(KbData.Message) + '\n');
 						return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 					}
 				}
 
 				HWND hWndReceiver = hWndFocus ? hWndFocus : ::GetActiveWindow();
-				if (hWndReceiver) ::PostMessage(hWndReceiver, KbData.Message, KbData.VKey, KbLParam);
+				if (hWndReceiver) ::PostMessage(hWndReceiver, KbData.Message, VKey, KbLParam);
+
+				// Posted keyboard messages don't change the thread keyboard state so we must update it manually
+				// for accelerators and some other windows internals (like alt codes Alt + Numpad NNN) to work.
+				if (VKey < 256)
+				{
+					BYTE Keys[256];
+					::GetKeyboardState(Keys);
+
+					const bool IsKeyDown = (KbData.Message == WM_KEYDOWN || KbData.Message == WM_SYSKEYDOWN);
+					SetKeyState(Keys[VKey], IsKeyDown);
+
+					switch (VKey)
+					{
+						case VK_SHIFT:
+						{
+							const UINT VKeyH = ::MapVirtualKey(ScanCode, MAPVK_VSC_TO_VK_EX);
+							SetKeyState(Keys[VKeyH == VK_RSHIFT ? VK_RSHIFT : VK_LSHIFT], IsKeyDown);
+							break;
+						}
+						case VK_CONTROL:
+						{
+							const SHORT VKeyH = IsExt ? VK_RCONTROL : VK_LCONTROL;
+							SetKeyState(Keys[VKeyH], IsKeyDown);
+							break;
+						}
+						case VK_MENU:
+						{
+							const SHORT VKeyH = IsExt ? VK_RMENU : VK_LMENU;
+							SetKeyState(Keys[VKeyH], IsKeyDown);
+							break;
+						}
+					}
+
+					::SetKeyboardState(Keys);
+				}
 			}
 		}
 	}
@@ -149,6 +230,7 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 
 CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	: hInst(hInstance)
+	, InputLocaleHotkey(INPUT_LOCALE_HOTKEY_NOT_SET)
 {
 	LONGLONG PerfFreq;
 	QueryPerformanceFrequency((LARGE_INTEGER*)&PerfFreq);
@@ -194,9 +276,31 @@ double CPlatformWin32::GetSystemTime() const
 }
 //---------------------------------------------------------------------
 
+void CPlatformWin32::ReadInputLocaleHotkey()
+{
+	InputLocaleHotkey = INPUT_LOCALE_HOTKEY_ALT_SHIFT; // Windows default setting
+
+	char RegData[4];
+	DWORD RegDataSize = sizeof(RegData);
+	LSTATUS ls = ::RegGetValue(HKEY_CURRENT_USER, "Keyboard Layout\\Toggle", "Hotkey", RRF_RT_ANY, NULL, &RegData, &RegDataSize);
+	if (ls == ERROR_SUCCESS && RegDataSize > 0)
+	{
+		switch (RegData[0])
+		{
+			case '1': InputLocaleHotkey = INPUT_LOCALE_HOTKEY_ALT_SHIFT; break;
+			case '2': InputLocaleHotkey = INPUT_LOCALE_HOTKEY_CTRL_SHIFT; break;
+			case '3': InputLocaleHotkey = INPUT_LOCALE_HOTKEY_NOT_SET; break;
+			case '4': InputLocaleHotkey = INPUT_LOCALE_HOTKEY_GRAVE; break;
+		};
+	}
+}
+//---------------------------------------------------------------------
+
 bool CPlatformWin32::RegisterRawInput()
 {
 	if (RawInputRegistered) OK;
+
+	ReadInputLocaleHotkey();
 
 	if (!aMessageOnlyWndClass)
 	{
@@ -417,7 +521,7 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 		WndClass.style         = CS_DBLCLKS; // | CS_HREDRAW | CS_VREDRAW;
 		WndClass.lpfnWndProc   = WindowProc;
 		WndClass.cbClsExtra    = 0;
-		WndClass.cbWndExtra    = sizeof(void*); // used to hold 'this' pointer
+		WndClass.cbWndExtra    = sizeof(void*) + sizeof(void*); // used to hold COSWindowWin32 and CPlatformWin32 'this' pointers
 		WndClass.hInstance     = hInst;
 		WndClass.hIcon         = ::LoadIcon(NULL, IDI_APPLICATION); // TODO: default DEM icon
 		WndClass.hIconSm       = NULL; // set it too?
@@ -431,7 +535,11 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 	}
 
 	POSWindowWin32 Wnd = n_new(COSWindowWin32(hInst, aGUIWndClass));
-	return Wnd->GetHWND() ? Wnd.Get() : nullptr;
+	if (!Wnd->GetHWND()) return nullptr;
+
+	::SetWindowLongPtr(Wnd->GetHWND(), sizeof(void*), (LONG_PTR)this);
+
+	return Wnd.Get();
 }
 //---------------------------------------------------------------------
 
@@ -440,50 +548,36 @@ void CPlatformWin32::Update()
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
-		if (RawInputRegistered)
+		// Restore input locale switching hotkey logic killed by raw input.
+		// Accelerators can't process Alt+Shift or Ctrl+Shift, also accelerators are
+		// triggered by keydown. So we implement a correct behaviour manually.
+		if (RawInputRegistered && InputLocaleHotkey != INPUT_LOCALE_HOTKEY_NOT_SET)
 		{
-			// Posted keyboard messages don't change the thread keyboard state so we must update it manually
-			// for accelerators and some other windows internals (like alt codes Alt + Numpad NNN) to work.
-			// "The status changes as a thread removes keyboard messages from its message queue" (c) Docs
-			const bool IsKeyDown = (Msg.message == WM_KEYDOWN || Msg.message == WM_SYSKEYDOWN);
-			const bool IsKeyUp = (Msg.message == WM_KEYUP || Msg.message == WM_SYSKEYUP);
-			if (IsKeyDown || IsKeyUp)
+			if (Msg.message == WM_KEYDOWN || Msg.message == WM_SYSKEYDOWN)
 			{
-				if (Msg.wParam < 256)
+				// Suppress character generation
+				if (InputLocaleHotkey == INPUT_LOCALE_HOTKEY_GRAVE && Msg.wParam == VK_OEM_3) continue;
+			}
+			else if (Msg.message == WM_KEYUP || Msg.message == WM_SYSKEYUP)
+			{
+				bool ToggleInputLocale = false;
+				switch (InputLocaleHotkey)
 				{
-					BYTE Keys[256];
-					::GetKeyboardState(Keys);
+					case INPUT_LOCALE_HOTKEY_ALT_SHIFT:
+						ToggleInputLocale = (Msg.wParam == VK_SHIFT && (::GetKeyState(VK_MENU) & 0x80));
+						break;
+					case INPUT_LOCALE_HOTKEY_CTRL_SHIFT:
+						ToggleInputLocale = (Msg.wParam == VK_SHIFT && (::GetKeyState(VK_CONTROL) & 0x80));
+						break;
+					case INPUT_LOCALE_HOTKEY_GRAVE:
+						ToggleInputLocale = (Msg.wParam == VK_OEM_3); // Grave ('`', typically the same key as '~')
+						break;
+				}
 
-					BYTE KeyState = IsKeyDown ? 0x80 : 0x00;
-
-					Keys[Msg.wParam] = KeyState;
-					switch (Msg.wParam)
-					{
-						case VK_SHIFT:
-						{
-							// Setting VK_SHIFT bit 0x80 here disables a language switching hotkey Alt+Shift,
-							// but it doesn't work with RIDEV_NOLEGACY anyway
-							//Keys[VK_SHIFT] = 0;
-
-							const UINT VKey = ::MapVirtualKey((Msg.lParam & 0x00ff0000) >> 16, MAPVK_VSC_TO_VK_EX);
-							Keys[VKey] = KeyState;
-							break;
-						}
-						case VK_CONTROL:
-						{
-							const UINT VKey = (Msg.lParam & 0x01000000) ? VK_RCONTROL : VK_LCONTROL;
-							Keys[VKey] = KeyState;
-							break;
-						}
-						case VK_MENU:
-						{
-							const UINT VKey = (Msg.lParam & 0x01000000) ? VK_RMENU : VK_LMENU;
-							Keys[VKey] = KeyState;
-							break;
-						}
-					}
-
-					::SetKeyboardState(Keys);
+				if (ToggleInputLocale)
+				{
+					::ActivateKeyboardLayout((HKL)HKL_NEXT, KLF_SETFORPROCESS);
+					continue;
 				}
 			}
 		}

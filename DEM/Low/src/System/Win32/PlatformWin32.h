@@ -36,12 +36,15 @@ private:
 	void*		pRawInputBuffer = nullptr;
 	UPTR		RawInputBufferSize = 0;
 	bool		RawInputRegistered = false;
+	int			InputLocaleHotkey;
 
 	bool RegisterRawInput();
 	bool UnregisterRawInput();
+	void ReadInputLocaleHotkey();
 	bool OnInputDeviceArrived(HANDLE hDevice);
 	bool OnInputDeviceRemoved(HANDLE hDevice);
 
+	friend LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	friend LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
 public:
