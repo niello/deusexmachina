@@ -43,24 +43,24 @@ IO::CIOServer& CApplication::IO() const
 }
 //---------------------------------------------------------------------
 
-bool CApplication::CreateUserProfile(const char* pUserID)
+CStrID CApplication::CreateUserProfile(const char* pUserID)
 {
 	CString UserStr(pUserID);
-	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) FAIL;
+	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
 
 	CString Path = "AppData:" + UserStr;
-	if (IO().DirectoryExists(Path)) FAIL;
+	if (IO().DirectoryExists(Path)) return CStrID::Empty;
 
-	if (!IO().CreateDirectory(Path)) FAIL;
-	if (!IO().CreateDirectory(Path + "/saves")) FAIL;
-	if (!IO().CreateDirectory(Path + "/screenshots")) FAIL;
-	if (!IO().CreateDirectory(Path + "/current")) FAIL;
+	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
+	if (!IO().CreateDirectory(Path + "/saves")) return CStrID::Empty;
+	if (!IO().CreateDirectory(Path + "/screenshots")) return CStrID::Empty;
+	if (!IO().CreateDirectory(Path + "/current")) return CStrID::Empty;
 
 	//!!!DBG TMP!
 	//!!!template must be packed into NPK or reside in bin/data or smth!
-	if (!IO().CopyFile("../content/DefaultUserSettings.hrd", Path + "/Settings.hrd")) FAIL;
+	if (!IO().CopyFile("../content/DefaultUserSettings.hrd", Path + "/Settings.hrd")) return CStrID::Empty;
 
-	OK;
+	return CStrID(pUserID);
 }
 //---------------------------------------------------------------------
 
@@ -68,6 +68,9 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 {
 	// if active, return ID
 	// if no profile, return empty
+	// - load user settings (or store inside a profile)
+	// - register input translator
+	// - connect all input devices to this user if it is the first user loaded (and now it is)
 	return CStrID::Empty;
 }
 //---------------------------------------------------------------------
