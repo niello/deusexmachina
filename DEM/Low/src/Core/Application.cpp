@@ -15,6 +15,45 @@
 namespace DEM { namespace Core
 {
 
+static CString GetProfilesPath()
+{
+	return CString("RW:profiles/");
+}
+//---------------------------------------------------------------------
+
+static CString GetUserProfilePath(const char* pUserID)
+{
+	CString Path = GetProfilesPath();
+	Path += pUserID;
+	PathUtils::EnsurePathHasEndingDirSeparator(Path);
+	return Path;
+}
+//---------------------------------------------------------------------
+
+static CString GetUserSavesPath(const char* pUserID)
+{
+	return GetUserProfilePath(pUserID) + "saves/";
+}
+//---------------------------------------------------------------------
+
+static CString GetUserScreenshotsPath(const char* pUserID)
+{
+	return GetUserProfilePath(pUserID) + "screenshots/";
+}
+//---------------------------------------------------------------------
+
+static CString GetUserCurrDataPath(const char* pUserID)
+{
+	return GetUserProfilePath(pUserID) + "current/";
+}
+//---------------------------------------------------------------------
+
+static CString GetUserSettingsFilePath(const char* pUserID)
+{
+	return GetUserProfilePath(pUserID) + "Settings.hrd";
+}
+//---------------------------------------------------------------------
+
 //???empty constructor, add Init to process init-time failures?
 CApplication::CApplication(Sys::IPlatform& _Platform)
 	: Platform(_Platform)
@@ -50,7 +89,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 	CString UserStr(pUserID);
 	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
 
-	CString Path = "AppData:profiles/" + UserStr;
+	CString Path = GetUserProfilePath(pUserID);
 	if (IO().DirectoryExists(Path)) return CStrID::Empty;
 
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
@@ -82,13 +121,13 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 
 	// TODO: if one of active users, FAIL
 
-	return IOSrv->DeleteDirectory(CString("AppData:profiles/") + pUserID);
+	return IOSrv->DeleteDirectory(GetUserProfilePath(pUserID));
 }
 //---------------------------------------------------------------------
 
 UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
 {
-	CString ProfilesDir("AppData:profiles/");
+	CString ProfilesDir = GetProfilesPath();
 	if (!IO().DirectoryExists(ProfilesDir)) return 0;
 
 	const UPTR OldCount = Out.GetCount();
@@ -111,7 +150,7 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 	// if active, return ID
 	// if no profile, return empty
 
-	CString Path = CString("AppData:profiles/") + UserID.CStr();
+	CString Path = GetUserProfilePath(UserID);
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 
 	// create user object:
