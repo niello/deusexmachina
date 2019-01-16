@@ -6,10 +6,12 @@
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
-#define ACCEL_TOGGLEFULLSCREEN	1001
 #define STYLE_WINDOWED			(WS_OVERLAPPEDWINDOW | WS_CLIPSIBLINGS | WS_CLIPCHILDREN | WS_VISIBLE)
 #define STYLE_FULLSCREEN		(WS_POPUP | WS_SYSMENU | WS_VISIBLE)
 #define STYLE_CHILD				(WS_CHILD | WS_TABSTOP | WS_VISIBLE)
+
+//!!!DUPLICATE!
+constexpr int ACCEL_TOGGLEFULLSCREEN = 1001;
 
 namespace DEM { namespace Sys
 {
@@ -58,16 +60,6 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 	Rect.X = p.x;
 	Rect.Y = p.y;
 
-	if (!hAccel)
-	{
-		ACCEL Acc[1];
-		Acc[0].fVirt = FALT | FVIRTKEY;
-		Acc[0].key = VK_RETURN;
-		Acc[0].cmd = ACCEL_TOGGLEFULLSCREEN;
-		hAccel = CreateAcceleratorTable(Acc, 1);
-		n_assert(hAccel);
-	}
-
 	// Set to initial state
 	::ShowWindow(hWnd, SW_SHOWDEFAULT);
 	Flags.SetTo(Wnd_Minimized, ::IsIconic(hWnd) == TRUE);
@@ -78,12 +70,10 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 
 COSWindowWin32::~COSWindowWin32()
 {
-	if (hWnd) ::SendMessage(hWnd, WM_CLOSE, 0, 0);
-
-	if (hAccel)
+	if (hWnd)
 	{
-		DestroyAcceleratorTable(hAccel);
-		hAccel = NULL;
+		::SetWindowLongPtr(hWnd, 0, 0);
+		::SendMessage(hWnd, WM_CLOSE, 0, 0);
 	}
 }
 //---------------------------------------------------------------------

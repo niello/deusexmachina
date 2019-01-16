@@ -19,7 +19,6 @@ protected:
 
 	COSWindowWin32*	pParent = nullptr;
 	HWND			hWnd = 0;
-	HACCEL			hAccel = 0;
 
 public:
 
@@ -49,7 +48,6 @@ public:
 	bool					SetTopmost(bool Topmost);
 
 	HWND					GetHWND() const { return hWnd; }
-	HACCEL					GetWin32AcceleratorTable() const { return hAccel; }
 	LONG					GetWin32Style() const;
 };
 

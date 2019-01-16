@@ -30,6 +30,9 @@ constexpr int INPUT_LOCALE_HOTKEY_CTRL_SHIFT = 2;
 constexpr int INPUT_LOCALE_HOTKEY_NOT_SET = 3;
 constexpr int INPUT_LOCALE_HOTKEY_GRAVE = 4;
 
+//!!!DUPLICATE!
+constexpr int ACCEL_TOGGLEFULLSCREEN = 1001;
+
 namespace DEM { namespace Sys
 {
 
@@ -231,6 +234,28 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 }
 //---------------------------------------------------------------------
 
+// Clear CPlatformWin32 references from our windows and kill them
+BOOL CALLBACK OnPlatformDestroyed(_In_ HWND hWnd, _In_ LPARAM lParam)
+{
+	CPlatformWin32* pPlatform = (CPlatformWin32*)lParam;
+	if (!pPlatform) return FALSE;
+
+	ATOM aClass = ::GetClassWord(hWnd, GCW_ATOM);
+	if (aClass == pPlatform->aGUIWndClass)
+	{
+		::SetWindowLongPtr(hWnd, sizeof(void*), 0);
+		::DestroyWindow(hWnd);
+	}
+	else if (aClass == pPlatform->aMessageOnlyWndClass)
+	{
+		::SetWindowLongPtr(hWnd, 0, 0);
+		::DestroyWindow(hWnd);
+	}
+
+	return TRUE;
+}
+//---------------------------------------------------------------------
+
 CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	: hInst(hInstance)
 	, InputLocaleHotkey(INPUT_LOCALE_HOTKEY_NOT_SET)
@@ -240,14 +265,28 @@ CPlatformWin32::CPlatformWin32(HINSTANCE hInstance)
 	PerfFreqMul = 1.0 / PerfFreq;
 
 	FileSystemInterface.reset(n_new(COSFileSystemWin32));
+
+	ACCEL Acc[1];
+	Acc[0].fVirt = FALT | FVIRTKEY;
+	Acc[0].key = VK_RETURN;
+	Acc[0].cmd = ACCEL_TOGGLEFULLSCREEN;
+	hAccel = CreateAcceleratorTable(Acc, 1);
 }
 //---------------------------------------------------------------------
 
 CPlatformWin32::~CPlatformWin32()
 {
+	::EnumWindows(OnPlatformDestroyed, (LPARAM)this);
+
 	SAFE_FREE(pRawInputBuffer);
 
 	UnregisterRawInput();
+
+	if (hAccel)
+	{
+		DestroyAcceleratorTable(hAccel);
+		hAccel = 0;
+	}
 
 	if (hWndMessageOnly)
 	{
@@ -627,13 +666,10 @@ void CPlatformWin32::Update()
 			}
 		}
 
-		// Process accelerators of our own windows
-		if (aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
+		// Process accelerators of our own windows (now GUI-only, may be extended)
+		if (hAccel && aGUIWndClass && Msg.hwnd && ::GetClassWord(Msg.hwnd, GCW_ATOM) == aGUIWndClass)
 		{
-			// Only our windows store engine window pointer at 0
-			const COSWindowWin32* pWnd = (COSWindowWin32*)::GetWindowLongPtr(Msg.hwnd, 0);
-			HACCEL hAccel = pWnd ? pWnd->GetWin32AcceleratorTable() : 0;
-			if (hAccel && ::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
+			if (::TranslateAccelerator(Msg.hwnd, hAccel, &Msg) != FALSE) continue;
 		}
 
 		::TranslateMessage(&Msg);

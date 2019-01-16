@@ -33,6 +33,7 @@ private:
 	ATOM		aGUIWndClass = 0;
 	ATOM		aMessageOnlyWndClass = 0;
 	HWND		hWndMessageOnly = 0;
+	HACCEL		hAccel = 0;
 
 	void*		pRawInputBuffer = nullptr;
 	UPTR		RawInputBufferSize = 0;
@@ -47,6 +48,7 @@ private:
 
 	friend LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 	friend LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+	friend BOOL CALLBACK OnPlatformDestroyed(_In_ HWND hWnd, _In_ LPARAM lParam);
 
 public:
 
