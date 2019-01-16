@@ -29,6 +29,8 @@ class IPlatform
 {
 public:
 
+	virtual bool			CheckAlreadyRunning(const char* pAppName) = 0;
+
 	virtual double			GetSystemTime() const = 0; // In seconds
 
 	virtual UPTR			EnumInputDevices(CArray<Input::PInputDevice>& Out) = 0;

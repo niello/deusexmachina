@@ -265,6 +265,35 @@ CPlatformWin32::~CPlatformWin32()
 			::Sys::Error("CPlatformWin32::~CPlatformWin32() > UnregisterClass(aMessageOnlyWndClass) failed!\n");
 		aMessageOnlyWndClass = 0;
 	}
+
+	if (hRunOnceMutex)
+	{
+		::CloseHandle(hRunOnceMutex);
+		hRunOnceMutex = 0;
+	}
+}
+//---------------------------------------------------------------------
+
+bool CPlatformWin32::CheckAlreadyRunning(const char* pAppName)
+{
+	// Cant check an app without name
+	if (!pAppName || !*pAppName) FAIL;
+
+	// We are the first instance, and we do't want to detect ourselves as a conflicting process
+	if (hRunOnceMutex) FAIL;
+
+	CString Prefix("DEM::CPlatformWin32::CheckAlreadyRunning::");
+	hRunOnceMutex = ::CreateMutex(NULL, TRUE, Prefix + pAppName);
+	if (hRunOnceMutex && ::GetLastError() == ERROR_ALREADY_EXISTS)
+	{
+		// The same app is already running
+		::CloseHandle(hRunOnceMutex);
+		hRunOnceMutex = 0;
+		OK;
+	}
+
+	// We are the first instance, so keep mutex handle
+	FAIL;
 }
 //---------------------------------------------------------------------
 

@@ -28,6 +28,7 @@ private:
 	double		PerfFreqMul;
 
 	HINSTANCE	hInst;
+	HANDLE		hRunOnceMutex = 0;
 
 	ATOM		aGUIWndClass = 0;
 	ATOM		aMessageOnlyWndClass = 0;
@@ -51,6 +52,8 @@ public:
 
 	CPlatformWin32(HINSTANCE hInstance);
 	~CPlatformWin32();
+
+	virtual bool CheckAlreadyRunning(const char* pAppName) override;
 
 	virtual double GetSystemTime() const override;
 
