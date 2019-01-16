@@ -281,8 +281,11 @@ CString CPlatformWin32::GetOSUserName() const
 {
 	char Buf[256];
 	DWORD BufSize = sizeof(Buf);
-	//if (!::GetUserName(Buf, &BufSize)) return CString();
-	if (!::GetUserNameEx(NameDisplay, Buf, &BufSize)) return CString();
+	if (!::GetUserNameEx(NameDisplay, Buf, &BufSize))
+	{
+		if (::GetLastError() != 1332) return CString();
+		if (!::GetUserName(Buf, &BufSize)) return CString();
+	}
 	return CString(Buf);
 }
 //---------------------------------------------------------------------
