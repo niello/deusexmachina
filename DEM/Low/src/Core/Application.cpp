@@ -8,6 +8,7 @@
 #include <System/Win32/OSWindowWin32.h>
 #include <Render/SwapChain.h>
 #include <Render/GPUDriver.h>
+#include <Data/ParamsUtils.h>
 
 namespace DEM { namespace Core
 {
@@ -39,6 +40,52 @@ CApplication::~CApplication()
 IO::CIOServer& CApplication::IO() const
 {
 	return *IOServer;
+}
+//---------------------------------------------------------------------
+
+void CApplication::ParseCommandLine(const char* pCmdLine)
+{
+	if (!pCmdLine || !*pCmdLine) return;
+
+	//!!!DBG TMP!
+	if (!strcmp(pCmdLine, "-O TestFloat=999.0"))
+	{
+		OverrideSettings = n_new(Data::CParams(1));
+		OverrideSettings->Set<float>(CStrID("TestFloat"), 999.f);
+	}
+}
+
+bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserID)
+{
+	Data::PParams Prm;
+	if (!ParamsUtils::LoadParamsFromHRD(pFilePath, Prm)) FAIL;
+
+	if (Reload || !GlobalSettings) GlobalSettings = Prm;
+	else GlobalSettings->Merge(*Prm, Data::Merge_Replace | Data::Merge_Deep);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID UserID)
+{
+	if (OverrideSettings)
+	{
+		Data::CData OverrideData;
+		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<float>())
+		{
+			return OverrideData.GetValue<float>();
+		}
+	}
+
+	if (UserID.IsValid())
+	{
+		// check user loaded
+		// if not, assert and return default
+		// if settings is set for user, return user's value
+	}
+
+	return GlobalSettings ? GlobalSettings->Get<float>(CStrID(pKey), Default) : Default;
 }
 //---------------------------------------------------------------------
 

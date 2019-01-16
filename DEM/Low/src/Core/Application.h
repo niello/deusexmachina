@@ -1,6 +1,7 @@
 #pragma once
 //#include <Data/Singleton.h>
 #include <Data/Ptr.h>
+#include <Data/Params.h>
 #include <Events/EventsFwd.h>
 #include <memory>
 
@@ -53,6 +54,10 @@ protected:
 
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 
+	Data::PParams GlobalSettings;
+	Data::PParams OverrideSettings; // From a command line
+	CStrID CurrentUserID;
+
 	double BaseTime = 0.0;
 	double PrevTime = 0.0;
 	double FrameTime = 0.0;
@@ -72,13 +77,22 @@ public:
 
 	IO::CIOServer& IO() const;
 
+	CStrID ActivateUser(CStrID UserID = CStrID::Empty);
+	CStrID GetCurrentUserID() const { return CurrentUserID; }
+
+	void ParseCommandLine(const char* pCmdLine);
+	bool LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
+	//CData GetSetting()
+	//template<class T> T GetSetting()
+	float GetFloatSetting(const char* pKey, float Default, CStrID UserID);
+	bool SetFloatSetting(const char* pKey, float Value, CStrID UserID);
+
 	bool Run();
 	bool Update();
 	void Term();
 	// Update, RequestState, RequestExit
 
 	//allow multiple instances
-	//exit when last window closed
 
 	void ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
