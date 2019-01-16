@@ -57,6 +57,7 @@ protected:
 	Data::PParams GlobalSettings;
 	Data::PParams OverrideSettings; // From a command line
 	CStrID CurrentUserID;
+	// list of active users for a multi-user session, including a current user. Input translators, settings etc
 
 	double BaseTime = 0.0;
 	double PrevTime = 0.0;
@@ -79,6 +80,7 @@ public:
 
 	// enum profiles - fill array of IDs
 	CStrID			CreateUserProfile(const char* pUserID);
+	bool			DeleteUserProfile(const char* pUserID);
 	UPTR			EnumUserProfiles(CArray<CStrID>& Out) const;
 	CStrID			ActivateUser(CStrID UserID = CStrID::Empty);
 	CStrID			GetCurrentUserID() const { return CurrentUserID; }

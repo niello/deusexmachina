@@ -10,6 +10,7 @@
 #include <Render/SwapChain.h>
 #include <Render/GPUDriver.h>
 #include <Data/ParamsUtils.h>
+#include <IO/PathUtils.h>
 
 namespace DEM { namespace Core
 {
@@ -53,15 +54,35 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 	if (IO().DirectoryExists(Path)) return CStrID::Empty;
 
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
-	if (!IO().CreateDirectory(Path + "/saves")) return CStrID::Empty;
-	if (!IO().CreateDirectory(Path + "/screenshots")) return CStrID::Empty;
-	if (!IO().CreateDirectory(Path + "/current")) return CStrID::Empty;
+
+	bool Result = true;
+	if (!IO().CreateDirectory(Path + "/saves")) Result = false;
+	if (Result && !IO().CreateDirectory(Path + "/screenshots")) Result = false;
+	if (Result && !IO().CreateDirectory(Path + "/current")) Result = false;
 
 	//!!!DBG TMP!
 	//!!!template must be packed into NPK or reside in bin/data or smth!
-	if (!IO().CopyFile("../content/DefaultUserSettings.hrd", Path + "/Settings.hrd")) return CStrID::Empty;
+	//!!!app must set file path or CParams for default user settings, engine must not hardcode where they are!
+	if (Result && !IO().CopyFile("../content/DefaultUserSettings.hrd", Path + "/Settings.hrd")) Result = false;
+
+	if (!Result)
+	{
+		IOSrv->DeleteDirectory(Path);
+		return CStrID::Empty;
+	}
 
 	return CStrID(pUserID);
+}
+//---------------------------------------------------------------------
+
+bool CApplication::DeleteUserProfile(const char* pUserID)
+{
+	// Can't delete current user
+	if (CurrentUserID == pUserID) FAIL;
+
+	// TODO: if one of active users, FAIL
+
+	return IOSrv->DeleteDirectory(CString("AppData:profiles/") + pUserID);
 }
 //---------------------------------------------------------------------
 
@@ -89,9 +110,26 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 {
 	// if active, return ID
 	// if no profile, return empty
+
+	CString Path = CString("AppData:profiles/") + UserID.CStr();
+	PathUtils::EnsurePathHasEndingDirSeparator(Path);
+
+	// create user object:
+	//???special CUser object? initialize inside
+	//profile subpathes must be fixed somewhere in one place, line UserProfile::GetScreenshotsPath(), UserProfile::GetSettingsFileName()
+	//and combine with profile root inside or outside
+
 	// - load user settings (or store inside a profile)
+	Data::PParams Prm;
+	if (!ParamsUtils::LoadParamsFromHRD(Path + "Settings.hrd", Prm)) return CStrID::Empty;
+
 	// - register input translator
-	// - connect all input devices to this user if it is the first user loaded (and now it is)
+
+	// if it is the first active user
+	// - connect all input devices to this user
+	// - set this user ID as current
+	// - save current user ID to app settings
+
 	return UserID;
 }
 //---------------------------------------------------------------------
