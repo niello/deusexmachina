@@ -176,13 +176,31 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 
 		CurrentUserID = UserID;
 
-		//!!!
-		//SetStringSetting("User", UserID.CStr(), CStrID::Empty);
+		SetStringSetting("User", CString(UserID), CStrID::Empty);
 	}
 
 	ActiveUsers.push_back(std::move(NewUser));
 
 	return UserID;
+}
+//---------------------------------------------------------------------
+
+void CApplication::DeactivateUser(CStrID UserID)
+{
+	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+	if (It == ActiveUsers.cend()) return;
+
+	//???save settings IF CHANGED? if want to use file time as "last seen" for the user,
+	//may use FS::Touch without actually writing the data
+	if (It->Settings) ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(UserID), *It->Settings);
+
+	ActiveUsers.erase(It);
+
+	if (CurrentUserID == UserID)
+	{
+		//!!!process current user changes!
+		CurrentUserID = ActiveUsers.empty() ? CStrID::Empty : ActiveUsers.back().ID;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -218,14 +236,26 @@ bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserI
 }
 //---------------------------------------------------------------------
 
-int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
+//???need public function?
+void CApplication::SaveSettings()
 {
+	//save all changed setting files (global & per-user)
+	//must save global when app exits & user when user is deactivated
+}
+//---------------------------------------------------------------------
+
+// Private, for internal use only, to avoid declaring all this logic in a header
+template<class T>
+T CApplication::GetSetting(const char* pKey, const T& Default, CStrID UserID) const
+{
+	CStrID Key(pKey);
+
 	if (OverrideSettings)
 	{
 		Data::CData OverrideData;
-		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<int>())
+		if (OverrideSettings->Get<T>(OverrideData, Key))
 		{
-			return OverrideData.GetValue<int>();
+			return OverrideData.GetValue<T>();
 		}
 	}
 
@@ -234,80 +264,105 @@ int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
 		auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
 		if (It == ActiveUsers.cend())
 		{
-			::Sys::Error("CApplication::GetIntSetting() > requested user is inactive");
+			::Sys::Error("CApplication::GetSetting() > requested user is inactive");
 			return Default;
 		}
 
 		Data::CData UserData;
-		if (It->Settings->Get(UserData, CStrID(pKey)) && UserData.IsA<int>())
+		if (It->Settings && It->Settings->Get(UserData, Key) && UserData.IsA<T>())
 		{
-			return UserData.GetValue<int>();
+			return UserData.GetValue<T>();
 		}
 	}
 
-	return GlobalSettings ? GlobalSettings->Get<int>(CStrID(pKey), Default) : Default;
+	return GlobalSettings ? GlobalSettings->Get<T>(Key, Default) : Default;
+}
+//---------------------------------------------------------------------
+
+// Private, for internal use only, to avoid declaring all this logic in a header.
+// Returns true if value actually changed.
+template<class T> bool CApplication::SetSetting(const char* pKey, const T& Value, CStrID UserID)
+{
+	CStrID Key(pKey);
+	Data::CParams* pSettings = nullptr;
+
+	if (UserID.IsValid())
+	{
+		auto It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
+		if (It == ActiveUsers.end())
+		{
+			::Sys::Error("CApplication::SetSetting() > requested user is inactive");
+			FAIL;
+		}
+
+		if (!It->Settings) It->Settings = n_new(Data::CParams);
+		pSettings = It->Settings.Get();
+	}
+	else
+	{
+		if (!GlobalSettings) GlobalSettings = n_new(Data::CParams);
+		pSettings = GlobalSettings.Get();
+	}
+
+	Data::CParam* pPrm = pSettings->Find(Key);
+
+	// Value not changed
+	if (pPrm && pPrm->IsA<T>() && pPrm->GetValue<T>() == Value) FAIL;
+
+	if (pPrm) pPrm->SetValue(Value);
+	else pSettings->Set(Key, Value);
+
+	//???set "settings changed" flag for user or global?
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CApplication::GetBoolSetting(const char* pKey, bool Default, CStrID UserID)
+{
+	return GetSetting<bool>(pKey, Default, UserID);
+}
+//---------------------------------------------------------------------
+
+int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
+{
+	return GetSetting<int>(pKey, Default, UserID);
 }
 //---------------------------------------------------------------------
 
 float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID UserID)
 {
-	if (OverrideSettings)
-	{
-		Data::CData OverrideData;
-		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<float>())
-		{
-			return OverrideData.GetValue<float>();
-		}
-	}
-
-	if (UserID.IsValid())
-	{
-		auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
-		if (It == ActiveUsers.cend())
-		{
-			::Sys::Error("CApplication::GetIntSetting() > requested user is inactive");
-			return Default;
-		}
-
-		Data::CData UserData;
-		if (It->Settings->Get(UserData, CStrID(pKey)) && UserData.IsA<float>())
-		{
-			return UserData.GetValue<float>();
-		}
-	}
-
-	return GlobalSettings ? GlobalSettings->Get<float>(CStrID(pKey), Default) : Default;
+	return GetSetting<float>(pKey, Default, UserID);
 }
 //---------------------------------------------------------------------
 
-const CString& CApplication::GetStringSetting(const char* pKey, const CString& Default, CStrID UserID)
+CString CApplication::GetStringSetting(const char* pKey, const CString& Default, CStrID UserID)
 {
-	if (OverrideSettings)
-	{
-		Data::CData OverrideData;
-		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<CString>())
-		{
-			return OverrideData.GetValue<CString>();
-		}
-	}
+	return GetSetting<CString>(pKey, Default, UserID);
+}
+//---------------------------------------------------------------------
 
-	if (UserID.IsValid())
-	{
-		auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
-		if (It == ActiveUsers.cend())
-		{
-			::Sys::Error("CApplication::GetIntSetting() > requested user is inactive");
-			return Default;
-		}
+bool CApplication::SetBoolSetting(const char* pKey, bool Value, CStrID UserID)
+{
+	return SetSetting<bool>(pKey, Value, UserID);
+}
+//---------------------------------------------------------------------
 
-		Data::CData UserData;
-		if (It->Settings->Get(UserData, CStrID(pKey)) && UserData.IsA<CString>())
-		{
-			return UserData.GetValue<CString>();
-		}
-	}
+bool CApplication::SetIntSetting(const char* pKey, int Value, CStrID UserID)
+{
+	return SetSetting<int>(pKey, Value, UserID);
+}
+//---------------------------------------------------------------------
 
-	return GlobalSettings ? GlobalSettings->Get<CString>(CStrID(pKey), Default) : Default;
+bool CApplication::SetFloatSetting(const char* pKey, float Value, CStrID UserID)
+{
+	return SetSetting<float>(pKey, Value, UserID);
+}
+//---------------------------------------------------------------------
+
+bool CApplication::SetStringSetting(const char* pKey, const CString& Value, CStrID UserID)
+{
+	return SetSetting<CString>(pKey, Value, UserID);
 }
 //---------------------------------------------------------------------
 

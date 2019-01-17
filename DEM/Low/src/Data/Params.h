@@ -43,6 +43,7 @@ public:
 	CParam&						Get(IPTR Idx) { return Params[Idx]; }
 	const CParam&				Get(IPTR Idx) const { return Params[Idx]; }
 	template<class T> const T&	Get(IPTR Idx) const { return Params[Idx].GetValue<T>(); }
+	CParam*						Find(CStrID Name);
 	CParam&						Get(CStrID Name); //???explicit specialization?
 	const CParam&				Get(CStrID Name) const; //???explicit specialization?
 	template<class T> const T&	Get(CStrID Name) const;
@@ -76,6 +77,14 @@ inline IPTR CParams::IndexOf(CStrID Name) const
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name) return i;
 	return INVALID_INDEX;
+}
+//---------------------------------------------------------------------
+
+inline CParam* CParams::Find(CStrID Name)
+{
+	for (UPTR i = 0; i < Params.GetCount(); ++i)
+		if (Params[i].GetName() == Name) return &Params[i];
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -80,6 +80,9 @@ protected:
 	//!!!DBG TMP! Will be state!
 	bool Exiting = false;
 
+	template<class T> T GetSetting(const char* pKey, const T& Default, CStrID UserID) const;
+	template<class T> bool SetSetting(const char* pKey, const T& Value, CStrID UserID);
+
 	DECLARE_EVENT_HANDLER(OnClosing, OnMainWindowClosing);
 
 public:
@@ -91,23 +94,26 @@ public:
 
 	IO::CIOServer&	IO() const;
 
-	// enum profiles - fill array of IDs
 	CStrID			CreateUserProfile(const char* pUserID);
 	bool			DeleteUserProfile(const char* pUserID);
 	UPTR			EnumUserProfiles(CArray<CStrID>& Out) const;
-	CStrID			ActivateUser(CStrID UserID = CStrID::Empty);
+	CStrID			ActivateUser(CStrID UserID);
+	void			DeactivateUser(CStrID UserID);
 	CStrID			GetCurrentUserID() const { return CurrentUserID; }
 
 	Input::CInputTranslator* GetUserInput(CStrID UserID) const;
 
 	void			ParseCommandLine(const char* pCmdLine);
 	bool			LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
-	//CData GetSetting()
-	//template<class T> T GetSetting()
+	void			SaveSettings();
+	bool			GetBoolSetting(const char* pKey, bool Default, CStrID UserID);
 	int				GetIntSetting(const char* pKey, int Default, CStrID UserID);
 	float			GetFloatSetting(const char* pKey, float Default, CStrID UserID);
-	const CString&	GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
+	CString			GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
+	bool			SetBoolSetting(const char* pKey, bool Value, CStrID UserID);
+	bool			SetIntSetting(const char* pKey, int Value, CStrID UserID);
 	bool			SetFloatSetting(const char* pKey, float Value, CStrID UserID);
+	bool			SetStringSetting(const char* pKey, const CString& Value, CStrID UserID);
 
 	bool			Run();
 	bool			Update();
