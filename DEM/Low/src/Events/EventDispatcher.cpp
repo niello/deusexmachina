@@ -15,7 +15,7 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 	//!!!MT! need interlocked operation for MT safety!
 	++EventsFiredTotal;
 
-	Event.UniqueNimber = EventsFiredTotal;
+	Event.UniqueNumber = EventsFiredTotal;
 
 	// Look for subscriptions to this event
 	if (Subscriptions.Get(EvID, Sub)) do

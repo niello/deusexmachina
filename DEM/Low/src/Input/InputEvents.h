@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_EVENTS_H__
-#define __DEM_L1_INPUT_EVENTS_H__
-
 #include <Events/EventNative.h>
 
 // IInputDevice axis and button events
@@ -44,5 +41,3 @@ public:
 };
 
 }
-
-#endif

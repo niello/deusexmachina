@@ -14,14 +14,14 @@ class CEventBase: public Core::CObject
 {
 protected:
 
-	mutable UPTR UniqueNimber;
+	mutable UPTR UniqueNumber;
 
 	friend class CEventDispatcher; // For unique number setting
 
 public:
 
 	virtual CEventID	GetID() const = 0;
-	UPTR				GetUniqueNumber() const { return UniqueNimber; }
+	UPTR				GetUniqueNumber() const { return UniqueNumber; }
 };
 
 typedef Ptr<CEventBase> PEventBase;
