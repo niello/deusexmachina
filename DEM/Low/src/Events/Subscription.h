@@ -3,9 +3,9 @@
 #include <Events/EventID.h>
 
 // Subscription handle is handy to automatically unsubscribe from event
-// NB: Subscription prevents its dispatcher from being destroyed (mb weak pointer would be better)
 
 //???use std::unique_ptr? no need in multiple references
+// TODO: pDispatcher to weak ref?
 
 namespace Events
 {

@@ -3,6 +3,7 @@
 namespace PathUtils
 {
 
+// TODO: compare performance against a naive approach (tokenize folder by folder)
 // Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
 // E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
 // All '\' slashes in a path must be converted to '/' before calling this function.

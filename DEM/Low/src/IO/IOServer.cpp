@@ -47,6 +47,7 @@ bool CIOServer::MountFileSystem(IO::IFileSystem* pFS, const char* pRoot, IO::IFi
 
 bool CIOServer::UnmountFileSystem(IO::IFileSystem* pFS)
 {
+	NOT_IMPLEMENTED;
 	FAIL; //return FileSystems.RemoveByValue(pFS);
 }
 //---------------------------------------------------------------------
@@ -54,27 +55,39 @@ bool CIOServer::UnmountFileSystem(IO::IFileSystem* pFS)
 // Unmounts all systems associated with the name provided. Returns unmounted system count.
 UPTR CIOServer::UnmountFileSystems(const char* pName)
 {
+	NOT_IMPLEMENTED;
 	return 0;
 }
 //---------------------------------------------------------------------
 
 const char* CIOServer::GetFSLocalPath(const CFSRecord& Rec, const char* pPath, IPTR ColonIndex) const
 {
+	// Invalid arguments
+	if (!pPath || ColonIndex < -1) return nullptr;
+
 	if (ColonIndex > 0 && Rec.Name.IsValid() && strncmp(pPath, Rec.Name.CStr(), ColonIndex)) return nullptr;
 
 	const char* pLocalPath = pPath + (ColonIndex + 1);
-	if (!Rec.RootPath.IsValid()) return pLocalPath;
 
 	const UPTR RootPathLen = Rec.RootPath.GetLength();
-	if (Rec.FS->IsCaseSensitive())
+	if (RootPathLen)
 	{
-		if (strncmp(Rec.RootPath.CStr(), pLocalPath, RootPathLen)) return nullptr;
+		if (Rec.FS->IsCaseSensitive())
+		{
+			if (strncmp(Rec.RootPath.CStr(), pLocalPath, RootPathLen)) return nullptr;
+		}
+		else
+		{
+			if (_strnicmp(Rec.RootPath.CStr(), pLocalPath, RootPathLen)) return nullptr;
+		}
+		pLocalPath += RootPathLen;
 	}
-	else
-	{
-		if (_strnicmp(Rec.RootPath.CStr(), pLocalPath, RootPathLen)) return nullptr;
-	}
-	return pLocalPath + RootPathLen;
+
+	if (pLocalPath[0] == '/') ++pLocalPath;
+
+	// If local path starts with ".." (parent directory) it violates
+	// the file system boundary and can't be used with this file system.
+	return strncmp(pLocalPath, "..", 2) ? pLocalPath : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -400,6 +413,7 @@ CString CIOServer::ResolveAssigns(const char* pPath) const
 		PathString = AssignValue + PathString.SubString(ColonIdx + 1, PathString.GetLength() - (ColonIdx + 1));
 	}
 
+	PathString = PathUtils::CollapseDots(PathString.CStr(), PathString.GetLength());
 	PathString.Trim(" \r\n\t\\/", false);
 	return PathString;
 }
