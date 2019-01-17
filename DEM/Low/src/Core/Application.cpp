@@ -2,6 +2,7 @@
 
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
+#include <IO/PathUtils.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 #include <Math/Math.h>
@@ -10,7 +11,8 @@
 #include <Render/SwapChain.h>
 #include <Render/GPUDriver.h>
 #include <Data/ParamsUtils.h>
-#include <IO/PathUtils.h>
+#include <Input/InputTranslator.h>
+#include <Input/InputDevice.h>
 
 namespace DEM { namespace Core
 {
@@ -147,29 +149,47 @@ UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
 
 CStrID CApplication::ActivateUser(CStrID UserID)
 {
-	// if active, return ID
-	// if no profile, return empty
+	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+	if (It != ActiveUsers.cend()) return UserID;
 
 	CString Path = GetUserProfilePath(UserID);
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 
-	// create user object:
-	//???special CUser object? initialize inside
-	//profile subpathes must be fixed somewhere in one place, line UserProfile::GetScreenshotsPath(), UserProfile::GetSettingsFileName()
-	//and combine with profile root inside or outside
+	if (!IO().DirectoryExists(Path)) return CStrID::Empty;
 
-	// - load user settings (or store inside a profile)
-	Data::PParams Prm;
-	if (!ParamsUtils::LoadParamsFromHRD(Path + "Settings.hrd", Prm)) return CStrID::Empty;
+	CUser NewUser;
+	NewUser.ID = UserID;
+	if (!ParamsUtils::LoadParamsFromHRD(Path + "Settings.hrd", NewUser.Settings)) return CStrID::Empty;
 
-	// - register input translator
+	NewUser.Input.reset(n_new(Input::CInputTranslator(UserID)));
+	//!!!load input contexts from app & user settings! may use separate files, not settings files
+	//or use sections in settings
 
-	// if it is the first active user
-	// - connect all input devices to this user
-	// - set this user ID as current
-	// - save current user ID to app settings
+	if (!CurrentUserID.IsValid())
+	{
+		CArray<Input::PInputDevice> InputDevices;
+		Platform.EnumInputDevices(InputDevices);
+		for (UPTR i = 0; i < InputDevices.GetCount(); ++i)
+		{
+			NewUser.Input->ConnectToDevice(InputDevices[i].Get());
+		}
+
+		CurrentUserID = UserID;
+
+		//!!!
+		//SetStringSetting("User", UserID.CStr(), CStrID::Empty);
+	}
+
+	ActiveUsers.push_back(std::move(NewUser));
 
 	return UserID;
+}
+//---------------------------------------------------------------------
+
+Input::CInputTranslator* CApplication::GetUserInput(CStrID UserID) const
+{
+	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+	return It == ActiveUsers.cend() ? nullptr : It->Input.get();
 }
 //---------------------------------------------------------------------
 
@@ -184,6 +204,7 @@ void CApplication::ParseCommandLine(const char* pCmdLine)
 		OverrideSettings->Set<float>(CStrID("TestFloat"), 999.f);
 	}
 }
+//---------------------------------------------------------------------
 
 bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserID)
 {
@@ -202,7 +223,7 @@ int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
 	if (OverrideSettings)
 	{
 		Data::CData OverrideData;
-		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<float>())
+		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<int>())
 		{
 			return OverrideData.GetValue<int>();
 		}
@@ -210,9 +231,18 @@ int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
 
 	if (UserID.IsValid())
 	{
-		// check user loaded
-		// if not, assert and return default
-		// if settings is set for user, return user's value
+		auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+		if (It == ActiveUsers.cend())
+		{
+			::Sys::Error("CApplication::GetIntSetting() > requested user is inactive");
+			return Default;
+		}
+
+		Data::CData UserData;
+		if (It->Settings->Get(UserData, CStrID(pKey)) && UserData.IsA<int>())
+		{
+			return UserData.GetValue<int>();
+		}
 	}
 
 	return GlobalSettings ? GlobalSettings->Get<int>(CStrID(pKey), Default) : Default;
@@ -232,9 +262,18 @@ float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID User
 
 	if (UserID.IsValid())
 	{
-		// check user loaded
-		// if not, assert and return default
-		// if settings is set for user, return user's value
+		auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+		if (It == ActiveUsers.cend())
+		{
+			::Sys::Error("CApplication::GetIntSetting() > requested user is inactive");
+			return Default;
+		}
+
+		Data::CData UserData;
+		if (It->Settings->Get(UserData, CStrID(pKey)) && UserData.IsA<float>())
+		{
+			return UserData.GetValue<float>();
+		}
 	}
 
 	return GlobalSettings ? GlobalSettings->Get<float>(CStrID(pKey), Default) : Default;
@@ -246,7 +285,7 @@ const CString& CApplication::GetStringSetting(const char* pKey, const CString& D
 	if (OverrideSettings)
 	{
 		Data::CData OverrideData;
-		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<float>())
+		if (OverrideSettings->Get(OverrideData, CStrID(pKey)) && OverrideData.IsA<CString>())
 		{
 			return OverrideData.GetValue<CString>();
 		}
@@ -254,9 +293,18 @@ const CString& CApplication::GetStringSetting(const char* pKey, const CString& D
 
 	if (UserID.IsValid())
 	{
-		// check user loaded
-		// if not, assert and return default
-		// if settings is set for user, return user's value
+		auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+		if (It == ActiveUsers.cend())
+		{
+			::Sys::Error("CApplication::GetIntSetting() > requested user is inactive");
+			return Default;
+		}
+
+		Data::CData UserData;
+		if (It->Settings->Get(UserData, CStrID(pKey)) && UserData.IsA<CString>())
+		{
+			return UserData.GetValue<CString>();
+		}
 	}
 
 	return GlobalSettings ? GlobalSettings->Get<CString>(CStrID(pKey), Default) : Default;

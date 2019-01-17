@@ -9,6 +9,18 @@
 namespace Input
 {
 
+CInputTranslator::CInputTranslator(CStrID UserID): _UserID(UserID)
+{
+	Contexts.SetKeepOrder(true);
+}
+//---------------------------------------------------------------------
+
+CInputTranslator::~CInputTranslator()
+{
+	Clear();
+}
+//---------------------------------------------------------------------
+
 void CInputTranslator::Clear()
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
@@ -230,7 +242,7 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 }
 //---------------------------------------------------------------------
 
-void CInputTranslator::Trigger(float ElapsedTime)
+void CInputTranslator::UpdateTime(float ElapsedTime)
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 	{

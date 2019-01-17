@@ -23,7 +23,7 @@ private:
 		bool			Enabled;
 	};
 
-	U8						_UserID;
+	CStrID					_UserID;
 	CArray<CInputContext>	Contexts;
 	CArray<Events::PSub>	DeviceSubs;
 	CArray<Events::CEvent>	EventQueue;
@@ -36,8 +36,8 @@ private:
 
 public:
 
-	CInputTranslator(U8 UserID): _UserID(UserID) { Contexts.SetKeepOrder(true); }
-	~CInputTranslator() { Clear(); }
+	CInputTranslator(CStrID UserID);
+	virtual ~CInputTranslator();
 
 	bool			LoadSettings(const Data::CParams& Desc);
 	bool			SaveSettings(Data::CParams& OutDesc) const;
@@ -54,7 +54,7 @@ public:
 	void			ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void			DisconnectFromDevice(const IInputDevice* pDevice);
 
-	void			Trigger(float ElapsedTime);
+	void			UpdateTime(float ElapsedTime);
 	void			FireQueuedEvents(/*max count*/);
 	bool			CheckState(CStrID StateID) const;
 	void			Reset(/*device type*/);

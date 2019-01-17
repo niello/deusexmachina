@@ -4,6 +4,7 @@
 #include <Data/Params.h>
 #include <Events/EventsFwd.h>
 #include <memory>
+#include <vector>
 
 // DEM application base class. Application serves as a state machine,
 // OS interface and a global service container.
@@ -35,6 +36,11 @@ namespace IO
 	class CIOServer;
 }
 
+namespace Input
+{
+	class CInputTranslator;
+}
+
 namespace DEM
 {
 namespace Sys
@@ -50,6 +56,13 @@ class CApplication
 {
 protected:
 
+	struct CUser
+	{
+		CStrID ID;
+		Data::PParams Settings;
+		std::unique_ptr<Input::CInputTranslator> Input;
+	};
+
 	Sys::IPlatform& Platform; //???use unique ptr and heap-allocated platform?
 
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
@@ -57,7 +70,7 @@ protected:
 	Data::PParams GlobalSettings;
 	Data::PParams OverrideSettings; // From a command line
 	CStrID CurrentUserID;
-	// list of active users for a multi-user session, including a current user. Input translators, settings etc
+	std::vector<CUser> ActiveUsers;
 
 	double BaseTime = 0.0;
 	double PrevTime = 0.0;
@@ -84,6 +97,8 @@ public:
 	UPTR			EnumUserProfiles(CArray<CStrID>& Out) const;
 	CStrID			ActivateUser(CStrID UserID = CStrID::Empty);
 	CStrID			GetCurrentUserID() const { return CurrentUserID; }
+
+	Input::CInputTranslator* GetUserInput(CStrID UserID) const;
 
 	void			ParseCommandLine(const char* pCmdLine);
 	bool			LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
