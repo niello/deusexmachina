@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_MOCAP_CLIP_LOADER_NAX2_H__
 #define __DEM_L1_MOCAP_CLIP_LOADER_NAX2_H__
 
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 
 // Loads motion capture animation clip from The Nebula Device 2 'nax2' format
 
@@ -14,15 +14,13 @@ namespace Render
 namespace Resources
 {
 
-class CMocapClipLoaderNAX2: public IResourceCreator
+class CMocapClipLoaderNAX2: public CResourceLoader
 {
-	__DeclareClass(CMocapClipLoaderNAX2);
-
 public:
 
 	Render::PSkinInfo ReferenceSkinInfo; // NAX2 is bound to a particular skin
 
-	CMocapClipLoaderNAX2();
+	CMocapClipLoaderNAX2(IO::CIOServer* pIOServer);
 	virtual ~CMocapClipLoaderNAX2();
 
 	virtual const Core::CRTTI&			GetResultType() const override;

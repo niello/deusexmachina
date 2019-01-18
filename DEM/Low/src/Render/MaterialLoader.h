@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_MATERIAL_LOADER_H__
-#define __DEM_L1_MATERIAL_LOADER_H__
-
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 #include <Data/Dictionary.h>
 
 // Loads render material from DEM "prm" format
@@ -15,7 +12,7 @@ namespace Render
 namespace Resources
 {
 
-class CMaterialLoader: public IResourceCreator
+class CMaterialLoader: public CResourceLoader
 {
 	__DeclareClassNoFactory;
 
@@ -32,5 +29,3 @@ public:
 typedef Ptr<CMaterialLoader> PMaterialLoader;
 
 }
-
-#endif

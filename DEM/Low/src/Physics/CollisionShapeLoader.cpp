@@ -9,7 +9,6 @@
 #include <Math/AABB.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
-#include <Core/Factory.h>
 
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
@@ -36,7 +35,6 @@ namespace Str
 
 namespace Resources
 {
-__ImplementClass(Resources::CCollisionShapeLoaderPRM, 'CSLD', Resources::IResourceCreator);
 
 const Core::CRTTI& CCollisionShapeLoaderPRM::GetResultType() const
 {
@@ -46,7 +44,11 @@ const Core::CRTTI& CCollisionShapeLoaderPRM::GetResultType() const
 
 PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 	Data::PParams Desc = n_new(Data::CParams);
 	if (!Reader.ReadParams(*Desc)) return NULL;
 

@@ -7,7 +7,6 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CCDLODDataLoader, Resources::IResourceCreator);
 
 const Core::CRTTI& CCDLODDataLoader::GetResultType() const
 {
@@ -22,7 +21,11 @@ PResourceObject CCDLODDataLoader::CreateResource(CStrID UID)
 	//!!!write R32F variant!
 	if (!GPU->CheckCaps(Render::Caps_VSTex_R16)) return NULL;
 
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read<U32>(Magic) || Magic != 'CDLD') return NULL;
@@ -46,13 +49,13 @@ PResourceObject CCDLODDataLoader::CreateResource(CStrID UID)
 	if (!Reader.Read(Obj->Box.Max.z)) return NULL;
 
 	void* pHeightData = NULL;
-	if (Stream.CanBeMapped()) pHeightData = Stream.Map();
+	if (Stream->CanBeMapped()) pHeightData = Stream->Map();
 	bool Mapped = !!pHeightData;
 	if (!Mapped)
 	{
 		UPTR DataSize = Obj->HFWidth * Obj->HFHeight * sizeof(unsigned short);
 		pHeightData = n_malloc(DataSize);
-		if (Stream.Read(pHeightData, DataSize) != DataSize)
+		if (Stream->Read(pHeightData, DataSize) != DataSize)
 		{
 			n_free(pHeightData);
 			return NULL;

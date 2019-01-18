@@ -18,32 +18,18 @@ bool CNodeAttrAmbientLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReade
 	{
 		case 'IRRM':
 		{
-			CString RsrcURI = DataReader.Read<CString>();
-			Resources::PResource RTexture = ResourceMgr->RegisterResource(RsrcURI);			
-			if (!RTexture->IsLoaded())
-			{
-				Resources::PResourceLoader Loader = RTexture->GetLoader();
-				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(RsrcURI));
-				ResourceMgr->LoadResourceSync(*RTexture, *Loader);
-				if (!RTexture->IsLoaded()) FAIL;
-			}
-			IrradianceMap = RTexture->GetObject<Render::CTexture>();
+			CString RUID = DataReader.Read<CString>();
+			Resources::PResource RTexture = ResourceMgr->RegisterResource(CStrID(RUID),
+				ResourceMgr->GetDefaultCreatorFor<Render::CTexture>(PathUtils::GetExtension(RUID)));			
+			IrradianceMap = RTexture->ValidateObject<Render::CTexture>();
 			OK;
 		}
 		case 'PMRM':
 		{
-			CString RsrcURI = DataReader.Read<CString>();
-			Resources::PResource RTexture = ResourceMgr->RegisterResource(RsrcURI);			
-			if (!RTexture->IsLoaded())
-			{
-				Resources::PResourceLoader Loader = RTexture->GetLoader();
-				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(RsrcURI));
-				ResourceMgr->LoadResourceSync(*RTexture, *Loader);
-				if (!RTexture->IsLoaded()) FAIL;
-			}
-			RadianceEnvMap = RTexture->GetObject<Render::CTexture>();
+			CString RUID = DataReader.Read<CString>();
+			Resources::PResource RTexture = ResourceMgr->RegisterResource(CStrID(RUID),
+				ResourceMgr->GetDefaultCreatorFor<Render::CTexture>(PathUtils::GetExtension(RUID)));			
+			RadianceEnvMap = RTexture->ValidateObject<Render::CTexture>();
 			OK;
 		}
 	}

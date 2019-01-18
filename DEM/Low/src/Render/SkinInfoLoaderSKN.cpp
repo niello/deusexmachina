@@ -6,7 +6,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CSkinInfoLoaderSKN, 'LSKN', Resources::IResourceCreator);
 
 const Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
 {

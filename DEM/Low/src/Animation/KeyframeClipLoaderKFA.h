@@ -1,12 +1,12 @@
 #pragma once
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 
 // Loads keyframed animation clip from a native DEM 'kfa' format
 
 namespace Resources
 {
 
-class CKeyframeClipLoaderKFA: public IResourceCreator
+class CKeyframeClipLoaderKFA: public CResourceLoader
 {
 public:
 

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_RENDER_PATH_LOADER_RP_H__
 #define __DEM_L1_RENDER_PATH_LOADER_RP_H__
 
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 
 // Loads a render path from DEM (.rp) format
 
@@ -14,10 +14,8 @@ namespace Data
 namespace Resources
 {
 
-class CRenderPathLoaderRP: public IResourceCreator
+class CRenderPathLoaderRP: public CResourceLoader
 {
-	__DeclareClass(CRenderPathLoaderRP);
-
 public:
 
 	//virtual ~CRenderPathLoaderRP() {}

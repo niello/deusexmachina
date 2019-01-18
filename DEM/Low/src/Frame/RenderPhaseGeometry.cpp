@@ -399,23 +399,13 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 			Render::PEffect Effect;
 			if (!Prm.GetRawValue().IsNull())
 			{
-				CString RsrcURI("Effects:");
-				RsrcURI += Prm.GetValue<CStrID>().CStr();
-				RsrcURI += ".eff"; //???replace ID by full URI on export?
+				CString RUID("Effects:");
+				RUID += Prm.GetValue<CStrID>().CStr();
+				RUID += ".eff"; //???replace ID by full URI on export?
 
-				Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
-				if (!Rsrc->IsLoaded())
-				{
-					Resources::PResourceLoader Loader = Rsrc->GetLoader();
-					if (Loader.IsNullPtr())
-					{
-						Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CEffect>(PathUtils::GetExtension(RsrcURI.CStr()));
-						if (Loader.IsNullPtr()) FAIL;
-					}
-					ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-					if (!Rsrc->IsLoaded()) FAIL;
-				}
-				Effect = Rsrc->GetObject<Render::CEffect>();
+				Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
+					ResourceMgr->GetDefaultCreatorFor<Render::CEffect>(PathUtils::GetExtension(RUID.CStr())));
+				Effect = Rsrc->ValidateObject<Render::CEffect>();
 			}
 
 			EffectOverrides.Add(EffectType, Effect);

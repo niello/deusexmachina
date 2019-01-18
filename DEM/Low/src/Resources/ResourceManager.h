@@ -42,9 +42,12 @@ public:
 	bool				RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator, bool ClonePerResource = false);
 	PResourceCreator	GetDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType = nullptr);
 	template<class TRsrc>
-	PResourceCreator	GetDefaultCreatorFor(const char* pFmtExtension) { return CreateDefaultLoader(pFmtExtension, &TRsrc::RTTI); }
+	PResourceCreator	GetDefaultCreatorFor(const char* pFmtExtension) { return GetDefaultCreator(pFmtExtension, &TRsrc::RTTI); }
 
-	PResource			RegisterResource(CStrID UID, IResourceCreator* pCreator = nullptr);
+	PResource			RegisterResource(CStrID UID, IResourceCreator* pCreator);
+
+	//???add convenience method for default creator setup?
+	//RegisterResource(CStrID UID, const char* pFmtExtension, const Core::CRTTI* pRsrcType)
 };
 
 }

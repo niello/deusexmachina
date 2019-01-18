@@ -32,17 +32,10 @@ bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataR
 			//???!!!store the whole URI in a file?!
 			//???store resource locally for reloading?
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RsrcURI = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI);
-			if (!Rsrc->IsLoaded())
-			{
-				Resources::PResourceLoader Loader = Rsrc->GetLoader();
-				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CSkinInfo>(PathUtils::GetExtension(RsrcURI.CStr()));
-				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-				n_assert(Rsrc->IsLoaded());
-			}
-			SkinInfo = Rsrc->GetObject<Render::CSkinInfo>();
+			CStrID RUID = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RUID,
+				ResourceMgr->GetDefaultCreatorFor<Render::CSkinInfo>(PathUtils::GetExtension(RUID.CStr())));
+			SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
 			OK;
 		}
 		case 'ACBN':

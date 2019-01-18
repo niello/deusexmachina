@@ -49,6 +49,8 @@ public:
 
 	template<class T>
 	T*					GetObject();
+	template<class T>
+	T*					ValidateObject();
 
 	CResourceObject*	GetObject();
 	CResourceObject*	ValidateObject();
@@ -65,6 +67,13 @@ public:
 template<class T> inline T* CResource::GetObject()
 {
 	CResourceObject* pObj = GetObject();
+	return (pObj && pObj->IsA<T>()) ? static_cast<T*>(pObj) : nullptr;
+}
+//--------------------------------------------------------------------
+
+template<class T> inline T* CResource::ValidateObject()
+{
+	CResourceObject* pObj = ValidateObject();
 	return (pObj && pObj->IsA<T>()) ? static_cast<T*>(pObj) : nullptr;
 }
 //--------------------------------------------------------------------

@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_EFFECT_LOADER_H__
 #define __DEM_L1_EFFECT_LOADER_H__
 
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 #include <Render/RenderFwd.h>
 #include <Data/FixedArray.h>
 
@@ -16,7 +16,7 @@ namespace IO
 namespace Resources
 {
 
-class CEffectLoader: public IResourceCreator
+class CEffectLoader: public CResourceLoader
 {
 public:
 
@@ -25,8 +25,8 @@ public:
 
 	virtual ~CEffectLoader();
 
-	virtual const Core::CRTTI&			GetResultType() const override;
-	virtual PResourceObject				CreateResource(CStrID UID) override;
+	virtual const Core::CRTTI&	GetResultType() const override;
+	virtual PResourceObject		CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CEffectLoader> PEffectLoader;

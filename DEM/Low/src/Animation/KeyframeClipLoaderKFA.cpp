@@ -2,7 +2,6 @@
 
 #include <Animation/KeyframeClip.h>
 #include <IO/BinaryReader.h>
-#include <IO/IOServer.h>
 #include <Core/Factory.h>
 
 namespace Resources
@@ -16,25 +15,9 @@ const Core::CRTTI& CKeyframeClipLoaderKFA::GetResultType() const
 
 PResourceObject CKeyframeClipLoaderKFA::CreateResource(CStrID UID)
 {
-	IO::PStream Stream;
-
-	const char* pSubId = strchr(UID.CStr(), '#');
-	if (pSubId)
-	{
-		if (pSubId == UID.CStr()) return nullptr;
-
-		CString Path(UID.CStr(), pSubId - UID.CStr());
-		Stream = IOSrv->CreateStream(Path);
-
-		++pSubId; // Skip '#'
-		if (*pSubId == 0) pSubId = nullptr;
-	}
-	else Stream = IOSrv->CreateStream(UID.CStr());
-
-	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead())
-	{
-		return nullptr;
-	}
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

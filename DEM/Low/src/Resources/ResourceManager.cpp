@@ -19,11 +19,18 @@ CResourceManager::~CResourceManager()
 }
 //---------------------------------------------------------------------
 
+// NB: does not change creator of existing resource
 PResource CResourceManager::RegisterResource(CStrID UID, IResourceCreator* pCreator)
 {
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))
 	{
+		//if (!pCreator)
+		//{
+		//	// Get path part from UID.CStr() (before '#' or '\0')
+		//	pCreator = GetDefaultCreator(PathUtils::GetExtension(UID.CStr()));
+		//}
+
 		Rsrc = n_new(CResource(UID));
 		Rsrc->SetCreator(pCreator);
 		Registry.Add(UID, Rsrc);

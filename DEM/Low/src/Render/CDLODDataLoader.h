@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_CDLOD_DATA_LOADER_H__
 #define __DEM_L1_CDLOD_DATA_LOADER_H__
 
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 
 // Loads CDLOD terrain rendering data from DEM "cdlod" format
 
@@ -14,10 +14,8 @@ namespace Render
 namespace Resources
 {
 
-class CCDLODDataLoader: public IResourceCreator
+class CCDLODDataLoader: public CResourceLoader
 {
-	__DeclareClassNoFactory;
-
 public:
 
 	Render::PGPUDriver GPU; // For heightfield texture only

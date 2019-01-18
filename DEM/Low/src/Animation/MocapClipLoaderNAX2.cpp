@@ -7,8 +7,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CMocapClipLoaderNAX2, 'LNX2', Resources::IResourceCreator);
-
 #pragma pack(push, 1)
 struct CNAX2Header
 {
@@ -37,7 +35,7 @@ struct CNAX2Curve
 };
 #pragma pack(pop)
 
-CMocapClipLoaderNAX2::CMocapClipLoaderNAX2() {}
+CMocapClipLoaderNAX2::CMocapClipLoaderNAX2(IO::CIOServer* pIOServer) : CResourceLoader(pIOServer) {}
 CMocapClipLoaderNAX2::~CMocapClipLoaderNAX2() {}
 
 const Core::CRTTI& CMocapClipLoaderNAX2::GetResultType() const
@@ -50,7 +48,11 @@ PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 {
 	if (ReferenceSkinInfo.IsNullPtr()) return NULL;
 
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	CNAX2Header Header;
 	if (!Reader.Read(Header) || Header.magic != 'NAX2') return NULL;
@@ -124,7 +126,7 @@ PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 
 	UPTR KeyCount = Group.numKeys * Group.keyStride;
 	vector4* pKeys = n_new_array(vector4, KeyCount);
-	Stream.Read(pKeys, KeyCount * sizeof(vector4));
+	Stream->Read(pKeys, KeyCount * sizeof(vector4));
 
 	//???load directly to Clip fields?
 	Anim::PMocapClip Clip = n_new(Anim::CMocapClip);

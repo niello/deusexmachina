@@ -10,8 +10,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CRenderPathLoaderRP, 'RPLD', Resources::IResourceCreator);
-
 // Defined in Render/EffectLoadingUtils.cpp
 bool LoadEffectParams(IO::CBinaryReader& Reader, Render::CShaderLibrary* pShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
 
@@ -23,7 +21,11 @@ const Core::CRTTI& CRenderPathLoaderRP::GetResultType() const
 
 PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read<U32>(Magic) || Magic != 'RPTH') return NULL;
@@ -82,14 +84,14 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 		case 0: // SM3.0
 		{
 			Render::CSM30ShaderMetadata* pGlobals = n_new(Render::CSM30ShaderMetadata);
-			if (!pGlobals->Load(Stream)) return NULL;
+			if (!pGlobals->Load(*Stream)) return NULL;
 			RP->pGlobals = pGlobals;
 			break;
 		}
 		case 1: // USM
 		{
 			Render::CUSMShaderMetadata* pGlobals = n_new(Render::CUSMShaderMetadata);
-			if (!pGlobals->Load(Stream)) return NULL;
+			if (!pGlobals->Load(*Stream)) return NULL;
 			RP->pGlobals = pGlobals;
 			break;
 		}

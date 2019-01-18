@@ -18,15 +18,6 @@ bool SkipEffectParams(IO::CBinaryReader& Reader);
 
 CEffectLoader::~CEffectLoader() {}
 
-PResourceLoader CEffectLoader::Clone()
-{
-	PEffectLoader NewLoader = n_new(CEffectLoader);
-	NewLoader->GPU = GPU;
-	NewLoader->ShaderLibrary = ShaderLibrary;
-	return NewLoader.Get();
-}
-//---------------------------------------------------------------------
-
 const Core::CRTTI& CEffectLoader::GetResultType() const
 {
 	return Render::CEffect::RTTI;
@@ -38,7 +29,11 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') return NULL;
@@ -237,10 +232,10 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 		{
 			U32 PassCount;
 			if (!Reader.Read<U32>(PassCount)) return NULL;
-			if (!Stream.Seek(4 * PassCount, IO::Seek_Current)) return NULL; // Pass indices
+			if (!Stream->Seek(4 * PassCount, IO::Seek_Current)) return NULL; // Pass indices
 			U32 MaxLights;
 			if (!Reader.Read<U32>(MaxLights)) return NULL;
-			if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) return NULL; // VariationValid flags
+			if (!Stream->Seek(MaxLights + 1, IO::Seek_Current)) return NULL; // VariationValid flags
 			if (!SkipEffectParams(Reader)) return NULL;
 			continue;
 		}
@@ -277,7 +272,7 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 
 		if (HasCompletelyInvalidPass)
 		{
-			if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) return NULL; // VariationValid flags
+			if (!Stream->Seek(MaxLights + 1, IO::Seek_Current)) return NULL; // VariationValid flags
 			if (!SkipEffectParams(Reader)) return NULL;
 			continue;
 		}

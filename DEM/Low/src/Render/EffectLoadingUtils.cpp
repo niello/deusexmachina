@@ -132,22 +132,14 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 
 Render::PTexture LoadTextureValue(IO::CBinaryReader& Reader, Render::PGPUDriver GPU)
 {
-	CStrID ResourceID;
-	if (!Reader.Read(ResourceID)) return NULL;
+	CStrID RUID;
+	if (!Reader.Read(RUID)) return NULL;
 
-	Resources::PResource RTexture = ResourceMgr->RegisterResource(ResourceID.CStr());
-	if (!RTexture->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RTexture->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CTexture>(PathUtils::GetExtension(ResourceID.CStr()));
-		if (Loader.IsNullPtr()) return NULL;
-		Loader->As<Resources::CTextureLoader>()->GPU = GPU;
-		ResourceMgr->LoadResourceSync(*RTexture, *Loader);
-		if (!RTexture->IsLoaded()) return NULL;
-	}
+	Resources::PResource RTexture = ResourceMgr->RegisterResource(RUID,
+		ResourceMgr->GetDefaultCreatorFor<Render::CTexture>(PathUtils::GetExtension(RUID.CStr())));
+	//Loader->As<Resources::CTextureLoader>()->GPU = GPU;
 
-	return RTexture->GetObject<Render::CTexture>();
+	return RTexture->ValidateObject<Render::CTexture>();
 }
 //---------------------------------------------------------------------
 

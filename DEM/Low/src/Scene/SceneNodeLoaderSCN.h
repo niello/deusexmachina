@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_NODE_LOADER_H__
-#define __DEM_L1_SCENE_NODE_LOADER_H__
-
-#include <Resources/ResourceCreator.h>
+#include <Resources/ResourceLoader.h>
 
 // Loads scene node hierarchy and attributes from DEM "scn" format
 
@@ -14,7 +11,7 @@ namespace Scene
 namespace Resources
 {
 
-class CSceneNodeLoaderSCN: public IResourceCreator
+class CSceneNodeLoaderSCN: public CResourceLoader
 {
 	__DeclareClassNoFactory;
 
@@ -30,5 +27,3 @@ public:
 typedef Ptr<CSceneNodeLoaderSCN> PSceneNodeLoaderSCN;
 
 }
-
-#endif
