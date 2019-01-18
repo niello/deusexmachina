@@ -248,10 +248,14 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 
-	U64 FileSize = Stream.GetSize();
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	U64 FileSize = Stream->GetSize();
 	if (FileSize < sizeof(DDS_HEADER) + 4) return NULL; // Too small to be a valid DDS
 
-	IO::CBinaryReader Reader(Stream);
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read<U32>(Magic) || Magic != DDS_MAGIC) return NULL;
@@ -305,19 +309,19 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 		else TexDesc.Type = Render::Texture_2D;
 	}
 
-	U64 DataSize64 = FileSize - Stream.GetPosition();
+	U64 DataSize64 = FileSize - Stream->GetPosition();
 	UPTR DataSize = (UPTR)DataSize64;
 	if ((U64)DataSize != DataSize64) return NULL;
 
 	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 
 	void* pData = NULL;
-	if (!ConversionRequired && Stream.CanBeMapped()) pData = Stream.Map();
+	if (!ConversionRequired && Stream->CanBeMapped()) pData = Stream->Map();
 	bool Mapped = !!pData;
 	if (!Mapped)
 	{
 		pData = n_malloc(DataSize);
-		if (Stream.Read(pData, DataSize) != DataSize)
+		if (Stream->Read(pData, DataSize) != DataSize)
 		{
 			n_free(pData);
 			return NULL;
@@ -375,7 +379,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, MipDataProvided);
 
-	if (Mapped) Stream.Unmap();
+	if (Mapped) Stream->Unmap();
 	else n_free(pData);
 
 	return Texture.Get();

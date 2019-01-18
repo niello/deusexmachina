@@ -15,7 +15,6 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CMaterialLoader, Resources::IResourceCreator);
 
 // Defined in Render/EffectLoadingUtils.cpp
 bool LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
@@ -30,7 +29,11 @@ PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read<U32>(Magic) || Magic != 'MTRL') return NULL;
@@ -42,27 +45,16 @@ PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 	if (!Reader.Read(EffectID)) return NULL;
 	if (!EffectID.IsValid()) return NULL;
 
-	CString RsrcURI("Effects:");
-	RsrcURI += EffectID.CStr();
-	RsrcURI += ".eff"; //???replace ID by full URI on export?
+	CString RUID("Effects:");
+	RUID += EffectID.CStr();
+	RUID += ".eff"; //???replace ID by full URI on export?
 
-	Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
-	if (!Rsrc->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = Rsrc->GetLoader();
-		if (Loader.IsNullPtr())
-		{
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CEffect>(PathUtils::GetExtension(RsrcURI.CStr()));
-			if (Loader.IsNullPtr()) return NULL;
-		}
-		Loader->As<Resources::CEffectLoader>()->GPU = GPU;
-		ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-		if (!Rsrc->IsLoaded()) return NULL;
-	}
+	Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
+		ResourceMgr->GetDefaultCreatorFor<Render::CEffect>(PathUtils::GetExtension(RUID.CStr())));
 
 	Render::PMaterial Mtl = n_new(Render::CMaterial);
 
-	Mtl->Effect = Rsrc->GetObject<Render::CEffect>();
+	Mtl->Effect = Rsrc->ValidateObject<Render::CEffect>();
 
 	// Build parameters
 

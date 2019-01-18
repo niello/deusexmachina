@@ -9,11 +9,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CD3D11ShaderLoader, 'SHL1', Resources::CShaderLoader);
-
-///////////////////////////////////////////////////////////////////////
-// CD3D11ShaderLoader
-///////////////////////////////////////////////////////////////////////
 
 const Core::CRTTI& CD3D11ShaderLoader::GetResultType() const
 {
@@ -21,11 +16,15 @@ const Core::CRTTI& CD3D11ShaderLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CD3D11ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShaderType ShaderType)
+PResourceObject CD3D11ShaderLoader::LoadImpl(CStrID UID, Render::EShaderType ShaderType)
 {
 	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D11GPUDriver>()) FAIL;
 
-	IO::CBinaryReader R(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader R(*Stream);
 
 	Data::CFourCC FileSig;
 	if (!R.Read(FileSig)) FAIL;
@@ -69,13 +68,13 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShade
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) FAIL;
 
-	U64 MetadataOffset = Stream.GetPosition();
-	U64 FileSize = Stream.GetSize();
+	U64 MetadataOffset = Stream->GetPosition();
+	U64 FileSize = Stream->GetSize();
 	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
 	if (!BinarySize) FAIL;
 	void* pData = n_malloc(BinarySize);
 	if (!pData) FAIL;
-	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
+	if (!Stream->Seek(BinaryOffset, IO::Seek_Begin) || Stream->Read(pData, BinarySize) != BinarySize)
 	{
 		n_free(pData);
 		FAIL;
@@ -116,9 +115,9 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShade
 
 	Shader->InputSignatureID = InputSignatureID;
 
-	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
+	if (!Stream->Seek(MetadataOffset, IO::Seek_Begin)) FAIL;
 
-	if (!Shader->Metadata.Load(Stream)) FAIL;
+	if (!Shader->Metadata.Load(*Stream)) FAIL;
 
 	return Shader.Get();
 }

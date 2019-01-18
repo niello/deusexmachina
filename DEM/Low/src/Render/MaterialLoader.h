@@ -14,8 +14,6 @@ namespace Resources
 
 class CMaterialLoader: public CResourceLoader
 {
-	__DeclareClassNoFactory;
-
 public:
 
 	Render::PGPUDriver GPU;

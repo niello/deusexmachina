@@ -74,7 +74,7 @@ PResourceObject CCDLODDataLoader::CreateResource(CStrID UID)
 
 	Obj->HeightMap = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pHeightData, false);
 
-	if (Mapped) Stream.Unmap();
+	if (Mapped) Stream->Unmap();
 	else n_free(pHeightData);
 
 	if (Obj->HeightMap.IsNullPtr()) return NULL;

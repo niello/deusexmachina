@@ -4,6 +4,7 @@
 
 #include <Resources/ResourceObject.h>
 #include <Data/FixedArray.h>
+#include <Data/StringID.h>
 #include <Math/Matrix44.h>
 
 // Shared bind pose data for skinning. Maps inverse skeleton-root-related bind

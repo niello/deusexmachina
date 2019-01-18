@@ -23,17 +23,17 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 	{
 		case 'CDLD':
 		{
-			CString RsrcURI("Terrain:");
-			RsrcURI += DataReader.Read<CStrID>().CStr();
-			RsrcURI += ".cdlod";
-			RCDLODData = ResourceMgr->RegisterResource(RsrcURI);
+			CString RUID("Terrain:");
+			RUID += DataReader.Read<CStrID>().CStr();
+			RUID += ".cdlod";
+			RCDLODData = ResourceMgr->RegisterResource(CStrID(RUID));
 			OK;
 		}
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(RsrcURI);
+			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+			RMaterial = ResourceMgr->RegisterResource(CStrID(RUID));
 			OK;
 		}
 		case 'TSSX':
@@ -74,7 +74,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 		ResourceMgr->LoadResourceSync(*RCDLODData, *Loader);
 		if (!RCDLODData->IsLoaded()) FAIL;
 	}
-	CDLODData = RCDLODData->GetObject<Render::CCDLODData>();
+	CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
 
 	//!!!if CDLOD will not include texture, just height data, create texture here, if not created!
 
@@ -86,7 +86,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 		ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
 		n_assert(RMaterial->IsLoaded());
 	}
-	Material = RMaterial->GetObject<Render::CMaterial>();
+	Material = RMaterial->ValidateObject<Render::CMaterial>();
 
 	U32 PatchSize = CDLODData->GetPatchSize();
 	if (pGPU && IsPow2(PatchSize) && PatchSize >= 4)
@@ -107,7 +107,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());
 		}
-		PatchMesh = RPatch->GetObject<CMesh>();
+		PatchMesh = RPatch->ValidateObject<CMesh>();
 
 		PatchSize >>= 1;
 		PatchName.Format("Mesh_Patch%dx%d", PatchSize, PatchSize);
@@ -125,7 +125,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
 			n_assert(RPatch->IsLoaded());
 		}
-		QuarterPatchMesh = RPatch->GetObject<CMesh>();
+		QuarterPatchMesh = RPatch->ValidateObject<CMesh>();
 	}
 
 	OK;

@@ -5,8 +5,6 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CMeshLoader, Resources::IResourceCreator);
-
 CMeshLoader::~CMeshLoader() {}
 
 const Core::CRTTI& CMeshLoader::GetResultType() const

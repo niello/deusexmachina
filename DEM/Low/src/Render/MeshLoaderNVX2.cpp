@@ -3,12 +3,9 @@
 #include <Render/Mesh.h>
 #include <Render/GPUDriver.h>
 #include <IO/BinaryReader.h>
-#include <Core/Factory.h>
 
 namespace Resources
 {
-__ImplementClass(Resources::CMeshLoaderNVX2, 'LMN2', Resources::CMeshLoader);
-
 #pragma pack(push, 1)
 struct CNVX2Header
 {
@@ -199,17 +196,13 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 }
 //---------------------------------------------------------------------
 
-PResourceLoader CMeshLoaderNVX2::Clone()
-{
-	PMeshLoaderNVX2 NewLoader = n_new(CMeshLoaderNVX2);
-	NewLoader->GPU = GPU;
-	return NewLoader.Get();
-}
-//---------------------------------------------------------------------
-
 PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	// NVX2 is always TriList and Index16
 	CNVX2Header Header;
@@ -238,12 +231,12 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 	//!!!map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
 	float* pVBData = (float*)n_malloc_aligned(DataSize, 16);
-	Stream.Read(pVBData, DataSize);
+	Stream->Read(pVBData, DataSize);
 
 	//!!!map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
 	U16* pIBData = (U16*)n_malloc_aligned(DataSize, 16);
-	Stream.Read(pIBData, DataSize);
+	Stream->Read(pIBData, DataSize);
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, Header.numVertices, Render::Access_GPU_Read, pVBData);
