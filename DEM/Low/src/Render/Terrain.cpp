@@ -26,14 +26,16 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 			CString RUID("Terrain:");
 			RUID += DataReader.Read<CStrID>().CStr();
 			RUID += ".cdlod";
-			RCDLODData = ResourceMgr->RegisterResource(CStrID(RUID));
+			RCDLODData = ResourceMgr->RegisterResource(CStrID(RUID),
+				ResourceMgr->GetDefaultCreatorFor<Render::CCDLODData>(PathUtils::GetExtension(RUID)));
 			OK;
 		}
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(CStrID(RUID));
+			RMaterial = ResourceMgr->RegisterResource(CStrID(RUID),
+				ResourceMgr->GetDefaultCreatorFor<Render::CMaterial>(PathUtils::GetExtension(RUID)));
 			OK;
 		}
 		case 'TSSX':
@@ -66,33 +68,17 @@ IRenderable* CTerrain::Clone()
 
 bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 {
-	if (!RCDLODData->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RCDLODData->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CCDLODData>(PathUtils::GetExtension(RCDLODData->GetUID()));
-		ResourceMgr->LoadResourceSync(*RCDLODData, *Loader);
-		if (!RCDLODData->IsLoaded()) FAIL;
-	}
 	CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
 
 	//!!!if CDLOD will not include texture, just height data, create texture here, if not created!
 
-	if (!RMaterial->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RMaterial->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RMaterial->GetUID()));
-		ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
-		n_assert(RMaterial->IsLoaded());
-	}
 	Material = RMaterial->ValidateObject<Render::CMaterial>();
 
 	U32 PatchSize = CDLODData->GetPatchSize();
 	if (pGPU && IsPow2(PatchSize) && PatchSize >= 4)
 	{
 		CString PatchName;
-		PatchName.Format("Mesh_Patch%dx%d", PatchSize, PatchSize);
+		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
 		Resources::PResource RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{
@@ -110,7 +96,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 		PatchMesh = RPatch->ValidateObject<CMesh>();
 
 		PatchSize >>= 1;
-		PatchName.Format("Mesh_Patch%dx%d", PatchSize, PatchSize);
+		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
 		RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{

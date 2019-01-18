@@ -54,7 +54,7 @@ PShader CShaderLibrary::GetShaderByID(U32 ID)
 
 	// Introduce temporary cyclic dependency, loader requires access to library to load input signatures by ID
 	ShaderLoader->ShaderLibrary = this;
-	Rec.LoadedShader = (CShader*)ShaderLoader->Load(*Stream.Get()).Get();
+	Rec.LoadedShader = (CShader*)ShaderLoader->CreateResource(*Stream.Get()).Get();
 	ShaderLoader->ShaderLibrary = nullptr;
 
 	Stream = nullptr;

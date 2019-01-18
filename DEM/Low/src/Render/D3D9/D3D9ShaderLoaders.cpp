@@ -8,11 +8,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CD3D9ShaderLoader, 'SHL9', Resources::CShaderLoader);
-
-///////////////////////////////////////////////////////////////////////
-// CD3D9ShaderLoader
-///////////////////////////////////////////////////////////////////////
 
 const Core::CRTTI& CD3D9ShaderLoader::GetResultType() const
 {
@@ -20,11 +15,15 @@ const Core::CRTTI& CD3D9ShaderLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CD3D9ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShaderType ShaderType)
+PResourceObject CD3D9ShaderLoader::LoadImpl(CStrID UID, Render::EShaderType ShaderType)
 {
 	if (GPU.IsNullPtr() || !GPU->IsA<Render::CD3D9GPUDriver>()) return NULL;
 
-	IO::CBinaryReader R(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader R(*Stream);
 
 	Data::CFourCC FileSig;
 	if (!R.Read(FileSig)) return NULL;
@@ -52,13 +51,13 @@ PResourceObject CD3D9ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShader
 	U32 ShaderFileID;
 	if (!R.Read(ShaderFileID)) return NULL;
 
-	U64 MetadataOffset = Stream.GetPosition();
-	U64 FileSize = Stream.GetSize();
+	U64 MetadataOffset = Stream->GetPosition();
+	U64 FileSize = Stream->GetSize();
 	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
 	if (!BinarySize) return NULL;
 	void* pData = n_malloc(BinarySize);
 	if (!pData) return NULL;
-	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
+	if (!Stream->Seek(BinaryOffset, IO::Seek_Begin) || Stream->Read(pData, BinarySize) != BinarySize)
 	{
 		n_free(pData);
 		return NULL;
@@ -69,9 +68,9 @@ PResourceObject CD3D9ShaderLoader::LoadImpl(IO::CStream& Stream, Render::EShader
 
 	n_free(pData);
 
-	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) return NULL;
+	if (!Stream->Seek(MetadataOffset, IO::Seek_Begin)) return NULL;
 
-	if (!Shader->Metadata.Load(Stream)) return NULL;
+	if (!Shader->Metadata.Load(*Stream)) return NULL;
 
 	return Shader.Get();
 }

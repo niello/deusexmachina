@@ -15,7 +15,11 @@ const Core::CRTTI& CShaderLibraryLoaderSLB::GetResultType() const
 
 PResourceObject CShaderLibraryLoaderSLB::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read(Magic) || Magic != 'SLIB') return NULL;
@@ -36,12 +40,8 @@ PResourceObject CShaderLibraryLoaderSLB::CreateResource(CStrID UID)
 		if (!Reader.Read(Rec.Offset)) return NULL;
 		if (!Reader.Read(Rec.Size)) return NULL;
 	}
-
-	// Own initialization stream for lazy loading of shaders.
-	// Ensure Stream is properly ref-counted (not created on stack).
-	n_assert_dbg(Stream.GetRefCount() > 0);
-	if ((Stream.GetRefCount() > 0))
-		ShaderLibrary->Storage = &Stream;
+	
+	ShaderLibrary->Storage = Stream;
 
 	return ShaderLibrary.Get();
 }

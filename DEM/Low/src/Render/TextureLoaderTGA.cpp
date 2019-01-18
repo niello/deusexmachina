@@ -11,8 +11,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CTextureLoaderTGA, 'TGAL', Resources::CTextureLoader);
-
 #pragma pack(push, 1)
 
 struct CTGAHeader

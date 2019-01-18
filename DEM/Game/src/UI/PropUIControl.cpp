@@ -73,15 +73,9 @@ bool CPropUIControl::InternalActivate()
 	if (PickShapeID.IsValid() && GetEntity()->GetLevel()->GetPhysics())
 	{
 		CStrID PickShapeURI = CStrID(CString("Physics:") + PickShapeID.CStr() + ".prm");
-		Resources::PResource RShape = ResourceMgr->RegisterResource(PickShapeURI);
-		if (!RShape->IsLoaded())
-		{
-			Resources::PResourceLoader Loader = ResourceMgr->CreateDefaultLoaderFor<Physics::CCollisionShape>("prm"); //!!!get ext from URI!
-			if (Loader.IsNullPtr()) FAIL;
-			ResourceMgr->LoadResourceSync(*RShape, *Loader);
-			if (!RShape->IsLoaded()) FAIL;
-		}
-		Physics::PCollisionShape Shape = RShape->GetObject<Physics::CCollisionShape>();
+		Resources::PResource RShape = ResourceMgr->RegisterResource(PickShapeURI,
+			ResourceMgr->GetDefaultCreatorFor<Physics::CCollisionShape>("prm")); //!!!get ext from URI!
+		Physics::PCollisionShape Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 
 		U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
 		U16 Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");

@@ -21,8 +21,9 @@ bool CSkybox::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(RsrcURI);
+			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+			RMaterial = ResourceMgr->RegisterResource(RUID,
+				ResourceMgr->GetDefaultCreatorFor<Render::CMaterial>(PathUtils::GetExtension(RUID)));
 			OK;
 		}
 		default: FAIL;
@@ -40,17 +41,10 @@ IRenderable* CSkybox::Clone()
 
 bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 {
-	if (!RMaterial->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RMaterial->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RMaterial->GetUID()));
-		ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
-		n_assert(RMaterial->IsLoaded());
-	}
-	Material = RMaterial->GetObject<Render::CMaterial>();
+	Material = RMaterial->ValidateObject<Render::CMaterial>();
 
-	Resources::PResource RMesh = ResourceMgr->RegisterResource("Mesh_Skybox");
+	//???how not to allocate new generator if resource exists? existence check needed!
+	Resources::PResource RMesh = ResourceMgr->RegisterResource("#Mesh_Skybox");
 	if (!RMesh->IsLoaded())
 	{
 		Resources::PResourceCreator Gen = RMesh->GetGenerator();
@@ -63,7 +57,7 @@ bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 		ResourceMgr->GenerateResourceSync(*RMesh, *Gen);
 		n_assert(RMesh->IsLoaded());
 	}
-	Mesh = RMesh->GetObject<CMesh>();
+	Mesh = RMesh->ValidateObject<CMesh>();
 
 	OK;
 }

@@ -15,7 +15,11 @@ const Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
 
 PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
 	if (!Reader.Read(Magic) || Magic != 'SKIF') return NULL;
@@ -30,7 +34,7 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
 	SkinInfo->Create(BoneCount);
 
-	Stream.Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
+	Stream->Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
 
 	for (U32 i = 0; i < BoneCount; ++i)
 	{

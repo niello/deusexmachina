@@ -128,7 +128,6 @@ struct DDS_HEADER_DXT10
 
 namespace Resources
 {
-__ImplementClass(Resources::CTextureLoaderDDS, 'DDSL', Resources::CTextureLoader);
 
 //!!!need sRGB handling!
 Render::EPixelFormat DDSFormatToPixelFormat(const DDS_PIXELFORMAT& DDSFormat)

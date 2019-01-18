@@ -20,8 +20,9 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RsrcURI = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(RsrcURI);			
+			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+			RMaterial = ResourceMgr->RegisterResource(RUID,
+				ResourceMgr->GetDefaultCreatorFor<Render::CMaterial>(PathUtils::GetExtension(RUID)));
 			OK;
 		}
 		case 'JPLT':
@@ -35,8 +36,9 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		{
 			//???!!!store the whole URI in a file?!
 			CString MeshID = DataReader.Read<CString>();
-			CStrID MeshURI = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
-			RMesh = ResourceMgr->RegisterResource(MeshURI);
+			CStrID RUID = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
+			RMesh = ResourceMgr->RegisterResource(RUID,
+				ResourceMgr->GetDefaultCreatorFor<Render::CMesh>(PathUtils::GetExtension(RUID)));			
 			OK;
 		}
 		case 'MSGR':
@@ -61,26 +63,8 @@ IRenderable* CModel::Clone()
 
 bool CModel::ValidateResources(CGPUDriver* pGPU)
 {
-	if (!RMesh->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RMesh->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMesh>(PathUtils::GetExtension(RMesh->GetUID()));
-		ResourceMgr->LoadResourceSync(*RMesh, *Loader);
-		n_assert(RMesh->IsLoaded());
-	}
-	Mesh = RMesh->GetObject<Render::CMesh>();
-
-	if (!RMaterial->IsLoaded())
-	{
-		Resources::PResourceLoader Loader = RMaterial->GetLoader();
-		if (Loader.IsNullPtr())
-			Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CMaterial>(PathUtils::GetExtension(RMaterial->GetUID()));
-		ResourceMgr->LoadResourceSync(*RMaterial, *Loader);
-		n_assert(RMaterial->IsLoaded());
-	}
-	Material = RMaterial->GetObject<Render::CMaterial>();
-
+	Mesh = RMesh->ValidateObject<Render::CMesh>();
+	Material = RMaterial->ValidateObject<Render::CMaterial>();
 	OK;
 }
 //---------------------------------------------------------------------

@@ -120,28 +120,20 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			Data::CParam& Prm = Desc->Get(i);
 
 			CStrID RsrcID = Prm.GetValue<CStrID>();
-			CString RsrcURI("Anims:");
-			RsrcURI += RsrcID.CStr();
+			CString RUID("Anims:");
+			RUID += RsrcID.CStr();
 
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
-			if (!Rsrc->IsLoaded())
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
+				ResourceMgr->GetDefaultCreatorFor<Anim::CAnimClip>(PathUtils::GetExtension(RUID)));
+
+			//!!!DBG TMP!
+			if (Rsrc->GetCreator()->GetResultType().IsDerivedFrom(Anim::CMocapClip::RTTI))
 			{
-				Resources::PResourceLoader Loader = Rsrc->GetLoader();
-				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Anim::CAnimClip>(PathUtils::GetExtension(RsrcURI.CStr()));
-
-				//!!!DBG TMP!
-				if (Loader->IsA<Resources::CMocapClipLoaderNAX2>())
-				{
-					Frame::CNodeAttrSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
-					if (pSkin) ((Resources::CMocapClipLoaderNAX2*)Loader.Get())->ReferenceSkinInfo = pSkin->GetSkinInfo();
-				}
-
-				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-				n_assert(Rsrc->IsLoaded());
+				Frame::CNodeAttrSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
+				if (pSkin) ((Resources::CMocapClipLoaderNAX2*)Rsrc->GetCreator())->ReferenceSkinInfo = pSkin->GetSkinInfo();
 			}
 
-			Clips.Add(Prm.GetName(), Rsrc->GetObject<Anim::CAnimClip>());
+			Clips.Add(Prm.GetName(), Rsrc->ValidateObject<Anim::CAnimClip>());
 		}
 	}
 //!!!to Activate() -

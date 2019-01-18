@@ -17,12 +17,12 @@ class CD3D9ShaderLoader: public CShaderLoader
 
 protected:
 
-	PResourceObject				LoadImpl(IO::CStream& Stream, Render::EShaderType ShaderType);
+	PResourceObject				LoadImpl(CStrID UID, Render::EShaderType ShaderType);
 
 public:
 
 	virtual const Core::CRTTI&	GetResultType() const override;
-	virtual PResourceObject		CreateResource(CStrID UID) { return LoadImpl(Stream, Render::ShaderType_Unknown); }
+	virtual PResourceObject		CreateResource(CStrID UID) { return LoadImpl(UID, Render::ShaderType_Unknown); }
 };
 
 typedef Ptr<CD3D9ShaderLoader> PD3D9ShaderLoader;

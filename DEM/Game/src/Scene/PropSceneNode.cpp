@@ -43,17 +43,10 @@ bool CPropSceneNode::Initialize()
 	{
 		if (NodeFile.IsValid())
 		{
-			CString RsrcURI = "Scene:" + NodeFile + ".scn";
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RsrcURI.CStr());
-			if (!Rsrc->IsLoaded())
-			{
-				Resources::PResourceLoader Loader = Rsrc->GetLoader();
-				if (Loader.IsNullPtr())
-					Loader = ResourceMgr->CreateDefaultLoaderFor<Scene::CSceneNode>(PathUtils::GetExtension(RsrcURI.CStr()));
-				ResourceMgr->LoadResourceSync(*Rsrc, *Loader);
-				if (!Rsrc->IsLoaded()) FAIL;
-			}
-			Node = Rsrc->GetObject<Scene::CSceneNode>()->Clone(true);
+			CString RUID = "Scene:" + NodeFile + ".scn";
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
+				ResourceMgr->GetDefaultCreatorFor<Scene::CSceneNode>(PathUtils::GetExtension(RUID)));
+			Node = Rsrc->ValidateObject<Scene::CSceneNode>()->Clone(true);
 		}
 		else
 		{

@@ -6,7 +6,6 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CSceneNodeLoaderSCN, Resources::IResourceCreator);
 
 const Core::CRTTI& CSceneNodeLoaderSCN::GetResultType() const
 {
@@ -60,7 +59,11 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 
 PResourceObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	const char* pSubId;
+	IO::PStream Stream = OpenStream(UID, pSubId);
+	if (!Stream) return nullptr;
+
+	IO::CBinaryReader Reader(*Stream);
 	Scene::PSceneNode Root = RootNode.IsValidPtr() ? RootNode : n_new(Scene::CSceneNode);
 	if (Root.IsNullPtr() || !LoadNode(Reader, Root)) return NULL;
 	return Root.Get();
