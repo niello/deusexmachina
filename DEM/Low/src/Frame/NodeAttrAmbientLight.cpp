@@ -19,16 +19,14 @@ bool CNodeAttrAmbientLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReade
 		case 'IRRM':
 		{
 			CString RUID = DataReader.Read<CString>();
-			Resources::PResource RTexture = ResourceMgr->RegisterResource(CStrID(RUID),
-				ResourceMgr->GetDefaultCreatorFor<Render::CTexture>(PathUtils::GetExtension(RUID)));			
+			Resources::PResource RTexture = ResourceMgr->RegisterResource<Render::CTexture>(CStrID(RUID));			
 			IrradianceMap = RTexture->ValidateObject<Render::CTexture>();
 			OK;
 		}
 		case 'PMRM':
 		{
 			CString RUID = DataReader.Read<CString>();
-			Resources::PResource RTexture = ResourceMgr->RegisterResource(CStrID(RUID),
-				ResourceMgr->GetDefaultCreatorFor<Render::CTexture>(PathUtils::GetExtension(RUID)));			
+			Resources::PResource RTexture = ResourceMgr->RegisterResource<Render::CTexture>(CStrID(RUID));			
 			RadianceEnvMap = RTexture->ValidateObject<Render::CTexture>();
 			OK;
 		}

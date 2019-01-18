@@ -44,8 +44,7 @@ bool CPropSceneNode::Initialize()
 		if (NodeFile.IsValid())
 		{
 			CString RUID = "Scene:" + NodeFile + ".scn";
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
-				ResourceMgr->GetDefaultCreatorFor<Scene::CSceneNode>(PathUtils::GetExtension(RUID)));
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource<Scene::CSceneNode>(CStrID(RUID));
 			Node = Rsrc->ValidateObject<Scene::CSceneNode>()->Clone(true);
 		}
 		else

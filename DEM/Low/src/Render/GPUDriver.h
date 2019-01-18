@@ -1,13 +1,11 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_GPU_DRIVER_H__
-#define __DEM_L1_RENDER_GPU_DRIVER_H__
-
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
 #include <Render/VertexComponent.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
 #include <Data/Regions.h>
+#include <Data/HashTable.h>
 
 // GPU device driver manages VRAM resources and provides an interface for rendering on a video card.
 // Create GPU device drivers with CVideoDriverFactory.
@@ -31,6 +29,11 @@ namespace Data
 	class CParams;
 }
 
+namespace Resources
+{
+	class CResourceManager;
+}
+
 namespace DEM { namespace Sys
 {
 	typedef Ptr<class COSWindow> POSWindow;
@@ -43,23 +46,25 @@ class CGPUDriver: public Core::CObject
 {
 protected:
 
-	UPTR							AdapterID;
+	UPTR							AdapterID = Adapter_None;
 	EGPUDriverType					Type;
 	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
+	//???right in GPU or in a separate class which ties GPU, resource manager etc?
+	Resources::CResourceManager*	pResMgr = nullptr;
+	CHashTable<CStrID, PTexture>	ResourceTextures; //???or one map for all GPU resources? base class? OnDeviceLost etc? d3d11 has no such concept
+
 #ifdef DEM_STATS
-	UPTR							PrimitivesRendered;
-	UPTR							DrawsRendered;
+	UPTR							PrimitivesRendered = 0;
+	UPTR							DrawsRendered = 0;
 #endif
 
 	static void					PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32& Width, U32& Height);
 
 public:
 
-	CGPUDriver(): AdapterID(Adapter_None) {}
-	virtual ~CGPUDriver() {}
-
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
+	EGPUDriverType				GetType() const { return Type; }
 	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }
 	virtual bool				CheckCaps(ECaps Cap) const = 0;
 	virtual bool				SupportsShaderModel(U32 ShaderModel) const = 0;
@@ -148,14 +153,14 @@ public:
 	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
+	// Engine resource management - create GPU (VRAM) resource from engine resource
+	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
+	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
+
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const = 0;
-
-	EGPUDriverType				GetType() const { return Type; }
 };
 
 typedef Ptr<CGPUDriver> PGPUDriver;
 
 }
-
-#endif

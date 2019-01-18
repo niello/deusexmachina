@@ -22,8 +22,7 @@ bool CSkybox::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		{
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(RUID,
-				ResourceMgr->GetDefaultCreatorFor<Render::CMaterial>(PathUtils::GetExtension(RUID)));
+			RMaterial = ResourceMgr->RegisterResource<Render::CMaterial>(RUID);
 			OK;
 		}
 		default: FAIL;

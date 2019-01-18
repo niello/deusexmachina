@@ -2,6 +2,7 @@
 
 #include <Resources/Resource.h>
 #include <Resources/ResourceCreator.h>
+#include <IO/PathUtils.h>
 
 namespace Resources
 {
@@ -19,23 +20,39 @@ CResourceManager::~CResourceManager()
 }
 //---------------------------------------------------------------------
 
-// NB: does not change creator of existing resource
+// NB: does not change creator for existing resource
+PResource CResourceManager::RegisterResource(CStrID UID, const Core::CRTTI& RsrcType)
+{
+	PResource Rsrc;
+	if (!Registry.Get(UID, Rsrc))
+	{
+		Rsrc = n_new(CResource(UID));
+		Rsrc->SetCreator(GetDefaultCreator(PathUtils::GetExtension(UID.CStr()), &RsrcType));
+		Registry.Add(UID, Rsrc);
+	}
+	return Rsrc;
+}
+//---------------------------------------------------------------------
+
+// NB: does not change creator for existing resource
 PResource CResourceManager::RegisterResource(CStrID UID, IResourceCreator* pCreator)
 {
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))
 	{
-		//if (!pCreator)
-		//{
-		//	// Get path part from UID.CStr() (before '#' or '\0')
-		//	pCreator = GetDefaultCreator(PathUtils::GetExtension(UID.CStr()));
-		//}
-
 		Rsrc = n_new(CResource(UID));
 		Rsrc->SetCreator(pCreator);
 		Registry.Add(UID, Rsrc);
 	}
 	return Rsrc;
+}
+//---------------------------------------------------------------------
+
+CResource* CResourceManager::FindResource(CStrID UID) const
+{
+	PResource Rsrc;
+	Registry.Get(UID, Rsrc);
+	return Rsrc.Get();
 }
 //---------------------------------------------------------------------
 

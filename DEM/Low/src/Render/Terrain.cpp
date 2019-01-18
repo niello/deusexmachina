@@ -26,16 +26,14 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 			CString RUID("Terrain:");
 			RUID += DataReader.Read<CStrID>().CStr();
 			RUID += ".cdlod";
-			RCDLODData = ResourceMgr->RegisterResource(CStrID(RUID),
-				ResourceMgr->GetDefaultCreatorFor<Render::CCDLODData>(PathUtils::GetExtension(RUID)));
+			RCDLODData = ResourceMgr->RegisterResource<Render::CCDLODData>(CStrID(RUID));
 			OK;
 		}
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(CStrID(RUID),
-				ResourceMgr->GetDefaultCreatorFor<Render::CMaterial>(PathUtils::GetExtension(RUID)));
+			RMaterial = ResourceMgr->RegisterResource<Render::CMaterial>(CStrID(RUID));
 			OK;
 		}
 		case 'TSSX':

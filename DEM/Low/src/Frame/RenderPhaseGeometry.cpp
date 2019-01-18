@@ -403,8 +403,7 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 				RUID += Prm.GetValue<CStrID>().CStr();
 				RUID += ".eff"; //???replace ID by full URI on export?
 
-				Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
-					ResourceMgr->GetDefaultCreatorFor<Render::CEffect>(PathUtils::GetExtension(RUID.CStr())));
+				Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
 				Effect = Rsrc->ValidateObject<Render::CEffect>();
 			}
 

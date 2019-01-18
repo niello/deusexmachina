@@ -44,10 +44,11 @@ public:
 	template<class TRsrc>
 	PResourceCreator	GetDefaultCreatorFor(const char* pFmtExtension) { return GetDefaultCreator(pFmtExtension, &TRsrc::RTTI); }
 
+	template<class TRsrc>
+	PResource			RegisterResource(CStrID UID) { return RegisterResource(UID, TRsrc::RTTI); }
+	PResource			RegisterResource(CStrID UID, const Core::CRTTI& RsrcType);
 	PResource			RegisterResource(CStrID UID, IResourceCreator* pCreator);
-
-	//???add convenience method for default creator setup?
-	//RegisterResource(CStrID UID, const char* pFmtExtension, const Core::CRTTI* pRsrcType)
+	CResource*			FindResource(CStrID UID) const;
 };
 
 }

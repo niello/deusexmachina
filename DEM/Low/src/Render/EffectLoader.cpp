@@ -160,13 +160,8 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 				}
 
 				//???try this way if no library or not loaded from library?
-				//CString URI = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
-				//Resources::PResource RShader = ResourceMgr->RegisterResource(URI.CStr());
-				//if (!RShader->IsLoaded())
-				//{
-				//	Resources::PResourceLoader Loader = RShader->GetLoader();
-				//	if (Loader.IsNullPtr())
-				//		Loader = ResourceMgr->CreateDefaultLoaderFor<Render::CShader>(pExtension[ShaderType] + 1); // +1 to skip dot
+				//CString UID = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
+				//Resources::PResource RShader = ResourceMgr->RegisterResource<Render::CShader>(CStrID(UID));
 				//	Loader->As<Resources::CShaderLoader>()->GPU = GPU;
 				//	ResourceMgr->LoadResourceSync(*RShader, *Loader);
 				//	if (!RShader->IsLoaded())
@@ -174,9 +169,8 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 				//		ShaderLoadingFailed = true;
 				//		break;
 				//	}
-				//}
+				//*pShaders[ShaderType] = RShader->ValidateObject<Render::CShader>();
 
-				//*pShaders[ShaderType] = RShader->GetObject<Render::CShader>();
 				*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
 			}
 

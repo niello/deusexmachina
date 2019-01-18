@@ -33,8 +33,7 @@ bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataR
 			//???store resource locally for reloading?
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RUID = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource(RUID,
-				ResourceMgr->GetDefaultCreatorFor<Render::CSkinInfo>(PathUtils::GetExtension(RUID.CStr())));
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CSkinInfo>(RUID);
 			SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
 			OK;
 		}

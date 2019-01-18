@@ -49,8 +49,7 @@ PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 	RUID += EffectID.CStr();
 	RUID += ".eff"; //???replace ID by full URI on export?
 
-	Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
-		ResourceMgr->GetDefaultCreatorFor<Render::CEffect>(PathUtils::GetExtension(RUID.CStr())));
+	Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
 
 	Render::PMaterial Mtl = n_new(Render::CMaterial);
 

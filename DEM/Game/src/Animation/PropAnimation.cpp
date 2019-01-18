@@ -123,10 +123,9 @@ void CPropAnimation::InitSceneNodeModifiers(CPropSceneNode& Prop)
 			CString RUID("Anims:");
 			RUID += RsrcID.CStr();
 
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource(CStrID(RUID),
-				ResourceMgr->GetDefaultCreatorFor<Anim::CAnimClip>(PathUtils::GetExtension(RUID)));
+			Resources::PResource Rsrc = ResourceMgr->RegisterResource<Anim::CAnimClip>(CStrID(RUID));
 
-			//!!!DBG TMP!
+			//!!!DBG TMP! FIX!!!!!!!!!!!
 			if (Rsrc->GetCreator()->GetResultType().IsDerivedFrom(Anim::CMocapClip::RTTI))
 			{
 				Frame::CNodeAttrSkin* pSkin = Prop.GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();

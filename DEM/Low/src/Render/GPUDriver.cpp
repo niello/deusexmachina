@@ -1,7 +1,10 @@
 #include "GPUDriver.h"
 
 #include <Render/VertexLayout.h>
+#include <Render/Texture.h>
 #include <System/OSWindow.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Data/Params.h>
 
 namespace Render
@@ -39,6 +42,37 @@ void CGPUDriver::PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32
 			Window.SetRect(WindowRect);
 		}
 	}
+}
+//---------------------------------------------------------------------
+
+void CGPUDriver::SetResourceManager(Resources::CResourceManager* pResourceManager)
+{
+	if (pResMgr == pResourceManager) return;
+
+	//???destroy resource links? if Rs are stored instead of UIDs
+	pResMgr = pResourceManager;
+}
+//---------------------------------------------------------------------
+
+//???validate existing texture here? it may be lost (at least in D3D9). Some other invalid state?
+//???bool keep loaded into RAM? how to control multiple clients? some kind of refcounting?
+PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
+{
+	PTexture Texture;
+	if (ResourceTextures.Get(UID, Texture) && Texture)
+	{
+		n_assert(Texture->GetAccess().Is(AccessFlags));
+		return Texture;
+	}
+
+	if (!pResMgr) return nullptr;
+
+	//Resources::PResource RTexData = pResMgr->RegisterResource<CTextureData>(UID);
+	//PTextureData TexData = RTexData->ValidateObject<CTextureData>();
+	//Texture = CreateTexture(TexData->GetDesc(), AccessFlags, TexData->GetDataPtr(), TexData->HasMipData());
+
+	if (Texture) ResourceTextures.Add(UID, Texture);
+	return Texture;
 }
 //---------------------------------------------------------------------
 

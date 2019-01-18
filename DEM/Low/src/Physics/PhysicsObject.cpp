@@ -23,8 +23,8 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 
 	//???!!!store the whole URI in a file?!
 	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
-	CStrID ShapeURI = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
-	Resources::PResource RShape = ResourceMgr->RegisterResource(ShapeURI, ResourceMgr->GetDefaultCreatorFor<Physics::CCollisionShape>(PathUtils::GetExtension(ShapeURI.CStr())));
+	CStrID ShapeUID = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
+	Resources::PResource RShape = ResourceMgr->RegisterResource<Physics::CCollisionShape>(ShapeUID);
 	Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 
 	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), CString("Default")));

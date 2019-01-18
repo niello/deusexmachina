@@ -21,8 +21,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		{
 			CString RsrcID = DataReader.Read<CString>();
 			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource(RUID,
-				ResourceMgr->GetDefaultCreatorFor<Render::CMaterial>(PathUtils::GetExtension(RUID)));
+			RMaterial = ResourceMgr->RegisterResource<Render::CMaterial>(RUID);
 			OK;
 		}
 		case 'JPLT':
@@ -37,8 +36,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 			//???!!!store the whole URI in a file?!
 			CString MeshID = DataReader.Read<CString>();
 			CStrID RUID = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
-			RMesh = ResourceMgr->RegisterResource(RUID,
-				ResourceMgr->GetDefaultCreatorFor<Render::CMesh>(PathUtils::GetExtension(RUID)));			
+			RMesh = ResourceMgr->RegisterResource<Render::CMesh>(RUID);			
 			OK;
 		}
 		case 'MSGR':
