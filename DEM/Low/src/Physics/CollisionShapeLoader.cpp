@@ -36,7 +36,7 @@ namespace Str
 
 namespace Resources
 {
-__ImplementClass(Resources::CCollisionShapeLoaderPRM, 'CSLD', Resources::CResourceLoader);
+__ImplementClass(Resources::CCollisionShapeLoaderPRM, 'CSLD', Resources::IResourceCreator);
 
 const Core::CRTTI& CCollisionShapeLoaderPRM::GetResultType() const
 {

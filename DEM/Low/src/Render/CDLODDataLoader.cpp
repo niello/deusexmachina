@@ -7,7 +7,7 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CCDLODDataLoader, Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CCDLODDataLoader, Resources::IResourceCreator);
 
 const Core::CRTTI& CCDLODDataLoader::GetResultType() const
 {

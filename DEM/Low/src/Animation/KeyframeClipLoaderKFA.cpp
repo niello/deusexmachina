@@ -6,7 +6,6 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CKeyframeClipLoaderKFA, 'LKFA', Resources::CResourceLoader);
 
 const Core::CRTTI& CKeyframeClipLoaderKFA::GetResultType() const
 {

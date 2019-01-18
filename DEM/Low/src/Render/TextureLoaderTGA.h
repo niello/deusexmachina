@@ -18,7 +18,6 @@ public:
 	//virtual ~CTextureLoaderTGA() {}
 
 	virtual const Core::CRTTI&			GetResultType() const;
-	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
 	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_RANDOM; }
 	virtual PResourceObject				Load(IO::CStream& Stream);
 };

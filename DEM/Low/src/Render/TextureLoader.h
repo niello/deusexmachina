@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_TEXTURE_LOADER_H__
 #define __DEM_L1_TEXTURE_LOADER_H__
 
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 
 // Texture loaders are intended to load GPU texture resources. It is a class of
 // different loaders each suited for a different image format and 3D API.
@@ -15,7 +15,7 @@ namespace Render
 namespace Resources
 {
 
-class CTextureLoader: public CResourceLoader
+class CTextureLoader: public IResourceCreator
 {
 	__DeclareClassNoFactory;
 

@@ -5,7 +5,7 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CMeshLoader, Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CMeshLoader, Resources::IResourceCreator);
 
 CMeshLoader::~CMeshLoader() {}
 

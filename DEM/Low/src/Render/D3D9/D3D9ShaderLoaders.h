@@ -21,7 +21,6 @@ protected:
 
 public:
 
-	virtual bool						IsProvidedDataValid() const { OK; } //!!!???write?!
 	virtual const Core::CRTTI&			GetResultType() const;
 	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_RANDOM; }
 	virtual PResourceObject				Load(IO::CStream& Stream) { return LoadImpl(Stream, Render::ShaderType_Unknown); }

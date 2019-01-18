@@ -4,7 +4,7 @@
 #include <Scene/SceneNode.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>

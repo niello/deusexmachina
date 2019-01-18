@@ -10,7 +10,7 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CRenderPathLoaderRP, 'RPLD', Resources::CResourceLoader);
+__ImplementClass(Resources::CRenderPathLoaderRP, 'RPLD', Resources::IResourceCreator);
 
 // Defined in Render/EffectLoadingUtils.cpp
 bool LoadEffectParams(IO::CBinaryReader& Reader, Render::CShaderLibrary* pShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);

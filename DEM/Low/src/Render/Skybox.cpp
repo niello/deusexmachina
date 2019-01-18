@@ -5,7 +5,7 @@
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
@@ -53,7 +53,7 @@ bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 	Resources::PResource RMesh = ResourceMgr->RegisterResource("Mesh_Skybox");
 	if (!RMesh->IsLoaded())
 	{
-		Resources::PResourceGenerator Gen = RMesh->GetGenerator();
+		Resources::PResourceCreator Gen = RMesh->GetGenerator();
 		if (Gen.IsNullPtr())
 		{
 			Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);

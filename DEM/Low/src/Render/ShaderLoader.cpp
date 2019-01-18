@@ -4,7 +4,7 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CShaderLoader, Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CShaderLoader, Resources::IResourceCreator);
 
 CShaderLoader::CShaderLoader() {}
 CShaderLoader::~CShaderLoader() {}

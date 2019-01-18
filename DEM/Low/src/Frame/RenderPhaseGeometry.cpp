@@ -16,7 +16,7 @@
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <IO/PathUtils.h>

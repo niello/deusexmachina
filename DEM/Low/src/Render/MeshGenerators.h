@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_MESH_GENERATORS_H__
-#define __DEM_L1_MESH_GENERATORS_H__
-
-#include <Resources/ResourceGenerator.h>
+#include <Resources/ResourceCreator.h>
 
 // A class of generators that procedurally create CMesh objects, along
 // with some most commonly used implementations.
@@ -15,10 +12,8 @@ namespace Render
 namespace Resources
 {
 
-class CMeshGenerator: public CResourceGenerator
+class CMeshGenerator: public IResourceCreator
 {
-	__DeclareClassNoFactory;
-
 public:
 
 	Render::PGPUDriver	GPU;
@@ -27,40 +22,30 @@ public:
 	CMeshGenerator();
 	virtual ~CMeshGenerator();
 
-	virtual const Core::CRTTI& GetResultType() const;
+	virtual const Core::CRTTI& GetResultType() const override;
 };
 
 typedef Ptr<CMeshGenerator> PMeshGenerator;
 
 class CMeshGeneratorQuadPatch: public CMeshGenerator
 {
-	__DeclareClassNoFactory;
-
 public:
 
 	UPTR QuadsPerEdge;
 
-	//virtual ~CMeshGeneratorQuadPatch() {}
-
-	virtual PResourceObject Generate();
+	virtual PResourceObject CreateResource() override;
 };
 
 typedef Ptr<CMeshGeneratorQuadPatch> PMeshGeneratorQuadPatch;
 
-//???rename to box? use for paceholder boxes too?
+//???rename to box? use for placeholder boxes too?
 class CMeshGeneratorSkybox: public CMeshGenerator
 {
-	__DeclareClassNoFactory;
-
 public:
 
-	//virtual ~CMeshGeneratorSkybox() {}
-
-	virtual PResourceObject Generate();
+	virtual PResourceObject CreateResource() override;
 };
 
 typedef Ptr<CMeshGeneratorSkybox> PMeshGeneratorSkybox;
 
 }
-
-#endif

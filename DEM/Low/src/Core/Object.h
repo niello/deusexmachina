@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_OBJECT_H__
-#define __DEM_L1_OBJECT_H__
-
 #include <Data/RefCounted.h>
 #include <Core/RTTIBaseClass.h>
 #ifdef _DEBUG
@@ -56,11 +53,8 @@ inline CObject::~CObject()
 #ifdef _DEBUG
 	n_assert(ListIt);
 	List.Remove(ListIt);
-	ListIt = NULL;
 #endif
 }
 //---------------------------------------------------------------------
 
 }
-
-#endif

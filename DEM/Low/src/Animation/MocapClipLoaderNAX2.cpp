@@ -7,7 +7,7 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CMocapClipLoaderNAX2, 'LNX2', Resources::CResourceLoader);
+__ImplementClass(Resources::CMocapClipLoaderNAX2, 'LNX2', Resources::IResourceCreator);
 
 #pragma pack(push, 1)
 struct CNAX2Header

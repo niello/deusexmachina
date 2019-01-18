@@ -6,7 +6,7 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CSceneNodeLoaderSCN, Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CSceneNodeLoaderSCN, Resources::IResourceCreator);
 
 const Core::CRTTI& CSceneNodeLoaderSCN::GetResultType() const
 {

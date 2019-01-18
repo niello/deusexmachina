@@ -12,7 +12,7 @@
 #include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 #include <Resources/Resource.h>
 #include <Data/ParamsUtils.h>
 #include <Events/EventServer.h>

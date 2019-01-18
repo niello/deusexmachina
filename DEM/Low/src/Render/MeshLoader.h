@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_MESH_LOADER_H__
 #define __DEM_L1_MESH_LOADER_H__
 
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 
 // A class of loaders that load CMesh objects from different data formats
 
@@ -14,7 +14,7 @@ namespace Render
 namespace Resources
 {
 
-class CMeshLoader: public CResourceLoader
+class CMeshLoader: public IResourceCreator
 {
 	__DeclareClassNoFactory;
 

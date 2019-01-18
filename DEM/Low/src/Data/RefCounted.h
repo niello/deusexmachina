@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_REFCOUNTED_H__
-#define __DEM_L1_REFCOUNTED_H__
-
 #include <Data/Ptr.h>
 
 // Class with simple refcounting mechanism.
@@ -14,16 +11,15 @@ class CRefCounted
 {
 private:
 
-	mutable int RefCount; // volatile for threading?
+	U32 RefCount = 0; // volatile for threading?
 
 public:
 
-	CRefCounted(): RefCount(0) {}
-	virtual ~CRefCounted() { n_assert(!RefCount); }
+	virtual ~CRefCounted() { n_assert_dbg(!RefCount); }
 
 	void	AddRef() { ++RefCount; } //!!!interlocked for threading!
-	void	Release() { n_assert(RefCount > 0); if (--RefCount == 0) n_delete(this); } //!!!interlocked for threading!
-	int		GetRefCount() const { return RefCount; }
+	void	Release() { n_assert_dbg(RefCount > 0); if (--RefCount == 0) n_delete(this); } //!!!interlocked for threading!
+	U32		GetRefCount() const { return RefCount; }
 };
 
 typedef Ptr<CRefCounted> PRefCounted;
@@ -32,5 +28,3 @@ typedef Ptr<CRefCounted> PRefCounted;
 
 inline void DEMPtrAddRef(Data::CRefCounted* p) noexcept { p->AddRef(); }
 inline void DEMPtrRelease(Data::CRefCounted* p) noexcept { p->Release(); }
-
-#endif

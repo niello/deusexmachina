@@ -15,7 +15,7 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CMaterialLoader, Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CMaterialLoader, Resources::IResourceCreator);
 
 // Defined in Render/EffectLoadingUtils.cpp
 bool LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);

@@ -6,10 +6,6 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CMeshGenerator, Resources::CResourceGenerator);
-__ImplementClassNoFactory(Resources::CMeshGeneratorQuadPatch, Resources::CMeshGenerator);
-__ImplementClassNoFactory(Resources::CMeshGeneratorSkybox, Resources::CMeshGenerator);
-
 CMeshGenerator::CMeshGenerator() {}
 CMeshGenerator::~CMeshGenerator() {}
 
@@ -19,7 +15,7 @@ const Core::CRTTI& CMeshGenerator::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorQuadPatch::Generate()
+PResourceObject CMeshGeneratorQuadPatch::CreateResource()
 {
 	if (GPU.IsNullPtr()) return NULL;
 
@@ -108,7 +104,7 @@ PResourceObject CMeshGeneratorQuadPatch::Generate()
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorSkybox::Generate()
+PResourceObject CMeshGeneratorSkybox::CreateResource()
 {
 	if (GPU.IsNullPtr()) return NULL;
 

@@ -7,7 +7,7 @@
 
 namespace Resources
 {
-__ImplementClass(Resources::CShaderLibraryLoaderSLB, 'LSLB', Resources::CResourceLoader);
+__ImplementClass(Resources::CShaderLibraryLoaderSLB, 'LSLB', Resources::IResourceCreator);
 
 const Core::CRTTI& CShaderLibraryLoaderSLB::GetResultType() const
 {

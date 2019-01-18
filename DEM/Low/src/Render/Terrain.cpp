@@ -5,7 +5,7 @@
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
@@ -96,7 +96,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 		Resources::PResource RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{
-			Resources::PResourceGenerator Gen = RPatch->GetGenerator();
+			Resources::PResourceCreator Gen = RPatch->GetGenerator();
 			if (Gen.IsNullPtr())
 			{
 				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
@@ -114,7 +114,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 		RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
 		if (!RPatch->IsLoaded())
 		{
-			Resources::PResourceGenerator Gen = RPatch->GetGenerator();
+			Resources::PResourceCreator Gen = RPatch->GetGenerator();
 			if (Gen.IsNullPtr())
 			{
 				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);

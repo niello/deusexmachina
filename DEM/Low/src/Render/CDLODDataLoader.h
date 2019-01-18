@@ -2,7 +2,7 @@
 #ifndef __DEM_L1_CDLOD_DATA_LOADER_H__
 #define __DEM_L1_CDLOD_DATA_LOADER_H__
 
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 
 // Loads CDLOD terrain rendering data from DEM "cdlod" format
 
@@ -14,7 +14,7 @@ namespace Render
 namespace Resources
 {
 
-class CCDLODDataLoader: public CResourceLoader
+class CCDLODDataLoader: public IResourceCreator
 {
 	__DeclareClassNoFactory;
 
@@ -25,7 +25,6 @@ public:
 	virtual ~CCDLODDataLoader() {}
 
 	virtual const Core::CRTTI&			GetResultType() const;
-	virtual bool						IsProvidedDataValid() const { OK; } //!!!implement properly!
 	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
 	virtual PResourceObject				Load(IO::CStream& Stream);
 };

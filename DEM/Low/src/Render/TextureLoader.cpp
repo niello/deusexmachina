@@ -2,5 +2,5 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CTextureLoader, Resources::CResourceLoader);
+__ImplementClassNoFactory(Resources::CTextureLoader, Resources::IResourceCreator);
 }

@@ -1,38 +1,63 @@
 #include "Resource.h"
-#include <Resources/ResourceGenerator.h>
-#include <Resources/ResourceLoader.h>
+#include <Resources/ResourceCreator.h>
 
 namespace Resources
 {
-
-CResource::CResource(): ByteSize(0), State(Rsrc_NotLoaded)
-{
-}
-//--------------------------------------------------------------------
-
-CResource::~CResource()
-{
-}
-//--------------------------------------------------------------------
+CResource::CResource(CStrID UID) : _UID(UID) {}
+CResource::~CResource() {}
 
 //!!!must be thread-safe!
-void CResource::Init(PResourceObject NewObject, PResourceLoader NewLoader, PResourceGenerator NewGenerator)
+void CResource::Init(PResourceObject NewObject, PResourceCreator NewCreator)
 {
 	Object = NewObject;
-	Loader = NewLoader;
-	Generator = NewGenerator;
+	Creator = NewCreator;
 }
 //--------------------------------------------------------------------
 
-CResourceObject* CResource::GetObject() const
+void CResource::SetCreator(IResourceCreator* pNewCreator)
 {
-	if (State == Rsrc_Loaded)
+	if (pNewCreator)
 	{
-		if (Object.IsValidPtr() && Object->IsResourceValid()) return Object.Get();
-		else State = Rsrc_NotLoaded; //!!!may be const if not update state!
+		if (Object && (pNewCreator != Creator || !Object->IsA(pNewCreator->GetResultType())))
+		{
+			// unload resource if loaded
+			// reload with a new creator if was loaded?
+		}
+	}
+
+	Creator = pNewCreator;
+}
+//--------------------------------------------------------------------
+
+CResourceObject* CResource::GetObject()
+{
+	if (State == EResourceState::Loaded)
+	{
+		if (Object && Object->IsResourceValid()) return Object.Get();
+		else State = EResourceState::NotLoaded;
 	}
 	//if (Placeholder.IsValid() && Placeholder->IsResourceValid()) return Placeholder.Get();
-	return NULL;
+	return nullptr;
+}
+//--------------------------------------------------------------------
+
+CResourceObject* CResource::ValidateObject()
+{
+	if (State == EResourceState::Loaded)
+	{
+		if (Object && Object->IsResourceValid()) return Object.Get();
+		else State = EResourceState::NotLoaded;
+	}
+
+	if (State == EResourceState::NotLoaded && Creator)
+	{
+		State = EResourceState::LoadingInProgress;
+		Object = Creator->CreateResource(_UID);
+		State = Object && Object->IsResourceValid() ? EResourceState::Loaded : EResourceState::LoadingFailed;
+		return Object.Get();
+	}
+
+	return nullptr;
 }
 //--------------------------------------------------------------------
 

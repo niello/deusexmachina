@@ -1,9 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_RESOURCE_OBJECT_H__
-#define __DEM_L1_RESOURCE_OBJECT_H__
-
 #include <Core/Object.h>
-#include <Data/StringID.h>
 
 // Resource object represents an actual data object (asset) used by some subsystem,
 // whereas a CResource is only a management container for them. All specific resources
@@ -30,5 +26,3 @@ public:
 typedef Ptr<CResourceObject> PResourceObject;
 
 }
-
-#endif
