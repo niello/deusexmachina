@@ -77,37 +77,27 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 	{
 		CString PatchName;
 		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
-		Resources::PResource RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
-		if (!RPatch->IsLoaded())
+		CStrID MeshUID(PatchName);
+		Resources::PResource RPatch = ResourceMgr->FindResource(MeshUID);
+		if (!RPatch)
 		{
-			Resources::PResourceCreator Gen = RPatch->GetGenerator();
-			if (Gen.IsNullPtr())
-			{
-				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
-				GenQuad->GPU = pGPU;
-				GenQuad->QuadsPerEdge = PatchSize;
-				Gen = GenQuad.Get();
-			}
-			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
-			n_assert(RPatch->IsLoaded());
+			Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
+			GenQuad->GPU = pGPU;
+			GenQuad->QuadsPerEdge = PatchSize;
+			ResourceMgr->RegisterResource(MeshUID, GenQuad);
 		}
 		PatchMesh = RPatch->ValidateObject<CMesh>();
 
 		PatchSize >>= 1;
 		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
-		RPatch = ResourceMgr->RegisterResource(PatchName.CStr());
-		if (!RPatch->IsLoaded())
+		CStrID QuarterMeshUID(PatchName);
+		RPatch = ResourceMgr->FindResource(QuarterMeshUID);
+		if (!RPatch)
 		{
-			Resources::PResourceCreator Gen = RPatch->GetGenerator();
-			if (Gen.IsNullPtr())
-			{
-				Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
-				GenQuad->GPU = pGPU;
-				GenQuad->QuadsPerEdge = PatchSize;
-				Gen = GenQuad.Get();
-			}
-			ResourceMgr->GenerateResourceSync(*RPatch, *Gen);
-			n_assert(RPatch->IsLoaded());
+			Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
+			GenQuad->GPU = pGPU;
+			GenQuad->QuadsPerEdge = PatchSize;
+			ResourceMgr->RegisterResource(QuarterMeshUID, GenQuad);
 		}
 		QuarterPatchMesh = RPatch->ValidateObject<CMesh>();
 	}

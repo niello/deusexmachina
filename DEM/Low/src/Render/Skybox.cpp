@@ -42,19 +42,13 @@ bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 {
 	Material = RMaterial->ValidateObject<Render::CMaterial>();
 
-	//???how not to allocate new generator if resource exists? existence check needed!
-	Resources::PResource RMesh = ResourceMgr->RegisterResource("#Mesh_Skybox");
-	if (!RMesh->IsLoaded())
+	CStrID MeshUID("#Mesh_Skybox");
+	Resources::PResource RMesh = ResourceMgr->FindResource(MeshUID);
+	if (!RMesh)
 	{
-		Resources::PResourceCreator Gen = RMesh->GetGenerator();
-		if (Gen.IsNullPtr())
-		{
-			Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);
-			GenSkybox->GPU = pGPU;
-			Gen = GenSkybox.Get();
-		}
-		ResourceMgr->GenerateResourceSync(*RMesh, *Gen);
-		n_assert(RMesh->IsLoaded());
+		Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);
+		GenSkybox->GPU = pGPU;
+		ResourceMgr->RegisterResource(MeshUID, GenSkybox);
 	}
 	Mesh = RMesh->ValidateObject<CMesh>();
 

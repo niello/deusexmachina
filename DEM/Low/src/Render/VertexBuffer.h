@@ -11,7 +11,7 @@
 namespace Render
 {
 
-//!!!GPU resource, Buffer, Resource!
+//!!!GPU resource, Buffer!
 class CVertexBuffer: public Core::CObject
 {
 	//__DeclareClassNoFactory;
@@ -22,7 +22,7 @@ protected:
 	UPTR			VertexCount;
 	Data::CFlags	Access;
 
-	void InternalDestroy() { VertexLayout = NULL; VertexCount = 0; Access.ClearAll(); }
+	void InternalDestroy() { VertexLayout = nullptr; VertexCount = 0; Access.ClearAll(); }
 
 public:
 
