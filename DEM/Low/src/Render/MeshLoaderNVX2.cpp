@@ -207,7 +207,7 @@ PResourceLoader CMeshLoaderNVX2::Clone()
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshLoaderNVX2::Load(IO::CStream& Stream)
+PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 {
 	IO::CBinaryReader Reader(Stream);
 

@@ -53,7 +53,7 @@ const Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CTextureLoaderTGA::Load(IO::CStream& Stream)
+PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 

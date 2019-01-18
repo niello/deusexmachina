@@ -4,6 +4,7 @@
 
 #include <Animation/AnimFwd.h>
 #include <Data/FixedArray.h>
+#include <Data/StringID.h>
 
 // Event track places events on the animation timeline. Once time cursor passes the event time mark,
 // event is fired with additional info about time direction (reverse or not) etc.

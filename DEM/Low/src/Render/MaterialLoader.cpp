@@ -26,7 +26,7 @@ const Core::CRTTI& CMaterialLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMaterialLoader::Load(IO::CStream& Stream)
+PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 

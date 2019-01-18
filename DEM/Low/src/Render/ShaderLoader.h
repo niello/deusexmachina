@@ -18,18 +18,10 @@ namespace Resources
 
 class CShaderLoader: public IResourceCreator
 {
-	__DeclareClassNoFactory;
-
 public:
 
 	Render::PGPUDriver		GPU;
 	Render::PShaderLibrary	ShaderLibrary; //!!!only for input signatures in D3D11 vertex shaders! redesign?
-
-	CShaderLoader();
-	virtual ~CShaderLoader();
-
-	virtual PResourceLoader			Clone();
-	//virtual const Core::CRTTI&	GetResultType() const;
 };
 
 typedef Ptr<CShaderLoader> PShaderLoader;

@@ -37,7 +37,7 @@ protected:
 	CStrID				_UID;
 	EResourceState		State = EResourceState::NotLoaded;
 	PResourceObject		Object;			// Actual object, such as a texture or a game object description
-	PResourceCreator	Creator;		// For (re)creation of actual resource object
+	PResourceCreator	Creator;		// For (re)creation of an actual resource object
 
 	//PResourceObject	Placeholder; //???here or register per RTTI in Mgr?
 	//UPTR				ByteSize = 0; //???or getter with redirection to PResourceObject?
@@ -53,17 +53,13 @@ public:
 	CResourceObject*	GetObject();
 	CResourceObject*	ValidateObject();
 
-	//PJob ValidateObjectAsync(); - doesn't create a job if already actual
+	//PJob ValidateObjectAsync(callback on finished); - doesn't create a job if already actual
 
 	CStrID				GetUID() const { return _UID; }
 	EResourceState		GetState() const { return State; } //!!!must be thread-safe!
 	bool				IsLoaded() const { return State == EResourceState::Loaded; } //!!!must be thread-safe!
 	IResourceCreator*	GetCreator() const { return Creator.Get(); }
 	void				SetCreator(IResourceCreator* pNewCreator);
-
-	// For internal use
-	void				SetState(EResourceState NewState) { State = NewState; } //!!!must be thread-safe!
-	void				Init(PResourceObject NewObject, PResourceCreator NewCreator = nullptr);
 };
 
 template<class T> inline T* CResource::GetObject()

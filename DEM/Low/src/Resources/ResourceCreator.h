@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/RefCounted.h>
+#include <Data/StringID.h>
 #include <Core/RTTI.h>
 
 // Resource creator is an interface to implement different resource object

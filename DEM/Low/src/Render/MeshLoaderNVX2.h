@@ -15,13 +15,9 @@ class CMeshLoaderNVX2: public CMeshLoader
 
 public:
 
-	// GPU, Access, MipCount (-1 for from-file or full)
-
 	virtual ~CMeshLoaderNVX2() {}
 
-	virtual PResourceLoader				Clone();
-	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
-	virtual PResourceObject				Load(IO::CStream& Stream);
+	virtual PResourceObject				CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CMeshLoaderNVX2> PMeshLoaderNVX2;

@@ -21,9 +21,8 @@ protected:
 
 public:
 
-	virtual const Core::CRTTI&			GetResultType() const;
-	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_RANDOM; }
-	virtual PResourceObject				Load(IO::CStream& Stream) { return LoadImpl(Stream, Render::ShaderType_Unknown); }
+	virtual const Core::CRTTI&			GetResultType() const override;
+	virtual PResourceObject				CreateResource(CStrID UID) { return LoadImpl(Stream, Render::ShaderType_Unknown); }
 };
 
 }

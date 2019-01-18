@@ -21,7 +21,7 @@ const Core::CRTTI& CRenderPathLoaderRP::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CRenderPathLoaderRP::Load(IO::CStream& Stream)
+PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 {
 	IO::CBinaryReader Reader(Stream);
 

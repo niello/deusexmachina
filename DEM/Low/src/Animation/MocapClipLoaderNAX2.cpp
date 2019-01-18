@@ -46,7 +46,7 @@ const Core::CRTTI& CMocapClipLoaderNAX2::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMocapClipLoaderNAX2::Load(IO::CStream& Stream)
+PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 {
 	if (ReferenceSkinInfo.IsNullPtr()) return NULL;
 

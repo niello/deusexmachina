@@ -14,7 +14,7 @@ const Core::CRTTI& CSkinInfoLoaderSKN::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CSkinInfoLoaderSKN::Load(IO::CStream& Stream)
+PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 {
 	IO::CBinaryReader Reader(Stream);
 

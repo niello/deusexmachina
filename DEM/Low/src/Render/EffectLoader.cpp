@@ -34,7 +34,7 @@ const Core::CRTTI& CEffectLoader::GetResultType() const
 //---------------------------------------------------------------------
 
 //!!!can first load techs, then RS, not to load RS that won't be used!
-PResourceObject CEffectLoader::Load(IO::CStream& Stream)
+PResourceObject CEffectLoader::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 

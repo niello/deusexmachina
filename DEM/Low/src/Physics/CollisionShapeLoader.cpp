@@ -44,7 +44,7 @@ const Core::CRTTI& CCollisionShapeLoaderPRM::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CCollisionShapeLoaderPRM::Load(IO::CStream& Stream)
+PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 {
 	IO::CBinaryReader Reader(Stream);
 	Data::PParams Desc = n_new(Data::CParams);

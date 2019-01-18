@@ -6,14 +6,6 @@ namespace Resources
 CResource::CResource(CStrID UID) : _UID(UID) {}
 CResource::~CResource() {}
 
-//!!!must be thread-safe!
-void CResource::Init(PResourceObject NewObject, PResourceCreator NewCreator)
-{
-	Object = NewObject;
-	Creator = NewCreator;
-}
-//--------------------------------------------------------------------
-
 void CResource::SetCreator(IResourceCreator* pNewCreator)
 {
 	if (pNewCreator)

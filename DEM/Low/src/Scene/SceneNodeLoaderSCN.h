@@ -23,11 +23,8 @@ public:
 	//???!!!TMP!? Doesn't fit very good into a resource system
 	Scene::PSceneNode RootNode;	// If not NULL, root node data will be loaded into it instead of allocating a new node
 
-	virtual ~CSceneNodeLoaderSCN() {}
-
-	virtual const Core::CRTTI&			GetResultType() const;
-	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
-	virtual PResourceObject				Load(IO::CStream& Stream);
+	virtual const Core::CRTTI&			GetResultType() const override;
+	virtual PResourceObject				CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CSceneNodeLoaderSCN> PSceneNodeLoaderSCN;

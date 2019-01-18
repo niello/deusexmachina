@@ -15,11 +15,8 @@ class CTextureLoaderTGA: public CTextureLoader
 
 public:
 
-	//virtual ~CTextureLoaderTGA() {}
-
-	virtual const Core::CRTTI&			GetResultType() const;
-	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_RANDOM; }
-	virtual PResourceObject				Load(IO::CStream& Stream);
+	virtual const Core::CRTTI&			GetResultType() const override;
+	virtual PResourceObject				CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CTextureLoaderTGA> PTextureLoaderTGA;

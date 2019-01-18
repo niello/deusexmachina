@@ -244,7 +244,7 @@ const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CTextureLoaderDDS::Load(IO::CStream& Stream)
+PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 

@@ -24,7 +24,7 @@ public:
 
 	virtual ~CMeshLoader();
 
-	virtual const Core::CRTTI&	GetResultType() const;
+	virtual const Core::CRTTI&	GetResultType() const override;
 };
 
 typedef Ptr<CMeshLoader> PMeshLoader;

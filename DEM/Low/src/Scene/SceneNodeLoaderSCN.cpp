@@ -58,7 +58,7 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 }
 //---------------------------------------------------------------------
 
-PResourceObject CSceneNodeLoaderSCN::Load(IO::CStream& Stream)
+PResourceObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 {
 	IO::CBinaryReader Reader(Stream);
 	Scene::PSceneNode Root = RootNode.IsValidPtr() ? RootNode : n_new(Scene::CSceneNode);

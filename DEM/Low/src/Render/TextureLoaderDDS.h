@@ -15,11 +15,8 @@ class CTextureLoaderDDS: public CTextureLoader
 
 public:
 
-	//virtual ~CTextureLoaderDDS() {}
-
-	virtual const Core::CRTTI&			GetResultType() const;
-	virtual IO::EStreamAccessPattern	GetStreamAccessPattern() const { return IO::SAP_SEQUENTIAL; }
-	virtual PResourceObject				Load(IO::CStream& Stream);
+	virtual const Core::CRTTI&			GetResultType() const override;
+	virtual PResourceObject				CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CTextureLoaderDDS> PTextureLoaderDDS;

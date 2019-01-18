@@ -15,7 +15,7 @@ const Core::CRTTI& CMeshGenerator::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorQuadPatch::CreateResource()
+PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 
@@ -104,7 +104,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource()
 }
 //---------------------------------------------------------------------
 
-PResourceObject CMeshGeneratorSkybox::CreateResource()
+PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 

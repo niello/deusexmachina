@@ -436,7 +436,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/SamplerDesc.cpp
 	DEM/Low/src/Render/ShaderLibrary.cpp
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.cpp
-	DEM/Low/src/Render/ShaderLoader.cpp
 	DEM/Low/src/Render/ShaderMetadata.cpp
 	DEM/Low/src/Render/SkinInfo.cpp
 	DEM/Low/src/Render/SkinInfoLoaderSKN.cpp

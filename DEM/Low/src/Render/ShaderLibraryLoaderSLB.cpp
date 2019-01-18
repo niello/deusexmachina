@@ -3,11 +3,9 @@
 #include <Render/Shader.h>
 #include <Render/ShaderLibrary.h>
 #include <IO/BinaryReader.h>
-#include <Core/Factory.h>
 
 namespace Resources
 {
-__ImplementClass(Resources::CShaderLibraryLoaderSLB, 'LSLB', Resources::IResourceCreator);
 
 const Core::CRTTI& CShaderLibraryLoaderSLB::GetResultType() const
 {
@@ -15,7 +13,7 @@ const Core::CRTTI& CShaderLibraryLoaderSLB::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CShaderLibraryLoaderSLB::Load(IO::CStream& Stream)
+PResourceObject CShaderLibraryLoaderSLB::CreateResource(CStrID UID)
 {
 	IO::CBinaryReader Reader(Stream);
 

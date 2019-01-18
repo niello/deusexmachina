@@ -2,6 +2,7 @@
 
 #include <Animation/KeyframeClip.h>
 #include <IO/BinaryReader.h>
+#include <IO/IOServer.h>
 #include <Core/Factory.h>
 
 namespace Resources
@@ -13,18 +14,38 @@ const Core::CRTTI& CKeyframeClipLoaderKFA::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CKeyframeClipLoaderKFA::Load(IO::CStream& Stream)
+PResourceObject CKeyframeClipLoaderKFA::CreateResource(CStrID UID)
 {
-	IO::CBinaryReader Reader(Stream);
+	IO::PStream Stream;
+
+	const char* pSubId = strchr(UID.CStr(), '#');
+	if (pSubId)
+	{
+		if (pSubId == UID.CStr()) return nullptr;
+
+		CString Path(UID.CStr(), pSubId - UID.CStr());
+		Stream = IOSrv->CreateStream(Path);
+
+		++pSubId; // Skip '#'
+		if (*pSubId == 0) pSubId = nullptr;
+	}
+	else Stream = IOSrv->CreateStream(UID.CStr());
+
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead())
+	{
+		return nullptr;
+	}
+
+	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'KFAN') return NULL;
+	if (!Reader.Read(Magic) || Magic != 'KFAN') return nullptr;
 
 	float Duration;
-	if (!Reader.Read(Duration)) return NULL;
+	if (!Reader.Read(Duration)) return nullptr;
 
 	U32 TrackCount;
-	if (!Reader.Read(TrackCount)) return NULL;
+	if (!Reader.Read(TrackCount)) return nullptr;
 
 	CArray<Anim::CKeyframeTrack> Tracks;
 	CArray<CStrID> TrackMapping;
@@ -38,13 +59,13 @@ PResourceObject CKeyframeClipLoaderKFA::Load(IO::CStream& Stream)
 		pTrack->Channel = (Scene::ETransformChannel)Reader.Read<int>();
 
 		U32 KeyCount;
-		if (!Reader.Read(KeyCount)) return NULL;
+		if (!Reader.Read(KeyCount)) return nullptr;
 
 		if (!KeyCount) Reader.Read(pTrack->ConstValue);
 		else
 		{
 			pTrack->Keys.SetSize(KeyCount);
-			Stream.Read(pTrack->Keys.GetPtr(), KeyCount * sizeof(Anim::CKeyframeTrack::CKey));
+			Stream->Read(pTrack->Keys.GetPtr(), KeyCount * sizeof(Anim::CKeyframeTrack::CKey));
 		}
 	}
 

@@ -33,7 +33,7 @@ public:
 
 	UPTR QuadsPerEdge;
 
-	virtual PResourceObject CreateResource() override;
+	virtual PResourceObject CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CMeshGeneratorQuadPatch> PMeshGeneratorQuadPatch;
@@ -43,7 +43,7 @@ class CMeshGeneratorSkybox: public CMeshGenerator
 {
 public:
 
-	virtual PResourceObject CreateResource() override;
+	virtual PResourceObject CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CMeshGeneratorSkybox> PMeshGeneratorSkybox;

@@ -15,7 +15,7 @@ const Core::CRTTI& CCDLODDataLoader::GetResultType() const
 }
 //---------------------------------------------------------------------
 
-PResourceObject CCDLODDataLoader::Load(IO::CStream& Stream)
+PResourceObject CCDLODDataLoader::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 
