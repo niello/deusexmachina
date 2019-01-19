@@ -25,8 +25,14 @@ class CD3D9Shader: public CShader
 
 protected:
 
-	IUnknown*			pD3DShader = nullptr;
-	CSM30ShaderMetadata	Metadata;
+	union
+	{
+		void*					pD3DShader = nullptr;
+		IDirect3DVertexShader9*	pD3DVertexShader;
+		IDirect3DPixelShader9*	pD3DPixelShader;
+	};
+
+	CSM30ShaderMetadata			Metadata;
 
 	void							InternalDestroy();
 
@@ -44,9 +50,8 @@ public:
 	virtual const IShaderMetadata*	GetMetadata() const { return &Metadata; }
 	virtual bool					IsResourceValid() const { return !!pD3DShader; }
 
-	IUnknown*						GetD3DShader() const { return pD3DShader; }
-	IDirect3DVertexShader9*			GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return (IDirect3DVertexShader9*)pD3DShader; }
-	IDirect3DPixelShader9*			GetD3DPixelShader() const { n_assert_dbg(Type == ShaderType_Pixel); return (IDirect3DPixelShader9*)pD3DShader; }
+	IDirect3DVertexShader9*			GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return pD3DVertexShader; }
+	IDirect3DPixelShader9*			GetD3DPixelShader() const { n_assert_dbg(Type == ShaderType_Pixel); return pD3DPixelShader; }
 };
 
 typedef Ptr<CD3D9Shader> PD3D9Shader;

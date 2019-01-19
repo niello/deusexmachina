@@ -20,29 +20,34 @@ bool CD3D9Shader::Create(IUnknown* pShader)
 {
 	if (!pShader) FAIL;
 
-	bool Result = false;
-	IDirect3DVertexShader9* pVS = NULL;
-	IDirect3DPixelShader9* pPS = NULL;
+	IDirect3DVertexShader9* pVS = nullptr;
+	IDirect3DPixelShader9* pPS = nullptr;
 	if (SUCCEEDED(pShader->QueryInterface(&pVS)))
 	{
-		Result = Create(pVS);
-		pVS->Release();
+		if (Create(pVS))
+		{
+			pShader->Release(); // QueryInterface adds ref to PS, so we clear initial ref
+			OK;
+		}
 	}
 	else if (SUCCEEDED(pShader->QueryInterface(&pPS)))
 	{
-		Result = Create(pPS);
-		pPS->Release();
+		if (Create(pPS))
+		{
+			pShader->Release(); // QueryInterface adds ref to PS, so we clear initial ref
+			OK;
+		}
 	}
 
-	return Result;
+	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CD3D9Shader::Create(IDirect3DVertexShader9* pShader)
 {
 	if (!pShader) FAIL;
-	pD3DShader = pShader;
 	Type = ShaderType_Vertex;
+	pD3DVertexShader = pShader;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -50,15 +55,24 @@ bool CD3D9Shader::Create(IDirect3DVertexShader9* pShader)
 bool CD3D9Shader::Create(IDirect3DPixelShader9* pShader)
 {
 	if (!pShader) FAIL;
-	pD3DShader = pShader;
 	Type = ShaderType_Pixel;
+	pD3DPixelShader = pShader;
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CD3D9Shader::InternalDestroy()
 {
-	SAFE_RELEASE(pD3DShader);
+	if (Type == ShaderType_Vertex)
+	{
+		SAFE_RELEASE(pD3DVertexShader);
+	}
+	else if (Type == ShaderType_Pixel)
+	{
+		SAFE_RELEASE(pD3DPixelShader);
+	}
+	else n_assert(!pD3DShader);
+
 	Metadata.Clear();
 }
 //---------------------------------------------------------------------
