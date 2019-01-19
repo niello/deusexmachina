@@ -14,17 +14,9 @@ namespace Resources
 
 class CTextureLoader: public CResourceLoader
 {
-	__DeclareClassNoFactory;
-
 public:
 
-	Render::PGPUDriver	GPU;
-	//UPTR				AccessFlags;		//!!!uncomment and define to GPU_Read in a _default_ loader!
 	//UPTR				DesiredMipCount;
-
-	//virtual ~CTextureLoader() {}
-
-	//virtual const Core::CRTTI&	GetResultType() const override;
 };
 
 typedef Ptr<CTextureLoader> PTextureLoader;

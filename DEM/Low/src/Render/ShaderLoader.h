@@ -1,8 +1,7 @@
 #pragma once
 #include <Resources/ResourceLoader.h>
 
-// Shader loaders are intended to load GPU shader objects. It is a class of
-// different loaders each suited for a different shader type and 3D API.
+// Shader loaders are intended to load GPU shader objects
 
 namespace Render
 {

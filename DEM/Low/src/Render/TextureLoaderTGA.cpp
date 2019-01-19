@@ -1,9 +1,7 @@
 #include "TextureLoaderTGA.h"
 
-#include <Render/Texture.h>
-#include <Render/GPUDriver.h>
+#include <Render/TextureData.h>
 #include <IO/BinaryReader.h>
-#include <Core/Factory.h>
 
 // Supports loading of TrueColor images only. //???support black-and-white too? RLE?
 // Only a required subset is implemented, in accordance with a specification at:
@@ -43,18 +41,16 @@ struct CTGAFooter
 #define TGA_TOP_TO_BOTTOM	(1 << 5)
 #define TGA_ATTRIBUTE_BITS	0x0f
 
-const char ReferenceSignature[] = "TRUEVISION-XFILE";
+constexpr const char ReferenceSignature[] = "TRUEVISION-XFILE";
 
 const Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 {
-	return Render::CTexture::RTTI;
+	return Render::CTextureData::RTTI;
 }
 //---------------------------------------------------------------------
 
 PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 {
-	if (GPU.IsNullPtr()) return NULL;
-
 	const char* pSubId;
 	IO::PStream Stream = OpenStream(UID, pSubId);
 	if (!Stream) return nullptr;
@@ -227,7 +223,7 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 				if (Stream->Read(pData, DataSize) != DataSize)
 				{
 					n_free(pData);
-					return NULL;
+					return nullptr;
 				}
 			}
 			else
@@ -252,12 +248,14 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		}
 	}
 
-	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, false);
+	Render::PTextureData TexData = n_new(Render::CTextureData);
+	TexData->pData = pData;
+	TexData->Stream = Mapped ? Stream : nullptr;
+	TexData->MipDataProvided = false;
+	TexData->Desc = std::move(TexDesc);
+	TexData->Access = Render::Access_GPU_Read;
 
-	if (Mapped) Stream->Unmap();
-	else n_free(pData);
-
-	return Texture.Get();
+	return TexData.Get();
 }
 //---------------------------------------------------------------------
 

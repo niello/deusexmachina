@@ -1,9 +1,7 @@
 #include "TextureLoaderDDS.h"
 
-#include <Render/Texture.h>
-#include <Render/GPUDriver.h>
+#include <Render/TextureData.h>
 #include <IO/BinaryReader.h>
-#include <Core/Factory.h>
 
 // DDS code and definitions are based on:
 // https://github.com/Microsoft/DirectXTex/blob/master/DDSTextureLoader/DDSTextureLoader.cpp
@@ -245,8 +243,6 @@ const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 
 PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 {
-	if (GPU.IsNullPtr()) return NULL;
-
 	const char* pSubId;
 	IO::PStream Stream = OpenStream(UID, pSubId);
 	if (!Stream) return nullptr;
@@ -268,9 +264,9 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 	TexDesc.Depth = Header.depth;
 	TexDesc.MipLevels = Clamp(Header.mipMapCount, 1U, (U32)DEM_MAX_MIP_LEVELS); //!!!set DesiredMipCount, if provided! some value for 'as in file', some for 'full chain' 
 	TexDesc.MSAAQuality = Render::MSAA_None;
-	bool MipDataProvided = (Header.mipMapCount > 1);
+	const bool MipDataProvided = (Header.mipMapCount > 1);
 
-	bool IsDX10 = (Header.ddspf.flags & DDS_FOURCC) && Header.ddspf.fourCC == MAKEFOURCC('D', 'X', '1', '0');
+	const bool IsDX10 = (Header.ddspf.flags & DDS_FOURCC) && Header.ddspf.fourCC == MAKEFOURCC('D', 'X', '1', '0');
 	if (IsDX10)
 	{
 		// D3D10 and later format
@@ -314,16 +310,16 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 
-	void* pData = NULL;
+	void* pData = nullptr;
 	if (!ConversionRequired && Stream->CanBeMapped()) pData = Stream->Map();
-	bool Mapped = !!pData;
+	const bool Mapped = !!pData;
 	if (!Mapped)
 	{
 		pData = n_malloc(DataSize);
 		if (Stream->Read(pData, DataSize) != DataSize)
 		{
 			n_free(pData);
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -376,12 +372,14 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 		pData = pNewData;
 	}
 
-	Render::PTexture Texture = GPU->CreateTexture(TexDesc, Render::Access_GPU_Read, pData, MipDataProvided);
+	Render::PTextureData TexData = n_new(Render::CTextureData);
+	TexData->pData = pData;
+	TexData->Stream = Mapped ? Stream : nullptr;
+	TexData->MipDataProvided = MipDataProvided;
+	TexData->Desc = std::move(TexDesc);
+	TexData->Access = Render::Access_GPU_Read;
 
-	if (Mapped) Stream->Unmap();
-	else n_free(pData);
-
-	return Texture.Get();
+	return TexData.Get();
 }
 //---------------------------------------------------------------------
 

@@ -205,6 +205,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/Terrain.h
 	DEM/Low/src/Render/TerrainRenderer.h
 	DEM/Low/src/Render/Texture.h
+	DEM/Low/src/Render/TextureData.h
 	DEM/Low/src/Render/TextureLoader.h
 	DEM/Low/src/Render/TextureLoaderDDS.h
 	DEM/Low/src/Render/TextureLoaderTGA.h
@@ -447,6 +448,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/Terrain.cpp
 	DEM/Low/src/Render/TerrainRenderer.cpp
 	DEM/Low/src/Render/Texture.cpp
+	DEM/Low/src/Render/TextureData.cpp
 	DEM/Low/src/Render/TextureLoader.cpp
 	DEM/Low/src/Render/TextureLoaderDDS.cpp
 	DEM/Low/src/Render/TextureLoaderTGA.cpp
