@@ -157,7 +157,7 @@ bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, void* pData, UPTR
 }
 //---------------------------------------------------------------------
 
-bool CD3D11DriverFactory::FindShaderInputSignature(UPTR ID, CBinaryData* pOutSigData) const
+bool CD3D11DriverFactory::FindShaderInputSignature(U32 ID, CBinaryData* pOutSigData) const
 {
 	UPTR Index;
 	if (!ShaderSigIDToIndex.Get(ID, Index)) FAIL;

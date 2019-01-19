@@ -253,7 +253,6 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	TexData->Stream = Mapped ? Stream : nullptr;
 	TexData->MipDataProvided = false;
 	TexData->Desc = std::move(TexDesc);
-	TexData->Access = Render::Access_GPU_Read;
 
 	return TexData.Get();
 }

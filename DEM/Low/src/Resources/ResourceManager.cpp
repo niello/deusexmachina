@@ -56,6 +56,13 @@ CResource* CResourceManager::FindResource(CStrID UID) const
 }
 //---------------------------------------------------------------------
 
+void CResourceManager::UnregisterResource(CStrID UID)
+{
+	Registry.Remove(UID);
+	//???force unload resource object here even if there are references to resource?
+}
+//---------------------------------------------------------------------
+
 bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator, bool ClonePerResource)
 {
 	if (pCreator &&	pRsrcType && !pCreator->GetResultType().IsDerivedFrom(*pRsrcType)) FAIL;

@@ -2,6 +2,7 @@
 
 #include <Render/VertexLayout.h>
 #include <Render/Texture.h>
+#include <Render/TextureData.h>
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -67,11 +68,16 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 	if (!pResMgr) return nullptr;
 
-	//Resources::PResource RTexData = pResMgr->RegisterResource<CTextureData>(UID);
-	//PTextureData TexData = RTexData->ValidateObject<CTextureData>();
-	//Texture = CreateTexture(TexData->GetDesc(), AccessFlags, TexData->GetDataPtr(), TexData->HasMipData());
+	Resources::PResource RTexData = pResMgr->RegisterResource<CTextureData>(UID);
+	PTextureData TexData = RTexData->ValidateObject<CTextureData>();
+	Texture = CreateTexture(TexData->Desc, AccessFlags, TexData->pData, TexData->MipDataProvided);
+
+	//!!!not to keep in RAM! or use refcount
+	//???CTexture holds resource ref if it wants RAM backing?
+	//TexData->UnloadResource();
 
 	if (Texture) ResourceTextures.Add(UID, Texture);
+
 	return Texture;
 }
 //---------------------------------------------------------------------

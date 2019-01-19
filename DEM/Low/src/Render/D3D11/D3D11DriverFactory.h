@@ -48,7 +48,7 @@ protected:
 	IDXGIFactory1*			pDXGIFactory;
 	UPTR					AdapterCount;		// Valid during a lifetime of the DXGI factory object
 	CArray<CBinaryData>		ShaderSignatures;
-	CHashTable<UPTR, UPTR>	ShaderSigIDToIndex;
+	CHashTable<U32, UPTR>	ShaderSigIDToIndex;
 
 public:
 
@@ -76,8 +76,8 @@ public:
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
-	bool					RegisterShaderInputSignature(UPTR ID, void* pData, UPTR Size);
-	bool					FindShaderInputSignature(UPTR ID, CBinaryData* pOutSigData = NULL) const;
+	bool					RegisterShaderInputSignature(U32 ID, void* pData, UPTR Size);
+	bool					FindShaderInputSignature(U32 ID, CBinaryData* pOutSigData = NULL) const;
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

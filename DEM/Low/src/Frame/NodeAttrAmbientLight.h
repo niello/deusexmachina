@@ -26,9 +26,10 @@ namespace Render
 namespace Frame
 {
 
+//???process as IRenderable? or at least add ValidateResources to create textures for GPU!
 class CNodeAttrAmbientLight: public Scene::CNodeAttribute
 {
-	__DeclareClass(CNodeAttrLight);
+	__DeclareClass(CNodeAttrAmbientLight);
 
 protected:
 

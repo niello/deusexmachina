@@ -83,6 +83,11 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(CStrID UID, Render::EShaderType Sha
 	void* pSigData = NULL;
 	if (ShaderType == Render::ShaderType_Vertex) // || ShaderType == Render::ShaderType_Geometry)
 	{
+		// Vertex shader input comes from input assembler stage (IA). In D3D10 and later
+		// input layouts (input signatures, vertex declarations) are created from VS
+		// input signatures (or at least are validated against them). Input layout, once
+		// created, can be reused with any vertex shader with the same input signature.
+
 		if (!InputSignatureID) InputSignatureID = ShaderFileID;
 
 		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
@@ -93,6 +98,9 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(CStrID UID, Render::EShaderType Sha
 				pSigData = pData;
 				SigSize = BinarySize;
 			}
+			// TODO: in a new system signature shader ID will be built from in-library shader ID
+			// by changing the subresource index. If shader is standalone (not in-library), its
+			// signature ID must be the same as a shader file ID, so its own data will be used.
 			else if (!ShaderLibrary->GetRawDataByID(InputSignatureID, pSigData, SigSize))
 			{
 				n_free(pData);
@@ -108,7 +116,7 @@ PResourceObject CD3D11ShaderLoader::LoadImpl(CStrID UID, Render::EShaderType Sha
 		}
 	}
 
-	Render::PD3D11Shader Shader = (Render::CD3D11Shader*)GPU->CreateShader(ShaderType, pData, BinarySize).Get();
+	Render::PD3D11Shader Shader = static_cast<Render::CD3D11Shader*>(GPU->CreateShader(ShaderType, pData, BinarySize).Get());
 	if (Shader.IsNullPtr()) FAIL;
 
 	if (pSigData != pData) n_free(pData);

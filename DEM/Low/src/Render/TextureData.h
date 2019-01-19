@@ -29,7 +29,6 @@ public:
 	void*			pData = nullptr;
 
 	CTextureDesc	Desc;
-	Data::CFlags	Access;
 	bool			MipDataProvided = false;
 
 	virtual ~CTextureData();

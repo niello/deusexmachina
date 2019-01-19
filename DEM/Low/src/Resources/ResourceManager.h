@@ -49,6 +49,7 @@ public:
 	PResource			RegisterResource(CStrID UID, const Core::CRTTI& RsrcType);
 	PResource			RegisterResource(CStrID UID, IResourceCreator* pCreator);
 	CResource*			FindResource(CStrID UID) const;
+	void				UnregisterResource(CStrID UID);
 };
 
 }
