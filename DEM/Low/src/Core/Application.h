@@ -36,6 +36,11 @@ namespace IO
 	class CIOServer;
 }
 
+namespace Resources
+{
+	class CResourceManager;
+}
+
 namespace Input
 {
 	class CInputTranslator;
@@ -66,6 +71,7 @@ protected:
 	Sys::IPlatform& Platform; //???use unique ptr and heap-allocated platform?
 
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
+	std::unique_ptr<Resources::CResourceManager> ResMgr;
 
 	Data::PParams GlobalSettings;
 	Data::PParams OverrideSettings; // From a command line
@@ -90,6 +96,7 @@ public:
 	Sys::IPlatform&	GetPlatform() const { return Platform; }
 
 	IO::CIOServer&	IO() const;
+	Resources::CResourceManager& ResourceManager() const;
 
 	// enum profiles - fill array of IDs
 	CStrID			CreateUserProfile(const char* pUserID);

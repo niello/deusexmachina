@@ -157,7 +157,8 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 					continue;
 				}
 
-				*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
+				NOT_IMPLEMENTED;
+				//*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
 			}
 
 			Variations[LightCount] = ShaderLoadingFailed ? nullptr : GPU->CreateRenderState(Desc);

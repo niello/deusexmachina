@@ -5,6 +5,7 @@
 #include <IO/PathUtils.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
+#include <Resources/ResourceManager.h>
 #include <Math/Math.h>
 #include <System/Platform.h>
 #include <System/OSWindow.h>
@@ -71,6 +72,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 
 	n_new(Events::CEventServer);
 	IOServer.reset(n_new(IO::CIOServer));
+	ResMgr.reset(n_new(Resources::CResourceManager));
 }
 //---------------------------------------------------------------------
 
@@ -83,6 +85,12 @@ CApplication::~CApplication()
 IO::CIOServer& CApplication::IO() const
 {
 	return *IOServer;
+}
+//---------------------------------------------------------------------
+
+Resources::CResourceManager& CApplication::ResourceManager() const
+{
+	return *ResMgr;
 }
 //---------------------------------------------------------------------
 

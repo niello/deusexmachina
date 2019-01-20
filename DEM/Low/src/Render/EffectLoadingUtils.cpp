@@ -53,7 +53,8 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		if (SourceShaderID && pShaderLibrary)
 		{
 			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = pShaderLibrary->GetShaderByID(SourceShaderID);
+			NOT_IMPLEMENTED;
+			Render::PShader ParamShader; // = pShaderLibrary->GetShaderByID(SourceShaderID);
 			pShaderMeta = ParamShader->GetMetadata();
 		}
 		else pShaderMeta = pDefaultShaderMeta;
@@ -85,7 +86,8 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		if (SourceShaderID && pShaderLibrary)
 		{
 			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = pShaderLibrary->GetShaderByID(SourceShaderID);
+			NOT_IMPLEMENTED;
+			Render::PShader ParamShader;// = pShaderLibrary->GetShaderByID(SourceShaderID);
 			pShaderMeta = ParamShader->GetMetadata();
 		}
 		else pShaderMeta = pDefaultShaderMeta;
@@ -114,7 +116,8 @@ bool LoadEffectParams(IO::CBinaryReader& Reader,
 		if (SourceShaderID && pShaderLibrary)
 		{
 			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = pShaderLibrary->GetShaderByID(SourceShaderID);
+			NOT_IMPLEMENTED;
+			Render::PShader ParamShader; // = pShaderLibrary->GetShaderByID(SourceShaderID);
 			pShaderMeta = ParamShader->GetMetadata();
 		}
 		else pShaderMeta = pDefaultShaderMeta;

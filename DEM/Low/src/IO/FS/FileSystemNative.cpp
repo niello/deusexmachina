@@ -101,7 +101,7 @@ bool CFileSystemNative::NextDirectoryEntry(void* hDir, CString& OutName, EFSEntr
 
 void* CFileSystemNative::OpenFile(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	if (_ReadOnly && (Mode & (EStreamAccessMode::SAM_READ | EStreamAccessMode::SAM_APPEND))) return nullptr;
+	if (_ReadOnly && (Mode & (EStreamAccessMode::SAM_WRITE | EStreamAccessMode::SAM_APPEND))) return nullptr;
 	return pFS->OpenFile(Root + pPath, Mode, Pattern);
 }
 //---------------------------------------------------------------------
