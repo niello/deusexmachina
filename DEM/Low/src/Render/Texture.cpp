@@ -2,7 +2,20 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CTexture, Resources::CResourceObject);
+__ImplementClassNoFactory(Render::CTexture, Core::CObject);
+
+UPTR CTexture::GetDimensionCount() const
+{
+	switch (Desc.Type)
+	{
+		case Texture_1D:	return 1;
+		case Texture_2D:
+		case Texture_Cube:	return 2;
+		case Texture_3D:	return 3;
+		default:			return 0;
+	};
+}
+//---------------------------------------------------------------------
 
 UPTR CTexture::GetPixelCount(bool IncludeSubsequentMips) const
 {

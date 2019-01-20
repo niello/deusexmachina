@@ -1,11 +1,8 @@
 #include "NodeAttrAmbientLight.h"
 
 #include <Scene/SPS.h>
-#include <Resources/Resource.h>
-#include <Resources/ResourceManager.h>
-#include <Resources/ResourceCreator.h>
+#include <Render/GPUDriver.h>
 #include <IO/BinaryReader.h>
-#include <IO/PathUtils.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -18,16 +15,12 @@ bool CNodeAttrAmbientLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReade
 	{
 		case 'IRRM':
 		{
-			CString RUID = DataReader.Read<CString>();
-			Resources::PResource RTexture = ResourceMgr->RegisterResource<Render::CTexture>(CStrID(RUID));			
-			IrradianceMap = RTexture->ValidateObject<Render::CTexture>();
+			UIDIrradianceMap = CStrID(DataReader.Read<CString>());
 			OK;
 		}
 		case 'PMRM':
 		{
-			CString RUID = DataReader.Read<CString>();
-			Resources::PResource RTexture = ResourceMgr->RegisterResource<Render::CTexture>(CStrID(RUID));			
-			RadianceEnvMap = RTexture->ValidateObject<Render::CTexture>();
+			UIDRadianceEnvMap = CStrID(DataReader.Read<CString>());
 			OK;
 		}
 	}
@@ -36,9 +29,20 @@ bool CNodeAttrAmbientLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReade
 }
 //---------------------------------------------------------------------
 
+bool CNodeAttrAmbientLight::ValidateResources(Render::CGPUDriver* pGPU)
+{
+	if (!pGPU) FAIL;
+	IrradianceMap = pGPU->GetTexture(UIDIrradianceMap, Render::Access_GPU_Read);
+	RadianceEnvMap = pGPU->GetTexture(UIDRadianceEnvMap, Render::Access_GPU_Read);
+	OK;
+}
+//---------------------------------------------------------------------
+
 Scene::PNodeAttribute CNodeAttrAmbientLight::Clone()
 {
 	PNodeAttrAmbientLight ClonedAttr = n_new(CNodeAttrAmbientLight);
+	ClonedAttr->UIDIrradianceMap = UIDIrradianceMap;
+	ClonedAttr->UIDRadianceEnvMap = UIDRadianceEnvMap;
 	ClonedAttr->IrradianceMap = IrradianceMap;
 	ClonedAttr->RadianceEnvMap = RadianceEnvMap;
 	return ClonedAttr.Get();

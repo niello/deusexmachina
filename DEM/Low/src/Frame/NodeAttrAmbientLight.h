@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_NODE_ATTR_AMBIENT_LIGHT_H__
-#define __DEM_L1_FRAME_NODE_ATTR_AMBIENT_LIGHT_H__
-
 #include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
 #include <Render/Texture.h>
@@ -26,28 +23,28 @@ namespace Render
 namespace Frame
 {
 
-//???process as IRenderable? or at least add ValidateResources to create textures for GPU!
 class CNodeAttrAmbientLight: public Scene::CNodeAttribute
 {
 	__DeclareClass(CNodeAttrAmbientLight);
 
 protected:
 
-	Render::PTexture	IrradianceMap;
-	Render::PTexture	RadianceEnvMap;
-	Scene::CSPS*		pSPS;
-	Scene::CSPSRecord*	pSPSRecord;		// NULL if oversized (global)
+	CStrID					UIDIrradianceMap;
+	CStrID					UIDRadianceEnvMap;
+	Render::PTexture		IrradianceMap;
+	Render::PTexture		RadianceEnvMap;
+	Scene::CSPS*			pSPS = nullptr;
+	Scene::CSPSRecord*		pSPSRecord = nullptr;		// NULL if oversized (global)
 
-	virtual void	OnDetachFromScene();
+	virtual void OnDetachFromScene();
 
 public:
-
-	CNodeAttrAmbientLight(): pSPS(NULL), pSPSRecord(NULL) {}
 
 	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual Scene::PNodeAttribute	Clone();
 	void							UpdateInSPS(Scene::CSPS& SPS);
 
+	bool							ValidateResources(Render::CGPUDriver* pGPU);
 	bool							GetGlobalAABB(CAABB& OutBox) const;
 	Render::CTexture*				GetIrradianceMap() const { return IrradianceMap.Get(); }
 	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }
@@ -56,5 +53,3 @@ public:
 typedef Ptr<CNodeAttrAmbientLight> PNodeAttrAmbientLight;
 
 }
-
-#endif

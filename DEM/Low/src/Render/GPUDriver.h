@@ -156,6 +156,7 @@ public:
 	// Engine resource management - create GPU (VRAM) resource from engine resource
 	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
 	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
+	PShader						GetShader(CStrID UID);
 
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const = 0;

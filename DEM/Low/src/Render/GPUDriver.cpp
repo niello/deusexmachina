@@ -3,6 +3,7 @@
 #include <Render/VertexLayout.h>
 #include <Render/Texture.h>
 #include <Render/TextureData.h>
+#include <Render/Shader.h>
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -79,6 +80,14 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 	if (Texture) ResourceTextures.Add(UID, Texture);
 
 	return Texture;
+}
+//---------------------------------------------------------------------
+
+PShader CGPUDriver::GetShader(CStrID UID)
+{
+	//
+
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
