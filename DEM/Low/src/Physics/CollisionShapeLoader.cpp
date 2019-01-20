@@ -3,6 +3,7 @@
 #include <Physics/HeightfieldShape.h>
 #include <Physics/BulletConv.h>
 #include <Resources/Resource.h>
+#include <Resources/ResourceManager.h>
 #include <IO/IOServer.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
@@ -44,9 +45,11 @@ const Core::CRTTI& CCollisionShapeLoaderPRM::GetResultType() const
 
 PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 {
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	if (!pResMgr) return nullptr;
+
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 	Data::PParams Desc = n_new(Data::CParams);

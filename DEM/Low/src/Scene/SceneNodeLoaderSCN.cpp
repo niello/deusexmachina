@@ -1,6 +1,7 @@
 #include "SceneNodeLoaderSCN.h"
 
 #include <Scene/SceneNode.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 
@@ -59,9 +60,11 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 
 PResourceObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 {
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	if (!pResMgr) return nullptr;
+
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 	Scene::PSceneNode Root = RootNode.IsValidPtr() ? RootNode : n_new(Scene::CSceneNode);

@@ -1,6 +1,7 @@
 #include "TextureLoaderTGA.h"
 
 #include <Render/TextureData.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 
 // Supports loading of TrueColor images only. //???support black-and-white too? RLE?
@@ -51,9 +52,11 @@ const Core::CRTTI& CTextureLoaderTGA::GetResultType() const
 
 PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 {
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	if (!pResMgr) return nullptr;
+
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

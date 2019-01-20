@@ -1,6 +1,7 @@
 #include "TextureLoaderDDS.h"
 
 #include <Render/TextureData.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 
 // DDS code and definitions are based on:
@@ -243,9 +244,11 @@ const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 
 PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 {
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	if (!pResMgr) return nullptr;
+
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	U64 FileSize = Stream->GetSize();
 	if (FileSize < sizeof(DDS_HEADER) + 4) return NULL; // Too small to be a valid DDS

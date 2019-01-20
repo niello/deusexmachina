@@ -8,7 +8,6 @@
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
-#include <IO/IOServer.h>
 #include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/StringUtils.h>
@@ -89,7 +88,9 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 PShader CGPUDriver::GetShader(CStrID UID)
 {
-	if (!pIO) return nullptr;
+	// Tough resource manager doesn't keep track of shaders, it is used
+	// for shader library loading and for accessing an IO service.
+	if (!pResMgr) return nullptr;
 
 	IO::PStream Stream;
 	PShaderLibrary ShaderLibrary;
@@ -104,8 +105,6 @@ PShader CGPUDriver::GetShader(CStrID UID)
 		++pSubId; // Skip '#'
 		if (*pSubId == 0) return nullptr;
 
-		if (!pResMgr) return nullptr;
-
 		Resources::PResource RShaderLibrary = pResMgr->RegisterResource<CShaderLibrary>(CStrID(Path));
 		if (!RShaderLibrary) return nullptr;
 
@@ -115,7 +114,7 @@ PShader CGPUDriver::GetShader(CStrID UID)
 		const U32 ElementID = StringUtils::ToInt(pSubId);
 		Stream = ShaderLibrary->GetElementStream(ElementID);
 	}
-	else Stream = pIO->CreateStream(UID.CStr());
+	else Stream = pResMgr->CreateResourceStream(UID, pSubId);
 
 	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
 

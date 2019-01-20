@@ -4,6 +4,7 @@
 #include <Frame/RenderPhase.h>
 #include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Render/D3D11/USMShaderMetadata.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <Data/DataArray.h>
 #include <Core/Factory.h>
@@ -21,9 +22,11 @@ const Core::CRTTI& CRenderPathLoaderRP::GetResultType() const
 
 PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 {
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	if (!pResMgr) return nullptr;
+
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

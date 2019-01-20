@@ -21,7 +21,6 @@
 
 namespace IO
 {
-	class CIOServer;
 	class CStream;
 }
 
@@ -51,8 +50,6 @@ protected:
 	EGPUDriverType					Type;
 	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
-	//???right in GPU or in a separate class which ties GPU, resource manager etc?
-	IO::CIOServer*					pIO = nullptr;
 	Resources::CResourceManager*	pResMgr = nullptr;
 	CHashTable<CStrID, PTexture>	ResourceTextures; //???or one map for all GPU resources? base class? OnDeviceLost etc? d3d11 has no such concept
 
@@ -156,7 +153,6 @@ public:
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
 	// Engine resource management - create GPU (VRAM) resource from engine resource
-	void						SetIO(IO::CIOServer* pIOServer) { pIO = pIOServer; }
 	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
 	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
 	PShader						GetShader(CStrID UID);

@@ -3,12 +3,16 @@
 #include <Resources/Resource.h>
 #include <Resources/ResourceCreator.h>
 #include <IO/PathUtils.h>
+#include <IO/IOServer.h>
+#include <IO/Stream.h>
 
 namespace Resources
 {
 __ImplementSingleton(CResourceManager);
 
-CResourceManager::CResourceManager(UPTR InitialCapacity): Registry(InitialCapacity)
+CResourceManager::CResourceManager(IO::CIOServer* pIOServer, UPTR InitialCapacity)
+	: Registry(InitialCapacity)
+	, pIO(pIOServer)
 {
 	__ConstructSingleton;
 }
@@ -21,8 +25,9 @@ CResourceManager::~CResourceManager()
 //---------------------------------------------------------------------
 
 // NB: does not change creator for existing resource
-PResource CResourceManager::RegisterResource(CStrID UID, const Core::CRTTI& RsrcType)
+PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI& RsrcType)
 {
+	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))
 	{
@@ -35,8 +40,9 @@ PResource CResourceManager::RegisterResource(CStrID UID, const Core::CRTTI& Rsrc
 //---------------------------------------------------------------------
 
 // NB: does not change creator for existing resource
-PResource CResourceManager::RegisterResource(CStrID UID, IResourceCreator* pCreator)
+PResource CResourceManager::RegisterResource(const char* pUID, IResourceCreator* pCreator)
 {
+	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))
 	{
@@ -48,6 +54,12 @@ PResource CResourceManager::RegisterResource(CStrID UID, IResourceCreator* pCrea
 }
 //---------------------------------------------------------------------
 
+CResource* CResourceManager::FindResource(const char* pUID) const
+{
+	return FindResource(pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID));
+}
+//---------------------------------------------------------------------
+
 CResource* CResourceManager::FindResource(CStrID UID) const
 {
 	PResource Rsrc;
@@ -56,6 +68,13 @@ CResource* CResourceManager::FindResource(CStrID UID) const
 }
 //---------------------------------------------------------------------
 
+void CResourceManager::UnregisterResource(const char* pUID)
+{
+	return UnregisterResource(pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID));
+}
+//---------------------------------------------------------------------
+
+//???need const char* variant?
 void CResourceManager::UnregisterResource(CStrID UID)
 {
 	Registry.Remove(UID);
@@ -63,7 +82,7 @@ void CResourceManager::UnregisterResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator, bool ClonePerResource)
+bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const Core::CRTTI* pRsrcType, IResourceCreator* pCreator)
 {
 	if (pCreator &&	pRsrcType && !pCreator->GetResultType().IsDerivedFrom(*pRsrcType)) FAIL;
 
@@ -91,7 +110,6 @@ bool CResourceManager::RegisterDefaultCreator(const char* pFmtExtension, const C
 	Rec.Extension = Ext;
 	Rec.pRsrcType = pRsrcType;
 	Rec.Creator = pCreator;
-	Rec.ClonePerResource = ClonePerResource;
 	DefaultCreators.push_back(std::move(Rec));
 	OK;
 }
@@ -138,11 +156,31 @@ PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, 
 		return nullptr;
 	}
 
-	// TODO: revisit necessity & implement if needed
-	n_assert(!pRec->ClonePerResource);
+	return pRec->Creator;
+}
+//---------------------------------------------------------------------
 
-	return //pRec->ClonePerResource ? pRec->Loader->Clone() :
-		pRec->Creator;
+IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*& pOutSubId)
+{
+	// Only generated resources are supported for resource manager not backed by an IO server
+	if (!pIO) return nullptr;
+
+	IO::PStream Stream;
+
+	pOutSubId = strchr(pUID, '#');
+	if (pOutSubId)
+	{
+		if (pOutSubId == pUID) return nullptr;
+
+		CString Path(pUID, pOutSubId - pUID);
+		Stream = pIO->CreateStream(Path);
+
+		++pOutSubId; // Skip '#'
+		if (*pOutSubId == 0) pOutSubId = nullptr;
+	}
+	else Stream = pIO->CreateStream(pUID);
+
+	return (Stream && Stream->CanRead()) ? Stream : nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -483,7 +483,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D9/SM30ShaderConstant.cpp
 	DEM/Low/src/Render/D3D9/SM30ShaderMetadata.cpp
 	DEM/Low/src/Resources/Resource.cpp
-	DEM/Low/src/Resources/ResourceLoader.cpp
 	DEM/Low/src/Resources/ResourceManager.cpp
 	DEM/Low/src/Resources/ResourceObject.cpp
 	DEM/Low/src/Scene/LODGroup.cpp

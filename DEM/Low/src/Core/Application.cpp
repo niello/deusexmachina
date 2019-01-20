@@ -72,7 +72,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 
 	n_new(Events::CEventServer);
 	IOServer.reset(n_new(IO::CIOServer));
-	ResMgr.reset(n_new(Resources::CResourceManager));
+	ResMgr.reset(n_new(Resources::CResourceManager(IOServer.get())));
 }
 //---------------------------------------------------------------------
 

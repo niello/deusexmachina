@@ -20,7 +20,7 @@ public:
 
 	Render::PSkinInfo ReferenceSkinInfo; // NAX2 is bound to a particular skin
 
-	CMocapClipLoaderNAX2(IO::CIOServer* pIOServer);
+	CMocapClipLoaderNAX2(CResourceManager& ResourceManager);
 	virtual ~CMocapClipLoaderNAX2();
 
 	virtual const Core::CRTTI&			GetResultType() const override;

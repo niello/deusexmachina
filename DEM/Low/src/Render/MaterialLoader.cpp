@@ -29,9 +29,11 @@ PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 {
 	if (GPU.IsNullPtr()) return NULL;
 
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	if (!pResMgr) return nullptr;
+
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

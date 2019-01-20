@@ -2,8 +2,8 @@
 
 #include <Animation/MocapClip.h>
 #include <Render/SkinInfo.h>
+#include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <Core/Factory.h>
 
 namespace Resources
 {
@@ -35,7 +35,7 @@ struct CNAX2Curve
 };
 #pragma pack(pop)
 
-CMocapClipLoaderNAX2::CMocapClipLoaderNAX2(IO::CIOServer* pIOServer) : CResourceLoader(pIOServer) {}
+CMocapClipLoaderNAX2::CMocapClipLoaderNAX2(CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 CMocapClipLoaderNAX2::~CMocapClipLoaderNAX2() {}
 
 const Core::CRTTI& CMocapClipLoaderNAX2::GetResultType() const
@@ -46,11 +46,11 @@ const Core::CRTTI& CMocapClipLoaderNAX2::GetResultType() const
 
 PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 {
-	if (ReferenceSkinInfo.IsNullPtr()) return NULL;
+	if (!pResMgr || !ReferenceSkinInfo) return nullptr;
 
-	const char* pSubId;
-	IO::PStream Stream = OpenStream(UID, pSubId);
-	if (!Stream) return nullptr;
+	const char* pOutSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 
