@@ -14,9 +14,11 @@
 #include <Render/D3D11/D3D11Shader.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
+#include <Render/ShaderLibrary.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/Win32/OSWindowWin32.h>
+#include <IO/BinaryReader.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
@@ -2641,61 +2643,148 @@ ProcessFailure:
 }
 //---------------------------------------------------------------------
 
-PShader CD3D11GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, UPTR Size)
+PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary)
 {
-	if (!pData || !Size) return NULL;
+	IO::CBinaryReader R(Stream);
 
-	ID3D11DeviceChild* pShader = NULL;
+	Data::CFourCC FileSig;
+	if (!R.Read(FileSig)) return nullptr;
+
+	// Shader type is autodetected from the file signature
+	Render::EShaderType ShaderType;
+	switch (FileSig.Code)
+	{
+		case 'VS40':
+		case 'VS41':
+		case 'VS50':	ShaderType = Render::ShaderType_Vertex; break;
+		case 'PS40':
+		case 'PS41':
+		case 'PS50':	ShaderType = Render::ShaderType_Pixel; break;
+		case 'GS40':
+		case 'GS41':
+		case 'GS50':	ShaderType = Render::ShaderType_Geometry; break;
+		case 'HS50':	ShaderType = Render::ShaderType_Hull; break;
+		case 'DS50':	ShaderType = Render::ShaderType_Domain; break;
+		default:		return nullptr;
+	};
+
+	U32 BinaryOffset;
+	if (!R.Read(BinaryOffset)) return nullptr;
+
+	U32 ShaderFileID;
+	if (!R.Read(ShaderFileID)) return nullptr;
+
+	U32 InputSignatureID;
+	if (!R.Read(InputSignatureID)) return nullptr;
+
+	U64 MetadataOffset = Stream.GetPosition();
+	U64 FileSize = Stream.GetSize();
+	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
+	if (!BinarySize) return nullptr;
+	void* pData = n_malloc(BinarySize);
+	if (!pData) return nullptr;
+	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
+	{
+		n_free(pData);
+		return nullptr;
+	}
+
+	void* pSigData = NULL;
+	if (ShaderType == Render::ShaderType_Vertex) // || ShaderType == Render::ShaderType_Geometry)
+	{
+		// Vertex shader input comes from input assembler stage (IA). In D3D10 and later
+		// input layouts are created from VS input signatures (or at least are validated
+		// against them). Input layout, once created, can be reused with any vertex shader
+		// with the same input signature.
+
+		if (!InputSignatureID) InputSignatureID = ShaderFileID;
+
+		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
+		{
+			UPTR SigSize;
+			if (InputSignatureID == ShaderFileID)
+			{
+				pSigData = pData;
+				SigSize = BinarySize;
+			}
+			else if (!pLibrary || !pLibrary->GetRawDataByID(InputSignatureID, pSigData, SigSize))
+			{
+				// Only in-library shaders may reference external signature file for now.
+				// Standalone shader must use its own input signature.
+				n_free(pData);
+				return nullptr;
+			}
+
+			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, pSigData, SigSize))
+			{
+				n_free(pData);
+				n_free(pSigData);
+				return nullptr;
+			}
+		}
+	}
+
+	if (!pData || !BinarySize) return nullptr;
+
+	ID3D11DeviceChild* pShader = nullptr;
 
 	switch (ShaderType)
 	{
 		case ShaderType_Vertex:
 		{
-			ID3D11VertexShader* pVS = NULL;
-			pD3DDevice->CreateVertexShader(pData, Size, NULL, &pVS);
+			ID3D11VertexShader* pVS = nullptr;
+			pD3DDevice->CreateVertexShader(pData, BinarySize, nullptr, &pVS);
 			pShader = pVS;
 			break;
 		}
 		case ShaderType_Pixel:
 		{
-			ID3D11PixelShader* pPS = NULL;
-			pD3DDevice->CreatePixelShader(pData, Size, NULL, &pPS);
+			ID3D11PixelShader* pPS = nullptr;
+			pD3DDevice->CreatePixelShader(pData, BinarySize, nullptr, &pPS);
 			pShader = pPS;
 			break;
 		}
 		case ShaderType_Geometry:
 		{
 			//???need stream output? or separate method? or separate shader type?
-			ID3D11GeometryShader* pGS = NULL;
-			pD3DDevice->CreateGeometryShader(pData, Size, NULL, &pGS);
+			ID3D11GeometryShader* pGS = nullptr;
+			pD3DDevice->CreateGeometryShader(pData, BinarySize, nullptr, &pGS);
 			pShader = pGS;
 			break;
 		}
 		case ShaderType_Hull:
 		{
-			ID3D11HullShader* pHS = NULL;
-			pD3DDevice->CreateHullShader(pData, Size, NULL, &pHS);
+			ID3D11HullShader* pHS = nullptr;
+			pD3DDevice->CreateHullShader(pData, BinarySize, nullptr, &pHS);
 			pShader = pHS;
 			break;
 		}
 		case ShaderType_Domain:
 		{
-			ID3D11DomainShader* pDS = NULL;
-			pD3DDevice->CreateDomainShader(pData, Size, NULL, &pDS);
+			ID3D11DomainShader* pDS = nullptr;
+			pD3DDevice->CreateDomainShader(pData, BinarySize, nullptr, &pDS);
 			pShader = pDS;
 			break;
 		}
-		default: return NULL;
+		default: return nullptr;
 	};
 
-	if (!pShader) return NULL;
+	if (!pShader) return nullptr;
 
 	PD3D11Shader Shader = n_new(Render::CD3D11Shader);
 	if (!Shader->Create(pShader))
 	{
 		pShader->Release();
-		return NULL;
+		return nullptr;
 	}
+
+	if (pSigData != pData) n_free(pData);
+
+	Shader->InputSignatureID = InputSignatureID;
+
+	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) return nullptr;
+
+	if (!Shader->Metadata.Load(Stream)) return nullptr;
 
 	return Shader.Get();
 }

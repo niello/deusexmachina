@@ -29,6 +29,7 @@ protected:
 		const Core::CRTTI*	pRsrcType;
 		PResourceCreator	Creator;
 		bool				ClonePerResource;	// Set to true for loaders with state which can change per-resource
+		//???need ClonePerResource at all?
 	};
 
 	CHashTable<CStrID, PResource>		Registry;

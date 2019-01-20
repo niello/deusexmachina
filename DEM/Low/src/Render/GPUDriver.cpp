@@ -4,10 +4,14 @@
 #include <Render/Texture.h>
 #include <Render/TextureData.h>
 #include <Render/Shader.h>
+#include <Render/ShaderLibrary.h>
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
+#include <IO/IOServer.h>
+#include <IO/Stream.h>
 #include <Data/Params.h>
+#include <Data/StringUtils.h>
 
 namespace Render
 {
@@ -85,9 +89,37 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 PShader CGPUDriver::GetShader(CStrID UID)
 {
-	//
+	if (!pIO) return nullptr;
 
-	return nullptr;
+	IO::PStream Stream;
+	PShaderLibrary ShaderLibrary;
+	const char* pSubId = strchr(UID.CStr(), '#');
+	if (pSubId)
+	{
+		// Generated shaders are not supported, must be a file
+		if (pSubId == UID.CStr()) return nullptr;
+
+		// File must be a ShaderLibrary if sub-ID is used
+		CString Path(UID.CStr(), pSubId - UID.CStr());
+		++pSubId; // Skip '#'
+		if (*pSubId == 0) return nullptr;
+
+		if (!pResMgr) return nullptr;
+
+		Resources::PResource RShaderLibrary = pResMgr->RegisterResource<CShaderLibrary>(CStrID(Path));
+		if (!RShaderLibrary) return nullptr;
+
+		ShaderLibrary = RShaderLibrary->ValidateObject<CShaderLibrary>();
+		if (!ShaderLibrary) return nullptr;
+
+		const U32 ElementID = StringUtils::ToInt(pSubId);
+		Stream = ShaderLibrary->GetElementStream(ElementID);
+	}
+	else Stream = pIO->CreateStream(UID.CStr());
+
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+
+	return CreateShader(*Stream, ShaderLibrary.Get());
 }
 //---------------------------------------------------------------------
 

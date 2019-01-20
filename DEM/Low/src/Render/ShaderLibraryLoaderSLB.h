@@ -10,6 +10,8 @@ class CShaderLibraryLoaderSLB: public CResourceLoader
 {
 public:
 
+	CShaderLibraryLoaderSLB(IO::CIOServer* pIOServer) : CResourceLoader(pIOServer) {}
+
 	virtual const Core::CRTTI&	GetResultType() const override;
 	virtual PResourceObject		CreateResource(CStrID UID) override;
 };

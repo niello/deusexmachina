@@ -21,6 +21,7 @@
 
 namespace IO
 {
+	class CIOServer;
 	class CStream;
 }
 
@@ -51,6 +52,7 @@ protected:
 	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
 	//???right in GPU or in a separate class which ties GPU, resource manager etc?
+	IO::CIOServer*					pIO = nullptr;
 	Resources::CResourceManager*	pResMgr = nullptr;
 	CHashTable<CStrID, PTexture>	ResourceTextures; //???or one map for all GPU resources? base class? OnDeviceLost etc? d3d11 has no such concept
 
@@ -89,7 +91,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = NULL) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
-	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, UPTR Size) = 0;
+	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) = 0;
 	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) = 0;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer) = 0;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) = 0;
@@ -154,6 +156,7 @@ public:
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
 	// Engine resource management - create GPU (VRAM) resource from engine resource
+	void						SetIO(IO::CIOServer* pIOServer) { pIO = pIOServer; }
 	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
 	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
 	PShader						GetShader(CStrID UID);

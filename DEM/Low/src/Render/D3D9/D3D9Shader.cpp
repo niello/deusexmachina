@@ -16,33 +16,6 @@ CD3D9Shader::~CD3D9Shader()
 }
 //---------------------------------------------------------------------
 
-bool CD3D9Shader::Create(IUnknown* pShader)
-{
-	if (!pShader) FAIL;
-
-	IDirect3DVertexShader9* pVS = nullptr;
-	IDirect3DPixelShader9* pPS = nullptr;
-	if (SUCCEEDED(pShader->QueryInterface(&pVS)))
-	{
-		if (Create(pVS))
-		{
-			pShader->Release(); // QueryInterface adds ref to PS, so we clear initial ref
-			OK;
-		}
-	}
-	else if (SUCCEEDED(pShader->QueryInterface(&pPS)))
-	{
-		if (Create(pPS))
-		{
-			pShader->Release(); // QueryInterface adds ref to PS, so we clear initial ref
-			OK;
-		}
-	}
-
-	FAIL;
-}
-//---------------------------------------------------------------------
-
 bool CD3D9Shader::Create(IDirect3DVertexShader9* pShader)
 {
 	if (!pShader) FAIL;

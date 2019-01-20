@@ -11,13 +11,9 @@ struct IUnknown;
 struct IDirect3DVertexShader9;
 struct IDirect3DPixelShader9;
 
-namespace Resources
-{
-	class CD3D9ShaderLoader;
-}
-
 namespace Render
 {
+class CD3D9GPUDriver;
 
 class CD3D9Shader: public CShader
 {
@@ -36,13 +32,12 @@ protected:
 
 	void							InternalDestroy();
 
-	friend class Resources::CD3D9ShaderLoader;
+	friend class CD3D9GPUDriver; // for creation
 
 public:
 
 	virtual ~CD3D9Shader();
 
-	bool							Create(IUnknown* pShader); 
 	bool							Create(IDirect3DVertexShader9* pShader);
 	bool							Create(IDirect3DPixelShader9* pShader);
 	virtual void					Destroy() { InternalDestroy(); }

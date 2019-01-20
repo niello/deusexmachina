@@ -43,10 +43,10 @@ typedef Ptr<class CUIContext> PUIContext;
 
 struct CUISettings
 {
-	Render::PGPUDriver	GPUDriver;
-	Render::PShader		VertexShader;
-	Render::PShader		PixelShaderRegular;
-	Render::PShader		PixelShaderOpaque;
+	Render::PGPUDriver	GPU;
+	CStrID				VertexShaderID;
+	CStrID				PixelShaderRegularID;
+	CStrID				PixelShaderOpaqueID;
 
 	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
 	int					SwapChainID;

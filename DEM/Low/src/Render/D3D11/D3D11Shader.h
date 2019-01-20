@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_SHADER_H__
-#define __DEM_L1_RENDER_D3D11_SHADER_H__
-
 #include <Render/Shader.h>
 #include <Render/D3D11/USMShaderMetadata.h>
 
@@ -14,13 +11,9 @@ struct ID3D11DomainShader;
 struct ID3D11GeometryShader;
 struct ID3D11PixelShader;
 
-namespace Resources
-{
-	class CD3D11ShaderLoader;
-}
-
 namespace Render
 {
+class CD3D11GPUDriver;
 
 class CD3D11Shader: public CShader
 {
@@ -28,18 +21,17 @@ class CD3D11Shader: public CShader
 
 protected:
 
-	ID3D11DeviceChild*	pD3DShader;
+	ID3D11DeviceChild*	pD3DShader = nullptr;
 	CUSMShaderMetadata	Metadata;
 
 	void							InternalDestroy();
 
-	friend class Resources::CD3D11ShaderLoader;
+	friend class CD3D11GPUDriver; // for creation
 
 public:
 
-	UPTR				InputSignatureID;
+	UPTR				InputSignatureID = 0;
 
-	CD3D11Shader(): pD3DShader(NULL), InputSignatureID(0) {}
 	virtual ~CD3D11Shader() { InternalDestroy(); }
 
 	bool							Create(ID3D11DeviceChild* pShader); 
@@ -64,5 +56,3 @@ public:
 typedef Ptr<CD3D11Shader> PD3D11Shader;
 
 }
-
-#endif

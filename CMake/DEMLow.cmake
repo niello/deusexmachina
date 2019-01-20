@@ -194,7 +194,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/ShaderConstant.h
 	DEM/Low/src/Render/ShaderLibrary.h
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.h
-	DEM/Low/src/Render/ShaderLoader.h
 	DEM/Low/src/Render/ShaderMetadata.h
 	DEM/Low/src/Render/SkinInfo.h
 	DEM/Low/src/Render/SkinInfoLoaderSKN.h
@@ -223,7 +222,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D11/D3D11RenderTarget.h
 	DEM/Low/src/Render/D3D11/D3D11Sampler.h
 	DEM/Low/src/Render/D3D11/D3D11Shader.h
-	DEM/Low/src/Render/D3D11/D3D11ShaderLoader.h
 	DEM/Low/src/Render/D3D11/D3D11SwapChain.h
 	DEM/Low/src/Render/D3D11/D3D11Texture.h
 	DEM/Low/src/Render/D3D11/D3D11VertexBuffer.h
@@ -241,7 +239,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D9/D3D9RenderTarget.h
 	DEM/Low/src/Render/D3D9/D3D9Sampler.h
 	DEM/Low/src/Render/D3D9/D3D9Shader.h
-	DEM/Low/src/Render/D3D9/D3D9ShaderLoader.h
 	DEM/Low/src/Render/D3D9/D3D9SwapChain.h
 	DEM/Low/src/Render/D3D9/D3D9Texture.h
 	DEM/Low/src/Render/D3D9/D3D9VertexBuffer.h
@@ -463,7 +460,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D11/D3D11RenderTarget.cpp
 	DEM/Low/src/Render/D3D11/D3D11Sampler.cpp
 	DEM/Low/src/Render/D3D11/D3D11Shader.cpp
-	DEM/Low/src/Render/D3D11/D3D11ShaderLoader.cpp
 	DEM/Low/src/Render/D3D11/D3D11SwapChain.cpp
 	DEM/Low/src/Render/D3D11/D3D11Texture.cpp
 	DEM/Low/src/Render/D3D11/D3D11VertexBuffer.cpp
@@ -480,7 +476,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D9/D3D9RenderTarget.cpp
 	DEM/Low/src/Render/D3D9/D3D9Sampler.cpp
 	DEM/Low/src/Render/D3D9/D3D9Shader.cpp
-	DEM/Low/src/Render/D3D9/D3D9ShaderLoader.cpp
 	DEM/Low/src/Render/D3D9/D3D9SwapChain.cpp
 	DEM/Low/src/Render/D3D9/D3D9Texture.cpp
 	DEM/Low/src/Render/D3D9/D3D9VertexBuffer.cpp

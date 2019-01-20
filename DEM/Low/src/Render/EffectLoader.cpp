@@ -145,8 +145,6 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 		{
 			bool ShaderLoadingFailed = false;
 
-			//???use .shd / .csh for all?
-			const char* pExtension[] = { ".vsh", ".psh", ".gsh", ".hsh", ".dsh" };
 			Render::PShader* pShaders[] = { &Desc.VertexShader, &Desc.PixelShader, &Desc.GeometryShader, &Desc.HullShader, &Desc.DomainShader };
 			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
 			{
@@ -158,18 +156,6 @@ PResourceObject CEffectLoader::CreateResource(CStrID UID)
 					*pShaders[ShaderType] = NULL;
 					continue;
 				}
-
-				//???try this way if no library or not loaded from library?
-				//CString UID = "Shaders:Bin/" + StringUtils::FromInt(ShaderID) + pExtension[ShaderType];
-				//Resources::PResource RShader = ResourceMgr->RegisterResource<Render::CShader>(CStrID(UID));
-				//	Loader->As<Resources::CShaderLoader>()->GPU = GPU;
-				//	ResourceMgr->LoadResourceSync(*RShader, *Loader);
-				//	if (!RShader->IsLoaded())
-				//	{
-				//		ShaderLoadingFailed = true;
-				//		break;
-				//	}
-				//*pShaders[ShaderType] = RShader->ValidateObject<Render::CShader>();
 
 				*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
 			}

@@ -172,7 +172,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = NULL);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
-	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, UPTR Size);
+	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) override;
 	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL);
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer);
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);

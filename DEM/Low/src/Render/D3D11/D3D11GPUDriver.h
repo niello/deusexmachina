@@ -178,86 +178,86 @@ public:
 
 	virtual ~CD3D11GPUDriver();
 
-	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType);
-	virtual bool				CheckCaps(ECaps Cap) const;
-	virtual bool				SupportsShaderModel(U32 ShaderModel) const { return ShaderModel >= 0x0400 && ShaderModel <= 0x0500; }
-	virtual UPTR				GetMaxVertexStreams() const;
-	virtual UPTR				GetMaxTextureSize(ETextureType Type) const;
-	virtual UPTR				GetMaxMultipleRenderTargetCount() const { return CurrRT.GetCount(); }
+	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) override;
+	virtual bool				CheckCaps(ECaps Cap) const override;
+	virtual bool				SupportsShaderModel(U32 ShaderModel) const override { return ShaderModel >= 0x0400 && ShaderModel <= 0x0500; }
+	virtual UPTR				GetMaxVertexStreams() const override;
+	virtual UPTR				GetMaxTextureSize(ETextureType Type) const override;
+	virtual UPTR				GetMaxMultipleRenderTargetCount() const override { return CurrRT.GetCount(); }
 
-	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow);
-	virtual bool				DestroySwapChain(UPTR SwapChainID);
-	virtual bool				SwapChainExists(UPTR SwapChainID) const;
-	virtual bool				ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height);
-	virtual bool				SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL);
-	virtual bool				SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWindowRect = NULL);
-	virtual bool				IsFullscreen(UPTR SwapChainID) const;
-	virtual PRenderTarget		GetSwapChainRenderTarget(UPTR SwapChainID) const;
+	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow) override;
+	virtual bool				DestroySwapChain(UPTR SwapChainID) override;
+	virtual bool				SwapChainExists(UPTR SwapChainID) const override;
+	virtual bool				ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height) override;
+	virtual bool				SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisplay = nullptr, const CDisplayMode* pMode = nullptr) override;
+	virtual bool				SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWindowRect = nullptr) override;
+	virtual bool				IsFullscreen(UPTR SwapChainID) const override;
+	virtual PRenderTarget		GetSwapChainRenderTarget(UPTR SwapChainID) const override;
 	virtual DEM::Sys::COSWindow*	GetSwapChainWindow(UPTR SwapChainID) const override;
-	virtual bool				Present(UPTR SwapChainID);
-	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const;
+	virtual bool				Present(UPTR SwapChainID) override;
+	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const override;
 
-	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count);
-	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = NULL);
-	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL);
-	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
-	virtual PShader				CreateShader(EShaderType ShaderType, const void* pData, UPTR Size);
-	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL);
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer);
-	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);
-	virtual PTexture			CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
-	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
-	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
-	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);
+	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count) override;
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = NULL) override;
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL) override;
+	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) override;
+	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) override;
+	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) override;
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer) override;
+	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;
+	virtual PTexture			CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData = NULL, bool MipDataProvided = false) override;
+	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) override;
+	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) override;
+	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) override;
 
-	virtual bool				SetViewport(UPTR Index, const CViewport* pViewport); // NULL to reset
-	virtual bool				GetViewport(UPTR Index, CViewport& OutViewport);
-	virtual bool				SetScissorRect(UPTR Index, const Data::CRect* pScissorRect); // NULL to reset
-	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect);
+	virtual bool				SetViewport(UPTR Index, const CViewport* pViewport) override; // NULL to reset
+	virtual bool				GetViewport(UPTR Index, CViewport& OutViewport) override;
+	virtual bool				SetScissorRect(UPTR Index, const Data::CRect* pScissorRect) override; // NULL to reset
+	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect) override;
 
-	virtual bool				SetVertexLayout(CVertexLayout* pVLayout);
-	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0);
-	virtual bool				SetIndexBuffer(CIndexBuffer* pIB);
-	//virtual bool				SetInstanceBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Instances, UPTR OffsetVertex = 0);
-	virtual bool				SetRenderState(CRenderState* pState);
-	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT);
-	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS);
-	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const;
-	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const;
+	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) override;
+	virtual bool				SetVertexBuffer(UPTR Index, CVertexBuffer* pVB, UPTR OffsetVertex = 0) override;
+	virtual bool				SetIndexBuffer(CIndexBuffer* pIB) override;
+	//virtual bool				SetInstanceBuffer(UPTR Index, CVertexBuffer* pVB, UPTR Instances, UPTR OffsetVertex = 0) override;
+	virtual bool				SetRenderState(CRenderState* pState) override;
+	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT) override;
+	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) override;
+	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const override;
+	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const override;
 
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer);
-	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
+	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer) override;
+	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) override;
+	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) override;
 
-	virtual bool				BeginFrame();
-	virtual void				EndFrame();
-	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
-	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA);
-	virtual void				ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil);
-	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) { return InternalDraw(PrimGroup, false, 1); }
-	virtual bool				DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount) { return InternalDraw(PrimGroup, true, InstanceCount); }
+	virtual bool				BeginFrame() override;
+	virtual void				EndFrame() override;
+	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil) override;
+	virtual void				ClearRenderTarget(CRenderTarget& RT, const vector4& ColorRGBA) override;
+	virtual void				ClearDepthStencilBuffer(CDepthStencilBuffer& DS, UPTR Flags, float Depth, U8 Stencil) override;
+	virtual bool				Draw(const CPrimitiveGroup& PrimGroup) override { return InternalDraw(PrimGroup, false, 1); }
+	virtual bool				DrawInstanced(const CPrimitiveGroup& PrimGroup, UPTR InstanceCount) override { return InternalDraw(PrimGroup, true, InstanceCount); }
 
 	//can set current values and call CreateRenderCache for the current set, which will generate layouts etc and even return cache object
 	//then Draw(CRenderCache&). D3D12 bundles may perfectly fit into this architecture.
 	UPTR						ApplyChanges(UPTR ChangesToUpdate = GPU_Dirty_All); // returns a combination of dirty flags where errors occurred
 
-	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode);
-	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode);
-	virtual bool				MapResource(CImageData& OutData, const CTexture& Resource, EResourceMapMode Mode, UPTR ArraySlice = 0, UPTR MipLevel = 0);
-	virtual bool				UnmapResource(const CVertexBuffer& Resource);
-	virtual bool				UnmapResource(const CIndexBuffer& Resource);
-	virtual bool				UnmapResource(const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0);
-	virtual bool				ReadFromResource(void* pDest, const CVertexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0);
-	virtual bool				ReadFromResource(void* pDest, const CIndexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0);
-	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL);
-	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0);
-	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0);
-	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL);
-	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0);
+	virtual bool				MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode) override;
+	virtual bool				MapResource(void** ppOutData, const CIndexBuffer& Resource, EResourceMapMode Mode) override;
+	virtual bool				MapResource(CImageData& OutData, const CTexture& Resource, EResourceMapMode Mode, UPTR ArraySlice = 0, UPTR MipLevel = 0) override;
+	virtual bool				UnmapResource(const CVertexBuffer& Resource) override;
+	virtual bool				UnmapResource(const CIndexBuffer& Resource) override;
+	virtual bool				UnmapResource(const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0) override;
+	virtual bool				ReadFromResource(void* pDest, const CVertexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) override;
+	virtual bool				ReadFromResource(void* pDest, const CIndexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) override;
+	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL) override;
+	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
+	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
+	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL) override;
+	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 
-	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer);
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size);
-	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer);
+	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) override;
+	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }

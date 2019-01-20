@@ -17,7 +17,7 @@
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
-#include <IO/Stream.h>
+#include <IO/BinaryReader.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
@@ -2728,39 +2728,82 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 }
 //---------------------------------------------------------------------
 
-PShader CD3D9GPUDriver::CreateShader(EShaderType ShaderType, const void* pData, UPTR Size)
+PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary)
 {
-	if (!pData || !Size) return NULL;
+	IO::CBinaryReader R(Stream);
 
-	IUnknown* pShader = NULL;
+	Data::CFourCC FileSig;
+	if (!R.Read(FileSig)) return nullptr;
+
+	// Shader type is autodetected from the file signature
+	Render::EShaderType ShaderType;
+	switch (FileSig.Code)
+	{
+		case 'VS30':	ShaderType = Render::ShaderType_Vertex; break;
+		case 'PS30':	ShaderType = Render::ShaderType_Pixel; break;
+		default:		return nullptr;
+	};
+
+	U32 BinaryOffset;
+	if (!R.Read(BinaryOffset)) return nullptr;
+
+	U32 ShaderFileID;
+	if (!R.Read(ShaderFileID)) return nullptr;
+
+	U64 MetadataOffset = Stream.GetPosition();
+	U64 FileSize = Stream.GetSize();
+	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
+	if (!BinarySize) return nullptr;
+	void* pData = n_malloc(BinarySize);
+	if (!pData) return nullptr;
+	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
+	{
+		n_free(pData);
+		return nullptr;
+	}
+
+	if (!pData || !BinarySize) return nullptr;
+
+	Render::PD3D9Shader Shader;
 
 	switch (ShaderType)
 	{
 		case ShaderType_Vertex:
 		{
-			IDirect3DVertexShader9* pVS = NULL;
-			pD3DDevice->CreateVertexShader((const DWORD*)pData, &pVS);
-			pShader = pVS;
+			IDirect3DVertexShader9* pVS = nullptr;
+			if (SUCCEEDED(pD3DDevice->CreateVertexShader((const DWORD*)pData, &pVS)))
+			{
+				Shader = n_new(Render::CD3D9Shader);
+				if (!Shader->Create(pVS))
+				{
+					pVS->Release();
+					return NULL;
+				}
+			}
 			break;
 		}
 		case ShaderType_Pixel:
 		{
-			IDirect3DPixelShader9* pPS = NULL;
-			pD3DDevice->CreatePixelShader((const DWORD*)pData, &pPS);
-			pShader = pPS;
+			IDirect3DPixelShader9* pPS = nullptr;
+			if (SUCCEEDED(pD3DDevice->CreatePixelShader((const DWORD*)pData, &pPS)))
+			{
+				Shader = n_new(Render::CD3D9Shader);
+				if (!Shader->Create(pPS))
+				{
+					pPS->Release();
+					return NULL;
+				}
+			}
 			break;
 		}
-		default: return NULL;
+		default: return nullptr;
 	};
 
-	if (!pShader) return NULL;
+	n_free(pData);
 
-	Render::PD3D9Shader Shader = n_new(Render::CD3D9Shader);
-	if (!Shader->Create(pShader))
-	{
-		pShader->Release();
-		return NULL;
-	}
+	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) return nullptr;
+
+	if (!Shader->Metadata.Load(Stream)) return nullptr;
 
 	return Shader.Get();
 }
