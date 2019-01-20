@@ -3,6 +3,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/RenderState.h>
+#include <Render/RenderTarget.h>
 #include <Render/Shader.h>
 #include <Render/ShaderMetadata.h>
 #include <Render/ShaderConstant.h>
@@ -27,19 +28,29 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain,
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChainID,
 						   float DefaultContextWidth, float DefaultContextHeight,
 						   CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID):
 	GPU(&GPUDriver),
-	pDefaultRT(NULL),
 	DisplayDPI(96, 96),
-	DisplaySize(DefaultContextWidth, DefaultContextHeight),
 	OpaqueMode(false)
 {
 	Render::PShader VS = GPU->GetShader(VertexShaderID);
 	Render::PShader PSRegular = GPU->GetShader(PixelShaderRegularID);
 	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);
 	n_assert_dbg(VS && PSRegular && PSOpaque && VS->IsResourceValid() && PSRegular->IsResourceValid() && PSOpaque->IsResourceValid());
+
+	if (DefaultContextWidth <= 0.f || DefaultContextHeight <= 0.f)
+	{
+		const Render::CRenderTargetDesc& RealBackBufDesc = GPU->GetSwapChainRenderTarget(SwapChainID)->GetDesc();
+		DisplaySize.d_width = DefaultContextWidth > 0.f ? DefaultContextWidth : static_cast<float>(RealBackBufDesc.Width);
+		DisplaySize.d_height = DefaultContextHeight > 0.f ? DefaultContextHeight : static_cast<float>(RealBackBufDesc.Height);
+	}
+	else
+	{
+		DisplaySize.d_width = DefaultContextWidth;
+		DisplaySize.d_height = DefaultContextHeight;
+	}
 
 	//=================================================================
 	// Render states
@@ -191,13 +202,13 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChain,
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, int SwapChainID,
 								   float DefaultContextWidth, float DefaultContextHeight,
 								   CStrID VertexShaderID, CStrID PixelShaderRegularID,
 								   CStrID PixelShaderOpaqueID, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, SwapChain, DefaultContextWidth, DefaultContextHeight, VertexShaderID, PixelShaderRegularID, PixelShaderOpaqueID);
+	return *n_new(CDEMRenderer)(GPUDriver, SwapChainID, DefaultContextWidth, DefaultContextHeight, VertexShaderID, PixelShaderRegularID, PixelShaderOpaqueID);
 }
 //--------------------------------------------------------------------
 

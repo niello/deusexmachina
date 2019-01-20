@@ -38,7 +38,7 @@ protected:
 	CArray<CDEMTextureTarget*>			TexTargets;
 	CHashTable<String, CDEMTexture*>	Textures;
 
-	RenderTarget*						pDefaultRT;
+	RenderTarget*						pDefaultRT = nullptr;
 	Render::PVertexLayout				VertexLayout;
 	Render::PRenderState				NormalUnclipped;
 	Render::PRenderState				NormalClipped;
@@ -59,7 +59,7 @@ protected:
 	// For now it is the only way to know the draw mode in a CDEMGeometryBuffer::draw()
 	bool								OpaqueMode;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -67,7 +67,7 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChain, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }

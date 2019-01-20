@@ -50,8 +50,8 @@ struct CUISettings
 
 	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
 	int					SwapChainID;
-	float				DefaultContextWidth;
-	float				DefaultContextHeight;
+	float				DefaultContextWidth;  // <= 0.f - from back buffer
+	float				DefaultContextHeight; // <= 0.f - from back buffer
 
 	Data::PParams		ResourceGroups;
 };
