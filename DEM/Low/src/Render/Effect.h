@@ -19,21 +19,6 @@ namespace Render
 {
 typedef Ptr<class CEffect> PEffect;
 
-// Renderables are queued and filtered by this type. For example, opaque objects are typically
-// rendered before alpha-blended ones, and are not included in a depth pre-pass at all. This enum
-// is designed with no runtime extensibility in mind, although it is possible. I see no benefit in
-// this, because after this enum is established during a development, it is very unlikely to change.
-// Also I don't like hacks like "render A after B and C for no reason". But you may implement it.
-enum EEffectType
-{
-	EffectType_Opaque,		// No transparency, all possible depth optimizations
-	EffectType_AlphaTest,	// No transparency, Z-write in a PS
-	EffectType_Skybox,		// Infinitely far opaque object for non-filled part of the screen only
-	EffectType_AlphaBlend,	// Back to front, requires all objects behind to be already drawn
-
-	EffectType_Other
-};
-
 class CEffect: public Data::CRefCounted
 {
 protected:

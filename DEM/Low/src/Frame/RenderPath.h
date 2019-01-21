@@ -71,6 +71,8 @@ public:
 	const Render::CEffectConstant*				GetGlobalConstant(CStrID Name) const;
 	const Render::CEffectResource*				GetGlobalResource(CStrID Name) const;
 	const Render::CEffectSampler*				GetGlobalSampler(CStrID Name) const;
+
+	void										SetRenderTargetClearColor(UPTR Index, const vector4& Color);
 };
 
 typedef Ptr<CRenderPath> PRenderPath;

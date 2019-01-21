@@ -30,13 +30,14 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 
 	CEffect* pEffect = pMaterial->GetEffect();
 	EEffectType EffType = pEffect->GetType();
-	if (Context.pEffectOverrides)
-		for (UPTR i = 0; i < Context.pEffectOverrides->GetCount(); ++i)
-			if (Context.pEffectOverrides->KeyAt(i) == EffType)
-			{
-				pEffect = Context.pEffectOverrides->ValueAt(i).Get();
-				break;
-			}
+	for (UPTR i = 0; i < Context.EffectOverrides.GetCount(); ++i)
+	{
+		if (Context.EffectOverrides.KeyAt(i) == EffType)
+		{
+			pEffect = Context.EffectOverrides.ValueAt(i).Get();
+			break;
+		}
+	}
 
 	if (!pEffect) FAIL;
 

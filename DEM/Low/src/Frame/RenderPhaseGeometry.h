@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_PHASE_GEOMETRY_H__
-#define __DEM_L1_FRAME_PHASE_GEOMETRY_H__
-
 #include <Frame/RenderPhase.h>
 #include <Render/RenderFwd.h>
 #include <Data/Dictionary.h>
@@ -29,7 +26,7 @@ protected:
 	CFixedArray<I32>								RenderTargetIndices;
 	I32												DepthStencilIndex;
 	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;
-	Render::CEffectOverrideMap						EffectOverrides;
+	CDict<Render::EEffectType, CStrID>				EffectOverrides;
 	bool											EnableLighting = false;
 
 	const Render::CEffectConstant*					pConstGlobalLightBuffer = nullptr;
@@ -47,5 +44,3 @@ public:
 };
 
 }
-
-#endif

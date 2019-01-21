@@ -49,9 +49,10 @@ struct CRenderNodeContext
 	UPTR					MeshLOD;
 	UPTR					MaterialLOD;
 	CAABB					AABB;
-	CEffectOverrideMap*		pEffectOverrides;
 	CArray<CLightRecord>*	pLights;
 	CArray<U16>*			pLightIndices;
+
+	CDict<Render::EEffectType, Render::PEffect>	EffectOverrides;
 };
 
 }

@@ -55,6 +55,13 @@ const Render::CEffectSampler* CRenderPath::GetGlobalSampler(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
+void CRenderPath::SetRenderTargetClearColor(UPTR Index, const vector4& Color)
+{
+	if (Index >= RTSlots.GetCount()) return;
+	RTSlots[Index].ClearValue = Color;
+}
+//---------------------------------------------------------------------
+
 bool CRenderPath::Render(CView& View)
 {
 	// We clear all phases' render targets and DS surfaces at the beginning of

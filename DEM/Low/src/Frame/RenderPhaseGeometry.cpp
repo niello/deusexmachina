@@ -85,7 +85,16 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	n_assert_dbg(!View.LightIndices.GetCount());
 
 	Render::CRenderNodeContext Context;
-	Context.pEffectOverrides = EffectOverrides.GetCount() ? &EffectOverrides : NULL;
+
+	// Find override effects for the current GPU
+	Context.EffectOverrides.Clear();
+	for (UPTR i = 0; i < EffectOverrides.GetCount(); ++i)
+	{
+		CStrID EffectUID = EffectOverrides.ValueAt(i);
+		Render::PEffect Effect = EffectUID.IsValid() ? View.GPU->GetEffect(EffectUID) : nullptr;
+		Context.EffectOverrides.Add(EffectOverrides.KeyAt(i), Effect);
+	}
+
 	if (EnableLighting)
 	{
 		Context.pLights = &View.GetLightCache();
@@ -399,20 +408,7 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 			else if (Key == "Other") EffectType = Render::EffectType_Other;
 			else FAIL;
 
-			Render::PEffect Effect;
-			if (!Prm.GetRawValue().IsNull())
-			{
-				CString RUID("Effects:");
-				RUID += Prm.GetValue<CStrID>().CStr();
-				RUID += ".eff"; //???replace ID by full URI on export?
-
-//TODO: RP must be GPU-independent, store IDs here!
-//NOT_IMPLEMENTED;
-				//Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
-				//Effect = Rsrc->ValidateObject<Render::CEffect>();
-			}
-
-			EffectOverrides.Add(EffectType, Effect);
+			EffectOverrides.Add(EffectType, Prm.GetRawValue().IsNull() ? CStrID::Empty : Prm.GetValue<CStrID>());
 		}
 	}
 
