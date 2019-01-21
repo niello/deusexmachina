@@ -23,9 +23,9 @@ class CSkybox: public IRenderable
 
 protected:
 
-	Resources::PResource	RMaterial;
-	PMaterial				Material;	//???NEED?
-	PMesh					Mesh;		//???NEED?
+	CStrID					MaterialUID;
+	PMaterial				Material;
+	PMesh					Mesh;
 
 	virtual bool			ValidateResources(CGPUDriver* pGPU);
 

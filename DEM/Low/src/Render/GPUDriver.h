@@ -53,10 +53,12 @@ protected:
 	EGPUDriverType					Type;
 	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
+	// Per-GPU resources are managed by their owner
 	Resources::CResourceManager*	pResMgr = nullptr;
-	CHashTable<CStrID, PTexture>	ResourceTextures;
+	CHashTable<CStrID, PTexture>	Textures;
 	CHashTable<CStrID, PShader>		Shaders;
 	CHashTable<CStrID, PEffect>		Effects;
+	CHashTable<CStrID, PMaterial>	Materials;
 
 #ifdef DEM_STATS
 	UPTR							PrimitivesRendered = 0;
@@ -76,6 +78,7 @@ public:
 	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
 	PShader						GetShader(CStrID UID);
 	PEffect						GetEffect(CStrID UID);
+	PMaterial					GetMaterial(CStrID UID);
 
 	EGPUDriverType				GetType() const { return Type; }
 	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }

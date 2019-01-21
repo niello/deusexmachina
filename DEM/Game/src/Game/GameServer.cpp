@@ -399,17 +399,18 @@ bool CGameServer::ContinueGame(const char* pFileName)
 
 bool CGameServer::LoadGameLevel(CStrID ID)
 {
-	n_assert(CurrProfile.IsValid());
-
 	CString RelLevelPath = CString(ID.CStr()) + ".prm";
 
 	Data::PParams InitialLvl;
 	if (!ParamsUtils::LoadParamsFromPRM("Levels:" + RelLevelPath, InitialLvl)) FAIL;
 	n_assert(InitialLvl.IsValidPtr());
 
-	CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
 	Data::PParams SGLvl;
-	ParamsUtils::LoadParamsFromPRM(DiffPath + RelLevelPath, SGLvl);
+	if (CurrProfile.IsValid())
+	{
+		CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
+		ParamsUtils::LoadParamsFromPRM(DiffPath + RelLevelPath, SGLvl);
+	}
 
 	Data::PParams LevelDesc;
 	if (SGLvl.IsValidPtr())

@@ -6,6 +6,7 @@
 #include <Render/Shader.h>
 #include <Render/ShaderLibrary.h>
 #include <Render/Effect.h>
+#include <Render/Material.h>
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -65,7 +66,7 @@ void CGPUDriver::SetResourceManager(Resources::CResourceManager* pResourceManage
 PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 {
 	PTexture Texture;
-	if (ResourceTextures.Get(UID, Texture) && Texture)
+	if (Textures.Get(UID, Texture) && Texture)
 	{
 		n_assert(Texture->GetAccess().Is(AccessFlags));
 		return Texture;
@@ -81,7 +82,7 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 	//???CTexture holds resource ref if it wants RAM backing?
 	//TexData->UnloadResource();
 
-	if (Texture) ResourceTextures.Add(UID, Texture);
+	if (Texture) Textures.Add(UID, Texture);
 
 	return Texture;
 }
@@ -148,6 +149,27 @@ PEffect CGPUDriver::GetEffect(CStrID UID)
 	Effects.Add(UID, Effect);
 
 	return Effect;
+}
+//---------------------------------------------------------------------
+
+PMaterial CGPUDriver::GetMaterial(CStrID UID)
+{
+	PMaterial Material;
+	if (Materials.Get(UID, Material) && Material) return Material;
+
+	if (!pResMgr) return nullptr;
+
+	const char* pSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID.CStr(), pSubId);
+
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+
+	Material = n_new(CMaterial);
+	if (!Material->Load(*this, *Stream)) return nullptr;
+
+	Materials.Add(UID, Material);
+
+	return Material;
 }
 //---------------------------------------------------------------------
 

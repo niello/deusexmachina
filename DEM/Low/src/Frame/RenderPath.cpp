@@ -64,6 +64,8 @@ void CRenderPath::SetRenderTargetClearColor(UPTR Index, const vector4& Color)
 
 bool CRenderPath::Render(CView& View)
 {
+	if (!View.GPU->BeginFrame()) FAIL;
+
 	// We clear all phases' render targets and DS surfaces at the beginning of
 	// the frame, as recommended, especially for SLI. It also serves for a better
 	// rendering architecture, as phase must not clear RTs and therefore know
@@ -95,6 +97,8 @@ bool CRenderPath::Render(CView& View)
 	}
 
 	//???clear tmp view data?
+
+	View.GPU->EndFrame();
 
 	OK;
 }

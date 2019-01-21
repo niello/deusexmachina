@@ -1,37 +1,31 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_MATERIAL_H__
-#define __DEM_L1_RENDER_MATERIAL_H__
-
-#include <Resources/ResourceObject.h>
-#include <Render/RenderFwd.h>
+#include <Data/RefCounted.h>
 #include <Data/FixedArray.h>
+#include <Render/RenderFwd.h>
 
 // Material defines parameters of an effect to achieve some visual properties of object rendered.
 // Material can be shared among render objects, providing the same shaders and shader parameters to all of them.
 
-namespace Resources
+namespace IO
 {
-	class CMaterialLoader;
+	class CStream;
 }
 
 namespace Render
 {
 typedef Ptr<class CMaterial> PMaterial;
 typedef Ptr<class CEffect> PEffect;
-class CTechnique;
 class CGPUDriver;
 
-class CMaterial: public Resources::CResourceObject
+class CMaterial: public Data::CRefCounted
 {
-	__DeclareClassNoFactory;
-
 protected:
 
 	struct CConstBufferRecord
 	{
 		HConstBuffer	Handle;
 		PConstantBuffer	Buffer;
-		EShaderType		ShaderType;		// Now supports binding to one stage at a time
+		EShaderType		ShaderType;		// Now supports binding to only one stage at a time
 	};
 
 	struct CResourceRecord
@@ -53,18 +47,16 @@ protected:
 	CFixedArray<CResourceRecord>	Resources;
 	CFixedArray<CSamplerRecord>		Samplers;
 
-	friend class Resources::CMaterialLoader;
-
 public:
 
-	//virtual ~CMaterial();
+	CMaterial();
+	virtual ~CMaterial();
 
-	bool			Apply(CGPUDriver& GPU) const;
+	bool		Load(CGPUDriver& GPU, IO::CStream& Stream);
+	bool		Apply(CGPUDriver& GPU) const;
 
-	virtual bool	IsResourceValid() const { return Effect.IsValidPtr(); }
-	CEffect*		GetEffect() const { return Effect.Get(); }
+	bool		IsValid() const { return Effect.IsValidPtr(); }
+	CEffect*	GetEffect() const { return Effect.Get(); }
 };
 
 }
-
-#endif

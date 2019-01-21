@@ -23,10 +23,12 @@ class CTerrain: public IRenderable
 
 protected:
 
+	//???!!!CDLOD textures as separate resources with sub-id like "file.cdlod#NM"?!
+	//Then CDLOD itself will be a GPU-independent shared RAM resource!
 	Resources::PResource	RCDLODData;
 	PCDLODData				CDLODData;	//???NEED?
-	Resources::PResource	RMaterial;
-	PMaterial				Material;	//???NEED?
+	CStrID					MaterialUID;
+	PMaterial				Material;
 	PMesh					PatchMesh;
 	PMesh					QuarterPatchMesh;
 

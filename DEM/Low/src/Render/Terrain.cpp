@@ -32,8 +32,7 @@ bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource<Render::CMaterial>(CStrID(RUID));
+			MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
 			OK;
 		}
 		case 'TSSX':
@@ -55,7 +54,7 @@ IRenderable* CTerrain::Clone()
 {
 	CTerrain* pCloned = n_new(CTerrain);
 	pCloned->RCDLODData = RCDLODData;
-	pCloned->RMaterial = RMaterial;
+	pCloned->MaterialUID = MaterialUID;
 	pCloned->PatchMesh = PatchMesh;
 	pCloned->QuarterPatchMesh = QuarterPatchMesh;
 	pCloned->InvSplatSizeX = InvSplatSizeX;
@@ -69,8 +68,9 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 	CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
 
 	//!!!if CDLOD will not include texture, just height data, create texture here, if not created!
+	//can create CDLOD textures here per GPU with fixed sub-ID, so with no unnecessary recreation
 
-	Material = RMaterial->ValidateObject<Render::CMaterial>();
+	Material = pGPU ? pGPU->GetMaterial(MaterialUID) : nullptr;
 
 	U32 PatchSize = CDLODData->GetPatchSize();
 	if (pGPU && IsPow2(PatchSize) && PatchSize >= 4)

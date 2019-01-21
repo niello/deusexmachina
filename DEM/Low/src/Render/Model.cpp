@@ -2,9 +2,9 @@
 
 #include <Render/Mesh.h>
 #include <Render/Material.h>
+#include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceCreator.h>
 #include <IO/BinaryReader.h>
 #include <IO/PathUtils.h>
 #include <Core/Factory.h>
@@ -20,8 +20,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource<Render::CMaterial>(RUID);
+			MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
 			OK;
 		}
 		case 'JPLT':
@@ -52,7 +51,7 @@ IRenderable* CModel::Clone()
 {
 	CModel* pCloned = n_new(CModel);
 	pCloned->RMesh = RMesh;
-	pCloned->RMaterial = RMaterial;
+	pCloned->MaterialUID = MaterialUID;
 	pCloned->MeshGroupIndex = MeshGroupIndex;
 	pCloned->BoneIndices.RawCopyFrom(BoneIndices.GetPtr(), BoneIndices.GetCount());
 	return pCloned;
@@ -62,7 +61,7 @@ IRenderable* CModel::Clone()
 bool CModel::ValidateResources(CGPUDriver* pGPU)
 {
 	Mesh = RMesh->ValidateObject<Render::CMesh>();
-	Material = RMaterial->ValidateObject<Render::CMaterial>();
+	Material = pGPU ? pGPU->GetMaterial(MaterialUID) : nullptr;
 	OK;
 }
 //---------------------------------------------------------------------

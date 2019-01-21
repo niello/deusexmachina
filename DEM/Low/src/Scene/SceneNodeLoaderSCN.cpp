@@ -67,9 +67,9 @@ PResourceObject CSceneNodeLoaderSCN::CreateResource(CStrID UID)
 	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
-	Scene::PSceneNode Root = RootNode.IsValidPtr() ? RootNode : n_new(Scene::CSceneNode);
-	if (Root.IsNullPtr() || !LoadNode(Reader, Root)) return NULL;
-	return Root.Get();
+	Scene::PSceneNode Root = n_new(Scene::CSceneNode);
+	if (!Root || !LoadNode(Reader, Root)) return nullptr;
+	return Root;
 }
 //---------------------------------------------------------------------
 

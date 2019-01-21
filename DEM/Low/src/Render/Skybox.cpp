@@ -21,8 +21,7 @@ bool CSkybox::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		case 'MTRL':
 		{
 			CString RsrcID = DataReader.Read<CString>();
-			CStrID RUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			RMaterial = ResourceMgr->RegisterResource<Render::CMaterial>(RUID);
+			MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
 			OK;
 		}
 		default: FAIL;
@@ -33,14 +32,14 @@ bool CSkybox::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 IRenderable* CSkybox::Clone()
 {
 	CSkybox* pCloned = n_new(CSkybox);
-	pCloned->RMaterial = RMaterial;
+	pCloned->MaterialUID = MaterialUID;
 	return pCloned;
 }
 //---------------------------------------------------------------------
 
 bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 {
-	Material = RMaterial->ValidateObject<Render::CMaterial>();
+	Material = pGPU ? pGPU->GetMaterial(MaterialUID) : nullptr;
 
 	CStrID MeshUID("#Mesh_Skybox");
 	Resources::PResource RMesh = ResourceMgr->FindResource(MeshUID);

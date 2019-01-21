@@ -173,7 +173,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/IndexBuffer.h
 	DEM/Low/src/Render/Light.h
 	DEM/Low/src/Render/Material.h
-	DEM/Low/src/Render/MaterialLoader.h
 	DEM/Low/src/Render/Mesh.h
 	DEM/Low/src/Render/MeshGenerators.h
 	DEM/Low/src/Render/MeshLoader.h
@@ -419,7 +418,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/Light.cpp
 	DEM/Low/src/Render/LoadMaterialFromPRM.cpp
 	DEM/Low/src/Render/Material.cpp
-	DEM/Low/src/Render/MaterialLoader.cpp
 	DEM/Low/src/Render/Mesh.cpp
 	DEM/Low/src/Render/MeshGenerators.cpp
 	DEM/Low/src/Render/MeshLoader.cpp

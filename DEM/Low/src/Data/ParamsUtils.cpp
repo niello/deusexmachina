@@ -15,7 +15,7 @@ bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams)
 {
 	Data::CBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	if (!File || !File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
@@ -30,7 +30,7 @@ bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams)
 bool LoadParamsFromPRM(const char* pFileName, Data::PParams& OutParams)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_READ)) return NULL;
+	if (!File || !File->Open(IO::SAM_READ)) return NULL;
 	IO::CBinaryReader Reader(*File);
 
 	Data::PParams Params = n_new(Data::CParams);
@@ -85,7 +85,7 @@ bool LoadDataSerializationSchemesFromDSS(const char* pFileName, CDict<CStrID, Da
 bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_WRITE)) FAIL;
+	if (!File || !File->Open(IO::SAM_WRITE)) FAIL;
 	IO::CHRDWriter Writer(*File);
 	return Writer.WriteParams(Params);
 }
@@ -94,7 +94,7 @@ bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params)
 bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_WRITE)) FAIL;
+	if (!File || !File->Open(IO::SAM_WRITE)) FAIL;
 	IO::CBinaryWriter Writer(*File);
 	return Writer.WriteParams(Params);
 }

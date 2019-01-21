@@ -33,7 +33,7 @@ public:
 	Resources::PResource	RMesh;
 	PMesh					Mesh;
 	UPTR					MeshGroupIndex = 0;
-	Resources::PResource	RMaterial;
+	CStrID					MaterialUID;
 	PMaterial				Material; //???!!!materialset!?
 	CFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
 
