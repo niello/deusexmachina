@@ -42,7 +42,7 @@ public:
 	bool			LoadSettings(const Data::CParams& Desc);
 	bool			SaveSettings(Data::CParams& OutDesc) const;
 
-	bool			CreateContext(CStrID ID);
+	bool			CreateContext(CStrID ID, bool Bypass = false);
 	void			DestroyContext(CStrID ID);
 	CControlLayout*	GetContextLayout(CStrID ID);	// Intentionally editable
 	void			EnableContext(CStrID ID);

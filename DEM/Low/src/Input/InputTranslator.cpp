@@ -64,14 +64,14 @@ bool CInputTranslator::SaveSettings(Data::CParams& OutDesc) const
 }
 //---------------------------------------------------------------------
 
-bool CInputTranslator::CreateContext(CStrID ID)
+bool CInputTranslator::CreateContext(CStrID ID, bool Bypass)
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 		if (Contexts[i].ID == ID) FAIL;
 	CInputContext& NewCtx = *Contexts.Add();
 	NewCtx.ID = ID;
 	NewCtx.Enabled = false;
-	NewCtx.pLayout = n_new(CControlLayout);
+	if (!Bypass) NewCtx.pLayout = n_new(CControlLayout);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -158,21 +158,29 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		if (!Ctx.Enabled) continue;
 
 		CControlLayout* pLayout = Ctx.pLayout;
-
-		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-			pLayout->States.ValueAt(StateIdx)->OnAxisMove(pDevice, Ev);
-
-		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		if (pLayout)
 		{
-			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-			if (EvRec.pEvent->OnAxisMove(pDevice, Ev))
+			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+				pLayout->States.ValueAt(StateIdx)->OnAxisMove(pDevice, Ev);
+
+			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
 			{
-				Events::CEvent& NewEvent = *EventQueue.Add();
-				NewEvent.ID = EvRec.OutEventID;
-				NewEvent.Params = n_new(Data::CParams(1));
-				NewEvent.Params->Set<float>(CStrID("Amount"), Ev.Amount);
-				OK;
+				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+				if (EvRec.pEvent->OnAxisMove(pDevice, Ev))
+				{
+					Events::CEvent& NewEvent = *EventQueue.Add();
+					NewEvent.ID = EvRec.OutEventID;
+					NewEvent.Params = n_new(Data::CParams(1));
+					NewEvent.Params->Set<float>(CStrID("Amount"), Ev.Amount);
+					OK;
+				}
 			}
+		}
+		else
+		{
+			// Bypass context only adds a device & user info into events
+			//!!!TODO: add device and user ID!
+			FireEvent(Event);
 		}
 	}
 
@@ -191,19 +199,27 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		if (!Ctx.Enabled) continue;
 
 		CControlLayout* pLayout = Ctx.pLayout;
-
-		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-			pLayout->States.ValueAt(StateIdx)->OnButtonDown(pDevice, Ev);
-
-		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		if (pLayout)
 		{
-			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-			if (EvRec.pEvent->OnButtonDown(pDevice, Ev))
+			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+				pLayout->States.ValueAt(StateIdx)->OnButtonDown(pDevice, Ev);
+
+			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
 			{
-				Events::CEvent& NewEvent = *EventQueue.Add();
-				NewEvent.ID = EvRec.OutEventID;
-				OK;
+				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+				if (EvRec.pEvent->OnButtonDown(pDevice, Ev))
+				{
+					Events::CEvent& NewEvent = *EventQueue.Add();
+					NewEvent.ID = EvRec.OutEventID;
+					OK;
+				}
 			}
+		}
+		else
+		{
+			// Bypass context only adds a device & user info into events
+			//!!!TODO: add device and user ID!
+			FireEvent(Event);
 		}
 	}
 
@@ -222,19 +238,27 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		if (!Ctx.Enabled) continue;
 
 		CControlLayout* pLayout = Ctx.pLayout;
-
-		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-			pLayout->States.ValueAt(StateIdx)->OnButtonUp(pDevice, Ev);
-
-		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		if (pLayout)
 		{
-			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-			if (EvRec.pEvent->OnButtonUp(pDevice, Ev))
+			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+				pLayout->States.ValueAt(StateIdx)->OnButtonUp(pDevice, Ev);
+
+			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
 			{
-				Events::CEvent& NewEvent = *EventQueue.Add();
-				NewEvent.ID = EvRec.OutEventID;
-				OK;
+				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+				if (EvRec.pEvent->OnButtonUp(pDevice, Ev))
+				{
+					Events::CEvent& NewEvent = *EventQueue.Add();
+					NewEvent.ID = EvRec.OutEventID;
+					OK;
+				}
 			}
+		}
+		else
+		{
+			// Bypass context only adds a device & user info into events
+			//!!!TODO: add device and user ID!
+			FireEvent(Event);
 		}
 	}
 
