@@ -20,6 +20,9 @@ private:
 	CEGUI::GUIContext*	pCtx = nullptr;
 
 	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
+	DECLARE_EVENT_HANDLER(AxisMove, OnAxisMove);
+	DECLARE_EVENT_HANDLER(ButtonDown, OnButtonDown);
+	DECLARE_EVENT_HANDLER(ButtonUp, OnButtonUp);
 
 public:
 

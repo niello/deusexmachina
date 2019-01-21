@@ -4,6 +4,7 @@
 #include <UI/CEGUI/DEMRenderer.h>
 #include <Events/EventDispatcher.h>
 #include <Events/Subscription.h>
+#include <Input/InputEvents.h>
 #include <System/Events/OSInput.h>
 
 namespace UI
@@ -63,6 +64,9 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
 	// as layout root with the MousePassThroughEnabled property set to true.
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, OSInput, CUIContext, OnOSWindowInput, Priority);
+	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, AxisMove, CUIContext, OnAxisMove, Priority);
+	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, ButtonDown, CUIContext, OnButtonDown, Priority);
+	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, ButtonUp, CUIContext, OnButtonUp, Priority);
 
 	OK;
 }
@@ -213,6 +217,24 @@ bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Ev
 			return pCtx->injectMouseWheelChange((float)Ev.WheelDelta);
 	}
 
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
 	FAIL;
 }
 //---------------------------------------------------------------------

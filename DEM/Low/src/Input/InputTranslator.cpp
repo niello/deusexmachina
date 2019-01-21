@@ -71,7 +71,7 @@ bool CInputTranslator::CreateContext(CStrID ID, bool Bypass)
 	CInputContext& NewCtx = *Contexts.Add();
 	NewCtx.ID = ID;
 	NewCtx.Enabled = false;
-	if (!Bypass) NewCtx.pLayout = n_new(CControlLayout);
+	NewCtx.pLayout = Bypass ? nullptr : n_new(CControlLayout);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -180,7 +180,7 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		{
 			// Bypass context only adds a device & user info into events
 			//!!!TODO: add device and user ID!
-			FireEvent(Event);
+			if (FireEvent(Event) > 0) OK;
 		}
 	}
 
@@ -219,7 +219,7 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		{
 			// Bypass context only adds a device & user info into events
 			//!!!TODO: add device and user ID!
-			FireEvent(Event);
+			if (FireEvent(Event) > 0) OK;
 		}
 	}
 
@@ -258,7 +258,7 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		{
 			// Bypass context only adds a device & user info into events
 			//!!!TODO: add device and user ID!
-			FireEvent(Event);
+			if (FireEvent(Event) > 0) OK;
 		}
 	}
 
