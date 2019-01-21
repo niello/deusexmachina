@@ -56,6 +56,7 @@ protected:
 	Resources::CResourceManager*	pResMgr = nullptr;
 	CHashTable<CStrID, PTexture>	ResourceTextures;
 	CHashTable<CStrID, PShader>		Shaders;
+	CHashTable<CStrID, PEffect>		Effects;
 
 #ifdef DEM_STATS
 	UPTR							PrimitivesRendered = 0;
@@ -66,9 +67,20 @@ protected:
 
 public:
 
-	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
+	CGPUDriver();
+	virtual ~CGPUDriver();
+
+	// Engine resource management - create GPU (VRAM) resource from engine resource
+	//???!!!resolve assigns?!
+	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
+	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
+	PShader						GetShader(CStrID UID);
+	PEffect						GetEffect(CStrID UID);
+
 	EGPUDriverType				GetType() const { return Type; }
 	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }
+
+	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
 	virtual bool				CheckCaps(ECaps Cap) const = 0;
 	virtual bool				SupportsShaderModel(U32 ShaderModel) const = 0;
 	virtual UPTR				GetMaxVertexStreams() const = 0;
@@ -155,11 +167,6 @@ public:
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) = 0;
 	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
-
-	// Engine resource management - create GPU (VRAM) resource from engine resource
-	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
-	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
-	PShader						GetShader(CStrID UID);
 
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const = 0;

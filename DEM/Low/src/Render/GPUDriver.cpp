@@ -5,6 +5,7 @@
 #include <Render/TextureData.h>
 #include <Render/Shader.h>
 #include <Render/ShaderLibrary.h>
+#include <Render/Effect.h>
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -14,6 +15,8 @@
 
 namespace Render
 {
+CGPUDriver::CGPUDriver() {}
+CGPUDriver::~CGPUDriver() {}
 
 bool CGPUDriver::PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA)
 {
@@ -59,12 +62,8 @@ void CGPUDriver::SetResourceManager(Resources::CResourceManager* pResourceManage
 }
 //---------------------------------------------------------------------
 
-//???validate existing texture here? it may be lost (at least in D3D9). Some other invalid state?
-//???bool keep loaded into RAM? how to control multiple clients? some kind of refcounting?
 PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 {
-	//!!!assigns must be resolved! or pass char* here and resolve!
-
 	PTexture Texture;
 	if (ResourceTextures.Get(UID, Texture) && Texture)
 	{
@@ -90,8 +89,6 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 PShader CGPUDriver::GetShader(CStrID UID)
 {
-	//!!!assigns must be resolved! or pass char* here and resolve!
-
 	PShader Shader;
 	if (Shaders.Get(UID, Shader) && Shader) return Shader;
 
@@ -130,6 +127,27 @@ PShader CGPUDriver::GetShader(CStrID UID)
 	if (Shader) Shaders.Add(UID, Shader);
 
 	return Shader;
+}
+//---------------------------------------------------------------------
+
+PEffect CGPUDriver::GetEffect(CStrID UID)
+{
+	PEffect Effect;
+	if (Effects.Get(UID, Effect) && Effect) return Effect;
+
+	if (!pResMgr) return nullptr;
+
+	const char* pSubId;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID.CStr(), pSubId);
+
+	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+
+	Effect = n_new(CEffect);
+	if (!Effect->Load(*this, *Stream)) return nullptr;
+
+	Effects.Add(UID, Effect);
+
+	return Effect;
 }
 //---------------------------------------------------------------------
 

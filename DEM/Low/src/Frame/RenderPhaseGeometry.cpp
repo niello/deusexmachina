@@ -280,8 +280,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	}
 	else
 	{
-		Ctx.pLights = NULL;
-		Ctx.pLightIndices = NULL;
+		Ctx.pLights = nullptr;
+		Ctx.pLightIndices = nullptr;
 		Ctx.UsesGlobalLightBuffer = false;
 	}
 
@@ -406,7 +406,8 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 				RUID += Prm.GetValue<CStrID>().CStr();
 				RUID += ".eff"; //???replace ID by full URI on export?
 
-				NOT_IMPLEMENTED;
+//TODO: RP must be GPU-independent, store IDs here!
+//NOT_IMPLEMENTED;
 				//Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
 				//Effect = Rsrc->ValidateObject<Render::CEffect>();
 			}

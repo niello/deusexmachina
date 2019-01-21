@@ -68,7 +68,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 		}
 	}
 
-	// Create rlinear cube sampler for image-based lighting
+	// Create linear cube sampler for image-based lighting
 
 	Render::CSamplerDesc SamplerDesc;
 	SamplerDesc.SetDefaults();

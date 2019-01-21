@@ -4,9 +4,9 @@
 #include <Data/Dictionary.h>
 
 // A complete (possibly multipass) shading effect on an abstract input data.
-// Since input data may be different, although the desired shading effect is the same, a shader
+// Since input data may be different, although the desired shading effect is the same, an effect
 // incapsulates a family of techniques, each of which implements an effect for a specific input data.
-// An unique set of feature flags defines each input data case, so, techniques are mapped to these
+// An unique set of feature flags defines each input data case, so techniques are mapped to these
 // flags, and clients can request an apropriate tech by its features. Request by ID is supported too.
 
 namespace IO
@@ -53,6 +53,8 @@ protected:
 	char*							pMaterialConstDefaultValues = nullptr;
 	UPTR							MaterialConstantBufferCount = 0;
 
+	CArray<PShader>					MetadataShaders;
+
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
 	// if Mtl->GetShaderTech(FFlags, LOD) fails, use Mtl->FallbackMtl->GetShaderTech(FFlags, LOD)
@@ -61,7 +63,7 @@ protected:
 
 public:
 
-	static bool LoadParams(IO::CBinaryReader& Reader, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
+	static bool LoadParams(IO::CBinaryReader& Reader, Render::CGPUDriver& GPU, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
 	static bool LoadParamValues(IO::CBinaryReader& Reader, Render::CGPUDriver& GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
 
 	CEffect();

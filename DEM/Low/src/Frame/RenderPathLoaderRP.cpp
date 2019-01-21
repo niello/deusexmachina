@@ -4,7 +4,7 @@
 #include <Frame/RenderPhase.h>
 #include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Render/D3D11/USMShaderMetadata.h>
-#include <Render/Effect.h>
+#include <Render/ShaderConstant.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <Data/DataArray.h>
@@ -16,6 +16,89 @@ namespace Resources
 const Core::CRTTI& CRenderPathLoaderRP::GetResultType() const
 {
 	return Frame::CRenderPath::RTTI;
+}
+//---------------------------------------------------------------------
+
+// Almost the same as CEffect::LoadParams but doesn't depend on GPU
+// Out array will be sorted by ID as parameters are saved sorted by ID
+static bool LoadGlobalParams(IO::CBinaryReader& Reader,
+	const Render::IShaderMetadata* pShaderMeta,
+	CFixedArray<Render::CEffectConstant>& OutConsts,
+	CFixedArray<Render::CEffectResource>& OutResources,
+	CFixedArray<Render::CEffectSampler>& OutSamplers)
+{
+	if (!pShaderMeta) FAIL;
+
+	U32 ParamCount;
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutConsts.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		U8 ConstType;
+		if (!Reader.Read(ConstType)) FAIL;
+
+		//???!!!need to save-load?!
+		U32 SizeInBytes;
+		if (!Reader.Read(SizeInBytes)) FAIL;
+
+		Render::HConst hConst = pShaderMeta->GetConstHandle(ParamID);
+		if (hConst == INVALID_HANDLE) FAIL;
+
+		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+		Rec.Const = pShaderMeta->GetConstant(hConst);
+	}
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutResources.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		Render::CEffectResource& Rec = OutResources[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.Handle = pShaderMeta->GetResourceHandle(ParamID);
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+	}
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutSamplers.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		Render::CEffectSampler& Rec = OutSamplers[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.Handle = pShaderMeta->GetSamplerHandle(ParamID);
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -81,6 +164,7 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 
 	// Breaks API independence. Honestly, RP file format breaks it even earlier,
 	// by including API-specific metadata. Subject to redesign.
+	//???load separate metadata-only shader file by GPU?
 	switch (ShaderModel)
 	{
 		case 0: // SM3.0
@@ -99,7 +183,7 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 		}
 	}
 
-	if (!Render::CEffect::LoadParams(Reader, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
+	if (!LoadGlobalParams(Reader, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
 
 	// Phases are intentionally initialized at the end, because they may access global params etc
 	RP->Phases.SetSize(Phases->GetCount());

@@ -9,6 +9,7 @@
 #include <Render/Shader.h>
 #include <Render/ShaderMetadata.h>
 #include <IO/BinaryReader.h>
+#include <Data/StringUtils.h>
 
 namespace Render
 {
@@ -22,7 +23,7 @@ CEffect::~CEffect()
 
 // Out array will be sorted by ID as parameters are saved sorted by ID
 bool CEffect::LoadParams(IO::CBinaryReader& Reader,
-	const Render::IShaderMetadata* pDefaultShaderMeta,
+	Render::CGPUDriver& GPU,
 	CFixedArray<Render::CEffectConstant>& OutConsts,
 	CFixedArray<Render::CEffectResource>& OutResources,
 	CFixedArray<Render::CEffectSampler>& OutSamplers)
@@ -52,12 +53,13 @@ bool CEffect::LoadParams(IO::CBinaryReader& Reader,
 		const Render::IShaderMetadata* pShaderMeta;
 		if (SourceShaderID)
 		{
-			// Shader will stay alive in a cache, so metadata will be valid
-			NOT_IMPLEMENTED;
-			Render::PShader ParamShader; // = pShaderLibrary->GetShaderByID(SourceShaderID);
+			//!!!DBG TMP!
+			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
+
+			Render::PShader ParamShader = GPU.GetShader(UID);
 			pShaderMeta = ParamShader->GetMetadata();
+			//!!!fill MetadataShaders.
 		}
-		else pShaderMeta = pDefaultShaderMeta;
 		if (!pShaderMeta) FAIL;
 
 		Render::HConst hConst = pShaderMeta->GetConstHandle(ParamID);
@@ -85,12 +87,14 @@ bool CEffect::LoadParams(IO::CBinaryReader& Reader,
 		const Render::IShaderMetadata* pShaderMeta;
 		if (SourceShaderID)
 		{
+			//!!!DBG TMP!
+			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
+
 			// Shader will stay alive in a cache, so metadata will be valid
-			NOT_IMPLEMENTED;
-			Render::PShader ParamShader;// = pShaderLibrary->GetShaderByID(SourceShaderID);
+			Render::PShader ParamShader = GPU.GetShader(UID);
 			pShaderMeta = ParamShader->GetMetadata();
+			//!!!fill MetadataShaders.
 		}
-		else pShaderMeta = pDefaultShaderMeta;
 		if (!pShaderMeta) FAIL;
 
 		Render::CEffectResource& Rec = OutResources[ParamIdx];
@@ -115,12 +119,14 @@ bool CEffect::LoadParams(IO::CBinaryReader& Reader,
 		const Render::IShaderMetadata* pShaderMeta;
 		if (SourceShaderID)
 		{
+			//!!!DBG TMP!
+			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
+
 			// Shader will stay alive in a cache, so metadata will be valid
-			NOT_IMPLEMENTED;
-			Render::PShader ParamShader; // = pShaderLibrary->GetShaderByID(SourceShaderID);
+			Render::PShader ParamShader = GPU.GetShader(UID);
 			pShaderMeta = ParamShader->GetMetadata();
+			//!!!fill MetadataShaders.
 		}
-		else pShaderMeta = pDefaultShaderMeta;
 		if (!pShaderMeta) FAIL;
 
 		Render::CEffectSampler& Rec = OutSamplers[ParamIdx];
@@ -134,7 +140,8 @@ bool CEffect::LoadParams(IO::CBinaryReader& Reader,
 //---------------------------------------------------------------------
 
 bool CEffect::LoadParamValues(IO::CBinaryReader& Reader,
-	Render::CGPUDriver& GPU, CDict<CStrID, void*>& OutConsts,
+	Render::CGPUDriver& GPU,
+	CDict<CStrID, void*>& OutConsts,
 	CDict<CStrID, Render::PTexture>& OutResources,
 	CDict<CStrID, Render::PSampler>& OutSamplers,
 	void*& pOutConstValueBuffer)
@@ -577,7 +584,7 @@ bool CEffect::Load(CGPUDriver& GPU, IO::CStream& Stream)
 
 		// Load tech params info
 
-		if (!LoadParams(Reader, nullptr, Tech->Consts, Tech->Resources, Tech->Samplers)) FAIL;
+		if (!LoadParams(Reader, GPU, Tech->Consts, Tech->Resources, Tech->Samplers)) FAIL;
 	}
 
 	if (!Techs.GetCount()) FAIL;
@@ -599,7 +606,7 @@ bool CEffect::Load(CGPUDriver& GPU, IO::CStream& Stream)
 
 	// Load material params
 
-	if (!LoadParams(Reader, nullptr, MaterialConsts, MaterialResources, MaterialSamplers)) FAIL;
+	if (!LoadParams(Reader, GPU, MaterialConsts, MaterialResources, MaterialSamplers)) FAIL;
 
 	//???save precalc in a tool?
 	CArray<HHandle> MtlConstBuffers;
