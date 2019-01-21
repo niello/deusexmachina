@@ -1,34 +1,33 @@
 #pragma once
-#ifndef __DEM_L1_BUFFER_H__
-#define __DEM_L1_BUFFER_H__
+#include <Data/Type.h>
+#include <Data/Hash.h>
+#include <memory>
 
 // The CBuffer class encapsulates a chunk of raw memory into a C++ object which can be copied, compared and hashed.
 // Based on mangalore Util::Blob_(C) 2006 Radon Labs GmbH
 
-#include <Data/Type.h>
-#include <Data/Hash.h>
-#include <memory.h>
-
 namespace Data
 {
+typedef std::unique_ptr<class CBuffer> PBuffer;
 
 class CBuffer
 {
 protected:
 
-	char*	pData;
-	UPTR	DataSize;
-	UPTR	Allocated;
+	char*	pData = nullptr;
+	UPTR	DataSize = 0;
+	UPTR	Allocated = 0;
 
 	void	Allocate(UPTR Size);
 	int		BinaryCompare(const CBuffer& Other) const;
 
 public:
 
-	CBuffer(): pData(NULL), DataSize(0), Allocated(0) {}
-	CBuffer(const void* pSrc, UPTR SrcSize): pData(NULL), DataSize(0), Allocated(0) { Set(pSrc, SrcSize); }
-	CBuffer(UPTR Size): pData(NULL), DataSize(0), Allocated(0) { Allocate(Size); }
-	CBuffer(const CBuffer& Other): pData(NULL), DataSize(0), Allocated(0) { Set(Other.pData, Other.DataSize); }
+	CBuffer() {}
+	CBuffer(const void* pSrc, UPTR SrcSize) { Set(pSrc, SrcSize); }
+	CBuffer(UPTR Size) { Allocate(Size); }
+	CBuffer(const CBuffer& Other) { Set(Other.pData, Other.DataSize); }
+	CBuffer(CBuffer&& Other): pData(Other.pData), DataSize(Other.DataSize), Allocated(Other.Allocated) { Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
 	~CBuffer() { if (pData) n_free(pData); }
 
 	void	Reserve(UPTR Size);
@@ -46,6 +45,7 @@ public:
 	void	Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx);
 
 	void operator =(const CBuffer& Other) { Set(Other.pData, Other.DataSize); }
+	void operator =(CBuffer&& Other) { pData = Other.pData; DataSize = Other.DataSize; Allocated = Other.Allocated; Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
 	bool operator ==(const CBuffer& Other) const { return !BinaryCompare(Other); }
 	bool operator !=(const CBuffer& Other) const { return !!BinaryCompare(Other); }
 	bool operator >(const CBuffer& Other) const { return BinaryCompare(Other) > 0; }
@@ -126,7 +126,6 @@ inline void CBuffer::Reserve(UPTR Size)
 
 }
 
+//???PBuffer?
 DECLARE_TYPE(Data::CBuffer, 9)
 #define TBuffer DATA_TYPE(Data::CBuffer)
-
-#endif

@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_MEMORY_H__
-#define __DEM_L1_MEMORY_H__
-
 #include <stdlib.h>
 #include <new>
+#include <memory>
 
 // Memory management overrides
 
@@ -73,6 +71,9 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 #define n_free_aligned(memblock) _aligned_free(memblock)
 #endif
 
+struct CDeleterNMalloc { void operator()(void* x) { n_free(x); } };
+typedef std::unique_ptr<void, CDeleterNMalloc> UniqueNMallocVoidPtr;
+
 #define SAFE_RELEASE(n)			if (n) { n->Release(); n = NULL; }
 #define SAFE_DELETE(n)			if (n) { n_delete(n); n = NULL; }
 #define SAFE_DELETE_ARRAY(n)	if (n) { n_delete_array(n); n = NULL; }
@@ -102,5 +103,3 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
    inline void  operator delete[](void* ptr, const char* file, int line)		{ n_free_aligned(ptr); }   \
    inline void* operator new[](size_t, void* ptr, const char* file, int line)	{ return ptr; }   \
    inline void  operator delete[](void*, void*, const char* file, int line)		{ }   \
-
-#endif

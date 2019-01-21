@@ -1,6 +1,7 @@
 #include "ShaderLibrary.h"
 
 #include <IO/Streams/ScopedStream.h>
+#include <Data/Buffer.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -10,10 +11,9 @@ __ImplementClass(Render::CShaderLibrary, 'SLIB', Resources::CResourceObject);
 CShaderLibrary::CShaderLibrary() {}
 CShaderLibrary::~CShaderLibrary() {}
 
-// Used primarily for input signatures of D3D11 vertex/geometry shaders
-bool CShaderLibrary::GetRawDataByID(U32 ID, void*& pOutData, UPTR& OutSize)
+Data::PBuffer CShaderLibrary::CopyRawData(U32 ID)
 {
-	if (!ID) return NULL;
+	if (!ID) return nullptr;
 
 	//!!!PERF:!
 	//!!!need find index sorted for fixed arrays! move to algorithm?
@@ -24,40 +24,47 @@ bool CShaderLibrary::GetRawDataByID(U32 ID, void*& pOutData, UPTR& OutSize)
 			Idx = i;
 			break;
 		}
-	if (Idx == INVALID_INDEX) return NULL;
+	if (Idx == INVALID_INDEX) return nullptr;
 
 	CRecord& Rec = TOC[Idx];
 
-	pOutData = n_malloc(Rec.Size);
-	if (!pOutData) FAIL;
-
-	// Allow nested loads
+	// Store CurrOffset to enable nested loads
 	U64 CurrOffset = Storage->GetPosition();
+	if (!Storage->Seek(Rec.Offset, IO::Seek_Begin)) return nullptr;
 
-	if (!Storage->Seek(Rec.Offset, IO::Seek_Begin)) FAIL;
+	// Read data into the buffer
+	Data::PBuffer Buffer(n_new(Data::CBuffer(Rec.Size)));
+	const UPTR ReadSize = Storage->Read(Buffer->GetPtr(), Rec.Size);
+	if (ReadSize != Rec.Size) return nullptr;
 
-	UPTR ReadSize = Storage->Read(pOutData, Rec.Size);
+	// Restore offset
 	Storage->Seek(CurrOffset, IO::Seek_Begin);
-	
-	if (ReadSize != Rec.Size)
-	{
-		n_free(pOutData);
-		FAIL;
-	}
 
-	OutSize = Rec.Size;
-
-	OK;
+	return Buffer;
 }
 //---------------------------------------------------------------------
 
+// For single threaded use only
 IO::PStream CShaderLibrary::GetElementStream(U32 ID)
 {
-	//???return positioned stream + size OR RAM stream over storage stream OR RAM stream over a buffer?
-	//???return buffer instead of all this?
-	//???what about file mapping? GetRawDataByID is good for this.
-	NOT_IMPLEMENTED;
-	return nullptr;
+	if (!ID) return nullptr;
+
+	//!!!PERF:!
+	//!!!need find index sorted for fixed arrays! move to algorithm?
+	IPTR Idx = INVALID_INDEX;
+	for (UPTR i = 0; i < TOC.GetCount(); ++i)
+		if (TOC[i].ID == ID)
+		{
+			Idx = i;
+			break;
+		}
+	if (Idx == INVALID_INDEX) return nullptr;
+
+	CRecord& Rec = TOC[Idx];
+
+	IO::PScopedStream ElmStream = n_new(IO::CScopedStream(Storage));
+	ElmStream->SetScope(Rec.Offset, Rec.Size);
+	return ElmStream;
 }
 //---------------------------------------------------------------------
 

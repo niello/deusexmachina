@@ -1253,8 +1253,8 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		{
 			CD3D11RenderState* pCurrRS = CurrRS.Get();
 
-			UPTR CurrSigID = pCurrRS && pCurrRS->VS.IsValidPtr() ? pCurrRS->VS.Get()->InputSignatureID : 0;
-			UPTR NewSigID = pNewRS->VS.IsValidPtr() ? pNewRS->VS.Get()->InputSignatureID : 0;
+			UPTR CurrSigID = pCurrRS && pCurrRS->VS.IsValidPtr() ? pCurrRS->VS.Get()->GetInputSignatureID() : 0;
+			UPTR NewSigID = pNewRS->VS.IsValidPtr() ? pNewRS->VS.Get()->GetInputSignatureID() : 0;
 
 			if (!pCurrRS || NewSigID != CurrSigID) InputLayoutDirty = true;
 
@@ -1314,7 +1314,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 	if (InputLayoutDirty)
 	{
-		UPTR InputSigID = CurrRS.IsValidPtr() && CurrRS->VS.IsValidPtr() ? CurrRS->VS->InputSignatureID : 0;
+		UPTR InputSigID = CurrRS.IsValidPtr() && CurrRS->VS.IsValidPtr() ? CurrRS->VS->GetInputSignatureID() : 0;
 		ID3D11InputLayout* pNewCurrIL = GetD3DInputLayout(*CurrVL, InputSigID);
 		if (pCurrIL != pNewCurrIL)
 		{
@@ -1621,30 +1621,22 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 // Gets or creates an actual layout for the given vertex layout and shader input signature
 ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature)
 {
-	if (!ShaderInputSignatureID) return NULL;
+	if (!ShaderInputSignatureID) return nullptr;
 
 	ID3D11InputLayout* pLayout = VertexLayout.GetD3DInputLayout(ShaderInputSignatureID);
 	if (pLayout) return pLayout;
 
 	const D3D11_INPUT_ELEMENT_DESC* pD3DDesc = VertexLayout.GetCachedD3DLayoutDesc();
-	if (!pD3DDesc) return NULL;
+	if (!pD3DDesc) return nullptr;
 
-	const void* pData;
-	UPTR Size;
-	if (pSignature)
+	if (!pSignature)
 	{
-		pData = pSignature->GetPtr();
-		Size = pSignature->GetSize();
-	}
-	else
-	{
-		CBinaryData Binary;
-		if (!D3D11DrvFactory->FindShaderInputSignature(ShaderInputSignatureID, &Binary)) FAIL;
-		pData = Binary.pData;
-		Size = Binary.Size;
+		pSignature = D3D11DrvFactory->FindShaderInputSignature(ShaderInputSignatureID);
+		if (!pSignature) return nullptr;
 	}
 
-	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pData, Size, &pLayout))) return NULL;
+	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pSignature->GetPtr(), pSignature->GetSize(), &pLayout)))
+		return nullptr;
 
 	n_verify_dbg(VertexLayout.AddLayoutObject(ShaderInputSignatureID, pLayout));
 
@@ -2677,19 +2669,56 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) return nullptr;
 
-	U64 MetadataOffset = Stream.GetPosition();
-	U64 FileSize = Stream.GetSize();
-	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
-	if (!BinarySize) return nullptr;
-	void* pData = n_malloc(BinarySize);
-	if (!pData) return nullptr;
-	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
-	{
-		n_free(pData);
-		return nullptr;
-	}
+	const U64 MetadataOffset = Stream.GetPosition();
+	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize()) - static_cast<UPTR>(BinaryOffset);
+	if (!BinarySize || !Stream.Seek(BinaryOffset, IO::Seek_Begin)) return nullptr;
 
-	void* pSigData = NULL;
+	Data::CBuffer Data(BinarySize);
+	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
+
+	ID3D11DeviceChild* pShader = nullptr;
+
+	switch (ShaderType)
+	{
+		case ShaderType_Vertex:
+		{
+			ID3D11VertexShader* pVS = nullptr;
+			if (FAILED(pD3DDevice->CreateVertexShader(Data.GetPtr(), BinarySize, nullptr, &pVS))) return nullptr;
+			pShader = pVS;
+			break;
+		}
+		case ShaderType_Pixel:
+		{
+			ID3D11PixelShader* pPS = nullptr;
+			if (FAILED(pD3DDevice->CreatePixelShader(Data.GetPtr(), BinarySize, nullptr, &pPS))) return nullptr;
+			pShader = pPS;
+			break;
+		}
+		case ShaderType_Geometry:
+		{
+			//???need stream output? or separate method? or separate shader type?
+			ID3D11GeometryShader* pGS = nullptr;
+			if (FAILED(pD3DDevice->CreateGeometryShader(Data.GetPtr(), BinarySize, nullptr, &pGS))) return nullptr;
+			pShader = pGS;
+			break;
+		}
+		case ShaderType_Hull:
+		{
+			ID3D11HullShader* pHS = nullptr;
+			if (FAILED(pD3DDevice->CreateHullShader(Data.GetPtr(), BinarySize, nullptr, &pHS))) return nullptr;
+			pShader = pHS;
+			break;
+		}
+		case ShaderType_Domain:
+		{
+			ID3D11DomainShader* pDS = nullptr;
+			if (FAILED(pD3DDevice->CreateDomainShader(Data.GetPtr(), BinarySize, nullptr, &pDS))) return nullptr;
+			pShader = pDS;
+			break;
+		}
+		default: return nullptr;
+	};
+
 	if (ShaderType == Render::ShaderType_Vertex) // || ShaderType == Render::ShaderType_Geometry)
 	{
 		// Vertex shader input comes from input assembler stage (IA). In D3D10 and later
@@ -2701,73 +2730,23 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 
 		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
 		{
-			UPTR SigSize;
 			if (InputSignatureID == ShaderFileID)
 			{
-				pSigData = pData;
-				SigSize = BinarySize;
+				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
 			}
-			else if (!pLibrary || !pLibrary->GetRawDataByID(InputSignatureID, pSigData, SigSize))
+			else
 			{
 				// Only in-library shaders may reference external signature file for now.
 				// Standalone shader must use its own input signature.
-				n_free(pData);
-				return nullptr;
-			}
-
-			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, pSigData, SigSize))
-			{
-				n_free(pData);
-				n_free(pSigData);
-				return nullptr;
+				if (!pLibrary) return nullptr;
+				Data::PBuffer Buf = pLibrary->CopyRawData(InputSignatureID);
+				if (!Buf) return nullptr;
+				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(*Buf))) return nullptr;
 			}
 		}
 	}
 
-	if (!pData || !BinarySize) return nullptr;
-
-	ID3D11DeviceChild* pShader = nullptr;
-
-	switch (ShaderType)
-	{
-		case ShaderType_Vertex:
-		{
-			ID3D11VertexShader* pVS = nullptr;
-			pD3DDevice->CreateVertexShader(pData, BinarySize, nullptr, &pVS);
-			pShader = pVS;
-			break;
-		}
-		case ShaderType_Pixel:
-		{
-			ID3D11PixelShader* pPS = nullptr;
-			pD3DDevice->CreatePixelShader(pData, BinarySize, nullptr, &pPS);
-			pShader = pPS;
-			break;
-		}
-		case ShaderType_Geometry:
-		{
-			//???need stream output? or separate method? or separate shader type?
-			ID3D11GeometryShader* pGS = nullptr;
-			pD3DDevice->CreateGeometryShader(pData, BinarySize, nullptr, &pGS);
-			pShader = pGS;
-			break;
-		}
-		case ShaderType_Hull:
-		{
-			ID3D11HullShader* pHS = nullptr;
-			pD3DDevice->CreateHullShader(pData, BinarySize, nullptr, &pHS);
-			pShader = pHS;
-			break;
-		}
-		case ShaderType_Domain:
-		{
-			ID3D11DomainShader* pDS = nullptr;
-			pD3DDevice->CreateDomainShader(pData, BinarySize, nullptr, &pDS);
-			pShader = pDS;
-			break;
-		}
-		default: return nullptr;
-	};
+	Data.Clear();
 
 	if (!pShader) return nullptr;
 
@@ -2777,8 +2756,6 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 		pShader->Release();
 		return nullptr;
 	}
-
-	if (pSigData != pData) n_free(pData);
 
 	Shader->InputSignatureID = InputSignatureID;
 

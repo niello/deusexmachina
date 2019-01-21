@@ -42,8 +42,8 @@ public:
 	bool							Create(IDirect3DPixelShader9* pShader);
 	virtual void					Destroy() { InternalDestroy(); }
 
-	virtual const IShaderMetadata*	GetMetadata() const { return &Metadata; }
-	virtual bool					IsResourceValid() const { return !!pD3DShader; }
+	virtual bool					IsValid() const override { return !!pD3DShader; }
+	virtual const IShaderMetadata*	GetMetadata() const override { return &Metadata; }
 
 	IDirect3DVertexShader9*			GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return pD3DVertexShader; }
 	IDirect3DPixelShader9*			GetD3DPixelShader() const { n_assert_dbg(Type == ShaderType_Pixel); return pD3DPixelShader; }

@@ -38,7 +38,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChainID,
 	Render::PShader VS = GPU->GetShader(VertexShaderID);
 	Render::PShader PSRegular = GPU->GetShader(PixelShaderRegularID);
 	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);
-	n_assert_dbg(VS && PSRegular && PSOpaque && VS->IsResourceValid() && PSRegular->IsResourceValid() && PSOpaque->IsResourceValid());
+	n_assert_dbg(VS && PSRegular && PSOpaque && VS->IsValid() && PSRegular->IsValid() && PSOpaque->IsValid());
 
 	if (DefaultContextWidth <= 0.f || DefaultContextHeight <= 0.f)
 	{

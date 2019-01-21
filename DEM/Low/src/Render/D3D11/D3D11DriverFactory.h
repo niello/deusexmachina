@@ -6,6 +6,8 @@
 #include <Data/Singleton.h>
 #include <Data/HandleManager.h>
 #include <Data/HashTable.h>
+#include <Data/Buffer.h>
+#include <vector>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory
 
@@ -15,6 +17,11 @@ struct IDXGIFactory1;
 struct IDXGIOutput;
 struct DXGI_SAMPLE_DESC;
 enum DXGI_FORMAT;
+
+namespace Data
+{
+	typedef std::unique_ptr<class CBuffer> PBuffer;
+}
 
 namespace Render
 {
@@ -30,12 +37,6 @@ enum EFormatType
 	FmtType_Float
 };
 
-struct CBinaryData
-{
-	void*	pData;
-	UPTR	Size;
-};
-
 #define D3D11DrvFactory Render::CD3D11DriverFactory::Instance()
 
 class CD3D11DriverFactory: public CVideoDriverFactory
@@ -45,14 +46,14 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 
 protected:
 
-	IDXGIFactory1*			pDXGIFactory;
-	UPTR					AdapterCount;		// Valid during a lifetime of the DXGI factory object
-	CArray<CBinaryData>		ShaderSignatures;
-	CHashTable<U32, UPTR>	ShaderSigIDToIndex;
+	IDXGIFactory1*				pDXGIFactory = nullptr;
+	UPTR						AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
+	std::vector<Data::CBuffer>	ShaderSignatures;
+	CHashTable<U32, UPTR>		ShaderSigIDToIndex;
 
 public:
 
-	CD3D11DriverFactory(): pDXGIFactory(NULL), AdapterCount(0), ShaderSignatures(0, 16) { __ConstructSingleton; }
+	CD3D11DriverFactory() { __ConstructSingleton; }
 	virtual ~CD3D11DriverFactory() { if (IsOpened()) Release(); __DestructSingleton; }
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
@@ -76,8 +77,8 @@ public:
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
-	bool					RegisterShaderInputSignature(U32 ID, void* pData, UPTR Size);
-	bool					FindShaderInputSignature(U32 ID, CBinaryData* pOutSigData = NULL) const;
+	bool					RegisterShaderInputSignature(U32 ID, Data::CBuffer&& Data);
+	const Data::CBuffer*	FindShaderInputSignature(U32 ID) const;
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

@@ -2750,19 +2750,12 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 	U32 ShaderFileID;
 	if (!R.Read(ShaderFileID)) return nullptr;
 
-	U64 MetadataOffset = Stream.GetPosition();
-	U64 FileSize = Stream.GetSize();
-	UPTR BinarySize = (UPTR)FileSize - (UPTR)BinaryOffset;
+	const U64 MetadataOffset = Stream.GetPosition();
+	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize()) - static_cast<UPTR>(BinaryOffset);
 	if (!BinarySize) return nullptr;
-	void* pData = n_malloc(BinarySize);
-	if (!pData) return nullptr;
-	if (!Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(pData, BinarySize) != BinarySize)
-	{
-		n_free(pData);
-		return nullptr;
-	}
 
-	if (!pData || !BinarySize) return nullptr;
+	UniqueNMallocVoidPtr Data(n_malloc(BinarySize));
+	if (!Data || !Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(Data.get(), BinarySize) != BinarySize) return nullptr;
 
 	Render::PD3D9Shader Shader;
 
@@ -2771,13 +2764,13 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		case ShaderType_Vertex:
 		{
 			IDirect3DVertexShader9* pVS = nullptr;
-			if (SUCCEEDED(pD3DDevice->CreateVertexShader((const DWORD*)pData, &pVS)))
+			if (SUCCEEDED(pD3DDevice->CreateVertexShader((const DWORD*)Data.get(), &pVS)))
 			{
 				Shader = n_new(Render::CD3D9Shader);
 				if (!Shader->Create(pVS))
 				{
 					pVS->Release();
-					return NULL;
+					return nullptr;
 				}
 			}
 			break;
@@ -2785,13 +2778,13 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		case ShaderType_Pixel:
 		{
 			IDirect3DPixelShader9* pPS = nullptr;
-			if (SUCCEEDED(pD3DDevice->CreatePixelShader((const DWORD*)pData, &pPS)))
+			if (SUCCEEDED(pD3DDevice->CreatePixelShader((const DWORD*)Data.get(), &pPS)))
 			{
 				Shader = n_new(Render::CD3D9Shader);
 				if (!Shader->Create(pPS))
 				{
 					pPS->Release();
-					return NULL;
+					return nullptr;
 				}
 			}
 			break;
@@ -2799,7 +2792,7 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		default: return nullptr;
 	};
 
-	n_free(pData);
+	Data.reset();
 
 	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) return nullptr;
 

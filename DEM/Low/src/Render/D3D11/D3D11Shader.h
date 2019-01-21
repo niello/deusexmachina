@@ -23,14 +23,13 @@ protected:
 
 	ID3D11DeviceChild*	pD3DShader = nullptr;
 	CUSMShaderMetadata	Metadata;
+	U32					InputSignatureID = 0;
 
 	void							InternalDestroy();
 
 	friend class CD3D11GPUDriver; // for creation
 
 public:
-
-	UPTR				InputSignatureID = 0;
 
 	virtual ~CD3D11Shader() { InternalDestroy(); }
 
@@ -42,15 +41,16 @@ public:
 	bool							Create(ID3D11PixelShader* pShader);
 	virtual void					Destroy() { InternalDestroy(); }
 
-	virtual const IShaderMetadata*	GetMetadata() const { return &Metadata; }
-	virtual bool					IsResourceValid() const { return !!pD3DShader; }
+	virtual bool					IsValid() const override { return !!pD3DShader; }
+	virtual const IShaderMetadata*	GetMetadata() const override { return &Metadata; }
+	U32								GetInputSignatureID() const { return InputSignatureID; }
 
 	ID3D11DeviceChild*				GetD3DShader() const { return pD3DShader; }
-	ID3D11VertexShader*				GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return (ID3D11VertexShader*)pD3DShader; }
-	ID3D11HullShader*				GetD3DHullShader() const { n_assert_dbg(Type == ShaderType_Hull); return (ID3D11HullShader*)pD3DShader; }
-	ID3D11DomainShader*				GetD3DDomainShader() const { n_assert_dbg(Type == ShaderType_Domain); return (ID3D11DomainShader*)pD3DShader; }
-	ID3D11GeometryShader*			GetD3DGeometryShader() const { n_assert_dbg(Type == ShaderType_Geometry); return (ID3D11GeometryShader*)pD3DShader; }
-	ID3D11PixelShader*				GetD3DPixelShader() const { n_assert_dbg(Type == ShaderType_Pixel); return (ID3D11PixelShader*)pD3DShader; }
+	ID3D11VertexShader*				GetD3DVertexShader() const;
+	ID3D11HullShader*				GetD3DHullShader() const;
+	ID3D11DomainShader*				GetD3DDomainShader() const;
+	ID3D11GeometryShader*			GetD3DGeometryShader() const;
+	ID3D11PixelShader*				GetD3DPixelShader() const;
 };
 
 typedef Ptr<CD3D11Shader> PD3D11Shader;

@@ -101,4 +101,39 @@ void CD3D11Shader::InternalDestroy()
 }
 //---------------------------------------------------------------------
 
+ID3D11VertexShader* CD3D11Shader::GetD3DVertexShader() const
+{
+	n_assert_dbg(Type == ShaderType_Vertex);
+	return static_cast<ID3D11VertexShader*>(pD3DShader);
+}
+//---------------------------------------------------------------------
+
+ID3D11HullShader* CD3D11Shader::GetD3DHullShader() const
+{
+	n_assert_dbg(Type == ShaderType_Hull);
+	return static_cast<ID3D11HullShader*>(pD3DShader);
+}
+//---------------------------------------------------------------------
+
+ID3D11DomainShader* CD3D11Shader::GetD3DDomainShader() const
+{
+	n_assert_dbg(Type == ShaderType_Domain);
+	return static_cast<ID3D11DomainShader*>(pD3DShader);
+}
+//---------------------------------------------------------------------
+
+ID3D11GeometryShader* CD3D11Shader::GetD3DGeometryShader() const
+{
+	n_assert_dbg(Type == ShaderType_Geometry);
+	return static_cast<ID3D11GeometryShader*>(pD3DShader);
+}
+//---------------------------------------------------------------------
+
+ID3D11PixelShader* CD3D11Shader::GetD3DPixelShader() const
+{
+	n_assert_dbg(Type == ShaderType_Pixel);
+	return static_cast<ID3D11PixelShader*>(pD3DShader);
+}
+//---------------------------------------------------------------------
+
 }

@@ -31,9 +31,7 @@ void CD3D11DriverFactory::Release()
 	AdapterCount = 0;
 	SAFE_RELEASE(pDXGIFactory);
 
-	for (UPTR i = 0; i < ShaderSignatures.GetCount(); ++i)
-		n_free(ShaderSignatures[i].pData);
-	ShaderSignatures.Clear();
+	ShaderSignatures.clear();
 	ShaderSigIDToIndex.Clear();
 }
 //---------------------------------------------------------------------
@@ -147,22 +145,19 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 //---------------------------------------------------------------------
 
 // NB: Doesn't copy data, so pData must be dynamically allocated and must not be freed externally
-bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, void* pData, UPTR Size)
+bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::CBuffer&& Data)
 {
-	CBinaryData* pBinary = ShaderSignatures.Reserve(1);
-	pBinary->pData = pData;
-	pBinary->Size = Size;
-	ShaderSigIDToIndex.Add(ID, ShaderSignatures.GetCount() - 1, true);
+	ShaderSignatures.push_back(std::move(Data));
+	ShaderSigIDToIndex.Add(ID, ShaderSignatures.size() - 1, true);
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CD3D11DriverFactory::FindShaderInputSignature(U32 ID, CBinaryData* pOutSigData) const
+const Data::CBuffer* CD3D11DriverFactory::FindShaderInputSignature(U32 ID) const
 {
 	UPTR Index;
-	if (!ShaderSigIDToIndex.Get(ID, Index)) FAIL;
-	if (pOutSigData) *pOutSigData = ShaderSignatures[Index];
-	OK;
+	if (!ShaderSigIDToIndex.Get(ID, Index)) return nullptr;
+	return &ShaderSignatures[Index];
 }
 //---------------------------------------------------------------------
 

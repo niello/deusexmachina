@@ -1,6 +1,7 @@
 #pragma once
 #include <Resources/ResourceObject.h>
 #include <Data/FixedArray.h>
+#include <memory>
 
 // Shader library is a shader storage container that provides an
 // ability to create and reference shaders by numeric ID. It and
@@ -8,6 +9,11 @@
 // them fast through a table of contents.
 
 // NB: now it is more an universal numeric-ID-based storage than a _shader_ library
+
+namespace Data
+{
+	typedef std::unique_ptr<class CBuffer> PBuffer;
+}
 
 namespace IO
 {
@@ -45,7 +51,7 @@ public:
 	CShaderLibrary();
 	virtual ~CShaderLibrary();
 
-	bool			GetRawDataByID(U32 ID, void*& pOutData, UPTR& OutSize);
+	Data::PBuffer	CopyRawData(U32 ID);
 	IO::PStream		GetElementStream(U32 ID);
 
 	virtual bool	IsResourceValid() const { return Storage.IsValidPtr(); }
