@@ -627,11 +627,13 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 }
 //---------------------------------------------------------------------
 
-void CPlatformWin32::Update()
+bool CPlatformWin32::Update()
 {
 	MSG Msg;
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
+		if (Msg.message == WM_QUIT) FAIL;
+
 		// Restore input locale switching hotkey logic killed by raw input.
 		// Accelerators can't process Alt+Shift or Ctrl+Shift, also accelerators are
 		// triggered by keydown. So we implement a correct behaviour manually.
@@ -675,6 +677,8 @@ void CPlatformWin32::Update()
 		::TranslateMessage(&Msg);
 		::DispatchMessage(&Msg);
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

@@ -1,8 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_EFFECT_H__
-#define __DEM_L1_RENDER_EFFECT_H__
-
-#include <Resources/ResourceObject.h>
 #include <Render/Technique.h>
 #include <Data/StringID.h>
 #include <Data/Dictionary.h>
@@ -13,8 +9,15 @@
 // An unique set of feature flags defines each input data case, so, techniques are mapped to these
 // flags, and clients can request an apropriate tech by its features. Request by ID is supported too.
 
+namespace IO
+{
+	class CStream;
+	class CBinaryReader;
+}
+
 namespace Render
 {
+typedef Ptr<class CEffect> PEffect;
 
 // Renderables are queued and filtered by this type. For example, opaque objects are typically
 // rendered before alpha-blended ones, and are not included in a depth pre-pass at all. This enum
@@ -31,10 +34,8 @@ enum EEffectType
 	EffectType_Other
 };
 
-class CEffect: public Resources::CResourceObject
+class CEffect: public Data::CRefCounted
 {
-	__DeclareClassNoFactory;
-
 protected:
 
 	EEffectType						Type;
@@ -58,18 +59,16 @@ protected:
 	// selects material LOD inside, uses its Shader
 	//???!!!LOD distances in material itself?! per-mtl calc, if common, per-renderer/per-phase calc
 
-	void								BeginAddTechs(UPTR Count) { TechsByName.BeginAdd(Count); TechsByInputSet.BeginAdd(Count); }
-	void								AddTech(PTechnique Tech) { TechsByName.Add(Tech->GetName(), Tech); TechsByInputSet.Add(Tech->GetShaderInputSetID(), Tech); }
-	void								EndAddTechs() { TechsByName.EndAdd(); TechsByInputSet.EndAdd(); }
-
-	friend class Resources::CEffectLoader;
-
 public:
+
+	static bool LoadParams(IO::CBinaryReader& Reader, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
+	static bool LoadParamValues(IO::CBinaryReader& Reader, Render::CGPUDriver& GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
 
 	CEffect();
 	~CEffect();
 
-	virtual bool						IsResourceValid() const { return !!TechsByInputSet.GetCount(); }
+	bool								Load(CGPUDriver& GPU, IO::CStream& Stream);
+	bool								IsValid() const { return !!TechsByInputSet.GetCount(); }
 
 	const CTechnique*					GetTechByName(CStrID Name) const;
 	const CTechnique*					GetTechByInputSet(UPTR InputSet) const;
@@ -84,29 +83,4 @@ public:
 	PSampler							GetSamplerDefaultValue(CStrID ID) const;
 };
 
-typedef Ptr<CEffect> PEffect;
-
-inline const CTechnique* CEffect::GetTechByName(CStrID Name) const
-{
-	IPTR Idx = TechsByName.FindIndex(Name);
-	return Idx == INVALID_INDEX ? NULL : TechsByName.ValueAt(Idx).Get();
 }
-//---------------------------------------------------------------------
-
-inline const CTechnique* CEffect::GetTechByInputSet(UPTR InputSet) const
-{
-	IPTR Idx = TechsByInputSet.FindIndex(InputSet);
-	return Idx == INVALID_INDEX ? NULL : TechsByInputSet.ValueAt(Idx).Get();
-}
-//---------------------------------------------------------------------
-
-inline void* CEffect::GetConstantDefaultValue(CStrID ID) const
-{
-	IPTR Idx = DefaultConsts.FindIndex(ID);
-	return Idx == INVALID_INDEX ? NULL : DefaultConsts.ValueAt(Idx);
-}
-//---------------------------------------------------------------------
-
-}
-
-#endif

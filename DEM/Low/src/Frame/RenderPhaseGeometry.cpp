@@ -57,6 +57,9 @@ struct CRenderQueueCmp_Material
 };
 //---------------------------------------------------------------------
 
+CRenderPhaseGeometry::CRenderPhaseGeometry() {}
+//---------------------------------------------------------------------
+
 CRenderPhaseGeometry::~CRenderPhaseGeometry()
 {
 	for (UPTR i = 0; i < Renderers.GetCount(); ++i)
@@ -403,8 +406,9 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 				RUID += Prm.GetValue<CStrID>().CStr();
 				RUID += ".eff"; //???replace ID by full URI on export?
 
-				Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
-				Effect = Rsrc->ValidateObject<Render::CEffect>();
+				NOT_IMPLEMENTED;
+				//Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
+				//Effect = Rsrc->ValidateObject<Render::CEffect>();
 			}
 
 			EffectOverrides.Add(EffectType, Effect);

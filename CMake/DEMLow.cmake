@@ -168,7 +168,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/DisplayDriver.h
 	DEM/Low/src/Render/DisplayMode.h
 	DEM/Low/src/Render/Effect.h
-	DEM/Low/src/Render/EffectLoader.h
 	DEM/Low/src/Render/GPUDriver.h
 	DEM/Low/src/Render/ImageUtils.h
 	DEM/Low/src/Render/IndexBuffer.h
@@ -414,7 +413,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/ConstantBufferSet.cpp
 	DEM/Low/src/Render/DepthStencilBuffer.cpp
 	DEM/Low/src/Render/Effect.cpp
-	DEM/Low/src/Render/EffectLoader.cpp
 	DEM/Low/src/Render/EffectLoadingUtils.cpp
 	DEM/Low/src/Render/GPUDriver.cpp
 	DEM/Low/src/Render/ImageUtils.cpp

@@ -4,6 +4,7 @@
 #include <Frame/RenderPhase.h>
 #include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Render/D3D11/USMShaderMetadata.h>
+#include <Render/Effect.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <Data/DataArray.h>
@@ -11,8 +12,6 @@
 
 namespace Resources
 {
-// Defined in Render/EffectLoadingUtils.cpp
-bool LoadEffectParams(IO::CBinaryReader& Reader, Render::CShaderLibrary* pShaderLibrary, const Render::IShaderMetadata* pDefaultShaderMeta, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
 
 const Core::CRTTI& CRenderPathLoaderRP::GetResultType() const
 {
@@ -100,7 +99,7 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 		}
 	}
 
-	if (!LoadEffectParams(Reader, nullptr, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
+	if (!Render::CEffect::LoadParams(Reader, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
 
 	// Phases are intentionally initialized at the end, because they may access global params etc
 	RP->Phases.SetSize(Phases->GetCount());

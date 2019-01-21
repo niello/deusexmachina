@@ -34,7 +34,7 @@ private:
 	CFixedArray<CEffectResource>	Resources;
 	CFixedArray<CEffectSampler>		Samplers;
 
-	friend class Resources::CEffectLoader;
+	friend class CEffect;
 
 public:
 

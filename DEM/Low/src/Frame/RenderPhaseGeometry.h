@@ -30,12 +30,12 @@ protected:
 	I32												DepthStencilIndex;
 	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;
 	Render::CEffectOverrideMap						EffectOverrides;
-	bool											EnableLighting;
+	bool											EnableLighting = false;
 
-	const Render::CEffectConstant*					pConstGlobalLightBuffer;
-	const Render::CEffectResource*					pRsrcIrradianceMap;
-	const Render::CEffectResource*					pRsrcRadianceEnvMap;
-	const Render::CEffectSampler*					pSampTrilinearCube;
+	const Render::CEffectConstant*					pConstGlobalLightBuffer = nullptr;
+	const Render::CEffectResource*					pRsrcIrradianceMap = nullptr;
+	const Render::CEffectResource*					pRsrcRadianceEnvMap = nullptr;
+	const Render::CEffectSampler*					pSampTrilinearCube = nullptr;
 
 public:
 
@@ -45,16 +45,6 @@ public:
 	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc);
 	virtual bool Render(CView& View);
 };
-
-inline CRenderPhaseGeometry::CRenderPhaseGeometry():
-	EnableLighting(false),
-	pConstGlobalLightBuffer(NULL),
-	pRsrcIrradianceMap(NULL),
-	pRsrcRadianceEnvMap(NULL),
-	pSampTrilinearCube(NULL)
-{
-}
-//---------------------------------------------------------------------
 
 }
 

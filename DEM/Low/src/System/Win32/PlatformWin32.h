@@ -68,7 +68,7 @@ public:
 	virtual IOSFileSystem*	GetFileSystemInterface() const override;
 	virtual bool			GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const override;
 
-	virtual void			Update() override;
+	virtual bool			Update() override;
 };
 
 }}

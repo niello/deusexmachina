@@ -3,7 +3,6 @@
 #include <Render/GPUDriver.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
-#include <Render/EffectLoader.h>
 #include <Render/ConstantBuffer.h>
 #include <Render/ShaderConstant.h>
 #include <Render/Sampler.h>
@@ -15,9 +14,6 @@
 
 namespace Resources
 {
-
-// Defined in Render/EffectLoadingUtils.cpp
-bool LoadEffectParamValues(IO::CBinaryReader& Reader, Render::PGPUDriver GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
 
 const Core::CRTTI& CMaterialLoader::GetResultType() const
 {
@@ -51,11 +47,11 @@ PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 	RUID += EffectID.CStr();
 	RUID += ".eff"; //???replace ID by full URI on export?
 
-	Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CEffect>(CStrID(RUID));
-
 	Render::PMaterial Mtl = n_new(Render::CMaterial);
 
-	Mtl->Effect = Rsrc->ValidateObject<Render::CEffect>();
+	NOT_IMPLEMENTED;
+	//!!!Mtl->Effect = GPU.GetEffect();
+	//Mtl->Effect = Rsrc->ValidateObject<Render::CEffect>();
 
 	// Build parameters
 
@@ -64,7 +60,7 @@ PResourceObject CMaterialLoader::CreateResource(CStrID UID)
 	CDict<CStrID, Render::PSampler>	SamplerValues;
 	void*							pConstValueBuffer;	// Must be n_free()'d if not NULL
 
-	if (!LoadEffectParamValues(Reader, GPU, ConstValues, ResourceValues, SamplerValues, pConstValueBuffer)) return NULL;
+	if (!Render::CEffect::LoadParamValues(Reader, *GPU, ConstValues, ResourceValues, SamplerValues, pConstValueBuffer)) return NULL;
 
 	const CFixedArray<Render::CEffectConstant>& Consts = Mtl->Effect->GetMaterialConstants();
 	Mtl->ConstBuffers.SetSize(Mtl->Effect->GetMaterialConstantBufferCount());

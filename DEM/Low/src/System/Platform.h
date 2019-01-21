@@ -42,7 +42,7 @@ public:
 	virtual IOSFileSystem*	GetFileSystemInterface() const = 0;
 	virtual bool			GetSystemFolderPath(ESystemFolder Code, CString& OutPath) const = 0;
 
-	virtual void			Update() = 0;
+	virtual bool			Update() = 0;
 };
 
 }

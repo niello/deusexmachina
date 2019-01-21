@@ -63,6 +63,8 @@ void CGPUDriver::SetResourceManager(Resources::CResourceManager* pResourceManage
 //???bool keep loaded into RAM? how to control multiple clients? some kind of refcounting?
 PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 {
+	//!!!assigns must be resolved! or pass char* here and resolve!
+
 	PTexture Texture;
 	if (ResourceTextures.Get(UID, Texture) && Texture)
 	{
@@ -88,6 +90,11 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 PShader CGPUDriver::GetShader(CStrID UID)
 {
+	//!!!assigns must be resolved! or pass char* here and resolve!
+
+	PShader Shader;
+	if (Shaders.Get(UID, Shader) && Shader) return Shader;
+
 	// Tough resource manager doesn't keep track of shaders, it is used
 	// for shader library loading and for accessing an IO service.
 	if (!pResMgr) return nullptr;
@@ -118,7 +125,11 @@ PShader CGPUDriver::GetShader(CStrID UID)
 
 	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
 
-	return CreateShader(*Stream, ShaderLibrary.Get());
+	Shader = CreateShader(*Stream, ShaderLibrary.Get());
+
+	if (Shader) Shaders.Add(UID, Shader);
+
+	return Shader;
 }
 //---------------------------------------------------------------------
 

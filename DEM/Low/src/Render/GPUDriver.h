@@ -14,6 +14,9 @@
 // swap chain must be connected to a corresponding display output, represented by a CDisplayDriver instance.
 // Windowed swap chains are present to the desktop. Each swap chain requires a viewport, and now
 // I use COSWindow for it.
+// Objects created by GPU are specific to this GPU, so each GPU manages its own textures, shaders etc.
+// They can't be shared through a CResourceManager, but it may manage templates, like RAM texture data
+// or material template with IDs instead of real GPU objects. Template can be instantiated with a GPU.
 
 //PERF:
 //!!!GCN says load shaders before textures, driver compiles to its ASM in the background!
@@ -51,7 +54,8 @@ protected:
 	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
 
 	Resources::CResourceManager*	pResMgr = nullptr;
-	CHashTable<CStrID, PTexture>	ResourceTextures; //???or one map for all GPU resources? base class? OnDeviceLost etc? d3d11 has no such concept
+	CHashTable<CStrID, PTexture>	ResourceTextures;
+	CHashTable<CStrID, PShader>		Shaders;
 
 #ifdef DEM_STATS
 	UPTR							PrimitivesRendered = 0;

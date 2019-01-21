@@ -374,7 +374,7 @@ bool CApplication::Update()
 
 	// Process OS messages etc
 
-	Platform.Update();
+	if (!Platform.Update()) FAIL;
 
 	// ...
 
@@ -391,6 +391,9 @@ bool CApplication::Update()
 //!!!Init()'s pair!
 void CApplication::Term()
 {
+	UNSUBSCRIBE_EVENT(OnClosing);
+
+	//!!!kill all windows!
 }
 //---------------------------------------------------------------------
 
