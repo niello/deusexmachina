@@ -3,7 +3,9 @@
 #include <Render/RenderNode.h>
 #include <Render/GPUDriver.h>
 #include <Render/Terrain.h>
+#include <Render/CDLODData.h>
 #include <Render/Light.h>
+#include <Render/Mesh.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
 #include <Render/Sampler.h>
@@ -843,7 +845,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		}
 
 		if (pResourceHeightMap)
-			GPU.BindResource(pResourceHeightMap->ShaderType, pResourceHeightMap->Handle, pCDLOD->GetHeightMap());
+			GPU.BindResource(pResourceHeightMap->ShaderType, pResourceHeightMap->Handle, pTerrain->GetHeightMap());
 
 		CConstantBufferSet PerInstanceBuffers;
 		PerInstanceBuffers.SetGPU(&GPU);

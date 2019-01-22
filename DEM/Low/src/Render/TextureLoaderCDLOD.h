@@ -6,16 +6,16 @@
 namespace Resources
 {
 
-class CCDLODDataLoader: public CResourceLoader
+class CTextureLoaderCDLOD: public CResourceLoader
 {
 public:
 
-	CCDLODDataLoader(CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
+	CTextureLoaderCDLOD(CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
 	virtual const Core::CRTTI&	GetResultType() const override;
 	virtual PResourceObject		CreateResource(CStrID UID) override;
 };
 
-typedef Ptr<CCDLODDataLoader> PCDLODDataLoader;
+typedef Ptr<CTextureLoaderCDLOD> PCDLODDataLoader;
 
 }

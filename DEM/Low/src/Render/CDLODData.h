@@ -1,10 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_CDLOD_DATA_H__
-#define __DEM_L1_RENDER_CDLOD_DATA_H__
-
 #include <Resources/ResourceObject.h>
-#include <Render/RenderFwd.h>
 #include <Data/FixedArray.h>
+#include <Math/AABB.h>
 
 // CDLOD heightfield-based terrain rendering data with settings and precalculated aux data
 
@@ -29,9 +26,6 @@ protected:
 		I16*	pData;
 	};
 
-	PTexture				HeightMap;
-	PTexture				NormalMap;
-
 	I16*					pMinMaxData = nullptr;
 	CFixedArray<CMinMaxMap>	MinMaxMaps;
 
@@ -51,7 +45,7 @@ public:
 	CCDLODData();
 	virtual ~CCDLODData();
 
-	virtual bool		IsResourceValid() const;
+	virtual bool		IsResourceValid() const { return !!pMinMaxData; }
 	U32					GetHeightMapWidth() const { return HFWidth; }
 	U32					GetHeightMapHeight() const { return HFHeight; }
 	U32					GetPatchSize() const { return PatchSize; }
@@ -60,8 +54,6 @@ public:
 	U32					GetLODCount() const { return LODCount; }
 	float				GetVerticalScale() const { return VerticalScale; }
 	const CAABB&		GetAABB() const { return Box; }
-	Render::CTexture*	GetHeightMap() const;
-	Render::CTexture*	GetNormalMap() const;
 	void				GetMinMaxHeight(UPTR X, UPTR Z, UPTR LOD, I16& MinY, I16& MaxY) const;
 	bool				HasNode(UPTR X, UPTR Z, UPTR LOD) const;
 };
@@ -86,5 +78,3 @@ inline bool CCDLODData::HasNode(UPTR X, UPTR Z, UPTR LOD) const
 //---------------------------------------------------------------------
 
 }
-
-#endif

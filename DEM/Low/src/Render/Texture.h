@@ -17,7 +17,7 @@ struct CTextureDesc
 	UPTR			MipLevels;
 	UPTR			ArraySize;
 	EPixelFormat	Format;
-	EMSAAQuality	MSAAQuality;
+	EMSAAQuality	MSAAQuality; //???move to render state & depth-stencil descs only?
 };
 
 class CTexture: public Core::CObject

@@ -1,10 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_TERRAIN_H__
-#define __DEM_L1_RENDER_TERRAIN_H__
-
 #include <Render/Renderable.h>
-#include <Render/CDLODData.h>
-#include <Render/Mesh.h>
+#include <Data/StringID.h>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
@@ -16,6 +12,10 @@ namespace Resources
 
 namespace Render
 {
+typedef Ptr<class CCDLODData> PCDLODData;
+typedef Ptr<class CMaterial> PMaterial;
+typedef Ptr<class CMesh> PMesh;
+typedef Ptr<class CTexture> PTexture;
 
 class CTerrain: public IRenderable
 {
@@ -23,12 +23,12 @@ class CTerrain: public IRenderable
 
 protected:
 
-	//???!!!CDLOD textures as separate resources with sub-id like "file.cdlod#NM"?!
-	//Then CDLOD itself will be a GPU-independent shared RAM resource!
 	Resources::PResource	RCDLODData;
 	PCDLODData				CDLODData;	//???NEED?
 	CStrID					MaterialUID;
 	PMaterial				Material;
+	CStrID					HeightMapUID;
+	PTexture				HeightMap;
 	PMesh					PatchMesh;
 	PMesh					QuarterPatchMesh;
 
@@ -44,10 +44,11 @@ public:
 
 	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual IRenderable*	Clone();
-	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const { OutBox = CDLODData->GetAABB(); OK; }
+	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
 
 	CCDLODData*				GetCDLODData() const { return CDLODData.Get(); }
 	CMaterial*				GetMaterial() const { return Material.Get(); }
+	CTexture*				GetHeightMap() const { return HeightMap.Get(); }
 	CMesh*					GetPatchMesh() const { return PatchMesh.Get(); }
 	CMesh*					GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
 	float					GetInvSplatSizeX() const { return InvSplatSizeX; }
@@ -57,5 +58,3 @@ public:
 typedef Ptr<CTerrain> PTerrain;
 
 }
-
-#endif

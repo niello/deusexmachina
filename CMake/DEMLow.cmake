@@ -203,7 +203,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/TerrainRenderer.h
 	DEM/Low/src/Render/Texture.h
 	DEM/Low/src/Render/TextureData.h
-	DEM/Low/src/Render/TextureLoader.h
+	DEM/Low/src/Render/TextureLoaderCDLOD.h
 	DEM/Low/src/Render/TextureLoaderDDS.h
 	DEM/Low/src/Render/TextureLoaderTGA.h
 	DEM/Low/src/Render/VertexBuffer.h
@@ -412,7 +412,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/ConstantBufferSet.cpp
 	DEM/Low/src/Render/DepthStencilBuffer.cpp
 	DEM/Low/src/Render/Effect.cpp
-	DEM/Low/src/Render/EffectLoadingUtils.cpp
 	DEM/Low/src/Render/GPUDriver.cpp
 	DEM/Low/src/Render/ImageUtils.cpp
 	DEM/Low/src/Render/Light.cpp
@@ -442,7 +441,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/TerrainRenderer.cpp
 	DEM/Low/src/Render/Texture.cpp
 	DEM/Low/src/Render/TextureData.cpp
-	DEM/Low/src/Render/TextureLoader.cpp
+	DEM/Low/src/Render/TextureLoaderCDLOD.cpp
 	DEM/Low/src/Render/TextureLoaderDDS.cpp
 	DEM/Low/src/Render/TextureLoaderTGA.cpp
 	DEM/Low/src/Render/VertexLayout.cpp
