@@ -1,8 +1,6 @@
 #if DEM_PLATFORM_WIN32
 #include "OSWindowWin32.h"
 
-#include <System/Events/OSInput.h>
-
 #include <Uxtheme.h>
 #include <WindowsX.h>
 
@@ -358,109 +356,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			hWnd = NULL;
 			OutResult = 0;
 			OK;
-
-		case WM_LBUTTONDBLCLK:
-		case WM_RBUTTONDBLCLK:
-		case WM_MBUTTONDBLCLK:
-		case WM_XBUTTONDBLCLK:
-		case WM_LBUTTONDOWN:
-		case WM_RBUTTONDOWN:
-		case WM_MBUTTONDOWN:
-		case WM_XBUTTONDOWN:
-		case WM_LBUTTONUP:
-		case WM_RBUTTONUP:
-		case WM_MBUTTONUP:
-		case WM_XBUTTONUP:
-		{
-			if (pParent) ::SetFocus(hWnd);
-
-			Event::OSInput Ev;
-
-			switch (uMsg)
-			{
-				case WM_LBUTTONDBLCLK:
-				case WM_RBUTTONDBLCLK:
-				case WM_MBUTTONDBLCLK:
-				case WM_XBUTTONDBLCLK:
-					Ev.Type = Event::OSInput::MouseDblClick;
-					break;
-
-				case WM_LBUTTONDOWN:
-				case WM_RBUTTONDOWN:
-				case WM_MBUTTONDOWN:
-				case WM_XBUTTONDOWN:
-					Ev.Type = Event::OSInput::MouseDown;
-					::SetCapture(hWnd);
-					break;
-
-				case WM_LBUTTONUP:
-				case WM_RBUTTONUP:
-				case WM_MBUTTONUP:
-				case WM_XBUTTONUP:
-					Ev.Type = Event::OSInput::MouseUp;
-					::ReleaseCapture();
-					break;
-			}
-
-			switch (uMsg)
-			{
-				case WM_LBUTTONDBLCLK:
-				case WM_LBUTTONDOWN:
-				case WM_LBUTTONUP:
-					Ev.MouseInfo.Button = 0;
-					break;
-
-				case WM_RBUTTONDBLCLK:
-				case WM_RBUTTONDOWN:
-				case WM_RBUTTONUP:
-					Ev.MouseInfo.Button = 1;
-					break;
-
-				case WM_MBUTTONDBLCLK:
-				case WM_MBUTTONDOWN:
-				case WM_MBUTTONUP:
-					Ev.MouseInfo.Button = 2;
-					break;
-
-				case WM_XBUTTONDBLCLK:
-				case WM_XBUTTONDOWN:
-				case WM_XBUTTONUP:
-				{
-					switch (GET_XBUTTON_WPARAM(wParam))
-					{
-						case XBUTTON1:	Ev.MouseInfo.Button = 3; break;
-						case XBUTTON2:	Ev.MouseInfo.Button = 4; break;
-						default:		Ev.MouseInfo.Button = 5; break;
-					}
-					break;
-				}
-			}
-
-			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
-			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			FireEvent(Ev, Events::Event_TermOnHandled);
-			break;
-		}
-
-		case WM_MOUSEMOVE:
-		{
-			Event::OSInput Ev;
-			Ev.Type = Event::OSInput::MouseMove;
-			Ev.MouseInfo.x = GET_X_LPARAM(lParam);
-			Ev.MouseInfo.y = GET_Y_LPARAM(lParam);
-			FireEvent(Ev, Events::Event_TermOnHandled);
-			break;
-		}
-
-		case WM_MOUSEWHEEL:
-		case WM_MOUSEHWHEEL:
-		{
-			Event::OSInput Ev;
-			Ev.Type = (uMsg == WM_MOUSEWHEEL) ? Event::OSInput::MouseWheelVertical : Event::OSInput::MouseWheelHorizontal;
-			Ev.WheelDelta = GET_WHEEL_DELTA_WPARAM(wParam) / WHEEL_DELTA;
-			FireEvent(Ev, Events::Event_TermOnHandled);
-			break;
-		}
 	}
 
 	FAIL;

@@ -254,8 +254,9 @@ bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events:
 
 bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	bool Handled = false;
 	const Event::TextInput& Ev = static_cast<const Event::TextInput&>(Event);
+
+	bool Handled = false;
 	for (char Char : Ev.Text)
 		Handled |= pCtx->injectChar(Char);
 	return Handled;

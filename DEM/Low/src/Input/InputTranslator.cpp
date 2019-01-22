@@ -187,9 +187,9 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		}
 		else
 		{
-			// Bypass context only adds a device & user info into events
-			//!!!TODO: add user ID!
-			if (FireEvent(Event) > 0) OK;
+			// Bypass context
+			Event::AxisMove BypassEvent(Ev.Device, Ev.Code, Ev.Amount, _UserID);
+			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
 		}
 	}
 
@@ -225,9 +225,9 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		}
 		else
 		{
-			// Bypass context only adds a device & user info into events
-			//!!!TODO: add user ID!
-			if (FireEvent(Event) > 0) OK;
+			// Bypass context
+			Event::ButtonDown BypassEvent(Ev.Device, Ev.Code, _UserID);
+			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
 		}
 	}
 
@@ -263,9 +263,9 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		}
 		else
 		{
-			// Bypass context only adds a device & user info into events
-			//!!!TODO: add user ID!
-			if (FireEvent(Event) > 0) OK;
+			// Bypass context
+			Event::ButtonUp BypassEvent(Ev.Device, Ev.Code, _UserID);
+			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
 		}
 	}
 
@@ -289,9 +289,9 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 		}
 		else
 		{
-			// Bypass context only adds a device & user info into events
-			//!!!TODO: add user ID!
-			if (FireEvent(Event) > 0) OK;
+			// Bypass context
+			Event::TextInput BypassEvent(Ev.Device, Ev.Text, _UserID);
+			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
 		}
 	}
 

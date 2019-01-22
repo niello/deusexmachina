@@ -2,11 +2,7 @@
 
 #include <Input/InputEvents.h>
 #include <Events/Subscription.h>
-#include <System/Events/OSInput.h>
 #include <System/OSWindow.h>
-
-//!!!DBG TMP!
-#include <Data/StringUtils.h>
 
 namespace Input
 {
@@ -118,8 +114,8 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 
 	if (ResultCode == EKey::Key_Invalid || !ResultCode) FAIL;
 
-	if (KbData.Flags & RI_KEY_BREAK) return FireEvent(Event::ButtonUp(this, ResultCode)) > 0;
-	else return FireEvent(Event::ButtonDown(this, ResultCode)) > 0;
+	if (KbData.Flags & RI_KEY_BREAK) return FireEvent(Event::ButtonUp(this, ResultCode), Events::Event_TermOnHandled) > 0;
+	else return FireEvent(Event::ButtonDown(this, ResultCode), Events::Event_TermOnHandled) > 0;
 }
 //---------------------------------------------------------------------
 
@@ -129,7 +125,7 @@ bool CKeyboardWin32::HandleCharMessage(WPARAM Char)
 	//::MultiByteToWideChar(CP_ACP, 0, (const char*)&Char, 1, CharUTF16, 1);
 
 	std::string Text(1, static_cast<char>(Char));
-	return FireEvent(Event::TextInput(this, std::move(Text)));
+	return FireEvent(Event::TextInput(this, std::move(Text)), Events::Event_TermOnHandled);
 }
 //---------------------------------------------------------------------
 
