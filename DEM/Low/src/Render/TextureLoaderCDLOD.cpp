@@ -9,7 +9,7 @@ namespace Resources
 
 const Core::CRTTI& CTextureLoaderCDLOD::GetResultType() const
 {
-	return Render::CTexture::RTTI;
+	return Render::CTextureData::RTTI;
 }
 //---------------------------------------------------------------------
 

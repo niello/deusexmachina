@@ -1,7 +1,6 @@
 #pragma once
 #include <Resources/ResourceObject.h>
 #include <Render/Texture.h> // for CTextureDesc
-#include <Data/Flags.h>
 
 // Texture data is an engine resource that incapsulates all necessary data
 // for a texture creation. Data is stored in a RAM and can be loaded from

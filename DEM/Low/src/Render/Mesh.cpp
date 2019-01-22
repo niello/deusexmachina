@@ -10,13 +10,13 @@ bool CMesh::Create(const CMeshInitData& InitData)
 {
 	n_assert(!pGroupLODMapping && !pGroups);
 
-	if (!InitData.pVertexBuffer ||
+	if (!InitData.VertexBuffer ||
 		!InitData.SubMeshCount ||
 		!InitData.LODCount ||
 		(InitData.UseMapping && !InitData.RealGroupCount)) FAIL;
 
-	VB = InitData.pVertexBuffer;
-	IB = InitData.pIndexBuffer;
+	VB = InitData.VertexBuffer;
+	IB = InitData.IndexBuffer;
 
 	SubMeshCount = InitData.SubMeshCount;
 	LODCount = InitData.LODCount;

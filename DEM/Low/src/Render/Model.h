@@ -1,19 +1,10 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_MODEL_H__
-#define __DEM_L1_RENDER_MODEL_H__
-
 #include <Render/Renderable.h>
 #include <Data/FixedArray.h>
 #include <Data/StringID.h>
-#include <Data/RefCounted.h>
 
 // Model represents a piece of visible polygonal geometry.
 // It ties together a mesh group, a material and per-object rendering params.
-
-namespace Resources
-{
-	typedef Ptr<class CResource> PResource;
-}
 
 namespace Render
 {
@@ -30,12 +21,12 @@ protected:
 
 public:
 
-	Resources::PResource	RMesh;
-	PMesh					Mesh;
-	UPTR					MeshGroupIndex = 0;
-	CStrID					MaterialUID;
-	PMaterial				Material; //???!!!materialset!?
-	CFixedArray<int>		BoneIndices;	// For skinning splits due to shader constants limit only
+	CStrID				MeshUID;
+	PMesh				Mesh;
+	UPTR				MeshGroupIndex = 0;
+	CStrID				MaterialUID;
+	PMaterial			Material; //???!!!materialset!?
+	CFixedArray<int>	BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 	//can use Flags field of CNodeAttribute
@@ -46,5 +37,3 @@ public:
 };
 
 }
-
-#endif

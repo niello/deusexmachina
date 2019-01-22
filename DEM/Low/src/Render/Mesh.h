@@ -21,8 +21,8 @@ namespace Render
 // Fill this in a resource loader and pass to the CMesh::Create()
 struct CMeshInitData
 {
-	CVertexBuffer*		pVertexBuffer;
-	CIndexBuffer*		pIndexBuffer;
+	PVertexBuffer		VertexBuffer;
+	PIndexBuffer		IndexBuffer;
 	CPrimitiveGroup*	pMeshGroupData;	// Mesh groups and optional mapping data
 	UPTR				SubMeshCount;
 	UPTR				LODCount;

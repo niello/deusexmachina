@@ -116,7 +116,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 
 	if (!Result)
 	{
-		IOSrv->DeleteDirectory(Path);
+		IO().DeleteDirectory(Path);
 		return CStrID::Empty;
 	}
 
@@ -131,7 +131,7 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 
 	// TODO: if one of active users, FAIL
 
-	return IOSrv->DeleteDirectory(GetUserProfilePath(pUserID));
+	return IO().DeleteDirectory(GetUserProfilePath(pUserID));
 }
 //---------------------------------------------------------------------
 

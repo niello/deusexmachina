@@ -397,8 +397,10 @@ bool CEffect::Load(CGPUDriver& GPU, IO::CStream& Stream)
 					continue;
 				}
 
-				NOT_IMPLEMENTED;
-				//*pShaders[ShaderType] = ShaderLibrary->GetShaderByID(ShaderID);
+				//!!!DBG TMP! store full resource ID instead
+				CStrID SUID = CStrID("ShLib:#" + StringUtils::FromInt(ShaderID));
+
+				*pShaders[ShaderType] = GPU.GetShader(SUID);
 			}
 
 			Variations[LightCount] = ShaderLoadingFailed ? nullptr : GPU.CreateRenderState(Desc);

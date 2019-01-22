@@ -34,8 +34,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 		{
 			//???!!!store the whole URI in a file?!
 			CString MeshID = DataReader.Read<CString>();
-			CStrID RUID = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
-			RMesh = ResourceMgr->RegisterResource<Render::CMesh>(RUID);			
+			MeshUID = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
 			OK;
 		}
 		case 'MSGR':
@@ -50,7 +49,7 @@ bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
 IRenderable* CModel::Clone()
 {
 	CModel* pCloned = n_new(CModel);
-	pCloned->RMesh = RMesh;
+	pCloned->MeshUID = MeshUID;
 	pCloned->MaterialUID = MaterialUID;
 	pCloned->MeshGroupIndex = MeshGroupIndex;
 	pCloned->BoneIndices.RawCopyFrom(BoneIndices.GetPtr(), BoneIndices.GetCount());
@@ -60,7 +59,7 @@ IRenderable* CModel::Clone()
 
 bool CModel::ValidateResources(CGPUDriver* pGPU)
 {
-	Mesh = RMesh->ValidateObject<Render::CMesh>();
+	Mesh = pGPU ? pGPU->GetMesh(MeshUID) : nullptr;
 	Material = pGPU ? pGPU->GetMaterial(MaterialUID) : nullptr;
 	OK;
 }

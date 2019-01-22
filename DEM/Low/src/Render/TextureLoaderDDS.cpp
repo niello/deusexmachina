@@ -238,7 +238,7 @@ Render::EPixelFormat DDSDX10FormatToPixelFormat(U32 DDSDX10Format)
 
 const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 {
-	return Render::CTexture::RTTI;
+	return Render::CTextureData::RTTI;
 }
 //---------------------------------------------------------------------
 

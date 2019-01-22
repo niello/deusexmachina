@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_PHYSICS_COLLISION_SHAPE_LOADER_H__
-#define __DEM_L1_PHYSICS_COLLISION_SHAPE_LOADER_H__
-
 #include <Resources/ResourceLoader.h>
 
 // Loads a collision shape from HRD or PRM
@@ -13,14 +10,12 @@ class CCollisionShapeLoaderPRM: public CResourceLoader
 {
 public:
 
-	virtual ~CCollisionShapeLoaderPRM() {}
+	CCollisionShapeLoaderPRM(CResourceManager& ResourceManager) : CResourceLoader(ResourceManager) {}
 
-	virtual const Core::CRTTI&			GetResultType() const override;
-	virtual PResourceObject				CreateResource(CStrID UID) override;
+	virtual const Core::CRTTI&	GetResultType() const override;
+	virtual PResourceObject		CreateResource(CStrID UID) override;
 };
 
 typedef Ptr<CCollisionShapeLoaderPRM> PCollisionShapeLoaderPRM;
 
 }
-
-#endif

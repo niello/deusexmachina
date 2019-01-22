@@ -1,7 +1,6 @@
 #include "MeshLoaderNVX2.h"
 
-#include <Render/Mesh.h>
-#include <Render/GPUDriver.h>
+#include <Render/MeshData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 
@@ -197,6 +196,12 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 }
 //---------------------------------------------------------------------
 
+const Core::CRTTI& CMeshLoaderNVX2::GetResultType() const
+{
+	return Render::CMeshData::RTTI;
+}
+//---------------------------------------------------------------------
+
 PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 {
 	if (!pResMgr) return nullptr;
@@ -209,16 +214,21 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 
 	// NVX2 is always TriList and Index16
 	CNVX2Header Header;
-	if (!Reader.Read(Header) || Header.magic != 'NVX2') return NULL;
+	if (!Reader.Read(Header) || Header.magic != 'NVX2') return nullptr;
 	Header.numIndices *= 3;
 
-	CArray<Render::CPrimitiveGroup> MeshGroups(Header.numGroups, 0);
+	Render::PMeshData MeshData = n_new(Render::CMeshData);
+	MeshData->IndexType = Render::Index_16;
+	MeshData->VertexCount = Header.numVertices;
+	MeshData->IndexCount = Header.numIndices;
+
+	MeshData->Groups.Resize(Header.numGroups);
 	for (U32 i = 0; i < Header.numGroups; ++i)
 	{
 		CNVX2Group Group;
 		Reader.Read(Group);
 
-		Render::CPrimitiveGroup& MeshGroup = MeshGroups.At(i);
+		Render::CPrimitiveGroup& MeshGroup = MeshData->Groups.At(i);
 		MeshGroup.FirstVertex = Group.firstVertex;
 		MeshGroup.VertexCount = Group.numVertices;
 		MeshGroup.FirstIndex = Group.firstTriangle * 3;
@@ -226,55 +236,32 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 		MeshGroup.Topology = Render::Prim_TriList;
 	}
 
-	CArray<Render::CVertexComponent> Components;
-	SetupVertexComponents(Header.vertexComponentMask, Components);
-	Render::PVertexLayout VertexLayout = GPU->CreateVertexLayout(&Components.Front(), Components.GetCount());
-	n_assert_dbg(VertexLayout->GetVertexSizeInBytes() == (Header.vertexWidth * sizeof(float)));
+	SetupVertexComponents(Header.vertexComponentMask, MeshData->VertexFormat);
 
 	//!!!map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
-	float* pVBData = (float*)n_malloc_aligned(DataSize, 16);
-	Stream->Read(pVBData, DataSize);
+	MeshData->pVBData = (float*)n_malloc_aligned(DataSize, 16);
+	Stream->Read(MeshData->pVBData, DataSize);
 
 	//!!!map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
-	U16* pIBData = (U16*)n_malloc_aligned(DataSize, 16);
-	Stream->Read(pIBData, DataSize);
+	MeshData->pIBData = (U16*)n_malloc_aligned(DataSize, 16);
+	Stream->Read(MeshData->pIBData, DataSize);
 
-	//!!!Now all VBs and IBs are not shared! later this may change!
-	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, Header.numVertices, Render::Access_GPU_Read, pVBData);
-	Render::PIndexBuffer IB = GPU->CreateIndexBuffer(Render::Index_16, Header.numIndices, Render::Access_GPU_Read, pIBData);
-
-	//!!!must be offline!
-	for (UPTR i = 0; i < MeshGroups.GetCount(); ++i)
+	for (UPTR i = 0; i < MeshData->Groups.GetCount(); ++i)
 	{
-		Render::CPrimitiveGroup& MeshGroup = MeshGroups[i];
+		Render::CPrimitiveGroup& MeshGroup = MeshData->Groups[i];
 		MeshGroup.AABB.BeginExtend();
-		U16* pIndex = pIBData + MeshGroup.FirstIndex;
+		U16* pIndex = static_cast<U16*>(MeshData->pIBData) + MeshGroup.FirstIndex;
 		for (U32 j = 0; j < MeshGroup.IndexCount; ++j)
 		{
-			float* pVertex = pVBData + (pIndex[j] * Header.vertexWidth);
+			float* pVertex = static_cast<float*>(MeshData->pVBData) + (pIndex[j] * Header.vertexWidth);
 			MeshGroup.AABB.Extend(pVertex[0], pVertex[1], pVertex[2]);
 		}
 		MeshGroup.AABB.EndExtend();
 	}
 
-	n_free_aligned(pVBData);
-	n_free_aligned(pIBData);
-
-	Render::CMeshInitData InitData;
-	InitData.pVertexBuffer = VB;
-	InitData.pIndexBuffer = IB;
-	InitData.pMeshGroupData = &MeshGroups.Front();
-	InitData.SubMeshCount = MeshGroups.GetCount();
-	InitData.LODCount = 1;
-	InitData.RealGroupCount = MeshGroups.GetCount();
-	InitData.UseMapping = false;
-
-	Render::PMesh Mesh = n_new(Render::CMesh);
-	Mesh->Create(InitData);
-
-	return Mesh.Get();
+	return MeshData;
 }
 //---------------------------------------------------------------------
 

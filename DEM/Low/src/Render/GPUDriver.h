@@ -59,6 +59,7 @@ protected:
 	CHashTable<CStrID, PShader>		Shaders;
 	CHashTable<CStrID, PEffect>		Effects;
 	CHashTable<CStrID, PMaterial>	Materials;
+	CHashTable<CStrID, PMesh>		Meshes;
 
 #ifdef DEM_STATS
 	UPTR							PrimitivesRendered = 0;
@@ -79,6 +80,7 @@ public:
 	PShader						GetShader(CStrID UID);
 	PEffect						GetEffect(CStrID UID);
 	PMaterial					GetMaterial(CStrID UID);
+	PMesh						GetMesh(CStrID UID);
 
 	EGPUDriverType				GetType() const { return Type; }
 	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }

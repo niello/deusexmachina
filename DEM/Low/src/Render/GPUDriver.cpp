@@ -7,6 +7,8 @@
 #include <Render/ShaderLibrary.h>
 #include <Render/Effect.h>
 #include <Render/Material.h>
+#include <Render/Mesh.h>
+#include <Render/MeshData.h>
 #include <System/OSWindow.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -170,6 +172,42 @@ PMaterial CGPUDriver::GetMaterial(CStrID UID)
 	Materials.Add(UID, Material);
 
 	return Material;
+}
+//---------------------------------------------------------------------
+
+PMesh CGPUDriver::GetMesh(CStrID UID)
+{
+	PMesh Mesh;
+	if (Meshes.Get(UID, Mesh) && Mesh) return Mesh;
+
+	if (!pResMgr) return nullptr;
+
+	Resources::PResource RMeshData = pResMgr->RegisterResource<CMeshData>(UID);
+	PMeshData MeshData = RMeshData->ValidateObject<CMeshData>();
+
+	//!!!not to keep in RAM! or use refcount
+	//???CTexture holds resource ref if it wants RAM backing?
+	//TexData->UnloadResource();
+
+	Render::PVertexLayout VertexLayout = CreateVertexLayout(&MeshData->VertexFormat.Front(), MeshData->VertexFormat.GetCount());
+
+	//!!!Now all VBs and IBs are not shared! later this may change!
+	Render::CMeshInitData InitData;
+	InitData.VertexBuffer = CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->pVBData);
+	if (MeshData->IndexCount)
+		InitData.IndexBuffer = CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->pIBData);
+	InitData.pMeshGroupData = &MeshData->Groups.Front();
+	InitData.SubMeshCount = MeshData->Groups.GetCount();
+	InitData.LODCount = 1;
+	InitData.RealGroupCount = MeshData->Groups.GetCount();
+	InitData.UseMapping = false;
+
+	Mesh = n_new(Render::CMesh);
+	if (!Mesh->Create(InitData)) return nullptr;
+
+	Meshes.Add(UID, Mesh);
+
+	return Mesh;
 }
 //---------------------------------------------------------------------
 

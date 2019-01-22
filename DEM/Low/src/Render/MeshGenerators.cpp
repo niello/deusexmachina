@@ -90,8 +90,8 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	Group.AABB.Max.set(1.f, 0.f, 1.f);
 
 	Render::CMeshInitData InitData;
-	InitData.pVertexBuffer = VB.Get();
-	InitData.pIndexBuffer = IB.Get();
+	InitData.VertexBuffer = VB.Get();
+	InitData.IndexBuffer = IB.Get();
 	InitData.pMeshGroupData = &Group;
 	InitData.SubMeshCount = 1;
 	InitData.LODCount = 1;
@@ -164,8 +164,8 @@ PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 	Group.AABB.Max.set(0.5f, 0.5f, 0.5f);
 
 	Render::CMeshInitData InitData;
-	InitData.pVertexBuffer = VB.Get();
-	InitData.pIndexBuffer = IB.Get();
+	InitData.VertexBuffer = VB.Get();
+	InitData.IndexBuffer = IB.Get();
 	InitData.pMeshGroupData = &Group;
 	InitData.SubMeshCount = 1;
 	InitData.LODCount = 1;
