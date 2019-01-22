@@ -6,8 +6,8 @@ __ImplementClassNoFactory(Render::CMeshData, Resources::CResourceObject);
 
 CMeshData::~CMeshData()
 {
-	n_free_aligned(pVBData);
-	n_free_aligned(pIBData);
+	if (pVBData) n_free_aligned(pVBData);
+	if (pIBData) n_free_aligned(pIBData);
 }
 //---------------------------------------------------------------------
 

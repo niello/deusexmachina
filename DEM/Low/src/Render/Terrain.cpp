@@ -101,7 +101,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 			Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
 			GenQuad->GPU = pGPU;
 			GenQuad->QuadsPerEdge = PatchSize;
-			ResourceMgr->RegisterResource(MeshUID, GenQuad);
+			RPatch = ResourceMgr->RegisterResource(MeshUID, GenQuad);
 		}
 		PatchMesh = RPatch->ValidateObject<CMesh>();
 
@@ -114,7 +114,7 @@ bool CTerrain::ValidateResources(CGPUDriver* pGPU)
 			Resources::PMeshGeneratorQuadPatch GenQuad = n_new(Resources::CMeshGeneratorQuadPatch);
 			GenQuad->GPU = pGPU;
 			GenQuad->QuadsPerEdge = PatchSize;
-			ResourceMgr->RegisterResource(QuarterMeshUID, GenQuad);
+			RPatch = ResourceMgr->RegisterResource(QuarterMeshUID, GenQuad);
 		}
 		QuarterPatchMesh = RPatch->ValidateObject<CMesh>();
 	}

@@ -32,7 +32,15 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 	if (!Registry.Get(UID, Rsrc))
 	{
 		Rsrc = n_new(CResource(UID));
-		Rsrc->SetCreator(GetDefaultCreator(PathUtils::GetExtension(UID.CStr()), &RsrcType));
+
+		CString Ext(PathUtils::GetExtension(UID.CStr()));
+		if (Ext.IsValid())
+		{
+			IPTR SharpIdx = Ext.FindIndex('#');
+			if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
+		}
+
+		Rsrc->SetCreator(GetDefaultCreator(Ext, &RsrcType));
 		Registry.Add(UID, Rsrc);
 	}
 	return Rsrc;

@@ -47,7 +47,7 @@ bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 	{
 		Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);
 		GenSkybox->GPU = pGPU;
-		ResourceMgr->RegisterResource(MeshUID, GenSkybox);
+		RMesh = ResourceMgr->RegisterResource(MeshUID, GenSkybox);
 	}
 	Mesh = RMesh->ValidateObject<CMesh>();
 

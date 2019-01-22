@@ -16,6 +16,6 @@ public:
 	virtual PResourceObject		CreateResource(CStrID UID) override;
 };
 
-typedef Ptr<CTextureLoaderCDLOD> PCDLODDataLoader;
+typedef Ptr<CTextureLoaderCDLOD> PTextureLoaderCDLOD;
 
 }
