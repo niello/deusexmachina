@@ -27,6 +27,9 @@
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
+#undef min
+#undef max
+
 //!!!D3D11_VIEWPORT_AND_SCISSORRECT_OBJECT_COUNT_PER_PIPELINE!
 //each scissor rect belongs to a viewport
 
@@ -1403,6 +1406,13 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		CurrDirtyFlags.Clear(GPU_Dirty_SS);
 	}
 
+	// This array is used to set pointer values into a D3D context. It can be force-casted to any type.
+	// We define it on stack and therefore avoid a per-frame dynamic allocation or unsafe _malloca.
+	// VS offsets & strides are stored in this buffer too.
+	constexpr UPTR PtrArraySize = std::max(D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT,
+		std::max((int)(D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT * 3), D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT));
+	void* PtrArray[PtrArraySize];
+
 	if (Update.Is(GPU_Dirty_SRV) && CurrDirtyFlags.Is(GPU_Dirty_SRV))
 	{
 		if (CurrSRV.IsInAddMode()) CurrSRV.EndAdd();
@@ -1410,7 +1420,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		if (CurrSRV.GetCount())
 		{
 			const UPTR SRVArrayMemSize = (MaxSRVSlotIndex + 1) * sizeof(ID3D11ShaderResourceView*);
-			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)_malloca(SRVArrayMemSize);
+			ID3D11ShaderResourceView** ppSRV = (ID3D11ShaderResourceView**)PtrArray;
 			::ZeroMemory(ppSRV, SRVArrayMemSize);
 
 			UPTR CurrShaderType = ShaderType_Invalid;
@@ -1473,8 +1483,6 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 				ppSRV[SRVSlot] = CurrSRV.ValueAt(i).pSRV;
 				CurrSRVSlot = SRVSlot;
 			}
-
-			_freea(ppSRV);
 		}
 
 		CurrDirtyFlags.Clear(GPU_Dirty_SRV);
@@ -1485,7 +1493,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		const UPTR MaxVBCount = CurrVB.GetCount();
 		const UPTR PtrsSize = sizeof(ID3D11Buffer*) * MaxVBCount;
 		const UPTR UINTsSize = sizeof(UINT) * MaxVBCount;
-		char* pMem = (char*)_malloca(PtrsSize + UINTsSize + UINTsSize);
+		char* pMem = (char*)PtrArray;
 		n_assert(pMem);
 
 		ID3D11Buffer** pVBs = (ID3D11Buffer**)pMem;
@@ -1512,8 +1520,6 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 		pD3DImmContext->IASetVertexBuffers(0, MaxVBCount, pVBs, pStrides, pOffsets);
 
-		_freea(pMem);
-
 		CurrDirtyFlags.Clear(GPU_Dirty_VB);
 	}
 
@@ -1534,7 +1540,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 	// All render targets and a depth-stencil buffer are set atomically in D3D11
 	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
 	{
-		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)_malloca(sizeof(ID3D11RenderTargetView*) * CurrRT.GetCount());
+		ID3D11RenderTargetView** pRTV = (ID3D11RenderTargetView**)PtrArray;
 		n_assert(pRTV);
 		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		{
@@ -1551,8 +1557,6 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 
 		pD3DImmContext->OMSetRenderTargets(CurrRT.GetCount(), pRTV, pDSV);
 		//OMSetRenderTargetsAndUnorderedAccessViews
-
-		_freea(pRTV);
 
 		// If at least one valid RT and at least one default (unset) VP exist, we check
 		// if RT dimensions are changed, and refill all default (unset) VPs properly.
