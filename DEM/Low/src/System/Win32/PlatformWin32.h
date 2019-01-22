@@ -21,9 +21,10 @@ class CPlatformWin32 : public IPlatform
 {
 private:
 
-	std::unique_ptr<COSFileSystemWin32>	FileSystemInterface;
+	std::unique_ptr<COSFileSystemWin32>		FileSystemInterface;
 
-	std::vector<Input::PInputDeviceWin32> InputDevices;
+	std::vector<Input::PInputDeviceWin32>	InputDevices;
+	Input::PInputDeviceWin32				LastKeyboard;
 
 	double		PerfFreqMul;
 

@@ -127,6 +127,7 @@ void CInputTranslator::ConnectToDevice(IInputDevice* pDevice, U16 Priority)
 		pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove, &NewSub);
 		DeviceSubs.Add(NewSub);
 	}
+
 	if (pDevice->GetButtonCount() > 0)
 	{
 		Events::PSub NewSub;
@@ -135,22 +136,30 @@ void CInputTranslator::ConnectToDevice(IInputDevice* pDevice, U16 Priority)
 		pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp, &NewSub);
 		DeviceSubs.Add(NewSub);
 	}
+
+	if (pDevice->CanInputText())
+	{
+		Events::PSub NewSub;
+		pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput, &NewSub);
+		DeviceSubs.Add(NewSub);
+	}
 }
 //---------------------------------------------------------------------
 
 void CInputTranslator::DisconnectFromDevice(const IInputDevice* pDevice)
 {
 	for (UPTR i = 0; i < DeviceSubs.GetCount(); )
+	{
 		if (DeviceSubs[i]->GetDispatcher() == pDevice)
 			DeviceSubs.RemoveAt(i);
 		else ++i;
+	}
 }
 //---------------------------------------------------------------------
 
 bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
-	const Event::AxisMove& Ev = (const Event::AxisMove&)Event;
+	const Event::AxisMove& Ev = static_cast<const Event::AxisMove&>(Event);
 
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 	{
@@ -161,12 +170,12 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		if (pLayout)
 		{
 			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnAxisMove(pDevice, Ev);
+				pLayout->States.ValueAt(StateIdx)->OnAxisMove(Ev.Device, Ev);
 
 			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
 			{
 				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnAxisMove(pDevice, Ev))
+				if (EvRec.pEvent->OnAxisMove(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = EvRec.OutEventID;
@@ -179,7 +188,7 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		else
 		{
 			// Bypass context only adds a device & user info into events
-			//!!!TODO: add device and user ID!
+			//!!!TODO: add user ID!
 			if (FireEvent(Event) > 0) OK;
 		}
 	}
@@ -190,8 +199,7 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 
 bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
-	const Event::ButtonDown& Ev = (const Event::ButtonDown&)Event;
+	const Event::ButtonDown& Ev = static_cast<const Event::ButtonDown&>(Event);
 
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 	{
@@ -202,12 +210,12 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		if (pLayout)
 		{
 			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnButtonDown(pDevice, Ev);
+				pLayout->States.ValueAt(StateIdx)->OnButtonDown(Ev.Device, Ev);
 
 			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
 			{
 				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnButtonDown(pDevice, Ev))
+				if (EvRec.pEvent->OnButtonDown(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = EvRec.OutEventID;
@@ -218,7 +226,7 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		else
 		{
 			// Bypass context only adds a device & user info into events
-			//!!!TODO: add device and user ID!
+			//!!!TODO: add user ID!
 			if (FireEvent(Event) > 0) OK;
 		}
 	}
@@ -229,8 +237,7 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 
 bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	IInputDevice* pDevice = (IInputDevice*)pDispatcher;
-	const Event::ButtonUp& Ev = (const Event::ButtonUp&)Event;
+	const Event::ButtonUp& Ev = static_cast<const Event::ButtonUp&>(Event);
 
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 	{
@@ -241,12 +248,12 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		if (pLayout)
 		{
 			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnButtonUp(pDevice, Ev);
+				pLayout->States.ValueAt(StateIdx)->OnButtonUp(Ev.Device, Ev);
 
 			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
 			{
 				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnButtonUp(pDevice, Ev))
+				if (EvRec.pEvent->OnButtonUp(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = EvRec.OutEventID;
@@ -257,7 +264,33 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		else
 		{
 			// Bypass context only adds a device & user info into events
-			//!!!TODO: add device and user ID!
+			//!!!TODO: add user ID!
+			if (FireEvent(Event) > 0) OK;
+		}
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	const Event::TextInput& Ev = static_cast<const Event::TextInput&>(Event);
+
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		CInputContext& Ctx = Contexts[i];
+		if (!Ctx.Enabled) continue;
+
+		CControlLayout* pLayout = Ctx.pLayout;
+		if (pLayout)
+		{
+			// ...
+		}
+		else
+		{
+			// Bypass context only adds a device & user info into events
+			//!!!TODO: add user ID!
 			if (FireEvent(Event) > 0) OK;
 		}
 	}

@@ -33,6 +33,7 @@ private:
 	bool			OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool			OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool			OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool			OnTextInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 public:
 

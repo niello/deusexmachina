@@ -1,5 +1,7 @@
 #pragma once
 #include <Events/EventNative.h>
+#include <Input/InputDevice.h>
+#include <string>
 
 // IInputDevice axis and button events
 
@@ -12,10 +14,17 @@ class AxisMove: public Events::CEventNative
 
 public:
 
-	U8		Code;
-	float	Amount; //???I16/I32?
+	Input::PInputDevice	Device;
+	CStrID				UserID;
+	U8					Code;
+	float				Amount;
 
-	AxisMove(U8 AxisCode, float MoveAmount): Code(AxisCode), Amount(MoveAmount) {}
+	AxisMove(Input::PInputDevice Source, U8 AxisCode, float MoveAmount)
+		: Device(Source)
+		, Code(AxisCode)
+		, Amount(MoveAmount)
+	{
+	}
 };
 
 class ButtonDown: public Events::CEventNative
@@ -24,9 +33,11 @@ class ButtonDown: public Events::CEventNative
 
 public:
 
-	U8 Code;
+	Input::PInputDevice	Device;
+	CStrID				UserID;
+	U8					Code;
 
-	ButtonDown(U8 ButtonCode): Code(ButtonCode) {}
+	ButtonDown(Input::PInputDevice Source, U8 ButtonCode): Device(Source), Code(ButtonCode) {}
 };
 
 class ButtonUp: public Events::CEventNative
@@ -35,9 +46,24 @@ class ButtonUp: public Events::CEventNative
 
 public:
 
-	U8 Code;
+	Input::PInputDevice	Device;
+	CStrID				UserID;
+	U8					Code;
 
-	ButtonUp(U8 ButtonCode): Code(ButtonCode) {}
+	ButtonUp(Input::PInputDevice Source, U8 ButtonCode): Device(Source), Code(ButtonCode) {}
+};
+
+class TextInput: public Events::CEventNative
+{
+	__DeclareNativeEventClass;
+
+public:
+
+	Input::PInputDevice	Device;
+	std::string			Text;
+
+	TextInput(Input::PInputDevice Source, std::string&& TextData): Device(Source), Text(std::move(TextData)) {}
+	TextInput(Input::PInputDevice Source, const std::string& TextData): Device(Source), Text(TextData) {}
 };
 
 }

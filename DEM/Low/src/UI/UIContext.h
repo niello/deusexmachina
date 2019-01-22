@@ -1,12 +1,14 @@
 #pragma once
-#ifndef __DEM_L1_UI_CONTEXT_H__
-#define __DEM_L1_UI_CONTEXT_H__
-
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 
 // UI context is a set of elements rendered to one target and receiving the same input.
 // Each engine window or viewport may have it's own UI context independent of each other.
+
+namespace DEM { namespace Sys
+{
+	typedef Ptr<class COSWindow> POSWindow;
+}}
 
 namespace UI
 {
@@ -16,13 +18,15 @@ class CUIContext: public Core::CObject
 {
 private:
 
+	DEM::Sys::POSWindow	OSWindow;
 	PUIWindow			RootWindow;
 	CEGUI::GUIContext*	pCtx = nullptr;
+	bool				WasMousePassThroughEnabledInRoot = false;
 
-	DECLARE_EVENT_HANDLER(OSInput, OnOSWindowInput);
 	DECLARE_EVENT_HANDLER(AxisMove, OnAxisMove);
 	DECLARE_EVENT_HANDLER(ButtonDown, OnButtonDown);
 	DECLARE_EVENT_HANDLER(ButtonUp, OnButtonUp);
+	DECLARE_EVENT_HANDLER(TextInput, OnTextInput);
 
 public:
 
@@ -30,7 +34,7 @@ public:
 	CUIContext();
 	~CUIContext();
 
-	void				Init(CEGUI::GUIContext* pContext);
+	void				Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow);
 	//CEGUI::GUIContext*	GetCEGUIContext() const { return pCtx; }
 
 	// Pass absolute viewport coordinates here
@@ -56,5 +60,3 @@ public:
 typedef Ptr<CUIContext> PUIContext;
 
 }
-
-#endif

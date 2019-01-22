@@ -182,6 +182,18 @@ CString COSWindowWin32::GetTitle() const
 }
 //---------------------------------------------------------------------
 
+bool COSWindowWin32::GetCursorPosition(IPTR& OutX, IPTR& OutY) const
+{
+	n_assert_dbg(hWnd);
+	POINT Pos;
+	if (!::GetCursorPos(&Pos)) FAIL;
+	if (!::ScreenToClient(hWnd, &Pos)) FAIL;
+	OutX = Pos.x;
+	OutY = Pos.y;
+	OK;
+}
+//---------------------------------------------------------------------
+
 void COSWindowWin32::SetIcon(const char* pIconName)
 {
 	IconName = pIconName;
@@ -346,35 +358,6 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			hWnd = NULL;
 			OutResult = 0;
 			OK;
-
-		case WM_CHAR:
-		case WM_SYSCHAR:
-		case WM_UNICHAR:
-		{
-			n_assert_dbg(uMsg != WM_UNICHAR); //!!!implement!
-
-			::Sys::DbgOut(CString("WM_CHAR ") + ((wParam == '%') ? "%" : "") + static_cast<char>(wParam) + '\n');
-
-			//???is valid? WM_CHAR must use UTF-16 itself. Always?
-			WCHAR CharUTF16[2];
-			::MultiByteToWideChar(CP_ACP, 0, (const char*)&wParam, 1, CharUTF16, 1);
-
-			U8 ScanCode = ((U8*)&lParam)[2];
-			UINT VirtualKey = 0;
-			bool IsExtended = (lParam & (1 << 24)) != 0;
-			//FixKeyCodes(ScanCode, VirtualKey, IsExtended);
-
-			Event::OSInput Ev;
-			Ev.Type = Event::OSInput::KeyDown;
-			Ev.KeyboardInfo.ScanCode = ScanCode;
-			Ev.KeyboardInfo.VirtualKey = VirtualKey;
-			Ev.KeyboardInfo.Char = CharUTF16[0];
-			Ev.KeyboardInfo.Flags = 0;
-			if ((lParam & (1 << 30))) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Repeated;
-			if (IsExtended) Ev.KeyboardInfo.Flags |= Event::OSInput::Key_Extended;
-			FireEvent(Ev, Events::Event_TermOnHandled);
-			break;
-		}
 
 		case WM_LBUTTONDBLCLK:
 		case WM_RBUTTONDBLCLK:

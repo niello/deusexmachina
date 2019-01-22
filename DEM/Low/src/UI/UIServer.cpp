@@ -4,6 +4,8 @@
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 
+#include <Render/GPUDriver.h>
+
 #include <UI/CEGUI/DEMLogger.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMResourceProvider.h>
@@ -45,7 +47,7 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	CEGUISystem = CEGUI::System::getSingletonPtr();
 
 	DefaultContext = n_new(CUIContext);
-	DefaultContext->Init(&CEGUISystem->getDefaultGUIContext());
+	DefaultContext->Init(&CEGUISystem->getDefaultGUIContext(), Settings.GPU->GetSwapChainWindow(Settings.SwapChainID));
 
 	if (Settings.ResourceGroups.IsValidPtr())
 	{

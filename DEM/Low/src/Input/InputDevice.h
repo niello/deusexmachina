@@ -25,6 +25,7 @@ public:
 	virtual U8			GetButtonCount() const = 0;
 	virtual U8			GetButtonCode(const char* pAlias) const = 0;
 	virtual const char*	GetButtonAlias(U8 Code) const = 0;
+	virtual bool		CanInputText() const = 0;
 };
 
 }

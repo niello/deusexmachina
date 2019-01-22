@@ -117,13 +117,15 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 		// to ::DefWindowProc to perform a cleanup (see WM_INPUT docs)
 
 		PRAWINPUT pData = (PRAWINPUT)pSelf->pRawInputBuffer;
+		HANDLE hDevice = pData->header.hDevice;
+
 		bool Handled = false;
 		const bool IsForeground = (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT); // Can enable background input for some cases
 		if (IsForeground)
 		{
 			for (auto& Device : pSelf->InputDevices)
 			{
-				if (Device->GetWin32Handle() == pData->header.hDevice)
+				if (Device->GetWin32Handle() == hDevice)
 				{
 					n_assert_dbg(Device->IsOperational());
 					Handled = Device->HandleRawInput(*pData);
@@ -147,6 +149,16 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 			// from a correct repeat count since we generate a separate message for each repeat.
 			if (pData->header.dwType == RIM_TYPEKEYBOARD)
 			{
+				// To bind WM_CHAR to the device. Not ideal but must work for most cases.
+				for (auto& Device : pSelf->InputDevices)
+				{
+					if (Device->GetWin32Handle() == hDevice)
+					{
+						pSelf->LastKeyboard = Device->IsOperational() ? Device : nullptr;
+						break;
+					}
+				}
+
 				// For now we always assume key was not down. Might be fixed if necessary.
 				constexpr bool WasDown = false;
 
@@ -633,6 +645,12 @@ bool CPlatformWin32::Update()
 	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
 	{
 		if (Msg.message == WM_QUIT) FAIL;
+
+		if (RawInputRegistered && Msg.message == WM_CHAR && LastKeyboard)
+		{
+			if (!LastKeyboard->IsOperational()) LastKeyboard = nullptr;
+			else if (LastKeyboard->HandleCharMessage(Msg.wParam)) continue;
+		}
 
 		// Restore input locale switching hotkey logic killed by raw input.
 		// Accelerators can't process Alt+Shift or Ctrl+Shift, also accelerators are

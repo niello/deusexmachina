@@ -24,7 +24,7 @@ public:
 
 	bool				Init(HANDLE hDevice, const CString& DeviceName, const RID_DEVICE_INFO_MOUSE& DeviceInfo);
 
-	virtual bool		HandleRawInput(const RAWINPUT& Data);
+	virtual bool		HandleRawInput(const RAWINPUT& Data) override;
 
 	virtual EDeviceType	GetType() const override { return Device_Mouse; }
 	virtual U8			GetAxisCount() const override { return AxisCount; }
@@ -35,6 +35,7 @@ public:
 	virtual U8			GetButtonCount() const override { return ButtonCount; }
 	virtual U8			GetButtonCode(const char* pAlias) const override;
 	virtual const char*	GetButtonAlias(U8 Code) const override;
+	virtual bool		CanInputText() const override { FAIL; }
 };
 
 }

@@ -5,7 +5,7 @@
 #include <Events/EventDispatcher.h>
 #include <Events/Subscription.h>
 #include <Input/InputEvents.h>
-#include <System/Events/OSInput.h>
+#include <System/OSWindow.h>
 
 namespace UI
 {
@@ -18,8 +18,9 @@ CUIContext::~CUIContext()
 }
 //---------------------------------------------------------------------
 
-void CUIContext::Init(CEGUI::GUIContext* pContext)
+void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
 {
+	OSWindow = pHostWindow;
 	pCtx = pContext;
 	if (pCtx) pCtx->setMouseClickEventGenerationEnabled(true);
 }
@@ -63,10 +64,10 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 	// CEGUI 0.7.x:
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
 	// as layout root with the MousePassThroughEnabled property set to true.
-	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, OSInput, CUIContext, OnOSWindowInput, Priority);
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, AxisMove, CUIContext, OnAxisMove, Priority);
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, ButtonDown, CUIContext, OnButtonDown, Priority);
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, ButtonUp, CUIContext, OnButtonUp, Priority);
+	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, TextInput, CUIContext, OnTextInput, Priority);
 
 	OK;
 }
@@ -74,7 +75,10 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 
 void CUIContext::UnsubscribeFromInput()
 {
-	UNSUBSCRIBE_EVENT(OSInput);
+	UNSUBSCRIBE_EVENT(AxisMove);
+	UNSUBSCRIBE_EVENT(ButtonDown);
+	UNSUBSCRIBE_EVENT(ButtonUp);
+	UNSUBSCRIBE_EVENT(TextInput);
 }
 //---------------------------------------------------------------------
 
@@ -83,6 +87,18 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 	RootWindow = pWindow;
 	if (pCtx)
 	{
+		if (!WasMousePassThroughEnabledInRoot)
+		{
+			CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
+			if (pPrevRoot) pPrevRoot->setMousePassThroughEnabled(false);
+		}
+
+		if (pWindow)
+		{
+			WasMousePassThroughEnabledInRoot = pWindow->GetWnd()->isMousePassThroughEnabled();
+			pWindow->GetWnd()->setMousePassThroughEnabled(true);
+		}
+
 		pCtx->setRootWindow(pWindow ? pWindow->GetWnd() : NULL);
 		pCtx->updateWindowContainingMouse();
 	}
@@ -158,84 +174,91 @@ bool CUIContext::IsMouseOverGUI() const
 }
 //---------------------------------------------------------------------
 
-// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
-bool CUIContext::OnOSWindowInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	const Event::OSInput& Ev = (const Event::OSInput&)Event;
+	const Event::AxisMove& Ev = static_cast<const Event::AxisMove&>(Event);
 
-	switch (Ev.Type)
+	if (Ev.Device->GetType() == Input::Device_Mouse)
 	{
-		case Event::OSInput::KeyDown:
+		switch (Ev.Code)
 		{
-			if (pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode)) OK;
-			return Ev.KeyboardInfo.Char != 0 && pCtx->injectChar(Ev.KeyboardInfo.Char);
-		}
-
-		case Event::OSInput::KeyUp:
-			return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.KeyboardInfo.ScanCode);
-
-		case Event::OSInput::MouseMove:
-			return pCtx->injectMousePosition((float)Ev.MouseInfo.x, (float)Ev.MouseInfo.y);
-
-		case Event::OSInput::MouseDown:
-		{
-			CEGUI::MouseButton Button;
-			switch (Ev.MouseInfo.Button)
+			case 0:
+			case 1:
 			{
-				case 0:		Button = CEGUI::LeftButton; break;
-				case 1:		Button = CEGUI::RightButton; break;
-				case 2:		Button = CEGUI::MiddleButton; break;
-				case 3:		Button = CEGUI::X1Button; break;
-				case 4:		Button = CEGUI::X2Button; break;
-				default:	FAIL;
-			}
-			return pCtx->injectMouseButtonDown(Button);
-		}
-
-		case Event::OSInput::MouseUp:
-		{
-			CEGUI::MouseButton Button;
-			switch (Ev.MouseInfo.Button)
-			{
-				case 0:		Button = CEGUI::LeftButton; break;
-				case 1:		Button = CEGUI::RightButton; break;
-				case 2:		Button = CEGUI::MiddleButton; break;
-				case 3:		Button = CEGUI::X1Button; break;
-				case 4:		Button = CEGUI::X2Button; break;
-				default:	FAIL;
+				IPTR X, Y;
+				return OSWindow && OSWindow->GetCursorPosition(X, Y) &&
+					pCtx->injectMousePosition((float)X, (float)Y);
 			}
 
-			//FIXME: as CEGUI currently marks all mouse button events as handled, we have to do the opposite here
-			//to track mouse up events properly. Mouse down events are handled without this hack.
-			//return pCtx->injectMouseButtonUp(Button);
-			pCtx->injectMouseButtonUp(Button);
-			FAIL;
+			case 2:
+			case 3:
+				return pCtx->injectMouseWheelChange(Ev.Amount);
 		}
-
-		case Event::OSInput::MouseWheelVertical:
-		case Event::OSInput::MouseWheelHorizontal:
-			return pCtx->injectMouseWheelChange((float)Ev.WheelDelta);
 	}
 
 	FAIL;
 }
 //---------------------------------------------------------------------
 
-bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	FAIL;
-}
-//---------------------------------------------------------------------
-
 bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	const Event::ButtonDown& Ev = static_cast<const Event::ButtonDown&>(Event);
+
+	if (Ev.Device->GetType() == Input::Device_Mouse)
+	{
+		switch (Ev.Code)
+		{
+			case 0:		return pCtx->injectMouseButtonDown(CEGUI::LeftButton);
+			case 1:		return pCtx->injectMouseButtonDown(CEGUI::RightButton);
+			case 2:		return pCtx->injectMouseButtonDown(CEGUI::MiddleButton);
+			case 3:		return pCtx->injectMouseButtonDown(CEGUI::X1Button);
+			case 4:		return pCtx->injectMouseButtonDown(CEGUI::X2Button);
+			default:	FAIL;
+		}
+	}
+	else if (Ev.Device->GetType() == Input::Device_Keyboard)
+	{
+		// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
+		return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.Code);
+	}
+
 	FAIL;
 }
 //---------------------------------------------------------------------
 
 bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	const Event::ButtonUp& Ev = static_cast<const Event::ButtonUp&>(Event);
+
+	if (Ev.Device->GetType() == Input::Device_Mouse)
+	{
+		switch (Ev.Code)
+		{
+			case 0:		return pCtx->injectMouseButtonUp(CEGUI::LeftButton);
+			case 1:		return pCtx->injectMouseButtonUp(CEGUI::RightButton);
+			case 2:		return pCtx->injectMouseButtonUp(CEGUI::MiddleButton);
+			case 3:		return pCtx->injectMouseButtonUp(CEGUI::X1Button);
+			case 4:		return pCtx->injectMouseButtonUp(CEGUI::X2Button);
+			default:	FAIL;
+		}
+	}
+	else if (Ev.Device->GetType() == Input::Device_Keyboard)
+	{
+		// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
+		return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.Code);
+	}
+
 	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	bool Handled = false;
+	const Event::TextInput& Ev = static_cast<const Event::TextInput&>(Event);
+	for (char Char : Ev.Text)
+		Handled |= pCtx->injectChar(Char);
+	return Handled;
 }
 //---------------------------------------------------------------------
 
