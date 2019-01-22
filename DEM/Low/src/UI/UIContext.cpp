@@ -23,6 +23,12 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 	OSWindow = pHostWindow;
 	pCtx = pContext;
 	if (pCtx) pCtx->setMouseClickEventGenerationEnabled(true);
+
+	if (pHostWindow)
+	{
+		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnToggleFullscreen, CUIContext, OnToggleFullscreen);
+		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnSizeChanged, CUIContext, OnSizeChanged);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -260,6 +266,28 @@ bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events
 	for (char Char : Ev.Text)
 		Handled |= pCtx->injectChar(Char);
 	return Handled;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	if (pCtx && OSWindow)
+	{
+		const Data::CRect& WndRect = OSWindow->GetRect();
+		CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(WndRect.W, WndRect.H));
+	}
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	if (pCtx && OSWindow)
+	{
+		const Data::CRect& WndRect = OSWindow->GetRect();
+		CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(WndRect.W, WndRect.H));
+	}
+	FAIL;
 }
 //---------------------------------------------------------------------
 

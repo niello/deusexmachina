@@ -28,6 +28,9 @@ private:
 	DECLARE_EVENT_HANDLER(ButtonUp, OnButtonUp);
 	DECLARE_EVENT_HANDLER(TextInput, OnTextInput);
 
+	DECLARE_EVENT_HANDLER(OnToggleFullscreen, OnToggleFullscreen);
+	DECLARE_EVENT_HANDLER(OnSizeChanged, OnSizeChanged);
+
 public:
 
 	//!!!pass OS window and render target params, either intermediate RT or swap chain index! or unify?
