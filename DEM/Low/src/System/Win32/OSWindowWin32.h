@@ -19,6 +19,7 @@ protected:
 
 	COSWindowWin32*	pParent = nullptr;
 	HWND			hWnd = 0;
+	HCURSOR			hClientCursor = 0;
 
 public:
 
@@ -27,6 +28,7 @@ public:
 
 	virtual void			SetTitle(const char* pTitle) override;
 	virtual void			SetIcon(const char* pIconName) override;
+	virtual bool			SetCursor(const char* pCursorName) override;
 	virtual bool			SetRect(const Data::CRect& NewRect, bool FullscreenMode = false) override;
 	virtual bool			SetInputFocus() override;
 

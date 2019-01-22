@@ -621,7 +621,7 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 		WndClass.hInstance     = hInst;
 		WndClass.hIcon         = ::LoadIcon(NULL, IDI_APPLICATION); // TODO: default DEM icon
 		WndClass.hIconSm       = NULL; // set it too?
-		WndClass.hCursor       = LoadCursor(NULL, IDC_ARROW);
+		WndClass.hCursor       = NULL;
 		WndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
 		WndClass.lpszMenuName  = NULL;
 		WndClass.lpszClassName = "DeusExMachina::MainWindow";

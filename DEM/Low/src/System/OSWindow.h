@@ -31,6 +31,7 @@ public:
 
 	virtual void			SetTitle(const char* pTitle) = 0;
 	virtual void			SetIcon(const char* pIconName) = 0;
+	virtual bool			SetCursor(const char* pCursorName) = 0;
 	virtual bool			SetRect(const Data::CRect& NewRect, bool FullscreenMode = false) = 0;
 	virtual bool			SetInputFocus() = 0;
 

@@ -205,6 +205,14 @@ void COSWindowWin32::SetIcon(const char* pIconName)
 }
 //---------------------------------------------------------------------
 
+bool COSWindowWin32::SetCursor(const char* pCursorName)
+{
+	// For now all cursors are loaded as IDC_ARROW, may rewrite later
+	hClientCursor = pCursorName ? ::LoadCursor(NULL, IDC_ARROW) : NULL;
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool COSWindowWin32::SetTopmost(bool Topmost)
 {
 	if (pParent && Topmost) FAIL; //???or allow?
@@ -328,12 +336,16 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 
 		case WM_SETCURSOR:
-			if (FireEvent(CStrID("OnSetCursor")))
+		{
+			if (LOWORD(lParam) == HTCLIENT)
 			{
+				::SetCursor(hClientCursor);
+				FireEvent(CStrID("OnSetCursor"));
 				OutResult = TRUE;
 				OK;
 			}
 			break;
+		}
 
 		case WM_SETFOCUS:
 			FireEvent(CStrID("OnSetFocus"));
