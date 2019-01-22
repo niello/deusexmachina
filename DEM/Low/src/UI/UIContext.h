@@ -28,8 +28,7 @@ private:
 	DECLARE_EVENT_HANDLER(ButtonUp, OnButtonUp);
 	DECLARE_EVENT_HANDLER(TextInput, OnTextInput);
 
-	DECLARE_EVENT_HANDLER(OnToggleFullscreen, OnToggleFullscreen);
-	DECLARE_EVENT_HANDLER(OnSizeChanged, OnSizeChanged);
+	DECLARE_2_EVENTS_HANDLER(OnToggleFullscreen, OnSizeChanged, OnViewportSizeChanged);
 
 public:
 
