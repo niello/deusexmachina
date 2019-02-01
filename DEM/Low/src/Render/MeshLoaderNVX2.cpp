@@ -3,6 +3,7 @@
 #include <Render/MeshData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <Data/RAMData.h>
 
 namespace Resources
 {
@@ -240,22 +241,22 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 
 	//!!!map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
-	MeshData->pVBData = (float*)n_malloc_aligned(DataSize, 16);
-	Stream->Read(MeshData->pVBData, DataSize);
+	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+	Stream->Read(MeshData->VBData->GetPtr(), DataSize);
 
 	//!!!map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
-	MeshData->pIBData = (U16*)n_malloc_aligned(DataSize, 16);
-	Stream->Read(MeshData->pIBData, DataSize);
+	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+	Stream->Read(MeshData->IBData->GetPtr(), DataSize);
 
 	for (UPTR i = 0; i < MeshData->Groups.GetCount(); ++i)
 	{
 		Render::CPrimitiveGroup& MeshGroup = MeshData->Groups[i];
 		MeshGroup.AABB.BeginExtend();
-		U16* pIndex = static_cast<U16*>(MeshData->pIBData) + MeshGroup.FirstIndex;
+		U16* pIndex = static_cast<U16*>(MeshData->IBData->GetPtr()) + MeshGroup.FirstIndex;
 		for (U32 j = 0; j < MeshGroup.IndexCount; ++j)
 		{
-			float* pVertex = static_cast<float*>(MeshData->pVBData) + (pIndex[j] * Header.vertexWidth);
+			float* pVertex = static_cast<float*>(MeshData->VBData->GetPtr()) + (pIndex[j] * Header.vertexWidth);
 			MeshGroup.AABB.Extend(pVertex[0], pVertex[1], pVertex[2]);
 		}
 		MeshGroup.AABB.EndExtend();

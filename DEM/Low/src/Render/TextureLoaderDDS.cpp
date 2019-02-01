@@ -3,6 +3,7 @@
 #include <Render/TextureData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <Data/RAMData.h>
 
 // DDS code and definitions are based on:
 // https://github.com/Microsoft/DirectXTex/blob/master/DDSTextureLoader/DDSTextureLoader.cpp
@@ -313,15 +314,13 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 
-	void* pData = nullptr;
-	if (!ConversionRequired && Stream->CanBeMapped()) pData = Stream->Map();
-	const bool Mapped = !!pData;
-	if (!Mapped)
+	Data::PRAMData Data;
+	if (!ConversionRequired && Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+	if (!Data->GetPtr()) // Not mapped
 	{
-		pData = n_malloc(DataSize);
-		if (Stream->Read(pData, DataSize) != DataSize)
+		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		if (Stream->Read(Data->GetPtr(), DataSize) != DataSize)
 		{
-			n_free(pData);
 			return nullptr;
 		}
 	}
@@ -330,11 +329,12 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 	{
 		// Perform a conversion to a PixelFmt_B8G8R8X8
 
-		const U8* pCurrData = (const U8*)pData;
-		const U8* pDataEnd = (const U8*)pData + DataSize;
+		const U8* pCurrData = static_cast<const U8*>(Data->GetPtr());
+		const U8* pDataEnd = pCurrData + DataSize;
 
 		DataSize = DataSize * 4 / 3;
-		U8* pNewData = (U8*)n_malloc(DataSize);
+		Data::PRAMData NewData(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		U8* pNewData = static_cast<U8*>(NewData->GetPtr());
 		U8* pCurrNewData = pNewData;
 
 		const bool InvertRB = ISBITMASK(Header.ddspf, 0x000000ff, 0x0000ff00, 0x00ff0000, 0x00000000);
@@ -371,13 +371,11 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 			}
 		}
 
-		n_free(pData);
-		pData = pNewData;
+		Data = std::move(NewData);
 	}
 
 	Render::PTextureData TexData = n_new(Render::CTextureData);
-	TexData->pData = pData;
-	TexData->Stream = Mapped ? Stream : nullptr;
+	TexData->Data = std::move(Data);
 	TexData->MipDataProvided = MipDataProvided;
 	TexData->Desc = std::move(TexDesc);
 

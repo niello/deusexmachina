@@ -9,8 +9,10 @@
 // different formats or be generated procedurally. Each GPU can create its
 // own CMesh object from this data.
 
-// NB: for now data must be allocated by n_malloc_aligned(16).
-//???use MMF? redesign meshes and textures?
+namespace Data
+{
+	typedef std::unique_ptr<class IRAMData> PRAMData;
+}
 
 namespace Render
 {
@@ -21,10 +23,8 @@ class CMeshData: public Resources::CResourceObject
 
 public:
 
-	// If stream is valid, pData is a mapped stream contents. Else pData must be n_free'd.
-	void*								pVBData = nullptr;
-	void*								pIBData = nullptr;
-
+	Data::PRAMData						VBData;
+	Data::PRAMData						IBData;
 	CArray<Render::CPrimitiveGroup>		Groups;
 	CArray<Render::CVertexComponent>	VertexFormat;
 	Render::EIndexType					IndexType = Render::Index_16;
@@ -33,7 +33,7 @@ public:
 
 	virtual ~CMeshData();
 
-	virtual bool IsResourceValid() const { return pVBData && VertexCount; }
+	virtual bool IsResourceValid() const { return VBData && VertexCount; }
 };
 
 typedef Ptr<CMeshData> PMeshData;

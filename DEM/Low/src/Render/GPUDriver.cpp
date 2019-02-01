@@ -78,7 +78,7 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 	Resources::PResource RTexData = pResMgr->RegisterResource<CTextureData>(UID);
 	PTextureData TexData = RTexData->ValidateObject<CTextureData>();
-	Texture = CreateTexture(TexData->Desc, AccessFlags, TexData->pData, TexData->MipDataProvided);
+	Texture = CreateTexture(TexData->Desc, AccessFlags, TexData->Data->GetPtr(), TexData->MipDataProvided);
 
 	//!!!not to keep in RAM! or use refcount
 	//???CTexture holds resource ref if it wants RAM backing?
@@ -193,9 +193,9 @@ PMesh CGPUDriver::GetMesh(CStrID UID)
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 	Render::CMeshInitData InitData;
-	InitData.VertexBuffer = CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->pVBData);
+	InitData.VertexBuffer = CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->VBData->GetPtr());
 	if (MeshData->IndexCount)
-		InitData.IndexBuffer = CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->pIBData);
+		InitData.IndexBuffer = CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
 	InitData.pMeshGroupData = &MeshData->Groups.Front();
 	InitData.SubMeshCount = MeshData->Groups.GetCount();
 	InitData.LODCount = 1;

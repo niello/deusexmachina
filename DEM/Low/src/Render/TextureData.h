@@ -7,11 +7,9 @@
 // different formats or be generated procedurally. Each GPU can create its
 // own CTexture object from this data.
 
-// NB: for now pData must be either a mapped pointer to a stream or allocated by n_malloc / n_realloc.
-
-namespace IO
+namespace Data
 {
-	typedef Ptr<class CStream> PStream;
+	typedef std::unique_ptr<class IRAMData> PRAMData;
 }
 
 namespace Render
@@ -23,16 +21,13 @@ class CTextureData: public Resources::CResourceObject
 
 public:
 
-	// If stream is valid, pData is a mapped stream contents. Else pData must be n_free'd.
-	IO::PStream		Stream;
-	void*			pData = nullptr;
-
+	Data::PRAMData	Data;
 	CTextureDesc	Desc;
-	bool			MipDataProvided = false;
+	bool			MipDataProvided = false; // Does Data provide all mips or only a top-level data
 
 	virtual ~CTextureData();
 
-	virtual bool IsResourceValid() const { return pData && Desc.Width; }
+	virtual bool IsResourceValid() const { return Data && Desc.Width; }
 };
 
 typedef Ptr<CTextureData> PTextureData;

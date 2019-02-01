@@ -3,6 +3,7 @@
 #include <Render/TextureData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <Data/RAMData.h>
 
 namespace Resources
 {
@@ -44,17 +45,15 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 		6 * sizeof(float); // AABB
 	if (!Stream->Seek(SkipSize, IO::Seek_Current)) return nullptr;
 
-	void* pHeightData = nullptr;
-	if (Stream->CanBeMapped()) pHeightData = Stream->Map();
-	bool Mapped = !!pHeightData;
-	if (!Mapped)
+	Data::PRAMData HeightData;
+	if (Stream->CanBeMapped()) HeightData.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+	if (!HeightData->GetPtr()) // Not mapped
 	{
-		UPTR DataSize = HFWidth * HFHeight * sizeof(unsigned short);
-		pHeightData = n_malloc(DataSize);
-		if (Stream->Read(pHeightData, DataSize) != DataSize)
+		const UPTR DataSize = HFWidth * HFHeight * sizeof(unsigned short);
+		HeightData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		if (Stream->Read(HeightData->GetPtr(), DataSize) != DataSize)
 		{
-			n_free(pHeightData);
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -69,8 +68,7 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 	TexDesc.Format = Render::PixelFmt_R16;
 
 	Render::PTextureData TexData = n_new(Render::CTextureData);
-	TexData->pData = pHeightData;
-	TexData->Stream = Mapped ? Stream : nullptr;
+	TexData->Data = std::move(HeightData);
 	TexData->MipDataProvided = false;
 	TexData->Desc = std::move(TexDesc);
 

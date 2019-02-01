@@ -3,6 +3,7 @@
 #include <Render/TextureData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
+#include <Data/RAMData.h>
 
 // Supports loading of TrueColor images only. //???support black-and-white too? RLE?
 // Only a required subset is implemented, in accordance with a specification at:
@@ -61,16 +62,16 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	CTGAHeader Header;
-	if (!Reader.Read(Header)) return NULL;
+	if (!Reader.Read(Header)) return nullptr;
 
 	// Only 32-bit TrueColor compressed and uncompressed images are supported for now
-	if (Header.ImageType != 2 && Header.ImageType != 10) return NULL;
+	if (Header.ImageType != 2 && Header.ImageType != 10) return nullptr;
 
 	const bool IsRLECompressed = (Header.ImageType == 10);
 
-	if (!Stream->Seek(26, IO::Seek_End)) return NULL;
+	if (!Stream->Seek(26, IO::Seek_End)) return nullptr;
 	CTGAFooter Footer;
-	if (!Reader.Read(Footer)) return NULL;
+	if (!Reader.Read(Footer)) return nullptr;
 
 	bool HasAlpha;
 	if (!memcmp(Footer.Signature, ReferenceSignature, sizeof(ReferenceSignature) - 1))
@@ -78,10 +79,10 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		// New TGA
 		if (Footer.ExtensionAreaOffset)
 		{
-			if (!Stream->Seek(Footer.ExtensionAreaOffset + 494, IO::Seek_Begin)) return NULL;
+			if (!Stream->Seek(Footer.ExtensionAreaOffset + 494, IO::Seek_Begin)) return nullptr;
 
 			U8 AttributesType;
-			if (!Reader.Read(AttributesType)) return NULL;
+			if (!Reader.Read(AttributesType)) return nullptr;
 
 			HasAlpha = (AttributesType == 3 || AttributesType == 4);
 			//!!!???AttributesType == 4 is a premultiplied alpha. How to handle?
@@ -118,21 +119,20 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		//	TexDesc.Format = greyscale;
 		//	break;
 		default:
-			return NULL;
+			return nullptr;
 	}
 
 	UPTR BytesPerPixel = Header.BitsPerPixel >> 3;
 	n_assert_dbg(BytesPerPixel <= BytesPerTargetPixel);
 
-	if (!Stream->Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return NULL;
+	if (!Stream->Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return nullptr;
 
-	U8* pData = NULL;
-	bool Mapped;
+	Data::PRAMData Data;
 	if (IsRLECompressed)
 	{
-		Mapped = false;
-		UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
-		pData = (U8*)n_malloc(DataSize);
+		const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
+		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		U8* pData = static_cast<U8*>(Data->GetPtr());
 		U8* pCurrPixel = pData;
 		const U8* pDataEnd = pData + DataSize;
 
@@ -140,21 +140,13 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 		while (pCurrPixel < pDataEnd)
 		{
 			U8 ChunkHeader;
-			if (Stream->Read(&ChunkHeader, sizeof(U8)) != sizeof(U8))
-			{
-				n_free(pData);
-				return NULL;
-			}
+			if (Stream->Read(&ChunkHeader, sizeof(U8)) != sizeof(U8)) return nullptr;
 
 			if (ChunkHeader & 0x80)
 			{
 				// RLE
 				U32 PixelValue;
-				if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel)
-				{
-					n_free(pData);
-					return NULL;
-				}
+				if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
 
 				const U8 ChunkPixelCount = ChunkHeader - 127; // (ChunkHeader & 0x7f) + 1
 				if (BytesPerPixel == 4)
@@ -172,8 +164,14 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 					while (pCurrPixel < pChunkEnd)
 					{
 						pCurrPixel[0] = ((U8*)&PixelValue)[0];
-						if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
-						if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
+						if (BytesPerPixel > 1)
+						{
+							pCurrPixel[1] = ((U8*)&PixelValue)[1];
+							if (BytesPerPixel > 2)
+							{
+								pCurrPixel[2] = ((U8*)&PixelValue)[2];
+							}
+						}
 						if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
 						pCurrPixel += BytesPerTargetPixel;
 					}
@@ -186,11 +184,7 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 				if (BytesPerPixel == BytesPerTargetPixel)
 				{
 					const UPTR ChunkSize = BytesPerPixel * ChunkPixelCount;
-					if (Stream->Read(pCurrPixel, ChunkSize) != ChunkSize)
-					{
-						n_free(pData);
-						return NULL;
-					}
+					if (Stream->Read(pCurrPixel, ChunkSize) != ChunkSize) return nullptr;
 					pCurrPixel += ChunkSize;
 				}
 				else
@@ -198,14 +192,16 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 					for (UPTR Curr = 0; Curr < ChunkPixelCount; ++Curr)
 					{
 						U32 PixelValue;
-						if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel)
-						{
-							n_free(pData);
-							return NULL;
-						}
+						if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
 						pCurrPixel[0] = ((U8*)&PixelValue)[0];
-						if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
-						if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
+						if (BytesPerPixel > 1)
+						{
+							pCurrPixel[1] = ((U8*)&PixelValue)[1];
+							if (BytesPerPixel > 2)
+							{
+								pCurrPixel[2] = ((U8*)&PixelValue)[2];
+							}
+						}
 						if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
 						pCurrPixel += BytesPerTargetPixel;
 					}
@@ -215,35 +211,33 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	}
 	else
 	{
-		if (Stream->CanBeMapped()) pData = (U8*)Stream->Map();
-		Mapped = !!pData;
-		if (!Mapped)
+		//???what if mapped but pixel formats don't match?
+		if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+		if (!Data->GetPtr()) // Not mapped
 		{
-			UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
+			const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
 			if (BytesPerPixel == BytesPerTargetPixel)
 			{
-				pData = (U8*)n_malloc(DataSize);
-				if (Stream->Read(pData, DataSize) != DataSize)
-				{
-					n_free(pData);
-					return nullptr;
-				}
+				Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+				if (Stream->Read(Data->GetPtr(), DataSize) != DataSize) return nullptr;
 			}
 			else
 			{
-				U8* pCurrPixel = (U8*)pData;
+				U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
 				UPTR PixelCount = Header.ImageWidth * Header.ImageHeight;
 				for (UPTR Curr = 0; Curr < PixelCount; ++Curr)
 				{
 					U32 PixelValue;
-					if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel)
-					{
-						n_free(pData);
-						return NULL;
-					}
+					if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
 					pCurrPixel[0] = ((U8*)&PixelValue)[0];
-					if (BytesPerPixel > 1) pCurrPixel[1] = ((U8*)&PixelValue)[1];
-					if (BytesPerPixel > 2) pCurrPixel[2] = ((U8*)&PixelValue)[2];
+					if (BytesPerPixel > 1)
+					{
+						pCurrPixel[1] = ((U8*)&PixelValue)[1];
+						if (BytesPerPixel > 2)
+						{
+							pCurrPixel[2] = ((U8*)&PixelValue)[2];
+						}
+					}
 					if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
 					pCurrPixel += BytesPerTargetPixel;
 				}
@@ -252,8 +246,7 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	}
 
 	Render::PTextureData TexData = n_new(Render::CTextureData);
-	TexData->pData = pData;
-	TexData->Stream = Mapped ? Stream : nullptr;
+	TexData->Data = std::move(Data);
 	TexData->MipDataProvided = false;
 	TexData->Desc = std::move(TexDesc);
 
