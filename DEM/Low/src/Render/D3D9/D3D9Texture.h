@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_TEXTURE_H__
-#define __DEM_L1_RENDER_D3D9_TEXTURE_H__
-
 #include <Render/Texture.h>
 
 // D3D9 implementation of VRAM texture
@@ -33,10 +30,7 @@ public:
 	CD3D9Texture(): pD3DTex(NULL) {}
 	virtual ~CD3D9Texture() { InternalDestroy(); }
 
-	bool						Create(IDirect3DBaseTexture9* pTexture);
-	bool						Create(IDirect3DTexture9* pTexture);
-	bool						Create(IDirect3DCubeTexture9* pTexture);
-	bool						Create(IDirect3DVolumeTexture9* pTexture);
+	bool						Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3DBaseTexture9* pTexture);
 	virtual void				Destroy() { InternalDestroy(); }
 
 	virtual bool				IsResourceValid() const { return !!pD3DTex; }
@@ -52,5 +46,3 @@ public:
 typedef Ptr<CD3D9Texture> PD3D9Texture;
 
 }
-
-#endif

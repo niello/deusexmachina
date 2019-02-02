@@ -12,157 +12,49 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9Texture, 'TEX9', Render::CTexture);
 
-bool CD3D9Texture::Create(IDirect3DBaseTexture9* pTexture)
+bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3DBaseTexture9* pTexture)
 {
-	if (!pTexture) FAIL;
+	if (!pTexture || !Data) FAIL;
 
-	bool Result = false;
-	IDirect3DTexture9* pTex = NULL;
-	IDirect3DCubeTexture9* pTexC = NULL;
-	IDirect3DVolumeTexture9* pTexV = NULL;
-	if (SUCCEEDED(pTexture->QueryInterface(IID_IDirect3DTexture9, (void**)&pTex)))
+	switch (Data->Desc.Type)
 	{
-		Result = Create(pTex);
-		pTex->Release();
+		case Texture_1D:
+		case Texture_2D:
+		case Texture_Cube:
+		{
+			D3DFORMAT Fmt = CD3D9DriverFactory::PixelFormatToD3DFormat(TextureData->Desc.Format);
+			const bool IsBlockCompressed = (CD3D9DriverFactory::D3DFormatBlockSize(Fmt) > 1);
+			RowPitch = CalcImageRowPitch(CD3D9DriverFactory::D3DFormatBitsPerPixel(Fmt), TextureData->Desc.Width, IsBlockCompressed);
+			SlicePitch = 0;
+			break;
+		}
+		case Texture_3D:
+		{
+			D3DFORMAT Fmt = CD3D9DriverFactory::PixelFormatToD3DFormat(TextureData->Desc.Format);
+			const bool IsBlockCompressed = (CD3D9DriverFactory::D3DFormatBlockSize(Fmt) > 1);
+			RowPitch = CalcImageRowPitch(CD3D9DriverFactory::D3DFormatBitsPerPixel(Fmt), TextureData->Desc.Width, IsBlockCompressed);
+			SlicePitch = CalcImageSlicePitch(RowPitch, TextureData->Desc.Height, IsBlockCompressed);
+			break;
+		}
 	}
-	else if (SUCCEEDED(pTexture->QueryInterface(IID_IDirect3DCubeTexture9, (void**)&pTexC)))
-	{
-		Result = Create(pTexC);
-		pTexC->Release();
-	}
-	else if (SUCCEEDED(pTexture->QueryInterface(IID_IDirect3DVolumeTexture9, (void**)&pTexV)))
-	{
-		Result = Create(pTexV);
-		pTexV->Release();
-	}
-
-	return Result;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
-{
-	if (!pTexture) FAIL;
-
-	D3DSURFACE_DESC D3DDesc;
-	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
-	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
-
-	CTextureDesc& Desc = TextureData->Desc;
-	Desc.Type = Texture_2D;
-	Desc.Width = D3DDesc.Width;
-	Desc.Height = D3DDesc.Height;
-	Desc.Depth = 1;
-	Desc.MipLevels = pTexture->GetLevelCount();
-	Desc.ArraySize = 1;
-	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
-	Desc.MSAAQuality = MSAA_None;
 
 	Access.ClearAll();
-	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
+	if (Pool == D3DPOOL_SYSTEMMEM || Pool == D3DPOOL_SCRATCH)
 	{
 		Access.Set(Access_CPU_Read | Access_CPU_Write);
 	}
 	else
 	{
 		Access.Set(Access_GPU_Read);
-		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
+		if (Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
 		else Access.Set(Access_GPU_Write);
 	}
 
-	RowPitch = CalcImageRowPitch(
-		CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DDesc.Format),
-		D3DDesc.Width,
-		CD3D9DriverFactory::D3DFormatBlockSize(D3DDesc.Format) > 1);
-	SlicePitch = 0;
-
+	TextureData = Data;
 	pD3DTex = pTexture;
-	D3DUsage = D3DDesc.Usage;
-	D3DPool = D3DDesc.Pool;
-	OK;
-}
-//---------------------------------------------------------------------
+	D3DUsage = Usage;
+	D3DPool = Pool;
 
-bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
-{
-	if (!pTexture) FAIL;
-
-	D3DSURFACE_DESC D3DDesc;
-	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
-	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
-
-	CTextureDesc& Desc = TextureData->Desc;
-	Desc.Type = Texture_Cube;
-	Desc.Width = D3DDesc.Width;
-	Desc.Height = D3DDesc.Height;
-	Desc.Depth = 1;
-	Desc.MipLevels = pTexture->GetLevelCount();
-	Desc.ArraySize = 1;
-	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
-	Desc.MSAAQuality = MSAA_None;
-
-	Access.ClearAll();
-	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
-	{
-		Access.Set(Access_CPU_Read | Access_CPU_Write);
-	}
-	else
-	{
-		Access.Set(Access_GPU_Read);
-		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
-		else Access.Set(Access_GPU_Write);
-	}
-
-	RowPitch = CalcImageRowPitch(
-		CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DDesc.Format),
-		D3DDesc.Width,
-		CD3D9DriverFactory::D3DFormatBlockSize(D3DDesc.Format) > 1);
-	SlicePitch = 0;
-
-	pD3DTex = pTexture;
-	D3DUsage = D3DDesc.Usage;
-	D3DPool = D3DDesc.Pool;
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
-{
-	if (!pTexture) FAIL;
-
-	D3DVOLUME_DESC D3DDesc;
-	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
-	n_verify(SUCCEEDED(pTexture->GetLevelDesc(0, &D3DDesc)));
-
-	CTextureDesc& Desc = TextureData->Desc;
-	Desc.Type = Texture_2D;
-	Desc.Width = D3DDesc.Width;
-	Desc.Height = D3DDesc.Height;
-	Desc.Depth = D3DDesc.Depth;
-	Desc.MipLevels = pTexture->GetLevelCount();
-	Desc.ArraySize = 1;
-	Desc.Format = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDesc.Format);
-	Desc.MSAAQuality = MSAA_None;
-
-	Access.ClearAll();
-	if (D3DDesc.Pool == D3DPOOL_SYSTEMMEM || D3DDesc.Pool == D3DPOOL_SCRATCH)
-	{
-		Access.Set(Access_CPU_Read | Access_CPU_Write);
-	}
-	else
-	{
-		Access.Set(Access_GPU_Read);
-		if (D3DDesc.Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
-		else Access.Set(Access_GPU_Write);
-	}
-
-	bool IsBC = (CD3D9DriverFactory::D3DFormatBlockSize(D3DDesc.Format) > 1);
-	RowPitch = CalcImageRowPitch(CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DDesc.Format), D3DDesc.Width, IsBC);
-	SlicePitch = CalcImageSlicePitch(RowPitch, D3DDesc.Height, IsBC);
-
-	pD3DTex = pTexture;
-	D3DUsage = D3DDesc.Usage;
-	D3DPool = D3DDesc.Pool;
 	OK;
 }
 //---------------------------------------------------------------------

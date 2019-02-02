@@ -2359,9 +2359,10 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 	{
 		UINT Height = (Desc.Type == Texture_1D) ? 1 : Desc.Height;
 		IDirect3DTexture9* pD3DTex = nullptr;
-		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Height, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, nullptr))) return nullptr;
+		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Height, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, nullptr)))
+			return nullptr;
 		
-		if (!Tex->Create(pD3DTex))
+		if (!Tex->Create(Data, Usage, Pool, pD3DTex))
 		{
 			pD3DTex->Release();
 			return nullptr;
@@ -2390,19 +2391,21 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 				else
 				{
 					pD3DTex->Release();
-					return NULL;
+					return nullptr;
 				}
 			}
 		}
 	}
 	else if (Desc.Type == Texture_3D)
 	{
-		IDirect3DVolumeTexture9* pD3DTex = NULL;
-		if (FAILED(pD3DDevice->CreateVolumeTexture(Desc.Width, Desc.Height, Desc.Depth, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
-		if (!Tex->Create(pD3DTex))
+		IDirect3DVolumeTexture9* pD3DTex = nullptr;
+		if (FAILED(pD3DDevice->CreateVolumeTexture(Desc.Width, Desc.Height, Desc.Depth, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, nullptr)))
+			return nullptr;
+
+		if (!Tex->Create(Data, Usage, Pool, pD3DTex))
 		{
 			pD3DTex->Release();
-			return NULL;
+			return nullptr;
 		}
 
 		if (pData)
@@ -2420,18 +2423,20 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 			else
 			{
 				pD3DTex->Release();
-				return NULL;
+				return nullptr;
 			}
 		}
 	}
 	else if (Desc.Type == Texture_Cube)
 	{
-		IDirect3DCubeTexture9* pD3DTex = NULL;
-		if (FAILED(pD3DDevice->CreateCubeTexture(Desc.Width, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
-		if (!Tex->Create(pD3DTex))
+		IDirect3DCubeTexture9* pD3DTex = nullptr;
+		if (FAILED(pD3DDevice->CreateCubeTexture(Desc.Width, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, nullptr)))
+			return nullptr;
+
+		if (!Tex->Create(Data, Usage, Pool, pD3DTex))
 		{
 			pD3DTex->Release();
-			return NULL;
+			return nullptr;
 		}
 
 		if (pData)
@@ -2457,7 +2462,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 				else
 				{
 					pD3DTex->Release();
-					return NULL;
+					return nullptr;
 				}
 			}
 		}
@@ -2465,7 +2470,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 	else
 	{
 		Sys::Error("CD3D9GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
-		return NULL;
+		return nullptr;
 	}
 
 	return Tex.Get();
@@ -2515,10 +2520,10 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	D3DFORMAT RTFmt = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 	D3DMULTISAMPLE_TYPE MSAAType;
 	DWORD MSAAQuality;
-	if (!GetD3DMSAAParams(Desc.MSAAQuality, RTFmt, MSAAType, MSAAQuality)) FAIL;
+	if (!GetD3DMSAAParams(Desc.MSAAQuality, RTFmt, MSAAType, MSAAQuality)) return nullptr;
 
-	IDirect3DSurface9* pSurface = NULL;
-	IDirect3DTexture9* pTexture = NULL;
+	IDirect3DSurface9* pSurface = nullptr;
+	IDirect3DTexture9* pTexture = nullptr;
 
 	// Using RT as a shader input requires a texture. Since MSAA textures are not supported in D3D9,
 	// MSAA RT will be created as a separate surface anyway and then it will be resolved into a texture.
@@ -2536,39 +2541,52 @@ PRenderTarget CD3D9GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 				Mips = Desc.MipLevels; //???or always 0 for D3DUSAGE_AUTOGENMIPMAP?
 			}
 		}
-		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, Mips, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, NULL))) return NULL;
+		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Desc.Height, Mips, Usage, RTFmt, D3DPOOL_DEFAULT, &pTexture, nullptr)))
+			return nullptr;
 	}
 
 	// Initialize RT surface, use texture level 0 when possible, else create separate surface
 
 	HRESULT hr;
 	if (Usage & D3DUSAGE_RENDERTARGET) hr = pTexture->GetSurfaceLevel(0, &pSurface);
-	else hr = pD3DDevice->CreateRenderTarget(Desc.Width, Desc.Height, RTFmt, MSAAType, MSAAQuality, FALSE, &pSurface, NULL);
+	else hr = pD3DDevice->CreateRenderTarget(Desc.Width, Desc.Height, RTFmt, MSAAType, MSAAQuality, FALSE, &pSurface, nullptr);
 
 	if (FAILED(hr))
 	{
 		if (pTexture) pTexture->Release();
-		return NULL;
+		return nullptr;
 	}
 
-	PD3D9Texture Tex = NULL;
+	PD3D9Texture Tex = nullptr;
 	if (pTexture)
 	{
+		PTextureData TexData = n_new(CTextureData);
+
+		CTextureDesc& TexDesc = TexData->Desc;
+		TexDesc.Type = Texture_2D;
+		TexDesc.Width = Desc.Width;
+		TexDesc.Height = Desc.Height;
+		TexDesc.Depth = 1;
+		TexDesc.ArraySize = 1;
+		TexDesc.MipLevels = Desc.MipLevels;
+		TexDesc.MSAAQuality = Desc.MSAAQuality;
+		TexDesc.Format = Desc.Format;
+
 		Tex = n_new(CD3D9Texture);
-		if (!Tex->Create(pTexture))
+		if (!Tex->Create(TexData, Usage, D3DPOOL_DEFAULT, pTexture))
 		{
 			pSurface->Release();
 			pTexture->Release();
-			return NULL;
+			return nullptr;
 		}
 	}
 
 	PD3D9RenderTarget RT = n_new(CD3D9RenderTarget);
 	if (!RT->Create(pSurface, Tex))
 	{
-		Tex = NULL;
+		Tex = nullptr;
 		pSurface->Release();
-		return NULL;
+		return nullptr;
 	}
 	return RT.Get();
 }

@@ -29,6 +29,7 @@ bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlag
 	switch (Data->Desc.Type)
 	{
 		case Texture_2D:
+		case Texture_Cube:
 		{
 			DXGI_FORMAT Fmt = CD3D11DriverFactory::PixelFormatToDXGIFormat(TextureData->Desc.Format);
 			const bool IsBlockCompressed = (CD3D11DriverFactory::DXGIFormatBlockSize(Fmt) > 1);
