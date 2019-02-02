@@ -5,9 +5,7 @@ namespace Render
 {
 __ImplementClassNoFactory(Render::CTextureData, Resources::CResourceObject);
 
-CTextureData::~CTextureData()
-{
-}
-//---------------------------------------------------------------------
+CTextureData::CTextureData() {}
+CTextureData::~CTextureData() {}
 
 }

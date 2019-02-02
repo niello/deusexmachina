@@ -57,7 +57,9 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 		}
 	}
 
-	Render::CTextureDesc TexDesc;
+	Render::PTextureData TexData = n_new(Render::CTextureData);
+
+	Render::CTextureDesc& TexDesc = TexData->Desc;
 	TexDesc.Type = Render::Texture_2D;
 	TexDesc.Width = HFWidth;
 	TexDesc.Height = HFHeight;
@@ -67,10 +69,8 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 	TexDesc.MSAAQuality = Render::MSAA_None;
 	TexDesc.Format = Render::PixelFmt_R16;
 
-	Render::PTextureData TexData = n_new(Render::CTextureData);
 	TexData->Data = std::move(HeightData);
 	TexData->MipDataProvided = false;
-	TexData->Desc = std::move(TexDesc);
 
 	return TexData.Get();
 }

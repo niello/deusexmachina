@@ -914,13 +914,16 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 	memset(&D3DCaps, 0, sizeof(D3DCaps));
 	n_verify(SUCCEEDED(pD3D9->GetDeviceCaps((UINT)CurrAdapterID, D3DDriverType, &D3DCaps)));
 
+	if (D3DCaps.VertexShaderVersion < D3DVS_VERSION(3, 0) || D3DCaps.PixelShaderVersion < D3DPS_VERSION(3, 0))
+	{
+		Sys::Log("CD3D9GPUDriver::CreateD3DDevice() > graphics device doesn't support shader model 3.0\n");
+		FAIL;
+	}
+
 #if DEM_RENDER_DEBUG
 	DWORD BhvFlags = D3DCREATE_FPU_PRESERVE | D3DCREATE_SOFTWARE_VERTEXPROCESSING;
 #else
-	DWORD BhvFlags = D3DCREATE_PUREDEVICE |
-		((D3DCaps.DevCaps & D3DDEVCAPS_HWTRANSFORMANDLIGHT) ?
-		D3DCREATE_HARDWARE_VERTEXPROCESSING :
-		D3DCREATE_SOFTWARE_VERTEXPROCESSING);
+	DWORD BhvFlags = D3DCREATE_PUREDEVICE | D3DCREATE_HARDWARE_VERTEXPROCESSING;
 #endif
 
 	// NB: May fail if can't create requested number of backbuffers.
@@ -936,14 +939,6 @@ bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriv
 	if (FAILED(hr))
 	{
 		Sys::Log("Failed to create Direct3D9 device object, hr = 0x%x!\n", hr);
-		FAIL;
-	}
-
-	if (D3DCaps.VertexShaderVersion < D3DVS_VERSION(3, 0) || D3DCaps.PixelShaderVersion < D3DPS_VERSION(3, 0))
-	{
-		Sys::Log("Graphics device doesn't support shader model 3.0\n");
-		pD3DDevice->Release();
-		pD3DDevice = NULL;
 		FAIL;
 	}
 

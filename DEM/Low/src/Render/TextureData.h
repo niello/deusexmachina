@@ -25,6 +25,7 @@ public:
 	CTextureDesc	Desc;
 	bool			MipDataProvided = false; // Does Data provide all mips or only a top-level data
 
+	CTextureData();
 	virtual ~CTextureData();
 
 	virtual bool IsResourceValid() const { return Data && Desc.Width; }

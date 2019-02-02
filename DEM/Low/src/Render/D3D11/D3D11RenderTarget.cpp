@@ -2,6 +2,7 @@
 
 #include <Render/D3D11/D3D11DriverFactory.h>
 #include <Render/D3D11/D3D11Texture.h>
+#include <Render/TextureData.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
@@ -34,13 +35,13 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 		FAIL;
 	}
 
-	D3D11_TEXTURE2D_DESC TexDesc;
-	pTex->GetDesc(&TexDesc);
-	Desc.Width = TexDesc.Width;
-	Desc.Height = TexDesc.Height;
-	Desc.MSAAQuality = CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality(TexDesc.SampleDesc);
+	D3D11_TEXTURE2D_DESC D3DTexDesc;
+	pTex->GetDesc(&D3DTexDesc);
+	Desc.Width = D3DTexDesc.Width;
+	Desc.Height = D3DTexDesc.Height;
+	Desc.MSAAQuality = CD3D11DriverFactory::D3DMSAAParamsToMSAAQuality(D3DTexDesc.SampleDesc);
 	Desc.UseAsShaderInput = !!pSRV; // (TexDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE) != 0;
-	Desc.MipLevels = TexDesc.MipLevels;
+	Desc.MipLevels = D3DTexDesc.MipLevels;
 	
 	pTexRsrc->Release();
 
@@ -48,8 +49,20 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 
 	if (Desc.UseAsShaderInput)
 	{
+		PTextureData TexData = n_new(CTextureData);
+
+		CTextureDesc& TexDesc = TexData->Desc;
+		TexDesc.Type = Texture_2D;
+		TexDesc.Width = Desc.Width;
+		TexDesc.Height = Desc.Height;
+		TexDesc.Depth = 1;
+		TexDesc.ArraySize = 1;
+		TexDesc.MipLevels = Desc.MipLevels;
+		TexDesc.MSAAQuality = Desc.MSAAQuality;
+		TexDesc.Format = Desc.Format;
+
 		Texture = n_new(CD3D11Texture);
-		if (!Texture->Create(pTex, pSRV))
+		if (!Texture->Create(TexData, D3DTexDesc.Usage, Access_GPU_Read, pTex, pSRV))
 		{
 			pTex->Release();
 			FAIL;

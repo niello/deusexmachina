@@ -197,7 +197,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	Data->Desc.Type = Render::Texture_2D;
 	Data->Desc.Width = (UPTR)buffer_size.d_width;
 	Data->Desc.Height = (UPTR)buffer_size.d_height;
-	Data->Desc.Depth = 0;
+	Data->Desc.Depth = 1;
 	Data->Desc.MipLevels = 1;
 	Data->Desc.ArraySize = 1;
 	Data->Desc.Format = CEGUIPixelFormatToPixelFormat(pixel_format);

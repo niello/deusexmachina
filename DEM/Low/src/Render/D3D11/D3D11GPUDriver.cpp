@@ -2288,7 +2288,7 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		return NULL;
 	}
 
-	if (!Tex->Create(Data, pTexRsrc, pSRV))
+	if (!Tex->Create(Data, Usage, AccessFlags, pTexRsrc, pSRV))
 	{
 		pSRV->Release();
 		pTexRsrc->Release();
