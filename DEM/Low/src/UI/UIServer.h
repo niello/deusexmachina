@@ -34,6 +34,11 @@ namespace Render
 	typedef Ptr<class CShader> PShader;
 }
 
+namespace DEM { namespace Sys
+{
+	typedef Ptr<class COSWindow> POSWindow;
+}}
+
 namespace UI
 {
 typedef Ptr<class CUIWindow> PUIWindow;
@@ -41,19 +46,21 @@ typedef Ptr<class CUIContext> PUIContext;
 
 #define UISrv UI::CUIServer::Instance()
 
+// Service-wide settings
 struct CUISettings
 {
 	Render::PGPUDriver	GPU;
 	CStrID				VertexShaderID;
 	CStrID				PixelShaderRegularID;
 	CStrID				PixelShaderOpaqueID;
-
-	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
-	int					SwapChainID;
-	float				DefaultContextWidth;  // <= 0.f - from back buffer
-	float				DefaultContextHeight; // <= 0.f - from back buffer
-
 	Data::PParams		ResourceGroups;
+};
+
+struct CUIContextSettings
+{
+	DEM::Sys::POSWindow	HostWindow;
+	float				Width;
+	float				Height;
 };
 
 class CUIServer: public Core::CObject
@@ -78,7 +85,7 @@ private:
 
 public:
 
-	CUIServer(const CUISettings& Settings);
+	CUIServer(const CUISettings& Settings, const CUIContextSettings& DefaultContextSettings);
 	~CUIServer();
 	
 	// Internal use, set by config
@@ -89,7 +96,7 @@ public:
 	void			Trigger(float FrameTime);
 
 	PUIContext		GetDefaultContext() const; //???get rid of it with CEGUI 1.0?
-	PUIContext		CreateContext(); //!!!params!
+	PUIContext		CreateContext(const CUIContextSettings& Settings); //!!!params!
 	void			DestroyContext(PUIContext Context); //!!!params!
 	
 	// Event will be disconnected at the beginning of the next GUI update loop.

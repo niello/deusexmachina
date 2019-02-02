@@ -29,7 +29,7 @@ namespace UI
 __ImplementClassNoFactory(UI::CUIServer, Core::CObject);
 __ImplementSingleton(UI::CUIServer);
 
-CUIServer::CUIServer(const CUISettings& Settings)
+CUIServer::CUIServer(const CUISettings& Settings, const CUIContextSettings& DefaultContextSettings)
 {
 	__ConstructSingleton;
 
@@ -38,7 +38,7 @@ CUIServer::CUIServer(const CUISettings& Settings)
 
 	Renderer = &CEGUI::CDEMRenderer::create(
 		*Settings.GPU,
-		Settings.DefaultContextWidth, Settings.DefaultContextHeight,
+		DefaultContextSettings.Width, DefaultContextSettings.Height,
 		Settings.VertexShaderID, Settings.PixelShaderRegularID, Settings.PixelShaderOpaqueID);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
@@ -46,8 +46,9 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = CEGUI::System::getSingletonPtr();
 
+	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
 	DefaultContext = n_new(CUIContext);
-	DefaultContext->Init(&CEGUISystem->getDefaultGUIContext(), Settings.GPU->GetSwapChainWindow(Settings.SwapChainID));
+	DefaultContext->Init(&CEGUISystem->getDefaultGUIContext(), DefaultContextSettings.HostWindow);
 
 	if (Settings.ResourceGroups.IsValidPtr())
 	{
