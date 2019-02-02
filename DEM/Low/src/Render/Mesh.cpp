@@ -1,41 +1,26 @@
 #include "Mesh.h"
-
+#include <Render/MeshData.h>
 #include <Core/Factory.h>
 
 namespace Render
 {
 __ImplementClass(Render::CMesh, 'MESH', Resources::CResourceObject);
 
-bool CMesh::Create(const CMeshInitData& InitData)
+CMesh::CMesh() {}
+
+CMesh::~CMesh()
 {
-	n_assert(!pGroupLODMapping && !pGroups);
+	Destroy();
+}
+//---------------------------------------------------------------------
 
-	if (!InitData.VertexBuffer ||
-		!InitData.SubMeshCount ||
-		!InitData.LODCount ||
-		(InitData.UseMapping && !InitData.RealGroupCount)) FAIL;
+bool CMesh::Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer)
+{
+	if (!VertexBuffer || !Data || !Data->GetSubMeshCount() || !Data->GetLODCount()) FAIL;
 
-	VB = InitData.VertexBuffer;
-	IB = InitData.IndexBuffer;
-
-	SubMeshCount = InitData.SubMeshCount;
-	LODCount = InitData.LODCount;
-
-	UPTR TotalSize;
-	if (InitData.UseMapping)
-	{
-		GroupCount = InitData.RealGroupCount;
-		TotalSize = sizeof(CPrimitiveGroup) * GroupCount + sizeof(CPrimitiveGroup*) * SubMeshCount * LODCount;
-	}
-	else
-	{
-		n_assert(InitData.RealGroupCount == 0 || InitData.RealGroupCount == SubMeshCount * LODCount);
-		GroupCount = SubMeshCount * LODCount;
-		TotalSize = sizeof(CPrimitiveGroup) * GroupCount;
-	}
-	pGroups = (CPrimitiveGroup*)n_malloc(TotalSize);
-	memcpy(pGroups, InitData.pMeshGroupData, TotalSize);
-	if (InitData.UseMapping) pGroupLODMapping = (CPrimitiveGroup**)(pGroups + GroupCount);
+	MeshData = Data;
+	VB = VertexBuffer;
+	IB = IndexBuffer;
 
 	OK;
 }
@@ -43,12 +28,15 @@ bool CMesh::Create(const CMeshInitData& InitData)
 
 void CMesh::Destroy()
 {
-	n_free(pGroups);
-	pGroups = NULL;
-	pGroupLODMapping = NULL;
+	IB = nullptr;
+	VB = nullptr;
+	MeshData = nullptr;
+}
+//---------------------------------------------------------------------
 
-	IB = NULL;
-	VB = NULL;
+const CPrimitiveGroup* CMesh::GetGroup(UPTR SubMeshIdx, UPTR LOD) const
+{
+	return MeshData ? MeshData->GetGroup(SubMeshIdx, LOD) : nullptr;
 }
 //---------------------------------------------------------------------
 

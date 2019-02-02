@@ -187,24 +187,19 @@ PMesh CGPUDriver::GetMesh(CStrID UID)
 	PMeshData MeshData = RMeshData->ValidateObject<CMeshData>();
 
 	//!!!not to keep in RAM! or use refcount
-	//???CTexture holds resource ref if it wants RAM backing?
-	//TexData->UnloadResource();
-
-	Render::PVertexLayout VertexLayout = CreateVertexLayout(&MeshData->VertexFormat.Front(), MeshData->VertexFormat.GetCount());
+	//???CMesh holds resource ref if it wants RAM backing?
+	//MeshData->UnloadResource();
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
-	Render::CMeshInitData InitData;
-	InitData.VertexBuffer = CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->VBData->GetPtr());
+
+	PVertexLayout VertexLayout = CreateVertexLayout(&MeshData->VertexFormat.Front(), MeshData->VertexFormat.GetCount());
+	PVertexBuffer VB = CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->VBData->GetPtr());
+	PIndexBuffer IB;
 	if (MeshData->IndexCount)
-		InitData.IndexBuffer = CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
-	InitData.pMeshGroupData = &MeshData->Groups.Front();
-	InitData.SubMeshCount = MeshData->Groups.GetCount();
-	InitData.LODCount = 1;
-	InitData.RealGroupCount = MeshData->Groups.GetCount();
-	InitData.UseMapping = false;
+		IB = CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
 
 	Mesh = n_new(Render::CMesh);
-	if (!Mesh->Create(InitData)) return nullptr;
+	if (!Mesh->Create(MeshData, VB, IB)) return nullptr;
 
 	Meshes.Add(UID, Mesh);
 

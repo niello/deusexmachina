@@ -223,13 +223,14 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 	MeshData->VertexCount = Header.numVertices;
 	MeshData->IndexCount = Header.numIndices;
 
-	MeshData->Groups.Resize(Header.numGroups);
+	CArray<Render::CPrimitiveGroup> Groups;
+	Groups.Resize(Header.numGroups);
 	for (U32 i = 0; i < Header.numGroups; ++i)
 	{
 		CNVX2Group Group;
 		Reader.Read(Group);
 
-		Render::CPrimitiveGroup& MeshGroup = MeshData->Groups.At(i);
+		Render::CPrimitiveGroup& MeshGroup = Groups.At(i);
 		MeshGroup.FirstVertex = Group.firstVertex;
 		MeshGroup.VertexCount = Group.numVertices;
 		MeshGroup.FirstIndex = Group.firstTriangle * 3;
@@ -249,9 +250,9 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
 	Stream->Read(MeshData->IBData->GetPtr(), DataSize);
 
-	for (UPTR i = 0; i < MeshData->Groups.GetCount(); ++i)
+	for (UPTR i = 0; i < Groups.GetCount(); ++i)
 	{
-		Render::CPrimitiveGroup& MeshGroup = MeshData->Groups[i];
+		Render::CPrimitiveGroup& MeshGroup = Groups[i];
 		MeshGroup.AABB.BeginExtend();
 		U16* pIndex = static_cast<U16*>(MeshData->IBData->GetPtr()) + MeshGroup.FirstIndex;
 		for (U32 j = 0; j < MeshGroup.IndexCount; ++j)
@@ -261,6 +262,8 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 		}
 		MeshGroup.AABB.EndExtend();
 	}
+
+	MeshData->InitGroups(&Groups.Front(), Groups.GetCount(), Groups.GetCount(), 1, false);
 
 	return MeshData;
 }
