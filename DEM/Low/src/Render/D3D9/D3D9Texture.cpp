@@ -16,6 +16,23 @@ bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3D
 {
 	if (!pTexture || !Data) FAIL;
 
+	TextureData = Data;
+	pD3DTex = pTexture;
+	D3DUsage = Usage;
+	D3DPool = Pool;
+
+	Access.ClearAll();
+	if (Pool == D3DPOOL_SYSTEMMEM || Pool == D3DPOOL_SCRATCH)
+	{
+		Access.Set(Access_CPU_Read | Access_CPU_Write);
+	}
+	else
+	{
+		Access.Set(Access_GPU_Read);
+		if (Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
+		else Access.Set(Access_GPU_Write);
+	}
+
 	switch (Data->Desc.Type)
 	{
 		case Texture_1D:
@@ -37,23 +54,6 @@ bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3D
 			break;
 		}
 	}
-
-	Access.ClearAll();
-	if (Pool == D3DPOOL_SYSTEMMEM || Pool == D3DPOOL_SCRATCH)
-	{
-		Access.Set(Access_CPU_Read | Access_CPU_Write);
-	}
-	else
-	{
-		Access.Set(Access_GPU_Read);
-		if (Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
-		else Access.Set(Access_GPU_Write);
-	}
-
-	TextureData = Data;
-	pD3DTex = pTexture;
-	D3DUsage = Usage;
-	D3DPool = Pool;
 
 	OK;
 }

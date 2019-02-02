@@ -316,7 +316,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	Data::PRAMData Data;
 	if (!ConversionRequired && Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
-	if (!Data->GetPtr()) // Not mapped
+	if (!Data || !Data->GetPtr()) // Not mapped
 	{
 		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
 		if (Stream->Read(Data->GetPtr(), DataSize) != DataSize)

@@ -26,6 +26,12 @@ bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlag
 {
 	if (!pTexture || !Data) FAIL;
 
+	TextureData = Data;
+	Access = AccessFlags;
+	pD3DTex = pTexture;
+	pSRView = pSRV;
+	D3DUsage = Usage;
+
 	switch (Data->Desc.Type)
 	{
 		case Texture_2D:
@@ -52,12 +58,6 @@ bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlag
 			break;
 		}
 	}
-
-	TextureData = Data;
-	Access = AccessFlags;
-	pD3DTex = pTexture;
-	pSRView = pSRV;
-	D3DUsage = Usage;
 
 	OK;
 }

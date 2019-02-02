@@ -45,13 +45,13 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 		6 * sizeof(float); // AABB
 	if (!Stream->Seek(SkipSize, IO::Seek_Current)) return nullptr;
 
-	Data::PRAMData HeightData;
-	if (Stream->CanBeMapped()) HeightData.reset(n_new(Data::CRAMDataMappedStream(Stream)));
-	if (!HeightData->GetPtr()) // Not mapped
+	Data::PRAMData Data;
+	if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+	if (!Data || !Data->GetPtr()) // Not mapped
 	{
 		const UPTR DataSize = HFWidth * HFHeight * sizeof(unsigned short);
-		HeightData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
-		if (Stream->Read(HeightData->GetPtr(), DataSize) != DataSize)
+		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		if (Stream->Read(Data->GetPtr(), DataSize) != DataSize)
 		{
 			return nullptr;
 		}
@@ -69,7 +69,7 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 	TexDesc.MSAAQuality = Render::MSAA_None;
 	TexDesc.Format = Render::PixelFmt_R16;
 
-	TexData->Data = std::move(HeightData);
+	TexData->Data = std::move(Data);
 	TexData->MipDataProvided = false;
 
 	return TexData.Get();

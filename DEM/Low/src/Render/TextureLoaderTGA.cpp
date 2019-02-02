@@ -211,36 +211,38 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	}
 	else
 	{
-		//???what if mapped but pixel formats don't match?
-		if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
-		if (!Data->GetPtr()) // Not mapped
+		if (BytesPerPixel == BytesPerTargetPixel)
 		{
-			const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
-			if (BytesPerPixel == BytesPerTargetPixel)
+			// No conversion needed, can use data as is
+			if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+			if (!Data || !Data->GetPtr()) // Not mapped
 			{
+				const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
 				Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
 				if (Stream->Read(Data->GetPtr(), DataSize) != DataSize) return nullptr;
 			}
-			else
+		}
+		else
+		{
+			const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
+			Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+			U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
+			UPTR PixelCount = Header.ImageWidth * Header.ImageHeight;
+			for (UPTR Curr = 0; Curr < PixelCount; ++Curr)
 			{
-				U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
-				UPTR PixelCount = Header.ImageWidth * Header.ImageHeight;
-				for (UPTR Curr = 0; Curr < PixelCount; ++Curr)
+				U32 PixelValue;
+				if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
+				pCurrPixel[0] = ((U8*)&PixelValue)[0];
+				if (BytesPerPixel > 1)
 				{
-					U32 PixelValue;
-					if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
-					pCurrPixel[0] = ((U8*)&PixelValue)[0];
-					if (BytesPerPixel > 1)
+					pCurrPixel[1] = ((U8*)&PixelValue)[1];
+					if (BytesPerPixel > 2)
 					{
-						pCurrPixel[1] = ((U8*)&PixelValue)[1];
-						if (BytesPerPixel > 2)
-						{
-							pCurrPixel[2] = ((U8*)&PixelValue)[2];
-						}
+						pCurrPixel[2] = ((U8*)&PixelValue)[2];
 					}
-					if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
-					pCurrPixel += BytesPerTargetPixel;
 				}
+				if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
+				pCurrPixel += BytesPerTargetPixel;
 			}
 		}
 	}
