@@ -37,7 +37,7 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warnings); //???to settings?
 
 	Renderer = &CEGUI::CDEMRenderer::create(
-		*Settings.GPU, Settings.SwapChainID,
+		*Settings.GPU,
 		Settings.DefaultContextWidth, Settings.DefaultContextHeight,
 		Settings.VertexShaderID, Settings.PixelShaderRegularID, Settings.PixelShaderOpaqueID);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);

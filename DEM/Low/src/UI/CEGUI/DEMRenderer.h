@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_CEGUI_RENDERER_H__
-#define __DEM_L1_CEGUI_RENDERER_H__
-
 #include <Data/RefCounted.h>
 #include <Data/HashTable.h>
 #include <UI/CEGUI/DEMFwd.h>
@@ -59,7 +56,7 @@ protected:
 	// For now it is the only way to know the draw mode in a CDEMGeometryBuffer::draw()
 	bool								OpaqueMode;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -67,7 +64,7 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, int SwapChainID, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
@@ -112,5 +109,3 @@ template<> inline unsigned int Hash<CEGUI::String>(const CEGUI::String& Key)
 	return Hash(Key.c_str(), Key.size());
 }
 //---------------------------------------------------------------------
-
-#endif
