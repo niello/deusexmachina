@@ -1,13 +1,8 @@
 #pragma once
 #include <Resources/ResourceCreator.h>
 
-// A class of generators that procedurally create CMesh objects, along
+// A class of generators that procedurally create CMeshData objects, along
 // with some most commonly used implementations.
-
-namespace Render
-{
-	typedef Ptr<class CGPUDriver> PGPUDriver;
-}
 
 namespace Resources
 {
@@ -16,8 +11,7 @@ class CMeshGenerator: public IResourceCreator
 {
 public:
 
-	Render::PGPUDriver	GPU;
-	bool				FrontClockWise = true;
+	bool FrontClockWise = true;
 
 	CMeshGenerator();
 	virtual ~CMeshGenerator();
@@ -29,9 +23,13 @@ typedef Ptr<CMeshGenerator> PMeshGenerator;
 
 class CMeshGeneratorQuadPatch: public CMeshGenerator
 {
+private:
+
+	UPTR _QuadsPerEdge;
+
 public:
 
-	UPTR QuadsPerEdge;
+	CMeshGeneratorQuadPatch(UPTR QuadsPerEdge) : _QuadsPerEdge(QuadsPerEdge) {}
 
 	virtual PResourceObject CreateResource(CStrID UID) override;
 };

@@ -28,7 +28,7 @@ protected:
 
 	// To maintain cache coherency and reduce number of allocations, these two are essentially one piece of memory,
 	// where pGroups is at Offset = 0 and pGroupLODMapping is at Offset = sizeof(CPrimitiveGroup) * GroupCount
-	// If direct mapping is used, GroupCount = SubMeshCount * LODCount and pGroupLODMapping = NULL
+	// If direct mapping is used, GroupCount = SubMeshCount * LODCount and pGroupLODMapping = nullptr
 	CPrimitiveGroup*					pGroups = nullptr;			// Real submesh data
 	CPrimitiveGroup**					pGroupLODMapping = nullptr;	// CArray2D<CPrimitiveGroup*>[LOD][SubMeshIndex]
 

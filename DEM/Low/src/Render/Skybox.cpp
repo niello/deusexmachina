@@ -39,17 +39,15 @@ IRenderable* CSkybox::Clone()
 
 bool CSkybox::ValidateResources(CGPUDriver* pGPU)
 {
-	Material = pGPU ? pGPU->GetMaterial(MaterialUID) : nullptr;
-
+	//!!!double searching! Here and in GPU->CreateMesh!
 	CStrID MeshUID("#Mesh_Skybox");
-	Resources::PResource RMesh = ResourceMgr->FindResource(MeshUID);
-	if (!RMesh)
+	if (!ResourceMgr->FindResource(MeshUID))
 	{
-		Resources::PMeshGeneratorSkybox GenSkybox = n_new(Resources::CMeshGeneratorSkybox);
-		GenSkybox->GPU = pGPU;
-		RMesh = ResourceMgr->RegisterResource(MeshUID, GenSkybox);
+		ResourceMgr->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorSkybox));
 	}
-	Mesh = RMesh->ValidateObject<CMesh>();
+
+	Material = pGPU ? pGPU->GetMaterial(MaterialUID) : nullptr;
+	Mesh = pGPU ? pGPU->GetMesh(MeshUID) : nullptr;
 
 	OK;
 }
