@@ -14,11 +14,13 @@
 #include <Render/D3D9/D3D9ConstantBuffer.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
+#include <Render/TextureData.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 #include <IO/BinaryReader.h>
 #include <System/Win32/OSWindowWin32.h>
+#include <Data/RAMData.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
@@ -2339,35 +2341,38 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 //---------------------------------------------------------------------
 
 //???how to handle MipDataProvided? lock levels one by one and upload data?
-PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData, bool MipDataProvided)
+PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 {
-	if (!pD3DDevice) return NULL;
+	if (!pD3DDevice || !Data) return nullptr;
 
-	n_assert_dbg(!MipDataProvided || Desc.MipLevels);
+	const CTextureDesc& Desc = Data->Desc;
+	const void* pData = Data->Data ? Data->Data->GetConstPtr() : nullptr;
+
+	n_assert_dbg(!Data->MipDataProvided || Desc.MipLevels);
 
 	PD3D9Texture Tex = n_new(CD3D9Texture);
-	if (Tex.IsNullPtr()) return NULL;
+	if (Tex.IsNullPtr()) return nullptr;
 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Desc.Format);
 
 	DWORD Usage;
 	D3DPOOL Pool;
 	GetUsagePool(AccessFlags, Usage, Pool);
-	if (!MipDataProvided && Desc.MipLevels != 1) Usage |= D3DUSAGE_AUTOGENMIPMAP;
+	if (!Data->MipDataProvided && Desc.MipLevels != 1) Usage |= D3DUSAGE_AUTOGENMIPMAP;
 
 	if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
 	{
 		UINT Height = (Desc.Type == Texture_1D) ? 1 : Desc.Height;
-		IDirect3DTexture9* pD3DTex = NULL;
-		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Height, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, NULL))) return NULL;
+		IDirect3DTexture9* pD3DTex = nullptr;
+		if (FAILED(pD3DDevice->CreateTexture(Desc.Width, Height, Desc.MipLevels, Usage, D3DFormat, Pool, &pD3DTex, nullptr))) return nullptr;
 		
 		if (!Tex->Create(pD3DTex))
 		{
 			pD3DTex->Release();
-			return NULL;
+			return nullptr;
 		}
 
-		UPTR MipsToLoad = MipDataProvided ? Desc.MipLevels : 1;
+		UPTR MipsToLoad = Data->MipDataProvided ? Desc.MipLevels : 1;
 		if (pData)
 		{
 			UPTR BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
@@ -2407,7 +2412,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 
 		if (pData)
 		{
-			if (MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 3D texture mip levels uploading\n");
+			if (Data->MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 3D texture mip levels uploading\n");
 
 			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
 			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)
@@ -2438,7 +2443,7 @@ PTexture CD3D9GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlag
 		{
 			UPTR BlockSize = CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat);
 
-			if (MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 cube texture mip levels uploading\n");
+			if (Data->MipDataProvided) NOT_IMPLEMENTED_MSG("D3D9 cube texture mip levels uploading\n");
 
 			// D3DPOOL_DEFAULT non-D3DUSAGE_DYNAMIC textures can't be locked, but must be
 			// modified by calling IDirect3DDevice9::UpdateTexture (from temporary D3DPOOL_SYSTEMMEM texture)

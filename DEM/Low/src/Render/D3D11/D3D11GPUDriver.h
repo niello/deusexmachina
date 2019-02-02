@@ -205,7 +205,7 @@ public:
 	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) override;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer) override;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;
-	virtual PTexture			CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData = NULL, bool MipDataProvided = false) override;
+	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) override;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) override;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) override;
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) override;

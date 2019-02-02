@@ -4,6 +4,8 @@
 #include <UI/CEGUI/DEMRenderer.h>
 #include <Render/GPUDriver.h>
 #include <Render/Texture.h>
+#include <Render/TextureData.h>
+#include <Data/RAMData.h>
 
 #include <CEGUI/System.h>
 #include <CEGUI/ImageCodec.h>
@@ -89,17 +91,17 @@ void CDEMTexture::setTexture(Render::CTexture* tex)
 
 void CDEMTexture::createEmptyTexture(const Sizef& sz)
 {
-	Render::CTextureDesc Desc;
-	Desc.Type = Render::Texture_2D;
-	Desc.Width = (UPTR)sz.d_width;
-	Desc.Height = (UPTR)sz.d_height;
-	Desc.Depth = 0;
-	Desc.MipLevels = 1;
-	Desc.ArraySize = 1;
-	Desc.Format = Render::PixelFmt_B8G8R8A8;
-	Desc.MSAAQuality = Render::MSAA_None;
+	Render::PTextureData Data = n_new(Render::CTextureData());
+	Data->Desc.Type = Render::Texture_2D;
+	Data->Desc.Width = (UPTR)sz.d_width;
+	Data->Desc.Height = (UPTR)sz.d_height;
+	Data->Desc.Depth = 0;
+	Data->Desc.MipLevels = 1;
+	Data->Desc.ArraySize = 1;
+	Data->Desc.Format = Render::PixelFmt_B8G8R8A8;
+	Data->Desc.MSAAQuality = Render::MSAA_None;
 
-	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write);
+	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, Render::Access_GPU_Read | Render::Access_GPU_Write);
 	n_assert(DEMTexture.IsValidPtr());
 
 	DataSize = sz;
@@ -124,7 +126,8 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 {
 	n_assert(isPixelFormatSupported(pixel_format));
 
-	const void* img_src = buffer;
+	Data::PRAMData Bytes;
+	bool IsCopy;
 
 	// Invert to BGR(A), as DX9 doesn't support RGBA textures
 	if (pixel_format == PF_RGB)
@@ -140,11 +143,14 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 			dest[i * 4 + 3] = 0xFF;
 		}*/
 
-		UPTR W = static_cast<UPTR>(buffer_size.d_width);
-		UPTR H = static_cast<UPTR>(buffer_size.d_height);
-		U8* pImg = n_new_array(U8, W * H * 3);
-		const U8* pSrc = (const U8*)buffer;
-		U8* pDest = pImg;
+		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
+		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
+
+		Bytes.reset(n_new(Data::CRAMDataMallocAligned(W * H * 3, 16)));
+		IsCopy = true;
+			
+		U8* pDest = static_cast<U8*>(Bytes->GetPtr());
+		const U8* pSrc = static_cast<const U8*>(buffer);
 
 		for (UPTR i = 0; i < H; ++i)
 		{
@@ -156,16 +162,17 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 				pSrc += 3;
 			}
 		}
-
-		img_src = pImg;
 	}
 	else if (pixel_format == PF_RGBA)
 	{
-		UPTR W = static_cast<UPTR>(buffer_size.d_width);
-		UPTR H = static_cast<UPTR>(buffer_size.d_height);
-		U32* pImg = n_new_array(U32, W * H);
-		const U32* pSrc = (U32*)buffer;
-		U32* pDest = pImg;
+		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
+		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
+
+		Bytes.reset(n_new(Data::CRAMDataMallocAligned(W * H * 4, 16)));
+		IsCopy = true;
+
+		U32* pDest = static_cast<U32*>(Bytes->GetPtr());
+		const U32* pSrc = static_cast<const U32*>(buffer);
 
 		//!!!__mm_shuffle_epi8
 		for (UPTR i = 0; i < H; ++i)
@@ -177,27 +184,31 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 				*pDest++ = Pixel & 0xFF00FF00 | (Tmp << 16) | (Tmp >> 16);
 			}
 		}
-
-		img_src = pImg;
+	}
+	else
+	{
+		Bytes.reset(n_new(Data::CRAMDataNotOwnedImmutable(buffer)));
+		IsCopy = false;
 	}
 
 	//!!!can reuse texture without recreation if desc is the same and not immutable!
 
-	Render::CTextureDesc Desc;
-	Desc.Type = Render::Texture_2D;
-	Desc.Width = (UPTR)buffer_size.d_width;
-	Desc.Height = (UPTR)buffer_size.d_height;
-	Desc.Depth = 0;
-	Desc.MipLevels = 1;
-	Desc.ArraySize = 1;
-	Desc.Format = CEGUIPixelFormatToPixelFormat(pixel_format);
-	Desc.MSAAQuality = Render::MSAA_None;
+	Render::PTextureData Data = n_new(Render::CTextureData());
+	Data->Desc.Type = Render::Texture_2D;
+	Data->Desc.Width = (UPTR)buffer_size.d_width;
+	Data->Desc.Height = (UPTR)buffer_size.d_height;
+	Data->Desc.Depth = 0;
+	Data->Desc.MipLevels = 1;
+	Data->Desc.ArraySize = 1;
+	Data->Desc.Format = CEGUIPixelFormatToPixelFormat(pixel_format);
+	Data->Desc.MSAAQuality = Render::MSAA_None;
+
+	Data->Data = std::move(Bytes);
+	Data->MipDataProvided = false;
 
 	//???is there any way to know will CEGUI write to texture or not?
 	//can create immutable textures!
-	DEMTexture = Owner.getGPUDriver()->CreateTexture(Desc, Render::Access_GPU_Read | Render::Access_GPU_Write, img_src);
-
-	if (img_src != buffer) n_delete_array(img_src);
+	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, Render::Access_GPU_Read | Render::Access_GPU_Write);
 
 	n_assert(DEMTexture.IsValidPtr());
 

@@ -42,9 +42,9 @@ public:
 	virtual bool				IsResourceValid() const { return !!pD3DTex; }
 
 	IDirect3DBaseTexture9*		GetD3DBaseTexture() const { /*n_assert(!LockCount);*/ return pD3DTex; }
-	IDirect3DTexture9*			GetD3DTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_2D); return (IDirect3DTexture9*)pD3DTex; }
-	IDirect3DCubeTexture9*		GetD3DCubeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_Cube); return (IDirect3DCubeTexture9*)pD3DTex; }
-	IDirect3DVolumeTexture9*	GetD3DVolumeTexture() const { n_assert(/*!LockCount &&*/ Desc.Type == Texture_3D); return (IDirect3DVolumeTexture9*)pD3DTex; }
+	IDirect3DTexture9*			GetD3DTexture() const;
+	IDirect3DCubeTexture9*		GetD3DCubeTexture() const;
+	IDirect3DVolumeTexture9*	GetD3DVolumeTexture() const;
 	UINT						GetD3DUsage() const { return D3DUsage; }
 	D3DPOOL						GetD3DPool() const { return D3DPool; }
 };

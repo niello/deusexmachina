@@ -1,6 +1,7 @@
 #include "D3D11Texture.h"
 
 #include <Render/D3D11/D3D11DriverFactory.h>
+#include <Render/TextureData.h>
 #include <Render/ImageUtils.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
@@ -10,20 +11,22 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11Texture, 'TEX1', Render::CTexture);
 
-bool CD3D11Texture::Create(ID3D11ShaderResourceView* pSRV)
+bool CD3D11Texture::Create(PTextureData Data, ID3D11ShaderResourceView* pSRV)
 {
 	if (!pSRV) FAIL;
 	ID3D11Resource* pTex = NULL;
 	pSRV->GetResource(&pTex);
-	bool Result = Create(pTex, pSRV);
+	bool Result = Create(Data, pTex, pSRV);
 	pTex->Release();
 	return Result;
 }
 //---------------------------------------------------------------------
 
-bool CD3D11Texture::Create(ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV)
+bool CD3D11Texture::Create(PTextureData Data, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV)
 {
-	if (!pTexture) FAIL;
+	if (!pTexture || !Data) FAIL;
+
+	TextureData = Data;
 
 	bool Result = false;
 	ID3D11Texture1D* pTex1D = NULL;
@@ -56,6 +59,7 @@ bool CD3D11Texture::Create(ID3D11Texture1D* pTexture, ID3D11ShaderResourceView* 
 	D3D11_TEXTURE1D_DESC D3DDesc;
 	pTexture->GetDesc(&D3DDesc);
 
+	CTextureDesc& Desc = TextureData->Desc;
 	Desc.Type = Texture_1D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = 1;
@@ -87,6 +91,7 @@ bool CD3D11Texture::Create(ID3D11Texture2D* pTexture, ID3D11ShaderResourceView* 
 	D3D11_TEXTURE2D_DESC D3DDesc;
 	pTexture->GetDesc(&D3DDesc);
 
+	CTextureDesc& Desc = TextureData->Desc;
 	Desc.Type = (D3DDesc.MiscFlags & D3D11_RESOURCE_MISC_TEXTURECUBE) ? Texture_Cube : Texture_2D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
@@ -121,6 +126,7 @@ bool CD3D11Texture::Create(ID3D11Texture3D* pTexture, ID3D11ShaderResourceView* 
 	D3D11_TEXTURE3D_DESC D3DDesc;
 	pTexture->GetDesc(&D3DDesc);
 
+	CTextureDesc& Desc = TextureData->Desc;
 	Desc.Type = Texture_3D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
@@ -150,6 +156,27 @@ void CD3D11Texture::InternalDestroy()
 {
 	SAFE_RELEASE(pSRView);
 	SAFE_RELEASE(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+ID3D11Texture1D* CD3D11Texture::GetD3DTexture1D() const
+{
+	n_assert(TextureData->Desc.Type == Texture_1D);
+	return static_cast<ID3D11Texture1D*>(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+ID3D11Texture2D* CD3D11Texture::GetD3DTexture2D() const
+{
+	n_assert(TextureData->Desc.Type == Texture_2D || TextureData->Desc.Type == Texture_Cube);
+	return static_cast<ID3D11Texture2D*>(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+ID3D11Texture3D* CD3D11Texture::GetD3DTexture3D() const
+{
+	n_assert(TextureData->Desc.Type == Texture_3D);
+	return static_cast<ID3D11Texture3D*>(pD3DTex);
 }
 //---------------------------------------------------------------------
 

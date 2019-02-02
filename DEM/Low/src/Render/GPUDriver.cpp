@@ -14,6 +14,7 @@
 #include <Resources/Resource.h>
 #include <IO/Stream.h>
 #include <Data/Params.h>
+#include <Data/RAMData.h>
 #include <Data/StringUtils.h>
 
 namespace Render
@@ -78,7 +79,7 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 	Resources::PResource RTexData = pResMgr->RegisterResource<CTextureData>(UID);
 	PTextureData TexData = RTexData->ValidateObject<CTextureData>();
-	Texture = CreateTexture(TexData->Desc, AccessFlags, TexData->Data->GetPtr(), TexData->MipDataProvided);
+	Texture = CreateTexture(TexData, AccessFlags);
 
 	//!!!not to keep in RAM! or use refcount
 	//???CTexture holds resource ref if it wants RAM backing?

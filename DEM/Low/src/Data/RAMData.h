@@ -19,9 +19,10 @@ class IRAMData
 {
 public:
 
-	virtual ~IRAMData() = 0;
+	virtual ~IRAMData() {}
 
 	virtual void* GetPtr() = 0;
+	virtual const void* GetConstPtr() const = 0;
 };
 
 class CRAMDataNotOwned : public IRAMData
@@ -37,6 +38,23 @@ public:
 	virtual ~CRAMDataNotOwned() {}
 
 	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
+};
+
+class CRAMDataNotOwnedImmutable : public IRAMData
+{
+private:
+
+	const void* _pData = nullptr;
+
+public:
+
+	CRAMDataNotOwnedImmutable(const void* pData) : _pData(pData) {}
+
+	virtual ~CRAMDataNotOwnedImmutable() {}
+
+	virtual void* GetPtr() override { return nullptr; }
+	virtual const void* GetConstPtr() const override { return _pData; }
 };
 
 class CRAMDataNew : public IRAMData
@@ -52,6 +70,7 @@ public:
 	virtual ~CRAMDataNew() { if (_pData) n_delete_array(_pData); }
 
 	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
 };
 
 class CRAMDataMalloc : public IRAMData
@@ -67,6 +86,7 @@ public:
 	virtual ~CRAMDataMalloc() { if (_pData) n_free(_pData); }
 
 	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
 };
 
 class CRAMDataMallocAligned : public IRAMData
@@ -82,6 +102,7 @@ public:
 	virtual ~CRAMDataMallocAligned() { if (_pData) n_free_aligned(_pData); }
 
 	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
 };
 
 class CRAMDataMappedStream : public IRAMData
@@ -98,6 +119,7 @@ public:
 	virtual ~CRAMDataMappedStream();
 
 	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
 };
 
 }

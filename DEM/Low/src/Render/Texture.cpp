@@ -1,12 +1,22 @@
 #include "Texture.h"
+#include <Render/TextureData.h>
 
 namespace Render
 {
 __ImplementClassNoFactory(Render::CTexture, Core::CObject);
 
+CTexture::CTexture() {}
+CTexture::~CTexture() {}
+
+const CTextureDesc&	CTexture::GetDesc() const
+{
+	return TextureData->Desc;
+}
+//---------------------------------------------------------------------
+
 UPTR CTexture::GetDimensionCount() const
 {
-	switch (Desc.Type)
+	switch (TextureData->Desc.Type)
 	{
 		case Texture_1D:	return 1;
 		case Texture_2D:
@@ -19,6 +29,8 @@ UPTR CTexture::GetDimensionCount() const
 
 UPTR CTexture::GetPixelCount(bool IncludeSubsequentMips) const
 {
+	const CTextureDesc& Desc = GetDesc();
+
 	UPTR BaseCount;
 	switch (Desc.Type)
 	{

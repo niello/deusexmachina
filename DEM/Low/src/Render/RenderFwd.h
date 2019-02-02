@@ -43,8 +43,10 @@ typedef Ptr<class CShaderLibrary> PShaderLibrary;
 typedef Ptr<class CEffect> PEffect;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
 typedef Ptr<class CTexture> PTexture;
+typedef Ptr<class CTextureData> PTextureData;
 typedef Ptr<class CSampler> PSampler;
 typedef Ptr<class CMesh> PMesh;
+typedef Ptr<class CMeshData> PMeshData;
 typedef Ptr<class CMaterial> PMaterial;
 
 const UPTR Adapter_AutoSelect = (UPTR)-2;
@@ -317,6 +319,18 @@ struct CImageData
 	char*	pData;			// Data sequentially placed in memory
 	UPTR	RowPitch;		// Distance in bytes between first bytes of two rows (undefined for 1D)
 	UPTR	SlicePitch;		// Distance in bytes between first bytes of two depth slices (undefined for 1D & 2D)
+};
+
+struct CTextureDesc
+{
+	ETextureType	Type;
+	UPTR			Width;
+	UPTR			Height;
+	UPTR			Depth;
+	UPTR			MipLevels;
+	UPTR			ArraySize;
+	EPixelFormat	Format;
+	EMSAAQuality	MSAAQuality; //???move to render state & depth-stencil descs only?
 };
 
 struct CRenderTargetDesc

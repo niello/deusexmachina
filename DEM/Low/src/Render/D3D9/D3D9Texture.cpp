@@ -1,6 +1,7 @@
 #include "D3D9Texture.h"
 
 #include <Render/D3D9/D3D9DriverFactory.h>
+#include <Render/TextureData.h>
 #include <Render/ImageUtils.h>
 #include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
@@ -47,6 +48,7 @@ bool CD3D9Texture::Create(IDirect3DTexture9* pTexture)
 	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
 	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
 
+	CTextureDesc& Desc = TextureData->Desc;
 	Desc.Type = Texture_2D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
@@ -89,6 +91,7 @@ bool CD3D9Texture::Create(IDirect3DCubeTexture9* pTexture)
 	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
 	if (FAILED(pTexture->GetLevelDesc(0, &D3DDesc))) FAIL;
 
+	CTextureDesc& Desc = TextureData->Desc;
 	Desc.Type = Texture_Cube;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
@@ -131,6 +134,7 @@ bool CD3D9Texture::Create(IDirect3DVolumeTexture9* pTexture)
 	ZeroMemory(&D3DDesc, sizeof(D3DDesc));
 	n_verify(SUCCEEDED(pTexture->GetLevelDesc(0, &D3DDesc)));
 
+	CTextureDesc& Desc = TextureData->Desc;
 	Desc.Type = Texture_2D;
 	Desc.Width = D3DDesc.Width;
 	Desc.Height = D3DDesc.Height;
@@ -167,6 +171,27 @@ void CD3D9Texture::InternalDestroy()
 {
 //	n_assert(!LockCount);
 	SAFE_RELEASE(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+IDirect3DTexture9* CD3D9Texture::GetD3DTexture() const
+{
+	n_assert(/*!LockCount &&*/ TextureData->Desc.Type == Texture_2D);
+	return static_cast<IDirect3DTexture9*>(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+IDirect3DCubeTexture9* CD3D9Texture::GetD3DCubeTexture() const
+{
+	n_assert(/*!LockCount &&*/ TextureData->Desc.Type == Texture_Cube);
+	return static_cast<IDirect3DCubeTexture9*>(pD3DTex);
+}
+//---------------------------------------------------------------------
+
+IDirect3DVolumeTexture9* CD3D9Texture::GetD3DVolumeTexture() const
+{
+	n_assert(/*!LockCount &&*/ TextureData->Desc.Type == Texture_3D);
+	return static_cast<IDirect3DVolumeTexture9*>(pD3DTex);
 }
 //---------------------------------------------------------------------
 

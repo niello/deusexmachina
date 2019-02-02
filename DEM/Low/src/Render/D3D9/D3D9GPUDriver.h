@@ -176,7 +176,7 @@ public:
 	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL);
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer);
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);
-	virtual PTexture			CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData = NULL, bool MipDataProvided = false);
+	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc);

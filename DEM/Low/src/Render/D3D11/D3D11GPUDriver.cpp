@@ -15,10 +15,12 @@
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <Render/ShaderLibrary.h>
+#include <Render/TextureData.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <IO/BinaryReader.h>
+#include <Data/RAMData.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
@@ -2056,28 +2058,31 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCB
 }
 //---------------------------------------------------------------------
 
-// pData - initial data to be uploaded to a texture.
-// if MipDataProvided, order is ArrayElement[0] { Mip[0] ... Mip[N] } ... ArrayElement[M] { Mip[0] ... Mip[N] },
+// if Data->MipDataProvided, order is ArrayElement[0] { Mip[0] ... Mip[N] } ... ArrayElement[M] { Mip[0] ... Mip[N] },
 // else order is ArrayElement[0] { Mip[0] } ... ArrayElement[M] { Mip[0] }, where Mip[0] is an original data.
-PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFlags, const void* pData, bool MipDataProvided)
+PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 {
-	if (!pD3DDevice || !Desc.Width || !Desc.Height) return NULL;
-	
+	if (!pD3DDevice || !Data || !Data->Desc.Width || !Data->Desc.Height) return nullptr;
+
+	const CTextureDesc& Desc = Data->Desc;
+
 	if (Desc.Type != Texture_1D && Desc.Type != Texture_2D && Desc.Type != Texture_Cube && Desc.Type != Texture_3D)
 	{
 		Sys::Error("CD3D11GPUDriver::CreateTexture() > Unknown texture type %d\n", Desc.Type);
-		return NULL;
+		return nullptr;
 	}
 
 	PD3D11Texture Tex = n_new(CD3D11Texture);
-	if (Tex.IsNullPtr()) return NULL;
+	if (Tex.IsNullPtr()) return nullptr;
 
+	const void* pData = Data->Data ? Data->Data->GetConstPtr() : nullptr;
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
 	UPTR QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
 	{
-		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DXGIFormat, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
-		pData = NULL; // MSAA resources can't be initialized with data
+		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DXGIFormat, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount)
+			return nullptr;
+		pData = nullptr; // MSAA resources can't be initialized with data
 	}
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
@@ -2090,7 +2095,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 	UPTR BindFlags = (Usage != D3D11_USAGE_STAGING) ? D3D11_BIND_SHADER_RESOURCE : 0;
 
 	// Dynamic SRV: The resource can only be created with a single subresource.
-	// The resource cannot be a texture array. The resource cannot be a mipmap chain (c) Docs
+	// The resource cannot be a texture array. The resource cannot be a mipmap chain. (c) Docs
 	if (Usage == D3D11_USAGE_DYNAMIC && (MipLevels != 1 || ArraySize != 1))
 	{
 #ifdef _DEBUG
@@ -2100,7 +2105,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		ArraySize = 1;
 	}
 
-	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA* pInitData = nullptr;
 	if (pData)
 	{
 		UPTR BlockSize = CD3D11DriverFactory::DXGIFormatBlockSize(DXGIFormat);
@@ -2148,7 +2153,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		// Order is ArrayElement[0] { Mip[1] ... Mip[N] } ... ArrayElement[M] { Mip[1] ... Mip[N] }.
 		// Most detailed data Mip[0] is not copied to this buffer. Can also generate mips async in loader.
 		char* pGeneratedMips = NULL;
-		if (!MipDataProvided && MipLevels > 1)
+		if (!Data->MipDataProvided && MipLevels > 1)
 		{
 			NOT_IMPLEMENTED;
 			//!!!generate mips by DirectXTex code or smth like that!
@@ -2158,7 +2163,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 #endif
 		}
 
-		pInitData = (D3D11_SUBRESOURCE_DATA*)_malloca(MipLevels * ArraySize * sizeof(D3D11_SUBRESOURCE_DATA));
+		pInitData = n_new_array(D3D11_SUBRESOURCE_DATA, MipLevels * ArraySize);
 		D3D11_SUBRESOURCE_DATA* pCurrInitData = pInitData;
 		U8* pCurrData = (U8*)pData;
 		for (UPTR Elm = 0; Elm < ArraySize; ++Elm)
@@ -2171,7 +2176,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 
 			for (UPTR Mip = 1; Mip < MipLevels; ++Mip)
 			{
-				if (MipDataProvided)
+				if (Data->MipDataProvided)
 				{
 					pCurrInitData->pSysMem = pCurrData;
 					pCurrInitData->SysMemPitch = Pitch[Mip];
@@ -2189,7 +2194,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 				}
 				else
 				{
-					pCurrInitData->pSysMem = NULL;
+					pCurrInitData->pSysMem = nullptr;
 					pCurrInitData->SysMemPitch = 0;
 					pCurrInitData->SysMemSlicePitch = 0;
 					++pCurrInitData;
@@ -2213,7 +2218,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 
 		ID3D11Texture1D* pD3DTex = NULL;
 		HRESULT hr = pD3DDevice->CreateTexture1D(&D3DDesc, pInitData, &pD3DTex);
-		if (pInitData) _freea(pInitData);
+		SAFE_DELETE_ARRAY(pInitData);
 		if (FAILED(hr)) return NULL;
 		pTexRsrc = pD3DTex;
 	}
@@ -2246,7 +2251,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 
 		ID3D11Texture2D* pD3DTex = NULL;
 		HRESULT hr = pD3DDevice->CreateTexture2D(&D3DDesc, pInitData, &pD3DTex);
-		if (pInitData) _freea(pInitData);
+		SAFE_DELETE_ARRAY(pInitData);
 		if (FAILED(hr)) return NULL;
 		pTexRsrc = pD3DTex;
 	}
@@ -2263,11 +2268,16 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		D3DDesc.CPUAccessFlags = CPUAccess;	
 		D3DDesc.MiscFlags = MiscFlags;
 
-		ID3D11Texture3D* pD3DTex = NULL;
+		ID3D11Texture3D* pD3DTex = nullptr;
 		HRESULT hr = pD3DDevice->CreateTexture3D(&D3DDesc, pInitData, &pD3DTex);
-		if (pInitData) _freea(pInitData);
-		if (FAILED(hr)) return NULL;
+		SAFE_DELETE_ARRAY(pInitData);
+		if (FAILED(hr)) return nullptr;
 		pTexRsrc = pD3DTex;
+	}
+	else
+	{
+		SAFE_DELETE_ARRAY(pInitData);
+		return nullptr;
 	}
 
 	ID3D11ShaderResourceView* pSRV = NULL;
@@ -2278,7 +2288,7 @@ PTexture CD3D11GPUDriver::CreateTexture(const CTextureDesc& Desc, UPTR AccessFla
 		return NULL;
 	}
 
-	if (!Tex->Create(pTexRsrc, pSRV))
+	if (!Tex->Create(Data, pTexRsrc, pSRV))
 	{
 		pSRV->Release();
 		pTexRsrc->Release();

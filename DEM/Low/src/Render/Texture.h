@@ -3,22 +3,10 @@
 #include <Render/RenderFwd.h>
 #include <Data/Flags.h>
 
-// Texture resource object that may be stored in VRAM and used for rendering
+// Texture GPU resource object that may be stored in VRAM and used for rendering
 
 namespace Render
 {
-
-struct CTextureDesc
-{
-	ETextureType	Type;
-	UPTR			Width;
-	UPTR			Height;
-	UPTR			Depth;
-	UPTR			MipLevels;
-	UPTR			ArraySize;
-	EPixelFormat	Format;
-	EMSAAQuality	MSAAQuality; //???move to render state & depth-stencil descs only?
-};
 
 class CTexture: public Core::CObject
 {
@@ -26,7 +14,7 @@ class CTexture: public Core::CObject
 
 protected:
 
-	CTextureDesc	Desc;
+	PTextureData	TextureData;
 	Data::CFlags	Access;
 	UPTR			RowPitch;
 	UPTR			SlicePitch;
@@ -35,12 +23,13 @@ protected:
 
 public:
 
-	//virtual ~CTexture() {}
+	CTexture();
+	virtual ~CTexture();
 
 	virtual void		Destroy() = 0;
 
 	UPTR				GetPixelCount(bool IncludeSubsequentMips) const;
-	const CTextureDesc&	GetDesc() const { return Desc; }
+	const CTextureDesc&	GetDesc() const;
 	Data::CFlags		GetAccess() const { return Access; }
 	UPTR				GetDimensionCount() const;
 	UPTR				GetRowPitch() const { return RowPitch; }
