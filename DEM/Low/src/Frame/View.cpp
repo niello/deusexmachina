@@ -215,13 +215,14 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 
 bool CView::Render()
 {
+	if (!RenderPath) FAIL;
+
 	VisibilityCache.Clear();
 	LightCache.Clear();
 	EnvironmentCache.Clear();
 	VisibilityCacheDirty = true;
-	if (!GPU->BeginFrame() || !RenderPath->Render(*this)) FAIL;
-	GPU->EndFrame();
-	OK;
+
+	return RenderPath->Render(*this);
 }
 //---------------------------------------------------------------------
 
