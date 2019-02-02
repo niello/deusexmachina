@@ -12,7 +12,7 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9Texture, 'TEX9', Render::CTexture);
 
-bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3DBaseTexture9* pTexture)
+bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3DBaseTexture9* pTexture, bool HoldRAMCopy)
 {
 	if (!pTexture || !Data) FAIL;
 
@@ -32,6 +32,9 @@ bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3D
 		if (Usage & D3DUSAGE_DYNAMIC) Access.Set(Access_CPU_Write);
 		else Access.Set(Access_GPU_Write);
 	}
+
+	HoldRAMBackingData = HoldRAMCopy;
+	if (HoldRAMCopy) n_verify(TextureData->UseRAMData());
 
 	switch (Data->Desc.Type)
 	{

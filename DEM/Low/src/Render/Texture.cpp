@@ -6,7 +6,19 @@ namespace Render
 __ImplementClassNoFactory(Render::CTexture, Core::CObject);
 
 CTexture::CTexture() {}
-CTexture::~CTexture() {}
+
+CTexture::~CTexture()
+{
+	InternalDestroy();
+}
+//---------------------------------------------------------------------
+
+void CTexture::InternalDestroy()
+{
+	if (HoldRAMBackingData) TextureData->ReleaseRAMData();
+	TextureData = nullptr;
+}
+//---------------------------------------------------------------------
 
 const CTextureDesc&	CTexture::GetDesc() const
 {

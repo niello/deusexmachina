@@ -19,6 +19,10 @@ class CTextureData: public Resources::CResourceObject
 {
 	__DeclareClassNoFactory;
 
+private:
+
+	UPTR			RAMDataUseCounter = 0;
+
 public:
 
 	Data::PRAMData	Data;
@@ -28,7 +32,11 @@ public:
 	CTextureData();
 	virtual ~CTextureData();
 
-	virtual bool IsResourceValid() const { return Data && Desc.Width; }
+	virtual bool	IsResourceValid() const { return Data && Desc.Width; }
+
+	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
+	bool			UseRAMData();
+	void			ReleaseRAMData();
 };
 
 typedef Ptr<CTextureData> PTextureData;

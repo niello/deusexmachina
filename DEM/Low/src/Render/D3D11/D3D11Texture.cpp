@@ -11,19 +11,25 @@ namespace Render
 {
 __ImplementClass(Render::CD3D11Texture, 'TEX1', Render::CTexture);
 
-bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV)
+bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy)
 {
 	if (!pSRV) FAIL;
 	ID3D11Resource* pTex = NULL;
 	pSRV->GetResource(&pTex);
-	const bool Result = Create(Data, Usage, AccessFlags, pTex, pSRV);
+	const bool Result = Create(Data, Usage, AccessFlags, pTex, pSRV, HoldRAMCopy);
 	pTex->Release();
 	return Result;
 }
 //---------------------------------------------------------------------
 
-bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV)
+bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy)
 {
+	if (TextureData)
+	{
+		Sys::Error("CD3D11Texture::Create() > already created\n");
+		FAIL;
+	}
+
 	if (!pTexture || !Data) FAIL;
 
 	TextureData = Data;
@@ -31,6 +37,9 @@ bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlag
 	pD3DTex = pTexture;
 	pSRView = pSRV;
 	D3DUsage = Usage;
+
+	HoldRAMBackingData = HoldRAMCopy;
+	if (HoldRAMCopy) n_verify(TextureData->UseRAMData());
 
 	switch (Data->Desc.Type)
 	{

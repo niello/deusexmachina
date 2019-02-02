@@ -18,15 +18,17 @@ protected:
 	Data::CFlags	Access;
 	UPTR			RowPitch;
 	UPTR			SlicePitch;
-
 	//UPTR			LockCount;
+	bool			HoldRAMBackingData = false;
+
+	void InternalDestroy();
 
 public:
 
 	CTexture();
 	virtual ~CTexture();
 
-	virtual void		Destroy() = 0;
+	virtual void		Destroy() { InternalDestroy(); }
 
 	UPTR				GetPixelCount(bool IncludeSubsequentMips) const;
 	const CTextureDesc&	GetDesc() const;

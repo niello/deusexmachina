@@ -99,7 +99,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	InitData.UseMapping = false;
 
 	Render::PMesh Patch = n_new(Render::CMesh);
-	if (!Patch->Create(InitData)) return NULL;
+	if (!Patch->Create(InitData, VB, IB)) return NULL;
 	return Patch.Get();
 }
 //---------------------------------------------------------------------

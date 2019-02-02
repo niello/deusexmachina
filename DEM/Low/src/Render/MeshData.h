@@ -36,6 +36,8 @@ protected:
 	UPTR								_LODCount = 0;
 	UPTR								_GroupCount = 0;
 
+	UPTR								RAMDataUseCounter = 0;
+
 public:
 
 	Data::PRAMData						VBData;
@@ -55,6 +57,10 @@ public:
 	const CPrimitiveGroup*	GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
 	UPTR					GetSubMeshCount() const { return _SubMeshCount; }
 	UPTR					GetLODCount() const { return _LODCount; }
+
+	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
+	bool					UseRAMData();
+	void					ReleaseRAMData();
 };
 
 typedef Ptr<CMeshData> PMeshData;

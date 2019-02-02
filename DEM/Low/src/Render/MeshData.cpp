@@ -44,4 +44,23 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 }
 //---------------------------------------------------------------------
 
+bool CMeshData::UseRAMData()
+{
+	if (!VBData) FAIL;
+	++RAMDataUseCounter;
+	OK;
+}
+//---------------------------------------------------------------------
+
+void CMeshData::ReleaseRAMData()
+{
+	--RAMDataUseCounter;
+	if (!RAMDataUseCounter)
+	{
+		VBData.reset();
+		IBData.reset();
+	}
+}
+//---------------------------------------------------------------------
+
 }

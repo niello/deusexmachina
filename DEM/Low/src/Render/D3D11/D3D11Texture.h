@@ -28,11 +28,10 @@ protected:
 public:
 
 	CD3D11Texture() {}
-	virtual ~CD3D11Texture() { InternalDestroy(); }
+	virtual ~CD3D11Texture() { InternalDestroy(); CTexture::Destroy(); }
 
-	//???assert destroyed?
-	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV); 
-	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV);
+	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy = false); 
+	bool						Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11Resource* pTexture, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy = false);
 	virtual void				Destroy() { InternalDestroy(); }
 
 	virtual bool				IsResourceValid() const { return !!pD3DTex; }
