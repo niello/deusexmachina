@@ -24,12 +24,14 @@ protected:
 	//UPTR VBOffset;
 	//UPTR IBOffset;
 
+	bool HoldRAMBackingData = false;
+
 public:
 
 	CMesh();
 	virtual ~CMesh();
 
-	bool					Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer);
+	bool					Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy = false);
 	void					Destroy();
 
 	virtual bool			IsResourceValid() const { return !!VB; }

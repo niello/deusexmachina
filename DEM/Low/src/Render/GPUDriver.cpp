@@ -79,11 +79,12 @@ PTexture CGPUDriver::GetTexture(CStrID UID, UPTR AccessFlags)
 
 	Resources::PResource RTexData = pResMgr->RegisterResource<CTextureData>(UID);
 	PTextureData TexData = RTexData->ValidateObject<CTextureData>();
+
+	if (!TexData->UseRAMData()) return nullptr;
+
 	Texture = CreateTexture(TexData, AccessFlags);
 
-	//!!!not to keep in RAM! or use refcount
-	//???CTexture holds resource ref if it wants RAM backing?
-	//TexData->UnloadResource();
+	TexData->ReleaseRAMData();
 
 	if (Texture) Textures.Add(UID, Texture);
 
@@ -186,9 +187,7 @@ PMesh CGPUDriver::GetMesh(CStrID UID)
 	Resources::PResource RMeshData = pResMgr->RegisterResource<CMeshData>(UID);
 	PMeshData MeshData = RMeshData->ValidateObject<CMeshData>();
 
-	//!!!not to keep in RAM! or use refcount
-	//???CMesh holds resource ref if it wants RAM backing?
-	//MeshData->UnloadResource();
+	if (!MeshData->UseRAMData()) return nullptr;
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 
@@ -199,7 +198,11 @@ PMesh CGPUDriver::GetMesh(CStrID UID)
 		IB = CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
 
 	Mesh = n_new(Render::CMesh);
-	if (!Mesh->Create(MeshData, VB, IB)) return nullptr;
+	bool Result = Mesh->Create(MeshData, VB, IB);
+
+	MeshData->ReleaseRAMData();
+
+	if (!Result) return nullptr;
 
 	Meshes.Add(UID, Mesh);
 

@@ -14,13 +14,16 @@ CMesh::~CMesh()
 }
 //---------------------------------------------------------------------
 
-bool CMesh::Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer)
+bool CMesh::Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer IndexBuffer, bool HoldRAMCopy)
 {
 	if (!VertexBuffer || !Data || !Data->GetSubMeshCount() || !Data->GetLODCount()) FAIL;
 
 	MeshData = Data;
 	VB = VertexBuffer;
 	IB = IndexBuffer;
+
+	HoldRAMBackingData = HoldRAMCopy;
+	if (HoldRAMCopy) n_verify(MeshData->UseRAMData());
 
 	OK;
 }
@@ -30,6 +33,7 @@ void CMesh::Destroy()
 {
 	IB = nullptr;
 	VB = nullptr;
+	if (HoldRAMBackingData) MeshData->ReleaseRAMData();
 	MeshData = nullptr;
 }
 //---------------------------------------------------------------------
