@@ -46,6 +46,16 @@ namespace Input
 	class CInputTranslator;
 }
 
+namespace UI
+{
+	class CUIServer;
+}
+
+namespace Frame
+{
+	typedef std::unique_ptr<class CView> PView;
+}
+
 namespace DEM
 {
 namespace Sys
@@ -72,6 +82,7 @@ protected:
 
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 	std::unique_ptr<Resources::CResourceManager> ResMgr;
+	//std::unique_ptr<UI::CUIServer> UIServer;
 
 	Data::PParams GlobalSettings;
 	Data::PParams OverrideSettings; // From a command line
@@ -96,6 +107,7 @@ public:
 	Sys::IPlatform&	GetPlatform() const { return Platform; }
 
 	IO::CIOServer&	IO() const;
+	//UI::CUIServer&	UI() const;
 	Resources::CResourceManager& ResourceManager() const;
 
 	// enum profiles - fill array of IDs
@@ -126,7 +138,8 @@ public:
 	void			ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
-	int				CreateRenderWindow(Render::CGPUDriver* pGPU, U32 Width, U32 Height);
+	Frame::PView	CreateFrameView(U32 Width, U32 Height, Render::CGPUDriver& GPU, CStrID RenderPathID, bool WithGUI);
+	int				CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
 	//POSConsoleWindow CreateConsoleWindow();
 };
 

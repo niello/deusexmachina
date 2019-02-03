@@ -20,6 +20,9 @@ CUIContext::~CUIContext()
 
 void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
 {
+	UNSUBSCRIBE_EVENT(OnToggleFullscreen);
+	UNSUBSCRIBE_EVENT(OnSizeChanged);
+
 	OSWindow = pHostWindow;
 	pCtx = pContext;
 	if (pCtx) pCtx->setMouseClickEventGenerationEnabled(true);

@@ -6,10 +6,14 @@
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
 #include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Math/Math.h>
 #include <System/Platform.h>
 #include <System/OSWindow.h>
+#include <Frame/View.h>
+#include <Frame/RenderPath.h>
 #include <Render/SwapChain.h>
+#include <Render/RenderTarget.h>
 #include <Render/GPUDriver.h>
 #include <Data/ParamsUtils.h>
 #include <Input/InputTranslator.h>
@@ -86,6 +90,12 @@ IO::CIOServer& CApplication::IO() const
 {
 	return *IOServer;
 }
+//---------------------------------------------------------------------
+
+//UI::CUIServer& CApplication::UI() const
+//{
+//	return *UIServer;
+//}
 //---------------------------------------------------------------------
 
 Resources::CResourceManager& CApplication::ResourceManager() const
@@ -319,8 +329,41 @@ const CString& CApplication::GetStringSetting(const char* pKey, const CString& D
 }
 //---------------------------------------------------------------------
 
+Frame::PView CApplication::CreateFrameView(U32 Width, U32 Height, Render::CGPUDriver& GPU, CStrID RenderPathID, bool WithGUI)
+{
+	const int SwapChainID = CreateRenderWindow(GPU, Width, Height);
+	if (SwapChainID < 0) return nullptr;
+
+	//DEM::Sys::POSWindow SwapChainWindow = GPU.GetSwapChainWindow(SwapChainID);
+	Render::PRenderTarget SwapChainRT = GPU.GetSwapChainRenderTarget(SwapChainID);
+
+	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(RenderPathID);
+
+	Frame::PView View(n_new(Frame::CView));
+	View->GPU = &GPU;
+	View->SetRenderPath(RRP->ValidateObject<Frame::CRenderPath>());
+	if (View->RTs.GetCount())
+	{
+		View->RTs[0] = SwapChainRT;
+
+		// It is boring to always have one color
+		View->GetRenderPath()->SetRenderTargetClearColor(0, vector4(Math::RandomFloat(), Math::RandomFloat(), Math::RandomFloat(), 1.f));
+	}
+
+	if (WithGUI)
+	{
+		NOT_IMPLEMENTED;
+		// New CEGUI context must be created
+		// Current CEGUI architecture is suited bad for this,
+		// so now you must set UI context in the calling code
+	}
+
+	return View;
+}
+//---------------------------------------------------------------------
+
 // Creates a GUI window most suitable for 3D scene rendering, based on app & profile settings
-int CApplication::CreateRenderWindow(Render::CGPUDriver* pGPU, U32 Width, U32 Height)
+int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height)
 {
 	auto Wnd = Platform.CreateGUIWindow();
 	Wnd->SetRect(Data::CRect(50, 50, Width, Height));
@@ -338,8 +381,8 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver* pGPU, U32 Width, U32 He
 	SCDesc.SwapMode = Render::SwapMode_CopyDiscard;
 	SCDesc.Flags = Render::SwapChain_AutoAdjustSize | Render::SwapChain_VSync;
 
-	int SwapChainID = pGPU->CreateSwapChain(BBDesc, SCDesc, Wnd);
-	n_assert(pGPU->SwapChainExists(SwapChainID));
+	const int SwapChainID = GPU.CreateSwapChain(BBDesc, SCDesc, Wnd);
+	n_assert(GPU.SwapChainExists(SwapChainID));
 	return SwapChainID;
 }
 //---------------------------------------------------------------------

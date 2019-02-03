@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_VIEW_H__
-#define __DEM_L1_FRAME_VIEW_H__
-
 #include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
 #include <Render/ConstantBufferSet.h>
@@ -31,6 +28,7 @@ namespace Frame
 class CNodeAttrCamera;
 class CNodeAttrAmbientLight;
 typedef Ptr<class CRenderPath> PRenderPath;
+typedef std::unique_ptr<class CView> PView;
 
 enum ELODType
 {
@@ -100,5 +98,3 @@ public:
 };
 
 }
-
-#endif

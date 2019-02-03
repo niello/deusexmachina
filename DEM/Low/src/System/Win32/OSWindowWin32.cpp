@@ -182,7 +182,7 @@ CString COSWindowWin32::GetTitle() const
 
 bool COSWindowWin32::GetCursorPosition(IPTR& OutX, IPTR& OutY) const
 {
-	n_assert_dbg(hWnd);
+	if (!hWnd) FAIL;
 	POINT Pos;
 	if (!::GetCursorPos(&Pos)) FAIL;
 	if (!::ScreenToClient(hWnd, &Pos)) FAIL;

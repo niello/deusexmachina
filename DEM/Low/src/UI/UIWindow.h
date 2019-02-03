@@ -18,13 +18,14 @@ class CUIWindow: public Core::CObject
 
 protected:
 
-	CEGUI::Window* pWnd;
+	CEGUI::Window* pWnd = nullptr;
 
 	static vector2 GetParentBaseSize(CEGUI::Window* pWindow);
 
 public:
 
-	CUIWindow(): pWnd(NULL) {}
+	CUIWindow() {}
+	CUIWindow(const char* pResourceFile) { Load(pResourceFile); }
 	virtual ~CUIWindow() {}
 
 	virtual void	Init(CEGUI::Window* pWindow);

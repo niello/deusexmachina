@@ -32,17 +32,16 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 						   float DefaultContextWidth, float DefaultContextHeight,
 						   CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID):
 	GPU(&GPUDriver),
+	DisplaySize(DefaultContextWidth, DefaultContextHeight),
 	DisplayDPI(96, 96),
 	OpaqueMode(false)
 {
+	n_assert(DefaultContextWidth > 0.f && DefaultContextHeight > 0.f);
+
 	Render::PShader VS = GPU->GetShader(VertexShaderID);
 	Render::PShader PSRegular = GPU->GetShader(PixelShaderRegularID);
 	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);
 	n_assert(VS && PSRegular && PSOpaque && VS->IsValid() && PSRegular->IsValid() && PSOpaque->IsValid());
-	n_assert(DefaultContextWidth > 0.f && DefaultContextHeight > 0.f);
-
-	DisplaySize.d_width = DefaultContextWidth;
-	DisplaySize.d_height = DefaultContextHeight;
 
 	//=================================================================
 	// Render states
