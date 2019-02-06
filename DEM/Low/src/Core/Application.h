@@ -138,8 +138,8 @@ public:
 	void			ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
-	Frame::PView	CreateFrameView(U32 Width, U32 Height, Render::CGPUDriver& GPU, CStrID RenderPathID, bool WithGUI);
 	int				CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
+	Frame::PView	CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI);
 	//POSConsoleWindow CreateConsoleWindow();
 };
 

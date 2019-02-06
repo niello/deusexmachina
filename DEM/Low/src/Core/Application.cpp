@@ -329,39 +329,6 @@ const CString& CApplication::GetStringSetting(const char* pKey, const CString& D
 }
 //---------------------------------------------------------------------
 
-Frame::PView CApplication::CreateFrameView(U32 Width, U32 Height, Render::CGPUDriver& GPU, CStrID RenderPathID, bool WithGUI)
-{
-	const int SwapChainID = CreateRenderWindow(GPU, Width, Height);
-	if (SwapChainID < 0) return nullptr;
-
-	//DEM::Sys::POSWindow SwapChainWindow = GPU.GetSwapChainWindow(SwapChainID);
-	Render::PRenderTarget SwapChainRT = GPU.GetSwapChainRenderTarget(SwapChainID);
-
-	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(RenderPathID);
-
-	Frame::PView View(n_new(Frame::CView));
-	View->GPU = &GPU;
-	View->SetRenderPath(RRP->ValidateObject<Frame::CRenderPath>());
-	if (View->RTs.GetCount())
-	{
-		View->RTs[0] = SwapChainRT;
-
-		// It is boring to always have one color
-		View->GetRenderPath()->SetRenderTargetClearColor(0, vector4(Math::RandomFloat(), Math::RandomFloat(), Math::RandomFloat(), 1.f));
-	}
-
-	if (WithGUI)
-	{
-		NOT_IMPLEMENTED;
-		// New CEGUI context must be created
-		// Current CEGUI architecture is suited bad for this,
-		// so now you must set UI context in the calling code
-	}
-
-	return View;
-}
-//---------------------------------------------------------------------
-
 // Creates a GUI window most suitable for 3D scene rendering, based on app & profile settings
 int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height)
 {
@@ -384,6 +351,47 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Hei
 	const int SwapChainID = GPU.CreateSwapChain(BBDesc, SCDesc, Wnd);
 	n_assert(GPU.SwapChainExists(SwapChainID));
 	return SwapChainID;
+}
+//---------------------------------------------------------------------
+
+Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI)
+{
+	if (!GPU.SwapChainExists(SwapChainID)) return nullptr;
+
+	Render::PRenderTarget SwapChainRT = GPU.GetSwapChainRenderTarget(SwapChainID);
+
+	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(pRenderPathID);
+
+	Frame::PView View(n_new(Frame::CView));
+	View->GPU = &GPU;
+	View->SetRenderPath(RRP->ValidateObject<Frame::CRenderPath>());
+	if (View->RTs.GetCount()) View->RTs[0] = SwapChainRT;
+
+	if (WithGUI)
+	{
+		NOT_IMPLEMENTED;
+		// New CEGUI context must be created
+		// Current CEGUI architecture is suited bad for this,
+		// so now you must set UI context in the calling code
+
+		//UI::CUIContextSettings UICtxSettings;
+		//UICtxSettings.HostWindow = GPU.GetSwapChainWindow(SwapChainID);
+		//UICtxSettings.Width = static_cast<float>(SwapChainRT->GetDesc().Width);
+		//UICtxSettings.Height = static_cast<float>(SwapChainRT->GetDesc().Height);
+		//View->UIContext = UIServer->CreateContext(UICtxSettings);
+
+		//???need always?
+		//Input::CInputTranslator* pUserInput = GetUserInput(GetCurrentUserID());
+		//if (pUserInput)
+		//{
+		//	// Bypass context //!!!check if exists!
+		//	pUserInput->CreateContext(CStrID("UI"), true);
+		//	pUserInput->EnableContext(CStrID("UI"));
+		//	FrameView->UIContext->SubscribeOnInput(pUserInput, 100);
+		//}
+	}
+
+	return View;
 }
 //---------------------------------------------------------------------
 

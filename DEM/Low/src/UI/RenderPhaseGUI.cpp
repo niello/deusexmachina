@@ -33,9 +33,10 @@ bool CRenderPhaseGUI::Render(CView& View)
 {
 	if (View.UIContext.IsNullPtr()) FAIL;
 
-	View.GPU->SetRenderTarget(0, View.RTs[0]);
+	auto RT = View.RTs[RenderTargetIndex];
+	View.GPU->SetRenderTarget(0, RT);
 
-	const Render::CRenderTargetDesc& RTDesc = View.RTs[0]->GetDesc();
+	const Render::CRenderTargetDesc& RTDesc = RT->GetDesc();
 	//!!!relative(normalized) VP coords may be defined in a phase desc/instance(this) and translated into absolute values here!
 	//!!!CEGUI 0.8.4 incorrectly processes viewports with offset!
 	float RTWidth = (float)RTDesc.Width;
