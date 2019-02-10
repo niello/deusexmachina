@@ -10,6 +10,7 @@
 
 namespace Core
 {
+typedef Ptr<class CObject> PObject;
 
 class CObject: public Data::CRefCounted, public CRTTIBaseClass
 {
@@ -31,22 +32,12 @@ protected:
 
 public:
 
-	CObject();
-
 #ifdef _DEBUG
+	CObject() { ListIt = List.AddBack(this); }
+
 	static void DumpLeaks();
 #endif
 };
-
-typedef Ptr<CObject> PObject;
-
-inline CObject::CObject()
-{
-#ifdef _DEBUG
-	ListIt = List.AddBack(this);
-#endif
-}
-//---------------------------------------------------------------------
 
 inline CObject::~CObject()
 {

@@ -1,5 +1,6 @@
 #include "Application.h"
 
+#include <Core/ApplicationState.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <IO/PathUtils.h>
@@ -395,17 +396,15 @@ Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChai
 }
 //---------------------------------------------------------------------
 
-//???need Run()? use Init()?
-bool CApplication::Run(/*initial state?*/)
+bool CApplication::Run(PApplicationState InitialState)
 {
 	BaseTime = Platform.GetSystemTime();
 	PrevTime = BaseTime;
 	FrameTime = 0.0;
 
-	// initialize systems
+	RequestedState = InitialState;
 
-	// start FSM initial state (enter state)
-	OK;
+	return InitialState.IsValidPtr();
 }
 //---------------------------------------------------------------------
 
@@ -427,15 +426,23 @@ bool CApplication::Update()
 
 	if (!Platform.Update()) FAIL;
 
-	// ...
+	//???render views here or in states? what about video?
 
-	// Update current application state
-	// ...
+	// Update application state
 
-	//!!!DBG TMP!
-	if (Exiting) FAIL;
+	if (CurrState != RequestedState)
+	{
+		if (CurrState) CurrState->OnExit(*this, RequestedState.Get());
+		if (RequestedState) RequestedState->OnEnter(*this, CurrState.Get());
+		CurrState = RequestedState;
+	}
 
-	OK;
+	if (CurrState)
+	{
+		RequestedState = CurrState->Update(*this, FrameTime);
+		OK;
+	}
+	else FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -445,6 +452,12 @@ void CApplication::Term()
 	UNSUBSCRIBE_EVENT(OnClosing);
 
 	//!!!kill all windows!
+}
+//---------------------------------------------------------------------
+
+void CApplication::RequestState(PApplicationState NewState)
+{
+	RequestedState = NewState;
 }
 //---------------------------------------------------------------------
 
@@ -464,12 +477,7 @@ void CApplication::ExitOnWindowClosed(Sys::COSWindow* pWindow)
 bool CApplication::OnMainWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	UNSUBSCRIBE_EVENT(OnClosing);
-
-	//FSM.RequestState(CStrID::Empty);
-
-	//!!!DBG TMP!
-	Exiting = true;
-
+	RequestState(nullptr);
 	OK;
 }
 //---------------------------------------------------------------------

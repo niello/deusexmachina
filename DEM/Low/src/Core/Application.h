@@ -66,6 +66,7 @@ namespace Sys
 
 namespace Core
 {
+typedef Ptr<class CApplicationState> PApplicationState;
 
 class CApplication
 {
@@ -89,15 +90,17 @@ protected:
 	CStrID CurrentUserID;
 	std::vector<CUser> ActiveUsers;
 
+	PApplicationState CurrState;
+	PApplicationState RequestedState;
+
 	double BaseTime = 0.0;
 	double PrevTime = 0.0;
 	double FrameTime = 0.0;
 	float TimeScale = 1.f;
 
-	//!!!DBG TMP! Will be state!
-	bool Exiting = false;
-
 	DECLARE_EVENT_HANDLER(OnClosing, OnMainWindowClosing);
+
+	void			RequestState(PApplicationState NewState);
 
 public:
 
@@ -128,10 +131,9 @@ public:
 	const CString&	GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
 	bool			SetFloatSetting(const char* pKey, float Value, CStrID UserID);
 
-	bool			Run();
+	bool			Run(PApplicationState InitialState);
 	bool			Update();
 	void			Term();
-	// Update, RequestState, RequestExit
 
 	//allow multiple instances
 
