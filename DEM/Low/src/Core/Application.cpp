@@ -23,42 +23,42 @@
 namespace DEM { namespace Core
 {
 
-static CString GetProfilesPath()
+CString GetProfilesPath(const CString& AppDataPath)
 {
-	return CString("RW:profiles/");
+	return AppDataPath + "profiles/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserProfilePath(const char* pUserID)
+static CString GetUserProfilePath(const CString& AppDataPath, const char* pUserID)
 {
-	CString Path = GetProfilesPath();
+	CString Path = GetProfilesPath(AppDataPath);
 	Path += pUserID;
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 	return Path;
 }
 //---------------------------------------------------------------------
 
-static CString GetUserSavesPath(const char* pUserID)
+static CString GetUserSavesPath(const CString& AppDataPath, const char* pUserID)
 {
-	return GetUserProfilePath(pUserID) + "saves/";
+	return GetUserProfilePath(AppDataPath, pUserID) + "saves/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserScreenshotsPath(const char* pUserID)
+static CString GetUserScreenshotsPath(const CString& AppDataPath, const char* pUserID)
 {
-	return GetUserProfilePath(pUserID) + "screenshots/";
+	return GetUserProfilePath(AppDataPath, pUserID) + "screenshots/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserCurrDataPath(const char* pUserID)
+static CString GetUserCurrDataPath(const CString& AppDataPath, const char* pUserID)
 {
-	return GetUserProfilePath(pUserID) + "current/";
+	return GetUserProfilePath(AppDataPath, pUserID) + "current/";
 }
 //---------------------------------------------------------------------
 
-static CString GetUserSettingsFilePath(const char* pUserID)
+static CString GetUserSettingsFilePath(const CString& AppDataPath, const char* pUserID)
 {
-	return GetUserProfilePath(pUserID) + "Settings.hrd";
+	return GetUserProfilePath(AppDataPath, pUserID) + "Settings.hrd";
 }
 //---------------------------------------------------------------------
 
@@ -110,7 +110,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 	CString UserStr(pUserID);
 	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
 
-	CString Path = GetUserProfilePath(pUserID);
+	CString Path = GetUserProfilePath(AppDataPath, pUserID);
 	if (IO().DirectoryExists(Path)) return CStrID::Empty;
 
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
@@ -142,13 +142,13 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 
 	// TODO: if one of active users, FAIL
 
-	return IO().DeleteDirectory(GetUserProfilePath(pUserID));
+	return IO().DeleteDirectory(GetUserProfilePath(AppDataPath, pUserID));
 }
 //---------------------------------------------------------------------
 
 UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
 {
-	CString ProfilesDir = GetProfilesPath();
+	CString ProfilesDir = GetProfilesPath(AppDataPath);
 	if (!IO().DirectoryExists(ProfilesDir)) return 0;
 
 	const UPTR OldCount = Out.GetCount();
@@ -171,7 +171,7 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
 	if (It != ActiveUsers.cend()) return UserID;
 
-	CString Path = GetUserProfilePath(UserID);
+	CString Path = GetUserProfilePath(AppDataPath, UserID);
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 
 	if (!IO().DirectoryExists(Path)) return CStrID::Empty;

@@ -89,6 +89,7 @@ protected:
 	Data::PParams OverrideSettings; // From a command line
 	CStrID CurrentUserID;
 	std::vector<CUser> ActiveUsers;
+	CString AppDataPath;
 
 	PApplicationState CurrState;
 	PApplicationState RequestedState;
@@ -113,7 +114,7 @@ public:
 	//UI::CUIServer&	UI() const;
 	Resources::CResourceManager& ResourceManager() const;
 
-	// enum profiles - fill array of IDs
+	void			SetAppDataPath(const char* pPath) { AppDataPath = pPath; }
 	CStrID			CreateUserProfile(const char* pUserID);
 	bool			DeleteUserProfile(const char* pUserID);
 	UPTR			EnumUserProfiles(CArray<CStrID>& Out) const;
