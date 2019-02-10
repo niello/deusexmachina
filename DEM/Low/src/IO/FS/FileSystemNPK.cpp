@@ -1,6 +1,7 @@
 #include "FileSystemNPK.h"
 
 #include <Data/StringUtils.h>
+#include <IO/Stream.h>
 #include <IO/PathUtils.h>
 
 namespace IO

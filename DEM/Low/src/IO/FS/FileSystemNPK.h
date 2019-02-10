@@ -1,6 +1,5 @@
 #pragma once
 #include <IO/FileSystem.h>
-#include <IO/Stream.h>
 #include "NpkTOC.h"
 
 // Original Nebula 2 NPK virtual file system.
@@ -32,8 +31,6 @@ protected:
 
 public:
 
-	//???can use engine path? would be convenient!
-	//???or construct from stream?
 	CFileSystemNPK(CStream* pSource);
 	virtual ~CFileSystemNPK();
 
