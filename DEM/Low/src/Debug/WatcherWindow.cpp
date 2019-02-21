@@ -40,7 +40,7 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 	pList->addColumn("Name", COL_NAME, CEGUI::UDim(0, 300));
 	pList->addColumn("Type", COL_TYPE, CEGUI::UDim(0, 100));
 	pList->addColumn("Value", COL_VALUE, CEGUI::UDim(0, 200));
-	pList->setSelectionMode(CEGUI::MultiColumnList::RowSingle);
+	pList->setSelectionMode(CEGUI::MultiColumnList::SelectionMode::RowSingle);
 	pList->subscribeEvent(CEGUI::MultiColumnList::EventKeyDown,
 		CEGUI::Event::Subscriber(&CWatcherWindow::OnListKeyDown, this));
 
@@ -93,12 +93,12 @@ void CWatcherWindow::AddWatched(EVarType Type, const char* Name)
 
 	if (!Curr.pNameItem)
 	{
-		Curr.pNameItem = n_new(CEGUI::ListboxTextItem((CEGUI::utf8*)Name, 0, 0, false, false));
+		Curr.pNameItem = n_new(CEGUI::ListboxTextItem(Name, 0, 0, false, false));
 		Curr.pNameItem->setSelectionBrushImage("TaharezLook/MultiListSelectionBrush");
 		Curr.pNameItem->setSelectionColours(CEGUI::Colour(0xff606099));
 		Curr.pNameItem->setTextParsingEnabled(false);
 	}
-	else Curr.pNameItem->setText((CEGUI::utf8*)Name);
+	else Curr.pNameItem->setText(Name);
 
 	if (!Curr.pTypeItem)
 	{
@@ -132,11 +132,11 @@ void CWatcherWindow::AddAllGlobals()
 
 bool CWatcherWindow::OnNewWatchedAccept(const CEGUI::EventArgs& e)
 {
-	const char* pName = pNewWatchEdit->getText().c_str();
-	if (!pName || !*pName) OK;
+	std::string Name = CEGUI::String::convertUtf32ToUtf8(pNewWatchEdit->getText().c_str());
+	if (Name.empty()) OK;
 
 	CEGUI::RadioButton* pRBNEnv = (CEGUI::RadioButton*)pWnd->getChild("RBNEnv");
-	AddWatched(pRBNEnv->isSelected() ? DEM : Lua, pName);
+	AddWatched(pRBNEnv->isSelected() ? DEM : Lua, Name.c_str());
 
 	OK;
 }
@@ -146,12 +146,12 @@ bool CWatcherWindow::OnListKeyDown(const CEGUI::EventArgs& e)
 {
 	const CEGUI::KeyEventArgs& ke = (const CEGUI::KeyEventArgs&)e;
 
-	if (ke.scancode == CEGUI::Key::Delete)
+	if (ke.scancode == CEGUI::Key::Scan::DeleteKey)
 	{
 		CEGUI::ListboxItem* pSel = pList->getFirstSelectedItem();
 		if (pSel)
 		{
-			CEGUI::uint RowIdx = pList->getRowWithID((int)pSel);
+			unsigned int RowIdx = pList->getRowWithID((int)pSel);
 			pList->removeRow(RowIdx);
 			
 			if (pList->getRowCount())
@@ -227,7 +227,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 					else if (CurrVar.IsA<CString>())
 					{
 						It->pTypeItem->setText("DEM string");
-						It->pValueItem->setText((CEGUI::utf8*)CurrVar.GetValue<CString>().CStr());
+						It->pValueItem->setText(CurrVar.GetValue<CString>().CStr());
 					}
 					else if (CurrVar.IsA<vector4>())
 					{
@@ -278,7 +278,7 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 				else if (Output.IsA<CString>())
 				{
 					It->pTypeItem->setText("Lua string");
-					It->pValueItem->setText((CEGUI::utf8*)Output.GetValue<CString>().CStr());
+					It->pValueItem->setText(Output.GetValue<CString>().CStr());
 				}
 				else if (Output.IsA<vector4>())
 				{

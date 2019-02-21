@@ -99,17 +99,17 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 		if (!WasMousePassThroughEnabledInRoot)
 		{
 			CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
-			if (pPrevRoot) pPrevRoot->setMousePassThroughEnabled(false);
+			if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
 		}
 
 		if (pWindow)
 		{
-			WasMousePassThroughEnabledInRoot = pWindow->GetWnd()->isMousePassThroughEnabled();
-			pWindow->GetWnd()->setMousePassThroughEnabled(true);
+			WasMousePassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
+			pWindow->GetWnd()->setCursorPassThroughEnabled(true);
 		}
 
 		pCtx->setRootWindow(pWindow ? pWindow->GetWnd() : NULL);
-		pCtx->updateWindowContainingMouse();
+		pCtx->updateWindowContainingCursor();
 	}
 }
 //---------------------------------------------------------------------
@@ -277,7 +277,7 @@ bool CUIContext::OnViewportSizeChanged(Events::CEventDispatcher* pDispatcher, co
 	if (pCtx && OSWindow)
 	{
 		const Data::CRect& WndRect = OSWindow->GetRect();
-		CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(WndRect.W, WndRect.H));
+		CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H)));
 
 		IPTR X, Y;
 		if (OSWindow->GetCursorPosition(X, Y))

@@ -1,14 +1,10 @@
 #pragma once
-#ifndef __DEM_L1_UI_SERVER_H__
-#define __DEM_L1_UI_SERVER_H__
-
 #include <Core/Object.h>
 #include <Data/Singleton.h>
 #include <Data/StringID.h>
 #include <Events/EventsFwd.h>
 #include <Data/Dictionary.h>
 #include <CEGUI/Event.h>
-#include <CEGUI/Vector.h>
 
 // UI server (CEGUI launcher & manager). This server creates top-level screens and manages
 // their switching (or provides switching functionality to application states).
@@ -105,5 +101,3 @@ public:
 };
 
 }
-
-#endif

@@ -6,7 +6,7 @@
 #include <CEGUI/CentredRenderedString.h>
 #include <CEGUI/RenderedStringWordWrapper.h>
 #include <CEGUI/Image.h>
-#include <CEGUI/widgets/Listbox.h>
+#include <CEGUI/widgets/MultiColumnList.h>
 
 namespace CEGUI
 {
@@ -14,7 +14,7 @@ namespace CEGUI
 //----------------------------------------------------------------------------//
 FormattedListboxTextItem::FormattedListboxTextItem(const String& text,
 	const HorizontalTextFormatting format,
-	const uint item_id,
+	const unsigned int item_id,
 	void* const item_data,
 	const bool disabled,
 	const bool auto_delete) :
@@ -56,7 +56,7 @@ void FormattedListboxTextItem::updateString() const
 
 	// get size of render area from target window, to see if we need to reformat
 	// NB: We do not use targetRect, since it may not represent the same area.
-	const Sizef area_sz(static_cast<const Listbox*>(d_owner)->getListRenderArea().getSize());
+	const Sizef area_sz(static_cast<const MultiColumnList*>(d_owner)->getListRenderArea().getSize());
 	if (StringChanged || area_sz != d_formattingAreaSize)
 	{
 		d_formattedRenderedString->format(d_owner, area_sz);
@@ -105,51 +105,51 @@ void FormattedListboxTextItem::setupStringFormatter() const
 	// create new formatter of whichever type...
 	switch(d_formatting)
 	{
-	case HTF_LEFT_ALIGNED:
-		d_formattedRenderedString =
-			new LeftAlignedRenderedString(d_renderedString);
-		break;
+		case HorizontalTextFormatting::LeftAligned:
+			d_formattedRenderedString =
+				new LeftAlignedRenderedString(d_renderedString);
+			break;
 
-	case HTF_RIGHT_ALIGNED:
-		d_formattedRenderedString =
-			new RightAlignedRenderedString(d_renderedString);
-		break;
+		case HorizontalTextFormatting::RightAligned:
+			d_formattedRenderedString =
+				new RightAlignedRenderedString(d_renderedString);
+			break;
 
-	case HTF_CENTRE_ALIGNED:
-		d_formattedRenderedString =
-			new CentredRenderedString(d_renderedString);
-		break;
+		case HorizontalTextFormatting::CentreAligned:
+			d_formattedRenderedString =
+				new CentredRenderedString(d_renderedString);
+			break;
 
-	case HTF_JUSTIFIED:
-		d_formattedRenderedString =
-			new JustifiedRenderedString(d_renderedString);
-		break;
+		case HorizontalTextFormatting::Justified:
+			d_formattedRenderedString =
+				new JustifiedRenderedString(d_renderedString);
+			break;
 
-	case HTF_WORDWRAP_LEFT_ALIGNED:
-		d_formattedRenderedString =
-			new RenderedStringWordWrapper
-			<LeftAlignedRenderedString>(d_renderedString);
-		break;
+		case HorizontalTextFormatting::WordWrapLeftAligned:
+			d_formattedRenderedString =
+				new RenderedStringWordWrapper
+				<LeftAlignedRenderedString>(d_renderedString);
+			break;
 
-	case HTF_WORDWRAP_RIGHT_ALIGNED:
-		d_formattedRenderedString =
-			new RenderedStringWordWrapper
-			<RightAlignedRenderedString>(d_renderedString);
-		break;
+		case HorizontalTextFormatting::WordWrapRightAligned:
+			d_formattedRenderedString =
+				new RenderedStringWordWrapper
+				<RightAlignedRenderedString>(d_renderedString);
+			break;
 
-	case HTF_WORDWRAP_CENTRE_ALIGNED:
-		d_formattedRenderedString =
-			new RenderedStringWordWrapper
-			<CentredRenderedString>(d_renderedString);
-		break;
+		case HorizontalTextFormatting::WordWrapCentreAligned:
+			d_formattedRenderedString =
+				new RenderedStringWordWrapper
+				<CentredRenderedString>(d_renderedString);
+			break;
 
-	case HTF_WORDWRAP_JUSTIFIED:
-		d_formattedRenderedString =
-			new RenderedStringWordWrapper
-			<JustifiedRenderedString>(d_renderedString);
-		break;
+		case HorizontalTextFormatting::WordWraperJustified:
+			d_formattedRenderedString =
+				new RenderedStringWordWrapper
+				<JustifiedRenderedString>(d_renderedString);
+			break;
 
-	default: d_formattedRenderedString = NULL; break;
+		default: d_formattedRenderedString = NULL; break;
 	}
 }
 

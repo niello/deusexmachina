@@ -70,8 +70,7 @@ public:
 \see
     Animation
 */
-class CEGUIEXPORT AnimationInstance :
-    public AllocatedObject<AnimationInstance>
+class CEGUIEXPORT AnimationInstance
 {
 public:
     //! Namespace for animation instance events
@@ -86,8 +85,6 @@ public:
     static const String EventAnimationPaused;
     //! fired when animation instance unpauses
     static const String EventAnimationUnpaused;
-    //! fired when animation instance finishes
-    static const String EventAnimationFinished;
     //! fired when animation instance ends
     static const String EventAnimationEnded;
     //! fired when animation instance loops
@@ -286,12 +283,6 @@ public:
 
     /*!
     \brief
-       Finishes and stops the animation
-    */
-    void finish();
-
-    /*!
-    \brief
         Returns true if this animation instance is currently unpaused,
         if it is stepping forward.
     */
@@ -354,12 +345,6 @@ public:
 
     /*!
     \brief
-        handler that finishes the animation instance
-    */
-    bool handleFinish(const CEGUI::EventArgs& e);
-
-    /*!
-    \brief
         Internal method, saves given property (called before it's affected)
     */
     void savePropertyValue(const String& propertyName);
@@ -411,12 +396,10 @@ private:
     void onAnimationPaused();
     //! this is called when animation unpauses
     void onAnimationUnpaused();
-    //! this is called when animation finishes
-    void onAnimationFinished();
 
     //! this is called when animation ends
     void onAnimationEnded();
-    //! this is called when animation loops (in RM_Loop or RM_Bounce mode)
+    //! this is called when animation loops (in ReplayMode::LOOP or ReplayMode::BOUNCE mode)
     void onAnimationLooped();
 
     //! parent Animation definition
@@ -438,7 +421,7 @@ private:
     float d_position;
     //! playback speed, 1.0 means normal playback
     float d_speed;
-    //! needed for RM_Bounce mode, if true, we bounce backwards
+    //! needed for ReplayMode::BOUNCE mode, if true, we bounce backwards
     bool d_bounceBackwards;
     //! true if this animation is unpaused
     bool d_running;
@@ -451,15 +434,13 @@ private:
     //! true if auto stepping is enabled
     bool d_autoSteppingEnabled;
 
-    typedef std::map<String, String, std::less<String>
-        CEGUI_MAP_ALLOC(String, String)> PropertyValueMap;
+    typedef std::map<String, String, std::less<String> > PropertyValueMap;
     /** cached saved values, used for relative application method
      *  and keyframe property source, see Affector and KeyFrame classes
      */
     PropertyValueMap d_savedPropertyValues;
 
-    typedef std::vector<Event::Connection
-        CEGUI_VECTOR_ALLOC(Event::Connection)> ConnectionTracker;
+    typedef std::vector<Event::Connection> ConnectionTracker;
     //! tracks auto event connections we make.
     ConnectionTracker d_autoConnections;
 };

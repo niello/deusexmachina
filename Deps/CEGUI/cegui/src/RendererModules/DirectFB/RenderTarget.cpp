@@ -46,15 +46,15 @@ DirectFBRenderTarget::DirectFBRenderTarget(DirectFBRenderer& owner,
 }
 
 //----------------------------------------------------------------------------//
-void DirectFBRenderTarget::draw(const GeometryBuffer& buffer, uint32 drawModeMask)
+void DirectFBRenderTarget::draw(const GeometryBuffer& buffer)
 {
-    buffer.draw(drawModeMask);
+    buffer.draw();
 }
 
 //----------------------------------------------------------------------------//
-void DirectFBRenderTarget::draw(const RenderQueue& queue, uint32 drawModeMask)
+void DirectFBRenderTarget::draw(const RenderQueue& queue)
 {
-    queue.draw(drawModeMask);
+    queue.draw();
 }
 
 //----------------------------------------------------------------------------//
@@ -91,7 +91,7 @@ void DirectFBRenderTarget::deactivate()
 
 //----------------------------------------------------------------------------//
 void DirectFBRenderTarget::unprojectPoint(const GeometryBuffer& buff,
-    const Vector2f& p_in, Vector2f& p_out) const
+    const glm::vec2& p_in, glm::vec2& p_out) const
 {
     // TODO:
     p_out = p_in;

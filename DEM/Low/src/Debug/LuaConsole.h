@@ -12,7 +12,7 @@
 namespace CEGUI
 {
 	class Editbox;
-	class Listbox;
+	class MultiColumnList;
 	class Scrollbar;
 	class EventArgs;
 }
@@ -27,7 +27,7 @@ class CLuaConsole: public UI::CUIWindow
 protected:
 
 	CEGUI::Editbox*				pInputLine;
-	CEGUI::Listbox*				pOutputWnd;
+	CEGUI::MultiColumnList*		pOutputWnd;
 	CEGUI::Scrollbar*			pVertScroll;
 
 	CEGUI::Event::Connection	ConnOnShow;

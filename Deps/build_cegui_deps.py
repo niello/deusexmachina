@@ -18,7 +18,7 @@ def unpack_repo(archive_path, dest_folder, has_root_dir):
 
 	if has_root_dir:
 		# [Re]create tmp directory
-		path_to_tmp = os.path.join(os.path.dirname(archive_path), 'CEGUI-Deps-tmp')
+		path_to_tmp = os.path.join(os.path.dirname(archive_path), 'tmp')
 		if os.path.exists(path_to_tmp):
 			shutil.rmtree(path_to_tmp)
 		os.mkdir(path_to_tmp)
@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 	print("Building CEGUI dependencies using CMake generator " + cmake_generator_name)
 
-	expected_archive_sha256 = "82d9b56b0dc10dd04910a09b455b470405e245ee4823b441c1990270068b38f4"
+	expected_archive_sha256 = "3c55fbe5e6667fb689990e9b13192575c2051ba95bf81aa6afe23dee47afbf06"
 	downloads_folder = os.path.join(PROJECT_FOLDER, 'Deps', 'Downloads')
 	archive_path = os.path.join(downloads_folder, 'CEGUI-Deps.zip')
 
@@ -64,7 +64,7 @@ if __name__ == "__main__":
 
 	# Download archive
 	if need_downloading:
-		deps_url = 'https://bitbucket.org/Jahndal/cegui-dependencies/get/dem-initial.zip'
+		deps_url = 'https://bitbucket.org/Jahndal/cegui-dependencies/get/dem/default-minimal.zip'
 		print("Downloading CEGUI-Deps from " + deps_url)
 		r = requests.get(deps_url, allow_redirects=True)
 		downloaded_sha256 = sha256(r.content).hexdigest()

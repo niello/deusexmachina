@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_CEGUI_FMT_LABEL_TEXT_ITEM_H__
-#define __DEM_L1_CEGUI_FMT_LABEL_TEXT_ITEM_H__
-
 #include <CEGUI/widgets/ListboxTextItem.h>
 
 namespace CEGUI
@@ -13,8 +10,8 @@ class FormattedListboxTextItem : public ListboxTextItem
 public:
 	//! Constructor
 	FormattedListboxTextItem(const String& text,
-		const HorizontalTextFormatting format = HTF_LEFT_ALIGNED,
-		const uint item_id = 0,
+		const HorizontalTextFormatting format = HorizontalTextFormatting::LeftAligned,
+		const unsigned int item_id = 0,
 		void* const item_data = 0,
 		const bool disabled = false,
 		const bool auto_delete = true);
@@ -25,7 +22,7 @@ public:
 	//! Return the current formatting set.
 	HorizontalTextFormatting getFormatting() const { return d_formatting; }
 	/*!
-	Set the formatting.  You should call Listbox::handleUpdatedItemData
+	Set the formatting.  You should call MultiColumnList::handleUpdatedItemData
 	after setting the formatting in order to update the listbox.  We do not
 	do it automatically since you may wish to batch changes to multiple
 	items and multiple calls to handleUpdatedItemData is wasteful.
@@ -50,5 +47,3 @@ protected:
 };
 
 }
-
-#endif

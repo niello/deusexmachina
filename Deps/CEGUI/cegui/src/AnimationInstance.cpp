@@ -30,7 +30,6 @@
 #include "CEGUI/Animation.h"
 #include "CEGUI/Exceptions.h"
 #include "CEGUI/Window.h"
-#include "CEGUI/Affector.h"
 #include "CEGUI/Logger.h"
 
 // Start of CEGUI namespace section
@@ -44,7 +43,6 @@ const String AnimationInstance::EventAnimationStarted("AnimationStarted");
 const String AnimationInstance::EventAnimationStopped("AnimationStopped");
 const String AnimationInstance::EventAnimationPaused("AnimationPaused");
 const String AnimationInstance::EventAnimationUnpaused("AnimationUnpaused");
-const String AnimationInstance::EventAnimationFinished("AnimationFinished");
 const String AnimationInstance::EventAnimationEnded("AnimationEnded");
 const String AnimationInstance::EventAnimationLooped("AnimationLooped");
 
@@ -52,9 +50,9 @@ const String AnimationInstance::EventAnimationLooped("AnimationLooped");
 AnimationInstance::AnimationInstance(Animation* definition):
     d_definition(definition),
 
-    d_target(0),
-    d_eventReceiver(0),
-    d_eventSender(0),
+    d_target(nullptr),
+    d_eventReceiver(nullptr),
+    d_eventSender(nullptr),
 
     d_position(0.0),
     d_speed(1.0),
@@ -149,10 +147,10 @@ void AnimationInstance::setPosition(float position)
 {
     if (position < 0.0 || position > d_definition->getDuration())
     {
-        CEGUI_THROW(InvalidRequestException(
+        throw InvalidRequestException(
                         "Unable to set position of this animation instance "
                         "because given position isn't in interval "
-                        "[0.0, duration of animation]."));
+                        "[0.0, duration of animation].");
     }
 
     d_position = position;
@@ -170,16 +168,16 @@ void AnimationInstance::setSpeed(float speed)
     // first sort out the adventurous users
     if (speed < 0.0f)
     {
-        CEGUI_THROW(InvalidRequestException(
+        throw InvalidRequestException(
                         "You can't set playback speed to a value that's lower "
-                        "than 0.0"));
+                        "than 0.0");
     }
 
     if (speed == 0.0f)
     {
-        CEGUI_THROW(InvalidRequestException(
+        throw InvalidRequestException(
                         "AnimationInstance::setSpeed: You can't set playback speed "
-                        "to zero, please use AnimationInstance::pause instead"));
+                        "to zero, please use AnimationInstance::pause instead");
     }
 
     d_speed = speed;
@@ -242,7 +240,7 @@ void AnimationInstance::start(bool skipNextStep)
     {
         Logger::getSingleton().logEvent(
             "AnimationInstance::start - Starting an animation instance with "
-            "no animation definition or 0 duration has no effect!", Warnings);
+            "no animation definition or 0 duration has no effect!", LoggingLevel::Warning);
         onAnimationStarted();
         onAnimationEnded();
     }
@@ -277,7 +275,7 @@ void AnimationInstance::unpause(bool skipNextStep)
     {
         Logger::getSingleton().logEvent(
             "AnimationInstance::unpause - Unpausing an animation instance with "
-            "no animation definition or 0 duration has no effect!", Warnings);
+            "no animation definition or 0 duration has no effect!", LoggingLevel::Warning);
         onAnimationUnpaused();
         onAnimationEnded();
     }
@@ -297,20 +295,6 @@ void AnimationInstance::togglePause(bool skipNextStep)
 }
 
 //----------------------------------------------------------------------------//
-void AnimationInstance::finish()
-{
-    if (d_definition)
-    {
-        setPosition(d_definition->getDuration());
-        apply();
-    }
-
-    d_running = false;
-    setPosition(0.0);
-    onAnimationFinished();
-}
-
-//----------------------------------------------------------------------------//
 bool AnimationInstance::isRunning() const
 {
     return d_running;
@@ -319,13 +303,13 @@ bool AnimationInstance::isRunning() const
 //----------------------------------------------------------------------------//
 void AnimationInstance::setAutoSteppingEnabled(bool enabled)
 {
-    d_autoSteppingEnabled = enabled;
+	d_autoSteppingEnabled = enabled;
 }
 
 //----------------------------------------------------------------------------//
 bool AnimationInstance::isAutoSteppingEnabled() const
 {
-    return d_autoSteppingEnabled;
+	return d_autoSteppingEnabled;
 }
 
 //----------------------------------------------------------------------------//
@@ -339,10 +323,10 @@ void AnimationInstance::step(float delta)
 
     if (delta < 0.0f)
     {
-        CEGUI_THROW(InvalidRequestException(
+        throw InvalidRequestException(
                         "You can't step the Animation Instance with negative "
                         "delta! You can't reverse the flow of time, stop "
-                        "trying!"));
+                        "trying!");
     }
 
     // first we deal with delta size
@@ -380,8 +364,8 @@ void AnimationInstance::step(float delta)
     // the position could have gotten out of the desired range, we have to
     // alter it depending on replay method of our animation definition
 
-    // first a simple clamp with RM_Once
-    if (d_definition->getReplayMode() == Animation::RM_Once)
+    // first a simple clamp with ReplayMode::PLAY_ONCE
+    if (d_definition->getReplayMode() == Animation::ReplayMode::PlayOnce)
     {
         float newPosition = d_position + delta;
 
@@ -397,8 +381,8 @@ void AnimationInstance::step(float delta)
 
         setPosition(newPosition);
     }
-    // a both sided wrap with RM_Loop
-    else if (d_definition->getReplayMode() == Animation::RM_Loop)
+    // a both sided wrap with ReplayMode::LOOP
+    else if (d_definition->getReplayMode() == Animation::ReplayMode::Loop)
     {
         float newPosition = d_position + delta;
 
@@ -410,8 +394,8 @@ void AnimationInstance::step(float delta)
 
         setPosition(newPosition);
     }
-    // bounce back and forth with RM_Bounce
-    else if (d_definition->getReplayMode() == Animation::RM_Bounce)
+    // bounce back and forth with ReplayMode::BOUNCE
+    else if (d_definition->getReplayMode() == Animation::ReplayMode::Bounce)
     {
         if (d_bounceBackwards)
         {
@@ -481,14 +465,6 @@ bool AnimationInstance::handleUnpause(const CEGUI::EventArgs&)
 bool AnimationInstance::handleTogglePause(const CEGUI::EventArgs&)
 {
     togglePause();
-
-    return true;
-}
-
-//----------------------------------------------------------------------------//
-bool AnimationInstance::handleFinish(const CEGUI::EventArgs&)
-{
-    finish();
 
     return true;
 }
@@ -592,16 +568,6 @@ void AnimationInstance::onAnimationUnpaused()
     {
         AnimationEventArgs args(this);
         d_eventReceiver->fireEvent(EventAnimationUnpaused, args, EventNamespace);
-    }
-}
-
-//----------------------------------------------------------------------------//
-void AnimationInstance::onAnimationFinished()
-{
-    if (d_eventReceiver)
-    {
-        AnimationEventArgs args(this);
-        d_eventReceiver->fireEvent(EventAnimationFinished, args, EventNamespace);
     }
 }
 

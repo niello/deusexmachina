@@ -7,7 +7,7 @@
 
 #include <UI/CEGUI/FmtLbTextItem.h>
 #include <CEGUI/widgets/Editbox.h>
-#include <CEGUI/widgets/Listbox.h>
+#include <CEGUI/widgets/MultiColumnList.h>
 #include <CEGUI/widgets/Scrollbar.h>
 
 #define MAX_LINES_START	32
@@ -30,7 +30,7 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 		CEGUI::Event::Subscriber(&CLuaConsole::OnKeyDown, this));
 	pInputLine->activate();
 
-	pOutputWnd = (CEGUI::Listbox*)pWnd->getChild("OutputList");
+	pOutputWnd = (CEGUI::MultiColumnList*)pWnd->getChild("OutputList");
 	pVertScroll = pOutputWnd->getVertScrollbar();
 
 	SUBSCRIBE_PEVENT(OnLogMsg, CLuaConsole, OnLogMsg);
@@ -51,20 +51,19 @@ void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 {
 	CEGUI::ListboxTextItem* pNewItem;
 
-	if (pOutputWnd->getItemCount() >= MAX_LINES)
+	if (pOutputWnd->getRowCount() >= MAX_LINES)
 	{
 		//???can just move from one index to another?
-		pNewItem = (CEGUI::FormattedListboxTextItem*)pOutputWnd->getListboxItemFromIndex(0);
+		pNewItem = (CEGUI::FormattedListboxTextItem*)pOutputWnd->getChildElementAtIdx(0);
 		n_assert(pNewItem);
-		pOutputWnd->removeItem(pNewItem);
-		pNewItem->setText((CEGUI::utf8*)pMsg);
+		pOutputWnd->removeRow(0);
+		pNewItem->setText(pMsg);
 	}
 	else
 	{
 		//!!!NEED TO DELETE AFTER USE!
 		pNewItem = n_new(CEGUI::FormattedListboxTextItem(
-			(CEGUI::utf8*)pMsg, CEGUI::HTF_WORDWRAP_LEFT_ALIGNED, 0, 0, true, false));
-		//pNewItem = n_new(CEGUI::ListboxTextItem((CEGUI::utf8*)pMsg, 0, 0, true, false));
+			pMsg, CEGUI::HorizontalTextFormatting::WordWrapLeftAligned, 0, 0, true, false));
 		n_assert(pNewItem);
 		pNewItem->setTextParsingEnabled(false);
 	}
@@ -73,7 +72,7 @@ void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 
 	bool ShouldScroll = (pVertScroll->getScrollPosition() >= pVertScroll->getDocumentSize() - pVertScroll->getPageSize());
 	pOutputWnd->addItem(pNewItem);
-	if (ShouldScroll) pOutputWnd->ensureItemIsVisible(pOutputWnd->getItemCount());
+	if (ShouldScroll) pOutputWnd->ensureItemIsVisible(pNewItem);
 }
 //---------------------------------------------------------------------
 
