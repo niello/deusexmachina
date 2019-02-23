@@ -30,7 +30,7 @@ protected:
 	Render::PTexture	DEMTexture;
 	Sizef				Size;			// tex size //???get from desc?
 	Sizef				DataSize;		// size of original data loaded to tex
-	Vector2f			TexelScaling;
+	glm::vec2			TexelScaling;
 	const String		Name;
 
 	CDEMTexture(CDEMRenderer& Renderer, const String& name);
@@ -51,7 +51,7 @@ public:
 	virtual const String&	getName() const { return Name; }
 	virtual const Sizef&	getSize() const { return Size; }
 	virtual const Sizef&	getOriginalDataSize() const { return DataSize;}
-	virtual const Vector2f&	getTexelScaling() const { return TexelScaling; }
+	virtual const glm::vec2& getTexelScaling() const { return TexelScaling; }
 	virtual void			loadFromFile(const String& filename, const String& resourceGroup);
 	virtual void			loadFromMemory(const void* buffer, const Sizef& buffer_size, PixelFormat pixel_format);
 	virtual void			blitFromMemory(const void* sourceData, const Rectf& area);

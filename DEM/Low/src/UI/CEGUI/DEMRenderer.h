@@ -1,7 +1,6 @@
 #pragma once
 #include <Data/RefCounted.h>
 #include <Data/HashTable.h>
-#include <UI/CEGUI/DEMFwd.h>
 #include <Render/RenderFwd.h>
 
 #include <CEGUI/Renderer.h>
@@ -29,7 +28,7 @@ protected:
 	Render::PGPUDriver					GPU;
 
 	Sizef								DisplaySize;
-	Vector2f							DisplayDPI;
+	glm::vec2							DisplayDPI;
 
 	CArray<CDEMGeometryBuffer*>			GeomBuffers;
 	CArray<CDEMTextureTarget*>			TexTargets;
@@ -68,7 +67,7 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
-	Render::PVertexBuffer	createVertexBuffer(D3DVertex* pVertexData, UPTR VertexCount);
+	Render::PVertexBuffer	createVertexBuffer(float* pVertexData, UPTR VertexCount);
 	void					setOpaqueMode(bool Opaque) { OpaqueMode = Opaque; }
 	bool					isInOpaqueMode() const { return OpaqueMode; }
 	void					setRenderState(BlendMode BlendMode, bool Clipped);
@@ -97,8 +96,8 @@ public:
 	virtual void			endRendering();
 	virtual void			setDisplaySize(const Sizef& sz);
 	virtual const Sizef&	getDisplaySize() const { return DisplaySize; }
-	virtual const Vector2f&	getDisplayDPI() const { return DisplayDPI; }
-	virtual uint			getMaxTextureSize() const;
+	virtual const glm::vec2& getDisplayDPI() const { return DisplayDPI; }
+	virtual unsigned int	getMaxTextureSize() const;
 	virtual const String&	getIdentifierString() const { return RendererID; }
 };
 

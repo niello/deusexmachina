@@ -150,7 +150,7 @@ find_package(RapidXML)
 
 # DEM: use tinyxml2 from DEM dependencies
 if(NOT TINYXML2_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2")
-    set(TINYXML2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2")
+    set(TINYXML2_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../tinyxml2/tinyxml2")
     set(TINYXML2_FOUND TRUE)
 endif()
 

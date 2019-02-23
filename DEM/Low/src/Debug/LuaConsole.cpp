@@ -157,12 +157,12 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 {
 	const CEGUI::KeyEventArgs& ke = (const CEGUI::KeyEventArgs&)e;
 
-	if (ke.scancode == CEGUI::Key::ArrowDown)
+	if (ke.scancode == CEGUI::Key::Scan::ArrowDown)
 	{
 		if (CmdHistory.GetCount() > CmdHistoryCursor + 1)
 		{
 			++CmdHistoryCursor;
-			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
+			pInputLine->setText(CmdHistory[CmdHistoryCursor].CStr());
 			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
 		else if (pInputLine->getText().c_str() && *pInputLine->getText().c_str())
@@ -178,17 +178,17 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 		}
 		OK;
 	}
-	else if (ke.scancode == CEGUI::Key::ArrowUp)
+	else if (ke.scancode == CEGUI::Key::Scan::ArrowUp)
 	{
 		if (CmdHistory.GetCount())
 		{
 			if (CmdHistoryCursor > 0) --CmdHistoryCursor;
-			pInputLine->setText((CEGUI::utf8*)CmdHistory[CmdHistoryCursor].CStr());
+			pInputLine->setText(CmdHistory[CmdHistoryCursor].CStr());
 			pInputLine->setCaretIndex(pInputLine->getText().length());
 		}
 		OK;
 	}
-	else if (ke.scancode == CEGUI::Key::Grave)
+	else if (ke.scancode == CEGUI::Key::Scan::Grave)
 	{
 		//!!!HACK, key can change in a control layout!
 		pWnd->hide();

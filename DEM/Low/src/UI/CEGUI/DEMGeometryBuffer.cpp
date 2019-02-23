@@ -9,25 +9,50 @@
 
 #include <CEGUI/RenderEffect.h>
 #include <CEGUI/Vertex.h>
+#include "CEGUI/ShaderParameterBindings.h"
 
 namespace CEGUI
 {
 
-CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner):
-	d_owner(owner),
-	d_clipRect(0, 0, 0, 0),
-	d_translation(0, 0, 0),
-	d_rotation(1, 0, 0, 0),
-	d_pivot(0, 0, 0)
+CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner, RefCounted<RenderMaterial> renderMaterial)
+	: GeometryBuffer(renderMaterial)
+	, d_owner(owner)
 {
 }
 //--------------------------------------------------------------------
 
-void CDEMGeometryBuffer::draw(uint32 drawModeMask) const
+void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 {
+	if (d_vertexData.empty()) return;
+
 	Render::CGPUDriver* pGPU = d_owner.getGPUDriver();
 	n_assert_dbg(pGPU);
+	if (!pGPU) return;
 
+	if (d_clippingActive)
+	{
+		Data::CRect SR;
+		SR.X = (int)d_preparedClippingRegion.left();
+		SR.Y = (int)d_preparedClippingRegion.top();
+		SR.W = (unsigned int)(d_preparedClippingRegion.right() - d_preparedClippingRegion.left());
+		SR.H = (unsigned int)(d_preparedClippingRegion.bottom() - d_preparedClippingRegion.top());
+		pGPU->SetScissorRect(0, &SR);
+	}
+
+	if (!d_matrixValid || !isRenderTargetDataValid(d_owner.getActiveRenderTarget()))
+	{
+		// Apply the view projection matrix to the model matrix and save the result as cached matrix
+		d_matrix = d_owner.getViewProjectionMatrix() * getModelMatrix();
+		d_matrixValid = true;
+	}
+
+	CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
+
+	// Set the uniform variables for this GeometryBuffer in the Shader
+	shaderParameterBindings->setParameter("modelViewProjMatrix", d_matrix);
+	shaderParameterBindings->setParameter("alphaPercentage", d_alpha);
+
+	//???
 	if (!d_bufferIsSync)
 	{
 		const UPTR vertex_count = d_vertices.GetCount();
@@ -51,19 +76,13 @@ void CDEMGeometryBuffer::draw(uint32 drawModeMask) const
 
 	pGPU->SetVertexBuffer(0, d_vertexBuffer.Get());
 
-	Data::CRect SR;
-	SR.X = (int)d_clipRect.left();
-	SR.Y = (int)d_clipRect.top();
-	SR.W = (unsigned int)(d_clipRect.right() - d_clipRect.left());
-	SR.H = (unsigned int)(d_clipRect.bottom() - d_clipRect.top());
-	pGPU->SetScissorRect(0, &SR);
-
-	if (!d_matrixValid) updateMatrix();
-	d_owner.setWorldMatrix(d_matrix);
+	d_owner.bindBlendMode(d_blendMode);
+	d_owner.bindRasterizerState(d_clippingActive);
 
 	Render::CPrimitiveGroup	primGroup;
 	primGroup.FirstVertex = 0;
 	primGroup.FirstIndex = 0;
+	primGroup.VertexCount = d_vertexCount;
 	primGroup.IndexCount = 0;
 	primGroup.Topology = Render::Prim_TriList;
 	// We don't use AABB
@@ -71,36 +90,31 @@ void CDEMGeometryBuffer::draw(uint32 drawModeMask) const
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
 	{
-		//!!!Docs: performPreRenderFunctions() must be called AFTER all state changes!
+		// set up RenderEffect
 		if (d_effect) d_effect->performPreRenderFunctions(pass);
 
-		for (CArray<BatchInfo>::CIterator i = d_batches.Begin(); i != d_batches.End(); ++i)
-		{
-			primGroup.VertexCount = i->vertexCount;
-			d_owner.setRenderState(d_blendMode, i->clip);
-			d_owner.commitChangedConsts();
-			pGPU->BindResource(Render::ShaderType_Pixel, d_owner.getTextureHandle(), i->texture.Get());
-			pGPU->Draw(primGroup);
-			primGroup.FirstVertex += primGroup.VertexCount;
-		}
+		//Prepare for the rendering process according to the used render material
+		d_renderMaterial->prepareForRendering();
+
+		// draw the geometry
+		//???d_owner.commitChangedConsts();
+		pGPU->Draw(primGroup);
 	}
 
+	// clean up RenderEffect
 	if (d_effect) d_effect->performPostRenderFunctions();
+
+	updateRenderTargetData(d_owner.getActiveRenderTarget());
 }
 //--------------------------------------------------------------------
 
-void CDEMGeometryBuffer::setClippingRegion(const Rectf& region)
+void CDEMGeometryBuffer::appendGeometry(const float* vertex_data, std::size_t array_size)
 {
-	d_clipRect.top(n_max(0.0f, region.top()));
-	d_clipRect.bottom(n_max(0.0f, region.bottom()));
-	d_clipRect.left(n_max(0.0f, region.left()));
-	d_clipRect.right(n_max(0.0f, region.right()));
-}
-//--------------------------------------------------------------------
+	GeometryBuffer::appendGeometry(vertex_data, array_size);
 
-void CDEMGeometryBuffer::appendGeometry(const Vertex* const vbuff, uint vertex_count)
-{
-    Render::CTexture* pTex = d_activeTexture ? d_activeTexture->getTexture() : NULL;
+	//////////////
+
+	Render::CTexture* pTex = d_activeTexture ? d_activeTexture->getTexture() : NULL;
 
     // create a new batch if there are no batches yet, or if the active texture
     // differs from that used by the current batch.
@@ -132,50 +146,6 @@ void CDEMGeometryBuffer::appendGeometry(const Vertex* const vbuff, uint vertex_c
 	}
 
 	d_bufferIsSync = false;
-}
-//--------------------------------------------------------------------
-
-void CDEMGeometryBuffer::setActiveTexture(Texture* texture)
-{
-	d_activeTexture = static_cast<CDEMTexture*>(texture);
-}
-//--------------------------------------------------------------------
-
-Texture* CDEMGeometryBuffer::getActiveTexture() const
-{
-	return d_activeTexture;
-}
-//--------------------------------------------------------------------
-
-void CDEMGeometryBuffer::reset()
-{
-	d_batches.Clear();
-	d_vertices.Clear();
-	d_activeTexture = NULL;
-}
-//--------------------------------------------------------------------
-
-void CDEMGeometryBuffer::updateMatrix() const
-{
-	d_matrix.set(1.f, 0.f, 0.f, 0.f,
-				0.f, 1.f, 0.f, 0.f,
-				0.f, 0.f, 1.f, 0.f,
-				-d_pivot.d_x, -d_pivot.d_y, -d_pivot.d_z, 1.f);
-	d_matrix.mult_simple(matrix44(quaternion(d_rotation.d_x, d_rotation.d_y, d_rotation.d_z, d_rotation.d_w)));
-	matrix44 ToFinalPos(1.f, 0.f, 0.f, 0.f,
-						0.f, 1.f, 0.f, 0.f,
-						0.f, 0.f, 1.f, 0.f,
-						d_pivot.d_x + d_translation.d_x, d_pivot.d_y + d_translation.d_y, d_pivot.d_z + d_translation.d_z, 1.f);
-	d_matrix.mult_simple(ToFinalPos);
-
-	d_matrixValid = true;
-}
-//--------------------------------------------------------------------
-
-const matrix44* CDEMGeometryBuffer::getMatrix() const
-{
-	if (!d_matrixValid) updateMatrix();
-	return &d_matrix;
 }
 //--------------------------------------------------------------------
 
