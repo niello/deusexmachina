@@ -1,36 +1,26 @@
 #pragma once
 #include <CEGUI/RenderQueue.h>
-#include <Math/Matrix44.h>
+#include <CEGUI/RenderTarget.h>
+#include <UI/CEGUI/DEMRenderer.h> // For covariant override of getOwner()
 
 namespace CEGUI
 {
 class CDEMRenderer;
 
-template <typename T>
-class CDEMRenderTarget: public T
+class CDEMRenderTarget: virtual public RenderTarget
 {
 protected:
 
-	CDEMRenderer&		d_owner;
-	Rectf				d_area;
-	mutable matrix44	d_matrix;
-	mutable bool		d_matrixValid;
-	mutable float		d_viewDistance; // is set up at the same time as d_matrix
-
-	void updateMatrix() const;
+	CDEMRenderer& d_owner;
 
 public:
 
 	CDEMRenderTarget(CDEMRenderer& owner);
 
 	// implement parts of RenderTarget interface
-	virtual void			draw(const GeometryBuffer& buffer/*, uint32 drawModeMask = DrawModeMaskAll*/);
-	virtual void			draw(const RenderQueue& queue/*, uint32 drawModeMask = DrawModeMaskAll*/) { queue.draw(/*drawModeMask*/); }
-	virtual void			setArea(const Rectf& area);
-	virtual const Rectf&	getArea() const { return d_area; }
-	virtual void			activate();
-	virtual void			deactivate() {}
-	virtual void			unprojectPoint(const GeometryBuffer& buff, const glm::vec2& p_in, glm::vec2& p_out) const;
+	virtual void			activate() override;
+	virtual void			unprojectPoint(const GeometryBuffer& buff, const glm::vec2& p_in, glm::vec2& p_out) const override;
+	virtual CDEMRenderer&	getOwner() override { return d_owner; }
 };
 
 }

@@ -288,7 +288,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/UI/CEGUI/DEMLogger.h
 	DEM/Low/src/UI/CEGUI/DEMRenderer.h
 	DEM/Low/src/UI/CEGUI/DEMRenderTarget.h
-	DEM/Low/src/UI/CEGUI/DEMRenderTarget.inl
 	DEM/Low/src/UI/CEGUI/DEMResourceProvider.h
 	DEM/Low/src/UI/CEGUI/DEMShaderWrapper.h
 	DEM/Low/src/UI/CEGUI/DEMTexture.h
@@ -515,6 +514,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/UI/CEGUI/DEMGeometryBuffer.cpp
 	DEM/Low/src/UI/CEGUI/DEMLogger.cpp
 	DEM/Low/src/UI/CEGUI/DEMRenderer.cpp
+	DEM/Low/src/UI/CEGUI/DEMRenderTarget.cpp
 	DEM/Low/src/UI/CEGUI/DEMResourceProvider.cpp
 	DEM/Low/src/UI/CEGUI/DEMShaderWrapper.cpp
 	DEM/Low/src/UI/CEGUI/DEMTexture.cpp

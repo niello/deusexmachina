@@ -33,7 +33,7 @@ public:
 
 	CSM30ShaderConstant(): RegSet(Reg_Invalid) {}
 
-	virtual bool			Init(HConst hConst);
+	virtual bool			Init(HConstant hConst);
 	virtual UPTR			GetSizeInBytes() const { return SizeInBytes; }
 	virtual UPTR			GetColumnCount() const { return Columns; }
 	virtual UPTR			GetRowCount() const { return Rows; }

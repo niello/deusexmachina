@@ -1026,7 +1026,7 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
+bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	if (!Handle) FAIL;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(Handle);
@@ -1892,7 +1892,7 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 
 //!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
-PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
+PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
@@ -1901,7 +1901,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuffer)
+PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer hBuffer)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
@@ -3347,7 +3347,7 @@ bool CD3D11GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 
 //!!!may use abstract CShaderConst, CShaderConstFloatArray, CD3D11ShaderConstFloatArray: public CD3D11ShaderArrayConst<float> etc and cache offset or any
 //other precomputed location there for fast setting!
-bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size)
+bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size)
 {
 	if (!hConst || !pData || !Size) FAIL;
 

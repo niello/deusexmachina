@@ -202,8 +202,8 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL) override;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) override;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) override;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) override;
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer) override;
+	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) override;
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) override;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) override;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) override;
@@ -225,7 +225,7 @@ public:
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const override;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const override;
 
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer) override;
+	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer) override;
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) override;
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) override;
 
@@ -256,7 +256,7 @@ public:
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) override;
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size) override;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
 
 	//void					SetWireframe(bool Wire);

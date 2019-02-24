@@ -37,7 +37,7 @@ protected:
 	BOOL*			pBoolData = nullptr;
 	UPTR			BoolCount = 0;
 
-	HConstBuffer	Handle = INVALID_HANDLE; //!!!strictly bounds D3D9 CB to the host Shader! may copy relevant metadata instead, if inacceptable
+	HConstantBuffer	Handle = INVALID_HANDLE; //!!!strictly bounds D3D9 CB to the host Shader! may copy relevant metadata instead, if inacceptable
 	Data::CFlags	DirtyFlags;
 	bool			Temporary = false;
 
@@ -59,7 +59,7 @@ public:
 	bool			IsDirtyInt4() const { return DirtyFlags.Is(CB9_DirtyInt4); }
 	bool			IsDirtyBool() const { return DirtyFlags.Is(CB9_DirtyBool); }
 	bool			IsTemporary() const { return Temporary; }
-	HConstBuffer	GetHandle() const { return Handle; }
+	HConstantBuffer	GetHandle() const { return Handle; }
 	const float*	GetFloat4Data() const { return pFloat4Data; }
 	const int*		GetInt4Data() const { return pInt4Data; }
 	const BOOL*		GetBoolData() const { return pBoolData; }

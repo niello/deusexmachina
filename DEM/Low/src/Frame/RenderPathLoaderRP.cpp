@@ -51,7 +51,7 @@ static bool LoadGlobalParams(IO::CBinaryReader& Reader,
 		U32 SizeInBytes;
 		if (!Reader.Read(SizeInBytes)) FAIL;
 
-		Render::HConst hConst = pShaderMeta->GetConstHandle(ParamID);
+		Render::HConstant hConst = pShaderMeta->GetConstantHandle(ParamID);
 		if (hConst == INVALID_HANDLE) FAIL;
 
 		Render::CEffectConstant& Rec = OutConsts[ParamIdx];

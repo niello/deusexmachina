@@ -34,7 +34,7 @@ protected:
 	};
 
 	PGPUDriver								GPU;
-	CDict<HConstBuffer, CConstBufferRecord> Buffers;
+	CDict<HConstantBuffer, CConstBufferRecord> Buffers;
 
 public:
 
@@ -42,9 +42,9 @@ public:
 	~CConstantBufferSet();
 
 	bool				SetGPU(PGPUDriver NewGPU);
-	bool				RegisterPermanentBuffer(HConstBuffer Handle, CConstantBuffer& Buffer);
-	bool				IsBufferRegistered(HConstBuffer Handle) const;
-	CConstantBuffer*	RequestBuffer(HConstBuffer Handle, EShaderType Stage);
+	bool				RegisterPermanentBuffer(HConstantBuffer Handle, CConstantBuffer& Buffer);
+	bool				IsBufferRegistered(HConstantBuffer Handle) const;
+	CConstantBuffer*	RequestBuffer(HConstantBuffer Handle, EShaderType Stage);
 	bool				CommitChanges();
 	void				UnbindAndClear();
 };

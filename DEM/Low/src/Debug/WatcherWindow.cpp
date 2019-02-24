@@ -195,13 +195,13 @@ bool CWatcherWindow::OnAddVarsClick(const CEGUI::EventArgs& e)
 
 bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	const char* pPattern = pPatternEdit->getText().c_str();
-	bool CheckMatch = (pPattern && *pPattern && strcmp(pPattern, "*"));
+	std::string Pattern = CEGUI::String::convertUtf32ToUtf8(pPatternEdit->getText().c_str());
+	const bool CheckMatch = !Pattern.empty() && Pattern != "*";
 
 	int i = 0;
 	for (CArray<CWatched>::CIterator It = Watched.Begin(); It != Watched.End(); It++, ++i)
 	{
-		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName, pPattern))
+		if (!CheckMatch || StringUtils::MatchesPattern(It->VarName, Pattern.c_str()))
 		{
 			if (It->Type == DEM)
 			{

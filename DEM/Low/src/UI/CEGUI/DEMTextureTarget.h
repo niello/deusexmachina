@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_CEGUI_TEXTURE_TARGET_H__
-#define __DEM_L1_CEGUI_TEXTURE_TARGET_H__
-
 #include <UI/CEGUI/DEMRenderTarget.h>
 #include <CEGUI/TextureTarget.h>
 #include <Data/RefCounted.h>
@@ -17,12 +14,12 @@ namespace CEGUI
 class CDEMRenderer;
 class CDEMTexture;
 
-class CDEMTextureTarget: public CDEMRenderTarget<TextureTarget>
+class CDEMTextureTarget : public CDEMRenderTarget, public TextureTarget
 {
 protected:
 
 	static const float			DEFAULT_SIZE;
-	static unsigned int			s_textureNumber;
+	static UPTR					s_textureNumber;
 	static String				generateTextureName();
 
 	Render::PRenderTarget		RT;
@@ -38,23 +35,20 @@ protected:
 
 public:
 
-	CDEMTextureTarget(CDEMRenderer& owner, const float size = DEFAULT_SIZE);
+	CDEMTextureTarget(CDEMRenderer& owner, bool addStencilBuffer, const float w = DEFAULT_SIZE, const float h = DEFAULT_SIZE);
 	virtual ~CDEMTextureTarget();
 
 	// overrides from CDEMRenderTarget
-	virtual void		activate();
-	virtual void		deactivate();
+	virtual void		activate() override;
+	virtual void		deactivate() override;
 
 	// implementation of RenderTarget interface
-	virtual bool		isImageryCache() const { return true; }
+	virtual bool		isImageryCache() const override { return true; }
 
 	// implementation of TextureTarget interface
-	virtual void		clear();
-	virtual Texture&	getTexture() const;
-	virtual void		declareRenderSize(const Sizef& sz);
-	virtual bool		isRenderingInverted() const { return false; }
+	virtual void		clear() override;
+	virtual Texture&	getTexture() const override;
+	virtual void		declareRenderSize(const Sizef& sz) override;
 };
 
 }
-
-#endif

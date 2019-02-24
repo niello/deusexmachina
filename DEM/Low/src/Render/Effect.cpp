@@ -62,7 +62,7 @@ bool CEffect::LoadParams(IO::CBinaryReader& Reader,
 		}
 		if (!pShaderMeta) FAIL;
 
-		Render::HConst hConst = pShaderMeta->GetConstHandle(ParamID);
+		Render::HConstant hConst = pShaderMeta->GetConstantHandle(ParamID);
 		if (hConst == INVALID_HANDLE) FAIL;
 
 		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
@@ -614,7 +614,7 @@ bool CEffect::Load(CGPUDriver& GPU, IO::CStream& Stream)
 	CArray<HHandle> MtlConstBuffers;
 	for (UPTR i = 0; i < MaterialConsts.GetCount(); ++i)
 	{
-		const Render::HConstBuffer hCB = MaterialConsts[i].Const->GetConstantBufferHandle();
+		const Render::HConstantBuffer hCB = MaterialConsts[i].Const->GetConstantBufferHandle();
 		if (!MtlConstBuffers.Contains(hCB)) MtlConstBuffers.Add(hCB);
 	}
 	MaterialConstantBufferCount = MtlConstBuffers.GetCount();

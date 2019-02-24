@@ -27,7 +27,7 @@ public:
 
 	//CUSMShaderConstant(): Offset(0), StructHandle(INVALID_HANDLE), Columns(0), Rows(0), Flags(0) {}
 
-	virtual bool			Init(HConst hConst);
+	virtual bool			Init(HConstant hConst);
 	virtual UPTR			GetSizeInBytes() const { return ElementCount * ElementSize; }
 	virtual UPTR			GetColumnCount() const { return Columns; }
 	virtual UPTR			GetRowCount() const { return Rows; }

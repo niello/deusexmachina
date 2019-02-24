@@ -6,7 +6,7 @@
 namespace Render
 {
 
-bool CSM30ShaderConstant::Init(HConst hConst)
+bool CSM30ShaderConstant::Init(HConstant hConst)
 {
 	if (!hConst) FAIL;
 	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)IShaderMetadata::GetHandleData(hConst);

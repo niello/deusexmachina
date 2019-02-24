@@ -184,7 +184,7 @@ void CUSMShaderMetadata::Clear()
 }
 //---------------------------------------------------------------------
 
-HConst CUSMShaderMetadata::GetConstHandle(CStrID ID) const
+HConstant CUSMShaderMetadata::GetConstantHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
@@ -200,7 +200,7 @@ HConst CUSMShaderMetadata::GetConstHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstBuffer CUSMShaderMetadata::GetConstBufferHandle(CStrID ID) const
+HConstantBuffer CUSMShaderMetadata::GetConstantBufferHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
@@ -251,7 +251,7 @@ HSampler CUSMShaderMetadata::GetSamplerHandle(CStrID ID) const
 /*
 bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 {
-	HConst Handle = GetConstHandle(ID);
+	HConstant Handle = GetConstantHandle(ID);
 	if (Handle == INVALID_HANDLE) FAIL;
 	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(Handle);
 	Out.Handle = Handle;
@@ -283,7 +283,7 @@ bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 //---------------------------------------------------------------------
 */
 
-PShaderConstant CUSMShaderMetadata::GetConstant(HConst hConst) const
+PShaderConstant CUSMShaderMetadata::GetConstant(HConstant hConst) const
 {
 	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
 	if (!pMeta) return NULL;

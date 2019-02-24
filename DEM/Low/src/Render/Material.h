@@ -23,7 +23,7 @@ protected:
 
 	struct CConstBufferRecord
 	{
-		HConstBuffer	Handle;
+		HConstantBuffer	Handle;
 		PConstantBuffer	Buffer;
 		EShaderType		ShaderType;		// Now supports binding to only one stage at a time
 	};

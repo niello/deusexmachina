@@ -107,7 +107,7 @@ protected:
 	};
 
 	CPoolAllocator<CTmpCB>				TmpCBPool;
-	CHashTable<HConstBuffer, CTmpCB*>	TmpConstantBuffers;
+	CHashTable<HConstantBuffer, CTmpCB*>	TmpConstantBuffers;
 	CTmpCB*								pPendingCBHead = nullptr;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
@@ -173,8 +173,8 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) override;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL);
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer);
+	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL);
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer);
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
@@ -195,7 +195,7 @@ public:
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const;
 
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer);
+	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer);
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
 
@@ -222,7 +222,7 @@ public:
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) { FAIL; }
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer);
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size);
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size);
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer);
 
 	//void						SetWireframe(bool Wire);

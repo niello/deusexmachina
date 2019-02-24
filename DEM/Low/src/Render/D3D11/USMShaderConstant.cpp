@@ -6,7 +6,7 @@
 namespace Render
 {
 
-bool CUSMShaderConstant::Init(HConst hConst)
+bool CUSMShaderConstant::Init(HConstant hConst)
 {
 	if (!hConst) FAIL;
 

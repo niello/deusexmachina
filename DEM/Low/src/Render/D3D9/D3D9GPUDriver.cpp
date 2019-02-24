@@ -1684,7 +1684,7 @@ CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer)
+bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer)
 {
 	if (!Handle) FAIL;
 	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(Handle);
@@ -1728,7 +1728,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstBuffer Han
 					if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 					else pPendingCBHead = pCurrNode->pNext;
 
-					HConstBuffer hCurrCB = pCurrNode->CB->GetHandle();
+					HConstantBuffer hCurrCB = pCurrNode->CB->GetHandle();
 					CTmpCB** ppHead = TmpConstantBuffers.Get(hCurrCB);
 					if (ppHead)
 					{
@@ -2262,7 +2262,7 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
+PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	n_assert_dbg(!pData || pData->IsA<CD3D9ConstantBuffer>());
 
@@ -2276,7 +2276,7 @@ PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstBuffer hBuffer, UPTR 
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstBuffer hBuffer)
+PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer hBuffer)
 {
 	if (!pD3DDevice || !hBuffer) return NULL;
 
@@ -2305,7 +2305,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CBuffer;
 	n_assert_dbg(CB9.IsTemporary());
 
-	HConstBuffer Handle = CB9.GetHandle();
+	HConstantBuffer Handle = CB9.GetHandle();
 	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(Handle);
 	n_assert_dbg(pMeta);
 
@@ -3294,7 +3294,7 @@ bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size)
+bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size)
 {
 	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
 

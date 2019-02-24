@@ -50,7 +50,7 @@ bool CMaterial::Load(CGPUDriver& GPU, IO::CStream& Stream)
 	{
 		const Render::CEffectConstant& Const = Consts[i];
 
-		const Render::HConstBuffer hCB = Const.Const->GetConstantBufferHandle();
+		const Render::HConstantBuffer hCB = Const.Const->GetConstantBufferHandle();
 		Render::CMaterial::CConstBufferRecord* pRec = nullptr;
 		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
 			if (ConstBuffers[BufIdx].Handle == hCB)

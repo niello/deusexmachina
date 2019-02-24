@@ -25,7 +25,7 @@ bool CConstantBufferSet::SetGPU(PGPUDriver NewGPU)
 }
 //---------------------------------------------------------------------
 
-bool CConstantBufferSet::RegisterPermanentBuffer(HConstBuffer Handle, CConstantBuffer& Buffer)
+bool CConstantBufferSet::RegisterPermanentBuffer(HConstantBuffer Handle, CConstantBuffer& Buffer)
 {
 	if (Handle == INVALID_HANDLE) FAIL;
 
@@ -38,13 +38,13 @@ bool CConstantBufferSet::RegisterPermanentBuffer(HConstBuffer Handle, CConstantB
 }
 //---------------------------------------------------------------------
 
-bool CConstantBufferSet::IsBufferRegistered(HConstBuffer Handle) const
+bool CConstantBufferSet::IsBufferRegistered(HConstantBuffer Handle) const
 {
 	return Buffers.Contains(Handle);
 }
 //---------------------------------------------------------------------
 
-CConstantBuffer* CConstantBufferSet::RequestBuffer(HConstBuffer Handle, EShaderType Stage)
+CConstantBuffer* CConstantBufferSet::RequestBuffer(HConstantBuffer Handle, EShaderType Stage)
 {
 	IPTR BufferIdx = Buffers.FindIndex(Handle);
 	CConstBufferRecord* pRec;
@@ -91,7 +91,7 @@ bool CConstantBufferSet::CommitChanges()
 		if (!GPU->CommitShaderConstants(Buffer)) FAIL;
 
 		// Bind buffer to all stages it is used at
-		HConstBuffer hCB = Buffers.KeyAt(i);
+		HConstantBuffer hCB = Buffers.KeyAt(i);
 		for (UPTR j = 0; j < Render::ShaderType_COUNT; ++j)
 			if (Rec.Flags & (1 << j))
 				GPU->BindConstantBuffer((Render::EShaderType)j, hCB, &Buffer);

@@ -6,16 +6,19 @@
 #include <Render/DepthStencilBuffer.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMTexture.h>
+#include <CEGUI/PropertyHelper.h>
 
 namespace CEGUI
 {
 const float CDEMTextureTarget::DEFAULT_SIZE = 128.0f;
-uint CDEMTextureTarget::s_textureNumber = 0;
+UPTR CDEMTextureTarget::s_textureNumber = 0;
 
-CDEMTextureTarget::CDEMTextureTarget(CDEMRenderer& owner, const float size): CDEMRenderTarget<TextureTarget>(owner)
+CDEMTextureTarget::CDEMTextureTarget(CDEMRenderer& owner, bool addStencilBuffer, const float w, const float h)
+	: CDEMRenderTarget(owner)
+	, TextureTarget(addStencilBuffer)
 {
 	d_CEGUITexture = &static_cast<CDEMTexture&>(d_owner.createTexture(generateTextureName()));
-	declareRenderSize(Sizef(size, size));
+	declareRenderSize(Sizef(w, h));
 }
 //---------------------------------------------------------------------
 
@@ -85,8 +88,8 @@ void CDEMTextureTarget::initialiseRenderTexture()
 
 void CDEMTextureTarget::cleanupRenderTexture()
 {
-	if (d_CEGUITexture) d_CEGUITexture->setTexture(NULL);
-	RT = NULL;
+	if (d_CEGUITexture) d_CEGUITexture->setTexture(nullptr);
+	RT = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -102,10 +105,7 @@ void CDEMTextureTarget::enableRenderTexture()
 	PrevRT = d_owner.getGPUDriver()->GetRenderTarget(0);
 	PrevDS = d_owner.getGPUDriver()->GetDepthStencilBuffer();
 	d_owner.getGPUDriver()->SetRenderTarget(0, RT.Get());
-	//UPTR MaxRT = d_owner.getGPUDriver()->GetMaxMultipleRenderTargetCount();
-	//for (UPTR i = 1; i < MaxRT; ++i)
-	//	d_owner.getGPUDriver()->SetRenderTarget(i, NULL);
-	d_owner.getGPUDriver()->SetDepthStencilBuffer(NULL);
+	d_owner.getGPUDriver()->SetDepthStencilBuffer(nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -113,23 +113,17 @@ void CDEMTextureTarget::disableRenderTexture()
 {
 	d_owner.getGPUDriver()->SetRenderTarget(0, PrevRT.Get());
 	d_owner.getGPUDriver()->SetDepthStencilBuffer(PrevDS.Get());
-	PrevRT = NULL;
-	PrevDS = NULL;
+	PrevRT = nullptr;
+	PrevDS = nullptr;
 }
 //---------------------------------------------------------------------
 
 String CDEMTextureTarget::generateTextureName()
 {
-	char StrIdx[12];
-	_itoa_s(s_textureNumber++, StrIdx, 10);
-	String tmp("CEGUI_CDEMTexture_");
-	tmp.append(StrIdx);
+	String tmp("_CEGUI_CDEMTextureTarget_");
+	tmp.append(PropertyHelper<std::uint32_t>::toString(s_textureNumber++));
 	return tmp;
 }
 //---------------------------------------------------------------------
 
 } 
-
-// Implementation of template base class
-#include "DEMRenderTarget.inl"
-
