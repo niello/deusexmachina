@@ -3,6 +3,11 @@
 #include <CEGUI/TextureTarget.h>
 #include <Data/RefCounted.h>
 
+#if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable : 4250)
+#endif
+
 namespace Render
 {
 	typedef Ptr<class CRenderTarget> PRenderTarget;
@@ -52,3 +57,7 @@ public:
 };
 
 }
+
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif
