@@ -147,22 +147,36 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 	n_assert(LinearSampler.IsValidPtr());
 
 	//=================================================================
-	// Vertex declaration
+	// Vertex declarations
 	//=================================================================
 
+	//???use Render::VCFmt_UInt8_4_Norm for color? convert on append vertices?
 	Render::CVertexComponent Components[] = {
-			{ Render::VCSem_Position, NULL, 0, Render::VCFmt_Float32_3, 0, 0, false },
-			{ Render::VCSem_Color, NULL, 0, Render::VCFmt_UInt8_4_Norm, 0, 12, false },
-			{ Render::VCSem_TexCoord, NULL, 0, Render::VCFmt_Float32_2, 0, 16, false } };
+			{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_3, 0, 0, false },
+			{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 0, 12, false },
+			{ Render::VCSem_TexCoord, nullptr, 0, Render::VCFmt_Float32_2, 0, 28, false } };
 
-	VertexLayout = GPU->CreateVertexLayout(Components, sizeof_array(Components));
-	n_assert(VertexLayout.IsValidPtr());
+	VertexLayoutTextured = GPU->CreateVertexLayout(Components, 3);
+	n_assert(VertexLayoutTextured.IsValidPtr());
+
+	VertexLayoutColoured = GPU->CreateVertexLayout(Components, 2);
+	n_assert(VertexLayoutColoured.IsValidPtr());
 
 	//!!!need some method to precreate actual vertex layout by passing a shader!
 	//but this may require knowledge about D3D11 nature of otherwise abstract GPU
 	//???call GPU->CreateRenderCache() and then reuse it?
 
-	pDefaultRT = n_new(CDEMViewportTarget)(*this, Rectf(0.f, 0.f, DefaultContextWidth, DefaultContextHeight));
+	/////////////////////////////////////
+	/*
+	d_shaderWrapperTextured = new Direct3D11ShaderWrapper(*ShaderTextured, this);
+	d_shaderWrapperTextured->addUniformVariable("texture0", ShaderType::PIXEL, ShaderParamType::Texture);
+	d_shaderWrapperTextured->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
+	d_shaderWrapperTextured->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
+
+	d_shaderWrapperSolid = new Direct3D11ShaderWrapper(*ShaderColoured, this);
+	d_shaderWrapperSolid->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
+	d_shaderWrapperSolid->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
+	*/
 }
 //--------------------------------------------------------------------
 
@@ -171,25 +185,26 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllTextureTargets();
 	destroyAllTextures();
 	destroyAllGeometryBuffers();
-	n_delete(pDefaultRT);
+	SAFE_DELETE(pDefaultRT);
 
-	ConstWorldMatrix = NULL;
-	ConstProjMatrix = NULL;
+	ConstWorldMatrix = nullptr;
+	ConstProjMatrix = nullptr;
 	hWMCB = INVALID_HANDLE;
 	hPMCB = INVALID_HANDLE;
 	hTexture = INVALID_HANDLE;
 	hLinearSampler = INVALID_HANDLE;
-	VertexLayout = NULL;
-	NormalUnclipped = NULL;
-	NormalClipped = NULL;
-	PremultipliedUnclipped = NULL;
-	PremultipliedClipped = NULL;
-	OpaqueUnclipped = NULL;
-	OpaqueClipped = NULL;
-	WMCB = NULL;
-	PMCB = NULL;
-	LinearSampler = NULL;
-	GPU = NULL;
+	VertexLayoutTextured = nullptr;
+	VertexLayoutColoured = nullptr;
+	NormalUnclipped = nullptr;
+	NormalClipped = nullptr;
+	PremultipliedUnclipped = nullptr;
+	PremultipliedClipped = nullptr;
+	OpaqueUnclipped = nullptr;
+	OpaqueClipped = nullptr;
+	WMCB = nullptr;
+	PMCB = nullptr;
+	LinearSampler = nullptr;
+	GPU = nullptr;
 }
 //--------------------------------------------------------------------
 
@@ -223,36 +238,9 @@ void CDEMRenderer::logTextureDestruction(const String& name)
 }
 //---------------------------------------------------------------------
 
-GeometryBuffer& CDEMRenderer::createGeometryBuffer()
+Render::PVertexBuffer CDEMRenderer::createVertexBuffer(const void* pVertexData, UPTR VertexCount)
 {
-	CDEMGeometryBuffer* b = n_new(CDEMGeometryBuffer)(*this);
-	GeomBuffers.Add(b);
-	return *b;
-}
-//--------------------------------------------------------------------
-
-void CDEMRenderer::destroyGeometryBuffer(const GeometryBuffer& buffer)
-{
-	IPTR Idx = GeomBuffers.FindIndex((CDEMGeometryBuffer*)&buffer);
-	if (Idx != INVALID_INDEX)
-	{
-		GeomBuffers.RemoveAt(Idx);
-		n_delete(&buffer);
-	}
-}
-//--------------------------------------------------------------------
-
-void CDEMRenderer::destroyAllGeometryBuffers()
-{
-	for (CArray<CDEMGeometryBuffer*>::CIterator It = GeomBuffers.Begin(); It < GeomBuffers.End(); ++It)
-		n_delete(*It);
-	GeomBuffers.Clear(true);
-}
-//--------------------------------------------------------------------
-
-Render::PVertexBuffer CDEMRenderer::createVertexBuffer(D3DVertex* pVertexData, UPTR VertexCount)
-{
-	if (!pVertexData || !VertexCount || VertexLayout.IsNullPtr()) return NULL;
+	if (!pVertexData || !VertexCount || VertexLayout.IsNullPtr()) return nullptr;
 	return GPU->CreateVertexBuffer(*VertexLayout, VertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
 }
 //--------------------------------------------------------------------
@@ -265,7 +253,7 @@ void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
 	}
 	else
 	{
-		if (BlendMode == BM_RTT_PREMULTIPLIED)
+		if (BlendMode == BlendMode::RttPremultiplied)
 			GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
 		else
 			GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
@@ -273,7 +261,7 @@ void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
 }
 //--------------------------------------------------------------------
 
-TextureTarget* CDEMRenderer::createTextureTarget()
+TextureTarget* CDEMRenderer::createTextureTarget(bool addStencilBuffer)
 {
 	CDEMTextureTarget* t = n_new(CDEMTextureTarget)(*this);
 	TexTargets.Add(t);
@@ -393,10 +381,48 @@ void CDEMRenderer::commitChangedConsts()
 }
 //--------------------------------------------------------------------
 
+RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShaderType shaderType) const
+{
+	if (shaderType == DefaultShaderType::Textured)
+	{
+		return new RenderMaterial(d_shaderWrapperTextured);
+	}
+	else if (shaderType == DefaultShaderType::Solid)
+	{
+		return new RenderMaterial(d_shaderWrapperSolid);
+	}
+	else
+	{
+		throw RendererException("A default shader of this type does not exist.");
+		return RefCounted<RenderMaterial>();
+	}
+}
+//--------------------------------------------------------------------
+
+GeometryBuffer& CDEMRenderer::createGeometryBufferTextured(RefCounted<RenderMaterial> renderMaterial)
+{
+	DEMGeometryBuffer* pBuffer = new DEMGeometryBuffer(*this, renderMaterial);
+
+	//VertexLayoutTextured
+
+	addGeometryBuffer(*pBuffer);
+	return *pBuffer;
+}
+//--------------------------------------------------------------------
+
+GeometryBuffer& CDEMRenderer::createGeometryBufferColoured(RefCounted<RenderMaterial> renderMaterial)
+{
+	DEMGeometryBuffer* pBuffer = new DEMGeometryBuffer(*this, renderMaterial);
+
+	//VertexLayoutColoured
+
+	addGeometryBuffer(*pBuffer);
+	return *pBuffer;
+}
+//--------------------------------------------------------------------
+
 void CDEMRenderer::beginRendering()
 {
-	GPU->SetVertexLayout(VertexLayout.Get());
-
 	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hWMCB, WMCB.Get());
 	GPU->BeginShaderConstants(*WMCB.Get());
 	if (hWMCB != hPMCB)
@@ -428,7 +454,7 @@ void CDEMRenderer::setDisplaySize(const Sizef& sz)
 }
 //---------------------------------------------------------------------
 
-uint CDEMRenderer::getMaxTextureSize() const
+unsigned int CDEMRenderer::getMaxTextureSize() const
 {
 	return GPU->GetMaxTextureSize(Render::Texture_2D);
 }

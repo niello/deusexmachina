@@ -22,7 +22,7 @@ class CDEMTextureTarget: public CDEMRenderTarget<TextureTarget>
 protected:
 
 	static const float			DEFAULT_SIZE;
-	static uint					s_textureNumber;
+	static unsigned int			s_textureNumber;
 	static String				generateTextureName();
 
 	Render::PRenderTarget		RT;

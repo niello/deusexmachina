@@ -30,12 +30,12 @@ protected:
 	Sizef								DisplaySize;
 	glm::vec2							DisplayDPI;
 
-	CArray<CDEMGeometryBuffer*>			GeomBuffers;
 	CArray<CDEMTextureTarget*>			TexTargets;
 	CHashTable<String, CDEMTexture*>	Textures;
 
 	RenderTarget*						pDefaultRT = nullptr;
-	Render::PVertexLayout				VertexLayout;
+	Render::PVertexLayout				VertexLayoutTextured;
+	Render::PVertexLayout				VertexLayoutColoured;
 	Render::PRenderState				NormalUnclipped;
 	Render::PRenderState				NormalClipped;
 	Render::PRenderState				PremultipliedUnclipped;
@@ -67,7 +67,7 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
-	Render::PVertexBuffer	createVertexBuffer(float* pVertexData, UPTR VertexCount);
+	Render::PVertexBuffer	createVertexBuffer(const void* pVertexData, UPTR VertexCount);
 	void					setOpaqueMode(bool Opaque) { OpaqueMode = Opaque; }
 	bool					isInOpaqueMode() const { return OpaqueMode; }
 	void					setRenderState(BlendMode BlendMode, bool Clipped);
@@ -77,28 +77,28 @@ public:
 	void					commitChangedConsts();
 
 	// Implement interface from Renderer
-	virtual RenderTarget&	getDefaultRenderTarget() { return *pDefaultRT; }
-	virtual GeometryBuffer&	createGeometryBuffer();
-	virtual void			destroyGeometryBuffer(const GeometryBuffer& buffer);
-	virtual void			destroyAllGeometryBuffers();
-	virtual TextureTarget*	createTextureTarget();
-	virtual void			destroyTextureTarget(TextureTarget* target);
-	virtual void			destroyAllTextureTargets();
-	virtual Texture&		createTexture(const String& name);
-	virtual Texture&		createTexture(const String& name, const String& filename, const String& resourceGroup);
-	virtual Texture&		createTexture(const String& name, const Sizef& size);
-	virtual void			destroyTexture(Texture& texture);
-	virtual void			destroyTexture(const String& name);
-	virtual void			destroyAllTextures();
-	virtual Texture&		getTexture(const String& name) const;
-	virtual bool			isTextureDefined(const String& name) const { return Textures.Contains(name); }
-	virtual void			beginRendering();
-	virtual void			endRendering();
-	virtual void			setDisplaySize(const Sizef& sz);
-	virtual const Sizef&	getDisplaySize() const { return DisplaySize; }
-	virtual const glm::vec2& getDisplayDPI() const { return DisplayDPI; }
-	virtual unsigned int	getMaxTextureSize() const;
-	virtual const String&	getIdentifierString() const { return RendererID; }
+	virtual RenderTarget&	getDefaultRenderTarget() override { return *pDefaultRT; }
+	virtual RefCounted<RenderMaterial> createRenderMaterial(const DefaultShaderType shaderType) const override;
+	virtual GeometryBuffer& createGeometryBufferTextured(RefCounted<RenderMaterial> renderMaterial) override;
+	virtual GeometryBuffer& createGeometryBufferColoured(RefCounted<RenderMaterial> renderMaterial) override;
+	virtual TextureTarget*	createTextureTarget(bool addStencilBuffer) override;
+	virtual void			destroyTextureTarget(TextureTarget* target) override;
+	virtual void			destroyAllTextureTargets() override;
+	virtual Texture&		createTexture(const String& name) override;
+	virtual Texture&		createTexture(const String& name, const String& filename, const String& resourceGroup) override;
+	virtual Texture&		createTexture(const String& name, const Sizef& size) override;
+	virtual void			destroyTexture(Texture& texture) override;
+	virtual void			destroyTexture(const String& name) override;
+	virtual void			destroyAllTextures() override;
+	virtual Texture&		getTexture(const String& name) const override;
+	virtual bool			isTextureDefined(const String& name) const override { return Textures.Contains(name); }
+	virtual void			beginRendering() override;
+	virtual void			endRendering() override;
+	virtual void			setDisplaySize(const Sizef& sz) override;
+	virtual const Sizef&	getDisplaySize() const override { return DisplaySize; }
+	virtual unsigned int	getMaxTextureSize() const override;
+	virtual const String&	getIdentifierString() const override { return RendererID; }
+	virtual bool			isTexCoordSystemFlipped() const override { return false; }
 };
 
 }

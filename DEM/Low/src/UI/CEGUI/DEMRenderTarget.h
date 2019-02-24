@@ -1,9 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_CEGUI_RENDER_TARGET_H__
-#define __DEM_L1_CEGUI_RENDER_TARGET_H__
-
 #include <CEGUI/RenderQueue.h>
-#include <CEGUI/Rect.h>
 #include <Math/Matrix44.h>
 
 namespace CEGUI
@@ -28,15 +24,13 @@ public:
 	CDEMRenderTarget(CDEMRenderer& owner);
 
 	// implement parts of RenderTarget interface
-	virtual void			draw(const GeometryBuffer& buffer, uint32 drawModeMask = DrawModeMaskAll);
-	virtual void			draw(const RenderQueue& queue, uint32 drawModeMask = DrawModeMaskAll) { queue.draw(drawModeMask); }
+	virtual void			draw(const GeometryBuffer& buffer/*, uint32 drawModeMask = DrawModeMaskAll*/);
+	virtual void			draw(const RenderQueue& queue/*, uint32 drawModeMask = DrawModeMaskAll*/) { queue.draw(/*drawModeMask*/); }
 	virtual void			setArea(const Rectf& area);
 	virtual const Rectf&	getArea() const { return d_area; }
 	virtual void			activate();
 	virtual void			deactivate() {}
-	virtual void			unprojectPoint(const GeometryBuffer& buff, const Vector2f& p_in, Vector2f& p_out) const;
+	virtual void			unprojectPoint(const GeometryBuffer& buff, const glm::vec2& p_in, glm::vec2& p_out) const;
 };
 
 }
-
-#endif

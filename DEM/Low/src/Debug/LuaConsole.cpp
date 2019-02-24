@@ -170,7 +170,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 			if (CmdHistory.GetCount() == CmdHistoryCursor)
 			{
 				if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
-				CmdHistory.Add(CString(pInputLine->getText().c_str()));
+				CmdHistory.Add(CString(CEGUI::String::convertUtf32ToUtf8(pInputLine->getText().c_str()).c_str()));
 			}
 			CmdHistoryCursor = CmdHistory.GetCount();
 

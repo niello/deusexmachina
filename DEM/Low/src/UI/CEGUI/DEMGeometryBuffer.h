@@ -15,7 +15,6 @@ protected:
 	mutable UPTR					d_bufferSize = 0;
 	mutable bool					d_bufferIsSync = false;
 	mutable glm::mat4				d_matrix;
-	mutable bool					d_matrixValid = false;
 
 public:
 

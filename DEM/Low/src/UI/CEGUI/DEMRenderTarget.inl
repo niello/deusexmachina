@@ -17,7 +17,7 @@ CDEMRenderTarget<T>::CDEMRenderTarget(CDEMRenderer& owner):
 //---------------------------------------------------------------------
 
 template <typename T>
-void CDEMRenderTarget<T>::draw(const GeometryBuffer& buffer, uint32 drawModeMask)
+void CDEMRenderTarget<T>::draw(const GeometryBuffer& buffer/*, uint32 drawModeMask*/)
 {
 	buffer.draw(drawModeMask);
 }
@@ -54,7 +54,7 @@ void CDEMRenderTarget<T>::activate()
 //---------------------------------------------------------------------
 
 template <typename T>
-void CDEMRenderTarget<T>::unprojectPoint(const GeometryBuffer& buff, const Vector2f& p_in, Vector2f& p_out) const
+void CDEMRenderTarget<T>::unprojectPoint(const GeometryBuffer& buff, const glm::vec2& p_in, glm::vec2& p_out) const
 {
 	if (!d_matrixValid) updateMatrix();
 
