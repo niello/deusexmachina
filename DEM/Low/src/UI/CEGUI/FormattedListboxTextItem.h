@@ -17,7 +17,7 @@ public:
 		const bool auto_delete = true);
 
 	//! Destructor.
-	virtual ~FormattedListboxTextItem();
+	virtual ~FormattedListboxTextItem() override;
 
 	//! Return the current formatting set.
 	HorizontalTextFormatting getFormatting() const { return d_formatting; }
@@ -30,9 +30,9 @@ public:
 	void setFormatting(const HorizontalTextFormatting fmt);
 
 	// overridden functions.
-	Sizef getPixelSize(void) const;
-	void draw(GeometryBuffer& buffer, const Rectf& targetRect,
-		float alpha, const Rectf* clipper) const;
+	virtual Sizef getPixelSize(void) const override;
+	virtual std::vector<GeometryBuffer*> createRenderGeometry(
+		const Rectf& targetRect, float alpha, const Rectf* clipper) const override;
 
 protected:
 	//! Helper to create a FormattedRenderedString of an appropriate type.

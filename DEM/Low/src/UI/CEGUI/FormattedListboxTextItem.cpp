@@ -1,10 +1,12 @@
 #include <StdCfg.h>
-#include "FmtLbTextItem.h"
+#include "FormattedListboxTextItem.h"
 
 #include <CEGUI/LeftAlignedRenderedString.h>
 #include <CEGUI/RightAlignedRenderedString.h>
 #include <CEGUI/CentredRenderedString.h>
 #include <CEGUI/RenderedStringWordWrapper.h>
+#include <CEGUI/CoordConverter.h>
+#include <CEGUI/Font.h>
 #include <CEGUI/Image.h>
 #include <CEGUI/widgets/MultiColumnList.h>
 
@@ -76,24 +78,45 @@ Sizef FormattedListboxTextItem::getPixelSize(void) const
 }
 
 //----------------------------------------------------------------------------//
-void FormattedListboxTextItem::draw(GeometryBuffer& buffer,
+std::vector<GeometryBuffer*> FormattedListboxTextItem::createRenderGeometry(
 	const Rectf& targetRect,
 	float alpha, const Rectf* clipper) const
 {
+	std::vector<GeometryBuffer*> geomBuffers;
+
+	if (d_selected && d_selectBrush != nullptr)
+	{
+		ImageRenderSettings imgRenderSettings(
+			targetRect, clipper, true,
+			d_selectCols, alpha);
+
+		std::vector<GeometryBuffer*> brushGeomBuffers =
+			d_selectBrush->createRenderGeometry(imgRenderSettings);
+
+		geomBuffers.insert(geomBuffers.end(), brushGeomBuffers.begin(),
+			brushGeomBuffers.end());
+	}
+
+	const Font* font = getFont();
+
+	if (!font)
+		return geomBuffers;
+
+	glm::vec2 draw_pos(targetRect.getPosition());
+
+	draw_pos.y += CoordConverter::alignToPixels(
+		(font->getLineSpacing() - font->getFontHeight()) * 0.5f);
+
 	updateString();
 
-	// draw selection imagery
-	if (d_selected && d_selectBrush != 0)
-		d_selectBrush->render(buffer, targetRect, clipper,
-		getModulateAlphaColourRect(d_selectCols, alpha));
+	const ColourRect final_colours(ColourRect(0xFFFFFFFF));
 
-	// factor the window alpha into our colours.
-	const ColourRect final_colours(
-		getModulateAlphaColourRect(ColourRect(0xFFFFFFFF), alpha));
+	std::vector<GeometryBuffer*> stringGeomBuffers =
+		d_formattedRenderedString->createRenderGeometry(d_owner, draw_pos, &final_colours, clipper);
 
-	// draw the formatted text
-	d_formattedRenderedString->draw(d_owner, buffer, targetRect.getPosition(),
-		&final_colours, clipper);
+	geomBuffers.insert(geomBuffers.end(), stringGeomBuffers.begin(), stringGeomBuffers.end());
+
+	return geomBuffers;
 }
 
 //----------------------------------------------------------------------------//
