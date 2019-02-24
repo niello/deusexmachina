@@ -21,6 +21,7 @@
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
 #include "DEMTexture.h"
+#include "DEMShaderWrapper.h"
 #include "CEGUI/System.h"
 #include "CEGUI/Logger.h"
 
@@ -118,6 +119,20 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 	//=================================================================
 
 	// NB: regular and opaque pixel shaders must be compatible
+
+	//???pass 3 shaders inside, create render states there etc?
+	ShaderWrapperTextured.reset(new CDEMShaderWrapper(VS->GetMetadata(), PSRegular->GetMetadata()));
+	//ShaderWrapperTextured->addUniformVariable("texture0");
+	//ShaderWrapperTextured->addUniformVariable("modelViewProjMatrix");
+	//ShaderWrapperTextured->addUniformVariable("alphaPercentage");
+
+	//!!!TODO: non-textured shaders!
+	/*
+	ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);
+	ShaderWrapperColoured->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
+	ShaderWrapperColoured->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
+	*/
+
 	const Render::IShaderMetadata* pVSMeta = VS->GetMetadata();
 	const Render::IShaderMetadata* pPSMeta = PSRegular->GetMetadata();
 
@@ -165,18 +180,6 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 	//!!!need some method to precreate actual vertex layout by passing a shader!
 	//but this may require knowledge about D3D11 nature of otherwise abstract GPU
 	//???call GPU->CreateRenderCache() and then reuse it?
-
-	/////////////////////////////////////
-	/*
-	d_shaderWrapperTextured = new Direct3D11ShaderWrapper(*ShaderTextured, this);
-	d_shaderWrapperTextured->addUniformVariable("texture0", ShaderType::PIXEL, ShaderParamType::Texture);
-	d_shaderWrapperTextured->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
-	d_shaderWrapperTextured->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
-
-	d_shaderWrapperSolid = new Direct3D11ShaderWrapper(*ShaderColoured, this);
-	d_shaderWrapperSolid->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
-	d_shaderWrapperSolid->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
-	*/
 }
 //--------------------------------------------------------------------
 
@@ -237,13 +240,6 @@ void CDEMRenderer::logTextureDestruction(const String& name)
 	if (logger) logger->logEvent("[CEGUI::CDEMRenderer] Destroyed texture: " + name);
 }
 //---------------------------------------------------------------------
-
-Render::PVertexBuffer CDEMRenderer::createVertexBuffer(const void* pVertexData, UPTR VertexCount)
-{
-	if (!pVertexData || !VertexCount || VertexLayout.IsNullPtr()) return nullptr;
-	return GPU->CreateVertexBuffer(*VertexLayout, VertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
-}
-//--------------------------------------------------------------------
 
 void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
 {
@@ -385,11 +381,11 @@ RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShade
 {
 	if (shaderType == DefaultShaderType::Textured)
 	{
-		return new RenderMaterial(d_shaderWrapperTextured);
+		return new RenderMaterial(ShaderWrapperTextured);
 	}
 	else if (shaderType == DefaultShaderType::Solid)
 	{
-		return new RenderMaterial(d_shaderWrapperSolid);
+		return new RenderMaterial(ShaderWrapperColoured);
 	}
 	else
 	{
@@ -401,10 +397,8 @@ RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShade
 
 GeometryBuffer& CDEMRenderer::createGeometryBufferTextured(RefCounted<RenderMaterial> renderMaterial)
 {
-	DEMGeometryBuffer* pBuffer = new DEMGeometryBuffer(*this, renderMaterial);
-
-	//VertexLayoutTextured
-
+	CDEMGeometryBuffer* pBuffer = new CDEMGeometryBuffer(*this, renderMaterial);
+	pBuffer->setVertexLayout(VertexLayoutTextured);
 	addGeometryBuffer(*pBuffer);
 	return *pBuffer;
 }
@@ -412,10 +406,8 @@ GeometryBuffer& CDEMRenderer::createGeometryBufferTextured(RefCounted<RenderMate
 
 GeometryBuffer& CDEMRenderer::createGeometryBufferColoured(RefCounted<RenderMaterial> renderMaterial)
 {
-	DEMGeometryBuffer* pBuffer = new DEMGeometryBuffer(*this, renderMaterial);
-
-	//VertexLayoutColoured
-
+	CDEMGeometryBuffer* pBuffer = new CDEMGeometryBuffer(*this, renderMaterial);
+	pBuffer->setVertexLayout(VertexLayoutColoured);
 	addGeometryBuffer(*pBuffer);
 	return *pBuffer;
 }

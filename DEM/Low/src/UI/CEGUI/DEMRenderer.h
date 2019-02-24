@@ -18,6 +18,7 @@ namespace CEGUI
 class CDEMGeometryBuffer;
 class CDEMTextureTarget;
 class CDEMTexture;
+typedef std::unique_ptr<class CDEMShaderWrapper> PDEMShaderWrapper;
 
 class CDEMRenderer: public Renderer
 {
@@ -36,6 +37,8 @@ protected:
 	RenderTarget*						pDefaultRT = nullptr;
 	Render::PVertexLayout				VertexLayoutTextured;
 	Render::PVertexLayout				VertexLayoutColoured;
+	PDEMShaderWrapper					ShaderWrapperTextured;
+	PDEMShaderWrapper					ShaderWrapperColoured;
 	Render::PRenderState				NormalUnclipped;
 	Render::PRenderState				NormalClipped;
 	Render::PRenderState				PremultipliedUnclipped;
@@ -67,7 +70,6 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
-	Render::PVertexBuffer	createVertexBuffer(const void* pVertexData, UPTR VertexCount);
 	void					setOpaqueMode(bool Opaque) { OpaqueMode = Opaque; }
 	bool					isInOpaqueMode() const { return OpaqueMode; }
 	void					setRenderState(BlendMode BlendMode, bool Clipped);

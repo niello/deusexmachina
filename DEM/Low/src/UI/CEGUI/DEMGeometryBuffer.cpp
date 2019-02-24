@@ -21,6 +21,18 @@ CDEMGeometryBuffer::CDEMGeometryBuffer(CDEMRenderer& owner, RefCounted<RenderMat
 }
 //--------------------------------------------------------------------
 
+void CDEMGeometryBuffer::setVertexLayout(Render::PVertexLayout newLayout)
+{
+	if (d_vertexLayout != newLayout)
+	{
+		d_vertexLayout = newLayout;
+		d_vertexBuffer = nullptr;
+		d_bufferSize = 0;
+		d_bufferIsSync = false;
+	}
+}
+//--------------------------------------------------------------------
+
 void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 {
 	if (d_vertexData.empty()) return;
@@ -31,8 +43,10 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 
 	if (!d_bufferIsSync)
 	{
+		d_bufferIsSync = true;
+
 		const UPTR DataSize = d_vertexData.size() * sizeof(float);
-		if (!DataSize)
+		if (!DataSize || !d_vertexLayout)
 		{
 			d_vertexBuffer = nullptr;
 			d_bufferSize = 0;
@@ -43,12 +57,10 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 
 		if (d_bufferSize < DataSize)
 		{
-			d_vertexBuffer = d_owner.createVertexBuffer(pVertexData, d_vertexCount);
+			d_vertexBuffer = pGPU->CreateVertexBuffer(*d_vertexLayout, d_vertexCount, Render::Access_GPU_Read | Render::Access_CPU_Write, pVertexData);
 			d_bufferSize = DataSize;
 		}
 		else pGPU->WriteToResource(*d_vertexBuffer, pVertexData, DataSize);
-
-		d_bufferIsSync = true;
 	}
 
 	pGPU->SetVertexBuffer(0, d_vertexBuffer.Get());

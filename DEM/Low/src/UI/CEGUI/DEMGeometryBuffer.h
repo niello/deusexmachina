@@ -11,6 +11,7 @@ class CDEMGeometryBuffer: public GeometryBuffer
 protected:
 
 	CDEMRenderer&					d_owner;
+	Render::PVertexLayout			d_vertexLayout;
 	mutable Render::PVertexBuffer	d_vertexBuffer;
 	mutable UPTR					d_bufferSize = 0;
 	mutable bool					d_bufferIsSync = false;
@@ -20,6 +21,8 @@ public:
 
 	CDEMGeometryBuffer(CDEMRenderer& owner, RefCounted<RenderMaterial> renderMaterial);
 	//virtual ~CDEMGeometryBuffer() { }
+
+	void setVertexLayout(Render::PVertexLayout newLayout);
 
 	// Implement GeometryBuffer interface.
 	virtual void			draw(/*uint32 drawModeMask = DrawModeMaskAll*/) const override;
