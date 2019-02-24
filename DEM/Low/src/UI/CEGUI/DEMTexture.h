@@ -48,15 +48,15 @@ public:
 	void					createEmptyTexture(const Sizef& sz);
 
 	// implement abstract members from base class.
-	virtual const String&	getName() const { return Name; }
-	virtual const Sizef&	getSize() const { return Size; }
-	virtual const Sizef&	getOriginalDataSize() const { return DataSize;}
-	virtual const glm::vec2& getTexelScaling() const { return TexelScaling; }
-	virtual void			loadFromFile(const String& filename, const String& resourceGroup);
-	virtual void			loadFromMemory(const void* buffer, const Sizef& buffer_size, PixelFormat pixel_format);
-	virtual void			blitFromMemory(const void* sourceData, const Rectf& area);
-	virtual void			blitToMemory(void* targetData);
-	virtual bool			isPixelFormatSupported(const PixelFormat fmt) const;
+	virtual const String&	getName() const override { return Name; }
+	virtual const Sizef&	getSize() const override { return Size; }
+	virtual const Sizef&	getOriginalDataSize() const override { return DataSize;}
+	virtual const glm::vec2& getTexelScaling() const override { return TexelScaling; }
+	virtual void			loadFromFile(const String& filename, const String& resourceGroup) override;
+	virtual void			loadFromMemory(const void* buffer, const Sizef& buffer_size, PixelFormat pixel_format) override;
+	virtual void			blitFromMemory(const void* sourceData, const Rectf& area) override;
+	virtual void			blitToMemory(void* targetData) override;
+	virtual bool			isPixelFormatSupported(const PixelFormat fmt) const override;
 };
 
 }

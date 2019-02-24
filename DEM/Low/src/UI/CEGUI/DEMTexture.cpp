@@ -45,22 +45,22 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 
 // Helper utility function that copies a region of a buffer containing D3DCOLOR
 // values into a second buffer as RGBA values.
-static void blitFromSurface(const uint32* src, uint32* dst, const Sizef& sz, size_t source_pitch) //size_t dest_pitch - blitRGBAToD3DCOLORSurface
+static void blitFromSurface(const U32* src, U32* dst, const Sizef& sz, size_t source_pitch) //size_t dest_pitch - blitRGBAToD3DCOLORSurface
 {
 	//!!!__mm_shuffle_epi8
 	for (UPTR i = 0; i < sz.d_height; ++i)
 	{
 		for (UPTR j = 0; j < sz.d_width; ++j)
 		{
-			const uint32 pixel = src[j];
-			const uint32 tmp = pixel & 0x00FF00FF;
+			const U32 pixel = src[j];
+			const U32 tmp = pixel & 0x00FF00FF;
 			dst[j] = pixel & 0xFF00FF00 | (tmp << 16) | (tmp >> 16);
 		}
 
-		src += source_pitch / sizeof(uint32);
-		dst += static_cast<uint32>(sz.d_width);
-        //dst += dest_pitch / sizeof(uint32); - blitRGBAToD3DCOLORSurface
-        //src += static_cast<uint32>(sz.d_width);
+		src += source_pitch / sizeof(U32);
+		dst += static_cast<U32>(sz.d_width);
+        //dst += dest_pitch / sizeof(U32); - blitRGBAToD3DCOLORSurface
+        //src += static_cast<U32>(sz.d_width);
 	}
 }
 //---------------------------------------------------------------------
@@ -69,12 +69,12 @@ bool CDEMTexture::isPixelFormatSupported(const PixelFormat fmt) const
 {
 	switch (fmt)
 	{
-		case PF_RGBA:
-		case PF_RGB:
-		case PF_RGBA_DXT1:
-		case PF_RGBA_DXT3:
-		case PF_RGBA_DXT5:	return true;
-		default:			return false;
+		case PixelFormat::Rgba:
+		case PixelFormat::Rgb:
+		case PixelFormat::RgbaDxt1:
+		case PixelFormat::RgbaDxt3:
+		case PixelFormat::RgbaDxt5:	return true;
+		default:					return false;
 	}
 }
 //---------------------------------------------------------------------
@@ -130,7 +130,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	bool IsCopy;
 
 	// Invert to BGR(A), as DX9 doesn't support RGBA textures
-	if (pixel_format == PF_RGB)
+	if (pixel_format == PixelFormat::Rgb)
 	{
 	/*	const unsigned char* src = static_cast<const unsigned char*>(buffer);
 		unsigned char* dest = n_new_array(unsigned char, static_cast<unsigned int>(buffer_size.d_width * buffer_size.d_height) * 4);
@@ -163,7 +163,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 			}
 		}
 	}
-	else if (pixel_format == PF_RGBA)
+	else if (pixel_format == PixelFormat::Rgba)
 	{
 		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
 		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
@@ -222,11 +222,11 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
 	if (DEMTexture.IsNullPtr()) return;
 
-	uint32 SrcPitch = ((uint32)area.getWidth()) * 4;
+	U32 SrcPitch = ((U32)area.getWidth()) * 4;
 
 	//!!!convert only if format is not supported!
-	uint32* pBuf = n_new_array(uint32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
-	blitFromSurface(static_cast<const uint32*>(sourceData), pBuf, area.getSize(), SrcPitch);
+	U32* pBuf = n_new_array(U32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
+	blitFromSurface(static_cast<const U32*>(sourceData), pBuf, area.getSize(), SrcPitch);
 
 	Render::CImageData SrcData;
 	SrcData.pData = (char*)pBuf;
@@ -256,8 +256,8 @@ void CDEMTexture::blitToMemory(void* targetData)
 	Dest.RowPitch = DEMTexture->GetRowPitch();
 
 ////!!!convert only if format is not supported!
-//	blitFromSurface(static_cast<uint32*>(mapped_tex.pData),
-//                    static_cast<uint32*>(targetData),
+//	blitFromSurface(static_cast<U32*>(mapped_tex.pData),
+//                    static_cast<U32*>(targetData),
 //                    Sizef(static_cast<float>(tex_desc.Width),
 //                            static_cast<float>(tex_desc.Height)),
 //                    mapped_tex.RowPitch);
@@ -275,8 +275,8 @@ void CDEMTexture::updateCachedScaleValues()
 
 	// If texture and original data dimensions are the same, scale is based on the original size.
 	// If they aren't (and source data was not stretched), scale is based on the size of the resulting texture.
-	TexelScaling.d_x = 1.0f / ((orgW == texW) ? orgW : texW);
-	TexelScaling.d_y = 1.0f / ((orgH == texH) ? orgH : texH);
+	TexelScaling.x = 1.0f / ((orgW == texW) ? orgW : texW);
+	TexelScaling.y = 1.0f / ((orgH == texH) ? orgH : texH);
 }
 //--------------------------------------------------------------------
 
