@@ -5,14 +5,6 @@
 
 #include <CEGUI/Renderer.h>
 
-namespace Render
-{
-	typedef Ptr<class CGPUDriver> PGPUDriver;
-	typedef Ptr<class CVertexLayout> PVertexLayout;
-	typedef Ptr<class CVertexBuffer> PVertexBuffer;
-	typedef Ptr<class CRenderState> PRenderState;
-}
-
 namespace CEGUI
 {
 class CDEMGeometryBuffer;
@@ -29,7 +21,6 @@ protected:
 	Render::PGPUDriver					GPU;
 
 	Sizef								DisplaySize;
-	glm::vec2							DisplayDPI;
 
 	CArray<CDEMTextureTarget*>			TexTargets;
 	CHashTable<String, CDEMTexture*>	Textures;
@@ -39,24 +30,6 @@ protected:
 	Render::PVertexLayout				VertexLayoutColoured;
 	PDEMShaderWrapper					ShaderWrapperTextured;
 	PDEMShaderWrapper					ShaderWrapperColoured;
-	Render::PRenderState				NormalUnclipped;
-	Render::PRenderState				NormalClipped;
-	Render::PRenderState				PremultipliedUnclipped;
-	Render::PRenderState				PremultipliedClipped;
-	Render::PRenderState				OpaqueUnclipped;
-	Render::PRenderState				OpaqueClipped;
-	Render::PConstantBuffer				WMCB;
-	Render::PConstantBuffer				PMCB;
-	Render::PSampler					LinearSampler;
-	Render::HConstBuffer				hWMCB;
-	Render::HConstBuffer				hPMCB;
-	Render::PShaderConstant				ConstWorldMatrix;
-	Render::PShaderConstant				ConstProjMatrix;
-	Render::HResource					hTexture;
-	Render::HSampler					hLinearSampler;
-
-	// For now it is the only way to know the draw mode in a CDEMGeometryBuffer::draw()
-	bool								OpaqueMode;
 
 	CDEMRenderer(Render::CGPUDriver& GPUDriver, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
 	virtual ~CDEMRenderer();
@@ -70,13 +43,6 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
-	void					setOpaqueMode(bool Opaque) { OpaqueMode = Opaque; }
-	bool					isInOpaqueMode() const { return OpaqueMode; }
-	void					setRenderState(BlendMode BlendMode, bool Clipped);
-	Render::HResource		getTextureHandle() const { return hTexture; }
-	void					setWorldMatrix(const matrix44& Matrix);
-	void					setProjMatrix(const matrix44& Matrix);
-	void					commitChangedConsts();
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() override { return *pDefaultRT; }

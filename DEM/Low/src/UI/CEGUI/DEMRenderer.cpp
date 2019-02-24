@@ -1,7 +1,6 @@
 #include "DEMRenderer.h"
 
 #include <Render/GPUDriver.h>
-#include <Render/RenderStateDesc.h>
 #include <Render/RenderState.h>
 #include <Render/RenderTarget.h>
 #include <Render/Shader.h>
@@ -33,9 +32,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 						   float DefaultContextWidth, float DefaultContextHeight,
 						   CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID):
 	GPU(&GPUDriver),
-	DisplaySize(DefaultContextWidth, DefaultContextHeight),
-	DisplayDPI(96, 96),
-	OpaqueMode(false)
+	DisplaySize(DefaultContextWidth, DefaultContextHeight)
 {
 	n_assert(DefaultContextWidth > 0.f && DefaultContextHeight > 0.f);
 
@@ -44,84 +41,10 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);
 	n_assert(VS && PSRegular && PSOpaque && VS->IsValid() && PSRegular->IsValid() && PSOpaque->IsValid());
 
-	//=================================================================
-	// Render states
-	//=================================================================
-
-	Render::CRenderStateDesc RSDesc;
-	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
-	RSDesc.SetDefaults();
-	RSDesc.VertexShader = VS;
-	RSDesc.PixelShader = PSRegular;
-	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
-					   Render::CRenderStateDesc::DS_DepthWriteEnable |
-					   Render::CRenderStateDesc::Rasterizer_DepthClipEnable |
-					   Render::CRenderStateDesc::Rasterizer_Wireframe |
-					   Render::CRenderStateDesc::Rasterizer_CullFront |
-					   Render::CRenderStateDesc::Rasterizer_CullBack |
-					   Render::CRenderStateDesc::Blend_AlphaToCoverage |
-					   Render::CRenderStateDesc::Blend_Independent);
-
-	// Normal blend
-	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_InvDestAlpha;
-	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_One;
-	RTBlendDesc.SrcBlendArg = Render::BlendArg_SrcAlpha;
-	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
-
-	// Unclipped
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	NormalUnclipped = GPU->CreateRenderState(RSDesc);
-	n_assert(NormalUnclipped.IsValidPtr());
-
-	// Clipped
-	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	NormalClipped = GPU->CreateRenderState(RSDesc);
-	n_assert(NormalClipped.IsValidPtr());
-
-	// Premultiplied alpha blend
-	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_One;
-	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_InvSrcAlpha;
-	RTBlendDesc.SrcBlendArg = Render::BlendArg_One;
-	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
-
-	// Clipped
-	PremultipliedClipped = GPU->CreateRenderState(RSDesc);
-	n_assert(PremultipliedClipped.IsValidPtr());
-
-	// Unclipped
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	PremultipliedUnclipped = GPU->CreateRenderState(RSDesc);
-	n_assert(PremultipliedUnclipped.IsValidPtr());
-
-	// Opaque
-	RSDesc.PixelShader = PSOpaque;
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
-	RSDesc.Flags.Set(Render::CRenderStateDesc::DS_DepthEnable |
-					 Render::CRenderStateDesc::DS_DepthWriteEnable);
-	RSDesc.DepthFunc = Render::Cmp_Always;
-
-	// Unclipped
-	OpaqueUnclipped = GPU->CreateRenderState(RSDesc);
-	n_assert(OpaqueUnclipped.IsValidPtr());
-
-	// Clipped
-	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	OpaqueClipped = GPU->CreateRenderState(RSDesc);
-	n_assert(OpaqueClipped.IsValidPtr());
-
-	//=================================================================
-	// Shader constants
-	//=================================================================
-
 	// NB: regular and opaque pixel shaders must be compatible
 
 	//???pass 3 shaders inside, create render states there etc?
-	ShaderWrapperTextured.reset(new CDEMShaderWrapper(VS->GetMetadata(), PSRegular->GetMetadata()));
+	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, VS, PSRegular, PSOpaque));
 	//ShaderWrapperTextured->addUniformVariable("texture0");
 	//ShaderWrapperTextured->addUniformVariable("modelViewProjMatrix");
 	//ShaderWrapperTextured->addUniformVariable("alphaPercentage");
@@ -132,38 +55,6 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 	ShaderWrapperColoured->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
 	ShaderWrapperColoured->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
 	*/
-
-	const Render::IShaderMetadata* pVSMeta = VS->GetMetadata();
-	const Render::IShaderMetadata* pPSMeta = PSRegular->GetMetadata();
-
-	ConstWorldMatrix = pVSMeta->GetConstant(pVSMeta->GetConstHandle(CStrID("WorldMatrix")));
-	n_assert(ConstWorldMatrix.IsValidPtr());
-	hWMCB = ConstWorldMatrix->GetConstantBufferHandle();
-	n_assert(hWMCB != INVALID_HANDLE);
-
-	ConstProjMatrix = pVSMeta->GetConstant(pVSMeta->GetConstHandle(CStrID("ProjectionMatrix")));
-	n_assert(ConstProjMatrix.IsValidPtr());
-	hPMCB = ConstProjMatrix->GetConstantBufferHandle();
-	n_assert(hPMCB != INVALID_HANDLE);
-
-	WMCB = GPU->CreateConstantBuffer(hWMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
-	if (hWMCB == hPMCB) PMCB = WMCB;
-	else PMCB = GPU->CreateConstantBuffer(hPMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
-
-	hTexture = pPSMeta->GetResourceHandle(CStrID("BoundTexture"));
-	hLinearSampler = pPSMeta->GetSamplerHandle(CStrID("LinearSampler"));
-
-	Render::CSamplerDesc SampDesc;
-	SampDesc.SetDefaults();
-	SampDesc.AddressU = Render::TexAddr_Clamp;
-	SampDesc.AddressV = Render::TexAddr_Clamp;
-	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	LinearSampler = GPU->CreateSampler(SampDesc);
-	n_assert(LinearSampler.IsValidPtr());
-
-	//=================================================================
-	// Vertex declarations
-	//=================================================================
 
 	//???use Render::VCFmt_UInt8_4_Norm for color? convert on append vertices?
 	Render::CVertexComponent Components[] = {
@@ -177,7 +68,7 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 	VertexLayoutColoured = GPU->CreateVertexLayout(Components, 2);
 	n_assert(VertexLayoutColoured.IsValidPtr());
 
-	//!!!need some method to precreate actual vertex layout by passing a shader!
+	//!!!need some method to precreate actual D3D11 input layout by passing a shader!
 	//but this may require knowledge about D3D11 nature of otherwise abstract GPU
 	//???call GPU->CreateRenderCache() and then reuse it?
 }
@@ -190,23 +81,10 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllGeometryBuffers();
 	SAFE_DELETE(pDefaultRT);
 
-	ConstWorldMatrix = nullptr;
-	ConstProjMatrix = nullptr;
-	hWMCB = INVALID_HANDLE;
-	hPMCB = INVALID_HANDLE;
-	hTexture = INVALID_HANDLE;
-	hLinearSampler = INVALID_HANDLE;
+	ShaderWrapperTextured = nullptr;
+	ShaderWrapperColoured = nullptr;
 	VertexLayoutTextured = nullptr;
 	VertexLayoutColoured = nullptr;
-	NormalUnclipped = nullptr;
-	NormalClipped = nullptr;
-	PremultipliedUnclipped = nullptr;
-	PremultipliedClipped = nullptr;
-	OpaqueUnclipped = nullptr;
-	OpaqueClipped = nullptr;
-	WMCB = nullptr;
-	PMCB = nullptr;
-	LinearSampler = nullptr;
 	GPU = nullptr;
 }
 //--------------------------------------------------------------------
@@ -240,22 +118,6 @@ void CDEMRenderer::logTextureDestruction(const String& name)
 	if (logger) logger->logEvent("[CEGUI::CDEMRenderer] Destroyed texture: " + name);
 }
 //---------------------------------------------------------------------
-
-void CDEMRenderer::setRenderState(BlendMode BlendMode, bool Clipped)
-{
-	if (OpaqueMode)
-	{
-		GPU->SetRenderState(Clipped ? OpaqueClipped : OpaqueUnclipped);
-	}
-	else
-	{
-		if (BlendMode == BlendMode::RttPremultiplied)
-			GPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
-		else
-			GPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
-	}
-}
-//--------------------------------------------------------------------
 
 TextureTarget* CDEMRenderer::createTextureTarget(bool addStencilBuffer)
 {
@@ -354,38 +216,15 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 }
 //--------------------------------------------------------------------
 
-void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
-{
-	if (WMCB.IsValidPtr())
-		ConstWorldMatrix->SetRawValue(*WMCB.Get(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
-}
-//--------------------------------------------------------------------
-
-void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
-{
-	if (PMCB.IsValidPtr())
-		ConstProjMatrix->SetRawValue(*PMCB.Get(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
-}
-//--------------------------------------------------------------------
-
-void CDEMRenderer::commitChangedConsts()
-{
-	if (WMCB.IsValidPtr())
-		GPU->CommitShaderConstants(*WMCB.Get());
-	if (hWMCB != hPMCB && PMCB.IsValidPtr())
-		GPU->CommitShaderConstants(*PMCB.Get());
-}
-//--------------------------------------------------------------------
-
 RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShaderType shaderType) const
 {
 	if (shaderType == DefaultShaderType::Textured)
 	{
-		return new RenderMaterial(ShaderWrapperTextured);
+		return new RenderMaterial(ShaderWrapperTextured.get());
 	}
 	else if (shaderType == DefaultShaderType::Solid)
 	{
-		return new RenderMaterial(ShaderWrapperColoured);
+		return new RenderMaterial(ShaderWrapperColoured.get());
 	}
 	else
 	{
@@ -415,15 +254,6 @@ GeometryBuffer& CDEMRenderer::createGeometryBufferColoured(RefCounted<RenderMate
 
 void CDEMRenderer::beginRendering()
 {
-	GPU->BindConstantBuffer(Render::ShaderType_Vertex, hWMCB, WMCB.Get());
-	GPU->BeginShaderConstants(*WMCB.Get());
-	if (hWMCB != hPMCB)
-	{
-		GPU->BindConstantBuffer(Render::ShaderType_Vertex, hPMCB, PMCB.Get());
-		GPU->BeginShaderConstants(*PMCB.Get());
-	}
-
-	GPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.Get());
 }
 //---------------------------------------------------------------------
 

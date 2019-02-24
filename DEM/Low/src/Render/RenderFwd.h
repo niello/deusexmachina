@@ -56,8 +56,8 @@ const UPTR Adapter_Secondary = 1;
 const UPTR Output_None = (UPTR)-1;
 
 // Binding handlers for shader parameters
-typedef HHandle HConst;
-typedef HHandle HConstBuffer;
+typedef HHandle HConstant;
+typedef HHandle HConstantBuffer;
 typedef HHandle HResource;
 typedef HHandle HSampler;
 

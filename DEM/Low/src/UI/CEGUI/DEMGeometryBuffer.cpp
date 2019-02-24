@@ -85,14 +85,19 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 
 	CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
 
-	// d_owner.setWorldMatrix(d_matrix)
-
 	// Set the uniform variables for this GeometryBuffer in the Shader
 	shaderParameterBindings->setParameter("modelViewProjMatrix", d_matrix);
 	shaderParameterBindings->setParameter("alphaPercentage", d_alpha);
 
+	// d_owner.setWorldMatrix(d_matrix)
+
+	// Prepare for the rendering process according to the used render material
+	//static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper())->setRenderState(d_blendMode, d_clippingActive);
+	//???or bindRenderState(), so that shader wrapper doesn't store state?
 	d_owner.setRenderState(d_blendMode, d_clippingActive);
-	d_owner.commitChangedConsts();
+	d_renderMaterial->prepareForRendering();
+
+	// Render geometry
 
 	Render::CPrimitiveGroup	primGroup;
 	primGroup.FirstVertex = 0;
@@ -105,17 +110,11 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 	const int pass_count = d_effect ? d_effect->getPassCount() : 1;
 	for (int pass = 0; pass < pass_count; ++pass)
 	{
-		// set up RenderEffect
 		if (d_effect) d_effect->performPreRenderFunctions(pass);
 
-		//Prepare for the rendering process according to the used render material
-		d_renderMaterial->prepareForRendering();
-
-		// draw the geometry
 		pGPU->Draw(primGroup);
 	}
 
-	// clean up RenderEffect
 	if (d_effect) d_effect->performPostRenderFunctions();
 
 	updateRenderTargetData(d_owner.getActiveRenderTarget());

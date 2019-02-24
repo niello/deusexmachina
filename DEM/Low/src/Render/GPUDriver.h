@@ -110,8 +110,8 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) = 0;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) = 0;
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstBuffer hBuffer) = 0;
+	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) = 0;
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) = 0;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) = 0;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) = 0;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
@@ -131,7 +131,7 @@ public:
 	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstBuffer Handle, CConstantBuffer* pCBuffer) = 0;
+	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer) = 0;
 	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) = 0;
 	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) = 0;
 
@@ -170,7 +170,7 @@ public:
 
 	//???or auto-begin if not?!
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) = 0;
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConst hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
+	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;

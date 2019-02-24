@@ -29,11 +29,11 @@ public:
 	static void*				GetHandleData(HHandle Handle) { return HandleMgr.GetHandleData(Handle); }
 
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const = 0;
-	virtual HConst				GetConstHandle(CStrID ID) const = 0;
-	virtual HConstBuffer		GetConstBufferHandle(CStrID ID) const = 0;
+	virtual HConstant			GetConstantHandle(CStrID ID) const = 0;
+	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const = 0;
 	virtual HResource			GetResourceHandle(CStrID ID) const = 0;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const = 0;
-	virtual PShaderConstant		GetConstant(HConst hConst) const = 0;
+	virtual PShaderConstant		GetConstant(HConstant hConst) const = 0;
 };
 
 }

@@ -15,7 +15,7 @@ def update_lists_cpp(var_name, out_file_path, source_folder, append=False):
 			ext = os.path.splitext(file_name)[1]
 			if ext == '.cpp' or ext == '.cc' or ext == '.c' or ext == '.cxx':
 				source_list += ("\n\t" + os.path.relpath(os.path.join(dirpath, file_name), root_folder))
-			elif ext == '.h' or ext == '.inc' or ext == '.hpp':
+			elif ext == '.h' or ext == '.inc' or ext == '.hpp' or ext == '.inl':
 				header_list += ("\n\t" + os.path.relpath(os.path.join(dirpath, file_name), root_folder))
 
 	out_text = ""

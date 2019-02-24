@@ -18,7 +18,7 @@ class CShaderConstant: public Data::CRefCounted
 {
 protected:
 
-	HConstBuffer BufferHandle;
+	HConstantBuffer BufferHandle;
 
 public:
 
@@ -28,7 +28,7 @@ public:
 	CShaderConstant(): BufferHandle(INVALID_HANDLE) {}
 	virtual ~CShaderConstant() {}
 
-	virtual bool			Init(HConst hConst) = 0;
+	virtual bool			Init(HConstant hConst) = 0;
 
 	virtual UPTR			GetSizeInBytes() const = 0;
 	virtual UPTR			GetColumnCount() const = 0;
@@ -37,7 +37,7 @@ public:
 	virtual UPTR			GetMemberCount() const = 0;
 	virtual PShaderConstant	GetElement(U32 Index) const = 0;
 	virtual PShaderConstant	GetMember(CStrID Name) const = 0;
-	HConstBuffer			GetConstantBufferHandle() const { return BufferHandle; }
+	HConstantBuffer			GetConstantBufferHandle() const { return BufferHandle; }
 
 	//!!!???add SetBool, SetInt, SetUInt, SetFloat for single value with pass-by-value?!
 	virtual void			SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const = 0;
