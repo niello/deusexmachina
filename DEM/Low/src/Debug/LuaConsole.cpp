@@ -5,7 +5,7 @@
 #include <Data/Params.h>
 #include <Core/Factory.h>
 
-#include <UI/CEGUI/FmtLbTextItem.h>
+#include <UI/CEGUI/FormattedListboxTextItem.h>
 #include <CEGUI/widgets/Editbox.h>
 #include <CEGUI/widgets/MultiColumnList.h>
 #include <CEGUI/widgets/Scrollbar.h>

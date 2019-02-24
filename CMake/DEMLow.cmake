@@ -293,7 +293,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/UI/CEGUI/DEMTexture.h
 	DEM/Low/src/UI/CEGUI/DEMTextureTarget.h
 	DEM/Low/src/UI/CEGUI/DEMViewportTarget.h
-	DEM/Low/src/UI/CEGUI/FmtLbTextItem.h
+	DEM/Low/src/UI/CEGUI/FormattedListboxTextItem.h
 	DEM/Low/src/Util/MD5.h
 	DEM/Low/src/Util/PFLoop.h
 	DEM/Low/src/Util/PFLoopAngular.h
@@ -520,7 +520,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/UI/CEGUI/DEMTexture.cpp
 	DEM/Low/src/UI/CEGUI/DEMTextureTarget.cpp
 	DEM/Low/src/UI/CEGUI/DEMViewportTarget.cpp
-	DEM/Low/src/UI/CEGUI/FmtLbTextItem.cpp
+	DEM/Low/src/UI/CEGUI/FormattedListboxTextItem.cpp
 	DEM/Low/src/Util/CRC.cpp
 	DEM/Low/src/Util/MD5.cpp
 	DEM/Low/src/Util/PerlinNoise.cpp

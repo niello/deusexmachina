@@ -34,7 +34,7 @@ CUIServer::CUIServer(const CUISettings& Settings, const CUIContextSettings& Defa
 	__ConstructSingleton;
 
 	Logger = n_new(CEGUI::CDEMLogger);
-	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warnings); //???to settings?
+	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
 	Renderer = &CEGUI::CDEMRenderer::create(
 		*Settings.GPU,
@@ -45,10 +45,6 @@ CUIServer::CUIServer(const CUISettings& Settings, const CUIContextSettings& Defa
 
 	CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = CEGUI::System::getSingletonPtr();
-
-	//!!!default context concept is a big mistake! Hope there won't be the one in CEGUI 1.0
-	DefaultContext = n_new(CUIContext);
-	DefaultContext->Init(&CEGUISystem->getDefaultGUIContext(), DefaultContextSettings.HostWindow);
 
 	if (Settings.ResourceGroups.IsValidPtr())
 	{
@@ -72,8 +68,6 @@ CUIServer::CUIServer(const CUISettings& Settings, const CUIContextSettings& Defa
 
 CUIServer::~CUIServer()
 {
-	DefaultContext = NULL;
-
 	CEGUI::System::destroy();
 	n_delete(XMLParser);
 	n_delete(ResourceProvider);
@@ -94,8 +88,8 @@ void CUIServer::Trigger(float FrameTime)
 	CEGUI::WindowManager::getSingleton().cleanDeadPool();
 
 	CEGUISystem->injectTimePulse(FrameTime);
-	CEGUISystem->getDefaultGUIContext().injectTimePulse(FrameTime); //???subscribe all contexts on some time event or store collection here?
-	//!!!inject in all contexts!
+	//!!! FIXME: inject in all contexts!
+	//???subscribe all contexts on some time event or store collection here?
 
 	EventSrv->FireEvent(CStrID("OnUIUpdate"));
 }
@@ -110,13 +104,6 @@ void CUIServer::LoadScheme(const char* pResourceFile)
 void CUIServer::LoadFont(const char* pResourceFile)
 {
 	CEGUI::FontManager::getSingleton().createFromFile(pResourceFile);
-}
-//---------------------------------------------------------------------
-
-//???get rid of it with CEGUI 1.0?
-PUIContext CUIServer::GetDefaultContext() const
-{
-	return DefaultContext;
 }
 //---------------------------------------------------------------------
 

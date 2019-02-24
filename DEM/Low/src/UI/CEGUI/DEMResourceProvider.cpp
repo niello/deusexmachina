@@ -23,7 +23,14 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 		else FinalFilename = filename;
 	}
 
-	IO::PStream File = IOSrv->CreateStream(FinalFilename.c_str());
+#if CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_32
+	std::string Filename = String::convertUtf32ToUtf8(FinalFilename.getString());
+#else
+	const std::string& Filename = FinalFilename.getString();
+#endif
+
+	IO::PStream File = IOSrv->CreateStream(Filename.c_str());
+
 	if (File->Open(IO::SAM_READ))
 	{
 		const UPTR Size = (UPTR)File->GetSize();
@@ -32,22 +39,23 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 		if (BytesRead != Size)
 		{
 			n_delete_array(pBuffer);
-			Sys::Error("A problem occurred while reading file: %s", FinalFilename.c_str());
+			Sys::Error("CDEMResourceProvider::loadRawDataContainer() > a problem occurred while reading file: %s", Filename.c_str());
 		}
 		File->Close();
 
 		output.setData(pBuffer);
 		output.setSize(Size);
 	}
+	else
+	{
+		Sys::Error("CDEMResourceProvider::loadRawDataContainer() > can't open file: %s", Filename.c_str());
+	}
 }
 //---------------------------------------------------------------------
 
 void CDEMResourceProvider::unloadRawDataContainer(RawDataContainer& data)
 {
-	uint8* const ptr = data.getDataPtr();
-	n_delete_array(ptr);
-	data.setData(0);
-	data.setSize(0);
+	data.release();
 }
 //---------------------------------------------------------------------
 
@@ -69,7 +77,7 @@ const String& CDEMResourceProvider::getResourceGroupDirectory(const String& reso
 
 void CDEMResourceProvider::clearResourceGroupDirectory(const String& resourceGroup)
 {
-	ResourceGroups.Clear();
+	ResourceGroups.Remove(resourceGroup);
 }
 //---------------------------------------------------------------------
 
@@ -86,24 +94,30 @@ size_t CDEMResourceProvider::getResourceGroupFileNames(std::vector<String>& out_
 		else DirName = "./";
 	}
 
-    size_t Entries = 0;
+	std::string Pattern;
+	std::string DirNameStr;
+#if CEGUI_STRING_CLASS == CEGUI_STRING_CLASS_UTF_32
+	DirNameStr = String::convertUtf32ToUtf8(DirName.getString());
+	Pattern = DirNameStr + String::convertUtf32ToUtf8(file_pattern.c_str());
+#else
+	DirNameStr = DirName.getString();
+	Pattern = DirNameStr + file_pattern;
+#endif
 
-	CString Pattern(DirName.c_str());
-	Pattern += file_pattern.c_str();
+    size_t Entries = 0;
 
 	IO::PFileSystem FS;
 	CString EntryName;
 	IO::EFSEntryType EntryType;
-	CString RootDir(DirName.c_str());
-	void* hDir = IOSrv->OpenDirectory(RootDir, CString::Empty, FS, EntryName, EntryType);
+	void* hDir = IOSrv->OpenDirectory(DirNameStr.c_str(), CString::Empty, FS, EntryName, EntryType);
 	if (hDir)
 	{
 		if (EntryType != IO::FSE_NONE) do
 		{
 			if (EntryType == IO::FSE_FILE)
 			{
-				CString FullEntryName = RootDir + EntryName;
-				if (StringUtils::MatchesPattern(FullEntryName.CStr(), Pattern.CStr()))
+				CString FullEntryName = DirNameStr.c_str() + EntryName;
+				if (StringUtils::MatchesPattern(FullEntryName.CStr(), Pattern.c_str()))
 				{
 					out_vec.push_back(String(FullEntryName.CStr()));
 					++Entries;

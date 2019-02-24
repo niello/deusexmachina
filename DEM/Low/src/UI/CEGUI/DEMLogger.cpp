@@ -9,12 +9,13 @@ void CDEMLogger::logEvent(const CEGUI::String& message, CEGUI::LoggingLevel leve
 	if (Enable && level <= getLoggingLevel())
 		switch (level) 
 		{
-			case CEGUI::Errors:
-				//Sys::Error("%s\n", message.c_str());
-				//break;
-			case CEGUI::Standard:
-			case CEGUI::Informative:
-			case CEGUI::Insane:
+			case CEGUI::LoggingLevel::Error:
+				Sys::Error("%s\n", message.c_str());
+				break;
+			case CEGUI::LoggingLevel::Warning:
+			case CEGUI::LoggingLevel::Standard:
+			case CEGUI::LoggingLevel::Informative:
+			case CEGUI::LoggingLevel::Insane:
 				Sys::Log("%s\n", message.c_str());
 				break;
 			default:

@@ -30,12 +30,12 @@ static Render::EPixelFormat CEGUIPixelFormatToPixelFormat(const Texture::PixelFo
 {
 	switch (fmt)
 	{
-		case Texture::PF_RGBA:		return Render::PixelFmt_B8G8R8A8;
-		case Texture::PF_RGB:		return Render::PixelFmt_B8G8R8X8;
-		case Texture::PF_RGBA_DXT1:	return Render::PixelFmt_DXT1;
-		case Texture::PF_RGBA_DXT3:	return Render::PixelFmt_DXT3;
-		case Texture::PF_RGBA_DXT5:	return Render::PixelFmt_DXT5;
-		default:					return Render::PixelFmt_Invalid;
+		case Texture::PixelFormat::Rgba:		return Render::PixelFmt_B8G8R8A8;
+		case Texture::PixelFormat::Rgb:			return Render::PixelFmt_B8G8R8X8;
+		case Texture::PixelFormat::RgbaDxt1:	return Render::PixelFmt_DXT1;
+		case Texture::PixelFormat::RgbaDxt3:	return Render::PixelFmt_DXT3;
+		case Texture::PixelFormat::RgbaDxt5:	return Render::PixelFmt_DXT5;
+		default:								return Render::PixelFmt_Invalid;
 	}
 	//case Texture::PF_RGB_565:   return D3DFMT_R5G6B5;
 	//case Texture::PF_RGBA_4444: return D3DFMT_A4R4G4B4;

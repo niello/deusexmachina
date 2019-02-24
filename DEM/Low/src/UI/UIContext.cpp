@@ -13,7 +13,7 @@ CUIContext::CUIContext() {}
 
 CUIContext::~CUIContext()
 {
-	if (pCtx && pCtx != &CEGUI::System::getSingleton().getDefaultGUIContext())
+	if (pCtx)
 		CEGUI::System::getSingleton().destroyGUIContext(*pCtx);
 }
 //---------------------------------------------------------------------
@@ -132,19 +132,19 @@ void CUIContext::HideGUI()
 
 void CUIContext::ShowMouseCursor()
 {
-	if (pCtx) pCtx->getMouseCursor().show();
+	if (pCtx) pCtx->getCursor().show();
 }
 //---------------------------------------------------------------------
 
 void CUIContext::HideMouseCursor()
 {
-	if (pCtx) pCtx->getMouseCursor().hide();
+	if (pCtx) pCtx->getCursor().hide();
 }
 //---------------------------------------------------------------------
 
 void CUIContext::SetDefaultMouseCursor(const char* pImageName)
 {
-	if (pCtx) pCtx->getMouseCursor().setDefaultImage(pImageName);
+	if (pCtx) pCtx->getCursor().setDefaultImage(pImageName);
 }
 //---------------------------------------------------------------------
 
@@ -152,9 +152,9 @@ bool CUIContext::GetCursorPosition(float& X, float& Y) const
 {
 	if (pCtx)
 	{
-		CEGUI::Vector2f CursorPos = pCtx->getMouseCursor().getPosition();
-		X = CursorPos.d_x;
-		Y = CursorPos.d_y;
+		glm::vec2 CursorPos = pCtx->getCursor().getPosition();
+		X = CursorPos.x;
+		Y = CursorPos.y;
 		OK;
 	}
 	FAIL;
@@ -166,9 +166,9 @@ bool CUIContext::GetCursorPositionRel(float& X, float& Y) const
 	if (pCtx)
 	{
 		CEGUI::Sizef CtxSize = pCtx->getRootWindow()->getPixelSize();
-		CEGUI::Vector2f CursorPos = pCtx->getMouseCursor().getPosition();
-		X = CursorPos.d_x / CtxSize.d_width;
-		Y = CursorPos.d_y / CtxSize.d_height;
+		glm::vec2 CursorPos = pCtx->getCursor().getPosition();
+		X = CursorPos.x / CtxSize.d_width;
+		Y = CursorPos.y / CtxSize.d_height;
 		OK;
 	}
 	FAIL;
@@ -178,7 +178,7 @@ bool CUIContext::GetCursorPositionRel(float& X, float& Y) const
 bool CUIContext::IsMouseOverGUI() const
 {
 	if (!pCtx) FAIL;
-	CEGUI::Window* pMouseWnd = pCtx->getWindowContainingMouse();
+	CEGUI::Window* pMouseWnd = pCtx->getWindowContainingCursor();
 	return pMouseWnd && pMouseWnd != pCtx->getRootWindow();
 }
 //---------------------------------------------------------------------

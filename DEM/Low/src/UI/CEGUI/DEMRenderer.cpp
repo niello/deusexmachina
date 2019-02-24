@@ -121,7 +121,7 @@ void CDEMRenderer::logTextureDestruction(const String& name)
 
 TextureTarget* CDEMRenderer::createTextureTarget(bool addStencilBuffer)
 {
-	CDEMTextureTarget* t = n_new(CDEMTextureTarget)(*this);
+	CDEMTextureTarget* t = n_new(CDEMTextureTarget)(*this, addStencilBuffer);
 	TexTargets.Add(t);
 	return t;
 }

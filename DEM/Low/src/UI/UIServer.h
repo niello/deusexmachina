@@ -72,8 +72,6 @@ private:
 	CEGUI::CDEMResourceProvider*		ResourceProvider;
 	CEGUI::TinyXML2Parser*				XMLParser;
 
-	PUIContext							DefaultContext; //???get rid of with CEGUI 1.0?
-
 	CArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
@@ -91,7 +89,6 @@ public:
 
 	void			Trigger(float FrameTime);
 
-	PUIContext		GetDefaultContext() const; //???get rid of it with CEGUI 1.0?
 	PUIContext		CreateContext(const CUIContextSettings& Settings); //!!!params!
 	void			DestroyContext(PUIContext Context); //!!!params!
 	

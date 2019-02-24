@@ -1,11 +1,12 @@
 #include <StdCfg.h>
 #include "DEMGeometryBuffer.h"
 
-#include <UI/CEGUI/DEMTexture.h>
+#include <Data/Regions.h>
 #include <Render/GPUDriver.h>
 #include <Render/VertexBuffer.h>
 #include <Render/Texture.h>
-#include <Data/Regions.h>
+#include <UI/CEGUI/DEMTexture.h>
+#include <UI/CEGUI/DEMShaderWrapper.h>
 
 #include <CEGUI/RenderEffect.h>
 #include <CEGUI/Vertex.h>
@@ -92,8 +93,9 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 	// d_owner.setWorldMatrix(d_matrix)
 
 	// Prepare for the rendering process according to the used render material
-	//static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper())->setRenderState(d_blendMode, d_clippingActive);
-	//???or bindRenderState(), so that shader wrapper doesn't store state?
+	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper())
+	//!!!get opaque mode from renderer!
+	//pShaderWrapper->bindRenderState(d_blendMode, d_clippingActive);
 	d_owner.setRenderState(d_blendMode, d_clippingActive);
 	d_renderMaterial->prepareForRendering();
 
