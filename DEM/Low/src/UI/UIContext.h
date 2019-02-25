@@ -18,10 +18,11 @@ class CUIContext: public Core::CObject
 {
 private:
 
-	DEM::Sys::POSWindow	OSWindow;
-	PUIWindow			RootWindow;
-	CEGUI::GUIContext*	pCtx = nullptr;
-	bool				WasMousePassThroughEnabledInRoot = false;
+	DEM::Sys::POSWindow		OSWindow;
+	PUIWindow				RootWindow;
+	CEGUI::GUIContext*		pCtx = nullptr;
+	CEGUI::InputAggregator*	pInput= nullptr;
+	bool					WasMousePassThroughEnabledInRoot = false;
 
 	DECLARE_EVENT_HANDLER(AxisMove, OnAxisMove);
 	DECLARE_EVENT_HANDLER(ButtonDown, OnButtonDown);
@@ -54,8 +55,6 @@ public:
 	void				SetDefaultMouseCursor(const char* pImageName); //???also add SetMouseCursor?
 	bool				GetCursorPosition(float& X, float& Y) const;
 	bool				GetCursorPositionRel(float& X, float& Y) const;
-	bool				IsGUIVisible() const;
-	bool				IsMouseCursorVisible() const;
 	bool				IsMouseOverGUI() const;
 };
 

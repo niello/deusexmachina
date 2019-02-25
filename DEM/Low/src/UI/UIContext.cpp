@@ -1,11 +1,13 @@
 #include "UIContext.h"
 
-#include <CEGUI/RenderTarget.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <Events/EventDispatcher.h>
 #include <Events/Subscription.h>
 #include <Input/InputEvents.h>
 #include <System/OSWindow.h>
+
+#include <CEGUI/RenderTarget.h>
+#include <CEGUI/InputAggregator.h>
 
 namespace UI
 {
@@ -13,6 +15,8 @@ CUIContext::CUIContext() {}
 
 CUIContext::~CUIContext()
 {
+	SAFE_DELETE(pInput);
+
 	if (pCtx)
 		CEGUI::System::getSingleton().destroyGUIContext(*pCtx);
 }
@@ -23,9 +27,16 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 	UNSUBSCRIBE_EVENT(OnToggleFullscreen);
 	UNSUBSCRIBE_EVENT(OnSizeChanged);
 
+	SAFE_DELETE(pInput);
+
 	OSWindow = pHostWindow;
 	pCtx = pContext;
-	if (pCtx) pCtx->setMouseClickEventGenerationEnabled(true);
+
+	if (!pContext) return;
+
+	pInput = n_new(CEGUI::InputAggregator(pCtx));
+	pInput->initialise();
+	pInput->setMouseClickEventGenerationEnabled(true);
 
 	if (pHostWindow)
 	{
@@ -68,7 +79,7 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 
 bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority)
 {
-	if (!pDispatcher || !pCtx) FAIL;
+	if (!pDispatcher || !pCtx || !pInput) FAIL;
 
 	// CEGUI 0.7.x:
 	// For correct bool return from injects app should have a fullscreen DefaultWindow
@@ -196,12 +207,12 @@ bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events:
 			{
 				IPTR X, Y;
 				return OSWindow && OSWindow->GetCursorPosition(X, Y) &&
-					pCtx->injectMousePosition((float)X, (float)Y);
+					pInput->injectMousePosition((float)X, (float)Y);
 			}
 
 			case 2:
 			case 3:
-				return pCtx->injectMouseWheelChange(Ev.Amount);
+				return pInput->injectMouseWheelChange(Ev.Amount);
 		}
 	}
 
@@ -217,18 +228,18 @@ bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Event
 	{
 		switch (Ev.Code)
 		{
-			case 0:		return pCtx->injectMouseButtonDown(CEGUI::LeftButton);
-			case 1:		return pCtx->injectMouseButtonDown(CEGUI::RightButton);
-			case 2:		return pCtx->injectMouseButtonDown(CEGUI::MiddleButton);
-			case 3:		return pCtx->injectMouseButtonDown(CEGUI::X1Button);
-			case 4:		return pCtx->injectMouseButtonDown(CEGUI::X2Button);
+			case 0:		return pInput->injectMouseButtonDown(CEGUI::MouseButton::Left);
+			case 1:		return pInput->injectMouseButtonDown(CEGUI::MouseButton::Right);
+			case 2:		return pInput->injectMouseButtonDown(CEGUI::MouseButton::Middle);
+			case 3:		return pInput->injectMouseButtonDown(CEGUI::MouseButton::X1);
+			case 4:		return pInput->injectMouseButtonDown(CEGUI::MouseButton::X2);
 			default:	FAIL;
 		}
 	}
 	else if (Ev.Device->GetType() == Input::Device_Keyboard)
 	{
 		// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
-		return pCtx->injectKeyDown((CEGUI::Key::Scan)Ev.Code);
+		return pInput->injectKeyDown((CEGUI::Key::Scan)Ev.Code);
 	}
 
 	FAIL;
@@ -243,18 +254,18 @@ bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events:
 	{
 		switch (Ev.Code)
 		{
-			case 0:		return pCtx->injectMouseButtonUp(CEGUI::LeftButton);
-			case 1:		return pCtx->injectMouseButtonUp(CEGUI::RightButton);
-			case 2:		return pCtx->injectMouseButtonUp(CEGUI::MiddleButton);
-			case 3:		return pCtx->injectMouseButtonUp(CEGUI::X1Button);
-			case 4:		return pCtx->injectMouseButtonUp(CEGUI::X2Button);
+			case 0:		return pInput->injectMouseButtonUp(CEGUI::MouseButton::Left);
+			case 1:		return pInput->injectMouseButtonUp(CEGUI::MouseButton::Right);
+			case 2:		return pInput->injectMouseButtonUp(CEGUI::MouseButton::Middle);
+			case 3:		return pInput->injectMouseButtonUp(CEGUI::MouseButton::X1);
+			case 4:		return pInput->injectMouseButtonUp(CEGUI::MouseButton::X2);
 			default:	FAIL;
 		}
 	}
 	else if (Ev.Device->GetType() == Input::Device_Keyboard)
 	{
 		// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
-		return pCtx->injectKeyUp((CEGUI::Key::Scan)Ev.Code);
+		return pInput->injectKeyUp((CEGUI::Key::Scan)Ev.Code);
 	}
 
 	FAIL;
@@ -267,7 +278,7 @@ bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events
 
 	bool Handled = false;
 	for (char Char : Ev.Text)
-		Handled |= pCtx->injectChar(Char);
+		Handled |= pInput->injectChar(Char);
 	return Handled;
 }
 //---------------------------------------------------------------------
@@ -281,7 +292,7 @@ bool CUIContext::OnViewportSizeChanged(Events::CEventDispatcher* pDispatcher, co
 
 		IPTR X, Y;
 		if (OSWindow->GetCursorPosition(X, Y))
-			pCtx->injectMousePosition((float)X, (float)Y);
+			pInput->injectMousePosition((float)X, (float)Y);
 	}
 	FAIL;
 }
