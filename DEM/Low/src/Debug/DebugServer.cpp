@@ -1,7 +1,5 @@
 #include "DebugServer.h"
 
-#include <UI/UIServer.h>
-#include <UI/UIContext.h>
 #include <Events/EventServer.h>
 #include <Core/Factory.h>
 
@@ -24,7 +22,7 @@ namespace Debug
 __ImplementClassNoFactory(Debug::CDebugServer, Core::CObject);
 __ImplementSingleton(Debug::CDebugServer);
 
-CDebugServer::CDebugServer(): UIAllowed(false)
+CDebugServer::CDebugServer()
 {
 	__ConstructSingleton;
 }
@@ -50,11 +48,15 @@ bool CDebugServer::RegisterPlugin(CStrID Name, const char* CppClassName, const c
 
 //???instead of this subscribe always and inside check UIServer::HasInstance()?
 //UI server must destruct plugin windows correctly on its destruction!
-void CDebugServer::AllowUI(bool Allow)
+void CDebugServer::SetUIContext(UI::PUIContext Context)
 {
-	UIAllowed = Allow;
+	if (UIContext == Context) return;
 
-	if (UIAllowed)
+	UIContext = Context;
+
+	// TODO: if context changed, transfer active debug windows to it
+
+	if (UIContext)
 	{
 		//SUBSCRIBE_PEVENT(ShowDebugConsole, CDebugServer, OnShowDebugConsole);
 		//SUBSCRIBE_PEVENT(ShowDebugWatcher, CDebugServer, OnShowDebugWatcher);
@@ -77,13 +79,13 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 	if (!pPlugin) return;
 
 	UI::CUIWindow& UI = *pPlugin->Window;
-	UI::CUIWindow& RootWnd = *UISrv->GetDefaultContext()->GetRootWindow();
+	UI::CUIWindow& RootWnd = *UIContext->GetRootWindow();
 
 	if (UI.GetWnd() && UI.GetWnd()->getParent() == RootWnd.GetWnd())
 		UI.ToggleVisibility();
 	else
 	{
-		if (!UI.GetWnd()) 
+		if (!UI.GetWnd())
 		{
 			UI.Load(CString(pPlugin->UIResource.CStr()));
 			n_assert(UI.GetWnd());

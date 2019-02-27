@@ -93,7 +93,7 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 	// d_owner.setWorldMatrix(d_matrix)
 
 	// Prepare for the rendering process according to the used render material
-	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper())
+	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
 	//!!!get opaque mode from renderer!
 	//pShaderWrapper->bindRenderState(d_blendMode, d_clippingActive);
 	d_owner.setRenderState(d_blendMode, d_clippingActive);

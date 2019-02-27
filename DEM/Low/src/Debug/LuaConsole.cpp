@@ -70,8 +70,11 @@ void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 
 	pNewItem->setTextColours(CEGUI::Colour(ColorARGB));
 
+	//!!!FIXME!
+	U32 ColumnID = -1;
+
 	bool ShouldScroll = (pVertScroll->getScrollPosition() >= pVertScroll->getDocumentSize() - pVertScroll->getPageSize());
-	pOutputWnd->addItem(pNewItem);
+	pOutputWnd->addRow(pNewItem, ColumnID);
 	if (ShouldScroll) pOutputWnd->ensureItemIsVisible(pNewItem);
 }
 //---------------------------------------------------------------------
@@ -94,15 +97,15 @@ bool CLuaConsole::OnShow(const CEGUI::EventArgs& e)
 
 bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 {
-	const char* pCmd = pInputLine->getText().c_str();
+	std::string Cmd = CEGUI::String::convertUtf32ToUtf8(pInputLine->getText().c_str());
 
-	if (!pCmd || !*pCmd) OK;
+	if (Cmd.empty()) OK;
 
-	Print(pCmd, 0xffffffff);
+	Print(Cmd.c_str(), 0xffffffff);
 
-	if (!strcmp(pCmd, "exit")) EventSrv->FireEvent(CStrID("CloseApplication"));
-	else if (!strcmp(pCmd, "cls")) pOutputWnd->resetList();
-	else if (!strcmp(pCmd, "help"))
+	if (Cmd == "exit") EventSrv->FireEvent(CStrID("CloseApplication"));
+	else if (Cmd == "cls") pOutputWnd->resetList();
+	else if (Cmd == "help")
 	{
 		Sys::Log(	"Debug Lua console.\n"
 					" help                           - view this help\n"
@@ -111,9 +114,9 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 					" dir <fullname> / ls <fullname> - view contents of a lua table at <fullname>\n"
 					"All other input is executed as a Lua script.");
 	}
-	else if (!strncmp(pCmd, "dir ", 4) || !strncmp(pCmd, "ls ", 3))
+	else if (!strncmp(Cmd.c_str(), "dir ", 4) || !strncmp(Cmd.c_str(), "ls ", 3))
 	{
-		const char* pTable = pCmd + 3;
+		const char* pTable = Cmd.c_str() + 3;
 		while (*pTable == 32) ++pTable;
 
 		CArray<CString> Contents;
@@ -136,14 +139,14 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 	else
 	{
 		Data::CData RetVal;
-		ScriptSrv->RunScript(pCmd, -1, &RetVal);
+		ScriptSrv->RunScript(Cmd.c_str(), -1, &RetVal);
 		if (RetVal.IsValid()) Sys::Log("Return value: %s\n", RetVal.ToString());
 	}
 
 	if (CmdHistoryCursor + 1 != CmdHistory.GetCount())
 	{
 		if (CmdHistory.GetCount() > 32) CmdHistory.RemoveAt(0);
-		CmdHistory.Add(CString(pCmd));
+		CmdHistory.Add(CString(Cmd.c_str()));
 	}
 	CmdHistoryCursor = CmdHistory.GetCount();
 
