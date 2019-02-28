@@ -29,16 +29,20 @@ namespace UI
 __ImplementClassNoFactory(UI::CUIServer, Core::CObject);
 __ImplementSingleton(UI::CUIServer);
 
-CUIServer::CUIServer(const CUISettings& Settings, const CUIContextSettings& DefaultContextSettings)
+CUIServer::CUIServer(const CUISettings& Settings)
 {
 	__ConstructSingleton;
 
 	Logger = n_new(CEGUI::CDEMLogger);
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
+	//!!!TMP!
+	// FIXME: set correct values (whatever it is intended to be)
+	const float W = 1024.f;
+	const float H = 768.f;
+
 	Renderer = &CEGUI::CDEMRenderer::create(
-		*Settings.GPU,
-		DefaultContextSettings.Width, DefaultContextSettings.Height,
+		*Settings.GPU, W, H,
 		Settings.VertexShaderID, Settings.PixelShaderRegularID, Settings.PixelShaderOpaqueID);
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);

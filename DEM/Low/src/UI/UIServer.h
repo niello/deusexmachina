@@ -79,7 +79,7 @@ private:
 
 public:
 
-	CUIServer(const CUISettings& Settings, const CUIContextSettings& DefaultContextSettings);
+	CUIServer(const CUISettings& Settings);
 	~CUIServer();
 	
 	// Internal use, set by config
