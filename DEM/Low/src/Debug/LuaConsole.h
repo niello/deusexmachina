@@ -39,7 +39,7 @@ protected:
 
 	bool OnShow(const CEGUI::EventArgs& e);
 	bool OnCommand(const CEGUI::EventArgs& e);
-	bool OnKeyDown(const CEGUI::EventArgs& e);
+	bool OnSemanticEvent(const CEGUI::EventArgs& e);
 
 	DECLARE_EVENT_HANDLER(OnLogMsg, OnLogMsg);
 

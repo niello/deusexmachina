@@ -59,16 +59,18 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 
 	pRenderer->beginRendering();
 
+	// TODO: fix
+
 	if (Mode & DrawMode_Opaque)
 	{
-		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(true);
-		pCtx->draw(DrawModeFlagWindowOpaque);
+//		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(true);
+//		pCtx->draw(DrawModeFlagWindowOpaque);
 	}
 
 	if (Mode & DrawMode_Transparent)
 	{
-		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(false);
-		pCtx->draw(CEGUI::DrawModeFlagWindowRegular | CEGUI::DrawModeFlagMouseCursor);
+//		((CEGUI::CDEMRenderer*)pRenderer)->setOpaqueMode(false);
+		pCtx->draw(/*CEGUI::DrawModeFlagWindowRegular | CEGUI::DrawModeFlagMouseCursor*/);
 	}
 
 	pRenderer->endRendering();

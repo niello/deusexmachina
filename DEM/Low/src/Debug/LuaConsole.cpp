@@ -26,8 +26,8 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 	pInputLine = (CEGUI::Editbox*)pWnd->getChild("InputLine");
 	pInputLine->subscribeEvent(CEGUI::Editbox::EventTextAccepted,
 		CEGUI::Event::Subscriber(&CLuaConsole::OnCommand, this));
-	pInputLine->subscribeEvent(CEGUI::Editbox::EventKeyDown,
-		CEGUI::Event::Subscriber(&CLuaConsole::OnKeyDown, this));
+	pInputLine->subscribeEvent(CEGUI::Editbox::EventSemanticEvent,
+		CEGUI::Event::Subscriber(&CLuaConsole::OnSemanticEvent, this));
 	pInputLine->activate();
 
 	pOutputWnd = (CEGUI::MultiColumnList*)pWnd->getChild("OutputList");
@@ -156,11 +156,11 @@ bool CLuaConsole::OnCommand(const CEGUI::EventArgs& e)
 }
 //---------------------------------------------------------------------
 
-bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
+bool CLuaConsole::OnSemanticEvent(const CEGUI::EventArgs& e)
 {
-	const CEGUI::KeyEventArgs& ke = (const CEGUI::KeyEventArgs&)e;
+	const CEGUI::SemanticEventArgs& ke = static_cast<const CEGUI::SemanticEventArgs&>(e);
 
-	if (ke.scancode == CEGUI::Key::Scan::ArrowDown)
+	if (ke.d_semanticValue == CEGUI::SemanticValue::GoDown)
 	{
 		if (CmdHistory.GetCount() > CmdHistoryCursor + 1)
 		{
@@ -181,7 +181,7 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 		}
 		OK;
 	}
-	else if (ke.scancode == CEGUI::Key::Scan::ArrowUp)
+	else if (ke.d_semanticValue == CEGUI::SemanticValue::GoUp)
 	{
 		if (CmdHistory.GetCount())
 		{
@@ -191,12 +191,17 @@ bool CLuaConsole::OnKeyDown(const CEGUI::EventArgs& e)
 		}
 		OK;
 	}
+
+
+	// TODO: fix
+	/*
 	else if (ke.scancode == CEGUI::Key::Scan::Grave)
 	{
 		//!!!HACK, key can change in a control layout!
 		pWnd->hide();
 		OK;
 	}
+	*/
 
 	FAIL;
 }
