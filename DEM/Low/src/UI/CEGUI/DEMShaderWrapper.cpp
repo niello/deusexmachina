@@ -13,6 +13,7 @@
 #include <UI/CEGUI/DEMRenderer.h>
 
 #include <CEGUI/ShaderParameterBindings.h>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace CEGUI
 {
@@ -133,7 +134,7 @@ CDEMShaderWrapper::~CDEMShaderWrapper()
 }
 //---------------------------------------------------------------------
 
-void CDEMShaderWrapper::bindRenderState(BlendMode BlendMode, bool Clipped, bool Opaque)
+void CDEMShaderWrapper::bindRenderState(BlendMode BlendMode, bool Clipped, bool Opaque) const
 {
 	Render::CGPUDriver* pGPU = Renderer.getGPUDriver();
 
@@ -168,22 +169,30 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 	const ShaderParameterBindings::ShaderParameterBindingsMap& paramMap = shaderParameterBindings->getShaderParameterBindings();
 	for (auto&& param : paramMap)
 	{
-		// set param
-		// may prepare string -> handle mapping to avoid scanning both shaders each time
+		//!!!DBG TMP!
+		// Rewrite for universal params!
+		//!!!may prepare string -> handle (PShaderConstant) mapping to avoid scanning both shaders each time
 
-		//void CDEMRenderer::setWorldMatrix(const matrix44& Matrix)
-		//{
-		//	if (WMCB.IsValidPtr())
-		//		ConstWorldMatrix->SetRawValue(*WMCB.Get(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
-		//}
-		////--------------------------------------------------------------------
-
-		//void CDEMRenderer::setProjMatrix(const matrix44& Matrix)
-		//{
-		//	if (PMCB.IsValidPtr())
-		//		ConstProjMatrix->SetRawValue(*PMCB.Get(), reinterpret_cast<const float*>(&Matrix), sizeof(matrix44));
-		//}
-		////--------------------------------------------------------------------
+		if (param.first == "WorldMatrix")
+		{
+			if (WMCB.IsValidPtr())
+			{
+				const CEGUI::ShaderParameterMatrix* prm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
+				ConstWorldMatrix->SetRawValue(*WMCB.Get(), glm::value_ptr(prm->d_parameterValue), sizeof(glm::mat4));
+			}
+		}
+		else if (param.first == "ProjectionMatrix")
+		{
+			if (PMCB.IsValidPtr())
+			{
+				const CEGUI::ShaderParameterMatrix* prm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
+				ConstProjMatrix->SetRawValue(*PMCB.Get(), glm::value_ptr(prm->d_parameterValue), sizeof(glm::mat4));
+			}
+		}
+		else if (param.first == "AlphaPercentage")
+		{
+			// TODO: CEGUI implement
+		}
 	}
 
 	if (WMCB.IsValidPtr())

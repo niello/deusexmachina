@@ -59,7 +59,7 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 
 	pRenderer->beginRendering();
 
-	// TODO: fix
+	// TODO: CEGUI fix
 
 	if (Mode & DrawMode_Opaque)
 	{

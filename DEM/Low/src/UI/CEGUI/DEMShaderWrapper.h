@@ -37,7 +37,7 @@ public:
 	CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Render::PShader PSRegular, Render::PShader PSOpaque);
 	virtual ~CDEMShaderWrapper();
 
-	void			bindRenderState(BlendMode BlendMode, bool Clipped, bool Opaque);
+	void			bindRenderState(BlendMode BlendMode, bool Clipped, bool Opaque) const;
 	virtual void	prepareForRendering(const ShaderParameterBindings* shaderParameterBindings) override;
 };
 

@@ -193,7 +193,7 @@ bool CLuaConsole::OnSemanticEvent(const CEGUI::EventArgs& e)
 	}
 
 
-	// TODO: fix
+	// TODO: CEGUI fix
 	/*
 	else if (ke.scancode == CEGUI::Key::Scan::Grave)
 	{

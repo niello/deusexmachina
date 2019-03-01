@@ -29,7 +29,7 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 {
 	CUIWindow::Init(pWindow);
 
-	// TODO: fix
+	// TODO: CEGUI fix
 	/*
 	pWnd->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
 	UPTR CEGUIChildCount = pWnd->getChildCount();

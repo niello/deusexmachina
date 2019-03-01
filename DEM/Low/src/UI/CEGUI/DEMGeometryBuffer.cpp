@@ -80,23 +80,23 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 	if (!d_matrixValid || !isRenderTargetDataValid(d_owner.getActiveRenderTarget()))
 	{
 		// Apply the view projection matrix to the model matrix and save the result as cached matrix
-		d_matrix = d_owner.getViewProjectionMatrix() * getModelMatrix();
+		d_matrix = /*d_owner.getViewProjectionMatrix() **/ getModelMatrix();
 		d_matrixValid = true;
 	}
 
 	CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
 
 	// Set the uniform variables for this GeometryBuffer in the Shader
-	shaderParameterBindings->setParameter("modelViewProjMatrix", d_matrix);
-	shaderParameterBindings->setParameter("alphaPercentage", d_alpha);
-
-	// d_owner.setWorldMatrix(d_matrix)
+	//???TODO: pass premultiplied WVP?
+	shaderParameterBindings->setParameter("WorldMatrix", d_matrix);
+	shaderParameterBindings->setParameter("ProjectionMatrix", d_matrix);
+	shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
 
 	// Prepare for the rendering process according to the used render material
-	auto pShaderWrapper = static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
-	//!!!get opaque mode from renderer!
-	//pShaderWrapper->bindRenderState(d_blendMode, d_clippingActive);
-	d_owner.setRenderState(d_blendMode, d_clippingActive);
+	const CDEMShaderWrapper& ShaderWrapper = *static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
+	//!!!get opaque mode from renderer or from the function arg!
+	const bool TMP_Opaque = false;
+	ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, TMP_Opaque);
 	d_renderMaterial->prepareForRendering();
 
 	// Render geometry
