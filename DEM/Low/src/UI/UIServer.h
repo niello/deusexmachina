@@ -89,7 +89,7 @@ public:
 
 	void			Trigger(float FrameTime);
 
-	PUIContext		CreateContext(const CUIContextSettings& Settings); //!!!params!
+	PUIContext		CreateContext(const CUIContextSettings& Settings);
 	void			DestroyContext(PUIContext Context); //!!!params!
 	
 	// Event will be disconnected at the beginning of the next GUI update loop.

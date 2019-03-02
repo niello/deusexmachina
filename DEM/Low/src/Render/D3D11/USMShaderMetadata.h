@@ -134,7 +134,7 @@ public:
 	void						Clear();
 
 	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return MinFeatureLevel; }
-	virtual HConstant				GetConstantHandle(CStrID ID) const;
+	virtual HConstant			GetConstantHandle(CStrID ID) const;
 	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;

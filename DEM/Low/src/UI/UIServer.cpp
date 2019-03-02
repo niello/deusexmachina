@@ -99,6 +99,17 @@ void CUIServer::Trigger(float FrameTime)
 }
 //---------------------------------------------------------------------
 
+PUIContext CUIServer::CreateContext(const CUIContextSettings& Settings)
+{
+	//!!!create viewport target sized as in Settings!
+	CEGUI::RenderTarget* pTarget = nullptr; //Renderer->createTextureTarget(false);
+	CEGUI::GUIContext& CEGUICtx = CEGUISystem->createGUIContext(*pTarget);
+	PUIContext Ctx = n_new(CUIContext);
+	Ctx->Init(&CEGUICtx, Settings.HostWindow.Get());
+	return Ctx;
+}
+//---------------------------------------------------------------------
+
 void CUIServer::LoadScheme(const char* pResourceFile)
 {
 	CEGUI::SchemeManager::getSingleton().createFromFile(pResourceFile);

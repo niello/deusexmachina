@@ -34,6 +34,7 @@ public:
 	virtual HResource			GetResourceHandle(CStrID ID) const = 0;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const = 0;
 	virtual PShaderConstant		GetConstant(HConstant hConst) const = 0;
+	PShaderConstant				GetConstant(CStrID ID) const;
 };
 
 }

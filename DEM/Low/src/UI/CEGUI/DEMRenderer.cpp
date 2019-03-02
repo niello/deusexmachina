@@ -45,16 +45,9 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 
 	//???pass 3 shaders inside, create render states there etc?
 	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, VS, PSRegular, PSOpaque));
-	//ShaderWrapperTextured->addUniformVariable("texture0");
-	//ShaderWrapperTextured->addUniformVariable("modelViewProjMatrix");
-	//ShaderWrapperTextured->addUniformVariable("alphaPercentage");
 
 	//!!!TODO: non-textured shaders!
-	/*
-	ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);
-	ShaderWrapperColoured->addUniformVariable("modelViewProjMatrix", ShaderType::VERTEX, ShaderParamType::Matrix4X4);
-	ShaderWrapperColoured->addUniformVariable("alphaPercentage", ShaderType::PIXEL, ShaderParamType::Float);
-	*/
+	//ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);
 
 	//???use Render::VCFmt_UInt8_4_Norm for color? convert on append vertices?
 	Render::CVertexComponent Components[] = {
