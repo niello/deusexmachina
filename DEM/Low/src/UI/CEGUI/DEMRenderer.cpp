@@ -116,6 +116,26 @@ void CDEMRenderer::logTextureDestruction(const String& name)
 }
 //---------------------------------------------------------------------
 
+RenderTarget* CDEMRenderer::createViewportTarget(float width, float height)
+{
+	Rectf area(0.f, 0.f, width, height);
+	CDEMViewportTarget* t = n_new(CDEMViewportTarget)(*this, area);
+	VPTargets.Add(t);
+	return t;
+}
+//---------------------------------------------------------------------
+
+void CDEMRenderer::destroyViewportTarget(RenderTarget* target)
+{
+	IPTR Idx = VPTargets.FindIndex(target);
+	if (Idx != INVALID_INDEX)
+	{
+		VPTargets.RemoveAt(Idx);
+		n_delete(target);
+	}
+}
+//---------------------------------------------------------------------
+
 TextureTarget* CDEMRenderer::createTextureTarget(bool addStencilBuffer)
 {
 	CDEMTextureTarget* t = n_new(CDEMTextureTarget)(*this, addStencilBuffer);
@@ -234,6 +254,9 @@ RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShade
 GeometryBuffer& CDEMRenderer::createGeometryBufferTextured(RefCounted<RenderMaterial> renderMaterial)
 {
 	CDEMGeometryBuffer* pBuffer = new CDEMGeometryBuffer(*this, renderMaterial);
+	pBuffer->addVertexAttribute(VertexAttributeType::Position0);
+	pBuffer->addVertexAttribute(VertexAttributeType::Colour0);
+	pBuffer->addVertexAttribute(VertexAttributeType::TexCoord0);
 	pBuffer->setVertexLayout(VertexLayoutTextured);
 	addGeometryBuffer(*pBuffer);
 	return *pBuffer;
@@ -243,6 +266,8 @@ GeometryBuffer& CDEMRenderer::createGeometryBufferTextured(RefCounted<RenderMate
 GeometryBuffer& CDEMRenderer::createGeometryBufferColoured(RefCounted<RenderMaterial> renderMaterial)
 {
 	CDEMGeometryBuffer* pBuffer = new CDEMGeometryBuffer(*this, renderMaterial);
+	pBuffer->addVertexAttribute(VertexAttributeType::Position0);
+	pBuffer->addVertexAttribute(VertexAttributeType::Colour0);
 	pBuffer->setVertexLayout(VertexLayoutColoured);
 	addGeometryBuffer(*pBuffer);
 	return *pBuffer;

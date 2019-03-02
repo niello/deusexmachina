@@ -101,8 +101,7 @@ void CUIServer::Trigger(float FrameTime)
 
 PUIContext CUIServer::CreateContext(const CUIContextSettings& Settings)
 {
-	//!!!create viewport target sized as in Settings!
-	CEGUI::RenderTarget* pTarget = nullptr; //Renderer->createTextureTarget(false);
+	CEGUI::RenderTarget* pTarget = Renderer->createViewportTarget(Settings.Width, Settings.Height);
 	CEGUI::GUIContext& CEGUICtx = CEGUISystem->createGUIContext(*pTarget);
 	PUIContext Ctx = n_new(CUIContext);
 	Ctx->Init(&CEGUICtx, Settings.HostWindow.Get());

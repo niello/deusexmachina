@@ -87,14 +87,14 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 	CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
 
 	// Set the uniform variables for this GeometryBuffer in the Shader
-	//???TODO: pass premultiplied WVP?
+	//???TODO: CEGUI fix - pass premultiplied WVP?
 	shaderParameterBindings->setParameter("WorldMatrix", d_matrix);
-	shaderParameterBindings->setParameter("ProjectionMatrix", d_matrix);
+	shaderParameterBindings->setParameter("ProjectionMatrix", d_owner.getViewProjectionMatrix());
 	shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
 
 	// Prepare for the rendering process according to the used render material
 	const CDEMShaderWrapper& ShaderWrapper = *static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
-	//!!!get opaque mode from renderer or from the function arg!
+	//!!! TODO: CEGUI implement - get opaque mode from renderer or from the function arg!
 	const bool TMP_Opaque = false;
 	ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, TMP_Opaque);
 	d_renderMaterial->prepareForRendering();

@@ -9,6 +9,7 @@ namespace CEGUI
 {
 class CDEMGeometryBuffer;
 class CDEMTextureTarget;
+class CDEMViewportTarget;
 class CDEMTexture;
 typedef std::unique_ptr<class CDEMShaderWrapper> PDEMShaderWrapper;
 
@@ -23,6 +24,7 @@ protected:
 	Sizef								DisplaySize;
 
 	CArray<CDEMTextureTarget*>			TexTargets;
+	CArray<RenderTarget*>				VPTargets;
 	CHashTable<String, CDEMTexture*>	Textures;
 
 	RenderTarget*						pDefaultRT = nullptr;
@@ -43,6 +45,8 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
+	RenderTarget*			createViewportTarget(float width, float height);
+	void					destroyViewportTarget(RenderTarget* target);
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() override { return *pDefaultRT; }

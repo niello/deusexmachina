@@ -208,45 +208,44 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 		// Constants
 		for (const auto& Rec : Constants)
 		{
-			// Set in each shader where this constant exists by name
-			if (Rec.Name == param.first)
-			{
-				if (!Rec.Buffer->IsInWriteMode())
-				{
-					pGPU->BindConstantBuffer(Rec.ShaderType, Rec.Constant->GetConstantBufferHandle(), Rec.Buffer.Get());
-					pGPU->BeginShaderConstants(*Rec.Buffer.Get());
-				}
+			// Set in each shader where this constant exists by name, don't break after the first name match
+			if (Rec.Name != param.first) continue;
 
-				switch (param.second->getType())
+			if (!Rec.Buffer->IsInWriteMode())
+			{
+				pGPU->BindConstantBuffer(Rec.ShaderType, Rec.Constant->GetConstantBufferHandle(), Rec.Buffer.Get());
+				pGPU->BeginShaderConstants(*Rec.Buffer.Get());
+			}
+
+			switch (param.second->getType())
+			{
+				case CEGUI::ShaderParamType::Matrix4X4:
 				{
-					case CEGUI::ShaderParamType::Matrix4X4:
-					{
-						const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
-						Rec.Constant->SetRawValue(*Rec.Buffer.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
-						break;
-					}
-					case CEGUI::ShaderParamType::Float:
-					{
-						const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
-						Rec.Constant->SetFloat(*Rec.Buffer.Get(), &pPrm->d_parameterValue);
-						break;
-					}
-					case CEGUI::ShaderParamType::Int:
-					{
-						const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
-						Rec.Constant->SetSInt(*Rec.Buffer.Get(), pPrm->d_parameterValue);
-						break;
-					}
-					case CEGUI::ShaderParamType::Texture:
-					{
-						::Sys::Error("CDEMShaderWrapper::prepareForRendering() > CEGUI arbitrary texture not implemented\n");
-						break;
-					}
-					default:
-					{
-						::Sys::Error("CDEMShaderWrapper::prepareForRendering() > unknown shader parameter type\n");
-						break;
-					}
+					const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
+					Rec.Constant->SetRawValue(*Rec.Buffer.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
+					break;
+				}
+				case CEGUI::ShaderParamType::Float:
+				{
+					const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
+					Rec.Constant->SetFloat(*Rec.Buffer.Get(), &pPrm->d_parameterValue);
+					break;
+				}
+				case CEGUI::ShaderParamType::Int:
+				{
+					const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
+					Rec.Constant->SetSInt(*Rec.Buffer.Get(), pPrm->d_parameterValue);
+					break;
+				}
+				case CEGUI::ShaderParamType::Texture:
+				{
+					::Sys::Error("CDEMShaderWrapper::prepareForRendering() > CEGUI arbitrary texture not implemented\n");
+					break;
+				}
+				default:
+				{
+					::Sys::Error("CDEMShaderWrapper::prepareForRendering() > unknown shader parameter type\n");
+					break;
 				}
 			}
 		}
