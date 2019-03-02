@@ -93,13 +93,15 @@ void CD3D11ConstantBuffer::OnBegin(void* pMappedVRAM)
 		n_assert_dbg(!pMapped && pMappedVRAM);
 		pMapped = (char*)pMappedVRAM;
 	}
+
+	Flags.Set(CB11_InWriteMode);
 }
 //---------------------------------------------------------------------
 
 void CD3D11ConstantBuffer::OnCommit()
 {
-	if (Flags.IsNot(CB11_UsesRAMCopy)) pMapped = NULL;
-	Flags.Clear(CB11_Dirty);
+	if (Flags.IsNot(CB11_UsesRAMCopy)) pMapped = nullptr;
+	Flags.Clear(CB11_Dirty | CB11_InWriteMode);
 }
 //---------------------------------------------------------------------
 

@@ -30,28 +30,29 @@ protected:
 	enum
 	{
 		CB11_UsesRAMCopy	= 0x01,
-		CB11_Dirty			= 0x02
+		CB11_Dirty			= 0x02,
+		CB11_InWriteMode	= 0x04,
+		CB11_Temporary		= 0x08
 	};
 
-	ID3D11Buffer*				pBuffer;
-	ID3D11ShaderResourceView*	pSRView;
-	char*						pMapped;
+	ID3D11Buffer*				pBuffer = nullptr;
+	ID3D11ShaderResourceView*	pSRView = nullptr;
+	char*						pMapped = nullptr;
 	EUSMBufferType				Type;
 	D3D11_USAGE					D3DUsage;
-	Data::CFlags				Flags;
 	UPTR						SizeInBytes;
-	bool						Temporary;
+	Data::CFlags				Flags;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D11ConstantBuffer(): pBuffer(NULL), pSRView(NULL), pMapped(NULL), Temporary(false) {}
 	virtual ~CD3D11ConstantBuffer() { InternalDestroy(); }
 
 	bool						Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV);
 	virtual void				Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
 	virtual bool				IsValid() const { return !!pBuffer; }
+	virtual bool				IsInWriteMode() const { return Flags.Is(CB11_InWriteMode); }
 
 	bool						CreateRAMCopy();
 	void						ResetRAMCopy(const void* pVRAMData);
@@ -73,18 +74,18 @@ public:
 	EUSMBufferType				GetType() const { return Type; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
-	bool						IsTemporary() const { return Temporary; }
+	bool						IsTemporary() const { return Flags.Is(CB11_Temporary); }
 
 	void						OnBegin(void* pMappedVRAM = NULL);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver
-	void						SetTemporary(bool TmpBuffer) { Temporary = TmpBuffer; }	// For internal use by the GPUDriver
+	void						SetTemporary(bool Tmp) { Flags.SetTo(CB11_Temporary, Tmp); }	// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 
 inline void CD3D11ConstantBuffer::WriteData(UPTR Offset, const void* pData, UPTR Size)
 {
-	n_assert_dbg(pData && Size && pMapped && (Offset + Size <= SizeInBytes));
+	n_assert_dbg(Flags.Is(CB11_InWriteMode) && pData && Size && pMapped && (Offset + Size <= SizeInBytes));
 	memcpy(pMapped + Offset, pData, Size);
 	Flags.Set(CB11_Dirty);
 }

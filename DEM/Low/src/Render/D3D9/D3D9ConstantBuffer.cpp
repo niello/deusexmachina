@@ -10,8 +10,6 @@ namespace Render
 {
 __ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
 
-CD3D9ConstantBuffer::CD3D9ConstantBuffer() {}
-
 CD3D9ConstantBuffer::~CD3D9ConstantBuffer()
 {
 	InternalDestroy();

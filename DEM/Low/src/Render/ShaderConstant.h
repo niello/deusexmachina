@@ -18,14 +18,13 @@ class CShaderConstant: public Data::CRefCounted
 {
 protected:
 
-	HConstantBuffer BufferHandle;
+	HConstantBuffer BufferHandle = INVALID_HANDLE;
 
 public:
 
 	// Pass as the Size to SetRawValue() to specify Size = size of this constant
 	static const UPTR WholeSize = 0;
 
-	CShaderConstant(): BufferHandle(INVALID_HANDLE) {}
 	virtual ~CShaderConstant() {}
 
 	virtual bool			Init(HConstant hConst) = 0;

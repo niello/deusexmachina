@@ -24,10 +24,6 @@ CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Re
 {
 	Render::CGPUDriver* pGPU = Owner.getGPUDriver();
 
-	//=================================================================
-	// Render states
-	//=================================================================
-
 	Render::CRenderStateDesc RSDesc;
 	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
 	RSDesc.SetDefaults();
@@ -43,7 +39,7 @@ CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Re
 		Render::CRenderStateDesc::Blend_AlphaToCoverage |
 		Render::CRenderStateDesc::Blend_Independent);
 
-	// Normal blend
+	// Regular shader with normal blend
 	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_InvDestAlpha;
 	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_One;
 	RTBlendDesc.SrcBlendArg = Render::BlendArg_SrcAlpha;
@@ -52,14 +48,14 @@ CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Re
 	// Unclipped
 	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
 
-	NormalUnclipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(NormalUnclipped.IsValidPtr());
+	RegularUnclipped = pGPU->CreateRenderState(RSDesc);
+	n_assert(RegularUnclipped.IsValidPtr());
 
 	// Clipped
 	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
 
-	NormalClipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(NormalClipped.IsValidPtr());
+	RegularClipped = pGPU->CreateRenderState(RSDesc);
+	n_assert(RegularClipped.IsValidPtr());
 
 	// Premultiplied alpha blend
 	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_One;
@@ -94,44 +90,82 @@ CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Re
 	OpaqueClipped = pGPU->CreateRenderState(RSDesc);
 	n_assert(OpaqueClipped.IsValidPtr());
 
-	//=================================================================
-	// Shader constants
-	//=================================================================
-
-	//???or universal external? CEffectConst etc?
-
-	const Render::IShaderMetadata* pVSMeta = VS->GetMetadata();
-	const Render::IShaderMetadata* pPSMeta = PSRegular->GetMetadata();
-
-	ConstWorldMatrix = pVSMeta->GetConstant(CStrID("WorldMatrix"));
-	n_assert(ConstWorldMatrix.IsValidPtr());
-	hWMCB = ConstWorldMatrix->GetConstantBufferHandle();
-	n_assert(hWMCB != INVALID_HANDLE);
-
-	ConstProjMatrix = pVSMeta->GetConstant(CStrID("ProjectionMatrix"));
-	n_assert(ConstProjMatrix.IsValidPtr());
-	hPMCB = ConstProjMatrix->GetConstantBufferHandle();
-	n_assert(hPMCB != INVALID_HANDLE);
-
-	WMCB = pGPU->CreateConstantBuffer(hWMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
-	if (hWMCB == hPMCB) PMCB = WMCB;
-	else PMCB = pGPU->CreateConstantBuffer(hPMCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
-
-	hTexture = pPSMeta->GetResourceHandle(CStrID("BoundTexture"));
-	hLinearSampler = pPSMeta->GetSamplerHandle(CStrID("LinearSampler"));
-
-	Render::CSamplerDesc SampDesc;
-	SampDesc.SetDefaults();
-	SampDesc.AddressU = Render::TexAddr_Clamp;
-	SampDesc.AddressV = Render::TexAddr_Clamp;
-	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	LinearSampler = pGPU->CreateSampler(SampDesc);
-	n_assert(LinearSampler.IsValidPtr());
+	// NB: all pixel shaders must have compatible metadata
+	pVSMeta = VS->GetMetadata();
+	pPSMeta = PSRegular->GetMetadata();
 }
 //---------------------------------------------------------------------
 
 CDEMShaderWrapper::~CDEMShaderWrapper()
 {
+}
+//---------------------------------------------------------------------
+
+void CDEMShaderWrapper::setupParameterForShader(CStrID Name, Render::EShaderType ShaderType)
+{
+	const Render::IShaderMetadata* pMeta;
+	switch (ShaderType)
+	{
+		case Render::ShaderType_Vertex:	pMeta = pVSMeta; break;
+		case Render::ShaderType_Pixel:	pMeta = pPSMeta; break;
+		default:						return;
+	}
+
+	if (!pMeta) return;
+
+	Render::PShaderConstant Constant = pMeta->GetConstant(Name);
+	if (!Constant || Constant->GetConstantBufferHandle() == INVALID_HANDLE) return;
+
+	Render::HConstantBuffer hCB = Constant->GetConstantBufferHandle();
+	Render::PConstantBuffer	CB;
+
+	for (const auto& Rec : Constants)
+	{
+		if (Rec.Constant->GetConstantBufferHandle() == hCB)
+		{
+			CB = Rec.Buffer;
+			break;
+		}
+	}
+
+	if (!CB)
+		CB = Renderer.getGPUDriver()->CreateConstantBuffer(hCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
+
+	CConstRecord Rec;
+	Rec.Name = Name;
+	Rec.Constant = Constant;
+	Rec.ShaderType = ShaderType;
+	Rec.Buffer = CB;
+
+	Constants.push_back(std::move(Rec));
+}
+//---------------------------------------------------------------------
+
+void CDEMShaderWrapper::setupParameter(const char* pName)
+{
+	CStrID Name(pName);
+	setupParameterForShader(Name, Render::ShaderType_Vertex);
+	setupParameterForShader(Name, Render::ShaderType_Pixel);
+}
+//---------------------------------------------------------------------
+
+void CDEMShaderWrapper::setupMainTexture(const char* pTextureName, const char* pSamplerName)
+{
+	if (!pPSMeta) return;
+
+	hTexture = pPSMeta->GetResourceHandle(CStrID(pTextureName));
+	hLinearSampler = pPSMeta->GetSamplerHandle(CStrID(pSamplerName));
+
+	if (!LinearSampler)
+	{
+		Render::CSamplerDesc SampDesc;
+		SampDesc.SetDefaults();
+		SampDesc.AddressU = Render::TexAddr_Clamp;
+		SampDesc.AddressV = Render::TexAddr_Clamp;
+		SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+		LinearSampler = Renderer.getGPUDriver()->CreateSampler(SampDesc);
+		n_assert(LinearSampler.IsValidPtr());
+	}
 }
 //---------------------------------------------------------------------
 
@@ -144,7 +178,7 @@ void CDEMShaderWrapper::bindRenderState(BlendMode BlendMode, bool Clipped, bool 
 	else if (BlendMode == BlendMode::RttPremultiplied)
 		pGPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
 	else
-		pGPU->SetRenderState(Clipped ? NormalClipped : NormalUnclipped);
+		pGPU->SetRenderState(Clipped ? RegularClipped : RegularUnclipped);
 }
 //---------------------------------------------------------------------
 
@@ -154,58 +188,75 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 
 	Render::CGPUDriver* pGPU = Renderer.getGPUDriver();
 
-	pGPU->BindConstantBuffer(Render::ShaderType_Vertex, hWMCB, WMCB.Get());
-	pGPU->BeginShaderConstants(*WMCB.Get());
-	if (hWMCB != hPMCB)
-	{
-		pGPU->BindConstantBuffer(Render::ShaderType_Vertex, hPMCB, PMCB.Get());
-		pGPU->BeginShaderConstants(*PMCB.Get());
-	}
-
 	const ShaderParameterBindings::ShaderParameterBindingsMap& paramMap = shaderParameterBindings->getShaderParameterBindings();
 	for (auto&& param : paramMap)
 	{
-		//!!!DBG TMP!
-		// Rewrite for universal params!
-		//!!!may prepare string -> handle (PShaderConstant) mapping to avoid scanning both shaders each time
-
-		if (param.first == "WorldMatrix")
+		// Default CEGUI texture. Hardcoded inside CEGUI as "texture0".
+		if (param.first == "texture0")
 		{
-			if (WMCB.IsValidPtr())
-			{
-				const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
-				ConstWorldMatrix->SetRawValue(*WMCB.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
-			}
-		}
-		else if (param.first == "ProjectionMatrix")
-		{
-			if (PMCB.IsValidPtr())
-			{
-				const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
-				ConstProjMatrix->SetRawValue(*PMCB.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
-			}
-		}
-		else if (param.first == "AlphaPercentage")
-		{
-			// TODO: CEGUI implement
-		}
-		else if (param.first == "texture0")
-		{
-			// Default CEGUI texture. Hardcoded inside CEGUI as "texture0".
-			if (hTexture)
+			if (hTexture && LinearSampler)
 			{
 				const CEGUI::ShaderParameterTexture* pPrm = static_cast<const CEGUI::ShaderParameterTexture*>(param.second);
 				const CEGUI::CDEMTexture* pTex = static_cast<const CEGUI::CDEMTexture*>(pPrm->d_parameterValue);
 				pGPU->BindResource(Render::ShaderType_Pixel, hTexture, pTex->getTexture());
 				pGPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.Get());
 			}
+
+			continue;
+		}
+
+		// Constants
+		for (const auto& Rec : Constants)
+		{
+			// Set in each shader where this constant exists by name
+			if (Rec.Name == param.first)
+			{
+				if (!Rec.Buffer->IsInWriteMode())
+				{
+					pGPU->BindConstantBuffer(Rec.ShaderType, Rec.Constant->GetConstantBufferHandle(), Rec.Buffer.Get());
+					pGPU->BeginShaderConstants(*Rec.Buffer.Get());
+				}
+
+				switch (param.second->getType())
+				{
+					case CEGUI::ShaderParamType::Matrix4X4:
+					{
+						const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
+						Rec.Constant->SetRawValue(*Rec.Buffer.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
+						break;
+					}
+					case CEGUI::ShaderParamType::Float:
+					{
+						const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
+						Rec.Constant->SetFloat(*Rec.Buffer.Get(), &pPrm->d_parameterValue);
+						break;
+					}
+					case CEGUI::ShaderParamType::Int:
+					{
+						const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
+						Rec.Constant->SetSInt(*Rec.Buffer.Get(), pPrm->d_parameterValue);
+						break;
+					}
+					case CEGUI::ShaderParamType::Texture:
+					{
+						::Sys::Error("CDEMShaderWrapper::prepareForRendering() > CEGUI arbitrary texture not implemented\n");
+						break;
+					}
+					default:
+					{
+						::Sys::Error("CDEMShaderWrapper::prepareForRendering() > unknown shader parameter type\n");
+						break;
+					}
+				}
+			}
 		}
 	}
 
-	if (WMCB.IsValidPtr())
-		pGPU->CommitShaderConstants(*WMCB.Get());
-	if (hWMCB != hPMCB && PMCB.IsValidPtr())
-		pGPU->CommitShaderConstants(*PMCB.Get());
+	for (const auto& Rec : Constants)
+	{
+		if (Rec.Buffer->IsInWriteMode())
+			pGPU->CommitShaderConstants(*Rec.Buffer.Get());
+	}
 }
 //---------------------------------------------------------------------
 

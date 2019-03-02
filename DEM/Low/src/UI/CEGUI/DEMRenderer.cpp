@@ -45,6 +45,10 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
 
 	//???pass 3 shaders inside, create render states there etc?
 	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, VS, PSRegular, PSOpaque));
+	ShaderWrapperTextured->setupMainTexture("BoundTexture", "LinearSampler");
+	ShaderWrapperTextured->setupParameter("WorldMatrix");
+	ShaderWrapperTextured->setupParameter("ProjectionMatrix");
+	ShaderWrapperTextured->setupParameter("AlphaPercentage"); // TODO: CEGUI implement in shaders
 
 	//!!!TODO: non-textured shaders!
 	//ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);

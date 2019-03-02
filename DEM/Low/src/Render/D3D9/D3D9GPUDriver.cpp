@@ -3290,6 +3290,9 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 
 bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 {
+	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
+	CD3D9ConstantBuffer& CB9 = static_cast<CD3D9ConstantBuffer&>(Buffer);
+	CB9.OnBegin();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -3340,7 +3343,7 @@ bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst
 bool CD3D9GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 {
 	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
+	CD3D9ConstantBuffer& CB9 = static_cast<CD3D9ConstantBuffer&>(Buffer);
 
 	if (CB9.IsDirty())
 	{
