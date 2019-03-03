@@ -292,7 +292,8 @@ bool CUIContext::OnViewportSizeChanged(Events::CEventDispatcher* pDispatcher, co
 		const Data::CRect& WndRect = OSWindow->GetRect();
 		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
 
-		// It is not a global display size change but a context size change!
+		// FIXME: fonts & images scale based on it, so we must call it for now, but the display size
+		//        doesn't change here actually, it is a render target size change, context-local!
 		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
 
 		auto& RT = pCtx->getRenderTarget();
