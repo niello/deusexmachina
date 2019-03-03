@@ -36,14 +36,16 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	Logger = n_new(CEGUI::CDEMLogger);
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
-	//!!!TMP!
-	// FIXME: set correct values (whatever it is intended to be)
-	const float W = 1024.f;
-	const float H = 768.f;
-
 	Renderer = &CEGUI::CDEMRenderer::create(
-		*Settings.GPU, W, H,
+		*Settings.GPU,
 		Settings.VertexShaderID, Settings.PixelShaderRegularID, Settings.PixelShaderOpaqueID);
+
+	//!!!TMP!
+	// TODO: CEGUI implement - get display size from GPU output 0 or don't use display size at all
+	// FIXME: set correct values (whatever it is intended to be)
+	//???here or inside a renderer constructor?
+	Renderer->setDisplaySize(CEGUI::Sizef(1024.f, 768.f));
+
 	ResourceProvider = n_new(CEGUI::CDEMResourceProvider);
 	XMLParser = n_new(CEGUI::TinyXML2Parser);
 

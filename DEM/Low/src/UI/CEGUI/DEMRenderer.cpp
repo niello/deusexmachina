@@ -28,14 +28,9 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver,
-						   float DefaultContextWidth, float DefaultContextHeight,
-						   CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID):
-	GPU(&GPUDriver),
-	DisplaySize(DefaultContextWidth, DefaultContextHeight)
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID)
+	: GPU(&GPUDriver)
 {
-	n_assert(DefaultContextWidth > 0.f && DefaultContextHeight > 0.f);
-
 	Render::PShader VS = GPU->GetShader(VertexShaderID);
 	Render::PShader PSRegular = GPU->GetShader(PixelShaderRegularID);
 	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);
@@ -76,7 +71,6 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllTextureTargets();
 	destroyAllTextures();
 	destroyAllGeometryBuffers();
-	SAFE_DELETE(pDefaultRT);
 
 	ShaderWrapperTextured = nullptr;
 	ShaderWrapperColoured = nullptr;
@@ -87,12 +81,11 @@ CDEMRenderer::~CDEMRenderer()
 //--------------------------------------------------------------------
 
 CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver,
-								   float DefaultContextWidth, float DefaultContextHeight,
 								   CStrID VertexShaderID, CStrID PixelShaderRegularID,
 								   CStrID PixelShaderOpaqueID, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, DefaultContextWidth, DefaultContextHeight, VertexShaderID, PixelShaderRegularID, PixelShaderOpaqueID);
+	return *n_new(CDEMRenderer)(GPUDriver, VertexShaderID, PixelShaderRegularID, PixelShaderOpaqueID);
 }
 //--------------------------------------------------------------------
 
@@ -233,6 +226,14 @@ Texture& CDEMRenderer::getTexture(const String& name) const
 }
 //--------------------------------------------------------------------
 
+RenderTarget& CDEMRenderer::getDefaultRenderTarget()
+{
+	static CDEMViewportTarget NullTarget(*this, Rectf(0.f, 0.f, 0.f, 0.f));
+	n_assert("CDEMRenderer::getDefaultRenderTarget() > should NOT be used! To be removed from CEGUI!");
+	return NullTarget;
+}
+//--------------------------------------------------------------------
+
 RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShaderType shaderType) const
 {
 	if (shaderType == DefaultShaderType::Textured)
@@ -286,15 +287,7 @@ void CDEMRenderer::endRendering()
 
 void CDEMRenderer::setDisplaySize(const Sizef& sz)
 {
-	if (sz != DisplaySize)
-	{
-		DisplaySize = sz;
-
-		// FIXME: This is probably not the right thing to do in all cases.
-		Rectf area(pDefaultRT->getArea());
-		area.setSize(sz);
-		pDefaultRT->setArea(area);
-	}
+	DisplaySize = sz;
 }
 //---------------------------------------------------------------------
 

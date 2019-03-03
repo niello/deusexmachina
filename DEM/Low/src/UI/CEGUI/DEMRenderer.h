@@ -27,13 +27,12 @@ protected:
 	CArray<RenderTarget*>				VPTargets;
 	CHashTable<String, CDEMTexture*>	Textures;
 
-	RenderTarget*						pDefaultRT = nullptr;
 	Render::PVertexLayout				VertexLayoutTextured;
 	Render::PVertexLayout				VertexLayoutColoured;
 	PDEMShaderWrapper					ShaderWrapperTextured;
 	PDEMShaderWrapper					ShaderWrapperColoured;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
 	virtual ~CDEMRenderer();
 
 	static void logTextureCreation(const String& name);
@@ -41,7 +40,7 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, float DefaultContextWidth, float DefaultContextHeight, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
@@ -49,7 +48,7 @@ public:
 	void					destroyViewportTarget(RenderTarget* target);
 
 	// Implement interface from Renderer
-	virtual RenderTarget&	getDefaultRenderTarget() override { return *pDefaultRT; }
+	virtual RenderTarget&	getDefaultRenderTarget() override;
 	virtual RefCounted<RenderMaterial> createRenderMaterial(const DefaultShaderType shaderType) const override;
 	virtual GeometryBuffer& createGeometryBufferTextured(RefCounted<RenderMaterial> renderMaterial) override;
 	virtual GeometryBuffer& createGeometryBufferColoured(RefCounted<RenderMaterial> renderMaterial) override;

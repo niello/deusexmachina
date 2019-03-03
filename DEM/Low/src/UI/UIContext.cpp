@@ -290,11 +290,19 @@ bool CUIContext::OnViewportSizeChanged(Events::CEventDispatcher* pDispatcher, co
 	if (pCtx && OSWindow)
 	{
 		const Data::CRect& WndRect = OSWindow->GetRect();
-		CEGUI::System::getSingleton().notifyDisplaySizeChanged(CEGUI::Sizef(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H)));
+		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
+
+		// It is not a global display size change but a context size change!
+		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
+
+		auto& RT = pCtx->getRenderTarget();
+		CEGUI::Rectf GUIArea(RT.getArea());
+		GUIArea.setSize(RectSize);
+		RT.setArea(GUIArea);
 
 		IPTR X, Y;
 		if (OSWindow->GetCursorPosition(X, Y))
-			pInput->injectMousePosition((float)X, (float)Y);
+			pInput->injectMousePosition(static_cast<float>(X), static_cast<float>(Y));
 	}
 	FAIL;
 }
