@@ -45,6 +45,7 @@ public:
 
 	bool			CreateContext(CStrID ID, bool Bypass = false);
 	void			DestroyContext(CStrID ID);
+	bool			HasContext(CStrID ID) const;
 	CControlLayout*	GetContextLayout(CStrID ID);	// Intentionally editable
 	void			EnableContext(CStrID ID);
 	void			DisableContext(CStrID ID);

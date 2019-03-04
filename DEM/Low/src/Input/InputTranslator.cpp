@@ -88,6 +88,16 @@ void CInputTranslator::DestroyContext(CStrID ID)
 }
 //---------------------------------------------------------------------
 
+bool CInputTranslator::HasContext(CStrID ID) const
+{
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+		if (Contexts[i].ID == ID)
+			return true;
+
+	return false;
+}
+//---------------------------------------------------------------------
+
 CControlLayout* CInputTranslator::GetContextLayout(CStrID ID)
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)

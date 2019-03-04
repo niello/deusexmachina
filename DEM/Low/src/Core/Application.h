@@ -1,5 +1,4 @@
 #pragma once
-//#include <Data/Singleton.h>
 #include <Data/Ptr.h>
 #include <Data/Params.h>
 #include <Events/EventsFwd.h>
@@ -83,7 +82,6 @@ protected:
 
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 	std::unique_ptr<Resources::CResourceManager> ResMgr;
-	//std::unique_ptr<UI::CUIServer> UIServer;
 
 	Data::PParams GlobalSettings;
 	Data::PParams OverrideSettings; // From a command line
@@ -114,7 +112,6 @@ public:
 	Sys::IPlatform&	GetPlatform() const { return Platform; }
 
 	IO::CIOServer&	IO() const;
-	//UI::CUIServer&	UI() const;
 	Resources::CResourceManager& ResourceManager() const;
 
 	void			SetAppDataPath(const char* pPath) { AppDataPath = pPath; }

@@ -40,8 +40,6 @@ namespace UI
 typedef Ptr<class CUIWindow> PUIWindow;
 typedef Ptr<class CUIContext> PUIContext;
 
-#define UISrv UI::CUIServer::Instance()
-
 // Service-wide settings
 struct CUISettings
 {
@@ -59,9 +57,10 @@ struct CUIContextSettings
 	float				Height;
 };
 
-class CUIServer: public Core::CObject
+#define UISrv UI::CUIServer::Instance()
+
+class CUIServer
 {
-	__DeclareClassNoFactory;
 	__DeclareSingleton(CUIServer);
 
 private:
@@ -90,7 +89,7 @@ public:
 	void			Trigger(float FrameTime);
 
 	PUIContext		CreateContext(const CUIContextSettings& Settings);
-	void			DestroyContext(PUIContext Context); //!!!params!
+	void			DestroyContext(PUIContext Context);
 	
 	// Event will be disconnected at the beginning of the next GUI update loop.
 	// Attention! This method is not thread safe. You must call it only from GUI thread.

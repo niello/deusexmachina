@@ -19,6 +19,8 @@
 #include <Data/ParamsUtils.h>
 #include <Input/InputTranslator.h>
 #include <Input/InputDevice.h>
+#include <UI/UIServer.h>
+#include <UI/UIContext.h>
 
 namespace DEM { namespace Core
 {
@@ -91,12 +93,6 @@ IO::CIOServer& CApplication::IO() const
 {
 	return *IOServer;
 }
-//---------------------------------------------------------------------
-
-//UI::CUIServer& CApplication::UI() const
-//{
-//	return *UIServer;
-//}
 //---------------------------------------------------------------------
 
 Resources::CResourceManager& CApplication::ResourceManager() const
@@ -425,26 +421,22 @@ Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChai
 
 	if (WithGUI)
 	{
-		NOT_IMPLEMENTED;
-		// New CEGUI context must be created
-		// Current CEGUI architecture is suited bad for this,
-		// so now you must set UI context in the calling code
+		UI::CUIContextSettings UICtxSettings;
+		UICtxSettings.HostWindow = GPU.GetSwapChainWindow(SwapChainID);
+		UICtxSettings.Width = static_cast<float>(SwapChainRT->GetDesc().Width);
+		UICtxSettings.Height = static_cast<float>(SwapChainRT->GetDesc().Height);
+		View->UIContext = UISrv->CreateContext(UICtxSettings);
 
-		//UI::CUIContextSettings UICtxSettings;
-		//UICtxSettings.HostWindow = GPU.GetSwapChainWindow(SwapChainID);
-		//UICtxSettings.Width = static_cast<float>(SwapChainRT->GetDesc().Width);
-		//UICtxSettings.Height = static_cast<float>(SwapChainRT->GetDesc().Height);
-		//View->UIContext = UIServer->CreateContext(UICtxSettings);
-
-		//???need always?
-		//Input::CInputTranslator* pUserInput = GetUserInput(GetCurrentUserID());
-		//if (pUserInput)
-		//{
-		//	// Bypass context //!!!check if exists!
-		//	pUserInput->CreateContext(CStrID("UI"), true);
-		//	pUserInput->EnableContext(CStrID("UI"));
-		//	FrameView->UIContext->SubscribeOnInput(pUserInput, 100);
-		//}
+		Input::CInputTranslator* pUserInput = GetUserInput(GetCurrentUserID());
+		if (pUserInput)
+		{
+			// Bypass context //!!!check if exists!
+			const CStrID UIContextID("UI");
+			if (!pUserInput->HasContext(UIContextID))
+				pUserInput->CreateContext(UIContextID, true);
+			pUserInput->EnableContext(UIContextID);
+			View->UIContext->SubscribeOnInput(pUserInput, 100);
+		}
 	}
 
 	return View;
