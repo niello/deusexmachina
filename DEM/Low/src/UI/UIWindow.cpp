@@ -3,6 +3,7 @@
 #include <Core/Factory.h>
 #include <CEGUI/WindowManager.h>
 #include <CEGUI/CoordConverter.h>
+#include <CEGUI/widgets/PushButton.h>
 
 namespace UI
 {
@@ -64,6 +65,19 @@ vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 	vector2 GrandParentSize = GetParentBaseSize(pWndParent);
 	return vector2(CEGUI::CoordConverter::asAbsolute(pWndParent->getWidth(), GrandParentSize.x),
 				   CEGUI::CoordConverter::asAbsolute(pWndParent->getHeight(), GrandParentSize.y));
+}
+//---------------------------------------------------------------------
+
+bool CUIWindow::SubscribeButtonClick(const char* pPath, std::function<void()> Callback)
+{
+	if (!pPath) FAIL;
+
+	CEGUI::Window* pChild = pWnd->getChild(pPath);
+	if (!pChild) FAIL;
+
+	pChild->subscribeEvent(CEGUI::PushButton::EventClicked, Callback);
+
+	OK;
 }
 //---------------------------------------------------------------------
 

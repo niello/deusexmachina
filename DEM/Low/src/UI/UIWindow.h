@@ -6,6 +6,7 @@
 #include <UI/UIFwd.h>
 #include <CEGUI/Window.h>
 #include <Math/Vector2.h>
+#include <functional>
 
 // CEGUI Window wrapper/controller/extender. Base class for all UI windows.
 
@@ -46,6 +47,8 @@ public:
 	void			SetPositionRel(float x, float y) { n_assert(pWnd); pWnd->setPosition(CEGUI::UVector2(CEGUI::UDim(x, 0.f), CEGUI::UDim(y, 0.f))); }
 	vector2			GetSizeRel();
 	void			SetFocus() { pWnd->activate(); }
+
+	bool			SubscribeButtonClick(const char* pPath, std::function<void()> Callback);
 
 	CEGUI::Window*	GetWnd() const { return pWnd; }
 
