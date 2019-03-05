@@ -75,9 +75,17 @@ bool CUIWindow::SubscribeButtonClick(const char* pPath, std::function<void()> Ca
 	CEGUI::Window* pChild = pWnd->getChild(pPath);
 	if (!pChild) FAIL;
 
-	pChild->subscribeEvent(CEGUI::PushButton::EventClicked, Callback);
+	// TODO: CEGUI implement - get look-independent window type from CEGUI
+	const CEGUI::String& Type = pChild->getType();
+	const CEGUI::String WidgetTypeName(Type, Type.find('/') + 1);
 
-	OK;
+	if (WidgetTypeName == "PushButton" || WidgetTypeName == "Button")
+	{
+		pChild->subscribeEvent(CEGUI::PushButton::EventClicked, Callback);
+		OK;
+	}
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 
