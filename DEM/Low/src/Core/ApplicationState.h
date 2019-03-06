@@ -4,7 +4,8 @@
 // Application state is a base class for user application logic. Application can
 // switch between different states as a regular FSM. State transition has no
 // duration, so all timed transition logic must be implemented inside a state.
-// This class is not intended to be stateless and can store any data.
+// This class is not intended to be stateless and can store any data. Therefore
+// it stores its host application because some stored objects may be app-specific.
 
 namespace DEM
 {
@@ -20,9 +21,17 @@ class CApplicationState : public ::Core::CObject
 
 public:
 
-	virtual void				OnEnter(CApplication& App, CApplicationState* pFromState) {}
-	virtual void				OnExit(CApplication& App, CApplicationState* pToState) {}
-	virtual CApplicationState*	Update(CApplication& App, double FrameTime) { return this; }
+	CApplicationState(CApplication& Application) : App(Application) {}
+
+	virtual void				OnEnter(CApplicationState* pFromState) {}
+	virtual void				OnExit(CApplicationState* pToState) {}
+	virtual CApplicationState*	Update(double FrameTime) { return this; }
+
+	CApplication&				GetApplication() const { return App; }
+
+protected:
+
+	CApplication& App;
 };
 
 }

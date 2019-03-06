@@ -449,6 +449,7 @@ bool CApplication::Run(PApplicationState InitialState)
 	PrevTime = BaseTime;
 	FrameTime = 0.0;
 
+	n_assert(!InitialState || &InitialState->GetApplication() == this);
 	RequestedState = InitialState;
 
 	return InitialState.IsValidPtr();
@@ -479,14 +480,14 @@ bool CApplication::Update()
 
 	if (CurrState != RequestedState)
 	{
-		if (CurrState) CurrState->OnExit(*this, RequestedState.Get());
-		if (RequestedState) RequestedState->OnEnter(*this, CurrState.Get());
+		if (CurrState) CurrState->OnExit(RequestedState.Get());
+		if (RequestedState) RequestedState->OnEnter(CurrState.Get());
 		CurrState = RequestedState;
 	}
 
 	if (CurrState)
 	{
-		RequestedState = CurrState->Update(*this, FrameTime);
+		RequestedState = CurrState->Update(FrameTime);
 		OK;
 	}
 	else FAIL;
@@ -504,6 +505,7 @@ void CApplication::Term()
 
 void CApplication::RequestState(PApplicationState NewState)
 {
+	n_assert(!NewState || &NewState->GetApplication() == this);
 	RequestedState = NewState;
 }
 //---------------------------------------------------------------------
