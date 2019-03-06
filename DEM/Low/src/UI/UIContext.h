@@ -18,8 +18,9 @@ class CUIContext: public Core::CObject
 {
 private:
 
+	std::vector<PUIWindow>	RootWindows; // Stack, top is back
+
 	DEM::Sys::POSWindow		OSWindow;
-	PUIWindow				RootWindow;
 	CEGUI::GUIContext*		pCtx = nullptr;
 	CEGUI::InputAggregator*	pInput= nullptr;
 	bool					WasMousePassThroughEnabledInRoot = false;
@@ -46,8 +47,11 @@ public:
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
 	void				UnsubscribeFromInput();
 
-	void				SetRootWindow(CUIWindow* pWindow);
-	CUIWindow*			GetRootWindow() const { return RootWindow.Get(); }
+	void				ClearWindowStack();
+	void				PushRootWindow(CUIWindow* pWindow);
+	PUIWindow			PopRootWindow();
+	CUIWindow*			GetRootWindow() const;
+
 	void				ShowGUI();
 	void				HideGUI();
 	void				ShowMouseCursor();

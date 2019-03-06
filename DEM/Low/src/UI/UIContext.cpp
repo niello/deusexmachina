@@ -104,26 +104,61 @@ void CUIContext::UnsubscribeFromInput()
 }
 //---------------------------------------------------------------------
 
-void CUIContext::SetRootWindow(CUIWindow* pWindow)
+void CUIContext::ClearWindowStack()
 {
-	RootWindow = pWindow;
-	if (pCtx)
+	//???configure in data and never touch in code?
+	if (!WasMousePassThroughEnabledInRoot)
 	{
-		if (!WasMousePassThroughEnabledInRoot)
-		{
-			CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
-			if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
-		}
-
-		if (pWindow)
-		{
-			WasMousePassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
-			pWindow->GetWnd()->setCursorPassThroughEnabled(true);
-		}
-
-		pCtx->setRootWindow(pWindow ? pWindow->GetWnd() : NULL);
-		pCtx->updateWindowContainingCursor();
+		CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
+		if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
 	}
+
+	pCtx->setRootWindow(nullptr);
+	pCtx->updateWindowContainingCursor();
+
+	RootWindows.clear();
+}
+//---------------------------------------------------------------------
+
+void CUIContext::PushRootWindow(CUIWindow* pWindow)
+{
+	if (!pWindow) return;
+
+	RootWindows.push_back(pWindow);
+
+	if (!pCtx) return;
+
+	//???configure in data and never touch in code?
+	if (!WasMousePassThroughEnabledInRoot)
+	{
+		CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
+		if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
+	}
+
+	WasMousePassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
+	pWindow->GetWnd()->setCursorPassThroughEnabled(true);
+
+	pCtx->setRootWindow(pWindow->GetWnd());
+	pCtx->updateWindowContainingCursor();
+}
+//---------------------------------------------------------------------
+
+PUIWindow CUIContext::PopRootWindow()
+{
+	// restore pass through of current root
+	// pop root
+	// set pass through of new root if not null
+	// set new root to ctx
+	// update window
+
+	//!!!need protected SetRootWindow!
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
+CUIWindow* CUIContext::GetRootWindow() const
+{
+	return RootWindows.empty() ? nullptr : RootWindows.back().Get();
 }
 //---------------------------------------------------------------------
 

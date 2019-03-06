@@ -102,8 +102,6 @@ protected:
 
 	DECLARE_EVENT_HANDLER(OnClosing, OnMainWindowClosing);
 
-	void			RequestState(PApplicationState NewState);
-
 public:
 
 	CApplication(Sys::IPlatform& _Platform);
@@ -114,39 +112,41 @@ public:
 	IO::CIOServer&	IO() const;
 	Resources::CResourceManager& ResourceManager() const;
 
-	void			SetAppDataPath(const char* pPath) { AppDataPath = pPath; }
-	CStrID			CreateUserProfile(const char* pUserID);
-	bool			DeleteUserProfile(const char* pUserID);
-	UPTR			EnumUserProfiles(CArray<CStrID>& Out) const;
-	CStrID			ActivateUser(CStrID UserID);
-	void			DeactivateUser(CStrID UserID);
-	CStrID			GetCurrentUserID() const { return CurrentUserID; }
+	void				SetAppDataPath(const char* pPath) { AppDataPath = pPath; }
+	CStrID				CreateUserProfile(const char* pUserID);
+	bool				DeleteUserProfile(const char* pUserID);
+	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;
+	CStrID				ActivateUser(CStrID UserID);
+	void				DeactivateUser(CStrID UserID);
+	CStrID				GetCurrentUserID() const { return CurrentUserID; }
 
 	Input::CInputTranslator* GetUserInput(CStrID UserID) const;
 
-	void			ParseCommandLine(const char* pCmdLine);
-	bool			LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
-	void			SaveSettings();
-	bool			GetBoolSetting(const char* pKey, bool Default, CStrID UserID);
-	int				GetIntSetting(const char* pKey, int Default, CStrID UserID);
-	float			GetFloatSetting(const char* pKey, float Default, CStrID UserID);
-	CString			GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
-	bool			SetBoolSetting(const char* pKey, bool Value, CStrID UserID);
-	bool			SetIntSetting(const char* pKey, int Value, CStrID UserID);
-	bool			SetFloatSetting(const char* pKey, float Value, CStrID UserID);
-	bool			SetStringSetting(const char* pKey, const CString& Value, CStrID UserID);
+	void				ParseCommandLine(const char* pCmdLine);
+	bool				LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
+	void				SaveSettings();
+	bool				GetBoolSetting(const char* pKey, bool Default, CStrID UserID);
+	int					GetIntSetting(const char* pKey, int Default, CStrID UserID);
+	float				GetFloatSetting(const char* pKey, float Default, CStrID UserID);
+	CString				GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
+	bool				SetBoolSetting(const char* pKey, bool Value, CStrID UserID);
+	bool				SetIntSetting(const char* pKey, int Value, CStrID UserID);
+	bool				SetFloatSetting(const char* pKey, float Value, CStrID UserID);
+	bool				SetStringSetting(const char* pKey, const CString& Value, CStrID UserID);
 
-	bool			Run(PApplicationState InitialState);
-	bool			Update();
-	void			Term();
+	bool				Run(PApplicationState InitialState);
+	bool				Update();
+	void				Term();
+	void				RequestState(PApplicationState NewState);
+	PApplicationState	GetCurrentState() const { return CurrState; }
 
 	//allow multiple instances
 
-	void			ExitOnWindowClosed(Sys::COSWindow* pWindow);
+	void				ExitOnWindowClosed(Sys::COSWindow* pWindow);
 
 	//???store windows inside app?
-	int				CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
-	Frame::PView	CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI);
+	int					CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
+	Frame::PView		CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI);
 	//POSConsoleWindow CreateConsoleWindow();
 };
 
