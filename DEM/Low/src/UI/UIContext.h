@@ -23,7 +23,9 @@ private:
 	DEM::Sys::POSWindow		OSWindow;
 	CEGUI::GUIContext*		pCtx = nullptr;
 	CEGUI::InputAggregator*	pInput= nullptr;
-	bool					WasMousePassThroughEnabledInRoot = false;
+	bool					WasPassThroughEnabledInRoot = false;
+
+	void				SetRootWindow(CUIWindow* pWindow);
 
 	DECLARE_EVENT_HANDLER(AxisMove, OnAxisMove);
 	DECLARE_EVENT_HANDLER(ButtonDown, OnButtonDown);

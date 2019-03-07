@@ -104,18 +104,35 @@ void CUIContext::UnsubscribeFromInput()
 }
 //---------------------------------------------------------------------
 
-void CUIContext::ClearWindowStack()
+void CUIContext::SetRootWindow(CUIWindow* pWindow)
 {
+	if (!pCtx) return;
+
 	//???configure in data and never touch in code?
-	if (!WasMousePassThroughEnabledInRoot)
+	if (!WasPassThroughEnabledInRoot)
 	{
 		CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
 		if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
 	}
 
-	pCtx->setRootWindow(nullptr);
-	pCtx->updateWindowContainingCursor();
+	if (pWindow && pWindow->GetWnd())
+	{
+		WasPassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
+		pWindow->GetWnd()->setCursorPassThroughEnabled(true);
+		pCtx->setRootWindow(pWindow->GetWnd());
+	}
+	else
+	{
+		pCtx->setRootWindow(nullptr);
+	}
 
+	pCtx->updateWindowContainingCursor();
+}
+//---------------------------------------------------------------------
+
+void CUIContext::ClearWindowStack()
+{
+	SetRootWindow(nullptr);
 	RootWindows.clear();
 }
 //---------------------------------------------------------------------
@@ -124,35 +141,22 @@ void CUIContext::PushRootWindow(CUIWindow* pWindow)
 {
 	if (!pWindow) return;
 
+	if (!RootWindows.empty() && RootWindows.back() == pWindow) return;
+
 	RootWindows.push_back(pWindow);
-
-	if (!pCtx) return;
-
-	//???configure in data and never touch in code?
-	if (!WasMousePassThroughEnabledInRoot)
-	{
-		CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
-		if (pPrevRoot) pPrevRoot->setCursorPassThroughEnabled(false);
-	}
-
-	WasMousePassThroughEnabledInRoot = pWindow->GetWnd()->isCursorPassThroughEnabled();
-	pWindow->GetWnd()->setCursorPassThroughEnabled(true);
-
-	pCtx->setRootWindow(pWindow->GetWnd());
-	pCtx->updateWindowContainingCursor();
+	SetRootWindow(pWindow);
 }
 //---------------------------------------------------------------------
 
 PUIWindow CUIContext::PopRootWindow()
 {
-	// restore pass through of current root
-	// pop root
-	// set pass through of new root if not null
-	// set new root to ctx
-	// update window
+	if (RootWindows.empty()) return nullptr;
 
-	//!!!need protected SetRootWindow!
-	return nullptr;
+	PUIWindow CurrWnd = GetRootWindow();
+	RootWindows.pop_back();
+	SetRootWindow(GetRootWindow());
+
+	return CurrWnd;
 }
 //---------------------------------------------------------------------
 
