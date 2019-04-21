@@ -1928,8 +1928,6 @@ void Window::setArea_impl(const UVector2& pos, const USize& size, bool topLeftSi
     markCachedWindowRectsInvalid();
     Element::setArea_impl(pos, size, topLeftSizing, fireEvents, adjust_size_to_content);
 
-    // FIXME: The first time it is called from the constructor when we
-    //        don't belong to any context yet.
     GUIContext* context = getGUIContextPtr();
     if (context)
     {
@@ -2756,6 +2754,11 @@ void Window::onCursorPressHold(CursorInputEventArgs& e)
 //----------------------------------------------------------------------------//
 void Window::onCursorActivate(CursorInputEventArgs& e)
 {
+    // onCursorPressHold() hides the tooltip, restore it here
+    Tooltip* const tip = getTooltip();
+    if (tip && !isAncestor(tip))
+        tip->setTargetWindow(this);
+
     // reset auto-repeat state
     if (d_autoRepeat && d_repeatPointerSource != CursorInputSource::NotSpecified)
     {
@@ -4001,8 +4004,6 @@ void Window::onTargetSurfaceChanged(RenderingSurface* newSurface)
 //----------------------------------------------------------------------------//
 const Sizef& Window::getRootContainerSize() const
 {
-    // FIXME: The first time it is called from the constructor when we
-    //        don't belong to any context yet.
     GUIContext* context = getGUIContextPtr();
     if (context)
     {

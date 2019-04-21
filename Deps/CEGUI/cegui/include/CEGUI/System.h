@@ -216,6 +216,9 @@ public:
     */
     Clipboard* getClipboard() const         {return d_clipboard;}
 
+    typedef std::vector<GUIContext*> GUIContextCollection;
+    GUIContextCollection& getGUIContexts()         {return d_guiContexts;}
+
     /*!
     \brief
         Depending upon the internal state, for each GUIContext this may either
@@ -679,7 +682,6 @@ protected:
     String d_defaultCursorName;
     String d_defaultTooltipType;
 
-    typedef std::vector<GUIContext*> GUIContextCollection;
     GUIContextCollection d_guiContexts;
     //! instance of class that can convert string encodings
 #if defined(__WIN32__) || defined(_WIN32)
