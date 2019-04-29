@@ -1,3 +1,7 @@
+#if defined(_MSC_VER)
+#   pragma warning(push)
+#   pragma warning(disable : 4530)	// C++ exception handler used, but unwind semantics not enabled
+#endif
 #include "DEMRenderTarget.h"
 
 #include <Render/GPUDriver.h>
@@ -102,3 +106,6 @@ void CDEMRenderTarget::unprojectPoint(const GeometryBuffer& buff, const glm::vec
 //---------------------------------------------------------------------
 
 }
+#if defined(_MSC_VER)
+#   pragma warning(pop)
+#endif

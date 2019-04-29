@@ -1,5 +1,4 @@
 #pragma once
-#include <CEGUI/RenderQueue.h>
 #include <CEGUI/RenderTarget.h>
 #include <UI/CEGUI/DEMRenderer.h> // For covariant override of getOwner()
 
