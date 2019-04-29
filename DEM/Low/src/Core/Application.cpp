@@ -419,7 +419,7 @@ Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChai
 	View->SetRenderPath(RRP->ValidateObject<Frame::CRenderPath>());
 	if (View->RTs.GetCount()) View->RTs[0] = SwapChainRT;
 
-	if (WithGUI)
+	if (WithGUI && UI::CUIServer::HasInstance())
 	{
 		UI::CUIContextSettings UICtxSettings;
 		UICtxSettings.HostWindow = GPU.GetSwapChainWindow(SwapChainID);
