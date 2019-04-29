@@ -85,6 +85,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 
 CApplication::~CApplication()
 {
+	Term();
 	if (Events::CEventServer::HasInstance()) n_delete(EventSrv);
 }
 //---------------------------------------------------------------------
