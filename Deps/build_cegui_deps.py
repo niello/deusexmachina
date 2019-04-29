@@ -47,7 +47,7 @@ if __name__ == "__main__":
 
 	print("Building CEGUI dependencies using CMake generator " + cmake_generator_name)
 
-	expected_archive_sha256 = "3c55fbe5e6667fb689990e9b13192575c2051ba95bf81aa6afe23dee47afbf06"
+	expected_archive_sha256 = "b1c822d880b3d361782f1807ea8a6f55e0834a02afd983f2a5141db04a333938"
 	downloads_folder = os.path.join(PROJECT_FOLDER, 'Deps', 'Downloads')
 	archive_path = os.path.join(downloads_folder, 'CEGUI-Deps.zip')
 
