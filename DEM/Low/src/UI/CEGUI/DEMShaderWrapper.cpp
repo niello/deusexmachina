@@ -209,7 +209,7 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 		for (const auto& Rec : Constants)
 		{
 			// Set in each shader where this constant exists by name, don't break after the first name match
-			if (Rec.Name != param.first) continue;
+			if (Rec.Name != param.first.c_str()) continue;
 
 			if (!Rec.Buffer->IsInWriteMode())
 			{
