@@ -1,14 +1,11 @@
 #pragma once
-#ifndef __DEM_L1_UI_WINDOW_H__
-#define __DEM_L1_UI_WINDOW_H__
-
 #include <Core/Object.h>
 #include <UI/UIFwd.h>
 #include <CEGUI/Window.h>
 #include <Math/Vector2.h>
 #include <functional>
 
-// CEGUI Window wrapper/controller/extender. Base class for all UI windows.
+// Base class for all UI windows
 
 namespace UI
 {
@@ -58,5 +55,3 @@ public:
 typedef Ptr<CUIWindow> PUIWindow;
 
 }
-
-#endif

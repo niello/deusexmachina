@@ -126,6 +126,7 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 		pCtx->setRootWindow(nullptr);
 	}
 
+	pCtx->setInputCaptureWindow(nullptr); // FIXME: to CEGUI setRootWindow()!
 	pCtx->updateWindowContainingCursor();
 }
 //---------------------------------------------------------------------
