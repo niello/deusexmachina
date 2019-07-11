@@ -109,6 +109,7 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 	if (!pCtx) return;
 
 	//???configure in data and never touch in code?
+	//May need input-opaque screens, like modal windows
 	if (!WasPassThroughEnabledInRoot)
 	{
 		CEGUI::Window* pPrevRoot = pCtx->getRootWindow();
@@ -126,7 +127,7 @@ void CUIContext::SetRootWindow(CUIWindow* pWindow)
 		pCtx->setRootWindow(nullptr);
 	}
 
-	pCtx->setInputCaptureWindow(nullptr); // FIXME: to CEGUI setRootWindow()!
+	//???!!!FIXME: to CEGUI?
 	pCtx->updateWindowContainingCursor();
 }
 //---------------------------------------------------------------------
