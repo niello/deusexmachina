@@ -403,6 +403,19 @@ bool Window::isChildRecursive(unsigned int ID) const
 }
 
 //----------------------------------------------------------------------------//
+size_t Window::getChildIdx(Window* wnd) const
+{
+    const size_t child_count = getChildCount();
+
+    for (size_t i = 0; i < child_count; ++i)
+        if (getChildAtIdx(i) == wnd)
+            return i;
+
+    // Any value >= getChildCount() must be treated as invalid
+    return std::numeric_limits<size_t>().max();
+}
+
+//----------------------------------------------------------------------------//
 Window* Window::getChild(unsigned int ID) const
 {
     const size_t child_count = getChildCount();
@@ -3009,8 +3022,8 @@ bool Window::isPropertyAtDefault(const Property* property) const
                     getWidgetLook(getParent()->getLookNFeel());
 
             // If this property is a target of a PropertyLink, we always report it as being at default.
-            WidgetLookFeel::StringSet propDefNames = wlf.getPropertyDefinitionNames(true);
-            if(propDefNames.find(property->getName()) != propDefNames.end())
+            WidgetLookFeel::StringSet propLinkDefNames = wlf.getPropertyLinkDefinitionNames(true);
+            if(propLinkDefNames.find(property->getName()) != propLinkDefNames.end())
                 return true;
 
             // for an auto-window see if the property is is set via a Property
