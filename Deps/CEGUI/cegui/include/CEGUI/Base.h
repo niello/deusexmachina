@@ -122,6 +122,17 @@ static const float		DefaultNativeHorzRes	= 640.0f;		//!< Default native horizont
 static const float		DefaultNativeVertRes	= 480.0f;		//!< Default native vertical resolution (for fonts and imagesets)
 
 
+
+/*************************************************************************
+	System wide constants
+*************************************************************************/
+//! Draw bitmask for drawing all objects (default draw mode)
+static const std::uint32_t DrawModeMaskAll = ~0U;
+//! Draw bit flag signifying a regular window (default window flag)
+static const std::uint32_t DrawModeFlagWindowRegular = 1U << 0;
+//! Draw bit flag signifying a mouse cursor
+static const std::uint32_t DrawModeFlagMouseCursor = 1U << 1;
+
 /*************************************************************************
     Additional typedefs
 *************************************************************************/

@@ -103,19 +103,19 @@ void RenderingSurface::clearGeometry()
 }
 
 //----------------------------------------------------------------------------//
-void RenderingSurface::draw()
+void RenderingSurface::draw(std::uint32_t drawMode)
 {
     d_target->activate();
     Renderer& owner = d_target->getOwner();
     owner.uploadBuffers(*this);
 
-    drawContent();
+    drawContent(drawMode);
 
     d_target->deactivate();
 }
 
 //----------------------------------------------------------------------------//
-void RenderingSurface::drawContent()
+void RenderingSurface::drawContent(std::uint32_t drawModeMask)
 {
     RenderQueueEventArgs evt_args(RenderQueueID::User0);
 
@@ -125,17 +125,19 @@ void RenderingSurface::drawContent()
     {
         evt_args.handled = 0;
         evt_args.queueID = i->first;
-        draw(i->second, evt_args);
+        draw(i->second, evt_args, drawModeMask);
     }
 }
 
 //----------------------------------------------------------------------------//
-void RenderingSurface::draw(const RenderQueue& queue,
-    RenderQueueEventArgs& args)
+void RenderingSurface::draw(
+    const RenderQueue& queue,
+    RenderQueueEventArgs& args,
+    std::uint32_t drawModeMask)
 {
     fireEvent(EventRenderQueueStarted, args, EventNamespace);
 
-    d_target->draw(queue);
+    d_target->draw(queue, drawModeMask);
 
     args.handled = 0;
     fireEvent(EventRenderQueueEnded, args, EventNamespace);

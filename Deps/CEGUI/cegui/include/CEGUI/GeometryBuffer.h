@@ -102,7 +102,7 @@ public:
     \brief
         Draw the geometry buffered within this GeometryBuffer object.
     */
-    virtual void draw() const = 0;
+    virtual void draw(std::uint32_t drawModeMask = DrawModeMaskAll) const = 0;
 
     /*!
     \brief

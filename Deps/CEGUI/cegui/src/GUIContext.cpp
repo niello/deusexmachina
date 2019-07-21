@@ -56,6 +56,7 @@ GUIContext::GUIContext(RenderTarget& target) :
     d_surfaceSize(target.getArea().getSize()),
     d_modalWindow(nullptr),
     d_captureWindow(nullptr),
+    d_lastDrawModeMask(0),
     d_areaChangedEventConnection(
         target.subscribeEvent(
             RenderTarget::EventAreaChanged,
@@ -239,27 +240,35 @@ bool GUIContext::isDirty() const
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::draw()
+void GUIContext::draw(std::uint32_t drawModeMask)
 {
-    if (d_isDirty)
-        drawWindowContentToTarget();
+    // Dirtify if the last draw call had a different drawModeMask than this one
+    if(d_lastDrawModeMask != drawModeMask)
+    {
+        d_isDirty = true;
+        d_lastDrawModeMask = drawModeMask;
+    }
+    
 
-    RenderingSurface::draw();
+    if (d_isDirty)
+        drawWindowContentToTarget(drawModeMask);
+
+    RenderingSurface::draw(drawModeMask);
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::drawContent()
+void GUIContext::drawContent(std::uint32_t drawModeMask)
 {
-    RenderingSurface::drawContent();
+    RenderingSurface::drawContent(drawModeMask);
 
     d_cursor.draw();
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::drawWindowContentToTarget()
+void GUIContext::drawWindowContentToTarget(std::uint32_t drawModeMask)
 {
     if (d_rootWindow)
-        renderWindowHierarchyToSurfaces();
+        renderWindowHierarchyToSurfaces(drawModeMask);
     else
         clearGeometry();
 
@@ -267,7 +276,7 @@ void GUIContext::drawWindowContentToTarget()
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::renderWindowHierarchyToSurfaces()
+void GUIContext::renderWindowHierarchyToSurfaces(std::uint32_t drawModeMask)
 {
     RenderingSurface* rs = d_rootWindow->getTargetRenderingSurface();
     if (!rs)
@@ -278,7 +287,7 @@ void GUIContext::renderWindowHierarchyToSurfaces()
     if (rs->isRenderingWindow())
         static_cast<RenderingWindow*>(rs)->getOwner().clearGeometry();
 
-    d_rootWindow->draw();
+    d_rootWindow->draw(drawModeMask);
 }
 
 //----------------------------------------------------------------------------//

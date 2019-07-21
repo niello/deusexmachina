@@ -101,6 +101,7 @@ const String Window::MarginPropertyName("MarginProperty");
 const String Window::UpdateModePropertyName("UpdateMode");
 const String Window::CursorInputPropagationEnabledPropertyName("CursorInputPropagationEnabled");
 const String Window::AutoWindowPropertyName("AutoWindow");
+const String Window::DrawModeMaskPropertyName("DrawModeMask");
 //----------------------------------------------------------------------------//
 const String Window::EventNamespace("Window");
 const String Window::EventUpdated ("Updated");
@@ -309,6 +310,7 @@ Window::Window(const String& type, const String& name):
     d_propagatePointerInputs(false),
 
     d_guiContext(nullptr),
+    d_drawModeMask(DrawModeFlagWindowRegular), // FIXME: DEM local fix
 
     d_containsPointer(false),
     d_isFocused(false),
@@ -1138,7 +1140,7 @@ void Window::invalidate_impl(const bool recursive)
 }
 
 //----------------------------------------------------------------------------//
-void Window::draw()
+void Window::draw(std::uint32_t drawModeMask)
 {
     // don't do anything if window is not visible
     if (!isEffectiveVisible())
@@ -1152,33 +1154,43 @@ void Window::draw()
     if (ctx.owner == this)
         ctx.surface->clearGeometry();
 
+    bool allowDrawing = checkIfDrawMaskAllowsDrawing(drawModeMask);
+
     // redraw if no surface set, or if surface is invalidated
     if (!d_surface || d_surface->isInvalidated())
     {
-        // perform drawing for 'this' Window
-        drawSelf(ctx);
+        if(allowDrawing)
+        {
+            // perform drawing for 'this' Window
+            drawSelf(ctx, drawModeMask);
+        }
 
         // render any child windows
         for (ChildDrawList::iterator it = d_drawList.begin(); it != d_drawList.end(); ++it)
         {
-            (*it)->draw();
+            (*it)->draw(drawModeMask);
         }
     }
 
     // do final rendering for surface if it's ours
-    if (ctx.owner == this)
-        ctx.surface->draw();
+    if (ctx.owner == this && allowDrawing)
+        ctx.surface->draw(drawModeMask);
+}
+
+bool Window::checkIfDrawMaskAllowsDrawing(std::uint32_t drawModeMask) const
+{
+    return (getDrawModeMask() & drawModeMask) != 0;
 }
 
 //----------------------------------------------------------------------------//
-void Window::drawSelf(const RenderingContext& ctx)
+void Window::drawSelf(const RenderingContext& ctx, std::uint32_t drawModeMask)
 {
-    bufferGeometry(ctx);
+    bufferGeometry(ctx, drawModeMask);
     queueGeometry(ctx);
 }
 
 //----------------------------------------------------------------------------//
-void Window::bufferGeometry(const RenderingContext&)
+void Window::bufferGeometry(const RenderingContext&, std::uint32_t drawModeMask)
 {
     if (d_needsRedraw)
     {
@@ -1568,6 +1580,15 @@ void Window::addWindowProperties(void)
         "automatically created sub-component window."
         "Value is either \"true\" or \"false\".",
         &Window::setAutoWindow, &Window::isAutoWindow, false
+    );
+
+    CEGUI_DEFINE_PROPERTY(Window, std::uint32_t,
+        DrawModeMaskPropertyName, "Property to get/set a bitmask that specifies whether the window should be "
+        "drawn or not be drawn in a draw call. The draw call may have its own bitmask specified otherwise "
+        "a bitmask with all bits at 1 is taken. The bitmask of the draw call and the Window are compared "
+        "using a bitwise AND, only if the result is not zero the Window will be drawn."
+        "Value is a bitmask of 32 bit size, which will be checked against the bitmask specified for the draw call.",
+        &Window::setDrawModeMask, &Window::getDrawModeMask, DrawModeFlagWindowRegular
     );
 }
 
@@ -4208,6 +4229,24 @@ void Window::updateGeometryBuffersAlpha()
         CEGUI::GeometryBuffer*& currentBuffer = d_geometryBuffers[i];
         currentBuffer->setAlpha(final_alpha);
     }
+}
+
+//----------------------------------------------------------------------------//
+void Window::setDrawModeMask(std::uint32_t drawModeMask)
+{
+    if(d_drawModeMask == drawModeMask)
+    {
+        return;
+    }
+
+    d_drawModeMask = drawModeMask;
+    getGUIContext().markAsDirty();
+}
+
+//----------------------------------------------------------------------------//
+std::uint32_t Window::getDrawModeMask() const
+{
+    return d_drawModeMask;
 }
 
 //----------------------------------------------------------------------------//

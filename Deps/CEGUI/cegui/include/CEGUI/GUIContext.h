@@ -215,7 +215,7 @@ public:
     bool injectInputEvent(const InputEvent& event) override;
 
     // public overrides
-    void draw() override;
+    void draw(std::uint32_t drawMode = DrawModeMaskAll) override;
 
     /*!
     \brief
@@ -225,8 +225,8 @@ public:
 
 protected:
     void updateRootWindowAreaRects() const;
-    void drawWindowContentToTarget();
-    void renderWindowHierarchyToSurfaces();
+    void drawWindowContentToTarget(std::uint32_t drawModeMask);
+    void renderWindowHierarchyToSurfaces(std::uint32_t drawModeMask);
 
     void createDefaultTooltipWindowInstance() const;
     void destroyDefaultTooltipWindowInstance();
@@ -256,7 +256,7 @@ protected:
     virtual void onDefaultFontChanged(EventArgs& args);
 
     // protected overrides
-    void drawContent() override;
+    void drawContent(std::uint32_t drawModeMask = DrawModeMaskAll) override;
 
     // Input event handlers
     void initializeSemanticEventHandlers();
@@ -293,6 +293,9 @@ protected:
     mutable bool d_windowContainingCursorIsUpToDate;
     Window* d_modalWindow;
     Window* d_captureWindow;
+
+    //! The draw mode mask that was used in the last draw call 
+    std::uint32_t d_lastDrawModeMask;
 
     CursorsState d_cursorsState;
 

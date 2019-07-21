@@ -147,7 +147,7 @@ const Image* Cursor::getDefaultImage() const
 /*************************************************************************
 	Draw the cursor
 *************************************************************************/
-void Cursor::draw()
+void Cursor::draw(std::uint32_t drawModeMask)
 {
     if (!d_visible || !d_indicatorImage)
         return;
@@ -158,7 +158,7 @@ void Cursor::draw()
     System::getSingleton().getRenderer()->uploadBuffers(d_geometryBuffers);
     const size_t geom_buffer_count = d_geometryBuffers.size();
     for (size_t i = 0; i < geom_buffer_count; ++i)
-        d_geometryBuffers[i]->draw();
+        d_geometryBuffers[i]->draw(drawModeMask);
 }
 
 

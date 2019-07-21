@@ -63,8 +63,10 @@ OpenGL3GeometryBuffer::~OpenGL3GeometryBuffer()
 }
 
 //----------------------------------------------------------------------------//
-void OpenGL3GeometryBuffer::draw() const
+void OpenGL3GeometryBuffer::draw(std::uint32_t drawModeMask) const
 {
+    CEGUI_UNUSED(drawModeMask);
+    
     if(d_vertexData.empty())
         return;
 

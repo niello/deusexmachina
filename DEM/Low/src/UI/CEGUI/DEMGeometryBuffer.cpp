@@ -7,6 +7,7 @@
 #include <Render/Texture.h>
 #include <UI/CEGUI/DEMTexture.h>
 #include <UI/CEGUI/DEMShaderWrapper.h>
+#include <UI/UIFwd.h>
 
 #include <CEGUI/RenderEffect.h>
 #include <CEGUI/Vertex.h>
@@ -34,7 +35,7 @@ void CDEMGeometryBuffer::setVertexLayout(Render::PVertexLayout newLayout)
 }
 //--------------------------------------------------------------------
 
-void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
+void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 {
 	if (d_vertexData.empty()) return;
 
@@ -90,13 +91,25 @@ void CDEMGeometryBuffer::draw(/*uint32 drawModeMask*/) const
 	//???TODO: CEGUI fix - pass premultiplied WVP?
 	shaderParameterBindings->setParameter("WorldMatrix", d_matrix);
 	shaderParameterBindings->setParameter("ProjectionMatrix", d_owner.getViewProjectionMatrix());
-	shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
 
 	// Prepare for the rendering process according to the used render material
 	const CDEMShaderWrapper& ShaderWrapper = *static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
-	//!!! TODO: CEGUI implement - get opaque mode from renderer or from the function arg!
-	const bool TMP_Opaque = false;
-	ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, TMP_Opaque);
+
+	if (drawModeMask & DrawModeFlagWindowRegular)
+	{
+		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha); // TODO: CEGUI implement in shaders
+		ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, false);
+	}
+	else if (drawModeMask & UI::DrawModeFlagWindowOpaque)
+	{
+		ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, true);
+	}
+	else
+	{
+		::Sys::Error("CDEMGeometryBuffer::draw() > neither DrawModeFlagWindowRegular nor DrawModeFlagWindowOpaque is specified");
+		return;
+	}
+
 	d_renderMaterial->prepareForRendering();
 
 	// Render geometry

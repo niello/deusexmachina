@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_UI_H__
-#define __DEM_L1_UI_H__
 
 // UI system declarations and helpers
 
@@ -17,5 +15,3 @@ enum EDrawMode
 static const U32 DrawModeFlagWindowOpaque = 1U << 2;
 
 }
-
-#endif

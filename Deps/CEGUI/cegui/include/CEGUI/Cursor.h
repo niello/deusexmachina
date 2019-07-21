@@ -36,7 +36,6 @@
 #include "CEGUI/URect.h"
 #include "CEGUI/EventSet.h"
 #include "CEGUI/InputEvent.h"
-#include "CEGUI/UDim.h"
 
 #include <vector>
 
@@ -157,7 +156,7 @@ public:
         Makes the indicator draw itself
 
 	*/
-	void draw(void);
+    void draw(std::uint32_t drawModeMask = DrawModeMaskAll);
 
 
 	/*!
