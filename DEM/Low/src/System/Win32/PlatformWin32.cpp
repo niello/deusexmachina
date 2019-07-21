@@ -80,7 +80,7 @@ LONG WINAPI WindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 //---------------------------------------------------------------------
 
 // Window procedure for a message-only window (primarily for raw input processing,
-// because RIDEV_DEVNOTIFY / WM_INPUT_DEVICE_CHANGE doesn't work with NULL hWnd
+// because RIDEV_DEVNOTIFY and WM_INPUT_DEVICE_CHANGE don't work with hWnd=nullptr
 LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	CPlatformWin32* pSelf = (CPlatformWin32*)::GetWindowLongPtr(hWnd, 0);
@@ -144,7 +144,7 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
 			}
 
-			// Keyboard must generate legacy messages only if no one processed a raw input.
+			// Keyboard must generate legacy messages only when no one processed a raw input.
 			// We don't count repeats here but it can be added if necessary. There is no much profit
 			// from a correct repeat count since we generate a separate message for each repeat.
 			if (pData->header.dwType == RIM_TYPEKEYBOARD)
@@ -168,41 +168,45 @@ LONG WINAPI MessageOnlyWindowProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lP
 				const BYTE ScanCode = static_cast<BYTE>(KbData.MakeCode);
 				const bool IsExt = (KbData.Flags & RI_KEY_E0);
 
-				LPARAM KbLParam = (1 << 0) | (ScanCode << 16);
-				if (IsExt) KbLParam |= (1 << 24);
-
-				switch (KbData.Message)
-				{
-					case WM_KEYDOWN:
-					{
-						if (WasDown) KbLParam |= (1 << 30);
-						break;
-					}
-					case WM_KEYUP:
-					{
-						KbLParam |= ((1 << 30) | (1 << 31));
-						break;
-					}
-					case WM_SYSKEYDOWN:
-					{
-						if (hWndFocus) KbLParam |= (1 << 29);
-						if (WasDown) KbLParam |= (1 << 30);
-						break;
-					}
-					case WM_SYSKEYUP:
-					{
-						KbLParam |= ((1 << 30) | (1 << 31));
-						if (hWndFocus) KbLParam |= (1 << 29);
-						break;
-					}
-					default:
-					{
-						return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
-					}
-				}
-
+				// Translate raw keyboard input to a legacy message and post it to the current window
 				HWND hWndReceiver = hWndFocus ? hWndFocus : ::GetActiveWindow();
-				if (hWndReceiver) ::PostMessage(hWndReceiver, KbData.Message, VKey, KbLParam);
+				if (hWndReceiver)
+				{
+					LPARAM KbLParam = (1 << 0) | (ScanCode << 16);
+					if (IsExt) KbLParam |= (1 << 24);
+
+					switch (KbData.Message)
+					{
+						case WM_KEYDOWN:
+						{
+							if (WasDown) KbLParam |= (1 << 30);
+							break;
+						}
+						case WM_KEYUP:
+						{
+							KbLParam |= ((1 << 30) | (1 << 31));
+							break;
+						}
+						case WM_SYSKEYDOWN:
+						{
+							if (hWndFocus) KbLParam |= (1 << 29);
+							if (WasDown) KbLParam |= (1 << 30);
+							break;
+						}
+						case WM_SYSKEYUP:
+						{
+							KbLParam |= ((1 << 30) | (1 << 31));
+							if (hWndFocus) KbLParam |= (1 << 29);
+							break;
+						}
+						default:
+						{
+							return ::DefWindowProc(hWnd, uMsg, wParam, lParam);
+						}
+					}
+
+					::PostMessage(hWndReceiver, KbData.Message, VKey, KbLParam);
+				}
 
 				// Posted keyboard messages don't change the thread keyboard state so we must update it manually
 				// for accelerators and some other windows internals (like alt codes Alt + Numpad NNN) to work.
@@ -481,6 +485,7 @@ bool CPlatformWin32::UnregisterRawInput()
 bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 {
 	// Try to find operational device by hDevice. If found, don't create a new device.
+	// NB: handle is valid only for an operational device, it is cleared in OnInputDeviceRemoved.
 
 	for (auto& Device : InputDevices)
 	{
@@ -646,6 +651,8 @@ bool CPlatformWin32::Update()
 	{
 		if (Msg.message == WM_QUIT) FAIL;
 
+		// Keyboard input loses a source device info when translated to WM_CHAR.
+		// We count the last used keyboard as WM_CHAR source.
 		if (RawInputRegistered && Msg.message == WM_CHAR && LastKeyboard)
 		{
 			if (!LastKeyboard->IsOperational()) LastKeyboard = nullptr;

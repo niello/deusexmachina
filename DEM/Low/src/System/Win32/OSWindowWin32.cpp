@@ -239,6 +239,18 @@ bool COSWindowWin32::SetInputFocus()
 }
 //---------------------------------------------------------------------
 
+bool COSWindowWin32::HasInputFocus() const
+{
+	HWND hWndCheck = ::GetFocus();
+	if (hWndCheck) return hWndCheck == hWnd;
+
+	hWndCheck = ::GetActiveWindow();
+	if (hWndCheck) return hWndCheck == hWnd;
+
+	return ::GetForegroundWindow() == hWnd;
+}
+//---------------------------------------------------------------------
+
 LONG COSWindowWin32::GetWin32Style() const
 {
 	n_assert(hWnd);

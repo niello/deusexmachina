@@ -35,7 +35,7 @@ bool CD3D11DriverFactory::Create()
 		// TODO: there is also IDXGIInfoQueue!
 		if (DxgiGetDebugInterface)
 		{
-			n_assert(SUCCEEDED(DxgiGetDebugInterface(__uuidof(IDXGIDebug), (void**)&pDXGIDebug)));
+			n_verify(SUCCEEDED(DxgiGetDebugInterface(__uuidof(IDXGIDebug), (void**)&pDXGIDebug)));
 		}
 	}
 #endif

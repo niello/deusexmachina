@@ -40,6 +40,7 @@ public:
 	virtual void			Close() = 0;
 
 	virtual bool			IsValid() const = 0;
+	virtual bool			HasInputFocus() const = 0;
 	virtual COSWindow*		GetParent() const = 0;
 	virtual CString			GetTitle() const = 0;
 	virtual bool			GetCursorPosition(IPTR& OutX, IPTR& OutY) const = 0;

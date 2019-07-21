@@ -75,9 +75,6 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 {
 	if (!pDispatcher || !pCtx || !pInput) FAIL;
 
-	// CEGUI 0.7.x:
-	// For correct bool return from injects app should have a fullscreen DefaultWindow
-	// as layout root with the MousePassThroughEnabled property set to true.
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, AxisMove, CUIContext, OnAxisMove, Priority);
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, ButtonDown, CUIContext, OnButtonDown, Priority);
 	DISP_SUBSCRIBE_NEVENT_PRIORITY(pDispatcher, ButtonUp, CUIContext, OnButtonUp, Priority);
@@ -231,6 +228,8 @@ bool CUIContext::IsMouseOverGUI() const
 
 bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	if (!OSWindow || !OSWindow->HasInputFocus()) FAIL;
+
 	const Event::AxisMove& Ev = static_cast<const Event::AxisMove&>(Event);
 
 	if (Ev.Device->GetType() == Input::Device_Mouse)
@@ -257,6 +256,8 @@ bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events:
 
 bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	if (!OSWindow || !OSWindow->HasInputFocus()) FAIL;
+
 	const Event::ButtonDown& Ev = static_cast<const Event::ButtonDown&>(Event);
 
 	if (Ev.Device->GetType() == Input::Device_Mouse)
@@ -285,6 +286,8 @@ bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Event
 
 bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	if (!OSWindow || !OSWindow->HasInputFocus()) FAIL;
+
 	const Event::ButtonUp& Ev = static_cast<const Event::ButtonUp&>(Event);
 
 	if (Ev.Device->GetType() == Input::Device_Mouse)
@@ -313,6 +316,8 @@ bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events:
 
 bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	if (!OSWindow || !OSWindow->HasInputFocus()) FAIL;
+
 	const Event::TextInput& Ev = static_cast<const Event::TextInput&>(Event);
 
 	bool Handled = false;

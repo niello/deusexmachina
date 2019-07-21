@@ -37,6 +37,7 @@ public:
 	virtual void			Close() override;
 
 	virtual bool			IsValid() const override { return !!hWnd; }
+	virtual bool			HasInputFocus() const override;
 	virtual COSWindow*		GetParent() const override { return pParent; }
 	virtual CString			GetTitle() const override;
 	virtual bool			GetCursorPosition(IPTR& OutX, IPTR& OutY) const override;
