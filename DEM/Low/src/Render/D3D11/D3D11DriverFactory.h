@@ -15,6 +15,9 @@
 
 struct IDXGIFactory1;
 struct IDXGIOutput;
+#if DEM_RENDER_DEBUG
+struct IDXGIDebug;
+#endif
 struct DXGI_SAMPLE_DESC;
 enum DXGI_FORMAT;
 
@@ -47,6 +50,9 @@ class CD3D11DriverFactory: public CVideoDriverFactory
 protected:
 
 	IDXGIFactory1*				pDXGIFactory = nullptr;
+#if DEM_RENDER_DEBUG
+	IDXGIDebug*					pDXGIDebug = nullptr;
+#endif
 	UPTR						AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
 	std::vector<Data::CBuffer>	ShaderSignatures;
 	CHashTable<U32, UPTR>		ShaderSigIDToIndex;

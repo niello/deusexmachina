@@ -3,8 +3,14 @@
 #include <Render/D3D11/D3D11DisplayDriver.h>
 #include <Render/D3D11/D3D11GPUDriver.h>
 
+// Windows 8.1 SDK is missing definitions for debug GUIDs
+#if (DEM_RENDER_DEBUG) && (WINVER <= 0x0603)
+#define INITGUID
+#endif
+
 #define WIN32_LEAN_AND_MEAN
 #include <DXGI.h>
+#include <dxgidebug.h>
 
 namespace Render
 {
@@ -16,12 +22,31 @@ bool CD3D11DriverFactory::Create()
 	Release();
 
 	if (!SUCCEEDED(CreateDXGIFactory1(__uuidof(IDXGIFactory1), (void**)&pDXGIFactory))) FAIL;
+
+#if DEM_RENDER_DEBUG
+	typedef HRESULT(WINAPI* DXGIGetDebugInterface)(REFIID, void **);
+	const auto hDXGIDebug = LoadLibraryEx("dxgidebug.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+	if (hDXGIDebug)
+	{
+		const auto DxgiGetDebugInterface = reinterpret_cast<DXGIGetDebugInterface>(
+			reinterpret_cast<void*>(GetProcAddress(hDXGIDebug, "DXGIGetDebugInterface"))
+			);
+
+		// TODO: there is also IDXGIInfoQueue!
+		if (DxgiGetDebugInterface)
+		{
+			n_assert(SUCCEEDED(DxgiGetDebugInterface(__uuidof(IDXGIDebug), (void**)&pDXGIDebug)));
+		}
+	}
+#endif
+
 	IDXGIAdapter1* pAdapter;
 	while (pDXGIFactory->EnumAdapters1(AdapterCount, &pAdapter) != DXGI_ERROR_NOT_FOUND)
 	{
 		pAdapter->Release(); // AddRef() is called in EnumAdapters1()
 		++AdapterCount;
 	}
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -29,6 +54,10 @@ bool CD3D11DriverFactory::Create()
 void CD3D11DriverFactory::Release()
 {
 	AdapterCount = 0;
+#if DEM_RENDER_DEBUG
+	if (pDXGIDebug) pDXGIDebug->ReportLiveObjects(DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_ALL);
+	SAFE_RELEASE(pDXGIDebug);
+#endif
 	SAFE_RELEASE(pDXGIFactory);
 
 	ShaderSignatures.clear();
