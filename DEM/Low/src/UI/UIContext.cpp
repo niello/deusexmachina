@@ -35,7 +35,7 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 	if (!pContext) return;
 
 	pInput = n_new(CEGUI::InputAggregator(pCtx));
-	pInput->initialise();
+	pInput->initialise(InputEventsOnKeyUp);
 	pInput->setMouseClickEventGenerationEnabled(true);
 
 	if (pHostWindow)
@@ -274,7 +274,9 @@ bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Event
 	else if (Ev.Device->GetType() == Input::Device_Keyboard)
 	{
 		// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
-		return pInput->injectKeyDown((CEGUI::Key::Scan)Ev.Code);
+		// FIXME CEGUI: input aggregator returns true despite it didn't generate an event when d_handleInKeyUp
+		const bool Handled = pInput->injectKeyDown((CEGUI::Key::Scan)Ev.Code);
+		return !InputEventsOnKeyUp && Handled;
 	}
 
 	FAIL;
@@ -300,7 +302,9 @@ bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events:
 	else if (Ev.Device->GetType() == Input::Device_Keyboard)
 	{
 		// NB: DEM keyboard key codes match CEGUI scancodes, so no additional mapping is required
-		return pInput->injectKeyUp((CEGUI::Key::Scan)Ev.Code);
+		// FIXME CEGUI: input aggregator returns true despite it didn't generate an event when not d_handleInKeyUp
+		const bool Handled = pInput->injectKeyUp((CEGUI::Key::Scan)Ev.Code);
+		return InputEventsOnKeyUp && Handled;
 	}
 
 	FAIL;
