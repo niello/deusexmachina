@@ -261,7 +261,10 @@ void GUIContext::drawContent(std::uint32_t drawModeMask)
 {
     RenderingSurface::drawContent(drawModeMask);
 
-    d_cursor.draw();
+    if(drawModeMask & DrawModeFlagMouseCursor)
+    {
+        d_cursor.draw(DrawModeFlagMouseCursor);
+    }
 }
 
 //----------------------------------------------------------------------------//

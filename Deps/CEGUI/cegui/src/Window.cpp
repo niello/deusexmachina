@@ -310,14 +310,15 @@ Window::Window(const String& type, const String& name):
     d_propagatePointerInputs(false),
 
     d_guiContext(nullptr),
-    d_drawModeMask(DrawModeFlagWindowRegular), // FIXME: DEM local fix
 
     d_containsPointer(false),
     d_isFocused(false),
     d_fontRenderSizeChangeConnection(
         GlobalEventSet::getSingleton().subscribeEvent(
             "Font/RenderSizeChanged",
-            Event::Subscriber(&Window::handleFontRenderSizeChange, this)))
+            Event::Subscriber(&Window::handleFontRenderSizeChange, this))),
+
+    d_drawModeMask(DrawModeFlagWindowRegular)
 {
 #ifdef CEGUI_USE_RAQM
     d_raqmTextData = new RaqmTextData();
