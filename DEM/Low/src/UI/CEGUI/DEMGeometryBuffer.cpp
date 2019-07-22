@@ -95,7 +95,7 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	// Prepare for the rendering process according to the used render material
 	const CDEMShaderWrapper& ShaderWrapper = *static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
 
-	if (drawModeMask & DrawModeFlagWindowRegular)
+	if (drawModeMask & (DrawModeFlagWindowRegular | DrawModeFlagMouseCursor))
 	{
 		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha); // TODO: CEGUI implement in shaders
 		ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, false);
@@ -106,7 +106,7 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	}
 	else
 	{
-		::Sys::Error("CDEMGeometryBuffer::draw() > neither DrawModeFlagWindowRegular nor DrawModeFlagWindowOpaque is specified");
+		::Sys::Error("CDEMGeometryBuffer::draw() > no supported draw mode is specified");
 		return;
 	}
 
