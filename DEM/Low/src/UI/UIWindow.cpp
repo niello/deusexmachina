@@ -9,14 +9,7 @@ namespace UI
 {
 __ImplementClass(UI::CUIWindow, 'UIWN', Core::CObject);
 
-void CUIWindow::Init(CEGUI::Window* pWindow)
-{
-	n_assert(!pWnd && pWindow);
-	pWnd = pWindow;
-}
-//---------------------------------------------------------------------
-
-void CUIWindow::Term()
+CUIWindow::~CUIWindow()
 {
 	if (pWnd && pWnd->getParent())
 		pWnd->getParent()->removeChild(pWnd);
@@ -27,7 +20,8 @@ void CUIWindow::Term()
 
 void CUIWindow::Load(const char* pResourceFile)
 {
-	Init(CEGUI::WindowManager::getSingleton().loadLayoutFromFile(pResourceFile));
+	n_assert(!pWnd);
+	pWnd = CEGUI::WindowManager::getSingleton().loadLayoutFromFile(pResourceFile);
 }
 //---------------------------------------------------------------------
 

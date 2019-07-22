@@ -25,10 +25,23 @@ namespace Debug
 {
 __ImplementClass(Debug::CWatcherWindow, 'DWWW', UI::CUIWindow);
 
-void CWatcherWindow::Init(CEGUI::Window* pWindow)
+CWatcherWindow::CWatcherWindow()
 {
-	CUIWindow::Init(pWindow);
+	Init();
+}
+//---------------------------------------------------------------------
 
+CWatcherWindow::~CWatcherWindow()
+{
+	for (UPTR i = 0; i < Watched.GetCount(); ++i)
+		Watched[i].Clear();
+
+	UNSUBSCRIBE_EVENT(OnUIUpdate);
+}
+//---------------------------------------------------------------------
+
+void CWatcherWindow::Init()
+{
 	pWnd->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
 	UPTR CEGUIChildCount = pWnd->getChildCount();
 	for (UPTR i = 0; i < CEGUIChildCount; ++i)
@@ -63,17 +76,6 @@ void CWatcherWindow::Init(CEGUI::Window* pWindow)
 		CEGUI::Event::Subscriber(&CWatcherWindow::OnAddVarsClick, this));
 
 	if (IsVisible()) SUBSCRIBE_PEVENT(OnUIUpdate, CWatcherWindow, OnUIUpdate);
-}
-//---------------------------------------------------------------------
-
-void CWatcherWindow::Term()
-{
-	UNSUBSCRIBE_EVENT(OnUIUpdate);
-
-	if (pWnd && pWnd->getParent())
-		pWnd->getParent()->removeChild(pWnd);
-
-	//CUIWindow::Term();
 }
 //---------------------------------------------------------------------
 

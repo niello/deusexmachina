@@ -24,10 +24,8 @@ public:
 
 	CUIWindow() {}
 	CUIWindow(const char* pResourceFile) { Load(pResourceFile); }
-	virtual ~CUIWindow() {}
+	virtual ~CUIWindow();
 
-	virtual void	Init(CEGUI::Window* pWindow);
-	virtual void	Term();
 	void			Load(const char* pResourceFile);
 	
 	bool			IsVisible() const { return pWnd->isVisible(); }

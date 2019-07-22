@@ -241,6 +241,8 @@ bool COSWindowWin32::SetInputFocus()
 
 bool COSWindowWin32::HasInputFocus() const
 {
+	if (!hWnd) FAIL;
+
 	HWND hWndCheck = ::GetFocus();
 	if (hWndCheck) return hWndCheck == hWnd;
 

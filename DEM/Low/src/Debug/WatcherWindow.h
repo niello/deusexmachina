@@ -56,6 +56,8 @@ protected:
 
 	CArray<CWatched>			Watched;
 
+	void Init();
+
 	bool OnClearClick(const CEGUI::EventArgs& e);
 	bool OnAddVarsClick(const CEGUI::EventArgs& e);
 	bool OnNewWatchedAccept(const CEGUI::EventArgs& e);
@@ -65,11 +67,9 @@ protected:
 
 public:
 
-	//CWatcherWindow() {}
-	virtual ~CWatcherWindow() { for (UPTR i = 0; i < Watched.GetCount(); ++i) Watched[i].Clear(); }
+	CWatcherWindow();
+	virtual ~CWatcherWindow() override;
 
-	virtual void	Init(CEGUI::Window* pWindow);
-	virtual void	Term();
 	virtual void	SetVisible(bool Visible);
 	void			SetInputFocus() { ((CEGUI::Window*)pPatternEdit)->activate(); }
 

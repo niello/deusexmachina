@@ -38,7 +38,7 @@ bool CDebugServer::RegisterPlugin(CStrID Name, const char* CppClassName, const c
 {
 	CPlugin New;
 	New.UIResource = UIResource;
-	New.Window = (UI::CUIWindow*)Factory->Create(CString(CppClassName));
+	New.Window = static_cast<UI::CUIWindow*>(Factory->Create(CppClassName));
 	n_assert(New.Window.IsValidPtr());
 	//!!!call InitPlugin or write all Init code in the virtual CUIWindow::Init!
 	Plugins.Add(Name, New);
@@ -68,7 +68,7 @@ void CDebugServer::SetUIContext(UI::PUIContext Context)
 
 		for (UPTR i = 0; i < Plugins.GetCount(); ++i)
 			if (Plugins.ValueAt(i).UIResource.IsValid())
-				Plugins.ValueAt(i).Window->Term();
+				Plugins.ValueAt(i).Window.Reset();
 	}
 }
 //---------------------------------------------------------------------

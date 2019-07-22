@@ -35,6 +35,7 @@ protected:
 	CArray<CString>				CmdHistory;
 	UPTR						CmdHistoryCursor;
 
+	void Init();
 	void Print(const char* pMsg, U32 ColorARGB);
 
 	bool OnShow(const CEGUI::EventArgs& e);
@@ -45,12 +46,10 @@ protected:
 
 public:
 
-	CLuaConsole(): CmdHistoryCursor(0) {}
-	//virtual ~CLuaConsole() {}
+	CLuaConsole();
+	virtual ~CLuaConsole() override;
 
-	virtual void	Init(CEGUI::Window* pWindow);
-	virtual void	Term();
-	void			SetInputFocus() { ((CEGUI::Window*)pInputLine)->activate(); }
+	void	SetInputFocus() { ((CEGUI::Window*)pInputLine)->activate(); }
 };
 
 typedef Ptr<CLuaConsole> PLuaConsole;

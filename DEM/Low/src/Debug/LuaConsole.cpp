@@ -17,10 +17,23 @@ namespace Debug
 {
 __ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CObject); //UI::CUIWindow);
 
-void CLuaConsole::Init(CEGUI::Window* pWindow)
+CLuaConsole::CLuaConsole()
+	: CmdHistoryCursor(0)
 {
-	CUIWindow::Init(pWindow);
+	Init();
+}
+//---------------------------------------------------------------------
 
+CLuaConsole::~CLuaConsole()
+{
+	UNSUBSCRIBE_EVENT(OnLogMsg);
+
+	if (ConnOnShow.isValid()) ConnOnShow->disconnect();
+}
+//---------------------------------------------------------------------
+
+void CLuaConsole::Init()
+{
 	ConnOnShow = pWnd->subscribeEvent(CEGUI::Window::EventShown, CEGUI::Event::Subscriber(&CLuaConsole::OnShow, this));
 
 	pInputLine = (CEGUI::Editbox*)pWnd->getChild("InputLine");
@@ -34,16 +47,6 @@ void CLuaConsole::Init(CEGUI::Window* pWindow)
 	pVertScroll = pOutputWnd->getVertScrollbar();
 
 	SUBSCRIBE_PEVENT(OnLogMsg, CLuaConsole, OnLogMsg);
-}
-//---------------------------------------------------------------------
-
-void CLuaConsole::Term()
-{
-	UNSUBSCRIBE_EVENT(OnLogMsg);
-
-	if (ConnOnShow.isValid()) ConnOnShow->disconnect();
-
-	CUIWindow::Term();
 }
 //---------------------------------------------------------------------
 
