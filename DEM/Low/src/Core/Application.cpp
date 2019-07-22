@@ -134,25 +134,29 @@ Resources::CResourceManager& CApplication::ResourceManager() const
 }
 //---------------------------------------------------------------------
 
-CStrID CApplication::CreateUserProfile(const char* pUserID)
+CStrID CApplication::CreateUserProfile(const char* pUserID, bool Overwrite)
 {
 	CString UserStr(pUserID);
 	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
 
 	CString Path = GetUserProfilePath(WritablePath, pUserID);
-	if (IO().DirectoryExists(Path)) return CStrID::Empty;
+	if (IO().DirectoryExists(Path))
+	{
+		if (!Overwrite) return CStrID::Empty;
+
+		// FIXME: check if this user is active now!
+
+		IO().DeleteDirectory(Path);
+	}
 
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
 
 	bool Result = true;
-	if (!IO().CreateDirectory(Path + "/saves")) Result = false;
-	if (Result && !IO().CreateDirectory(Path + "/screenshots")) Result = false;
-	if (Result && !IO().CreateDirectory(Path + "/current")) Result = false;
 
-	//!!!DBG TMP!
-	//!!!template must be packed into NPK or reside in bin/data or smth!
-	//!!!app must set file path or CParams for default user settings, engine must not hardcode where they are!
-	if (Result && !IO().CopyFile("../content/DefaultUserSettings.hrd", Path + "/Settings.hrd")) Result = false;
+	if (Result && !IO().CopyFile(UserSettingsTemplate, Path + "Settings.hrd")) Result = false;
+	if (Result && !IO().CreateDirectory(Path + "saves")) Result = false;
+	if (Result && !IO().CreateDirectory(Path + "screenshots")) Result = false;
+	if (Result && !IO().CreateDirectory(Path + "current")) Result = false;
 
 	if (!Result)
 	{

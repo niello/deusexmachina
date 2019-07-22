@@ -43,6 +43,7 @@ public:
 	vector2			GetSizeRel();
 	void			SetFocus() { pWnd->activate(); }
 
+	bool			SetWidgetEnabled(const char* pPath, bool Enabled);
 	bool			SetWidgetText(const char* pPath, const CString& Text);
 	bool			SubscribeButtonClick(const char* pPath, std::function<void()> Callback);
 

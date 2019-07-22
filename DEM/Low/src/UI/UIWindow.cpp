@@ -59,6 +59,19 @@ vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 }
 //---------------------------------------------------------------------
 
+bool CUIWindow::SetWidgetEnabled(const char* pPath, bool Enabled)
+{
+	if (!pPath) FAIL;
+
+	CEGUI::Window* pChild = pWnd->getChild(pPath);
+	if (!pChild) FAIL;
+
+	pChild->setEnabled(Enabled);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CUIWindow::SetWidgetText(const char* pPath, const CString& Text)
 {
 	if (!pPath) FAIL;
@@ -72,6 +85,8 @@ bool CUIWindow::SetWidgetText(const char* pPath, const CString& Text)
 }
 //---------------------------------------------------------------------
 
+// TODO: SubscribeWidgetClick instead, without type restriction?
+// Or other widgets don't send EventClicked?
 bool CUIWindow::SubscribeButtonClick(const char* pPath, std::function<void()> Callback)
 {
 	if (!pPath) FAIL;

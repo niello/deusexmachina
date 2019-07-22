@@ -89,6 +89,7 @@ protected:
 	CStrID CurrentUserID;
 	std::vector<CUser> ActiveUsers;
 	CString WritablePath;
+	CString UserSettingsTemplate;
 
 	PApplicationState CurrState;
 	PApplicationState RequestedState;
@@ -114,7 +115,8 @@ public:
 	Resources::CResourceManager& ResourceManager() const;
 
 	void				SetWritablePath(const char* pPath) { WritablePath = pPath; }
-	CStrID				CreateUserProfile(const char* pUserID);
+	void				SetUserSettingsTemplate(const char* pFilePath) { UserSettingsTemplate = pFilePath; }
+	CStrID				CreateUserProfile(const char* pUserID, bool Overwrite = false);
 	bool				DeleteUserProfile(const char* pUserID);
 	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;
 	CStrID				ActivateUser(CStrID UserID);
