@@ -3,6 +3,7 @@
 #include <UI/UIContext.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
+#include <Data/DataArray.h>
 
 #include <Render/GPUDriver.h>
 
@@ -65,6 +66,17 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	CEGUI::ImageManager::setImagesetDefaultResourceGroup("imagesets");
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
+
+	Data::PDataArray ResourcesToLoad;
+
+	// TODO: move to CEGUI scheme, it already has capability of font autoloading
+	if (Settings.LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Fonts")))
+		for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
+			LoadFont(ResourcesToLoad->Get<CString>(i).CStr());
+
+	if (Settings.LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
+		for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
+			LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
 
 	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);

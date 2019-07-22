@@ -27,7 +27,8 @@
 
 namespace Render
 {
-	class CGPUDriver;
+	typedef Ptr<class CVideoDriverFactory> PVideoDriverFactory;
+	typedef Ptr<class CGPUDriver> PGPUDriver;
 }
 
 namespace IO
@@ -87,7 +88,7 @@ protected:
 	Data::PParams OverrideSettings; // From a command line
 	CStrID CurrentUserID;
 	std::vector<CUser> ActiveUsers;
-	CString AppDataPath;
+	CString WritablePath;
 
 	PApplicationState CurrState;
 	PApplicationState RequestedState;
@@ -112,7 +113,7 @@ public:
 	IO::CIOServer&	IO() const;
 	Resources::CResourceManager& ResourceManager() const;
 
-	void				SetAppDataPath(const char* pPath) { AppDataPath = pPath; }
+	void				SetWritablePath(const char* pPath) { WritablePath = pPath; }
 	CStrID				CreateUserProfile(const char* pUserID);
 	bool				DeleteUserProfile(const char* pUserID);
 	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;
@@ -148,6 +149,9 @@ public:
 	int					CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
 	Frame::PView		CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI);
 	//POSConsoleWindow CreateConsoleWindow();
+
+	// Quickstart methods
+	bool				BootstrapScene(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, Render::PGPUDriver& GPU, int& SwapChainID);
 };
 
 }

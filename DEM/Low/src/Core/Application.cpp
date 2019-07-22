@@ -16,11 +16,43 @@
 #include <Render/SwapChain.h>
 #include <Render/RenderTarget.h>
 #include <Render/GPUDriver.h>
+#include <Render/VideoDriverFactory.h>
 #include <Data/ParamsUtils.h>
 #include <Input/InputTranslator.h>
 #include <Input/InputDevice.h>
 #include <UI/UIServer.h>
 #include <UI/UIContext.h>
+
+// Scene bootstrapper includes
+// TODO: consider incapsulating into methods of relevant subsystems
+#include <Frame/RenderPhaseGlobalSetup.h>
+#include <Frame/RenderPhaseGeometry.h>
+#include <UI/RenderPhaseGUI.h>
+//
+#include <Render/Model.h>
+#include <Render/ModelRenderer.h>
+#include <Render/Skybox.h>
+#include <Render/SkyboxRenderer.h>
+#include <Render/Terrain.h>
+#include <Render/TerrainRenderer.h>
+//
+#include <Frame/RenderPath.h>
+#include <Frame/RenderPathLoaderRP.h>
+#include <Render/SkinInfo.h>
+#include <Render/SkinInfoLoaderSKN.h>
+#include <Render/MeshData.h>
+#include <Render/MeshLoaderNVX2.h>
+#include <Render/TextureData.h>
+#include <Render/TextureLoaderTGA.h>
+#include <Render/TextureLoaderDDS.h>
+#include <Render/TextureLoaderCDLOD.h>
+#include <Render/CDLODDataLoader.h>
+#include <Render/ShaderLibrary.h>
+#include <Render/ShaderLibraryLoaderSLB.h>
+#include <Physics/CollisionShape.h>
+#include <Physics/CollisionShapeLoader.h>
+#include <Scene/SceneNode.h>
+#include <Scene/SceneNodeLoaderSCN.h>
 
 namespace DEM { namespace Core
 {
@@ -107,7 +139,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID)
 	CString UserStr(pUserID);
 	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
 
-	CString Path = GetUserProfilePath(AppDataPath, pUserID);
+	CString Path = GetUserProfilePath(WritablePath, pUserID);
 	if (IO().DirectoryExists(Path)) return CStrID::Empty;
 
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
@@ -139,13 +171,13 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 
 	// TODO: if one of active users, FAIL
 
-	return IO().DeleteDirectory(GetUserProfilePath(AppDataPath, pUserID));
+	return IO().DeleteDirectory(GetUserProfilePath(WritablePath, pUserID));
 }
 //---------------------------------------------------------------------
 
 UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
 {
-	CString ProfilesDir = GetProfilesPath(AppDataPath);
+	CString ProfilesDir = GetProfilesPath(WritablePath);
 	if (!IO().DirectoryExists(ProfilesDir)) return 0;
 
 	const UPTR OldCount = Out.GetCount();
@@ -168,7 +200,7 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
 	if (It != ActiveUsers.cend()) return UserID;
 
-	CString Path = GetUserProfilePath(AppDataPath, UserID);
+	CString Path = GetUserProfilePath(WritablePath, UserID);
 	PathUtils::EnsurePathHasEndingDirSeparator(Path);
 
 	if (!IO().DirectoryExists(Path)) return CStrID::Empty;
@@ -208,7 +240,7 @@ void CApplication::DeactivateUser(CStrID UserID)
 
 	//???save settings IF CHANGED? if want to use file time as "last seen" for the user,
 	//may use FS::Touch without actually writing the data
-	if (It->Settings) ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(AppDataPath, UserID), *It->Settings);
+	if (It->Settings) ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
 
 	ActiveUsers.erase(It);
 
@@ -441,6 +473,62 @@ Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChai
 	}
 
 	return View;
+}
+//---------------------------------------------------------------------
+
+// Initializes 3D graphics, resources etc and makes an application ready to work with 3D scenes.
+// This function is intended for fast typical setup and may be completely replaced with an application
+// code if more sophisticated initialization is required.
+bool CApplication::BootstrapScene(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, Render::PGPUDriver& GPU, int& SwapChainID)
+{
+	// Register render path classes in the factory
+
+	Frame::CRenderPhaseGUI::ForceFactoryRegistration();
+	Frame::CRenderPhaseGlobalSetup::ForceFactoryRegistration();
+	Frame::CRenderPhaseGeometry::ForceFactoryRegistration();
+	Render::CModel::ForceFactoryRegistration();
+	Render::CModelRenderer::ForceFactoryRegistration();
+	Render::CSkybox::ForceFactoryRegistration();
+	Render::CSkyboxRenderer::ForceFactoryRegistration();
+	Render::CTerrain::ForceFactoryRegistration();
+	Render::CTerrainRenderer::ForceFactoryRegistration();
+
+	// Initialize the default graphics device
+
+	if (!Gfx->Create())
+	{
+		::Sys::Error("Can't create video driver factory");
+		return false;
+	}
+
+	GPU = Gfx->CreateGPUDriver(Render::Adapter_Primary, Render::GPU_Hardware);
+	if (!GPU)
+	{
+		::Sys::Error("Can't create GPU driver");
+		return false;
+	}
+
+	GPU->SetResourceManager(ResMgr.get());
+
+	// Register resource loaders
+
+	ResMgr->RegisterDefaultCreator("slb", &Render::CShaderLibrary::RTTI, n_new(Resources::CShaderLibraryLoaderSLB(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("rp", &Frame::CRenderPath::RTTI, n_new(Resources::CRenderPathLoaderRP(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("scn", &Scene::CSceneNode::RTTI, n_new(Resources::CSceneNodeLoaderSCN(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("cdlod", &Render::CCDLODData::RTTI, n_new(Resources::CCDLODDataLoader(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("cdlod", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderCDLOD(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("nvx2", &Render::CMeshData::RTTI, n_new(Resources::CMeshLoaderNVX2(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("skn", &Render::CSkinInfo::RTTI, n_new(Resources::CSkinInfoLoaderSKN(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("dds", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderDDS(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("tga", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderTGA(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("prm", &Physics::CCollisionShape::RTTI, n_new(Resources::CCollisionShapeLoaderPRM(*ResMgr)));
+
+	// Create and setup the main window
+
+	SwapChainID = CreateRenderWindow(*GPU, WindowWidth, WindowHeight);
+	ExitOnWindowClosed(GPU->GetSwapChainWindow(SwapChainID));
+
+	return true;
 }
 //---------------------------------------------------------------------
 

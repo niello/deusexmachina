@@ -48,6 +48,7 @@ struct CUISettings
 	CStrID				PixelShaderRegularID;
 	CStrID				PixelShaderOpaqueID;
 	Data::PParams		ResourceGroups;
+	Data::PParams		LoadOnStartup;
 };
 
 struct CUIContextSettings

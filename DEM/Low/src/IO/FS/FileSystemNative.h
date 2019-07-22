@@ -23,7 +23,6 @@ protected:
 
 public:
 
-	//!!!platform interface required!
 	CFileSystemNative(DEM::Sys::IOSFileSystem* pHostFS, const char* pRootPath, bool ReadOnly = false);
 
 	virtual bool	Init() override;
