@@ -13,7 +13,6 @@ void CUIWindow::Init(CEGUI::Window* pWindow)
 {
 	n_assert(!pWnd && pWindow);
 	pWnd = pWindow;
-	//if (pWnd) pWnd->setDrawMode(CEGUI::Window::DrawModeFlagWindowRegular);
 }
 //---------------------------------------------------------------------
 
@@ -22,6 +21,7 @@ void CUIWindow::Term()
 	if (pWnd && pWnd->getParent())
 		pWnd->getParent()->removeChild(pWnd);
 	//???unload / delete?
+	// TODO: ownership of CEGUI window
 }
 //---------------------------------------------------------------------
 
