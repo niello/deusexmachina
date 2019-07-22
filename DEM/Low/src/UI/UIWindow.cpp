@@ -59,6 +59,19 @@ vector2 CUIWindow::GetParentBaseSize(CEGUI::Window* pWindow)
 }
 //---------------------------------------------------------------------
 
+bool CUIWindow::SetWidgetText(const char* pPath, const CString& Text)
+{
+	if (!pPath) FAIL;
+
+	CEGUI::Window* pChild = pWnd->getChild(pPath);
+	if (!pChild) FAIL;
+
+	pChild->setText(Text.CStr());
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CUIWindow::SubscribeButtonClick(const char* pPath, std::function<void()> Callback)
 {
 	if (!pPath) FAIL;
