@@ -105,8 +105,8 @@ void CUIServer::Trigger(float FrameTime)
 	CEGUI::WindowManager::getSingleton().cleanDeadPool();
 
 	CEGUISystem->injectTimePulse(FrameTime);
-	//!!! FIXME: inject in all contexts!
-	//???subscribe all contexts on some time event or store collection here?
+	for (auto pCtx : CEGUISystem->getGUIContexts())
+		pCtx->injectTimePulse(FrameTime);
 
 	EventSrv->FireEvent(CStrID("OnUIUpdate"));
 }
