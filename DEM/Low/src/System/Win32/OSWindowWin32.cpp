@@ -349,6 +349,12 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			break;
 		}
 
+		case WM_EXITSIZEMOVE:
+		{
+			FireEvent(CStrID("OnSizeChangeFinished"));
+			break;
+		}
+
 		case WM_SETCURSOR:
 		{
 			if (LOWORD(lParam) == HTCLIENT)

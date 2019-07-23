@@ -33,7 +33,7 @@ private:
 	DECLARE_EVENT_HANDLER(ButtonUp, OnButtonUp);
 	DECLARE_EVENT_HANDLER(TextInput, OnTextInput);
 
-	DECLARE_2_EVENTS_HANDLER(OnToggleFullscreen, OnSizeChanged, OnViewportSizeChanged);
+	DECLARE_2_EVENTS_HANDLER(OnToggleFullscreen, OnSizeChangeFinished, OnViewportSizeChanged);
 
 public:
 

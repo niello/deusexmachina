@@ -25,7 +25,7 @@ CUIContext::~CUIContext()
 void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
 {
 	UNSUBSCRIBE_EVENT(OnToggleFullscreen);
-	UNSUBSCRIBE_EVENT(OnSizeChanged);
+	UNSUBSCRIBE_EVENT(OnSizeChangeFinished);
 
 	SAFE_DELETE(pInput);
 
@@ -41,7 +41,7 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 	if (pHostWindow)
 	{
 		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnToggleFullscreen, CUIContext, OnViewportSizeChanged);
-		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnSizeChanged, CUIContext, OnViewportSizeChanged);
+		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnSizeChangeFinished, CUIContext, OnViewportSizeChanged);
 	}
 }
 //---------------------------------------------------------------------
