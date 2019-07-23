@@ -9,6 +9,7 @@
 *.vcxproj.user
 *.vcproj.*.user
 *.ib_pdb_index
+*.pyc
 
 #Intermediate directories
 DEM/Lib/
