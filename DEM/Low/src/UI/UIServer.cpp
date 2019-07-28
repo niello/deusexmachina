@@ -78,6 +78,9 @@ CUIServer::CUIServer(const CUISettings& Settings)
 		for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
 			LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
 
+	if (Settings.DefaultCursor.IsValid())
+		CEGUISystem->setDefaultCursorName(Settings.DefaultCursor.CStr());
+
 	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);
 }

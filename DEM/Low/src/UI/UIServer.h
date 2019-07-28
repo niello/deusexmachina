@@ -47,6 +47,7 @@ struct CUISettings
 	CStrID				VertexShaderID;
 	CStrID				PixelShaderRegularID;
 	CStrID				PixelShaderOpaqueID;
+	CString				DefaultCursor;
 	Data::PParams		ResourceGroups;
 	Data::PParams		LoadOnStartup;
 };
