@@ -9,7 +9,8 @@
 namespace Input
 {
 
-CInputTranslator::CInputTranslator(CStrID UserID): _UserID(UserID)
+CInputTranslator::CInputTranslator(CStrID UserID)
+	: _UserID(UserID)
 {
 	Contexts.SetKeepOrder(true);
 }

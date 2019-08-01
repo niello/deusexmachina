@@ -112,6 +112,21 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	n_new(Events::CEventServer);
 	IOServer.reset(n_new(IO::CIOServer));
 	ResMgr.reset(n_new(Resources::CResourceManager(IOServer.get())));
+
+	// Initialize unclaimed input translator. It is used to translate input from
+	// devices not yet tied to a specific user. Typically only UI receives that input.
+	UnclaimedInput.reset(n_new(Input::CInputTranslator(CStrID::Empty)));
+
+	// Initialize a bypass context for UI
+	const CStrID UIContextID("UI");
+	UnclaimedInput->CreateContext(UIContextID, true);
+	UnclaimedInput->EnableContext(UIContextID);
+
+	// Attach all existing input devices to the unclaimed context
+	CArray<Input::PInputDevice> InputDevices;
+	Platform.EnumInputDevices(InputDevices);
+	for (auto& Device : InputDevices)
+		UnclaimedInput->ConnectToDevice(Device.Get());
 }
 //---------------------------------------------------------------------
 
@@ -201,7 +216,12 @@ UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
 
 CStrID CApplication::ActivateUser(CStrID UserID)
 {
-	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+	if (!UserID.IsValid()) return CStrID::Empty;
+
+	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User)
+	{
+		return User.ID == UserID;
+	});
 	if (It != ActiveUsers.cend()) return UserID;
 
 	CString Path = GetUserProfilePath(WritablePath, UserID);
@@ -223,12 +243,11 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 		Platform.EnumInputDevices(InputDevices);
 		for (UPTR i = 0; i < InputDevices.GetCount(); ++i)
 		{
+			UnclaimedInput->DisconnectFromDevice(InputDevices[i].Get());
 			NewUser.Input->ConnectToDevice(InputDevices[i].Get());
 		}
 
 		CurrentUserID = UserID;
-
-		SetStringSetting("User", CString(UserID), CStrID::Empty);
 	}
 
 	ActiveUsers.push_back(std::move(NewUser));
@@ -467,13 +486,17 @@ Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChai
 		Input::CInputTranslator* pUserInput = GetUserInput(GetCurrentUserID());
 		if (pUserInput)
 		{
-			// Bypass context //!!!check if exists!
+			// Initialize a bypass context for UI
 			const CStrID UIContextID("UI");
 			if (!pUserInput->HasContext(UIContextID))
 				pUserInput->CreateContext(UIContextID, true);
 			pUserInput->EnableContext(UIContextID);
+
 			View->UIContext->SubscribeOnInput(pUserInput, 100);
 		}
+
+		if (UnclaimedInput)
+			View->UIContext->SubscribeOnInput(UnclaimedInput.get(), 50);
 	}
 
 	return View;

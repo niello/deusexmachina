@@ -90,6 +90,7 @@ protected:
 	std::vector<CUser> ActiveUsers;
 	CString WritablePath;
 	CString UserSettingsTemplate;
+	std::unique_ptr<Input::CInputTranslator> UnclaimedInput;
 
 	PApplicationState CurrState;
 	PApplicationState RequestedState;
