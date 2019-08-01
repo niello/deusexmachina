@@ -45,7 +45,7 @@ void CWatcherWindow::Init()
 	pWnd->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
 	UPTR CEGUIChildCount = pWnd->getChildCount();
 	for (UPTR i = 0; i < CEGUIChildCount; ++i)
-		pWnd->getChildAtIdx(i)->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
+		pWnd->getChildAtIndex(i)->setDrawModeMask(UI::DrawModeFlagWindowOpaque);
 
 	pPatternEdit = (CEGUI::Editbox*)pWnd->getChild("PatternEdit");
 

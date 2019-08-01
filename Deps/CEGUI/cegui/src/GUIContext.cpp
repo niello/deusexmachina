@@ -49,14 +49,13 @@ const String GUIContext::EventDefaultFontChanged("DefaultFontChanged");
 GUIContext::GUIContext(RenderTarget& target) :
     RenderingSurface(target),
     d_rootWindow(nullptr),
-    d_isDirty(false),
     d_defaultTooltipObject(nullptr),
     d_weCreatedTooltipObject(false),
     d_defaultFont(nullptr),
     d_surfaceSize(target.getArea().getSize()),
     d_modalWindow(nullptr),
     d_captureWindow(nullptr),
-    d_lastDrawModeMask(0),
+    d_dirtyDrawModeMask(0),
     d_areaChangedEventConnection(
         target.subscribeEvent(
             RenderTarget::EventAreaChanged,
@@ -104,18 +103,26 @@ void GUIContext::setRootWindow(Window* new_root)
         return;
 
     setInputCaptureWindow(nullptr);
+    setModalWindow(nullptr);
+    updateWindowContainingCursor();
 
     if (d_rootWindow)
         d_rootWindow->setGUIContext(nullptr);
 
+    // Remember previous root for the event
     WindowEventArgs args(d_rootWindow);
 
     d_rootWindow = new_root;
 
     if (d_rootWindow)
+    {
         d_rootWindow->setGUIContext(this);
+        updateRootWindowAreaRects();
+    }
 
-    onRootWindowChanged(args);
+    markAsDirty();
+
+    fireEvent(EventRootWindowChanged, args);
 }
 
 //----------------------------------------------------------------------------//
@@ -228,30 +235,23 @@ const Sizef& GUIContext::getSurfaceSize() const
 }
 
 //----------------------------------------------------------------------------//
-void GUIContext::markAsDirty()
+void GUIContext::markAsDirty(std::uint32_t drawModeMask)
 {
-    d_isDirty = true;
-}
-
-//----------------------------------------------------------------------------//
-bool GUIContext::isDirty() const
-{
-    return d_isDirty;
+    d_dirtyDrawModeMask |= drawModeMask;
 }
 
 //----------------------------------------------------------------------------//
 void GUIContext::draw(std::uint32_t drawModeMask)
 {
-    // Dirtify if the last draw call had a different drawModeMask than this one
-    if(d_lastDrawModeMask != drawModeMask)
-    {
-        d_isDirty = true;
-        d_lastDrawModeMask = drawModeMask;
-    }
+    // Cursor is always dirty because it must be redrawn each frame
+    const bool drawCursor = (drawModeMask & DrawModeFlagMouseCursor);
     
+    drawModeMask &= d_dirtyDrawModeMask;
 
-    if (d_isDirty)
-        drawWindowContentToTarget(drawModeMask);
+    drawWindowContentToTarget(drawModeMask);
+
+    if (drawCursor)
+        drawModeMask |= DrawModeFlagMouseCursor;
 
     RenderingSurface::draw(drawModeMask);
 }
@@ -259,23 +259,28 @@ void GUIContext::draw(std::uint32_t drawModeMask)
 //----------------------------------------------------------------------------//
 void GUIContext::drawContent(std::uint32_t drawModeMask)
 {
+    if (!drawModeMask)
+        return;
+
     RenderingSurface::drawContent(drawModeMask);
 
-    if(drawModeMask & DrawModeFlagMouseCursor)
-    {
+    if (drawModeMask & DrawModeFlagMouseCursor)
         d_cursor.draw(DrawModeFlagMouseCursor);
-    }
 }
 
 //----------------------------------------------------------------------------//
 void GUIContext::drawWindowContentToTarget(std::uint32_t drawModeMask)
 {
+    if (!drawModeMask)
+        return;
+
     if (d_rootWindow)
         renderWindowHierarchyToSurfaces(drawModeMask);
     else
         clearGeometry();
 
-    d_isDirty = false;
+    // Mark all rendered modes as not dirty (cursor is always redrawn anyway)
+    d_dirtyDrawModeMask &= (~drawModeMask);
 }
 
 //----------------------------------------------------------------------------//
@@ -343,17 +348,6 @@ bool GUIContext::windowDestroyedHandler(const EventArgs& args)
     }
 
     return true;
-}
-
-//----------------------------------------------------------------------------//
-void GUIContext::onRootWindowChanged(WindowEventArgs& args)
-{
-    if (d_rootWindow)
-        updateRootWindowAreaRects();
-
-    markAsDirty();
-
-    fireEvent(EventRootWindowChanged, args);
 }
 
 //----------------------------------------------------------------------------//
@@ -655,7 +649,7 @@ void GUIContext::notifyDefaultFontChanged(Window* hierarchy_root) const
         hierarchy_root->onFontChanged(evt_args);
 
     for (size_t i = 0; i < hierarchy_root->getChildCount(); ++i)
-        notifyDefaultFontChanged(hierarchy_root->getChildAtIdx(i));
+        notifyDefaultFontChanged(hierarchy_root->getChildAtIndex(i));
 }
 
 //----------------------------------------------------------------------------//

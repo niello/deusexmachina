@@ -57,7 +57,7 @@ void CLuaConsole::Print(const char* pMsg, U32 ColorARGB)
 	if (pOutputWnd->getRowCount() >= MAX_LINES)
 	{
 		//???can just move from one index to another?
-		pNewItem = (CEGUI::FormattedListboxTextItem*)pOutputWnd->getChildElementAtIdx(0);
+		pNewItem = (CEGUI::FormattedListboxTextItem*)pOutputWnd->getChildElementAtIndex(0);
 		n_assert(pNewItem);
 		pOutputWnd->removeRow(0);
 		pNewItem->setText(pMsg);
