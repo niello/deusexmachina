@@ -101,6 +101,10 @@ public:
 	bool		IsDoubleGrowing() const { return Flags.Is(Array_DoubleGrowSize); }
 	bool		IsKeepingOrder() const { return Flags.Is(Array_KeepOrder); }
 
+	// Range-based 'for' loop support
+	CIterator	begin() const { return pData; }
+	CIterator	end() const { return pData + Count; }
+
 	CArray<T>&	operator =(const CArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
 	T&			operator [](IPTR Idx) const { return At(Idx); }
 	bool		operator ==(const CArray<T>& Other) const;
