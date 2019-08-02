@@ -104,6 +104,8 @@ protected:
 	template<class T> bool SetSetting(const char* pKey, const T& Value, CStrID UserID);
 
 	DECLARE_EVENT_HANDLER(OnClosing, OnMainWindowClosing);
+	DECLARE_EVENT_HANDLER(InputDeviceArrived, OnInputDeviceArrived);
+	DECLARE_EVENT_HANDLER(InputDeviceRemoved, OnInputDeviceRemoved);
 
 public:
 

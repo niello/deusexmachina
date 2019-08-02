@@ -1,6 +1,7 @@
 #if DEM_PLATFORM_WIN32
-#include <System/Win32/OSFileSystemWin32.h>
+#include <System/Win32/OSFileSystemWin32.h> // Strictly before windows.h, Win defines spoil API names
 #include "PlatformWin32.h"
+#include <System/PlatformEvents.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <System/Win32/MouseWin32.h>
 #include <System/Win32/KeyboardWin32.h>
@@ -504,6 +505,7 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 		if (!Device->IsOperational() && Device->GetName() == DeviceName)
 		{
 			Device->SetOperational(true, hDevice);
+			FireEvent(Event::InputDeviceArrived(Device, false));
 			OK;
 		}
 	}
@@ -522,6 +524,7 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 			Input::PMouseWin32 Device = n_new(Input::CMouseWin32);
 			if (!Device->Init(hDevice, DeviceName, DeviceInfo.mouse)) FAIL;
 			InputDevices.push_back(Device);
+			FireEvent(Event::InputDeviceArrived(Device, true));
 			OK;
 		}
 		case RIM_TYPEKEYBOARD:
@@ -529,6 +532,7 @@ bool CPlatformWin32::OnInputDeviceArrived(HANDLE hDevice)
 			Input::PKeyboardWin32 Device = n_new(Input::CKeyboardWin32);
 			if (!Device->Init(hDevice, DeviceName, DeviceInfo.keyboard)) FAIL;
 			InputDevices.push_back(Device);
+			FireEvent(Event::InputDeviceArrived(Device, true));
 			OK;
 		}
 		//case RIM_TYPEHID:
@@ -549,6 +553,7 @@ bool CPlatformWin32::OnInputDeviceRemoved(HANDLE hDevice)
 		if (Device->IsOperational() && Device->GetWin32Handle() == hDevice)
 		{
 			Device->SetOperational(false, 0);
+			FireEvent(Event::InputDeviceRemoved(Device));
 			OK;
 		}
 	}
@@ -565,7 +570,10 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 	if (::GetRawInputDeviceList(NULL, &Count, sizeof(RAWINPUTDEVICELIST)) != 0 || !Count)
 	{
 		for (auto& Device : InputDevices)
+		{
 			Device->SetOperational(false, 0);
+			FireEvent(Event::InputDeviceRemoved(Device));
+		}
 		return 0;
 	}
 
@@ -574,7 +582,10 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 	{
 		n_delete_array(pList);
 		for (auto& Device : InputDevices)
+		{
 			Device->SetOperational(false, 0);
+			FireEvent(Event::InputDeviceRemoved(Device));
+		}
 		return 0;
 	}
 
@@ -598,7 +609,11 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 			}
 		}
 
-		if (!Found) Device->SetOperational(false, 0);
+		if (!Found)
+		{
+			Device->SetOperational(false, 0);
+			FireEvent(Event::InputDeviceRemoved(Device));
+		}
 	}
 
 	n_delete_array(pList);

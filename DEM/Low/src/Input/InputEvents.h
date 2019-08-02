@@ -3,7 +3,7 @@
 #include <Input/InputDevice.h>
 #include <string>
 
-// IInputDevice axis and button events
+// Input device axis and button events
 
 namespace Event
 {

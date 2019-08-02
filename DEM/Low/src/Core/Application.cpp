@@ -10,6 +10,7 @@
 #include <Resources/Resource.h>
 #include <Math/Math.h>
 #include <System/Platform.h>
+#include <System/PlatformEvents.h>
 #include <System/OSWindow.h>
 #include <Frame/View.h>
 #include <Frame/RenderPath.h>
@@ -127,6 +128,9 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 	Platform.EnumInputDevices(InputDevices);
 	for (auto& Device : InputDevices)
 		UnclaimedInput->ConnectToDevice(Device.Get());
+
+	DISP_SUBSCRIBE_NEVENT(&_Platform, InputDeviceArrived, CApplication, OnInputDeviceArrived);
+	DISP_SUBSCRIBE_NEVENT(&_Platform, InputDeviceRemoved, CApplication, OnInputDeviceRemoved);
 }
 //---------------------------------------------------------------------
 
@@ -613,6 +617,8 @@ bool CApplication::Update()
 //!!!Init()'s pair!
 void CApplication::Term()
 {
+	UNSUBSCRIBE_EVENT(InputDeviceArrived);
+	UNSUBSCRIBE_EVENT(InputDeviceRemoved);
 	UNSUBSCRIBE_EVENT(OnClosing);
 
 	//!!!kill all windows!
@@ -643,6 +649,29 @@ bool CApplication::OnMainWindowClosing(Events::CEventDispatcher* pDispatcher, co
 {
 	UNSUBSCRIBE_EVENT(OnClosing);
 	RequestState(nullptr);
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CApplication::OnInputDeviceArrived(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	const Event::InputDeviceArrived& Ev = static_cast<const Event::InputDeviceArrived&>(Event);
+
+	// When a new input device is connected, it becomes an unclaimed input source.
+	// It can be assigned to an user later.
+	if (Ev.FirstSeen)
+		UnclaimedInput->ConnectToDevice(Ev.Device.Get());
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CApplication::OnInputDeviceRemoved(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	const Event::InputDeviceRemoved& Ev = static_cast<const Event::InputDeviceRemoved&>(Event);
+
+	// FIXME: remove this method if no action required
+
 	OK;
 }
 //---------------------------------------------------------------------

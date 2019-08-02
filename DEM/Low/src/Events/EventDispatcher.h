@@ -20,8 +20,8 @@ namespace Events
 
 enum EEventFlags
 {
-	Event_TermOnHandled		= 0x01,	// Stop calling handlers as one returns true, which means 'event is handled by me'
-	Event_IgnoreNULLSubs	= 0x02	// Don't send to default (any-event, NULL) handlers
+	Event_TermOnHandled			= 0x01,	// Stop calling handlers as one returns true, which means 'event is handled by me'
+	Event_IgnoreAllEventSubs	= 0x02	// Don't send to default (any-event, nullptr) handlers
 };
 
 class CEventDispatcher
@@ -38,17 +38,20 @@ public:
 
 	CEventDispatcher(UPTR HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE): Subscriptions(HashTableCapacity) {}
 
-	static UPTR				GetFiredEventsCount() { return EventsFiredTotal; }
+	static UPTR	GetFiredEventsCount() { return EventsFiredTotal; }
 
 	// Returns handled counter (how much handlers have signed that they handled this event)
-	UPTR					FireEvent(const CEventBase& Event, U8 Flags = 0);
-	UPTR					FireEvent(CStrID ID, Data::PParams Params = NULL, U8 Flags = 0) { return FireEvent(CEvent(ID, Params), Flags); }
+	UPTR		FireEvent(const CEventBase& Event, U8 Flags = 0);
+	UPTR		FireEvent(CStrID ID, Data::PParams Params = nullptr, U8 Flags = 0) { return FireEvent(CEvent(ID, Params), Flags); }
 
-	bool					Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub = NULL);
-	bool					Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = NULL, U16 Priority = Priority_Default);
-	template<class T> bool	Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub = NULL, U16 Priority = Priority_Default);
-	void					Unsubscribe(CEventID ID, CEventHandler* pHandler);
-	void					UnsubscribeAll() { Subscriptions.Clear(); }
+	bool		Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub = nullptr);
+	bool		Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = nullptr, U16 Priority = Priority_Default);
+
+	template<class T>
+	bool		Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub = nullptr, U16 Priority = Priority_Default);
+
+	void		Unsubscribe(CEventID ID, CEventHandler* pHandler);
+	void		UnsubscribeAll() { Subscriptions.Clear(); }
 };
 
 inline bool CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub, U16 Priority)

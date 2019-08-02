@@ -271,6 +271,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/System/OSFileSystem.h
 	DEM/Low/src/System/OSWindow.h
 	DEM/Low/src/System/Platform.h
+	DEM/Low/src/System/PlatformEvents.h
 	DEM/Low/src/System/System.h
 	DEM/Low/src/System/Allocators/PoolAllocator.h
 	DEM/Low/src/System/Win32/InputDeviceWin32.h
@@ -500,6 +501,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/SI/SIGlobals.cpp
 	DEM/Low/src/SI/SITime.cpp
 	DEM/Low/src/System/Memory.cpp
+	DEM/Low/src/System/PlatformEvents.cpp
 	DEM/Low/src/System/System.cpp
 	DEM/Low/src/System/Win32/KeyboardWin32.cpp
 	DEM/Low/src/System/Win32/MouseWin32.cpp

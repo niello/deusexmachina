@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/Ptr.h>
 #include <Data/Array.h>
+#include <Events/EventDispatcher.h>
 
 // Platform-dependent functionality interface. Implemented per-platform / OS.
 
@@ -25,7 +26,7 @@ enum ESystemFolder
 	SysFolder_Programs		// OS folder where applications are installed
 };
 
-class IPlatform
+class IPlatform : public Events::CEventDispatcher
 {
 public:
 
