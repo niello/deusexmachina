@@ -42,6 +42,7 @@ public:
 	CArray(UPTR _Count, UPTR _GrowSize);
 	CArray(UPTR _Count, UPTR _GrowSize, const T& Value);
 	CArray(const CArray<T>& Other): pData(NULL), Allocated(0), Count(0) { Copy(Other); }
+	CArray(CArray<T>&& Other);
 	~CArray();
 
 	CIterator	Add();
@@ -136,6 +137,20 @@ CArray<T>::CArray(UPTR _Count, UPTR _GrowSize, const T& Value):
 		for (UPTR i = 0; i < _Count; ++i) n_placement_new(pData + i, T)(Value);
 	}
 	else pData = NULL;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+CArray<T>::CArray(CArray<T>&& Other)
+	: pData(Other.pData)
+	, Allocated(Other.Allocated)
+	, Count(Other.Count)
+	, GrowSize(Other.GrowSize)
+	, Flags(Other.Flags)
+{
+	Other.pData = nullptr;
+	Other.Allocated = 0;
+	Other.Count = 0;
 }
 //---------------------------------------------------------------------
 

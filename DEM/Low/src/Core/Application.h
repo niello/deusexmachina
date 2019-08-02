@@ -127,6 +127,7 @@ public:
 	CStrID				GetCurrentUserID() const { return CurrentUserID; }
 
 	Input::CInputTranslator* GetUserInput(CStrID UserID) const;
+	Input::CInputTranslator* GetUnclaimedInput() const;
 
 	void				ParseCommandLine(const char* pCmdLine);
 	bool				LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?

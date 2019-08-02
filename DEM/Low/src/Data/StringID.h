@@ -20,7 +20,7 @@ protected:
 	friend class CStringIDStorage;
 	static class CStringIDStorage Storage;
 
-	const char* pString;
+	const char* pString = nullptr;
 
 	explicit CStringID(const char* pStr, int, int) { pString = pStr; }
 
@@ -28,7 +28,9 @@ public:
 
 	static const CStringID Empty;
 
-	CStringID(): pString(NULL) {}
+	CStringID() {}
+	CStringID(const CStringID& Other) : pString(Other.pString) {}
+	CStringID(CStringID&& Other) : pString(Other.pString) {}
 #ifdef _DEBUG
 	explicit // So I can later search all static StrIDs and predefine them
 #endif

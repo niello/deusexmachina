@@ -23,7 +23,7 @@ enum EMergeMethod
 
 typedef Ptr<class CParams> PParams;
 
-class CParams: public Data::CRefCounted
+class CParams: public CRefCounted
 {
 private:
 
@@ -33,6 +33,7 @@ public:
 
 	CParams() {}
 	CParams(const CParams& Other): Params(Other.Params) {}
+	CParams(CParams&& Other): Params(std::move(Other.Params)) {}
 	CParams(int InitialSize, int Grow = 4): Params(InitialSize, Grow) {}
 
 	//???const char*/CString version?

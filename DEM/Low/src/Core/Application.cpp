@@ -264,7 +264,11 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 		}
 
 		CurrentUserID = UserID;
-		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"));
+
+		Data::PParams Params = n_new(Data::CParams(2));
+		Params->Set(CStrID("Old"), CStrID::Empty);
+		Params->Set(CStrID("New"), CurrentUserID);
+		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"), Params);
 	}
 
 	return UserID;
@@ -273,14 +277,24 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 
 void CApplication::DeactivateUser(CStrID UserID)
 {
-	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
-	if (It == ActiveUsers.cend()) return;
+	auto It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
+	if (It == ActiveUsers.end()) return;
 
 	//???save settings IF CHANGED? if want to use file time as "last seen" for the user,
 	//may use FS::Touch without actually writing the data
 	if (It->Settings) ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
 
-	//???return user input to unclaimed?
+	// All user input is returned to unclaimed
+	CArray<Input::IInputDevice*> InputDevices;
+	It->Input->GetConnectedDevices(InputDevices);
+	for (auto pDevice : InputDevices)
+	{
+		It->Input->DisconnectFromDevice(pDevice);
+		UnclaimedInput->ConnectToDevice(pDevice);
+	}
+
+	// Prevent deletion of user data until all events are fired
+	CUser DeactivatedUser = std::move(*It);
 
 	ActiveUsers.erase(It);
 
@@ -290,7 +304,11 @@ void CApplication::DeactivateUser(CStrID UserID)
 	{
 		//!!!process current user changes!
 		CurrentUserID = ActiveUsers.empty() ? CStrID::Empty : ActiveUsers.back().ID;
-		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"));
+
+		Data::PParams Params = n_new(Data::CParams(2));
+		Params->Set(CStrID("Old"), UserID);
+		Params->Set(CStrID("New"), CurrentUserID);
+		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"), Params);
 	}
 }
 //---------------------------------------------------------------------
@@ -299,6 +317,12 @@ Input::CInputTranslator* CApplication::GetUserInput(CStrID UserID) const
 {
 	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
 	return It == ActiveUsers.cend() ? nullptr : It->Input.get();
+}
+//---------------------------------------------------------------------
+
+Input::CInputTranslator* CApplication::GetUnclaimedInput() const
+{
+	return UnclaimedInput.get();
 }
 //---------------------------------------------------------------------
 
@@ -664,10 +688,23 @@ bool CApplication::OnInputDeviceArrived(Events::CEventDispatcher* pDispatcher, c
 {
 	const Event::InputDeviceArrived& Ev = static_cast<const Event::InputDeviceArrived&>(Event);
 
+	// All new unclaimed input is assigned to the current user
+	// FIXME: is per-application?
+	if (Ev.FirstSeen)
+	{
+		if (CurrentUserID.IsValid())
+			GetUserInput(CurrentUserID)->ConnectToDevice(Ev.Device.Get());
+		else
+			UnclaimedInput->ConnectToDevice(Ev.Device.Get());
+	}
+
+	// Probably more correct way:
+	/*
 	// When a new input device is connected, it becomes an unclaimed input source.
 	// It can be assigned to an user later.
 	if (Ev.FirstSeen)
 		UnclaimedInput->ConnectToDevice(Ev.Device.Get());
+	*/
 
 	OK;
 }
