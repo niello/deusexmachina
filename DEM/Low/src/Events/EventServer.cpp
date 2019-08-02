@@ -6,6 +6,20 @@ namespace Events
 {
 __ImplementSingleton(Events::CEventServer);
 
+CEventServer::CEventServer()
+	: CEventDispatcher(256)
+{
+	__ConstructSingleton;
+}
+//---------------------------------------------------------------------
+
+CEventServer::~CEventServer()
+{
+	RemoveAllScheduledEvents();
+	__DestructSingleton;
+}
+//---------------------------------------------------------------------
+
 void CEventServer::ScheduleEvent(CEventBase& Event, U8 Flags, CEventDispatcher* pDisp, float RelTime)
 {
 	CEventNode* pNewNode = EventNodes.Construct();

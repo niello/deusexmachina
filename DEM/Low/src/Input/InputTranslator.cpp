@@ -168,6 +168,19 @@ void CInputTranslator::DisconnectFromDevice(const IInputDevice* pDevice)
 }
 //---------------------------------------------------------------------
 
+UPTR CInputTranslator::GetConnectedDevices(CArray<IInputDevice*>& OutDevices) const
+{
+	const UPTR PrevCount = OutDevices.GetCount();
+	for (const auto& Sub : DeviceSubs)
+	{
+		auto pDevice = static_cast<IInputDevice*>(Sub->GetDispatcher());
+		if (!OutDevices.Contains(pDevice))
+			OutDevices.Add(pDevice);
+	}
+	return OutDevices.GetCount() - PrevCount;
+}
+//---------------------------------------------------------------------
+
 bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const Event::AxisMove& Ev = static_cast<const Event::AxisMove&>(Event);

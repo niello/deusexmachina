@@ -27,7 +27,7 @@ public:
 
 	CEventID				GetEvent() const { return Event; }
 	const CEventHandler*	GetHandler() const { return Handler; }
-	const CEventDispatcher*	GetDispatcher() const { return pDispatcher; }
+	CEventDispatcher*		GetDispatcher() const { return pDispatcher; }
 };
 
 typedef Ptr<CSubscription> PSub;

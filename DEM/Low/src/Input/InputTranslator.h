@@ -55,6 +55,7 @@ public:
 
 	void			ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void			DisconnectFromDevice(const IInputDevice* pDevice);
+	UPTR			GetConnectedDevices(CArray<IInputDevice*>& OutDevices) const;
 
 	void			UpdateTime(float ElapsedTime);
 	void			FireQueuedEvents(/*max count*/);

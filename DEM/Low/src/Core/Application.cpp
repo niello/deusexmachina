@@ -241,20 +241,31 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 	//!!!load input contexts from app & user settings! may use separate files, not settings files
 	//or use sections in settings
 
+	// Initialize a bypass context for UI
+	const CStrID UIContextID("UI");
+	NewUser.Input->CreateContext(UIContextID, true);
+	NewUser.Input->EnableContext(UIContextID);
+
+	ActiveUsers.push_back(std::move(NewUser));
+
+	EventSrv->FireEvent(CStrID("OnUserActivated"));
+
+	// Make an activated user current if there was no current user
 	if (!CurrentUserID.IsValid())
 	{
-		CArray<Input::PInputDevice> InputDevices;
-		Platform.EnumInputDevices(InputDevices);
-		for (UPTR i = 0; i < InputDevices.GetCount(); ++i)
+		// All unclaimed input is assigned to the first user
+		// FIXME: is per-application?
+		CArray<Input::IInputDevice*> InputDevices;
+		UnclaimedInput->GetConnectedDevices(InputDevices);
+		for (auto pDevice : InputDevices)
 		{
-			UnclaimedInput->DisconnectFromDevice(InputDevices[i].Get());
-			NewUser.Input->ConnectToDevice(InputDevices[i].Get());
+			UnclaimedInput->DisconnectFromDevice(pDevice);
+			ActiveUsers.back().Input->ConnectToDevice(pDevice);
 		}
 
 		CurrentUserID = UserID;
+		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"));
 	}
-
-	ActiveUsers.push_back(std::move(NewUser));
 
 	return UserID;
 }
@@ -269,12 +280,17 @@ void CApplication::DeactivateUser(CStrID UserID)
 	//may use FS::Touch without actually writing the data
 	if (It->Settings) ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
 
+	//???return user input to unclaimed?
+
 	ActiveUsers.erase(It);
+
+	EventSrv->FireEvent(CStrID("OnUserDeactivated"));
 
 	if (CurrentUserID == UserID)
 	{
 		//!!!process current user changes!
 		CurrentUserID = ActiveUsers.empty() ? CStrID::Empty : ActiveUsers.back().ID;
+		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"));
 	}
 }
 //---------------------------------------------------------------------
@@ -487,20 +503,11 @@ Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChai
 		UICtxSettings.Height = static_cast<float>(SwapChainRT->GetDesc().Height);
 		View->UIContext = UISrv->CreateContext(UICtxSettings);
 
-		Input::CInputTranslator* pUserInput = GetUserInput(GetCurrentUserID());
-		if (pUserInput)
-		{
-			// Initialize a bypass context for UI
-			const CStrID UIContextID("UI");
-			if (!pUserInput->HasContext(UIContextID))
-				pUserInput->CreateContext(UIContextID, true);
-			pUserInput->EnableContext(UIContextID);
-
-			View->UIContext->SubscribeOnInput(pUserInput, 100);
-		}
-
+		// Unclaimed input is always connected to UI to avoid unintended freezing.
+		// End-application can disconnect it if necessary. Connecting users to UI
+		// is also an end-application task because its logic is unknown in engine.
 		if (UnclaimedInput)
-			View->UIContext->SubscribeOnInput(UnclaimedInput.get(), 50);
+			View->UIContext->SubscribeOnInput(UnclaimedInput.get(), 100);
 	}
 
 	return View;

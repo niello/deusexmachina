@@ -31,14 +31,14 @@ protected:
 	};
 
 	CPoolAllocator<CEventNode>	EventNodes;
-	CEventNode*					PendingEventsHead;
-	CEventNode*					PendingEventsTail; // To preserve events' fire order, insert to the end of the list
-	CEventNode*					EventsToAdd;
+	CEventNode*					PendingEventsHead = nullptr;
+	CEventNode*					PendingEventsTail = nullptr; // To preserve events' fire order, insert to the end of the list
+	CEventNode*					EventsToAdd = nullptr;
 
 public:
 
 	CEventServer();
-	virtual ~CEventServer() { RemoveAllScheduledEvents(); __DestructSingleton; }
+	virtual ~CEventServer() override;
 
 	void		ScheduleEvent(CEventBase& Event, U8 Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
 	void		ScheduleEvent(CStrID ID, Data::PParams Params = NULL, U8 Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
@@ -52,16 +52,6 @@ public:
 	//Ptr<CEventNative>			CreateNativeEvent(const Core::CRTTI* RTTI);
 	//template<class T> Ptr<T>	CreateNativeEvent();
 };
-
-inline CEventServer::CEventServer():
-	CEventDispatcher(256),
-	PendingEventsHead(NULL),
-	PendingEventsTail(NULL),
-	EventsToAdd(NULL)
-{
-	__ConstructSingleton;
-}
-//---------------------------------------------------------------------
 
 inline void CEventServer::ScheduleEvent(CStrID ID, Data::PParams Params, U8 Flags, CEventDispatcher* pDisp, float RelTime)
 {
