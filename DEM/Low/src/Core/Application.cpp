@@ -162,16 +162,23 @@ bool CApplication::IsValidUserProfileName(const char* pUserID, UPTR MaxLength) c
 	std::string UserStr(pUserID);
 
 	std::smatch smatch;
-	std::regex regex("^[\\w .\\-+]{1," + std::to_string(MaxLength) + "}$");
+	std::regex regex("^[\\w .\\-+()]{1," + std::to_string(MaxLength) + "}$");
 	if (!std::regex_match(UserStr, smatch, regex) || smatch.empty()) FAIL;
 
 	// TODO: checking WritablePath FS is more correct, it can be implemented
 	// to support file names not supported by a native FS.
 	if (!Platform.GetFileSystemInterface()->IsValidFileName(pUserID)) FAIL;
 
-	//!!!check profile exists case-insensitive!
+	if (UserProfileExists(pUserID)) FAIL;
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CApplication::UserProfileExists(const char* pUserID) const
+{
+	const CString Path = GetUserProfilePath(WritablePath, pUserID);
+	return IO().DirectoryExists(Path);
 }
 //---------------------------------------------------------------------
 
@@ -182,16 +189,12 @@ CStrID CApplication::CreateUserProfile(const char* pUserID, bool Overwrite)
 	CString UserID(pUserID);
 	UserID.Trim();
 
-	CString Path = GetUserProfilePath(WritablePath, UserID);
-	if (IO().DirectoryExists(Path))
+	if (UserProfileExists(pUserID))
 	{
-		if (!Overwrite) return CStrID::Empty;
-
-		// FIXME: check if this user is active now!
-
-		IO().DeleteDirectory(Path);
+		if (!Overwrite || !DeleteUserProfile(pUserID)) return CStrID::Empty;
 	}
 
+	const CString Path = GetUserProfilePath(WritablePath, pUserID);
 	if (!IO().CreateDirectory(Path)) return CStrID::Empty;
 
 	bool Result = true;
