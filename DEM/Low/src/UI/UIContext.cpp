@@ -91,11 +91,7 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 
 void CUIContext::UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher)
 {
-	if (!pDispatcher)
-	{
-		InputSubs.Clear();
-		return;
-	}
+	if (!pDispatcher) return;
 
 	for (UPTR i = 0; i < InputSubs.GetCount(); )
 	{
@@ -103,6 +99,12 @@ void CUIContext::UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher)
 			InputSubs.RemoveAt(i);
 		else ++i;
 	}
+}
+//---------------------------------------------------------------------
+
+void CUIContext::UnsubscribeFromInput()
+{
+	InputSubs.Clear();
 }
 //---------------------------------------------------------------------
 

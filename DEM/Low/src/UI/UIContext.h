@@ -50,7 +50,8 @@ public:
 	bool				Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom);
 
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
-	void				UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher = nullptr);
+	void				UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher);
+	void				UnsubscribeFromInput();
 
 	void				ClearWindowStack();
 	void				PushRootWindow(CUIWindow* pWindow);

@@ -82,9 +82,8 @@ void LayoutContainer::layoutIfNecessary()
 {
     if (d_needsLayouting)
     {
-        layout();
-
         d_needsLayouting = false;
+        layout();
     }
 }
 
