@@ -119,6 +119,7 @@ public:
 
 	void				SetWritablePath(const char* pPath) { WritablePath = pPath; }
 	void				SetUserSettingsTemplate(const char* pFilePath) { UserSettingsTemplate = pFilePath; }
+	bool				IsValidUserProfileName(const char* pUserID, UPTR MaxLength = 40) const;
 	CStrID				CreateUserProfile(const char* pUserID, bool Overwrite = false);
 	bool				DeleteUserProfile(const char* pUserID);
 	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;

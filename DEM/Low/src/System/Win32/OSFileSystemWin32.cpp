@@ -2,11 +2,23 @@
 #include "OSFileSystemWin32.h"
 #include <IO/PathUtils.h>
 #include <Data/Array.h>
+#include <regex>
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
 namespace DEM { namespace Sys
 {
+
+bool COSFileSystemWin32::IsValidFileName(const char* pName) const
+{
+	// This turned out to be a surprisingly hard task, so this method may
+	// not work in some cases. But for most cases it must work well.
+	std::string FileName(pName);
+	std::smatch smatch;
+	std::regex regex("^(?!(COM[0-9]|LPT[0-9]|CON|PRN|AUX|CLOCK\\$|NUL)$)[^\\/\\\\:*?\\\"<>|]{1,256}$");
+	return std::regex_match(FileName, smatch, regex) && !smatch.empty();
+}
+//---------------------------------------------------------------------
 
 bool COSFileSystemWin32::FileExists(const char* pPath)
 {

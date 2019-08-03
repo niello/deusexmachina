@@ -11,6 +11,7 @@ class COSFileSystemWin32 : public IOSFileSystem
 {
 public:
 
+	virtual bool	IsValidFileName(const char* pName) const override;
 	virtual bool	FileExists(const char* pPath) override;
 	virtual bool	IsFileReadOnly(const char* pPath) override;
 	virtual bool	SetFileReadOnly(const char* pPath, bool ReadOnly) override;

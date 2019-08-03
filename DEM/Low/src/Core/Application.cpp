@@ -12,6 +12,7 @@
 #include <System/Platform.h>
 #include <System/PlatformEvents.h>
 #include <System/OSWindow.h>
+#include <System/OSFileSystem.h>
 #include <Frame/View.h>
 #include <Frame/RenderPath.h>
 #include <Render/SwapChain.h>
@@ -23,6 +24,7 @@
 #include <Input/InputDevice.h>
 #include <UI/UIServer.h>
 #include <UI/UIContext.h>
+#include <regex>
 
 // Scene bootstrapper includes
 // TODO: consider incapsulating into methods of relevant subsystems
@@ -153,12 +155,34 @@ Resources::CResourceManager& CApplication::ResourceManager() const
 }
 //---------------------------------------------------------------------
 
+bool CApplication::IsValidUserProfileName(const char* pUserID, UPTR MaxLength) const
+{
+	if (!pUserID || !*pUserID || !MaxLength) FAIL;
+
+	std::string UserStr(pUserID);
+
+	std::smatch smatch;
+	std::regex regex("^[\\w .\\-+]{1," + std::to_string(MaxLength) + "}$");
+	if (!std::regex_match(UserStr, smatch, regex) || smatch.empty()) FAIL;
+
+	// TODO: checking WritablePath FS is more correct, it can be implemented
+	// to support file names not supported by a native FS.
+	if (!Platform.GetFileSystemInterface()->IsValidFileName(pUserID)) FAIL;
+
+	//!!!check profile exists case-insensitive!
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 CStrID CApplication::CreateUserProfile(const char* pUserID, bool Overwrite)
 {
-	CString UserStr(pUserID);
-	if (UserStr.IsEmpty() || UserStr.ContainsAny("\t\n\r\\/:?&%$#@!~")) return CStrID::Empty;
+	if (!IsValidUserProfileName(pUserID)) return CStrID::Empty;
 
-	CString Path = GetUserProfilePath(WritablePath, pUserID);
+	CString UserID(pUserID);
+	UserID.Trim();
+
+	CString Path = GetUserProfilePath(WritablePath, UserID);
 	if (IO().DirectoryExists(Path))
 	{
 		if (!Overwrite) return CStrID::Empty;
@@ -183,7 +207,7 @@ CStrID CApplication::CreateUserProfile(const char* pUserID, bool Overwrite)
 		return CStrID::Empty;
 	}
 
-	return CStrID(pUserID);
+	return CStrID(UserID);
 }
 //---------------------------------------------------------------------
 

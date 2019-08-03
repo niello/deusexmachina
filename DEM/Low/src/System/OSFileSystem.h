@@ -11,6 +11,7 @@ class IOSFileSystem
 {
 public:
 
+	virtual bool	IsValidFileName(const char* pName) const = 0;
 	virtual bool	FileExists(const char* pPath) = 0;
 	virtual bool	IsFileReadOnly(const char* pPath) = 0;
 	virtual bool	SetFileReadOnly(const char* pPath, bool ReadOnly) = 0;
