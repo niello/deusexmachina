@@ -687,7 +687,12 @@ bool CApplication::Run(PApplicationState InitialState)
 	PrevTime = BaseTime;
 	FrameTime = 0.0;
 
-	n_assert(!InitialState || &InitialState->GetApplication() == this);
+	if (InitialState && (&InitialState->GetApplication()) != this)
+	{
+		::Sys::Error("CApplication::Run() > state is not attached to this application");
+		FAIL;
+	}
+
 	RequestedState = InitialState;
 
 	return InitialState.IsValidPtr();
