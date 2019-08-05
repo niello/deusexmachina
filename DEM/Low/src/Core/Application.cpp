@@ -220,7 +220,8 @@ bool CApplication::DeleteUserProfile(const char* pUserID)
 	// Can't delete current user
 	if (CurrentUserID == pUserID) FAIL;
 
-	// TODO: if one of active users, FAIL
+	//???or deactivate?
+	if (IsUserActive(CStrID(pUserID))) FAIL;
 
 	return IO().DeleteDirectory(GetUserProfilePath(WritablePath, pUserID));
 }
@@ -261,13 +262,16 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 
 	if (!IO().DirectoryExists(Path)) return CStrID::Empty;
 
+	// OnSettingsLoaded is not sent here, subscribe on OnUserActivated
 	CUser NewUser;
 	NewUser.ID = UserID;
-	if (!ParamsUtils::LoadParamsFromHRD(Path + "Settings.hrd", NewUser.Settings)) return CStrID::Empty;
+	if (!ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID), NewUser.Settings))
+		return CStrID::Empty;
 
 	NewUser.Input.reset(n_new(Input::CInputTranslator(UserID)));
 	//!!!load input contexts from app & user settings! may use separate files, not settings files
 	//or use sections in settings
+	//???shared CInputLayout for app contexts like Debug?
 
 	// Initialize a bypass context for UI
 	const CStrID UIContextID("UI");
@@ -276,13 +280,16 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 
 	ActiveUsers.push_back(std::move(NewUser));
 
-	EventSrv->FireEvent(CStrID("OnUserActivated"));
+	Data::PParams Params = n_new(Data::CParams(1));
+	Params->Set(CStrID("UserID"), UserID);
+	EventSrv->FireEvent(CStrID("OnUserActivated"), Params);
 
+	//???need current user at all? maybe end-application must handle it?
 	// Make an activated user current if there was no current user
 	if (!CurrentUserID.IsValid())
 	{
 		// All unclaimed input is assigned to the first user
-		// FIXME: is per-application?
+		// FIXME: is per-end-application?
 		CArray<Input::IInputDevice*> InputDevices;
 		UnclaimedInput->GetConnectedDevices(InputDevices);
 		for (auto pDevice : InputDevices)
@@ -308,9 +315,8 @@ void CApplication::DeactivateUser(CStrID UserID)
 	auto It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
 	if (It == ActiveUsers.end()) return;
 
-	//???save settings IF CHANGED? if want to use file time as "last seen" for the user,
-	//may use FS::Touch without actually writing the data
-	if (It->Settings) ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
+	if (It->SettingsChanged && It->Settings)
+		ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
 
 	// All user input is returned to unclaimed
 	CArray<Input::IInputDevice*> InputDevices;
@@ -335,7 +341,16 @@ void CApplication::DeactivateUser(CStrID UserID)
 
 	ActiveUsers.erase(It);
 
-	EventSrv->FireEvent(CStrID("OnUserDeactivated"));
+	Data::PParams Params = n_new(Data::CParams(1));
+	Params->Set(CStrID("UserID"), UserID);
+	EventSrv->FireEvent(CStrID("OnUserDeactivated"), Params);
+}
+//---------------------------------------------------------------------
+
+bool CApplication::IsUserActive(CStrID UserID) const
+{
+	auto It = std::find_if(ActiveUsers.cbegin(), ActiveUsers.cend(), [UserID](const CUser& User) { return User.ID == UserID; });
+	return It != ActiveUsers.cend();
 }
 //---------------------------------------------------------------------
 
@@ -361,6 +376,11 @@ void CApplication::ParseCommandLine(const char* pCmdLine)
 	{
 		OverrideSettings = n_new(Data::CParams(1));
 		OverrideSettings->Set<float>(CStrID("TestFloat"), 999.f);
+
+		Data::PParams Params = n_new(Data::CParams(2));
+		Params->Set(CStrID("UserID"), CStrID::Empty);
+		Params->Set(CStrID("Key"), CStrID("TestFloat"));
+		EventSrv->FireEvent(CStrID("OnSettingChanged"), Params);
 	}
 }
 //---------------------------------------------------------------------
@@ -375,25 +395,13 @@ bool CApplication::LoadGlobalSettings(const char* pFilePath)
 	GlobalSettings = NewSettings;
 	GlobalSettingsChanged = false;
 
-	// TODO: notification
+	Data::PParams Params = n_new(Data::CParams(1));
+	Params->Set(CStrID("UserID"), CStrID::Empty);
+	EventSrv->FireEvent(CStrID("OnSettingsLoaded"), Params);
 
 	OK;
 }
 //---------------------------------------------------------------------
-
-/*
-bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserID)
-{
-	Data::PParams Prm;
-	if (!ParamsUtils::LoadParamsFromHRD(pFilePath, Prm)) FAIL;
-
-	if (Reload || !GlobalSettings) GlobalSettings = Prm;
-	else GlobalSettings->Merge(*Prm, Data::Merge_Replace | Data::Merge_Deep);
-
-	OK;
-}
-//---------------------------------------------------------------------
-*/
 
 void CApplication::SaveSettings()
 {
@@ -410,9 +418,22 @@ void CApplication::SaveSettings()
 			GlobalSettingsChanged = false;
 	}
 
-	//!!!TODO:
-	//save all changed setting files (global & per-user)
-	//must save global when app exits & user when user is deactivated
+	for (auto& User : ActiveUsers)
+	{
+		if (User.SettingsChanged && User.Settings)
+		{
+			const auto UserSettingsPath = GetUserSettingsFilePath(WritablePath, User.ID);
+
+			if (UserSettingsPath.IsEmpty() ||
+				IO().IsFileReadOnly(UserSettingsPath) ||
+				!ParamsUtils::SaveParamsToHRD(UserSettingsPath, *User.Settings))
+			{
+				::Sys::Error("CApplication::SaveSettings() > failed to save user settings\n");
+			}
+			else
+				User.SettingsChanged = false;
+		}
+	}
 }
 //---------------------------------------------------------------------
 
@@ -458,9 +479,10 @@ template<class T> bool CApplication::SetSetting(const char* pKey, const T& Value
 	CStrID Key(pKey);
 	Data::CParams* pSettings = nullptr;
 
+	auto It = ActiveUsers.end();
 	if (UserID.IsValid())
 	{
-		auto It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
+		It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
 		if (It == ActiveUsers.end())
 		{
 			::Sys::Error("CApplication::SetSetting() > requested user is inactive");
@@ -485,13 +507,14 @@ template<class T> bool CApplication::SetSetting(const char* pKey, const T& Value
 	else pSettings->Set(Key, Value);
 
 	if (UserID.IsValid())
-	{
-		//???set "settings changed" flag for user?
-	}
+		It->SettingsChanged = true;
 	else
 		GlobalSettingsChanged = true;
 
-	//???send notification event?
+	Data::PParams Params = n_new(Data::CParams(2));
+	Params->Set(CStrID("UserID"), UserID);
+	Params->Set(CStrID("Key"), Key);
+	EventSrv->FireEvent(CStrID("OnSettingChanged"), Params);
 
 	OK;
 }
@@ -716,6 +739,8 @@ bool CApplication::Update()
 //!!!Init()'s pair!
 void CApplication::Term()
 {
+	SaveSettings();
+
 	UNSUBSCRIBE_EVENT(InputDeviceArrived);
 	UNSUBSCRIBE_EVENT(InputDeviceRemoved);
 	UNSUBSCRIBE_EVENT(OnClosing);
@@ -772,6 +797,8 @@ bool CApplication::OnInputDeviceArrived(Events::CEventDispatcher* pDispatcher, c
 	// It can be assigned to an user later.
 	if (Ev.FirstSeen)
 		UnclaimedInput->ConnectToDevice(Ev.Device.Get());
+
+	and then forward this event to client
 	*/
 
 	OK;

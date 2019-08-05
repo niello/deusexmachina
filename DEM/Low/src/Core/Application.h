@@ -75,8 +75,9 @@ protected:
 	struct CUser
 	{
 		CStrID ID;
-		Data::PParams Settings;
 		std::unique_ptr<Input::CInputTranslator> Input;
+		Data::PParams Settings;
+		bool SettingsChanged = false;
 	};
 
 	Sys::IPlatform& Platform; //???use unique ptr and heap-allocated platform?
@@ -130,6 +131,7 @@ public:
 	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;
 	CStrID				ActivateUser(CStrID UserID);
 	void				DeactivateUser(CStrID UserID);
+	bool				IsUserActive(CStrID UserID) const;
 	CStrID				GetCurrentUserID() const { return CurrentUserID; }
 
 	Input::CInputTranslator* GetUserInput(CStrID UserID) const;
