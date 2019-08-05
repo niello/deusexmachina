@@ -44,11 +44,11 @@ public:
 	UPTR		FireEvent(const CEventBase& Event, U8 Flags = 0);
 	UPTR		FireEvent(CStrID ID, Data::PParams Params = nullptr, U8 Flags = 0) { return FireEvent(CEvent(ID, Params), Flags); }
 
-	bool		Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub = nullptr);
-	bool		Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub = nullptr, U16 Priority = Priority_Default);
+	bool		Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub);
+	bool		Subscribe(CEventID ID, CEventCallback Callback, PSub* pSub, U16 Priority = Priority_Default);
 
 	template<class T>
-	bool		Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub = nullptr, U16 Priority = Priority_Default);
+	bool		Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), PSub* pSub, U16 Priority = Priority_Default);
 
 	void		Unsubscribe(CEventID ID, CEventHandler* pHandler);
 	void		UnsubscribeAll() { Subscriptions.Clear(); }

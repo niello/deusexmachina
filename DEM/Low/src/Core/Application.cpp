@@ -177,6 +177,7 @@ bool CApplication::IsValidUserProfileName(const char* pUserID, UPTR MaxLength) c
 
 bool CApplication::UserProfileExists(const char* pUserID) const
 {
+	//???must be case-insensitive regardless of FS?
 	const CString Path = GetUserProfilePath(WritablePath, pUserID);
 	return IO().DirectoryExists(Path);
 }
