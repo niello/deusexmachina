@@ -320,23 +320,21 @@ void CApplication::DeactivateUser(CStrID UserID)
 		UnclaimedInput->ConnectToDevice(pDevice);
 	}
 
-	// Prevent deletion of user data until all events are fired
-	CUser DeactivatedUser = std::move(*It);
-
-	ActiveUsers.erase(It);
-
-	EventSrv->FireEvent(CStrID("OnUserDeactivated"));
-
 	if (CurrentUserID == UserID)
 	{
-		//!!!process current user changes!
-		CurrentUserID = ActiveUsers.empty() ? CStrID::Empty : ActiveUsers.back().ID;
+		auto NewUserIt = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID != UserID; });
+
+		CurrentUserID = (NewUserIt == ActiveUsers.end()) ? CStrID::Empty : NewUserIt->ID;
 
 		Data::PParams Params = n_new(Data::CParams(2));
 		Params->Set(CStrID("Old"), UserID);
 		Params->Set(CStrID("New"), CurrentUserID);
 		EventSrv->FireEvent(CStrID("OnCurrentUserChanged"), Params);
 	}
+
+	ActiveUsers.erase(It);
+
+	EventSrv->FireEvent(CStrID("OnUserDeactivated"));
 }
 //---------------------------------------------------------------------
 
@@ -366,6 +364,23 @@ void CApplication::ParseCommandLine(const char* pCmdLine)
 }
 //---------------------------------------------------------------------
 
+bool CApplication::LoadGlobalSettings(const char* pFilePath)
+{
+	GlobalSettingsPath = pFilePath;
+
+	Data::PParams NewSettings;
+	if (!ParamsUtils::LoadParamsFromHRD(pFilePath, NewSettings)) FAIL;
+
+	GlobalSettings = NewSettings;
+	GlobalSettingsChanged = false;
+
+	// TODO: notification
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+/*
 bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserID)
 {
 	Data::PParams Prm;
@@ -377,10 +392,24 @@ bool CApplication::LoadSettings(const char* pFilePath, bool Reload, CStrID UserI
 	OK;
 }
 //---------------------------------------------------------------------
+*/
 
-//???need public function?
 void CApplication::SaveSettings()
 {
+	// Save global settings if necessary
+	if (GlobalSettingsChanged && GlobalSettings)
+	{
+		if (GlobalSettingsPath.IsEmpty() ||
+			IO().IsFileReadOnly(GlobalSettingsPath) ||
+			!ParamsUtils::SaveParamsToHRD(GlobalSettingsPath, *GlobalSettings))
+		{
+			::Sys::Error("CApplication::SaveSettings() > failed to save global settings\n");
+		}
+		else
+			GlobalSettingsChanged = false;
+	}
+
+	//!!!TODO:
 	//save all changed setting files (global & per-user)
 	//must save global when app exits & user when user is deactivated
 }
@@ -454,7 +483,14 @@ template<class T> bool CApplication::SetSetting(const char* pKey, const T& Value
 	if (pPrm) pPrm->SetValue(Value);
 	else pSettings->Set(Key, Value);
 
-	//???set "settings changed" flag for user or global?
+	if (UserID.IsValid())
+	{
+		//???set "settings changed" flag for user?
+	}
+	else
+		GlobalSettingsChanged = true;
+
+	//???send notification event?
 
 	OK;
 }
@@ -647,6 +683,10 @@ bool CApplication::Update()
 	FrameTime *= TimeScale;
 
 	PrevTime = CurrTime;
+
+	// Dump setting changes
+
+	SaveSettings();
 
 	// Process OS messages etc
 

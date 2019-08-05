@@ -21,9 +21,8 @@ bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams)
 	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
 	if (Buffer.GetSize() != FileSize) FAIL;
 
-	Data::PParams Params;
 	Data::CHRDParser Parser;
-	return Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), OutParams);
+	return Parser.ParseBuffer(static_cast<const char*>(Buffer.GetPtr()), Buffer.GetSize(), OutParams);
 }
 //---------------------------------------------------------------------
 

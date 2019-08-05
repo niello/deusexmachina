@@ -84,12 +84,15 @@ protected:
 	std::unique_ptr<IO::CIOServer> IOServer; //???rename to IOService?
 	std::unique_ptr<Resources::CResourceManager> ResMgr;
 
-	Data::PParams GlobalSettings;
-	Data::PParams OverrideSettings; // From a command line
-	CStrID CurrentUserID;
-	std::vector<CUser> ActiveUsers;
 	CString WritablePath;
 	CString UserSettingsTemplate;
+	CString GlobalSettingsPath;
+
+	Data::PParams GlobalSettings;
+	Data::PParams OverrideSettings; // From a command line
+	bool GlobalSettingsChanged = false;
+	CStrID CurrentUserID;
+	std::vector<CUser> ActiveUsers;
 	std::unique_ptr<Input::CInputTranslator> UnclaimedInput;
 
 	PApplicationState CurrState;
@@ -100,6 +103,7 @@ protected:
 	double FrameTime = 0.0;
 	float TimeScale = 1.f;
 
+	void SaveSettings();
 	template<class T> T GetSetting(const char* pKey, const T& Default, CStrID UserID) const;
 	template<class T> bool SetSetting(const char* pKey, const T& Value, CStrID UserID);
 
@@ -132,8 +136,7 @@ public:
 	Input::CInputTranslator* GetUnclaimedInput() const;
 
 	void				ParseCommandLine(const char* pCmdLine);
-	bool				LoadSettings(const char* pFilePath, bool Reload = false, CStrID UserID = CStrID::Empty); //???use stream?
-	void				SaveSettings();
+	bool				LoadGlobalSettings(const char* pFilePath);
 	bool				GetBoolSetting(const char* pKey, bool Default, CStrID UserID);
 	int					GetIntSetting(const char* pKey, int Default, CStrID UserID);
 	float				GetFloatSetting(const char* pKey, float Default, CStrID UserID);
