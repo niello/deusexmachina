@@ -82,15 +82,20 @@ bool CD3D9DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 
 bool CD3D9DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 {
+	//???store in CD3D9DisplayDriver on creation?
 	HMONITOR hMonitor = D3D9DrvFactory->GetDirect3D9()->GetAdapterMonitor(AdapterID);
-	MONITORINFO Win32MonitorInfo = { sizeof(Win32MonitorInfo), 0 };
+
+	MONITORINFO Win32MonitorInfo;
+	Win32MonitorInfo.cbSize = sizeof(Win32MonitorInfo);
 	if (!::GetMonitorInfo(hMonitor, &Win32MonitorInfo)) FAIL;
-	OutInfo.Left = (U16)Win32MonitorInfo.rcMonitor.left;
-	OutInfo.Top = (U16)Win32MonitorInfo.rcMonitor.top;
-	OutInfo.Width = (U16)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
-	OutInfo.Height = (U16)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
-	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
+
+	OutInfo.Left = static_cast<I16>(Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Top = static_cast<I16>(Win32MonitorInfo.rcMonitor.top);
+	OutInfo.Width = static_cast<U16>(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Height = static_cast<U16>(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
+	OutInfo.IsPrimary = (Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY);
 	//!!!device name can be obtained from adapter or MONITORINFOEX!
+
 	OK;
 }
 //---------------------------------------------------------------------

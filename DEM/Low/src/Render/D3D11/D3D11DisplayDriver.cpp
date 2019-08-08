@@ -196,17 +196,17 @@ bool CD3D11DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 	DXGI_OUTPUT_DESC Desc;
 	if (!SUCCEEDED(pDXGIOutput->GetDesc(&Desc))) FAIL;
 
-	MONITORINFOEX Win32MonitorInfo;
+	MONITORINFO Win32MonitorInfo;
 	Win32MonitorInfo.cbSize = sizeof(Win32MonitorInfo);
 	if (!::GetMonitorInfo(Desc.Monitor, &Win32MonitorInfo)) FAIL;
 
-	OutInfo.Left = (U16)Win32MonitorInfo.rcMonitor.left;
-	OutInfo.Top = (U16)Win32MonitorInfo.rcMonitor.top;
-	OutInfo.Width = (U16)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
-	OutInfo.Height = (U16)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
-	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
+	OutInfo.Left = static_cast<I16>(Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Top = static_cast<I16>(Win32MonitorInfo.rcMonitor.top);
+	OutInfo.Width = static_cast<U16>(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
+	OutInfo.Height = static_cast<U16>(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
+	OutInfo.IsPrimary = (Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY);
 
-	/*
+	/* MONITORINFO -> MONITORINFOEX
 	HDC hDC = ::CreateDC(TEXT("DISPLAY"), Win32MonitorInfo.szDevice, NULL, NULL);
 	if (hDC)
 	{
