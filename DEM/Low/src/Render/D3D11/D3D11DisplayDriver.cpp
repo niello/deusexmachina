@@ -38,7 +38,7 @@ void CD3D11DisplayDriver::InternalTerm()
 }
 //---------------------------------------------------------------------
 
-UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vector<CDisplayMode>& OutModes) const
 {
 	if (!pDXGIOutput) return 0;
 
@@ -46,7 +46,7 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<C
 
 	HRESULT hr;
 	UINT ModeCount = 0;
-	DXGI_MODE_DESC* pDXGIModes = NULL;
+	DXGI_MODE_DESC* pDXGIModes = nullptr;
 	do
 	{
 		if (pDXGIModes) _freea(pDXGIModes);
@@ -56,22 +56,30 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<C
 	}
 	while (hr == DXGI_ERROR_MORE_DATA); // Somtimes new modes become available right between two calls, see DXGI docs
 
-	// This code doesn't check for possible duplication against modes already in array
-	CDisplayMode* pNewMode = OutModes.Reserve(ModeCount);
+	UPTR Total = 0;
+	OutModes.reserve(ModeCount);
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
-		DXGI_MODE_DESC& DXGIMode = pDXGIModes[i];
-		pNewMode->Width = DXGIMode.Width;
-		pNewMode->Height = DXGIMode.Height;
-		pNewMode->PixelFormat = CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGIMode.Format);
-		pNewMode->RefreshRate.Numerator = DXGIMode.RefreshRate.Numerator;
-		pNewMode->RefreshRate.Denominator = DXGIMode.RefreshRate.Denominator;
-		pNewMode->Stereo = false; // Useful with DXGI 1.2 and above only
+		const DXGI_MODE_DESC& DXGIMode = pDXGIModes[i];
+
+		CDisplayMode NewMode;
+		NewMode.Width = DXGIMode.Width;
+		NewMode.Height = DXGIMode.Height;
+		NewMode.PixelFormat = CD3D11DriverFactory::DXGIFormatToPixelFormat(DXGIMode.Format);
+		NewMode.RefreshRate.Numerator = DXGIMode.RefreshRate.Numerator;
+		NewMode.RefreshRate.Denominator = DXGIMode.RefreshRate.Denominator;
+		NewMode.Stereo = false; // Useful with DXGI 1.2 and above only
+
+		if (std::find(OutModes.cbegin(), OutModes.cend(), NewMode) == OutModes.cend())
+		{
+			OutModes.push_back(std::move(NewMode));
+			++Total;
+		}
 	}
 
 	_freea(pDXGIModes);
 
-	return ModeCount;
+	return Total;
 }
 //---------------------------------------------------------------------
 

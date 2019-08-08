@@ -1,10 +1,8 @@
 #pragma once
-#ifndef __DEM_STDDEM_H__
-#define __DEM_STDDEM_H__
-
 #include "StdCfg.h"
 #include <System/Memory.h>
 #include <stdint.h>
+#include <vector>
 
 #define OK				return true
 #define FAIL			return false
@@ -133,10 +131,10 @@ enum EClipStatus
 
 struct CRational
 {
-	I16	Numerator;
-	U16	Denominator;
+	I32	Numerator;
+	U32	Denominator;
 
-	short	GetIntRounded() const { return Denominator ? Numerator / Denominator : 0; }
+	I32		GetIntRounded() const { return Denominator ? Numerator / Denominator : 0; }
 	float	GetFloat() const { return Denominator ? (float)Numerator / (float)Denominator : 0.f; }
 	double	GetDouble() const { return Denominator ? (double)Numerator / (double)Denominator : 0.0; }
 
@@ -149,5 +147,3 @@ struct CRange
 	UPTR Start;
 	UPTR Count;
 };
-
-#endif

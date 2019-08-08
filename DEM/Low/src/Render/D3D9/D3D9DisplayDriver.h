@@ -27,7 +27,7 @@ public:
 
 	//virtual ~CD3D9DisplayDriver() { InternalTerm(); }
 
-	virtual UPTR	GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const;
+	virtual UPTR	GetAvailableDisplayModes(EPixelFormat Format, std::vector<CDisplayMode>& OutModes) const;
 	virtual bool	SupportsDisplayMode(const CDisplayMode& Mode) const;
 	virtual bool	GetCurrentDisplayMode(CDisplayMode& OutMode) const;
 	virtual bool	GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const;

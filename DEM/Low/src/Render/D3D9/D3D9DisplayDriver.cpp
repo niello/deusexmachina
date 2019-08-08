@@ -18,7 +18,7 @@ bool CD3D9DisplayDriver::Init(UPTR AdapterNumber, UPTR OutputNumber)
 //---------------------------------------------------------------------
 
 // We don't cache available display modes since they can change after display driver was created
-UPTR CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const
+UPTR CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vector<CDisplayMode>& OutModes) const
 {
 	D3DDISPLAYMODE D3DDisplayMode = { 0 };
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Format);
@@ -35,10 +35,10 @@ UPTR CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, CArray<CD
 		Mode.RefreshRate.Numerator = D3DDisplayMode.RefreshRate;
 		Mode.RefreshRate.Denominator = 1;
 		Mode.Stereo = false;
-		
-		if (OutModes.FindIndex(Mode) == INVALID_INDEX)
+
+		if (std::find(OutModes.cbegin(), OutModes.cend(), Mode) == OutModes.cend())
 		{
-			OutModes.Add(Mode);
+			OutModes.push_back(std::move(Mode));
 			++Total;
 		}
 	}

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_DISPLAY_DRIVER_H__
-#define __DEM_L1_RENDER_DISPLAY_DRIVER_H__
-
 #include <Core/Object.h>
 #include <Data/Array.h>
 #include <Render/DisplayMode.h>
@@ -45,7 +42,7 @@ public:
 	virtual bool			Init(UPTR AdapterNumber, UPTR OutputNumber) { AdapterID = AdapterNumber; OutputID = OutputNumber; OK; }
 	virtual void			Term() { AdapterID = Adapter_None; OutputID = Output_None; }
 
-	virtual UPTR			GetAvailableDisplayModes(EPixelFormat Format, CArray<CDisplayMode>& OutModes) const = 0;
+	virtual UPTR			GetAvailableDisplayModes(EPixelFormat Format, std::vector<CDisplayMode>& OutModes) const = 0;
 	virtual bool			SupportsDisplayMode(const CDisplayMode& Mode) const = 0;
 	virtual bool			GetCurrentDisplayMode(CDisplayMode& OutMode) const = 0;
 	virtual bool			GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const = 0;
@@ -59,5 +56,3 @@ public:
 typedef Ptr<CDisplayDriver> PDisplayDriver;
 
 }
-
-#endif
