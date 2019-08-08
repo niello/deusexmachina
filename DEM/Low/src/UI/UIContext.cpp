@@ -5,6 +5,7 @@
 #include <Events/Subscription.h>
 #include <Input/InputEvents.h>
 #include <System/OSWindow.h>
+#include <System/SystemEvents.h>
 
 #include <CEGUI/RenderTarget.h>
 #include <CEGUI/InputAggregator.h>
@@ -25,7 +26,7 @@ CUIContext::~CUIContext()
 void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
 {
 	UNSUBSCRIBE_EVENT(OnToggleFullscreen);
-	UNSUBSCRIBE_EVENT(OnSizeChangeFinished);
+	UNSUBSCRIBE_EVENT(OSWindowResized);
 
 	SAFE_DELETE(pInput);
 
@@ -41,7 +42,7 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 	if (pHostWindow)
 	{
 		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnToggleFullscreen, CUIContext, OnViewportSizeChanged);
-		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnSizeChangeFinished, CUIContext, OnViewportSizeChanged);
+		DISP_SUBSCRIBE_NEVENT(pHostWindow, OSWindowResized, CUIContext, OnViewportSizeChanged);
 	}
 }
 //---------------------------------------------------------------------
@@ -349,25 +350,28 @@ bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events
 
 bool CUIContext::OnViewportSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	if (pCtx && OSWindow)
-	{
-		const Data::CRect& WndRect = OSWindow->GetRect();
-		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
+	const auto& Ev = static_cast<const Event::OSWindowResized&>(Event);
+	if (Ev.ManualResizingInProgress) FAIL;
 
-		// FIXME: fonts & images scale based on it, so we must call it for now, but the display size
-		//        doesn't change here actually, it is a render target size change, context-local!
-		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
+	if (!pCtx || !OSWindow) FAIL;
 
-		auto& RT = pCtx->getRenderTarget();
-		CEGUI::Rectf GUIArea(RT.getArea());
-		GUIArea.setSize(RectSize);
-		RT.setArea(GUIArea);
+	const Data::CRect& WndRect = OSWindow->GetRect();
+	const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
 
-		IPTR X, Y;
-		if (OSWindow->GetCursorPosition(X, Y))
-			pInput->injectMousePosition(static_cast<float>(X), static_cast<float>(Y));
-	}
-	FAIL;
+	// FIXME: fonts & images scale based on it, so we must call it for now, but the display size
+	//        doesn't change here actually, it is a render target size change, context-local!
+	CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
+
+	auto& RT = pCtx->getRenderTarget();
+	CEGUI::Rectf GUIArea(RT.getArea());
+	GUIArea.setSize(RectSize);
+	RT.setArea(GUIArea);
+
+	IPTR X, Y;
+	if (OSWindow->GetCursorPosition(X, Y))
+		pInput->injectMousePosition(static_cast<float>(X), static_cast<float>(Y));
+
+	OK;
 }
 //---------------------------------------------------------------------
 

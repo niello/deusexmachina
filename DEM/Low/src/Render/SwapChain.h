@@ -42,9 +42,9 @@ enum ESwapMode
 // Buffer size, format and MSAA is described with CRenderTargetDesc
 struct CSwapChainDesc
 {
-	Data::CFlags		Flags;
-	ESwapMode			SwapMode;
-	UPTR				BackBufferCount;
+	Data::CFlags	Flags;
+	ESwapMode		SwapMode;
+	UPTR			BackBufferCount;
 
 	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync) {}
 };

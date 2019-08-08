@@ -7,6 +7,27 @@
 namespace Event
 {
 
+class OSWindowResized: public Events::CEventNative
+{
+	__DeclareNativeEventClass;
+
+public:
+
+	U16 OldWidth;
+	U16 OldHeight;
+	U16 NewWidth;
+	U16 NewHeight;
+	bool ManualResizingInProgress;
+
+	OSWindowResized(U16 _OldWidth, U16 _OldHeight, U16 _NewWidth, U16 _NewHeight, bool _ManualResizingInProgress)
+		: OldWidth(_OldWidth)
+		, OldHeight(_OldHeight)
+		, NewWidth(_NewWidth)
+		, NewHeight(_NewHeight)
+		, ManualResizingInProgress(_ManualResizingInProgress)
+	{}
+};
+
 class InputDeviceArrived: public Events::CEventNative
 {
 	__DeclareNativeEventClass;

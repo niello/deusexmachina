@@ -19,6 +19,7 @@
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
 #include <System/Win32/OSWindowWin32.h>
+#include <System/SystemEvents.h>
 #include <IO/BinaryReader.h>
 #include <Data/RAMData.h>
 #include <Core/Factory.h>
@@ -522,7 +523,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
 	pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
 	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnSizeChangeFinished"), this, &CD3D11GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
+		pWindow->Subscribe<CD3D11GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D11GPUDriver::OnOSWindowResized, &ItSC->Sub_OnSizeChanged);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -580,7 +581,7 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 	//???for child window, assert that size passed is a window size?
 
 	//???or this method must resize target? in fact, need two swap chain resizing methods?
-	//one as command (ResizeTarget), one as handler (ResizeBuffers), second can be OnOSWindowSizeChanged handler
+	//one as command (ResizeTarget), one as handler (ResizeBuffers), second can be OnOSWindowResized handler
 
 	UPTR RemovedRTIdx;
 	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.GetCount(); ++RemovedRTIdx)
@@ -3656,8 +3657,11 @@ bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, c
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CD3D11GPUDriver::OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	const auto& Ev = static_cast<const Event::OSWindowResized&>(Event);
+	if (Ev.ManualResizingInProgress) FAIL;
+
 	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
@@ -3668,7 +3672,8 @@ bool CD3D11GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatche
 			OK; // Only one swap chain is allowed for each window
 		}
 	}
-	OK;
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 

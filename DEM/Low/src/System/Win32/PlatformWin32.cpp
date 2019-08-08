@@ -1,7 +1,7 @@
 #if DEM_PLATFORM_WIN32
 #include <System/Win32/OSFileSystemWin32.h> // Strictly before windows.h, Win defines spoil API names
 #include "PlatformWin32.h"
-#include <System/PlatformEvents.h>
+#include <System/SystemEvents.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <System/Win32/MouseWin32.h>
 #include <System/Win32/KeyboardWin32.h>

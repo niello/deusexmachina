@@ -145,7 +145,7 @@ protected:
 	CD3D11GPUDriver();
 
 	bool								OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool								OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool								OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool								OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	//bool								OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 

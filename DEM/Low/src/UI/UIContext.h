@@ -35,7 +35,7 @@ private:
 	bool				OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool				OnTextInput(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
-	DECLARE_2_EVENTS_HANDLER(OnToggleFullscreen, OnSizeChangeFinished, OnViewportSizeChanged);
+	DECLARE_2_EVENTS_HANDLER(OnToggleFullscreen, OSWindowResized, OnViewportSizeChanged);
 
 public:
 

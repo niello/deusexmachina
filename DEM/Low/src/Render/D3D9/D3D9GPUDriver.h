@@ -116,7 +116,7 @@ protected:
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
 	bool						OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
-	bool						OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
+	bool						OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool						OnOSWindowPaint(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool						OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 

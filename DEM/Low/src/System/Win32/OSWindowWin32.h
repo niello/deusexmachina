@@ -24,6 +24,7 @@ protected:
 	// For resizing detection in WM_EXITSIZEMOVE
 	U16				PrevWidth = 0;
 	U16				PrevHeight = 0;
+	bool			ManualResizingInProgress = false;
 
 public:
 

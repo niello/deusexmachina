@@ -1,5 +1,6 @@
 #if DEM_PLATFORM_WIN32
 #include "OSWindowWin32.h"
+#include <System/SystemEvents.h>
 
 #include <Uxtheme.h>
 #include <WindowsX.h>
@@ -335,14 +336,17 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 					::ReleaseCapture();
 				}
 
-				UPTR W = (UPTR)LOWORD(lParam);
-				UPTR H = (UPTR)HIWORD(lParam);
+				const UPTR W = static_cast<UPTR>(LOWORD(lParam));
+				const UPTR H = static_cast<UPTR>(HIWORD(lParam));
 
 				if (Rect.W != W || Rect.H != H)
 				{
+					Event::OSWindowResized Ev(Rect.W, Rect.H, W, H, ManualResizingInProgress);
+					
 					Rect.W = W;
 					Rect.H = H;
-					FireEvent(CStrID("OnSizeChanged"));
+					
+					FireEvent(Ev);
 				}
 			}
 
@@ -353,13 +357,15 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		{
 			PrevWidth = Rect.W;
 			PrevHeight = Rect.H;
+			ManualResizingInProgress = true;
 			break;
 		}
 
 		case WM_EXITSIZEMOVE:
 		{
+			ManualResizingInProgress = false;
 			if (PrevWidth != Rect.W || PrevHeight != Rect.H)
-				FireEvent(CStrID("OnSizeChangeFinished"));
+				FireEvent(Event::OSWindowResized(PrevWidth, PrevHeight, Rect.W, Rect.H, false));
 			break;
 		}
 

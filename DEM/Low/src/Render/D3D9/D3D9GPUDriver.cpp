@@ -20,6 +20,7 @@
 #include <Events/Subscription.h>
 #include <IO/BinaryReader.h>
 #include <System/Win32/OSWindowWin32.h>
+#include <System/SystemEvents.h>
 #include <Data/RAMData.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
@@ -202,7 +203,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, UPTR TargetS
 			}
 
 			if (SC.Desc.Flags.Is(SwapChain_AutoAdjustSize))
-				SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChangeFinished"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &SC.Sub_OnSizeChanged);
+				SC.TargetWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized, &SC.Sub_OnSizeChanged);
 		}
 
 		n_assert(InitSwapChainRenderTarget(SC));
@@ -1185,7 +1186,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 	pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
 	pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
 	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChangeFinished"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &ItSC->Sub_OnSizeChanged);
+		pWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized, &ItSC->Sub_OnSizeChanged);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -1323,7 +1324,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDispl
 		//???call SwitchToWindowed?
 		SC.TargetWindow->SetRect(SC.LastWindowRect);
 		if (SC.Desc.Flags.Is(SwapChain_AutoAdjustSize))
-			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnSizeChangeFinished"), this, &CD3D9GPUDriver::OnOSWindowSizeChanged, &SC.Sub_OnSizeChanged);
+			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized, &SC.Sub_OnSizeChanged);
 		FAIL;
 	}
 
@@ -3637,8 +3638,11 @@ bool CD3D9GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, co
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+bool CD3D9GPUDriver::OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	const auto& Ev = static_cast<const Event::OSWindowResized&>(Event);
+	if (Ev.ManualResizingInProgress) FAIL;
+
 	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
 	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
 	{
@@ -3653,7 +3657,8 @@ bool CD3D9GPUDriver::OnOSWindowSizeChanged(Events::CEventDispatcher* pDispatcher
 			OK; // Only one swap chain is allowed for each window
 		}
 	}
-	OK;
+
+	FAIL;
 }
 //---------------------------------------------------------------------
 
