@@ -196,7 +196,8 @@ bool CD3D11DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 	DXGI_OUTPUT_DESC Desc;
 	if (!SUCCEEDED(pDXGIOutput->GetDesc(&Desc))) FAIL;
 
-	MONITORINFO Win32MonitorInfo = { sizeof(Win32MonitorInfo), 0 };
+	MONITORINFOEX Win32MonitorInfo;
+	Win32MonitorInfo.cbSize = sizeof(Win32MonitorInfo);
 	if (!::GetMonitorInfo(Desc.Monitor, &Win32MonitorInfo)) FAIL;
 
 	OutInfo.Left = (U16)Win32MonitorInfo.rcMonitor.left;
@@ -204,7 +205,16 @@ bool CD3D11DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 	OutInfo.Width = (U16)(Win32MonitorInfo.rcMonitor.right - Win32MonitorInfo.rcMonitor.left);
 	OutInfo.Height = (U16)(Win32MonitorInfo.rcMonitor.bottom - Win32MonitorInfo.rcMonitor.top);
 	OutInfo.IsPrimary = Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY;
-	//!!!device name can be obtained from adapter or MONITORINFOEX!
+
+	/*
+	HDC hDC = ::CreateDC(TEXT("DISPLAY"), Win32MonitorInfo.szDevice, NULL, NULL);
+	if (hDC)
+	{
+		OutInfo.NativeWidth = ::GetDeviceCaps(hDC, HORZRES);
+		OutInfo.NativeHeight = ::GetDeviceCaps(hDC, VERTRES);
+		::DeleteDC(hDC);
+	}
+	*/
 
 	OK;
 }

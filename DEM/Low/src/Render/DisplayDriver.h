@@ -18,11 +18,13 @@ public:
 	//???cache? store right here?
 	struct CMonitorInfo
 	{
-		short	Left;
-		short	Top;
-		U16	Width;
-		U16	Height;
-		bool	IsPrimary;
+		I16		Left = 0;
+		I16		Top = 0;
+		U16		Width = 0;
+		U16		Height = 0;
+		U16		NativeWidth = 0;
+		U16		NativeHeight = 0;
+		bool	IsPrimary = false;
 		//bool	IsAttachedToDesktop; // D3D9: HMONITOR -> DISPLAY_DEVICE
 		//CString DeviceName; // D3D9 - from adapter info
 		//work area, monitor area in desktop coords (DPI-dependent)
