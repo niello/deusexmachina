@@ -57,13 +57,18 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 	if (pCtx->getRenderTarget().getArea() != ViewportArea)
 		pCtx->getRenderTarget().setArea(ViewportArea);
 
+	// FIXME: CEGUI drawMode concept doesn't fully fit into requirements of
+	// opaque/transparent separation, so draw all in a transparent phase for now.
+	if (!(Mode & DrawMode_Transparent)) OK;
+		
 	pRenderer->beginRendering();
 
-	if (Mode & DrawMode_Opaque)
-		pCtx->draw(DrawModeFlagWindowOpaque);
+	//if (Mode & DrawMode_Opaque)
+	//	pCtx->draw(DrawModeFlagWindowOpaque);
 
-	if (Mode & DrawMode_Transparent)
-		pCtx->draw(CEGUI::DrawModeFlagWindowRegular | CEGUI::DrawModeFlagMouseCursor);
+	//if (Mode & DrawMode_Transparent)
+	//	pCtx->draw(CEGUI::DrawModeFlagWindowRegular | CEGUI::DrawModeFlagMouseCursor);
+	pCtx->draw();
 
 	pRenderer->endRendering();
 
