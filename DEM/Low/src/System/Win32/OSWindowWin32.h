@@ -21,6 +21,10 @@ protected:
 	HWND			hWnd = 0;
 	HCURSOR			hClientCursor = 0;
 
+	// For resizing detection in WM_EXITSIZEMOVE
+	U16				PrevWidth = 0;
+	U16				PrevHeight = 0;
+
 public:
 
 	COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin32* pParentWnd = nullptr);

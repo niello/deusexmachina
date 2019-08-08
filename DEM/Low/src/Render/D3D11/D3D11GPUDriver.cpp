@@ -3504,7 +3504,11 @@ void CD3D11GPUDriver::GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP&
 			OutMapType = D3D11_MAP_WRITE_NO_OVERWRITE;
 			return;
 		}
-		default: Sys::Error("CD3D11GPUDriver::GetD3DMapTypeAndFlags() > Invalid map mode\n"); return;
+		default:
+		{
+			Sys::Error("CD3D11GPUDriver::GetD3DMapTypeAndFlags() > Invalid map mode\n");
+			return;
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -3521,7 +3525,11 @@ D3D11_COMPARISON_FUNC CD3D11GPUDriver::GetD3DCmpFunc(ECmpFunc Func)
 		case Cmp_Equal:			return D3D11_COMPARISON_EQUAL;
 		case Cmp_NotEqual:		return D3D11_COMPARISON_NOT_EQUAL;
 		case Cmp_Always:		return D3D11_COMPARISON_ALWAYS;
-		default: Sys::Error("CD3D11GPUDriver::GetD3DCmpFunc() > invalid function"); return D3D11_COMPARISON_NEVER;
+		default:
+		{
+			Sys::Error("CD3D11GPUDriver::GetD3DCmpFunc() > invalid function");
+			return D3D11_COMPARISON_NEVER;
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -3538,7 +3546,11 @@ D3D11_STENCIL_OP CD3D11GPUDriver::GetD3DStencilOp(EStencilOp Operation)
 		case StencilOp_Dec:		return D3D11_STENCIL_OP_DECR;
 		case StencilOp_DecSat:	return D3D11_STENCIL_OP_DECR_SAT;
 		case StencilOp_Invert:	return D3D11_STENCIL_OP_INVERT;
-		default: Sys::Error("CD3D11GPUDriver::GetD3DStencilOp() > invalid operation"); return D3D11_STENCIL_OP_KEEP;
+		default:
+		{
+			Sys::Error("CD3D11GPUDriver::GetD3DStencilOp() > invalid operation");
+			return D3D11_STENCIL_OP_KEEP;
+		}
 	}
 }
 //---------------------------------------------------------------------
@@ -3564,7 +3576,11 @@ D3D11_BLEND CD3D11GPUDriver::GetD3DBlendArg(EBlendArg Arg)
 		case BlendArg_InvDestAlpha:		return D3D11_BLEND_INV_DEST_ALPHA;
 		case BlendArg_BlendFactor:		return D3D11_BLEND_BLEND_FACTOR;
 		case BlendArg_InvBlendFactor:	return D3D11_BLEND_INV_BLEND_FACTOR;
-		default: Sys::Error("CD3D11GPUDriver::GetD3DStencilOp() > invalid argument"); return D3D11_BLEND_ZERO;
+		default:
+		{
+			Sys::Error("CD3D11GPUDriver::GetD3DBlendArg() > invalid argument");
+			return D3D11_BLEND_ZERO;
+		}
 	}
 }
 //---------------------------------------------------------------------

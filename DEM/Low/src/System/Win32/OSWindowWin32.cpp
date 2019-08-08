@@ -349,9 +349,17 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			break;
 		}
 
+		case WM_ENTERSIZEMOVE:
+		{
+			PrevWidth = Rect.W;
+			PrevHeight = Rect.H;
+			break;
+		}
+
 		case WM_EXITSIZEMOVE:
 		{
-			FireEvent(CStrID("OnSizeChangeFinished"));
+			if (PrevWidth != Rect.W || PrevHeight != Rect.H)
+				FireEvent(CStrID("OnSizeChangeFinished"));
 			break;
 		}
 
