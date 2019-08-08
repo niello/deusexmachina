@@ -38,7 +38,7 @@ enum ELODType
 	LOD_ScreenSizeAbsolute	// Based on a number of pixels occupied by rendered object
 };
 
-class CView
+class CView final
 {
 protected:
 

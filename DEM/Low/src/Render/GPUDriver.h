@@ -101,6 +101,7 @@ public:
 	virtual bool				IsFullscreen(UPTR SwapChainID) const = 0;
 	virtual PRenderTarget		GetSwapChainRenderTarget(UPTR SwapChainID) const = 0;
 	virtual DEM::Sys::COSWindow*	GetSwapChainWindow(UPTR SwapChainID) const = 0;
+	virtual PDisplayDriver		GetSwapChainDisplay(UPTR SwapChainID) const = 0;
 	virtual bool				Present(UPTR SwapChainID) = 0;
 	bool						PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA);
 	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const = 0;

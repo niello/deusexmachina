@@ -194,6 +194,7 @@ public:
 	virtual bool				IsFullscreen(UPTR SwapChainID) const override;
 	virtual PRenderTarget		GetSwapChainRenderTarget(UPTR SwapChainID) const override;
 	virtual DEM::Sys::COSWindow*	GetSwapChainWindow(UPTR SwapChainID) const override;
+	virtual PDisplayDriver		GetSwapChainDisplay(UPTR SwapChainID) const override;
 	virtual bool				Present(UPTR SwapChainID) override;
 	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const override;
 

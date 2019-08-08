@@ -1382,6 +1382,16 @@ DEM::Sys::COSWindow* CD3D9GPUDriver::GetSwapChainWindow(UPTR SwapChainID) const
 }
 //---------------------------------------------------------------------
 
+PDisplayDriver CD3D9GPUDriver::GetSwapChainDisplay(UPTR SwapChainID) const
+{
+	if (!SwapChainExists(SwapChainID)) return nullptr;
+
+	// Only one output per adapter in a current implementation, use output ID 0 for default display
+	auto Display = SwapChains[SwapChainID].TargetDisplay;
+	return Display ? Display : D3D9DrvFactory->CreateDisplayDriver(AdapterID, 0);
+}
+//---------------------------------------------------------------------
+
 // NB: Present() should be called as late as possible after EndFrame()
 // to improve parallelism between the GPU and the CPU
 bool CD3D9GPUDriver::Present(UPTR SwapChainID)

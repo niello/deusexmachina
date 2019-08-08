@@ -620,11 +620,7 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
-	if (SC.TargetWindow->IsChild())
-	{
-		n_assert2(false, "WORTH TESTING!");
-		FAIL;
-	}
+	if (SC.TargetWindow->IsChild()) FAIL;
 
 	if (pDisplay) SC.TargetDisplay = pDisplay;
 	else
@@ -632,7 +628,7 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 		IDXGIOutput* pOutput = NULL;
 		if (FAILED(SC.pSwapChain->GetContainingOutput(&pOutput))) FAIL;
 		SC.TargetDisplay = D3D11DrvFactory->CreateDisplayDriver(pOutput);
-		if (SC.TargetDisplay.IsNullPtr())
+		if (!SC.TargetDisplay)
 		{
 			pOutput->Release();
 			FAIL;
@@ -677,23 +673,13 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 
 	SC.LastWindowRect = SC.TargetWindow->GetRect();
 
-//!!!DBG TMP!
-//Sys::DbgOut("Before Wnd -> Full, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
-//!!!DBG TMP!
-
 	HRESULT hr = SC.pSwapChain->SetFullscreenState(TRUE, pDXGIOutput);
-
-//!!!DBG TMP!
-//Sys::DbgOut("After Wnd -> Full, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
-//!!!DBG TMP!
-
 	if (FAILED(hr))
 	{
 		if (hr == DXGI_STATUS_MODE_CHANGE_IN_PROGRESS) OK;
 		else FAIL; //???resize back?
 	}
 
-	//???is really necessary?
 	// After calling SetFullscreenState, it is advisable to call ResizeTarget again with the
 	// RefreshRate member of DXGI_MODE_DESC zeroed out. This amounts to a no-operation instruction
 	// in DXGI, but it can avoid issues with the refresh rate. (c) Docs
@@ -719,18 +705,10 @@ bool CD3D11GPUDriver::SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWin
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
+	// Windowed viewport can be shared between several monitors
 	SC.TargetDisplay = NULL;
 
-//!!!DBG TMP!
-//Sys::DbgOut("Before Full -> Wnd, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
-//!!!DBG TMP!
-
 	HRESULT hr = SC.pSwapChain->SetFullscreenState(FALSE, NULL);
-
-//!!!DBG TMP!
-//Sys::DbgOut("After Full -> Wnd, Window flags = %ld\n", SC.TargetWindow->GetWin32Style());
-//!!!DBG TMP!
-
 	if (FAILED(hr))
 	{
 		if (hr == DXGI_STATUS_MODE_CHANGE_IN_PROGRESS) OK;
@@ -756,6 +734,23 @@ PRenderTarget CD3D11GPUDriver::GetSwapChainRenderTarget(UPTR SwapChainID) const
 DEM::Sys::COSWindow* CD3D11GPUDriver::GetSwapChainWindow(UPTR SwapChainID) const
 {
 	return SwapChainExists(SwapChainID) ? SwapChains[SwapChainID].TargetWindow.Get() : nullptr;
+}
+//---------------------------------------------------------------------
+
+PDisplayDriver CD3D11GPUDriver::GetSwapChainDisplay(UPTR SwapChainID) const
+{
+	if (!SwapChainExists(SwapChainID)) return nullptr;
+
+	auto& SC = SwapChains[SwapChainID];
+	if (SC.TargetDisplay) return SC.TargetDisplay;
+
+	// Windowed swap chain has no dedicated display, return the one
+	// that contains the most part of the swap chain window
+	IDXGIOutput* pOutput = nullptr;
+	if (FAILED(SC.pSwapChain->GetContainingOutput(&pOutput))) FAIL;
+	auto Display = D3D11DrvFactory->CreateDisplayDriver(pOutput);
+	if (!Display) pOutput->Release();
+	return Display;
 }
 //---------------------------------------------------------------------
 
