@@ -5,6 +5,11 @@
 #define WIN32_LEAN_AND_MEAN
 #include <DXGI.h>
 
+/* Adapter from output:
+IDXGIAdapter1* pAdapter = nullptr;
+pDXGIOutput->GetParent(__uuidof(IDXGIAdapter1), (void**)&pAdapter);
+*/
+
 namespace Render
 {
 __ImplementClass(Render::CD3D11DisplayDriver, 'D1DD', Render::CDisplayDriver);
@@ -13,7 +18,7 @@ bool CD3D11DisplayDriver::Init(UPTR AdapterNumber, UPTR OutputNumber)
 {
 	if (!CDisplayDriver::Init(AdapterNumber, OutputNumber)) FAIL;
 
-	IDXGIAdapter1* pAdapter = NULL;
+	IDXGIAdapter1* pAdapter = nullptr;
 	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter)))
 	{
 		Term();
@@ -49,6 +54,8 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vec
 	DXGI_MODE_DESC* pDXGIModes = nullptr;
 	do
 	{
+		// Starting with Direct3D 11.1, we recommend not to use GetDisplayModeList anymore to retrieve the matching 
+		// display mode. Instead, use IDXGIOutput1::GetDisplayModeList1, which supports stereo display mode. (c) Docs
 		if (pDXGIModes) _freea(pDXGIModes);
 		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, NULL)) || !ModeCount) return 0;
 		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
@@ -94,6 +101,8 @@ bool CD3D11DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 	DXGI_MODE_DESC* pDXGIModes = NULL;
 	do
 	{
+		// Starting with Direct3D 11.1, we recommend not to use GetDisplayModeList anymore to retrieve the matching 
+		// display mode. Instead, use IDXGIOutput1::GetDisplayModeList1, which supports stereo display mode. (c) Docs
 		if (pDXGIModes) _freea(pDXGIModes);
 		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, NULL)) || !ModeCount) FAIL;
 		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
@@ -125,58 +134,26 @@ bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 {
 	if (!pDXGIOutput) FAIL;
 
-	//???or adapter device name?
-
-	/*
 	DXGI_OUTPUT_DESC Desc;
 	if (!SUCCEEDED(pDXGIOutput->GetDesc(&Desc))) FAIL;
-
-	MONITORINFOEX Win32MonitorInfo;
-	::ZeroMemory(&Win32MonitorInfo, sizeof(Win32MonitorInfo));
-	Win32MonitorInfo.cbSize = sizeof(Win32MonitorInfo);
-	if (!::GetMonitorInfo(Desc.Monitor, &Win32MonitorInfo)) FAIL;
-
-	// Can't believe, but there is no way to obtain current display mode via DXGI without a swap chain
-	DEVMODE DevMode = { 0 };
-	DevMode.dmSize = sizeof(DevMode);
-	if (!::EnumDisplaySettings(Win32MonitorInfo.szDevice, ENUM_CURRENT_SETTINGS, &DevMode)) FAIL;
-
-	//???enumerate all matching modes and select one?
-	//!!!OutMode.PixelFormat = 
-	OutMode.Stereo = false; //???how to be when it could be stereo?
-
-	DXGI_MODE_DESC ApproxMode, DXGIMode;
-
-	ApproxMode.Width = DevMode.dmPelsWidth;
-	ApproxMode.Height = DevMode.dmPelsHeight;
-	ApproxMode.RefreshRate.Numerator = DevMode.dmDisplayFrequency;
-	ApproxMode.RefreshRate.Denominator = 1;
-	ApproxMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-	ApproxMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-
-	//???use SRGB formats?
-	switch (DevMode.dmBitsPerPel)
-	{
-		case 16: ApproxMode.Format = DXGI_FORMAT_B5G6R5_UNORM; break;
-		case 24: ApproxMode.Format = DXGI_FORMAT_B8G8R8X8_UNORM; break;
-		case 32: ApproxMode.Format = DXGI_FORMAT_B8G8R8A8_UNORM; break;
-		default: FAIL;
-	}
-	*/
 
 	DXGI_MODE_DESC ApproxMode, DXGIMode;
 
 	// Get current mode
-	ApproxMode.Width = 0;
-	ApproxMode.Height = 0;
+	ApproxMode.Width = Desc.DesktopCoordinates.right - Desc.DesktopCoordinates.left;
+	ApproxMode.Height = Desc.DesktopCoordinates.bottom - Desc.DesktopCoordinates.top;
 	ApproxMode.RefreshRate.Numerator = 0;
 	ApproxMode.RefreshRate.Denominator = 0;
 	ApproxMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	ApproxMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 
-	//???If pConcernedDevice is NULL, Format cannot be DXGI_FORMAT_UNKNOWN. (c) Docs?
+	// If pConcernedDevice is NULL, Format cannot be DXGI_FORMAT_UNKNOWN. (c) Docs
+	// TODO: GPU to args, optional
+	//if (pGPUDriver)
+	//	ApproxMode.Format = DXGI_FORMAT_UNKNOWN;
+	ApproxMode.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
 
-	if (!SUCCEEDED(pDXGIOutput->FindClosestMatchingMode(&ApproxMode, &DXGIMode, NULL))) FAIL;
+	if (!SUCCEEDED(pDXGIOutput->FindClosestMatchingMode(&ApproxMode, &DXGIMode, nullptr))) FAIL;
 
 	OutMode.Width = DXGIMode.Width;
 	OutMode.Height = DXGIMode.Height;

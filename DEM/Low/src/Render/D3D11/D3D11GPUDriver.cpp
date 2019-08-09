@@ -656,7 +656,7 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 		RequestedDXGIMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 
 		// We don't use a requested mode directly since it may be unsupported.
-		// We find closest supported mode instead of it.
+		// We find closest supported mode instead.
 		// DX 11.1: IDXGIOutput1::FindClosestMatchingMode1()
 		if (FAILED(pDXGIOutput->FindClosestMatchingMode(&RequestedDXGIMode, &DXGIMode, pD3DDevice)))
 		{

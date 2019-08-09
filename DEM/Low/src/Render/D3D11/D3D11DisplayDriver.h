@@ -21,9 +21,9 @@ protected:
 
 	friend class CD3D11DriverFactory;
 
-	IDXGIOutput*	pDXGIOutput;
+	IDXGIOutput*	pDXGIOutput = nullptr;
 
-	CD3D11DisplayDriver(): pDXGIOutput(NULL) {}
+	CD3D11DisplayDriver() {}
 
 	virtual bool	Init(UPTR AdapterNumber, UPTR OutputNumber);
 	virtual void	Term() { InternalTerm(); CDisplayDriver::Term(); } //???need? or never manually-destructible?
