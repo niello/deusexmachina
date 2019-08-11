@@ -8,20 +8,26 @@
 
 // View is a data context required to render a frame. It is defined by a scene (what to render),
 // a camera (from where), render target(s) (to where), a render path (how) and some other
-// parameters. NULL scene is valid and has meaning for example for GUI-only views.
+// parameters. Scene = nullptr is valid and may be used for GUI-only views.
 // Customizable frame properties like a screen resolution, color depth, depth buffer bits
 // and LOD scales are controlled and stored here.
+// Frame view may be targeted to the swap chain or to intermediate RT(s).
 
 namespace Scene
 {
 	class CSPS;
 	class CNodeAttribute;
-};
+}
+
+namespace DEM { namespace Sys
+{
+	class COSWindow;
+}}
 
 namespace UI
 {
 	typedef Ptr<class CUIContext> PUIContext;
-};
+}
 
 namespace Frame
 {
@@ -42,7 +48,9 @@ class CView final
 {
 protected:
 
-	PRenderPath									RenderPath;
+	PRenderPath									_RenderPath;
+	Render::PGPUDriver							_GPU;
+	int											_SwapChainID = INVALID_INDEX;
 	CNodeAttrCamera*							pCamera = nullptr; //???smart ptr?
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
@@ -63,7 +71,6 @@ public:
 	Scene::CSPS*								pSPS = nullptr;
 	UI::PUIContext								UIContext;
 
-	Render::PGPUDriver							GPU;
 	CFixedArray<Render::PRenderTarget>			RTs;
 	CFixedArray<Render::PDepthStencilBuffer>	DSBuffers;
 	Render::CConstantBufferSet					Globals;
@@ -74,6 +81,7 @@ public:
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	CView();
+	CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID = INVALID_INDEX);
 	~CView();
 
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars
@@ -83,10 +91,8 @@ public:
 	//shadow map buffers (sort of RT / DS, no special case?)
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
-	bool							SetRenderPath(CRenderPath* pNewRenderPath);
-	CRenderPath*					GetRenderPath() const { return RenderPath.Get(); }
-	bool							SetCamera(CNodeAttrCamera* pNewCamera);
-	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
+	bool							CreateUIContext();
+
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
@@ -95,6 +101,16 @@ public:
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }
 	bool							Render();
+	bool							Present() const;
+
+	bool							SetRenderPath(CRenderPath* pNewRenderPath);
+	CRenderPath*					GetRenderPath() const { return _RenderPath.Get(); }
+	bool							SetCamera(CNodeAttrCamera* pNewCamera);
+	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
+	Render::CGPUDriver*				GetGPU() const { return _GPU.Get(); }
+	DEM::Sys::COSWindow*			GetTargetWindow() const;
+	Render::PDisplayDriver			GetTargetDisplay() const;
+	bool							IsFullscreen() const;
 };
 
 }

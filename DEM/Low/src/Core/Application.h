@@ -160,11 +160,10 @@ public:
 
 	//???store windows inside app?
 	int					CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Height);
-	Frame::PView		CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI);
 	//POSConsoleWindow CreateConsoleWindow();
 
 	// Quickstart methods
-	bool				BootstrapScene(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, Render::PGPUDriver& GPU, int& SwapChainID);
+	Frame::PView		BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID);
 };
 
 }

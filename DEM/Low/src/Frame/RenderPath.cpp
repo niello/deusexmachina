@@ -64,7 +64,8 @@ void CRenderPath::SetRenderTargetClearColor(UPTR Index, const vector4& Color)
 
 bool CRenderPath::Render(CView& View)
 {
-	if (!View.GPU->BeginFrame()) FAIL;
+	Render::CGPUDriver* pGPU = View.GetGPU();
+	if (!pGPU || !pGPU->BeginFrame()) FAIL;
 
 	// We clear all phases' render targets and DS surfaces at the beginning of
 	// the frame, as recommended, especially for SLI. It also serves for a better
@@ -74,7 +75,7 @@ bool CRenderPath::Render(CView& View)
 	for (UPTR i = 0; i < RTSlots.GetCount(); ++i)
 	{
 		Render::CRenderTarget* pRT = View.RTs[i].Get();
-		if (pRT) View.GPU->ClearRenderTarget(*pRT, RTSlots[i].ClearValue);
+		if (pRT) pGPU->ClearRenderTarget(*pRT, RTSlots[i].ClearValue);
 	}
 
 	for (UPTR i = 0; i < DSSlots.GetCount(); ++i)
@@ -83,7 +84,7 @@ bool CRenderPath::Render(CView& View)
 		if (pDS)
 		{
 			const CDepthStencilSlot& Slot = DSSlots[i];
-			View.GPU->ClearDepthStencilBuffer(*pDS, Slot.ClearFlags, Slot.DepthClearValue, Slot.StencilClearValue);
+			pGPU->ClearDepthStencilBuffer(*pDS, Slot.ClearFlags, Slot.DepthClearValue, Slot.StencilClearValue);
 		}
 	}
 
@@ -98,7 +99,7 @@ bool CRenderPath::Render(CView& View)
 
 	//???clear tmp view data?
 
-	View.GPU->EndFrame();
+	pGPU->EndFrame();
 
 	OK;
 }

@@ -14,16 +14,11 @@
 #include <System/OSWindow.h>
 #include <System/OSFileSystem.h>
 #include <Frame/View.h>
-#include <Frame/RenderPath.h>
 #include <Render/SwapChain.h>
-#include <Render/RenderTarget.h>
 #include <Render/GPUDriver.h>
 #include <Render/VideoDriverFactory.h>
 #include <Data/ParamsUtils.h>
 #include <Input/InputTranslator.h>
-#include <Input/InputDevice.h>
-#include <UI/UIServer.h>
-#include <UI/UIContext.h>
 #include <regex>
 
 // Scene bootstrapper includes
@@ -593,42 +588,10 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Hei
 }
 //---------------------------------------------------------------------
 
-Frame::PView CApplication::CreateFrameView(Render::CGPUDriver& GPU, int SwapChainID, const char* pRenderPathID, bool WithGUI)
-{
-	if (!GPU.SwapChainExists(SwapChainID)) return nullptr;
-
-	Render::PRenderTarget SwapChainRT = GPU.GetSwapChainRenderTarget(SwapChainID);
-
-	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(pRenderPathID);
-
-	Frame::PView View(n_new(Frame::CView));
-	View->GPU = &GPU;
-	View->SetRenderPath(RRP->ValidateObject<Frame::CRenderPath>());
-	if (View->RTs.GetCount()) View->RTs[0] = SwapChainRT;
-
-	if (WithGUI && UI::CUIServer::HasInstance())
-	{
-		UI::CUIContextSettings UICtxSettings;
-		UICtxSettings.HostWindow = GPU.GetSwapChainWindow(SwapChainID);
-		UICtxSettings.Width = static_cast<float>(SwapChainRT->GetDesc().Width);
-		UICtxSettings.Height = static_cast<float>(SwapChainRT->GetDesc().Height);
-		View->UIContext = UISrv->CreateContext(UICtxSettings);
-
-		// Unclaimed input is always connected to UI to avoid unintended freezing.
-		// End-application can disconnect it if necessary. Connecting users to UI
-		// is also an end-application task because its logic is unknown in engine.
-		if (UnclaimedInput)
-			View->UIContext->SubscribeOnInput(UnclaimedInput.get(), 100);
-	}
-
-	return View;
-}
-//---------------------------------------------------------------------
-
 // Initializes 3D graphics, resources etc and makes an application ready to work with 3D scenes.
 // This function is intended for fast typical setup and may be completely replaced with an application
-// code if more sophisticated initialization is required.
-bool CApplication::BootstrapScene(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, Render::PGPUDriver& GPU, int& SwapChainID)
+// code if more sophisticated initialization is required. Don't call more than once!
+Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID)
 {
 	// Register render path classes in the factory
 
@@ -647,14 +610,14 @@ bool CApplication::BootstrapScene(Render::PVideoDriverFactory Gfx, U32 WindowWid
 	if (!Gfx->Create())
 	{
 		::Sys::Error("Can't create video driver factory");
-		return false;
+		return nullptr;
 	}
 
-	GPU = Gfx->CreateGPUDriver(Render::Adapter_Primary, Render::GPU_Hardware);
+	Render::PGPUDriver GPU = Gfx->CreateGPUDriver(Render::Adapter_Primary, Render::GPU_Hardware);
 	if (!GPU)
 	{
 		::Sys::Error("Can't create GPU driver");
-		return false;
+		return nullptr;
 	}
 
 	GPU->SetResourceManager(ResMgr.get());
@@ -674,10 +637,13 @@ bool CApplication::BootstrapScene(Render::PVideoDriverFactory Gfx, U32 WindowWid
 
 	// Create and setup the main window
 
-	SwapChainID = CreateRenderWindow(*GPU, WindowWidth, WindowHeight);
+	const int SwapChainID = CreateRenderWindow(*GPU, WindowWidth, WindowHeight);
 	ExitOnWindowClosed(GPU->GetSwapChainWindow(SwapChainID));
 
-	return true;
+	// Create a frame view based on the specified render path
+
+	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(pRenderPathID);
+	return Frame::PView(n_new(Frame::CView(*RRP->ValidateObject<Frame::CRenderPath>(), *GPU, SwapChainID)));
 }
 //---------------------------------------------------------------------
 

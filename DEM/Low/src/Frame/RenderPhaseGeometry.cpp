@@ -71,6 +71,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 {
 	if (!View.pSPS || !View.GetCamera()) OK;
 
+	Render::CGPUDriver* pGPU = View.GetGPU();
+	if (!pGPU) FAIL;
+
 	View.UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
@@ -91,7 +94,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (UPTR i = 0; i < EffectOverrides.GetCount(); ++i)
 	{
 		CStrID EffectUID = EffectOverrides.ValueAt(i);
-		Render::PEffect Effect = EffectUID.IsValid() ? View.GPU->GetEffect(EffectUID) : nullptr;
+		Render::PEffect Effect = EffectUID.IsValid() ? pGPU->GetEffect(EffectUID) : nullptr;
 		Context.EffectOverrides.Add(EffectOverrides.KeyAt(i), Effect);
 	}
 
@@ -246,13 +249,13 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			CNodeAttrAmbientLight* pGlobalAmbientLight = EnvCache[0];
 
 			if (pRsrcIrradianceMap)
-				View.GPU->BindResource(pRsrcIrradianceMap->ShaderType, pRsrcIrradianceMap->Handle, pGlobalAmbientLight->GetIrradianceMap());
+				pGPU->BindResource(pRsrcIrradianceMap->ShaderType, pRsrcIrradianceMap->Handle, pGlobalAmbientLight->GetIrradianceMap());
 
 			if (pRsrcRadianceEnvMap)
-				View.GPU->BindResource(pRsrcRadianceEnvMap->ShaderType, pRsrcRadianceEnvMap->Handle, pGlobalAmbientLight->GetRadianceEnvMap());
+				pGPU->BindResource(pRsrcRadianceEnvMap->ShaderType, pRsrcRadianceEnvMap->Handle, pGlobalAmbientLight->GetRadianceEnvMap());
 
 			if (pSampTrilinearCube)
-				View.GPU->BindSampler(pSampTrilinearCube->ShaderType, pSampTrilinearCube->Handle, View.TrilinearCubeSampler.Get());
+				pGPU->BindSampler(pSampTrilinearCube->ShaderType, pSampTrilinearCube->Handle, View.TrilinearCubeSampler.Get());
 		}
 	}
 
@@ -268,17 +271,17 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (; RTIdxIdx < RenderTargetIndices.GetCount(); ++RTIdxIdx)
 	{
 		const I32 RTIdx = RenderTargetIndices[RTIdxIdx];
-		View.GPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].Get());
+		pGPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].Get());
 	}
 
-	UPTR MaxRTCount = View.GPU->GetMaxMultipleRenderTargetCount();
+	UPTR MaxRTCount = pGPU->GetMaxMultipleRenderTargetCount();
 	for (; RTIdxIdx < MaxRTCount; ++RTIdxIdx)
-		View.GPU->SetRenderTarget(RTIdxIdx, NULL);
+		pGPU->SetRenderTarget(RTIdxIdx, NULL);
 
-	View.GPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].Get());
+	pGPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].Get());
 
 	Render::IRenderer::CRenderContext Ctx;
-	Ctx.pGPU = View.GPU;
+	Ctx.pGPU = pGPU;
 	Ctx.CameraPosition = CameraPos;
 	Ctx.ViewProjection = View.GetCamera()->GetViewProjMatrix();
 	if (EnableLighting)

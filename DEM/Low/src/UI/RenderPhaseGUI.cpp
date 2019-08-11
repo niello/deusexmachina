@@ -34,7 +34,7 @@ bool CRenderPhaseGUI::Render(CView& View)
 	if (View.UIContext.IsNullPtr()) FAIL;
 
 	auto RT = View.RTs[RenderTargetIndex];
-	View.GPU->SetRenderTarget(0, RT);
+	View.GetGPU()->SetRenderTarget(0, RT);
 
 	const Render::CRenderTargetDesc& RTDesc = RT->GetDesc();
 	//!!!relative(normalized) VP coords may be defined in a phase desc/instance(this) and translated into absolute values here!
