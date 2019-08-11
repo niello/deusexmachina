@@ -28,6 +28,7 @@ public:
 
 	bool	operator ==(const CDisplayMode& Other) const;
 	bool	operator !=(const CDisplayMode& Other) const { return !(*this == Other); }
+	bool	operator <(const CDisplayMode& Other) const;
 };
 
 inline CDisplayMode::CDisplayMode(U16 w, U16 h, EPixelFormat Format):
@@ -59,6 +60,19 @@ inline bool CDisplayMode::operator ==(const CDisplayMode& Other) const
 		Height == Other.Height &&
 		PixelFormat == Other.PixelFormat &&
 		RefreshRate == Other.RefreshRate;
+}
+//---------------------------------------------------------------------
+
+inline bool CDisplayMode::operator <(const CDisplayMode& Other) const
+{
+	if (Width != Other.Width) return Width < Other.Width;
+	if (Height != Other.Height) return Height < Other.Height;
+
+	const I32 RR = RefreshRate.GetIntRounded();
+	const I32 OtherRR = Other.RefreshRate.GetIntRounded();
+	if (RR != OtherRR) return RR < OtherRR;
+
+	return PixelFormat < Other.PixelFormat;
 }
 //---------------------------------------------------------------------
 
