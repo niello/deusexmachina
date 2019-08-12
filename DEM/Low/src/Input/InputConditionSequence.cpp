@@ -1,5 +1,4 @@
 #include "InputConditionSequence.h"
-
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Input/InputConditionUp.h>
@@ -85,11 +84,10 @@ bool CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Ev
 	else
 	{
 		// If we wait Up and this is Down of the same button, we don't break the sequence
-		if (pCurrEvent->IsA<CInputConditionUp>()&&
-			((CInputConditionUp*)pCurrEvent)->GetDeviceType() == pDevice->GetType() &&
-			((CInputConditionUp*)pCurrEvent)->GetButton() == Event.Code)
+		// FIXME: Down-and-Up event needed, CInputConditionClick
+		if (auto pUpEvent = pCurrEvent->As<CInputConditionUp>())
 		{
-			FAIL;
+			if (pUpEvent->GetDeviceType() == pDevice->GetType() && pUpEvent->GetButton() == Event.Code) FAIL;
 		}
 
 		CurrChild = 0; // Reset on any other unexpected ButtonDown
@@ -113,6 +111,25 @@ bool CInputConditionSequence::OnButtonUp(const IInputDevice* pDevice, const Even
 		}
 	}
 	else CurrChild = 0; // Reset on any unexpected ButtonUp
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CInputConditionSequence::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+{
+	if (CurrChild >= Children.GetCount()) FAIL;
+
+	if (Children[CurrChild]->OnTextInput(pDevice, Event))
+	{
+		++CurrChild;
+		if (CurrChild == Children.GetCount())
+		{
+			CurrChild = 0;
+			OK;
+		}
+	}
+	else CurrChild = 0; // Reset on any unexpected TextInput
 
 	FAIL;
 }

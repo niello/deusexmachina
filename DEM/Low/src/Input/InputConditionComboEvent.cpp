@@ -1,7 +1,5 @@
 #include "InputConditionComboEvent.h"
-
-#include <Input/InputEvents.h>
-#include <Input/InputDevice.h>
+#include <Data/Params.h>
 #include <Core/Factory.h>
 
 namespace Input
@@ -73,6 +71,17 @@ bool CInputConditionComboEvent::OnButtonUp(const IInputDevice* pDevice, const Ev
 		if (!pState->IsOn()) FAIL;
 	}
 	return pEvent->OnButtonUp(pDevice, Event);
+}
+//---------------------------------------------------------------------
+
+bool CInputConditionComboEvent::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+{
+	if (pState)
+	{
+		pState->OnTextInput(pDevice, Event);
+		if (!pState->IsOn()) FAIL;
+	}
+	return pEvent->OnTextInput(pDevice, Event);
 }
 //---------------------------------------------------------------------
 

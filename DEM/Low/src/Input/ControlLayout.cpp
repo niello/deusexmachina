@@ -1,37 +1,90 @@
 #include "ControlLayout.h"
-
 #include <Data/Params.h>
-#include <Data/DataArray.h>
+#include <cctype>
 
 namespace Input
 {
 
-bool CControlLayout::Initialize(const Data::CDataArray& Desc)
+static bool ParseRule(const CString& Rule)
+{
+	const char* pCurr = Rule.CStr();
+	while (pCurr)
+	{
+		char c = *pCurr;
+		if (c == '\'')
+		{
+			const char* pEnd = strchr(pCurr + 1, '\'');
+			if (!pEnd) FAIL;
+
+			// create text input condition
+		}
+		else if (c == '|')
+		{
+			// parse next rule
+			// combine
+		}
+		else if (std::isspace(c))
+		{
+			// Skip space
+		}
+		else if (c == '%' || c == '_' || std::isalnum(c))
+		{
+			const bool IsParam = (c == '%');
+			if (IsParam) ++pCurr;
+
+			const char* pEnd = pCurr;
+			c = *pEnd;
+			while (c == '_' || std::isalnum(c))
+			{
+				++pEnd;
+				c = *pEnd;
+			}
+
+			std::string ID(pCurr, pEnd);
+
+			// Process optional modifiers
+			switch (c)
+			{
+				case '+': break;
+				case '-': break;
+				case '[': break;
+				case '{': break;
+			}
+		}
+		else FAIL;
+
+		++pCurr;
+	}
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+bool CControlLayout::Initialize(const Data::CParams& Desc)
 {
 	States.BeginAdd();
 
 	for (UPTR i = 0; i < Desc.GetCount(); ++i)
 	{
-		Data::PParams MappingDesc = Desc.Get<Data::PParams>(i);
+		const Data::CParam& Prm = Desc.Get(i);
 
-		CString ConditionType = MappingDesc->Get<CString>(CStrID("Type"), CString::Empty);
-		if (ConditionType.IsEmpty()) FAIL;
+		if (!ParseRule(Prm.GetValue<CString>())) continue;
 
-		CString OutputName;
-		if (MappingDesc->Get(OutputName, CStrID("Event")))
+		//
+
+		/*
 		{
 			CEventRecord& NewRec = *Events.Add();
-			NewRec.OutEventID = CStrID(OutputName.CStr());
+			NewRec.OutEventID = Prm.GetName();
 			NewRec.pEvent = CInputConditionEvent::CreateByType(ConditionType);
 			if (!NewRec.pEvent || !NewRec.pEvent->Initialize(*MappingDesc.Get())) FAIL;
 		}
-		else if (MappingDesc->Get(OutputName, CStrID("State")))
 		{
 			CInputConditionState* pState = CInputConditionState::CreateByType(ConditionType);
 			if (!pState || !pState->Initialize(*MappingDesc.Get())) FAIL;
-			States.Add(CStrID(OutputName.CStr()), pState);
+			States.Add(Prm.GetName(), pState);
 		}
-		//else FAIL;
+		*/
 	}
 
 	States.EndAdd();

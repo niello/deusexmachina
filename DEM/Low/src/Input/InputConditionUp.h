@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_UP_H__
-#define __DEM_L1_INPUT_CONDITION_UP_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionEvent.h>
 
 // Event condition that is triggered by ButtonUp of the corresponding button
 
@@ -28,5 +25,3 @@ public:
 };
 
 }
-
-#endif

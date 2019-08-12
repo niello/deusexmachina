@@ -41,7 +41,6 @@ public:
 	virtual ~CInputTranslator();
 
 	bool			LoadSettings(const Data::CParams& Desc);
-	bool			SaveSettings(Data::CParams& OutDesc) const;
 
 	bool			CreateContext(CStrID ID, bool Bypass = false);
 	void			DestroyContext(CStrID ID);

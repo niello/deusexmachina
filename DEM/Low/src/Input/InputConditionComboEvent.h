@@ -1,8 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_COMBO_EVENT_H__
-#define __DEM_L1_INPUT_CONDITION_COMBO_EVENT_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionEvent.h>
+#include <Input/InputConditionState.h>
 #include <Data/FixedArray.h>
 
 // Event condition that is triggered when the child state is on and the child event is triggered.
@@ -17,24 +15,23 @@ class CInputConditionComboEvent: public CInputConditionEvent
 
 protected:
 
-	CInputConditionEvent*	pEvent;
-	CInputConditionState*	pState;
+	CInputConditionEvent* pEvent = nullptr;
+	CInputConditionState* pState = nullptr;
 
 	void			Clear();
 
 public:
 
-	CInputConditionComboEvent(): pEvent(NULL), pState(NULL) {}
+	CInputConditionComboEvent() {}
 	virtual ~CInputConditionComboEvent() { Clear(); }
 
-	virtual bool	Initialize(const Data::CParams& Desc);
-	virtual void	Reset();
-	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event);
-	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event);
-	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event);
-	virtual bool	OnTimeElapsed(float ElapsedTime);
+	virtual bool	Initialize(const Data::CParams& Desc) override;
+	virtual void	Reset() override;
+	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
+	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
+	virtual bool	OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) override;
+	virtual bool	OnTimeElapsed(float ElapsedTime) override;
 };
 
 }
-
-#endif

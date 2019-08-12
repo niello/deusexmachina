@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_DOWN_H__
-#define __DEM_L1_INPUT_CONDITION_DOWN_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionEvent.h>
 
 // Event condition that is triggered by ButtonDown of the corresponding button
 
@@ -25,5 +22,3 @@ public:
 };
 
 }
-
-#endif

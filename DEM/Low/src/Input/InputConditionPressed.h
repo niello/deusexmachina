@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_PRESSED_H__
-#define __DEM_L1_INPUT_CONDITION_PRESSED_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionState.h>
 
 // State condition that is On on ButtonDown and Off on ButtonUp
 
@@ -27,5 +24,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONTROL_LAYOUT_H__
-#define __DEM_L1_INPUT_CONTROL_LAYOUT_H__
-
 #include <Core/Object.h>
-#include <Input/InputCondition.h>
+#include <Input/InputConditionEvent.h>
+#include <Input/InputConditionState.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
 
@@ -12,13 +10,13 @@
 
 namespace Data
 {
-	class CDataArray;
+	class CParams;
 }
 
 namespace Input
 {
 
-class CControlLayout
+class CControlLayout final
 {
 public:
 
@@ -34,11 +32,9 @@ public:
 	CControlLayout() { Events.SetKeepOrder(true); }
 	~CControlLayout() { Clear(); }
 
-	bool Initialize(const Data::CDataArray& Desc);
+	bool Initialize(const Data::CParams& Desc);
 	void Clear();
 	void Reset();
 };
 
 }
-
-#endif

@@ -6,17 +6,18 @@ namespace Input
 
 static const char* pDeviceTypeString[] =
 {
-	"ID_Keyboard",
-	"ID_Mouse",
-	"ID_Gamepad"
+	"ID_Input_Keyboard",
+	"ID_Input_Mouse",
+	"ID_Input_Gamepad",
+	"ID_Input_SpeechRecognition",
 };
 
 static const char* pMouseAxisString[] =
 {
 	"ID_Mouse_Axis_X",
 	"ID_Mouse_Axis_Y",
-	"ID_Mouse_Wheel_1",
-	"ID_Mouse_Wheel_2"
+	"ID_Mouse_Wheel_V",
+	"ID_Mouse_Wheel_H"
 };
 
 static const char* pMouseButtonString[] =
@@ -326,7 +327,7 @@ static U8 pKeyCode[] =
 
 const char*	DeviceTypeToString(EDeviceType Type)
 {
-	if (Type >= Device_Count) return NULL;
+	if (Type >= Device_Count) return nullptr;
 	return pDeviceTypeString[Type];
 }
 //---------------------------------------------------------------------

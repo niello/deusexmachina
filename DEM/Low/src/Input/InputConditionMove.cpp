@@ -1,5 +1,4 @@
 #include "InputConditionMove.h"
-
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Core/Factory.h>
@@ -18,7 +17,15 @@ bool CInputConditionMove::Initialize(const Data::CParams& Desc)
 
 bool CInputConditionMove::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	return pDevice->GetType() == DeviceType && Event.Code == Axis;
+	if (pDevice->GetType() != DeviceType || Event.Code != Axis) FAIL;
+
+	if (Threshold <= 0.f) OK;
+
+	Accumulated += Event.Amount;
+	if (Accumulated < Threshold) FAIL;
+
+	Accumulated -= Threshold;
+	OK;
 }
 //---------------------------------------------------------------------
 

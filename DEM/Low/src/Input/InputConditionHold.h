@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_HOLD_H__
-#define __DEM_L1_INPUT_CONDITION_HOLD_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionEvent.h>
 
 // Event condition that is triggered when Time seconds elapsed since the last
 // ButtonDown of the corresponding button. ButtonUp stops and resets the timer.
@@ -18,22 +15,14 @@ class CInputConditionHold: public CInputConditionEvent
 
 protected:
 
-	enum
-	{
-		Flag_Repeat		= 0x01,
-		Flag_Waiting	= 0x02
-	};
-
 	EDeviceType	DeviceType;
 	U8			Button;
 	float		Time;
 	float		TimeSinceDown;
-	bool		Repeat;
-	bool		Waiting;
+	bool		Repeat = false;
+	bool		Waiting = false;
 
 public:
-
-	CInputConditionHold(): Waiting(false) {}
 
 	virtual bool Initialize(const Data::CParams& Desc);
 	virtual void Reset() { Waiting = false; }
@@ -43,5 +32,3 @@ public:
 };
 
 }
-
-#endif

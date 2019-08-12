@@ -4,7 +4,6 @@
 #include <Input/InputDevice.h>
 #include <Input/ControlLayout.h>
 #include <Events/Subscription.h>
-#include <Data/DataArray.h>
 
 namespace Input
 {
@@ -36,32 +35,19 @@ bool CInputTranslator::LoadSettings(const Data::CParams& Desc)
 {
 	Clear();
 
-	Data::PParams ContextsDesc;
-	if (Desc.Get(ContextsDesc, CStrID("Contexts")))
+	for (UPTR i = 0; i < Desc.GetCount(); ++i)
 	{
-		for (UPTR i = 0; i < ContextsDesc->GetCount(); ++i)
-		{
-			const Data::CParam& Prm = ContextsDesc->Get(i);
-			const Data::CDataArray& ContextLayoutDesc = *Prm.GetValue<Data::PDataArray>().Get();
+		const Data::CParam& Prm = Desc.Get(i);
 
-			CStrID ContextID = Prm.GetName();
-			if (!CreateContext(ContextID)) FAIL;
-			CControlLayout* pLayout = GetContextLayout(ContextID);
-			if (!pLayout || !pLayout->Initialize(ContextLayoutDesc)) FAIL;
-		}
+		CStrID ContextID = Prm.GetName();
+		if (!CreateContext(ContextID)) FAIL;
+
+		const auto& ContextLayoutDesc = *Prm.GetValue<Data::PParams>().Get();
+		CControlLayout* pLayout = GetContextLayout(ContextID);
+		if (!pLayout || !pLayout->Initialize(ContextLayoutDesc)) FAIL;
 	}
 
-	// read enabled contexts and enable them
-	// read axis inversion
-	// read other settings
-
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CInputTranslator::SaveSettings(Data::CParams& OutDesc) const
-{
-	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -103,7 +89,7 @@ CControlLayout* CInputTranslator::GetContextLayout(CStrID ID)
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 		if (Contexts[i].ID == ID) return Contexts[i].pLayout;
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -309,7 +295,19 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 		CControlLayout* pLayout = Ctx.pLayout;
 		if (pLayout)
 		{
-			// ...
+			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
+				pLayout->States.ValueAt(StateIdx)->OnTextInput(Ev.Device, Ev);
+
+			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+			{
+				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
+				if (EvRec.pEvent->OnTextInput(Ev.Device, Ev))
+				{
+					Events::CEvent& NewEvent = *EventQueue.Add();
+					NewEvent.ID = EvRec.OutEventID;
+					OK;
+				}
+			}
 		}
 		else
 		{

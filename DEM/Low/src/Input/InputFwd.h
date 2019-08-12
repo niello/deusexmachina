@@ -16,6 +16,7 @@ enum EDeviceType
 	Device_Keyboard,
 	Device_Mouse,
 	Device_Gamepad,
+	Device_SpeechRecognition,
 
 	Device_Count,
 	Device_Invalid
@@ -227,4 +228,5 @@ namespace Event
 	class AxisMove;
 	class ButtonDown;
 	class ButtonUp;
+	class TextInput;
 }

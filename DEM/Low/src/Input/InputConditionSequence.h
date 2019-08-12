@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_SEQUENCE_H__
-#define __DEM_L1_INPUT_CONDITION_SEQUENCE_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionEvent.h>
 #include <Data/FixedArray.h>
 
 // Event condition that is triggered when its child events are triggered in order.
@@ -28,12 +25,11 @@ public:
 
 	virtual bool	Initialize(const Data::CParams& Desc);
 	virtual void	Reset();
-	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event);
-	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event);
-	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event);
-	virtual bool	OnTimeElapsed(float ElapsedTime);
+	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
+	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
+	virtual bool	OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) override;
+	virtual bool	OnTimeElapsed(float ElapsedTime) override;
 };
 
 }
-
-#endif

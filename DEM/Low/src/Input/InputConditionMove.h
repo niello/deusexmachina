@@ -1,10 +1,9 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_MOVE_H__
-#define __DEM_L1_INPUT_CONDITION_MOVE_H__
+#include <Input/InputConditionEvent.h>
 
-#include <Input/InputCondition.h>
-
-// Event condition that is triggered by AxisMove of the corresponding axis
+// Event condition that is triggered by AxisMove of the corresponding axis.
+// If threshold is set, event is fired only when amount of movement exceeds it.
+// Event is fired repeatedly.
 
 namespace Input
 {
@@ -17,6 +16,8 @@ protected:
 
 	EDeviceType	DeviceType;
 	U8			Axis;
+	float		Threshold = 0.f;
+	float		Accumulated = 0.f;
 
 public:
 
@@ -25,5 +26,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,5 +1,4 @@
 #include "InputConditionHold.h"
-
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Core/Factory.h>

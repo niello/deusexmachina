@@ -1,13 +1,11 @@
 #include "InputConditionComboState.h"
-
-#include <Input/InputEvents.h>
-#include <Input/InputDevice.h>
+#include <Data/Params.h>
 #include <Data/DataArray.h>
 #include <Core/Factory.h>
 
 namespace Input
 {
-__ImplementClass(Input::CInputConditionComboState, 'ICCS', Input::CInputConditionEvent);
+__ImplementClass(Input::CInputConditionComboState, 'ICCS', Input::CInputConditionState);
 
 bool CInputConditionComboState::Initialize(const Data::CParams& Desc)
 {
@@ -95,6 +93,22 @@ void CInputConditionComboState::OnButtonUp(const IInputDevice* pDevice, const Ev
 		if (pState)
 		{
 			pState->OnButtonUp(pDevice, Event);
+			if (NewOn && !pState->IsOn()) NewOn = false;
+		}
+	}
+	On = NewOn;
+}
+//---------------------------------------------------------------------
+
+void CInputConditionComboState::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
+{
+	bool NewOn = true;
+	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	{
+		CInputConditionState* pState = Children[i];
+		if (pState)
+		{
+			pState->OnTextInput(pDevice, Event);
 			if (NewOn && !pState->IsOn()) NewOn = false;
 		}
 	}

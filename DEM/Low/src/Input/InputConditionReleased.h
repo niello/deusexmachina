@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_INPUT_CONDITION_RELEASED_H__
-#define __DEM_L1_INPUT_CONDITION_RELEASED_H__
-
-#include <Input/InputCondition.h>
+#include <Input/InputConditionState.h>
 
 // State condition that is Off on ButtonDown and On on ButtonUp.
 // Allows to check if some button is NOT pressed.
@@ -28,5 +25,3 @@ public:
 };
 
 }
-
-#endif
