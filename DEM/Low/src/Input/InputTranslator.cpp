@@ -179,16 +179,15 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		CControlLayout* pLayout = Ctx.pLayout;
 		if (pLayout)
 		{
-			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnAxisMove(Ev.Device, Ev);
+			for (auto& Pair : pLayout->States)
+				Pair.second->OnAxisMove(Ev.Device, Ev);
 
-			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+			for (auto& Rec : pLayout->Events)
 			{
-				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnAxisMove(Ev.Device, Ev))
+				if (Rec.Event->OnAxisMove(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
-					NewEvent.ID = EvRec.OutEventID;
+					NewEvent.ID = Rec.OutEventID;
 					NewEvent.Params = n_new(Data::CParams(1));
 					NewEvent.Params->Set<float>(CStrID("Amount"), Ev.Amount);
 					OK;
@@ -219,16 +218,15 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		CControlLayout* pLayout = Ctx.pLayout;
 		if (pLayout)
 		{
-			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnButtonDown(Ev.Device, Ev);
+			for (auto& Pair : pLayout->States)
+				Pair.second->OnButtonDown(Ev.Device, Ev);
 
-			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+			for (auto& Rec : pLayout->Events)
 			{
-				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnButtonDown(Ev.Device, Ev))
+				if (Rec.Event->OnButtonDown(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
-					NewEvent.ID = EvRec.OutEventID;
+					NewEvent.ID = Rec.OutEventID;
 					OK;
 				}
 			}
@@ -257,16 +255,15 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		CControlLayout* pLayout = Ctx.pLayout;
 		if (pLayout)
 		{
-			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnButtonUp(Ev.Device, Ev);
+			for (auto& Pair : pLayout->States)
+				Pair.second->OnButtonUp(Ev.Device, Ev);
 
-			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+			for (auto& Rec : pLayout->Events)
 			{
-				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnButtonUp(Ev.Device, Ev))
+				if (Rec.Event->OnButtonUp(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
-					NewEvent.ID = EvRec.OutEventID;
+					NewEvent.ID = Rec.OutEventID;
 					OK;
 				}
 			}
@@ -295,16 +292,15 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 		CControlLayout* pLayout = Ctx.pLayout;
 		if (pLayout)
 		{
-			for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-				pLayout->States.ValueAt(StateIdx)->OnTextInput(Ev.Device, Ev);
+			for (auto& Pair : pLayout->States)
+				Pair.second->OnTextInput(Ev.Device, Ev);
 
-			for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+			for (auto& Rec : pLayout->Events)
 			{
-				CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-				if (EvRec.pEvent->OnTextInput(Ev.Device, Ev))
+				if (Rec.Event->OnTextInput(Ev.Device, Ev))
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
-					NewEvent.ID = EvRec.OutEventID;
+					NewEvent.ID = Rec.OutEventID;
 					OK;
 				}
 			}
@@ -312,7 +308,7 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 		else
 		{
 			// Bypass context
-			Event::TextInput BypassEvent(Ev.Device, Ev.Text, _UserID);
+			Event::TextInput BypassEvent(Ev.Device, Ev.Text, Ev.CaseSensitive, _UserID);
 			if (FireEvent(BypassEvent, Events::Event_TermOnHandled) > 0) OK;
 		}
 	}
@@ -330,16 +326,15 @@ void CInputTranslator::UpdateTime(float ElapsedTime)
 
 		CControlLayout* pLayout = Ctx.pLayout;
 
-		for (UPTR StateIdx = 0; StateIdx < pLayout->States.GetCount(); ++StateIdx)
-			pLayout->States.ValueAt(StateIdx)->OnTimeElapsed(ElapsedTime);
+		for (auto& Pair : pLayout->States)
+			Pair.second->OnTimeElapsed(ElapsedTime);
 
-		for (UPTR EventIdx = 0; EventIdx < pLayout->Events.GetCount(); ++EventIdx)
+		for (auto& Rec : pLayout->Events)
 		{
-			CControlLayout::CEventRecord& EvRec = pLayout->Events[EventIdx];
-			if (EvRec.pEvent->OnTimeElapsed(ElapsedTime))
+			if (Rec.Event->OnTimeElapsed(ElapsedTime))
 			{
 				Events::CEvent& NewEvent = *EventQueue.Add();
-				NewEvent.ID = EvRec.OutEventID;
+				NewEvent.ID = Rec.OutEventID;
 			}
 		}
 	}
@@ -358,13 +353,11 @@ bool CInputTranslator::CheckState(CStrID StateID) const
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
 	{
-		CInputContext& Ctx = Contexts[i];
+		const CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		const CDict<CStrID, CInputConditionState*>& States = Ctx.pLayout->States;
-
-		for (UPTR StateIdx = 0; StateIdx < States.GetCount(); ++StateIdx)
-			if (States.KeyAt(StateIdx) == StateID && States.ValueAt(StateIdx)->IsOn()) OK;
+		auto It = Ctx.pLayout->States.find(StateID);
+		if (It != Ctx.pLayout->States.cend() && It->second->IsOn()) OK;
 	}
 
 	FAIL;

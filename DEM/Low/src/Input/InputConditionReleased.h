@@ -9,19 +9,18 @@ namespace Input
 
 class CInputConditionReleased: public CInputConditionState
 {
-	__DeclareClass(CInputConditionReleased);
-
 protected:
 
-	EDeviceType	DeviceType;
-	U8			Button;
+	EDeviceType	_DeviceType;
+	U8			_Button;
 
 public:
 
-	virtual bool Initialize(const Data::CParams& Desc);
-	virtual void Reset() { On = true; }
-	virtual void OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event);
-	virtual void OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event);
+	CInputConditionReleased(EDeviceType DeviceType, U8 Button);
+
+	virtual void Reset() override { On = true; }
+	virtual void OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual void OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
 };
 
 }

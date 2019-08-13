@@ -70,17 +70,20 @@ public:
 	Input::PInputDevice	Device;
 	CStrID				UserID;
 	std::string			Text;
+	bool				CaseSensitive = false;
 
-	TextInput(Input::PInputDevice Source, std::string&& TextData, CStrID User = CStrID::Empty)
+	TextInput(Input::PInputDevice Source, std::string&& TextData, bool _CaseSensitive, CStrID User = CStrID::Empty)
 		: Device(Source)
 		, UserID(User)
 		, Text(std::move(TextData))
+		, CaseSensitive(_CaseSensitive)
 	{}
 
-	TextInput(Input::PInputDevice Source, const std::string& TextData, CStrID User = CStrID::Empty)
+	TextInput(Input::PInputDevice Source, const std::string& TextData, bool _CaseSensitive, CStrID User = CStrID::Empty)
 		: Device(Source)
 		, UserID(User)
 		, Text(TextData)
+		, CaseSensitive(_CaseSensitive)
 	{}
 };
 

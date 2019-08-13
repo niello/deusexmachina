@@ -22,10 +22,8 @@ protected:
 
 public:
 
-	CInputConditionComboEvent() {}
 	virtual ~CInputConditionComboEvent() { Clear(); }
 
-	virtual bool	Initialize(const Data::CParams& Desc) override;
 	virtual void	Reset() override;
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;

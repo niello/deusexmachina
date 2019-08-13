@@ -22,9 +22,6 @@ enum EDeviceType
 	Device_Invalid
 };
 
-const char*	DeviceTypeToString(EDeviceType Type);
-EDeviceType	StringToDeviceType(const char* pName);
-
 // Typical mouse axes with corresponding codes and name text IDs.
 // Provided for consistency between different mouse implementations,
 // but your IInputDevice-based implementation may use other values

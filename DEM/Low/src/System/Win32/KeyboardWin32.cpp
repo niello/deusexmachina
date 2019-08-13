@@ -125,7 +125,7 @@ bool CKeyboardWin32::HandleCharMessage(WPARAM Char)
 	//::MultiByteToWideChar(CP_ACP, 0, (const char*)&Char, 1, CharUTF16, 1);
 
 	std::string Text(1, static_cast<char>(Char));
-	return FireEvent(Event::TextInput(this, std::move(Text)), Events::Event_TermOnHandled);
+	return FireEvent(Event::TextInput(this, std::move(Text), true), Events::Event_TermOnHandled);
 }
 //---------------------------------------------------------------------
 

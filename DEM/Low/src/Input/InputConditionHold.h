@@ -11,24 +11,23 @@ namespace Input
 
 class CInputConditionHold: public CInputConditionEvent
 {
-	__DeclareClass(CInputConditionHold);
-
 protected:
 
-	EDeviceType	DeviceType;
-	U8			Button;
-	float		Time;
-	float		TimeSinceDown;
-	bool		Repeat = false;
-	bool		Waiting = false;
+	EDeviceType	_DeviceType;
+	U8			_Button;
+	float		_Time;
+	float		_TimeSinceDown;
+	bool		_Repeat = false;
+	bool		_Waiting = false;
 
 public:
 
-	virtual bool Initialize(const Data::CParams& Desc);
-	virtual void Reset() { Waiting = false; }
-	virtual bool OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event);
-	virtual bool OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event);
-	virtual bool OnTimeElapsed(float ElapsedTime);
+	CInputConditionHold(EDeviceType DeviceType, U8 Button, float Time, bool Repeat = false);
+
+	virtual void Reset() override { _Waiting = false; }
+	virtual bool OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
+	virtual bool OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;
+	virtual bool OnTimeElapsed(float ElapsedTime) override;
 };
 
 }

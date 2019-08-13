@@ -4,6 +4,7 @@
 namespace Input
 {
 
+// Human-readable name (localization ID)
 static const char* pDeviceTypeString[] =
 {
 	"ID_Input_Keyboard",
@@ -12,23 +13,26 @@ static const char* pDeviceTypeString[] =
 	"ID_Input_SpeechRecognition",
 };
 
+// Internal ID
 static const char* pMouseAxisString[] =
 {
-	"ID_Mouse_Axis_X",
-	"ID_Mouse_Axis_Y",
-	"ID_Mouse_Wheel_V",
-	"ID_Mouse_Wheel_H"
+	"AxisX",
+	"AxisY",
+	"Wheel",
+	"HWheel"
 };
 
+// Internal ID
 static const char* pMouseButtonString[] =
 {
-	"ID_Mouse_Btn_Left",
-	"ID_Mouse_Btn_Right",
-	"ID_Mouse_Btn_Middle",
-	"ID_Mouse_Btn_X1",
-	"ID_Mouse_Btn_X2"
+	"LMB",
+	"RMB",
+	"MMB",
+	"X1",
+	"X2"
 };
 
+// Internal ID
 static const char* pKeyString[] =
 {
 	"Escape",
@@ -324,24 +328,6 @@ static U8 pKeyCode[] =
 	Mail,
 	MediaSelect
 };
-
-const char*	DeviceTypeToString(EDeviceType Type)
-{
-	if (Type >= Device_Count) return nullptr;
-	return pDeviceTypeString[Type];
-}
-//---------------------------------------------------------------------
-
-EDeviceType	StringToDeviceType(const char* pName)
-{
-	for (UPTR i = 0; i < Device_Count; ++i)
-		if (!n_stricmp(pName, pDeviceTypeString[i]))
-			return (EDeviceType)i;
-	if (!n_stricmp(pName, "kb")) return Device_Keyboard;
-	if (!n_stricmp(pName, "xbox")) return Device_Gamepad;
-	return Device_Invalid;
-}
-//---------------------------------------------------------------------
 
 const char*	MouseAxisToString(EMouseAxis Axis)
 {

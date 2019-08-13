@@ -101,6 +101,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Input/InputConditionReleased.h
 	DEM/Low/src/Input/InputConditionSequence.h
 	DEM/Low/src/Input/InputConditionState.h
+	DEM/Low/src/Input/InputConditionText.h
 	DEM/Low/src/Input/InputConditionUp.h
 	DEM/Low/src/Input/InputDevice.h
 	DEM/Low/src/Input/InputEvents.h
@@ -374,6 +375,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputConditionReleased.cpp
 	DEM/Low/src/Input/InputConditionSequence.cpp
 	DEM/Low/src/Input/InputConditionState.cpp
+	DEM/Low/src/Input/InputConditionText.cpp
 	DEM/Low/src/Input/InputConditionUp.cpp
 	DEM/Low/src/Input/InputEvents.cpp
 	DEM/Low/src/Input/InputTranslator.cpp

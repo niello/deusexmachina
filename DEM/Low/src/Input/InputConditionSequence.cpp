@@ -9,27 +9,6 @@ namespace Input
 {
 __ImplementClass(Input::CInputConditionSequence, 'ICSQ', Input::CInputConditionEvent);
 
-
-bool CInputConditionSequence::Initialize(const Data::CParams& Desc)
-{
-	Clear();
-
-	Data::PDataArray EventDescArray;
-	if (!Desc.Get<Data::PDataArray>(EventDescArray, CStrID("Events"))) OK;
-
-	Children.SetSize(EventDescArray->GetCount());
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-	{
-		Data::PParams SubDesc = EventDescArray->Get<Data::PParams>(i);
-		CInputConditionEvent* pEvent = CInputConditionEvent::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pEvent || !pEvent->Initialize(*SubDesc.Get())) FAIL;
-		Children[i] = pEvent;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 void CInputConditionSequence::Clear()
 {
 	for (UPTR i = 0; i < Children.GetCount(); ++i)

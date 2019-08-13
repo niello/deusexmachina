@@ -21,7 +21,6 @@ public:
 
 	virtual ~CInputConditionComboState() { Clear(); }
 
-	virtual bool	Initialize(const Data::CParams& Desc) override;
 	virtual void	Reset() override;
 	virtual void	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 	virtual void	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;

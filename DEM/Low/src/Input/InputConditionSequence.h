@@ -23,8 +23,7 @@ public:
 
 	virtual ~CInputConditionSequence() { Clear(); }
 
-	virtual bool	Initialize(const Data::CParams& Desc);
-	virtual void	Reset();
+	virtual void	Reset() override;
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
 	virtual bool	OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event) override;

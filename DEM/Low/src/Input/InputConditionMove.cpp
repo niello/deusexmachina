@@ -1,30 +1,27 @@
 #include "InputConditionMove.h"
 #include <Input/InputEvents.h>
-#include <Input/InputDevice.h>
-#include <Core/Factory.h>
 
 namespace Input
 {
-__ImplementClass(Input::CInputConditionMove, 'ICMV', Input::CInputConditionEvent);
 
-bool CInputConditionMove::Initialize(const Data::CParams& Desc)
+CInputConditionMove::CInputConditionMove(EDeviceType DeviceType, U8 Axis, float Threshold)
+	: _DeviceType(DeviceType)
+	, _Axis(Axis)
+	, _Threshold(Threshold)
 {
-	DeviceType = StringToDeviceType(Desc.Get<CString>(CStrID("Device"), CString::Empty));
-	Axis = StringToMouseAxis(Desc.Get<CString>(CStrID("Axis"), CString::Empty));
-	OK;
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionMove::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	if (pDevice->GetType() != DeviceType || Event.Code != Axis) FAIL;
+	if (pDevice->GetType() != _DeviceType || Event.Code != _Axis) FAIL;
 
-	if (Threshold <= 0.f) OK;
+	if (_Threshold <= 0.f) OK;
 
-	Accumulated += Event.Amount;
-	if (Accumulated < Threshold) FAIL;
+	_Accumulated += Event.Amount;
+	if (_Accumulated < _Threshold) FAIL;
 
-	Accumulated -= Threshold;
+	_Accumulated -= _Threshold;
 	OK;
 }
 //---------------------------------------------------------------------

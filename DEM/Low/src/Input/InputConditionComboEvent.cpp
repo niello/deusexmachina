@@ -6,27 +6,6 @@ namespace Input
 {
 __ImplementClass(Input::CInputConditionComboEvent, 'ICCE', Input::CInputConditionEvent);
 
-bool CInputConditionComboEvent::Initialize(const Data::CParams& Desc)
-{
-	Clear();
-
-	Data::PParams SubDesc;
-	if (Desc.Get<Data::PParams>(SubDesc, CStrID("ChildEvent")))
-	{
-		pEvent = CInputConditionEvent::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pEvent || !pEvent->Initialize(*SubDesc.Get())) FAIL;
-	}
-
-	if (Desc.Get<Data::PParams>(SubDesc, CStrID("ChildState")))
-	{
-		pState = CInputConditionState::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pState || !pState->Initialize(*SubDesc.Get())) FAIL;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 void CInputConditionComboEvent::Clear()
 {
 	SAFE_DELETE(pEvent);

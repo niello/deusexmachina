@@ -10,19 +10,18 @@ namespace Input
 
 class CInputConditionMove: public CInputConditionEvent
 {
-	__DeclareClass(CInputConditionMove);
-
 protected:
 
-	EDeviceType	DeviceType;
-	U8			Axis;
-	float		Threshold = 0.f;
-	float		Accumulated = 0.f;
+	EDeviceType	_DeviceType;
+	U8			_Axis;
+	float		_Threshold = 0.f;
+	float		_Accumulated = 0.f;
 
 public:
 
-	virtual bool Initialize(const Data::CParams& Desc);
-	virtual bool OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event);
+	CInputConditionMove(EDeviceType DeviceType, U8 Axis, float Threshold = 0.f);
+
+	virtual bool OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 };
 
 }

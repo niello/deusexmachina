@@ -5,11 +5,6 @@
 // Conditions that are evaluated by processing input events.
 // Event conditions return true if triggered by event.
 
-namespace Data
-{
-	class CParams;
-}
-
 namespace Input
 {
 
@@ -19,11 +14,8 @@ class CInputConditionEvent: public Core::CRTTIBaseClass
 
 public:
 
-	static CInputConditionEvent* CreateByType(const char* pType);
-
 	virtual ~CInputConditionEvent() {}
 
-	virtual bool	Initialize(const Data::CParams& Desc) = 0;
 	virtual void	Reset() {}
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) { FAIL; }
 	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) { FAIL; }
@@ -31,5 +23,7 @@ public:
 	virtual bool	OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event) { FAIL; }
 	virtual bool	OnTimeElapsed(float ElapsedTime) { FAIL; }
 };
+
+typedef std::unique_ptr<CInputConditionEvent> PInputConditionEvent;
 
 }

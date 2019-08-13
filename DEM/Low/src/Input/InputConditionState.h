@@ -5,11 +5,6 @@
 // Conditions that are evaluated by processing input events.
 // State conditions are on or off, this state is changed by events.
 
-namespace Data
-{
-	class CParams;
-}
-
 namespace Input
 {
 
@@ -23,12 +18,8 @@ protected:
 
 public:
 
-	static CInputConditionState* CreateByType(const char* pType);
-
-	CInputConditionState() {}
 	virtual ~CInputConditionState() {}
 
-	virtual bool	Initialize(const Data::CParams& Desc) = 0;
 	virtual void	Reset() = 0;
 	virtual void	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) {}
 	virtual void	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) {}
@@ -38,5 +29,7 @@ public:
 
 	bool			IsOn() const { return On; }
 };
+
+typedef std::unique_ptr<CInputConditionState> PInputConditionState;
 
 }

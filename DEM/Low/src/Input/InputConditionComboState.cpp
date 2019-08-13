@@ -7,26 +7,6 @@ namespace Input
 {
 __ImplementClass(Input::CInputConditionComboState, 'ICCS', Input::CInputConditionState);
 
-bool CInputConditionComboState::Initialize(const Data::CParams& Desc)
-{
-	Clear();
-
-	Data::PDataArray StateDescArray;
-	if (!Desc.Get<Data::PDataArray>(StateDescArray, CStrID("States"))) OK;
-
-	Children.SetSize(StateDescArray->GetCount());
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-	{
-		Data::PParams SubDesc = StateDescArray->Get<Data::PParams>(i);
-		CInputConditionState* pState = CInputConditionState::CreateByType(SubDesc->Get<CString>(CStrID("Type")));
-		if (!pState || !pState->Initialize(*SubDesc.Get())) FAIL;
-		Children[i] = pState;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 void CInputConditionComboState::Clear()
 {
 	for (UPTR i = 0; i < Children.GetCount(); ++i)

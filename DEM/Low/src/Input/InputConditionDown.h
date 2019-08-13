@@ -8,17 +8,16 @@ namespace Input
 
 class CInputConditionDown: public CInputConditionEvent
 {
-	__DeclareClass(CInputConditionDown);
-
 protected:
 
-	EDeviceType	DeviceType;
-	U8			Button;
+	EDeviceType	_DeviceType;
+	U8			_Button;
 
 public:
 
-	virtual bool Initialize(const Data::CParams& Desc);
-	virtual bool OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event);
+	CInputConditionDown(EDeviceType DeviceType, U8 Button);
+
+	virtual bool OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
 };
 
 }
