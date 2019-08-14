@@ -1,6 +1,5 @@
 #pragma once
 #include <Input/InputConditionEvent.h>
-#include <Data/FixedArray.h>
 
 // Event condition that is triggered when its child events are triggered in order.
 // Condition is reset if sequence is broken by receiving any other input.
@@ -10,11 +9,11 @@ namespace Input
 
 class CInputConditionSequence: public CInputConditionEvent
 {
-	__DeclareClass(CInputConditionSequence);
+	__DeclareClassNoFactory;
 
 protected:
 
-	CFixedArray<CInputConditionEvent*>	Children;
+	std::vector<PInputConditionEvent>	Children;
 	UPTR								CurrChild;
 
 	void			Clear();
@@ -22,6 +21,8 @@ protected:
 public:
 
 	virtual ~CInputConditionSequence() { Clear(); }
+
+	void			AddChild(PInputConditionEvent&& NewChild);
 
 	virtual void	Reset() override;
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;

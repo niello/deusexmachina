@@ -1,17 +1,19 @@
 #include "InputConditionComboState.h"
-#include <Data/Params.h>
-#include <Data/DataArray.h>
-#include <Core/Factory.h>
 
 namespace Input
 {
-__ImplementClass(Input::CInputConditionComboState, 'ICCS', Input::CInputConditionState);
+__ImplementClassNoFactory(Input::CInputConditionComboState, Input::CInputConditionState);
+
+void CInputConditionComboState::AddChild(PInputConditionState&& NewChild)
+{
+	if (!NewChild || NewChild.get() == this) return;
+	Children.push_back(std::move(NewChild));
+}
+//---------------------------------------------------------------------
 
 void CInputConditionComboState::Clear()
 {
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-		if (Children[i]) n_delete(Children[i]);
-	Children.SetSize(0);
+	Children.clear();
 	On = false;
 }
 //---------------------------------------------------------------------
@@ -19,14 +21,10 @@ void CInputConditionComboState::Clear()
 void CInputConditionComboState::Reset()
 {
 	bool NewOn = true;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	for (auto& Child : Children)
 	{
-		CInputConditionState* pState = Children[i];
-		if (pState)
-		{
-			pState->Reset();
-			if (NewOn && !pState->IsOn()) NewOn = false;
-		}
+		Child->Reset();
+		if (NewOn && !Child->IsOn()) NewOn = false;
 	}
 	On = NewOn;
 }
@@ -35,14 +33,10 @@ void CInputConditionComboState::Reset()
 void CInputConditionComboState::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
 	bool NewOn = true;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	for (auto& Child : Children)
 	{
-		CInputConditionState* pState = Children[i];
-		if (pState)
-		{
-			pState->OnAxisMove(pDevice, Event);
-			if (NewOn && !pState->IsOn()) NewOn = false;
-		}
+		Child->OnAxisMove(pDevice, Event);
+		if (NewOn && !Child->IsOn()) NewOn = false;
 	}
 	On = NewOn;
 }
@@ -51,14 +45,10 @@ void CInputConditionComboState::OnAxisMove(const IInputDevice* pDevice, const Ev
 void CInputConditionComboState::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
 	bool NewOn = true;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	for (auto& Child : Children)
 	{
-		CInputConditionState* pState = Children[i];
-		if (pState)
-		{
-			pState->OnButtonDown(pDevice, Event);
-			if (NewOn && !pState->IsOn()) NewOn = false;
-		}
+		Child->OnButtonDown(pDevice, Event);
+		if (NewOn && !Child->IsOn()) NewOn = false;
 	}
 	On = NewOn;
 }
@@ -67,14 +57,10 @@ void CInputConditionComboState::OnButtonDown(const IInputDevice* pDevice, const 
 void CInputConditionComboState::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
 	bool NewOn = true;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	for (auto& Child : Children)
 	{
-		CInputConditionState* pState = Children[i];
-		if (pState)
-		{
-			pState->OnButtonUp(pDevice, Event);
-			if (NewOn && !pState->IsOn()) NewOn = false;
-		}
+		Child->OnButtonUp(pDevice, Event);
+		if (NewOn && !Child->IsOn()) NewOn = false;
 	}
 	On = NewOn;
 }
@@ -83,14 +69,10 @@ void CInputConditionComboState::OnButtonUp(const IInputDevice* pDevice, const Ev
 void CInputConditionComboState::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
 	bool NewOn = true;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	for (auto& Child : Children)
 	{
-		CInputConditionState* pState = Children[i];
-		if (pState)
-		{
-			pState->OnTextInput(pDevice, Event);
-			if (NewOn && !pState->IsOn()) NewOn = false;
-		}
+		Child->OnTextInput(pDevice, Event);
+		if (NewOn && !Child->IsOn()) NewOn = false;
 	}
 	On = NewOn;
 }
@@ -99,14 +81,10 @@ void CInputConditionComboState::OnTextInput(const IInputDevice* pDevice, const E
 void CInputConditionComboState::OnTimeElapsed(float ElapsedTime)
 {
 	bool NewOn = true;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
+	for (auto& Child : Children)
 	{
-		CInputConditionState* pState = Children[i];
-		if (pState)
-		{
-			pState->OnTimeElapsed(ElapsedTime);
-			if (NewOn && !pState->IsOn()) NewOn = false;
-		}
+		Child->OnTimeElapsed(ElapsedTime);
+		if (NewOn && !Child->IsOn()) NewOn = false;
 	}
 	On = NewOn;
 }

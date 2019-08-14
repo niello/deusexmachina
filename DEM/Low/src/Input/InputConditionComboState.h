@@ -1,6 +1,5 @@
 #pragma once
 #include <Input/InputConditionState.h>
-#include <Data/FixedArray.h>
 
 // State condition that is On when all its child conditions are On
 
@@ -9,17 +8,19 @@ namespace Input
 
 class CInputConditionComboState: public CInputConditionState
 {
-	__DeclareClass(CInputConditionComboState);
+	__DeclareClassNoFactory;
 
 protected:
 
-	CFixedArray<CInputConditionState*>	Children;
+	std::vector<PInputConditionState>	Children;
 
 	void			Clear();
 
 public:
 
 	virtual ~CInputConditionComboState() { Clear(); }
+
+	void			AddChild(PInputConditionState&& NewChild);
 
 	virtual void	Reset() override;
 	virtual void	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;

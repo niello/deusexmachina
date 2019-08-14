@@ -2,38 +2,41 @@
 #include <Input/InputEvents.h>
 #include <Input/InputDevice.h>
 #include <Input/InputConditionUp.h>
-#include <Data/DataArray.h>
-#include <Core/Factory.h>
 
 namespace Input
 {
-__ImplementClass(Input::CInputConditionSequence, 'ICSQ', Input::CInputConditionEvent);
+__ImplementClassNoFactory(Input::CInputConditionSequence, Input::CInputConditionEvent);
+
+void CInputConditionSequence::AddChild(PInputConditionEvent&& NewChild)
+{
+	if (!NewChild || NewChild.get() == this) return;
+	Children.push_back(std::move(NewChild));
+}
+//---------------------------------------------------------------------
 
 void CInputConditionSequence::Clear()
 {
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-		if (Children[i]) n_delete(Children[i]);
-	Children.SetSize(0);
+	Children.clear();
 	CurrChild = 0;
 }
 //---------------------------------------------------------------------
 
 void CInputConditionSequence::Reset()
 {
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-		if (Children[i]) Children[i]->Reset();
+	for (auto& Child : Children)
+		Child->Reset();
 	CurrChild = 0;
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionSequence::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	if (CurrChild >= Children.GetCount()) FAIL;
+	if (CurrChild >= Children.size()) FAIL;
 
 	if (Children[CurrChild]->OnAxisMove(pDevice, Event))
 	{
 		++CurrChild;
-		if (CurrChild == Children.GetCount())
+		if (CurrChild == Children.size())
 		{
 			CurrChild = 0;
 			OK;
@@ -48,13 +51,13 @@ bool CInputConditionSequence::OnAxisMove(const IInputDevice* pDevice, const Even
 
 bool CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
-	if (CurrChild >= Children.GetCount()) FAIL;
+	if (CurrChild >= Children.size()) FAIL;
 
-	CInputConditionEvent* pCurrEvent = Children[CurrChild];
+	CInputConditionEvent* pCurrEvent = Children[CurrChild].get();
 	if (pCurrEvent->OnButtonDown(pDevice, Event))
 	{
 		++CurrChild;
-		if (CurrChild == Children.GetCount())
+		if (CurrChild == Children.size())
 		{
 			CurrChild = 0;
 			OK;
@@ -78,12 +81,12 @@ bool CInputConditionSequence::OnButtonDown(const IInputDevice* pDevice, const Ev
 
 bool CInputConditionSequence::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
-	if (CurrChild >= Children.GetCount()) FAIL;
+	if (CurrChild >= Children.size()) FAIL;
 
 	if (Children[CurrChild]->OnButtonUp(pDevice, Event))
 	{
 		++CurrChild;
-		if (CurrChild == Children.GetCount())
+		if (CurrChild == Children.size())
 		{
 			CurrChild = 0;
 			OK;
@@ -97,12 +100,12 @@ bool CInputConditionSequence::OnButtonUp(const IInputDevice* pDevice, const Even
 
 bool CInputConditionSequence::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
-	if (CurrChild >= Children.GetCount()) FAIL;
+	if (CurrChild >= Children.size()) FAIL;
 
 	if (Children[CurrChild]->OnTextInput(pDevice, Event))
 	{
 		++CurrChild;
-		if (CurrChild == Children.GetCount())
+		if (CurrChild == Children.size())
 		{
 			CurrChild = 0;
 			OK;
@@ -116,12 +119,12 @@ bool CInputConditionSequence::OnTextInput(const IInputDevice* pDevice, const Eve
 
 bool CInputConditionSequence::OnTimeElapsed(float ElapsedTime)
 {
-	if (CurrChild >= Children.GetCount()) FAIL;
+	if (CurrChild >= Children.size()) FAIL;
 
 	if (Children[CurrChild]->OnTimeElapsed(ElapsedTime))
 	{
 		++CurrChild;
-		if (CurrChild == Children.GetCount())
+		if (CurrChild == Children.size())
 		{
 			CurrChild = 0;
 			OK;
