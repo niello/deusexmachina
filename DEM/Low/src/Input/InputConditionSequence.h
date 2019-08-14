@@ -20,8 +20,6 @@ protected:
 
 public:
 
-	virtual ~CInputConditionSequence() { Clear(); }
-
 	void			AddChild(PInputConditionEvent&& NewChild);
 
 	virtual void	Reset() override;

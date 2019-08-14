@@ -1,77 +1,115 @@
 #include "InputConditionComboEvent.h"
-#include <Data/Params.h>
-#include <Core/Factory.h>
+#include <Input/InputConditionSequence.h>
+#include <Input/InputConditionComboState.h>
 
 namespace Input
 {
-__ImplementClass(Input::CInputConditionComboEvent, 'ICCE', Input::CInputConditionEvent);
+__ImplementClassNoFactory(Input::CInputConditionComboEvent, Input::CInputConditionEvent);
+
+void CInputConditionComboEvent::AddChild(PInputConditionEvent&& NewChild)
+{
+	if (!NewChild || NewChild.get() == this || NewChild == _Event) return;
+
+	if (_Event)
+	{
+		// Automatically combine
+		auto pSequence = _Event->As<CInputConditionSequence>();
+		if (!pSequence)
+		{
+			pSequence = new CInputConditionSequence();
+			pSequence->AddChild(std::move(_Event));
+		}
+		pSequence->AddChild(std::move(NewChild));
+	}
+	else _Event = std::move(NewChild);
+}
+//---------------------------------------------------------------------
+
+void CInputConditionComboEvent::AddChild(PInputConditionState&& NewChild)
+{
+	if (!NewChild || NewChild == _State) return;
+
+	if (_State)
+	{
+		// Automatically combine
+		auto pCombo = _State->As<CInputConditionComboState>();
+		if (!pCombo)
+		{
+			pCombo = new CInputConditionComboState();
+			pCombo->AddChild(std::move(_State));
+		}
+		pCombo->AddChild(std::move(NewChild));
+	}
+	else _State = std::move(NewChild);
+}
+//---------------------------------------------------------------------
 
 void CInputConditionComboEvent::Clear()
 {
-	SAFE_DELETE(pEvent);
-	SAFE_DELETE(pState);
+	_Event.reset();
+	_State.reset();
 }
 //---------------------------------------------------------------------
 
 void CInputConditionComboEvent::Reset()
 {
-	if (pEvent) pEvent->Reset();
-	if (pState) pState->Reset();
+	if (_Event) _Event->Reset();
+	if (_State) _State->Reset();
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event)
 {
-	if (pState)
+	if (_State)
 	{
-		pState->OnAxisMove(pDevice, Event);
-		if (!pState->IsOn()) FAIL;
+		_State->OnAxisMove(pDevice, Event);
+		if (!_State->IsOn()) FAIL;
 	}
-	return pEvent->OnAxisMove(pDevice, Event);
+	return _Event->OnAxisMove(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event)
 {
-	if (pState)
+	if (_State)
 	{
-		pState->OnButtonDown(pDevice, Event);
-		if (!pState->IsOn()) FAIL;
+		_State->OnButtonDown(pDevice, Event);
+		if (!_State->IsOn()) FAIL;
 	}
-	return pEvent->OnButtonDown(pDevice, Event);
+	return _Event->OnButtonDown(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnButtonUp(const IInputDevice* pDevice, const Event::ButtonUp& Event)
 {
-	if (pState)
+	if (_State)
 	{
-		pState->OnButtonUp(pDevice, Event);
-		if (!pState->IsOn()) FAIL;
+		_State->OnButtonUp(pDevice, Event);
+		if (!_State->IsOn()) FAIL;
 	}
-	return pEvent->OnButtonUp(pDevice, Event);
+	return _Event->OnButtonUp(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnTextInput(const IInputDevice* pDevice, const Event::TextInput& Event)
 {
-	if (pState)
+	if (_State)
 	{
-		pState->OnTextInput(pDevice, Event);
-		if (!pState->IsOn()) FAIL;
+		_State->OnTextInput(pDevice, Event);
+		if (!_State->IsOn()) FAIL;
 	}
-	return pEvent->OnTextInput(pDevice, Event);
+	return _Event->OnTextInput(pDevice, Event);
 }
 //---------------------------------------------------------------------
 
 bool CInputConditionComboEvent::OnTimeElapsed(float ElapsedTime)
 {
-	if (pState)
+	if (_State)
 	{
-		pState->OnTimeElapsed(ElapsedTime);
-		if (!pState->IsOn()) FAIL;
+		_State->OnTimeElapsed(ElapsedTime);
+		if (!_State->IsOn()) FAIL;
 	}
-	return pEvent->OnTimeElapsed(ElapsedTime);
+	return _Event->OnTimeElapsed(ElapsedTime);
 }
 //---------------------------------------------------------------------
 

@@ -7,6 +7,7 @@
 #include <Input/InputConditionUp.h>
 #include <Input/InputConditionSequence.h>
 #include <Input/InputConditionComboState.h>
+#include <Input/InputConditionComboEvent.h>
 #include <Data/Params.h>
 #include <cctype>
 
@@ -155,22 +156,24 @@ static Core::CRTTIBaseClass* ParseSequence(const char*& pRule)
 			if (FirstIsEvent && SecondIsEvent)
 			{
 				// Events are combined into sequences
-				CInputConditionSequence* pSequence = pResult->As<CInputConditionSequence>();
+				auto pSequence = pResult->As<CInputConditionSequence>();
 				if (!pSequence)
 				{
 					pSequence = new CInputConditionSequence();
 					pSequence->AddChild(PInputConditionEvent(static_cast<CInputConditionEvent*>(pResult)));
+					pResult = pSequence;
 				}
 				pSequence->AddChild(PInputConditionEvent(static_cast<CInputConditionEvent*>(pCondition)));
 			}
 			else if (!FirstIsEvent && !SecondIsEvent)
 			{
 				// States are combined into one combo state
-				CInputConditionComboState* pCombo = pResult->As<CInputConditionComboState>();
+				auto pCombo = pResult->As<CInputConditionComboState>();
 				if (!pCombo)
 				{
 					pCombo = new CInputConditionComboState();
 					pCombo->AddChild(PInputConditionState(static_cast<CInputConditionState*>(pResult)));
+					pResult = pCombo;
 				}
 				pCombo->AddChild(PInputConditionState(static_cast<CInputConditionState*>(pCondition)));
 			}
@@ -178,7 +181,19 @@ static Core::CRTTIBaseClass* ParseSequence(const char*& pRule)
 			{
 				// Events and states are mixed through the combo event. Once it is created, all events
 				// are combined into one sequence and all states into one combo state inside a combo event.
-				// CInputConditionComboEvent(First, Second) / CInputConditionComboEvent(Second, First)
+
+				auto pEvent = FirstIsEvent ? pResult : pCondition;
+				auto pState = FirstIsEvent ? pCondition : pResult;
+
+				auto pCombo = pEvent->As<CInputConditionComboEvent>();
+				if (!pCombo)
+				{
+					pCombo = new CInputConditionComboEvent();
+					pCombo->AddChild(PInputConditionEvent(static_cast<CInputConditionEvent*>(pEvent)));
+				}
+				pCombo->AddChild(PInputConditionState(static_cast<CInputConditionState*>(pState)));
+
+				pResult = pCombo;
 			}
 		}
 

@@ -1,7 +1,6 @@
 #pragma once
 #include <Input/InputConditionEvent.h>
 #include <Input/InputConditionState.h>
-#include <Data/FixedArray.h>
 
 // Event condition that is triggered when the child state is on and the child event is triggered.
 // Useful for combinations like "[Ctrl + Shift] + Click" or "[MMB] + Mouse move".
@@ -11,18 +10,19 @@ namespace Input
 
 class CInputConditionComboEvent: public CInputConditionEvent
 {
-	__DeclareClass(CInputConditionComboEvent);
+	__DeclareClassNoFactory;
 
 protected:
 
-	CInputConditionEvent* pEvent = nullptr;
-	CInputConditionState* pState = nullptr;
+	PInputConditionEvent _Event;
+	PInputConditionState _State;
 
 	void			Clear();
 
 public:
 
-	virtual ~CInputConditionComboEvent() { Clear(); }
+	void			AddChild(PInputConditionEvent&& NewChild);
+	void			AddChild(PInputConditionState&& NewChild);
 
 	virtual void	Reset() override;
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;

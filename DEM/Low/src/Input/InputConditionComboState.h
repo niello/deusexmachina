@@ -18,8 +18,6 @@ protected:
 
 public:
 
-	virtual ~CInputConditionComboState() { Clear(); }
-
 	void			AddChild(PInputConditionState&& NewChild);
 
 	virtual void	Reset() override;
