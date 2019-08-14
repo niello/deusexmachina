@@ -91,6 +91,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/SceneNodeValidateResources.h
 	DEM/Low/src/Frame/View.h
 	DEM/Low/src/Input/ControlLayout.h
+	DEM/Low/src/Input/InputConditionAnyOfEvents.h
+	DEM/Low/src/Input/InputConditionAnyOfStates.h
 	DEM/Low/src/Input/InputConditionComboEvent.h
 	DEM/Low/src/Input/InputConditionComboState.h
 	DEM/Low/src/Input/InputConditionDown.h
@@ -365,6 +367,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/View.cpp
 	DEM/Low/src/Input/ControlLayout.cpp
 	DEM/Low/src/Input/Input.cpp
+	DEM/Low/src/Input/InputConditionAnyOfEvents.cpp
+	DEM/Low/src/Input/InputConditionAnyOfStates.cpp
 	DEM/Low/src/Input/InputConditionComboEvent.cpp
 	DEM/Low/src/Input/InputConditionComboState.cpp
 	DEM/Low/src/Input/InputConditionDown.cpp

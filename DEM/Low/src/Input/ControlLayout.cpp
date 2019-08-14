@@ -8,6 +8,8 @@
 #include <Input/InputConditionSequence.h>
 #include <Input/InputConditionComboState.h>
 #include <Input/InputConditionComboEvent.h>
+#include <Input/InputConditionAnyOfEvents.h>
+#include <Input/InputConditionAnyOfStates.h>
 #include <Data/Params.h>
 #include <cctype>
 
@@ -214,9 +216,9 @@ static Core::CRTTIBaseClass* ParseRule(const char* pRule)
 	{
 		Core::CRTTIBaseClass* pCondition = ParseSequence(pRule);
 
-		// Failed parsing is an error, result is discarded
 		if (!pCondition)
 		{
+			// Failed parsing is an error, result is discarded
 			n_delete(pResult);
 			return nullptr;
 		}
@@ -224,8 +226,37 @@ static Core::CRTTIBaseClass* ParseRule(const char* pRule)
 		if (!pResult) pResult = pCondition;
 		else
 		{
-			// CInputConditionAnyOfEvents
-			// CInputConditionAnyOfStates
+			const bool FirstIsEvent = pResult->IsA<CInputConditionEvent>();
+			const bool SecondIsEvent = pCondition->IsA<CInputConditionEvent>();
+			if (FirstIsEvent != SecondIsEvent)
+			{
+				// Can't mix events and states with OR
+				n_delete(pResult);
+				return nullptr;
+			}
+
+			if (FirstIsEvent)
+			{
+				auto pAny = pResult->As<CInputConditionAnyOfEvents>();
+				if (!pAny)
+				{
+					pAny = new CInputConditionAnyOfEvents();
+					pAny->AddChild(PInputConditionEvent(static_cast<CInputConditionEvent*>(pResult)));
+					pResult = pAny;
+				}
+				pAny->AddChild(PInputConditionEvent(static_cast<CInputConditionEvent*>(pCondition)));
+			}
+			else
+			{
+				auto pAny = pResult->As<CInputConditionAnyOfStates>();
+				if (!pAny)
+				{
+					pAny = new CInputConditionAnyOfStates();
+					pAny->AddChild(PInputConditionState(static_cast<CInputConditionState*>(pResult)));
+					pResult = pAny;
+				}
+				pAny->AddChild(PInputConditionState(static_cast<CInputConditionState*>(pCondition)));
+			}
 		}
 
 		// Skip trailing whitespace
