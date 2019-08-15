@@ -31,17 +31,18 @@ static Core::CRTTIBaseClass* ParseCondition(const char*& pRule)
 	// Text condition
 	if (c == '\'')
 	{
-		const char* pEnd = strchr(pCurr + 1, '\'');
+		++pCurr;
+		const char* pEnd = strchr(pCurr, '\'');
 		if (!pEnd) return nullptr;
-		pRule = pEnd;
+		pRule = pEnd + 1;
 		return new CInputConditionText(std::string(pCurr, pEnd));
 	}
 
 	// Axis or button condition
 	// TODO: can use std::isprint to parse key symbols like "~"
-	if (c == '%' || c == '_' || std::isalnum(static_cast<unsigned char>(c)))
+	if (c == '$' || c == '_' || std::isalnum(static_cast<unsigned char>(c)))
 	{
-		const bool IsParam = (c == '%');
+		const bool IsParam = (c == '$');
 		if (IsParam) ++pCurr;
 
 		const char* pEnd = pCurr;
@@ -262,7 +263,7 @@ static Core::CRTTIBaseClass* ParseRule(const char* pRule)
 		// Skip trailing whitespace
 		while (std::isspace(*pRule)) ++pRule;
 	}
-	while (*pRule == '|');
+	while (*pRule++ == '|');
 
 	return pResult;
 }
@@ -280,7 +281,7 @@ bool CControlLayout::Initialize(const Data::CParams& Desc)
 		if (RuleStr.IsEmpty()) continue;
 
 		const char* pRuleStr = RuleStr.CStr();
-		Core::CRTTIBaseClass* pRule(ParseRule(pRuleStr));
+		auto pRule = ParseRule(pRuleStr);
 		if (!pRule)
 		{
 			::Sys::Error("CControlLayout::Initialize() > error parsing rule string \"" + RuleStr + "\"\n");
