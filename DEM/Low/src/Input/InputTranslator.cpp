@@ -31,16 +31,15 @@ void CInputTranslator::Clear()
 }
 //---------------------------------------------------------------------
 
+// Doesn't remove contexts but overrides existing ones
 bool CInputTranslator::LoadSettings(const Data::CParams& Desc)
 {
-	Clear();
-
 	for (UPTR i = 0; i < Desc.GetCount(); ++i)
 	{
 		const Data::CParam& Prm = Desc.Get(i);
 
 		CStrID ContextID = Prm.GetName();
-		if (!CreateContext(ContextID)) FAIL;
+		CreateContext(ContextID);
 
 		const auto& ContextLayoutDesc = *Prm.GetValue<Data::PParams>().Get();
 		CControlLayout* pLayout = GetContextLayout(ContextID);
