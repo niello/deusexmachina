@@ -97,12 +97,14 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Input/InputConditionComboState.h
 	DEM/Low/src/Input/InputConditionDown.h
 	DEM/Low/src/Input/InputConditionEvent.h
+	DEM/Low/src/Input/InputConditionEventTemplate.h
 	DEM/Low/src/Input/InputConditionHold.h
 	DEM/Low/src/Input/InputConditionMove.h
 	DEM/Low/src/Input/InputConditionPressed.h
 	DEM/Low/src/Input/InputConditionReleased.h
 	DEM/Low/src/Input/InputConditionSequence.h
 	DEM/Low/src/Input/InputConditionState.h
+	DEM/Low/src/Input/InputConditionStateTemplate.h
 	DEM/Low/src/Input/InputConditionText.h
 	DEM/Low/src/Input/InputConditionUp.h
 	DEM/Low/src/Input/InputDevice.h
@@ -373,12 +375,14 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputConditionComboState.cpp
 	DEM/Low/src/Input/InputConditionDown.cpp
 	DEM/Low/src/Input/InputConditionEvent.cpp
+	DEM/Low/src/Input/InputConditionEventTemplate.cpp
 	DEM/Low/src/Input/InputConditionHold.cpp
 	DEM/Low/src/Input/InputConditionMove.cpp
 	DEM/Low/src/Input/InputConditionPressed.cpp
 	DEM/Low/src/Input/InputConditionReleased.cpp
 	DEM/Low/src/Input/InputConditionSequence.cpp
 	DEM/Low/src/Input/InputConditionState.cpp
+	DEM/Low/src/Input/InputConditionStateTemplate.cpp
 	DEM/Low/src/Input/InputConditionText.cpp
 	DEM/Low/src/Input/InputConditionUp.cpp
 	DEM/Low/src/Input/InputEvents.cpp

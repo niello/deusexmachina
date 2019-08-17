@@ -16,6 +16,7 @@ public:
 
 	virtual ~CInputConditionEvent() {}
 
+	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter) { OK; }
 	virtual void	Reset() {}
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) { FAIL; }
 	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) { FAIL; }

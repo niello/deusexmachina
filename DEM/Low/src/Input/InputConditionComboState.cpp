@@ -18,6 +18,15 @@ void CInputConditionComboState::Clear()
 }
 //---------------------------------------------------------------------
 
+bool CInputConditionComboState::UpdateParams(std::function<std::string(const char*)> ParamGetter)
+{
+	bool Result = true;
+	for (auto& Child : Children)
+		Result &= Child->UpdateParams(ParamGetter);
+	return Result;
+}
+//---------------------------------------------------------------------
+
 void CInputConditionComboState::Reset()
 {
 	bool NewOn = true;

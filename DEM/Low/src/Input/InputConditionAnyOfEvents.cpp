@@ -20,6 +20,15 @@ void CInputConditionAnyOfEvents::Clear()
 }
 //---------------------------------------------------------------------
 
+bool CInputConditionAnyOfEvents::UpdateParams(std::function<std::string(const char*)> ParamGetter)
+{
+	bool Result = true;
+	for (auto& Child : Children)
+		Result &= Child->UpdateParams(ParamGetter);
+	return Result;
+}
+//---------------------------------------------------------------------
+
 void CInputConditionAnyOfEvents::Reset()
 {
 	for (auto& Child : Children)

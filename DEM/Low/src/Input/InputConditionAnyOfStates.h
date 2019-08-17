@@ -20,6 +20,7 @@ public:
 
 	void			AddChild(PInputConditionState&& NewChild);
 
+	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter) override;
 	virtual void	Reset() override;
 	virtual void	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 	virtual void	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;

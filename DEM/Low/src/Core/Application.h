@@ -152,7 +152,7 @@ public:
 	bool				Update();
 	void				Term();
 	void				RequestState(PApplicationState NewState);
-	PApplicationState	GetCurrentState() const { return CurrState; }
+	CApplicationState*	GetCurrentState() const;
 
 	//allow multiple instances
 

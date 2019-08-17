@@ -4,6 +4,7 @@
 #include <Input/InputDevice.h>
 #include <Input/ControlLayout.h>
 #include <Events/Subscription.h>
+#include <Core/Application.h>
 
 namespace Input
 {
@@ -47,6 +48,32 @@ bool CInputTranslator::LoadSettings(const Data::CParams& Desc)
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CInputTranslator::UpdateParams(DEM::Core::CApplication& App)
+{
+	auto ParamGetter = [&App, UserID = _UserID](const char* pKey) -> std::string
+	{
+		CString Value = App.GetStringSetting(pKey, CString::Empty, UserID);
+		return Value.IsValid() ? Value.CStr() : "";
+	};
+
+	bool Result = true;
+
+	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
+	{
+		if (auto pLayout = Contexts[i].pLayout)
+		{
+			for (auto& Pair : pLayout->States)
+				Result &= Pair.second->UpdateParams(ParamGetter);
+
+			for (auto& Rec : pLayout->Events)
+				Result &= Rec.Event->UpdateParams(ParamGetter);
+		}
+	}
+
+	return Result;
 }
 //---------------------------------------------------------------------
 

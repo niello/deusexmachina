@@ -3,6 +3,11 @@
 
 // Input system forward declarations
 
+namespace Core
+{
+	class CRTTIBaseClass;
+}
+
 namespace Input
 {
 class IInputDevice;
@@ -213,10 +218,12 @@ enum EKey
 	Key_Invalid		= InvalidCode
 };
 
-const char*		KeyToString(EKey Key);
-EKey			StringToKey(const char* pName);
+const char*				KeyToString(EKey Key);
+EKey					StringToKey(const char* pName);
 
-U8				StringToButton(EDeviceType DeviceType, const char* pName);
+U8						StringToButton(EDeviceType DeviceType, const char* pName);
+
+Core::CRTTIBaseClass*	ParseRule(const char* pRule);
 
 }
 

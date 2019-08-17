@@ -7,6 +7,11 @@
 // general-purpose events accompanied with a user ID to which a translator belongs.
 // Mappings are separated into input contexts which can be enabled or disabled individually.
 
+namespace DEM { namespace Core
+{
+	class CApplication;
+}}
+
 namespace Input
 {
 class IInputDevice;
@@ -41,6 +46,7 @@ public:
 	virtual ~CInputTranslator();
 
 	bool			LoadSettings(const Data::CParams& Desc);
+	bool			UpdateParams(DEM::Core::CApplication& App);
 
 	bool			CreateContext(CStrID ID, bool Bypass = false);
 	void			DestroyContext(CStrID ID);

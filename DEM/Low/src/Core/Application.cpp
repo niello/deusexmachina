@@ -559,7 +559,15 @@ bool CApplication::SetFloatSetting(const char* pKey, float Value, CStrID UserID)
 
 bool CApplication::SetStringSetting(const char* pKey, const CString& Value, CStrID UserID)
 {
-	return SetSetting<CString>(pKey, Value, UserID);
+	if (!SetSetting<CString>(pKey, Value, UserID)) FAIL;
+
+	// Input controls are saved as string settings, so we must update them when string setting changes
+	// FIXME: can make better?
+	if (UnclaimedInput) UnclaimedInput->UpdateParams(*this);
+	for (auto& User : ActiveUsers)
+		User.Input->UpdateParams(*this);
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -724,6 +732,12 @@ void CApplication::RequestState(PApplicationState NewState)
 {
 	n_assert(!NewState || &NewState->GetApplication() == this);
 	RequestedState = NewState;
+}
+//---------------------------------------------------------------------
+
+CApplicationState* CApplication::GetCurrentState() const
+{
+	return CurrState.Get();
 }
 //---------------------------------------------------------------------
 

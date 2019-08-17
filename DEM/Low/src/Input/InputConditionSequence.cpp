@@ -21,6 +21,15 @@ void CInputConditionSequence::Clear()
 }
 //---------------------------------------------------------------------
 
+bool CInputConditionSequence::UpdateParams(std::function<std::string(const char*)> ParamGetter)
+{
+	bool Result = true;
+	for (auto& Child : Children)
+		Result &= Child->UpdateParams(ParamGetter);
+	return Result;
+}
+//---------------------------------------------------------------------
+
 void CInputConditionSequence::Reset()
 {
 	for (auto& Child : Children)

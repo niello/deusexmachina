@@ -51,6 +51,15 @@ void CInputConditionComboEvent::Clear()
 }
 //---------------------------------------------------------------------
 
+bool CInputConditionComboEvent::UpdateParams(std::function<std::string(const char*)> ParamGetter)
+{
+	bool Result = true;
+	if (_Event) Result &= _Event->UpdateParams(ParamGetter);
+	if (_State) Result &= _State->UpdateParams(ParamGetter);
+	return Result;
+}
+//---------------------------------------------------------------------
+
 void CInputConditionComboEvent::Reset()
 {
 	if (_Event) _Event->Reset();
