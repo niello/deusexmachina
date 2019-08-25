@@ -46,7 +46,7 @@ public:
 	virtual ~CInputTranslator();
 
 	bool			LoadSettings(const Data::CParams& Desc);
-	bool			UpdateParams(DEM::Core::CApplication& App);
+	bool			UpdateParams(DEM::Core::CApplication& App, std::set<std::string>* pOutParams = nullptr);
 	void			SetUserID(CStrID UserID) { _UserID = UserID; }
 
 	bool			CreateContext(CStrID ID, bool Bypass = false);

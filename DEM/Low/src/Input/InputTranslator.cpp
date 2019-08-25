@@ -51,7 +51,7 @@ bool CInputTranslator::LoadSettings(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-bool CInputTranslator::UpdateParams(DEM::Core::CApplication& App)
+bool CInputTranslator::UpdateParams(DEM::Core::CApplication& App, std::set<std::string>* pOutParams)
 {
 	auto ParamGetter = [&App, UserID = _UserID](const char* pKey) -> std::string
 	{
@@ -66,10 +66,10 @@ bool CInputTranslator::UpdateParams(DEM::Core::CApplication& App)
 		if (auto pLayout = Contexts[i].pLayout)
 		{
 			for (auto& Pair : pLayout->States)
-				Result &= Pair.second->UpdateParams(ParamGetter);
+				Result &= Pair.second->UpdateParams(ParamGetter, pOutParams);
 
 			for (auto& Rec : pLayout->Events)
-				Result &= Rec.Event->UpdateParams(ParamGetter);
+				Result &= Rec.Event->UpdateParams(ParamGetter, pOutParams);
 		}
 	}
 

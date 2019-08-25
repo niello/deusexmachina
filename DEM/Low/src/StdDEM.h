@@ -3,6 +3,7 @@
 #include <System/Memory.h>
 #include <stdint.h>
 #include <vector>
+#include <set>
 #include <functional>
 
 #define OK				return true

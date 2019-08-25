@@ -20,7 +20,7 @@ public:
 
 	virtual ~CInputConditionState() {}
 
-	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter) { OK; }
+	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) { OK; }
 	virtual void	Reset() = 0;
 	virtual void	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) {}
 	virtual void	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) {}

@@ -17,9 +17,11 @@ CInputConditionEventTemplate::CInputConditionEventTemplate(const std::string& Ru
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionEventTemplate::UpdateParams(std::function<std::string(const char*)> ParamGetter)
+bool CInputConditionEventTemplate::UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams)
 {
 	if (!ParamGetter || _ParamStart == std::string::npos) FAIL;
+
+	if (pOutParams) pOutParams->insert(_Key);
 
 	const std::string NewValue = ParamGetter(_Key.c_str());
 	if (_Impl && NewValue == _CurrValue) OK;

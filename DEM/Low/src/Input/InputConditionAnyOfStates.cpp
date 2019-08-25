@@ -18,11 +18,11 @@ void CInputConditionAnyOfStates::Clear()
 }
 //---------------------------------------------------------------------
 
-bool CInputConditionAnyOfStates::UpdateParams(std::function<std::string(const char*)> ParamGetter)
+bool CInputConditionAnyOfStates::UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams)
 {
 	bool Result = true;
 	for (auto& Child : Children)
-		Result &= Child->UpdateParams(ParamGetter);
+		Result &= Child->UpdateParams(ParamGetter, pOutParams);
 	return Result;
 }
 //---------------------------------------------------------------------

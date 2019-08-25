@@ -22,7 +22,7 @@ public:
 
 	CInputConditionStateTemplate(const std::string& RuleTemplate);
 
-	virtual bool UpdateParams(std::function<std::string(const char*)> ParamGetter) override;
+	virtual bool UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) override;
 	virtual void Reset() override;
 	virtual void OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& State) override;
 	virtual void OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& State) override;

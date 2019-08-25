@@ -21,7 +21,7 @@ public:
 
 	void			AddChild(PInputConditionEvent&& NewChild);
 
-	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter) override;
+	virtual bool	UpdateParams(std::function<std::string(const char*)> ParamGetter, std::set<std::string>* pOutParams) override;
 	virtual void	Reset() override;
 	virtual bool	OnAxisMove(const IInputDevice* pDevice, const Event::AxisMove& Event) override;
 	virtual bool	OnButtonDown(const IInputDevice* pDevice, const Event::ButtonDown& Event) override;
