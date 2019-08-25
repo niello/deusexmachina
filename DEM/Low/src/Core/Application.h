@@ -43,7 +43,7 @@ namespace Resources
 
 namespace Input
 {
-	class CInputTranslator;
+	typedef std::unique_ptr<class CInputTranslator> PInputTranslator;
 }
 
 namespace UI
@@ -75,7 +75,7 @@ protected:
 	struct CUser
 	{
 		CStrID ID;
-		std::unique_ptr<Input::CInputTranslator> Input;
+		Input::PInputTranslator Input;
 		Data::PParams Settings;
 		bool SettingsChanged = false;
 	};
@@ -94,7 +94,7 @@ protected:
 	bool GlobalSettingsChanged = false;
 	CStrID CurrentUserID;
 	std::vector<CUser> ActiveUsers;
-	std::unique_ptr<Input::CInputTranslator> UnclaimedInput;
+	Input::PInputTranslator UnclaimedInput;
 
 	PApplicationState CurrState;
 	PApplicationState RequestedState;

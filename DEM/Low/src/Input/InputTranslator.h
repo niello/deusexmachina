@@ -47,6 +47,7 @@ public:
 
 	bool			LoadSettings(const Data::CParams& Desc);
 	bool			UpdateParams(DEM::Core::CApplication& App);
+	void			SetUserID(CStrID UserID) { _UserID = UserID; }
 
 	bool			CreateContext(CStrID ID, bool Bypass = false);
 	void			DestroyContext(CStrID ID);
@@ -67,5 +68,7 @@ public:
 	bool			CheckState(CStrID StateID) const;
 	void			Reset(/*device type*/);
 };
+
+typedef std::unique_ptr<CInputTranslator> PInputTranslator;
 
 }
