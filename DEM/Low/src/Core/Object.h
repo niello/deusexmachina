@@ -16,36 +16,24 @@ class CObject: public Data::CRefCounted, public CRTTIBaseClass
 {
 	__DeclareClassNoFactory;
 
+#ifdef _DEBUG
 private:
 
-#ifdef _DEBUG
 	typedef Data::CList<CObject*> CObjList;
 
 	static CObjList		List;
 	CObjList::CIterator	ListIt;
-#endif
 
 protected:
 
-	// NB: the destructor of derived classes MUST be virtual!
-	virtual ~CObject() = 0;
+	virtual ~CObject() { n_assert(ListIt); List.Remove(ListIt); }
 
 public:
 
-#ifdef _DEBUG
 	CObject() { ListIt = List.AddBack(this); }
 
 	static void DumpLeaks();
 #endif
 };
-
-inline CObject::~CObject()
-{
-#ifdef _DEBUG
-	n_assert(ListIt);
-	List.Remove(ListIt);
-#endif
-}
-//---------------------------------------------------------------------
 
 }

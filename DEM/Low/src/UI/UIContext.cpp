@@ -253,6 +253,8 @@ bool CUIContext::OnAxisMove(Events::CEventDispatcher* pDispatcher, const Events:
 
 	const Event::AxisMove& Ev = static_cast<const Event::AxisMove&>(Event);
 
+	if (!RootWindows.empty() && RootWindows.back()->OnAxisMove(pDispatcher, Ev)) OK;
+
 	if (Ev.Device->GetType() == Input::Device_Mouse)
 	{
 		switch (Ev.Code)
@@ -280,6 +282,8 @@ bool CUIContext::OnButtonDown(Events::CEventDispatcher* pDispatcher, const Event
 	if (!OSWindow || !OSWindow->HasInputFocus()) FAIL;
 
 	const Event::ButtonDown& Ev = static_cast<const Event::ButtonDown&>(Event);
+
+	if (!RootWindows.empty() && RootWindows.back()->OnButtonDown(pDispatcher, Ev)) OK;
 
 	if (Ev.Device->GetType() == Input::Device_Mouse)
 	{
@@ -311,6 +315,8 @@ bool CUIContext::OnButtonUp(Events::CEventDispatcher* pDispatcher, const Events:
 
 	const Event::ButtonUp& Ev = static_cast<const Event::ButtonUp&>(Event);
 
+	if (!RootWindows.empty() && RootWindows.back()->OnButtonUp(pDispatcher, Ev)) OK;
+
 	if (Ev.Device->GetType() == Input::Device_Mouse)
 	{
 		switch (Ev.Code)
@@ -340,6 +346,8 @@ bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events
 	if (!OSWindow || !OSWindow->HasInputFocus()) FAIL;
 
 	const Event::TextInput& Ev = static_cast<const Event::TextInput&>(Event);
+
+	if (!RootWindows.empty() && RootWindows.back()->OnTextInput(pDispatcher, Ev)) OK;
 
 	bool Handled = false;
 	for (char Char : Ev.Text)
