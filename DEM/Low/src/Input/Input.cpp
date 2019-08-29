@@ -408,6 +408,17 @@ U8 StringToButton(EDeviceType DeviceType, const char* pName)
 }
 //---------------------------------------------------------------------
 
+const char* ButtonToString(EDeviceType DeviceType, U8 Code)
+{
+	switch (DeviceType)
+	{
+		case Device_Keyboard:	return KeyToString(static_cast<EKey>(Code));
+		case Device_Mouse:		return MouseButtonToString(static_cast<EMouseButton>(Code));
+	}
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 static Core::CRTTIBaseClass* ParseCondition(const char*& pRule)
 {
 	const char* pCurr = pRule;

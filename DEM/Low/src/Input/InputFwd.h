@@ -222,6 +222,7 @@ const char*				KeyToString(EKey Key);
 EKey					StringToKey(const char* pName);
 
 U8						StringToButton(EDeviceType DeviceType, const char* pName);
+const char*				ButtonToString(EDeviceType DeviceType, U8 Code);
 
 Core::CRTTIBaseClass*	ParseRule(const char* pRule);
 
