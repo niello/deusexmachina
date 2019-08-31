@@ -432,20 +432,13 @@ void CApplication::SaveSettings()
 }
 //---------------------------------------------------------------------
 
-// Private, for internal use only, to avoid declaring all this logic in a header
-template<class T>
-T CApplication::GetSetting(const char* pKey, const T& Default, CStrID UserID) const
+Data::CData* CApplication::FindSetting(const char* pKey, CStrID UserID) const
 {
 	CStrID Key(pKey);
+	Data::CData* pData = nullptr;
 
-	if (OverrideSettings)
-	{
-		Data::CData OverrideData;
-		if (OverrideSettings->Get<T>(OverrideData, Key))
-		{
-			return OverrideData.GetValue<T>();
-		}
-	}
+	if (OverrideSettings && OverrideSettings->Get(pData, Key))
+		return pData;
 
 	if (UserID.IsValid())
 	{
@@ -453,65 +446,26 @@ T CApplication::GetSetting(const char* pKey, const T& Default, CStrID UserID) co
 		if (It == ActiveUsers.cend())
 		{
 			::Sys::Error("CApplication::GetSetting() > requested user is inactive");
-			return Default;
+			return nullptr;
 		}
 
-		Data::CData UserData;
-		if (It->Settings && It->Settings->Get(UserData, Key) && UserData.IsA<T>())
-		{
-			return UserData.GetValue<T>();
-		}
+		if (It->Settings && It->Settings->Get(pData, Key))
+			return pData;
 	}
 
-	return GlobalSettings ? GlobalSettings->Get<T>(Key, Default) : Default;
+	if (GlobalSettings && GlobalSettings->Get(pData, Key))
+		return pData;
+
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
-// Private, for internal use only, to avoid declaring all this logic in a header.
-// Returns true if value actually changed.
-template<class T> bool CApplication::SetSetting(const char* pKey, const T& Value, CStrID UserID)
+// For internal use only. Made private to avoid declaring this in a header.
+template<class T>
+T CApplication::GetSetting(const char* pKey, const T& Default, CStrID UserID) const
 {
-	CStrID Key(pKey);
-	Data::CParams* pSettings = nullptr;
-
-	auto It = ActiveUsers.end();
-	if (UserID.IsValid())
-	{
-		It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
-		if (It == ActiveUsers.end())
-		{
-			::Sys::Error("CApplication::SetSetting() > requested user is inactive");
-			FAIL;
-		}
-
-		if (!It->Settings) It->Settings = n_new(Data::CParams);
-		pSettings = It->Settings.Get();
-	}
-	else
-	{
-		if (!GlobalSettings) GlobalSettings = n_new(Data::CParams);
-		pSettings = GlobalSettings.Get();
-	}
-
-	Data::CParam* pPrm = pSettings->Find(Key);
-
-	// Value not changed
-	if (pPrm && pPrm->IsA<T>() && pPrm->GetValue<T>() == Value) FAIL;
-
-	if (pPrm) pPrm->SetValue(Value);
-	else pSettings->Set(Key, Value);
-
-	if (UserID.IsValid())
-		It->SettingsChanged = true;
-	else
-		GlobalSettingsChanged = true;
-
-	Data::PParams Params = n_new(Data::CParams(2));
-	Params->Set(CStrID("UserID"), UserID);
-	Params->Set(CStrID("Key"), Key);
-	EventSrv->FireEvent(CStrID("OnSettingChanged"), Params);
-
-	OK;
+	const Data::CData* pData = FindSetting(pKey, UserID);
+	return (pData && pData->IsA<T>()) ? pData->GetValue<T>() : Default;
 }
 //---------------------------------------------------------------------
 
@@ -539,35 +493,73 @@ CString CApplication::GetStringSetting(const char* pKey, const CString& Default,
 }
 //---------------------------------------------------------------------
 
+bool CApplication::SetSetting(const char* pKey, const Data::CData& Value, CStrID UserID)
+{
+	CStrID Key(pKey);
+	Data::CParams* pSettings = nullptr;
+
+	auto It = ActiveUsers.end();
+	if (UserID.IsValid())
+	{
+		It = std::find_if(ActiveUsers.begin(), ActiveUsers.end(), [UserID](const CUser& User) { return User.ID == UserID; });
+		if (It == ActiveUsers.end())
+		{
+			::Sys::Error("CApplication::SetSetting() > requested user is inactive");
+			FAIL;
+		}
+
+		if (!It->Settings) It->Settings = n_new(Data::CParams);
+		pSettings = It->Settings.Get();
+	}
+	else
+	{
+		if (!GlobalSettings) GlobalSettings = n_new(Data::CParams);
+		pSettings = GlobalSettings.Get();
+	}
+
+	Data::CParam* pPrm = pSettings->Find(Key);
+
+	// Value not changed
+	if (pPrm && pPrm->GetRawValue() == Value) FAIL;
+
+	if (pPrm) pPrm->SetValue(Value);
+	else pSettings->Set(Key, Value);
+
+	if (UserID.IsValid())
+		It->SettingsChanged = true;
+	else
+		GlobalSettingsChanged = true;
+
+	Data::PParams Params = n_new(Data::CParams(2));
+	Params->Set(CStrID("UserID"), UserID);
+	Params->Set(CStrID("Key"), Key);
+	EventSrv->FireEvent(CStrID("OnSettingChanged"), Params);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CApplication::SetBoolSetting(const char* pKey, bool Value, CStrID UserID)
 {
-	return SetSetting<bool>(pKey, Value, UserID);
+	return SetSetting(pKey, Value, UserID);
 }
 //---------------------------------------------------------------------
 
 bool CApplication::SetIntSetting(const char* pKey, int Value, CStrID UserID)
 {
-	return SetSetting<int>(pKey, Value, UserID);
+	return SetSetting(pKey, Value, UserID);
 }
 //---------------------------------------------------------------------
 
 bool CApplication::SetFloatSetting(const char* pKey, float Value, CStrID UserID)
 {
-	return SetSetting<float>(pKey, Value, UserID);
+	return SetSetting(pKey, Value, UserID);
 }
 //---------------------------------------------------------------------
 
 bool CApplication::SetStringSetting(const char* pKey, const CString& Value, CStrID UserID)
 {
-	if (!SetSetting<CString>(pKey, Value, UserID)) FAIL;
-
-	// Input controls are saved as string settings, so we must update them when string setting changes
-	// FIXME: can make better?
-	if (UnclaimedInput) UnclaimedInput->UpdateParams(*this);
-	for (auto& User : ActiveUsers)
-		User.Input->UpdateParams(*this);
-
-	OK;
+	return SetSetting(pKey, Value, UserID);
 }
 //---------------------------------------------------------------------
 

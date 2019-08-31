@@ -106,7 +106,6 @@ protected:
 
 	void SaveSettings();
 	template<class T> T GetSetting(const char* pKey, const T& Default, CStrID UserID) const;
-	template<class T> bool SetSetting(const char* pKey, const T& Value, CStrID UserID);
 
 	DECLARE_EVENT_HANDLER(OnClosing, OnMainWindowClosing);
 	DECLARE_EVENT_HANDLER(InputDeviceArrived, OnInputDeviceArrived);
@@ -139,10 +138,12 @@ public:
 
 	void				ParseCommandLine(const char* pCmdLine);
 	bool				LoadGlobalSettings(const char* pFilePath);
+	Data::CData*		FindSetting(const char* pKey, CStrID UserID) const;
 	bool				GetBoolSetting(const char* pKey, bool Default, CStrID UserID);
 	int					GetIntSetting(const char* pKey, int Default, CStrID UserID);
 	float				GetFloatSetting(const char* pKey, float Default, CStrID UserID);
 	CString				GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
+	bool				SetSetting(const char* pKey, const Data::CData& Value, CStrID UserID);
 	bool				SetBoolSetting(const char* pKey, bool Value, CStrID UserID);
 	bool				SetIntSetting(const char* pKey, int Value, CStrID UserID);
 	bool				SetFloatSetting(const char* pKey, float Value, CStrID UserID);

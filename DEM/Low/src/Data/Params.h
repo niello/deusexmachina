@@ -54,6 +54,7 @@ public:
 	void						Set(const CParam& Param);
 	void						Set(CStrID Name, const CData& Value);
 	template<class T> void		Set(CStrID Name, const T& Value) { Set(Name, CData(Value)); }
+	bool						Remove(CStrID Name);
 	void						Clear() { Params.Clear(); }
 
 	void						FromDataDict(const CDataDict& Dict);
@@ -63,6 +64,10 @@ public:
 	void						MergeDiff(CParams& OutChangedData, const CParams& Diff) const;
 	void						GetDiff(CParams& OutDiff, const CParams& ChangedData) const;
 	void						GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const;
+
+	// Range-based loop support
+	CParam* begin() const { return Params.begin(); }
+	CParam* end() const { return Params.end(); }
 
 	//???also/instead of this: return CData? or even template class
 	const CParam&				operator [](CStrID Name) const { return Get(Name); }
@@ -207,6 +212,15 @@ inline void CParams::Set(CStrID Name, const CData& Value)
 	IPTR Idx = IndexOf(Name);
 	if (Idx != INVALID_INDEX) Params[Idx].SetValue(Value);
 	else Params.Add(CParam(Name, Value)); //???can avoid tmp obj creation?
+}
+//---------------------------------------------------------------------
+
+inline bool CParams::Remove(CStrID Name)
+{
+	const IPTR Idx = IndexOf(Name);
+	if (Idx == INVALID_INDEX) FAIL;
+	Params.RemoveAt(Idx);
+	OK;
 }
 //---------------------------------------------------------------------
 
