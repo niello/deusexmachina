@@ -47,19 +47,20 @@ static const char* pMouseButtonString[] =
 };
 
 // Internal ID
+// TODO: separate UI names and internal IDs? UI names may be localizable, but not necessarily (no need to localize '3' etc)
 static const char* pKeyString[] =
 {
 	"Escape",
-	"One",
-	"Two",
-	"Three",
-	"Four",
-	"Five",
-	"Six",
-	"Seven",
-	"Eight",
-	"Nine",
-	"Zero",
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"9",
+	"0",
 	"Minus",
 	"Equals",
 	"Backspace",
