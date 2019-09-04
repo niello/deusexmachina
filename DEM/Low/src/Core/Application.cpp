@@ -242,7 +242,7 @@ UPTR CApplication::EnumUserProfiles(CArray<CStrID>& Out) const
 }
 //---------------------------------------------------------------------
 
-CStrID CApplication::ActivateUser(CStrID UserID)
+CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input)
 {
 	if (!UserID.IsValid()) return CStrID::Empty;
 
@@ -263,7 +263,15 @@ CStrID CApplication::ActivateUser(CStrID UserID)
 	if (!ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID), NewUser.Settings))
 		return CStrID::Empty;
 
-	NewUser.Input.reset(n_new(Input::CInputTranslator(UserID)));
+	if (Input)
+	{
+		NewUser.Input = std::move(Input);
+		NewUser.Input->SetUserID(UserID);
+	}
+	else
+	{
+		NewUser.Input.reset(n_new(Input::CInputTranslator(UserID)));
+	}
 	//!!!load input contexts from app & user settings! may use separate files, not settings files
 	//or use sections in settings
 	//???shared CInputLayout for app contexts like Debug?

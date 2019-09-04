@@ -2,6 +2,7 @@
 #include <Data/Ptr.h>
 #include <Data/Params.h>
 #include <Events/EventsFwd.h>
+#include <Input/InputTranslator.h>
 #include <memory>
 #include <vector>
 
@@ -128,7 +129,7 @@ public:
 	CStrID				CreateUserProfile(const char* pUserID, bool Overwrite = false);
 	bool				DeleteUserProfile(const char* pUserID);
 	UPTR				EnumUserProfiles(CArray<CStrID>& Out) const;
-	CStrID				ActivateUser(CStrID UserID);
+	CStrID				ActivateUser(CStrID UserID, Input::PInputTranslator&& Input = Input::PInputTranslator());
 	void				DeactivateUser(CStrID UserID);
 	bool				IsUserActive(CStrID UserID) const;
 	CStrID				GetCurrentUserID() const { return CurrentUserID; }
