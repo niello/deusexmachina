@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_GPU_DRIVER_H__
-#define __DEM_L1_RENDER_D3D11_GPU_DRIVER_H__
-
 #include <Render/GPUDriver.h>
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
@@ -112,7 +109,7 @@ protected:
 	struct CSRVRecord
 	{
 		ID3D11ShaderResourceView*	pSRV;
-		PD3D11ConstantBuffer		CB;		// NULL if SRV is not a buffer //???or store PObject - SRV source?
+		PD3D11ConstantBuffer		CB;		// nullptr if SRV is not a buffer //???or store PObject - SRV source?
 	};
 
 	CDict<UPTR, CSRVRecord>				CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
@@ -165,7 +162,7 @@ protected:
 	static D3D11_TEXTURE_ADDRESS_MODE	GetD3DTexAddressMode(ETexAddressMode Mode);
 	static D3D11_FILTER					GetD3DTexFilter(ETexFilter Filter, bool Comparison);
 
-	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature = NULL);
+	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature = nullptr);
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, UPTR Size, UPTR Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
 	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);
@@ -199,11 +196,11 @@ public:
 	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const override;
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count) override;
-	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = NULL) override;
-	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL) override;
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr) override;
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr) override;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) override;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) override;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) override;
+	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) override;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) override;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) override;
@@ -211,9 +208,9 @@ public:
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) override;
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) override;
 
-	virtual bool				SetViewport(UPTR Index, const CViewport* pViewport) override; // NULL to reset
+	virtual bool				SetViewport(UPTR Index, const CViewport* pViewport) override; // nullptr to reset
 	virtual bool				GetViewport(UPTR Index, CViewport& OutViewport) override;
-	virtual bool				SetScissorRect(UPTR Index, const Data::CRect* pScissorRect) override; // NULL to reset
+	virtual bool				SetScissorRect(UPTR Index, const Data::CRect* pScissorRect) override; // nullptr to reset
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect) override;
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) override;
@@ -250,10 +247,10 @@ public:
 	virtual bool				UnmapResource(const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0) override;
 	virtual bool				ReadFromResource(void* pDest, const CVertexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) override;
 	virtual bool				ReadFromResource(void* pDest, const CIndexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) override;
-	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL) override;
+	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = nullptr) override;
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
-	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL) override;
+	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = nullptr) override;
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
@@ -269,5 +266,3 @@ public:
 typedef Ptr<CD3D11GPUDriver> PD3D11GPUDriver;
 
 }
-
-#endif

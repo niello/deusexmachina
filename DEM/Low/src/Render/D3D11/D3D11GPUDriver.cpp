@@ -78,8 +78,8 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	//Shader debugging requires a driver that is implemented to the WDDM for Windows 8 (WDDM 1.2)
 #endif
 
-	// If we use NULL adapter (Adapter_AutoSelect), new DXGI factory will be created. We avoid it.
-	IDXGIAdapter1* pAdapter = NULL;
+	// If we use nullptr adapter (Adapter_AutoSelect), new DXGI factory will be created. We avoid it.
+	IDXGIAdapter1* pAdapter = nullptr;
 	if (AdapterID == Adapter_AutoSelect) AdapterID = 0;
 	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter))) FAIL;
 
@@ -96,14 +96,14 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 
 	D3D_FEATURE_LEVEL D3DFeatureLevel;
 
-	HRESULT hr = D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, CreateFlags,
+	HRESULT hr = D3D11CreateDevice(pAdapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, CreateFlags,
 								   FeatureLevels, FeatureLevelCount, D3D11_SDK_VERSION,
 								   &pD3DDevice, &D3DFeatureLevel, &pD3DImmContext);
 
 	//if (hr == E_INVALIDARG)
 	//{
 	//	// DirectX 11.0 platforms will not recognize D3D_FEATURE_LEVEL_11_1 so we need to retry without it
-	//	hr = D3D11CreateDevice(	pAdapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, CreateFlags, FeatureLevels + 1, FeatureLevelCount - 1,
+	//	hr = D3D11CreateDevice(	pAdapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, CreateFlags, FeatureLevels + 1, FeatureLevelCount - 1,
 	//							D3D11_SDK_VERSION, &pD3DDevice, &D3DFeatureLevel, &pD3DImmContext);
 	//}
 
@@ -191,16 +191,16 @@ bool CD3D11GPUDriver::InitSwapChainRenderTarget(CD3D11SwapChain& SC)
 	// Already initialized, can't reinitialize
 	if (SC.BackBufferRT.IsValidPtr() && SC.BackBufferRT->IsValid()) FAIL;
 
-	ID3D11Texture2D* pBackBuffer = NULL;
+	ID3D11Texture2D* pBackBuffer = nullptr;
 	if (FAILED(SC.pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)))) FAIL;
 	
-	ID3D11RenderTargetView* pRTV = NULL;
-	HRESULT hr = pD3DDevice->CreateRenderTargetView(pBackBuffer, NULL, &pRTV);
+	ID3D11RenderTargetView* pRTV = nullptr;
+	HRESULT hr = pD3DDevice->CreateRenderTargetView(pBackBuffer, nullptr, &pRTV);
 	pBackBuffer->Release();
 	if (FAILED(hr)) FAIL;
 
 	if (!SC.BackBufferRT.IsValidPtr()) SC.BackBufferRT = n_new(CD3D11RenderTarget);
-	if (!SC.BackBufferRT->As<CD3D11RenderTarget>()->Create(pRTV, NULL))
+	if (!SC.BackBufferRT->As<CD3D11RenderTarget>()->Create(pRTV, nullptr))
 	{
 		pRTV->Release();
 		FAIL;
@@ -281,8 +281,8 @@ void CD3D11GPUDriver::Release()
 	//!!!can call the same event as on lost device!
 
 	//for (int i = 1; i < MaxRenderTargetCount; ++i)
-	//	pD3DDevice->SetRenderTarget(i, NULL);
-	//pD3DDevice->SetDepthStencilSurface(NULL); //???need when auto depth stencil?
+	//	pD3DDevice->SetRenderTarget(i, nullptr);
+	//pD3DDevice->SetDepthStencilSurface(nullptr); //???need when auto depth stencil?
 
 	//EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
 
@@ -297,7 +297,7 @@ void CD3D11GPUDriver::Release()
 	SAFE_RELEASE(pD3DImmContext);
 
 //#if (DEM_RENDER_DEBUG != 0)
-//	ID3D11Debug* pD3D11Debug = NULL;
+//	ID3D11Debug* pD3D11Debug = nullptr;
 //	pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pD3D11Debug));
 //	if (pD3D11Debug)
 //	{
@@ -485,7 +485,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	//!!!can add requirement for a platform update for win 7 and use d3d11.1 + dxgi 1.2 codepath!
 
 	IDXGIFactory1* pDXGIFactory = D3D11DrvFactory->GetDXGIFactory();
-	IDXGISwapChain* pSwapChain = NULL;
+	IDXGISwapChain* pSwapChain = nullptr;
 	HRESULT hr = pDXGIFactory->CreateSwapChain(pD3DDevice, &SCDesc, &pSwapChain);
 
 	// They say if the first failure was due to wrong BufferCount, DX sets it to the correct value
@@ -514,7 +514,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 
 	ItSC->TargetWindow = pWindow;
 	ItSC->LastWindowRect = pWindow->GetRect();
-	ItSC->TargetDisplay = NULL;
+	ItSC->TargetDisplay = nullptr;
 	ItSC->Desc = SwapChainDesc;
 
 	// Disable DXGI reaction on Alt+Enter & PrintScreen
@@ -538,7 +538,7 @@ bool CD3D11GPUDriver::DestroySwapChain(UPTR SwapChainID)
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		if (CurrRT[i].Get() == SC.BackBufferRT.Get())
 		{
-			SetRenderTarget(i, NULL);
+			SetRenderTarget(i, nullptr);
 			break; // Some RT may be only in one slot at a time
 		}
 
@@ -566,7 +566,7 @@ bool CD3D11GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsi
 
 //!!!DBG TMP!
 BOOL FScr;
-SC.pSwapChain->GetFullscreenState(&FScr, NULL);
+SC.pSwapChain->GetFullscreenState(&FScr, nullptr);
 Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, Width, Height, FScr == TRUE ? "Full" : "Wnd");
 //!!!DBG TMP!
 
@@ -587,8 +587,8 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.GetCount(); ++RemovedRTIdx)
 		if (CurrRT[RemovedRTIdx] == SC.BackBufferRT)
 		{
-			CurrRT[RemovedRTIdx] = NULL;
-			//!!!commit changes! pD3DImmContext->OMSetRenderTargets(0, NULL, NULL);
+			CurrRT[RemovedRTIdx] = nullptr;
+			//!!!commit changes! pD3DImmContext->OMSetRenderTargets(0, nullptr, nullptr);
 			break;
 		}
 
@@ -626,7 +626,7 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 	if (pDisplay) SC.TargetDisplay = pDisplay;
 	else
 	{
-		IDXGIOutput* pOutput = NULL;
+		IDXGIOutput* pOutput = nullptr;
 		if (FAILED(SC.pSwapChain->GetContainingOutput(&pOutput))) FAIL;
 		SC.TargetDisplay = D3D11DrvFactory->CreateDisplayDriver(pOutput);
 		if (!SC.TargetDisplay)
@@ -639,7 +639,7 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 	IDXGIOutput* pDXGIOutput = SC.TargetDisplay->As<CD3D11DisplayDriver>()->GetDXGIOutput();
 	n_assert(pDXGIOutput);
 
-	// If pMode is NULL, DXGI will default mode to a desktop mode if
+	// If pMode is nullptr, DXGI will default mode to a desktop mode if
 	// DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH flag is not set and to
 	// a closest mode to a window size if this flag is set. We don't set it.
 	DXGI_MODE_DESC DXGIMode;
@@ -660,14 +660,14 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 		// DX 11.1: IDXGIOutput1::FindClosestMatchingMode1()
 		if (FAILED(pDXGIOutput->FindClosestMatchingMode(&RequestedDXGIMode, &DXGIMode, pD3DDevice)))
 		{
-			SC.TargetDisplay = NULL;
+			SC.TargetDisplay = nullptr;
 			FAIL;
 		}
 
 		// NB: it is recommended to call ResizeTarget() _before_ SetFullscreenState()
 		if (FAILED(SC.pSwapChain->ResizeTarget(&DXGIMode)))
 		{
-			SC.TargetDisplay = NULL;
+			SC.TargetDisplay = nullptr;
 			FAIL;
 		}
 	}
@@ -690,8 +690,8 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 		DXGIMode.RefreshRate.Denominator = 0;
 		if (FAILED(SC.pSwapChain->ResizeTarget(&DXGIMode)))
 		{
-			SC.pSwapChain->SetFullscreenState(FALSE, NULL);
-			SC.TargetDisplay = NULL;
+			SC.pSwapChain->SetFullscreenState(FALSE, nullptr);
+			SC.TargetDisplay = nullptr;
 			FAIL;
 		}
 	}
@@ -707,9 +707,9 @@ bool CD3D11GPUDriver::SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWin
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
 
 	// Windowed viewport can be shared between several monitors
-	SC.TargetDisplay = NULL;
+	SC.TargetDisplay = nullptr;
 
-	HRESULT hr = SC.pSwapChain->SetFullscreenState(FALSE, NULL);
+	HRESULT hr = SC.pSwapChain->SetFullscreenState(FALSE, nullptr);
 	if (FAILED(hr))
 	{
 		if (hr == DXGI_STATUS_MODE_CHANGE_IN_PROGRESS) OK;
@@ -1036,7 +1036,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer
 	else
 	{
 		IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
-		pCurrBuffer = (DictIdx == INVALID_INDEX) ? NULL : CurrSRV.ValueAt(DictIdx).CB.Get();
+		pCurrBuffer = (DictIdx == INVALID_INDEX) ? nullptr : CurrSRV.ValueAt(DictIdx).CB.Get();
 	}
 
 	// Free temporary buffer previously bound to this slot
@@ -1058,7 +1058,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer
 	}
 	else
 	{
-		ID3D11ShaderResourceView* pSRV = pCBuffer ? ((CD3D11ConstantBuffer*)pCBuffer)->GetD3DSRView() : NULL;
+		ID3D11ShaderResourceView* pSRV = pCBuffer ? ((CD3D11ConstantBuffer*)pCBuffer)->GetD3DSRView() : nullptr;
 		return BindSRV(ShaderType, pMeta->Register, pSRV, (CD3D11ConstantBuffer*)pCBuffer);
 	}
 }
@@ -1075,11 +1075,11 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 
 	// Free temporary buffer previously bound to this slot
 	IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
-	const CD3D11ConstantBuffer* pCurrBuffer = (DictIdx == INVALID_INDEX) ? NULL : CurrSRV.ValueAt(DictIdx).CB.Get();
+	const CD3D11ConstantBuffer* pCurrBuffer = (DictIdx == INVALID_INDEX) ? nullptr : CurrSRV.ValueAt(DictIdx).CB.Get();
 	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, Index);
 
-	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : NULL;
-	return BindSRV(ShaderType, Index, pSRV, NULL);
+	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : nullptr;
+	return BindSRV(ShaderType, Index, pSRV, nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -1133,8 +1133,8 @@ void CD3D11GPUDriver::EndFrame()
 	/*
 	//!!!may clear render targets in RP phases, this is not a solution!
 	for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
-		SetRenderTarget(i, NULL);
-	SetDepthStencilBuffer(NULL);
+		SetRenderTarget(i, nullptr);
+	SetDepthStencilBuffer(nullptr);
 	*/
 }
 //---------------------------------------------------------------------
@@ -1260,15 +1260,15 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			if (!pCurrRS || NewSigID != CurrSigID) InputLayoutDirty = true;
 
 			if (!pCurrRS || pNewRS->VS != pCurrRS->VS)
-				pD3DImmContext->VSSetShader(pNewRS->VS.IsValidPtr() ? pNewRS->VS.Get()->GetD3DVertexShader() : NULL, NULL, 0);
+				pD3DImmContext->VSSetShader(pNewRS->VS.IsValidPtr() ? pNewRS->VS.Get()->GetD3DVertexShader() : nullptr, nullptr, 0);
 			if (!pCurrRS || pNewRS->HS != pCurrRS->HS)
-				pD3DImmContext->HSSetShader(pNewRS->HS.IsValidPtr() ? pNewRS->HS.Get()->GetD3DHullShader() : NULL, NULL, 0);
+				pD3DImmContext->HSSetShader(pNewRS->HS.IsValidPtr() ? pNewRS->HS.Get()->GetD3DHullShader() : nullptr, nullptr, 0);
 			if (!pCurrRS || pNewRS->DS != pCurrRS->DS)
-				pD3DImmContext->DSSetShader(pNewRS->DS.IsValidPtr() ? pNewRS->DS.Get()->GetD3DDomainShader() : NULL, NULL, 0);
+				pD3DImmContext->DSSetShader(pNewRS->DS.IsValidPtr() ? pNewRS->DS.Get()->GetD3DDomainShader() : nullptr, nullptr, 0);
 			if (!pCurrRS || pNewRS->GS != pCurrRS->GS)
-				pD3DImmContext->GSSetShader(pNewRS->GS.IsValidPtr() ? pNewRS->GS.Get()->GetD3DGeometryShader() : NULL, NULL, 0);
+				pD3DImmContext->GSSetShader(pNewRS->GS.IsValidPtr() ? pNewRS->GS.Get()->GetD3DGeometryShader() : nullptr, nullptr, 0);
 			if (!pCurrRS || pNewRS->PS != pCurrRS->PS)
-				pD3DImmContext->PSSetShader(pNewRS->PS.IsValidPtr() ? pNewRS->PS.Get()->GetD3DPixelShader() : NULL, NULL, 0);
+				pD3DImmContext->PSSetShader(pNewRS->PS.IsValidPtr() ? pNewRS->PS.Get()->GetD3DPixelShader() : nullptr, nullptr, 0);
 
 			if (!pCurrRS ||
 				pNewRS->pBState != pCurrRS->pBState ||
@@ -1293,14 +1293,14 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		else
 		{
 			const float EmptyFloats[4] = { 0 };
-			pD3DImmContext->VSSetShader(NULL, NULL, 0);
-			pD3DImmContext->HSSetShader(NULL, NULL, 0);
-			pD3DImmContext->DSSetShader(NULL, NULL, 0);
-			pD3DImmContext->GSSetShader(NULL, NULL, 0);
-			pD3DImmContext->PSSetShader(NULL, NULL, 0);
-			pD3DImmContext->OMSetBlendState(NULL, EmptyFloats, 0xffffffff);
-			pD3DImmContext->OMSetDepthStencilState(NULL, 0);
-			pD3DImmContext->RSSetState(NULL);
+			pD3DImmContext->VSSetShader(nullptr, nullptr, 0);
+			pD3DImmContext->HSSetShader(nullptr, nullptr, 0);
+			pD3DImmContext->DSSetShader(nullptr, nullptr, 0);
+			pD3DImmContext->GSSetShader(nullptr, nullptr, 0);
+			pD3DImmContext->PSSetShader(nullptr, nullptr, 0);
+			pD3DImmContext->OMSetBlendState(nullptr, EmptyFloats, 0xffffffff);
+			pD3DImmContext->OMSetDepthStencilState(nullptr, 0);
+			pD3DImmContext->RSSetState(nullptr);
 		}
 
 		CurrRS = NewRS;
@@ -1336,7 +1336,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			for (UPTR i = 0; i < D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT; ++i)
 			{
 				const CD3D11ConstantBuffer* pCB = CurrCB[Offset + i].Get();
-				D3DBuffers[i] = pCB ? pCB->GetD3DBuffer() : NULL;
+				D3DBuffers[i] = pCB ? pCB->GetD3DBuffer() : nullptr;
 			}
 
 			switch ((EShaderType)Sh)
@@ -1376,7 +1376,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			for (UPTR i = 0; i < D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT; ++i)
 			{
 				const CD3D11Sampler* pSamp = CurrSS[Offset + i].Get();
-				D3DSamplers[i] = pSamp ? pSamp->GetD3DSampler() : NULL;
+				D3DSamplers[i] = pSamp ? pSamp->GetD3DSampler() : nullptr;
 			}
 
 			switch ((EShaderType)Sh)
@@ -1498,7 +1498,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		UINT* pStrides = (UINT*)(pMem + PtrsSize);
 		UINT* pOffsets = (UINT*)(pMem + PtrsSize + UINTsSize);
 
-		//???PERF: skip all NULL buffers prior to the first non-NULL and all NULL after the last non-NULL and reduce count?
+		//???PERF: skip all nullptr buffers prior to the first non-nullptr and all nullptr after the last non-nullptr and reduce count?
 		for (UPTR i = 0; i < MaxVBCount; ++i)
 		{
 			CD3D11VertexBuffer* pVB = CurrVB[i].Get();
@@ -1510,7 +1510,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			}
 			else
 			{
-				pVBs[i] = NULL;
+				pVBs[i] = nullptr;
 				pStrides[i] = 0;
 				pOffsets[i] = 0;
 			}
@@ -1528,12 +1528,12 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			const DXGI_FORMAT Fmt = CurrIB.Get()->GetIndexType() == Index_32 ? DXGI_FORMAT_R32_UINT : DXGI_FORMAT_R16_UINT;
 			pD3DImmContext->IASetIndexBuffer(CurrIB.Get()->GetD3DBuffer(), Fmt, 0);
 		}
-		else pD3DImmContext->IASetIndexBuffer(NULL, DXGI_FORMAT_UNKNOWN, 0);
+		else pD3DImmContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
 
 		CurrDirtyFlags.Clear(GPU_Dirty_IB);
 	}
 
-	CD3D11RenderTarget* pValidRT = NULL;
+	CD3D11RenderTarget* pValidRT = nullptr;
 
 	// All render targets and a depth-stencil buffer are set atomically in D3D11
 	if (Update.IsAny(GPU_Dirty_RT | GPU_Dirty_DS) && CurrDirtyFlags.IsAny(GPU_Dirty_RT | GPU_Dirty_DS))
@@ -1548,10 +1548,10 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 				pRTV[i] = pRT->GetD3DRTView();
 				pValidRT = pRT;
 			}
-			else pRTV[i] = NULL;
+			else pRTV[i] = nullptr;
 		}
 
-		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : NULL;
+		ID3D11DepthStencilView* pDSV = CurrDS.IsValidPtr() ? CurrDS->GetD3DDSView() : nullptr;
 
 		pD3DImmContext->OMSetRenderTargets(CurrRT.GetCount(), pRTV, pDSV);
 		//OMSetRenderTargetsAndUnorderedAccessViews
@@ -1611,7 +1611,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		for (; NumSR > 1; --NumSR)
 			if (VPSRSetFlags.Is(1 << (VP_OR_SR_SET_FLAG_COUNT + NumSR - 1))) break;
 
-		pD3DImmContext->RSSetScissorRects(NumSR, NumSR ? CurrSR : NULL);
+		pD3DImmContext->RSSetScissorRects(NumSR, NumSR ? CurrSR : nullptr);
 
 		CurrDirtyFlags.Clear(GPU_Dirty_SR);
 	}
@@ -1651,7 +1651,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 {
 	const UPTR MAX_VERTEX_COMPONENTS = 32;
 
-	if (!pComponents || !Count || Count > MAX_VERTEX_COMPONENTS) return NULL;
+	if (!pComponents || !Count || Count > MAX_VERTEX_COMPONENTS) return nullptr;
 
 	CStrID Signature = CVertexLayout::BuildSignature(pComponents, Count);
 
@@ -1666,7 +1666,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 		const CVertexComponent& Component = pComponents[i];
 
 		UPTR StreamIndex = Component.Stream;
-		if (StreamIndex >= MaxVertexStreams) return NULL;
+		if (StreamIndex >= MaxVertexStreams) return nullptr;
 
 		D3D11_INPUT_ELEMENT_DESC& DeclElement = DeclData[i];
 
@@ -1681,7 +1681,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 			case VCSem_BoneWeights:	DeclElement.SemanticName = "BLENDWEIGHT"; break;
 			case VCSem_BoneIndices:	DeclElement.SemanticName = "BLENDINDICES"; break;
 			case VCSem_UserDefined:	DeclElement.SemanticName = Component.UserDefinedName; break;
-			default:				return NULL;
+			default:				return nullptr;
 		}
 
 		DeclElement.SemanticIndex = Component.Index;
@@ -1702,7 +1702,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 			case VCFmt_SInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_SNORM; break;
 			case VCFmt_UInt16_2_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16_UNORM; break;
 			case VCFmt_UInt16_4_Norm:	DeclElement.Format = DXGI_FORMAT_R16G16B16A16_UNORM; break;
-			default:					return NULL;
+			default:					return nullptr;
 		}
 
 		DeclElement.InputSlot = StreamIndex;
@@ -1721,7 +1721,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 	}
 
 	PD3D11VertexLayout Layout = n_new(CD3D11VertexLayout);
-	if (!Layout->Create(pComponents, Count, DeclData)) return NULL;
+	if (!Layout->Create(pComponents, Count, DeclData)) return nullptr;
 
 	VertexLayouts.Add(Signature, Layout);
 
@@ -1731,7 +1731,7 @@ PVertexLayout CD3D11GPUDriver::CreateVertexLayout(const CVertexComponent* pCompo
 
 PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData)
 {
-	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return NULL;
+	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return nullptr;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1744,7 +1744,7 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, U
 	Desc.CPUAccessFlags = CPUAccess;
 	Desc.MiscFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA* pInitData = nullptr;
 	D3D11_SUBRESOURCE_DATA InitData;
 	if (pData)
 	{
@@ -1752,14 +1752,14 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, U
 		pInitData = &InitData;
 	}
 
-	ID3D11Buffer* pD3DBuf = NULL;
-	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
+	ID3D11Buffer* pD3DBuf = nullptr;
+	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return nullptr;
 
 	PD3D11VertexBuffer VB = n_new(CD3D11VertexBuffer);
 	if (!VB->Create(VertexLayout, pD3DBuf))
 	{
 		pD3DBuf->Release();
-		return NULL;
+		return nullptr;
 	}
 
 	return VB.Get();
@@ -1768,7 +1768,7 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, U
 
 PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData)
 {
-	if (!pD3DDevice || !IndexCount) return NULL;
+	if (!pD3DDevice || !IndexCount) return nullptr;
 
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1781,7 +1781,7 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 	Desc.CPUAccessFlags = CPUAccess;
 	Desc.MiscFlags = 0;
 
-	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA* pInitData = nullptr;
 	D3D11_SUBRESOURCE_DATA InitData;
 	if (pData)
 	{
@@ -1789,14 +1789,14 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 		pInitData = &InitData;
 	}
 
-	ID3D11Buffer* pD3DBuf = NULL;
-	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
+	ID3D11Buffer* pD3DBuf = nullptr;
+	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return nullptr;
 
 	PD3D11IndexBuffer IB = n_new(CD3D11IndexBuffer);
 	if (!IB->Create(IndexType, pD3DBuf))
 	{
 		pD3DBuf->Release();
-		return NULL;
+		return nullptr;
 	}
 
 	return IB.Get();
@@ -1819,7 +1819,7 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 	if (pMeta->Type == USMBuffer_Constant)
 	{
 		UPTR ElementCount = (TotalSize + 15) >> 4;
-		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return NULL;
+		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return nullptr;
 		Desc.ByteWidth = ElementCount << 4;
 		Desc.BindFlags = (Usage == D3D11_USAGE_STAGING) ? 0 : D3D11_BIND_CONSTANT_BUFFER;
 	}
@@ -1840,20 +1840,20 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 		Desc.StructureByteStride = 0;
 	}
 
-	D3D11_SUBRESOURCE_DATA* pInitData = NULL;
+	D3D11_SUBRESOURCE_DATA* pInitData = nullptr;
 	D3D11_SUBRESOURCE_DATA InitData;
 	if (pData)
 	{
-		if (!pData->IsA<CD3D11ConstantBuffer>()) return NULL;
+		if (!pData->IsA<CD3D11ConstantBuffer>()) return nullptr;
 		const CD3D11ConstantBuffer* pDataCB11 = (const CD3D11ConstantBuffer*)pData;
 		InitData.pSysMem = pDataCB11->GetRAMCopy();
 		pInitData = &InitData;
 	}
 
-	ID3D11Buffer* pD3DBuf = NULL;
-	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return NULL;
+	ID3D11Buffer* pD3DBuf = nullptr;
+	if (FAILED(pD3DDevice->CreateBuffer(&Desc, pInitData, &pD3DBuf))) return nullptr;
 
-	ID3D11ShaderResourceView* pSRV = NULL;
+	ID3D11ShaderResourceView* pSRV = nullptr;
 	if (Desc.BindFlags & D3D11_BIND_SHADER_RESOURCE)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
@@ -1864,7 +1864,7 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 		if (FAILED(pD3DDevice->CreateShaderResourceView(pD3DBuf, &SRVDesc, &pSRV)))
 		{
 			pD3DBuf->Release();
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -1873,13 +1873,13 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 	{
 		if (pSRV) pSRV->Release();
 		pD3DBuf->Release();
-		return NULL;
+		return nullptr;
 	}
 
 	//???or add manual control / some flag in a metadata?
 	if (Usage != D3D11_USAGE_IMMUTABLE)
 	{
-		if (!CB->CreateRAMCopy()) return NULL;
+		if (!CB->CreateRAMCopy()) return nullptr;
 	}
 
 	return CB;
@@ -1890,18 +1890,18 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
 PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
 {
-	if (!pD3DDevice || !hBuffer) return NULL;
+	if (!pD3DDevice || !hBuffer) return nullptr;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta) return NULL;
+	if (!pMeta) return nullptr;
 	return InternalCreateConstantBuffer(pMeta, AccessFlags, pData).Get();
 }
 //---------------------------------------------------------------------
 
 PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer hBuffer)
 {
-	if (!pD3DDevice || !hBuffer) return NULL;
+	if (!pD3DDevice || !hBuffer) return nullptr;
 	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta || !pMeta->Size) return NULL;
+	if (!pMeta || !pMeta->Size) return nullptr;
 
 	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
 	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
@@ -1925,7 +1925,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer h
 
 	CUSMBufferMeta Meta = *pMeta;
 	Meta.Size = NextPow2Size;
-	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(&Meta, Access_CPU_Write | Access_GPU_Read, NULL);
+	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(&Meta, Access_CPU_Write | Access_GPU_Read, nullptr);
 	CB->SetTemporary(true);
 	return CB.Get();
 }
@@ -1962,7 +1962,7 @@ void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 		}
 		else
 		{
-			pNewNode->pNext = NULL;
+			pNewNode->pNext = nullptr;
 			BufferPool.Add(BufferSize, pNewNode);
 		}
 	}
@@ -2022,7 +2022,7 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCB
 		Type == USMBuffer_Structured ? TmpStructuredBuffers :
 		(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
 
-	CTmpCB* pPrevNode = NULL;
+	CTmpCB* pPrevNode = nullptr;
 	CTmpCB* pCurrNode = pPendingCBHead;
 	while (pCurrNode)
 	{
@@ -2041,7 +2041,7 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCB
 			}
 			else
 			{
-				pCurrNode->pNext = NULL;
+				pCurrNode->pNext = nullptr;
 				BufferPool.Add(BufferSize, pCurrNode);
 			}
 
@@ -2148,7 +2148,7 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		// toolchain or are omitted to save HDD loading time and will be generated now on CPU.
 		// Order is ArrayElement[0] { Mip[1] ... Mip[N] } ... ArrayElement[M] { Mip[1] ... Mip[N] }.
 		// Most detailed data Mip[0] is not copied to this buffer. Can also generate mips async in loader.
-		char* pGeneratedMips = NULL;
+		char* pGeneratedMips = nullptr;
 		if (!Data->MipDataProvided && MipLevels > 1)
 		{
 			NOT_IMPLEMENTED;
@@ -2199,7 +2199,7 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		}
 	}
 
-	ID3D11Resource* pTexRsrc = NULL;
+	ID3D11Resource* pTexRsrc = nullptr;
 	if (Desc.Type == Texture_1D)
 	{
 		D3D11_TEXTURE1D_DESC D3DDesc = { 0 };
@@ -2212,10 +2212,10 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		D3DDesc.CPUAccessFlags = CPUAccess;	
 		D3DDesc.MiscFlags = MiscFlags;
 
-		ID3D11Texture1D* pD3DTex = NULL;
+		ID3D11Texture1D* pD3DTex = nullptr;
 		HRESULT hr = pD3DDevice->CreateTexture1D(&D3DDesc, pInitData, &pD3DTex);
 		SAFE_DELETE_ARRAY(pInitData);
-		if (FAILED(hr)) return NULL;
+		if (FAILED(hr)) return nullptr;
 		pTexRsrc = pD3DTex;
 	}
 	else if (Desc.Type == Texture_2D || Desc.Type == Texture_Cube)
@@ -2241,14 +2241,14 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		}
 		else
 		{
-			D3DDesc.SampleDesc.Count = (int)Desc.MSAAQuality;
+			D3DDesc.SampleDesc.Count = static_cast<int>(Desc.MSAAQuality);
 			D3DDesc.SampleDesc.Quality = QualityLvlCount - 1; // Can use predefined D3D11_STANDARD_MULTISAMPLE_PATTERN, D3D11_CENTER_MULTISAMPLE_PATTERN
 		}
 
-		ID3D11Texture2D* pD3DTex = NULL;
+		ID3D11Texture2D* pD3DTex = nullptr;
 		HRESULT hr = pD3DDevice->CreateTexture2D(&D3DDesc, pInitData, &pD3DTex);
 		SAFE_DELETE_ARRAY(pInitData);
-		if (FAILED(hr)) return NULL;
+		if (FAILED(hr)) return nullptr;
 		pTexRsrc = pD3DTex;
 	}
 	else if (Desc.Type == Texture_3D)
@@ -2276,19 +2276,19 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		return nullptr;
 	}
 
-	ID3D11ShaderResourceView* pSRV = NULL;
+	ID3D11ShaderResourceView* pSRV = nullptr;
 	if ((BindFlags & D3D11_BIND_SHADER_RESOURCE) &&
-		FAILED(pD3DDevice->CreateShaderResourceView(pTexRsrc, NULL, &pSRV)))
+		FAILED(pD3DDevice->CreateShaderResourceView(pTexRsrc, nullptr, &pSRV)))
 	{
 		pTexRsrc->Release();
-		return NULL;
+		return nullptr;
 	}
 
 	if (!Tex->Create(Data, Usage, AccessFlags, pTexRsrc, pSRV))
 	{
 		pSRV->Release();
 		pTexRsrc->Release();
-		return NULL;
+		return nullptr;
 	}
 
 	return Tex.Get();
@@ -2309,8 +2309,8 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	D3DDesc.MinLOD = Desc.FinestMipMapLOD;
 	D3DDesc.MipLODBias = Desc.MipMapLODBias;
 
-	ID3D11SamplerState* pD3DSamplerState = NULL;
-	if (FAILED(pD3DDevice->CreateSamplerState(&D3DDesc, &pD3DSamplerState))) return NULL;
+	ID3D11SamplerState* pD3DSamplerState = nullptr;
+	if (FAILED(pD3DDevice->CreateSamplerState(&D3DDesc, &pD3DSamplerState))) return nullptr;
 
 	// Since sampler creation should be load-time, it is not performance critical.
 	// We can omit it and allow to create duplicate samplers, but maintaining uniquity
@@ -2325,7 +2325,7 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	if (!Samp->Create(pD3DSamplerState))
 	{
 		pD3DSamplerState->Release();
-		return NULL;
+		return nullptr;
 	}
 
 	Samplers.Add(Samp);
@@ -2341,7 +2341,7 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 
 	UPTR QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
-		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
+		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(Fmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return nullptr;
 
 	D3D11_TEXTURE2D_DESC D3DDesc = {0};
 	D3DDesc.Width = Desc.Width;
@@ -2370,24 +2370,24 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 			D3DDesc.MiscFlags |= D3D11_RESOURCE_MISC_GENERATE_MIPS; // | D3D11_RESOURCE_MISC_RESOURCE_CLAMP
 	}
 
-	ID3D11Texture2D* pTexture = NULL;
-	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTexture))) return NULL;
+	ID3D11Texture2D* pTexture = nullptr;
+	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, nullptr, &pTexture))) return nullptr;
 	
-	ID3D11RenderTargetView* pRTV = NULL;
-	if (FAILED(pD3DDevice->CreateRenderTargetView(pTexture, NULL, &pRTV)))
+	ID3D11RenderTargetView* pRTV = nullptr;
+	if (FAILED(pD3DDevice->CreateRenderTargetView(pTexture, nullptr, &pRTV)))
 	{
 		pTexture->Release();
-		return NULL;
+		return nullptr;
 	}
 
-	ID3D11ShaderResourceView* pSRV = NULL;
+	ID3D11ShaderResourceView* pSRV = nullptr;
 	if (Desc.UseAsShaderInput)
 	{
-		if (FAILED(pD3DDevice->CreateShaderResourceView(pTexture, NULL, &pSRV)))
+		if (FAILED(pD3DDevice->CreateShaderResourceView(pTexture, nullptr, &pSRV)))
 		{
 			pRTV->Release();
 			pTexture->Release();
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -2398,7 +2398,7 @@ PRenderTarget CD3D11GPUDriver::CreateRenderTarget(const CRenderTargetDesc& Desc)
 	{
 		if (pSRV) pSRV->Release();
 		pRTV->Release();
-		return NULL;
+		return nullptr;
 	}
 	return RT.Get();
 }
@@ -2422,7 +2422,7 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	//???check DSV or texture fmt?
 	UPTR QualityLvlCount = 0;
 	if (Desc.MSAAQuality != MSAA_None)
-		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DSVFmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return NULL;
+		if (FAILED(pD3DDevice->CheckMultisampleQualityLevels(DSVFmt, (int)Desc.MSAAQuality, &QualityLvlCount)) || !QualityLvlCount) return nullptr;
 
 	D3D11_TEXTURE2D_DESC D3DDesc = {0};
 	D3DDesc.Width = Desc.Width;
@@ -2446,8 +2446,8 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	D3DDesc.CPUAccessFlags = 0;
 	D3DDesc.MiscFlags = 0;
 
-	ID3D11Texture2D* pTexture = NULL;
-	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTexture))) return NULL;
+	ID3D11Texture2D* pTexture = nullptr;
+	if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, nullptr, &pTexture))) return nullptr;
 
 	D3D11_DEPTH_STENCIL_VIEW_DESC DSVDesc;
 	if (Desc.MSAAQuality == MSAA_None)
@@ -2459,14 +2459,14 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	DSVDesc.Format = DSVFmt;
 	DSVDesc.Flags = 0; // D3D11_DSV_READ_ONLY_DEPTH, D3D11_DSV_READ_ONLY_STENCIL
 
-	ID3D11DepthStencilView* pDSV = NULL;
+	ID3D11DepthStencilView* pDSV = nullptr;
 	if (FAILED(pD3DDevice->CreateDepthStencilView(pTexture, &DSVDesc, &pDSV)))
 	{
 		pTexture->Release();
-		return NULL;
+		return nullptr;
 	}
 
-	ID3D11ShaderResourceView* pSRV = NULL;
+	ID3D11ShaderResourceView* pSRV = nullptr;
 	if (Desc.UseAsShaderInput)
 	{
 		D3D11_SHADER_RESOURCE_VIEW_DESC SRVDesc;
@@ -2483,7 +2483,7 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 		{
 			pDSV->Release();
 			pTexture->Release();
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -2494,7 +2494,7 @@ PDepthStencilBuffer CD3D11GPUDriver::CreateDepthStencilBuffer(const CRenderTarge
 	{
 		if (pSRV) pSRV->Release();
 		pDSV->Release();
-		return NULL;
+		return nullptr;
 	}
 	return DS.Get();
 }
@@ -2532,7 +2532,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	RDesc.MultisampleEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAAEnable);
 	RDesc.AntialiasedLineEnable = Desc.Flags.Is(CRenderStateDesc::Rasterizer_MSAALinesEnable);
 
-	ID3D11RasterizerState* pRState = NULL;
+	ID3D11RasterizerState* pRState = nullptr;
 	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) goto ProcessFailure;
 
 	D3D11_DEPTH_STENCIL_DESC DSDesc;
@@ -2551,7 +2551,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	DSDesc.BackFace.StencilFailOp = GetD3DStencilOp(Desc.StencilBackFace.StencilFailOp);
 	DSDesc.BackFace.StencilDepthFailOp = GetD3DStencilOp(Desc.StencilBackFace.StencilDepthFailOp);
 
-	ID3D11DepthStencilState* pDSState = NULL;
+	ID3D11DepthStencilState* pDSState = nullptr;
 	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState))) goto ProcessFailure;
 
 	D3D11_BLEND_DESC BDesc;
@@ -2585,7 +2585,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 		}
 	}
 
-	ID3D11BlendState* pBState = NULL;
+	ID3D11BlendState* pBState = nullptr;
 	if (FAILED(pD3DDevice->CreateBlendState(&BDesc, &pBState))) goto ProcessFailure;
 
 	// Since render state creation should be load-time, it is not performance critical. If we
@@ -2641,7 +2641,7 @@ ProcessFailure:
 	if (pDSState) pDSState->Release();
 	if (pBState) pBState->Release();
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -2934,7 +2934,7 @@ bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_U
 
 	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
 
-	ID3D11Buffer* pBufToMap = NULL;
+	ID3D11Buffer* pBufToMap = nullptr;
 	if (IsNonMappable)
 	{
 		// Instead of creation may use ring buffer of precreated resources!
@@ -2945,7 +2945,7 @@ bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_U
 		D3DDesc.MiscFlags = 0;
 		D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-		if (FAILED(pD3DDevice->CreateBuffer(&D3DDesc, NULL, &pBufToMap))) FAIL;
+		if (FAILED(pD3DDevice->CreateBuffer(&D3DDesc, nullptr, &pBufToMap))) FAIL;
 
 		// PERF: Async, immediate reading may cause stall. Allow processing multiple read requests per call or make ReadFromResource async?
 		pD3DImmContext->CopyResource(pBufToMap, pBuf);
@@ -3022,7 +3022,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 
 	UPTR ImageCopyFlags = CopyImage_AdjustSrc;
 
-	ID3D11Resource* pRsrcToMap = NULL;
+	ID3D11Resource* pRsrcToMap = nullptr;
 	if (IsNonMappable)
 	{
 		// Instead of creation may use ring buffer of precreated resources!
@@ -3041,8 +3041,8 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 				D3DDesc.MiscFlags = 0;
 				D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-				ID3D11Texture1D* pTex = NULL;
-				if (FAILED(pD3DDevice->CreateTexture1D(&D3DDesc, NULL, &pTex))) FAIL;
+				ID3D11Texture1D* pTex = nullptr;
+				if (FAILED(pD3DDevice->CreateTexture1D(&D3DDesc, nullptr, &pTex))) FAIL;
 				pRsrcToMap = pTex;
 
 				break;
@@ -3062,8 +3062,8 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 				D3DDesc.MiscFlags = 0;
 				D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-				ID3D11Texture2D* pTex = NULL;
-				if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, NULL, &pTex))) FAIL;
+				ID3D11Texture2D* pTex = nullptr;
+				if (FAILED(pD3DDevice->CreateTexture2D(&D3DDesc, nullptr, &pTex))) FAIL;
 				pRsrcToMap = pTex;
 
 				break;
@@ -3082,8 +3082,8 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 				D3DDesc.MiscFlags = 0;
 				D3DDesc.CPUAccessFlags = D3D11_CPU_ACCESS_READ;
 
-				ID3D11Texture3D* pTex = NULL;
-				if (FAILED(pD3DDevice->CreateTexture3D(&D3DDesc, NULL, &pTex))) FAIL;
+				ID3D11Texture3D* pTex = nullptr;
+				if (FAILED(pD3DDevice->CreateTexture3D(&D3DDesc, nullptr, &pTex))) FAIL;
 				pRsrcToMap = pTex;
 
 				ImageCopyFlags |= CopyImage_3DImage;
@@ -3093,7 +3093,7 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 		};
 
 		// PERF: Async, immediate reading may cause stall. Allow processing multiple read requests per call or make ReadFromResource async?
-		pD3DImmContext->CopySubresourceRegion(pRsrcToMap, 0, 0, 0, 0, pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels), NULL);
+		pD3DImmContext->CopySubresourceRegion(pRsrcToMap, 0, 0, 0, 0, pTexRsrc, D3D11CalcSubresource(MipLevel, ArraySlice, Desc.MipLevels), nullptr);
 	}
 	else pRsrcToMap = pTexRsrc;
 
@@ -3136,7 +3136,7 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 
 	if (Usage == D3D11_USAGE_DEFAULT) //???update staging here too? need perf test!
 	{
-		if (UpdateWhole) pD3DImmContext->UpdateSubresource(pBuf, 0, NULL, pData, 0, 0);
+		if (UpdateWhole) pD3DImmContext->UpdateSubresource(pBuf, 0, nullptr, pData, 0, 0);
 		else
 		{
 			D3D11_BOX D3DBox;
@@ -3289,7 +3289,7 @@ bool CD3D11GPUDriver::WriteToResource(CConstantBuffer& Resource, const void* pDa
 
 	if (D3DUsage == D3D11_USAGE_DEFAULT)
 	{
-		pD3DImmContext->UpdateSubresource(pBuffer, 0, NULL, pData, 0, 0);
+		pD3DImmContext->UpdateSubresource(pBuffer, 0, nullptr, pData, 0, 0);
 	}
 	else if (D3DUsage == D3D11_USAGE_DYNAMIC)
 	{
@@ -3389,7 +3389,7 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 
 		if (D3DUsage == D3D11_USAGE_DEFAULT)
 		{
-			pD3DImmContext->UpdateSubresource(pBuffer, 0, NULL, CB11.GetRAMCopy(), 0, 0);
+			pD3DImmContext->UpdateSubresource(pBuffer, 0, nullptr, CB11.GetRAMCopy(), 0, 0);
 		}
 		else if (D3DUsage == D3D11_USAGE_DYNAMIC || D3DUsage == D3D11_USAGE_STAGING)
 		{
@@ -3464,7 +3464,7 @@ void CD3D11GPUDriver::GetUsageAccess(UPTR InAccessFlags, bool InitDataProvided, 
 	{
 		OutUsage = D3D11_USAGE_DYNAMIC;
 	}
-	else //???are there any unsupported combinations? user wants to get a resource with a specified access or NULL!
+	else //???are there any unsupported combinations? user wants to get a resource with a specified access or nullptr!
 	{
 		OutUsage = D3D11_USAGE_STAGING; // Can't be a depth-stencil buffer or a multisampled render target
 	}
