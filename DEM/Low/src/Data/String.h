@@ -20,7 +20,7 @@ public:
 
 	static const CString Empty;
 
-	CString(): pString(NULL), Length(0), MaxLength(0) {}
+	CString(): pString(nullptr), Length(0), MaxLength(0) {}
 	explicit CString(const char* pSrc);
 	explicit CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeSpace = 0);
 	CString(const CString& Other, UPTR PreallocatedFreeSpace = 0): CString(Other.CStr(), Other.GetLength(), PreallocatedFreeSpace) { }
@@ -36,7 +36,7 @@ public:
 	void			Clear();
 	void __cdecl	Format(const char* pFormatStr, ...) __attribute__((format(printf,2,3)));
 	void			FormatWithArgs(const char* pFormatStr, va_list args);
-	//???Wrap(const char* pSrc)? - wrap NULL-terminated string w/out ownership
+	//???Wrap(const char* pSrc)? - wrap nullptr-terminated string w/out ownership
 
 	void			Add(const char* pStr, UPTR StrLength);
 	void			Add(char Chr);
@@ -69,7 +69,7 @@ public:
 	operator		const char*() const { return pString; }
 	operator		bool() const { return pString && *pString; }
 
-	//???simplify by using const "" instead of NULL in CString::pString?
+	//???simplify by using const "" instead of nullptr in CString::pString?
 	bool			operator ==(const CString& Other) const { return Length == Other.Length && (pString == Other.pString || (pString && Other.pString && !strcmp(pString, Other.pString))); }
 	bool			operator !=(const CString& Other) const { return Length != Other.Length || (pString != Other.pString && (!pString || !Other.pString || strcmp(pString, Other.pString))); }
 	bool			operator >(const char* pOther) const { return pString && (!pOther || strcmp(pString, pOther) > 0); }
@@ -133,7 +133,7 @@ inline CString::CString(const char* pSrc)
 		}
 	}
 
-	pString = NULL;
+	pString = nullptr;
 	MaxLength = 0;
 	Length = 0;
 }
@@ -150,7 +150,7 @@ inline CString::CString(const char* pSrc, UPTR SrcLength, UPTR PreallocatedFreeS
 	}
 	else
 	{
-		pString = PreallocatedFreeSpace ? (char*)n_malloc(PreallocatedFreeSpace + 1) : NULL;
+		pString = PreallocatedFreeSpace ? (char*)n_malloc(PreallocatedFreeSpace + 1) : nullptr;
 		MaxLength = PreallocatedFreeSpace;
 		Length = 0;
 	}

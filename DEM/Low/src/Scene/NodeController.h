@@ -39,10 +39,10 @@ protected:
 
 public:
 
-	CNodeController(): pNode(NULL) {}
+	CNodeController(): pNode(nullptr) {}
 
 	virtual bool	OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; return !!pNode; }
-	virtual void	OnDetachFromScene() { pNode = NULL; }
+	virtual void	OnDetachFromScene() { pNode = nullptr; }
 
 	virtual bool	ApplyTo(Math::CTransformSRT& DestTfm) = 0;
 	void			RemoveFromNode();

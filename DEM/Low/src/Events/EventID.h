@@ -20,12 +20,12 @@ struct CEventID
 		const Core::CRTTI*	RTTI;
 	};
 
-	CEventID(): ID(NULL) {}
+	CEventID(): ID(nullptr) {}
 	CEventID(CStrID _ID): ID(_ID) {}
 	CEventID(const Core::CRTTI* _RTTI): RTTI(_RTTI) {}
 	CEventID(const Core::CRTTI& _RTTI): RTTI(&_RTTI) {}
 
-	bool IsDefault() const { return ID == NULL; }
+	bool IsDefault() const { return ID == nullptr; }
 
 	bool operator ==(const CEventID& Other) const { return ID == Other.ID; }
 	bool operator !=(const CEventID& Other) const { return ID != Other.ID; }

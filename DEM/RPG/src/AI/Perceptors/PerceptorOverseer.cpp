@@ -15,7 +15,7 @@ void CPerceptorOverseer::Init(const Data::CParams& Desc)
 {
 	//CPerceptor::Init(Desc);
 	
-	Data::PDataArray Array = Desc.Get<Data::PDataArray>(CStrID("Overseers"), NULL);
+	Data::PDataArray Array = Desc.Get<Data::PDataArray>(CStrID("Overseers"), nullptr);
 	if (Array.IsValidPtr()) Array->FillArray(Overseers);
 }
 //---------------------------------------------------------------------

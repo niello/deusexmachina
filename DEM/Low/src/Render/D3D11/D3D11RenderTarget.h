@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	CD3D11RenderTarget(): pRTView(NULL) {}
+	CD3D11RenderTarget(): pRTView(nullptr) {}
 	virtual ~CD3D11RenderTarget() { InternalDestroy(); }
 
 	bool					Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV); // For internal use

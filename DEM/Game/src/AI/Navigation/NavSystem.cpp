@@ -16,12 +16,12 @@ namespace AI
 
 CNavSystem::CNavSystem(CActor* Actor):
 	pActor(Actor),
-	pNavQuery(NULL),
-	pNavFilter(NULL),
-	pBoundary(NULL),
+	pNavQuery(nullptr),
+	pNavFilter(nullptr),
+	pBoundary(nullptr),
 	DestRef(0),
 	OffMeshRef(0),
-	pProcessingQueue(NULL),
+	pProcessingQueue(nullptr),
 	PathRequestID(DT_PATHQ_INVALID),
 	TraversingOffMesh(false)
 {
@@ -33,7 +33,7 @@ inline void CNavSystem::ResetPathRequest()
 {
 	if (!pProcessingQueue) return;
 	pProcessingQueue->CancelRequest(PathRequestID);
-	pProcessingQueue = NULL;
+	pProcessingQueue = nullptr;
 	PathRequestID = DT_PATHQ_INVALID;
 }
 //---------------------------------------------------------------------
@@ -42,19 +42,19 @@ void CNavSystem::Init(const Data::CParams* Params)
 {
 	if (Params)
 	{
-		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<CString>(CStrID("NavFilterID"), NULL).CStr()));
+		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<CString>(CStrID("NavFilterID"), nullptr).CStr()));
 		Sys::Error("CNavSystem::Init() -> IMPLEMENT ME!!!");
 		
 #ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
 		pBoundary = n_new(dtLocalBoundary); //!!!and only if obstacle avoidance enabled!
 #else
-		pBoundary = NULL;
+		pBoundary = nullptr;
 #endif
 	}
 	else
 	{
 		pNavFilter = AISrv->GetDefaultNavQueryFilter();
-		pBoundary = NULL;
+		pBoundary = nullptr;
 	}
 
 	//!!!DBG TMP!
@@ -263,7 +263,7 @@ void CNavSystem::Update(float FrameTime)
 			dtStatus QueryStatus = pProcessingQueue->GetRequestStatus(PathRequestID);
 			if (dtStatusFailed(QueryStatus))
 			{
-				pProcessingQueue = NULL;
+				pProcessingQueue = nullptr;
 				PathRequestID = DT_PATHQ_INVALID;
 				pActor->NavState = AINav_Failed;
 			}
@@ -322,7 +322,7 @@ void CNavSystem::Update(float FrameTime)
 				else pActor->NavState = AINav_Failed;
 
 				ReplanTime = 0.f;
-				pProcessingQueue = NULL;
+				pProcessingQueue = nullptr;
 				PathRequestID = DT_PATHQ_INVALID;
 			}
 		}
@@ -417,7 +417,7 @@ void CNavSystem::ResetPositionPoly(bool ForceResetState)
 				// No poly found, try to find nearest valid poly in a recovery radius. Radius may be changed.
 				const float RecoveryRadius = n_min(pActor->Radius * 2.f, 20.f);
 				const float RecoveryExtents[3] = { RecoveryRadius, pActor->Height, RecoveryRadius };
-				pNavQuery->findNearestPoly(pActor->Position.v, RecoveryExtents, pNavFilter, &Ref, NULL);
+				pNavQuery->findNearestPoly(pActor->Position.v, RecoveryExtents, pNavFilter, &Ref, nullptr);
 			}
 		}
 	}
@@ -533,7 +533,7 @@ bool CNavSystem::GetPathEdges(CPathEdge* pOutPath, UPTR MaxCount, UPTR& Count)
 	//if action not changed, but controller has changed, finalize edge and start new one
 	//!!!if poly has controller, can determine action from a controller
 
-	CPathEdge* pEdge = NULL;
+	CPathEdge* pEdge = nullptr;
 	Count = 0;
 	if (TraversingOffMesh)
 	{
@@ -722,7 +722,7 @@ UPTR CNavSystem::GetValidPolys(const vector3& Center, float MinRange, float MaxR
 	const UPTR MAX_POLYS = 32; //!!!???to settings?!
 	Polys.AllocateFixed(MAX_POLYS);
 	int NearCount;
-	if (!dtStatusSucceed(pNavQuery->findPolysAroundCircle(Ref, Pt.v, MaxRange, pNavFilter, Polys.Begin(), NULL, NULL, &NearCount, MAX_POLYS))) return 0;
+	if (!dtStatusSucceed(pNavQuery->findPolysAroundCircle(Ref, Pt.v, MaxRange, pNavFilter, Polys.Begin(), nullptr, nullptr, &NearCount, MAX_POLYS))) return 0;
 
 	// Exclude polys laying entirely in MinRange. Since polys are convex, there is no chance
 	// that some poly has all corners inside MinRange, but some part of area outside.
@@ -833,7 +833,7 @@ bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, float
 		// Projected point is invalid, project back to find the first valid point between
 		// the nearest and valid ones. It will be the closest valid point we search for.
 		float t;
-		if (!dtStatusSucceed(pNavQuery->raycast(NearestPoly, OutPos.v, CandidatePos.v, pNavFilter, &t, NULL, NULL, NULL, 0))) FAIL;
+		if (!dtStatusSucceed(pNavQuery->raycast(NearestPoly, OutPos.v, CandidatePos.v, pNavFilter, &t, nullptr, nullptr, nullptr, 0))) FAIL;
 		n_assert(t != FLT_MAX); // OutPos is valid, CandidatePos is not. Intersection must exist.
 		OutPos += (CandidatePos - OutPos) * t;
 	}
@@ -891,7 +891,7 @@ void CNavSystem::RenderDebug()
 {
 	if (!pNavQuery) return;
 
-	const char* pNavStr = NULL;
+	const char* pNavStr = nullptr;
 	if (pActor->NavState == AINav_Done) pNavStr = "Done";
 	else if (pActor->NavState == AINav_Failed) pNavStr = "Failed";
 	else if (pActor->NavState == AINav_DestSet) pNavStr = "DestSet";

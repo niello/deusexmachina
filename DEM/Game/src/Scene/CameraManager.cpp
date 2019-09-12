@@ -24,7 +24,7 @@ bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 	if (Ctlr.IsValid())
 	{
 		Ctlr->Activate(false);
-		Ctlr = NULL;
+		Ctlr = nullptr;
 	}
 */
 
@@ -132,7 +132,7 @@ bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 PEntity CCameraManager::CreateEntity(CStrID UID, CGameLevel& Level)
 {
 	n_assert(UID.IsValid());
-	n_assert(!EntityExists(UID)); //???return NULL or existing entity?
+	n_assert(!EntityExists(UID)); //???return nullptr or existing entity?
 	PEntity Entity = n_new(CEntity(UID, Level));
 	Entities.Add(Entity);
 	UIDToEntity.Add(Entity->GetUID(), Entity.Get());

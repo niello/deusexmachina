@@ -412,7 +412,7 @@ COGGTheoraPlayer::Close()
     n_assert(_IsOpen);
     infile->Close();
     n_delete(infile);
-	infile = NULL;
+	infile = nullptr;
     if (theoraLoaded)
         StopTheora();
     n_delete_array(rgbBuffer);

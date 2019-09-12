@@ -59,10 +59,10 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 
 	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
 
-	const CMaterial* pCurrMaterial = NULL;
-	const CTechnique* pCurrTech = NULL;
+	const CMaterial* pCurrMaterial = nullptr;
+	const CTechnique* pCurrTech = nullptr;
 
-	const CEffectConstant* pConstWorldMatrix = NULL;
+	const CEffectConstant* pConstWorldMatrix = nullptr;
 
 	while (ItCurr != ItEnd)
 	{

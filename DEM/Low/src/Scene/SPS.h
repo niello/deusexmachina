@@ -35,7 +35,7 @@ public:
 
 		CSPSRecord* pNode;
 
-		CIterator(): pNode(NULL) {}
+		CIterator(): pNode(nullptr) {}
 		CIterator(CSPSRecord* Node): pNode(Node) {}
 		CIterator(const CIterator& Other): pNode(Other.pNode) {}
 
@@ -53,7 +53,7 @@ public:
 
 	CSPSRecord* pFront;
 
-	CSPSCell(): pFront(NULL) {}
+	CSPSCell(): pFront(nullptr) {}
 	~CSPSCell() { n_assert(!pFront); } // All nodes must be removed and deallocated by SPS
 
 	CIterator	Add(CSPSRecord* Object);
@@ -62,7 +62,7 @@ public:
 	CIterator	Find(CSPSRecord* Object) const;
 	bool		IsEmpty() const { return !pFront; }
 	CIterator	Begin() const { return CIterator(pFront); }
-	CIterator	End() const { return CIterator(NULL); }
+	CIterator	End() const { return CIterator(nullptr); }
 };
 
 typedef Data::CQuadTree<CSPSRecord*, CSPSCell> CSPSQuadTree;

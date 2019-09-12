@@ -150,7 +150,7 @@ CNavData* CAILevel::GetNavData(float ActorRadius)
 		if (ActorRadius <= NavData.KeyAt(i))
 			return &NavData.ValueAt(i);
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

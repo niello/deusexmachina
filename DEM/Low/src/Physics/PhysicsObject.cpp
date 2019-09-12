@@ -65,10 +65,10 @@ void CPhysicsObject::InternalTerm()
 	if (pBtCollObj)
 	{
 		delete pBtCollObj;
-		pBtCollObj = NULL;
+		pBtCollObj = nullptr;
 	}
 
-	Shape = NULL;
+	Shape = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -96,7 +96,7 @@ void CPhysicsObject::RemoveFromLevel()
 	if (pWorld)
 	{
 		pWorld->RemoveCollisionObject(*this);
-		pWorld = NULL;
+		pWorld = nullptr;
 	}
 }
 //---------------------------------------------------------------------

@@ -41,7 +41,7 @@ struct CSampler
 	CAnimTrack* pTrackR;
 	CAnimTrack* pTrackS;
 
-	CSampler(): pTrackT(NULL), pTrackR(NULL), pTrackS(NULL) {}
+	CSampler(): pTrackT(nullptr), pTrackR(nullptr), pTrackS(nullptr) {}
 };
 
 }

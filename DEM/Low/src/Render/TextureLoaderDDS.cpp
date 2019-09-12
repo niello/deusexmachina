@@ -252,15 +252,15 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 
 	U64 FileSize = Stream->GetSize();
-	if (FileSize < sizeof(DDS_HEADER) + 4) return NULL; // Too small to be a valid DDS
+	if (FileSize < sizeof(DDS_HEADER) + 4) return nullptr; // Too small to be a valid DDS
 
 	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read<U32>(Magic) || Magic != DDS_MAGIC) return NULL;
+	if (!Reader.Read<U32>(Magic) || Magic != DDS_MAGIC) return nullptr;
 
 	DDS_HEADER Header;
-	if (!Reader.Read(Header) || Header.size != sizeof(DDS_HEADER) || Header.ddspf.size != sizeof(DDS_PIXELFORMAT)) return NULL;
+	if (!Reader.Read(Header) || Header.size != sizeof(DDS_HEADER) || Header.ddspf.size != sizeof(DDS_PIXELFORMAT)) return nullptr;
 
 	Render::CTextureDesc TexDesc;
 	TexDesc.Width = Header.width;
@@ -275,11 +275,11 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 	{
 		// D3D10 and later format
 		DDS_HEADER_DXT10 Header10;
-		if (!Reader.Read(Header10) || Header10.arraySize == 0) return NULL;
+		if (!Reader.Read(Header10) || Header10.arraySize == 0) return nullptr;
 		TexDesc.ArraySize = Header10.arraySize;
 
 		TexDesc.Format = DDSDX10FormatToPixelFormat(Header10.dxgiFormat);
-		if (TexDesc.Format == Render::PixelFmt_Invalid) return NULL;
+		if (TexDesc.Format == Render::PixelFmt_Invalid) return nullptr;
 
 		switch (Header10.resourceDimension)
 		{
@@ -287,7 +287,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 			case D3D11_RESOURCE_DIMENSION_TEXTURE2D:
 				TexDesc.Type = (Header10.miscFlag & D3D11_RESOURCE_MISC_TEXTURECUBE) ? Render::Texture_Cube : Render::Texture_2D; break;
 			case D3D11_RESOURCE_DIMENSION_TEXTURE3D:	TexDesc.Type = Render::Texture_3D; break;
-			default:									return NULL;
+			default:									return nullptr;
 		}
 	}
 	else
@@ -296,13 +296,13 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 		TexDesc.ArraySize = 1;
 
 		TexDesc.Format = DDSFormatToPixelFormat(Header.ddspf);
-		if (TexDesc.Format == Render::PixelFmt_Invalid) return NULL;
+		if (TexDesc.Format == Render::PixelFmt_Invalid) return nullptr;
 
 		if (Header.flags & DDS_HEADER_FLAGS_VOLUME) TexDesc.Type = Render::Texture_3D;
 		else if (Header.caps2 & DDS_CUBEMAP)
 		{
 			// All cube faces must be defined
-			if ((Header.caps2 & DDS_CUBEMAP_ALLFACES) != DDS_CUBEMAP_ALLFACES) return NULL;
+			if ((Header.caps2 & DDS_CUBEMAP_ALLFACES) != DDS_CUBEMAP_ALLFACES) return nullptr;
 			TexDesc.Type = Render::Texture_Cube;
 		}
 		else TexDesc.Type = Render::Texture_2D;
@@ -310,7 +310,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	U64 DataSize64 = FileSize - Stream->GetPosition();
 	UPTR DataSize = (UPTR)DataSize64;
-	if ((U64)DataSize != DataSize64) return NULL;
+	if ((U64)DataSize != DataSize64) return nullptr;
 
 	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 

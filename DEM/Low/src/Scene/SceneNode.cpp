@@ -8,7 +8,7 @@ namespace Scene
 const UPTR MAX_NODE_NAME_LEN = 64;
 
 CSceneNode::CSceneNode(CStrID NodeName):
-	pParent(NULL),
+	pParent(nullptr),
 	Name(NodeName),
 	Flags(Active | LocalMatrixDirty | LocalTransformValid)
 {
@@ -182,14 +182,14 @@ void CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node)
 //---------------------------------------------------------------------
 
 // NB: no data is changed inside this method, but const_cast is required to return non-const node pointer.
-// If pUnresolvedPathPart == NULL, the child node is found, return this node. Else the deepest found node is returned.
+// If pUnresolvedPathPart == nullptr, the child node is found, return this node. Else the deepest found node is returned.
 CSceneNode* CSceneNode::FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const
 {
 	const CSceneNode* pCurrNode = this;
 
 	if (!pPath || !*pPath)
 	{
-		pUnresolvedPathPart = NULL;
+		pUnresolvedPathPart = nullptr;
 		return const_cast<CSceneNode*>(pCurrNode);
 	}
 
@@ -209,7 +209,7 @@ CSceneNode* CSceneNode::FindDeepestChild(const char* pPath, char const* & pUnres
 		}
 	}
 
-	pUnresolvedPathPart = NULL;
+	pUnresolvedPathPart = nullptr;
 	return const_cast<CSceneNode*>(pCurrNode);
 }
 //---------------------------------------------------------------------

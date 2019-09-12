@@ -48,17 +48,17 @@ public:
 	bool		LuaStackToData(Data::CData& Result, int StackIdx);
 
 	UPTR		RunScriptFile(const char* pFileName);
-	UPTR		RunScript(const char* Buffer, UPTR Length = -1, Data::CData* pRetVal = NULL);
+	UPTR		RunScript(const char* Buffer, UPTR Length = -1, Data::CData* pRetVal = nullptr);
 
-	UPTR		PerformCall(int ArgCount, Data::CData* pRetVal = NULL, const char* pDbgName = "<UNKNOWN>");
+	UPTR		PerformCall(int ArgCount, Data::CData* pRetVal = nullptr, const char* pDbgName = "<UNKNOWN>");
 	
 	//UPTR		RunFunction(const char* pFuncName, int ArgsOnStack = 0);
 	//UPTR		RunFunction(const char* pFuncName, const char* ArgLuaGlobal);
 	//UPTR		RunFunction(const char* pFuncName, const CArray<const char*>& LuaArgs);
-	//UPTR		RunFunction(const char* pFuncName, PParams Args = NULL);
+	//UPTR		RunFunction(const char* pFuncName, PParams Args = nullptr);
 
 	// Class registration, Mixing-in
-	bool		BeginClass(const char* Name, const char* BaseClass = NULL, UPTR FieldCount = 0);
+	bool		BeginClass(const char* Name, const char* BaseClass = nullptr, UPTR FieldCount = 0);
 	bool		BeginExistingClass(const char* Name);
 	void		EndClass(bool IsScriptObjectSubclass);
 	bool		BeginMixin(CScriptObject* pObj);
@@ -74,10 +74,10 @@ public:
 	
 	bool		CreateObject(CScriptObject& Obj, const char* LuaClassName = "CScriptObject");
 	bool		CreateInterface(const char* Name, const char* TablePath, const char* LuaClassName, void* pCppPtr);
-	bool		PlaceObjectOnStack(const char* Name, const char* Table = NULL);
+	bool		PlaceObjectOnStack(const char* Name, const char* Table = nullptr);
 	bool		PlaceOnStack(const char* FullPath, bool Create = false);
-	void		RemoveObject(const char* Name, const char* Table = NULL);
-	bool		ObjectExists(const char* Name, const char* Table = NULL);
+	void		RemoveObject(const char* Name, const char* Table = nullptr);
+	bool		ObjectExists(const char* Name, const char* Table = nullptr);
 
 	bool		GetTableFieldsDebug(CArray<CString>& OutFields);
 };

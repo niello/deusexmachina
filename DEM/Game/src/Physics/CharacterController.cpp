@@ -49,7 +49,7 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 void CCharacterController::Term()
 {
 	RemoveFromLevel();
-	Body = NULL;
+	Body = nullptr;
 }
 //---------------------------------------------------------------------
 

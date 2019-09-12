@@ -46,7 +46,7 @@ void CQuestManager::Trigger()
 			if (TasksToDelete[i]->ScriptObj.IsValidPtr())
 			{
 				DeletedScriptObjects.Add(TasksToDelete[i]->ScriptObj->GetFullName());
-				TasksToDelete[i]->ScriptObj = NULL;
+				TasksToDelete[i]->ScriptObj = nullptr;
 			}
 		}
 		TasksToDelete.Clear();
@@ -104,7 +104,7 @@ bool CQuestManager::StartQuest(CStrID QuestID, CStrID TaskID)
 	IPTR Idx = Quests.FindIndex(QuestID);
 	if (Idx == INVALID_INDEX) //???or found & status = No?
 	{
-		if (!LoadQuest(QuestID, (TaskID == CStrID::Empty) ? &TaskID : NULL)) FAIL;
+		if (!LoadQuest(QuestID, (TaskID == CStrID::Empty) ? &TaskID : nullptr)) FAIL;
 		CQuestRec& NewRec = Quests[QuestID];
 		Quest = NewRec.Quest;
 		NewRec.Status = CQuest::Opened;
@@ -193,7 +193,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 				// Don't delete task, we need its name & desc for journal
 				TasksToDelete.Add(Task.Task);
-				//Task.Task = NULL;
+				//Task.Task = nullptr;
 				Task.Status = Status;
 			}
 		}
@@ -207,7 +207,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 		// Do not unload to access to tasks' Status now
 		//QuestsToDelete.Add(Quest);
-		//Quests.ValueAt(Idx).Quest = NULL;
+		//Quests.ValueAt(Idx).Quest = nullptr;
 		Quests.ValueAt(Idx).Status = Status;
 
 		//!!!refactor params!
@@ -245,7 +245,7 @@ bool CQuestManager::CloseQuest(CStrID QuestID, CStrID TaskID, bool Success)
 
 			// Don't delete task, we need its name & desc for journal
 			TasksToDelete.Add(Task.Task);
-			//Task.Task = NULL;
+			//Task.Task = nullptr;
 			Task.Status = Status;
 
 			OK;
@@ -299,7 +299,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 		{
 			CQuest::CTaskRec& TaskRec = Tasks.ValueAt(j);
 			TaskRec.Status = CQuest::No;
-			TaskRec.Task->ScriptObj = NULL;
+			TaskRec.Task->ScriptObj = nullptr;
 		}
 	}
 

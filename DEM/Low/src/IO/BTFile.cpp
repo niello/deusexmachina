@@ -10,7 +10,7 @@ const short CBTFile::NoDataS = -32768;
 
 CBTFile::CBTFile(const void* Data): SelfAllocated(false), Version(BT_INVALID), MinHeight(NoDataF), MaxHeight(NoDataF)
 {
-	n_assert2(Data, "NULL data in constructor of CBTFile");
+	n_assert2(Data, "nullptr data in constructor of CBTFile");
 	Header = (CHeaderUnion*)Data;
 	HeightsF = (float*)((char*)Data + sizeof(CHeaderUnion));
 	InitVersion();

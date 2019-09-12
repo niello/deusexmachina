@@ -68,7 +68,7 @@ inline void CBuffer::Clear()
 	if (IsValid())
 	{
 		n_free(pData);
-		pData = NULL;
+		pData = nullptr;
 		DataSize = 0;
 		Allocated = 0;
 	}

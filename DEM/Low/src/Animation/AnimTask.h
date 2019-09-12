@@ -61,7 +61,7 @@ public:
 	Events::CEventDispatcher*		pEventDisp;	// For anim events
 	Data::PParams					Params;		// For anim events
 
-	CAnimTask(): Ctlrs(1, 2), pEventDisp(NULL), State(Task_Invalid) { Ctlrs.Flags.Set(Array_DoubleGrowSize); }
+	CAnimTask(): Ctlrs(1, 2), pEventDisp(nullptr), State(Task_Invalid) { Ctlrs.Flags.Set(Array_DoubleGrowSize); }
 	~CAnimTask() { Clear(); }
 
 	void	Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Speed, float _Weight, float FadeInTime, float FadeOutTime);

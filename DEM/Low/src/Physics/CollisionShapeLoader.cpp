@@ -53,7 +53,7 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 
 	IO::CBinaryReader Reader(*Stream);
 	Data::PParams Desc = n_new(Data::CParams);
-	if (!Reader.ReadParams(*Desc)) return NULL;
+	if (!Reader.ReadParams(*Desc)) return nullptr;
 
 	CStrID Type = Desc->Get<CStrID>(Str::Type);
 	if (Type == Str::StaticMesh)
@@ -62,15 +62,15 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 		//create btStridingMeshInterface*
 		//???can get interface pointer from the shape?
 		NOT_IMPLEMENTED;
-		return NULL;
+		return nullptr;
 	}
 	else if (Type == Str::Heightfield)
 	{
 		CString FileName = Desc->Get<CString>(Str::HeightMapFile, CString::Empty);
-		if (!FileName.IsValid()) return NULL;
+		if (!FileName.IsValid()) return nullptr;
 		FileName = "Terrain:" + FileName + ".cdlod";
 
-		void* pHFData = NULL;
+		void* pHFData = nullptr;
 		U32 HFWidth, HFHeight;
 		float HScale;
 		CAABB AABB;
@@ -79,7 +79,7 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 		{
 			//!!!DUPLICATE CODE! See CCDLODDataLoader!
 			IO::PStream CDLODFile = IOSrv->CreateStream(FileName);
-			if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return NULL;
+			if (!CDLODFile->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 			IO::CBinaryReader Reader(*CDLODFile);
 
 			n_assert(Reader.Read<U32>() == 'CDLD');	// Magic
@@ -113,7 +113,7 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 				++pSData;
 			}
 		}
-		else return NULL;
+		else return nullptr;
 
 		Physics::PHeightfieldShape HFShape = n_new(Physics::CHeightfieldShape);
 		if (HFShape.IsValidPtr())
@@ -151,7 +151,7 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 		{
 			pBtShape = new btCapsuleShape(Desc->Get<float>(Str::Radius, 1.f), Desc->Get<float>(Str::Height, 1.f));
 		}
-		else return NULL;
+		else return nullptr;
 
 		Physics::PCollisionShape Shape = n_new(Physics::CCollisionShape);
 		if (Shape.IsValidPtr() && Shape->Setup(pBtShape)) return Shape.Get();
@@ -159,7 +159,7 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 		delete pBtShape;
 	}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

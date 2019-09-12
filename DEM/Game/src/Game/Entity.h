@@ -45,10 +45,10 @@ public:
 	void						SetLevel(CGameLevel* pNewLevel);
 	void						Activate();
 	void						Deactivate();
-	void						Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
+	void						Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
 
 	template<class T> T*		GetProperty() const;
-	template<class T> bool		HasProperty() const { return GetProperty<T>() != NULL; }
+	template<class T> bool		HasProperty() const { return GetProperty<T>() != nullptr; }
 
 	CStrID						GetUID() const { n_assert_dbg(UID.IsValid()); return UID; }
 	CGameLevel*					GetLevel() const;

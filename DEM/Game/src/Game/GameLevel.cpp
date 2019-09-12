@@ -196,7 +196,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 				for (UPTR i = 0; i < Props->GetCount(); ++i)
 				{
 					const Data::CData& PropID = Props->Get(i);
-					const Core::CRTTI* pRTTI = NULL;
+					const Core::CRTTI* pRTTI = nullptr;
 					if (PropID.IsA<int>()) pRTTI = Factory->GetRTTI((Data::CFourCC)PropID.GetValue<int>());
 					else if (PropID.IsA<CString>()) pRTTI = Factory->GetRTTI(PropID.GetValue<CString>());
 
@@ -210,7 +210,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 	// Broadcast all global events to the level script and hosted entities
 
-	EventSrv->Subscribe(NULL, this, &CGameLevel::OnEvent, &GlobalSub);
+	EventSrv->Subscribe(nullptr, this, &CGameLevel::OnEvent, &GlobalSub);
 
 	OK;
 }
@@ -243,11 +243,11 @@ bool CGameLevel::Validate(Render::CGPUDriver* pGPU)
 
 void CGameLevel::Term()
 {
-	GlobalSub = NULL;
-	AILevel = NULL;
-	PhysicsLevel = NULL;
-	SceneRoot = NULL;
-	Script = NULL;
+	GlobalSub = nullptr;
+	AILevel = nullptr;
+	PhysicsLevel = nullptr;
+	SceneRoot = nullptr;
+	Script = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -307,12 +307,12 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	CArray<CEntity*> Entities(128, 128);
 	GameSrv->GetEntityMgr()->GetEntitiesByLevel(this, Entities);
 	Data::PParams SGEntity = n_new(Data::CParams);
-	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.Get() : NULL;
+	const Data::CParams* pInitialEntities = InitialEntities.IsValidPtr() && InitialEntities->GetCount() ? InitialEntities.Get() : nullptr;
 	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 	{
 		CEntity* pEntity = Entities[i];
 		if (SGEntity->GetCount()) SGEntity = n_new(Data::CParams);
-		Data::PParams InitialDesc = pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), NULL).Get() : NULL;
+		Data::PParams InitialDesc = pInitialEntities ? pInitialEntities->Get<Data::PParams>(pEntity->GetUID(), nullptr).Get() : nullptr;
 		if (InitialDesc.IsValidPtr())
 		{
 			const CString& TplName = InitialDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
@@ -464,7 +464,7 @@ bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3
 
 	if (pOutEntityUID)
 	{
-		void* pUserData = PhysObj.IsValidPtr() ? PhysObj->GetUserData() : NULL;
+		void* pUserData = PhysObj.IsValidPtr() ? PhysObj->GetUserData() : nullptr;
 		*pOutEntityUID = pUserData ? *(CStrID*)&pUserData : CStrID::Empty;
 	}
 

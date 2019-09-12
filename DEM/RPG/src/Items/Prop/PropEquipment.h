@@ -29,7 +29,7 @@ public:
 		U16					Count;
 		//WORD				MaxCount;
 
-		CSlot(): pStack(NULL), Count(0) {}
+		CSlot(): pStack(nullptr), Count(0) {}
 	};
 
 	CDict<CStrID, CSlot> Slots; //???to protected?

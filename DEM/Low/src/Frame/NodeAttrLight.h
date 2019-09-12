@@ -32,13 +32,13 @@ protected:
 
 	Render::CLight		Light;
 	Scene::CSPS*		pSPS;
-	Scene::CSPSRecord*	pSPSRecord;		// NULL if oversized
+	Scene::CSPSRecord*	pSPSRecord;		// nullptr if oversized
 
 	virtual void	OnDetachFromScene();
 
 public:
 
-	CNodeAttrLight(): pSPS(NULL), pSPSRecord(NULL) {}
+	CNodeAttrLight(): pSPS(nullptr), pSPSRecord(nullptr) {}
 
 	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 	virtual Scene::PNodeAttribute	Clone();

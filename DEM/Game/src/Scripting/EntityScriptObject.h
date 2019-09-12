@@ -22,13 +22,13 @@ protected:
 
 	Game::CEntity*	pEntity; //???Ptr? or will cause cyclic reference?
 
-	CEntityScriptObject(): pEntity(NULL) {}
+	CEntityScriptObject(): pEntity(nullptr) {}
 
 public:
 
 	friend class CScriptServer; //???why protected constructor?
 
-	CEntityScriptObject(Game::CEntity& Ent, const char* ObjName, const char* TableName = NULL):
+	CEntityScriptObject(Game::CEntity& Ent, const char* ObjName, const char* TableName = nullptr):
 		CScriptObject(ObjName, TableName), pEntity(&Ent) {}
 	//virtual ~CEntityScriptObject();
 

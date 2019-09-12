@@ -22,16 +22,16 @@ const char* CStringIDStorage::StoreString(const char* pString)
 {
 	int Len = strlen(pString) + 1;
 
-	if (Len > STR_BLOCK_SIZE) return NULL;
+	if (Len > STR_BLOCK_SIZE) return nullptr;
 
 	if (BlockPosition + Len > STR_BLOCK_SIZE)
 	{
-		if (BlockIndex + 1 >= STR_BLOCK_COUNT) return NULL;
+		if (BlockIndex + 1 >= STR_BLOCK_COUNT) return nullptr;
 		++BlockIndex;
 		BlockPosition = 0;
 	}
 
-	if (Block[BlockIndex] == NULL)
+	if (Block[BlockIndex] == nullptr)
 	{
 		Block[BlockIndex] = (char*)n_malloc(STR_BLOCK_SIZE); //!!!heap mgr, dlmalloc!
 		BlockPosition = 0;

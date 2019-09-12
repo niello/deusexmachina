@@ -36,8 +36,8 @@ void CAppFSM::Clear()
 
 	CurrState = CStrID::Empty;
 	RequestedState = CurrState;
-	pCurrStateHandler = NULL;
-	TransitionParams = NULL;
+	pCurrStateHandler = nullptr;
+	TransitionParams = nullptr;
 
 	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
 		StateHandlers[i]->OnRemoveFromApplication();
@@ -58,7 +58,7 @@ void CAppFSM::ChangeState(CStrID NextState)
 		else n_assert(CurrState == CStrID::Empty);
 	}
 	RequestedState = CurrState;
-	//???TransitionParams = NULL;?
+	//???TransitionParams = nullptr;?
 }
 //---------------------------------------------------------------------
 

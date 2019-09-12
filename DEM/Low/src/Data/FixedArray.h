@@ -23,14 +23,14 @@ public:
 
 	typedef T* CIterator;
 
-	CFixedArray(): Count(0), pData(NULL) {}
-	CFixedArray(UPTR _Size): Count(0), pData(NULL) { SetSize(_Size); }
-	CFixedArray(const CFixedArray<T>& Other): Count(0), pData(NULL) { Copy(Other); }
+	CFixedArray(): Count(0), pData(nullptr) {}
+	CFixedArray(UPTR _Size): Count(0), pData(nullptr) { SetSize(_Size); }
+	CFixedArray(const CFixedArray<T>& Other): Count(0), pData(nullptr) { Copy(Other); }
 	~CFixedArray() { if (pData) n_delete_array(pData); }
 
 	CIterator	Begin() const { return pData; }
 	CIterator	End() const { return pData + Count; }
-	CIterator	IteratorAt(IPTR Idx) const { return Idx == INVALID_INDEX ? NULL : pData + Idx; }
+	CIterator	IteratorAt(IPTR Idx) const { return Idx == INVALID_INDEX ? nullptr : pData + Idx; }
 
 	void		Clear(T Elm = T()) { for (UPTR i = 0; i < Count; ++i) pData[i] = Elm; }
 	CIterator	Find(const T& Val) const { IPTR Idx = FindIndex(Val); return Idx == INVALID_INDEX ? End() : IteratorAt(Idx); }
@@ -59,7 +59,7 @@ template<class T> void CFixedArray<T>::SetSize(UPTR NewSize, bool KeepValues)
 	if (KeepValues)
 	{
 		T* pOldData = pData;
-		pData = (NewSize > 0) ? n_new_array(T, NewSize) : NULL;
+		pData = (NewSize > 0) ? n_new_array(T, NewSize) : nullptr;
 		UPTR MinSize = n_min(NewSize, Count);
 		for (UPTR i = 0; i < MinSize; ++i) pData[i] = pOldData[i];
 		if (pOldData) n_delete_array(pOldData);
@@ -67,7 +67,7 @@ template<class T> void CFixedArray<T>::SetSize(UPTR NewSize, bool KeepValues)
 	else
 	{
 		if (pData) n_delete_array(pData);
-		pData = (NewSize > 0) ? n_new_array(T, NewSize) : NULL;
+		pData = (NewSize > 0) ? n_new_array(T, NewSize) : nullptr;
 	}
 
 	Count = NewSize;

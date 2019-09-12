@@ -303,12 +303,12 @@ bool CSM30ShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 PShaderConstant CSM30ShaderMetadata::GetConstant(HConstant hConst) const
 {
 	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)HandleMgr.GetHandleData(hConst);
-	if (!pMeta) return NULL;
+	if (!pMeta) return nullptr;
 
 	if (pMeta->ConstObject.IsNullPtr())
 	{
 		PSM30ShaderConstant Const = n_new(CSM30ShaderConstant);
-		if (!Const->Init(hConst)) return NULL;
+		if (!Const->Init(hConst)) return nullptr;
 		pMeta->ConstObject = Const.Get();
 	}
 

@@ -71,14 +71,14 @@ inline void CAILevel::UpdateActorSense(CActor* pActor, CSensor* pSensor)
 inline dtNavMesh* CAILevel::GetNavMesh(float ActorRadius)
 {
 	CNavData* pNav = GetNavData(ActorRadius);
-	return pNav ? pNav->pNavMesh : NULL;
+	return pNav ? pNav->pNavMesh : nullptr;
 }
 //---------------------------------------------------------------------
 
 inline dtNavMeshQuery* CAILevel::GetSyncNavQuery(float ActorRadius)
 {
 	CNavData* pNav = GetNavData(ActorRadius);
-	return pNav ? pNav->pNavMeshQuery[0] : NULL;
+	return pNav ? pNav->pNavMeshQuery[0] : nullptr;
 }
 //---------------------------------------------------------------------
 

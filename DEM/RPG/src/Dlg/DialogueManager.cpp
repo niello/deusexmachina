@@ -54,7 +54,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 			const Data::CParams& LinkDesc = *Links->Get<Data::PParams>(j);
 
 			int ToIdx = LinkDesc.IndexOf(CStrID("To"));
-			pLink->pTargetNode = (ToIdx == INVALID_INDEX) ? NULL : LoadedNodes[LinkDesc.Get<CStrID>(ToIdx)];
+			pLink->pTargetNode = (ToIdx == INVALID_INDEX) ? nullptr : LoadedNodes[LinkDesc.Get<CStrID>(ToIdx)];
 
 			pLink->Condition = LinkDesc.Get<CString>(CStrID("Condition"), CString::Empty);
 			pLink->Action = LinkDesc.Get<CString>(CStrID("Action"), CString::Empty);
@@ -72,8 +72,8 @@ PDlgGraph CDialogueManager::GetDialogueGraph(CStrID ID)
 	else
 	{
 		Data::PParams Desc;
-		if (!ParamsUtils::LoadParamsFromPRM(CString("Dlg:") + ID.CStr() + ".prm", Desc)) return NULL;
-		return Desc.IsValidPtr() ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : NULL;
+		if (!ParamsUtils::LoadParamsFromPRM(CString("Dlg:") + ID.CStr() + ".prm", Desc)) return nullptr;
+		return Desc.IsValidPtr() ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : nullptr;
 	}
 }
 //---------------------------------------------------------------------

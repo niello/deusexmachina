@@ -14,11 +14,11 @@ bool CD3D11Shader::Create(ID3D11DeviceChild* pShader)
 	if (!pShader) FAIL;
 
 	bool Result = false;
-	ID3D11VertexShader* pVS = NULL;
-	ID3D11HullShader* pHS = NULL;
-	ID3D11DomainShader* pDS = NULL;
-	ID3D11GeometryShader* pGS = NULL;
-	ID3D11PixelShader* pPS = NULL;
+	ID3D11VertexShader* pVS = nullptr;
+	ID3D11HullShader* pHS = nullptr;
+	ID3D11DomainShader* pDS = nullptr;
+	ID3D11GeometryShader* pGS = nullptr;
+	ID3D11PixelShader* pPS = nullptr;
 	if (SUCCEEDED(pShader->QueryInterface(&pVS)))
 	{
 		Result = Create(pVS);

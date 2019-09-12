@@ -31,7 +31,7 @@ bool CModelRenderer::Init(bool LightingEnabled)
 	{
 		CVertexComponent& Cmp = InstanceDataDecl[i];
 		Cmp.Semantic = VCSem_TexCoord;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.Index = i + 4;
 		Cmp.Format = VCFmt_Float32_4;
 		Cmp.Stream = INSTANCE_BUFFER_STREAM_INDEX;
@@ -80,7 +80,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 		Node.pSkinMapping = pModel->BoneIndices.GetPtr();
 		Node.BoneCount = pModel->BoneIndices.GetCount();
 	}
-	else Node.pSkinMapping = NULL;
+	else Node.pSkinMapping = nullptr;
 
 	U8 LightCount = 0;
 
@@ -194,23 +194,23 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
-	const CMaterial* pCurrMaterial = NULL;
-	const CMesh* pCurrMesh = NULL;
-	const CTechnique* pCurrTech = NULL;
-	CVertexLayout* pVL = NULL;
-	CVertexLayout* pVLInstanced = NULL;
+	const CMaterial* pCurrMaterial = nullptr;
+	const CMesh* pCurrMesh = nullptr;
+	const CTechnique* pCurrTech = nullptr;
+	CVertexLayout* pVL = nullptr;
+	CVertexLayout* pVLInstanced = nullptr;
 
 	// Effect constants
-	const CEffectConstant* pConstInstanceDataVS = NULL;	// Model, ModelSkinned, ModelInstanced
-	const CEffectConstant* pConstInstanceDataPS = NULL;	// Model, ModelSkinned, ModelInstanced
-	const CEffectConstant* pConstSkinPalette = NULL;	// ModelSkinned
+	const CEffectConstant* pConstInstanceDataVS = nullptr;	// Model, ModelSkinned, ModelInstanced
+	const CEffectConstant* pConstInstanceDataPS = nullptr;	// Model, ModelSkinned, ModelInstanced
+	const CEffectConstant* pConstSkinPalette = nullptr;	// ModelSkinned
 
 	// Subsequent shader constants for single-instance case
 	PShaderConstant ConstWorldMatrix;
 	PShaderConstant ConstLightCount;
 	PShaderConstant ConstLightIndices;
 
-	const bool LightingEnabled = (Context.pLights != NULL);
+	const bool LightingEnabled = (Context.pLights != nullptr);
 	UPTR TechLightCount;
 
 	static const CStrID sidWorldMatrix("WorldMatrix");
@@ -252,7 +252,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			pCurrMesh = pMesh;
 
 			pVL = pVB->GetVertexLayout();
-			pVLInstanced = NULL;
+			pVLInstanced = nullptr;
 		}
 
 		// Gather instances (no skinned instancing supported)
@@ -353,7 +353,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				PerInstanceBuffers.SetGPU(&GPU);
 
 				CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(pConstInstanceDataVS->Const->GetConstantBufferHandle(), pConstInstanceDataVS->ShaderType);
-				CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : NULL;
+				CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : nullptr;
 
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
@@ -555,7 +555,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				if (pConstInstanceDataPS)
 				{
-					CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : NULL;
+					CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : nullptr;
 
 					if (LightingEnabled && ConstLightIndices.IsValidPtr())
 					{

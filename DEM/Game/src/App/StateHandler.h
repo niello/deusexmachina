@@ -31,7 +31,7 @@ public:
 
 	virtual void	OnAttachToApplication() {}
 	virtual void	OnRemoveFromApplication() {}
-	virtual void	OnStateEnter(CStrID PrevState, Data::PParams Params = NULL) {}
+	virtual void	OnStateEnter(CStrID PrevState, Data::PParams Params = nullptr) {}
 	virtual void	OnStateLeave(CStrID NextState) {}
 	virtual CStrID	OnFrame() { return CStrID::Empty; }
 

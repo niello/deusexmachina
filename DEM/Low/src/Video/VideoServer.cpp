@@ -94,7 +94,7 @@ n_assert(false);
 	//nGfxServer2::Instance()->EnterDialogBoxMode();
 	//RenderSrv->ClearScreen(0);
 
-	if (FAILED(CoCreateInstance(CLSID_FilterGraph, NULL, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
+	if (FAILED(CoCreateInstance(CLSID_FilterGraph, nullptr, CLSCTX_INPROC_SERVER, IID_IGraphBuilder, (void**)&pGraphBuilder)))
 	{
 		Sys::Error("CVideoServer: could not create DirectShow filter graph!");
 		FAIL;
@@ -106,7 +106,7 @@ n_assert(false);
 	size_t CharsConverted;
 	mbstowcs_s(&CharsConverted, WidePath, sizeof(WidePath), Path.CStr(), Path.GetLength() + 1);
 
-	if (FAILED(pGraphBuilder->RenderFile(WidePath, NULL)))
+	if (FAILED(pGraphBuilder->RenderFile(WidePath, nullptr)))
 	{
 		Sys::Error("CVideoServer::PlayFile(): could not render file '%s'", Path.CStr());
 		FAIL;
@@ -117,7 +117,7 @@ n_assert(false);
 	n_verify(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IVideoWindow, (void**)&pVideoWnd)));
 	pGraphBuilder->QueryInterface(IID_IBasicVideo, (void**)&pBasicVideo);
 
-	OAHWND OwnerHWnd = NULL;
+	OAHWND OwnerHWnd = nullptr;
 	CoreSrv->GetGlobal(CString("hwnd"), (int&)OwnerHWnd);
 	RECT Rect;
 	GetClientRect((HWND)OwnerHWnd, &Rect);
@@ -165,7 +165,7 @@ void CVideoServer::Stop()
 	SAFE_RELEASE(pMediaEvent);
 	SAFE_RELEASE(pGraphBuilder);
 
-	HWND hWnd = NULL;
+	HWND hWnd = nullptr;
 	CoreSrv->GetGlobal(CString("hwnd"), (int&)hWnd);
 	ShowWindow(hWnd, SW_RESTORE);
 

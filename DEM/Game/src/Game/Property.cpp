@@ -7,7 +7,7 @@ namespace Game
 {
 __ImplementClassNoFactory(Game::CProperty, Core::CObject);
 
-CProperty::CProperty(): Active(false), pEntity(NULL)
+CProperty::CProperty(): Active(false), pEntity(nullptr)
 {
 }
 //---------------------------------------------------------------------

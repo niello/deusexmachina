@@ -34,7 +34,7 @@ struct CCopyImageParams
 // Source and destination formats must match, no conversion occurs //!!!can use custom memcpy substitutes as arg to allow conversion algorithms!
 void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Flags, const CCopyImageParams& Params);
 
-// pInRegion may be NULL, which means that region covers the whole image
+// pInRegion may be nullptr, which means that region covers the whole image
 // Dimensions is a number of image dimensions from 1 to 3
 // If region requested is degenerate, function returns false not finishing calculations
 bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, UPTR Dimensions,

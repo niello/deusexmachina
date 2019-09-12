@@ -22,7 +22,7 @@ public:
 	CMocapClip*	pOwnerClip;
 	int			FirstKey;
 
-	CMocapTrack(): pOwnerClip(NULL), FirstKey(INVALID_INDEX) {}
+	CMocapTrack(): pOwnerClip(nullptr), FirstKey(INVALID_INDEX) {}
 
 	void Sample(int KeyIndex, float IpolFactor, vector3& Out);
 	void Sample(int KeyIndex, float IpolFactor, vector4& Out);

@@ -48,11 +48,11 @@ public:
 	~CKeyList();
 
 	CIterator	Add(const TObject& Object);
-	void		Remove(CIterator It, TObject* pOutValue = NULL);
+	void		Remove(CIterator It, TObject* pOutValue = nullptr);
 	bool		RemoveByValue(const TObject& Object);
 
 	CIterator	Find(const TObject& Object) const;
-	CIterator	End() const { return CIterator(NULL); }
+	CIterator	End() const { return CIterator(nullptr); }
 	TKey		GetKeyAt(IPTR Idx) const { return Lists.KeyAt(Idx); }
 	CIterator	GetHead(TKey Key) const;
 	CIterator	GetHeadAt(IPTR Idx) const { return Lists.ValueAt(Idx)->Begin(); }
@@ -122,7 +122,7 @@ typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::Find(const 
 {
 	TKey Key = ObjTraits<TObject>::GetKey(Object);
 	IPTR Idx = Lists.FindIndex(Key);
-	if (Idx == INVALID_INDEX) return NULL;
+	if (Idx == INVALID_INDEX) return nullptr;
 	CList<TObject>* pList = Lists.ValueAt(Idx);
 	return pList->Find(Object, pList->Begin());
 }
@@ -132,7 +132,7 @@ template<class TKey, class TObject>
 inline typename CKeyList<TKey, TObject>::CIterator CKeyList<TKey, TObject>::GetHead(TKey Key) const
 {	
 	IPTR Idx = Lists.FindIndex(Key);
-	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->Begin() : NULL;
+	return (Idx != INVALID_INDEX) ? Lists.ValueAt(Idx)->Begin() : nullptr;
 }
 //---------------------------------------------------------------------
 

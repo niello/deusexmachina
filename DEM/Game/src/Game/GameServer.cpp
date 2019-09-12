@@ -56,7 +56,7 @@ void CGameServer::Close()
 	LevelViewHandles.Clear();
 
 	CoreSrv->RemoveTimeSource(CStrID("Game"));
-	GameTimeSrc = NULL;
+	GameTimeSrc = nullptr;
 
 	IsOpen = false;
 }
@@ -75,7 +75,7 @@ void CGameServer::Trigger()
 	// Update levels
 
 	UPTR ViewCount = LevelViews.GetCount();
-	vector3* pCOIArray = ViewCount ? (vector3*)_malloca(sizeof(vector3) * ViewCount) : NULL;
+	vector3* pCOIArray = ViewCount ? (vector3*)_malloca(sizeof(vector3) * ViewCount) : nullptr;
 
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
 	{
@@ -105,7 +105,7 @@ void CGameServer::Trigger()
 		}
 
 		for (UPTR i = 0; i < DefferedNodes.GetCount(); ++i)
-			DefferedNodes[i]->UpdateTransform(pCOIArray, COICount, true, NULL);
+			DefferedNodes[i]->UpdateTransform(pCOIArray, COICount, true, nullptr);
 
 		pLevel->FireEvent(CStrID("AfterTransforms"));
 
@@ -193,7 +193,7 @@ void CGameServer::UnloadLevel(CStrID ID)
 CGameLevel* CGameServer::GetLevel(CStrID ID) const
 {
 	IPTR Idx = Levels.FindIndex(ID);
-	return (Idx == INVALID_INDEX) ? NULL : Levels.ValueAt(Idx);
+	return (Idx == INVALID_INDEX) ? nullptr : Levels.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 
@@ -377,9 +377,9 @@ bool CGameServer::ContinueGame(const char* pFileName)
 	else CoreSrv->ResetAll();
 
 	// Allow custom gameplay managers to load their data
-	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc->Get<Data::PParams>(CStrID("Managers"), NULL));
+	EventSrv->FireEvent(CStrID("OnGameDescLoaded"), GameDesc->Get<Data::PParams>(CStrID("Managers"), nullptr));
 
-	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), NULL);
+	Data::PDataArray LoadedLevels = GetGlobalAttr<Data::PDataArray>(CStrID("LoadedLevels"), nullptr);
 	if (LoadedLevels.IsNullPtr())
 	{
 		LoadedLevels = n_new(Data::CDataArray);

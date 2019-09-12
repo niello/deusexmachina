@@ -14,7 +14,7 @@ __ImplementClass(Render::CD3D11Texture, 'TEX1', Render::CTexture);
 bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy)
 {
 	if (!pSRV) FAIL;
-	ID3D11Resource* pTex = NULL;
+	ID3D11Resource* pTex = nullptr;
 	pSRV->GetResource(&pTex);
 	const bool Result = Create(Data, Usage, AccessFlags, pTex, pSRV, HoldRAMCopy);
 	pTex->Release();

@@ -62,7 +62,7 @@ protected:
 	CArray<PGoal>				Goals;
 	CArray<const CActionTpl*>	ActionTpls;
 
-	PGoal						CurrGoal;	// If NULL, task is processed or actor is completely idle
+	PGoal						CurrGoal;	// If nullptr, task is processed or actor is completely idle
 	Data::CList<CTask>			TaskQueue;	// Queue front is a current task
 	PAction						Plan;
 

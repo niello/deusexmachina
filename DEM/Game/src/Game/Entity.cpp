@@ -34,8 +34,8 @@ void CEntity::SetLevel(CGameLevel* pNewLevel)
 	n_assert(IsInactive());
 	if (pNewLevel == Level.Get()) return;
 	Level = pNewLevel;
-	if (pNewLevel) Level->Subscribe(NULL, this, &CEntity::OnEvent, &LevelSub);
-	else LevelSub = NULL;
+	if (pNewLevel) Level->Subscribe(nullptr, this, &CEntity::OnEvent, &LevelSub);
+	else LevelSub = nullptr;
 }
 //---------------------------------------------------------------------
 

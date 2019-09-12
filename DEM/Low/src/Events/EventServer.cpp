@@ -125,7 +125,7 @@ void CEventServer::ProcessPendingEvents()
 				if (!EventsToAdd->Next)
 				{
 					EventsToAdd->Next = Next;
-					EventsToAdd = NULL;
+					EventsToAdd = nullptr;
 					break;
 				}
 				CEventNode* NextToAdd = EventsToAdd->Next;
@@ -147,7 +147,7 @@ void CEventServer::ProcessPendingEvents()
 		EventNodes.Destroy(PendingEventsHead);
 		PendingEventsHead = Next;
 	}
-	if (!PendingEventsHead) PendingEventsTail = NULL;
+	if (!PendingEventsHead) PendingEventsTail = nullptr;
 }
 //---------------------------------------------------------------------
 

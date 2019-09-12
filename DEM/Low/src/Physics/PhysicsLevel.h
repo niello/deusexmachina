@@ -33,7 +33,7 @@ protected:
 
 public:
 
-	CPhysicsLevel(): pBtDynWorld(NULL), StepTime(1.f / 60.f) {}
+	CPhysicsLevel(): pBtDynWorld(nullptr), StepTime(1.f / 60.f) {}
 	~CPhysicsLevel();
 
 	bool	Init(const CAABB& Bounds);
@@ -41,7 +41,7 @@ public:
 	void	Trigger(float FrameTime);
 	void	RenderDebug();
 
-	bool	GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = NULL, PPhysicsObj* pOutObj = NULL) const;
+	bool	GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = nullptr, PPhysicsObj* pOutObj = nullptr) const;
 	UPTR	GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const;
 
 	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, CArray<PEntity>& Result);

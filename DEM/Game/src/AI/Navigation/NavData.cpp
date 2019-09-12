@@ -58,13 +58,13 @@ void CNavData::Clear()
 		if (pNavMeshQuery[i])
 		{
 			dtFreeNavMeshQuery(pNavMeshQuery[i]);
-			pNavMeshQuery[i] = NULL;
+			pNavMeshQuery[i] = nullptr;
 		}
 
 	if (pNavMesh)
 	{
 		dtFreeNavMesh(pNavMesh);
-		pNavMesh = NULL;
+		pNavMesh = nullptr;
 	}
 }
 //---------------------------------------------------------------------

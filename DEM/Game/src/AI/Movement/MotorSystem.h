@@ -118,7 +118,7 @@ inline CMotorSystem::CMotorSystem(CActor* Actor):
 	AvoidObstacles(true),
 	AdaptiveVelocitySampling(true),
 	AvoidanceMargin(0.1f),
-	pLastClosestObstacle(NULL)
+	pLastClosestObstacle(nullptr)
 {
 }
 //---------------------------------------------------------------------

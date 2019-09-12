@@ -42,7 +42,7 @@ protected:
 
 public:
 
-	CPhysicsObject(): pBtCollObj(NULL), pWorld(NULL), pUserPtr(NULL) {}
+	CPhysicsObject(): pBtCollObj(nullptr), pWorld(nullptr), pUserPtr(nullptr) {}
 	virtual ~CPhysicsObject() { InternalTerm(); }
 
 	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);

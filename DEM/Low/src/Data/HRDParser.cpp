@@ -26,7 +26,7 @@ enum
 	DLM_BR_CLOSE
 };
 
-CHRDParser::CHRDParser(): pErr(NULL)
+CHRDParser::CHRDParser(): pErr(nullptr)
 {
 	// NB: Keep sorted and keep enum above updated
 	TableRW.Add(CString("false"));
@@ -83,7 +83,7 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, C
 	if (!ParseTokenStream(Tokens, Result))
 	{
 		if (pErr) pErr->Add("Syntax analysis of HRD failed\n");
-		Result = NULL;
+		Result = nullptr;
 		TableID.Clear();
 		TableConst.Clear(); //???always keep "0" const?
 		//Tokens.Clear();
@@ -94,7 +94,7 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, C
 	TableConst.Clear(); //???always keep "0" const?
 	//Tokens.Clear();
 
-	pErr = NULL;
+	pErr = nullptr;
 
 	OK;
 }
@@ -632,7 +632,7 @@ void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Ty
 	switch (Type)
 	{
 		case T_INT:		Data = StringUtils::ToInt(Const.CStr()); break;
-		case T_INT_HEX:	Data = (int)strtoul(Const.CStr(), NULL, 16); break; //!!!can use 0 base to autodetect radix
+		case T_INT_HEX:	Data = (int)strtoul(Const.CStr(), nullptr, 16); break; //!!!can use 0 base to autodetect radix
 		case T_FLOAT:	Data = StringUtils::ToFloat(Const.CStr()); break;
 		case T_STRING:	Data = Const; break;
 		case T_STRID:	Data = CStrID(Const.CStr()); break;

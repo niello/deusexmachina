@@ -11,7 +11,7 @@ CTechnique::~CTechnique() {}
 const CPassList* CTechnique::GetPasses(UPTR& LightCount) const
 {
 	UPTR DifferentLightCounts = PassesByLightCount.GetCount();
-	if (!DifferentLightCounts) return NULL;
+	if (!DifferentLightCounts) return nullptr;
 
 	UPTR Idx = LightCount;
 	if (Idx >= PassesByLightCount.GetCount()) Idx = PassesByLightCount.GetCount() - 1;
@@ -19,7 +19,7 @@ const CPassList* CTechnique::GetPasses(UPTR& LightCount) const
 	// If the exact light count requested is not supported, find any supported count less than that
 	while (Idx > 0 && !PassesByLightCount[Idx].GetCount()) --Idx;
 
-	if (!PassesByLightCount[Idx].GetCount()) return NULL;
+	if (!PassesByLightCount[Idx].GetCount()) return nullptr;
 
 	LightCount = Idx;
 	return &PassesByLightCount[Idx];
@@ -33,7 +33,7 @@ const CEffectConstant* CTechnique::GetConstant(CStrID Name) const
 		const CEffectConstant& CurrConst = Consts[i];
 		if (CurrConst.ID == Name) return &CurrConst;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -44,7 +44,7 @@ const CEffectResource* CTechnique::GetResource(CStrID Name) const
 		const CEffectResource& CurrConst = Resources[i];
 		if (CurrConst.ID == Name) return &CurrConst;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ const CEffectSampler* CTechnique::GetSampler(CStrID Name) const
 		const CEffectSampler& CurrConst = Samplers[i];
 		if (CurrConst.ID == Name) return &CurrConst;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

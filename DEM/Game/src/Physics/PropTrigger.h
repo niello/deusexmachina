@@ -61,7 +61,7 @@ protected:
 
 public:
 
-	CPropTrigger(): Enabled(false), pScriptObj(NULL), Period(0.f), TimeLastTriggered(0.f) {}
+	CPropTrigger(): Enabled(false), pScriptObj(nullptr), Period(0.f), TimeLastTriggered(0.f) {}
 	//virtual ~CPropTrigger();
 
 	void SetEnabled(bool Enable);

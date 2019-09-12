@@ -79,7 +79,7 @@ CMemFact* CMemSystem::FindFact(const CMemFact& Pattern, Data::CFlags FieldMask)
 		++ItCurr;
 	}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

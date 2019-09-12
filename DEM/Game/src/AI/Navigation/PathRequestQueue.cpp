@@ -13,7 +13,7 @@ void CPathRequestQueue::Purge()
 	for (int i = 0; i < MAX_QUEUE; ++i)
 	{
 		dtFree(Queue[i].pPath);
-		Queue[i].pPath = NULL;
+		Queue[i].pPath = nullptr;
 	}
 }
 //---------------------------------------------------------------------

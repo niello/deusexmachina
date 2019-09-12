@@ -63,7 +63,7 @@ bool CPropSmartObject::InternalActivate()
 	}
 
 	//AnimTaskID = INVALID_INDEX;
-	//pCurrAnimInfo = NULL;
+	//pCurrAnimInfo = nullptr;
 
 	CurrState = GetEntity()->GetAttr(CStrID("SOState"), CStrID::Empty);
 	TargetState = GetEntity()->GetAttr(CStrID("SOTargetState"), CurrState);
@@ -85,7 +85,7 @@ bool CPropSmartObject::InternalActivate()
 		TrActionID = CStrID::Empty;
 		TrManualControl = false;
 
-		// Make transition from NULL state to DefaultState
+		// Make transition from nullptr state to DefaultState
 		if (!TargetState.IsValid() && Desc.IsValidPtr() && Desc->Has(CStrID("DefaultState")))
 			PROP_SUBSCRIBE_PEVENT(OnPropsActivated, CPropSmartObject, OnPropsActivated);
 	}
@@ -117,7 +117,7 @@ void CPropSmartObject::InternalDeactivate()
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
 
-	SwitchAnimation(NULL);
+	SwitchAnimation(nullptr);
 
 	//???delete related entity attrs?
 
@@ -186,7 +186,7 @@ bool CPropSmartObject::OnPropDeactivating(Events::CEventDispatcher* pDispatcher,
 	if (pProp->IsA<CPropAnimation>())
 	{
 		AnimTaskID = INVALID_INDEX;
-		pCurrAnimInfo = NULL;
+		pCurrAnimInfo = nullptr;
 		ActionAnimIndices.Clear();
 		StateAnimIndices.Clear();
 		Anims.Clear();
@@ -284,13 +284,13 @@ void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
 	if (IsInTransition())
 	{
 		IPTR Idx = ActionAnimIndices.FindIndex(CurrState);
-		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : NULL);
+		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : nullptr);
 		UpdateAnimationCursor();
 	}
 	else
 	{
 		IPTR Idx = StateAnimIndices.FindIndex(CurrState);
-		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
+		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : nullptr);
 	}
 }
 //---------------------------------------------------------------------
@@ -315,7 +315,7 @@ bool CPropSmartObject::SetState(CStrID StateID, CStrID ActionID, float Transitio
 	}
 
 	IPTR Idx = ActionAnimIndices.FindIndex(ActionID);
-	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : NULL;
+	CAnimInfo* pAnimInfo = (Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : nullptr;
 	if (TransitionDuration < 0.f)
 		TransitionDuration = (pAnimInfo && pAnimInfo->Speed != 0.f) ? pAnimInfo->Duration / n_fabs(pAnimInfo->Speed) : 0.f;
 
@@ -363,7 +363,7 @@ void CPropSmartObject::CompleteTransition()
 	UNSUBSCRIBE_EVENT(OnBeginFrame);
 
 	IPTR Idx = StateAnimIndices.FindIndex(TargetState);
-	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
+	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : nullptr);
 
 	Data::PParams P = n_new(Data::CParams(2));
 	P->Set(CStrID("From"), CurrState);
@@ -409,7 +409,7 @@ void CPropSmartObject::AbortTransition(float Duration)
 	//???only if bidirectional transition available for this state pair?
 
 	IPTR Idx = StateAnimIndices.FindIndex(CurrState);
-	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : NULL);
+	SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : nullptr);
 
 	TargetState = CurrState;
 	TrProgress = 0.f;
@@ -621,14 +621,14 @@ bool CPropSmartObject::GetRequiredActorFacing(CStrID ActionID, const AI::CActor*
 CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID)
 {
 	IPTR Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : nullptr;
 }
 //---------------------------------------------------------------------
 
 const CPropSmartObject::CAction* CPropSmartObject::GetAction(CStrID ID) const
 {
 	IPTR Idx = Actions.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : NULL;
+	return (Idx != INVALID_INDEX) ? &Actions.ValueAt(Idx) : nullptr;
 }
 //---------------------------------------------------------------------
 

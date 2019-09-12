@@ -25,13 +25,13 @@ PResourceObject CShaderLibraryLoaderSLB::CreateResource(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'SLIB') return NULL;
+	if (!Reader.Read(Magic) || Magic != 'SLIB') return nullptr;
 
 	U32 FormatVersion;
-	if (!Reader.Read(FormatVersion)) return NULL;
+	if (!Reader.Read(FormatVersion)) return nullptr;
 
 	U32 ShaderCount;
-	if (!Reader.Read(ShaderCount)) return NULL;
+	if (!Reader.Read(ShaderCount)) return nullptr;
 
 	Render::PShaderLibrary ShaderLibrary = n_new(Render::CShaderLibrary);
 
@@ -39,9 +39,9 @@ PResourceObject CShaderLibraryLoaderSLB::CreateResource(CStrID UID)
 	for (U32 i = 0; i < ShaderCount; ++i)
 	{
 		Render::CShaderLibrary::CRecord& Rec = ShaderLibrary->TOC[i];
-		if (!Reader.Read(Rec.ID)) return NULL;
-		if (!Reader.Read(Rec.Offset)) return NULL;
-		if (!Reader.Read(Rec.Size)) return NULL;
+		if (!Reader.Read(Rec.ID)) return nullptr;
+		if (!Reader.Read(Rec.Offset)) return nullptr;
+		if (!Reader.Read(Rec.Size)) return nullptr;
 	}
 	
 	ShaderLibrary->Storage = Stream;

@@ -21,7 +21,7 @@ protected:
 
 public:
 
-	CActionSequence(): ppCurrChild(NULL) {}
+	CActionSequence(): ppCurrChild(nullptr) {}
 
 	void			AddChild(CAction* pAction) { n_assert(pAction); Child.Add(pAction); }
 	// RemoveAllChildren / Clear (deactivate current, remove all)

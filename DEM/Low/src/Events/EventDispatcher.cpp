@@ -32,7 +32,7 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 	// Look for subscriptions to any event
 	if (!(Flags & Event_IgnoreAllEventSubs))
 	{
-		if (Subscriptions.Get(NULL, Sub)) do
+		if (Subscriptions.Get(nullptr, Sub)) do
 		{
 			if (Sub->Invoke(this, Event))
 			{

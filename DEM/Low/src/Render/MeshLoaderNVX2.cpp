@@ -59,7 +59,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 	else if (Mask & Coord4)
@@ -70,7 +70,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -82,7 +82,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -94,7 +94,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -106,7 +106,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 1;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -118,7 +118,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 2;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -130,7 +130,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 3;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -142,7 +142,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -154,7 +154,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -166,7 +166,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -178,7 +178,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 
@@ -191,7 +191,7 @@ static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Co
 		Cmp.Index = 0;
 		Cmp.Stream = 0;
 		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = NULL;
+		Cmp.UserDefinedName = nullptr;
 		Cmp.PerInstanceData = false;
 	}
 }

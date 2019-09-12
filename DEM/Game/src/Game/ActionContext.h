@@ -18,7 +18,7 @@ struct CActionContext
 	ITarget*		pTarget;
 	Data::PParams	Params;
 
-	CActionContext(): pAbility(NULL), pTarget(NULL) {}
+	CActionContext(): pAbility(nullptr), pTarget(nullptr) {}
 };
 
 }

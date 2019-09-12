@@ -23,7 +23,7 @@ CEntityManager::~CEntityManager()
 	{
 		n_assert_dbg(!(*PropStorages.ValueAt(i))->GetCount());
 		n_delete(*PropStorages.ValueAt(i));
-		*PropStorages.ValueAt(i) = NULL;
+		*PropStorages.ValueAt(i) = nullptr;
 	}
 	PropStorages.Clear();
 }
@@ -32,7 +32,7 @@ CEntityManager::~CEntityManager()
 PEntity CEntityManager::CreateEntity(CStrID UID, CGameLevel& Level)
 {
 	n_assert(UID.IsValid());
-	n_assert(!EntityExists(UID)); //???return NULL or existing entity?
+	n_assert(!EntityExists(UID)); //???return nullptr or existing entity?
 	PEntity Entity = n_new(CEntity(UID));
 	Entity->SetLevel(&Level);
 	Entities.Add(Entity);
@@ -61,7 +61,7 @@ PEntity CEntityManager::CloneEntity(const CEntity& Entity, CStrID UID)
 	// attach all the same properties
 	// if props have copy constructor or Clone method, exploit it
 	Sys::Error("CEntityManager::CloneEntity() -> IMPLEMENT ME!!!");
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ void CEntityManager::DeleteAllEntities()
 
 CEntity* CEntityManager::GetEntity(CStrID UID) const
 {
-	CEntity* pEnt = NULL;
+	CEntity* pEnt = nullptr;
 	UIDToEntity.Get(UID, pEnt);
 	return pEnt;
 }
@@ -125,10 +125,10 @@ void CEntityManager::GetEntitiesByLevel(const CGameLevel* pLevel, CArray<CEntity
 
 CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pRTTI) const
 {
-	if (!pRTTI) return NULL;
+	if (!pRTTI) return nullptr;
 
 	/* // Another way to get storage, without early instantiation. ???What is better?
-	CPropertyStorage* pStorage = NULL;
+	CPropertyStorage* pStorage = nullptr;
 	const Core::CRTTI* pCurrRTTI = pRTTI;
 	while (pCurrRTTI)
 	{
@@ -180,7 +180,7 @@ void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) c
 
 CProperty* CEntityManager::GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI) const
 {
-	if (!pRTTI || !EntityID.IsValid()) return NULL;
+	if (!pRTTI || !EntityID.IsValid()) return nullptr;
 	IPTR Idx = PropStorages.FindIndex(pRTTI);
 
 	const Core::CRTTI* pStorageRTTI = pRTTI;
@@ -190,14 +190,14 @@ CProperty* CEntityManager::GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI
 		Idx = PropStorages.FindIndex(pStorageRTTI);
 	}
 	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
-	if (Idx == INVALID_INDEX) return NULL;
+	if (Idx == INVALID_INDEX) return nullptr;
 
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);
 
 	PProperty Prop;
 	pStorage->Get(EntityID, Prop);
-	return pRTTI == pStorageRTTI || Prop->IsA(*pRTTI) ? Prop.Get() : NULL;
+	return pRTTI == pStorageRTTI || Prop->IsA(*pRTTI) ? Prop.Get() : nullptr;
 }
 //---------------------------------------------------------------------
 

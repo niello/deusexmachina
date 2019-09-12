@@ -24,7 +24,7 @@ protected:
 
 public:
 
-	CD3D9VertexLayout(): pDecl(NULL), InstanceStreamFlags(0) {}
+	CD3D9VertexLayout(): pDecl(nullptr), InstanceStreamFlags(0) {}
 	virtual ~CD3D9VertexLayout() { InternalDestroy(); }
 
 	bool							Create(const CVertexComponent* pComponents, UPTR Count, IDirect3DVertexDeclaration9* pD3DDecl);

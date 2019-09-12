@@ -79,7 +79,7 @@ public:
 		CNode*	GetParent() const { return pParent; }
 		CNode*	GetChild(UPTR Index) const { n_assert(Index < 4); return pChild + Index; }
 		UPTR	GetTotalObjCount() const { return TotalObjCount; }
-		bool	HasChildren() const { return pChild != NULL; }
+		bool	HasChildren() const { return pChild != nullptr; }
 
 		//CQuadTree<TObject, TStorage>*	GetOwner() { return pOwner; }
 	};
@@ -88,8 +88,8 @@ public:
 	CQuadTree(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth) { Build(CenterX, CenterZ, SizeX, SizeZ, TreeDepth); }
 
 	void			Build(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth);
-	void			AddObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pOutNode, CHandle* pOutHandle = NULL);
-	void			UpdateObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode, CHandle* pOutHandle = NULL);
+	void			AddObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pOutNode, CHandle* pOutHandle = nullptr);
+	void			UpdateObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode, CHandle* pOutHandle = nullptr);
 	void			UpdateHandle(CHandle& InOutHandle, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode);
 
 	CNode*			GetNode(UPTR Col, UPTR Row, UPTR Level) const;
@@ -202,7 +202,7 @@ void CQuadTree<TObject, TStorage>::Build(float CenterX, float CenterZ, float Siz
 	for (UPTR i = 0; i < Nodes.GetCount(); ++i) Nodes[i].pOwner = this;
 
 	CNode* pFirstFreeNode = &Nodes[1];
-	Nodes[0].pParent = NULL;
+	Nodes[0].pParent = nullptr;
 	Build(0, 0, 0, &Nodes[0], pFirstFreeNode);
 }
 //---------------------------------------------------------------------
@@ -231,7 +231,7 @@ void CQuadTree<TObject, TStorage>::Build(U16 Col, U16 Row, U8 Level, CNode* pNod
 		Build(Col,		Row + 1,	Level, pNode->pChild + 2,	pFirstFreeNode);
 		Build(Col + 1,	Row + 1,	Level, pNode->pChild + 3,	pFirstFreeNode);
 	}
-	else pNode->pChild = NULL;
+	else pNode->pChild = nullptr;
 }
 //---------------------------------------------------------------------
 

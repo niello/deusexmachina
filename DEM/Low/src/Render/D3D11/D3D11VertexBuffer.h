@@ -25,7 +25,7 @@ protected:
 
 public:
 
-	CD3D11VertexBuffer(): pBuffer(NULL) {}
+	CD3D11VertexBuffer(): pBuffer(nullptr) {}
 	virtual ~CD3D11VertexBuffer() { InternalDestroy(); }
 
 	bool			Create(CVertexLayout& Layout, ID3D11Buffer* pVB);

@@ -36,7 +36,7 @@ protected:
 
 public:
 
-	CNodeAttrRenderable(): pRenderable(NULL), pSPS(NULL), pSPSRecord(NULL) {}
+	CNodeAttrRenderable(): pRenderable(nullptr), pSPS(nullptr), pSPSRecord(nullptr) {}
 	~CNodeAttrRenderable();
 
 	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);

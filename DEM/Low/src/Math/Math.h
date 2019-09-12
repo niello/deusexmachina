@@ -224,7 +224,7 @@ inline float RSqrt(const float Value)
 }
 
 // Solves ax^2 + bx + c = 0 equation. Returns a number of real roots and optionally root values.
-inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = NULL, float* pOutX2 = NULL)
+inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = nullptr, float* pOutX2 = nullptr)
 {
 	float D = b * b - 4.f * a * c;
 

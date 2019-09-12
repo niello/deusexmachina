@@ -95,8 +95,8 @@ public:
 	virtual int					CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, DEM::Sys::COSWindow* pWindow) = 0;
 	virtual bool				DestroySwapChain(UPTR SwapChainID) = 0;
 	virtual bool				SwapChainExists(UPTR SwapChainID) const = 0;
-	virtual bool				SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisplay = NULL, const CDisplayMode* pMode = NULL) = 0;
-	virtual bool				SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWindowRect = NULL) = 0;
+	virtual bool				SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisplay = nullptr, const CDisplayMode* pMode = nullptr) = 0;
+	virtual bool				SwitchToWindowed(UPTR SwapChainID, const Data::CRect* pWindowRect = nullptr) = 0;
 	virtual bool				ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height) = 0;
 	virtual bool				IsFullscreen(UPTR SwapChainID) const = 0;
 	virtual PRenderTarget		GetSwapChainRenderTarget(UPTR SwapChainID) const = 0;
@@ -107,11 +107,11 @@ public:
 	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const = 0;
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count) = 0;
-	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = NULL) = 0;
-	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = NULL) = 0;
+	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr) = 0;
+	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) = 0;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = NULL) = 0;
+	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) = 0;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) = 0;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) = 0;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) = 0;
@@ -119,9 +119,9 @@ public:
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;
 	virtual PDepthStencilBuffer	CreateDepthStencilBuffer(const CRenderTargetDesc& Desc) = 0;
 
-	virtual bool				SetViewport(UPTR Index, const CViewport* pViewport) = 0; // NULL to reset
+	virtual bool				SetViewport(UPTR Index, const CViewport* pViewport) = 0; // nullptr to reset
 	virtual bool				GetViewport(UPTR Index, CViewport& OutViewport) = 0;
-	virtual bool				SetScissorRect(UPTR Index, const Data::CRect* pScissorRect) = 0; // NULL to reset
+	virtual bool				SetScissorRect(UPTR Index, const Data::CRect* pScissorRect) = 0; // nullptr to reset
 	virtual bool				GetScissorRect(UPTR Index, Data::CRect& OutScissorRect) = 0;
 
 	virtual bool				SetVertexLayout(CVertexLayout* pVLayout) = 0;
@@ -160,10 +160,10 @@ public:
 	virtual bool				UnmapResource(const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0) = 0;
 	virtual bool				ReadFromResource(void* pDest, const CVertexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) = 0;
 	virtual bool				ReadFromResource(void* pDest, const CIndexBuffer& Resource, UPTR Size = 0, UPTR Offset = 0) = 0;
-	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL) = 0;
+	virtual bool				ReadFromResource(const CImageData& Dest, const CTexture& Resource, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = nullptr) = 0;
 	virtual bool				WriteToResource(CVertexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) = 0;
 	virtual bool				WriteToResource(CIndexBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) = 0;
-	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = NULL) = 0;
+	virtual bool				WriteToResource(CTexture& Resource, const CImageData& SrcData, UPTR ArraySlice = 0, UPTR MipLevel = 0, const Data::CBox* pRegion = nullptr) = 0;
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) = 0;
 	//virtual PVertexBuffer		CopyResource(const CVertexBuffer& Source, UPTR NewAccessFlags) = 0;
 	//virtual PIndexBuffer		CopyResource(const CIndexBuffer& Source, UPTR NewAccessFlags) = 0;

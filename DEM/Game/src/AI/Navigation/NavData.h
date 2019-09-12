@@ -42,7 +42,7 @@ public:
 
 	CDict<CStrID, CNavRegion>	Regions;
 
-	CNavData(): pNavMesh(NULL) { memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery)); }
+	CNavData(): pNavMesh(nullptr) { memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery)); }
 
 	bool LoadFromStream(IO::CStream& Stream);
 	void Clear();

@@ -50,7 +50,7 @@ bool CView::CreateUIContext()
 	UICtxSettings.Height = static_cast<float>(pRT->GetDesc().Height);
 	UIContext = UISrv->CreateContext(UICtxSettings);
 
-	return (UIContext != nullptr);
+	return UIContext.IsValidPtr();
 }
 //---------------------------------------------------------------------
 

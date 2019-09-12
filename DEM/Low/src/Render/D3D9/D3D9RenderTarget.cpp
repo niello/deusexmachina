@@ -26,7 +26,7 @@ bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture
 
 	if (Texture.IsValidPtr())
 	{
-		IDirect3DSurface9* pTmpSurf = NULL;
+		IDirect3DSurface9* pTmpSurf = nullptr;
 		if (FAILED(Texture->GetD3DTexture()->GetSurfaceLevel(0, &pTmpSurf))) FAIL;
 		NeedResolve = (pTmpSurf != pSurface);
 		Desc.UseAsShaderInput = true;
@@ -38,7 +38,7 @@ bool CD3D9RenderTarget::Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture
 		NeedResolve = false;
 		Desc.UseAsShaderInput = false;
 		Desc.MipLevels = 1;
-		SRTexture = NULL;
+		SRTexture = nullptr;
 	}
 
 	pRTSurface = pSurface;
@@ -61,7 +61,7 @@ void CD3D9RenderTarget::InternalDestroy()
 
 	SAFE_RELEASE(pRTSurface);
 //	if (SRTexture.IsValid() && SRTexture->IsLoaded()) RTTexture->Unload();
-	SRTexture = NULL;
+	SRTexture = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -73,17 +73,17 @@ bool CD3D9RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 	if (Dest.IsNullPtr()) FAIL;
 	IDirect3DTexture9* pDestTex = ((CD3D9Texture*)Dest.Get())->GetD3DTexture();
 
-	IDirect3DDevice9* pDev = NULL;
+	IDirect3DDevice9* pDev = nullptr;
 	if (FAILED(pDestTex->GetDevice(&pDev))) FAIL;
 
-	IDirect3DSurface9* pResolveSurface = NULL;
+	IDirect3DSurface9* pResolveSurface = nullptr;
 	if (FAILED(pDestTex->GetSurfaceLevel(0, &pResolveSurface)))
 	{
 		pDev->Release();
 		FAIL;
 	}
 
-	bool Result = SUCCEEDED(pDev->StretchRect(pRTSurface, NULL, pResolveSurface, NULL, D3DTEXF_NONE));
+	bool Result = SUCCEEDED(pDev->StretchRect(pRTSurface, nullptr, pResolveSurface, nullptr, D3DTEXF_NONE));
 	pResolveSurface->Release();
 	pDev->Release();
 

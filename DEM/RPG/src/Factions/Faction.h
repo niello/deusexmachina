@@ -29,7 +29,7 @@ public:
 	bool	AdoptMember(CStrID ID, int Rank); //???bool IsNativeMember or use sign of rank?
 	bool	ExpelMember(CStrID ID);
 
-	UPTR	SplitByMembership(const CArray<CStrID>& Group, CArray<CStrID>* pMembers = NULL, CArray<CStrID>* pNonMembers = NULL) const;
+	UPTR	SplitByMembership(const CArray<CStrID>& Group, CArray<CStrID>* pMembers = nullptr, CArray<CStrID>* pNonMembers = nullptr) const;
 
 	UPTR	GetMemberCount() const { return Members.GetCount(); }
 	CStrID	GetMember(IPTR Idx) const { return Members.KeyAt(Idx); }

@@ -54,7 +54,7 @@ UPTR CUSMShaderConstant::GetMemberCount() const
 
 PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
 {
-	if (Index >= ElementCount) return NULL;
+	if (Index >= ElementCount) return nullptr;
 
 	//!!!can use pool!
 	PUSMShaderConstant Const = n_new(CUSMShaderConstant);
@@ -84,7 +84,7 @@ PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
 PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 {
 	CUSMStructMeta* pStructMeta = (CUSMStructMeta*)IShaderMetadata::GetHandleData(StructHandle);
-	if (!pStructMeta) return NULL;
+	if (!pStructMeta) return nullptr;
 
 	//???sort?
 	for (CFixedArray<CUSMStructMemberMeta>::CIterator It = pStructMeta->Members.Begin(); It < pStructMeta->Members.End(); ++It)
@@ -103,7 +103,7 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 			return Const.Get();
 		}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

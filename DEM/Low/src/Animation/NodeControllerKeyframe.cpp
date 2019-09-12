@@ -7,7 +7,7 @@ namespace Anim
 
 void CNodeControllerKeyframe::SetSampler(const CSampler* _pSampler)
 {
-	n_assert(_pSampler); //???allow NULL?
+	n_assert(_pSampler); //???allow nullptr?
 	pSampler = _pSampler;
 	Channels.ClearAll();
 	if (pSampler->pTrackT) Channels.Set(Scene::Tfm_Translation);
@@ -19,7 +19,7 @@ void CNodeControllerKeyframe::SetSampler(const CSampler* _pSampler)
 void CNodeControllerKeyframe::Clear()
 {
 	Channels.ClearAll();
-	pSampler = NULL;
+	pSampler = nullptr;
 	Time = 0.f;
 }
 //---------------------------------------------------------------------

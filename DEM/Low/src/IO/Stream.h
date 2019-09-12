@@ -37,7 +37,7 @@ public:
 	virtual UPTR	Write(const void* pData, UPTR Size) = 0;
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) = 0;
 	virtual void	Flush() = 0;
-	virtual void*	Map() { n_assert(!IsMapped()); return NULL; }
+	virtual void*	Map() { n_assert(!IsMapped()); return nullptr; }
 	virtual void	Unmap() {}
 
 	bool			IsOpen() const { return Flags.Is(IS_OPEN); }

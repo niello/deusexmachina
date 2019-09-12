@@ -45,7 +45,7 @@ bool CPropUIControl::InternalActivate()
 
 		//???read priorities for actions? or all through scripts?
 
-		Data::PParams UIActionNames = Desc->Get<Data::PParams>(CStrID("UIActionNames"), NULL);
+		Data::PParams UIActionNames = Desc->Get<Data::PParams>(CStrID("UIActionNames"), nullptr);
 
 		if (Desc->Get<bool>(CStrID("Explorable"), false))
 		{
@@ -125,7 +125,7 @@ void CPropUIControl::InternalDeactivate()
 	{
 		MousePickShape->RemoveFromNode();
 		MousePickShape->CollObj->RemoveFromLevel();
-		MousePickShape = NULL;
+		MousePickShape = nullptr;
 	}
 }
 //---------------------------------------------------------------------
@@ -192,7 +192,7 @@ void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
 	Data::PParams UIDesc;
 	if (UIDescPath.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("GameUI:") + UIDescPath + ".prm", UIDesc);
-	Data::PParams Desc = UIDesc.IsValidPtr() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), NULL) : NULL;
+	Data::PParams Desc = UIDesc.IsValidPtr() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), nullptr) : nullptr;
 	if (Desc.IsNullPtr()) return;
 
 	const CPropSmartObject::CActionList& SOActions = Prop.GetActions();
@@ -299,7 +299,7 @@ void CPropUIControl::SetUIName(const char* pNewName)
 {
 	//???use attribute?
 	UIName = pNewName;
-	if (TipVisible) ShowTip(NULL);
+	if (TipVisible) ShowTip(nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -324,7 +324,7 @@ void CPropUIControl::HideTip()
 bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, const char* ScriptFuncName, int Priority, bool IsSOAction)
 {
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
-	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
+	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : nullptr;
 	if (!pScriptObj) FAIL;
 	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, IsSOAction);
 }
@@ -400,8 +400,8 @@ bool CPropUIControl::ExecuteDefaultAction(Game::CEntity* pActorEnt)
 	// and next cmd is "Attack". We definitely don't want to attack friendly NPC by
 	// default (left-click) just because we can't speak at the moment xD
 
-	CPropActorBrain* pActor = NULL;
-	CPropSmartObject* pSO = NULL;
+	CPropActorBrain* pActor = nullptr;
+	CPropSmartObject* pSO = nullptr;
 	if (ReflectSOActions)
 	{
 		if (pActorEnt) pActor = pActorEnt->GetProperty<CPropActorBrain>();
@@ -433,8 +433,8 @@ void CPropUIControl::ShowPopup(Game::CEntity* pActorEnt)
 {
 	if (!Enabled) return;
 
-	CPropActorBrain* pActor = NULL;
-	CPropSmartObject* pSO = NULL;
+	CPropActorBrain* pActor = nullptr;
+	CPropSmartObject* pSO = nullptr;
 	if (ReflectSOActions)
 	{
 		pActor = pActorEnt->GetProperty<CPropActorBrain>();

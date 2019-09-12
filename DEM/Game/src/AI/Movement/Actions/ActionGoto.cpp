@@ -28,7 +28,7 @@ void CActionGoto::Deactivate(CActor* pActor)
 	if (SubAction.IsValidPtr())
 	{
 		SubAction->Deactivate(pActor);
-		SubAction = NULL;
+		SubAction = nullptr;
 	}
 
 	if (!pActor->IsNavSystemIdle())
@@ -66,18 +66,18 @@ UPTR CActionGoto::AdvancePath(CActor* pActor)
 		SubAction = (CActionTraversePathEdge*)Factory->Create(ActNameBase + SubActionID.CStr());
 		if (!SubAction->Activate(pActor))				
 		{
-			SubAction = NULL;
+			SubAction = nullptr;
 			pActor->GetNavSystem().Reset(false);
 			return Failure;
 		}
 	}
 
-	SubAction->UpdatePathEdge(pActor, &Path[0], (EdgeCount > 1 && NewActionID == Path[1].Action) ? &Path[1] : NULL);
+	SubAction->UpdatePathEdge(pActor, &Path[0], (EdgeCount > 1 && NewActionID == Path[1].Action) ? &Path[1] : nullptr);
 	UPTR Result = SubAction->Update(pActor);
 	if (Result != Running)
 	{
 		SubAction->Deactivate(pActor);
-		SubAction = NULL;
+		SubAction = nullptr;
 		SubActionID = CStrID::Empty;
 		if (Result == Success)
 		{

@@ -108,7 +108,7 @@ bool CEntityManager::UnregisterProperty()
 
 	PropStorages.Remove(&T::RTTI);
 	n_delete(T::pStorage);
-	T::pStorage = NULL;
+	T::pStorage = nullptr;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -118,7 +118,7 @@ T* CEntityManager::AttachProperty(Game::CEntity& Entity) const
 {
 	n_assert_dbg(T::RTTI.IsDerivedFrom(CProperty::RTTI));
 	n_assert2_dbg(T::pStorage, (CString("Property ") + T::RTTI.GetName() + " is not registered!").CStr());
-	if (!T::pStorage) return NULL;
+	if (!T::pStorage) return nullptr;
 
 	PProperty Prop;
 	if (!T::pStorage->Get(Entity.GetUID(), Prop))
@@ -155,7 +155,7 @@ T* CEntityManager::GetProperty(CStrID EntityID) const
 {
 	PProperty Prop;
 	if (T::pStorage && T::pStorage->Get(EntityID, Prop))
-		if (!Prop->IsA(T::RTTI)) return NULL;
+		if (!Prop->IsA(T::RTTI)) return nullptr;
 	return (T*)Prop.Get();
 }
 //---------------------------------------------------------------------

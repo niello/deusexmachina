@@ -80,7 +80,7 @@ void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 
 void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 {
-	// Cnanged data no longer contains my param, set NULL as its new value in diff
+	// Cnanged data no longer contains my param, set nullptr as its new value in diff
 	for (UPTR i = 0; i < GetCount(); ++i)
 	{
 		CStrID ID = Params[i].GetName();
@@ -111,7 +111,7 @@ void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 
 void CParams::GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const
 {
-	// Cnanged data no longer contains my param, set NULL as its new value in diff
+	// Cnanged data no longer contains my param, set nullptr as its new value in diff
 	for (UPTR i = 0; i < GetCount(); ++i)
 	{
 		CStrID ID = Params[i].GetName();

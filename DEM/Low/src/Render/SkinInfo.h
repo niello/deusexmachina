@@ -31,7 +31,7 @@ protected:
 
 public:
 
-	CSkinInfo(): pInvBindPose(NULL) {}
+	CSkinInfo(): pInvBindPose(nullptr) {}
 	virtual ~CSkinInfo() { Destroy(); }
 
 	bool				Create(UPTR BoneCount);

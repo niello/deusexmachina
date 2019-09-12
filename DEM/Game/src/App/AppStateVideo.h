@@ -25,7 +25,7 @@ public:
 
 	CAppStateVideo(CStrID StateID): CStateHandler(StateID), EnableScaling(false) {}
 
-	virtual void	OnStateEnter(CStrID PrevState, Data::PParams Params = NULL);
+	virtual void	OnStateEnter(CStrID PrevState, Data::PParams Params = nullptr);
 	virtual CStrID	OnFrame();
 
 	void			SetNextState(CStrID State) { NextState = State; }

@@ -76,7 +76,7 @@ public:
 	bool					Load(CStrID LevelID, const Data::CParams& Desc);
 	bool					Validate(Render::CGPUDriver* pGPU);
 	void					Term();
-	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = NULL);
+	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
 	//void					RenderDebug();
 
 	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
@@ -86,11 +86,11 @@ public:
 	//???pass camera? or move to view? here is more universal, but may need renaming as there is no "screen" at the server part
 	//can add shortcut methods to a View, with these names, calling renamed level methods with a view camera
 	UPTR					GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRect& RelRect) const;
-	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+	bool					GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset = nullptr) const;
 	bool					GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const;
 
 	// Physics-based queries
-	bool					GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D = NULL, CStrID* pOutEntityUID = NULL) const;
+	bool					GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D = nullptr, CStrID* pOutEntityUID = nullptr) const;
 	UPTR					GetEntitiesInPhysBox(CArray<CEntity*>& Out, const matrix44& OBB) const;
 	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;

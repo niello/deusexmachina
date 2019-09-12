@@ -84,10 +84,10 @@ inline U16 CPropInventory::AddItem(const Items::CItemStack& Items, bool AsManyAs
 
 inline Items::CItemStack* CPropInventory::FindItemStack(const Items::CItem* pItem)
 {
-	if (!pItem) return NULL;
+	if (!pItem) return nullptr;
 	foreach_stack(Stack, Items)
 		if (Stack->GetItem()->IsEqual(pItem)) return (Items::CItemStack*)Stack;
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -95,7 +95,7 @@ inline Items::CItemStack* CPropInventory::FindItemStack(CStrID ItemID)
 {
 	foreach_stack(Stack, Items)
 		if (Stack->GetItem()->GetID() == ItemID) return (Items::CItemStack*)Stack;
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

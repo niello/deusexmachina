@@ -25,10 +25,10 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 		RTDesc.ViewDimension != D3D11_RTV_DIMENSION_TEXTURE2DMSARRAY) FAIL;
 	Desc.Format = CD3D11DriverFactory::DXGIFormatToPixelFormat(RTDesc.Format);
 
-	ID3D11Resource* pTexRsrc = NULL;
+	ID3D11Resource* pTexRsrc = nullptr;
 	pRTV->GetResource(&pTexRsrc);
 	
-	ID3D11Texture2D* pTex = NULL;
+	ID3D11Texture2D* pTex = nullptr;
 	if (FAILED(pTexRsrc->QueryInterface<ID3D11Texture2D>(&pTex)))
 	{
 		pTexRsrc->Release();
@@ -76,7 +76,7 @@ bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResour
 
 void CD3D11RenderTarget::InternalDestroy()
 {
-	Texture = NULL;
+	Texture = nullptr;
 	SAFE_RELEASE(pRTView);
 }
 //---------------------------------------------------------------------
@@ -89,13 +89,13 @@ bool CD3D11RenderTarget::CopyResolveToTexture(PTexture Dest /*, region*/) const
 	if (Dest.IsNullPtr()) FAIL;
 	ID3D11Texture2D* pDestTex = ((CD3D11Texture*)Dest.Get())->GetD3DTexture2D();
 
-	ID3D11Device* pDev = NULL;
+	ID3D11Device* pDev = nullptr;
 	pDestTex->GetDevice(&pDev);
 
-	ID3D11DeviceContext* pDevCtx = NULL;
+	ID3D11DeviceContext* pDevCtx = nullptr;
 	pDev->GetImmediateContext(&pDevCtx);
 
-	ID3D11Resource* pRsrc = NULL;
+	ID3D11Resource* pRsrc = nullptr;
 	pRTView->GetResource(&pRsrc);
 
 	if (Desc.MSAAQuality != MSAA_None) //!!! && Dest->GetDesc()->MSAAQuality == MSAA_None)!

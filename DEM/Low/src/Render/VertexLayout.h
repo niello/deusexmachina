@@ -35,7 +35,7 @@ public:
 	virtual void					Destroy() { InternalDestroy(); }
 	virtual bool					IsValid() const = 0;
 
-	const CVertexComponent*			GetComponent(UPTR Index) const { return Index < Components.GetCount() ? &Components[Index] : NULL; }
+	const CVertexComponent*			GetComponent(UPTR Index) const { return Index < Components.GetCount() ? &Components[Index] : nullptr; }
 	UPTR							GetComponentCount() const { return Components.GetCount(); }
 	UPTR							GetVertexSizeInBytes() const { return VertexSize; }
 };

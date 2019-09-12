@@ -34,7 +34,7 @@ protected:
 	Render::PTexture		IrradianceMap;
 	Render::PTexture		RadianceEnvMap;
 	Scene::CSPS*			pSPS = nullptr;
-	Scene::CSPSRecord*		pSPSRecord = nullptr;		// NULL if oversized (global)
+	Scene::CSPSRecord*		pSPSRecord = nullptr;		// nullptr if oversized (global)
 
 	virtual void OnDetachFromScene();
 

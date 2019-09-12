@@ -15,13 +15,13 @@ bool CD3D9VertexLayout::Create(const CVertexComponent* pComponents, UPTR Count, 
 	if (!pComponents || !Count) FAIL;
 
 	// Since user-defined semantic names are not supported for D3D9, values are
-	// always NULL and we don't need to allocate memory for that names.
+	// always nullptr and we don't need to allocate memory for that names.
 	Components.RawCopyFrom(pComponents, Count);
 	UPTR VSize = 0;
 	for (UPTR i = 0; i < Count; ++i)
 		VSize += pComponents[i].GetSize();
 	VertexSize = VSize;
-	pDecl = pD3DDecl;	// May be NULL if this layout is per-instance only
+	pDecl = pD3DDecl;	// May be nullptr if this layout is per-instance only
 
 	if (pD3DDecl)
 	{

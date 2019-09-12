@@ -24,13 +24,13 @@ class CAbility
 protected:
 
 	CStrID			ID;
-	IAction*		pAction;		// May be NULL, in this case smart object must provide an action
+	IAction*		pAction;		// May be nullptr, in this case smart object must provide an action
 	Data::CFlags	TargetFlags;	//???or RTTI list or CStrID list? use dynamic enum?
 	Data::PParams	Params;
 
 public:
 
-	CAbility(): pAction(NULL) {}
+	CAbility(): pAction(nullptr) {}
 
 	bool		AcceptsTargetType(UPTR TargetTypeFlag) const { return TargetFlags.Is(TargetTypeFlag); }
 	IAction*	GetAction() { return pAction; }

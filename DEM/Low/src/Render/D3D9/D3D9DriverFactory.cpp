@@ -53,7 +53,7 @@ PDisplayDriver CD3D9DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Output
 	// No support for multihead devices, you may add it if you need
 	n_assert2(Output == 0, "D3D9 supports only one output (0) per video adapter");
 	PD3D9DisplayDriver Driver = n_new(CD3D9DisplayDriver);
-	if (!Driver->Init(Adapter, Output)) Driver = NULL;
+	if (!Driver->Init(Adapter, Output)) Driver = nullptr;
 	return Driver.Get();
 }
 //---------------------------------------------------------------------

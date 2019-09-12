@@ -21,7 +21,7 @@ protected:
 
 public:
 
-	CNodeControllerKeyframe(): pSampler(NULL), Time(0.f) { Flags.Set(LocalSpace); }
+	CNodeControllerKeyframe(): pSampler(nullptr), Time(0.f) { Flags.Set(LocalSpace); }
 
 	void			SetSampler(const CSampler* _pSampler);
 	void			SetTime(float AbsTime) { Time = AbsTime; }

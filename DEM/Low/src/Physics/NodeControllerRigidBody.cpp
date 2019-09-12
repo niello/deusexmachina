@@ -14,7 +14,7 @@ void CNodeControllerRigidBody::SetBody(CRigidBody& RigidBody)
 void CNodeControllerRigidBody::Clear()
 {
 	Channels.ClearAll();
-	Body = NULL;
+	Body = nullptr;
 }
 //---------------------------------------------------------------------
 

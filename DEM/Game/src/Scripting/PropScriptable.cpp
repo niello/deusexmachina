@@ -37,7 +37,7 @@ void CPropScriptable::InternalDeactivate()
 	UNSUBSCRIBE_EVENT(OnPropsActivated);
 	
 	Obj->RunFunction("OnPropTerm");
-	Obj = NULL;
+	Obj = nullptr;
 }
 //---------------------------------------------------------------------
 

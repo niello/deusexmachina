@@ -55,16 +55,16 @@ PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	CNAX2Header Header;
-	if (!Reader.Read(Header) || Header.magic != 'NAX2') return NULL;
+	if (!Reader.Read(Header) || Header.magic != 'NAX2') return nullptr;
 
 	CNAX2Group Group;
-	if (!Reader.Read(Group)) return NULL;
+	if (!Reader.Read(Group)) return nullptr;
 
 	UPTR TotalCurves = Group.numCurves;
 	for (UPTR i = 1; i < Header.numGroups; ++i)
 	{
 		CNAX2Group TmpGroup;
-		if (!Reader.Read(TmpGroup)) return NULL;
+		if (!Reader.Read(TmpGroup)) return nullptr;
 		TotalCurves += TmpGroup.numCurves;
 	}
 
@@ -77,7 +77,7 @@ PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 	for (UPTR i = 0; i < Group.numCurves; ++i)
 	{
 		CNAX2Curve Curve;
-		if (!Reader.Read(Curve)) return NULL;
+		if (!Reader.Read(Curve)) return nullptr;
 		if (!Curve.isAnimated) continue;
 		
 		Scene::ETransformChannel Channel;
@@ -130,7 +130,7 @@ PResourceObject CMocapClipLoaderNAX2::CreateResource(CStrID UID)
 
 	//???load directly to Clip fields?
 	Anim::PMocapClip Clip = n_new(Anim::CMocapClip);
-	Clip->Setup(Tracks, TrackMapping, NULL, pKeys, Group.numKeys, Group.keyStride, Group.keyTime);
+	Clip->Setup(Tracks, TrackMapping, nullptr, pKeys, Group.numKeys, Group.keyStride, Group.keyTime);
 
 	return Clip.Get();
 }

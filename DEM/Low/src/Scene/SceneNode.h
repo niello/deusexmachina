@@ -59,7 +59,7 @@ public:
 
 	virtual bool			IsResourceValid() const { OK; }
 
-	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = NULL);
+	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = nullptr);
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
@@ -122,14 +122,14 @@ inline void CSceneNode::RemoveChild(CSceneNode& Node)
 	n_assert(Node.pParent == this);
 	Node.OnDetachFromScene();
 	Children.Remove(Node.Name);
-	Node.pParent = NULL;
+	Node.pParent = nullptr;
 }
 //---------------------------------------------------------------------
 
 inline CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
 {
 	IPTR Idx = Children.FindIndex(ChildName);
-	return Idx == INVALID_INDEX ? NULL : Children.ValueAt(Idx).Get();
+	return Idx == INVALID_INDEX ? nullptr : Children.ValueAt(Idx).Get();
 }
 //---------------------------------------------------------------------
 
@@ -137,7 +137,7 @@ inline CSceneNode* CSceneNode::GetChild(const char* pPath) const
 {
 	const char* pUnprocessed;
 	CSceneNode* pNode = FindDeepestChild(pPath, pUnprocessed);
-	return pUnprocessed ? NULL : pNode;
+	return pUnprocessed ? nullptr : pNode;
 }
 //---------------------------------------------------------------------
 
@@ -148,7 +148,7 @@ template<class T> inline T* CSceneNode::FindFirstAttribute() const
 		CNodeAttribute* pAttr = Attrs[i];
 		if (pAttr->IsA(T::RTTI)) return (T*)pAttr;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -26,7 +26,7 @@ namespace Scripting
 {
 __ImplementSingleton(CScriptServer);
 
-CScriptServer::CScriptServer(): CurrClass(NULL), CurrObj(NULL)
+CScriptServer::CScriptServer(): CurrClass(nullptr), CurrObj(nullptr)
 {
 	__ConstructSingleton;
 
@@ -64,7 +64,7 @@ CScriptServer::~CScriptServer()
 	if (l)
 	{
 		lua_close(l);
-		l = NULL;
+		l = nullptr;
 	}
 
 	__DestructSingleton;
@@ -382,7 +382,7 @@ void CScriptServer::EndClass(bool IsScriptObjectSubclass)
 
 	lua_setfield(l, -2, CurrClass.CStr());
 	lua_pop(l, 1); // Classes table
-	CurrClass = NULL;
+	CurrClass = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -400,7 +400,7 @@ void CScriptServer::EndMixin()
 {
 	n_assert(CurrObj);
 	lua_pop(l, 1);
-	CurrObj = NULL;
+	CurrObj = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -435,9 +435,9 @@ bool CScriptServer::LoadClass(const char* Name)
 	if (ClassDesc.IsNullPtr()) FAIL;
 
 	const CString& BaseClass = ClassDesc->Get<CString>(CStrID("Base"), CString::Empty);
-	if (!BeginClass(Name, BaseClass.IsValid() ? BaseClass.CStr() : NULL)) FAIL;
+	if (!BeginClass(Name, BaseClass.IsValid() ? BaseClass.CStr() : nullptr)) FAIL;
 
-	const char* pData = NULL;
+	const char* pData = nullptr;
 	UPTR Size = 0;
 
 	Data::CParam* pCodePrm;

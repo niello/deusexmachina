@@ -48,7 +48,7 @@ void CPropCharacterController::InternalDeactivate()
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*pProp);
 
-	CharCtlr = NULL;
+	CharCtlr = nullptr;
 
 }
 //---------------------------------------------------------------------
@@ -94,7 +94,7 @@ void CPropCharacterController::TermSceneNodeModifiers(CPropSceneNode& Prop)
 	if (NodeCtlr.IsValidPtr())
 	{
 		NodeCtlr->RemoveFromNode();
-		NodeCtlr = NULL; //???create once and attach/detach?
+		NodeCtlr = nullptr; //???create once and attach/detach?
 	}
 }
 //---------------------------------------------------------------------

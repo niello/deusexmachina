@@ -61,10 +61,10 @@ public:
 	UPTR			LoadScriptFile(const char* pFileName);
 	UPTR			LoadScript(const char* Buffer, UPTR Length);
 
-	UPTR			RunFunction(const char* pFuncName, Data::CData* pRetVal = NULL) const;
-	UPTR			RunFunction(const char* pFuncName, const char* ArgLuaGlobal, Data::CData* pRetVal = NULL) const;
-	UPTR			RunFunction(const char* pFuncName, Data::CData* Args, UPTR ArgCount, Data::CData* pRetVal = NULL) const;
-	UPTR			RunFunctionOneArg(const char* FuncName, const Data::CData& Arg, Data::CData* pRetVal = NULL) const;
+	UPTR			RunFunction(const char* pFuncName, Data::CData* pRetVal = nullptr) const;
+	UPTR			RunFunction(const char* pFuncName, const char* ArgLuaGlobal, Data::CData* pRetVal = nullptr) const;
+	UPTR			RunFunction(const char* pFuncName, Data::CData* Args, UPTR ArgCount, Data::CData* pRetVal = nullptr) const;
+	UPTR			RunFunctionOneArg(const char* FuncName, const Data::CData& Arg, Data::CData* pRetVal = nullptr) const;
 
 	bool			SubscribeEvent(CStrID EventID, const char* HandlerFuncName, Events::CEventDispatcher* pDisp, U16 Priority);
 	void			UnsubscribeEvent(CStrID EventID, const char* HandlerFuncName, const Events::CEventDispatcher* pDisp);

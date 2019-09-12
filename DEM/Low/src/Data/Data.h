@@ -50,8 +50,8 @@ protected:
 
 public:
 
-	CData(): Type(NULL), Value(NULL) {}
-	CData(const CData& Data): Type(NULL) { SetTypeValue(Data); }
+	CData(): Type(nullptr), Value(nullptr) {}
+	CData(const CData& Data): Type(nullptr) { SetTypeValue(Data); }
 	template<class T> CData(const T& Val) { Type = DATA_TYPE(T); DATA_TYPE_NV(T)::NewT(&Value, &Val); }
 	explicit CData(const CType* type): Type(type) { if (Type) Type->New(&Value); }
 	~CData() { if (Type) Type->Delete(&Value); }
@@ -63,7 +63,7 @@ public:
 	int							GetTypeID() const { return Type ? Type->GetID() : INVALID_TYPE_ID; }
 	bool						IsA(const CType* Sample) const { return Type == Sample; }
 	template<class T> bool		IsA() const { return Type == CType::GetType<T>(); }
-	bool						IsValid() const { return Type != NULL; }
+	bool						IsValid() const { return Type != nullptr; }
 	bool						IsVoid() const { return !Type /*|| Type->GetID() == INVALID_TYPE_ID*/; }
 	bool						IsNull() const { return IsVoid() || (!Value && Type != DATA_TYPE(bool) && Type != DATA_TYPE(int)); }
 
@@ -84,7 +84,7 @@ public:
 	template<class T> const T*	GetValuePtr() const;
 	void* const*				GetValueObjectPtr() const { return &Value; }
 
-	const char*					ToString() const { return Type ? Type->ToString(Value) : NULL; }
+	const char*					ToString() const { return Type ? Type->ToString(Value) : nullptr; }
 
 	CData&						operator =(const CData& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(const T& Src) { SetTypeValue(Src); return *this; }
@@ -119,7 +119,7 @@ inline void CData::Clear()
 	if (Type)
 	{
 		Type->Delete(&Value);
-		Type = NULL;
+		Type = nullptr;
 	}
 }
 //---------------------------------------------------------------------
@@ -180,14 +180,14 @@ template<class T> inline const T& CData::GetValue() const
 template<class T> inline T* CData::GetValuePtr()
 {
 	n_assert(Type == DATA_TYPE(T)); // no conversions now
-	return (IsNull()) ? NULL : (T*)DATA_TYPE_NV(T)::GetPtr(&Value);
+	return (IsNull()) ? nullptr : (T*)DATA_TYPE_NV(T)::GetPtr(&Value);
 }
 //---------------------------------------------------------------------
 
 template<class T> inline const T* CData::GetValuePtr() const
 {
 	n_assert(Type == DATA_TYPE(T)); // no conversions now
-	return (IsNull()) ? NULL : (const T*)DATA_TYPE_NV(T)::GetPtr(&Value);
+	return (IsNull()) ? nullptr : (const T*)DATA_TYPE_NV(T)::GetPtr(&Value);
 }
 //---------------------------------------------------------------------
 

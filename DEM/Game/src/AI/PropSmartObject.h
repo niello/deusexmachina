@@ -107,7 +107,7 @@ public:
 	bool				IsActionAvailable(CStrID ID, const AI::CActor* pActor) const;
 
 	CStrID				GetTypeID() const { return TypeID; }
-	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, vector3& OutPos, CArray<dtPolyRef>* pNavCache = NULL, bool UpdateCache = false);
+	bool				GetRequiredActorPosition(CStrID ActionID, const AI::CActor* pActor, vector3& OutPos, CArray<dtPolyRef>* pNavCache = nullptr, bool UpdateCache = false);
 	bool				GetRequiredActorFacing(CStrID ActionID, const AI::CActor* pActor, vector3& OutFaceDir);
 };
 

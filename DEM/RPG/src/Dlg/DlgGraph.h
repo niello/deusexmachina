@@ -26,7 +26,7 @@ public:
 	CString						ScriptFile;
 	Scripting::PScriptObject	ScriptObj;	// Stateless. Object is needed to avoid name clashes and to clear script at the end.
 
-	CDlgGraph(): StartNode(NULL) {}
+	CDlgGraph(): StartNode(nullptr) {}
 };
 
 typedef Ptr<CDlgGraph> PDlgGraph;

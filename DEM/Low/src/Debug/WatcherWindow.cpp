@@ -337,11 +337,11 @@ bool CWatcherWindow::OnUIUpdate(Events::CEventDispatcher* pDispatcher, const Eve
 void CWatcherWindow::CWatched::Clear()
 {
 	n_delete(pNameItem);
-	pNameItem = NULL;
+	pNameItem = nullptr;
 	n_delete(pTypeItem);
-	pTypeItem = NULL;
+	pTypeItem = nullptr;
 	n_delete(pValueItem);
-	pValueItem = NULL;
+	pValueItem = nullptr;
 }
 //---------------------------------------------------------------------
 

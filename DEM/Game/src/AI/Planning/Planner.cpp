@@ -55,7 +55,7 @@ bool CPlanner::IsPlanValid(CActor* pActor, CNode* pNode, const CWorldState& WSAc
 	CWorldState WorldState;
 	MergeWorldStates(WorldState, pNode->WSCurr, WSActor);
 
-	CNode* pNodeParent = NULL;
+	CNode* pNodeParent = nullptr;
 	
 	while (pAction)
 	{

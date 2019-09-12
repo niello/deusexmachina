@@ -84,7 +84,7 @@ public:
 	static const float NoDataF;
 	static const short NoDataS;
 
-	CBTFile(): Header(NULL), HeightsF(NULL), SelfAllocated(false), MinHeight(NoDataF), MaxHeight(NoDataF) {}
+	CBTFile(): Header(nullptr), HeightsF(nullptr), SelfAllocated(false), MinHeight(NoDataF), MaxHeight(NoDataF) {}
 	CBTFile(const void* Data);
 	~CBTFile() { if (SelfAllocated && Header) n_free(Header); }
 

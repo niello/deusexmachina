@@ -81,8 +81,8 @@ public:
 	bool			DeleteProfile(const char* pName) const;
 	bool			SetCurrentProfile(const char* pName);
 	const CString&	GetCurrentProfile() const { return CurrProfile; }
-	void			EnumSavedGames(CArray<CString>& Out, const char* pProfile = NULL) const;
-	bool			SavedGameExists(const char* pName, const char* pProfile = NULL);
+	void			EnumSavedGames(CArray<CString>& Out, const char* pProfile = nullptr) const;
+	bool			SavedGameExists(const char* pName, const char* pProfile = nullptr);
 
 	bool			StartNewGame(const char* pFileName);
 	bool			ContinueGame(const char* pFileName);

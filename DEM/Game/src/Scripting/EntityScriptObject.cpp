@@ -121,7 +121,7 @@ int CEntityScriptObject_HasProperty(lua_State* l)
 	const Core::CRTTI* pRTTI = Factory->GetRTTI(ClassName.CStr());
 	Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
-	lua_pushboolean(l, pProp != NULL);
+	lua_pushboolean(l, pProp != nullptr);
 	return 1;
 }
 //---------------------------------------------------------------------

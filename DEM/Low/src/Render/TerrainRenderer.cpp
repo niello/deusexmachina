@@ -56,7 +56,7 @@ bool CTerrainRenderer::Init(bool LightingEnabled)
 	// Patch offset and scale in XZ
 	CVertexComponent* pCmp = &InstanceDataDecl[0];
 	pCmp->Semantic = VCSem_TexCoord;
-	pCmp->UserDefinedName = NULL;
+	pCmp->UserDefinedName = nullptr;
 	pCmp->Index = 0;
 	pCmp->Format = VCFmt_Float32_4;
 	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
@@ -66,7 +66,7 @@ bool CTerrainRenderer::Init(bool LightingEnabled)
 	// Morph constants
 	pCmp = &InstanceDataDecl[1];
 	pCmp->Semantic = VCSem_TexCoord;
-	pCmp->UserDefinedName = NULL;
+	pCmp->UserDefinedName = nullptr;
 	pCmp->Index = 1;
 	pCmp->Format = VCFmt_Float32_2;
 	pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
@@ -79,7 +79,7 @@ bool CTerrainRenderer::Init(bool LightingEnabled)
 	{
 		pCmp = &InstanceDataDecl[ElementIdx];
 		pCmp->Semantic = VCSem_TexCoord;
-		pCmp->UserDefinedName = NULL;
+		pCmp->UserDefinedName = nullptr;
 		pCmp->Index = ElementIdx;
 		pCmp->Format = VCFmt_SInt16_4;
 		pCmp->Stream = INSTANCE_BUFFER_STREAM_INDEX;
@@ -492,7 +492,7 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		IsVisible = true;
 	}
 
-	const bool LightingEnabled = (Args.pRenderContext->pLights != NULL);
+	const bool LightingEnabled = (Args.pRenderContext->pLights != nullptr);
 
 	float* pLODMorphConsts = Args.pMorphConsts + 2 * LOD;
 
@@ -657,22 +657,22 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		return ItEnd;
 	}
 
-	const CMaterial* pCurrMaterial = NULL;
-	const CTechnique* pCurrTech = NULL;
+	const CMaterial* pCurrMaterial = nullptr;
+	const CTechnique* pCurrTech = nullptr;
 
-	const CEffectConstant* pConstVSCDLODParams = NULL;
-	const CEffectConstant* pConstGridConsts = NULL;
-	const CEffectConstant* pConstFirstInstanceIndex = NULL;
-	const CEffectConstant* pConstInstanceDataVS = NULL;
-	const CEffectConstant* pConstInstanceDataPS = NULL;
-	const CEffectResource* pResourceHeightMap = NULL;
+	const CEffectConstant* pConstVSCDLODParams = nullptr;
+	const CEffectConstant* pConstGridConsts = nullptr;
+	const CEffectConstant* pConstFirstInstanceIndex = nullptr;
+	const CEffectConstant* pConstInstanceDataVS = nullptr;
+	const CEffectConstant* pConstInstanceDataPS = nullptr;
+	const CEffectResource* pResourceHeightMap = nullptr;
 
 	// Subsequent shader constants for single-instance case
 	PShaderConstant ConstWorldMatrix;
 	PShaderConstant ConstLightCount;
 	PShaderConstant ConstLightIndices;
 
-	const bool LightingEnabled = (Context.pLights != NULL);
+	const bool LightingEnabled = (Context.pLights != nullptr);
 	UPTR TechLightCount;
 
 	static const CStrID sidWorldMatrix("WorldMatrix");
@@ -891,7 +891,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			n_assert_dbg(MaxInstanceCountConst > 1);
 
 			CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(pConstInstanceDataVS->Const->GetConstantBufferHandle(), pConstInstanceDataVS->ShaderType);
-			CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : NULL;
+			CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : nullptr;
 
 			//!!!implement looping if instance buffer is too small!
 			n_assert_dbg(MaxInstanceCountConst >= (PatchCount + QuarterPatchCount));
@@ -999,7 +999,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			if (InstanceVB.IsNullPtr() || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
 			{
 				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), DeclSize);
-				InstanceVB = NULL; // Drop before allocating new buffer
+				InstanceVB = nullptr; // Drop before allocating new buffer
 				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
 
 				//!!!DBG TMP!

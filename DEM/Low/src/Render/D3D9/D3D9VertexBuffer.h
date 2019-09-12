@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	CD3D9VertexBuffer(): pBuffer(NULL)/*, LockCount(0)*/ {}
+	CD3D9VertexBuffer(): pBuffer(nullptr)/*, LockCount(0)*/ {}
 	virtual ~CD3D9VertexBuffer() { InternalDestroy(); }
 
 	bool					Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB);

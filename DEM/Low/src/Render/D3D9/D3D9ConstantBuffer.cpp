@@ -93,9 +93,9 @@ void CD3D9ConstantBuffer::InternalDestroy()
 	if (pFloat4Data) n_free_aligned(pFloat4Data);
 	else if (pInt4Data) n_free_aligned(pInt4Data);
 	else if (pBoolData) n_free_aligned(pBoolData);
-	pFloat4Data = NULL;
-	pInt4Data = NULL;
-	pBoolData = NULL;
+	pFloat4Data = nullptr;
+	pInt4Data = nullptr;
+	pBoolData = nullptr;
 	Float4Count = 0;
 	Int4Count = 0;
 	BoolCount = 0;

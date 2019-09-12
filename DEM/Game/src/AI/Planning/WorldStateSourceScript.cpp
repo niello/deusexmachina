@@ -34,7 +34,7 @@ bool CWorldStateSourceScript::FillWorldState(const CActor* pActor, const Prop::C
 	if (!Func.IsValid()) OK;
 
 	Prop::CPropScriptable* pScriptable = pSO->GetEntity()->GetProperty<Prop::CPropScriptable>();
-	Prop::CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
+	Prop::CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : nullptr;
 	if (!pScriptObj) OK;
 
 	Data::CData RetVal;

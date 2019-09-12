@@ -34,7 +34,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	VC.Semantic = Render::VCSem_Position;
 	VC.Index = 0;
 	VC.Stream = 0;
-	VC.UserDefinedName = NULL;
+	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
 	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
 	VC.PerInstanceData = false;
@@ -104,7 +104,7 @@ PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 	VC.Semantic = Render::VCSem_Position;
 	VC.Index = 0;
 	VC.Stream = 0;
-	VC.UserDefinedName = NULL;
+	VC.UserDefinedName = nullptr;
 	VC.Stream = 0;
 	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
 	VC.PerInstanceData = false;

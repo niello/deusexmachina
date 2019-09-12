@@ -32,7 +32,7 @@ public:
 
 	CRTTI(const char* pClassName, Data::CFourCC ClassFourCC, CFactoryFunc pFactoryCreator, const CRTTI* pParentClass, UPTR InstSize);
 
-	CRTTIBaseClass*	CreateClassInstance(void* pParam = NULL) const { return pFactoryFunc ? pFactoryFunc(pParam) : NULL; }
+	CRTTIBaseClass*	CreateClassInstance(void* pParam = nullptr) const { return pFactoryFunc ? pFactoryFunc(pParam) : nullptr; }
 	//void*			AllocInstanceMemory() const { return n_malloc(InstanceSize); }
 	//void			FreeInstanceMemory(void* pPtr) { n_free(pPtr); }
 
@@ -110,7 +110,7 @@ public: \
 	static ::Core::CRTTI			RTTI; \
 	static const bool				Factory_Registered; \
 	virtual ::Core::CRTTI*			GetRTTI() const { return &RTTI; } \
-	static ::Core::CRTTIBaseClass*	CreateClassInstance(void* pParam = NULL); \
+	static ::Core::CRTTIBaseClass*	CreateClassInstance(void* pParam = nullptr); \
 	static bool						RegisterInFactory(); \
 	static void						ForceFactoryRegistration(); \
 private:
@@ -128,7 +128,7 @@ private:
 	const bool Class::Factory_Registered = Class::RegisterInFactory();
 
 #define __ImplementRootClass(Class, FourCC) \
-	::Core::CRTTI Class::RTTI(#Class, FourCC, Class::CreateClassInstance, NULL, sizeof(Class)); \
+	::Core::CRTTI Class::RTTI(#Class, FourCC, Class::CreateClassInstance, nullptr, sizeof(Class)); \
 	::Core::CRTTIBaseClass* Class::CreateClassInstance(void* pParam) { return n_new(Class); } \
 	bool Class::RegisterInFactory() \
 	{ \
@@ -146,9 +146,9 @@ public: \
 private:
 
 #define __ImplementClassNoFactory(Class, ParentClass) \
-	::Core::CRTTI Class::RTTI(#Class, 0, NULL, &ParentClass::RTTI, 0);
+	::Core::CRTTI Class::RTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0);
 
 #define __ImplementRootClassNoFactory(Class, FourCC) \
-	::Core::CRTTI Class::RTTI(#Class, FourCC, NULL, NULL, 0);
+	::Core::CRTTI Class::RTTI(#Class, FourCC, nullptr, nullptr, 0);
 
 #endif

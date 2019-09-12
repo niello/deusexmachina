@@ -105,8 +105,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	}
 	else
 	{
-		Context.pLights = NULL;
-		Context.pLightIndices = NULL;
+		Context.pLights = nullptr;
+		Context.pLightIndices = nullptr;
 	}
 
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
@@ -134,7 +134,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			pNode->pSkinPalette = pSkinAttr->GetSkinPalette();
 			pNode->BoneCount = pSkinAttr->GetSkinInfo()->GetBoneCount();
 		}
-		else pNode->pSkinPalette = NULL;
+		else pNode->pSkinPalette = nullptr;
 
 		if (pAttrRenderable->GetGlobalAABB(Context.AABB, 0))
 		{
@@ -161,7 +161,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		//!!!PERF: needs testing!
 		//!!!may send lights subset selected by:
 		//if (pAttrRenderable->pSPSRecord->pSPSNode->SharesSpaceWith(*pAttrLight->pSPSRecord->pSPSNode))
-		//if (pAttrRenderable->CheckPotentialIntersection(*pAttrLight / pSPSNode)) // true if some of pSPSNodes is NULL
+		//if (pAttrRenderable->CheckPotentialIntersection(*pAttrLight / pSPSNode)) // true if some of pSPSNodes is nullptr
 
 		if (!pRenderer->PrepareNode(*pNode, Context))
 		{
@@ -271,14 +271,14 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (; RTIdxIdx < RenderTargetIndices.GetCount(); ++RTIdxIdx)
 	{
 		const I32 RTIdx = RenderTargetIndices[RTIdxIdx];
-		pGPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? NULL : View.RTs[RTIdx].Get());
+		pGPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? nullptr : View.RTs[RTIdx].Get());
 	}
 
 	UPTR MaxRTCount = pGPU->GetMaxMultipleRenderTargetCount();
 	for (; RTIdxIdx < MaxRTCount; ++RTIdxIdx)
-		pGPU->SetRenderTarget(RTIdxIdx, NULL);
+		pGPU->SetRenderTarget(RTIdxIdx, nullptr);
 
-	pGPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? NULL : View.DSBuffers[DepthStencilIndex].Get());
+	pGPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? nullptr : View.DSBuffers[DepthStencilIndex].Get());
 
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
@@ -288,7 +288,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		Ctx.pLights = &View.GetLightCache();
 		Ctx.pLightIndices = &View.LightIndices;
-		Ctx.UsesGlobalLightBuffer = (pConstGlobalLightBuffer != NULL);
+		Ctx.UsesGlobalLightBuffer = (pConstGlobalLightBuffer != nullptr);
 	}
 	else
 	{
@@ -364,19 +364,19 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 	{
 		Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
 
-		const Core::CRTTI* pObjType = NULL;
+		const Core::CRTTI* pObjType = nullptr;
 		const Data::CParam& PrmObject = RendererDesc.Get(CStrID("Object"));
 		if (PrmObject.IsA<int>()) pObjType = Factory->GetRTTI(Data::CFourCC((I32)PrmObject.GetValue<int>()));
 		else if (PrmObject.IsA<CString>()) pObjType = Factory->GetRTTI(PrmObject.GetValue<CString>());
 		if (!pObjType) FAIL;
 
-		const Core::CRTTI* pRendererType = NULL;
+		const Core::CRTTI* pRendererType = nullptr;
 		const Data::CParam& PrmRenderer = RendererDesc.Get(CStrID("Renderer"));
 		if (PrmRenderer.IsA<int>()) pRendererType = Factory->GetRTTI(Data::CFourCC((I32)PrmRenderer.GetValue<int>()));
 		else if (PrmRenderer.IsA<CString>()) pRendererType = Factory->GetRTTI(PrmRenderer.GetValue<CString>());
 		if (!pRendererType) FAIL;
 
-		Render::IRenderer* pRenderer = NULL;
+		Render::IRenderer* pRenderer = nullptr;
 		for (UPTR j = 0; j < Renderers.GetCount(); ++j)
 			if (Renderers.ValueAt(j)->GetRTTI() == pRendererType)
 			{

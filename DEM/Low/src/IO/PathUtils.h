@@ -18,7 +18,7 @@ CString CollapseDots(const char* pPath, UPTR PathLength = 0);
 //!!!use FindLastIndex(pCharSet)!
 inline const char* GetLastDirSeparator(const char* pPath, UPTR PathLen = 0)
 {
-	if (!pPath) return NULL;
+	if (!pPath) return nullptr;
 	if (!PathLen) PathLen = strlen(pPath);
 
 	const char* pCurr = pPath + PathLen - 1;
@@ -27,7 +27,7 @@ inline const char* GetLastDirSeparator(const char* pPath, UPTR PathLen = 0)
 		if (strchr("/\\:", *pCurr)) return pCurr;
 		--pCurr;
 	};
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -45,7 +45,7 @@ inline void EnsurePathHasEndingDirSeparator(CString& Path)
 }
 //---------------------------------------------------------------------
 
-// Returns pointer to extension (without the dot), or empty string (not NULL, for CRT comparison)
+// Returns pointer to extension (without the dot), or empty string (not nullptr, for CRT comparison)
 inline const char* GetExtension(const char* pPath)
 {
 	const char* pLastDirSep = GetLastDirSeparator(pPath);
@@ -95,7 +95,7 @@ inline CString ExtractLastDirName(const char* pPath)
 			pLastDirSep = GetLastDirSeparator(pPath, pEnd - pPath);
 		}
 
-		const char* pSecondLastDirSep = NULL;
+		const char* pSecondLastDirSep = nullptr;
 		if (pLastDirSep)
 		{
 			pEnd = pLastDirSep;

@@ -44,7 +44,7 @@ public:
 	CNpkTOCEntry*				AddDirEntry(const char* pName);
 	CNpkTOCEntry*				AddFileEntry(const char* pName, UPTR FileOffset, UPTR FileLength);
 	CNpkTOCEntry*				FindEntry(const char* pName);
-	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(NULL); }
+	CIterator					GetEntryIterator() { return pEntries ? pEntries->Begin() : CIterator(nullptr); }
 
 	const CString&	GetName() const { return Name; }
 	CString						GetFullName() const;
@@ -60,7 +60,7 @@ inline CNpkTOCEntry::CNpkTOCEntry(CNpkTOCEntry* pParentEntry, const char* pName)
 	Name(pName),
 	pParent(pParentEntry),
 	Type(FSE_DIR),
-	pEntries(NULL)
+	pEntries(nullptr)
 {
 }
 //---------------------------------------------------------------------
@@ -117,7 +117,7 @@ inline CNpkTOCEntry* CNpkTOCEntry::FindEntry(const char* pName)
 	Name.ToLower();
 
 	CNpkTOCEntry* pResult;
-	return pEntries->Get(Name, pResult) ? pResult : NULL;
+	return pEntries->Get(Name, pResult) ? pResult : nullptr;
 }
 //---------------------------------------------------------------------
 

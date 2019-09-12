@@ -30,11 +30,11 @@ void CNodeAttrLight::OnDetachFromScene()
 		if (pSPSRecord)
 		{
 			pSPS->RemoveRecord(pSPSRecord);
-			pSPSRecord = NULL;
+			pSPSRecord = nullptr;
 		}
 		else pSPS->OversizedObjects.RemoveByValue(this);
 
-		pSPS = NULL;
+		pSPS = nullptr;
 	}
 
 	CNodeAttribute::OnDetachFromScene();
@@ -48,7 +48,7 @@ void CNodeAttrLight::UpdateInSPS(Scene::CSPS& SPS)
 		if (pSPSRecord)
 		{
 			pSPS->RemoveRecord(pSPSRecord);
-			pSPSRecord = NULL;
+			pSPSRecord = nullptr;
 		}
 
 		if (!pSPS)
@@ -66,7 +66,7 @@ void CNodeAttrLight::UpdateInSPS(Scene::CSPS& SPS)
 				if (pSPSRecord)
 				{
 					pSPS->RemoveRecord(pSPSRecord);
-					pSPSRecord = NULL;
+					pSPSRecord = nullptr;
 				}
 				else pSPS->OversizedObjects.RemoveByValue(this);
 			}

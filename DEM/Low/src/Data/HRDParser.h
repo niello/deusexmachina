@@ -90,7 +90,7 @@ public:
 
 	CHRDParser();
 
-	bool ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, CString* pErrors = NULL);
+	bool ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, CString* pErrors = nullptr);
 };
 
 }

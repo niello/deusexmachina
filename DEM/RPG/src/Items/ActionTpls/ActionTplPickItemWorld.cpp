@@ -29,7 +29,7 @@ bool CActionTplPickItemWorld::GetPreconditions(CActor* pActor, CWorldState& WS, 
 
 bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const CWorldState& WSGoal)
 {
-	CMemFactSmartObj* pBest = NULL;
+	CMemFactSmartObj* pBest = nullptr;
 	float MaxConf = 0.f;
 
 	CStrID DesiredItemID = (CStrID)WSGoal.GetProp(WSP_HasItem);
@@ -61,7 +61,7 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 
 PAction CActionTplPickItemWorld::CreateInstance(const CWorldState& Context) const
 {
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	CHeightfieldShape(): pHFData(NULL) {}
+	CHeightfieldShape(): pHFData(nullptr) {}
 	virtual ~CHeightfieldShape() { Unload(); }
 
 	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset);

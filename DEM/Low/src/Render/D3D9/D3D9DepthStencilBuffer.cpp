@@ -27,7 +27,7 @@ bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)
 	//!!!validate format if shader input!
 	//if (Texture.IsValidPtr())
 	//{
-	//	IDirect3DSurface9* pTmpSurf = NULL;
+	//	IDirect3DSurface9* pTmpSurf = nullptr;
 	//	if (FAILED(Texture->GetD3DTexture()->GetSurfaceLevel(0, &pTmpSurf))) FAIL;
 	//	NeedResolve = (pTmpSurf != pSurface);
 	//	Desc.UseAsShaderInput = true;
@@ -37,7 +37,7 @@ bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)
 	//{
 	//	NeedResolve = false;
 	//	Desc.UseAsShaderInput = false;
-	//	SRTexture = NULL;
+	//	SRTexture = nullptr;
 	//}
 
 	pDSSurface = pSurface;

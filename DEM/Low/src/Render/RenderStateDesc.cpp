@@ -12,11 +12,11 @@ void CRenderStateDesc::SetDefaults()
 				  DS_DepthEnable |
 				  DS_DepthWriteEnable);
 
-	VertexShader = NULL;
-	HullShader = NULL;
-	DomainShader = NULL;
-	GeometryShader = NULL;
-	PixelShader = NULL;
+	VertexShader = nullptr;
+	HullShader = nullptr;
+	DomainShader = nullptr;
+	GeometryShader = nullptr;
+	PixelShader = nullptr;
 
 	DepthBias = 0.f;
 	DepthBiasClamp = 0.f;
@@ -67,7 +67,7 @@ void CRenderStateDesc::SetDefaults()
 	RDesc.MultisampleEnable = Desc.Get(CStrID("Multisampling"), true);
 	RDesc.AntialiasedLineEnable = Desc.Get(CStrID("AntialiasedLines"), true);
 
-	ID3D11RasterizerState* pRState = NULL;
+	ID3D11RasterizerState* pRState = nullptr;
 	if (FAILED(pD3DDevice->CreateRasterizerState(&RDesc, &pRState))) goto ProcessFailure;
 
 	D3D11_DEPTH_STENCIL_DESC DSDesc;
@@ -80,7 +80,7 @@ void CRenderStateDesc::SetDefaults()
 	//D3D11_DEPTH_STENCILOP_DESC FrontFace;
 	//D3D11_DEPTH_STENCILOP_DESC BackFace;
 
-	ID3D11DepthStencilState* pDSState = NULL;
+	ID3D11DepthStencilState* pDSState = nullptr;
 	if (FAILED(pD3DDevice->CreateDepthStencilState(&DSDesc, &pDSState))) goto ProcessFailure;
 
 	D3D11_BLEND_DESC BDesc;

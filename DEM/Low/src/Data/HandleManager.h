@@ -7,7 +7,7 @@
 // Handles are safer than pointers, they virtually avoid dangling problem,
 // can uniquely identify an object in a manager scope, and can be dereferenced
 // to an object pointer with a fast conversion.
-// Zero HHandle is a NULL, or empty one. It is also defined as an INVALID_HANDLE.
+// Zero HHandle is a nullptr, or empty one. It is also defined as an INVALID_HANDLE.
 
 namespace Data
 {
@@ -41,9 +41,9 @@ public:
 inline void* CHandleManager::GetHandleData(HHandle Handle) const
 {
 	UPTR Index = UPTR_LOW_HALF(Handle);
-	if (Index >= HandleRecs.GetCount()) return NULL;
+	if (Index >= HandleRecs.GetCount()) return nullptr;
 	CHandleRec& Rec = HandleRecs[Index];
-	return UPTR_HIGH_HALF(Handle) == UPTR_HIGH_HALF(Rec.MagicAndNextFreeIndex) ? Rec.pData : NULL;
+	return UPTR_HIGH_HALF(Handle) == UPTR_HIGH_HALF(Rec.MagicAndNextFreeIndex) ? Rec.pData : nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -33,7 +33,7 @@ bool CPropInventory::InternalActivate()
 			Data::PParams StackDesc = InvDesc->Get<Data::PParams>(i);
 
 			Items::PItem Item = ItemMgr->GetItemTpl(StackDesc->Get<CStrID>(CStrID("ID")))->GetTemplateItem();
-			Data::PParams ItemInst = StackDesc->Get<Data::PParams>(CStrID("Instance"), NULL);
+			Data::PParams ItemInst = StackDesc->Get<Data::PParams>(CStrID("Instance"), nullptr);
 			if (ItemInst.IsValidPtr())
 			{
 				Item = Item->Clone();

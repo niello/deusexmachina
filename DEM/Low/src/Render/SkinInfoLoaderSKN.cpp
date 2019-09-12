@@ -24,13 +24,13 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'SKIF') return NULL;
+	if (!Reader.Read(Magic) || Magic != 'SKIF') return nullptr;
 
 	U32 FormatVersion;
-	if (!Reader.Read(FormatVersion)) return NULL;
+	if (!Reader.Read(FormatVersion)) return nullptr;
 
 	U32 BoneCount;
-	if (!Reader.Read(BoneCount)) return NULL;
+	if (!Reader.Read(BoneCount)) return nullptr;
 
 	//!!!may use MMF for bind pose matrices!
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
@@ -42,9 +42,9 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	{
 		Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfoEditable(i);
 		U16 ParentIndex;
-		if (!Reader.Read(ParentIndex)) return NULL;
+		if (!Reader.Read(ParentIndex)) return nullptr;
 		BoneInfo.ParentIndex = (ParentIndex == (U16)INVALID_INDEX) ? INVALID_INDEX : ParentIndex;
-		if (!Reader.Read(BoneInfo.ID)) return NULL;
+		if (!Reader.Read(BoneInfo.ID)) return nullptr;
 	}
 
 	return SkinInfo.Get();

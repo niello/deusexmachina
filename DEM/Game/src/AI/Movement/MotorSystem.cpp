@@ -178,7 +178,7 @@ void CMotorSystem::Update(float FrameTime)
 
 			if (It)
 			{
-				CMemFactObstacle* pClosest = NULL;
+				CMemFactObstacle* pClosest = nullptr;
 				float MinIsect = FLT_MAX;
 				float MinExpRadius;
 
@@ -359,7 +359,7 @@ void CMotorSystem::SetDest(const vector3& Dest)
 		DestPoint = Dest;
 		pActor->MvmtState = AIMvmt_DestSet;
 		FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
-		//pLastClosestObstacle = NULL;
+		//pLastClosestObstacle = nullptr;
 	}
 }
 //---------------------------------------------------------------------
@@ -407,7 +407,7 @@ void CMotorSystem::RenderDebug()
 		DebugDraw->DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
 	}
 
-	const char* pMvmt = NULL;
+	const char* pMvmt = nullptr;
 	if (pActor->MvmtState == AIMvmt_Failed) pMvmt = "None";
 	else if (pActor->MvmtState == AIMvmt_Done) pMvmt = "Done";
 	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";

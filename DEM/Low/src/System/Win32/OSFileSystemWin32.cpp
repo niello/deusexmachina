@@ -111,7 +111,7 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 		}
 		else
 		{
-			if (!CreateDirectory(AbsPath.CStr(), NULL)) FAIL;
+			if (!CreateDirectory(AbsPath.CStr(), nullptr)) FAIL;
 			break;
 		}
 	}
@@ -120,7 +120,7 @@ bool COSFileSystemWin32::CreateDirectory(const char* pPath)
 	{
 		AbsPath += "/" + DirStack.Back();
 		DirStack.RemoveAt(DirStack.GetCount() - 1);
-		if (!CreateDirectory(AbsPath.CStr(), NULL)) FAIL;
+		if (!CreateDirectory(AbsPath.CStr(), nullptr)) FAIL;
 	}
 
 	OK;
@@ -170,7 +170,7 @@ bool COSFileSystemWin32::DeleteDirectory(const char* pPath)
 void* COSFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, CString& OutName, IO::EFSEntryType& OutType)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
-	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return NULL;
+	if (FileAttrs == INVALID_FILE_ATTRIBUTES || !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY)) return nullptr;
 
 	const char* pActualFilter = (pFilter && *pFilter) ? pFilter : "/*.*"; //???or "/*" ?
 	UPTR FilterLength = strlen(pActualFilter);
@@ -184,7 +184,7 @@ void* COSFileSystemWin32::OpenDirectory(const char* pPath, const char* pFilter, 
 	{
 		OutName.Clear();
 		OutType = IO::FSE_NONE;
-		return NULL; //???return bool success instead? mb NULL handle is valid?
+		return nullptr; //???return bool success instead? mb nullptr handle is valid?
 	}
 
 	while (!strcmp(FindData.cFileName, "..") || !strcmp(FindData.cFileName, "."))
@@ -227,7 +227,7 @@ bool COSFileSystemWin32::NextDirectoryEntry(void* hDir, CString& OutName, IO::EF
 
 void* COSFileSystemWin32::OpenFile(const char* pPath, IO::EStreamAccessMode Mode, IO::EStreamAccessPattern Pattern)
 {
-	if (!pPath || !*pPath) return NULL;
+	if (!pPath || !*pPath) return nullptr;
 
 	DWORD Access = 0;
 	if ((Mode & IO::SAM_READ) || (Mode & IO::SAM_APPEND)) Access |= GENERIC_READ;
@@ -253,15 +253,15 @@ void* COSFileSystemWin32::OpenFile(const char* pPath, IO::EStreamAccessMode Mode
 		0,
 		Disposition,
 		(Pattern == IO::SAP_RANDOM) ? FILE_FLAG_RANDOM_ACCESS : FILE_FLAG_SEQUENTIAL_SCAN,
-		NULL);
+		nullptr);
 
 	if (hFile != INVALID_HANDLE_VALUE)
 	{
-		if (Mode == IO::SAM_APPEND) ::SetFilePointer(hFile, 0, NULL, FILE_END);
+		if (Mode == IO::SAM_APPEND) ::SetFilePointer(hFile, 0, nullptr, FILE_END);
 		return hFile;
 	}
 
-	return NULL; //???return bool success instead? mb NULL handle is valid?
+	return nullptr; //???return bool success instead? mb nullptr handle is valid?
 }
 //---------------------------------------------------------------------
 
@@ -276,7 +276,7 @@ UPTR COSFileSystemWin32::Read(void* hFile, void* pData, UPTR Size)
 {
 	n_assert(hFile && pData && Size > 0 && Size <= ULONG_MAX);
 	DWORD BytesRead;
-	BOOL Result = ::ReadFile(hFile, pData, (DWORD)Size, &BytesRead, NULL);
+	BOOL Result = ::ReadFile(hFile, pData, (DWORD)Size, &BytesRead, nullptr);
 	return (Result == TRUE) ? BytesRead : 0;
 }
 //---------------------------------------------------------------------
@@ -285,7 +285,7 @@ UPTR COSFileSystemWin32::Write(void* hFile, const void* pData, UPTR Size)
 {
 	n_assert(hFile && pData && Size > 0 && Size <= ULONG_MAX);
 	DWORD BytesWritten;
-	BOOL Result = ::WriteFile(hFile, pData, (DWORD)Size, &BytesWritten, NULL);
+	BOOL Result = ::WriteFile(hFile, pData, (DWORD)Size, &BytesWritten, nullptr);
 	return (Result == TRUE) ? BytesWritten : 0;
 }
 //---------------------------------------------------------------------
@@ -302,7 +302,7 @@ bool COSFileSystemWin32::Seek(void* hFile, I64 Offset, IO::ESeekOrigin Origin)
 	}
 	LARGE_INTEGER LIOffset;
 	LIOffset.QuadPart = Offset;
-	return ::SetFilePointerEx(hFile, LIOffset, NULL, SeekOrigin) != 0;
+	return ::SetFilePointerEx(hFile, LIOffset, nullptr, SeekOrigin) != 0;
 }
 //---------------------------------------------------------------------
 
@@ -338,7 +338,7 @@ U64 COSFileSystemWin32::GetFileSize(void* hFile) const
 U64 COSFileSystemWin32::GetFileWriteTime(void* hFile) const
 {
 	FILETIME WriteTime;
-	if (!::GetFileTime(hFile, NULL, NULL, &WriteTime)) return 0;
+	if (!::GetFileTime(hFile, nullptr, nullptr, &WriteTime)) return 0;
 
 	ULARGE_INTEGER UL;
 	UL.LowPart = WriteTime.dwLowDateTime;

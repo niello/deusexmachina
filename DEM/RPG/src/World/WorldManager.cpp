@@ -63,7 +63,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	if (UnloadAllLevels)
 	{
 		for (UPTR i = 0; i < Entities.GetCount(); ++i)
-			Entities[i]->SetLevel(NULL);
+			Entities[i]->SetLevel(nullptr);
 		GameSrv->UnloadAllGameLevels();
 	}
 
@@ -78,7 +78,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	{
 		// calculate destination, if there is more than one entity
 		//!!!need formation to calculate per-entity destinations!
-		Sys::Error("IMPLEMENT ME!!! Need formations, if formation is NULL may auto-position.");
+		Sys::Error("IMPLEMENT ME!!! Need formations, if formation is nullptr may auto-position.");
 	}
 	else Entities[0]->SetAttr<matrix44>(CStrID("Transform"), DestTfm);
 

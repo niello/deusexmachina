@@ -21,8 +21,8 @@ private:
 
 public:
 
-	CRingBuffer(): pStart(NULL), pEnd(NULL), pHead(NULL), pTail(NULL) {}
-	CRingBuffer(UPTR Capacity): pStart(NULL) { Initialize(Capacity); }
+	CRingBuffer(): pStart(nullptr), pEnd(nullptr), pHead(nullptr), pTail(nullptr) {}
+	CRingBuffer(UPTR Capacity): pStart(nullptr) { Initialize(Capacity); }
 	~CRingBuffer() { if (pStart) n_delete_array(pStart); }
 
 	void Initialize(UPTR Capacity);
@@ -33,7 +33,7 @@ public:
 	T* GetStart() const { return pStart; }
 	T* GetEnd() const { return pEnd; }
 	T* GetHead() const;
-	T* GetTail() const { return IsEmpty() ? NULL : pTail; }
+	T* GetTail() const { return IsEmpty() ? nullptr : pTail; }
 	T* GetNext(T* pElm) const;
 	T* GetPrev(T* pElm) const;
 
@@ -105,7 +105,7 @@ template<class T> void CRingBuffer<T>::DeleteTail()
 
 template<class T> inline T* CRingBuffer<T>::GetHead() const
 {
-	if (IsEmpty()) return NULL;
+	if (IsEmpty()) return nullptr;
 	T* pElm = pHead - 1;
 	if (pElm < pStart) pElm = pEnd;
 	return pElm;
@@ -117,7 +117,7 @@ template<class T> T* CRingBuffer<T>::GetNext(T* pElm) const
 	n_assert(pElm && pStart);
 	if (pElm == pEnd) pElm = pStart;
 	else ++pElm;
-	return (pElm == pHead) ? NULL : pElm;
+	return (pElm == pHead) ? nullptr : pElm;
 }
 //---------------------------------------------------------------------
 
@@ -125,7 +125,7 @@ template<class T> T* CRingBuffer<T>::GetNext(T* pElm) const
 template<class T> inline T* CRingBuffer<T>::GetPrev(T* pElm) const
 {
 	n_assert(pElm);
-	if (IsEmpty()) return NULL;
+	if (IsEmpty()) return nullptr;
 	return (pElm == pStart) ? pEnd : pElm - 1;
 }
 //---------------------------------------------------------------------

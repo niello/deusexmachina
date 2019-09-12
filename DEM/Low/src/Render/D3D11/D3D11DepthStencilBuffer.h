@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	CD3D11DepthStencilBuffer(): pDSView(NULL) {}
+	CD3D11DepthStencilBuffer(): pDSView(nullptr) {}
 	virtual ~CD3D11DepthStencilBuffer() { InternalDestroy(); }
 
 	bool					Create(ID3D11DepthStencilView* pDSV, ID3D11ShaderResourceView* pSRV); // For internal use

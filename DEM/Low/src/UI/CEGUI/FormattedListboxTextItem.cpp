@@ -24,7 +24,7 @@ FormattedListboxTextItem::FormattedListboxTextItem(const String& text,
 ListboxTextItem(text, item_id, item_data, disabled, auto_delete),
 	// initialise subclass fields
 	d_formatting(format),
-	d_formattedRenderedString(NULL),
+	d_formattedRenderedString(nullptr),
 	d_formattingAreaSize(0, 0)
 {
 }
@@ -43,7 +43,7 @@ void FormattedListboxTextItem::setFormatting(const HorizontalTextFormatting fmt)
 
 	d_formatting = fmt;
 	delete d_formattedRenderedString;
-	d_formattedRenderedString = NULL;
+	d_formattedRenderedString = nullptr;
 	d_formattingAreaSize = Sizef(0, 0);
 }
 
@@ -172,7 +172,7 @@ void FormattedListboxTextItem::setupStringFormatter() const
 				<JustifiedRenderedString>(d_renderedString);
 			break;
 
-		default: d_formattedRenderedString = NULL; break;
+		default: d_formattedRenderedString = nullptr; break;
 	}
 }
 

@@ -80,11 +80,11 @@ bool CD3D11DriverFactory::GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) co
 	if (!Success) FAIL;
 
 	D3DAdapterInfo.Description[sizeof_array(D3DAdapterInfo.Description) - 1] = 0;
-	int Len = WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), NULL, 0, NULL, NULL);
+	int Len = WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), nullptr, 0, nullptr, nullptr);
 	if (Len > 0)
 	{
-		char* pBuf = (char*)_malloca(Len); // Len includes terminating NULL
-		WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), pBuf, Len, NULL, NULL);
+		char* pBuf = (char*)_malloca(Len); // Len includes terminating nullptr
+		WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), pBuf, Len, nullptr, nullptr);
 		OutInfo.Description = pBuf;
 		_freea(pBuf);
 	}
@@ -126,18 +126,18 @@ UPTR CD3D11DriverFactory::GetAdapterOutputCount(UPTR Adapter) const
 PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Output)
 {
 	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
-	if (!Driver->Init(Adapter, Output)) Driver = NULL;
+	if (!Driver->Init(Adapter, Output)) Driver = nullptr;
 	return Driver.Get();
 }
 //---------------------------------------------------------------------
 
 PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(IDXGIOutput* pOutput)
 {
-	if (!pOutput) return NULL;
+	if (!pOutput) return nullptr;
 	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
 	Driver->pDXGIOutput = pOutput;
 	//???determine adapter and output?
-	//if (!Driver->Init(Adapter, Output)) Driver = NULL;
+	//if (!Driver->Init(Adapter, Output)) Driver = nullptr;
 	return Driver.Get();
 }
 //---------------------------------------------------------------------
@@ -168,7 +168,7 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 #endif
 
 	PD3D11GPUDriver Driver = n_new(CD3D11GPUDriver);
-	if (!Driver->Init(Adapter, DriverType)) Driver = NULL;
+	if (!Driver->Init(Adapter, DriverType)) Driver = nullptr;
 	return Driver.Get();
 }
 //---------------------------------------------------------------------

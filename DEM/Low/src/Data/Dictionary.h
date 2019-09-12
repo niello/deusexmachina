@@ -103,7 +103,7 @@ TValue* CDictionary<TKey, TValue>::Get(const TKey& Key) const
 {
 	n_assert(Pairs.Flags.IsNot(Dict_InBeginAdd));
 	IPTR Idx = Pairs.FindIndexSorted(Key);
-	return (Idx == INVALID_INDEX) ? NULL : &Pairs[Idx].GetValue();
+	return (Idx == INVALID_INDEX) ? nullptr : &Pairs[Idx].GetValue();
 }
 //---------------------------------------------------------------------
 

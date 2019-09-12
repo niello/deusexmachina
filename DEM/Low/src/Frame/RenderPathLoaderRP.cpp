@@ -113,22 +113,22 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read<U32>(Magic) || Magic != 'RPTH') return NULL;
+	if (!Reader.Read<U32>(Magic) || Magic != 'RPTH') return nullptr;
 
 	U32 Version;
-	if (!Reader.Read<U32>(Version)) return NULL;
+	if (!Reader.Read<U32>(Version)) return nullptr;
 
 	U32 ShaderModel;
-	if (!Reader.Read<U32>(ShaderModel)) return NULL; // 0 for SM3.0, 1 for USM
+	if (!Reader.Read<U32>(ShaderModel)) return nullptr; // 0 for SM3.0, 1 for USM
 
 	Data::CDataArray RTSlots;
-	if (!Reader.Read(RTSlots)) return NULL;
+	if (!Reader.Read(RTSlots)) return nullptr;
 
 	Data::CDataArray DSSlots;
-	if (!Reader.Read(DSSlots)) return NULL;
+	if (!Reader.Read(DSSlots)) return nullptr;
 
 	Data::PParams Phases = n_new(Data::CParams);
-	if (!Reader.ReadParams(*Phases)) return NULL;
+	if (!Reader.ReadParams(*Phases)) return nullptr;
 
 	Frame::PRenderPath RP = n_new(Frame::CRenderPath);
 
@@ -170,20 +170,20 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 		case 0: // SM3.0
 		{
 			Render::CSM30ShaderMetadata* pGlobals = n_new(Render::CSM30ShaderMetadata);
-			if (!pGlobals->Load(*Stream)) return NULL;
+			if (!pGlobals->Load(*Stream)) return nullptr;
 			RP->pGlobals = pGlobals;
 			break;
 		}
 		case 1: // USM
 		{
 			Render::CUSMShaderMetadata* pGlobals = n_new(Render::CUSMShaderMetadata);
-			if (!pGlobals->Load(*Stream)) return NULL;
+			if (!pGlobals->Load(*Stream)) return nullptr;
 			RP->pGlobals = pGlobals;
 			break;
 		}
 	}
 
-	if (!LoadGlobalParams(Reader, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return NULL;
+	if (!LoadGlobalParams(Reader, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return nullptr;
 
 	// Phases are intentionally initialized at the end, because they may access global params etc
 	RP->Phases.SetSize(Phases->GetCount());
@@ -197,7 +197,7 @@ PResourceObject CRenderPathLoaderRP::CreateResource(CStrID UID)
 		CString ClassName = "Frame::CRenderPhase" + PhaseType;
 		Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
 
-		if (!CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return NULL;
+		if (!CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return nullptr;
 
 		RP->Phases[i] = CurrPhase;
 	}

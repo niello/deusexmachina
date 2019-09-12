@@ -43,7 +43,7 @@ void CPropTalking::InternalDeactivate()
 	if (pPropSO && pPropSO->IsActive()) pPropSO->EnableAction(CStrID("Talk"), false);
 
 	//???check IsTalking and force abort dlg?
-	Dialogue = NULL;
+	Dialogue = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -97,7 +97,7 @@ void CPropTalking::SayPhrase(CStrID PhraseID)
 	P = n_new(Data::CParams(1));
 	P->Set(CStrID("EntityID"), GetEntity()->GetUID());
 	//!!!TODO: Calculate time
-	EventSrv->ScheduleEvent(CStrID("HidePhrase"), P, 0, NULL, 5.f);
+	EventSrv->ScheduleEvent(CStrID("HidePhrase"), P, 0, nullptr, 5.f);
 }
 //---------------------------------------------------------------------
 

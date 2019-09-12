@@ -45,7 +45,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 		Preconditions = (CWorldStateSource*)Factory->Create(StrWSSrcPfx + SubDesc->Get<CString>(CStrID("Type")));
 		Preconditions->Init(SubDesc);
 	}
-	else Preconditions = NULL;
+	else Preconditions = nullptr;
 
 	const CString& ScriptName = Desc.Get<CString>(CStrID("Script"), CString::Empty);
 	if (ScriptName.IsValid())

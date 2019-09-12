@@ -29,7 +29,7 @@ bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams)
 bool LoadParamsFromPRM(const char* pFileName, Data::PParams& OutParams)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File || !File->Open(IO::SAM_READ)) return NULL;
+	if (!File || !File->Open(IO::SAM_READ)) return nullptr;
 	IO::CBinaryReader Reader(*File);
 
 	Data::PParams Params = n_new(Data::CParams);

@@ -59,8 +59,8 @@ CPoolAllocator<T, ChunkSize, MaxChunks>::CPoolAllocator():
 #ifdef _DEBUG
 	CurrAllocatedCount(0),
 #endif
-	Chunks(NULL),
-	FreeRecords(NULL)
+	Chunks(nullptr),
+	FreeRecords(nullptr)
 {
 	n_assert(ChunkSize > 0);
 }
@@ -69,7 +69,7 @@ CPoolAllocator<T, ChunkSize, MaxChunks>::CPoolAllocator():
 template<class T, UPTR ChunkSize, UPTR MaxChunks>
 void* CPoolAllocator<T, ChunkSize, MaxChunks>::Allocate()
 {
-	T* AllocatedRec(NULL);
+	T* AllocatedRec(nullptr);
 
 	if (FreeRecords)
 	{
@@ -157,7 +157,7 @@ inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Clear()
 	if (Chunks)
 	{
 		n_delete(Chunks);
-		Chunks = NULL;
+		Chunks = nullptr;
 	}
 }
 //---------------------------------------------------------------------

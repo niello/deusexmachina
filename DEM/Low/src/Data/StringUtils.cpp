@@ -5,10 +5,10 @@ namespace StringUtils
 
 char* LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* pSubStr, UPTR SubStrLen)
 {
-	if (!pStrStart || !pSubStr || !*pStrStart || !*pSubStr) return NULL;
+	if (!pStrStart || !pSubStr || !*pStrStart || !*pSubStr) return nullptr;
 
 	if (!pStrEnd) pStrEnd = pStrStart + strlen(pStrStart);
-	else if (pStrEnd <= pStrStart) return NULL;
+	else if (pStrEnd <= pStrStart) return nullptr;
 
 	UPTR SubStrLastIdx = (SubStrLen ? SubStrLen : strlen(pSubStr)) - 1;
 
@@ -21,7 +21,7 @@ char* LastOccurrenceOf(const char* pStrStart, const char* pStrEnd, const char* p
 		--pCurr;
 	}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -106,7 +106,7 @@ CString FromMatrix44(const matrix44& m)
 
 bool ToBool(const char* pStr)
 {
-	static const char* Bools[] = { "no", "yes", "off", "on", "false", "true", NULL };
+	static const char* Bools[] = { "no", "yes", "off", "on", "false", "true", nullptr };
 	int i = 0;
 	while (Bools[i])
 	{

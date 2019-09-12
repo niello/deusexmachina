@@ -69,9 +69,9 @@ __ImplementSingleton(CDebugDraw);
 //	if (Shapes->IsLoaded()) OK;
 //
 //	ID3DXMesh* pDXMesh[ShapeCount];
-//	n_verify(SUCCEEDED(D3DXCreateBox(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, &pDXMesh[0], NULL)));
-//	n_verify(SUCCEEDED(D3DXCreateSphere(RenderSrv->GetD3DDevice(), 1.0f, 12, 6, &pDXMesh[1], NULL)));
-//	n_verify(SUCCEEDED(D3DXCreateCylinder(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, 18, 1, &pDXMesh[2], NULL)));
+//	n_verify(SUCCEEDED(D3DXCreateBox(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, &pDXMesh[0], nullptr)));
+//	n_verify(SUCCEEDED(D3DXCreateSphere(RenderSrv->GetD3DDevice(), 1.0f, 12, 6, &pDXMesh[1], nullptr)));
+//	n_verify(SUCCEEDED(D3DXCreateCylinder(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, 18, 1, &pDXMesh[2], nullptr)));
 //
 //	UPTR VCount = 0, ICount = 0;
 //	for (int i = 0; i < ShapeCount; ++i)
@@ -150,11 +150,11 @@ __ImplementSingleton(CDebugDraw);
 //	Lines.Clear();
 //	Points.Clear();
 //
-//	ShapeInstVL = NULL;
-//	InstVL = NULL;
-//	PrimVL = NULL;
-//	Shapes = NULL;
-//	InstanceBuffer = NULL;
+//	ShapeInstVL = nullptr;
+//	InstVL = nullptr;
+//	PrimVL = nullptr;
+//	Shapes = nullptr;
+//	InstanceBuffer = nullptr;
 //}
 ////---------------------------------------------------------------------
 //
@@ -198,7 +198,7 @@ __ImplementSingleton(CDebugDraw);
 //			}
 //		}
 //
-//		RenderSrv->SetInstanceBuffer(1, NULL, 0);
+//		RenderSrv->SetInstanceBuffer(1, nullptr, 0);
 //
 //		ShapeShader->EndPass();
 //		ShapeShader->End();

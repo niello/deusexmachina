@@ -18,7 +18,7 @@ CPropItem::~CPropItem() {}
 bool CPropItem::InternalActivate()
 {
 	Items::PItem Item = ItemMgr->GetItemTpl(GetEntity()->GetAttr<CStrID>(CStrID("ItemTplID")))->GetTemplateItem();
-	Data::PParams ItemInst = GetEntity()->GetAttr<Data::PParams>(CStrID("ItemInstance"), NULL);
+	Data::PParams ItemInst = GetEntity()->GetAttr<Data::PParams>(CStrID("ItemInstance"), nullptr);
 	if (ItemInst.IsValidPtr())
 	{
 		Item = Item->Clone();

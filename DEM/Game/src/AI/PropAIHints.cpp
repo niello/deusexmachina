@@ -52,7 +52,7 @@ void CPropAIHints::InternalDeactivate()
 		if (Rec.QTNode)
 		{
 			(*Rec.QTNode)->pQTNode->RemoveByHandle(Rec.QTNode);
-			Rec.QTNode = NULL;
+			Rec.QTNode = nullptr;
 		}
 	}
 
@@ -159,7 +159,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 
 			//???Rec.Stimulus->Init(PrmVal);
 
-			Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : NULL;
+			Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : nullptr;
 			Hints.Add(Prm.GetName(), Rec);
 		}
 		Hints.EndAdd();
@@ -187,8 +187,8 @@ void CPropAIHints::EnableStimulus(CStrID Name, bool Enable)
 			if (Rec.QTNode)
 			{
 				(*Rec.QTNode)->pQTNode->RemoveByHandle(Rec.QTNode);
-				(*Rec.QTNode)->pQTNode = NULL;
-				Rec.QTNode = NULL;
+				(*Rec.QTNode)->pQTNode = nullptr;
+				Rec.QTNode = nullptr;
 			}
 		}
 	}

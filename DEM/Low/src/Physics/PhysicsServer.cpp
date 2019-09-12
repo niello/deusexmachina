@@ -62,7 +62,7 @@ void CPhysicsServer::Close()
 	if (pDD)
 	{
 		n_delete(pDD);
-		pDD = NULL;
+		pDD = nullptr;
 	}
 
 	_IsOpen = false;

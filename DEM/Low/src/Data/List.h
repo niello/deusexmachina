@@ -25,7 +25,7 @@ private:
 		CNode*	pPrev;
 		T		Value;
 
-		CNode(const T& Val): pNext(NULL), pPrev(NULL), Value(Val) {}
+		CNode(const T& Val): pNext(nullptr), pPrev(nullptr), Value(Val) {}
 		~CNode() { n_assert(!pNext && !pPrev); }
 	};
 
@@ -44,7 +44,7 @@ public:
 
 	public:
 
-		CIterator(): pNode(NULL) {}
+		CIterator(): pNode(nullptr) {}
 		CIterator(CNode* Node): pNode(Node) {}
 		CIterator(const CIterator& Other): pNode(Other.pNode) {}
 
@@ -60,8 +60,8 @@ public:
 		T&					operator *() const { n_assert_dbg(pNode); return pNode->Value; }
 	};
 
-	CList(): pFront(NULL), pBack(NULL) {}
-	CList(const CList<T>& Other): pFront(NULL), pBack(NULL) { AddList(Other); }
+	CList(): pFront(nullptr), pBack(nullptr) {}
+	CList(const CList<T>& Other): pFront(nullptr), pBack(nullptr) { AddList(Other); }
 	~CList() { Clear(); }
 
 	//???add to collections API method family T& Add...() with no const T& param, adding an empty element
@@ -73,16 +73,16 @@ public:
 	CIterator	AddBack(const T& Val) { return AddAfter(pBack, Val); }
 	void		AddList(const CList<T>& Other);
 
-	bool		RemoveFront(T* pOutValue = NULL) { if (!pFront) FAIL; Remove(pFront, pOutValue); OK; }
-	bool		RemoveBack(T* pOutValue = NULL) { if (!pBack) FAIL; Remove(pBack, pOutValue); OK; }
-	void		Remove(CIterator It, T* pOutValue = NULL);
+	bool		RemoveFront(T* pOutValue = nullptr) { if (!pFront) FAIL; Remove(pFront, pOutValue); OK; }
+	bool		RemoveBack(T* pOutValue = nullptr) { if (!pBack) FAIL; Remove(pBack, pOutValue); OK; }
+	void		Remove(CIterator It, T* pOutValue = nullptr);
 	bool		RemoveByValue(const T& Val);
 	void		Clear() { while (pBack) RemoveBack(); }
 
 	T&			Front() const { n_assert_dbg(pFront); return pFront->Value; }
 	T&			Back() const { n_assert_dbg(pBack); return pBack->Value; }
 	CIterator	Begin() const { return CIterator(pFront); }
-	CIterator	End() const { return CIterator(NULL); }
+	CIterator	End() const { return CIterator(nullptr); }
 
 	CIterator	Find(const T& Val, CIterator ItStart = Begin()) const;
 
@@ -175,8 +175,8 @@ void CList<T>::Remove(CIterator It, T* pOutValue)
 	if (pNode->pNext) pNode->pNext->pPrev = pNode->pPrev;
 	if (pNode == pFront) pFront = pNode->pNext;
 	if (pNode == pBack) pBack = pNode->pPrev;
-	pNode->pNext = NULL;
-	pNode->pPrev = NULL;
+	pNode->pNext = nullptr;
+	pNode->pPrev = nullptr;
 	if (pOutValue) *pOutValue = pNode->Value;
 	n_delete(pNode);
 }
@@ -188,7 +188,7 @@ typename CList<T>::CIterator CList<T>::Find(const T& Val, CIterator ItStart) con
 	for (; ItStart != End(); ++ItStart)
 		if (*ItStart == Val)
 			return ItStart;
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

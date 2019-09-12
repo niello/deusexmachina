@@ -23,7 +23,7 @@ protected:
 
 public:
 
-	CNodeControllerMocap(): pSampler(NULL), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
+	CNodeControllerMocap(): pSampler(nullptr), KeyIndex(INVALID_INDEX), IpolFactor(0.f) { Flags.Set(LocalSpace); }
 
 	void			SetSampler(const CSampler* _pSampler);
 	void			SetSamplingParams(int KeyIdx, float Factor) { KeyIndex = KeyIdx; IpolFactor = Factor; }

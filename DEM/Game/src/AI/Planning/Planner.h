@@ -37,7 +37,7 @@ private:
 		int			Fitness;	// Goal + Heuristic
 		CNode*		pParent;
 
-		CNode(): pAction(NULL), pParent(NULL), Fitness(I32_MAX) {}
+		CNode(): pAction(nullptr), pParent(nullptr), Fitness(I32_MAX) {}
 	};
 
 	CPoolAllocator<CNode, 32>	NodePool;
@@ -55,7 +55,7 @@ public:
 
 	CPlanner(): NewActIdx(0) {}
 
-	void				RegisterActionTpl(const char* Name, Data::PParams Params = NULL);
+	void				RegisterActionTpl(const char* Name, Data::PParams Params = nullptr);
 	void				EndActionTpls();
 	const CActionTpl*	FindActionTpl(const char* Name) const;
 
@@ -69,7 +69,7 @@ inline const CActionTpl* CPlanner::FindActionTpl(const char* Name) const
 	for (CArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ++ppTpl)
 		if ((*ppTpl)->IsInstanceOf(ClassName))
 			return (*ppTpl).Get();
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

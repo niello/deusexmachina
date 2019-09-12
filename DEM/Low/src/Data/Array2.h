@@ -22,8 +22,8 @@ protected:
 
 public:
 
-	CArray2(): pData(NULL), Width(0), Height(0) {}
-	CArray2(UPTR W, UPTR H): pData(NULL) { Alloc(W, H); }
+	CArray2(): pData(nullptr), Width(0), Height(0) {}
+	CArray2(UPTR W, UPTR H): pData(nullptr) { Alloc(W, H); }
 	~CArray2() { Delete(); }
 
 	void	SetSize(UPTR W, UPTR H) { Delete(); if (W > 0 && H > 0) Alloc(W, H); }
@@ -62,7 +62,7 @@ template<class TYPE> void CArray2<TYPE>::Delete()
 	if (pData)
 	{
 		n_delete_array(pData);
-		pData = NULL;
+		pData = nullptr;
 	}
 }
 //---------------------------------------------------------------------

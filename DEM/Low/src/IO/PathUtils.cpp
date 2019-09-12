@@ -39,8 +39,8 @@ CString CollapseDots(const char* pPath, UPTR PathLength)
 		char CurrChar = *pCurr;
 		if (CurrChar == '/' || CurrChar == ':' || !CurrChar)
 		{
-			const char* pRegionStart = NULL;
-			const char* pRegionEnd = NULL;
+			const char* pRegionStart = nullptr;
+			const char* pRegionEnd = nullptr;
 			UPTR DirLength = pCurr - pDirStart;
 			if (!DirLength)
 			{
@@ -161,7 +161,7 @@ CString CollapseDots(const char* pPath, UPTR PathLength)
 
 	if (!CutRegionCount) return CString(pPath, PathLength);
 
-	CString Result(NULL, 0, LengthAfterCut);
+	CString Result(nullptr, 0, LengthAfterCut);
 
 	IPTR RegionIdx;
 	const char* pStart;

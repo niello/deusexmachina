@@ -32,7 +32,7 @@ protected:
 
 public:
 
-	CD3D9RenderTarget(): pRTSurface(NULL) {}
+	CD3D9RenderTarget(): pRTSurface(nullptr) {}
 	virtual ~CD3D9RenderTarget() { InternalDestroy(); }
 
 	bool				Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture); // For internal use

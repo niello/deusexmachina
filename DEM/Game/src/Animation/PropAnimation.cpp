@@ -227,7 +227,7 @@ IPTR CPropAnimation::StartAnim(CStrID ClipID, bool Loop, float CursorOffset, flo
 	if (!pPropNode || !pPropNode->GetNode()) return INVALID_INDEX; // Nothing to animate
 
 	IPTR TaskID = INVALID_INDEX;
-	CTask* pTask = NULL;
+	CTask* pTask = nullptr;
 	for (UPTR i = 0; i < Tasks.GetCount(); ++i)
 		if (Tasks[i].AnimTask.IsEmpty())
 		{

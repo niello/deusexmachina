@@ -47,12 +47,12 @@ public:
 			{
 				ItChain = pTable->Chains.Begin();
 				while (ItChain < pTable->Chains.End() && !ItChain->GetCount()) ++ItChain;
-				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : NULL;
+				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : nullptr;
 			}
 			else
 			{
-				ItChain = NULL;
-				It = NULL;
+				ItChain = nullptr;
+				It = nullptr;
 			}
 		}
 
@@ -71,7 +71,7 @@ public:
 			if (It == ItChain->End())
 			{
 				do ++ItChain; while (ItChain < pTable->Chains.End() && !ItChain->GetCount());
-				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : NULL;
+				It = ItChain < pTable->Chains.End() ? ItChain->Begin() : nullptr;
 			}
 			return *this;
 		}
@@ -95,7 +95,7 @@ public:
 	void		CopyToArray(CChain& OutData) const;
 
 	CIterator	Begin() { return CIterator(this); }
-	CIterator	End() { return CIterator(NULL); }
+	CIterator	End() { return CIterator(nullptr); }
 
 	UPTR		GetCount() const { return Count; }
 	UPTR		Capacity() const { return Chains.GetCount(); }
@@ -212,7 +212,7 @@ TVal* CHashTable<TKey, TVal>::Get(const TKey& Key) const
 			if (Idx != INVALID_INDEX) return &Chain[Idx].GetValue();
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

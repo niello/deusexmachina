@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	CMocapClip(): pKeys(NULL) {}
+	CMocapClip(): pKeys(nullptr) {}
 	virtual ~CMocapClip() { Unload(); }
 
 	bool							Setup(	const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,

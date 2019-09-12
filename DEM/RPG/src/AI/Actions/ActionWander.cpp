@@ -42,7 +42,7 @@ bool CActionWander::SelectAction(CActor* pActor)
 	}
 	else
 	{
-		CurrAction = NULL;
+		CurrAction = nullptr;
 		NextActSelectioCTime = (float)GameSrv->GetTime() + Math::RandomFloat() * 5.f + 5.f;
 		OK;
 	}
@@ -75,7 +75,7 @@ void CActionWander::Deactivate(CActor* pActor)
 	if (CurrAction.IsValidPtr())
 	{
 		CurrAction->Deactivate(pActor);
-		CurrAction = NULL;
+		CurrAction = nullptr;
 	}
 }
 //---------------------------------------------------------------------

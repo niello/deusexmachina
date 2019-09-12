@@ -11,7 +11,7 @@ void CNodeController::RemoveFromNode()
 {
 	if (!pNode) return;
 	n_assert_dbg(pNode->GetController());
-	if (pNode->GetController() == this) pNode->SetController(NULL);
+	if (pNode->GetController() == this) pNode->SetController(nullptr);
 	else if (pNode->GetController()->IsA<CNodeControllerComposite>())
 	{
 		n_verify_dbg(((CNodeControllerComposite*)pNode->GetController())->RemoveSource(*this));

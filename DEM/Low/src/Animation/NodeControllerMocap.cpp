@@ -7,7 +7,7 @@ namespace Anim
 
 void CNodeControllerMocap::SetSampler(const CSampler* _pSampler)
 {
-	n_assert(_pSampler); //???allow NULL?
+	n_assert(_pSampler); //???allow nullptr?
 	pSampler = _pSampler;
 	Channels.ClearAll();
 	if (pSampler->pTrackT) Channels.Set(Scene::Tfm_Translation);
@@ -19,7 +19,7 @@ void CNodeControllerMocap::SetSampler(const CSampler* _pSampler)
 void CNodeControllerMocap::Clear()
 {
 	Channels.ClearAll();
-	pSampler = NULL;
+	pSampler = nullptr;
 	KeyIndex = INVALID_INDEX;
 	IpolFactor = 0.f;
 }

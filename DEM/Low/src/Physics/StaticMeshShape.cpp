@@ -27,7 +27,7 @@ void CStaticMeshShape::Unload()
 	if (pBtShape)
 	{
 		delete pBtShape;
-		pBtShape = NULL;
+		pBtShape = nullptr;
 	}
 	State = Resources::Rsrc_NotLoaded;
 }

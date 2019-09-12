@@ -22,7 +22,7 @@ void CFileStream::Close()
 	n_assert(IsOpen() && hFile);
 	if (IsMapped()) Unmap();
 	FS->CloseFile(hFile);
-	hFile = NULL;
+	hFile = nullptr;
 	Flags.Clear(IS_OPEN);
 	//CStream::Close();
 }
@@ -75,7 +75,7 @@ void* CFileStream::Map()
 	//n_assert(readSize == size);
 	//Stream::Map();
 	//return mappedContent;
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

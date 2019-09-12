@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	CMemStream(): pBuffer(NULL), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
+	CMemStream(): pBuffer(nullptr), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
 	virtual ~CMemStream() { if (IsOpen()) Close(); }
 
 	bool			Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);

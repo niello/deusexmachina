@@ -62,7 +62,7 @@ public:
 inline CPathRequestQueue::CPathRequestQueue(): NextRequestID(1)
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
-		Queue[i].pPath = NULL;
+		Queue[i].pPath = nullptr;
 }
 //---------------------------------------------------------------------
 

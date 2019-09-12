@@ -25,7 +25,7 @@ protected:
 
 public:
 
-	CD3D11IndexBuffer(): pBuffer(NULL) {}
+	CD3D11IndexBuffer(): pBuffer(nullptr) {}
 	virtual ~CD3D11IndexBuffer() { InternalDestroy(); }
 
 	bool			Create(EIndexType Type, ID3D11Buffer* pIB);

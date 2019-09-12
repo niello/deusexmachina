@@ -66,9 +66,9 @@ public:
 
 	ID3D11Buffer*				GetD3DBuffer() const { return pBuffer; }
 	ID3D11ShaderResourceView*	GetD3DSRView() const { return pSRView; }
-	char*						GetMappedVRAM() { return Flags.Is(CB11_UsesRAMCopy) ? NULL : pMapped; }
-	char*						GetRAMCopy() { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
-	const char*					GetRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : NULL; }
+	char*						GetMappedVRAM() { return Flags.Is(CB11_UsesRAMCopy) ? nullptr : pMapped; }
+	char*						GetRAMCopy() { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : nullptr; }
+	const char*					GetRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy) ? pMapped : nullptr; }
 	D3D11_USAGE					GetD3DUsage() const { return D3DUsage; }
 	UPTR						GetSizeInBytes() const { return SizeInBytes; }
 	EUSMBufferType				GetType() const { return Type; }
@@ -76,7 +76,7 @@ public:
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
 	bool						IsTemporary() const { return Flags.Is(CB11_Temporary); }
 
-	void						OnBegin(void* pMappedVRAM = NULL);	// For internal use by the GPUDriver
+	void						OnBegin(void* pMappedVRAM = nullptr);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver
 	void						SetTemporary(bool Tmp) { Flags.SetTo(CB11_Temporary, Tmp); }	// For internal use by the GPUDriver
 };

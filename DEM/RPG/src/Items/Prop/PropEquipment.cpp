@@ -26,7 +26,7 @@ bool CPropEquipment::Equip(CStrID Slot, Items::CItemStack* pStack, U16 Count)
 {
 	if (!pStack || !pStack->IsValid()) FAIL;
 
-	CSlot* pSlot = NULL;
+	CSlot* pSlot = nullptr;
 
 	//!!!Item type is in AllowedSlotTypes instead of Slot.Type check!
 
@@ -75,7 +75,7 @@ void CPropEquipment::Unequip(CStrID SlotID)
 		//!!!remove effects!
 
 		Slot.pStack->Unequip(Slot.Count);
-		Slot.pStack = NULL;
+		Slot.pStack = nullptr;
 		Slot.Count = 0;
 
 		//!!!Fire OnItemUnequipped!

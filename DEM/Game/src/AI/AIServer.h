@@ -66,14 +66,14 @@ public:
 inline const dtQueryFilter* CAIServer::GetNavQueryFilter(CStrID ID) const
 {
 	IPTR Idx = NavQueryFilters.FindIndex(ID);
-	return Idx != INVALID_INDEX ? NavQueryFilters.ValueAt(Idx) : NULL;
+	return Idx != INVALID_INDEX ? NavQueryFilters.ValueAt(Idx) : nullptr;
 }
 //---------------------------------------------------------------------
 
 inline const COAParams* CAIServer::GetObstacleAvoidanceParams(CStrID ID) const
 {
 	IPTR Idx = ObstacleAvoidanceParams.FindIndex(ID);
-	return Idx != INVALID_INDEX ? ObstacleAvoidanceParams.ValueAt(Idx) : NULL;
+	return Idx != INVALID_INDEX ? ObstacleAvoidanceParams.ValueAt(Idx) : nullptr;
 }
 //---------------------------------------------------------------------
 

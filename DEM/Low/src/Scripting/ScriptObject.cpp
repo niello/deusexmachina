@@ -37,7 +37,7 @@ CScriptObject* CScriptObject::GetFromStack(lua_State* l, int StackIdx)
 	{
 		Sys::Message("Can't get 'this' table, may be you used '.' instead of ':' for member call\n");
 		lua_settop(l, 0);
-		return NULL;
+		return nullptr;
 	}
 
 	lua_pushstring(l, "cpp_ptr");
@@ -181,7 +181,7 @@ UPTR CScriptObject::LoadScript(const char* Buffer, UPTR Length)
 	if (Table.IsValid()) lua_remove(l, -2);
 	lua_setfenv(l, -2);
 
-	UPTR Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, NULL);
+	UPTR Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, nullptr);
 	if (ExecResultIsError(Result)) Sys::Log("Script is: %s\n", Buffer);
 	return Result;
 }

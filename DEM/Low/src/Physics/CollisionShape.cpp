@@ -23,7 +23,7 @@ void CCollisionShape::Unload()
 	if (pBtShape)
 	{
 		delete pBtShape;
-		pBtShape = NULL;
+		pBtShape = nullptr;
 	}
 }
 //---------------------------------------------------------------------

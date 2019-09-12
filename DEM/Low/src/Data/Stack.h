@@ -16,7 +16,7 @@ private:
 public:
 
 	void		Push(const T& Elm) { Storage.Add(Elm); }
-	bool		Pop(T* pOutValue = NULL);
+	bool		Pop(T* pOutValue = nullptr);
 	const T&	Top() const { return Storage.Back(); }
 	bool		IsEmpty() const { return Storage.IsEmpty(); }
 };

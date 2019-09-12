@@ -41,7 +41,7 @@ public:
 inline CFaction* CFactionManager::GetFaction(CStrID ID) const
 {
 	IPTR Idx = Factions.FindIndex(ID);
-	return (Idx == INVALID_INDEX) ? NULL : Factions.ValueAt(Idx).Get();
+	return (Idx == INVALID_INDEX) ? nullptr : Factions.ValueAt(Idx).Get();
 }
 //---------------------------------------------------------------------
 

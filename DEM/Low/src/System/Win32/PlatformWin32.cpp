@@ -355,7 +355,7 @@ bool CPlatformWin32::CheckAlreadyRunning(const char* pAppName)
 	if (hRunOnceMutex) FAIL;
 
 	CString Prefix("DEM::CPlatformWin32::CheckAlreadyRunning::");
-	hRunOnceMutex = ::CreateMutex(NULL, TRUE, Prefix + pAppName);
+	hRunOnceMutex = ::CreateMutex(nullptr, TRUE, Prefix + pAppName);
 	if (hRunOnceMutex && ::GetLastError() == ERROR_ALREADY_EXISTS)
 	{
 		// The same app is already running
@@ -383,7 +383,7 @@ void CPlatformWin32::ReadInputLocaleHotkey()
 
 	char RegData[4];
 	DWORD RegDataSize = sizeof(RegData);
-	LSTATUS ls = ::RegGetValue(HKEY_CURRENT_USER, "Keyboard Layout\\Toggle", "Hotkey", RRF_RT_ANY, NULL, &RegData, &RegDataSize);
+	LSTATUS ls = ::RegGetValue(HKEY_CURRENT_USER, "Keyboard Layout\\Toggle", "Hotkey", RRF_RT_ANY, nullptr, &RegData, &RegDataSize);
 	if (ls == ERROR_SUCCESS && RegDataSize > 0)
 	{
 		switch (RegData[0])
@@ -413,11 +413,11 @@ bool CPlatformWin32::RegisterRawInput()
 		WndClass.cbClsExtra    = 0;
 		WndClass.cbWndExtra    = sizeof(void*); // used to hold 'this' pointer
 		WndClass.hInstance     = hInst;
-		WndClass.hIcon         = NULL;
-		WndClass.hIconSm       = NULL;
-		WndClass.hCursor       = NULL;
-		WndClass.hbrBackground = NULL;
-		WndClass.lpszMenuName  = NULL;
+		WndClass.hIcon         = nullptr;
+		WndClass.hIconSm       = nullptr;
+		WndClass.hCursor       = nullptr;
+		WndClass.hbrBackground = nullptr;
+		WndClass.lpszMenuName  = nullptr;
 		WndClass.lpszClassName = "DeusExMachina::MessageOnlyWindow";
 		aMessageOnlyWndClass = ::RegisterClassEx(&WndClass);
 
@@ -426,7 +426,7 @@ bool CPlatformWin32::RegisterRawInput()
 
 	if (!hWndMessageOnly)
 	{
-		hWndMessageOnly = ::CreateWindowEx(0, (const char*)aMessageOnlyWndClass, NULL, 0, 0, 0, 0, 0, HWND_MESSAGE, NULL, hInst, NULL);
+		hWndMessageOnly = ::CreateWindowEx(0, (const char*)aMessageOnlyWndClass, nullptr, 0, 0, 0, 0, 0, HWND_MESSAGE, nullptr, hInst, nullptr);
 		if (!hWndMessageOnly) FAIL;
 		::SetWindowLongPtr(hWndMessageOnly, 0, (LONG_PTR)this);
 	}
@@ -467,17 +467,17 @@ bool CPlatformWin32::UnregisterRawInput()
 	RawInputDevices[0].usUsagePage = HID_USAGE_PAGE_GENERIC;
 	RawInputDevices[0].usUsage = HID_USAGE_GENERIC_MOUSE;
 	RawInputDevices[0].dwFlags = RIDEV_REMOVE;
-	RawInputDevices[0].hwndTarget = NULL;
+	RawInputDevices[0].hwndTarget = nullptr;
 
 	RawInputDevices[1].usUsagePage = HID_USAGE_PAGE_GENERIC;
 	RawInputDevices[1].usUsage = HID_USAGE_GENERIC_KEYBOARD;
 	RawInputDevices[1].dwFlags = RIDEV_REMOVE;
-	RawInputDevices[1].hwndTarget = NULL;
+	RawInputDevices[1].hwndTarget = nullptr;
 
 	RawInputDevices[2].usUsagePage = HID_USAGE_PAGE_GENERIC;
 	RawInputDevices[2].usUsage = HID_USAGE_GENERIC_GAMEPAD;
 	RawInputDevices[2].dwFlags = RIDEV_REMOVE;
-	RawInputDevices[2].hwndTarget = NULL;
+	RawInputDevices[2].hwndTarget = nullptr;
 
 	return ::RegisterRawInputDevices(RawInputDevices, 3, sizeof(RAWINPUTDEVICE)) != FALSE;
 }
@@ -567,7 +567,7 @@ UPTR CPlatformWin32::EnumInputDevices(CArray<Input::PInputDevice>& Out)
 	RegisterRawInput();
 
 	UINT Count;
-	if (::GetRawInputDeviceList(NULL, &Count, sizeof(RAWINPUTDEVICELIST)) != 0 || !Count)
+	if (::GetRawInputDeviceList(nullptr, &Count, sizeof(RAWINPUTDEVICELIST)) != 0 || !Count)
 	{
 		for (auto& Device : InputDevices)
 		{
@@ -639,11 +639,11 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 		WndClass.cbClsExtra    = 0;
 		WndClass.cbWndExtra    = sizeof(void*) + sizeof(void*); // used to hold COSWindowWin32 and CPlatformWin32 'this' pointers
 		WndClass.hInstance     = hInst;
-		WndClass.hIcon         = ::LoadIcon(NULL, IDI_APPLICATION); // TODO: default DEM icon
-		WndClass.hIconSm       = NULL; // set it too?
-		WndClass.hCursor       = NULL;
+		WndClass.hIcon         = ::LoadIcon(nullptr, IDI_APPLICATION); // TODO: default DEM icon
+		WndClass.hIconSm       = nullptr; // set it too?
+		WndClass.hCursor       = nullptr;
 		WndClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		WndClass.lpszMenuName  = NULL;
+		WndClass.lpszMenuName  = nullptr;
 		WndClass.lpszClassName = "DeusExMachina::MainWindow";
 		aGUIWndClass = ::RegisterClassEx(&WndClass);
 		
@@ -662,7 +662,7 @@ POSWindow CPlatformWin32::CreateGUIWindow()
 bool CPlatformWin32::Update()
 {
 	MSG Msg;
-	while (::PeekMessage(&Msg, NULL, 0, 0, PM_REMOVE))
+	while (::PeekMessage(&Msg, nullptr, 0, 0, PM_REMOVE))
 	{
 		if (Msg.message == WM_QUIT) FAIL;
 
@@ -739,7 +739,7 @@ bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) c
 	}
 	else if (Code == SysFolder_Bin || Code == SysFolder_Home)
 	{
-		if (!::GetModuleFileName(NULL, pRawPath, sizeof(pRawPath))) FAIL;
+		if (!::GetModuleFileName(nullptr, pRawPath, sizeof(pRawPath))) FAIL;
 		CString PathToExe(pRawPath);
 		PathToExe.Replace('\\', '/');
 		OutPath = PathUtils::CollapseDots(PathUtils::ExtractDirName(PathToExe));
@@ -761,7 +761,7 @@ bool CPlatformWin32::GetSystemFolderPath(ESystemFolder Code, CString& OutPath) c
 			default:					FAIL;
 		}
 
-		if (FAILED(::SHGetFolderPath(0, CSIDL, NULL, 0, pRawPath))) FAIL;
+		if (FAILED(::SHGetFolderPath(0, CSIDL, nullptr, 0, pRawPath))) FAIL;
 		OutPath = pRawPath;
 		OutPath.Replace('\\', '/');
 	}

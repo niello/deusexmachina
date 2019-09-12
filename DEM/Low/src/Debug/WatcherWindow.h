@@ -49,7 +49,7 @@ protected:
 		CEGUI::ListboxTextItem*	pTypeItem;
 		CEGUI::ListboxTextItem*	pValueItem;
 
-		CWatched(): RowID(-1), pNameItem(NULL), pTypeItem(NULL), pValueItem(NULL) {}
+		CWatched(): RowID(-1), pNameItem(nullptr), pTypeItem(nullptr), pValueItem(nullptr) {}
 		//~CWatched() { Clear(); } - leave it commented while tere is no copy constructor which clones text items
 		void Clear();
 	};

@@ -27,7 +27,7 @@ protected:
 
 public:
 
-	CD3D11VertexLayout(): pD3DDesc(NULL), pSemanticNames(NULL) {}
+	CD3D11VertexLayout(): pD3DDesc(nullptr), pSemanticNames(nullptr) {}
 	virtual ~CD3D11VertexLayout() { InternalDestroy(); }
 
 	bool							Create(const CVertexComponent* pComponents, UPTR Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc);
@@ -53,7 +53,7 @@ inline bool CD3D11VertexLayout::AddLayoutObject(UPTR ShaderInputSignatureID, ID3
 inline ID3D11InputLayout* CD3D11VertexLayout::GetD3DInputLayout(UPTR ShaderInputSignatureID) const
 {
 	IPTR Idx = ShaderSignatureToLayout.FindIndex(ShaderInputSignatureID);
-	return Idx == INVALID_INDEX ? NULL : ShaderSignatureToLayout.ValueAt(Idx);
+	return Idx == INVALID_INDEX ? nullptr : ShaderSignatureToLayout.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

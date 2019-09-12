@@ -20,7 +20,7 @@ DEFINE_TYPE(int, 0)
 DEFINE_TYPE(float, 0.f)
 DEFINE_TYPE(CString, CString::Empty)
 DEFINE_TYPE(CStrID, CStrID::Empty)
-DEFINE_TYPE(PVOID, NULL)
+DEFINE_TYPE(PVOID, nullptr)
 
 void CData::SetType(const CType* SrcType)
 {

@@ -21,7 +21,7 @@ public:
 
 	Scene::CSPS* pSPS;
 
-	CSceneNodeUpdateInSPS(): pSPS(NULL) {} 
+	CSceneNodeUpdateInSPS(): pSPS(nullptr) {} 
 
 	virtual bool Visit(Scene::CSceneNode& Node);
 };

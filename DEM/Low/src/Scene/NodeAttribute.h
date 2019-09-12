@@ -41,10 +41,10 @@ protected:
 
 public:
 
-	CNodeAttribute(): pNode(NULL), Flags(Active) {}
+	CNodeAttribute(): pNode(nullptr), Flags(Active) {}
 
 	virtual bool			OnAttachToNode(CSceneNode* pSceneNode) { if (pNode) FAIL; pNode = pSceneNode; Flags.Set(WorldMatrixChanged); return !!pNode; }
-	virtual void			OnDetachFromNode() { pNode = NULL; }
+	virtual void			OnDetachFromNode() { pNode = nullptr; }
 	virtual void			OnDetachFromScene() { }
 
 	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }

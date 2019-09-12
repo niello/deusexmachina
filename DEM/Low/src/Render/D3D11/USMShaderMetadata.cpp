@@ -286,12 +286,12 @@ bool CUSMShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 PShaderConstant CUSMShaderMetadata::GetConstant(HConstant hConst) const
 {
 	CUSMConstMeta* pMeta = (CUSMConstMeta*)HandleMgr.GetHandleData(hConst);
-	if (!pMeta) return NULL;
+	if (!pMeta) return nullptr;
 
 	if (pMeta->ConstObject.IsNullPtr())
 	{
 		PUSMShaderConstant Const = n_new(CUSMShaderConstant);
-		if (!Const->Init(hConst)) return NULL;
+		if (!Const->Init(hConst)) return nullptr;
 		pMeta->ConstObject = Const.Get();
 	}
 

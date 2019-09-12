@@ -41,7 +41,7 @@ void CDlgContext::Trigger(bool IsForeground)
 			if (pCurrNode->LinkMode == CDlgNode::Link_Select) LinkIdx = -1;
 			else
 			{
-				// Select random link here because it may be NULL-link, and UI must
+				// Select random link here because it may be nullptr-link, and UI must
 				// know it to display proper text (Continue/End) on the button
 				int ValidLinkCount = ValidLinkIndices.GetCount();
 				if (ValidLinkCount == 0) LinkIdx = -1;

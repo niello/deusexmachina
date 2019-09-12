@@ -229,7 +229,7 @@ bool CEffect::LoadParamValues(IO::CBinaryReader& Reader,
 			pValue = (char*)pOutConstValueBuffer + (U32)pValue;
 		}
 	}
-	else pOutConstValueBuffer = NULL;
+	else pOutConstValueBuffer = nullptr;
 
 	OK;
 }
@@ -393,7 +393,7 @@ bool CEffect::Load(CGPUDriver& GPU, IO::CStream& Stream)
 
 				if (!ShaderID)
 				{
-					*pShaders[ShaderType] = NULL;
+					*pShaders[ShaderType] = nullptr;
 					continue;
 				}
 
@@ -664,14 +664,14 @@ void* CEffect::GetConstantDefaultValue(CStrID ID) const
 PTexture CEffect::GetResourceDefaultValue(CStrID ID) const
 {
 	IPTR Idx = DefaultResources.FindIndex(ID);
-	return Idx == INVALID_INDEX ? NULL : DefaultResources.ValueAt(Idx);
+	return Idx == INVALID_INDEX ? nullptr : DefaultResources.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 
 PSampler CEffect::GetSamplerDefaultValue(CStrID ID) const
 {
 	IPTR Idx = DefaultSamplers.FindIndex(ID);
-	return Idx == INVALID_INDEX ? NULL : DefaultSamplers.ValueAt(Idx);
+	return Idx == INVALID_INDEX ? nullptr : DefaultSamplers.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

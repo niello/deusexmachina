@@ -33,7 +33,7 @@ private:
 	CArray<Ptr<CTask>>	TasksToDelete;
 	CArray<CString>		DeletedScriptObjects;
 
-	bool LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID = NULL);
+	bool LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID = nullptr);
 	bool CloseQuest(CStrID QuestID, CStrID TaskID, bool Success);
 
 	DECLARE_EVENT_HANDLER(OnGameDescLoaded, OnGameDescLoaded);

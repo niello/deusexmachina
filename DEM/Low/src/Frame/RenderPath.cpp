@@ -27,7 +27,7 @@ const Render::CEffectConstant* CRenderPath::GetGlobalConstant(CStrID Name) const
 		const Render::CEffectConstant& Curr = Consts[i];
 		if (Curr.ID == Name) return &Curr;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -39,7 +39,7 @@ const Render::CEffectResource* CRenderPath::GetGlobalResource(CStrID Name) const
 		const Render::CEffectResource& Curr = Resources[i];
 		if (Curr.ID == Name) return &Curr;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -51,7 +51,7 @@ const Render::CEffectSampler* CRenderPath::GetGlobalSampler(CStrID Name) const
 		const Render::CEffectSampler& Curr = Samplers[i];
 		if (Curr.ID == Name) return &Curr;
 	}
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -107,7 +107,7 @@ bool CPropSceneNode::InternalActivate()
 		Node->SetWorldTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 
 		// Load child local transforms
-		Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), NULL);
+		Data::PDataArray ChildTfms = GetEntity()->GetAttr<Data::PDataArray>(CStrID("ChildTransforms"), nullptr);
 		if (ChildTfms.IsValidPtr() && ChildTfms->GetCount())
 		{
 			for (UPTR i = 0; i < ChildTfms->GetCount(); ++i)

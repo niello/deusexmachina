@@ -53,7 +53,7 @@ public:
 	private:
 
 #define __ImplementPropertyStorage(Class) \
-	Game::CPropertyStorage* Class::pStorage = NULL; \
+	Game::CPropertyStorage* Class::pStorage = nullptr; \
 	Game::CPropertyStorage* Class::GetStorage() const { return pStorage; }
 
 #define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \

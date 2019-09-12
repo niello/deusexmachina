@@ -22,7 +22,7 @@ protected:
 
 public:
 
-	CCollisionShape(): pBtShape(NULL) {}
+	CCollisionShape(): pBtShape(nullptr) {}
 	virtual ~CCollisionShape() { Unload(); }
 
 	bool				Setup(btCollisionShape* pShape);

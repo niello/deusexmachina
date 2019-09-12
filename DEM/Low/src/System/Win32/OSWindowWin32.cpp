@@ -40,7 +40,7 @@ COSWindowWin32::COSWindowWin32(HINSTANCE hInstance, ATOM aWndClass, COSWindowWin
 	hWnd = ::CreateWindowEx(Flags.Is(Wnd_Topmost) ? WS_EX_TOPMOST : 0,
 		(const char*)(DWORD_PTR)aWndClass, "", WndStyle,
 		r.left, r.top, r.right - r.left, r.bottom - r.top,
-		pParentWnd ? pParentWnd->GetHWND() : NULL, NULL, hInstance, NULL);
+		pParentWnd ? pParentWnd->GetHWND() : nullptr, nullptr, hInstance, nullptr);
 
 	if (!hWnd) return;
 
@@ -85,7 +85,7 @@ bool COSWindowWin32::Show()
 	//???need to redraw frame right now?
 	//::UpdateWindow(hWnd);
 	// or
-	//::RedrawWindow(hWnd, NULL, NULL, RDW_INVALIDATE | RDW_INTERNALPAINT | RDW_UPDATENOW);
+	//::RedrawWindow(hWnd, nullptr, nullptr, RDW_INVALIDATE | RDW_INTERNALPAINT | RDW_UPDATENOW);
 
 	// event, state?
 
@@ -143,7 +143,7 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 		SWPFlags |= SWP_FRAMECHANGED;
 
 		// Fullscreen mode breaks theme (at least aero glass) on Win7, so restore it when returned from the fullscreen mode
-		if (PrevWndStyle == STYLE_FULLSCREEN) ::SetWindowTheme(hWnd, NULL, NULL);
+		if (PrevWndStyle == STYLE_FULLSCREEN) ::SetWindowTheme(hWnd, nullptr, nullptr);
 	}
 
 	if (Rect.X == NewRect.X && Rect.Y == NewRect.Y) SWPFlags |= SWP_NOMOVE;
@@ -153,7 +153,7 @@ bool COSWindowWin32::SetRect(const Data::CRect& NewRect, bool FullscreenMode)
 	::AdjustWindowRect(&r, NewWndStyle, FALSE);
 
 	// Rect is updated in a window procedure
-	if (::SetWindowPos(hWnd, NULL, r.left, r.top, r.right - r.left, r.bottom - r.top, SWPFlags) == FALSE) FAIL;
+	if (::SetWindowPos(hWnd, nullptr, r.left, r.top, r.right - r.left, r.bottom - r.top, SWPFlags) == FALSE) FAIL;
 
 	OK;
 }
@@ -209,7 +209,7 @@ void COSWindowWin32::SetIcon(const char* pIconName)
 bool COSWindowWin32::SetCursor(const char* pCursorName)
 {
 	// For now all cursors are loaded as IDC_ARROW, may rewrite later
-	hClientCursor = pCursorName ? ::LoadCursor(NULL, IDC_ARROW) : NULL;
+	hClientCursor = pCursorName ? ::LoadCursor(nullptr, IDC_ARROW) : nullptr;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -236,7 +236,7 @@ bool COSWindowWin32::SetTopmost(bool Topmost)
 
 bool COSWindowWin32::SetInputFocus()
 {
-	return hWnd && (::SetFocus(hWnd) != NULL);
+	return hWnd && (::SetFocus(hWnd) != nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -399,7 +399,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 
 		case WM_DESTROY:
 			FireEvent(CStrID("OnClosed"));
-			hWnd = NULL;
+			hWnd = nullptr;
 			OutResult = 0;
 			OK;
 	}

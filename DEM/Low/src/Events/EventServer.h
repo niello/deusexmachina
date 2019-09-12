@@ -27,7 +27,7 @@ protected:
 		PEventBase			Event;
 		CEventNode*			Next;
 		U8					Flags;
-		CEventNode(): Next(NULL) {}
+		CEventNode(): Next(nullptr) {}
 	};
 
 	CPoolAllocator<CEventNode>	EventNodes;
@@ -40,8 +40,8 @@ public:
 	CEventServer();
 	virtual ~CEventServer() override;
 
-	void		ScheduleEvent(CEventBase& Event, U8 Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
-	void		ScheduleEvent(CStrID ID, Data::PParams Params = NULL, U8 Flags = 0, CEventDispatcher* pDisp = NULL, float RelTime = 0.f);
+	void		ScheduleEvent(CEventBase& Event, U8 Flags = 0, CEventDispatcher* pDisp = nullptr, float RelTime = 0.f);
+	void		ScheduleEvent(CStrID ID, Data::PParams Params = nullptr, U8 Flags = 0, CEventDispatcher* pDisp = nullptr, float RelTime = 0.f);
 	UPTR		RemoveScheduledEvents(CEventDispatcher* pDisp);
 	UPTR		RemoveAllScheduledEvents();
 

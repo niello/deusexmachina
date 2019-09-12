@@ -22,7 +22,7 @@ protected:
 
 public:
 
-	CStringTokenizer(const char* String, char* Buffer = NULL, UPTR BufSize = 0);
+	CStringTokenizer(const char* String, char* Buffer = nullptr, UPTR BufSize = 0);
 	~CStringTokenizer() { if (FreeBuffer) n_free(pBuffer); }
 
 	void		ResetCursor() { pCursor = pString; }
@@ -60,7 +60,7 @@ inline CStringTokenizer::CStringTokenizer(const char* String, char* Buffer, UPTR
 
 inline const char* CStringTokenizer::GetNextToken(const char* pSplitChars)
 {
-	if (!pCursor) return NULL;
+	if (!pCursor) return nullptr;
 
 	const char* pTokenEnd = strpbrk(pCursor, pSplitChars);
 	if (pTokenEnd)
@@ -85,7 +85,7 @@ inline const char* CStringTokenizer::GetNextToken(const char* pSplitChars)
 
 inline const char* CStringTokenizer::GetNextToken(char SplitChar)
 {
-	if (!pCursor) return NULL;
+	if (!pCursor) return nullptr;
 
 	const char* pTokenEnd = strchr(pCursor, SplitChar);
 	if (pTokenEnd)
@@ -110,7 +110,7 @@ inline const char* CStringTokenizer::GetNextToken(char SplitChar)
 
 inline const char* CStringTokenizer::GetNextToken(const char* pSplitChars, char Fence)
 {
-	if (!pCursor) return NULL;
+	if (!pCursor) return nullptr;
 
 	char* pBuf = pBuffer;
 
@@ -133,9 +133,9 @@ inline const char* CStringTokenizer::GetNextToken(const char* pSplitChars, char 
 	}
 	else
 	{
-		pCursor = NULL;
+		pCursor = nullptr;
 		CurrDelimiter = 0;
-		return NULL;
+		return nullptr;
 	}
 }
 //---------------------------------------------------------------------

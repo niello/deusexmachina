@@ -74,11 +74,11 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 struct CDeleterNMalloc { void operator()(void* x) { n_free(x); } };
 typedef std::unique_ptr<void, CDeleterNMalloc> UniqueNMallocVoidPtr;
 
-#define SAFE_RELEASE(n)			if (n) { n->Release(); n = NULL; }
-#define SAFE_DELETE(n)			if (n) { n_delete(n); n = NULL; }
-#define SAFE_DELETE_ARRAY(n)	if (n) { n_delete_array(n); n = NULL; }
-#define SAFE_FREE(n)			if (n) { n_free(n); n = NULL; }
-#define SAFE_FREE_ALIGNED(n)	if (n) { n_free_aligned(n); n = NULL; }
+#define SAFE_RELEASE(n)			if (n) { n->Release(); n = nullptr; }
+#define SAFE_DELETE(n)			if (n) { n_delete(n); n = nullptr; }
+#define SAFE_DELETE_ARRAY(n)	if (n) { n_delete_array(n); n = nullptr; }
+#define SAFE_FREE(n)			if (n) { n_free(n); n = nullptr; }
+#define SAFE_FREE_ALIGNED(n)	if (n) { n_free_aligned(n); n = nullptr; }
 
 #if defined(_MSC_VER)
 #define DEM_ALIGN_16 __declspec(align(16))

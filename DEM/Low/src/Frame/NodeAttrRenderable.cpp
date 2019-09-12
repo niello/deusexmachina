@@ -54,7 +54,7 @@ void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 		if (pSPSRecord)
 		{
 			pSPS->RemoveRecord(pSPSRecord);
-			pSPSRecord = NULL;
+			pSPSRecord = nullptr;
 		}
 		else pSPS->OversizedObjects.RemoveByValue(this);
 	}
@@ -79,7 +79,7 @@ void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 			SPS.UpdateRecord(pSPSRecord);
 		}
 	}
-	else pSPS = NULL;
+	else pSPS = nullptr;
 
 	Flags.Clear(WorldMatrixChanged);
 }
@@ -108,13 +108,13 @@ void CNodeAttrRenderable::OnDetachFromScene()
 	if (pSPSRecord)
 	{
 		pSPS->RemoveRecord(pSPSRecord);
-		pSPSRecord = NULL;
-		pSPS = NULL;
+		pSPSRecord = nullptr;
+		pSPS = nullptr;
 	}
 	else if (pSPS)
 	{
 		pSPS->OversizedObjects.RemoveByValue(this);
-		pSPS = NULL;
+		pSPS = nullptr;
 	}
 
 	CNodeAttribute::OnDetachFromScene();

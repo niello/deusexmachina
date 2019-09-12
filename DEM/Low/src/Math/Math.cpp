@@ -28,7 +28,7 @@ inline U32 RunWELL512()
 
 void InitRandomNumberGenerator()
 {
-	srand((unsigned int)time(NULL));
+	srand((unsigned int)time(nullptr));
 
 	// For WELL512 we must initialize 16 x U32 values, but rand() gives us values
 	// between 0 and 32767, which is a half of a short.

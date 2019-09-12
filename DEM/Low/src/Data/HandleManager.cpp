@@ -59,7 +59,7 @@ void CHandleManager::CloseHandle(HHandle Handle)
 	++Magic;
 	if (!Magic) Magic = 1; 
 
-	Rec.pData = NULL;
+	Rec.pData = nullptr;
 	Rec.MagicAndNextFreeIndex = (Magic << HalfRegisterBits) | INVALID_HALF_INDEX;
 
 	if (LastFreeIndex < INVALID_HALF_INDEX)

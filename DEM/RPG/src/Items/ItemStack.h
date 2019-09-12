@@ -22,7 +22,7 @@ private:
 
 public:
 
-	CItemStack(): Item(NULL), Count(0), EquippedCount(0) {}
+	CItemStack(): Item(nullptr), Count(0), EquippedCount(0) {}
 	CItemStack(PItem pItem, U16 Num = 1): Item(pItem), Count(Num), EquippedCount(0) { n_assert(pItem.IsValidPtr() && Num > 0); }
 	CItemStack(const CItemStack& pItem): Item(pItem.Item), Count(pItem.Count), EquippedCount(pItem.EquippedCount) { n_assert(pItem.Item.IsValidPtr()); }
 
@@ -31,7 +31,7 @@ public:
 	void			Equip(U16 Num) { SetEquippedCount(EquippedCount + Num); }
 	void			Unequip(U16 Num) { n_assert(Num <= EquippedCount); SetEquippedCount(EquippedCount - Num); }
 	void			Merge(const CItemStack* pOther);
-	void			Clear() { Item = NULL; Count = EquippedCount = 0; }
+	void			Clear() { Item = nullptr; Count = EquippedCount = 0; }
 	bool			IsValid() const { return Item.IsValidPtr() && Count > 0; }
 
 	void			SetItem(PItem NewItem) { n_assert(NewItem.IsValidPtr()); Item = NewItem; }

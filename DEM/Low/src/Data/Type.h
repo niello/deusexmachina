@@ -79,7 +79,7 @@ public:
 	virtual bool		IsEqualT(const void* pObj, const void* OtherValue) const;
 	virtual int			GetSize() const;
 	virtual int			GetID() const { return CTypeID<T>::TypeID; }
-	virtual const char*	ToString(const void* /*pObj*/) const { return NULL; }
+	virtual const char*	ToString(const void* /*pObj*/) const { return nullptr; }
 
 	inline void*		GetPtr(void* pObj) const;
 	inline const void*	GetPtr(const void* pObj) const;
@@ -115,7 +115,7 @@ template<class T> inline void CTypeImpl<T>::Delete(void** pObj) const
 	{
 		if (*(T**)pObj) n_delete(*(T**)pObj);
 	}
-	*pObj = 0; // 0 or NULL
+	*pObj = 0; // 0 or nullptr
 }
 //---------------------------------------------------------------------
 

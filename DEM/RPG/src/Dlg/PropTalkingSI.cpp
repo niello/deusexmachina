@@ -22,7 +22,7 @@ int CPropTalking_SayPhrase(lua_State* l)
 	SETUP_ENT_SI_ARGS(2);
 
 	Game::CEntity* pTalkingEnt = This->GetEntity();
-	CPropTalking* pTalking = pTalkingEnt ? pTalkingEnt->GetProperty<CPropTalking>() : NULL;
+	CPropTalking* pTalking = pTalkingEnt ? pTalkingEnt->GetProperty<CPropTalking>() : nullptr;
 
 	if (pTalking)
 	{

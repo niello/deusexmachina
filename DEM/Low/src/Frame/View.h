@@ -67,7 +67,7 @@ public:
 
 	//???add viewport settings here? to render multiple views into one RT
 
-	//???scene start node? if NULL, render all nodes, else only that and its children
+	//???scene start node? if nullptr, render all nodes, else only that and its children
 	Scene::CSPS*								pSPS = nullptr;
 	UI::PUIContext								UIContext;
 

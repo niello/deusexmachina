@@ -38,10 +38,10 @@ public:
 	float	Intensity;
 	float	ExpireTime;		//???is dependent on intensity? //???int?
 
-	CStimulus(): pQTNode(NULL), Radius(0.f) {}
+	CStimulus(): pQTNode(nullptr), Radius(0.f) {}
 	~CStimulus() { if (pQTNode) pQTNode->RemoveByValue(this); }
 
-	bool			IsActive() const { return pQTNode != NULL; }
+	bool			IsActive() const { return pQTNode != nullptr; }
 	
 	// For CKeyList
 	Core::CRTTI*	GetKey() const { return GetRTTI(); }

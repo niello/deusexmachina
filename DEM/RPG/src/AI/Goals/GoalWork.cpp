@@ -16,7 +16,7 @@ void CGoalWork::Init(Data::PParams Params)
 {
 	WorkActionMap.Add(CStrID::Empty, CStrID("Work")); // Default, may move to params too
 
-	Data::PParams Map = Params->Get<Data::PParams>(CStrID("ActionMap"), NULL);
+	Data::PParams Map = Params->Get<Data::PParams>(CStrID("ActionMap"), nullptr);
 	if (Map.IsValidPtr())
 		for (UPTR i = 0; i < Map->GetCount(); ++i)
 		{
@@ -35,7 +35,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 	SO = CStrID::Empty;
 	Action = CStrID::Empty;
 
-	CMemFactSmartObj* pBest = NULL;
+	CMemFactSmartObj* pBest = nullptr;
 	Relevance = 0.f;
 
 	// Remember any known smart object to work on

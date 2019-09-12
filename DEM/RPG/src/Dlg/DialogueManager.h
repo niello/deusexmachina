@@ -65,7 +65,7 @@ public:
 inline CDlgContext* CDialogueManager::GetDialogue(CStrID ID)
 {
 	IPTR Idx = RunningDlgs.FindIndex(ID);
-	return (Idx == INVALID_INDEX) ? NULL : &RunningDlgs.ValueAt(Idx);
+	return (Idx == INVALID_INDEX) ? nullptr : &RunningDlgs.ValueAt(Idx);
 }
 //---------------------------------------------------------------------
 

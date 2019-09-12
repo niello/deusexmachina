@@ -59,7 +59,7 @@ void CRigidBody::InternalTerm()
 	btMotionState* pMS = ((btRigidBody*)pBtCollObj)->getMotionState();
 	if (pMS)
 	{
-		((btRigidBody*)pBtCollObj)->setMotionState(NULL);
+		((btRigidBody*)pBtCollObj)->setMotionState(nullptr);
 		delete pMS;
 	}
 }

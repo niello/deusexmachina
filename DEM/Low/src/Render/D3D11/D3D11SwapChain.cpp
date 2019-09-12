@@ -20,22 +20,22 @@ CD3D11SwapChain::~CD3D11SwapChain()
 
 void CD3D11SwapChain::Destroy()
 {
-	Sub_OnClosing = NULL;
-	Sub_OnSizeChanged = NULL;
-	Sub_OnToggleFullscreen = NULL;
+	Sub_OnClosing = nullptr;
+	Sub_OnSizeChanged = nullptr;
+	Sub_OnToggleFullscreen = nullptr;
 
 	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();
 
 	if (pSwapChain)
 	{
-		if (IsFullscreen()) pSwapChain->SetFullscreenState(FALSE, NULL);
+		if (IsFullscreen()) pSwapChain->SetFullscreenState(FALSE, nullptr);
 		pSwapChain->Release();
-		pSwapChain = NULL;
+		pSwapChain = nullptr;
 	}
 
-	TargetDisplay = NULL;
-	TargetWindow = NULL;
-	BackBufferRT = NULL;
+	TargetDisplay = nullptr;
+	TargetWindow = nullptr;
+	BackBufferRT = nullptr;
 }
 //---------------------------------------------------------------------
 

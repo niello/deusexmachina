@@ -17,16 +17,16 @@
 public: \
 	static type* Singleton; \
     static inline type* Instance() { n_assert(Singleton); return Singleton; }; \
-    static inline bool HasInstance() { return Singleton != NULL; }; \
+    static inline bool HasInstance() { return Singleton != nullptr; }; \
 private:
 
 #define __ImplementSingleton(type) \
-	type * type::Singleton = NULL;
+	type * type::Singleton = nullptr;
 
 #define __ConstructSingleton \
     n_assert(!Singleton); Singleton = this;
 
 #define __DestructSingleton \
-    n_assert(Singleton); Singleton = NULL;
+    n_assert(Singleton); Singleton = nullptr;
 
 #endif

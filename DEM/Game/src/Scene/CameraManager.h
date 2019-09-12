@@ -72,7 +72,7 @@ public:
 	//???RotationSpeed; , or it is a sensitivity?
 	//???bool InvertY?
 
-	CCameraManager(): pCameraNode(NULL), Sensitivity(0.05f), MoveSpeed(0.1f), ZoomSpeed(1.f) { }
+	CCameraManager(): pCameraNode(nullptr), Sensitivity(0.05f), MoveSpeed(0.1f), ZoomSpeed(1.f) { }
 
 	bool				InitThirdPersonCamera(CSceneNode& NodeWithCamera);
 	void				ResetCamera(); //???reset only orientation (and distance for 3P)?

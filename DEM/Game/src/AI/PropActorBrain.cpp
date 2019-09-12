@@ -100,7 +100,7 @@ bool CPropActorBrain::InternalActivate()
 				New->Init(*NewDesc);
 				Sensors.Add(New);
 				
-				PDataArray Percs = NewDesc->Get<PDataArray>(CStrID("Perceptors"), NULL);
+				PDataArray Percs = NewDesc->Get<PDataArray>(CStrID("Perceptors"), nullptr);
 				if (Percs.IsValidPtr())
 				{
 					CDataArray::CIterator ItPercName;
@@ -146,7 +146,7 @@ bool CPropActorBrain::InternalActivate()
 			//if (!HasIdleGoal)
 			//{
 			//	PGoal New = n_new(CGoalIdle);
-			//	New->Init(NULL);
+			//	New->Init(nullptr);
 			//	Goals.Add(New);
 			//}
 		}
@@ -171,8 +171,8 @@ bool CPropActorBrain::InternalActivate()
 
 		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
 		
-		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), NULL).Get());
-		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), NULL).Get());
+		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), nullptr).Get());
+		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), nullptr).Get());
 	}
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -259,7 +259,7 @@ void CPropActorBrain::ClearTaskQueue()
 
 void CPropActorBrain::AbortCurrAction(UPTR Result)
 {
-	SetPlan(NULL, CurrGoal.Get(), Running);
+	SetPlan(nullptr, CurrGoal.Get(), Running);
 	RequestBehaviourUpdate();
 }
 //---------------------------------------------------------------------
@@ -268,7 +268,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, UPTR PrevPlanRe
 {
 	if (Plan == NewPlan) return;
 
-	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
+	CTask* pTask = TaskQueue.IsEmpty() ? nullptr : &TaskQueue.Front();
 
 	if (Plan.IsValidPtr())
 	{
@@ -310,7 +310,7 @@ void CPropActorBrain::SetPlan(PAction NewPlan, CGoal* pPrevGoal, UPTR PrevPlanRe
 		if (!Plan->Activate(this))
 		{
 			Flags.Set(AIMind_InvalidatePlan);
-			Plan = NULL;
+			Plan = nullptr;
 		}
 	}
 }
@@ -327,7 +327,7 @@ void CPropActorBrain::UpdateBehaviour()
 	Flags.Clear(AIMind_SelectAction | AIMind_InvalidatePlan);
 
 	CGoal* pPrevGoal = CurrGoal.Get();
-	CTask* pTask = TaskQueue.IsEmpty() ? NULL : &TaskQueue.Front();
+	CTask* pTask = TaskQueue.IsEmpty() ? nullptr : &TaskQueue.Front();
 
 	//???!!!check can task action be interrupted, if task active?
 
@@ -387,7 +387,7 @@ void CPropActorBrain::UpdateBehaviour()
 
 	if (NewPlan.IsNullPtr())
 	{
-		CurrGoal = NULL;
+		CurrGoal = nullptr;
 		if (pTask)
 		{
 			NewPlan = pTask->Plan;
@@ -423,7 +423,7 @@ bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const 
 		UPTR PlanResult = Plan->IsValid(this) ? Plan->Update(this) : Failure;
 		if (PlanResult != Running)
 		{
-			SetPlan(NULL, CurrGoal.Get(), PlanResult);
+			SetPlan(nullptr, CurrGoal.Get(), PlanResult);
 			RequestBehaviourUpdate();
 		}
 	}

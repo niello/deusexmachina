@@ -47,7 +47,7 @@ EMsgBoxButton ShowMessageBox(EMsgType Type, const char* pHeaderText, const char*
 		default:									BoxType |= MB_OK; break;
 	}
 
-	int Ret = ::MessageBox(NULL, pMessage, pHeaderText, BoxType);
+	int Ret = ::MessageBox(nullptr, pMessage, pHeaderText, BoxType);
 
 	switch (Ret)
 	{
@@ -109,7 +109,7 @@ void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt
 			HANDLE hStdOut = ::GetStdHandle(STD_OUTPUT_HANDLE);
 			if (hStdOut && hStdOut != INVALID_HANDLE_VALUE)
 			{
-				::WriteFile(hStdOut, pMessage, strlen(pMessage), NULL, NULL);
+				::WriteFile(hStdOut, pMessage, strlen(pMessage), nullptr, nullptr);
 				::FlushFileBuffers(hStdOut); //PERF //???always? isn't too slow?
 				return;
 			}
@@ -120,7 +120,7 @@ void DefaultLogHandler(EMsgType Type, const char* pMessage) //!!!context, see Qt
 			HANDLE hStdErr = ::GetStdHandle(STD_ERROR_HANDLE);
 			if (hStdErr && hStdErr != INVALID_HANDLE_VALUE)
 			{
-				::WriteFile(hStdErr, pMessage, strlen(pMessage), NULL, NULL);
+				::WriteFile(hStdErr, pMessage, strlen(pMessage), nullptr, nullptr);
 				::FlushFileBuffers(hStdErr);
 				return;
 			}
@@ -207,7 +207,7 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 				0,
 				::SymFunctionTableAccess64,
 				::SymGetModuleBase64,
-				NULL))
+				nullptr))
 	{
 		ZeroMemory(pSymInfo, sizeof(SYMBOL_INFO) + MAX_NAME_LEN);
 		pSymInfo->SizeOfStruct = sizeof(SYMBOL_INFO);

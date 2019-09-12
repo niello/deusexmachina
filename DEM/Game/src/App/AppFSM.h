@@ -36,7 +36,7 @@ public:
 	void			Clear();
 
 	void			AddStateHandler(CStateHandler* pHandler);
-	void			RequestState(CStrID NewState, Data::PParams Params = NULL);
+	void			RequestState(CStrID NewState, Data::PParams Params = nullptr);
 
 	CStateHandler*	FindStateHandlerByID(CStrID ID) const;
 	CStateHandler*	FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const;
@@ -64,7 +64,7 @@ inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
 		if (StateHandlers[i]->GetID() == ID)
 			return StateHandlers[i];
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -73,7 +73,7 @@ inline CStateHandler* CAppFSM::FindStateHandlerByRTTI(const Core::CRTTI& RTTI) c
 	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
 		if (StateHandlers[i]->IsInstanceOf(RTTI))
 			return StateHandlers[i];
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

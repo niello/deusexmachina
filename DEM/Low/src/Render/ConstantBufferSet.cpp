@@ -62,11 +62,11 @@ CConstantBuffer* CConstantBufferSet::RequestBuffer(HConstantBuffer Handle, EShad
 		{
 			// No permanent buffer registered, create temporary buffer and mark it for later deletion
 			pRec->Buffer = GPU->CreateTemporaryConstantBuffer(Handle);
-			if (pRec->Buffer.IsNullPtr()) return NULL;
+			if (pRec->Buffer.IsNullPtr()) return nullptr;
 			pRec->Flags |= ECSV_TmpBuffer;
 		}
 
-		if (!GPU->BeginShaderConstants(*pRec->Buffer)) return NULL;
+		if (!GPU->BeginShaderConstants(*pRec->Buffer)) return nullptr;
 	}
 
 	// Mark buffer as used at the Stage
@@ -99,7 +99,7 @@ bool CConstantBufferSet::CommitChanges()
 		if (Rec.Flags & ECSV_TmpBuffer)
 		{
 			GPU->FreeTemporaryConstantBuffer(Buffer);
-			Rec.Buffer = NULL;
+			Rec.Buffer = nullptr;
 		}
 
 		Rec.Flags = 0;
@@ -117,7 +117,7 @@ void CConstantBufferSet::UnbindAndClear()
 		//can unbind only non-tmp buffers here, unbind tmp inside a GPU!
 	}
 	Buffers.Clear(true);
-	GPU = NULL;
+	GPU = nullptr;
 }
 //---------------------------------------------------------------------
 

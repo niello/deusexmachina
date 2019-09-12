@@ -9,8 +9,8 @@
 #define OK				return true
 #define FAIL			return false
 
-#ifndef NULL
-#define NULL			(0L)
+#ifndef nullptr
+#define nullptr			(0L)
 #endif
 
 #define INVALID_INDEX	(-1)

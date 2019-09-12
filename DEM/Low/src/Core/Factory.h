@@ -35,8 +35,8 @@ public:
 	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
 	const CRTTI*	GetRTTI(const char* pClassName) const { return NameToRTTI[CString(pClassName)]; }
 	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
-	CRTTIBaseClass*	Create(const char* pClassName, void* pParam = NULL) const;
-	CRTTIBaseClass*	Create(Data::CFourCC ClassFourCC, void* pParam = NULL) const;
+	CRTTIBaseClass*	Create(const char* pClassName, void* pParam = nullptr) const;
+	CRTTIBaseClass*	Create(Data::CFourCC ClassFourCC, void* pParam = nullptr) const;
 };
 
 }

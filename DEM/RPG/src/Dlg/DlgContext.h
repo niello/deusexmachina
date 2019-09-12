@@ -17,7 +17,7 @@ enum EDlgState
 	DlgState_InNode = 2,	// Accepted, current node must be processed
 	DlgState_Waiting = 3,	// Current node was processed, wait for a time, UI or other response
 	DlgState_InLink = 4,	// Response received, follow selected link
-	DlgState_Finished = 5,	// Exited node with no valid links or with a link to NULL
+	DlgState_Finished = 5,	// Exited node with no valid links or with a link to nullptr
 	DlgState_Aborted = 6	// Rejected or failed to execute script (or aborted by user?)
 };
 
@@ -38,7 +38,7 @@ public:
 	UPTR		LinkIdx;
 	CArray<int>	ValidLinkIndices;	// For nodes with delayed link selection, like answer nodes
 
-	CDlgContext(): pCurrNode(NULL) {}
+	CDlgContext(): pCurrNode(nullptr) {}
 
 	void Trigger(bool IsForeground);
 	void SelectValidLink(UPTR Idx);

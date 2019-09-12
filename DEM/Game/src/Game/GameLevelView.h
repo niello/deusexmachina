@@ -57,7 +57,7 @@ public:
 	UPTR					GetSelectedCount() const { return SelectedEntities.GetCount(); }
 	bool					IsSelected(CStrID EntityID) const { return SelectedEntities.Contains(EntityID); }
 
-	bool					GetEntityScreenRectRel(Data::CRectF& Out, const Game::CEntity& Entity, const vector3* Offset = NULL) const;
+	bool					GetEntityScreenRectRel(Data::CRectF& Out, const Game::CEntity& Entity, const vector3* Offset = nullptr) const;
 
 	bool					HasMouseIntersection(/*HHandle hView*/) const { return HasMouseIsect; }
 	CStrID					GetEntityUnderMouseUID(/*HHandle hView*/) const { return EntityUnderMouse; }

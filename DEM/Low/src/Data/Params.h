@@ -296,7 +296,7 @@ template<int Size> inline const CParam* CStaticParams<Size>::Get(CStrID Name) co
 {
 for (UPTR i=0; i<Size; ++i)
 if (Params[i].GetName()==Name) return Params[i];
-return NULL;
+return nullptr;
 }
 //---------------------------------------------------------------------
 

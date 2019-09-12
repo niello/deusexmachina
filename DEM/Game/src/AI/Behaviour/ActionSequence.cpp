@@ -43,7 +43,7 @@ UPTR CActionSequence::Update(CActor* pActor)
 		
 		if (++ppCurrChild == Child.End())
 		{
-			ppCurrChild = NULL;
+			ppCurrChild = nullptr;
 			return Success;
 		}
 		
@@ -57,7 +57,7 @@ void CActionSequence::Deactivate(CActor* pActor)
 	if (ppCurrChild)
 	{
 		(*ppCurrChild)->Deactivate(pActor);
-		ppCurrChild = NULL;
+		ppCurrChild = nullptr;
 	}
 }
 //---------------------------------------------------------------------

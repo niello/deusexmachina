@@ -66,8 +66,8 @@ void CPropTrigger::InternalDeactivate()
 
 	SetEnabled(false);
 
-	CollObj = NULL;
-	pScriptObj = NULL;
+	CollObj = nullptr;
+	pScriptObj = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -80,7 +80,7 @@ bool CPropTrigger::OnPropActivated(Events::CEventDispatcher* pDispatcher, const 
 	if (pProp->IsA<CPropScriptable>())
 	{
 		CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
-		pScriptObj = pScriptable ? pScriptable->GetScriptObject() : NULL;
+		pScriptObj = pScriptable ? pScriptable->GetScriptObject() : nullptr;
 		EnableSI(*pScriptable);
 		OK;
 	}
@@ -98,7 +98,7 @@ bool CPropTrigger::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, con
 	if (pProp->IsA<CPropScriptable>())
 	{
 		DisableSI(*(CPropScriptable*)pProp);
-		pScriptObj = NULL;
+		pScriptObj = nullptr;
 		OK;
 	}
 
@@ -133,7 +133,7 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 
 	// Sort to skip duplicates
 	Collisions.Sort();
-	const btCollisionObject* pCurrObj = NULL;
+	const btCollisionObject* pCurrObj = nullptr;
 	for (UPTR i = 0; i < Collisions.GetCount(); ++i)
 	{
 		if (Collisions[i] == pCurrObj) continue;

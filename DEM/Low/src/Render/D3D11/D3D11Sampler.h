@@ -23,7 +23,7 @@ protected:
 
 public:
 
-	CD3D11Sampler(): pD3DSampler(NULL) {}
+	CD3D11Sampler(): pD3DSampler(nullptr) {}
 	virtual ~CD3D11Sampler() { InternalDestroy(); }
 
 	bool				Create(ID3D11SamplerState* pSampler); 

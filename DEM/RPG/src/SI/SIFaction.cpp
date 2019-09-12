@@ -42,7 +42,7 @@ int CFaction_GetLeader(lua_State* l)
 	//ret:	string
 	RPG::CFaction* pFaction = *(RPG::CFaction**)lua_touserdata(l, 1);
 	n_assert_dbg(pFaction);
-	lua_pushstring(l, pFaction ? pFaction->GetLeader().CStr() : NULL);
+	lua_pushstring(l, pFaction ? pFaction->GetLeader().CStr() : nullptr);
 	return 1;
 }
 //---------------------------------------------------------------------

@@ -28,10 +28,10 @@ bool CD3D11DepthStencilBuffer::Create(ID3D11DepthStencilView* pDSV, ID3D11Shader
 	}
 	Desc.Format = CD3D11DriverFactory::DXGIFormatToPixelFormat(DSDesc.Format);
 
-	ID3D11Resource* pTexRsrc = NULL;
+	ID3D11Resource* pTexRsrc = nullptr;
 	pDSV->GetResource(&pTexRsrc);
 	
-	ID3D11Texture2D* pTex = NULL;
+	ID3D11Texture2D* pTex = nullptr;
 	if (FAILED(pTexRsrc->QueryInterface<ID3D11Texture2D>(&pTex)))
 	{
 		pTexRsrc->Release();
@@ -77,7 +77,7 @@ bool CD3D11DepthStencilBuffer::Create(ID3D11DepthStencilView* pDSV, ID3D11Shader
 
 void CD3D11DepthStencilBuffer::InternalDestroy()
 {
-	Texture = NULL;
+	Texture = nullptr;
 	SAFE_RELEASE(pDSView);
 }
 //---------------------------------------------------------------------

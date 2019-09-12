@@ -15,7 +15,7 @@ bool CSM30ShaderConstant::Init(HConstant hConst)
 	CSM30BufferMeta* pBufferMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
 	if (!pBufferMeta) FAIL;
 
-	CFixedArray<CRange>* pRanges = NULL;
+	CFixedArray<CRange>* pRanges = nullptr;
 	switch (pMeta->RegSet)
 	{
 		case Reg_Float4:	pRanges = &pBufferMeta->Float4; break;
@@ -92,7 +92,7 @@ UPTR CSM30ShaderConstant::GetMemberCount() const
 
 PShaderConstant CSM30ShaderConstant::GetElement(U32 Index) const
 {
-	if (Index >= ElementCount) return NULL;
+	if (Index >= ElementCount) return nullptr;
 
 	//!!!can use pool!
 	PSM30ShaderConstant Const = n_new(CSM30ShaderConstant);
@@ -112,7 +112,7 @@ PShaderConstant CSM30ShaderConstant::GetElement(U32 Index) const
 PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 {
 	CSM30StructMeta* pStructMeta = (CSM30StructMeta*)IShaderMetadata::GetHandleData(StructHandle);
-	if (!pStructMeta) return NULL;
+	if (!pStructMeta) return nullptr;
 
 	//???sort?
 	for (CFixedArray<CSM30StructMemberMeta>::CIterator It = pStructMeta->Members.Begin(); It < pStructMeta->Members.End(); ++It)
@@ -132,7 +132,7 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 			return Const.Get();
 		}
 
-	return NULL;
+	return nullptr;
 }
 //---------------------------------------------------------------------
 

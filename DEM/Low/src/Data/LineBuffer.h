@@ -17,7 +17,7 @@ private:
 		int		ActualPos;
 		char*	pString;
 
-		CLine(): pString(NULL), Len(0), ActualPos(0) {}
+		CLine(): pString(nullptr), Len(0), ActualPos(0) {}
 
 		void		Set(char* pStr, int Length);
 		void		Reset() { n_assert(pString); *pString = 0; ActualPos = 0; }
@@ -63,7 +63,7 @@ inline void CLineBuffer::CLine::Set(char* pStr, int Length)
 //---------------------------------------------------------------------
 
 // Appends string until pString is full, new pString or end of string is reached.
-// If new pString, a pointer to the next char is returned, otherwise NULL.
+// If new pString, a pointer to the next char is returned, otherwise nullptr.
 // A '\r' in the string rewinds the cursor to the start of the pString. If the
 // string buffer is full, a 0 is appended in any case. Newlines are not copied.
 inline const char* CLineBuffer::CLine::Add(const char* pInStr)
@@ -95,7 +95,7 @@ inline const char* CLineBuffer::CLine::Add(const char* pInStr)
 			else if (Chr == 0)
 			{
 				pString[ActualPos] = 0;
-				pInStr = NULL;
+				pInStr = nullptr;
 				Running = false;
 			}
 			else pString[ActualPos++] = Chr;

@@ -26,7 +26,7 @@ protected:
 
 public:
 
-	CD3D9IndexBuffer(): pBuffer(NULL)/*, LockCount(0)*/ {}
+	CD3D9IndexBuffer(): pBuffer(nullptr)/*, LockCount(0)*/ {}
 	virtual ~CD3D9IndexBuffer() { InternalDestroy(); }
 
 	bool					Create(EIndexType Type, IDirect3DIndexBuffer9* pIB);

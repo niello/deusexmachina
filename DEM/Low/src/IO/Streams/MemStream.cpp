@@ -19,7 +19,7 @@ void CMemStream::Close()
 	n_assert(IsOpen());
 	if (IsMapped()) Unmap();
 	if (SelfAlloc && pBuffer) n_free(pBuffer);
-	pBuffer = NULL;
+	pBuffer = nullptr;
 	Flags.Clear(IS_OPEN);
 	//CStream::Close();
 }

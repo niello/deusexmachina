@@ -78,7 +78,7 @@ Scene::CSceneNode* CNodeAttrSkin::SetupBoneNode(UPTR BoneIndex)
 				pBoneNode->SetLocalTransform(BindPoseLocal);
 			}
 		}
-		else pBoneNodes[BoneIndex] = NULL;
+		else pBoneNodes[BoneIndex] = nullptr;
 	}
 	return pBoneNodes[BoneIndex];
 }
@@ -92,9 +92,9 @@ bool CNodeAttrSkin::Initialize()
 	pSkinPalette = (matrix44*)n_malloc_aligned(BoneCount * sizeof(matrix44), 16);
 	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
 
-	// Here we fill an array of scene nodes associated with bones of this skin instance. NULL values
+	// Here we fill an array of scene nodes associated with bones of this skin instance. nullptr values
 	// are valid for the case when bone doesn't exist and must not be autocreated. To make distinstion
-	// between NULL and not processed nodes we fill not processed ones with the value of pNode (skin
+	// between nullptr and not processed nodes we fill not processed ones with the value of pNode (skin
 	// owner). No bone can use this node, so this value means 'not processed yet'. Hacky but convenient.
 	// Since processing is recursive and random-access, we must clear array in a first pass and then
 	// process it in a second pass.

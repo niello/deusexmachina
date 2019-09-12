@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	CFSBrowser(): hDir(NULL), AtFirstEntry(false) {}
+	CFSBrowser(): hDir(nullptr), AtFirstEntry(false) {}
 	~CFSBrowser() { Close(); }
 
 	bool			SetAbsolutePath(const char* pPath) { CurrPath = pPath; return ForceToFirstEntry(); }

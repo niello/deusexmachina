@@ -90,7 +90,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
 	// It is necessary because dynamic bodies may require subnode world tfm to set their initial tfm.
 	// World transform of the prop root node is updated by owner prop.
-	Prop.GetNode()->UpdateTransform(NULL, 0, true, NULL);
+	Prop.GetNode()->UpdateTransform(nullptr, 0, true, nullptr);
 
 	const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
 	for (UPTR i = 0; i < Objects.GetCount(); ++i)
@@ -158,7 +158,7 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
 	//!!!unload joints!
 
-	RootBody = NULL;
+	RootBody = nullptr;
 
 	for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 	{

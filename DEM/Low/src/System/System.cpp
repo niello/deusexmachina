@@ -5,7 +5,7 @@
 
 namespace Sys
 {
-static FLogHandler pLogHandler = NULL;
+static FLogHandler pLogHandler = nullptr;
 
 extern void DefaultLogHandler(EMsgType Type, const char* pMessage);
 
@@ -58,7 +58,7 @@ bool ReportAssertionFailure(const char* pExpression, const char* pMessage, const
 		Buffer += Trace;
 	}
 
-	return Sys::ShowMessageBox(MsgType_Error, NULL, Buffer.CStr(), MBB_OK | MBB_Cancel) != MBB_OK;
+	return Sys::ShowMessageBox(MsgType_Error, nullptr, Buffer.CStr(), MBB_OK | MBB_Cancel) != MBB_OK;
 }
 //---------------------------------------------------------------------
 

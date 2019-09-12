@@ -24,8 +24,8 @@ void CSPSCell::Remove(CSPSRecord* pRec)
 	if (pPrev) pPrev->pNext = pNext;
 	if (pNext) pNext->pPrev = pPrev;
 	if (pRec == pFront) pFront = pNext;
-	pRec->pNext = NULL;
-	pRec->pPrev = NULL;
+	pRec->pNext = nullptr;
+	pRec->pPrev = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -55,7 +55,7 @@ CSPSCell::CIterator CSPSCell::Find(CSPSRecord* Object) const
 		if (pCurr == pRec) return CIterator(pCurr);
 		pCurr = pCurr->pNext;
 	}
-	return CIterator(NULL);
+	return CIterator(nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -64,8 +64,8 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 	CSPSRecord* pRecord = RecordPool.Construct();
 	pRecord->GlobalBox = GlobalBox;
 	pRecord->pUserData = pUserData;
-	pRecord->pPrev = NULL;
-	pRecord->pNext = NULL;
+	pRecord->pPrev = nullptr;
+	pRecord->pNext = nullptr;
 	float CenterX, CenterZ, HalfSizeX, HalfSizeZ;
 	GetDimensions(GlobalBox, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
 	QuadTree.AddObject(pRecord, CenterX, CenterZ, HalfSizeX, HalfSizeZ, pRecord->pSPSNode);

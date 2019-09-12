@@ -57,7 +57,7 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vec
 		// Starting with Direct3D 11.1, we recommend not to use GetDisplayModeList anymore to retrieve the matching 
 		// display mode. Instead, use IDXGIOutput1::GetDisplayModeList1, which supports stereo display mode. (c) Docs
 		if (pDXGIModes) _freea(pDXGIModes);
-		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, NULL)) || !ModeCount) return 0;
+		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, nullptr)) || !ModeCount) return 0;
 		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
 		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, pDXGIModes);
 	}
@@ -98,13 +98,13 @@ bool CD3D11DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 
 	HRESULT hr;
 	UINT ModeCount = 0;
-	DXGI_MODE_DESC* pDXGIModes = NULL;
+	DXGI_MODE_DESC* pDXGIModes = nullptr;
 	do
 	{
 		// Starting with Direct3D 11.1, we recommend not to use GetDisplayModeList anymore to retrieve the matching 
 		// display mode. Instead, use IDXGIOutput1::GetDisplayModeList1, which supports stereo display mode. (c) Docs
 		if (pDXGIModes) _freea(pDXGIModes);
-		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, NULL)) || !ModeCount) FAIL;
+		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, nullptr)) || !ModeCount) FAIL;
 		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
 		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, pDXGIModes);
 	}
@@ -147,7 +147,7 @@ bool CD3D11DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 	ApproxMode.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
 	ApproxMode.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
 
-	// If pConcernedDevice is NULL, Format cannot be DXGI_FORMAT_UNKNOWN. (c) Docs
+	// If pConcernedDevice is nullptr, Format cannot be DXGI_FORMAT_UNKNOWN. (c) Docs
 	// TODO: GPU to args, optional
 	//if (pGPUDriver)
 	//	ApproxMode.Format = DXGI_FORMAT_UNKNOWN;
@@ -184,7 +184,7 @@ bool CD3D11DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 	OutInfo.IsPrimary = (Win32MonitorInfo.dwFlags & MONITORINFOF_PRIMARY);
 
 	/* MONITORINFO -> MONITORINFOEX
-	HDC hDC = ::CreateDC(TEXT("DISPLAY"), Win32MonitorInfo.szDevice, NULL, NULL);
+	HDC hDC = ::CreateDC(TEXT("DISPLAY"), Win32MonitorInfo.szDevice, nullptr, nullptr);
 	if (hDC)
 	{
 		OutInfo.NativeWidth = ::GetDeviceCaps(hDC, HORZRES);

@@ -183,9 +183,9 @@ void CAnimTask::Stop(float OverrideFadeOutTime)
 void CAnimTask::Clear()
 {
 	State = Task_Invalid;
-	pEventDisp = NULL;
-	Params = NULL;
-	Clip = NULL;
+	pEventDisp = nullptr;
+	Params = nullptr;
+	Clip = nullptr;
 	for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
 	{
 		Ctlrs[i]->RemoveFromNode();

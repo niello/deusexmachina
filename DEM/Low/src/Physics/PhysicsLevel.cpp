@@ -89,7 +89,7 @@ void CPhysicsLevel::Term()
 		delete pBtCollCfg;
 		delete pBtBroadPhase;
 
-		pBtDynWorld = NULL;
+		pBtDynWorld = nullptr;
 	}
 
 	Objects.Clear();
@@ -138,7 +138,7 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 	if (!RayCB.hasHit()) FAIL;
 
 	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
-	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObject*)RayCB.m_collisionObject->getUserPointer() : NULL;
+	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObject*)RayCB.m_collisionObject->getUserPointer() : nullptr;
 	n_assert_dbg(!pOutObj || !(*pOutObj).IsValidPtr() || Objects.Contains(*pOutObj));
 
 	OK;

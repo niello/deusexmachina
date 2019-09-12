@@ -19,7 +19,7 @@ public:
 	CD3D9SwapChain();
 	virtual ~CD3D9SwapChain();
 
-	IDirect3DSwapChain9*	pSwapChain = nullptr; // NULL for implicit swap chain, device methods will be called
+	IDirect3DSwapChain9*	pSwapChain = nullptr; // nullptr for implicit swap chain, device methods will be called
 
 	Events::PSub			Sub_OnToggleFullscreen;
 	Events::PSub			Sub_OnSizeChanged;

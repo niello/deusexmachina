@@ -28,7 +28,7 @@ protected:
 
 public:
 
-	CD3D9DriverFactory(): pD3D9(NULL), AdapterCount(0) { __ConstructSingleton; }
+	CD3D9DriverFactory(): pD3D9(nullptr), AdapterCount(0) { __ConstructSingleton; }
 	virtual ~CD3D9DriverFactory() { if (IsOpened()) Release(); __DestructSingleton; }
 
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
