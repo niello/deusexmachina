@@ -35,6 +35,16 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 
 	if (!pContext) return;
 
+	// FIXME: CEGUI doesn't calculate proper font size at the start
+	if (OSWindow)
+	{
+		const Data::CRect& WndRect = OSWindow->GetRect();
+		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
+
+		// FIXME: must be per-context, not global!
+		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
+	}
+
 	pInput = n_new(CEGUI::InputAggregator(pCtx));
 	pInput->initialise(InputEventsOnKeyUp);
 	pInput->setMouseClickEventGenerationEnabled(true);
