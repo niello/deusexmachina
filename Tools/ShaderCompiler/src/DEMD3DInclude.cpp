@@ -1,6 +1,5 @@
 #include "DEMD3DInclude.h"
 #include <fstream>
-#include <sstream>
 #include <algorithm>
 
 // trim from end (in place)
@@ -47,17 +46,24 @@ HRESULT CDEMD3DInclude::Open(THIS_ D3D_INCLUDE_TYPE IncludeType, const char* pFi
 		}
 	}
 	
-	std::string Contents(static_cast<std::stringstream const&>(std::stringstream() << File.rdbuf()).str());
+	//std::string Contents(static_cast<std::stringstream const&>(std::stringstream() << File.rdbuf()).str());
 
+	File.seekg(0, std::ios_base::end);
+	auto FileSize = File.tellg();
+
+	void* pBuf = malloc(static_cast<size_t>(FileSize));
+	if (!pBuf)
+	{
+		File.close();
+		return E_FAIL;
+	}
+
+	File.seekg(0, std::ios_base::beg);
+	File.read((char*)pBuf, FileSize);
 	File.close();
 
-	void* pBuf = malloc(Contents.size());
-	if (!pBuf) return E_FAIL;
-
-	memcpy(pBuf, Contents.c_str(), Contents.size());
-
 	*ppData = pBuf;
-	*pBytes = Contents.size();
+	*pBytes = static_cast<UINT>(FileSize);
 
 	return S_OK;
 }

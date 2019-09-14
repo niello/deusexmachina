@@ -1,15 +1,13 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 
-namespace DB
-{
-	class CValueTable;
-}
+class CValueTable;
 
 namespace Data
 {
-	class CParams;
+	typedef std::map<class CStringID, class CData> CParams;
 }
 
 struct CSrcFileData
@@ -69,4 +67,4 @@ bool		FindObjFileByID(uint32_t ID, CObjFileData& Out);
 uint32_t	CreateObjFileRecord();
 bool		UpdateObjFileRecord(const CObjFileData& Record);
 bool		ReleaseObjFile(uint32_t ID, std::string& OutPath);
-bool		ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable = nullptr, const Data::CParams* pParams = nullptr);
+bool		ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable = nullptr, const Data::CParams* pParams = nullptr);

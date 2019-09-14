@@ -1,6 +1,7 @@
 #pragma once
 #include "Type.h"
 #include <string>
+#include <cassert>
 
 // Variant data type with compile-time extendable type list
 
@@ -125,7 +126,7 @@ template<class T> void CData::SetValue(const T& Src)
 {
 	if (Type)
 	{
-		n_assert(Type == DATA_TYPE(T)); //!!!need conversion!
+		assert(Type == DATA_TYPE(T)); //!!!need conversion!
 		DATA_TYPE_NV(T)::CopyT(&Value, &Src);
 	}
 	else SetTypeValue(Src);
@@ -147,28 +148,28 @@ template<class T> inline bool CData::GetValue(T& Dest) const
 
 template<class T> inline T& CData::GetValue()
 {
-	n_assert(!IsVoid() && Type == DATA_TYPE(T)); // no conversions now
+	assert(!IsVoid() && Type == DATA_TYPE(T)); // no conversions now
 	return *(T*)DATA_TYPE_NV(T)::GetPtr(&Value);
 }
 //---------------------------------------------------------------------
 
 template<class T> inline const T& CData::GetValue() const
 {
-	n_assert(!IsVoid() && Type == DATA_TYPE(T)); // no conversions now
+	assert(!IsVoid() && Type == DATA_TYPE(T)); // no conversions now
 	return *(const T*)DATA_TYPE_NV(T)::GetPtr(&Value);
 }
 //---------------------------------------------------------------------
 
 template<class T> inline T* CData::GetValuePtr()
 {
-	n_assert(Type == DATA_TYPE(T)); // no conversions now
+	assert(Type == DATA_TYPE(T)); // no conversions now
 	return (IsNull()) ? nullptr : (T*)DATA_TYPE_NV(T)::GetPtr(&Value);
 }
 //---------------------------------------------------------------------
 
 template<class T> inline const T* CData::GetValuePtr() const
 {
-	n_assert(Type == DATA_TYPE(T)); // no conversions now
+	assert(Type == DATA_TYPE(T)); // no conversions now
 	return (IsNull()) ? nullptr : (const T*)DATA_TYPE_NV(T)::GetPtr(&Value);
 }
 //---------------------------------------------------------------------

@@ -403,7 +403,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
+bool CSM30ShaderMeta::Save(std::ofstream& File) const
 {
 	W.Write<uint32_t>(Buffers.size());
 	for (size_t i = 0; i < Buffers.size(); ++i)
@@ -479,7 +479,7 @@ bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
+bool CSM30ShaderMeta::Load(std::ifstream& File)
 {
 	Buffers.Clear();
 	Consts.Clear();
@@ -720,7 +720,7 @@ size_t CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 }
 //---------------------------------------------------------------------
 
-CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const
+CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject)
 {
 	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return nullptr;
 	return &Buffers[((CSM30ConstMeta*)pMetaObject)->BufferIndex];

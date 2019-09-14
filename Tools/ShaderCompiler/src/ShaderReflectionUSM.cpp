@@ -1,12 +1,29 @@
 #include "ShaderReflectionUSM.h"
 
-#include <IO/BinaryReader.h>
-#include <IO/BinaryWriter.h>
-#include <Data/StringUtils.h>
-#include <Render/RenderFwd.h>		// For GPU levels enum
+#include <string>
+#include <cassert>
 #include <D3DCompiler.inl>
 
+#undef min
+#undef max
+
 extern std::string Messages;
+
+// Hardware capability level relative to D3D features.
+// This is a hardware attribute, it doesn't depend on API used.
+// Never change values, they are used in a file format.
+enum EGPUFeatureLevel
+{
+	GPU_Level_D3D9_1	= 0x9100,
+	GPU_Level_D3D9_2	= 0x9200,
+	GPU_Level_D3D9_3	= 0x9300,
+	GPU_Level_D3D10_0	= 0xa000,
+	GPU_Level_D3D10_1	= 0xa100,
+	GPU_Level_D3D11_0	= 0xb000,
+	GPU_Level_D3D11_1	= 0xb100,
+	GPU_Level_D3D12_0	= 0xc000,
+	GPU_Level_D3D12_1	= 0xc100
+};
 
 bool CUSMBufferMeta::IsEqual(const CMetadataObject& Other) const
 {
@@ -51,7 +68,7 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 	if (!pType) return false;
 
 	// Already processed
-	if (StructCache.FindIndex(pType) != INVALID_INDEX) return true;
+	if (StructCache.find(pType) != StructCache.cend()) return true;
 
 	D3D11_SHADER_TYPE_DESC D3DTypeDesc;
 	pType->GetDesc(&D3DTypeDesc);
@@ -60,11 +77,11 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 	if (D3DTypeDesc.Members == 0) return true;
 
 	// Add and fill new structure layout metadata
-	StructCache.Add(pType, Structs.size());
-	CUSMStructMeta& Meta = *Structs.Add();
+	StructCache.emplace(pType, Structs.size());
+	CUSMStructMeta Meta;
 
-	CUSMStructMemberMeta* pMemberMeta = Meta.Members.Reserve(D3DTypeDesc.Members);
-	for (UINT MemberIdx = 0; MemberIdx < D3DTypeDesc.Members; ++MemberIdx, ++pMemberMeta)
+	Meta.Members.reserve(D3DTypeDesc.Members);
+	for (UINT MemberIdx = 0; MemberIdx < D3DTypeDesc.Members; ++MemberIdx)
 	{
 		LPCSTR pMemberName = pType->GetMemberTypeName(MemberIdx);
 
@@ -72,9 +89,10 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 		D3D11_SHADER_TYPE_DESC D3DMemberTypeDesc;
 		pMemberType->GetDesc(&D3DMemberTypeDesc);
 
-		pMemberMeta->Name = pMemberName;
-		pMemberMeta->Offset = D3DMemberTypeDesc.Offset;
-		pMemberMeta->Flags = 0;
+		CUSMStructMemberMeta MemberMeta;
+		MemberMeta.Name = pMemberName;
+		MemberMeta.Offset = D3DMemberTypeDesc.Offset;
+		MemberMeta.Flags = 0;
 
 		uint32_t MemberSize;
 		if (MemberIdx + 1 < D3DTypeDesc.Members)
@@ -89,37 +107,37 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 		if (D3DMemberTypeDesc.Elements > 1)
 		{
 			// Arrays
-			pMemberMeta->ElementSize = MemberSize / D3DMemberTypeDesc.Elements;
-			pMemberMeta->ElementCount = D3DMemberTypeDesc.Elements;
+			MemberMeta.ElementSize = MemberSize / D3DMemberTypeDesc.Elements;
+			MemberMeta.ElementCount = D3DMemberTypeDesc.Elements;
 		}
 		else
 		{
 			// Non-arrays and arrays [1]
-			pMemberMeta->ElementSize = MemberSize;
-			pMemberMeta->ElementCount = 1;
+			MemberMeta.ElementSize = MemberSize;
+			MemberMeta.ElementCount = 1;
 		}
 
 		if (D3DMemberTypeDesc.Class == D3D_SVC_STRUCT)
 		{
-			pMemberMeta->Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-			if (!ProcessStructure(pMemberType, pMemberMeta->ElementSize, StructCache)) continue;
-			pMemberMeta->StructIndex = StructCache[pMemberType];
+			MemberMeta.Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
+			if (!ProcessStructure(pMemberType, MemberMeta.ElementSize, StructCache)) continue;
+			MemberMeta.StructIndex = StructCache[pMemberType];
 		}
 		else
 		{
-			pMemberMeta->StructIndex = (uint32_t)(-1);
+			MemberMeta.StructIndex = (uint32_t)(-1);
 			switch (D3DMemberTypeDesc.Type)
 			{
-				case D3D_SVT_BOOL:	pMemberMeta->Type = USMConst_Bool; break;
+				case D3D_SVT_BOOL:	MemberMeta.Type = USMConst_Bool; break;
 				case D3D_SVT_INT:
-				case D3D_SVT_UINT:	pMemberMeta->Type = USMConst_Int; break;
-				case D3D_SVT_FLOAT:	pMemberMeta->Type = USMConst_Float; break;
+				case D3D_SVT_UINT:	MemberMeta.Type = USMConst_Int; break;
+				case D3D_SVT_FLOAT:	MemberMeta.Type = USMConst_Float; break;
 				default:
 				{
 					Messages += "Unsupported constant '";
 					Messages += pMemberName;
 					Messages += "' type '";
-					Messages += StringUtils::FromInt(D3DMemberTypeDesc.Type);
+					Messages += std::to_string(D3DMemberTypeDesc.Type);
 					Messages += "' in a structure '";
 					Messages += (D3DTypeDesc.Name ? D3DTypeDesc.Name : "");
 					Messages += "'\n";
@@ -127,13 +145,17 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 				}
 			}
 
-			pMemberMeta->Columns = D3DMemberTypeDesc.Columns;
-			pMemberMeta->Rows = D3DMemberTypeDesc.Rows;
+			MemberMeta.Columns = D3DMemberTypeDesc.Columns;
+			MemberMeta.Rows = D3DMemberTypeDesc.Rows;
 
 			if (D3DMemberTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
-				pMemberMeta->Flags |= ShaderConst_ColumnMajor;
+				MemberMeta.Flags |= ShaderConst_ColumnMajor;
 		}
+
+		Meta.Members.push_back(std::move(MemberMeta));
 	}
+
+	Structs.push_back(std::move(Meta));
 
 	return true;
 }
@@ -154,14 +176,14 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 
 	switch (D3DFeatureLevel)
 	{
-		case D3D_FEATURE_LEVEL_9_1:		MinFeatureLevel = Render::GPU_Level_D3D9_1; break;
-		case D3D_FEATURE_LEVEL_9_2:		MinFeatureLevel = Render::GPU_Level_D3D9_2; break;
-		case D3D_FEATURE_LEVEL_9_3:		MinFeatureLevel = Render::GPU_Level_D3D9_3; break;
-		case D3D_FEATURE_LEVEL_10_0:	MinFeatureLevel = Render::GPU_Level_D3D10_0; break;
-		case D3D_FEATURE_LEVEL_10_1:	MinFeatureLevel = Render::GPU_Level_D3D10_1; break;
-		case D3D_FEATURE_LEVEL_11_0:	MinFeatureLevel = Render::GPU_Level_D3D11_0; break;
+		case D3D_FEATURE_LEVEL_9_1:		MinFeatureLevel = GPU_Level_D3D9_1; break;
+		case D3D_FEATURE_LEVEL_9_2:		MinFeatureLevel = GPU_Level_D3D9_2; break;
+		case D3D_FEATURE_LEVEL_9_3:		MinFeatureLevel = GPU_Level_D3D9_3; break;
+		case D3D_FEATURE_LEVEL_10_0:	MinFeatureLevel = GPU_Level_D3D10_0; break;
+		case D3D_FEATURE_LEVEL_10_1:	MinFeatureLevel = GPU_Level_D3D10_1; break;
+		case D3D_FEATURE_LEVEL_11_0:	MinFeatureLevel = GPU_Level_D3D11_0; break;
 		//case D3D_FEATURE_LEVEL_11_1:
-		default:						MinFeatureLevel = Render::GPU_Level_D3D11_1; break;
+		default:						MinFeatureLevel = GPU_Level_D3D11_1; break;
 	}
 
 	RequiresFlags = pReflector->GetRequiresFlags();
@@ -190,34 +212,37 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 		{
 			case D3D_SIT_TEXTURE:
 			{
-				CUSMRsrcMeta* pMeta = Resources.Add();
-				pMeta->Name = RsrcDesc.Name;
-				pMeta->RegisterStart = RsrcDesc.BindPoint;
-				pMeta->RegisterCount = RsrcDesc.BindCount;
+				CUSMRsrcMeta Meta;
+				Meta.Name = RsrcDesc.Name;
+				Meta.RegisterStart = RsrcDesc.BindPoint;
+				Meta.RegisterCount = RsrcDesc.BindCount;
 
 				switch (RsrcDesc.Dimension)
 				{
-					case D3D_SRV_DIMENSION_TEXTURE1D:			pMeta->Type = USMRsrc_Texture1D; break;
-					case D3D_SRV_DIMENSION_TEXTURE1DARRAY:		pMeta->Type = USMRsrc_Texture1DArray; break;
-					case D3D_SRV_DIMENSION_TEXTURE2D:			pMeta->Type = USMRsrc_Texture2D; break;
-					case D3D_SRV_DIMENSION_TEXTURE2DARRAY:		pMeta->Type = USMRsrc_Texture2DArray; break;
-					case D3D_SRV_DIMENSION_TEXTURE2DMS:			pMeta->Type = USMRsrc_Texture2DMS; break;
-					case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:	pMeta->Type = USMRsrc_Texture2DMSArray; break;
-					case D3D_SRV_DIMENSION_TEXTURE3D:			pMeta->Type = USMRsrc_Texture3D; break;
-					case D3D_SRV_DIMENSION_TEXTURECUBE:			pMeta->Type = USMRsrc_TextureCUBE; break;
-					case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:	pMeta->Type = USMRsrc_TextureCUBEArray; break;
-					default:									pMeta->Type = USMRsrc_Unknown; break;
+					case D3D_SRV_DIMENSION_TEXTURE1D:			Meta.Type = USMRsrc_Texture1D; break;
+					case D3D_SRV_DIMENSION_TEXTURE1DARRAY:		Meta.Type = USMRsrc_Texture1DArray; break;
+					case D3D_SRV_DIMENSION_TEXTURE2D:			Meta.Type = USMRsrc_Texture2D; break;
+					case D3D_SRV_DIMENSION_TEXTURE2DARRAY:		Meta.Type = USMRsrc_Texture2DArray; break;
+					case D3D_SRV_DIMENSION_TEXTURE2DMS:			Meta.Type = USMRsrc_Texture2DMS; break;
+					case D3D_SRV_DIMENSION_TEXTURE2DMSARRAY:	Meta.Type = USMRsrc_Texture2DMSArray; break;
+					case D3D_SRV_DIMENSION_TEXTURE3D:			Meta.Type = USMRsrc_Texture3D; break;
+					case D3D_SRV_DIMENSION_TEXTURECUBE:			Meta.Type = USMRsrc_TextureCUBE; break;
+					case D3D_SRV_DIMENSION_TEXTURECUBEARRAY:	Meta.Type = USMRsrc_TextureCUBEArray; break;
+					default:									Meta.Type = USMRsrc_Unknown; break;
 				}
+
+				Resources.push_back(std::move(Meta));
 
 				break;
 			}
 			case D3D_SIT_SAMPLER:
 			{
 				// D3D_SIF_COMPARISON_SAMPLER
-				CUSMSamplerMeta* pMeta = Samplers.Add();
-				pMeta->Name = RsrcDesc.Name;
-				pMeta->RegisterStart = RsrcDesc.BindPoint;
-				pMeta->RegisterCount = RsrcDesc.BindCount;
+				CUSMSamplerMeta Meta;
+				Meta.Name = RsrcDesc.Name;
+				Meta.RegisterStart = RsrcDesc.BindPoint;
+				Meta.RegisterCount = RsrcDesc.BindCount;
+				Samplers.push_back(std::move(Meta));
 				break;
 			}
 			case D3D_SIT_CBUFFER:
@@ -225,7 +250,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 			case D3D_SIT_STRUCTURED:
 			{
 				// Can't violate this condition (can't define cbuffer / tbuffer array)
-				n_assert(RsrcDesc.BindCount == 1);
+				assert(RsrcDesc.BindCount == 1);
 
 				// There can be cbuffer and tbuffer with the same name, so search by name and type
 				D3D_CBUFFER_TYPE DesiredType;
@@ -258,10 +283,11 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 				else if (RsrcDesc.Type == D3D_SIT_STRUCTURED) TypeMask = USMBuffer_Structured;
 				else TypeMask = 0;
 
-				CUSMBufferMeta* pMeta = Buffers.Add();
-				pMeta->Name = RsrcDesc.Name;
-				pMeta->Register = (RsrcDesc.BindPoint | TypeMask);
-				pMeta->Size = D3DBufDesc.Size;
+				CUSMBufferMeta Meta;
+				Meta.Name = RsrcDesc.Name;
+				Meta.Register = (RsrcDesc.BindPoint | TypeMask);
+				Meta.Size = D3DBufDesc.Size;
+				Buffers.push_back(std::move(Meta));
 
 				if (RsrcDesc.Type != D3D_SIT_STRUCTURED)
 				{
@@ -282,46 +308,46 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 						D3D11_SHADER_TYPE_DESC D3DTypeDesc;
 						pVarType->GetDesc(&D3DTypeDesc);
 
-						CUSMConstMeta* pConstMeta = Consts.Add();
-						pConstMeta->Name = D3DVarDesc.Name;
-						pConstMeta->BufferIndex = Buffers.size() - 1;
-						pConstMeta->Offset = D3DVarDesc.StartOffset;
-						pConstMeta->Flags = 0;
+						CUSMConstMeta ConstMeta;
+						ConstMeta.Name = D3DVarDesc.Name;
+						ConstMeta.BufferIndex = Buffers.size() - 1;
+						ConstMeta.Offset = D3DVarDesc.StartOffset;
+						ConstMeta.Flags = 0;
 
 						if (D3DTypeDesc.Elements > 1)
 						{
 							// Arrays
-							pConstMeta->ElementSize = D3DVarDesc.Size / D3DTypeDesc.Elements;
-							pConstMeta->ElementCount = D3DTypeDesc.Elements;
+							ConstMeta.ElementSize = D3DVarDesc.Size / D3DTypeDesc.Elements;
+							ConstMeta.ElementCount = D3DTypeDesc.Elements;
 						}
 						else
 						{
 							// Non-arrays and arrays [1]
-							pConstMeta->ElementSize = D3DVarDesc.Size;
-							pConstMeta->ElementCount = 1;
+							ConstMeta.ElementSize = D3DVarDesc.Size;
+							ConstMeta.ElementCount = 1;
 						}
 
 						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)
 						{
-							pConstMeta->Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-							if (!ProcessStructure(pVarType, pConstMeta->ElementSize, StructCache)) continue;
-							pConstMeta->StructIndex = StructCache[pVarType];
+							ConstMeta.Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
+							if (!ProcessStructure(pVarType, ConstMeta.ElementSize, StructCache)) continue;
+							ConstMeta.StructIndex = StructCache[pVarType];
 						}
 						else
 						{
-							pConstMeta->StructIndex = (uint32_t)(-1);
+							ConstMeta.StructIndex = (uint32_t)(-1);
 							switch (D3DTypeDesc.Type)
 							{
-								case D3D_SVT_BOOL:	pConstMeta->Type = USMConst_Bool; break;
+								case D3D_SVT_BOOL:	ConstMeta.Type = USMConst_Bool; break;
 								case D3D_SVT_INT:
-								case D3D_SVT_UINT:	pConstMeta->Type = USMConst_Int; break;
-								case D3D_SVT_FLOAT:	pConstMeta->Type = USMConst_Float; break;
+								case D3D_SVT_UINT:	ConstMeta.Type = USMConst_Int; break;
+								case D3D_SVT_FLOAT:	ConstMeta.Type = USMConst_Float; break;
 								default:
 								{
 									Messages += "Unsupported constant '";
 									Messages += D3DVarDesc.Name;
 									Messages += "' type '";
-									Messages += StringUtils::FromInt(D3DTypeDesc.Type);
+									Messages += std::to_string(D3DTypeDesc.Type);
 									Messages += "' in USM buffer '";
 									Messages += RsrcDesc.Name;
 									Messages += "'\n";
@@ -329,11 +355,13 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 								}
 							}
 
-							pConstMeta->Columns = D3DTypeDesc.Columns;
-							pConstMeta->Rows = D3DTypeDesc.Rows;
+							ConstMeta.Columns = D3DTypeDesc.Columns;
+							ConstMeta.Rows = D3DTypeDesc.Rows;
 
 							if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
-								pConstMeta->Flags |= ShaderConst_ColumnMajor;
+								ConstMeta.Flags |= ShaderConst_ColumnMajor;
+
+							Consts.push_back(std::move(ConstMeta));
 						}
 					}
 				}
@@ -349,176 +377,187 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
+bool CUSMShaderMeta::Save(std::ofstream& File) const
 {
-	W.Write<uint32_t>(MinFeatureLevel);
-	W.Write<uint64_t>(RequiresFlags);
+	WriteFile<uint32_t>(File, MinFeatureLevel);
+	WriteFile<uint64_t>(File, RequiresFlags);
 
-	W.Write<uint32_t>(Buffers.size());
+	WriteFile<uint32_t>(File, Buffers.size());
 	for (size_t i = 0; i < Buffers.size(); ++i)
 	{
 		const CUSMBufferMeta& Obj = Buffers[i];
-		W.Write(Obj.Name);
-		W.Write(Obj.Register);
-		W.Write(Obj.Size);
-		//W.Write(Obj.ElementCount);
+		WriteFile(File, Obj.Name);
+		WriteFile(File, Obj.Register);
+		WriteFile(File, Obj.Size);
+		//WriteFile(Obj.ElementCount);
 	}
 
-	W.Write<uint32_t>(Structs.size());
+	WriteFile<uint32_t>(File, Structs.size());
 	for (size_t i = 0; i < Structs.size(); ++i)
 	{
-		CUSMStructMeta& Obj = Structs[i];
+		const CUSMStructMeta& Obj = Structs[i];
 
-		W.Write<uint32_t>(Obj.Members.size());
+		WriteFile<uint32_t>(File, Obj.Members.size());
 		for (size_t j = 0; j < Obj.Members.size(); ++j)
 		{
-			CUSMStructMemberMeta& Member = Obj.Members[j];
-			W.Write(Member.Name);
-			W.Write(Member.StructIndex);
-			W.Write<uint8_t>(Member.Type);
-			W.Write(Member.Offset);
-			W.Write(Member.ElementSize);
-			W.Write(Member.ElementCount);
-			W.Write(Member.Columns);
-			W.Write(Member.Rows);
-			W.Write(Member.Flags);
+			const CUSMStructMemberMeta& Member = Obj.Members[j];
+			WriteFile(File, Member.Name);
+			WriteFile(File, Member.StructIndex);
+			WriteFile<uint8_t>(File, Member.Type);
+			WriteFile(File, Member.Offset);
+			WriteFile(File, Member.ElementSize);
+			WriteFile(File, Member.ElementCount);
+			WriteFile(File, Member.Columns);
+			WriteFile(File, Member.Rows);
+			WriteFile(File, Member.Flags);
 		}
 	}
 
-	W.Write<uint32_t>(Consts.size());
+	WriteFile<uint32_t>(File, Consts.size());
 	for (size_t i = 0; i < Consts.size(); ++i)
 	{
 		const CUSMConstMeta& Obj = Consts[i];
-		W.Write(Obj.Name);
-		W.Write(Obj.BufferIndex);
-		W.Write(Obj.StructIndex);
-		W.Write<uint8_t>(Obj.Type);
-		W.Write(Obj.Offset);
-		W.Write(Obj.ElementSize);
-		W.Write(Obj.ElementCount);
-		W.Write(Obj.Columns);
-		W.Write(Obj.Rows);
-		W.Write(Obj.Flags);
+		WriteFile(File, Obj.Name);
+		WriteFile(File, Obj.BufferIndex);
+		WriteFile(File, Obj.StructIndex);
+		WriteFile<uint8_t>(File, Obj.Type);
+		WriteFile(File, Obj.Offset);
+		WriteFile(File, Obj.ElementSize);
+		WriteFile(File, Obj.ElementCount);
+		WriteFile(File, Obj.Columns);
+		WriteFile(File, Obj.Rows);
+		WriteFile(File, Obj.Flags);
 	}
 
-	W.Write<uint32_t>(Resources.size());
+	WriteFile<uint32_t>(File, Resources.size());
 	for (size_t i = 0; i < Resources.size(); ++i)
 	{
 		const CUSMRsrcMeta& Obj = Resources[i];
-		W.Write(Obj.Name);
-		W.Write<uint8_t>(Obj.Type);
-		W.Write(Obj.RegisterStart);
-		W.Write(Obj.RegisterCount);
+		WriteFile(File, Obj.Name);
+		WriteFile<uint8_t>(File, Obj.Type);
+		WriteFile(File, Obj.RegisterStart);
+		WriteFile(File, Obj.RegisterCount);
 	}
 
-	W.Write<uint32_t>(Samplers.size());
+	WriteFile<uint32_t>(File, Samplers.size());
 	for (size_t i = 0; i < Samplers.size(); ++i)
 	{
 		const CUSMSamplerMeta& Obj = Samplers[i];
-		W.Write(Obj.Name);
-		W.Write(Obj.RegisterStart);
-		W.Write(Obj.RegisterCount);
+		WriteFile(File, Obj.Name);
+		WriteFile(File, Obj.RegisterStart);
+		WriteFile(File, Obj.RegisterCount);
 	}
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
+bool CUSMShaderMeta::Load(std::ifstream& File)
 {
-	Buffers.Clear();
-	Consts.Clear();
-	Resources.Clear();
-	Samplers.Clear();
+	Buffers.clear();
+	Consts.clear();
+	Resources.clear();
+	Samplers.clear();
 
-	R.Read<uint32_t>(MinFeatureLevel);
-	R.Read<uint64_t>(RequiresFlags);
+	ReadFile<uint32_t>(File, MinFeatureLevel);
+	ReadFile<uint64_t>(File, RequiresFlags);
 
 	uint32_t Count;
 
-	R.Read<uint32_t>(Count);
-	CUSMBufferMeta* pBuf = Buffers.Reserve(Count, false);
-	for (; pBuf < Buffers.End(); ++pBuf)
+	ReadFile<uint32_t>(File, Count);
+	Buffers.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
 	{
 		//!!!arrays, tbuffers & sbuffers aren't supported for now!
-		CUSMBufferMeta& Obj = *pBuf;
-		R.Read(Obj.Name);
-		R.Read(Obj.Register);
-		R.Read(Obj.Size);
-		///R.Read(Obj.ElementCount);
+		CUSMBufferMeta Obj;
+		ReadFile(File, Obj.Name);
+		ReadFile(File, Obj.Register);
+		ReadFile(File, Obj.Size);
+		///ReadFile(Obj.ElementCount);
+		Buffers.push_back(std::move(Obj));
 	}
 
-	R.Read<uint32_t>(Count);
-	CUSMStructMeta* pStruct = Structs.Reserve(Count, false);
-	for (; pStruct < Structs.End(); ++pStruct)
+	ReadFile<uint32_t>(File, Count);
+	Structs.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CUSMStructMeta& Obj = *pStruct;
+		CUSMStructMeta Obj;
 
-		R.Read<uint32_t>(Count);
-		CUSMStructMemberMeta* pMember = Obj.Members.Reserve(Count, false);
-		for (; pMember < Obj.Members.End(); ++pMember)
+		uint32_t MemberCount;
+		ReadFile<uint32_t>(File, MemberCount);
+		Obj.Members.reserve(MemberCount);
+		for (uint32_t j = 0; j < MemberCount; ++j)
 		{
-			CUSMStructMemberMeta& Member = *pMember;
-			R.Read(Member.Name);
-			R.Read(Member.StructIndex);
+			CUSMStructMemberMeta Member;
+			ReadFile(File, Member.Name);
+			ReadFile(File, Member.StructIndex);
 
 			uint8_t Type;
-			R.Read<uint8_t>(Type);
+			ReadFile<uint8_t>(File, Type);
 			Member.Type = (EUSMConstType)Type;
 
-			R.Read(Member.Offset);
-			R.Read(Member.ElementSize);
-			R.Read(Member.ElementCount);
-			R.Read(Member.Columns);
-			R.Read(Member.Rows);
-			R.Read(Member.Flags);
+			ReadFile(File, Member.Offset);
+			ReadFile(File, Member.ElementSize);
+			ReadFile(File, Member.ElementCount);
+			ReadFile(File, Member.Columns);
+			ReadFile(File, Member.Rows);
+			ReadFile(File, Member.Flags);
+
+			Obj.Members.push_back(std::move(Member));
 		}
+
+		Structs.push_back(std::move(Obj));
 	}
 
-	R.Read<uint32_t>(Count);
-	CUSMConstMeta* pConst = Consts.Reserve(Count, false);
-	for (; pConst < Consts.End(); ++pConst)
+	ReadFile<uint32_t>(File, Count);
+	Consts.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CUSMConstMeta& Obj = *pConst;
-		R.Read(Obj.Name);
-		R.Read(Obj.BufferIndex);
-		R.Read(Obj.StructIndex);
+		CUSMConstMeta Obj;
+		ReadFile(File, Obj.Name);
+		ReadFile(File, Obj.BufferIndex);
+		ReadFile(File, Obj.StructIndex);
 
 		uint8_t Type;
-		R.Read<uint8_t>(Type);
+		ReadFile<uint8_t>(File, Type);
 		Obj.Type = (EUSMConstType)Type;
 
-		R.Read(Obj.Offset);
-		R.Read(Obj.ElementSize);
-		R.Read(Obj.ElementCount);
-		R.Read(Obj.Columns);
-		R.Read(Obj.Rows);
-		R.Read(Obj.Flags);
+		ReadFile(File, Obj.Offset);
+		ReadFile(File, Obj.ElementSize);
+		ReadFile(File, Obj.ElementCount);
+		ReadFile(File, Obj.Columns);
+		ReadFile(File, Obj.Rows);
+		ReadFile(File, Obj.Flags);
+
+		Consts.push_back(std::move(Obj));
 	}
 
-	R.Read<uint32_t>(Count);
-	CUSMRsrcMeta* pRsrc = Resources.Reserve(Count, false);
-	for (; pRsrc < Resources.End(); ++pRsrc)
+	ReadFile<uint32_t>(File, Count);
+	Resources.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CUSMRsrcMeta& Obj = *pRsrc;
-		R.Read(Obj.Name);
+		CUSMRsrcMeta Obj;
+		ReadFile(File, Obj.Name);
 
 		uint8_t Type;
-		R.Read<uint8_t>(Type);
+		ReadFile<uint8_t>(File, Type);
 		Obj.Type = (EUSMResourceType)Type;
 
-		R.Read(Obj.RegisterStart);
-		R.Read(Obj.RegisterCount);
+		ReadFile(File, Obj.RegisterStart);
+		ReadFile(File, Obj.RegisterCount);
+
+		Resources.push_back(std::move(Obj));
 	}
 
-	R.Read<uint32_t>(Count);
-	CUSMSamplerMeta* pSamp = Samplers.Reserve(Count, false);
-	for (; pSamp < Samplers.End(); ++pSamp)
+	ReadFile<uint32_t>(File, Count);
+	Samplers.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CUSMSamplerMeta& Obj = *pSamp;
-		R.Read(Obj.Name);
-		R.Read(Obj.RegisterStart);
-		R.Read(Obj.RegisterCount);
+		CUSMSamplerMeta Obj;
+		ReadFile(File, Obj.Name);
+		ReadFile(File, Obj.RegisterStart);
+		ReadFile(File, Obj.RegisterCount);
+		Samplers.push_back(std::move(Obj));
 	}
 
 	return true;
@@ -551,26 +590,27 @@ CMetadataObject* CUSMShaderMeta::GetParamObject(EShaderParamClass Class, size_t 
 
 size_t CUSMShaderMeta::AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject)
 {
-	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class) return (size_t)(INVALID_INDEX);
+	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class)
+		return std::numeric_limits<size_t>().max();
 
 	switch (Class)
 	{
 		case ShaderParam_Const:
 		{
-			Consts.Add(*(const CUSMConstMeta*)pMetaObject);
+			Consts.push_back(*(const CUSMConstMeta*)pMetaObject);
 			return Consts.size() - 1;
 		}
 		case ShaderParam_Resource:
 		{
-			Resources.Add(*(const CUSMRsrcMeta*)pMetaObject);
+			Resources.push_back(*(const CUSMRsrcMeta*)pMetaObject);
 			return Resources.size() - 1;
 		}
 		case ShaderParam_Sampler:
 		{
-			Samplers.Add(*(const CUSMSamplerMeta*)pMetaObject);
+			Samplers.push_back(*(const CUSMSamplerMeta*)pMetaObject);
 			return Samplers.size() - 1;
 		}
-		default:	return (size_t)(INVALID_INDEX);
+		default: return std::numeric_limits<size_t>().max();
 	}
 }
 //---------------------------------------------------------------------
@@ -606,14 +646,15 @@ bool CUSMShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* 
 			OutIndex = Idx;
 			return true;
 		}
-		default:					return false;
+		default: return false;
 	}
 }
 //---------------------------------------------------------------------
 
 size_t CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 {
-	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (size_t)(INVALID_INDEX);
+	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel())
+		return std::numeric_limits<size_t>().max();
 
 	const CUSMBufferMeta* pUSMBuffer = (const CUSMBufferMeta*)pMetaBuffer;
 	size_t Idx = 0;
@@ -621,7 +662,7 @@ size_t CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 		if (Buffers[Idx].Register == pUSMBuffer->Register) break;
 	if (Idx == Buffers.size())
 	{
-		Buffers.Add(*pUSMBuffer);
+		Buffers.push_back(*pUSMBuffer);
 		return Buffers.size() - 1;
 	}
 	else
@@ -634,7 +675,7 @@ size_t CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 }
 //---------------------------------------------------------------------
 
-CMetadataObject* CUSMShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const
+CMetadataObject* CUSMShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject)
 {
 	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return nullptr;
 	return &Buffers[((CUSMConstMeta*)pMetaObject)->BufferIndex];
@@ -651,13 +692,13 @@ bool CUSMShaderMeta::SetContainingConstantBuffer(size_t ConstIdx, size_t BufferI
 
 uint32_t CUSMShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping)
 {
-	ptrdiff_t StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-	if (StructIdxIdx != INVALID_INDEX) return StructIndexMapping.ValueAt(StructIdxIdx);
+	auto It = StructIndexMapping.find(StructKey);
+	if (It != StructIndexMapping.cend()) return It->second;
 
 	const uint32_t StructIndex = (uint32_t)(StructKey & 0xffffffff);
 	const CUSMStructMeta& StructMeta = ((const CUSMShaderMeta&)SourceMeta).Structs[StructIndex];
-	Structs.Add(StructMeta);
-	StructIndexMapping.Add(StructKey, Structs.size() - 1);
+	Structs.push_back(StructMeta);
+	StructIndexMapping.emplace(StructKey, Structs.size() - 1);
 
 	for (size_t i = 0; i < StructMeta.Members.size(); ++i)
 	{
@@ -668,9 +709,9 @@ uint32_t CUSMShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, uint64_
 		AddStructure(SourceMeta, MemberKey, StructIndexMapping);
 	}
 
-	StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
-	n_assert(StructIdxIdx != INVALID_INDEX);
-	return StructIndexMapping.ValueAt(StructIdxIdx);
+	It = StructIndexMapping.find(StructKey);
+	assert(It != StructIndexMapping.cend());
+	return It->second;
 }
 //---------------------------------------------------------------------
 

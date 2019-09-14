@@ -139,8 +139,8 @@ public:
 
 	bool						CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, CDEMD3DInclude& IncludeHandler);
 
-	virtual bool				Load(IO::CBinaryReader& R);
-	virtual bool				Save(IO::CBinaryWriter& W) const;
+	virtual bool				Load(std::ifstream& File) override;
+	virtual bool				Save(std::ofstream& File) const override;
 
 	virtual EShaderModel		GetShaderModel() const { return ShaderModel_30; }
 	virtual uint32_t			GetMinFeatureLevel() const;
@@ -154,7 +154,7 @@ public:
 	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const;
 
 	virtual size_t				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer);
-	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const;
+	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject);
 	virtual bool				SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx);
 
 	virtual uint32_t			AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping);

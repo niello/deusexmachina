@@ -1,15 +1,10 @@
 #pragma once
 #include <map>
+#include <fstream>
 
 // Data and functions for shader metadata manipulation in both SM3.0 and USM
 
 //#define DEM_DLL_EXPORT	__declspec(dllexport)
-
-namespace IO
-{
-	class CBinaryReader;
-	class CBinaryWriter;
-};
 
 // Don't change existing values, they are saved to file
 enum EShaderModel
@@ -63,8 +58,8 @@ class CShaderMetadata
 {
 public:
 
-	virtual bool				Load(IO::CBinaryReader& R) = 0;
-	virtual bool				Save(IO::CBinaryWriter& W) const = 0;
+	virtual bool				Load(std::ifstream& File) = 0;
+	virtual bool				Save(std::ofstream& File) const = 0;
 
 	virtual EShaderModel		GetShaderModel() const = 0;
 	virtual uint32_t			GetMinFeatureLevel() const = 0;
@@ -78,10 +73,22 @@ public:
 	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const = 0;
 
 	virtual size_t				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer) = 0;
-	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const = 0;
+	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) = 0;
 	virtual bool				SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx) = 0;
 
 	virtual uint32_t			AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping) = 0;
 	virtual uint32_t			GetStructureIndex(size_t ConstIdx) const = 0;
 	virtual bool				SetStructureIndex(size_t ConstIdx, uint32_t StructIdx) = 0;
 };
+
+template<class T> void ReadFile(std::ifstream& File, T& Out)
+{
+	File.read(reinterpret_cast<char*>(&Out), sizeof(T));
+}
+//---------------------------------------------------------------------
+
+template<class T> void WriteFile(std::ofstream& File, const T& Data)
+{
+	File.write(reinterpret_cast<const char*>(&Data), sizeof(T));
+}
+//---------------------------------------------------------------------
