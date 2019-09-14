@@ -1,6 +1,6 @@
 #include "Data.h"
-#include <Data/StringID.h>
-#include <string>
+#include <StringID.h>
+#include <cassert>
 
 namespace Data
 {
@@ -10,16 +10,15 @@ namespace Data
 template<> inline const char* CTypeImpl<bool>::ToString(const void* pObj) const { return pObj ? "true" : "false"; }
 template<> inline const char* CTypeImpl<int>::ToString(const void* pObj) const { return std::to_string(*((int*)&pObj)).c_str(); }
 template<> inline const char* CTypeImpl<float>::ToString(const void* pObj) const { return std::to_string(*((float*)&pObj)).c_str(); }
-template<> inline const char* CTypeImpl<CString>::ToString(const void* pObj) const { return ((CString*)pObj)->CStr(); }
+template<> inline const char* CTypeImpl<std::string>::ToString(const void* pObj) const { return ((std::string*)pObj)->c_str(); }
 template<> inline const char* CTypeImpl<CStrID>::ToString(const void* pObj) const { return (const char*)pObj; }
 
 //DEFINE_TYPE(void)
 DEFINE_TYPE(bool, false)
 DEFINE_TYPE(int, 0)
 DEFINE_TYPE(float, 0.f)
-DEFINE_TYPE(CString, CString::Empty)
+DEFINE_TYPE_EX(std::string, string, std::string{})
 DEFINE_TYPE(CStrID, CStrID::Empty)
-DEFINE_TYPE(PVOID, nullptr)
 
 void CData::SetType(const CType* SrcType)
 {
@@ -47,7 +46,7 @@ void CData::SetTypeValue(const CType* SrcType, void* const* pSrcObj)
 
 void CData::SetValue(const CData& Src)
 {
-	n_assert(Type && Type == Src.GetType()); //!!!need conversion!
+	assert(Type && Type == Src.GetType()); //!!!need conversion!
 	Type->Copy(&Value, &Src.Value);
 }
 //---------------------------------------------------------------------

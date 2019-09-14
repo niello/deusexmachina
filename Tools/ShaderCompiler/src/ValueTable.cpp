@@ -1,7 +1,5 @@
 #include "ValueTable.h"
-
-namespace DB
-{
+//#include <Data/Buffer.h>
 
 void CValueTable::Clear()
 {
@@ -11,7 +9,7 @@ void CValueTable::Clear()
 		const Data::CType* Type = GetColumnValueType(ColIdx);
 
 		//???use Type->Delete()? virtual call even if type will call empty destructor like !int()
-		if (Type == TString)
+		if (Type == DATA_TYPE(std::string))
 			for (size_t RowIdx = 0; RowIdx < NumRows; RowIdx++)
 				DATA_TYPE_NV(std::string)::Delete(GetValuePtr(ColIdx, RowIdx));
 		else if (Type == DATA_TYPE(Data::CBuffer))
@@ -22,27 +20,36 @@ void CValueTable::Clear()
 				((Data::CData*)GetValuePtr(ColIdx, RowIdx))->Clear();
 	}
 
-	SAFE_FREE(ValueBuffer);
-	SAFE_FREE(RowStateBuffer);
+	if (ValueBuffer)
+	{
+		free(ValueBuffer);
+		ValueBuffer = nullptr;
+	}
+
+	if (RowStateBuffer)
+	{
+		free(RowStateBuffer);
+		RowStateBuffer = nullptr;
+	}
 
 	NumRows = 0;
 	AllocatedRows = 0;
 
 	//???need?
-/*	FirstNewRowIndex = INTPTR_MAX;
+/*	FirstNewRowIndex = std::numeric_limits<intptr_t>().max();
 	NewRowsCount = 0;
-	FirstDeletedRowIndex = INTPTR_MAX;
+	FirstDeletedRowIndex = std::numeric_limits<intptr_t>().max();
 	DeletedRowsCount = 0;
 */
-	Flags.Clear(_IsModified);
-	Flags.Clear(_HasModifiedRows);
+	_IsModified = false;
+	_HasModifiedRows = false;
 }
 //---------------------------------------------------------------------
 
 void CValueTable::Realloc(size_t NewPitch, size_t NewAllocRows)
 {
-	n_assert(NewAllocRows >= NumRows);
-	n_assert(NewPitch >= RowPitch);
+	assert(NewAllocRows >= NumRows);
+	assert(NewPitch >= RowPitch);
 
 	AllocatedRows = NewAllocRows;
 	int NewValueBufferSize = NewPitch * NewAllocRows;
@@ -92,10 +99,9 @@ int CValueTable::UpdateColumnOffsets()
 // EndAddColumns(), since this will save a lot of re-allocations.
 void CValueTable::BeginAddColumns()
 {
-	n_assert(!Flags.Is(_InBeginAddColumns));
-	Flags.Set(_InBeginAddColumns);
+	assert(!_InBeginAddColumns);
+	_InBeginAddColumns = true;
 	FirstAddedColIndex = Columns.size();
-	ColumnIndexMap.BeginAdd();
 }
 //---------------------------------------------------------------------
 
@@ -110,13 +116,13 @@ void CValueTable::AddColumn(CStrID ID, const Data::CType* Type, bool RecAsNewCol
 
 	ColumnIndexMap.Add(ID, Columns.size() - 1);
 
-	if (Flags.Is(_TrackModifications))
+	if (_TrackModifications)
 	{
 		if (RecAsNewCol) NewColumnIndices.Add(Columns.size() - 1);
-		Flags.Set(_IsModified);
+		_IsModified = true;
 	}
 
-	if (!Flags.Is(_InBeginAddColumns))
+	if (!_InBeginAddColumns)
 	{
 		if (NumRows > 0) Realloc(UpdateColumnOffsets(), NumRows);
 		else RowPitch = UpdateColumnOffsets();
@@ -128,9 +134,8 @@ void CValueTable::AddColumn(CStrID ID, const Data::CType* Type, bool RecAsNewCol
 
 void CValueTable::EndAddColumns()
 {
-	n_assert(Flags.Is(_InBeginAddColumns));
-	Flags.Clear(_InBeginAddColumns);
-	ColumnIndexMap.EndAdd();
+	assert(_InBeginAddColumns);
+	_InBeginAddColumns = false;
 
 	if ((size_t)FirstAddedColIndex < Columns.size())
 	{
@@ -148,8 +153,8 @@ void CValueTable::EndAddColumns()
 // call. The row will never be physically removed from memory!
 void CValueTable::DeleteRow(size_t RowIdx)
 {
-	n_assert(IsRowValid(RowIdx));
-	if (Flags.Is(_TrackModifications))
+	assert(IsRowValid(RowIdx));
+	if (_TrackModifications)
 	{
 		if (FirstDeletedRowIndex > RowIdx) FirstDeletedRowIndex = RowIdx;
 		
@@ -163,7 +168,7 @@ void CValueTable::DeleteRow(size_t RowIdx)
 			--NewRowsCount;
 		}
 
-		Flags.Set(_IsModified);
+		_IsModified = true;
 	}
 }
 //---------------------------------------------------------------------
@@ -171,18 +176,18 @@ void CValueTable::DeleteRow(size_t RowIdx)
 void CValueTable::SetValue(size_t ColIdx, size_t RowIdx, const Data::CData& Val)
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
-	n_assert(!Type || Type == Val.GetType());
-	n_assert(IsRowValid(RowIdx));
+	assert(!Type || Type == Val.GetType());
+	assert(IsRowValid(RowIdx));
 	
 	void** pObj = GetValuePtr(ColIdx, RowIdx);
 	if (Type) Type->Copy(IsSpecialType(Type) ? (void**)&pObj : pObj, Val.GetValueObjectPtr());
 	else *(Data::CData*)pObj = Val;
 	
-	if (Flags.Is(_TrackModifications))
+	if (_TrackModifications)
 	{
 		RowStateBuffer[RowIdx] |= UpdatedRow;
-		Flags.Set(_IsModified);
-		Flags.Set(_HasModifiedRows);
+		_IsModified = true;
+		_HasModifiedRows = true;
 	}
 }
 //---------------------------------------------------------------------
@@ -191,7 +196,7 @@ void CValueTable::SetValue(size_t ColIdx, size_t RowIdx, const Data::CData& Val)
 // NOTE: the user data will be initialized to nullptr for the new row!
 int CValueTable::CopyRow(size_t FromRowIdx)
 {
-	n_assert(FromRowIdx < NumRows);
+	assert(FromRowIdx < NumRows);
 	int ToRowIdx = AddRow();
 	Data::CData Value; //???or inside the loop?
 	for (size_t ColIdx = 0; ColIdx < Columns.size(); ColIdx++)
@@ -209,8 +214,8 @@ int CValueTable::CopyRow(size_t FromRowIdx)
 // NOTE: the user data will be initialised to nullptr for the new row.
 int CValueTable::CopyExtRow(CValueTable* pOther, size_t OtherRowIdx, bool CreateMissingCols)
 {
-	n_assert(pOther);
-	n_assert(OtherRowIdx < pOther->GetRowCount());
+	assert(pOther);
+	assert(OtherRowIdx < pOther->GetRowCount());
 	int MyRowIdx = AddRow();
 	Data::CData Value;
 	for (size_t OtherColIdx = 0; OtherColIdx < pOther->GetColumnCount(); OtherColIdx++)
@@ -240,12 +245,12 @@ int CValueTable::AddRow()
 		Realloc(RowPitch, NewNumRows);
 	}
 
-	if (Flags.Is(_TrackModifications))
+	if (_TrackModifications)
 	{
 		if (FirstNewRowIndex > NumRows) FirstNewRowIndex = NumRows;
 		RowStateBuffer[NumRows] |= NewRow;
 		++NewRowsCount;
-		Flags.Set(_IsModified);
+		_IsModified = true;
 	}
 
 	SetRowToDefaultValues(NumRows++); // Copy to stack, then increment, then call. Intended, don't change.
@@ -261,7 +266,7 @@ std::vector<int> CValueTable::InternalFindRowIndicesByAttr(CStrID AttrID, const 
 	std::vector<int> Result;
 	size_t ColIdx = GetColumnIndex(AttrID);
 	const Data::CType* Type = GetColumnValueType(ColIdx);
-	n_assert(Type == Value.GetType());
+	assert(Type == Value.GetType());
 	for (size_t RowIdx = 0; RowIdx < GetRowCount(); RowIdx++)
 	{
 		if (IsRowValid(RowIdx))
@@ -305,10 +310,8 @@ void CValueTable::ClearDeletedRows()
 			RowStateBuffer[RowIdx] = DestroyedRow; //???remember first & count? reuse only when NumRows == NumAllocRows
 		}
 
-	n_assert(!DeletedRowsCount);
+	assert(!DeletedRowsCount);
 
-	FirstDeletedRowIndex = INTPTR_MAX;
+	FirstDeletedRowIndex = std::numeric_limits<intptr_t>().max();
 }
 //---------------------------------------------------------------------
-
-}

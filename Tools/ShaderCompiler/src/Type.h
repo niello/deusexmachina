@@ -1,5 +1,4 @@
 #pragma once
-#include <System/Memory.h>
 
 // Template data type implementation.
 
@@ -64,7 +63,7 @@ public:
 	CTypeImpl() { /*static_assert(CTypeID<T>::IsDeclared);*/ /*n_assert(CTypeID<T>::TypeID != INVALID_TYPE_ID);*/ }
 	
 	// Getter for non-virtual type instance (convenience method)
-	static const CTypeImpl<T>*	GetNVType() { /*static_assert(CTypeID<T>::IsDeclared);*/ return (const CTypeImpl<T>*)Type; }
+	static const CTypeImpl<T>*	GetNVType() { n_assert(CTypeID<T>::IsDeclared); return (const CTypeImpl<T>*)Type; }
 
 	virtual void		New(void** pObj) const;
 	virtual void		New(void** pObj, void* const* pSrcObj) const;
@@ -86,22 +85,22 @@ public:
 
 template<class T> inline void CTypeImpl<T>::New(void** pObj) const
 {
-	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(DefaultValue);
-	else *(T**)pObj = n_new(T)(DefaultValue);
+	if (sizeof(T) <= sizeof(void*)) new(pObj) T(DefaultValue);
+	else *(T**)pObj = new T(DefaultValue);
 }
 //---------------------------------------------------------------------
 
 template<class T> inline void CTypeImpl<T>::New(void** pObj, void* const* pSrcObj) const
 {
-	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(*(const T*)GetPtr(pSrcObj));
-	else *(T**)pObj = n_new(T)(*(const T*)GetPtr(pSrcObj));
+	if (sizeof(T) <= sizeof(void*)) new(pObj) T(*(const T*)GetPtr(pSrcObj));
+	else *(T**)pObj = new T(*(const T*)GetPtr(pSrcObj));
 }
 //---------------------------------------------------------------------
 
 template<class T> inline void CTypeImpl<T>::NewT(void** pObj, const void* Value) const
 {
-	if (sizeof(T) <= sizeof(void*)) n_placement_new(pObj, T)(*(const T*)Value);
-	else *(T**)pObj = n_new(T)(*(const T*)Value);
+	if (sizeof(T) <= sizeof(void*)) new(pObj) T(*(const T*)Value);
+	else *(T**)pObj = new T(*(const T*)Value);
 }
 //---------------------------------------------------------------------
 
@@ -110,7 +109,7 @@ template<class T> inline void CTypeImpl<T>::Delete(void** pObj) const
 	if (sizeof(T) <= sizeof(void*)) ((T*)pObj)->~T();
 	else
 	{
-		if (*(T**)pObj) n_delete(*(T**)pObj);
+		if (*(T**)pObj) delete *(T**)pObj;
 	}
 	*pObj = 0; // 0 or nullptr
 }
@@ -122,7 +121,7 @@ template<class T> inline void CTypeImpl<T>::Copy(void** pObj, void* const* pSrcO
 	else
 	{
 		if (*(T**)pObj) **(T**)pObj = **(T**)pSrcObj;
-		else *(T**)pObj = n_new(T)(*(const T*)GetPtr(pSrcObj));
+		else *(T**)pObj = new T(*(const T*)GetPtr(pSrcObj));
 	}
 }
 //---------------------------------------------------------------------
@@ -133,7 +132,7 @@ template<class T> inline void CTypeImpl<T>::CopyT(void** pObj, const void* Value
 	else
 	{
 		if (*(T**)pObj) **(T**)pObj = *(const T*)Value;
-		else *(T**)pObj = n_new(T)(*(const T*)Value);
+		else *(T**)pObj = new T(*(const T*)Value);
 	}
 }
 //---------------------------------------------------------------------

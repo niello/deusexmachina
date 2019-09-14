@@ -1,5 +1,6 @@
 set(DEM_SHADER_COMPILER_HEADERS
 	src/D3D9ShaderReflectionAPI.h
+	src/Data.h
 	src/DEMD3DInclude.h
 	src/DEMShaderCompilerDLL.h
 	src/ShaderCompiler.h
@@ -7,11 +8,15 @@ set(DEM_SHADER_COMPILER_HEADERS
 	src/ShaderReflection.h
 	src/ShaderReflectionSM30.h
 	src/ShaderReflectionUSM.h
+	src/StringID.h
+	src/StringIDStorage.h
+	src/Type.h
 	src/ValueTable.h
 )
 
 set(DEM_SHADER_COMPILER_SOURCES
 	src/D3D9ShaderReflectionAPI.cpp
+	src/Data.cpp
 	src/DEMD3DInclude.cpp
 	src/DEMShaderCompilerDLL.cpp
 	src/Main.cpp
@@ -19,6 +24,8 @@ set(DEM_SHADER_COMPILER_SOURCES
 	src/ShaderDB.cpp
 	src/ShaderReflectionSM30.cpp
 	src/ShaderReflectionUSM.cpp
+	src/StringID.cpp
+	src/StringIDStorage.cpp
 	src/ValueTable.cpp
 )
 

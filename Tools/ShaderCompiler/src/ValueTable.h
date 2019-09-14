@@ -1,12 +1,9 @@
 #pragma once
-#include <Data/Buffer.h>
-#include <Data/StringID.h>
-#include <Data/Flags.h>
-#include <Data/Dictionary.h>
-#include <Data/Data.h>
-
-namespace DB //???to Data?
-{
+#include <Data.h>
+#include <StringID.h>
+#include <vector>
+#include <map>
+#include <cassert>
 
 class CValueTable
 {
@@ -27,32 +24,27 @@ private:
 		DestroyedRow	= 0x08	// Marks row as not existing in DB and invalid (reusable) in ValueTable
 	};
 
-	enum
-	{
-		_TrackModifications	= 0x01,
-		_IsModified			= 0x02,
-		_HasModifiedRows	= 0x04,
-		_InBeginAddColumns	= 0x08
-	};
+	void*					ValueBuffer = nullptr;
+	uint8_t*				RowStateBuffer = nullptr;
 
-	Data::CFlags				Flags;
-
-	void*						ValueBuffer;
-	uint8_t*							RowStateBuffer;
-
-	std::vector<ColumnInfo>			Columns;
+	std::vector<ColumnInfo>	Columns;
 	std::map<CStrID, int>	ColumnIndexMap;		// map attribute ID to column index
-	std::vector<int>					NewColumnIndices;	// indices of new Columns since last ResetModifiedState
+	std::vector<int>		NewColumnIndices;	// indices of new Columns since last ResetModifiedState
 
-	int							FirstAddedColIndex;
-	size_t						FirstNewRowIndex;
-	size_t						NewRowsCount;
-	size_t						FirstDeletedRowIndex;
-	int							DeletedRowsCount;
+	size_t					FirstAddedColIndex;
+	size_t					FirstNewRowIndex;
+	size_t					NewRowsCount;
+	size_t					FirstDeletedRowIndex;
+	int						DeletedRowsCount;
 
-	size_t						RowPitch;			// pitch of a row in bytes
-	size_t						NumRows;			// number of rows
-	size_t						AllocatedRows;		// number of allocated rows
+	size_t					RowPitch;			// pitch of a row in bytes
+	size_t					NumRows;			// number of rows
+	size_t					AllocatedRows;		// number of allocated rows
+
+	bool					_TrackModifications : 1;
+	bool					_IsModified : 1;
+	bool					_HasModifiedRows : 1;
+	bool					_InBeginAddColumns : 1;
 
 	void		Realloc(size_t NewPitch, size_t NewAllocRows);
 	int			UpdateColumnOffsets();
@@ -74,7 +66,7 @@ public:
 	void				BeginAddColumns();
 	void				AddColumn(CStrID ID, const Data::CType* Type, bool IsNew = true);
 	void				EndAddColumns();
-	bool				HasColumn(CStrID ID) const { return ColumnIndexMap.Contains(ID); }
+	bool				HasColumn(CStrID ID) const { return ColumnIndexMap.find(ID) != ColumnIndexMap.cend(); }
 	int					GetColumnIndex(CStrID ID) const;
 	size_t				GetColumnCount() const { return Columns.size(); }
 	CStrID				GetColumnID(size_t ColIdx) const { return Columns[ColIdx].ID; }
@@ -82,7 +74,7 @@ public:
 	const std::vector<int>&	GetNewColumnIndices() { return NewColumnIndices; }
 
 	void				Clear();
-	void				ReserveRows(size_t NumRows) { n_assert(NumRows > 0); Realloc(RowPitch, AllocatedRows + NumRows); }
+	void				ReserveRows(size_t NumRows) { assert(NumRows > 0); Realloc(RowPitch, AllocatedRows + NumRows); }
 	int					AddRow();
 	int					CopyRow(size_t FromRowIdx);
 	int					CopyExtRow(CValueTable* pOther, size_t OtherRowIdx, bool CreateMissingCols = false);
@@ -98,10 +90,10 @@ public:
 	bool				IsRowValid(size_t RowIdx) const;
 	bool				IsRowUntouched(size_t RowIdx) const;
 	bool				IsRowModified(size_t RowIdx) const;
-	bool				IsModified() const { return Flags.Is(_IsModified); }
-	bool				HasModifiedRows() const { return Flags.Is(_HasModifiedRows); }
-	void				TrackModifications(bool Track) { Flags.SetTo(_TrackModifications, Track); }
-	bool				IsTrackingModifications() const { return Flags.Is(_TrackModifications); }
+	bool				IsModified() const { return _IsModified; }
+	bool				HasModifiedRows() const { return _HasModifiedRows; }
+	void				TrackModifications(bool Track) { _TrackModifications = Track; }
+	bool				IsTrackingModifications() const { return _TrackModifications; }
 	void				ClearNewRowStats();
 	void				ClearDeletedRows();
 	void				ClearRowFlags(size_t RowIdx);
@@ -132,24 +124,25 @@ public:
 inline CValueTable::CValueTable():
 	Columns(12, 4),
 	NewColumnIndices(8, 8),
-	FirstAddedColIndex(-1),
-	FirstNewRowIndex(INTPTR_MAX),
+	FirstAddedColIndex(0),
+	FirstNewRowIndex(std::numeric_limits<intptr_t>().max()),
 	NewRowsCount(0),
-	FirstDeletedRowIndex(INTPTR_MAX),
+	FirstDeletedRowIndex(std::numeric_limits<intptr_t>().max()),
 	DeletedRowsCount(0),
 	RowPitch(0),
 	NumRows(0),
 	AllocatedRows(0),
-	ValueBuffer(nullptr),
-	RowStateBuffer(nullptr),
-	Flags(_TrackModifications)
+	_TrackModifications(true),
+	_IsModified(false),
+	_HasModifiedRows(false),
+	_InBeginAddColumns(false)
 {
 }
 //---------------------------------------------------------------------
 
 inline void CValueTable::ClearNewRowStats()
 {
-	FirstNewRowIndex = INTPTR_MAX;
+	FirstNewRowIndex = std::numeric_limits<intptr_t>().max();
 	NewRowsCount = 0;
 }
 //---------------------------------------------------------------------
@@ -157,56 +150,56 @@ inline void CValueTable::ClearNewRowStats()
 // Doesn't update modification statistics
 inline void CValueTable::ClearRowFlags(size_t RowIdx)
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	RowStateBuffer[RowIdx] = 0;
 }
 //---------------------------------------------------------------------
 
 inline void CValueTable::ResetModifiedState()
 {
-	Flags.Clear(_IsModified);
-	Flags.Clear(_HasModifiedRows);
+	_IsModified = false;
+	_HasModifiedRows = false;
 }
 //---------------------------------------------------------------------
 
 inline bool CValueTable::IsRowModified(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	return RowStateBuffer[RowIdx] != 0;
 }
 //---------------------------------------------------------------------
 
 inline uint8_t CValueTable::GetRowState(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	return RowStateBuffer[RowIdx];
 }
 //---------------------------------------------------------------------
 
 inline bool CValueTable::IsRowNew(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	return (RowStateBuffer[RowIdx] & NewRow) != 0;
 }
 //---------------------------------------------------------------------
 
 inline bool CValueTable::IsRowUpdated(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	return (RowStateBuffer[RowIdx] & UpdatedRow) != 0;
 }
 //---------------------------------------------------------------------
 
 inline bool CValueTable::IsRowOnlyUpdated(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	return RowStateBuffer[RowIdx] == UpdatedRow;
 }
 //---------------------------------------------------------------------
 
 inline bool CValueTable::IsRowDeleted(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows);
+	assert(RowIdx < NumRows);
 	return (RowStateBuffer[RowIdx] & DeletedRow) != 0;
 }
 //---------------------------------------------------------------------
@@ -214,28 +207,28 @@ inline bool CValueTable::IsRowDeleted(size_t RowIdx) const
 // Returns true if row isn't deleted or destroyed
 inline bool CValueTable::IsRowValid(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows); //???incorporate into return value?
+	assert(RowIdx < NumRows); //???incorporate into return value?
 	return (RowStateBuffer[RowIdx] & (DeletedRow | DestroyedRow)) == 0;
 }
 //---------------------------------------------------------------------
 
 inline bool CValueTable::IsRowUntouched(size_t RowIdx) const
 {
-	n_assert(RowIdx < NumRows); //???incorporate into return value?
+	assert(RowIdx < NumRows); //???incorporate into return value?
 	return RowStateBuffer[RowIdx] == 0;
 }
 //---------------------------------------------------------------------
 
 inline int CValueTable::GetColumnIndex(CStrID ID) const
 {
-	int Idx = ColumnIndexMap.FindIndex(ID);
-	return (Idx != INVALID_INDEX) ? ColumnIndexMap[ID] : INVALID_INDEX;
+	auto It = ColumnIndexMap.find(ID);
+	return (It != ColumnIndexMap.cend()) ? ColumnIndexMap[ID] : -1;
 }
 //---------------------------------------------------------------------
 
 inline void** CValueTable::GetValuePtr(size_t ColIdx, size_t RowIdx) const
 {
-	n_assert(ColIdx < Columns.size() && RowIdx < NumRows);
+	assert(ColIdx < Columns.size() && RowIdx < NumRows);
 	return (void**)((char*)ValueBuffer + RowIdx * RowPitch + Columns[ColIdx].ByteOffset);
 }
 //---------------------------------------------------------------------
@@ -243,18 +236,18 @@ inline void** CValueTable::GetValuePtr(size_t ColIdx, size_t RowIdx) const
 template<class T> inline void CValueTable::Set(size_t ColIdx, size_t RowIdx, const T& Val)
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
-	n_assert(!Type || Type == DATA_TYPE(T));
-	n_assert(IsRowValid(RowIdx));
+	assert(!Type || Type == DATA_TYPE(T));
+	assert(IsRowValid(RowIdx));
 
 	void** pObj = GetValuePtr(ColIdx, RowIdx);
 	if (Type) DATA_TYPE_NV(T)::CopyT(IsSpecialType(Type) ? (void**)&pObj : pObj, &Val);
 	else *(Data::CData*)pObj = Val;
 
-	if (Flags.Is(_TrackModifications))
+	if (_TrackModifications)
 	{
 		RowStateBuffer[RowIdx] |= UpdatedRow;
-		Flags.Set(_IsModified);
-		Flags.Set(_HasModifiedRows);
+		_IsModified = true;
+		_HasModifiedRows = true;
 	}
 }
 //---------------------------------------------------------------------
@@ -271,7 +264,7 @@ inline void CValueTable::GetValue(size_t ColIdx, size_t RowIdx, Data::CData& Val
 template<class T> inline const T& CValueTable::Get(size_t ColIdx, size_t RowIdx) const
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);
-	n_assert(!Type || Type == DATA_TYPE(T));
+	assert(!Type || Type == DATA_TYPE(T));
 	void** pObj = GetValuePtr(ColIdx, RowIdx);
 	return (Type) ?
 		*(T*)DATA_TYPE_NV(T)::GetPtr(IsSpecialType(Type) ? (void**)&pObj : pObj) :
@@ -300,7 +293,7 @@ inline std::vector<int> CValueTable::FindRowIndicesByValue(CStrID AttrID, const 
 inline int CValueTable::FindRowIndexByValue(CStrID AttrID, const Data::CData& Value) const
 {
 	std::vector<int> RowIndices = InternalFindRowIndicesByAttr(AttrID, Value, true);
-	return (RowIndices.size() == 1) ? RowIndices[0] : INVALID_INDEX; //???or if > 0?
+	return (RowIndices.size() == 1) ? RowIndices[0] : -1; //???or if > 0?
 }
 //---------------------------------------------------------------------
 
@@ -309,7 +302,7 @@ inline int CValueTable::FindRowIndexByValue(CStrID AttrID, const Data::CData& Va
 //inline int CValueTable::FindRowIndexByAttrs(const nArray<CAttr>& Attrs) const
 //{
 //	nArray<int> RowIndices = InternalFindRowIndicesByAttrs(Attrs, true);
-//	return (RowIndices.Size() == 1) ? RowIndices[0] : INVALID_INDEX; //???or if > 0?
+//	return (RowIndices.Size() == 1) ? RowIndices[0] : -1; //???or if > 0?
 //}
 ////---------------------------------------------------------------------
 
@@ -327,5 +320,3 @@ inline void CValueTable::SetColumnToDefaultValues(size_t ColIdx)
 		SetValue(ColIdx, RowIdx, DefVal);
 }
 //---------------------------------------------------------------------
-
-}

@@ -1,6 +1,8 @@
 #pragma once
+#include <StdDEM.h>
 #include <Data/Type.h>
 #include <Data/Hash.h>
+#include <System/System.h>
 #include <memory>
 
 // The CBuffer class encapsulates a chunk of raw memory into a C++ object which can be copied, compared and hashed.

@@ -1,8 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_HASH_H__
-#define __DEM_L1_HASH_H__
-
-//#include "SuperFastHash.h"
 #include "MurmurHash3.h"
 #include <string.h>			// strlen
 
@@ -85,5 +81,3 @@ inline unsigned int OneAtATimeHash(const void* Key, size_t Length)
 }
 //---------------------------------------------------------------------
 */
-
-#endif

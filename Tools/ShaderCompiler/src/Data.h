@@ -1,18 +1,12 @@
 #pragma once
 #include "Type.h"
-#include <Data/String.h>
+#include <string>
 
 // Variant data type with compile-time extendable type list
 
 namespace Data
 {
 class CStringID;
-
-#ifdef _DEBUG
-	class CDataArray;
-	class CParams;
-	class CBuffer;
-#endif
 
 class CData
 {
@@ -27,11 +21,7 @@ protected:
 		bool							As_bool;
 		int								As_int;
 		float							As_float;
-		CString*						As_CString;
 		const char*						As_CStrID;
-		const CDataArray*				As_CDataArray;
-		const CParams*					As_CParams;
-		const CBuffer*					As_CBuffer;
 		struct { float x, y, z; }*		As_vector3;
 		struct { float x, y, z, w; }*	As_vector4;
 		struct { float m[4][4]; }*		As_matrix44;
@@ -147,11 +137,11 @@ template<class T> inline bool CData::GetValue(T& Dest) const
 	if (!IsVoid() && Type == DATA_TYPE(T)) // no conversions now
 	{
 		Dest = *(const T*)DATA_TYPE_NV(T)::GetPtr(&Value);
-		OK;
+		return true;
 	}
 
 	//!!!return converted if !void!
-	FAIL;
+	return false;
 }
 //---------------------------------------------------------------------
 
@@ -186,7 +176,7 @@ template<class T> inline const T* CData::GetValuePtr() const
 inline bool CData::operator ==(const CData& Other) const
 {
 	//!!!compare by comparator & return IsEqual!
-	if (Type != Other.Type)	FAIL;
+	if (Type != Other.Type)	return false;
 	return (IsVoid() || Type->IsEqual(&Value, &Other.Value));
 }
 //---------------------------------------------------------------------
@@ -194,7 +184,7 @@ inline bool CData::operator ==(const CData& Other) const
 template<class T> inline bool CData::operator ==(const T& Other) const
 {
 	//!!!compare by comparator & return IsEqual!
-	if (Type != DATA_TYPE(T)) FAIL;
+	if (Type != DATA_TYPE(T)) return false;
 	return (IsVoid() || Type->IsEqualT(&Value, &Other));
 }
 //---------------------------------------------------------------------
@@ -202,25 +192,11 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 };
 
 typedef Data::CStringID CStrID;
-template<class TKey, class TVal> class CDictionary;
-typedef CDictionary<CStrID, Data::CData> CDataDict;	// Is used oftenly
 
 // Std types
 //DECLARE_TYPE(void) //!!!can use struct CVoid {};
 DECLARE_TYPE(bool, 1)
 DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
-DECLARE_TYPE(CString, 4) //???define char* too?
+DECLARE_TYPE(std::string, 4) //???define char* too?
 DECLARE_TYPE(CStrID, 5)
-DECLARE_TYPE(PVOID, 6)
-
-#define TVoid			INVALID_TYPE_ID
-#define TBool			DATA_TYPE(bool)
-#define TInt			DATA_TYPE(int)
-#define TFloat			DATA_TYPE(float)
-#define TString			DATA_TYPE(CString)
-#define TStrID			DATA_TYPE(CStrID)
-#define TPtr			DATA_TYPE(PVOID)
-#define TVector3		DATA_TYPE(vector3)
-#define TVector4		DATA_TYPE(vector4)
-#define TMatrix44		DATA_TYPE(matrix44)
