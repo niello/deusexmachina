@@ -63,7 +63,7 @@ public:
 	CTypeImpl() { /*static_assert(CTypeID<T>::IsDeclared);*/ /*n_assert(CTypeID<T>::TypeID != INVALID_TYPE_ID);*/ }
 	
 	// Getter for non-virtual type instance (convenience method)
-	static const CTypeImpl<T>*	GetNVType() { n_assert(CTypeID<T>::IsDeclared); return (const CTypeImpl<T>*)Type; }
+	static const CTypeImpl<T>*	GetNVType() { /*n_assert(CTypeID<T>::IsDeclared);*/ return (const CTypeImpl<T>*)Type; }
 
 	virtual void		New(void** pObj) const;
 	virtual void		New(void** pObj, void* const* pSrcObj) const;

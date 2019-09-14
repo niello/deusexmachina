@@ -1,4 +1,5 @@
 #pragma once
+#include <string.h>
 
 // Static string identifier. The actual string is stored only once and all CStrIDs reference it
 // by pointers. That is guaranteed that each string (case-sensitive) will have its unique address

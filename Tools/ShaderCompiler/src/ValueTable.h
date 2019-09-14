@@ -31,15 +31,15 @@ private:
 	std::map<CStrID, int>	ColumnIndexMap;		// map attribute ID to column index
 	std::vector<int>		NewColumnIndices;	// indices of new Columns since last ResetModifiedState
 
-	size_t					FirstAddedColIndex;
-	size_t					FirstNewRowIndex;
-	size_t					NewRowsCount;
-	size_t					FirstDeletedRowIndex;
-	int						DeletedRowsCount;
+	size_t					FirstAddedColIndex = std::numeric_limits<intptr_t>().max();
+	size_t					FirstNewRowIndex = std::numeric_limits<intptr_t>().max();
+	size_t					NewRowsCount = 0;
+	size_t					FirstDeletedRowIndex = std::numeric_limits<intptr_t>().max();
+	int						DeletedRowsCount = 0;
 
-	size_t					RowPitch;			// pitch of a row in bytes
-	size_t					NumRows;			// number of rows
-	size_t					AllocatedRows;		// number of allocated rows
+	size_t					RowPitch = 0;			// pitch of a row in bytes
+	size_t					NumRows = 0;			// number of rows
+	size_t					AllocatedRows = 0;		// number of allocated rows
 
 	bool					_TrackModifications : 1;
 	bool					_IsModified : 1;
@@ -108,30 +108,20 @@ public:
 	int					FindRowIndexByValue(CStrID AttrID, const Data::CData& Value) const;
 
 	void				GetValue(size_t ColIdx, size_t RowIdx, Data::CData& Val) const;
-	void				GetValue(CStrID AttrID, size_t RowIdx, Data::CData& Val) const { GetValue(ColumnIndexMap[AttrID], RowIdx, Val); }
+	void				GetValue(CStrID AttrID, size_t RowIdx, Data::CData& Val) const { GetValue(ColumnIndexMap.at(AttrID), RowIdx, Val); }
 	template<class T>
 	const T&			Get(size_t ColIdx, size_t RowIdx) const;
 	template<class T>
-	const T&			Get(CStrID AttrID, size_t RowIdx) const { return Get<T>(ColumnIndexMap[AttrID], RowIdx); }
+	const T&			Get(CStrID AttrID, size_t RowIdx) const { return Get<T>(ColumnIndexMap.at(AttrID), RowIdx); }
 	void				SetValue(size_t ColIdx, size_t RowIdx, const Data::CData& Val);
-	void				SetValue(CStrID AttrID, size_t RowIdx, const Data::CData& Val) { SetValue(ColumnIndexMap[AttrID], RowIdx, Val); }
+	void				SetValue(CStrID AttrID, size_t RowIdx, const Data::CData& Val) { SetValue(ColumnIndexMap.at(AttrID), RowIdx, Val); }
 	template<class T>
 	void				Set(size_t ColIdx, size_t RowIdx, const T& Val);
 	template<class T>
-	void				Set(CStrID AttrID, size_t RowIdx, const T& Val) { Set(ColumnIndexMap[AttrID], RowIdx, Val); }
+	void				Set(CStrID AttrID, size_t RowIdx, const T& Val) { Set(ColumnIndexMap.at(AttrID), RowIdx, Val); }
 };
 
 inline CValueTable::CValueTable():
-	Columns(12, 4),
-	NewColumnIndices(8, 8),
-	FirstAddedColIndex(0),
-	FirstNewRowIndex(std::numeric_limits<intptr_t>().max()),
-	NewRowsCount(0),
-	FirstDeletedRowIndex(std::numeric_limits<intptr_t>().max()),
-	DeletedRowsCount(0),
-	RowPitch(0),
-	NumRows(0),
-	AllocatedRows(0),
 	_TrackModifications(true),
 	_IsModified(false),
 	_HasModifiedRows(false),
@@ -222,7 +212,7 @@ inline bool CValueTable::IsRowUntouched(size_t RowIdx) const
 inline int CValueTable::GetColumnIndex(CStrID ID) const
 {
 	auto It = ColumnIndexMap.find(ID);
-	return (It != ColumnIndexMap.cend()) ? ColumnIndexMap[ID] : -1;
+	return (It != ColumnIndexMap.cend()) ? It->second : -1;
 }
 //---------------------------------------------------------------------
 

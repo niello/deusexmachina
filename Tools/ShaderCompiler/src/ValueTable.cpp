@@ -1,5 +1,5 @@
 #include "ValueTable.h"
-//#include <Data/Buffer.h>
+#include <Buffer.h>
 
 void CValueTable::Clear()
 {
@@ -107,18 +107,18 @@ void CValueTable::BeginAddColumns()
 
 void CValueTable::AddColumn(CStrID ID, const Data::CType* Type, bool RecAsNewCol)
 {
-	if (ColumnIndexMap.Contains(ID)) return;
+	if (HasColumn(ID)) return;
 
 	ColumnInfo NewColInfo;
 	NewColInfo.ID = ID;
 	NewColInfo.Type = Type;
-	Columns.Add(NewColInfo);
+	Columns.push_back(std::move(NewColInfo));
 
-	ColumnIndexMap.Add(ID, Columns.size() - 1);
+	ColumnIndexMap.emplace(ID, Columns.size() - 1);
 
 	if (_TrackModifications)
 	{
-		if (RecAsNewCol) NewColumnIndices.Add(Columns.size() - 1);
+		if (RecAsNewCol) NewColumnIndices.push_back(Columns.size() - 1);
 		_IsModified = true;
 	}
 
@@ -274,7 +274,7 @@ std::vector<int> CValueTable::InternalFindRowIndicesByAttr(CStrID AttrID, const 
 			void** pObj = GetValuePtr(ColIdx, RowIdx);
 			if (Type->IsEqualT(Value.GetValueObjectPtr(), IsSpecialType(Type) ? (void*)pObj : *pObj))
 			{
-				Result.Add(RowIdx);
+				Result.push_back(RowIdx);
 				if (FirstMatchOnly) return Result;
 			}
 		}
@@ -290,7 +290,7 @@ void CValueTable::DeleteRowData(size_t RowIdx)
 	{
 		const Data::CType* Type = GetColumnValueType(ColIdx);
 
-		if (Type == TString)
+		if (Type == DATA_TYPE(std::string))
 			DATA_TYPE_NV(std::string)::Delete(GetValuePtr(ColIdx, RowIdx));
 		else if (Type == DATA_TYPE(Data::CBuffer))
 			DATA_TYPE_NV(Data::CBuffer)::Delete(GetValuePtr(ColIdx, RowIdx));

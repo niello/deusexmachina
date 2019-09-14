@@ -1,6 +1,15 @@
 #include "StringIDStorage.h"
+#include <MurmurHash3.h>
 #include <memory.h>
 #include <algorithm>
+
+static inline unsigned int Hash(const void* pData, int Length)
+{
+	unsigned int Result;
+	MurmurHash3_x86_32(pData, Length, 0xB0F57EE3, &Result);
+	return Result;
+}
+//---------------------------------------------------------------------
 
 namespace Data
 {
@@ -47,7 +56,7 @@ const char* CStringIDStorage::StoreString(const char* pString)
 
 CStringID CStringIDStorage::Get(const char* pString) const
 {
-	unsigned int HashValue = Hash(pString);
+	unsigned int HashValue = Hash(pString, strlen(pString));
 	auto& Chain = Map[HashValue % Map.size()];
 	if (Chain.size() == 1)
 	{
@@ -68,7 +77,7 @@ CStringID CStringIDStorage::Get(const char* pString) const
 
 CStringID CStringIDStorage::GetOrAdd(const char* pString)
 {
-	unsigned int HashValue = Hash(pString);
+	unsigned int HashValue = Hash(pString, strlen(pString));
 	auto& Chain = Map[HashValue % Map.size()];
 	auto InsertPos = Chain.begin();
 	if (Chain.size() == 1)

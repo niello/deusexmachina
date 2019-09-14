@@ -1,6 +1,6 @@
 #include "ShaderCompiler.h"
 
-#include <Data/Buffer.h>
+#include <Buffer.h>
 #include <Data/StringUtils.h>
 #include <IO/FS/FileSystemWin32.h>
 #include <IO/Streams/FileStream.h>
