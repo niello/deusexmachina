@@ -244,41 +244,42 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 		}
 		else if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
 		{
-			CSM30SamplerMeta* pMeta = Samplers.Reserve(1);
-			pMeta->Name = D3D9ConstDesc.Name;
-			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
-			pMeta->RegisterCount = D3D9ConstDesc.RegisterCount;
+			CSM30SamplerMeta Meta;
+			Meta.Name = D3D9ConstDesc.Name;
+			Meta.RegisterStart = D3D9ConstDesc.RegisterIndex;
+			Meta.RegisterCount = D3D9ConstDesc.RegisterCount;
 
 			switch (D3D9ConstDesc.Type.Type)
 			{
-				case PT_SAMPLER1D:		pMeta->Type = SM30Sampler_1D; break;
-				case PT_SAMPLER3D:		pMeta->Type = SM30Sampler_3D; break;
-				case PT_SAMPLERCUBE:	pMeta->Type = SM30Sampler_CUBE; break;
-				default:				pMeta->Type = SM30Sampler_2D; break;
+				case PT_SAMPLER1D:		Meta.Type = SM30Sampler_1D; break;
+				case PT_SAMPLER3D:		Meta.Type = SM30Sampler_3D; break;
+				case PT_SAMPLERCUBE:	Meta.Type = SM30Sampler_CUBE; break;
+				default:				Meta.Type = SM30Sampler_2D; break;
 			}
 
 			size_t TexCount;
-			int STIdx = SampToTex.FindIndex(D3D9ConstDesc.Name);
-			if (STIdx == INVALID_INDEX) TexCount = 0;
+			auto STIt = SampToTex.find(D3D9ConstDesc.Name);
+			if (STIt == SampToTex.cend()) TexCount = 0;
 			else
 			{
-				const std::vector<std::string>& TexNames = SampToTex.ValueAt(STIdx);
-				TexCount = n_min(D3D9ConstDesc.RegisterCount, TexNames.size());
+				const std::vector<std::string>& TexNames = STIt->second;
+				TexCount = std::min(D3D9ConstDesc.RegisterCount, TexNames.size());
 				for (size_t TexIdx = 0; TexIdx < TexCount; ++TexIdx)
 				{
 					const std::string& TexName = TexNames[TexIdx];
-					if (TexName.IsValid())
+					if (!TexName.empty())
 					{
-						CSM30RsrcMeta* pMeta = Resources.Reserve(1);
-						pMeta->Name = TexName;
-						pMeta->Register = D3D9ConstDesc.RegisterIndex + TexIdx;
+						CSM30RsrcMeta Meta;
+						Meta.Name = TexName;
+						Meta.Register = D3D9ConstDesc.RegisterIndex + TexIdx;
+						Resources.push_back(std::move(Meta));
 					}
 					else if (D3D9ConstDesc.RegisterCount > 1)
 					{
 						Messages += "Sampler '";
 						Messages += D3D9ConstDesc.Name;
 						Messages += '[';
-						Messages += StringUtils::FromInt(TexIdx);
+						Messages += std::to_string(TexIdx);
 						Messages += "]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 					}
 					else
@@ -296,11 +297,13 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 				Messages += D3D9ConstDesc.Name;
 				Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }' or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 			}
+
+			Samplers.push_back(std::move(Meta));
 		}
 		else // Constants
 		{
 			std::string BufferName;
-			uint32_t SlotIndex = (uint32_t)(INVALID_INDEX);
+			uint32_t SlotIndex = (uint32_t)(-1);
 			D3D9FindConstantBuffer(Source.c_str(), D3D9ConstDesc.Name, BufferName, SlotIndex);
 
 			size_t BufferIndex = 0;
@@ -317,7 +320,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 			else
 			{
 				CSM30BufferMeta& Meta = Buffers[BufferIndex];
-				if (SlotIndex == (uint32_t)(INVALID_INDEX))
+				if (SlotIndex == (uint32_t)(-1))
 					SlotIndex = SlotIndex;
 				else if (SlotIndex != SlotIndex)
 				{
@@ -332,16 +335,16 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 				}
 			}
 
-			CSM30ConstMeta* pMeta = Consts.Reserve(1);
-			pMeta->Name = D3D9ConstDesc.Name;
-			pMeta->BufferIndex = BufferIndex;
-			pMeta->StructIndex = (uint32_t)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
+			CSM30ConstMeta Meta;
+			Meta.Name = D3D9ConstDesc.Name;
+			Meta.BufferIndex = BufferIndex;
+			Meta.StructIndex = (uint32_t)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{
-				case RS_FLOAT4:	pMeta->RegisterSet = RS_Float4; break;
-				case RS_INT4:	pMeta->RegisterSet = RS_Int4; break;
-				case RS_BOOL:	pMeta->RegisterSet = RS_Bool; break;
+				case RS_FLOAT4:	Meta.RegisterSet = RS_Float4; break;
+				case RS_INT4:	Meta.RegisterSet = RS_Int4; break;
+				case RS_BOOL:	Meta.RegisterSet = RS_Bool; break;
 				default:
 				{
 					// FIXME message!
@@ -350,30 +353,32 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 				}
 			};
 
-			pMeta->RegisterStart = D3D9ConstDesc.RegisterIndex;
-			pMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
-			pMeta->ElementCount = D3D9ConstDesc.Type.Elements;
-			pMeta->Columns = static_cast<uint8_t>(D3D9ConstDesc.Type.Columns);
-			pMeta->Rows = static_cast<uint8_t>(D3D9ConstDesc.Type.Rows);
-			pMeta->Flags = 0;
+			Meta.RegisterStart = D3D9ConstDesc.RegisterIndex;
+			Meta.ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
+			Meta.ElementCount = D3D9ConstDesc.Type.Elements;
+			Meta.Columns = static_cast<uint8_t>(D3D9ConstDesc.Type.Columns);
+			Meta.Rows = static_cast<uint8_t>(D3D9ConstDesc.Type.Rows);
+			Meta.Flags = 0;
 
 			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
-				pMeta->Flags |= ShaderConst_ColumnMajor;
+				Meta.Flags |= ShaderConst_ColumnMajor;
 
 			// Cache value
-			pMeta->RegisterCount = pMeta->ElementRegisterCount * pMeta->ElementCount;
+			Meta.RegisterCount = Meta.ElementRegisterCount * Meta.ElementCount;
 
-			assert(pMeta->RegisterCount == D3D9ConstDesc.RegisterCount);
+			assert(Meta.RegisterCount == D3D9ConstDesc.RegisterCount);
 
-			CSM30BufferMeta& BufMeta = Buffers[pMeta->BufferIndex];
+			CSM30BufferMeta& BufMeta = Buffers[Meta.BufferIndex];
 			auto& UsedRegs =
-				(pMeta->RegisterSet == RS_Float4) ? BufMeta.UsedFloat4 :
-				((pMeta->RegisterSet == RS_Int4) ? BufMeta.UsedInt4 :
+				(Meta.RegisterSet == RS_Float4) ? BufMeta.UsedFloat4 :
+				((Meta.RegisterSet == RS_Int4) ? BufMeta.UsedInt4 :
 					BufMeta.UsedBool);
 			for (uint32_t r = D3D9ConstDesc.RegisterIndex; r < D3D9ConstDesc.RegisterIndex + D3D9ConstDesc.RegisterCount; ++r)
 			{
 				UsedRegs.emplace(r);
 			}
+
+			Consts.push_back(std::move(Meta));
 		}
 	}
 
