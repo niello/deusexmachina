@@ -1,10 +1,5 @@
 #pragma once
-#ifndef __DEM_TOOLS_D3D_INCLUDE_H__
-#define __DEM_TOOLS_D3D_INCLUDE_H__
-
-//#include <Render/D3D9/D3D9Fwd.h>
-#include <Data/String.h>
-
+#include <string>
 #define WIN32_LEAN_AND_MEAN
 #include <d3dcompiler.h>
 
@@ -14,15 +9,13 @@ class CDEMD3DInclude: public ID3DInclude
 {
 private:
 
-	CString ShaderDir;
-	CString ShaderRootDir;
+	std::string ShaderDir;
+	std::string ShaderRootDir;
 
 public:
 
-	CDEMD3DInclude(const CString& ShdDir, const CString& ShdRootDir);
+	CDEMD3DInclude(const std::string& ShdDir, const std::string& ShdRootDir);
 
     STDMETHOD(Open)(THIS_ D3D_INCLUDE_TYPE IncludeType, const char* pFileName, LPCVOID pParentData, LPCVOID *ppData, UINT *pBytes);
     STDMETHOD(Close)(THIS_ LPCVOID pData);
 };
-
-#endif

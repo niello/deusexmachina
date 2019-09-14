@@ -9,45 +9,45 @@
 #include <IO/PathUtils.h>
 #include <sqlite3.h>
 
-extern CString Messages;
+extern std::string Messages;
 
 #define INIT_SQL(Stmt, SQL) \
-	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, NULL) != SQLITE_OK) \
+	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, nullptr) != SQLITE_OK) \
 	{ \
 		Sys::Log("Error compiling SQL: %s\n", SQL); \
 		CloseDB(); \
-		FAIL; \
+		return false; \
 	}
-#define SAFE_RELEASE_SQL(Stmt) if (Stmt) { sqlite3_finalize(Stmt); Stmt = NULL; }
+#define SAFE_RELEASE_SQL(Stmt) if (Stmt) { sqlite3_finalize(Stmt); Stmt = nullptr; }
 
-sqlite3*		SQLiteHandle = NULL;
-sqlite3_stmt*	SQLFindShader = NULL;
-sqlite3_stmt*	SQLGetObjFile = NULL;
-sqlite3_stmt*	SQLFindObjFileUsage = NULL;
-sqlite3_stmt*	SQLFindObjFile = NULL;
-sqlite3_stmt*	SQLFindObjFileByID = NULL;
-sqlite3_stmt*	SQLFindFreeObjFileRec = NULL;
-sqlite3_stmt*	SQLInsertNewObjFileRec = NULL;
-sqlite3_stmt*	SQLUpdateObjFileRec = NULL;
-sqlite3_stmt*	SQLReleaseObjFileRec = NULL;
-sqlite3_stmt*	SQLInsertNewShaderRec = NULL;
-sqlite3_stmt*	SQLUpdateShaderRec = NULL;
-sqlite3_stmt*	SQLClearDefines = NULL;
-sqlite3_stmt*	SQLInsertDefine = NULL;
-sqlite3_stmt*	SQLGetDefines = NULL;
+sqlite3*		SQLiteHandle = nullptr;
+sqlite3_stmt*	SQLFindShader = nullptr;
+sqlite3_stmt*	SQLGetObjFile = nullptr;
+sqlite3_stmt*	SQLFindObjFileUsage = nullptr;
+sqlite3_stmt*	SQLFindObjFile = nullptr;
+sqlite3_stmt*	SQLFindObjFileByID = nullptr;
+sqlite3_stmt*	SQLFindFreeObjFileRec = nullptr;
+sqlite3_stmt*	SQLInsertNewObjFileRec = nullptr;
+sqlite3_stmt*	SQLUpdateObjFileRec = nullptr;
+sqlite3_stmt*	SQLReleaseObjFileRec = nullptr;
+sqlite3_stmt*	SQLInsertNewShaderRec = nullptr;
+sqlite3_stmt*	SQLUpdateShaderRec = nullptr;
+sqlite3_stmt*	SQLClearDefines = nullptr;
+sqlite3_stmt*	SQLInsertDefine = nullptr;
+sqlite3_stmt*	SQLGetDefines = nullptr;
 
 bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
-	if (!SQLiteStmt || sqlite3_reset(SQLiteStmt) != SQLITE_OK) FAIL;
+	if (!SQLiteStmt || sqlite3_reset(SQLiteStmt) != SQLITE_OK) return false;
 
-	CString ParamName(NULL, 0, 64);
-	for (UPTR i = 0; i < Params.GetCount(); ++i)
+	std::string ParamName(nullptr, 0, 64);
+	for (size_t i = 0; i < Params.size(); ++i)
 	{
 		const Data::CParam& Prm = Params.Get(i);
 
 		ParamName = ":";
-		ParamName += Prm.GetName().CStr();
-		int Idx = sqlite3_bind_parameter_index(SQLiteStmt, ParamName.CStr());
+		ParamName += Prm.GetName().c_str();
+		int Idx = sqlite3_bind_parameter_index(SQLiteStmt, ParamName.c_str());
 		if (Idx < 1) continue;
 
 		const Data::CData& Val = Prm.GetRawValue();
@@ -56,16 +56,16 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 		else if (Val.IsA<int>()) Error = sqlite3_bind_int(SQLiteStmt, Idx, Val);
 		else if (Val.IsA<float>()) Error = sqlite3_bind_double(SQLiteStmt, Idx, (double)Val.GetValue<float>());
 		else if (Val.IsA<bool>()) Error = sqlite3_bind_int(SQLiteStmt, Idx, (bool)Val ? 1 : 0);
-		else if (Val.IsA<CString>())
+		else if (Val.IsA<std::string>())
 		{
 			// NOTE: the string should be in UTF-8 format.
-			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValuePtr<CString>()->CStr(),
+			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValuePtr<std::string>()->CStr(),
 				-1, SQLITE_TRANSIENT);
 		}
 		else if (Val.IsA<CStrID>())
 		{
 			// NOTE: the string should be in UTF-8 format.
-			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValue<CStrID>().CStr(),
+			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValue<CStrID>().c_str(),
 				-1, SQLITE_TRANSIENT);
 		}
 		else if (Val.IsA<Data::CBuffer>())
@@ -77,21 +77,21 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 		else
 		{
 			Messages += "BindQueryParams() > invalid parameter type!\n";
-			FAIL;
+			return false;
 		}
 
-		if (Error != SQLITE_OK) FAIL;
+		if (Error != SQLITE_OK) return false;
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NULL, const Data::CParams* pParams = NULL)
+bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = nullptr, const Data::CParams* pParams = nullptr)
 {
-	if (!SQLiteStmt) FAIL;
+	if (!SQLiteStmt) return false;
 
-	if (pParams && !BindQueryParams(SQLiteStmt, *pParams)) FAIL;
+	if (pParams && !BindQueryParams(SQLiteStmt, *pParams)) return false;
 
 	if (pOutTable)
 	{
@@ -105,7 +105,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 			{
 				CStrID ColID = CStrID(sqlite3_column_name(SQLiteStmt, ResultColIdx));
 				if (!pOutTable->HasColumn(ColID))
-					pOutTable->AddColumn(ColID, NULL, false);
+					pOutTable->AddColumn(ColID, nullptr, false);
 			}
 			pOutTable->EndAddColumns();
 		}
@@ -156,8 +156,8 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 					else if (Type == TString)
 					{
 						n_assert(SQLITE_TEXT == ResultColType);
-						CString Val((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx));
-						pOutTable->Set<CString>(ColIdx, RowIdx, Val);
+						std::string Val((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx));
+						pOutTable->Set<std::string>(ColIdx, RowIdx, Val);
 					}
 					else if (Type == TStrID)
 					{
@@ -187,7 +187,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 								pOutTable->Set<float>(ColIdx, RowIdx, (float)sqlite3_column_double(SQLiteStmt, ResultColIdx));
 								break;
 							case SQLITE_TEXT:
-								pOutTable->Set<CString>(ColIdx, RowIdx, CString((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx)));
+								pOutTable->Set<std::string>(ColIdx, RowIdx, std::string((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx)));
 								break;
 							default: Sys::Error("ExecuteStatement() > unsupported variable-type DB column type!");
 						}
@@ -202,7 +202,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 				Messages += "SQLite error during sqlite3_step(): ";
 				Messages += sqlite3_errmsg(SQLiteHandle);
 				Messages += '\n';
-				FAIL;
+				return false;
 			}
 			default:
 			{
@@ -211,7 +211,7 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 				Messages += ", ";
 				Messages += sqlite3_errmsg(SQLiteHandle);
 				Messages += '\n';
-				FAIL;
+				return false;
 			}
 		}
 	}
@@ -219,30 +219,30 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, DB::CValueTable* pOutTable = NUL
 
 	if (pOutTable) pOutTable->TrackModifications(true);
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool ExecuteSQLQuery(const char* pSQL, DB::CValueTable* pOutTable, const Data::CParams* pParams)
 {
-	if (!pSQL) OK;
+	if (!pSQL) return true;
 
 	bool Result = true;
 	do
 	{
-		sqlite3_stmt* SQLiteStmt = NULL;
+		sqlite3_stmt* SQLiteStmt = nullptr;
 		if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLiteStmt, &pSQL) != SQLITE_OK)
 		{
 			Messages += "SQLite error: ";
 			Messages += sqlite3_errmsg(SQLiteHandle);
 			Messages += '\n';
-			FAIL;
+			return false;
 		}
 
-		while (*pSQL && strchr(DEM_WHITESPACE, *pSQL)) ++pSQL;
+		while (*pSQL && strchr(" \r\n\t", *pSQL)) ++pSQL;
 
 		// In the last query fill table
-		Result = ExecuteStatement(SQLiteStmt, (!*pSQL && pOutTable) ? pOutTable : NULL, pParams);
+		Result = ExecuteStatement(SQLiteStmt, (!*pSQL && pOutTable) ? pOutTable : nullptr, pParams);
 
 		sqlite3_finalize(SQLiteStmt);
 	}
@@ -257,19 +257,19 @@ bool OpenDB(const char* pURI)
 {
 	n_assert(!SQLiteHandle);
 
-	CString DirName = PathUtils::ExtractDirName(pURI);
+	std::string DirName = PathUtils::ExtractDirName(pURI);
 	IO::CFileSystemWin32 FS;
-	if (!FS.DirectoryExists(DirName.CStr()))
-		FS.CreateDirectory(DirName.CStr());
+	if (!FS.DirectoryExists(DirName.c_str()))
+		FS.CreateDirectory(DirName.c_str());
 
-	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, NULL);
+	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
 	if (Result != SQLITE_OK)
 	{
 		Messages += "SQLite error: ";
 		Messages += sqlite3_errmsg(SQLiteHandle);
 		Messages += '\n';
-		SQLiteHandle = NULL;
-		FAIL;
+		SQLiteHandle = nullptr;
+		return false;
 	}
 
 	if (sqlite3_busy_timeout(SQLiteHandle, 100) != SQLITE_OK ||
@@ -279,7 +279,7 @@ bool OpenDB(const char* pURI)
 		Messages += sqlite3_errmsg(SQLiteHandle);
 		Messages += '\n';
 		CloseDB();
-		FAIL;
+		return false;
 	}
 
 	//???synchronous mode?
@@ -292,7 +292,7 @@ PRAGMA temp_store=MEMORY";
 	if (!ExecuteSQLQuery(pSQL))
 	{
 		CloseDB();
-		FAIL;
+		return false;
 	}
 
 	// Query tables and create them if DB is empty
@@ -300,7 +300,7 @@ PRAGMA temp_store=MEMORY";
 	if (!ExecuteSQLQuery("SELECT name FROM sqlite_master WHERE type='table'", &Tables))
 	{
 		CloseDB();
-		FAIL;
+		return false;
 	}
 
 	if (!Tables.GetRowCount())
@@ -308,7 +308,7 @@ PRAGMA temp_store=MEMORY";
 		const char* pCreateDBSQL = "\
 CREATE TABLE 'Files' (\
 	'ID' INTEGER,\
-	'Path' VARCHAR(1024) NOT NULL,\
+	'Path' VARCHAR(1024) NOT nullptr,\
 	'Size' INTEGER,\
 	'BytecodeSize' INTEGER,\
 	'CRC' INTEGER,\
@@ -320,7 +320,7 @@ CREATE TABLE 'Shaders' (\
 	'Target' INTEGER,\
 	'EntryPoint' VARCHAR(64),\
 	'CompilerFlags' INTEGER,\
-	'SrcPath' VARCHAR(1024) NOT NULL,\
+	'SrcPath' VARCHAR(1024) NOT nullptr,\
 	'SrcModifyTimestamp' INTEGER,\
 	'SrcSize' INTEGER,\
 	'SrcCRC' INTEGER,\
@@ -342,7 +342,7 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 		if (!ExecuteSQLQuery(pCreateDBSQL))
 		{
 			CloseDB();
-			FAIL;
+			return false;
 		}
 	}
 
@@ -373,7 +373,7 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 	INIT_SQL(SQLInsertDefine, "INSERT INTO Macros (ShaderID, Name, Value) VALUES (:ShaderID, :Name, :Value)");
 	INIT_SQL(SQLGetDefines, "SELECT Name, Value FROM Macros WHERE ShaderID = :ShaderID"); // ORDER BY Name");
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -402,7 +402,7 @@ void CloseDB()
 			Messages += sqlite3_errmsg(SQLiteHandle);
 			Messages += '\n';
 		}
-		SQLiteHandle = NULL;
+		SQLiteHandle = nullptr;
 	}
 }
 //---------------------------------------------------------------------
@@ -416,22 +416,22 @@ bool FindShaderRec(CShaderDBRec& InOut)
 	Params.Set(CStrID("Entry"), InOut.EntryPoint);
 
 	DB::CValueTable Shaders;
-	if (!ExecuteStatement(SQLFindShader, &Shaders, &Params)) FAIL;
+	if (!ExecuteStatement(SQLFindShader, &Shaders, &Params)) return false;
 
 	Data::CParams DefineParams(1);
 
 	bool Found = false;
 
 	int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
-	for (UPTR ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
+	for (size_t ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
 	{
 		DefineParams.Set(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
 
 		DB::CValueTable Defines;
-		if (!ExecuteStatement(SQLGetDefines, &Defines, &DefineParams)) FAIL;
+		if (!ExecuteStatement(SQLGetDefines, &Defines, &DefineParams)) return false;
 
-		UPTR DBDefineCount = Defines.GetRowCount();
-		UPTR LocalDefineCount = InOut.Defines.GetCount();
+		size_t DBDefineCount = Defines.GetRowCount();
+		size_t LocalDefineCount = InOut.Defines.size();
 		if (DBDefineCount != LocalDefineCount)
 		{
 			Found = false;
@@ -442,12 +442,12 @@ bool FindShaderRec(CShaderDBRec& InOut)
 
 		int Col_Name = Defines.GetColumnIndex(CStrID("Name"));
 		int Col_Value = Defines.GetColumnIndex(CStrID("Value"));
-		for (UPTR DefIdx = 0; DefIdx < Defines.GetRowCount(); ++DefIdx)
+		for (size_t DefIdx = 0; DefIdx < Defines.GetRowCount(); ++DefIdx)
 		{
-			const char* pName = Defines.Get<CString>(Col_Name, DefIdx).CStr();
+			const char* pName = Defines.Get<std::string>(Col_Name, DefIdx).c_str();
 			n_assert(pName && *pName);
 
-			for (UPTR NewDefIdx = 0; NewDefIdx < InOut.Defines.GetCount(); ++NewDefIdx)
+			for (size_t NewDefIdx = 0; NewDefIdx < InOut.Defines.size(); ++NewDefIdx)
 			{
 				CMacroDBRec& Macro = InOut.Defines[NewDefIdx];
 				if (!strcmp(Macro.Name, pName))
@@ -456,7 +456,7 @@ bool FindShaderRec(CShaderDBRec& InOut)
 					Defines.GetValue(Col_Value, DefIdx, Value);
 					bool IsNoLocalValue = !Macro.Value;
 					bool IsNoDBValue = Value.IsNull();
-					if (IsNoLocalValue != IsNoDBValue || strcmp(Macro.Value, Value.GetValue<CString>().CStr()))
+					if (IsNoLocalValue != IsNoDBValue || strcmp(Macro.Value, Value.GetValue<std::string>().c_str()))
 					{
 						Found = false;
 					}
@@ -476,28 +476,28 @@ bool FindShaderRec(CShaderDBRec& InOut)
 			InOut.SrcFile.CRC = Shaders.Get<int>(CStrID("SrcCRC"), ShIdx);
 			InOut.ObjFile.ID = Shaders.Get<int>(CStrID("ObjFileID"), ShIdx);
 			InOut.InputSigFile.ID = Shaders.Get<int>(CStrID("InputSigFileID"), ShIdx);
-			OK;
+			return true;
 		}
 	}
 
 	InOut.ID = 0;
 	InOut.CompilerFlags = 0;
 	InOut.ObjFile.ID = 0;
-	InOut.ObjFile.Path = CString::Empty;
+	InOut.ObjFile.Path = std::string::Empty;
 	InOut.InputSigFile.ID = 0;
-	InOut.InputSigFile.Path = CString::Empty;
+	InOut.InputSigFile.Path = std::string::Empty;
 
-	FAIL; // Not found
+	return false; // Not found
 }
 //---------------------------------------------------------------------
 
 bool WriteShaderRec(CShaderDBRec& InOut)
 {
-	U32 ID;
+	uint32_t ID;
 	if (InOut.ID == 0)
 	{
-		if (!ExecuteStatement(SQLInsertNewShaderRec)) FAIL;
-		ID = (U32)sqlite3_last_insert_rowid(SQLiteHandle);
+		if (!ExecuteStatement(SQLInsertNewShaderRec)) return false;
+		ID = (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
 	}
 	else ID = InOut.ID;
 
@@ -514,28 +514,28 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 	Params.Set(CStrID("ObjFileID"), (int)InOut.ObjFile.ID);
 	Params.Set(CStrID("InputSigFileID"), (int)InOut.InputSigFile.ID);
 
-	if (!ExecuteStatement(SQLUpdateShaderRec, NULL, &Params)) FAIL;
+	if (!ExecuteStatement(SQLUpdateShaderRec, nullptr, &Params)) return false;
 
 	InOut.ID = ID;
 
 	Params.Clear();
 	Params.Set(CStrID("ShaderID"), (int)InOut.ID);
-	if (!ExecuteStatement(SQLClearDefines, NULL, &Params)) FAIL;
+	if (!ExecuteStatement(SQLClearDefines, nullptr, &Params)) return false;
 
-	for (UPTR i = 0; i < InOut.Defines.GetCount(); ++i)
+	for (size_t i = 0; i < InOut.Defines.size(); ++i)
 	{
 		CMacroDBRec& Macro = InOut.Defines[i];
 		if (!Macro.Name || !*Macro.Name) continue;
-		Params.Set(CStrID("Name"), CString(Macro.Name));
-		Params.Set(CStrID("Value"), CString(Macro.Value));
-		if (!ExecuteStatement(SQLInsertDefine, NULL, &Params)) FAIL;
+		Params.Set(CStrID("Name"), std::string(Macro.Name));
+		Params.Set(CStrID("Value"), std::string(Macro.Value));
+		if (!ExecuteStatement(SQLInsertDefine, nullptr, &Params)) return false;
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjCompareMode Mode)
+bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, uint32_t Target, EObjCompareMode Mode)
 {
 	if (InOut.BytecodeSize)
 	{
@@ -545,13 +545,13 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjC
 		Params.Set(CStrID("CRC"), (int)InOut.CRC);
 
 		DB::CValueTable Result;
-		if (!ExecuteStatement(SQLFindObjFile, &Result, &Params)) FAIL;
+		if (!ExecuteStatement(SQLFindObjFile, &Result, &Params)) return false;
 
 		int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 		int Col_Path = Result.GetColumnIndex(CStrID("Path"));
-		for (UPTR i = 0; i < Result.GetRowCount(); ++i)
+		for (size_t i = 0; i < Result.GetRowCount(); ++i)
 		{
-			CString Path = Result.Get<CString>(Col_Path, i);
+			std::string Path = Result.Get<std::string>(Col_Path, i);
 
 			if (pBinaryData)
 			{
@@ -560,17 +560,17 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjC
 				IO::CFileStream File(Path, FS);
 				if (!File.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) continue;
 
-				U64 FileSize = File.GetSize();
+				uint64_t FileSize = File.GetSize();
 
 				if (Mode == Cmp_ShaderAndMetadata)
 				{
-					U32 Offset = (Target >= 0x0400) ? 16 : 12;
+					uint32_t Offset = (Target >= 0x0400) ? 16 : 12;
 					if (!File.Seek(Offset, IO::Seek_Begin)) continue;
 					FileSize -= Offset;
 				}
 				else if (Mode == Cmp_Shader)
 				{
-					U32 BytecodeOffset;
+					uint32_t BytecodeOffset;
 					if (!File.Seek(4, IO::Seek_Begin)) continue;
 					if (!File.Read(&BytecodeOffset, sizeof(BytecodeOffset))) continue;
 					if (!File.Seek(BytecodeOffset, IO::Seek_Begin)) continue;
@@ -578,33 +578,33 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, U32 Target, EObjC
 					if (FileSize != InOut.BytecodeSize) continue;
 				}
 
-				Data::CBuffer Buffer((UPTR)FileSize);
-				if (File.Read(Buffer.GetPtr(), (UPTR)FileSize) != FileSize) continue;
+				Data::CBuffer Buffer((size_t)FileSize);
+				if (File.Read(Buffer.GetPtr(), (size_t)FileSize) != FileSize) continue;
 			
-				if (Buffer.IsEmpty() || memcmp(pBinaryData, Buffer.GetPtr(), (UPTR)FileSize) != 0) continue;
+				if (Buffer.IsEmpty() || memcmp(pBinaryData, Buffer.GetPtr(), (size_t)FileSize) != 0) continue;
 			}
 
 			InOut.ID = Result.Get<int>(Col_ID, i);
 			InOut.Path = Path;
-			OK; // Found
+			return true; // Found
 		}
 	}
 
 	InOut.ID = 0;
-	InOut.Path = CString::Empty;
+	InOut.Path = std::string::Empty;
 
-	FAIL; // Not found
+	return false; // Not found
 }
 //---------------------------------------------------------------------
 
-bool FindObjFileByID(U32 ID, CObjFileData& Out)
+bool FindObjFileByID(uint32_t ID, CObjFileData& Out)
 {
 	Data::CParams Params(1);
 	Params.Set(CStrID("ID"), (int)ID);
 
 	DB::CValueTable Result;
-	if (!ExecuteStatement(SQLFindObjFileByID, &Result, &Params)) FAIL;
-	if (!Result.GetRowCount()) FAIL;
+	if (!ExecuteStatement(SQLFindObjFileByID, &Result, &Params)) return false;
+	if (!Result.GetRowCount()) return false;
 
 	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
@@ -612,19 +612,19 @@ bool FindObjFileByID(U32 ID, CObjFileData& Out)
 	int Col_BytecodeSize = Result.GetColumnIndex(CStrID("BytecodeSize"));
 	int Col_CRC = Result.GetColumnIndex(CStrID("CRC"));
 	Out.ID = Result.Get<int>(Col_ID, 0);
-	Out.Path = Result.Get<CString>(Col_Path, 0);
+	Out.Path = Result.Get<std::string>(Col_Path, 0);
 	Out.Size = Result.Get<int>(Col_Size, 0);
 	Out.BytecodeSize = Result.Get<int>(Col_BytecodeSize, 0);
 	Out.CRC = Result.Get<int>(Col_CRC, 0);
 
-	OK; // Found
+	return true; // Found
 }
 //---------------------------------------------------------------------
 
-U32 CreateObjFileRecord()
+uint32_t CreateObjFileRecord()
 {
 	DB::CValueTable Result;
-	if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) FAIL;
+	if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) return false;
 
 	if (Result.GetRowCount())
 	{
@@ -632,15 +632,15 @@ U32 CreateObjFileRecord()
 	}
 	else
 	{
-		if (!ExecuteStatement(SQLInsertNewObjFileRec)) FAIL;
-		return (U32)sqlite3_last_insert_rowid(SQLiteHandle);
+		if (!ExecuteStatement(SQLInsertNewObjFileRec)) return false;
+		return (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
 	}
 }
 //---------------------------------------------------------------------
 
 bool UpdateObjFileRecord(const CObjFileData& Record)
 {
-	if (!Record.ID || Record.Path.IsEmpty()) FAIL;
+	if (!Record.ID || Record.Path.IsEmpty()) return false;
 
 	Data::CParams Params(4);
 	Params.Set(CStrID("Path"), Record.Path);
@@ -649,30 +649,30 @@ bool UpdateObjFileRecord(const CObjFileData& Record)
 	Params.Set(CStrID("CRC"), (int)Record.CRC);
 	Params.Set(CStrID("ID"), (int)Record.ID);
 
-	if (!ExecuteStatement(SQLUpdateObjFileRec, NULL, &Params)) FAIL;
+	if (!ExecuteStatement(SQLUpdateObjFileRec, nullptr, &Params)) return false;
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-bool ReleaseObjFile(U32 ID, CString& OutPath)
+bool ReleaseObjFile(uint32_t ID, std::string& OutPath)
 {
-	if (ID == 0) FAIL;
+	if (ID == 0) return false;
 
 	DB::CValueTable Result;
-	if (!ExecuteStatement(SQLFindObjFileUsage, &Result)) FAIL;
+	if (!ExecuteStatement(SQLFindObjFileUsage, &Result)) return false;
 
 	// References found, don't delete file
-	if (Result.GetRowCount()) FAIL;
+	if (Result.GetRowCount()) return false;
 
 	Data::CParams Params(1);
 	Params.Set(CStrID("ID"), (int)ID);
 
 	// Get file path to delete
 	Result.Clear();
-	if (!ExecuteStatement(SQLGetObjFile, &Result, &Params)) FAIL;
-	OutPath = Result.Get<CString>(CStrID("Path"), 0);
+	if (!ExecuteStatement(SQLGetObjFile, &Result, &Params)) return false;
+	OutPath = Result.Get<std::string>(CStrID("Path"), 0);
 
-	return ExecuteStatement(SQLReleaseObjFileRec, NULL, &Params);
+	return ExecuteStatement(SQLReleaseObjFileRec, nullptr, &Params);
 }
 //---------------------------------------------------------------------

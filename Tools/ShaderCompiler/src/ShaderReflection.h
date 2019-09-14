@@ -1,9 +1,5 @@
 #pragma once
-#ifndef __DEM_TOOLS_SHADER_REFLECTION_H__
-#define __DEM_TOOLS_SHADER_REFLECTION_H__
-
-#include <Data/String.h>
-#include <Data/Dictionary.h>
+#include <map>
 
 // Data and functions for shader metadata manipulation in both SM3.0 and USM
 
@@ -71,23 +67,21 @@ public:
 	virtual bool				Save(IO::CBinaryWriter& W) const = 0;
 
 	virtual EShaderModel		GetShaderModel() const = 0;
-	virtual U32					GetMinFeatureLevel() const = 0;
-	virtual void				SetMinFeatureLevel(U32 NewLevel) = 0;
-	virtual U64					GetRequiresFlags() const = 0;
-	virtual void				SetRequiresFlags(U64 NewFlags) = 0;
+	virtual uint32_t			GetMinFeatureLevel() const = 0;
+	virtual void				SetMinFeatureLevel(uint32_t NewLevel) = 0;
+	virtual uint64_t			GetRequiresFlags() const = 0;
+	virtual void				SetRequiresFlags(uint64_t NewFlags) = 0;
 
-	virtual UPTR				GetParamCount(EShaderParamClass Class) const = 0;
-	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, UPTR Index) = 0;
-	virtual UPTR				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject) = 0;
-	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, UPTR& OutIndex) const = 0;
+	virtual size_t				GetParamCount(EShaderParamClass Class) const = 0;
+	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, size_t Index) = 0;
+	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject) = 0;
+	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const = 0;
 
-	virtual UPTR				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer) = 0;
+	virtual size_t				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer) = 0;
 	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const = 0;
-	virtual bool				SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx) = 0;
+	virtual bool				SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx) = 0;
 
-	virtual U32					AddStructure(const CShaderMetadata& SourceMeta, U64 StructKey, CDict<U64, U32>& StructIndexMapping) = 0;
-	virtual U32					GetStructureIndex(UPTR ConstIdx) const = 0;
-	virtual bool				SetStructureIndex(UPTR ConstIdx, U32 StructIdx) = 0;
+	virtual uint32_t			AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping) = 0;
+	virtual uint32_t			GetStructureIndex(size_t ConstIdx) const = 0;
+	virtual bool				SetStructureIndex(size_t ConstIdx, uint32_t StructIdx) = 0;
 };
-
-#endif

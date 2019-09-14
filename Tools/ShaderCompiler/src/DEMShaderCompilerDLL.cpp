@@ -3,26 +3,26 @@
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
-static HMODULE hDLL = NULL;
-static FDEMShaderCompiler_InitCompiler pInitCompiler = NULL;
-static FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = NULL;
-static FDEMShaderCompiler_CompileShader pCompileShader = NULL;
-static FDEMShaderCompiler_CreateShaderMetadata pCreateShaderMetadata = NULL;
-static FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = NULL;
-static FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = NULL;
-//static FDEMShaderCompiler_SaveShaderMetadata pSaveShaderMetadata = NULL;
-static FDEMShaderCompiler_PackShaders pPackShaders = NULL;
+static HMODULE hDLL = nullptr;
+static FDEMShaderCompiler_InitCompiler pInitCompiler = nullptr;
+static FDEMShaderCompiler_GetLastOperationMessages pGetLastOperationMessages = nullptr;
+static FDEMShaderCompiler_CompileShader pCompileShader = nullptr;
+static FDEMShaderCompiler_CreateShaderMetadata pCreateShaderMetadata = nullptr;
+static FDEMShaderCompiler_LoadShaderMetadataByObjectFileID pLoadShaderMetadataByObjectFileID = nullptr;
+static FDEMShaderCompiler_FreeShaderMetadata pFreeShaderMetadata = nullptr;
+//static FDEMShaderCompiler_SaveShaderMetadata pSaveShaderMetadata = nullptr;
+static FDEMShaderCompiler_PackShaders pPackShaders = nullptr;
 
 bool InitDEMShaderCompilerDLL(const char* pDLLPath, const char* pDBFilePath, const char* pOutputDirectory)
 {
 	if (!hDLL)
 	{
 		hDLL = ::LoadLibrary(pDLLPath);
-		if (!hDLL) FAIL;
+		if (!hDLL) return false;
 	}
 
 	pInitCompiler = (FDEMShaderCompiler_InitCompiler)GetProcAddress(hDLL, "InitCompiler");
-	if (!pInitCompiler) FAIL;
+	if (!pInitCompiler) return false;
 
 	return pInitCompiler(pDBFilePath, pOutputDirectory);
 }
@@ -38,12 +38,12 @@ bool TermDEMShaderCompilerDLL()
 		hDLL = 0;
 	}
 
-	pInitCompiler = NULL;
-	pGetLastOperationMessages = NULL;
-	pCompileShader = NULL;
-	pLoadShaderMetadataByObjectFileID = NULL;
-	pFreeShaderMetadata = NULL;
-	pPackShaders = NULL;
+	pInitCompiler = nullptr;
+	pGetLastOperationMessages = nullptr;
+	pCompileShader = nullptr;
+	pLoadShaderMetadataByObjectFileID = nullptr;
+	pFreeShaderMetadata = nullptr;
+	pPackShaders = nullptr;
 
 	return Result;
 }
@@ -53,17 +53,17 @@ const char*	DLLGetLastOperationMessages()
 {
 	if (!pGetLastOperationMessages)
 	{
-		if (!hDLL) return NULL;
+		if (!hDLL) return nullptr;
 		pGetLastOperationMessages = (FDEMShaderCompiler_GetLastOperationMessages)GetProcAddress(hDLL, "GetLastOperationMessages");
-		if (!pGetLastOperationMessages) return NULL;
+		if (!pGetLastOperationMessages) return nullptr;
 	}
 
 	return pGetLastOperationMessages();
 }
 //---------------------------------------------------------------------
 
-int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
-				   const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID)
+int DLLCompileShader(const char* pSrcPath, EShaderType ShaderType, uint32_t Target, const char* pEntryPoint,
+				   const char* pDefines, bool Debug, bool OnlyMetadata, uint32_t& ObjectFileID, uint32_t& InputSignatureFileID)
 {
 	if (!pCompileShader)
 	{
@@ -89,13 +89,13 @@ void DLLCreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMet
 }
 //---------------------------------------------------------------------
 
-bool DLLLoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta)
+bool DLLLoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta)
 {
 	if (!pLoadShaderMetadataByObjectFileID)
 	{
-		if (!hDLL) FAIL;
+		if (!hDLL) return false;
 		pLoadShaderMetadataByObjectFileID = (FDEMShaderCompiler_LoadShaderMetadataByObjectFileID)GetProcAddress(hDLL, "LoadShaderMetadataByObjectFileID");
-		if (!pLoadShaderMetadataByObjectFileID) FAIL;
+		if (!pLoadShaderMetadataByObjectFileID) return false;
 	}
 
 	return pLoadShaderMetadataByObjectFileID(ID, OutTarget, pOutMeta);
@@ -106,14 +106,14 @@ bool DLLFreeShaderMetadata(CShaderMetadata* pDLLAllocMeta)
 {
 	if (!pFreeShaderMetadata)
 	{
-		if (!hDLL) FAIL;
+		if (!hDLL) return false;
 		pFreeShaderMetadata = (FDEMShaderCompiler_FreeShaderMetadata)GetProcAddress(hDLL, "FreeShaderMetadata");
-		if (!pFreeShaderMetadata) FAIL;
+		if (!pFreeShaderMetadata) return false;
 	}
 
 	pFreeShaderMetadata(pDLLAllocMeta);
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -122,9 +122,9 @@ bool DLLSaveShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
 {
 	if (!pSaveShaderMetadata)
 	{
-		if (!hDLL) FAIL;
+		if (!hDLL) return false;
 		pSaveShaderMetadata = (FDEMShaderCompiler_SaveShaderMetadata)GetProcAddress(hDLL, "SaveUSMShaderMetadata");
-		if (!pSaveShaderMetadata) FAIL;
+		if (!pSaveShaderMetadata) return false;
 	}
 
 	return pSaveShaderMetadata(W, Meta);
@@ -136,9 +136,9 @@ unsigned int DLLPackShaders(const char* pCommaSeparatedShaderIDs, const char* pL
 {
 	if (!pPackShaders)
 	{
-		if (!hDLL) return NULL;
+		if (!hDLL) return 0;
 		pPackShaders = (FDEMShaderCompiler_PackShaders)GetProcAddress(hDLL, "PackShaders");
-		if (!pPackShaders) return NULL;
+		if (!pPackShaders) return 0;
 	}
 
 	return pPackShaders(pCommaSeparatedShaderIDs, pLibraryFilePath);

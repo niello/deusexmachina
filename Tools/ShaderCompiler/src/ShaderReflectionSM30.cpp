@@ -1,26 +1,25 @@
 #include "ShaderReflectionSM30.h"
 
-#include <Render/RenderFwd.h>	// For EGPUFeatureLevel
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <Data/StringUtils.h>
 #include <DEMD3DInclude.h>
 #include <D3D9ShaderReflectionAPI.h>
 
-extern CString Messages;
+extern std::string Messages;
 
 bool CSM30BufferMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	//const CSM30BufferMeta& TypedOther = (const CSM30BufferMeta&)Other;
 	//return SlotIndex == TypedOther.SlotIndex;
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool CSM30ConstMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CSM30ConstMeta& TypedOther = (const CSM30ConstMeta&)Other;
 	return RegisterSet == TypedOther.RegisterSet &&
 		RegisterStart == TypedOther.RegisterStart &&
@@ -32,7 +31,7 @@ bool CSM30ConstMeta::IsEqual(const CMetadataObject& Other) const
 
 bool CSM30RsrcMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CSM30RsrcMeta& TypedOther = (const CSM30RsrcMeta&)Other;
 	return Register == TypedOther.Register;
 }
@@ -40,7 +39,7 @@ bool CSM30RsrcMeta::IsEqual(const CMetadataObject& Other) const
 
 bool CSM30SamplerMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CSM30SamplerMeta& TypedOther = (const CSM30SamplerMeta&)Other;
 	return Type == TypedOther.Type &&
 		RegisterStart == TypedOther.RegisterStart &&
@@ -48,85 +47,85 @@ bool CSM30SamplerMeta::IsEqual(const CMetadataObject& Other) const
 }
 //---------------------------------------------------------------------
 
-static void WriteRegisterRanges(const CArray<UPTR>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
+static void WriteRegisterRanges(const std::vector<size_t>& UsedRegs, IO::CBinaryWriter& W, const char* pRegisterSetName)
 {
-	U64 RangeCountOffset = W.GetStream().GetPosition();
-	W.Write<U32>(0);
+	uint64_t RangeCountOffset = W.GetStream().GetPosition();
+	W.Write<uint32_t>(0);
 
-	if (!UsedRegs.GetCount()) return;
+	if (!UsedRegs.size()) return;
 
-	U32 RangeCount = 0;
-	UPTR CurrStart = UsedRegs[0], CurrCount = 1;
-	for (UPTR r = 1; r < UsedRegs.GetCount(); ++r)
+	uint32_t RangeCount = 0;
+	size_t CurrStart = UsedRegs[0], CurrCount = 1;
+	for (size_t r = 1; r < UsedRegs.size(); ++r)
 	{
-		UPTR Reg = UsedRegs[r];
+		size_t Reg = UsedRegs[r];
 		if (Reg == CurrStart + CurrCount) ++CurrCount;
 		else
 		{
 			// New range detected
-			W.Write<U32>(CurrStart);
-			W.Write<U32>(CurrCount);
+			W.Write<uint32_t>(CurrStart);
+			W.Write<uint32_t>(CurrCount);
 			++RangeCount;
 			CurrStart = Reg;
 			CurrCount = 1;
 		}
 	}
 
-	if (CurrStart != (UPTR)-1)
+	if (CurrStart != (size_t)-1)
 	{
-		W.Write<U32>(CurrStart);
-		W.Write<U32>(CurrCount);
+		W.Write<uint32_t>(CurrStart);
+		W.Write<uint32_t>(CurrCount);
 		++RangeCount;
 	}
 
-	U64 EndOffset = W.GetStream().GetPosition();
+	uint64_t EndOffset = W.GetStream().GetPosition();
 	W.GetStream().Seek(RangeCountOffset, IO::Seek_Begin);
-	W.Write<U32>(RangeCount);
+	W.Write<uint32_t>(RangeCount);
 	W.GetStream().Seek(EndOffset, IO::Seek_Begin);
 }
 //---------------------------------------------------------------------
 
-static void ReadRegisterRanges(CArray<UPTR>& UsedRegs, IO::CBinaryReader& R)
+static void ReadRegisterRanges(std::vector<size_t>& UsedRegs, IO::CBinaryReader& R)
 {
 	UsedRegs.Clear();
 
-	U32 RangeCount = 0;
-	R.Read<U32>(RangeCount);
-	for (UPTR i = 0; i < RangeCount; ++i)
+	uint32_t RangeCount = 0;
+	R.Read<uint32_t>(RangeCount);
+	for (size_t i = 0; i < RangeCount; ++i)
 	{
-		U32 Curr;
-		U32 CurrCount;
-		R.Read<U32>(Curr);
-		R.Read<U32>(CurrCount);
-		U32 CurrEnd = Curr + CurrCount;
+		uint32_t Curr;
+		uint32_t CurrCount;
+		R.Read<uint32_t>(Curr);
+		R.Read<uint32_t>(CurrCount);
+		uint32_t CurrEnd = Curr + CurrCount;
 		for (; Curr < CurrEnd; ++Curr)
-			UsedRegs.Add((UPTR)Curr);
+			UsedRegs.Add((size_t)Curr);
 	}
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, const char* pSource, UPTR SourceSize, CDEMD3DInclude& IncludeHandler)
+bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, CDEMD3DInclude& IncludeHandler)
 {
-	CArray<CD3D9ConstantDesc> D3D9Consts;
-	CDict<U32, CD3D9StructDesc> D3D9Structs;
-	CString Creator;
+	std::vector<CD3D9ConstantDesc> D3D9Consts;
+	std::map<uint32_t, CD3D9StructDesc> D3D9Structs;
+	std::string Creator;
 
-	if (!D3D9Reflect(pData, Size, D3D9Consts, D3D9Structs, Creator)) FAIL;
+	if (!D3D9Reflect(pData, Size, D3D9Consts, D3D9Structs, Creator)) return false;
 
 	// Process source code includes and remove comments
 
-	CString Source(pSource, SourceSize);
+	std::string Source(pSource, SourceSize);
 
-	//!!!DIRTY HACK! Need valid way to edit CString inplace by StripComments()!
-	UPTR NewLength = StringUtils::StripComments(&Source[0]);
-	Source.TruncateRight(Source.GetLength() - NewLength);
+	//!!!DIRTY HACK! Need valid way to edit std::string inplace by StripComments()!
+	size_t NewLength = StringUtils::StripComments(&Source[0]);
+	Source.TruncateRight(Source.size() - NewLength);
 
-	IPTR CurrIdx = 0;
-	IPTR IncludeIdx;
+	ptrdiff_t CurrIdx = 0;
+	ptrdiff_t IncludeIdx;
 	while ((IncludeIdx = Source.FindIndex("#include", CurrIdx)) != INVALID_INDEX)
 	{
-		IPTR FileNameStartSys = Source.FindIndex('<', IncludeIdx);
-		IPTR FileNameStartLocal = Source.FindIndex('\"', IncludeIdx);
+		ptrdiff_t FileNameStartSys = Source.FindIndex('<', IncludeIdx);
+		ptrdiff_t FileNameStartLocal = Source.FindIndex('\"', IncludeIdx);
 		if (FileNameStartSys == INVALID_INDEX && FileNameStartLocal == INVALID_INDEX)
 		{
 			Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
@@ -140,8 +139,8 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 		}
 
 		D3D_INCLUDE_TYPE IncludeType;
-		IPTR FileNameStart;
-		IPTR FileNameEnd;
+		ptrdiff_t FileNameStart;
+		ptrdiff_t FileNameEnd;
 		if (FileNameStartSys != INVALID_INDEX)
 		{
 			IncludeType = D3D_INCLUDE_SYSTEM; // <FileName>
@@ -161,11 +160,11 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 			break;
 		}
 
-		CString IncludeFileName = Source.SubString(FileNameStart, FileNameEnd - FileNameStart);
+		std::string IncludeFileName = Source.SubString(FileNameStart, FileNameEnd - FileNameStart);
 
 		const void* pData;
 		UINT Bytes;
-		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.CStr(), NULL, &pData, &Bytes)))
+		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.c_str(), nullptr, &pData, &Bytes)))
 		{
 			Messages += "SM30CollectShaderMetadata() > Failed to #include '";
 			Messages += IncludeFileName;
@@ -176,33 +175,33 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 
 		Source =
 			Source.SubString(0, IncludeIdx) +
-			CString((const char*)pData, Bytes) +
-			Source.SubString(FileNameEnd + 1, Source.GetLength() - FileNameEnd - 1);
+			std::string((const char*)pData, Bytes) +
+			Source.SubString(FileNameEnd + 1, Source.size() - FileNameEnd - 1);
 		
 		IncludeHandler.Close(pData);
 
 		CurrIdx = IncludeIdx;
 
-		//!!!DIRTY HACK! Need valid way to edit CString inplace by StripComments()!
+		//!!!DIRTY HACK! Need valid way to edit std::string inplace by StripComments()!
 		NewLength = StringUtils::StripComments(&Source[0]);
-		Source.TruncateRight(Source.GetLength() - NewLength);
+		Source.TruncateRight(Source.size() - NewLength);
 	}
 
 	// Collect structure layout metadata
 
-	const UPTR StructCount = D3D9Structs.GetCount();
+	const size_t StructCount = D3D9Structs.size();
 	CSM30StructMeta* pStructMeta = Structs.Reserve(StructCount);
-	for (UPTR i = 0; i < StructCount; ++i, ++pStructMeta)
+	for (size_t i = 0; i < StructCount; ++i, ++pStructMeta)
 	{
 		const CD3D9StructDesc& D3D9StructDesc = D3D9Structs.ValueAt(i);
 
-		const UPTR MemberCount = D3D9StructDesc.Members.GetCount();
+		const size_t MemberCount = D3D9StructDesc.Members.size();
 		CSM30StructMemberMeta* pMemberMeta = pStructMeta->Members.Reserve(MemberCount);
-		for (UPTR j = 0; j < MemberCount; ++j, ++pMemberMeta)
+		for (size_t j = 0; j < MemberCount; ++j, ++pMemberMeta)
 		{
 			const CD3D9ConstantDesc& D3D9ConstDesc = D3D9StructDesc.Members[j];
 			pMemberMeta->Name = D3D9ConstDesc.Name;
-			pMemberMeta->StructIndex = (U32)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
+			pMemberMeta->StructIndex = (uint32_t)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
 			pMemberMeta->RegisterOffset = D3D9ConstDesc.RegisterIndex;
 			pMemberMeta->ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			pMemberMeta->ElementCount = D3D9ConstDesc.Type.Elements;
@@ -219,12 +218,12 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 
 	// Collect constant metadata
 
-	CDict<CString, CArray<CString>> SampToTex;
-	D3D9FindSamplerTextures(Source.CStr(), SampToTex);
+	std::map<std::string, std::vector<std::string>> SampToTex;
+	D3D9FindSamplerTextures(Source.c_str(), SampToTex);
 
-	CDict<CString, CString> ConstToBuf;
+	std::map<std::string, std::string> ConstToBuf;
 
-	for (UPTR i = 0; i < D3D9Consts.GetCount(); ++i)
+	for (size_t i = 0; i < D3D9Consts.size(); ++i)
 	{
 		CD3D9ConstantDesc& D3D9ConstDesc = D3D9Consts[i];
 
@@ -250,16 +249,16 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 				default:				pMeta->Type = SM30Sampler_2D; break;
 			}
 
-			UPTR TexCount;
+			size_t TexCount;
 			int STIdx = SampToTex.FindIndex(D3D9ConstDesc.Name);
 			if (STIdx == INVALID_INDEX) TexCount = 0;
 			else
 			{
-				const CArray<CString>& TexNames = SampToTex.ValueAt(STIdx);
-				TexCount = n_min(D3D9ConstDesc.RegisterCount, TexNames.GetCount());
-				for (UPTR TexIdx = 0; TexIdx < TexCount; ++TexIdx)
+				const std::vector<std::string>& TexNames = SampToTex.ValueAt(STIdx);
+				TexCount = n_min(D3D9ConstDesc.RegisterCount, TexNames.size());
+				for (size_t TexIdx = 0; TexIdx < TexCount; ++TexIdx)
 				{
-					const CString& TexName = TexNames[TexIdx];
+					const std::string& TexName = TexNames[TexIdx];
 					if (TexName.IsValid())
 					{
 						CSM30RsrcMeta* pMeta = Resources.Reserve(1);
@@ -292,15 +291,15 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 		}
 		else // Constants
 		{
-			CString BufferName;
-			U32 SlotIndex = (U32)(INVALID_INDEX);
-			D3D9FindConstantBuffer(Source.CStr(), D3D9ConstDesc.Name, BufferName, SlotIndex);
+			std::string BufferName;
+			uint32_t SlotIndex = (uint32_t)(INVALID_INDEX);
+			D3D9FindConstantBuffer(Source.c_str(), D3D9ConstDesc.Name, BufferName, SlotIndex);
 
-			UPTR BufferIndex = 0;
-			for (; BufferIndex < Buffers.GetCount(); ++BufferIndex)
+			size_t BufferIndex = 0;
+			for (; BufferIndex < Buffers.size(); ++BufferIndex)
 				if (Buffers[BufferIndex].Name == BufferName) break;
 
-			if (BufferIndex == Buffers.GetCount())
+			if (BufferIndex == Buffers.size())
 			{
 				CSM30BufferMeta* pMeta = Buffers.Reserve(1);
 				pMeta->Name = BufferName;
@@ -309,7 +308,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 			else
 			{
 				CSM30BufferMeta& Meta = Buffers[BufferIndex];
-				if (SlotIndex == (U32)(INVALID_INDEX))
+				if (SlotIndex == (uint32_t)(INVALID_INDEX))
 					SlotIndex = SlotIndex;
 				else if (SlotIndex != SlotIndex)
 				{
@@ -320,14 +319,14 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 					Messages += " and ";
 					Messages += StringUtils::FromInt(SlotIndex);
 					Messages += ") in the same shader, please fix it\n";
-					FAIL;
+					return false;
 				}
 			}
 
 			CSM30ConstMeta* pMeta = Consts.Reserve(1);
 			pMeta->Name = D3D9ConstDesc.Name;
 			pMeta->BufferIndex = BufferIndex;
-			pMeta->StructIndex = (U32)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
+			pMeta->StructIndex = (uint32_t)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{
@@ -337,7 +336,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 				default:
 				{
 					Sys::Error("Unsupported SM3.0 register set %d\n", D3D9ConstDesc.RegisterSet);
-					FAIL;
+					return false;
 				}
 			};
 
@@ -357,8 +356,8 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 			n_assert(pMeta->RegisterCount == D3D9ConstDesc.RegisterCount);
 
 			CSM30BufferMeta& BufMeta = Buffers[pMeta->BufferIndex];
-			CArray<UPTR>& UsedRegs = (pMeta->RegisterSet == RS_Float4) ? BufMeta.UsedFloat4 : ((pMeta->RegisterSet == RS_Int4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
-			for (UPTR r = D3D9ConstDesc.RegisterIndex; r < D3D9ConstDesc.RegisterIndex + D3D9ConstDesc.RegisterCount; ++r)
+			std::vector<size_t>& UsedRegs = (pMeta->RegisterSet == RS_Float4) ? BufMeta.UsedFloat4 : ((pMeta->RegisterSet == RS_Int4) ? BufMeta.UsedInt4 : BufMeta.UsedBool);
+			for (size_t r = D3D9ConstDesc.RegisterIndex; r < D3D9ConstDesc.RegisterIndex + D3D9ConstDesc.RegisterCount; ++r)
 			{
 				if (!UsedRegs.Contains(r)) UsedRegs.Add(r);
 			}
@@ -367,14 +366,14 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 
 	// Remove empty constant buffers and set free SlotIndices where no explicit value was specified
 
-	CArray<U32> UsedSlotIndices;
-	UPTR i = 0;
-	while (i < Buffers.GetCount())
+	std::vector<uint32_t> UsedSlotIndices;
+	size_t i = 0;
+	while (i < Buffers.size())
 	{
 		CSM30BufferMeta& B = Buffers[i];
-		if (!B.UsedFloat4.GetCount() &&
-			!B.UsedInt4.GetCount() &&
-			!B.UsedBool.GetCount())
+		if (!B.UsedFloat4.size() &&
+			!B.UsedInt4.size() &&
+			!B.UsedBool.size())
 		{
 			Buffers.RemoveAt(i);
 		}
@@ -387,11 +386,11 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 
 	UsedSlotIndices.Sort();
 
-	U32 NewSlotIndex = 0;
-	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	uint32_t NewSlotIndex = 0;
+	for (size_t i = 0; i < Buffers.size(); ++i)
 	{
 		CSM30BufferMeta& B = Buffers[i];
-		if (B.SlotIndex == (U32)(INVALID_INDEX))
+		if (B.SlotIndex == (uint32_t)(INVALID_INDEX))
 		{
 			while (UsedSlotIndices.ContainsSorted(NewSlotIndex))
 				++NewSlotIndex;
@@ -400,14 +399,14 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, UPTR Size, c
 		}
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 {
-	W.Write<U32>(Buffers.GetCount());
-	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	W.Write<uint32_t>(Buffers.size());
+	for (size_t i = 0; i < Buffers.size(); ++i)
 	{
 		CSM30BufferMeta& Obj = Buffers[i];
 		Obj.UsedFloat4.Sort();
@@ -422,13 +421,13 @@ bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 		WriteRegisterRanges(Obj.UsedBool, W, "bool");
 	}
 
-	W.Write<U32>(Structs.GetCount());
-	for (UPTR i = 0; i < Structs.GetCount(); ++i)
+	W.Write<uint32_t>(Structs.size());
+	for (size_t i = 0; i < Structs.size(); ++i)
 	{
 		CSM30StructMeta& Obj = Structs[i];
 
-		W.Write<U32>(Obj.Members.GetCount());
-		for (UPTR j = 0; j < Obj.Members.GetCount(); ++j)
+		W.Write<uint32_t>(Obj.Members.size());
+		for (size_t j = 0; j < Obj.Members.size(); ++j)
 		{
 			CSM30StructMemberMeta& Member = Obj.Members[j];
 			W.Write(Member.Name);
@@ -442,14 +441,14 @@ bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 		}
 	}
 
-	W.Write<U32>(Consts.GetCount());
-	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	W.Write<uint32_t>(Consts.size());
+	for (size_t i = 0; i < Consts.size(); ++i)
 	{
 		const CSM30ConstMeta& Obj = Consts[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
 		W.Write(Obj.StructIndex);
-		W.Write<U8>(Obj.RegisterSet);
+		W.Write<uint8_t>(Obj.RegisterSet);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.ElementRegisterCount);
 		W.Write(Obj.ElementCount);
@@ -458,25 +457,25 @@ bool CSM30ShaderMeta::Save(IO::CBinaryWriter& W) const
 		W.Write(Obj.Flags);
 	}
 
-	W.Write<U32>(Resources.GetCount());
-	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	W.Write<uint32_t>(Resources.size());
+	for (size_t i = 0; i < Resources.size(); ++i)
 	{
 		const CSM30RsrcMeta& Obj = Resources[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.Register);
 	}
 
-	W.Write<U32>(Samplers.GetCount());
-	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	W.Write<uint32_t>(Samplers.size());
+	for (size_t i = 0; i < Samplers.size(); ++i)
 	{
 		const CSM30SamplerMeta& Obj = Samplers[i];
 		W.Write(Obj.Name);
-		W.Write<U8>(Obj.Type);
+		W.Write<uint8_t>(Obj.Type);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.RegisterCount);
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -486,9 +485,9 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 	Consts.Clear();
 	Samplers.Clear();
 
-	U32 Count;
+	uint32_t Count;
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CSM30BufferMeta* pBuf = Buffers.Reserve(Count, false);
 	for (; pBuf < Buffers.End(); ++pBuf)
 	{
@@ -502,13 +501,13 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 		ReadRegisterRanges(Obj.UsedBool, R);
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CSM30StructMeta* pStruct = Structs.Reserve(Count, false);
 	for (; pStruct < Structs.End(); ++pStruct)
 	{
 		CSM30StructMeta& Obj = *pStruct;
 
-		R.Read<U32>(Count);
+		R.Read<uint32_t>(Count);
 		CSM30StructMemberMeta* pMember = Obj.Members.Reserve(Count, false);
 		for (; pMember < Obj.Members.End(); ++pMember)
 		{
@@ -524,18 +523,18 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 		}
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CSM30ConstMeta* pConst = Consts.Reserve(Count, false);
 	for (; pConst < Consts.End(); ++pConst)
 	{
 		CSM30ConstMeta& Obj = *pConst;
 
-		U8 RegSet;
+		uint8_t RegSet;
 
 		R.Read(Obj.Name);
 		R.Read(Obj.BufferIndex);
 		R.Read(Obj.StructIndex);
-		R.Read<U8>(RegSet);
+		R.Read<uint8_t>(RegSet);
 
 		Obj.RegisterSet = (ESM30RegisterSet)RegSet;
 
@@ -550,7 +549,7 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 		Obj.RegisterCount = Obj.ElementRegisterCount * Obj.ElementCount;
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CSM30RsrcMeta* pRsrc = Resources.Reserve(Count, false);
 	for (; pRsrc < Resources.End(); ++pRsrc)
 	{
@@ -561,129 +560,129 @@ bool CSM30ShaderMeta::Load(IO::CBinaryReader& R)
 		//???how to reference texture object in SM3.0 shader for it to be included in params list?
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CSM30SamplerMeta* pSamp = Samplers.Reserve(Count, false);
 	for (; pSamp < Samplers.End(); ++pSamp)
 	{
 		CSM30SamplerMeta& Obj = *pSamp;
 		R.Read(Obj.Name);
 		
-		U8 Type;
-		R.Read<U8>(Type);
+		uint8_t Type;
+		R.Read<uint8_t>(Type);
 		Obj.Type = (ESM30SamplerType)Type;
 		
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.RegisterCount);
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-U32 CSM30ShaderMeta::GetMinFeatureLevel() const
+uint32_t CSM30ShaderMeta::GetMinFeatureLevel() const
 {
 	return Render::GPU_Level_D3D9_3;
 }
 //---------------------------------------------------------------------
 
-UPTR CSM30ShaderMeta::GetParamCount(EShaderParamClass Class) const
+size_t CSM30ShaderMeta::GetParamCount(EShaderParamClass Class) const
 {
 	switch (Class)
 	{
-		case ShaderParam_Const:		return Consts.GetCount();
-		case ShaderParam_Resource:	return Resources.GetCount();
-		case ShaderParam_Sampler:	return Samplers.GetCount();
+		case ShaderParam_Const:		return Consts.size();
+		case ShaderParam_Resource:	return Resources.size();
+		case ShaderParam_Sampler:	return Samplers.size();
 		default:					return 0;
 	}
 }
 //---------------------------------------------------------------------
 
-CMetadataObject* CSM30ShaderMeta::GetParamObject(EShaderParamClass Class, UPTR Index)
+CMetadataObject* CSM30ShaderMeta::GetParamObject(EShaderParamClass Class, size_t Index)
 {
 	switch (Class)
 	{
 		case ShaderParam_Const:		return &Consts[Index];
 		case ShaderParam_Resource:	return &Resources[Index];
 		case ShaderParam_Sampler:	return &Samplers[Index];
-		default:					return NULL;
+		default:					return nullptr;
 	}
 }
 //---------------------------------------------------------------------
 
-UPTR CSM30ShaderMeta::AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject)
+size_t CSM30ShaderMeta::AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject)
 {
-	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class) return (UPTR)(INVALID_INDEX);
+	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class) return (size_t)(INVALID_INDEX);
 
 	switch (Class)
 	{
 		case ShaderParam_Const:
 		{
 			Consts.Add(*(const CSM30ConstMeta*)pMetaObject);
-			return Consts.GetCount() - 1;
+			return Consts.size() - 1;
 		}
 		case ShaderParam_Resource:
 		{
 			Resources.Add(*(const CSM30RsrcMeta*)pMetaObject);
-			return Resources.GetCount() - 1;
+			return Resources.size() - 1;
 		}
 		case ShaderParam_Sampler:
 		{
 			Samplers.Add(*(const CSM30SamplerMeta*)pMetaObject);
-			return Samplers.GetCount() - 1;
+			return Samplers.size() - 1;
 		}
-		default:	return (UPTR)(INVALID_INDEX);
+		default:	return (size_t)(INVALID_INDEX);
 	}
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* pName, UPTR& OutIndex) const
+bool CSM30ShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const
 {
 	switch (Class)
 	{
 		case ShaderParam_Const:
 		{
-			UPTR Idx = 0;
-			for (; Idx < Consts.GetCount(); ++ Idx)
+			size_t Idx = 0;
+			for (; Idx < Consts.size(); ++ Idx)
 				if (Consts[Idx].Name == pName) break;
-			if (Idx == Consts.GetCount()) FAIL;
+			if (Idx == Consts.size()) return false;
 			OutIndex = Idx;
-			OK;
+			return true;
 		}
 		case ShaderParam_Resource:
 		{
-			UPTR Idx = 0;
-			for (; Idx < Resources.GetCount(); ++ Idx)
+			size_t Idx = 0;
+			for (; Idx < Resources.size(); ++ Idx)
 				if (Resources[Idx].Name == pName) break;
-			if (Idx == Resources.GetCount()) FAIL;
+			if (Idx == Resources.size()) return false;
 			OutIndex = Idx;
-			OK;
+			return true;
 		}
 		case ShaderParam_Sampler:
 		{
-			UPTR Idx = 0;
-			for (; Idx < Samplers.GetCount(); ++ Idx)
+			size_t Idx = 0;
+			for (; Idx < Samplers.size(); ++ Idx)
 				if (Samplers[Idx].Name == pName) break;
-			if (Idx == Samplers.GetCount()) FAIL;
+			if (Idx == Samplers.size()) return false;
 			OutIndex = Idx;
-			OK;
+			return true;
 		}
-		default:					FAIL;
+		default:					return false;
 	}
 }
 //---------------------------------------------------------------------
 
-UPTR CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
+size_t CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 {
-	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (UPTR)(INVALID_INDEX);
+	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (size_t)(INVALID_INDEX);
 
 	const CSM30BufferMeta* pSM30Buffer = (const CSM30BufferMeta*)pMetaBuffer;
-	UPTR Idx = 0;
-	for (; Idx < Buffers.GetCount(); ++ Idx)
+	size_t Idx = 0;
+	for (; Idx < Buffers.size(); ++ Idx)
 		if (Buffers[Idx].SlotIndex == pSM30Buffer->SlotIndex) break;
-	if (Idx == Buffers.GetCount())
+	if (Idx == Buffers.size())
 	{
 		Buffers.Add(*pSM30Buffer);
-		return Buffers.GetCount() - 1;
+		return Buffers.size() - 1;
 	}
 	else
 	{
@@ -692,25 +691,25 @@ UPTR CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 		CSM30BufferMeta& CurrBuffer = Buffers[Idx];
 		const CSM30BufferMeta& NewBuffer = *pSM30Buffer;
 		
-		for (UPTR r = 0; r < NewBuffer.UsedFloat4.GetCount(); ++r)
+		for (size_t r = 0; r < NewBuffer.UsedFloat4.size(); ++r)
 		{
-			UPTR Register = NewBuffer.UsedFloat4[r];
+			size_t Register = NewBuffer.UsedFloat4[r];
 			if (!CurrBuffer.UsedFloat4.Contains(Register))
 				CurrBuffer.UsedFloat4.Add(Register);
 		}
 		CurrBuffer.UsedFloat4.Sort();
 		
-		for (UPTR r = 0; r < NewBuffer.UsedInt4.GetCount(); ++r)
+		for (size_t r = 0; r < NewBuffer.UsedInt4.size(); ++r)
 		{
-			UPTR Register = NewBuffer.UsedInt4[r];
+			size_t Register = NewBuffer.UsedInt4[r];
 			if (!CurrBuffer.UsedInt4.Contains(Register))
 				CurrBuffer.UsedInt4.Add(Register);
 		}
 		CurrBuffer.UsedInt4.Sort();
 		
-		for (UPTR r = 0; r < NewBuffer.UsedBool.GetCount(); ++r)
+		for (size_t r = 0; r < NewBuffer.UsedBool.size(); ++r)
 		{
-			UPTR Register = NewBuffer.UsedBool[r];
+			size_t Register = NewBuffer.UsedBool[r];
 			if (!CurrBuffer.UsedBool.Contains(Register))
 				CurrBuffer.UsedBool.Add(Register);
 		}
@@ -723,35 +722,35 @@ UPTR CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 
 CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const
 {
-	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;
+	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return nullptr;
 	return &Buffers[((CSM30ConstMeta*)pMetaObject)->BufferIndex];
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx)
+bool CSM30ShaderMeta::SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx)
 {
-	if (ConstIdx >= Consts.GetCount()) FAIL;
+	if (ConstIdx >= Consts.size()) return false;
 	Consts[ConstIdx].BufferIndex = BufferIdx;
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-U32 CSM30ShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, U64 StructKey, CDict<U64, U32>& StructIndexMapping)
+uint32_t CSM30ShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping)
 {
-	IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+	ptrdiff_t StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
 	if (StructIdxIdx != INVALID_INDEX) return StructIndexMapping.ValueAt(StructIdxIdx);
 
-	const U32 StructIndex = (U32)(StructKey & 0xffffffff);
+	const uint32_t StructIndex = (uint32_t)(StructKey & 0xffffffff);
 	const CSM30StructMeta& StructMeta = ((const CSM30ShaderMeta&)SourceMeta).Structs[StructIndex];
 	Structs.Add(StructMeta);
-	StructIndexMapping.Add(StructKey, Structs.GetCount() - 1);
+	StructIndexMapping.Add(StructKey, Structs.size() - 1);
 
-	for (UPTR i = 0; i < StructMeta.Members.GetCount(); ++i)
+	for (size_t i = 0; i < StructMeta.Members.size(); ++i)
 	{
 		const CSM30StructMemberMeta& MemberMeta = StructMeta.Members[i];
-		if (MemberMeta.StructIndex == (U32)(-1)) continue;
+		if (MemberMeta.StructIndex == (uint32_t)(-1)) continue;
 
-		const U64 MemberKey = (StructKey & 0xffffffff00000000) | ((U64)MemberMeta.StructIndex);
+		const uint64_t MemberKey = (StructKey & 0xffffffff00000000) | ((uint64_t)MemberMeta.StructIndex);
 		AddStructure(SourceMeta, MemberKey, StructIndexMapping);
 	}
 
@@ -761,17 +760,17 @@ U32 CSM30ShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, U64 StructK
 }
 //---------------------------------------------------------------------
 
-U32 CSM30ShaderMeta::GetStructureIndex(UPTR ConstIdx) const
+uint32_t CSM30ShaderMeta::GetStructureIndex(size_t ConstIdx) const
 {
-	if (ConstIdx >= Consts.GetCount()) return (U32)(-1);
+	if (ConstIdx >= Consts.size()) return (uint32_t)(-1);
 	return Consts[ConstIdx].StructIndex;
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::SetStructureIndex(UPTR ConstIdx, U32 StructIdx)
+bool CSM30ShaderMeta::SetStructureIndex(size_t ConstIdx, uint32_t StructIdx)
 {
-	if (ConstIdx >= Consts.GetCount()) FAIL;
+	if (ConstIdx >= Consts.size()) return false;
 	Consts[ConstIdx].StructIndex = StructIdx;
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------

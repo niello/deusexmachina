@@ -18,14 +18,14 @@
 #undef CreateDirectory
 #undef DeleteFile
 
-CString OutputDir;
-CString Messages;	// Last operation messages. Must be cleared at the start of every public API function.
+std::string OutputDir;
+std::string Messages;	// Last operation messages. Must be cleared at the start of every public API function.
 
 struct CTargetParams
 {
-	const char*		pD3DTarget;
-	const char*		pExtension;
-	Data::CFourCC	FileSignature;
+	const char*	pD3DTarget;
+	const char*	pExtension;
+	uint32_t	FileSignature;
 };
 
 class CAutoFree
@@ -36,15 +36,15 @@ private:
 
 public:
 
-	CAutoFree(): pDataToFree(NULL) {}
-	~CAutoFree() { if (pDataToFree) n_free(pDataToFree); }
+	CAutoFree(): pDataToFree(nullptr) {}
+	~CAutoFree() { if (pDataToFree) free(pDataToFree); }
 
 	void Set(void* pData) { pDataToFree = pData; }
 };
 
 DEM_DLL_API bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory)
 {
-	Messages.Clear();
+	Messages.clear();
 
 	if (pOutputDirectory)
 	{
@@ -55,7 +55,7 @@ DEM_DLL_API bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* p
 	{
 		OutputDir = PathUtils::ExtractDirName(pDBFileName);
 		OutputDir += "../../Export/Shaders/Bin/";
-		OutputDir = PathUtils::CollapseDots(OutputDir.CStr());
+		OutputDir = PathUtils::CollapseDots(OutputDir.c_str());
 	}
 
 	return OpenDB(pDBFileName);
@@ -64,25 +64,15 @@ DEM_DLL_API bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* p
 
 DEM_DLL_API const char* DEM_DLLCALL GetLastOperationMessages()
 {
-	return Messages.CStr();
+	return Messages.c_str();
 }
 //---------------------------------------------------------------------
 
-inline U32 GetTargetByFileSignature(Data::CFourCC FileSig)
+bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out)
 {
-	// File signature always stores target in bytes 1 and 0
-	//!!!add endian-correctness!
-	char TargetHigh = FileSig.GetChar(1) - '0';
-	char TargetLow = FileSig.GetChar(0) - '0';
-	return (TargetHigh << 8) | TargetLow;
-}
-//---------------------------------------------------------------------
-
-bool GetTargetParams(EShaderType ShaderType, U32 Target, CTargetParams& Out)
-{
-	const char* pTarget = NULL;
-	const char* pExt = NULL;
-	Data::CFourCC FileSig;
+	const char* pTarget = nullptr;
+	const char* pExt = nullptr;
+	uint32_t FileSig;
 	switch (ShaderType)
 	{
 		case ShaderType_Vertex:
@@ -90,11 +80,11 @@ bool GetTargetParams(EShaderType ShaderType, U32 Target, CTargetParams& Out)
 			pExt = "vsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "vs_5_0"; FileSig.Code = 'VS50'; break;
-				case 0x0401: pTarget = "vs_4_1"; FileSig.Code = 'VS41'; break;
-				case 0x0400: pTarget = "vs_4_0"; FileSig.Code = 'VS40'; break;
-				case 0x0300: pTarget = "vs_3_0"; FileSig.Code = 'VS30'; break;
-				default: FAIL;
+				case 0x0500: pTarget = "vs_5_0"; FileSig = 'VS50'; break;
+				case 0x0401: pTarget = "vs_4_1"; FileSig = 'VS41'; break;
+				case 0x0400: pTarget = "vs_4_0"; FileSig = 'VS40'; break;
+				case 0x0300: pTarget = "vs_3_0"; FileSig = 'VS30'; break;
+				default: return false;
 			}
 			break;
 		}
@@ -103,11 +93,11 @@ bool GetTargetParams(EShaderType ShaderType, U32 Target, CTargetParams& Out)
 			pExt = "psh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "ps_5_0"; FileSig.Code = 'PS50'; break;
-				case 0x0401: pTarget = "ps_4_1"; FileSig.Code = 'PS41'; break;
-				case 0x0400: pTarget = "ps_4_0"; FileSig.Code = 'PS40'; break;
-				case 0x0300: pTarget = "ps_3_0"; FileSig.Code = 'PS30'; break;
-				default: FAIL;
+				case 0x0500: pTarget = "ps_5_0"; FileSig = 'PS50'; break;
+				case 0x0401: pTarget = "ps_4_1"; FileSig = 'PS41'; break;
+				case 0x0400: pTarget = "ps_4_0"; FileSig = 'PS40'; break;
+				case 0x0300: pTarget = "ps_3_0"; FileSig = 'PS30'; break;
+				default: return false;
 			}
 			break;
 		}
@@ -116,10 +106,10 @@ bool GetTargetParams(EShaderType ShaderType, U32 Target, CTargetParams& Out)
 			pExt = "gsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "gs_5_0"; FileSig.Code = 'GS50'; break;
-				case 0x0401: pTarget = "gs_4_1"; FileSig.Code = 'GS41'; break;
-				case 0x0400: pTarget = "gs_4_0"; FileSig.Code = 'GS40'; break;
-				default: FAIL;
+				case 0x0500: pTarget = "gs_5_0"; FileSig = 'GS50'; break;
+				case 0x0401: pTarget = "gs_4_1"; FileSig = 'GS41'; break;
+				case 0x0400: pTarget = "gs_4_0"; FileSig = 'GS40'; break;
+				default: return false;
 			}
 			break;
 		}
@@ -128,8 +118,8 @@ bool GetTargetParams(EShaderType ShaderType, U32 Target, CTargetParams& Out)
 			pExt = "hsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "hs_5_0"; FileSig.Code = 'HS50'; break;
-				default: FAIL;
+				case 0x0500: pTarget = "hs_5_0"; FileSig = 'HS50'; break;
+				default: return false;
 			}
 			break;
 		}
@@ -138,25 +128,25 @@ bool GetTargetParams(EShaderType ShaderType, U32 Target, CTargetParams& Out)
 			pExt = "dsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "ds_5_0"; FileSig.Code = 'DS50'; break;
-				default: FAIL;
+				case 0x0500: pTarget = "ds_5_0"; FileSig = 'DS50'; break;
+				default: return false;
 			}
 			break;
 		}
-		default: FAIL;
+		default: return false;
 	};
 
 	Out.pD3DTarget = pTarget;
 	Out.pExtension = pExt;
 	Out.FileSignature = FileSig;
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 // String passed will be tokenized in place, so it must be read-write accessible.
 // Memory management is a caller's responsibility.
-bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
+bool ParseDefineString(char* pDefineString, std::vector<CMacroDBRec>& Out)
 {
 	CMacroDBRec CurrMacro = { 0 };
 
@@ -179,13 +169,13 @@ bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
 			}
 			else // ';'
 			{
-				CurrMacro.Value = NULL;
+				CurrMacro.Value = nullptr;
 				if (!CurrMacro.Name)
 				{
 					CurrMacro.Name = pCurrPos;
 					Out.Add(CurrMacro);
 				}
-				CurrMacro.Name = NULL;
+				CurrMacro.Name = nullptr;
 				pCurrDlms = pBothDlms;
 			}
 			*pDlm = 0;
@@ -193,13 +183,13 @@ bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
 		}
 		else
 		{
-			CurrMacro.Value = NULL;
+			CurrMacro.Value = nullptr;
 			if (!CurrMacro.Name)
 			{
 				CurrMacro.Name = pCurrPos;
 				Out.Add(CurrMacro);
 			}
-			CurrMacro.Name = NULL;
+			CurrMacro.Name = nullptr;
 			break;
 		}
 	}
@@ -207,15 +197,15 @@ bool ParseDefineString(char* pDefineString, CArray<CMacroDBRec>& Out)
 	// CurrMacro is both NULLs in all control pathes here, but we don't add it.
 	// CompileShader() method takes care of it for D3D.
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 // pDefines - "NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]"
-DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, U32 Target, const char* pEntryPoint,
-											 const char* pDefines, bool Debug, bool OnlyMetadata, U32& ObjectFileID, U32& InputSignatureFileID)
+DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, uint32_t Target, const char* pEntryPoint,
+											 const char* pDefines, bool Debug, bool OnlyMetadata, uint32_t& ObjectFileID, uint32_t& InputSignatureFileID)
 {
-	Messages.Clear();
+	Messages.clear();
 
 	if (!pSrcPath || ShaderType >= ShaderType_COUNT || !pEntryPoint) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
@@ -226,15 +216,15 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	Data::CBuffer In;
 	void* hFile = FS->OpenFile(pSrcPath, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!hFile) return DEM_SHADER_COMPILER_IO_READ_ERROR;
-	U64 CurrWriteTime = FS->GetFileWriteTime(hFile);
-	UPTR FileSize = (UPTR)FS->GetFileSize(hFile);
+	uint64_t CurrWriteTime = FS->GetFileWriteTime(hFile);
+	size_t FileSize = (size_t)FS->GetFileSize(hFile);
 	In.Reserve(FileSize);
-	UPTR ReadSize = FS->Read(hFile, In.GetPtr(), FileSize);
+	size_t ReadSize = FS->Read(hFile, In.GetPtr(), FileSize);
 	FS->CloseFile(hFile);
 		
 	if (ReadSize != FileSize) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 
-	UPTR SrcCRC = Util::CalcCRC((U8*)In.GetPtr(), In.GetSize());
+	size_t SrcCRC = Util::CalcCRC((uint8_t*)In.GetPtr(), In.GetSize());
 
 	// Setup compiler flags
 
@@ -270,8 +260,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	CAutoFree DefineStringBuffer;
 	if (pDefines && *pDefines)
 	{
-		UPTR DefinesLen = strlen(pDefines) + 1;
-		pDefineStringBuffer = (char*)n_malloc(DefinesLen);
+		size_t DefinesLen = strlen(pDefines) + 1;
+		pDefineStringBuffer = (char*)malloc(DefinesLen);
 		strcpy_s(pDefineStringBuffer, DefinesLen, pDefines);
 		DefineStringBuffer.Set(pDefineStringBuffer);
 		if (!ParseDefineString(pDefineStringBuffer, Rec.Defines)) return DEM_SHADER_COMPILER_INVALID_ARGS;
@@ -302,11 +292,11 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	// Setup D3D shader macros
 
-	CArray<D3D_SHADER_MACRO> D3DMacros(Rec.Defines.GetCount() + 1, 0);
+	std::vector<D3D_SHADER_MACRO> D3DMacros(Rec.Defines.size() + 1, 0);
 	D3D_SHADER_MACRO* pD3DMacros;
-	if (Rec.Defines.GetCount())
+	if (Rec.Defines.size())
 	{
-		for (UPTR i = 0; i < Rec.Defines.GetCount(); ++i)
+		for (size_t i = 0; i < Rec.Defines.size(); ++i)
 		{
 			const CMacroDBRec& Macro = Rec.Defines[i];
 			D3D_SHADER_MACRO* pD3DMacro = D3DMacros.Add();
@@ -315,19 +305,19 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		}
 
 		// Terminating macro
-		D3D_SHADER_MACRO D3DMacro = { NULL, NULL };
+		D3D_SHADER_MACRO D3DMacro = { nullptr, nullptr };
 		D3DMacros.Add(D3DMacro);
 
 		pD3DMacros = &D3DMacros[0];
 	}
-	else pD3DMacros = NULL;
+	else pD3DMacros = nullptr;
 
 	// Compile shader
 
-	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pSrcPath), CString::Empty); //RootPath);
+	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pSrcPath), std::string::Empty); //RootPath);
 
-	ID3DBlob* pCode = NULL;
-	ID3DBlob* pErrors = NULL;
+	ID3DBlob* pCode = nullptr;
+	ID3DBlob* pErrors = nullptr;
 	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), pSrcPath,
 							pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
 							Flags, 0, &pCode, &pErrors);
@@ -361,9 +351,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		{
 			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
 			Rec.InputSigFile.BytecodeSize = pInputSig->GetBufferSize();
-			Rec.InputSigFile.CRC = Util::CalcCRC((U8*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+			Rec.InputSigFile.CRC = Util::CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
-			U32 OldInputSigID = Rec.InputSigFile.ID;
+			uint32_t OldInputSigID = Rec.InputSigFile.ID;
 			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), Target, Cmp_All))
 			{
 				Rec.InputSigFile.ID = CreateObjFileRecord();
@@ -378,7 +368,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 				FS->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
 
-				void* hFile = FS->OpenFile(Rec.InputSigFile.Path.CStr(), IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
+				void* hFile = FS->OpenFile(Rec.InputSigFile.Path.c_str(), IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
 				if (!hFile)
 				{
 					pCode->Release();
@@ -398,7 +388,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
 			{
-				CString OldObjPath;
+				std::string OldObjPath;
 				if (ReleaseObjFile(OldInputSigID, OldObjPath))
 					FS->DeleteFile(OldObjPath);
 			}
@@ -432,14 +422,14 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	}
 
 	Rec.ObjFile.BytecodeSize = pFinalCode->GetBufferSize();
-	Rec.ObjFile.CRC = Util::CalcCRC((U8*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+	Rec.ObjFile.CRC = Util::CalcCRC((uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 	// Try to find exactly the same binary and reuse it, or save our result
 
 	DWORD OldObjFileID = Rec.ObjFile.ID;
 	bool ObjFound;
 	IO::PMemStream ObjStream;
-	U64 BinaryOffset;
+	uint64_t BinaryOffset;
 	if (Target < 0x0400)
 	{
 		// Collect and compare metadata for sm3.0 shaders. Binary file may differ even if a shader blob part
@@ -505,26 +495,26 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 		IO::CBinaryWriter W(File);
 
-		W.Write<U32>(TargetParams.FileSignature.Code);
+		W.Write<uint32_t>(TargetParams.FileSignature);
 
 		// Offset of a shader binary, will fill later
-		U64 OffsetOffset = File.GetPosition();
-		W.Write<U32>(0);
+		uint64_t OffsetOffset = File.GetPosition();
+		W.Write<uint32_t>(0);
 
-		W.Write<U32>(Rec.ObjFile.ID);
+		W.Write<uint32_t>(Rec.ObjFile.ID);
 
 		if (Target >= 0x0400)
 		{
-			W.Write<U32>(Rec.InputSigFile.ID);
+			W.Write<uint32_t>(Rec.InputSigFile.ID);
 		}
 
 		if (ObjStream.IsValidPtr())
 		{
 			// Data is already serialized into a memory, just save it
 			BinaryOffset += File.GetPosition();
-			File.Write(ObjStream->Map(), (UPTR)ObjStream->GetSize());
+			File.Write(ObjStream->Map(), (size_t)ObjStream->GetSize());
 			ObjStream->Unmap();
-			ObjStream = NULL;
+			ObjStream = nullptr;
 		}
 		else
 		{
@@ -565,7 +555,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		{
 			// Write binary data offset for fast skipping of metadata when reading
 			File.Seek(OffsetOffset, IO::Seek_Begin);
-			W.Write<U32>((U32)BinaryOffset);
+			W.Write<uint32_t>((uint32_t)BinaryOffset);
 		}
 
 		File.Close();
@@ -587,7 +577,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	// and delete it if no references left.
 	if (OldObjFileID > 0 && OldObjFileID != Rec.ObjFile.ID)
 	{
-		CString OldObjPath;
+		std::string OldObjPath;
 		if (ReleaseObjFile(OldObjFileID, OldObjPath))
 			FS->DeleteFile(OldObjPath);
 	}
@@ -605,61 +595,64 @@ DEM_DLL_API void DEM_DLLCALL CreateShaderMetadata(EShaderModel ShaderModel, CSha
 {
 	if (ShaderModel == ShaderModel_30) pOutMeta = n_new(CSM30ShaderMeta);
 	else if (ShaderModel == ShaderModel_USM) pOutMeta = n_new(CUSMShaderMeta);
-	else pOutMeta = NULL;
+	else pOutMeta = nullptr;
 }
 //---------------------------------------------------------------------
 
 // Use FreeShaderMetadata() on the pointer returned.
-DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(U32 ID, U32& OutTarget, CShaderMetadata*& pOutMeta)
+DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta)
 {
-	Messages.Clear();
+	Messages.clear();
 
 	CObjFileData ObjFile;
-	if (!FindObjFileByID(ID, ObjFile)) FAIL;
+	if (!FindObjFileByID(ID, ObjFile)) return false;
 
 	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
-	IO::CFileStream File(ObjFile.Path.CStr(), FS);
-	if (!File.Open(IO::SAM_READ)) FAIL;
+	IO::CFileStream File(ObjFile.Path.c_str(), FS);
+	if (!File.Open(IO::SAM_READ)) return false;
 	IO::CBinaryReader R(File);
 
-	Data::CFourCC FileSig;
-	R.Read(FileSig.Code);
-	OutTarget = GetTargetByFileSignature(FileSig);
+	// File signature always stores target in bytes 1 and 0
+	uint32_t FileSig;
+	R.Read(FileSig);
+	const char ByteHigh = (FileSig & 0x0000ff00) >> 8;
+	const char ByteLow = (FileSig & 0x000000ff);
+	OutTarget = ((ByteHigh - '0') << 8) | (ByteLow - '0');
 
-	R.Read<U32>();	// Binary data offset - skip
-	R.Read<U32>();	// Shader obj file ID - skip
+	R.Read<uint32_t>();	// Binary data offset - skip
+	R.Read<uint32_t>();	// Shader obj file ID - skip
 
-	pOutMeta = NULL;
+	pOutMeta = nullptr;
 
 	if (OutTarget >= 0x0400)
 	{
-		R.Read<U32>();	// Input signature obj file ID - skip
-		pOutMeta = n_new(CUSMShaderMeta);
+		R.Read<uint32_t>();	// Input signature obj file ID - skip
+		pOutMeta = new CUSMShaderMeta;
 	}
-	else pOutMeta = n_new(CSM30ShaderMeta);
+	else pOutMeta = new CSM30ShaderMeta;
 
-	if (!pOutMeta) FAIL;
+	if (!pOutMeta) return false;
 
-	if (pOutMeta->Load(R)) OK;
+	if (pOutMeta->Load(R)) return true;
 	else
 	{
-		n_delete(pOutMeta);
-		pOutMeta = NULL;
-		FAIL;
+		delete pOutMeta;
+		pOutMeta = nullptr;
+		return false;
 	}
 }
 //---------------------------------------------------------------------
 
 DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 {
-	Messages.Clear();
-	n_delete(pMeta);
+	Messages.clear();
+	delete pMeta;
 }
 //---------------------------------------------------------------------
 
 DEM_DLL_API bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
 {
-	Messages.Clear();
+	Messages.clear();
 	return Meta.Save(W);
 }
 //---------------------------------------------------------------------
@@ -668,17 +661,17 @@ DEM_DLL_API bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const C
 // with a lookup table ID -> Offset. Returns packed shader count.
 DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
 {
-	Messages.Clear();
+	Messages.clear();
 
 	// Get files by ID, include input signatures
-	CString SQL("SELECT ID, Path, Size FROM Files WHERE ID IN(");
+	std::string SQL("SELECT ID, Path, Size FROM Files WHERE ID IN(");
 	SQL += pCommaSeparatedShaderIDs;
 	SQL += ") OR ID IN (SELECT DISTINCT InputSigFileID FROM Shaders WHERE InputSigFileID <> 0 AND ObjFileID IN(";
 	SQL += pCommaSeparatedShaderIDs;
 	SQL += ")) ORDER BY ID ASC";
 
 	DB::CValueTable Result;
-	if (!ExecuteSQLQuery(SQL.CStr(), &Result)) return 0;
+	if (!ExecuteSQLQuery(SQL.c_str(), &Result)) return 0;
 	if (!Result.GetRowCount()) return 0;
 
 	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
@@ -688,27 +681,27 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 
 	IO::CBinaryWriter W(File);
 
-	W.Write<U32>('SLIB');				// Magic
-	W.Write<U32>(0x0100);				// Version
-	W.Write<U32>(Result.GetRowCount());	// Record count
+	W.Write<uint32_t>('SLIB');				// Magic
+	W.Write<uint32_t>(0x0100);				// Version
+	W.Write<uint32_t>(Result.GetRowCount());	// Record count
 
 	// Data starts after a header (12 bytes) and a lookup table
 	// (4 bytes ID + 4 bytes offset + 4 bytes size for each record)
-	UPTR CurrDataOffset = 12 + Result.GetRowCount() * 12;
+	size_t CurrDataOffset = 12 + Result.GetRowCount() * 12;
 
 	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
 	int Col_Size = Result.GetColumnIndex(CStrID("Size"));
 
 	// Write TOC, sorted by ID for faster lookup
-	for (UPTR i = 0; i < Result.GetRowCount(); ++i)
+	for (size_t i = 0; i < Result.GetRowCount(); ++i)
 	{
-		U32 ID = (U32)Result.Get<int>(Col_ID, i);
-		U32 Size = (U32)Result.Get<int>(Col_Size, i);
+		uint32_t ID = (uint32_t)Result.Get<int>(Col_ID, i);
+		uint32_t Size = (uint32_t)Result.Get<int>(Col_Size, i);
 
-		W.Write<U32>(ID);
-		W.Write<U32>(CurrDataOffset);
-		W.Write<U32>(Size);
+		W.Write<uint32_t>(ID);
+		W.Write<uint32_t>(CurrDataOffset);
+		W.Write<uint32_t>(Size);
 
 		CurrDataOffset += Size;
 	}
@@ -716,10 +709,10 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 	// Write binary data
 	//???!!!how to preserve order passed when saving binary data?! is really critical?!
 
-	for (UPTR i = 0; i < Result.GetRowCount(); ++i)
+	for (size_t i = 0; i < Result.GetRowCount(); ++i)
 	{
-		U32 Size = (U32)Result.Get<int>(Col_Size, i);
-		const CString& Path = Result.Get<CString>(Col_Path, i);
+		uint32_t Size = (uint32_t)Result.Get<int>(Col_Size, i);
+		const std::string& Path = Result.Get<std::string>(Col_Path, i);
 		
 		IO::CFileStream ObjFile(Path, FS);
 		if (!ObjFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return i;
@@ -727,18 +720,18 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 		n_assert(ObjFile.GetSize() == Size);
 
 		//!!!can use mapped files instead!
-		void* pData = n_malloc(Size);
+		void* pData = malloc(Size);
 		if (ObjFile.Read(pData, Size) != Size)
 		{
-			n_free(pData);
+			free(pData);
 			return i;
 		}
 		if (File.Write(pData, Size) != Size)
 		{
-			n_free(pData);
+			free(pData);
 			return i;
 		}
-		n_free(pData);
+		free(pData);
 	}
 
 	File.Close();

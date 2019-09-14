@@ -17,6 +17,7 @@ DEM/Obj/
 Tools/Obj/
 /build
 /Build
+/Tools/build
 
 #Debug versions of binaries
 *_d.exe

@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_TOOLS_D3D9_SHADER_REFLECTION_H__
-#define __DEM_TOOLS_D3D9_SHADER_REFLECTION_H__
-
-#include <Data/Dictionary.h>
-#include <Data/String.h>
+#include <string>
+#include <vector>
+#include <map>
 
 // Code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
@@ -61,34 +59,32 @@ struct CD3D9ConstantType
 {
 	EPARAMETER_CLASS	Class;
 	EPARAMETER_TYPE		Type;
-	UPTR				Rows;
-	UPTR				Columns;
-	UPTR				Elements;				// For arrays
-	UPTR				StructMembers;
-	UPTR				Bytes;
-	UPTR				ElementRegisterCount;	// For a single array element
+	size_t				Rows;
+	size_t				Columns;
+	size_t				Elements;				// For arrays
+	size_t				StructMembers;
+	size_t				Bytes;
+	size_t				ElementRegisterCount;	// For a single array element
 };
 
 struct CD3D9ConstantDesc
 {
-	CString						Name;
+	std::string					Name;
 	CD3D9ConstantType			Type;
-	U32							StructID;
+	uint32_t					StructID;
 	EREGISTER_SET				RegisterSet;
-	UPTR						RegisterIndex;
-	UPTR						RegisterCount;
+	size_t						RegisterIndex;
+	size_t						RegisterCount;
 	//const void*				pDefaultValue; //???CBuffer or explicit mem mgmt? or don't read?
 };
 
 struct CD3D9StructDesc
 {
-	UPTR						Bytes;
+	size_t						Bytes;
 	EPARAMETER_TYPE				Type;
-	CArray<CD3D9ConstantDesc>	Members;
+	std::vector<CD3D9ConstantDesc>	Members;
 };
 
-bool D3D9Reflect(const void* pData, UPTR Size, CArray<CD3D9ConstantDesc>& OutConsts, CDict<U32, CD3D9StructDesc>& OutStructs, CString& OutCreator);
-void D3D9FindSamplerTextures(const char* pSrcText, CDict<CString, CArray<CString>>& OutSampToTex);
-void D3D9FindConstantBuffer(const char* pSrcText, const CString& ConstName, CString& OutBufferName, U32& OutSlotIndex);
-
-#endif
+bool D3D9Reflect(const void* pData, size_t Size, std::vector<CD3D9ConstantDesc>& OutConsts, std::map<uint32_t, CD3D9StructDesc>& OutStructs, std::string& OutCreator);
+void D3D9FindSamplerTextures(const char* pSrcText, std::map<std::string, std::vector<std::string>>& OutSampToTex);
+void D3D9FindConstantBuffer(const char* pSrcText, const std::string& ConstName, std::string& OutBufferName, uint32_t& OutSlotIndex);

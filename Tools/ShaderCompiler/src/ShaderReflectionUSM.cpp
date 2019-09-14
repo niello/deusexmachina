@@ -6,11 +6,11 @@
 #include <Render/RenderFwd.h>		// For GPU levels enum
 #include <D3DCompiler.inl>
 
-extern CString Messages;
+extern std::string Messages;
 
 bool CUSMBufferMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CUSMBufferMeta& TypedOther = (const CUSMBufferMeta&)Other;
 	return Register == TypedOther.Register && Size == TypedOther.Size;
 }
@@ -18,7 +18,7 @@ bool CUSMBufferMeta::IsEqual(const CMetadataObject& Other) const
 
 bool CUSMConstMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CUSMConstMeta& TypedOther = (const CUSMConstMeta&)Other;
 	return Type == TypedOther.Type &&
 		Offset == TypedOther.Offset &&
@@ -29,7 +29,7 @@ bool CUSMConstMeta::IsEqual(const CMetadataObject& Other) const
 
 bool CUSMRsrcMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CUSMRsrcMeta& TypedOther = (const CUSMRsrcMeta&)Other;
 	return Type == TypedOther.Type &&
 		RegisterStart == TypedOther.RegisterStart &&
@@ -39,28 +39,28 @@ bool CUSMRsrcMeta::IsEqual(const CMetadataObject& Other) const
 
 bool CUSMSamplerMeta::IsEqual(const CMetadataObject& Other) const
 {
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) FAIL;
+	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
 	const CUSMSamplerMeta& TypedOther = (const CUSMSamplerMeta&)Other;
 	return RegisterStart == TypedOther.RegisterStart && RegisterCount == TypedOther.RegisterCount;
 }
 //---------------------------------------------------------------------
 
 // StructCache stores D3D11 type to metadata index mapping, where metadata index is an index in the Out.Structs array
-bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, U32 StructSize, CDict<ID3D11ShaderReflectionType*, UPTR>& StructCache)
+bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache)
 {
-	if (!pType) FAIL;
+	if (!pType) return false;
 
 	// Already processed
-	if (StructCache.FindIndex(pType) != INVALID_INDEX) OK;
+	if (StructCache.FindIndex(pType) != INVALID_INDEX) return true;
 
 	D3D11_SHADER_TYPE_DESC D3DTypeDesc;
 	pType->GetDesc(&D3DTypeDesc);
 
 	// Has no members
-	if (D3DTypeDesc.Members == 0) OK;
+	if (D3DTypeDesc.Members == 0) return true;
 
 	// Add and fill new structure layout metadata
-	StructCache.Add(pType, Structs.GetCount());
+	StructCache.Add(pType, Structs.size());
 	CUSMStructMeta& Meta = *Structs.Add();
 
 	CUSMStructMemberMeta* pMemberMeta = Meta.Members.Reserve(D3DTypeDesc.Members);
@@ -76,7 +76,7 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, U32 Str
 		pMemberMeta->Offset = D3DMemberTypeDesc.Offset;
 		pMemberMeta->Flags = 0;
 
-		U32 MemberSize;
+		uint32_t MemberSize;
 		if (MemberIdx + 1 < D3DTypeDesc.Members)
 		{
 			ID3D11ShaderReflectionType* pNextMemberType = pType->GetMemberTypeByIndex(MemberIdx + 1);
@@ -107,7 +107,7 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, U32 Str
 		}
 		else
 		{
-			pMemberMeta->StructIndex = (U32)(-1);
+			pMemberMeta->StructIndex = (uint32_t)(-1);
 			switch (D3DMemberTypeDesc.Type)
 			{
 				case D3D_SVT_BOOL:	pMemberMeta->Type = USMConst_Bool; break;
@@ -123,7 +123,7 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, U32 Str
 					Messages += "' in a structure '";
 					Messages += (D3DTypeDesc.Name ? D3DTypeDesc.Name : "");
 					Messages += "'\n";
-					FAIL;
+					return false;
 				}
 			}
 
@@ -135,21 +135,21 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, U32 Str
 		}
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
+bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 {
-	ID3D11ShaderReflection* pReflector = NULL;
+	ID3D11ShaderReflection* pReflector = nullptr;
 
-	if (FAILED(D3D11Reflect(pData, Size, &pReflector))) FAIL;
+	if (FAILED(D3D11Reflect(pData, Size, &pReflector))) return false;
 
 	D3D_FEATURE_LEVEL D3DFeatureLevel;
 	if (FAILED(pReflector->GetMinFeatureLevel(&D3DFeatureLevel)))
 	{
 		pReflector->Release();
-		FAIL;
+		return false;
 	}
 
 	switch (D3DFeatureLevel)
@@ -170,10 +170,10 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 	if (FAILED(pReflector->GetDesc(&D3DDesc)))
 	{
 		pReflector->Release();
-		FAIL;
+		return false;
 	}
 
-	CDict<ID3D11ShaderReflectionType*, UPTR> StructCache;
+	std::map<ID3D11ShaderReflectionType*, size_t> StructCache;
 
 	for (UINT RsrcIdx = 0; RsrcIdx < D3DDesc.BoundResources; ++RsrcIdx)
 	{
@@ -181,7 +181,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 		if (FAILED(pReflector->GetResourceBindingDesc(RsrcIdx, &RsrcDesc)))
 		{
 			pReflector->Release();
-			FAIL;
+			return false;
 		}
 
 		// D3D_SIF_USERPACKED - may fail assertion if not set!
@@ -236,9 +236,9 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 					case D3D_SIT_STRUCTURED:	DesiredType = D3D_CT_RESOURCE_BIND_INFO; break;
 				}
 
-				ID3D11ShaderReflectionConstantBuffer* pCB = NULL;
+				ID3D11ShaderReflectionConstantBuffer* pCB = nullptr;
 				D3D11_SHADER_BUFFER_DESC D3DBufDesc;
-				for (UPTR BufIdx = 0; BufIdx < D3DDesc.ConstantBuffers; ++BufIdx)
+				for (size_t BufIdx = 0; BufIdx < D3DDesc.ConstantBuffers; ++BufIdx)
 				{
 					ID3D11ShaderReflectionConstantBuffer* pCurrCB = pReflector->GetConstantBufferByIndex(BufIdx);
 					pCurrCB->GetDesc(&D3DBufDesc);
@@ -284,7 +284,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 
 						CUSMConstMeta* pConstMeta = Consts.Add();
 						pConstMeta->Name = D3DVarDesc.Name;
-						pConstMeta->BufferIndex = Buffers.GetCount() - 1;
+						pConstMeta->BufferIndex = Buffers.size() - 1;
 						pConstMeta->Offset = D3DVarDesc.StartOffset;
 						pConstMeta->Flags = 0;
 
@@ -309,7 +309,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 						}
 						else
 						{
-							pConstMeta->StructIndex = (U32)(-1);
+							pConstMeta->StructIndex = (uint32_t)(-1);
 							switch (D3DTypeDesc.Type)
 							{
 								case D3D_SVT_BOOL:	pConstMeta->Type = USMConst_Bool; break;
@@ -325,7 +325,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 									Messages += "' in USM buffer '";
 									Messages += RsrcDesc.Name;
 									Messages += "'\n";
-									FAIL;
+									return false;
 								}
 							}
 
@@ -345,17 +345,17 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, UPTR Size)
 
 	pReflector->Release();
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 {
-	W.Write<U32>(MinFeatureLevel);
-	W.Write<U64>(RequiresFlags);
+	W.Write<uint32_t>(MinFeatureLevel);
+	W.Write<uint64_t>(RequiresFlags);
 
-	W.Write<U32>(Buffers.GetCount());
-	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
+	W.Write<uint32_t>(Buffers.size());
+	for (size_t i = 0; i < Buffers.size(); ++i)
 	{
 		const CUSMBufferMeta& Obj = Buffers[i];
 		W.Write(Obj.Name);
@@ -364,18 +364,18 @@ bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 		//W.Write(Obj.ElementCount);
 	}
 
-	W.Write<U32>(Structs.GetCount());
-	for (UPTR i = 0; i < Structs.GetCount(); ++i)
+	W.Write<uint32_t>(Structs.size());
+	for (size_t i = 0; i < Structs.size(); ++i)
 	{
 		CUSMStructMeta& Obj = Structs[i];
 
-		W.Write<U32>(Obj.Members.GetCount());
-		for (UPTR j = 0; j < Obj.Members.GetCount(); ++j)
+		W.Write<uint32_t>(Obj.Members.size());
+		for (size_t j = 0; j < Obj.Members.size(); ++j)
 		{
 			CUSMStructMemberMeta& Member = Obj.Members[j];
 			W.Write(Member.Name);
 			W.Write(Member.StructIndex);
-			W.Write<U8>(Member.Type);
+			W.Write<uint8_t>(Member.Type);
 			W.Write(Member.Offset);
 			W.Write(Member.ElementSize);
 			W.Write(Member.ElementCount);
@@ -385,14 +385,14 @@ bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 		}
 	}
 
-	W.Write<U32>(Consts.GetCount());
-	for (UPTR i = 0; i < Consts.GetCount(); ++i)
+	W.Write<uint32_t>(Consts.size());
+	for (size_t i = 0; i < Consts.size(); ++i)
 	{
 		const CUSMConstMeta& Obj = Consts[i];
 		W.Write(Obj.Name);
 		W.Write(Obj.BufferIndex);
 		W.Write(Obj.StructIndex);
-		W.Write<U8>(Obj.Type);
+		W.Write<uint8_t>(Obj.Type);
 		W.Write(Obj.Offset);
 		W.Write(Obj.ElementSize);
 		W.Write(Obj.ElementCount);
@@ -401,18 +401,18 @@ bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 		W.Write(Obj.Flags);
 	}
 
-	W.Write<U32>(Resources.GetCount());
-	for (UPTR i = 0; i < Resources.GetCount(); ++i)
+	W.Write<uint32_t>(Resources.size());
+	for (size_t i = 0; i < Resources.size(); ++i)
 	{
 		const CUSMRsrcMeta& Obj = Resources[i];
 		W.Write(Obj.Name);
-		W.Write<U8>(Obj.Type);
+		W.Write<uint8_t>(Obj.Type);
 		W.Write(Obj.RegisterStart);
 		W.Write(Obj.RegisterCount);
 	}
 
-	W.Write<U32>(Samplers.GetCount());
-	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
+	W.Write<uint32_t>(Samplers.size());
+	for (size_t i = 0; i < Samplers.size(); ++i)
 	{
 		const CUSMSamplerMeta& Obj = Samplers[i];
 		W.Write(Obj.Name);
@@ -420,7 +420,7 @@ bool CUSMShaderMeta::Save(IO::CBinaryWriter& W) const
 		W.Write(Obj.RegisterCount);
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -431,12 +431,12 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 	Resources.Clear();
 	Samplers.Clear();
 
-	R.Read<U32>(MinFeatureLevel);
-	R.Read<U64>(RequiresFlags);
+	R.Read<uint32_t>(MinFeatureLevel);
+	R.Read<uint64_t>(RequiresFlags);
 
-	U32 Count;
+	uint32_t Count;
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CUSMBufferMeta* pBuf = Buffers.Reserve(Count, false);
 	for (; pBuf < Buffers.End(); ++pBuf)
 	{
@@ -448,13 +448,13 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 		///R.Read(Obj.ElementCount);
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CUSMStructMeta* pStruct = Structs.Reserve(Count, false);
 	for (; pStruct < Structs.End(); ++pStruct)
 	{
 		CUSMStructMeta& Obj = *pStruct;
 
-		R.Read<U32>(Count);
+		R.Read<uint32_t>(Count);
 		CUSMStructMemberMeta* pMember = Obj.Members.Reserve(Count, false);
 		for (; pMember < Obj.Members.End(); ++pMember)
 		{
@@ -462,8 +462,8 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 			R.Read(Member.Name);
 			R.Read(Member.StructIndex);
 
-			U8 Type;
-			R.Read<U8>(Type);
+			uint8_t Type;
+			R.Read<uint8_t>(Type);
 			Member.Type = (EUSMConstType)Type;
 
 			R.Read(Member.Offset);
@@ -475,7 +475,7 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 		}
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CUSMConstMeta* pConst = Consts.Reserve(Count, false);
 	for (; pConst < Consts.End(); ++pConst)
 	{
@@ -484,8 +484,8 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 		R.Read(Obj.BufferIndex);
 		R.Read(Obj.StructIndex);
 
-		U8 Type;
-		R.Read<U8>(Type);
+		uint8_t Type;
+		R.Read<uint8_t>(Type);
 		Obj.Type = (EUSMConstType)Type;
 
 		R.Read(Obj.Offset);
@@ -496,22 +496,22 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 		R.Read(Obj.Flags);
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CUSMRsrcMeta* pRsrc = Resources.Reserve(Count, false);
 	for (; pRsrc < Resources.End(); ++pRsrc)
 	{
 		CUSMRsrcMeta& Obj = *pRsrc;
 		R.Read(Obj.Name);
 
-		U8 Type;
-		R.Read<U8>(Type);
+		uint8_t Type;
+		R.Read<uint8_t>(Type);
 		Obj.Type = (EUSMResourceType)Type;
 
 		R.Read(Obj.RegisterStart);
 		R.Read(Obj.RegisterCount);
 	}
 
-	R.Read<U32>(Count);
+	R.Read<uint32_t>(Count);
 	CUSMSamplerMeta* pSamp = Samplers.Reserve(Count, false);
 	for (; pSamp < Samplers.End(); ++pSamp)
 	{
@@ -521,108 +521,108 @@ bool CUSMShaderMeta::Load(IO::CBinaryReader& R)
 		R.Read(Obj.RegisterCount);
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-UPTR CUSMShaderMeta::GetParamCount(EShaderParamClass Class) const
+size_t CUSMShaderMeta::GetParamCount(EShaderParamClass Class) const
 {
 	switch (Class)
 	{
-		case ShaderParam_Const:		return Consts.GetCount();
-		case ShaderParam_Resource:	return Resources.GetCount();
-		case ShaderParam_Sampler:	return Samplers.GetCount();
+		case ShaderParam_Const:		return Consts.size();
+		case ShaderParam_Resource:	return Resources.size();
+		case ShaderParam_Sampler:	return Samplers.size();
 		default:					return 0;
 	}
 }
 //---------------------------------------------------------------------
 
-CMetadataObject* CUSMShaderMeta::GetParamObject(EShaderParamClass Class, UPTR Index)
+CMetadataObject* CUSMShaderMeta::GetParamObject(EShaderParamClass Class, size_t Index)
 {
 	switch (Class)
 	{
 		case ShaderParam_Const:		return &Consts[Index];
 		case ShaderParam_Resource:	return &Resources[Index];
 		case ShaderParam_Sampler:	return &Samplers[Index];
-		default:					return NULL;
+		default:					return nullptr;
 	}
 }
 //---------------------------------------------------------------------
 
-UPTR CUSMShaderMeta::AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject)
+size_t CUSMShaderMeta::AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject)
 {
-	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class) return (UPTR)(INVALID_INDEX);
+	if (!pMetaObject || pMetaObject->GetShaderModel() != GetShaderModel() || pMetaObject->GetClass() != Class) return (size_t)(INVALID_INDEX);
 
 	switch (Class)
 	{
 		case ShaderParam_Const:
 		{
 			Consts.Add(*(const CUSMConstMeta*)pMetaObject);
-			return Consts.GetCount() - 1;
+			return Consts.size() - 1;
 		}
 		case ShaderParam_Resource:
 		{
 			Resources.Add(*(const CUSMRsrcMeta*)pMetaObject);
-			return Resources.GetCount() - 1;
+			return Resources.size() - 1;
 		}
 		case ShaderParam_Sampler:
 		{
 			Samplers.Add(*(const CUSMSamplerMeta*)pMetaObject);
-			return Samplers.GetCount() - 1;
+			return Samplers.size() - 1;
 		}
-		default:	return (UPTR)(INVALID_INDEX);
+		default:	return (size_t)(INVALID_INDEX);
 	}
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* pName, UPTR& OutIndex) const
+bool CUSMShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const
 {
 	switch (Class)
 	{
 		case ShaderParam_Const:
 		{
-			UPTR Idx = 0;
-			for (; Idx < Consts.GetCount(); ++ Idx)
+			size_t Idx = 0;
+			for (; Idx < Consts.size(); ++ Idx)
 				if (Consts[Idx].Name == pName) break;
-			if (Idx == Consts.GetCount()) FAIL;
+			if (Idx == Consts.size()) return false;
 			OutIndex = Idx;
-			OK;
+			return true;
 		}
 		case ShaderParam_Resource:
 		{
-			UPTR Idx = 0;
-			for (; Idx < Resources.GetCount(); ++ Idx)
+			size_t Idx = 0;
+			for (; Idx < Resources.size(); ++ Idx)
 				if (Resources[Idx].Name == pName) break;
-			if (Idx == Resources.GetCount()) FAIL;
+			if (Idx == Resources.size()) return false;
 			OutIndex = Idx;
-			OK;
+			return true;
 		}
 		case ShaderParam_Sampler:
 		{
-			UPTR Idx = 0;
-			for (; Idx < Samplers.GetCount(); ++ Idx)
+			size_t Idx = 0;
+			for (; Idx < Samplers.size(); ++ Idx)
 				if (Samplers[Idx].Name == pName) break;
-			if (Idx == Samplers.GetCount()) FAIL;
+			if (Idx == Samplers.size()) return false;
 			OutIndex = Idx;
-			OK;
+			return true;
 		}
-		default:					FAIL;
+		default:					return false;
 	}
 }
 //---------------------------------------------------------------------
 
-UPTR CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
+size_t CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 {
-	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (UPTR)(INVALID_INDEX);
+	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel()) return (size_t)(INVALID_INDEX);
 
 	const CUSMBufferMeta* pUSMBuffer = (const CUSMBufferMeta*)pMetaBuffer;
-	UPTR Idx = 0;
-	for (; Idx < Buffers.GetCount(); ++ Idx)
+	size_t Idx = 0;
+	for (; Idx < Buffers.size(); ++ Idx)
 		if (Buffers[Idx].Register == pUSMBuffer->Register) break;
-	if (Idx == Buffers.GetCount())
+	if (Idx == Buffers.size())
 	{
 		Buffers.Add(*pUSMBuffer);
-		return Buffers.GetCount() - 1;
+		return Buffers.size() - 1;
 	}
 	else
 	{
@@ -636,35 +636,35 @@ UPTR CUSMShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
 
 CMetadataObject* CUSMShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject) const
 {
-	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return NULL;
+	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return nullptr;
 	return &Buffers[((CUSMConstMeta*)pMetaObject)->BufferIndex];
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::SetContainingConstantBuffer(UPTR ConstIdx, UPTR BufferIdx)
+bool CUSMShaderMeta::SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx)
 {
-	if (ConstIdx >= Consts.GetCount()) FAIL;
+	if (ConstIdx >= Consts.size()) return false;
 	Consts[ConstIdx].BufferIndex = BufferIdx;
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
-U32 CUSMShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, U64 StructKey, CDict<U64, U32>& StructIndexMapping)
+uint32_t CUSMShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping)
 {
-	IPTR StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
+	ptrdiff_t StructIdxIdx = StructIndexMapping.FindIndex(StructKey);
 	if (StructIdxIdx != INVALID_INDEX) return StructIndexMapping.ValueAt(StructIdxIdx);
 
-	const U32 StructIndex = (U32)(StructKey & 0xffffffff);
+	const uint32_t StructIndex = (uint32_t)(StructKey & 0xffffffff);
 	const CUSMStructMeta& StructMeta = ((const CUSMShaderMeta&)SourceMeta).Structs[StructIndex];
 	Structs.Add(StructMeta);
-	StructIndexMapping.Add(StructKey, Structs.GetCount() - 1);
+	StructIndexMapping.Add(StructKey, Structs.size() - 1);
 
-	for (UPTR i = 0; i < StructMeta.Members.GetCount(); ++i)
+	for (size_t i = 0; i < StructMeta.Members.size(); ++i)
 	{
 		const CUSMStructMemberMeta& MemberMeta = StructMeta.Members[i];
-		if (MemberMeta.StructIndex == (U32)(-1)) continue;
+		if (MemberMeta.StructIndex == (uint32_t)(-1)) continue;
 
-		const U64 MemberKey = (StructKey & 0xffffffff00000000) | ((U64)MemberMeta.StructIndex);
+		const uint64_t MemberKey = (StructKey & 0xffffffff00000000) | ((uint64_t)MemberMeta.StructIndex);
 		AddStructure(SourceMeta, MemberKey, StructIndexMapping);
 	}
 
@@ -674,17 +674,17 @@ U32 CUSMShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, U64 StructKe
 }
 //---------------------------------------------------------------------
 
-U32 CUSMShaderMeta::GetStructureIndex(UPTR ConstIdx) const
+uint32_t CUSMShaderMeta::GetStructureIndex(size_t ConstIdx) const
 {
-	if (ConstIdx >= Consts.GetCount()) return (U32)(-1);
+	if (ConstIdx >= Consts.size()) return (uint32_t)(-1);
 	return Consts[ConstIdx].StructIndex;
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::SetStructureIndex(UPTR ConstIdx, U32 StructIdx)
+bool CUSMShaderMeta::SetStructureIndex(size_t ConstIdx, uint32_t StructIdx)
 {
-	if (ConstIdx >= Consts.GetCount()) FAIL;
+	if (ConstIdx >= Consts.size()) return false;
 	Consts[ConstIdx].StructIndex = StructIdx;
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
