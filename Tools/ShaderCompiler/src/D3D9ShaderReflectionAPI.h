@@ -59,12 +59,12 @@ struct CD3D9ConstantType
 {
 	EPARAMETER_CLASS	Class;
 	EPARAMETER_TYPE		Type;
-	size_t				Rows;
-	size_t				Columns;
-	size_t				Elements;				// For arrays
-	size_t				StructMembers;
-	size_t				Bytes;
-	size_t				ElementRegisterCount;	// For a single array element
+	uint32_t			Rows;
+	uint32_t			Columns;
+	uint32_t			Elements;				// For arrays
+	uint32_t			StructMembers;
+	uint32_t			Bytes;
+	uint32_t			ElementRegisterCount;	// For a single array element
 };
 
 struct CD3D9ConstantDesc
@@ -73,8 +73,8 @@ struct CD3D9ConstantDesc
 	CD3D9ConstantType			Type;
 	uint32_t					StructID;
 	EREGISTER_SET				RegisterSet;
-	size_t						RegisterIndex;
-	size_t						RegisterCount;
+	uint32_t					RegisterIndex;
+	uint32_t					RegisterCount;
 	//const void*				pDefaultValue; //???CBuffer or explicit mem mgmt? or don't read?
 };
 

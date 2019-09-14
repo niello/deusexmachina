@@ -1,6 +1,7 @@
 #pragma once
 #include <ShaderReflection.h>
 #include <vector>
+#include <set>
 
 // Legacy Shader Model 3.0 (SM3.0) metadata
 
@@ -26,10 +27,12 @@ class CSM30BufferMeta: public CMetadataObject
 public:
 
 	std::string			Name;
-	uint32_t				SlotIndex;	// Pseudo-register, two buffers at the same slot will conflict
-	std::vector<size_t>	UsedFloat4;
-	std::vector<size_t>	UsedInt4;
-	std::vector<size_t>	UsedBool;
+	uint32_t			SlotIndex;	// Pseudo-register, two buffers at the same slot will conflict
+
+	// NB: it is very important that they are sorted and have unique elements!
+	std::set<uint32_t>	UsedFloat4;
+	std::set<uint32_t>	UsedInt4;
+	std::set<uint32_t>	UsedBool;
 
 	virtual const char*			GetName() const { return Name.c_str(); }
 	virtual EShaderModel		GetShaderModel() const { return ShaderModel_30; }
