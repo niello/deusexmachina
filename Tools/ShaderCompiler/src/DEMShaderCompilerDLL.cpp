@@ -117,21 +117,6 @@ bool DLLFreeShaderMetadata(CShaderMetadata* pDLLAllocMeta)
 }
 //---------------------------------------------------------------------
 
-/*
-bool DLLSaveShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
-{
-	if (!pSaveShaderMetadata)
-	{
-		if (!hDLL) return false;
-		pSaveShaderMetadata = (FDEMShaderCompiler_SaveShaderMetadata)GetProcAddress(hDLL, "SaveUSMShaderMetadata");
-		if (!pSaveShaderMetadata) return false;
-	}
-
-	return pSaveShaderMetadata(W, Meta);
-}
-//---------------------------------------------------------------------
-*/
-
 unsigned int DLLPackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
 {
 	if (!pPackShaders)

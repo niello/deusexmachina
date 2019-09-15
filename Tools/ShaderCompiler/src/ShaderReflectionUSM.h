@@ -162,8 +162,8 @@ public:
 
 	bool						CollectFromBinary(const void* pData, size_t Size);
 
-	virtual bool				Load(std::ifstream& File) override;
-	virtual bool				Save(std::ofstream& File) const override;
+	virtual bool				Load(std::istream& Stream) override;
+	virtual bool				Save(std::ostream& Stream) const override;
 
 	virtual EShaderModel		GetShaderModel() const { return ShaderModel_USM; }
 	virtual uint32_t			GetMinFeatureLevel() const { return MinFeatureLevel; }

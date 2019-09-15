@@ -14,6 +14,5 @@ target_include_directories(ShaderCompiler PUBLIC src)
 target_link_libraries(ShaderCompiler PUBLIC sqlite3)
 if(WIN32)
 	target_compile_definitions(ShaderCompiler PUBLIC DEM_PLATFORM_WIN32=1) # Public because app uses headers. Exclude headers when not Win32!
-	target_link_libraries(ShaderCompiler PUBLIC DXGI.lib D3D11.lib) # TODO: only when D3D11 renderer is built
-	target_link_libraries(ShaderCompiler PUBLIC D3d9.lib dxguid.lib) # TODO: only when D3D9 renderer is built
+	target_link_libraries(ShaderCompiler PUBLIC d3dcompiler.lib dxguid.lib)
 endif()

@@ -91,6 +91,12 @@ bool EnsureDirectoryExists(std::string Path)
 }
 //---------------------------------------------------------------------
 
+bool EraseFile(const char* pPath)
+{
+	return ::DeleteFile(pPath) != 0;
+}
+//---------------------------------------------------------------------
+
 // TODO: compare performance against a naive approach (tokenize folder by folder)
 // Returns the same path with '.' (this folder) and '..' (parent folder) collapsed where possible.
 // E.g. CollapseDots("One/Two/Three/../../Four") will return "One/Four"
@@ -279,5 +285,62 @@ std::string CollapseDots(const char* pPath, size_t PathLength)
 		Result.pop_back();
 
 	return Result;
+}
+//---------------------------------------------------------------------
+
+//!!!non-optimal, can rewrite in a reverse order to minimize memmove sizes!
+// Adds space for each multiline comment stripped to preserve token delimiting in a "name1/*comment*/name2" case
+size_t StripComments(char* pStr, const char* pSingleLineComment, const char* pMultiLineCommentStart, const char* pMultiLineCommentEnd)
+{
+	size_t Len = strlen(pStr);
+
+	if (pMultiLineCommentStart && pMultiLineCommentEnd)
+	{
+		size_t MLCSLen = strlen(pMultiLineCommentStart);
+		size_t MLCELen = strlen(pMultiLineCommentEnd);
+		char* pFound;
+		while (pFound = strstr(pStr, pMultiLineCommentStart))
+		{
+			char* pEnd = strstr(pFound + MLCSLen, pMultiLineCommentEnd);
+			if (pEnd)
+			{
+				const char* pFirstValid = pEnd + MLCELen;
+				*pFound = ' ';
+				++pFound;
+				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
+				Len -= (pFirstValid - pFound);
+				pStr[Len] = 0;
+			}
+			else
+			{
+				*pFound = 0;
+				Len = pFound - pStr;
+			}
+		}
+	}
+
+	if (pSingleLineComment)
+	{
+		size_t SLCLen = strlen(pSingleLineComment);
+		char* pFound;
+		while (pFound = strstr(pStr, pSingleLineComment))
+		{
+			char* pEnd = strpbrk(pFound + SLCLen, "\n\r");
+			if (pEnd)
+			{
+				const char* pFirstValid = pEnd + 1;
+				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
+				Len -= (pFirstValid - pFound);
+				pStr[Len] = 0;
+			}
+			else
+			{
+				*pFound = 0;
+				Len = pFound - pStr;
+			}
+		}
+	}
+
+	return Len;
 }
 //---------------------------------------------------------------------

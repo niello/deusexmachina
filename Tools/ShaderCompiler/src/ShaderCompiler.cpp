@@ -7,6 +7,7 @@
 #include <ShaderReflectionSM30.h>
 #include <ShaderReflectionUSM.h>
 #include <ValueTable.h>
+#include <sstream>
 
 #undef CreateDirectory
 #undef DeleteFile
@@ -204,21 +205,22 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	if (!Target) Target = 0x0500;
 
-
-	std::ifstream File(pSrcPath);
-	if (!File) return DEM_SHADER_COMPILER_IO_READ_ERROR;
-
-	File.seekg(0, std::ios_base::end);
-	auto FileSize = File.tellg();
-	File.seekg(0, std::ios_base::beg);
-
 	Data::CBuffer In;
-	In.Reserve(FileSize);
+	{
+		std::ifstream File(pSrcPath);
+		if (!File) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 
-	const bool ReadError = !File.read((char*)In.GetPtr(), FileSize);
-	File.close();
+		File.seekg(0, std::ios_base::end);
+		auto FileSize = File.tellg();
+		File.seekg(0, std::ios_base::beg);
 
-	if (ReadError) return DEM_SHADER_COMPILER_IO_READ_ERROR;
+		In.Reserve(static_cast<size_t>(FileSize));
+
+		const bool ReadError = !File.read((char*)In.GetPtr(), FileSize);
+		File.close();
+
+		if (ReadError) return DEM_SHADER_COMPILER_IO_READ_ERROR;
+	}
 
 	uint64_t CurrWriteTime = 0;
 	{
@@ -365,17 +367,18 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 				Rec.InputSigFile.Path = CollapseDots(OutputDir + std::to_string(Rec.InputSigFile.ID) + ".sig");
 
-				FS->CreateDirectory(ExtractDirName(Rec.InputSigFile.Path));
+				EnsureDirectoryExists(ExtractDirName(Rec.InputSigFile.Path));
 
-				void* hFile = FS->OpenFile(Rec.InputSigFile.Path.c_str(), IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
-				if (!hFile)
 				{
-					pCode->Release();
-					pInputSig->Release();
-					return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
+					std::ofstream File(Rec.InputSigFile.Path.c_str());
+					if (!File || !File.write((const char*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize()))
+					{
+						pCode->Release();
+						pInputSig->Release();
+						return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
+					}
+					File.close();
 				}
-				FS->Write(hFile, pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
-				FS->CloseFile(hFile);
 
 				if (!UpdateObjFileRecord(Rec.InputSigFile))
 				{
@@ -389,7 +392,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			{
 				std::string OldObjPath;
 				if (ReleaseObjFile(OldInputSigID, OldObjPath))
-					FS->DeleteFile(OldObjPath);
+					EraseFile(OldObjPath.c_str());
 			}
 
 			pInputSig->Release();
@@ -421,25 +424,22 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	}
 
 	Rec.ObjFile.BytecodeSize = pFinalCode->GetBufferSize();
-	Rec.ObjFile.CRC = Util::CalcCRC((uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+	Rec.ObjFile.CRC = CalcCRC((uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 	// Try to find exactly the same binary and reuse it, or save our result
 
 	DWORD OldObjFileID = Rec.ObjFile.ID;
 	bool ObjFound;
-	IO::PMemStream ObjStream;
+	std::ostringstream ObjStream;
 	uint64_t BinaryOffset;
 	if (Target < 0x0400)
 	{
 		// Collect and compare metadata for sm3.0 shaders. Binary file may differ even if a shader blob part
 		// is the same, because constant buffers are defined in annotations and aren't reflected in a shader blob.
-		ObjStream = n_new(IO::CMemStream);
-		ObjStream->Open(IO::SAM_READWRITE);
-		IO::CBinaryWriter W(*ObjStream.GetUnsafe());
 
 		CSM30ShaderMeta Meta;
 		bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), IncHandler);
-		bool MetaSaved = MetaReflected && Meta.Save(W);
+		bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
 
 		pCode->Release();
 		
@@ -455,14 +455,13 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		}
 		else
 		{
-			BinaryOffset = ObjStream->GetPosition();
-			ObjStream->Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+			BinaryOffset = ObjStream.tellp();
+			ObjStream.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 		}
 
 		pFinalCode->Release();
 
-		ObjFound = FindObjFile(Rec.ObjFile, ObjStream->Map(), Target, Cmp_ShaderAndMetadata);
-		ObjStream->Unmap();
+		ObjFound = FindObjFile(Rec.ObjFile, ObjStream.str().c_str(), Target, Cmp_ShaderAndMetadata);
 	}
 	else
 	{
@@ -482,48 +481,45 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 		Rec.ObjFile.Path = CollapseDots(OutputDir + std::to_string(Rec.ObjFile.ID) + "." + TargetParams.pExtension);
 
-		FS->CreateDirectory(ExtractDirName(Rec.ObjFile.Path));
+		EnsureDirectoryExists(ExtractDirName(Rec.ObjFile.Path));
 
-		IO::CFileStream File(Rec.ObjFile.Path, FS);
-		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		std::ofstream File(Rec.ObjFile.Path);
+		if (!File)
 		{
 			pCode->Release();
 			pFinalCode->Release();
 			return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 		}
 
-		IO::CBinaryWriter W(File);
-
-		W.Write<uint32_t>(TargetParams.FileSignature);
+		WriteStream<uint32_t>(File, TargetParams.FileSignature);
 
 		// Offset of a shader binary, will fill later
-		uint64_t OffsetOffset = File.GetPosition();
-		W.Write<uint32_t>(0);
+		auto OffsetOffset = File.tellp();
+		WriteStream<uint32_t>(File, 0);
 
-		W.Write<uint32_t>(Rec.ObjFile.ID);
+		WriteStream<uint32_t>(File, Rec.ObjFile.ID);
 
 		if (Target >= 0x0400)
 		{
-			W.Write<uint32_t>(Rec.InputSigFile.ID);
+			WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
 		}
 
-		if (ObjStream.IsValidPtr())
+		const std::string ObjData = ObjStream.str();
+		if (!ObjData.empty())
 		{
 			// Data is already serialized into a memory, just save it
-			BinaryOffset += File.GetPosition();
-			File.Write(ObjStream->Map(), (size_t)ObjStream->GetSize());
-			ObjStream->Unmap();
-			ObjStream = nullptr;
+			BinaryOffset += File.tellp();
+			File.write(ObjData.c_str(), ObjData.size());
 		}
 		else
 		{
-			n_assert(Target >= 0x0400);
+			assert(Target >= 0x0400);
 
 			// Save metadata
 			
 			CUSMShaderMeta Meta;
 			bool MetaReflected = Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize());
-			bool MetaSaved = MetaReflected && Meta.Save(W);
+			bool MetaSaved = MetaReflected && Meta.Save(File);
 
 			pCode->Release();
 		
@@ -540,24 +536,24 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			else
 			{
 				// Save shader binary
-				BinaryOffset = File.GetPosition();
-				File.Write(pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+				BinaryOffset = File.tellp();
+				File.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 			}
 
 			pFinalCode->Release();
 		}
 
 		// Get total file size
-		Rec.ObjFile.Size = File.GetPosition();
+		Rec.ObjFile.Size = File.tellp();
 
 		if (BinaryOffset)
 		{
 			// Write binary data offset for fast skipping of metadata when reading
-			File.Seek(OffsetOffset, IO::Seek_Begin);
-			W.Write<uint32_t>((uint32_t)BinaryOffset);
+			File.seekp(OffsetOffset, std::ios_base::beg);
+			WriteStream<uint32_t>(File, static_cast<uint32_t>(BinaryOffset));
 		}
 
-		File.Close();
+		File.close();
 
 		if (!UpdateObjFileRecord(Rec.ObjFile)) return DEM_SHADER_COMPILER_DB_ERROR;
 	}
@@ -578,7 +574,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	{
 		std::string OldObjPath;
 		if (ReleaseObjFile(OldObjFileID, OldObjPath))
-			FS->DeleteFile(OldObjPath);
+			EraseFile(OldObjPath.c_str());
 	}
 
 	if (!WriteShaderRec(Rec)) return DEM_SHADER_COMPILER_DB_ERROR;
@@ -606,33 +602,31 @@ DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(uint32_t ID, uint3
 	CObjFileData ObjFile;
 	if (!FindObjFileByID(ID, ObjFile)) return false;
 
-	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
-	IO::CFileStream File(ObjFile.Path.c_str(), FS);
-	if (!File.Open(IO::SAM_READ)) return false;
-	IO::CBinaryReader R(File);
+	std::ifstream File(ObjFile.Path.c_str());
+	if (!File) return false;
 
 	// File signature always stores target in bytes 1 and 0
 	uint32_t FileSig;
-	R.Read(FileSig);
+	ReadStream(File, FileSig);
 	const char ByteHigh = (FileSig & 0x0000ff00) >> 8;
 	const char ByteLow = (FileSig & 0x000000ff);
 	OutTarget = ((ByteHigh - '0') << 8) | (ByteLow - '0');
 
-	R.Read<uint32_t>();	// Binary data offset - skip
-	R.Read<uint32_t>();	// Shader obj file ID - skip
+	ReadStream<uint32_t>(File);	// Binary data offset - skip
+	ReadStream<uint32_t>(File);	// Shader obj file ID - skip
 
 	pOutMeta = nullptr;
 
 	if (OutTarget >= 0x0400)
 	{
-		R.Read<uint32_t>();	// Input signature obj file ID - skip
+		ReadStream<uint32_t>(File);	// Input signature obj file ID - skip
 		pOutMeta = new CUSMShaderMeta;
 	}
 	else pOutMeta = new CSM30ShaderMeta;
 
 	if (!pOutMeta) return false;
 
-	if (pOutMeta->Load(R)) return true;
+	if (pOutMeta->Load(File)) return true;
 	else
 	{
 		delete pOutMeta;
@@ -646,13 +640,6 @@ DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 {
 	Messages.clear();
 	delete pMeta;
-}
-//---------------------------------------------------------------------
-
-DEM_DLL_API bool DEM_DLLCALL SaveUSMShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta)
-{
-	Messages.clear();
-	return Meta.Save(W);
 }
 //---------------------------------------------------------------------
 
@@ -673,16 +660,12 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 	if (!ExecuteSQLQuery(SQL.c_str(), &Result)) return 0;
 	if (!Result.GetRowCount()) return 0;
 
-	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
+	std::ofstream File(pLibraryFilePath);
+	if (!File) return 0;
 
-	IO::CFileStream File(pLibraryFilePath, FS);
-	if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL)) return 0;
-
-	IO::CBinaryWriter W(File);
-
-	W.Write<uint32_t>('SLIB');				// Magic
-	W.Write<uint32_t>(0x0100);				// Version
-	W.Write<uint32_t>(Result.GetRowCount());	// Record count
+	WriteStream<uint32_t>(File, 'SLIB');				// Magic
+	WriteStream<uint32_t>(File, 0x0100);				// Version
+	WriteStream<uint32_t>(File, Result.GetRowCount());	// Record count
 
 	// Data starts after a header (12 bytes) and a lookup table
 	// (4 bytes ID + 4 bytes offset + 4 bytes size for each record)
@@ -698,9 +681,9 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 		uint32_t ID = (uint32_t)Result.Get<int>(Col_ID, i);
 		uint32_t Size = (uint32_t)Result.Get<int>(Col_Size, i);
 
-		W.Write<uint32_t>(ID);
-		W.Write<uint32_t>(CurrDataOffset);
-		W.Write<uint32_t>(Size);
+		WriteStream<uint32_t>(File, ID);
+		WriteStream<uint32_t>(File, CurrDataOffset);
+		WriteStream<uint32_t>(File, Size);
 
 		CurrDataOffset += Size;
 	}
@@ -710,30 +693,29 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 
 	for (size_t i = 0; i < Result.GetRowCount(); ++i)
 	{
-		uint32_t Size = (uint32_t)Result.Get<int>(Col_Size, i);
+		const size_t Size = static_cast<size_t>(Result.Get<int>(Col_Size, i));
 		const std::string& Path = Result.Get<std::string>(Col_Path, i);
 		
-		IO::CFileStream ObjFile(Path, FS);
-		if (!ObjFile.Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return i;
+		std::ifstream ObjFile(Path);
+		if (!ObjFile) return i;
 
-		n_assert(ObjFile.GetSize() == Size);
+		constexpr size_t BufferSize = 1024;
+		char Buffer[1024];
 
-		//!!!can use mapped files instead!
-		void* pData = malloc(Size);
-		if (ObjFile.Read(pData, Size) != Size)
+		size_t RealSize = 0;
+		while (File && ObjFile && !ObjFile.eof())
 		{
-			free(pData);
-			return i;
+			ObjFile.read(Buffer, BufferSize);
+			File.write(Buffer, ObjFile.gcount());
+			RealSize += static_cast<size_t>(ObjFile.gcount());
 		}
-		if (File.Write(pData, Size) != Size)
-		{
-			free(pData);
-			return i;
-		}
-		free(pData);
+
+		assert(RealSize == Size);
+
+		ObjFile.close();
 	}
 
-	File.Close();
+	File.close();
 
 	return Result.GetRowCount();
 }

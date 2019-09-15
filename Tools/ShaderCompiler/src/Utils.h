@@ -10,8 +10,10 @@ uint32_t CalcCRC(const uint8_t* pData, size_t Size);
 std::string ExtractDirName(const std::string& Path);
 bool DirectoryExists(const char* pPath);
 bool EnsureDirectoryExists(std::string Path);
+bool EraseFile(const char* pPath);
 std::string CollapseDots(const char* pPath, size_t PathLength = 0);
-std::string CollapseDots(const std::string& Path) { CollapseDots(Path.c_str(), Path.size()); }
+inline std::string CollapseDots(const std::string& Path) { return CollapseDots(Path.c_str(), Path.size()); }
+size_t StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/");
 
 inline void EnsurePathHasEndingDirSeparator(std::string& Path)
 {
@@ -20,15 +22,23 @@ inline void EnsurePathHasEndingDirSeparator(std::string& Path)
 }
 //---------------------------------------------------------------------
 
-template<class T> void ReadFile(std::ifstream& File, T& Out)
+template<class T> void ReadStream(std::istream& Stream, T& Out)
 {
-	File.read(reinterpret_cast<char*>(&Out), sizeof(T));
+	Stream.read(reinterpret_cast<char*>(&Out), sizeof(T));
 }
 //---------------------------------------------------------------------
 
-template<class T> void WriteFile(std::ofstream& File, const T& Data)
+// Skip data
+template<class T> void ReadStream(std::istream& Stream)
 {
-	File.write(reinterpret_cast<const char*>(&Data), sizeof(T));
+	T Out;
+	Stream.read(reinterpret_cast<char*>(&Out), sizeof(T));
+}
+//---------------------------------------------------------------------
+
+template<class T> void WriteStream(std::ostream& Stream, const T& Data)
+{
+	Stream.write(reinterpret_cast<const char*>(&Data), sizeof(T));
 }
 //---------------------------------------------------------------------
 

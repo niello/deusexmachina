@@ -361,131 +361,131 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::Save(std::ofstream& File) const
+bool CUSMShaderMeta::Save(std::ostream& Stream) const
 {
-	WriteFile<uint32_t>(File, MinFeatureLevel);
-	WriteFile<uint64_t>(File, RequiresFlags);
+	WriteStream<uint32_t>(Stream, MinFeatureLevel);
+	WriteStream<uint64_t>(Stream, RequiresFlags);
 
-	WriteFile<uint32_t>(File, Buffers.size());
+	WriteStream<uint32_t>(Stream, Buffers.size());
 	for (size_t i = 0; i < Buffers.size(); ++i)
 	{
 		const CUSMBufferMeta& Obj = Buffers[i];
-		WriteFile(File, Obj.Name);
-		WriteFile(File, Obj.Register);
-		WriteFile(File, Obj.Size);
-		//WriteFile(Obj.ElementCount);
+		WriteStream(Stream, Obj.Name);
+		WriteStream(Stream, Obj.Register);
+		WriteStream(Stream, Obj.Size);
+		//WriteStream(Stream, Obj.ElementCount);
 	}
 
-	WriteFile<uint32_t>(File, Structs.size());
+	WriteStream<uint32_t>(Stream, Structs.size());
 	for (size_t i = 0; i < Structs.size(); ++i)
 	{
 		const CUSMStructMeta& Obj = Structs[i];
 
-		WriteFile<uint32_t>(File, Obj.Members.size());
+		WriteStream<uint32_t>(Stream, Obj.Members.size());
 		for (size_t j = 0; j < Obj.Members.size(); ++j)
 		{
 			const CUSMStructMemberMeta& Member = Obj.Members[j];
-			WriteFile(File, Member.Name);
-			WriteFile(File, Member.StructIndex);
-			WriteFile<uint8_t>(File, Member.Type);
-			WriteFile(File, Member.Offset);
-			WriteFile(File, Member.ElementSize);
-			WriteFile(File, Member.ElementCount);
-			WriteFile(File, Member.Columns);
-			WriteFile(File, Member.Rows);
-			WriteFile(File, Member.Flags);
+			WriteStream(Stream, Member.Name);
+			WriteStream(Stream, Member.StructIndex);
+			WriteStream<uint8_t>(Stream, Member.Type);
+			WriteStream(Stream, Member.Offset);
+			WriteStream(Stream, Member.ElementSize);
+			WriteStream(Stream, Member.ElementCount);
+			WriteStream(Stream, Member.Columns);
+			WriteStream(Stream, Member.Rows);
+			WriteStream(Stream, Member.Flags);
 		}
 	}
 
-	WriteFile<uint32_t>(File, Consts.size());
+	WriteStream<uint32_t>(Stream, Consts.size());
 	for (size_t i = 0; i < Consts.size(); ++i)
 	{
 		const CUSMConstMeta& Obj = Consts[i];
-		WriteFile(File, Obj.Name);
-		WriteFile(File, Obj.BufferIndex);
-		WriteFile(File, Obj.StructIndex);
-		WriteFile<uint8_t>(File, Obj.Type);
-		WriteFile(File, Obj.Offset);
-		WriteFile(File, Obj.ElementSize);
-		WriteFile(File, Obj.ElementCount);
-		WriteFile(File, Obj.Columns);
-		WriteFile(File, Obj.Rows);
-		WriteFile(File, Obj.Flags);
+		WriteStream(Stream, Obj.Name);
+		WriteStream(Stream, Obj.BufferIndex);
+		WriteStream(Stream, Obj.StructIndex);
+		WriteStream<uint8_t>(Stream, Obj.Type);
+		WriteStream(Stream, Obj.Offset);
+		WriteStream(Stream, Obj.ElementSize);
+		WriteStream(Stream, Obj.ElementCount);
+		WriteStream(Stream, Obj.Columns);
+		WriteStream(Stream, Obj.Rows);
+		WriteStream(Stream, Obj.Flags);
 	}
 
-	WriteFile<uint32_t>(File, Resources.size());
+	WriteStream<uint32_t>(Stream, Resources.size());
 	for (size_t i = 0; i < Resources.size(); ++i)
 	{
 		const CUSMRsrcMeta& Obj = Resources[i];
-		WriteFile(File, Obj.Name);
-		WriteFile<uint8_t>(File, Obj.Type);
-		WriteFile(File, Obj.RegisterStart);
-		WriteFile(File, Obj.RegisterCount);
+		WriteStream(Stream, Obj.Name);
+		WriteStream<uint8_t>(Stream, Obj.Type);
+		WriteStream(Stream, Obj.RegisterStart);
+		WriteStream(Stream, Obj.RegisterCount);
 	}
 
-	WriteFile<uint32_t>(File, Samplers.size());
+	WriteStream<uint32_t>(Stream, Samplers.size());
 	for (size_t i = 0; i < Samplers.size(); ++i)
 	{
 		const CUSMSamplerMeta& Obj = Samplers[i];
-		WriteFile(File, Obj.Name);
-		WriteFile(File, Obj.RegisterStart);
-		WriteFile(File, Obj.RegisterCount);
+		WriteStream(Stream, Obj.Name);
+		WriteStream(Stream, Obj.RegisterStart);
+		WriteStream(Stream, Obj.RegisterCount);
 	}
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::Load(std::ifstream& File)
+bool CUSMShaderMeta::Load(std::istream& Stream)
 {
 	Buffers.clear();
 	Consts.clear();
 	Resources.clear();
 	Samplers.clear();
 
-	ReadFile<uint32_t>(File, MinFeatureLevel);
-	ReadFile<uint64_t>(File, RequiresFlags);
+	ReadStream<uint32_t>(Stream, MinFeatureLevel);
+	ReadStream<uint64_t>(Stream, RequiresFlags);
 
 	uint32_t Count;
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Buffers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		//!!!arrays, tbuffers & sbuffers aren't supported for now!
 		CUSMBufferMeta Obj;
-		ReadFile(File, Obj.Name);
-		ReadFile(File, Obj.Register);
-		ReadFile(File, Obj.Size);
-		///ReadFile(Obj.ElementCount);
+		ReadStream(Stream, Obj.Name);
+		ReadStream(Stream, Obj.Register);
+		ReadStream(Stream, Obj.Size);
+		///ReadStream(Obj.ElementCount);
 		Buffers.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Structs.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CUSMStructMeta Obj;
 
 		uint32_t MemberCount;
-		ReadFile<uint32_t>(File, MemberCount);
+		ReadStream<uint32_t>(Stream, MemberCount);
 		Obj.Members.reserve(MemberCount);
 		for (uint32_t j = 0; j < MemberCount; ++j)
 		{
 			CUSMStructMemberMeta Member;
-			ReadFile(File, Member.Name);
-			ReadFile(File, Member.StructIndex);
+			ReadStream(Stream, Member.Name);
+			ReadStream(Stream, Member.StructIndex);
 
 			uint8_t Type;
-			ReadFile<uint8_t>(File, Type);
+			ReadStream<uint8_t>(Stream, Type);
 			Member.Type = (EUSMConstType)Type;
 
-			ReadFile(File, Member.Offset);
-			ReadFile(File, Member.ElementSize);
-			ReadFile(File, Member.ElementCount);
-			ReadFile(File, Member.Columns);
-			ReadFile(File, Member.Rows);
-			ReadFile(File, Member.Flags);
+			ReadStream(Stream, Member.Offset);
+			ReadStream(Stream, Member.ElementSize);
+			ReadStream(Stream, Member.ElementCount);
+			ReadStream(Stream, Member.Columns);
+			ReadStream(Stream, Member.Rows);
+			ReadStream(Stream, Member.Flags);
 
 			Obj.Members.push_back(std::move(Member));
 		}
@@ -493,54 +493,54 @@ bool CUSMShaderMeta::Load(std::ifstream& File)
 		Structs.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Consts.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CUSMConstMeta Obj;
-		ReadFile(File, Obj.Name);
-		ReadFile(File, Obj.BufferIndex);
-		ReadFile(File, Obj.StructIndex);
+		ReadStream(Stream, Obj.Name);
+		ReadStream(Stream, Obj.BufferIndex);
+		ReadStream(Stream, Obj.StructIndex);
 
 		uint8_t Type;
-		ReadFile<uint8_t>(File, Type);
+		ReadStream<uint8_t>(Stream, Type);
 		Obj.Type = (EUSMConstType)Type;
 
-		ReadFile(File, Obj.Offset);
-		ReadFile(File, Obj.ElementSize);
-		ReadFile(File, Obj.ElementCount);
-		ReadFile(File, Obj.Columns);
-		ReadFile(File, Obj.Rows);
-		ReadFile(File, Obj.Flags);
+		ReadStream(Stream, Obj.Offset);
+		ReadStream(Stream, Obj.ElementSize);
+		ReadStream(Stream, Obj.ElementCount);
+		ReadStream(Stream, Obj.Columns);
+		ReadStream(Stream, Obj.Rows);
+		ReadStream(Stream, Obj.Flags);
 
 		Consts.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Resources.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CUSMRsrcMeta Obj;
-		ReadFile(File, Obj.Name);
+		ReadStream(Stream, Obj.Name);
 
 		uint8_t Type;
-		ReadFile<uint8_t>(File, Type);
+		ReadStream<uint8_t>(Stream, Type);
 		Obj.Type = (EUSMResourceType)Type;
 
-		ReadFile(File, Obj.RegisterStart);
-		ReadFile(File, Obj.RegisterCount);
+		ReadStream(Stream, Obj.RegisterStart);
+		ReadStream(Stream, Obj.RegisterCount);
 
 		Resources.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Samplers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CUSMSamplerMeta Obj;
-		ReadFile(File, Obj.Name);
-		ReadFile(File, Obj.RegisterStart);
-		ReadFile(File, Obj.RegisterCount);
+		ReadStream(Stream, Obj.Name);
+		ReadStream(Stream, Obj.RegisterStart);
+		ReadStream(Stream, Obj.RegisterCount);
 		Samplers.push_back(std::move(Obj));
 	}
 

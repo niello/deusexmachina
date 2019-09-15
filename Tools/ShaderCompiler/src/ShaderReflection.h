@@ -1,6 +1,7 @@
 #pragma once
 #include <map>
-#include <fstream>
+#include <istream>
+#include <ostream>
 
 // Data and functions for shader metadata manipulation in both SM3.0 and USM
 
@@ -74,8 +75,8 @@ class CShaderMetadata
 {
 public:
 
-	virtual bool				Load(std::ifstream& File) = 0;
-	virtual bool				Save(std::ofstream& File) const = 0;
+	virtual bool				Load(std::istream& Stream) = 0;
+	virtual bool				Save(std::ostream& Stream) const = 0;
 
 	virtual EShaderModel		GetShaderModel() const = 0;
 	virtual uint32_t			GetMinFeatureLevel() const = 0;

@@ -10,63 +10,6 @@
 
 extern std::string Messages;
 
-//!!!non-optimal, can rewrite in a reverse order to minimize memmove sizes!
-// Adds space for each multiline comment stripped to preserve token delimiting in a "name1/*comment*/name2" case
-static size_t StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/")
-{
-	size_t Len = strlen(pStr);
-
-	if (pMultiLineCommentStart && pMultiLineCommentEnd)
-	{
-		size_t MLCSLen = strlen(pMultiLineCommentStart);
-		size_t MLCELen = strlen(pMultiLineCommentEnd);
-		char* pFound;
-		while (pFound = strstr(pStr, pMultiLineCommentStart))
-		{
-			char* pEnd = strstr(pFound + MLCSLen, pMultiLineCommentEnd);
-			if (pEnd)
-			{
-				const char* pFirstValid = pEnd + MLCELen;
-				*pFound = ' ';
-				++pFound;
-				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
-				Len -= (pFirstValid - pFound);
-				pStr[Len] = 0;
-			}
-			else
-			{
-				*pFound = 0;
-				Len = pFound - pStr;
-			}
-		}
-	}
-
-	if (pSingleLineComment)
-	{
-		size_t SLCLen = strlen(pSingleLineComment);
-		char* pFound;
-		while (pFound = strstr(pStr, pSingleLineComment))
-		{
-			char* pEnd = strpbrk(pFound + SLCLen, "\n\r");
-			if (pEnd)
-			{
-				const char* pFirstValid = pEnd + 1;
-				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
-				Len -= (pFirstValid - pFound);
-				pStr[Len] = 0;
-			}
-			else
-			{
-				*pFound = 0;
-				Len = pFound - pStr;
-			}
-		}
-	}
-
-	return Len;
-}
-//---------------------------------------------------------------------
-
 bool CSM30BufferMeta::IsEqual(const CMetadataObject& Other) const
 {
 	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
@@ -106,10 +49,10 @@ bool CSM30SamplerMeta::IsEqual(const CMetadataObject& Other) const
 }
 //---------------------------------------------------------------------
 
-static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ofstream& File, const char* pRegisterSetName)
+static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ostream& Stream, const char* pRegisterSetName)
 {
-	uint64_t RangeCountOffset = File.tellp();
-	WriteFile<uint32_t>(File, 0);
+	uint64_t RangeCountOffset = Stream.tellp();
+	WriteStream<uint32_t>(Stream, 0);
 
 	if (!UsedRegs.size()) return;
 
@@ -125,8 +68,8 @@ static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ofstrea
 		else
 		{
 			// New range detected
-			WriteFile<uint32_t>(File, CurrStart);
-			WriteFile<uint32_t>(File, CurrCount);
+			WriteStream<uint32_t>(Stream, CurrStart);
+			WriteStream<uint32_t>(Stream, CurrCount);
 			++RangeCount;
 			CurrStart = Reg;
 			CurrCount = 1;
@@ -134,29 +77,29 @@ static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ofstrea
 	}
 
 	// The last range
-	WriteFile<uint32_t>(File, CurrStart);
-	WriteFile<uint32_t>(File, CurrCount);
+	WriteStream<uint32_t>(Stream, CurrStart);
+	WriteStream<uint32_t>(Stream, CurrCount);
 	++RangeCount;
 
-	uint64_t EndOffset = File.tellp();
-	File.seekp(RangeCountOffset, std::ios_base::beg);
-	WriteFile<uint32_t>(File, RangeCount);
-	File.seekp(EndOffset, std::ios_base::beg);
+	uint64_t EndOffset = Stream.tellp();
+	Stream.seekp(RangeCountOffset, std::ios_base::beg);
+	WriteStream<uint32_t>(Stream, RangeCount);
+	Stream.seekp(EndOffset, std::ios_base::beg);
 }
 //---------------------------------------------------------------------
 
-static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::ifstream& File)
+static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::istream& Stream)
 {
 	UsedRegs.clear();
 
 	uint32_t RangeCount = 0;
-	ReadFile<uint32_t>(File, RangeCount);
+	ReadStream<uint32_t>(Stream, RangeCount);
 	for (uint32_t i = 0; i < RangeCount; ++i)
 	{
 		uint32_t Curr;
 		uint32_t CurrCount;
-		ReadFile<uint32_t>(File, Curr);
-		ReadFile<uint32_t>(File, CurrCount);
+		ReadStream<uint32_t>(Stream, Curr);
+		ReadStream<uint32_t>(Stream, CurrCount);
 		uint32_t CurrEnd = Curr + CurrCount;
 		for (; Curr < CurrEnd; ++Curr)
 			UsedRegs.emplace(Curr);
@@ -489,72 +432,72 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::Save(std::ofstream& File) const
+bool CSM30ShaderMeta::Save(std::ostream& Stream) const
 {
-	WriteFile<uint32_t>(File, Buffers.size());
+	WriteStream<uint32_t>(Stream, Buffers.size());
 	for (const auto& Obj : Buffers)
 	{
-		WriteFile(File, Obj.Name);
-		WriteFile(File, Obj.SlotIndex);
+		WriteStream(Stream, Obj.Name);
+		WriteStream(Stream, Obj.SlotIndex);
 
-		WriteRegisterRanges(Obj.UsedFloat4, File, "float4");
-		WriteRegisterRanges(Obj.UsedInt4, File, "int4");
-		WriteRegisterRanges(Obj.UsedBool, File, "bool");
+		WriteRegisterRanges(Obj.UsedFloat4, Stream, "float4");
+		WriteRegisterRanges(Obj.UsedInt4, Stream, "int4");
+		WriteRegisterRanges(Obj.UsedBool, Stream, "bool");
 	}
 
-	WriteFile<uint32_t>(File, Structs.size());
+	WriteStream<uint32_t>(Stream, Structs.size());
 	for (const auto& Obj : Structs)
 	{
-		WriteFile<uint32_t>(File, Obj.Members.size());
+		WriteStream<uint32_t>(Stream, Obj.Members.size());
 		for (const auto& Member : Obj.Members)
 		{
-			WriteFile(File, Member.Name);
-			WriteFile(File, Member.StructIndex);
-			WriteFile(File, Member.RegisterOffset);
-			WriteFile(File, Member.ElementRegisterCount);
-			WriteFile(File, Member.ElementCount);
-			WriteFile(File, Member.Columns);
-			WriteFile(File, Member.Rows);
-			WriteFile(File, Member.Flags);
+			WriteStream(Stream, Member.Name);
+			WriteStream(Stream, Member.StructIndex);
+			WriteStream(Stream, Member.RegisterOffset);
+			WriteStream(Stream, Member.ElementRegisterCount);
+			WriteStream(Stream, Member.ElementCount);
+			WriteStream(Stream, Member.Columns);
+			WriteStream(Stream, Member.Rows);
+			WriteStream(Stream, Member.Flags);
 		}
 	}
 
-	WriteFile<uint32_t>(File, Consts.size());
+	WriteStream<uint32_t>(Stream, Consts.size());
 	for (const auto& Obj : Consts)
 	{
-		WriteFile(File, Obj.Name);
-		WriteFile(File, Obj.BufferIndex);
-		WriteFile(File, Obj.StructIndex);
-		WriteFile<uint8_t>(File, Obj.RegisterSet);
-		WriteFile(File, Obj.RegisterStart);
-		WriteFile(File, Obj.ElementRegisterCount);
-		WriteFile(File, Obj.ElementCount);
-		WriteFile(File, Obj.Columns);
-		WriteFile(File, Obj.Rows);
-		WriteFile(File, Obj.Flags);
+		WriteStream(Stream, Obj.Name);
+		WriteStream(Stream, Obj.BufferIndex);
+		WriteStream(Stream, Obj.StructIndex);
+		WriteStream<uint8_t>(Stream, Obj.RegisterSet);
+		WriteStream(Stream, Obj.RegisterStart);
+		WriteStream(Stream, Obj.ElementRegisterCount);
+		WriteStream(Stream, Obj.ElementCount);
+		WriteStream(Stream, Obj.Columns);
+		WriteStream(Stream, Obj.Rows);
+		WriteStream(Stream, Obj.Flags);
 	}
 
-	WriteFile<uint32_t>(File, Resources.size());
+	WriteStream<uint32_t>(Stream, Resources.size());
 	for (const auto& Obj : Resources)
 	{
-		WriteFile(File, Obj.Name);
-		WriteFile(File, Obj.Register);
+		WriteStream(Stream, Obj.Name);
+		WriteStream(Stream, Obj.Register);
 	}
 
-	WriteFile<uint32_t>(File, Samplers.size());
+	WriteStream<uint32_t>(Stream, Samplers.size());
 	for (const auto& Obj : Samplers)
 	{
-		WriteFile(File, Obj.Name);
-		WriteFile<uint8_t>(File, Obj.Type);
-		WriteFile(File, Obj.RegisterStart);
-		WriteFile(File, Obj.RegisterCount);
+		WriteStream(Stream, Obj.Name);
+		WriteStream<uint8_t>(Stream, Obj.Type);
+		WriteStream(Stream, Obj.RegisterStart);
+		WriteStream(Stream, Obj.RegisterCount);
 	}
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::Load(std::ifstream& File)
+bool CSM30ShaderMeta::Load(std::istream& Stream)
 {
 	Buffers.clear();
 	Consts.clear();
@@ -562,42 +505,42 @@ bool CSM30ShaderMeta::Load(std::ifstream& File)
 
 	uint32_t Count;
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Buffers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30BufferMeta Obj;
 
-		ReadFile(File, Obj.Name);
-		ReadFile(File, Obj.SlotIndex);
+		ReadStream(Stream, Obj.Name);
+		ReadStream(Stream, Obj.SlotIndex);
 
-		ReadRegisterRanges(Obj.UsedFloat4, File);
-		ReadRegisterRanges(Obj.UsedInt4, File);
-		ReadRegisterRanges(Obj.UsedBool, File);
+		ReadRegisterRanges(Obj.UsedFloat4, Stream);
+		ReadRegisterRanges(Obj.UsedInt4, Stream);
+		ReadRegisterRanges(Obj.UsedBool, Stream);
 
 		Buffers.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Structs.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30StructMeta Obj;
 
 		uint32_t MemberCount;
-		ReadFile<uint32_t>(File, MemberCount);
+		ReadStream<uint32_t>(Stream, MemberCount);
 		Obj.Members.reserve(MemberCount);
 		for (uint32_t j = 0; j < MemberCount; ++j)
 		{
 			CSM30StructMemberMeta Member;
-			ReadFile(File, Member.Name);
-			ReadFile(File, Member.StructIndex);
-			ReadFile(File, Member.RegisterOffset);
-			ReadFile(File, Member.ElementRegisterCount);
-			ReadFile(File, Member.ElementCount);
-			ReadFile(File, Member.Columns);
-			ReadFile(File, Member.Rows);
-			ReadFile(File, Member.Flags);
+			ReadStream(Stream, Member.Name);
+			ReadStream(Stream, Member.StructIndex);
+			ReadStream(Stream, Member.RegisterOffset);
+			ReadStream(Stream, Member.ElementRegisterCount);
+			ReadStream(Stream, Member.ElementCount);
+			ReadStream(Stream, Member.Columns);
+			ReadStream(Stream, Member.Rows);
+			ReadStream(Stream, Member.Flags);
 
 			Obj.Members.push_back(std::move(Member));
 		}
@@ -605,26 +548,26 @@ bool CSM30ShaderMeta::Load(std::ifstream& File)
 		Structs.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Consts.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30ConstMeta Obj;
 
-		ReadFile(File, Obj.Name);
-		ReadFile(File, Obj.BufferIndex);
-		ReadFile(File, Obj.StructIndex);
+		ReadStream(Stream, Obj.Name);
+		ReadStream(Stream, Obj.BufferIndex);
+		ReadStream(Stream, Obj.StructIndex);
 
 		uint8_t RegSet;
-		ReadFile<uint8_t>(File, RegSet);
+		ReadStream<uint8_t>(Stream, RegSet);
 		Obj.RegisterSet = (ESM30RegisterSet)RegSet;
 
-		ReadFile(File, Obj.RegisterStart);
-		ReadFile(File, Obj.ElementRegisterCount);
-		ReadFile(File, Obj.ElementCount);
-		ReadFile(File, Obj.Columns);
-		ReadFile(File, Obj.Rows);
-		ReadFile(File, Obj.Flags);
+		ReadStream(Stream, Obj.RegisterStart);
+		ReadStream(Stream, Obj.ElementRegisterCount);
+		ReadStream(Stream, Obj.ElementCount);
+		ReadStream(Stream, Obj.Columns);
+		ReadStream(Stream, Obj.Rows);
+		ReadStream(Stream, Obj.Flags);
 
 		// Cache value
 		Obj.RegisterCount = Obj.ElementRegisterCount * Obj.ElementCount;
@@ -632,31 +575,31 @@ bool CSM30ShaderMeta::Load(std::ifstream& File)
 		Consts.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Resources.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30RsrcMeta Obj;
-		ReadFile(File, Obj.Name);
-		ReadFile(File, Obj.Register);
+		ReadStream(Stream, Obj.Name);
+		ReadStream(Stream, Obj.Register);
 		//???store sampler type or index for texture type validation on set?
 		//???how to reference texture object in SM3.0 shader for it to be included in params list?
 		Resources.push_back(std::move(Obj));
 	}
 
-	ReadFile<uint32_t>(File, Count);
+	ReadStream<uint32_t>(Stream, Count);
 	Samplers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30SamplerMeta Obj;
-		ReadFile(File, Obj.Name);
+		ReadStream(Stream, Obj.Name);
 		
 		uint8_t Type;
-		ReadFile<uint8_t>(File, Type);
+		ReadStream<uint8_t>(Stream, Type);
 		Obj.Type = (ESM30SamplerType)Type;
 		
-		ReadFile(File, Obj.RegisterStart);
-		ReadFile(File, Obj.RegisterCount);
+		ReadStream(Stream, Obj.RegisterStart);
+		ReadStream(Stream, Obj.RegisterCount);
 
 		Samplers.push_back(std::move(Obj));
 	}
