@@ -264,6 +264,13 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 	// Collect structure layout metadata
 
+	// Since D3D9Structs is a map, its elements have no indices. We generate linear indices for them.
+	// These indices are valid to reference structs in a Structs vector.
+	std::map<uint32_t, uint32_t> StructIDToIndex;
+	size_t Idx = 0;
+	for (const auto& Pair : D3D9Structs)
+		StructIDToIndex.emplace(Pair.first, Idx++);
+
 	Structs.reserve(D3D9Structs.size());
 	for (const auto& Pair : D3D9Structs)
 	{
@@ -277,7 +284,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 			CSM30StructMemberMeta MemberMeta;
 
 			MemberMeta.Name = D3D9ConstDesc.Name;
-			MemberMeta.StructIndex = (uint32_t)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
+			MemberMeta.StructIndex = StructIDToIndex[D3D9ConstDesc.StructID];
 			MemberMeta.RegisterOffset = D3D9ConstDesc.RegisterIndex;
 			MemberMeta.ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			MemberMeta.ElementCount = D3D9ConstDesc.Type.Elements;
@@ -410,7 +417,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 			CSM30ConstMeta Meta;
 			Meta.Name = D3D9ConstDesc.Name;
 			Meta.BufferIndex = BufferIndex;
-			Meta.StructIndex = (uint32_t)D3D9Structs.FindIndex(D3D9ConstDesc.StructID);
+			Meta.StructIndex = StructIDToIndex[D3D9ConstDesc.StructID];
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{
