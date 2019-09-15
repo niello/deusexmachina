@@ -13,6 +13,7 @@ set(DEM_SHADER_COMPILER_HEADERS
 	src/StringID.h
 	src/StringIDStorage.h
 	src/Type.h
+	src/Utils.h
 	src/ValueTable.h
 )
 
@@ -30,6 +31,7 @@ set(DEM_SHADER_COMPILER_SOURCES
 	src/ShaderReflectionUSM.cpp
 	src/StringID.cpp
 	src/StringIDStorage.cpp
+	src/Utils.cpp
 	src/ValueTable.cpp
 )
 

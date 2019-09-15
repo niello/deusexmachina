@@ -5,6 +5,9 @@
 #include <map>
 #include <cassert>
 
+#undef min
+#undef max
+
 class CValueTable
 {
 private:
@@ -31,10 +34,10 @@ private:
 	std::map<CStrID, int>	ColumnIndexMap;		// map attribute ID to column index
 	std::vector<int>		NewColumnIndices;	// indices of new Columns since last ResetModifiedState
 
-	size_t					FirstAddedColIndex = std::numeric_limits<intptr_t>().max();
-	size_t					FirstNewRowIndex = std::numeric_limits<intptr_t>().max();
+	size_t					FirstAddedColIndex = std::numeric_limits<size_t>().max();
+	size_t					FirstNewRowIndex = std::numeric_limits<size_t>().max();
 	size_t					NewRowsCount = 0;
-	size_t					FirstDeletedRowIndex = std::numeric_limits<intptr_t>().max();
+	size_t					FirstDeletedRowIndex = std::numeric_limits<size_t>().max();
 	int						DeletedRowsCount = 0;
 
 	size_t					RowPitch = 0;			// pitch of a row in bytes

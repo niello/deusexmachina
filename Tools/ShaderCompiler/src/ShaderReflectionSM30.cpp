@@ -2,7 +2,7 @@
 
 #include <DEMD3DInclude.h>
 #include <D3D9ShaderReflectionAPI.h>
-#include <algorithm>
+#include <Utils.h>
 #include <cassert>
 
 #undef min

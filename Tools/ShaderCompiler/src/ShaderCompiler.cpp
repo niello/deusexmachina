@@ -1,14 +1,7 @@
 #include "ShaderCompiler.h"
 
 #include <Buffer.h>
-#include <Data/StringUtils.h>
-#include <IO/FS/FileSystemWin32.h>
-#include <IO/Streams/FileStream.h>
-#include <IO/Streams/MemStream.h>
-#include <IO/BinaryReader.h>
-#include <IO/BinaryWriter.h>
-#include <IO/PathUtils.h>
-#include <Util/UtilFwd.h>
+#include <Utils.h>
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
 #include <ShaderReflectionSM30.h>
@@ -48,14 +41,14 @@ DEM_DLL_API bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* p
 
 	if (pOutputDirectory)
 	{
-		OutputDir.Set(pOutputDirectory);
-		PathUtils::EnsurePathHasEndingDirSeparator(OutputDir);
+		OutputDir.assign(pOutputDirectory);
+		EnsurePathHasEndingDirSeparator(OutputDir);
 	}
 	else
 	{
-		OutputDir = PathUtils::ExtractDirName(pDBFileName);
+		OutputDir = ExtractDirName(pDBFileName);
 		OutputDir += "../../Export/Shaders/Bin/";
-		OutputDir = PathUtils::CollapseDots(OutputDir.c_str());
+		OutputDir = CollapseDots(OutputDir);
 	}
 
 	return OpenDB(pDBFileName);
@@ -211,20 +204,30 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	if (!Target) Target = 0x0500;
 
-	IO::PFileSystem FS = n_new(IO::CFileSystemWin32);
+
+	std::ifstream File(pSrcPath);
+	if (!File) return DEM_SHADER_COMPILER_IO_READ_ERROR;
+
+	File.seekg(0, std::ios_base::end);
+	auto FileSize = File.tellg();
+	File.seekg(0, std::ios_base::beg);
 
 	Data::CBuffer In;
-	void* hFile = FS->OpenFile(pSrcPath, IO::SAM_READ, IO::SAP_SEQUENTIAL);
-	if (!hFile) return DEM_SHADER_COMPILER_IO_READ_ERROR;
-	uint64_t CurrWriteTime = FS->GetFileWriteTime(hFile);
-	size_t FileSize = (size_t)FS->GetFileSize(hFile);
 	In.Reserve(FileSize);
-	size_t ReadSize = FS->Read(hFile, In.GetPtr(), FileSize);
-	FS->CloseFile(hFile);
-		
-	if (ReadSize != FileSize) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 
-	size_t SrcCRC = Util::CalcCRC((uint8_t*)In.GetPtr(), In.GetSize());
+	const bool ReadError = !File.read((char*)In.GetPtr(), FileSize);
+	File.close();
+
+	if (ReadError) return DEM_SHADER_COMPILER_IO_READ_ERROR;
+
+	uint64_t CurrWriteTime = 0;
+	{
+		struct _stat FileStat;
+		if (_stat(pSrcPath, &FileStat) == 0)
+			CurrWriteTime = FileStat.st_mtime;
+	}
+
+	const size_t SrcCRC = CalcCRC((uint8_t*)In.GetPtr(), In.GetSize());
 
 	// Setup compiler flags
 
@@ -292,17 +295,14 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	// Setup D3D shader macros
 
-	std::vector<D3D_SHADER_MACRO> D3DMacros(Rec.Defines.size() + 1, 0);
+	std::vector<D3D_SHADER_MACRO> D3DMacros;
 	D3D_SHADER_MACRO* pD3DMacros;
 	if (Rec.Defines.size())
 	{
-		for (size_t i = 0; i < Rec.Defines.size(); ++i)
-		{
-			const CMacroDBRec& Macro = Rec.Defines[i];
-			D3D_SHADER_MACRO* pD3DMacro = D3DMacros.Add();
-			pD3DMacro->Name = Macro.Name;
-			pD3DMacro->Definition = Macro.Value;
-		}
+		D3DMacros.reserve(Rec.Defines.size() + 1);
+
+		for (const auto& Macro : Rec.Defines)
+			D3DMacros.push_back({ Macro.Name, Macro.Value });
 
 		// Terminating macro
 		D3DMacros.push_back({ nullptr, nullptr });
@@ -313,7 +313,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	// Compile shader
 
-	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pSrcPath), std::string{}); //RootPath);
+	CDEMD3DInclude IncHandler(ExtractDirName(pSrcPath), std::string{}); //RootPath);
 
 	ID3DBlob* pCode = nullptr;
 	ID3DBlob* pErrors = nullptr;
@@ -350,7 +350,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		{
 			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
 			Rec.InputSigFile.BytecodeSize = pInputSig->GetBufferSize();
-			Rec.InputSigFile.CRC = Util::CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+			Rec.InputSigFile.CRC = CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
 			uint32_t OldInputSigID = Rec.InputSigFile.ID;
 			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), Target, Cmp_All))
@@ -363,9 +363,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 					return DEM_SHADER_COMPILER_DB_ERROR;
 				}
 
-				Rec.InputSigFile.Path = PathUtils::CollapseDots(OutputDir + StringUtils::FromInt(Rec.InputSigFile.ID) + ".sig");
+				Rec.InputSigFile.Path = CollapseDots(OutputDir + std::to_string(Rec.InputSigFile.ID) + ".sig");
 
-				FS->CreateDirectory(PathUtils::ExtractDirName(Rec.InputSigFile.Path));
+				FS->CreateDirectory(ExtractDirName(Rec.InputSigFile.Path));
 
 				void* hFile = FS->OpenFile(Rec.InputSigFile.Path.c_str(), IO::SAM_WRITE, IO::SAP_SEQUENTIAL);
 				if (!hFile)
@@ -480,9 +480,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
 
-		Rec.ObjFile.Path = PathUtils::CollapseDots(OutputDir + StringUtils::FromInt(Rec.ObjFile.ID) + "." + TargetParams.pExtension);
+		Rec.ObjFile.Path = CollapseDots(OutputDir + std::to_string(Rec.ObjFile.ID) + "." + TargetParams.pExtension);
 
-		FS->CreateDirectory(PathUtils::ExtractDirName(Rec.ObjFile.Path));
+		FS->CreateDirectory(ExtractDirName(Rec.ObjFile.Path));
 
 		IO::CFileStream File(Rec.ObjFile.Path, FS);
 		if (!File.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))

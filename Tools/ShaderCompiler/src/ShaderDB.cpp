@@ -1,19 +1,12 @@
 #include "ShaderDB.h"
 
 #include <ValueTable.h>
-//#include <Data/Params.h>
-//#include <Data/StringUtils.h>
 #include <Buffer.h>
-//#include <IO/FS/FileSystemWin32.h>
-//#include <IO/Streams/FileStream.h>
-//#include <IO/PathUtils.h>
+#include <Utils.h>
 #include <sqlite3.h>
-#include <fstream>
 #include <thread>
 #include <chrono>
 #include <cassert>
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h> // For the directory chain creation
 
 namespace Data
 {
@@ -258,74 +251,6 @@ bool ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable, const Data::CPara
 	while (Result && *pSQL);
 
 	return Result;
-}
-//---------------------------------------------------------------------
-
-// Return a CString object containing the part before the last directory separator.
-// NOTE (floh): I left my fix in that returns the last slash (or colon), this was
-// necessary to tell if a dirname is a normal directory or an assign.
-static std::string ExtractDirName(const std::string& Path)
-{
-	if (Path.empty()) return {};
-
-	auto Pos = Path.find_last_of("/\\:");
-
-	// Ignore a separator at the last character
-	if (Pos == Path.size() - 1)
-		Pos = Path.find_last_of("/\\:", Pos - 1);
-
-	if (Pos == std::string::npos) return {};
-
-	return Path.substr(Pos + 1);
-}
-//---------------------------------------------------------------------
-
-static bool DirectoryExists(const char* pPath)
-{
-	DWORD FileAttrs = ::GetFileAttributes(pPath);
-	return FileAttrs != INVALID_FILE_ATTRIBUTES && (FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
-}
-//---------------------------------------------------------------------
-
-// trim from end (in place)
-static inline void rtrim(std::string& s, const std::string& whitespace)
-{
-	s.erase(std::find_if(s.rbegin(), s.rend(), [&whitespace](int ch)
-	{
-		return whitespace.find(ch) == std::string::npos;
-	}).base(), s.end());
-}
-//---------------------------------------------------------------------
-
-static bool EnsureDirectoryExists(std::string Path)
-{
-	std::vector<std::string> DirStack;
-	while (!DirectoryExists(Path.c_str()))
-	{
-		rtrim(Path, " \r\n\t\\/");
-		
-		auto LastSepIdx = Path.find_last_of("/\\:");
-		if (LastSepIdx != std::string::npos)
-		{
-			DirStack.push_back(Path.substr(LastSepIdx + 1));
-			Path = Path.substr(0, LastSepIdx);
-		}
-		else
-		{
-			if (!::CreateDirectory(Path.c_str(), nullptr)) return false;
-			break;
-		}
-	}
-
-	while (DirStack.size())
-	{
-		Path += '/';
-		Path += DirStack.back();
-		DirStack.pop_back();
-		if (!CreateDirectory(Path.c_str(), nullptr)) return false;
-	}
-
-	return true;
 }
 //---------------------------------------------------------------------
 

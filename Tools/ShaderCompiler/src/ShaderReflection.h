@@ -88,15 +88,3 @@ public:
 	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject) = 0;
 	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const = 0;
 };
-
-template<class T> void ReadFile(std::ifstream& File, T& Out)
-{
-	File.read(reinterpret_cast<char*>(&Out), sizeof(T));
-}
-//---------------------------------------------------------------------
-
-template<class T> void WriteFile(std::ofstream& File, const T& Data)
-{
-	File.write(reinterpret_cast<const char*>(&Data), sizeof(T));
-}
-//---------------------------------------------------------------------

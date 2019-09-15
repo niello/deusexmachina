@@ -1,35 +1,10 @@
 #include "D3D9ShaderReflectionAPI.h"
-#include <algorithm> 
+#include <Utils.h>
 #include <cassert>
 
 // ProcessConstant() and D3D9Reflect() code is obtained from
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
 // This version has some cosmetic changes
-
-// trim from start (in place)
-static inline void ltrim(std::string& s, const std::string& whitespace)
-{
-	s.erase(s.begin(), std::find_if(s.begin(), s.end(), [&whitespace](int ch)
-	{
-		return whitespace.find(ch) == std::string::npos;
-	}));
-}
-
-// trim from end (in place)
-static inline void rtrim(std::string& s, const std::string& whitespace)
-{
-	s.erase(std::find_if(s.rbegin(), s.rend(), [&whitespace](int ch)
-	{
-		return whitespace.find(ch) == std::string::npos;
-	}).base(), s.end());
-}
-
-// trim from both ends (in place)
-static inline void trim(std::string& s, const std::string& whitespace)
-{
-	ltrim(s, whitespace);
-	rtrim(s, whitespace);
-}
 
 #pragma pack(push)
 #pragma pack(1)

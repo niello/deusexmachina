@@ -1,6 +1,6 @@
 #include "ShaderReflectionUSM.h"
 
-#include <string>
+#include <Utils.h>
 #include <cassert>
 #include <D3DCompiler.inl>
 

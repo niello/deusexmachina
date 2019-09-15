@@ -1,15 +1,5 @@
 #include "DEMD3DInclude.h"
-#include <fstream>
-#include <algorithm>
-
-// trim from end (in place)
-static inline void rtrim(std::string& s, const std::string& whitespace)
-{
-	s.erase(std::find_if(s.rbegin(), s.rend(), [&whitespace](int ch)
-	{
-		return whitespace.find(ch) == std::string::npos;
-	}).base(), s.end());
-}
+#include <Utils.h>
 
 CDEMD3DInclude::CDEMD3DInclude(const std::string& ShdDir, const std::string& ShdRootDir):
 	ShaderDir(ShdDir),
