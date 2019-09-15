@@ -44,14 +44,15 @@ class CSM30StructMemberMeta: public CMetadataObject
 {
 public:
 
-	std::string			Name;
-	uint32_t				StructIndex;
-	uint32_t				RegisterOffset;
-	uint32_t				ElementRegisterCount;
-	uint32_t				ElementCount;
-	uint8_t				Columns;
-	uint8_t				Rows;
-	uint8_t				Flags;					// See EShaderConstFlags
+	std::string	Name;
+	uint32_t	StructIndex;
+	uint32_t	RegisterOffset;
+	uint32_t	ElementRegisterCount;
+	uint32_t	ElementCount;
+	uint8_t		Columns;
+	uint8_t		Rows;
+	uint8_t		Flags;					// See EShaderConstFlags
+
 	//???store register set and support mixed structs?
 
 	virtual const char*			GetName() const { return Name.c_str(); }
@@ -155,12 +156,4 @@ public:
 	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, size_t Index);
 	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject);
 	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const;
-
-	virtual size_t				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer);
-	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject);
-	virtual bool				SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx);
-
-	virtual uint32_t			AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping);
-	virtual uint32_t			GetStructureIndex(size_t ConstIdx) const;
-	virtual bool				SetStructureIndex(size_t ConstIdx, uint32_t StructIdx);
 };

@@ -87,14 +87,6 @@ public:
 	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, size_t Index) = 0;
 	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject) = 0;
 	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const = 0;
-
-	virtual size_t				AddOrMergeBuffer(const CMetadataObject* pMetaBuffer) = 0;
-	virtual CMetadataObject*	GetContainingConstantBuffer(const CMetadataObject* pMetaObject) = 0;
-	virtual bool				SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx) = 0;
-
-	virtual uint32_t			AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping) = 0;
-	virtual uint32_t			GetStructureIndex(size_t ConstIdx) const = 0;
-	virtual bool				SetStructureIndex(size_t ConstIdx, uint32_t StructIdx) = 0;
 };
 
 template<class T> void ReadFile(std::ifstream& File, T& Out)

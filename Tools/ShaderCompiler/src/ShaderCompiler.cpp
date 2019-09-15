@@ -164,7 +164,7 @@ bool ParseDefineString(char* pDefineString, std::vector<CMacroDBRec>& Out)
 			{
 				CurrMacro.Name = pCurrPos;
 				CurrMacro.Value = pDlm + 1;
-				Out.Add(CurrMacro);
+				Out.push_back(CurrMacro);
 				pCurrDlms = pSemicolonOnly;
 			}
 			else // ';'
@@ -173,7 +173,7 @@ bool ParseDefineString(char* pDefineString, std::vector<CMacroDBRec>& Out)
 				if (!CurrMacro.Name)
 				{
 					CurrMacro.Name = pCurrPos;
-					Out.Add(CurrMacro);
+					Out.push_back(CurrMacro);
 				}
 				CurrMacro.Name = nullptr;
 				pCurrDlms = pBothDlms;
@@ -187,7 +187,7 @@ bool ParseDefineString(char* pDefineString, std::vector<CMacroDBRec>& Out)
 			if (!CurrMacro.Name)
 			{
 				CurrMacro.Name = pCurrPos;
-				Out.Add(CurrMacro);
+				Out.push_back(CurrMacro);
 			}
 			CurrMacro.Name = nullptr;
 			break;
@@ -305,8 +305,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		}
 
 		// Terminating macro
-		D3D_SHADER_MACRO D3DMacro = { nullptr, nullptr };
-		D3DMacros.Add(D3DMacro);
+		D3DMacros.push_back({ nullptr, nullptr });
 
 		pD3DMacros = &D3DMacros[0];
 	}
@@ -314,7 +313,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	// Compile shader
 
-	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pSrcPath), std::string::Empty); //RootPath);
+	CDEMD3DInclude IncHandler(PathUtils::ExtractDirName(pSrcPath), std::string{}); //RootPath);
 
 	ID3DBlob* pCode = nullptr;
 	ID3DBlob* pErrors = nullptr;
@@ -324,14 +323,14 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	if (FAILED(hr) || !pCode)
 	{
-		Messages.Set(pErrors ? (const char*)pErrors->GetBufferPointer() : "<No D3D error message>");
+		Messages.assign(pErrors ? (const char*)pErrors->GetBufferPointer() : "<No D3D error message>");
 		if (pCode) pCode->Release();
 		if (pErrors) pErrors->Release();
 		return DEM_SHADER_COMPILER_COMPILE_ERROR;
 	}
 	else if (pErrors)
 	{
-		Messages.Set("Compiled with warnings:\n\n");
+		Messages.assign("Compiled with warnings:\n\n");
 		Messages += (const char*)pErrors->GetBufferPointer();
 		Messages += '\n';
 		pErrors->Release();
@@ -593,8 +592,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 DEM_DLL_API void DEM_DLLCALL CreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta)
 {
-	if (ShaderModel == ShaderModel_30) pOutMeta = n_new(CSM30ShaderMeta);
-	else if (ShaderModel == ShaderModel_USM) pOutMeta = n_new(CUSMShaderMeta);
+	if (ShaderModel == ShaderModel_30) pOutMeta = new CSM30ShaderMeta;
+	else if (ShaderModel == ShaderModel_USM) pOutMeta = new CUSMShaderMeta;
 	else pOutMeta = nullptr;
 }
 //---------------------------------------------------------------------
@@ -670,7 +669,7 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 	SQL += pCommaSeparatedShaderIDs;
 	SQL += ")) ORDER BY ID ASC";
 
-	DB::CValueTable Result;
+	CValueTable Result;
 	if (!ExecuteSQLQuery(SQL.c_str(), &Result)) return 0;
 	if (!Result.GetRowCount()) return 0;
 

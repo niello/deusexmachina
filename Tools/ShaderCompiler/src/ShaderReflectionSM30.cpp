@@ -10,6 +10,63 @@
 
 extern std::string Messages;
 
+//!!!non-optimal, can rewrite in a reverse order to minimize memmove sizes!
+// Adds space for each multiline comment stripped to preserve token delimiting in a "name1/*comment*/name2" case
+static size_t StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/")
+{
+	size_t Len = strlen(pStr);
+
+	if (pMultiLineCommentStart && pMultiLineCommentEnd)
+	{
+		size_t MLCSLen = strlen(pMultiLineCommentStart);
+		size_t MLCELen = strlen(pMultiLineCommentEnd);
+		char* pFound;
+		while (pFound = strstr(pStr, pMultiLineCommentStart))
+		{
+			char* pEnd = strstr(pFound + MLCSLen, pMultiLineCommentEnd);
+			if (pEnd)
+			{
+				const char* pFirstValid = pEnd + MLCELen;
+				*pFound = ' ';
+				++pFound;
+				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
+				Len -= (pFirstValid - pFound);
+				pStr[Len] = 0;
+			}
+			else
+			{
+				*pFound = 0;
+				Len = pFound - pStr;
+			}
+		}
+	}
+
+	if (pSingleLineComment)
+	{
+		size_t SLCLen = strlen(pSingleLineComment);
+		char* pFound;
+		while (pFound = strstr(pStr, pSingleLineComment))
+		{
+			char* pEnd = strpbrk(pFound + SLCLen, "\n\r");
+			if (pEnd)
+			{
+				const char* pFirstValid = pEnd + 1;
+				memmove(pFound, pFirstValid, Len - (pFirstValid - pStr));
+				Len -= (pFirstValid - pFound);
+				pStr[Len] = 0;
+			}
+			else
+			{
+				*pFound = 0;
+				Len = pFound - pStr;
+			}
+		}
+	}
+
+	return Len;
+}
+//---------------------------------------------------------------------
+
 bool CSM30BufferMeta::IsEqual(const CMetadataObject& Other) const
 {
 	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
@@ -115,13 +172,19 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 	if (!D3D9Reflect(pData, Size, D3D9Consts, D3D9Structs, Creator)) return false;
 
-	// Process source code includes and remove comments
+	// Remove comments from the source code
 
-	std::string Source(pSource, SourceSize);
+	std::string Source;
+	{
+		std::unique_ptr<char[]> pSourceCopy(new char[SourceSize + 1]);
+		memcpy(pSourceCopy.get(), pSource, SourceSize);
+		pSourceCopy[SourceSize] = 0;
 
-	//!!!DIRTY HACK! Need valid way to edit std::string inplace by StripComments()!
-	size_t NewLength = StringUtils::StripComments(&Source[0]);
-	Source.TruncateRight(Source.size() - NewLength);
+		const size_t NewLength = StripComments(pSourceCopy.get());
+		Source.assign(pSourceCopy.get(), NewLength);
+	}
+
+	// Insert includes right into a code, as preprocessor does
 
 	size_t CurrIdx = 0;
 	size_t IncludeIdx;
@@ -165,9 +228,9 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 		std::string IncludeFileName = Source.substr(FileNameStart, FileNameEnd - FileNameStart);
 
-		const void* pData;
-		UINT Bytes;
-		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.c_str(), nullptr, &pData, &Bytes)))
+		const void* pIncludeSource;
+		UINT IncludeSourceSize;
+		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.c_str(), nullptr, &pIncludeSource, &IncludeSourceSize)))
 		{
 			Messages += "SM30CollectShaderMetadata() > Failed to #include '";
 			Messages += IncludeFileName;
@@ -176,18 +239,27 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 			continue;
 		}
 
+		// Remove comments from the obtained include file
+		std::string IncludeSource;
+		{
+			std::unique_ptr<char[]> pSourceCopy(new char[IncludeSourceSize + 1]);
+			memcpy(pSourceCopy.get(), pIncludeSource, IncludeSourceSize);
+			pSourceCopy[SourceSize] = 0;
+
+			const size_t NewLength = StripComments(pSourceCopy.get());
+			IncludeSource.assign(pSourceCopy.get(), NewLength);
+		}
+
+		IncludeHandler.Close(pIncludeSource);
+
 		Source =
-			Source.substr(0, IncludeIdx) +
-			std::string((const char*)pData, Bytes) +
-			Source.substr(FileNameEnd + 1, Source.size() - FileNameEnd - 1);
-		
-		IncludeHandler.Close(pData);
+			Source.substr(0, IncludeIdx) + ' ' +
+			IncludeSource + ' ' +
+			Source.substr(FileNameEnd + 1);
 
+		// Start from the place where include was inserted, because it can
+		// contain another include right at the start
 		CurrIdx = IncludeIdx;
-
-		//!!!DIRTY HACK! Need valid way to edit std::string inplace by StripComments()!
-		NewLength = StringUtils::StripComments(&Source[0]);
-		Source.TruncateRight(Source.size() - NewLength);
 	}
 
 	// Collect structure layout metadata
@@ -676,90 +748,5 @@ bool CSM30ShaderMeta::FindParamObjectByName(EShaderParamClass Class, const char*
 		}
 		default:					return false;
 	}
-}
-//---------------------------------------------------------------------
-
-size_t CSM30ShaderMeta::AddOrMergeBuffer(const CMetadataObject* pMetaBuffer)
-{
-	if (!pMetaBuffer || pMetaBuffer->GetShaderModel() != GetShaderModel())
-		return std::numeric_limits<size_t>().max();
-
-	const CSM30BufferMeta* pSM30Buffer = (const CSM30BufferMeta*)pMetaBuffer;
-	size_t Idx = 0;
-	for (; Idx < Buffers.size(); ++ Idx)
-		if (Buffers[Idx].SlotIndex == pSM30Buffer->SlotIndex) break;
-	if (Idx == Buffers.size())
-	{
-		Buffers.push_back(*pSM30Buffer);
-		return Buffers.size() - 1;
-	}
-	else
-	{
-		// Merge used registers from the conflicting buffer
-		
-		CSM30BufferMeta& CurrBuffer = Buffers[Idx];
-		const CSM30BufferMeta& NewBuffer = *pSM30Buffer;
-		
-		CurrBuffer.UsedFloat4.insert(NewBuffer.UsedFloat4.begin(), NewBuffer.UsedFloat4.end());
-		CurrBuffer.UsedInt4.insert(NewBuffer.UsedInt4.begin(), NewBuffer.UsedInt4.end());
-		CurrBuffer.UsedBool.insert(NewBuffer.UsedBool.begin(), NewBuffer.UsedBool.end());
-
-		return Idx;
-	}
-}
-//---------------------------------------------------------------------
-
-CMetadataObject* CSM30ShaderMeta::GetContainingConstantBuffer(const CMetadataObject* pMetaObject)
-{
-	if (!pMetaObject || pMetaObject->GetClass() != ShaderParam_Const || pMetaObject->GetShaderModel() != GetShaderModel()) return nullptr;
-	return &Buffers[((CSM30ConstMeta*)pMetaObject)->BufferIndex];
-}
-//---------------------------------------------------------------------
-
-bool CSM30ShaderMeta::SetContainingConstantBuffer(size_t ConstIdx, size_t BufferIdx)
-{
-	if (ConstIdx >= Consts.size()) return false;
-	Consts[ConstIdx].BufferIndex = BufferIdx;
-	return true;
-}
-//---------------------------------------------------------------------
-
-uint32_t CSM30ShaderMeta::AddStructure(const CShaderMetadata& SourceMeta, uint64_t StructKey, std::map<uint64_t, uint32_t>& StructIndexMapping)
-{
-	auto It = StructIndexMapping.find(StructKey);
-	if (It != StructIndexMapping.cend()) return It->second;
-
-	const uint32_t StructIndex = (uint32_t)(StructKey & 0xffffffff);
-	const CSM30StructMeta& StructMeta = ((const CSM30ShaderMeta&)SourceMeta).Structs[StructIndex];
-	Structs.push_back(StructMeta);
-	StructIndexMapping.emplace(StructKey, Structs.size() - 1);
-
-	for (size_t i = 0; i < StructMeta.Members.size(); ++i)
-	{
-		const CSM30StructMemberMeta& MemberMeta = StructMeta.Members[i];
-		if (MemberMeta.StructIndex == (uint32_t)(-1)) continue;
-
-		const uint64_t MemberKey = (StructKey & 0xffffffff00000000) | ((uint64_t)MemberMeta.StructIndex);
-		AddStructure(SourceMeta, MemberKey, StructIndexMapping);
-	}
-
-	It = StructIndexMapping.find(StructKey);
-	assert(It != StructIndexMapping.cend());
-	return It->second;
-}
-//---------------------------------------------------------------------
-
-uint32_t CSM30ShaderMeta::GetStructureIndex(size_t ConstIdx) const
-{
-	if (ConstIdx >= Consts.size()) return (uint32_t)(-1);
-	return Consts[ConstIdx].StructIndex;
-}
-//---------------------------------------------------------------------
-
-bool CSM30ShaderMeta::SetStructureIndex(size_t ConstIdx, uint32_t StructIdx)
-{
-	if (ConstIdx >= Consts.size()) return false;
-	Consts[ConstIdx].StructIndex = StructIdx;
-	return true;
 }
 //---------------------------------------------------------------------
