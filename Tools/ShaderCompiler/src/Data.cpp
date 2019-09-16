@@ -19,6 +19,7 @@ DEFINE_TYPE(int, 0)
 DEFINE_TYPE(float, 0.f)
 DEFINE_TYPE_EX(std::string, string, std::string{})
 DEFINE_TYPE(CStrID, CStrID::Empty)
+DEFINE_TYPE(CBuffer, {})
 
 void CData::SetType(const CType* SrcType)
 {

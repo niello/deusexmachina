@@ -1,6 +1,7 @@
 #pragma once
 #include "Type.h"
 #include <string>
+#include <vector>
 #include <cassert>
 
 // Variant data type with compile-time extendable type list
@@ -193,6 +194,7 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 };
 
 typedef Data::CStringID CStrID;
+typedef std::vector<uint8_t> CBuffer;
 
 // Std types
 //DECLARE_TYPE(void) //!!!can use struct CVoid {};
@@ -201,3 +203,4 @@ DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
 DECLARE_TYPE(std::string, 4) //???define char* too?
 DECLARE_TYPE(CStrID, 5)
+DECLARE_TYPE(CBuffer, 9)

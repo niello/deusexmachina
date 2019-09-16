@@ -226,6 +226,7 @@ inline void** CValueTable::GetValuePtr(size_t ColIdx, size_t RowIdx) const
 }
 //---------------------------------------------------------------------
 
+//!!!TODO: moveable object Set!
 template<class T> inline void CValueTable::Set(size_t ColIdx, size_t RowIdx, const T& Val)
 {
 	const Data::CType* Type = GetColumnValueType(ColIdx);

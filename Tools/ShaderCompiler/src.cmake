@@ -1,5 +1,4 @@
 set(DEM_SHADER_COMPILER_HEADERS
-	src/Buffer.h
 	src/D3D9ShaderReflectionAPI.h
 	src/Data.h
 	src/DEMD3DInclude.h
@@ -18,7 +17,6 @@ set(DEM_SHADER_COMPILER_HEADERS
 )
 
 set(DEM_SHADER_COMPILER_SOURCES
-	src/Buffer.cpp
 	src/D3D9ShaderReflectionAPI.cpp
 	src/Data.cpp
 	src/DEMD3DInclude.cpp

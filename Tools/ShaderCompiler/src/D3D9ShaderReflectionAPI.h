@@ -75,7 +75,7 @@ struct CD3D9ConstantDesc
 	EREGISTER_SET				RegisterSet;
 	uint32_t					RegisterIndex;
 	uint32_t					RegisterCount;
-	//const void*				pDefaultValue; //???CBuffer or explicit mem mgmt? or don't read?
+	//std::unique_ptr<uint8_t[]>	pDefaultValue; //???read?
 };
 
 struct CD3D9StructDesc

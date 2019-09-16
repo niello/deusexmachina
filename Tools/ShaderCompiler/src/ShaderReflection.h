@@ -75,17 +75,6 @@ class CShaderMetadata
 {
 public:
 
-	virtual bool				Load(std::istream& Stream) = 0;
-	virtual bool				Save(std::ostream& Stream) const = 0;
-
-	virtual EShaderModel		GetShaderModel() const = 0;
-	virtual uint32_t			GetMinFeatureLevel() const = 0;
-	virtual void				SetMinFeatureLevel(uint32_t NewLevel) = 0;
-	virtual uint64_t			GetRequiresFlags() const = 0;
-	virtual void				SetRequiresFlags(uint64_t NewFlags) = 0;
-
-	virtual size_t				GetParamCount(EShaderParamClass Class) const = 0;
-	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, size_t Index) = 0;
-	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject) = 0;
-	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const = 0;
+	virtual bool Load(std::istream& Stream) = 0;
+	virtual bool Save(std::ostream& Stream) const = 0;
 };

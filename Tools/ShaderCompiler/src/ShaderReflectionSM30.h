@@ -141,19 +141,8 @@ public:
 	std::vector<CSM30RsrcMeta>		Resources;
 	std::vector<CSM30SamplerMeta>	Samplers;
 
-	bool						CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, CDEMD3DInclude& IncludeHandler);
+	bool CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, CDEMD3DInclude& IncludeHandler);
 
-	virtual bool				Load(std::istream& Stream) override;
-	virtual bool				Save(std::ostream& Stream) const override;
-
-	virtual EShaderModel		GetShaderModel() const { return ShaderModel_30; }
-	virtual uint32_t			GetMinFeatureLevel() const;
-	virtual void				SetMinFeatureLevel(uint32_t NewLevel) { }
-	virtual uint64_t			GetRequiresFlags() const { return 0; }
-	virtual void				SetRequiresFlags(uint64_t NewFlags) { }
-
-	virtual size_t				GetParamCount(EShaderParamClass Class) const;
-	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, size_t Index);
-	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject);
-	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const;
+	virtual bool Load(std::istream& Stream) override;
+	virtual bool Save(std::ostream& Stream) const override;
 };

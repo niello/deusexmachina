@@ -1,6 +1,5 @@
 #include "ShaderCompiler.h"
 
-#include <Buffer.h>
 #include <Utils.h>
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
@@ -205,7 +204,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	if (!Target) Target = 0x0500;
 
-	Data::CBuffer In;
+	std::vector<char> In;
 	{
 		std::ifstream File(pSrcPath);
 		if (!File) return DEM_SHADER_COMPILER_IO_READ_ERROR;
@@ -214,9 +213,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		auto FileSize = File.tellg();
 		File.seekg(0, std::ios_base::beg);
 
-		In.Reserve(static_cast<size_t>(FileSize));
+		In.resize(static_cast<size_t>(FileSize));
 
-		const bool ReadError = !File.read((char*)In.GetPtr(), FileSize);
+		const bool ReadError = !File.read(In.data(), FileSize);
 		File.close();
 
 		if (ReadError) return DEM_SHADER_COMPILER_IO_READ_ERROR;
@@ -229,7 +228,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			CurrWriteTime = FileStat.st_mtime;
 	}
 
-	const size_t SrcCRC = CalcCRC((uint8_t*)In.GetPtr(), In.GetSize());
+	const size_t SrcCRC = CalcCRC((uint8_t*)In.data(), In.size());
 
 	// Setup compiler flags
 
@@ -275,7 +274,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	bool RecFound = FindShaderRec(Rec);
 	if (RecFound &&
 		Rec.CompilerFlags == Flags &&
-		Rec.SrcFile.Size == In.GetSize() &&
+		Rec.SrcFile.Size == In.size() &&
 		Rec.SrcFile.CRC == SrcCRC &&
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
@@ -286,7 +285,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	}
 
 	Rec.CompilerFlags = Flags;
-	Rec.SrcFile.Size = In.GetSize();
+	Rec.SrcFile.Size = In.size();
 	Rec.SrcFile.CRC = SrcCRC;
 	Rec.SrcModifyTimestamp = CurrWriteTime;
 
@@ -319,7 +318,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	ID3DBlob* pCode = nullptr;
 	ID3DBlob* pErrors = nullptr;
-	HRESULT hr = D3DCompile(In.GetPtr(), In.GetSize(), pSrcPath,
+	HRESULT hr = D3DCompile(In.data(), In.size(), pSrcPath,
 							pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
 							Flags, 0, &pCode, &pErrors);
 
@@ -438,7 +437,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		// is the same, because constant buffers are defined in annotations and aren't reflected in a shader blob.
 
 		CSM30ShaderMeta Meta;
-		bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), (const char*)In.GetPtr(), In.GetSize(), IncHandler);
+		bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), In.data(), In.size(), IncHandler);
 		bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
 
 		pCode->Release();

@@ -1,7 +1,6 @@
 #include "ShaderDB.h"
 
 #include <ValueTable.h>
-#include <Buffer.h>
 #include <Utils.h>
 #include <sqlite3.h>
 #include <thread>
@@ -70,11 +69,11 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 			Error = sqlite3_bind_text(SQLiteStmt, Idx, Val.GetValue<CStrID>().CStr(),
 				-1, SQLITE_TRANSIENT);
 		}
-		else if (Val.IsA<Data::CBuffer>())
+		else if (Val.IsA<CBuffer>())
 		{
-			const Data::CBuffer* Blob = Val.GetValuePtr<Data::CBuffer>();
-			if (Blob->IsValid())
-				Error = sqlite3_bind_blob(SQLiteStmt, Idx, Blob->GetPtr(), Blob->GetSize(), SQLITE_TRANSIENT);
+			const CBuffer* Blob = Val.GetValuePtr<CBuffer>();
+			if (Blob && !Blob->empty())
+				Error = sqlite3_bind_blob(SQLiteStmt, Idx, Blob->data(), Blob->size(), SQLITE_TRANSIENT);
 		}
 		else
 		{
@@ -167,13 +166,12 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, CValueTable* pOutTable = nullptr
 						CStrID Val((const char*)sqlite3_column_text(SQLiteStmt, ResultColIdx));
 						pOutTable->Set<CStrID>(ColIdx, RowIdx, Val);
 					}
-					else if (Type == DATA_TYPE(Data::CBuffer))
+					else if (Type == DATA_TYPE(CBuffer))
 					{
 						assert(SQLITE_BLOB == ResultColType);
-						const void* ptr = sqlite3_column_blob(SQLiteStmt, ResultColIdx);
+						auto ptr = static_cast<const uint8_t*>(sqlite3_column_blob(SQLiteStmt, ResultColIdx));
 						int size = sqlite3_column_bytes(SQLiteStmt, ResultColIdx);
-						Data::CBuffer Blob(ptr, size);
-						pOutTable->Set<Data::CBuffer>(ColIdx, RowIdx, Blob);
+						pOutTable->Set<CBuffer>(ColIdx, RowIdx, CBuffer(ptr, ptr + size));
 					}
 					else if (!Type)
 					{
@@ -558,7 +556,8 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, uint32_t Target, 
 				if (!File) continue;
 
 				File.seekg(0, std::ios_base::end);
-				auto FileSize = File.tellg();
+				size_t FileSize = static_cast<size_t>(File.tellg());
+				assert(FileSize == File.tellg());
 
 				if (Mode == Cmp_ShaderAndMetadata)
 				{
@@ -580,14 +579,16 @@ bool FindObjFile(CObjFileData& InOut, const void* pBinaryData, uint32_t Target, 
 					File.seekg(0, std::ios_base::beg);
 				}
 
-				Data::CBuffer Buffer((size_t)FileSize);
-				if (!File.read((char*)Buffer.GetPtr(), (size_t)FileSize)) continue;
+				if (!FileSize) continue;
+
+				std::unique_ptr<char[]> Buffer(new char[FileSize]);
+				if (!File.read(Buffer.get(), (size_t)FileSize)) continue;
 			
-				if (Buffer.IsEmpty() || memcmp(pBinaryData, Buffer.GetPtr(), (size_t)FileSize) != 0) continue;
+				if (memcmp(pBinaryData, Buffer.get(), (size_t)FileSize) != 0) continue;
 			}
 
 			InOut.ID = Result.Get<int>(Col_ID, i);
-			InOut.Path = Path;
+			InOut.Path = std::move(Path);
 			return true; // Found
 		}
 	}

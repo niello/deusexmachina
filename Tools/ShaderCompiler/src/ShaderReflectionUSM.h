@@ -145,10 +145,10 @@ class CUSMShaderMeta: public CShaderMetadata
 {
 private:
 
-	uint32_t						MinFeatureLevel;
-	uint64_t						RequiresFlags;
+	uint32_t MinFeatureLevel = 0;
+	uint64_t RequiresFlags = 0;
 
-	bool						ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache);
+	bool ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache);
 
 public:
 
@@ -158,21 +158,8 @@ public:
 	std::vector<CUSMRsrcMeta>		Resources;
 	std::vector<CUSMSamplerMeta>	Samplers;
 
-	CUSMShaderMeta(): MinFeatureLevel(0), RequiresFlags(0) {}
+	bool CollectFromBinary(const void* pData, size_t Size);
 
-	bool						CollectFromBinary(const void* pData, size_t Size);
-
-	virtual bool				Load(std::istream& Stream) override;
-	virtual bool				Save(std::ostream& Stream) const override;
-
-	virtual EShaderModel		GetShaderModel() const { return ShaderModel_USM; }
-	virtual uint32_t			GetMinFeatureLevel() const { return MinFeatureLevel; }
-	virtual void				SetMinFeatureLevel(uint32_t NewLevel) { MinFeatureLevel = NewLevel; }
-	virtual uint64_t			GetRequiresFlags() const { return RequiresFlags; }
-	virtual void				SetRequiresFlags(uint64_t NewFlags) { RequiresFlags = NewFlags; }
-
-	virtual size_t				GetParamCount(EShaderParamClass Class) const;
-	virtual CMetadataObject*	GetParamObject(EShaderParamClass Class, size_t Index);
-	virtual size_t				AddParamObject(EShaderParamClass Class, const CMetadataObject* pMetaObject);
-	virtual bool				FindParamObjectByName(EShaderParamClass Class, const char* pName, size_t& OutIndex) const;
+	virtual bool Load(std::istream& Stream) override;
+	virtual bool Save(std::ostream& Stream) const override;
 };

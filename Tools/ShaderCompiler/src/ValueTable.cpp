@@ -1,5 +1,4 @@
 #include "ValueTable.h"
-#include <Buffer.h>
 
 void CValueTable::Clear()
 {
@@ -12,9 +11,9 @@ void CValueTable::Clear()
 		if (Type == DATA_TYPE(std::string))
 			for (size_t RowIdx = 0; RowIdx < NumRows; RowIdx++)
 				DATA_TYPE_NV(std::string)::Delete(GetValuePtr(ColIdx, RowIdx));
-		else if (Type == DATA_TYPE(Data::CBuffer))
+		else if (Type == DATA_TYPE(CBuffer))
 			for (size_t RowIdx = 0; RowIdx < NumRows; RowIdx++)
-				DATA_TYPE_NV(Data::CBuffer)::Delete(GetValuePtr(ColIdx, RowIdx));
+				DATA_TYPE_NV(CBuffer)::Delete(GetValuePtr(ColIdx, RowIdx));
 		else if (!Type)
 			for (size_t RowIdx = 0; RowIdx < NumRows; RowIdx++)
 				((Data::CData*)GetValuePtr(ColIdx, RowIdx))->Clear();
@@ -292,8 +291,8 @@ void CValueTable::DeleteRowData(size_t RowIdx)
 
 		if (Type == DATA_TYPE(std::string))
 			DATA_TYPE_NV(std::string)::Delete(GetValuePtr(ColIdx, RowIdx));
-		else if (Type == DATA_TYPE(Data::CBuffer))
-			DATA_TYPE_NV(Data::CBuffer)::Delete(GetValuePtr(ColIdx, RowIdx));
+		else if (Type == DATA_TYPE(CBuffer))
+			DATA_TYPE_NV(CBuffer)::Delete(GetValuePtr(ColIdx, RowIdx));
 		else if (!Type)
 			((Data::CData*)GetValuePtr(ColIdx, RowIdx))->Clear();
 	}
