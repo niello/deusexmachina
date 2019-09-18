@@ -204,6 +204,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	if (!Target) Target = 0x0500;
 
+	// TODO: use D3DReadFileToBlob? Note, there is also D3DWriteBlobToFile!
 	std::vector<char> In;
 	{
 		std::ifstream File(pSrcPath);
@@ -221,15 +222,6 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		if (ReadError) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 	}
 
-	uint64_t CurrWriteTime = 0;
-	{
-		struct _stat FileStat;
-		if (_stat(pSrcPath, &FileStat) == 0)
-			CurrWriteTime = FileStat.st_mtime;
-	}
-
-	const size_t SrcCRC = CalcCRC((uint8_t*)In.data(), In.size());
-
 	// Setup compiler flags
 
 	// D3DCOMPILE_IEEE_STRICTNESS
@@ -240,10 +232,6 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	if (Target >= 0x0400)
 	{
 		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Denies deprecated syntax
-	}
-	else
-	{
-		//Flags |= D3DCOMPILE_ENABLE_BACKWARDS_COMPATIBILITY;
 	}
 
 	if (Debug)
@@ -264,15 +252,25 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	CAutoFree DefineStringBuffer;
 	if (pDefines && *pDefines)
 	{
-		size_t DefinesLen = strlen(pDefines) + 1;
+		const size_t DefinesLen = strlen(pDefines) + 1;
 		pDefineStringBuffer = (char*)malloc(DefinesLen);
 		strcpy_s(pDefineStringBuffer, DefinesLen, pDefines);
 		DefineStringBuffer.Set(pDefineStringBuffer);
 		if (!ParseDefineString(pDefineStringBuffer, Rec.Defines)) return DEM_SHADER_COMPILER_INVALID_ARGS;
 	}
 
-	bool RecFound = FindShaderRec(Rec);
+	uint64_t CurrWriteTime = 0;
+	{
+		struct _stat FileStat;
+		if (_stat(pSrcPath, &FileStat) == 0)
+			CurrWriteTime = FileStat.st_mtime;
+	}
+
+	const size_t SrcCRC = CalcCRC((uint8_t*)In.data(), In.size());
+
+	const bool RecFound = FindShaderRec(Rec);
 	if (RecFound &&
+		Rec.CompilerVersion == D3D_COMPILER_VERSION &&
 		Rec.CompilerFlags == Flags &&
 		Rec.SrcFile.Size == In.size() &&
 		Rec.SrcFile.CRC == SrcCRC &&
@@ -284,6 +282,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 
+	Rec.CompilerVersion = D3D_COMPILER_VERSION;
 	Rec.CompilerFlags = Flags;
 	Rec.SrcFile.Size = In.size();
 	Rec.SrcFile.CRC = SrcCRC;
@@ -314,8 +313,10 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	// Compile shader
 
+	// TODO: try D3D_COMPILE_STANDARD_FILE_INCLUDE!
 	CDEMD3DInclude IncHandler(ExtractDirName(pSrcPath), std::string{}); //RootPath);
 
+	// There is also D3DCompile2 with 'secondary data' optional args but it is not useful for us now
 	ID3DBlob* pCode = nullptr;
 	ID3DBlob* pErrors = nullptr;
 	HRESULT hr = D3DCompile(In.data(), In.size(), pSrcPath,
@@ -342,12 +343,11 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	if (!OnlyMetadata && (ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Geometry) && Target >= 0x0400)
 	{
-		ID3DBlob* pInputSig;
-		if (SUCCEEDED(D3DGetBlobPart(pCode->GetBufferPointer(),
-									 pCode->GetBufferSize(),
-									 D3D_BLOB_INPUT_SIGNATURE_BLOB,
-									 0,
-									 &pInputSig)))
+		ID3DBlob* pInputSig = nullptr;
+		if (SUCCEEDED(D3DGetInputSignatureBlob(
+			pCode->GetBufferPointer(),
+			pCode->GetBufferSize(),
+			&pInputSig)))
 		{
 			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
 			Rec.InputSigFile.BytecodeSize = pInputSig->GetBufferSize();
@@ -410,6 +410,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	}
 	else
 	{
+		// TODO: D3D12 - D3DCOMPILER_STRIP_ROOT_SIGNATURE ?
 		hr = D3DStripShader(pCode->GetBufferPointer(),
 							pCode->GetBufferSize(),
 							D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,

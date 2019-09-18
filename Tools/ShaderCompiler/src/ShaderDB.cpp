@@ -279,12 +279,14 @@ bool OpenDB(const char* pURI)
 		return false;
 	}
 
-	//???synchronous mode?
+	// PRAGMA threads = N; - for worker threads
+	// The same as sqlite3_limit, see https://www.sqlite.org/c3ref/limit.html
+
 	const char* pSQL = "\
+PRAGMA encoding = \"UTF-8\";\
 PRAGMA journal_mode=MEMORY;\
-PRAGMA locking_mode=EXCLUSIVE;\
 PRAGMA cache_size=2048;\
-PRAGMA synchronous=ON;\
+PRAGMA synchronous=NORMAL;\
 PRAGMA temp_store=MEMORY";
 	if (!ExecuteSQLQuery(pSQL))
 	{
@@ -305,7 +307,7 @@ PRAGMA temp_store=MEMORY";
 		const char* pCreateDBSQL = "\
 CREATE TABLE 'Files' (\
 	'ID' INTEGER,\
-	'Path' VARCHAR(1024) NOT nullptr,\
+	'Path' VARCHAR(1024) NOT NULL,\
 	'Size' INTEGER,\
 	'BytecodeSize' INTEGER,\
 	'CRC' INTEGER,\
@@ -316,8 +318,9 @@ CREATE TABLE 'Shaders' (\
 	'ShaderType' INTEGER,\
 	'Target' INTEGER,\
 	'EntryPoint' VARCHAR(64),\
+	'CompilerVersion' INTEGER,\
 	'CompilerFlags' INTEGER,\
-	'SrcPath' VARCHAR(1024) NOT nullptr,\
+	'SrcPath' VARCHAR(1024) NOT NULL,\
 	'SrcModifyTimestamp' INTEGER,\
 	'SrcSize' INTEGER,\
 	'SrcCRC' INTEGER,\
@@ -325,6 +328,7 @@ CREATE TABLE 'Shaders' (\
 	'InputSigFileID' INTEGER,\
 	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE,\
 	FOREIGN KEY (ObjFileID) REFERENCES Files(ID));\
+	FOREIGN KEY (InputSigFileID) REFERENCES Files(ID));\
 \
 CREATE TABLE 'Macros' (\
 	'ShaderID' INTEGER,\
@@ -358,6 +362,7 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 			 "	ShaderType=:ShaderType, "
 			 "	Target=:Target, "
 			 "	EntryPoint=:EntryPoint, "
+			 "	CompilerVersion=:CompilerVersion, "
 			 "	CompilerFlags=:CompilerFlags, "
 			 "	SrcPath=:SrcPath, "
 			 "	SrcModifyTimestamp=:SrcModifyTimestamp, "
@@ -467,6 +472,7 @@ bool FindShaderRec(CShaderDBRec& InOut)
 		if (Found)
 		{
 			InOut.ID = Shaders.Get<int>(Col_ID, ShIdx);
+			InOut.CompilerVersion = Shaders.Get<int>(CStrID("CompilerVersion"), ShIdx);
 			InOut.CompilerFlags = Shaders.Get<int>(CStrID("CompilerFlags"), ShIdx);
 			InOut.SrcModifyTimestamp = Shaders.Get<int>(CStrID("SrcModifyTimestamp"), ShIdx);
 			InOut.SrcFile.Size = Shaders.Get<int>(CStrID("SrcSize"), ShIdx);
@@ -478,6 +484,7 @@ bool FindShaderRec(CShaderDBRec& InOut)
 	}
 
 	InOut.ID = 0;
+	InOut.CompilerVersion = 0;
 	InOut.CompilerFlags = 0;
 	InOut.ObjFile.ID = 0;
 	InOut.ObjFile.Path.clear();
@@ -503,6 +510,7 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 	Params.emplace(CStrID("ShaderType"), (int)InOut.ShaderType);
 	Params.emplace(CStrID("Target"), (int)InOut.Target);
 	Params.emplace(CStrID("EntryPoint"), InOut.EntryPoint);
+	Params.emplace(CStrID("CompilerVersion"), (int)InOut.CompilerVersion);
 	Params.emplace(CStrID("CompilerFlags"), (int)InOut.CompilerFlags);
 	Params.emplace(CStrID("SrcPath"), InOut.SrcFile.Path);
 	Params.emplace(CStrID("SrcModifyTimestamp"), (int)InOut.SrcModifyTimestamp);

@@ -37,9 +37,10 @@ struct CMacroDBRec
 
 struct CShaderDBRec
 {
-	uint32_t					ID;
+	uint32_t					ID = 0;
 	uint32_t					ShaderType;
-	uint32_t					Target;
+	uint32_t					Target = 0;
+	uint32_t					CompilerVersion;
 	uint32_t					CompilerFlags;
 	std::string					EntryPoint;
 	CSrcFileData				SrcFile;
@@ -47,8 +48,6 @@ struct CShaderDBRec
 	CObjFileData				ObjFile;
 	CObjFileData				InputSigFile;
 	std::vector<CMacroDBRec>	Defines;
-
-	CShaderDBRec(): ID(0), Target(0) {}
 };
 
 enum EObjCompareMode

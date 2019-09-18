@@ -117,6 +117,8 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 	// Remove comments from the source code
 
+	// TODO: try D3DPreprocess, try D3D_COMPILE_STANDARD_FILE_INCLUDE!
+
 	std::string Source;
 	{
 		std::unique_ptr<char[]> pSourceCopy(new char[SourceSize + 1]);
