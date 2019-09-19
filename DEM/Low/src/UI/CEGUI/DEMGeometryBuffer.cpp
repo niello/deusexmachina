@@ -81,23 +81,21 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	if (!d_matrixValid || !isRenderTargetDataValid(d_owner.getActiveRenderTarget()))
 	{
 		// Apply the view projection matrix to the model matrix and save the result as cached matrix
-		d_matrix = /*d_owner.getViewProjectionMatrix() **/ getModelMatrix();
+		d_matrix = d_owner.getViewProjectionMatrix() * getModelMatrix();
 		d_matrixValid = true;
 	}
 
 	CEGUI::ShaderParameterBindings* shaderParameterBindings = (*d_renderMaterial).getShaderParamBindings();
 
 	// Set the uniform variables for this GeometryBuffer in the Shader
-	//???TODO: CEGUI fix - pass premultiplied WVP?
-	shaderParameterBindings->setParameter("WorldMatrix", d_matrix);
-	shaderParameterBindings->setParameter("ProjectionMatrix", d_owner.getViewProjectionMatrix());
+	shaderParameterBindings->setParameter("WVP", d_matrix);
 
 	// Prepare for the rendering process according to the used render material
 	const CDEMShaderWrapper& ShaderWrapper = *static_cast<const CDEMShaderWrapper*>(d_renderMaterial->getShaderWrapper());
 
 	if (drawModeMask & (DrawModeFlagWindowRegular | DrawModeFlagMouseCursor))
 	{
-		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha); // TODO: CEGUI implement in shaders
+		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
 		ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, false);
 	}
 	else if (drawModeMask & UI::DrawModeFlagWindowOpaque)
