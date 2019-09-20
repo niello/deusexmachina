@@ -13,4 +13,5 @@ if __name__ == "__main__":
 	update_src_lists("DEM_L2_GAME", os.path.join(PROJECT_FOLDER, "CMake", "DEMGame.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "Game", "src"))
 	update_src_lists("DEM_L3_RPG", os.path.join(PROJECT_FOLDER, "CMake", "DEMRPG.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "RPG", "src"))
 	update_src_lists("DEM_SHADER_COMPILER", os.path.join(PROJECT_FOLDER, "Tools", "ShaderCompiler", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ShaderCompiler", "src"))
+	update_src_lists("DEM_CF_HLSL", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
 	print("Done updating engine source lists")

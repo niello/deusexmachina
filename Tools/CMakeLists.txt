@@ -14,11 +14,13 @@ include(../CMake/DEMCMakeUtils.cmake)
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ShaderCompiler" "${CMAKE_CURRENT_BINARY_DIR}/ShaderCompiler")
 
-# TODO: change directories to appropriate! Each tool in its binary folder? Or all in one, but not inside build?
+# Tool: ContentForge
+
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ContentForge" "${CMAKE_CURRENT_BINARY_DIR}/ContentForge")
 
 # HACK: empty generator expressions are used for config suffix suppression
-set(DEM_TOOLS_LIB_DIR "${CMAKE_CURRENT_BINARY_DIR}/lib/$<$<BOOL:FALSE>:>")
-set(DEM_TOOLS_BIN_DIR "${CMAKE_CURRENT_BINARY_DIR}/bin/$<$<BOOL:FALSE>:>")
+set(DEM_TOOLS_LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/lib/$<$<BOOL:FALSE>:>")
+set(DEM_TOOLS_BIN_DIR "${CMAKE_CURRENT_SOURCE_DIR}/bin/$<$<BOOL:FALSE>:>")
 
 get_all_targets(DEM_TOOLS_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}")
 foreach(_TARGET_NAME IN LISTS DEM_TOOLS_TARGETS)
