@@ -3,6 +3,14 @@
 namespace Data
 {
 
+template<class T>
+const T& GetParam(const CParams& Params, const char* pKey, const T& Default)
+{
+	auto It = Params.find(CStrID(pKey));
+	return (It == Params.cend()) ? Default : It->second;
+}
+//---------------------------------------------------------------------
+
 bool CDataScheme::Init(const CParams& Desc)
 {
 	for (const auto& Prm : Desc)
@@ -14,57 +22,65 @@ bool CDataScheme::Init(const CParams& Desc)
 
 		Rec.ID = Prm.first;
 
-		Rec.Flags.SetTo(WRITE_KEY, Value.Get<bool>(CStrID("WriteKey"), false));
-		Rec.Flags.SetTo(WRITE_COUNT, Value.Get<bool>(CStrID("WriteCount"), true));
-		Rec.Flags.SetTo(WRITE_CHILD_KEYS, Value.Get<bool>(CStrID("WriteChildKeys"), false));
-		Rec.Flags.SetTo(WRITE_CHILD_COUNT, Value.Get<bool>(CStrID("WriteChildCount"), true));
-		Rec.Flags.SetTo(APPLY_SCHEME_TO_SELF, Value.Get<bool>(CStrID("ApplySchemeToSelf"), false));
+		Rec.WriteKey = GetParam<bool>(Value, CStrID("WriteKey"), false);
+		Rec.WriteCount = GetParam<bool>(Value, CStrID("WriteCount"), true);
+		Rec.WriteChildKeys = GetParam<bool>(Value, CStrID("WriteChildKeys"), false);
+		Rec.WriteChildCount = GetParam<bool>(Value, CStrID("WriteChildCount"), true);
+		Rec.ApplySchemeToSelf = GetParam<bool>(Value, CStrID("ApplySchemeToSelf"), false);
 
-		CString FourCC;
-		if (Value.Get<CString>(FourCC, CStrID("FourCC")))
-			Rec.FourCC.FromString(FourCC.CStr());
-		else Rec.FourCC = 0;
-
-		CData* TypeIDVal;
-		if (Value.Get(TypeIDVal, CStrID("Type")))
+		Rec.FourCC = 0;
+		auto It = Value.find(CStrID("FourCC"));
+		if (It != Value.cend()) 
 		{
-			if (TypeIDVal->IsA<int>()) Rec.TypeID = *TypeIDVal;
-			else if (TypeIDVal->IsA<CString>())
+			const auto& FourCC = It->second.GetValue<std::string>();
+			if (FourCC.size() == 4)
 			{
-				const char* pTypeString = TypeIDVal->GetValue<CString>().CStr();
+				Rec.FourCC = FourCC[3] | (FourCC[2] << 8) | (FourCC[1] << 16) | (FourCC[0] << 24);
+			}
+		}
+
+		It = Value.find(CStrID("Type"));
+		if (It != Value.cend())
+		{
+			const CData* TypeIDVal = &It->second;
+			if (TypeIDVal->IsA<int>()) Rec.TypeID = *TypeIDVal;
+			else if (TypeIDVal->IsA<std::string>())
+			{
+				const char* pTypeString = TypeIDVal->GetValue<std::string>().c_str();
 
 				//???move somewhere as common? or even store map of string-to-ID
-				if (!n_stricmp(pTypeString, "bool")) Rec.TypeID = DATA_TYPE_ID(bool);
-				else if (!n_stricmp(pTypeString, "int")) Rec.TypeID = DATA_TYPE_ID(int);
-				else if (!n_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
-				else if (!n_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(CString);
-				else if (!n_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
-				else if (!n_stricmp(pTypeString, "vector3")) Rec.TypeID = DATA_TYPE_ID(vector3);
-				else if (!n_stricmp(pTypeString, "vector4")) Rec.TypeID = DATA_TYPE_ID(vector4);
-				else if (!n_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
+				if (!_stricmp(pTypeString, "bool")) Rec.TypeID = DATA_TYPE_ID(bool);
+				else if (!_stricmp(pTypeString, "int")) Rec.TypeID = DATA_TYPE_ID(int);
+				else if (!_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
+				else if (!_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(std::string);
+				else if (!_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
+				//else if (!_stricmp(pTypeString, "vector3")) Rec.TypeID = DATA_TYPE_ID(vector3);
+				//else if (!_stricmp(pTypeString, "vector4")) Rec.TypeID = DATA_TYPE_ID(vector4);
+				//else if (!_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
 				else Rec.TypeID = -1;
 			}
-			else Sys::Error("CDataScheme::Init -> Wrong type of TypeID param. Must be int or string.");
+			else assert(false && "CDataScheme::Init -> Wrong type of TypeID param. Must be int or string.");
 		}
 		else Rec.TypeID = -1;
 
-		CData* SchemeVal;
-		if (Value.Get(SchemeVal, CStrID("Scheme")))
+		It = Value.find(CStrID("Scheme"));
+		if (It != Value.cend())
 		{
-			if (SchemeVal->IsA<PParams>())
+			const CData* SchemeVal = &It->second;
+			if (SchemeVal->IsA<CParams>())
 			{
-				Rec.Scheme = n_new(CDataScheme);
-				if (!Rec.Scheme->Init(*SchemeVal->GetValue<PParams>())) FAIL;
+				Rec.Scheme.reset(new CDataScheme());
+				if (!Rec.Scheme->Init(SchemeVal->GetValue<CParams>())) return false;
 			}
 			else if (SchemeVal->IsA<CStrID>()) Rec.SchemeID = SchemeVal->GetValue<CStrID>();
-			else Sys::Error("CDataScheme::Init -> Wrong type of Scheme param. Must be params or strid.");
+			else assert(false && "CDataScheme::Init -> Wrong type of Scheme param. Must be params or strid.");
 		}
 
-		CParam* pDflt;
-		if (Value.Get(pDflt, CStrID("Default")))
-			Rec.Default = pDflt->GetRawValue();
+		It = Value.find(CStrID("Default"));
+		if (It != Value.cend())
+			Rec.Default = It->second;
 
-		Records.Add(Rec);
+		Records.push_back(std::move(Rec));
 	}
 
 	return true;

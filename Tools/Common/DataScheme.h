@@ -29,9 +29,14 @@ public:
 		uint32_t		FourCC;
 		int				TypeID; //???or type ptr?
 		CStrID			SchemeID;
-		CDataScheme*	pScheme;
-		uint32_t		Flags;
+		std::unique_ptr<CDataScheme> Scheme;
 		CData			Default;
+
+		bool			WriteKey : 1;
+		bool			WriteCount : 1;
+		bool			WriteChildKeys : 1;
+		bool			WriteChildCount : 1;
+		bool			ApplySchemeToSelf : 1;
 	};
 
 	std::vector<CRecord> Records;

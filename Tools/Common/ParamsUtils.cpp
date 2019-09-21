@@ -15,6 +15,7 @@ bool LoadParamsFromHRD(const char* pFileName, Data::CParams& OutParams)
 }
 //---------------------------------------------------------------------
 
+/*
 bool LoadParamsFromPRM(const char* pFileName, Data::CParams& OutParams)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
@@ -22,58 +23,56 @@ bool LoadParamsFromPRM(const char* pFileName, Data::CParams& OutParams)
 	IO::CBinaryReader Reader(*File);
 
 	Data::PParams Params = n_new(Data::CParams);
-	if (!Reader.ReadParams(*Params)) FAIL;
+	if (!Reader.ReadParams(*Params)) return false;
 	OutParams = Params;
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data::CParams& OutParams)
 {
 	Data::PParams Main;
-	if (!ParamsUtils::LoadParamsFromPRM(std::string(pRootPath) + pRelativeFileName, Main)) FAIL;
-	if (Main.IsNullPtr()) FAIL;
+	if (!ParamsUtils::LoadParamsFromPRM(std::string(pRootPath) + pRelativeFileName, Main)) return false;
+	if (Main.IsNullPtr()) return false;
 
 	std::string BaseName;
 	if (Main->Get(BaseName, CStrID("_Base_")))
 	{
 		n_assert(BaseName != pRelativeFileName);
-		if (!LoadDescFromPRM(pRootPath, BaseName + ".prm", OutParams)) FAIL;
+		if (!LoadDescFromPRM(pRootPath, BaseName + ".prm", OutParams)) return false;
 		OutParams->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!
 	}
 	else OutParams = n_new(Data::CParams(*Main));
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
+*/
 
-bool LoadDataSerializationSchemesFromDSS(const char* pFileName, std::map<CStrID, Data::PDataScheme>& OutSchemes)
+bool LoadDataSerializationSchemesFromDSS(const char* pFileName, std::map<CStrID, Data::CDataScheme>& OutSchemes)
 {
-	Data::PParams SchemeDescs;
-	if (!ParamsUtils::LoadParamsFromHRD(pFileName, SchemeDescs)) FAIL;
-	if (SchemeDescs.IsNullPtr()) FAIL;
+	Data::CParams SchemeDescs;
+	if (!ParamsUtils::LoadParamsFromHRD(pFileName, SchemeDescs)) return false;
+	if (SchemeDescs.empty()) return false;
 
-	for (size_t i = 0; i < SchemeDescs->GetCount(); ++i)
+	for (const auto& Prm : SchemeDescs)
 	{
-		const Data::CParam& Prm = SchemeDescs->Get(i);
-		if (!Prm.IsA<Data::PParams>()) FAIL;
+		if (!Prm.second.IsA<Data::CParams>()) return false;
 
-		IPTR Idx = OutSchemes.FindIndex(Prm.GetName());
-		if (Idx != INVALID_INDEX) OutSchemes.RemoveAt(Idx);
-
-		Data::PDataScheme Scheme = n_new(Data::CDataScheme);
-		if (!Scheme->Init(*Prm.GetValue<Data::PParams>())) FAIL;
-		OutSchemes.Add(Prm.GetName(), Scheme);
+		Data::CDataScheme Scheme;
+		if (!Scheme.Init(Prm.second.GetValue<Data::CParams>())) return false;
+		OutSchemes[Prm.first] = std::move(Scheme);
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
+/*
 bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File || !File->Open(IO::SAM_WRITE)) FAIL;
+	if (!File || !File->Open(IO::SAM_WRITE)) return false;
 	IO::CHRDWriter Writer(*File);
 	return Writer.WriteParams(Params);
 }
@@ -82,10 +81,11 @@ bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params)
 bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File || !File->Open(IO::SAM_WRITE)) FAIL;
+	if (!File || !File->Open(IO::SAM_WRITE)) return false;
 	IO::CBinaryWriter Writer(*File);
 	return Writer.WriteParams(Params);
 }
 //---------------------------------------------------------------------
+*/
 
 }

@@ -1,4 +1,7 @@
 
+int main(int argc, const char** argv)
+{
+}
 
 /*#include <IO/IOServer.h>
 #include <IO/PathUtils.h>
