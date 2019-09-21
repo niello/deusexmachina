@@ -10,12 +10,8 @@ include(../CMake/DEMCMakeUtils.cmake)
 
 #???run python script to update cmake src lists?
 
-# Tool: ShaderCompiler
-
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Common" "${CMAKE_CURRENT_BINARY_DIR}/Common")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ShaderCompiler" "${CMAKE_CURRENT_BINARY_DIR}/ShaderCompiler")
-
-# Tool: ContentForge
-
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ContentForge" "${CMAKE_CURRENT_BINARY_DIR}/ContentForge")
 
 # HACK: empty generator expressions are used for config suffix suppression

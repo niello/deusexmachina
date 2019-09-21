@@ -18,6 +18,7 @@ Tools/Obj/
 /build
 /Build
 /Tools/build
+/Tools/lib
 
 #Debug versions of binaries
 *_d.exe

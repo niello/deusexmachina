@@ -9,9 +9,14 @@ PROJECT_FOLDER = os.path.dirname(os.path.dirname(os.path.realpath(__file__)))
 
 
 if __name__ == "__main__":
+	# Engine
 	update_src_lists("DEM_L1_LOW", os.path.join(PROJECT_FOLDER, "CMake", "DEMLow.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "Low", "src"))
 	update_src_lists("DEM_L2_GAME", os.path.join(PROJECT_FOLDER, "CMake", "DEMGame.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "Game", "src"))
 	update_src_lists("DEM_L3_RPG", os.path.join(PROJECT_FOLDER, "CMake", "DEMRPG.cmake"), os.path.join(PROJECT_FOLDER, "DEM", "RPG", "src"))
+	
+	# Tools
+	update_src_lists("DEM_TOOLS_COMMON", os.path.join(PROJECT_FOLDER, "Tools", "Common", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "Common"))
 	update_src_lists("DEM_SHADER_COMPILER", os.path.join(PROJECT_FOLDER, "Tools", "ShaderCompiler", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ShaderCompiler", "src"))
 	update_src_lists("DEM_CF_HLSL", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
+
 	print("Done updating engine source lists")
