@@ -206,21 +206,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 
 	// TODO: use D3DReadFileToBlob? Note, there is also D3DWriteBlobToFile!
 	std::vector<char> In;
-	{
-		std::ifstream File(pSrcPath);
-		if (!File) return DEM_SHADER_COMPILER_IO_READ_ERROR;
-
-		File.seekg(0, std::ios_base::end);
-		auto FileSize = File.tellg();
-		File.seekg(0, std::ios_base::beg);
-
-		In.resize(static_cast<size_t>(FileSize));
-
-		const bool ReadError = !File.read(In.data(), FileSize);
-		File.close();
-
-		if (ReadError) return DEM_SHADER_COMPILER_IO_READ_ERROR;
-	}
+	if (!ReadAllFile(pSrcPath, In)) return DEM_SHADER_COMPILER_IO_READ_ERROR;
 
 	// Setup compiler flags
 

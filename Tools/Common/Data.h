@@ -2,6 +2,7 @@
 #include "Type.h"
 #include <string>
 #include <vector>
+#include <map>
 #include <cassert>
 
 // Variant data type with compile-time extendable type list
@@ -191,6 +192,8 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 }
 //---------------------------------------------------------------------
 
+typedef std::map<CStringID, CData> CParams;
+typedef std::vector<CData> CDataArray;
 };
 
 typedef Data::CStringID CStrID;

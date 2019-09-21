@@ -1,4 +1,6 @@
-#include <IO/IOServer.h>
+
+
+/*#include <IO/IOServer.h>
 #include <IO/PathUtils.h>
 #include <Data/StringTokenizer.h>
 #include <Data/Params.h>
@@ -25,8 +27,8 @@
 #define VERSION		"1.0"
 
 int									Verbose = VL_ERROR;
-CString								RootPath;
-CHashTable<CString, Data::CFourCC>	ClassToFOURCC;
+std::string								RootPath;
+CHashTable<std::string, Data::CFourCC>	ClassToFOURCC;
 
 int ExitApp(int Code, bool WaitKey);
 int CompileEffect(const char* pInFilePath, const char* pOutFilePath, bool Debug, EShaderModel ShaderModel);
@@ -71,7 +73,7 @@ int main(int argc, const char** argv)
 	const char* pOut = Args.GetStringArg("-out");
 	RootPath = Args.GetStringArg("-root");
 	const char* pProjPath = Args.GetStringArg("-proj");
-	CString DB(Args.GetStringArg("-db"));
+	std::string DB(Args.GetStringArg("-db"));
 	bool Debug = Args.GetBoolArg("-d");
 	bool SM30 = Args.GetBoolArg("-sm3");
 	bool Rebuild = Args.GetBoolArg("-r"); //!!!or if tool / DLL version changed (store in DB)!
@@ -103,10 +105,10 @@ int main(int argc, const char** argv)
 			ClassToFOURCCDesc->Get<Data::PDataArray>(ClassToFOURCCArray, CStrID("List")) &&
 			ClassToFOURCCArray->GetCount())
 		{
-			for (UPTR i = 0; i < ClassToFOURCCArray->GetCount(); ++i)
+			for (size_t i = 0; i < ClassToFOURCCArray->GetCount(); ++i)
 			{
 				Data::PParams Prm = ClassToFOURCCArray->Get<Data::PParams>(i);
-				ClassToFOURCC.Add(Prm->Get<CString>(CStrID("Name")), Data::CFourCC(Prm->Get<CString>(CStrID("Code")).CStr()));
+				ClassToFOURCC.Add(Prm->Get<std::string>(CStrID("Name")), Data::CFourCC(Prm->Get<std::string>(CStrID("Code")).CStr()));
 			}
 		}
 	}
@@ -120,8 +122,8 @@ int main(int argc, const char** argv)
 			if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
 
 			if (PathList.IsValidPtr())
-				for (UPTR i = 0; i < PathList->GetCount(); ++i)
-					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
+				for (size_t i = 0; i < PathList->GetCount(); ++i)
+					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<std::string>(i)));
 		}
 
 		if (IOSrv->LoadFileToBuffer("Proj:SrcPathList.hrd", Buffer))
@@ -130,8 +132,8 @@ int main(int argc, const char** argv)
 			if (!Parser.ParseBuffer((const char*)Buffer.GetPtr(), Buffer.GetSize(), PathList)) return ERR_IO_READ;
 
 			if (PathList.IsValidPtr())
-				for (UPTR i = 0; i < PathList->GetCount(); ++i)
-					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<CString>(i)));
+				for (size_t i = 0; i < PathList->GetCount(); ++i)
+					IOSrv->SetAssign(PathList->Get(i).GetName().CStr(), IOSrv->ResolveAssigns(PathList->Get<std::string>(i)));
 		}
 	}
 
@@ -148,33 +150,33 @@ int main(int argc, const char** argv)
 	if (Rebuild) IOSrv->DeleteFile(DB);
 
 #ifdef _DEBUG
-	CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
+	std::string DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler_d.dll");
 #else
-	CString DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
+	std::string DLLPath = IOSrv->ResolveAssigns("Home:../DEMShaderCompiler/DEMShaderCompiler.dll");
 #endif
-	CString OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
+	std::string OutputDir = PathUtils::GetAbsolutePath(IOSrv->ResolveAssigns("Home:"), IOSrv->ResolveAssigns("Shaders:Bin/"));
 	if (!InitDEMShaderCompilerDLL(DLLPath.CStr(), DB.CStr(), OutputDir.CStr())) return ExitApp(ERR_MAIN_FAILED, WaitKey);
 
-	CArray<CString> InList, OutList;
+	std::vector<std::string> InList, OutList;
 
 	{
 		Data::CStringTokenizer StrTok(pIn);
 		while (StrTok.GetNextToken(';'))
-			InList.Add(CString(StrTok.GetCurrToken()));
+			InList.Add(std::string(StrTok.GetCurrToken()));
 	}
 
 	{
 		Data::CStringTokenizer StrTok(pOut);
 		while (StrTok.GetNextToken(';'))
-			OutList.Add(CString(StrTok.GetCurrToken()));
+			OutList.Add(std::string(StrTok.GetCurrToken()));
 	}
 
 	if (InList.GetCount() != OutList.GetCount()) return ExitApp(ERR_INVALID_CMD_LINE, WaitKey);
 
-	for (UPTR i = 0; i < InList.GetCount(); ++i)
+	for (size_t i = 0; i < InList.GetCount(); ++i)
 	{
-		const CString& InRec = InList[i];
-		const CString& OutRec = OutList[i];
+		const std::string& InRec = InList[i];
+		const std::string& OutRec = OutList[i];
 
 		n_msg(VL_INFO, "Compiling pair %d: '%s' -> '%s'\n", i, InRec.CStr(), OutRec.CStr());
 
@@ -217,3 +219,4 @@ int ExitApp(int Code, bool WaitKey)
 	return Code;
 }
 //---------------------------------------------------------------------
+*/

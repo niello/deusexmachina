@@ -5,9 +5,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 # Tool: cf-hlsl
 
+# TODO: get rid of ch-hlsl folder inside VS!
+
 include("${CMAKE_CURRENT_SOURCE_DIR}/cf-hlsl/src.cmake")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
 add_executable(cf-hlsl ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
 target_include_directories(cf-hlsl PRIVATE src)
-#target_link_libraries(ShaderCompiler PRIVATE ShaderCompiler)
-
+target_link_libraries(cf-hlsl PRIVATE sqlite3 ToolsCommon) # ShaderCompiler

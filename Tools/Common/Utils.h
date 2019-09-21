@@ -10,6 +10,7 @@ uint32_t CalcCRC(const uint8_t* pData, size_t Size);
 std::string ExtractDirName(const std::string& Path);
 bool DirectoryExists(const char* pPath);
 bool EnsureDirectoryExists(std::string Path);
+bool ReadAllFile(const char* pPath, std::vector<char>& Out);
 bool EraseFile(const char* pPath);
 std::string CollapseDots(const char* pPath, size_t PathLength = 0);
 inline std::string CollapseDots(const std::string& Path) { return CollapseDots(Path.c_str(), Path.size()); }

@@ -7,11 +7,6 @@
 #include <chrono>
 #include <cassert>
 
-namespace Data
-{
-	typedef std::map<CStringID, CData> CParams;
-}
-
 extern std::string Messages;
 
 #define INIT_SQL(Stmt, SQL) \

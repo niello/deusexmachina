@@ -28,7 +28,7 @@ public:
 	int			GetIntArg(const char* option, int defaultValue = 0) const;
 	bool		GetBoolArg(const char* option) const { return FindArg(option) > 0; }
 	const char*	GetStringArg(const char* option, const char* defaultValue = NULL) const;
-	bool		HasArg(const CString& option) const { return FindArg(option) != 0; }
+	bool		HasArg(const std::string& option) const { return FindArg(option) != 0; }
 };
 
 inline int nCmdLineArgs::FindArg(const char* option) const
