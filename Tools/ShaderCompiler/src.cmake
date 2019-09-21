@@ -7,7 +7,6 @@ set(DEM_SHADER_COMPILER_HEADERS
 	src/ShaderReflection.h
 	src/ShaderReflectionSM30.h
 	src/ShaderReflectionUSM.h
-	src/ValueTable.h
 )
 
 set(DEM_SHADER_COMPILER_SOURCES
@@ -19,6 +18,5 @@ set(DEM_SHADER_COMPILER_SOURCES
 	src/ShaderDB.cpp
 	src/ShaderReflectionSM30.cpp
 	src/ShaderReflectionUSM.cpp
-	src/ValueTable.cpp
 )
 

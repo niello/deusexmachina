@@ -7,6 +7,7 @@ set(DEM_TOOLS_COMMON_HEADERS
 	StringIDStorage.h
 	Type.h
 	Utils.h
+	ValueTable.h
 )
 
 set(DEM_TOOLS_COMMON_SOURCES
@@ -15,5 +16,6 @@ set(DEM_TOOLS_COMMON_SOURCES
 	StringID.cpp
 	StringIDStorage.cpp
 	Utils.cpp
+	ValueTable.cpp
 )
 
