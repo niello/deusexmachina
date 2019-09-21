@@ -1,6 +1,44 @@
+#include <Utils.h>
+#include <CLI11.hpp>
 
 int main(int argc, const char** argv)
 {
+	std::string File;
+	std::string RootDir("../../../content");
+	int Verbosity = 2;
+
+	{
+		CLI::App App("HLSL to DeusExMachina resource converter", "cf-hlsl");
+		App.add_option("-s,--src", File, "Source file or metafile");
+		App.add_option("-r,--root", RootDir, "Root folder for all project resources");
+		App.add_option("-v", Verbosity, "Verbosity level")->check(CLI::Range(0, 5));
+		CLI11_PARSE(App, argc, argv);
+	}
+
+	if (!RootDir.empty() && RootDir.back() != '/' && RootDir.back() != '\\')
+		RootDir.push_back('/');
+
+	std::cout << "Working on file: " << File << std::endl;
+	std::cout << "Root folder: " << RootDir << std::endl;
+	std::cout << "Verbosity: " << Verbosity << std::endl;
+
+	//!!!DBG TMP!
+	std::vector<char> Data;
+	ReadAllFile((RootDir + File).c_str(), Data);
+
+	// Project root path (content, tools, or tools always in cwd/exe_dir, tools only for DLLs, static link?)
+	// Tool name and version
+	// Verbosity, logging
+	// Exiting with codes and cleanup
+	// Get the list of sources/targets to process from files, metafiles and folders in -s
+	// Build structure for each one conversion task, extract source file extension, build dest path
+	// Verify tasks, reject invalid, with inexistent source files, unsupported src format etc
+	// Create destination dirs for valid tasks? Or in task?
+	// Multithreaded jobs
+
+	// Move all common part to tools-common: CConverterToolBase or CContentForgeTool
+
+	return 0;
 }
 
 /*#include <IO/IOServer.h>

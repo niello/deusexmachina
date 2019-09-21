@@ -102,6 +102,8 @@ bool ReadAllFile(const char* pPath, std::vector<char>& Out)
 
 	Out.resize(static_cast<size_t>(FileSize));
 
+	if (!FileSize) return true;
+
 	const bool ReadError = !File.read(Out.data(), FileSize);
 	File.close();
 
