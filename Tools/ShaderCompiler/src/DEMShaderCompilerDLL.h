@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_TOOLS_DEM_SHADER_COMPILER_DLL_H__
-#define __DEM_TOOLS_DEM_SHADER_COMPILER_DLL_H__
-
 #include <ShaderCompiler.h>
 #include <ShaderReflectionSM30.h>
 #include <ShaderReflectionUSM.h>
@@ -19,5 +16,3 @@ bool			DLLLoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CSh
 bool			DLLFreeShaderMetadata(CShaderMetadata* pDLLAllocMeta);
 //bool			DLLSaveShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta);
 unsigned int	DLLPackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
-
-#endif

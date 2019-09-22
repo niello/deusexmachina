@@ -322,7 +322,7 @@ CREATE TABLE 'Shaders' (\
 	'ObjFileID' INTEGER,\
 	'InputSigFileID' INTEGER,\
 	PRIMARY KEY (ID ASC) ON CONFLICT REPLACE,\
-	FOREIGN KEY (ObjFileID) REFERENCES Files(ID));\
+	FOREIGN KEY (ObjFileID) REFERENCES Files(ID),\
 	FOREIGN KEY (InputSigFileID) REFERENCES Files(ID));\
 \
 CREATE TABLE 'Macros' (\
@@ -376,6 +376,7 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 
 void CloseDB()
 {
+	//???can release without an SQLiteHandle handle?
 	SAFE_RELEASE_SQL(SQLFindShader);
 	SAFE_RELEASE_SQL(SQLGetObjFile);
 	SAFE_RELEASE_SQL(SQLFindObjFileUsage);

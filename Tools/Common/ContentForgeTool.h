@@ -2,6 +2,7 @@
 #include <Data.h>
 #include <filesystem>
 #include <unordered_set>
+#include <deque>
 
 // Base class for different console tools
 
@@ -49,9 +50,8 @@ protected:
 
 	std::string _RootDir;
 	std::vector<std::string> _SrcPathes;
-	std::vector<CContentForgeTask> _Tasks;
+	std::deque<CContentForgeTask> _Tasks;
 
-	int _WorkerThreadCount = 4;
 	int _LogVerbosity;
 	bool _WaitKey = false;
 

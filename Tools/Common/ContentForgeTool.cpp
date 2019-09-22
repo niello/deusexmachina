@@ -3,6 +3,7 @@
 #include <Utils.h>
 #include <CLI11.hpp>
 #include <algorithm>
+#include <thread>
 #include <conio.h>
 
 namespace fs = std::filesystem;
@@ -103,13 +104,50 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 
 	// Run tasks in parallel
 
-	for (auto& Task : _Tasks)
 	{
-		auto Job = [this](CContentForgeTask& Task)
+		typedef std::function<void(CContentForgeTask& Task)> FJob;
+
+		/*
+		const auto WorkerThreadCount = std::max(1u, std::thread::hardware_concurrency());
+
+		for (uint32_t i = 0; i < WorkerThreadCount; ++i)
 		{
+			std::thread Worker([]
+			{
+				FJob Job;
+
+				while (true)
+				{
+					//if (_Tasks.pop_front(job)) // try to grab a job from the jobPool queue
+					//{
+					//	// It found a job, execute it:
+					//	job(); // execute job
+					//	finishedLabel.fetch_add(1); // update worker label state
+					//}
+					//else
+					//{
+					//	// no job, put thread to sleep
+					//	std::unique_lock<std::mutex> lock(wakeMutex);
+					//	wakeCondition.wait(lock);
+					//}
+				}
+			});
+
+			Worker.detach(); // forget about this thread, let it do it's job in the infinite loop that we created above
+		}
+		*/
+
+		for (auto& Task : _Tasks)
+		{
+			/*
+			FJob Job = [this](CContentForgeTask& Task)
+			{
+				ProcessTask(Task);
+			};
+			Job(Task);
+			*/
 			ProcessTask(Task);
-		};
-		Job(Task);
+		}
 	}
 
 	if (_WaitKey) _getch();

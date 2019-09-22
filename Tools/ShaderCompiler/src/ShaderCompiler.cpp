@@ -35,7 +35,10 @@ public:
 	void Set(void* pData) { pDataToFree = pData; }
 };
 
-DEM_DLL_API bool DEM_DLLCALL InitCompiler(const char* pDBFileName, const char* pOutputDirectory)
+namespace DEMShaderCompiler
+{
+
+DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName, const char* pOutputDirectory)
 {
 	Messages.clear();
 
@@ -196,7 +199,7 @@ bool ParseDefineString(char* pDefineString, std::vector<CMacroDBRec>& Out)
 
 // pDefines - "NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]"
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, uint32_t Target, const char* pEntryPoint,
-											 const char* pDefines, bool Debug, bool OnlyMetadata, uint32_t& ObjectFileID, uint32_t& InputSignatureFileID)
+	const char* pDefines, bool Debug, bool OnlyMetadata, uint32_t& ObjectFileID, uint32_t& InputSignatureFileID)
 {
 	Messages.clear();
 
@@ -306,8 +309,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	ID3DBlob* pCode = nullptr;
 	ID3DBlob* pErrors = nullptr;
 	HRESULT hr = D3DCompile(In.data(), In.size(), pSrcPath,
-							pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
-							Flags, 0, &pCode, &pErrors);
+		pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
+		Flags, 0, &pCode, &pErrors);
 
 	if (FAILED(hr) || !pCode)
 	{
@@ -398,9 +401,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	{
 		// TODO: D3D12 - D3DCOMPILER_STRIP_ROOT_SIGNATURE ?
 		hr = D3DStripShader(pCode->GetBufferPointer(),
-							pCode->GetBufferSize(),
-							D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
-							&pFinalCode);
+			pCode->GetBufferSize(),
+			D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
+			&pFinalCode);
 		if (FAILED(hr))
 		{
 			Messages += "\nD3DStripShader() failed\n";
@@ -428,7 +431,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
 
 		pCode->Release();
-		
+
 		if (!MetaReflected || !MetaSaved)
 		{
 			pFinalCode->Release();
@@ -502,13 +505,13 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			assert(Target >= 0x0400);
 
 			// Save metadata
-			
+
 			CUSMShaderMeta Meta;
 			bool MetaReflected = Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize());
 			bool MetaSaved = MetaReflected && Meta.Save(File);
 
 			pCode->Release();
-		
+
 			if (!MetaReflected || !MetaSaved)
 			{
 				pFinalCode->Release();
@@ -681,7 +684,7 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 	{
 		const size_t Size = static_cast<size_t>(Result.Get<int>(Col_Size, i));
 		const std::string& Path = Result.Get<std::string>(Col_Path, i);
-		
+
 		std::ifstream ObjFile(Path);
 		if (!ObjFile) return i;
 
@@ -706,3 +709,5 @@ DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShad
 	return Result.GetRowCount();
 }
 //---------------------------------------------------------------------
+
+}
