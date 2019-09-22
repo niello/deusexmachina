@@ -1,44 +1,45 @@
-#include <Utils.h>
-#include <CLI11.hpp>
+#include <ContentForgeTool.h>
+//#include <Utils.h>
+#include <CLI11.hpp> //!!!remove when not needed!
+
+class CTool : public CContentForgeTool
+{
+public:
+
+	//!!!DBG TMP for test only! file list is processed by the base class!
+	std::string _File;
+
+	CTool(const std::string& Name, const std::string& Desc, CVersion Version) :
+		CContentForgeTool(Name, Desc, Version)
+	{
+		// Set default before parsing command line
+		_RootDir = "../../../content";
+	}
+
+	virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	{
+		CContentForgeTool::ProcessCommandLine(CLIApp);
+
+		//!!!DBG TMP for test only! file list is processed by the base class!
+		CLIApp.add_option("-s,--src", _File, "Source file or metafile");
+	}
+};
 
 int main(int argc, const char** argv)
 {
-	std::string File;
-	std::string RootDir("../../../content");
-	int Verbosity = 2;
-
-	{
-		CLI::App App("HLSL to DeusExMachina resource converter", "cf-hlsl");
-		App.add_option("-s,--src", File, "Source file or metafile");
-		App.add_option("-r,--root", RootDir, "Root folder for all project resources");
-		App.add_option("-v", Verbosity, "Verbosity level")->check(CLI::Range(0, 5));
-		CLI11_PARSE(App, argc, argv);
-	}
-
-	if (!RootDir.empty() && RootDir.back() != '/' && RootDir.back() != '\\')
-		RootDir.push_back('/');
-
-	std::cout << "Working on file: " << File << std::endl;
-	std::cout << "Root folder: " << RootDir << std::endl;
-	std::cout << "Verbosity: " << Verbosity << std::endl;
+	CTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 0, 1, 0 });
 
 	//!!!DBG TMP!
-	std::vector<char> Data;
-	ReadAllFile((RootDir + File).c_str(), Data);
+	//std::vector<char> Data;
+	//ReadAllFile((RootDir + File).c_str(), Data);
 
-	// Project root path (content, tools, or tools always in cwd/exe_dir, tools only for DLLs, static link?)
-	// Tool name and version
-	// Verbosity, logging
-	// Exiting with codes and cleanup
 	// Get the list of sources/targets to process from files, metafiles and folders in -s
 	// Build structure for each one conversion task, extract source file extension, build dest path
 	// Verify tasks, reject invalid, with inexistent source files, unsupported src format etc
 	// Create destination dirs for valid tasks? Or in task?
 	// Multithreaded jobs
 
-	// Move all common part to tools-common: CConverterToolBase or CContentForgeTool
-
-	return 0;
+	return Tool.Execute(argc, argv);
 }
 
 /*#include <IO/IOServer.h>

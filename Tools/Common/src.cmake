@@ -1,6 +1,7 @@
 set(DEM_TOOLS_COMMON_HEADERS
 	CmdLineArgs.h
 	ConsoleApp.h
+	ContentForgeTool.h
 	Data.h
 	DataScheme.h
 	HRDParser.h
@@ -14,6 +15,7 @@ set(DEM_TOOLS_COMMON_HEADERS
 )
 
 set(DEM_TOOLS_COMMON_SOURCES
+	ContentForgeTool.cpp
 	Data.cpp
 	DataScheme.cpp
 	HRDParser.cpp
