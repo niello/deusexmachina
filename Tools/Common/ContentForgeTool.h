@@ -1,8 +1,14 @@
 #pragma once
 #include <Data.h>
 #include <filesystem>
+#include <unordered_set>
 
 // Base class for different console tools
+
+namespace Data
+{
+	class CHRDParser;
+}
 
 namespace CLI
 {
@@ -12,8 +18,8 @@ namespace CLI
 enum EVerbosity
 {
 	Always = 0,
-	Error,
-	Warning,
+	Errors,
+	Warnings,
 	Info,
 	Debug
 };
@@ -27,7 +33,8 @@ struct CVersion
 
 struct CContentForgeTask
 {
-	std::string SrcFilePath;
+	std::filesystem::path SrcFilePath;
+	std::shared_ptr<std::vector<char>> SrcFileData;
 	Data::CParams Params;
 };
 
@@ -44,10 +51,10 @@ protected:
 	std::vector<CContentForgeTask> _Tasks;
 
 	int _WorkerThreadCount = 4;
-	int _LogVerbosity = 2;
+	int _LogVerbosity;
 	bool _WaitKey = false;
 
-	void ProcessMetafile(const std::filesystem::path& Path);
+	void ProcessMetafile(const std::filesystem::path& Path, Data::CHRDParser& Parser, std::unordered_set<std::string>& Processed);
 
 public:
 

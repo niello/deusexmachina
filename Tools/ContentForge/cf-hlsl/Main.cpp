@@ -1,15 +1,10 @@
 #include <ContentForgeTool.h>
-//#include <Utils.h>
-//#include <CLI11.hpp> //!!!remove when not needed!
 
-class CTool : public CContentForgeTool
+class CHLSLTool : public CContentForgeTool
 {
 public:
 
-	//!!!DBG TMP for test only! file list is processed by the base class!
-	//std::string _File;
-
-	CTool(const std::string& Name, const std::string& Desc, CVersion Version) :
+	CHLSLTool(const std::string& Name, const std::string& Desc, CVersion Version) :
 		CContentForgeTool(Name, Desc, Version)
 	{
 		// Set default before parsing command line
@@ -20,27 +15,13 @@ public:
 	virtual void ProcessCommandLine(CLI::App& CLIApp) override
 	{
 		CContentForgeTool::ProcessCommandLine(CLIApp);
-
-		//!!!DBG TMP for test only! file list is processed by the base class!
-		//CLIApp.add_option("-s,--src", _File, "Source file or metafile");
 	}
 	*/
 };
 
 int main(int argc, const char** argv)
 {
-	CTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 0, 1, 0 });
-
-	//!!!DBG TMP!
-	//std::vector<char> Data;
-	//ReadAllFile((RootDir + File).c_str(), Data);
-
-	// Get the list of sources/targets to process from files, metafiles and folders in -s
-	// Build structure for each one conversion task, extract source file extension, build dest path
-	// Verify tasks, reject invalid, with inexistent source files, unsupported src format etc
-	// Create destination dirs for valid tasks? Or in task?
-	// Multithreaded jobs
-
+	CHLSLTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 0, 1, 0 });
 	return Tool.Execute(argc, argv);
 }
 

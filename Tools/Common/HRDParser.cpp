@@ -596,8 +596,8 @@ void CHRDParser::AddConst(std::vector<CToken>& Tokens, const std::string& Const,
 	switch (Type)
 	{
 		case T_INT:		Data = std::atoi(Const.c_str()); break;
-		case T_INT_HEX:	Data = (int)strtoul(Const.c_str(), nullptr, 16); break; //!!!can use 0 base to autodetect radix
-		case T_FLOAT:	Data = std::atof(Const.c_str()); break;
+		case T_INT_HEX:	Data = static_cast<int>(strtoul(Const.c_str(), nullptr, 16)); break; //!!!can use 0 base to autodetect radix
+		case T_FLOAT:	Data = static_cast<float>(std::atof(Const.c_str())); break;
 		case T_STRING:	Data = Const; break;
 		case T_STRID:	Data = CStrID(Const.c_str()); break;
 		default:		assert(false && "Unknown data type\n");
@@ -656,7 +656,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 		}
 
 		//!!!can check duplicates here!
-		Output.emplace(CStrID(TableID[CurrToken.Index].c_str()), Data);
+		Output.emplace(CStrID(TableID[CurrToken.Index].c_str()), std::move(Data));
 		return true;
 	}
 	
@@ -707,7 +707,7 @@ bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 	CDataArray Array;
 	if (ParseArray(Tokens, Array))
 	{
-		Output = Array;
+		Output = std::move(Array);
 		return true;
 	}
 
@@ -715,7 +715,7 @@ bool CHRDParser::ParseData(const std::vector<CToken>& Tokens, CData& Output)
 	CParams Params;
 	if (ParseSection(Tokens, Params))
 	{
-		Output = Params;
+		Output = std::move(Params);
 		return true;
 	}
 	

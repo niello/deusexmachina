@@ -8,8 +8,12 @@
 
 // Variant data type with compile-time extendable type list
 
+typedef std::vector<uint8_t> CBuffer;
+
 namespace Data
 {
+typedef std::map<CStringID, class CData> CParams; //!!! FIXME: some code relies on order preservation of loaded HRD, can't use map!
+typedef std::vector<class CData> CDataArray;
 
 class CData
 {
@@ -25,6 +29,9 @@ protected:
 		int								As_int;
 		float							As_float;
 		const char*						As_CStrID;
+		CBuffer*						As_CBuffer;
+		CParams*						As_CParams;
+		CDataArray*						As_CDataArray;
 		struct { float x, y, z; }*		As_vector3;
 		struct { float x, y, z, w; }*	As_vector4;
 		struct { float m[4][4]; }*		As_matrix44;
@@ -37,6 +44,7 @@ public:
 
 	CData(): Type(nullptr), Value(nullptr) {}
 	CData(const CData& Data): Type(nullptr) { SetTypeValue(Data); }
+	CData(CData&& Data);
 	template<class T> CData(const T& Val) { Type = DATA_TYPE(T); DATA_TYPE_NV(T)::NewT(&Value, &Val); }
 	explicit CData(const CType* type): Type(type) { if (Type) Type->New(&Value); }
 	~CData() { if (Type) Type->Delete(&Value); }
@@ -72,7 +80,9 @@ public:
 	const char*					ToString() const { return Type ? Type->ToString(Value) : nullptr; }
 
 	CData&						operator =(const CData& Src) { SetTypeValue(Src); return *this; }
+	CData&						operator =(CData&& Src);
 	template<class T> CData&	operator =(const T& Src) { SetTypeValue(Src); return *this; }
+	template<class T> CData&	operator =(T&& Src);
 
 	bool						operator ==(const CData& Other) const;
 	template<class T> bool		operator ==(const T& Other) const;
@@ -106,6 +116,14 @@ inline void CData::Clear()
 		Type->Delete(&Value);
 		Type = nullptr;
 	}
+}
+//---------------------------------------------------------------------
+
+// TODO: move instead of copying!
+template<class T> CData& CData::operator =(T&& Src)
+{
+	SetTypeValue(Src);
+	return *this;
 }
 //---------------------------------------------------------------------
 
@@ -192,11 +210,7 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 }
 //---------------------------------------------------------------------
 
-typedef std::map<CStringID, CData> CParams; //!!! FIXME: some code relies on order preservation of loaded HRD!
-typedef std::vector<CData> CDataArray;
 };
-
-typedef std::vector<uint8_t> CBuffer;
 
 // Std types
 //DECLARE_TYPE(void, 0) // Can use struct CVoid {}; CType* == nullptr for void now.
@@ -206,3 +220,5 @@ DECLARE_TYPE(float, 3)
 DECLARE_TYPE(std::string, 4)
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(CBuffer, 9)
+DECLARE_TYPE(CDataArray, 10)
+DECLARE_TYPE(CParams, 11)

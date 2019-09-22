@@ -20,6 +20,27 @@ DEFINE_TYPE(float, 0.f)
 DEFINE_TYPE_EX(std::string, string, std::string{})
 DEFINE_TYPE(CStrID, CStrID::Empty)
 DEFINE_TYPE(CBuffer, {})
+DEFINE_TYPE(CDataArray, {})
+DEFINE_TYPE(CParams, {})
+
+CData::CData(CData&& Data)
+	: Type(Data.Type)
+	, Value(Data.Value)
+{
+	Data.Type = nullptr;
+	Data.Value = nullptr;
+}
+//---------------------------------------------------------------------
+
+CData& CData::operator =(CData&& Src)
+{
+	Type = Src.Type;
+	Value = Src.Value;
+	Src.Type = nullptr;
+	Src.Value = nullptr;
+	return *this;
+}
+//---------------------------------------------------------------------
 
 void CData::SetType(const CType* SrcType)
 {

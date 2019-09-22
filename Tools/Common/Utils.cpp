@@ -121,18 +121,9 @@ bool ReadAllFile(const char* pPath, std::vector<char>& Out)
 	std::ifstream File(pPath);
 	if (!File) return false;
 
-	File.seekg(0, std::ios_base::end);
-	auto FileSize = File.tellg();
-	File.seekg(0, std::ios_base::beg);
+	Out.assign(std::istreambuf_iterator<char>(File), std::istreambuf_iterator<char>());
 
-	Out.resize(static_cast<size_t>(FileSize));
-
-	if (!FileSize) return true;
-
-	const bool ReadError = !File.read(Out.data(), FileSize);
-	File.close();
-
-	return !ReadError;
+	return !File.bad();
 }
 //---------------------------------------------------------------------
 
