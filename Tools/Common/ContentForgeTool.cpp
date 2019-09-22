@@ -4,6 +4,8 @@
 #include <CLI11.hpp>
 #include <algorithm>
 
+namespace fs = std::filesystem;
+
 CContentForgeTool::CContentForgeTool(const std::string& Name, const std::string& Desc, CVersion Version)
 	: _Name(Name)
 	, _Desc(Desc)
@@ -46,32 +48,57 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	// then multithreaded processing
 	for (const auto& SrcPath : _SrcPathes)
 	{
-		std::string FullSrcPath = IsPathAbsolute(SrcPath) ? SrcPath : _RootDir + SrcPath;
+		fs::path FullSrcPath = fs::path(SrcPath).is_absolute() ? SrcPath : _RootDir + SrcPath;
 
-		if (DirectoryExists(FullSrcPath.c_str()))
+		auto Status = fs::status(FullSrcPath);
+
+		// Skip inexistent source even if corresponding metafile exists
+		if (!fs::exists(Status))
+		{
+			if (_LogVerbosity >= EVerbosity::Warning)
+				std::cout << FullSrcPath << " not found, skipped" << std::endl;
+			continue;
+		}
+
+		if (fs::is_directory(Status))
 		{
 			// Parse the directory recursively for metafiles
 			// All metafiles found here definitely exist
+			//std::files
+			for (const auto& Entry : fs::recursive_directory_iterator(FullSrcPath))
+			{
+				if (!Entry.is_directory() && Entry.path().extension() == ".meta")
+					ProcessMetafile(Entry.path());
+			}
 		}
 		else
 		{
-			if (ExtractExtension(FullSrcPath) != "meta")
+			if (FullSrcPath.extension() != ".meta")
 			{
 				// This is not a metafile, try to find and process its corresponding metafile
 				FullSrcPath += ".meta";
+
+				if (!fs::exists(FullSrcPath))
+				{
+					if (_LogVerbosity >= EVerbosity::Warning)
+						std::cout << FullSrcPath << " not found, skipped" << std::endl;
+					continue;
+				}
 			}
 
-			if (!FileExists(FullSrcPath.c_str()))
-			{
-				if (_LogVerbosity >= EVerbosity::Warning)
-					std::cout << FullSrcPath << " not found, skipped" << std::endl;
-				continue;
-			}
-
-			// process source metafile
+			ProcessMetafile(FullSrcPath);
 		}
 	}
 
 	return 0;
+}
+//---------------------------------------------------------------------
+
+void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path)
+{
+	//!!!detect duplicates! don't process one metafile twice!
+
+	//!!!DBG TMP!
+	std::cout << Path << std::endl;
 }
 //---------------------------------------------------------------------

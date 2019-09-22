@@ -1,6 +1,6 @@
 #pragma once
 #include <Data.h>
-#include <string>
+#include <filesystem>
 
 // Base class for different console tools
 
@@ -46,6 +46,8 @@ protected:
 	int _WorkerThreadCount = 4;
 	int _LogVerbosity = 2;
 	bool _WaitKey = false;
+
+	void ProcessMetafile(const std::filesystem::path& Path);
 
 public:
 

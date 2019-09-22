@@ -12,3 +12,4 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_HLSL_HEADERS} ${D
 add_executable(cf-hlsl ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
 target_include_directories(cf-hlsl PRIVATE src)
 target_link_libraries(cf-hlsl PRIVATE sqlite3 ToolsCommon) # ShaderCompiler
+set_target_properties(cf-hlsl PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
