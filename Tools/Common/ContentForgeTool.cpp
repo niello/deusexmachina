@@ -103,7 +103,14 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 
 	// Run tasks in parallel
 
-	//
+	for (auto& Task : _Tasks)
+	{
+		auto Job = [this](CContentForgeTask& Task)
+		{
+			ProcessTask(Task);
+		};
+		Job(Task);
+	}
 
 	if (_WaitKey) _getch();
 
@@ -169,6 +176,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 		CContentForgeTask Task;
 		Task.SrcFilePath = SrcFilePath;
 		Task.SrcFileData = SrcFileData;
+		Task.TaskID = Param.first;
 		Task.Params = std::move(Param.second.GetValue<Data::CParams>());
 		_Tasks.push_back(std::move(Task));
 	}

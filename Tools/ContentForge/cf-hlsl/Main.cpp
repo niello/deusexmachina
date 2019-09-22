@@ -1,4 +1,6 @@
 #include <ContentForgeTool.h>
+#include <iostream>
+#include <thread>
 
 class CHLSLTool : public CContentForgeTool
 {
@@ -11,12 +13,12 @@ public:
 		_RootDir = "../../../content";
 	}
 
-	/*
-	virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	virtual void ProcessTask(CContentForgeTask& Task) override
 	{
-		CContentForgeTool::ProcessCommandLine(CLIApp);
+		std::cout << "Source: " << Task.SrcFilePath.generic_string() << std::endl;
+		std::cout << "Task: " << Task.TaskID.CStr() << std::endl;
+		std::cout << "Thread: " << std::this_thread::get_id() << std::endl;
 	}
-	*/
 };
 
 int main(int argc, const char** argv)

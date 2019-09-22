@@ -35,6 +35,7 @@ struct CContentForgeTask
 {
 	std::filesystem::path SrcFilePath;
 	std::shared_ptr<std::vector<char>> SrcFileData;
+	CStrID TaskID;
 	Data::CParams Params;
 };
 
@@ -61,6 +62,7 @@ public:
 	CContentForgeTool(const std::string& Name, const std::string& Desc, CVersion Version);
 
 	virtual void ProcessCommandLine(CLI::App& CLIApp);
+	virtual void ProcessTask(CContentForgeTask& Task) = 0;
 
 	int Execute(int argc, const char** argv);
 
