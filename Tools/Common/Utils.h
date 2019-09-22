@@ -8,6 +8,9 @@
 
 uint32_t CalcCRC(const uint8_t* pData, size_t Size);
 std::string ExtractDirName(const std::string& Path);
+std::string ExtractExtension(const std::string& Path);
+bool IsPathAbsolute(const std::string& Path);
+bool FileExists(const char* pPath);
 bool DirectoryExists(const char* pPath);
 bool EnsureDirectoryExists(std::string Path);
 bool ReadAllFile(const char* pPath, std::vector<char>& Out);
@@ -68,5 +71,17 @@ inline void trim(std::string& s, const std::string& whitespace)
 {
 	ltrim(s, whitespace);
 	rtrim(s, whitespace);
+}
+//---------------------------------------------------------------------
+
+inline void ToLower(std::string& s)
+{
+	std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+}
+//---------------------------------------------------------------------
+
+inline void ToUpper(std::string& s)
+{
+	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 }
 //---------------------------------------------------------------------

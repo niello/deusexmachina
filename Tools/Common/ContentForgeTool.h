@@ -1,4 +1,5 @@
 #pragma once
+#include <Data.h>
 #include <string>
 
 // Base class for different console tools
@@ -8,11 +9,26 @@ namespace CLI
 	class App;
 }
 
+enum EVerbosity
+{
+	Always = 0,
+	Error,
+	Warning,
+	Info,
+	Debug
+};
+
 struct CVersion
 {
 	uint8_t Major = 0;
 	uint8_t Minor = 0;
 	uint8_t Patch = 0;
+};
+
+struct CContentForgeTask
+{
+	std::string SrcFilePath;
+	Data::CParams Params;
 };
 
 class CContentForgeTool
@@ -24,8 +40,12 @@ protected:
 	CVersion _Version;
 
 	std::string _RootDir;
+	std::vector<std::string> _SrcPathes;
+	std::vector<CContentForgeTask> _Tasks;
 
+	int _WorkerThreadCount = 4;
 	int _LogVerbosity = 2;
+	bool _WaitKey = false;
 
 public:
 

@@ -1,5 +1,6 @@
 #pragma once
 #include "Type.h"
+#include <StringID.h>
 #include <string>
 #include <vector>
 #include <map>
@@ -9,7 +10,6 @@
 
 namespace Data
 {
-class CStringID;
 
 class CData
 {
@@ -192,18 +192,17 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 }
 //---------------------------------------------------------------------
 
-typedef std::map<CStringID, CData> CParams;
+typedef std::map<CStringID, CData> CParams; //!!! FIXME: some code relies on order preservation of loaded HRD!
 typedef std::vector<CData> CDataArray;
 };
 
-typedef Data::CStringID CStrID;
 typedef std::vector<uint8_t> CBuffer;
 
 // Std types
-//DECLARE_TYPE(void) //!!!can use struct CVoid {};
+//DECLARE_TYPE(void, 0) // Can use struct CVoid {}; CType* == nullptr for void now.
 DECLARE_TYPE(bool, 1)
 DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
-DECLARE_TYPE(std::string, 4) //???define char* too?
+DECLARE_TYPE(std::string, 4)
 DECLARE_TYPE(CStrID, 5)
 DECLARE_TYPE(CBuffer, 9)

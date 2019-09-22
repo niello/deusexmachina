@@ -1,13 +1,13 @@
 #include <ContentForgeTool.h>
 //#include <Utils.h>
-#include <CLI11.hpp> //!!!remove when not needed!
+//#include <CLI11.hpp> //!!!remove when not needed!
 
 class CTool : public CContentForgeTool
 {
 public:
 
 	//!!!DBG TMP for test only! file list is processed by the base class!
-	std::string _File;
+	//std::string _File;
 
 	CTool(const std::string& Name, const std::string& Desc, CVersion Version) :
 		CContentForgeTool(Name, Desc, Version)
@@ -16,13 +16,15 @@ public:
 		_RootDir = "../../../content";
 	}
 
+	/*
 	virtual void ProcessCommandLine(CLI::App& CLIApp) override
 	{
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 
 		//!!!DBG TMP for test only! file list is processed by the base class!
-		CLIApp.add_option("-s,--src", _File, "Source file or metafile");
+		//CLIApp.add_option("-s,--src", _File, "Source file or metafile");
 	}
+	*/
 };
 
 int main(int argc, const char** argv)

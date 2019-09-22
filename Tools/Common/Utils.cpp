@@ -52,6 +52,31 @@ std::string ExtractDirName(const std::string& Path)
 }
 //---------------------------------------------------------------------
 
+std::string ExtractExtension(const std::string& Path)
+{
+	const auto DotPos = Path.find_last_of('.');
+	if (DotPos == std::string::npos) return {};
+
+	const auto DlmPos = Path.find_last_of(":/\\");
+	if (DlmPos != std::string::npos && DlmPos > DotPos) return {};
+
+	return Path.substr(DotPos + 1);
+}
+//---------------------------------------------------------------------
+
+bool IsPathAbsolute(const std::string& Path)
+{
+	return Path.find_first_of(':') != std::string::npos;
+}
+//---------------------------------------------------------------------
+
+bool FileExists(const char* pPath)
+{
+	DWORD FileAttrs = ::GetFileAttributes(pPath);
+	return FileAttrs != INVALID_FILE_ATTRIBUTES && !(FileAttrs & FILE_ATTRIBUTE_DIRECTORY);
+}
+//---------------------------------------------------------------------
+
 bool DirectoryExists(const char* pPath)
 {
 	DWORD FileAttrs = ::GetFileAttributes(pPath);
