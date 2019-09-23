@@ -7,6 +7,9 @@
 #include <ShaderReflectionUSM.h>
 #include <ValueTable.h>
 #include <sstream>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 #undef CreateDirectory
 #undef DeleteFile
@@ -94,7 +97,7 @@ static bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetPara
 }
 //---------------------------------------------------------------------
 
-static int ProcessInputSignature(ID3DBlob* pCode, CShaderDBRec& Rec)
+static int ProcessInputSignature(const char* pInputSigDir, ID3DBlob* pCode, CShaderDBRec& Rec)
 {
 	ID3DBlob* pInputSig = nullptr;
 	if (FAILED(D3DGetInputSignatureBlob(pCode->GetBufferPointer(), pCode->GetBufferSize(), &pInputSig)))
@@ -118,7 +121,7 @@ static int ProcessInputSignature(ID3DBlob* pCode, CShaderDBRec& Rec)
 			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
 
-		Rec.InputSigFile.Path = CollapseDots(/*OutputDir +*/ std::to_string(Rec.InputSigFile.ID) + ".sig");
+		Rec.InputSigFile.Path = (fs::path(pInputSigDir) / std::to_string(Rec.InputSigFile.ID) / ".sig").lexically_normal().generic_string();
 
 		EnsureDirectoryExists(ExtractDirName(Rec.InputSigFile.Path));
 
@@ -317,7 +320,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 
 	if (HasInputSignature)
 	{
-		const auto ResultCode = ProcessInputSignature(pCode, Rec);
+		const auto ResultCode = ProcessInputSignature(pInputSigDir, pCode, Rec);
 		if (ResultCode != DEM_SHADER_COMPILER_SUCCESS) return ResultCode;
 	}
 	else Rec.InputSigFile.ID = 0;

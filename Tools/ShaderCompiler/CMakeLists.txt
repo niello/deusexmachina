@@ -16,3 +16,4 @@ if(WIN32)
 	target_compile_definitions(ShaderCompiler PUBLIC DEM_PLATFORM_WIN32=1) # Public because app uses headers. Exclude headers when not Win32!
 	target_link_libraries(ShaderCompiler PUBLIC d3dcompiler.lib dxguid.lib)
 endif()
+set_target_properties(ShaderCompiler PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem

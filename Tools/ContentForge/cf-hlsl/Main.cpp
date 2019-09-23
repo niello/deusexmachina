@@ -1,7 +1,7 @@
 #include <ContentForgeTool.h>
 #include <ShaderCompiler.h>
 #include <Utils.h>
-#include <CLI11.hpp>
+//#include <CLI11.hpp>
 #include <iostream>
 #include <thread>
 #include <filesystem>
@@ -28,11 +28,13 @@ public:
 		_RootDir = "../../../content";
 	}
 
+	/*
 	virtual void ProcessCommandLine(CLI::App& CLIApp) override
 	{
-		CLIApp.add_option("-db", _DBPath, "Shader DB file path");
-		CLIApp.add_option("-is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
+		CLIApp.add_option("--db", _DBPath, "Shader DB file path");
+		CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
 	}
+	*/
 
 	virtual int Init() override
 	{
