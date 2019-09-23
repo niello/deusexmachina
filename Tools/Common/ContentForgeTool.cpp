@@ -44,6 +44,13 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	if (!_RootDir.empty() && _RootDir.back() != '/' && _RootDir.back() != '\\')
 		_RootDir.push_back('/');
 
+	// Run custom initialization code
+
+	{
+		const int Code = Init();
+		if (Code != 0) return Code;
+	}
+
 	if (_LogVerbosity >= EVerbosity::Info)
 		std::cout << _Name << " v" << static_cast<uint32_t>(_Version.Major) <<
 			'.' << static_cast<uint32_t>(_Version.Minor) <<

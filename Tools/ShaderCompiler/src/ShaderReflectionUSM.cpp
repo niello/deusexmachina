@@ -7,8 +7,6 @@
 #undef min
 #undef max
 
-extern std::string Messages;
-
 bool CUSMBufferMeta::IsEqual(const CMetadataObject& Other) const
 {
 	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
@@ -118,13 +116,13 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 				case D3D_SVT_FLOAT:	MemberMeta.Type = USMConst_Float; break;
 				default:
 				{
-					Messages += "Unsupported constant '";
-					Messages += pMemberName;
-					Messages += "' type '";
-					Messages += std::to_string(D3DMemberTypeDesc.Type);
-					Messages += "' in a structure '";
-					Messages += (D3DTypeDesc.Name ? D3DTypeDesc.Name : "");
-					Messages += "'\n";
+					//Messages += "Unsupported constant '";
+					//Messages += pMemberName;
+					//Messages += "' type '";
+					//Messages += std::to_string(D3DMemberTypeDesc.Type);
+					//Messages += "' in a structure '";
+					//Messages += (D3DTypeDesc.Name ? D3DTypeDesc.Name : "");
+					//Messages += "'\n";
 					return false;
 				}
 			}
@@ -327,13 +325,13 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 								case D3D_SVT_FLOAT:	ConstMeta.Type = USMConst_Float; break;
 								default:
 								{
-									Messages += "Unsupported constant '";
-									Messages += D3DVarDesc.Name;
-									Messages += "' type '";
-									Messages += std::to_string(D3DTypeDesc.Type);
-									Messages += "' in USM buffer '";
-									Messages += RsrcDesc.Name;
-									Messages += "'\n";
+									//Messages += "Unsupported constant '";
+									//Messages += D3DVarDesc.Name;
+									//Messages += "' type '";
+									//Messages += std::to_string(D3DTypeDesc.Type);
+									//Messages += "' in USM buffer '";
+									//Messages += RsrcDesc.Name;
+									//Messages += "'\n";
 									return false;
 								}
 							}

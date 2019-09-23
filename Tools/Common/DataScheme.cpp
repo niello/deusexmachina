@@ -1,15 +1,8 @@
 #include "DataScheme.h"
+#include <Utils.h>
 
 namespace Data
 {
-
-template<class T>
-const T& GetParam(const CParams& Params, const char* pKey, const T& Default)
-{
-	auto It = Params.find(CStrID(pKey));
-	return (It == Params.cend()) ? Default : It->second;
-}
-//---------------------------------------------------------------------
 
 bool CDataScheme::Init(const CParams& Desc)
 {

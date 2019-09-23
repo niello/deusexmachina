@@ -1,6 +1,4 @@
 set(DEM_TOOLS_COMMON_HEADERS
-	CmdLineArgs.h
-	ConsoleApp.h
 	ContentForgeTool.h
 	Data.h
 	DataScheme.h

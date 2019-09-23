@@ -8,8 +8,6 @@
 #undef min
 #undef max
 
-extern std::string Messages;
-
 bool CSM30BufferMeta::IsEqual(const CMetadataObject& Other) const
 {
 	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
@@ -139,7 +137,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 		auto FileNameStartLocal = Source.find('\"', IncludeIdx);
 		if (FileNameStartSys == std::string::npos && FileNameStartLocal == std::string::npos)
 		{
-			Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
+			//Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
 			break;
 		}
 
@@ -167,7 +165,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 		if (FileNameEnd == std::string::npos)
 		{
-			Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
+			//Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
 			break;
 		}
 
@@ -177,9 +175,9 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 		UINT IncludeSourceSize;
 		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.c_str(), nullptr, &pIncludeSource, &IncludeSourceSize)))
 		{
-			Messages += "SM30CollectShaderMetadata() > Failed to #include '";
-			Messages += IncludeFileName;
-			Messages += "', skipped\n";
+			//Messages += "SM30CollectShaderMetadata() > Failed to #include '";
+			//Messages += IncludeFileName;
+			//Messages += "', skipped\n";
 			CurrIdx = FileNameEnd;
 			continue;
 		}
@@ -261,9 +259,9 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 		if (D3D9ConstDesc.RegisterSet == RS_MIXED)
 		{
-			Messages += "    SM3.0 mixed-regset structs aren't supported, '";
-			Messages += D3D9ConstDesc.Name;
-			Messages += "' skipped\n";
+			//Messages += "    SM3.0 mixed-regset structs aren't supported, '";
+			//Messages += D3D9ConstDesc.Name;
+			//Messages += "' skipped\n";
 			continue;
 		}
 		else if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
@@ -300,26 +298,26 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 					}
 					else if (D3D9ConstDesc.RegisterCount > 1)
 					{
-						Messages += "Sampler '";
-						Messages += D3D9ConstDesc.Name;
-						Messages += '[';
-						Messages += std::to_string(TexIdx);
-						Messages += "]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
+						//Messages += "Sampler '";
+						//Messages += D3D9ConstDesc.Name;
+						//Messages += '[';
+						//Messages += std::to_string(TexIdx);
+						//Messages += "]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 					}
 					else
 					{
-						Messages += "Sampler '";
-						Messages += D3D9ConstDesc.Name;
-						Messages += "' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'\n";
+						//Messages += "Sampler '";
+						//Messages += D3D9ConstDesc.Name;
+						//Messages += "' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'\n";
 					}
 				}
 			}
 
 			if (!TexCount)
 			{
-				Messages += "Sampler '";
-				Messages += D3D9ConstDesc.Name;
-				Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }' or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
+				//Messages += "Sampler '";
+				//Messages += D3D9ConstDesc.Name;
+				//Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }' or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
 			}
 
 			Samplers.push_back(std::move(Meta));
@@ -348,13 +346,13 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 					SlotIndex = SlotIndex;
 				else if (SlotIndex != SlotIndex)
 				{
-					Messages += "CBuffer '";
-					Messages += Meta.Name;
-					Messages += "' is bound to different SlotIndex values (at least ";
-					Messages += std::to_string(SlotIndex);
-					Messages += " and ";
-					Messages += std::to_string(SlotIndex);
-					Messages += ") in the same shader, please fix it\n";
+					//Messages += "CBuffer '";
+					//Messages += Meta.Name;
+					//Messages += "' is bound to different SlotIndex values (at least ";
+					//Messages += std::to_string(SlotIndex);
+					//Messages += " and ";
+					//Messages += std::to_string(SlotIndex);
+					//Messages += ") in the same shader, please fix it\n";
 					return false;
 				}
 			}

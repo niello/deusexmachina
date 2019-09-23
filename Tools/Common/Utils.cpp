@@ -6,6 +6,22 @@ static const uint32_t CRCKey = 0x04c11db7;
 static uint32_t CRCTable[256] = { 0 };
 static bool CRCTableInited = false;
 
+std::vector<std::string> SplitString(const std::string& Str, char Sep)
+{
+	std::vector<std::string> result;
+
+	auto i = Str.begin();
+	const auto& iEnd = Str.end();
+	while (i != iEnd)
+	{
+		const auto& j = std::find(i, iEnd, Sep);
+		result.emplace_back(i, j);
+		i = j == iEnd ? iEnd : j + 1;
+	}
+
+	return std::move(result);
+}
+
 uint32_t CalcCRC(const uint8_t* pData, size_t Size)
 {
 	if (!CRCTableInited)

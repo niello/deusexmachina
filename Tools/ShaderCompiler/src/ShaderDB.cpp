@@ -7,8 +7,6 @@
 #include <chrono>
 #include <cassert>
 
-extern std::string Messages;
-
 #define INIT_SQL(Stmt, SQL) \
 	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, nullptr) != SQLITE_OK) \
 	{ \
@@ -72,7 +70,7 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 		}
 		else
 		{
-			Messages += "BindQueryParams() > invalid parameter type!\n";
+			//Messages += "BindQueryParams() > invalid parameter type!\n";
 			return false;
 		}
 
@@ -194,18 +192,18 @@ bool ExecuteStatement(sqlite3_stmt* SQLiteStmt, CValueTable* pOutTable = nullptr
 			}
 			case SQLITE_ERROR:
 			{
-				Messages += "SQLite error during sqlite3_step(): ";
-				Messages += sqlite3_errmsg(SQLiteHandle);
-				Messages += '\n';
+				//Messages += "SQLite error during sqlite3_step(): ";
+				//Messages += sqlite3_errmsg(SQLiteHandle);
+				//Messages += '\n';
 				return false;
 			}
 			default:
 			{
-				Messages += "sqlite3_step() returned error code ";
-				Messages += std::to_string(Result);
-				Messages += ", ";
-				Messages += sqlite3_errmsg(SQLiteHandle);
-				Messages += '\n';
+				//Messages += "sqlite3_step() returned error code ";
+				//Messages += std::to_string(Result);
+				//Messages += ", ";
+				//Messages += sqlite3_errmsg(SQLiteHandle);
+				//Messages += '\n';
 				return false;
 			}
 		}
@@ -228,9 +226,9 @@ bool ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable, const Data::CPara
 		sqlite3_stmt* SQLiteStmt = nullptr;
 		if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, &SQLiteStmt, &pSQL) != SQLITE_OK)
 		{
-			Messages += "SQLite error: ";
-			Messages += sqlite3_errmsg(SQLiteHandle);
-			Messages += '\n';
+			//Messages += "SQLite error: ";
+			//Messages += sqlite3_errmsg(SQLiteHandle);
+			//Messages += '\n';
 			return false;
 		}
 
@@ -257,9 +255,9 @@ bool OpenDB(const char* pURI)
 	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
 	if (Result != SQLITE_OK)
 	{
-		Messages += "SQLite error: ";
-		Messages += sqlite3_errmsg(SQLiteHandle);
-		Messages += '\n';
+		//Messages += "SQLite error: ";
+		//Messages += sqlite3_errmsg(SQLiteHandle);
+		//Messages += '\n';
 		SQLiteHandle = nullptr;
 		return false;
 	}
@@ -267,9 +265,9 @@ bool OpenDB(const char* pURI)
 	if (sqlite3_busy_timeout(SQLiteHandle, 100) != SQLITE_OK ||
 		sqlite3_extended_result_codes(SQLiteHandle, 1) != SQLITE_OK)
 	{
-		Messages += "SQLite error: ";
-		Messages += sqlite3_errmsg(SQLiteHandle);
-		Messages += '\n';
+		//Messages += "SQLite error: ";
+		//Messages += sqlite3_errmsg(SQLiteHandle);
+		//Messages += '\n';
 		CloseDB();
 		return false;
 	}
@@ -396,9 +394,9 @@ void CloseDB()
 	{
 		if (sqlite3_close(SQLiteHandle) != SQLITE_OK)
 		{
-			Messages += "SQLite error: ";
-			Messages += sqlite3_errmsg(SQLiteHandle);
-			Messages += '\n';
+			//Messages += "SQLite error: ";
+			//Messages += sqlite3_errmsg(SQLiteHandle);
+			//Messages += '\n';
 		}
 		SQLiteHandle = nullptr;
 	}
@@ -442,19 +440,18 @@ bool FindShaderRec(CShaderDBRec& InOut)
 		int Col_Value = Defines.GetColumnIndex(CStrID("Value"));
 		for (size_t DefIdx = 0; DefIdx < Defines.GetRowCount(); ++DefIdx)
 		{
-			const char* pName = Defines.Get<std::string>(Col_Name, DefIdx).c_str();
-			assert(pName && *pName);
+			const auto& DBDefineName = Defines.Get<std::string>(Col_Name, DefIdx);
+			assert(!DBDefineName.empty());
 
-			for (size_t NewDefIdx = 0; NewDefIdx < InOut.Defines.size(); ++NewDefIdx)
+			//???TODO: compare through INNER JOIN / WHERE?
+			for (const auto& NewDefine : InOut.Defines)
 			{
-				CMacroDBRec& Macro = InOut.Defines[NewDefIdx];
-				if (!strcmp(Macro.Name, pName))
+				if (NewDefine.first == DBDefineName)
 				{
 					Data::CData Value;
 					Defines.GetValue(Col_Value, DefIdx, Value);
-					bool IsNoLocalValue = !Macro.Value;
-					bool IsNoDBValue = Value.IsNull();
-					if (IsNoLocalValue != IsNoDBValue || strcmp(Macro.Value, Value.GetValue<std::string>().c_str()))
+					const std::string DBDefineValue = Value.IsNull() ? std::string{} : Value.GetValue<std::string>();
+					if (NewDefine.second != DBDefineValue)
 					{
 						Found = false;
 					}
@@ -523,12 +520,12 @@ bool WriteShaderRec(CShaderDBRec& InOut)
 	Params.emplace(CStrID("ShaderID"), (int)InOut.ID);
 	if (!ExecuteStatement(SQLClearDefines, nullptr, &Params)) return false;
 
-	for (size_t i = 0; i < InOut.Defines.size(); ++i)
+	// TODO: check if batch insert is better
+	for (const auto& Macro : InOut.Defines)
 	{
-		CMacroDBRec& Macro = InOut.Defines[i];
-		if (!Macro.Name || !*Macro.Name) continue;
-		Params.emplace(CStrID("Name"), std::string(Macro.Name));
-		Params.emplace(CStrID("Value"), std::string(Macro.Value));
+		if (Macro.first.empty()) continue;
+		Params.emplace(CStrID("Name"), Macro.first);
+		Params.emplace(CStrID("Value"), Macro.second);
 		if (!ExecuteStatement(SQLInsertDefine, nullptr, &Params)) return false;
 	}
 

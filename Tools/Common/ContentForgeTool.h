@@ -61,8 +61,9 @@ public:
 
 	CContentForgeTool(const std::string& Name, const std::string& Desc, CVersion Version);
 
+	virtual int Init() { return 0; }
 	virtual void ProcessCommandLine(CLI::App& CLIApp);
-	virtual void ProcessTask(CContentForgeTask& Task) = 0;
+	virtual bool ProcessTask(CContentForgeTask& Task) = 0;
 
 	int Execute(int argc, const char** argv);
 

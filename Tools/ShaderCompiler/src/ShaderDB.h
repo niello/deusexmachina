@@ -27,14 +27,6 @@ struct CObjFileData
 	std::string	Path;
 };
 
-struct CMacroDBRec
-{
-	const char*	Name;
-	const char*	Value;
-
-	//!!!sorting cmp operators!
-};
-
 struct CShaderDBRec
 {
 	uint32_t					ID = 0;
@@ -47,7 +39,7 @@ struct CShaderDBRec
 	uint64_t					SrcModifyTimestamp;
 	CObjFileData				ObjFile;
 	CObjFileData				InputSigFile;
-	std::vector<CMacroDBRec>	Defines;
+	std::map<std::string, std::string> Defines;
 };
 
 enum EObjCompareMode

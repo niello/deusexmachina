@@ -11,9 +11,6 @@
 #undef CreateDirectory
 #undef DeleteFile
 
-std::string OutputDir;
-std::string Messages;	// Last operation messages. Must be cleared at the start of every public API function.
-
 struct CTargetParams
 {
 	const char*	pD3DTarget;
@@ -21,50 +18,7 @@ struct CTargetParams
 	uint32_t	FileSignature;
 };
 
-class CAutoFree
-{
-private:
-
-	void* pDataToFree;
-
-public:
-
-	CAutoFree(): pDataToFree(nullptr) {}
-	~CAutoFree() { if (pDataToFree) free(pDataToFree); }
-
-	void Set(void* pData) { pDataToFree = pData; }
-};
-
-namespace DEMShaderCompiler
-{
-
-DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName, const char* pOutputDirectory)
-{
-	Messages.clear();
-
-	if (pOutputDirectory)
-	{
-		OutputDir.assign(pOutputDirectory);
-		EnsurePathHasEndingDirSeparator(OutputDir);
-	}
-	else
-	{
-		OutputDir = ExtractDirName(pDBFileName);
-		OutputDir += "../../Export/Shaders/Bin/";
-		OutputDir = CollapseDots(OutputDir);
-	}
-
-	return OpenDB(pDBFileName);
-}
-//---------------------------------------------------------------------
-
-DEM_DLL_API const char* DEM_DLLCALL GetLastOperationMessages()
-{
-	return Messages.c_str();
-}
-//---------------------------------------------------------------------
-
-bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out)
+static bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out)
 {
 	const char* pTarget = nullptr;
 	const char* pExt = nullptr;
@@ -140,76 +94,103 @@ bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out
 }
 //---------------------------------------------------------------------
 
-// String passed will be tokenized in place, so it must be read-write accessible.
-// Memory management is a caller's responsibility.
-bool ParseDefineString(char* pDefineString, std::vector<CMacroDBRec>& Out)
+static int ProcessInputSignature(ID3DBlob* pCode, CShaderDBRec& Rec)
 {
-	CMacroDBRec CurrMacro = { 0 };
-
-	char* pCurrPos = pDefineString;
-	const char* pBothDlms = "=;";
-	const char* pSemicolonOnly = ";";
-	const char* pCurrDlms = pBothDlms;
-	while (true)
+	ID3DBlob* pInputSig = nullptr;
+	if (FAILED(D3DGetInputSignatureBlob(pCode->GetBufferPointer(), pCode->GetBufferSize(), &pInputSig)))
 	{
-		char* pDlm = strpbrk(pCurrPos, pCurrDlms);
-		if (pDlm)
+		Rec.InputSigFile.ID = 0;
+		return DEM_SHADER_COMPILER_SUCCESS;
+	}
+
+	Rec.InputSigFile.Size = pInputSig->GetBufferSize();
+	Rec.InputSigFile.BytecodeSize = pInputSig->GetBufferSize();
+	Rec.InputSigFile.CRC = CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
+
+	uint32_t OldInputSigID = Rec.InputSigFile.ID;
+	if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), Rec.Target, Cmp_All))
+	{
+		Rec.InputSigFile.ID = CreateObjFileRecord();
+		if (!Rec.InputSigFile.ID)
 		{
-			char Dlm = *pDlm;
-			if (Dlm == '=')
-			{
-				CurrMacro.Name = pCurrPos;
-				CurrMacro.Value = pDlm + 1;
-				Out.push_back(CurrMacro);
-				pCurrDlms = pSemicolonOnly;
-			}
-			else // ';'
-			{
-				CurrMacro.Value = nullptr;
-				if (!CurrMacro.Name)
-				{
-					CurrMacro.Name = pCurrPos;
-					Out.push_back(CurrMacro);
-				}
-				CurrMacro.Name = nullptr;
-				pCurrDlms = pBothDlms;
-			}
-			*pDlm = 0;
-			pCurrPos = pDlm + 1;
+			pCode->Release();
+			pInputSig->Release();
+			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
-		else
+
+		Rec.InputSigFile.Path = CollapseDots(/*OutputDir +*/ std::to_string(Rec.InputSigFile.ID) + ".sig");
+
+		EnsureDirectoryExists(ExtractDirName(Rec.InputSigFile.Path));
+
 		{
-			CurrMacro.Value = nullptr;
-			if (!CurrMacro.Name)
+			std::ofstream File(Rec.InputSigFile.Path.c_str());
+			if (!File || !File.write((const char*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize()))
 			{
-				CurrMacro.Name = pCurrPos;
-				Out.push_back(CurrMacro);
+				pCode->Release();
+				pInputSig->Release();
+				return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 			}
-			CurrMacro.Name = nullptr;
-			break;
+			File.close();
+		}
+
+		if (!UpdateObjFileRecord(Rec.InputSigFile))
+		{
+			pCode->Release();
+			pInputSig->Release();
+			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
 	}
 
-	// CurrMacro is both NULLs in all control pathes here, but we don't add it.
-	// CompileShader() method takes care of it for D3D.
+	//!!!DUPLICATE CODE! SEE MAIN OBJ FILE BELOW!
+	if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
+	{
+		std::string OldObjPath;
+		if (ReleaseObjFile(OldInputSigID, OldObjPath))
+			EraseFile(OldObjPath.c_str());
+	}
 
-	return true;
+	pInputSig->Release();
+
+	return DEM_SHADER_COMPILER_SUCCESS;
 }
 //---------------------------------------------------------------------
 
-// pDefines - "NAME[=VALUE];NAME[=VALUE];...NAME[=VALUE]"
-DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType ShaderType, uint32_t Target, const char* pEntryPoint,
-	const char* pDefines, bool Debug, bool OnlyMetadata, uint32_t& ObjectFileID, uint32_t& InputSignatureFileID)
+namespace DEMShaderCompiler
 {
-	Messages.clear();
 
-	if (!pSrcPath || ShaderType >= ShaderType_COUNT || !pEntryPoint) return DEM_SHADER_COMPILER_INVALID_ARGS;
+DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName)
+{
+	return OpenDB(pDBFileName);
+}
+//---------------------------------------------------------------------
+
+DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
+	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug,
+	/*std::ostream* pErrors,*/ const char* pSrcData, size_t SrcDataSize)
+{
+	// Validate args
+
+	if (!pSrcPath || !pDestPath || !pEntryPoint || ShaderType >= ShaderType_COUNT) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
 	if (!Target) Target = 0x0500;
 
-	// TODO: use D3DReadFileToBlob? Note, there is also D3DWriteBlobToFile!
-	std::vector<char> In;
-	if (!ReadAllFile(pSrcPath, In)) return DEM_SHADER_COMPILER_IO_READ_ERROR;
+	const bool HasInputSignature = (ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Geometry) && Target >= 0x0400;
+	if (HasInputSignature && !pInputSigDir) return DEM_SHADER_COMPILER_INVALID_ARGS;
+
+	// Determine D3D target, output file extension and file signature
+
+	CTargetParams TargetParams;
+	if (!GetTargetParams(ShaderType, Target, TargetParams)) return DEM_SHADER_COMPILER_INVALID_ARGS;
+
+	// Read the source file if not read yet
+
+	std::vector<char> SrcData;
+	if (!pSrcData || !SrcDataSize)
+	{
+		if (!ReadAllFile(pSrcPath, SrcData)) return DEM_SHADER_COMPILER_IO_READ_ERROR;
+		pSrcData = SrcData.data();
+		SrcDataSize = SrcData.size();
+	}
 
 	// Setup compiler flags
 
@@ -220,16 +201,19 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	DWORD Flags = D3DCOMPILE_PACK_MATRIX_ROW_MAJOR;
 	if (Target >= 0x0400)
 	{
-		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Denies deprecated syntax
+		Flags |= D3DCOMPILE_ENABLE_STRICTNESS; // Deny deprecated syntax
 	}
 
 	if (Debug)
 	{
 		Flags |= (D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION);
 	}
-	else Flags |= (D3DCOMPILE_OPTIMIZATION_LEVEL3); // | D3DCOMPILE_SKIP_VALIDATION);
+	else
+	{
+		Flags |= (D3DCOMPILE_OPTIMIZATION_LEVEL3); // | D3DCOMPILE_SKIP_VALIDATION);
+	}
 
-	// Get info about previous compilation, skip if no changes
+	// Build the compilation task description
 
 	CShaderDBRec Rec;
 	Rec.SrcFile.Path = pSrcPath;
@@ -237,16 +221,22 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	Rec.Target = Target;
 	Rec.EntryPoint = pEntryPoint;
 
-	char* pDefineStringBuffer;
-	CAutoFree DefineStringBuffer;
-	if (pDefines && *pDefines)
+	// Parse define string
+
+	if (pDefines)
 	{
-		const size_t DefinesLen = strlen(pDefines) + 1;
-		pDefineStringBuffer = (char*)malloc(DefinesLen);
-		strcpy_s(pDefineStringBuffer, DefinesLen, pDefines);
-		DefineStringBuffer.Set(pDefineStringBuffer);
-		if (!ParseDefineString(pDefineStringBuffer, Rec.Defines)) return DEM_SHADER_COMPILER_INVALID_ARGS;
+		auto Pairs = SplitString(pDefines, ';');
+		for (auto& Pair : Pairs)
+		{
+			const auto Pos = Pair.find_first_of('=');
+			if (Pos == std::string::npos)
+				Rec.Defines.emplace(std::move(Pair), std::string{});
+			else
+				Rec.Defines.emplace(Pair.substr(0, Pos), Pair.substr(Pos + 1));
+		}
 	}
+
+	// Check whether there were changes since the last conversion
 
 	uint64_t CurrWriteTime = 0;
 	{
@@ -255,50 +245,43 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			CurrWriteTime = FileStat.st_mtime;
 	}
 
-	const size_t SrcCRC = CalcCRC((uint8_t*)In.data(), In.size());
+	const size_t SrcCRC = CalcCRC((const uint8_t*)pSrcData, SrcDataSize);
 
-	const bool RecFound = FindShaderRec(Rec);
-	if (RecFound &&
+	if (FindShaderRec(Rec) &&
 		Rec.CompilerVersion == D3D_COMPILER_VERSION &&
 		Rec.CompilerFlags == Flags &&
-		Rec.SrcFile.Size == In.size() &&
+		Rec.SrcFile.Size == SrcDataSize &&
 		Rec.SrcFile.CRC == SrcCRC &&
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
-		ObjectFileID = Rec.ObjFile.ID;
-		InputSignatureFileID = Rec.InputSigFile.ID;
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 
+	// We need to do the conversion, so update the description with current details
+
 	Rec.CompilerVersion = D3D_COMPILER_VERSION;
 	Rec.CompilerFlags = Flags;
-	Rec.SrcFile.Size = In.size();
+	Rec.SrcFile.Size = SrcDataSize;
 	Rec.SrcFile.CRC = SrcCRC;
 	Rec.SrcModifyTimestamp = CurrWriteTime;
-
-	// Determine D3D target, output file extension and file signature
-
-	CTargetParams TargetParams;
-	if (!GetTargetParams(ShaderType, Target, TargetParams)) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
 	// Setup D3D shader macros
 
 	std::vector<D3D_SHADER_MACRO> D3DMacros;
-	D3D_SHADER_MACRO* pD3DMacros;
+	D3D_SHADER_MACRO* pD3DMacros = nullptr;
 	if (Rec.Defines.size())
 	{
 		D3DMacros.reserve(Rec.Defines.size() + 1);
 
 		for (const auto& Macro : Rec.Defines)
-			D3DMacros.push_back({ Macro.Name, Macro.Value });
+			D3DMacros.push_back({ Macro.first.c_str(), Macro.second.c_str() });
 
 		// Terminating macro
 		D3DMacros.push_back({ nullptr, nullptr });
 
 		pD3DMacros = &D3DMacros[0];
 	}
-	else pD3DMacros = nullptr;
 
 	// Compile shader
 
@@ -306,86 +289,36 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	CDEMD3DInclude IncHandler(ExtractDirName(pSrcPath), std::string{}); //RootPath);
 
 	// There is also D3DCompile2 with 'secondary data' optional args but it is not useful for us now
+	// TODO: RAII class for COM pointers? Would simplify the code.
 	ID3DBlob* pCode = nullptr;
-	ID3DBlob* pErrors = nullptr;
-	HRESULT hr = D3DCompile(In.data(), In.size(), pSrcPath,
+	ID3DBlob* pErrorMsgs = nullptr;
+	HRESULT hr = D3DCompile(pSrcData, SrcDataSize, pSrcPath,
 		pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
-		Flags, 0, &pCode, &pErrors);
+		Flags, 0, &pCode, &pErrorMsgs);
 
+	std::string Messages;
 	if (FAILED(hr) || !pCode)
 	{
-		Messages.assign(pErrors ? (const char*)pErrors->GetBufferPointer() : "<No D3D error message>");
+		Messages.assign(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
 		if (pCode) pCode->Release();
-		if (pErrors) pErrors->Release();
+		if (pErrorMsgs) pErrorMsgs->Release();
 		return DEM_SHADER_COMPILER_COMPILE_ERROR;
 	}
-	else if (pErrors)
+	else if (pErrorMsgs)
 	{
 		Messages.assign("Compiled with warnings:\n\n");
-		Messages += (const char*)pErrors->GetBufferPointer();
+		Messages += (const char*)pErrorMsgs->GetBufferPointer();
 		Messages += '\n';
-		pErrors->Release();
+		pErrorMsgs->Release();
 	}
 
 	// For vertex and geometry shaders, store input signature in a separate binary file.
 	// It saves RAM since input signatures must reside in it at the runtime.
 
-	if (!OnlyMetadata && (ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Geometry) && Target >= 0x0400)
+	if (HasInputSignature)
 	{
-		ID3DBlob* pInputSig = nullptr;
-		if (SUCCEEDED(D3DGetInputSignatureBlob(
-			pCode->GetBufferPointer(),
-			pCode->GetBufferSize(),
-			&pInputSig)))
-		{
-			Rec.InputSigFile.Size = pInputSig->GetBufferSize();
-			Rec.InputSigFile.BytecodeSize = pInputSig->GetBufferSize();
-			Rec.InputSigFile.CRC = CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
-
-			uint32_t OldInputSigID = Rec.InputSigFile.ID;
-			if (!FindObjFile(Rec.InputSigFile, pInputSig->GetBufferPointer(), Target, Cmp_All))
-			{
-				Rec.InputSigFile.ID = CreateObjFileRecord();
-				if (!Rec.InputSigFile.ID)
-				{
-					pCode->Release();
-					pInputSig->Release();
-					return DEM_SHADER_COMPILER_DB_ERROR;
-				}
-
-				Rec.InputSigFile.Path = CollapseDots(OutputDir + std::to_string(Rec.InputSigFile.ID) + ".sig");
-
-				EnsureDirectoryExists(ExtractDirName(Rec.InputSigFile.Path));
-
-				{
-					std::ofstream File(Rec.InputSigFile.Path.c_str());
-					if (!File || !File.write((const char*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize()))
-					{
-						pCode->Release();
-						pInputSig->Release();
-						return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
-					}
-					File.close();
-				}
-
-				if (!UpdateObjFileRecord(Rec.InputSigFile))
-				{
-					pCode->Release();
-					pInputSig->Release();
-					return DEM_SHADER_COMPILER_DB_ERROR;
-				}
-			}
-
-			if (OldInputSigID > 0 && OldInputSigID != Rec.InputSigFile.ID)
-			{
-				std::string OldObjPath;
-				if (ReleaseObjFile(OldInputSigID, OldObjPath))
-					EraseFile(OldObjPath.c_str());
-			}
-
-			pInputSig->Release();
-		}
-		else Rec.InputSigFile.ID = 0;
+		const auto ResultCode = ProcessInputSignature(pCode, Rec);
+		if (ResultCode != DEM_SHADER_COMPILER_SUCCESS) return ResultCode;
 	}
 	else Rec.InputSigFile.ID = 0;
 
@@ -400,8 +333,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	else
 	{
 		// TODO: D3D12 - D3DCOMPILER_STRIP_ROOT_SIGNATURE ?
-		hr = D3DStripShader(pCode->GetBufferPointer(),
-			pCode->GetBufferSize(),
+		hr = D3DStripShader(pCode->GetBufferPointer(), pCode->GetBufferSize(),
 			D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
 			&pFinalCode);
 		if (FAILED(hr))
@@ -413,7 +345,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 	}
 
 	Rec.ObjFile.BytecodeSize = pFinalCode->GetBufferSize();
-	Rec.ObjFile.CRC = CalcCRC((uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 	// Try to find exactly the same binary and reuse it, or save our result
 
@@ -427,8 +359,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 		// is the same, because constant buffers are defined in annotations and aren't reflected in a shader blob.
 
 		CSM30ShaderMeta Meta;
-		bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), In.data(), In.size(), IncHandler);
-		bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
+		const bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, IncHandler);
+		const bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
 
 		pCode->Release();
 
@@ -438,15 +370,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}
 
-		if (OnlyMetadata)
-		{
-			BinaryOffset = 0; // Means that no binary shader bytecode included
-		}
-		else
-		{
-			BinaryOffset = ObjStream.tellp();
-			ObjStream.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
-		}
+		BinaryOffset = ObjStream.tellp();
+		ObjStream.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 		pFinalCode->Release();
 
@@ -468,7 +393,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
 
-		Rec.ObjFile.Path = CollapseDots(OutputDir + std::to_string(Rec.ObjFile.ID) + "." + TargetParams.pExtension);
+		Rec.ObjFile.Path = pDestPath;
 
 		EnsureDirectoryExists(ExtractDirName(Rec.ObjFile.Path));
 
@@ -518,16 +443,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 				return MetaReflected ? DEM_SHADER_COMPILER_IO_WRITE_ERROR : DEM_SHADER_COMPILER_REFLECTION_ERROR;
 			}
 
-			if (OnlyMetadata)
-			{
-				BinaryOffset = 0; // Means that no binary shader bytecode included
-			}
-			else
-			{
-				// Save shader binary
-				BinaryOffset = File.tellp();
-				File.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
-			}
+			// Save shader binary
+			BinaryOffset = File.tellp();
+			File.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
 			pFinalCode->Release();
 		}
@@ -566,10 +484,9 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, EShaderType Shad
 			EraseFile(OldObjPath.c_str());
 	}
 
-	if (!WriteShaderRec(Rec)) return DEM_SHADER_COMPILER_DB_ERROR;
+	// Write successfull compilation results to the database
 
-	ObjectFileID = Rec.ObjFile.ID;
-	InputSignatureFileID = Rec.InputSigFile.ID;
+	if (!WriteShaderRec(Rec)) return DEM_SHADER_COMPILER_DB_ERROR;
 
 	return DEM_SHADER_COMPILER_SUCCESS;
 }
@@ -586,8 +503,6 @@ DEM_DLL_API void DEM_DLLCALL CreateShaderMetadata(EShaderModel ShaderModel, CSha
 // Use FreeShaderMetadata() on the pointer returned.
 DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta)
 {
-	Messages.clear();
-
 	CObjFileData ObjFile;
 	if (!FindObjFileByID(ID, ObjFile)) return false;
 
@@ -627,7 +542,6 @@ DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(uint32_t ID, uint3
 
 DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 {
-	Messages.clear();
 	delete pMeta;
 }
 //---------------------------------------------------------------------
@@ -636,8 +550,6 @@ DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 // with a lookup table ID -> Offset. Returns packed shader count.
 DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
 {
-	Messages.clear();
-
 	// Get files by ID, include input signatures
 	std::string SQL("SELECT ID, Path, Size FROM Files WHERE ID IN(");
 	SQL += pCommaSeparatedShaderIDs;

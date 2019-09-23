@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <stdint.h> // for uint32_t only
 
 // Main public API header
@@ -45,18 +46,14 @@ enum EShaderType
 	ShaderType_COUNT
 };
 
-//#ifdef __cplusplus
-//extern "C"
-//{
-//#endif
 namespace DEMShaderCompiler
 {
 
 // For static loading
-DEM_DLL_API bool DEM_DLLCALL			Init(const char* pDBFileName, const char* pOutputDirectory);
-DEM_DLL_API const char* DEM_DLLCALL		GetLastOperationMessages();
-DEM_DLL_API int DEM_DLLCALL				CompileShader(const char* pSrcPath, EShaderType ShaderType, uint32_t Target, const char* pEntryPoint,
-													  const char* pDefines, bool Debug, bool OnlyMetadata, uint32_t& ObjectFileID, uint32_t& InputSignatureFileID);
+DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName);
+DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
+	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug,
+	/*std::ostream* pErrors = nullptr,*/ const char* pSrcData = nullptr, size_t SrcDataSize = 0);
 DEM_DLL_API void DEM_DLLCALL			CreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta);
 DEM_DLL_API bool DEM_DLLCALL			LoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta);
 DEM_DLL_API void DEM_DLLCALL			FreeShaderMetadata(CShaderMetadata* pMeta);
@@ -64,11 +61,9 @@ DEM_DLL_API void DEM_DLLCALL			FreeShaderMetadata(CShaderMetadata* pMeta);
 DEM_DLL_API unsigned int DEM_DLLCALL	PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 
 }
-//#ifdef __cplusplus
-//}
-//#endif
 
 // For dynamic loading
+//???need extern "C"?
 typedef bool (DEM_DLLCALL *FDEMShaderCompiler_InitCompiler)(const char* pDBFileName, const char* pOutputDirectory);
 typedef const char* (DEM_DLLCALL *FDEMShaderCompiler_GetLastOperationMessages)();
 typedef int (DEM_DLLCALL *FDEMShaderCompiler_CompileShader)(const char* pSrcPath, EShaderType ShaderType, uint32_t Target, const char* pEntryPoint,
