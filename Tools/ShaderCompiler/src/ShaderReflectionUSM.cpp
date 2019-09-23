@@ -148,8 +148,7 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 {
 	ID3D11ShaderReflection* pReflector = nullptr;
-
-	if (FAILED(D3D11Reflect(pData, Size, &pReflector))) return false;
+	if (FAILED(D3DReflect(pData, Size, IID_ID3D11ShaderReflection, (void**)&pReflector))) return false;
 
 	D3D_FEATURE_LEVEL D3DFeatureLevel;
 	if (FAILED(pReflector->GetMinFeatureLevel(&D3DFeatureLevel)))
