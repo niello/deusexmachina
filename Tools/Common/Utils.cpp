@@ -116,17 +116,6 @@ bool EnsureDirectoryExists(std::string Path)
 }
 //---------------------------------------------------------------------
 
-bool ReadAllFile(const char* pPath, std::vector<char>& Out)
-{
-	std::ifstream File(pPath);
-	if (!File) return false;
-
-	Out.assign(std::istreambuf_iterator<char>(File), std::istreambuf_iterator<char>());
-
-	return !File.bad();
-}
-//---------------------------------------------------------------------
-
 bool EraseFile(const char* pPath)
 {
 	return ::DeleteFile(pPath) != 0;

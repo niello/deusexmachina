@@ -13,11 +13,22 @@ bool IsPathAbsolute(const std::string& Path);
 bool FileExists(const char* pPath);
 bool DirectoryExists(const char* pPath);
 bool EnsureDirectoryExists(std::string Path);
-bool ReadAllFile(const char* pPath, std::vector<char>& Out);
 bool EraseFile(const char* pPath);
 std::string CollapseDots(const char* pPath, size_t PathLength = 0);
 inline std::string CollapseDots(const std::string& Path) { return CollapseDots(Path.c_str(), Path.size()); }
 size_t StripComments(char* pStr, const char* pSingleLineComment = "//", const char* pMultiLineCommentStart = "/*", const char* pMultiLineCommentEnd = "*/");
+
+template<typename T>
+bool ReadAllFile(const char* pPath, std::vector<T>& Out)
+{
+	std::ifstream File(pPath);
+	if (!File) return false;
+
+	Out.assign(std::istreambuf_iterator<T>(File), std::istreambuf_iterator<T>());
+
+	return !File.bad();
+}
+//---------------------------------------------------------------------
 
 inline void EnsurePathHasEndingDirSeparator(std::string& Path)
 {
