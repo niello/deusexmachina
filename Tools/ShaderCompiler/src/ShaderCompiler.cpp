@@ -169,7 +169,7 @@ DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName)
 
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
 	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug,
-	/*std::ostream* pErrors,*/ const char* pSrcData, size_t SrcDataSize, ILogDelegate* pLog)
+	const char* pSrcData, size_t SrcDataSize, ILogDelegate* pLog)
 {
 	// Validate args
 
@@ -289,14 +289,15 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 	// Compile shader
 
 	// TODO: try D3D_COMPILE_STANDARD_FILE_INCLUDE!
-	CDEMD3DInclude IncHandler(ExtractDirName(pSrcPath), std::string{}); //RootPath);
+	//CDEMD3DInclude IncHandler(ExtractDirName(pSrcPath), std::string{}); //RootPath);
+	ID3DInclude* pInclude = D3D_COMPILE_STANDARD_FILE_INCLUDE;
 
 	// There is also D3DCompile2 with 'secondary data' optional args but it is not useful for us now
 	// TODO: RAII class for COM pointers? Would simplify the code.
 	ID3DBlob* pCode = nullptr;
 	ID3DBlob* pErrorMsgs = nullptr;
 	HRESULT hr = D3DCompile(pSrcData, SrcDataSize, pSrcPath,
-		pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
+		pD3DMacros, pInclude, pEntryPoint, TargetParams.pD3DTarget,
 		Flags, 0, &pCode, &pErrorMsgs);
 
 	if (FAILED(hr) || !pCode)
@@ -363,7 +364,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 		// is the same, because constant buffers are defined in annotations and aren't reflected in a shader blob.
 
 		CSM30ShaderMeta Meta;
-		const bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, IncHandler);
+		const bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, pSrcPath, pD3DMacros);
 		const bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
 
 		pCode->Release();
@@ -552,7 +553,7 @@ DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
 
 // Packs shaders in a sindle library file, big concatenated blob
 // with a lookup table ID -> Offset. Returns packed shader count.
-DEM_DLL_API unsigned int DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
+DEM_DLL_API uint32_t DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath)
 {
 	// Get files by ID, include input signatures
 	std::string SQL("SELECT ID, Path, Size FROM Files WHERE ID IN(");

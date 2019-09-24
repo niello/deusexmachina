@@ -105,7 +105,8 @@ static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::istream& Strea
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, CDEMD3DInclude& IncludeHandler)
+bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize,
+	ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines)
 {
 	std::vector<CD3D9ConstantDesc> D3D9Consts;
 	std::map<uint32_t, CD3D9StructDesc> D3D9Structs;
@@ -113,97 +114,31 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 	if (!D3D9Reflect(pData, Size, D3D9Consts, D3D9Structs, Creator)) return false;
 
-	// Remove comments from the source code
+	// Preprocess the source code
 
-	// TODO: try D3DPreprocess, try D3D_COMPILE_STANDARD_FILE_INCLUDE!
+	ID3DBlob* pCodeText = nullptr;
+	ID3DBlob* pErrorMsgs = nullptr;
+	HRESULT hr = D3DPreprocess(pSource, SourceSize, pSourcePath, pDefines, pInclude, &pCodeText, &pErrorMsgs);
 
-	std::string Source;
+	if (FAILED(hr) || !pCodeText)
 	{
-		std::unique_ptr<char[]> pSourceCopy(new char[SourceSize + 1]);
-		memcpy(pSourceCopy.get(), pSource, SourceSize);
-		pSourceCopy[SourceSize] = 0;
-
-		const size_t NewLength = StripComments(pSourceCopy.get());
-		Source.assign(pSourceCopy.get(), NewLength);
+		//if (pLog) pLog->Log(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
+		if (pCodeText) pCodeText->Release();
+		if (pErrorMsgs) pErrorMsgs->Release();
+		return false;
+	}
+	else if (pErrorMsgs)
+	{
+		//if (pLog)
+		//{
+		//	pLog->Log("Preprocessed with warnings:\n");
+		//	pLog->Log((const char*)pErrorMsgs->GetBufferPointer());
+		//}
+		pErrorMsgs->Release();
 	}
 
-	// Insert includes right into a code, as preprocessor does
-
-	size_t CurrIdx = 0;
-	size_t IncludeIdx;
-	while ((IncludeIdx = Source.find("#include", CurrIdx)) != std::string::npos)
-	{
-		auto FileNameStartSys = Source.find('<', IncludeIdx);
-		auto FileNameStartLocal = Source.find('\"', IncludeIdx);
-		if (FileNameStartSys == std::string::npos && FileNameStartLocal == std::string::npos)
-		{
-			//Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
-			break;
-		}
-
-		if (FileNameStartSys != std::string::npos && FileNameStartLocal != std::string::npos)
-		{
-			if (FileNameStartSys < FileNameStartLocal) FileNameStartLocal = std::string::npos;
-			else FileNameStartSys = std::string::npos;
-		}
-
-		D3D_INCLUDE_TYPE IncludeType;
-		size_t FileNameStart;
-		size_t FileNameEnd;
-		if (FileNameStartSys != std::string::npos)
-		{
-			IncludeType = D3D_INCLUDE_SYSTEM; // <FileName>
-			FileNameStart = FileNameStartSys + 1;
-			FileNameEnd = Source.find('>', FileNameStart);
-		}
-		else
-		{
-			IncludeType = D3D_INCLUDE_LOCAL; // "FileName"
-			FileNameStart = FileNameStartLocal + 1;
-			FileNameEnd = Source.find('\"', FileNameStart);
-		}
-
-		if (FileNameEnd == std::string::npos)
-		{
-			//Messages += "SM30CollectShaderMetadata() > Invalid #include in a shader source code\n";
-			break;
-		}
-
-		std::string IncludeFileName = Source.substr(FileNameStart, FileNameEnd - FileNameStart);
-
-		const void* pIncludeSource;
-		UINT IncludeSourceSize;
-		if (FAILED(IncludeHandler.Open(IncludeType, IncludeFileName.c_str(), nullptr, &pIncludeSource, &IncludeSourceSize)))
-		{
-			//Messages += "SM30CollectShaderMetadata() > Failed to #include '";
-			//Messages += IncludeFileName;
-			//Messages += "', skipped\n";
-			CurrIdx = FileNameEnd;
-			continue;
-		}
-
-		// Remove comments from the obtained include file
-		std::string IncludeSource;
-		{
-			std::unique_ptr<char[]> pSourceCopy(new char[IncludeSourceSize + 1]);
-			memcpy(pSourceCopy.get(), pIncludeSource, IncludeSourceSize);
-			pSourceCopy[SourceSize] = 0;
-
-			const size_t NewLength = StripComments(pSourceCopy.get());
-			IncludeSource.assign(pSourceCopy.get(), NewLength);
-		}
-
-		IncludeHandler.Close(pIncludeSource);
-
-		Source =
-			Source.substr(0, IncludeIdx) + ' ' +
-			IncludeSource + ' ' +
-			Source.substr(FileNameEnd + 1);
-
-		// Start from the place where include was inserted, because it can
-		// contain another include right at the start
-		CurrIdx = IncludeIdx;
-	}
+	const std::string Source = static_cast<const char*>(pCodeText->GetBufferPointer());
+	pCodeText->Release();
 
 	// Collect structure layout metadata
 

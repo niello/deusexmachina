@@ -94,6 +94,7 @@ bool ProcessConstant(const char* ctab,
 		Desc.Type.Elements = TypeInfo.Elements > 0 ? TypeInfo.Elements : 1;
 		Desc.Type.StructMembers = TypeInfo.StructMembers;
 		OutConsts.push_back(std::move(Desc));
+		pDesc = &OutConsts.back();
 	}
  
 	pDesc->RegisterSet = static_cast<EREGISTER_SET>(ConstInfo.RegisterSet);
@@ -245,7 +246,7 @@ bool D3D9Reflect(const void* pData, size_t Size, std::vector<CD3D9ConstantDesc>&
 }
 //---------------------------------------------------------------------
 
-// Use StringUtils::StripComments(pSrc) to remove comments from the HLSL source before caling this function.
+// Pass only preprocessed code here.
 // Parses source code and finds "samplerX SamplerName { Texture = TextureName; }" or
 // "sampler SamplerName[N] { { Texture = Tex1; }, ..., { Texture = TexN; } }" pattern,
 // as HLSL texture names are not saved in a metadata. Doesn't support annotations.
@@ -335,7 +336,7 @@ void D3D9FindSamplerTextures(const char* pSrcText, std::map<std::string, std::ve
 }
 //---------------------------------------------------------------------
 
-// Use StringUtils::StripComments(pSrc) to remove comments from the HLSL source before caling this function.
+// Pass only preprocessed code here.
 // Parses source code, finds annotations of shader constats and fills additional constant metadata.
 void D3D9FindConstantBuffer(const char* pSrcText, const std::string& ConstName, std::string& OutBufferName, uint32_t& OutSlotIndex)
 {
