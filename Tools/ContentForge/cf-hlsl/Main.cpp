@@ -16,12 +16,21 @@ namespace fs = std::filesystem;
 
 class CLog : public DEMShaderCompiler::ILogDelegate
 {
+private:
+
+	std::string Prefix;
+
 public:
+
+	CLog(const std::string& TaskID)
+	{
+		Prefix = "[DLL " + TaskID + "] ";
+	}
 
 	virtual void Log(const char* pMessage) override
 	{
 		// FIXME: not thread safe, just for testing
-		std::cout << "[DLL] " << pMessage << std::endl;
+		std::cout << Prefix << pMessage << std::endl;
 	}
 };
 
@@ -85,9 +94,10 @@ public:
 		else if (Type == "Domain") ShaderType = ShaderType_Domain;
 		else return false;
 
-		const auto DestPath = fs::path(_RootDir) / fs::path(Output) / (std::string(Task.TaskID.CStr()) + ".bin");
+		const std::string TaskID(Task.TaskID.CStr());
+		const auto DestPath = fs::path(_RootDir) / fs::path(Output) / (TaskID + ".bin");
 
-		CLog Log;
+		CLog Log(TaskID);
 
 		const auto Code = DEMShaderCompiler::CompileShader(
 			Task.SrcFilePath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),

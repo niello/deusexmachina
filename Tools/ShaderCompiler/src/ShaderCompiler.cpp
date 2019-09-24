@@ -258,6 +258,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
+		if (pLog) pLog->Log("No recompilation required, task skipped");
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 
