@@ -14,11 +14,6 @@
 class CShaderMetadata;
 enum EShaderModel;
 
-namespace IO
-{
-	class CBinaryWriter;
-}
-
 // Return codes
 enum EReturnCode
 {
@@ -49,15 +44,21 @@ enum EShaderType
 namespace DEMShaderCompiler
 {
 
+class ILogDelegate
+{
+public:
+
+	virtual void Log(const char* pMessage) = 0;
+};
+
 // For static loading
 DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName);
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
 	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug,
-	/*std::ostream* pErrors = nullptr,*/ const char* pSrcData = nullptr, size_t SrcDataSize = 0);
+	/*std::ostream* pErrors = nullptr,*/ const char* pSrcData = nullptr, size_t SrcDataSize = 0, ILogDelegate* pLog = nullptr);
 DEM_DLL_API void DEM_DLLCALL			CreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta);
 DEM_DLL_API bool DEM_DLLCALL			LoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta);
 DEM_DLL_API void DEM_DLLCALL			FreeShaderMetadata(CShaderMetadata* pMeta);
-//DEM_DLL_EXPORT bool DEM_DLLCALL			SaveShaderMetadata(IO::CBinaryWriter& W, const CShaderMetadata& Meta);
 DEM_DLL_API unsigned int DEM_DLLCALL	PackShaders(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);
 
 }
@@ -71,5 +72,4 @@ typedef int (DEM_DLLCALL *FDEMShaderCompiler_CompileShader)(const char* pSrcPath
 typedef void (DEM_DLLCALL *FDEMShaderCompiler_CreateShaderMetadata)(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta);
 typedef bool (DEM_DLLCALL *FDEMShaderCompiler_LoadShaderMetadataByObjectFileID)(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta);
 typedef void (DEM_DLLCALL *FDEMShaderCompiler_FreeShaderMetadata)(CShaderMetadata* pMeta);
-//typedef bool (DEM_DLLCALL *FDEMShaderCompiler_SaveShaderMetadata)(IO::CBinaryWriter& W, const CShaderMetadata& Meta);
 typedef unsigned int (DEM_DLLCALL *FDEMShaderCompiler_PackShaders)(const char* pCommaSeparatedShaderIDs, const char* pLibraryFilePath);

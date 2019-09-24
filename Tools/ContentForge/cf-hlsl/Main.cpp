@@ -14,6 +14,17 @@ namespace fs = std::filesystem;
 // -s src/shaders/hlsl_usm/CEGUI.hlsl
 // -s src/shaders
 
+class CLog : public DEMShaderCompiler::ILogDelegate
+{
+public:
+
+	virtual void Log(const char* pMessage) override
+	{
+		// FIXME: not thread safe, just for testing
+		std::cout << "[DLL] " << pMessage << std::endl;
+	}
+};
+
 class CHLSLTool : public CContentForgeTool
 {
 public:
@@ -75,10 +86,12 @@ public:
 		else return false;
 
 		const auto DestPath = Task.SrcFilePath.parent_path() / Task.TaskID.CStr() / ".bin";
-		
+
+		CLog Log;
+
 		const auto Code = DEMShaderCompiler::CompileShader(
 			Task.SrcFilePath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
-			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, Task.SrcFileData->data(), Task.SrcFileData->size());
+			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
 
 		return Code == DEM_SHADER_COMPILER_SUCCESS;
 	}

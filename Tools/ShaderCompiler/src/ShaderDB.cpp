@@ -36,7 +36,8 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
 	if (!SQLiteStmt || sqlite3_reset(SQLiteStmt) != SQLITE_OK) return false;
 
-	std::string ParamName(nullptr, 0, 64);
+	std::string ParamName;
+	ParamName.reserve(64);
 	for (const auto& Pair : Params)
 	{
 		ParamName = ":";

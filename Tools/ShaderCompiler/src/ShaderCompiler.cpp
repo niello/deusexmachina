@@ -169,7 +169,7 @@ DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName)
 
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
 	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug,
-	/*std::ostream* pErrors,*/ const char* pSrcData, size_t SrcDataSize)
+	/*std::ostream* pErrors,*/ const char* pSrcData, size_t SrcDataSize, ILogDelegate* pLog)
 {
 	// Validate args
 
@@ -299,19 +299,20 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 		pD3DMacros, &IncHandler, pEntryPoint, TargetParams.pD3DTarget,
 		Flags, 0, &pCode, &pErrorMsgs);
 
-	std::string Messages;
 	if (FAILED(hr) || !pCode)
 	{
-		Messages.assign(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
+		if (pLog) pLog->Log(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
 		if (pCode) pCode->Release();
 		if (pErrorMsgs) pErrorMsgs->Release();
 		return DEM_SHADER_COMPILER_COMPILE_ERROR;
 	}
 	else if (pErrorMsgs)
 	{
-		Messages.assign("Compiled with warnings:\n\n");
-		Messages += (const char*)pErrorMsgs->GetBufferPointer();
-		Messages += '\n';
+		if (pLog)
+		{
+			pLog->Log("Compiled with warnings:\n");
+			pLog->Log((const char*)pErrorMsgs->GetBufferPointer());
+		}
 		pErrorMsgs->Release();
 	}
 
@@ -341,7 +342,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 			&pFinalCode);
 		if (FAILED(hr))
 		{
-			Messages += "\nD3DStripShader() failed\n";
+			if (pLog) pLog->Log("\nD3DStripShader() failed\n");
 			pCode->Release();
 			return DEM_SHADER_COMPILER_ERROR;
 		}
