@@ -60,7 +60,7 @@ public:
 			_DBPath = (fs::path(_RootDir) / fs::path("src/shaders/shaders.db3")).string();
 
 		if (_InputSignaturesDir.empty())
-			_InputSignaturesDir = (fs::path(_RootDir) / fs::path("shaders/sig")).string();
+			_InputSignaturesDir = "shaders/sig";
 
 		if (!DEMShaderCompiler::Init(_DBPath.c_str())) return 1;
 
@@ -93,13 +93,15 @@ public:
 		else if (Type == "Domain") ShaderType = ShaderType_Domain;
 		else return false;
 
+		const auto SrcPath = fs::relative(Task.SrcFilePath, _RootDir);
+
 		const std::string TaskID(Task.TaskID.CStr());
-		const auto DestPath = fs::path(_RootDir) / fs::path(Output) / (TaskID + ".bin");
+		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
 
 		CLog Log(TaskID);
 
-		const auto Code = DEMShaderCompiler::CompileShader(
-			Task.SrcFilePath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
+		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
+			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
 			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
 
 		return Code == DEM_SHADER_COMPILER_SUCCESS;
