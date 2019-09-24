@@ -1,5 +1,6 @@
 #include "DEMShaderCompilerDLL.h"
 
+/*
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -129,3 +130,4 @@ unsigned int DLLPackShaders(const char* pCommaSeparatedShaderIDs, const char* pL
 	return pPackShaders(pCommaSeparatedShaderIDs, pLibraryFilePath);
 }
 //---------------------------------------------------------------------
+*/

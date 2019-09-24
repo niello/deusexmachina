@@ -364,7 +364,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 		// is the same, because constant buffers are defined in annotations and aren't reflected in a shader blob.
 
 		CSM30ShaderMeta Meta;
-		const bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, pSrcPath, pD3DMacros);
+		const bool MetaReflected = Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, pSrcPath, pD3DMacros, pLog);
 		const bool MetaSaved = MetaReflected && Meta.Save(ObjStream);
 
 		pCode->Release();

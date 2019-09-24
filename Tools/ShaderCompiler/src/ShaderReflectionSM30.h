@@ -131,6 +131,10 @@ public:
 
 struct ID3DInclude;
 typedef struct _D3D_SHADER_MACRO D3D_SHADER_MACRO;
+namespace DEMShaderCompiler
+{
+	class ILogDelegate;
+}
 
 class CSM30ShaderMeta: public CShaderMetadata
 {
@@ -142,7 +146,7 @@ public:
 	std::vector<CSM30RsrcMeta>		Resources;
 	std::vector<CSM30SamplerMeta>	Samplers;
 
-	bool CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines);
+	bool CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize, ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines, DEMShaderCompiler::ILogDelegate* pLog);
 
 	virtual bool Load(std::istream& Stream) override;
 	virtual bool Save(std::ostream& Stream) const override;

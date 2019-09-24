@@ -1,9 +1,11 @@
 #include "ShaderReflectionSM30.h"
 
-#include <DEMD3DInclude.h>
+#include <LogDelegate.h>
 #include <D3D9ShaderReflectionAPI.h>
 #include <Utils.h>
 #include <cassert>
+#define WIN32_LEAN_AND_MEAN
+#include <d3dcompiler.h>
 
 #undef min
 #undef max
@@ -106,7 +108,7 @@ static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::istream& Strea
 //---------------------------------------------------------------------
 
 bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size, const char* pSource, size_t SourceSize,
-	ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines)
+	ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	std::vector<CD3D9ConstantDesc> D3D9Consts;
 	std::map<uint32_t, CD3D9StructDesc> D3D9Structs;
@@ -122,18 +124,18 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 	if (FAILED(hr) || !pCodeText)
 	{
-		//if (pLog) pLog->Log(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
+		if (pLog) pLog->Log(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
 		if (pCodeText) pCodeText->Release();
 		if (pErrorMsgs) pErrorMsgs->Release();
 		return false;
 	}
 	else if (pErrorMsgs)
 	{
-		//if (pLog)
-		//{
-		//	pLog->Log("Preprocessed with warnings:\n");
-		//	pLog->Log((const char*)pErrorMsgs->GetBufferPointer());
-		//}
+		if (pLog)
+		{
+			pLog->Log("Preprocessed with warnings:\n");
+			pLog->Log((const char*)pErrorMsgs->GetBufferPointer());
+		}
 		pErrorMsgs->Release();
 	}
 
