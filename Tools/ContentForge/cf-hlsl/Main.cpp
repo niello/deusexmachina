@@ -71,6 +71,7 @@ public:
 		const std::string EntryPoint = GetParam<std::string>(Task.Params, "Entry", std::string{});
 		if (EntryPoint.empty()) return false;
 
+		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
 		const int Target = GetParam<int>(Task.Params, "Target", 0);
 		const std::string Defines = GetParam<std::string>(Task.Params, "Defines", std::string{});
 		const bool Debug = GetParam<bool>(Task.Params, "Debug", false);
@@ -84,7 +85,7 @@ public:
 		else if (Type == "Domain") ShaderType = ShaderType_Domain;
 		else return false;
 
-		const auto DestPath = Task.SrcFilePath.parent_path() / Task.TaskID.CStr() / ".bin";
+		const auto DestPath = fs::path(_RootDir) / fs::path(Output) / (std::string(Task.TaskID.CStr()) + ".bin");
 
 		CLog Log;
 

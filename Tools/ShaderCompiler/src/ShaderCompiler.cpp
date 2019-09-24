@@ -121,9 +121,9 @@ static int ProcessInputSignature(const char* pInputSigDir, ID3DBlob* pCode, CSha
 			return DEM_SHADER_COMPILER_DB_ERROR;
 		}
 
-		Rec.InputSigFile.Path = (fs::path(pInputSigDir) / std::to_string(Rec.InputSigFile.ID) / ".sig").lexically_normal().generic_string();
+		Rec.InputSigFile.Path = (fs::path(pInputSigDir) / (std::to_string(Rec.InputSigFile.ID) + ".sig")).lexically_normal().generic_string();
 
-		EnsureDirectoryExists(ExtractDirName(Rec.InputSigFile.Path));
+		fs::create_directories(fs::path(Rec.InputSigFile.Path).parent_path());
 
 		{
 			std::ofstream File(Rec.InputSigFile.Path.c_str());
@@ -400,7 +400,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pSrcPath, const char* pDes
 
 		Rec.ObjFile.Path = pDestPath;
 
-		EnsureDirectoryExists(ExtractDirName(Rec.ObjFile.Path));
+		fs::create_directories(fs::path(pDestPath).parent_path());
 
 		std::ofstream File(Rec.ObjFile.Path);
 		if (!File)
