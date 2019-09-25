@@ -155,7 +155,7 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 		fs::create_directories(PathFS.parent_path());
 
 		{
-			std::ofstream File(PathFS);
+			std::ofstream File(PathFS, std::ios_base::binary);
 			if (!File || !File.write((const char*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize()))
 			{
 				pCode->Release();
@@ -441,7 +441,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 		fs::create_directories(DestPathFS.parent_path());
 
-		std::ofstream File(DestPathFS);
+		std::ofstream File(DestPathFS, std::ios_base::binary);
 		if (!File)
 		{
 			pCode->Release();
@@ -605,7 +605,7 @@ DEM_DLL_API uint32_t DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderID
 	if (!ExecuteSQLQuery(SQL.c_str(), &Result)) return 0;
 	if (!Result.GetRowCount()) return 0;
 
-	std::ofstream File(pLibraryFilePath);
+	std::ofstream File(pLibraryFilePath, std::ios_base::binary);
 	if (!File) return 0;
 
 	WriteStream<uint32_t>(File, 'SLIB');				// Magic

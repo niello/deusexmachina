@@ -20,9 +20,11 @@
 #include <Events/EventServer.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <System/SystemEvents.h>
+#include <IO/IOServer.h> //!!!DBG TMP!
 #include <IO/BinaryReader.h>
 #include <Data/RAMData.h>
 #include <Core/Factory.h>
+#include <string>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>
@@ -2744,14 +2746,29 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 			{
 				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
 			}
-			else
+			else if (pLibrary)
 			{
-				// Only in-library shaders may reference external signature file for now.
-				// Standalone shader must use its own input signature.
-				if (!pLibrary) return nullptr;
 				Data::PBuffer Buf = pLibrary->CopyRawData(InputSignatureID);
 				if (!Buf) return nullptr;
 				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(*Buf))) return nullptr;
+			}
+			else
+			{
+				//!!!DBG TMP!
+
+				std::string FileName("Data:shaders/sig/");
+				FileName += std::to_string(InputSignatureID);
+				FileName += ".sig";
+
+				Data::CBuffer Buffer;
+				IO::PStream File = IOSrv->CreateStream(FileName.c_str());
+				if (!File || !File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
+				const UPTR FileSize = static_cast<UPTR>(File->GetSize());
+				Buffer.Reserve(FileSize);
+				Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
+				if (Buffer.GetSize() != FileSize) return nullptr;
+
+				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
 			}
 		}
 	}
