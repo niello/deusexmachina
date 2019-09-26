@@ -107,14 +107,9 @@ static void MakePathes(const char* pBasePath, const char* pPath, fs::path& OutFS
 	if (OutDBPath.is_relative())
 	{
 		if (pBasePath)
-		{
-			OutFSPath = fs::weakly_canonical(fs::path(pBasePath) / OutFSPath);
-		}
+			OutFSPath = fs::path(pBasePath) / OutFSPath;
 		else
-		{
 			OutDBPath = fs::weakly_canonical(OutDBPath);
-			OutFSPath = fs::weakly_canonical(OutFSPath);
-		}
 	}
 }
 //---------------------------------------------------------------------
