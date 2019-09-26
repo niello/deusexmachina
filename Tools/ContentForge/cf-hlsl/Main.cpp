@@ -59,13 +59,6 @@ public:
 		_RootDir = "../../../content";
 	}
 
-	virtual void ProcessCommandLine(CLI::App& CLIApp) override
-	{
-		CContentForgeTool::ProcessCommandLine(CLIApp);
-		CLIApp.add_option("--db", _DBPath, "Shader DB file path");
-		CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
-	}
-
 	virtual int Init() override
 	{
 		if (_DBPath.empty())
@@ -77,6 +70,19 @@ public:
 		if (!DEMShaderCompiler::Init(_DBPath.c_str())) return 1;
 
 		return 0;
+	}
+
+	virtual bool SupportsMultithreading() const override
+	{
+		// DLL is guaranteed to be thread-safe, but we could add a check: sqlite3_threadsafe()
+		return true;
+	}
+
+	virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	{
+		CContentForgeTool::ProcessCommandLine(CLIApp);
+		CLIApp.add_option("--db", _DBPath, "Shader DB file path");
+		CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
 	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override

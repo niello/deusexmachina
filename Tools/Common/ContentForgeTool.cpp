@@ -113,9 +113,14 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 
 	// Run tasks in parallel
 
+	//???pass task count to SupportsMultithreading for perf tuning?
+	if (_Tasks.size() > 1 && SupportsMultithreading())
 	{
-		typedef std::function<void(CContentForgeTask& Task)> FJob;
+		//!!!DBG TMP!
+		for (auto& Task : _Tasks)
+			ProcessTask(Task);
 
+		typedef std::function<void(CContentForgeTask& Task)> FJob;
 		/*
 		const auto WorkerThreadCount = std::max(1u, std::thread::hardware_concurrency());
 
@@ -145,18 +150,11 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 			Worker.detach(); // forget about this thread, let it do it's job in the infinite loop that we created above
 		}
 		*/
-
+	}
+	else
+	{
 		for (auto& Task : _Tasks)
-		{
-			/*
-			FJob Job = [this](CContentForgeTask& Task)
-			{
-				ProcessTask(Task);
-			};
-			Job(Task);
-			*/
 			ProcessTask(Task);
-		}
 	}
 
 	if (_WaitKey) _getch();

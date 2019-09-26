@@ -62,6 +62,7 @@ public:
 	CContentForgeTool(const std::string& Name, const std::string& Desc, CVersion Version);
 
 	virtual int Init() { return 0; }
+	virtual bool SupportsMultithreading() const { return false; }
 	virtual void ProcessCommandLine(CLI::App& CLIApp);
 	virtual bool ProcessTask(CContentForgeTask& Task) = 0;
 
