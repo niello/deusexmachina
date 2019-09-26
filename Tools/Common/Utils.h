@@ -65,6 +65,15 @@ template<class T> void WriteStream(std::ostream& Stream, const T& Data)
 }
 //---------------------------------------------------------------------
 
+template<>
+inline void WriteStream(std::ostream& Stream, const std::string& Data)
+{
+	const auto Length = static_cast<uint16_t>(Data.size());
+	WriteStream<uint16_t>(Stream, Length);
+	Stream.write(Data.c_str(), Length);
+}
+//---------------------------------------------------------------------
+
 // trim from start (in place)
 inline void ltrim(std::string& s, const std::string& whitespace)
 {
