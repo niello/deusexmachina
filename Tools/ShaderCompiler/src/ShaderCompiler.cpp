@@ -130,7 +130,7 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 	Rec.InputSigFile.CRC = CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
 	// Try to find existing file in DB and on disk
-	if (!DB::FindSignatureRecord(Rec.InputSigFile))
+	if (!DB::FindSignatureRecord(Rec.InputSigFile, pBasePath, pInputSig->GetBufferPointer()))
 	{
 		fs::path PathDB, PathFS;
 		MakePathes(pBasePath, pInputSigDir, PathFS, PathDB);
@@ -160,9 +160,14 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 	// If file ID changed we can delete previous file if it isn't used
 	if (OldID > 0 && OldID != Rec.InputSigFile.ID)
 	{
-		std::string OldPath;
-		if (DB::ReleaseSignatureRecord(OldID, OldPath))
+		std::string OldPathStr;
+		if (DB::ReleaseSignatureRecord(OldID, OldPathStr))
+		{
+			auto OldPath = fs::path(OldPathStr);
+			if (pBasePath && OldPath.is_relative())
+				OldPath = fs::path(pBasePath) / OldPath;
 			fs::remove(OldPath);
+		}
 	}
 
 	return DEM_SHADER_COMPILER_SUCCESS;
@@ -266,21 +271,9 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 //---------------------------------------------------------------------
 
 static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath, ID3DBlob* pCode, DB::CShaderRecord& Rec,
-	CSM30ShaderMeta&& Meta, uint32_t FileSignature, bool /*Debug*/, DEMShaderCompiler::ILogDelegate* pLog)
+	CSM30ShaderMeta&& Meta, uint32_t FileSignature, DEMShaderCompiler::ILogDelegate* pLog)
 {
-	//!!!DBG TMP! try to strip from SM30 shader, was disabled!
-	// Strip unnecessary info for release builds, making object files smaller
-	{
-		ID3DBlob* pFinalCode = nullptr;
-		HRESULT hr = D3DStripShader(pCode->GetBufferPointer(), pCode->GetBufferSize(),
-			D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
-			&pFinalCode);
-		if (FAILED(hr))
-		{
-			assert(false);
-			return DEM_SHADER_COMPILER_ERROR;
-		}
-	}
+	// D3DStripShader can't be applied to sm3.0 shaders
 
 	Rec.ObjFile.BytecodeSize = pCode->GetBufferSize();
 	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pCode->GetBufferPointer(), pCode->GetBufferSize());
@@ -535,7 +528,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 			// SM30 shaders can't rely on a shader blob only, because some metadata is stored in annotations
 			CSM30ShaderMeta Meta;
 			if (Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, SrcPathFSStr.c_str(), pD3DMacros, pLog))
-				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams.FileSignature, Debug, pLog);
+				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams.FileSignature, pLog);
 			else
 				ResultCode = DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}
@@ -549,9 +542,14 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	// and delete it if no references left.
 	if (OldID > 0 && OldID != Rec.ObjFile.ID)
 	{
-		std::string OldPath;
-		if (DB::ReleaseBinaryRecord(OldID, OldPath))
+		std::string OldPathStr;
+		if (DB::ReleaseBinaryRecord(OldID, OldPathStr))
+		{
+			auto OldPath = fs::path(OldPathStr);
+			if (pBasePath && OldPath.is_relative())
+				OldPath = fs::path(pBasePath) / OldPath;
 			fs::remove(OldPath);
+		}
 	}
 
 	// Write successfull compilation results to the database

@@ -6,6 +6,9 @@
 #include <thread>
 #include <chrono>
 #include <cassert>
+#include <filesystem>
+
+namespace fs = std::filesystem;
 
 namespace DB
 {
@@ -36,15 +39,6 @@ bool InitSQL(sqlite3_stmt** ppStmt, const char* pSQL)
 	return false;
 }
 //---------------------------------------------------------------------
-
-#define INIT_SQL(Stmt, SQL) \
-	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, nullptr) != SQLITE_OK) \
-	{ \
-		CloseConnection(); \
-		assert(false && "Error compiling SQL: "##SQL); \
-		return false; \
-	}
-#define SAFE_RELEASE_SQL(Stmt) if (Stmt) { sqlite3_finalize(Stmt); Stmt = nullptr; }
 
 bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
@@ -260,6 +254,14 @@ bool ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable, const Data::CPara
 }
 //---------------------------------------------------------------------
 
+#define INIT_SQL(Stmt, SQL) \
+	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, nullptr) != SQLITE_OK) \
+	{ \
+		CloseConnection(); \
+		assert(false && "Error compiling SQL: "##SQL); \
+		return false; \
+	}
+
 // NB: pURI must be encoded in UTF-8
 bool OpenConnection(const char* pURI)
 {
@@ -365,14 +367,14 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 	if (!InitSQL(&SQLFindShader, "SELECT * FROM Shaders WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND EntryPoint=:Entry"))
 		return false;
 
-	INIT_SQL(SQLGetObjFile, "SELECT * FROM Files WHERE ID=:ID");
-	INIT_SQL(SQLFindObjFileUsage, "SELECT ID FROM Shaders WHERE BinaryFileID=:ID OR InputSigFileID=:ID");
-	INIT_SQL(SQLFindObjFile, "SELECT ID, Path FROM Files WHERE BytecodeSize=:BytecodeSize AND CRC=:CRC");
-	INIT_SQL(SQLFindObjFileByID, "SELECT * FROM Files WHERE ID=:ID");
-	INIT_SQL(SQLFindFreeObjFileRec, "SELECT ID FROM Files WHERE Size = 0 ORDER BY ID LIMIT 1");
-	INIT_SQL(SQLInsertNewObjFileRec, "INSERT INTO Files (Path, Size, BytecodeSize, CRC) VALUES (\"\", 0, 0, 0)");
-	INIT_SQL(SQLUpdateObjFileRec, "UPDATE Files SET Path=:Path, Size=:Size, BytecodeSize=:BytecodeSize, CRC=:CRC WHERE ID=:ID");
-	INIT_SQL(SQLReleaseObjFileRec, "UPDATE Files SET Size=0 WHERE ID=:ID");
+	INIT_SQL(SQLGetObjFile, "SELECT * FROM ShaderBinaries WHERE ID=:ID");
+	INIT_SQL(SQLFindObjFileUsage, "SELECT ID FROM Shaders WHERE BinaryFileID=:ID");
+	INIT_SQL(SQLFindObjFile, "SELECT ID, Path FROM ShaderBinaries WHERE BytecodeSize=:BytecodeSize AND CRC=:CRC");
+	INIT_SQL(SQLFindObjFileByID, "SELECT * FROM ShaderBinaries WHERE ID=:ID");
+	INIT_SQL(SQLFindFreeObjFileRec, "SELECT ID FROM ShaderBinaries WHERE Size = 0 ORDER BY ID LIMIT 1");
+	INIT_SQL(SQLInsertNewObjFileRec, "INSERT INTO ShaderBinaries (Path, Size, BytecodeSize, CRC) VALUES (\"\", 0, 0, 0)");
+	INIT_SQL(SQLUpdateObjFileRec, "UPDATE ShaderBinaries SET Path=:Path, Size=:Size, BytecodeSize=:BytecodeSize, CRC=:CRC WHERE ID=:ID");
+	INIT_SQL(SQLReleaseObjFileRec, "UPDATE ShaderBinaries SET Size=0 WHERE ID=:ID");
 	INIT_SQL(SQLInsertNewShaderRec, "INSERT INTO Shaders (SrcPath) VALUES (\"\")");
 	INIT_SQL(SQLUpdateShaderRec,
 		"UPDATE Shaders SET "
@@ -395,6 +397,8 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 	return true;
 }
 //---------------------------------------------------------------------
+
+#define SAFE_RELEASE_SQL(Stmt) if (Stmt) { sqlite3_finalize(Stmt); Stmt = nullptr; }
 
 void CloseConnection()
 {
@@ -544,7 +548,17 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 	Params.emplace(CStrID("ShaderID"), (int)InOut.ID);
 	if (!ExecuteStatement(SQLClearDefines, nullptr, &Params)) return false;
 
-	// TODO: check if batch insert is better
+	// TODO: check if batch is better
+	/*
+	DELETE FROM Macros WHERE ShaderID = :ShaderID;
+
+	INSERT INTO table1 (column1,column2 ,..)
+	VALUES 
+	   (value1,value2 ,...),
+	   (value1,value2 ,...),
+		...
+	   (value1,value2 ,...);	
+	*/
 	for (const auto& Macro : InOut.Defines)
 	{
 		if (Macro.first.empty()) continue;
@@ -557,90 +571,168 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 }
 //---------------------------------------------------------------------
 
-bool FindSignatureRecord(CSignatureRecord& InOut)
+bool FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const void* pBinaryData)
 {
-	assert(false);
-	return false;
+	InOut.ID = 0;
+	InOut.Folder.clear();
+
+	if (!InOut.Size) return false; // Not found
+
+	Data::CParams Params;
+	Params.emplace(CStrID("Size"), (int)InOut.Size);
+	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+
+	CValueTable Result;
+	if (!ExecuteSQLQuery("SELECT ID, Folder FROM InputSignatures WHERE Size=:Size AND CRC=:CRC", &Result, &Params)) return false;
+
+	const int Col_ID = Result.GetColumnIndex(CStrID("ID"));
+	const int Col_Folder = Result.GetColumnIndex(CStrID("Folder"));
+	for (size_t i = 0; i < Result.GetRowCount(); ++i)
+	{
+		const int ID = Result.Get<int>(Col_ID, i);
+		const std::string Folder = Result.Get<std::string>(Col_Folder, i);
+
+		// If binary data is passed in, compare bytewise
+		if (pBinaryData)
+		{
+			auto Path = fs::path(Folder) / (std::to_string(ID) + ".sig");
+			if (pBasePath) Path = fs::path(pBasePath) / Path;
+
+			std::vector<char> Buffer;
+			if (!ReadAllFile(Path.string().c_str(), Buffer)) continue;
+			if (Buffer.size() != InOut.Size) continue;
+			if (memcmp(pBinaryData, Buffer.data(), Buffer.size()) != 0) continue;
+		}
+
+		InOut.ID = ID;
+		InOut.Folder = std::move(Folder);
+		return true; // Found
+	}
+
+	return false; // Not found
 }
 //---------------------------------------------------------------------
 
 bool WriteSignatureRecord(CSignatureRecord& InOut)
 {
-	assert(false);
-	return false;
+	if (InOut.Folder.empty() || !InOut.Size) return false;
+
+	if (!InOut.ID)
+	{
+		// If new record, try to find free ID
+		CValueTable Result;
+		if (!ExecuteSQLQuery("SELECT ID FROM InputSignatures WHERE Size = 0 ORDER BY ID LIMIT 1", &Result)) return false;
+		if (Result.GetRowCount())
+			InOut.ID = Result.Get<int>(CStrID("ID"), 0);
+	}
+
+	Data::CParams Params;
+	Params.emplace(CStrID("Folder"), InOut.Folder);
+	Params.emplace(CStrID("Size"), (int)InOut.Size);
+	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+
+	if (!InOut.ID)
+	{
+		// No free ID, insert a new line
+		if (!ExecuteSQLQuery("INSERT INTO InputSignatures (Folder, Size, CRC) VALUES (:Folder, :Size, :CRC)", nullptr, &Params)) return false;
+		InOut.ID = (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
+		return InOut.ID != 0;
+	}
+	else
+	{
+		// We have ID, update existing row
+		Params.emplace(CStrID("ID"), (int)InOut.ID);
+		return ExecuteSQLQuery("UPDATE InputSignatures SET Folder=:Folder, Size=:Size, CRC=:CRC WHERE ID=:ID", nullptr, &Params);
+	}
 }
 //---------------------------------------------------------------------
 
 bool ReleaseSignatureRecord(uint32_t ID, std::string& OutPath)
 {
-	assert(false);
-	return false;
+	if (ID == 0) return false;
+
+	Data::CParams Params;
+	Params.emplace(CStrID("ID"), (int)ID);
+
+	CValueTable Result;
+	if (!ExecuteSQLQuery("SELECT ID FROM Shaders WHERE InputSigFileID=:ID", &Result, &Params)) return false;
+
+	// References found, don't delete file
+	if (Result.GetRowCount()) return false;
+
+	// Get file path to delete
+	Result.Clear();
+	if (!ExecuteSQLQuery("SELECT Folder FROM InputSignatures WHERE ID=:ID", &Result, &Params)) return false;
+
+	const auto& Folder = Result.Get<std::string>(CStrID("Folder"), 0);
+	OutPath = (fs::path(Folder) / (std::to_string(ID) + ".sig")).string();
+
+	return ExecuteSQLQuery("UPDATE InputSignatures SET Size=0 WHERE ID=:ID", nullptr, &Params);
 }
 //---------------------------------------------------------------------
 
 bool FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, EObjCompareMode Mode)
 {
-	if (InOut.BytecodeSize)
-	{
-		Data::CParams Params;
-		//Params.emplace(CStrID("Size"), (int)InOut.Size);
-		Params.emplace(CStrID("BytecodeSize"), (int)InOut.BytecodeSize);
-		Params.emplace(CStrID("CRC"), (int)InOut.CRC);
-
-		CValueTable Result;
-		if (!ExecuteStatement(SQLFindObjFile, &Result, &Params)) return false;
-
-		int Col_ID = Result.GetColumnIndex(CStrID("ID"));
-		int Col_Path = Result.GetColumnIndex(CStrID("Path"));
-		for (size_t i = 0; i < Result.GetRowCount(); ++i)
-		{
-			std::string Path = Result.Get<std::string>(Col_Path, i);
-
-			if (pBinaryData)
-			{
-				std::ifstream File(Path);
-				if (!File) continue;
-
-				File.seekg(0, std::ios_base::end);
-				size_t FileSize = static_cast<size_t>(File.tellg());
-				assert(FileSize == File.tellg());
-
-				if (Mode == EObjCompareMode::ShaderAndMetadata)
-				{
-					uint32_t Offset = USM ? 16 : 12;
-					if (!File.seekg(Offset, std::ios_base::beg)) continue;
-					FileSize -= Offset;
-				}
-				else if (Mode == EObjCompareMode::Shader)
-				{
-					uint32_t BytecodeOffset;
-					if (!File.seekg(4, std::ios_base::beg)) continue;
-					if (!File.read((char*)&BytecodeOffset, sizeof(BytecodeOffset))) continue;
-					if (!File.seekg(BytecodeOffset, std::ios_base::beg)) continue;
-					FileSize -= BytecodeOffset;
-					if (FileSize != InOut.BytecodeSize) continue;
-				}
-				else
-				{
-					File.seekg(0, std::ios_base::beg);
-				}
-
-				if (!FileSize) continue;
-
-				std::unique_ptr<char[]> Buffer(new char[FileSize]);
-				if (!File.read(Buffer.get(), (size_t)FileSize)) continue;
-
-				if (memcmp(pBinaryData, Buffer.get(), (size_t)FileSize) != 0) continue;
-			}
-
-			InOut.ID = Result.Get<int>(Col_ID, i);
-			InOut.Path = std::move(Path);
-			return true; // Found
-		}
-	}
-
 	InOut.ID = 0;
 	InOut.Path.clear();
+
+	if (!InOut.BytecodeSize) return false; // Not found
+
+	Data::CParams Params;
+	Params.emplace(CStrID("BytecodeSize"), (int)InOut.BytecodeSize);
+	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+
+	CValueTable Result;
+	if (!ExecuteStatement(SQLFindObjFile, &Result, &Params)) return false;
+
+	const int Col_ID = Result.GetColumnIndex(CStrID("ID"));
+	const int Col_Path = Result.GetColumnIndex(CStrID("Path"));
+	for (size_t i = 0; i < Result.GetRowCount(); ++i)
+	{
+		std::string Path = Result.Get<std::string>(Col_Path, i);
+
+		// If binary data is passed in, compare bytewise
+		if (pBinaryData)
+		{
+			std::ifstream File(Path);
+			if (!File) continue;
+
+			File.seekg(0, std::ios_base::end);
+			size_t FileSize = static_cast<size_t>(File.tellg());
+			assert(FileSize == File.tellg());
+
+			if (Mode == EObjCompareMode::ShaderAndMetadata)
+			{
+				uint32_t Offset = USM ? 16 : 12;
+				if (!File.seekg(Offset, std::ios_base::beg)) continue;
+				FileSize -= Offset;
+			}
+			else if (Mode == EObjCompareMode::Shader)
+			{
+				uint32_t BytecodeOffset;
+				if (!File.seekg(4, std::ios_base::beg)) continue;
+				if (!File.read((char*)&BytecodeOffset, sizeof(BytecodeOffset))) continue;
+				if (!File.seekg(BytecodeOffset, std::ios_base::beg)) continue;
+				FileSize -= BytecodeOffset;
+				if (FileSize != InOut.BytecodeSize) continue;
+			}
+			else
+			{
+				File.seekg(0, std::ios_base::beg);
+			}
+
+			if (!FileSize) continue;
+
+			std::unique_ptr<char[]> Buffer(new char[FileSize]);
+			if (!File.read(Buffer.get(), (size_t)FileSize)) continue;
+
+			if (memcmp(pBinaryData, Buffer.get(), (size_t)FileSize) != 0) continue;
+		}
+
+		InOut.ID = Result.Get<int>(Col_ID, i);
+		InOut.Path = std::move(Path);
+		return true; // Found
+	}
 
 	return false; // Not found
 }
@@ -648,15 +740,58 @@ bool FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, E
 
 bool WriteBinaryRecord(CBinaryRecord& InOut)
 {
-	assert(false);
-	return false;
+	if (InOut.Path.empty() || !InOut.Size) return false;
+
+	if (!InOut.ID)
+	{
+		// If new record, try to find free ID
+		CValueTable Result;
+		if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) return false;
+		if (Result.GetRowCount())
+			InOut.ID = Result.Get<int>(CStrID("ID"), 0);
+	}
+
+	Data::CParams Params;
+	Params.emplace(CStrID("Path"), InOut.Path);
+	Params.emplace(CStrID("Size"), (int)InOut.Size);
+	Params.emplace(CStrID("BytecodeSize"), (int)InOut.BytecodeSize);
+	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+
+	if (!InOut.ID)
+	{
+		// No free ID, insert a new line
+		if (!ExecuteSQLQuery("INSERT INTO ShaderBinaries (Path, Size, BytecodeSize, CRC) VALUES (:Path, :Size, :BytecodeSize, :CRC)", nullptr, &Params)) return false;
+		InOut.ID = (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
+		return InOut.ID != 0;
+	}
+	else
+	{
+		// We have ID, update existing row
+		Params.emplace(CStrID("ID"), (int)InOut.ID);
+		return ExecuteStatement(SQLUpdateObjFileRec, nullptr, &Params);
+	}
 }
 //---------------------------------------------------------------------
 
 bool ReleaseBinaryRecord(uint32_t ID, std::string& OutPath)
 {
-	assert(false);
-	return false;
+	if (ID == 0) return false;
+
+	Data::CParams Params;
+	Params.emplace(CStrID("ID"), (int)ID);
+
+	CValueTable Result;
+	if (!ExecuteStatement(SQLFindObjFileUsage, &Result, &Params)) return false;
+
+	// References found, don't delete file
+	if (Result.GetRowCount()) return false;
+
+	// Get file path to delete
+	Result.Clear();
+	if (!ExecuteStatement(SQLGetObjFile, &Result, &Params)) return false;
+	OutPath = Result.Get<std::string>(CStrID("Path"), 0);
+
+	return ExecuteStatement(SQLReleaseObjFileRec, nullptr, &Params);
 }
 //---------------------------------------------------------------------
 
@@ -681,62 +816,6 @@ bool FindObjFileByID(uint32_t ID, CBinaryRecord& Out)
 	Out.CRC = Result.Get<int>(Col_CRC, 0);
 
 	return true; // Found
-}
-//---------------------------------------------------------------------
-
-uint32_t CreateObjFileRecord()
-{
-	CValueTable Result;
-	if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) return false;
-
-	if (Result.GetRowCount())
-	{
-		return Result.Get<int>(CStrID("ID"), 0);
-	}
-	else
-	{
-		if (!ExecuteStatement(SQLInsertNewObjFileRec)) return false;
-		return (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
-	}
-}
-//---------------------------------------------------------------------
-
-bool UpdateObjFileRecord(const CBinaryRecord& Record)
-{
-	if (!Record.ID || Record.Path.empty()) return false;
-
-	Data::CParams Params;
-	Params.emplace(CStrID("Path"), Record.Path);
-	Params.emplace(CStrID("Size"), (int)Record.Size);
-	Params.emplace(CStrID("BytecodeSize"), (int)Record.BytecodeSize);
-	Params.emplace(CStrID("CRC"), (int)Record.CRC);
-	Params.emplace(CStrID("ID"), (int)Record.ID);
-
-	if (!ExecuteStatement(SQLUpdateObjFileRec, nullptr, &Params)) return false;
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool ReleaseObjFile(uint32_t ID, std::string& OutPath)
-{
-	if (ID == 0) return false;
-
-	CValueTable Result;
-	if (!ExecuteStatement(SQLFindObjFileUsage, &Result)) return false;
-
-	// References found, don't delete file
-	if (Result.GetRowCount()) return false;
-
-	Data::CParams Params;
-	Params.emplace(CStrID("ID"), (int)ID);
-
-	// Get file path to delete
-	Result.Clear();
-	if (!ExecuteStatement(SQLGetObjFile, &Result, &Params)) return false;
-	OutPath = Result.Get<std::string>(CStrID("Path"), 0);
-
-	return ExecuteStatement(SQLReleaseObjFileRec, nullptr, &Params);
 }
 //---------------------------------------------------------------------
 

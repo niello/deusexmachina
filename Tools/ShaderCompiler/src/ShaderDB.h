@@ -66,7 +66,7 @@ void		CloseConnection();
 bool		FindShaderRecord(CShaderRecord& InOut);
 bool		WriteShaderRecord(CShaderRecord& InOut);
 
-bool		FindSignatureRecord(CSignatureRecord& InOut);
+bool		FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const void* pBinaryData);
 bool		WriteSignatureRecord(CSignatureRecord& InOut);
 bool		ReleaseSignatureRecord(uint32_t ID, std::string& OutPath);
 
@@ -75,9 +75,7 @@ bool		WriteBinaryRecord(CBinaryRecord& InOut);
 bool		ReleaseBinaryRecord(uint32_t ID, std::string& OutPath);
 
 bool		FindObjFileByID(uint32_t ID, CBinaryRecord& Out);
-uint32_t	CreateObjFileRecord();
-bool		UpdateObjFileRecord(const CBinaryRecord& Record);
-bool		ReleaseObjFile(uint32_t ID, std::string& OutPath);
+
 bool		ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable = nullptr, const Data::CParams* pParams = nullptr);
 
 }
