@@ -3,6 +3,7 @@
 #include <Utils.h>
 #include <CLI11.hpp>
 #include <thread>
+#include <mutex>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -17,24 +18,35 @@ class CLog : public DEMShaderCompiler::ILogDelegate
 {
 private:
 
-	std::string Prefix;
+	ESeverity _Severity;
+	std::string _Prefix;
+	std::ostringstream _Stream; // Cache logs in a separate stream for thread safety
+	char _LineEnd = '\n';
 
 public:
 
-	CLog(const std::string& TaskID)
+	CLog(const std::string& TaskID, ESeverity Severity)
+		: _Severity(Severity)
 	{
-		Prefix = "[DLL " + TaskID + "] ";
+		_Prefix = "[DLL " + TaskID + "] ";
+		_LineEnd = _Stream.widen('\n');
 	}
 
-	virtual void Log(const char* pMessage) override
+	std::ostringstream& GetStream() { return _Stream; }
+
+	virtual void Log(ESeverity Level, const char* pMessage) override
 	{
-		// FIXME: not thread safe, just for testing
-		std::cout << Prefix << pMessage << std::endl;
+		if (_Severity >= Level)
+			_Stream << _Prefix << pMessage << _LineEnd;
 	}
 };
 
 class CHLSLTool : public CContentForgeTool
 {
+private:
+
+	std::mutex COutMutex;
+
 public:
 
 	std::string _DBPath;
@@ -69,13 +81,6 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		if (_LogVerbosity >= EVerbosity::Debug)
-		{
-			std::cout << "Source: " << Task.SrcFilePath.generic_string() << std::endl;
-			std::cout << "Task: " << Task.TaskID.CStr() << std::endl;
-			std::cout << "Thread: " << std::this_thread::get_id() << std::endl;
-		}
-
 		const std::string EntryPoint = GetParam<std::string>(Task.Params, "Entry", std::string{});
 		if (EntryPoint.empty()) return false;
 
@@ -98,11 +103,27 @@ public:
 		const std::string TaskID(Task.TaskID.CStr());
 		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
 
-		CLog Log(TaskID);
+		CLog Log(TaskID, static_cast<DEMShaderCompiler::ILogDelegate::ESeverity>(_LogVerbosity));
+
+		if (_LogVerbosity >= EVerbosity::Debug)
+		{
+			const auto LineEnd = Log.GetStream().widen('\n');
+			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
+			Log.GetStream() << "Task: " << Task.TaskID.CStr() << LineEnd;
+			Log.GetStream() << "Thread: " << std::this_thread::get_id() << LineEnd;
+		}
 
 		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
 			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
+
+		const auto LoggedString = Log.GetStream().str();
+		if (!LoggedString.empty())
+		{
+			// Flush cached logs to stdout
+			std::lock_guard<std::mutex> Lock(COutMutex);
+			std::cout << LoggedString;
+		}
 
 		return Code == DEM_SHADER_COMPILER_SUCCESS;
 	}

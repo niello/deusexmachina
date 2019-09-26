@@ -296,7 +296,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		CurrWriteTime &&
 		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
-		if (pLog) pLog->Log("No recompilation required, task skipped");
+		if (pLog) pLog->LogInfo("No recompilation required, task skipped");
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 
@@ -341,7 +341,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 	if (FAILED(hr) || !pCode)
 	{
-		if (pLog) pLog->Log(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
+		if (pLog) pLog->LogError(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
 		if (pCode) pCode->Release();
 		if (pErrorMsgs) pErrorMsgs->Release();
 		return DEM_SHADER_COMPILER_COMPILE_ERROR;
@@ -350,8 +350,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	{
 		if (pLog)
 		{
-			pLog->Log("Compiled with warnings:\n");
-			pLog->Log((const char*)pErrorMsgs->GetBufferPointer());
+			pLog->LogWarning("Compiled with warnings:\n");
+			pLog->LogWarning((const char*)pErrorMsgs->GetBufferPointer());
 		}
 		pErrorMsgs->Release();
 	}
@@ -382,7 +382,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 			&pFinalCode);
 		if (FAILED(hr))
 		{
-			if (pLog) pLog->Log("\nD3DStripShader() failed\n");
+			if (pLog) pLog->LogError("\nD3DStripShader() failed\n");
 			pCode->Release();
 			return DEM_SHADER_COMPILER_ERROR;
 		}

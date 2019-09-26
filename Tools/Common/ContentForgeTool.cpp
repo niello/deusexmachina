@@ -51,10 +51,12 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 		if (Code != 0) return Code;
 	}
 
+	const auto LineEnd = std::cout.widen('\n');
+
 	if (_LogVerbosity >= EVerbosity::Info)
 		std::cout << _Name << " v" << static_cast<uint32_t>(_Version.Major) <<
 			'.' << static_cast<uint32_t>(_Version.Minor) <<
-			'.' << static_cast<uint32_t>(_Version.Patch) << std::endl;
+			'.' << static_cast<uint32_t>(_Version.Patch) << LineEnd;
 
 	// Build a list of conversion tasks from source metafiles
 
@@ -76,7 +78,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 			if (!fs::exists(Status))
 			{
 				if (_LogVerbosity >= EVerbosity::Warnings)
-					std::cout << FullSrcPath.generic_string() << " not found, skipped" << std::endl;
+					std::cout << FullSrcPath.generic_string() << " not found, skipped" << LineEnd;
 				continue;
 			}
 
@@ -99,7 +101,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 					if (!fs::exists(FullSrcPath))
 					{
 						if (_LogVerbosity >= EVerbosity::Warnings)
-							std::cout << FullSrcPath.generic_string() << " not found, skipped" << std::endl;
+							std::cout << FullSrcPath.generic_string() << " not found, skipped" << LineEnd;
 						continue;
 					}
 				}
@@ -165,6 +167,8 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 
 void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data::CHRDParser& Parser, std::unordered_set<std::string>& Processed)
 {
+	const auto LineEnd = std::cout.widen('\n');
+
 	// Detect already processed metafiles
 	{
 		std::string PathStr = fs::absolute(Path).generic_string();
@@ -174,7 +178,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 	}
 
 	if (_LogVerbosity >= EVerbosity::Debug)
-		std::cout << "Processing metafile: " << Path.generic_string() << std::endl;
+		std::cout << "Processing metafile: " << Path.generic_string() << LineEnd;
 
 	// Read metafile
 	Data::CParams Meta;
@@ -183,7 +187,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 		if (!ReadAllFile(Path.string().c_str(), In))
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << Path.generic_string() << " reading error" << std::endl;
+				std::cout << Path.generic_string() << " reading error" << LineEnd;
 			return;
 		}
 
@@ -196,7 +200,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 		if (!Param.second.IsA<Data::CParams>())
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << Path.generic_string() << " must contain only per-resource sections" << std::endl;
+				std::cout << Path.generic_string() << " must contain only per-resource sections" << LineEnd;
 			return;
 		}
 	}
@@ -210,7 +214,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 	if (!ReadAllFile(SrcFilePath.string().c_str(), *SrcFileData))
 	{
 		if (_LogVerbosity >= EVerbosity::Errors)
-			std::cout << SrcFilePath.generic_string() << " reading error" << std::endl;
+			std::cout << SrcFilePath.generic_string() << " reading error" << LineEnd;
 		return;
 	}
 

@@ -124,7 +124,7 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 
 	if (FAILED(hr) || !pCodeText)
 	{
-		if (pLog) pLog->Log(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
+		if (pLog) pLog->LogError(pErrorMsgs ? (const char*)pErrorMsgs->GetBufferPointer() : "<No D3D error message>");
 		if (pCodeText) pCodeText->Release();
 		if (pErrorMsgs) pErrorMsgs->Release();
 		return false;
@@ -133,8 +133,8 @@ bool CSM30ShaderMeta::CollectFromBinaryAndSource(const void* pData, size_t Size,
 	{
 		if (pLog)
 		{
-			pLog->Log("Preprocessed with warnings:\n");
-			pLog->Log((const char*)pErrorMsgs->GetBufferPointer());
+			pLog->LogWarning("Preprocessed with warnings:\n");
+			pLog->LogWarning((const char*)pErrorMsgs->GetBufferPointer());
 		}
 		pErrorMsgs->Release();
 	}
