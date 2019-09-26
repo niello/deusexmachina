@@ -10,7 +10,10 @@ namespace Data
 	typedef std::map<class CStringID, class CData> CParams;
 }
 
-struct CSrcFileData
+namespace DB
+{
+
+struct CSourceRecord
 {
 	uint32_t	ID;
 	uint64_t	Size;
@@ -18,7 +21,7 @@ struct CSrcFileData
 	std::string	Path;
 };
 
-struct CObjFileData
+struct CBinaryRecord
 {
 	uint32_t	ID;
 	uint64_t	Size;
@@ -27,35 +30,54 @@ struct CObjFileData
 	std::string	Path;
 };
 
-struct CShaderDBRec
+struct CSignatureRecord
 {
-	uint32_t					ID = 0;
-	uint32_t					ShaderType;
-	uint32_t					Target = 0;
-	uint32_t					CompilerVersion;
-	uint32_t					CompilerFlags;
-	std::string					EntryPoint;
-	CSrcFileData				SrcFile;
-	uint64_t					SrcModifyTimestamp;
-	CObjFileData				ObjFile;
-	CObjFileData				InputSigFile;
+	uint32_t	ID;
+	uint64_t	Size;
+	uint32_t	CRC;
+	std::string	Folder; // Signature file name is based on ID and can be restored from ID+Folder
+};
+
+struct CShaderRecord
+{
+	uint32_t			ID = 0;
+	uint32_t			ShaderType;
+	uint32_t			Target = 0;
+	uint32_t			CompilerVersion;
+	uint32_t			CompilerFlags;
+	std::string			EntryPoint;
+	CSourceRecord		SrcFile;
+	uint64_t			SrcModifyTimestamp;
+	CBinaryRecord		ObjFile;
+	CSignatureRecord	InputSigFile;
 	std::map<std::string, std::string> Defines;
 };
 
-enum EObjCompareMode
+enum class EObjCompareMode
 {
-	Cmp_All,
-	Cmp_ShaderAndMetadata,
-	Cmp_Shader
+	All,
+	ShaderAndMetadata,
+	Shader
 };
 
-bool		OpenDB(const char* pURI);
-void		CloseDB();
-bool		FindShaderRec(CShaderDBRec& InOut);
-bool		WriteShaderRec(CShaderDBRec& InOut);
-bool		FindObjFile(CObjFileData& InOut, const void* pBinaryData, uint32_t Target, EObjCompareMode Mode);
-bool		FindObjFileByID(uint32_t ID, CObjFileData& Out);
+bool		OpenConnection(const char* pURI);
+void		CloseConnection();
+
+bool		FindShaderRecord(CShaderRecord& InOut);
+bool		WriteShaderRecord(CShaderRecord& InOut);
+
+bool		FindSignatureRecord(CSignatureRecord& InOut);
+bool		WriteSignatureRecord(CSignatureRecord& InOut);
+bool		ReleaseSignatureRecord(uint32_t ID, std::string& OutPath);
+
+bool		FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, EObjCompareMode Mode);
+bool		WriteBinaryRecord(CBinaryRecord& InOut);
+bool		ReleaseBinaryRecord(uint32_t ID, std::string& OutPath);
+
+bool		FindObjFileByID(uint32_t ID, CBinaryRecord& Out);
 uint32_t	CreateObjFileRecord();
-bool		UpdateObjFileRecord(const CObjFileData& Record);
+bool		UpdateObjFileRecord(const CBinaryRecord& Record);
 bool		ReleaseObjFile(uint32_t ID, std::string& OutPath);
 bool		ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable = nullptr, const Data::CParams* pParams = nullptr);
+
+}

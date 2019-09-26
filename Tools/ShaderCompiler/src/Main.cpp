@@ -9,7 +9,7 @@ BOOL WINAPI DllMain(_In_ HINSTANCE hinstDLL, _In_ DWORD fdwReason, _In_ LPVOID l
 	if (fdwReason == DLL_PROCESS_DETACH)
 	{
 		// DLL is being unloaded for the current process
-		CloseDB();
+		DB::CloseConnection();
 	}
 
 	return TRUE;

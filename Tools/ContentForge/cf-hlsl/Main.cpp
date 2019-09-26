@@ -74,8 +74,11 @@ public:
 
 	virtual bool SupportsMultithreading() const override
 	{
+		// FIXME: DLL is not thread-safe now, there are shared sqlite3_stmt objects
+		return false;
+
 		// DLL is guaranteed to be thread-safe, but we could add a check: sqlite3_threadsafe()
-		return true;
+		//return true;
 	}
 
 	virtual void ProcessCommandLine(CLI::App& CLIApp) override
