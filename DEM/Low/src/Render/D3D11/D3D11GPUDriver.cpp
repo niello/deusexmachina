@@ -2756,7 +2756,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 			{
 				//!!!DBG TMP!
 
-				std::string FileName("Data:shaders/sig/");
+				std::string FileName("Data:shaders/d3d_usm/sig/");
 				FileName += std::to_string(InputSignatureID);
 				FileName += ".sig";
 

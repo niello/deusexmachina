@@ -185,7 +185,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 	Data::CParams Meta;
 	{
 		std::vector<char> In;
-		if (!ReadAllFile(Path.string().c_str(), In))
+		if (!ReadAllFile(Path.string().c_str(), In, false))
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
 				std::cout << Path.generic_string() << " reading error" << LineEnd;

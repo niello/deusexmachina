@@ -8,7 +8,7 @@ namespace ParamsUtils
 bool LoadParamsFromHRD(const char* pFileName, Data::CParams& OutParams)
 {
 	std::vector<char> In;
-	if (!ReadAllFile(pFileName, In)) return false;
+	if (!ReadAllFile(pFileName, In, false)) return false;
 
 	Data::CHRDParser Parser;
 	return Parser.ParseBuffer(In.data(), In.size(), OutParams);

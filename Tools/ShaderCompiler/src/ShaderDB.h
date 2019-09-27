@@ -53,13 +53,6 @@ struct CShaderRecord
 	std::map<std::string, std::string> Defines;
 };
 
-enum class EObjCompareMode
-{
-	All,
-	ShaderAndMetadata,
-	Shader
-};
-
 bool		OpenConnection(const char* pURI);
 void		CloseConnection();
 
@@ -70,7 +63,7 @@ bool		FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const 
 bool		WriteSignatureRecord(CSignatureRecord& InOut);
 bool		ReleaseSignatureRecord(uint32_t ID, std::string& OutPath);
 
-bool		FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, EObjCompareMode Mode);
+bool		FindBinaryRecord(CBinaryRecord& InOut, const char* pBasePath, const void* pBinaryData, bool USM);
 bool		WriteBinaryRecord(CBinaryRecord& InOut);
 bool		ReleaseBinaryRecord(uint32_t ID, std::string& OutPath);
 

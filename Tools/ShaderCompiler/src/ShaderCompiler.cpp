@@ -124,8 +124,6 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
 
-	const uint32_t OldID = Rec.InputSigFile.ID;
-
 	Rec.InputSigFile.Size = pInputSig->GetBufferSize();
 	Rec.InputSigFile.CRC = CalcCRC((uint8_t*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize());
 
@@ -156,19 +154,6 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 	}
 
 	pInputSig->Release();
-
-	// If file ID changed we can delete previous file if it isn't used
-	if (OldID > 0 && OldID != Rec.InputSigFile.ID)
-	{
-		std::string OldPathStr;
-		if (DB::ReleaseSignatureRecord(OldID, OldPathStr))
-		{
-			auto OldPath = fs::path(OldPathStr);
-			if (pBasePath && OldPath.is_relative())
-				OldPath = fs::path(pBasePath) / OldPath;
-			fs::remove(OldPath);
-		}
-	}
 
 	return DEM_SHADER_COMPILER_SUCCESS;
 }
@@ -203,7 +188,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 
 	// If object file is found, no additional actions are needed.
 	// Compare only a shader blob for USM shaders, metadata completely depends on it.
-	if (DB::FindBinaryRecord(Rec.ObjFile, pFinalCode->GetBufferPointer(), true, DB::EObjCompareMode::Shader))
+	if (DB::FindBinaryRecord(Rec.ObjFile, pBasePath, pFinalCode->GetBufferPointer(), true))
 	{
 		pFinalCode->Release();
 		return DEM_SHADER_COMPILER_SUCCESS;
@@ -288,7 +273,7 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	ObjStream.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
 
 	// If object file is found, no additional actions are needed
-	if (DB::FindBinaryRecord(Rec.ObjFile, ObjStream.str().c_str(), false, DB::EObjCompareMode::ShaderAndMetadata))
+	if (DB::FindBinaryRecord(Rec.ObjFile, pBasePath, ObjStream.str().c_str(), false))
 		return DEM_SHADER_COMPILER_SUCCESS;
 
 	fs::path DestPathDB, DestPathFS;
@@ -501,6 +486,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	// For vertex and geometry shaders, store input signature in a separate binary file.
 	// It saves RAM since input signatures must reside in it at the runtime.
 
+	const uint32_t OldSignatureID = Rec.InputSigFile.ID;
+
 	if (HasInputSignature)
 	{
 		const auto ResultCode = ProcessInputSignature(pBasePath, pInputSigDir, pCode, Rec);
@@ -514,7 +501,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 	// Process shader binary
 
-	const uint32_t OldID = Rec.ObjFile.ID;
+	const uint32_t OldBinaryID = Rec.ObjFile.ID;
 
 	{
 		int ResultCode;
@@ -538,12 +525,16 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		if (ResultCode != DEM_SHADER_COMPILER_SUCCESS) return ResultCode;
 	}
 
-	// If object file changed, remove reference to the old one
-	// and delete it if no references left.
-	if (OldID > 0 && OldID != Rec.ObjFile.ID)
+	// Write successfull compilation results to the database
+
+	if (!DB::WriteShaderRecord(Rec)) return DEM_SHADER_COMPILER_DB_ERROR;
+
+	// If resulting file IDs changed, the old ones might become unused and can be deleted
+
+	if (OldSignatureID > 0 && OldSignatureID != Rec.InputSigFile.ID)
 	{
 		std::string OldPathStr;
-		if (DB::ReleaseBinaryRecord(OldID, OldPathStr))
+		if (DB::ReleaseSignatureRecord(OldSignatureID, OldPathStr))
 		{
 			auto OldPath = fs::path(OldPathStr);
 			if (pBasePath && OldPath.is_relative())
@@ -552,9 +543,17 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		}
 	}
 
-	// Write successfull compilation results to the database
-
-	if (!DB::WriteShaderRecord(Rec)) return DEM_SHADER_COMPILER_DB_ERROR;
+	if (OldBinaryID > 0 && OldBinaryID != Rec.ObjFile.ID)
+	{
+		std::string OldPathStr;
+		if (DB::ReleaseBinaryRecord(OldBinaryID, OldPathStr))
+		{
+			auto OldPath = fs::path(OldPathStr);
+			if (pBasePath && OldPath.is_relative())
+				OldPath = fs::path(pBasePath) / OldPath;
+			fs::remove(OldPath);
+		}
+	}
 
 	return DEM_SHADER_COMPILER_SUCCESS;
 }

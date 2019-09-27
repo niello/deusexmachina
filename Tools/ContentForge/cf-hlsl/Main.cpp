@@ -65,7 +65,7 @@ public:
 			_DBPath = (fs::path(_RootDir) / fs::path("src/shaders/shaders.db3")).string();
 
 		if (_InputSignaturesDir.empty())
-			_InputSignaturesDir = "shaders/sig";
+			_InputSignaturesDir = "shaders/d3d_usm/sig";
 
 		if (!DEMShaderCompiler::Init(_DBPath.c_str())) return 1;
 

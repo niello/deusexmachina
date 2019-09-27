@@ -561,7 +561,8 @@ bool FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const v
 		if (pBinaryData)
 		{
 			auto Path = fs::path(Folder) / (std::to_string(ID) + ".sig");
-			if (pBasePath) Path = fs::path(pBasePath) / Path;
+			if (pBasePath && Path.is_relative())
+				Path = fs::path(pBasePath) / Path;
 
 			std::vector<char> Buffer;
 			if (!ReadAllFile(Path.string().c_str(), Buffer)) continue;
@@ -640,7 +641,7 @@ bool ReleaseSignatureRecord(uint32_t ID, std::string& OutPath)
 }
 //---------------------------------------------------------------------
 
-bool FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, EObjCompareMode Mode)
+bool FindBinaryRecord(CBinaryRecord& InOut, const char* pBasePath, const void* pBinaryData, bool USM)
 {
 	InOut.ID = 0;
 	InOut.Path.clear();
@@ -658,48 +659,41 @@ bool FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, E
 	const int Col_Path = Result.GetColumnIndex(CStrID("Path"));
 	for (size_t i = 0; i < Result.GetRowCount(); ++i)
 	{
-		std::string Path = Result.Get<std::string>(Col_Path, i);
+		std::string PathStr = Result.Get<std::string>(Col_Path, i);
 
 		// If binary data is passed in, compare bytewise
 		if (pBinaryData)
 		{
-			std::ifstream File(Path);
-			if (!File) continue;
+			auto Path = fs::path(PathStr);
+			if (pBasePath && Path.is_relative())
+				Path = fs::path(pBasePath) / Path;
 
-			File.seekg(0, std::ios_base::end);
-			size_t FileSize = static_cast<size_t>(File.tellg());
-			assert(FileSize == File.tellg());
+			std::vector<char> Buffer;
+			if (!ReadAllFile(Path.string().c_str(), Buffer)) continue;
 
-			if (Mode == EObjCompareMode::ShaderAndMetadata)
+			const char* pFileData = Buffer.data();
+			size_t FileSize = Buffer.size();
+			if (USM)
 			{
-				uint32_t Offset = USM ? 16 : 12;
-				if (!File.seekg(Offset, std::ios_base::beg)) continue;
-				FileSize -= Offset;
-			}
-			else if (Mode == EObjCompareMode::Shader)
-			{
-				uint32_t BytecodeOffset;
-				if (!File.seekg(4, std::ios_base::beg)) continue;
-				if (!File.read((char*)&BytecodeOffset, sizeof(BytecodeOffset))) continue;
-				if (!File.seekg(BytecodeOffset, std::ios_base::beg)) continue;
+				// Shader bytecode only
+				const uint32_t BytecodeOffset = *reinterpret_cast<const uint32_t*>(pFileData + 4);
+				pFileData += BytecodeOffset;
 				FileSize -= BytecodeOffset;
 				if (FileSize != InOut.BytecodeSize) continue;
 			}
 			else
 			{
-				File.seekg(0, std::ios_base::beg);
+				// Shader bytecode and metadata, skip only 12 bytes of sm3.0 header
+				if (FileSize <= 12 + InOut.BytecodeSize) continue;
+				pFileData += 12;
+				FileSize -= 12;
 			}
 
-			if (!FileSize) continue;
-
-			std::unique_ptr<char[]> Buffer(new char[FileSize]);
-			if (!File.read(Buffer.get(), (size_t)FileSize)) continue;
-
-			if (memcmp(pBinaryData, Buffer.get(), (size_t)FileSize) != 0) continue;
+			if (memcmp(pBinaryData, pFileData, FileSize) != 0) continue;
 		}
 
 		InOut.ID = Result.Get<int>(Col_ID, i);
-		InOut.Path = std::move(Path);
+		InOut.Path = std::move(PathStr);
 		return true; // Found
 	}
 

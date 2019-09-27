@@ -27,9 +27,11 @@ const T& GetParam(const std::map<CStrID, class Data::CData>& Params, const char*
 //---------------------------------------------------------------------
 
 template<typename T>
-bool ReadAllFile(const char* pPath, std::vector<T>& Out)
+bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 {
-	std::ifstream File(pPath);
+	int Mode = std::ios_base::in;
+	if (Binary) Mode |= std::ios_base::binary;
+	std::ifstream File(pPath, Mode);
 	if (!File) return false;
 
 	Out.assign(std::istreambuf_iterator<T>(File), std::istreambuf_iterator<T>());
