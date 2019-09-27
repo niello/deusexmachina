@@ -13,32 +13,7 @@ namespace fs = std::filesystem;
 namespace DB
 {
 
-sqlite3*		SQLiteHandle = nullptr;
-sqlite3_stmt*	SQLFindShader = nullptr;
-sqlite3_stmt*	SQLGetObjFile = nullptr;
-sqlite3_stmt*	SQLFindObjFileUsage = nullptr;
-sqlite3_stmt*	SQLFindObjFile = nullptr;
-sqlite3_stmt*	SQLFindObjFileByID = nullptr;
-sqlite3_stmt*	SQLFindFreeObjFileRec = nullptr;
-sqlite3_stmt*	SQLInsertNewObjFileRec = nullptr;
-sqlite3_stmt*	SQLUpdateObjFileRec = nullptr;
-sqlite3_stmt*	SQLReleaseObjFileRec = nullptr;
-sqlite3_stmt*	SQLInsertNewShaderRec = nullptr;
-sqlite3_stmt*	SQLUpdateShaderRec = nullptr;
-sqlite3_stmt*	SQLClearDefines = nullptr;
-sqlite3_stmt*	SQLInsertDefine = nullptr;
-sqlite3_stmt*	SQLGetDefines = nullptr;
-
-bool InitSQL(sqlite3_stmt** ppStmt, const char* pSQL)
-{
-	if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, ppStmt, nullptr) == SQLITE_OK)
-		return true;
-
-	CloseConnection();
-	assert(false && "Error compiling SQL");
-	return false;
-}
-//---------------------------------------------------------------------
+static sqlite3* SQLiteHandle = nullptr;
 
 bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 {
@@ -87,6 +62,17 @@ bool BindQueryParams(sqlite3_stmt* SQLiteStmt, const Data::CParams& Params)
 	}
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool InitSQL(sqlite3_stmt** ppStmt, const char* pSQL)
+{
+	if (sqlite3_prepare_v2(SQLiteHandle, pSQL, -1, ppStmt, nullptr) == SQLITE_OK)
+		return true;
+
+	CloseConnection();
+	assert(false && "Error compiling SQL");
+	return false;
 }
 //---------------------------------------------------------------------
 
@@ -254,14 +240,6 @@ bool ExecuteSQLQuery(const char* pSQL, CValueTable* pOutTable, const Data::CPara
 }
 //---------------------------------------------------------------------
 
-#define INIT_SQL(Stmt, SQL) \
-	if (sqlite3_prepare_v2(SQLiteHandle, SQL, -1, &Stmt, nullptr) != SQLITE_OK) \
-	{ \
-		CloseConnection(); \
-		assert(false && "Error compiling SQL: "##SQL); \
-		return false; \
-	}
-
 // NB: pURI must be encoded in UTF-8
 bool OpenConnection(const char* pURI)
 {
@@ -292,13 +270,13 @@ bool OpenConnection(const char* pURI)
 	// PRAGMA threads = N; - for worker threads
 	// The same as sqlite3_limit, see https://www.sqlite.org/c3ref/limit.html
 
-	const char* pSQL = "\
+	constexpr char* pSQLPragmas = "\
 PRAGMA encoding = \"UTF-8\";\
 PRAGMA journal_mode=MEMORY;\
 PRAGMA cache_size=2048;\
 PRAGMA synchronous=NORMAL;\
 PRAGMA temp_store=MEMORY";
-	if (!ExecuteSQLQuery(pSQL))
+	if (!ExecuteSQLQuery(pSQLPragmas))
 	{
 		CloseConnection();
 		return false;
@@ -364,36 +342,6 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 		}
 	}
 
-	if (!InitSQL(&SQLFindShader, "SELECT * FROM Shaders WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND EntryPoint=:Entry"))
-		return false;
-
-	INIT_SQL(SQLGetObjFile, "SELECT * FROM ShaderBinaries WHERE ID=:ID");
-	INIT_SQL(SQLFindObjFileUsage, "SELECT ID FROM Shaders WHERE BinaryFileID=:ID");
-	INIT_SQL(SQLFindObjFile, "SELECT ID, Path FROM ShaderBinaries WHERE BytecodeSize=:BytecodeSize AND CRC=:CRC");
-	INIT_SQL(SQLFindObjFileByID, "SELECT * FROM ShaderBinaries WHERE ID=:ID");
-	INIT_SQL(SQLFindFreeObjFileRec, "SELECT ID FROM ShaderBinaries WHERE Size = 0 ORDER BY ID LIMIT 1");
-	INIT_SQL(SQLInsertNewObjFileRec, "INSERT INTO ShaderBinaries (Path, Size, BytecodeSize, CRC) VALUES (\"\", 0, 0, 0)");
-	INIT_SQL(SQLUpdateObjFileRec, "UPDATE ShaderBinaries SET Path=:Path, Size=:Size, BytecodeSize=:BytecodeSize, CRC=:CRC WHERE ID=:ID");
-	INIT_SQL(SQLReleaseObjFileRec, "UPDATE ShaderBinaries SET Size=0 WHERE ID=:ID");
-	INIT_SQL(SQLInsertNewShaderRec, "INSERT INTO Shaders (SrcPath) VALUES (\"\")");
-	INIT_SQL(SQLUpdateShaderRec,
-		"UPDATE Shaders SET "
-		"	ShaderType=:ShaderType, "
-		"	Target=:Target, "
-		"	EntryPoint=:EntryPoint, "
-		"	CompilerVersion=:CompilerVersion, "
-		"	CompilerFlags=:CompilerFlags, "
-		"	SrcPath=:SrcPath, "
-		"	SrcModifyTimestamp=:SrcModifyTimestamp, "
-		"	SrcSize=:SrcSize, "
-		"	SrcCRC=:SrcCRC, "
-		"	BinaryFileID=:BinaryFileID, "
-		"	InputSigFileID=:InputSigFileID "
-		"WHERE ID=:ID");
-	INIT_SQL(SQLClearDefines, "DELETE FROM Macros WHERE ShaderID = :ShaderID");
-	INIT_SQL(SQLInsertDefine, "INSERT INTO Macros (ShaderID, Name, Value) VALUES (:ShaderID, :Name, :Value)");
-	INIT_SQL(SQLGetDefines, "SELECT Name, Value FROM Macros WHERE ShaderID = :ShaderID"); // ORDER BY Name");
-
 	return true;
 }
 //---------------------------------------------------------------------
@@ -402,32 +350,18 @@ CREATE INDEX Shaders_MainIndex ON Shaders (SrcPath, ShaderType, Target, EntryPoi
 
 void CloseConnection()
 {
-	//???can release without an SQLiteHandle?
-	SAFE_RELEASE_SQL(SQLFindShader);
-	SAFE_RELEASE_SQL(SQLGetObjFile);
-	SAFE_RELEASE_SQL(SQLFindObjFileUsage);
-	SAFE_RELEASE_SQL(SQLFindObjFile);
-	SAFE_RELEASE_SQL(SQLFindObjFileByID);
-	SAFE_RELEASE_SQL(SQLFindFreeObjFileRec);
-	SAFE_RELEASE_SQL(SQLInsertNewObjFileRec);
-	SAFE_RELEASE_SQL(SQLUpdateObjFileRec);
-	SAFE_RELEASE_SQL(SQLReleaseObjFileRec);
-	SAFE_RELEASE_SQL(SQLInsertNewShaderRec);
-	SAFE_RELEASE_SQL(SQLUpdateShaderRec);
-	SAFE_RELEASE_SQL(SQLClearDefines);
-	SAFE_RELEASE_SQL(SQLInsertDefine);
-	SAFE_RELEASE_SQL(SQLGetDefines);
+	if (!SQLiteHandle) return;
 
-	if (SQLiteHandle)
+	// sqlite3_finalize all precompiled statements here
+
+	if (sqlite3_close(SQLiteHandle) != SQLITE_OK)
 	{
-		if (sqlite3_close(SQLiteHandle) != SQLITE_OK)
-		{
-			//Messages += "SQLite error: ";
-			//Messages += sqlite3_errmsg(SQLiteHandle);
-			//Messages += '\n';
-		}
-		SQLiteHandle = nullptr;
+		//Messages += "SQLite error: ";
+		//Messages += sqlite3_errmsg(SQLiteHandle);
+		//Messages += '\n';
 	}
+
+	SQLiteHandle = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -435,27 +369,32 @@ bool FindShaderRecord(CShaderRecord& InOut)
 {
 	Data::CParams Params;
 	Params.emplace(CStrID("Path"), InOut.SrcFile.Path);
-	Params.emplace(CStrID("Type"), (int)InOut.ShaderType);
-	Params.emplace(CStrID("Target"), (int)InOut.Target);
+	Params.emplace(CStrID("Type"), static_cast<int>(InOut.ShaderType));
+	Params.emplace(CStrID("Target"), static_cast<int>(InOut.Target));
 	Params.emplace(CStrID("Entry"), InOut.EntryPoint);
 
+	constexpr char* pSQLSelect =
+		"SELECT ID, CompilerVersion, CompilerFlags, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID "
+		"FROM Shaders "
+		"WHERE SrcPath=:Path AND ShaderType=:Type AND Target=:Target AND EntryPoint=:Entry";
+
 	CValueTable Shaders;
-	if (!ExecuteStatement(SQLFindShader, &Shaders, &Params)) return false;
+	if (!ExecuteSQLQuery(pSQLSelect, &Shaders, &Params)) return false;
 
 	Data::CParams DefineParams;
 
 	bool Found = false;
 
-	int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
+	const int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
 	for (size_t ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
 	{
 		DefineParams.emplace(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
 
 		CValueTable Defines;
-		if (!ExecuteStatement(SQLGetDefines, &Defines, &DefineParams)) return false;
+		if (!ExecuteSQLQuery("SELECT Name, Value FROM Macros WHERE ShaderID = :ShaderID"/*ORDER BY Name*/, &Defines, &DefineParams)) return false;
 
-		size_t DBDefineCount = Defines.GetRowCount();
-		size_t LocalDefineCount = InOut.Defines.size();
+		const size_t DBDefineCount = Defines.GetRowCount();
+		const size_t LocalDefineCount = InOut.Defines.size();
 		if (DBDefineCount != LocalDefineCount)
 		{
 			Found = false;
@@ -518,35 +457,56 @@ bool FindShaderRecord(CShaderRecord& InOut)
 
 bool WriteShaderRecord(CShaderRecord& InOut)
 {
-	uint32_t ID;
-	if (InOut.ID == 0)
-	{
-		if (!ExecuteStatement(SQLInsertNewShaderRec)) return false;
-		ID = (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
-	}
-	else ID = InOut.ID;
-
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), (int)ID);
-	Params.emplace(CStrID("ShaderType"), (int)InOut.ShaderType);
-	Params.emplace(CStrID("Target"), (int)InOut.Target);
+	Params.emplace(CStrID("ShaderType"), static_cast<int>(InOut.ShaderType));
+	Params.emplace(CStrID("Target"), static_cast<int>(InOut.Target));
 	Params.emplace(CStrID("EntryPoint"), InOut.EntryPoint);
-	Params.emplace(CStrID("CompilerVersion"), (int)InOut.CompilerVersion);
-	Params.emplace(CStrID("CompilerFlags"), (int)InOut.CompilerFlags);
+	Params.emplace(CStrID("CompilerVersion"), static_cast<int>(InOut.CompilerVersion));
+	Params.emplace(CStrID("CompilerFlags"), static_cast<int>(InOut.CompilerFlags));
 	Params.emplace(CStrID("SrcPath"), InOut.SrcFile.Path);
-	Params.emplace(CStrID("SrcModifyTimestamp"), (int)InOut.SrcModifyTimestamp);
-	Params.emplace(CStrID("SrcSize"), (int)InOut.SrcFile.Size);
-	Params.emplace(CStrID("SrcCRC"), (int)InOut.SrcFile.CRC);
-	Params.emplace(CStrID("BinaryFileID"), (int)InOut.ObjFile.ID);
-	Params.emplace(CStrID("InputSigFileID"), (int)InOut.InputSigFile.ID);
+	Params.emplace(CStrID("SrcModifyTimestamp"), static_cast<int>(InOut.SrcModifyTimestamp));
+	Params.emplace(CStrID("SrcSize"), static_cast<int>(InOut.SrcFile.Size));
+	Params.emplace(CStrID("SrcCRC"), static_cast<int>(InOut.SrcFile.CRC));
+	Params.emplace(CStrID("BinaryFileID"), static_cast<int>(InOut.ObjFile.ID));
+	Params.emplace(CStrID("InputSigFileID"), static_cast<int>(InOut.InputSigFile.ID));
 
-	if (!ExecuteStatement(SQLUpdateShaderRec, nullptr, &Params)) return false;
+	auto ID = InOut.ID;
+	if (!ID)
+	{
+		// No free ID, insert a new line
+		constexpr char* pSQLInsert =
+			"INSERT INTO Shaders "
+			"   (ShaderType, Target, EntryPoint, CompilerVersion, CompilerFlags, SrcPath, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID) "
+			"VALUES "
+			"   (:ShaderType, :Target, :EntryPoint, :CompilerVersion, :CompilerFlags, :SrcPath, :SrcModifyTimestamp, :SrcSize, :SrcCRC, :BinaryFileID, :InputSigFileID)";
+		if (!ExecuteSQLQuery(pSQLInsert, nullptr, &Params)) return false;
+
+		ID = static_cast<uint32_t>(sqlite3_last_insert_rowid(SQLiteHandle));
+		if (!ID) return false;
+	}
+	else
+	{
+		// We have ID, update existing row
+		Params.emplace(CStrID("ID"), static_cast<int>(ID));
+
+		constexpr char* pSQLUpdate =
+			"UPDATE Shaders SET "
+			"	ShaderType=:ShaderType, "
+			"	Target=:Target, "
+			"	EntryPoint=:EntryPoint, "
+			"	CompilerVersion=:CompilerVersion, "
+			"	CompilerFlags=:CompilerFlags, "
+			"	SrcPath=:SrcPath, "
+			"	SrcModifyTimestamp=:SrcModifyTimestamp, "
+			"	SrcSize=:SrcSize, "
+			"	SrcCRC=:SrcCRC, "
+			"	BinaryFileID=:BinaryFileID, "
+			"	InputSigFileID=:InputSigFileID "
+			"WHERE ID=:ID";
+		if (!ExecuteSQLQuery(pSQLUpdate, nullptr, &Params)) return false;
+	}
 
 	InOut.ID = ID;
-
-	Params.clear();
-	Params.emplace(CStrID("ShaderID"), (int)InOut.ID);
-	if (!ExecuteStatement(SQLClearDefines, nullptr, &Params)) return false;
 
 	// TODO: check if batch is better
 	/*
@@ -559,12 +519,17 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 		...
 	   (value1,value2 ,...);	
 	*/
+
+	Params.clear();
+	Params.emplace(CStrID("ShaderID"), static_cast<int>(InOut.ID));
+	if (!ExecuteSQLQuery("DELETE FROM Macros WHERE ShaderID = :ShaderID", nullptr, &Params)) return false;
+
 	for (const auto& Macro : InOut.Defines)
 	{
 		if (Macro.first.empty()) continue;
 		Params.emplace(CStrID("Name"), Macro.first);
 		Params.emplace(CStrID("Value"), Macro.second);
-		if (!ExecuteStatement(SQLInsertDefine, nullptr, &Params)) return false;
+		if (!ExecuteSQLQuery("INSERT INTO Macros (ShaderID, Name, Value) VALUES (:ShaderID, :Name, :Value)", nullptr, &Params)) return false;
 	}
 
 	return true;
@@ -579,8 +544,8 @@ bool FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const v
 	if (!InOut.Size) return false; // Not found
 
 	Data::CParams Params;
-	Params.emplace(CStrID("Size"), (int)InOut.Size);
-	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+	Params.emplace(CStrID("Size"), static_cast<int>(InOut.Size));
+	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT ID, Folder FROM InputSignatures WHERE Size=:Size AND CRC=:CRC", &Result, &Params)) return false;
@@ -617,33 +582,37 @@ bool WriteSignatureRecord(CSignatureRecord& InOut)
 {
 	if (InOut.Folder.empty() || !InOut.Size) return false;
 
-	if (!InOut.ID)
+	auto ID = InOut.ID;
+	if (!ID)
 	{
 		// If new record, try to find free ID
 		CValueTable Result;
 		if (!ExecuteSQLQuery("SELECT ID FROM InputSignatures WHERE Size = 0 ORDER BY ID LIMIT 1", &Result)) return false;
 		if (Result.GetRowCount())
-			InOut.ID = Result.Get<int>(CStrID("ID"), 0);
+			ID = Result.Get<int>(CStrID("ID"), 0);
 	}
 
 	Data::CParams Params;
 	Params.emplace(CStrID("Folder"), InOut.Folder);
-	Params.emplace(CStrID("Size"), (int)InOut.Size);
-	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+	Params.emplace(CStrID("Size"), static_cast<int>(InOut.Size));
+	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
-	if (!InOut.ID)
+	if (!ID)
 	{
 		// No free ID, insert a new line
 		if (!ExecuteSQLQuery("INSERT INTO InputSignatures (Folder, Size, CRC) VALUES (:Folder, :Size, :CRC)", nullptr, &Params)) return false;
-		InOut.ID = (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
-		return InOut.ID != 0;
+		ID = static_cast<uint32_t>(sqlite3_last_insert_rowid(SQLiteHandle));
+		if (!ID) return false;
 	}
 	else
 	{
 		// We have ID, update existing row
-		Params.emplace(CStrID("ID"), (int)InOut.ID);
-		return ExecuteSQLQuery("UPDATE InputSignatures SET Folder=:Folder, Size=:Size, CRC=:CRC WHERE ID=:ID", nullptr, &Params);
+		Params.emplace(CStrID("ID"), static_cast<int>(ID));
+		if (!ExecuteSQLQuery("UPDATE InputSignatures SET Folder=:Folder, Size=:Size, CRC=:CRC WHERE ID=:ID", nullptr, &Params)) return false;
 	}
+
+	InOut.ID = ID;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -652,7 +621,7 @@ bool ReleaseSignatureRecord(uint32_t ID, std::string& OutPath)
 	if (ID == 0) return false;
 
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), (int)ID);
+	Params.emplace(CStrID("ID"), static_cast<int>(ID));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT ID FROM Shaders WHERE InputSigFileID=:ID", &Result, &Params)) return false;
@@ -679,11 +648,11 @@ bool FindBinaryRecord(CBinaryRecord& InOut, const void* pBinaryData, bool USM, E
 	if (!InOut.BytecodeSize) return false; // Not found
 
 	Data::CParams Params;
-	Params.emplace(CStrID("BytecodeSize"), (int)InOut.BytecodeSize);
-	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+	Params.emplace(CStrID("BytecodeSize"), static_cast<int>(InOut.BytecodeSize));
+	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
 	CValueTable Result;
-	if (!ExecuteStatement(SQLFindObjFile, &Result, &Params)) return false;
+	if (!ExecuteSQLQuery("SELECT ID, Path FROM ShaderBinaries WHERE BytecodeSize=:BytecodeSize AND CRC=:CRC", &Result, &Params)) return false;
 
 	const int Col_ID = Result.GetColumnIndex(CStrID("ID"));
 	const int Col_Path = Result.GetColumnIndex(CStrID("Path"));
@@ -742,34 +711,38 @@ bool WriteBinaryRecord(CBinaryRecord& InOut)
 {
 	if (InOut.Path.empty() || !InOut.Size) return false;
 
-	if (!InOut.ID)
+	auto ID = InOut.ID;
+	if (!ID)
 	{
 		// If new record, try to find free ID
 		CValueTable Result;
-		if (!ExecuteStatement(SQLFindFreeObjFileRec, &Result)) return false;
+		if (!ExecuteSQLQuery("SELECT ID FROM ShaderBinaries WHERE Size = 0 ORDER BY ID LIMIT 1", &Result)) return false;
 		if (Result.GetRowCount())
-			InOut.ID = Result.Get<int>(CStrID("ID"), 0);
+			ID = Result.Get<int>(CStrID("ID"), 0);
 	}
 
 	Data::CParams Params;
 	Params.emplace(CStrID("Path"), InOut.Path);
-	Params.emplace(CStrID("Size"), (int)InOut.Size);
-	Params.emplace(CStrID("BytecodeSize"), (int)InOut.BytecodeSize);
-	Params.emplace(CStrID("CRC"), (int)InOut.CRC);
+	Params.emplace(CStrID("Size"), static_cast<int>(InOut.Size));
+	Params.emplace(CStrID("BytecodeSize"), static_cast<int>(InOut.BytecodeSize));
+	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
-	if (!InOut.ID)
+	if (!ID)
 	{
 		// No free ID, insert a new line
 		if (!ExecuteSQLQuery("INSERT INTO ShaderBinaries (Path, Size, BytecodeSize, CRC) VALUES (:Path, :Size, :BytecodeSize, :CRC)", nullptr, &Params)) return false;
-		InOut.ID = (uint32_t)sqlite3_last_insert_rowid(SQLiteHandle);
-		return InOut.ID != 0;
+		ID = static_cast<uint32_t>(sqlite3_last_insert_rowid(SQLiteHandle));
+		if (!ID) return false;
 	}
 	else
 	{
 		// We have ID, update existing row
-		Params.emplace(CStrID("ID"), (int)InOut.ID);
-		return ExecuteStatement(SQLUpdateObjFileRec, nullptr, &Params);
+		Params.emplace(CStrID("ID"), static_cast<int>(ID));
+		if (!ExecuteSQLQuery("UPDATE ShaderBinaries SET Path=:Path, Size=:Size, BytecodeSize=:BytecodeSize, CRC=:CRC WHERE ID=:ID", nullptr, &Params)) return false;
 	}
+
+	InOut.ID = ID;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -778,42 +751,37 @@ bool ReleaseBinaryRecord(uint32_t ID, std::string& OutPath)
 	if (ID == 0) return false;
 
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), (int)ID);
+	Params.emplace(CStrID("ID"), static_cast<int>(ID));
 
 	CValueTable Result;
-	if (!ExecuteStatement(SQLFindObjFileUsage, &Result, &Params)) return false;
+	if (!ExecuteSQLQuery("SELECT ID FROM Shaders WHERE BinaryFileID=:ID", &Result, &Params)) return false;
 
 	// References found, don't delete file
 	if (Result.GetRowCount()) return false;
 
 	// Get file path to delete
 	Result.Clear();
-	if (!ExecuteStatement(SQLGetObjFile, &Result, &Params)) return false;
+	if (!ExecuteSQLQuery("SELECT * FROM ShaderBinaries WHERE ID=:ID", &Result, &Params)) return false;
 	OutPath = Result.Get<std::string>(CStrID("Path"), 0);
 
-	return ExecuteStatement(SQLReleaseObjFileRec, nullptr, &Params);
+	return ExecuteSQLQuery("UPDATE ShaderBinaries SET Size=0 WHERE ID=:ID", nullptr, &Params);
 }
 //---------------------------------------------------------------------
 
 bool FindObjFileByID(uint32_t ID, CBinaryRecord& Out)
 {
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), (int)ID);
+	Params.emplace(CStrID("ID"), static_cast<int>(ID));
 
 	CValueTable Result;
-	if (!ExecuteStatement(SQLFindObjFileByID, &Result, &Params)) return false;
+	if (!ExecuteSQLQuery("SELECT * FROM ShaderBinaries WHERE ID=:ID", &Result, &Params)) return false;
 	if (!Result.GetRowCount()) return false;
 
-	int Col_ID = Result.GetColumnIndex(CStrID("ID"));
-	int Col_Path = Result.GetColumnIndex(CStrID("Path"));
-	int Col_Size = Result.GetColumnIndex(CStrID("Size"));
-	int Col_BytecodeSize = Result.GetColumnIndex(CStrID("BytecodeSize"));
-	int Col_CRC = Result.GetColumnIndex(CStrID("CRC"));
-	Out.ID = Result.Get<int>(Col_ID, 0);
-	Out.Path = Result.Get<std::string>(Col_Path, 0);
-	Out.Size = Result.Get<int>(Col_Size, 0);
-	Out.BytecodeSize = Result.Get<int>(Col_BytecodeSize, 0);
-	Out.CRC = Result.Get<int>(Col_CRC, 0);
+	Out.ID = Result.Get<int>(CStrID("ID"), 0);
+	Out.Path = Result.Get<std::string>(CStrID("Path"), 0);
+	Out.Size = Result.Get<int>(CStrID("Size"), 0);
+	Out.BytecodeSize = Result.Get<int>(CStrID("BytecodeSize"), 0);
+	Out.CRC = Result.Get<int>(CStrID("CRC"), 0);
 
 	return true; // Found
 }

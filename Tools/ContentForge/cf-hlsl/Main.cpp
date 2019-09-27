@@ -130,6 +130,7 @@ public:
 		if (!LoggedString.empty())
 		{
 			// Flush cached logs to stdout
+			// TODO: move log flushing to the end of CContentForgeTool::Execute? No locking needed at all there.
 			std::lock_guard<std::mutex> Lock(COutMutex);
 			std::cout << LoggedString;
 		}
