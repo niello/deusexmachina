@@ -114,9 +114,10 @@ public:
 
 		CLog Log(TaskID, static_cast<DEMShaderCompiler::ILogDelegate::ESeverity>(_LogVerbosity));
 
+		const auto LineEnd = Log.GetStream().widen('\n');
+
 		if (_LogVerbosity >= EVerbosity::Debug)
 		{
-			const auto LineEnd = Log.GetStream().widen('\n');
 			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
 			Log.GetStream() << "Task: " << Task.TaskID.CStr() << LineEnd;
 			Log.GetStream() << "Thread: " << std::this_thread::get_id() << LineEnd;
@@ -134,6 +135,9 @@ public:
 			std::lock_guard<std::mutex> Lock(COutMutex);
 			std::cout << LoggedString;
 		}
+
+		if (_LogVerbosity >= EVerbosity::Debug)
+			std::cout << "Status: " << ((Code == DEM_SHADER_COMPILER_SUCCESS) ? "OK" : "FAIL") << LineEnd << LineEnd;
 
 		return Code == DEM_SHADER_COMPILER_SUCCESS;
 	}

@@ -111,6 +111,9 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 		}
 	}
 
+	if (_LogVerbosity >= EVerbosity::Debug)
+		std::cout << LineEnd;
+
 	// Run tasks in parallel
 
 	//???pass task count to SupportsMultithreading for perf tuning?
