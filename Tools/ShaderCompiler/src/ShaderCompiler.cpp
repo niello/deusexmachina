@@ -211,7 +211,6 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	// Some data will be filled later
 	auto DelayedDataOffset = File.tellp();
 	WriteStream<uint32_t>(File, 0); // Shader binary data offset for fast metadata skipping
-	WriteStream<uint32_t>(File, 0); // Shader DB ID (is useful anywhere?)
 
 	WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
 
@@ -236,29 +235,26 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 
 	pFinalCode->Release();
 
-	Rec.ObjFile.Size = File.tellp();
-	Rec.ObjFile.Path = DestPathDB.generic_string();
-	// CRC is already calculated against the shader binary
-
-	// Write binary file record to DB and obtain its ID
-	if (!DB::WriteBinaryRecord(Rec.ObjFile))
-		return DEM_SHADER_COMPILER_DB_ERROR;
+	const auto FileSize = File.tellp();
 
 	// Finally write delayed data
 	File.seekp(DelayedDataOffset, std::ios_base::beg);
 	WriteStream<uint32_t>(File, static_cast<uint32_t>(BinaryOffset));
-	WriteStream<uint32_t>(File, Rec.ObjFile.ID);
 
 	File.close();
 
-	return DEM_SHADER_COMPILER_SUCCESS;
+	// Write binary file record to DB and obtain its ID
+	// CRC is already calculated against the shader binary
+	Rec.ObjFile.Size = FileSize;
+	Rec.ObjFile.Path = DestPathDB.generic_string();
+	return DB::WriteBinaryRecord(Rec.ObjFile) ? DEM_SHADER_COMPILER_SUCCESS : DEM_SHADER_COMPILER_DB_ERROR;
 }
 //---------------------------------------------------------------------
 
 static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath, ID3DBlob* pCode, DB::CShaderRecord& Rec,
 	CSM30ShaderMeta&& Meta, uint32_t FileSignature, DEMShaderCompiler::ILogDelegate* pLog)
 {
-	// D3DStripShader can't be applied to sm3.0 shaders
+	// NB: D3DStripShader can't be applied to sm3.0 shaders
 
 	Rec.ObjFile.BytecodeSize = pCode->GetBufferSize();
 	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pCode->GetBufferPointer(), pCode->GetBufferSize());
@@ -289,31 +285,25 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	// Some data will be filled later
 	auto DelayedDataOffset = File.tellp();
 	WriteStream<uint32_t>(File, 0); // Shader binary data offset for fast metadata skipping
-	WriteStream<uint32_t>(File, 0); // Shader DB ID (is useful anywhere?)
 
 	// Data is already serialized into a memory, just save it
 	BinaryOffset += File.tellp();
 	const std::string ObjData = ObjStream.str();
 	File.write(ObjData.c_str(), ObjData.size());
 
-	Rec.ObjFile.Size = File.tellp();
-	Rec.ObjFile.Path = DestPathDB.generic_string();
-
-	// CRC is already calculated against shader binary
-	// FIXME: check, is acceptable for D3D9? Metadata can be different for the same binary!
-
-	// Write binary file record to DB and obtain its ID
-	if (!DB::WriteBinaryRecord(Rec.ObjFile))
-		return DEM_SHADER_COMPILER_DB_ERROR;
+	const auto FileSize = File.tellp();
 
 	// Finally write delayed data
 	File.seekp(DelayedDataOffset, std::ios_base::beg);
 	WriteStream<uint32_t>(File, static_cast<uint32_t>(BinaryOffset));
-	WriteStream<uint32_t>(File, Rec.ObjFile.ID);
 
 	File.close();
 
-	return DEM_SHADER_COMPILER_SUCCESS;
+	// Write binary file record
+	// CRC is already calculated against shader binary
+	Rec.ObjFile.Size = FileSize;
+	Rec.ObjFile.Path = DestPathDB.generic_string();
+	return DB::WriteBinaryRecord(Rec.ObjFile) ? DEM_SHADER_COMPILER_SUCCESS : DEM_SHADER_COMPILER_DB_ERROR;
 }
 //---------------------------------------------------------------------
 

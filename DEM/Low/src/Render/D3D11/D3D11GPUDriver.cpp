@@ -2675,9 +2675,6 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 	U32 BinaryOffset;
 	if (!R.Read(BinaryOffset)) return nullptr;
 
-	U32 ShaderFileID;
-	if (!R.Read(ShaderFileID)) return nullptr;
-
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) return nullptr;
 
@@ -2738,15 +2735,9 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 		// against them). Input layout, once created, can be reused with any vertex shader
 		// with the same input signature.
 
-		if (!InputSignatureID) InputSignatureID = ShaderFileID;
-
 		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
 		{
-			if (InputSignatureID == ShaderFileID)
-			{
-				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
-			}
-			else if (pLibrary)
+			if (pLibrary)
 			{
 				Data::PBuffer Buf = pLibrary->CopyRawData(InputSignatureID);
 				if (!Buf) return nullptr;

@@ -2776,9 +2776,6 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 	U32 BinaryOffset;
 	if (!R.Read(BinaryOffset)) return nullptr;
 
-	U32 ShaderFileID;
-	if (!R.Read(ShaderFileID)) return nullptr;
-
 	const U64 MetadataOffset = Stream.GetPosition();
 	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize()) - static_cast<UPTR>(BinaryOffset);
 	if (!BinarySize) return nullptr;

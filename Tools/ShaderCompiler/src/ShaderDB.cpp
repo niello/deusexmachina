@@ -683,10 +683,11 @@ bool FindBinaryRecord(CBinaryRecord& InOut, const char* pBasePath, const void* p
 			}
 			else
 			{
-				// Shader bytecode and metadata, skip only 12 bytes of sm3.0 header
-				if (FileSize <= 12 + InOut.BytecodeSize) continue;
-				pFileData += 12;
-				FileSize -= 12;
+				// Shader bytecode and metadata, skip only 8 bytes of sm3.0 header.
+				// NB: USM has 12 bytes of header, because it includes input signature ID.
+				if (FileSize <= 8 + InOut.BytecodeSize) continue;
+				pFileData += 8;
+				FileSize -= 8;
 			}
 
 			if (memcmp(pBinaryData, pFileData, FileSize) != 0) continue;
