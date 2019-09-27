@@ -74,6 +74,7 @@ public:
 
 	virtual bool SupportsMultithreading() const override
 	{
+		// FIXME: must handle duplicate targets (for example 2 metafiles writing the same resulting file, like depth_atest_ps)
 		// FIXME: DLL is not thread-safe now, there are shared sqlite3_stmt objects
 		return false;
 
