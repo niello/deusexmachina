@@ -2735,6 +2735,15 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 		// against them). Input layout, once created, can be reused with any vertex shader
 		// with the same input signature.
 
+		/*
+		// If no signature, can load this shader itself with some unique ID, for example negative.
+		// This must never happen for shaders build in DEM, so we omit handling this case.
+		if (InputSignatureID == 0)
+		{
+			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
+		}
+		*/
+
 		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
 		{
 			if (pLibrary)
