@@ -473,7 +473,7 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 	auto ID = InOut.ID;
 	if (!ID)
 	{
-		// No free ID, insert a new line
+		// We have no ID, insert a new line
 		constexpr char* pSQLInsert =
 			"INSERT INTO Shaders "
 			"   (ShaderType, Target, EntryPoint, CompilerVersion, CompilerFlags, SrcPath, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID) "
