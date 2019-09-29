@@ -84,23 +84,124 @@ public:
 			}
 		}
 
-		// Get material type
-		// Get global params
-		// Get material params
+		// Get and validate material type
 
-		// For each tech:
-		// discard empty techs
-		// get shader format
-		// verify that all shaders are of compatible format, or discard a tech
-		// get feature level (max through all used shaders)
-		// get max light count (-1 = any, 0 = no lights in this pass)
-		// inside each format sort by the feature level desc
+		const CStrID MaterialType = GetParam<CStrID>(Desc, "Type", CStrID::Empty);
+		if (!MaterialType)
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "Material type not specified" << LineEnd;
+			return false;
+		}
 
-		//!!!light count is an inbuilt define! System builds shader variations!
-		//???need or instead of switching shader and flushing pipeline just render max light count,
-		//skipping "-1" light index as "no light"?
+		// Get and validate global and material params
 
-		//???prebuild material constant table? or will be built in runtime?
+		auto ItGlobalParams = Desc.find(CStrID("GlobalParams"));
+		const bool HasGlobalParams = (ItGlobalParams != Desc.cend() && !ItGlobalParams->second.IsVoid());
+		if (HasGlobalParams && !ItGlobalParams->second.IsA<Data::CDataArray>())
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "'GlobalParams' must be an array of CStringID" << LineEnd;
+			return false;
+		}
+
+		auto ItMaterialParams = Desc.find(CStrID("MaterialParams"));
+		const bool HasMaterialParams = (ItMaterialParams != Desc.cend() && !ItMaterialParams->second.IsVoid());
+		if (HasMaterialParams && !ItMaterialParams->second.IsA<Data::CParams>())
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "'MaterialParams' must be a section" << LineEnd;
+			return false;
+		}
+
+		if (HasGlobalParams && HasMaterialParams)
+		{
+			// Check intersections between global and material params
+			bool HasErrors = false;
+			const Data::CDataArray& GlobalParams = ItGlobalParams->second.GetValue<Data::CDataArray>();
+			const Data::CParams& MaterialParams = ItMaterialParams->second.GetValue<Data::CParams>();
+			for (const auto& Global : GlobalParams)
+			{
+				if (!Global.IsA<CStrID>())
+				{
+					if (_LogVerbosity >= EVerbosity::Errors)
+						std::cout << "'GlobalParams' can contain only CStringID elements (single-quoted strings)" << LineEnd;
+					HasErrors = true;
+				}
+
+				const CStrID ParamID = Global.GetValue<CStrID>();
+				if (MaterialParams.find(ParamID) != MaterialParams.cend())
+				{
+					if (_LogVerbosity >= EVerbosity::Errors)
+						std::cout << '\'' << ParamID.CStr() << "' appears in both global and material params" << LineEnd;
+					HasErrors = true;
+				}
+			}
+		}
+
+		// Parse, validate and sort techniques
+
+		auto ItTechs = Desc.find(CStrID("Techniques"));
+		if (ItTechs == Desc.cend() || !ItTechs->second.IsA<Data::CParams>() || ItTechs->second.GetValue<Data::CParams>().empty())
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "'Techniques' must be a section and contain at least one input set" << LineEnd;
+			return false;
+		}
+
+		const auto& InputSets = ItTechs->second.GetValue<Data::CParams>();
+		for (const auto& InputSet : InputSets)
+		{
+			if (!InputSet.second.IsA<Data::CParams>() || InputSet.second.GetValue<Data::CParams>().empty())
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "Input set '" << InputSet.first.CStr() << "' must be a section containing at least one technique" << LineEnd;
+				return false;
+			}
+
+			const auto& Techs = InputSet.second.GetValue<Data::CParams>();
+			for (const auto& Tech : Techs)
+			{
+				if (!Tech.second.IsA<Data::CDataArray>() || Tech.second.GetValue<Data::CDataArray>().empty())
+				{
+					if (_LogVerbosity >= EVerbosity::Errors)
+						std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "' must be an array containing at least one render state ID" << LineEnd;
+					return false;
+				}
+
+				// TODO:
+				// parse passes //???before techs to handle references properly?
+				// if has invalid or inexistent passes, write error
+				// if tech mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
+				// if tech became empty, discard it
+
+				const auto& Passes = Tech.second.GetValue<Data::CDataArray>();
+
+				//!!!DBG TMP!
+				for (const auto& Pass : Passes)
+				{
+					if (_LogVerbosity >= EVerbosity::Errors)
+						std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "', pass '" << Pass.GetValue<CStrID>().CStr() << '\'' << LineEnd;
+
+					// build RS from base & overrides
+					// get shader formats for all specified shaders
+					// if shader doesn't exist, fail
+					// if pass mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
+					// collect feature level (max through all used shaders) - only for DX? additional fields can be based on tech format
+
+					// get max light count of all shaders in all passes (-1 = any, 0 = no lights in this pass)
+					// shader switching is costly, so we don't build per-light-count variations, but instead
+					// create the shader with max light count only
+					//???how to claculate max light count and whether the shader uses lights at all?
+				}
+
+				// All passes of the tech:
+			}
+
+			// All techs of the input set:
+			// sort techs by the feature level (descending), so that first loaded tech is the best
+			//???sort by shader format?
+		}
 
 		//if (_LogVerbosity >= EVerbosity::Debug)
 		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
