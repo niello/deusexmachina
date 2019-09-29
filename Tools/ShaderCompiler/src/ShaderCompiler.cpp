@@ -186,6 +186,9 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	Rec.ObjFile.BytecodeSize = pFinalCode->GetBufferSize();
 	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
 
+	/*
+	// FIXME: this check prevents creation of the requested target file. Binary merging
+	// must happen on packing, where different TOC records can resolve to the same chunk of bytes.
 	// If object file is found, no additional actions are needed.
 	// Compare only a shader blob for USM shaders, metadata completely depends on it.
 	if (DB::FindBinaryRecord(Rec.ObjFile, pBasePath, pFinalCode->GetBufferPointer(), true))
@@ -193,6 +196,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 		pFinalCode->Release();
 		return DEM_SHADER_COMPILER_SUCCESS;
 	}
+	*/
 	
 	fs::path DestPathDB, DestPathFS;
 	MakePathes(pBasePath, pDestPath, DestPathFS, DestPathDB);
@@ -268,9 +272,13 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	auto BinaryOffset = ObjStream.tellp();
 	ObjStream.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
 
+	/*
+	// FIXME: this check prevents creation of the requested target file. Binary merging
+	// must happen on packing, where different TOC records can resolve to the same chunk of bytes.
 	// If object file is found, no additional actions are needed
 	if (DB::FindBinaryRecord(Rec.ObjFile, pBasePath, ObjStream.str().c_str(), false))
 		return DEM_SHADER_COMPILER_SUCCESS;
+	*/
 
 	fs::path DestPathDB, DestPathFS;
 	MakePathes(pBasePath, pDestPath, DestPathFS, DestPathDB);
