@@ -1,5 +1,6 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
+#include <HRDParser.h>
 //#include <CLI11.hpp>
 #include <thread>
 //#include <mutex>
@@ -47,21 +48,14 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		const std::string EntryPoint = GetParam<std::string>(Task.Params, "Entry", std::string{});
-		if (EntryPoint.empty()) return false;
+		// TODO: check whether the metafile can be processed by this tool
 
 		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
-		const int Target = GetParam<int>(Task.Params, "Target", 0);
-		const std::string Defines = GetParam<std::string>(Task.Params, "Defines", std::string{});
-		const bool Debug = GetParam<bool>(Task.Params, "Debug", false);
-
-		const auto SrcPath = fs::relative(Task.SrcFilePath, _RootDir);
-
 		const std::string TaskID(Task.TaskID.CStr());
-		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
+		const auto DestPath = fs::path(Output) / (TaskID + ".eff");
 
+		// FIXME: need MT-safe logger instead of cout!
 		const auto LineEnd = std::cout.widen('\n');
-
 		if (_LogVerbosity >= EVerbosity::Debug)
 		{
 			std::cout << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
@@ -69,7 +63,44 @@ public:
 			std::cout << "Thread: " << std::this_thread::get_id() << LineEnd;
 		}
 
-		// 
+		// Read effect hrd
+
+		Data::CParams Desc;
+		{
+			std::vector<char> In;
+			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << Task.SrcFilePath.generic_string() << " reading error" << LineEnd;
+				return false;
+			}
+
+			Data::CHRDParser Parser;
+			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << Task.SrcFilePath.generic_string() << " HRD parsing error" << LineEnd;
+				return false;
+			}
+		}
+
+		// Get material type
+		// Get global params
+		// Get material params
+
+		// For each tech:
+		// discard empty techs
+		// get shader format
+		// verify that all shaders are of compatible format, or discard a tech
+		// get feature level (max through all used shaders)
+		// get max light count (-1 = any, 0 = no lights in this pass)
+		// inside each format sort by the feature level desc
+
+		//!!!light count is an inbuilt define! System builds shader variations!
+		//???need or instead of switching shader and flushing pipeline just render max light count,
+		//skipping "-1" light index as "no light"?
+
+		//???prebuild material constant table? or will be built in runtime?
 
 		//if (_LogVerbosity >= EVerbosity::Debug)
 		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;

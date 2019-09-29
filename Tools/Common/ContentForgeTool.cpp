@@ -192,7 +192,12 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 			return;
 		}
 
-		Parser.ParseBuffer(In.data(), In.size(), Meta);
+		if (!Parser.ParseBuffer(In.data(), In.size(), Meta))
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << Path.generic_string() << " HRD parsing error" << LineEnd;
+			return;
+		}
 	}
 
 	// NB: probably some other fields may be added to the metafile, but now it must consist of sections only
