@@ -245,9 +245,9 @@ bool OpenConnection(const char* pURI)
 {
 	assert(!SQLiteHandle);
 
-	EnsureDirectoryExists(ExtractDirName(pURI));
+	fs::create_directories(fs::path(pURI).parent_path());
 
-	int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
+	const int Result = sqlite3_open_v2(pURI, &SQLiteHandle, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE, nullptr);
 	if (Result != SQLITE_OK)
 	{
 		//Messages += "SQLite error: ";
