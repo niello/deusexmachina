@@ -10,7 +10,7 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 include("${CMAKE_CURRENT_SOURCE_DIR}/cf-hlsl/src.cmake")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
 add_executable(cf-hlsl ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
-target_include_directories(cf-hlsl PRIVATE src)
+target_include_directories(cf-hlsl PRIVATE "cf-hlsl")
 target_link_libraries(cf-hlsl PRIVATE sqlite3 ToolsCommon ShaderCompiler)
 set_target_properties(cf-hlsl PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
 
@@ -21,6 +21,6 @@ set_target_properties(cf-hlsl PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED O
 include("${CMAKE_CURRENT_SOURCE_DIR}/cf-effect/src.cmake")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_EFFECT_HEADERS} ${DEM_CF_EFFECT_SOURCES})
 add_executable(cf-effect ${DEM_CF_EFFECT_HEADERS} ${DEM_CF_EFFECT_SOURCES})
-target_include_directories(cf-effect PRIVATE src)
+target_include_directories(cf-effect PRIVATE "cf-effect")
 target_link_libraries(cf-effect PRIVATE sqlite3 ToolsCommon)
 set_target_properties(cf-effect PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem

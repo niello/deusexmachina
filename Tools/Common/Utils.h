@@ -16,6 +16,16 @@ const T& GetParam(const std::map<CStrID, class Data::CData>& Params, const char*
 }
 //---------------------------------------------------------------------
 
+template<class T>
+const bool TryGetParam(T& Out, const std::map<CStrID, class Data::CData>& Params, const char* pKey)
+{
+	auto It = Params.find(CStrID(pKey));
+	if (It == Params.cend() || !It->second.IsA<T>()) return false;
+	Out = It->second.GetValue<T>();
+	return true;
+}
+//---------------------------------------------------------------------
+
 template<typename T>
 bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 {

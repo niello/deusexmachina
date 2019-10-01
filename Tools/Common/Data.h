@@ -10,6 +10,13 @@
 
 typedef std::vector<uint8_t> CBuffer;
 
+struct vector4
+{
+	float x, y, z, w;
+
+	bool operator ==(const vector4& Other) const { return x == Other.x && y == Other.y && z == Other.z && w == Other.w; }
+};
+
 namespace Data
 {
 typedef std::map<CStringID, class CData> CParams; //!!! FIXME: some code relies on order preservation of loaded HRD, can't use map!
@@ -33,7 +40,7 @@ protected:
 		CParams*						As_CParams;
 		CDataArray*						As_CDataArray;
 		struct { float x, y, z; }*		As_vector3;
-		struct { float x, y, z, w; }*	As_vector4;
+		vector4*						As_vector4;
 		struct { float m[4][4]; }*		As_matrix44;
 	};
 #else
@@ -219,6 +226,7 @@ DECLARE_TYPE(int, 2)
 DECLARE_TYPE(float, 3)
 DECLARE_TYPE(std::string, 4)
 DECLARE_TYPE(CStrID, 5)
+DECLARE_TYPE(vector4, 7)
 DECLARE_TYPE(CBuffer, 9)
 DECLARE_TYPE(CDataArray, 10)
 DECLARE_TYPE(CParams, 11)
