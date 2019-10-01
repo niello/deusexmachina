@@ -13,6 +13,19 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/effects
 
+struct CRenderState
+{
+	// pipeline settings
+
+	// shader data
+
+	uint32_t ShaderFormatFourCC = 0;
+	uint32_t MinFeatureLevel = 0;
+	uint32_t RequiresFlags = 0;
+	int8_t LightCount = -1;
+	bool IsValid = false;
+};
+
 class CEffectTool : public CContentForgeTool
 {
 private:
@@ -158,17 +171,6 @@ public:
 			return false;
 		}
 
-		struct CRenderState
-		{
-			// pipeline settings
-
-			// shader data
-
-			uint32_t ShaderFormatFourCC;
-			uint8_t LightCount;
-			bool IsValid;
-		};
-
 		std::map<CStrID, CRenderState> RSCache;
 
 		const auto& RenderStates = ItRenderStates->second.GetValue<Data::CParams>();
@@ -194,9 +196,11 @@ public:
 
 				// TODO:
 				// parse passes //???before techs to handle references properly?
-				// if has invalid or inexistent passes, write error
 				// if tech mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
 				// if tech became empty, discard it
+				uint32_t ShaderFormatFourCC = 0;
+				uint32_t MinFeatureLevel = 0;
+				uint32_t RequiresFlags = 0;
 
 				const auto& Passes = Tech.second.GetValue<Data::CDataArray>();
 				for (const auto& Pass : Passes)
@@ -209,21 +213,8 @@ public:
 					auto ItRS = RSCache.find(RenderStateID);
 					if (ItRS == RSCache.cend())
 					{
-						CRenderState NewState;
-
-						// load (base + overrides)
-						NewState.IsValid = false;
-
-						// get shader formats for all specified shaders
-						// if shader doesn't exist, fail
-						// if pass mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
-						// collect feature level (max through all used shaders) - only for DX? additional fields can be based on tech format
-						// get max light count of all shaders in all passes (-1 = any, 0 = no lights in this pass)
-						// shader switching is costly, so we don't build per-light-count variations, but instead
-						// create the shader with max light count only
-						//???how to claculate max light count and whether the shader uses lights at all?
-
-						ItRS = RSCache.emplace(RenderStateID, std::move(NewState)).first;
+						LoadRenderState(RSCache, RenderStateID, RenderStates);
+						auto ItRS = RSCache.find(RenderStateID);
 					}
 
 					const auto& RS = ItRS->second;
@@ -251,6 +242,79 @@ public:
 		//if (_LogVerbosity >= EVerbosity::Debug)
 		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
 
+		return true;
+	}
+
+	bool LoadRenderState(std::map<CStrID, CRenderState>& RSCache, CStrID ID, const Data::CParams& RenderStates)
+	{
+		// Insert invalid render state initially not to do it in every 'return false' below.
+		// We want to have a record for each parsed RS, not only for valid ones.
+		CRenderState& RS = RSCache.emplace(ID, CRenderState{}).first->second;
+
+		const auto LineEnd = std::cout.widen('\n');
+
+		// Get a descripting HRD section
+
+		auto It = RenderStates.find(ID);
+		if (It == RenderStates.cend() || !It->second.IsA<Data::CParams>)
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "Render state '" << ID.CStr() << "' not found or is not a section" << LineEnd;
+			return false;
+		}
+
+		const auto& Desc = It->second.GetValue<Data::CParams>();
+
+		// Load base state if specified
+
+		const CStrID BaseID = GetParam(Desc, "Base", CStrID::Empty);
+		if (BaseID)
+		{
+			auto ItRS = RSCache.find(BaseID);
+			if (ItRS == RSCache.cend())
+			{
+				LoadRenderState(RSCache, BaseID, RenderStates);
+				auto ItRS = RSCache.find(BaseID);
+			}
+
+			const auto& BaseRS = ItRS->second;
+			if (!BaseRS.IsValid)
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "Render state '" << ID.CStr() << "' has invalid base state '" << BaseID.CStr() << '\'' << LineEnd;
+				return false;
+			}
+
+			// Copy base state to the current, so all parameters in the current desc will override base values
+			RS = BaseRS;
+		}
+
+		// Load explicit state
+
+		//...
+
+		// Process shaders
+
+		// ...
+
+		// store only explicitly defined values? easier loading, engine supplies defaults
+
+		// loop through specified shaders
+		// - if no shader resource, fail
+		// - if unsupported format mixing, fail
+		// - load metadata (separate codepath for each metadata format)
+
+		// get shader formats for all specified shaders
+		// if shader doesn't exist, fail
+		// if pass mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
+		// collect feature level (max through all used shaders) - only for DX? additional fields can be based on tech format
+		// get max light count of all shaders in all passes (-1 = any, 0 = no lights in this pass)
+		// shader switching is costly, so we don't build per-light-count variations, but instead
+		// create the shader with max light count only
+		//???how to claculate max light count and whether the shader uses lights at all?
+
+		RSCache.emplace(ID, std::move(RS));
+		RS.IsValid = true;
 		return true;
 	}
 };
