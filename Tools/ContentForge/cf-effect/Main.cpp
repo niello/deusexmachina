@@ -202,7 +202,7 @@ public:
 					if (ItRS == RSCache.cend())
 					{
 						LoadRenderState(RSCache, RenderStateID, RenderStates);
-						auto ItRS = RSCache.find(RenderStateID);
+						ItRS = RSCache.find(RenderStateID);
 					}
 
 					const auto& RS = ItRS->second;
@@ -263,7 +263,7 @@ public:
 			if (ItRS == RSCache.cend())
 			{
 				LoadRenderState(RSCache, BaseID, RenderStates);
-				auto ItRS = RSCache.find(BaseID);
+				ItRS = RSCache.find(BaseID);
 			}
 
 			const auto& BaseRS = ItRS->second;
@@ -477,41 +477,40 @@ public:
 		if (TryGetParam(StrValue, Desc, "AlphaTestFunc"))
 			RS.AlphaTestFunc = StringToCmpFunc(StrValue);
 
-
-/*
-	// Misc
-
-	Data::CData ClipPlanes;
-	if (RS->Get(ClipPlanes, CStrID("ClipPlanes")))
-	{
-		if (ClipPlanes.IsA<bool>() && ClipPlanes == false)
+		auto ItClipPlanes = Desc.find(CStrID("ClipPlanes"));
+		if (ItClipPlanes != Desc.cend())
 		{
-			// All clip planes disabled
-		}
-		else if (ClipPlanes.IsA<int>())
-		{
-			int CP = ClipPlanes;
-			for (int i = 0; i < 5; ++i)
-				RS.SetFlags(CRenderState::Misc_ClipPlaneEnable << i, !!(CP & (1 << i)));
-		}
-		else if (ClipPlanes.IsA<Data::PDataArray>())
-		{
-			Data::CDataArray& CP = *ClipPlanes.GetValue<Data::PDataArray>();
-			
-			for (UPTR i = 0; i < 5; ++i)
-				Desc.Flags.Clear(CRenderState::Misc_ClipPlaneEnable << i);
-			
-			for (UPTR i = 0; i < CP.GetCount(); ++i)
+			if (ItClipPlanes->second.IsA<bool>() && ItClipPlanes->second == false)
 			{
-				Data::CData& Val = CP[i];
-				if (!Val.IsA<int>()) continue;
-				int IntVal = Val;
-				if (IntVal < 0 || IntVal > 5) continue;
-				Desc.Flags.Set(CRenderState::Misc_ClipPlaneEnable << IntVal);
+				// All clip planes disabled
+			}
+			else if (ItClipPlanes->second.IsA<int>())
+			{
+				const int CP = ItClipPlanes->second;
+				for (int i = 0; i < 5; ++i)
+					RS.SetFlags(CRenderState::Misc_ClipPlaneEnable << i, !!(CP & (1 << i)));
+			}
+			else if (ItClipPlanes->second.IsA<Data::CDataArray>())
+			{			
+				for (size_t i = 0; i < 5; ++i)
+					RS.Flags &= ~(CRenderState::Misc_ClipPlaneEnable << i);
+			
+				const Data::CDataArray& CP = ItClipPlanes->second.GetValue<Data::CDataArray>();
+				for (const auto& Val : CP)
+				{
+					if (!Val.IsA<int>()) continue;
+					int IntVal = Val;
+					if (IntVal < 0 || IntVal > 5) continue;
+					RS.Flags |= (CRenderState::Misc_ClipPlaneEnable << IntVal);
+				}
+			}
+			else
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "Render state '" << ID.CStr() << "' has invalid 'ClipPlanes'. Must be 'false', int bitmask or an array of indices." << LineEnd;
+				return false;
 			}
 		}
-	}
-*/
 
 		// Process shaders
 
