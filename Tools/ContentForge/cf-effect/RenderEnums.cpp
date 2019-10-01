@@ -5,12 +5,12 @@ ECmpFunc StringToCmpFunc(std::string Str)
 {
 	trim(Str, " \r\n\t");
 	ToLower(Str);
-	if (Str == "less" || Str == "l") return Cmp_Less;
-	if (Str == "lessequal" || Str == "le") return Cmp_LessEqual;
-	if (Str == "greater" || Str == "g") return Cmp_Greater;
-	if (Str == "greaterequal" || Str == "ge") return Cmp_GreaterEqual;
-	if (Str == "equal" || Str == "e") return Cmp_Equal;
-	if (Str == "notequal" || Str == "ne") return Cmp_NotEqual;
+	if (Str == "less" || Str == "l" || Str == "<") return Cmp_Less;
+	if (Str == "lessequal" || Str == "le" || Str == "<=") return Cmp_LessEqual;
+	if (Str == "greater" || Str == "g" || Str == ">") return Cmp_Greater;
+	if (Str == "greaterequal" || Str == "ge" || Str == ">=") return Cmp_GreaterEqual;
+	if (Str == "equal" || Str == "e" || Str == "=" || Str == "==") return Cmp_Equal;
+	if (Str == "notequal" || Str == "ne" || Str == "!=") return Cmp_NotEqual;
 	if (Str == "always") return Cmp_Always;
 	return Cmp_Never;
 }
