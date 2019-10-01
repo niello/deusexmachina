@@ -17,6 +17,7 @@ class CEffectTool : public CContentForgeTool
 {
 private:
 
+	// FIXME: common threadsafe logger for tasks instead of cout
 	//std::mutex COutMutex;
 
 public:
@@ -54,7 +55,7 @@ public:
 		const std::string TaskID(Task.TaskID.CStr());
 		const auto DestPath = fs::path(Output) / (TaskID + ".eff");
 
-		// FIXME: need MT-safe logger instead of cout!
+		// FIXME: must be thread-safe, also can move to the common code
 		const auto LineEnd = std::cout.widen('\n');
 		if (_LogVerbosity >= EVerbosity::Debug)
 		{
@@ -141,6 +142,14 @@ public:
 
 		// Parse, validate and sort techniques
 
+		auto ItRenderStates = Desc.find(CStrID("RenderStates"));
+		if (ItRenderStates == Desc.cend() || !ItRenderStates->second.IsA<Data::CParams>())
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "'RenderStates' must be a section" << LineEnd;
+			return false;
+		}
+
 		auto ItTechs = Desc.find(CStrID("Techniques"));
 		if (ItTechs == Desc.cend() || !ItTechs->second.IsA<Data::CParams>() || ItTechs->second.GetValue<Data::CParams>().empty())
 		{
@@ -149,6 +158,20 @@ public:
 			return false;
 		}
 
+		struct CRenderState
+		{
+			// pipeline settings
+
+			// shader data
+
+			uint32_t ShaderFormatFourCC;
+			uint8_t LightCount;
+			bool IsValid;
+		};
+
+		std::map<CStrID, CRenderState> RSCache;
+
+		const auto& RenderStates = ItRenderStates->second.GetValue<Data::CParams>();
 		const auto& InputSets = ItTechs->second.GetValue<Data::CParams>();
 		for (const auto& InputSet : InputSets)
 		{
@@ -176,26 +199,47 @@ public:
 				// if tech became empty, discard it
 
 				const auto& Passes = Tech.second.GetValue<Data::CDataArray>();
-
-				//!!!DBG TMP!
 				for (const auto& Pass : Passes)
 				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "', pass '" << Pass.GetValue<CStrID>().CStr() << '\'' << LineEnd;
+					const CStrID RenderStateID = Pass.GetValue<CStrID>();
 
-					// build RS from base & overrides
-					// get shader formats for all specified shaders
-					// if shader doesn't exist, fail
-					// if pass mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
-					// collect feature level (max through all used shaders) - only for DX? additional fields can be based on tech format
+					if (_LogVerbosity >= EVerbosity::Debug)
+						std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
 
-					// get max light count of all shaders in all passes (-1 = any, 0 = no lights in this pass)
-					// shader switching is costly, so we don't build per-light-count variations, but instead
-					// create the shader with max light count only
-					//???how to claculate max light count and whether the shader uses lights at all?
+					auto ItRS = RSCache.find(RenderStateID);
+					if (ItRS == RSCache.cend())
+					{
+						CRenderState NewState;
+
+						// load (base + overrides)
+						NewState.IsValid = false;
+
+						// get shader formats for all specified shaders
+						// if shader doesn't exist, fail
+						// if pass mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
+						// collect feature level (max through all used shaders) - only for DX? additional fields can be based on tech format
+						// get max light count of all shaders in all passes (-1 = any, 0 = no lights in this pass)
+						// shader switching is costly, so we don't build per-light-count variations, but instead
+						// create the shader with max light count only
+						//???how to claculate max light count and whether the shader uses lights at all?
+
+						ItRS = RSCache.emplace(RenderStateID, std::move(NewState)).first;
+					}
+
+					const auto& RS = ItRS->second;
+					if (!RS.IsValid)
+					{
+						// Can discard only this tech, but for now issue an error and stop
+						if (_LogVerbosity >= EVerbosity::Errors)
+							std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "' uses invalid render state in a pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+						return false;
+					}
+
+					// collect info from the render state:
+					// shader format
+					// feature level
+					// light count
 				}
-
-				// All passes of the tech:
 			}
 
 			// All techs of the input set:
@@ -203,6 +247,7 @@ public:
 			//???sort by shader format?
 		}
 
+		// FIXME: must be thread-safe, also can move to the common code
 		//if (_LogVerbosity >= EVerbosity::Debug)
 		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
 

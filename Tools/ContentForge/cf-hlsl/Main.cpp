@@ -117,6 +117,7 @@ public:
 
 		const auto LineEnd = Log.GetStream().widen('\n');
 
+		// FIXME: can move to the common code
 		if (_LogVerbosity >= EVerbosity::Debug)
 		{
 			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
@@ -137,6 +138,7 @@ public:
 			std::cout << LoggedString;
 		}
 
+		// FIXME: must be thread-safe, also can move to the common code
 		if (_LogVerbosity >= EVerbosity::Debug)
 			std::cout << "Status: " << ((Code == DEM_SHADER_COMPILER_SUCCESS) ? "OK" : "FAIL") << LineEnd << LineEnd;
 
