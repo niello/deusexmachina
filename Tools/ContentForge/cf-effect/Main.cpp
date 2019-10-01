@@ -3,6 +3,7 @@
 #include <Utils.h>
 #include <HRDParser.h>
 //#include <CLI11.hpp>
+#include <set>
 #include <thread>
 //#include <mutex>
 #include <iostream>
@@ -514,25 +515,29 @@ public:
 
 		// Process shaders
 
-		// ...
+		std::set<CStrID> Shaders;
+		if (RS.VertexShader) Shaders.insert(RS.VertexShader);
+		if (RS.HullShader) Shaders.insert(RS.HullShader);
+		if (RS.DomainShader) Shaders.insert(RS.DomainShader);
+		if (RS.GeometryShader) Shaders.insert(RS.GeometryShader);
+		if (RS.PixelShader) Shaders.insert(RS.PixelShader);
 
-		// store only explicitly defined values? easier loading, engine supplies defaults
+		for (CStrID ShaderID : Shaders)
+		{
+			// if no shader resource, fail
+			// if unsupported format mixing, fail (DXBC+DXIL -> DXIL? what if API supports DXIL only? deny mixing for now?)
 
-		// loop through specified shaders
-		// - if no shader resource, fail
-		// - if unsupported format mixing, fail
-		// - load metadata (separate codepath for each metadata format)
+			// load metadata (separate codepath for each metadata format)
+			//???cache for param tables?
 
-		// get shader formats for all specified shaders
-		// if shader doesn't exist, fail
-		// if pass mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
-		// collect feature level (max through all used shaders) - only for DX? additional fields can be based on tech format
-		// get max light count of all shaders in all passes (-1 = any, 0 = no lights in this pass)
-		// shader switching is costly, so we don't build per-light-count variations, but instead
-		// create the shader with max light count only
-		//???how to claculate max light count and whether the shader uses lights at all?
+			// get format
+			// get feature level (only if format specifies it, or for all formats?)
+			// get light count, collect max of all shaders
+			// shader switching is costly, so we don't build per-light-count variations, but instead
+			// create the shader with max light count only
+			//???how to claculate max light count and whether the shader uses lights at all?
+		}
 
-		RSCache.emplace(ID, std::move(RS));
 		RS.IsValid = true;
 		return true;
 	}
