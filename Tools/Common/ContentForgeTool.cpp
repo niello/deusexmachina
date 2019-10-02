@@ -28,6 +28,16 @@ void CContentForgeTool::ProcessCommandLine(CLI::App& CLIApp)
 	CLIApp.add_option("-v", _LogVerbosity, "Verbosity level")->check(
 		CLI::Range(static_cast<int>(EVerbosity::Always), static_cast<int>(EVerbosity::Debug)));
 	CLIApp.add_option("-w,--waitkey", _WaitKey, "Wait for key press after the tool has finished");
+
+	// Path aliases (assigns)
+	auto pOption = CLIApp.add_option("--path", [this](CLI::results_t vals)
+	{
+		const size_t PairCount = vals.size() / 2;
+		for (size_t i = 0; i < PairCount; ++i)
+			_PathAliases[vals[i * 2]] = vals[i * 2 + 1];
+		return true;
+	}, "Path alias for resource location resolving");
+	pOption->type_name("KEY VALUE")->type_size(-2);
 }
 //---------------------------------------------------------------------
 
@@ -235,5 +245,27 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 		Task.Params = std::move(Param.second.GetValue<Data::CParams>());
 		_Tasks.push_back(std::move(Task));
 	}
+}
+//---------------------------------------------------------------------
+
+std::filesystem::path CContentForgeTool::ResolvePathAliases(const std::string& Path) const
+{
+	std::string Result = Path;
+	auto Pos = Result.find_first_of(':');
+	while (Pos != std::string::npos)
+	{
+		if (Pos > 0)
+		{
+			std::string Alias = Result.substr(0, Pos);
+			auto It = _PathAliases.find(Alias);
+			if (It == _PathAliases.cend()) break; // Not an alias, path is resolved
+			Result = (It->second / Result.substr(Pos + 1)).string();
+		}
+		else Result = Result.substr(1); // Empty alias, just remove leading ':'
+
+		Pos = Result.find_first_of(':');
+	}
+
+	return Result;
 }
 //---------------------------------------------------------------------

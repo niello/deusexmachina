@@ -2,10 +2,10 @@
 #include <RenderState.h>
 #include <Utils.h>
 #include <HRDParser.h>
-#include <CLI11.hpp>
+//#include <CLI11.hpp>
+//#include <mutex>
 #include <set>
 #include <thread>
-//#include <mutex>
 #include <iostream>
 #include <filesystem>
 
@@ -13,16 +13,11 @@ namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/effects
+// -s src/effects --path Data ../../../content
 
 class CEffectTool : public CContentForgeTool
 {
 private:
-
-	// _Pathes is for CLI11, _PathAliases is an actual data
-	//!!!https://github.com/CLIUtils/CLI11/issues/128
-	std::vector<std::string> _Pathes;
-	std::map<std::string, std::string> _PathAliases;
 
 	// FIXME: common threadsafe logger for tasks instead of cout
 	//std::mutex COutMutex;
@@ -47,11 +42,10 @@ public:
 		return false;
 	}
 
-	virtual void ProcessCommandLine(CLI::App& CLIApp) override
-	{
-		CContentForgeTool::ProcessCommandLine(CLIApp);
-		CLIApp.add_option("--path", _Pathes, "Path alias for resource location resolving");
-	}
+	//virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	//{
+	//	CContentForgeTool::ProcessCommandLine(CLIApp);
+	//}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
@@ -528,8 +522,58 @@ public:
 
 		for (CStrID ShaderID : Shaders)
 		{
-			// if no shader resource, fail
-			// if unsupported format mixing, fail (DXBC+DXIL -> DXIL? what if API supports DXIL only? deny mixing for now?)
+			auto Path = ResolvePathAliases(ShaderID.CStr());
+
+			if (_LogVerbosity >= EVerbosity::Debug)
+				std::cout << "Opening shader " << Path.generic_string() << LineEnd;
+
+			std::ifstream File(Path, std::ios_base::binary);
+			if (!File)
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "Can't open shader " << Path.generic_string() << LineEnd;
+				return false;
+			}
+
+			// TODO: write shader format signature to DEM shader files?
+			uint32_t FileSignature;
+			ReadStream(File, FileSignature);
+
+			uint32_t ShaderFormat = 0;
+			switch (FileSignature)
+			{
+				case 'VS30':
+				case 'PS30':
+				{
+					ShaderFormat = 'DX9C';
+					break;
+				}
+				case 'VS50':
+				case 'VS41':
+				case 'VS40':
+				case 'PS50':
+				case 'PS41':
+				case 'PS40':
+				case 'GS50':
+				case 'GS41':
+				case 'GS40':
+				case 'HS50':
+				case 'DS50':
+				{
+					ShaderFormat = 'DXBC';
+					break;
+				}
+			}
+
+			// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
+			if (RS.ShaderFormatFourCC && RS.ShaderFormatFourCC != ShaderFormat)
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "Render state '" << ID.CStr() << "' has unsupported mix of shader formats." << LineEnd;
+				return false;
+			}
+
+			RS.ShaderFormatFourCC = ShaderFormat;
 
 			// load metadata (separate codepath for each metadata format)
 			//???cache for param tables?
