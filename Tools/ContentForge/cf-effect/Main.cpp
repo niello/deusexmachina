@@ -2,7 +2,7 @@
 #include <RenderState.h>
 #include <Utils.h>
 #include <HRDParser.h>
-//#include <CLI11.hpp>
+#include <CLI11.hpp>
 #include <set>
 #include <thread>
 //#include <mutex>
@@ -18,6 +18,11 @@ namespace fs = std::filesystem;
 class CEffectTool : public CContentForgeTool
 {
 private:
+
+	// _Pathes is for CLI11, _PathAliases is an actual data
+	//!!!https://github.com/CLIUtils/CLI11/issues/128
+	std::vector<std::string> _Pathes;
+	std::map<std::string, std::string> _PathAliases;
 
 	// FIXME: common threadsafe logger for tasks instead of cout
 	//std::mutex COutMutex;
@@ -42,12 +47,11 @@ public:
 		return false;
 	}
 
-	//virtual void ProcessCommandLine(CLI::App& CLIApp) override
-	//{
-	//	CContentForgeTool::ProcessCommandLine(CLIApp);
-	//	CLIApp.add_option("--db", _DBPath, "Shader DB file path");
-	//	CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
-	//}
+	virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	{
+		CContentForgeTool::ProcessCommandLine(CLIApp);
+		CLIApp.add_option("--path", _Pathes, "Path alias for resource location resolving");
+	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
