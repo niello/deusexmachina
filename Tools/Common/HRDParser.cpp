@@ -810,7 +810,6 @@ bool CHRDParser::ParseSection(const std::vector<CToken>& Tokens, CParams& Output
 // VECTOR = '(' [ NUMBER { ',' NUMBER } ] ')'
 bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 {
-	/*
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_BR_OPEN)) return false;
 
 	int CursorBackup = ParserCursor;
@@ -819,18 +818,14 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 
 	while (++ParserCursor < Tokens.size())
 	{
-		const CToken& CurrToken = Tokens[ParserCursor];
+		const CToken* pCurrToken = &Tokens[ParserCursor];
 
 		// Parse data and ensure it is number
 		CData Data;
 		if (!(ParseData(Tokens, Data) && (Data.IsA<int>() || Data.IsA<float>())))
 		{
 			if (pErr)
-			{
-				std::string S;
-				S.Format("Numeric constant expected in vector (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-				pErr->append(S);
-			}
+				*pErr << "Numeric constant expected in vector (Ln:" << pCurrToken->Ln << ", Col:" << pCurrToken->Cl << ")\n";
 			ParserCursor = CursorBackup;
 			return false;
 		}
@@ -838,34 +833,30 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 	
 		if (ParserCursor >= Tokens.size()) break;
 		
-		const CToken& CurrToken = Tokens[ParserCursor];
-		if (CurrToken.IsA(TBL_DLM, DLM_COMMA)) continue;
-		else if (CurrToken.IsA(TBL_DLM, DLM_BR_CLOSE))
+		pCurrToken = &Tokens[ParserCursor];
+		if (pCurrToken->IsA(TBL_DLM, DLM_COMMA)) continue;
+		else if (pCurrToken->IsA(TBL_DLM, DLM_BR_CLOSE))
 		{
 			switch (Floats.size())
 			{
 				case 3:
-					Output = vector3(Floats[0], Floats[1], Floats[2]);
+					Output = vector4{ Floats[0], Floats[1], Floats[2], 0.f };
 					break;
 				case 4:
-					Output = vector4(Floats[0], Floats[1], Floats[2], Floats[3]);
+					Output = vector4{ Floats[0], Floats[1], Floats[2], Floats[3] };
 					break;
 
-				case 16:
-					Output = matrix44(	Floats[0], Floats[1], Floats[2], Floats[3],
-										Floats[4], Floats[5], Floats[6], Floats[7],
-										Floats[8], Floats[9], Floats[10], Floats[11],
-										Floats[12], Floats[13], Floats[14], Floats[15]);
-					break;
+				//case 16:
+				//	Output = matrix44(	Floats[0], Floats[1], Floats[2], Floats[3],
+				//						Floats[4], Floats[5], Floats[6], Floats[7],
+				//						Floats[8], Floats[9], Floats[10], Floats[11],
+				//						Floats[12], Floats[13], Floats[14], Floats[15]);
+				//	break;
 				
 				default:
 					ParserCursor = CursorBackup;
 					if (pErr)
-					{
-						std::string S;
-						S.Format("Unexpected vector element count: %d (Ln:%u, Col:%u)\n", Floats.size(), CurrToken.Ln, CurrToken.Cl);
-						pErr->append(S);
-					}
+						*pErr << "Unexpected vector element count: " << Floats.size() << " (Ln:" << pCurrToken->Ln << ", Col:" << pCurrToken->Cl << ")\n";
 					return false;
 			}
 
@@ -876,23 +867,15 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 		{
 			ParserCursor = CursorBackup;
 			if (pErr)
-			{
-				std::string S;
-				S.Format("',' or ']' expected (Ln:%u, Col:%u)\n", CurrToken.Ln, CurrToken.Cl);
-				pErr->append(S);
-			}
+				*pErr << "',' or ')' expected (Ln:" << pCurrToken->Ln << ", Col:" << pCurrToken->Cl << ")\n";
 			return false;
 		}
 	}
 
 	ParserCursor = CursorBackup;
 	if (pErr)
-	{
-		std::string S;
-		S.Format("Unexpected end of file while parsing VECTOR\n");
-		pErr->append(S);
-	}
-	*/
+		*pErr << "Unexpected end of file while parsing VECTOR\n";
+
 	return false;
 }
 //---------------------------------------------------------------------
