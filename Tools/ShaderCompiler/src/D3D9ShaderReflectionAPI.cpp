@@ -6,8 +6,7 @@
 // http://www.gamedev.net/topic/648016-replacement-for-id3dxconstanttable/
 // This version has some cosmetic changes
 
-#pragma pack(push)
-#pragma pack(1)
+#pragma pack(push, 1)
 struct CCTABHeader
 {
 	uint32_t Size;

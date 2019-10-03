@@ -15,6 +15,37 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/effects --path Data ../../../content
 
+struct CTechnique
+{
+	std::vector<const CRenderState*> Passes;
+
+	uint32_t ShaderFormatFourCC = 0;
+	uint32_t MinFeatureLevel = 0;
+
+	bool operator <(const CTechnique& Other)
+	{
+		// Sort by features descending, so we start with the
+		// most interesting tech and fall back to simpler ones
+		return MinFeatureLevel > Other.MinFeatureLevel;
+	}
+};
+
+#pragma pack(push, 1)
+struct CShaderHeader
+{
+	uint32_t Format;
+	uint32_t MinFeatureLevel;
+	uint8_t Type;
+	uint32_t BinaryOffset;
+};
+#pragma pack(pop)
+
+struct CShaderData
+{
+	CShaderHeader Header;
+	std::unique_ptr<char[]> MetaBytes;
+};
+
 class CEffectTool : public CContentForgeTool
 {
 private:
@@ -159,48 +190,45 @@ public:
 		}
 
 		std::map<CStrID, CRenderState> RSCache;
+		std::map<CStrID, CShaderData> ShaderCache;
 
-		auto& RenderStates = ItRenderStates->second.GetValue<Data::CParams>();
-		const auto& InputSets = ItTechs->second.GetValue<Data::CParams>();
-		for (const auto& InputSet : InputSets)
+		auto& RenderStateDescs = ItRenderStates->second.GetValue<Data::CParams>();
+		const auto& InputSetDescs = ItTechs->second.GetValue<Data::CParams>();
+		for (const auto& InputSetDesc : InputSetDescs)
 		{
-			if (!InputSet.second.IsA<Data::CParams>() || InputSet.second.GetValue<Data::CParams>().empty())
+			if (!InputSetDesc.second.IsA<Data::CParams>() || InputSetDesc.second.GetValue<Data::CParams>().empty())
 			{
 				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Input set '" << InputSet.first.CStr() << "' must be a section containing at least one technique" << LineEnd;
+					std::cout << "Input set '" << InputSetDesc.first.CStr() << "' must be a section containing at least one technique" << LineEnd;
 				return false;
 			}
 
-			const auto& Techs = InputSet.second.GetValue<Data::CParams>();
-			for (const auto& Tech : Techs)
+			std::vector<CTechnique> InputSetTechs;
+
+			const auto& TechDescs = InputSetDesc.second.GetValue<Data::CParams>();
+			for (const auto& TechDesc : TechDescs)
 			{
-				if (!Tech.second.IsA<Data::CDataArray>() || Tech.second.GetValue<Data::CDataArray>().empty())
+				if (!TechDesc.second.IsA<Data::CDataArray>() || TechDesc.second.GetValue<Data::CDataArray>().empty())
 				{
 					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "' must be an array containing at least one render state ID" << LineEnd;
+						std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "' must be an array containing at least one render state ID" << LineEnd;
 					return false;
 				}
 
-				// TODO:
-				// parse passes //???before techs to handle references properly?
-				// if tech mixes shader formats, fail (or allow say DXBC+DXIL for D3D12? use newer format as tech format? DXIL in this case)
-				// if tech became empty, discard it
-				uint32_t ShaderFormatFourCC = 0;
-				uint32_t MinFeatureLevel = 0;
-				uint32_t RequiresFlags = 0;
+				CTechnique Tech;
 
-				const auto& Passes = Tech.second.GetValue<Data::CDataArray>();
-				for (const auto& Pass : Passes)
+				const auto& PassDescs = TechDesc.second.GetValue<Data::CDataArray>();
+				for (const auto& PassDesc : PassDescs)
 				{
-					const CStrID RenderStateID = Pass.GetValue<CStrID>();
+					const CStrID RenderStateID = PassDesc.GetValue<CStrID>();
 
 					if (_LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+						std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
 
 					auto ItRS = RSCache.find(RenderStateID);
 					if (ItRS == RSCache.cend())
 					{
-						LoadRenderState(RSCache, RenderStateID, RenderStates);
+						LoadRenderState(RSCache, ShaderCache, RenderStateID, RenderStateDescs);
 						ItRS = RSCache.find(RenderStateID);
 					}
 
@@ -209,20 +237,33 @@ public:
 					{
 						// Can discard only this tech, but for now issue an error and stop
 						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Tech '" << InputSet.first.CStr() << '.' << Tech.first.CStr() << "' uses invalid render state in a pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+							std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "' uses invalid render state in a pass '" << RenderStateID.CStr() << '\'' << LineEnd;
 						return false;
 					}
 
-					// collect info from the render state:
-					// shader format
-					// feature level
-					// light count
+					// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
+					if (Tech.ShaderFormatFourCC && Tech.ShaderFormatFourCC != RS.ShaderFormatFourCC)
+					{
+						if (_LogVerbosity >= EVerbosity::Errors)
+							std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "' has unsupported mix of shader formats." << LineEnd;
+						return false;
+					}
+
+					Tech.ShaderFormatFourCC = RS.ShaderFormatFourCC;
+
+					if (Tech.MinFeatureLevel < RS.MinFeatureLevel)
+						Tech.MinFeatureLevel = RS.MinFeatureLevel;
+
+					// TODO: light count
+
+					Tech.Passes.push_back(&RS);
 				}
+
+				InputSetTechs.push_back(std::move(Tech));
 			}
 
-			// All techs of the input set:
-			// sort techs by the feature level (descending), so that first loaded tech is the best
-			//???sort by shader format?
+			// See tech's operator <
+			std::sort(InputSetTechs.begin(), InputSetTechs.end());
 		}
 
 		// FIXME: must be thread-safe, also can move to the common code
@@ -232,7 +273,8 @@ public:
 		return true;
 	}
 
-	bool LoadRenderState(std::map<CStrID, CRenderState>& RSCache, CStrID ID, Data::CParams& RenderStates)
+	bool LoadRenderState(std::map<CStrID, CRenderState>& RSCache, std::map<CStrID, CShaderData>& ShaderCache,
+		CStrID ID, Data::CParams& RenderStateDescs)
 	{
 		// Insert invalid render state initially not to do it in every 'return false' below.
 		// We want to have a record for each parsed RS, not only for valid ones.
@@ -242,8 +284,8 @@ public:
 
 		// Get a HRD section for this render state
 
-		auto It = RenderStates.find(ID);
-		if (It == RenderStates.cend() || !It->second.IsA<Data::CParams>())
+		auto It = RenderStateDescs.find(ID);
+		if (It == RenderStateDescs.cend() || !It->second.IsA<Data::CParams>())
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
 				std::cout << "Render state '" << ID.CStr() << "' not found or is not a section" << LineEnd;
@@ -261,7 +303,7 @@ public:
 			auto ItRS = RSCache.find(BaseID);
 			if (ItRS == RSCache.cend())
 			{
-				LoadRenderState(RSCache, BaseID, RenderStates);
+				LoadRenderState(RSCache, ShaderCache, BaseID, RenderStateDescs);
 				ItRS = RSCache.find(BaseID);
 			}
 
@@ -522,52 +564,63 @@ public:
 
 		for (CStrID ShaderID : Shaders)
 		{
-			auto Path = ResolvePathAliases(ShaderID.CStr());
-
-			if (_LogVerbosity >= EVerbosity::Debug)
-				std::cout << "Opening shader " << Path.generic_string() << LineEnd;
-
-			std::ifstream File(Path, std::ios_base::binary);
-			if (!File)
+			auto ShaderDataIt = ShaderCache.find(ShaderID);
+			if (ShaderDataIt == ShaderCache.cend())
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Can't open shader " << Path.generic_string() << LineEnd;
-				return false;
+				auto Path = ResolvePathAliases(ShaderID.CStr());
+
+				if (_LogVerbosity >= EVerbosity::Debug)
+					std::cout << "Opening shader " << Path.generic_string() << LineEnd;
+
+				std::ifstream File(Path, std::ios_base::binary);
+				if (!File)
+				{
+					if (_LogVerbosity >= EVerbosity::Errors)
+						std::cout << "Can't open shader " << Path.generic_string() << LineEnd;
+					return false;
+				}
+
+				CShaderData ShaderData;
+				ReadStream(File, ShaderData.Header);
+
+				// TODO: get light count
+				// collect max light count of all shaders
+				// shader switching is costly, so we don't build per-light-count variations, but instead
+				// create the shader with max light count only
+				//???how to calculate max light count and whether the shader uses lights at all?
+				//???parameter in a shader metafile? will add DEM_MAX_LIGHT_COUNT definition to the compiler + metadata
+				//???or find a way to determine light count from shader metadata?
+
+				// Cache metadata bytes
+				const size_t MetaSize = ShaderData.Header.BinaryOffset - sizeof(CShaderHeader);
+				if (MetaSize)
+				{
+					ShaderData.MetaBytes.reset(new char[MetaSize]);
+					if (!File.read(ShaderData.MetaBytes.get(), MetaSize))
+					{
+						if (_LogVerbosity >= EVerbosity::Errors)
+							std::cout << "Render state '" << ID.CStr() << "' metadata bytes reading error." << LineEnd;
+						return false;
+					}
+				}
+
+				ShaderDataIt = ShaderCache.emplace(ShaderID, std::move(ShaderData)).first;
 			}
 
-			uint32_t ShaderFormat;
-			uint32_t MinFeatureLevel;
-			uint8_t ShaderType;
-			uint32_t BinaryOffset;
-			ReadStream(File, ShaderFormat);
-			ReadStream(File, MinFeatureLevel);
-			ReadStream(File, ShaderType);
-			ReadStream(File, BinaryOffset);
+			const CShaderData& ShaderData = ShaderDataIt->second;
 
 			// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
-			if (RS.ShaderFormatFourCC && RS.ShaderFormatFourCC != ShaderFormat)
+			if (RS.ShaderFormatFourCC && RS.ShaderFormatFourCC != ShaderData.Header.Format)
 			{
 				if (_LogVerbosity >= EVerbosity::Errors)
 					std::cout << "Render state '" << ID.CStr() << "' has unsupported mix of shader formats." << LineEnd;
 				return false;
 			}
 
-			RS.ShaderFormatFourCC = ShaderFormat;
+			RS.ShaderFormatFourCC = ShaderData.Header.Format;
 
-			if (RS.MinFeatureLevel < MinFeatureLevel)
-				RS.MinFeatureLevel = MinFeatureLevel;
-
-			// get light count, collect max of all shaders
-			// shader switching is costly, so we don't build per-light-count variations, but instead
-			// create the shader with max light count only
-			//???how to claculate max light count and whether the shader uses lights at all?
-			//???parameter in a shader metafile? will add DEM_MAX_LIGHT_COUNT definition to the compiler + metadata
-			//???or find a way to determine light count from shader metadata?
-
-			// load metadata (separate codepath for each metadata format)
-			//???cache loaded meta for param tables?
-			//???do we really need metadata here? probably not. But file is opened and we can cache it
-			//or even build param tables on the fly. Note that only valid techs must contribute to param tables!
+			if (RS.MinFeatureLevel < ShaderData.Header.MinFeatureLevel)
+				RS.MinFeatureLevel = ShaderData.Header.MinFeatureLevel;
 		}
 
 		RS.IsValid = true;
