@@ -360,7 +360,6 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 
 bool CUSMShaderMeta::Save(std::ostream& Stream) const
 {
-	WriteStream<uint32_t>(Stream, MinFeatureLevel);
 	WriteStream<uint64_t>(Stream, RequiresFlags);
 
 	WriteStream<uint32_t>(Stream, Buffers.size());
@@ -440,7 +439,6 @@ bool CUSMShaderMeta::Load(std::istream& Stream)
 	Resources.clear();
 	Samplers.clear();
 
-	ReadStream<uint32_t>(Stream, MinFeatureLevel);
 	ReadStream<uint64_t>(Stream, RequiresFlags);
 
 	uint32_t Count;

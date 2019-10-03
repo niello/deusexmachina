@@ -535,35 +535,14 @@ public:
 				return false;
 			}
 
-			// TODO: write shader format signature to DEM shader files?
-			uint32_t FileSignature;
-			ReadStream(File, FileSignature);
-
-			uint32_t ShaderFormat = 0;
-			switch (FileSignature)
-			{
-				case 'VS30':
-				case 'PS30':
-				{
-					ShaderFormat = 'DX9C';
-					break;
-				}
-				case 'VS50':
-				case 'VS41':
-				case 'VS40':
-				case 'PS50':
-				case 'PS41':
-				case 'PS40':
-				case 'GS50':
-				case 'GS41':
-				case 'GS40':
-				case 'HS50':
-				case 'DS50':
-				{
-					ShaderFormat = 'DXBC';
-					break;
-				}
-			}
+			uint32_t ShaderFormat;
+			uint32_t MinFeatureLevel;
+			uint8_t ShaderType;
+			uint32_t BinaryOffset;
+			ReadStream(File, ShaderFormat);
+			ReadStream(File, MinFeatureLevel);
+			ReadStream(File, ShaderType);
+			ReadStream(File, BinaryOffset);
 
 			// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
 			if (RS.ShaderFormatFourCC && RS.ShaderFormatFourCC != ShaderFormat)
@@ -575,15 +554,20 @@ public:
 
 			RS.ShaderFormatFourCC = ShaderFormat;
 
-			// load metadata (separate codepath for each metadata format)
-			//???cache for param tables?
+			if (RS.MinFeatureLevel < MinFeatureLevel)
+				RS.MinFeatureLevel = MinFeatureLevel;
 
-			// get format
-			// get feature level (only if format specifies it, or for all formats?)
 			// get light count, collect max of all shaders
 			// shader switching is costly, so we don't build per-light-count variations, but instead
 			// create the shader with max light count only
 			//???how to claculate max light count and whether the shader uses lights at all?
+			//???parameter in a shader metafile? will add DEM_MAX_LIGHT_COUNT definition to the compiler + metadata
+			//???or find a way to determine light count from shader metadata?
+
+			// load metadata (separate codepath for each metadata format)
+			//???cache loaded meta for param tables?
+			//???do we really need metadata here? probably not. But file is opened and we can cache it
+			//or even build param tables on the fly. Note that only valid techs must contribute to param tables!
 		}
 
 		RS.IsValid = true;

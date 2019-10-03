@@ -18,9 +18,10 @@ struct CTargetParams
 {
 	const char*	pD3DTarget;
 	uint32_t	FormatSignature;
+	EShaderType ShaderType;
 };
 
-static bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out)
+static bool FillTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out)
 {
 	assert(Target <= 0x0500); // Add D3D12 'DXIL' format and sm5.1/6.0 targets
 
@@ -85,6 +86,7 @@ static bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetPara
 
 	Out.pD3DTarget = pTarget;
 	Out.FormatSignature = (Target < 0x0400) ? 'DX9C' : 'DXBC';
+	Out.ShaderType = ShaderType;
 
 	return true;
 }
@@ -152,60 +154,60 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 }
 //---------------------------------------------------------------------
 
-static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, ID3DBlob* pCode, DB::CShaderRecord& Rec,
-	uint32_t FormatSignature, bool Debug, DEMShaderCompiler::ILogDelegate* pLog)
+static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, ID3DBlob*& pCode, DB::CShaderRecord& Rec,
+	const CTargetParams& TargetParams, bool Debug, DEMShaderCompiler::ILogDelegate* pLog)
 {
+	// Read metadata
+
+	CUSMShaderMeta Meta;
+	if (!Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize()))
+		return DEM_SHADER_COMPILER_REFLECTION_ERROR;
+
 	// Strip unnecessary info for release builds, making object files smaller
 
-	ID3DBlob* pFinalCode = nullptr;
-	if (Debug)
-	{
-		pFinalCode = pCode;
-		pFinalCode->AddRef();
-	}
-	else
+	if (!Debug)
 	{
 		// TODO: D3D12 - D3DCOMPILER_STRIP_ROOT_SIGNATURE ?
+		ID3DBlob* pStrippedCode = nullptr;
 		HRESULT hr = D3DStripShader(pCode->GetBufferPointer(), pCode->GetBufferSize(),
 			D3DCOMPILER_STRIP_REFLECTION_DATA | D3DCOMPILER_STRIP_DEBUG_INFO | D3DCOMPILER_STRIP_TEST_BLOBS | D3DCOMPILER_STRIP_PRIVATE_DATA,
-			&pFinalCode);
+			&pStrippedCode);
+
 		if (FAILED(hr))
 		{
 			if (pLog) pLog->LogError("\nD3DStripShader() failed\n");
 			return DEM_SHADER_COMPILER_ERROR;
 		}
+
+		pCode->Release();
+		pCode = pStrippedCode;
 	}
 
-	Rec.ObjFile.BytecodeSize = pFinalCode->GetBufferSize();
-	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
+	Rec.ObjFile.BytecodeSize = pCode->GetBufferSize();
+	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pCode->GetBufferPointer(), pCode->GetBufferSize());
 
 	/*
 	// FIXME: this check prevents creation of the requested target file. Binary merging
 	// must happen on packing, where different TOC records can resolve to the same chunk of bytes.
 	// If object file is found, no additional actions are needed.
 	// Compare only a shader blob for USM shaders, metadata completely depends on it.
-	if (DB::FindBinaryRecord(Rec.ObjFile, pBasePath, pFinalCode->GetBufferPointer(), true))
-	{
-		pFinalCode->Release();
+	if (DB::FindBinaryRecord(Rec.ObjFile, pBasePath, pCode->GetBufferPointer(), true))
 		return DEM_SHADER_COMPILER_SUCCESS;
-	}
 	*/
-	
+
 	fs::path DestPathDB, DestPathFS;
 	MakePathes(pBasePath, pDestPath, DestPathFS, DestPathDB);
 
 	fs::create_directories(DestPathFS.parent_path());
 
 	std::ofstream File(DestPathFS, std::ios_base::binary);
-	if (!File)
-	{
-		pFinalCode->Release();
-		return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
-	}
+	if (!File) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 
-	WriteStream<uint32_t>(File, FormatSignature);
-	WriteStream<uint16_t>(File, MinFeatureLevel);
-	WriteStream<uint8_t>(File, ShaderType);
+	// Save common header
+
+	WriteStream<uint32_t>(File, TargetParams.FormatSignature);
+	WriteStream<uint32_t>(File, Meta.MinFeatureLevel);
+	WriteStream<uint8_t>(File, TargetParams.ShaderType);
 
 	// Some data will be filled later
 	auto DelayedDataOffset = File.tellp();
@@ -213,27 +215,13 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 
 	// Save metadata
 
-	//!!!TO METADATA FOR D3D11!
-	WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
+	WriteStream<uint32_t>(File, Rec.InputSigFile.ID); // For DEM it will be a part of DXBC-specific metadata
 
-	CUSMShaderMeta Meta;
-	if (!Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize()))
-	{
-		pFinalCode->Release();
-		return DEM_SHADER_COMPILER_REFLECTION_ERROR;
-	}
-
-	if (!Meta.Save(File))
-	{
-		pFinalCode->Release();
-		return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
-	}
+	if (!Meta.Save(File)) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 
 	// Save shader binary
 	auto BinaryOffset = File.tellp();
-	File.write((const char*)pFinalCode->GetBufferPointer(), pFinalCode->GetBufferSize());
-
-	pFinalCode->Release();
+	File.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
 
 	const auto FileSize = File.tellp();
 
@@ -252,7 +240,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 //---------------------------------------------------------------------
 
 static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath, ID3DBlob* pCode, DB::CShaderRecord& Rec,
-	CSM30ShaderMeta&& Meta, uint32_t FormatSignature, DEMShaderCompiler::ILogDelegate* pLog)
+	CSM30ShaderMeta&& Meta, const CTargetParams& TargetParams, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	// NB: D3DStripShader can't be applied to sm3.0 shaders
 
@@ -284,15 +272,16 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	std::ofstream File(DestPathFS, std::ios_base::binary);
 	if (!File) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 
-	WriteStream<uint32_t>(File, FormatSignature);
-	WriteStream<uint16_t>(File, MinFeatureLevel);
-	WriteStream<uint8_t>(File, ShaderType);
+	// Save common header
+	WriteStream<uint32_t>(File, TargetParams.FormatSignature);
+	WriteStream<uint32_t>(File, GPU_Level_D3D9_3);
+	WriteStream<uint8_t>(File, TargetParams.ShaderType);
 
 	// Some data will be filled later
 	auto DelayedDataOffset = File.tellp();
 	WriteStream<uint32_t>(File, 0); // Shader binary data offset for fast metadata skipping
 
-	// Data is already serialized into a memory, just save it
+	// Metadata and bytecode are already serialized into memory, just save it
 	BinaryOffset += File.tellp();
 	const std::string ObjData = ObjStream.str();
 	File.write(ObjData.c_str(), ObjData.size());
@@ -338,7 +327,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	// Determine D3D target, output file extension and file signature
 
 	CTargetParams TargetParams;
-	if (!GetTargetParams(ShaderType, Target, TargetParams)) return DEM_SHADER_COMPILER_INVALID_ARGS;
+	if (!FillTargetParams(ShaderType, Target, TargetParams)) return DEM_SHADER_COMPILER_INVALID_ARGS;
 
 	// Build source paths
 
@@ -504,14 +493,14 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		if (Target >= 0x0400)
 		{
 			// USM shaders store all necessary metadata in a shader blob itself
-			ResultCode = ProcessShaderBinaryUSM(pBasePath, pDestPath, pCode, Rec, TargetParams.FormatSignature, Debug, pLog);
+			ResultCode = ProcessShaderBinaryUSM(pBasePath, pDestPath, pCode, Rec, TargetParams, Debug, pLog);
 		}
 		else
 		{
 			// SM30 shaders can't rely on a shader blob only, because some metadata is stored in annotations
 			CSM30ShaderMeta Meta;
 			if (Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, SrcPathFSStr.c_str(), pD3DMacros, pLog))
-				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams.FormatSignature, pLog);
+				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams, pLog);
 			else
 				ResultCode = DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}

@@ -48,8 +48,8 @@ class CUSMBufferMeta: public CMetadataObject
 public:
 
 	std::string	Name;
-	uint32_t		Register;
-	uint32_t		Size;		// For structured buffers - StructureByteStride
+	uint32_t	Register;
+	uint32_t	Size;		// For structured buffers - StructureByteStride
 
 	virtual const char*			GetName() const { return Name.c_str(); }
 	virtual EShaderModel		GetShaderModel() const { return ShaderModel_USM; }
@@ -145,9 +145,6 @@ class CUSMShaderMeta: public CShaderMetadata
 {
 private:
 
-	uint32_t MinFeatureLevel = 0;
-	uint64_t RequiresFlags = 0;
-
 	bool ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache);
 
 public:
@@ -157,6 +154,9 @@ public:
 	std::vector<CUSMConstMeta>		Consts;
 	std::vector<CUSMRsrcMeta>		Resources;
 	std::vector<CUSMSamplerMeta>	Samplers;
+
+	uint32_t MinFeatureLevel = 0;
+	uint64_t RequiresFlags = 0;
 
 	bool CollectFromBinary(const void* pData, size_t Size);
 
