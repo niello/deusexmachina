@@ -17,71 +17,65 @@ namespace fs = std::filesystem;
 struct CTargetParams
 {
 	const char*	pD3DTarget;
-	const char*	pExtension;
-	uint32_t	FileSignature;
+	uint32_t	FormatSignature;
 };
 
 static bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetParams& Out)
 {
+	assert(Target <= 0x0500); // Add D3D12 'DXIL' format and sm5.1/6.0 targets
+
 	const char* pTarget = nullptr;
-	const char* pExt = nullptr;
-	uint32_t FileSig;
 	switch (ShaderType)
 	{
 		case ShaderType_Vertex:
 		{
-			pExt = "vsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "vs_5_0"; FileSig = 'VS50'; break;
-				case 0x0401: pTarget = "vs_4_1"; FileSig = 'VS41'; break;
-				case 0x0400: pTarget = "vs_4_0"; FileSig = 'VS40'; break;
-				case 0x0300: pTarget = "vs_3_0"; FileSig = 'VS30'; break;
+				case 0x0500: pTarget = "vs_5_0"; break;
+				case 0x0401: pTarget = "vs_4_1"; break;
+				case 0x0400: pTarget = "vs_4_0"; break;
+				case 0x0300: pTarget = "vs_3_0"; break;
 				default: return false;
 			}
 			break;
 		}
 		case ShaderType_Pixel:
 		{
-			pExt = "psh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "ps_5_0"; FileSig = 'PS50'; break;
-				case 0x0401: pTarget = "ps_4_1"; FileSig = 'PS41'; break;
-				case 0x0400: pTarget = "ps_4_0"; FileSig = 'PS40'; break;
-				case 0x0300: pTarget = "ps_3_0"; FileSig = 'PS30'; break;
+				case 0x0500: pTarget = "ps_5_0"; break;
+				case 0x0401: pTarget = "ps_4_1"; break;
+				case 0x0400: pTarget = "ps_4_0"; break;
+				case 0x0300: pTarget = "ps_3_0"; break;
 				default: return false;
 			}
 			break;
 		}
 		case ShaderType_Geometry:
 		{
-			pExt = "gsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "gs_5_0"; FileSig = 'GS50'; break;
-				case 0x0401: pTarget = "gs_4_1"; FileSig = 'GS41'; break;
-				case 0x0400: pTarget = "gs_4_0"; FileSig = 'GS40'; break;
+				case 0x0500: pTarget = "gs_5_0"; break;
+				case 0x0401: pTarget = "gs_4_1"; break;
+				case 0x0400: pTarget = "gs_4_0"; break;
 				default: return false;
 			}
 			break;
 		}
 		case ShaderType_Hull:
 		{
-			pExt = "hsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "hs_5_0"; FileSig = 'HS50'; break;
+				case 0x0500: pTarget = "hs_5_0"; break;
 				default: return false;
 			}
 			break;
 		}
 		case ShaderType_Domain:
 		{
-			pExt = "dsh";
 			switch (Target)
 			{
-				case 0x0500: pTarget = "ds_5_0"; FileSig = 'DS50'; break;
+				case 0x0500: pTarget = "ds_5_0"; break;
 				default: return false;
 			}
 			break;
@@ -90,8 +84,7 @@ static bool GetTargetParams(EShaderType ShaderType, uint32_t Target, CTargetPara
 	};
 
 	Out.pD3DTarget = pTarget;
-	Out.pExtension = pExt;
-	Out.FileSignature = FileSig;
+	Out.FormatSignature = (Target < 0x0400) ? 'DX9C' : 'DXBC';
 
 	return true;
 }
@@ -160,7 +153,7 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 //---------------------------------------------------------------------
 
 static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, ID3DBlob* pCode, DB::CShaderRecord& Rec,
-	uint32_t FileSignature, bool Debug, DEMShaderCompiler::ILogDelegate* pLog)
+	uint32_t FormatSignature, bool Debug, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	// Strip unnecessary info for release builds, making object files smaller
 
@@ -210,15 +203,18 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 		return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 	}
 
-	WriteStream<uint32_t>(File, FileSignature);
+	WriteStream<uint32_t>(File, FormatSignature);
+	WriteStream<uint16_t>(File, MinFeatureLevel);
+	WriteStream<uint8_t>(File, ShaderType);
 
 	// Some data will be filled later
 	auto DelayedDataOffset = File.tellp();
 	WriteStream<uint32_t>(File, 0); // Shader binary data offset for fast metadata skipping
 
-	WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
-
 	// Save metadata
+
+	//!!!TO METADATA FOR D3D11!
+	WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
 
 	CUSMShaderMeta Meta;
 	if (!Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize()))
@@ -256,7 +252,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 //---------------------------------------------------------------------
 
 static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath, ID3DBlob* pCode, DB::CShaderRecord& Rec,
-	CSM30ShaderMeta&& Meta, uint32_t FileSignature, DEMShaderCompiler::ILogDelegate* pLog)
+	CSM30ShaderMeta&& Meta, uint32_t FormatSignature, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	// NB: D3DStripShader can't be applied to sm3.0 shaders
 
@@ -288,7 +284,9 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	std::ofstream File(DestPathFS, std::ios_base::binary);
 	if (!File) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 
-	WriteStream<uint32_t>(File, FileSignature);
+	WriteStream<uint32_t>(File, FormatSignature);
+	WriteStream<uint16_t>(File, MinFeatureLevel);
+	WriteStream<uint8_t>(File, ShaderType);
 
 	// Some data will be filled later
 	auto DelayedDataOffset = File.tellp();
@@ -506,14 +504,14 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		if (Target >= 0x0400)
 		{
 			// USM shaders store all necessary metadata in a shader blob itself
-			ResultCode = ProcessShaderBinaryUSM(pBasePath, pDestPath, pCode, Rec, TargetParams.FileSignature, Debug, pLog);
+			ResultCode = ProcessShaderBinaryUSM(pBasePath, pDestPath, pCode, Rec, TargetParams.FormatSignature, Debug, pLog);
 		}
 		else
 		{
 			// SM30 shaders can't rely on a shader blob only, because some metadata is stored in annotations
 			CSM30ShaderMeta Meta;
 			if (Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, SrcPathFSStr.c_str(), pD3DMacros, pLog))
-				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams.FileSignature, pLog);
+				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams.FormatSignature, pLog);
 			else
 				ResultCode = DEM_SHADER_COMPILER_REFLECTION_ERROR;
 		}

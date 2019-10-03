@@ -8,13 +8,14 @@
 
 struct CRenderState
 {
-	// Basic info
+	bool IsValid = false;
+
+	// Accumulated info
+	// NB: RequiresFlags are D3D11-specific and have no meaning for the effect compiler
 
 	uint32_t ShaderFormatFourCC = 0;
 	uint32_t MinFeatureLevel = 0;
-	uint32_t RequiresFlags = 0;
 	int8_t LightCount = -1;
-	bool IsValid = false;
 
 	// Shaders
 
