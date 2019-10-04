@@ -273,6 +273,8 @@ public:
 		return true;
 	}
 
+private:
+
 	bool LoadRenderState(std::map<CStrID, CRenderState>& RSCache, std::map<CStrID, CShaderData>& ShaderCache,
 		CStrID ID, Data::CParams& RenderStateDescs)
 	{
@@ -548,7 +550,7 @@ public:
 			else
 			{
 				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Render state '" << ID.CStr() << "' has invalid 'ClipPlanes'. Must be 'false', int bitmask or an array of indices." << LineEnd;
+					std::cout << "Render state '" << ID.CStr() << "' has invalid 'ClipPlanes'. Must be 'false', integer bitmask or an array of indices." << LineEnd;
 				return false;
 			}
 		}
