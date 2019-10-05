@@ -221,7 +221,8 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 
 	// Save metadata
 
-	WriteStream<uint32_t>(File, Rec.InputSigFile.ID); // For DEM it will be a part of DXBC-specific metadata
+	WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
+	WriteStream<uint64_t>(File, RequiresFlags);
 	File << Meta;
 
 	// Save shader binary
