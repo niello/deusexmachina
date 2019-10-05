@@ -152,40 +152,54 @@ public:
 
 		// Get and validate global and material params
 
+		std::set<CStrID> GlobalParams;
+		Data::CParams MaterialParams;
+
 		auto ItGlobalParams = Desc.find(CStrID("GlobalParams"));
 		const bool HasGlobalParams = (ItGlobalParams != Desc.cend() && !ItGlobalParams->second.IsVoid());
-		if (HasGlobalParams && !ItGlobalParams->second.IsA<Data::CDataArray>())
+		if (HasGlobalParams)
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "'GlobalParams' must be an array of CStringID" << LineEnd;
-			return false;
+			if (!ItGlobalParams->second.IsA<Data::CDataArray>())
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "'GlobalParams' must be an array of CStringID elements (single-quoted strings)" << LineEnd;
+				return false;
+			}
+
+			const auto& GlobalParamsDesc = ItGlobalParams->second.GetValue<Data::CDataArray>();
+			for (const auto& Data : GlobalParamsDesc)
+			{
+				if (!Data.IsA<CStrID>())
+				{
+					if (_LogVerbosity >= EVerbosity::Errors)
+						std::cout << "'GlobalParams' must be an array of CStringID elements (single-quoted strings)" << LineEnd;
+					return false;
+				}
+
+				GlobalParams.insert(Data.GetValue<CStrID>());
+			}
 		}
 
 		auto ItMaterialParams = Desc.find(CStrID("MaterialParams"));
 		const bool HasMaterialParams = (ItMaterialParams != Desc.cend() && !ItMaterialParams->second.IsVoid());
-		if (HasMaterialParams && !ItMaterialParams->second.IsA<Data::CParams>())
+		if (HasMaterialParams)
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "'MaterialParams' must be a section" << LineEnd;
-			return false;
+			if (!ItMaterialParams->second.IsA<Data::CParams>())
+			{
+				if (_LogVerbosity >= EVerbosity::Errors)
+					std::cout << "'MaterialParams' must be a section" << LineEnd;
+				return false;
+			}
+
+			MaterialParams = std::move(ItMaterialParams->second.GetValue<Data::CParams>());
 		}
 
 		if (HasGlobalParams && HasMaterialParams)
 		{
 			// Check intersections between global and material params
 			bool HasErrors = false;
-			const Data::CDataArray& GlobalParams = ItGlobalParams->second.GetValue<Data::CDataArray>();
-			const Data::CParams& MaterialParams = ItMaterialParams->second.GetValue<Data::CParams>();
-			for (const auto& Global : GlobalParams)
+			for (const auto& ParamID : GlobalParams)
 			{
-				if (!Global.IsA<CStrID>())
-				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "'GlobalParams' can contain only CStringID elements (single-quoted strings)" << LineEnd;
-					HasErrors = true;
-				}
-
-				const CStrID ParamID = Global.GetValue<CStrID>();
 				if (MaterialParams.find(ParamID) != MaterialParams.cend())
 				{
 					if (_LogVerbosity >= EVerbosity::Errors)
@@ -844,6 +858,8 @@ private:
 		//???the same for tech?
 		CUsedSM30Registers GlobalRegisters, MaterialRegisters;
 
+		CSM30ShaderMeta GlobalMeta, MaterialMeta;
+
 		for (const auto& Tech : Techs)
 		{
 			for (CStrID PassID : Tech.Passes)
@@ -857,15 +873,15 @@ private:
 					const CStrID ShaderID = ShaderIDs[ShaderType];
 					if (!ShaderID) continue;
 
-					CSM30ShaderMeta Meta;
+					CSM30ShaderMeta ShaderMeta;
 					{
 						const CShaderData& ShaderData = ShaderCache.at(ShaderID);
 						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
 						std::istream MetaStream(&MetaBuffer);
-						MetaStream >> Meta;
+						MetaStream >> ShaderMeta;
 					}
 
-					for (const auto& Const : Meta.Consts)
+					for (const auto& Const : ShaderMeta.Consts)
 					{
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << LineEnd;
@@ -876,7 +892,7 @@ private:
 						//   in all cases check that registers don't overlap
 					}
 
-					for (const auto& Rsrc : Meta.Resources)
+					for (const auto& Rsrc : ShaderMeta.Resources)
 					{
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << LineEnd;
@@ -887,7 +903,7 @@ private:
 						//   in all cases check that registers don't overlap
 					}
 
-					for (const auto& Sampler : Meta.Samplers)
+					for (const auto& Sampler : ShaderMeta.Samplers)
 					{
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << LineEnd;

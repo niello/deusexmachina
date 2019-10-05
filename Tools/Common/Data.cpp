@@ -48,6 +48,7 @@ void CData::SetType(const CType* SrcType)
 	if (Type) Type->Delete(&Value);
 	Type = SrcType;
 	if (Type) Type->New(&Value);
+	else Value = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -64,6 +65,7 @@ void CData::SetTypeValue(const CType* SrcType, void* const* pSrcObj)
 
 	Type = SrcType;
 	if (Type) Type->New(&Value, pSrcObj);
+	else Value = nullptr;
 }
 //---------------------------------------------------------------------
 
