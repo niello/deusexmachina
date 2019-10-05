@@ -3,7 +3,15 @@
 #include <algorithm> 
 #include <fstream>
 
-// Utility functions
+// Utility functions and data structures
+
+struct membuf : std::streambuf
+{
+	membuf(char* begin, char* end)
+	{
+		setg(begin, begin, end);
+	}
+};
 
 std::vector<std::string> SplitString(const std::string& Str, char Sep);
 uint32_t CalcCRC(const uint8_t* pData, size_t Size);
@@ -53,6 +61,21 @@ template<class T> void ReadStream(std::istream& Stream, T& Out)
 }
 //---------------------------------------------------------------------
 
+template<>
+inline void ReadStream(std::istream& Stream, std::string& Data)
+{
+	uint16_t Length;
+	ReadStream<uint16_t>(Stream, Length);
+
+	if (Length)
+	{
+		Data.clear();
+		Data.resize(Length + 1, '\0');
+		Stream.read(Data.data(), Length);
+	}
+}
+//---------------------------------------------------------------------
+
 // Skip data
 template<class T> void ReadStream(std::istream& Stream)
 {
@@ -72,7 +95,7 @@ inline void WriteStream(std::ostream& Stream, const std::string& Data)
 {
 	const auto Length = static_cast<uint16_t>(Data.size());
 	WriteStream<uint16_t>(Stream, Length);
-	Stream.write(Data.c_str(), Length);
+	if (Length) Stream.write(Data.c_str(), Length);
 }
 //---------------------------------------------------------------------
 

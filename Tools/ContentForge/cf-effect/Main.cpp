@@ -2,6 +2,8 @@
 #include <RenderState.h>
 #include <Utils.h>
 #include <HRDParser.h>
+#include <ShaderMeta/SM30ShaderMeta.h>
+#include <ShaderMeta/USMShaderMeta.h>
 //#include <CLI11.hpp>
 //#include <mutex>
 #include <set>
@@ -53,6 +55,7 @@ struct CShaderData
 {
 	CShaderHeader Header;
 	std::unique_ptr<char[]> MetaBytes;
+	size_t MetaByteCount;
 };
 
 inline std::string FourCC(uint32_t Code)
@@ -308,7 +311,6 @@ public:
 				case 'DX9C':
 				{
 					if (!WriteParameterTablesForDX9C(Stream, Techs, RSCache, ShaderCache)) return false;
-					// if (!Process...) FAIL;
 					break;
 				}
 				case 'DXBC':
@@ -793,6 +795,7 @@ private:
 				if (MetaSize)
 				{
 					ShaderData.MetaBytes.reset(new char[MetaSize]);
+					ShaderData.MetaByteCount = MetaSize;
 					if (!File.read(ShaderData.MetaBytes.get(), MetaSize))
 					{
 						if (_LogVerbosity >= EVerbosity::Errors)
@@ -860,9 +863,15 @@ private:
 				{
 					if (!ShaderIDs[ShaderType]) continue;
 
-					const CShaderData& ShaderData = ShaderCache.at(ShaderIDs[ShaderType]);
+					CSM30ShaderMeta Meta;
+					{
+						const CShaderData& ShaderData = ShaderCache.at(ShaderIDs[ShaderType]);
+						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
+						std::istream MetaStream(&MetaBuffer);
+						MetaStream >> Meta;
+					}
 
-					// load metadata from cached binary
+					int test = 0;
 
 					// for all consts / resources / samplers
 					//   if ID is global, add to globals
@@ -878,6 +887,20 @@ private:
 
 	bool WriteParameterTablesForDXBC(std::ostream& Stream, const std::vector<CTechnique>& Techs)
 	{
+		/*
+					CUSMShaderMeta Meta;
+					{
+						const CShaderData& ShaderData = ShaderCache.at(ShaderIDs[ShaderType]);
+						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
+						std::istream MetaStream(&MetaBuffer);
+
+						// Skip additional metadata
+						ReadStream<uint32_t>(MetaStream);
+						ReadStream<uint64_t>(MetaStream);
+
+						MetaStream >> Meta;
+					}
+		*/
 		return false;
 	}
 };

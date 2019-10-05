@@ -64,10 +64,12 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 		StructMeta.Members.reserve(D3D9StructDesc.Members.size());
 		for (const auto& D3D9ConstDesc : D3D9StructDesc.Members)
 		{
+			auto ItStruct = StructIDToIndex.find(D3D9ConstDesc.StructID);
+
 			CSM30StructMemberMeta MemberMeta;
 
 			MemberMeta.Name = D3D9ConstDesc.Name;
-			MemberMeta.StructIndex = StructIDToIndex[D3D9ConstDesc.StructID];
+			MemberMeta.StructIndex = (ItStruct == StructIDToIndex.cend()) ? (uint32_t(-1)) : ItStruct->second;
 			MemberMeta.RegisterOffset = D3D9ConstDesc.RegisterIndex;
 			MemberMeta.ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			MemberMeta.ElementCount = D3D9ConstDesc.Type.Elements;
@@ -200,7 +202,9 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 			CSM30ConstMeta Meta;
 			Meta.Name = D3D9ConstDesc.Name;
 			Meta.BufferIndex = BufferIndex;
-			Meta.StructIndex = StructIDToIndex[D3D9ConstDesc.StructID];
+
+			auto ItStruct = StructIDToIndex.find(D3D9ConstDesc.StructID);
+			Meta.StructIndex = (ItStruct == StructIDToIndex.cend()) ? (uint32_t(-1)) : ItStruct->second;
 
 			switch (D3D9ConstDesc.RegisterSet)
 			{
