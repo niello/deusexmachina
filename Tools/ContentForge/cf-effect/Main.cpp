@@ -7,6 +7,7 @@
 #include <set>
 #include <thread>
 #include <iostream>
+#include <sstream>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -19,13 +20,21 @@ struct CTechnique
 {
 	std::vector<const CRenderState*> Passes;
 
+	CStrID InputSet;
+
 	uint32_t ShaderFormatFourCC = 0;
 	uint32_t MinFeatureLevel = 0;
 
 	bool operator <(const CTechnique& Other)
 	{
-		// Sort by features descending, so we start with the
-		// most interesting tech and fall back to simpler ones
+		// NB: not sorted by shader format, grouped by it in a map instead
+
+		// Sort by input set to group all related techs and make selection easier
+		if (InputSet < Other.InputSet) return true;
+		else if (InputSet > Other.InputSet) return false;
+
+		// Sort by features descending, so we start with the most interesting
+		// tech and fall back to simpler ones
 		return MinFeatureLevel > Other.MinFeatureLevel;
 	}
 };
@@ -45,6 +54,16 @@ struct CShaderData
 	CShaderHeader Header;
 	std::unique_ptr<char[]> MetaBytes;
 };
+
+inline std::string FourCC(uint32_t Code)
+{
+	std::string Result;
+	Result.push_back((Code & 0xff000000) >> 24);
+	Result.push_back((Code & 0x00ff0000) >> 16);
+	Result.push_back((Code & 0x0000ff00) >> 8);
+	Result.push_back(Code & 0x000000ff);
+	return Result;
+}
 
 class CEffectTool : public CContentForgeTool
 {
@@ -84,7 +103,9 @@ public:
 
 		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
-		const auto DestPath = fs::path(Output) / (TaskID + ".eff");
+		auto DestPath = fs::path(Output) / (TaskID + ".eff");
+		if (!_RootDir.empty() && DestPath.is_relative())
+			DestPath = fs::path(_RootDir) / DestPath;
 
 		// FIXME: must be thread-safe, also can move to the common code
 		const auto LineEnd = std::cout.widen('\n');
@@ -191,19 +212,20 @@ public:
 
 		std::map<CStrID, CRenderState> RSCache;
 		std::map<CStrID, CShaderData> ShaderCache;
+		std::map<uint32_t, std::vector<CTechnique>> Techs; // Grouped by shader format
 
 		auto& RenderStateDescs = ItRenderStates->second.GetValue<Data::CParams>();
 		const auto& InputSetDescs = ItTechs->second.GetValue<Data::CParams>();
 		for (const auto& InputSetDesc : InputSetDescs)
 		{
+			CStrID InputSet = InputSetDesc.first;
+
 			if (!InputSetDesc.second.IsA<Data::CParams>() || InputSetDesc.second.GetValue<Data::CParams>().empty())
 			{
 				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Input set '" << InputSetDesc.first.CStr() << "' must be a section containing at least one technique" << LineEnd;
+					std::cout << "Input set '" << InputSet.CStr() << "' must be a section containing at least one technique" << LineEnd;
 				return false;
 			}
-
-			std::vector<CTechnique> InputSetTechs;
 
 			const auto& TechDescs = InputSetDesc.second.GetValue<Data::CParams>();
 			for (const auto& TechDesc : TechDescs)
@@ -211,7 +233,7 @@ public:
 				if (!TechDesc.second.IsA<Data::CDataArray>() || TechDesc.second.GetValue<Data::CDataArray>().empty())
 				{
 					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "' must be an array containing at least one render state ID" << LineEnd;
+						std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "' must be an array containing at least one render state ID" << LineEnd;
 					return false;
 				}
 
@@ -223,7 +245,7 @@ public:
 					const CStrID RenderStateID = PassDesc.GetValue<CStrID>();
 
 					if (_LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+						std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
 
 					auto ItRS = RSCache.find(RenderStateID);
 					if (ItRS == RSCache.cend())
@@ -237,7 +259,7 @@ public:
 					{
 						// Can discard only this tech, but for now issue an error and stop
 						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "' uses invalid render state in a pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+							std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "' uses invalid render state in a pass '" << RenderStateID.CStr() << '\'' << LineEnd;
 						return false;
 					}
 
@@ -245,7 +267,7 @@ public:
 					if (Tech.ShaderFormatFourCC && Tech.ShaderFormatFourCC != RS.ShaderFormatFourCC)
 					{
 						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Tech '" << InputSetDesc.first.CStr() << '.' << TechDesc.first.CStr() << "' has unsupported mix of shader formats." << LineEnd;
+							std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "' has unsupported mix of shader formats." << LineEnd;
 						return false;
 					}
 
@@ -256,15 +278,99 @@ public:
 
 					// TODO: light count
 
+					Tech.InputSet = InputSet;
+
 					Tech.Passes.push_back(&RS);
 				}
 
-				InputSetTechs.push_back(std::move(Tech));
+				Techs[Tech.ShaderFormatFourCC].push_back(std::move(Tech));
+			}
+		}
+
+		// Build resulting effect for each shader format separately
+
+		std::map<uint32_t, std::string> SerializedEffect;
+		for (auto& TechsByFormat : Techs)
+		{
+			// Sort techs for easier processing, see tech's operator <
+			std::sort(TechsByFormat.second.begin(), TechsByFormat.second.end());
+
+			std::ostringstream Stream(std::ios_base::binary);
+
+			switch (TechsByFormat.first)
+			{
+				case 'DX9C':
+				{
+					// if (!Process...) FAIL;
+					break;
+				}
+				case 'DXBC':
+				{
+					// if (!Process...) FAIL;
+					break;
+				}
+				default:
+				{
+					// TODO: print FourCC as text!
+					if (_LogVerbosity >= EVerbosity::Warnings)
+						std::cout << "Skipping unsupported shader format: " << FourCC(TechsByFormat.first) << LineEnd;
+					continue;
+				}
 			}
 
-			// See tech's operator <
-			std::sort(InputSetTechs.begin(), InputSetTechs.end());
+			std::string Data = Stream.str();
+			if (Data.empty())
+			{
+				if (_LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "No data serialized for the format: " << FourCC(TechsByFormat.first) << LineEnd;
+				continue;
+			}
+			else if (Data.size() > std::numeric_limits<uint32_t>().max())
+			{
+				// We don't support 64-bit offsets in effect files. If your data is such big,
+				// most probably it is a serialization error.
+				if (_LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "Discarding too big serialized data for the format: " << FourCC(TechsByFormat.first) << LineEnd;
+				continue;
+			}
+
+			SerializedEffect.emplace(TechsByFormat.first, std::move(Data));
 		}
+
+		// Write resulting file
+
+		if (SerializedEffect.empty())
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "No data serialized for the effect, resource will not be created" << LineEnd;
+			return false;
+		}
+
+		std::ofstream File(DestPath, std::ios_base::binary);
+		if (!File)
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				std::cout << "Error opening an output file" << LineEnd;
+			return false;
+		}
+
+		WriteStream<uint32_t>(File, 'SHFX');                  // Format magic value
+		WriteStream<uint32_t>(File, 0x00010000);              // Version 0.1.0.0
+		WriteStream<uint32_t>(File, MaterialType);            //???or write enum instead of string?
+		WriteStream<uint32_t>(File, SerializedEffect.size()); // Shader format count
+
+		// Write format map (FourCC to offset from the body start)
+		uint32_t TotalOffset = 0;
+		for (const auto& Pair : SerializedEffect)
+		{
+			WriteStream<uint32_t>(File, Pair.first);
+			WriteStream<uint32_t>(File, TotalOffset);
+			TotalOffset += static_cast<uint32_t>(Pair.second.size()); // Overflow already checked
+		}
+
+		// Write serialized effect blocks
+		for (const auto& Pair : SerializedEffect)
+			File.write(Pair.second.c_str(), Pair.second.size());
 
 		// FIXME: must be thread-safe, also can move to the common code
 		//if (_LogVerbosity >= EVerbosity::Debug)

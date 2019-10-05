@@ -76,6 +76,13 @@ inline void WriteStream(std::ostream& Stream, const std::string& Data)
 }
 //---------------------------------------------------------------------
 
+template<>
+inline void WriteStream(std::ostream& Stream, const CStrID& Data)
+{
+	WriteStream(Stream, std::string(Data.CStr() ? Data.CStr() : ""));
+}
+//---------------------------------------------------------------------
+
 // trim from start (in place)
 inline void ltrim(std::string& s, const std::string& whitespace)
 {
