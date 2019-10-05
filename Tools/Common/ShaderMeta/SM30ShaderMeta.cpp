@@ -1,7 +1,7 @@
 #include "SM30ShaderMeta.h"
 #include <Utils.h>
 
-static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ostream& Stream, const char* pRegisterSetName)
+static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ostream& Stream)
 {
 	uint64_t RangeCountOffset = Stream.tellp();
 	WriteStream<uint32_t>(Stream, 0);
@@ -64,9 +64,9 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value)
 	WriteStream(Stream, Value.Name);
 	WriteStream(Stream, Value.SlotIndex);
 
-	WriteRegisterRanges(Value.UsedFloat4, Stream, "float4");
-	WriteRegisterRanges(Value.UsedInt4, Stream, "int4");
-	WriteRegisterRanges(Value.UsedBool, Stream, "bool");
+	WriteRegisterRanges(Value.UsedFloat4, Stream);
+	WriteRegisterRanges(Value.UsedInt4, Stream);
+	WriteRegisterRanges(Value.UsedBool, Stream);
 
 	return Stream;
 }
@@ -242,7 +242,9 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 	uint32_t Count = 0;
 
 	Value.Buffers.clear();
+	Value.Structs.clear();
 	Value.Consts.clear();
+	Value.Resources.clear();
 	Value.Samplers.clear();
 
 	ReadStream<uint32_t>(Stream, Count);

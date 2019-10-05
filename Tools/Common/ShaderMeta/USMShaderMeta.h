@@ -58,6 +58,9 @@ bool operator ==(const CUSMBufferMeta& a, const CUSMBufferMeta& b)
 	return a.Register == b.Register && a.Size == b.Size;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CUSMBufferMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMBufferMeta& Value);
+
 struct CUSMStructMemberMeta
 {
 	std::string		Name;
@@ -76,6 +79,9 @@ struct CUSMStructMeta
 	//std::string						Name;
 	std::vector<CUSMStructMemberMeta>	Members;
 };
+
+std::ostream& operator <<(std::ostream& Stream, const CUSMStructMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMStructMeta& Value);
 
 // Arrays and mixed-type structs supported
 struct CUSMConstMeta
@@ -97,6 +103,9 @@ bool operator ==(const CUSMConstMeta& a, const CUSMConstMeta& b)
 	return a.Type == b.Type && a.Offset == b.Offset && a.ElementSize == b.ElementSize && a.ElementCount == b.ElementCount;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CUSMConstMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMConstMeta& Value);
+
 struct CUSMRsrcMeta
 {
 	std::string Name;
@@ -110,6 +119,9 @@ bool operator ==(const CUSMRsrcMeta& a, const CUSMRsrcMeta& b)
 	return a.Type == b.Type && a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CUSMRsrcMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMRsrcMeta& Value);
+
 struct CUSMSamplerMeta
 {
 	std::string Name;
@@ -122,6 +134,9 @@ bool operator ==(const CUSMSamplerMeta& a, const CUSMSamplerMeta& b)
 	return a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CUSMSamplerMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMSamplerMeta& Value);
+
 struct CUSMShaderMeta
 {
 	std::vector<CUSMBufferMeta> Buffers;
@@ -130,3 +145,6 @@ struct CUSMShaderMeta
 	std::vector<CUSMRsrcMeta> Resources;
 	std::vector<CUSMSamplerMeta> Samplers;
 };
+
+std::ostream& operator <<(std::ostream& Stream, const CUSMShaderMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMShaderMeta& Value);
