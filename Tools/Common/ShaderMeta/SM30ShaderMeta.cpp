@@ -59,178 +59,237 @@ static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::istream& Strea
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::Save(std::ostream& Stream) const
+std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value)
 {
-	WriteStream<uint32_t>(Stream, Buffers.size());
-	for (const auto& Obj : Buffers)
-	{
-		WriteStream(Stream, Obj.Name);
-		WriteStream(Stream, Obj.SlotIndex);
+	WriteStream(Stream, Value.Name);
+	WriteStream(Stream, Value.SlotIndex);
 
-		WriteRegisterRanges(Obj.UsedFloat4, Stream, "float4");
-		WriteRegisterRanges(Obj.UsedInt4, Stream, "int4");
-		WriteRegisterRanges(Obj.UsedBool, Stream, "bool");
-	}
+	WriteRegisterRanges(Value.UsedFloat4, Stream, "float4");
+	WriteRegisterRanges(Value.UsedInt4, Stream, "int4");
+	WriteRegisterRanges(Value.UsedBool, Stream, "bool");
 
-	WriteStream<uint32_t>(Stream, Structs.size());
-	for (const auto& Obj : Structs)
-	{
-		WriteStream<uint32_t>(Stream, Obj.Members.size());
-		for (const auto& Member : Obj.Members)
-		{
-			WriteStream(Stream, Member.Name);
-			WriteStream(Stream, Member.StructIndex);
-			WriteStream(Stream, Member.RegisterOffset);
-			WriteStream(Stream, Member.ElementRegisterCount);
-			WriteStream(Stream, Member.ElementCount);
-			WriteStream(Stream, Member.Columns);
-			WriteStream(Stream, Member.Rows);
-			WriteStream(Stream, Member.Flags);
-		}
-	}
-
-	WriteStream<uint32_t>(Stream, Consts.size());
-	for (const auto& Obj : Consts)
-	{
-		WriteStream(Stream, Obj.Name);
-		WriteStream(Stream, Obj.BufferIndex);
-		WriteStream(Stream, Obj.StructIndex);
-		WriteStream<uint8_t>(Stream, Obj.RegisterSet);
-		WriteStream(Stream, Obj.RegisterStart);
-		WriteStream(Stream, Obj.ElementRegisterCount);
-		WriteStream(Stream, Obj.ElementCount);
-		WriteStream(Stream, Obj.Columns);
-		WriteStream(Stream, Obj.Rows);
-		WriteStream(Stream, Obj.Flags);
-	}
-
-	WriteStream<uint32_t>(Stream, Resources.size());
-	for (const auto& Obj : Resources)
-	{
-		WriteStream(Stream, Obj.Name);
-		WriteStream(Stream, Obj.Register);
-	}
-
-	WriteStream<uint32_t>(Stream, Samplers.size());
-	for (const auto& Obj : Samplers)
-	{
-		WriteStream(Stream, Obj.Name);
-		WriteStream<uint8_t>(Stream, Obj.Type);
-		WriteStream(Stream, Obj.RegisterStart);
-		WriteStream(Stream, Obj.RegisterCount);
-	}
-
-	return true;
+	return Stream;
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMeta::Load(std::istream& Stream)
+std::istream& operator >>(std::istream& Stream, CSM30BufferMeta& Value)
 {
-	Buffers.clear();
-	Consts.clear();
-	Samplers.clear();
+	ReadStream(Stream, Value.Name);
+	ReadStream(Stream, Value.SlotIndex);
 
-	uint32_t Count;
+	ReadRegisterRanges(Value.UsedFloat4, Stream);
+	ReadRegisterRanges(Value.UsedInt4, Stream);
+	ReadRegisterRanges(Value.UsedBool, Stream);
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
+{
+	WriteStream<uint32_t>(Stream, Value.Members.size());
+	for (const auto& Member : Value.Members)
+	{
+		WriteStream(Stream, Member.Name);
+		WriteStream(Stream, Member.StructIndex);
+		WriteStream(Stream, Member.RegisterOffset);
+		WriteStream(Stream, Member.ElementRegisterCount);
+		WriteStream(Stream, Member.ElementCount);
+		WriteStream(Stream, Member.Columns);
+		WriteStream(Stream, Member.Rows);
+		WriteStream(Stream, Member.Flags);
+	}
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value)
+{
+	uint32_t MemberCount;
+	ReadStream<uint32_t>(Stream, MemberCount);
+	Value.Members.reserve(MemberCount);
+	for (uint32_t j = 0; j < MemberCount; ++j)
+	{
+		CSM30StructMemberMeta Member;
+		ReadStream(Stream, Member.Name);
+		ReadStream(Stream, Member.StructIndex);
+		ReadStream(Stream, Member.RegisterOffset);
+		ReadStream(Stream, Member.ElementRegisterCount);
+		ReadStream(Stream, Member.ElementCount);
+		ReadStream(Stream, Member.Columns);
+		ReadStream(Stream, Member.Rows);
+		ReadStream(Stream, Member.Flags);
+
+		Value.Members.push_back(std::move(Member));
+	}
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30ConstMeta& Value)
+{
+	WriteStream(Stream, Value.Name);
+	WriteStream(Stream, Value.BufferIndex);
+	WriteStream(Stream, Value.StructIndex);
+	WriteStream<uint8_t>(Stream, Value.RegisterSet);
+	WriteStream(Stream, Value.RegisterStart);
+	WriteStream(Stream, Value.ElementRegisterCount);
+	WriteStream(Stream, Value.ElementCount);
+	WriteStream(Stream, Value.Columns);
+	WriteStream(Stream, Value.Rows);
+	WriteStream(Stream, Value.Flags);
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value)
+{
+	ReadStream(Stream, Value.Name);
+	ReadStream(Stream, Value.BufferIndex);
+	ReadStream(Stream, Value.StructIndex);
+
+	uint8_t RegSet;
+	ReadStream<uint8_t>(Stream, RegSet);
+	Value.RegisterSet = (ESM30RegisterSet)RegSet;
+
+	ReadStream(Stream, Value.RegisterStart);
+	ReadStream(Stream, Value.ElementRegisterCount);
+	ReadStream(Stream, Value.ElementCount);
+	ReadStream(Stream, Value.Columns);
+	ReadStream(Stream, Value.Rows);
+	ReadStream(Stream, Value.Flags);
+
+	// Cache value
+	Value.RegisterCount = Value.ElementRegisterCount * Value.ElementCount;
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30RsrcMeta& Value)
+{
+	WriteStream(Stream, Value.Name);
+	WriteStream(Stream, Value.Register);
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CSM30RsrcMeta& Value)
+{
+	ReadStream(Stream, Value.Name);
+	ReadStream(Stream, Value.Register);
+	//???store sampler type or index for texture type validation on set?
+	//???how to reference texture object in SM3.0 shader for it to be included in params list?
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30SamplerMeta& Value)
+{
+	WriteStream(Stream, Value.Name);
+	WriteStream<uint8_t>(Stream, Value.Type);
+	WriteStream(Stream, Value.RegisterStart);
+	WriteStream(Stream, Value.RegisterCount);
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CSM30SamplerMeta& Value)
+{
+	ReadStream(Stream, Value.Name);
+
+	uint8_t Type;
+	ReadStream<uint8_t>(Stream, Type);
+	Value.Type = static_cast<ESM30SamplerType>(Type);
+
+	ReadStream(Stream, Value.RegisterStart);
+	ReadStream(Stream, Value.RegisterCount);
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30ShaderMeta& Value)
+{
+	WriteStream<uint32_t>(Stream, Value.Buffers.size());
+	for (const auto& Obj : Value.Buffers)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Structs.size());
+	for (const auto& Obj : Value.Structs)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Consts.size());
+	for (const auto& Obj : Value.Consts)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Resources.size());
+	for (const auto& Obj : Value.Resources)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Samplers.size());
+	for (const auto& Obj : Value.Samplers)
+		Stream << Obj;
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
+{
+	uint32_t Count = 0;
+
+	Value.Buffers.clear();
+	Value.Consts.clear();
+	Value.Samplers.clear();
 
 	ReadStream<uint32_t>(Stream, Count);
-	Buffers.reserve(Count);
+	Value.Buffers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30BufferMeta Obj;
-
-		ReadStream(Stream, Obj.Name);
-		ReadStream(Stream, Obj.SlotIndex);
-
-		ReadRegisterRanges(Obj.UsedFloat4, Stream);
-		ReadRegisterRanges(Obj.UsedInt4, Stream);
-		ReadRegisterRanges(Obj.UsedBool, Stream);
-
-		Buffers.push_back(std::move(Obj));
+		Stream >> Obj;
+		Value.Buffers.push_back(std::move(Obj));
 	}
 
 	ReadStream<uint32_t>(Stream, Count);
-	Structs.reserve(Count);
+	Value.Structs.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30StructMeta Obj;
-
-		uint32_t MemberCount;
-		ReadStream<uint32_t>(Stream, MemberCount);
-		Obj.Members.reserve(MemberCount);
-		for (uint32_t j = 0; j < MemberCount; ++j)
-		{
-			CSM30StructMemberMeta Member;
-			ReadStream(Stream, Member.Name);
-			ReadStream(Stream, Member.StructIndex);
-			ReadStream(Stream, Member.RegisterOffset);
-			ReadStream(Stream, Member.ElementRegisterCount);
-			ReadStream(Stream, Member.ElementCount);
-			ReadStream(Stream, Member.Columns);
-			ReadStream(Stream, Member.Rows);
-			ReadStream(Stream, Member.Flags);
-
-			Obj.Members.push_back(std::move(Member));
-		}
-
-		Structs.push_back(std::move(Obj));
+		Stream >> Obj;
+		Value.Structs.push_back(std::move(Obj));
 	}
 
 	ReadStream<uint32_t>(Stream, Count);
-	Consts.reserve(Count);
+	Value.Consts.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30ConstMeta Obj;
-
-		ReadStream(Stream, Obj.Name);
-		ReadStream(Stream, Obj.BufferIndex);
-		ReadStream(Stream, Obj.StructIndex);
-
-		uint8_t RegSet;
-		ReadStream<uint8_t>(Stream, RegSet);
-		Obj.RegisterSet = (ESM30RegisterSet)RegSet;
-
-		ReadStream(Stream, Obj.RegisterStart);
-		ReadStream(Stream, Obj.ElementRegisterCount);
-		ReadStream(Stream, Obj.ElementCount);
-		ReadStream(Stream, Obj.Columns);
-		ReadStream(Stream, Obj.Rows);
-		ReadStream(Stream, Obj.Flags);
-
-		// Cache value
-		Obj.RegisterCount = Obj.ElementRegisterCount * Obj.ElementCount;
-
-		Consts.push_back(std::move(Obj));
+		Stream >> Obj;
+		Value.Consts.push_back(std::move(Obj));
 	}
 
 	ReadStream<uint32_t>(Stream, Count);
-	Resources.reserve(Count);
+	Value.Resources.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30RsrcMeta Obj;
-		ReadStream(Stream, Obj.Name);
-		ReadStream(Stream, Obj.Register);
-		//???store sampler type or index for texture type validation on set?
-		//???how to reference texture object in SM3.0 shader for it to be included in params list?
-		Resources.push_back(std::move(Obj));
+		Stream >> Obj;
+		Value.Resources.push_back(std::move(Obj));
 	}
 
 	ReadStream<uint32_t>(Stream, Count);
-	Samplers.reserve(Count);
+	Value.Samplers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
 		CSM30SamplerMeta Obj;
-		ReadStream(Stream, Obj.Name);
-		
-		uint8_t Type;
-		ReadStream<uint8_t>(Stream, Type);
-		Obj.Type = (ESM30SamplerType)Type;
-		
-		ReadStream(Stream, Obj.RegisterStart);
-		ReadStream(Stream, Obj.RegisterCount);
-
-		Samplers.push_back(std::move(Obj));
+		Stream >> Obj;
+		Value.Samplers.push_back(std::move(Obj));
 	}
 
-	return true;
+	return Stream;
 }
 //---------------------------------------------------------------------

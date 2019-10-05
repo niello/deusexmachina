@@ -44,6 +44,9 @@ bool operator ==(const CSM30BufferMeta& a, const CSM30BufferMeta& b)
 	return true;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30BufferMeta& Value);
+
 struct CSM30StructMemberMeta
 {
 	std::string	Name;
@@ -63,6 +66,9 @@ struct CSM30StructMeta
 	//std::string						Name;
 	std::vector<CSM30StructMemberMeta>	Members;
 };
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value);
 
 // Arrays and single-type structures are supported
 struct CSM30ConstMeta
@@ -90,6 +96,9 @@ bool operator ==(const CSM30ConstMeta& a, const CSM30ConstMeta& b)
 		a.Flags == b.Flags;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CSM30ConstMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value);
+
 // Arrays aren't supported, one texture to multiple samplers isn't supported yet
 //???what about one tex to multiple samplers? store register bit mask or 'UsedRegisters' array?
 struct CSM30RsrcMeta
@@ -102,6 +111,9 @@ bool operator ==(const CSM30RsrcMeta& a, const CSM30RsrcMeta& b)
 {
 	return a.Register == b.Register;
 }
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30RsrcMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30RsrcMeta& Value);
 
 // Arrays supported with arbitrarily assigned textures
 struct CSM30SamplerMeta
@@ -117,6 +129,9 @@ bool operator ==(const CSM30SamplerMeta& a, const CSM30SamplerMeta& b)
 	return a.Type == b.Type && a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
 
+std::ostream& operator <<(std::ostream& Stream, const CSM30SamplerMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30SamplerMeta& Value);
+
 struct CSM30ShaderMeta
 {
 	std::vector<CSM30BufferMeta>	Buffers;
@@ -125,3 +140,6 @@ struct CSM30ShaderMeta
 	std::vector<CSM30RsrcMeta>		Resources;
 	std::vector<CSM30SamplerMeta>	Samplers;
 };
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30ShaderMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value);
