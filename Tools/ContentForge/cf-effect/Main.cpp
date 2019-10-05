@@ -75,6 +75,15 @@ private:
 	// FIXME: common threadsafe logger for tasks instead of cout
 	//std::mutex COutMutex;
 
+	struct CContext
+	{
+		std::set<CStrID> GlobalParams;
+		Data::CParams MaterialParams;
+		std::map<CStrID, CRenderState> RSCache;
+		std::map<CStrID, CShaderData> ShaderCache;
+		std::map<uint32_t, std::vector<CTechnique>> TechsByFormat; // Grouped by shader format
+	};
+
 public:
 
 	CEffectTool(const std::string& Name, const std::string& Desc, CVersion Version) :
@@ -140,6 +149,8 @@ public:
 			}
 		}
 
+		CContext Ctx;
+
 		// Get and validate material type
 
 		const CStrID MaterialType = GetParam<CStrID>(Desc, "Type", CStrID::Empty);
@@ -151,9 +162,6 @@ public:
 		}
 
 		// Get and validate global and material params
-
-		std::set<CStrID> GlobalParams;
-		Data::CParams MaterialParams;
 
 		auto ItGlobalParams = Desc.find(CStrID("GlobalParams"));
 		const bool HasGlobalParams = (ItGlobalParams != Desc.cend() && !ItGlobalParams->second.IsVoid());
@@ -176,7 +184,7 @@ public:
 					return false;
 				}
 
-				GlobalParams.insert(Data.GetValue<CStrID>());
+				Ctx.GlobalParams.insert(Data.GetValue<CStrID>());
 			}
 		}
 
@@ -191,16 +199,16 @@ public:
 				return false;
 			}
 
-			MaterialParams = std::move(ItMaterialParams->second.GetValue<Data::CParams>());
+			Ctx.MaterialParams = std::move(ItMaterialParams->second.GetValue<Data::CParams>());
 		}
 
 		if (HasGlobalParams && HasMaterialParams)
 		{
 			// Check intersections between global and material params
 			bool HasErrors = false;
-			for (const auto& ParamID : GlobalParams)
+			for (const auto& ParamID : Ctx.GlobalParams)
 			{
-				if (MaterialParams.find(ParamID) != MaterialParams.cend())
+				if (Ctx.MaterialParams.find(ParamID) != Ctx.MaterialParams.cend())
 				{
 					if (_LogVerbosity >= EVerbosity::Errors)
 						std::cout << '\'' << ParamID.CStr() << "' appears in both global and material params" << LineEnd;
@@ -226,10 +234,6 @@ public:
 				std::cout << "'Techniques' must be a section and contain at least one input set" << LineEnd;
 			return false;
 		}
-
-		std::map<CStrID, CRenderState> RSCache;
-		std::map<CStrID, CShaderData> ShaderCache;
-		std::map<uint32_t, std::vector<CTechnique>> TechsByFormat; // Grouped by shader format
 
 		auto& RenderStateDescs = ItRenderStates->second.GetValue<Data::CParams>();
 		const auto& InputSetDescs = ItTechs->second.GetValue<Data::CParams>();
@@ -264,11 +268,11 @@ public:
 					if (_LogVerbosity >= EVerbosity::Debug)
 						std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
 
-					auto ItRS = RSCache.find(RenderStateID);
-					if (ItRS == RSCache.cend())
+					auto ItRS = Ctx.RSCache.find(RenderStateID);
+					if (ItRS == Ctx.RSCache.cend())
 					{
-						LoadRenderState(RSCache, ShaderCache, RenderStateID, RenderStateDescs);
-						ItRS = RSCache.find(RenderStateID);
+						LoadRenderState(Ctx, RenderStateID, RenderStateDescs);
+						ItRS = Ctx.RSCache.find(RenderStateID);
 					}
 
 					const auto& RS = ItRS->second;
@@ -301,14 +305,14 @@ public:
 					Tech.Passes.push_back(RenderStateID);
 				}
 
-				TechsByFormat[Tech.ShaderFormatFourCC].push_back(std::move(Tech));
+				Ctx.TechsByFormat[Tech.ShaderFormatFourCC].push_back(std::move(Tech));
 			}
 		}
 
 		// Build resulting effect for each shader format separately
 
 		std::map<uint32_t, std::string> SerializedEffect;
-		for (auto& FormatTechs : TechsByFormat)
+		for (auto& FormatTechs : Ctx.TechsByFormat)
 		{
 			const uint32_t ShaderFormat = FormatTechs.first;
 			auto& Techs = FormatTechs.second;
@@ -324,12 +328,12 @@ public:
 			{
 				case 'DX9C':
 				{
-					if (!WriteParameterTablesForDX9C(Stream, Techs, RSCache, ShaderCache)) return false;
+					if (!WriteParameterTablesForDX9C(Stream, Techs, Ctx)) return false;
 					break;
 				}
 				case 'DXBC':
 				{
-					if (!WriteParameterTablesForDXBC(Stream, Techs)) return false;
+					if (!WriteParameterTablesForDXBC(Stream, Techs, Ctx)) return false;
 					break;
 				}
 				default:
@@ -486,12 +490,11 @@ public:
 
 private:
 
-	bool LoadRenderState(std::map<CStrID, CRenderState>& RSCache, std::map<CStrID, CShaderData>& ShaderCache,
-		CStrID ID, Data::CParams& RenderStateDescs)
+	bool LoadRenderState(CContext& Ctx, CStrID ID, Data::CParams& RenderStateDescs)
 	{
 		// Insert invalid render state initially not to do it in every 'return false' below.
 		// We want to have a record for each parsed RS, not only for valid ones.
-		CRenderState& RS = RSCache.emplace(ID, CRenderState{}).first->second;
+		CRenderState& RS = Ctx.RSCache.emplace(ID, CRenderState{}).first->second;
 
 		const auto LineEnd = std::cout.widen('\n');
 
@@ -513,11 +516,11 @@ private:
 		const CStrID BaseID = GetParam(Desc, "Base", CStrID::Empty);
 		if (BaseID)
 		{
-			auto ItRS = RSCache.find(BaseID);
-			if (ItRS == RSCache.cend())
+			auto ItRS = Ctx.RSCache.find(BaseID);
+			if (ItRS == Ctx.RSCache.cend())
 			{
-				LoadRenderState(RSCache, ShaderCache, BaseID, RenderStateDescs);
-				ItRS = RSCache.find(BaseID);
+				LoadRenderState(Ctx, BaseID, RenderStateDescs);
+				ItRS = Ctx.RSCache.find(BaseID);
 			}
 
 			const auto& BaseRS = ItRS->second;
@@ -777,8 +780,8 @@ private:
 
 		for (CStrID ShaderID : Shaders)
 		{
-			auto ShaderDataIt = ShaderCache.find(ShaderID);
-			if (ShaderDataIt == ShaderCache.cend())
+			auto ShaderDataIt = Ctx.ShaderCache.find(ShaderID);
+			if (ShaderDataIt == Ctx.ShaderCache.cend())
 			{
 				auto Path = ResolvePathAliases(ShaderID.CStr());
 
@@ -818,7 +821,7 @@ private:
 					}
 				}
 
-				ShaderDataIt = ShaderCache.emplace(ShaderID, std::move(ShaderData)).first;
+				ShaderDataIt = Ctx.ShaderCache.emplace(ShaderID, std::move(ShaderData)).first;
 			}
 
 			const CShaderData& ShaderData = ShaderDataIt->second;
@@ -841,8 +844,7 @@ private:
 		return true;
 	}
 
-	bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs,
-		const std::map<CStrID, CRenderState>& RSCache, const std::map<CStrID, CShaderData>& ShaderCache)
+	bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
 	{
 		const auto LineEnd = std::cout.widen('\n');
 
@@ -864,7 +866,7 @@ private:
 		{
 			for (CStrID PassID : Tech.Passes)
 			{
-				const CRenderState& RS = RSCache.at(PassID);
+				const CRenderState& RS = Ctx.RSCache.at(PassID);
 
 				CStrID ShaderIDs[] = { RS.VertexShader, RS.PixelShader, RS.GeometryShader, RS.HullShader, RS.DomainShader };
 
@@ -875,7 +877,7 @@ private:
 
 					CSM30ShaderMeta ShaderMeta;
 					{
-						const CShaderData& ShaderData = ShaderCache.at(ShaderID);
+						const CShaderData& ShaderData = Ctx.ShaderCache.at(ShaderID);
 						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
 						std::istream MetaStream(&MetaBuffer);
 						MetaStream >> ShaderMeta;
@@ -886,10 +888,25 @@ private:
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << LineEnd;
 
-						//   if ID is global, add to globals
-						//   else if ID is material, add to materials
-						//   else add to tech
-						//   in all cases check that registers don't overlap
+						CStrID ID(Const.Name.c_str());
+						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
+						{
+							//add to globals
+						}
+						else
+						{
+							auto ItMtl = Ctx.MaterialParams.find(ID);
+							if (ItMtl != Ctx.MaterialParams.cend())
+							{
+								//add to materials
+							}
+							else
+							{
+								//add to tech
+							}
+						}
+
+						//in all cases check that registers don't overlap
 					}
 
 					for (const auto& Rsrc : ShaderMeta.Resources)
@@ -897,10 +914,25 @@ private:
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << LineEnd;
 
-						//   if ID is global, add to globals
-						//   else if ID is material, add to materials
-						//   else add to tech
-						//   in all cases check that registers don't overlap
+						CStrID ID(Rsrc.Name.c_str());
+						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
+						{
+							//add to globals
+						}
+						else
+						{
+							auto ItMtl = Ctx.MaterialParams.find(ID);
+							if (ItMtl != Ctx.MaterialParams.cend())
+							{
+								//add to materials
+							}
+							else
+							{
+								//add to tech
+							}
+						}
+
+						//in all cases check that registers don't overlap
 					}
 
 					for (const auto& Sampler : ShaderMeta.Samplers)
@@ -908,10 +940,25 @@ private:
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << LineEnd;
 
-						//   if ID is global, add to globals
-						//   else if ID is material, add to materials
-						//   else add to tech
-						//   in all cases check that registers don't overlap
+						CStrID ID(Sampler.Name.c_str());
+						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
+						{
+							//add to globals
+						}
+						else
+						{
+							auto ItMtl = Ctx.MaterialParams.find(ID);
+							if (ItMtl != Ctx.MaterialParams.cend())
+							{
+								//add to materials
+							}
+							else
+							{
+								//add to tech
+							}
+						}
+
+						//in all cases check that registers don't overlap
 					}
 				}
 			}
@@ -920,7 +967,7 @@ private:
 		return false;
 	}
 
-	bool WriteParameterTablesForDXBC(std::ostream& Stream, const std::vector<CTechnique>& Techs)
+	bool WriteParameterTablesForDXBC(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
 	{
 		/*
 					CUSMShaderMeta Meta;
