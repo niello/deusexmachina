@@ -212,7 +212,7 @@ public:
 
 		std::map<CStrID, CRenderState> RSCache;
 		std::map<CStrID, CShaderData> ShaderCache;
-		std::map<uint32_t, std::vector<CTechnique>> Techs; // Grouped by shader format
+		std::map<uint32_t, std::vector<CTechnique>> TechsByFormat; // Grouped by shader format
 
 		auto& RenderStateDescs = ItRenderStates->second.GetValue<Data::CParams>();
 		const auto& InputSetDescs = ItTechs->second.GetValue<Data::CParams>();
@@ -284,33 +284,36 @@ public:
 					Tech.Passes.push_back(RenderStateID);
 				}
 
-				Techs[Tech.ShaderFormatFourCC].push_back(std::move(Tech));
+				TechsByFormat[Tech.ShaderFormatFourCC].push_back(std::move(Tech));
 			}
 		}
 
 		// Build resulting effect for each shader format separately
 
 		std::map<uint32_t, std::string> SerializedEffect;
-		for (auto& TechsByFormat : Techs)
+		for (auto& FormatTechs : TechsByFormat)
 		{
-			const uint32_t ShaderFormat = TechsByFormat.first;
-			auto& TechArray = TechsByFormat.second;
+			const uint32_t ShaderFormat = FormatTechs.first;
+			auto& Techs = FormatTechs.second;
 
 			// Sort techs for easier processing, see tech's operator <
-			std::sort(TechArray.begin(), TechArray.end());
+			std::sort(Techs.begin(), Techs.end());
 
 			std::ostringstream Stream(std::ios_base::binary);
+
+			// Serialize parameter tables
 
 			switch (ShaderFormat)
 			{
 				case 'DX9C':
 				{
+					if (!WriteParameterTablesForDX9C(Stream, Techs, RSCache, ShaderCache)) return false;
 					// if (!Process...) FAIL;
 					break;
 				}
 				case 'DXBC':
 				{
-					// if (!Process...) FAIL;
+					if (!WriteParameterTablesForDXBC(Stream, Techs)) return false;
 					break;
 				}
 				default:
@@ -322,10 +325,10 @@ public:
 				}
 			}
 
-			//!!!serialize render states! reference from techs by index?
+			// Serialize techniques
 
-			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(TechArray.size()));
-			for (const auto& Tech : TechArray)
+			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Techs.size()));
+			for (const auto& Tech : Techs)
 			{
 				WriteStream(Stream, Tech.ID); //???need?
 				WriteStream(Stream, Tech.InputSet); 
@@ -336,18 +339,73 @@ public:
 
 				// write tech params - reference shader params from passes?
 				//???or skip it for techs and in engine build ID -> shader stage -> handle mapping?
+				//???or only build ID -> shader stage mask here and check compatibility?
 			}
-			//!!!if tech serialization is format-independent, can do it here, not in a switch-case!
+
+			// Serialize render states
+
+			//???reference from techs by index or by ID?
 			/*
+			if (!W.Write<U32>(RSRef.MaxLights)) return ERR_IO_WRITE;
+			if (!W.Write<U32>(Desc.Flags.GetMask())) return ERR_IO_WRITE;
+		
+			if (!W.Write(Desc.DepthBias)) return ERR_IO_WRITE;
+			if (!W.Write(Desc.DepthBiasClamp)) return ERR_IO_WRITE;
+			if (!W.Write(Desc.SlopeScaledDepthBias)) return ERR_IO_WRITE;
+		
+			if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_DepthEnable))
+			{
+				if (!W.Write<U8>(Desc.DepthFunc)) return ERR_IO_WRITE;
+			}
+	
+			if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_StencilEnable))
+			{
+				if (!W.Write(Desc.StencilReadMask)) return ERR_IO_WRITE;
+				if (!W.Write(Desc.StencilWriteMask)) return ERR_IO_WRITE;
+				if (!W.Write<U32>(Desc.StencilRef)) return ERR_IO_WRITE;
 
-			if (!W.Write<U32>(TechInfo.PassIndices.GetCount())) return ERR_IO_WRITE;
-			for (UPTR PassIdx = 0; PassIdx < TechInfo.PassIndices.GetCount(); ++PassIdx)
-				if (!W.Write<U32>(TechInfo.PassIndices[PassIdx])) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilFrontFace.StencilFailOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilFrontFace.StencilDepthFailOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilFrontFace.StencilPassOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilFrontFace.StencilFunc)) return ERR_IO_WRITE;
 
-			TechInfo.Params.Sort<CSortParamsByID>();
-			int SaveResult = SaveEffectParams(W, TechInfo.Params);
-			if (SaveResult != SUCCESS) return SaveResult;
+				if (!W.Write<U8>(Desc.StencilBackFace.StencilFailOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilBackFace.StencilDepthFailOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilBackFace.StencilPassOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(Desc.StencilBackFace.StencilFunc)) return ERR_IO_WRITE;
+			}
+
+			for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+			{
+				if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_Independent)) break;
+			
+				const Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
+				if (!W.Write<U8>(RTBlend.WriteMask)) return ERR_IO_WRITE;
+			
+				if (Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
+
+				if (!W.Write<U8>(RTBlend.SrcBlendArg)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(RTBlend.DestBlendArg)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(RTBlend.BlendOp)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(RTBlend.SrcBlendArgAlpha)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(RTBlend.DestBlendArgAlpha)) return ERR_IO_WRITE;
+				if (!W.Write<U8>(RTBlend.BlendOpAlpha)) return ERR_IO_WRITE;
+			}
+
+			if (!W.Write(Desc.BlendFactorRGBA[0])) return ERR_IO_WRITE;
+			if (!W.Write(Desc.BlendFactorRGBA[1])) return ERR_IO_WRITE;
+			if (!W.Write(Desc.BlendFactorRGBA[2])) return ERR_IO_WRITE;
+			if (!W.Write(Desc.BlendFactorRGBA[3])) return ERR_IO_WRITE;
+			if (!W.Write<U32>(Desc.SampleMask)) return ERR_IO_WRITE;
+
+			if (!W.Write(Desc.AlphaTestRef)) return ERR_IO_WRITE;
+			if (!W.Write<U8>(Desc.AlphaTestFunc)) return ERR_IO_WRITE;
+
+			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+				if (!W.Write<U32>(RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount])) return ERR_IO_WRITE;
 			*/
+
+			// Check and store serialized data
 
 			std::string Data = Stream.str();
 			if (Data.empty())
@@ -358,7 +416,7 @@ public:
 			}
 			else if (Data.size() > std::numeric_limits<uint32_t>().max())
 			{
-				// We don't support 64-bit offsets in effect files. If your data is such big,
+				// We don't support 64-bit offsets in effect files. If your data is so big,
 				// most probably it is a serialization error.
 				if (_LogVerbosity >= EVerbosity::Warnings)
 					std::cout << "Discarding too big serialized data for the format: " << FourCC(ShaderFormat) << LineEnd;
@@ -391,7 +449,7 @@ public:
 		WriteStream<uint32_t>(File, SerializedEffect.size()); // Shader format count
 
 		// Write format map (FourCC to offset from the body start)
-		uint32_t TotalOffset = 0;
+		uint32_t TotalOffset = static_cast<uint32_t>(File.tellp());
 		for (const auto& Pair : SerializedEffect)
 		{
 			WriteStream<uint32_t>(File, Pair.first);
@@ -764,6 +822,63 @@ private:
 
 		RS.IsValid = true;
 		return true;
+	}
+
+	bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs,
+		const std::map<CStrID, CRenderState>& RSCache, const std::map<CStrID, CShaderData>& ShaderCache)
+	{
+		//???the same for tech?
+		// metadata block for global & material params
+		//!!!lightweight structures without methods + binary serialization (save/load)
+		//no virtual code etc
+
+		//???to metadata in cf-effect?
+		std::set<uint32_t> GlobalFloat4;
+		std::set<uint32_t> GlobalInt4;
+		std::set<uint32_t> GlobalBool;
+		std::set<uint32_t> GlobalResources;
+		std::set<uint32_t> GlobalSamplers;
+
+		//???to metadata in cf-effect?
+		std::set<uint32_t> MaterialFloat4;
+		std::set<uint32_t> MaterialInt4;
+		std::set<uint32_t> MaterialBool;
+		std::set<uint32_t> MaterialResources;
+		std::set<uint32_t> MaterialSamplers;
+
+		//???the same for tech?
+
+		for (const auto& Tech : Techs)
+		{
+			for (CStrID PassID : Tech.Passes)
+			{
+				const CRenderState& RS = RSCache.at(PassID);
+
+				CStrID ShaderIDs[] = { RS.VertexShader, RS.PixelShader, RS.GeometryShader, RS.HullShader, RS.DomainShader };
+
+				for (size_t ShaderType = ShaderType_Vertex; ShaderType < ShaderType_COUNT; ++ShaderType)
+				{
+					if (!ShaderIDs[ShaderType]) continue;
+
+					const CShaderData& ShaderData = ShaderCache.at(ShaderIDs[ShaderType]);
+
+					// load metadata from cached binary
+
+					// for all consts / resources / samplers
+					//   if ID is global, add to globals
+					//   else if ID is material, add to materials
+					//   else add to tech
+					//   in all cases check that registers don't overlap
+				}
+			}
+		}
+
+		return false;
+	}
+
+	bool WriteParameterTablesForDXBC(std::ostream& Stream, const std::vector<CTechnique>& Techs)
+	{
+		return false;
 	}
 };
 

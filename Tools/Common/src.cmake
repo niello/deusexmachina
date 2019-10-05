@@ -10,6 +10,8 @@ set(DEM_TOOLS_COMMON_HEADERS
 	Type.h
 	Utils.h
 	ValueTable.h
+	ShaderMeta/SM30ShaderMeta.h
+	ShaderMeta/USMShaderMeta.h
 )
 
 set(DEM_TOOLS_COMMON_SOURCES
@@ -23,5 +25,7 @@ set(DEM_TOOLS_COMMON_SOURCES
 	StringIDStorage.cpp
 	Utils.cpp
 	ValueTable.cpp
+	ShaderMeta/SM30ShaderMeta.cpp
+	ShaderMeta/USMShaderMeta.cpp
 )
 
