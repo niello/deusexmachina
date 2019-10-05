@@ -860,6 +860,8 @@ private:
 		//???the same for tech?
 		CUsedSM30Registers GlobalRegisters, MaterialRegisters;
 
+		//???need special meta with shader mask/type per each variable?
+		//???map or vector of pairs [shader(s) -> meta]?
 		CSM30ShaderMeta GlobalMeta, MaterialMeta;
 
 		for (const auto& Tech : Techs)
@@ -883,33 +885,38 @@ private:
 						MetaStream >> ShaderMeta;
 					}
 
-					for (const auto& Const : ShaderMeta.Consts)
+					for (auto& Const : ShaderMeta.Consts)
 					{
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << LineEnd;
 
+						//???!!!related struct & buffer meta must be copied too?!
+
 						CStrID ID(Const.Name.c_str());
 						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 						{
-							//add to globals
+							//!!! check that registers don't overlap !
+							GlobalMeta.Consts.push_back(std::move(Const));
 						}
 						else
 						{
 							auto ItMtl = Ctx.MaterialParams.find(ID);
 							if (ItMtl != Ctx.MaterialParams.cend())
 							{
-								//add to materials
+								//!!! check that registers don't overlap !
+								MaterialMeta.Consts.push_back(std::move(Const));
+
+								// process defaults
 							}
 							else
 							{
-								//add to tech
+								////!!! check that registers don't overlap !
+								//TechMeta.Consts.push_back(std::move(Const));
 							}
 						}
-
-						//in all cases check that registers don't overlap
 					}
 
-					for (const auto& Rsrc : ShaderMeta.Resources)
+					for (auto& Rsrc : ShaderMeta.Resources)
 					{
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << LineEnd;
@@ -917,25 +924,30 @@ private:
 						CStrID ID(Rsrc.Name.c_str());
 						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 						{
-							//add to globals
+							//!!! check that registers don't overlap !
+							GlobalMeta.Resources.push_back(std::move(Rsrc));
 						}
 						else
 						{
 							auto ItMtl = Ctx.MaterialParams.find(ID);
 							if (ItMtl != Ctx.MaterialParams.cend())
 							{
-								//add to materials
+								//!!! check that registers don't overlap !
+								MaterialMeta.Resources.push_back(std::move(Rsrc));
+
+								// process defaults
 							}
 							else
 							{
-								//add to tech
+								////!!! check that registers don't overlap !
+								//TechMeta.Resources.push_back(std::move(Rsrc));
 							}
 						}
 
 						//in all cases check that registers don't overlap
 					}
 
-					for (const auto& Sampler : ShaderMeta.Samplers)
+					for (auto& Sampler : ShaderMeta.Samplers)
 					{
 						if (_LogVerbosity >= EVerbosity::Debug)
 							std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << LineEnd;
@@ -943,22 +955,25 @@ private:
 						CStrID ID(Sampler.Name.c_str());
 						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 						{
-							//add to globals
+							//!!! check that registers don't overlap !
+							GlobalMeta.Samplers.push_back(std::move(Sampler));
 						}
 						else
 						{
 							auto ItMtl = Ctx.MaterialParams.find(ID);
 							if (ItMtl != Ctx.MaterialParams.cend())
 							{
-								//add to materials
+								//!!! check that registers don't overlap !
+								MaterialMeta.Samplers.push_back(std::move(Sampler));
+
+								// process defaults
 							}
 							else
 							{
-								//add to tech
+								//!!! check that registers don't overlap !
+								//TechMeta.Samplers.push_back(std::move(Sampler));
 							}
 						}
-
-						//in all cases check that registers don't overlap
 					}
 				}
 			}
