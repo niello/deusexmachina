@@ -7,7 +7,7 @@
 // Don't change existing values, they are saved to file
 enum ESM30ShaderConstFlags
 {
-	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
+	SM30ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
 // Don't change existing values, they are saved to file
@@ -38,7 +38,7 @@ struct CSM30BufferMeta
 	std::set<uint32_t>	UsedBool;
 };
 
-bool operator ==(const CSM30BufferMeta& a, const CSM30BufferMeta& b)
+inline bool operator ==(const CSM30BufferMeta& a, const CSM30BufferMeta& b)
 {
 	// FIXME: why? was lazy to implement in a previous version?
 	return true;
@@ -87,7 +87,7 @@ struct CSM30ConstMeta
 	uint32_t			RegisterCount;			// Cache, not saved
 };
 
-bool operator ==(const CSM30ConstMeta& a, const CSM30ConstMeta& b)
+inline bool operator ==(const CSM30ConstMeta& a, const CSM30ConstMeta& b)
 {
 	return a.RegisterSet == b.RegisterSet &&
 		a.RegisterStart == b.RegisterStart &&
@@ -107,7 +107,7 @@ struct CSM30RsrcMeta
 	uint32_t	Register;
 };
 
-bool operator ==(const CSM30RsrcMeta& a, const CSM30RsrcMeta& b)
+inline bool operator ==(const CSM30RsrcMeta& a, const CSM30RsrcMeta& b)
 {
 	return a.Register == b.Register;
 }
@@ -124,7 +124,7 @@ struct CSM30SamplerMeta
 	uint32_t			RegisterCount;
 };
 
-bool operator ==(const CSM30SamplerMeta& a, const CSM30SamplerMeta& b)
+inline bool operator ==(const CSM30SamplerMeta& a, const CSM30SamplerMeta& b)
 {
 	return a.Type == b.Type && a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }

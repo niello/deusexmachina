@@ -6,8 +6,6 @@ set(DEM_SHADER_COMPILER_HEADERS
 	src/ShaderCompiler.h
 	src/ShaderDB.h
 	src/ShaderReflection.h
-	src/ShaderReflectionSM30.h
-	src/ShaderReflectionUSM.h
 )
 
 set(DEM_SHADER_COMPILER_SOURCES

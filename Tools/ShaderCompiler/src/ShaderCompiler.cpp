@@ -3,8 +3,9 @@
 #include <Utils.h>
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
-#include <ShaderReflectionSM30.h>
-#include <ShaderReflectionUSM.h>
+#include <ShaderReflection.h>
+#include <ShaderMeta/USMShaderMeta.h>
+#include <ShaderMeta/SM30ShaderMeta.h>
 #include <ValueTable.h>
 #include <sstream>
 #include <filesystem>
@@ -13,6 +14,9 @@ namespace fs = std::filesystem;
 
 #undef CreateDirectory
 #undef DeleteFile
+
+bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags);
+bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pData, size_t Size, const char* pSource, size_t SourceSize, ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines, DEMShaderCompiler::ILogDelegate* pLog);
 
 struct CTargetParams
 {
@@ -160,7 +164,9 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	// Read metadata
 
 	CUSMShaderMeta Meta;
-	if (!Meta.CollectFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize()))
+	uint32_t MinFeatureLevel;
+	uint64_t RequiresFlags;
+	if (!ExtractUSMMetaFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta, MinFeatureLevel, RequiresFlags))
 		return DEM_SHADER_COMPILER_REFLECTION_ERROR;
 
 	// Strip unnecessary info for release builds, making object files smaller
@@ -206,7 +212,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	// Save common header
 
 	WriteStream<uint32_t>(File, TargetParams.FormatSignature);
-	WriteStream<uint32_t>(File, Meta.MinFeatureLevel);
+	WriteStream<uint32_t>(File, MinFeatureLevel);
 	WriteStream<uint8_t>(File, TargetParams.ShaderType);
 
 	// Some data will be filled later
@@ -216,8 +222,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	// Save metadata
 
 	WriteStream<uint32_t>(File, Rec.InputSigFile.ID); // For DEM it will be a part of DXBC-specific metadata
-
-	if (!Meta.Save(File)) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
+	File << Meta;
 
 	// Save shader binary
 	auto BinaryOffset = File.tellp();
@@ -251,7 +256,7 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	// in annotations and aren't reflected in a blob itself.
 
 	std::ostringstream ObjStream(std::ios_base::binary);
-	if (!Meta.Save(ObjStream)) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
+	ObjStream << Meta;
 
 	auto BinaryOffset = ObjStream.tellp();
 	ObjStream.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
@@ -499,7 +504,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		{
 			// SM30 shaders can't rely on a shader blob only, because some metadata is stored in annotations
 			CSM30ShaderMeta Meta;
-			if (Meta.CollectFromBinaryAndSource(pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, SrcPathFSStr.c_str(), pD3DMacros, pLog))
+			if (ExtractSM30MetaFromBinaryAndSource(Meta, pCode->GetBufferPointer(), pCode->GetBufferSize(), pSrcData, SrcDataSize, pInclude, SrcPathFSStr.c_str(), pD3DMacros, pLog))
 				ResultCode = ProcessShaderBinarySM30(pBasePath, pDestPath, pCode, Rec, std::move(Meta), TargetParams, pLog);
 			else
 				ResultCode = DEM_SHADER_COMPILER_REFLECTION_ERROR;
@@ -541,60 +546,6 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 	}
 
 	return DEM_SHADER_COMPILER_SUCCESS;
-}
-//---------------------------------------------------------------------
-
-DEM_DLL_API void DEM_DLLCALL CreateShaderMetadata(EShaderModel ShaderModel, CShaderMetadata*& pOutMeta)
-{
-	if (ShaderModel == ShaderModel_30) pOutMeta = new CSM30ShaderMeta;
-	else if (ShaderModel == ShaderModel_USM) pOutMeta = new CUSMShaderMeta;
-	else pOutMeta = nullptr;
-}
-//---------------------------------------------------------------------
-
-// Use FreeShaderMetadata() on the pointer returned.
-DEM_DLL_API bool DEM_DLLCALL LoadShaderMetadataByObjectFileID(uint32_t ID, uint32_t& OutTarget, CShaderMetadata*& pOutMeta)
-{
-	DB::CBinaryRecord ObjFile;
-	if (!DB::FindObjFileByID(ID, ObjFile)) return false;
-
-	std::ifstream File(ObjFile.Path.c_str(), std::ios_base::binary);
-	if (!File) return false;
-
-	// File signature always stores target in bytes 1 and 0
-	uint32_t FileSig;
-	ReadStream(File, FileSig);
-	const char ByteHigh = (FileSig & 0x0000ff00) >> 8;
-	const char ByteLow = (FileSig & 0x000000ff);
-	OutTarget = ((ByteHigh - '0') << 8) | (ByteLow - '0');
-
-	ReadStream<uint32_t>(File);	// Binary data offset - skip
-	ReadStream<uint32_t>(File);	// Shader obj file ID - skip
-
-	pOutMeta = nullptr;
-
-	if (OutTarget >= 0x0400)
-	{
-		ReadStream<uint32_t>(File);	// Input signature obj file ID - skip
-		pOutMeta = new CUSMShaderMeta;
-	}
-	else pOutMeta = new CSM30ShaderMeta;
-
-	if (!pOutMeta) return false;
-
-	if (pOutMeta->Load(File)) return true;
-	else
-	{
-		delete pOutMeta;
-		pOutMeta = nullptr;
-		return false;
-	}
-}
-//---------------------------------------------------------------------
-
-DEM_DLL_API void DEM_DLLCALL FreeShaderMetadata(CShaderMetadata* pMeta)
-{
-	delete pMeta;
 }
 //---------------------------------------------------------------------
 

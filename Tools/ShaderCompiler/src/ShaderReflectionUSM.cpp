@@ -1,51 +1,12 @@
-#include "ShaderReflectionUSM.h"
-
-#include <Utils.h>
+#include <ShaderReflection.h>
+#include <ShaderMeta/USMShaderMeta.h>
 #include <cassert>
-#include <D3DCompiler.inl>
-
-#undef min
-#undef max
-
-bool CUSMBufferMeta::IsEqual(const CMetadataObject& Other) const
-{
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
-	const CUSMBufferMeta& TypedOther = (const CUSMBufferMeta&)Other;
-	return Register == TypedOther.Register && Size == TypedOther.Size;
-}
-//---------------------------------------------------------------------
-
-bool CUSMConstMeta::IsEqual(const CMetadataObject& Other) const
-{
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
-	const CUSMConstMeta& TypedOther = (const CUSMConstMeta&)Other;
-	return Type == TypedOther.Type &&
-		Offset == TypedOther.Offset &&
-		ElementSize == TypedOther.ElementSize &&
-		ElementCount == TypedOther.ElementCount;
-}
-//---------------------------------------------------------------------
-
-bool CUSMRsrcMeta::IsEqual(const CMetadataObject& Other) const
-{
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
-	const CUSMRsrcMeta& TypedOther = (const CUSMRsrcMeta&)Other;
-	return Type == TypedOther.Type &&
-		RegisterStart == TypedOther.RegisterStart &&
-		RegisterCount == TypedOther.RegisterCount;
-}
-//---------------------------------------------------------------------
-
-bool CUSMSamplerMeta::IsEqual(const CMetadataObject& Other) const
-{
-	if (GetClass() != Other.GetClass() || GetShaderModel() != Other.GetShaderModel()) return false;
-	const CUSMSamplerMeta& TypedOther = (const CUSMSamplerMeta&)Other;
-	return RegisterStart == TypedOther.RegisterStart && RegisterCount == TypedOther.RegisterCount;
-}
-//---------------------------------------------------------------------
+#include <map>
+#define WIN32_LEAN_AND_MEAN
+#include <d3dcompiler.h>
 
 // StructCache stores D3D11 type to metadata index mapping, where metadata index is an index in the Out.Structs array
-bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache)
+static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache)
 {
 	if (!pType) return false;
 
@@ -59,10 +20,10 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 	if (D3DTypeDesc.Members == 0) return true;
 
 	// Add and fill new structure layout metadata
-	StructCache.emplace(pType, Structs.size());
-	CUSMStructMeta Meta;
+	StructCache.emplace(pType, Meta.Structs.size());
+	CUSMStructMeta StructMeta;
 
-	Meta.Members.reserve(D3DTypeDesc.Members);
+	StructMeta.Members.reserve(D3DTypeDesc.Members);
 	for (UINT MemberIdx = 0; MemberIdx < D3DTypeDesc.Members; ++MemberIdx)
 	{
 		LPCSTR pMemberName = pType->GetMemberTypeName(MemberIdx);
@@ -102,7 +63,7 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 		if (D3DMemberTypeDesc.Class == D3D_SVC_STRUCT)
 		{
 			MemberMeta.Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-			if (!ProcessStructure(pMemberType, MemberMeta.ElementSize, StructCache)) continue;
+			if (!ProcessStructure(Meta, pMemberType, MemberMeta.ElementSize, StructCache)) continue;
 			MemberMeta.StructIndex = StructCache[pMemberType];
 		}
 		else
@@ -131,19 +92,19 @@ bool CUSMShaderMeta::ProcessStructure(ID3D11ShaderReflectionType* pType, uint32_
 			MemberMeta.Rows = D3DMemberTypeDesc.Rows;
 
 			if (D3DMemberTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
-				MemberMeta.Flags |= ShaderConst_ColumnMajor;
+				MemberMeta.Flags |= USMShaderConst_ColumnMajor;
 		}
 
-		Meta.Members.push_back(std::move(MemberMeta));
+		StructMeta.Members.push_back(std::move(MemberMeta));
 	}
 
-	Structs.push_back(std::move(Meta));
+	Meta.Structs.push_back(std::move(StructMeta));
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
+bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags)
 {
 	ID3D11ShaderReflection* pReflector = nullptr;
 	if (FAILED(D3DReflect(pData, Size, IID_ID3D11ShaderReflection, (void**)&pReflector))) return false;
@@ -157,17 +118,17 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 
 	switch (D3DFeatureLevel)
 	{
-		case D3D_FEATURE_LEVEL_9_1:		MinFeatureLevel = GPU_Level_D3D9_1; break;
-		case D3D_FEATURE_LEVEL_9_2:		MinFeatureLevel = GPU_Level_D3D9_2; break;
-		case D3D_FEATURE_LEVEL_9_3:		MinFeatureLevel = GPU_Level_D3D9_3; break;
-		case D3D_FEATURE_LEVEL_10_0:	MinFeatureLevel = GPU_Level_D3D10_0; break;
-		case D3D_FEATURE_LEVEL_10_1:	MinFeatureLevel = GPU_Level_D3D10_1; break;
-		case D3D_FEATURE_LEVEL_11_0:	MinFeatureLevel = GPU_Level_D3D11_0; break;
+		case D3D_FEATURE_LEVEL_9_1:		OutMinFeatureLevel = GPU_Level_D3D9_1; break;
+		case D3D_FEATURE_LEVEL_9_2:		OutMinFeatureLevel = GPU_Level_D3D9_2; break;
+		case D3D_FEATURE_LEVEL_9_3:		OutMinFeatureLevel = GPU_Level_D3D9_3; break;
+		case D3D_FEATURE_LEVEL_10_0:	OutMinFeatureLevel = GPU_Level_D3D10_0; break;
+		case D3D_FEATURE_LEVEL_10_1:	OutMinFeatureLevel = GPU_Level_D3D10_1; break;
+		case D3D_FEATURE_LEVEL_11_0:	OutMinFeatureLevel = GPU_Level_D3D11_0; break;
 		//case D3D_FEATURE_LEVEL_11_1:
-		default:						MinFeatureLevel = GPU_Level_D3D11_1; break;
+		default:						OutMinFeatureLevel = GPU_Level_D3D11_1; break;
 	}
 
-	RequiresFlags = pReflector->GetRequiresFlags();
+	OutRequiresFlags = pReflector->GetRequiresFlags();
 
 	D3D11_SHADER_DESC D3DDesc;
 	if (FAILED(pReflector->GetDesc(&D3DDesc)))
@@ -212,7 +173,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 					default:									Meta.Type = USMRsrc_Unknown; break;
 				}
 
-				Resources.push_back(std::move(Meta));
+				OutMeta.Resources.push_back(std::move(Meta));
 
 				break;
 			}
@@ -223,7 +184,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 				Meta.Name = RsrcDesc.Name;
 				Meta.RegisterStart = RsrcDesc.BindPoint;
 				Meta.RegisterCount = RsrcDesc.BindCount;
-				Samplers.push_back(std::move(Meta));
+				OutMeta.Samplers.push_back(std::move(Meta));
 				break;
 			}
 			case D3D_SIT_CBUFFER:
@@ -268,7 +229,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 				Meta.Name = RsrcDesc.Name;
 				Meta.Register = (RsrcDesc.BindPoint | TypeMask);
 				Meta.Size = D3DBufDesc.Size;
-				Buffers.push_back(std::move(Meta));
+				OutMeta.Buffers.push_back(std::move(Meta));
 
 				if (RsrcDesc.Type != D3D_SIT_STRUCTURED)
 				{
@@ -291,7 +252,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 
 						CUSMConstMeta ConstMeta;
 						ConstMeta.Name = D3DVarDesc.Name;
-						ConstMeta.BufferIndex = Buffers.size() - 1;
+						ConstMeta.BufferIndex = OutMeta.Buffers.size() - 1;
 						ConstMeta.Offset = D3DVarDesc.StartOffset;
 						ConstMeta.Flags = 0;
 
@@ -311,7 +272,7 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)
 						{
 							ConstMeta.Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-							if (!ProcessStructure(pVarType, ConstMeta.ElementSize, StructCache)) continue;
+							if (!ProcessStructure(OutMeta, pVarType, ConstMeta.ElementSize, StructCache)) continue;
 							ConstMeta.StructIndex = StructCache[pVarType];
 						}
 						else
@@ -340,9 +301,9 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 							ConstMeta.Rows = D3DTypeDesc.Rows;
 
 							if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
-								ConstMeta.Flags |= ShaderConst_ColumnMajor;
+								ConstMeta.Flags |= USMShaderConst_ColumnMajor;
 
-							Consts.push_back(std::move(ConstMeta));
+							OutMeta.Consts.push_back(std::move(ConstMeta));
 						}
 					}
 				}
@@ -353,191 +314,6 @@ bool CUSMShaderMeta::CollectFromBinary(const void* pData, size_t Size)
 	}
 
 	pReflector->Release();
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool CUSMShaderMeta::Save(std::ostream& Stream) const
-{
-	WriteStream<uint64_t>(Stream, RequiresFlags);
-
-	WriteStream<uint32_t>(Stream, Buffers.size());
-	for (size_t i = 0; i < Buffers.size(); ++i)
-	{
-		const CUSMBufferMeta& Obj = Buffers[i];
-		WriteStream(Stream, Obj.Name);
-		WriteStream(Stream, Obj.Register);
-		WriteStream(Stream, Obj.Size);
-		//WriteStream(Stream, Obj.ElementCount);
-	}
-
-	WriteStream<uint32_t>(Stream, Structs.size());
-	for (size_t i = 0; i < Structs.size(); ++i)
-	{
-		const CUSMStructMeta& Obj = Structs[i];
-
-		WriteStream<uint32_t>(Stream, Obj.Members.size());
-		for (size_t j = 0; j < Obj.Members.size(); ++j)
-		{
-			const CUSMStructMemberMeta& Member = Obj.Members[j];
-			WriteStream(Stream, Member.Name);
-			WriteStream(Stream, Member.StructIndex);
-			WriteStream<uint8_t>(Stream, Member.Type);
-			WriteStream(Stream, Member.Offset);
-			WriteStream(Stream, Member.ElementSize);
-			WriteStream(Stream, Member.ElementCount);
-			WriteStream(Stream, Member.Columns);
-			WriteStream(Stream, Member.Rows);
-			WriteStream(Stream, Member.Flags);
-		}
-	}
-
-	WriteStream<uint32_t>(Stream, Consts.size());
-	for (size_t i = 0; i < Consts.size(); ++i)
-	{
-		const CUSMConstMeta& Obj = Consts[i];
-		WriteStream(Stream, Obj.Name);
-		WriteStream(Stream, Obj.BufferIndex);
-		WriteStream(Stream, Obj.StructIndex);
-		WriteStream<uint8_t>(Stream, Obj.Type);
-		WriteStream(Stream, Obj.Offset);
-		WriteStream(Stream, Obj.ElementSize);
-		WriteStream(Stream, Obj.ElementCount);
-		WriteStream(Stream, Obj.Columns);
-		WriteStream(Stream, Obj.Rows);
-		WriteStream(Stream, Obj.Flags);
-	}
-
-	WriteStream<uint32_t>(Stream, Resources.size());
-	for (size_t i = 0; i < Resources.size(); ++i)
-	{
-		const CUSMRsrcMeta& Obj = Resources[i];
-		WriteStream(Stream, Obj.Name);
-		WriteStream<uint8_t>(Stream, Obj.Type);
-		WriteStream(Stream, Obj.RegisterStart);
-		WriteStream(Stream, Obj.RegisterCount);
-	}
-
-	WriteStream<uint32_t>(Stream, Samplers.size());
-	for (size_t i = 0; i < Samplers.size(); ++i)
-	{
-		const CUSMSamplerMeta& Obj = Samplers[i];
-		WriteStream(Stream, Obj.Name);
-		WriteStream(Stream, Obj.RegisterStart);
-		WriteStream(Stream, Obj.RegisterCount);
-	}
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool CUSMShaderMeta::Load(std::istream& Stream)
-{
-	Buffers.clear();
-	Consts.clear();
-	Resources.clear();
-	Samplers.clear();
-
-	ReadStream<uint64_t>(Stream, RequiresFlags);
-
-	uint32_t Count;
-
-	ReadStream<uint32_t>(Stream, Count);
-	Buffers.reserve(Count);
-	for (uint32_t i = 0; i < Count; ++i)
-	{
-		//!!!arrays, tbuffers & sbuffers aren't supported for now!
-		CUSMBufferMeta Obj;
-		ReadStream(Stream, Obj.Name);
-		ReadStream(Stream, Obj.Register);
-		ReadStream(Stream, Obj.Size);
-		///ReadStream(Obj.ElementCount);
-		Buffers.push_back(std::move(Obj));
-	}
-
-	ReadStream<uint32_t>(Stream, Count);
-	Structs.reserve(Count);
-	for (uint32_t i = 0; i < Count; ++i)
-	{
-		CUSMStructMeta Obj;
-
-		uint32_t MemberCount;
-		ReadStream<uint32_t>(Stream, MemberCount);
-		Obj.Members.reserve(MemberCount);
-		for (uint32_t j = 0; j < MemberCount; ++j)
-		{
-			CUSMStructMemberMeta Member;
-			ReadStream(Stream, Member.Name);
-			ReadStream(Stream, Member.StructIndex);
-
-			uint8_t Type;
-			ReadStream<uint8_t>(Stream, Type);
-			Member.Type = (EUSMConstType)Type;
-
-			ReadStream(Stream, Member.Offset);
-			ReadStream(Stream, Member.ElementSize);
-			ReadStream(Stream, Member.ElementCount);
-			ReadStream(Stream, Member.Columns);
-			ReadStream(Stream, Member.Rows);
-			ReadStream(Stream, Member.Flags);
-
-			Obj.Members.push_back(std::move(Member));
-		}
-
-		Structs.push_back(std::move(Obj));
-	}
-
-	ReadStream<uint32_t>(Stream, Count);
-	Consts.reserve(Count);
-	for (uint32_t i = 0; i < Count; ++i)
-	{
-		CUSMConstMeta Obj;
-		ReadStream(Stream, Obj.Name);
-		ReadStream(Stream, Obj.BufferIndex);
-		ReadStream(Stream, Obj.StructIndex);
-
-		uint8_t Type;
-		ReadStream<uint8_t>(Stream, Type);
-		Obj.Type = (EUSMConstType)Type;
-
-		ReadStream(Stream, Obj.Offset);
-		ReadStream(Stream, Obj.ElementSize);
-		ReadStream(Stream, Obj.ElementCount);
-		ReadStream(Stream, Obj.Columns);
-		ReadStream(Stream, Obj.Rows);
-		ReadStream(Stream, Obj.Flags);
-
-		Consts.push_back(std::move(Obj));
-	}
-
-	ReadStream<uint32_t>(Stream, Count);
-	Resources.reserve(Count);
-	for (uint32_t i = 0; i < Count; ++i)
-	{
-		CUSMRsrcMeta Obj;
-		ReadStream(Stream, Obj.Name);
-
-		uint8_t Type;
-		ReadStream<uint8_t>(Stream, Type);
-		Obj.Type = (EUSMResourceType)Type;
-
-		ReadStream(Stream, Obj.RegisterStart);
-		ReadStream(Stream, Obj.RegisterCount);
-
-		Resources.push_back(std::move(Obj));
-	}
-
-	ReadStream<uint32_t>(Stream, Count);
-	Samplers.reserve(Count);
-	for (uint32_t i = 0; i < Count; ++i)
-	{
-		CUSMSamplerMeta Obj;
-		ReadStream(Stream, Obj.Name);
-		ReadStream(Stream, Obj.RegisterStart);
-		ReadStream(Stream, Obj.RegisterCount);
-		Samplers.push_back(std::move(Obj));
-	}
 
 	return true;
 }

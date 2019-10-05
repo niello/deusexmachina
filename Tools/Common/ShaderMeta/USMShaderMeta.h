@@ -6,7 +6,7 @@
 // Don't change existing values, they are saved to file
 enum EUSMShaderConstFlags
 {
-	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
+	USMShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
 // Don't change existing values, they are saved to file
@@ -53,7 +53,7 @@ struct CUSMBufferMeta
 	uint32_t	Size;		// For structured buffers - StructureByteStride
 };
 
-bool operator ==(const CUSMBufferMeta& a, const CUSMBufferMeta& b)
+inline bool operator ==(const CUSMBufferMeta& a, const CUSMBufferMeta& b)
 {
 	return a.Register == b.Register && a.Size == b.Size;
 }
@@ -98,7 +98,7 @@ struct CUSMConstMeta
 	uint8_t			Flags;			// See EUSMShaderConstFlags
 };
 
-bool operator ==(const CUSMConstMeta& a, const CUSMConstMeta& b)
+inline bool operator ==(const CUSMConstMeta& a, const CUSMConstMeta& b)
 {
 	return a.Type == b.Type && a.Offset == b.Offset && a.ElementSize == b.ElementSize && a.ElementCount == b.ElementCount;
 }
@@ -114,7 +114,7 @@ struct CUSMRsrcMeta
 	uint32_t RegisterCount;
 };
 
-bool operator ==(const CUSMRsrcMeta& a, const CUSMRsrcMeta& b)
+inline bool operator ==(const CUSMRsrcMeta& a, const CUSMRsrcMeta& b)
 {
 	return a.Type == b.Type && a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
@@ -129,7 +129,7 @@ struct CUSMSamplerMeta
 	uint32_t RegisterCount;
 };
 
-bool operator ==(const CUSMSamplerMeta& a, const CUSMSamplerMeta& b)
+inline bool operator ==(const CUSMSamplerMeta& a, const CUSMSamplerMeta& b)
 {
 	return a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
