@@ -69,8 +69,7 @@ inline void ReadStream(std::istream& Stream, std::string& Data)
 
 	if (Length)
 	{
-		Data.clear();
-		Data.resize(Length + 1, '\0');
+		Data.resize(Length, '\0');
 		Stream.read(Data.data(), Length);
 	}
 }

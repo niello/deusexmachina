@@ -830,26 +830,19 @@ private:
 	bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs,
 		const std::map<CStrID, CRenderState>& RSCache, const std::map<CStrID, CShaderData>& ShaderCache)
 	{
-		//???the same for tech?
-		// metadata block for global & material params
-		//!!!lightweight structures without methods + binary serialization (save/load)
-		//no virtual code etc
+		const auto LineEnd = std::cout.widen('\n');
 
-		//???to metadata in cf-effect?
-		std::set<uint32_t> GlobalFloat4;
-		std::set<uint32_t> GlobalInt4;
-		std::set<uint32_t> GlobalBool;
-		std::set<uint32_t> GlobalResources;
-		std::set<uint32_t> GlobalSamplers;
-
-		//???to metadata in cf-effect?
-		std::set<uint32_t> MaterialFloat4;
-		std::set<uint32_t> MaterialInt4;
-		std::set<uint32_t> MaterialBool;
-		std::set<uint32_t> MaterialResources;
-		std::set<uint32_t> MaterialSamplers;
+		struct CUsedSM30Registers
+		{
+			std::set<uint32_t> Float4;
+			std::set<uint32_t> Int4;
+			std::set<uint32_t> Bool;
+			std::set<uint32_t> Resources;
+			std::set<uint32_t> Samplers;
+		};
 
 		//???the same for tech?
+		CUsedSM30Registers GlobalRegisters, MaterialRegisters;
 
 		for (const auto& Tech : Techs)
 		{
@@ -861,23 +854,49 @@ private:
 
 				for (size_t ShaderType = ShaderType_Vertex; ShaderType < ShaderType_COUNT; ++ShaderType)
 				{
-					if (!ShaderIDs[ShaderType]) continue;
+					const CStrID ShaderID = ShaderIDs[ShaderType];
+					if (!ShaderID) continue;
 
 					CSM30ShaderMeta Meta;
 					{
-						const CShaderData& ShaderData = ShaderCache.at(ShaderIDs[ShaderType]);
+						const CShaderData& ShaderData = ShaderCache.at(ShaderID);
 						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
 						std::istream MetaStream(&MetaBuffer);
 						MetaStream >> Meta;
 					}
 
-					int test = 0;
+					for (const auto& Const : Meta.Consts)
+					{
+						if (_LogVerbosity >= EVerbosity::Debug)
+							std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << LineEnd;
 
-					// for all consts / resources / samplers
-					//   if ID is global, add to globals
-					//   else if ID is material, add to materials
-					//   else add to tech
-					//   in all cases check that registers don't overlap
+						//   if ID is global, add to globals
+						//   else if ID is material, add to materials
+						//   else add to tech
+						//   in all cases check that registers don't overlap
+					}
+
+					for (const auto& Rsrc : Meta.Resources)
+					{
+						if (_LogVerbosity >= EVerbosity::Debug)
+							std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << LineEnd;
+
+						//   if ID is global, add to globals
+						//   else if ID is material, add to materials
+						//   else add to tech
+						//   in all cases check that registers don't overlap
+					}
+
+					for (const auto& Sampler : Meta.Samplers)
+					{
+						if (_LogVerbosity >= EVerbosity::Debug)
+							std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << LineEnd;
+
+						//   if ID is global, add to globals
+						//   else if ID is material, add to materials
+						//   else add to tech
+						//   in all cases check that registers don't overlap
+					}
 				}
 			}
 		}
