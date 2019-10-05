@@ -52,6 +52,7 @@ public:
 	bool		operator ==(const char* pOther) const { return pString == pOther || (pString && pOther && !strcmp(pString, pOther)); }
 	bool		operator !=(const char* pOther) const { return pString != pOther && (!pString || !pOther || strcmp(pString, pOther)); }
 	CStringID&	operator =(const CStringID& Other) { pString = Other.pString; return *this; }
+	CStringID&	operator =(CStringID&& Other) { pString = Other.pString; return *this; }
 };
 
 }

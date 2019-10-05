@@ -89,8 +89,8 @@ bool CMaterial::Load(CGPUDriver& GPU, IO::CStream& Stream)
 		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
 		if (!GPU.CommitShaderConstants(*RAMBuffer.Get())) FAIL; //!!!must not do any VRAM operations inside!
 
-																		//???do only if current buffer doesn't support VRAM? DX9 will support, DX11 will not.
-																		//if supports VRAM, can reuse as VRAM buffer without data copying between RAMBuffer and a new one.
+		//???do only if current buffer doesn't support VRAM? DX9 will support, DX11 will not.
+		//if supports VRAM, can reuse as VRAM buffer without data copying between RAMBuffer and a new one.
 		pRec->Buffer = GPU.CreateConstantBuffer(pRec->Handle, Render::Access_GPU_Read, RAMBuffer.Get());
 	}
 

@@ -18,8 +18,9 @@ namespace fs = std::filesystem;
 
 struct CTechnique
 {
-	std::vector<const CRenderState*> Passes;
+	std::vector<CStrID> Passes;
 
+	CStrID ID;
 	CStrID InputSet;
 
 	uint32_t ShaderFormatFourCC = 0;
@@ -30,8 +31,7 @@ struct CTechnique
 		// NB: not sorted by shader format, grouped by it in a map instead
 
 		// Sort by input set to group all related techs and make selection easier
-		if (InputSet < Other.InputSet) return true;
-		else if (InputSet > Other.InputSet) return false;
+		if (InputSet != Other.InputSet) return InputSet < Other.InputSet;
 
 		// Sort by features descending, so we start with the most interesting
 		// tech and fall back to simpler ones
@@ -278,9 +278,10 @@ public:
 
 					// TODO: light count
 
+					Tech.ID = TechDesc.first;
 					Tech.InputSet = InputSet;
 
-					Tech.Passes.push_back(&RS);
+					Tech.Passes.push_back(RenderStateID);
 				}
 
 				Techs[Tech.ShaderFormatFourCC].push_back(std::move(Tech));
@@ -292,12 +293,15 @@ public:
 		std::map<uint32_t, std::string> SerializedEffect;
 		for (auto& TechsByFormat : Techs)
 		{
+			const uint32_t ShaderFormat = TechsByFormat.first;
+			auto& TechArray = TechsByFormat.second;
+
 			// Sort techs for easier processing, see tech's operator <
-			std::sort(TechsByFormat.second.begin(), TechsByFormat.second.end());
+			std::sort(TechArray.begin(), TechArray.end());
 
 			std::ostringstream Stream(std::ios_base::binary);
 
-			switch (TechsByFormat.first)
+			switch (ShaderFormat)
 			{
 				case 'DX9C':
 				{
@@ -313,16 +317,43 @@ public:
 				{
 					// TODO: print FourCC as text!
 					if (_LogVerbosity >= EVerbosity::Warnings)
-						std::cout << "Skipping unsupported shader format: " << FourCC(TechsByFormat.first) << LineEnd;
+						std::cout << "Skipping unsupported shader format: " << FourCC(ShaderFormat) << LineEnd;
 					continue;
 				}
 			}
+
+			//!!!serialize render states! reference from techs by index?
+
+			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(TechArray.size()));
+			for (const auto& Tech : TechArray)
+			{
+				WriteStream(Stream, Tech.ID); //???need?
+				WriteStream(Stream, Tech.InputSet); 
+				WriteStream(Stream, Tech.MinFeatureLevel); 
+
+				WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Tech.Passes.size()));
+				// write pass IDs or uint32_t indices
+
+				// write tech params - reference shader params from passes?
+				//???or skip it for techs and in engine build ID -> shader stage -> handle mapping?
+			}
+			//!!!if tech serialization is format-independent, can do it here, not in a switch-case!
+			/*
+
+			if (!W.Write<U32>(TechInfo.PassIndices.GetCount())) return ERR_IO_WRITE;
+			for (UPTR PassIdx = 0; PassIdx < TechInfo.PassIndices.GetCount(); ++PassIdx)
+				if (!W.Write<U32>(TechInfo.PassIndices[PassIdx])) return ERR_IO_WRITE;
+
+			TechInfo.Params.Sort<CSortParamsByID>();
+			int SaveResult = SaveEffectParams(W, TechInfo.Params);
+			if (SaveResult != SUCCESS) return SaveResult;
+			*/
 
 			std::string Data = Stream.str();
 			if (Data.empty())
 			{
 				if (_LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "No data serialized for the format: " << FourCC(TechsByFormat.first) << LineEnd;
+					std::cout << "No data serialized for the format: " << FourCC(ShaderFormat) << LineEnd;
 				continue;
 			}
 			else if (Data.size() > std::numeric_limits<uint32_t>().max())
@@ -330,11 +361,11 @@ public:
 				// We don't support 64-bit offsets in effect files. If your data is such big,
 				// most probably it is a serialization error.
 				if (_LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Discarding too big serialized data for the format: " << FourCC(TechsByFormat.first) << LineEnd;
+					std::cout << "Discarding too big serialized data for the format: " << FourCC(ShaderFormat) << LineEnd;
 				continue;
 			}
 
-			SerializedEffect.emplace(TechsByFormat.first, std::move(Data));
+			SerializedEffect.emplace(ShaderFormat, std::move(Data));
 		}
 
 		// Write resulting file
