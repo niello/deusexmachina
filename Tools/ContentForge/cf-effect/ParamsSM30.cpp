@@ -29,29 +29,32 @@ struct CSM30EffectMeta
 	std::string PrintableName;
 };
 
-static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, CSM30EffectMeta& Meta, const CSM30EffectMeta& Other)
+static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM30EffectMeta& Other)
 {
-	auto& Regs =
-		(Param.RegisterSet == RS_Float4) ? Meta.UsedFloat4 :
-		(Param.RegisterSet == RS_Int4) ? Meta.UsedInt4 :
-		Meta.UsedBool;
-
 	const auto& OtherRegs =
 		(Param.RegisterSet == RS_Float4) ? Other.UsedFloat4 :
 		(Param.RegisterSet == RS_Int4) ? Other.UsedInt4 :
 		Other.UsedBool;
 
+	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
 	for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
-	{
-		// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
-		if (OtherRegs.find(r) != OtherRegs.cend()) return false;
-
-		// Remember our own registers to check overlapping with other objects
-		Regs.insert(r);
-	}
+		if (OtherRegs.find(r) != OtherRegs.cend())
+			return false;
 
 	return true;
 }
+//---------------------------------------------------------------------
+
+static bool CheckSamplerRegisterOverlapping(const CSM30SamplerMeta& Param, const CSM30EffectMeta& Other)
+{
+	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
+	for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+		if (Other.UsedSamplers.find(r) != Other.UsedSamplers.cend())
+			return false;
+
+	return true;
+}
+//---------------------------------------------------------------------
 
 static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
@@ -61,25 +64,35 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 	auto ItPrev = TargetMeta.Consts.find(ID);
 	if (ItPrev == TargetMeta.Consts.cend())
 	{
-		// New param, check register overlapping and add to meta
+		// Check register overlapping, because it prevents correct param setup from effects
 
-		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta1))
+		if (!CheckConstRegisterOverlapping(Param, OtherMeta1))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " constant '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
-		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta2))
+		if (!CheckConstRegisterOverlapping(Param, OtherMeta2))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " constant '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
+
+		// Remember used registers for future overlap checks
+
+		auto& Regs =
+			(Param.RegisterSet == RS_Float4) ? TargetMeta.UsedFloat4 :
+			(Param.RegisterSet == RS_Int4) ? TargetMeta.UsedInt4 :
+			TargetMeta.UsedBool;
+
+		for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+			Regs.insert(r);
+
+		// Copy necessary metadata
 
 		TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
-
-		// Copy related struct and buffer metadata
 
 		// TODO: copy necessary struct and buffer meta!
 		//!!!fix buffer indexing! check if this buffer already exists!
@@ -93,7 +106,7 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 		if (ExistingMeta != Param)
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " constant '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -118,6 +131,98 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 
 	return true;
 }
+//---------------------------------------------------------------------
+
+static bool ProcessNewResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+{
+	CStrID ID(Param.Name.c_str());
+
+	// Check if this param was already added from another shader
+	auto ItPrev = TargetMeta.Resources.find(ID);
+	if (ItPrev == TargetMeta.Resources.cend())
+	{
+		if (OtherMeta1.UsedResources.find(Param.Register) != OtherMeta1.UsedResources.cend())
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " resource '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+			return false;
+		}
+
+		if (OtherMeta2.UsedResources.find(Param.Register) != OtherMeta2.UsedResources.cend())
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " resource '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+			return false;
+		}
+
+		TargetMeta.UsedResources.insert(Param.Register);
+
+		TargetMeta.Resources.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
+	}
+	else
+	{
+		// The same param found, check compatibility
+		const auto& ExistingMeta = ItPrev->second.second;
+		if (ExistingMeta != Param)
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " resource '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+			return false;
+		}
+
+		// Extend shader mask
+		ItPrev->second.first |= ShaderType;
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
+static bool ProcessNewSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+{
+	CStrID ID(Param.Name.c_str());
+
+	// Check if this param was already added from another shader
+	auto ItPrev = TargetMeta.Samplers.find(ID);
+	if (ItPrev == TargetMeta.Samplers.cend())
+	{
+		if (!CheckSamplerRegisterOverlapping(Param, OtherMeta1))
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " sampler '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+			return false;
+		}
+
+		if (!CheckSamplerRegisterOverlapping(Param, OtherMeta2))
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " sampler '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+			return false;
+		}
+
+		for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+			TargetMeta.UsedSamplers.insert(r);
+
+		TargetMeta.Samplers.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
+	}
+	else
+	{
+		// The same param found, check compatibility
+		const auto& ExistingMeta = ItPrev->second.second;
+		if (ExistingMeta != Param)
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " sampler '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+			return false;
+		}
+
+		// Extend shader mask
+		ItPrev->second.first |= ShaderType;
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
 
 bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
@@ -164,7 +269,8 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 						{
 							ProcessNewConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
-							// process defaults
+							// process defaults - null or depends on const type
+							//???!!!support defaults for structs? CParams with fields!
 						}
 						else
 						{
@@ -181,27 +287,22 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					CStrID ID(Rsrc.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						//!!! check that registers don't overlap !
-						//GlobalMeta.Resources.push_back(std::move(Rsrc));
+						ProcessNewResource(ShaderType, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							//!!! check that registers don't overlap !
-							//MaterialMeta.Resources.push_back(std::move(Rsrc));
+							ProcessNewResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
-							// process defaults
+							// process defaults - null, string, CStrID
 						}
 						else
 						{
-							////!!! check that registers don't overlap !
-							//TechMeta.Resources.push_back(std::move(Rsrc));
+							ProcessNewResource(ShaderType, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
-
-					//in all cases check that registers don't overlap
 				}
 
 				for (auto& Sampler : ShaderMeta.Samplers)
@@ -212,23 +313,20 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					CStrID ID(Sampler.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						//!!! check that registers don't overlap !
-						//GlobalMeta.Samplers.push_back(std::move(Sampler));
+						ProcessNewSampler(ShaderType, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							//!!! check that registers don't overlap !
-							//MaterialMeta.Samplers.push_back(std::move(Sampler));
+							ProcessNewSampler(ShaderType, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
-							// process defaults
+							// process defaults - null or CParams
 						}
 						else
 						{
-							//!!! check that registers don't overlap !
-							//TechMeta.Samplers.push_back(std::move(Sampler));
+							ProcessNewSampler(ShaderType, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
 				}
@@ -238,3 +336,4 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 
 	return false;
 }
+//---------------------------------------------------------------------
