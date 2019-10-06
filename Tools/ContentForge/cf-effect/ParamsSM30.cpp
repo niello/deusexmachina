@@ -7,7 +7,6 @@
 //???!!!TODO:
 //???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
 
-//!!!add name for log messages!
 struct CSM30EffectMeta
 {
 	// Param ID -> shader type mask + metadata
@@ -23,6 +22,9 @@ struct CSM30EffectMeta
 	std::set<uint32_t> UsedBool;
 	std::set<uint32_t> UsedResources;
 	std::set<uint32_t> UsedSamplers;
+
+	// For logging
+	std::string PrintableName;
 };
 
 static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, CSM30EffectMeta& Meta, const CSM30EffectMeta& Other)
@@ -39,7 +41,10 @@ static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, CSM30Effe
 
 	for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
 	{
+		// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
 		if (OtherRegs.find(r) != OtherRegs.cend()) return false;
+
+		// Remember our own registers to check overlapping with other objects
 		Regs.insert(r);
 	}
 
@@ -58,14 +63,14 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30E
 		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta1))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << "Global param '" << ID.CStr() << "' uses a register used by material params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
 		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta2))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << "Global param '" << ID.CStr() << "' uses a register used by tech params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -109,6 +114,9 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30E
 bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
 	CSM30EffectMeta GlobalMeta, MaterialMeta, TechMeta;
+	GlobalMeta.PrintableName = "Global";
+	MaterialMeta.PrintableName = "Material";
+	TechMeta.PrintableName = "Tech";
 
 	for (const auto& Tech : Techs)
 	{
@@ -136,8 +144,6 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					if (Ctx.LogVerbosity >= EVerbosity::Debug)
 						std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << Ctx.LineEnd;
 
-					//???!!!related struct & buffer meta must be copied too?!
-
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
@@ -148,15 +154,13 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							//!!! check that registers don't overlap !
-							//MaterialMeta.Consts.push_back(std::move(Const));
+							ProcessNewConstant(ShaderType, Const, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
 							// process defaults
 						}
 						else
 						{
-							////!!! check that registers don't overlap !
-							//TechMeta.Consts.push_back(std::move(Const));
+							ProcessNewConstant(ShaderType, Const, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
 				}
