@@ -10,8 +10,10 @@
 struct CSM30EffectMeta
 {
 	// Param ID -> shader type mask + metadata
-	std::map<CStrID, std::pair<uint8_t, CSM30BufferMeta>> Buffers;
-	std::map<CStrID, std::pair<uint8_t, CSM30StructMeta>> Structs;
+	//std::map<CStrID, std::pair<uint8_t, CSM30BufferMeta>> Buffers;
+	//std::map<CStrID, std::pair<uint8_t, CSM30StructMeta>> Structs;
+	std::vector<CSM30BufferMeta> Buffers;
+	std::vector<CSM30StructMeta> Structs;
 	std::map<CStrID, std::pair<uint8_t, CSM30ConstMeta>> Consts;
 	std::map<CStrID, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
 	std::map<CStrID, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
@@ -51,7 +53,7 @@ static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, CSM30Effe
 	return true;
 }
 
-static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	CStrID ID(Param.Name.c_str());
 
@@ -80,29 +82,35 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30E
 		// Copy related struct and buffer metadata
 
 		// TODO: copy necessary struct and buffer meta!
+		//!!!fix buffer indexing! check if this buffer already exists!
+		//???check by name, by == or both? can be problems with multiple shaders?
 	}
 	else
 	{
 		// The same param found, check compatibility
 
-		if (ItPrev->second.second != Param)
+		const auto& ExistingMeta = ItPrev->second.second;
+		if (ExistingMeta != Param)
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
 				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
 			return false;
 		}
 
-		// Compare containing constant buffers (???must be equal or compatible?)
+		// Compare containing constant buffers
 
-		/*
-		const CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
-		const CMetadataObject* pExistingBuffer = Param.GetContainingBuffer();
-		if (!pMetaBuffer->IsEqual(*pExistingBuffer)) //???must be equal or compatible?
+		//!!!for SM30 we must not compare constantbuffers because they are fictional. If constants itselves
+		// are the same, registers are compatible, so we can use this constants even from different buffers.
+		// We just throw away the second buffer.
+		//!!!that's why operator == for SM30 buffers always returns true!
+
+		//???must be equal or compatible?
+		if (TargetMeta.Buffers[ExistingMeta.BufferIndex] != SrcMeta.Buffers[Param.BufferIndex])
 		{
-			n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
-			return ERR_INVALID_DATA;
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' containing constant buffer is not compatible across all tech shaders" << Ctx.LineEnd;
+			return false;
 		}
-		*/
 
 		// Extend shader mask
 		ItPrev->second.first |= ShaderType;
@@ -147,20 +155,20 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessNewConstant(ShaderType, Const, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessNewConstant(ShaderType, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							ProcessNewConstant(ShaderType, Const, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+							ProcessNewConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
 							// process defaults
 						}
 						else
 						{
-							ProcessNewConstant(ShaderType, Const, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+							ProcessNewConstant(ShaderType, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
 				}
