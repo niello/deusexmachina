@@ -406,16 +406,16 @@ bool Window::isChildRecursive(unsigned int ID) const
 }
 
 //----------------------------------------------------------------------------//
-Window* Window::getChild(unsigned int ID) const
+Window* Window::getChild(unsigned int id) const
 {
     const size_t child_count = getChildCount();
 
     for (size_t i = 0; i < child_count; ++i)
-        if (getChildAtIndex(i)->getID() == ID)
+        if (getChildAtIndex(i)->getID() == id)
             return getChildAtIndex(i);
 
     std::stringstream& sstream = SharedStringstream::GetPreparedStream();
-    sstream << std::hex << ID << std::dec;
+    sstream << std::hex << id << std::dec;
 
     throw UnknownObjectException("A Window with ID: '" +
         sstream.str() + "' is not attached to Window '" + d_name + "'.");
@@ -1363,13 +1363,12 @@ void Window::addChild_impl(Element* element)
             "Window can only have Elements of type Window added as children "
             "(Window path: " + getNamePath() + ").");
 
-    // Process the child even if it is in our list already. This happens in some
-    // widgets that use optimizations in child rearrangement operations.
+    // if the element is already a child of this Window, this is a NOOP
+    if (isChild(element))
+        return;
 
     NamedElement::addChild_impl(wnd);
 
-    // Reinsert to the draw list in any case
-    removeWindowFromDrawList(*wnd);
     addWindowToDrawList(*wnd);
 
     wnd->invalidate(true);
@@ -1549,7 +1548,7 @@ void Window::addWindowProperties(void)
 
     CEGUI_DEFINE_PROPERTY(Window, bool,
         ActivePropertyName, "Property to get/set the 'active' setting for the Window. Value is either \"true\" or \"false\".",
-        &Window::setActive, &Window::isActive, false 
+        &Window::setActive, &Window::isActive, false
     );
 
     CEGUI_DEFINE_PROPERTY(Window, bool,
@@ -1915,7 +1914,7 @@ void Window::destroy(void)
 
     // ensure custom tooltip is cleaned up
     setTooltip(static_cast<Tooltip*>(nullptr));
-    
+
 
 
     // clean up looknfeel related things
