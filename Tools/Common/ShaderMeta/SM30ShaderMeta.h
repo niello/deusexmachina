@@ -44,6 +44,7 @@ inline bool operator ==(const CSM30BufferMeta& a, const CSM30BufferMeta& b)
 	return true;
 }
 
+inline bool operator !=(const CSM30BufferMeta& a, const CSM30BufferMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30BufferMeta& Value);
 
@@ -96,6 +97,7 @@ inline bool operator ==(const CSM30ConstMeta& a, const CSM30ConstMeta& b)
 		a.Flags == b.Flags;
 }
 
+inline bool operator !=(const CSM30ConstMeta& a, const CSM30ConstMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CSM30ConstMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value);
 
@@ -112,6 +114,7 @@ inline bool operator ==(const CSM30RsrcMeta& a, const CSM30RsrcMeta& b)
 	return a.Register == b.Register;
 }
 
+inline bool operator !=(const CSM30RsrcMeta& a, const CSM30RsrcMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CSM30RsrcMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30RsrcMeta& Value);
 
@@ -129,6 +132,7 @@ inline bool operator ==(const CSM30SamplerMeta& a, const CSM30SamplerMeta& b)
 	return a.Type == b.Type && a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
 
+inline bool operator !=(const CSM30SamplerMeta& a, const CSM30SamplerMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CSM30SamplerMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30SamplerMeta& Value);
 

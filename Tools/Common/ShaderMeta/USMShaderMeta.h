@@ -58,6 +58,7 @@ inline bool operator ==(const CUSMBufferMeta& a, const CUSMBufferMeta& b)
 	return a.Register == b.Register && a.Size == b.Size;
 }
 
+inline bool operator !=(const CUSMBufferMeta& a, const CUSMBufferMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CUSMBufferMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMBufferMeta& Value);
 
@@ -103,6 +104,7 @@ inline bool operator ==(const CUSMConstMeta& a, const CUSMConstMeta& b)
 	return a.Type == b.Type && a.Offset == b.Offset && a.ElementSize == b.ElementSize && a.ElementCount == b.ElementCount;
 }
 
+inline bool operator !=(const CUSMConstMeta& a, const CUSMConstMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CUSMConstMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMConstMeta& Value);
 
@@ -119,6 +121,7 @@ inline bool operator ==(const CUSMRsrcMeta& a, const CUSMRsrcMeta& b)
 	return a.Type == b.Type && a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
 
+inline bool operator !=(const CUSMRsrcMeta& a, const CUSMRsrcMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CUSMRsrcMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMRsrcMeta& Value);
 
@@ -134,6 +137,7 @@ inline bool operator ==(const CUSMSamplerMeta& a, const CUSMSamplerMeta& b)
 	return a.RegisterStart == b.RegisterStart && a.RegisterCount == b.RegisterCount;
 }
 
+inline bool operator !=(const CUSMSamplerMeta& a, const CUSMSamplerMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CUSMSamplerMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMSamplerMeta& Value);
 

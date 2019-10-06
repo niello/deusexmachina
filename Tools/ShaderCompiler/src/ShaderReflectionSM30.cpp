@@ -101,9 +101,7 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 
 		if (D3D9ConstDesc.RegisterSet == RS_MIXED)
 		{
-			//Messages += "    SM3.0 mixed-regset structs aren't supported, '";
-			//Messages += D3D9ConstDesc.Name;
-			//Messages += "' skipped\n";
+			if (pLog) pLog->LogWarning(("    SM3.0 mixed-regset structs aren't supported, '" + D3D9ConstDesc.Name + "' skipped").c_str());
 			continue;
 		}
 		else if (D3D9ConstDesc.RegisterSet == RS_SAMPLER)
@@ -140,26 +138,18 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 					}
 					else if (D3D9ConstDesc.RegisterCount > 1)
 					{
-						//Messages += "Sampler '";
-						//Messages += D3D9ConstDesc.Name;
-						//Messages += '[';
-						//Messages += std::to_string(TexIdx);
-						//Messages += "]' has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
+						if (pLog) pLog->LogWarning(("Sampler '" + D3D9ConstDesc.Name + '[' + std::to_string(TexIdx) + "] has no texture bound, use initializer in a form of 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'").c_str());
 					}
 					else
 					{
-						//Messages += "Sampler '";
-						//Messages += D3D9ConstDesc.Name;
-						//Messages += "' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'\n";
+						if (pLog) pLog->LogWarning(("Sampler '" + D3D9ConstDesc.Name + "' has no texture bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }'").c_str());
 					}
 				}
 			}
 
 			if (!TexCount)
 			{
-				//Messages += "Sampler '";
-				//Messages += D3D9ConstDesc.Name;
-				//Messages += "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }' or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'\n";
+				if (pLog) pLog->LogWarning(("Sampler '" + D3D9ConstDesc.Name + "' has no textures bound, use initializer in a form of 'samplerX SamplerName { Texture = TextureName; }' or 'samplerX SamplerName[N] { { Texture = TextureName1; }, ..., { Texture = TextureNameN; } }'").c_str());
 			}
 
 			OutMeta.Samplers.push_back(std::move(Meta));
@@ -185,16 +175,13 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 			{
 				CSM30BufferMeta& Meta = OutMeta.Buffers[BufferIndex];
 				if (SlotIndex == (uint32_t)(-1))
-					SlotIndex = SlotIndex;
-				else if (SlotIndex != SlotIndex)
 				{
-					//Messages += "CBuffer '";
-					//Messages += Meta.Name;
-					//Messages += "' is bound to different SlotIndex values (at least ";
-					//Messages += std::to_string(SlotIndex);
-					//Messages += " and ";
-					//Messages += std::to_string(SlotIndex);
-					//Messages += ") in the same shader, please fix it\n";
+					Meta.SlotIndex = SlotIndex;
+				}
+				else if (SlotIndex != Meta.SlotIndex)
+				{
+					if (pLog) pLog->LogWarning(("CBuffer '" + Meta.Name + "' is bound to different SlotIndex values (at least " +
+						std::to_string(SlotIndex) + " and " + std::to_string(Meta.SlotIndex) + ") in the same shader, please fix it\n").c_str());
 					return false;
 				}
 			}
@@ -213,8 +200,7 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 				case RS_BOOL:	Meta.RegisterSet = RS_Bool; break;
 				default:
 				{
-					// FIXME message!
-					assert(false && "Unsupported SM3.0 register set %d\n");//, D3D9ConstDesc.RegisterSet);
+					if (pLog) pLog->LogError(("Unsupported SM3.0 register set " + std::to_string(D3D9ConstDesc.RegisterSet)).c_str());
 					return false;
 				}
 			};

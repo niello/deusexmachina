@@ -60,6 +60,7 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30E
 	if (ItPrev == TargetMeta.Consts.cend())
 	{
 		// New param, check register overlapping and add to meta
+
 		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta1))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
@@ -76,35 +77,34 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30E
 
 		TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
 
+		// Copy related struct and buffer metadata
+
 		// TODO: copy necessary struct and buffer meta!
 	}
 	else
 	{
-		/*
 		// The same param found, check compatibility
 
-		const CEffectParam& Param = TechInfo.Params[Idx];
-		const CMetadataObject* pExistingMetaObject = Param.GetMetadataObject();
-
-		if (!pMetaObject->IsEqual(*pExistingMetaObject))
+		if (ItPrev->second.second != Param)
 		{
-		n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
-		return ERR_INVALID_DATA;
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+			return false;
 		}
 
-		if (ShaderParamClass == ShaderParam_Const)
-		{
+		// Compare containing constant buffers (???must be equal or compatible?)
+
+		/*
 		const CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
 		const CMetadataObject* pExistingBuffer = Param.GetContainingBuffer();
 		if (!pMetaBuffer->IsEqual(*pExistingBuffer)) //???must be equal or compatible?
 		{
-		n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
-		return ERR_INVALID_DATA;
-		}
+			n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
+			return ERR_INVALID_DATA;
 		}
 		*/
 
-		// Existing parameter, check compatibility and extend shader mask
+		// Extend shader mask
 		ItPrev->second.first |= ShaderType;
 	}
 
