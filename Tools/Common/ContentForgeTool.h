@@ -1,5 +1,6 @@
 #pragma once
 #include <Data.h>
+#include <Logging.h>
 #include <filesystem>
 #include <unordered_set>
 #include <deque>
@@ -15,15 +16,6 @@ namespace CLI
 {
 	class App;
 }
-
-enum EVerbosity
-{
-	Always = 0,
-	Errors,
-	Warnings,
-	Info,
-	Debug
-};
 
 struct CVersion
 {

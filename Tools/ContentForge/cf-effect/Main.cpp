@@ -1,16 +1,12 @@
 #include <ContentForgeTool.h>
-#include <RenderState.h>
+#include <ParamsSM30.h>
 #include <Utils.h>
 #include <HRDParser.h>
-#include <ShaderMeta/SM30ShaderMeta.h>
-#include <ShaderMeta/USMShaderMeta.h>
 //#include <CLI11.hpp>
 //#include <mutex>
-#include <set>
 #include <thread>
 #include <iostream>
 #include <sstream>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -18,71 +14,12 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/effects --path Data ../../../content
 
-struct CTechnique
-{
-	std::vector<CStrID> Passes;
-
-	CStrID ID;
-	CStrID InputSet;
-
-	uint32_t ShaderFormatFourCC = 0;
-	uint32_t MinFeatureLevel = 0;
-
-	bool operator <(const CTechnique& Other)
-	{
-		// NB: not sorted by shader format, grouped by it in a map instead
-
-		// Sort by input set to group all related techs and make selection easier
-		if (InputSet != Other.InputSet) return InputSet < Other.InputSet;
-
-		// Sort by features descending, so we start with the most interesting
-		// tech and fall back to simpler ones
-		return MinFeatureLevel > Other.MinFeatureLevel;
-	}
-};
-
-#pragma pack(push, 1)
-struct CShaderHeader
-{
-	uint32_t Format;
-	uint32_t MinFeatureLevel;
-	uint8_t Type;
-	uint32_t BinaryOffset;
-};
-#pragma pack(pop)
-
-struct CShaderData
-{
-	CShaderHeader Header;
-	std::unique_ptr<char[]> MetaBytes;
-	size_t MetaByteCount;
-};
-
-inline std::string FourCC(uint32_t Code)
-{
-	std::string Result;
-	Result.push_back((Code & 0xff000000) >> 24);
-	Result.push_back((Code & 0x00ff0000) >> 16);
-	Result.push_back((Code & 0x0000ff00) >> 8);
-	Result.push_back(Code & 0x000000ff);
-	return Result;
-}
-
 class CEffectTool : public CContentForgeTool
 {
 private:
 
 	// FIXME: common threadsafe logger for tasks instead of cout
 	//std::mutex COutMutex;
-
-	struct CContext
-	{
-		std::set<CStrID> GlobalParams;
-		Data::CParams MaterialParams;
-		std::map<CStrID, CRenderState> RSCache;
-		std::map<CStrID, CShaderData> ShaderCache;
-		std::map<uint32_t, std::vector<CTechnique>> TechsByFormat; // Grouped by shader format
-	};
 
 public:
 
@@ -150,6 +87,7 @@ public:
 		}
 
 		CContext Ctx;
+		Ctx.LogVerbosity = _LogVerbosity;
 
 		// Get and validate material type
 
@@ -842,163 +780,6 @@ private:
 
 		RS.IsValid = true;
 		return true;
-	}
-
-	bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
-	{
-		const auto LineEnd = std::cout.widen('\n');
-
-		struct CUsedSM30Registers
-		{
-			std::set<uint32_t> Float4;
-			std::set<uint32_t> Int4;
-			std::set<uint32_t> Bool;
-			std::set<uint32_t> Resources;
-			std::set<uint32_t> Samplers;
-		};
-
-		struct CSM30EffectMeta
-		{
-			std::map<CStrID, std::pair<uint8_t, CSM30BufferMeta>> Buffers;
-			std::map<CStrID, std::pair<uint8_t, CSM30StructMeta>> Structs;
-			std::map<CStrID, std::pair<uint8_t, CSM30ConstMeta>> Consts;
-			std::map<CStrID, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
-			std::map<CStrID, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
-		};
-
-		//???the same for tech?
-		CUsedSM30Registers GlobalRegisters, MaterialRegisters;
-
-		//???need special meta with shader mask/type per each variable?
-		//???map or vector of pairs [shader(s) -> meta]?
-		CSM30EffectMeta GlobalMeta, MaterialMeta;
-
-		for (const auto& Tech : Techs)
-		{
-			for (CStrID PassID : Tech.Passes)
-			{
-				const CRenderState& RS = Ctx.RSCache.at(PassID);
-
-				CStrID ShaderIDs[] = { RS.VertexShader, RS.PixelShader, RS.GeometryShader, RS.HullShader, RS.DomainShader };
-
-				for (uint8_t ShaderType = ShaderType_Vertex; ShaderType < ShaderType_COUNT; ++ShaderType)
-				{
-					const CStrID ShaderID = ShaderIDs[ShaderType];
-					if (!ShaderID) continue;
-
-					CSM30ShaderMeta ShaderMeta;
-					{
-						const CShaderData& ShaderData = Ctx.ShaderCache.at(ShaderID);
-						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
-						std::istream MetaStream(&MetaBuffer);
-						MetaStream >> ShaderMeta;
-					}
-
-					for (auto& Const : ShaderMeta.Consts)
-					{
-						if (_LogVerbosity >= EVerbosity::Debug)
-							std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << LineEnd;
-
-						//???!!!related struct & buffer meta must be copied too?!
-
-						CStrID ID(Const.Name.c_str());
-						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
-						{
-							// Check if this const was already added from another shader
-							auto ItPrev = GlobalMeta.Consts.find(ID);
-							if (ItPrev == GlobalMeta.Consts.cend())
-							{
-								// New parameter, check registers and add
-								GlobalMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Const)));
-							}
-							else
-							{
-								// Existing parameter, check compatibility and extend shader mask
-								ItPrev->second.first |= ShaderType;
-							}
-						}
-						else
-						{
-							auto ItMtl = Ctx.MaterialParams.find(ID);
-							if (ItMtl != Ctx.MaterialParams.cend())
-							{
-								//!!! check that registers don't overlap !
-								MaterialMeta.Consts.push_back(std::move(Const));
-
-								// process defaults
-							}
-							else
-							{
-								////!!! check that registers don't overlap !
-								//TechMeta.Consts.push_back(std::move(Const));
-							}
-						}
-					}
-
-					for (auto& Rsrc : ShaderMeta.Resources)
-					{
-						if (_LogVerbosity >= EVerbosity::Debug)
-							std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << LineEnd;
-
-						CStrID ID(Rsrc.Name.c_str());
-						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
-						{
-							//!!! check that registers don't overlap !
-							GlobalMeta.Resources.push_back(std::move(Rsrc));
-						}
-						else
-						{
-							auto ItMtl = Ctx.MaterialParams.find(ID);
-							if (ItMtl != Ctx.MaterialParams.cend())
-							{
-								//!!! check that registers don't overlap !
-								MaterialMeta.Resources.push_back(std::move(Rsrc));
-
-								// process defaults
-							}
-							else
-							{
-								////!!! check that registers don't overlap !
-								//TechMeta.Resources.push_back(std::move(Rsrc));
-							}
-						}
-
-						//in all cases check that registers don't overlap
-					}
-
-					for (auto& Sampler : ShaderMeta.Samplers)
-					{
-						if (_LogVerbosity >= EVerbosity::Debug)
-							std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << LineEnd;
-
-						CStrID ID(Sampler.Name.c_str());
-						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
-						{
-							//!!! check that registers don't overlap !
-							GlobalMeta.Samplers.push_back(std::move(Sampler));
-						}
-						else
-						{
-							auto ItMtl = Ctx.MaterialParams.find(ID);
-							if (ItMtl != Ctx.MaterialParams.cend())
-							{
-								//!!! check that registers don't overlap !
-								MaterialMeta.Samplers.push_back(std::move(Sampler));
-
-								// process defaults
-							}
-							else
-							{
-								//!!! check that registers don't overlap !
-								//TechMeta.Samplers.push_back(std::move(Sampler));
-							}
-						}
-					}
-				}
-			}
-		}
-
-		return false;
 	}
 
 	bool WriteParameterTablesForDXBC(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)

@@ -3,6 +3,7 @@ set(DEM_TOOLS_COMMON_HEADERS
 	Data.h
 	DataScheme.h
 	HRDParser.h
+	Logging.h
 	MurmurHash3.h
 	ParamsUtils.h
 	StringID.h

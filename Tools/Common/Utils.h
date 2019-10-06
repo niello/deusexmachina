@@ -105,6 +105,17 @@ inline void WriteStream(std::ostream& Stream, const CStrID& Data)
 }
 //---------------------------------------------------------------------
 
+inline std::string FourCC(uint32_t Code)
+{
+	std::string Result;
+	Result.push_back((Code & 0xff000000) >> 24);
+	Result.push_back((Code & 0x00ff0000) >> 16);
+	Result.push_back((Code & 0x0000ff00) >> 8);
+	Result.push_back(Code & 0x000000ff);
+	return Result;
+}
+//---------------------------------------------------------------------
+
 // trim from start (in place)
 inline void ltrim(std::string& s, const std::string& whitespace)
 {

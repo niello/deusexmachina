@@ -18,15 +18,15 @@ class CLog : public DEMShaderCompiler::ILogDelegate
 {
 private:
 
-	ESeverity _Severity;
+	EVerbosity _Verbosity;
 	std::string _Prefix;
 	std::ostringstream _Stream; // Cache logs in a separate stream for thread safety
 	char _LineEnd = '\n';
 
 public:
 
-	CLog(const std::string& TaskID, ESeverity Severity)
-		: _Severity(Severity)
+	CLog(const std::string& TaskID, EVerbosity Verbosity)
+		: _Verbosity(Verbosity)
 	{
 		_Prefix = "[DLL " + TaskID + "] ";
 		_LineEnd = _Stream.widen('\n');
@@ -34,9 +34,9 @@ public:
 
 	std::ostringstream& GetStream() { return _Stream; }
 
-	virtual void Log(ESeverity Level, const char* pMessage) override
+	virtual void Log(EVerbosity Level, const char* pMessage) override
 	{
-		if (_Severity >= Level)
+		if (_Verbosity >= Level)
 			_Stream << _Prefix << pMessage << _LineEnd;
 	}
 };
@@ -113,7 +113,7 @@ public:
 		const std::string TaskID(Task.TaskID.CStr());
 		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
 
-		CLog Log(TaskID, static_cast<DEMShaderCompiler::ILogDelegate::ESeverity>(_LogVerbosity));
+		CLog Log(TaskID, static_cast<EVerbosity>(_LogVerbosity));
 
 		const auto LineEnd = Log.GetStream().widen('\n');
 
