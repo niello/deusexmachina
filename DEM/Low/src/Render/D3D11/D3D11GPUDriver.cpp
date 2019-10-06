@@ -2651,32 +2651,26 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 {
 	IO::CBinaryReader R(Stream);
 
-	Data::CFourCC FileSig;
-	if (!R.Read(FileSig)) return nullptr;
+	Data::CFourCC FormatSignature;
+	if (!R.Read(FormatSignature) || FormatSignature != 'DXBC') return nullptr;
 
-	// Shader type is autodetected from the file signature
-	Render::EShaderType ShaderType;
-	switch (FileSig.Code)
-	{
-		case 'VS40':
-		case 'VS41':
-		case 'VS50':	ShaderType = Render::ShaderType_Vertex; break;
-		case 'PS40':
-		case 'PS41':
-		case 'PS50':	ShaderType = Render::ShaderType_Pixel; break;
-		case 'GS40':
-		case 'GS41':
-		case 'GS50':	ShaderType = Render::ShaderType_Geometry; break;
-		case 'HS50':	ShaderType = Render::ShaderType_Hull; break;
-		case 'DS50':	ShaderType = Render::ShaderType_Domain; break;
-		default:		return nullptr;
-	};
+	uint32_t MinFeatureLevel;
+	if (!R.Read(MinFeatureLevel) || static_cast<EGPUFeatureLevel>(MinFeatureLevel) > FeatureLevel) return nullptr;
+
+	uint8_t ShaderTypeCode;
+	if (!R.Read(ShaderTypeCode)) return nullptr;
+	Render::EShaderType ShaderType = static_cast<EShaderType>(ShaderTypeCode);
 
 	U32 BinaryOffset;
 	if (!R.Read(BinaryOffset)) return nullptr;
 
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) return nullptr;
+
+	U64 RequiresFlags;
+	if (!R.Read(RequiresFlags)) return nullptr;
+
+	// TODO: check GPU against RequiresFlags
 
 	const U64 MetadataOffset = Stream.GetPosition();
 	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize()) - static_cast<UPTR>(BinaryOffset);

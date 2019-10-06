@@ -94,8 +94,7 @@ public:
 	bool						Load(IO::CStream& Stream);
 	void						Clear();
 
-	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return GPU_Level_D3D9_3; }
-	virtual HConstant				GetConstantHandle(CStrID ID) const;
+	virtual HConstant			GetConstantHandle(CStrID ID) const;
 	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;
 	virtual HSampler			GetSamplerHandle(CStrID ID) const;

@@ -28,7 +28,6 @@ public:
 	//???implement some type safety?
 	static void*				GetHandleData(HHandle Handle) { return HandleMgr.GetHandleData(Handle); }
 
-	virtual EGPUFeatureLevel	GetMinFeatureLevel() const = 0;
 	virtual HConstant			GetConstantHandle(CStrID ID) const = 0;
 	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const = 0;
 	virtual HResource			GetResourceHandle(CStrID ID) const = 0;

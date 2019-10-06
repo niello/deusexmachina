@@ -117,8 +117,6 @@ class CUSMShaderMetadata: public IShaderMetadata
 private:
 
 	//!!!must be sorted by name! //???sort in tool?
-	EGPUFeatureLevel				MinFeatureLevel;
-	U64								RequiresFlags;	//!!!add getter!
 	CFixedArray<CUSMConstMeta>		Consts;
 	CFixedArray<CUSMStructMeta>		Structs;
 	CFixedArray<CUSMBufferMeta>		Buffers;
@@ -133,7 +131,6 @@ public:
 	bool						Load(IO::CStream& Stream);
 	void						Clear();
 
-	virtual EGPUFeatureLevel	GetMinFeatureLevel() const { return MinFeatureLevel; }
 	virtual HConstant			GetConstantHandle(CStrID ID) const;
 	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const;
 	virtual HResource			GetResourceHandle(CStrID ID) const;

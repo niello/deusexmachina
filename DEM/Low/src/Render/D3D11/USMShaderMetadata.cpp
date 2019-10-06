@@ -17,13 +17,6 @@ bool CUSMShaderMetadata::Load(IO::CStream& Stream)
 {
 	IO::CBinaryReader R(Stream);
 
-	//???where to validate? will be loaded at all? mb load and check these fields before creating D3D API shader object?
-	U32 MinFeatureLevelValue;
-	R.Read<U32>(MinFeatureLevelValue);
-	MinFeatureLevel = (Render::EGPUFeatureLevel)MinFeatureLevelValue;
-
-	R.Read<U64>(RequiresFlags);
-
 	Buffers.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
 	{
