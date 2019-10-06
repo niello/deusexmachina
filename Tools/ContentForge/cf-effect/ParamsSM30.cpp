@@ -4,34 +4,111 @@
 #include <Logging.h>
 #include <iostream>
 
+//???!!!TODO:
+//???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
+
+//!!!add name for log messages!
+struct CSM30EffectMeta
+{
+	// Param ID -> shader type mask + metadata
+	std::map<CStrID, std::pair<uint8_t, CSM30BufferMeta>> Buffers;
+	std::map<CStrID, std::pair<uint8_t, CSM30StructMeta>> Structs;
+	std::map<CStrID, std::pair<uint8_t, CSM30ConstMeta>> Consts;
+	std::map<CStrID, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
+	std::map<CStrID, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
+
+	// Cache for faster search
+	std::set<uint32_t> UsedFloat4;
+	std::set<uint32_t> UsedInt4;
+	std::set<uint32_t> UsedBool;
+	std::set<uint32_t> UsedResources;
+	std::set<uint32_t> UsedSamplers;
+};
+
+static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, CSM30EffectMeta& Meta, const CSM30EffectMeta& Other)
+{
+	auto& Regs =
+		(Param.RegisterSet == RS_Float4) ? Meta.UsedFloat4 :
+		(Param.RegisterSet == RS_Int4) ? Meta.UsedInt4 :
+		Meta.UsedBool;
+
+	const auto& OtherRegs =
+		(Param.RegisterSet == RS_Float4) ? Other.UsedFloat4 :
+		(Param.RegisterSet == RS_Int4) ? Other.UsedInt4 :
+		Other.UsedBool;
+
+	for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+	{
+		if (OtherRegs.find(r) != OtherRegs.cend()) return false;
+		Regs.insert(r);
+	}
+
+	return true;
+}
+
+static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+{
+	CStrID ID(Param.Name.c_str());
+
+	// Check if this param was already added from another shader
+	auto ItPrev = TargetMeta.Consts.find(ID);
+	if (ItPrev == TargetMeta.Consts.cend())
+	{
+		// New param, check register overlapping and add to meta
+		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta1))
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << "Global param '" << ID.CStr() << "' uses a register used by material params" << Ctx.LineEnd;
+			return false;
+		}
+
+		if (!CheckConstRegisterOverlapping(Param, TargetMeta, OtherMeta2))
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Errors)
+				std::cout << "Global param '" << ID.CStr() << "' uses a register used by tech params" << Ctx.LineEnd;
+			return false;
+		}
+
+		TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
+
+		// TODO: copy necessary struct and buffer meta!
+	}
+	else
+	{
+		/*
+		// The same param found, check compatibility
+
+		const CEffectParam& Param = TechInfo.Params[Idx];
+		const CMetadataObject* pExistingMetaObject = Param.GetMetadataObject();
+
+		if (!pMetaObject->IsEqual(*pExistingMetaObject))
+		{
+		n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
+		return ERR_INVALID_DATA;
+		}
+
+		if (ShaderParamClass == ShaderParam_Const)
+		{
+		const CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
+		const CMetadataObject* pExistingBuffer = Param.GetContainingBuffer();
+		if (!pMetaBuffer->IsEqual(*pExistingBuffer)) //???must be equal or compatible?
+		{
+		n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
+		return ERR_INVALID_DATA;
+		}
+		}
+		*/
+
+		// Existing parameter, check compatibility and extend shader mask
+		ItPrev->second.first |= ShaderType;
+	}
+
+	return true;
+}
+
 bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
-	const auto LineEnd = std::cout.widen('\n');
-
-	struct CUsedSM30Registers
-	{
-		std::set<uint32_t> Float4;
-		std::set<uint32_t> Int4;
-		std::set<uint32_t> Bool;
-		std::set<uint32_t> Resources;
-		std::set<uint32_t> Samplers;
-	};
-
-	struct CSM30EffectMeta
-	{
-		std::map<CStrID, std::pair<uint8_t, CSM30BufferMeta>> Buffers;
-		std::map<CStrID, std::pair<uint8_t, CSM30StructMeta>> Structs;
-		std::map<CStrID, std::pair<uint8_t, CSM30ConstMeta>> Consts;
-		std::map<CStrID, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
-		std::map<CStrID, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
-	};
-
-	//???the same for tech?
-	CUsedSM30Registers GlobalRegisters, MaterialRegisters;
-
-	//???need special meta with shader mask/type per each variable?
-	//???map or vector of pairs [shader(s) -> meta]?
-	CSM30EffectMeta GlobalMeta, MaterialMeta;
+	CSM30EffectMeta GlobalMeta, MaterialMeta, TechMeta;
 
 	for (const auto& Tech : Techs)
 	{
@@ -57,65 +134,14 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 				for (auto& Const : ShaderMeta.Consts)
 				{
 					if (Ctx.LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << LineEnd;
+						std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << Ctx.LineEnd;
 
 					//???!!!related struct & buffer meta must be copied too?!
 
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						// Check if this const was already added from another shader
-						auto ItPrev = GlobalMeta.Consts.find(ID);
-						if (ItPrev == GlobalMeta.Consts.cend())
-						{
-							// Validate range against both material & tech registers, two calls of the common function
-							/*
-							CSM30ConstMeta* pSM30Const = (CSM30ConstMeta*)pMetaObject;
-							CArray<UPTR>& UsedGlobalRegs = (pSM30Const->RegisterSet == RS_Float4) ? GlobalFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? GlobalInt4 : GlobalBool);
-							CArray<UPTR>& UsedMaterialRegs = (pSM30Const->RegisterSet == RS_Float4) ? MaterialFloat4 : ((pSM30Const->RegisterSet == RS_Int4) ? MaterialInt4 : MaterialBool);
-							for (UPTR r = pSM30Const->RegisterStart; r < pSM30Const->RegisterStart + pSM30Const->RegisterCount; ++r)
-							{
-							if (UsedMaterialRegs.Contains(r))
-							{
-							n_msg(VL_ERROR, "Global param '%s' uses a register used by material params\n", ParamID.CStr());
-							return ERR_INVALID_DATA;
-							}
-							if (!UsedGlobalRegs.Contains(r)) UsedGlobalRegs.Add(r);
-							}
-							*/
-
-							// New parameter, check registers and add
-							GlobalMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Const)));
-						}
-						else
-						{
-							/*
-							// The same param found, check compatibility
-
-							const CEffectParam& Param = TechInfo.Params[Idx];
-							const CMetadataObject* pExistingMetaObject = Param.GetMetadataObject();
-
-							if (!pMetaObject->IsEqual(*pExistingMetaObject))
-							{
-							n_msg(VL_ERROR, "Tech '%s': param '%s' has different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
-							return ERR_INVALID_DATA;
-							}
-
-							if (ShaderParamClass == ShaderParam_Const)
-							{
-							const CMetadataObject* pMetaBuffer = pMeta->GetContainingConstantBuffer(pMetaObject);
-							const CMetadataObject* pExistingBuffer = Param.GetContainingBuffer();
-							if (!pMetaBuffer->IsEqual(*pExistingBuffer)) //???must be equal or compatible?
-							{
-							n_msg(VL_ERROR, "Tech '%s': param '%s' containing buffers have different description in different shaders\n", TechInfo.ID.CStr(), MetaObjectID.CStr());
-							return ERR_INVALID_DATA;
-							}
-							}
-							*/
-
-							// Existing parameter, check compatibility and extend shader mask
-							ItPrev->second.first |= ShaderType;
-						}
+						ProcessNewConstant(ShaderType, Const, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
@@ -138,7 +164,7 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 				for (auto& Rsrc : ShaderMeta.Resources)
 				{
 					if (Ctx.LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << LineEnd;
+						std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << Ctx.LineEnd;
 
 					CStrID ID(Rsrc.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
@@ -169,7 +195,7 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 				for (auto& Sampler : ShaderMeta.Samplers)
 				{
 					if (Ctx.LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << LineEnd;
+						std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << Ctx.LineEnd;
 
 					CStrID ID(Sampler.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())

@@ -51,4 +51,5 @@ struct CContext
 	std::map<CStrID, CShaderData> ShaderCache;
 	std::map<uint32_t, std::vector<CTechnique>> TechsByFormat; // Grouped by shader format
 	int LogVerbosity; // TODO: logger instance instead!
+	char LineEnd; // TODO: logger instance instead!
 };

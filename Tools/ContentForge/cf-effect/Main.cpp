@@ -88,6 +88,7 @@ public:
 
 		CContext Ctx;
 		Ctx.LogVerbosity = _LogVerbosity;
+		Ctx.LineEnd = LineEnd;
 
 		// Get and validate material type
 
