@@ -857,12 +857,21 @@ private:
 			std::set<uint32_t> Samplers;
 		};
 
+		struct CSM30EffectMeta
+		{
+			std::map<CStrID, std::pair<uint8_t, CSM30BufferMeta>> Buffers;
+			std::map<CStrID, std::pair<uint8_t, CSM30StructMeta>> Structs;
+			std::map<CStrID, std::pair<uint8_t, CSM30ConstMeta>> Consts;
+			std::map<CStrID, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
+			std::map<CStrID, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
+		};
+
 		//???the same for tech?
 		CUsedSM30Registers GlobalRegisters, MaterialRegisters;
 
 		//???need special meta with shader mask/type per each variable?
 		//???map or vector of pairs [shader(s) -> meta]?
-		CSM30ShaderMeta GlobalMeta, MaterialMeta;
+		CSM30EffectMeta GlobalMeta, MaterialMeta;
 
 		for (const auto& Tech : Techs)
 		{
@@ -872,7 +881,7 @@ private:
 
 				CStrID ShaderIDs[] = { RS.VertexShader, RS.PixelShader, RS.GeometryShader, RS.HullShader, RS.DomainShader };
 
-				for (size_t ShaderType = ShaderType_Vertex; ShaderType < ShaderType_COUNT; ++ShaderType)
+				for (uint8_t ShaderType = ShaderType_Vertex; ShaderType < ShaderType_COUNT; ++ShaderType)
 				{
 					const CStrID ShaderID = ShaderIDs[ShaderType];
 					if (!ShaderID) continue;
@@ -895,8 +904,18 @@ private:
 						CStrID ID(Const.Name.c_str());
 						if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 						{
-							//!!! check that registers don't overlap !
-							GlobalMeta.Consts.push_back(std::move(Const));
+							// Check if this const was already added from another shader
+							auto ItPrev = GlobalMeta.Consts.find(ID);
+							if (ItPrev == GlobalMeta.Consts.cend())
+							{
+								// New parameter, check registers and add
+								GlobalMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Const)));
+							}
+							else
+							{
+								// Existing parameter, check compatibility and extend shader mask
+								ItPrev->second.first |= ShaderType;
+							}
 						}
 						else
 						{
