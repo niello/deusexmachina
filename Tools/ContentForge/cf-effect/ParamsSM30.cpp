@@ -6,6 +6,7 @@
 
 //???!!!TODO:
 //???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
+//!!!struct member duplicates const meta, make membermeta = offset + constmeta?
 
 struct CSM30EffectMeta
 {
@@ -56,7 +57,7 @@ static bool CheckSamplerRegisterOverlapping(const CSM30SamplerMeta& Param, const
 }
 //---------------------------------------------------------------------
 
-static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	CStrID ID(Param.Name.c_str());
 
@@ -92,7 +93,19 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 
 		// Copy necessary metadata
 
-		TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
+		auto It = TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param))).first;
+		CSM30ConstMeta& NewConst = It->second.second;
+
+		// find exactly the same buffer or copy buffer meta
+		//!!!when the same shader, can check buffer index!
+		// fix buffer index
+
+		if (NewConst.StructIndex != static_cast<uint32_t>(-1))
+		{
+			// find exactly the same struct or copy struct meta
+			//!!!when the same shader, can check struct index!
+			// fix struct index
+		}
 
 		// TODO: copy necessary struct and buffer meta!
 		//!!!fix buffer indexing! check if this buffer already exists!
@@ -101,7 +114,6 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 	else
 	{
 		// The same param found, check compatibility
-
 		const auto& ExistingMeta = ItPrev->second.second;
 		if (ExistingMeta != Param)
 		{
@@ -111,13 +123,10 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 		}
 
 		// Compare containing constant buffers
-
-		//!!!for SM30 we must not compare constantbuffers because they are fictional. If constants itselves
-		// are the same, registers are compatible, so we can use this constants even from different buffers.
-		// We just throw away the second buffer.
-		//!!!that's why operator == for SM30 buffers always returns true!
-
-		//???must be equal or compatible?
+		// NB: we perform this check despite D3D9 has no real constant buffers, because even with
+		// the same set of registers we still can have different constant buffer layouts. Using
+		// the constant with foreign constant buffer can be incompatible with the shader. D3D9 is
+		// legacy and this situation will probably never happen, so I don't spend much time on solution.
 		if (TargetMeta.Buffers[ExistingMeta.BufferIndex] != SrcMeta.Buffers[Param.BufferIndex])
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
@@ -133,7 +142,7 @@ static bool ProcessNewConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const 
 }
 //---------------------------------------------------------------------
 
-static bool ProcessNewResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	CStrID ID(Param.Name.c_str());
 
@@ -178,7 +187,7 @@ static bool ProcessNewResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30Ef
 }
 //---------------------------------------------------------------------
 
-static bool ProcessNewSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	CStrID ID(Param.Name.c_str());
 
@@ -226,13 +235,15 @@ static bool ProcessNewSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30
 
 bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
-	CSM30EffectMeta GlobalMeta, MaterialMeta, TechMeta;
+	CSM30EffectMeta GlobalMeta, MaterialMeta;
 	GlobalMeta.PrintableName = "Global";
 	MaterialMeta.PrintableName = "Material";
-	TechMeta.PrintableName = "Tech";
 
 	for (const auto& Tech : Techs)
 	{
+		CSM30EffectMeta TechMeta;
+		TechMeta.PrintableName = "Tech";
+
 		for (CStrID PassID : Tech.Passes)
 		{
 			const CRenderState& RS = Ctx.RSCache.at(PassID);
@@ -260,21 +271,21 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessNewConstant(ShaderType, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessConstant(ShaderType, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							ProcessNewConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+							ProcessConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
 							// process defaults - null or depends on const type
 							//???!!!support defaults for structs? CParams with fields!
 						}
 						else
 						{
-							ProcessNewConstant(ShaderType, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+							ProcessConstant(ShaderType, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
 				}
@@ -287,20 +298,20 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					CStrID ID(Rsrc.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessNewResource(ShaderType, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessResource(ShaderType, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							ProcessNewResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+							ProcessResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
 							// process defaults - null, string, CStrID
 						}
 						else
 						{
-							ProcessNewResource(ShaderType, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+							ProcessResource(ShaderType, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
 				}
@@ -313,20 +324,20 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 					CStrID ID(Sampler.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessNewSampler(ShaderType, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessSampler(ShaderType, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else
 					{
 						auto ItMtl = Ctx.MaterialParams.find(ID);
 						if (ItMtl != Ctx.MaterialParams.cend())
 						{
-							ProcessNewSampler(ShaderType, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+							ProcessSampler(ShaderType, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
 							// process defaults - null or CParams
 						}
 						else
 						{
-							ProcessNewSampler(ShaderType, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+							ProcessSampler(ShaderType, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 						}
 					}
 				}

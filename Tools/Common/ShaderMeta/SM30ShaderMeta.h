@@ -40,8 +40,7 @@ struct CSM30BufferMeta
 
 inline bool operator ==(const CSM30BufferMeta& a, const CSM30BufferMeta& b)
 {
-	// FIXME: why? was lazy to implement in a previous version?
-	return true;
+	return a.SlotIndex == b.SlotIndex && a.UsedFloat4 == b.UsedFloat4 && a.UsedInt4 == b.UsedInt4 && a.UsedBool == b.UsedBool;
 }
 
 inline bool operator !=(const CSM30BufferMeta& a, const CSM30BufferMeta& b) { return !(a == b); }

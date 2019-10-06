@@ -1719,12 +1719,9 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer 
 	if (pPendingCBHead && pCurrBuffer && pCurrBuffer->IsTemporary())
 	{
 		// We have only two slots where the buffer may be bound (one in VS and one in PS)
-		UPTR SecondIndex;
-		switch (ShaderType)
-		{
-			case ShaderType_Vertex:	SecondIndex = CB_Slot_Count + pMeta->SlotIndex; break;
-			case ShaderType_Pixel:	SecondIndex = pMeta->SlotIndex; break;
-		};
+		const UPTR SecondIndex = (ShaderType == ShaderType_Vertex) ?
+			(CB_Slot_Count + pMeta->SlotIndex) :
+			pMeta->SlotIndex;
 
 		// Is this buffer bound to the other shader stage
 		const bool IsBound = (CurrCB[SecondIndex].CB.Get() == pCurrBuffer);
