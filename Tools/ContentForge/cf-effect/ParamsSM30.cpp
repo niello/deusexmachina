@@ -96,9 +96,19 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 		auto It = TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param))).first;
 		CSM30ConstMeta& NewConst = It->second.second;
 
-		// find exactly the same buffer or copy buffer meta
-		//!!!when the same shader, can check buffer index!
-		// fix buffer index
+		const auto& Buffer = SrcMeta.Buffers[Param.BufferIndex];
+		auto ItBuffer = std::find(TargetMeta.Buffers.cbegin(), TargetMeta.Buffers.cend(), Buffer);
+		if (ItBuffer != TargetMeta.Buffers.cend())
+		{
+			// The same buffer found, reference it
+			NewConst.BufferIndex = std::distance(TargetMeta.Buffers.cbegin(), ItBuffer);
+		}
+		else
+		{
+			// Copy new buffer to metadata
+			TargetMeta.Buffers.push_back(Buffer);
+			NewConst.BufferIndex = static_cast<uint32_t>(TargetMeta.Buffers.size());
+		}
 
 		if (NewConst.StructIndex != static_cast<uint32_t>(-1))
 		{
@@ -106,10 +116,6 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 			//!!!when the same shader, can check struct index!
 			// fix struct index
 		}
-
-		// TODO: copy necessary struct and buffer meta!
-		//!!!fix buffer indexing! check if this buffer already exists!
-		//???check by name, by == or both? can be problems with multiple shaders?
 	}
 	else
 	{
