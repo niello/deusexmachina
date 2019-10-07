@@ -109,7 +109,7 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 		{
 			// Copy new buffer to metadata
 			TargetMeta.Buffers.push_back(Buffer);
-			NewConst.BufferIndex = static_cast<uint32_t>(TargetMeta.Buffers.size());
+			NewConst.BufferIndex = static_cast<uint32_t>(TargetMeta.Buffers.size() - 1);
 		}
 
 		if (NewConst.StructIndex != static_cast<uint32_t>(-1))
