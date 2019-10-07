@@ -38,7 +38,8 @@ static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM
 		Other.UsedBool;
 
 	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
-	for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+	const auto RegisterEnd = Param.RegisterStart + Param.ElementRegisterCount * Param.ElementCount;
+	for (uint32_t r = Param.RegisterStart; r < RegisterEnd; ++r)
 		if (OtherRegs.find(r) != OtherRegs.cend())
 			return false;
 
@@ -88,7 +89,8 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 			(Param.RegisterSet == RS_Int4) ? TargetMeta.UsedInt4 :
 			TargetMeta.UsedBool;
 
-		for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+		const auto RegisterEnd = Param.RegisterStart + Param.ElementRegisterCount * Param.ElementCount;
+		for (uint32_t r = Param.RegisterStart; r < RegisterEnd; ++r)
 			Regs.insert(r);
 
 		// Copy necessary metadata

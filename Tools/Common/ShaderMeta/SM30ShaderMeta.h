@@ -47,44 +47,32 @@ inline bool operator !=(const CSM30BufferMeta& a, const CSM30BufferMeta& b) { re
 std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30BufferMeta& Value);
 
-struct CSM30StructMemberMeta
+struct CSM30ConstMetaBase
 {
-	std::string	Name;
-	uint32_t	StructIndex;
-	uint32_t	RegisterOffset;
-	uint32_t	ElementRegisterCount;
-	uint32_t	ElementCount;
-	uint8_t		Columns;
-	uint8_t		Rows;
-	uint8_t		Flags;					// See ESM30ShaderConstFlags
-
-	//???store register set and support mixed structs?
+	std::string			Name;
+	uint32_t			StructIndex;
+	ESM30RegisterSet	RegisterSet; //???save for struct members and add mixed-type structure support?
+	uint32_t			RegisterStart; // For structs - offset from the start of the structure
+	uint32_t			ElementRegisterCount;
+	uint32_t			ElementCount;
+	uint8_t				Columns;
+	uint8_t				Rows;
+	uint8_t				Flags; // See ESM30ShaderConstFlags
 };
 
 struct CSM30StructMeta
 {
 	//std::string						Name;
-	std::vector<CSM30StructMemberMeta>	Members;
+	std::vector<CSM30ConstMetaBase> Members;
 };
 
 std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value);
 
 // Arrays and single-type structures are supported
-struct CSM30ConstMeta
+struct CSM30ConstMeta : public CSM30ConstMetaBase
 {
-	std::string			Name;
-	uint32_t			BufferIndex;
-	uint32_t			StructIndex;
-	ESM30RegisterSet	RegisterSet;
-	uint32_t			RegisterStart;
-	uint32_t			ElementRegisterCount;
-	uint32_t			ElementCount;
-	uint8_t				Columns;
-	uint8_t				Rows;
-	uint8_t				Flags;					// See ESM30ShaderConstFlags
-
-	uint32_t			RegisterCount;			// Cache, not saved
+	uint32_t BufferIndex;
 };
 
 inline bool operator ==(const CSM30ConstMeta& a, const CSM30ConstMeta& b)

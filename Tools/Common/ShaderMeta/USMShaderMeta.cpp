@@ -26,7 +26,7 @@ std::ostream& operator <<(std::ostream& Stream, const CUSMStructMeta& Value)
 	WriteStream<uint32_t>(Stream, Value.Members.size());
 	for (size_t j = 0; j < Value.Members.size(); ++j)
 	{
-		const CUSMStructMemberMeta& Member = Value.Members[j];
+		const CUSMConstMetaBase& Member = Value.Members[j];
 		WriteStream(Stream, Member.Name);
 		WriteStream(Stream, Member.StructIndex);
 		WriteStream<uint8_t>(Stream, Member.Type);
@@ -49,7 +49,7 @@ std::istream& operator >>(std::istream& Stream, CUSMStructMeta& Value)
 	Value.Members.reserve(MemberCount);
 	for (uint32_t j = 0; j < MemberCount; ++j)
 	{
-		CUSMStructMemberMeta Member;
+		CUSMConstMetaBase Member;
 		ReadStream(Stream, Member.Name);
 		ReadStream(Stream, Member.StructIndex);
 

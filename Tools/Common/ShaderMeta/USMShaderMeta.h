@@ -62,41 +62,32 @@ inline bool operator !=(const CUSMBufferMeta& a, const CUSMBufferMeta& b) { retu
 std::ostream& operator <<(std::ostream& Stream, const CUSMBufferMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMBufferMeta& Value);
 
-struct CUSMStructMemberMeta
+struct CUSMConstMetaBase
 {
 	std::string		Name;
 	uint32_t		StructIndex;
 	EUSMConstType	Type;
-	uint32_t		Offset;
+	uint32_t		Offset; // From the start of CB, for struct members - from the start of the structure
 	uint32_t		ElementSize;
 	uint32_t		ElementCount;
 	uint8_t			Columns;
 	uint8_t			Rows;
-	uint8_t			Flags;			// See EUSMShaderConstFlags
+	uint8_t			Flags; // See EUSMShaderConstFlags
 };
 
 struct CUSMStructMeta
 {
-	//std::string						Name;
-	std::vector<CUSMStructMemberMeta>	Members;
+	std::string Name;
+	std::vector<CUSMConstMetaBase> Members;
 };
 
 std::ostream& operator <<(std::ostream& Stream, const CUSMStructMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMStructMeta& Value);
 
 // Arrays and mixed-type structs supported
-struct CUSMConstMeta
+struct CUSMConstMeta : public CUSMConstMetaBase
 {
-	std::string		Name;
-	uint32_t		BufferIndex;
-	uint32_t		StructIndex;
-	EUSMConstType	Type;
-	uint32_t		Offset;
-	uint32_t		ElementSize;
-	uint32_t		ElementCount;
-	uint8_t			Columns;
-	uint8_t			Rows;
-	uint8_t			Flags;			// See EUSMShaderConstFlags
+	uint32_t BufferIndex;
 };
 
 inline bool operator ==(const CUSMConstMeta& a, const CUSMConstMeta& b)

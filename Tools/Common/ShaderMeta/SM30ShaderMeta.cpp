@@ -92,7 +92,7 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
 	{
 		WriteStream(Stream, Member.Name);
 		WriteStream(Stream, Member.StructIndex);
-		WriteStream(Stream, Member.RegisterOffset);
+		WriteStream(Stream, Member.RegisterStart);
 		WriteStream(Stream, Member.ElementRegisterCount);
 		WriteStream(Stream, Member.ElementCount);
 		WriteStream(Stream, Member.Columns);
@@ -111,10 +111,10 @@ std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value)
 	Value.Members.reserve(MemberCount);
 	for (uint32_t j = 0; j < MemberCount; ++j)
 	{
-		CSM30StructMemberMeta Member;
+		CSM30ConstMetaBase Member;
 		ReadStream(Stream, Member.Name);
 		ReadStream(Stream, Member.StructIndex);
-		ReadStream(Stream, Member.RegisterOffset);
+		ReadStream(Stream, Member.RegisterStart);
 		ReadStream(Stream, Member.ElementRegisterCount);
 		ReadStream(Stream, Member.ElementCount);
 		ReadStream(Stream, Member.Columns);
@@ -160,9 +160,6 @@ std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value)
 	ReadStream(Stream, Value.Columns);
 	ReadStream(Stream, Value.Rows);
 	ReadStream(Stream, Value.Flags);
-
-	// Cache value
-	Value.RegisterCount = Value.ElementRegisterCount * Value.ElementCount;
 
 	return Stream;
 }

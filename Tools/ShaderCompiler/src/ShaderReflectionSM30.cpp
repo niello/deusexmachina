@@ -66,11 +66,11 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 		{
 			auto ItStruct = StructIDToIndex.find(D3D9ConstDesc.StructID);
 
-			CSM30StructMemberMeta MemberMeta;
+			CSM30ConstMetaBase MemberMeta;
 
 			MemberMeta.Name = D3D9ConstDesc.Name;
 			MemberMeta.StructIndex = (ItStruct == StructIDToIndex.cend()) ? (uint32_t(-1)) : ItStruct->second;
-			MemberMeta.RegisterOffset = D3D9ConstDesc.RegisterIndex;
+			MemberMeta.RegisterStart = D3D9ConstDesc.RegisterIndex;
 			MemberMeta.ElementRegisterCount = D3D9ConstDesc.Type.ElementRegisterCount;
 			MemberMeta.ElementCount = D3D9ConstDesc.Type.Elements;
 			MemberMeta.Columns = static_cast<uint8_t>(D3D9ConstDesc.Type.Columns);
@@ -215,10 +215,7 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 			if (D3D9ConstDesc.Type.Class == PC_MATRIX_COLUMNS)
 				Meta.Flags |= SM30ShaderConst_ColumnMajor;
 
-			// Cache value
-			Meta.RegisterCount = Meta.ElementRegisterCount * Meta.ElementCount;
-
-			assert(Meta.RegisterCount == D3D9ConstDesc.RegisterCount);
+			assert(Meta.ElementRegisterCount * Meta.ElementCount == D3D9ConstDesc.RegisterCount);
 
 			CSM30BufferMeta& BufMeta = OutMeta.Buffers[Meta.BufferIndex];
 			auto& UsedRegs =

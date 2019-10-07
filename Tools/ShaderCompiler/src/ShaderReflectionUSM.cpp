@@ -22,6 +22,7 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 	// Add and fill new structure layout metadata
 	StructCache.emplace(pType, Meta.Structs.size());
 	CUSMStructMeta StructMeta;
+	StructMeta.Name = D3DTypeDesc.Name ? D3DTypeDesc.Name : std::string();
 
 	StructMeta.Members.reserve(D3DTypeDesc.Members);
 	for (UINT MemberIdx = 0; MemberIdx < D3DTypeDesc.Members; ++MemberIdx)
@@ -32,7 +33,7 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 		D3D11_SHADER_TYPE_DESC D3DMemberTypeDesc;
 		pMemberType->GetDesc(&D3DMemberTypeDesc);
 
-		CUSMStructMemberMeta MemberMeta;
+		CUSMConstMetaBase MemberMeta;
 		MemberMeta.Name = pMemberName;
 		MemberMeta.Offset = D3DMemberTypeDesc.Offset;
 		MemberMeta.Flags = 0;
