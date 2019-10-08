@@ -110,7 +110,7 @@ void CopyStructMetadata(uint32_t& StructIndex, const std::vector<TStructMeta>& S
 	else
 	{
 		// Copy new struct to metadata
-		TargetStructs.push_back(Struct);
+		TargetStructs.push_back(std::move(Struct));
 		StructIndex = static_cast<uint32_t>(TargetStructs.size() - 1);
 	}
 }
