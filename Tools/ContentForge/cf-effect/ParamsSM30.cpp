@@ -259,6 +259,8 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 	GlobalMeta.PrintableName = "Global";
 	MaterialMeta.PrintableName = "Material";
 
+	std::map<CStrID, std::string> ResourceDefaults;
+
 	// Scan all shaders and collect global, material and per-technique parameters metadata
 
 	for (auto& Tech : Techs)
@@ -329,7 +331,21 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 						{
 							ProcessResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 
-							// process defaults - null, string, CStrID
+							// Get default value
+							if (ItMtl->second.IsA<CStrID>())
+							{
+								CStrID Default = ItMtl->second.GetValue<CStrID>();
+								ResourceDefaults.emplace(ID, Default ? std::string(Default.CStr()) : std::string());
+							}
+							else if (ItMtl->second.IsA<std::string>())
+							{
+								ResourceDefaults.emplace(ID, ItMtl->second.GetValue<std::string>());
+							}
+							else if (!ItMtl->second.IsVoid())
+							{
+								if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+									std::cout << "Unsupported default type for resource '" << Rsrc.Name << "', must be string or string ID" << Ctx.LineEnd;
+							}
 						}
 						else
 						{

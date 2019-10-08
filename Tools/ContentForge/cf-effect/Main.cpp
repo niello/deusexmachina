@@ -296,7 +296,7 @@ public:
 				WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Tech.Passes.size()));
 				// write pass IDs or uint32_t indices
 
-				WriteStream(Stream, Tech.EffectMetaBinary);
+				Stream.write(Tech.EffectMetaBinary.c_str(), Tech.EffectMetaBinary.size());
 			}
 
 			// Serialize render states
