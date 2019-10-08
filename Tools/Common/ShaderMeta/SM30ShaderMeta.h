@@ -60,9 +60,21 @@ struct CSM30ConstMetaBase
 	uint8_t				Flags; // See ESM30ShaderConstFlags
 };
 
+// NB: StructIndex is not compared intentionally
+inline bool operator ==(const CSM30ConstMetaBase& a, const CSM30ConstMetaBase& b)
+{
+	return a.RegisterSet == b.RegisterSet &&
+		a.RegisterStart == b.RegisterStart &&
+		a.ElementRegisterCount == b.ElementRegisterCount &&
+		a.ElementCount == b.ElementCount &&
+		a.Flags == b.Flags;
+}
+
+inline bool operator !=(const CSM30ConstMetaBase& a, const CSM30ConstMetaBase& b) { return !(a == b); }
+
 struct CSM30StructMeta
 {
-	//std::string						Name;
+	//std::string Name;
 	std::vector<CSM30ConstMetaBase> Members;
 };
 
@@ -75,16 +87,6 @@ struct CSM30ConstMeta : public CSM30ConstMetaBase
 	uint32_t BufferIndex;
 };
 
-inline bool operator ==(const CSM30ConstMeta& a, const CSM30ConstMeta& b)
-{
-	return a.RegisterSet == b.RegisterSet &&
-		a.RegisterStart == b.RegisterStart &&
-		a.ElementRegisterCount == b.ElementRegisterCount &&
-		a.ElementCount == b.ElementCount &&
-		a.Flags == b.Flags;
-}
-
-inline bool operator !=(const CSM30ConstMeta& a, const CSM30ConstMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CSM30ConstMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value);
 

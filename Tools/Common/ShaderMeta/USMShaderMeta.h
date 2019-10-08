@@ -75,6 +75,13 @@ struct CUSMConstMetaBase
 	uint8_t			Flags; // See EUSMShaderConstFlags
 };
 
+inline bool operator ==(const CUSMConstMetaBase& a, const CUSMConstMetaBase& b)
+{
+	return a.Type == b.Type && a.Offset == b.Offset && a.ElementSize == b.ElementSize && a.ElementCount == b.ElementCount;
+}
+
+inline bool operator !=(const CUSMConstMetaBase& a, const CUSMConstMetaBase& b) { return !(a == b); }
+
 struct CUSMStructMeta
 {
 	std::string Name;
@@ -90,12 +97,6 @@ struct CUSMConstMeta : public CUSMConstMetaBase
 	uint32_t BufferIndex;
 };
 
-inline bool operator ==(const CUSMConstMeta& a, const CUSMConstMeta& b)
-{
-	return a.Type == b.Type && a.Offset == b.Offset && a.ElementSize == b.ElementSize && a.ElementCount == b.ElementCount;
-}
-
-inline bool operator !=(const CUSMConstMeta& a, const CUSMConstMeta& b) { return !(a == b); }
 std::ostream& operator <<(std::ostream& Stream, const CUSMConstMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMConstMeta& Value);
 
