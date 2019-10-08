@@ -132,7 +132,8 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 
 		// Copy necessary metadata
 
-		CSM30ConstMeta& NewConst = TargetMeta.Consts.emplace(Param.Name, std::make_pair(ShaderType, std::move(Param))).first->second.second;
+		std::string ParamName = Param.Name;
+		CSM30ConstMeta& NewConst = TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderType, std::move(Param))).first->second.second;
 		CopyBufferMetadata(NewConst.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
 		CopyStructMetadata(NewConst.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
 	}
@@ -189,7 +190,8 @@ static bool ProcessResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30Effec
 
 		TargetMeta.UsedResources.insert(Param.Register);
 
-		TargetMeta.Resources.emplace(Param.Name, std::make_pair(ShaderType, std::move(Param)));
+		std::string ParamName = Param.Name;
+		TargetMeta.Resources.emplace(std::move(ParamName), std::make_pair(ShaderType, std::move(Param)));
 	}
 	else
 	{
@@ -233,7 +235,8 @@ static bool ProcessSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30Eff
 		for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
 			TargetMeta.UsedSamplers.insert(r);
 
-		TargetMeta.Samplers.emplace(Param.Name, std::make_pair(ShaderType, std::move(Param)));
+		std::string ParamName = Param.Name;
+		TargetMeta.Samplers.emplace(std::move(ParamName), std::make_pair(ShaderType, std::move(Param)));
 	}
 	else
 	{
@@ -420,6 +423,7 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 		{
 			// process defaults - null or depends on const type
 			//???!!!support defaults for structs? CParams with fields!
+			// FIXME: implement!
 		}
 		else if (MaterialMeta.Resources.find(ID) != MaterialMeta.Resources.cend())
 		{
@@ -427,17 +431,18 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 			{
 				WriteStream(Stream, ID);
 				WriteStream(Stream, MaterialParam.second.GetValue<CStrID>().ToString());
+				++DefaultCount;
 			}
 			else if (MaterialParam.second.IsA<std::string>())
 			{
 				WriteStream(Stream, ID);
 				WriteStream(Stream, MaterialParam.second.GetValue<std::string>());
+				++DefaultCount;
 			}
 			else if (!MaterialParam.second.IsVoid())
 			{
 				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
 					std::cout << "Unsupported default type for resource '" << ID << "', must be string or string ID" << Ctx.LineEnd;
-				continue;
 			}
 		}
 		else if (MaterialMeta.Samplers.find(ID) != MaterialMeta.Samplers.cend())
@@ -446,22 +451,19 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 			{
 				WriteStream(Stream, ID);
 				SerializeSamplerState(Stream, MaterialParam.second.GetValue<Data::CParams>());
+				++DefaultCount;
 			}
 			else if (!MaterialParam.second.IsVoid())
 			{
 				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
 					std::cout << "Unsupported default type for sampler '" << ID << "', must be section with sampler settings" << Ctx.LineEnd;
-				continue;
 			}
 		}
 		else
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Warnings)
 				std::cout << "Default for unknow parameter '" << ID << "' is skipped" << Ctx.LineEnd;
-			continue;
 		}
-
-		++DefaultCount;
 	}
 
 	const auto EndOffset = Stream.tellp();
