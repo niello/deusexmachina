@@ -1,5 +1,6 @@
 #include "ParamsSM30.h"
 #include <ShaderMeta/SM30ShaderMeta.h>
+#include <RenderEnums.h> // For sampler desc. To common code?
 #include <Utils.h>
 #include <Logging.h>
 #include <iostream>
@@ -253,13 +254,56 @@ static bool ProcessSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30Eff
 }
 //---------------------------------------------------------------------
 
+// TODO: common code!
+static void SerializeSamplerState(std::ostream& Stream, const Data::CParams& SamplerDesc)
+{
+	// NB: default values are different for D3D9 and D3D11, but we use the same defaults for consistency
+
+	std::string StrValue;
+	vector4 ColorRGBA;
+
+	if (TryGetParam(StrValue, SamplerDesc, "AddressU"))
+		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));
+	else
+		WriteStream<uint8_t>(Stream, TexAddr_Wrap);
+
+	if (TryGetParam(StrValue, SamplerDesc, "AddressV"))
+		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));
+	else
+		WriteStream<uint8_t>(Stream, TexAddr_Wrap);
+
+	if (TryGetParam(StrValue, SamplerDesc, "AddressW"))
+		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));
+	else
+		WriteStream<uint8_t>(Stream, TexAddr_Wrap);
+
+	if (TryGetParam(StrValue, SamplerDesc, "Filter"))
+		WriteStream<uint8_t>(Stream, StringToTexFilter(StrValue));
+	else
+		WriteStream<uint8_t>(Stream, TexFilter_MinMagMip_Linear);
+
+	if (!TryGetParam(ColorRGBA, SamplerDesc, "BorderColorRGBA"))
+		ColorRGBA = { 0.f, 0.f, 0.f, 0.f };
+
+	WriteStream(Stream, ColorRGBA);
+
+	WriteStream(Stream, GetParam(SamplerDesc, "MipMapLODBias", 0.f));
+	WriteStream(Stream, GetParam(SamplerDesc, "FinestMipMapLOD", 0.f));
+	WriteStream(Stream, GetParam(SamplerDesc, "CoarsestMipMapLOD", std::numeric_limits<float>().max()));
+	WriteStream<uint32_t>(Stream, GetParam<int>(SamplerDesc, "MaxAnisotropy", 1));
+
+	if (TryGetParam(StrValue, SamplerDesc, "CmpFunc"))
+		WriteStream<uint8_t>(Stream, StringToCmpFunc(StrValue));
+	else
+		WriteStream<uint8_t>(Stream, Cmp_Never);
+}
+//---------------------------------------------------------------------
+
 bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
 	CSM30EffectMeta GlobalMeta, MaterialMeta;
 	GlobalMeta.PrintableName = "Global";
 	MaterialMeta.PrintableName = "Material";
-
-	std::map<CStrID, std::string> ResourceDefaults;
 
 	// Scan all shaders and collect global, material and per-technique parameters metadata
 
@@ -297,20 +341,13 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 					{
 						ProcessConstant(ShaderType, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
+					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
+					{
+						ProcessConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+					}
 					else
 					{
-						auto ItMtl = Ctx.MaterialParams.find(ID);
-						if (ItMtl != Ctx.MaterialParams.cend())
-						{
-							ProcessConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
-
-							// process defaults - null or depends on const type
-							//???!!!support defaults for structs? CParams with fields!
-						}
-						else
-						{
-							ProcessConstant(ShaderType, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
-						}
+						ProcessConstant(ShaderType, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 					}
 				}
 
@@ -324,33 +361,13 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 					{
 						ProcessResource(ShaderType, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
+					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
+					{
+						ProcessResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+					}
 					else
 					{
-						auto ItMtl = Ctx.MaterialParams.find(ID);
-						if (ItMtl != Ctx.MaterialParams.cend())
-						{
-							ProcessResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
-
-							// Get default value
-							if (ItMtl->second.IsA<CStrID>())
-							{
-								CStrID Default = ItMtl->second.GetValue<CStrID>();
-								ResourceDefaults.emplace(ID, Default ? std::string(Default.CStr()) : std::string());
-							}
-							else if (ItMtl->second.IsA<std::string>())
-							{
-								ResourceDefaults.emplace(ID, ItMtl->second.GetValue<std::string>());
-							}
-							else if (!ItMtl->second.IsVoid())
-							{
-								if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-									std::cout << "Unsupported default type for resource '" << Rsrc.Name << "', must be string or string ID" << Ctx.LineEnd;
-							}
-						}
-						else
-						{
-							ProcessResource(ShaderType, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
-						}
+						ProcessResource(ShaderType, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 					}
 				}
 
@@ -364,19 +381,13 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 					{
 						ProcessSampler(ShaderType, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
+					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
+					{
+						ProcessSampler(ShaderType, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+					}
 					else
 					{
-						auto ItMtl = Ctx.MaterialParams.find(ID);
-						if (ItMtl != Ctx.MaterialParams.cend())
-						{
-							ProcessSampler(ShaderType, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
-
-							// process defaults - null or CParams
-						}
-						else
-						{
-							ProcessSampler(ShaderType, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
-						}
+						ProcessSampler(ShaderType, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 					}
 				}
 			}
@@ -390,10 +401,73 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 		}
 	}
 
+	// Serialize global and material tables to output
+
 	Stream << GlobalMeta;
 	Stream << MaterialMeta;
 
-	// serialize material defaults
+	// Serialize material defaults
+
+	const auto DefaultCountOffset = Stream.tellp();
+	WriteStream<uint32_t>(Stream, 0);
+
+	uint32_t DefaultCount = 0;
+
+	for (const auto& MaterialParam : Ctx.MaterialParams)
+	{
+		const std::string ID = MaterialParam.first.CStr();
+		if (MaterialMeta.Consts.find(ID) != MaterialMeta.Consts.cend())
+		{
+			// process defaults - null or depends on const type
+			//???!!!support defaults for structs? CParams with fields!
+		}
+		else if (MaterialMeta.Resources.find(ID) != MaterialMeta.Resources.cend())
+		{
+			if (MaterialParam.second.IsA<CStrID>())
+			{
+				WriteStream(Stream, ID);
+				WriteStream(Stream, MaterialParam.second.GetValue<CStrID>().ToString());
+			}
+			else if (MaterialParam.second.IsA<std::string>())
+			{
+				WriteStream(Stream, ID);
+				WriteStream(Stream, MaterialParam.second.GetValue<std::string>());
+			}
+			else if (!MaterialParam.second.IsVoid())
+			{
+				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "Unsupported default type for resource '" << ID << "', must be string or string ID" << Ctx.LineEnd;
+				continue;
+			}
+		}
+		else if (MaterialMeta.Samplers.find(ID) != MaterialMeta.Samplers.cend())
+		{
+			if (MaterialParam.second.IsA<Data::CParams>())
+			{
+				WriteStream(Stream, ID);
+				SerializeSamplerState(Stream, MaterialParam.second.GetValue<Data::CParams>());
+			}
+			else if (!MaterialParam.second.IsVoid())
+			{
+				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "Unsupported default type for sampler '" << ID << "', must be section with sampler settings" << Ctx.LineEnd;
+				continue;
+			}
+		}
+		else
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+				std::cout << "Default for unknow parameter '" << ID << "' is skipped" << Ctx.LineEnd;
+			continue;
+		}
+
+		++DefaultCount;
+	}
+
+	const auto EndOffset = Stream.tellp();
+	Stream.seekp(DefaultCountOffset, std::ios_base::beg);
+	WriteStream<uint32_t>(Stream, DefaultCount);
+	Stream.seekp(EndOffset, std::ios_base::beg);
 
 	return true;
 }

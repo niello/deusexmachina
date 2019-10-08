@@ -1,5 +1,5 @@
 #pragma once
-#include <string.h>
+#include <string>
 
 // Static string identifier. The actual string is stored only once and all CStrIDs reference it
 // by pointers. That is guaranteed that each string (case-sensitive) will have its unique address
@@ -36,6 +36,7 @@ public:
 
 	size_t		GetID() const { return reinterpret_cast<size_t>(pString); }
 	const char*	CStr() const { return pString; }
+	std::string ToString() const { return pString ? std::string(pString) : std::string(); }
 
 	operator	size_t() const { return reinterpret_cast<size_t>(pString); }
 	operator	const char*() const { return pString; }

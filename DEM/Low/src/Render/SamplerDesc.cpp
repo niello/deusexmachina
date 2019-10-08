@@ -14,7 +14,7 @@ void CSamplerDesc::SetDefaults()
 	BorderColorRGBA[1] = 0.f;
 	BorderColorRGBA[2] = 0.f;
 	BorderColorRGBA[3] = 0.f;
-	FinestMipMapLOD = 0;
+	FinestMipMapLOD = 0.f;
 	CoarsestMipMapLOD = FLT_MAX;
 	MaxAnisotropy = 1;
 	CmpFunc = Cmp_Never;
