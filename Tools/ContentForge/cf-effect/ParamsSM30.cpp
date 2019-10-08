@@ -3,19 +3,21 @@
 #include <Utils.h>
 #include <Logging.h>
 #include <iostream>
+#include <sstream>
 
 //???!!!TODO:
 //???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
-//!!!struct member duplicates const meta, make membermeta = offset + constmeta?
 
 struct CSM30EffectMeta
 {
-	// Param ID -> shader type mask + metadata
+	// Order must be preserved, params reference them by index
 	std::vector<CSM30BufferMeta> Buffers;
 	std::vector<CSM30StructMeta> Structs;
-	std::map<CStrID, std::pair<uint8_t, CSM30ConstMeta>> Consts;
-	std::map<CStrID, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
-	std::map<CStrID, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
+
+	// Param ID (alphabetically sorted) -> shader type mask + metadata
+	std::map<std::string, std::pair<uint8_t, CSM30ConstMeta>> Consts;
+	std::map<std::string, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
+	std::map<std::string, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
 
 	// Cache for faster search
 	std::set<uint32_t> UsedFloat4;
@@ -27,6 +29,44 @@ struct CSM30EffectMeta
 	// For logging
 	std::string PrintableName;
 };
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value)
+{
+	WriteStream<uint32_t>(Stream, Value.Buffers.size());
+	for (const auto& Obj : Value.Buffers)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Structs.size());
+	for (const auto& Obj : Value.Structs)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Consts.size());
+	for (const auto& IDToMeta : Value.Consts)
+	{
+		WriteStream(Stream, IDToMeta.first);
+		WriteStream(Stream, IDToMeta.second.first);
+		Stream << IDToMeta.second.second;
+	}
+
+	WriteStream<uint32_t>(Stream, Value.Resources.size());
+	for (const auto& IDToMeta : Value.Resources)
+	{
+		WriteStream(Stream, IDToMeta.first);
+		WriteStream(Stream, IDToMeta.second.first);
+		Stream << IDToMeta.second.second;
+	}
+
+	WriteStream<uint32_t>(Stream, Value.Samplers.size());
+	for (const auto& IDToMeta : Value.Samplers)
+	{
+		WriteStream(Stream, IDToMeta.first);
+		WriteStream(Stream, IDToMeta.second.first);
+		Stream << IDToMeta.second.second;
+	}
+
+	return Stream;
+}
+//---------------------------------------------------------------------
 
 static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM30EffectMeta& Other)
 {
@@ -58,10 +98,8 @@ static bool CheckSamplerRegisterOverlapping(const CSM30SamplerMeta& Param, const
 
 static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
-	CStrID ID(Param.Name.c_str());
-
 	// Check if this param was already added from another shader
-	auto ItPrev = TargetMeta.Consts.find(ID);
+	auto ItPrev = TargetMeta.Consts.find(Param.Name);
 	if (ItPrev == TargetMeta.Consts.cend())
 	{
 		// Check register overlapping, because it prevents correct param setup from effects
@@ -69,14 +107,14 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 		if (!CheckConstRegisterOverlapping(Param, OtherMeta1))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " constant '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " constant '" << Param.Name << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
 		if (!CheckConstRegisterOverlapping(Param, OtherMeta2))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " constant '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " constant '" << Param.Name << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -93,7 +131,7 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 
 		// Copy necessary metadata
 
-		CSM30ConstMeta& NewConst = TargetMeta.Consts.emplace(ID, std::make_pair(ShaderType, std::move(Param))).first->second.second;
+		CSM30ConstMeta& NewConst = TargetMeta.Consts.emplace(Param.Name, std::make_pair(ShaderType, std::move(Param))).first->second.second;
 		CopyBufferMetadata(NewConst.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
 		CopyStructMetadata(NewConst.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
 	}
@@ -104,7 +142,7 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 		if (ExistingMeta != Param)
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " constant '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " constant '" << Param.Name << "' is not compatible across all tech shaders" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -116,7 +154,7 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 		if (TargetMeta.Buffers[ExistingMeta.BufferIndex] != SrcMeta.Buffers[Param.BufferIndex])
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " param '" << ID.CStr() << "' containing constant buffer is not compatible across all tech shaders" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " param '" << Param.Name << "' containing constant buffer is not compatible across all tech shaders" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -130,29 +168,27 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 
 static bool ProcessResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
-	CStrID ID(Param.Name.c_str());
-
 	// Check if this param was already added from another shader
-	auto ItPrev = TargetMeta.Resources.find(ID);
+	auto ItPrev = TargetMeta.Resources.find(Param.Name);
 	if (ItPrev == TargetMeta.Resources.cend())
 	{
 		if (OtherMeta1.UsedResources.find(Param.Register) != OtherMeta1.UsedResources.cend())
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " resource '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " resource '" << Param.Name << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
 		if (OtherMeta2.UsedResources.find(Param.Register) != OtherMeta2.UsedResources.cend())
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " resource '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " resource '" << Param.Name << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
 		TargetMeta.UsedResources.insert(Param.Register);
 
-		TargetMeta.Resources.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
+		TargetMeta.Resources.emplace(Param.Name, std::make_pair(ShaderType, std::move(Param)));
 	}
 	else
 	{
@@ -161,7 +197,7 @@ static bool ProcessResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30Effec
 		if (ExistingMeta != Param)
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " resource '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " resource '" << Param.Name << "' is not compatible across all tech shaders" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -175,30 +211,28 @@ static bool ProcessResource(uint8_t ShaderType, CSM30RsrcMeta& Param, CSM30Effec
 
 static bool ProcessSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
-	CStrID ID(Param.Name.c_str());
-
 	// Check if this param was already added from another shader
-	auto ItPrev = TargetMeta.Samplers.find(ID);
+	auto ItPrev = TargetMeta.Samplers.find(Param.Name);
 	if (ItPrev == TargetMeta.Samplers.cend())
 	{
 		if (!CheckSamplerRegisterOverlapping(Param, OtherMeta1))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " sampler '" << ID.CStr() << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " sampler '" << Param.Name << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
 		if (!CheckSamplerRegisterOverlapping(Param, OtherMeta2))
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " sampler '" << ID.CStr() << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " sampler '" << Param.Name << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
 			return false;
 		}
 
 		for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
 			TargetMeta.UsedSamplers.insert(r);
 
-		TargetMeta.Samplers.emplace(ID, std::make_pair(ShaderType, std::move(Param)));
+		TargetMeta.Samplers.emplace(Param.Name, std::make_pair(ShaderType, std::move(Param)));
 	}
 	else
 	{
@@ -207,7 +241,7 @@ static bool ProcessSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30Eff
 		if (ExistingMeta != Param)
 		{
 			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " sampler '" << ID.CStr() << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+				std::cout << TargetMeta.PrintableName << " sampler '" << Param.Name << "' is not compatible across all tech shaders" << Ctx.LineEnd;
 			return false;
 		}
 
@@ -219,13 +253,15 @@ static bool ProcessSampler(uint8_t ShaderType, CSM30SamplerMeta& Param, CSM30Eff
 }
 //---------------------------------------------------------------------
 
-bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
+bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
 	CSM30EffectMeta GlobalMeta, MaterialMeta;
 	GlobalMeta.PrintableName = "Global";
 	MaterialMeta.PrintableName = "Material";
 
-	for (const auto& Tech : Techs)
+	// Scan all shaders and collect global, material and per-technique parameters metadata
+
+	for (auto& Tech : Techs)
 	{
 		CSM30EffectMeta TechMeta;
 		TechMeta.PrintableName = "Tech";
@@ -329,8 +365,20 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, const std::vector<CTechni
 				}
 			}
 		}
+
+		// Will be serialized to file with other tech data in calling code
+		{
+			std::ostringstream TechStream(std::ios_base::binary);
+			TechStream << TechMeta;
+			Tech.EffectMetaBinary = TechStream.str();
+		}
 	}
 
-	return false;
+	Stream << GlobalMeta;
+	Stream << MaterialMeta;
+
+	// serialize material defaults
+
+	return true;
 }
 //---------------------------------------------------------------------

@@ -13,6 +13,8 @@ struct CTechnique
 	uint32_t ShaderFormatFourCC = 0;
 	uint32_t MinFeatureLevel = 0;
 
+	std::string EffectMetaBinary;
+
 	bool operator <(const CTechnique& Other)
 	{
 		// NB: not sorted by shader format, grouped by it in a map instead

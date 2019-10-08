@@ -289,16 +289,14 @@ public:
 			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Techs.size()));
 			for (const auto& Tech : Techs)
 			{
-				WriteStream(Stream, Tech.ID); //???need?
-				WriteStream(Stream, Tech.InputSet); 
-				WriteStream(Stream, Tech.MinFeatureLevel); 
+				//WriteStream(Stream, Tech.ID); // not used in an engine
+				WriteStream(Stream, Tech.InputSet);
+				WriteStream(Stream, Tech.MinFeatureLevel);
 
 				WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Tech.Passes.size()));
 				// write pass IDs or uint32_t indices
 
-				// write tech params - reference shader params from passes?
-				//???or skip it for techs and in engine build ID -> shader stage -> handle mapping?
-				//???or only build ID -> shader stage mask here and check compatibility?
+				WriteStream(Stream, Tech.EffectMetaBinary);
 			}
 
 			// Serialize render states
