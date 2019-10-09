@@ -302,6 +302,107 @@ static void SerializeSamplerState(std::ostream& Stream, const Data::CParams& Sam
 }
 //---------------------------------------------------------------------
 
+//???common code, input - not meta, but byte size and type?
+static bool SerializeConstantDefault(std::ostream& Stream, const CSM30ConstMeta& Meta, const Data::CData& DefaultValue, const CContext& Ctx)
+{
+	if (DefaultValue.IsVoid()) return false;
+
+	const uint32_t RegisterCount = Meta.ElementRegisterCount * Meta.ElementCount;
+	if (RegisterCount) return false;
+
+	//???process structs?
+
+	switch (Meta.RegisterSet)
+	{
+		case RS_Float4:
+		{
+			const uint32_t ConstSizeInBytes = 4 * sizeof(float) * RegisterCount;
+
+			//???to templated numeric writer for both int and float output?
+			if (DefaultValue.IsA<float>())
+			{
+				const float DefValue = DefaultValue.GetValue<float>();
+				ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+				DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+			}
+			else if (DefaultValue.IsA<int>())
+			{
+				const float DefValue = (float)DefaultValue.GetValue<int>();
+				ValueSizeInBytes = n_min(sizeof(float), ConstSizeInBytes);
+				DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+			}
+			else if (DefaultValue.IsA<vector4>())
+			{
+				const vector4& DefValue = DefaultValue.GetValue<vector4>();
+				ValueSizeInBytes = n_min(sizeof(vector4), ConstSizeInBytes);
+				DefaultConstValues->Write(DefValue.v, ValueSizeInBytes);
+			}
+			else
+			{
+				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "Material param '" << Meta.Name << "' is a float, default value must be null, float, int, vector or matrix" << Ctx.LineEnd;
+				return false;
+			}
+
+			break;
+		}
+		case RS_Int4:
+		{
+			const uint32_t ConstSizeInBytes = 4 * sizeof(int32_t) * RegisterCount;
+
+			if (DefaultValue.IsA<int>())
+			{
+				const I32 DefValue = (I32)DefaultValue.GetValue<int>();
+				ValueSizeInBytes = n_min(sizeof(I32), ConstSizeInBytes);
+				DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+			}
+			else if (DefaultValue.IsA<vector4>())
+			{
+				const vector4& DefValue = DefaultValue.GetValue<vector4>();
+				ValueSizeInBytes = n_min(sizeof(vector4), ConstSizeInBytes);
+				DefaultConstValues->Write(DefValue.v, ValueSizeInBytes);
+			}
+			else
+			{
+				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "Material param '" << Meta.Name << "' is an int, default value must be null or int" << Ctx.LineEnd;
+				return false;
+			}
+			break;
+		}
+		case RS_Bool:
+		{
+			const uint32_t ConstSizeInBytes = sizeof(bool) * RegisterCount;
+
+			if (DefaultValue.IsA<bool>())
+			{
+				const bool DefValue = DefaultValue.GetValue<bool>();
+				ValueSizeInBytes = n_min(sizeof(bool), ConstSizeInBytes);
+				DefaultConstValues->Write(&DefValue, ValueSizeInBytes);
+			}
+			else
+			{
+				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+					std::cout << "Material param '" << Meta.Name << "' is a bool, default value must be null or bool" << Ctx.LineEnd;
+				return false;
+			}
+			break;
+		}
+		default:
+		{
+			if (Ctx.LogVerbosity >= EVerbosity::Warnings)
+				std::cout << "Material param '" << Meta.Name << "' is a constant of unsupported type or register set, default value is skipped" << Ctx.LineEnd;
+			return false;
+		}
+	}
+
+	for (uint32_t i = ValueSizeInBytes; i < ConstSizeInBytes; ++i)
+		WriteStream<uint8_t>(Stream, 0);
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx)
 {
 	CSM30EffectMeta GlobalMeta, MaterialMeta;
@@ -415,15 +516,21 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 	WriteStream<uint32_t>(Stream, 0);
 
 	uint32_t DefaultCount = 0;
+	std::ostringstream DefaultConstsStream(std::ios_base::binary);
 
 	for (const auto& MaterialParam : Ctx.MaterialParams)
 	{
 		const std::string ID = MaterialParam.first.CStr();
-		if (MaterialMeta.Consts.find(ID) != MaterialMeta.Consts.cend())
+		auto ItConst = MaterialMeta.Consts.find(ID);
+		if (ItConst != MaterialMeta.Consts.cend())
 		{
-			// process defaults - null or depends on const type
-			//???!!!support defaults for structs? CParams with fields!
-			// FIXME: implement!
+			const uint32_t CurrDefaultOffset = static_cast<uint32_t>(DefaultConstsStream.tellp());
+
+			if (!SerializeConstantDefault(DefaultConstsStream, ItConst->second.second, MaterialParam.second, Ctx)) continue;
+
+			WriteStream(Stream, ID);
+			WriteStream(Stream, CurrDefaultOffset);
+			++DefaultCount;
 		}
 		else if (MaterialMeta.Resources.find(ID) != MaterialMeta.Resources.cend())
 		{
@@ -466,10 +573,19 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 		}
 	}
 
+	// Write actual default value count
+
 	const auto EndOffset = Stream.tellp();
 	Stream.seekp(DefaultCountOffset, std::ios_base::beg);
 	WriteStream<uint32_t>(Stream, DefaultCount);
 	Stream.seekp(EndOffset, std::ios_base::beg);
+
+	// Write the buffer with constant defaults
+
+	const std::string DefaultConstsBuffer = DefaultConstsStream.str();
+	WriteStream(Stream, static_cast<uint32_t>(DefaultConstsBuffer.size()));
+	if (!DefaultConstsBuffer.empty())
+		Stream.write(DefaultConstsBuffer.c_str(), DefaultConstsBuffer.size());
 
 	return true;
 }
