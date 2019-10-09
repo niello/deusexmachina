@@ -1,5 +1,5 @@
 #include <ContentForgeTool.h>
-#include <ParamsSM30.h>
+#include <CFEffectFwd.h>
 #include <Utils.h>
 #include <HRDParser.h>
 //#include <CLI11.hpp>
@@ -13,6 +13,9 @@ namespace fs = std::filesystem;
 // Set working directory to $(TargetDir)
 // Example args:
 // -s src/effects --path Data ../../../content
+
+bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx);
+bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx);
 
 class CEffectTool : public CContentForgeTool
 {
@@ -301,66 +304,10 @@ public:
 
 			// Serialize render states
 
+			//!!!SaveRenderState();!
+			//Ctx.RSCache
+
 			//???reference from techs by index or by ID?
-			/*
-			if (!W.Write<U32>(RSRef.MaxLights)) return ERR_IO_WRITE;
-			if (!W.Write<U32>(Desc.Flags.GetMask())) return ERR_IO_WRITE;
-		
-			if (!W.Write(Desc.DepthBias)) return ERR_IO_WRITE;
-			if (!W.Write(Desc.DepthBiasClamp)) return ERR_IO_WRITE;
-			if (!W.Write(Desc.SlopeScaledDepthBias)) return ERR_IO_WRITE;
-		
-			if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_DepthEnable))
-			{
-				if (!W.Write<U8>(Desc.DepthFunc)) return ERR_IO_WRITE;
-			}
-	
-			if (Desc.Flags.Is(Render::CToolRenderStateDesc::DS_StencilEnable))
-			{
-				if (!W.Write(Desc.StencilReadMask)) return ERR_IO_WRITE;
-				if (!W.Write(Desc.StencilWriteMask)) return ERR_IO_WRITE;
-				if (!W.Write<U32>(Desc.StencilRef)) return ERR_IO_WRITE;
-
-				if (!W.Write<U8>(Desc.StencilFrontFace.StencilFailOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Desc.StencilFrontFace.StencilDepthFailOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Desc.StencilFrontFace.StencilPassOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Desc.StencilFrontFace.StencilFunc)) return ERR_IO_WRITE;
-
-				if (!W.Write<U8>(Desc.StencilBackFace.StencilFailOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Desc.StencilBackFace.StencilDepthFailOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Desc.StencilBackFace.StencilPassOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(Desc.StencilBackFace.StencilFunc)) return ERR_IO_WRITE;
-			}
-
-			for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
-			{
-				if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_Independent)) break;
-			
-				const Render::CToolRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
-				if (!W.Write<U8>(RTBlend.WriteMask)) return ERR_IO_WRITE;
-			
-				if (Desc.Flags.IsNot(Render::CToolRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
-
-				if (!W.Write<U8>(RTBlend.SrcBlendArg)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(RTBlend.DestBlendArg)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(RTBlend.BlendOp)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(RTBlend.SrcBlendArgAlpha)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(RTBlend.DestBlendArgAlpha)) return ERR_IO_WRITE;
-				if (!W.Write<U8>(RTBlend.BlendOpAlpha)) return ERR_IO_WRITE;
-			}
-
-			if (!W.Write(Desc.BlendFactorRGBA[0])) return ERR_IO_WRITE;
-			if (!W.Write(Desc.BlendFactorRGBA[1])) return ERR_IO_WRITE;
-			if (!W.Write(Desc.BlendFactorRGBA[2])) return ERR_IO_WRITE;
-			if (!W.Write(Desc.BlendFactorRGBA[3])) return ERR_IO_WRITE;
-			if (!W.Write<U32>(Desc.SampleMask)) return ERR_IO_WRITE;
-
-			if (!W.Write(Desc.AlphaTestRef)) return ERR_IO_WRITE;
-			if (!W.Write<U8>(Desc.AlphaTestFunc)) return ERR_IO_WRITE;
-
-			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
-				if (!W.Write<U32>(RSRef.ShaderIDs[ShaderType * LightVariationCount + LightCount])) return ERR_IO_WRITE;
-			*/
 
 			// Check and store serialized data
 
@@ -391,6 +338,8 @@ public:
 				std::cout << "No data serialized for the effect, resource will not be created" << LineEnd;
 			return false;
 		}
+
+		fs::create_directories(DestPath.parent_path());
 
 		std::ofstream File(DestPath, std::ios_base::binary);
 		if (!File)
@@ -736,7 +685,7 @@ private:
 				CShaderData ShaderData;
 				ReadStream(File, ShaderData.Header);
 
-				// TODO: get light count
+				// TODO: light count
 				// collect max light count of all shaders
 				// shader switching is costly, so we don't build per-light-count variations, but instead
 				// create the shader with max light count only
@@ -781,23 +730,65 @@ private:
 		return true;
 	}
 
-	bool WriteParameterTablesForDXBC(std::ostream& Stream, const std::vector<CTechnique>& Techs, const CContext& Ctx)
+	void SaveRenderState(std::ostream& Stream, const CRenderState& RS)
 	{
-		/*
-					CUSMShaderMeta Meta;
-					{
-						const CShaderData& ShaderData = ShaderCache.at(ShaderIDs[ShaderType]);
-						membuf MetaBuffer(ShaderData.MetaBytes.get(), ShaderData.MetaBytes.get() + ShaderData.MetaByteCount);
-						std::istream MetaStream(&MetaBuffer);
+		// TODO: light count
+		//if (!W.Write<U32>(RSRef.MaxLights)) return ERR_IO_WRITE;
 
-						// Skip additional metadata
-						ReadStream<uint32_t>(MetaStream);
-						ReadStream<uint64_t>(MetaStream);
+		WriteStream(Stream, RS.Flags);
 
-						MetaStream >> Meta;
-					}
-		*/
-		return false;
+		WriteStream(Stream, RS.DepthBias);
+		WriteStream(Stream, RS.DepthBiasClamp);
+		WriteStream(Stream, RS.SlopeScaledDepthBias);
+
+		if (RS.Flags & CRenderState::DS_DepthEnable)
+			WriteStream<uint8_t>(Stream, RS.DepthFunc);
+
+		if (RS.Flags & CRenderState::DS_StencilEnable)
+		{
+			WriteStream(Stream, RS.StencilReadMask);
+			WriteStream(Stream, RS.StencilWriteMask);
+			WriteStream<uint32_t>(Stream, RS.StencilRef);
+
+			WriteStream<uint8_t>(Stream, RS.StencilFrontFace.StencilFailOp);
+			WriteStream<uint8_t>(Stream, RS.StencilFrontFace.StencilDepthFailOp);
+			WriteStream<uint8_t>(Stream, RS.StencilFrontFace.StencilPassOp);
+			WriteStream<uint8_t>(Stream, RS.StencilFrontFace.StencilFunc);
+
+			WriteStream<uint8_t>(Stream, RS.StencilBackFace.StencilFailOp);
+			WriteStream<uint8_t>(Stream, RS.StencilBackFace.StencilDepthFailOp);
+			WriteStream<uint8_t>(Stream, RS.StencilBackFace.StencilPassOp);
+			WriteStream<uint8_t>(Stream, RS.StencilBackFace.StencilFunc);
+		}
+
+		for (size_t BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+		{
+			if (BlendIdx > 0 && !(RS.Flags & CRenderState::Blend_Independent)) break;
+
+			const CRenderState::CRTBlend& RTBlend = RS.RTBlend[BlendIdx];
+			WriteStream<uint8_t>(Stream, RTBlend.WriteMask);
+
+			if (!(RS.Flags & (CRenderState::Blend_RTBlendEnable << BlendIdx))) continue;
+
+			WriteStream<uint8_t>(Stream, RTBlend.SrcBlendArg);
+			WriteStream<uint8_t>(Stream, RTBlend.DestBlendArg);
+			WriteStream<uint8_t>(Stream, RTBlend.BlendOp);
+			WriteStream<uint8_t>(Stream, RTBlend.SrcBlendArgAlpha);
+			WriteStream<uint8_t>(Stream, RTBlend.DestBlendArgAlpha);
+			WriteStream<uint8_t>(Stream, RTBlend.BlendOpAlpha);
+		}
+
+		WriteStream(Stream, RS.BlendFactorRGBA);
+		WriteStream<uint32_t>(Stream, RS.SampleMask);
+
+		WriteStream(Stream, RS.AlphaTestRef);
+		WriteStream<uint8_t>(Stream, RS.AlphaTestFunc);
+
+		WriteStream(Stream, RS.VertexShader.ToString());
+		WriteStream(Stream, RS.PixelShader.ToString());
+		WriteStream(Stream, RS.GeometryShader.ToString());
+		WriteStream(Stream, RS.HullShader.ToString());
+		WriteStream(Stream, RS.DomainShader.ToString());
 	}
 };
 

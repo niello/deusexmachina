@@ -47,7 +47,6 @@ bool CDataScheme::Init(const CParams& Desc)
 				else if (!_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
 				else if (!_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(std::string);
 				else if (!_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
-				//else if (!_stricmp(pTypeString, "vector3")) Rec.TypeID = DATA_TYPE_ID(vector3);
 				//else if (!_stricmp(pTypeString, "vector4")) Rec.TypeID = DATA_TYPE_ID(vector4);
 				//else if (!_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
 				else Rec.TypeID = -1;
