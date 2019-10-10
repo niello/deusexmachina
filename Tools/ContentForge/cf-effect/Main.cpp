@@ -287,6 +287,14 @@ public:
 				}
 			}
 
+			// Build a vector of used render states to reference them by indices
+
+			std::vector<CStrID> RenderStates;
+			for (const auto& Tech : Techs)
+				for (CStrID PassID : Tech.Passes)
+					if (std::find(RenderStates.cbegin(), RenderStates.cend(), PassID) == RenderStates.cend())
+						RenderStates.push_back(PassID);
+
 			// Serialize techniques
 
 			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Techs.size()));
@@ -297,17 +305,20 @@ public:
 				WriteStream(Stream, Tech.MinFeatureLevel);
 
 				WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Tech.Passes.size()));
-				// write pass IDs or uint32_t indices
+				for (CStrID PassID : Tech.Passes)
+				{
+					auto ItPass = std::find(RenderStates.cbegin(), RenderStates.cend(), PassID);
+					WriteStream<uint32_t>(Stream, static_cast<uint32_t>(std::distance(RenderStates.cbegin(), ItPass)));
+				}
 
 				Stream.write(Tech.EffectMetaBinary.c_str(), Tech.EffectMetaBinary.size());
 			}
 
 			// Serialize render states
 
-			//!!!SaveRenderState();!
-			//Ctx.RSCache
-
-			//???reference from techs by index or by ID?
+			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(RenderStates.size()));
+			for (CStrID RSID : RenderStates)
+				SaveRenderState(Stream, Ctx.RSCache.at(RSID));
 
 			// Check and store serialized data
 
