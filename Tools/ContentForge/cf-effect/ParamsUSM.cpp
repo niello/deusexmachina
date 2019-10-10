@@ -78,6 +78,26 @@ static inline bool CheckRegisterOverlapping(uint32_t RegisterStart, uint32_t Reg
 }
 //---------------------------------------------------------------------
 
+static void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>& SrcBuffers, std::vector<CUSMBufferMeta>& TargetBuffers)
+{
+	if (BufferIndex == static_cast<uint32_t>(-1)) return;
+
+	const auto& Buffer = SrcBuffers[BufferIndex];
+	auto ItBuffer = std::find(TargetBuffers.cbegin(), TargetBuffers.cend(), Buffer);
+	if (ItBuffer != TargetBuffers.cend())
+	{
+		// The same buffer found, reference it
+		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.cbegin(), ItBuffer));
+	}
+	else
+	{
+		// Copy new buffer to metadata
+		TargetBuffers.push_back(Buffer);
+		BufferIndex = static_cast<uint32_t>(TargetBuffers.size() - 1);
+	}
+}
+//---------------------------------------------------------------------
+
 static bool ProcessConstant(uint8_t ShaderType, CUSMConstMeta& Param, const CUSMShaderMeta& SrcMeta, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader

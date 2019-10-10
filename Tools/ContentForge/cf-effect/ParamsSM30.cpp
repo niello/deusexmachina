@@ -97,6 +97,48 @@ static bool CheckSamplerRegisterOverlapping(const CSM30SamplerMeta& Param, const
 }
 //---------------------------------------------------------------------
 
+static void MergeConstantBuffers(const CSM30BufferMeta& SrcBuffer, CSM30BufferMeta& TargetBuffer)
+{
+	TargetBuffer.UsedFloat4.insert(SrcBuffer.UsedFloat4.begin(), SrcBuffer.UsedFloat4.end());
+	TargetBuffer.UsedInt4.insert(SrcBuffer.UsedInt4.begin(), SrcBuffer.UsedInt4.end());
+	TargetBuffer.UsedBool.insert(SrcBuffer.UsedBool.begin(), SrcBuffer.UsedBool.end());
+}
+//---------------------------------------------------------------------
+
+static void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CSM30BufferMeta>& SrcBuffers, std::vector<CSM30BufferMeta>& TargetBuffers)
+{
+	if (BufferIndex == static_cast<uint32_t>(-1)) return;
+
+	const auto& Buffer = SrcBuffers[BufferIndex];
+	auto ItBuffer = std::find(TargetBuffers.begin(), TargetBuffers.end(), Buffer);
+	if (ItBuffer != TargetBuffers.end())
+	{
+		// The same buffer found, reference it
+		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.begin(), ItBuffer));
+		return;
+	}
+
+	// Buffer can differ due to registers of unused fields, try to merge if name is the same
+	ItBuffer = std::find_if(TargetBuffers.begin(), TargetBuffers.end(), [&Buffer](const CSM30BufferMeta& TargetBuffer)
+	{
+		return Buffer.Name == TargetBuffer.Name && Buffer.SlotIndex == TargetBuffer.SlotIndex;
+	});
+
+	if (ItBuffer != TargetBuffers.end())
+	{
+		// Buffer with the same name and slot is found, merge them
+		MergeConstantBuffers(Buffer, *ItBuffer);
+		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.begin(), ItBuffer));
+	}
+	else
+	{
+		// Copy new buffer to metadata
+		TargetBuffers.push_back(Buffer);
+		BufferIndex = static_cast<uint32_t>(TargetBuffers.size() - 1);
+	}
+}
+//---------------------------------------------------------------------
+
 static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
@@ -148,17 +190,10 @@ static bool ProcessConstant(uint8_t ShaderType, CSM30ConstMeta& Param, const CSM
 			return false;
 		}
 
-		// Compare containing constant buffers
-		// NB: we perform this check despite D3D9 has no real constant buffers, because even with
-		// the same set of registers we still can have different constant buffer layouts. Using
-		// the constant with foreign constant buffer can be incompatible with the shader. D3D9 is
-		// legacy and this situation will probably never happen, so I don't spend much time on solution.
-		if (TargetMeta.Buffers[ExistingMeta.BufferIndex] != SrcMeta.Buffers[Param.BufferIndex])
-		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " constant '" << Param.Name << "' containing buffer is not compatible across all tech shaders" << Ctx.LineEnd;
-			return false;
-		}
+		// Merge constant buffers instead of comparison, because unused parameters in some shaders
+		// may render buffers inequal, but they are still compatible. Overlapping not checked because
+		// it will be when adding constants. Probably it is insufficient but acceptable for legacy D3D9.
+		MergeConstantBuffers(SrcMeta.Buffers[Param.BufferIndex], TargetMeta.Buffers[ExistingMeta.BufferIndex]);
 
 		// Extend shader mask
 		ItPrev->second.first |= ShaderType;

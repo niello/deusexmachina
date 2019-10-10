@@ -56,27 +56,6 @@ struct CContext
 	char LineEnd; // TODO: logger instance instead!
 };
 
-template<class TBufferMeta>
-void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<TBufferMeta>& SrcBuffers, std::vector<TBufferMeta>& TargetBuffers)
-{
-	if (BufferIndex == static_cast<uint32_t>(-1)) return;
-
-	const auto& Buffer = SrcBuffers[BufferIndex];
-	auto ItBuffer = std::find(TargetBuffers.cbegin(), TargetBuffers.cend(), Buffer);
-	if (ItBuffer != TargetBuffers.cend())
-	{
-		// The same buffer found, reference it
-		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.cbegin(), ItBuffer));
-	}
-	else
-	{
-		// Copy new buffer to metadata
-		TargetBuffers.push_back(Buffer);
-		BufferIndex = static_cast<uint32_t>(TargetBuffers.size() - 1);
-	}
-}
-//---------------------------------------------------------------------
-
 template<class TStructMeta>
 void CopyStructMetadata(uint32_t& StructIndex, const std::vector<TStructMeta>& SrcStructs, std::vector<TStructMeta>& TargetStructs)
 {
