@@ -633,6 +633,7 @@ bool ReleaseSignatureRecord(uint32_t ID, std::string& OutPath)
 	// Get file path to delete
 	Result.Clear();
 	if (!ExecuteSQLQuery("SELECT Folder FROM InputSignatures WHERE ID=:ID", &Result, &Params)) return false;
+	if (!Result.GetRowCount()) return false;
 
 	const auto& Folder = Result.Get<std::string>(CStrID("Folder"), 0);
 	OutPath = (fs::path(Folder) / (std::to_string(ID) + ".sig")).string();

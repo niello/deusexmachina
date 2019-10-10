@@ -318,7 +318,7 @@ DEM_DLL_API bool DEM_DLLCALL Init(const char* pDBFileName)
 //---------------------------------------------------------------------
 
 DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSrcPath, const char* pDestPath, const char* pInputSigDir,
-	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug,
+	EShaderType ShaderType, uint32_t Target, const char* pEntryPoint, const char* pDefines, bool Debug, bool Recompile,
 	const char* pSrcData, size_t SrcDataSize, ILogDelegate* pLog)
 {
 	// Validate args
@@ -406,7 +406,8 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 
 	const size_t SrcCRC = CalcCRC((const uint8_t*)pSrcData, SrcDataSize);
 
-	if (DB::FindShaderRecord(Rec) &&
+	if (!Recompile &&
+		DB::FindShaderRecord(Rec) &&
 		Rec.CompilerVersion == D3D_COMPILER_VERSION &&
 		Rec.CompilerFlags == Flags &&
 		Rec.SrcFile.Size == SrcDataSize &&

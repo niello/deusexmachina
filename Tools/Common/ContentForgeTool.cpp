@@ -23,7 +23,7 @@ CContentForgeTool::CContentForgeTool(const std::string& Name, const std::string&
 
 void CContentForgeTool::ProcessCommandLine(CLI::App& CLIApp)
 {
-	CLIApp.add_option("-r,--root", _RootDir, "Root folder for all project resources");
+	CLIApp.add_option("--root", _RootDir, "Root folder for all project resources");
 	CLIApp.add_option("-s,--src", _SrcPathes, "Source file or metafile");
 	CLIApp.add_option("-v", _LogVerbosity, "Verbosity level")->check(
 		CLI::Range(static_cast<int>(EVerbosity::Always), static_cast<int>(EVerbosity::Debug)));

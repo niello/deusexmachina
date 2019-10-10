@@ -51,6 +51,7 @@ public:
 
 	std::string _DBPath;
 	std::string _InputSignaturesDir;
+	bool _ForceRecompilation = false;
 
 	CHLSLTool(const std::string& Name, const std::string& Desc, CVersion Version) :
 		CContentForgeTool(Name, Desc, Version)
@@ -87,6 +88,7 @@ public:
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--db", _DBPath, "Shader DB file path");
 		CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
+		CLIApp.add_flag("-r", _ForceRecompilation, "Force recompilation");
 	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
@@ -127,7 +129,7 @@ public:
 
 		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
-			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
+			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
 
 		const auto LoggedString = Log.GetStream().str();
 		if (!LoggedString.empty())
