@@ -37,7 +37,7 @@ public:
 	virtual void Log(EVerbosity Level, const char* pMessage) override
 	{
 		if (_Verbosity >= Level)
-			_Stream << _Prefix << pMessage << _LineEnd;
+			_Stream << GetSeverityPrefix(Level) << _Prefix << pMessage << _LineEnd;
 	}
 };
 

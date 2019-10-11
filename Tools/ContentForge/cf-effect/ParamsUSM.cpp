@@ -110,15 +110,13 @@ static bool ProcessConstant(uint8_t ShaderType, CUSMConstMeta& Param, const CUSM
 
 		if (OtherMeta1.UsedConstantBuffers.find(BufferRegister) != OtherMeta1.UsedConstantBuffers.cend())
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " buffer containing '" << Param.Name << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " buffer containing '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
 		if (OtherMeta2.UsedConstantBuffers.find(BufferRegister) != OtherMeta2.UsedConstantBuffers.cend())
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " buffer containing '" << Param.Name << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " buffer containing '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;
 		}
 
@@ -137,16 +135,14 @@ static bool ProcessConstant(uint8_t ShaderType, CUSMConstMeta& Param, const CUSM
 		const auto& ExistingMeta = ItPrev->second.second;
 		if (ExistingMeta != Param)
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " constant '" << Param.Name << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " constant '" + Param.Name + "' is not compatible across all tech shaders");
 			return false;
 		}
 
 		// Compare containing constant buffers
 		if (TargetMeta.Buffers[ExistingMeta.BufferIndex] != SrcMeta.Buffers[Param.BufferIndex])
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " constant '" << Param.Name << "' containing buffer is not compatible across all tech shaders" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " constant '" + Param.Name + "' containing buffer is not compatible across all tech shaders");
 			return false;
 		}
 
@@ -166,15 +162,13 @@ static bool ProcessResource(uint8_t ShaderType, CUSMRsrcMeta& Param, CUSMEffectM
 	{
 		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, OtherMeta1.UsedResources))
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " resource '" << Param.Name << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
 		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, OtherMeta2.UsedResources))
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " resource '" << Param.Name << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;
 		}
 
@@ -190,8 +184,7 @@ static bool ProcessResource(uint8_t ShaderType, CUSMRsrcMeta& Param, CUSMEffectM
 		const auto& ExistingMeta = ItPrev->second.second;
 		if (ExistingMeta != Param)
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " resource '" << Param.Name << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' is not compatible across all tech shaders");
 			return false;
 		}
 
@@ -211,15 +204,13 @@ static bool ProcessSampler(uint8_t ShaderType, CUSMSamplerMeta& Param, CUSMEffec
 	{
 		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, OtherMeta1.UsedSamplers))
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " sampler '" << Param.Name << "' uses a register used by " << OtherMeta1.PrintableName << " params" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " sampler '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
 		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, OtherMeta2.UsedSamplers))
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " sampler '" << Param.Name << "' uses a register used by " << OtherMeta2.PrintableName << " params" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " sampler '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;
 		}
 
@@ -235,8 +226,7 @@ static bool ProcessSampler(uint8_t ShaderType, CUSMSamplerMeta& Param, CUSMEffec
 		const auto& ExistingMeta = ItPrev->second.second;
 		if (ExistingMeta != Param)
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Errors)
-				std::cout << TargetMeta.PrintableName << " sampler '" << Param.Name << "' is not compatible across all tech shaders" << Ctx.LineEnd;
+			Ctx.Log->LogError(TargetMeta.PrintableName + " sampler '" + Param.Name + "' is not compatible across all tech shaders");
 			return false;
 		}
 
@@ -266,8 +256,7 @@ static bool SerializeConstantDefault(std::ostream& Stream, const CUSMConstMetaBa
 		{
 			if (ValueSizeInBytes = WriteFloatDefault(Stream, DefaultValue))
 			{
-				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Material param '" << Meta.Name << "' is a float, default value must be null, float, int or vector" << Ctx.LineEnd;
+				Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is a float, default value must be null, float, int or vector");
 				return false;
 			}
 			break;
@@ -276,8 +265,7 @@ static bool SerializeConstantDefault(std::ostream& Stream, const CUSMConstMetaBa
 		{
 			if (ValueSizeInBytes = WriteIntDefault(Stream, DefaultValue))
 			{
-				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Material param '" << Meta.Name << "' is an integer, default value must be null, float, int or vector" << Ctx.LineEnd;
+				Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is an integer, default value must be null, float, int or vector");
 				return false;
 			}
 			break;
@@ -286,16 +274,14 @@ static bool SerializeConstantDefault(std::ostream& Stream, const CUSMConstMetaBa
 		{
 			if (ValueSizeInBytes = WriteBoolDefault(Stream, DefaultValue))
 			{
-				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Material param '" << Meta.Name << "' is a bool, default value must be null, bool or int" << Ctx.LineEnd;
+				Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is a bool, default value must be null, bool or int");
 				return false;
 			}
 			break;
 		}
 		default:
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-				std::cout << "Material param '" << Meta.Name << "' is a constant of unsupported type or register set, default value is skipped" << Ctx.LineEnd;
+			Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is a constant of unsupported type or register set, default value is skipped");
 			return false;
 		}
 	}
@@ -346,8 +332,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 
 				for (auto& Const : ShaderMeta.Consts)
 				{
-					if (Ctx.LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Shader '" << ShaderID.CStr() << "' constant " << Const.Name << Ctx.LineEnd;
+					Ctx.Log->LogDebug("Shader '" + ShaderID.ToString() + "' constant " + Const.Name);
 
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
@@ -366,8 +351,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 
 				for (auto& Rsrc : ShaderMeta.Resources)
 				{
-					if (Ctx.LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Shader '" << ShaderID.CStr() << "' resource " << Rsrc.Name << Ctx.LineEnd;
+					Ctx.Log->LogDebug("Shader '" + ShaderID.ToString() + "' resource " + Rsrc.Name);
 
 					CStrID ID(Rsrc.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
@@ -386,8 +370,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 
 				for (auto& Sampler : ShaderMeta.Samplers)
 				{
-					if (Ctx.LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Shader '" << ShaderID.CStr() << "' sampler " << Sampler.Name << Ctx.LineEnd;
+					Ctx.Log->LogDebug("Shader '" + ShaderID.ToString() + "' sampler " + Sampler.Name);
 
 					CStrID ID(Sampler.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
@@ -457,8 +440,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 			}
 			else if (!MaterialParam.second.IsVoid())
 			{
-				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Unsupported default type for resource '" << ID << "', must be string or string ID" << Ctx.LineEnd;
+				Ctx.Log->LogWarning("Unsupported default type for resource '" + ID + "', must be string or string ID");
 			}
 		}
 		else if (MaterialMeta.Samplers.find(ID) != MaterialMeta.Samplers.cend())
@@ -471,14 +453,12 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 			}
 			else if (!MaterialParam.second.IsVoid())
 			{
-				if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Unsupported default type for sampler '" << ID << "', must be section with sampler settings" << Ctx.LineEnd;
+				Ctx.Log->LogWarning("Unsupported default type for sampler '" + ID + "', must be section with sampler settings");
 			}
 		}
 		else
 		{
-			if (Ctx.LogVerbosity >= EVerbosity::Warnings)
-				std::cout << "Default for unknow parameter '" << ID << "' is skipped" << Ctx.LineEnd;
+			Ctx.Log->LogWarning("Default for unknow parameter '" + ID + "' is skipped");
 		}
 	}
 

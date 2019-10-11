@@ -2,8 +2,7 @@
 #include <CFEffectFwd.h>
 #include <Utils.h>
 #include <HRDParser.h>
-//#include <CLI11.hpp>
-//#include <mutex>
+#include <mutex>
 #include <thread>
 #include <iostream>
 #include <sstream>
@@ -21,8 +20,7 @@ class CEffectTool : public CContentForgeTool
 {
 private:
 
-	// FIXME: common threadsafe logger for tasks instead of cout
-	//std::mutex COutMutex;
+	std::mutex COutMutex;
 
 public:
 
@@ -59,14 +57,13 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
+		CContext Ctx;
+		Ctx.Log.reset(new CThreadSafeLog("", static_cast<EVerbosity>(_LogVerbosity)));
+
 		// FIXME: must be thread-safe, also can move to the common code
-		const auto LineEnd = std::cout.widen('\n');
-		if (_LogVerbosity >= EVerbosity::Debug)
-		{
-			std::cout << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
-			std::cout << "Task: " << Task.TaskID.CStr() << LineEnd;
-			std::cout << "Thread: " << std::this_thread::get_id() << LineEnd;
-		}
+		Ctx.Log->LogDebug("Source: " + Task.SrcFilePath.generic_string());
+		Ctx.Log->LogDebug("Task: " + Task.TaskID.ToString());
+		//Ctx.Log->LogDebug("Thread: " + std::this_thread::get_id());
 
 		// Read effect hrd
 
@@ -75,31 +72,24 @@ public:
 			std::vector<char> In;
 			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << Task.SrcFilePath.generic_string() << " reading error" << LineEnd;
+				Ctx.Log->LogError(Task.SrcFilePath.generic_string() + " reading error");
 				return false;
 			}
 
 			Data::CHRDParser Parser;
 			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << Task.SrcFilePath.generic_string() << " HRD parsing error" << LineEnd;
+				Ctx.Log->LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
 				return false;
 			}
 		}
-
-		CContext Ctx;
-		Ctx.LogVerbosity = _LogVerbosity;
-		Ctx.LineEnd = LineEnd;
 
 		// Get and validate material type
 
 		const CStrID MaterialType = GetParam<CStrID>(Desc, "Type", CStrID::Empty);
 		if (!MaterialType)
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "Material type not specified" << LineEnd;
+			Ctx.Log->LogError("Material type not specified, Type = '<string ID>' expected");
 			return false;
 		}
 
@@ -111,8 +101,7 @@ public:
 		{
 			if (!ItGlobalParams->second.IsA<Data::CDataArray>())
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "'GlobalParams' must be an array of CStringID elements (single-quoted strings)" << LineEnd;
+				Ctx.Log->LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
 				return false;
 			}
 
@@ -121,8 +110,7 @@ public:
 			{
 				if (!Data.IsA<CStrID>())
 				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "'GlobalParams' must be an array of CStringID elements (single-quoted strings)" << LineEnd;
+					Ctx.Log->LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
 					return false;
 				}
 
@@ -136,8 +124,7 @@ public:
 		{
 			if (!ItMaterialParams->second.IsA<Data::CParams>())
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "'MaterialParams' must be a section" << LineEnd;
+				Ctx.Log->LogError("'MaterialParams' must be a section");
 				return false;
 			}
 
@@ -152,8 +139,7 @@ public:
 			{
 				if (Ctx.MaterialParams.find(ParamID) != Ctx.MaterialParams.cend())
 				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << '\'' << ParamID.CStr() << "' appears in both global and material params" << LineEnd;
+					Ctx.Log->LogError('\'' + ParamID.ToString() + "' appears in both global and material params");
 					HasErrors = true;
 				}
 			}
@@ -164,16 +150,14 @@ public:
 		auto ItRenderStates = Desc.find(CStrID("RenderStates"));
 		if (ItRenderStates == Desc.cend() || !ItRenderStates->second.IsA<Data::CParams>())
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "'RenderStates' must be a section" << LineEnd;
+			Ctx.Log->LogError("'RenderStates' must be a section");
 			return false;
 		}
 
 		auto ItTechs = Desc.find(CStrID("Techniques"));
 		if (ItTechs == Desc.cend() || !ItTechs->second.IsA<Data::CParams>() || ItTechs->second.GetValue<Data::CParams>().empty())
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "'Techniques' must be a section and contain at least one input set" << LineEnd;
+			Ctx.Log->LogError("'Techniques' must be a section and contain at least one input set");
 			return false;
 		}
 
@@ -185,8 +169,7 @@ public:
 
 			if (!InputSetDesc.second.IsA<Data::CParams>() || InputSetDesc.second.GetValue<Data::CParams>().empty())
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Input set '" << InputSet.CStr() << "' must be a section containing at least one technique" << LineEnd;
+				Ctx.Log->LogError("Input set '" + InputSet.ToString() + "' must be a section containing at least one technique");
 				return false;
 			}
 
@@ -195,8 +178,7 @@ public:
 			{
 				if (!TechDesc.second.IsA<Data::CDataArray>() || TechDesc.second.GetValue<Data::CDataArray>().empty())
 				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "' must be an array containing at least one render state ID" << LineEnd;
+					Ctx.Log->LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' must be an array containing at least one render state ID");
 					return false;
 				}
 
@@ -207,8 +189,7 @@ public:
 				{
 					const CStrID RenderStateID = PassDesc.GetValue<CStrID>();
 
-					if (_LogVerbosity >= EVerbosity::Debug)
-						std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "', pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+					Ctx.Log->LogDebug("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "', pass '" + RenderStateID.CStr() + '\'');
 
 					auto ItRS = Ctx.RSCache.find(RenderStateID);
 					if (ItRS == Ctx.RSCache.cend())
@@ -221,16 +202,14 @@ public:
 					if (!RS.IsValid)
 					{
 						// Can discard only this tech, but for now issue an error and stop
-						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "' uses invalid render state in a pass '" << RenderStateID.CStr() << '\'' << LineEnd;
+						Ctx.Log->LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' uses invalid render state in a pass '" + RenderStateID.CStr() + '\'');
 						return false;
 					}
 
 					// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
 					if (Tech.ShaderFormatFourCC && Tech.ShaderFormatFourCC != RS.ShaderFormatFourCC)
 					{
-						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Tech '" << InputSet.CStr() << '.' << TechDesc.first.CStr() << "' has unsupported mix of shader formats." << LineEnd;
+						Ctx.Log->LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' has unsupported mix of shader formats.");
 						return false;
 					}
 
@@ -280,9 +259,7 @@ public:
 				}
 				default:
 				{
-					// TODO: print FourCC as text!
-					if (_LogVerbosity >= EVerbosity::Warnings)
-						std::cout << "Skipping unsupported shader format: " << FourCC(ShaderFormat) << LineEnd;
+					Ctx.Log->LogWarning("Skipping unsupported shader format: " + FourCC(ShaderFormat));
 					continue;
 				}
 			}
@@ -325,16 +302,14 @@ public:
 			std::string Data = Stream.str();
 			if (Data.empty())
 			{
-				if (_LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "No data serialized for the format: " << FourCC(ShaderFormat) << LineEnd;
+				Ctx.Log->LogWarning("No data serialized for the format: " + FourCC(ShaderFormat));
 				continue;
 			}
 			else if (Data.size() > std::numeric_limits<uint32_t>().max())
 			{
 				// We don't support 64-bit offsets in effect files. If your data is so big,
 				// most probably it is a serialization error.
-				if (_LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Discarding too big serialized data for the format: " << FourCC(ShaderFormat) << LineEnd;
+				Ctx.Log->LogWarning("Discarding too big serialized data for the format: " + FourCC(ShaderFormat));
 				continue;
 			}
 
@@ -345,8 +320,7 @@ public:
 
 		if (SerializedEffect.empty())
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "No data serialized for the effect, resource will not be created" << LineEnd;
+			Ctx.Log->LogError("No data serialized for the effect, resource will not be created");
 			return false;
 		}
 
@@ -355,8 +329,7 @@ public:
 		std::ofstream File(DestPath, std::ios_base::binary);
 		if (!File)
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "Error opening an output file" << LineEnd;
+			Ctx.Log->LogError("Error opening an output file");
 			return false;
 		}
 
@@ -378,6 +351,15 @@ public:
 		for (const auto& Pair : SerializedEffect)
 			File.write(Pair.second.c_str(), Pair.second.size());
 
+		const auto LoggedString = Ctx.Log->GetStream().str();
+		if (!LoggedString.empty())
+		{
+			// Flush cached logs to stdout
+			// TODO: move log flushing to the end of CContentForgeTool::Execute? No locking needed at all there.
+			std::lock_guard<std::mutex> Lock(COutMutex);
+			std::cout << LoggedString;
+		}
+
 		// FIXME: must be thread-safe, also can move to the common code
 		//if (_LogVerbosity >= EVerbosity::Debug)
 		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
@@ -393,15 +375,12 @@ private:
 		// We want to have a record for each parsed RS, not only for valid ones.
 		CRenderState& RS = Ctx.RSCache.emplace(ID, CRenderState{}).first->second;
 
-		const auto LineEnd = std::cout.widen('\n');
-
 		// Get a HRD section for this render state
 
 		auto It = RenderStateDescs.find(ID);
 		if (It == RenderStateDescs.cend() || !It->second.IsA<Data::CParams>())
 		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << "Render state '" << ID.CStr() << "' not found or is not a section" << LineEnd;
+			Ctx.Log->LogError("Render state '" + ID.ToString() + "' not found or is not a section");
 			return false;
 		}
 
@@ -423,8 +402,7 @@ private:
 			const auto& BaseRS = ItRS->second;
 			if (!BaseRS.IsValid)
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Render state '" << ID.CStr() << "' has invalid base state '" << BaseID.CStr() << '\'' << LineEnd;
+				Ctx.Log->LogError("Render state '" + ID.ToString() + "' has invalid base state '" + BaseID.CStr() + '\'');
 				return false;
 			}
 
@@ -466,8 +444,7 @@ private:
 			}
 			else
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Render state '" << ID.CStr() << "' has unknown Cull value: " << StrValue << LineEnd;
+				Ctx.Log->LogError("Render state '" + ID.ToString() + "' has unknown Cull value: " + StrValue);
 				return false;
 			}
 		}
@@ -548,17 +525,13 @@ private:
 			}
 			else
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Render state '" << ID.CStr() << "' has invalid 'Blend'. Must be a section or an array." << LineEnd;
+				Ctx.Log->LogError("Render state '" + ID.ToString() + "' has invalid 'Blend'. Must be a section or an array.");
 				return false;
 			}
 
 			const auto& BlendDescs = ItBlend->second.GetValue<Data::CDataArray>();
 			if (BlendDescs.size() > 8)
-			{
-				if (_LogVerbosity >= EVerbosity::Warnings)
-					std::cout << "Render state '" << ID.CStr() << "' has 'Blend' array of size " << BlendDescs.size() << ", note that only 8 first elements will be processed" << LineEnd;
-			}
+				Ctx.Log->LogWarning("Render state '" + ID.ToString() + "' has 'Blend' array of size " + std::to_string(BlendDescs.size()) + ", note that only 8 first elements will be processed");
 
 			// Read blend descs one by one
 
@@ -566,8 +539,7 @@ private:
 			{
 				if (!BlendDescs[i].IsA<Data::CParams>())
 				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "Render state '" << ID.CStr() << "' has invalid 'Blend'. All array elements must be sections." << LineEnd;
+					Ctx.Log->LogError("Render state '" + ID.ToString() + "' has invalid 'Blend'. All array elements must be sections.");
 					return false;
 				}
 
@@ -616,8 +588,7 @@ private:
 					}
 					else
 					{
-						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Render state '" << ID.CStr() << "' has invalid 'Blend'. 'WriteMask' must be an int or a string, empty or containing r, g, b & a in any combination." << LineEnd;
+						Ctx.Log->LogError("Render state '" + ID.ToString() + "' has invalid 'Blend'. 'WriteMask' must be an int or a string, empty or containing r, g, b & a in any combination.");
 						return false;
 					}
 				}
@@ -660,8 +631,7 @@ private:
 			}
 			else
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Render state '" << ID.CStr() << "' has invalid 'ClipPlanes'. Must be 'false', integer bitmask or an array of indices." << LineEnd;
+				Ctx.Log->LogError("Render state '" + ID.ToString() + "' has invalid 'ClipPlanes'. Must be 'false', integer bitmask or an array of indices.");
 				return false;
 			}
 		}
@@ -682,14 +652,12 @@ private:
 			{
 				auto Path = ResolvePathAliases(ShaderID.CStr());
 
-				if (_LogVerbosity >= EVerbosity::Debug)
-					std::cout << "Opening shader " << Path.generic_string() << LineEnd;
+				Ctx.Log->LogDebug("Opening shader " + Path.generic_string());
 
 				std::ifstream File(Path, std::ios_base::binary);
 				if (!File)
 				{
-					if (_LogVerbosity >= EVerbosity::Errors)
-						std::cout << "Can't open shader " << Path.generic_string() << LineEnd;
+					Ctx.Log->LogError("Can't open shader " + Path.generic_string());
 					return false;
 				}
 
@@ -712,8 +680,7 @@ private:
 					ShaderData.MetaByteCount = MetaSize;
 					if (!File.read(ShaderData.MetaBytes.get(), MetaSize))
 					{
-						if (_LogVerbosity >= EVerbosity::Errors)
-							std::cout << "Render state '" << ID.CStr() << "' metadata bytes reading error." << LineEnd;
+						Ctx.Log->LogError("Render state '" + ID.ToString() + "' metadata bytes reading error.");
 						return false;
 					}
 				}
@@ -726,8 +693,7 @@ private:
 			// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
 			if (RS.ShaderFormatFourCC && RS.ShaderFormatFourCC != ShaderData.Header.Format)
 			{
-				if (_LogVerbosity >= EVerbosity::Errors)
-					std::cout << "Render state '" << ID.CStr() << "' has unsupported mix of shader formats." << LineEnd;
+				Ctx.Log->LogError("Render state '" + ID.ToString() + "' has unsupported mix of shader formats.");
 				return false;
 			}
 
