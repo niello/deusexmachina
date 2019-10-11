@@ -39,13 +39,9 @@ public:
 	virtual bool SupportsMultithreading() const override
 	{
 		// FIXME: must handle duplicate targets (for example 2 metafiles writing the same resulting file, like depth_atest_ps)
+		// FIXME: CStrID
 		return false;
 	}
-
-	//virtual void ProcessCommandLine(CLI::App& CLIApp) override
-	//{
-	//	CContentForgeTool::ProcessCommandLine(CLIApp);
-	//}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
@@ -60,10 +56,13 @@ public:
 		CContext Ctx;
 		Ctx.Log.reset(new CThreadSafeLog("", static_cast<EVerbosity>(_LogVerbosity)));
 
-		// FIXME: must be thread-safe, also can move to the common code
-		Ctx.Log->LogDebug("Source: " + Task.SrcFilePath.generic_string());
-		Ctx.Log->LogDebug("Task: " + Task.TaskID.ToString());
-		//Ctx.Log->LogDebug("Thread: " + std::this_thread::get_id());
+		// FIXME: can move to the common code
+		if (_LogVerbosity >= EVerbosity::Debug)
+		{
+			Ctx.Log->GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Ctx.Log->GetLineEnd();
+			Ctx.Log->GetStream() << "Task: " << Task.TaskID.CStr() << Ctx.Log->GetLineEnd();
+			Ctx.Log->GetStream() << "Thread: " << std::this_thread::get_id() << Ctx.Log->GetLineEnd();
+		}
 
 		// Read effect hrd
 
