@@ -505,7 +505,7 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 		}
 		else
 		{
-			Ctx.Log->LogWarning("Default for unknow parameter '" + ID + "' is skipped");
+			Ctx.Log->LogWarning("Default for unknown parameter '" + ID + "' is skipped");
 		}
 	}
 

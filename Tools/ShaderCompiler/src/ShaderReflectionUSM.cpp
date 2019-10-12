@@ -1,5 +1,6 @@
 #include <ShaderReflection.h>
 #include <ShaderMeta/USMShaderMeta.h>
+#include <LogDelegate.h>
 #include <cassert>
 #include <map>
 #define WIN32_LEAN_AND_MEAN
@@ -105,7 +106,7 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 }
 //---------------------------------------------------------------------
 
-bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags)
+bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	ID3D11ShaderReflection* pReflector = nullptr;
 	if (FAILED(D3DReflect(pData, Size, IID_ID3D11ShaderReflection, (void**)&pReflector))) return false;
@@ -287,13 +288,9 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 								case D3D_SVT_FLOAT:	ConstMeta.Type = USMConst_Float; break;
 								default:
 								{
-									//Messages += "Unsupported constant '";
-									//Messages += D3DVarDesc.Name;
-									//Messages += "' type '";
-									//Messages += std::to_string(D3DTypeDesc.Type);
-									//Messages += "' in USM buffer '";
-									//Messages += RsrcDesc.Name;
-									//Messages += "'\n";
+									if (pLog)
+										pLog->LogInfo((std::string("Unsupported constant '") + D3DVarDesc.Name + "' type '" +
+											std::to_string(D3DTypeDesc.Type) + "' in USM buffer '" + RsrcDesc.Name).c_str());
 									return false;
 								}
 							}

@@ -120,7 +120,7 @@ public:
 		const auto LineEnd = Log.GetStream().widen('\n');
 
 		// FIXME: can move to the common code
-		if (_LogVerbosity >= EVerbosity::Debug)
+		if (_LogVerbosity >= EVerbosity::Info)
 		{
 			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
 			Log.GetStream() << "Task: " << Task.TaskID.CStr() << LineEnd;
@@ -150,6 +150,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CHLSLTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 0, 1, 0 });
+	CHLSLTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }

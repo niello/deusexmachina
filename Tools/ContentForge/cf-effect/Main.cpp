@@ -57,7 +57,7 @@ public:
 		Ctx.Log.reset(new CThreadSafeLog("", static_cast<EVerbosity>(_LogVerbosity)));
 
 		// FIXME: can move to the common code
-		if (_LogVerbosity >= EVerbosity::Debug)
+		if (_LogVerbosity >= EVerbosity::Info)
 		{
 			Ctx.Log->GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Ctx.Log->GetLineEnd();
 			Ctx.Log->GetStream() << "Task: " << Task.TaskID.CStr() << Ctx.Log->GetLineEnd();
@@ -770,6 +770,6 @@ private:
 
 int main(int argc, const char** argv)
 {
-	CEffectTool Tool("cf-effect", "DeusExMachina rendering effect compiler", { 0, 1, 0 });
+	CEffectTool Tool("cf-effect", "DeusExMachina rendering effect compiler", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }

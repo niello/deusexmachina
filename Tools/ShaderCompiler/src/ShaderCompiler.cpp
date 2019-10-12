@@ -1,5 +1,4 @@
 #include "ShaderCompiler.h"
-
 #include <Utils.h>
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
@@ -15,7 +14,7 @@ namespace fs = std::filesystem;
 #undef CreateDirectory
 #undef DeleteFile
 
-bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags);
+bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& OutMeta, uint32_t& OutMinFeatureLevel, uint64_t& OutRequiresFlags, DEMShaderCompiler::ILogDelegate* pLog);
 bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pData, size_t Size, const char* pSource, size_t SourceSize, ID3DInclude* pInclude, const char* pSourcePath, const D3D_SHADER_MACRO* pDefines, DEMShaderCompiler::ILogDelegate* pLog);
 
 struct CTargetParams
@@ -166,7 +165,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	CUSMShaderMeta Meta;
 	uint32_t MinFeatureLevel;
 	uint64_t RequiresFlags;
-	if (!ExtractUSMMetaFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta, MinFeatureLevel, RequiresFlags))
+	if (!ExtractUSMMetaFromBinary(pCode->GetBufferPointer(), pCode->GetBufferSize(), Meta, MinFeatureLevel, RequiresFlags, pLog))
 		return DEM_SHADER_COMPILER_REFLECTION_ERROR;
 
 	// Strip unnecessary info for release builds, making object files smaller
