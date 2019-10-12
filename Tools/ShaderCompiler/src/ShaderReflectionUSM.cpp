@@ -7,7 +7,8 @@
 #include <d3dcompiler.h>
 
 // StructCache stores D3D11 type to metadata index mapping, where metadata index is an index in the Out.Structs array
-static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* pType, uint32_t StructSize, std::map<ID3D11ShaderReflectionType*, size_t>& StructCache)
+static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* pType, uint32_t StructSize,
+	std::map<ID3D11ShaderReflectionType*, size_t>& StructCache, DEMShaderCompiler::ILogDelegate* pLog)
 {
 	if (!pType) return false;
 
@@ -65,12 +66,12 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 		if (D3DMemberTypeDesc.Class == D3D_SVC_STRUCT)
 		{
 			MemberMeta.Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-			if (!ProcessStructure(Meta, pMemberType, MemberMeta.ElementSize, StructCache)) continue;
+			if (!ProcessStructure(Meta, pMemberType, MemberMeta.ElementSize, StructCache, pLog)) continue;
 			MemberMeta.StructIndex = StructCache[pMemberType];
 		}
 		else
 		{
-			MemberMeta.StructIndex = (uint32_t)(-1);
+			MemberMeta.StructIndex = static_cast<uint32_t>(-1);
 			switch (D3DMemberTypeDesc.Type)
 			{
 				case D3D_SVT_BOOL:	MemberMeta.Type = USMConst_Bool; break;
@@ -79,13 +80,9 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 				case D3D_SVT_FLOAT:	MemberMeta.Type = USMConst_Float; break;
 				default:
 				{
-					//Messages += "Unsupported constant '";
-					//Messages += pMemberName;
-					//Messages += "' type '";
-					//Messages += std::to_string(D3DMemberTypeDesc.Type);
-					//Messages += "' in a structure '";
-					//Messages += (D3DTypeDesc.Name ? D3DTypeDesc.Name : "");
-					//Messages += "'\n";
+					if (pLog)
+						pLog->LogInfo((std::string("Unsupported constant '") + pMemberName + "' type '" +
+							std::to_string(D3DMemberTypeDesc.Type) + "' in a structure '" + (D3DTypeDesc.Name ? D3DTypeDesc.Name : "")).c_str());
 					return false;
 				}
 			}
@@ -274,12 +271,12 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 						if (D3DTypeDesc.Class == D3D_SVC_STRUCT)
 						{
 							ConstMeta.Type = USMConst_Struct; // D3DTypeDesc.Type is 'void'
-							if (!ProcessStructure(OutMeta, pVarType, ConstMeta.ElementSize, StructCache)) continue;
+							if (!ProcessStructure(OutMeta, pVarType, ConstMeta.ElementSize, StructCache, pLog)) continue;
 							ConstMeta.StructIndex = StructCache[pVarType];
 						}
 						else
 						{
-							ConstMeta.StructIndex = (uint32_t)(-1);
+							ConstMeta.StructIndex = static_cast<uint32_t>(-1);
 							switch (D3DTypeDesc.Type)
 							{
 								case D3D_SVT_BOOL:	ConstMeta.Type = USMConst_Bool; break;
