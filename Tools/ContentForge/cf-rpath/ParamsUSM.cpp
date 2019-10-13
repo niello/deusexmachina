@@ -38,6 +38,9 @@ bool MergeParams(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLog
 				if (pLog) pLog->LogError("Constant '" + Param.Name + "' containing buffer is not compatible across all effects");
 				return false;
 			}
+
+			// Extend shader mask
+			ItPrev->second.first |= Const.second.first;
 		}
 	}
 
@@ -62,6 +65,9 @@ bool MergeParams(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLog
 				if (pLog) pLog->LogError("Resource '" + Param.Name + "' is not compatible across all effects");
 				return false;
 			}
+
+			// Extend shader mask
+			ItPrev->second.first |= Rsrc.second.first;
 		}
 	}
 
@@ -86,6 +92,9 @@ bool MergeParams(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLog
 				if (pLog) pLog->LogError("Sampler '" + Param.Name + "' is not compatible across all tech shaders");
 				return false;
 			}
+
+			// Extend shader mask
+			ItPrev->second.first |= Sampler.second.first;
 		}
 	}
 
