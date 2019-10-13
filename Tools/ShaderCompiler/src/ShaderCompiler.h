@@ -12,8 +12,6 @@
 #endif
 #define DEM_DLLCALL		__cdecl
 
-enum EShaderModel;
-
 // Return codes
 enum EReturnCode
 {
