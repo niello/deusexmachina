@@ -9,64 +9,6 @@
 //???!!!TODO:
 //???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
 
-struct CUSMEffectMeta
-{
-	// Order must be preserved, params reference them by index
-	std::vector<CUSMBufferMeta> Buffers;
-	std::vector<CUSMStructMeta> Structs;
-
-	// Param ID (alphabetically sorted) -> shader type mask + metadata
-	std::map<std::string, std::pair<uint8_t, CUSMConstMeta>> Consts;
-	std::map<std::string, std::pair<uint8_t, CUSMRsrcMeta>> Resources;
-	std::map<std::string, std::pair<uint8_t, CUSMSamplerMeta>> Samplers;
-
-	// Cache for faster search
-	std::set<uint32_t> UsedConstantBuffers;
-	std::set<uint32_t> UsedResources;
-	std::set<uint32_t> UsedSamplers;
-
-	// For logging
-	std::string PrintableName;
-};
-
-std::ostream& operator <<(std::ostream& Stream, const CUSMEffectMeta& Value)
-{
-	WriteStream<uint32_t>(Stream, Value.Buffers.size());
-	for (const auto& Obj : Value.Buffers)
-		Stream << Obj;
-
-	WriteStream<uint32_t>(Stream, Value.Structs.size());
-	for (const auto& Obj : Value.Structs)
-		Stream << Obj;
-
-	WriteStream<uint32_t>(Stream, Value.Consts.size());
-	for (const auto& IDToMeta : Value.Consts)
-	{
-		WriteStream(Stream, IDToMeta.first);
-		WriteStream(Stream, IDToMeta.second.first);
-		Stream << IDToMeta.second.second;
-	}
-
-	WriteStream<uint32_t>(Stream, Value.Resources.size());
-	for (const auto& IDToMeta : Value.Resources)
-	{
-		WriteStream(Stream, IDToMeta.first);
-		WriteStream(Stream, IDToMeta.second.first);
-		Stream << IDToMeta.second.second;
-	}
-
-	WriteStream<uint32_t>(Stream, Value.Samplers.size());
-	for (const auto& IDToMeta : Value.Samplers)
-	{
-		WriteStream(Stream, IDToMeta.first);
-		WriteStream(Stream, IDToMeta.second.first);
-		Stream << IDToMeta.second.second;
-	}
-
-	return Stream;
-}
-//---------------------------------------------------------------------
-
 static inline bool CheckRegisterOverlapping(uint32_t RegisterStart, uint32_t RegisterCount, const std::set<uint32_t>& Used)
 {
 	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
@@ -98,7 +40,7 @@ static void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBuff
 }
 //---------------------------------------------------------------------
 
-static bool ProcessConstant(uint8_t ShaderType, CUSMConstMeta& Param, const CUSMShaderMeta& SrcMeta, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessConstant(uint8_t ShaderTypeMask, CUSMConstMeta& Param, const CUSMShaderMeta& SrcMeta, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
 	auto ItPrev = TargetMeta.Consts.find(Param.Name);
@@ -125,7 +67,7 @@ static bool ProcessConstant(uint8_t ShaderType, CUSMConstMeta& Param, const CUSM
 		// Copy necessary metadata
 
 		std::string ParamName = Param.Name;
-		CUSMConstMeta& NewConst = TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderType, std::move(Param))).first->second.second;
+		CUSMConstMeta& NewConst = TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param))).first->second.second;
 		CopyBufferMetadata(NewConst.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
 		CopyStructMetadata(NewConst.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
 	}
@@ -147,14 +89,14 @@ static bool ProcessConstant(uint8_t ShaderType, CUSMConstMeta& Param, const CUSM
 		}
 
 		// Extend shader mask
-		ItPrev->second.first |= ShaderType;
+		ItPrev->second.first |= ShaderTypeMask;
 	}
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-static bool ProcessResource(uint8_t ShaderType, CUSMRsrcMeta& Param, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessResource(uint8_t ShaderTypeMask, CUSMRsrcMeta& Param, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
 	auto ItPrev = TargetMeta.Resources.find(Param.Name);
@@ -176,7 +118,7 @@ static bool ProcessResource(uint8_t ShaderType, CUSMRsrcMeta& Param, CUSMEffectM
 			TargetMeta.UsedResources.insert(r);
 
 		std::string ParamName = Param.Name;
-		TargetMeta.Resources.emplace(std::move(ParamName), std::make_pair(ShaderType, std::move(Param)));
+		TargetMeta.Resources.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 	else
 	{
@@ -189,14 +131,14 @@ static bool ProcessResource(uint8_t ShaderType, CUSMRsrcMeta& Param, CUSMEffectM
 		}
 
 		// Extend shader mask
-		ItPrev->second.first |= ShaderType;
+		ItPrev->second.first |= ShaderTypeMask;
 	}
 
 	return true;
 }
 //---------------------------------------------------------------------
 
-static bool ProcessSampler(uint8_t ShaderType, CUSMSamplerMeta& Param, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
+static bool ProcessSampler(uint8_t ShaderTypeMask, CUSMSamplerMeta& Param, CUSMEffectMeta& TargetMeta, const CUSMEffectMeta& OtherMeta1, const CUSMEffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
 	auto ItPrev = TargetMeta.Samplers.find(Param.Name);
@@ -218,7 +160,7 @@ static bool ProcessSampler(uint8_t ShaderType, CUSMSamplerMeta& Param, CUSMEffec
 			TargetMeta.UsedSamplers.insert(r);
 
 		std::string ParamName = Param.Name;
-		TargetMeta.Samplers.emplace(std::move(ParamName), std::make_pair(ShaderType, std::move(Param)));
+		TargetMeta.Samplers.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 	else
 	{
@@ -231,7 +173,7 @@ static bool ProcessSampler(uint8_t ShaderType, CUSMSamplerMeta& Param, CUSMEffec
 		}
 
 		// Extend shader mask
-		ItPrev->second.first |= ShaderType;
+		ItPrev->second.first |= ShaderTypeMask;
 	}
 
 	return true;
@@ -330,6 +272,8 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					MetaStream >> ShaderMeta;
 				}
 
+				const uint8_t ShaderTypeMask = (1 << ShaderType);
+
 				for (auto& Const : ShaderMeta.Consts)
 				{
 					Ctx.Log->LogDebug("Shader '" + ShaderID.ToString() + "' constant " + Const.Name);
@@ -337,15 +281,15 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessConstant(ShaderType, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessConstant(ShaderTypeMask, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
 					{
-						ProcessConstant(ShaderType, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+						ProcessConstant(ShaderTypeMask, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 					}
 					else
 					{
-						ProcessConstant(ShaderType, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+						ProcessConstant(ShaderTypeMask, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 					}
 				}
 
@@ -356,15 +300,15 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					CStrID ID(Rsrc.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessResource(ShaderType, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessResource(ShaderTypeMask, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
 					{
-						ProcessResource(ShaderType, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+						ProcessResource(ShaderTypeMask, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 					}
 					else
 					{
-						ProcessResource(ShaderType, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+						ProcessResource(ShaderTypeMask, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 					}
 				}
 
@@ -375,15 +319,15 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					CStrID ID(Sampler.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessSampler(ShaderType, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						ProcessSampler(ShaderTypeMask, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
 					}
 					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
 					{
-						ProcessSampler(ShaderType, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+						ProcessSampler(ShaderTypeMask, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
 					}
 					else
 					{
-						ProcessSampler(ShaderType, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+						ProcessSampler(ShaderTypeMask, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
 					}
 				}
 			}

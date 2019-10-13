@@ -75,11 +75,12 @@ inline void ReadStream(std::istream& Stream, std::string& Data)
 }
 //---------------------------------------------------------------------
 
-// Skip data
-template<class T> void ReadStream(std::istream& Stream)
+// Can be used to skip data
+template<class T> T ReadStream(std::istream& Stream)
 {
 	T Out;
-	Stream.read(reinterpret_cast<char*>(&Out), sizeof(T));
+	ReadStream(Stream, Out);
+	return Out;
 }
 //---------------------------------------------------------------------
 

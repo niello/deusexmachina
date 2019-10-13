@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <set>
+#include <map>
 
 // Legacy Shader Model 3.0 (SM3.0) metadata
 
@@ -136,3 +137,28 @@ struct CSM30ShaderMeta
 
 std::ostream& operator <<(std::ostream& Stream, const CSM30ShaderMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value);
+
+struct CSM30EffectMeta
+{
+	// Order must be preserved, params reference them by index
+	std::vector<CSM30BufferMeta> Buffers;
+	std::vector<CSM30StructMeta> Structs;
+
+	// Param ID (alphabetically sorted) -> shader type mask + metadata
+	std::map<std::string, std::pair<uint8_t, CSM30ConstMeta>> Consts;
+	std::map<std::string, std::pair<uint8_t, CSM30RsrcMeta>> Resources;
+	std::map<std::string, std::pair<uint8_t, CSM30SamplerMeta>> Samplers;
+
+	// Cache for faster search
+	std::set<uint32_t> UsedFloat4;
+	std::set<uint32_t> UsedInt4;
+	std::set<uint32_t> UsedBool;
+	std::set<uint32_t> UsedResources;
+	std::set<uint32_t> UsedSamplers;
+
+	// For logging
+	std::string PrintableName;
+};
+
+std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value);
+std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value);

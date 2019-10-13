@@ -236,3 +236,103 @@ std::istream& operator >>(std::istream& Stream, CUSMShaderMeta& Value)
 	return Stream;
 }
 //---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CUSMEffectMeta& Value)
+{
+	WriteStream<uint32_t>(Stream, Value.Buffers.size());
+	for (const auto& Obj : Value.Buffers)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Structs.size());
+	for (const auto& Obj : Value.Structs)
+		Stream << Obj;
+
+	WriteStream<uint32_t>(Stream, Value.Consts.size());
+	for (const auto& IDToMeta : Value.Consts)
+	{
+		WriteStream(Stream, IDToMeta.first);
+		WriteStream(Stream, IDToMeta.second.first);
+		Stream << IDToMeta.second.second;
+	}
+
+	WriteStream<uint32_t>(Stream, Value.Resources.size());
+	for (const auto& IDToMeta : Value.Resources)
+	{
+		WriteStream(Stream, IDToMeta.first);
+		WriteStream(Stream, IDToMeta.second.first);
+		Stream << IDToMeta.second.second;
+	}
+
+	WriteStream<uint32_t>(Stream, Value.Samplers.size());
+	for (const auto& IDToMeta : Value.Samplers)
+	{
+		WriteStream(Stream, IDToMeta.first);
+		WriteStream(Stream, IDToMeta.second.first);
+		Stream << IDToMeta.second.second;
+	}
+
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value)
+{
+	uint32_t Count = 0;
+
+	Value.Buffers.clear();
+	Value.Structs.clear();
+	Value.Consts.clear();
+	Value.Resources.clear();
+	Value.Samplers.clear();
+
+	ReadStream<uint32_t>(Stream, Count);
+	Value.Buffers.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
+	{
+		CUSMBufferMeta Obj;
+		Stream >> Obj;
+		Value.Buffers.push_back(std::move(Obj));
+	}
+
+	ReadStream<uint32_t>(Stream, Count);
+	Value.Structs.reserve(Count);
+	for (uint32_t i = 0; i < Count; ++i)
+	{
+		CUSMStructMeta Obj;
+		Stream >> Obj;
+		Value.Structs.push_back(std::move(Obj));
+	}
+
+	ReadStream<uint32_t>(Stream, Count);
+	for (uint32_t i = 0; i < Count; ++i)
+	{
+		auto ParamName = ReadStream<std::string>(Stream);
+		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
+		CUSMConstMeta Param;
+		Stream >> Param;
+		Value.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
+	}
+
+	ReadStream<uint32_t>(Stream, Count);
+	for (uint32_t i = 0; i < Count; ++i)
+	{
+		auto ParamName = ReadStream<std::string>(Stream);
+		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
+		CUSMRsrcMeta Param;
+		Stream >> Param;
+		Value.Resources.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
+	}
+
+	ReadStream<uint32_t>(Stream, Count);
+	for (uint32_t i = 0; i < Count; ++i)
+	{
+		auto ParamName = ReadStream<std::string>(Stream);
+		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
+		CUSMSamplerMeta Param;
+		Stream >> Param;
+		Value.Samplers.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
+	}
+
+	return Stream;
+}
+//---------------------------------------------------------------------

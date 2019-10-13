@@ -1,5 +1,7 @@
 #pragma once
 #include <vector>
+#include <set>
+#include <map>
 
 // Universal Shader Model (SM4.0 and higher) metadata
 
@@ -144,3 +146,26 @@ struct CUSMShaderMeta
 
 std::ostream& operator <<(std::ostream& Stream, const CUSMShaderMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMShaderMeta& Value);
+
+struct CUSMEffectMeta
+{
+	// Order must be preserved, params reference them by index
+	std::vector<CUSMBufferMeta> Buffers;
+	std::vector<CUSMStructMeta> Structs;
+
+	// Param ID (alphabetically sorted) -> shader type mask + metadata
+	std::map<std::string, std::pair<uint8_t, CUSMConstMeta>> Consts;
+	std::map<std::string, std::pair<uint8_t, CUSMRsrcMeta>> Resources;
+	std::map<std::string, std::pair<uint8_t, CUSMSamplerMeta>> Samplers;
+
+	// Cache for faster search
+	std::set<uint32_t> UsedConstantBuffers;
+	std::set<uint32_t> UsedResources;
+	std::set<uint32_t> UsedSamplers;
+
+	// For logging
+	std::string PrintableName;
+};
+
+std::ostream& operator <<(std::ostream& Stream, const CUSMEffectMeta& Value);
+std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value);

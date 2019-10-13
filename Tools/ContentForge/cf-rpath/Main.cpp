@@ -1,6 +1,8 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
 #include <HRDParser.h>
+#include <ShaderMeta/SM30ShaderMeta.h>
+#include <ShaderMeta/USMShaderMeta.h>
 #include <thread>
 #include <mutex>
 #include <iostream>
@@ -10,6 +12,10 @@ namespace fs = std::filesystem;
 // Set working directory to $(TargetDir)
 // Example args:
 // -s src/rpaths --path Data ../../../content
+
+//???skip loading global metadata from effect when creating rpath in DEM? all relevant metadata is already copied to the rpath.
+//???save global table to a separate file, not to the effect itself?
+//???the same for shader metadata?
 
 class CRenderPathTool : public CContentForgeTool
 {
@@ -102,7 +108,62 @@ public:
 					return false;
 				}
 
-				// For each shader format merge and verify global metadata
+				if (ReadStream<uint32_t>(File) != 'SHFX')
+				{
+					Log.LogError("Wrong effect file format in " + Path.generic_string());
+					return false;
+				}
+
+				if (ReadStream<uint32_t>(File) > 0x00010000)
+				{
+					Log.LogError("Unsupported effect version in " + Path.generic_string());
+					return false;
+				}
+
+				// Skip material type
+				ReadStream<std::string>(File);
+
+				std::map<uint32_t, uint32_t> GlobalOffsets;
+
+				// Offset is the start of the global table of corresponding metadata, because
+				// global table is always conveniently placed at the metadata start.
+				const uint32_t FormatCount = ReadStream<uint32_t>(File);
+				for (size_t i = 0; i < FormatCount; ++i)
+				{
+					const auto ShaderFormat = ReadStream<uint32_t>(File);
+					const auto Offset = ReadStream<uint32_t>(File);
+					GlobalOffsets.emplace(ShaderFormat, Offset);
+				}
+
+				for (const auto& FormatToOffset : GlobalOffsets)
+				{
+					File.seekg(FormatToOffset.second, std::ios_base::beg);
+
+					switch (FormatToOffset.first)
+					{
+						case 'DX9C':
+						{
+							CSM30EffectMeta Meta;
+							File >> Meta;
+							// Merge & verify
+							//???verify globals against materials and tech across all effects?
+							break;
+						}
+						case 'DXBC':
+						{
+							CUSMEffectMeta Meta;
+							File >> Meta;
+							// Merge & verify
+							//???verify globals against materials and tech across all effects?
+							break;
+						}
+						default:
+						{
+							Log.LogWarning("Skipping unsupported shader format: " + FourCC(FormatToOffset.first));
+							continue;
+						}
+					}
+				}
 			}
 		}
 
@@ -125,11 +186,10 @@ public:
 			}
 
 			const auto& PhaseDesc = PhasePair.second.GetValue<Data::CParams>();
-			//
-		}
 
-		//???warn no render targets/DS-buffers referenced by index?
-		//???use names instead of indices?
+			// verify referenced RTs/DS, check that RT is ID or array of IDs
+			// write to file
+		}
 
 		// Write resulting file
 
