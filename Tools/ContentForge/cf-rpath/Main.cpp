@@ -91,6 +91,8 @@ public:
 				return false;
 			}
 
+			// Collect global metadata sources
+
 			const auto& EffectPathes = ItEffects->second.GetValue<Data::CDataArray>();
 			for (const auto& EffectPathData : EffectPathes)
 			{
@@ -142,6 +144,8 @@ public:
 				}
 			}
 
+			// Process and verify globals from all effects
+
 			for (auto& FormatToGlobals : Globals)
 			{
 				switch (FormatToGlobals.first)
@@ -162,6 +166,93 @@ public:
 						continue;
 					}
 				}
+			}
+
+			// Validate results
+
+			for (auto ItGlobal = Globals.begin(); ItGlobal != Globals.end(); /**/)
+			{
+				if (ItGlobal->second.Result.empty())
+				{
+					Log.LogWarning("No data serialized for the format: " + FourCC(ItGlobal->first));
+					ItGlobal = Globals.erase(ItGlobal);
+				}
+				else if (ItGlobal->second.Result.size() > std::numeric_limits<uint32_t>().max())
+				{
+					// We don't support 64-bit offsets in render path files. If your data is so big,
+					// most probably it is a serialization error.
+					Log.LogWarning("Discarding too big serialized data for the format: " + FourCC(ItGlobal->first));
+					ItGlobal = Globals.erase(ItGlobal);
+				}
+				else ++ItGlobal;
+			}
+		}
+
+		// Process render targets
+
+		struct CRenderTarget
+		{
+			vector4 ClearValue;
+		};
+
+		std::map<CStrID, CRenderTarget> RenderTargets;
+		auto ItRenderTargets = Desc.find(CStrID("RenderTargets"));
+		if (ItRenderTargets != Desc.cend())
+		{
+			if (!ItRenderTargets->second.IsA<Data::CParams>())
+			{
+				Log.LogError("'RenderTargets' must be a section");
+				return false;
+			}
+
+			const auto& RenderTargetsDesc = ItRenderTargets->second.GetValue<Data::CParams>();
+			for (const auto& RTPair : RenderTargetsDesc)
+			{
+				if (!RTPair.second.IsA<Data::CParams>())
+				{
+					Log.LogError("Render target '" + RTPair.first.ToString() + "' must be a section");
+					return false;
+				}
+
+				const auto& RTDesc = RTPair.second.GetValue<Data::CParams>();
+				CRenderTarget RT;
+				RT.ClearValue = GetParam(RTDesc, "ClearValue", vector4{ 0.f, 0.f, 0.f, 1.f });
+				RenderTargets.emplace(RTPair.first, std::move(RT));
+			}
+		}
+
+		// Process depth-stencil buffers
+
+		struct CDepthStencilBuffer
+		{
+			float DepthClearValue;
+			uint8_t StencilClearValue;
+		};
+
+		std::map<CStrID, CDepthStencilBuffer> DepthStencilBuffers;
+		auto ItDepthStencilBuffers = Desc.find(CStrID("DepthStencilBuffers"));
+		if (ItDepthStencilBuffers != Desc.cend())
+		{
+			if (!ItDepthStencilBuffers->second.IsA<Data::CParams>())
+			{
+				Log.LogError("'DepthStencilBuffers' must be a section");
+				return false;
+			}
+
+			const auto& DepthStencilBuffersDesc = ItDepthStencilBuffers->second.GetValue<Data::CParams>();
+			for (const auto& DSPair : DepthStencilBuffersDesc)
+			{
+				if (!DSPair.second.IsA<Data::CParams>())
+				{
+					Log.LogError("Depth-stencil buffer '" + DSPair.first.ToString() + "' must be a section");
+					return false;
+				}
+
+				const auto& DSDesc = DSPair.second.GetValue<Data::CParams>();
+				CDepthStencilBuffer DS;
+				DS.DepthClearValue = GetParam(DSDesc, "DepthClearValue", 1.f);
+				DS.StencilClearValue = GetParam(DSDesc, "StencilClearValue", 0);
+				DepthStencilBuffers.emplace(DSPair.first, std::move(DS));
 			}
 		}
 
@@ -185,8 +276,66 @@ public:
 
 			const auto& PhaseDesc = PhasePair.second.GetValue<Data::CParams>();
 
-			// verify referenced RTs/DS, check that RT is ID or array of IDs
-			// write to file
+			const auto Type = GetParam<std::string>(PhaseDesc, "Type", {});
+			if (Type.empty())
+			{
+				Log.LogError("Phase '" + PhasePair.first.ToString() + "' type not specified, Type = \"<string>\" expected");
+				return false;
+			}
+
+			auto ItRT = PhaseDesc.find(CStrID("RenderTarget"));
+			if (ItRT != PhaseDesc.cend())
+			{
+				if (ItRT->second.IsA<CStrID>())
+				{
+					const CStrID RefID = ItRT->second.GetValue<CStrID>();
+					if (RenderTargets.find(RefID) != RenderTargets.cend())
+					{
+						Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
+						return false;
+					}
+				}
+				else if (ItRT->second.IsA<Data::CDataArray>())
+				{
+					for (const auto& Ref : ItRT->second.GetValue<Data::CDataArray>())
+					{
+						if (!Ref.IsA<CStrID>())
+						{
+							Log.LogError("Phase '" + PhasePair.first.ToString() + "' render target array must contain only string ID elements");
+							return false;
+						}
+
+						const CStrID RefID = Ref.GetValue<CStrID>();
+						if (RenderTargets.find(RefID) != RenderTargets.cend())
+						{
+							Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
+							return false;
+						}
+					}
+				}
+				else if (!ItRT->second.IsVoid())
+				{
+					Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'RenderTarget' which is not a string ID or an array of them");
+				}
+			}
+
+			auto ItDS = PhaseDesc.find(CStrID("DepthStencilBuffer"));
+			if (ItDS != PhaseDesc.cend())
+			{
+				if (ItDS->second.IsA<CStrID>())
+				{
+					const CStrID RefID = ItDS->second.GetValue<CStrID>();
+					if (DepthStencilBuffers.find(RefID) != DepthStencilBuffers.cend())
+					{
+						Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown depth-stencil buffer '" + RefID.ToString() + '\'');
+						return false;
+					}
+				}
+				else if (!ItDS->second.IsVoid())
+				{
+					Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'DepthStencilBuffer' which is not a string ID");
+				}
+			}
 		}
 
 		// Write resulting file
@@ -200,9 +349,48 @@ public:
 			return false;
 		}
 
-		WriteStream<uint32_t>(File, 'RPTH');         // Format magic value
-		WriteStream<uint32_t>(File, 0x00010000);     // Version 0.1.0.0
-		WriteStream<uint32_t>(File, Globals.size()); // Shader format count
+		const auto ShaderFormatCount = static_cast<uint32_t>(Globals.size());
+
+		WriteStream<uint32_t>(File, 'RPTH');     // Format magic value
+		WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
+
+		// Write render targets
+		WriteStream<uint32_t>(File, static_cast<uint32_t>(RenderTargets.size()));
+		for (const auto& Pair : RenderTargets)
+		{
+			WriteStream(File, Pair.first.ToString());
+			WriteStream(File, Pair.second.ClearValue);
+		}
+
+		// Write depth-stencil buffers
+		WriteStream<uint32_t>(File, static_cast<uint32_t>(DepthStencilBuffers.size()));
+		for (const auto& Pair : DepthStencilBuffers)
+		{
+			WriteStream(File, Pair.first.ToString());
+			WriteStream(File, Pair.second.DepthClearValue);
+			WriteStream(File, Pair.second.StencilClearValue);
+		}
+
+		// Write phases
+		WriteStream<uint32_t>(File, static_cast<uint32_t>(PhaseDescs.size()));
+		for (const auto& Pair : PhaseDescs)
+		{
+			//!!!serialize CParams!
+		}
+
+		// Write format map (FourCC to offset from the body start)
+		WriteStream<uint32_t>(File, ShaderFormatCount);
+		uint32_t TotalOffset = static_cast<uint32_t>(File.tellp()) + ShaderFormatCount * 2 * sizeof(uint32_t);
+		for (const auto& Pair : Globals)
+		{
+			WriteStream<uint32_t>(File, Pair.first);
+			WriteStream<uint32_t>(File, TotalOffset);
+			TotalOffset += static_cast<uint32_t>(Pair.second.Result.size()); // Overflow already checked
+		}
+
+		// Write serialized global parameter tables
+		for (const auto& Pair : Globals)
+			File.write(Pair.second.Result.c_str(), Pair.second.Result.size());
 
 		// Finish task
 

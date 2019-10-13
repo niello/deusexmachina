@@ -329,12 +329,12 @@ public:
 
 		const auto ShaderFormatCount = static_cast<uint32_t>(SerializedEffect.size());
 
-		WriteStream<uint32_t>(File, 'SHFX');         // Format magic value
-		WriteStream<uint32_t>(File, 0x00010000);     // Version 0.1.0.0
-		WriteStream(File, MaterialType.ToString());  //???or write enum instead of string?
-		WriteStream(File, ShaderFormatCount);        // Shader format count
+		WriteStream<uint32_t>(File, 'SHFX');        // Format magic value
+		WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+		WriteStream(File, MaterialType.ToString()); //???or write enum instead of string?
 
 		// Write format map (FourCC to offset from the body start)
+		WriteStream(File, ShaderFormatCount);
 		uint32_t TotalOffset = static_cast<uint32_t>(File.tellp()) + ShaderFormatCount * 2 * sizeof(uint32_t);
 		for (const auto& Pair : SerializedEffect)
 		{
