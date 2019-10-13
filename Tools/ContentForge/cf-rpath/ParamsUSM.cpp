@@ -102,6 +102,43 @@ bool MergeParams(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLog
 }
 //---------------------------------------------------------------------
 
+bool VerifyParams(const CUSMEffectMeta& Meta, const CUSMEffectMeta& Against, CThreadSafeLog* pLog)
+{
+	for (const auto& Const : Against.Consts)
+	{
+		const auto& Param = Const.second.second;
+		const uint32_t BufferRegister = Against.Buffers[Param.BufferIndex].Register;
+		if (!CheckRegisterOverlapping(BufferRegister, 1, Meta.UsedConstantBuffers))
+		{
+			if (pLog) pLog->LogError(Against.PrintableName + " buffer containing '" + Param.Name + "' uses a register used by global params");
+			return false;
+		}
+	}
+
+	for (const auto& Rsrc : Against.Resources)
+	{
+		const auto& Param = Rsrc.second.second;
+		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, Meta.UsedResources))
+		{
+			if (pLog) pLog->LogError(Against.PrintableName + " resource '" + Param.Name + "' uses a register used by global params");
+			return false;
+		}
+	}
+
+	for (const auto& Sampler : Against.Samplers)
+	{
+		const auto& Param = Sampler.second.second;
+		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, Meta.UsedSamplers))
+		{
+			if (pLog) pLog->LogError(Against.PrintableName + " sampler '" + Param.Name + "' uses a register used by global params");
+			return false;
+		}
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog)
 {
 	CUSMEffectMeta RPGlobalMeta;
@@ -117,46 +154,17 @@ bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog)
 
 		InStream.seekg(Src.Offset, std::ios_base::beg);
 
-		// Read effect's global params
-
 		CUSMEffectMeta Buffer;
 		Buffer.PrintableName = "Material";
 		InStream >> Buffer;
 
 		if (!MergeParams(Buffer, RPGlobalMeta, pLog)) return false;
 
-		// Add material params table for globals verification
-		InStream >> Buffer;
-		MetaToCheck.push_back(std::move(Buffer));
-
-		if (!SkipMaterialDefaults(InStream, MetaToCheck.back()))
-		{
-			if (pLog) pLog->LogError("Default for unknown material parameter is found");
-			return false;
-		}
-
-		// Get param tables from techniques
-
-		const auto TechCount = ReadStream<uint32_t>(InStream);
-		for (size_t i = 0; i < TechCount; ++i)
-		{
-			// Skip tech info to param table
-
-			//ReadStream<std::string>(InStream); // not used in an engine
-			ReadStream<std::string>(InStream);
-			ReadStream<uint32_t>(InStream);
-
-			const auto PassCount = ReadStream<uint32_t>(InStream);
-			InStream.seekg(PassCount * sizeof(uint32_t), std::ios_base::cur);
-
-			// Add tech params table for globals verification
-			InStream >> Buffer;
-			Buffer.PrintableName = "Tech" + std::to_string(i);
-			MetaToCheck.push_back(std::move(Buffer));
-		}
+		if (!CollectNonGlobalMetadataFromEffect(InStream, MetaToCheck, pLog)) return false;
 	}
 
-	// verify RPGlobalMeta against MetaToCheck
+	for (const auto& Meta : MetaToCheck)
+		if (!VerifyParams(RPGlobalMeta, Meta, pLog)) return false;
 
 	std::ostringstream OutStream(std::ios_base::binary);
 	OutStream << RPGlobalMeta;

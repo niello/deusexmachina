@@ -10,34 +10,6 @@
 //???!!!TODO:
 //???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
 
-static bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM30EffectMeta& Other)
-{
-	const auto& OtherRegs =
-		(Param.RegisterSet == RS_Float4) ? Other.UsedFloat4 :
-		(Param.RegisterSet == RS_Int4) ? Other.UsedInt4 :
-		Other.UsedBool;
-
-	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
-	const auto RegisterEnd = Param.RegisterStart + Param.ElementRegisterCount * Param.ElementCount;
-	for (uint32_t r = Param.RegisterStart; r < RegisterEnd; ++r)
-		if (OtherRegs.find(r) != OtherRegs.cend())
-			return false;
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-static bool CheckSamplerRegisterOverlapping(const CSM30SamplerMeta& Param, const CSM30EffectMeta& Other)
-{
-	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
-	for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
-		if (Other.UsedSamplers.find(r) != Other.UsedSamplers.cend())
-			return false;
-
-	return true;
-}
-//---------------------------------------------------------------------
-
 static bool ProcessConstant(uint8_t ShaderTypeMask, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
@@ -106,13 +78,13 @@ static bool ProcessResource(uint8_t ShaderTypeMask, CSM30RsrcMeta& Param, CSM30E
 	auto ItPrev = TargetMeta.Resources.find(Param.Name);
 	if (ItPrev == TargetMeta.Resources.cend())
 	{
-		if (OtherMeta1.UsedResources.find(Param.Register) != OtherMeta1.UsedResources.cend())
+		if (CheckRegisterOverlapping(Param.Register, 1, OtherMeta1.UsedResources))
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
-		if (OtherMeta2.UsedResources.find(Param.Register) != OtherMeta2.UsedResources.cend())
+		if (CheckRegisterOverlapping(Param.Register, 1, OtherMeta2.UsedResources))
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;
@@ -147,13 +119,13 @@ static bool ProcessSampler(uint8_t ShaderTypeMask, CSM30SamplerMeta& Param, CSM3
 	auto ItPrev = TargetMeta.Samplers.find(Param.Name);
 	if (ItPrev == TargetMeta.Samplers.cend())
 	{
-		if (!CheckSamplerRegisterOverlapping(Param, OtherMeta1))
+		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, OtherMeta1.UsedSamplers))
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " sampler '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
-		if (!CheckSamplerRegisterOverlapping(Param, OtherMeta2))
+		if (!CheckRegisterOverlapping(Param.RegisterStart, Param.RegisterCount, OtherMeta2.UsedSamplers))
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " sampler '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;

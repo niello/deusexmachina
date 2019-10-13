@@ -43,3 +43,14 @@ void CopyStructMetadata(uint32_t& StructIndex, const std::vector<TStructMeta>& S
 	}
 }
 //---------------------------------------------------------------------
+
+inline bool CheckRegisterOverlapping(uint32_t RegisterStart, uint32_t RegisterCount, const std::set<uint32_t>& Used)
+{
+	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
+	for (uint32_t r = RegisterStart; r < RegisterStart + RegisterCount; ++r)
+		if (Used.find(r) != Used.cend())
+			return false;
+
+	return true;
+}
+//---------------------------------------------------------------------

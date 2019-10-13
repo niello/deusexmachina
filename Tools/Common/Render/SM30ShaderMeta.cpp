@@ -431,3 +431,20 @@ void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CSM30BufferMeta
 	}
 }
 //---------------------------------------------------------------------
+
+bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM30EffectMeta& Other)
+{
+	const auto& OtherRegs =
+		(Param.RegisterSet == RS_Float4) ? Other.UsedFloat4 :
+		(Param.RegisterSet == RS_Int4) ? Other.UsedInt4 :
+		Other.UsedBool;
+
+	// Fail if overlapping detected. Overlapping data can't be correctly set from effects.
+	const auto RegisterEnd = Param.RegisterStart + Param.ElementRegisterCount * Param.ElementCount;
+	for (uint32_t r = Param.RegisterStart; r < RegisterEnd; ++r)
+		if (OtherRegs.find(r) != OtherRegs.cend())
+			return false;
+
+	return true;
+}
+//---------------------------------------------------------------------

@@ -5,7 +5,6 @@ set(DEM_CF_RPATH_HEADERS
 
 set(DEM_CF_RPATH_SOURCES
 	cf-rpath/Main.cpp
-	cf-rpath/ParamsCommon.cpp
 	cf-rpath/ParamsSM30.cpp
 	cf-rpath/ParamsUSM.cpp
 )
