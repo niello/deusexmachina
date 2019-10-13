@@ -6,15 +6,15 @@
 #include <Utils.h>
 #include <sstream>
 
-bool MergeGlobals(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLog)
+bool MergeParams(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLog)
 {
 	for (auto& Const : Src.Consts)
 	{
-		auto It = Dest.Consts.find(Const.first);
-		if (It == Dest.Consts.end())
-		{
-			auto& Param = Const.second.second;
+		auto& Param = Const.second.second;
 
+		auto ItPrev = Dest.Consts.find(Const.first);
+		if (ItPrev == Dest.Consts.end())
+		{
 			Dest.UsedConstantBuffers.insert(Src.Buffers[Param.BufferIndex].Register);
 
 			CopyBufferMetadata(Param.BufferIndex, Src.Buffers, Dest.Buffers);
@@ -24,7 +24,68 @@ bool MergeGlobals(CUSMEffectMeta& Src, CUSMEffectMeta& Dest, CThreadSafeLog* pLo
 		}
 		else
 		{
-			// verify compatibility
+			// The same param found, check compatibility
+			const auto& ExistingMeta = ItPrev->second.second;
+			if (ExistingMeta != Param)
+			{
+				if (pLog) pLog->LogError("Constant '" + Param.Name + "' is not compatible across all effects");
+				return false;
+			}
+
+			// Compare containing constant buffers
+			if (Dest.Buffers[ExistingMeta.BufferIndex] != Src.Buffers[Param.BufferIndex])
+			{
+				if (pLog) pLog->LogError("Constant '" + Param.Name + "' containing buffer is not compatible across all effects");
+				return false;
+			}
+		}
+	}
+
+	for (auto& Rsrc : Src.Resources)
+	{
+		auto& Param = Rsrc.second.second;
+
+		auto ItPrev = Dest.Resources.find(Rsrc.first);
+		if (ItPrev == Dest.Resources.end())
+		{
+			for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+				Dest.UsedResources.insert(r);
+
+			Dest.Resources.insert(std::move(Rsrc));
+		}
+		else
+		{
+			// The same param found, check compatibility
+			const auto& ExistingMeta = ItPrev->second.second;
+			if (ExistingMeta != Param)
+			{
+				if (pLog) pLog->LogError("Resource '" + Param.Name + "' is not compatible across all effects");
+				return false;
+			}
+		}
+	}
+
+	for (auto& Sampler : Src.Samplers)
+	{
+		auto& Param = Sampler.second.second;
+
+		auto ItPrev = Dest.Samplers.find(Sampler.first);
+		if (ItPrev == Dest.Samplers.end())
+		{
+			for (uint32_t r = Param.RegisterStart; r < Param.RegisterStart + Param.RegisterCount; ++r)
+				Dest.UsedSamplers.insert(r);
+
+			Dest.Samplers.insert(std::move(Sampler));
+		}
+		else
+		{
+			// The same param found, check compatibility
+			const auto& ExistingMeta = ItPrev->second.second;
+			if (ExistingMeta != Param)
+			{
+				if (pLog) pLog->LogError("Sampler '" + Param.Name + "' is not compatible across all tech shaders");
+				return false;
+			}
 		}
 	}
 
@@ -53,7 +114,7 @@ bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog)
 		Buffer.PrintableName = "Material";
 		InStream >> Buffer;
 
-		if (!MergeGlobals(Buffer, RPGlobalMeta, pLog)) return false;
+		if (!MergeParams(Buffer, RPGlobalMeta, pLog)) return false;
 
 		// Add material params table for globals verification
 		InStream >> Buffer;
