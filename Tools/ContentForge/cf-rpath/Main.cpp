@@ -1,8 +1,7 @@
+#include <CFRenderPathFwd.h>
 #include <ContentForgeTool.h>
 #include <Utils.h>
 #include <HRDParser.h>
-#include <ShaderMeta/SM30ShaderMeta.h>
-#include <ShaderMeta/USMShaderMeta.h>
 #include <thread>
 #include <mutex>
 #include <iostream>
@@ -16,6 +15,9 @@ namespace fs = std::filesystem;
 //???skip loading global metadata from effect when creating rpath in DEM? all relevant metadata is already copied to the rpath.
 //???save global table to a separate file, not to the effect itself?
 //???the same for shader metadata?
+
+bool BuildGlobalsTableForDX9C(CGlobalTable& Task, CThreadSafeLog* pLog);
+bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog);
 
 class CRenderPathTool : public CContentForgeTool
 {
@@ -79,7 +81,7 @@ public:
 
 		// Build and verify global parameter table
 
-		std::map<uint32_t, std::string> SerializedGlobals;
+		std::map<uint32_t, CGlobalTable> Globals;
 		auto ItEffects = Desc.find(CStrID("Effects"));
 		if (ItEffects != Desc.cend())
 		{
@@ -101,7 +103,8 @@ public:
 				auto Path = ResolvePathAliases(EffectPathData.GetValue<std::string>());
 				Log.LogDebug("Opening effect " + Path.generic_string());
 
-				std::ifstream File(Path, std::ios_base::binary);
+				auto FilePtr = std::make_shared<std::ifstream>(Path, std::ios_base::binary);
+				auto& File = *FilePtr;
 				if (!File)
 				{
 					Log.LogError("Can't open effect " + Path.generic_string());
@@ -123,8 +126,6 @@ public:
 				// Skip material type
 				ReadStream<std::string>(File);
 
-				std::map<uint32_t, uint32_t> GlobalOffsets;
-
 				// Offset is the start of the global table of corresponding metadata, because
 				// global table is always conveniently placed at the metadata start.
 				const uint32_t FormatCount = ReadStream<uint32_t>(File);
@@ -132,36 +133,33 @@ public:
 				{
 					const auto ShaderFormat = ReadStream<uint32_t>(File);
 					const auto Offset = ReadStream<uint32_t>(File);
-					GlobalOffsets.emplace(ShaderFormat, Offset);
+
+					auto It = Globals.find(ShaderFormat);
+					if (It == Globals.end())
+						It = Globals.emplace(ShaderFormat, CGlobalTable{}).first;
+
+					It->second.Sources.emplace_back(CGlobalTable::CSource{ FilePtr, Offset });
 				}
+			}
 
-				for (const auto& FormatToOffset : GlobalOffsets)
+			for (auto& FormatToGlobals : Globals)
+			{
+				switch (FormatToGlobals.first)
 				{
-					File.seekg(FormatToOffset.second, std::ios_base::beg);
-
-					switch (FormatToOffset.first)
+					case 'DX9C':
 					{
-						case 'DX9C':
-						{
-							CSM30EffectMeta Meta;
-							File >> Meta;
-							// Merge & verify
-							//???verify globals against materials and tech across all effects?
-							break;
-						}
-						case 'DXBC':
-						{
-							CUSMEffectMeta Meta;
-							File >> Meta;
-							// Merge & verify
-							//???verify globals against materials and tech across all effects?
-							break;
-						}
-						default:
-						{
-							Log.LogWarning("Skipping unsupported shader format: " + FourCC(FormatToOffset.first));
-							continue;
-						}
+						if (!BuildGlobalsTableForDX9C(FormatToGlobals.second, &Log)) return false;
+						break;
+					}
+					case 'DXBC':
+					{
+						if (!BuildGlobalsTableForDXBC(FormatToGlobals.second, &Log)) return false;
+						break;
+					}
+					default:
+					{
+						Log.LogWarning("Skipping unsupported shader format: " + FourCC(FormatToGlobals.first));
+						continue;
 					}
 				}
 			}
@@ -202,9 +200,9 @@ public:
 			return false;
 		}
 
-		WriteStream<uint32_t>(File, 'RPTH');                   // Format magic value
-		WriteStream<uint32_t>(File, 0x00010000);               // Version 0.1.0.0
-		WriteStream<uint32_t>(File, SerializedGlobals.size()); // Shader format count
+		WriteStream<uint32_t>(File, 'RPTH');         // Format magic value
+		WriteStream<uint32_t>(File, 0x00010000);     // Version 0.1.0.0
+		WriteStream<uint32_t>(File, Globals.size()); // Shader format count
 
 		// Finish task
 
