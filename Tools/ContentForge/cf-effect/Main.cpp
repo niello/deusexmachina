@@ -31,11 +31,6 @@ public:
 		_RootDir = "../../../content";
 	}
 
-	virtual int Init() override
-	{
-		return 0;
-	}
-
 	virtual bool SupportsMultithreading() const override
 	{
 		// FIXME: must handle duplicate targets (for example 2 metafiles writing the same resulting file, like depth_atest_ps)
@@ -349,6 +344,8 @@ public:
 		// Write serialized effect blocks
 		for (const auto& Pair : SerializedEffect)
 			File.write(Pair.second.c_str(), Pair.second.size());
+
+		// Finish task
 
 		const auto LoggedString = Ctx.Log->GetStream().str();
 		if (!LoggedString.empty())

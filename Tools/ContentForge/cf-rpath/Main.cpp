@@ -1,17 +1,15 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
-#include <CLI11.hpp>
+#include <HRDParser.h>
 #include <thread>
 #include <mutex>
-#include <filesystem>
+#include <iostream>
 
 namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/shaders/hlsl_usm/CEGUI.hlsl.meta
-// -s src/shaders/hlsl_usm/CEGUI.hlsl
-// -s src/shaders
+// -s src/rpaths --path Data ../../../content
 
 class CRenderPathTool : public CContentForgeTool
 {
@@ -21,20 +19,11 @@ private:
 
 public:
 
-	std::string _DBPath;
-	std::string _InputSignaturesDir;
-	bool _ForceRecompilation = false;
-
 	CRenderPathTool(const std::string& Name, const std::string& Desc, CVersion Version) :
 		CContentForgeTool(Name, Desc, Version)
 	{
 		// Set default before parsing command line
 		_RootDir = "../../../content";
-	}
-
-	virtual int Init() override
-	{
-		return 0;
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -43,53 +32,48 @@ public:
 		return false;
 	}
 
-	virtual void ProcessCommandLine(CLI::App& CLIApp) override
-	{
-		CContentForgeTool::ProcessCommandLine(CLIApp);
-		CLIApp.add_option("--db", _DBPath, "Shader DB file path");
-		CLIApp.add_option("--is,--inputsig", _InputSignaturesDir, "Folder where input signature binaries will be saved");
-		CLIApp.add_flag("-r", _ForceRecompilation, "Force recompilation");
-	}
-
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		const std::string EntryPoint = GetParam<std::string>(Task.Params, "Entry", std::string{});
-		if (EntryPoint.empty()) return false;
+		// TODO: check whether the metafile can be processed by this tool
 
 		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
-		const int Target = GetParam<int>(Task.Params, "Target", 0);
-		const std::string Defines = GetParam<std::string>(Task.Params, "Defines", std::string{});
-		const bool Debug = GetParam<bool>(Task.Params, "Debug", false);
-
-		EShaderType ShaderType;
-		const CStrID Type = GetParam<CStrID>(Task.Params, "Type", CStrID::Empty);
-		if (Type == "Vertex") ShaderType = ShaderType_Vertex;
-		else if (Type == "Pixel") ShaderType = ShaderType_Pixel;
-		else if (Type == "Geometry") ShaderType = ShaderType_Geometry;
-		else if (Type == "Hull") ShaderType = ShaderType_Hull;
-		else if (Type == "Domain") ShaderType = ShaderType_Domain;
-		else return false;
-
-		const auto SrcPath = fs::relative(Task.SrcFilePath, _RootDir);
-
 		const std::string TaskID(Task.TaskID.CStr());
-		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
+		auto DestPath = fs::path(Output) / (TaskID + ".eff");
+		if (!_RootDir.empty() && DestPath.is_relative())
+			DestPath = fs::path(_RootDir) / DestPath;
 
-		CLog Log(TaskID, static_cast<EVerbosity>(_LogVerbosity));
-
-		const auto LineEnd = Log.GetStream().widen('\n');
+		CThreadSafeLog Log("", static_cast<EVerbosity>(_LogVerbosity));
 
 		// FIXME: can move to the common code
 		if (_LogVerbosity >= EVerbosity::Info)
 		{
-			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
-			Log.GetStream() << "Task: " << Task.TaskID.CStr() << LineEnd;
-			Log.GetStream() << "Thread: " << std::this_thread::get_id() << LineEnd;
+			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Log.GetLineEnd();
+			Log.GetStream() << "Task: " << Task.TaskID.CStr() << Log.GetLineEnd();
+			Log.GetStream() << "Thread: " << std::this_thread::get_id() << Log.GetLineEnd();
 		}
 
-		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
-			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
-			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
+		// Read render path hrd
+
+		Data::CParams Desc;
+		{
+			std::vector<char> In;
+			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
+			{
+				Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
+				return false;
+			}
+
+			Data::CHRDParser Parser;
+			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
+			{
+				Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
+				return false;
+			}
+		}
+
+		// ...
+
+		// Finish task
 
 		const auto LoggedString = Log.GetStream().str();
 		if (!LoggedString.empty())
@@ -101,15 +85,15 @@ public:
 		}
 
 		// FIXME: must be thread-safe, also can move to the common code
-		if (_LogVerbosity >= EVerbosity::Debug)
-			std::cout << "Status: " << ((Code == DEM_SHADER_COMPILER_SUCCESS) ? "OK" : "FAIL") << LineEnd << LineEnd;
+		//if (_LogVerbosity >= EVerbosity::Debug)
+		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
 
-		return Code == DEM_SHADER_COMPILER_SUCCESS;
+		return true;
 	}
 };
 
 int main(int argc, const char** argv)
 {
-	CHLSLTool Tool("cf-hlsl", "HLSL to DeusExMachina resource converter", { 1, 0, 0 });
+	CRenderPathTool Tool("cf-rpath", "DeusExMachina render path compiler", { 0, 1, 0 });
 	return Tool.Execute(argc, argv);
 }
