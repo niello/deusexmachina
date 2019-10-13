@@ -1,99 +1,37 @@
-#include "SM30ShaderMeta.h"
+#include "USMShaderMeta.h"
 #include <Utils.h>
 
-static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ostream& Stream)
-{
-	uint64_t RangeCountOffset = Stream.tellp();
-	WriteStream<uint32_t>(Stream, 0);
-
-	if (!UsedRegs.size()) return;
-
-	auto It = UsedRegs.cbegin();
-
-	uint32_t RangeCount = 0;
-	uint32_t CurrStart = *It++;
-	uint32_t CurrCount = 1;
-	for (; It != UsedRegs.cend(); ++It)
-	{
-		const uint32_t Reg = *It;
-		if (Reg == CurrStart + CurrCount) ++CurrCount;
-		else
-		{
-			// New range detected
-			WriteStream<uint32_t>(Stream, CurrStart);
-			WriteStream<uint32_t>(Stream, CurrCount);
-			++RangeCount;
-			CurrStart = Reg;
-			CurrCount = 1;
-		}
-	}
-
-	// The last range
-	WriteStream<uint32_t>(Stream, CurrStart);
-	WriteStream<uint32_t>(Stream, CurrCount);
-	++RangeCount;
-
-	uint64_t EndOffset = Stream.tellp();
-	Stream.seekp(RangeCountOffset, std::ios_base::beg);
-	WriteStream<uint32_t>(Stream, RangeCount);
-	Stream.seekp(EndOffset, std::ios_base::beg);
-}
-//---------------------------------------------------------------------
-
-static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::istream& Stream)
-{
-	UsedRegs.clear();
-
-	uint32_t RangeCount = 0;
-	ReadStream<uint32_t>(Stream, RangeCount);
-	for (uint32_t i = 0; i < RangeCount; ++i)
-	{
-		uint32_t Curr;
-		uint32_t CurrCount;
-		ReadStream<uint32_t>(Stream, Curr);
-		ReadStream<uint32_t>(Stream, CurrCount);
-		uint32_t CurrEnd = Curr + CurrCount;
-		for (; Curr < CurrEnd; ++Curr)
-			UsedRegs.emplace(Curr);
-	}
-}
-//---------------------------------------------------------------------
-
-std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value)
+std::ostream& operator <<(std::ostream& Stream, const CUSMBufferMeta& Value)
 {
 	WriteStream(Stream, Value.Name);
-	WriteStream(Stream, Value.SlotIndex);
-
-	WriteRegisterRanges(Value.UsedFloat4, Stream);
-	WriteRegisterRanges(Value.UsedInt4, Stream);
-	WriteRegisterRanges(Value.UsedBool, Stream);
-
+	WriteStream(Stream, Value.Register);
+	WriteStream(Stream, Value.Size);
+	//WriteStream(Stream, Value.ElementCount);
 	return Stream;
 }
 //---------------------------------------------------------------------
 
-std::istream& operator >>(std::istream& Stream, CSM30BufferMeta& Value)
+std::istream& operator >>(std::istream& Stream, CUSMBufferMeta& Value)
 {
 	ReadStream(Stream, Value.Name);
-	ReadStream(Stream, Value.SlotIndex);
-
-	ReadRegisterRanges(Value.UsedFloat4, Stream);
-	ReadRegisterRanges(Value.UsedInt4, Stream);
-	ReadRegisterRanges(Value.UsedBool, Stream);
-
+	ReadStream(Stream, Value.Register);
+	ReadStream(Stream, Value.Size);
+	///ReadStream(Value.ElementCount);
 	return Stream;
 }
 //---------------------------------------------------------------------
 
-std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
+std::ostream& operator <<(std::ostream& Stream, const CUSMStructMeta& Value)
 {
 	WriteStream<uint32_t>(Stream, Value.Members.size());
-	for (const auto& Member : Value.Members)
+	for (size_t j = 0; j < Value.Members.size(); ++j)
 	{
+		const CUSMConstMetaBase& Member = Value.Members[j];
 		WriteStream(Stream, Member.Name);
 		WriteStream(Stream, Member.StructIndex);
-		WriteStream(Stream, Member.RegisterStart);
-		WriteStream(Stream, Member.ElementRegisterCount);
+		WriteStream<uint8_t>(Stream, Member.Type);
+		WriteStream(Stream, Member.Offset);
+		WriteStream(Stream, Member.ElementSize);
 		WriteStream(Stream, Member.ElementCount);
 		WriteStream(Stream, Member.Columns);
 		WriteStream(Stream, Member.Rows);
@@ -104,18 +42,23 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value)
+std::istream& operator >>(std::istream& Stream, CUSMStructMeta& Value)
 {
 	uint32_t MemberCount;
 	ReadStream<uint32_t>(Stream, MemberCount);
 	Value.Members.reserve(MemberCount);
 	for (uint32_t j = 0; j < MemberCount; ++j)
 	{
-		CSM30ConstMetaBase Member;
+		CUSMConstMetaBase Member;
 		ReadStream(Stream, Member.Name);
 		ReadStream(Stream, Member.StructIndex);
-		ReadStream(Stream, Member.RegisterStart);
-		ReadStream(Stream, Member.ElementRegisterCount);
+
+		uint8_t Type;
+		ReadStream<uint8_t>(Stream, Type);
+		Member.Type = (EUSMConstType)Type;
+
+		ReadStream(Stream, Member.Offset);
+		ReadStream(Stream, Member.ElementSize);
 		ReadStream(Stream, Member.ElementCount);
 		ReadStream(Stream, Member.Columns);
 		ReadStream(Stream, Member.Rows);
@@ -128,14 +71,14 @@ std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::ostream& operator <<(std::ostream& Stream, const CSM30ConstMeta& Value)
+std::ostream& operator <<(std::ostream& Stream, const CUSMConstMeta& Value)
 {
 	WriteStream(Stream, Value.Name);
 	WriteStream(Stream, Value.BufferIndex);
 	WriteStream(Stream, Value.StructIndex);
-	WriteStream<uint8_t>(Stream, Value.RegisterSet);
-	WriteStream(Stream, Value.RegisterStart);
-	WriteStream(Stream, Value.ElementRegisterCount);
+	WriteStream<uint8_t>(Stream, Value.Type);
+	WriteStream(Stream, Value.Offset);
+	WriteStream(Stream, Value.ElementSize);
 	WriteStream(Stream, Value.ElementCount);
 	WriteStream(Stream, Value.Columns);
 	WriteStream(Stream, Value.Rows);
@@ -144,18 +87,18 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30ConstMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value)
+std::istream& operator >>(std::istream& Stream, CUSMConstMeta& Value)
 {
 	ReadStream(Stream, Value.Name);
 	ReadStream(Stream, Value.BufferIndex);
 	ReadStream(Stream, Value.StructIndex);
 
-	uint8_t RegSet;
-	ReadStream<uint8_t>(Stream, RegSet);
-	Value.RegisterSet = (ESM30RegisterSet)RegSet;
+	uint8_t Type;
+	ReadStream<uint8_t>(Stream, Type);
+	Value.Type = (EUSMConstType)Type;
 
-	ReadStream(Stream, Value.RegisterStart);
-	ReadStream(Stream, Value.ElementRegisterCount);
+	ReadStream(Stream, Value.Offset);
+	ReadStream(Stream, Value.ElementSize);
 	ReadStream(Stream, Value.ElementCount);
 	ReadStream(Stream, Value.Columns);
 	ReadStream(Stream, Value.Rows);
@@ -165,25 +108,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::ostream& operator <<(std::ostream& Stream, const CSM30RsrcMeta& Value)
-{
-	WriteStream(Stream, Value.Name);
-	WriteStream(Stream, Value.Register);
-	return Stream;
-}
-//---------------------------------------------------------------------
-
-std::istream& operator >>(std::istream& Stream, CSM30RsrcMeta& Value)
-{
-	ReadStream(Stream, Value.Name);
-	ReadStream(Stream, Value.Register);
-	//???store sampler type or index for texture type validation on set?
-	//???how to reference texture object in SM3.0 shader for it to be included in params list?
-	return Stream;
-}
-//---------------------------------------------------------------------
-
-std::ostream& operator <<(std::ostream& Stream, const CSM30SamplerMeta& Value)
+std::ostream& operator <<(std::ostream& Stream, const CUSMRsrcMeta& Value)
 {
 	WriteStream(Stream, Value.Name);
 	WriteStream<uint8_t>(Stream, Value.Type);
@@ -193,13 +118,13 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30SamplerMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::istream& operator >>(std::istream& Stream, CSM30SamplerMeta& Value)
+std::istream& operator >>(std::istream& Stream, CUSMRsrcMeta& Value)
 {
 	ReadStream(Stream, Value.Name);
 
 	uint8_t Type;
 	ReadStream<uint8_t>(Stream, Type);
-	Value.Type = static_cast<ESM30SamplerType>(Type);
+	Value.Type = (EUSMResourceType)Type;
 
 	ReadStream(Stream, Value.RegisterStart);
 	ReadStream(Stream, Value.RegisterCount);
@@ -208,7 +133,25 @@ std::istream& operator >>(std::istream& Stream, CSM30SamplerMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::ostream& operator <<(std::ostream& Stream, const CSM30ShaderMeta& Value)
+std::ostream& operator <<(std::ostream& Stream, const CUSMSamplerMeta& Value)
+{
+	WriteStream(Stream, Value.Name);
+	WriteStream(Stream, Value.RegisterStart);
+	WriteStream(Stream, Value.RegisterCount);
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::istream& operator >>(std::istream& Stream, CUSMSamplerMeta& Value)
+{
+	ReadStream(Stream, Value.Name);
+	ReadStream(Stream, Value.RegisterStart);
+	ReadStream(Stream, Value.RegisterCount);
+	return Stream;
+}
+//---------------------------------------------------------------------
+
+std::ostream& operator <<(std::ostream& Stream, const CUSMShaderMeta& Value)
 {
 	WriteStream<uint32_t>(Stream, Value.Buffers.size());
 	for (const auto& Obj : Value.Buffers)
@@ -234,7 +177,7 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30ShaderMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
+std::istream& operator >>(std::istream& Stream, CUSMShaderMeta& Value)
 {
 	uint32_t Count = 0;
 
@@ -248,7 +191,8 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 	Value.Buffers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30BufferMeta Obj;
+		//!!!arrays, tbuffers & sbuffers aren't supported for now!
+		CUSMBufferMeta Obj;
 		Stream >> Obj;
 		Value.Buffers.push_back(std::move(Obj));
 	}
@@ -257,7 +201,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 	Value.Structs.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30StructMeta Obj;
+		CUSMStructMeta Obj;
 		Stream >> Obj;
 		Value.Structs.push_back(std::move(Obj));
 	}
@@ -266,7 +210,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 	Value.Consts.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30ConstMeta Obj;
+		CUSMConstMeta Obj;
 		Stream >> Obj;
 		Value.Consts.push_back(std::move(Obj));
 	}
@@ -275,7 +219,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 	Value.Resources.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30RsrcMeta Obj;
+		CUSMRsrcMeta Obj;
 		Stream >> Obj;
 		Value.Resources.push_back(std::move(Obj));
 	}
@@ -284,7 +228,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 	Value.Samplers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30SamplerMeta Obj;
+		CUSMSamplerMeta Obj;
 		Stream >> Obj;
 		Value.Samplers.push_back(std::move(Obj));
 	}
@@ -293,7 +237,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ShaderMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value)
+std::ostream& operator <<(std::ostream& Stream, const CUSMEffectMeta& Value)
 {
 	WriteStream<uint32_t>(Stream, Value.Buffers.size());
 	for (const auto& Obj : Value.Buffers)
@@ -331,7 +275,7 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value)
 }
 //---------------------------------------------------------------------
 
-std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
+std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value)
 {
 	uint32_t Count = 0;
 
@@ -345,7 +289,7 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	Value.Buffers.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30BufferMeta Obj;
+		CUSMBufferMeta Obj;
 		Stream >> Obj;
 		Value.Buffers.push_back(std::move(Obj));
 	}
@@ -354,7 +298,7 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	Value.Structs.reserve(Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		CSM30StructMeta Obj;
+		CUSMStructMeta Obj;
 		Stream >> Obj;
 		Value.Structs.push_back(std::move(Obj));
 	}
@@ -364,7 +308,7 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	{
 		auto ParamName = ReadStream<std::string>(Stream);
 		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
-		CSM30ConstMeta Param;
+		CUSMConstMeta Param;
 		Stream >> Param;
 		Value.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
@@ -374,7 +318,7 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	{
 		auto ParamName = ReadStream<std::string>(Stream);
 		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
-		CSM30RsrcMeta Param;
+		CUSMRsrcMeta Param;
 		Stream >> Param;
 		Value.Resources.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
@@ -384,11 +328,31 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	{
 		auto ParamName = ReadStream<std::string>(Stream);
 		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
-		CSM30SamplerMeta Param;
+		CUSMSamplerMeta Param;
 		Stream >> Param;
 		Value.Samplers.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 
 	return Stream;
+}
+//---------------------------------------------------------------------
+
+void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>& SrcBuffers, std::vector<CUSMBufferMeta>& TargetBuffers)
+{
+	if (BufferIndex == static_cast<uint32_t>(-1)) return;
+
+	const auto& Buffer = SrcBuffers[BufferIndex];
+	auto ItBuffer = std::find(TargetBuffers.cbegin(), TargetBuffers.cend(), Buffer);
+	if (ItBuffer != TargetBuffers.cend())
+	{
+		// The same buffer found, reference it
+		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.cbegin(), ItBuffer));
+	}
+	else
+	{
+		// Copy new buffer to metadata
+		TargetBuffers.push_back(Buffer);
+		BufferIndex = static_cast<uint32_t>(TargetBuffers.size() - 1);
+	}
 }
 //---------------------------------------------------------------------

@@ -1,5 +1,6 @@
 #include <CFEffectFwd.h>
-#include <ShaderMeta/SM30ShaderMeta.h>
+#include <Render/ShaderMetaCommon.h>
+#include <Render/SM30ShaderMeta.h>
 #include <ParamsCommon.h>
 #include <Utils.h>
 #include <Logging.h>
@@ -37,48 +38,6 @@ static bool CheckSamplerRegisterOverlapping(const CSM30SamplerMeta& Param, const
 }
 //---------------------------------------------------------------------
 
-static void MergeConstantBuffers(const CSM30BufferMeta& SrcBuffer, CSM30BufferMeta& TargetBuffer)
-{
-	TargetBuffer.UsedFloat4.insert(SrcBuffer.UsedFloat4.begin(), SrcBuffer.UsedFloat4.end());
-	TargetBuffer.UsedInt4.insert(SrcBuffer.UsedInt4.begin(), SrcBuffer.UsedInt4.end());
-	TargetBuffer.UsedBool.insert(SrcBuffer.UsedBool.begin(), SrcBuffer.UsedBool.end());
-}
-//---------------------------------------------------------------------
-
-static void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CSM30BufferMeta>& SrcBuffers, std::vector<CSM30BufferMeta>& TargetBuffers)
-{
-	if (BufferIndex == static_cast<uint32_t>(-1)) return;
-
-	const auto& Buffer = SrcBuffers[BufferIndex];
-	auto ItBuffer = std::find(TargetBuffers.begin(), TargetBuffers.end(), Buffer);
-	if (ItBuffer != TargetBuffers.end())
-	{
-		// The same buffer found, reference it
-		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.begin(), ItBuffer));
-		return;
-	}
-
-	// Buffer can differ due to registers of unused fields, try to merge if name is the same
-	ItBuffer = std::find_if(TargetBuffers.begin(), TargetBuffers.end(), [&Buffer](const CSM30BufferMeta& TargetBuffer)
-	{
-		return Buffer.Name == TargetBuffer.Name && Buffer.SlotIndex == TargetBuffer.SlotIndex;
-	});
-
-	if (ItBuffer != TargetBuffers.end())
-	{
-		// Buffer with the same name and slot is found, merge them
-		MergeConstantBuffers(Buffer, *ItBuffer);
-		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.begin(), ItBuffer));
-	}
-	else
-	{
-		// Copy new buffer to metadata
-		TargetBuffers.push_back(Buffer);
-		BufferIndex = static_cast<uint32_t>(TargetBuffers.size() - 1);
-	}
-}
-//---------------------------------------------------------------------
-
 static bool ProcessConstant(uint8_t ShaderTypeMask, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
@@ -112,10 +71,11 @@ static bool ProcessConstant(uint8_t ShaderTypeMask, CSM30ConstMeta& Param, const
 
 		// Copy necessary metadata
 
-		std::string ParamName = Param.Name;
-		CSM30ConstMeta& NewConst = TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param))).first->second.second;
-		CopyBufferMetadata(NewConst.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
-		CopyStructMetadata(NewConst.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
+		CopyBufferMetadata(Param.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
+		CopyStructMetadata(Param.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
+
+		std::string ParamName = std::move(Param.Name);
+		TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 	else
 	{
@@ -447,7 +407,7 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 		}
 		else
 		{
-			Ctx.Log->LogWarning("Default for unknown parameter '" + ID + "' is skipped");
+			Ctx.Log->LogWarning("Default for unknown material parameter '" + ID + "' is skipped");
 		}
 	}
 

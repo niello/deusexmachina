@@ -258,7 +258,7 @@ public:
 				}
 			}
 
-			// Build a vector of used render states to reference them by indices
+			// Build a vector of used render states to reference them by index
 
 			std::vector<CStrID> RenderStates;
 			for (const auto& Tech : Techs)
@@ -271,8 +271,8 @@ public:
 			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Techs.size()));
 			for (const auto& Tech : Techs)
 			{
-				//WriteStream(Stream, Tech.ID); // not used in an engine
-				WriteStream(Stream, Tech.InputSet);
+				//WriteStream(Stream, Tech.ID.ToString()); // not used in an engine
+				WriteStream(Stream, Tech.InputSet.ToString());
 				WriteStream(Stream, Tech.MinFeatureLevel);
 
 				WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Tech.Passes.size()));

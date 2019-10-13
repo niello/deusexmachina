@@ -1,5 +1,6 @@
 #include <CFEffectFwd.h>
-#include <ShaderMeta/USMShaderMeta.h>
+#include <Render/ShaderMetaCommon.h>
+#include <Render/USMShaderMeta.h>
 #include <ParamsCommon.h>
 #include <Utils.h>
 #include <Logging.h>
@@ -17,26 +18,6 @@ static inline bool CheckRegisterOverlapping(uint32_t RegisterStart, uint32_t Reg
 			return false;
 
 	return true;
-}
-//---------------------------------------------------------------------
-
-static void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>& SrcBuffers, std::vector<CUSMBufferMeta>& TargetBuffers)
-{
-	if (BufferIndex == static_cast<uint32_t>(-1)) return;
-
-	const auto& Buffer = SrcBuffers[BufferIndex];
-	auto ItBuffer = std::find(TargetBuffers.cbegin(), TargetBuffers.cend(), Buffer);
-	if (ItBuffer != TargetBuffers.cend())
-	{
-		// The same buffer found, reference it
-		BufferIndex = static_cast<uint32_t>(std::distance(TargetBuffers.cbegin(), ItBuffer));
-	}
-	else
-	{
-		// Copy new buffer to metadata
-		TargetBuffers.push_back(Buffer);
-		BufferIndex = static_cast<uint32_t>(TargetBuffers.size() - 1);
-	}
 }
 //---------------------------------------------------------------------
 
@@ -66,10 +47,11 @@ static bool ProcessConstant(uint8_t ShaderTypeMask, CUSMConstMeta& Param, const 
 
 		// Copy necessary metadata
 
-		std::string ParamName = Param.Name;
-		CUSMConstMeta& NewConst = TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param))).first->second.second;
-		CopyBufferMetadata(NewConst.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
-		CopyStructMetadata(NewConst.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
+		CopyBufferMetadata(Param.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
+		CopyStructMetadata(Param.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
+
+		std::string ParamName = std::move(Param.Name);
+		TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 	else
 	{
@@ -402,7 +384,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 		}
 		else
 		{
-			Ctx.Log->LogWarning("Default for unknown parameter '" + ID + "' is skipped");
+			Ctx.Log->LogWarning("Default for unknown material parameter '" + ID + "' is skipped");
 		}
 	}
 

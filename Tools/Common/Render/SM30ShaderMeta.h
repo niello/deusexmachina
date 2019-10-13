@@ -162,3 +162,6 @@ struct CSM30EffectMeta
 
 std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value);
 std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value);
+
+void MergeConstantBuffers(const CSM30BufferMeta& SrcBuffer, CSM30BufferMeta& TargetBuffer);
+void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CSM30BufferMeta>& SrcBuffers, std::vector<CSM30BufferMeta>& TargetBuffers);

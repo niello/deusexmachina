@@ -169,3 +169,5 @@ struct CUSMEffectMeta
 
 std::ostream& operator <<(std::ostream& Stream, const CUSMEffectMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value);
+
+void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>& SrcBuffers, std::vector<CUSMBufferMeta>& TargetBuffers);

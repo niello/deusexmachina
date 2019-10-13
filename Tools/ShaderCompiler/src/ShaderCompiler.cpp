@@ -3,8 +3,8 @@
 #include <DEMD3DInclude.h>
 #include <ShaderDB.h>
 #include <ShaderReflection.h>
-#include <ShaderMeta/USMShaderMeta.h>
-#include <ShaderMeta/SM30ShaderMeta.h>
+#include <Render/USMShaderMeta.h>
+#include <Render/SM30ShaderMeta.h>
 #include <ValueTable.h>
 #include <sstream>
 #include <filesystem>
