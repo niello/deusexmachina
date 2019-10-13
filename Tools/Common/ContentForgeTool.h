@@ -30,6 +30,10 @@ struct CContentForgeTask
 	std::shared_ptr<std::vector<char>> SrcFileData;
 	CStrID TaskID;
 	Data::CParams Params;
+	CThreadSafeLog Log;
+	bool Success;
+
+	CContentForgeTask(EVerbosity LogVerbosity) : Log("", LogVerbosity) {}
 };
 
 class CContentForgeTool

@@ -3,7 +3,6 @@
 #include <Utils.h>
 #include <HRDParser.h>
 #include <thread>
-#include <mutex>
 #include <iostream>
 
 namespace fs = std::filesystem;
@@ -22,8 +21,6 @@ bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog);
 class CRenderPathTool : public CContentForgeTool
 {
 private:
-
-	std::mutex COutMutex;
 
 public:
 
@@ -50,14 +47,12 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
-		CThreadSafeLog Log("", static_cast<EVerbosity>(_LogVerbosity));
-
 		// FIXME: can move to the common code
 		if (_LogVerbosity >= EVerbosity::Info)
 		{
-			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Log.GetLineEnd();
-			Log.GetStream() << "Task: " << Task.TaskID.CStr() << Log.GetLineEnd();
-			Log.GetStream() << "Thread: " << std::this_thread::get_id() << Log.GetLineEnd();
+			Task.Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Task.Log.GetLineEnd();
+			Task.Log.GetStream() << "Task: " << Task.TaskID.CStr() << Task.Log.GetLineEnd();
+			Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
 		}
 
 		// Read render path hrd
@@ -67,14 +62,14 @@ public:
 			std::vector<char> In;
 			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
 			{
-				Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
 				return false;
 			}
 
 			Data::CHRDParser Parser;
 			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
 			{
-				Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
 				return false;
 			}
 		}
@@ -87,7 +82,7 @@ public:
 		{
 			if (!ItEffects->second.IsA<Data::CDataArray>())
 			{
-				Log.LogError("'Phases' must be an array of pathes to .eff files");
+				Task.Log.LogError("'Phases' must be an array of pathes to .eff files");
 				return false;
 			}
 
@@ -98,30 +93,30 @@ public:
 			{
 				if (!EffectPathData.IsA<std::string>())
 				{
-					Log.LogError("Wrong data in 'Effects' array, all elements must be strings");
+					Task.Log.LogError("Wrong data in 'Effects' array, all elements must be strings");
 					return false;
 				}
 
 				auto Path = ResolvePathAliases(EffectPathData.GetValue<std::string>());
-				Log.LogDebug("Opening effect " + Path.generic_string());
+				Task.Log.LogDebug("Opening effect " + Path.generic_string());
 
 				auto FilePtr = std::make_shared<std::ifstream>(Path, std::ios_base::binary);
 				auto& File = *FilePtr;
 				if (!File)
 				{
-					Log.LogError("Can't open effect " + Path.generic_string());
+					Task.Log.LogError("Can't open effect " + Path.generic_string());
 					return false;
 				}
 
 				if (ReadStream<uint32_t>(File) != 'SHFX')
 				{
-					Log.LogError("Wrong effect file format in " + Path.generic_string());
+					Task.Log.LogError("Wrong effect file format in " + Path.generic_string());
 					return false;
 				}
 
 				if (ReadStream<uint32_t>(File) > 0x00010000)
 				{
-					Log.LogError("Unsupported effect version in " + Path.generic_string());
+					Task.Log.LogError("Unsupported effect version in " + Path.generic_string());
 					return false;
 				}
 
@@ -152,17 +147,17 @@ public:
 				{
 					case 'DX9C':
 					{
-						if (!BuildGlobalsTableForDX9C(FormatToGlobals.second, &Log)) return false;
+						if (!BuildGlobalsTableForDX9C(FormatToGlobals.second, &Task.Log)) return false;
 						break;
 					}
 					case 'DXBC':
 					{
-						if (!BuildGlobalsTableForDXBC(FormatToGlobals.second, &Log)) return false;
+						if (!BuildGlobalsTableForDXBC(FormatToGlobals.second, &Task.Log)) return false;
 						break;
 					}
 					default:
 					{
-						Log.LogWarning("Skipping unsupported shader format: " + FourCC(FormatToGlobals.first));
+						Task.Log.LogWarning("Skipping unsupported shader format: " + FourCC(FormatToGlobals.first));
 						continue;
 					}
 				}
@@ -174,14 +169,14 @@ public:
 			{
 				if (ItGlobal->second.Result.empty())
 				{
-					Log.LogWarning("No data serialized for the format: " + FourCC(ItGlobal->first));
+					Task.Log.LogWarning("No data serialized for the format: " + FourCC(ItGlobal->first));
 					ItGlobal = Globals.erase(ItGlobal);
 				}
 				else if (ItGlobal->second.Result.size() > std::numeric_limits<uint32_t>().max())
 				{
 					// We don't support 64-bit offsets in render path files. If your data is so big,
 					// most probably it is a serialization error.
-					Log.LogWarning("Discarding too big serialized data for the format: " + FourCC(ItGlobal->first));
+					Task.Log.LogWarning("Discarding too big serialized data for the format: " + FourCC(ItGlobal->first));
 					ItGlobal = Globals.erase(ItGlobal);
 				}
 				else ++ItGlobal;
@@ -201,7 +196,7 @@ public:
 		{
 			if (!ItRenderTargets->second.IsA<Data::CParams>())
 			{
-				Log.LogError("'RenderTargets' must be a section");
+				Task.Log.LogError("'RenderTargets' must be a section");
 				return false;
 			}
 
@@ -210,7 +205,7 @@ public:
 			{
 				if (!RTPair.second.IsA<Data::CParams>())
 				{
-					Log.LogError("Render target '" + RTPair.first.ToString() + "' must be a section");
+					Task.Log.LogError("Render target '" + RTPair.first.ToString() + "' must be a section");
 					return false;
 				}
 
@@ -235,7 +230,7 @@ public:
 		{
 			if (!ItDepthStencilBuffers->second.IsA<Data::CParams>())
 			{
-				Log.LogError("'DepthStencilBuffers' must be a section");
+				Task.Log.LogError("'DepthStencilBuffers' must be a section");
 				return false;
 			}
 
@@ -244,7 +239,7 @@ public:
 			{
 				if (!DSPair.second.IsA<Data::CParams>())
 				{
-					Log.LogError("Depth-stencil buffer '" + DSPair.first.ToString() + "' must be a section");
+					Task.Log.LogError("Depth-stencil buffer '" + DSPair.first.ToString() + "' must be a section");
 					return false;
 				}
 
@@ -261,7 +256,7 @@ public:
 		auto ItPhases = Desc.find(CStrID("Phases"));
 		if (ItPhases == Desc.cend() || !ItPhases->second.IsA<Data::CParams>())
 		{
-			Log.LogError("'Phases' must be a section");
+			Task.Log.LogError("'Phases' must be a section");
 			return false;
 		}
 
@@ -270,7 +265,7 @@ public:
 		{
 			if (!PhasePair.second.IsA<Data::CParams>())
 			{
-				Log.LogError("Phase '" + PhasePair.first.ToString() + "' must be a section");
+				Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' must be a section");
 				return false;
 			}
 
@@ -279,7 +274,7 @@ public:
 			const auto Type = GetParam<std::string>(PhaseDesc, "Type", {});
 			if (Type.empty())
 			{
-				Log.LogError("Phase '" + PhasePair.first.ToString() + "' type not specified, Type = \"<string>\" expected");
+				Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' type not specified, Type = \"<string>\" expected");
 				return false;
 			}
 
@@ -289,9 +284,9 @@ public:
 				if (ItRT->second.IsA<CStrID>())
 				{
 					const CStrID RefID = ItRT->second.GetValue<CStrID>();
-					if (RenderTargets.find(RefID) != RenderTargets.cend())
+					if (RenderTargets.find(RefID) == RenderTargets.cend())
 					{
-						Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
+						Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
 						return false;
 					}
 				}
@@ -301,21 +296,21 @@ public:
 					{
 						if (!Ref.IsA<CStrID>())
 						{
-							Log.LogError("Phase '" + PhasePair.first.ToString() + "' render target array must contain only string ID elements");
+							Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' render target array must contain only string ID elements");
 							return false;
 						}
 
 						const CStrID RefID = Ref.GetValue<CStrID>();
-						if (RenderTargets.find(RefID) != RenderTargets.cend())
+						if (RenderTargets.find(RefID) == RenderTargets.cend())
 						{
-							Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
+							Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
 							return false;
 						}
 					}
 				}
 				else if (!ItRT->second.IsVoid())
 				{
-					Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'RenderTarget' which is not a string ID or an array of them");
+					Task.Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'RenderTarget' which is not a string ID or an array of them");
 				}
 			}
 
@@ -325,15 +320,15 @@ public:
 				if (ItDS->second.IsA<CStrID>())
 				{
 					const CStrID RefID = ItDS->second.GetValue<CStrID>();
-					if (DepthStencilBuffers.find(RefID) != DepthStencilBuffers.cend())
+					if (DepthStencilBuffers.find(RefID) == DepthStencilBuffers.cend())
 					{
-						Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown depth-stencil buffer '" + RefID.ToString() + '\'');
+						Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown depth-stencil buffer '" + RefID.ToString() + '\'');
 						return false;
 					}
 				}
 				else if (!ItDS->second.IsVoid())
 				{
-					Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'DepthStencilBuffer' which is not a string ID");
+					Task.Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'DepthStencilBuffer' which is not a string ID");
 				}
 			}
 		}
@@ -345,7 +340,7 @@ public:
 		std::ofstream File(DestPath, std::ios_base::binary);
 		if (!File)
 		{
-			Log.LogError("Error opening an output file");
+			Task.Log.LogError("Error opening an output file");
 			return false;
 		}
 
@@ -391,21 +386,6 @@ public:
 		// Write serialized global parameter tables
 		for (const auto& Pair : Globals)
 			File.write(Pair.second.Result.c_str(), Pair.second.Result.size());
-
-		// Finish task
-
-		const auto LoggedString = Log.GetStream().str();
-		if (!LoggedString.empty())
-		{
-			// Flush cached logs to stdout
-			// TODO: move log flushing to the end of CContentForgeTool::Execute? No locking needed at all there.
-			std::lock_guard<std::mutex> Lock(COutMutex);
-			std::cout << LoggedString;
-		}
-
-		// FIXME: must be thread-safe, also can move to the common code
-		//if (_LogVerbosity >= EVerbosity::Debug)
-		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
 
 		return true;
 	}

@@ -3,7 +3,6 @@
 #include <Utils.h>
 #include <CLI11.hpp>
 #include <thread>
-#include <mutex>
 #include <filesystem>
 
 namespace fs = std::filesystem;
@@ -44,8 +43,6 @@ public:
 class CHLSLTool : public CContentForgeTool
 {
 private:
-
-	std::mutex COutMutex;
 
 public:
 
@@ -130,19 +127,6 @@ public:
 		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
 			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
-
-		const auto LoggedString = Log.GetStream().str();
-		if (!LoggedString.empty())
-		{
-			// Flush cached logs to stdout
-			// TODO: move log flushing to the end of CContentForgeTool::Execute? No locking needed at all there.
-			std::lock_guard<std::mutex> Lock(COutMutex);
-			std::cout << LoggedString;
-		}
-
-		// FIXME: must be thread-safe, also can move to the common code
-		if (_LogVerbosity >= EVerbosity::Debug)
-			std::cout << "Status: " << ((Code == DEM_SHADER_COMPILER_SUCCESS) ? "OK" : "FAIL") << LineEnd << LineEnd;
 
 		return Code == DEM_SHADER_COMPILER_SUCCESS;
 	}

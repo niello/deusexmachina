@@ -131,7 +131,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	{
 		//!!!DBG TMP!
 		for (auto& Task : _Tasks)
-			ProcessTask(Task);
+			Task.Success = ProcessTask(Task);
 
 		typedef std::function<void(CContentForgeTask& Task)> FJob;
 		/*
@@ -163,11 +163,24 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 			Worker.detach(); // forget about this thread, let it do it's job in the infinite loop that we created above
 		}
 		*/
+
+		// TODO: wait all threads to finish
 	}
 	else
 	{
 		for (auto& Task : _Tasks)
-			ProcessTask(Task);
+			Task.Success = ProcessTask(Task);
+	}
+
+	// Flush cached logs to stdout
+	for (auto& Task : _Tasks)
+	{
+		const auto LoggedString = Task.Log.GetStream().str();
+		if (!LoggedString.empty())
+			std::cout << LoggedString;
+
+		if (_LogVerbosity >= EVerbosity::Info)
+			std::cout << "Status: " << (Task.Success ? "OK" : "FAIL") << LineEnd << LineEnd;
 	}
 
 	if (_WaitKey) _getch();
@@ -238,7 +251,7 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 
 	for (auto& Param : Meta)
 	{
-		CContentForgeTask Task;
+		CContentForgeTask Task(static_cast<EVerbosity>(_LogVerbosity));
 		Task.SrcFilePath = SrcFilePath;
 		Task.SrcFileData = SrcFileData;
 		Task.TaskID = Param.first;

@@ -2,7 +2,6 @@
 #include <CFEffectFwd.h>
 #include <Utils.h>
 #include <HRDParser.h>
-#include <mutex>
 #include <thread>
 #include <iostream>
 #include <sstream>
@@ -19,8 +18,6 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 class CEffectTool : public CContentForgeTool
 {
 private:
-
-	std::mutex COutMutex;
 
 public:
 
@@ -346,21 +343,6 @@ public:
 		// Write serialized effect blocks
 		for (const auto& Pair : SerializedEffect)
 			File.write(Pair.second.c_str(), Pair.second.size());
-
-		// Finish task
-
-		const auto LoggedString = Ctx.Log->GetStream().str();
-		if (!LoggedString.empty())
-		{
-			// Flush cached logs to stdout
-			// TODO: move log flushing to the end of CContentForgeTool::Execute? No locking needed at all there.
-			std::lock_guard<std::mutex> Lock(COutMutex);
-			std::cout << LoggedString;
-		}
-
-		// FIXME: must be thread-safe, also can move to the common code
-		//if (_LogVerbosity >= EVerbosity::Debug)
-		//	std::cout << "Status: " << (Ok ? "OK" : "FAIL") << LineEnd << LineEnd;
 
 		return true;
 	}
