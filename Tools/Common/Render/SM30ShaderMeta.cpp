@@ -306,7 +306,6 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value)
 	WriteStream<uint32_t>(Stream, Value.Consts.size());
 	for (const auto& IDToMeta : Value.Consts)
 	{
-		WriteStream(Stream, IDToMeta.first);
 		WriteStream(Stream, IDToMeta.second.first);
 		Stream << IDToMeta.second.second;
 	}
@@ -314,7 +313,6 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value)
 	WriteStream<uint32_t>(Stream, Value.Resources.size());
 	for (const auto& IDToMeta : Value.Resources)
 	{
-		WriteStream(Stream, IDToMeta.first);
 		WriteStream(Stream, IDToMeta.second.first);
 		Stream << IDToMeta.second.second;
 	}
@@ -322,7 +320,6 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30EffectMeta& Value)
 	WriteStream<uint32_t>(Stream, Value.Samplers.size());
 	for (const auto& IDToMeta : Value.Samplers)
 	{
-		WriteStream(Stream, IDToMeta.first);
 		WriteStream(Stream, IDToMeta.second.first);
 		Stream << IDToMeta.second.second;
 	}
@@ -362,30 +359,30 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	ReadStream<uint32_t>(Stream, Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		auto ParamName = ReadStream<std::string>(Stream);
 		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
 		CSM30ConstMeta Param;
 		Stream >> Param;
+		std::string ParamName = Param.Name;
 		Value.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 
 	ReadStream<uint32_t>(Stream, Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		auto ParamName = ReadStream<std::string>(Stream);
 		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
 		CSM30RsrcMeta Param;
 		Stream >> Param;
+		std::string ParamName = Param.Name;
 		Value.Resources.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 
 	ReadStream<uint32_t>(Stream, Count);
 	for (uint32_t i = 0; i < Count; ++i)
 	{
-		auto ParamName = ReadStream<std::string>(Stream);
 		auto ShaderTypeMask = ReadStream<uint8_t>(Stream);
 		CSM30SamplerMeta Param;
 		Stream >> Param;
+		std::string ParamName = Param.Name;
 		Value.Samplers.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 

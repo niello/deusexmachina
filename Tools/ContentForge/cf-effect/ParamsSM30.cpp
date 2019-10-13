@@ -74,7 +74,7 @@ static bool ProcessConstant(uint8_t ShaderTypeMask, CSM30ConstMeta& Param, const
 		CopyBufferMetadata(Param.BufferIndex, SrcMeta.Buffers, TargetMeta.Buffers);
 		CopyStructMetadata(Param.StructIndex, SrcMeta.Structs, TargetMeta.Structs);
 
-		std::string ParamName = std::move(Param.Name);
+		std::string ParamName = Param.Name;
 		TargetMeta.Consts.emplace(std::move(ParamName), std::make_pair(ShaderTypeMask, std::move(Param)));
 	}
 	else
