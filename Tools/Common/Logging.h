@@ -45,6 +45,7 @@ public:
 
 	std::ostringstream& GetStream() { return _Stream; }
 	char GetLineEnd() const { return _LineEnd; }
+	EVerbosity GetVerbosity() const { return _Verbosity; }
 
 	void LogAlways(const std::string& Message) { Log(EVerbosity::Always, Message.c_str()); }
 	void LogError(const std::string& Message) { Log(EVerbosity::Errors, Message.c_str()); }

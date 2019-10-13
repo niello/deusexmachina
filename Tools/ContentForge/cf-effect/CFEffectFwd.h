@@ -53,5 +53,5 @@ struct CContext
 	std::map<CStrID, CRenderState> RSCache;
 	std::map<CStrID, CShaderData> ShaderCache;
 	std::map<uint32_t, std::vector<CTechnique>> TechsByFormat; // Grouped by shader format
-	std::unique_ptr<CThreadSafeLog> Log;
+	CThreadSafeLog* Log;
 };

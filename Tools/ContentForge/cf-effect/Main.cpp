@@ -46,7 +46,7 @@ public:
 			DestPath = fs::path(_RootDir) / DestPath;
 
 		CContext Ctx;
-		Ctx.Log.reset(new CThreadSafeLog("", static_cast<EVerbosity>(_LogVerbosity)));
+		Ctx.Log = &Task.Log;
 
 		// FIXME: can move to the common code
 		if (_LogVerbosity >= EVerbosity::Info)
