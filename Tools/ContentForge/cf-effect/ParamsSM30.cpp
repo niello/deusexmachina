@@ -258,15 +258,15 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 					CStrID ID(Const.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessConstant(ShaderTypeMask, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						if (!ProcessConstant(ShaderTypeMask, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx)) return false;
 					}
 					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
 					{
-						ProcessConstant(ShaderTypeMask, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+						if (!ProcessConstant(ShaderTypeMask, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx)) return false;
 					}
 					else
 					{
-						ProcessConstant(ShaderTypeMask, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+						if (!ProcessConstant(ShaderTypeMask, Const, ShaderMeta, TechMeta, GlobalMeta, MaterialMeta, Ctx)) return false;
 					}
 				}
 
@@ -277,15 +277,15 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 					CStrID ID(Rsrc.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessResource(ShaderTypeMask, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						if (!ProcessResource(ShaderTypeMask, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx)) return false;
 					}
 					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
 					{
-						ProcessResource(ShaderTypeMask, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+						if (!ProcessResource(ShaderTypeMask, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx)) return false;
 					}
 					else
 					{
-						ProcessResource(ShaderTypeMask, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+						if (!ProcessResource(ShaderTypeMask, Rsrc, TechMeta, GlobalMeta, MaterialMeta, Ctx)) return false;
 					}
 				}
 
@@ -296,15 +296,15 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 					CStrID ID(Sampler.Name.c_str());
 					if (Ctx.GlobalParams.find(ID) != Ctx.GlobalParams.cend())
 					{
-						ProcessSampler(ShaderTypeMask, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx);
+						if (!ProcessSampler(ShaderTypeMask, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx)) return false;
 					}
 					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
 					{
-						ProcessSampler(ShaderTypeMask, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx);
+						if (!ProcessSampler(ShaderTypeMask, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx)) return false;
 					}
 					else
 					{
-						ProcessSampler(ShaderTypeMask, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx);
+						if (!ProcessSampler(ShaderTypeMask, Sampler, TechMeta, GlobalMeta, MaterialMeta, Ctx)) return false;
 					}
 				}
 			}
