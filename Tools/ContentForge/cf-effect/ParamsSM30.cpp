@@ -78,13 +78,13 @@ static bool ProcessResource(uint8_t ShaderTypeMask, CSM30RsrcMeta& Param, CSM30E
 	auto ItPrev = TargetMeta.Resources.find(Param.Name);
 	if (ItPrev == TargetMeta.Resources.cend())
 	{
-		if (CheckRegisterOverlapping(Param.Register, 1, OtherMeta1.UsedResources))
+		if (!CheckRegisterOverlapping(Param.Register, 1, OtherMeta1.UsedResources))
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
-		if (CheckRegisterOverlapping(Param.Register, 1, OtherMeta2.UsedResources))
+		if (!CheckRegisterOverlapping(Param.Register, 1, OtherMeta2.UsedResources))
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " resource '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;
