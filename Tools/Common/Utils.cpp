@@ -50,3 +50,20 @@ uint32_t CalcCRC(const uint8_t* pData, size_t Size)
 	return Checksum;
 }
 //---------------------------------------------------------------------
+
+void WriteData(std::ostream& Stream, const Data::CData& Value)
+{
+	WriteStream(Stream, static_cast<uint8_t>(Value.GetTypeID()));
+
+	if (Value.IsVoid()) return;
+	else if (Value.IsA<bool>()) WriteStream<bool>(Stream, Value);
+	else if (Value.IsA<int>()) WriteStream<int>(Stream, Value);
+	else if (Value.IsA<float>()) WriteStream<float>(Stream, Value);
+	else if (Value.IsA<std::string>()) WriteStream<std::string>(Stream, Value);
+	else if (Value.IsA<CStrID>()) WriteStream<CStrID>(Stream, Value);
+	else if (Value.IsA<vector4>()) WriteStream<vector4>(Stream, Value);
+	else if (Value.IsA<Data::CParams>()) WriteStream<Data::CParams>(Stream, Value);
+	else if (Value.IsA<Data::CDataArray>()) WriteStream<Data::CDataArray>(Stream, Value);
+	//else assert
+}
+//---------------------------------------------------------------------

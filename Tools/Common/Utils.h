@@ -84,25 +84,55 @@ template<class T> T ReadStream(std::istream& Stream)
 }
 //---------------------------------------------------------------------
 
-template<class T> void WriteStream(std::ostream& Stream, const T& Data)
+template<class T> void WriteStream(std::ostream& Stream, const T& Value)
 {
-	Stream.write(reinterpret_cast<const char*>(&Data), sizeof(T));
+	Stream.write(reinterpret_cast<const char*>(&Value), sizeof(T));
 }
 //---------------------------------------------------------------------
 
 template<>
-inline void WriteStream(std::ostream& Stream, const std::string& Data)
+inline void WriteStream(std::ostream& Stream, const std::string& Value)
 {
-	const auto Length = static_cast<uint16_t>(Data.size());
+	const auto Length = static_cast<uint16_t>(Value.size());
 	WriteStream<uint16_t>(Stream, Length);
-	if (Length) Stream.write(Data.c_str(), Length);
+	if (Length) Stream.write(Value.c_str(), Length);
 }
 //---------------------------------------------------------------------
 
 template<>
-inline void WriteStream(std::ostream& Stream, const CStrID& Data)
+inline void WriteStream(std::ostream& Stream, const CStrID& Value)
 {
-	WriteStream(Stream, std::string(Data.CStr() ? Data.CStr() : ""));
+	WriteStream(Stream, std::string(Value.CStr() ? Value.CStr() : ""));
+}
+//---------------------------------------------------------------------
+
+void WriteData(std::ostream& Stream, const Data::CData& Value);
+
+template<>
+inline void WriteStream(std::ostream& Stream, const Data::CData& Value)
+{
+	WriteData(Stream, Value);
+}
+//---------------------------------------------------------------------
+
+template<>
+inline void WriteStream(std::ostream& Stream, const Data::CDataArray& Value)
+{
+	WriteStream(Stream, static_cast<uint16_t>(Value.size()));
+	for (const auto& Data : Value)
+		WriteStream(Stream, Data);
+}
+//---------------------------------------------------------------------
+
+template<>
+inline void WriteStream(std::ostream& Stream, const Data::CParams& Value)
+{
+	WriteStream(Stream, static_cast<uint16_t>(Value.size()));
+	for (const auto& Pair : Value)
+	{
+		WriteStream(Stream, Pair.first.ToString());
+		WriteStream(Stream, Pair.second);
+	}
 }
 //---------------------------------------------------------------------
 

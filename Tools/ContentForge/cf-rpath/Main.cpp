@@ -359,11 +359,7 @@ public:
 		}
 
 		// Write phases
-		WriteStream<uint32_t>(File, static_cast<uint32_t>(PhaseDescs.size()));
-		for (const auto& Pair : PhaseDescs)
-		{
-			//!!!serialize CParams!
-		}
+		WriteStream(File, PhaseDescs);
 
 		// Write format map (FourCC to offset from the body start)
 		WriteStream<uint32_t>(File, ShaderFormatCount);
