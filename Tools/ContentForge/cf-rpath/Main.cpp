@@ -43,7 +43,7 @@ public:
 
 		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
-		auto DestPath = fs::path(Output) / (TaskID + ".eff");
+		auto DestPath = fs::path(Output) / (TaskID + ".rp");
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
