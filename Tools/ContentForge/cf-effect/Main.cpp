@@ -45,17 +45,6 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
-		CContext Ctx;
-		Ctx.Log = &Task.Log;
-
-		// FIXME: can move to the common code
-		if (_LogVerbosity >= EVerbosity::Info)
-		{
-			Ctx.Log->GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Ctx.Log->GetLineEnd();
-			Ctx.Log->GetStream() << "Task: " << Task.TaskID.CStr() << Ctx.Log->GetLineEnd();
-			Ctx.Log->GetStream() << "Thread: " << std::this_thread::get_id() << Ctx.Log->GetLineEnd();
-		}
-
 		// Read effect hrd
 
 		Data::CParams Desc;
@@ -63,14 +52,14 @@ public:
 			std::vector<char> In;
 			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
 			{
-				Ctx.Log->LogError(Task.SrcFilePath.generic_string() + " reading error");
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
 				return false;
 			}
 
 			Data::CHRDParser Parser;
 			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
 			{
-				Ctx.Log->LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
 				return false;
 			}
 		}
@@ -80,11 +69,14 @@ public:
 		const CStrID MaterialType = GetParam<CStrID>(Desc, "Type", CStrID::Empty);
 		if (!MaterialType)
 		{
-			Ctx.Log->LogError("Material type not specified, Type = '<string ID>' expected");
+			Task.Log.LogError("Material type not specified, Type = '<string ID>' expected");
 			return false;
 		}
 
 		// Get and validate global and material params
+
+		CContext Ctx;
+		Ctx.Log = &Task.Log;
 
 		auto ItGlobalParams = Desc.find(CStrID("GlobalParams"));
 		const bool HasGlobalParams = (ItGlobalParams != Desc.cend() && !ItGlobalParams->second.IsVoid());
@@ -92,7 +84,7 @@ public:
 		{
 			if (!ItGlobalParams->second.IsA<Data::CDataArray>())
 			{
-				Ctx.Log->LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
+				Task.Log.LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
 				return false;
 			}
 
@@ -101,7 +93,7 @@ public:
 			{
 				if (!Data.IsA<CStrID>())
 				{
-					Ctx.Log->LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
+					Task.Log.LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
 					return false;
 				}
 
@@ -115,7 +107,7 @@ public:
 		{
 			if (!ItMaterialParams->second.IsA<Data::CParams>())
 			{
-				Ctx.Log->LogError("'MaterialParams' must be a section");
+				Task.Log.LogError("'MaterialParams' must be a section");
 				return false;
 			}
 
@@ -130,7 +122,7 @@ public:
 			{
 				if (Ctx.MaterialParams.find(ParamID) != Ctx.MaterialParams.cend())
 				{
-					Ctx.Log->LogError('\'' + ParamID.ToString() + "' appears in both global and material params");
+					Task.Log.LogError('\'' + ParamID.ToString() + "' appears in both global and material params");
 					HasErrors = true;
 				}
 			}
@@ -141,14 +133,14 @@ public:
 		auto ItRenderStates = Desc.find(CStrID("RenderStates"));
 		if (ItRenderStates == Desc.cend() || !ItRenderStates->second.IsA<Data::CParams>())
 		{
-			Ctx.Log->LogError("'RenderStates' must be a section");
+			Task.Log.LogError("'RenderStates' must be a section");
 			return false;
 		}
 
 		auto ItTechs = Desc.find(CStrID("Techniques"));
 		if (ItTechs == Desc.cend() || !ItTechs->second.IsA<Data::CParams>() || ItTechs->second.GetValue<Data::CParams>().empty())
 		{
-			Ctx.Log->LogError("'Techniques' must be a section and contain at least one input set");
+			Task.Log.LogError("'Techniques' must be a section and contain at least one input set");
 			return false;
 		}
 
@@ -160,7 +152,7 @@ public:
 
 			if (!InputSetDesc.second.IsA<Data::CParams>() || InputSetDesc.second.GetValue<Data::CParams>().empty())
 			{
-				Ctx.Log->LogError("Input set '" + InputSet.ToString() + "' must be a section containing at least one technique");
+				Task.Log.LogError("Input set '" + InputSet.ToString() + "' must be a section containing at least one technique");
 				return false;
 			}
 
@@ -169,7 +161,7 @@ public:
 			{
 				if (!TechDesc.second.IsA<Data::CDataArray>() || TechDesc.second.GetValue<Data::CDataArray>().empty())
 				{
-					Ctx.Log->LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' must be an array containing at least one render state ID");
+					Task.Log.LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' must be an array containing at least one render state ID");
 					return false;
 				}
 
@@ -180,7 +172,7 @@ public:
 				{
 					const CStrID RenderStateID = PassDesc.GetValue<CStrID>();
 
-					Ctx.Log->LogDebug("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "', pass '" + RenderStateID.CStr() + '\'');
+					Task.Log.LogDebug("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "', pass '" + RenderStateID.CStr() + '\'');
 
 					auto ItRS = Ctx.RSCache.find(RenderStateID);
 					if (ItRS == Ctx.RSCache.cend())
@@ -193,14 +185,14 @@ public:
 					if (!RS.IsValid)
 					{
 						// Can discard only this tech, but for now issue an error and stop
-						Ctx.Log->LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' uses invalid render state in a pass '" + RenderStateID.CStr() + '\'');
+						Task.Log.LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' uses invalid render state in a pass '" + RenderStateID.CStr() + '\'');
 						return false;
 					}
 
 					// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
 					if (Tech.ShaderFormatFourCC && Tech.ShaderFormatFourCC != RS.ShaderFormatFourCC)
 					{
-						Ctx.Log->LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' has unsupported mix of shader formats.");
+						Task.Log.LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' has unsupported mix of shader formats.");
 						return false;
 					}
 
@@ -250,7 +242,7 @@ public:
 				}
 				default:
 				{
-					Ctx.Log->LogWarning("Skipping unsupported shader format: " + FourCC(ShaderFormat));
+					Task.Log.LogWarning("Skipping unsupported shader format: " + FourCC(ShaderFormat));
 					continue;
 				}
 			}
@@ -293,14 +285,14 @@ public:
 			std::string Data = Stream.str();
 			if (Data.empty())
 			{
-				Ctx.Log->LogWarning("No data serialized for the format: " + FourCC(ShaderFormat));
+				Task.Log.LogWarning("No data serialized for the format: " + FourCC(ShaderFormat));
 				continue;
 			}
 			else if (Data.size() > std::numeric_limits<uint32_t>().max())
 			{
 				// We don't support 64-bit offsets in effect files. If your data is so big,
 				// most probably it is a serialization error.
-				Ctx.Log->LogWarning("Discarding too big serialized data for the format: " + FourCC(ShaderFormat));
+				Task.Log.LogWarning("Discarding too big serialized data for the format: " + FourCC(ShaderFormat));
 				continue;
 			}
 
@@ -311,7 +303,7 @@ public:
 
 		if (SerializedEffect.empty())
 		{
-			Ctx.Log->LogError("No data serialized for the effect, resource will not be created");
+			Task.Log.LogError("No data serialized for the effect, resource will not be created");
 			return false;
 		}
 
@@ -320,7 +312,7 @@ public:
 		std::ofstream File(DestPath, std::ios_base::binary);
 		if (!File)
 		{
-			Ctx.Log->LogError("Error opening an output file");
+			Task.Log.LogError("Error opening an output file");
 			return false;
 		}
 

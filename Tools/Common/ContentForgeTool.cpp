@@ -131,7 +131,16 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	{
 		//!!!DBG TMP!
 		for (auto& Task : _Tasks)
+		{
+			if (_LogVerbosity >= EVerbosity::Info)
+			{
+				Task.Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Task.Log.GetLineEnd();
+				Task.Log.GetStream() << "Task: " << Task.TaskID.CStr() << Task.Log.GetLineEnd();
+				Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
+			}
+
 			Task.Success = ProcessTask(Task);
+		}
 
 		typedef std::function<void(CContentForgeTask& Task)> FJob;
 		/*
@@ -169,7 +178,16 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	else
 	{
 		for (auto& Task : _Tasks)
+		{
+			if (_LogVerbosity >= EVerbosity::Info)
+			{
+				Task.Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Task.Log.GetLineEnd();
+				Task.Log.GetStream() << "Task: " << Task.TaskID.CStr() << Task.Log.GetLineEnd();
+				Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
+			}
+
 			Task.Success = ProcessTask(Task);
+		}
 	}
 
 	// Flush cached logs to stdout

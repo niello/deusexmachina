@@ -13,7 +13,7 @@ namespace fs = std::filesystem;
 // -s src/shaders/hlsl_usm/CEGUI.hlsl
 // -s src/shaders
 
-class CLog : public DEMShaderCompiler::ILogDelegate
+class CDLLLog : public DEMShaderCompiler::ILogDelegate
 {
 private:
 
@@ -21,7 +21,7 @@ private:
 
 public:
 
-	CLog(CThreadSafeLog* pLog) : _pLog(pLog) {}
+	CDLLLog(CThreadSafeLog* pLog) : _pLog(pLog) {}
 
 	std::ostringstream& GetStream() { return _pLog->GetStream(); }
 
@@ -104,17 +104,7 @@ public:
 		const std::string TaskID(Task.TaskID.CStr());
 		const auto DestPath = fs::path(Output) / (TaskID + ".bin");
 
-		CLog Log(&Task.Log);
-
-		const auto LineEnd = Log.GetStream().widen('\n');
-
-		// FIXME: can move to the common code
-		if (_LogVerbosity >= EVerbosity::Info)
-		{
-			Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << LineEnd;
-			Log.GetStream() << "Task: " << Task.TaskID.CStr() << LineEnd;
-			Log.GetStream() << "Thread: " << std::this_thread::get_id() << LineEnd;
-		}
+		CDLLLog Log(&Task.Log);
 
 		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),

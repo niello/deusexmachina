@@ -47,14 +47,6 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
-		// FIXME: can move to the common code
-		if (_LogVerbosity >= EVerbosity::Info)
-		{
-			Task.Log.GetStream() << "Source: " << Task.SrcFilePath.generic_string() << Task.Log.GetLineEnd();
-			Task.Log.GetStream() << "Task: " << Task.TaskID.CStr() << Task.Log.GetLineEnd();
-			Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
-		}
-
 		// Read render path hrd
 
 		Data::CParams Desc;
