@@ -10,7 +10,7 @@
 // with actual values, temporary buffers are created by GPU on demand, filled with
 // values, used and then discarded. If there is no permanent buffer registered for
 // a particular handle, the temporary one will be created on the first request.
-// This is just a conveience class that hides typical constant buffer management
+// This is just a convenience class that hides typical constant buffer management
 // strategy inside to reduce complexity and to avoid redundant implementation of
 // buffer management in each renderer.
 

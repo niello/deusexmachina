@@ -38,7 +38,6 @@ CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID,
 
 	// NB: regular and opaque pixel shaders must be compatible
 
-	//???pass 3 shaders inside, create render states there etc?
 	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, VS, PSRegular, PSOpaque));
 	ShaderWrapperTextured->setupMainTexture("BoundTexture", "LinearSampler");
 	ShaderWrapperTextured->setupParameter("WVP");

@@ -1,3 +1,4 @@
+#define _HAS_EXCEPTIONS 0
 #include "StringID.h"
 #include "StringIDStorage.h"
 

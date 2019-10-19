@@ -144,9 +144,11 @@ foreach(_TARGET_NAME IN LISTS DEM_DEPS_TARGETS)
 		)
 	endforeach()
 
-	# Disable C++ RTTI if requested
-	if(MSVC AND DEM_DEPS_DISABLE_CXX_RTTI AND NOT ${_TARGET_NAME} IN_LIST DEM_CEGUI_TARGETS)
-		target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
+	if(MSVC)
+		if(DEM_DEPS_DISABLE_CXX_RTTI AND NOT ${_TARGET_NAME} IN_LIST DEM_CEGUI_TARGETS)
+			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
+		endif()
+		target_compile_options(${_TARGET_NAME} PRIVATE "/Zc:__cplusplus")
 	endif()
 
 endforeach()

@@ -107,6 +107,7 @@ foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 		LIBRARY_OUTPUT_DIRECTORY ${DEM_LIB_DIR}
 		RUNTIME_OUTPUT_DIRECTORY ${DEM_BIN_DIR}
 		DEBUG_POSTFIX "_d"
+		CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON
 	)
 
 	foreach(_CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
@@ -118,9 +119,11 @@ foreach(_TARGET_NAME IN LISTS DEM_TARGETS)
 		)
 	endforeach()
 
-	# Disable C++ RTTI if requested
-	if(MSVC AND DEM_DISABLE_CXX_RTTI)
-		target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
+	if(MSVC)
+		if(DEM_DISABLE_CXX_RTTI)
+			target_compile_options(${_TARGET_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CXX>:/GR->)
+		endif()
+		target_compile_options(${_TARGET_NAME} PRIVATE "/Zc:__cplusplus")
 	endif()
 
 endforeach()

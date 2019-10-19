@@ -201,6 +201,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/ShaderLibrary.h
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.h
 	DEM/Low/src/Render/ShaderMetadata.h
+	DEM/Low/src/Render/ShaderParamStorage.h
+	DEM/Low/src/Render/ShaderParamTable.h
 	DEM/Low/src/Render/SkinInfo.h
 	DEM/Low/src/Render/SkinInfoLoaderSKN.h
 	DEM/Low/src/Render/Skybox.h
@@ -447,6 +449,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/ShaderLibrary.cpp
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.cpp
 	DEM/Low/src/Render/ShaderMetadata.cpp
+	DEM/Low/src/Render/ShaderParamStorage.cpp
+	DEM/Low/src/Render/ShaderParamTable.cpp
 	DEM/Low/src/Render/SkinInfo.cpp
 	DEM/Low/src/Render/SkinInfoLoaderSKN.cpp
 	DEM/Low/src/Render/Skybox.cpp
