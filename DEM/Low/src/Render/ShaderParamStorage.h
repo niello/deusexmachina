@@ -11,8 +11,18 @@ class CShaderParamStorage
 {
 protected:
 
+	// GPU ref
+	// Param table ref(shared intrusive ptr?)
+	// CBs
+	// Resources
+	// Samplers
+
+	// All of them are in vectors, indexed the same as params in a table
+	// So for Apply() we can just get param by index of the value
+
 public:
 
+	// Apply
 };
 
 }
