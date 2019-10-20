@@ -13,52 +13,12 @@ __ImplementClassNoFactory(Frame::CRenderPath, Resources::CResourceObject);
 
 CRenderPath::CRenderPath() {}
 
-CRenderPath::~CRenderPath()
-{
-	if (pGlobals) n_delete(pGlobals);
-}
-//---------------------------------------------------------------------
+CRenderPath::~CRenderPath() {}
 
-const Render::CEffectConstant* CRenderPath::GetGlobalConstant(CStrID Name) const
+void CRenderPath::SetRenderTargetClearColor(CStrID ID, const vector4& Color)
 {
-	UPTR i = 0;
-	for (; i < Consts.GetCount(); ++i)
-	{
-		const Render::CEffectConstant& Curr = Consts[i];
-		if (Curr.ID == Name) return &Curr;
-	}
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-const Render::CEffectResource* CRenderPath::GetGlobalResource(CStrID Name) const
-{
-	UPTR i = 0;
-	for (; i < Resources.GetCount(); ++i)
-	{
-		const Render::CEffectResource& Curr = Resources[i];
-		if (Curr.ID == Name) return &Curr;
-	}
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-const Render::CEffectSampler* CRenderPath::GetGlobalSampler(CStrID Name) const
-{
-	UPTR i = 0;
-	for (; i < Samplers.GetCount(); ++i)
-	{
-		const Render::CEffectSampler& Curr = Samplers[i];
-		if (Curr.ID == Name) return &Curr;
-	}
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-void CRenderPath::SetRenderTargetClearColor(UPTR Index, const vector4& Color)
-{
-	if (Index >= RTSlots.GetCount()) return;
-	RTSlots[Index].ClearValue = Color;
+	auto It = RTSlots.find(ID);
+	if (It != RTSlots.cend()) It->second.ClearValue = Color;
 }
 //---------------------------------------------------------------------
 
@@ -72,25 +32,22 @@ bool CRenderPath::Render(CView& View)
 	// rendering architecture, as phase must not clear RTs and therefore know
 	// whether it is the first who writes to the target.
 
-	for (UPTR i = 0; i < RTSlots.GetCount(); ++i)
+	for (const auto& Slot : RTSlots)
 	{
-		Render::CRenderTarget* pRT = View.RTs[i].Get();
-		if (pRT) pGPU->ClearRenderTarget(*pRT, RTSlots[i].ClearValue);
+		Render::CRenderTarget* pRT = View.GetRenderTarget(Slot.first);
+		if (pRT) pGPU->ClearRenderTarget(*pRT, Slot.second.ClearValue);
 	}
 
-	for (UPTR i = 0; i < DSSlots.GetCount(); ++i)
+	for (const auto& Slot : DSSlots)
 	{
-		Render::CDepthStencilBuffer* pDS = View.DSBuffers[i].Get();
+		Render::CDepthStencilBuffer* pDS = View.GetDepthStencilBuffer(Slot.first);
 		if (pDS)
-		{
-			const CDepthStencilSlot& Slot = DSSlots[i];
-			pGPU->ClearDepthStencilBuffer(*pDS, Slot.ClearFlags, Slot.DepthClearValue, Slot.StencilClearValue);
-		}
+			pGPU->ClearDepthStencilBuffer(*pDS, Slot.second.ClearFlags, Slot.second.DepthClearValue, Slot.second.StencilClearValue);
 	}
 
-	for (UPTR i = 0; i < Phases.GetCount(); ++i)
+	for (auto& Phase : Phases)
 	{
-		if (!Phases[i]->Render(View))
+		if (!Phase->Render(View))
 		{
 			//???clear tmp view data?
 			FAIL;

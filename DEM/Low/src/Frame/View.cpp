@@ -21,15 +21,15 @@ namespace Frame
 {
 CView::CView() {}
 
-CView::CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID)
+CView::CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID, CStrID SwapChainRTID)
 	: _GPU(&GPU)
 	, _SwapChainID(SwapChainID)
 {
 	SetRenderPath(&RenderPath);
 
 	// If our view is attached to the swap chain, set the back buffer as its first RT
-	if (SwapChainID >= 0 && RTs.GetCount())
-		RTs[0] = GPU.GetSwapChainRenderTarget(SwapChainID);
+	if (SwapChainID >= 0 && SwapChainRTID)
+		SetRenderTarget(SwapChainRTID, GPU.GetSwapChainRenderTarget(SwapChainID));
 }
 //---------------------------------------------------------------------
 
@@ -39,10 +39,24 @@ CView::~CView()
 }
 //---------------------------------------------------------------------
 
-bool CView::CreateUIContext()
+bool CView::CreateUIContext(CStrID RenderTargetID)
 {
-	Render::CRenderTarget* pRT = RTs[0].Get();
-	if (!UI::CUIServer::HasInstance() || !pRT) FAIL;
+	if (!UI::CUIServer::HasInstance() || RTs.empty()) FAIL;
+
+	// Get render target for resolution
+	Render::CRenderTarget* pRT = nullptr;
+	if (RenderTargetID)
+	{
+		auto It = RTs.find(RenderTargetID);
+		if (It == RTs.cend()) FAIL;
+		pRT = It->second;
+	}
+	else if (_GPU && _SwapChainID >= 0)
+	{
+		pRT = _GPU->GetSwapChainRenderTarget(_SwapChainID);
+	}
+
+	if (!pRT) FAIL;
 
 	UI::CUIContextSettings UICtxSettings;
 	UICtxSettings.HostWindow = GetTargetWindow();
@@ -116,9 +130,10 @@ UPTR CView::GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) c
 		}
 		case LOD_ScreenSizeAbsolute:
 		{
-			if (RTs[0].IsNullPtr()) return 0;
-			const Render::CRenderTargetDesc& RTDesc = RTs[0]->GetDesc();
-			float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height; //!!!may cache float WMulH, on each RT set!
+			// FIXME: what render target to use? Not always the first one definitely!
+			if (!RTs.begin()->second) return 0;
+			const Render::CRenderTargetDesc& RTDesc = RTs.begin()->second->GetDesc();
+			const float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height;
 			for (UPTR i = 0; i < MeshLODScale.GetCount(); ++i)
 				if (ScreenSpaceOccupiedAbs > MeshLODScale[i]) return i;
 			return MeshLODScale.GetCount();
@@ -151,9 +166,10 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 		}
 		case LOD_ScreenSizeAbsolute:
 		{
-			if (RTs[0].IsNullPtr()) return 0;
-			const Render::CRenderTargetDesc& RTDesc = RTs[0]->GetDesc();
-			float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height; //!!!may cache float WMulH, on each RT set!
+			// FIXME: what render target to use? Not always the first one definitely!
+			if (!RTs.begin()->second) return 0;
+			const Render::CRenderTargetDesc& RTDesc = RTs.begin()->second->GetDesc();
+			const float ScreenSpaceOccupiedAbs = SqDistanceToCamera * RTDesc.Width * RTDesc.Height;
 			for (UPTR i = 0; i < MaterialLODScale.GetCount(); ++i)
 				if (ScreenSpaceOccupiedAbs > MaterialLODScale[i]) return i;
 			return MaterialLODScale.GetCount();
@@ -196,22 +212,23 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	Globals.UnbindAndClear();
 	Globals.SetGPU(_GPU);
 
+	RTs.clear();
+	DSBuffers.clear();
+
 	if (!pNewRenderPath)
 	{
-		RTs.SetSize(0);
 		_RenderPath = nullptr;
 		OK;
 	}
 
-	// Allocate RT and DS slots
 	//!!!may fill with default RTs and DSs if descs are provided in RP!
-
-	RTs.SetSize(pNewRenderPath->GetRenderTargetCount());
-	DSBuffers.SetSize(pNewRenderPath->GetDepthStencilBufferCount());
 
 	// Allocate storage for global shader params
 
-	const CFixedArray<Render::CEffectConstant>& GlobalConsts = pNewRenderPath->GetGlobalConstants();
+	//!!!must create storage here, then request permanent buffers for all constants!
+	//buffers can be created inside the storage in a helper method.
+
+	const auto& GlobalParams = pNewRenderPath->GetGlobalParamTable();
 	for (UPTR i = 0; i < GlobalConsts.GetCount(); ++i)
 	{
 		const Render::CEffectConstant& Const = GlobalConsts[i];
@@ -230,7 +247,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	}
 
 	// Create linear cube sampler for image-based lighting
-	//???FIXME: declarative in RP?
+	//???FIXME: declarative in RP? as material defaults in the effect!
 
 	Render::CSamplerDesc SamplerDesc;
 	SamplerDesc.SetDefaults();
@@ -242,6 +259,40 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 
 	_RenderPath = pNewRenderPath;
 	OK;
+}
+//---------------------------------------------------------------------
+
+bool CView::SetRenderTarget(CStrID ID, Render::PRenderTarget RT)
+{
+	if (!_RenderPath || !_RenderPath->HasRenderTarget(ID)) FAIL;
+
+	if (RT) RTs[ID] = RT;
+	else RTs.erase(ID);
+	OK;
+}
+//---------------------------------------------------------------------
+
+Render::CRenderTarget* CView::GetRenderTarget(CStrID ID) const
+{
+	auto It = RTs.find(ID);
+	return (It != RTs.cend()) ? It->second.Get() : nullptr;
+}
+//---------------------------------------------------------------------
+
+bool CView::SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS)
+{
+	if (!_RenderPath || !_RenderPath->HasDepthStencilBuffer(ID)) FAIL;
+
+	if (DS) DSBuffers[ID] = DS;
+	else DSBuffers.erase(ID);
+	OK;
+}
+//---------------------------------------------------------------------
+
+Render::CDepthStencilBuffer* CView::GetDepthStencilBuffer(CStrID ID) const
+{
+	auto It = DSBuffers.find(ID);
+	return (It != DSBuffers.cend()) ? It->second.Get() : nullptr;
 }
 //---------------------------------------------------------------------
 

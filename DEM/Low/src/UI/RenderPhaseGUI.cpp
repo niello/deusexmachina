@@ -15,7 +15,7 @@ bool CRenderPhaseGUI::Init(const CRenderPath& Owner, CStrID PhaseName, const Dat
 {
 	if (!CRenderPhase::Init(Owner, PhaseName, Desc)) FAIL;
 
-	RenderTargetIndex = (I32)Desc.Get(CStrID("RenderTarget")).GetValue<int>();
+	RenderTargetID = Desc.Get(CStrID("RenderTarget")).GetValue<CStrID>();
 	CString ModeStr;
 	if (Desc.Get<CString>(ModeStr, CStrID("Mode")))
 	{
@@ -33,7 +33,9 @@ bool CRenderPhaseGUI::Render(CView& View)
 {
 	if (View.UIContext.IsNullPtr()) FAIL;
 
-	auto RT = View.RTs[RenderTargetIndex];
+	auto RT = View.GetRenderTarget(RenderTargetID);
+	if (!RT) FAIL;
+
 	View.GetGPU()->SetRenderTarget(0, RT);
 
 	const Render::CRenderTargetDesc& RTDesc = RT->GetDesc();

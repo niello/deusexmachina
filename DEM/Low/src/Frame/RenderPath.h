@@ -1,7 +1,9 @@
 #pragma once
 #include <Resources/ResourceObject.h>
 #include <Render/RenderFwd.h>
-#include <Data/FixedArray.h>
+#include <Render/ShaderParamTable.h>
+#include <map>
+#include <vector>
 
 // Render path incapsulates a full algorithm to render a frame, allowing to
 // define it in a data-driven manner and therefore to avoid hardcoding frame rendering.
@@ -45,15 +47,13 @@ protected:
 		U8		StencilClearValue;
 	};
 
-	CFixedArray<CRenderTargetSlot>			RTSlots;
-	CFixedArray<CDepthStencilSlot>			DSSlots;
+	std::map<CStrID, CRenderTargetSlot>		RTSlots;
+	std::map<CStrID, CDepthStencilSlot>		DSSlots;
 
-	CFixedArray<PRenderPhase>				Phases;
+	std::vector<PRenderPhase>				Phases;
 
-	Render::IShaderMetadata*				pGlobals = nullptr;
-	CFixedArray<Render::CEffectConstant>	Consts;
-	CFixedArray<Render::CEffectResource>	Resources;
-	CFixedArray<Render::CEffectSampler>		Samplers;
+	//???intrusive ptr? storages will reference it!
+	Render::CShaderParamTable				Globals;
 
 	friend class Resources::CRenderPathLoaderRP;
 
@@ -62,17 +62,16 @@ public:
 	CRenderPath();
 	virtual ~CRenderPath();
 
-	bool										Render(CView& View);
+	bool								HasRenderTarget(CStrID ID) const { return RTSlots.find(ID) != RTSlots.cend(); }
+	bool								HasDepthStencilBuffer(CStrID ID) const { return DSSlots.find(ID) != DSSlots.cend(); }
+	void								SetRenderTargetClearColor(CStrID ID, const vector4& Color);
 
-	virtual bool								IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
-	UPTR										GetRenderTargetCount() const { return RTSlots.GetCount(); }
-	UPTR										GetDepthStencilBufferCount() const { return DSSlots.GetCount(); }
-	const CFixedArray<Render::CEffectConstant>&	GetGlobalConstants() const { return Consts; }
-	const Render::CEffectConstant*				GetGlobalConstant(CStrID Name) const;
-	const Render::CEffectResource*				GetGlobalResource(CStrID Name) const;
-	const Render::CEffectSampler*				GetGlobalSampler(CStrID Name) const;
+	bool								Render(CView& View);
 
-	void										SetRenderTargetClearColor(UPTR Index, const vector4& Color);
+	//virtual bool						IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
+	UPTR								GetRenderTargetCount() const { return RTSlots.size(); }
+	UPTR								GetDepthStencilBufferCount() const { return DSSlots.size(); }
+	const Render::CShaderParamTable&	GetGlobalParamTable() const { return Globals; }
 };
 
 typedef Ptr<CRenderPath> PRenderPath;

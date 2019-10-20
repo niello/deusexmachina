@@ -5,6 +5,7 @@
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 #include <System/Allocators/PoolAllocator.h>
+#include <map>
 
 // View is a data context required to render a frame. It is defined by a scene (what to render),
 // a camera (from where), render target(s) (to where), a render path (how) and some other
@@ -19,10 +20,10 @@ namespace Scene
 	class CNodeAttribute;
 }
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 	class COSWindow;
-}}
+}
 
 namespace UI
 {
@@ -53,6 +54,9 @@ protected:
 	int											_SwapChainID = INVALID_INDEX;
 	CNodeAttrCamera*							pCamera = nullptr; //???smart ptr?
 
+	std::map<CStrID, Render::PRenderTarget>			RTs;
+	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
+
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
 	CArray<CNodeAttrAmbientLight*>				EnvironmentCache;
@@ -71,17 +75,15 @@ public:
 	Scene::CSPS*								pSPS = nullptr;
 	UI::PUIContext								UIContext;
 
-	CFixedArray<Render::PRenderTarget>			RTs;
-	CFixedArray<Render::PDepthStencilBuffer>	DSBuffers;
-	Render::CConstantBufferSet					Globals;
-	Render::PSampler							TrilinearCubeSampler; // For IBL
+	Render::CConstantBufferSet						Globals;
+	Render::PSampler								TrilinearCubeSampler; // For IBL
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	CView();
-	CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID = INVALID_INDEX);
+	CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
 	~CView();
 
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars
@@ -91,7 +93,7 @@ public:
 	//shadow map buffers (sort of RT / DS, no special case?)
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
-	bool							CreateUIContext();
+	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
@@ -105,6 +107,10 @@ public:
 
 	bool							SetRenderPath(CRenderPath* pNewRenderPath);
 	CRenderPath*					GetRenderPath() const { return _RenderPath.Get(); }
+	bool							SetRenderTarget(CStrID ID, Render::PRenderTarget RT);
+	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
+	bool							SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS);
+	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
 	bool							SetCamera(CNodeAttrCamera* pNewCamera);
 	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
 	Render::CGPUDriver*				GetGPU() const { return _GPU.Get(); }

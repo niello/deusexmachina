@@ -267,18 +267,19 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		case Sort_Material:		RenderQueue.Sort<CRenderQueueCmp_Material>(); break;
 	}
 
-	UPTR RTIdxIdx = 0;
-	for (; RTIdxIdx < RenderTargetIndices.GetCount(); ++RTIdxIdx)
-	{
-		const I32 RTIdx = RenderTargetIndices[RTIdxIdx];
-		pGPU->SetRenderTarget(RTIdxIdx, RTIdx == INVALID_INDEX ? nullptr : View.RTs[RTIdx].Get());
-	}
+	// Bind render targets and a depth-stencil buffer
 
-	UPTR MaxRTCount = pGPU->GetMaxMultipleRenderTargetCount();
-	for (; RTIdxIdx < MaxRTCount; ++RTIdxIdx)
-		pGPU->SetRenderTarget(RTIdxIdx, nullptr);
+	const UPTR RenderTargetCount = RenderTargetIDs.GetCount();
+	for (UPTR i = 0; i < RenderTargetCount; ++i)
+		pGPU->SetRenderTarget(i, View.GetRenderTarget(RenderTargetIDs[i]));
 
-	pGPU->SetDepthStencilBuffer(DepthStencilIndex == INVALID_INDEX ? nullptr : View.DSBuffers[DepthStencilIndex].Get());
+	const UPTR MaxRTCount = pGPU->GetMaxMultipleRenderTargetCount();
+	for (UPTR i = RenderTargetCount; i < MaxRTCount; ++i)
+		pGPU->SetRenderTarget(i, nullptr);
+
+	pGPU->SetDepthStencilBuffer(View.GetDepthStencilBuffer(DepthStencilID));
+
+	// Render the phase
 
 	Render::IRenderer::CRenderContext Ctx;
 	Ctx.pGPU = pGPU;
@@ -331,31 +332,31 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 	else SortingType = Sort_None;
 
 	const Data::CData& RTValue = Desc.Get(CStrID("RenderTarget")).GetRawValue();
-	if (RTValue.IsNull()) RenderTargetIndices.SetSize(0);
+	if (RTValue.IsNull()) RenderTargetIDs.SetSize(0);
 	else if (RTValue.IsA<Data::PDataArray>())
 	{
 		Data::PDataArray RTArray = RTValue.GetValue<Data::PDataArray>();
-		RenderTargetIndices.SetSize(RTArray->GetCount());
+		RenderTargetIDs.SetSize(RTArray->GetCount());
 		for (UPTR i = 0; i < RTArray->GetCount(); ++i)
 		{
 			const Data::CData& RTElm = RTArray->Get<int>(i);
-			if (RTElm.IsNull()) RenderTargetIndices[i] = INVALID_INDEX;
-			else if (RTElm.IsA<int>()) RenderTargetIndices[i] = (I32)RTArray->Get<int>(i);
+			if (RTElm.IsNull()) RenderTargetIDs[i] = CStrID::Empty;
+			else if (RTElm.IsA<int>()) RenderTargetIDs[i] = RTArray->Get<CStrID>(i);
 			else FAIL;
 		}
 	}
-	else if (RTValue.IsA<int>())
+	else if (RTValue.IsA<CStrID>())
 	{
-		RenderTargetIndices.SetSize(1);
-		RenderTargetIndices[0] = (I32)RTValue.GetValue<int>();
+		RenderTargetIDs.SetSize(1);
+		RenderTargetIDs[0] = RTValue.GetValue<CStrID>();
 	}
 	else FAIL;
 
 	const Data::CData& DSValue = Desc.Get(CStrID("DepthStencilBuffer")).GetRawValue();
-	if (DSValue.IsNull()) DepthStencilIndex = INVALID_INDEX;
-	else if (DSValue.IsA<int>())
+	if (DSValue.IsNull()) DepthStencilID = CStrID::Empty;
+	else if (DSValue.IsA<CStrID>())
 	{
-		DepthStencilIndex = (I32)DSValue.GetValue<int>();
+		DepthStencilID = DSValue.GetValue<CStrID>();
 	}
 	else FAIL;
 
@@ -415,17 +416,25 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 		}
 	}
 
+	// Cache global shader parameter descriptions
+
+	const auto& GlobalParams = Owner.GetGlobalParamTable();
+
 	CStrID GlobalLightBufferName = Desc.Get<CStrID>(CStrID("GlobalLightBufferName"), CStrID::Empty);
-	if (GlobalLightBufferName.IsValid()) pConstGlobalLightBuffer = Owner.GetGlobalConstant(GlobalLightBufferName);
+	if (GlobalLightBufferName.IsValid())
+		pConstGlobalLightBuffer = GlobalParams.GetConstant(GlobalLightBufferName);
 
 	CStrID IrradianceMapName = Desc.Get<CStrID>(CStrID("IrradianceMapName"), CStrID::Empty);
-	if (IrradianceMapName.IsValid()) pRsrcIrradianceMap = Owner.GetGlobalResource(IrradianceMapName);
+	if (IrradianceMapName.IsValid())
+		pRsrcIrradianceMap = GlobalParams.GetResource(IrradianceMapName);
 
 	CStrID RadianceEnvMapName = Desc.Get<CStrID>(CStrID("RadianceEnvMapName"), CStrID::Empty);
-	if (RadianceEnvMapName.IsValid()) pRsrcRadianceEnvMap = Owner.GetGlobalResource(RadianceEnvMapName);
+	if (RadianceEnvMapName.IsValid())
+		pRsrcRadianceEnvMap = GlobalParams.GetResource(RadianceEnvMapName);
 
 	CStrID TrilinearCubeSamplerName = Desc.Get<CStrID>(CStrID("TrilinearCubeSamplerName"), CStrID::Empty);
-	if (TrilinearCubeSamplerName.IsValid()) pSampTrilinearCube = Owner.GetGlobalSampler(TrilinearCubeSamplerName);
+	if (TrilinearCubeSamplerName.IsValid())
+		pSampTrilinearCube = GlobalParams.GetSampler(TrilinearCubeSamplerName);
 
 	OK;
 }

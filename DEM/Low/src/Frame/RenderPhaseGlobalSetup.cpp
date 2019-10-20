@@ -41,10 +41,17 @@ bool CRenderPhaseGlobalSetup::Init(const CRenderPath& Owner, CStrID PhaseName, c
 {
 	if (!CRenderPhase::Init(Owner, PhaseName, Desc)) FAIL;
 
+	// Cache global shader parameter descriptions
+
+	const auto& GlobalParams = Owner.GetGlobalParamTable();
+
 	CStrID ViewProjectionName = Desc.Get<CStrID>(CStrID("ViewProjectionName"), CStrID::Empty);
-	if (ViewProjectionName.IsValid()) pConstViewProjection = Owner.GetGlobalConstant(ViewProjectionName);
+	if (ViewProjectionName.IsValid())
+		pConstViewProjection = GlobalParams.GetConstant(ViewProjectionName);
+
 	CStrID CameraPositionName = Desc.Get<CStrID>(CStrID("CameraPositionName"), CStrID::Empty);
-	if (CameraPositionName.IsValid()) pConstCameraPosition = Owner.GetGlobalConstant(CameraPositionName);
+	if (CameraPositionName.IsValid())
+		pConstCameraPosition = GlobalParams.GetConstant(CameraPositionName);
 
 	OK;
 }

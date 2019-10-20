@@ -23,8 +23,8 @@ protected:
 	};
 
 	ESortingType									SortingType;
-	CFixedArray<I32>								RenderTargetIndices;
-	I32												DepthStencilIndex;
+	CFixedArray<CStrID>								RenderTargetIDs;
+	CStrID											DepthStencilID;
 	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;
 	CDict<Render::EEffectType, CStrID>				EffectOverrides;
 	bool											EnableLighting = false;

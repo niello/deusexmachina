@@ -16,7 +16,7 @@ class CRenderPhaseGUI: public CRenderPhase
 
 private:
 
-	I32				RenderTargetIndex;
+	CStrID			RenderTargetID;
 	UI::EDrawMode	DrawMode;
 
 public:
