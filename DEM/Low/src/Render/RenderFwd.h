@@ -22,6 +22,7 @@ struct CTextureDesc;
 struct CSwapChainDesc;
 struct CRenderStateDesc;
 struct CSamplerDesc;
+struct CVertexComponent;
 class CDisplayMode;
 class CLight;
 class CTechnique;

@@ -1,11 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
-#include <Render/VertexComponent.h>
-#include <Data/Dictionary.h>
-#include <Data/StringID.h>
 #include <Data/Regions.h>
-#include <Data/HashTable.h>
 
 // GPU device driver manages VRAM resources and provides an interface for rendering on a video card.
 // Create GPU device drivers with CVideoDriverFactory.
@@ -32,15 +28,10 @@ namespace Data
 	class CParams;
 }
 
-namespace Resources
-{
-	class CResourceManager;
-}
-
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 	typedef Ptr<class COSWindow> POSWindow;
-}}
+}
 
 namespace Render
 {
@@ -49,21 +40,13 @@ class CGPUDriver: public Core::CObject
 {
 protected:
 
-	UPTR							AdapterID = Adapter_None;
-	EGPUDriverType					Type;
-	EGPUFeatureLevel				FeatureLevel;	// Must be filled on init
-
-	// Per-GPU resources are managed by their owner
-	Resources::CResourceManager*	pResMgr = nullptr;
-	CHashTable<CStrID, PTexture>	Textures;
-	CHashTable<CStrID, PShader>		Shaders;
-	CHashTable<CStrID, PEffect>		Effects;
-	CHashTable<CStrID, PMaterial>	Materials;
-	CHashTable<CStrID, PMesh>		Meshes;
+	UPTR				AdapterID = Adapter_None;
+	EGPUDriverType		Type;
+	EGPUFeatureLevel	FeatureLevel;	// Must be filled on init
 
 #ifdef DEM_STATS
-	UPTR							PrimitivesRendered = 0;
-	UPTR							DrawsRendered = 0;
+	UPTR				PrimitivesRendered = 0;
+	UPTR				DrawsRendered = 0;
 #endif
 
 	static void					PrepareWindowAndBackBufferSize(DEM::Sys::COSWindow& Window, U32& Width, U32& Height);
@@ -72,15 +55,6 @@ public:
 
 	CGPUDriver();
 	virtual ~CGPUDriver();
-
-	// Engine resource management - create GPU (VRAM) resource from engine resource
-	//???!!!resolve assigns?!
-	void						SetResourceManager(Resources::CResourceManager* pResourceManager);
-	PTexture					GetTexture(CStrID UID, UPTR AccessFlags);
-	PShader						GetShader(CStrID UID);
-	PEffect						GetEffect(CStrID UID);
-	PMaterial					GetMaterial(CStrID UID);
-	PMesh						GetMesh(CStrID UID);
 
 	EGPUDriverType				GetType() const { return Type; }
 	EGPUFeatureLevel			GetFeatureLevel() const { return FeatureLevel; }

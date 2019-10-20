@@ -77,6 +77,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Subscription.h
+	DEM/Low/src/Frame/FrameResourceManager.h
 	DEM/Low/src/Frame/NodeAttrAmbientLight.h
 	DEM/Low/src/Frame/NodeAttrCamera.h
 	DEM/Low/src/Frame/NodeAttrLight.h
@@ -356,6 +357,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/EventNative.cpp
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
+	DEM/Low/src/Frame/FrameResourceManager.cpp
 	DEM/Low/src/Frame/NodeAttrAmbientLight.cpp
 	DEM/Low/src/Frame/NodeAttrCamera.cpp
 	DEM/Low/src/Frame/NodeAttrLight.cpp
