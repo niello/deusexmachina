@@ -20,37 +20,43 @@ __ImplementClass(Render::CTerrain, 'TERR', Render::IRenderable);
 CTerrain::CTerrain() {}
 CTerrain::~CTerrain() {}
 
-bool CTerrain::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CTerrain::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'CDLD':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			CString RUID("Terrain:");
-			RUID += DataReader.Read<CStrID>().CStr();
-			RUID += ".cdlod";
-			RCDLODData = ResourceMgr->RegisterResource<Render::CCDLODData>(CStrID(RUID));
-			HeightMapUID = CStrID(RUID + "#HM");
-			OK;
+			case 'CDLD':
+			{
+				CString RUID("Terrain:");
+				RUID += DataReader.Read<CStrID>().CStr();
+				RUID += ".cdlod";
+				RCDLODData = ResourceMgr->RegisterResource<Render::CCDLODData>(CStrID(RUID));
+				HeightMapUID = CStrID(RUID + "#HM");
+				break;
+			}
+			case 'MTRL':
+			{
+				CString RsrcID = DataReader.Read<CString>();
+				MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+				break;
+			}
+			case 'TSSX':
+			{
+				InvSplatSizeX = 1.f / DataReader.Read<float>();
+				break;
+			}
+			case 'TSSZ':
+			{
+				InvSplatSizeZ = 1.f / DataReader.Read<float>();
+				break;
+			}
+			default: FAIL;
 		}
-		case 'MTRL':
-		{
-			CString RsrcID = DataReader.Read<CString>();
-			MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			OK;
-		}
-		case 'TSSX':
-		{
-			InvSplatSizeX = 1.f / DataReader.Read<float>();
-			OK;
-		}
-		case 'TSSZ':
-		{
-			InvSplatSizeZ = 1.f / DataReader.Read<float>();
-			OK;
-		}
-		default: FAIL;
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

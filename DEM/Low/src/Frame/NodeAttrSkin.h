@@ -44,7 +44,7 @@ public:
 
 	bool							Initialize();
 
-	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute	Clone();
 	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
 

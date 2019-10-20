@@ -23,27 +23,33 @@ CNodeAttrSkin::~CNodeAttrSkin()
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrSkin::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CNodeAttrSkin::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'SKIF':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			//???!!!store the whole URI in a file?!
-			//???store resource locally for reloading?
-			CString RsrcID = DataReader.Read<CString>();
-			CStrID RUID = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
-			Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CSkinInfo>(RUID);
-			SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
-			OK;
+			case 'SKIF':
+			{
+				//???!!!store the whole URI in a file?!
+				//???store resource locally for reloading? or reload in ValidateResources?
+				CString RsrcID = DataReader.Read<CString>();
+				CStrID RUID = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
+				Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CSkinInfo>(RUID);
+				SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
+				break;
+			}
+			case 'ACBN':
+			{
+				Flags.SetTo(Skin_AutocreateBones, DataReader.Read<bool>());
+				break;
+			}
+			default: FAIL;
 		}
-		case 'ACBN':
-		{
-			Flags.SetTo(Skin_AutocreateBones, DataReader.Read<bool>());
-			OK;
-		}
-		default: return CNodeAttribute::LoadDataBlock(FourCC, DataReader);
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

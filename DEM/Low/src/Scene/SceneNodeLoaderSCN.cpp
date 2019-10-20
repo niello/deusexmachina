@@ -33,10 +33,8 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 		n_assert(Reader.ReadString(ClassName));
 		Scene::PNodeAttribute Attr = (Scene::CNodeAttribute*)Factory->Create(ClassName);
 
-		//!!!move to Attr->LoadFromStream! some attrs may want to load not by block, but sequentially.
-		//may require to read data block count inside, or ignore it for such attrs.
-		for (U16 j = 0; j < DataBlockCount; ++j)
-			if (!Attr->LoadDataBlock(Reader.Read<int>(), Reader)) FAIL;
+		//!!!not all attrs may be saved with blocks! change SCN format?
+		if (!Attr->LoadDataBlocks(Reader, DataBlockCount)) FAIL;
 
 		Node->AddAttribute(*Attr);
 	}

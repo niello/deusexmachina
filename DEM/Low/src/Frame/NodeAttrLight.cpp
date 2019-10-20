@@ -1,16 +1,61 @@
 #include "NodeAttrLight.h"
-
 #include <Scene/SPS.h>
 #include <Render/Light.h>
 #include <Core/Factory.h>
+#include <IO/BinaryReader.h>
 
 namespace Frame
 {
 __ImplementClass(Frame::CNodeAttrLight, 'NALT', Scene::CNodeAttribute);
 
-bool CNodeAttrLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CNodeAttrLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	return Light.LoadDataBlock(FourCC, DataReader);
+	for (UPTR j = 0; j < Count; ++j)
+	{
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
+		{
+			case 'LGHT':
+			{
+				Light.Type = static_cast<Render::ELightType>(DataReader.Read<int>());
+				break;
+			}
+			case 'CSHD':
+			{
+				//!!!Light.Flags.SetTo(ShadowCaster, DataReader.Read<bool>());!
+				DataReader.Read<bool>();
+				break;
+			}
+			case 'LINT':
+			{
+				DataReader.Read(Light.Intensity);
+				break;
+			}
+			case 'LCLR':
+			{
+				DataReader.Read(Light.Color);
+				break;
+			}
+			case 'LRNG':
+			{
+				Light.SetRange(DataReader.Read<float>());
+				break;
+			}
+			case 'LCIN':
+			{
+				Light.SetSpotInnerAngle(n_deg2rad(DataReader.Read<float>()));
+				break;
+			}
+			case 'LCOU':
+			{
+				Light.SetSpotOuterAngle(n_deg2rad(DataReader.Read<float>()));
+				break;
+			}
+			default: FAIL;
+		}
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
@@ -18,7 +63,7 @@ Scene::PNodeAttribute CNodeAttrLight::Clone()
 {
 	PNodeAttrLight ClonedAttr = n_new(CNodeAttrLight);
 	ClonedAttr->Light = Light;
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

@@ -13,36 +13,44 @@ namespace Render
 {
 __ImplementClass(Render::CModel, 'MODL', Render::IRenderable);
 
-bool CModel::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CModel::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'MTRL':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			CString RsrcID = DataReader.Read<CString>();
-			MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			OK;
+			case 'MTRL':
+			{
+				CString RsrcID = DataReader.Read<CString>();
+				MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+				break;
+			}
+			case 'JPLT':
+			{
+				U16 Count;
+				if (!DataReader.Read(Count)) FAIL;
+				BoneIndices.SetSize(Count);
+				if (DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) != Count * sizeof(int)) FAIL;
+				break;
+			}
+			case 'MESH':
+			{
+				//???!!!store the whole URI in a file?!
+				CString MeshID = DataReader.Read<CString>();
+				MeshUID = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
+				break;
+			}
+			case 'MSGR':
+			{
+				if (!DataReader.Read(MeshGroupIndex)) FAIL;
+				break;
+			}
+			default: FAIL;
 		}
-		case 'JPLT':
-		{
-			U16 Count;
-			if (!DataReader.Read(Count)) FAIL;
-			BoneIndices.SetSize(Count);
-			return DataReader.GetStream().Read(BoneIndices.GetPtr(), Count * sizeof(int)) == Count * sizeof(int);
-		}
-		case 'MESH':
-		{
-			//???!!!store the whole URI in a file?!
-			CString MeshID = DataReader.Read<CString>();
-			MeshUID = CStrID(CString("Meshes:") + MeshID.CStr() + ".nvx2");
-			OK;
-		}
-		case 'MSGR':
-		{
-			return DataReader.Read(MeshGroupIndex);
-		}
-		default: FAIL;
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

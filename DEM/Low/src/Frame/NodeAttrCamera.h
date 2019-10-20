@@ -47,7 +47,7 @@ public:
 	//???flag ManualProjMatrix? Perspective, Orthogonal, Manual
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
-	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute	Clone();
 	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
 

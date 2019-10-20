@@ -31,6 +31,9 @@ String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina en
 CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID)
 	: GPU(&GPUDriver)
 {
+	//???to GUI render phase? get shaders there from Frame mgr, set when render? or create shader wrapper on phase Init?
+	//must not pass shader resource IDs here! better to move these settings to phase. Effect can't handle 2 pixel shaders,
+	//but if use tech, it may work. Or use 2 effects.
 	Render::PShader VS = GPU->GetShader(VertexShaderID);
 	Render::PShader PSRegular = GPU->GetShader(PixelShaderRegularID);
 	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);

@@ -39,7 +39,7 @@ public:
 	CNodeAttrRenderable(): pRenderable(nullptr), pSPS(nullptr), pSPSRecord(nullptr) {}
 	~CNodeAttrRenderable();
 
-	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute	Clone();
 	void							UpdateInSPS(Scene::CSPS& SPS);
 

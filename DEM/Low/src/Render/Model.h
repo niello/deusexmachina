@@ -31,7 +31,7 @@ public:
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 	//can use Flags field of CNodeAttribute
 
-	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual IRenderable*	Clone();
 	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
 };

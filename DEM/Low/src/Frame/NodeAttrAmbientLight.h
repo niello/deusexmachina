@@ -40,7 +40,7 @@ protected:
 
 public:
 
-	virtual bool					LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute	Clone();
 	void							UpdateInSPS(Scene::CSPS& SPS);
 

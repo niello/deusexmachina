@@ -18,6 +18,16 @@
 namespace Frame
 {
 
+CFrameResourceManager::CFrameResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU)
+	: pResMgr(&ResMgr)
+	, pGPU(&GPU)
+{
+}
+//---------------------------------------------------------------------
+
+CFrameResourceManager::~CFrameResourceManager() {}
+//---------------------------------------------------------------------
+
 Render::PMesh CFrameResourceManager::GetMesh(CStrID UID)
 {
 	auto It = Meshes.find(UID);

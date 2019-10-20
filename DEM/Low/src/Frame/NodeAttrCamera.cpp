@@ -6,18 +6,27 @@ namespace Frame
 {
 __ImplementClass(Frame::CNodeAttrCamera, 'CAMR', Scene::CNodeAttribute);
 
-bool CNodeAttrCamera::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CNodeAttrCamera::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	/*
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'XXXX':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			//DataReader.Read();
-			//OK;
-			FAIL;
+			case 'XXXX':
+			{
+				DataReader.Read();
+				break;
+			}
+			default: FAIL;
 		}
-		default: FAIL;
 	}
+
+	OK;
+	*/
+
+	return !Count;
 }
 //---------------------------------------------------------------------
 

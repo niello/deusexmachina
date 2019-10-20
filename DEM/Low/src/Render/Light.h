@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_LIGHT_H__
-#define __DEM_L1_RENDER_LIGHT_H__
-
 #include <Data/Flags.h>
 #include <Data/FourCC.h>
 #include <Math/Vector3.h>
@@ -54,8 +51,6 @@ public:
 	float				Intensity;
 
 	CLight();
-
-	virtual bool	LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
 
 	void			CalcLocalFrustum(matrix44& OutFrustum) const; // Spot only
 	float			CalcLightPriority(const vector3& ObjectPos, const vector3& LightPos, const vector3& LightInvDir) const;
@@ -111,5 +106,3 @@ inline void CLight::SetSpotOuterAngle(float NewAngle)
 //---------------------------------------------------------------------
 
 }
-
-#endif

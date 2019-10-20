@@ -9,23 +9,28 @@ namespace Frame
 {
 __ImplementClass(Frame::CNodeAttrAmbientLight, 'NAAL', Scene::CNodeAttribute);
 
-bool CNodeAttrAmbientLight::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CNodeAttrAmbientLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'IRRM':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			UIDIrradianceMap = CStrID(DataReader.Read<CString>());
-			OK;
-		}
-		case 'PMRM':
-		{
-			UIDRadianceEnvMap = CStrID(DataReader.Read<CString>());
-			OK;
+			case 'IRRM':
+			{
+				UIDIrradianceMap = CStrID(DataReader.Read<CString>());
+				break;
+			}
+			case 'PMRM':
+			{
+				UIDRadianceEnvMap = CStrID(DataReader.Read<CString>());
+				break;
+			}
+			default: FAIL;
 		}
 	}
 
-	FAIL;
+	OK;
 }
 //---------------------------------------------------------------------
 

@@ -23,6 +23,7 @@
 
 // Scene bootstrapper includes
 // TODO: consider incapsulating into methods of relevant subsystems
+#include <Frame/FrameResourceManager.h>
 #include <Frame/RenderPhaseGlobalSetup.h>
 #include <Frame/RenderPhaseGeometry.h>
 #include <UI/RenderPhaseGUI.h>
@@ -628,7 +629,7 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 		return nullptr;
 	}
 
-	GPU->SetResourceManager(ResMgr.get());
+	Frame::CFrameResourceManager FrameMgr(*ResMgr, *GPU);
 
 	// Register resource loaders
 
@@ -650,8 +651,7 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 
 	// Create a frame view based on the specified render path
 
-	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(pRenderPathID);
-	return Frame::PView(n_new(Frame::CView(*RRP->ValidateObject<Frame::CRenderPath>(), *GPU, SwapChainID, SwapChainRTID)));
+	return Frame::PView(n_new(Frame::CView(*FrameMgr.GetRenderPath(CStrID(pRenderPathID)), *GPU, SwapChainID, SwapChainRTID)));
 }
 //---------------------------------------------------------------------
 

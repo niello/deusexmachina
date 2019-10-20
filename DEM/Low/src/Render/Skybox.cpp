@@ -14,18 +14,24 @@ namespace Render
 {
 __ImplementClass(Render::CSkybox, 'SKBX', Render::IRenderable);
 
-bool CSkybox::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CSkybox::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'MTRL':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			CString RsrcID = DataReader.Read<CString>();
-			MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
-			OK;
+			case 'MTRL':
+			{
+				CString RsrcID = DataReader.Read<CString>();
+				MaterialUID = CStrID(CString("Materials:") + RsrcID.CStr() + ".mtl"); //???replace ID by full URI on export?
+				break;
+			}
+			default: FAIL;
 		}
-		default: FAIL;
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

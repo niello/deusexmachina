@@ -42,7 +42,7 @@ public:
 	CTerrain();
 	virtual ~CTerrain();
 
-	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual IRenderable*	Clone();
 	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
 

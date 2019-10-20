@@ -30,6 +30,7 @@ private:
 public:
 
 	CFrameResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU);
+	~CFrameResourceManager();
 
 	// Engine resource management - create GPU (VRAM) resource from engine resource
 	//???!!!resolve assigns?!

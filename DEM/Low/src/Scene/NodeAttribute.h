@@ -47,7 +47,7 @@ public:
 	virtual void			OnDetachFromNode() { pNode = nullptr; }
 	virtual void			OnDetachFromScene() { }
 
-	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) { FAIL; }
+	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) { FAIL; }
 	virtual PNodeAttribute	Clone() = 0;
 	virtual void			Update(const vector3* pCOIArray, UPTR COICount);
 	void					RemoveFromNode();

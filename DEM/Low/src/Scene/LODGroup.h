@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader);
+	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual PNodeAttribute	Clone();
 	virtual void			Update(const vector3* pCOIArray, UPTR COICount);
 };

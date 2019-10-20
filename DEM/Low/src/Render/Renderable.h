@@ -40,7 +40,7 @@ public:
 
 	virtual ~IRenderable() {}
 
-	virtual bool			LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader) = 0;
+	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) = 0;
 	virtual IRenderable*	Clone() = 0;
 	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	virtual bool			ValidateResources(CGPUDriver* pGPU) = 0;

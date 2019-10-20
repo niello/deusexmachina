@@ -8,29 +8,35 @@ namespace Scene
 {
 __ImplementClass(Scene::CLODGroup, 'LODG', Scene::CNodeAttribute);
 
-bool CLODGroup::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CLODGroup::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'TRSH':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			short Count;
-			if (!DataReader.Read(Count)) FAIL;
-			SqThresholds.BeginAdd(Count);
-			for (short i = 0; i < Count; ++i)
+			case 'TRSH':
 			{
-				float Threshold;
-				CStrID ChildID;
-				DataReader.Read<float>(Threshold);
-				DataReader.Read<CStrID>(ChildID);
-				//!!!check FLT_MAX and what if square it!
-				SqThresholds.Add(Threshold * Threshold, ChildID);
+				short Count;
+				if (!DataReader.Read(Count)) FAIL;
+				SqThresholds.BeginAdd(Count);
+				for (short i = 0; i < Count; ++i)
+				{
+					float Threshold;
+					CStrID ChildID;
+					DataReader.Read<float>(Threshold);
+					DataReader.Read<CStrID>(ChildID);
+					//!!!check FLT_MAX and what if square it!
+					SqThresholds.Add(Threshold * Threshold, ChildID);
+				}
+				SqThresholds.EndAdd();
+				break;
 			}
-			SqThresholds.EndAdd();
-			OK;
+			default: FAIL;
 		}
-		default: FAIL;
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

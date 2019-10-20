@@ -16,20 +16,26 @@ CNodeAttrRenderable::~CNodeAttrRenderable()
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrRenderable::LoadDataBlock(Data::CFourCC FourCC, IO::CBinaryReader& DataReader)
+bool CNodeAttrRenderable::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	switch (FourCC.Code)
+	for (UPTR j = 0; j < Count; ++j)
 	{
-		case 'RCLS':
+		const uint32_t Code = DataReader.Read<uint32_t>();
+		switch (Code)
 		{
-			//???!!!load by fourcc?!
-			n_assert_dbg(!pRenderable);
-			CString ClassName = DataReader.Read<CString>();
-			pRenderable = (Render::IRenderable*)Factory->Create(ClassName);
-			OK;
+			case 'RCLS':
+			{
+				//???!!!load by fourcc?!
+				n_assert_dbg(!pRenderable);
+				CString ClassName = DataReader.Read<CString>();
+				pRenderable = (Render::IRenderable*)Factory->Create(ClassName);
+				break;
+			}
+			default: return pRenderable && pRenderable->LoadDataBlock(FourCC, DataReader);
 		}
-		default: return pRenderable && pRenderable->LoadDataBlock(FourCC, DataReader);
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 
