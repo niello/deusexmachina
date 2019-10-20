@@ -165,7 +165,7 @@ public:
 	//POSConsoleWindow CreateConsoleWindow();
 
 	// Quickstart methods
-	Frame::PView		BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID);
+	Frame::PView		BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID, CStrID SwapChainRTID);
 };
 
 }

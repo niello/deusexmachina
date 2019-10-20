@@ -599,7 +599,7 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Hei
 // Initializes 3D graphics, resources etc and makes an application ready to work with 3D scenes.
 // This function is intended for fast typical setup and may be completely replaced with an application
 // code if more sophisticated initialization is required. Don't call more than once!
-Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID)
+Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID, CStrID SwapChainRTID)
 {
 	// Register render path classes in the factory
 
@@ -651,7 +651,7 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 	// Create a frame view based on the specified render path
 
 	Resources::PResource RRP = ResMgr->RegisterResource<Frame::CRenderPath>(pRenderPathID);
-	return Frame::PView(n_new(Frame::CView(*RRP->ValidateObject<Frame::CRenderPath>(), *GPU, SwapChainID)));
+	return Frame::PView(n_new(Frame::CView(*RRP->ValidateObject<Frame::CRenderPath>(), *GPU, SwapChainID, SwapChainRTID)));
 }
 //---------------------------------------------------------------------
 
