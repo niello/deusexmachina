@@ -45,6 +45,7 @@
 #include <Render/TextureLoaderTGA.h>
 #include <Render/TextureLoaderDDS.h>
 #include <Render/TextureLoaderCDLOD.h>
+#include <Render/CDLODData.h>
 #include <Render/CDLODDataLoader.h>
 #include <Render/ShaderLibrary.h>
 #include <Render/ShaderLibraryLoaderSLB.h>

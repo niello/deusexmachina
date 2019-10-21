@@ -26,7 +26,7 @@ private:
 
 protected:
 
-	virtual ~CObject() { n_assert(ListIt); List.Remove(ListIt); }
+	virtual ~CObject() override { n_assert(ListIt); List.Remove(ListIt); }
 
 public:
 

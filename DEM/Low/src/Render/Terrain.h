@@ -1,14 +1,10 @@
 #pragma once
 #include <Render/Renderable.h>
 #include <Data/StringID.h>
+#include <Data/Ptr.h>
 
 // Terrain represents a CDLOD heightmap-based model. It has special LOD handling
 // and integrated visibility test.
-
-namespace Resources
-{
-	typedef Ptr<class CResource> PResource;
-}
 
 namespace Render
 {
@@ -21,13 +17,10 @@ class CTerrain: public IRenderable
 {
 	__DeclareClass(CTerrain);
 
-protected:
+public:
 
-	Resources::PResource	RCDLODData;
-	PCDLODData				CDLODData;	//???NEED?
-	CStrID					MaterialUID;
+	PCDLODData				CDLODData;
 	PMaterial				Material;
-	CStrID					HeightMapUID;
 	PTexture				HeightMap;
 	PMesh					PatchMesh;
 	PMesh					QuarterPatchMesh;
@@ -35,24 +28,19 @@ protected:
 	float					InvSplatSizeX = 0.1f;
 	float					InvSplatSizeZ = 0.1f;
 
-	virtual bool			ValidateResources(CGPUDriver* pGPU);
-
-public:
-
 	CTerrain();
 	virtual ~CTerrain();
 
-	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual IRenderable*	Clone();
-	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
+	virtual PRenderable Clone() override;
+	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD) const override;
 
-	CCDLODData*				GetCDLODData() const { return CDLODData.Get(); }
-	CMaterial*				GetMaterial() const { return Material.Get(); }
-	CTexture*				GetHeightMap() const { return HeightMap.Get(); }
-	CMesh*					GetPatchMesh() const { return PatchMesh.Get(); }
-	CMesh*					GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
-	float					GetInvSplatSizeX() const { return InvSplatSizeX; }
-	float					GetInvSplatSizeZ() const { return InvSplatSizeZ; }
+	CCDLODData*         GetCDLODData() const { return CDLODData.Get(); }
+	CMaterial*          GetMaterial() const { return Material.Get(); }
+	CTexture*           GetHeightMap() const { return HeightMap.Get(); }
+	CMesh*              GetPatchMesh() const { return PatchMesh.Get(); }
+	CMesh*              GetQuarterPatchMesh() const { return QuarterPatchMesh.Get(); }
+	float               GetInvSplatSizeX() const { return InvSplatSizeX; }
+	float               GetInvSplatSizeZ() const { return InvSplatSizeZ; }
 };
 
 typedef Ptr<CTerrain> PTerrain;

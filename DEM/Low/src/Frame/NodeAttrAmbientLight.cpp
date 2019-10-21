@@ -1,5 +1,5 @@
 #include "NodeAttrAmbientLight.h"
-
+#include <Frame/FrameResourceManager.h>
 #include <Scene/SPS.h>
 #include <Render/GPUDriver.h>
 #include <IO/BinaryReader.h>
@@ -34,11 +34,10 @@ bool CNodeAttrAmbientLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR C
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrAmbientLight::ValidateResources(Render::CGPUDriver* pGPU)
+bool CNodeAttrAmbientLight::ValidateResources(CFrameResourceManager& ResMgr)
 {
-	if (!pGPU) FAIL;
-	IrradianceMap = pGPU->GetTexture(UIDIrradianceMap, Render::Access_GPU_Read);
-	RadianceEnvMap = pGPU->GetTexture(UIDRadianceEnvMap, Render::Access_GPU_Read);
+	IrradianceMap = ResMgr.GetTexture(UIDIrradianceMap, Render::Access_GPU_Read);
+	RadianceEnvMap = ResMgr.GetTexture(UIDRadianceEnvMap, Render::Access_GPU_Read);
 	OK;
 }
 //---------------------------------------------------------------------

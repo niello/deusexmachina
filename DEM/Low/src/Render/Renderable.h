@@ -1,9 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_RENDERABLE_H__
-#define __DEM_L1_RENDER_RENDERABLE_H__
-
 #include <Core/RTTIBaseClass.h>
-#include <Data/Ptr.h>
+//#include <Data/Ptr.h>
 
 // An interface class for any renderable objects, like regular models, particle systems, terrain patches etc.
 
@@ -16,7 +13,7 @@ namespace IO
 
 namespace Render
 {
-typedef Ptr<class CGPUDriver> PGPUDriver;
+typedef std::unique_ptr<class IRenderable> PRenderable;
 
 class IRenderable: public Core::CRTTIBaseClass //???or CObject?
 {
@@ -24,10 +21,8 @@ class IRenderable: public Core::CRTTIBaseClass //???or CObject?
 
 protected:
 
-	//enum // extends Scene::CNodeAttribute enum
+	//enum //???not all flags applicable to all renderables?
 	//{
-	//	// Active
-	//	// WorldMatrixChanged
 	//	//AddedAsAlwaysVisible	= 0x04,	// To avoid searching in SPS AlwaysVisible array at each UpdateInSPS() call
 	//	DoOcclusionCulling		= 0x08,
 	//	CastShadow				= 0x10,
@@ -38,16 +33,8 @@ protected:
 
 public:
 
-	virtual ~IRenderable() {}
-
-	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) = 0;
-	virtual IRenderable*	Clone() = 0;
-	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
-	virtual bool			ValidateResources(CGPUDriver* pGPU) = 0;
+	virtual PRenderable Clone() = 0;
+	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 };
 
-//typedef Ptr<IRenderable> PRenderable;
-
 }
-
-#endif

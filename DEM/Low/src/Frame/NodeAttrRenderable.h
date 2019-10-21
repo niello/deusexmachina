@@ -1,10 +1,11 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_NODE_ATTR_RENDERABLE_H__
-#define __DEM_L1_FRAME_NODE_ATTR_RENDERABLE_H__
-
 #include <Scene/NodeAttribute.h>
 
-// Base attribute class for any renderable scene objects.
+// Base attribute class for any renderable scene objects. Initialization is done in two
+// phases. First all plain data is initialized on loading. After that the attribute can
+// be used as an instance or as a template (create instances with Clone()). Second phase
+// is resource validation. It happens only for instances and initializes GPU-dependent
+// resources of the attribute, making it renderable on certain GPU.
 
 class CAABB;
 
@@ -16,39 +17,34 @@ namespace Scene
 
 namespace Render
 {
-	class IRenderable;
+	typedef std::unique_ptr<class IRenderable> PRenderable;
 }
 
 namespace Frame
 {
+class CFrameResourceManager;
 
 class CNodeAttrRenderable: public Scene::CNodeAttribute
 {
-	__DeclareClass(CNodeAttrRenderable);
+	__DeclareClassNoFactory;
 
 protected:
 
-	Render::IRenderable*	pRenderable; //!!!???PRenderable?!
-	Scene::CSPS*			pSPS;
-	Scene::CSPSRecord*		pSPSRecord;
+	Render::PRenderable	Renderable;
+	Scene::CSPS*		pSPS = nullptr;
+	Scene::CSPSRecord*	pSPSRecord = nullptr;
 
-	virtual void			OnDetachFromScene();
+	virtual void         OnDetachFromScene();
 
 public:
 
-	CNodeAttrRenderable(): pRenderable(nullptr), pSPS(nullptr), pSPSRecord(nullptr) {}
-	~CNodeAttrRenderable();
+	virtual bool         ValidateResources(CFrameResourceManager& ResMgr) = 0;
+	void                 UpdateInSPS(Scene::CSPS& SPS);
 
-	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual Scene::PNodeAttribute	Clone();
-	void							UpdateInSPS(Scene::CSPS& SPS);
-
-	bool							GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const; //!!!can get from a spatial record!
-	Render::IRenderable*			GetRenderable() const { return pRenderable; }
+	bool                 GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const; //!!!can get from a spatial record!
+	Render::IRenderable* GetRenderable() const { return Renderable.get(); }
 };
 
 typedef Ptr<CNodeAttrRenderable> PNodeAttrRenderable;
 
 }
-
-#endif

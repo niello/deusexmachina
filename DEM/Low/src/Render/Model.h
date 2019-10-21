@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/Renderable.h>
+#include <Data/Ptr.h>
 #include <Data/FixedArray.h>
 #include <Data/StringID.h>
 
@@ -15,25 +16,17 @@ class CModel: public IRenderable
 {
 	__DeclareClass(CModel);
 
-protected:
-
-	virtual bool	ValidateResources(CGPUDriver* pGPU);
-
 public:
 
-	CStrID				MeshUID;
+	PMaterial			Material; //???!!!materialset!?
 	PMesh				Mesh;
 	UPTR				MeshGroupIndex = 0;
-	CStrID				MaterialUID;
-	PMaterial			Material; //???!!!materialset!?
 	CFixedArray<int>	BoneIndices;	// For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
-	//can use Flags field of CNodeAttribute
 
-	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual IRenderable*	Clone();
-	virtual bool			GetLocalAABB(CAABB& OutBox, UPTR LOD) const;
+	virtual PRenderable Clone() override;
+	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD) const override;
 };
 
 }

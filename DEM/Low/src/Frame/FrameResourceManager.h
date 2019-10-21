@@ -45,6 +45,9 @@ public:
 
 	//???temporary CBs?
 	//???render node pool?
+
+	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
+	Render::CGPUDriver*          GetGPU() const { return pGPU; }
 };
 
 }

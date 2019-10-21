@@ -78,6 +78,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Subscription.h
 	DEM/Low/src/Frame/FrameResourceManager.h
+	DEM/Low/src/Frame/ModelAttribute.h
 	DEM/Low/src/Frame/NodeAttrAmbientLight.h
 	DEM/Low/src/Frame/NodeAttrCamera.h
 	DEM/Low/src/Frame/NodeAttrLight.h
@@ -90,6 +91,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/RenderPhaseGlobalSetup.h
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.h
 	DEM/Low/src/Frame/SceneNodeValidateResources.h
+	DEM/Low/src/Frame/SkyboxAttribute.h
+	DEM/Low/src/Frame/TerrainAttribute.h
 	DEM/Low/src/Frame/View.h
 	DEM/Low/src/Input/ControlLayout.h
 	DEM/Low/src/Input/InputConditionAnyOfEvents.h
@@ -358,6 +361,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
 	DEM/Low/src/Frame/FrameResourceManager.cpp
+	DEM/Low/src/Frame/ModelAttribute.cpp
 	DEM/Low/src/Frame/NodeAttrAmbientLight.cpp
 	DEM/Low/src/Frame/NodeAttrCamera.cpp
 	DEM/Low/src/Frame/NodeAttrLight.cpp
@@ -370,6 +374,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/RenderPhaseGlobalSetup.cpp
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.cpp
 	DEM/Low/src/Frame/SceneNodeValidateResources.cpp
+	DEM/Low/src/Frame/SkyboxAttribute.cpp
+	DEM/Low/src/Frame/TerrainAttribute.cpp
 	DEM/Low/src/Frame/View.cpp
 	DEM/Low/src/Input/ControlLayout.cpp
 	DEM/Low/src/Input/Input.cpp

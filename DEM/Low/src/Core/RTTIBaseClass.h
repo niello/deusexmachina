@@ -8,11 +8,11 @@ namespace Core
 
 class CRTTIBaseClass
 {
-	__DeclareClassNoFactory;
+	__DeclareClassNoFactory; // virtual methods inside
 
 public:
 
-	//virtual ~CRTTIBaseClass() = default;
+	virtual ~CRTTIBaseClass() = default;
 
 	bool			IsInstanceOf(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
 	bool			IsInstanceOf(const char* pName) const { return GetRTTI()->GetName() == pName; }

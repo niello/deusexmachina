@@ -16,7 +16,7 @@ bool CSceneNodeValidateAttrs::Visit(Scene::CSceneNode& Node)
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (Attr.IsA<Frame::CNodeAttrRenderable>())
 		{
-			if (!((Frame::CNodeAttrRenderable&)Attr).GetRenderable()->ValidateResources(Level->GetHostGPU())) FAIL;
+			if (!((Frame::CNodeAttrRenderable&)Attr).ValidateResources(Level->GetHostGPU())) FAIL;
 		}
 		else if (Attr.IsA<Frame::CNodeAttrSkin>())
 		{

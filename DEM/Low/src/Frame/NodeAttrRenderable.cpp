@@ -1,57 +1,16 @@
 #include "NodeAttrRenderable.h"
-
 #include <Scene/SPS.h>
 #include <Scene/SceneNode.h>
 #include <Render/Renderable.h>
-#include <IO/BinaryReader.h>
-#include <Core/Factory.h>
 
 namespace Frame
 {
-__ImplementClass(Frame::CNodeAttrRenderable, 'NARE', Scene::CNodeAttribute);
-
-CNodeAttrRenderable::~CNodeAttrRenderable()
-{
-	SAFE_DELETE(pRenderable);
-}
-//---------------------------------------------------------------------
-
-bool CNodeAttrRenderable::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
-{
-	for (UPTR j = 0; j < Count; ++j)
-	{
-		const uint32_t Code = DataReader.Read<uint32_t>();
-		switch (Code)
-		{
-			case 'RCLS':
-			{
-				//???!!!load by fourcc?!
-				n_assert_dbg(!pRenderable);
-				CString ClassName = DataReader.Read<CString>();
-				pRenderable = (Render::IRenderable*)Factory->Create(ClassName);
-				break;
-			}
-			default: return pRenderable && pRenderable->LoadDataBlock(FourCC, DataReader);
-		}
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-Scene::PNodeAttribute CNodeAttrRenderable::Clone()
-{
-	//???or clone renderable?
-	PNodeAttrRenderable ClonedAttr = n_new(CNodeAttrRenderable);
-	ClonedAttr->pRenderable = pRenderable->Clone();
-	return ClonedAttr.Get();
-}
-//---------------------------------------------------------------------
+__ImplementClassNoFactory(Frame::CNodeAttrRenderable, Scene::CNodeAttribute);
 
 void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 {
 	CAABB AABB;
-	const bool AABBIsValid = pRenderable->GetLocalAABB(AABB);
+	const bool AABBIsValid = Renderable->GetLocalAABB(AABB);
 	const bool SPSChanged = (pSPS != &SPS);
 
 	// Remove record, if AABB is invalid or object is moved to another SPS (one scene - one SPS for now)
@@ -101,7 +60,7 @@ bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 	}
 	else
 	{
-		if (!pRenderable->GetLocalAABB(OutBox, LOD)) FAIL;
+		if (!Renderable->GetLocalAABB(OutBox, LOD)) FAIL;
 		OutBox.Transform(pNode->GetWorldMatrix());
 		OK;
 	}
