@@ -25,7 +25,7 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	CSkybox* pSkybox = Node.pRenderable->As<CSkybox>();
 	n_assert_dbg(pSkybox);
 
-	CMaterial* pMaterial = pSkybox->GetMaterial(); //!!!Get by MaterialLOD!
+	CMaterial* pMaterial = pSkybox->Material; //!!!Get by MaterialLOD / quality level!
 	if (!pMaterial) FAIL;
 
 	CEffect* pEffect = pMaterial->GetEffect();
@@ -46,8 +46,8 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	Node.pTech = pEffect->GetTechByInputSet(InputSet_Skybox);
 	if (!Node.pTech) FAIL;
 
-	Node.pMesh = pSkybox->GetMesh();
-	Node.pGroup = pSkybox->GetMesh()->GetGroup(0, 0);
+	Node.pMesh = pSkybox->Mesh;
+	Node.pGroup = pSkybox->Mesh->GetGroup(0, 0);
 
 	OK;
 }
