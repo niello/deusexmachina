@@ -1,5 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
+#include <Core/Object.h>
 #include <Render/RenderFwd.h>
 #include <Render/ShaderParamTable.h>
 #include <map>
@@ -29,7 +29,7 @@ namespace Frame
 class CView;
 typedef Ptr<class CRenderPhase> PRenderPhase;
 
-class CRenderPath: public Resources::CResourceObject
+class CRenderPath: public Core::CObject
 {
 	__DeclareClassNoFactory;
 
@@ -60,7 +60,7 @@ protected:
 public:
 
 	CRenderPath();
-	virtual ~CRenderPath();
+	virtual ~CRenderPath() override;
 
 	bool								HasRenderTarget(CStrID ID) const { return RTSlots.find(ID) != RTSlots.cend(); }
 	bool								HasDepthStencilBuffer(CStrID ID) const { return DSSlots.find(ID) != DSSlots.cend(); }
@@ -68,7 +68,6 @@ public:
 
 	bool								Render(CView& View);
 
-	//virtual bool						IsResourceValid() const { return Phases.GetCount() > 0; } //???can be valid when empty?
 	UPTR								GetRenderTargetCount() const { return RTSlots.size(); }
 	UPTR								GetDepthStencilBufferCount() const { return DSSlots.size(); }
 	const Render::CShaderParamTable&	GetGlobalParamTable() const { return Globals; }

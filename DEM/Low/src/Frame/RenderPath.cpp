@@ -9,7 +9,7 @@
 
 namespace Frame
 {
-__ImplementClassNoFactory(Frame::CRenderPath, Resources::CResourceObject);
+__ImplementClassNoFactory(Frame::CRenderPath, Core::CObject);
 
 CRenderPath::CRenderPath() {}
 

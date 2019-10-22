@@ -55,7 +55,7 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 }
 //---------------------------------------------------------------------
 
-bool CTerrainAttribute::ValidateResources(CFrameResourceManager& ResMgr)
+bool CTerrainAttribute::ValidateResources(CGraphicsResourceManager& ResMgr)
 {
 	if (!Renderable || !ResMgr.GetGPU()) FAIL;
 

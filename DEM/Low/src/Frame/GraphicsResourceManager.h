@@ -13,12 +13,12 @@ namespace Frame
 {
 typedef Ptr<class CRenderPath> PRenderPath;
 
-class CFrameResourceManager final
+class CGraphicsResourceManager final
 {
 private:
 
-	Resources::CResourceManager* pResMgr = nullptr;
-	Render::CGPUDriver* pGPU = nullptr;
+	Resources::CResourceManager* pResMgr = nullptr; //???strong ref?
+	Render::CGPUDriver* pGPU = nullptr; //???strong ref?
 
 	std::unordered_map<CStrID, Render::PMesh>		Meshes;
 	std::unordered_map<CStrID, Render::PTexture>	Textures;
@@ -27,10 +27,14 @@ private:
 	std::unordered_map<CStrID, Render::PMaterial>	Materials;
 	std::unordered_map<CStrID, PRenderPath>			RenderPaths;
 
+	Render::PEffect   LoadEffect(CStrID UID);
+	Render::PMaterial LoadMaterial(CStrID UID);
+	PRenderPath       LoadRenderPath(CStrID UID);
+
 public:
 
-	CFrameResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU);
-	~CFrameResourceManager();
+	CGraphicsResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU);
+	~CGraphicsResourceManager();
 
 	// Engine resource management - create GPU (VRAM) resource from engine resource
 	//???!!!resolve assigns?!

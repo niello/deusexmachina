@@ -38,8 +38,6 @@ protected:
 	char*							pMaterialConstDefaultValues = nullptr;
 	UPTR							MaterialConstantBufferCount = 0;
 
-	CArray<PShader>					MetadataShaders;
-
 	// call Material LOD CEffectParams / CEffectInstance?
 	//!!!check hardware support on load! Render state invalid -> tech invalid
 	// if Mtl->GetShaderTech(FFlags, LOD) fails, use Mtl->FallbackMtl->GetShaderTech(FFlags, LOD)
@@ -48,13 +46,9 @@ protected:
 
 public:
 
-	static bool LoadParams(IO::CBinaryReader& Reader, Render::CGPUDriver& GPU, CFixedArray<Render::CEffectConstant>& OutConsts, CFixedArray<Render::CEffectResource>& OutResources, CFixedArray<Render::CEffectSampler>& OutSamplers);
-	static bool LoadParamValues(IO::CBinaryReader& Reader, Render::CGPUDriver& GPU, CDict<CStrID, void*>& OutConsts, CDict<CStrID, Render::PTexture>& OutResources, CDict<CStrID, Render::PSampler>& OutSamplers, void*& pOutConstValueBuffer);
-
 	CEffect();
 	~CEffect();
 
-	bool								Load(CGPUDriver& GPU, IO::CStream& Stream);
 	bool								IsValid() const { return !!TechsByInputSet.GetCount(); }
 
 	const CTechnique*					GetTechByName(CStrID Name) const;

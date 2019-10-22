@@ -52,7 +52,6 @@ public:
 	CMaterial();
 	virtual ~CMaterial();
 
-	bool		Load(CGPUDriver& GPU, IO::CStream& Stream);
 	bool		Apply(CGPUDriver& GPU) const;
 
 	bool		IsValid() const { return Effect.IsValidPtr(); }

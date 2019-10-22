@@ -22,7 +22,7 @@ namespace Render
 
 namespace Frame
 {
-class CFrameResourceManager;
+class CGraphicsResourceManager;
 
 class CNodeAttrRenderable: public Scene::CNodeAttribute
 {
@@ -38,7 +38,7 @@ protected:
 
 public:
 
-	virtual bool         ValidateResources(CFrameResourceManager& ResMgr) = 0;
+	virtual bool         ValidateResources(CGraphicsResourceManager& ResMgr) = 0;
 	void                 UpdateInSPS(Scene::CSPS& SPS);
 
 	bool                 GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const; //!!!can get from a spatial record!

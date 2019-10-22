@@ -77,7 +77,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Subscription.h
-	DEM/Low/src/Frame/FrameResourceManager.h
+	DEM/Low/src/Frame/GraphicsResourceManager.h
 	DEM/Low/src/Frame/ModelAttribute.h
 	DEM/Low/src/Frame/NodeAttrAmbientLight.h
 	DEM/Low/src/Frame/NodeAttrCamera.h
@@ -85,7 +85,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/NodeAttrRenderable.h
 	DEM/Low/src/Frame/NodeAttrSkin.h
 	DEM/Low/src/Frame/RenderPath.h
-	DEM/Low/src/Frame/RenderPathLoaderRP.h
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
 	DEM/Low/src/Frame/RenderPhaseGlobalSetup.h
@@ -360,7 +359,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/EventNative.cpp
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
-	DEM/Low/src/Frame/FrameResourceManager.cpp
+	DEM/Low/src/Frame/GraphicsResourceManager.cpp
 	DEM/Low/src/Frame/ModelAttribute.cpp
 	DEM/Low/src/Frame/NodeAttrAmbientLight.cpp
 	DEM/Low/src/Frame/NodeAttrCamera.cpp
@@ -368,7 +367,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/NodeAttrRenderable.cpp
 	DEM/Low/src/Frame/NodeAttrSkin.cpp
 	DEM/Low/src/Frame/RenderPath.cpp
-	DEM/Low/src/Frame/RenderPathLoaderRP.cpp
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
 	DEM/Low/src/Frame/RenderPhaseGlobalSetup.cpp

@@ -6,17 +6,17 @@
 
 namespace Frame
 {
-class CFrameResourceManager;
+class CGraphicsResourceManager;
 
 class CSceneNodeValidateResources: public Scene::INodeVisitor
 {
 private:
 
-	CFrameResourceManager& _ResMgr;
+	CGraphicsResourceManager& _ResMgr;
 
 public:
 
-	CSceneNodeValidateResources(CFrameResourceManager& ResMgr) : _ResMgr(ResMgr) {}
+	CSceneNodeValidateResources(CGraphicsResourceManager& ResMgr) : _ResMgr(ResMgr) {}
 
 	virtual bool Visit(Scene::CSceneNode& Node);
 };

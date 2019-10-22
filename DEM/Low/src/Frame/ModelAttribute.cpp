@@ -51,7 +51,7 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-bool CModelAttribute::ValidateResources(CFrameResourceManager& ResMgr)
+bool CModelAttribute::ValidateResources(CGraphicsResourceManager& ResMgr)
 {
 	if (!Renderable) FAIL;
 

@@ -22,7 +22,7 @@ namespace Render
 
 namespace Frame
 {
-class CFrameResourceManager;
+class CGraphicsResourceManager;
 
 class CNodeAttrAmbientLight: public Scene::CNodeAttribute
 {
@@ -45,7 +45,7 @@ public:
 	virtual Scene::PNodeAttribute	Clone();
 	void							UpdateInSPS(Scene::CSPS& SPS);
 
-	bool							ValidateResources(CFrameResourceManager& ResMgr);
+	bool							ValidateResources(CGraphicsResourceManager& ResMgr);
 	bool							GetGlobalAABB(CAABB& OutBox) const;
 	Render::CTexture*				GetIrradianceMap() const { return IrradianceMap.Get(); }
 	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }

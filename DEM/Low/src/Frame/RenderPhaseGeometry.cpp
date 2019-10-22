@@ -422,19 +422,19 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 
 	CStrID GlobalLightBufferName = Desc.Get<CStrID>(CStrID("GlobalLightBufferName"), CStrID::Empty);
 	if (GlobalLightBufferName.IsValid())
-		pConstGlobalLightBuffer = GlobalParams.GetConstant(GlobalLightBufferName);
+		pConstGlobalLightBuffer = GlobalParams.GetConstantParam(GlobalLightBufferName);
 
 	CStrID IrradianceMapName = Desc.Get<CStrID>(CStrID("IrradianceMapName"), CStrID::Empty);
 	if (IrradianceMapName.IsValid())
-		pRsrcIrradianceMap = GlobalParams.GetResource(IrradianceMapName);
+		pRsrcIrradianceMap = GlobalParams.GetResourceParam(IrradianceMapName);
 
 	CStrID RadianceEnvMapName = Desc.Get<CStrID>(CStrID("RadianceEnvMapName"), CStrID::Empty);
 	if (RadianceEnvMapName.IsValid())
-		pRsrcRadianceEnvMap = GlobalParams.GetResource(RadianceEnvMapName);
+		pRsrcRadianceEnvMap = GlobalParams.GetResourceParam(RadianceEnvMapName);
 
 	CStrID TrilinearCubeSamplerName = Desc.Get<CStrID>(CStrID("TrilinearCubeSamplerName"), CStrID::Empty);
 	if (TrilinearCubeSamplerName.IsValid())
-		pSampTrilinearCube = GlobalParams.GetSampler(TrilinearCubeSamplerName);
+		pSampTrilinearCube = GlobalParams.GetSamplerParam(TrilinearCubeSamplerName);
 
 	OK;
 }

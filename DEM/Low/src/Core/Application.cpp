@@ -23,7 +23,7 @@
 
 // Scene bootstrapper includes
 // TODO: consider incapsulating into methods of relevant subsystems
-#include <Frame/FrameResourceManager.h>
+#include <Frame/GraphicsResourceManager.h>
 #include <Frame/RenderPhaseGlobalSetup.h>
 #include <Frame/RenderPhaseGeometry.h>
 #include <UI/RenderPhaseGUI.h>
@@ -36,7 +36,6 @@
 #include <Render/TerrainRenderer.h>
 //
 #include <Frame/RenderPath.h>
-#include <Frame/RenderPathLoaderRP.h>
 #include <Render/SkinInfo.h>
 #include <Render/SkinInfoLoaderSKN.h>
 #include <Render/MeshData.h>
@@ -630,12 +629,11 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 		return nullptr;
 	}
 
-	Frame::CFrameResourceManager FrameMgr(*ResMgr, *GPU);
+	Frame::CGraphicsResourceManager FrameMgr(*ResMgr, *GPU);
 
 	// Register resource loaders
 
 	ResMgr->RegisterDefaultCreator("slb", &Render::CShaderLibrary::RTTI, n_new(Resources::CShaderLibraryLoaderSLB(*ResMgr)));
-	ResMgr->RegisterDefaultCreator("rp", &Frame::CRenderPath::RTTI, n_new(Resources::CRenderPathLoaderRP(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("scn", &Scene::CSceneNode::RTTI, n_new(Resources::CSceneNodeLoaderSCN(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CCDLODData::RTTI, n_new(Resources::CCDLODDataLoader(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderCDLOD(*ResMgr)));
