@@ -1,5 +1,5 @@
 #include "ModelAttribute.h"
-#include <Frame/FrameResourceManager.h>
+#include <Frame/GraphicsResourceManager.h>
 #include <Render/Model.h>
 #include <Render/Mesh.h>
 #include <Render/Material.h>

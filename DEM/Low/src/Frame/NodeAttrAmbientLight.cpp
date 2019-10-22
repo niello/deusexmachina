@@ -1,5 +1,5 @@
 #include "NodeAttrAmbientLight.h"
-#include <Frame/FrameResourceManager.h>
+#include <Frame/GraphicsResourceManager.h>
 #include <Scene/SPS.h>
 #include <Render/GPUDriver.h>
 #include <IO/BinaryReader.h>

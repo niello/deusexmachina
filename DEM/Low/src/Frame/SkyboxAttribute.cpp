@@ -1,5 +1,5 @@
 #include "SkyboxAttribute.h"
-#include <Frame/FrameResourceManager.h>
+#include <Frame/GraphicsResourceManager.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Render/MeshGenerators.h>
