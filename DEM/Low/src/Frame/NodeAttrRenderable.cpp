@@ -56,14 +56,14 @@ bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 	if (pSPSRecord && Flags.IsNot(WorldMatrixChanged)) //!!! && LocalBox not changed!
 	{
 		OutBox = pSPSRecord->GlobalBox;
-		OK;
 	}
 	else
 	{
 		if (!Renderable->GetLocalAABB(OutBox, LOD)) FAIL;
 		OutBox.Transform(pNode->GetWorldMatrix());
-		OK;
 	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

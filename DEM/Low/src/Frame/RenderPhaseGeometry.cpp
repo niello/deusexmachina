@@ -1,6 +1,7 @@
 #include "RenderPhaseGeometry.h"
 
 #include <Frame/View.h>
+#include <Frame/GraphicsResourceManager.h>
 #include <Frame/RenderPath.h>
 #include <Frame/NodeAttrCamera.h>
 #include <Frame/NodeAttrRenderable.h>
@@ -71,8 +72,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 {
 	if (!View.pSPS || !View.GetCamera()) OK;
 
-	Render::CGPUDriver* pGPU = View.GetGPU();
-	if (!pGPU) FAIL;
+	if (!View.GetGraphicsManager()) FAIL;
 
 	View.UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
@@ -94,7 +94,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	for (UPTR i = 0; i < EffectOverrides.GetCount(); ++i)
 	{
 		CStrID EffectUID = EffectOverrides.ValueAt(i);
-		Render::PEffect Effect = EffectUID.IsValid() ? pGPU->GetEffect(EffectUID) : nullptr;
+		Render::PEffect Effect = EffectUID.IsValid() ? View.GetGraphicsManager()->GetEffect(EffectUID) : nullptr;
 		Context.EffectOverrides.Add(EffectOverrides.KeyAt(i), Effect);
 	}
 
@@ -184,6 +184,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	}
 
 	// Setup global lighting params, both ambient and direct
+
+	auto pGPU = View.GetGPU();
 
 	if (EnableLighting)
 	{

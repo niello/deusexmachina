@@ -35,6 +35,7 @@ namespace Frame
 class CNodeAttrCamera;
 class CNodeAttrAmbientLight;
 typedef Ptr<class CRenderPath> PRenderPath;
+typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 typedef std::unique_ptr<class CView> PView;
 
 enum ELODType
@@ -50,7 +51,7 @@ class CView final
 protected:
 
 	PRenderPath									_RenderPath;
-	Render::PGPUDriver							_GPU;
+	PGraphicsResourceManager					_GraphicsMgr;
 	int											_SwapChainID = INVALID_INDEX;
 	CNodeAttrCamera*							pCamera = nullptr; //???smart ptr?
 
@@ -75,15 +76,15 @@ public:
 	Scene::CSPS*								pSPS = nullptr;
 	UI::PUIContext								UIContext;
 
-	Render::CConstantBufferSet						Globals;
-	Render::PSampler								TrilinearCubeSampler; // For IBL
+	Render::CConstantBufferSet					Globals;
+	Render::PSampler							TrilinearCubeSampler; // For IBL
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	CView();
-	CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
+	CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
 	~CView();
 
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars
@@ -113,7 +114,8 @@ public:
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
 	bool							SetCamera(CNodeAttrCamera* pNewCamera);
 	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
-	Render::CGPUDriver*				GetGPU() const { return _GPU.Get(); }
+	CGraphicsResourceManager*		GetGraphicsManager() const;
+	Render::CGPUDriver*				GetGPU() const;
 	DEM::Sys::COSWindow*			GetTargetWindow() const;
 	Render::PDisplayDriver			GetTargetDisplay() const;
 	bool							IsFullscreen() const;

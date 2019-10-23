@@ -650,7 +650,7 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 
 	// Create a frame view based on the specified render path
 
-	return Frame::PView(n_new(Frame::CView(*FrameMgr.GetRenderPath(CStrID(pRenderPathID)), *GPU, SwapChainID, SwapChainRTID)));
+	return Frame::PView(n_new(Frame::CView(*FrameMgr.GetRenderPath(CStrID(pRenderPathID)), FrameMgr, SwapChainID, SwapChainRTID)));
 }
 //---------------------------------------------------------------------
 

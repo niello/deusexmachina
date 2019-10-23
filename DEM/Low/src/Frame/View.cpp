@@ -1,9 +1,9 @@
 #include "View.h"
-
 #include <Frame/NodeAttrCamera.h>
 #include <Frame/NodeAttrAmbientLight.h>
 #include <Frame/NodeAttrLight.h>
 #include <Frame/RenderPath.h>
+#include <Frame/GraphicsResourceManager.h>
 #include <Scene/SPS.h>
 #include <Render/RenderTarget.h>
 #include <Render/ShaderConstant.h>
@@ -21,15 +21,15 @@ namespace Frame
 {
 CView::CView() {}
 
-CView::CView(CRenderPath& RenderPath, Render::CGPUDriver& GPU, int SwapChainID, CStrID SwapChainRTID)
-	: _GPU(&GPU)
+CView::CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int SwapChainID, CStrID SwapChainRTID)
+	: _GraphicsMgr(&GraphicsMgr)
 	, _SwapChainID(SwapChainID)
 {
 	SetRenderPath(&RenderPath);
 
 	// If our view is attached to the swap chain, set the back buffer as its first RT
 	if (SwapChainID >= 0 && SwapChainRTID)
-		SetRenderTarget(SwapChainRTID, GPU.GetSwapChainRenderTarget(SwapChainID));
+		SetRenderTarget(SwapChainRTID, GraphicsMgr.GetGPU()->GetSwapChainRenderTarget(SwapChainID));
 }
 //---------------------------------------------------------------------
 
@@ -51,9 +51,9 @@ bool CView::CreateUIContext(CStrID RenderTargetID)
 		if (It == RTs.cend()) FAIL;
 		pRT = It->second;
 	}
-	else if (_GPU && _SwapChainID >= 0)
+	else if (_GraphicsMgr && _SwapChainID >= 0)
 	{
-		pRT = _GPU->GetSwapChainRenderTarget(_SwapChainID);
+		pRT = _GraphicsMgr->GetGPU()->GetSwapChainRenderTarget(_SwapChainID);
 	}
 
 	if (!pRT) FAIL;
@@ -198,19 +198,24 @@ bool CView::Render()
 // This method results in a no-op for intermediate RTs.
 bool CView::Present() const
 {
-	return _SwapChainID >= 0 && _GPU && _GPU->Present(_SwapChainID);
+	if (_SwapChainID < 0) FAIL;
+
+	auto GPU = GetGPU();
+	return GPU && GPU->Present(_SwapChainID);
 }
 //---------------------------------------------------------------------
 
 bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 {
 	// GPU must be valid in order to create global shader params and buffers
-	if (!_GPU) FAIL;
+	if (!_GraphicsMgr) FAIL;
 
 	if (_RenderPath.Get() == pNewRenderPath) OK;
 
+	auto GPU = GetGPU();
+
 	Globals.UnbindAndClear();
-	Globals.SetGPU(_GPU);
+	Globals.SetGPU(GPU);
 
 	RTs.clear();
 	DSBuffers.clear();
@@ -236,7 +241,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 		const Render::HConstantBuffer hCB = Const.Const->GetConstantBufferHandle();
 		if (!Globals.IsBufferRegistered(hCB))
 		{
-			Render::PConstantBuffer CB = _GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
+			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
 			if (CB.IsNullPtr())
 			{
 				Globals.UnbindAndClear();
@@ -255,7 +260,7 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	SamplerDesc.AddressV = Render::TexAddr_Clamp;
 	SamplerDesc.AddressW = Render::TexAddr_Clamp;
 	SamplerDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	TrilinearCubeSampler = _GPU->CreateSampler(SamplerDesc);
+	TrilinearCubeSampler = GPU->CreateSampler(SamplerDesc);
 
 	_RenderPath = pNewRenderPath;
 	OK;
@@ -316,21 +321,38 @@ bool CView::SetCamera(CNodeAttrCamera* pNewCamera)
 }
 //---------------------------------------------------------------------
 
+CGraphicsResourceManager* CView::GetGraphicsManager() const
+{
+	return _GraphicsMgr;
+}
+//---------------------------------------------------------------------
+
+Render::CGPUDriver* CView::GetGPU() const
+{
+	return _GraphicsMgr ? _GraphicsMgr->GetGPU() : nullptr;
+}
+//---------------------------------------------------------------------
+
 DEM::Sys::COSWindow* CView::GetTargetWindow() const
 {
-	return _GPU ? _GPU->GetSwapChainWindow(_SwapChainID) : nullptr;
+	auto GPU = GetGPU();
+	return GPU ? GPU->GetSwapChainWindow(_SwapChainID) : nullptr;
 }
 //---------------------------------------------------------------------
 
 Render::PDisplayDriver CView::GetTargetDisplay() const
 {
-	return _GPU ? _GPU->GetSwapChainDisplay(_SwapChainID) : nullptr;
+	auto GPU = GetGPU();
+	return GPU ? GPU->GetSwapChainDisplay(_SwapChainID) : nullptr;
 }
 //---------------------------------------------------------------------
 
 bool CView::IsFullscreen() const
 {
-	return _SwapChainID >= 0 && _GPU && _GPU->IsFullscreen(_SwapChainID);
+	if (_SwapChainID < 0) FAIL;
+
+	auto GPU = GetGPU();
+	return GPU && GPU->IsFullscreen(_SwapChainID);
 }
 //---------------------------------------------------------------------
 
