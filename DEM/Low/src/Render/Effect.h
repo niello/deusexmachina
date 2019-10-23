@@ -29,20 +29,14 @@ protected:
 	CDict<UPTR, PTechnique>			TechsByInputSet;
 
 	//!!!need binary search by ID in fixed arrays!
-	CFixedArray<CEffectConstant>	MaterialConsts;
-	CFixedArray<CEffectResource>	MaterialResources;
-	CFixedArray<CEffectSampler>		MaterialSamplers;
 	CDict<CStrID, void*>			DefaultConsts;
 	CDict<CStrID, PTexture>			DefaultResources;
 	CDict<CStrID, PSampler>			DefaultSamplers;
 	char*							pMaterialConstDefaultValues = nullptr;
 	UPTR							MaterialConstantBufferCount = 0;
 
-	// call Material LOD CEffectParams / CEffectInstance?
-	//!!!check hardware support on load! Render state invalid -> tech invalid
-	// if Mtl->GetShaderTech(FFlags, LOD) fails, use Mtl->FallbackMtl->GetShaderTech(FFlags, LOD)
-	// selects material LOD inside, uses its Shader
-	//???!!!LOD distances in material itself?! per-mtl calc, if common, per-renderer/per-phase calc
+	//CShaderParamTable GlobalParams; // Stored in RP, used only there
+	CShaderParamTable MaterialParams;
 
 public:
 
@@ -51,17 +45,14 @@ public:
 
 	bool								IsValid() const { return !!TechsByInputSet.GetCount(); }
 
-	const CTechnique*					GetTechByName(CStrID Name) const;
-	const CTechnique*					GetTechByInputSet(UPTR InputSet) const;
+	const CTechnique* GetTechByName(CStrID Name) const;
+	const CTechnique* GetTechByInputSet(UPTR InputSet) const;
 
-	EEffectType							GetType() const { return Type; }
-	const CFixedArray<CEffectConstant>&	GetMaterialConstants() const { return MaterialConsts; }
-	const CFixedArray<CEffectResource>&	GetMaterialResources() const { return MaterialResources; }
-	const CFixedArray<CEffectSampler>&	GetMaterialSamplers() const { return MaterialSamplers; }
-	UPTR								GetMaterialConstantBufferCount() const { return MaterialConstantBufferCount; }
-	void*								GetConstantDefaultValue(CStrID ID) const;
-	PTexture							GetResourceDefaultValue(CStrID ID) const;
-	PSampler							GetSamplerDefaultValue(CStrID ID) const;
+	EEffectType       GetType() const { return Type; }
+	const auto&       GetMaterialParamTable() const { return MaterialParams; }
+	void*             GetConstantDefaultValue(CStrID ID) const;
+	PTexture          GetResourceDefaultValue(CStrID ID) const;
+	PSampler          GetSamplerDefaultValue(CStrID ID) const;
 };
 
 }

@@ -26,37 +26,4 @@ const CPassList* CTechnique::GetPasses(UPTR& LightCount) const
 }
 //---------------------------------------------------------------------
 
-const CEffectConstant* CTechnique::GetConstant(CStrID Name) const
-{
-	for (UPTR i = 0; i < Consts.GetCount(); ++i)
-	{
-		const CEffectConstant& CurrConst = Consts[i];
-		if (CurrConst.ID == Name) return &CurrConst;
-	}
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-const CEffectResource* CTechnique::GetResource(CStrID Name) const
-{
-	for (UPTR i = 0; i < Resources.GetCount(); ++i)
-	{
-		const CEffectResource& CurrConst = Resources[i];
-		if (CurrConst.ID == Name) return &CurrConst;
-	}
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-const CEffectSampler* CTechnique::GetSampler(CStrID Name) const
-{
-	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
-	{
-		const CEffectSampler& CurrConst = Samplers[i];
-		if (CurrConst.ID == Name) return &CurrConst;
-	}
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
 }

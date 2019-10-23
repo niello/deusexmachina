@@ -19,11 +19,6 @@ namespace Data
 	class CParams;
 }
 
-namespace Resources
-{
-	class CRenderPathLoaderRP;
-}
-
 namespace Frame
 {
 class CView;
@@ -54,8 +49,6 @@ protected:
 
 	//???intrusive ptr? storages will reference it!
 	Render::CShaderParamTable				Globals;
-
-	friend class Resources::CRenderPathLoaderRP;
 
 public:
 

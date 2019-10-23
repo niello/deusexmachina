@@ -4,10 +4,38 @@
 
 namespace Render
 {
+typedef std::unique_ptr<class IShaderConstantParam> PShaderConstantParam;
+typedef std::unique_ptr<class IShaderResourceParam> PShaderResourceParam;
+typedef std::unique_ptr<class IShaderSamplerParam> PShaderSamplerParam;
+
+//???interfaces or base classes with common data?
+
+class IShaderConstantParam
+{
+public:
+
+	//
+};
+
+class IShaderResourceParam
+{
+public:
+
+	//
+};
+
+class IShaderSamplerParam
+{
+public:
+
+	//
+};
 
 class CShaderParamTable
 {
 protected:
+
+	//!!!sorted vectors for stable indices + fast search by CStrID! index is handle.
 
 	// struct info for constants
 	// constants
@@ -20,8 +48,17 @@ protected:
 
 public:
 
-	// get params by name, by index
-	// each class of params is completely separate, no common base class for all
+	size_t GetConstantIndex(CStrID ID) const;
+	size_t GetResourceIndex(CStrID ID) const;
+	size_t GetSamplerIndex(CStrID ID) const;
+
+	const IShaderConstantParam* GetConstant(size_t Index) const;
+	const IShaderResourceParam* GetResource(size_t Index) const;
+	const IShaderSamplerParam*  GetSampler(size_t Index) const;
+
+	const IShaderConstantParam* GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
+	const IShaderResourceParam* GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
+	const IShaderSamplerParam*  GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }
 };
 
 }

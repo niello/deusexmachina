@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/RenderFwd.h>
+#include <Render/ShaderParamTable.h>
 #include <Data/FixedArray.h>
 #include <Data/StringID.h>
 #include <Data/Dictionary.h>
@@ -29,25 +30,20 @@ private:
 	//EGPUFeatureLevel				MinFeatureLevel;
 	CFixedArray<CPassList>			PassesByLightCount; // Light count is an index
 
-	//!!!need binary search by ID!
-	CFixedArray<CEffectConstant>	Consts;
-	CFixedArray<CEffectResource>	Resources;
-	CFixedArray<CEffectSampler>		Samplers;
+	CShaderParamTable Params;
 
 	friend class CEffect;
 
 public:
 
 	CTechnique();
-	~CTechnique();
+	virtual ~CTechnique() override;
 
-	CStrID					GetName() const { return Name; }
-	UPTR					GetShaderInputSetID() const { return ShaderInputSetID; }
-	IPTR					GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
-	const CPassList*		GetPasses(UPTR& LightCount) const;
-	const CEffectConstant*	GetConstant(CStrID Name) const;
-	const CEffectResource*	GetResource(CStrID Name) const;
-	const CEffectSampler*	GetSampler(CStrID Name) const;
+	CStrID           GetName() const { return Name; }
+	UPTR             GetShaderInputSetID() const { return ShaderInputSetID; }
+	IPTR             GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
+	const CPassList* GetPasses(UPTR& LightCount) const;
+	const auto&      GetParamTable() const { return Params; }
 };
 
 typedef Ptr<CTechnique> PTechnique;

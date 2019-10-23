@@ -824,12 +824,14 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		{
 			pCurrTech = pTech;
 
-			pConstVSCDLODParams = pTech->GetConstant(CStrID("VSCDLODParams"));
-			pConstGridConsts = pTech->GetConstant(CStrID("GridConsts"));
-			pConstFirstInstanceIndex = pTech->GetConstant(CStrID("FirstInstanceIndex"));
-			pConstInstanceDataVS = pTech->GetConstant(CStrID("InstanceDataVS"));
-			pConstInstanceDataPS = pTech->GetConstant(CStrID("InstanceDataPS"));
-			pResourceHeightMap = pTech->GetResource(CStrID("HeightMapVS"));
+			const CShaderParamTable& ParamTable = pTech->GetParamTable();
+
+			pConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
+			pConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
+			pConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
+			pConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
+			pConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
+			pResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
 
 			TechLightCount = 0;
 			if (LightingEnabled && pConstInstanceDataPS)
@@ -839,7 +841,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 					TechLightCount = ConstLightIndices->GetElementCount() * ConstLightIndices->GetColumnCount() * ConstLightIndices->GetRowCount();
 			}
 
-			const CEffectSampler* pVSLinearSampler = pTech->GetSampler(CStrID("VSLinearSampler"));
+			const CEffectSampler* pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
 			if (pVSLinearSampler)
 				GPU.BindSampler(pVSLinearSampler->ShaderType, pVSLinearSampler->Handle, HMSampler.Get());
 		}
