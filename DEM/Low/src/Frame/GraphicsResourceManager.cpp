@@ -15,6 +15,7 @@
 #include <IO/BinaryReader.h>
 #include <Data/RAMData.h>
 #include <Data/StringUtils.h>
+#include <map>
 
 namespace Frame
 {
@@ -173,298 +174,6 @@ PRenderPath CGraphicsResourceManager::GetRenderPath(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-// Almost the same as CEffect::LoadParams but doesn't depend on GPU
-// Out array will be sorted by ID as parameters are saved sorted by ID
-bool CGraphicsResourceManager::LoadGlobalParams(IO::CBinaryReader& Reader,
-	const Render::IShaderMetadata* pShaderMeta,
-	CFixedArray<Render::CEffectConstant>& OutConsts,
-	CFixedArray<Render::CEffectResource>& OutResources,
-	CFixedArray<Render::CEffectSampler>& OutSamplers)
-{
-	if (!pShaderMeta) FAIL;
-
-	U32 ParamCount;
-
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	OutConsts.SetSize(ParamCount);
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 ShaderType;
-		if (!Reader.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!Reader.Read(SourceShaderID)) FAIL;
-
-		U8 ConstType;
-		if (!Reader.Read(ConstType)) FAIL;
-
-		//???!!!need to save-load?!
-		U32 SizeInBytes;
-		if (!Reader.Read(SizeInBytes)) FAIL;
-
-		Render::HConstant hConst = pShaderMeta->GetConstantHandle(ParamID);
-		if (hConst == INVALID_HANDLE) FAIL;
-
-		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
-		Rec.ID = ParamID;
-		Rec.ShaderType = (Render::EShaderType)ShaderType;
-		Rec.Const = pShaderMeta->GetConstant(hConst);
-	}
-
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	OutResources.SetSize(ParamCount);
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 ShaderType;
-		if (!Reader.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!Reader.Read(SourceShaderID)) FAIL;
-
-		Render::CEffectResource& Rec = OutResources[ParamIdx];
-		Rec.ID = ParamID;
-		Rec.Handle = pShaderMeta->GetResourceHandle(ParamID);
-		Rec.ShaderType = (Render::EShaderType)ShaderType;
-	}
-
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	OutSamplers.SetSize(ParamCount);
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 ShaderType;
-		if (!Reader.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!Reader.Read(SourceShaderID)) FAIL;
-
-		Render::CEffectSampler& Rec = OutSamplers[ParamIdx];
-		Rec.ID = ParamID;
-		Rec.Handle = pShaderMeta->GetSamplerHandle(ParamID);
-		Rec.ShaderType = (Render::EShaderType)ShaderType;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-// Out array will be sorted by ID as parameters are saved sorted by ID
-bool CGraphicsResourceManager::LoadEffectParams(IO::CBinaryReader& Reader,
-	CFixedArray<Render::CEffectConstant>& OutConsts,
-	CFixedArray<Render::CEffectResource>& OutResources,
-	CFixedArray<Render::CEffectSampler>& OutSamplers)
-{
-	U32 ParamCount;
-
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	OutConsts.SetSize(ParamCount);
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 ShaderType;
-		if (!Reader.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!Reader.Read(SourceShaderID)) FAIL;
-
-		U8 ConstType;
-		if (!Reader.Read(ConstType)) FAIL;
-
-		//???!!!need to save-load?!
-		U32 SizeInBytes;
-		if (!Reader.Read(SizeInBytes)) FAIL;
-
-		const Render::IShaderMetadata* pShaderMeta;
-		if (SourceShaderID)
-		{
-			//!!!DBG TMP!
-			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
-
-			Render::PShader ParamShader = GPU.GetShader(UID);
-			pShaderMeta = ParamShader->GetMetadata();
-		}
-		if (!pShaderMeta) FAIL;
-
-		Render::HConstant hConst = pShaderMeta->GetConstantHandle(ParamID);
-		if (hConst == INVALID_HANDLE) FAIL;
-
-		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
-		Rec.ID = ParamID;
-		Rec.ShaderType = (Render::EShaderType)ShaderType;
-		Rec.Const = pShaderMeta->GetConstant(hConst);
-	}
-
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	OutResources.SetSize(ParamCount);
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 ShaderType;
-		if (!Reader.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!Reader.Read(SourceShaderID)) FAIL;
-
-		const Render::IShaderMetadata* pShaderMeta;
-		if (SourceShaderID)
-		{
-			//!!!DBG TMP!
-			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
-
-			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = GPU.GetShader(UID);
-			pShaderMeta = ParamShader->GetMetadata();
-		}
-		if (!pShaderMeta) FAIL;
-
-		Render::CEffectResource& Rec = OutResources[ParamIdx];
-		Rec.ID = ParamID;
-		Rec.Handle = pShaderMeta->GetResourceHandle(ParamID);
-		Rec.ShaderType = (Render::EShaderType)ShaderType;
-	}
-
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	OutSamplers.SetSize(ParamCount);
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 ShaderType;
-		if (!Reader.Read(ShaderType)) FAIL;
-
-		U32 SourceShaderID;
-		if (!Reader.Read(SourceShaderID)) FAIL;
-
-		const Render::IShaderMetadata* pShaderMeta;
-		if (SourceShaderID)
-		{
-			//!!!DBG TMP!
-			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
-
-			// Shader will stay alive in a cache, so metadata will be valid
-			Render::PShader ParamShader = GPU.GetShader(UID);
-			pShaderMeta = ParamShader->GetMetadata();
-		}
-		if (!pShaderMeta) FAIL;
-
-		Render::CEffectSampler& Rec = OutSamplers[ParamIdx];
-		Rec.ID = ParamID;
-		Rec.Handle = pShaderMeta->GetSamplerHandle(ParamID);
-		Rec.ShaderType = (Render::EShaderType)ShaderType;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CGraphicsResourceManager::LoadEffectParamValues(IO::CBinaryReader& Reader,
-	CDict<CStrID, void*>& OutConsts,
-	CDict<CStrID, Render::PTexture>& OutResources,
-	CDict<CStrID, Render::PSampler>& OutSamplers,
-	void*& pOutConstValueBuffer)
-{
-	U32 ParamCount;
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 Type;
-		if (!Reader.Read(Type)) FAIL;
-
-		switch (Type)
-		{
-			case Render::EPT_Const:
-			{
-				U32 Offset;
-				if (!Reader.Read(Offset)) FAIL;
-				if (!OutConsts.IsInAddMode()) OutConsts.BeginAdd();
-				OutConsts.Add(ParamID, (void*)Offset);
-				break;
-			}
-			case Render::EPT_Resource:
-			{
-				CStrID RUID;
-				if (!Reader.Read(RUID)) FAIL;
-				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
-				if (Texture.IsNullPtr()) FAIL;
-				if (!OutResources.IsInAddMode()) OutResources.BeginAdd();
-				OutResources.Add(ParamID, Texture);
-				break;
-			}
-			case Render::EPT_Sampler:
-			{
-				Render::CSamplerDesc SamplerDesc;
-
-				U8 U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
-
-				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
-				Reader.Read(SamplerDesc.MipMapLODBias);
-				Reader.Read(SamplerDesc.FinestMipMapLOD);
-				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
-				Reader.Read(SamplerDesc.MaxAnisotropy);
-
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
-
-				Render::PSampler Sampler = GPU.CreateSampler(SamplerDesc);
-				if (Sampler.IsNullPtr()) FAIL;
-				if (!OutSamplers.IsInAddMode()) OutSamplers.BeginAdd();
-				OutSamplers.Add(ParamID, Sampler);
-				break;
-			}
-		}
-	}
-
-	if (OutConsts.IsInAddMode()) OutConsts.EndAdd();
-	if (OutResources.IsInAddMode()) OutResources.EndAdd();
-	if (OutSamplers.IsInAddMode()) OutSamplers.EndAdd();
-
-	U32 ValueBufferSize;
-	if (!Reader.Read(ValueBufferSize)) FAIL;
-	if (ValueBufferSize)
-	{
-		pOutConstValueBuffer = n_malloc(ValueBufferSize);
-		Reader.GetStream().Read(pOutConstValueBuffer, ValueBufferSize);
-		//???return ValueBufferSize too?
-
-		for (UPTR i = 0; i < OutConsts.GetCount(); ++i)
-		{
-			void*& pValue = OutConsts.ValueAt(i);
-			pValue = (char*)pOutConstValueBuffer + (U32)pValue;
-		}
-	}
-	else pOutConstValueBuffer = nullptr;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 static bool SkipEffectParams(IO::CBinaryReader& Reader)
 {
 	// Constants
@@ -513,13 +222,55 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') FAIL;
 
 	U32 Version;
-	if (!Reader.Read<U32>(Version)) FAIL;
+	if (!Reader.Read<U32>(Version) || Version > 0x00010000) FAIL;
 
-	U32 ShaderModel;
-	if (!Reader.Read<U32>(ShaderModel)) FAIL; // 0 for SM3.0, 1 for USM
+	CStrID MaterialType;
+	if (!Reader.Read(MaterialType)) FAIL;
 
-	U32 EffectType;
-	if (!Reader.Read<U32>(EffectType)) FAIL;
+	U32 ShaderFormatCount;
+	if (!Reader.Read<U32>(ShaderFormatCount) || !ShaderFormatCount) FAIL;
+
+	std::map<U32, U32> Offsets;
+	for (U32 i = 0; i < ShaderFormatCount; ++i)
+	{
+		U32 Format;
+		if (!Reader.Read(Format)) FAIL;
+		U32 Offset;
+		if (!Reader.Read(Offset)) FAIL;
+
+		if (pGPU->SupportsShaderFormat(Format))
+			Offsets.emplace(Format, Offset);
+	}
+
+	for (const auto& Pair : Offsets)
+	{
+		Reader.GetStream().Seek(Pair.second, IO::Seek_Begin);
+
+		// read global param table
+		// read material param table
+
+		//???universal?
+		// read default value count
+		// read material defaults
+		// read const value buffer for defaults
+
+		// tech count
+
+		//!!!add offet for skipping when tech feature level is unacceptable!
+		// techs:
+		// -feature level u32
+		// -offset of the next tech u32
+		// -input set str
+		// -pass count u32
+		// -pass indices array of u32
+		// -tech param table
+
+		// render state count u32
+		// render states
+	}
+
+	FAIL;
+
 
 	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
 	U32 RSCount;
@@ -1095,5 +846,301 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	return RP.Get();
 }
 //---------------------------------------------------------------------
+
+
+///////////
+
+// Almost the same as CEffect::LoadParams but doesn't depend on GPU
+// Out array will be sorted by ID as parameters are saved sorted by ID
+bool CGraphicsResourceManager::LoadGlobalParams(IO::CBinaryReader& Reader,
+	const Render::IShaderMetadata* pShaderMeta,
+	CFixedArray<Render::CEffectConstant>& OutConsts,
+	CFixedArray<Render::CEffectResource>& OutResources,
+	CFixedArray<Render::CEffectSampler>& OutSamplers)
+{
+	if (!pShaderMeta) FAIL;
+
+	U32 ParamCount;
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutConsts.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		U8 ConstType;
+		if (!Reader.Read(ConstType)) FAIL;
+
+		//???!!!need to save-load?!
+		U32 SizeInBytes;
+		if (!Reader.Read(SizeInBytes)) FAIL;
+
+		Render::HConstant hConst = pShaderMeta->GetConstantHandle(ParamID);
+		if (hConst == INVALID_HANDLE) FAIL;
+
+		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+		Rec.Const = pShaderMeta->GetConstant(hConst);
+	}
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutResources.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		Render::CEffectResource& Rec = OutResources[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.Handle = pShaderMeta->GetResourceHandle(ParamID);
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+	}
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutSamplers.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		Render::CEffectSampler& Rec = OutSamplers[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.Handle = pShaderMeta->GetSamplerHandle(ParamID);
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+// Out array will be sorted by ID as parameters are saved sorted by ID
+bool CGraphicsResourceManager::LoadEffectParams(IO::CBinaryReader& Reader,
+	CFixedArray<Render::CEffectConstant>& OutConsts,
+	CFixedArray<Render::CEffectResource>& OutResources,
+	CFixedArray<Render::CEffectSampler>& OutSamplers)
+{
+	U32 ParamCount;
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutConsts.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		U8 ConstType;
+		if (!Reader.Read(ConstType)) FAIL;
+
+		//???!!!need to save-load?!
+		U32 SizeInBytes;
+		if (!Reader.Read(SizeInBytes)) FAIL;
+
+		const Render::IShaderMetadata* pShaderMeta;
+		if (SourceShaderID)
+		{
+			//!!!DBG TMP!
+			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
+
+			Render::PShader ParamShader = GPU.GetShader(UID);
+			pShaderMeta = ParamShader->GetMetadata();
+		}
+		if (!pShaderMeta) FAIL;
+
+		Render::HConstant hConst = pShaderMeta->GetConstantHandle(ParamID);
+		if (hConst == INVALID_HANDLE) FAIL;
+
+		Render::CEffectConstant& Rec = OutConsts[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+		Rec.Const = pShaderMeta->GetConstant(hConst);
+	}
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutResources.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		const Render::IShaderMetadata* pShaderMeta;
+		if (SourceShaderID)
+		{
+			//!!!DBG TMP!
+			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
+
+			// Shader will stay alive in a cache, so metadata will be valid
+			Render::PShader ParamShader = GPU.GetShader(UID);
+			pShaderMeta = ParamShader->GetMetadata();
+		}
+		if (!pShaderMeta) FAIL;
+
+		Render::CEffectResource& Rec = OutResources[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.Handle = pShaderMeta->GetResourceHandle(ParamID);
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+	}
+
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	OutSamplers.SetSize(ParamCount);
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 ShaderType;
+		if (!Reader.Read(ShaderType)) FAIL;
+
+		U32 SourceShaderID;
+		if (!Reader.Read(SourceShaderID)) FAIL;
+
+		const Render::IShaderMetadata* pShaderMeta;
+		if (SourceShaderID)
+		{
+			//!!!DBG TMP!
+			CStrID UID = CStrID("ShLib:#" + StringUtils::FromInt(SourceShaderID));
+
+			// Shader will stay alive in a cache, so metadata will be valid
+			Render::PShader ParamShader = GPU.GetShader(UID);
+			pShaderMeta = ParamShader->GetMetadata();
+		}
+		if (!pShaderMeta) FAIL;
+
+		Render::CEffectSampler& Rec = OutSamplers[ParamIdx];
+		Rec.ID = ParamID;
+		Rec.Handle = pShaderMeta->GetSamplerHandle(ParamID);
+		Rec.ShaderType = (Render::EShaderType)ShaderType;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGraphicsResourceManager::LoadEffectParamValues(IO::CBinaryReader& Reader,
+	CDict<CStrID, void*>& OutConsts,
+	CDict<CStrID, Render::PTexture>& OutResources,
+	CDict<CStrID, Render::PSampler>& OutSamplers,
+	void*& pOutConstValueBuffer)
+{
+	U32 ParamCount;
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 Type;
+		if (!Reader.Read(Type)) FAIL;
+
+		switch (Type)
+		{
+			case Render::EPT_Const:
+			{
+				U32 Offset;
+				if (!Reader.Read(Offset)) FAIL;
+				if (!OutConsts.IsInAddMode()) OutConsts.BeginAdd();
+				OutConsts.Add(ParamID, (void*)Offset);
+				break;
+			}
+			case Render::EPT_Resource:
+			{
+				CStrID RUID;
+				if (!Reader.Read(RUID)) FAIL;
+				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
+				if (Texture.IsNullPtr()) FAIL;
+				if (!OutResources.IsInAddMode()) OutResources.BeginAdd();
+				OutResources.Add(ParamID, Texture);
+				break;
+			}
+			case Render::EPT_Sampler:
+			{
+				Render::CSamplerDesc SamplerDesc;
+
+				U8 U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
+
+				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
+				Reader.Read(SamplerDesc.MipMapLODBias);
+				Reader.Read(SamplerDesc.FinestMipMapLOD);
+				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
+				Reader.Read(SamplerDesc.MaxAnisotropy);
+
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
+
+				Render::PSampler Sampler = GPU.CreateSampler(SamplerDesc);
+				if (Sampler.IsNullPtr()) FAIL;
+				if (!OutSamplers.IsInAddMode()) OutSamplers.BeginAdd();
+				OutSamplers.Add(ParamID, Sampler);
+				break;
+			}
+		}
+	}
+
+	if (OutConsts.IsInAddMode()) OutConsts.EndAdd();
+	if (OutResources.IsInAddMode()) OutResources.EndAdd();
+	if (OutSamplers.IsInAddMode()) OutSamplers.EndAdd();
+
+	U32 ValueBufferSize;
+	if (!Reader.Read(ValueBufferSize)) FAIL;
+	if (ValueBufferSize)
+	{
+		pOutConstValueBuffer = n_malloc(ValueBufferSize);
+		Reader.GetStream().Read(pOutConstValueBuffer, ValueBufferSize);
+		//???return ValueBufferSize too?
+
+		for (UPTR i = 0; i < OutConsts.GetCount(); ++i)
+		{
+			void*& pValue = OutConsts.ValueAt(i);
+			pValue = (char*)pOutConstValueBuffer + (U32)pValue;
+		}
+	}
+	else pOutConstValueBuffer = nullptr;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 
 }

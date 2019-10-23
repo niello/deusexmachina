@@ -177,7 +177,7 @@ public:
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) override;
 	virtual bool				CheckCaps(ECaps Cap) const override;
-	virtual bool				SupportsShaderModel(U32 ShaderModel) const override { return ShaderModel >= 0x0400 && ShaderModel <= 0x0500; }
+	virtual bool				SupportsShaderFormat(U32 ShaderFormatCode) const override { return ShaderFormatCode == 'DXBC'; }
 	virtual UPTR				GetMaxVertexStreams() const override;
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const override;
 	virtual UPTR				GetMaxMultipleRenderTargetCount() const override { return CurrRT.GetCount(); }

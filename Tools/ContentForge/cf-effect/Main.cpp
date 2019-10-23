@@ -260,11 +260,25 @@ public:
 			WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Techs.size()));
 			for (const auto& Tech : Techs)
 			{
-				//WriteStream(Stream, Tech.ID.ToString()); // not used in an engine
-				WriteStream(Stream, Tech.InputSet.ToString());
-				WriteStream(Stream, Tech.MinFeatureLevel);
+				auto InputSet = Tech.InputSet.ToString();
+				auto PassCount = static_cast<uint32_t>(Tech.Passes.size());
 
-				WriteStream<uint32_t>(Stream, static_cast<uint32_t>(Tech.Passes.size()));
+				// Calculate offset of the next tech for fast skipping
+				const uint32_t Offset =
+					static_cast<uint32_t>(Stream.tellp()) + // Curr pos
+					sizeof(uint32_t) + // MinFeatureLevel
+					sizeof(uint32_t) + // Offset
+					sizeof(uint16_t) + static_cast<uint32_t>(InputSet.size()) + // InputSet
+					sizeof(uint32_t) + // Pass count
+					PassCount * sizeof(uint32_t) + // Pass indices
+					static_cast<uint32_t>(Tech.EffectMetaBinary.size()); // Tech params
+
+				//WriteStream(Stream, Tech.ID.ToString()); // not used in an engine
+				WriteStream(Stream, Tech.MinFeatureLevel);
+				WriteStream(Stream, Offset);
+				WriteStream(Stream, InputSet);
+
+				WriteStream<uint32_t>(Stream, PassCount);
 				for (CStrID PassID : Tech.Passes)
 				{
 					auto ItPass = std::find(RenderStates.cbegin(), RenderStates.cend(), PassID);
@@ -272,6 +286,8 @@ public:
 				}
 
 				Stream.write(Tech.EffectMetaBinary.c_str(), Tech.EffectMetaBinary.size());
+
+				assert(Offset == static_cast<uint32_t>(Stream.tellp()));
 			}
 
 			// Serialize render states

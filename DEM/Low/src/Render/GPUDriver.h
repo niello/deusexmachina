@@ -61,7 +61,7 @@ public:
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) { AdapterID = AdapterNumber; OK; }
 	virtual bool				CheckCaps(ECaps Cap) const = 0;
-	virtual bool				SupportsShaderModel(U32 ShaderModel) const = 0;
+	virtual bool				SupportsShaderFormat(U32 ShaderFormatCode) const = 0;
 	virtual UPTR				GetMaxVertexStreams() const = 0;
 	virtual UPTR				GetMaxTextureSize(ETextureType Type) const = 0;
 	virtual UPTR				GetMaxMultipleRenderTargetCount() const = 0;
