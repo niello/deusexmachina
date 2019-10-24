@@ -142,7 +142,7 @@ bool VerifyParams(const CUSMEffectMeta& Meta, const CUSMEffectMeta& Against, CTh
 bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog)
 {
 	CUSMEffectMeta RPGlobalMeta;
-	RPGlobalMeta.PrintableName = "RP Global";
+	RPGlobalMeta.PrintableName = "RP global";
 
 	// Load metadata from all effects, merge and verify compatibility
 
@@ -152,13 +152,14 @@ bool BuildGlobalsTableForDXBC(CGlobalTable& Task, CThreadSafeLog* pLog)
 	{
 		auto& InStream = *Src.Stream;
 
-		InStream.seekg(Src.Offset, std::ios_base::beg);
+		// Skip 32-bit metadata size
+		InStream.seekg(Src.Offset + sizeof(uint32_t), std::ios_base::beg);
 
-		CUSMEffectMeta Buffer;
-		Buffer.PrintableName = "Material";
-		InStream >> Buffer;
+		CUSMEffectMeta EffectGlobalMeta;
+		EffectGlobalMeta.PrintableName = "Effect global";
+		InStream >> EffectGlobalMeta;
 
-		if (!MergeParams(Buffer, RPGlobalMeta, pLog)) return false;
+		if (!MergeParams(EffectGlobalMeta, RPGlobalMeta, pLog)) return false;
 
 		if (!CollectNonGlobalMetadataFromEffect(InStream, MetaToCheck, pLog)) return false;
 	}

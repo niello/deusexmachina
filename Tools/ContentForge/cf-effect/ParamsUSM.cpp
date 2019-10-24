@@ -307,10 +307,13 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 		// Will be serialized to file with other tech data in calling code
 		{
 			const uint32_t MetaSize = GetSerializedSize(TechMeta);
+
 			std::ostringstream TechStream(std::ios_base::binary);
+			WriteStream<uint32_t>(TechStream, MetaSize);
 			TechStream << TechMeta;
 			Tech.EffectMetaBinary = TechStream.str();
-			assert(Tech.EffectMetaBinary.size() == MetaSize);
+
+			assert(Tech.EffectMetaBinary.size() == MetaSize + sizeof(uint32_t));
 		}
 	}
 
@@ -319,15 +322,21 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 	{
 		const uint32_t MetaSize = GetSerializedSize(GlobalMeta);
 		const auto MetaStart = Stream.tellp();
+
+		WriteStream<uint32_t>(Stream, MetaSize);
 		Stream << GlobalMeta;
-		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize));
+
+		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize + sizeof(uint32_t)));
 	}
 
 	{
 		const uint32_t MetaSize = GetSerializedSize(MaterialMeta);
 		const auto MetaStart = Stream.tellp();
+
+		WriteStream<uint32_t>(Stream, MetaSize);
 		Stream << MaterialMeta;
-		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize));
+
+		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize + sizeof(uint32_t)));
 	}
 
 	// Serialize material defaults

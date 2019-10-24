@@ -35,6 +35,9 @@ bool CollectNonGlobalMetadataFromEffect(std::istream& Stream, std::vector<TEffec
 
 	// Add material params table for globals verification, skip defaults
 
+	// Skip 32-bit metadata size
+	ReadStream<uint32_t>(Stream);
+
 	Stream >> Buffer;
 	MetaToCheck.push_back(std::move(Buffer));
 
@@ -47,12 +50,16 @@ bool CollectNonGlobalMetadataFromEffect(std::istream& Stream, std::vector<TEffec
 	{
 		// Skip tech info to param table
 
-		//ReadStream<std::string>(Stream); // not used in an engine
-		ReadStream<std::string>(Stream);
-		ReadStream<uint32_t>(Stream);
+		//ReadStream<std::string>(Stream); // ID not saved because it is not used in an engine
+		ReadStream<uint32_t>(Stream); // MinFeatureLevel
+		ReadStream<uint32_t>(Stream); // Offset
+		ReadStream<std::string>(Stream); // InputSet
 
 		const auto PassCount = ReadStream<uint32_t>(Stream);
 		Stream.seekg(PassCount * sizeof(uint32_t), std::ios_base::cur);
+
+		// Skip 32-bit metadata size
+		ReadStream<uint32_t>(Stream);
 
 		// Add tech params table for globals verification
 		Stream >> Buffer;

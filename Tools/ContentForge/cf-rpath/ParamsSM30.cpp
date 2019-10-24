@@ -154,7 +154,8 @@ bool BuildGlobalsTableForDX9C(CGlobalTable& Task, CThreadSafeLog* pLog)
 	{
 		auto& InStream = *Src.Stream;
 
-		InStream.seekg(Src.Offset, std::ios_base::beg);
+		// Skip 32-bit metadata size
+		InStream.seekg(Src.Offset + sizeof(uint32_t), std::ios_base::beg);
 
 		CSM30EffectMeta EffectGlobalMeta;
 		EffectGlobalMeta.PrintableName = "Effect global";

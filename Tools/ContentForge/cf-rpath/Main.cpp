@@ -372,6 +372,7 @@ public:
 		}
 
 		// Write serialized global parameter tables
+		// NB: metadata size is not written because skipping RP globals is not needed anywhere
 		for (const auto& Pair : Globals)
 			File.write(Pair.second.Result.c_str(), Pair.second.Result.size());
 
