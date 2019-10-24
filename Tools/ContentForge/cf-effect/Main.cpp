@@ -661,7 +661,7 @@ private:
 				//???or find a way to determine light count from shader metadata?
 
 				// Cache metadata bytes
-				const size_t MetaSize = ShaderData.Header.BinaryOffset - sizeof(CShaderHeader);
+				const size_t MetaSize = ShaderData.Header.MetadataSize;
 				if (MetaSize)
 				{
 					ShaderData.MetaBytes.reset(new char[MetaSize]);

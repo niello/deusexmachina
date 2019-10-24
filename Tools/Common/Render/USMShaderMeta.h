@@ -170,4 +170,6 @@ struct CUSMEffectMeta
 std::ostream& operator <<(std::ostream& Stream, const CUSMEffectMeta& Value);
 std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value);
 
+uint32_t GetSerializedSize(const CUSMShaderMeta& Value);
+uint32_t GetSerializedSize(const CUSMEffectMeta& Value);
 void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>& SrcBuffers, std::vector<CUSMBufferMeta>& TargetBuffers);

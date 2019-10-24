@@ -312,16 +312,29 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 
 		// Will be serialized to file with other tech data in calling code
 		{
+			const uint32_t MetaSize = GetSerializedSize(TechMeta);
 			std::ostringstream TechStream(std::ios_base::binary);
 			TechStream << TechMeta;
 			Tech.EffectMetaBinary = TechStream.str();
+			assert(Tech.EffectMetaBinary.size() == MetaSize);
 		}
 	}
 
 	// Serialize global and material tables to output
 
-	Stream << GlobalMeta;
-	Stream << MaterialMeta;
+	{
+		const uint32_t MetaSize = GetSerializedSize(GlobalMeta);
+		const auto MetaStart = Stream.tellp();
+		Stream << GlobalMeta;
+		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize));
+	}
+
+	{
+		const uint32_t MetaSize = GetSerializedSize(MaterialMeta);
+		const auto MetaStart = Stream.tellp();
+		Stream << MaterialMeta;
+		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize));
+	}
 
 	// Serialize material defaults
 

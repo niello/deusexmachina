@@ -35,7 +35,7 @@ struct CShaderHeader
 	uint32_t Format;
 	uint32_t MinFeatureLevel;
 	uint8_t Type;
-	uint32_t BinaryOffset;
+	uint32_t MetadataSize;
 };
 #pragma pack(pop)
 

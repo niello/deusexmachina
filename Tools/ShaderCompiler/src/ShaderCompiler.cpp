@@ -214,31 +214,30 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 	WriteStream<uint32_t>(File, MinFeatureLevel);
 	WriteStream<uint8_t>(File, TargetParams.ShaderType);
 
-	// Some data will be filled later
-	auto DelayedDataOffset = File.tellp();
-	WriteStream<uint32_t>(File, 0); // Shader binary data offset for fast metadata skipping
+	// Metadata size for fast skipping
+	const uint32_t MetaSize = GetSerializedSize(Meta) + sizeof(uint32_t) + sizeof(uint64_t);
+	WriteStream<uint32_t>(File, MetaSize);
 
 	// Save metadata
 
+	const auto MetadataStart = File.tellp();
+
 	WriteStream<uint32_t>(File, Rec.InputSigFile.ID);
 	WriteStream<uint64_t>(File, RequiresFlags);
+
 	File << Meta;
 
+	assert(File.tellp() == MetadataStart + std::streampos(MetaSize));
+
 	// Save shader binary
-	auto BinaryOffset = File.tellp();
-	File.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
+	File.write(static_cast<const char*>(pCode->GetBufferPointer()), pCode->GetBufferSize());
 
-	const auto FileSize = File.tellp();
-
-	// Finally write delayed data
-	File.seekp(DelayedDataOffset, std::ios_base::beg);
-	WriteStream<uint32_t>(File, static_cast<uint32_t>(BinaryOffset));
+	Rec.ObjFile.Size = File.tellp();
 
 	File.close();
 
 	// Write binary file record to DB and obtain its ID
 	// CRC is already calculated against the shader binary
-	Rec.ObjFile.Size = FileSize;
 	Rec.ObjFile.Path = DestPathDB.generic_string();
 	return DB::WriteBinaryRecord(Rec.ObjFile) ? DEM_SHADER_COMPILER_SUCCESS : DEM_SHADER_COMPILER_DB_ERROR;
 }
@@ -252,13 +251,16 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	Rec.ObjFile.BytecodeSize = pCode->GetBufferSize();
 	Rec.ObjFile.CRC = CalcCRC((const uint8_t*)pCode->GetBufferPointer(), pCode->GetBufferSize());
 
-	// Build binary from metadata + shader blob for binary comparison, because constant buffers are defined
-	// in annotations and aren't reflected in a blob itself.
+	// Build binary from metadata + shader blob for binary comparison. Constant buffers are defined
+	// in annotations and aren't reflected in a blob itself, so we must compare metadata too.
+
+	const uint32_t MetaSize = GetSerializedSize(Meta);
 
 	std::ostringstream ObjStream(std::ios_base::binary);
 	ObjStream << Meta;
 
-	auto BinaryOffset = ObjStream.tellp();
+	assert(ObjStream.tellp() == MetaSize);
+
 	ObjStream.write((const char*)pCode->GetBufferPointer(), pCode->GetBufferSize());
 
 	/*
@@ -282,26 +284,20 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 	WriteStream<uint32_t>(File, GPU_Level_D3D9_3);
 	WriteStream<uint8_t>(File, TargetParams.ShaderType);
 
-	// Some data will be filled later
-	auto DelayedDataOffset = File.tellp();
-	WriteStream<uint32_t>(File, 0); // Shader binary data offset for fast metadata skipping
+	// Metadata size for fast skipping
+	WriteStream<uint32_t>(File, MetaSize);
 
 	// Metadata and bytecode are already serialized into memory, just save it
-	BinaryOffset += File.tellp();
 	const std::string ObjData = ObjStream.str();
-	File.write(ObjData.c_str(), ObjData.size());
+	if (!ObjData.empty())
+		File.write(ObjData.c_str(), ObjData.size());
 
-	const auto FileSize = File.tellp();
-
-	// Finally write delayed data
-	File.seekp(DelayedDataOffset, std::ios_base::beg);
-	WriteStream<uint32_t>(File, static_cast<uint32_t>(BinaryOffset));
+	Rec.ObjFile.Size = File.tellp();
 
 	File.close();
 
 	// Write binary file record
 	// CRC is already calculated against shader binary
-	Rec.ObjFile.Size = FileSize;
 	Rec.ObjFile.Path = DestPathDB.generic_string();
 	return DB::WriteBinaryRecord(Rec.ObjFile) ? DEM_SHADER_COMPILER_SUCCESS : DEM_SHADER_COMPILER_DB_ERROR;
 }

@@ -190,9 +190,14 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 		}
 	}
 
-	// Flush cached logs to stdout
+	// Flush cached logs to stdout, calculate statistics
+
+	size_t FailedTasks = 0;
+
 	for (auto& Task : _Tasks)
 	{
+		if (!Task.Success) ++FailedTasks;
+
 		const auto LoggedString = Task.Log.GetStream().str();
 		if (!LoggedString.empty())
 			std::cout << LoggedString;
@@ -200,6 +205,8 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 		if (_LogVerbosity >= EVerbosity::Info)
 			std::cout << "Status: " << (Task.Success ? "OK" : "FAIL") << LineEnd << LineEnd;
 	}
+
+	std::cout << "Successful: " << (_Tasks.size() - FailedTasks) << ", Failed: " << FailedTasks << LineEnd << LineEnd;
 
 	if (_WaitKey) _getch();
 

@@ -1,44 +1,31 @@
 #include "SM30ShaderMeta.h"
 #include <Utils.h>
 
-static void WriteRegisterRanges(const std::set<uint32_t>& UsedRegs, std::ostream& Stream)
+static void BuildRegisterRanges(const std::set<uint32_t>& UsedRegs, std::vector<std::pair<uint32_t, uint32_t>>& Out)
 {
-	uint64_t RangeCountOffset = Stream.tellp();
-	WriteStream<uint32_t>(Stream, 0);
-
 	if (!UsedRegs.size()) return;
 
 	auto It = UsedRegs.cbegin();
 
-	uint32_t RangeCount = 0;
 	uint32_t CurrStart = *It++;
 	uint32_t CurrCount = 1;
 	for (; It != UsedRegs.cend(); ++It)
 	{
 		const uint32_t Reg = *It;
-		if (Reg == CurrStart + CurrCount) ++CurrCount;
+		if (Reg == CurrStart + CurrCount)
+			++CurrCount;
 		else
 		{
 			// New range detected
-			WriteStream<uint32_t>(Stream, CurrStart);
-			WriteStream<uint32_t>(Stream, CurrCount);
-			++RangeCount;
+			Out.emplace_back(CurrStart, CurrCount);
 			CurrStart = Reg;
 			CurrCount = 1;
 		}
 	}
 
 	// The last range
-	WriteStream<uint32_t>(Stream, CurrStart);
-	WriteStream<uint32_t>(Stream, CurrCount);
-	++RangeCount;
-
-	uint64_t EndOffset = Stream.tellp();
-	Stream.seekp(RangeCountOffset, std::ios_base::beg);
-	WriteStream<uint32_t>(Stream, RangeCount);
-	Stream.seekp(EndOffset, std::ios_base::beg);
+	Out.emplace_back(CurrStart, CurrCount);
 }
-//---------------------------------------------------------------------
 
 static void ReadRegisterRanges(std::set<uint32_t>& UsedRegs, std::istream& Stream)
 {
@@ -64,9 +51,19 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30BufferMeta& Value)
 	WriteStream(Stream, Value.Name);
 	WriteStream(Stream, Value.SlotIndex);
 
-	WriteRegisterRanges(Value.UsedFloat4, Stream);
-	WriteRegisterRanges(Value.UsedInt4, Stream);
-	WriteRegisterRanges(Value.UsedBool, Stream);
+	std::vector<const std::set<uint32_t>*> RegSets = { &Value.UsedFloat4, &Value.UsedInt4, &Value.UsedBool };
+	for (const auto* pRegSet : RegSets)
+	{
+		std::vector<std::pair<uint32_t, uint32_t>> Ranges;
+		BuildRegisterRanges(*pRegSet, Ranges);
+
+		WriteStream<uint32_t>(Stream, Ranges.size());
+		for (const auto& Range : Ranges)
+		{
+			WriteStream<uint32_t>(Stream, Range.first);
+			WriteStream<uint32_t>(Stream, Range.second);
+		}
+	}
 
 	return Stream;
 }
@@ -387,6 +384,118 @@ std::istream& operator >>(std::istream& Stream, CSM30EffectMeta& Value)
 	}
 
 	return Stream;
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CSM30BufferMeta& Value)
+{
+	uint32_t Total =
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		sizeof(uint32_t) + // SlotIndex
+		3 * sizeof(uint32_t); // Register range counters per type (float, int, bool)
+
+	std::vector<const std::set<uint32_t>*> RegSets = { &Value.UsedFloat4, &Value.UsedInt4, &Value.UsedBool };
+	for (const auto* pRegSet : RegSets)
+	{
+		std::vector<std::pair<uint32_t, uint32_t>> Ranges;
+		BuildRegisterRanges(*pRegSet, Ranges);
+
+		Total += sizeof(uint32_t) * 2 * static_cast<uint32_t>(Ranges.size()); // Range pairs
+	}
+
+	return Total;
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CSM30ConstMetaBase& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		19; // Other data
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CSM30StructMeta& Value)
+{
+	uint32_t Total = sizeof(uint32_t); // Counter
+
+	for (const auto& Member : Value.Members)
+		Total += GetSerializedSize(Member);
+
+	return Total;
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CSM30ConstMeta& Value)
+{
+	return
+		GetSerializedSize(static_cast<const CSM30ConstMetaBase&>(Value)) + // Base data
+		sizeof(uint8_t) + // RegisterSet
+		sizeof(uint32_t); // BufferIndex
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CSM30RsrcMeta& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		sizeof(uint32_t); // Register
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CSM30SamplerMeta& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		sizeof(uint8_t) + // Type
+		sizeof(uint32_t) + // RegisterStart
+		sizeof(uint32_t); // RegisterCount
+}
+//---------------------------------------------------------------------
+
+uint32_t GetSerializedSize(const CSM30ShaderMeta& Value)
+{
+	uint32_t Total = 5 * sizeof(uint32_t); // Counters
+
+	for (const auto& Obj : Value.Buffers)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Structs)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Consts)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Resources)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Samplers)
+		Total += GetSerializedSize(Obj);
+
+	return Total;
+}
+//---------------------------------------------------------------------
+
+uint32_t GetSerializedSize(const CSM30EffectMeta& Value)
+{
+	uint32_t Total = 5 * sizeof(uint32_t); // Counters
+
+	for (const auto& Obj : Value.Buffers)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Structs)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& IDToMeta : Value.Consts)
+		Total += GetSerializedSize(IDToMeta.second.second) + sizeof(uint8_t); // Object + shader type mask
+
+	for (const auto& IDToMeta : Value.Resources)
+		Total += GetSerializedSize(IDToMeta.second.second) + sizeof(uint8_t); // Object + shader type mask
+
+	for (const auto& IDToMeta : Value.Samplers)
+		Total += GetSerializedSize(IDToMeta.second.second) + sizeof(uint8_t); // Object + shader type mask
+
+	return Total;
 }
 //---------------------------------------------------------------------
 

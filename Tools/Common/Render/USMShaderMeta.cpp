@@ -6,7 +6,6 @@ std::ostream& operator <<(std::ostream& Stream, const CUSMBufferMeta& Value)
 	WriteStream(Stream, Value.Name);
 	WriteStream(Stream, Value.Register);
 	WriteStream(Stream, Value.Size);
-	//WriteStream(Stream, Value.ElementCount);
 	return Stream;
 }
 //---------------------------------------------------------------------
@@ -24,9 +23,8 @@ std::istream& operator >>(std::istream& Stream, CUSMBufferMeta& Value)
 std::ostream& operator <<(std::ostream& Stream, const CUSMStructMeta& Value)
 {
 	WriteStream<uint32_t>(Stream, Value.Members.size());
-	for (size_t j = 0; j < Value.Members.size(); ++j)
+	for (const auto& Member : Value.Members)
 	{
-		const CUSMConstMetaBase& Member = Value.Members[j];
 		WriteStream(Stream, Member.Name);
 		WriteStream(Stream, Member.StructIndex);
 		WriteStream<uint8_t>(Stream, Member.Type);
@@ -331,6 +329,107 @@ std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value)
 	}
 
 	return Stream;
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CUSMBufferMeta& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		sizeof(uint32_t) + // Register
+		sizeof(uint32_t); // Size
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CUSMConstMetaBase& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		20; // Other data
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CUSMStructMeta& Value)
+{
+	uint32_t Total = sizeof(uint32_t); // Counter
+
+	for (const auto& Member : Value.Members)
+		Total += GetSerializedSize(Member);
+
+	return Total;
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CUSMConstMeta& Value)
+{
+	return
+		GetSerializedSize(static_cast<const CUSMConstMetaBase&>(Value)) + // Base data
+		sizeof(uint32_t); // BufferIndex
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CUSMRsrcMeta& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		sizeof(uint8_t) + // Type
+		sizeof(uint32_t) + // RegisterStart
+		sizeof(uint32_t); // RegisterCount
+}
+//---------------------------------------------------------------------
+
+static uint32_t GetSerializedSize(const CUSMSamplerMeta& Value)
+{
+	return
+		sizeof(uint16_t) + static_cast<uint32_t>(Value.Name.size()) + // Name
+		sizeof(uint32_t) + // RegisterStart
+		sizeof(uint32_t); // RegisterCount
+}
+//---------------------------------------------------------------------
+
+uint32_t GetSerializedSize(const CUSMShaderMeta& Value)
+{
+	uint32_t Total = 5 * sizeof(uint32_t); // Counters
+
+	for (const auto& Obj : Value.Buffers)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Structs)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Consts)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Resources)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Samplers)
+		Total += GetSerializedSize(Obj);
+
+	return Total;
+}
+//---------------------------------------------------------------------
+
+uint32_t GetSerializedSize(const CUSMEffectMeta& Value)
+{
+	uint32_t Total = 5 * sizeof(uint32_t); // Counters
+
+	for (const auto& Obj : Value.Buffers)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& Obj : Value.Structs)
+		Total += GetSerializedSize(Obj);
+
+	for (const auto& IDToMeta : Value.Consts)
+		Total += GetSerializedSize(IDToMeta.second.second) + sizeof(uint8_t); // Object + shader type mask
+
+	for (const auto& IDToMeta : Value.Resources)
+		Total += GetSerializedSize(IDToMeta.second.second) + sizeof(uint8_t); // Object + shader type mask
+
+	for (const auto& IDToMeta : Value.Samplers)
+		Total += GetSerializedSize(IDToMeta.second.second) + sizeof(uint8_t); // Object + shader type mask
+
+	return Total;
 }
 //---------------------------------------------------------------------
 
