@@ -9,6 +9,7 @@
 #include <Render/Material.h>
 #include <Render/Mesh.h>
 #include <Render/MeshData.h>
+#include <Render/RenderStateDesc.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <IO/Stream.h>
@@ -246,10 +247,13 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	{
 		Reader.GetStream().Seek(Pair.second, IO::Seek_Begin);
 
-		// read global param table
+		// Skip global metadata, actual is loaded in a render path
+		auto GlobalMetaSize = Reader.Read<U32>();
+		Reader.GetStream().Seek(GlobalMetaSize, IO::Seek_Current);
+
 		// read material param table
 
-		//???universal?
+		//???universal? // NB: some defaults not exist for some shader formats. Store all once and filter on load based on format?
 		// read default value count
 		// read material defaults
 		// read const value buffer for defaults
@@ -267,6 +271,8 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 		// render state count u32
 		// render states
+
+		// if loaded correctly, OK;
 	}
 
 	FAIL;
