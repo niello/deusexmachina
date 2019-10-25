@@ -35,8 +35,8 @@ protected:
 	char*							pMaterialConstDefaultValues = nullptr;
 	UPTR							MaterialConstantBufferCount = 0;
 
-	//CShaderParamTable GlobalParams; // Stored in RP, used only there
-	CShaderParamTable MaterialParams;
+	//PShaderParamTable GlobalParams; // Stored in RP, used only there
+	PShaderParamTable MaterialParams;
 
 public:
 

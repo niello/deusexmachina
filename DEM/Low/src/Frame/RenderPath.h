@@ -47,8 +47,7 @@ protected:
 
 	std::vector<PRenderPhase>				Phases;
 
-	//???intrusive ptr? storages will reference it!
-	Render::CShaderParamTable				Globals;
+	Render::PShaderParamTable				Globals;
 
 public:
 
@@ -63,7 +62,7 @@ public:
 
 	UPTR								GetRenderTargetCount() const { return RTSlots.size(); }
 	UPTR								GetDepthStencilBufferCount() const { return DSSlots.size(); }
-	const Render::CShaderParamTable&	GetGlobalParamTable() const { return Globals; }
+	const Render::CShaderParamTable&	GetGlobalParamTable() const { return *Globals; }
 };
 
 typedef Ptr<CRenderPath> PRenderPath;

@@ -209,6 +209,14 @@ static bool SkipEffectParams(IO::CBinaryReader& Reader)
 }
 //---------------------------------------------------------------------
 
+Render::PShaderParamTable LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CBinaryReader& Reader)
+{
+	//???virtual method in a video driver factory? switch-case is not extensible!
+	//but we know that ShaderFormatCode is supported by the current GPU and can ask its factory to load table
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 {
 	if (!pResMgr || !pGPU) return nullptr;
@@ -252,6 +260,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		Reader.GetStream().Seek(GlobalMetaSize, IO::Seek_Current);
 
 		// read material param table
+		Render::PShaderParamTable MaterialParams = LoadShaderParamTable(Pair.first, Reader);
 
 		//???universal? // NB: some defaults not exist for some shader formats. Store all once and filter on load based on format?
 		// read default value count

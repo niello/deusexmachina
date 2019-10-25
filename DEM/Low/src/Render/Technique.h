@@ -30,7 +30,7 @@ private:
 	//EGPUFeatureLevel				MinFeatureLevel;
 	CFixedArray<CPassList>			PassesByLightCount; // Light count is an index
 
-	CShaderParamTable Params;
+	PShaderParamTable Params;
 
 	friend class CEffect;
 
@@ -39,11 +39,11 @@ public:
 	CTechnique();
 	virtual ~CTechnique() override;
 
-	CStrID           GetName() const { return Name; }
-	UPTR             GetShaderInputSetID() const { return ShaderInputSetID; }
-	IPTR             GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
-	const CPassList* GetPasses(UPTR& LightCount) const;
-	const auto&      GetParamTable() const { return Params; }
+	CStrID                   GetName() const { return Name; }
+	UPTR                     GetShaderInputSetID() const { return ShaderInputSetID; }
+	IPTR                     GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
+	const CPassList*         GetPasses(UPTR& LightCount) const;
+	const CShaderParamTable& GetParamTable() const { return *Params; }
 };
 
 typedef Ptr<CTechnique> PTechnique;

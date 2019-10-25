@@ -1,4 +1,5 @@
 #pragma once
+#include <Data/RefCounted.h>
 
 // Shader parameter table stores metadata necessary to set shader parameter values
 
@@ -31,7 +32,7 @@ public:
 	//
 };
 
-class CShaderParamTable
+class CShaderParamTable : public Data::CRefCounted
 {
 protected:
 
@@ -60,5 +61,7 @@ public:
 	const IShaderResourceParam* GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
 	const IShaderSamplerParam*  GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }
 };
+
+typedef Ptr<CShaderParamTable> PShaderParamTable;
 
 }
