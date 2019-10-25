@@ -10,11 +10,6 @@ namespace Resources
 	class CResourceManager;
 }
 
-namespace IO
-{
-	class CBinaryReader;
-}
-
 namespace Frame
 {
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
@@ -34,7 +29,6 @@ private:
 	std::unordered_map<CStrID, Render::PMaterial> Materials;
 	std::unordered_map<CStrID, PRenderPath>       RenderPaths;
 
-	Render::PShaderParamTable LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CBinaryReader& Reader);
 	Render::PEffect           LoadEffect(CStrID UID);
 	Render::PMaterial         LoadMaterial(CStrID UID);
 	PRenderPath               LoadRenderPath(CStrID UID);

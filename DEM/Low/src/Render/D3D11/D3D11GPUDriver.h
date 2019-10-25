@@ -200,6 +200,7 @@ public:
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr) override;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) override;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr) override;
+	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream) override;
 	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) override;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) override;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;

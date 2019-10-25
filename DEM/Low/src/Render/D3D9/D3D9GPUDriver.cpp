@@ -2825,6 +2825,16 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 }
 //---------------------------------------------------------------------
 
+PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
+{
+	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
+
+	//???virtual method in a video driver factory? switch-case is not extensible!
+	//but we know that ShaderFormatCode is supported by the current GPU and can ask its factory to load table
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode)
 {
 	n_assert_dbg(Resource.IsA<CD3D9VertexBuffer>());

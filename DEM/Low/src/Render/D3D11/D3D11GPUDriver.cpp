@@ -2788,6 +2788,16 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 }
 //---------------------------------------------------------------------
 
+PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
+{
+	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
+
+	//???virtual method in a video driver factory? switch-case is not extensible!
+	//but we know that ShaderFormatCode is supported by the current GPU and can ask its factory to load table
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 // Pointer will be 16-byte aligned
 bool CD3D11GPUDriver::MapResource(void** ppOutData, const CVertexBuffer& Resource, EResourceMapMode Mode)
 {

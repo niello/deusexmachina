@@ -209,14 +209,6 @@ static bool SkipEffectParams(IO::CBinaryReader& Reader)
 }
 //---------------------------------------------------------------------
 
-Render::PShaderParamTable LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CBinaryReader& Reader)
-{
-	//???virtual method in a video driver factory? switch-case is not extensible!
-	//but we know that ShaderFormatCode is supported by the current GPU and can ask its factory to load table
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
 Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 {
 	if (!pResMgr || !pGPU) return nullptr;
@@ -228,24 +220,24 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') FAIL;
+	if (!Reader.Read<U32>(Magic) || Magic != 'SHFX') return nullptr;
 
 	U32 Version;
-	if (!Reader.Read<U32>(Version) || Version > 0x00010000) FAIL;
+	if (!Reader.Read<U32>(Version) || Version > 0x00010000) return nullptr;
 
 	CStrID MaterialType;
-	if (!Reader.Read(MaterialType)) FAIL;
+	if (!Reader.Read(MaterialType)) return nullptr;
 
 	U32 ShaderFormatCount;
-	if (!Reader.Read<U32>(ShaderFormatCount) || !ShaderFormatCount) FAIL;
+	if (!Reader.Read<U32>(ShaderFormatCount) || !ShaderFormatCount) return nullptr;
 
 	std::map<U32, U32> Offsets;
 	for (U32 i = 0; i < ShaderFormatCount; ++i)
 	{
 		U32 Format;
-		if (!Reader.Read(Format)) FAIL;
+		if (!Reader.Read(Format)) return nullptr;
 		U32 Offset;
-		if (!Reader.Read(Offset)) FAIL;
+		if (!Reader.Read(Offset)) return nullptr;
 
 		if (pGPU->SupportsShaderFormat(Format))
 			Offsets.emplace(Format, Offset);
@@ -259,17 +251,23 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		auto GlobalMetaSize = Reader.Read<U32>();
 		Reader.GetStream().Seek(GlobalMetaSize, IO::Seek_Current);
 
-		// read material param table
-		Render::PShaderParamTable MaterialParams = LoadShaderParamTable(Pair.first, Reader);
+		Render::PShaderParamTable MaterialParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
+		if (!MaterialParams) return nullptr;
 
-		//???universal? // NB: some defaults not exist for some shader formats. Store all once and filter on load based on format?
-		// read default value count
+		U32 DefaultValueCount;
+		if (!Reader.Read(DefaultValueCount)) return nullptr;
+
 		// read material defaults
 		// read const value buffer for defaults
+/*
+	void* pVoidBuffer;
+	if (!LoadParamValues(Reader, GPU, DefaultConsts, DefaultResources, DefaultSamplers, pVoidBuffer)) return nullptr;
+	pMaterialConstDefaultValues = (char*)pVoidBuffer;
+*/
 
 		// tech count
 
-		//!!!add offet for skipping when tech feature level is unacceptable!
+		//!!!add offset for skipping when tech feature level is unacceptable!
 		// techs:
 		// -feature level u32
 		// -offset of the next tech u32
@@ -281,11 +279,12 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		// render state count u32
 		// render states
 
-		// if loaded correctly, OK;
+		// if loaded correctly, return created effect;
 	}
 
-	FAIL;
+	return nullptr;
 
+	/*
 
 	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
 	U32 RSCount;
@@ -400,10 +399,10 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 				//!!!DBG TMP! store full resource ID instead
 				CStrID SUID = CStrID("ShLib:#" + StringUtils::FromInt(ShaderID));
 
-				*pShaders[ShaderType] = GPU.GetShader(SUID);
+				*pShaders[ShaderType] = GetShader(SUID);
 			}
 
-			Variations[LightCount] = ShaderLoadingFailed ? nullptr : GPU.CreateRenderState(Desc);
+			Variations[LightCount] = ShaderLoadingFailed ? nullptr : pGPU->CreateRenderState(Desc);
 			if (Variations[LightCount].IsValidPtr()) VariationArraySize = LightCount + 1;
 		}
 
@@ -414,8 +413,6 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	// Load techniques
 
 	CDict<CStrID, Render::PTechnique> Techs;
-
-	Render::EGPUFeatureLevel GPULevel = GPU.GetFeatureLevel();
 
 	U32 TechCount;
 	if (!Reader.Read<U32>(TechCount) || !TechCount) FAIL;
@@ -451,14 +448,14 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		// support, a better way is to measure GPU performance on driver init and choose here not
 		// only by features supported, but by performance 'score' of tech vs GPU too.
 		//!!!check RequiresFlags!
-		if (BestTechFound || MinFeatureLevel > GPULevel || !GPU.SupportsShaderModel(Target))
+		if (BestTechFound || MinFeatureLevel > pGPU->GetFeatureLevel())
 		{
 			U32 PassCount;
 			if (!Reader.Read<U32>(PassCount)) FAIL;
-			if (!Stream.Seek(4 * PassCount, IO::Seek_Current)) FAIL; // Pass indices
+			if (!Stream->Seek(4 * PassCount, IO::Seek_Current)) FAIL; // Pass indices
 			U32 MaxLights;
 			if (!Reader.Read<U32>(MaxLights)) FAIL;
-			if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
+			if (!Stream->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
 			if (!SkipEffectParams(Reader)) FAIL;
 			continue;
 		}
@@ -495,7 +492,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 		if (HasCompletelyInvalidPass)
 		{
-			if (!Stream.Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
+			if (!Stream->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
 			if (!SkipEffectParams(Reader)) FAIL;
 			continue;
 		}
@@ -602,28 +599,6 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		default:	Type = Render::EffectType_Other; break;
 	}
 
-	// Skip global params
-
-	if (!SkipEffectParams(Reader)) FAIL;
-
-	// Load material params
-
-	if (!LoadParams(Reader, GPU, MaterialConsts, MaterialResources, MaterialSamplers)) FAIL;
-
-	//???save precalc in a tool?
-	CArray<HHandle> MtlConstBuffers;
-	for (UPTR i = 0; i < MaterialConsts.GetCount(); ++i)
-	{
-		const Render::HConstantBuffer hCB = MaterialConsts[i].Const->GetConstantBufferHandle();
-		if (!MtlConstBuffers.Contains(hCB)) MtlConstBuffers.Add(hCB);
-	}
-	MaterialConstantBufferCount = MtlConstBuffers.GetCount();
-	MtlConstBuffers.Clear(true);
-
-	void* pVoidBuffer;
-	if (!LoadParamValues(Reader, GPU, DefaultConsts, DefaultResources, DefaultSamplers, pVoidBuffer)) FAIL;
-	pMaterialConstDefaultValues = (char*)pVoidBuffer;
-
 	// Build tech indices
 	TechsByName.BeginAdd(Techs.GetCount());
 	TechsByInputSet.BeginAdd(Techs.GetCount());
@@ -637,6 +612,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	TechsByInputSet.EndAdd();
 
 	OK;
+	*/
 }
 //---------------------------------------------------------------------
 
@@ -660,7 +636,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	if (!Reader.Read(EffectID)) FAIL;
 	if (!EffectID.IsValid()) FAIL;
 
-	Effect = GetEffect(EffectID);
+	Render::PEffect Effect = GetEffect(EffectID);
 
 	// Build parameters
 

@@ -15,7 +15,7 @@ class IShaderConstantParam
 {
 public:
 
-	//
+	// GetSize() !
 };
 
 class IShaderResourceParam
