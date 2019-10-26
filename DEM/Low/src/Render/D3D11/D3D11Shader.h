@@ -1,6 +1,5 @@
 #pragma once
 #include <Render/Shader.h>
-#include <Render/D3D11/USMShaderMetadata.h>
 
 // Direct3D11 shader object implementation
 
@@ -22,7 +21,6 @@ class CD3D11Shader: public CShader
 protected:
 
 	ID3D11DeviceChild*	pD3DShader = nullptr;
-	CUSMShaderMetadata	Metadata;
 	U32					InputSignatureID = 0;
 
 	void							InternalDestroy();
@@ -42,7 +40,6 @@ public:
 	virtual void					Destroy() { InternalDestroy(); }
 
 	virtual bool					IsValid() const override { return !!pD3DShader; }
-	virtual const IShaderMetadata*	GetMetadata() const override { return &Metadata; }
 	U32								GetInputSignatureID() const { return InputSignatureID; }
 
 	ID3D11DeviceChild*				GetD3DShader() const { return pD3DShader; }

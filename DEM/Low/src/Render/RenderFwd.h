@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_H__
-#define __DEM_L1_RENDER_H__
-
 #include <Data/Ptr.h>
 #include <Data/Dictionary.h>
 #include <Data/StringID.h>
@@ -26,7 +23,6 @@ struct CVertexComponent;
 class CDisplayMode;
 class CLight;
 class CTechnique;
-class IShaderMetadata;
 class IRenderable;
 class IRenderer;
 enum EEffectType;
@@ -436,5 +432,3 @@ inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 //---------------------------------------------------------------------
 
 }
-
-#endif

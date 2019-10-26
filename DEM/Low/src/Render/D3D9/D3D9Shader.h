@@ -1,9 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_SHADER_H__
-#define __DEM_L1_RENDER_D3D9_SHADER_H__
-
 #include <Render/Shader.h>
-#include <Render/D3D9/SM30ShaderMetadata.h>
 
 // Direct3D9 shader object implementation
 
@@ -28,8 +24,6 @@ protected:
 		IDirect3DPixelShader9*	pD3DPixelShader;
 	};
 
-	CSM30ShaderMetadata			Metadata;
-
 	void							InternalDestroy();
 
 	friend class CD3D9GPUDriver; // for creation
@@ -43,7 +37,6 @@ public:
 	virtual void					Destroy() { InternalDestroy(); }
 
 	virtual bool					IsValid() const override { return !!pD3DShader; }
-	virtual const IShaderMetadata*	GetMetadata() const override { return &Metadata; }
 
 	IDirect3DVertexShader9*			GetD3DVertexShader() const { n_assert_dbg(Type == ShaderType_Vertex); return pD3DVertexShader; }
 	IDirect3DPixelShader9*			GetD3DPixelShader() const { n_assert_dbg(Type == ShaderType_Pixel); return pD3DPixelShader; }
@@ -52,5 +45,3 @@ public:
 typedef Ptr<CD3D9Shader> PD3D9Shader;
 
 }
-
-#endif

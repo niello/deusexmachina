@@ -22,6 +22,7 @@
 #include <System/Win32/OSWindowWin32.h>
 #include <System/SystemEvents.h>
 #include <Data/RAMData.h>
+#include <Data/Buffer.h>
 #include <Core/Factory.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
@@ -2754,31 +2755,39 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 }
 //---------------------------------------------------------------------
 
-PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary)
+PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
 {
 	IO::CBinaryReader R(Stream);
 
-	Data::CFourCC FileSig;
-	if (!R.Read(FileSig)) return nullptr;
+	U32 ShaderFormatCode;
+	if (!R.Read(ShaderFormatCode) || !SupportsShaderFormat(ShaderFormatCode)) return nullptr;
 
-	// Shader type is autodetected from the file signature
-	Render::EShaderType ShaderType;
-	switch (FileSig.Code)
+	U32 MinFeatureLevel;
+	if (!R.Read(MinFeatureLevel) || static_cast<EGPUFeatureLevel>(MinFeatureLevel) > FeatureLevel) return nullptr;
+
+	U8 ShaderTypeCode;
+	if (!R.Read(ShaderTypeCode)) return nullptr;
+	Render::EShaderType ShaderType = static_cast<EShaderType>(ShaderTypeCode);
+
+	U32 MetadataSize;
+	if (!R.Read(MetadataSize)) return nullptr;
+
+	PShaderParamTable Params;
+	if (LoadParamTable)
 	{
-		case 'VS30':	ShaderType = Render::ShaderType_Vertex; break;
-		case 'PS30':	ShaderType = Render::ShaderType_Pixel; break;
-		default:		return nullptr;
-	};
+		Params = LoadShaderParamTable(ShaderFormatCode, Stream);
+		if (!Params) return nullptr;
+	}
+	else
+	{
+		if (!Stream.Seek(MetadataSize, IO::Seek_Current)) return nullptr;
+	}
 
-	U32 BinaryOffset;
-	if (!R.Read(BinaryOffset)) return nullptr;
-
-	const U64 MetadataOffset = Stream.GetPosition();
-	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize()) - static_cast<UPTR>(BinaryOffset);
+	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.GetPosition());
 	if (!BinarySize) return nullptr;
 
-	UniqueNMallocVoidPtr Data(n_malloc(BinarySize));
-	if (!Data || !Stream.Seek(BinaryOffset, IO::Seek_Begin) || Stream.Read(Data.get(), BinarySize) != BinarySize) return nullptr;
+	Data::CBuffer Data(BinarySize);
+	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
 
 	Render::PD3D9Shader Shader;
 
@@ -2787,7 +2796,7 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		case ShaderType_Vertex:
 		{
 			IDirect3DVertexShader9* pVS = nullptr;
-			if (SUCCEEDED(pD3DDevice->CreateVertexShader((const DWORD*)Data.get(), &pVS)))
+			if (SUCCEEDED(pD3DDevice->CreateVertexShader((const DWORD*)Data.GetPtr(), &pVS)))
 			{
 				Shader = n_new(Render::CD3D9Shader);
 				if (!Shader->Create(pVS))
@@ -2801,7 +2810,7 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		case ShaderType_Pixel:
 		{
 			IDirect3DPixelShader9* pPS = nullptr;
-			if (SUCCEEDED(pD3DDevice->CreatePixelShader((const DWORD*)Data.get(), &pPS)))
+			if (SUCCEEDED(pD3DDevice->CreatePixelShader((const DWORD*)Data.GetPtr(), &pPS)))
 			{
 				Shader = n_new(Render::CD3D9Shader);
 				if (!Shader->Create(pPS))
@@ -2815,11 +2824,7 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		default: return nullptr;
 	};
 
-	Data.reset();
-
-	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) return nullptr;
-
-	if (!Shader->Metadata.Load(Stream)) return nullptr;
+	Shader->Params = Params;
 
 	return Shader.Get();
 }
@@ -2829,8 +2834,6 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
 
-	//???virtual method in a video driver factory? switch-case is not extensible!
-	//but we know that ShaderFormatCode is supported by the current GPU and can ask its factory to load table
 	return nullptr;
 }
 //---------------------------------------------------------------------

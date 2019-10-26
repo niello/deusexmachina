@@ -7,20 +7,21 @@
 
 namespace Render
 {
-class IShaderMetadata;
 
 class CShader: public Core::CObject
 {
 protected:
 
-	EShaderType Type = ShaderType_Invalid;
+	EShaderType       Type = ShaderType_Invalid;
+	PShaderParamTable Params;
 
 public:
 
-	virtual void					Destroy() = 0;
-	virtual bool					IsValid() const = 0;
-	virtual const IShaderMetadata*	GetMetadata() const = 0;
-	EShaderType						GetType() const { return Type; }
+	virtual void             Destroy() = 0;
+	virtual bool             IsValid() const = 0;
+
+	const CShaderParamTable* GetParamTable() const { return Params; }
+	EShaderType              GetType() const { return Type; }
 };
 
 typedef Ptr<CShader> PShader;

@@ -2647,34 +2647,46 @@ ProcessFailure:
 }
 //---------------------------------------------------------------------
 
-PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary)
+PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
 {
 	IO::CBinaryReader R(Stream);
 
-	Data::CFourCC FormatSignature;
-	if (!R.Read(FormatSignature) || FormatSignature != 'DXBC') return nullptr;
+	U32 ShaderFormatCode;
+	if (!R.Read(ShaderFormatCode) || !SupportsShaderFormat(ShaderFormatCode)) return nullptr;
 
-	uint32_t MinFeatureLevel;
+	U32 MinFeatureLevel;
 	if (!R.Read(MinFeatureLevel) || static_cast<EGPUFeatureLevel>(MinFeatureLevel) > FeatureLevel) return nullptr;
 
-	uint8_t ShaderTypeCode;
+	U8 ShaderTypeCode;
 	if (!R.Read(ShaderTypeCode)) return nullptr;
 	Render::EShaderType ShaderType = static_cast<EShaderType>(ShaderTypeCode);
 
-	U32 BinaryOffset;
-	if (!R.Read(BinaryOffset)) return nullptr;
+	U32 MetadataSize;
+	if (!R.Read(MetadataSize)) return nullptr;
 
 	U32 InputSignatureID;
 	if (!R.Read(InputSignatureID)) return nullptr;
+	MetadataSize -= sizeof(U32);
 
 	U64 RequiresFlags;
 	if (!R.Read(RequiresFlags)) return nullptr;
+	MetadataSize -= sizeof(U64);
 
 	// TODO: check GPU against RequiresFlags
 
-	const U64 MetadataOffset = Stream.GetPosition();
-	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize()) - static_cast<UPTR>(BinaryOffset);
-	if (!BinarySize || !Stream.Seek(BinaryOffset, IO::Seek_Begin)) return nullptr;
+	PShaderParamTable Params;
+	if (LoadParamTable)
+	{
+		Params = LoadShaderParamTable(ShaderFormatCode, Stream);
+		if (!Params) return nullptr;
+	}
+	else
+	{
+		if (!Stream.Seek(MetadataSize, IO::Seek_Current)) return nullptr;
+	}
+
+	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.GetPosition());
+	if (!BinarySize) return nullptr;
 
 	Data::CBuffer Data(BinarySize);
 	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
@@ -2779,10 +2791,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 	}
 
 	Shader->InputSignatureID = InputSignatureID;
-
-	if (!Stream.Seek(MetadataOffset, IO::Seek_Begin)) return nullptr;
-
-	if (!Shader->Metadata.Load(Stream)) return nullptr;
+	Shader->Params = Params;
 
 	return Shader.Get();
 }
@@ -2792,8 +2801,6 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
 
-	//???virtual method in a video driver factory? switch-case is not extensible!
-	//but we know that ShaderFormatCode is supported by the current GPU and can ask its factory to load table
 	return nullptr;
 }
 //---------------------------------------------------------------------
