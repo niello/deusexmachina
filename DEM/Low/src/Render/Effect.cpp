@@ -1,15 +1,6 @@
 #include "Effect.h"
-#include <Render/GPUDriver.h>
-#include <Render/Sampler.h>
-#include <Render/ShaderConstant.h>
 #include <Render/Texture.h>
-#include <Render/RenderState.h>
-#include <Render/RenderStateDesc.h>
-#include <Render/SamplerDesc.h>
-#include <Render/Shader.h>
-#include <Render/ShaderMetadata.h>
-#include <IO/BinaryReader.h>
-#include <Data/StringUtils.h>
+#include <Render/Sampler.h>
 
 namespace Render
 {
@@ -29,41 +20,44 @@ CEffect::~CEffect()
 
 void CEffect::SetTechnique(CStrID InputSet, PTechnique Tech)
 {
+	_TechsByInputSet[InputSet] = Tech;
+
+	if (Tech->GetName()) _TechsByName[Tech->GetName()] = Tech;
 }
 //---------------------------------------------------------------------
 
 const CTechnique* CEffect::GetTechByName(CStrID Name) const
 {
-	IPTR Idx = TechsByName.FindIndex(Name);
-	return Idx == INVALID_INDEX ? nullptr : TechsByName.ValueAt(Idx).Get();
+	auto It = _TechsByName.find(Name);
+	return (It == _TechsByName.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 
 const CTechnique* CEffect::GetTechByInputSet(CStrID InputSet) const
 {
-	IPTR Idx = TechsByInputSet.FindIndex(InputSet);
-	return Idx == INVALID_INDEX ? nullptr : TechsByInputSet.ValueAt(Idx).Get();
+	auto It = _TechsByInputSet.find(InputSet);
+	return (It == _TechsByInputSet.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 
 void* CEffect::GetConstantDefaultValue(CStrID ID) const
 {
-	IPTR Idx = DefaultConsts.FindIndex(ID);
-	return Idx == INVALID_INDEX ? nullptr : DefaultConsts.ValueAt(Idx);
+	auto It = _MaterialDefaults.ConstValues.find(ID);
+	return (It == _MaterialDefaults.ConstValues.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 
 PTexture CEffect::GetResourceDefaultValue(CStrID ID) const
 {
-	IPTR Idx = DefaultResources.FindIndex(ID);
-	return Idx == INVALID_INDEX ? nullptr : DefaultResources.ValueAt(Idx);
+	auto It = _MaterialDefaults.ResourceValues.find(ID);
+	return (It == _MaterialDefaults.ResourceValues.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 
 PSampler CEffect::GetSamplerDefaultValue(CStrID ID) const
 {
-	IPTR Idx = DefaultSamplers.FindIndex(ID);
-	return Idx == INVALID_INDEX ? nullptr : DefaultSamplers.ValueAt(Idx);
+	auto It = _MaterialDefaults.SamplerValues.find(ID);
+	return (It == _MaterialDefaults.SamplerValues.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 

@@ -39,12 +39,12 @@ public:
 	virtual ~CEffect() override;
 
 	// For creation
-	void SetTechnique(CStrID InputSet, PTechnique Tech);
+	void                     SetTechnique(CStrID InputSet, PTechnique Tech);
 
-	bool IsValid() const { return !_TechsByInputSet.empty(); }
+	bool                     IsValid() const { return !_TechsByInputSet.empty(); }
 
-	const CTechnique* GetTechByName(CStrID Name) const;
-	const CTechnique* GetTechByInputSet(CStrID InputSet) const;
+	const CTechnique*        GetTechByName(CStrID Name) const;
+	const CTechnique*        GetTechByInputSet(CStrID InputSet) const;
 
 	EEffectType              GetType() const { return _Type; }
 	const CShaderParamTable& GetMaterialParamTable() const { return *_MaterialParams; }

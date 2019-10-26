@@ -1,6 +1,5 @@
 #include "Technique.h"
 #include <Render/RenderState.h>
-#include <Render/ShaderConstant.h>
 
 namespace Render
 {
