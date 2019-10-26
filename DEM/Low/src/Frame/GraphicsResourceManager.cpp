@@ -10,6 +10,7 @@
 #include <Render/Mesh.h>
 #include <Render/MeshData.h>
 #include <Render/RenderStateDesc.h>
+#include <Render/SamplerDesc.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <IO/Stream.h>
@@ -90,10 +91,19 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 }
 //---------------------------------------------------------------------
 
-Render::PShader CGraphicsResourceManager::GetShader(CStrID UID)
+Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTable)
 {
 	auto It = Shaders.find(UID);
-	if (It != Shaders.cend() && It->second) return It->second;
+	if (It != Shaders.cend() && It->second)
+	{
+		if (NeedParamTable && !It->second->GetParamTable())
+		{
+			// TODO: load and set param table to the existing shader
+			NOT_IMPLEMENTED;
+		}
+
+		return It->second;
+	}
 
 	// Tough resource manager doesn't keep track of shaders, it is used
 	// for shader library loading and for accessing an IO service.
@@ -125,7 +135,7 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID)
 
 	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
 
-	Render::PShader Shader = pGPU->CreateShader(*Stream, ShaderLibrary.Get());
+	Render::PShader Shader = pGPU->CreateShader(*Stream, ShaderLibrary.Get(), NeedParamTable);
 
 	if (Shader) Shaders.emplace(UID, Shader);
 
@@ -209,6 +219,210 @@ static bool SkipEffectParams(IO::CBinaryReader& Reader)
 }
 //---------------------------------------------------------------------
 
+bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader,
+	std::map<CStrID, void*>& OutConsts,
+	std::map<CStrID, Render::PTexture>& OutResources,
+	std::map<CStrID, Render::PSampler>& OutSamplers,
+	std::unique_ptr<char[]>& OutConstValueBuffer)
+{
+	U32 ParamCount;
+	if (!Reader.Read<U32>(ParamCount)) FAIL;
+	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
+	{
+		CStrID ParamID;
+		if (!Reader.Read(ParamID)) FAIL;
+
+		U8 Type;
+		if (!Reader.Read(Type)) FAIL;
+
+		switch (Type)
+		{
+			case Render::EPT_Const:
+			{
+				U32 Offset;
+				if (!Reader.Read(Offset)) FAIL;
+				OutConsts.emplace(ParamID, (void*)Offset);
+				break;
+			}
+			case Render::EPT_Resource:
+			{
+				CStrID RUID;
+				if (!Reader.Read(RUID)) FAIL;
+				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
+				if (Texture.IsNullPtr()) FAIL;
+				OutResources.emplace(ParamID, Texture);
+				break;
+			}
+			case Render::EPT_Sampler:
+			{
+				Render::CSamplerDesc SamplerDesc;
+
+				U8 U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
+
+				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
+				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
+				Reader.Read(SamplerDesc.MipMapLODBias);
+				Reader.Read(SamplerDesc.FinestMipMapLOD);
+				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
+				Reader.Read(SamplerDesc.MaxAnisotropy);
+
+				Reader.Read<U8>(U8Value);
+				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
+
+				Render::PSampler Sampler = pGPU->CreateSampler(SamplerDesc);
+				if (Sampler.IsNullPtr()) FAIL;
+				OutSamplers.emplace(ParamID, Sampler);
+				break;
+			}
+		}
+	}
+
+	U32 ValueBufferSize;
+	if (!Reader.Read(ValueBufferSize)) FAIL;
+	if (ValueBufferSize)
+	{
+		OutConstValueBuffer = std::make_unique<char[]>(ValueBufferSize);
+		Reader.GetStream().Read(OutConstValueBuffer.get(), ValueBufferSize);
+
+		// Covert offsets to direct pointers
+		for (auto& Pair : OutConsts)
+			Pair.second = OutConstValueBuffer.get() + (U32)Pair.second;
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out)
+{
+	Out.SetDefaults();
+
+	U32 MaxLights;
+	if (!Reader.Read(MaxLights)) FAIL;
+	UPTR LightVariationCount = MaxLights + 1;
+
+	U8 U8Value;
+	U32 U32Value;
+
+	if (!Reader.Read(U32Value)) FAIL;
+	Out.Flags.ResetTo(U32Value);
+
+	if (!Reader.Read(Out.DepthBias)) FAIL;
+	if (!Reader.Read(Out.DepthBiasClamp)) FAIL;
+	if (!Reader.Read(Out.SlopeScaledDepthBias)) FAIL;
+
+	if (Out.Flags.Is(Render::CRenderStateDesc::DS_DepthEnable))
+	{
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.DepthFunc = (Render::ECmpFunc)U8Value;
+	}
+
+	if (Out.Flags.Is(Render::CRenderStateDesc::DS_StencilEnable))
+	{
+		if (!Reader.Read(Out.StencilReadMask)) FAIL;
+		if (!Reader.Read(Out.StencilWriteMask)) FAIL;
+		if (!Reader.Read<U32>(U32Value)) FAIL;
+		Out.StencilRef = U32Value;
+
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilFrontFace.StencilFailOp = (Render::EStencilOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilFrontFace.StencilDepthFailOp = (Render::EStencilOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilFrontFace.StencilPassOp = (Render::EStencilOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilFrontFace.StencilFunc = (Render::ECmpFunc)U8Value;
+
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilBackFace.StencilFailOp = (Render::EStencilOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilBackFace.StencilDepthFailOp = (Render::EStencilOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilBackFace.StencilPassOp = (Render::EStencilOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		Out.StencilBackFace.StencilFunc = (Render::ECmpFunc)U8Value;
+	}
+
+	for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
+	{
+		if (BlendIdx > 0 && Out.Flags.IsNot(Render::CRenderStateDesc::Blend_Independent)) break;
+
+		Render::CRenderStateDesc::CRTBlend& RTBlend = Out.RTBlend[BlendIdx];
+
+		if (!Reader.Read(RTBlend.WriteMask)) FAIL;
+
+		if (Out.Flags.IsNot(Render::CRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
+
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		RTBlend.SrcBlendArg = (Render::EBlendArg)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		RTBlend.DestBlendArg = (Render::EBlendArg)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		RTBlend.BlendOp = (Render::EBlendOp)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		RTBlend.SrcBlendArgAlpha = (Render::EBlendArg)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		RTBlend.DestBlendArgAlpha = (Render::EBlendArg)U8Value;
+		if (!Reader.Read<U8>(U8Value)) FAIL;
+		RTBlend.BlendOpAlpha = (Render::EBlendOp)U8Value;
+	}
+
+	if (!Reader.Read(Out.BlendFactorRGBA[0])) FAIL;
+	if (!Reader.Read(Out.BlendFactorRGBA[1])) FAIL;
+	if (!Reader.Read(Out.BlendFactorRGBA[2])) FAIL;
+	if (!Reader.Read(Out.BlendFactorRGBA[3])) FAIL;
+	if (!Reader.Read<U32>(U32Value)) FAIL;
+	Out.SampleMask = U32Value;
+
+	if (!Reader.Read(Out.AlphaTestRef)) FAIL;
+	if (!Reader.Read<U8>(U8Value)) FAIL;
+	Out.AlphaTestFunc = (Render::ECmpFunc)U8Value;
+
+	CFixedArray<Render::PRenderState>& Variations = RenderStates[i];
+	Variations.SetSize(LightVariationCount);
+
+	UPTR VariationArraySize = 0;
+	for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
+	{
+		bool ShaderLoadingFailed = false;
+
+		Render::PShader* pShaders[] = { &Out.VertexShader, &Out.PixelShader, &Out.GeometryShader, &Out.HullShader, &Out.DomainShader };
+		for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
+		{
+			U32 ShaderID;
+			if (!Reader.Read<U32>(ShaderID)) FAIL;
+
+			if (!ShaderID)
+			{
+				*pShaders[ShaderType] = nullptr;
+				continue;
+			}
+
+			//!!!DBG TMP! store full resource ID instead
+			CStrID SUID = CStrID("ShLib:#" + StringUtils::FromInt(ShaderID));
+
+			*pShaders[ShaderType] = GetShader(SUID);
+		}
+
+		Variations[LightCount] = ShaderLoadingFailed ? nullptr : pGPU->CreateRenderState(Desc);
+		if (Variations[LightCount].IsValidPtr()) VariationArraySize = LightCount + 1;
+	}
+
+	if (VariationArraySize < LightVariationCount)
+		Variations.SetSize(VariationArraySize, true);
+}
+//---------------------------------------------------------------------
+
 Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 {
 	if (!pResMgr || !pGPU) return nullptr;
@@ -257,27 +471,73 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		U32 DefaultValueCount;
 		if (!Reader.Read(DefaultValueCount)) return nullptr;
 
-		// read material defaults
-		// read const value buffer for defaults
-/*
-	void* pVoidBuffer;
-	if (!LoadParamValues(Reader, GPU, DefaultConsts, DefaultResources, DefaultSamplers, pVoidBuffer)) return nullptr;
-	pMaterialConstDefaultValues = (char*)pVoidBuffer;
-*/
+		std::map<CStrID, void*> ConstValues;
+		std::map<CStrID, Render::PTexture> ResourceValues;
+		std::map<CStrID, Render::PSampler> SamplerValues;
+		std::unique_ptr<char[]> ConstValueBuffer;
 
-		// tech count
+		if (!LoadShaderParamValues(Reader, ConstValues, ResourceValues, SamplerValues, ConstValueBuffer)) FAIL;
 
-		//!!!add offset for skipping when tech feature level is unacceptable!
-		// techs:
-		// -feature level u32
-		// -offset of the next tech u32
-		// -input set str
-		// -pass count u32
-		// -pass indices array of u32
-		// -tech param table
+		std::set<U32> UsedRenderStateIndices;
+		//used RS indices per input set
+		//best tech per input set
+		//???or build selection tree here? InputSet -> array of valid techs from the best down?
 
-		// render state count u32
-		// render states
+		U32 TechCount;
+		if (!Reader.Read(TechCount)) return nullptr;
+		for (U32 TechIdx = 0; TechIdx < TechCount; +TechIdx)
+		{
+			U32 FeatureLevel;
+			if (!Reader.Read(FeatureLevel)) return nullptr;
+
+			U32 SkipOffset;
+			if (!Reader.Read(SkipOffset)) return nullptr;
+
+			if (FeatureLevel > pGPU->GetFeatureLevel())
+			{
+				Reader.GetStream().Seek(SkipOffset, IO::Seek_Begin);
+				continue;
+			}
+
+			CStrID InputSet;
+			if (!Reader.Read(InputSet)) return nullptr;
+
+			//!!!if has valid tech for this input set, skip!
+			//???or load render states, invalidate techs with failed states and then select techs?
+
+			//!!!clear used RS!
+			std::vector<U32> RSIndices;
+
+			U32 PassCount;
+			if (!Reader.Read(PassCount)) return nullptr;
+			RSIndices.resize(PassCount);
+			for (auto& RSIndex : RSIndices)
+			{
+				if (!Reader.Read(RSIndex)) return nullptr;
+			}
+
+			Render::PShaderParamTable TechParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
+			if (!TechParams) return nullptr;
+		}
+
+		// build all render states count or array of render states with nulls for unused
+
+		U32 RenderStateCount;
+		if (!Reader.Read(RenderStateCount)) return nullptr;
+
+		std::vector<Render::PRenderState> RenderStates;
+		RenderStates.resize(RenderStateCount);
+		for (U32 RSIndex = 0; RSIndex < RenderStateCount; ++RSIndex)
+		{
+			if (UsedRenderStateIndices.find(RSIndex) == UsedRenderStateIndices.cend())
+			{
+				//!!!skip desc!
+				continue;
+			}
+
+			Render::CRenderStateDesc Desc;
+			if (!LoadRenderStateDesc(Reader, Desc)) return false;
+		}
 
 		// if loaded correctly, return created effect;
 	}
@@ -285,130 +545,6 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	return nullptr;
 
 	/*
-
-	CFixedArray<CFixedArray<Render::PRenderState>> RenderStates; // By render state index, by variation
-	U32 RSCount;
-	if (!Reader.Read<U32>(RSCount)) FAIL;
-	RenderStates.SetSize(RSCount);
-	for (UPTR i = 0; i < RSCount; ++i)
-	{
-		Render::CRenderStateDesc Desc;
-		Desc.SetDefaults();
-
-		U32 MaxLights;
-		if (!Reader.Read(MaxLights)) FAIL;
-		UPTR LightVariationCount = MaxLights + 1;
-
-		U8 U8Value;
-		U32 U32Value;
-
-		if (!Reader.Read(U32Value)) FAIL;
-		Desc.Flags.ResetTo(U32Value);
-
-		if (!Reader.Read(Desc.DepthBias)) FAIL;
-		if (!Reader.Read(Desc.DepthBiasClamp)) FAIL;
-		if (!Reader.Read(Desc.SlopeScaledDepthBias)) FAIL;
-
-		if (Desc.Flags.Is(Render::CRenderStateDesc::DS_DepthEnable))
-		{
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.DepthFunc = (Render::ECmpFunc)U8Value;
-		}
-
-		if (Desc.Flags.Is(Render::CRenderStateDesc::DS_StencilEnable))
-		{
-			if (!Reader.Read(Desc.StencilReadMask)) FAIL;
-			if (!Reader.Read(Desc.StencilWriteMask)) FAIL;
-			if (!Reader.Read<U32>(U32Value)) FAIL;
-			Desc.StencilRef = U32Value;
-
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilFrontFace.StencilFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilFrontFace.StencilDepthFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilFrontFace.StencilPassOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilFrontFace.StencilFunc = (Render::ECmpFunc)U8Value;
-
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilBackFace.StencilFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilBackFace.StencilDepthFailOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilBackFace.StencilPassOp = (Render::EStencilOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			Desc.StencilBackFace.StencilFunc = (Render::ECmpFunc)U8Value;
-		}
-
-		for (UPTR BlendIdx = 0; BlendIdx < 8; ++BlendIdx)
-		{
-			if (BlendIdx > 0 && Desc.Flags.IsNot(Render::CRenderStateDesc::Blend_Independent)) break;
-
-			Render::CRenderStateDesc::CRTBlend& RTBlend = Desc.RTBlend[BlendIdx];
-
-			if (!Reader.Read(RTBlend.WriteMask)) FAIL;
-
-			if (Desc.Flags.IsNot(Render::CRenderStateDesc::Blend_RTBlendEnable << BlendIdx)) continue;
-
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			RTBlend.SrcBlendArg = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			RTBlend.DestBlendArg = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			RTBlend.BlendOp = (Render::EBlendOp)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			RTBlend.SrcBlendArgAlpha = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			RTBlend.DestBlendArgAlpha = (Render::EBlendArg)U8Value;
-			if (!Reader.Read<U8>(U8Value)) FAIL;
-			RTBlend.BlendOpAlpha = (Render::EBlendOp)U8Value;
-		}
-
-		if (!Reader.Read(Desc.BlendFactorRGBA[0])) FAIL;
-		if (!Reader.Read(Desc.BlendFactorRGBA[1])) FAIL;
-		if (!Reader.Read(Desc.BlendFactorRGBA[2])) FAIL;
-		if (!Reader.Read(Desc.BlendFactorRGBA[3])) FAIL;
-		if (!Reader.Read<U32>(U32Value)) FAIL;
-		Desc.SampleMask = U32Value;
-
-		if (!Reader.Read(Desc.AlphaTestRef)) FAIL;
-		if (!Reader.Read<U8>(U8Value)) FAIL;
-		Desc.AlphaTestFunc = (Render::ECmpFunc)U8Value;
-
-		CFixedArray<Render::PRenderState>& Variations = RenderStates[i];
-		Variations.SetSize(LightVariationCount);
-
-		UPTR VariationArraySize = 0;
-		for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
-		{
-			bool ShaderLoadingFailed = false;
-
-			Render::PShader* pShaders[] = { &Desc.VertexShader, &Desc.PixelShader, &Desc.GeometryShader, &Desc.HullShader, &Desc.DomainShader };
-			for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
-			{
-				U32 ShaderID;
-				if (!Reader.Read<U32>(ShaderID)) FAIL;
-
-				if (!ShaderID)
-				{
-					*pShaders[ShaderType] = nullptr;
-					continue;
-				}
-
-				//!!!DBG TMP! store full resource ID instead
-				CStrID SUID = CStrID("ShLib:#" + StringUtils::FromInt(ShaderID));
-
-				*pShaders[ShaderType] = GetShader(SUID);
-			}
-
-			Variations[LightCount] = ShaderLoadingFailed ? nullptr : pGPU->CreateRenderState(Desc);
-			if (Variations[LightCount].IsValidPtr()) VariationArraySize = LightCount + 1;
-		}
-
-		if (VariationArraySize < LightVariationCount)
-			Variations.SetSize(VariationArraySize, true);
-	}
 
 	// Load techniques
 
@@ -640,12 +776,12 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 
 	// Build parameters
 
-	CDict<CStrID, void*>			ConstValues;
-	CDict<CStrID, Render::PTexture>	ResourceValues;
-	CDict<CStrID, Render::PSampler>	SamplerValues;
-	void*							pConstValueBuffer;	// Must be n_free()'d if not nullptr
+	std::map<CStrID, void*> ConstValues;
+	std::map<CStrID, Render::PTexture> ResourceValues;
+	std::map<CStrID, Render::PSampler> SamplerValues;
+	std::unique_ptr<char[]> ConstValueBuffer;
 
-	if (!CEffect::LoadParamValues(Reader, GPU, ConstValues, ResourceValues, SamplerValues, pConstValueBuffer)) FAIL;
+	if (!LoadShaderParamValues(Reader, ConstValues, ResourceValues, SamplerValues, ConstValueBuffer)) FAIL;
 
 	const CFixedArray<Render::CEffectConstant>& Consts = Effect->GetMaterialConstants();
 	ConstBuffers.SetSize(Effect->GetMaterialConstantBufferCount());
@@ -1037,101 +1173,5 @@ bool CGraphicsResourceManager::LoadEffectParams(IO::CBinaryReader& Reader,
 	OK;
 }
 //---------------------------------------------------------------------
-
-bool CGraphicsResourceManager::LoadEffectParamValues(IO::CBinaryReader& Reader,
-	CDict<CStrID, void*>& OutConsts,
-	CDict<CStrID, Render::PTexture>& OutResources,
-	CDict<CStrID, Render::PSampler>& OutSamplers,
-	void*& pOutConstValueBuffer)
-{
-	U32 ParamCount;
-	if (!Reader.Read<U32>(ParamCount)) FAIL;
-	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
-	{
-		CStrID ParamID;
-		if (!Reader.Read(ParamID)) FAIL;
-
-		U8 Type;
-		if (!Reader.Read(Type)) FAIL;
-
-		switch (Type)
-		{
-			case Render::EPT_Const:
-			{
-				U32 Offset;
-				if (!Reader.Read(Offset)) FAIL;
-				if (!OutConsts.IsInAddMode()) OutConsts.BeginAdd();
-				OutConsts.Add(ParamID, (void*)Offset);
-				break;
-			}
-			case Render::EPT_Resource:
-			{
-				CStrID RUID;
-				if (!Reader.Read(RUID)) FAIL;
-				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
-				if (Texture.IsNullPtr()) FAIL;
-				if (!OutResources.IsInAddMode()) OutResources.BeginAdd();
-				OutResources.Add(ParamID, Texture);
-				break;
-			}
-			case Render::EPT_Sampler:
-			{
-				Render::CSamplerDesc SamplerDesc;
-
-				U8 U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
-
-				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
-				Reader.Read(SamplerDesc.MipMapLODBias);
-				Reader.Read(SamplerDesc.FinestMipMapLOD);
-				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
-				Reader.Read(SamplerDesc.MaxAnisotropy);
-
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
-
-				Render::PSampler Sampler = GPU.CreateSampler(SamplerDesc);
-				if (Sampler.IsNullPtr()) FAIL;
-				if (!OutSamplers.IsInAddMode()) OutSamplers.BeginAdd();
-				OutSamplers.Add(ParamID, Sampler);
-				break;
-			}
-		}
-	}
-
-	if (OutConsts.IsInAddMode()) OutConsts.EndAdd();
-	if (OutResources.IsInAddMode()) OutResources.EndAdd();
-	if (OutSamplers.IsInAddMode()) OutSamplers.EndAdd();
-
-	U32 ValueBufferSize;
-	if (!Reader.Read(ValueBufferSize)) FAIL;
-	if (ValueBufferSize)
-	{
-		pOutConstValueBuffer = n_malloc(ValueBufferSize);
-		Reader.GetStream().Read(pOutConstValueBuffer, ValueBufferSize);
-		//???return ValueBufferSize too?
-
-		for (UPTR i = 0; i < OutConsts.GetCount(); ++i)
-		{
-			void*& pValue = OutConsts.ValueAt(i);
-			pValue = (char*)pOutConstValueBuffer + (U32)pValue;
-		}
-	}
-	else pOutConstValueBuffer = nullptr;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 
 }

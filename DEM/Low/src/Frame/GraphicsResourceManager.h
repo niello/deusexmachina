@@ -1,9 +1,15 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Data/RefCounted.h>
+#include <map>
 
 // Manages all GPU-dependent resources required for frame rendering,
 // prevents redundant GPU resource loading
+
+namespace IO
+{
+	class CBinaryReader;
+}
 
 namespace Resources
 {
@@ -29,6 +35,13 @@ private:
 	std::unordered_map<CStrID, Render::PMaterial> Materials;
 	std::unordered_map<CStrID, PRenderPath>       RenderPaths;
 
+	bool LoadShaderParamValues(IO::CBinaryReader& Reader,
+		std::map<CStrID, void*>& OutConsts,
+		std::map<CStrID, Render::PTexture>& OutResources,
+		std::map<CStrID, Render::PSampler>& OutSamplers,
+		std::unique_ptr<char[]>& OutConstValueBuffer);
+	bool LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out);
+
 	Render::PEffect           LoadEffect(CStrID UID);
 	Render::PMaterial         LoadMaterial(CStrID UID);
 	PRenderPath               LoadRenderPath(CStrID UID);
@@ -42,7 +55,7 @@ public:
 	//???!!!resolve assigns?!
 	Render::PMesh     GetMesh(CStrID UID);
 	Render::PTexture  GetTexture(CStrID UID, UPTR AccessFlags);
-	Render::PShader   GetShader(CStrID UID);
+	Render::PShader   GetShader(CStrID UID, bool NeedParamTable);
 	Render::PEffect   GetEffect(CStrID UID);
 	Render::PMaterial GetMaterial(CStrID UID);
 	PRenderPath       GetRenderPath(CStrID ID);

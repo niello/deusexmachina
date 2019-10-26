@@ -2743,7 +2743,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 
 		/*
 		// If no signature, can load this shader itself with some unique ID, for example negative.
-		// This must never happen for shaders build in DEM, so we omit handling this case.
+		// This must never happen for shaders built in DEM, so we omit handling this case.
 		if (InputSignatureID == 0)
 		{
 			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
