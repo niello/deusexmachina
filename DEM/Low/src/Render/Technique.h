@@ -1,9 +1,7 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Render/ShaderParamTable.h>
-#include <Data/FixedArray.h>
 #include <Data/StringID.h>
-#include <Data/Dictionary.h>
 #include <Data/RefCounted.h>
 
 // A particular implementation of an effect for a specific input data. It includes
@@ -12,38 +10,29 @@
 // When IRenderer renders some object, it chooses a technique whose input set ID
 // matches an ID of input set the renderer provides.
 
-namespace Resources
-{
-	class CEffectLoader;
-}
-
 namespace Render
 {
-typedef CFixedArray<PRenderState> CPassList;
 
 class CTechnique: public Data::CRefCounted
 {
 private:
 
-	CStrID							Name;
-	UPTR							ShaderInputSetID;
-	//EGPUFeatureLevel				MinFeatureLevel;
-	CFixedArray<CPassList>			PassesByLightCount; // Light count is an index
-
-	PShaderParamTable Params;
+	CStrID                    _Name;
+	std::vector<PRenderState> _Passes;
+	IPTR                      _MaxLightCount;
+	PShaderParamTable         _Params;
 
 	friend class CEffect;
 
 public:
 
-	CTechnique();
+	CTechnique(CStrID Name, std::vector<PRenderState>&& Passes, IPTR MaxLights, PShaderParamTable Params);
 	virtual ~CTechnique() override;
 
-	CStrID                   GetName() const { return Name; }
-	UPTR                     GetShaderInputSetID() const { return ShaderInputSetID; }
-	IPTR                     GetMaxLightCount() const { return PassesByLightCount.GetCount() - 1; }
-	const CPassList*         GetPasses(UPTR& LightCount) const;
-	const CShaderParamTable& GetParamTable() const { return *Params; }
+	CStrID                   GetName() const { return _Name; }
+	const auto&              GetPasses(UPTR& LightCount) const { return _Passes; }
+	IPTR                     GetMaxLightCount() const { return _MaxLightCount; }
+	const CShaderParamTable& GetParamTable() const { return *_Params; }
 };
 
 typedef Ptr<CTechnique> PTechnique;

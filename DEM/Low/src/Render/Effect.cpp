@@ -13,11 +13,22 @@
 
 namespace Render
 {
-CEffect::CEffect() {}
+
+CEffect::CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderParamValues&& MaterialDefaults)
+	: _Type(Type)
+	, _MaterialParams(MaterialParams)
+	, _MaterialDefaults(std::move(MaterialDefaults))
+{
+}
+//---------------------------------------------------------------------
 
 CEffect::~CEffect()
 {
-	SAFE_FREE(pMaterialConstDefaultValues);
+}
+//---------------------------------------------------------------------
+
+void CEffect::SetTechnique(CStrID InputSet, PTechnique Tech)
+{
 }
 //---------------------------------------------------------------------
 
@@ -28,7 +39,7 @@ const CTechnique* CEffect::GetTechByName(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-const CTechnique* CEffect::GetTechByInputSet(UPTR InputSet) const
+const CTechnique* CEffect::GetTechByInputSet(CStrID InputSet) const
 {
 	IPTR Idx = TechsByInputSet.FindIndex(InputSet);
 	return Idx == INVALID_INDEX ? nullptr : TechsByInputSet.ValueAt(Idx).Get();

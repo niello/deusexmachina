@@ -1,7 +1,7 @@
 #pragma once
 #include <Render/Technique.h>
 #include <Data/StringID.h>
-#include <Data/Dictionary.h>
+#include <map>
 
 // A complete (possibly multipass) shading effect on an abstract input data.
 // Since input data may be different, although the desired shading effect is the same, an effect
@@ -9,50 +9,48 @@
 // An unique set of feature flags defines each input data case, so techniques are mapped to these
 // flags, and clients can request an apropriate tech by its features. Request by ID is supported too.
 
-namespace IO
-{
-	class CStream;
-	class CBinaryReader;
-}
-
 namespace Render
 {
 typedef Ptr<class CEffect> PEffect;
+
+struct CShaderParamValues
+{
+	std::map<CStrID, void*> ConstValues;
+	std::map<CStrID, Render::PTexture> ResourceValues;
+	std::map<CStrID, Render::PSampler> SamplerValues;
+	std::unique_ptr<char[]> ConstValueBuffer;
+};
 
 class CEffect: public Data::CRefCounted
 {
 protected:
 
-	EEffectType						Type;
+	EEffectType                  _Type;
 
-	CDict<CStrID, PTechnique>		TechsByName;
-	CDict<UPTR, PTechnique>			TechsByInputSet;
+	std::map<CStrID, PTechnique> _TechsByName;
+	std::map<CStrID, PTechnique> _TechsByInputSet;
 
-	//!!!need binary search by ID in fixed arrays!
-	CDict<CStrID, void*>			DefaultConsts;
-	CDict<CStrID, PTexture>			DefaultResources;
-	CDict<CStrID, PSampler>			DefaultSamplers;
-	char*							pMaterialConstDefaultValues = nullptr;
-	UPTR							MaterialConstantBufferCount = 0;
-
-	//PShaderParamTable GlobalParams; // Stored in RP, used only there
-	PShaderParamTable MaterialParams;
+	PShaderParamTable            _MaterialParams;
+	CShaderParamValues           _MaterialDefaults;
 
 public:
 
-	CEffect();
-	~CEffect();
+	CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderParamValues&& MaterialDefaults);
+	virtual ~CEffect() override;
 
-	bool								IsValid() const { return !!TechsByInputSet.GetCount(); }
+	// For creation
+	void SetTechnique(CStrID InputSet, PTechnique Tech);
+
+	bool IsValid() const { return !_TechsByInputSet.empty(); }
 
 	const CTechnique* GetTechByName(CStrID Name) const;
-	const CTechnique* GetTechByInputSet(UPTR InputSet) const;
+	const CTechnique* GetTechByInputSet(CStrID InputSet) const;
 
-	EEffectType       GetType() const { return Type; }
-	const auto&       GetMaterialParamTable() const { return MaterialParams; }
-	void*             GetConstantDefaultValue(CStrID ID) const;
-	PTexture          GetResourceDefaultValue(CStrID ID) const;
-	PSampler          GetSamplerDefaultValue(CStrID ID) const;
+	EEffectType              GetType() const { return _Type; }
+	const CShaderParamTable& GetMaterialParamTable() const { return *_MaterialParams; }
+	void*                    GetConstantDefaultValue(CStrID ID) const;
+	PTexture                 GetResourceDefaultValue(CStrID ID) const;
+	PSampler                 GetSamplerDefaultValue(CStrID ID) const;
 };
 
 }

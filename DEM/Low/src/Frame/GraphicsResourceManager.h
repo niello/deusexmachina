@@ -16,6 +16,11 @@ namespace Resources
 	class CResourceManager;
 }
 
+namespace Render
+{
+	struct CShaderParamValues;
+}
+
 namespace Frame
 {
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
@@ -35,11 +40,7 @@ private:
 	std::unordered_map<CStrID, Render::PMaterial> Materials;
 	std::unordered_map<CStrID, PRenderPath>       RenderPaths;
 
-	bool LoadShaderParamValues(IO::CBinaryReader& Reader,
-		std::map<CStrID, void*>& OutConsts,
-		std::map<CStrID, Render::PTexture>& OutResources,
-		std::map<CStrID, Render::PSampler>& OutSamplers,
-		std::unique_ptr<char[]>& OutConstValueBuffer);
+	bool LoadShaderParamValues(IO::CBinaryReader& Reader, Render::CShaderParamValues& Out);
 	bool LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out);
 
 	Render::PEffect           LoadEffect(CStrID UID);

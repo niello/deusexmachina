@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_STATE_DESC_H__
-#define __DEM_L1_RENDER_STATE_DESC_H__
-
 #include <Render/RenderFwd.h>
 #include <Data/Flags.h>
 
@@ -15,11 +12,11 @@ struct CRenderStateDesc
 {
 	// Shaders
 
-	PShader				VertexShader;
-	PShader				PixelShader;
-	PShader				GeometryShader;
-	PShader				HullShader;
-	PShader				DomainShader;
+	CStrID				VertexShader;
+	CStrID				PixelShader;
+	CStrID				GeometryShader;
+	CStrID				HullShader;
+	CStrID				DomainShader;
 
 	Data::CFlags		Flags; // For boolean variables, see enums below
 
@@ -107,5 +104,3 @@ struct CRenderStateDesc
 };
 
 }
-
-#endif

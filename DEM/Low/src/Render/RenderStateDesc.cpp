@@ -12,11 +12,11 @@ void CRenderStateDesc::SetDefaults()
 				  DS_DepthEnable |
 				  DS_DepthWriteEnable);
 
-	VertexShader = nullptr;
-	HullShader = nullptr;
-	DomainShader = nullptr;
-	GeometryShader = nullptr;
-	PixelShader = nullptr;
+	VertexShader = CStrID::Empty;
+	HullShader = CStrID::Empty;
+	DomainShader = CStrID::Empty;
+	GeometryShader = CStrID::Empty;
+	PixelShader = CStrID::Empty;
 
 	DepthBias = 0.f;
 	DepthBiasClamp = 0.f;

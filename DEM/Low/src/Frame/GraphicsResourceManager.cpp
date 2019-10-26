@@ -185,45 +185,7 @@ PRenderPath CGraphicsResourceManager::GetRenderPath(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-static bool SkipEffectParams(IO::CBinaryReader& Reader)
-{
-	// Constants
-	U32 Count;
-	if (!Reader.Read(Count)) FAIL;
-	for (U32 Idx = 0; Idx < Count; ++Idx)
-	{
-		CString StrValue;
-		if (!Reader.Read(StrValue)) FAIL;
-		if (!Reader.GetStream().Seek(10, IO::Seek_Current)) FAIL;
-	}
-
-	// Resources
-	if (!Reader.Read(Count)) FAIL;
-	for (U32 Idx = 0; Idx < Count; ++Idx)
-	{
-		CString StrValue;
-		if (!Reader.Read(StrValue)) FAIL;
-		if (!Reader.GetStream().Seek(5, IO::Seek_Current)) FAIL;
-	}
-
-	// Samplers
-	if (!Reader.Read(Count)) FAIL;
-	for (U32 Idx = 0; Idx < Count; ++Idx)
-	{
-		CString StrValue;
-		if (!Reader.Read(StrValue)) FAIL;
-		if (!Reader.GetStream().Seek(5, IO::Seek_Current)) FAIL;
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader,
-	std::map<CStrID, void*>& OutConsts,
-	std::map<CStrID, Render::PTexture>& OutResources,
-	std::map<CStrID, Render::PSampler>& OutSamplers,
-	std::unique_ptr<char[]>& OutConstValueBuffer)
+bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, Render::CShaderParamValues& Out)
 {
 	U32 ParamCount;
 	if (!Reader.Read<U32>(ParamCount)) FAIL;
@@ -241,7 +203,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader,
 			{
 				U32 Offset;
 				if (!Reader.Read(Offset)) FAIL;
-				OutConsts.emplace(ParamID, (void*)Offset);
+				Out.ConstValues.emplace(ParamID, (void*)Offset);
 				break;
 			}
 			case Render::EPT_Resource:
@@ -250,7 +212,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader,
 				if (!Reader.Read(RUID)) FAIL;
 				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
 				if (Texture.IsNullPtr()) FAIL;
-				OutResources.emplace(ParamID, Texture);
+				Out.ResourceValues.emplace(ParamID, Texture);
 				break;
 			}
 			case Render::EPT_Sampler:
@@ -281,7 +243,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader,
 
 				Render::PSampler Sampler = pGPU->CreateSampler(SamplerDesc);
 				if (Sampler.IsNullPtr()) FAIL;
-				OutSamplers.emplace(ParamID, Sampler);
+				Out.SamplerValues.emplace(ParamID, Sampler);
 				break;
 			}
 		}
@@ -291,12 +253,12 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader,
 	if (!Reader.Read(ValueBufferSize)) FAIL;
 	if (ValueBufferSize)
 	{
-		OutConstValueBuffer = std::make_unique<char[]>(ValueBufferSize);
-		Reader.GetStream().Read(OutConstValueBuffer.get(), ValueBufferSize);
+		Out.ConstValueBuffer = std::make_unique<char[]>(ValueBufferSize);
+		Reader.GetStream().Read(Out.ConstValueBuffer.get(), ValueBufferSize);
 
 		// Covert offsets to direct pointers
-		for (auto& Pair : OutConsts)
-			Pair.second = OutConstValueBuffer.get() + (U32)Pair.second;
+		for (auto& Pair : Out.ConstValues)
+			Pair.second = Out.ConstValueBuffer.get() + (U32)Pair.second;
 	}
 
 	OK;
@@ -307,9 +269,9 @@ bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Re
 {
 	Out.SetDefaults();
 
-	U32 MaxLights;
-	if (!Reader.Read(MaxLights)) FAIL;
-	UPTR LightVariationCount = MaxLights + 1;
+	//U32 MaxLights;
+	//if (!Reader.Read(MaxLights)) FAIL;
+	//UPTR LightVariationCount = MaxLights + 1;
 
 	U8 U8Value;
 	U32 U32Value;
@@ -388,38 +350,11 @@ bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Re
 	if (!Reader.Read<U8>(U8Value)) FAIL;
 	Out.AlphaTestFunc = (Render::ECmpFunc)U8Value;
 
-	CFixedArray<Render::PRenderState>& Variations = RenderStates[i];
-	Variations.SetSize(LightVariationCount);
-
-	UPTR VariationArraySize = 0;
-	for (UPTR LightCount = 0; LightCount < LightVariationCount; ++LightCount)
-	{
-		bool ShaderLoadingFailed = false;
-
-		Render::PShader* pShaders[] = { &Out.VertexShader, &Out.PixelShader, &Out.GeometryShader, &Out.HullShader, &Out.DomainShader };
-		for (UPTR ShaderType = Render::ShaderType_Vertex; ShaderType < Render::ShaderType_COUNT; ++ShaderType)
-		{
-			U32 ShaderID;
-			if (!Reader.Read<U32>(ShaderID)) FAIL;
-
-			if (!ShaderID)
-			{
-				*pShaders[ShaderType] = nullptr;
-				continue;
-			}
-
-			//!!!DBG TMP! store full resource ID instead
-			CStrID SUID = CStrID("ShLib:#" + StringUtils::FromInt(ShaderID));
-
-			*pShaders[ShaderType] = GetShader(SUID);
-		}
-
-		Variations[LightCount] = ShaderLoadingFailed ? nullptr : pGPU->CreateRenderState(Desc);
-		if (Variations[LightCount].IsValidPtr()) VariationArraySize = LightCount + 1;
-	}
-
-	if (VariationArraySize < LightVariationCount)
-		Variations.SetSize(VariationArraySize, true);
+	if (!Reader.Read(Out.VertexShader)) FAIL;
+	if (!Reader.Read(Out.PixelShader)) FAIL;
+	if (!Reader.Read(Out.GeometryShader)) FAIL;
+	if (!Reader.Read(Out.HullShader)) FAIL;
+	if (!Reader.Read(Out.DomainShader)) FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -442,6 +377,19 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	CStrID MaterialType;
 	if (!Reader.Read(MaterialType)) return nullptr;
 
+	//???FIXME: use loaded CStrID as is?
+	Render::EEffectType EffectType;
+	if (MaterialType == "Opaque")
+		EffectType = Render::EffectType_Opaque;
+	else if (MaterialType == "AlphaTest")
+		EffectType = Render::EffectType_AlphaTest;
+	else if (MaterialType == "Skybox")
+		EffectType = Render::EffectType_Skybox;
+	else if (MaterialType == "AlphaBlend")
+		EffectType = Render::EffectType_AlphaBlend;
+	else
+		EffectType = Render::EffectType_Other;
+
 	U32 ShaderFormatCount;
 	if (!Reader.Read<U32>(ShaderFormatCount) || !ShaderFormatCount) return nullptr;
 
@@ -461,6 +409,8 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	{
 		Reader.GetStream().Seek(Pair.second, IO::Seek_Begin);
 
+		// Load param tables
+
 		// Skip global metadata, actual is loaded in a render path
 		auto GlobalMetaSize = Reader.Read<U32>();
 		Reader.GetStream().Seek(GlobalMetaSize, IO::Seek_Current);
@@ -468,24 +418,25 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		Render::PShaderParamTable MaterialParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 		if (!MaterialParams) return nullptr;
 
-		U32 DefaultValueCount;
-		if (!Reader.Read(DefaultValueCount)) return nullptr;
+		// Load material default values
 
-		std::map<CStrID, void*> ConstValues;
-		std::map<CStrID, Render::PTexture> ResourceValues;
-		std::map<CStrID, Render::PSampler> SamplerValues;
-		std::unique_ptr<char[]> ConstValueBuffer;
+		Render::CShaderParamValues MaterialDefaults;
+		if (!LoadShaderParamValues(Reader, MaterialDefaults)) FAIL;
 
-		if (!LoadShaderParamValues(Reader, ConstValues, ResourceValues, SamplerValues, ConstValueBuffer)) FAIL;
+		// Load techniques and select the best one for each input set
+
+		struct CTechniqueData
+		{
+			std::vector<U32> RSIndices;
+			Render::PShaderParamTable Params;
+		};
 
 		std::set<U32> UsedRenderStateIndices;
-		//used RS indices per input set
-		//best tech per input set
-		//???or build selection tree here? InputSet -> array of valid techs from the best down?
+		std::map<CStrID, CTechniqueData> TechPerInputSet;
 
 		U32 TechCount;
 		if (!Reader.Read(TechCount)) return nullptr;
-		for (U32 TechIdx = 0; TechIdx < TechCount; +TechIdx)
+		for (U32 TechIdx = 0; TechIdx < TechCount; ++TechIdx)
 		{
 			U32 FeatureLevel;
 			if (!Reader.Read(FeatureLevel)) return nullptr;
@@ -493,7 +444,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			U32 SkipOffset;
 			if (!Reader.Read(SkipOffset)) return nullptr;
 
-			if (FeatureLevel > pGPU->GetFeatureLevel())
+			if (static_cast<Render::EGPUFeatureLevel>(FeatureLevel) > pGPU->GetFeatureLevel())
 			{
 				Reader.GetStream().Seek(SkipOffset, IO::Seek_Begin);
 				continue;
@@ -502,136 +453,84 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			CStrID InputSet;
 			if (!Reader.Read(InputSet)) return nullptr;
 
-			//!!!if has valid tech for this input set, skip!
-			//???or load render states, invalidate techs with failed states and then select techs?
-
-			//!!!clear used RS!
-			std::vector<U32> RSIndices;
+			if (TechPerInputSet.find(InputSet) != TechPerInputSet.cend())
+			{
+				// Better valid tech is already found, skip the rest of techs for this input set
+				// NB: we trust our tools that this tech is compatible with our GPU. This is checked
+				// with FeatureLevel. So if some render states will happen to be invalid, it is
+				// considered a fatal error and effect will not be loaded at all.
+				Reader.GetStream().Seek(SkipOffset, IO::Seek_Begin);
+				continue;
+			}
 
 			U32 PassCount;
 			if (!Reader.Read(PassCount)) return nullptr;
-			RSIndices.resize(PassCount);
-			for (auto& RSIndex : RSIndices)
+
+			CTechniqueData TechData;
+			TechData.RSIndices.resize(PassCount);
+			for (auto& RSIndex : TechData.RSIndices)
 			{
 				if (!Reader.Read(RSIndex)) return nullptr;
 			}
 
-			Render::PShaderParamTable TechParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
-			if (!TechParams) return nullptr;
+			TechData.Params = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
+			if (!TechData.Params) return nullptr;
+
+			// Tech is valid, mark its render states as used
+			for (auto RSIndex : TechData.RSIndices)
+				UsedRenderStateIndices.insert(RSIndex);
 		}
 
-		// build all render states count or array of render states with nulls for unused
+		// Load only used render states
 
 		U32 RenderStateCount;
 		if (!Reader.Read(RenderStateCount)) return nullptr;
 
-		std::vector<Render::PRenderState> RenderStates;
-		RenderStates.resize(RenderStateCount);
+		std::vector<Render::PRenderState> RenderStates(RenderStateCount);
 		for (U32 RSIndex = 0; RSIndex < RenderStateCount; ++RSIndex)
 		{
-			if (UsedRenderStateIndices.find(RSIndex) == UsedRenderStateIndices.cend())
-			{
-				//!!!skip desc!
-				continue;
-			}
-
+			// TODO: can add skipping unused RS desc (even with precomputed offset) if optimization required
 			Render::CRenderStateDesc Desc;
-			if (!LoadRenderStateDesc(Reader, Desc)) return false;
+			if (!LoadRenderStateDesc(Reader, Desc)) return nullptr;
+
+			// Load only used render states
+			if (UsedRenderStateIndices.find(RSIndex) != UsedRenderStateIndices.cend())
+			{
+				RenderStates[RSIndex] = pGPU->CreateRenderState(Desc);
+				if (!RenderStates[RSIndex]) return nullptr;
+			}
 		}
 
-		// if loaded correctly, return created effect;
+		// Create an effect from the loaded data
+
+		Render::PEffect Effect = n_new(Render::CEffect(EffectType, MaterialParams, std::move(MaterialDefaults)));
+
+		for (const auto& Pair : TechPerInputSet)
+		{
+			std::vector<Render::PRenderState> Passes;
+			for (auto RSIndex : Pair.second.RSIndices)
+				Passes.push_back(RenderStates[RSIndex]);
+
+			Render::PTechnique Tech = n_new(Render::CTechnique(CStrID::Empty, std::move(Passes), -1, Pair.second.Params));
+			Effect->SetTechnique(Pair.first, Tech);
+		}
+
+		return Effect;
 	}
 
 	return nullptr;
 
 	/*
 
-	// Load techniques
-
-	CDict<CStrID, Render::PTechnique> Techs;
-
-	U32 TechCount;
-	if (!Reader.Read<U32>(TechCount) || !TechCount) FAIL;
-
-	CStrID CurrInputSet;
-	UPTR ShaderInputSetID;
-	bool BestTechFound = false; // True if we already loaded the best tech for the current input set
-
 	for (UPTR i = 0; i < TechCount; ++i)
 	{
-		CStrID TechID;
-		CStrID InputSet;
-		U32 Target;
-		if (!Reader.Read(TechID)) FAIL;
-		if (!Reader.Read(InputSet)) FAIL;
-		if (!Reader.Read(Target)) FAIL;
-
-		U32 U32Value;
-		if (!Reader.Read(U32Value)) FAIL;
-		Render::EGPUFeatureLevel MinFeatureLevel = (Render::EGPUFeatureLevel)U32Value;
-
-		U64 RequiresFlags;
-		if (!Reader.Read(RequiresFlags)) FAIL;
-
-		if (InputSet != CurrInputSet)
-		{
-			CurrInputSet = InputSet;
-			ShaderInputSetID = Render::RegisterShaderInputSetID(InputSet);
-			BestTechFound = false;
-		}
-
-		// Check for hardware and API support. For low-performance graphic cards with rich feature
-		// support, a better way is to measure GPU performance on driver init and choose here not
-		// only by features supported, but by performance 'score' of tech vs GPU too.
-		//!!!check RequiresFlags!
-		if (BestTechFound || MinFeatureLevel > pGPU->GetFeatureLevel())
-		{
-			U32 PassCount;
-			if (!Reader.Read<U32>(PassCount)) FAIL;
-			if (!Stream->Seek(4 * PassCount, IO::Seek_Current)) FAIL; // Pass indices
-			U32 MaxLights;
-			if (!Reader.Read<U32>(MaxLights)) FAIL;
-			if (!Stream->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
-			if (!SkipEffectParams(Reader)) FAIL;
-			continue;
-		}
-
 		Render::PTechnique Tech = n_new(Render::CTechnique);
 		Tech->Name = TechID;
 		Tech->ShaderInputSetID = ShaderInputSetID;
 		//Tech->MinFeatureLevel = MinFeatureLevel;
 
-		bool HasCompletelyInvalidPass = false;
-
-		U32 PassCount;
-		if (!Reader.Read<U32>(PassCount)) FAIL;
-		CFixedArray<U32> PassRenderStateIndices(PassCount);
-		for (UPTR PassIdx = 0; PassIdx < PassCount; ++PassIdx)
-		{
-			U32 PassRenderStateIdx;
-			if (!Reader.Read<U32>(PassRenderStateIdx)) FAIL;
-
-			//!!!can lazy-load render states here! read desc above, but don't create GPU objects!
-			//many unused render states may be loaded unnecessarily
-
-			if (PassRenderStateIdx == INVALID_INDEX || !RenderStates[PassRenderStateIdx].GetCount())
-			{
-				HasCompletelyInvalidPass = true;
-				break;
-			}
-
-			PassRenderStateIndices[PassIdx] = PassRenderStateIdx;
-		}
-
 		U32 MaxLights;
 		if (!Reader.Read<U32>(MaxLights)) FAIL;
-
-		if (HasCompletelyInvalidPass)
-		{
-			if (!Stream->Seek(MaxLights + 1, IO::Seek_Current)) FAIL; // VariationValid flags
-			if (!SkipEffectParams(Reader)) FAIL;
-			continue;
-		}
 
 		UPTR NewVariationCount = 0;
 		UPTR ValidVariationCount = 0;
@@ -726,26 +625,14 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 	//!!!try to find by effect ID! add into it, if found!
 	//so GPU will find loaded effect & add loaded data into it. Is still actual?
-	switch (EffectType)
-	{
-		case 0:		Type = Render::EffectType_Opaque; break;
-		case 1:		Type = Render::EffectType_AlphaTest; break;
-		case 2:		Type = Render::EffectType_Skybox; break;
-		case 3:		Type = Render::EffectType_AlphaBlend; break;
-		default:	Type = Render::EffectType_Other; break;
-	}
 
 	// Build tech indices
-	TechsByName.BeginAdd(Techs.GetCount());
-	TechsByInputSet.BeginAdd(Techs.GetCount());
 	for (UPTR i = 0; i < Techs.GetCount(); ++i)
 	{
 		auto& Tech = Techs.ValueAt(i);
 		TechsByName.Add(Tech->GetName(), Tech);
 		TechsByInputSet.Add(Tech->GetShaderInputSetID(), Tech);
 	}
-	TechsByName.EndAdd();
-	TechsByInputSet.EndAdd();
 
 	OK;
 	*/
@@ -776,12 +663,8 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 
 	// Build parameters
 
-	std::map<CStrID, void*> ConstValues;
-	std::map<CStrID, Render::PTexture> ResourceValues;
-	std::map<CStrID, Render::PSampler> SamplerValues;
-	std::unique_ptr<char[]> ConstValueBuffer;
-
-	if (!LoadShaderParamValues(Reader, ConstValues, ResourceValues, SamplerValues, ConstValueBuffer)) FAIL;
+	Render::CShaderParamValues Values;
+	if (!LoadShaderParamValues(Reader, Values)) FAIL;
 
 	const CFixedArray<Render::CEffectConstant>& Consts = Effect->GetMaterialConstants();
 	ConstBuffers.SetSize(Effect->GetMaterialConstantBufferCount());
