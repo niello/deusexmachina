@@ -1,11 +1,7 @@
 #include "RenderPath.h"
-
 #include <Frame/RenderPhase.h>
 #include <Frame/View.h>
-#include <Frame/NodeAttrCamera.h>
 #include <Render/GPUDriver.h>
-#include <Render/ShaderMetadata.h>
-#include <Render/ShaderConstant.h>
 
 namespace Frame
 {
@@ -14,6 +10,18 @@ __ImplementClassNoFactory(Frame::CRenderPath, Core::CObject);
 CRenderPath::CRenderPath() {}
 
 CRenderPath::~CRenderPath() {}
+
+void CRenderPath::AddRenderTargetSlot(CStrID ID, vector4 ClearValue)
+{
+	RTSlots.emplace(ID, CRenderTargetSlot{ ClearValue });
+}
+//---------------------------------------------------------------------
+
+void CRenderPath::AddDepthStencilSlot(CStrID ID, U32 ClearFlags, float DepthClearValue, U8 StencilClearValue)
+{
+	DSSlots.emplace(ID, CDepthStencilSlot{ ClearFlags, DepthClearValue, StencilClearValue });
+}
+//---------------------------------------------------------------------
 
 void CRenderPath::SetRenderTargetClearColor(CStrID ID, const vector4& Color)
 {

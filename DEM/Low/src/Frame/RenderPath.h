@@ -54,6 +54,9 @@ public:
 	CRenderPath();
 	virtual ~CRenderPath() override;
 
+	void AddRenderTargetSlot(CStrID ID, vector4 ClearValue);
+	void AddDepthStencilSlot(CStrID ID, U32 ClearFlags, float DepthClearValue, U8 StencilClearValue);
+
 	bool								HasRenderTarget(CStrID ID) const { return RTSlots.find(ID) != RTSlots.cend(); }
 	bool								HasDepthStencilBuffer(CStrID ID) const { return DSSlots.find(ID) != DSSlots.cend(); }
 	void								SetRenderTargetClearColor(CStrID ID, const vector4& Color);

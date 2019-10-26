@@ -1,4 +1,6 @@
 #include "GraphicsResourceManager.h"
+#include <Frame/RenderPath.h>
+#include <Frame/RenderPhase.h>
 #include <Render/GPUDriver.h>
 #include <Render/VertexLayout.h>
 #include <Render/Texture.h>
@@ -17,6 +19,7 @@
 #include <IO/BinaryReader.h>
 #include <Data/RAMData.h>
 #include <Data/StringUtils.h>
+#include <Core/Factory.h>
 #include <map>
 
 namespace Frame
@@ -550,8 +553,8 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	Render::CShaderParamValues Values;
 	if (!LoadShaderParamValues(Reader, Values)) FAIL;
 
-	const CFixedArray<Render::CEffectConstant>& Consts = Effect->GetMaterialConstants();
-	ConstBuffers.SetSize(Effect->GetMaterialConstantBufferCount());
+	const auto& Params = Effect->GetMaterialParamTable();
+	ConstBuffers.SetSize(Params.GetConstantBufferCount());
 	UPTR CurrCBCount = 0;
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
@@ -653,79 +656,92 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	U32 Version;
 	if (!Reader.Read<U32>(Version)) return nullptr;
 
-	U32 ShaderModel;
-	if (!Reader.Read<U32>(ShaderModel)) return nullptr; // 0 for SM3.0, 1 for USM
-
-	Data::CDataArray RTSlots;
-	if (!Reader.Read(RTSlots)) return nullptr;
-
-	Data::CDataArray DSSlots;
-	if (!Reader.Read(DSSlots)) return nullptr;
-
-	Data::PParams Phases = n_new(Data::CParams);
-	if (!Reader.ReadParams(*Phases)) return nullptr;
-
 	Frame::PRenderPath RP = n_new(Frame::CRenderPath);
 
-	RP->RTSlots.SetSize(RTSlots.GetCount());
-	for (UPTR i = 0; i < RTSlots.GetCount(); ++i)
+	// Read render targets
+
+	U32 RTCount;
+	if (!Reader.Read(RTCount)) return nullptr;
+
+	for (U32 i = 0; i < RTCount; ++i)
 	{
-		Frame::CRenderPath::CRenderTargetSlot& Slot = RP->RTSlots[i];
-		Slot.ClearValue = RTSlots[i].GetValue<Data::PParams>()->Get<vector4>(CStrID("ClearValue"), vector4(0.5f, 0.5f, 0.f, 1.f));
+		CStrID ID;
+		if (!Reader.Read(ID)) return nullptr;
+
+		vector4 ClearValue;
+		if (!Reader.Read(ClearValue)) return nullptr;
+
+		RP->AddRenderTargetSlot(ID, ClearValue);
 	}
 
-	RP->DSSlots.SetSize(DSSlots.GetCount());
-	for (UPTR i = 0; i < DSSlots.GetCount(); ++i)
+	// Read depth-stencil buffers
+
+	U32 DSCount;
+	if (!Reader.Read(DSCount)) return nullptr;
+
+	for (U32 i = 0; i < DSCount; ++i)
 	{
-		Frame::CRenderPath::CDepthStencilSlot& Slot = RP->DSSlots[i];
-		Data::PParams SlotParams = DSSlots[i].GetValue<Data::PParams>();
+		CStrID ID;
+		if (!Reader.Read(ID)) return nullptr;
 
-		Slot.ClearFlags = 0;
+		float DepthClearValue;
+		U8 StencilClearValue;
+		U8 ClearFlags;
+		if (!Reader.Read(DepthClearValue)) return nullptr;
+		if (!Reader.Read(StencilClearValue)) return nullptr;
+		if (!Reader.Read(ClearFlags)) return nullptr;
 
-		float ZClear;
-		if (SlotParams->Get(ZClear, CStrID("DepthClearValue")))
-		{
-			Slot.DepthClearValue = ZClear;
-			Slot.ClearFlags |= Render::Clear_Depth;
-		}
+		constexpr U8 Flag_ClearDepth = (1 << 0);
+		constexpr U8 Flag_ClearStencil = (1 << 1);
 
-		int StencilClear;
-		if (SlotParams->Get(StencilClear, CStrID("StencilClearValue")))
-		{
-			Slot.StencilClearValue = StencilClear;
-			Slot.ClearFlags |= Render::Clear_Stencil;
-		}
+		U32 RealClearFlags = 0;
+		if (ClearFlags & Flag_ClearDepth)
+			RealClearFlags |= Render::Clear_Depth;
+		if (ClearFlags & Flag_ClearStencil)
+			RealClearFlags |= Render::Clear_Stencil;
+
+		RP->AddDepthStencilSlot(ID, RealClearFlags, DepthClearValue, StencilClearValue);
 	}
 
-	// Breaks API independence. Honestly, RP file format breaks it even earlier,
-	// by including API-specific metadata. Subject to redesign.
-	//???load separate metadata-only shader file by GPU?
-	switch (ShaderModel)
+	// Read phases
+
+	Data::PParams PhaseDescs = n_new(Data::CParams);
+	if (!Reader.ReadParams(*PhaseDescs)) return nullptr;
+
+	// Read global params compatible with our GPU
+
+	Render::PShaderParamTable GlobalParams;
+
+	U32 ShaderFormatCount;
+	if (!Reader.Read<U32>(ShaderFormatCount)) return nullptr;
+
+	std::map<U32, U32> Offsets;
+	for (U32 i = 0; i < ShaderFormatCount; ++i)
 	{
-		case 0: // SM3.0
+		U32 Format;
+		if (!Reader.Read(Format)) return nullptr;
+		U32 Offset;
+		if (!Reader.Read(Offset)) return nullptr;
+
+		if (pGPU->SupportsShaderFormat(Format))
 		{
-			Render::CSM30ShaderMetadata* pGlobals = n_new(Render::CSM30ShaderMetadata);
-			if (!pGlobals->Load(*Stream)) return nullptr;
-			RP->pGlobals = pGlobals;
+			Reader.GetStream().Seek(Offset, IO::Seek_Begin);
+
+			GlobalParams = pGPU->LoadShaderParamTable(Format, Reader.GetStream());
+			if (!GlobalParams) return nullptr;
+
+			// NB: file has no useful data after this, so leave the stream at any position it is now
 			break;
 		}
-		case 1: // USM
-		{
-			Render::CUSMShaderMetadata* pGlobals = n_new(Render::CUSMShaderMetadata);
-			if (!pGlobals->Load(*Stream)) return nullptr;
-			RP->pGlobals = pGlobals;
-			break;
-		}
 	}
 
-	if (!LoadGlobalParams(Reader, RP->pGlobals, RP->Consts, RP->Resources, RP->Samplers)) return nullptr;
+	// Create phases.
+	// NB: intentionally created at the end, because they may access global params etc.
 
-	// Phases are intentionally initialized at the end, because they may access global params etc
-	RP->Phases.SetSize(Phases->GetCount());
-
-	for (UPTR i = 0; i < Phases->GetCount(); ++i)
+	std::vector<PRenderPhase> Phases(PhaseDescs->GetCount());
+	for (UPTR i = 0; i < PhaseDescs->GetCount(); ++i)
 	{
-		const Data::CParam& Prm = Phases->Get(i);
+		const Data::CParam& Prm = PhaseDescs->Get(i);
 		Data::CParams& PhaseDesc = *Prm.GetValue<Data::PParams>();
 
 		const CString& PhaseType = PhaseDesc.Get<CString>(CStrID("Type"), CString::Empty); //???use FourCC in PRM?
@@ -734,7 +750,7 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 
 		if (!CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return nullptr;
 
-		RP->Phases[i] = CurrPhase;
+		Phases[i] = CurrPhase;
 	}
 
 	return RP.Get();

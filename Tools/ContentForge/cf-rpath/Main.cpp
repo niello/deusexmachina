@@ -210,10 +210,13 @@ public:
 
 		// Process depth-stencil buffers
 
+		constexpr uint8_t Flag_ClearDepth = (1 << 0);
+		constexpr uint8_t Flag_ClearStencil = (1 << 1);
 		struct CDepthStencilBuffer
 		{
-			float DepthClearValue;
-			uint8_t StencilClearValue;
+			float DepthClearValue = 1.f;
+			uint8_t StencilClearValue = 0;
+			uint8_t ClearFlags = 0;
 		};
 
 		std::map<CStrID, CDepthStencilBuffer> DepthStencilBuffers;
@@ -237,8 +240,17 @@ public:
 
 				const auto& DSDesc = DSPair.second.GetValue<Data::CParams>();
 				CDepthStencilBuffer DS;
-				DS.DepthClearValue = GetParam(DSDesc, "DepthClearValue", 1.f);
-				DS.StencilClearValue = GetParam(DSDesc, "StencilClearValue", 0);
+
+				if (TryGetParam(DS.DepthClearValue, DSDesc, "DepthClearValue"))
+					DS.ClearFlags |= Flag_ClearDepth;
+
+				int StencilClearValue;
+				if (TryGetParam(StencilClearValue, DSDesc, "StencilClearValue"))
+				{
+					DS.StencilClearValue = static_cast<uint8_t>(StencilClearValue);
+					DS.ClearFlags |= Flag_ClearStencil;
+				}
+
 				DepthStencilBuffers.emplace(DSPair.first, std::move(DS));
 			}
 		}
@@ -356,6 +368,7 @@ public:
 			WriteStream(File, Pair.first.ToString());
 			WriteStream(File, Pair.second.DepthClearValue);
 			WriteStream(File, Pair.second.StencilClearValue);
+			WriteStream(File, Pair.second.ClearFlags);
 		}
 
 		// Write phases
