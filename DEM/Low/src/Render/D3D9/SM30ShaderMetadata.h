@@ -1,6 +1,6 @@
 #pragma once
+#include <Render/ShaderParamTable.h>
 #include <Data/StringID.h>
-#include <Data/RefCounted.h>
 
 // Shader Model 3.0 (for Direct3D 9.0c) shader metadata
 
@@ -92,6 +92,27 @@ struct CSM30SamplerMeta
 	ESM30SamplerType Type;
 	uint32_t         RegisterStart;
 	uint32_t         RegisterCount;
+};
+
+class CSM30ShaderConstantParam : public IShaderConstantParam
+{
+public:
+
+	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
+};
+
+class CSM30ShaderResourceParam : public IShaderResourceParam
+{
+public:
+
+	virtual void Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
+};
+
+class CSM30ShaderSamplerParam : public IShaderSamplerParam
+{
+public:
+
+	virtual void Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
 };
 
 }

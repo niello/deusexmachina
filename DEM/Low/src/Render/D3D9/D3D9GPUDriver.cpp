@@ -2953,6 +2953,9 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		if (!R.Read(Sampler.RegisterCount)) return nullptr;
 	}
 
+	// create params, initialize with metadata structures
+	// create table based on these params
+
 	return nullptr;
 }
 //---------------------------------------------------------------------

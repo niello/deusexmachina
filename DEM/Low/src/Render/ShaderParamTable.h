@@ -11,26 +11,27 @@ typedef std::unique_ptr<class IShaderSamplerParam> PShaderSamplerParam;
 typedef Ptr<class CShaderParamTable> PShaderParamTable;
 
 //???interfaces or base classes with common data?
+//???need refcounting or always use raw pointers in clients?
 
 class IShaderConstantParam
 {
 public:
 
-	// GetSize() !
+	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
 class IShaderResourceParam
 {
 public:
 
-	//
+	virtual void Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
 };
 
 class IShaderSamplerParam
 {
 public:
 
-	//
+	virtual void Apply(const CGPUDriver& GPU, CSampler* pValue) const = 0;
 };
 
 class CShaderParamTable : public Data::CRefCounted
