@@ -27,7 +27,7 @@ public:
 	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU);
 	~CShaderParamStorage();
 
-	// Apply
+	bool Apply() const;
 };
 
 }
