@@ -31,8 +31,8 @@ protected:
 	Render::PRenderState				OpaqueUnclipped;
 	Render::PRenderState				OpaqueClipped;
 
-	const Render::IShaderMetadata*		pVSMeta = nullptr;
-	const Render::IShaderMetadata*		pPSMeta = nullptr;
+	const Render::CShaderParamTable*	pVSParams = nullptr;
+	const Render::CShaderParamTable*	pPSParams = nullptr;
 
 	std::vector<CConstRecord>			Constants;
 

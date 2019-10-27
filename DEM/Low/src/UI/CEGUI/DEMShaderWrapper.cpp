@@ -5,7 +5,7 @@
 #include <Render/RenderStateDesc.h>
 #include <Render/RenderState.h>
 #include <Render/Shader.h>
-#include <Render/ShaderMetadata.h>
+#include <Render/ShaderParamTable.h>
 #include <Render/ShaderConstant.h>
 #include <Render/SamplerDesc.h>
 #include <Render/Sampler.h>
@@ -91,8 +91,8 @@ CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Re
 	n_assert(OpaqueClipped.IsValidPtr());
 
 	// NB: all pixel shaders must have compatible metadata
-	pVSMeta = VS->GetMetadata();
-	pPSMeta = PSRegular->GetMetadata();
+	pVSParams = VS->GetParamTable();
+	pPSParams = PSRegular->GetParamTable();
 }
 //---------------------------------------------------------------------
 
@@ -103,17 +103,17 @@ CDEMShaderWrapper::~CDEMShaderWrapper()
 
 void CDEMShaderWrapper::setupParameterForShader(CStrID Name, Render::EShaderType ShaderType)
 {
-	const Render::IShaderMetadata* pMeta;
+	const Render::CShaderParamTable* pShaderParams;
 	switch (ShaderType)
 	{
-		case Render::ShaderType_Vertex:	pMeta = pVSMeta; break;
-		case Render::ShaderType_Pixel:	pMeta = pPSMeta; break;
+		case Render::ShaderType_Vertex:	pShaderParams = pVSParams; break;
+		case Render::ShaderType_Pixel:	pShaderParams = pPSParams; break;
 		default:						return;
 	}
 
-	if (!pMeta) return;
+	if (!pShaderParams) return;
 
-	Render::PShaderConstant Constant = pMeta->GetConstant(Name);
+	Render::PShaderConstant Constant = pShaderParams->GetConstant(Name);
 	if (!Constant || Constant->GetConstantBufferHandle() == INVALID_HANDLE) return;
 
 	Render::HConstantBuffer hCB = Constant->GetConstantBufferHandle();
@@ -151,10 +151,10 @@ void CDEMShaderWrapper::setupParameter(const char* pName)
 
 void CDEMShaderWrapper::setupMainTexture(const char* pTextureName, const char* pSamplerName)
 {
-	if (!pPSMeta) return;
+	if (!pPSParams) return;
 
-	hTexture = pPSMeta->GetResourceHandle(CStrID(pTextureName));
-	hLinearSampler = pPSMeta->GetSamplerHandle(CStrID(pSamplerName));
+	hTexture = pPSParams->GetResource(CStrID(pTextureName));
+	hLinearSampler = pPSParams->GetSampler(CStrID(pSamplerName));
 
 	if (!LinearSampler)
 	{
