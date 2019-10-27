@@ -395,6 +395,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CRenderPathTool Tool("cf-rpath", "DeusExMachina render path compiler", { 0, 1, 0 });
+	CRenderPathTool Tool("cf-rpath", "DeusExMachina render path compiler", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }

@@ -47,11 +47,11 @@ bool CRenderPhaseGlobalSetup::Init(const CRenderPath& Owner, CStrID PhaseName, c
 
 	CStrID ViewProjectionName = Desc.Get<CStrID>(CStrID("ViewProjectionName"), CStrID::Empty);
 	if (ViewProjectionName.IsValid())
-		pConstViewProjection = GlobalParams.GetConstantParam(ViewProjectionName);
+		pConstViewProjection = GlobalParams.GetConstant(ViewProjectionName);
 
 	CStrID CameraPositionName = Desc.Get<CStrID>(CStrID("CameraPositionName"), CStrID::Empty);
 	if (CameraPositionName.IsValid())
-		pConstCameraPosition = GlobalParams.GetConstantParam(CameraPositionName);
+		pConstCameraPosition = GlobalParams.GetConstant(CameraPositionName);
 
 	OK;
 }

@@ -35,3 +35,14 @@ add_executable(cf-rpath ${DEM_CF_RPATH_HEADERS} ${DEM_CF_RPATH_SOURCES})
 target_include_directories(cf-rpath PRIVATE "cf-rpath")
 target_link_libraries(cf-rpath PRIVATE ToolsCommon)
 set_target_properties(cf-rpath PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
+
+# Tool: cf-material
+
+# TODO: get rid of cf-material folder inside VS!
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cf-material/src.cmake")
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_MTL_HEADERS} ${DEM_CF_MTL_SOURCES})
+add_executable(cf-material ${DEM_CF_MTL_HEADERS} ${DEM_CF_MTL_SOURCES})
+target_include_directories(cf-material PRIVATE "cf-material")
+target_link_libraries(cf-material PRIVATE ToolsCommon)
+set_target_properties(cf-material PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
