@@ -1,52 +1,48 @@
 #include "D3D9Shader.h"
-
-#include <Render/D3D9/D3D9DriverFactory.h>
-#include <Core/Factory.h>
+#include <Render/ShaderParamTable.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3d9.h>
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9Shader, 'SHD9', Render::CShader);
+__ImplementClassNoFactory(Render::CD3D9Shader, Render::CShader);
+
+CD3D9Shader::CD3D9Shader(IDirect3DVertexShader9* pShader, PShaderParamTable Params)
+	: _pShader(pShader)
+{
+	n_assert(pShader);
+	_Type = pShader ? ShaderType_Vertex : ShaderType_Invalid;
+	_Params = Params;
+}
+//---------------------------------------------------------------------
+
+CD3D9Shader::CD3D9Shader(IDirect3DPixelShader9* pShader, PShaderParamTable Params)
+	: _pShader(pShader)
+{
+	n_assert(pShader);
+	_Type = pShader ? ShaderType_Pixel : ShaderType_Invalid;
+	_Params = Params;
+}
+//---------------------------------------------------------------------
 
 CD3D9Shader::~CD3D9Shader()
 {
-	InternalDestroy();
+	SAFE_RELEASE(_pShader);
 }
 //---------------------------------------------------------------------
 
-bool CD3D9Shader::Create(IDirect3DVertexShader9* pShader)
+IDirect3DVertexShader9* CD3D9Shader::GetD3DVertexShader() const
 {
-	if (!pShader) FAIL;
-	Type = ShaderType_Vertex;
-	pD3DVertexShader = pShader;
-	OK;
+	n_assert_dbg(_Type == ShaderType_Vertex);
+	return (_Type == ShaderType_Vertex) ? static_cast<IDirect3DVertexShader9*>(_pShader) : nullptr;
 }
 //---------------------------------------------------------------------
 
-bool CD3D9Shader::Create(IDirect3DPixelShader9* pShader)
+IDirect3DPixelShader9* CD3D9Shader::GetD3DPixelShader() const
 {
-	if (!pShader) FAIL;
-	Type = ShaderType_Pixel;
-	pD3DPixelShader = pShader;
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CD3D9Shader::InternalDestroy()
-{
-	if (Type == ShaderType_Vertex)
-	{
-		SAFE_RELEASE(pD3DVertexShader);
-	}
-	else if (Type == ShaderType_Pixel)
-	{
-		SAFE_RELEASE(pD3DPixelShader);
-	}
-	else n_assert(!pD3DShader);
-
-	Metadata.Clear();
+	n_assert_dbg(_Type == ShaderType_Pixel);
+	return (_Type == ShaderType_Pixel) ? static_cast<IDirect3DPixelShader9*>(_pShader) : nullptr;
 }
 //---------------------------------------------------------------------
 

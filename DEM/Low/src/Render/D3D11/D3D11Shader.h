@@ -16,38 +16,32 @@ class CD3D11GPUDriver;
 
 class CD3D11Shader: public CShader
 {
-	__DeclareClass(CD3D11Shader);
+	__DeclareClassNoFactory;
 
 protected:
 
-	ID3D11DeviceChild*	pD3DShader = nullptr;
-	U32					InputSignatureID = 0;
-
-	void							InternalDestroy();
-
-	friend class CD3D11GPUDriver; // for creation
+	ID3D11DeviceChild*	_pShader = nullptr;
+	U32					_InputSignatureID = 0;
 
 public:
 
-	virtual ~CD3D11Shader() { InternalDestroy(); }
+	CD3D11Shader(ID3D11VertexShader* pShader, U32 InputSignatureID, PShaderParamTable Params = nullptr);
+	CD3D11Shader(ID3D11PixelShader* pShader, PShaderParamTable Params = nullptr);
+	CD3D11Shader(ID3D11GeometryShader* pShader, U32 InputSignatureID, PShaderParamTable Params = nullptr);
+	CD3D11Shader(ID3D11HullShader* pShader, PShaderParamTable Params = nullptr);
+	CD3D11Shader(ID3D11DomainShader* pShader, PShaderParamTable Params = nullptr);
 
-	bool							Create(ID3D11DeviceChild* pShader); 
-	bool							Create(ID3D11VertexShader* pShader);
-	bool							Create(ID3D11HullShader* pShader);
-	bool							Create(ID3D11DomainShader* pShader);
-	bool							Create(ID3D11GeometryShader* pShader);
-	bool							Create(ID3D11PixelShader* pShader);
-	virtual void					Destroy() { InternalDestroy(); }
+	virtual ~CD3D11Shader() override;
 
-	virtual bool					IsValid() const override { return !!pD3DShader; }
-	U32								GetInputSignatureID() const { return InputSignatureID; }
+	virtual bool          IsValid() const override { return !!_pShader && _Type != ShaderType_Invalid; }
 
-	ID3D11DeviceChild*				GetD3DShader() const { return pD3DShader; }
-	ID3D11VertexShader*				GetD3DVertexShader() const;
-	ID3D11HullShader*				GetD3DHullShader() const;
-	ID3D11DomainShader*				GetD3DDomainShader() const;
-	ID3D11GeometryShader*			GetD3DGeometryShader() const;
-	ID3D11PixelShader*				GetD3DPixelShader() const;
+	U32                   GetInputSignatureID() const { return _InputSignatureID; }
+	ID3D11DeviceChild*    GetD3DShader() const { return _pShader; }
+	ID3D11VertexShader*   GetD3DVertexShader() const;
+	ID3D11HullShader*     GetD3DHullShader() const;
+	ID3D11DomainShader*   GetD3DDomainShader() const;
+	ID3D11GeometryShader* GetD3DGeometryShader() const;
+	ID3D11PixelShader*    GetD3DPixelShader() const;
 };
 
 typedef Ptr<CD3D11Shader> PD3D11Shader;

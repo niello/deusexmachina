@@ -433,6 +433,8 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		auto GlobalMetaSize = Reader.Read<U32>();
 		Reader.GetStream().Seek(GlobalMetaSize, IO::Seek_Current);
 
+		// Skip material meta size, read table
+		Reader.Read<U32>();
 		Render::PShaderParamTable MaterialParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 		if (!MaterialParams) return nullptr;
 

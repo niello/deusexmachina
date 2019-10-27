@@ -12,16 +12,15 @@ class CShader: public Core::CObject
 {
 protected:
 
-	EShaderType       Type = ShaderType_Invalid;
-	PShaderParamTable Params;
+	EShaderType       _Type = ShaderType_Invalid;
+	PShaderParamTable _Params;
 
 public:
 
-	virtual void             Destroy() = 0;
 	virtual bool             IsValid() const = 0;
 
-	const CShaderParamTable* GetParamTable() const { return Params; }
-	EShaderType              GetType() const { return Type; }
+	const CShaderParamTable* GetParamTable() const { return _Params; }
+	EShaderType              GetType() const { return _Type; }
 };
 
 typedef Ptr<CShader> PShader;

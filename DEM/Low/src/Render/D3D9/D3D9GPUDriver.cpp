@@ -2766,35 +2766,21 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		case ShaderType_Vertex:
 		{
 			IDirect3DVertexShader9* pVS = nullptr;
-			if (SUCCEEDED(pD3DDevice->CreateVertexShader((const DWORD*)Data.GetPtr(), &pVS)))
-			{
-				Shader = n_new(Render::CD3D9Shader);
-				if (!Shader->Create(pVS))
-				{
-					pVS->Release();
-					return nullptr;
-				}
-			}
+			if (FAILED(pD3DDevice->CreateVertexShader((const DWORD*)Data.GetPtr(), &pVS))) return nullptr;
+			Shader = n_new(CD3D9Shader(pVS, Params));
 			break;
 		}
 		case ShaderType_Pixel:
 		{
 			IDirect3DPixelShader9* pPS = nullptr;
-			if (SUCCEEDED(pD3DDevice->CreatePixelShader((const DWORD*)Data.GetPtr(), &pPS)))
-			{
-				Shader = n_new(Render::CD3D9Shader);
-				if (!Shader->Create(pPS))
-				{
-					pPS->Release();
-					return nullptr;
-				}
-			}
+			if (FAILED(pD3DDevice->CreatePixelShader((const DWORD*)Data.GetPtr(), &pPS))) return nullptr;
+			Shader = n_new(CD3D9Shader(pPS, Params));
 			break;
 		}
 		default: return nullptr;
 	};
 
-	Shader->Params = Params;
+	if (!Shader->IsValid()) return nullptr;
 
 	return Shader.Get();
 }

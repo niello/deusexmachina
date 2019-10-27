@@ -2675,7 +2675,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 	Data::CBuffer Data(BinarySize);
 	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
 
-	ID3D11DeviceChild* pShader = nullptr;
+	PD3D11Shader Shader;
 
 	switch (ShaderType)
 	{
@@ -2683,14 +2683,14 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 		{
 			ID3D11VertexShader* pVS = nullptr;
 			if (FAILED(pD3DDevice->CreateVertexShader(Data.GetPtr(), BinarySize, nullptr, &pVS))) return nullptr;
-			pShader = pVS;
+			Shader = n_new(CD3D11Shader(pVS, InputSignatureID, Params));
 			break;
 		}
 		case ShaderType_Pixel:
 		{
 			ID3D11PixelShader* pPS = nullptr;
 			if (FAILED(pD3DDevice->CreatePixelShader(Data.GetPtr(), BinarySize, nullptr, &pPS))) return nullptr;
-			pShader = pPS;
+			Shader = n_new(CD3D11Shader(pPS, Params));
 			break;
 		}
 		case ShaderType_Geometry:
@@ -2698,27 +2698,29 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 			//???need stream output? or separate method? or separate shader type?
 			ID3D11GeometryShader* pGS = nullptr;
 			if (FAILED(pD3DDevice->CreateGeometryShader(Data.GetPtr(), BinarySize, nullptr, &pGS))) return nullptr;
-			pShader = pGS;
+			Shader = n_new(CD3D11Shader(pGS, InputSignatureID, Params));
 			break;
 		}
 		case ShaderType_Hull:
 		{
 			ID3D11HullShader* pHS = nullptr;
 			if (FAILED(pD3DDevice->CreateHullShader(Data.GetPtr(), BinarySize, nullptr, &pHS))) return nullptr;
-			pShader = pHS;
+			Shader = n_new(CD3D11Shader(pHS, Params));
 			break;
 		}
 		case ShaderType_Domain:
 		{
 			ID3D11DomainShader* pDS = nullptr;
 			if (FAILED(pD3DDevice->CreateDomainShader(Data.GetPtr(), BinarySize, nullptr, &pDS))) return nullptr;
-			pShader = pDS;
+			Shader = n_new(CD3D11Shader(pDS, Params));
 			break;
 		}
 		default: return nullptr;
 	};
 
-	if (ShaderType == Render::ShaderType_Vertex) // || ShaderType == Render::ShaderType_Geometry)
+	if (!Shader->IsValid()) return nullptr;
+
+	if (ShaderType == Render::ShaderType_Vertex || ShaderType == Render::ShaderType_Geometry)
 	{
 		// Vertex shader input comes from input assembler stage (IA). In D3D10 and later
 		// input layouts are created from VS input signatures (or at least are validated
@@ -2764,18 +2766,6 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 	}
 
 	Data.Clear();
-
-	if (!pShader) return nullptr;
-
-	PD3D11Shader Shader = n_new(Render::CD3D11Shader);
-	if (!Shader->Create(pShader))
-	{
-		pShader->Release();
-		return nullptr;
-	}
-
-	Shader->InputSignatureID = InputSignatureID;
-	Shader->Params = Params;
 
 	return Shader.Get();
 }
