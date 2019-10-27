@@ -44,20 +44,13 @@ public:
 
 class CShaderParamTable : public Data::CRefCounted
 {
-protected:
-
-	//!!!sorted vectors for stable indices + fast search by CStrID! index is handle.
-
-	// struct info for constants
-	// constants
-	// cbs
-	// resources
-	// samplers
-
-	//???each of params stores its index inside to avoid search? it is like a handle
-	//internal dbg validation is simple, pParam == Table.pParams[pParam->Index]
-
 public:
+
+	// Vectors are sorted and never change in runtime
+	std::vector<PShaderConstantParam> Constants;
+	std::vector<PShaderConstantBufferParam> ConstantBuffers;
+	std::vector<PShaderResourceParam> Resources;
+	std::vector<PShaderSamplerParam> Samplers;
 
 	size_t GetConstantIndex(CStrID ID) const;
 	size_t GetResourceIndex(CStrID ID) const;

@@ -81,11 +81,15 @@ public:
 
 class CUSMShaderConstantParam : public IShaderConstantParam
 {
+protected:
+
+	PUSMShaderConstantBufferParam _Buffer;
+	PUSMConstMeta                 _Meta;
+	U32                           _OffsetInBuffer;
+
 public:
 
-	PUSMShaderConstantBufferParam Buffer;
-	PUSMConstMeta                 Meta;
-	U32                           OffsetInBuffer;
+	CUSMShaderConstantParam(PUSMShaderConstantBufferParam Buffer, PUSMConstMeta Meta, U32 Offset = 0);
 
 	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
 	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
@@ -101,6 +105,7 @@ public:
 	EUSMBufferType Type;
 	U32            Register;
 	U32            Size;     // For structured buffers - StructureByteStride
+	U8             ShaderTypeMask;
 
 	virtual void Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 };

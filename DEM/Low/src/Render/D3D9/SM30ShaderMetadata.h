@@ -67,12 +67,16 @@ public:
 
 class CSM30ShaderConstantParam : public IShaderConstantParam
 {
+protected:
+
+	PSM30ShaderConstantBufferParam _Buffer;
+	PSM30ConstMeta                 _Meta;
+	U32                            _RegisterStart; // Real start
+	ESM30RegisterSet               _RegisterSet;
+
 public:
 
-	PSM30ShaderConstantBufferParam Buffer;
-	PSM30ConstMeta                 Meta;
-	U32                            RegisterStart; // Real start
-	ESM30RegisterSet               RegisterSet;
+	CSM30ShaderConstantParam(PSM30ShaderConstantBufferParam Buffer, PSM30ConstMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset = 0);
 
 	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
 	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;

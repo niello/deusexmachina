@@ -2908,37 +2908,33 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	std::vector<PSM30ShaderConstantParam> Consts(Count);
 	for (auto& ConstPtr : Consts)
 	{
-		ConstPtr = n_new(CSM30ShaderConstantParam);
-		auto& Const = *ConstPtr;
-
-		Const.Meta = n_new(CSM30ConstMeta);
-		auto& Meta = *Const.Meta;
-
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		if (!R.Read(Meta.Name)) return nullptr;
+		PSM30ConstMeta Meta = n_new(CSM30ConstMeta);
+		if (!R.Read(Meta->Name)) return nullptr;
 
 		U32 BufferIndex;
 		if (!R.Read(BufferIndex)) return nullptr;
-		if (BufferIndex != static_cast<U32>(-1))
-		{
-			Const.Buffer = Buffers[BufferIndex];
-			Const.Buffer->ShaderTypeMask |= ShaderTypeMask;
-		}
+		if (BufferIndex >= Buffers.size()) return nullptr;
 
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Meta.Struct = Structs[StructIndex];
+			Meta->Struct = Structs[StructIndex];
 
 		ESM30RegisterSet RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
-		if (!R.Read(Meta.RegisterStart)) return nullptr;
-		if (!R.Read(Meta.ElementRegisterCount)) return nullptr;
-		if (!R.Read(Meta.ElementCount)) return nullptr;
-		if (!R.Read(Meta.Columns)) return nullptr;
-		if (!R.Read(Meta.Rows)) return nullptr;
-		if (!R.Read(Meta.Flags)) return nullptr;
+
+		if (!R.Read(Meta->RegisterStart)) return nullptr;
+		if (!R.Read(Meta->ElementRegisterCount)) return nullptr;
+		if (!R.Read(Meta->ElementCount)) return nullptr;
+		if (!R.Read(Meta->Columns)) return nullptr;
+		if (!R.Read(Meta->Rows)) return nullptr;
+		if (!R.Read(Meta->Flags)) return nullptr;
+
+		Buffers[BufferIndex]->ShaderTypeMask |= ShaderTypeMask;
+
+		ConstPtr = n_new(CSM30ShaderConstantParam(Buffers[BufferIndex], Meta, RegisterSet));
 	}
 
 	if (!R.Read(Count)) return nullptr;

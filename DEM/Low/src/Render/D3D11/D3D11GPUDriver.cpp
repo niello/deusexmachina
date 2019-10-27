@@ -2859,34 +2859,33 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	std::vector<PUSMShaderConstantParam> Consts(Count);
 	for (auto& ConstPtr : Consts)
 	{
-		ConstPtr = n_new(CUSMShaderConstantParam);
-		auto& Const = *ConstPtr;
-
-		Const.Meta = n_new(CUSMConstMeta);
-		auto& Meta = *Const.Meta;
-
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		if (!R.Read(Meta.Name)) return nullptr;
+		PUSMConstMeta Meta = n_new(CUSMConstMeta);
+		if (!R.Read(Meta->Name)) return nullptr;
 
 		U32 BufferIndex;
 		if (!R.Read(BufferIndex)) return nullptr;
-		if (BufferIndex != static_cast<U32>(-1))
-			Const.Buffer = Buffers[BufferIndex];
+		if (BufferIndex >= Buffers.size()) return nullptr;
 
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Meta.Struct = Structs[StructIndex];
+			Meta->Struct = Structs[StructIndex];
 
-		Meta.Type = static_cast<EUSMConstType>(R.Read<U8>());
-		if (!R.Read(Meta.Offset)) return nullptr;
-		if (!R.Read(Meta.ElementSize)) return nullptr;
-		if (!R.Read(Meta.ElementCount)) return nullptr;
-		if (!R.Read(Meta.Columns)) return nullptr;
-		if (!R.Read(Meta.Rows)) return nullptr;
-		if (!R.Read(Meta.Flags)) return nullptr;
+		Meta->Type = static_cast<EUSMConstType>(R.Read<U8>());
+
+		if (!R.Read(Meta->Offset)) return nullptr;
+		if (!R.Read(Meta->ElementSize)) return nullptr;
+		if (!R.Read(Meta->ElementCount)) return nullptr;
+		if (!R.Read(Meta->Columns)) return nullptr;
+		if (!R.Read(Meta->Rows)) return nullptr;
+		if (!R.Read(Meta->Flags)) return nullptr;
+
+		Buffers[BufferIndex]->ShaderTypeMask |= ShaderTypeMask;
+
+		ConstPtr = n_new(CUSMShaderConstantParam(Buffers[BufferIndex], Meta));
 	}
 
 	if (!R.Read(Count)) return nullptr;
