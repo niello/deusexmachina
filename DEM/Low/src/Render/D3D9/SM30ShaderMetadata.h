@@ -78,7 +78,8 @@ public:
 
 	CSM30ShaderConstantParam(PSM30ShaderConstantBufferParam Buffer, PSM30ConstMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset = 0);
 
-	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
+	virtual CStrID GetID() const override { return _Meta->Name; }
+	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
 	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetInts(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
@@ -98,7 +99,8 @@ public:
 	CRanges  Bool;
 	U8       ShaderTypeMask;
 
-	virtual void Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual CStrID GetID() const override { return Name; }
+	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 };
 
 class CSM30ShaderResourceParam : public IShaderResourceParam
@@ -113,7 +115,8 @@ public:
 
 	CSM30ShaderResourceParam(CStrID Name, U8 ShaderTypeMask, U32 Register);
 
-	virtual void Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
+	virtual CStrID GetID() const override { return _Name; }
+	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
 class CSM30ShaderSamplerParam : public IShaderSamplerParam
@@ -130,7 +133,8 @@ public:
 
 	CSM30ShaderSamplerParam(CStrID Name, U8 ShaderTypeMask, ESM30SamplerType Type, U32 RegisterStart, U32 RegisterCount);
 
-	virtual void Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
+	virtual CStrID GetID() const override { return _Name; }
+	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
 };
 
 }

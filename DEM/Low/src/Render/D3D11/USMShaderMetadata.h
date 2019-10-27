@@ -91,7 +91,8 @@ public:
 
 	CUSMShaderConstantParam(PUSMShaderConstantBufferParam Buffer, PUSMConstMeta Meta, U32 Offset = 0);
 
-	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
+	virtual CStrID GetID() const override { return _Meta->Name; }
+	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
 	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetInts(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
@@ -107,7 +108,8 @@ public:
 	U32            Size;     // For structured buffers - StructureByteStride
 	U8             ShaderTypeMask;
 
-	virtual void Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual CStrID GetID() const override { return Name; }
+	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 };
 
 class CUSMShaderResourceParam : public IShaderResourceParam
@@ -124,7 +126,8 @@ public:
 
 	CUSMShaderResourceParam(CStrID Name, U8 ShaderTypeMask, EUSMResourceType Type, U32 RegisterStart, U32 RegisterCount);
 
-	virtual void Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
+	virtual CStrID GetID() const override { return _Name; }
+	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
 class CUSMShaderSamplerParam : public IShaderSamplerParam
@@ -140,7 +143,8 @@ public:
 
 	CUSMShaderSamplerParam(CStrID Name, U8 ShaderTypeMask, U32 RegisterStart, U32 RegisterCount);
 
-	virtual void Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
+	virtual CStrID GetID() const override { return _Name; }
+	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
 };
 
 }

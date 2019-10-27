@@ -15,7 +15,8 @@ class IShaderConstantParam : public Data::CRefCounted
 {
 public:
 
-	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	virtual CStrID GetID() const = 0;
+	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetInts(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
@@ -25,32 +26,42 @@ class IShaderConstantBufferParam : public Data::CRefCounted
 {
 public:
 
-	virtual void Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
+	virtual CStrID GetID() const = 0;
+	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
 };
 
 class IShaderResourceParam : public Data::CRefCounted
 {
 public:
 
-	virtual void Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
+	virtual CStrID GetID() const = 0;
+	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
 };
 
 class IShaderSamplerParam : public Data::CRefCounted
 {
 public:
 
-	virtual void Apply(const CGPUDriver& GPU, CSampler* pValue) const = 0;
+	virtual CStrID GetID() const = 0;
+	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const = 0;
 };
 
 class CShaderParamTable : public Data::CRefCounted
 {
-public:
+protected:
 
 	// Vectors are sorted and never change in runtime
-	std::vector<PShaderConstantParam> Constants;
-	std::vector<PShaderConstantBufferParam> ConstantBuffers;
-	std::vector<PShaderResourceParam> Resources;
-	std::vector<PShaderSamplerParam> Samplers;
+	std::vector<PShaderConstantParam> _Constants;
+	std::vector<PShaderConstantBufferParam> _ConstantBuffers;
+	std::vector<PShaderResourceParam> _Resources;
+	std::vector<PShaderSamplerParam> _Samplers;
+
+public:
+
+	CShaderParamTable(std::vector<PShaderConstantParam>&& Constants,
+		std::vector<PShaderConstantBufferParam>&& ConstantBuffers,
+		std::vector<PShaderResourceParam>&& Resources,
+		std::vector<PShaderSamplerParam>&& Samplers);
 
 	size_t GetConstantIndex(CStrID ID) const;
 	size_t GetResourceIndex(CStrID ID) const;

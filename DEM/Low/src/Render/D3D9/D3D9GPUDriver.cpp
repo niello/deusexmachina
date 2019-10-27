@@ -2840,11 +2840,11 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PSM30ShaderConstantBufferParam> Buffers(Count);
+	std::vector<PShaderConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
 		BufferPtr = n_new(CSM30ShaderConstantBufferParam);
-		auto& Buffer = *BufferPtr;
+		auto& Buffer = static_cast<CSM30ShaderConstantBufferParam&>(*BufferPtr);
 
 		if (!R.Read(Buffer.Name)) return nullptr;
 		if (!R.Read(Buffer.SlotIndex)) return nullptr;
@@ -2905,7 +2905,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PSM30ShaderConstantParam> Consts(Count);
+	std::vector<PShaderConstantParam> Consts(Count);
 	for (auto& ConstPtr : Consts)
 	{
 		U8 ShaderTypeMask;
@@ -2932,13 +2932,14 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		if (!R.Read(Meta->Rows)) return nullptr;
 		if (!R.Read(Meta->Flags)) return nullptr;
 
-		Buffers[BufferIndex]->ShaderTypeMask |= ShaderTypeMask;
+		auto pBuffer = static_cast<CSM30ShaderConstantBufferParam*>(Buffers[BufferIndex].Get());
+		pBuffer->ShaderTypeMask |= ShaderTypeMask;
 
-		ConstPtr = n_new(CSM30ShaderConstantParam(Buffers[BufferIndex], Meta, RegisterSet));
+		ConstPtr = n_new(CSM30ShaderConstantParam(pBuffer, Meta, RegisterSet));
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PSM30ShaderResourceParam> Resources(Count);
+	std::vector<PShaderResourceParam> Resources(Count);
 	for (auto& ResourcePtr : Resources)
 	{
 		auto ShaderTypeMask = R.Read<U8>();
@@ -2948,7 +2949,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PSM30ShaderSamplerParam> Samplers(Count);
+	std::vector<PShaderSamplerParam> Samplers(Count);
 	for (auto& SamplerPtr : Samplers)
 	{
 		auto ShaderTypeMask = R.Read<U8>();
@@ -2959,13 +2960,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		SamplerPtr = n_new(CSM30ShaderSamplerParam(Name, ShaderTypeMask, Type, RegisterStart, RegisterCount));
 	}
 
-	// create params, initialize with metadata structures or even read into them directly,
-	// at least simple data like texture and sampler params. Const descs used in structs so can be meta structs.
-	// Also think about referencing (not copying) const base data from shader const param, to create lightweight
-	// params for setter instances of struct members etc.
-	// create table based on these params
-
-	return nullptr;
+	return n_new(CShaderParamTable(std::move(Consts), std::move(Buffers), std::move(Resources), std::move(Samplers)));
 }
 //---------------------------------------------------------------------
 

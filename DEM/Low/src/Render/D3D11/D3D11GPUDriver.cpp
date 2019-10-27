@@ -2807,11 +2807,11 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PUSMShaderConstantBufferParam> Buffers(Count);
+	std::vector<PShaderConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
 		BufferPtr = n_new(CUSMShaderConstantBufferParam);
-		auto& Buffer = *BufferPtr;
+		auto& Buffer = static_cast<CUSMShaderConstantBufferParam&>(*BufferPtr);
 
 		if (!R.Read(Buffer.Name)) return nullptr;
 		if (!R.Read(Buffer.Register)) return nullptr;
@@ -2856,7 +2856,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PUSMShaderConstantParam> Consts(Count);
+	std::vector<PShaderConstantParam> Consts(Count);
 	for (auto& ConstPtr : Consts)
 	{
 		U8 ShaderTypeMask;
@@ -2883,13 +2883,14 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		if (!R.Read(Meta->Rows)) return nullptr;
 		if (!R.Read(Meta->Flags)) return nullptr;
 
-		Buffers[BufferIndex]->ShaderTypeMask |= ShaderTypeMask;
+		auto pBuffer = static_cast<CUSMShaderConstantBufferParam*>(Buffers[BufferIndex].Get());
+		pBuffer->ShaderTypeMask |= ShaderTypeMask;
 
-		ConstPtr = n_new(CUSMShaderConstantParam(Buffers[BufferIndex], Meta));
+		ConstPtr = n_new(CUSMShaderConstantParam(pBuffer, Meta));
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PUSMShaderResourceParam> Resources(Count);
+	std::vector<PShaderResourceParam> Resources(Count);
 	for (auto& ResourcePtr : Resources)
 	{
 		auto ShaderTypeMask = R.Read<U8>();
@@ -2901,7 +2902,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PUSMShaderSamplerParam> Samplers(Count);
+	std::vector<PShaderSamplerParam> Samplers(Count);
 	for (auto& SamplerPtr : Samplers)
 	{
 		auto ShaderTypeMask = R.Read<U8>();
@@ -2911,7 +2912,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		SamplerPtr = n_new(CUSMShaderSamplerParam(Name, ShaderTypeMask, RegisterStart, RegisterCount));
 	}
 
-	return nullptr;
+	return n_new(CShaderParamTable(std::move(Consts), std::move(Buffers), std::move(Resources), std::move(Samplers)));
 }
 //---------------------------------------------------------------------
 
