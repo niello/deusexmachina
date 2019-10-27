@@ -2807,11 +2807,11 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PShaderConstantBufferParam> Buffers(Count);
+	std::vector<PConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
-		BufferPtr = n_new(CUSMShaderConstantBufferParam);
-		auto& Buffer = static_cast<CUSMShaderConstantBufferParam&>(*BufferPtr);
+		BufferPtr = n_new(CUSMConstantBufferParam);
+		auto& Buffer = static_cast<CUSMConstantBufferParam&>(*BufferPtr);
 
 		if (!R.Read(Buffer.Name)) return nullptr;
 		if (!R.Read(Buffer.Register)) return nullptr;
@@ -2835,7 +2835,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		Struct.Members.resize(R.Read<U32>());
 		for (auto& MemberPtr : Struct.Members)
 		{
-			MemberPtr = n_new(CUSMConstMeta);
+			MemberPtr = n_new(CUSMConstantMeta);
 			auto& Member = *MemberPtr;
 
 			if (!R.Read(Member.Name)) return nullptr;
@@ -2862,7 +2862,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		PUSMConstMeta Meta = n_new(CUSMConstMeta);
+		PUSMConstantMeta Meta = n_new(CUSMConstantMeta);
 		if (!R.Read(Meta->Name)) return nullptr;
 
 		U32 BufferIndex;
@@ -2883,14 +2883,14 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		if (!R.Read(Meta->Rows)) return nullptr;
 		if (!R.Read(Meta->Flags)) return nullptr;
 
-		auto pBuffer = static_cast<CUSMShaderConstantBufferParam*>(Buffers[BufferIndex].Get());
+		auto pBuffer = static_cast<CUSMConstantBufferParam*>(Buffers[BufferIndex].Get());
 		pBuffer->ShaderTypeMask |= ShaderTypeMask;
 
-		ConstPtr = n_new(CUSMShaderConstantParam(pBuffer, Meta));
+		ConstPtr = n_new(CUSMConstantParam(pBuffer, Meta));
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PShaderResourceParam> Resources(Count);
+	std::vector<PResourceParam> Resources(Count);
 	for (auto& ResourcePtr : Resources)
 	{
 		auto ShaderTypeMask = R.Read<U8>();
@@ -2898,18 +2898,18 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		auto Type = static_cast<EUSMResourceType>(R.Read<U8>());
 		auto RegisterStart = R.Read<U32>();
 		auto RegisterCount = R.Read<U32>();
-		ResourcePtr = n_new(CUSMShaderResourceParam(Name, ShaderTypeMask, Type, RegisterStart, RegisterCount));
+		ResourcePtr = n_new(CUSMResourceParam(Name, ShaderTypeMask, Type, RegisterStart, RegisterCount));
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PShaderSamplerParam> Samplers(Count);
+	std::vector<PSamplerParam> Samplers(Count);
 	for (auto& SamplerPtr : Samplers)
 	{
 		auto ShaderTypeMask = R.Read<U8>();
 		auto Name = R.Read<CStrID>();
 		auto RegisterStart = R.Read<U32>();
 		auto RegisterCount = R.Read<U32>();
-		SamplerPtr = n_new(CUSMShaderSamplerParam(Name, ShaderTypeMask, RegisterStart, RegisterCount));
+		SamplerPtr = n_new(CUSMSamplerParam(Name, ShaderTypeMask, RegisterStart, RegisterCount));
 	}
 
 	return n_new(CShaderParamTable(std::move(Consts), std::move(Buffers), std::move(Resources), std::move(Samplers)));
@@ -3489,7 +3489,7 @@ bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hCons
 	n_assert_dbg(Buffer.IsA<CD3D11ConstantBuffer>());
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
 
-	CUSMConstMeta* pMeta = (CUSMConstMeta*)IShaderMetadata::GetHandleData(hConst);
+	CUSMConstantMeta* pMeta = (CUSMConstantMeta*)IShaderMetadata::GetHandleData(hConst);
 	if (!pMeta) FAIL;
 
 	UPTR Offset = pMeta->Offset; 

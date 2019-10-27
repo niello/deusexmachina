@@ -9,7 +9,7 @@
 namespace Render
 {
 
-class CUSMShaderConstant: public CShaderConstant
+class CUSMConstant: public CShaderConstant
 {
 protected:
 
@@ -25,7 +25,7 @@ protected:
 
 public:
 
-	//CUSMShaderConstant(): Offset(0), StructHandle(INVALID_HANDLE), Columns(0), Rows(0), Flags(0) {}
+	//CUSMConstant(): Offset(0), StructHandle(INVALID_HANDLE), Columns(0), Rows(0), Flags(0) {}
 
 	virtual bool			Init(HConstant hConst);
 	virtual UPTR			GetSizeInBytes() const { return ElementCount * ElementSize; }
@@ -44,7 +44,7 @@ public:
 	virtual void			SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count = 1, U32 StartIndex = 0) const;
 };
 
-typedef Ptr<CUSMShaderConstant> PUSMShaderConstant;
+typedef Ptr<CUSMConstant> PUSMConstant;
 
 }
 

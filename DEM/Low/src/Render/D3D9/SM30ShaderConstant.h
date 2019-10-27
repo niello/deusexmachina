@@ -10,7 +10,7 @@ namespace Render
 {
 class CD3D9ConstantBuffer;
 
-class CSM30ShaderConstant: public CShaderConstant
+class CSM30Constant: public CShaderConstant
 {
 protected:
 
@@ -30,7 +30,7 @@ protected:
 
 public:
 
-	CSM30ShaderConstant(): RegSet(Reg_Invalid) {}
+	CSM30Constant(): RegSet(Reg_Invalid) {}
 
 	virtual bool			Init(HConstant hConst);
 	virtual UPTR			GetSizeInBytes() const { return SizeInBytes; }
@@ -49,7 +49,7 @@ public:
 	virtual void			SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count = 1, U32 StartIndex = 0) const;
 };
 
-typedef Ptr<CSM30ShaderConstant> PSM30ShaderConstant;
+typedef Ptr<CSM30Constant> PSM30Constant;
 
 }
 

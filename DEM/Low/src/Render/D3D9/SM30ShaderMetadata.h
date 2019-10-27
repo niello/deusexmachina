@@ -10,9 +10,9 @@ namespace Render
 // Don't change values
 enum ESM30RegisterSet
 {
-	Reg_Bool			= 0,
-	Reg_Int4			= 1,
-	Reg_Float4			= 2,
+	Reg_Bool    = 0,
+	Reg_Int4    = 1,
+	Reg_Float4  = 2,
 
 	Reg_Invalid
 };
@@ -32,14 +32,14 @@ enum ESM30ShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-typedef Ptr<class CSM30ShaderConstantParam> PSM30ShaderConstantParam;
-typedef Ptr<class CSM30ShaderConstantBufferParam> PSM30ShaderConstantBufferParam;
-typedef Ptr<class CSM30ShaderResourceParam> PSM30ShaderResourceParam;
-typedef Ptr<class CSM30ShaderSamplerParam> PSM30ShaderSamplerParam;
+typedef Ptr<class CSM30ConstantParam> PSM30ConstantParam;
+typedef Ptr<class CSM30ConstantBufferParam> PSM30ConstantBufferParam;
+typedef Ptr<class CSM30ResourceParam> PSM30ResourceParam;
+typedef Ptr<class CSM30SamplerParam> PSM30SamplerParam;
 typedef Ptr<class CSM30StructMeta> PSM30StructMeta;
-typedef Ptr<class CSM30ConstMeta> PSM30ConstMeta;
+typedef Ptr<class CSM30ConstantMeta> PSM30ConstantMeta;
 
-class CSM30ConstMeta : public Data::CRefCounted
+class CSM30ConstantMeta : public Data::CRefCounted
 {
 public:
 
@@ -62,21 +62,21 @@ class CSM30StructMeta : public Data::CRefCounted
 public:
 
 	//CStrID Name;
-	std::vector<PSM30ConstMeta> Members;
+	std::vector<PSM30ConstantMeta> Members;
 };
 
-class CSM30ShaderConstantParam : public IShaderConstantParam
+class CSM30ConstantParam : public IShaderConstantParam
 {
 protected:
 
-	PSM30ShaderConstantBufferParam _Buffer;
-	PSM30ConstMeta                 _Meta;
-	U32                            _RegisterStart; // Real start
-	ESM30RegisterSet               _RegisterSet;
+	PSM30ConstantBufferParam _Buffer;
+	PSM30ConstantMeta        _Meta;
+	U32                      _RegisterStart; // Real start
+	ESM30RegisterSet         _RegisterSet;
 
 public:
 
-	CSM30ShaderConstantParam(PSM30ShaderConstantBufferParam Buffer, PSM30ConstMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset = 0);
+	CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset = 0);
 
 	virtual CStrID GetID() const override { return _Meta->Name; }
 	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
@@ -85,7 +85,7 @@ public:
 	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
-class CSM30ShaderConstantBufferParam : public IShaderConstantBufferParam
+class CSM30ConstantBufferParam : public IConstantBufferParam
 {
 public:
 
@@ -103,7 +103,7 @@ public:
 	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 };
 
-class CSM30ShaderResourceParam : public IShaderResourceParam
+class CSM30ResourceParam : public IResourceParam
 {
 protected:
 
@@ -113,13 +113,13 @@ protected:
 
 public:
 
-	CSM30ShaderResourceParam(CStrID Name, U8 ShaderTypeMask, U32 Register);
+	CSM30ResourceParam(CStrID Name, U8 ShaderTypeMask, U32 Register);
 
 	virtual CStrID GetID() const override { return _Name; }
 	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
-class CSM30ShaderSamplerParam : public IShaderSamplerParam
+class CSM30SamplerParam : public ISamplerParam
 {
 protected:
 
@@ -131,7 +131,7 @@ protected:
 
 public:
 
-	CSM30ShaderSamplerParam(CStrID Name, U8 ShaderTypeMask, ESM30SamplerType Type, U32 RegisterStart, U32 RegisterCount);
+	CSM30SamplerParam(CStrID Name, U8 ShaderTypeMask, ESM30SamplerType Type, U32 RegisterStart, U32 RegisterCount);
 
 	virtual CStrID GetID() const override { return _Name; }
 	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;

@@ -49,14 +49,14 @@ enum EUSMShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-typedef Ptr<class CUSMShaderConstantParam> PUSMShaderConstantParam;
-typedef Ptr<class CUSMShaderConstantBufferParam> PUSMShaderConstantBufferParam;
-typedef Ptr<class CUSMShaderResourceParam> PUSMShaderResourceParam;
-typedef Ptr<class CUSMShaderSamplerParam> PUSMShaderSamplerParam;
+typedef Ptr<class CUSMConstantParam> PUSMConstantParam;
+typedef Ptr<class CUSMConstantBufferParam> PUSMConstantBufferParam;
+typedef Ptr<class CUSMResourceParam> PUSMResourceParam;
+typedef Ptr<class CUSMSamplerParam> PUSMSamplerParam;
 typedef Ptr<class CUSMStructMeta> PUSMStructMeta;
-typedef Ptr<class CUSMConstMeta> PUSMConstMeta;
+typedef Ptr<class CUSMConstantMeta> PUSMConstantMeta;
 
-struct CUSMConstMeta
+struct CUSMConstantMeta
 {
 	CStrID         Name;
 
@@ -76,20 +76,20 @@ class CUSMStructMeta : public Data::CRefCounted
 public:
 
 	//CStrID Name;
-	std::vector<PUSMConstMeta> Members;
+	std::vector<PUSMConstantMeta> Members;
 };
 
-class CUSMShaderConstantParam : public IShaderConstantParam
+class CUSMConstantParam : public IShaderConstantParam
 {
 protected:
 
-	PUSMShaderConstantBufferParam _Buffer;
-	PUSMConstMeta                 _Meta;
-	U32                           _OffsetInBuffer;
+	PUSMConstantBufferParam _Buffer;
+	PUSMConstantMeta        _Meta;
+	U32                     _OffsetInBuffer;
 
 public:
 
-	CUSMShaderConstantParam(PUSMShaderConstantBufferParam Buffer, PUSMConstMeta Meta, U32 Offset = 0);
+	CUSMConstantParam(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset = 0);
 
 	virtual CStrID GetID() const override { return _Meta->Name; }
 	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
@@ -98,21 +98,21 @@ public:
 	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
-class CUSMShaderConstantBufferParam : public IShaderConstantBufferParam
+class CUSMConstantBufferParam : public IConstantBufferParam
 {
 public:
 
 	CStrID         Name;
 	EUSMBufferType Type;
 	U32            Register;
-	U32            Size;     // For structured buffers - StructureByteStride
+	U32            Size;           // For structured buffers - StructureByteStride
 	U8             ShaderTypeMask;
 
 	virtual CStrID GetID() const override { return Name; }
 	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 };
 
-class CUSMShaderResourceParam : public IShaderResourceParam
+class CUSMResourceParam : public IResourceParam
 {
 protected:
 
@@ -124,13 +124,13 @@ protected:
 
 public:
 
-	CUSMShaderResourceParam(CStrID Name, U8 ShaderTypeMask, EUSMResourceType Type, U32 RegisterStart, U32 RegisterCount);
+	CUSMResourceParam(CStrID Name, U8 ShaderTypeMask, EUSMResourceType Type, U32 RegisterStart, U32 RegisterCount);
 
 	virtual CStrID GetID() const override { return _Name; }
 	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
-class CUSMShaderSamplerParam : public IShaderSamplerParam
+class CUSMSamplerParam : public ISamplerParam
 {
 protected:
 
@@ -141,7 +141,7 @@ protected:
 
 public:
 
-	CUSMShaderSamplerParam(CStrID Name, U8 ShaderTypeMask, U32 RegisterStart, U32 RegisterCount);
+	CUSMSamplerParam(CStrID Name, U8 ShaderTypeMask, U32 RegisterStart, U32 RegisterCount);
 
 	virtual CStrID GetID() const override { return _Name; }
 	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;

@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Hash.h>
+#include <type_traits>
 
 // Static string identifier. The actual string is stored only once and all CStrIDs reference it
 // by pointers. That is guaranteed that each string (case-sensitive) will have its unique address
@@ -65,10 +66,9 @@ namespace std
 template<>
 struct hash<CStrID>
 {
-	uint32_t operator()(const CStrID _Keyval) const noexcept
+	size_t operator()(const CStrID _Keyval) const noexcept
 	{
-		//return std::hash<void*>()((void*)_Keyval.CStr());
-		return Hash(_Keyval.CStr());
+		return static_cast<size_t>(Hash(_Keyval.CStr()));
 	}
 };
 

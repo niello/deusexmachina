@@ -5,15 +5,15 @@
 
 namespace Render
 {
-CSM30ShaderMetadata::CSM30ShaderMetadata() {}
+CSM30Metadata::CSM30Metadata() {}
 
-CSM30ShaderMetadata::~CSM30ShaderMetadata()
+CSM30Metadata::~CSM30Metadata()
 {
 	Clear();
 }
 //---------------------------------------------------------------------
 
-bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
+bool CSM30Metadata::Load(IO::CStream& Stream)
 {
 	IO::CBinaryReader R(Stream);
 
@@ -54,7 +54,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	Consts.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
-		CSM30ConstMeta* pMeta = &Consts[i];
+		CSM30ConstantMeta* pMeta = &Consts[i];
 		if (!R.Read(pMeta->Name)) FAIL;
 
 		U32 BufIdx;
@@ -110,7 +110,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderMetadata::Clear()
+void CSM30Metadata::Clear()
 {
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
@@ -142,12 +142,12 @@ void CSM30ShaderMetadata::Clear()
 }
 //---------------------------------------------------------------------
 
-HConstant CSM30ShaderMetadata::GetConstantHandle(CStrID ID) const
+HConstant CSM30Metadata::GetConstantHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Consts.GetCount(); ++i)
 	{
-		CSM30ConstMeta* pMeta = &Consts[i];
+		CSM30ConstantMeta* pMeta = &Consts[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);
@@ -158,7 +158,7 @@ HConstant CSM30ShaderMetadata::GetConstantHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HConstantBuffer CSM30ShaderMetadata::GetConstantBufferHandle(CStrID ID) const
+HConstantBuffer CSM30Metadata::GetConstantBufferHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
@@ -183,7 +183,7 @@ HConstantBuffer CSM30ShaderMetadata::GetConstantBufferHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HResource CSM30ShaderMetadata::GetResourceHandle(CStrID ID) const
+HResource CSM30Metadata::GetResourceHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Resources.GetCount(); ++i)
@@ -199,7 +199,7 @@ HResource CSM30ShaderMetadata::GetResourceHandle(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-HSampler CSM30ShaderMetadata::GetSamplerHandle(CStrID ID) const
+HSampler CSM30Metadata::GetSamplerHandle(CStrID ID) const
 {
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
@@ -216,11 +216,11 @@ HSampler CSM30ShaderMetadata::GetSamplerHandle(CStrID ID) const
 //---------------------------------------------------------------------
 
 /*
-bool CSM30ShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
+bool CSM30Metadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 {
 	HConstant Handle = GetConstantHandle(ID);
 	if (Handle == INVALID_HANDLE) FAIL;
-	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)HandleMgr.GetHandleData(Handle);
+	CSM30ConstantMeta* pMeta = (CSM30ConstantMeta*)HandleMgr.GetHandleData(Handle);
 	Out.Handle = Handle;
 	Out.BufferHandle = pMeta->BufferHandle;
 	Out.ElementCount = pMeta->ElementCount;
@@ -259,14 +259,14 @@ bool CSM30ShaderMetadata::GetConstDesc(CStrID ID, CShaderConstDesc& Out) const
 //---------------------------------------------------------------------
 */
 
-PShaderConstant CSM30ShaderMetadata::GetConstant(HConstant hConst) const
+PShaderConstant CSM30Metadata::GetConstant(HConstant hConst) const
 {
-	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)HandleMgr.GetHandleData(hConst);
+	CSM30ConstantMeta* pMeta = (CSM30ConstantMeta*)HandleMgr.GetHandleData(hConst);
 	if (!pMeta) return nullptr;
 
 	if (pMeta->ConstObject.IsNullPtr())
 	{
-		PSM30ShaderConstant Const = n_new(CSM30ShaderConstant);
+		PSM30Constant Const = n_new(CSM30Constant);
 		if (!Const->Init(hConst)) return nullptr;
 		pMeta->ConstObject = Const.Get();
 	}

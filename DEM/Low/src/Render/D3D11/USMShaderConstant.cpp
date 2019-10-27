@@ -6,11 +6,11 @@
 namespace Render
 {
 
-bool CUSMShaderConstant::Init(HConstant hConst)
+bool CUSMConstant::Init(HConstant hConst)
 {
 	if (!hConst) FAIL;
 
-	CUSMConstMeta* pMeta = (CUSMConstMeta*)IShaderMetadata::GetHandleData(hConst);
+	CUSMConstantMeta* pMeta = (CUSMConstantMeta*)IShaderMetadata::GetHandleData(hConst);
 	if (!pMeta) FAIL;
 
 	Offset = pMeta->Offset;
@@ -27,7 +27,7 @@ bool CUSMShaderConstant::Init(HConstant hConst)
 //---------------------------------------------------------------------
 
 //???process column-major differently?
-U32 CUSMShaderConstant::GetComponentOffset(U32 ComponentIndex) const
+U32 CUSMConstant::GetComponentOffset(U32 ComponentIndex) const
 {
 	n_assert_dbg(StructHandle == INVALID_HANDLE);
 
@@ -44,7 +44,7 @@ U32 CUSMShaderConstant::GetComponentOffset(U32 ComponentIndex) const
 }
 //---------------------------------------------------------------------
 
-UPTR CUSMShaderConstant::GetMemberCount() const
+UPTR CUSMConstant::GetMemberCount() const
 {
 	if (StructHandle == INVALID_HANDLE) return 0;
 	CUSMStructMeta* pStructMeta = (CUSMStructMeta*)IShaderMetadata::GetHandleData(StructHandle);
@@ -52,12 +52,12 @@ UPTR CUSMShaderConstant::GetMemberCount() const
 }
 //---------------------------------------------------------------------
 
-PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
+PShaderConstant CUSMConstant::GetElement(U32 Index) const
 {
 	if (Index >= ElementCount) return nullptr;
 
 	//!!!can use pool!
-	PUSMShaderConstant Const = n_new(CUSMShaderConstant);
+	PUSMConstant Const = n_new(CUSMConstant);
 	Const->Offset = Offset + Index * ElementSize;
 	Const->StructHandle = StructHandle;
 	Const->ElementCount = 1;
@@ -81,7 +81,7 @@ PShaderConstant CUSMShaderConstant::GetElement(U32 Index) const
 }
 //---------------------------------------------------------------------
 
-PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
+PShaderConstant CUSMConstant::GetMember(CStrID Name) const
 {
 	CUSMStructMeta* pStructMeta = (CUSMStructMeta*)IShaderMetadata::GetHandleData(StructHandle);
 	if (!pStructMeta) return nullptr;
@@ -91,7 +91,7 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 		if (It->Name == Name)
 		{
 			//!!!can use pool!
-			PUSMShaderConstant Const = n_new(CUSMShaderConstant);
+			PUSMConstant Const = n_new(CUSMConstant);
 			Const->Offset = Offset + It->Offset;
 			Const->StructHandle = It->StructHandle;
 			Const->ElementCount = It->ElementCount;
@@ -107,7 +107,7 @@ PShaderConstant CUSMShaderConstant::GetMember(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
+void CUSMConstant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
 {
 	n_assert_dbg(CB.IsA<CD3D11ConstantBuffer>());
 	if (Size == WholeSize) Size = ElementCount * ElementSize;
@@ -116,7 +116,7 @@ void CUSMShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pDat
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
+void CUSMConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
 {
 	//???switch type, convert to const type?
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
@@ -124,7 +124,7 @@ void CUSMShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
+void CUSMConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
 {
 	//???switch type, convert to const type?
 	if (StructHandle != INVALID_HANDLE) return;
@@ -133,7 +133,7 @@ void CUSMShaderConstant::SetUIntComponent(const CConstantBuffer& CB, U32 Compone
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
+void CUSMConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
 {
 	//???switch type, convert to const type?
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
@@ -141,7 +141,7 @@ void CUSMShaderConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
+void CUSMConstant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
 {
 	//???switch type, convert to const type?
 	if (StructHandle != INVALID_HANDLE) return;
@@ -150,7 +150,7 @@ void CUSMShaderConstant::SetSIntComponent(const CConstantBuffer& CB, U32 Compone
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
+void CUSMConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
 {
 	//???switch type, convert to const type?
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
@@ -158,7 +158,7 @@ void CUSMShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValue
 }
 //---------------------------------------------------------------------
 
-void CUSMShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
+void CUSMConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
 {
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
 

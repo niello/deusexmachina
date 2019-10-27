@@ -6,10 +6,10 @@
 namespace Render
 {
 
-bool CSM30ShaderConstant::Init(HConstant hConst)
+bool CSM30Constant::Init(HConstant hConst)
 {
 	if (!hConst) FAIL;
-	CSM30ConstMeta* pMeta = (CSM30ConstMeta*)IShaderMetadata::GetHandleData(hConst);
+	CSM30ConstantMeta* pMeta = (CSM30ConstantMeta*)IShaderMetadata::GetHandleData(hConst);
 	if (!pMeta) FAIL;
 
 	CSM30BufferMeta* pBufferMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
@@ -65,7 +65,7 @@ bool CSM30ShaderConstant::Init(HConstant hConst)
 //---------------------------------------------------------------------
 
 //???process column-major differently?
-U32 CSM30ShaderConstant::GetComponentOffset(U32 ComponentIndex) const
+U32 CSM30Constant::GetComponentOffset(U32 ComponentIndex) const
 {
 	n_assert_dbg(StructHandle == INVALID_HANDLE);
 
@@ -82,7 +82,7 @@ U32 CSM30ShaderConstant::GetComponentOffset(U32 ComponentIndex) const
 }
 //---------------------------------------------------------------------
 
-UPTR CSM30ShaderConstant::GetMemberCount() const
+UPTR CSM30Constant::GetMemberCount() const
 {
 	if (StructHandle == INVALID_HANDLE) return 0;
 	CSM30StructMeta* pStructMeta = (CSM30StructMeta*)IShaderMetadata::GetHandleData(StructHandle);
@@ -90,12 +90,12 @@ UPTR CSM30ShaderConstant::GetMemberCount() const
 }
 //---------------------------------------------------------------------
 
-PShaderConstant CSM30ShaderConstant::GetElement(U32 Index) const
+PShaderConstant CSM30Constant::GetElement(U32 Index) const
 {
 	if (Index >= ElementCount) return nullptr;
 
 	//!!!can use pool!
-	PSM30ShaderConstant Const = n_new(CSM30ShaderConstant);
+	PSM30Constant Const = n_new(CSM30Constant);
 	Const->Offset = Offset + Index * ElementRegisterCount;
 	Const->RegSet = RegSet;
 	Const->StructHandle = StructHandle;
@@ -109,7 +109,7 @@ PShaderConstant CSM30ShaderConstant::GetElement(U32 Index) const
 }
 //---------------------------------------------------------------------
 
-PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
+PShaderConstant CSM30Constant::GetMember(CStrID Name) const
 {
 	CSM30StructMeta* pStructMeta = (CSM30StructMeta*)IShaderMetadata::GetHandleData(StructHandle);
 	if (!pStructMeta) return nullptr;
@@ -119,7 +119,7 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 		if (It->Name == Name)
 		{
 			//!!!can use pool!
-			PSM30ShaderConstant Const = n_new(CSM30ShaderConstant);
+			PSM30Constant Const = n_new(CSM30Constant);
 			Const->Offset = Offset + It->RegisterOffset;
 			Const->RegSet = RegSet;
 			Const->StructHandle = It->StructHandle;
@@ -136,7 +136,7 @@ PShaderConstant CSM30ShaderConstant::GetMember(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
+void CSM30Constant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
 {
 	n_assert_dbg(RegSet != Reg_Invalid && CB.IsA<CD3D9ConstantBuffer>());
 	if (Size == WholeSize) Size = SizeInBytes;
@@ -145,7 +145,7 @@ void CSM30ShaderConstant::SetRawValue(const CConstantBuffer& CB, const void* pDa
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::InternalSetUInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, U32 Value) const
+void CSM30Constant::InternalSetUInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, U32 Value) const
 {
 	switch (RegSet)
 	{
@@ -170,7 +170,7 @@ void CSM30ShaderConstant::InternalSetUInt(CD3D9ConstantBuffer& CB9, U32 ValueOff
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::InternalSetSInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, I32 Value) const
+void CSM30Constant::InternalSetSInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, I32 Value) const
 {
 	switch (RegSet)
 	{
@@ -195,14 +195,14 @@ void CSM30ShaderConstant::InternalSetSInt(CD3D9ConstantBuffer& CB9, U32 ValueOff
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
+void CSM30Constant::SetUInt(const CConstantBuffer& CB, U32 Value) const
 {
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 	InternalSetUInt(CB9, Offset, Value);
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
+void CSM30Constant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
 {
 	if (StructHandle != INVALID_HANDLE) return;
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
@@ -210,14 +210,14 @@ void CSM30ShaderConstant::SetUIntComponent(const CConstantBuffer& CB, U32 Compon
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
+void CSM30Constant::SetSInt(const CConstantBuffer& CB, I32 Value) const
 {
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 	InternalSetSInt(CB9, Offset, Value);
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
+void CSM30Constant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
 {
 	if (StructHandle != INVALID_HANDLE) return;
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
@@ -225,7 +225,7 @@ void CSM30ShaderConstant::SetSIntComponent(const CConstantBuffer& CB, U32 Compon
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
+void CSM30Constant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
 {
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 
@@ -251,7 +251,7 @@ void CSM30ShaderConstant::SetFloat(const CConstantBuffer& CB, const float* pValu
 }
 //---------------------------------------------------------------------
 
-void CSM30ShaderConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
+void CSM30Constant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
 {
 	if (RegSet != Reg_Float4) return;
 
