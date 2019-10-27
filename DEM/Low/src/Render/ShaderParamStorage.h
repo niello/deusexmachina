@@ -1,4 +1,5 @@
 #pragma once
+#include <Render/RenderFwd.h>
 
 // Shader parameter storage stores values in a form ready to be committed to the GPU.
 // In a combination with shader parameter table this class simplifies the process of
@@ -7,12 +8,13 @@
 namespace Render
 {
 
-class CShaderParamStorage
+class CShaderParamStorage final
 {
 protected:
 
+	PShaderParamTable _Table;
+	PGPUDriver        _GPU;
 	// GPU ref
-	// Param table ref(shared intrusive ptr?)
 	// CBs
 	// Resources
 	// Samplers
@@ -21,6 +23,9 @@ protected:
 	// So for Apply() we can just get param by index of the value
 
 public:
+
+	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU);
+	~CShaderParamStorage();
 
 	// Apply
 };

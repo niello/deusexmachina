@@ -379,11 +379,6 @@ enum EEffectType
 	EffectType_Invalid
 };
 
-enum EShaderConstFlags
-{
-	ShaderConst_ColumnMajor	= 0x01			// Only for matrix types
-};
-
 /*
 enum EShaderConstType
 {

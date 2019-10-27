@@ -57,3 +57,19 @@ public:
 }
 
 typedef Data::CStringID CStrID;
+
+namespace std
+{
+
+// ’эшируем атом как сырой указатель, без учЄта контента
+template<>
+struct hash<CStrID>
+{
+	uint32_t operator()(const CStrID _Keyval) const noexcept
+	{
+		//return std::hash<void*>()((void*)_Keyval.CStr());
+		return Hash(_Keyval.CStr());
+	}
+};
+
+}

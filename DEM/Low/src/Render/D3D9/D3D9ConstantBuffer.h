@@ -4,7 +4,7 @@
 
 #include <Render/ConstantBuffer.h>
 #include <Render/RenderFwd.h>
-#include <Render/D3D9/D3D9Fwd.h>
+#include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Data/Flags.h>
 
 // A Direct3D9 implementation of a shader constant buffer.

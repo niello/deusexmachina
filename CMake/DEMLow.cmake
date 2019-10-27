@@ -243,7 +243,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D9/D3D9DepthStencilBuffer.h
 	DEM/Low/src/Render/D3D9/D3D9DisplayDriver.h
 	DEM/Low/src/Render/D3D9/D3D9DriverFactory.h
-	DEM/Low/src/Render/D3D9/D3D9Fwd.h
 	DEM/Low/src/Render/D3D9/D3D9GPUDriver.h
 	DEM/Low/src/Render/D3D9/D3D9IndexBuffer.h
 	DEM/Low/src/Render/D3D9/D3D9RenderState.h

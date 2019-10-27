@@ -12,6 +12,7 @@
 #include <Render/D3D9/D3D9Sampler.h>
 #include <Render/D3D9/D3D9Shader.h>
 #include <Render/D3D9/D3D9ConstantBuffer.h>
+#include <Render/D3D9/SM30ShaderMetadata.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <Render/TextureData.h>
@@ -286,7 +287,7 @@ bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR 
 		n_assert_dbg(Rec.CB.IsValidPtr());
 
 		UPTR j;
-		const CFixedArray<CRange>* pRanges;
+		const CSM30BufferMeta::CRanges* pRanges;
 		switch (ApplyFlag)
 		{
 			case CB_ApplyFloat4:	pRanges = &Rec.pMeta->Float4; break;
@@ -295,11 +296,11 @@ bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR 
 			default:				FAIL;
 		};
 
-		for (j = Rec.NextRange; j < pRanges->GetCount(); ++j)
+		for (j = Rec.NextRange; j < pRanges->size(); ++j)
 		{
-			CRange& Range = pRanges->operator[](j);
-			UPTR RangeStart = Range.Start;
-			UPTR RangeEnd = RangeStart + Range.Count;
+			auto& Range = pRanges->operator[](j);
+			UPTR RangeStart = Range.first;
+			UPTR RangeEnd = RangeStart + Range.second;
 			if (RangeEnd > CurrConst)
 			{
 				Rec.NextRange = j;
@@ -320,10 +321,10 @@ bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR 
 						
 				break;
 			}
-			else Rec.CurrRangeOffset += Range.Count;
+			else Rec.CurrRangeOffset += Range.second;
 		}
 
-		if (j >= pRanges->GetCount()) Rec.ApplyFlags.Clear(ApplyFlag);
+		if (j >= pRanges->size()) Rec.ApplyFlags.Clear(ApplyFlag);
 
 		if (FoundRangeStart == CurrConst) OK;
 	}
@@ -2741,8 +2742,8 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 	for (UPTR i = 0; i < RenderStates.GetCount(); ++i)
 	{
 		CD3D9RenderState* pRS = RenderStates[i].Get();
-		if (pRS->VS == Desc.VertexShader &&
-			pRS->PS == Desc.PixelShader &&
+		if (pRS->VS == Desc.VertexShader.Get() &&
+			pRS->PS == Desc.PixelShader.Get() &&
 			memcmp(pRS->D3DStateValues, pValues, sizeof(pRS->D3DStateValues)) == 0)
 		{
 			return pRS;
@@ -2833,6 +2834,107 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
+
+	IO::CBinaryReader R(Stream);
+
+	U32 Count;
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CSM30BufferMeta> Buffers(Count);
+	for (auto& Buffer : Buffers)
+	{
+		if (!R.Read(Buffer.Name)) return nullptr;
+		if (!R.Read(Buffer.SlotIndex)) return nullptr;
+
+		Buffer.Float4.resize(R.Read<U32>());
+		for (auto& Range : Buffer.Float4)
+		{
+			if (!R.Read<U32>(Range.first)) return nullptr;
+			if (!R.Read<U32>(Range.second)) return nullptr;
+		}
+
+		Buffer.Int4.resize(R.Read<U32>());
+		for (auto& Range : Buffer.Int4)
+		{
+			if (!R.Read<U32>(Range.first)) return nullptr;
+			if (!R.Read<U32>(Range.second)) return nullptr;
+		}
+
+		Buffer.Bool.resize(R.Read<U32>());
+		for (auto& Range : Buffer.Bool)
+		{
+			if (!R.Read<U32>(Range.first)) return nullptr;
+			if (!R.Read<U32>(Range.second)) return nullptr;
+		}
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CSM30StructMeta> Structs(Count);
+	for (auto& Struct : Structs)
+	{
+		Struct.Members.resize(R.Read<U32>());
+		for (auto& Member : Struct.Members)
+		{
+			if (!R.Read(Member.Name)) return nullptr;
+
+			//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
+			if (!R.Read(Member.StructIndex)) return nullptr;
+
+			if (!R.Read(Member.RegisterStart)) return nullptr;
+			if (!R.Read(Member.ElementRegisterCount)) return nullptr;
+			if (!R.Read(Member.ElementCount)) return nullptr;
+			if (!R.Read(Member.Columns)) return nullptr;
+			if (!R.Read(Member.Rows)) return nullptr;
+			if (!R.Read(Member.Flags)) return nullptr;
+		}
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CSM30ConstMeta> Consts(Count);
+	for (auto& Const : Consts)
+	{
+		U8 ShaderTypeMask;
+		if (!R.Read(ShaderTypeMask)) return nullptr;
+
+		if (!R.Read(Const.Name)) return nullptr;
+
+		//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
+		//!!!extend buffer's shader mask by the mask of this constant!
+		if (!R.Read(Const.BufferIndex)) return nullptr;
+		if (!R.Read(Const.StructIndex)) return nullptr;
+
+		Const.RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
+		if (!R.Read(Const.RegisterStart)) return nullptr;
+		if (!R.Read(Const.ElementRegisterCount)) return nullptr;
+		if (!R.Read(Const.ElementCount)) return nullptr;
+		if (!R.Read(Const.Columns)) return nullptr;
+		if (!R.Read(Const.Rows)) return nullptr;
+		if (!R.Read(Const.Flags)) return nullptr;
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CSM30RsrcMeta> Resources(Count);
+	for (auto& Resource : Resources)
+	{
+		U8 ShaderTypeMask;
+		if (!R.Read(ShaderTypeMask)) return nullptr;
+
+		if (!R.Read(Resource.Name)) return nullptr;
+		if (!R.Read(Resource.Register)) return nullptr;
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CSM30SamplerMeta> Samplers(Count);
+	for (auto& Sampler : Samplers)
+	{
+		U8 ShaderTypeMask;
+		if (!R.Read(ShaderTypeMask)) return nullptr;
+
+		if (!R.Read(Sampler.Name)) return nullptr;
+		Sampler.Type = static_cast<ESM30SamplerType>(R.Read<U8>());
+		if (!R.Read(Sampler.RegisterStart)) return nullptr;
+		if (!R.Read(Sampler.RegisterCount)) return nullptr;
+	}
 
 	return nullptr;
 }
@@ -3326,8 +3428,8 @@ bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst
 	CSM30BufferMeta* pBufferMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
 	if (!pBufferMeta) FAIL;
 
-	CFixedArray<CRange>* pRanges = nullptr;
-	switch (pMeta->RegSet)
+	CSM30BufferMeta::CRanges* pRanges = nullptr;
+	switch (pMeta->RegisterSet)
 	{
 		case Reg_Float4:	pRanges = &pBufferMeta->Float4; break;
 		case Reg_Int4:		pRanges = &pBufferMeta->Int4; break;
@@ -3336,21 +3438,21 @@ bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst
 	};
 
 	UPTR Offset = 0;
-	for (UPTR i = 0; i < pRanges->GetCount(); ++i)
+	for (UPTR i = 0; i < pRanges->size(); ++i)
 	{
-		CRange& Range = pRanges->operator[](i);
-		if (Range.Start > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
-		if (Range.Start + Range.Count <= pMeta->RegisterStart)
+		auto& Range = pRanges->operator[](i);
+		if (Range.first > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
+		if (Range.first + Range.second <= pMeta->RegisterStart)
 		{
-			Offset += Range.Count;
+			Offset += Range.second;
 			continue;
 		}
-		n_assert(Range.Start + Range.Count >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
+		n_assert(Range.first + Range.second >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
 
-		Offset += pMeta->RegisterStart - Range.Start + ElementIndex * pMeta->ElementRegisterCount;
+		Offset += pMeta->RegisterStart - Range.first + ElementIndex * pMeta->ElementRegisterCount;
 
 		CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
-		CB9.WriteData(pMeta->RegSet, Offset, pData, Size);
+		CB9.WriteData(pMeta->RegisterSet, Offset, pData, Size);
 		OK;
 	}
 

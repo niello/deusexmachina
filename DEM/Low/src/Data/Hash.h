@@ -4,22 +4,22 @@
 
 // Hash functions
 
-inline unsigned int Hash(const void* pData, int Length)
+inline uint32_t Hash(const void* pData, int Length)
 {
-	unsigned int Result;
+	uint32_t Result;
 	MurmurHash3_x86_32(pData, Length, 0xB0F57EE3, &Result);
 	return Result;
 	//return SuperFastHash((const char*)pData, Length);
 }
 //---------------------------------------------------------------------
 
-inline unsigned int Hash(const char* pStr)
+inline uint32_t Hash(const char* pStr)
 {
 	return Hash(pStr, strlen(pStr));
 }
 //---------------------------------------------------------------------
 
-template<class T> inline unsigned int Hash(const T& Key)
+template<class T> inline uint32_t Hash(const T& Key)
 {
 	//???what about smaller than int?
 	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
@@ -27,7 +27,7 @@ template<class T> inline unsigned int Hash(const T& Key)
 }
 //---------------------------------------------------------------------
 
-template<> inline unsigned int Hash<const char*>(const char * const & Key)
+template<> inline uint32_t Hash<const char*>(const char * const & Key)
 {
 	return Hash(Key, strlen(Key));
 }

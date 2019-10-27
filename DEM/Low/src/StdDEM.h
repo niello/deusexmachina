@@ -143,9 +143,3 @@ struct CRational
 	bool operator ==(const CRational& Other) const { return Numerator == Other.Numerator && Denominator == Other.Denominator; }
 	bool operator !=(const CRational& Other) const { return Numerator != Other.Numerator || Denominator != Other.Denominator; }
 };
-
-struct CRange
-{
-	UPTR Start;
-	UPTR Count;
-};

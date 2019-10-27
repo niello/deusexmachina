@@ -17,47 +17,6 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 {
 	IO::CBinaryReader R(Stream);
 
-	Buffers.SetSize(R.Read<U32>());
-	for (UPTR i = 0; i < Buffers.GetCount(); ++i)
-	{
-		CSM30BufferMeta* pMeta = &Buffers[i];
-		if (!R.Read(pMeta->Name)) FAIL;
-		if (!R.Read(pMeta->SlotIndex)) FAIL;
-
-		CFixedArray<CRange>& Ranges1 = pMeta->Float4;
-		Ranges1.SetSize(R.Read<U32>());
-		for (UPTR r = 0; r < Ranges1.GetCount(); ++r)
-		{
-			CRange& Range = Ranges1[r];
-			if (!R.Read<U32>(Range.Start)) FAIL;
-			if (!R.Read<U32>(Range.Count)) FAIL;
-		}
-
-		CFixedArray<CRange>& Ranges2 = pMeta->Int4;
-		Ranges2.SetSize(R.Read<U32>());
-		for (UPTR r = 0; r < Ranges2.GetCount(); ++r)
-		{
-			CRange& Range = Ranges2[r];
-			if (!R.Read<U32>(Range.Start)) FAIL;
-			if (!R.Read<U32>(Range.Count)) FAIL;
-		}
-
-		CFixedArray<CRange>& Ranges3 = pMeta->Bool;
-		Ranges3.SetSize(R.Read<U32>());
-		for (UPTR r = 0; r < Ranges3.GetCount(); ++r)
-		{
-			CRange& Range = Ranges3[r];
-			if (!R.Read<U32>(Range.Start)) FAIL;
-			if (!R.Read<U32>(Range.Count)) FAIL;
-		}
-
-		// For non-empty buffers open handles at the load time to reference buffers from constants
-		pMeta->Handle =
-			(pMeta->Float4.GetCount() || pMeta->Int4.GetCount() || pMeta->Bool.GetCount()) ?
-			HandleMgr.OpenHandle(pMeta) :
-			INVALID_HANDLE;
-	}
-
 	Structs.SetSize(R.Read<U32>());
 
 	// Open handles at the load time to reference structs from constants and members

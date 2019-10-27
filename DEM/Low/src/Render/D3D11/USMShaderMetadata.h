@@ -1,16 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_USM_SHADER_METADATA_H__
-#define __DEM_L1_RENDER_USM_SHADER_METADATA_H__
-
-#include <Render/ShaderMetadata.h>
-#include <Render/D3D9/D3D9Fwd.h>
+#include <Data/StringID.h>
 
 // Universal Shader Model (4.0 and higher, for Direct3D 10 and higher) shader metadata
-
-namespace IO
-{
-	class CStream;
-}
 
 namespace Render
 {
@@ -51,93 +42,60 @@ enum EUSMResourceType
 	USMRsrc_Unknown
 };
 
-struct CUSMBufferMeta
+// Don't change values
+enum EUSMShaderConstFlags
 {
-	CStrID			Name;
-	EUSMBufferType	Type;
-	U32				Register;
-	U32				Size;			// Element size for structured buffers
-	HHandle			Handle;
+	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-struct CUSMStructMemberMeta
+struct CUSMBufferMeta
 {
-	CStrID			Name;
-	HHandle			StructHandle;
-	EUSMConstType	Type;
-	U32				Offset;
-	U32				ElementSize;
-	U32				ElementCount;
-	U8				Columns;
-	U8				Rows;
-	U8				Flags;			// See EShaderConstFlags
+	CStrID         Name;
+	EUSMBufferType Type;
+	uint32_t       Register;
+	uint32_t       Size;		// For structured buffers - StructureByteStride
+};
+
+struct CUSMConstMetaBase
+{
+	CStrID        Name;
+
+	//!!!
+	uint32_t      StructIndex;
+
+	EUSMConstType Type;
+	uint32_t      Offset; // From the start of CB, for struct members - from the start of the structure
+	uint32_t      ElementSize;
+	uint32_t      ElementCount;
+	uint8_t       Columns;
+	uint8_t       Rows;
+	uint8_t       Flags; // See EUSMShaderConstFlags
 };
 
 struct CUSMStructMeta
 {
-	HHandle								Handle;
-	CFixedArray<CUSMStructMemberMeta>	Members;
+	CStrID Name;
+	std::vector<CUSMConstMetaBase> Members;
 };
 
-struct CUSMConstMeta
+struct CUSMConstMeta : public CUSMConstMetaBase
 {
-	CStrID			Name;
-	HHandle			BufferHandle;
-	HHandle			StructHandle;
-	EUSMConstType	Type;
-	U32				Offset;
-	U32				ElementSize;
-	U32				ElementCount;
-	U8				Columns;
-	U8				Rows;
-	U8				Flags;			// See EShaderConstFlags
-	HHandle			Handle;
-	PShaderConstant	ConstObject;
+	uint32_t BufferIndex; //???ref?
 };
 
-struct CUSMResourceMeta
+struct CUSMRsrcMeta
 {
-	CStrID				Name;
-	EUSMResourceType	Type;
-	U32					RegisterStart;
-	U32					RegisterCount;
-	HHandle				Handle;
+	CStrID           Name;
+	EUSMResourceType Type;
+	uint32_t         RegisterStart;
+	uint32_t         RegisterCount;
 };
 
 struct CUSMSamplerMeta
 {
-	CStrID		Name;
-	U32			RegisterStart;
-	U32			RegisterCount;
-	HHandle		Handle;
-};
-
-class CUSMShaderMetadata: public IShaderMetadata
-{
-private:
-
-	//!!!must be sorted by name! //???sort in tool?
-	CFixedArray<CUSMConstMeta>		Consts;
-	CFixedArray<CUSMStructMeta>		Structs;
-	CFixedArray<CUSMBufferMeta>		Buffers;
-	CFixedArray<CUSMResourceMeta>	Resources;
-	CFixedArray<CUSMSamplerMeta>	Samplers;
-
-public:
-
-	CUSMShaderMetadata();
-	virtual ~CUSMShaderMetadata();
-
-	bool						Load(IO::CStream& Stream);
-	void						Clear();
-
-	virtual HConstant			GetConstantHandle(CStrID ID) const;
-	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const;
-	virtual HResource			GetResourceHandle(CStrID ID) const;
-	virtual HSampler			GetSamplerHandle(CStrID ID) const;
-	virtual PShaderConstant		GetConstant(HConstant hConst) const;
+	CStrID   Name;
+	uint32_t RegisterStart;
+	uint32_t RegisterCount;
 };
 
 }
-
-#endif

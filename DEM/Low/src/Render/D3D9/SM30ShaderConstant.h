@@ -3,7 +3,6 @@
 #define __DEM_L1_RENDER_SM30_SHADER_CONSTANT_H__
 
 #include <Render/ShaderConstant.h>
-#include <Render/D3D9/D3D9Fwd.h>
 
 // Shader Model 3.0 constant implementation
 

@@ -1,106 +1,90 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_SM30_SHADER_METADATA_H__
-#define __DEM_L1_RENDER_SM30_SHADER_METADATA_H__
-
-#include <Render/ShaderMetadata.h>
-#include <Render/D3D9/D3D9Fwd.h>
+#include <Data/StringID.h>
 
 // Shader Model 3.0 (for Direct3D 9.0c) shader metadata
-
-namespace IO
-{
-	class CStream;
-}
 
 namespace Render
 {
 
-struct CSM30BufferMeta
+// Don't change values
+enum ESM30RegisterSet
 {
-	CStrID				Name;
-	U32					SlotIndex;			// Pseudo-register
-	CFixedArray<CRange>	Float4;
-	CFixedArray<CRange>	Int4;
-	CFixedArray<CRange>	Bool;
-	HHandle				Handle;
+	Reg_Bool			= 0,
+	Reg_Int4			= 1,
+	Reg_Float4			= 2,
+
+	Reg_Invalid
 };
 
-struct CSM30StructMemberMeta
+// Don't change values
+enum ESM30SamplerType
 {
-	CStrID			Name;
-	HHandle			StructHandle;
-	U32				RegisterOffset;
-	U32				ElementRegisterCount;
-	U32				ElementCount;
-	U8				Columns;
-	U8				Rows;
-	U8				Flags;					// See EShaderConstFlags
-	//???store register set and support mixed structs?
+	SM30Sampler_1D		= 0,
+	SM30Sampler_2D,
+	SM30Sampler_3D,
+	SM30Sampler_CUBE
+};
+
+// Don't change values
+enum ESM30ShaderConstFlags
+{
+	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
+};
+
+struct CSM30BufferMeta
+{
+	// NB: range is a (start, count) pair
+	typedef std::vector<std::pair<U32, U32>> CRanges;
+
+	CStrID   Name;
+	uint32_t SlotIndex; // Pseudo-register
+	CRanges  Float4;
+	CRanges  Int4;
+	CRanges  Bool;
+	HHandle  Handle;
+};
+
+struct CSM30ConstMetaBase
+{
+	CStrID   Name;
+
+	//!!!
+	uint32_t StructIndex;
+
+	uint32_t RegisterStart; // For structs - offset from the start of the structure
+	uint32_t ElementRegisterCount;
+	uint32_t ElementCount;
+	uint8_t  Columns;
+	uint8_t  Rows;
+	uint8_t  Flags; // See ESM30ShaderConstFlags
+
+	//ESM30RegisterSet	RegisterSet; //???save for struct members and add mixed-type structure support?
 };
 
 struct CSM30StructMeta
 {
-	HHandle								Handle;
-	CFixedArray<CSM30StructMemberMeta>	Members;
+	//CStrID Name;
+	std::vector<CSM30ConstMetaBase> Members;
 };
 
-struct CSM30ConstMeta
+struct CSM30ConstMeta : public CSM30ConstMetaBase
 {
-	CStrID				Name;
-	HHandle				BufferHandle;
-	HHandle				StructHandle;
-	ESM30RegisterSet	RegSet;
-	U32					RegisterStart;
-	U32					ElementRegisterCount;
-	U32					ElementCount;
-	U8					Columns;
-	U8					Rows;
-	U8					Flags;				// See ESM30ConstFlags
-	HHandle				Handle;
-	PShaderConstant		ConstObject;
+	uint32_t         BufferIndex; //???ref?
+	ESM30RegisterSet RegisterSet;
 };
 
 struct CSM30RsrcMeta
 {
-	CStrID				Name;
-	U32					Register;
-	HHandle				Handle;
+	CStrID   Name;
+	uint32_t Register;
 };
 
 struct CSM30SamplerMeta
 {
-	CStrID				Name;
-	ESM30SamplerType	Type;
-	U32					RegisterStart;
-	U32					RegisterCount;
-	HHandle				Handle;
-};
-
-class CSM30ShaderMetadata: public IShaderMetadata
-{
-private:
-
-	CFixedArray<CSM30BufferMeta>	Buffers;
-	CFixedArray<CSM30StructMeta>	Structs;
-	CFixedArray<CSM30ConstMeta>		Consts;
-	CFixedArray<CSM30RsrcMeta>		Resources;
-	CFixedArray<CSM30SamplerMeta>	Samplers;
-
-public:
-
-	CSM30ShaderMetadata();
-	virtual ~CSM30ShaderMetadata();
-
-	bool						Load(IO::CStream& Stream);
-	void						Clear();
-
-	virtual HConstant			GetConstantHandle(CStrID ID) const;
-	virtual HConstantBuffer		GetConstantBufferHandle(CStrID ID) const;
-	virtual HResource			GetResourceHandle(CStrID ID) const;
-	virtual HSampler			GetSamplerHandle(CStrID ID) const;
-	virtual PShaderConstant		GetConstant(HConstant hConst) const;
+	CStrID           Name;
+	ESM30SamplerType Type;
+	uint32_t         RegisterStart;
+	uint32_t         RegisterCount;
 };
 
 }
-
-#endif

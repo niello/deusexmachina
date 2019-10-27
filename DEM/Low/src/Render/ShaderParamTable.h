@@ -8,6 +8,7 @@ namespace Render
 typedef std::unique_ptr<class IShaderConstantParam> PShaderConstantParam;
 typedef std::unique_ptr<class IShaderResourceParam> PShaderResourceParam;
 typedef std::unique_ptr<class IShaderSamplerParam> PShaderSamplerParam;
+typedef Ptr<class CShaderParamTable> PShaderParamTable;
 
 //???interfaces or base classes with common data?
 
@@ -61,7 +62,5 @@ public:
 	const IShaderResourceParam* GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
 	const IShaderSamplerParam*  GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }
 };
-
-typedef Ptr<CShaderParamTable> PShaderParamTable;
 
 }
