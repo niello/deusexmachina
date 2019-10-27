@@ -5,29 +5,37 @@
 
 namespace Render
 {
-typedef std::unique_ptr<class IShaderConstantParam> PShaderConstantParam;
-typedef std::unique_ptr<class IShaderResourceParam> PShaderResourceParam;
-typedef std::unique_ptr<class IShaderSamplerParam> PShaderSamplerParam;
+typedef Ptr<class IShaderConstantParam> PShaderConstantParam;
+typedef Ptr<class IShaderConstantBufferParam> PShaderConstantBufferParam;
+typedef Ptr<class IShaderResourceParam> PShaderResourceParam;
+typedef Ptr<class IShaderSamplerParam> PShaderSamplerParam;
 typedef Ptr<class CShaderParamTable> PShaderParamTable;
 
-//???interfaces or base classes with common data?
-//???need refcounting or always use raw pointers in clients?
-
-class IShaderConstantParam
+class IShaderConstantParam : public Data::CRefCounted
 {
 public:
 
 	virtual void SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetInts(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
-class IShaderResourceParam
+class IShaderConstantBufferParam : public Data::CRefCounted
+{
+public:
+
+	virtual void Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
+};
+
+class IShaderResourceParam : public Data::CRefCounted
 {
 public:
 
 	virtual void Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
 };
 
-class IShaderSamplerParam
+class IShaderSamplerParam : public Data::CRefCounted
 {
 public:
 

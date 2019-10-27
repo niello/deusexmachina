@@ -2807,15 +2807,18 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PUSMBufferMeta> Buffers(Count);
+	std::vector<PUSMShaderConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
-		BufferPtr = n_new(CUSMBufferMeta);
+		BufferPtr = n_new(CUSMShaderConstantBufferParam);
 		auto& Buffer = *BufferPtr;
 
 		if (!R.Read(Buffer.Name)) return nullptr;
 		if (!R.Read(Buffer.Register)) return nullptr;
 		if (!R.Read(Buffer.Size)) return nullptr;
+
+		//!!!???get type from register?
+		NOT_IMPLEMENTED;
 	}
 
 	if (!R.Read(Count)) return nullptr;
@@ -2830,8 +2833,11 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		auto& Struct = *StructPtr;
 
 		Struct.Members.resize(R.Read<U32>());
-		for (auto& Member : Struct.Members)
+		for (auto& MemberPtr : Struct.Members)
 		{
+			MemberPtr = n_new(CUSMConstMeta);
+			auto& Member = *MemberPtr;
+
 			if (!R.Read(Member.Name)) return nullptr;
 
 			U32 StructIndex;
@@ -2850,13 +2856,19 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CUSMConstMeta> Consts(Count);
-	for (auto& Const : Consts)
+	std::vector<PUSMShaderConstantParam> Consts(Count);
+	for (auto& ConstPtr : Consts)
 	{
+		ConstPtr = n_new(CUSMShaderConstantParam);
+		auto& Const = *ConstPtr;
+
+		Const.Meta = n_new(CUSMConstMeta);
+		auto& Meta = *Const.Meta;
+
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		if (!R.Read(Const.Name)) return nullptr;
+		if (!R.Read(Meta.Name)) return nullptr;
 
 		U32 BufferIndex;
 		if (!R.Read(BufferIndex)) return nullptr;
@@ -2866,40 +2878,38 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Const.Struct = Structs[StructIndex];
+			Meta.Struct = Structs[StructIndex];
 
-		Const.Type = static_cast<EUSMConstType>(R.Read<U8>());
-		if (!R.Read(Const.Offset)) return nullptr;
-		if (!R.Read(Const.ElementSize)) return nullptr;
-		if (!R.Read(Const.ElementCount)) return nullptr;
-		if (!R.Read(Const.Columns)) return nullptr;
-		if (!R.Read(Const.Rows)) return nullptr;
-		if (!R.Read(Const.Flags)) return nullptr;
+		Meta.Type = static_cast<EUSMConstType>(R.Read<U8>());
+		if (!R.Read(Meta.Offset)) return nullptr;
+		if (!R.Read(Meta.ElementSize)) return nullptr;
+		if (!R.Read(Meta.ElementCount)) return nullptr;
+		if (!R.Read(Meta.Columns)) return nullptr;
+		if (!R.Read(Meta.Rows)) return nullptr;
+		if (!R.Read(Meta.Flags)) return nullptr;
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CUSMResourceMeta> Resources(Count);
-	for (auto& Resource : Resources)
+	std::vector<PUSMShaderResourceParam> Resources(Count);
+	for (auto& ResourcePtr : Resources)
 	{
-		U8 ShaderTypeMask;
-		if (!R.Read(ShaderTypeMask)) return nullptr;
-
-		if (!R.Read(Resource.Name)) return nullptr;
-		Resource.Type = static_cast<EUSMResourceType>(R.Read<U8>());
-		if (!R.Read(Resource.RegisterStart)) return nullptr;
-		if (!R.Read(Resource.RegisterCount)) return nullptr;
+		auto ShaderTypeMask = R.Read<U8>();
+		auto Name = R.Read<CStrID>();
+		auto Type = static_cast<EUSMResourceType>(R.Read<U8>());
+		auto RegisterStart = R.Read<U32>();
+		auto RegisterCount = R.Read<U32>();
+		ResourcePtr = n_new(CUSMShaderResourceParam(Name, ShaderTypeMask, Type, RegisterStart, RegisterCount));
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CUSMSamplerMeta> Samplers(Count);
-	for (auto& Sampler : Samplers)
+	std::vector<PUSMShaderSamplerParam> Samplers(Count);
+	for (auto& SamplerPtr : Samplers)
 	{
-		U8 ShaderTypeMask;
-		if (!R.Read(ShaderTypeMask)) return nullptr;
-
-		if (!R.Read(Sampler.Name)) return nullptr;
-		if (!R.Read(Sampler.RegisterStart)) return nullptr;
-		if (!R.Read(Sampler.RegisterCount)) return nullptr;
+		auto ShaderTypeMask = R.Read<U8>();
+		auto Name = R.Read<CStrID>();
+		auto RegisterStart = R.Read<U32>();
+		auto RegisterCount = R.Read<U32>();
+		SamplerPtr = n_new(CUSMShaderSamplerParam(Name, ShaderTypeMask, RegisterStart, RegisterCount));
 	}
 
 	return nullptr;

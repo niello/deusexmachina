@@ -2840,10 +2840,10 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PSM30BufferMeta> Buffers(Count);
+	std::vector<PSM30ShaderConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
-		BufferPtr = n_new(CSM30BufferMeta);
+		BufferPtr = n_new(CSM30ShaderConstantBufferParam);
 		auto& Buffer = *BufferPtr;
 
 		if (!R.Read(Buffer.Name)) return nullptr;
@@ -2883,8 +2883,11 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		auto& Struct = *StructPtr;
 
 		Struct.Members.resize(R.Read<U32>());
-		for (auto& Member : Struct.Members)
+		for (auto& MemberPtr : Struct.Members)
 		{
+			MemberPtr = n_new(CSM30ConstMeta);
+			auto& Member = *MemberPtr;
+
 			if (!R.Read(Member.Name)) return nullptr;
 
 			U32 StructIndex;
@@ -2902,58 +2905,68 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CSM30ConstMeta> Consts(Count);
-	for (auto& Const : Consts)
+	std::vector<PSM30ShaderConstantParam> Consts(Count);
+	for (auto& ConstPtr : Consts)
 	{
+		ConstPtr = n_new(CSM30ShaderConstantParam);
+		auto& Const = *ConstPtr;
+
+		Const.Meta = n_new(CSM30ConstMeta);
+		auto& Meta = *Const.Meta;
+
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		if (!R.Read(Const.Name)) return nullptr;
+		if (!R.Read(Meta.Name)) return nullptr;
 
 		U32 BufferIndex;
 		if (!R.Read(BufferIndex)) return nullptr;
 		if (BufferIndex != static_cast<U32>(-1))
+		{
 			Const.Buffer = Buffers[BufferIndex];
+			Const.Buffer->ShaderTypeMask |= ShaderTypeMask;
+		}
 
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Const.Struct = Structs[StructIndex];
+			Meta.Struct = Structs[StructIndex];
 
-		Const.RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
-		if (!R.Read(Const.RegisterStart)) return nullptr;
-		if (!R.Read(Const.ElementRegisterCount)) return nullptr;
-		if (!R.Read(Const.ElementCount)) return nullptr;
-		if (!R.Read(Const.Columns)) return nullptr;
-		if (!R.Read(Const.Rows)) return nullptr;
-		if (!R.Read(Const.Flags)) return nullptr;
+		ESM30RegisterSet RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
+		if (!R.Read(Meta.RegisterStart)) return nullptr;
+		if (!R.Read(Meta.ElementRegisterCount)) return nullptr;
+		if (!R.Read(Meta.ElementCount)) return nullptr;
+		if (!R.Read(Meta.Columns)) return nullptr;
+		if (!R.Read(Meta.Rows)) return nullptr;
+		if (!R.Read(Meta.Flags)) return nullptr;
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CSM30ResourceMeta> Resources(Count);
-	for (auto& Resource : Resources)
+	std::vector<PSM30ShaderResourceParam> Resources(Count);
+	for (auto& ResourcePtr : Resources)
 	{
-		U8 ShaderTypeMask;
-		if (!R.Read(ShaderTypeMask)) return nullptr;
-
-		if (!R.Read(Resource.Name)) return nullptr;
-		if (!R.Read(Resource.Register)) return nullptr;
+		auto ShaderTypeMask = R.Read<U8>();
+		auto Name = R.Read<CStrID>();
+		auto Register = R.Read<U32>();
+		ResourcePtr = n_new(CSM30ShaderResourceParam(Name, ShaderTypeMask, Register));
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CSM30SamplerMeta> Samplers(Count);
-	for (auto& Sampler : Samplers)
+	std::vector<PSM30ShaderSamplerParam> Samplers(Count);
+	for (auto& SamplerPtr : Samplers)
 	{
-		U8 ShaderTypeMask;
-		if (!R.Read(ShaderTypeMask)) return nullptr;
-
-		if (!R.Read(Sampler.Name)) return nullptr;
-		Sampler.Type = static_cast<ESM30SamplerType>(R.Read<U8>());
-		if (!R.Read(Sampler.RegisterStart)) return nullptr;
-		if (!R.Read(Sampler.RegisterCount)) return nullptr;
+		auto ShaderTypeMask = R.Read<U8>();
+		auto Name = R.Read<CStrID>();
+		auto Type = static_cast<ESM30SamplerType>(R.Read<U8>());
+		auto RegisterStart = R.Read<U32>();
+		auto RegisterCount = R.Read<U32>();
+		SamplerPtr = n_new(CSM30ShaderSamplerParam(Name, ShaderTypeMask, Type, RegisterStart, RegisterCount));
 	}
 
-	// create params, initialize with metadata structures
+	// create params, initialize with metadata structures or even read into them directly,
+	// at least simple data like texture and sampler params. Const descs used in structs so can be meta structs.
+	// Also think about referencing (not copying) const base data from shader const param, to create lightweight
+	// params for setter instances of struct members etc.
 	// create table based on these params
 
 	return nullptr;
