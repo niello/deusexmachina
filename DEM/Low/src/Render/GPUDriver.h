@@ -107,10 +107,6 @@ public:
 	virtual bool				SetRenderTarget(UPTR Index, CRenderTarget* pRT) = 0;
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) = 0;
 
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer) = 0;
-	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) = 0;
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) = 0;
-
 	virtual bool				BeginFrame() = 0;
 	virtual void				EndFrame() = 0;
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil) = 0;

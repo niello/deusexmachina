@@ -64,7 +64,6 @@ protected:
 		Data::CFlags					ApplyFlags;
 		UPTR							NextRange;
 		UPTR							CurrRangeOffset;
-		const CSM30BufferMeta*	pMeta;		// Request from handle before use, may not persist over the frame if host shader destroyed
 	};
 
 	PD3D9VertexLayout					CurrVL;
@@ -193,10 +192,6 @@ public:
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const;
 
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer);
-	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource);
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler);
-
 	virtual bool				BeginFrame();
 	virtual void				EndFrame();
 	virtual void				Clear(UPTR Flags, const vector4& ColorRGBA, float Depth, U8 Stencil);
@@ -225,6 +220,10 @@ public:
 
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }
+
+	bool                        BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CConstantBuffer* pCBuffer);
+	bool                        BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource);
+	bool                        BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CSampler* pSampler);
 
 	bool						GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const;
 	IDirect3DDevice9*			GetD3DDevice() const { return pD3DDevice; }

@@ -1697,17 +1697,13 @@ CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer)
+bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CConstantBuffer* pCBuffer)
 {
-	if (!Handle) FAIL;
-	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(Handle);
-	if (!pMeta) FAIL;
-
 	UPTR Index;
 	switch (ShaderType)
 	{
-		case ShaderType_Vertex:	Index = pMeta->SlotIndex; break;
-		case ShaderType_Pixel:	Index = CB_Slot_Count + pMeta->SlotIndex; break;
+		case ShaderType_Vertex:	Index = SlotIndex; break;
+		case ShaderType_Pixel:	Index = CB_Slot_Count + SlotIndex; break;
 		default:				FAIL;
 	};
 
@@ -1722,8 +1718,8 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer 
 	{
 		// We have only two slots where the buffer may be bound (one in VS and one in PS)
 		const UPTR SecondIndex = (ShaderType == ShaderType_Vertex) ?
-			(CB_Slot_Count + pMeta->SlotIndex) :
-			pMeta->SlotIndex;
+			(CB_Slot_Count + SlotIndex) :
+			SlotIndex;
 
 		// Is this buffer bound to the other shader stage
 		const bool IsBound = (CurrCB[SecondIndex].CB.Get() == pCurrBuffer);
@@ -1761,19 +1757,14 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer 
 	CurrCBRec.CB = (CD3D9ConstantBuffer*)pCBuffer;
 	if (pCBuffer) CurrCBRec.ApplyFlags.Set(CB_ApplyAll);
 	else CurrCBRec.ApplyFlags.ClearAll();
-	CurrCBRec.pMeta = nullptr;
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
+bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource)
 {
-	if (!Handle) FAIL;
-	CSM30ResourceMeta* pMeta = (CSM30ResourceMeta*)IShaderMetadata::GetHandleData(Handle);
-	if (!pMeta) FAIL;
-
-	UPTR Index = pMeta->Register;
+	UPTR Index = Register;
 	DWORD D3DSamplerIndex;
 	if (ShaderType == ShaderType_Vertex)
 	{
@@ -1804,16 +1795,12 @@ bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTex
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
+bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CSampler* pSampler)
 {
 	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.Get();
 	n_assert_dbg(pD3DSampler);
 
-	if (!Handle) FAIL;
-	CSM30SamplerMeta* pMeta = (CSM30SamplerMeta*)IShaderMetadata::GetHandleData(Handle);
-	if (!pMeta) FAIL;
-
-	UPTR Index = pMeta->RegisterStart;
+	UPTR Index = RegisterStart;
 	DWORD D3DSamplerIndex;
 	if (ShaderType == ShaderType_Vertex)
 	{
@@ -1834,7 +1821,7 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampl
 	}
 	else FAIL;
 
-	U32 LastIndex = Index + pMeta->RegisterCount;
+	U32 LastIndex = Index + RegisterCount;
 	for (; Index < LastIndex; ++Index, ++D3DSamplerIndex)
 	{
 		CD3D9Sampler* pCurrSampler = CurrSS[Index].Get();
