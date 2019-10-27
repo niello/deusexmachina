@@ -55,6 +55,15 @@ public:
 			}
 		}
 
+		// read effect
+
+		// read params
+
+		//!!!try to pack params once to use in all shader formats!
+		//!!!move param value writing from cf-effect to common code!
+		//params must be converted to type and shrinked/extended
+		//!!!NB that short default for long param may lead to storing many zeroes in a value buffer! can expand in load time!
+
 		return true;
 	}
 };
