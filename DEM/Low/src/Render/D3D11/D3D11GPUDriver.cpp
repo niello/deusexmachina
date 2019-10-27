@@ -12,6 +12,7 @@
 #include <Render/D3D11/D3D11ConstantBuffer.h>
 #include <Render/D3D11/D3D11Sampler.h>
 #include <Render/D3D11/D3D11Shader.h>
+#include <Render/D3D11/USMShaderMetadata.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
 #include <Render/ShaderLibrary.h>
@@ -2800,6 +2801,89 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
+
+	IO::CBinaryReader R(Stream);
+
+	U32 Count;
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CUSMBufferMeta> Buffers(Count);
+	for (auto& Buffer : Buffers)
+	{
+		if (!R.Read(Buffer.Name)) return nullptr;
+		if (!R.Read(Buffer.Register)) return nullptr;
+		if (!R.Read(Buffer.Size)) return nullptr;
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CUSMStructMeta> Structs(Count);
+	for (auto& Struct : Structs)
+	{
+		Struct.Members.resize(R.Read<U32>());
+		for (auto& Member : Struct.Members)
+		{
+			if (!R.Read(Member.Name)) return nullptr;
+
+			//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
+			if (!R.Read(Member.StructIndex)) return nullptr;
+
+			Member.Type = static_cast<EUSMConstType>(R.Read<U8>());
+			if (!R.Read(Member.Offset)) return nullptr;
+			if (!R.Read(Member.ElementSize)) return nullptr;
+			if (!R.Read(Member.ElementCount)) return nullptr;
+			if (!R.Read(Member.Columns)) return nullptr;
+			if (!R.Read(Member.Rows)) return nullptr;
+			if (!R.Read(Member.Flags)) return nullptr;
+		}
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CUSMConstMeta> Consts(Count);
+	for (auto& Const : Consts)
+	{
+		U8 ShaderTypeMask;
+		if (!R.Read(ShaderTypeMask)) return nullptr;
+
+		if (!R.Read(Const.Name)) return nullptr;
+
+		//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
+		//!!!extend buffer's shader mask by the mask of this constant!
+		if (!R.Read(Const.BufferIndex)) return nullptr;
+		if (!R.Read(Const.StructIndex)) return nullptr;
+
+		Const.Type = static_cast<EUSMConstType>(R.Read<U8>());
+		if (!R.Read(Const.Offset)) return nullptr;
+		if (!R.Read(Const.ElementSize)) return nullptr;
+		if (!R.Read(Const.ElementCount)) return nullptr;
+		if (!R.Read(Const.Columns)) return nullptr;
+		if (!R.Read(Const.Rows)) return nullptr;
+		if (!R.Read(Const.Flags)) return nullptr;
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CUSMRsrcMeta> Resources(Count);
+	for (auto& Resource : Resources)
+	{
+		U8 ShaderTypeMask;
+		if (!R.Read(ShaderTypeMask)) return nullptr;
+
+		if (!R.Read(Resource.Name)) return nullptr;
+		Resource.Type = static_cast<EUSMResourceType>(R.Read<U8>());
+		if (!R.Read(Resource.RegisterStart)) return nullptr;
+		if (!R.Read(Resource.RegisterCount)) return nullptr;
+	}
+
+	if (!R.Read(Count)) return nullptr;
+	std::vector<CUSMSamplerMeta> Samplers(Count);
+	for (auto& Sampler : Samplers)
+	{
+		U8 ShaderTypeMask;
+		if (!R.Read(ShaderTypeMask)) return nullptr;
+
+		if (!R.Read(Sampler.Name)) return nullptr;
+		if (!R.Read(Sampler.RegisterStart)) return nullptr;
+		if (!R.Read(Sampler.RegisterCount)) return nullptr;
+	}
 
 	return nullptr;
 }
