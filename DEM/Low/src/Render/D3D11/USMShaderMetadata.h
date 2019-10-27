@@ -56,8 +56,10 @@ typedef Ptr<class CUSMSamplerParam> PUSMSamplerParam;
 typedef Ptr<class CUSMStructMeta> PUSMStructMeta;
 typedef Ptr<class CUSMConstantMeta> PUSMConstantMeta;
 
-struct CUSMConstantMeta
+class CUSMConstantMeta : public Data::CRefCounted
 {
+public:
+
 	CStrID         Name;
 
 	PUSMStructMeta Struct;
@@ -100,6 +102,8 @@ public:
 
 class CUSMConstantBufferParam : public IConstantBufferParam
 {
+	__DeclareClassNoFactory;
+
 public:
 
 	CStrID         Name;

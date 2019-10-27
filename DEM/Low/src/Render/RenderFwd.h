@@ -35,8 +35,11 @@ typedef Ptr<class CRenderTarget> PRenderTarget;
 typedef Ptr<class CDepthStencilBuffer> PDepthStencilBuffer;
 typedef Ptr<class CRenderState> PRenderState;
 typedef Ptr<class CShader> PShader;
+typedef Ptr<class IShaderConstantParam> PShaderConstantParam;
+typedef Ptr<class IConstantBufferParam> PConstantBufferParam;
+typedef Ptr<class IResourceParam> PResourceParam;
+typedef Ptr<class ISamplerParam> PSamplerParam;
 typedef Ptr<class CShaderParamTable> PShaderParamTable;
-typedef Ptr<class CShaderConstant> PShaderConstant;
 typedef Ptr<class CShaderLibrary> PShaderLibrary;
 typedef Ptr<class CEffect> PEffect;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
@@ -377,40 +380,6 @@ enum EEffectType
 
 	EffectType_Count,
 	EffectType_Invalid
-};
-
-/*
-enum EShaderConstType
-{
-	ConstType_Float	= 0,
-	ConstType_Int,
-	ConstType_Bool,
-
-	ConstType_Other,
-
-	ConstType_Invalid
-};
-*/
-
-struct CEffectConstant
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	PShaderConstant	Const;		//!!!may store array of const objects, indexed by shader type! multi-stage support!
-};
-
-struct CEffectResource
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HResource		Handle;
-};
-
-struct CEffectSampler
-{
-	CStrID			ID;
-	EShaderType		ShaderType;
-	HSampler		Handle;
 };
 
 inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)

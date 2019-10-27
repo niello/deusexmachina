@@ -102,7 +102,7 @@ protected:
 	};
 
 	CPoolAllocator<CTmpCB>				TmpCBPool;
-	CHashTable<HConstantBuffer, CTmpCB*>	TmpConstantBuffers;
+	CHashTable<const IConstantBufferParam*, CTmpCB*>	TmpConstantBuffers;
 	CTmpCB*								pPendingCBHead = nullptr;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
@@ -170,8 +170,8 @@ public:
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) override;
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream) override;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = nullptr);
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer);
+	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr);
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param);
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
@@ -215,7 +215,6 @@ public:
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) { FAIL; }
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer);
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size);
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer);
 
 	//void						SetWireframe(bool Wire);

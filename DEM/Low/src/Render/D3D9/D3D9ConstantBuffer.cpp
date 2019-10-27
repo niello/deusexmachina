@@ -16,23 +16,26 @@ CD3D9ConstantBuffer::~CD3D9ConstantBuffer()
 }
 //---------------------------------------------------------------------
 
+// D3D9 pseudo-buffers are too tightly coupled with shader metadata to be reused with another metadata
 //!!!???assert destroyed?!
-bool CD3D9ConstantBuffer::Create(const CSM30BufferMeta& Meta, const CD3D9ConstantBuffer* pInitData)
+bool CD3D9ConstantBuffer::Create(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData)
 {
+	if (!Meta) FAIL;
+
+	_Meta = Meta;
+
 	Float4Count = 0;
-	const CFixedArray<CRange>& Float4 = Meta.Float4;
-	for (UPTR i = 0; i < Float4.GetCount(); ++i)
-		Float4Count += Float4[i].Count;
+	const auto& Float4 = Meta->Float4;
+	for (const auto& Range : Meta->Float4)
+		Float4Count += Range.second;
 
 	Int4Count = 0;
-	const CFixedArray<CRange>& Int4 = Meta.Int4;
-	for (UPTR i = 0; i < Int4.GetCount(); ++i)
-		Int4Count += Int4[i].Count;
+	for (const auto& Range : Meta->Int4)
+		Int4Count += Range.second;
 
 	BoolCount = 0;
-	const CFixedArray<CRange>& Bool = Meta.Bool;
-	for (UPTR i = 0; i < Bool.GetCount(); ++i)
-		BoolCount += Bool[i].Count;
+	for (const auto& Range : Meta->Bool)
+		BoolCount += Range.second;
 
 	UPTR Float4Size = Float4Count * sizeof(float) * 4;
 	UPTR Int4Size = Int4Count * sizeof(int) * 4;
@@ -53,9 +56,9 @@ bool CD3D9ConstantBuffer::Create(const CSM30BufferMeta& Meta, const CD3D9Constan
 
 	if (pInitData)
 	{
-		const void* pInitDataPtr = pInitData->pFloat4Data ?
-			(const void*)pInitData->pFloat4Data :
-			(pInitData->pInt4Data ? (const void*)pInitData->pInt4Data : (const void*)pInitData->pBoolData);
+		const void* pInitDataPtr = pInitData->pFloat4Data ? (const void*)pInitData->pFloat4Data :
+			(pInitData->pInt4Data ? (const void*)pInitData->pInt4Data :
+			(const void*)pInitData->pBoolData);
 		memcpy(pData, pInitDataPtr, TotalSize);
 	}
 	else
@@ -82,8 +85,6 @@ bool CD3D9ConstantBuffer::Create(const CSM30BufferMeta& Meta, const CD3D9Constan
 		pData += BoolSize;
 	}
 
-	Handle = Meta.Handle;
-
 	OK;
 }
 //---------------------------------------------------------------------
@@ -99,7 +100,38 @@ void CD3D9ConstantBuffer::InternalDestroy()
 	Float4Count = 0;
 	Int4Count = 0;
 	BoolCount = 0;
-	Handle = INVALID_HANDLE;
+	_Meta = nullptr;
+}
+//---------------------------------------------------------------------
+
+void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size)
+{
+	n_assert_dbg(pData && Size);
+
+	char* pDest;
+	switch (RegSet)
+	{
+		case Reg_Float4:
+			pDest = (char*)pFloat4Data + Offset * sizeof(float) * 4;
+			Flags.Set(CB9_DirtyFloat4);
+			break;
+		case Reg_Int4:
+			pDest = (char*)pInt4Data + Offset * sizeof(int) * 4;
+			Flags.Set(CB9_DirtyInt4);
+			break;
+		case Reg_Bool:
+			pDest = (char*)pBoolData + Offset * sizeof(BOOL);
+			Flags.Set(CB9_DirtyBool);
+			break;
+		default:
+			pDest = nullptr;
+			break;
+	};
+
+	n_assert_dbg(pDest);
+	n_assert_dbg(pDest + Size <= (char*)pFloat4Data + Float4Count * sizeof(float) * 4 + Int4Count * sizeof(int) * 4 + BoolCount * sizeof(BOOL));
+
+	memcpy(pDest, pData, Size);
 }
 //---------------------------------------------------------------------
 

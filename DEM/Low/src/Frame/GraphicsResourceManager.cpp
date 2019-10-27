@@ -270,7 +270,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 }
 //---------------------------------------------------------------------
 
-bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out)
+bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out, bool LoadParamTables)
 {
 	Out.SetDefaults();
 
@@ -355,11 +355,22 @@ bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Re
 	if (!Reader.Read<U8>(U8Value)) FAIL;
 	Out.AlphaTestFunc = (Render::ECmpFunc)U8Value;
 
-	if (!Reader.Read(Out.VertexShader)) FAIL;
-	if (!Reader.Read(Out.PixelShader)) FAIL;
-	if (!Reader.Read(Out.GeometryShader)) FAIL;
-	if (!Reader.Read(Out.HullShader)) FAIL;
-	if (!Reader.Read(Out.DomainShader)) FAIL;
+	CStrID VertexShaderID;
+	CStrID PixelShaderID;
+	CStrID GeometryShaderID;
+	CStrID HullShaderID;
+	CStrID DomainShaderID;
+	if (!Reader.Read(VertexShaderID)) FAIL;
+	if (!Reader.Read(PixelShaderID)) FAIL;
+	if (!Reader.Read(GeometryShaderID)) FAIL;
+	if (!Reader.Read(HullShaderID)) FAIL;
+	if (!Reader.Read(DomainShaderID)) FAIL;
+
+	Out.VertexShader = GetShader(VertexShaderID, LoadParamTables);
+	Out.PixelShader = GetShader(PixelShaderID, LoadParamTables);
+	Out.GeometryShader = GetShader(GeometryShaderID, LoadParamTables);
+	Out.HullShader = GetShader(HullShaderID, LoadParamTables);
+	Out.DomainShader = GetShader(DomainShaderID, LoadParamTables);
 
 	OK;
 }
@@ -496,9 +507,10 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		std::vector<Render::PRenderState> RenderStates(RenderStateCount);
 		for (U32 RSIndex = 0; RSIndex < RenderStateCount; ++RSIndex)
 		{
-			// TODO: can add skipping unused RS desc (even with precomputed offset) if optimization required
+			// Load render state from file, skip shader param tables because effect already has them
+			// TODO: can seek to the end of unused RS desc (with precomputed offset?) if optimization required
 			Render::CRenderStateDesc Desc;
-			if (!LoadRenderStateDesc(Reader, Desc)) return nullptr;
+			if (!LoadRenderStateDesc(Reader, Desc, false)) return nullptr;
 
 			// Load only used render states
 			if (UsedRenderStateIndices.find(RSIndex) != UsedRenderStateIndices.cend())

@@ -3,6 +3,7 @@
 
 namespace Render
 {
+__ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
 CShaderParamTable::CShaderParamTable(std::vector<PShaderConstantParam>&& Constants,
 	std::vector<PConstantBufferParam>&& ConstantBuffers,

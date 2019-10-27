@@ -86,8 +86,8 @@ public:
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) = 0;
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream) = 0;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) = 0;
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) = 0;
+	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) = 0;
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param) = 0;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) = 0;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) = 0;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
@@ -142,7 +142,6 @@ public:
 
 	//???or auto-begin if not?!
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) = 0;
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size) = 0;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) = 0;
 
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const = 0;

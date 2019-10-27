@@ -87,6 +87,8 @@ public:
 
 class CSM30ConstantBufferParam : public IConstantBufferParam
 {
+	__DeclareClassNoFactory;
+
 public:
 
 	// NB: range is a (start, count) pair

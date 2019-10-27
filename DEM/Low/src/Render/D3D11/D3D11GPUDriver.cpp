@@ -1025,16 +1025,12 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer)
+bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CConstantBuffer* pCBuffer)
 {
-	if (!Handle) FAIL;
-	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(Handle);
-	if (!pMeta) FAIL;
-
-	UPTR Index = pMeta->Register;
+	UPTR Index = Register;
 
 	const CD3D11ConstantBuffer* pCurrBuffer;	
-	if (pMeta->Type == USMBuffer_Constant)
+	if (Type == USMBuffer_Constant)
 		pCurrBuffer = CurrCB[Index + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT].Get();
 	else
 	{
@@ -1045,7 +1041,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer
 	// Free temporary buffer previously bound to this slot
 	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, Index);
 
-	if (pMeta->Type == USMBuffer_Constant)
+	if (Type == USMBuffer_Constant)
 	{
 		if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
@@ -1062,19 +1058,14 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer
 	else
 	{
 		ID3D11ShaderResourceView* pSRV = pCBuffer ? ((CD3D11ConstantBuffer*)pCBuffer)->GetD3DSRView() : nullptr;
-		return BindSRV(ShaderType, pMeta->Register, pSRV, (CD3D11ConstantBuffer*)pCBuffer);
+		return BindSRV(ShaderType, Register, pSRV, (CD3D11ConstantBuffer*)pCBuffer);
 	}
 }
 //---------------------------------------------------------------------
 
-//!!!???allow arrays, just add count param?! or add index with defailt 0?
-bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
+bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource)
 {
-	if (!Handle) FAIL;
-	CUSMResourceMeta* pMeta = (CUSMResourceMeta*)IShaderMetadata::GetHandleData(Handle);
-	if (!pMeta) FAIL;
-
-	UPTR Index = pMeta->RegisterStart;
+	UPTR Index = Register;
 
 	// Free temporary buffer previously bound to this slot
 	IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
@@ -1086,14 +1077,9 @@ bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTe
 }
 //---------------------------------------------------------------------
 
-//!!!???allow arrays, just add count param?! or add index with defailt 0?
-bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler)
+bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, U32 Register, CSampler* pSampler)
 {
-	if (!Handle) FAIL;
-	CUSMSamplerMeta* pMeta = (CUSMSamplerMeta*)IShaderMetadata::GetHandleData(Handle);
-	if (!pMeta) FAIL;
-
-	UPTR Index = pMeta->RegisterStart;
+	UPTR Index = Register;
 	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
 
 	Index += ((UPTR)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
@@ -1808,7 +1794,7 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 
 //!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
-PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData)
+PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1818,8 +1804,8 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 	Desc.Usage = Usage;
 	Desc.CPUAccessFlags = CPUAccess;
 
-	UPTR TotalSize = pMeta->Size; // * ElementCount; //!!!for StructuredBuffer!
-	if (pMeta->Type == USMBuffer_Constant)
+	UPTR TotalSize = Size; // * ElementCount; //!!!for StructuredBuffer! or precompute in metadata?
+	if (Type == USMBuffer_Constant)
 	{
 		UPTR ElementCount = (TotalSize + 15) >> 4;
 		if (ElementCount > D3D11_REQ_CONSTANT_BUFFER_ELEMENT_COUNT) return nullptr;
@@ -1832,10 +1818,10 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 		Desc.BindFlags = (Usage == D3D11_USAGE_STAGING) ? 0 : D3D11_BIND_SHADER_RESOURCE;
 	}
 
-	if (pMeta->Type == USMBuffer_Structured)
+	if (Type == USMBuffer_Structured)
 	{
 		Desc.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-		Desc.StructureByteStride = pMeta->Size;
+		Desc.StructureByteStride = Size;
 	}
 	else
 	{
@@ -1891,27 +1877,26 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(CUSMBufferMet
 
 //!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
-PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
+PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData)
 {
-	if (!pD3DDevice || !hBuffer) return nullptr;
-	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta) return nullptr;
-	return InternalCreateConstantBuffer(pMeta, AccessFlags, pData).Get();
+	auto pUSMParam = Param.As<CUSMConstantBufferParam>();
+	if (!pD3DDevice || !pUSMParam || !pUSMParam->Size) return nullptr;
+
+	return InternalCreateConstantBuffer(pUSMParam->Type, pUSMParam->Size, AccessFlags, pData).Get();
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer hBuffer)
+PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferParam& Param)
 {
-	if (!pD3DDevice || !hBuffer) return nullptr;
-	CUSMBufferMeta* pMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta || !pMeta->Size) return nullptr;
+	auto pUSMParam = Param.As<CUSMConstantBufferParam>();
+	if (!pD3DDevice || !pUSMParam || !pUSMParam->Size) return nullptr;
 
 	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
 	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
-	UPTR NextPow2Size = n_max(16, NextPow2(pMeta->Size)/* * ElementCount; //!!!for StructuredBuffer!*/); 
+	UPTR NextPow2Size = n_max(16, NextPow2(pUSMParam->Size)/* * ElementCount; //!!!for StructuredBuffer!*/); 
 	CDict<UPTR, CTmpCB*>& BufferPool = 
-		pMeta->Type == USMBuffer_Structured ? TmpStructuredBuffers :
-		(pMeta->Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+		pUSMParam->Type == USMBuffer_Structured ? TmpStructuredBuffers :
+		(pUSMParam->Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
 
 	IPTR Idx = BufferPool.FindIndex(NextPow2Size);
 	if (Idx != INVALID_INDEX)
@@ -1926,9 +1911,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer h
 		}
 	}
 
-	CUSMBufferMeta Meta = *pMeta;
-	Meta.Size = NextPow2Size;
-	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(&Meta, Access_CPU_Write | Access_GPU_Read, nullptr);
+	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(pUSMParam->Type, NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr);
 	CB->SetTemporary(true);
 	return CB.Get();
 }
@@ -3475,38 +3458,6 @@ bool CD3D11GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 		if (FAILED(pD3DImmContext->Map(pBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &MappedSubRsrc))) FAIL;
 		CB11.OnBegin(MappedSubRsrc.pData);
 	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-//!!!may use abstract CShaderConst, CShaderConstFloatArray, CD3D11ShaderConstFloatArray: public CD3D11ShaderArrayConst<float> etc and cache offset or any
-//other precomputed location there for fast setting!
-bool CD3D11GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size)
-{
-	if (!hConst || !pData || !Size) FAIL;
-
-	n_assert_dbg(Buffer.IsA<CD3D11ConstantBuffer>());
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
-
-	CUSMConstantMeta* pMeta = (CUSMConstantMeta*)IShaderMetadata::GetHandleData(hConst);
-	if (!pMeta) FAIL;
-
-	UPTR Offset = pMeta->Offset; 
-
-	if (ElementIndex)
-	{
-		CUSMBufferMeta* pBufMeta = (CUSMBufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
-		n_assert_dbg(pBufMeta);
-		switch (pBufMeta->Type)
-		{
-			case USMBuffer_Constant:	//Offset += pMeta->ElementSize * ElementIndex; break;
-			case USMBuffer_Texture:		Offset += pMeta->ElementSize * ElementIndex; break;
-			case USMBuffer_Structured:	Offset += pBufMeta->Size * ElementIndex; break;
-		}
-	}
-
-	CB11.WriteData(Offset, pData, Size);
 
 	OK;
 }

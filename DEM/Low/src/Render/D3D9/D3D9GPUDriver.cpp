@@ -286,13 +286,15 @@ bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR 
 		if (Rec.ApplyFlags.IsNot(ApplyFlag)) continue;
 		n_assert_dbg(Rec.CB.IsValidPtr());
 
+		auto pMeta = Rec.CB->GetMeta();
+
 		UPTR j;
-		const CSM30BufferMeta::CRanges* pRanges;
+		const CSM30ConstantBufferParam::CRanges* pRanges;
 		switch (ApplyFlag)
 		{
-			case CB_ApplyFloat4:	pRanges = &Rec.pMeta->Float4; break;
-			case CB_ApplyInt4:		pRanges = &Rec.pMeta->Int4; break;
-			case CB_ApplyBool:		pRanges = &Rec.pMeta->Bool; break;
+			case CB_ApplyFloat4:	pRanges = &pMeta->Float4; break;
+			case CB_ApplyInt4:		pRanges = &pMeta->Int4; break;
+			case CB_ApplyBool:		pRanges = &pMeta->Bool; break;
 			default:				FAIL;
 		};
 
@@ -335,22 +337,6 @@ bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR 
 
 void CD3D9GPUDriver::ApplyShaderConstChanges()
 {
-	// We must refresh cached metadata pointer before use, no persistence guaranteed
-	for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
-	{
-		CCBRec& Rec = CurrCB[i];
-		if (Rec.ApplyFlags.IsAny())
-		{
-			Rec.pMeta = (const CSM30BufferMeta*)IShaderMetadata::GetHandleData(Rec.CB->GetHandle());
-			if (!Rec.pMeta)
-			{
-				// Unbind this buffer immediately if metadata is inaccessible (host shader is destroyed)
-				Rec.CB = nullptr;
-				Rec.ApplyFlags.ClearAll();
-			}
-		}
-	}
-
 	///////////////////////////////////////////////////////////////////
 	// VS Float4
 
@@ -1722,7 +1708,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 			SlotIndex;
 
 		// Is this buffer bound to the other shader stage
-		const bool IsBound = (CurrCB[SecondIndex].CB.Get() == pCurrBuffer);
+		const bool IsBound = (CurrCB[SecondIndex].CB == pCurrBuffer);
 		if (!IsBound)
 		{
 			CTmpCB* pPrevNode = nullptr;
@@ -1734,8 +1720,8 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 					if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 					else pPendingCBHead = pCurrNode->pNext;
 
-					HConstantBuffer hCurrCB = pCurrNode->CB->GetHandle();
-					CTmpCB** ppHead = TmpConstantBuffers.Get(hCurrCB);
+					const IConstantBufferParam* pParam = pCurrNode->CB->GetMeta();
+					CTmpCB** ppHead = TmpConstantBuffers.Get(pParam);
 					if (ppHead)
 					{
 						pCurrNode->pNext = *ppHead;
@@ -1744,7 +1730,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 					else
 					{
 						pCurrNode->pNext = nullptr;
-						TmpConstantBuffers.Add(hCurrCB, pCurrNode);
+						TmpConstantBuffers.Add(pParam, pCurrNode);
 					}
 					break;
 				}
@@ -2259,25 +2245,24 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData)
+PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	n_assert_dbg(!pData || pData->IsA<CD3D9ConstantBuffer>());
 
-	if (!pD3DDevice || !hBuffer) return nullptr;
-	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(hBuffer);
-	if (!pMeta) return nullptr;
+	auto pSM30Param = Param.As<CSM30ConstantBufferParam>();
+	if (!pSM30Param) return nullptr;
 
 	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
-	if (!CB->Create(*pMeta, (const CD3D9ConstantBuffer*)pData)) return nullptr;
+	if (!CB->Create(pSM30Param, (const CD3D9ConstantBuffer*)pData)) return nullptr;
 	return CB.Get();
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer hBuffer)
+PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferParam& Param)
 {
-	if (!pD3DDevice || !hBuffer) return nullptr;
+	if (!pD3DDevice) return nullptr;
 
-	CTmpCB** ppHead = TmpConstantBuffers.Get(hBuffer);
+	CTmpCB** ppHead = TmpConstantBuffers.Get(&Param);
 	if (ppHead)
 	{
 		CTmpCB* pHead = *ppHead;
@@ -2290,7 +2275,7 @@ PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(HConstantBuffer hB
 		}
 	}
 
-	PConstantBuffer CB = CreateConstantBuffer(hBuffer, Access_CPU_Write | Access_GPU_Read);
+	PConstantBuffer CB = CreateConstantBuffer(Param, Access_CPU_Write | Access_GPU_Read);
 	((CD3D9ConstantBuffer*)CB.Get())->SetTemporary(true);
 
 	return CB;
@@ -2302,14 +2287,11 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CBuffer;
 	n_assert_dbg(CB9.IsTemporary());
 
-	HConstantBuffer Handle = CB9.GetHandle();
-	CSM30BufferMeta* pMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(Handle);
-	n_assert_dbg(pMeta);
-
 	CTmpCB* pNewNode = TmpCBPool.Construct();
 	pNewNode->CB = &CB9;
 
-	const bool IsBound = (CurrCB[pMeta->SlotIndex].CB.Get() == &CB9 || CurrCB[CB_Slot_Count + pMeta->SlotIndex].CB.Get() == &CB9);
+	const auto SlotIdx = CB9.GetMeta()->SlotIndex;
+	const bool IsBound = (CurrCB[SlotIdx].CB.Get() == &CB9 || CurrCB[CB_Slot_Count + SlotIdx].CB.Get() == &CB9);
 	if (IsBound)
 	{
 		pNewNode->pNext = pPendingCBHead;
@@ -2317,7 +2299,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	}
 	else
 	{
-		CTmpCB** ppHead = TmpConstantBuffers.Get(Handle);
+		CTmpCB** ppHead = TmpConstantBuffers.Get(CB9.GetMeta());
 		if (ppHead)
 		{
 			pNewNode->pNext = *ppHead;
@@ -2326,7 +2308,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 		else
 		{
 			pNewNode->pNext = nullptr;
-			TmpConstantBuffers.Add(Handle, pNewNode);
+			TmpConstantBuffers.Add(CB9.GetMeta(), pNewNode);
 		}
 	}
 }
@@ -3425,49 +3407,6 @@ bool CD3D9GPUDriver::BeginShaderConstants(CConstantBuffer& Buffer)
 	CD3D9ConstantBuffer& CB9 = static_cast<CD3D9ConstantBuffer&>(Buffer);
 	CB9.OnBegin();
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D9GPUDriver::SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size)
-{
-	n_assert_dbg(Buffer.IsA<CD3D9ConstantBuffer>());
-
-	if (!hConst) FAIL;
-	CSM30ConstantMeta* pMeta = (CSM30ConstantMeta*)IShaderMetadata::GetHandleData(hConst);
-	if (!pMeta) FAIL;
-
-	CSM30BufferMeta* pBufferMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
-	if (!pBufferMeta) FAIL;
-
-	CSM30BufferMeta::CRanges* pRanges = nullptr;
-	switch (pMeta->RegisterSet)
-	{
-		case Reg_Float4:	pRanges = &pBufferMeta->Float4; break;
-		case Reg_Int4:		pRanges = &pBufferMeta->Int4; break;
-		case Reg_Bool:		pRanges = &pBufferMeta->Bool; break;
-		default:			FAIL;
-	};
-
-	UPTR Offset = 0;
-	for (UPTR i = 0; i < pRanges->size(); ++i)
-	{
-		auto& Range = pRanges->operator[](i);
-		if (Range.first > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
-		if (Range.first + Range.second <= pMeta->RegisterStart)
-		{
-			Offset += Range.second;
-			continue;
-		}
-		n_assert(Range.first + Range.second >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
-
-		Offset += pMeta->RegisterStart - Range.first + ElementIndex * pMeta->ElementRegisterCount;
-
-		CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
-		CB9.WriteData(pMeta->RegisterSet, Offset, pData, Size);
-		OK;
-	}
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 

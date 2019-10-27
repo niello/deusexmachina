@@ -41,7 +41,7 @@ private:
 	std::unordered_map<CStrID, PRenderPath>       RenderPaths;
 
 	bool LoadShaderParamValues(IO::CBinaryReader& Reader, Render::CShaderParamValues& Out);
-	bool LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out);
+	bool LoadRenderStateDesc(IO::CBinaryReader& Reader, Render::CRenderStateDesc& Out, bool LoadParamTables);
 
 	Render::PEffect           LoadEffect(CStrID UID);
 	Render::PMaterial         LoadMaterial(CStrID UID);

@@ -37,6 +37,7 @@ typedef Ptr<class CD3D11RenderState> PD3D11RenderState;
 typedef Ptr<class CD3D11ConstantBuffer> PD3D11ConstantBuffer;
 typedef Ptr<class CD3D11Sampler> PD3D11Sampler;
 typedef Ptr<class CD3D11Texture> PD3D11Texture;
+enum EUSMBufferType;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
@@ -147,7 +148,7 @@ protected:
 
 	bool								InitSwapChainRenderTarget(CD3D11SwapChain& SC);
 	void								Release();
-	PD3D11ConstantBuffer				InternalCreateConstantBuffer(CUSMBufferMeta* pMeta, UPTR AccessFlags, const CConstantBuffer* pData);
+	PD3D11ConstantBuffer				InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData);
 	bool								InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instanced, UPTR InstanceCount);
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
@@ -200,8 +201,8 @@ public:
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) override;
 	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) override;
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream) override;
-	virtual PConstantBuffer		CreateConstantBuffer(HConstantBuffer hBuffer, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) override;
-	virtual PConstantBuffer		CreateTemporaryConstantBuffer(HConstantBuffer hBuffer) override;
+	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) override;
+	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param) override;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) override;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) override;
@@ -222,10 +223,6 @@ public:
 	virtual bool				SetDepthStencilBuffer(CDepthStencilBuffer* pDS) override;
 	virtual CRenderTarget*		GetRenderTarget(UPTR Index) const override;
 	virtual CDepthStencilBuffer* GetDepthStencilBuffer() const override;
-
-	virtual bool				BindConstantBuffer(EShaderType ShaderType, HConstantBuffer Handle, CConstantBuffer* pCBuffer) override;
-	virtual bool				BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource) override;
-	virtual bool				BindSampler(EShaderType ShaderType, HSampler Handle, CSampler* pSampler) override;
 
 	virtual bool				BeginFrame() override;
 	virtual void				EndFrame() override;
@@ -254,8 +251,11 @@ public:
 	virtual bool				WriteToResource(CConstantBuffer& Resource, const void* pData, UPTR Size = 0, UPTR Offset = 0) override;
 
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
-	virtual bool				SetShaderConstant(CConstantBuffer& Buffer, HConstant hConst, UPTR ElementIndex, const void* pData, UPTR Size) override;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
+
+	bool                        BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CConstantBuffer* pCBuffer);
+	bool                        BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource);
+	bool                        BindSampler(EShaderType ShaderType, U32 Register, CSampler* pSampler);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }

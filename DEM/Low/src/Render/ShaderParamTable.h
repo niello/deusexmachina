@@ -1,16 +1,11 @@
 #pragma once
 #include <Render/RenderFwd.h>
-#include <Data/RefCounted.h>
+#include <Core/Object.h>
 
 // Shader parameter table stores metadata necessary to set shader parameter values
 
 namespace Render
 {
-typedef Ptr<class IShaderConstantParam> PShaderConstantParam;
-typedef Ptr<class IConstantBufferParam> PConstantBufferParam;
-typedef Ptr<class IResourceParam> PResourceParam;
-typedef Ptr<class ISamplerParam> PSamplerParam;
-typedef Ptr<class CShaderParamTable> PShaderParamTable;
 
 class IShaderConstantParam : public Data::CRefCounted
 {
@@ -23,8 +18,10 @@ public:
 	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
-class IConstantBufferParam : public Data::CRefCounted
+class IConstantBufferParam : public Core::CObject
 {
+	__DeclareClassNoFactory;
+
 public:
 
 	virtual CStrID GetID() const = 0;

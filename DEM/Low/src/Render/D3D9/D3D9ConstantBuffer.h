@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_CONSTANT_BUFFER_H__
-#define __DEM_L1_RENDER_D3D9_CONSTANT_BUFFER_H__
-
 #include <Render/ConstantBuffer.h>
 #include <Render/RenderFwd.h>
 #include <Render/D3D9/SM30ShaderMetadata.h>
@@ -40,7 +37,7 @@ protected:
 	BOOL*			pBoolData = nullptr;
 	UPTR			BoolCount = 0;
 
-	HConstantBuffer	Handle = INVALID_HANDLE; //!!!strictly bounds D3D9 CB to the host Shader! may copy relevant metadata instead, if inacceptable
+	PSM30ConstantBufferParam _Meta;
 	Data::CFlags	Flags;
 
 	void InternalDestroy();
@@ -49,7 +46,7 @@ public:
 
 	virtual ~CD3D9ConstantBuffer();
 
-	bool			Create(const CSM30BufferMeta& Meta, const CD3D9ConstantBuffer* pInitData);
+	bool			Create(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData);
 	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
 	virtual bool	IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
 	virtual bool	IsInWriteMode() const { return Flags.Is(CB9_InWriteMode); }
@@ -61,7 +58,7 @@ public:
 	bool			IsDirtyInt4() const { return Flags.Is(CB9_DirtyInt4); }
 	bool			IsDirtyBool() const { return Flags.Is(CB9_DirtyBool); }
 	bool			IsTemporary() const { return Flags.Is(CB9_Temporary); }
-	HConstantBuffer	GetHandle() const { return Handle; }
+	const auto*     GetMeta() const { return _Meta.Get(); }
 	const float*	GetFloat4Data() const { return pFloat4Data; }
 	const int*		GetInt4Data() const { return pInt4Data; }
 	const BOOL*		GetBoolData() const { return pBoolData; }
@@ -73,37 +70,4 @@ public:
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;
 
-inline void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size)
-{
-	n_assert_dbg(pData && Size);
-
-	char* pDest;
-	switch (RegSet)
-	{
-		case Reg_Float4:
-			pDest = (char*)pFloat4Data + Offset * sizeof(float) * 4;
-			Flags.Set(CB9_DirtyFloat4);
-			break;
-		case Reg_Int4:
-			pDest = (char*)pInt4Data + Offset * sizeof(int) * 4;
-			Flags.Set(CB9_DirtyInt4);
-			break;
-		case Reg_Bool:
-			pDest = (char*)pBoolData + Offset * sizeof(BOOL);
-			Flags.Set(CB9_DirtyBool);
-			break;
-		default:
-			pDest = nullptr;
-			break;
-	};
-
-	n_assert_dbg(pDest);
-	n_assert_dbg(pDest + Size <= (char*)pFloat4Data + Float4Count * sizeof(float) * 4 + Int4Count * sizeof(int) * 4 + BoolCount * sizeof(BOOL));
-
-	memcpy(pDest, pData, Size);
 }
-//---------------------------------------------------------------------
-
-}
-
-#endif
