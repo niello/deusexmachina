@@ -27,7 +27,6 @@ typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
 typedef Ptr<class CD3D9ConstantBuffer> PD3D9ConstantBuffer;
 typedef Ptr<class CD3D9Sampler> PD3D9Sampler;
 typedef Ptr<class CD3D9Texture> PD3D9Texture;
-struct CSM30BufferMeta;
 
 class CD3D9GPUDriver: public CGPUDriver
 {

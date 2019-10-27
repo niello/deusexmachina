@@ -13,7 +13,6 @@ typedef int BOOL;
 
 namespace Render
 {
-struct CSM30BufferMeta;
 
 class CD3D9ConstantBuffer: public CConstantBuffer
 {

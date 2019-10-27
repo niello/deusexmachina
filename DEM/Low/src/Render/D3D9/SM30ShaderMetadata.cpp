@@ -83,7 +83,7 @@ bool CSM30ShaderMetadata::Load(IO::CStream& Stream)
 	Resources.SetSize(R.Read<U32>());
 	for (UPTR i = 0; i < Resources.GetCount(); ++i)
 	{
-		CSM30RsrcMeta* pMeta = &Resources[i];
+		CSM30ResourceMeta* pMeta = &Resources[i];
 		if (!R.Read(pMeta->Name)) FAIL;
 		if (!R.Read<U32>(pMeta->Register)) FAIL;
 		
@@ -188,7 +188,7 @@ HResource CSM30ShaderMetadata::GetResourceHandle(CStrID ID) const
 	//???!!!implement binary search for fixed arrays?!
 	for (UPTR i = 0; i < Resources.GetCount(); ++i)
 	{
-		CSM30RsrcMeta* pMeta = &Resources[i];
+		CSM30ResourceMeta* pMeta = &Resources[i];
 		if (pMeta->Name == ID)
 		{
 			if (!pMeta->Handle) pMeta->Handle = HandleMgr.OpenHandle(pMeta);

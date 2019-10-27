@@ -2807,25 +2807,37 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CUSMBufferMeta> Buffers(Count);
-	for (auto& Buffer : Buffers)
+	std::vector<PUSMBufferMeta> Buffers(Count);
+	for (auto& BufferPtr : Buffers)
 	{
+		BufferPtr = n_new(CUSMBufferMeta);
+		auto& Buffer = *BufferPtr;
+
 		if (!R.Read(Buffer.Name)) return nullptr;
 		if (!R.Read(Buffer.Register)) return nullptr;
 		if (!R.Read(Buffer.Size)) return nullptr;
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CUSMStructMeta> Structs(Count);
-	for (auto& Struct : Structs)
+	std::vector<PUSMStructMeta> Structs(Count);
+
+	// Precreate for valid referencing (see StructIndex)
+	for (auto& StructPtr : Structs)
+		StructPtr = n_new(CUSMStructMeta);
+
+	for (auto& StructPtr : Structs)
 	{
+		auto& Struct = *StructPtr;
+
 		Struct.Members.resize(R.Read<U32>());
 		for (auto& Member : Struct.Members)
 		{
 			if (!R.Read(Member.Name)) return nullptr;
 
-			//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
-			if (!R.Read(Member.StructIndex)) return nullptr;
+			U32 StructIndex;
+			if (!R.Read(StructIndex)) return nullptr;
+			if (StructIndex != static_cast<U32>(-1))
+				Member.Struct = Structs[StructIndex];
 
 			Member.Type = static_cast<EUSMConstType>(R.Read<U8>());
 			if (!R.Read(Member.Offset)) return nullptr;
@@ -2846,10 +2858,15 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 
 		if (!R.Read(Const.Name)) return nullptr;
 
-		//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
-		//!!!extend buffer's shader mask by the mask of this constant!
-		if (!R.Read(Const.BufferIndex)) return nullptr;
-		if (!R.Read(Const.StructIndex)) return nullptr;
+		U32 BufferIndex;
+		if (!R.Read(BufferIndex)) return nullptr;
+		if (BufferIndex != static_cast<U32>(-1))
+			Const.Buffer = Buffers[BufferIndex];
+
+		U32 StructIndex;
+		if (!R.Read(StructIndex)) return nullptr;
+		if (StructIndex != static_cast<U32>(-1))
+			Const.Struct = Structs[StructIndex];
 
 		Const.Type = static_cast<EUSMConstType>(R.Read<U8>());
 		if (!R.Read(Const.Offset)) return nullptr;
@@ -2861,7 +2878,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CUSMRsrcMeta> Resources(Count);
+	std::vector<CUSMResourceMeta> Resources(Count);
 	for (auto& Resource : Resources)
 	{
 		U8 ShaderTypeMask;

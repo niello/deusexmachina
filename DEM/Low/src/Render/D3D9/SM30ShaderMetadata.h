@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/StringID.h>
+#include <Data/RefCounted.h>
 
 // Shader Model 3.0 (for Direct3D 9.0c) shader metadata
 
@@ -31,8 +32,13 @@ enum ESM30ShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-struct CSM30BufferMeta
+typedef Ptr<class CSM30BufferMeta> PSM30BufferMeta;
+typedef Ptr<class CSM30StructMeta> PSM30StructMeta;
+
+class CSM30BufferMeta : public Data::CRefCounted
 {
+public:
+
 	// NB: range is a (start, count) pair
 	typedef std::vector<std::pair<U32, U32>> CRanges;
 
@@ -46,34 +52,35 @@ struct CSM30BufferMeta
 
 struct CSM30ConstMetaBase
 {
-	CStrID   Name;
+	CStrID          Name;
 
-	//!!!
-	uint32_t StructIndex;
+	PSM30StructMeta Struct;
 
-	uint32_t RegisterStart; // For structs - offset from the start of the structure
-	uint32_t ElementRegisterCount;
-	uint32_t ElementCount;
-	uint8_t  Columns;
-	uint8_t  Rows;
-	uint8_t  Flags; // See ESM30ShaderConstFlags
+	uint32_t        RegisterStart; // For structs - offset from the start of the structure
+	uint32_t        ElementRegisterCount;
+	uint32_t        ElementCount;
+	uint8_t         Columns;
+	uint8_t         Rows;
+	uint8_t         Flags; // See ESM30ShaderConstFlags
 
 	//ESM30RegisterSet	RegisterSet; //???save for struct members and add mixed-type structure support?
 };
 
-struct CSM30StructMeta
+class CSM30StructMeta : public Data::CRefCounted
 {
+public:
+
 	//CStrID Name;
 	std::vector<CSM30ConstMetaBase> Members;
 };
 
 struct CSM30ConstMeta : public CSM30ConstMetaBase
 {
-	uint32_t         BufferIndex; //???ref?
+	PSM30BufferMeta  Buffer;
 	ESM30RegisterSet RegisterSet;
 };
 
-struct CSM30RsrcMeta
+struct CSM30ResourceMeta
 {
 	CStrID   Name;
 	uint32_t Register;

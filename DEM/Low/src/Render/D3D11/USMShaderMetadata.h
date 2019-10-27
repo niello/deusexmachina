@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/StringID.h>
+#include <Data/RefCounted.h>
 
 // Universal Shader Model (4.0 and higher, for Direct3D 10 and higher) shader metadata
 
@@ -48,42 +49,48 @@ enum EUSMShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-struct CUSMBufferMeta
+typedef Ptr<class CUSMBufferMeta> PUSMBufferMeta;
+typedef Ptr<class CUSMStructMeta> PUSMStructMeta;
+
+class CUSMBufferMeta : public Data::CRefCounted
 {
+public:
+
 	CStrID         Name;
 	EUSMBufferType Type;
 	uint32_t       Register;
-	uint32_t       Size;		// For structured buffers - StructureByteStride
+	uint32_t       Size;     // For structured buffers - StructureByteStride
 };
 
 struct CUSMConstMetaBase
 {
-	CStrID        Name;
+	CStrID         Name;
 
-	//!!!
-	uint32_t      StructIndex;
+	PUSMStructMeta Struct;
 
-	EUSMConstType Type;
-	uint32_t      Offset; // From the start of CB, for struct members - from the start of the structure
-	uint32_t      ElementSize;
-	uint32_t      ElementCount;
-	uint8_t       Columns;
-	uint8_t       Rows;
-	uint8_t       Flags; // See EUSMShaderConstFlags
+	EUSMConstType  Type;
+	uint32_t       Offset; // From the start of CB, for struct members - from the start of the structure
+	uint32_t       ElementSize;
+	uint32_t       ElementCount;
+	uint8_t        Columns;
+	uint8_t        Rows;
+	uint8_t        Flags; // See EUSMShaderConstFlags
 };
 
-struct CUSMStructMeta
+class CUSMStructMeta : public Data::CRefCounted
 {
-	CStrID Name;
+public:
+
+	//CStrID Name;
 	std::vector<CUSMConstMetaBase> Members;
 };
 
 struct CUSMConstMeta : public CUSMConstMetaBase
 {
-	uint32_t BufferIndex; //???ref?
+	PUSMBufferMeta Buffer;
 };
 
-struct CUSMRsrcMeta
+struct CUSMResourceMeta
 {
 	CStrID           Name;
 	EUSMResourceType Type;

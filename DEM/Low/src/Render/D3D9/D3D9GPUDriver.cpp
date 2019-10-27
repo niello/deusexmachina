@@ -1770,7 +1770,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, HConstantBuffer 
 bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, HResource Handle, CTexture* pResource)
 {
 	if (!Handle) FAIL;
-	CSM30RsrcMeta* pMeta = (CSM30RsrcMeta*)IShaderMetadata::GetHandleData(Handle);
+	CSM30ResourceMeta* pMeta = (CSM30ResourceMeta*)IShaderMetadata::GetHandleData(Handle);
 	if (!pMeta) FAIL;
 
 	UPTR Index = pMeta->Register;
@@ -2840,9 +2840,12 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	U32 Count;
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CSM30BufferMeta> Buffers(Count);
-	for (auto& Buffer : Buffers)
+	std::vector<PSM30BufferMeta> Buffers(Count);
+	for (auto& BufferPtr : Buffers)
 	{
+		BufferPtr = n_new(CSM30BufferMeta);
+		auto& Buffer = *BufferPtr;
+
 		if (!R.Read(Buffer.Name)) return nullptr;
 		if (!R.Read(Buffer.SlotIndex)) return nullptr;
 
@@ -2869,16 +2872,25 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CSM30StructMeta> Structs(Count);
-	for (auto& Struct : Structs)
+	std::vector<PSM30StructMeta> Structs(Count);
+
+	// Precreate for valid referencing (see StructIndex)
+	for (auto& StructPtr : Structs)
+		StructPtr = n_new(CSM30StructMeta);
+
+	for (auto& StructPtr : Structs)
 	{
+		auto& Struct = *StructPtr;
+
 		Struct.Members.resize(R.Read<U32>());
 		for (auto& Member : Struct.Members)
 		{
 			if (!R.Read(Member.Name)) return nullptr;
 
-			//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
-			if (!R.Read(Member.StructIndex)) return nullptr;
+			U32 StructIndex;
+			if (!R.Read(StructIndex)) return nullptr;
+			if (StructIndex != static_cast<U32>(-1))
+				Member.Struct = Structs[StructIndex];
 
 			if (!R.Read(Member.RegisterStart)) return nullptr;
 			if (!R.Read(Member.ElementRegisterCount)) return nullptr;
@@ -2898,10 +2910,15 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 
 		if (!R.Read(Const.Name)) return nullptr;
 
-		//!!!convert to ref! structs can be not stored separately but strong-referenced from constants!
-		//!!!extend buffer's shader mask by the mask of this constant!
-		if (!R.Read(Const.BufferIndex)) return nullptr;
-		if (!R.Read(Const.StructIndex)) return nullptr;
+		U32 BufferIndex;
+		if (!R.Read(BufferIndex)) return nullptr;
+		if (BufferIndex != static_cast<U32>(-1))
+			Const.Buffer = Buffers[BufferIndex];
+
+		U32 StructIndex;
+		if (!R.Read(StructIndex)) return nullptr;
+		if (StructIndex != static_cast<U32>(-1))
+			Const.Struct = Structs[StructIndex];
 
 		Const.RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
 		if (!R.Read(Const.RegisterStart)) return nullptr;
@@ -2913,7 +2930,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<CSM30RsrcMeta> Resources(Count);
+	std::vector<CSM30ResourceMeta> Resources(Count);
 	for (auto& Resource : Resources)
 	{
 		U8 ShaderTypeMask;
