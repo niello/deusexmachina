@@ -2,6 +2,7 @@
 #include <CFEffectFwd.h>
 #include <Utils.h>
 #include <HRDParser.h>
+#include <Render/ShaderMetaCommon.h>
 #include <thread>
 #include <iostream>
 #include <sstream>
@@ -12,8 +13,8 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/effects --path Data ../../../content
 
-bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx);
-bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx);
+bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, CMaterialParams& MaterialParams, const CContext& Ctx);
+bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& Techs, CMaterialParams& MaterialParams, const CContext& Ctx);
 
 class CEffectTool : public CContentForgeTool
 {
@@ -215,6 +216,7 @@ public:
 
 		// Build resulting effect for each shader format separately
 
+		CMaterialParams MaterialParams;
 		std::map<uint32_t, std::string> SerializedEffect;
 		for (auto& FormatTechs : Ctx.TechsByFormat)
 		{
@@ -232,12 +234,12 @@ public:
 			{
 				case 'DX9C':
 				{
-					if (!WriteParameterTablesForDX9C(Stream, Techs, Ctx)) return false;
+					if (!WriteParameterTablesForDX9C(Stream, Techs, MaterialParams, Ctx)) return false;
 					break;
 				}
 				case 'DXBC':
 				{
-					if (!WriteParameterTablesForDXBC(Stream, Techs, Ctx)) return false;
+					if (!WriteParameterTablesForDXBC(Stream, Techs, MaterialParams, Ctx)) return false;
 					break;
 				}
 				default:
@@ -348,9 +350,19 @@ public:
 			TotalOffset += static_cast<uint32_t>(Pair.second.size()); // Overflow already checked
 		}
 
+		// Write material defaults offset
+		WriteStream<uint32_t>(File, TotalOffset);
+
 		// Write serialized effect blocks
 		for (const auto& Pair : SerializedEffect)
 			File.write(Pair.second.c_str(), Pair.second.size());
+
+		// Serialize material defaults
+		if (!WriteMaterialParams(File, MaterialParams, Ctx.MaterialParams))
+		{
+			Task.Log.LogError("Error serializing material defaults");
+			return false;
+		}
 
 		return true;
 	}

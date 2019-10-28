@@ -7,9 +7,6 @@
 #include <iostream>
 #include <sstream>
 
-//???!!!TODO:
-//???skip loading shader metadata when creating effect in DEM? all relevant metadata is already copied to the effect.
-
 static bool ProcessConstant(uint8_t ShaderTypeMask, CSM30ConstMeta& Param, const CSM30ShaderMeta& SrcMeta, CSM30EffectMeta& TargetMeta, const CSM30EffectMeta& OtherMeta1, const CSM30EffectMeta& OtherMeta2, const CContext& Ctx)
 {
 	// Check if this param was already added from another shader
@@ -155,69 +152,7 @@ static bool ProcessSampler(uint8_t ShaderTypeMask, CSM30SamplerMeta& Param, CSM3
 }
 //---------------------------------------------------------------------
 
-static bool SerializeConstantDefault(std::ostream& Stream, const CSM30ConstMetaBase& Meta, const Data::CData& DefaultValue, const CContext& Ctx)
-{
-	if (DefaultValue.IsVoid()) return false;
-
-	const uint32_t RegisterCount = Meta.ElementRegisterCount * Meta.ElementCount;
-	if (!RegisterCount) return false;
-
-	// TODO: support arrays and structures
-	assert(Meta.ElementCount == 1 && Meta.StructIndex == static_cast<uint32_t>(-1));
-
-	uint32_t ConstSizeInBytes = 0;
-	uint32_t ValueSizeInBytes = 0;
-
-	switch (Meta.RegisterSet)
-	{
-		case RS_Float4:
-		{
-			if (ValueSizeInBytes = WriteFloatDefault(Stream, DefaultValue))
-			{
-				Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is a float, default value must be null, float, int or vector");
-				return false;
-			}
-
-			ConstSizeInBytes = 4 * sizeof(float) * RegisterCount;
-			break;
-		}
-		case RS_Int4:
-		{
-			if (ValueSizeInBytes = WriteIntDefault(Stream, DefaultValue))
-			{
-				Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is an integer, default value must be null, float, int or vector");
-				return false;
-			}
-
-			ConstSizeInBytes = 4 * sizeof(int) * RegisterCount;
-			break;
-		}
-		case RS_Bool:
-		{
-			if (ValueSizeInBytes = WriteBoolDefault(Stream, DefaultValue))
-			{
-				Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is a bool, default value must be null, bool or int");
-				return false;
-			}
-
-			ConstSizeInBytes = sizeof(bool) * RegisterCount;
-			break;
-		}
-		default:
-		{
-			Ctx.Log->LogWarning("Material param '" + Meta.Name + "' is a constant of unsupported type or register set, default value is skipped");
-			return false;
-		}
-	}
-
-	for (uint32_t i = ValueSizeInBytes; i < ConstSizeInBytes; ++i)
-		WriteStream<uint8_t>(Stream, 0);
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, const CContext& Ctx)
+bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& Techs, CMaterialParams& MaterialParams, const CContext& Ctx)
 {
 	CSM30EffectMeta GlobalMeta, MaterialMeta;
 	GlobalMeta.PrintableName = "Global";
@@ -345,79 +280,13 @@ bool WriteParameterTablesForDX9C(std::ostream& Stream, std::vector<CTechnique>& 
 		assert(Stream.tellp() == MetaStart + std::streampos(MetaSize + sizeof(uint32_t)));
 	}
 
-	// Serialize material defaults
+	// Build table for material defaults
 
-	const auto DefaultCountOffset = Stream.tellp();
-	WriteStream<uint32_t>(Stream, 0);
-
-	uint32_t DefaultCount = 0;
-	std::ostringstream DefaultConstsStream(std::ios_base::binary);
-
-	for (const auto& MaterialParam : Ctx.MaterialParams)
+	if (!CollectMaterialParams(MaterialParams, MaterialMeta))
 	{
-		const std::string ID = MaterialParam.first.CStr();
-		auto ItConst = MaterialMeta.Consts.find(ID);
-		if (ItConst != MaterialMeta.Consts.cend())
-		{
-			const uint32_t CurrDefaultOffset = static_cast<uint32_t>(DefaultConstsStream.tellp());
-
-			if (!SerializeConstantDefault(DefaultConstsStream, ItConst->second.second, MaterialParam.second, Ctx)) continue;
-
-			WriteStream(Stream, ID);
-			WriteStream(Stream, CurrDefaultOffset);
-			++DefaultCount;
-		}
-		else if (MaterialMeta.Resources.find(ID) != MaterialMeta.Resources.cend())
-		{
-			if (MaterialParam.second.IsA<CStrID>())
-			{
-				WriteStream(Stream, ID);
-				WriteStream(Stream, MaterialParam.second.GetValue<CStrID>().ToString());
-				++DefaultCount;
-			}
-			else if (MaterialParam.second.IsA<std::string>())
-			{
-				WriteStream(Stream, ID);
-				WriteStream(Stream, MaterialParam.second.GetValue<std::string>());
-				++DefaultCount;
-			}
-			else if (!MaterialParam.second.IsVoid())
-			{
-				Ctx.Log->LogWarning("Unsupported default type for resource '" + ID + "', must be string or string ID");
-			}
-		}
-		else if (MaterialMeta.Samplers.find(ID) != MaterialMeta.Samplers.cend())
-		{
-			if (MaterialParam.second.IsA<Data::CParams>())
-			{
-				WriteStream(Stream, ID);
-				SerializeSamplerState(Stream, MaterialParam.second.GetValue<Data::CParams>());
-				++DefaultCount;
-			}
-			else if (!MaterialParam.second.IsVoid())
-			{
-				Ctx.Log->LogWarning("Unsupported default type for sampler '" + ID + "', must be section with sampler settings");
-			}
-		}
-		else
-		{
-			Ctx.Log->LogWarning("Default for unknown material parameter '" + ID + "' is skipped");
-		}
+		Ctx.Log->LogError("Material metadata is incompatible across different shader formats");
+		return false;
 	}
-
-	// Write actual default value count
-
-	const auto EndOffset = Stream.tellp();
-	Stream.seekp(DefaultCountOffset, std::ios_base::beg);
-	WriteStream<uint32_t>(Stream, DefaultCount);
-	Stream.seekp(EndOffset, std::ios_base::beg);
-
-	// Write the buffer with constant defaults
-
-	const std::string DefaultConstsBuffer = DefaultConstsStream.str();
-	WriteStream(Stream, static_cast<uint32_t>(DefaultConstsBuffer.size()));
-	if (!DefaultConstsBuffer.empty())
-		Stream.write(DefaultConstsBuffer.c_str(), DefaultConstsBuffer.size());
 
 	return true;
 }

@@ -1,7 +1,37 @@
 #pragma once
+#include <Data.h>
 #include <vector>
 #include <set>
 #include <map>
+
+class CThreadSafeLog;
+
+enum class EShaderConstType
+{
+	Float,
+	Int,
+	Bool,
+	Struct
+};
+
+struct CMaterialConst
+{
+	EShaderConstType Type;
+	uint32_t SizeInBytes;
+};
+
+struct CMaterialParams
+{
+	std::map<std::string, CMaterialConst> Consts;
+	std::set<std::string> Resources;
+	std::set<std::string> Samplers;
+};
+
+//uint32_t WriteFloatDefault(std::ostream& Stream, const Data::CData& DefaultValue);
+//uint32_t WriteIntDefault(std::ostream& Stream, const Data::CData& DefaultValue);
+//uint32_t WriteBoolDefault(std::ostream& Stream, const Data::CData& DefaultValue);
+//void SerializeSamplerState(std::ostream& Stream, const Data::CParams& SamplerDesc);
+bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, const Data::CParams& Values, CThreadSafeLog& Log);
 
 template<class TStructMeta>
 void CopyStructMetadata(uint32_t& StructIndex, const std::vector<TStructMeta>& SrcStructs, std::vector<TStructMeta>& TargetStructs)

@@ -1,7 +1,5 @@
 #pragma once
-#include <vector>
-#include <set>
-#include <map>
+#include "ShaderMetaCommon.h"
 
 // Legacy Shader Model 3.0 (SM3.0) metadata
 
@@ -168,3 +166,4 @@ uint32_t GetSerializedSize(const CSM30EffectMeta& Value);
 void MergeConstantBuffers(const CSM30BufferMeta& SrcBuffer, CSM30BufferMeta& TargetBuffer);
 void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CSM30BufferMeta>& SrcBuffers, std::vector<CSM30BufferMeta>& TargetBuffers);
 bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM30EffectMeta& Other);
+bool CollectMaterialParams(CMaterialParams& Out, const CSM30EffectMeta& Meta);

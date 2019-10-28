@@ -1,7 +1,5 @@
 #pragma once
-#include <vector>
-#include <set>
-#include <map>
+#include "ShaderMetaCommon.h"
 
 // Universal Shader Model (SM4.0 and higher) metadata
 
@@ -173,3 +171,4 @@ std::istream& operator >>(std::istream& Stream, CUSMEffectMeta& Value);
 uint32_t GetSerializedSize(const CUSMShaderMeta& Value);
 uint32_t GetSerializedSize(const CUSMEffectMeta& Value);
 void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>& SrcBuffers, std::vector<CUSMBufferMeta>& TargetBuffers);
+bool CollectMaterialParams(CMaterialParams& Out, const CUSMEffectMeta& Meta);

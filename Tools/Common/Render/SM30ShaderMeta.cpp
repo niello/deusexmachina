@@ -557,3 +557,77 @@ bool CheckConstRegisterOverlapping(const CSM30ConstMeta& Param, const CSM30Effec
 	return true;
 }
 //---------------------------------------------------------------------
+
+//???add logging?
+bool CollectMaterialParams(CMaterialParams& Out, const CSM30EffectMeta& Meta)
+{
+	for (const auto& Const : Meta.Consts)
+	{
+		// Check type consistency
+		if (Out.Samplers.find(Const.first) != Out.Samplers.cend()) return false;
+		if (Out.Resources.find(Const.first) != Out.Resources.cend()) return false;
+
+		const uint32_t RegisterCount = Const.second.second.ElementRegisterCount * Const.second.second.ElementCount;
+
+		// FIXME: support structures (fill members of CMaterialConst)
+
+		EShaderConstType Type;
+		uint32_t ConstSizeInBytes = 0;
+		switch (Const.second.second.RegisterSet)
+		{
+			case RS_Float4:
+			{
+				Type = EShaderConstType::Float;
+				ConstSizeInBytes = 4 * sizeof(float) * RegisterCount;
+				break;
+			}
+			case RS_Int4:
+			{
+				Type = EShaderConstType::Int;
+				ConstSizeInBytes = 4 * sizeof(int) * RegisterCount;
+				break;
+			}
+			case RS_Bool:
+			{
+				Type = EShaderConstType::Bool;
+				ConstSizeInBytes = sizeof(bool) * RegisterCount;
+				break;
+			}
+			default: return false;
+		}
+
+		auto It = Out.Consts.find(Const.first);
+		if (It == Out.Consts.cend())
+		{
+			Out.Consts.emplace(Const.first, CMaterialConst{ Type, ConstSizeInBytes });
+		}
+		else
+		{
+			if (It->second.Type != Type) return false;
+
+			if (It->second.SizeInBytes < ConstSizeInBytes)
+				It->second.SizeInBytes = ConstSizeInBytes;
+		}
+	}
+
+	for (const auto& Rsrc : Meta.Resources)
+	{
+		// Check type consistency
+		if (Out.Samplers.find(Rsrc.first) != Out.Samplers.cend()) return false;
+		if (Out.Consts.find(Rsrc.first) != Out.Consts.cend()) return false;
+
+		Out.Resources.insert(Rsrc.first);
+	}
+
+	for (const auto& Sampler : Meta.Samplers)
+	{
+		// Check type consistency
+		if (Out.Consts.find(Sampler.first) != Out.Consts.cend()) return false;
+		if (Out.Resources.find(Sampler.first) != Out.Resources.cend()) return false;
+
+		Out.Samplers.insert(Sampler.first);
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------

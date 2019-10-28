@@ -452,3 +452,62 @@ void CopyBufferMetadata(uint32_t& BufferIndex, const std::vector<CUSMBufferMeta>
 	}
 }
 //---------------------------------------------------------------------
+
+//???add logging?
+bool CollectMaterialParams(CMaterialParams& Out, const CUSMEffectMeta& Meta)
+{
+	for (const auto& Const : Meta.Consts)
+	{
+		// Check type consistency
+		if (Out.Samplers.find(Const.first) != Out.Samplers.cend()) return false;
+		if (Out.Resources.find(Const.first) != Out.Resources.cend()) return false;
+
+		// FIXME: support structures (fill members of CMaterialConst)
+
+		EShaderConstType Type;
+		switch (Const.second.second.Type)
+		{
+			case USMConst_Float: Type = EShaderConstType::Float; break;
+			case USMConst_Int: Type = EShaderConstType::Int; break;
+			case USMConst_Bool: Type = EShaderConstType::Bool; break;
+			case USMConst_Struct: Type = EShaderConstType::Struct; break;
+			default: return false;
+		}
+
+		const uint32_t ConstSizeInBytes = Const.second.second.ElementSize * Const.second.second.ElementCount;
+
+		auto It = Out.Consts.find(Const.first);
+		if (It == Out.Consts.cend())
+		{
+			Out.Consts.emplace(Const.first, CMaterialConst{ Type, ConstSizeInBytes });
+		}
+		else
+		{
+			if (It->second.Type != Type) return false;
+
+			if (It->second.SizeInBytes < ConstSizeInBytes)
+				It->second.SizeInBytes = ConstSizeInBytes;
+		}
+	}
+
+	for (const auto& Rsrc : Meta.Resources)
+	{
+		// Check type consistency
+		if (Out.Samplers.find(Rsrc.first) != Out.Samplers.cend()) return false;
+		if (Out.Consts.find(Rsrc.first) != Out.Consts.cend()) return false;
+
+		Out.Resources.insert(Rsrc.first);
+	}
+
+	for (const auto& Sampler : Meta.Samplers)
+	{
+		// Check type consistency
+		if (Out.Consts.find(Sampler.first) != Out.Consts.cend()) return false;
+		if (Out.Resources.find(Sampler.first) != Out.Resources.cend()) return false;
+
+		Out.Samplers.insert(Sampler.first);
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
