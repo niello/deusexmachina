@@ -13,9 +13,15 @@ namespace Render
 {
 typedef Ptr<class CEffect> PEffect;
 
+struct CShaderConstValue
+{
+	void* pData;
+	U32   Size;
+};
+
 struct CShaderParamValues
 {
-	std::map<CStrID, void*> ConstValues;
+	std::map<CStrID, CShaderConstValue> ConstValues;
 	std::map<CStrID, Render::PTexture> ResourceValues;
 	std::map<CStrID, Render::PSampler> SamplerValues;
 	std::unique_ptr<char[]> ConstValueBuffer;
@@ -47,8 +53,8 @@ public:
 	const CTechnique*        GetTechByInputSet(CStrID InputSet) const;
 
 	EEffectType              GetType() const { return _Type; }
-	const CShaderParamTable& GetMaterialParamTable() const { return *_MaterialParams; }
-	void*                    GetConstantDefaultValue(CStrID ID) const;
+	CShaderParamTable&       GetMaterialParamTable() const { return *_MaterialParams; }
+	const CShaderConstValue* GetConstantDefaultValue(CStrID ID) const;
 	PTexture                 GetResourceDefaultValue(CStrID ID) const;
 	PSampler                 GetSamplerDefaultValue(CStrID ID) const;
 };

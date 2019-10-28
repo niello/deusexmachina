@@ -190,8 +190,13 @@ PRenderPath CGraphicsResourceManager::GetRenderPath(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, Render::CShaderParamValues& Out)
+bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, const Render::CShaderParamTable& MaterialTable, Render::CShaderParamValues& Out)
 {
+	Out.ConstValueBuffer.reset();
+	Out.ConstValues.clear();
+	Out.ResourceValues.clear();
+	Out.SamplerValues.clear();
+
 	U32 ParamCount;
 	if (!Reader.Read<U32>(ParamCount)) FAIL;
 	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
@@ -199,58 +204,51 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 		CStrID ParamID;
 		if (!Reader.Read(ParamID)) FAIL;
 
-		U8 Type;
-		if (!Reader.Read(Type)) FAIL;
-
-		switch (Type)
+		if (MaterialTable.GetConstant(ParamID))
 		{
-			case Render::EPT_Const:
-			{
-				U32 Offset;
-				if (!Reader.Read(Offset)) FAIL;
-				Out.ConstValues.emplace(ParamID, (void*)Offset);
-				break;
-			}
-			case Render::EPT_Resource:
-			{
-				CStrID RUID;
-				if (!Reader.Read(RUID)) FAIL;
-				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
-				if (Texture.IsNullPtr()) FAIL;
-				Out.ResourceValues.emplace(ParamID, Texture);
-				break;
-			}
-			case Render::EPT_Sampler:
-			{
-				Render::CSamplerDesc SamplerDesc;
+			U32 Offset;
+			if (!Reader.Read(Offset)) FAIL;
+			U32 Size;
+			if (!Reader.Read(Size)) FAIL;
+			Out.ConstValues.emplace(ParamID, Render::CShaderConstValue{ (void*)Offset, Size });
+		}
+		else if (MaterialTable.GetResource(ParamID))
+		{
+			CStrID RUID;
+			if (!Reader.Read(RUID)) FAIL;
+			Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
+			if (Texture.IsNullPtr()) FAIL;
+			Out.ResourceValues.emplace(ParamID, Texture);
+		}
+		else if (MaterialTable.GetSampler(ParamID))
+		{
+			Render::CSamplerDesc SamplerDesc;
 
-				U8 U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.Filter = (Render::ETexFilter)U8Value;
+			U8 U8Value;
+			Reader.Read<U8>(U8Value);
+			SamplerDesc.AddressU = (Render::ETexAddressMode)U8Value;
+			Reader.Read<U8>(U8Value);
+			SamplerDesc.AddressV = (Render::ETexAddressMode)U8Value;
+			Reader.Read<U8>(U8Value);
+			SamplerDesc.AddressW = (Render::ETexAddressMode)U8Value;
+			Reader.Read<U8>(U8Value);
+			SamplerDesc.Filter = (Render::ETexFilter)U8Value;
 
-				Reader.Read(SamplerDesc.BorderColorRGBA[0]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[1]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[2]);
-				Reader.Read(SamplerDesc.BorderColorRGBA[3]);
-				Reader.Read(SamplerDesc.MipMapLODBias);
-				Reader.Read(SamplerDesc.FinestMipMapLOD);
-				Reader.Read(SamplerDesc.CoarsestMipMapLOD);
-				Reader.Read(SamplerDesc.MaxAnisotropy);
+			Reader.Read(SamplerDesc.BorderColorRGBA[0]);
+			Reader.Read(SamplerDesc.BorderColorRGBA[1]);
+			Reader.Read(SamplerDesc.BorderColorRGBA[2]);
+			Reader.Read(SamplerDesc.BorderColorRGBA[3]);
+			Reader.Read(SamplerDesc.MipMapLODBias);
+			Reader.Read(SamplerDesc.FinestMipMapLOD);
+			Reader.Read(SamplerDesc.CoarsestMipMapLOD);
+			Reader.Read(SamplerDesc.MaxAnisotropy);
 
-				Reader.Read<U8>(U8Value);
-				SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
+			Reader.Read<U8>(U8Value);
+			SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
 
-				Render::PSampler Sampler = pGPU->CreateSampler(SamplerDesc);
-				if (Sampler.IsNullPtr()) FAIL;
-				Out.SamplerValues.emplace(ParamID, Sampler);
-				break;
-			}
+			Render::PSampler Sampler = pGPU->CreateSampler(SamplerDesc);
+			if (Sampler.IsNullPtr()) FAIL;
+			Out.SamplerValues.emplace(ParamID, Sampler);
 		}
 	}
 
@@ -263,7 +261,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 
 		// Covert offsets to direct pointers
 		for (auto& Pair : Out.ConstValues)
-			Pair.second = Out.ConstValueBuffer.get() + (U32)Pair.second;
+			Pair.second.pData = Out.ConstValueBuffer.get() + (U32)Pair.second.pData;
 	}
 
 	OK;
@@ -423,8 +421,16 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			Offsets.emplace(Format, Offset);
 	}
 
+	U32 MaterialDefaultsOffset;
+	if (!Reader.Read(MaterialDefaultsOffset)) return nullptr;
+
+	std::map<CStrID, Render::PTechnique> Techs;
+	Render::PShaderParamTable MaterialParams;
+
 	for (const auto& Pair : Offsets)
 	{
+		MaterialParams.Reset();
+
 		Reader.GetStream().Seek(Pair.second, IO::Seek_Begin);
 
 		// Load param tables
@@ -437,11 +443,6 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		Reader.Read<U32>();
 		Render::PShaderParamTable MaterialParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 		if (!MaterialParams) return nullptr;
-
-		// Load material default values
-
-		Render::CShaderParamValues MaterialDefaults;
-		if (!LoadShaderParamValues(Reader, MaterialDefaults)) FAIL;
 
 		// Load techniques and select the best one for each input set
 
@@ -522,9 +523,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			}
 		}
 
-		// Create an effect from the loaded data
-
-		Render::PEffect Effect = n_new(Render::CEffect(EffectType, MaterialParams, std::move(MaterialDefaults)));
+		// Create techs for the valid effect
 
 		for (const auto& Pair : TechPerInputSet)
 		{
@@ -532,15 +531,30 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			for (auto RSIndex : Pair.second.RSIndices)
 				Passes.push_back(RenderStates[RSIndex]);
 
-			Render::PTechnique Tech = n_new(Render::CTechnique(CStrID::Empty, std::move(Passes), -1, Pair.second.Params));
-			Effect->SetTechnique(Pair.first, Tech);
+			Techs.emplace(Pair.first, n_new(Render::CTechnique(CStrID::Empty, std::move(Passes), -1, Pair.second.Params)));
 		}
 
-		return Effect;
+		break;
 	}
 
 	// There is no effect variation for supported shader format
-	return nullptr;
+	if (Techs.empty()) return nullptr;
+
+	// Load material default values
+
+	Reader.GetStream().Seek(MaterialDefaultsOffset, IO::Seek_Begin);
+
+	Render::CShaderParamValues MaterialDefaults;
+	if (!LoadShaderParamValues(Reader, *MaterialParams, MaterialDefaults)) FAIL;
+
+	// Create an effect from the loaded data
+
+	Render::PEffect Effect = n_new(Render::CEffect(EffectType, MaterialParams, std::move(MaterialDefaults)));
+
+	for (const auto& Pair : Techs)
+		Effect->SetTechnique(Pair.first, Pair.second);
+
+	return Effect;
 }
 //---------------------------------------------------------------------
 
@@ -569,7 +583,13 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	// Build parameters
 
 	Render::CShaderParamValues Values;
-	if (!LoadShaderParamValues(Reader, Values)) return nullptr;
+	if (!LoadShaderParamValues(Reader, Effect->GetMaterialParamTable(), Values)) return nullptr;
+
+	Render::CShaderParamStorage Storage(Effect->GetMaterialParamTable(), *pGPU);
+
+	//!!!fill storage!
+
+	//return n_new(Render::CMaterial(Effect, std::move(Storage)));
 
 	return nullptr;
 

@@ -40,10 +40,10 @@ const CTechnique* CEffect::GetTechByInputSet(CStrID InputSet) const
 }
 //---------------------------------------------------------------------
 
-void* CEffect::GetConstantDefaultValue(CStrID ID) const
+const CShaderConstValue* CEffect::GetConstantDefaultValue(CStrID ID) const
 {
 	auto It = _MaterialDefaults.ConstValues.find(ID);
-	return (It == _MaterialDefaults.ConstValues.cend()) ? nullptr : It->second;
+	return (It == _MaterialDefaults.ConstValues.cend()) ? nullptr : &It->second;
 }
 //---------------------------------------------------------------------
 
