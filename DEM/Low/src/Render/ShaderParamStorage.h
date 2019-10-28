@@ -25,6 +25,7 @@ protected:
 public:
 
 	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU);
+	CShaderParamStorage(CShaderParamStorage&& Other);
 	~CShaderParamStorage();
 
 	bool SetResource(CStrID ID, CTexture* pTexture);
@@ -34,6 +35,8 @@ public:
 	bool SetSampler(size_t Index, CSampler* pSampler);
 
 	bool Apply() const;
+
+	const CShaderParamTable& GetParamTable() const { return *_Table; }
 };
 
 }

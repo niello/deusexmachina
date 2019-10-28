@@ -18,7 +18,10 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 }
 //---------------------------------------------------------------------
 
-CShaderParamStorage::~CShaderParamStorage() {}
+CShaderParamStorage::CShaderParamStorage(CShaderParamStorage&& Other) = default;
+//---------------------------------------------------------------------
+
+CShaderParamStorage::~CShaderParamStorage() = default;
 //---------------------------------------------------------------------
 
 bool CShaderParamStorage::SetResource(CStrID ID, CTexture* pTexture)

@@ -579,6 +579,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	if (!EffectID.IsValid()) return nullptr;
 
 	Render::PEffect Effect = GetEffect(EffectID);
+	if (!Effect) return nullptr;
 
 	// Build parameters
 
@@ -589,9 +590,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 
 	//!!!fill storage!
 
-	//return n_new(Render::CMaterial(Effect, std::move(Storage)));
-
-	return nullptr;
+	return n_new(Render::CMaterial(*Effect, std::move(Storage)));
 
 	/*
 	const auto& Params = Effect->GetMaterialParamTable();
@@ -674,8 +673,6 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 		Rec.ShaderType = Sampler.ShaderType;
 		Rec.Sampler = Value.IsValidPtr() ? Value : Effect->GetSamplerDefaultValue(Sampler.ID);
 	}
-
-	Render::PMaterial Material = n_new(Render::CMaterial);
 	*/
 }
 //---------------------------------------------------------------------
