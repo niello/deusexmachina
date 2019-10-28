@@ -113,7 +113,8 @@ public:
 	U8             ShaderTypeMask;
 
 	virtual CStrID GetID() const override { return Name; }
-	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual bool   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual bool   IsBufferCompatible(CConstantBuffer& Value) const override;
 };
 
 class CUSMResourceParam : public IResourceParam
@@ -131,7 +132,7 @@ public:
 	CUSMResourceParam(CStrID Name, U8 ShaderTypeMask, EUSMResourceType Type, U32 RegisterStart, U32 RegisterCount);
 
 	virtual CStrID GetID() const override { return _Name; }
-	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
+	virtual bool   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
 class CUSMSamplerParam : public ISamplerParam
@@ -148,7 +149,7 @@ public:
 	CUSMSamplerParam(CStrID Name, U8 ShaderTypeMask, U32 RegisterStart, U32 RegisterCount);
 
 	virtual CStrID GetID() const override { return _Name; }
-	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
+	virtual bool   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
 };
 
 }

@@ -102,7 +102,8 @@ public:
 	U8       ShaderTypeMask;
 
 	virtual CStrID GetID() const override { return Name; }
-	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual bool   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual bool   IsBufferCompatible(CConstantBuffer& Value) const override;
 };
 
 class CSM30ResourceParam : public IResourceParam
@@ -118,7 +119,7 @@ public:
 	CSM30ResourceParam(CStrID Name, U8 ShaderTypeMask, U32 Register);
 
 	virtual CStrID GetID() const override { return _Name; }
-	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
+	virtual bool   Apply(const CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
 class CSM30SamplerParam : public ISamplerParam
@@ -136,7 +137,7 @@ public:
 	CSM30SamplerParam(CStrID Name, U8 ShaderTypeMask, ESM30SamplerType Type, U32 RegisterStart, U32 RegisterCount);
 
 	virtual CStrID GetID() const override { return _Name; }
-	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
+	virtual bool   Apply(const CGPUDriver& GPU, CSampler* pValue) const override;
 };
 
 }

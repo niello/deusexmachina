@@ -25,7 +25,8 @@ class IConstantBufferParam : public Core::CObject
 public:
 
 	virtual CStrID GetID() const = 0;
-	virtual void   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
+	virtual bool   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
+	virtual bool   IsBufferCompatible(CConstantBuffer& Value) const = 0;
 };
 
 class IResourceParam : public Data::CRefCounted
@@ -33,7 +34,7 @@ class IResourceParam : public Data::CRefCounted
 public:
 
 	virtual CStrID GetID() const = 0;
-	virtual void   Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
+	virtual bool   Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
 };
 
 class ISamplerParam : public Data::CRefCounted
@@ -41,7 +42,7 @@ class ISamplerParam : public Data::CRefCounted
 public:
 
 	virtual CStrID GetID() const = 0;
-	virtual void   Apply(const CGPUDriver& GPU, CSampler* pValue) const = 0;
+	virtual bool   Apply(const CGPUDriver& GPU, CSampler* pValue) const = 0;
 };
 
 class CShaderParamTable : public Data::CRefCounted
@@ -49,7 +50,7 @@ class CShaderParamTable : public Data::CRefCounted
 protected:
 
 	// Vectors are sorted and never change in runtime
-	std::vector<PShaderConstantParam>       _Constants;
+	std::vector<PShaderConstantParam> _Constants;
 	std::vector<PConstantBufferParam> _ConstantBuffers;
 	std::vector<PResourceParam>       _Resources;
 	std::vector<PSamplerParam>        _Samplers;
@@ -75,6 +76,11 @@ public:
 	const IConstantBufferParam* GetConstantBuffer(CStrID ID) const { return GetConstantBuffer(GetConstantBufferIndex(ID)); }
 	const IResourceParam*       GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
 	const ISamplerParam*        GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }
+
+	const auto&                 GetConstants() const { return _Constants; }
+	const auto&                 GetConstantBuffers() const { return _ConstantBuffers; }
+	const auto&                 GetResources() const { return _Resources; }
+	const auto&                 GetSamplers() const { return _Samplers; }
 };
 
 }
