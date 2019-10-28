@@ -57,7 +57,7 @@ public:
 	bool			IsDirtyFloat4() const { return Flags.Is(CB9_DirtyFloat4); }
 	bool			IsDirtyInt4() const { return Flags.Is(CB9_DirtyInt4); }
 	bool			IsDirtyBool() const { return Flags.Is(CB9_DirtyBool); }
-	bool			IsTemporary() const { return Flags.Is(CB9_Temporary); }
+	virtual bool	IsTemporary() const { return Flags.Is(CB9_Temporary); }
 	const auto*     GetMetadata() const { return _Meta.Get(); }
 	const float*	GetFloat4Data() const { return pFloat4Data; }
 	const int*		GetInt4Data() const { return pInt4Data; }

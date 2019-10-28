@@ -28,6 +28,10 @@ public:
 	CShaderParamStorage(CShaderParamStorage&& Other);
 	~CShaderParamStorage();
 
+	// If required buffer is not set, temporary one will be allocated
+	bool SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer);
+	bool SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer);
+
 	bool SetResource(CStrID ID, CTexture* pTexture);
 	bool SetResource(size_t Index, CTexture* pTexture);
 

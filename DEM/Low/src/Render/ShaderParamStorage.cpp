@@ -24,6 +24,21 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamStorage&& Other) = default;
 CShaderParamStorage::~CShaderParamStorage() = default;
 //---------------------------------------------------------------------
 
+bool CShaderParamStorage::SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer)
+{
+	return SetConstantBuffer(_Table->GetConstantBufferIndex(ID), pBuffer);
+}
+//---------------------------------------------------------------------
+
+//???try to keep values from the previous buffer? or do externally if required?
+bool CShaderParamStorage::SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer)
+{
+	if (Index >= _ConstantBuffers.size()) FAIL;
+	_ConstantBuffers[Index] = pBuffer;
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CShaderParamStorage::SetResource(CStrID ID, CTexture* pTexture)
 {
 	return SetResource(_Table->GetResourceIndex(ID), pTexture);

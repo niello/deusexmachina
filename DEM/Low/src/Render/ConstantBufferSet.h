@@ -21,12 +21,6 @@ class CConstantBufferSet
 {
 protected:
 
-	enum
-	{
-		// First ShaderType_COUNT flags are (1 << EShaderType) for target shader stages
-		ECSV_TmpBuffer = (1 << ShaderType_COUNT)
-	};
-
 	struct CConstBufferRecord
 	{
 		PConstantBuffer	Buffer;

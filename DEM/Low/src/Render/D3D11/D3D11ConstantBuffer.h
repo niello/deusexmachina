@@ -74,7 +74,7 @@ public:
 	EUSMBufferType				GetType() const { return Type; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
-	bool						IsTemporary() const { return Flags.Is(CB11_Temporary); }
+	virtual bool				IsTemporary() const { return Flags.Is(CB11_Temporary); }
 
 	void						OnBegin(void* pMappedVRAM = nullptr);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver
