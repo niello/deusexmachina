@@ -25,7 +25,7 @@ class IConstantBufferParam : public Core::CObject
 public:
 
 	virtual CStrID GetID() const = 0;
-	virtual bool   Apply(const CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
+	virtual bool   Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const = 0;
 	virtual bool   IsBufferCompatible(CConstantBuffer& Value) const = 0;
 };
 
@@ -34,7 +34,7 @@ class IResourceParam : public Data::CRefCounted
 public:
 
 	virtual CStrID GetID() const = 0;
-	virtual bool   Apply(const CGPUDriver& GPU, CTexture* pValue) const = 0;
+	virtual bool   Apply(CGPUDriver& GPU, CTexture* pValue) const = 0;
 };
 
 class ISamplerParam : public Data::CRefCounted
@@ -42,7 +42,7 @@ class ISamplerParam : public Data::CRefCounted
 public:
 
 	virtual CStrID GetID() const = 0;
-	virtual bool   Apply(const CGPUDriver& GPU, CSampler* pValue) const = 0;
+	virtual bool   Apply(CGPUDriver& GPU, CSampler* pValue) const = 0;
 };
 
 class CShaderParamTable : public Data::CRefCounted

@@ -220,9 +220,9 @@ public:
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }
 
-	bool                        BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CConstantBuffer* pCBuffer);
-	bool                        BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource);
-	bool                        BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CSampler* pSampler);
+	bool                        BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pCBuffer);
+	bool                        BindResource(EShaderType ShaderType, U32 Register, CD3D9Texture* pResource);
+	bool                        BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler* pSampler);
 
 	bool						GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const;
 	IDirect3DDevice9*			GetD3DDevice() const { return pD3DDevice; }

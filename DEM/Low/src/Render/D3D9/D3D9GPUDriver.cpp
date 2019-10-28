@@ -1683,7 +1683,7 @@ CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CConstantBuffer* pCBuffer)
+bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pCBuffer)
 {
 	UPTR Index;
 	switch (ShaderType)
@@ -1740,7 +1740,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 		}
 	}
 
-	CurrCBRec.CB = (CD3D9ConstantBuffer*)pCBuffer;
+	CurrCBRec.CB = pCBuffer;
 	if (pCBuffer) CurrCBRec.ApplyFlags.Set(CB_ApplyAll);
 	else CurrCBRec.ApplyFlags.ClearAll();
 
@@ -1748,7 +1748,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource)
+bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CD3D9Texture* pResource)
 {
 	UPTR Index = Register;
 	DWORD D3DSamplerIndex;
@@ -1774,16 +1774,16 @@ bool CD3D9GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CTexture
 	CD3D9Texture* pCurrTex = CurrTex[Index].Get();
 	if (pCurrTex == pResource) OK;
 
-	if (FAILED(pD3DDevice->SetTexture(D3DSamplerIndex, pResource ? ((CD3D9Texture*)pResource)->GetD3DBaseTexture() : nullptr))) FAIL;
+	if (FAILED(pD3DDevice->SetTexture(D3DSamplerIndex, pResource ? pResource->GetD3DBaseTexture() : nullptr))) FAIL;
 
-	CurrTex[Index] = (CD3D9Texture*)pResource;
+	CurrTex[Index] = pResource;
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CSampler* pSampler)
+bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler* pSampler)
 {
-	CD3D9Sampler* pD3DSampler = pSampler ? (CD3D9Sampler*)pSampler : DefaultSampler.Get();
+	CD3D9Sampler* pD3DSampler = pSampler ? pSampler : DefaultSampler.Get();
 	n_assert_dbg(pD3DSampler);
 
 	UPTR Index = RegisterStart;
