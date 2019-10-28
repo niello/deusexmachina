@@ -1,4 +1,6 @@
 #include <ContentForgeTool.h>
+#include <Render/SM30ShaderMeta.h>
+#include <Render/USMShaderMeta.h>
 #include <Utils.h>
 #include <HRDParser.h>
 
@@ -62,6 +64,8 @@ public:
 			return false;
 		}
 
+		CMaterialParams MaterialParams;
+
 		auto ItParams = Desc.find(CStrID("Params"));
 		if (ItParams != Desc.cend())
 		{
@@ -99,31 +103,56 @@ public:
 			// Skip material type
 			ReadStream<std::string>(File);
 
-			// Offset is the start of the global table of corresponding metadata, because
-			// global table is always conveniently placed at the metadata start.
+			std::map<uint32_t, uint32_t> MaterialTableOffsets;
 			const uint32_t FormatCount = ReadStream<uint32_t>(File);
 			for (size_t i = 0; i < FormatCount; ++i)
 			{
 				const auto ShaderFormat = ReadStream<uint32_t>(File);
 				const auto Offset = ReadStream<uint32_t>(File);
-
-				//auto It = Globals.find(ShaderFormat);
-				//if (It == Globals.end())
-				//	It = Globals.emplace(ShaderFormat, CGlobalTable{}).first;
-
-				//It->second.Sources.emplace_back(CGlobalTable::CSource{ FilePtr, Offset });
+				MaterialTableOffsets.emplace(ShaderFormat, Offset);
 			}
 
-			// Process parameter values
+			// Process material tables for all formats, build cross-format table
 
-			auto& ParamDescs = ItParams->second.GetValue<Data::CParams>();
-			for (const auto& ParamDesc : ParamDescs)
+			for (auto& Pair : MaterialTableOffsets)
 			{
-				Task.Log.LogDebug("Material param: " + ParamDesc.first.ToString());
-			
-				// if ID found in constants
-				// else if in resources
-				// else if in samplers
+				File.seekg(Pair.second, std::ios_base::beg);
+
+				// Get offset to material param table (the end of the global table)
+				// Skip to the material table start (skip uint32_t table size too)
+				const auto Offset = ReadStream<uint32_t>(File);
+				File.seekg(Offset + sizeof(uint32_t), std::ios_base::cur);
+
+				switch (Pair.first)
+				{
+					case 'DX9C':
+					{
+						CSM30EffectMeta Meta;
+						File >> Meta;
+						if (!CollectMaterialParams(MaterialParams, Meta))
+						{
+							Task.Log.LogError("Material metadata is incompatible across different shader formats");
+							return false;
+						}
+						break;
+					}
+					case 'DXBC':
+					{
+						CUSMEffectMeta Meta;
+						File >> Meta;
+						if (!CollectMaterialParams(MaterialParams, Meta))
+						{
+							Task.Log.LogError("Material metadata is incompatible across different shader formats");
+							return false;
+						}
+						break;
+					}
+					default:
+					{
+						Task.Log.LogWarning("Skipping unsupported shader format: " + FourCC(Pair.first));
+						continue;
+					}
+				}
 			}
 		}
 
@@ -142,12 +171,24 @@ public:
 		WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
 		WriteStream(File, EffectID);
 
+		// Serialize values
+		if (ItParams != Desc.cend())
+		{
+			const auto& ParamDescs = ItParams->second.GetValue<Data::CParams>();
+			if (!WriteMaterialParams(File, MaterialParams, ParamDescs, Task.Log))
+			{
+				Task.Log.LogError("Error serializing values");
+				return false;
+			}
+		}
+		else WriteStream<uint32_t>(File, 0); // Value count
+
 		return true;
 	}
 };
 
 int main(int argc, const char** argv)
 {
-	CMaterialTool Tool("cf-material", "DeusExMachina material compiler", { 0, 1, 0 });
+	CMaterialTool Tool("cf-material", "DeusExMachina material compiler", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }

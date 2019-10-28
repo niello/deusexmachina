@@ -342,7 +342,7 @@ public:
 
 		// Write format map (FourCC to offset from the body start)
 		WriteStream(File, ShaderFormatCount);
-		uint32_t TotalOffset = static_cast<uint32_t>(File.tellp()) + ShaderFormatCount * 2 * sizeof(uint32_t);
+		uint32_t TotalOffset = static_cast<uint32_t>(File.tellp()) + ShaderFormatCount * 2 * sizeof(uint32_t) + sizeof(uint32_t);
 		for (const auto& Pair : SerializedEffect)
 		{
 			WriteStream<uint32_t>(File, Pair.first);
