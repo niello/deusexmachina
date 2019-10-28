@@ -358,7 +358,7 @@ public:
 			File.write(Pair.second.c_str(), Pair.second.size());
 
 		// Serialize material defaults
-		if (!WriteMaterialParams(File, MaterialParams, Ctx.MaterialParams))
+		if (!WriteMaterialParams(File, MaterialParams, Ctx.MaterialParams, Task.Log))
 		{
 			Task.Log.LogError("Error serializing material defaults");
 			return false;

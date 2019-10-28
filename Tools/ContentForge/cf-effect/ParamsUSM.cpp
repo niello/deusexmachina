@@ -1,7 +1,5 @@
 #include <CFEffectFwd.h>
-#include <Render/ShaderMetaCommon.h>
 #include <Render/USMShaderMeta.h>
-#include <ParamsCommon.h>
 #include <Utils.h>
 #include <Logging.h>
 #include <iostream>
