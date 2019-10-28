@@ -32,7 +32,7 @@ public:
 
 		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
-		auto DestPath = fs::path(Output) / (TaskID + ".eff");
+		auto DestPath = fs::path(Output) / (TaskID + ".mtl");
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
@@ -55,14 +55,92 @@ public:
 			}
 		}
 
-		// read effect
+		const std::string EffectID = GetParam<std::string>(Desc, "Effect", std::string{});
+		if (EffectID.empty())
+		{
+			Task.Log.LogError("Material must reference an effect");
+			return false;
+		}
 
-		// read params
+		auto ItParams = Desc.find(CStrID("Params"));
+		if (ItParams != Desc.cend())
+		{
+			if (!ItParams->second.IsA<Data::CParams>())
+			{
+				Task.Log.LogError("'RenderStates' must be a section");
+				return false;
+			}
 
-		//!!!try to pack params once to use in all shader formats!
-		//!!!move param value writing from cf-effect to common code!
-		//params must be converted to type and shrinked/extended
-		//!!!NB that short default for long param may lead to storing many zeroes in a value buffer! can expand in load time!
+			// Get material table from the effect file
+
+			auto Path = ResolvePathAliases(EffectID);
+			Task.Log.LogDebug("Opening effect " + Path.generic_string());
+
+			auto FilePtr = std::make_shared<std::ifstream>(Path, std::ios_base::binary);
+			auto& File = *FilePtr;
+			if (!File)
+			{
+				Task.Log.LogError("Can't open effect " + Path.generic_string());
+				return false;
+			}
+
+			if (ReadStream<uint32_t>(File) != 'SHFX')
+			{
+				Task.Log.LogError("Wrong effect file format in " + Path.generic_string());
+				return false;
+			}
+
+			if (ReadStream<uint32_t>(File) > 0x00010000)
+			{
+				Task.Log.LogError("Unsupported effect version in " + Path.generic_string());
+				return false;
+			}
+
+			// Skip material type
+			ReadStream<std::string>(File);
+
+			// Offset is the start of the global table of corresponding metadata, because
+			// global table is always conveniently placed at the metadata start.
+			const uint32_t FormatCount = ReadStream<uint32_t>(File);
+			for (size_t i = 0; i < FormatCount; ++i)
+			{
+				const auto ShaderFormat = ReadStream<uint32_t>(File);
+				const auto Offset = ReadStream<uint32_t>(File);
+
+				//auto It = Globals.find(ShaderFormat);
+				//if (It == Globals.end())
+				//	It = Globals.emplace(ShaderFormat, CGlobalTable{}).first;
+
+				//It->second.Sources.emplace_back(CGlobalTable::CSource{ FilePtr, Offset });
+			}
+
+			// Process parameter values
+
+			auto& ParamDescs = ItParams->second.GetValue<Data::CParams>();
+			for (const auto& ParamDesc : ParamDescs)
+			{
+				Task.Log.LogDebug("Material param: " + ParamDesc.first.ToString());
+			
+				// if ID found in constants
+				// else if in resources
+				// else if in samplers
+			}
+		}
+
+		// Write resulting file
+
+		fs::create_directories(DestPath.parent_path());
+
+		std::ofstream File(DestPath, std::ios_base::binary);
+		if (!File)
+		{
+			Task.Log.LogError("Error opening an output file");
+			return false;
+		}
+
+		WriteStream<uint32_t>(File, 'MTRL');     // Format magic value
+		WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
+		WriteStream(File, EffectID);
 
 		return true;
 	}
