@@ -72,6 +72,7 @@ protected:
 	PSM30ConstantBufferParam _Buffer;
 	PSM30ConstantMeta        _Meta;
 	U32                      _RegisterStart; // Real start
+	U32                      _SizeInBytes;
 	ESM30RegisterSet         _RegisterSet;
 
 public:

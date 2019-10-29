@@ -4,9 +4,67 @@
 #include <Render/D3D9/D3D9Texture.h>
 #include <Render/D3D9/D3D9Sampler.h>
 
+#undef min
+#undef max
+
 namespace Render
 {
 __ImplementClassNoFactory(CSM30ConstantBufferParam, IConstantBufferParam);
+
+template<typename TTo>
+static inline TTo* Cast(Core::CRTTIBaseClass& Value)
+{
+#if DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION
+	return Value.As<TTo>();
+#else
+	n_assert_dbg(Value.IsA<TTo>());
+	return static_cast<TTo*>(&Value);
+#endif
+}
+//---------------------------------------------------------------------
+
+CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset)
+	: _Buffer(Buffer)
+	, _Meta(Meta)
+	, _RegisterSet(RegisterSet)
+{
+	n_assert_dbg(_Buffer && _RegisterSet != Reg_Invalid);
+
+	CSM30ConstantBufferParam::CRanges* pRanges = nullptr;
+	switch (_RegisterSet)
+	{
+		case Reg_Float4:	pRanges = &_Buffer->Float4; break;
+		case Reg_Int4:		pRanges = &_Buffer->Int4; break;
+		case Reg_Bool:		pRanges = &_Buffer->Bool; break;
+	};
+
+	for (const auto& Range : *pRanges)
+	{
+		/*
+		CRange& Range = pRanges->operator[](i);
+		if (Range.Start > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
+		if (Range.Start + Range.Count <= pMeta->RegisterStart)
+		{
+			Offset += Range.Count;
+			continue;
+		}
+		n_assert_dbg(Range.Start + Range.Count >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
+
+		Offset += pMeta->RegisterStart - Range.Start;
+		*/
+	}
+
+	//!!!use internal Offset!
+
+	_SizeInBytes = _Meta->ElementCount * _Meta->ElementRegisterCount;
+	switch (_RegisterSet)
+	{
+		case Reg_Float4:	_SizeInBytes *= sizeof(float) * 4; break;
+		case Reg_Int4:		_SizeInBytes *= sizeof(int) * 4; break;
+		case Reg_Bool:		_SizeInBytes *= sizeof(BOOL); break;
+	}
+}
+//---------------------------------------------------------------------
 
 IConstantBufferParam& CSM30ConstantParam::GetConstantBuffer() const
 {
@@ -16,7 +74,10 @@ IConstantBufferParam& CSM30ConstantParam::GetConstantBuffer() const
 
 void CSM30ConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
 {
-	NOT_IMPLEMENTED;
+	n_assert_dbg(_RegisterSet != Reg_Invalid);
+
+	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
+		pCB->WriteData(_RegisterSet, _RegisterStart, pValue, std::min(Size, _SizeInBytes));
 }
 //---------------------------------------------------------------------
 
