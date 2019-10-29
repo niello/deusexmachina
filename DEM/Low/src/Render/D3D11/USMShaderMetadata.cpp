@@ -55,7 +55,7 @@ bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) co
 
 bool CUSMConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 {
-	auto pCB = Cast<CD3D11ConstantBuffer>(Value);
+	const auto* pCB = Cast<CD3D11ConstantBuffer>(Value);
 	return pCB && Type == pCB->GetType() && Size <= pCB->GetSizeInBytes();
 }
 //---------------------------------------------------------------------

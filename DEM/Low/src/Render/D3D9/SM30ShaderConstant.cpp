@@ -6,64 +6,6 @@
 namespace Render
 {
 
-bool CSM30Constant::Init(HConstant hConst)
-{
-	if (!hConst) FAIL;
-	CSM30ConstantMeta* pMeta = (CSM30ConstantMeta*)IShaderMetadata::GetHandleData(hConst);
-	if (!pMeta) FAIL;
-
-	CSM30BufferMeta* pBufferMeta = (CSM30BufferMeta*)IShaderMetadata::GetHandleData(pMeta->BufferHandle);
-	if (!pBufferMeta) FAIL;
-
-	CFixedArray<CRange>* pRanges = nullptr;
-	switch (pMeta->RegSet)
-	{
-		case Reg_Float4:	pRanges = &pBufferMeta->Float4; break;
-		case Reg_Int4:		pRanges = &pBufferMeta->Int4; break;
-		case Reg_Bool:		pRanges = &pBufferMeta->Bool; break;
-		default:			FAIL;
-	};
-
-	Offset = 0;
-	for (UPTR i = 0; i < pRanges->GetCount(); ++i)
-	{
-		CRange& Range = pRanges->operator[](i);
-		if (Range.Start > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
-		if (Range.Start + Range.Count <= pMeta->RegisterStart)
-		{
-			Offset += Range.Count;
-			continue;
-		}
-		n_assert_dbg(Range.Start + Range.Count >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
-
-		// Range found, initialize constant
-		//Handle = hConst;
-		Offset += pMeta->RegisterStart - Range.Start;
-		RegSet = pMeta->RegSet;
-		BufferHandle = pMeta->BufferHandle;
-		StructHandle = pMeta->StructHandle;
-		ElementCount = pMeta->ElementCount;
-		ElementRegisterCount = pMeta->ElementRegisterCount;
-		Columns = pMeta->Columns;
-		Rows = pMeta->Rows;
-		Flags = pMeta->Flags;
-
-		//!!!for mixed calculate per-member!
-		SizeInBytes = ElementCount * ElementRegisterCount;
-		switch (RegSet)
-		{
-			case Reg_Float4:	SizeInBytes *= sizeof(float) * 4; break;
-			case Reg_Int4:		SizeInBytes *= sizeof(int) * 4; break;
-			case Reg_Bool:		SizeInBytes *= sizeof(BOOL); break;
-		}
-
-		OK;
-	}
-
-	FAIL;
-}
-//---------------------------------------------------------------------
-
 //???process column-major differently?
 U32 CSM30Constant::GetComponentOffset(U32 ComponentIndex) const
 {
@@ -133,15 +75,6 @@ PShaderConstant CSM30Constant::GetMember(CStrID Name) const
 		}
 
 	return nullptr;
-}
-//---------------------------------------------------------------------
-
-void CSM30Constant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
-{
-	n_assert_dbg(RegSet != Reg_Invalid && CB.IsA<CD3D9ConstantBuffer>());
-	if (Size == WholeSize) Size = SizeInBytes;
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
-	CB9.WriteData(RegSet, Offset, pData, Size);
 }
 //---------------------------------------------------------------------
 

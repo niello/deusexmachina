@@ -30,39 +30,35 @@ CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30Con
 {
 	n_assert_dbg(_Buffer && _RegisterSet != Reg_Invalid);
 
+	_SizeInBytes = _Meta->ElementCount * _Meta->ElementRegisterCount;
 	CSM30ConstantBufferParam::CRanges* pRanges = nullptr;
 	switch (_RegisterSet)
 	{
-		case Reg_Float4:	pRanges = &_Buffer->Float4; break;
-		case Reg_Int4:		pRanges = &_Buffer->Int4; break;
-		case Reg_Bool:		pRanges = &_Buffer->Bool; break;
+		case Reg_Float4: pRanges = &_Buffer->Float4; _SizeInBytes *= sizeof(float) * 4; break;
+		case Reg_Int4:   pRanges = &_Buffer->Int4;   _SizeInBytes *= sizeof(int) * 4;   break;
+		case Reg_Bool:   pRanges = &_Buffer->Bool;   _SizeInBytes *= sizeof(BOOL);      break;
 	};
+
+	// Offset is local and referenced value is always in the same range as the base
+	_RegisterStart = Offset;
 
 	for (const auto& Range : *pRanges)
 	{
-		/*
-		CRange& Range = pRanges->operator[](i);
-		if (Range.Start > pMeta->RegisterStart) FAIL; // As ranges are sorted ascending
-		if (Range.Start + Range.Count <= pMeta->RegisterStart)
+		// Ranges are sorted ascending, so that means that the buffer has no required range
+		if (Range.first > _Meta->RegisterStart) break;
+
+		if (Range.first + Range.second > _Meta->RegisterStart)
 		{
-			Offset += Range.Count;
-			continue;
+			// Found range
+			n_assert_dbg(Range.first + Range.second >= _Meta->RegisterStart + _Meta->ElementRegisterCount * _Meta->ElementCount);
+			_RegisterStart += _Meta->RegisterStart - Range.first;
+			return;
 		}
-		n_assert_dbg(Range.Start + Range.Count >= pMeta->RegisterStart + pMeta->ElementRegisterCount * pMeta->ElementCount);
 
-		Offset += pMeta->RegisterStart - Range.Start;
-		*/
+		_RegisterStart += Range.second;
 	}
 
-	//!!!use internal Offset!
-
-	_SizeInBytes = _Meta->ElementCount * _Meta->ElementRegisterCount;
-	switch (_RegisterSet)
-	{
-		case Reg_Float4:	_SizeInBytes *= sizeof(float) * 4; break;
-		case Reg_Int4:		_SizeInBytes *= sizeof(int) * 4; break;
-		case Reg_Bool:		_SizeInBytes *= sizeof(BOOL); break;
-	}
+	::Sys::Error("CSM30ConstantParam() > provided buffer doesn't contain the constant");
 }
 //---------------------------------------------------------------------
 
@@ -83,16 +79,11 @@ void CSM30ConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UP
 
 bool CSM30ConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const
 {
-	auto pGPU = GPU.As<CD3D9GPUDriver>();
+	auto pGPU = Cast<CD3D9GPUDriver>(GPU);
 	if (!pGPU) FAIL;
 
-	CD3D9ConstantBuffer* pCB;
-	if (pValue)
-	{
-		pCB = pValue->As<CD3D9ConstantBuffer>();
-		if (!pCB) FAIL;
-	}
-	else pCB = nullptr;
+	auto pCB = pValue ? Cast<CD3D9ConstantBuffer>(*pValue) : nullptr;
+	if (pValue && !pCB) FAIL;
 
 	if (ShaderTypeMask & ShaderType_Vertex)
 	{
@@ -110,23 +101,18 @@ bool CSM30ConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) c
 
 bool CSM30ConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 {
-	const auto* pCB = Value.As<CD3D9ConstantBuffer>();
+	const auto* pCB = Cast<CD3D9ConstantBuffer>(Value);
 	return pCB && this == pCB->GetMetadata();
 }
 //---------------------------------------------------------------------
 
 bool CSM30ResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 {
-	auto pGPU = GPU.As<CD3D9GPUDriver>();
+	auto pGPU = Cast<CD3D9GPUDriver>(GPU);
 	if (!pGPU) FAIL;
 
-	CD3D9Texture* pTex;
-	if (pValue)
-	{
-		pTex = pValue->As<CD3D9Texture>();
-		if (!pTex) FAIL;
-	}
-	else pTex = nullptr;
+	auto pTex = pValue ? Cast<CD3D9Texture>(*pValue) : nullptr;
+	if (pValue && !pTex) FAIL;
 
 	if (_ShaderTypeMask & ShaderType_Vertex)
 	{
@@ -144,16 +130,11 @@ bool CSM30ResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 
 bool CSM30SamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 {
-	auto pGPU = GPU.As<CD3D9GPUDriver>();
+	auto pGPU = Cast<CD3D9GPUDriver>(GPU);
 	if (!pGPU) FAIL;
 
-	CD3D9Sampler* pSampler;
-	if (pValue)
-	{
-		pSampler = pValue->As<CD3D9Sampler>();
-		if (!pSampler) FAIL;
-	}
-	else pSampler = nullptr;
+	auto pSampler = pValue ? Cast<CD3D9Sampler>(*pValue) : nullptr;
+	if (pValue && !pSampler) FAIL;
 
 	if (_ShaderTypeMask & ShaderType_Vertex)
 	{
