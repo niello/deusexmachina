@@ -8,6 +8,18 @@ namespace Render
 {
 __ImplementClassNoFactory(CUSMConstantBufferParam, IConstantBufferParam);
 
+template<typename TTo>
+static inline TTo* Cast(Core::CRTTIBaseClass& Value)
+{
+#if DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION
+	return Value.As<TTo>();
+#else
+	n_assert_dbg(Value.IsA<TTo>());
+	return static_cast<TTo*>(&Value);
+#endif
+}
+//---------------------------------------------------------------------
+
 IConstantBufferParam& CUSMConstantParam::GetConstantBuffer() const
 {
 	return *_Buffer;
@@ -16,22 +28,18 @@ IConstantBufferParam& CUSMConstantParam::GetConstantBuffer() const
 
 void CUSMConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
 {
-	NOT_IMPLEMENTED;
+	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
+		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementSize));
 }
 //---------------------------------------------------------------------
 
 bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const
 {
-	auto pGPU = GPU.As<CD3D11GPUDriver>();
+	auto pGPU = Cast<CD3D11GPUDriver>(GPU);
 	if (!pGPU) FAIL;
 
-	CD3D11ConstantBuffer* pCB;
-	if (pValue)
-	{
-		pCB = pValue->As<CD3D11ConstantBuffer>();
-		if (!pCB) FAIL;
-	}
-	else pCB = nullptr;
+	auto pCB = pValue ? Cast<CD3D11ConstantBuffer>(*pValue) : nullptr;
+	if (pValue && !pCB) FAIL;
 
 	for (U8 i = 0; i < ShaderType_COUNT; ++i)
 	{
@@ -47,23 +55,18 @@ bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) co
 
 bool CUSMConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 {
-	const auto* pCB = Value.As<CD3D11ConstantBuffer>();
+	auto pCB = Cast<CD3D11ConstantBuffer>(Value);
 	return pCB && Type == pCB->GetType() && Size <= pCB->GetSizeInBytes();
 }
 //---------------------------------------------------------------------
 
 bool CUSMResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 {
-	auto pGPU = GPU.As<CD3D11GPUDriver>();
+	auto pGPU = Cast<CD3D11GPUDriver>(GPU);
 	if (!pGPU) FAIL;
 
-	CD3D11Texture* pTex;
-	if (pValue)
-	{
-		pTex = pValue->As<CD3D11Texture>();
-		if (!pTex) FAIL;
-	}
-	else pTex = nullptr;
+	auto pTex = pValue ? Cast<CD3D11Texture>(*pValue) : nullptr;
+	if (pValue && !pTex) FAIL;
 
 	// FIXME: use _RegisterCount! Is for arrays?
 
@@ -81,16 +84,11 @@ bool CUSMResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 
 bool CUSMSamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 {
-	auto pGPU = GPU.As<CD3D11GPUDriver>();
+	auto pGPU = Cast<CD3D11GPUDriver>(GPU);
 	if (!pGPU) FAIL;
 
-	CD3D11Sampler* pSampler;
-	if (pValue)
-	{
-		pSampler = pValue->As<CD3D11Sampler>();
-		if (!pSampler) FAIL;
-	}
-	else pSampler = nullptr;
+	auto pSampler = pValue ? Cast<CD3D11Sampler>(*pValue) : nullptr;
+	if (pValue && !pSampler) FAIL;
 
 	// FIXME: use _RegisterCount! Is for arrays?
 

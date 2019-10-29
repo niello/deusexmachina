@@ -4,6 +4,12 @@
 
 // Shader parameter table stores metadata necessary to set shader parameter values
 
+#ifdef _DEBUG
+#define DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION (1)
+#else
+#define DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION (0)
+#endif
+
 namespace Render
 {
 
