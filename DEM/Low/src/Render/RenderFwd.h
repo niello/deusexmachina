@@ -56,12 +56,6 @@ const UPTR Adapter_Primary = 0;
 const UPTR Adapter_Secondary = 1;
 const UPTR Output_None = (UPTR)-1;
 
-// Binding handlers for shader parameters
-typedef HHandle HConstant;
-typedef HHandle HConstantBuffer;
-typedef HHandle HResource;
-typedef HHandle HSampler;
-
 // Named data flow conventions between CPU and GPU, see Renderer.cpp for implementation and details
 UPTR RegisterShaderInputSetID(CStrID InputSetName);
 
@@ -196,11 +190,14 @@ enum ECubeMapFace
 
 // Flags that indicate which hardware has which access to this resource data.
 // Some combinations may be unsupported by certain rendering APIs, so, implementations must
-// consider to satisfy the most of possible features of a set requested.
+// consider to satisfy the most of possible features of a set requested. Implementation may
+// include additional capabilities if it doesn't affect performance in comparison with
+// requested access. Implementation must fail if requested access can't be satisfied.
 // Some common usage patterns are:
-// Access_GPU_Read						- immutable resources, initialized on creation, the fastest ones for GPU access
-// Access_GPU_Read | Access_CPU_Write	- dynamic resources, suitable for a GPU data that is regularly updated by CPU
-// Access_GPU_Read | Access_GPU_Write	- texture render targets or very infrequently updated VRAM resources
+// Access_GPU_Read                      - immutable resources, initialized on creation, the fastest ones for GPU access
+// Access_GPU_Read | Access_CPU_Write   - dynamic resources, suitable for a GPU data that is regularly updated by CPU
+// Access_GPU_Read | Access_GPU_Write   - texture render targets or very infrequently updated VRAM resources
+// Access_CPU_Read | Access_CPU_Write   - RAM-only resources
 enum EResourceAccess
 {
 	Access_CPU_Read		= 0x01,

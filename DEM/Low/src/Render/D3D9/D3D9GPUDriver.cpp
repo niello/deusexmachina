@@ -286,7 +286,7 @@ bool CD3D9GPUDriver::FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR 
 		if (Rec.ApplyFlags.IsNot(ApplyFlag)) continue;
 		n_assert_dbg(Rec.CB.IsValidPtr());
 
-		auto pMeta = Rec.CB->GetMeta();
+		auto pMeta = Rec.CB->GetMetadata();
 
 		UPTR j;
 		const CSM30ConstantBufferParam::CRanges* pRanges;
@@ -1720,7 +1720,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 					if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 					else pPendingCBHead = pCurrNode->pNext;
 
-					const IConstantBufferParam* pParam = pCurrNode->CB->GetMeta();
+					const IConstantBufferParam* pParam = pCurrNode->CB->GetMetadata();
 					CTmpCB** ppHead = TmpConstantBuffers.Get(pParam);
 					if (ppHead)
 					{
@@ -2290,7 +2290,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	CTmpCB* pNewNode = TmpCBPool.Construct();
 	pNewNode->CB = &CB9;
 
-	const auto SlotIdx = CB9.GetMeta()->SlotIndex;
+	const auto SlotIdx = CB9.GetMetadata()->SlotIndex;
 	const bool IsBound = (CurrCB[SlotIdx].CB.Get() == &CB9 || CurrCB[CB_Slot_Count + SlotIdx].CB.Get() == &CB9);
 	if (IsBound)
 	{
@@ -2299,7 +2299,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 	}
 	else
 	{
-		CTmpCB** ppHead = TmpConstantBuffers.Get(CB9.GetMeta());
+		CTmpCB** ppHead = TmpConstantBuffers.Get(CB9.GetMetadata());
 		if (ppHead)
 		{
 			pNewNode->pNext = *ppHead;
@@ -2308,7 +2308,7 @@ void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 		else
 		{
 			pNewNode->pNext = nullptr;
-			TmpConstantBuffers.Add(CB9.GetMeta(), pNewNode);
+			TmpConstantBuffers.Add(CB9.GetMetadata(), pNewNode);
 		}
 	}
 }

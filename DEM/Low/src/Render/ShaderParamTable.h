@@ -62,25 +62,27 @@ public:
 		std::vector<PResourceParam>&& Resources,
 		std::vector<PSamplerParam>&& Samplers);
 
-	size_t GetConstantIndex(CStrID ID) const;
-	size_t GetConstantBufferIndex(CStrID ID) const;
-	size_t GetResourceIndex(CStrID ID) const;
-	size_t GetSamplerIndex(CStrID ID) const;
+	size_t                GetConstantIndex(CStrID ID) const;
+	size_t                GetConstantBufferIndex(CStrID ID) const;
+	size_t                GetConstantBufferIndexForConstant(CStrID ID) const;
+	size_t                GetConstantBufferIndexForConstant(size_t Index) const;
+	size_t                GetResourceIndex(CStrID ID) const;
+	size_t                GetSamplerIndex(CStrID ID) const;
 
-	const IShaderConstantParam* GetConstant(size_t Index) const;
-	const IConstantBufferParam* GetConstantBuffer(size_t Index) const;
-	const IResourceParam*       GetResource(size_t Index) const;
-	const ISamplerParam*        GetSampler(size_t Index) const;
+	IShaderConstantParam* GetConstant(size_t Index) const;
+	IConstantBufferParam* GetConstantBuffer(size_t Index) const;
+	IResourceParam*       GetResource(size_t Index) const;
+	ISamplerParam*        GetSampler(size_t Index) const;
 
-	const IShaderConstantParam* GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
-	const IConstantBufferParam* GetConstantBuffer(CStrID ID) const { return GetConstantBuffer(GetConstantBufferIndex(ID)); }
-	const IResourceParam*       GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
-	const ISamplerParam*        GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }
+	IShaderConstantParam* GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
+	IConstantBufferParam* GetConstantBuffer(CStrID ID) const { return GetConstantBuffer(GetConstantBufferIndex(ID)); }
+	IResourceParam*       GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
+	ISamplerParam*        GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }
 
-	const auto&                 GetConstants() const { return _Constants; }
-	const auto&                 GetConstantBuffers() const { return _ConstantBuffers; }
-	const auto&                 GetResources() const { return _Resources; }
-	const auto&                 GetSamplers() const { return _Samplers; }
+	const auto&           GetConstants() const { return _Constants; }
+	const auto&           GetConstantBuffers() const { return _ConstantBuffers; }
+	const auto&           GetResources() const { return _Resources; }
+	const auto&           GetSamplers() const { return _Samplers; }
 };
 
 }

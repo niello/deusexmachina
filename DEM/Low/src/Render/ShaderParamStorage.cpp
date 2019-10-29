@@ -34,8 +34,26 @@ bool CShaderParamStorage::SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer)
 bool CShaderParamStorage::SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer)
 {
 	if (Index >= _ConstantBuffers.size()) FAIL;
+
+	auto pCurrCB = _ConstantBuffers[Index].Get();
+	if (pCurrCB && pCurrCB->IsTemporary())
+		_GPU->FreeTemporaryConstantBuffer(*pCurrCB);
+
 	_ConstantBuffers[Index] = pBuffer;
+
 	OK;
+}
+//---------------------------------------------------------------------
+
+CConstantBuffer* CShaderParamStorage::GetBuffer(size_t Index, bool Create)
+{
+	if (Index >= _ConstantBuffers.size()) return nullptr;
+
+	// Check if explicit buffer is not set and temporary buffer is not created yet
+	if (!_ConstantBuffers[Index] && Create)
+		_ConstantBuffers[Index] = _GPU->CreateTemporaryConstantBuffer(*_Table->GetConstantBuffer(Index));
+
+	return _ConstantBuffers[Index];
 }
 //---------------------------------------------------------------------
 

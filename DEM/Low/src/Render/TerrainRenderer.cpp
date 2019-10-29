@@ -10,7 +10,6 @@
 #include <Render/Effect.h>
 #include <Render/Sampler.h>
 #include <Render/ShaderConstant.h>
-#include <Render/ConstantBufferSet.h>
 #include <Math/Sphere.h>
 #include <Core/Factory.h>
 

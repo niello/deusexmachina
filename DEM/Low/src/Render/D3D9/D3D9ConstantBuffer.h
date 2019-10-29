@@ -46,26 +46,27 @@ public:
 
 	virtual ~CD3D9ConstantBuffer();
 
-	bool			Create(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData);
-	virtual void	Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
-	virtual bool	IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
-	virtual bool	IsInWriteMode() const { return Flags.Is(CB9_InWriteMode); }
+	bool         Create(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData);
+	virtual void Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
+	virtual bool IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
+	virtual bool IsInWriteMode() const { return Flags.Is(CB9_InWriteMode); }
+	virtual bool IsTemporary() const { return Flags.Is(CB9_Temporary); }
+	virtual U8   GetAccessFlags() const;
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
-	void			WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);
-	bool			IsDirty() const { return Flags.IsAny(CB9_AnyDirty); }
-	bool			IsDirtyFloat4() const { return Flags.Is(CB9_DirtyFloat4); }
-	bool			IsDirtyInt4() const { return Flags.Is(CB9_DirtyInt4); }
-	bool			IsDirtyBool() const { return Flags.Is(CB9_DirtyBool); }
-	virtual bool	IsTemporary() const { return Flags.Is(CB9_Temporary); }
-	const auto*     GetMetadata() const { return _Meta.Get(); }
-	const float*	GetFloat4Data() const { return pFloat4Data; }
-	const int*		GetInt4Data() const { return pInt4Data; }
-	const BOOL*		GetBoolData() const { return pBoolData; }
+	void         WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);
+	bool         IsDirty() const { return Flags.IsAny(CB9_AnyDirty); }
+	bool         IsDirtyFloat4() const { return Flags.Is(CB9_DirtyFloat4); }
+	bool         IsDirtyInt4() const { return Flags.Is(CB9_DirtyInt4); }
+	bool         IsDirtyBool() const { return Flags.Is(CB9_DirtyBool); }
+	const auto*  GetMetadata() const { return _Meta.Get(); }
+	const float* GetFloat4Data() const { return pFloat4Data; }
+	const int*   GetInt4Data() const { return pInt4Data; }
+	const BOOL*  GetBoolData() const { return pBoolData; }
 
-	void			OnBegin() { Flags.Set(CB9_InWriteMode); }	// For internal use by the GPUDriver
-	void			OnCommit() { Flags.Clear(CB9_AnyDirty | CB9_InWriteMode); }	// For internal use by the GPUDriver
-	void			SetTemporary(bool Tmp) { Flags.SetTo(CB9_Temporary, Tmp); }	// For internal use by the GPUDriver
+	void         OnBegin() { Flags.Set(CB9_InWriteMode); }	// For internal use by the GPUDriver
+	void         OnCommit() { Flags.Clear(CB9_AnyDirty | CB9_InWriteMode); }	// For internal use by the GPUDriver
+	void         SetTemporary(bool Tmp) { Flags.SetTo(CB9_Temporary, Tmp); }	// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;

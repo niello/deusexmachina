@@ -6,6 +6,7 @@
 #include <Render/Texture.h>
 #include <Render/TextureData.h>
 #include <Render/Sampler.h>
+#include <Render/ConstantBuffer.h>
 #include <Render/Shader.h>
 #include <Render/ShaderLibrary.h>
 #include <Render/RenderState.h>
@@ -583,97 +584,63 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 
 	// Build parameters
 
+	auto& Table = Effect->GetMaterialParamTable();
+
 	Render::CShaderParamValues Values;
-	if (!LoadShaderParamValues(Reader, Effect->GetMaterialParamTable(), Values)) return nullptr;
+	if (!LoadShaderParamValues(Reader, Table, Values)) return nullptr;
 
-	Render::CShaderParamStorage Storage(Effect->GetMaterialParamTable(), *pGPU);
+	Render::CShaderParamStorage Storage(Table, *pGPU);
 
-	//!!!fill storage!
+	// Constants will be filled into RAM buffers, and they will be used as initial data for immutable GPU buffers.
+	// D3D9 buffer is CPU+GPU, so it can be reused directly, but D3D11 requires data transfer.
+	// TODO: check what is faster, to use CD3D11ConstantBuffer with D3D11_USAGE_STAGING or create CD3D11RAMConstantBuffer.
+	std::vector<Render::PConstantBuffer> RAMBuffers(Table.GetConstantBuffers().size());
+	for (size_t i = 0; i < Table.GetConstantBuffers().size(); ++i)
+	{
+		RAMBuffers[i] = pGPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_CPU_Write);
+		if (!pGPU->BeginShaderConstants(*RAMBuffers[i])) return nullptr;
+	}
+
+	// Fill intermediate buffers with constant values
+	for (size_t i = 0; i < Table.GetConstants().size(); ++i)
+	{
+		auto pParam = Table.GetConstant(i);
+		const CStrID ID = pParam->GetID();
+		auto It = Values.ConstValues.find(ID);
+		const Render::CShaderConstValue* pValue = (It != Values.ConstValues.cend()) ? &It->second : Effect->GetConstantDefaultValue(ID);
+		if (pValue) pParam->SetRawValue(*RAMBuffers[Table.GetConstantBufferIndexForConstant(i)], pValue->pData, pValue->Size);
+	}
+
+	// Set filled constant buffers
+	for (size_t i = 0; i < Table.GetConstantBuffers().size(); ++i)
+	{
+		auto& Buffer = RAMBuffers[i];
+		if (!pGPU->CommitShaderConstants(*Buffer)) return nullptr;
+
+		// Transfer temporary data to immutable VRAM if required
+		if (!(Buffer->GetAccessFlags() & Render::Access_GPU_Read))
+			Buffer = pGPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_GPU_Read, Buffer.Get());
+
+		Storage.SetConstantBuffer(i, Buffer);
+	}
+
+	// Set resources
+	for (size_t i = 0; i < Table.GetResources().size(); ++i)
+	{
+		const CStrID ID = Table.GetResource(i)->GetID();
+		auto It = Values.ResourceValues.find(ID);
+		Storage.SetResource(i, (It != Values.ResourceValues.cend()) ? It->second : Effect->GetResourceDefaultValue(ID));
+	}
+
+	// Set samplers
+	for (size_t i = 0; i < Table.GetSamplers().size(); ++i)
+	{
+		const CStrID ID = Table.GetSampler(i)->GetID();
+		auto It = Values.SamplerValues.find(ID);
+		Storage.SetSampler(i, (It != Values.SamplerValues.cend()) ? It->second : Effect->GetSamplerDefaultValue(ID));
+	}
 
 	return n_new(Render::CMaterial(*Effect, std::move(Storage)));
-
-	/*
-	const auto& Params = Effect->GetMaterialParamTable();
-	ConstBuffers.SetSize(Params.GetConstantBufferCount());
-	UPTR CurrCBCount = 0;
-	for (UPTR i = 0; i < Consts.GetCount(); ++i)
-	{
-		const Render::CEffectConstant& Const = Consts[i];
-
-		const Render::HConstantBuffer hCB = Const.Const->GetConstantBufferHandle();
-		Render::CMaterial::CConstBufferRecord* pRec = nullptr;
-		for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
-			if (ConstBuffers[BufIdx].Handle == hCB)
-			{
-				pRec = &ConstBuffers[BufIdx];
-				break;
-			}
-
-		if (!pRec)
-		{
-			pRec = &ConstBuffers[CurrCBCount];
-			pRec->Handle = hCB;
-			pRec->ShaderType = Const.ShaderType;
-			pRec->Buffer = GPU.CreateConstantBuffer(hCB, Render::Access_CPU_Write); //!!!must be a RAM-only buffer!
-			++CurrCBCount;
-
-			if (!GPU.BeginShaderConstants(*pRec->Buffer.Get())) return nullptr;
-		}
-
-		IPTR Idx = ConstValues.FindIndex(Const.ID);
-		void* pValue = (Idx != INVALID_INDEX) ? ConstValues.ValueAt(Idx) : nullptr;
-		if (!pValue) pValue = Effect->GetConstantDefaultValue(Const.ID);
-
-		if (pValue) //???fail if value is undefined? or fill with zeroes?
-		{
-			if (Const.Const.IsNullPtr()) return nullptr;
-			Const.Const->SetRawValue(*pRec->Buffer.Get(), pValue, Render::CShaderConstant::WholeSize);
-		}
-	}
-
-	SAFE_FREE(pConstValueBuffer);
-
-	for (UPTR BufIdx = 0; BufIdx < CurrCBCount; ++BufIdx)
-	{
-		Render::CMaterial::CConstBufferRecord* pRec = &ConstBuffers[BufIdx];
-		Render::PConstantBuffer RAMBuffer = pRec->Buffer;
-		if (!GPU.CommitShaderConstants(*RAMBuffer.Get())) return nullptr; //!!!must not do any VRAM operations inside!
-
-																//???do only if current buffer doesn't support VRAM? DX9 will support, DX11 will not.
-																//if supports VRAM, can reuse as VRAM buffer without data copying between RAMBuffer and a new one.
-		pRec->Buffer = GPU.CreateConstantBuffer(pRec->Handle, Render::Access_GPU_Read, RAMBuffer.Get());
-	}
-
-	const CFixedArray<Render::CEffectResource>& EffectResources = Effect->GetMaterialResources();
-	Resources.SetSize(EffectResources.GetCount());
-	for (UPTR i = 0; i < EffectResources.GetCount(); ++i)
-	{
-		const Render::CEffectResource& Rsrc = EffectResources[i];
-
-		IPTR Idx = ResourceValues.FindIndex(Rsrc.ID);
-		Render::PTexture Value = (Idx != INVALID_INDEX) ? ResourceValues.ValueAt(Idx) : Render::PTexture();
-
-		Render::CMaterial::CResourceRecord& Rec = Resources[i];
-		Rec.Handle = Rsrc.Handle;
-		Rec.ShaderType = Rsrc.ShaderType;
-		Rec.Resource = Value.IsValidPtr() ? Value : Effect->GetResourceDefaultValue(Rsrc.ID);
-	}
-
-	const CFixedArray<Render::CEffectSampler>& EffectSamplers = Effect->GetMaterialSamplers();
-	Samplers.SetSize(EffectSamplers.GetCount());
-	for (UPTR i = 0; i < EffectSamplers.GetCount(); ++i)
-	{
-		const Render::CEffectSampler& Sampler = EffectSamplers[i];
-
-		IPTR Idx = SamplerValues.FindIndex(Sampler.ID);
-		Render::PSampler Value = (Idx != INVALID_INDEX) ? SamplerValues.ValueAt(Idx) : Render::PSampler();
-
-		Render::CMaterial::CSamplerRecord& Rec = Samplers[i];
-		Rec.Handle = Sampler.Handle;
-		Rec.ShaderType = Sampler.ShaderType;
-		Rec.Sampler = Value.IsValidPtr() ? Value : Effect->GetSamplerDefaultValue(Sampler.ID);
-	}
-	*/
 }
 //---------------------------------------------------------------------
 

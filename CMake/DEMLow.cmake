@@ -174,7 +174,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/CDLODData.h
 	DEM/Low/src/Render/CDLODDataLoader.h
 	DEM/Low/src/Render/ConstantBuffer.h
-	DEM/Low/src/Render/ConstantBufferSet.h
 	DEM/Low/src/Render/DepthStencilBuffer.h
 	DEM/Low/src/Render/DisplayDriver.h
 	DEM/Low/src/Render/DisplayMode.h
@@ -431,7 +430,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/StaticMeshShape.cpp
 	DEM/Low/src/Render/CDLODData.cpp
 	DEM/Low/src/Render/CDLODDataLoader.cpp
-	DEM/Low/src/Render/ConstantBufferSet.cpp
 	DEM/Low/src/Render/DepthStencilBuffer.cpp
 	DEM/Low/src/Render/Effect.cpp
 	DEM/Low/src/Render/GPUDriver.cpp

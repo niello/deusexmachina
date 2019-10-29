@@ -6,11 +6,6 @@
 
 // Performs setup of global shader variables and other frame-wide params.
 
-namespace Render
-{
-	struct CEffectConstant;
-}
-
 namespace Frame
 {
 

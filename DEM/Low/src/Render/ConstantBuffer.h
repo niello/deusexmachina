@@ -15,10 +15,11 @@ class CConstantBuffer: public Core::CObject
 {
 public:
 
-	virtual void	Destroy() = 0;
-	virtual bool	IsValid() const = 0;
-	virtual bool	IsInWriteMode() const = 0;
-	virtual bool	IsTemporary() const = 0;
+	virtual void Destroy() = 0;
+	virtual bool IsValid() const = 0;
+	virtual bool IsInWriteMode() const = 0;
+	virtual bool IsTemporary() const = 0;
+	virtual U8   GetAccessFlags() const = 0;
 };
 
 typedef Ptr<CConstantBuffer> PConstantBuffer;

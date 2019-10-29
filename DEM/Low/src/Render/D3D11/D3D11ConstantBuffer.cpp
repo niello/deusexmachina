@@ -51,6 +51,20 @@ void CD3D11ConstantBuffer::InternalDestroy()
 }
 //---------------------------------------------------------------------
 
+U8 CD3D11ConstantBuffer::GetAccessFlags() const
+{
+	switch (D3DUsage)
+	{
+		case D3D11_USAGE_DEFAULT:   return Access_GPU_Read | Access_GPU_Write;
+		case D3D11_USAGE_IMMUTABLE: return Access_GPU_Read;
+		case D3D11_USAGE_DYNAMIC:   return Access_GPU_Read | Access_CPU_Write;
+		case D3D11_USAGE_STAGING:   return Access_CPU_Read | Access_CPU_Write;
+	}
+
+	return 0;
+}
+//---------------------------------------------------------------------
+
 bool CD3D11ConstantBuffer::CreateRAMCopy()
 {
 	if (Flags.Is(CB11_UsesRAMCopy)) OK;

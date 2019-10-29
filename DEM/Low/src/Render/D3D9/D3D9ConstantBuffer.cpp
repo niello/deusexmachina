@@ -104,6 +104,12 @@ void CD3D9ConstantBuffer::InternalDestroy()
 }
 //---------------------------------------------------------------------
 
+U8 CD3D9ConstantBuffer::GetAccessFlags() const
+{
+	return Access_CPU_Read | Access_CPU_Write | Access_GPU_Read;
+}
+//---------------------------------------------------------------------
+
 void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size)
 {
 	n_assert_dbg(pData && Size);

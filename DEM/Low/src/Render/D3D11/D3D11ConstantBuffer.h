@@ -53,15 +53,13 @@ public:
 	virtual void				Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
 	virtual bool				IsValid() const { return !!pBuffer; }
 	virtual bool				IsInWriteMode() const { return Flags.Is(CB11_InWriteMode); }
+	virtual bool				IsTemporary() const { return Flags.Is(CB11_Temporary); }
+	virtual U8                  GetAccessFlags() const;
 
 	bool						CreateRAMCopy();
 	void						ResetRAMCopy(const void* pVRAMData);
 	void						DestroyRAMCopy();
 
-	//???need int and float? is *(*float)pData = X faster than memcpy(pData, &X, sizeof(float))? same for int?
-	//is it faster for float4, int4? is scalar SetFloat/SetInt realy so frequent in shaders?
-	//virtual bool				SetFloat(UPTR Offset, const float* pData, UPTR Count);
-	//virtual bool				SetInt(UPTR Offset, const int* pData, UPTR Count);
 	void						WriteData(UPTR Offset, const void* pData, UPTR Size);
 
 	ID3D11Buffer*				GetD3DBuffer() const { return pBuffer; }
@@ -74,7 +72,6 @@ public:
 	EUSMBufferType				GetType() const { return Type; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
 	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
-	virtual bool				IsTemporary() const { return Flags.Is(CB11_Temporary); }
 
 	void						OnBegin(void* pMappedVRAM = nullptr);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver
