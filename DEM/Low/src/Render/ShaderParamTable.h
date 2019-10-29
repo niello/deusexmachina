@@ -11,11 +11,12 @@ class IShaderConstantParam : public Data::CRefCounted
 {
 public:
 
-	virtual CStrID GetID() const = 0;
-	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetInts(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	virtual CStrID                GetID() const = 0;
+	virtual IConstantBufferParam& GetConstantBuffer() const = 0;
+	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetFloats(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetInts(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetBools(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
 class IConstantBufferParam : public Core::CObject

@@ -20,10 +20,8 @@ protected:
 	PShaderParamTable            _Table;
 	PGPUDriver                   _GPU;
 
-	//???!!!for the fast access when setting separate constants?!
-	//???std::vector<CConstantBuffer*> _ConstantBufferPerConstant;
-
 	std::vector<PConstantBuffer> _ConstantBuffers;
+	std::vector<size_t>          _ConstantBufferPerConstant;
 	std::vector<PTexture>        _Resources;
 	std::vector<PSampler>        _Samplers;
 

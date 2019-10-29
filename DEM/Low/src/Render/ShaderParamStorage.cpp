@@ -13,8 +13,18 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 	, _GPU(&GPU)
 {
 	_ConstantBuffers.resize(Table.GetConstantBuffers().size());
+	_ConstantBufferPerConstant.resize(Table.GetConstants().size());
 	_Resources.resize(Table.GetResources().size());
 	_Samplers.resize(Table.GetSamplers().size());
+
+	const auto& CBParams = _Table->GetConstantBuffers();
+	for (size_t i = 0; i < _ConstantBufferPerConstant.size(); ++i)
+	{
+		auto& CBParam = _Table->GetConstant(i)->GetConstantBuffer();
+		auto CBIt = std::find(CBParams.cbegin(), CBParams.cend(), &CBParam);
+		n_assert(CBIt == CBParams.cend());
+		_ConstantBufferPerConstant[i] = static_cast<size_t>(std::distance(CBParams.cbegin(), CBIt));
+	}
 }
 //---------------------------------------------------------------------
 
@@ -54,6 +64,25 @@ CConstantBuffer* CShaderParamStorage::GetBuffer(size_t Index, bool Create)
 		_ConstantBuffers[Index] = _GPU->CreateTemporaryConstantBuffer(*_Table->GetConstantBuffer(Index));
 
 	return _ConstantBuffers[Index];
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetRawConstant(CStrID ID, void* pData, UPTR Size)
+{
+	return SetRawConstant(_Table->GetConstantIndex(ID), pData, Size);
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetRawConstant(size_t Index, void* pData, UPTR Size)
+{
+	if (Index >= _ConstantBufferPerConstant.size()) FAIL;
+
+	auto* pCB = GetBuffer(_ConstantBufferPerConstant[Index]);
+	if (!pCB) FAIL;
+
+	_Table->GetConstant(Index)->SetRawValue(*pCB, pData, Size);
+
+	OK;
 }
 //---------------------------------------------------------------------
 

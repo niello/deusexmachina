@@ -8,6 +8,18 @@ namespace Render
 {
 __ImplementClassNoFactory(CUSMConstantBufferParam, IConstantBufferParam);
 
+IConstantBufferParam& CUSMConstantParam::GetConstantBuffer() const
+{
+	return *_Buffer;
+}
+//---------------------------------------------------------------------
+
+void CUSMConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const
 {
 	auto pGPU = GPU.As<CD3D11GPUDriver>();

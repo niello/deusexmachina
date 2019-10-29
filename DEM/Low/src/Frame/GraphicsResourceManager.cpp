@@ -605,9 +605,8 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	for (size_t i = 0; i < Table.GetConstants().size(); ++i)
 	{
 		auto pParam = Table.GetConstant(i);
-		const CStrID ID = pParam->GetID();
-		auto It = Values.ConstValues.find(ID);
-		const Render::CShaderConstValue* pValue = (It != Values.ConstValues.cend()) ? &It->second : Effect->GetConstantDefaultValue(ID);
+		auto It = Values.ConstValues.find(pParam->GetID());
+		const Render::CShaderConstValue* pValue = (It != Values.ConstValues.cend()) ? &It->second : Effect->GetConstantDefaultValue(pParam->GetID());
 		if (pValue) pParam->SetRawValue(*RAMBuffers[Table.GetConstantBufferIndexForConstant(i)], pValue->pData, pValue->Size);
 	}
 

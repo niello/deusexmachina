@@ -78,11 +78,12 @@ public:
 
 	CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset = 0);
 
-	virtual CStrID GetID() const override { return _Meta->Name; }
-	virtual void   SetRawValue(const CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
-	//virtual void SetFloats(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetInts(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetBools(const CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	virtual CStrID                GetID() const override { return _Meta->Name; }
+	virtual IConstantBufferParam& GetConstantBuffer() const override;
+	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
+	//virtual void SetFloats(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetInts(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	//virtual void SetBools(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
 };
 
 class CSM30ConstantBufferParam : public IConstantBufferParam
