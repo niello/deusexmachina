@@ -1794,7 +1794,7 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 
 //!!!shader reflection doesn't return StructuredBuffer element count! So we must pass it here and ignore parameter for other buffers!
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
-PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData)
+PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData, bool Temporary)
 {
 	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
 	UINT CPUAccess;
@@ -1857,13 +1857,8 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(EUSMBufferTyp
 		}
 	}
 
-	PD3D11ConstantBuffer CB = n_new(CD3D11ConstantBuffer);
-	if (!CB->Create(pD3DBuf, pSRV))
-	{
-		if (pSRV) pSRV->Release();
-		pD3DBuf->Release();
-		return nullptr;
-	}
+	PD3D11ConstantBuffer CB = n_new(CD3D11ConstantBuffer(pD3DBuf, pSRV, Temporary));
+	if (!CB->IsValid()) return nullptr;
 
 	//???or add manual control / some flag in a metadata?
 	if (Usage != D3D11_USAGE_IMMUTABLE)
@@ -1882,7 +1877,7 @@ PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(IConstantBufferParam& Para
 	auto pUSMParam = Param.As<CUSMConstantBufferParam>();
 	if (!pD3DDevice || !pUSMParam || !pUSMParam->Size) return nullptr;
 
-	return InternalCreateConstantBuffer(pUSMParam->Type, pUSMParam->Size, AccessFlags, pData).Get();
+	return InternalCreateConstantBuffer(pUSMParam->Type, pUSMParam->Size, AccessFlags, pData, false);
 }
 //---------------------------------------------------------------------
 
@@ -1911,8 +1906,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 		}
 	}
 
-	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(pUSMParam->Type, NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr);
-	CB->SetTemporary(true);
+	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(pUSMParam->Type, NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
 	return CB.Get();
 }
 //---------------------------------------------------------------------

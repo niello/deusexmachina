@@ -1,26 +1,16 @@
 #include "D3D9ConstantBuffer.h"
-
 #include <Render/D3D9/SM30ShaderMetadata.h>
-#include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3d9.h>
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9ConstantBuffer, 'CB09', Render::CConstantBuffer);
+__ImplementClassNoFactory(Render::CD3D9ConstantBuffer, Render::CConstantBuffer);
 
-CD3D9ConstantBuffer::~CD3D9ConstantBuffer()
+CD3D9ConstantBuffer::CD3D9ConstantBuffer(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData, bool Temporary)
 {
-	InternalDestroy();
-}
-//---------------------------------------------------------------------
-
-// D3D9 pseudo-buffers are too tightly coupled with shader metadata to be reused with another metadata
-//!!!???assert destroyed?!
-bool CD3D9ConstantBuffer::Create(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData)
-{
-	if (!Meta) FAIL;
+	if (!Meta) return;
 
 	_Meta = Meta;
 
@@ -41,9 +31,9 @@ bool CD3D9ConstantBuffer::Create(PSM30ConstantBufferParam Meta, const CD3D9Const
 	UPTR Int4Size = Int4Count * sizeof(int) * 4;
 	UPTR BoolSize = BoolCount * sizeof(BOOL);
 	UPTR TotalSize = Float4Size + Int4Size + BoolSize;
-	if (!TotalSize) FAIL;
-	
-	if (pInitData && (Float4Count != pInitData->Float4Count || Int4Count != pInitData->Int4Count || BoolCount != pInitData->BoolCount)) FAIL;
+	if (!TotalSize) return;
+
+	if (pInitData && (Float4Count != pInitData->Float4Count || Int4Count != pInitData->Int4Count || BoolCount != pInitData->BoolCount)) return;
 
 	char* pData = (char*)n_malloc_aligned(TotalSize, 16);
 	if (!pData)
@@ -51,7 +41,7 @@ bool CD3D9ConstantBuffer::Create(PSM30ConstantBufferParam Meta, const CD3D9Const
 		Float4Count = 0;
 		Int4Count = 0;
 		BoolCount = 0;
-		FAIL;
+		return;
 	}
 
 	if (pInitData)
@@ -84,12 +74,10 @@ bool CD3D9ConstantBuffer::Create(PSM30ConstantBufferParam Meta, const CD3D9Const
 		pBoolData = (BOOL*)pData;
 		pData += BoolSize;
 	}
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-void CD3D9ConstantBuffer::InternalDestroy()
+CD3D9ConstantBuffer::~CD3D9ConstantBuffer()
 {
 	if (pFloat4Data) n_free_aligned(pFloat4Data);
 	else if (pInt4Data) n_free_aligned(pInt4Data);

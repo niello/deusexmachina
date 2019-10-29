@@ -13,7 +13,7 @@ namespace Render
 
 class CD3D9ConstantBuffer: public CConstantBuffer
 {
-	__DeclareClass(CD3D9ConstantBuffer);
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -37,21 +37,20 @@ protected:
 	BOOL*			pBoolData = nullptr;
 	UPTR			BoolCount = 0;
 
-	PSM30ConstantBufferParam _Meta;
 	Data::CFlags	Flags;
 
-	void InternalDestroy();
+	// D3D9 pseudo-buffers are too tightly coupled with shader metadata to be reused with another metadata
+	PSM30ConstantBufferParam _Meta;
 
 public:
 
-	virtual ~CD3D9ConstantBuffer();
+	CD3D9ConstantBuffer(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData, bool Temporary = false);
+	virtual ~CD3D9ConstantBuffer() override;
 
-	bool         Create(PSM30ConstantBufferParam Meta, const CD3D9ConstantBuffer* pInitData);
-	virtual void Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
-	virtual bool IsValid() const { return pFloat4Data || pInt4Data || pBoolData; }
-	virtual bool IsInWriteMode() const { return Flags.Is(CB9_InWriteMode); }
-	virtual bool IsTemporary() const { return Flags.Is(CB9_Temporary); }
-	virtual U8   GetAccessFlags() const;
+	virtual bool IsValid() const override { return pFloat4Data || pInt4Data || pBoolData; }
+	virtual bool IsInWriteMode() const override { return Flags.Is(CB9_InWriteMode); }
+	virtual bool IsTemporary() const override { return Flags.Is(CB9_Temporary); }
+	virtual U8   GetAccessFlags() const override;
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
 	void         WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);
@@ -66,7 +65,6 @@ public:
 
 	void         OnBegin() { Flags.Set(CB9_InWriteMode); }	// For internal use by the GPUDriver
 	void         OnCommit() { Flags.Clear(CB9_AnyDirty | CB9_InWriteMode); }	// For internal use by the GPUDriver
-	void         SetTemporary(bool Tmp) { Flags.SetTo(CB9_Temporary, Tmp); }	// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D9ConstantBuffer> PD3D9ConstantBuffer;

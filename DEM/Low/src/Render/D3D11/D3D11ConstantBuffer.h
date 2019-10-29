@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_CONSTANT_BUFFER_H__
-#define __DEM_L1_RENDER_D3D11_CONSTANT_BUFFER_H__
-
 #include <Render/ConstantBuffer.h>
 #include <Data/Flags.h>
 
@@ -23,7 +20,7 @@ enum EUSMBufferType;
 
 class CD3D11ConstantBuffer: public CConstantBuffer
 {
-	__DeclareClass(CD3D11ConstantBuffer);
+	__DeclareClassNoFactory;
 
 protected:
 
@@ -43,18 +40,15 @@ protected:
 	UPTR						SizeInBytes;
 	Data::CFlags				Flags;
 
-	void InternalDestroy();
-
 public:
 
-	virtual ~CD3D11ConstantBuffer() { InternalDestroy(); }
+	CD3D11ConstantBuffer(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV, bool Temporary = false);
+	virtual ~CD3D11ConstantBuffer() override;
 
-	bool						Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV);
-	virtual void				Destroy() { InternalDestroy(); /*CConstantBuffer::Destroy();*/ }
-	virtual bool				IsValid() const { return !!pBuffer; }
-	virtual bool				IsInWriteMode() const { return Flags.Is(CB11_InWriteMode); }
-	virtual bool				IsTemporary() const { return Flags.Is(CB11_Temporary); }
-	virtual U8                  GetAccessFlags() const;
+	virtual bool				IsValid() const override { return !!pBuffer; }
+	virtual bool				IsInWriteMode() const override { return Flags.Is(CB11_InWriteMode); }
+	virtual bool				IsTemporary() const override { return Flags.Is(CB11_Temporary); }
+	virtual U8                  GetAccessFlags() const override;
 
 	bool						CreateRAMCopy();
 	void						ResetRAMCopy(const void* pVRAMData);
@@ -75,7 +69,6 @@ public:
 
 	void						OnBegin(void* pMappedVRAM = nullptr);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver
-	void						SetTemporary(bool Tmp) { Flags.SetTo(CB11_Temporary, Tmp); }	// For internal use by the GPUDriver
 };
 
 typedef Ptr<CD3D11ConstantBuffer> PD3D11ConstantBuffer;
@@ -89,5 +82,3 @@ inline void CD3D11ConstantBuffer::WriteData(UPTR Offset, const void* pData, UPTR
 //---------------------------------------------------------------------
 
 }
-
-#endif

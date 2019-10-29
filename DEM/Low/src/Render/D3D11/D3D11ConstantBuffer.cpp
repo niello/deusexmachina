@@ -1,18 +1,15 @@
 #include "D3D11ConstantBuffer.h"
-
 #include <Render/D3D11/USMShaderMetadata.h> // For EUSMBufferType only
-#include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <d3d11.h>
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11ConstantBuffer, 'CB11', Render::CConstantBuffer);
+__ImplementClassNoFactory(Render::CD3D11ConstantBuffer, Render::CConstantBuffer);
 
-//!!!???assert destroyed?!
-bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV)
+CD3D11ConstantBuffer::CD3D11ConstantBuffer(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV, bool Temporary)
 {
-	if (!pCB) FAIL;
+	if (!pCB) return;
 
 	D3D11_BUFFER_DESC D3DDesc;
 	pCB->GetDesc(&D3DDesc);
@@ -20,10 +17,11 @@ bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* p
 	if (!(D3DDesc.Usage & D3D11_USAGE_STAGING) &&
 		!((D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) || (pSRV && (D3DDesc.BindFlags & D3D11_BIND_SHADER_RESOURCE))))
 	{
-		FAIL;
+		return;
 	}
 
 	Flags.ClearAll();
+	if (Temporary) Flags.Set(CB11_Temporary);
 
 	pBuffer = pCB;
 	pSRView = pSRV;
@@ -33,12 +31,10 @@ bool CD3D11ConstantBuffer::Create(ID3D11Buffer* pCB, ID3D11ShaderResourceView* p
 	if (D3DDesc.BindFlags & D3D11_BIND_CONSTANT_BUFFER) Type = USMBuffer_Constant;
 	else if (D3DDesc.MiscFlags & D3D11_RESOURCE_MISC_BUFFER_STRUCTURED) Type = USMBuffer_Structured;
 	else Type = USMBuffer_Texture;
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-void CD3D11ConstantBuffer::InternalDestroy()
+CD3D11ConstantBuffer::~CD3D11ConstantBuffer()
 {
 	SAFE_RELEASE(pSRView);
 	SAFE_RELEASE(pBuffer);

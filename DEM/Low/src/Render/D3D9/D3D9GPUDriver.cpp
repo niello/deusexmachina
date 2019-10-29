@@ -1720,7 +1720,7 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 					if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 					else pPendingCBHead = pCurrNode->pNext;
 
-					const IConstantBufferParam* pParam = pCurrNode->CB->GetMetadata();
+					const auto* pParam = pCurrNode->CB->GetMetadata();
 					CTmpCB** ppHead = TmpConstantBuffers.Get(pParam);
 					if (ppHead)
 					{
@@ -2245,16 +2245,14 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 }
 //---------------------------------------------------------------------
 
-PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData)
+PConstantBuffer CD3D9GPUDriver::CreateConstantBuffer(IConstantBufferParam& Param, UPTR /*AccessFlags*/, const CConstantBuffer* pData)
 {
 	n_assert_dbg(!pData || pData->IsA<CD3D9ConstantBuffer>());
 
 	auto pSM30Param = Param.As<CSM30ConstantBufferParam>();
 	if (!pSM30Param) return nullptr;
 
-	PD3D9ConstantBuffer CB = n_new(CD3D9ConstantBuffer);
-	if (!CB->Create(pSM30Param, (const CD3D9ConstantBuffer*)pData)) return nullptr;
-	return CB.Get();
+	return n_new(CD3D9ConstantBuffer(pSM30Param, static_cast<const CD3D9ConstantBuffer*>(pData), false));
 }
 //---------------------------------------------------------------------
 
@@ -2262,7 +2260,10 @@ PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPar
 {
 	if (!pD3DDevice) return nullptr;
 
-	CTmpCB** ppHead = TmpConstantBuffers.Get(&Param);
+	auto pSM30Param = Param.As<CSM30ConstantBufferParam>();
+	if (!pSM30Param) return nullptr;
+
+	CTmpCB** ppHead = TmpConstantBuffers.Get(pSM30Param);
 	if (ppHead)
 	{
 		CTmpCB* pHead = *ppHead;
@@ -2275,10 +2276,7 @@ PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPar
 		}
 	}
 
-	PConstantBuffer CB = CreateConstantBuffer(Param, Access_CPU_Write | Access_GPU_Read);
-	((CD3D9ConstantBuffer*)CB.Get())->SetTemporary(true);
-
-	return CB;
+	return n_new(CD3D9ConstantBuffer(pSM30Param, nullptr, true));
 }
 //---------------------------------------------------------------------
 

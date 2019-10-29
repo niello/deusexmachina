@@ -148,7 +148,7 @@ protected:
 
 	bool								InitSwapChainRenderTarget(CD3D11SwapChain& SC);
 	void								Release();
-	PD3D11ConstantBuffer				InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData);
+	PD3D11ConstantBuffer				InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData, bool Temporary);
 	bool								InternalDraw(const CPrimitiveGroup& PrimGroup, bool Instanced, UPTR InstanceCount);
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);

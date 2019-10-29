@@ -27,6 +27,7 @@ typedef Ptr<class CD3D9RenderState> PD3D9RenderState;
 typedef Ptr<class CD3D9ConstantBuffer> PD3D9ConstantBuffer;
 typedef Ptr<class CD3D9Sampler> PD3D9Sampler;
 typedef Ptr<class CD3D9Texture> PD3D9Texture;
+class CSM30ConstantBufferParam;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
@@ -102,7 +103,7 @@ protected:
 	};
 
 	CPoolAllocator<CTmpCB>				TmpCBPool;
-	CHashTable<const IConstantBufferParam*, CTmpCB*>	TmpConstantBuffers;
+	CHashTable<const CSM30ConstantBufferParam*, CTmpCB*>	TmpConstantBuffers;
 	CTmpCB*								pPendingCBHead = nullptr;
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
