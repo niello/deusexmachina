@@ -6,51 +6,6 @@
 namespace Render
 {
 
-//???process column-major differently?
-U32 CSM30Constant::GetComponentOffset(U32 ComponentIndex) const
-{
-	n_assert_dbg(StructHandle == INVALID_HANDLE);
-
-	const U32 ComponentsPerElement = Columns * Rows;
-	const U32 Elm = ComponentIndex / ComponentsPerElement;
-	ComponentIndex = ComponentIndex - Elm * ComponentsPerElement;
-	const U32 Row = ComponentIndex / Columns;
-	const U32 Col = ComponentIndex - Row * Columns;
-
-	const U32 ComponentSize = 4; // Always 32-bit, even bool
-	const U32 ComponentsPerAlignedRow = 4; // Even for, say, float3x3, each row uses full 4-component register
-
-	return Offset + Elm * ComponentsPerElement + Row * ComponentsPerAlignedRow + Col; // In register components
-}
-//---------------------------------------------------------------------
-
-UPTR CSM30Constant::GetMemberCount() const
-{
-	if (StructHandle == INVALID_HANDLE) return 0;
-	CSM30StructMeta* pStructMeta = (CSM30StructMeta*)IShaderMetadata::GetHandleData(StructHandle);
-	return pStructMeta ? pStructMeta->Members.GetCount() : 0;
-}
-//---------------------------------------------------------------------
-
-PShaderConstant CSM30Constant::GetElement(U32 Index) const
-{
-	if (Index >= ElementCount) return nullptr;
-
-	//!!!can use pool!
-	PSM30Constant Const = n_new(CSM30Constant);
-	Const->Offset = Offset + Index * ElementRegisterCount;
-	Const->RegSet = RegSet;
-	Const->StructHandle = StructHandle;
-	Const->ElementCount = 1;
-	Const->ElementRegisterCount = ElementRegisterCount;
-	Const->Columns = Columns;
-	Const->Rows = Rows;
-	Const->Flags = Flags;
-
-	return Const.Get();
-}
-//---------------------------------------------------------------------
-
 PShaderConstant CSM30Constant::GetMember(CStrID Name) const
 {
 	CSM30StructMeta* pStructMeta = (CSM30StructMeta*)IShaderMetadata::GetHandleData(StructHandle);

@@ -75,19 +75,24 @@ protected:
 	U32                      _SizeInBytes;
 	ESM30RegisterSet         _RegisterSet;
 
+	virtual U32  GetMemberOffset(const char* pName) const override;
+	virtual U32  GetElementOffset(U32 Index) const override;
+	virtual U32  GetComponentOffset(U32 Index) const override;
+
+	virtual bool IsColumnMajor() const override { return _Meta->Flags & ShaderConst_ColumnMajor; }
+
 public:
 
 	CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes = 0);
 
 	virtual CStrID                GetID() const override { return _Meta->Name; }
 	virtual IConstantBufferParam& GetConstantBuffer() const override;
-	virtual bool                  IsColumnMajor() const override { return _Meta->Flags & ShaderConst_ColumnMajor; }
 
-	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
-	virtual void                  SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const override;
-	virtual void                  SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const override;
-	virtual void                  SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const override;
-	virtual void                  SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const override;
+	virtual void SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
+	virtual void SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const override;
+	virtual void SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const override;
+	virtual void SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const override;
+	virtual void SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const override;
 };
 
 class CSM30ConstantBufferParam : public IConstantBufferParam

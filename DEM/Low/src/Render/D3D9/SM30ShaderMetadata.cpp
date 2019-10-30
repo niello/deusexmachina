@@ -83,6 +83,50 @@ CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30Con
 }
 //---------------------------------------------------------------------
 
+U32 CSM30ConstantParam::GetMemberOffset(const char* pName) const
+{
+	n_assert(_Meta->ElementCount == 1);
+	return static_cast<U32>(-1);
+}
+//---------------------------------------------------------------------
+
+U32 CSM30ConstantParam::GetElementOffset(U32 Index) const
+{
+	U32 BytesPerRegister;
+	switch (_RegisterSet)
+	{
+		case Reg_Float4: BytesPerRegister = sizeof(float) * 4; break;
+		case Reg_Int4:   BytesPerRegister = sizeof(I32) * 4; break;
+		case Reg_Bool:   BytesPerRegister = sizeof(BOOL); break;
+		default:         ::Sys::Error("CSM30ConstantParam::GetElementOffset() > invalid register set"); return;
+	};
+	return _OffsetInBytes + Index * _Meta->ElementRegisterCount * BytesPerRegister;
+}
+//---------------------------------------------------------------------
+
+U32 CSM30ConstantParam::GetComponentOffset(U32 Index) const
+{
+	/*
+	//???process column-major differently?
+	n_assert_dbg(StructHandle == INVALID_HANDLE);
+
+	const U32 ComponentsPerElement = Columns * Rows;
+	const U32 Elm = ComponentIndex / ComponentsPerElement;
+	ComponentIndex = ComponentIndex - Elm * ComponentsPerElement;
+	const U32 Row = ComponentIndex / Columns;
+	const U32 Col = ComponentIndex - Row * Columns;
+
+	const U32 ComponentSize = 4; // Always 32-bit, even bool
+	const U32 ComponentsPerAlignedRow = 4; // Even for, say, float3x3, each row uses full 4-component register
+
+	return Offset + Elm * ComponentsPerElement + Row * ComponentsPerAlignedRow + Col; // In register components
+	*/
+
+	return static_cast<U32>(-1);
+}
+//---------------------------------------------------------------------
+
+
 IConstantBufferParam& CSM30ConstantParam::GetConstantBuffer() const
 {
 	return *_Buffer;

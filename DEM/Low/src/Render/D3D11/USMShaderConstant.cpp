@@ -24,14 +24,6 @@ U32 CUSMConstant::GetComponentOffset(U32 ComponentIndex) const
 }
 //---------------------------------------------------------------------
 
-UPTR CUSMConstant::GetMemberCount() const
-{
-	if (StructHandle == INVALID_HANDLE) return 0;
-	CUSMStructMeta* pStructMeta = (CUSMStructMeta*)IShaderMetadata::GetHandleData(StructHandle);
-	return pStructMeta ? pStructMeta->Members.GetCount() : 0;
-}
-//---------------------------------------------------------------------
-
 PShaderConstant CUSMConstant::GetElement(U32 Index) const
 {
 	if (Index >= ElementCount) return nullptr;

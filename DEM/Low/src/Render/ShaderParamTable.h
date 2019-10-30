@@ -17,9 +17,13 @@ class IShaderConstantParam : public Data::CRefCounted
 {
 protected:
 
-	virtual U32                   GetRowCount() const = 0;
-	virtual U32                   GetColumnCount() const = 0;
-	virtual bool                  IsColumnMajor() const = 0;
+	virtual U32  GetMemberOffset(const char* pName) const = 0;
+	virtual U32  GetElementOffset(U32 Index) const = 0;
+	virtual U32  GetComponentOffset(U32 Index) const = 0;
+
+	virtual U32  GetRowCount() const = 0;
+	virtual U32  GetColumnCount() const = 0;
+	virtual bool IsColumnMajor() const = 0;
 
 public:
 
@@ -29,21 +33,21 @@ public:
 	//!!!TODO: member, element and component operations! operator[int/str] + methods like .x()?
 	//!!!TODO: matrix majority!
 
-	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	virtual void                  SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const = 0;
-	virtual void                  SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const = 0;
-	virtual void                  SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const = 0;
-	virtual void                  SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const = 0;
+	virtual void SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	virtual void SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const = 0;
+	virtual void SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const = 0;
+	virtual void SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const = 0;
+	virtual void SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const = 0;
 
-	void                          SetFloat(CConstantBuffer& CB, float Value) const { SetFloats(CB, &Value, 1); }
-	void                          SetInt(CConstantBuffer& CB, I32 Value) const { SetInts(CB, &Value, 1); }
-	void                          SetUInt(CConstantBuffer& CB, U32 Value) const { SetUInts(CB, &Value, 1); }
-	void                          SetBool(CConstantBuffer& CB, bool Value) const { SetBools(CB, &Value, 1); }
-	void                          SetVector(CConstantBuffer& CB, const vector3& Value) const { SetFloats(CB, Value.v, 3); }
-	void                          SetVector(CConstantBuffer& CB, const vector4& Value) const { SetFloats(CB, Value.v, 4); }
-	void                          SetVectors(CConstantBuffer& CB, const vector4* pValue, UPTR Count) const { SetFloats(CB, pValue->v, 4 * Count); }
-	void                          SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { SetMatrices(CB, &Value, 1); }
-	void                          SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const;
+	void         SetFloat(CConstantBuffer& CB, float Value) const { SetFloats(CB, &Value, 1); }
+	void         SetInt(CConstantBuffer& CB, I32 Value) const { SetInts(CB, &Value, 1); }
+	void         SetUInt(CConstantBuffer& CB, U32 Value) const { SetUInts(CB, &Value, 1); }
+	void         SetBool(CConstantBuffer& CB, bool Value) const { SetBools(CB, &Value, 1); }
+	void         SetVector(CConstantBuffer& CB, const vector3& Value) const { SetFloats(CB, Value.v, 3); }
+	void         SetVector(CConstantBuffer& CB, const vector4& Value) const { SetFloats(CB, Value.v, 4); }
+	void         SetVectors(CConstantBuffer& CB, const vector4* pValue, UPTR Count) const { SetFloats(CB, pValue->v, 4 * Count); }
+	void         SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { SetMatrices(CB, &Value, 1); }
+	void         SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const;
 };
 
 class IConstantBufferParam : public Core::CObject
