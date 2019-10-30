@@ -23,24 +23,43 @@ static inline TTo* Cast(Core::CRTTIBaseClass& Value)
 }
 //---------------------------------------------------------------------
 
-CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 Offset)
+CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes)
 	: _Buffer(Buffer)
 	, _Meta(Meta)
 	, _RegisterSet(RegisterSet)
 {
 	n_assert_dbg(_Buffer && _RegisterSet != Reg_Invalid);
 
-	_SizeInBytes = _Meta->ElementCount * _Meta->ElementRegisterCount;
-	CSM30ConstantBufferParam::CRanges* pRanges = nullptr;
+	CSM30ConstantBufferParam::CRanges* pRanges;
+	U32 BytesPerRegister;
 	switch (_RegisterSet)
 	{
-		case Reg_Float4: pRanges = &_Buffer->Float4; _SizeInBytes *= sizeof(float) * 4; break;
-		case Reg_Int4:   pRanges = &_Buffer->Int4;   _SizeInBytes *= sizeof(int) * 4;   break;
-		case Reg_Bool:   pRanges = &_Buffer->Bool;   _SizeInBytes *= sizeof(BOOL);      break;
+		case Reg_Float4:
+		{
+			pRanges = &_Buffer->Float4;
+			BytesPerRegister = sizeof(float) * 4;
+			break;
+		}
+		case Reg_Int4:
+		{
+			pRanges = &_Buffer->Int4;
+			BytesPerRegister = sizeof(I32) * 4;
+			break;
+		}
+		case Reg_Bool:
+		{
+			pRanges = &_Buffer->Bool;
+			BytesPerRegister = sizeof(BOOL);
+			break;
+		}
+		default:
+		{
+			::Sys::Error("CSM30ConstantParam() > invalid register set");
+			return;
+		}
 	};
 
-	// Offset is local and referenced value is always in the same range as the base
-	_RegisterStart = Offset;
+	U32 OffsetInRegisters = 0;
 
 	for (const auto& Range : *pRanges)
 	{
@@ -51,11 +70,13 @@ CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30Con
 		{
 			// Found range
 			n_assert_dbg(Range.first + Range.second >= _Meta->RegisterStart + _Meta->ElementRegisterCount * _Meta->ElementCount);
-			_RegisterStart += _Meta->RegisterStart - Range.first;
+			OffsetInRegisters += _Meta->RegisterStart - Range.first;
+			_OffsetInBytes = OffsetInRegisters * BytesPerRegister + OffsetInBytes;
+			_SizeInBytes = _Meta->ElementCount * _Meta->ElementRegisterCount * BytesPerRegister;
 			return;
 		}
 
-		_RegisterStart += Range.second;
+		OffsetInRegisters += Range.second;
 	}
 
 	::Sys::Error("CSM30ConstantParam() > provided buffer doesn't contain the constant");
@@ -70,10 +91,178 @@ IConstantBufferParam& CSM30ConstantParam::GetConstantBuffer() const
 
 void CSM30ConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
 {
-	n_assert_dbg(_RegisterSet != Reg_Invalid);
+	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
-		pCB->WriteData(_RegisterSet, _RegisterStart, pValue, std::min(Size, _SizeInBytes));
+		pCB->WriteData(_RegisterSet, _OffsetInBytes, pValue, std::min(Size, _SizeInBytes));
+}
+//---------------------------------------------------------------------
+
+void CSM30ConstantParam::SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
+	{
+		if (_RegisterSet == Reg_Float4)
+		{
+			pCB->WriteData(Reg_Float4, _OffsetInBytes, pValue, std::min(Count * sizeof(float), _SizeInBytes));
+		}
+		else if (_RegisterSet == Reg_Int4)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount * 4);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const I32 Value = static_cast<I32>(*pValue);
+				pCB->WriteData(Reg_Int4, Offset, &Value, sizeof(I32));
+				++pValue;
+				Offset += sizeof(I32);
+			}
+		}
+		else if (_RegisterSet == Reg_Bool)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const BOOL Value = (*pValue != 0.f);
+				pCB->WriteData(Reg_Bool, Offset, &Value, sizeof(BOOL));
+				++pValue;
+				Offset += sizeof(BOOL);
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CSM30ConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
+	{
+		if (_RegisterSet == Reg_Int4)
+		{
+			pCB->WriteData(Reg_Int4, _OffsetInBytes, pValue, std::min(Count * sizeof(I32), _SizeInBytes));
+		}
+		else if (_RegisterSet == Reg_Float4)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount * 4);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const float Value = static_cast<float>(*pValue);
+				pCB->WriteData(Reg_Float4, Offset, &Value, sizeof(float));
+				++pValue;
+				Offset += sizeof(float);
+			}
+		}
+		else if (_RegisterSet == Reg_Bool)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const BOOL Value = (*pValue != 0);
+				pCB->WriteData(Reg_Bool, Offset, &Value, sizeof(BOOL));
+				++pValue;
+				Offset += sizeof(BOOL);
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CSM30ConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
+	{
+		if (_RegisterSet == Reg_Int4)
+		{
+			pCB->WriteData(Reg_Int4, _OffsetInBytes, pValue, std::min(Count * sizeof(U32), _SizeInBytes));
+		}
+		else if (_RegisterSet == Reg_Float4)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount * 4);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const float Value = static_cast<float>(*pValue);
+				pCB->WriteData(Reg_Float4, Offset, &Value, sizeof(float));
+				++pValue;
+				Offset += sizeof(float);
+			}
+		}
+		else if (_RegisterSet == Reg_Bool)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const BOOL Value = (*pValue != 0);
+				pCB->WriteData(Reg_Bool, Offset, &Value, sizeof(BOOL));
+				++pValue;
+				Offset += sizeof(BOOL);
+			}
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CSM30ConstantParam::SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
+	{
+		auto Offset = _OffsetInBytes;
+
+		if (_RegisterSet == Reg_Float4)
+		{
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount * 4);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const float Value = *pValue ? 1.f : 0.f;
+				pCB->WriteData(Reg_Float4, Offset, &Value, sizeof(float));
+				++pValue;
+				Offset += sizeof(float);
+			}
+		}
+		else if (_RegisterSet == Reg_Int4)
+		{
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount * 4);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const I32 Value = *pValue ? 1 : 0;
+				pCB->WriteData(Reg_Float4, Offset, &Value, sizeof(I32));
+				++pValue;
+				Offset += sizeof(I32);
+			}
+		}
+		else if (_RegisterSet == Reg_Bool)
+		{
+			Count = std::min(Count, _Meta->ElementCount * _Meta->ElementRegisterCount);
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const BOOL Value = *pValue ? 1 : 0;
+				pCB->WriteData(Reg_Bool, Offset, &Value, sizeof(BOOL));
+				++pValue;
+				Offset += sizeof(BOOL);
+			}
+		}
+	}
 }
 //---------------------------------------------------------------------
 

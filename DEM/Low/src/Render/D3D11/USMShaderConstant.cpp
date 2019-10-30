@@ -6,26 +6,6 @@
 namespace Render
 {
 
-bool CUSMConstant::Init(HConstant hConst)
-{
-	if (!hConst) FAIL;
-
-	CUSMConstantMeta* pMeta = (CUSMConstantMeta*)IShaderMetadata::GetHandleData(hConst);
-	if (!pMeta) FAIL;
-
-	Offset = pMeta->Offset;
-	BufferHandle = pMeta->BufferHandle;
-	StructHandle = pMeta->StructHandle;
-	ElementCount = pMeta->ElementCount;
-	ElementSize = pMeta->ElementSize;
-	Columns = pMeta->Columns;
-	Rows = pMeta->Rows;
-	Flags = pMeta->Flags;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 //???process column-major differently?
 U32 CUSMConstant::GetComponentOffset(U32 ComponentIndex) const
 {
@@ -107,23 +87,6 @@ PShaderConstant CUSMConstant::GetMember(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-void CUSMConstant::SetRawValue(const CConstantBuffer& CB, const void* pData, UPTR Size) const
-{
-	n_assert_dbg(CB.IsA<CD3D11ConstantBuffer>());
-	if (Size == WholeSize) Size = ElementCount * ElementSize;
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
-	CB11.WriteData(Offset, pData, Size);
-}
-//---------------------------------------------------------------------
-
-void CUSMConstant::SetUInt(const CConstantBuffer& CB, U32 Value) const
-{
-	//???switch type, convert to const type?
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
-	CB11.WriteData(Offset, &Value, sizeof(U32));
-}
-//---------------------------------------------------------------------
-
 void CUSMConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
 {
 	//???switch type, convert to const type?
@@ -133,28 +96,12 @@ void CUSMConstant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentInde
 }
 //---------------------------------------------------------------------
 
-void CUSMConstant::SetSInt(const CConstantBuffer& CB, I32 Value) const
-{
-	//???switch type, convert to const type?
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
-	CB11.WriteData(Offset, &Value, sizeof(U32));
-}
-//---------------------------------------------------------------------
-
 void CUSMConstant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
 {
 	//???switch type, convert to const type?
 	if (StructHandle != INVALID_HANDLE) return;
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
 	CB11.WriteData(GetComponentOffset(ComponentIndex), &Value, sizeof(U32));
-}
-//---------------------------------------------------------------------
-
-void CUSMConstant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
-{
-	//???switch type, convert to const type?
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
-	CB11.WriteData(Offset, pValues, sizeof(float) * Count);
 }
 //---------------------------------------------------------------------
 

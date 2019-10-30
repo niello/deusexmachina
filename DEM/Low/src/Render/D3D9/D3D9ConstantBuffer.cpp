@@ -98,31 +98,30 @@ U8 CD3D9ConstantBuffer::GetAccessFlags() const
 }
 //---------------------------------------------------------------------
 
-void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size)
+void CD3D9ConstantBuffer::WriteData(ESM30RegisterSet RegSet, UPTR OffsetInBytes, const void* pData, UPTR Size)
 {
-	n_assert_dbg(pData && Size);
+	n_assert_dbg(pData && Size && RegSet != Reg_Invalid);
 
 	char* pDest;
 	switch (RegSet)
 	{
 		case Reg_Float4:
-			pDest = (char*)pFloat4Data + Offset * sizeof(float) * 4;
+			n_assert_dbg(pFloat4Data);
+			pDest = (char*)pFloat4Data + OffsetInBytes;
 			Flags.Set(CB9_DirtyFloat4);
 			break;
 		case Reg_Int4:
-			pDest = (char*)pInt4Data + Offset * sizeof(int) * 4;
+			n_assert_dbg(pInt4Data);
+			pDest = (char*)pInt4Data + OffsetInBytes;
 			Flags.Set(CB9_DirtyInt4);
 			break;
 		case Reg_Bool:
-			pDest = (char*)pBoolData + Offset * sizeof(BOOL);
+			n_assert_dbg(pBoolData);
+			pDest = (char*)pBoolData + OffsetInBytes;
 			Flags.Set(CB9_DirtyBool);
-			break;
-		default:
-			pDest = nullptr;
 			break;
 	};
 
-	n_assert_dbg(pDest);
 	n_assert_dbg(pDest + Size <= (char*)pFloat4Data + Float4Count * sizeof(float) * 4 + Int4Count * sizeof(int) * 4 + BoolCount * sizeof(BOOL));
 
 	memcpy(pDest, pData, Size);

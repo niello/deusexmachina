@@ -20,6 +20,14 @@ static inline TTo* Cast(Core::CRTTIBaseClass& Value)
 }
 //---------------------------------------------------------------------
 
+CUSMConstantParam::CUSMConstantParam(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset)
+	: _Buffer(Buffer)
+	, _Meta(Meta)
+	, _OffsetInBuffer(Meta->Offset + Offset)
+{
+}
+//---------------------------------------------------------------------
+
 IConstantBufferParam& CUSMConstantParam::GetConstantBuffer() const
 {
 	return *_Buffer;
@@ -28,8 +36,50 @@ IConstantBufferParam& CUSMConstantParam::GetConstantBuffer() const
 
 void CUSMConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
 {
+	if (!pValue || !Size) return;
+
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementSize));
+}
+//---------------------------------------------------------------------
+
+void CUSMConstantParam::SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	//!!!convert to type!
+	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
+		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(float), _Meta->ElementCount * _Meta->ElementSize));
+}
+//---------------------------------------------------------------------
+
+void CUSMConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	//!!!convert to type!
+	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
+		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(I32), _Meta->ElementCount * _Meta->ElementSize));
+}
+//---------------------------------------------------------------------
+
+void CUSMConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	//!!!convert to type!
+	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
+		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(U32), _Meta->ElementCount * _Meta->ElementSize));
+}
+//---------------------------------------------------------------------
+
+void CUSMConstantParam::SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const
+{
+	if (!pValue || !Count) return;
+
+	//!!!convert to type!
+	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
+		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(bool), _Meta->ElementCount * _Meta->ElementSize));
 }
 //---------------------------------------------------------------------
 

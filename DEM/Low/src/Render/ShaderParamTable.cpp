@@ -5,6 +5,13 @@ namespace Render
 {
 __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
+void IShaderConstantParam::SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const
+{
+	// transpose to buffer and set floats?
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 CShaderParamTable::CShaderParamTable(std::vector<PShaderConstantParam>&& Constants,
 	std::vector<PConstantBufferParam>&& ConstantBuffers,
 	std::vector<PResourceParam>&& Resources,

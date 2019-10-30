@@ -95,10 +95,12 @@ public:
 
 	virtual CStrID                GetID() const override { return _Meta->Name; }
 	virtual IConstantBufferParam& GetConstantBuffer() const override;
+
 	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
-	//virtual void SetFloats(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetInts(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetBools(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	virtual void                  SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const override;
+	virtual void                  SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const override;
+	virtual void                  SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const override;
+	virtual void                  SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const override;
 };
 
 class CUSMConstantBufferParam : public IConstantBufferParam

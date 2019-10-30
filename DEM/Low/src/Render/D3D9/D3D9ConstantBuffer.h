@@ -53,7 +53,7 @@ public:
 	virtual U8   GetAccessFlags() const override;
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
-	void         WriteData(ESM30RegisterSet RegSet, UPTR Offset, const void* pData, UPTR Size);
+	void         WriteData(ESM30RegisterSet RegSet, UPTR OffsetInBytes, const void* pData, UPTR Size);
 	bool         IsDirty() const { return Flags.IsAny(CB9_AnyDirty); }
 	bool         IsDirtyFloat4() const { return Flags.Is(CB9_DirtyFloat4); }
 	bool         IsDirtyInt4() const { return Flags.Is(CB9_DirtyInt4); }

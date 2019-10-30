@@ -19,10 +19,23 @@ public:
 
 	virtual CStrID                GetID() const = 0;
 	virtual IConstantBufferParam& GetConstantBuffer() const = 0;
+
+	//!!!TODO: member, element and component operations! operator[int/str] + methods like .x()?
+
 	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetFloats(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetInts(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	//virtual void SetBools(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
+	virtual void                  SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const = 0;
+	virtual void                  SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const = 0;
+	virtual void                  SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const = 0;
+	virtual void                  SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const = 0;
+
+	void                          SetFloat(CConstantBuffer& CB, float Value) const { SetFloats(CB, &Value, 1); }
+	void                          SetInt(CConstantBuffer& CB, I32 Value) const { SetInts(CB, &Value, 1); }
+	void                          SetUInt(CConstantBuffer& CB, U32 Value) const { SetUInts(CB, &Value, 1); }
+	void                          SetBool(CConstantBuffer& CB, bool Value) const { SetBools(CB, &Value, 1); }
+	void                          SetVector(CConstantBuffer& CB, const vector3& Value) const { SetFloats(CB, Value.v, 3); }
+	void                          SetVector(CConstantBuffer& CB, const vector4& Value) const { SetFloats(CB, Value.v, 4); }
+	void                          SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { SetMatrices(CB, &Value, 1); }
+	void                          SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const;
 };
 
 class IConstantBufferParam : public Core::CObject

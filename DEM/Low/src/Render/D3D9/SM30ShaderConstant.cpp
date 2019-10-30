@@ -78,56 +78,6 @@ PShaderConstant CSM30Constant::GetMember(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-void CSM30Constant::InternalSetUInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, U32 Value) const
-{
-	switch (RegSet)
-	{
-		case Reg_Int4:
-		{
-			CB9.WriteData(Reg_Int4, ValueOffset, &Value, sizeof(U32));
-			break;
-		}
-		case Reg_Float4:
-		{
-			float FloatValue = (float)Value;
-			CB9.WriteData(Reg_Float4, ValueOffset, &FloatValue, sizeof(float));
-			break;
-		}
-		case Reg_Bool:
-		{
-			BOOL BoolValue = (Value != 0);
-			CB9.WriteData(Reg_Bool, ValueOffset, &BoolValue, sizeof(BOOL));
-			break;
-		}
-	}
-}
-//---------------------------------------------------------------------
-
-void CSM30Constant::InternalSetSInt(CD3D9ConstantBuffer& CB9, U32 ValueOffset, I32 Value) const
-{
-	switch (RegSet)
-	{
-		case Reg_Int4:
-		{
-			CB9.WriteData(Reg_Int4, ValueOffset, &Value, sizeof(I32));
-			break;
-		}
-		case Reg_Float4:
-		{
-			float FloatValue = (float)Value;
-			CB9.WriteData(Reg_Float4, ValueOffset, &FloatValue, sizeof(float));
-			break;
-		}
-		case Reg_Bool:
-		{
-			BOOL BoolValue = (Value != 0);
-			CB9.WriteData(Reg_Bool, ValueOffset, &BoolValue, sizeof(BOOL));
-			break;
-		}
-	}
-}
-//---------------------------------------------------------------------
-
 void CSM30Constant::SetUInt(const CConstantBuffer& CB, U32 Value) const
 {
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
