@@ -94,46 +94,4 @@ void CSM30Constant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentInd
 }
 //---------------------------------------------------------------------
 
-void CSM30Constant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
-{
-	if (RegSet != Reg_Float4) return;
-
-	n_assert_dbg(StartIndex < ElementCount);
-
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
-
-	if (Flags & ShaderConst_ColumnMajor)
-	{
-		n_assert_dbg(Columns > 0 && Rows > 0);
-
-		 // The maximum is 16 floats, may be less
-		float TransposedData[16];
-		const UPTR MatrixSize = Columns * Rows * sizeof(float);
-
-		const matrix44* pCurrMatrix = pValues;
-		const matrix44* pEndMatrix = pValues + Count;
-		for (; pCurrMatrix < pEndMatrix; ++pCurrMatrix)
-		{
-			float* pCurrData = TransposedData;
-			for (U32 Col = 0; Col < Columns; ++Col)
-				for (U32 Row = 0; Row < Rows; ++Row)
-				{
-					*pCurrData = pCurrMatrix->m[Row][Col];
-					++pCurrData;
-				}
-
-			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
-			NOT_IMPLEMENTED;
-			CB9.WriteData(RegSet, Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
-		}
-	}
-	else
-	{
-		//!!!check columns and rows! (really need to check only rows, as all columns are used)
-		NOT_IMPLEMENTED;
-		CB9.WriteData(RegSet, Offset + sizeof(matrix44) * StartIndex, pValues, sizeof(matrix44) * Count);
-	}
-}
-//---------------------------------------------------------------------
-
 }

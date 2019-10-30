@@ -43,6 +43,7 @@ public:
              float _m41, float _m42, float _m43, float _m44);
 	void ident() { set(Identity); }
     void transpose();
+	matrix44 transposed() const;
     float det() const;
     void invert();
 	float det_simple() const;
@@ -233,19 +234,25 @@ matrix44::set(float _m11, float _m12, float _m13, float _m14,
 //------------------------------------------------------------------------------
 /**
 */
-inline
-void
-matrix44::transpose()
+inline void matrix44::transpose()
 {
-    #undef n_swap
-    #define n_swap(x,y) { float t=x; x=y; y=t; }
-    n_swap(M12, M21);
-    n_swap(M13, M31);
-    n_swap(M14, M41);
-    n_swap(M23, M32);
-    n_swap(M24, M42);
-    n_swap(M34, M43);
+    std::swap(M12, M21);
+	std::swap(M13, M31);
+	std::swap(M14, M41);
+	std::swap(M23, M32);
+	std::swap(M24, M42);
+	std::swap(M34, M43);
 }
+
+matrix44 matrix44::transposed() const
+{
+	return matrix44(
+		M11, M21, M31, M41,
+		M12, M22, M32, M42,
+		M13, M23, M33, M43,
+		M14, M24, M34, M44);
+}
+//---------------------------------------------------------------------
 
 //------------------------------------------------------------------------------
 /**

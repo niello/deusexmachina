@@ -40,7 +40,6 @@ public:
 	void                          SetUInt(CConstantBuffer& CB, U32 Value) const { SetUInts(CB, &Value, 1); }
 	void                          SetBool(CConstantBuffer& CB, bool Value) const { SetBools(CB, &Value, 1); }
 	void                          SetVector(CConstantBuffer& CB, const vector3& Value) const { SetFloats(CB, Value.v, 3); }
-	void                          SetVectors(CConstantBuffer& CB, const vector3* pValue, UPTR Count) const { SetFloats(CB, pValue->v, 3 * Count); }
 	void                          SetVector(CConstantBuffer& CB, const vector4& Value) const { SetFloats(CB, Value.v, 4); }
 	void                          SetVectors(CConstantBuffer& CB, const vector4* pValue, UPTR Count) const { SetFloats(CB, pValue->v, 4 * Count); }
 	void                          SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { SetMatrices(CB, &Value, 1); }
