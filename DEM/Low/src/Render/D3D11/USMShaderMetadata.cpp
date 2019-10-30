@@ -23,7 +23,7 @@ static inline TTo* Cast(Core::CRTTIBaseClass& Value)
 CUSMConstantParam::CUSMConstantParam(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset)
 	: _Buffer(Buffer)
 	, _Meta(Meta)
-	, _OffsetInBuffer(Meta->Offset + Offset)
+	, _OffsetInBytes(Meta->Offset + Offset)
 {
 }
 //---------------------------------------------------------------------
@@ -39,7 +39,7 @@ void CUSMConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPT
 	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementSize));
+		pCB->WriteData(_OffsetInBytes, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementSize));
 }
 //---------------------------------------------------------------------
 
@@ -47,9 +47,30 @@ void CUSMConstantParam::SetFloats(CConstantBuffer& CB, const float* pValue, UPTR
 {
 	if (!pValue || !Count) return;
 
-	//!!!convert to type!
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(float), _Meta->ElementCount * _Meta->ElementSize));
+	{
+		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementSize;
+
+		if (_Meta->Type == USMConst_Float)
+		{
+			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(float), SizeInBytes));
+		}
+		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
+		{
+			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, SizeInBytes / sizeof(I32));
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const I32 Value = static_cast<I32>(*pValue);
+				pCB->WriteData(Offset, &Value, sizeof(I32));
+				++pValue;
+				Offset += sizeof(I32);
+			}
+		}
+		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+	}
 }
 //---------------------------------------------------------------------
 
@@ -57,9 +78,30 @@ void CUSMConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Cou
 {
 	if (!pValue || !Count) return;
 
-	//!!!convert to type!
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(I32), _Meta->ElementCount * _Meta->ElementSize));
+	{
+		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementSize;
+
+		if (_Meta->Type == USMConst_Float)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, SizeInBytes / sizeof(float));
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const float Value = static_cast<float>(*pValue);
+				pCB->WriteData(Offset, &Value, sizeof(float));
+				++pValue;
+				Offset += sizeof(float);
+			}
+		}
+		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
+		{
+			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
+			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(I32), SizeInBytes));
+		}
+		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+	}
 }
 //---------------------------------------------------------------------
 
@@ -67,9 +109,30 @@ void CUSMConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Co
 {
 	if (!pValue || !Count) return;
 
-	//!!!convert to type!
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(U32), _Meta->ElementCount * _Meta->ElementSize));
+	{
+		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementSize;
+
+		if (_Meta->Type == USMConst_Float)
+		{
+			auto Offset = _OffsetInBytes;
+			Count = std::min(Count, SizeInBytes / sizeof(float));
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const float Value = static_cast<float>(*pValue);
+				pCB->WriteData(Offset, &Value, sizeof(float));
+				++pValue;
+				Offset += sizeof(float);
+			}
+		}
+		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
+		{
+			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
+			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(U32), SizeInBytes));
+		}
+		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+	}
 }
 //---------------------------------------------------------------------
 
@@ -77,9 +140,38 @@ void CUSMConstantParam::SetBools(CConstantBuffer& CB, const bool* pValue, UPTR C
 {
 	if (!pValue || !Count) return;
 
-	//!!!convert to type!
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(_OffsetInBuffer, pValue, std::min(Count * sizeof(bool), _Meta->ElementCount * _Meta->ElementSize));
+	{
+		auto Offset = _OffsetInBytes;
+		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementSize;
+
+		if (_Meta->Type == USMConst_Float)
+		{
+			Count = std::min(Count, SizeInBytes / sizeof(float));
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const float Value = *pValue ? 1.f : 0.f;
+				pCB->WriteData(Offset, &Value, sizeof(float));
+				++pValue;
+				Offset += sizeof(float);
+			}
+		}
+		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
+		{
+			// NB: HLSL bool is a 32-bit int even in sm4.0+
+			Count = std::min(Count, SizeInBytes / sizeof(I32));
+			const auto* pEnd = pValue + Count;
+			while (pValue < pEnd)
+			{
+				const I32 Value = *pValue ? 1 : 0;
+				pCB->WriteData(Offset, &Value, sizeof(I32));
+				++pValue;
+				Offset += sizeof(I32);
+			}
+		}
+		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+	}
 }
 //---------------------------------------------------------------------
 

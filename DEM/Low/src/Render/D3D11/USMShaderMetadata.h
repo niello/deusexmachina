@@ -87,7 +87,7 @@ protected:
 
 	PUSMConstantBufferParam _Buffer;
 	PUSMConstantMeta        _Meta;
-	U32                     _OffsetInBuffer;
+	U32                     _OffsetInBytes; // From the beginning of the buffer
 
 public:
 

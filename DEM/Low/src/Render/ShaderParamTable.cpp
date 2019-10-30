@@ -8,6 +8,7 @@ __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 void IShaderConstantParam::SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const
 {
 	// transpose to buffer and set floats?
+	// Use SetFloats as a backend
 	NOT_IMPLEMENTED;
 }
 //---------------------------------------------------------------------

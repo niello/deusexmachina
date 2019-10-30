@@ -78,13 +78,6 @@ PShaderConstant CSM30Constant::GetMember(CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-void CSM30Constant::SetUInt(const CConstantBuffer& CB, U32 Value) const
-{
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
-	InternalSetUInt(CB9, Offset, Value);
-}
-//---------------------------------------------------------------------
-
 void CSM30Constant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, U32 Value) const
 {
 	if (StructHandle != INVALID_HANDLE) return;
@@ -93,44 +86,11 @@ void CSM30Constant::SetUIntComponent(const CConstantBuffer& CB, U32 ComponentInd
 }
 //---------------------------------------------------------------------
 
-void CSM30Constant::SetSInt(const CConstantBuffer& CB, I32 Value) const
-{
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
-	InternalSetSInt(CB9, Offset, Value);
-}
-//---------------------------------------------------------------------
-
 void CSM30Constant::SetSIntComponent(const CConstantBuffer& CB, U32 ComponentIndex, I32 Value) const
 {
 	if (StructHandle != INVALID_HANDLE) return;
 	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
 	InternalSetSInt(CB9, GetComponentOffset(ComponentIndex), Value);
-}
-//---------------------------------------------------------------------
-
-void CSM30Constant::SetFloat(const CConstantBuffer& CB, const float* pValues, UPTR Count) const
-{
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
-
-	switch (RegSet)
-	{
-		case Reg_Float4:
-		{
-			CB9.WriteData(Reg_Float4, Offset, pValues, sizeof(float) * Count);
-			break;
-		}
-		case Reg_Int4:
-		{
-			U32 CurrOffset = Offset;
-			for (UPTR i = 0; i < Count; ++i)
-			{
-				U32 IntValue = (U32)pValues[i];
-				CB9.WriteData(Reg_Int4, CurrOffset, &IntValue, sizeof(U32));
-				CurrOffset += sizeof(U32);
-			}
-			break;
-		}
-	}
 }
 //---------------------------------------------------------------------
 
