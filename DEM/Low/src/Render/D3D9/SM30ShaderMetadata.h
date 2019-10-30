@@ -81,6 +81,7 @@ public:
 
 	virtual CStrID                GetID() const override { return _Meta->Name; }
 	virtual IConstantBufferParam& GetConstantBuffer() const override;
+	virtual bool                  IsColumnMajor() const override { return _Meta->Flags & ShaderConst_ColumnMajor; }
 
 	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
 	virtual void                  SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const override;

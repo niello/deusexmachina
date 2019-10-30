@@ -15,6 +15,12 @@ namespace Render
 
 class IShaderConstantParam : public Data::CRefCounted
 {
+protected:
+
+	virtual U32                   GetRowCount() const = 0;
+	virtual U32                   GetColumnCount() const = 0;
+	virtual bool                  IsColumnMajor() const = 0;
+
 public:
 
 	virtual CStrID                GetID() const = 0;
