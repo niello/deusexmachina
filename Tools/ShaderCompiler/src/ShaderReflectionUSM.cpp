@@ -55,6 +55,7 @@ static bool ProcessStructure(CUSMShaderMeta& Meta, ID3D11ShaderReflectionType* p
 			// Arrays
 			MemberMeta.ElementSize = MemberSize / D3DMemberTypeDesc.Elements;
 			MemberMeta.ElementCount = D3DMemberTypeDesc.Elements;
+			assert(MemberSize == MemberMeta.ElementSize * MemberMeta.ElementCount);
 		}
 		else
 		{
@@ -224,11 +225,7 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 				else if (RsrcDesc.Type == D3D_SIT_STRUCTURED) TypeMask = USMBuffer_Structured;
 				else TypeMask = 0;
 
-				CUSMBufferMeta Meta;
-				Meta.Name = RsrcDesc.Name;
-				Meta.Register = (RsrcDesc.BindPoint | TypeMask);
-				Meta.Size = D3DBufDesc.Size;
-				OutMeta.Buffers.push_back(std::move(Meta));
+				bool BufferAdded = false;
 
 				if (RsrcDesc.Type != D3D_SIT_STRUCTURED)
 				{
@@ -240,8 +237,7 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 						D3D11_SHADER_VARIABLE_DESC D3DVarDesc;
 						pVar->GetDesc(&D3DVarDesc);
 
-						//D3D_SVF_USERPACKED             = 1,
-						//D3D_SVF_USED                   = 2,
+						if (!(D3DVarDesc.uFlags & D3D_SVF_USED)) continue;
 
 						ID3D11ShaderReflectionType* pVarType = pVar->GetType();
 						if (!pVarType) continue;
@@ -251,7 +247,6 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 
 						CUSMConstMeta ConstMeta;
 						ConstMeta.Name = D3DVarDesc.Name;
-						ConstMeta.BufferIndex = OutMeta.Buffers.size() - 1;
 						ConstMeta.Offset = D3DVarDesc.StartOffset;
 						ConstMeta.Flags = 0;
 
@@ -260,6 +255,7 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 							// Arrays
 							ConstMeta.ElementSize = D3DVarDesc.Size / D3DTypeDesc.Elements;
 							ConstMeta.ElementCount = D3DTypeDesc.Elements;
+							assert(D3DVarDesc.Size == ConstMeta.ElementSize * ConstMeta.ElementCount);
 						}
 						else
 						{
@@ -297,9 +293,23 @@ bool ExtractUSMMetaFromBinary(const void* pData, size_t Size, CUSMShaderMeta& Ou
 
 							if (D3DTypeDesc.Class == D3D_SVC_MATRIX_COLUMNS)
 								ConstMeta.Flags |= USMShaderConst_ColumnMajor;
-
-							OutMeta.Consts.push_back(std::move(ConstMeta));
 						}
+
+						// Add the buffer only with the first its used constant
+						if (!BufferAdded)
+						{
+							CUSMBufferMeta Meta;
+							Meta.Name = RsrcDesc.Name;
+							Meta.Register = (RsrcDesc.BindPoint | TypeMask);
+							Meta.Size = D3DBufDesc.Size;
+							OutMeta.Buffers.push_back(std::move(Meta));
+
+							BufferAdded = true;
+						}
+
+						ConstMeta.BufferIndex = OutMeta.Buffers.size() - 1;
+
+						OutMeta.Consts.push_back(std::move(ConstMeta));
 					}
 				}
 

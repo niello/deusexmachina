@@ -66,7 +66,7 @@ public:
 
 	EUSMConstType  Type;
 	U32            Offset; // From the start of CB, for struct members - from the start of the structure
-	U32            ElementSize;
+	U32            ElementStride;
 	U32            ElementCount;
 	U8             Columns;
 	U8             Rows;
