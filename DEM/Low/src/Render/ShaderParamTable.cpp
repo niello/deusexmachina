@@ -35,12 +35,20 @@ void CShaderConstantParam::SetFloatArray(CConstantBuffer& CB, const float* pValu
 	Count = std::min(Count, _Info->GetElementCount() - StartIndex);
 	if (!Count) return;
 
+	U32 Offset = _Offset + StartIndex * _Info->GetElementStride();
+
 	if (_Info->HasElementPadding() || _Info->NeedConversionFrom(/*float*/))
 	{
+		const float* pEnd = pValues + Count;
+		for (; pValues < pEnd; ++pValues)
+		{
+			_Info->SetFloats(CB, Offset, pValues, 1);
+			Offset += _Info->GetElementStride();
+		}
 	}
 	else
 	{
-		_Info->SetFloats(CB, _Offset + StartIndex * _Info->GetElementStride(), pValues, Count);
+		_Info->SetFloats(CB, Offset, pValues, Count);
 	}
 }
 //---------------------------------------------------------------------
