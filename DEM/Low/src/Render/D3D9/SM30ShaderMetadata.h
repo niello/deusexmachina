@@ -65,6 +65,22 @@ public:
 	std::vector<PSM30ConstantMeta> Members;
 };
 
+class CSM30ConstantInfo : public IShaderConstantInfo
+{
+public:
+
+	virtual CStrID GetID() const override;
+	virtual U32    GetLocalOffset() const override;
+	virtual U32    GetElementStride() const override;
+	virtual U32    GetComponentStride() const override;
+
+	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;
+
+	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const override;
+	virtual PShaderConstantInfo GetElementInfo() const override;
+	virtual PShaderConstantInfo GetComponentInfo() const override;
+};
+
 class CSM30ConstantParam : public IShaderConstantParam
 {
 protected:

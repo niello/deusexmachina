@@ -81,6 +81,27 @@ public:
 	std::vector<PUSMConstantMeta> Members;
 };
 
+class CUSMConstantInfo : public IShaderConstantInfo
+{
+protected:
+
+	PUSMConstantMeta _Meta;  //???common fields to IShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
+	size_t           _Index; //???to IShaderConstantInfo?
+
+public:
+
+	virtual CStrID GetID() const override;
+	virtual U32    GetLocalOffset() const override;
+	virtual U32    GetElementStride() const override;
+	virtual U32    GetComponentStride() const override;
+
+	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;
+
+	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const override;
+	virtual PShaderConstantInfo GetElementInfo() const override;
+	virtual PShaderConstantInfo GetComponentInfo() const override;
+};
+
 class CUSMConstantParam : public IShaderConstantParam
 {
 protected:

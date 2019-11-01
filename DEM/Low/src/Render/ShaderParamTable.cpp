@@ -5,6 +5,69 @@ namespace Render
 {
 __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
+CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
+	: _Info(Info)
+	, _Offset(Offset)
+{
+}
+//---------------------------------------------------------------------
+
+CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info)
+	: _Info(Info)
+	, _Offset(Info ? Info->GetLocalOffset() : 0)
+{
+}
+//---------------------------------------------------------------------
+
+void CShaderConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
+{
+	n_assert_dbg(_Info);
+	//if (_Info) _Info->SetRawValue(CB, _Offset, pValue, Size);
+	//???or virtual CB.WriteData(OpaqueOffset, pValue, Size)?
+}
+//---------------------------------------------------------------------
+
+void CShaderConstantParam::SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex) const
+{
+	n_assert_dbg(_Info);
+	if (!pValues || !_Info || StartIndex >= _Info->GetElementCount()) return;
+
+	Count = std::min(Count, _Info->GetElementCount() - StartIndex);
+	if (!Count) return;
+
+	if (_Info->HasElementPadding() || _Info->NeedConversionFrom(/*float*/))
+	{
+	}
+	else
+	{
+		_Info->SetFloats(CB, _Offset + StartIndex * _Info->GetElementStride(), pValues, Count);
+	}
+}
+//---------------------------------------------------------------------
+
+CShaderConstantParam CShaderConstantParam::GetMember(const char* pName) const
+{
+	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	return CShaderConstantParam(_Info->GetMemberInfo(pName), _Offset + _Info->GetLocalOffset());
+}
+//---------------------------------------------------------------------
+
+CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
+{
+	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	return CShaderConstantParam(_Info->GetElementInfo(), _Offset + Index * _Info->GetElementStride());
+}
+//---------------------------------------------------------------------
+
+CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
+{
+	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+}
+//---------------------------------------------------------------------
+
+/*
+
 // DEM matrices are row-major
 void IShaderConstantParam::SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const
 {
@@ -49,8 +112,6 @@ void IShaderConstantParam::SetMatrices(CConstantBuffer& CB, const matrix44* pVal
 	}
 }
 //---------------------------------------------------------------------
-
-/*
 
 void CUSMConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
 {
@@ -149,7 +210,7 @@ void CSM30Constant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues
 
 */
 
-CShaderParamTable::CShaderParamTable(std::vector<PShaderConstantParam>&& Constants,
+CShaderParamTable::CShaderParamTable(std::vector<CShaderConstantParam>&& Constants,
 	std::vector<PConstantBufferParam>&& ConstantBuffers,
 	std::vector<PResourceParam>&& Resources,
 	std::vector<PSamplerParam>&& Samplers)
@@ -159,9 +220,9 @@ CShaderParamTable::CShaderParamTable(std::vector<PShaderConstantParam>&& Constan
 	, _Resources(std::move(Resources))
 	, _Samplers(std::move(Samplers))
 {
-	std::sort(_Constants.begin(), _Constants.end(), [](const PShaderConstantParam& a, const PShaderConstantParam& b)
+	std::sort(_Constants.begin(), _Constants.end(), [](const CShaderConstantParam& a, const CShaderConstantParam& b)
 	{
-		return a->GetID() < b->GetID();
+		return a.GetID() < b.GetID();
 	});
 	std::sort(_ConstantBuffers.begin(), _ConstantBuffers.end(), [](const PConstantBufferParam& a, const PConstantBufferParam& b)
 	{

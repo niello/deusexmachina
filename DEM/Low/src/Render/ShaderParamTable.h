@@ -13,6 +13,75 @@
 namespace Render
 {
 
+class IShaderConstantInfo : public Core::CObject
+{
+public:
+
+	virtual CStrID GetID() const = 0;
+	virtual U32    GetLocalOffset() const = 0;
+	virtual U32    GetElementCount() const = 0;
+	virtual U32    GetElementStride() const = 0;
+	virtual U32    GetComponentStride() const = 0;
+	virtual bool   HasElementPadding() const = 0;
+	virtual bool   NeedConversionFrom(/*type*/) const = 0;
+
+	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
+
+	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const = 0;
+	virtual PShaderConstantInfo GetElementInfo() const = 0;
+	virtual PShaderConstantInfo GetComponentInfo() const = 0;
+};
+
+class CShaderConstantParam final
+{
+private:
+
+	PShaderConstantInfo _Info;
+	U32                 _Offset;
+
+	CShaderConstantParam(PShaderConstantInfo Info, U32 Offset);
+
+public:
+
+	CShaderConstantParam(PShaderConstantInfo Info);
+
+	CStrID GetID() const { return _Info ? _Info->GetID() : CStrID::Empty; }
+	bool   IsValid() const { return _Info.IsValidPtr(); }
+
+	void   SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const;
+
+	void   SetFloat(CConstantBuffer& CB, float Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, &Value, 1); }
+	//void   SetInt(CConstantBuffer& CB, I32 Value) const;
+	//void   SetUInt(CConstantBuffer& CB, U32 Value) const;
+	//void   SetBool(CConstantBuffer& CB, bool Value) const;
+	//void   SetVector(CConstantBuffer& CB, const vector3& Value) const;
+	//void   SetVector(CConstantBuffer& CB, const vector4& Value) const;
+	//void   SetMatrix(CConstantBuffer& CB, const matrix44& Value) const;
+
+	void   SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex = 0) const;
+	void   SetFloatArray(CConstantBuffer& CB, std::initializer_list<float> Values, U32 StartIndex = 0) const { SetFloatArray(CB, Values.begin(), Values.size(), StartIndex); }
+	//void   SetIntArray(CConstantBuffer& CB, const I32* pValues, UPTR Count, U32 StartIndex = 0) const;
+	//void   SetUIntArray(CConstantBuffer& CB, const U32* pValues, UPTR Count, U32 StartIndex = 0) const;
+	//void   SetBoolArray(CConstantBuffer& CB, const bool* pValues, UPTR Count, U32 StartIndex = 0) const;
+	//void   SetVectorArray(CConstantBuffer& CB, const vector3* pValues, UPTR Count, U32 StartIndex = 0) const;
+	//void   SetVectorArray(CConstantBuffer& CB, const vector4* pValues, UPTR Count, U32 StartIndex = 0) const;
+	//void   SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex = 0) const;
+
+	CShaderConstantParam GetMember(const char* pName) const;
+	CShaderConstantParam GetElement(U32 Index) const;
+	CShaderConstantParam GetComponent(U32 Index) const;
+
+	CShaderConstantParam x() const { return GetComponent(0); }
+	CShaderConstantParam y() const { return GetComponent(1); }
+	CShaderConstantParam z() const { return GetComponent(2); }
+	CShaderConstantParam w() const { return GetComponent(3); }
+
+	CShaderConstantParam operator [](const char* pName) const { return GetMember(pName); }
+	CShaderConstantParam operator [](U32 Index) const { return GetElement(Index); }
+	CShaderConstantParam operator ()(U32 Row, U32 Column) const;
+	CShaderConstantParam operator ()(U32 ComponentIndex) const;
+};
+
 class IShaderConstantParam : public Data::CRefCounted
 {
 protected:
@@ -82,14 +151,14 @@ class CShaderParamTable : public Data::CRefCounted
 protected:
 
 	// Vectors are sorted and never change in runtime
-	std::vector<PShaderConstantParam> _Constants;
+	std::vector<CShaderConstantParam> _Constants;
 	std::vector<PConstantBufferParam> _ConstantBuffers;
 	std::vector<PResourceParam>       _Resources;
 	std::vector<PSamplerParam>        _Samplers;
 
 public:
 
-	CShaderParamTable(std::vector<PShaderConstantParam>&& Constants,
+	CShaderParamTable(std::vector<CShaderConstantParam>&& Constants,
 		std::vector<PConstantBufferParam>&& ConstantBuffers,
 		std::vector<PResourceParam>&& Resources,
 		std::vector<PSamplerParam>&& Samplers);

@@ -23,6 +23,11 @@ static inline TTo* Cast(Core::CRTTIBaseClass& Value)
 }
 //---------------------------------------------------------------------
 
+void CSM30ConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const
+{
+}
+//---------------------------------------------------------------------
+
 CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes)
 	: _Buffer(Buffer)
 	, _Meta(Meta)
