@@ -1,6 +1,6 @@
 #pragma once
 #include <Frame/RenderPhase.h>
-#include <Render/RenderFwd.h>
+#include <Render/ShaderParamTable.h> // FIXME: ShaderParams / ShaderConstant?
 #include <Data/Dictionary.h>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
@@ -29,10 +29,10 @@ protected:
 	CDict<Render::EEffectType, CStrID>				EffectOverrides;
 	bool											EnableLighting = false;
 
-	const Render::CEffectConstant*					pConstGlobalLightBuffer = nullptr;
-	const Render::CEffectResource*					pRsrcIrradianceMap = nullptr;
-	const Render::CEffectResource*					pRsrcRadianceEnvMap = nullptr;
-	const Render::CEffectSampler*					pSampTrilinearCube = nullptr;
+	Render::CShaderConstantParam					ConstGlobalLightBuffer;
+	Render::PResourceParam							RsrcIrradianceMap;
+	Render::PResourceParam							RsrcRadianceEnvMap;
+	Render::PSamplerParam							SampTrilinearCube;
 
 public:
 

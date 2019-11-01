@@ -13,19 +13,8 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 	, _GPU(&GPU)
 {
 	_ConstantBuffers.resize(Table.GetConstantBuffers().size());
-	_ConstantBufferPerConstant.resize(Table.GetConstants().size());
 	_Resources.resize(Table.GetResources().size());
 	_Samplers.resize(Table.GetSamplers().size());
-
-	const auto& CBParams = _Table->GetConstantBuffers();
-	for (size_t i = 0; i < _ConstantBufferPerConstant.size(); ++i)
-	{
-		//!!!if CB index is stored, can get index and not search!
-		auto& CBParam = _Table->GetConstant(i)->GetConstantBuffer();
-		auto CBIt = std::find(CBParams.cbegin(), CBParams.cend(), &CBParam);
-		n_assert(CBIt == CBParams.cend());
-		_ConstantBufferPerConstant[i] = static_cast<size_t>(std::distance(CBParams.cbegin(), CBIt));
-	}
 }
 //---------------------------------------------------------------------
 
@@ -76,12 +65,14 @@ bool CShaderParamStorage::SetRawConstant(CStrID ID, void* pData, UPTR Size)
 
 bool CShaderParamStorage::SetRawConstant(size_t Index, void* pData, UPTR Size)
 {
-	if (Index >= _ConstantBufferPerConstant.size()) FAIL;
+	if (Index >= _Table->GetConstants().size()) FAIL;
 
-	auto* pCB = GetBuffer(_ConstantBufferPerConstant[Index]);
+	const auto& Constant = _Table->GetConstant(Index);
+
+	auto* pCB = GetBuffer(Constant.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
-	_Table->GetConstant(Index)->SetRawValue(*pCB, pData, Size);
+	Constant.SetRawValue(*pCB, pData, Size);
 
 	OK;
 }

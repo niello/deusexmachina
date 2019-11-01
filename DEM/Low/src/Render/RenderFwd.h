@@ -25,6 +25,7 @@ class CLight;
 class CTechnique;
 class IRenderable;
 class IRenderer;
+class CShaderConstantParam;
 enum EEffectType;
 typedef Ptr<class CGPUDriver> PGPUDriver;
 typedef Ptr<class CDisplayDriver> PDisplayDriver;

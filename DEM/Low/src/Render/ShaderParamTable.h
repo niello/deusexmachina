@@ -14,11 +14,22 @@ namespace Render
 {
 constexpr size_t InvalidParamIndex = std::numeric_limits<size_t>().max();
 
+enum EShaderConstantFlags : U8
+{
+	ColumnMajor = 0x01
+};
+
 class CShaderConstantInfo : public Core::CObject
 {
 protected:
 
 	size_t _CBIndex;
+	U32    _ElementStride;
+	U32    _ElementCount;
+	U32    _ComponentStride;
+	U8     _Rows;
+	U8     _Columns;
+	U8     _Flags;
 
 	// PShaderConstantInfo members / element / component / component row
 
@@ -27,17 +38,17 @@ public:
 	// CShaderConstantInfo
 
 	size_t GetConstantBufferIndex() const { return _CBIndex; }
+	U32    GetElementStride() const { return _ElementStride; }
+	U32    GetElementCount() const { return _ElementCount; }
+	U32    GetComponentStride() const { return _ComponentStride; }
+	U32    GetRowCount() const { return _Rows; }
+	U32    GetColumnCount() const { return _Columns; }
+	bool   IsColumnMajor() const { return _Flags & EShaderConstantFlags::ColumnMajor; }
 
 	virtual CStrID GetID() const = 0;
 	virtual U32    GetLocalOffset() const = 0;
-	virtual U32    GetElementCount() const = 0;
-	virtual U32    GetElementStride() const = 0;
-	virtual U32    GetComponentStride() const = 0;
 	virtual bool   HasElementPadding() const = 0;
 	virtual bool   NeedConversionFrom(/*type*/) const = 0;
-	virtual U32    GetRowCount() const = 0;
-	virtual U32    GetColumnCount() const = 0;
-	virtual bool   IsColumnMajor() const = 0;
 
 	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
@@ -95,6 +106,7 @@ public:
 	CShaderConstantParam GetMember(const char* pName) const;
 	CShaderConstantParam GetElement(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Index) const;
+	CShaderConstantParam GetComponent(U32 Row, U32 Column) const;
 
 	CShaderConstantParam X() const { return GetComponent(0); }
 	CShaderConstantParam Y() const { return GetComponent(1); }
@@ -102,9 +114,8 @@ public:
 	CShaderConstantParam W() const { return GetComponent(3); }
 
 	CShaderConstantParam operator [](const char* pName) const { return GetMember(pName); }
-	CShaderConstantParam operator [](U32 Index) const { return GetElement(Index); } //!!!for components too!
-	CShaderConstantParam operator ()(U32 Row, U32 Column) const;
-	CShaderConstantParam operator ()(U32 ComponentIndex) const;
+	CShaderConstantParam operator [](U32 Index) const { return GetElement(Index); } //!!!for components too! elm -> cmp row -> cmp
+	CShaderConstantParam operator ()(U32 Row, U32 Column) const { return GetComponent(Row, Column); }
 
 	operator bool() const noexcept { return _Info.IsValidPtr(); }
 };
@@ -155,17 +166,15 @@ public:
 
 	size_t                GetConstantIndex(CStrID ID) const;
 	size_t                GetConstantBufferIndex(CStrID ID) const;
-	size_t                GetConstantBufferIndexForConstant(CStrID ID) const;
-	size_t                GetConstantBufferIndexForConstant(size_t Index) const;
 	size_t                GetResourceIndex(CStrID ID) const;
 	size_t                GetSamplerIndex(CStrID ID) const;
 
-	CShaderConstantParam  GetConstant(size_t Index) const;
+	const CShaderConstantParam& GetConstant(size_t Index) const;
 	IConstantBufferParam* GetConstantBuffer(size_t Index) const;
 	IResourceParam*       GetResource(size_t Index) const;
 	ISamplerParam*        GetSampler(size_t Index) const;
 
-	CShaderConstantParam  GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
+	const CShaderConstantParam& GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
 	IConstantBufferParam* GetConstantBuffer(CStrID ID) const { return GetConstantBuffer(GetConstantBufferIndex(ID)); }
 	IResourceParam*       GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
 	ISamplerParam*        GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }

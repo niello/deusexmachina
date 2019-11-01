@@ -2823,7 +2823,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PShaderConstantParam> Consts(Count);
+	std::vector<CShaderConstantParam> Consts(Count);
 	for (auto& ConstPtr : Consts)
 	{
 		U8 ShaderTypeMask;

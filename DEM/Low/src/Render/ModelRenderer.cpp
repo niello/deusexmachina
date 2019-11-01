@@ -5,7 +5,6 @@
 #include <Render/Model.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
-#include <Render/ShaderConstant.h>
 #include <Render/Mesh.h>
 #include <Render/Light.h>
 #include <Render/GPUDriver.h>

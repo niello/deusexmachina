@@ -81,8 +81,6 @@ public:
 
 	virtual CStrID GetID() const override;
 	virtual U32    GetLocalOffset() const override;
-	virtual U32    GetElementStride() const override;
-	virtual U32    GetComponentStride() const override;
 
 	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;

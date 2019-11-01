@@ -12,7 +12,6 @@
 #include <Render/Renderer.h>
 #include <Render/Material.h>
 #include <Render/Effect.h>
-#include <Render/ShaderConstant.h>
 #include <Render/SkinInfo.h>
 #include <Render/GPUDriver.h>
 #include <Resources/Resource.h>
@@ -189,12 +188,12 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	if (EnableLighting)
 	{
-		if (pConstGlobalLightBuffer)
+		if (ConstGlobalLightBuffer)
 		{
 			//!!!for a structured buffer, max count may be not applicable! must then use the same value
 			//as was used to allocate structured buffer instance!
 			UPTR GlobalLightCount = 0;
-			const UPTR MaxLightCount = pConstGlobalLightBuffer->Const->GetElementCount();
+			const UPTR MaxLightCount = ConstGlobalLightBuffer->Const->GetElementCount();
 			n_assert_dbg(MaxLightCount > 0);
 
 			const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();

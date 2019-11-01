@@ -4,8 +4,6 @@
 #include <Render/RenderState.h>
 #include <Render/RenderTarget.h>
 #include <Render/Shader.h>
-#include <Render/ShaderMetadata.h>
-#include <Render/ShaderConstant.h>
 #include <Render/SamplerDesc.h>
 #include <Render/Sampler.h>
 #include <Render/ConstantBuffer.h>

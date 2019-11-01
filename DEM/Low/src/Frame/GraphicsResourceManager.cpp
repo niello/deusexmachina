@@ -604,10 +604,10 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	// Fill intermediate buffers with constant values
 	for (size_t i = 0; i < Table.GetConstants().size(); ++i)
 	{
-		auto pParam = Table.GetConstant(i);
-		auto It = Values.ConstValues.find(pParam->GetID());
-		const Render::CShaderConstValue* pValue = (It != Values.ConstValues.cend()) ? &It->second : Effect->GetConstantDefaultValue(pParam->GetID());
-		if (pValue) pParam->SetRawValue(*RAMBuffers[Table.GetConstantBufferIndexForConstant(i)], pValue->pData, pValue->Size);
+		auto Param = Table.GetConstant(i);
+		auto It = Values.ConstValues.find(Param.GetID());
+		const Render::CShaderConstValue* pValue = (It != Values.ConstValues.cend()) ? &It->second : Effect->GetConstantDefaultValue(Param.GetID());
+		if (pValue) Param.SetRawValue(*RAMBuffers[Param.GetConstantBufferIndex()], pValue->pData, pValue->Size);
 	}
 
 	// Set filled constant buffers

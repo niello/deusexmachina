@@ -9,6 +9,9 @@
 #define D3D_DISABLE_9EX
 #include <d3d9.h> // At least for a CAPS structure
 
+#undef min
+#undef max
+
 // Direct3D9 GPU device driver.
 // Multihead (multimonitor) feature is not implemented. You may do it by yourself.
 // NB: D3D9 device can't be created without a swap chain, so you MUST call CreateSwapChain()

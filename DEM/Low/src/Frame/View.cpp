@@ -6,7 +6,6 @@
 #include <Frame/GraphicsResourceManager.h>
 #include <Scene/SPS.h>
 #include <Render/RenderTarget.h>
-#include <Render/ShaderConstant.h>
 #include <Render/ConstantBuffer.h>
 #include <Render/GPUDriver.h>
 #include <Render/DisplayDriver.h>

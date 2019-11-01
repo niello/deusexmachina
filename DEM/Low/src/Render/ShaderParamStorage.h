@@ -21,7 +21,6 @@ protected:
 	PGPUDriver                   _GPU;
 
 	std::vector<PConstantBuffer> _ConstantBuffers;
-	std::vector<size_t>          _ConstantBufferPerConstant;
 	std::vector<PTexture>        _Resources;
 	std::vector<PSampler>        _Samplers;
 
