@@ -41,22 +41,7 @@ static inline void ConvertAndWrite(CD3D9ConstantBuffer* pCB, ESM30RegisterSet Re
 }
 //---------------------------------------------------------------------
 
-void CSM30ConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const
-{
-	if (!pValue || !Count) return;
-
-	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
-	{
-		if (_RegisterSet == Reg_Float4)
-			pCB->WriteData(Reg_Float4, Offset, pValue, std::min(Count * sizeof(float), _Meta->SizeInBytes));
-		else if (_RegisterSet == Reg_Int4)
-			ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes);
-		else if (_RegisterSet == Reg_Bool)
-			ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes);
-	}
-}
-//---------------------------------------------------------------------
-
+/*
 CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes)
 	: _Buffer(Buffer)
 	, _Meta(Meta)
@@ -116,125 +101,78 @@ CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30Con
 	::Sys::Error("CSM30ConstantParam() > provided buffer doesn't contain the constant");
 }
 //---------------------------------------------------------------------
+*/
 
-U32 CSM30ConstantParam::GetMemberOffset(const char* pName) const
-{
-	n_assert(_Meta->ElementCount == 1);
-	return static_cast<U32>(-1);
-}
-//---------------------------------------------------------------------
-
-U32 CSM30ConstantParam::GetElementOffset(U32 Index) const
-{
-	U32 BytesPerRegister;
-	switch (_RegisterSet)
-	{
-		case Reg_Float4: BytesPerRegister = sizeof(float) * 4; break;
-		case Reg_Int4:   BytesPerRegister = sizeof(I32) * 4; break;
-		case Reg_Bool:   BytesPerRegister = sizeof(BOOL); break;
-		default:         ::Sys::Error("CSM30ConstantParam::GetElementOffset() > invalid register set"); return;
-	};
-	return _OffsetInBytes + Index * _Meta->ElementRegisterCount * BytesPerRegister;
-}
-//---------------------------------------------------------------------
-
-U32 CSM30ConstantParam::GetComponentOffset(U32 Index) const
-{
-	/*
-	//???process column-major differently?
-	n_assert_dbg(StructHandle == INVALID_HANDLE);
-
-	const U32 ComponentsPerElement = Columns * Rows;
-	const U32 Elm = ComponentIndex / ComponentsPerElement;
-	ComponentIndex = ComponentIndex - Elm * ComponentsPerElement;
-	const U32 Row = ComponentIndex / Columns;
-	const U32 Col = ComponentIndex - Row * Columns;
-
-	const U32 ComponentSize = 4; // Always 32-bit, even bool
-	const U32 ComponentsPerAlignedRow = 4; // Even for, say, float3x3, each row uses full 4-component register
-
-	return Offset + Elm * ComponentsPerElement + Row * ComponentsPerAlignedRow + Col; // In register components
-	*/
-
-	return static_cast<U32>(-1);
-}
-//---------------------------------------------------------------------
-
-
-IConstantBufferParam& CSM30ConstantParam::GetConstantBuffer() const
-{
-	return *_Buffer;
-}
-//---------------------------------------------------------------------
-
-void CSM30ConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
+void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
-		pCB->WriteData(_RegisterSet, _OffsetInBytes, pValue, std::min(Size, _SizeInBytes));
+		pCB->WriteData(_RegisterSet, Offset, pValue, std::min(Size, _Meta->SizeInBytes));
 }
 //---------------------------------------------------------------------
 
-void CSM30ConstantParam::SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const
+void CSM30ConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
-		if (_RegisterSet == Reg_Float4)
-			pCB->WriteData(Reg_Float4, _OffsetInBytes, pValue, std::min(Count * sizeof(float), _Meta->SizeInBytes));
-		else if (_RegisterSet == Reg_Int4)
-			ConvertAndWrite<I32>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
-		else if (_RegisterSet == Reg_Bool)
-			ConvertAndWrite<BOOL>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
+		switch (_RegisterSet)
+		{
+			case Reg_Float4: pCB->WriteData(Reg_Float4, Offset, pValue, std::min(Count * sizeof(float), _Meta->SizeInBytes)); break;
+			case Reg_Int4:   ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Bool:   ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CSM30ConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const
+void CSM30ConstantInfo::SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
-		if (_RegisterSet == Reg_Float4)
-			ConvertAndWrite<float>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
-		else if (_RegisterSet == Reg_Int4 || _RegisterSet == Reg_Bool)
-			pCB->WriteData(Reg_Int4, _OffsetInBytes, pValue, std::min(Count * sizeof(I32), _Meta->SizeInBytes));
+		switch (_RegisterSet)
+		{
+			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Int4:
+			case Reg_Bool:   pCB->WriteData(Reg_Int4, Offset, pValue, std::min(Count * sizeof(I32), _Meta->SizeInBytes)); break;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CSM30ConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const
+void CSM30ConstantInfo::SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
-		if (_RegisterSet == Reg_Float4)
-			ConvertAndWrite<float>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
-		else if (_RegisterSet == Reg_Int4 || _RegisterSet == Reg_Bool)
-			// No reason to convert U32 to I32, write as is
-			pCB->WriteData(Reg_Int4, _OffsetInBytes, pValue, std::min(Count * sizeof(U32), _Meta->SizeInBytes));
+		// NB: no need to convert U32 to I32, write as is
+		switch (_RegisterSet)
+		{
+			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Int4:
+			case Reg_Bool:   pCB->WriteData(Reg_Int4, Offset, pValue, std::min(Count * sizeof(U32), _Meta->SizeInBytes)); break;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CSM30ConstantParam::SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const
+void CSM30ConstantInfo::SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
-		auto Offset = _OffsetInBytes;
-
-		if (_RegisterSet == Reg_Float4)
-			ConvertAndWrite<float>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
-		else if (_RegisterSet == Reg_Int4)
-			ConvertAndWrite<I32>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
-		else if (_RegisterSet == Reg_Bool)
-			ConvertAndWrite<BOOL>(pCB, _RegisterSet, _OffsetInBytes, pValue, Count, _Meta->SizeInBytes);
+		switch (_RegisterSet)
+		{
+			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Int4:   ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Bool:   ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+		}
 	}
 }
 //---------------------------------------------------------------------

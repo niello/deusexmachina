@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
+#include <Render/ShaderParamStorage.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 #include <System/Allocators/PoolAllocator.h>
@@ -75,8 +76,8 @@ public:
 	Scene::CSPS*								pSPS = nullptr;
 	UI::PUIContext								UIContext;
 
-	Render::CConstantBufferSet					Globals;
-	Render::PSampler							TrilinearCubeSampler; // For IBL
+	Render::CShaderParamStorage					Globals;
+	//Render::PSampler							TrilinearCubeSampler; // For IBL
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations

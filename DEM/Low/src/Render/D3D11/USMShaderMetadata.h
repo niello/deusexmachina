@@ -49,7 +49,7 @@ enum EUSMShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-typedef Ptr<class CUSMConstantParam> PUSMConstantParam;
+typedef Ptr<class CUSMConstantInfo> PUSMConstantInfo;
 typedef Ptr<class CUSMConstantBufferParam> PUSMConstantBufferParam;
 typedef Ptr<class CUSMResourceParam> PUSMResourceParam;
 typedef Ptr<class CUSMSamplerParam> PUSMSamplerParam;
@@ -81,48 +81,31 @@ public:
 	std::vector<PUSMConstantMeta> Members;
 };
 
-class CUSMConstantInfo : public IShaderConstantInfo
+class CUSMConstantInfo : public CShaderConstantInfo
 {
 protected:
 
-	PUSMConstantMeta _Meta;  //???common fields to IShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
-	size_t           _Index; //???to IShaderConstantInfo?
+	//	PUSMConstantBufferParam _Buffer;
+	PUSMConstantMeta _Meta;  //???common fields to CShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
 
 public:
+
+	//CUSMConstantInfo
 
 	virtual CStrID GetID() const override;
 	virtual U32    GetLocalOffset() const override;
 	virtual U32    GetElementStride() const override;
 	virtual U32    GetComponentStride() const override;
 
+	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;
+	virtual void   SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const override;
+	virtual void   SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const override;
+	virtual void   SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const override;
 
 	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const override;
 	virtual PShaderConstantInfo GetElementInfo() const override;
 	virtual PShaderConstantInfo GetComponentInfo() const override;
-};
-
-class CUSMConstantParam : public IShaderConstantParam
-{
-protected:
-
-	PUSMConstantBufferParam _Buffer;
-	PUSMConstantMeta        _Meta;
-	U32                     _OffsetInBytes; // From the beginning of the buffer
-
-public:
-
-	CUSMConstantParam(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset = 0);
-
-	virtual CStrID                GetID() const override { return _Meta->Name; }
-	virtual IConstantBufferParam& GetConstantBuffer() const override;
-	virtual bool                  IsColumnMajor() const override { return _Meta->Flags & ShaderConst_ColumnMajor; }
-
-	virtual void                  SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
-	virtual void                  SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const override;
-	virtual void                  SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const override;
-	virtual void                  SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const override;
-	virtual void                  SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const override;
 };
 
 class CUSMConstantBufferParam : public IConstantBufferParam

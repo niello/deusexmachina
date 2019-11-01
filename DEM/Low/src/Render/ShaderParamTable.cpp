@@ -19,43 +19,85 @@ CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info)
 }
 //---------------------------------------------------------------------
 
-void CShaderConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
+template<typename T>
+static inline void SetValues(CShaderConstantInfo* Info, CConstantBuffer& CB, U32 Offset, const T* pValues, UPTR Count)
 {
-	n_assert_dbg(_Info);
-	//if (_Info) _Info->SetRawValue(CB, _Offset, pValue, Size);
-	//???or virtual CB.WriteData(OpaqueOffset, pValue, Size)?
+	if constexpr (std::is_same<T, float>())
+		Info->SetFloats(CB, Offset, pValues, Count);
+	else if constexpr (std::is_same<T, I32>())
+		Info->SetInts(CB, Offset, pValues, Count);
+	else if constexpr (std::is_same<T, U32>())
+		Info->SetUInts(CB, Offset, pValues, Count);
+	else if constexpr (std::is_same<T, bool>())
+		Info->SetBools(CB, Offset, pValues, Count);
+	else
+		static_assert(false, "Unsupported type in shader constant SetValues");
+}
+//---------------------------------------------------------------------
+
+template<typename T>
+static inline void SetArray(CShaderConstantInfo* Info, CConstantBuffer& CB, U32 Offset, const T* pValues, UPTR Count, U32 StartIndex)
+{
+	n_assert_dbg(Info);
+	if (!pValues || !Info || StartIndex >= Info->GetElementCount()) return;
+
+	Count = std::min(Count, Info->GetElementCount() - StartIndex);
+	if (!Count) return;
+
+	Offset += StartIndex * Info->GetElementStride();
+
+	if (Info->HasElementPadding() || Info->NeedConversionFrom(/*float*/))
+	{
+		const auto* pEnd = pValues + Count;
+		for (; pValues < pEnd; ++pValues)
+		{
+			SetValues(Info, CB, Offset, pValues, 1);
+			Offset += Info->GetElementStride();
+		}
+	}
+	else
+	{
+		SetValues(Info, CB, Offset, pValues, Count);
+	}
 }
 //---------------------------------------------------------------------
 
 void CShaderConstantParam::SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex) const
 {
-	n_assert_dbg(_Info);
-	if (!pValues || !_Info || StartIndex >= _Info->GetElementCount()) return;
-
-	Count = std::min(Count, _Info->GetElementCount() - StartIndex);
-	if (!Count) return;
-
-	U32 Offset = _Offset + StartIndex * _Info->GetElementStride();
-
-	if (_Info->HasElementPadding() || _Info->NeedConversionFrom(/*float*/))
-	{
-		const float* pEnd = pValues + Count;
-		for (; pValues < pEnd; ++pValues)
-		{
-			_Info->SetFloats(CB, Offset, pValues, 1);
-			Offset += _Info->GetElementStride();
-		}
-	}
-	else
-	{
-		_Info->SetFloats(CB, Offset, pValues, Count);
-	}
+	SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
 }
 //---------------------------------------------------------------------
 
-void CShaderConstantParam::SetMatrix(CConstantBuffer& CB, const matrix44& Value) const
+void CShaderConstantParam::SetIntArray(CConstantBuffer& CB, const I32* pValues, UPTR Count, U32 StartIndex) const
 {
-	//InternalSetMatrix((matrix majority == const majority) ? Value : Value.transposed())
+	SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
+}
+//---------------------------------------------------------------------
+
+void CShaderConstantParam::SetUIntArray(CConstantBuffer& CB, const U32* pValues, UPTR Count, U32 StartIndex) const
+{
+	SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
+}
+//---------------------------------------------------------------------
+
+void CShaderConstantParam::SetBoolArray(CConstantBuffer& CB, const bool* pValues, UPTR Count, U32 StartIndex) const
+{
+	SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
+}
+//---------------------------------------------------------------------
+
+void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44& Value) const
+{
+	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
+	if (MajorDim == 4)
+		_Info->SetFloats(CB, _Offset, *Value.m, MajorDim * MinorDim);
+	else
+	{
+		U32 Offset = _Offset;
+		for (size_t Min = 0; Min < MinorDim; ++Min, Offset += 4 * sizeof(float))
+			_Info->SetFloats(CB, Offset, *Value.m, MajorDim);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -79,150 +121,6 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
 }
 //---------------------------------------------------------------------
-
-/*
-
-// DEM matrices are row-major
-void IShaderConstantParam::SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const
-{
-	if (!pValue || !Count) return;
-
-	const auto Rows = GetRowCount();
-	const auto Columns = GetColumnCount();
-	n_assert_dbg(Columns > 0 && Rows > 0);
-
-	if (IsColumnMajor())
-	{
-		//!!!limit count!
-
-		const matrix44* pCurrMatrix = pValue;
-		const matrix44* pEndMatrix = pValue + Count;
-		for (; pCurrMatrix < pEndMatrix; ++pCurrMatrix)
-		{
-			const matrix44 Transposed = pCurrMatrix->transposed();
-
-			NOT_IMPLEMENTED;
-			// set array element
-		}
-	}
-	else
-	{
-		if (Columns == 4)
-		{
-			if (Rows == 4)
-			{
-				// Copy matrices without breaking
-				SetFloats(CB, *pValue->m, 16 * Count);
-			}
-			else
-			{
-				// Copy rows without breaking
-			}
-		}
-		else
-		{
-			// Copy row by row
-		}
-	}
-}
-//---------------------------------------------------------------------
-
-void CUSMConstant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
-{
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CB;
-
-	n_assert_dbg(StartIndex < ElementCount);
-
-	if (Flags & ShaderConst_ColumnMajor)
-	{
-		n_assert_dbg(Columns > 0 && Rows > 0);
-
-		 // The maximum is 16 floats, may be less
-		float TransposedData[16];
-		const UPTR MatrixSize = Columns * Rows * sizeof(float);
-
-		const matrix44* pCurrMatrix = pValues;
-		const matrix44* pEndMatrix = pValues + Count;
-		for (; pCurrMatrix < pEndMatrix; ++pCurrMatrix)
-		{
-			float* pCurrData = TransposedData;
-			for (U32 Col = 0; Col < Columns; ++Col)
-				for (U32 Row = 0; Row < Rows; ++Row)
-				{
-					*pCurrData = pCurrMatrix->m[Row][Col];
-					++pCurrData;
-				}
-
-			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
-			NOT_IMPLEMENTED;
-			CB11.WriteData(Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
-		}
-	}
-	else
-	{
-		const UPTR DataSize = 4 * Rows * sizeof(float);
-		UPTR CurrOffset = Offset + DataSize * StartIndex;
-		if (DataSize == sizeof(matrix44))
-		{
-			CB11.WriteData(CurrOffset, pValues, sizeof(matrix44) * Count);
-		}
-		else
-		{
-			const matrix44* pCurrValue = pValues;
-			for (UPTR i = 0; i < Count; ++i)
-			{
-				CB11.WriteData(CurrOffset, pValues, DataSize);
-				CurrOffset += DataSize;
-				pCurrValue += sizeof(matrix44);
-			}
-		}
-	}
-}
-//---------------------------------------------------------------------
-
-void CSM30Constant::SetMatrix(const CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex) const
-{
-	if (RegSet != Reg_Float4) return;
-
-	n_assert_dbg(StartIndex < ElementCount);
-
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CB;
-
-	if (Flags & ShaderConst_ColumnMajor)
-	{
-		n_assert_dbg(Columns > 0 && Rows > 0);
-
-		 // The maximum is 16 floats, may be less
-		float TransposedData[16];
-		const UPTR MatrixSize = Columns * Rows * sizeof(float);
-
-		const matrix44* pCurrMatrix = pValues;
-		const matrix44* pEndMatrix = pValues + Count;
-		for (; pCurrMatrix < pEndMatrix; ++pCurrMatrix)
-		{
-			float* pCurrData = TransposedData;
-			for (U32 Col = 0; Col < Columns; ++Col)
-				for (U32 Row = 0; Row < Rows; ++Row)
-				{
-					*pCurrData = pCurrMatrix->m[Row][Col];
-					++pCurrData;
-				}
-
-			//!!!need total columns used, check float3x3, is it 9 or 12 floats?!
-			NOT_IMPLEMENTED;
-			CB9.WriteData(RegSet, Offset + MatrixSize * StartIndex, &TransposedData, MatrixSize);
-		}
-	}
-	else
-	{
-		//!!!check columns and rows! (really need to check only rows, as all columns are used)
-		NOT_IMPLEMENTED;
-		CB9.WriteData(RegSet, Offset + sizeof(matrix44) * StartIndex, pValues, sizeof(matrix44) * Count);
-	}
-}
-//---------------------------------------------------------------------
-
-*/
 
 CShaderParamTable::CShaderParamTable(std::vector<CShaderConstantParam>&& Constants,
 	std::vector<PConstantBufferParam>&& ConstantBuffers,

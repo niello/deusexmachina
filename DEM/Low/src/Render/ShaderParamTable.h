@@ -12,10 +12,21 @@
 
 namespace Render
 {
+constexpr size_t InvalidParamIndex = std::numeric_limits<size_t>().max();
 
-class IShaderConstantInfo : public Core::CObject
+class CShaderConstantInfo : public Core::CObject
 {
+protected:
+
+	size_t _CBIndex;
+
+	// PShaderConstantInfo members / element / component / component row
+
 public:
+
+	// CShaderConstantInfo
+
+	size_t GetConstantBufferIndex() const { return _CBIndex; }
 
 	virtual CStrID GetID() const = 0;
 	virtual U32    GetLocalOffset() const = 0;
@@ -24,8 +35,15 @@ public:
 	virtual U32    GetComponentStride() const = 0;
 	virtual bool   HasElementPadding() const = 0;
 	virtual bool   NeedConversionFrom(/*type*/) const = 0;
+	virtual U32    GetRowCount() const = 0;
+	virtual U32    GetColumnCount() const = 0;
+	virtual bool   IsColumnMajor() const = 0;
 
+	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
+	virtual void   SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const = 0;
+	virtual void   SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const = 0;
+	virtual void   SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const = 0;
 
 	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const = 0;
 	virtual PShaderConstantInfo GetElementInfo() const = 0;
@@ -37,32 +55,39 @@ class CShaderConstantParam final
 private:
 
 	PShaderConstantInfo _Info;
-	U32                 _Offset;
+	U32                 _Offset = 0;
 
 	CShaderConstantParam(PShaderConstantInfo Info, U32 Offset);
 
+	void   InternalSetMatrix(CConstantBuffer& CB, const matrix44& Value) const;
+
 public:
 
+	CShaderConstantParam() = default;
 	CShaderConstantParam(PShaderConstantInfo Info);
 
 	CStrID GetID() const { return _Info ? _Info->GetID() : CStrID::Empty; }
+	size_t GetConstantBufferIndex() const { return _Info ? _Info->GetConstantBufferIndex() : InvalidParamIndex; }
 	bool   IsValid() const { return _Info.IsValidPtr(); }
 
-	void   SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const;
+	void   SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const { n_assert_dbg(_Info); if (_Info) _Info->SetRawValue(CB, _Offset, pValue, Size); }
 
 	void   SetFloat(CConstantBuffer& CB, float Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, &Value, 1); }
-	//void   SetInt(CConstantBuffer& CB, I32 Value) const;
-	//void   SetUInt(CConstantBuffer& CB, U32 Value) const;
-	//void   SetBool(CConstantBuffer& CB, bool Value) const;
+	void   SetInt(CConstantBuffer& CB, I32 Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetInts(CB, _Offset, &Value, 1); }
+	void   SetUInt(CConstantBuffer& CB, U32 Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetUInts(CB, _Offset, &Value, 1); }
+	void   SetBool(CConstantBuffer& CB, bool Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetBools(CB, _Offset, &Value, 1); }
 	void   SetVector(CConstantBuffer& CB, const vector3& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 3); }
 	void   SetVector(CConstantBuffer& CB, const vector4& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 4); }
-	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value) const;
+	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { n_assert_dbg(_Info); if (_Info) { if (_Info->IsColumnMajor()) InternalSetMatrix(CB, Value.transposed()); else InternalSetMatrix(CB, Value); } }
 
 	void   SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex = 0) const;
 	void   SetFloatArray(CConstantBuffer& CB, std::initializer_list<float> Values, U32 StartIndex = 0) const { SetFloatArray(CB, Values.begin(), Values.size(), StartIndex); }
-	//void   SetIntArray(CConstantBuffer& CB, const I32* pValues, UPTR Count, U32 StartIndex = 0) const;
-	//void   SetUIntArray(CConstantBuffer& CB, const U32* pValues, UPTR Count, U32 StartIndex = 0) const;
-	//void   SetBoolArray(CConstantBuffer& CB, const bool* pValues, UPTR Count, U32 StartIndex = 0) const;
+	void   SetIntArray(CConstantBuffer& CB, const I32* pValues, UPTR Count, U32 StartIndex = 0) const;
+	void   SetIntArray(CConstantBuffer& CB, std::initializer_list<I32> Values, U32 StartIndex = 0) const { SetIntArray(CB, Values.begin(), Values.size(), StartIndex); }
+	void   SetUIntArray(CConstantBuffer& CB, const U32* pValues, UPTR Count, U32 StartIndex = 0) const;
+	void   SetUIntArray(CConstantBuffer& CB, std::initializer_list<U32> Values, U32 StartIndex = 0) const { SetUIntArray(CB, Values.begin(), Values.size(), StartIndex); }
+	void   SetBoolArray(CConstantBuffer& CB, const bool* pValues, UPTR Count, U32 StartIndex = 0) const;
+	void   SetBoolArray(CConstantBuffer& CB, std::initializer_list<bool> Values, U32 StartIndex = 0) const { SetBoolArray(CB, Values.begin(), Values.size(), StartIndex); }
 	//void   SetVectorArray(CConstantBuffer& CB, const vector3* pValues, UPTR Count, U32 StartIndex = 0) const;
 	//void   SetVectorArray(CConstantBuffer& CB, const vector4* pValues, UPTR Count, U32 StartIndex = 0) const;
 	//void   SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex = 0) const;
@@ -71,52 +96,17 @@ public:
 	CShaderConstantParam GetElement(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Index) const;
 
-	CShaderConstantParam x() const { return GetComponent(0); }
-	CShaderConstantParam y() const { return GetComponent(1); }
-	CShaderConstantParam z() const { return GetComponent(2); }
-	CShaderConstantParam w() const { return GetComponent(3); }
+	CShaderConstantParam X() const { return GetComponent(0); }
+	CShaderConstantParam Y() const { return GetComponent(1); }
+	CShaderConstantParam Z() const { return GetComponent(2); }
+	CShaderConstantParam W() const { return GetComponent(3); }
 
 	CShaderConstantParam operator [](const char* pName) const { return GetMember(pName); }
-	CShaderConstantParam operator [](U32 Index) const { return GetElement(Index); }
+	CShaderConstantParam operator [](U32 Index) const { return GetElement(Index); } //!!!for components too!
 	CShaderConstantParam operator ()(U32 Row, U32 Column) const;
 	CShaderConstantParam operator ()(U32 ComponentIndex) const;
-};
 
-class IShaderConstantParam : public Data::CRefCounted
-{
-protected:
-
-	virtual U32  GetMemberOffset(const char* pName) const = 0;
-	virtual U32  GetElementOffset(U32 Index) const = 0;
-	virtual U32  GetComponentOffset(U32 Index) const = 0;
-
-	virtual U32  GetRowCount() const = 0;
-	virtual U32  GetColumnCount() const = 0;
-	virtual bool IsColumnMajor() const = 0;
-
-public:
-
-	virtual CStrID                GetID() const = 0;
-	virtual IConstantBufferParam& GetConstantBuffer() const = 0;
-
-	//!!!TODO: member, element and component operations! operator[int/str] + methods like .x()?
-	//!!!TODO: matrix majority!
-
-	virtual void SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const = 0;
-	virtual void SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const = 0;
-	virtual void SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const = 0;
-	virtual void SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const = 0;
-	virtual void SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const = 0;
-
-	void         SetFloat(CConstantBuffer& CB, float Value) const { SetFloats(CB, &Value, 1); }
-	void         SetInt(CConstantBuffer& CB, I32 Value) const { SetInts(CB, &Value, 1); }
-	void         SetUInt(CConstantBuffer& CB, U32 Value) const { SetUInts(CB, &Value, 1); }
-	void         SetBool(CConstantBuffer& CB, bool Value) const { SetBools(CB, &Value, 1); }
-	void         SetVector(CConstantBuffer& CB, const vector3& Value) const { SetFloats(CB, Value.v, 3); }
-	void         SetVector(CConstantBuffer& CB, const vector4& Value) const { SetFloats(CB, Value.v, 4); }
-	void         SetVectors(CConstantBuffer& CB, const vector4* pValue, UPTR Count) const { SetFloats(CB, pValue->v, 4 * Count); }
-	void         SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { SetMatrices(CB, &Value, 1); }
-	void         SetMatrices(CConstantBuffer& CB, const matrix44* pValue, UPTR Count) const;
+	operator bool() const noexcept { return _Info.IsValidPtr(); }
 };
 
 class IConstantBufferParam : public Core::CObject
@@ -150,7 +140,7 @@ class CShaderParamTable : public Data::CRefCounted
 {
 protected:
 
-	// Vectors are sorted and never change in runtime
+	// Vectors are sorted by ID and never change in runtime
 	std::vector<CShaderConstantParam> _Constants;
 	std::vector<PConstantBufferParam> _ConstantBuffers;
 	std::vector<PResourceParam>       _Resources;
@@ -170,12 +160,12 @@ public:
 	size_t                GetResourceIndex(CStrID ID) const;
 	size_t                GetSamplerIndex(CStrID ID) const;
 
-	IShaderConstantParam* GetConstant(size_t Index) const;
+	CShaderConstantParam  GetConstant(size_t Index) const;
 	IConstantBufferParam* GetConstantBuffer(size_t Index) const;
 	IResourceParam*       GetResource(size_t Index) const;
 	ISamplerParam*        GetSampler(size_t Index) const;
 
-	IShaderConstantParam* GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
+	CShaderConstantParam  GetConstant(CStrID ID) const { return GetConstant(GetConstantIndex(ID)); }
 	IConstantBufferParam* GetConstantBuffer(CStrID ID) const { return GetConstantBuffer(GetConstantBufferIndex(ID)); }
 	IResourceParam*       GetResource(CStrID ID) const { return GetResource(GetResourceIndex(ID)); }
 	ISamplerParam*        GetSampler(CStrID ID) const { return GetSampler(GetSamplerIndex(ID)); }

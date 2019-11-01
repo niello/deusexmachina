@@ -37,64 +37,45 @@ static inline void ConvertAndWrite(CD3D11ConstantBuffer* pCB, U32 Offset, const 
 }
 //---------------------------------------------------------------------
 
-void CUSMConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const
-{
-	if (!pValue || !Count) return;
-
-	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-	{
-		const auto SizeInBytes = _Meta->ElementStride; //!!!byte size of one element, NOT dimensionless stride!
-
-		if (_Meta->Type == USMConst_Float)
-			pCB->WriteData(Offset, pValue, std::min(Count * sizeof(float), SizeInBytes));
-		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-			ConvertAndWrite<I32>(pCB, Offset, pValue, Count, SizeInBytes);
-		else ::Sys::Error("CUSMConstantInfo::SetFloats() > typed value writing allowed only for float, int & bool constants");
-	}
-}
-//---------------------------------------------------------------------
-
-CUSMConstantParam::CUSMConstantParam(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset)
+/*
+CUSMConstantInfo::CUSMConstantInfo(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset)
 	: _Buffer(Buffer)
 	, _Meta(Meta)
 	, _OffsetInBytes(Meta->Offset + Offset)
 {
 }
 //---------------------------------------------------------------------
+*/
 
-IConstantBufferParam& CUSMConstantParam::GetConstantBuffer() const
-{
-	return *_Buffer;
-}
-//---------------------------------------------------------------------
-
-void CUSMConstantParam::SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const
+void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(_OffsetInBytes, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementStride));
+		pCB->WriteData(Offset, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementStride));
 }
 //---------------------------------------------------------------------
 
-void CUSMConstantParam::SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const
+void CUSMConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
+		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride; //!!!need byte size from meta!
 
-		if (_Meta->Type == USMConst_Float)
-			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(float), SizeInBytes));
-		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-			ConvertAndWrite<I32>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
-		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+		switch (_Meta->Type)
+		{
+			case USMConst_Float: pCB->WriteData(Offset, pValue, std::min(Count * sizeof(float), SizeInBytes)); break;
+			case USMConst_Int:
+			case USMConst_Bool:  ConvertAndWrite<I32>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			default: ::Sys::Error("CUSMConstantInfo::SetFloats() > typed value writing allowed only for float, int & bool constants"); return;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CUSMConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const
+void CUSMConstantInfo::SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
@@ -102,16 +83,18 @@ void CUSMConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Cou
 	{
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
-		if (_Meta->Type == USMConst_Float)
-			ConvertAndWrite<float>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
-		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(I32), SizeInBytes));
-		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+		switch (_Meta->Type)
+		{
+			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Int:
+			case USMConst_Bool:  pCB->WriteData(Offset, pValue, std::min(Count * sizeof(I32), SizeInBytes)); break;
+			default: ::Sys::Error("CUSMConstantInfo::SetInts() > typed value writing allowed only for float, int & bool constants"); return;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CUSMConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const
+void CUSMConstantInfo::SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
@@ -119,29 +102,32 @@ void CUSMConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Co
 	{
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
-		if (_Meta->Type == USMConst_Float)
-			ConvertAndWrite<float>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
-		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(U32), SizeInBytes));
-		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+		switch (_Meta->Type)
+		{
+			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Int:
+			case USMConst_Bool:  pCB->WriteData(Offset, pValue, std::min(Count * sizeof(U32), SizeInBytes)); break;
+			default: ::Sys::Error("CUSMConstantInfo::SetUInts() > typed value writing allowed only for float, int & bool constants"); return;
+		}
 	}
 }
 //---------------------------------------------------------------------
 
-void CUSMConstantParam::SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const
+void CUSMConstantInfo::SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const
 {
 	if (!pValue || !Count) return;
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		auto Offset = _OffsetInBytes;
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
-		if (_Meta->Type == USMConst_Float)
-			ConvertAndWrite<float>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
-		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-			ConvertAndWrite<I32>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
-		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
+		switch (_Meta->Type)
+		{
+			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			case USMConst_Int:
+			case USMConst_Bool:  ConvertAndWrite<I32>(pCB, Offset, pValue, Count, SizeInBytes); break;
+			default: ::Sys::Error("CUSMConstantInfo::SetBools() > typed value writing allowed only for float, int & bool constants"); return;
+		}
 	}
 }
 //---------------------------------------------------------------------

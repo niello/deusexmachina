@@ -1,8 +1,6 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_PHASE_GLOBAL_SETUP_H__
-#define __DEM_L1_FRAME_PHASE_GLOBAL_SETUP_H__
-
 #include <Frame/RenderPhase.h>
+#include <Render/ShaderParamTable.h> // FIXME: ShaderParams / ShaderConstant?
 
 // Performs setup of global shader variables and other frame-wide params.
 
@@ -16,8 +14,8 @@ class CRenderPhaseGlobalSetup: public CRenderPhase
 protected:
 
 	// Global shader params
-	const Render::CEffectConstant* pConstViewProjection;
-	const Render::CEffectConstant* pConstCameraPosition;
+	Render::CShaderConstantParam ViewProjection;
+	Render::CShaderConstantParam CameraPosition;
 
 public:
 
@@ -28,5 +26,3 @@ public:
 };
 
 }
-
-#endif

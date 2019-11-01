@@ -20,6 +20,7 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 	const auto& CBParams = _Table->GetConstantBuffers();
 	for (size_t i = 0; i < _ConstantBufferPerConstant.size(); ++i)
 	{
+		//!!!if CB index is stored, can get index and not search!
 		auto& CBParam = _Table->GetConstant(i)->GetConstantBuffer();
 		auto CBIt = std::find(CBParams.cbegin(), CBParams.cend(), &CBParam);
 		n_assert(CBIt == CBParams.cend());

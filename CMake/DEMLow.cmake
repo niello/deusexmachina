@@ -199,7 +199,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/Sampler.h
 	DEM/Low/src/Render/SamplerDesc.h
 	DEM/Low/src/Render/Shader.h
-	DEM/Low/src/Render/ShaderConstant.h
 	DEM/Low/src/Render/ShaderLibrary.h
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.h
 	DEM/Low/src/Render/ShaderParamStorage.h
@@ -235,7 +234,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D11/D3D11Texture.h
 	DEM/Low/src/Render/D3D11/D3D11VertexBuffer.h
 	DEM/Low/src/Render/D3D11/D3D11VertexLayout.h
-	DEM/Low/src/Render/D3D11/USMShaderConstant.h
 	DEM/Low/src/Render/D3D11/USMShaderMetadata.h
 	DEM/Low/src/Render/D3D9/D3D9ConstantBuffer.h
 	DEM/Low/src/Render/D3D9/D3D9DepthStencilBuffer.h
@@ -251,7 +249,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D9/D3D9Texture.h
 	DEM/Low/src/Render/D3D9/D3D9VertexBuffer.h
 	DEM/Low/src/Render/D3D9/D3D9VertexLayout.h
-	DEM/Low/src/Render/D3D9/SM30ShaderConstant.h
 	DEM/Low/src/Render/D3D9/SM30ShaderMetadata.h
 	DEM/Low/src/Resources/Resource.h
 	DEM/Low/src/Resources/ResourceCreator.h
@@ -480,7 +477,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D11/D3D11Texture.cpp
 	DEM/Low/src/Render/D3D11/D3D11VertexBuffer.cpp
 	DEM/Low/src/Render/D3D11/D3D11VertexLayout.cpp
-	DEM/Low/src/Render/D3D11/USMShaderConstant.cpp
 	DEM/Low/src/Render/D3D11/USMShaderMetadata.cpp
 	DEM/Low/src/Render/D3D9/D3D9ConstantBuffer.cpp
 	DEM/Low/src/Render/D3D9/D3D9DepthStencilBuffer.cpp
@@ -496,7 +492,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/D3D9/D3D9Texture.cpp
 	DEM/Low/src/Render/D3D9/D3D9VertexBuffer.cpp
 	DEM/Low/src/Render/D3D9/D3D9VertexLayout.cpp
-	DEM/Low/src/Render/D3D9/SM30ShaderConstant.cpp
 	DEM/Low/src/Render/D3D9/SM30ShaderMetadata.cpp
 	DEM/Low/src/Resources/Resource.cpp
 	DEM/Low/src/Resources/ResourceManager.cpp

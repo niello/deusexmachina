@@ -37,6 +37,10 @@ public:
 
 	bool                     SetRawConstant(CStrID ID, void* pData, UPTR Size);
 	bool                     SetRawConstant(size_t Index, void* pData, UPTR Size);
+	bool                     SetRawConstant(const CShaderConstantParam& Param, void* pData, UPTR Size);
+	bool                     SetVector(const CShaderConstantParam& Param, const vector3& Value);
+	bool                     SetVector(const CShaderConstantParam& Param, const vector4& Value);
+	bool                     SetMatrix(const CShaderConstantParam& Param, const matrix44& Value);
 
 	bool                     SetResource(CStrID ID, CTexture* pTexture);
 	bool                     SetResource(size_t Index, CTexture* pTexture);

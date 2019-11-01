@@ -32,7 +32,7 @@ enum ESM30ShaderConstFlags
 	ShaderConst_ColumnMajor	= 0x01 // Only for matrix types
 };
 
-typedef Ptr<class CSM30ConstantParam> PSM30ConstantParam;
+typedef Ptr<class CSM30ConstantInfo> PSM30ConstantInfo;
 typedef Ptr<class CSM30ConstantBufferParam> PSM30ConstantBufferParam;
 typedef Ptr<class CSM30ResourceParam> PSM30ResourceParam;
 typedef Ptr<class CSM30SamplerParam> PSM30SamplerParam;
@@ -67,55 +67,32 @@ public:
 	std::vector<PSM30ConstantMeta> Members;
 };
 
-class CSM30ConstantInfo : public IShaderConstantInfo
+class CSM30ConstantInfo : public CShaderConstantInfo
 {
 protected:
 
-	PSM30ConstantMeta _Meta;  //???common fields to IShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
-	size_t            _Index; //???to IShaderConstantInfo?
-	ESM30RegisterSet  _RegisterSet;
+	//	PSM30ConstantBufferParam _Buffer;
+	PSM30ConstantMeta _Meta;  //???common fields to CShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
+	ESM30RegisterSet  _RegisterSet; //???to constant meta? //!!!total offset depends on constant buffer, can't be stored in struct member!
 
 public:
+
+	//CSM30ConstantInfo
 
 	virtual CStrID GetID() const override;
 	virtual U32    GetLocalOffset() const override;
 	virtual U32    GetElementStride() const override;
 	virtual U32    GetComponentStride() const override;
 
+	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;
+	virtual void   SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const override;
+	virtual void   SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const override;
+	virtual void   SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const override;
 
 	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const override;
 	virtual PShaderConstantInfo GetElementInfo() const override;
 	virtual PShaderConstantInfo GetComponentInfo() const override;
-};
-
-class CSM30ConstantParam : public IShaderConstantParam
-{
-protected:
-
-	PSM30ConstantBufferParam _Buffer;
-	PSM30ConstantMeta        _Meta;
-	U32                      _OffsetInBytes; // Real start
-	ESM30RegisterSet         _RegisterSet;
-
-	virtual U32  GetMemberOffset(const char* pName) const override;
-	virtual U32  GetElementOffset(U32 Index) const override;
-	virtual U32  GetComponentOffset(U32 Index) const override;
-
-	virtual bool IsColumnMajor() const override { return _Meta->Flags & ShaderConst_ColumnMajor; }
-
-public:
-
-	CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes = 0);
-
-	virtual CStrID                GetID() const override { return _Meta->Name; }
-	virtual IConstantBufferParam& GetConstantBuffer() const override;
-
-	virtual void SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const override;
-	virtual void SetFloats(CConstantBuffer& CB, const float* pValue, UPTR Count) const override;
-	virtual void SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Count) const override;
-	virtual void SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Count) const override;
-	virtual void SetBools(CConstantBuffer& CB, const bool* pValue, UPTR Count) const override;
 };
 
 class CSM30ConstantBufferParam : public IConstantBufferParam
