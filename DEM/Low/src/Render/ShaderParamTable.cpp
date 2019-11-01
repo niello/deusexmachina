@@ -5,6 +5,8 @@ namespace Render
 {
 __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
+CShaderConstantInfo::~CShaderConstantInfo() = default;
+
 CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
 	: _Info(Info)
 	, _Offset(Offset)

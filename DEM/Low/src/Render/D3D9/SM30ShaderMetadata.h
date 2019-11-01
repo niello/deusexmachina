@@ -43,16 +43,16 @@ class CSM30ConstantMeta : public Data::CRefCounted
 {
 public:
 
-	CStrID          Name;
+	//CStrID          Name;
 
 	PSM30StructMeta Struct;
 
 	U32             RegisterStart; // For structs - offset from the start of the structure
 	U32             ElementRegisterCount;
-	U32             ElementCount;
-	U8              Columns;
-	U8              Rows;
-	U8              Flags; // See ESM30ShaderConstFlags
+	//U32             ElementCount;
+	//U8              Columns;
+	//U8              Rows;
+	//U8              Flags; // See ESM30ShaderConstFlags
 
 	U32             SizeInBytes = 6666; // Cached value // FIXME: calculate!
 
@@ -71,16 +71,12 @@ class CSM30ConstantInfo : public CShaderConstantInfo
 {
 protected:
 
-	//	PSM30ConstantBufferParam _Buffer;
 	PSM30ConstantMeta _Meta;  //???common fields to CShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
 	ESM30RegisterSet  _RegisterSet; //???to constant meta? //!!!total offset depends on constant buffer, can't be stored in struct member!
 
 public:
 
 	//CSM30ConstantInfo
-
-	virtual CStrID GetID() const override;
-	virtual U32    GetLocalOffset() const override;
 
 	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;

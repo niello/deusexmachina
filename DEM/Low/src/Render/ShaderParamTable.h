@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Core/Object.h>
+#include <map>
 
 // Shader parameter table stores metadata necessary to set shader parameter values
 
@@ -23,7 +24,9 @@ class CShaderConstantInfo : public Core::CObject
 {
 protected:
 
+	CStrID _ID;
 	size_t _CBIndex;
+	U32    _LocalOffset;
 	U32    _ElementStride;
 	U32    _ElementCount;
 	U32    _ComponentStride;
@@ -31,13 +34,27 @@ protected:
 	U8     _Columns;
 	U8     _Flags;
 
-	// PShaderConstantInfo members / element / component / component row
+	// Cached sub-constant info. Any array has elements. Any single structure has members.
+	// Any single vector has components. Any single matrix has components and rows.
+	union
+	{
+		std::map<CStrID, PShaderConstantInfo> MemberInfo;
+		PShaderConstantInfo                   ElementInfo;
+		struct
+		{
+			PShaderConstantInfo               RowInfo;
+			PShaderConstantInfo               ComponentInfo;
+		};
+	};
 
 public:
 
 	// CShaderConstantInfo
+	virtual ~CShaderConstantInfo() override;
 
+	CStrID GetID() const { return _ID; }
 	size_t GetConstantBufferIndex() const { return _CBIndex; }
+	U32    GetLocalOffset() const { return _LocalOffset; }
 	U32    GetElementStride() const { return _ElementStride; }
 	U32    GetElementCount() const { return _ElementCount; }
 	U32    GetComponentStride() const { return _ComponentStride; }
@@ -45,8 +62,6 @@ public:
 	U32    GetColumnCount() const { return _Columns; }
 	bool   IsColumnMajor() const { return _Flags & EShaderConstantFlags::ColumnMajor; }
 
-	virtual CStrID GetID() const = 0;
-	virtual U32    GetLocalOffset() const = 0;
 	virtual bool   HasElementPadding() const = 0;
 	virtual bool   NeedConversionFrom(/*type*/) const = 0;
 

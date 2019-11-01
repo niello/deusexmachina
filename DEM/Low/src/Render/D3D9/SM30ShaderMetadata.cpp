@@ -41,67 +41,13 @@ static inline void ConvertAndWrite(CD3D9ConstantBuffer* pCB, ESM30RegisterSet Re
 }
 //---------------------------------------------------------------------
 
-/*
-CSM30ConstantParam::CSM30ConstantParam(PSM30ConstantBufferParam Buffer, PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes)
+CSM30ConstantInfo::CSM30ConstantInfo(PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes)
 	: _Buffer(Buffer)
 	, _Meta(Meta)
 	, _RegisterSet(RegisterSet)
 {
-	n_assert_dbg(_Buffer && _RegisterSet != Reg_Invalid);
-
-	CSM30ConstantBufferParam::CRanges* pRanges;
-	U32 BytesPerRegister;
-	switch (_RegisterSet)
-	{
-		case Reg_Float4:
-		{
-			pRanges = &_Buffer->Float4;
-			BytesPerRegister = sizeof(float) * 4;
-			break;
-		}
-		case Reg_Int4:
-		{
-			pRanges = &_Buffer->Int4;
-			BytesPerRegister = sizeof(I32) * 4;
-			break;
-		}
-		case Reg_Bool:
-		{
-			pRanges = &_Buffer->Bool;
-			BytesPerRegister = sizeof(BOOL);
-			break;
-		}
-		default:
-		{
-			::Sys::Error("CSM30ConstantParam() > invalid register set");
-			return;
-		}
-	};
-
-	U32 OffsetInRegisters = 0;
-
-	for (const auto& Range : *pRanges)
-	{
-		// Ranges are sorted ascending, so that means that the buffer has no required range
-		if (Range.first > _Meta->RegisterStart) break;
-
-		if (Range.first + Range.second > _Meta->RegisterStart)
-		{
-			// Found range
-			n_assert_dbg(Range.first + Range.second >= _Meta->RegisterStart + _Meta->ElementRegisterCount * _Meta->ElementCount);
-			OffsetInRegisters += _Meta->RegisterStart - Range.first;
-			_OffsetInBytes = OffsetInRegisters * BytesPerRegister + OffsetInBytes;
-			_SizeInBytes = _Meta->ElementCount * _Meta->ElementRegisterCount * BytesPerRegister;
-			return;
-		}
-
-		OffsetInRegisters += Range.second;
-	}
-
-	::Sys::Error("CSM30ConstantParam() > provided buffer doesn't contain the constant");
 }
 //---------------------------------------------------------------------
-*/
 
 void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {

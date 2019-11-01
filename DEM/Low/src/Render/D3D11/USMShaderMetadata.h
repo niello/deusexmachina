@@ -60,17 +60,17 @@ class CUSMConstantMeta : public Data::CRefCounted
 {
 public:
 
-	CStrID         Name;
+	//CStrID         Name;
 
 	PUSMStructMeta Struct;
 
 	EUSMConstType  Type;
-	U32            Offset; // From the start of CB, for struct members - from the start of the structure
-	U32            ElementStride;
-	U32            ElementCount;
-	U8             Columns;
-	U8             Rows;
-	U8             Flags; // See EUSMShaderConstFlags
+	//U32            Offset; // From the start of CB, for struct members - from the start of the structure
+	//U32            ElementStride;
+	//U32            ElementCount;
+	//U8             Columns;
+	//U8             Rows;
+	//U8             Flags; // See EUSMShaderConstFlags
 };
 
 class CUSMStructMeta : public Data::CRefCounted
@@ -85,15 +85,11 @@ class CUSMConstantInfo : public CShaderConstantInfo
 {
 protected:
 
-	//	PUSMConstantBufferParam _Buffer;
 	PUSMConstantMeta _Meta;  //???common fields to CShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
 
 public:
 
 	//CUSMConstantInfo
-
-	virtual CStrID GetID() const override;
-	virtual U32    GetLocalOffset() const override;
 
 	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;

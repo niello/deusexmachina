@@ -2814,7 +2814,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 
 			Member.Type = static_cast<EUSMConstType>(R.Read<U8>());
 			if (!R.Read(Member.Offset)) return nullptr;
-			if (!R.Read(Member.ElementSize)) return nullptr;
+			if (!R.Read(Member.ElementStride)) return nullptr;
 			if (!R.Read(Member.ElementCount)) return nullptr;
 			if (!R.Read(Member.Columns)) return nullptr;
 			if (!R.Read(Member.Rows)) return nullptr;
