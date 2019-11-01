@@ -54,9 +54,9 @@ public:
 	//void   SetInt(CConstantBuffer& CB, I32 Value) const;
 	//void   SetUInt(CConstantBuffer& CB, U32 Value) const;
 	//void   SetBool(CConstantBuffer& CB, bool Value) const;
-	//void   SetVector(CConstantBuffer& CB, const vector3& Value) const;
-	//void   SetVector(CConstantBuffer& CB, const vector4& Value) const;
-	//void   SetMatrix(CConstantBuffer& CB, const matrix44& Value) const;
+	void   SetVector(CConstantBuffer& CB, const vector3& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 3); }
+	void   SetVector(CConstantBuffer& CB, const vector4& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 4); }
+	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value) const;
 
 	void   SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex = 0) const;
 	void   SetFloatArray(CConstantBuffer& CB, std::initializer_list<float> Values, U32 StartIndex = 0) const { SetFloatArray(CB, Values.begin(), Values.size(), StartIndex); }

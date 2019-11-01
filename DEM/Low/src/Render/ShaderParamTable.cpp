@@ -53,6 +53,12 @@ void CShaderConstantParam::SetFloatArray(CConstantBuffer& CB, const float* pValu
 }
 //---------------------------------------------------------------------
 
+void CShaderConstantParam::SetMatrix(CConstantBuffer& CB, const matrix44& Value) const
+{
+	//InternalSetMatrix((matrix majority == const majority) ? Value : Value.transposed())
+}
+//---------------------------------------------------------------------
+
 CShaderConstantParam CShaderConstantParam::GetMember(const char* pName) const
 {
 	if (!_Info) return CShaderConstantParam(nullptr, 0);

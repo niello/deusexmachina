@@ -4,19 +4,36 @@
 #include <Render/D3D11/D3D11Texture.h>
 #include <Render/D3D11/D3D11Sampler.h>
 
+// NB: HLSL bool is a 32-bit int even in shader model 4.0+
+
 namespace Render
 {
 __ImplementClassNoFactory(CUSMConstantBufferParam, IConstantBufferParam);
 
-template<typename TTo>
-static inline TTo* Cast(Core::CRTTIBaseClass& Value)
+template<typename T>
+static inline T* Cast(Core::CRTTIBaseClass& Value)
 {
 #if DEM_SHADER_META_DYNAMIC_TYPE_VALIDATION
-	return Value.As<TTo>();
+	return Value.As<T>();
 #else
-	n_assert_dbg(Value.IsA<TTo>());
-	return static_cast<TTo*>(&Value);
+	n_assert_dbg(Value.IsA<T>());
+	return static_cast<T*>(&Value);
 #endif
+}
+//---------------------------------------------------------------------
+
+template<typename T, typename TSrc>
+static inline void ConvertAndWrite(CD3D11ConstantBuffer* pCB, U32 Offset, const TSrc* pValue, UPTR Count, UPTR DestSize)
+{
+	Count = std::min(Count, DestSize / sizeof(T));
+	const auto* pEnd = pValue + Count;
+	while (pValue < pEnd)
+	{
+		const T Value = static_cast<T>(*pValue);
+		pCB->WriteData(Offset, &Value, sizeof(T));
+		++pValue;
+		Offset += sizeof(T); // In D3D11 offset is in bytes // FIXME: hide in CB, return from pCB->WriteData?
+	}
 }
 //---------------------------------------------------------------------
 
@@ -29,22 +46,9 @@ void CUSMConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* p
 		const auto SizeInBytes = _Meta->ElementStride; //!!!byte size of one element, NOT dimensionless stride!
 
 		if (_Meta->Type == USMConst_Float)
-		{
 			pCB->WriteData(Offset, pValue, std::min(Count * sizeof(float), SizeInBytes));
-		}
 		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-		{
-			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
-			Count = std::min(Count, SizeInBytes / sizeof(I32));
-			const auto* pEnd = pValue + Count;
-			while (pValue < pEnd)
-			{
-				const I32 Value = static_cast<I32>(*pValue);
-				pCB->WriteData(Offset, &Value, sizeof(I32));
-				++pValue;
-				Offset += sizeof(I32);
-			}
-		}
+			ConvertAndWrite<I32>(pCB, Offset, pValue, Count, SizeInBytes);
 		else ::Sys::Error("CUSMConstantInfo::SetFloats() > typed value writing allowed only for float, int & bool constants");
 	}
 }
@@ -82,23 +86,9 @@ void CUSMConstantParam::SetFloats(CConstantBuffer& CB, const float* pValue, UPTR
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
 		if (_Meta->Type == USMConst_Float)
-		{
 			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(float), SizeInBytes));
-		}
 		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-		{
-			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
-			auto Offset = _OffsetInBytes;
-			Count = std::min(Count, SizeInBytes / sizeof(I32));
-			const auto* pEnd = pValue + Count;
-			while (pValue < pEnd)
-			{
-				const I32 Value = static_cast<I32>(*pValue);
-				pCB->WriteData(Offset, &Value, sizeof(I32));
-				++pValue;
-				Offset += sizeof(I32);
-			}
-		}
+			ConvertAndWrite<I32>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
 		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
 	}
 }
@@ -113,23 +103,9 @@ void CUSMConstantParam::SetInts(CConstantBuffer& CB, const I32* pValue, UPTR Cou
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
 		if (_Meta->Type == USMConst_Float)
-		{
-			auto Offset = _OffsetInBytes;
-			Count = std::min(Count, SizeInBytes / sizeof(float));
-			const auto* pEnd = pValue + Count;
-			while (pValue < pEnd)
-			{
-				const float Value = static_cast<float>(*pValue);
-				pCB->WriteData(Offset, &Value, sizeof(float));
-				++pValue;
-				Offset += sizeof(float);
-			}
-		}
+			ConvertAndWrite<float>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
 		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-		{
-			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
 			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(I32), SizeInBytes));
-		}
 		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
 	}
 }
@@ -144,23 +120,9 @@ void CUSMConstantParam::SetUInts(CConstantBuffer& CB, const U32* pValue, UPTR Co
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
 		if (_Meta->Type == USMConst_Float)
-		{
-			auto Offset = _OffsetInBytes;
-			Count = std::min(Count, SizeInBytes / sizeof(float));
-			const auto* pEnd = pValue + Count;
-			while (pValue < pEnd)
-			{
-				const float Value = static_cast<float>(*pValue);
-				pCB->WriteData(Offset, &Value, sizeof(float));
-				++pValue;
-				Offset += sizeof(float);
-			}
-		}
+			ConvertAndWrite<float>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
 		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-		{
-			// NB: HLSL bool is a 32-bit int even in shader model 4.0+
 			pCB->WriteData(_OffsetInBytes, pValue, std::min(Count * sizeof(U32), SizeInBytes));
-		}
 		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
 	}
 }
@@ -176,30 +138,9 @@ void CUSMConstantParam::SetBools(CConstantBuffer& CB, const bool* pValue, UPTR C
 		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
 
 		if (_Meta->Type == USMConst_Float)
-		{
-			Count = std::min(Count, SizeInBytes / sizeof(float));
-			const auto* pEnd = pValue + Count;
-			while (pValue < pEnd)
-			{
-				const float Value = *pValue ? 1.f : 0.f;
-				pCB->WriteData(Offset, &Value, sizeof(float));
-				++pValue;
-				Offset += sizeof(float);
-			}
-		}
+			ConvertAndWrite<float>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
 		else if (_Meta->Type == USMConst_Int || _Meta->Type == USMConst_Bool)
-		{
-			// NB: HLSL bool is a 32-bit int even in sm4.0+
-			Count = std::min(Count, SizeInBytes / sizeof(I32));
-			const auto* pEnd = pValue + Count;
-			while (pValue < pEnd)
-			{
-				const I32 Value = *pValue ? 1 : 0;
-				pCB->WriteData(Offset, &Value, sizeof(I32));
-				++pValue;
-				Offset += sizeof(I32);
-			}
-		}
+			ConvertAndWrite<I32>(pCB, _OffsetInBytes, pValue, Count, SizeInBytes);
 		else ::Sys::Error("CUSMConstantParam() > typed value writing allowed only for float, int & bool constants");
 	}
 }

@@ -54,6 +54,8 @@ public:
 	U8              Rows;
 	U8              Flags; // See ESM30ShaderConstFlags
 
+	U32             SizeInBytes = 6666; // Cached value // FIXME: calculate!
+
 	//ESM30RegisterSet	RegisterSet; //???save for struct members and add mixed-type structure support?
 };
 
@@ -67,6 +69,12 @@ public:
 
 class CSM30ConstantInfo : public IShaderConstantInfo
 {
+protected:
+
+	PSM30ConstantMeta _Meta;  //???common fields to IShaderConstantInfo? Rows, Cols, IsColMajor, ElementCount, ElementStride?
+	size_t            _Index; //???to IShaderConstantInfo?
+	ESM30RegisterSet  _RegisterSet;
+
 public:
 
 	virtual CStrID GetID() const override;
@@ -88,7 +96,6 @@ protected:
 	PSM30ConstantBufferParam _Buffer;
 	PSM30ConstantMeta        _Meta;
 	U32                      _OffsetInBytes; // Real start
-	U32                      _SizeInBytes;
 	ESM30RegisterSet         _RegisterSet;
 
 	virtual U32  GetMemberOffset(const char* pName) const override;
