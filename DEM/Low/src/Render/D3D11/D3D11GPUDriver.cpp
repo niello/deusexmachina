@@ -2789,11 +2789,11 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	}
 
 	if (!R.Read(Count)) return nullptr;
-	std::vector<PUSMStructMeta> Structs(Count);
+	std::vector<PShaderStructureInfo> Structs(Count);
 
 	// Precreate for valid referencing (see StructIndex)
 	for (auto& StructPtr : Structs)
-		StructPtr = n_new(CUSMStructMeta);
+		StructPtr = n_new(CShaderStructureInfo);
 
 	for (auto& StructPtr : Structs)
 	{
@@ -2803,7 +2803,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		for (auto& MemberPtr : Struct.Members)
 		{
 			MemberPtr = n_new(CUSMConstantInfo());
-			auto& Member = *MemberPtr;
+			auto& Member = *static_cast<CUSMConstantInfo*>(MemberPtr.Get());
 
 			if (!R.Read(Member.Name)) return nullptr;
 
