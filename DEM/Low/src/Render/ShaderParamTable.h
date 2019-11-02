@@ -13,6 +13,8 @@
 
 namespace Render
 {
+typedef Ptr<class CShaderStructureInfo> PShaderStructureInfo;
+
 constexpr size_t InvalidParamIndex = std::numeric_limits<size_t>().max();
 
 enum EShaderConstantFlags : U8
@@ -20,9 +22,23 @@ enum EShaderConstantFlags : U8
 	ColumnMajor = 0x01
 };
 
-// Common part of constant metadata. Available in every API, necessary for writing values.
-struct CShaderConstantMeta
+class CShaderConstantInfo : public Core::CObject
 {
+protected:
+
+	// Cached sub-constant info. Any array has elements. Any single structure has members.
+	// Any single vector has components. Any single matrix has components at [0] and rows at [1].
+	// Member info is a sorted array mapped to struct members array. It could be a union,
+	// but it makes default constructor deleted.
+	std::unique_ptr<PShaderConstantInfo[]> SubInfo;
+
+	virtual PShaderConstantInfo Clone() const = 0;
+
+public:
+
+	//???store struct here? pointers can be to base class!
+
+	size_t BufferIndex;
 	CStrID Name;
 	U32    LocalOffset;
 	U32    ElementStride;
@@ -31,31 +47,7 @@ struct CShaderConstantMeta
 	U8     Rows;
 	U8     Columns;
 	U8     Flags;
-};
 
-class CShaderConstantInfo : public Core::CObject
-{
-protected:
-
-	CShaderConstantMeta _Meta;
-	size_t              _CBIndex;
-
-	// Cached sub-constant info. Any array has elements. Any single structure has members.
-	// Any single vector has components. Any single matrix has components and rows.
-	union
-	{
-		mutable std::map<CStrID, PShaderConstantInfo> MemberInfo;
-		mutable PShaderConstantInfo                   ElementInfo;
-		struct
-		{
-			mutable PShaderConstantInfo               RowInfo;
-			mutable PShaderConstantInfo               ComponentInfo;
-		};
-	};
-
-public:
-
-	CShaderConstantInfo(size_t ConstantBufferIndex, const CShaderConstantMeta& Meta);
 	virtual ~CShaderConstantInfo() override;
 
 	virtual U32  GetMemberCount() const = 0;
@@ -66,22 +58,30 @@ public:
 	virtual void SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const = 0;
 	virtual void SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const = 0;
 
-	CStrID GetID() const { return _Meta.Name; }
-	size_t GetConstantBufferIndex() const { return _CBIndex; }
-	U32    GetLocalOffset() const { return _Meta.LocalOffset; }
-	U32    GetElementStride() const { return _Meta.ElementStride; }
-	U32    GetElementCount() const { return _Meta.ElementCount; }
-	U32    GetComponentStride() const { return _Meta.ComponentStride; }
-	U32    GetRowCount() const { return _Meta.Rows; }
-	U32    GetColumnCount() const { return _Meta.Columns; }
-	bool   IsColumnMajor() const { return _Meta.Flags & EShaderConstantFlags::ColumnMajor; }
+	CStrID GetID() const { return Name; }
+	size_t GetConstantBufferIndex() const { return BufferIndex; }
+	U32    GetLocalOffset() const { return LocalOffset; }
+	U32    GetElementStride() const { return ElementStride; }
+	U32    GetElementCount() const { return ElementCount; }
+	U32    GetComponentStride() const { return ComponentStride; }
+	U32    GetRowCount() const { return Rows; }
+	U32    GetColumnCount() const { return Columns; }
+	bool   IsColumnMajor() const { return Flags & EShaderConstantFlags::ColumnMajor; }
 	bool   HasElementPadding() const;
 	bool   NeedConversionFrom(/*type*/) const;
 
-	PShaderConstantInfo GetMemberInfo(CStrID Name) const;
-	PShaderConstantInfo GetElementInfo() const;
-	PShaderConstantInfo GetRowInfo() const;
-	PShaderConstantInfo GetComponentInfo() const;
+	PShaderConstantInfo GetMemberInfo(CStrID Name);
+	PShaderConstantInfo GetElementInfo();
+	PShaderConstantInfo GetRowInfo();
+	PShaderConstantInfo GetComponentInfo();
+};
+
+class CShaderStructureInfo : public Data::CRefCounted
+{
+public:
+
+	//CStrID Name;
+	std::vector<PShaderConstantInfo> Members;
 };
 
 class CShaderConstantParam final

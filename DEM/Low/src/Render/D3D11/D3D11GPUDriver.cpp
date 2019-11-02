@@ -2800,8 +2800,11 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		auto& Struct = *StructPtr;
 
 		Struct.Members.resize(R.Read<U32>());
-		for (auto& Member : Struct.Members)
+		for (auto& MemberPtr : Struct.Members)
 		{
+			MemberPtr = n_new(CUSMConstantInfo());
+			auto& Member = *MemberPtr;
+
 			if (!R.Read(Member.Name)) return nullptr;
 
 			U32 StructIndex;
@@ -2826,31 +2829,31 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		CUSMConstantMeta Meta;
-		if (!R.Read(Meta.Name)) return nullptr;
+		PUSMConstantInfo Info = n_new(CUSMConstantInfo());
 
-		U32 BufferIndex;
-		if (!R.Read(BufferIndex)) return nullptr;
-		if (BufferIndex >= Buffers.size()) return nullptr;
+		if (!R.Read(Info->Name)) return nullptr;
+
+		if (!R.Read(Info->BufferIndex)) return nullptr;
+		if (Info->BufferIndex >= Buffers.size()) return nullptr;
 
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Meta.Struct = Structs[StructIndex];
+			Info->Struct = Structs[StructIndex];
 
-		Meta.Type = static_cast<EUSMConstType>(R.Read<U8>());
+		Info->Type = static_cast<EUSMConstType>(R.Read<U8>());
 
-		if (!R.Read(Meta.LocalOffset)) return nullptr;
-		if (!R.Read(Meta.ElementStride)) return nullptr;
-		if (!R.Read(Meta.ElementCount)) return nullptr;
-		if (!R.Read(Meta.Columns)) return nullptr;
-		if (!R.Read(Meta.Rows)) return nullptr;
-		if (!R.Read(Meta.Flags)) return nullptr;
+		if (!R.Read(Info->LocalOffset)) return nullptr;
+		if (!R.Read(Info->ElementStride)) return nullptr;
+		if (!R.Read(Info->ElementCount)) return nullptr;
+		if (!R.Read(Info->Columns)) return nullptr;
+		if (!R.Read(Info->Rows)) return nullptr;
+		if (!R.Read(Info->Flags)) return nullptr;
 
-		auto pBuffer = static_cast<CUSMConstantBufferParam*>(Buffers[BufferIndex].Get());
+		auto pBuffer = static_cast<CUSMConstantBufferParam*>(Buffers[Info->BufferIndex].Get());
 		pBuffer->ShaderTypeMask |= ShaderTypeMask;
 
-		Const = CShaderConstantParam(n_new(CUSMConstantInfo(BufferIndex, std::move(Meta))));
+		Const = CShaderConstantParam(Info);
 	}
 
 	if (!R.Read(Count)) return nullptr;

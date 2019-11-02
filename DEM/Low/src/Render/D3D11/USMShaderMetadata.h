@@ -49,30 +49,12 @@ typedef Ptr<class CUSMResourceParam> PUSMResourceParam;
 typedef Ptr<class CUSMSamplerParam> PUSMSamplerParam;
 typedef Ptr<class CUSMStructMeta> PUSMStructMeta;
 
-struct CUSMConstantMeta : public CShaderConstantMeta
-{
-	PUSMStructMeta Struct;
-	EUSMConstType  Type;
-};
-
-class CUSMStructMeta : public Data::CRefCounted
-{
-public:
-
-	//CStrID Name;
-	std::vector<CUSMConstantMeta> Members;
-};
-
 class CUSMConstantInfo : public CShaderConstantInfo
 {
-protected:
-
-	PUSMStructMeta _Struct;
-	EUSMConstType  _Type;
-
 public:
 
-	CUSMConstantInfo(size_t ConstantBufferIndex, const CUSMConstantMeta& Meta);
+	PUSMStructMeta Struct;
+	EUSMConstType  Type;
 
 	virtual U32  GetMemberCount() const override;
 
@@ -81,6 +63,14 @@ public:
 	virtual void SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const override;
 	virtual void SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const override;
 	virtual void SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const override;
+};
+
+class CUSMStructMeta : public Data::CRefCounted
+{
+public:
+
+	//CStrID Name;
+	std::vector<PUSMConstantInfo> Members;
 };
 
 class CUSMConstantBufferParam : public IConstantBufferParam

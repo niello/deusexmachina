@@ -32,30 +32,12 @@ typedef Ptr<class CSM30ResourceParam> PSM30ResourceParam;
 typedef Ptr<class CSM30SamplerParam> PSM30SamplerParam;
 typedef Ptr<class CSM30StructMeta> PSM30StructMeta;
 
-struct CSM30ConstantMeta : public CShaderConstantMeta
-{
-	PSM30StructMeta Struct;
-	//ESM30RegisterSet	RegisterSet; //???save for struct members and add mixed-type structure support?
-};
-
-class CSM30StructMeta : public Data::CRefCounted
-{
-public:
-
-	//CStrID Name;
-	std::vector<CSM30ConstantMeta> Members;
-};
-
 class CSM30ConstantInfo : public CShaderConstantInfo
 {
-protected:
-
-	PSM30StructMeta  _Struct;
-	ESM30RegisterSet _RegisterSet;
-
 public:
 
-	CSM30ConstantInfo(size_t ConstantBufferIndex, const CSM30ConstantMeta& Meta, ESM30RegisterSet RegisterSet);
+	PSM30StructMeta  Struct;
+	ESM30RegisterSet RegisterSet;
 
 	virtual U32  GetMemberCount() const override;
 
@@ -64,6 +46,14 @@ public:
 	virtual void SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const override;
 	virtual void SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const override;
 	virtual void SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const override;
+};
+
+class CSM30StructMeta : public Data::CRefCounted
+{
+public:
+
+	//CStrID Name;
+	std::vector<PSM30ConstantInfo> Members; // FIXME: can't store CSM30ConstantInfo, compilation fails
 };
 
 class CSM30ConstantBufferParam : public IConstantBufferParam

@@ -5,60 +5,125 @@ namespace Render
 {
 __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
-CShaderConstantInfo::CShaderConstantInfo(size_t ConstantBufferIndex, const CShaderConstantMeta& Meta)
-	: _CBIndex(ConstantBufferIndex)
-	, _Meta(Meta)
-{
-}
-//---------------------------------------------------------------------
-
 CShaderConstantInfo::~CShaderConstantInfo() = default;
 //---------------------------------------------------------------------
 
-PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name) const
+PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 {
-	auto It = MemberInfo.find(Name);
-	if (It != MemberInfo.cend()) return It->second;
+	// An array, can't access members even if array element is a structure
+	if (ElementCount > 1) return nullptr;
+
+	// Not a structure
+	const auto MemberCount = GetMemberCount();
+	if (!MemberCount) return nullptr;
+
+	const auto MemberIndex = GetMemberIndex(Name);
+
+	// Has no member with requested Name
+	if (MemberIndex >= MemberCount) return nullptr;
+
+	if (SubInfo)
+	{
+		// Cache is mapped to struct members, check at member index
+		if (SubInfo[MemberIndex]) return SubInfo[MemberIndex];
+	}
+	else
+	{
+		// Member cache is not created yet, allocate
+		SubInfo = std::make_unique<PShaderConstantInfo[]>(MemberCount);
+	}
+
+	SubInfo[MemberIndex] = Struct.Members[MemberIndex]->Clone();
+	// patch fields!
 
 	// find member
+	// if not found in structure, return nullptr;
 	// create mutable cached pointer
 	// return member
-	return MemberInfo[Name];
+	return SubInfo[MemberIndex];
 }
 //---------------------------------------------------------------------
 
-PShaderConstantInfo CShaderConstantInfo::GetElementInfo() const
+PShaderConstantInfo CShaderConstantInfo::GetElementInfo()
 {
-	if (ElementInfo) return ElementInfo;
+	// Not an array, is element itself 
+	if (ElementCount < 2) return this;
 
-	if (_Meta.ElementCount < 2) return nullptr;
+	// If cache is valid, there is the only element there
+	if (SubInfo) return SubInfo[0];
 
-	//ElementInfo = n_new(CShaderConstantInfo(
-	return ElementInfo;
+	SubInfo = std::make_unique<PShaderConstantInfo[]>(1);
+	SubInfo[0] = Clone();
+	SubInfo[0]->ElementCount = 1;
+
+	return SubInfo[0];
 }
 //---------------------------------------------------------------------
 
-PShaderConstantInfo CShaderConstantInfo::GetRowInfo() const
+PShaderConstantInfo CShaderConstantInfo::GetRowInfo()
 {
-	if (RowInfo) return RowInfo;
+	// An array, can't access components
+	if (ElementCount > 1) return nullptr;
 
-	const auto MajorDim = IsColumnMajor() ? GetColumnCount() : GetRowCount();
+	// Don't check if it is a structure, because structure must have MajorDim = 1
+	n_assert_dbg(!GetMemberCount());
+
+	// Not a matrix (2-dimensional object), has no rows
+	const auto MajorDim = IsColumnMajor() ? Columns : Rows;
 	if (MajorDim < 2) return nullptr;
 
-	//RowInfo = n_new(CShaderConstantInfo(
-	return RowInfo;
+	// If cache is valid, there are component at [0] and row at [1]
+	if (SubInfo)
+	{
+		if (SubInfo[1]) return SubInfo[1];
+	}
+	else
+	{
+		SubInfo = std::make_unique<PShaderConstantInfo[]>(2);
+	}
+
+	SubInfo[1] = Clone();
+	if (IsColumnMajor())
+		SubInfo[1]->Columns = 1;
+	else
+		SubInfo[1]->Rows = 1;
+
+	//!!!fix stride!
+
+	return SubInfo[1];
 }
 //---------------------------------------------------------------------
 
-PShaderConstantInfo CShaderConstantInfo::GetComponentInfo() const
+PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 {
-	if (ComponentInfo) return ComponentInfo;
+	// An array, can't access components
+	if (ElementCount > 1) return nullptr;
 
-	const auto MinorDim = IsColumnMajor() ? GetRowCount() : GetColumnCount();
-	if (MinorDim < 2) return nullptr;
+	// A structure, can't access components
+	if (GetMemberCount()) return nullptr;
 
-	//ComponentInfo = n_new(CShaderConstantInfo(
-	return ComponentInfo;
+	// Single component constant is a component itself
+	if (Rows < 2 && Columns < 2) return this;
+
+	// If cache is valid, there is component at [0]
+	if (SubInfo)
+	{
+		if (SubInfo[0]) return SubInfo[0];
+	}
+	else
+	{
+		// If it is a matrix, allocate slot for the row info too
+		const auto MajorDim = IsColumnMajor() ? Columns : Rows;
+		SubInfo = std::make_unique<PShaderConstantInfo[]>((MajorDim > 1) ? 2 : 1);
+	}
+
+	SubInfo[0] = Clone();
+	SubInfo[0]->Columns = 1;
+	SubInfo[0]->Rows = 1;
+
+	//!!!fix stride!
+
+	return SubInfo[1];
 }
 //---------------------------------------------------------------------
 
@@ -162,7 +227,7 @@ void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44
 
 CShaderConstantParam CShaderConstantParam::GetMember(CStrID Name) const
 {
-	if (!_Info || _Info->GetElementCount() > 1) return CShaderConstantParam(nullptr, 0);
+	if (!_Info) return CShaderConstantParam(nullptr, 0);
 	return CShaderConstantParam(_Info->GetMemberInfo(Name), _Offset + _Info->GetLocalOffset());
 }
 //---------------------------------------------------------------------
@@ -176,6 +241,8 @@ CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
 
 CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 {
+	//???!!!recalc into row-column with majority and call that method?
+
 	if (!_Info ||
 		_Info->GetElementCount() > 1 ||
 		_Info->GetMemberCount() > 0 ||
@@ -184,6 +251,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 		return CShaderConstantParam(nullptr, 0);
 	}
 
+	//???is component stride enough or for matrix3x2 there will be padding between rows?
 	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
 }
 //---------------------------------------------------------------------
@@ -199,7 +267,10 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 		return CShaderConstantParam(nullptr, 0);
 	}
 
-	//???must index honour majority?
+	//???is component stride enough or for matrix3x2 there will be padding between rows?
+	const auto Index = _Info->IsColumnMajor() ?
+		Row * _Info->GetColumnCount() + Column :
+		Column * _Info->GetRowCount() + Row;
 
 	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
 }

@@ -2841,7 +2841,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 
 	// Precreate for valid referencing (see StructIndex)
 	for (auto& StructPtr : Structs)
-		StructPtr = n_new(CSM30StructMeta);
+		StructPtr = n_new(CSM30StructMeta());
 
 	for (auto& StructPtr : Structs)
 	{
@@ -2852,8 +2852,11 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		const auto BytesPerRegister = GetBytesPerRegister(RegisterSet);
 
 		Struct.Members.resize(R.Read<U32>());
-		for (auto& Member : Struct.Members)
+		for (auto& MemberPtr : Struct.Members)
 		{
+			MemberPtr = n_new(CSM30ConstantInfo());
+			auto& Member = *MemberPtr;
+
 			if (!R.Read(Member.Name)) return nullptr;
 
 			U32 StructIndex;
@@ -2881,43 +2884,43 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		CSM30ConstantMeta Meta;
-		if (!R.Read(Meta.Name)) return nullptr;
+		PSM30ConstantInfo Info = n_new(CSM30ConstantInfo());
 
-		U32 BufferIndex;
-		if (!R.Read(BufferIndex)) return nullptr;
-		if (BufferIndex >= Buffers.size()) return nullptr;
+		if (!R.Read(Info->Name)) return nullptr;
+
+		if (!R.Read(Info->BufferIndex)) return nullptr;
+		if (Info->BufferIndex >= Buffers.size()) return nullptr;
 
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Meta.Struct = Structs[StructIndex];
+			Info->Struct = Structs[StructIndex];
 
-		ESM30RegisterSet RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
-		if (RegisterSet != Reg_Float4 && RegisterSet != Reg_Int4 && RegisterSet != Reg_Bool) return nullptr;
+		Info->RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
+		if (Info->RegisterSet != Reg_Float4 && Info->RegisterSet != Reg_Int4 && Info->RegisterSet != Reg_Bool) return nullptr;
 
 		U32 RegisterStart, ElementRegisterCount;
 		if (!R.Read(RegisterStart)) return nullptr;
 		if (!R.Read(ElementRegisterCount)) return nullptr;
-		if (!R.Read(Meta.ElementCount)) return nullptr;
-		if (!R.Read(Meta.Columns)) return nullptr;
-		if (!R.Read(Meta.Rows)) return nullptr;
-		if (!R.Read(Meta.Flags)) return nullptr;
+		if (!R.Read(Info->ElementCount)) return nullptr;
+		if (!R.Read(Info->Columns)) return nullptr;
+		if (!R.Read(Info->Rows)) return nullptr;
+		if (!R.Read(Info->Flags)) return nullptr;
 
-		auto pBuffer = static_cast<CSM30ConstantBufferParam*>(Buffers[BufferIndex].Get());
+		auto pBuffer = static_cast<CSM30ConstantBufferParam*>(Buffers[Info->BufferIndex].Get());
 		pBuffer->ShaderTypeMask |= ShaderTypeMask;
 
 		// TODO: move into cf-hlsl?
 
 		CSM30ConstantBufferParam::CRanges* pRanges;
-		switch (RegisterSet)
+		switch (Info->RegisterSet)
 		{
 			case Reg_Float4: pRanges = &pBuffer->Float4; break;
 			case Reg_Int4:   pRanges = &pBuffer->Int4; break;
 			case Reg_Bool:   pRanges = &pBuffer->Bool; break;
 		};
 
-		Meta.LocalOffset = 0;
+		Info->LocalOffset = 0;
 		bool RangeFound = false;
 
 		for (const auto& Range : *pRanges)
@@ -2928,13 +2931,13 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			if (Range.first + Range.second > RegisterStart)
 			{
 				// Found range
-				n_assert_dbg(Range.first + Range.second >= RegisterStart + ElementRegisterCount * Meta.ElementCount);
-				Meta.LocalOffset += RegisterStart - Range.first;
+				n_assert_dbg(Range.first + Range.second >= RegisterStart + ElementRegisterCount * Info->ElementCount);
+				Info->LocalOffset += RegisterStart - Range.first;
 				RangeFound = true;
 				break;
 			}
 
-			Meta.LocalOffset += Range.second;
+			Info->LocalOffset += Range.second;
 		}
 
 		if (!RangeFound)
@@ -2943,12 +2946,12 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			return nullptr;
 		}
 
-		const auto BytesPerRegister = GetBytesPerRegister(RegisterSet);
+		const auto BytesPerRegister = GetBytesPerRegister(Info->RegisterSet);
 
-		Meta.LocalOffset *= BytesPerRegister;
-		Meta.ElementStride = ElementRegisterCount * BytesPerRegister;
+		Info->LocalOffset *= BytesPerRegister;
+		Info->ElementStride = ElementRegisterCount * BytesPerRegister;
 
-		Const = CShaderConstantParam(n_new(CSM30ConstantInfo(BufferIndex, Meta, RegisterSet)));
+		Const = CShaderConstantParam(Info);
 	}
 
 	if (!R.Read(Count)) return nullptr;
