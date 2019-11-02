@@ -2784,6 +2784,18 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 }
 //---------------------------------------------------------------------
 
+static inline U32 GetBytesPerRegister(ESM30RegisterSet RegisterSet)
+{
+	switch (RegisterSet)
+	{
+		case Reg_Float4: return sizeof(float) * 4;
+		case Reg_Int4:   return sizeof(I32) * 4;
+		case Reg_Bool:   return sizeof(BOOL);
+		default:         return 0;
+	};
+}
+//---------------------------------------------------------------------
+
 PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
@@ -2835,6 +2847,10 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 	{
 		auto& Struct = *StructPtr;
 
+		ESM30RegisterSet RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
+		if (RegisterSet != Reg_Float4 && RegisterSet != Reg_Int4 && RegisterSet != Reg_Bool) return nullptr;
+		const auto BytesPerRegister = GetBytesPerRegister(RegisterSet);
+
 		Struct.Members.resize(R.Read<U32>());
 		for (auto& Member : Struct.Members)
 		{
@@ -2845,14 +2861,16 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			if (StructIndex != static_cast<U32>(-1))
 				Member.Struct = Structs[StructIndex];
 
-			if (!R.Read(Member.RegisterStart)) return nullptr;
-			if (!R.Read(Member.ElementRegisterCount)) return nullptr;
+			U32 RegisterStart, ElementRegisterCount;
+			if (!R.Read(RegisterStart)) return nullptr;
+			if (!R.Read(ElementRegisterCount)) return nullptr;
 			if (!R.Read(Member.ElementCount)) return nullptr;
 			if (!R.Read(Member.Columns)) return nullptr;
 			if (!R.Read(Member.Rows)) return nullptr;
 			if (!R.Read(Member.Flags)) return nullptr;
 
-			// FIXME: LocalOffset, ElementStride must be calculated but we don't know register set!
+			Member.LocalOffset = RegisterStart * BytesPerRegister;
+			Member.ElementStride = ElementRegisterCount * BytesPerRegister;
 		}
 	}
 
@@ -2876,10 +2894,11 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			Meta.Struct = Structs[StructIndex];
 
 		ESM30RegisterSet RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
-		if (RegisterSet == Reg_Invalid) return nullptr;
+		if (RegisterSet != Reg_Float4 && RegisterSet != Reg_Int4 && RegisterSet != Reg_Bool) return nullptr;
 
-		if (!R.Read(Meta.RegisterStart)) return nullptr;
-		if (!R.Read(Meta.ElementRegisterCount)) return nullptr;
+		U32 RegisterStart, ElementRegisterCount;
+		if (!R.Read(RegisterStart)) return nullptr;
+		if (!R.Read(ElementRegisterCount)) return nullptr;
 		if (!R.Read(Meta.ElementCount)) return nullptr;
 		if (!R.Read(Meta.Columns)) return nullptr;
 		if (!R.Read(Meta.Rows)) return nullptr;
@@ -2891,27 +2910,11 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		// TODO: move into cf-hlsl?
 
 		CSM30ConstantBufferParam::CRanges* pRanges;
-		U32 BytesPerRegister;
 		switch (RegisterSet)
 		{
-			case Reg_Float4:
-			{
-				pRanges = &pBuffer->Float4;
-				BytesPerRegister = sizeof(float) * 4;
-				break;
-			}
-			case Reg_Int4:
-			{
-				pRanges = &pBuffer->Int4;
-				BytesPerRegister = sizeof(I32) * 4;
-				break;
-			}
-			case Reg_Bool:
-			{
-				pRanges = &pBuffer->Bool;
-				BytesPerRegister = sizeof(BOOL);
-				break;
-			}
+			case Reg_Float4: pRanges = &pBuffer->Float4; break;
+			case Reg_Int4:   pRanges = &pBuffer->Int4; break;
+			case Reg_Bool:   pRanges = &pBuffer->Bool; break;
 		};
 
 		Meta.LocalOffset = 0;
@@ -2920,13 +2923,13 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		for (const auto& Range : *pRanges)
 		{
 			// Ranges are sorted ascending, so that means that the buffer has no required range
-			if (Range.first > Meta.RegisterStart) break;
+			if (Range.first > RegisterStart) break;
 
-			if (Range.first + Range.second > Meta.RegisterStart)
+			if (Range.first + Range.second > RegisterStart)
 			{
 				// Found range
-				n_assert_dbg(Range.first + Range.second >= Meta.RegisterStart + Meta.ElementRegisterCount * Meta.ElementCount);
-				Meta.LocalOffset += Meta.RegisterStart - Range.first;
+				n_assert_dbg(Range.first + Range.second >= RegisterStart + ElementRegisterCount * Meta.ElementCount);
+				Meta.LocalOffset += RegisterStart - Range.first;
 				RangeFound = true;
 				break;
 			}
@@ -2940,8 +2943,10 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			return nullptr;
 		}
 
+		const auto BytesPerRegister = GetBytesPerRegister(RegisterSet);
+
 		Meta.LocalOffset *= BytesPerRegister;
-		Meta.ElementStride = Meta.ElementRegisterCount * BytesPerRegister;
+		Meta.ElementStride = ElementRegisterCount * BytesPerRegister;
 
 		Const = CShaderConstantParam(n_new(CSM30ConstantInfo(BufferIndex, Meta, RegisterSet)));
 	}

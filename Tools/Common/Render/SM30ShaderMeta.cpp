@@ -84,6 +84,8 @@ std::istream& operator >>(std::istream& Stream, CSM30BufferMeta& Value)
 
 std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
 {
+	WriteStream<uint8_t>(Stream, Value.RegisterSet);
+
 	WriteStream<uint32_t>(Stream, Value.Members.size());
 	for (const auto& Member : Value.Members)
 	{
@@ -103,6 +105,8 @@ std::ostream& operator <<(std::ostream& Stream, const CSM30StructMeta& Value)
 
 std::istream& operator >>(std::istream& Stream, CSM30StructMeta& Value)
 {
+	Value.RegisterSet = static_cast<ESM30RegisterSet>(ReadStream<uint8_t>(Stream));
+
 	uint32_t MemberCount;
 	ReadStream<uint32_t>(Stream, MemberCount);
 	Value.Members.reserve(MemberCount);
@@ -147,9 +151,7 @@ std::istream& operator >>(std::istream& Stream, CSM30ConstMeta& Value)
 	ReadStream(Stream, Value.BufferIndex);
 	ReadStream(Stream, Value.StructIndex);
 
-	uint8_t RegSet;
-	ReadStream<uint8_t>(Stream, RegSet);
-	Value.RegisterSet = (ESM30RegisterSet)RegSet;
+	Value.RegisterSet = static_cast<ESM30RegisterSet>(ReadStream<uint8_t>(Stream));
 
 	ReadStream(Stream, Value.RegisterStart);
 	ReadStream(Stream, Value.ElementRegisterCount);
@@ -417,7 +419,7 @@ static uint32_t GetSerializedSize(const CSM30ConstMetaBase& Value)
 
 static uint32_t GetSerializedSize(const CSM30StructMeta& Value)
 {
-	uint32_t Total = sizeof(uint32_t); // Counter
+	uint32_t Total = sizeof(uint8_t) + sizeof(uint32_t); // RegSet & Counter
 
 	for (const auto& Member : Value.Members)
 		Total += GetSerializedSize(Member);

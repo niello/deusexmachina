@@ -175,6 +175,7 @@ bool ProcessConstant(const char* ctab,
  
 					case PC_VECTOR:
 						//offsetdiff = TypeInfo.Rows * 4;
+						assert(TypeInfo.Rows == 1);
 						ElementRegisterCount = 1;
 						break;
 					

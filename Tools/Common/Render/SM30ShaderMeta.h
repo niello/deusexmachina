@@ -74,6 +74,7 @@ inline bool operator !=(const CSM30ConstMetaBase& a, const CSM30ConstMetaBase& b
 struct CSM30StructMeta
 {
 	//std::string Name;
+	ESM30RegisterSet	            RegisterSet; //???save for struct members and add mixed-type structure support?
 	std::vector<CSM30ConstMetaBase> Members;
 };
 

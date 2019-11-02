@@ -59,7 +59,21 @@ bool ExtractSM30MetaFromBinaryAndSource(CSM30ShaderMeta& OutMeta, const void* pD
 	{
 		const CD3D9StructDesc& D3D9StructDesc = Pair.second;
 
+		assert(!D3D9StructDesc.Members.empty());
+
 		CSM30StructMeta StructMeta;
+
+		switch (D3D9StructDesc.Members[0].RegisterSet) //???D3D9StructDesc.Type)
+		{
+			case RS_FLOAT4:	StructMeta.RegisterSet = RS_Float4; break;
+			case RS_INT4:	StructMeta.RegisterSet = RS_Int4; break;
+			case RS_BOOL:	StructMeta.RegisterSet = RS_Bool; break;
+			default:
+			{
+				if (pLog) pLog->LogError(("Unsupported SM3.0 register set " + std::to_string(D3D9StructDesc.Members[0].RegisterSet)).c_str());
+				return false;
+			}
+		};
 
 		StructMeta.Members.reserve(D3D9StructDesc.Members.size());
 		for (const auto& D3D9ConstDesc : D3D9StructDesc.Members)

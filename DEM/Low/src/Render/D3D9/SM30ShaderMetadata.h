@@ -35,8 +35,6 @@ typedef Ptr<class CSM30StructMeta> PSM30StructMeta;
 struct CSM30ConstantMeta : public CShaderConstantMeta
 {
 	PSM30StructMeta Struct;
-	U32             RegisterStart;
-	U32             ElementRegisterCount;
 	//ESM30RegisterSet	RegisterSet; //???save for struct members and add mixed-type structure support?
 };
 
