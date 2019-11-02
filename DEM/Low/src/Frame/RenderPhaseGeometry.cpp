@@ -193,13 +193,13 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			//!!!for a structured buffer, max count may be not applicable! must then use the same value
 			//as was used to allocate structured buffer instance!
 			UPTR GlobalLightCount = 0;
-			const UPTR MaxLightCount = ConstGlobalLightBuffer->Const->GetElementCount();
+			const UPTR MaxLightCount = ConstGlobalLightBuffer.GetElementCount();
 			n_assert_dbg(MaxLightCount > 0);
 
 			const CArray<Render::CLightRecord>& VisibleLights = View.GetLightCache();
-			for (CArray<Render::CLightRecord>::CIterator It = VisibleLights.Begin(); It != VisibleLights.End(); ++It)
+			for (size_t i = 0; i < VisibleLights.GetCount(); ++i)
 			{
-				Render::CLightRecord& LightRec = (Render::CLightRecord&)(*It);
+				Render::CLightRecord& LightRec = VisibleLights[i];
 				if (LightRec.UseCount)
 				{
 					const Render::CLight& Light = *LightRec.pLight;
@@ -226,8 +226,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 					}
 					GPULight.Type = Light.Type;
 
-					Render::CConstantBuffer* pCB = View.Globals.RequestBuffer(pConstGlobalLightBuffer->Const->GetConstantBufferHandle(), pConstGlobalLightBuffer->ShaderType);
-					pConstGlobalLightBuffer->Const->SetRawValue(*pCB, &GPULight, sizeof(GPULight));
+					View.Globals.SetRawConstant(ConstGlobalLightBuffer[GlobalLightCount], &GPULight, sizeof(GPULight));
 
 					LightRec.GPULightIndex = GlobalLightCount;
 					++GlobalLightCount;
@@ -249,14 +248,14 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		{
 			CNodeAttrAmbientLight* pGlobalAmbientLight = EnvCache[0];
 
-			if (pRsrcIrradianceMap)
-				pGPU->BindResource(pRsrcIrradianceMap->ShaderType, pRsrcIrradianceMap->Handle, pGlobalAmbientLight->GetIrradianceMap());
+			if (RsrcIrradianceMap)
+				RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->GetIrradianceMap());
 
-			if (pRsrcRadianceEnvMap)
-				pGPU->BindResource(pRsrcRadianceEnvMap->ShaderType, pRsrcRadianceEnvMap->Handle, pGlobalAmbientLight->GetRadianceEnvMap());
+			if (RsrcRadianceEnvMap)
+				RsrcRadianceEnvMap->Apply(*pGPU, pGlobalAmbientLight->GetRadianceEnvMap());
 
-			if (pSampTrilinearCube)
-				pGPU->BindSampler(pSampTrilinearCube->ShaderType, pSampTrilinearCube->Handle, View.TrilinearCubeSampler.Get());
+			if (SampTrilinearCube)
+				SampTrilinearCube->Apply(*pGPU, View.TrilinearCubeSampler);
 		}
 	}
 
@@ -290,7 +289,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		Ctx.pLights = &View.GetLightCache();
 		Ctx.pLightIndices = &View.LightIndices;
-		Ctx.UsesGlobalLightBuffer = (pConstGlobalLightBuffer != nullptr);
+		Ctx.UsesGlobalLightBuffer = !!ConstGlobalLightBuffer;
 	}
 	else
 	{
@@ -423,19 +422,19 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 
 	CStrID GlobalLightBufferName = Desc.Get<CStrID>(CStrID("GlobalLightBufferName"), CStrID::Empty);
 	if (GlobalLightBufferName.IsValid())
-		pConstGlobalLightBuffer = GlobalParams.GetConstantParam(GlobalLightBufferName);
+		ConstGlobalLightBuffer = GlobalParams.GetConstant(GlobalLightBufferName);
 
 	CStrID IrradianceMapName = Desc.Get<CStrID>(CStrID("IrradianceMapName"), CStrID::Empty);
 	if (IrradianceMapName.IsValid())
-		pRsrcIrradianceMap = GlobalParams.GetResourceParam(IrradianceMapName);
+		RsrcIrradianceMap = GlobalParams.GetResource(IrradianceMapName);
 
 	CStrID RadianceEnvMapName = Desc.Get<CStrID>(CStrID("RadianceEnvMapName"), CStrID::Empty);
 	if (RadianceEnvMapName.IsValid())
-		pRsrcRadianceEnvMap = GlobalParams.GetResourceParam(RadianceEnvMapName);
+		RsrcRadianceEnvMap = GlobalParams.GetResource(RadianceEnvMapName);
 
 	CStrID TrilinearCubeSamplerName = Desc.Get<CStrID>(CStrID("TrilinearCubeSamplerName"), CStrID::Empty);
 	if (TrilinearCubeSamplerName.IsValid())
-		pSampTrilinearCube = GlobalParams.GetSamplerParam(TrilinearCubeSamplerName);
+		SampTrilinearCube = GlobalParams.GetSampler(TrilinearCubeSamplerName);
 
 	OK;
 }

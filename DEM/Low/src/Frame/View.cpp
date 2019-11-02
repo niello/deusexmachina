@@ -233,20 +233,12 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 	//buffers can be created inside the storage in a helper method.
 
 	const auto& GlobalParams = pNewRenderPath->GetGlobalParamTable();
-	for (UPTR i = 0; i < GlobalConsts.GetCount(); ++i)
+	for (const auto& Const : GlobalParams.GetConstants())
 	{
-		const Render::CEffectConstant& Const = GlobalConsts[i];
-
-		const Render::HConstantBuffer hCB = Const.Const->GetConstantBufferHandle();
-		if (!Globals.IsBufferRegistered(hCB))
+		if (!Globals.GetBuffer(Const.GetConstantBufferIndex(), false))
 		{
-			Render::PConstantBuffer CB = GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
-			if (CB.IsNullPtr())
-			{
-				Globals.UnbindAndClear();
-				FAIL;
-			}
-			Globals.RegisterPermanentBuffer(hCB, *CB.Get());
+			auto CB =  GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
+			Globals.SetConstantBuffer(Const.GetConstantBufferIndex(), CB);
 		}
 	}
 

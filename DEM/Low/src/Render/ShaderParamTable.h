@@ -97,8 +97,9 @@ public:
 	CShaderConstantParam(PShaderConstantInfo Info);
 
 	CStrID GetID() const { return _Info ? _Info->GetID() : CStrID::Empty; }
-	size_t GetConstantBufferIndex() const { return _Info ? _Info->GetConstantBufferIndex() : InvalidParamIndex; }
 	bool   IsValid() const { return _Info.IsValidPtr(); }
+	size_t GetConstantBufferIndex() const { return _Info ? _Info->GetConstantBufferIndex() : InvalidParamIndex; }
+	U32    GetElementCount() const { return _Info ? _Info->GetElementCount() : 0; }
 
 	void   SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const { n_assert_dbg(_Info); if (_Info) _Info->SetRawValue(CB, _Offset, pValue, Size); }
 
