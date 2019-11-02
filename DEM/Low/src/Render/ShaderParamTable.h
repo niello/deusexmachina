@@ -36,21 +36,18 @@ protected:
 
 public:
 
-	//???store struct here? pointers can be to base class!
-
-	size_t BufferIndex;
-	CStrID Name;
-	U32    LocalOffset;
-	U32    ElementStride;
-	U32    ElementCount;
-	U32    ComponentStride;
-	U8     Rows;
-	U8     Columns;
-	U8     Flags;
+	PShaderStructureInfo Struct;
+	size_t               BufferIndex;
+	CStrID               Name;
+	U32                  LocalOffset;
+	U32                  ElementStride;
+	U32                  ElementCount;
+	U32                  ComponentStride;
+	U8                   Rows;
+	U8                   Columns;
+	U8                   Flags;
 
 	virtual ~CShaderConstantInfo() override;
-
-	virtual U32  GetMemberCount() const = 0;
 
 	virtual void SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
 	virtual void SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
@@ -79,6 +76,8 @@ public:
 class CShaderStructureInfo : public Data::CRefCounted
 {
 public:
+
+	//!!!members must be sorted by CStrID ID!
 
 	//CStrID Name;
 	std::vector<PShaderConstantInfo> Members;

@@ -14,13 +14,12 @@ PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 	if (ElementCount > 1) return nullptr;
 
 	// Not a structure
-	const auto MemberCount = GetMemberCount();
-	if (!MemberCount) return nullptr;
+	if (!Struct) return nullptr;
 
 	const auto MemberIndex = GetMemberIndex(Name);
 
 	// Has no member with requested Name
-	if (MemberIndex >= MemberCount) return nullptr;
+	if (MemberIndex >= Struct->Members.size()) return nullptr;
 
 	if (SubInfo)
 	{
@@ -30,10 +29,10 @@ PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 	else
 	{
 		// Member cache is not created yet, allocate
-		SubInfo = std::make_unique<PShaderConstantInfo[]>(MemberCount);
+		SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->Members.size());
 	}
 
-	SubInfo[MemberIndex] = Struct.Members[MemberIndex]->Clone();
+	SubInfo[MemberIndex] = Struct->Members[MemberIndex]->Clone();
 	// patch fields!
 
 	// find member
@@ -66,7 +65,7 @@ PShaderConstantInfo CShaderConstantInfo::GetRowInfo()
 	if (ElementCount > 1) return nullptr;
 
 	// Don't check if it is a structure, because structure must have MajorDim = 1
-	n_assert_dbg(!GetMemberCount());
+	n_assert_dbg(!Struct);
 
 	// Not a matrix (2-dimensional object), has no rows
 	const auto MajorDim = IsColumnMajor() ? Columns : Rows;
@@ -100,7 +99,7 @@ PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 	if (ElementCount > 1) return nullptr;
 
 	// A structure, can't access components
-	if (GetMemberCount()) return nullptr;
+	if (Struct) return nullptr;
 
 	// Single component constant is a component itself
 	if (Rows < 2 && Columns < 2) return this;
@@ -245,7 +244,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 
 	if (!_Info ||
 		_Info->GetElementCount() > 1 ||
-		_Info->GetMemberCount() > 0 ||
+		_Info->Struct ||
 		_Info->GetRowCount() * _Info->GetColumnCount() <= Index)
 	{
 		return CShaderConstantParam(nullptr, 0);
@@ -260,7 +259,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 {
 	if (!_Info ||
 		_Info->GetElementCount() > 1 ||
-		_Info->GetMemberCount() > 0 ||
+		_Info->Struct ||
 		_Info->GetRowCount() <= Row ||
 		_Info->GetColumnCount() <= Column)
 	{

@@ -51,12 +51,14 @@ typedef Ptr<class CUSMStructMeta> PUSMStructMeta;
 
 class CUSMConstantInfo : public CShaderConstantInfo
 {
+protected:
+
+	virtual PShaderConstantInfo Clone() const override;
+
 public:
 
 	PUSMStructMeta Struct;
 	EUSMConstType  Type;
-
-	virtual U32  GetMemberCount() const override;
 
 	virtual void SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;

@@ -37,12 +37,6 @@ static inline void ConvertAndWrite(CD3D11ConstantBuffer* pCB, U32 Offset, const 
 }
 //---------------------------------------------------------------------
 
-U32 CUSMConstantInfo::GetMemberCount() const
-{
-	return Struct ? Struct->Members.size() : 0;
-}
-//---------------------------------------------------------------------
-
 void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

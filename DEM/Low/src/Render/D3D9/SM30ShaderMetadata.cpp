@@ -41,12 +41,6 @@ static inline void ConvertAndWrite(CD3D9ConstantBuffer* pCB, ESM30RegisterSet Re
 }
 //---------------------------------------------------------------------
 
-U32 CSM30ConstantInfo::GetMemberCount() const
-{
-	return Struct ? Struct->Members.size() : 0;
-}
-//---------------------------------------------------------------------
-
 void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

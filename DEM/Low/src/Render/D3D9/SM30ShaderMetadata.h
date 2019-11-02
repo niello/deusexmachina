@@ -34,12 +34,14 @@ typedef Ptr<class CSM30StructMeta> PSM30StructMeta;
 
 class CSM30ConstantInfo : public CShaderConstantInfo
 {
+protected:
+
+	virtual PShaderConstantInfo Clone() const override;
+
 public:
 
 	PSM30StructMeta  Struct;
 	ESM30RegisterSet RegisterSet;
-
-	virtual U32  GetMemberCount() const override;
 
 	virtual void SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;
