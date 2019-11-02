@@ -60,7 +60,7 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 	const CMaterial* pCurrMaterial = nullptr;
 	const CTechnique* pCurrTech = nullptr;
 
-	const CEffectConstant* pConstWorldMatrix = nullptr;
+	CShaderConstantParam ConstWorldMatrix;
 
 	while (ItCurr != ItEnd)
 	{
@@ -80,7 +80,7 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 		if (pTech != pCurrTech)
 		{
 			pCurrTech = pTech;
-			pConstWorldMatrix = pTech->GetConstant(CStrID("WorldMatrix"));
+			ConstWorldMatrix = pTech->GetParamTable().GetConstant(CStrID("WorldMatrix"));
 		}
 
 		UPTR LightCount = 0;
@@ -94,12 +94,12 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 
 		CConstantBufferSet PerInstanceBuffers;
 		PerInstanceBuffers.SetGPU(&GPU);
-		if (pConstWorldMatrix)
+		if (ConstWorldMatrix)
 		{
 			matrix44 Tfm = pRenderNode->Transform;
 			Tfm.set_translation(Context.CameraPosition);
-			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstWorldMatrix->Const->GetConstantBufferHandle(), pConstWorldMatrix->ShaderType);
-			pConstWorldMatrix->Const->SetMatrix(*pCB, &Tfm);
+			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstWorldMatrix.GetConstantBufferIndex(), ConstWorldMatrix.ShaderType);
+			ConstWorldMatrix.SetMatrix(*pCB, Tfm);
 		}
 		n_verify_dbg(PerInstanceBuffers.CommitChanges());
 

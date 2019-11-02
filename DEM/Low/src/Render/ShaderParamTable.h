@@ -75,7 +75,7 @@ public:
 	virtual void   SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const = 0;
 	virtual void   SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const = 0;
 
-	PShaderConstantInfo GetMemberInfo(const char* pName) const;
+	PShaderConstantInfo GetMemberInfo(CStrID Name) const;
 	PShaderConstantInfo GetElementInfo() const;
 	PShaderConstantInfo GetComponentInfo() const;
 };
@@ -109,7 +109,7 @@ public:
 	void   SetBool(CConstantBuffer& CB, bool Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetBools(CB, _Offset, &Value, 1); }
 	void   SetVector(CConstantBuffer& CB, const vector3& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 3); }
 	void   SetVector(CConstantBuffer& CB, const vector4& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 4); }
-	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value) const { n_assert_dbg(_Info); if (_Info) { if (_Info->IsColumnMajor()) InternalSetMatrix(CB, Value.transposed()); else InternalSetMatrix(CB, Value); } }
+	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value, bool ColumnMajor = false) const { n_assert_dbg(_Info); if (_Info) { if (ColumnMajor == _Info->IsColumnMajor()) InternalSetMatrix(CB, Value); else InternalSetMatrix(CB, Value.transposed()); } }
 
 	void   SetFloatArray(CConstantBuffer& CB, const float* pValues, UPTR Count, U32 StartIndex = 0) const;
 	void   SetFloatArray(CConstantBuffer& CB, std::initializer_list<float> Values, U32 StartIndex = 0) const { SetFloatArray(CB, Values.begin(), Values.size(), StartIndex); }
@@ -123,7 +123,7 @@ public:
 	//void   SetVectorArray(CConstantBuffer& CB, const vector4* pValues, UPTR Count, U32 StartIndex = 0) const;
 	//void   SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex = 0) const;
 
-	CShaderConstantParam GetMember(const char* pName) const;
+	CShaderConstantParam GetMember(CStrID Name) const;
 	CShaderConstantParam GetElement(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Row, U32 Column) const;
@@ -133,8 +133,9 @@ public:
 	CShaderConstantParam Z() const { return GetComponent(2); }
 	CShaderConstantParam W() const { return GetComponent(3); }
 
-	CShaderConstantParam operator [](const char* pName) const { return GetMember(pName); }
-	CShaderConstantParam operator [](U32 Index) const { return GetElement(Index); } //!!!for components too! elm -> cmp row -> cmp
+	CShaderConstantParam operator [](const char* pName) const { return GetMember(CStrID(pName)); }
+	CShaderConstantParam operator [](CStrID Name) const { return GetMember(Name); }
+	CShaderConstantParam operator [](U32 Index) const;
 	CShaderConstantParam operator ()(U32 Row, U32 Column) const { return GetComponent(Row, Column); }
 
 	operator bool() const noexcept { return _Info.IsValidPtr(); }

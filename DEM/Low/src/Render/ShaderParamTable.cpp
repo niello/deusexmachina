@@ -15,6 +15,7 @@ CShaderConstantInfo::CShaderConstantInfo(size_t ConstantBufferIndex, const CShad
 CShaderConstantInfo::~CShaderConstantInfo() = default;
 //---------------------------------------------------------------------
 
+// Create sub-constant with offset precalculated in the parent
 CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
 	: _Info(Info)
 	, _Offset(Offset)
@@ -22,6 +23,7 @@ CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
 }
 //---------------------------------------------------------------------
 
+// Create top-level constant
 CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info)
 	: _Info(Info)
 	, _Offset(Info ? Info->GetLocalOffset() : 0)
@@ -111,24 +113,64 @@ void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44
 }
 //---------------------------------------------------------------------
 
-CShaderConstantParam CShaderConstantParam::GetMember(const char* pName) const
+CShaderConstantParam CShaderConstantParam::GetMember(CStrID Name) const
 {
-	if (!_Info) return CShaderConstantParam(nullptr, 0);
-	return CShaderConstantParam(_Info->GetMemberInfo(pName), _Offset + _Info->GetLocalOffset());
+	if (!_Info || _Info->GetElementCount() > 1) return CShaderConstantParam(nullptr, 0);
+	return CShaderConstantParam(_Info->GetMemberInfo(Name), _Offset + _Info->GetLocalOffset());
 }
 //---------------------------------------------------------------------
 
 CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
 {
-	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	if (!_Info || _Info->GetElementCount() <= Index) return CShaderConstantParam(nullptr, 0);
 	return CShaderConstantParam(_Info->GetElementInfo(), _Offset + Index * _Info->GetElementStride());
 }
 //---------------------------------------------------------------------
 
 CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 {
-	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	if (!_Info ||
+		_Info->GetElementCount() > 1 ||
+		_Info->GetMemberCount() > 0 ||
+		_Info->GetRowCount() * _Info->GetColumnCount <= Index)
+	{
+		return CShaderConstantParam(nullptr, 0);
+	}
+
 	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+}
+//---------------------------------------------------------------------
+
+CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) const
+{
+	if (!_Info ||
+		_Info->GetElementCount() > 1 ||
+		_Info->GetMemberCount() > 0 ||
+		_Info->GetRowCount() <= Row ||
+		_Info->GetColumnCount <= Column)
+	{
+		return CShaderConstantParam(nullptr, 0);
+	}
+
+	//???must index honour majority?
+
+	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+}
+//---------------------------------------------------------------------
+
+CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
+{
+	if (!_Info) return CShaderConstantParam(nullptr, 0);
+
+	if (_Info->GetElementCount() > 1) return GetElement(Index);
+
+	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	//!!!if (MajorDim > 1) return GetRow(Index);
+
+	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
+	if (MinorDim) return GetComponent(Index);
+
+	return CShaderConstantParam(nullptr, 0);
 }
 //---------------------------------------------------------------------
 

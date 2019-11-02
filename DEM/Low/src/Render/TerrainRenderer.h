@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_TERRAIN_RENDERER_H__
-#define __DEM_L1_RENDER_TERRAIN_RENDERER_H__
-
 #include <Render/Renderer.h>
 #include <Render/VertexComponent.h>
 #include <Render/SamplerDesc.h>
@@ -105,5 +102,3 @@ public:
 };
 
 }
-
-#endif

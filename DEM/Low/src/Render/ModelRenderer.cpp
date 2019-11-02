@@ -199,14 +199,14 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 	CVertexLayout* pVLInstanced = nullptr;
 
 	// Effect constants
-	const CEffectConstant* pConstInstanceDataVS = nullptr;	// Model, ModelSkinned, ModelInstanced
-	const CEffectConstant* pConstInstanceDataPS = nullptr;	// Model, ModelSkinned, ModelInstanced
-	const CEffectConstant* pConstSkinPalette = nullptr;	// ModelSkinned
+	CShaderConstantParam ConstInstanceDataVS;	// Model, ModelSkinned, ModelInstanced
+	CShaderConstantParam ConstInstanceDataPS;	// Model, ModelSkinned, ModelInstanced
+	CShaderConstantParam ConstSkinPalette;	// ModelSkinned
 
 	// Subsequent shader constants for single-instance case
-	PShaderConstant ConstWorldMatrix;
-	PShaderConstant ConstLightCount;
-	PShaderConstant ConstLightIndices;
+	CShaderConstantParam ConstWorldMatrix;
+	CShaderConstantParam ConstLightCount;
+	CShaderConstantParam ConstLightIndices;
 
 	const bool LightingEnabled = (Context.pLights != nullptr);
 	UPTR TechLightCount;
@@ -321,25 +321,25 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		{
 			if (pTech != pCurrTech)
 			{
-				pConstInstanceDataVS = pTech->GetConstant(CStrID("InstanceDataVS"));
-				pConstInstanceDataPS = pTech->GetConstant(CStrID("InstanceDataPS"));
+				ConstInstanceDataVS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataVS"));
+				ConstInstanceDataPS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataPS"));
 				pCurrTech = pTech;
 
 				TechLightCount = 0;
-				if (LightingEnabled && pConstInstanceDataPS)
+				if (LightingEnabled && ConstInstanceDataPS)
 				{
-					ConstLightIndices = pConstInstanceDataPS->Const->GetElement(0)->GetMember(sidLightIndices);
-					if (ConstLightIndices.IsValidPtr())
-						TechLightCount = ConstLightIndices->GetElementCount() * ConstLightIndices->GetColumnCount() * ConstLightIndices->GetRowCount();
+					ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
+					if (ConstLightIndices)
+						TechLightCount = ConstLightIndices.GetElementCount() * ConstLightIndices.GetColumnCount() * ConstLightIndices.GetRowCount();
 				}
 			}
 
-			if (pConstInstanceDataVS)
+			if (ConstInstanceDataVS)
 			{
-				UPTR MaxInstanceCountConst = pConstInstanceDataVS->Const->GetElementCount();
-				if (pConstInstanceDataPS)
+				UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
+				if (ConstInstanceDataPS)
 				{
-					const UPTR MaxInstanceCountConstPS = pConstInstanceDataPS->Const->GetElementCount();
+					const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
 					if (MaxInstanceCountConst < MaxInstanceCountConstPS)
 						MaxInstanceCountConst = MaxInstanceCountConstPS;
 				}
@@ -350,27 +350,27 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				CConstantBufferSet PerInstanceBuffers;
 				PerInstanceBuffers.SetGPU(&GPU);
 
-				CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(pConstInstanceDataVS->Const->GetConstantBufferHandle(), pConstInstanceDataVS->ShaderType);
-				CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : nullptr;
+				CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(ConstInstanceDataVS.GetConstantBufferIndex(), ConstInstanceDataVS.ShaderType);
+				CConstantBuffer* pPSCB = ConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(ConstInstanceDataPS.GetConstantBufferIndex(), ConstInstanceDataPS.ShaderType) : nullptr;
 
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
 				{
 					// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
-					PShaderConstant CurrInstanceDataVS = pConstInstanceDataVS->Const->GetElement(InstanceCount);
+					auto CurrInstanceDataVS = ConstInstanceDataVS[InstanceCount];
 
 					// Setup instance transformation
 
-					PShaderConstant CurrWorldMatrix = CurrInstanceDataVS->GetMember(sidWorldMatrix);
-					if (CurrWorldMatrix.IsValidPtr())
-						CurrWorldMatrix->SetMatrix(*pVSCB, &pRenderNode->Transform, 1);
+					auto CurrWorldMatrix = CurrInstanceDataVS[sidWorldMatrix];
+					if (CurrWorldMatrix)
+						CurrWorldMatrix.SetMatrix(*pVSCB, pRenderNode->Transform);
 
 					// Setup instance lights
 
-					if (LightingEnabled && pConstInstanceDataPS && TechLightCount)
+					if (LightingEnabled && ConstInstanceDataPS && TechLightCount)
 					{
-						PShaderConstant CurrInstanceDataPS = pConstInstanceDataPS->Const->GetElement(InstanceCount);
-						PShaderConstant CurrLightIndices = CurrInstanceDataPS->GetMember(sidLightIndices);
+						CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS.GetElement(InstanceCount);
+						CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
 
 						U32 ActualLightCount;
 
@@ -378,9 +378,9 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						{
 							// If tech is variable-light-count, set it per instance
 							ActualLightCount = (U32)n_min(TechLightCount, pRenderNode->LightCount);
-							PShaderConstant CurrLightCount = CurrInstanceDataPS->GetMember(sidLightCount);
-							if (CurrLightCount.IsValidPtr())
-								CurrLightCount->SetUInt(*pPSCB, ActualLightCount);
+							CShaderConstantParam CurrLightCount = CurrInstanceDataPS[sidLightCount];
+							if (CurrLightCount)
+								CurrLightCount.SetUInt(*pPSCB, ActualLightCount);
 						}
 						else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
 
@@ -397,12 +397,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 									//!!!???what with batch-local indices?!
 								}
 								const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-								CurrLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, LightRec.GPULightIndex);
+								CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, LightRec.GPULightIndex);
 							}
 
 							// If tech is fixed-light-count, fill the first unused light index with the special value
 							if (LightCount && InstLightIdx < TechLightCount)
-								CurrLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
+								CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
 						}
 					}
 
@@ -513,21 +513,21 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		{
 			if (pTech != pCurrTech)
 			{
-				pConstInstanceDataVS = pTech->GetConstant(CStrID("InstanceDataVS"));
-				pConstInstanceDataPS = pTech->GetConstant(CStrID("InstanceDataPS"));
-				pConstSkinPalette = pTech->GetConstant(CStrID("SkinPalette"));
+				ConstInstanceDataVS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataVS"));
+				ConstInstanceDataPS = pTech->GetParamTable().GetConstant(CStrID("InstanceDataPS"));
+				ConstSkinPalette = pTech->GetParamTable().GetConstant(CStrID("SkinPalette"));
 
 				// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
-				if (pConstInstanceDataVS)
-					ConstWorldMatrix = pConstInstanceDataVS->Const->GetMember(sidWorldMatrix);
+				if (ConstInstanceDataVS)
+					ConstWorldMatrix = ConstInstanceDataVS[sidWorldMatrix];
 
 				TechLightCount = 0;
-				if (LightingEnabled && pConstInstanceDataPS)
+				if (LightingEnabled && ConstInstanceDataPS)
 				{
-					ConstLightCount = pConstInstanceDataPS->Const->GetMember(sidLightCount);
-					ConstLightIndices = pConstInstanceDataPS->Const->GetMember(sidLightIndices);
-					if (ConstLightIndices.IsValidPtr())
-						TechLightCount = ConstLightIndices->GetElementCount() * ConstLightIndices->GetColumnCount() * ConstLightIndices->GetRowCount();
+					ConstLightCount = ConstInstanceDataPS.GetMember(sidLightCount);
+					ConstLightIndices = ConstInstanceDataPS.GetMember(sidLightIndices);
+					if (ConstLightIndices)
+						TechLightCount = ConstLightIndices.GetElementCount() * ConstLightIndices.GetColumnCount() * ConstLightIndices.GetRowCount();
 				}
 
 				pCurrTech = pTech;
@@ -543,19 +543,19 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				// Setup per-instance information
 
-				if (pConstInstanceDataVS)
+				if (ConstInstanceDataVS)
 				{
-					CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(pConstInstanceDataVS->Const->GetConstantBufferHandle(), pConstInstanceDataVS->ShaderType);
+					CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(ConstInstanceDataVS.GetConstantBufferHandle(), ConstInstanceDataVS.ShaderType);
 					
-					if (ConstWorldMatrix.IsValidPtr())
+					if (ConstWorldMatrix)
 						ConstWorldMatrix->SetMatrix(*pVSCB, &pRenderNode->Transform);
 				}
 
-				if (pConstInstanceDataPS)
+				if (ConstInstanceDataPS)
 				{
-					CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : nullptr;
+					CConstantBuffer* pPSCB = ConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(ConstInstanceDataPS.GetConstantBufferHandle(), ConstInstanceDataPS.ShaderType) : nullptr;
 
-					if (LightingEnabled && ConstLightIndices.IsValidPtr())
+					if (LightingEnabled && ConstLightIndices)
 					{
 						U32 ActualLightCount;
 
@@ -563,8 +563,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						{
 							// If tech is variable-light-count, set it per instance
 							ActualLightCount = (U32)n_min(TechLightCount, pRenderNode->LightCount);
-							if (ConstLightCount.IsValidPtr())
-								ConstLightCount->SetUInt(*pPSCB, ActualLightCount);
+							if (ConstLightCount)
+								ConstLightCount.SetUInt(*pPSCB, ActualLightCount);
 						}
 						else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
 
@@ -581,32 +581,32 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 									//!!!???what with batch-local indices?!
 								}
 								const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-								ConstLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, LightRec.GPULightIndex);
+								ConstLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, LightRec.GPULightIndex);
 							}
 
 							// If tech is fixed-light-count, fill the first unused light index with the special value
 							if (LightCount && InstLightIdx < TechLightCount)
-								ConstLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
+								ConstLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
 						}
 					}
 				}
 
-				if (pConstSkinPalette && pRenderNode->pSkinPalette)
+				if (ConstSkinPalette && pRenderNode->pSkinPalette)
 				{
-					const UPTR BoneCount = n_min(pRenderNode->BoneCount, pConstSkinPalette->Const->GetElementCount());
-					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstSkinPalette->Const->GetConstantBufferHandle(), pConstSkinPalette->ShaderType);
+					const UPTR BoneCount = n_min(pRenderNode->BoneCount, ConstSkinPalette.GetElementCount());
+					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstSkinPalette.GetConstantBufferIndex(), ConstSkinPalette.ShaderType);
 					if (pRenderNode->pSkinMapping)
 					{
 						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 						{
 							const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
-							pConstSkinPalette->Const->SetMatrix(*pCB, pBoneMatrix, 1, BoneIdxIdx);
+							ConstSkinPalette[BoneIdxIdx].SetMatrix(*pCB, *pBoneMatrix);
 						}
 					}
 					else
 					{
 						// No mapping, use skin palette directly
-						pConstSkinPalette->Const->SetMatrix(*pCB, pRenderNode->pSkinPalette, BoneCount);
+						ConstSkinPalette.SetMatrixArray(*pCB, pRenderNode->pSkinPalette, BoneCount);
 					}
 				}
 

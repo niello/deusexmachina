@@ -658,17 +658,17 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 	const CMaterial* pCurrMaterial = nullptr;
 	const CTechnique* pCurrTech = nullptr;
 
-	const CEffectConstant* pConstVSCDLODParams = nullptr;
-	const CEffectConstant* pConstGridConsts = nullptr;
-	const CEffectConstant* pConstFirstInstanceIndex = nullptr;
-	const CEffectConstant* pConstInstanceDataVS = nullptr;
-	const CEffectConstant* pConstInstanceDataPS = nullptr;
-	const CEffectResource* pResourceHeightMap = nullptr;
+	CShaderConstantParam ConstVSCDLODParams;
+	CShaderConstantParam ConstGridConsts;
+	CShaderConstantParam ConstFirstInstanceIndex;
+	CShaderConstantParam ConstInstanceDataVS;
+	CShaderConstantParam ConstInstanceDataPS;
+	PResourceParam ResourceHeightMap;
 
 	// Subsequent shader constants for single-instance case
-	PShaderConstant ConstWorldMatrix;
-	PShaderConstant ConstLightCount;
-	PShaderConstant ConstLightIndices;
+	CShaderConstantParam ConstWorldMatrix;
+	CShaderConstantParam ConstLightCount;
+	CShaderConstantParam ConstLightIndices;
 
 	const bool LightingEnabled = (Context.pLights != nullptr);
 	UPTR TechLightCount;
@@ -824,33 +824,33 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 			const CShaderParamTable& ParamTable = pTech->GetParamTable();
 
-			pConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
-			pConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
-			pConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
-			pConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
-			pConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
-			pResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
+			ConstVSCDLODParams = ParamTable.GetConstant(CStrID("VSCDLODParams"));
+			ConstGridConsts = ParamTable.GetConstant(CStrID("GridConsts"));
+			ConstFirstInstanceIndex = ParamTable.GetConstant(CStrID("FirstInstanceIndex"));
+			ConstInstanceDataVS = ParamTable.GetConstant(CStrID("InstanceDataVS"));
+			ConstInstanceDataPS = ParamTable.GetConstant(CStrID("InstanceDataPS"));
+			ResourceHeightMap = ParamTable.GetResource(CStrID("HeightMapVS"));
 
 			TechLightCount = 0;
-			if (LightingEnabled && pConstInstanceDataPS)
+			if (LightingEnabled && ConstInstanceDataPS)
 			{
-				ConstLightIndices = pConstInstanceDataPS->Const->GetElement(0)->GetMember(sidLightIndices);
-				if (ConstLightIndices.IsValidPtr())
-					TechLightCount = ConstLightIndices->GetElementCount() * ConstLightIndices->GetColumnCount() * ConstLightIndices->GetRowCount();
+				ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
+				if (ConstLightIndices)
+					TechLightCount = ConstLightIndices.GetElementCount() * ConstLightIndices.GetColumnCount() * ConstLightIndices.GetRowCount();
 			}
 
-			const CEffectSampler* pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
+			auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
 			if (pVSLinearSampler)
-				GPU.BindSampler(pVSLinearSampler->ShaderType, pVSLinearSampler->Handle, HMSampler.Get());
+				pVSLinearSampler->Apply(GPU, HMSampler.Get());
 		}
 
-		if (pResourceHeightMap)
-			GPU.BindResource(pResourceHeightMap->ShaderType, pResourceHeightMap->Handle, pTerrain->GetHeightMap());
+		if (ResourceHeightMap)
+			ResourceHeightMap->Apply(GPU, pTerrain->GetHeightMap());
 
 		CConstantBufferSet PerInstanceBuffers;
 		PerInstanceBuffers.SetGPU(&GPU);
 
-		if (pConstVSCDLODParams)
+		if (ConstVSCDLODParams)
 		{
 			struct
 			{
@@ -874,29 +874,29 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
 			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
 
-			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstVSCDLODParams->Const->GetConstantBufferHandle(), pConstVSCDLODParams->ShaderType);
-			pConstVSCDLODParams->Const->SetRawValue(*pCB, &CDLODParams, sizeof(CDLODParams));
+			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstVSCDLODParams.GetConstantBufferIndex(), ConstVSCDLODParams.ShaderType);
+			ConstVSCDLODParams.SetRawValue(*pCB, &CDLODParams, sizeof(CDLODParams));
 		}
 
 		//!!!implement looping if instance buffer is too small!
-		if (pConstInstanceDataVS)
+		if (ConstInstanceDataVS)
 		{
-			UPTR MaxInstanceCountConst = pConstInstanceDataVS->Const->GetElementCount();
-			if (pConstInstanceDataPS)
+			UPTR MaxInstanceCountConst = ConstInstanceDataVS.GetElementCount();
+			if (ConstInstanceDataPS)
 			{
-				const UPTR MaxInstanceCountConstPS = pConstInstanceDataPS->Const->GetElementCount();
+				const UPTR MaxInstanceCountConstPS = ConstInstanceDataPS.GetElementCount();
 				if (MaxInstanceCountConst < MaxInstanceCountConstPS)
 					MaxInstanceCountConst = MaxInstanceCountConstPS;
 			}
 			n_assert_dbg(MaxInstanceCountConst > 1);
 
-			CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(pConstInstanceDataVS->Const->GetConstantBufferHandle(), pConstInstanceDataVS->ShaderType);
-			CConstantBuffer* pPSCB = pConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(pConstInstanceDataPS->Const->GetConstantBufferHandle(), pConstInstanceDataPS->ShaderType) : nullptr;
+			CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(ConstInstanceDataVS.GetConstantBufferIndex(), ConstInstanceDataVS.ShaderType);
+			CConstantBuffer* pPSCB = ConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(ConstInstanceDataPS.GetConstantBufferIndex(), ConstInstanceDataPS.ShaderType) : nullptr;
 
 			//!!!implement looping if instance buffer is too small!
 			n_assert_dbg(MaxInstanceCountConst >= (PatchCount + QuarterPatchCount));
 
-			const bool UploadLightInfo = LightingEnabled && pConstInstanceDataPS && TechLightCount;
+			const bool UploadLightInfo = LightingEnabled && ConstInstanceDataPS && TechLightCount;
 			U32 AvailableLightCount = (LightCount == 0) ? (U32)TechLightCount : (U32)n_min(LightCount, TechLightCount);
 			if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
 
@@ -909,37 +909,37 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 				// Setup instance patch constants
 
-				PShaderConstant CurrInstanceDataVS = pConstInstanceDataVS->Const->GetElement(InstanceCount);
-				if (CurrInstanceDataVS.IsValidPtr())
-					CurrInstanceDataVS->SetRawValue(*pVSCB, &CurrPatch, 6 * sizeof(float));
+				CShaderConstantParam CurrInstanceDataVS = ConstInstanceDataVS[InstanceCount];
+				if (CurrInstanceDataVS)
+					CurrInstanceDataVS.SetRawValue(*pVSCB, &CurrPatch, 6 * sizeof(float));
 
 				// Setup instance lights
 
 				if (UploadLightInfo)
 				{
-					PShaderConstant CurrInstanceDataPS = pConstInstanceDataPS->Const->GetElement(InstanceCount);
-					PShaderConstant CurrLightIndices = CurrInstanceDataPS->GetMember(sidLightIndices);
+					CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+					CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
 
 					U32 InstLightIdx;
 					for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
 					{
 						I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
 						if (CurrGPUIdx < 0) break;
-						CurrLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, CurrGPUIdx);
+						CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, CurrGPUIdx);
 					}
 
 					if (LightCount)
 					{
 						// If tech is fixed-light-count, fill the first unused light index with the special value
 						if (InstLightIdx < TechLightCount)
-							CurrLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
+							CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
 					}
 					else
 					{
 						// If tech is variable-light-count, set light count explicitly
-						PShaderConstant CurrLightCount = CurrInstanceDataPS->GetMember(sidLightCount);
-						if (CurrLightCount.IsValidPtr())
-							CurrLightCount->SetUInt(*pPSCB, InstLightIdx);
+						CShaderConstantParam CurrLightCount = CurrInstanceDataPS[sidLightCount];
+						if (CurrLightCount)
+							CurrLightCount.SetUInt(*pPSCB, InstLightIdx);
 					}
 				}
 			}
@@ -951,37 +951,37 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 				// Setup instance patch constants
 
-				PShaderConstant CurrInstanceDataVS = pConstInstanceDataVS->Const->GetElement(InstanceCount);
-				if (CurrInstanceDataVS.IsValidPtr())
-					CurrInstanceDataVS->SetRawValue(*pVSCB, &CurrPatch, 6 * sizeof(float));
+				CShaderConstantParam CurrInstanceDataVS = ConstInstanceDataVS[InstanceCount];
+				if (CurrInstanceDataVS)
+					CurrInstanceDataVS.SetRawValue(*pVSCB, &CurrPatch, 6 * sizeof(float));
 
 				// Setup instance lights
 
 				if (UploadLightInfo)
 				{
-					PShaderConstant CurrInstanceDataPS = pConstInstanceDataPS->Const->GetElement(InstanceCount);
-					PShaderConstant CurrLightIndices = CurrInstanceDataPS->GetMember(sidLightIndices);
+					CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS[InstanceCount];
+					CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
 
 					U32 InstLightIdx;
 					for (InstLightIdx = 0; InstLightIdx < AvailableLightCount; ++InstLightIdx)
 					{
 						I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
 						if (CurrGPUIdx < 0) break;
-						CurrLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, CurrGPUIdx);
+						CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, CurrGPUIdx);
 					}
 
 					if (LightCount)
 					{
 						// If tech is fixed-light-count, fill the first unused light index with the special value
 						if (InstLightIdx < TechLightCount)
-							CurrLightIndices->SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
+							CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
 					}
 					else
 					{
 						// If tech is variable-light-count, set light count explicitly
-						PShaderConstant CurrLightCount = CurrInstanceDataPS->GetMember(sidLightCount);
-						if (CurrLightCount.IsValidPtr())
-							CurrLightCount->SetUInt(*pPSCB, InstLightIdx);
+						CShaderConstantParam CurrLightCount = CurrInstanceDataPS[sidLightCount];
+						if (CurrLightCount)
+							CurrLightCount.SetUInt(*pPSCB, InstLightIdx);
 					}
 				}
 			}
@@ -1065,7 +1065,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		n_assert_dbg(pVB);
 		CVertexLayout* pVL = pVB->GetVertexLayout();
 
-		if (pConstInstanceDataVS) GPU.SetVertexLayout(pVL);
+		if (ConstInstanceDataVS) GPU.SetVertexLayout(pVL);
 		else
 		{
 			IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
@@ -1094,19 +1094,19 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 		if (PatchCount)
 		{
-			if (pConstGridConsts)
+			if (ConstGridConsts)
 			{
 				float GridConsts[2];
 				GridConsts[0] = pCDLOD->GetPatchSize() * 0.5f;
 				GridConsts[1] = 1.f / GridConsts[0];
-				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstGridConsts->Const->GetConstantBufferHandle(), pConstGridConsts->ShaderType);
-				pConstGridConsts->Const->SetRawValue(*pCB, &GridConsts, sizeof(GridConsts));
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstGridConsts.GetConstantBufferIndex(), ConstGridConsts.ShaderType);
+				ConstGridConsts.SetRawValue(*pCB, &GridConsts, sizeof(GridConsts));
 			}
 
-			if (pConstFirstInstanceIndex)
+			if (ConstFirstInstanceIndex)
 			{
-				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstFirstInstanceIndex->Const->GetConstantBufferHandle(), pConstFirstInstanceIndex->ShaderType);
-				pConstFirstInstanceIndex->Const->SetUInt(*pCB, 0);
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstFirstInstanceIndex.GetConstantBufferIndex(), ConstFirstInstanceIndex.ShaderType);
+				ConstFirstInstanceIndex.SetUInt(*pCB, 0);
 			}
 
 			PerInstanceBuffers.CommitChanges();
@@ -1114,7 +1114,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
-			if (!pConstInstanceDataVS)
+			if (!ConstInstanceDataVS)
 				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), 0);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
@@ -1127,19 +1127,19 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 		if (QuarterPatchCount)
 		{
-			if (pConstGridConsts)
+			if (ConstGridConsts)
 			{
 				float GridConsts[2];
 				GridConsts[0] = pCDLOD->GetPatchSize() * 0.25f;
 				GridConsts[1] = 1.f / GridConsts[0];
-				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstGridConsts->Const->GetConstantBufferHandle(), pConstGridConsts->ShaderType);
-				pConstGridConsts->Const->SetRawValue(*pCB, &GridConsts, sizeof(GridConsts));
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstGridConsts.GetConstantBufferIndex(), ConstGridConsts.ShaderType);
+				ConstGridConsts.SetRawValue(*pCB, &GridConsts, sizeof(GridConsts));
 			}
 
-			if (pConstFirstInstanceIndex)
+			if (ConstFirstInstanceIndex)
 			{
-				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(pConstFirstInstanceIndex->Const->GetConstantBufferHandle(), pConstFirstInstanceIndex->ShaderType);
-				pConstFirstInstanceIndex->Const->SetUInt(*pCB, PatchCount);
+				CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstFirstInstanceIndex.GetConstantBufferIndex(), ConstFirstInstanceIndex.ShaderType);
+				ConstFirstInstanceIndex.SetUInt(*pCB, PatchCount);
 			}
 
 			PerInstanceBuffers.CommitChanges();
@@ -1152,7 +1152,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
-			if (!pConstInstanceDataVS)
+			if (!ConstInstanceDataVS)
 				GPU.SetVertexBuffer(INSTANCE_BUFFER_STREAM_INDEX, InstanceVB.Get(), PatchCount);
 
 			const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
