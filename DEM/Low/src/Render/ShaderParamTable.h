@@ -43,12 +43,12 @@ protected:
 	// Any single vector has components. Any single matrix has components and rows.
 	union
 	{
-		std::map<CStrID, PShaderConstantInfo> MemberInfo;
-		PShaderConstantInfo                   ElementInfo;
+		mutable std::map<CStrID, PShaderConstantInfo> MemberInfo;
+		mutable PShaderConstantInfo                   ElementInfo;
 		struct
 		{
-			PShaderConstantInfo               RowInfo;
-			PShaderConstantInfo               ComponentInfo;
+			mutable PShaderConstantInfo               RowInfo;
+			mutable PShaderConstantInfo               ComponentInfo;
 		};
 	};
 
@@ -56,6 +56,14 @@ public:
 
 	CShaderConstantInfo(size_t ConstantBufferIndex, const CShaderConstantMeta& Meta);
 	virtual ~CShaderConstantInfo() override;
+
+	virtual U32  GetMemberCount() const = 0;
+
+	virtual void SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
+	virtual void SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
+	virtual void SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const = 0;
+	virtual void SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const = 0;
+	virtual void SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const = 0;
 
 	CStrID GetID() const { return _Meta.Name; }
 	size_t GetConstantBufferIndex() const { return _CBIndex; }
@@ -69,14 +77,9 @@ public:
 	bool   HasElementPadding() const;
 	bool   NeedConversionFrom(/*type*/) const;
 
-	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
-	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
-	virtual void   SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const = 0;
-	virtual void   SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const = 0;
-	virtual void   SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const = 0;
-
 	PShaderConstantInfo GetMemberInfo(CStrID Name) const;
 	PShaderConstantInfo GetElementInfo() const;
+	PShaderConstantInfo GetRowInfo() const;
 	PShaderConstantInfo GetComponentInfo() const;
 };
 

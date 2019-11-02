@@ -45,6 +45,12 @@ CUSMConstantInfo::CUSMConstantInfo(size_t ConstantBufferIndex, const CUSMConstan
 }
 //---------------------------------------------------------------------
 
+U32 CUSMConstantInfo::GetMemberCount() const
+{
+	return _Struct ? _Struct->Members.size() : 0;
+}
+//---------------------------------------------------------------------
+
 void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

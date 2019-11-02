@@ -49,6 +49,12 @@ CSM30ConstantInfo::CSM30ConstantInfo(size_t ConstantBufferIndex, const CSM30Cons
 }
 //---------------------------------------------------------------------
 
+U32 CSM30ConstantInfo::GetMemberCount() const
+{
+	return _Struct ? _Struct->Members.size() : 0;
+}
+//---------------------------------------------------------------------
+
 void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

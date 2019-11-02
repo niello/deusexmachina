@@ -15,6 +15,53 @@ CShaderConstantInfo::CShaderConstantInfo(size_t ConstantBufferIndex, const CShad
 CShaderConstantInfo::~CShaderConstantInfo() = default;
 //---------------------------------------------------------------------
 
+PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name) const
+{
+	auto It = MemberInfo.find(Name);
+	if (It != MemberInfo.cend()) return It->second;
+
+	// find member
+	// create mutable cached pointer
+	// return member
+	return MemberInfo[Name];
+}
+//---------------------------------------------------------------------
+
+PShaderConstantInfo CShaderConstantInfo::GetElementInfo() const
+{
+	if (ElementInfo) return ElementInfo;
+
+	if (_Meta.ElementCount < 2) return nullptr;
+
+	//ElementInfo = n_new(CShaderConstantInfo(
+	return ElementInfo;
+}
+//---------------------------------------------------------------------
+
+PShaderConstantInfo CShaderConstantInfo::GetRowInfo() const
+{
+	if (RowInfo) return RowInfo;
+
+	const auto MajorDim = IsColumnMajor() ? GetColumnCount() : GetRowCount();
+	if (MajorDim < 2) return nullptr;
+
+	//RowInfo = n_new(CShaderConstantInfo(
+	return RowInfo;
+}
+//---------------------------------------------------------------------
+
+PShaderConstantInfo CShaderConstantInfo::GetComponentInfo() const
+{
+	if (ComponentInfo) return ComponentInfo;
+
+	const auto MinorDim = IsColumnMajor() ? GetRowCount() : GetColumnCount();
+	if (MinorDim < 2) return nullptr;
+
+	//ComponentInfo = n_new(CShaderConstantInfo(
+	return ComponentInfo;
+}
+//---------------------------------------------------------------------
+
 // Create sub-constant with offset precalculated in the parent
 CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
 	: _Info(Info)
@@ -132,7 +179,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 	if (!_Info ||
 		_Info->GetElementCount() > 1 ||
 		_Info->GetMemberCount() > 0 ||
-		_Info->GetRowCount() * _Info->GetColumnCount <= Index)
+		_Info->GetRowCount() * _Info->GetColumnCount() <= Index)
 	{
 		return CShaderConstantParam(nullptr, 0);
 	}
@@ -147,7 +194,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 		_Info->GetElementCount() > 1 ||
 		_Info->GetMemberCount() > 0 ||
 		_Info->GetRowCount() <= Row ||
-		_Info->GetColumnCount <= Column)
+		_Info->GetColumnCount() <= Column)
 	{
 		return CShaderConstantParam(nullptr, 0);
 	}
