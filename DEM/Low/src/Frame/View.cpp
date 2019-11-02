@@ -18,13 +18,31 @@
 
 namespace Frame
 {
-CView::CView() {}
 
 CView::CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int SwapChainID, CStrID SwapChainRTID)
 	: _GraphicsMgr(&GraphicsMgr)
 	, _SwapChainID(SwapChainID)
+	, _RenderPath(&RenderPath)
+	, Globals(RenderPath.GetGlobalParamTable(), *GraphicsMgr.GetGPU())
 {
-	SetRenderPath(&RenderPath);
+	// Allocate storage for global shader params
+
+	auto& GlobalParams = _RenderPath->GetGlobalParamTable();
+	for (const auto& Const : GlobalParams.GetConstants())
+		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
+
+	// Create linear cube sampler for image-based lighting
+	//???FIXME: declarative in RP? as material defaults in the effect!
+
+	Render::CSamplerDesc SamplerDesc;
+	SamplerDesc.SetDefaults();
+	SamplerDesc.AddressU = Render::TexAddr_Clamp;
+	SamplerDesc.AddressV = Render::TexAddr_Clamp;
+	SamplerDesc.AddressW = Render::TexAddr_Clamp;
+	SamplerDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+	TrilinearCubeSampler = GraphicsMgr.GetGPU()->CreateSampler(SamplerDesc);
+
+	//!!!may fill with default RTs and DSs if descs are provided in RP!
 
 	// If our view is attached to the swap chain, set the back buffer as its first RT
 	if (SwapChainID >= 0 && SwapChainRTID)
@@ -202,53 +220,6 @@ bool CView::Present() const
 
 	auto GPU = GetGPU();
 	return GPU && GPU->Present(_SwapChainID);
-}
-//---------------------------------------------------------------------
-
-bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
-{
-	// GPU must be valid in order to create global shader params and buffers
-	if (!_GraphicsMgr) FAIL;
-
-	if (_RenderPath.Get() == pNewRenderPath) OK;
-
-	auto GPU = GetGPU();
-
-	//???must be in a CShaderParamStorage destructor? or control unbinding manually? or bool flag in constructor?
-	Globals.UnbindAndClear();
-
-	auto& GlobalParams = pNewRenderPath->GetGlobalParamTable();
-	Globals = Render::CShaderParamStorage(GlobalParams, *GPU);
-
-	RTs.clear();
-	DSBuffers.clear();
-
-	if (!pNewRenderPath)
-	{
-		_RenderPath = nullptr;
-		OK;
-	}
-
-	//!!!may fill with default RTs and DSs if descs are provided in RP!
-
-	// Allocate storage for global shader params
-
-	for (const auto& Const : GlobalParams.GetConstants())
-		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
-
-	// Create linear cube sampler for image-based lighting
-	//???FIXME: declarative in RP? as material defaults in the effect!
-
-	Render::CSamplerDesc SamplerDesc;
-	SamplerDesc.SetDefaults();
-	SamplerDesc.AddressU = Render::TexAddr_Clamp;
-	SamplerDesc.AddressV = Render::TexAddr_Clamp;
-	SamplerDesc.AddressW = Render::TexAddr_Clamp;
-	SamplerDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	TrilinearCubeSampler = GPU->CreateSampler(SamplerDesc);
-
-	_RenderPath = pNewRenderPath;
-	OK;
 }
 //---------------------------------------------------------------------
 

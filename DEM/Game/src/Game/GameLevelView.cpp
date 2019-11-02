@@ -18,7 +18,7 @@ CGameLevelView::~CGameLevelView() {}
 bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 {
 	Level = &GameLevel;
-	View.pSPS = GameLevel.GetSPS();
+	View->pSPS = GameLevel.GetSPS();
 	//???fill other fields?
 	DISP_SUBSCRIBE_PEVENT(Level.Get(), OnEntityDeactivated, CGameLevelView, OnEntityDeactivated);
 	OK;
@@ -29,13 +29,13 @@ void CGameLevelView::Trigger()
 {
 	CStrID OldEntityUnderMouse = EntityUnderMouse;
 
-	if (Level.IsNullPtr() || View.UIContext->IsMouseOverGUI()) HasMouseIsect = false;
+	if (Level.IsNullPtr() || View->UIContext->IsMouseOverGUI()) HasMouseIsect = false;
 	else
 	{
 		float XRel, YRel;
-		View.UIContext->GetCursorPositionRel(XRel, YRel);
+		View->UIContext->GetCursorPositionRel(XRel, YRel);
 
-		const Frame::CNodeAttrCamera* pCamera = View.GetCamera();
+		const Frame::CNodeAttrCamera* pCamera = View->GetCamera();
 		if (pCamera)
 		{
 			line3 Ray;
@@ -65,7 +65,7 @@ void CGameLevelView::Trigger()
 
 const vector3& CGameLevelView::GetCenterOfInterest() const
 {
-	return View.GetCamera()->GetNode()->GetWorldPosition();
+	return View->GetCamera()->GetNode()->GetWorldPosition();
 }
 //---------------------------------------------------------------------
 
@@ -92,7 +92,7 @@ bool CGameLevelView::RemoveFromSelection(CStrID EntityID)
 
 bool CGameLevelView::GetEntityScreenRectRel(Data::CRectF& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	const Frame::CNodeAttrCamera* pCamera = View.GetCamera();
+	const Frame::CNodeAttrCamera* pCamera = View->GetCamera();
 	if (!pCamera) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();

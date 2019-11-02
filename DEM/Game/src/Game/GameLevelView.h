@@ -26,7 +26,7 @@ protected:
 
 	HHandle				Handle;
 	PGameLevel			Level;
-	Frame::CView		View;
+	Frame::PView		View;
 	//???store game camera here or obtain from manager? load camera in view loading!
 
 	CArray<CStrID>		SelectedEntities;
@@ -47,7 +47,7 @@ public:
 
 	HHandle					GetHandle() const { return Handle; }
 	CGameLevel*				GetLevel() const { return Level.Get(); }
-	Frame::CView&			GetFrameView() { return View; }
+	Frame::CView&			GetFrameView() { return *View; }
 	const vector3&			GetCenterOfInterest() const;
 
 	void					AddToSelection(CStrID EntityID);

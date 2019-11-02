@@ -83,7 +83,6 @@ public:
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
-	CView();
 	CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
 	~CView();
 
@@ -106,7 +105,6 @@ public:
 	bool							Render();
 	bool							Present() const;
 
-	bool							SetRenderPath(CRenderPath* pNewRenderPath);
 	CRenderPath*					GetRenderPath() const { return _RenderPath.Get(); }
 	bool							SetRenderTarget(CStrID ID, Render::PRenderTarget RT);
 	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
