@@ -33,6 +33,7 @@ protected:
 	std::unique_ptr<PShaderConstantInfo[]> SubInfo;
 
 	virtual PShaderConstantInfo Clone() const = 0;
+	void                        CShaderConstantInfo_CopyFields(const CShaderConstantInfo& Source);
 
 public:
 

@@ -37,6 +37,15 @@ static inline void ConvertAndWrite(CD3D11ConstantBuffer* pCB, U32 Offset, const 
 }
 //---------------------------------------------------------------------
 
+PShaderConstantInfo CUSMConstantInfo::Clone() const
+{
+	PUSMConstantInfo Info = n_new(CUSMConstantInfo);
+	Info->CShaderConstantInfo_CopyFields(*this);
+	Info->Type = Type;
+	return Info;
+}
+//---------------------------------------------------------------------
+
 void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

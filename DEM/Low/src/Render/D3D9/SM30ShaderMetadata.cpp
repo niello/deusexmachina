@@ -41,6 +41,15 @@ static inline void ConvertAndWrite(CD3D9ConstantBuffer* pCB, ESM30RegisterSet Re
 }
 //---------------------------------------------------------------------
 
+PShaderConstantInfo CSM30ConstantInfo::Clone() const
+{
+	PSM30ConstantInfo Info = n_new(CSM30ConstantInfo);
+	Info->CShaderConstantInfo_CopyFields(*this);
+	Info->RegisterSet = RegisterSet;
+	return Info;
+}
+//---------------------------------------------------------------------
+
 void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

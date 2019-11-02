@@ -8,6 +8,22 @@ __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 CShaderConstantInfo::~CShaderConstantInfo() = default;
 //---------------------------------------------------------------------
 
+// TODO: is there better way to clone fields from the base class?
+void CShaderConstantInfo::CShaderConstantInfo_CopyFields(const CShaderConstantInfo& Source)
+{
+	Struct = Source.Struct;
+	BufferIndex = Source.Struct;
+	Name = Source.Name;
+	LocalOffset = Source.LocalOffset;
+	ElementStride = Source.ElementStride;
+	ElementCount = Source.ElementCount;
+	ComponentStride = Source.ComponentStride;
+	Rows = Source.Rows;
+	Columns = Source.Columns;
+	Flags = Source.Flags;
+}
+//---------------------------------------------------------------------
+
 PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 {
 	// An array, can't access members even if array element is a structure
