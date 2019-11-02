@@ -18,8 +18,7 @@ bool CRenderPhaseGlobalSetup::Render(CView& View)
 		View.Globals.SetVector(CameraPosition, View.GetCamera()->GetPosition());
 	}
 
-	View.Globals.CommitChanges();
-	//???View.Globals.Apply(); , commit buffers inside?
+	View.Globals.Apply();
 
 	OK;
 }

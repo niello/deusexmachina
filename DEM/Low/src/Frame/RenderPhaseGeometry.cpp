@@ -234,7 +234,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 				}
 			}
 
-			if (GlobalLightCount) View.Globals.CommitChanges();
+			if (GlobalLightCount) View.Globals.Apply();
 		}
 
 		// Setup IBL (ambient cubemaps)

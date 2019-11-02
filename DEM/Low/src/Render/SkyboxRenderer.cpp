@@ -97,7 +97,7 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 			Tfm.set_translation(Context.CameraPosition);
 			PerInstance.SetMatrix(ConstWorldMatrix, Tfm);
 		}
-		n_verify_dbg(PerInstance.CommitChanges());
+		n_verify_dbg(PerInstance.Apply());
 
 		const CMesh* pMesh = pRenderNode->pMesh;
 		n_assert_dbg(pMesh);

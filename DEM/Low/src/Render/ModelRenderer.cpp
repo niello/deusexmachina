@@ -404,7 +404,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 					if (InstanceCount == MaxInstanceCountConst)
 					{
-						PerInstance.CommitChanges();
+						PerInstance.Apply();
 						for (const auto& Pass : Passes)
 						{
 							GPU.SetRenderState(Pass);
@@ -419,7 +419,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				if (InstanceCount)
 				{
-					PerInstance.CommitChanges();
+					PerInstance.Apply();
 					for (const auto& Pass : Passes)
 					{
 						GPU.SetRenderState(Pass);
@@ -589,7 +589,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					}
 				}
 
-				PerInstance.CommitChanges();
+				PerInstance.Apply();
 
 				// Rendering
 

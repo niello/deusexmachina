@@ -1089,7 +1089,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 			PerInstance.SetUInt(ConstFirstInstanceIndex, 0);
 
-			PerInstance.CommitChanges();
+			PerInstance.Apply();
 
 			GPU.SetVertexBuffer(0, pVB);
 			GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
@@ -1117,7 +1117,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 			PerInstance.SetUInt(ConstFirstInstanceIndex, PatchCount);
 
-			PerInstance.CommitChanges();
+			PerInstance.Apply();
 
 			pMesh = pTerrain->GetQuarterPatchMesh();
 			n_assert_dbg(pMesh);
