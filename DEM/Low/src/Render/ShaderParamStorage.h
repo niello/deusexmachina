@@ -32,7 +32,8 @@ public:
 
 	bool                     SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer);
 	bool                     SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer);
-	CConstantBuffer*         GetBuffer(size_t Index, bool Create = true);
+	CConstantBuffer*         CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags);
+	CConstantBuffer*         GetConstantBuffer(size_t Index, bool Create = true);
 
 	bool                     SetRawConstant(CStrID ID, const void* pData, UPTR Size);
 	bool                     SetRawConstant(size_t Index, const void* pData, UPTR Size);

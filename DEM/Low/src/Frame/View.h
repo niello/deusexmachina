@@ -77,7 +77,7 @@ public:
 	UI::PUIContext								UIContext;
 
 	Render::CShaderParamStorage					Globals;
-	//Render::PSampler							TrilinearCubeSampler; // For IBL
+	Render::PSampler							TrilinearCubeSampler; // For IBL
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations

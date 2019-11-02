@@ -34,6 +34,7 @@ CView::CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int
 
 CView::~CView()
 {
+	//???must be in a CShaderParamStorage destructor? or control unbinding manually? or bool flag in constructor?
 	Globals.UnbindAndClear();
 }
 //---------------------------------------------------------------------
@@ -213,8 +214,11 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 
 	auto GPU = GetGPU();
 
+	//???must be in a CShaderParamStorage destructor? or control unbinding manually? or bool flag in constructor?
 	Globals.UnbindAndClear();
-	Globals.SetGPU(GPU);
+
+	auto& GlobalParams = pNewRenderPath->GetGlobalParamTable();
+	Globals = Render::CShaderParamStorage(GlobalParams, *GPU);
 
 	RTs.clear();
 	DSBuffers.clear();
@@ -229,18 +233,8 @@ bool CView::SetRenderPath(CRenderPath* pNewRenderPath)
 
 	// Allocate storage for global shader params
 
-	//!!!must create storage here, then request permanent buffers for all constants!
-	//buffers can be created inside the storage in a helper method.
-
-	const auto& GlobalParams = pNewRenderPath->GetGlobalParamTable();
 	for (const auto& Const : GlobalParams.GetConstants())
-	{
-		if (!Globals.GetBuffer(Const.GetConstantBufferIndex(), false))
-		{
-			auto CB =  GPU->CreateConstantBuffer(hCB, Render::Access_CPU_Write | Render::Access_GPU_Read);
-			Globals.SetConstantBuffer(Const.GetConstantBufferIndex(), CB);
-		}
-	}
+		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
 
 	// Create linear cube sampler for image-based lighting
 	//???FIXME: declarative in RP? as material defaults in the effect!

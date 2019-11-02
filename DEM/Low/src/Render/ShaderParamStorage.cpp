@@ -45,7 +45,19 @@ bool CShaderParamStorage::SetConstantBuffer(size_t Index, CConstantBuffer* pBuff
 }
 //---------------------------------------------------------------------
 
-CConstantBuffer* CShaderParamStorage::GetBuffer(size_t Index, bool Create)
+CConstantBuffer* CShaderParamStorage::CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags)
+{
+	if (Index >= _ConstantBuffers.size()) return nullptr;
+
+	//???if exists, assert access flags or even replace with new buffer?
+	if (!_ConstantBuffers[Index])
+		_ConstantBuffers[Index] = _GPU->CreateConstantBuffer(*_Table->GetConstantBuffer(Index), AccessFlags);
+
+	return _ConstantBuffers[Index];
+}
+//---------------------------------------------------------------------
+
+CConstantBuffer* CShaderParamStorage::GetConstantBuffer(size_t Index, bool Create)
 {
 	if (Index >= _ConstantBuffers.size()) return nullptr;
 
@@ -69,7 +81,7 @@ bool CShaderParamStorage::SetRawConstant(size_t Index, const void* pData, UPTR S
 
 	const auto& Constant = _Table->GetConstant(Index);
 
-	auto* pCB = GetBuffer(Constant.GetConstantBufferIndex());
+	auto* pCB = GetConstantBuffer(Constant.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
 	Constant.SetRawValue(*pCB, pData, Size);
