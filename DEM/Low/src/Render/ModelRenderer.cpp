@@ -231,7 +231,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
-			n_verify_dbg(pMaterial->Apply(GPU));
+			n_verify_dbg(pMaterial->Apply());
 			pCurrMaterial = pMaterial;
 		}
 

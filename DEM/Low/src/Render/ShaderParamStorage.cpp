@@ -57,13 +57,13 @@ CConstantBuffer* CShaderParamStorage::GetBuffer(size_t Index, bool Create)
 }
 //---------------------------------------------------------------------
 
-bool CShaderParamStorage::SetRawConstant(CStrID ID, void* pData, UPTR Size)
+bool CShaderParamStorage::SetRawConstant(CStrID ID, const void* pData, UPTR Size)
 {
 	return SetRawConstant(_Table->GetConstantIndex(ID), pData, Size);
 }
 //---------------------------------------------------------------------
 
-bool CShaderParamStorage::SetRawConstant(size_t Index, void* pData, UPTR Size)
+bool CShaderParamStorage::SetRawConstant(size_t Index, const void* pData, UPTR Size)
 {
 	if (Index >= _Table->GetConstants().size()) FAIL;
 

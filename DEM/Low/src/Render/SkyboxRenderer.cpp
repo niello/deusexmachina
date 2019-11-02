@@ -11,11 +11,7 @@ namespace Render
 {
 __ImplementClass(Render::CSkyboxRenderer, 'SBXR', Render::IRenderer);
 
-CSkyboxRenderer::CSkyboxRenderer()
-{
-	// Setup dynamic enumeration
-	InputSet_Skybox = RegisterShaderInputSetID(CStrID("Skybox"));
-}
+CSkyboxRenderer::CSkyboxRenderer() = default;
 //---------------------------------------------------------------------
 
 bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
@@ -38,6 +34,8 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	}
 
 	if (!pEffect) FAIL;
+
+	static const CStrID InputSet_Skybox("Skybox");
 
 	Node.pMaterial = pMaterial;
 	Node.pEffect = pEffect;
@@ -72,7 +70,7 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);
-			n_verify_dbg(pMaterial->Apply(GPU));
+			n_verify_dbg(pMaterial->Apply());
 			pCurrMaterial = pMaterial;
 		}
 
@@ -84,24 +82,22 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 		}
 
 		UPTR LightCount = 0;
-		const CPassList* pPasses = pTech->GetPasses(LightCount);
-		n_assert_dbg(pPasses); // To test if it could happen at all
-		if (!pPasses)
+		const auto& Passes = pTech->GetPasses(LightCount);
+		if (Passes.empty())
 		{
 			++ItCurr;
 			continue;
 		}
 
-		CConstantBufferSet PerInstanceBuffers;
-		PerInstanceBuffers.SetGPU(&GPU);
+		CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
+
 		if (ConstWorldMatrix)
 		{
 			matrix44 Tfm = pRenderNode->Transform;
 			Tfm.set_translation(Context.CameraPosition);
-			CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstWorldMatrix.GetConstantBufferIndex(), ConstWorldMatrix.ShaderType);
-			ConstWorldMatrix.SetMatrix(*pCB, Tfm);
+			PerInstance.SetMatrix(ConstWorldMatrix, Tfm);
 		}
-		n_verify_dbg(PerInstanceBuffers.CommitChanges());
+		n_verify_dbg(PerInstance.CommitChanges());
 
 		const CMesh* pMesh = pRenderNode->pMesh;
 		n_assert_dbg(pMesh);
@@ -113,9 +109,9 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
-		for (UPTR PassIdx = 0; PassIdx < pPasses->GetCount(); ++PassIdx)
+		for (const auto& Pass : Passes)
 		{
-			GPU.SetRenderState((*pPasses)[PassIdx]);
+			GPU.SetRenderState(Pass);
 			GPU.Draw(*pGroup);
 		}
 

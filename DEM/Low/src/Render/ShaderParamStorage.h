@@ -34,12 +34,16 @@ public:
 	bool                     SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer);
 	CConstantBuffer*         GetBuffer(size_t Index, bool Create = true);
 
-	bool                     SetRawConstant(CStrID ID, void* pData, UPTR Size);
-	bool                     SetRawConstant(size_t Index, void* pData, UPTR Size);
-	bool                     SetRawConstant(const CShaderConstantParam& Param, void* pData, UPTR Size);
+	bool                     SetRawConstant(CStrID ID, const void* pData, UPTR Size);
+	bool                     SetRawConstant(size_t Index, const void* pData, UPTR Size);
+	bool                     SetRawConstant(const CShaderConstantParam& Param, const void* pData, UPTR Size);
+	bool                     SetFloat(const CShaderConstantParam& Param, float Value);
+	bool                     SetInt(const CShaderConstantParam& Param, I32 Value);
+	bool                     SetUInt(const CShaderConstantParam& Param, U32 Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector3& Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector4& Value);
-	bool                     SetMatrix(const CShaderConstantParam& Param, const matrix44& Value);
+	bool                     SetMatrix(const CShaderConstantParam& Param, const matrix44& Value, bool ColumnMajor = false);
+	bool                     SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, bool ColumnMajor = false);
 
 	bool                     SetResource(CStrID ID, CTexture* pTexture);
 	bool                     SetResource(size_t Index, CTexture* pTexture);

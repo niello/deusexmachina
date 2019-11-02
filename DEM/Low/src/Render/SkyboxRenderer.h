@@ -14,10 +14,6 @@ class CSkyboxRenderer: public IRenderer
 {
 	__DeclareClass(CSkyboxRenderer);
 
-protected:
-
-	UPTR InputSet_Skybox;
-
 public:
 
 	CSkyboxRenderer();

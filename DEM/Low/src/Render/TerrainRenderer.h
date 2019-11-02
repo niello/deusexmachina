@@ -74,8 +74,6 @@ protected:
 		U8						LightCount;
 	};
 
-	UPTR									InputSet_CDLOD;
-
 	CSamplerDesc							HMSamplerDesc;
 	PSampler								HMSampler;			//!!!binds an RP to a specific GPU!
 
