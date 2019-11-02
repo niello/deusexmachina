@@ -1,5 +1,5 @@
 #pragma once
-#include <Render/RenderFwd.h>
+#include <Render/ShaderParamTable.h> // FIXME: ShaderParams / ShaderConstant?
 #include <CEGUI/ShaderWrapper.h>
 #include <CEGUI/Renderer.h>
 #include <vector>
@@ -14,12 +14,13 @@ class CDEMShaderWrapper: public ShaderWrapper
 {
 protected:
 
+	//???need? or use storage?
 	struct CConstRecord
 	{
-		CStrID					Name;
-		Render::PShaderConstant	Constant;
-		Render::PConstantBuffer	Buffer;
-		Render::EShaderType		ShaderType;
+		CStrID							Name;
+		Render::CShaderConstantParam	Constant;
+		Render::PConstantBuffer			Buffer;
+		Render::EShaderType				ShaderType;
 	};
 
 	CDEMRenderer&						Renderer;
@@ -37,16 +38,9 @@ protected:
 	std::vector<CConstRecord>			Constants;
 
 	// Main texture (CEGUI 'texture0')
-	Render::HResource					hTexture = INVALID_HANDLE;
-	Render::HSampler					hLinearSampler = INVALID_HANDLE;
+	Render::PResourceParam				TextureParam;
+	Render::PSamplerParam				LinearSamplerParam;
 	Render::PSampler					LinearSampler;
-
-	//Render::PConstantBuffer				WMCB;
-	//Render::PConstantBuffer				PMCB;
-	//Render::HConstantBuffer				hWMCB;
-	//Render::HConstantBuffer				hPMCB;
-	//Render::PShaderConstant				ConstWorldMatrix;
-	//Render::PShaderConstant				ConstProjMatrix;
 
 	void			setupParameterForShader(CStrID Name, Render::EShaderType ShaderType);
 

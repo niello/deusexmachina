@@ -112,10 +112,8 @@ void CDEMShaderWrapper::setupParameterForShader(CStrID Name, Render::EShaderType
 
 	if (!pShaderParams) return;
 
-	Render::PShaderConstant Constant = pShaderParams->GetConstant(Name);
-	if (!Constant || Constant->GetConstantBufferHandle() == INVALID_HANDLE) return;
+	const auto& Constant = pShaderParams->GetConstant(Name);
 
-	Render::HConstantBuffer hCB = Constant->GetConstantBufferHandle();
 	Render::PConstantBuffer	CB;
 
 	for (const auto& Rec : Constants)
@@ -152,8 +150,8 @@ void CDEMShaderWrapper::setupMainTexture(const char* pTextureName, const char* p
 {
 	if (!pPSParams) return;
 
-	hTexture = pPSParams->GetResource(CStrID(pTextureName));
-	hLinearSampler = pPSParams->GetSampler(CStrID(pSamplerName));
+	TextureParam = pPSParams->GetResource(CStrID(pTextureName));
+	LinearSamplerParam = pPSParams->GetSampler(CStrID(pSamplerName));
 
 	if (!LinearSampler)
 	{
@@ -193,12 +191,12 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 		// Default CEGUI texture. Hardcoded inside CEGUI as "texture0".
 		if (param.first == "texture0")
 		{
-			if (hTexture && LinearSampler)
+			if (TextureParam && LinearSamplerParam)
 			{
 				const CEGUI::ShaderParameterTexture* pPrm = static_cast<const CEGUI::ShaderParameterTexture*>(param.second);
 				const CEGUI::CDEMTexture* pTex = static_cast<const CEGUI::CDEMTexture*>(pPrm->d_parameterValue);
-				pGPU->BindResource(Render::ShaderType_Pixel, hTexture, pTex->getTexture());
-				pGPU->BindSampler(Render::ShaderType_Pixel, hLinearSampler, LinearSampler.Get());
+				TextureParam->Apply(*pGPU, pTex->getTexture());
+				LinearSamplerParam->Apply(*pGPU, LinearSampler.Get());
 			}
 
 			continue;
@@ -212,7 +210,7 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 
 			if (!Rec.Buffer->IsInWriteMode())
 			{
-				pGPU->BindConstantBuffer(Rec.ShaderType, Rec.Constant->GetConstantBufferHandle(), Rec.Buffer.Get());
+				pGPU->BindConstantBuffer(Rec.ShaderType, Rec.Constant.GetConstantBufferIndex(), Rec.Buffer.Get());
 				pGPU->BeginShaderConstants(*Rec.Buffer.Get());
 			}
 
@@ -221,19 +219,19 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 				case CEGUI::ShaderParamType::Matrix4X4:
 				{
 					const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
-					Rec.Constant->SetRawValue(*Rec.Buffer.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
+					Rec.Constant.SetRawValue(*Rec.Buffer.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
 					break;
 				}
 				case CEGUI::ShaderParamType::Float:
 				{
 					const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
-					Rec.Constant->SetFloat(*Rec.Buffer.Get(), &pPrm->d_parameterValue);
+					Rec.Constant.SetFloat(*Rec.Buffer.Get(), pPrm->d_parameterValue);
 					break;
 				}
 				case CEGUI::ShaderParamType::Int:
 				{
 					const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
-					Rec.Constant->SetSInt(*Rec.Buffer.Get(), pPrm->d_parameterValue);
+					Rec.Constant.SetInt(*Rec.Buffer.Get(), pPrm->d_parameterValue);
 					break;
 				}
 				case CEGUI::ShaderParamType::Texture:
