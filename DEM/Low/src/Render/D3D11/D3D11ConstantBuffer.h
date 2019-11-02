@@ -47,6 +47,7 @@ public:
 
 	virtual bool				IsValid() const override { return !!pBuffer; }
 	virtual bool				IsInWriteMode() const override { return Flags.Is(CB11_InWriteMode); }
+	virtual bool                IsDirty() const override { return Flags.Is(CB11_Dirty); }
 	virtual bool				IsTemporary() const override { return Flags.Is(CB11_Temporary); }
 	virtual U8                  GetAccessFlags() const override;
 
@@ -65,7 +66,6 @@ public:
 	UPTR						GetSizeInBytes() const { return SizeInBytes; }
 	EUSMBufferType				GetType() const { return Type; }
 	bool						UsesRAMCopy() const { return Flags.Is(CB11_UsesRAMCopy); }
-	bool						IsDirty() const { return Flags.Is(CB11_Dirty); }
 
 	void						OnBegin(void* pMappedVRAM = nullptr);	// For internal use by the GPUDriver
 	void						OnCommit();							// For internal use by the GPUDriver

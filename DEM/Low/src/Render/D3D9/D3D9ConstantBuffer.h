@@ -49,12 +49,12 @@ public:
 
 	virtual bool IsValid() const override { return pFloat4Data || pInt4Data || pBoolData; }
 	virtual bool IsInWriteMode() const override { return Flags.Is(CB9_InWriteMode); }
+	virtual bool IsDirty() const override { return Flags.IsAny(CB9_AnyDirty); }
 	virtual bool IsTemporary() const override { return Flags.Is(CB9_Temporary); }
 	virtual U8   GetAccessFlags() const override;
 
 	//!!!for IConst can compute universal offset! anyway need to set proper dirty flag (can deduce from offset btw)!
 	void         WriteData(ESM30RegisterSet RegSet, UPTR OffsetInBytes, const void* pData, UPTR Size);
-	bool         IsDirty() const { return Flags.IsAny(CB9_AnyDirty); }
 	bool         IsDirtyFloat4() const { return Flags.Is(CB9_DirtyFloat4); }
 	bool         IsDirtyInt4() const { return Flags.Is(CB9_DirtyInt4); }
 	bool         IsDirtyBool() const { return Flags.Is(CB9_DirtyBool); }

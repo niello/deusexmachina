@@ -17,6 +17,7 @@ public:
 
 	virtual bool IsValid() const = 0;
 	virtual bool IsInWriteMode() const = 0;
+	virtual bool IsDirty() const = 0;
 	virtual bool IsTemporary() const = 0;
 	virtual U8   GetAccessFlags() const = 0;
 };

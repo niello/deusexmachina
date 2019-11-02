@@ -107,12 +107,26 @@ bool CShaderParamStorage::SetSampler(size_t Index, CSampler* pSampler)
 //---------------------------------------------------------------------
 
 //???apply nullptrs too?
-bool CShaderParamStorage::Apply() const
+bool CShaderParamStorage::Apply()
 {
 	for (size_t i = 0; i < _ConstantBuffers.size(); ++i)
 	{
-		if (_ConstantBuffers[i])
+		auto* pCB = _ConstantBuffers[i].Get();
+		if (pCB)
+		{
+			//???only if pCB->IsDirty()?
+			if (pCB->IsInWriteMode())
+				_GPU->CommitShaderConstants(*pCB);
+
 			if (!_Table->GetConstantBuffer(i)->Apply(*_GPU, _ConstantBuffers[i])) return false;
+
+			if (pCB->IsTemporary())
+			{
+				//!!!must return to the pool only when GPU is finished with this buffer!
+				_GPU->FreeTemporaryConstantBuffer(*pCB);
+				_ConstantBuffers[i] = nullptr;
+			}
+		}
 	}
 
 	for (size_t i = 0; i < _Resources.size(); ++i)

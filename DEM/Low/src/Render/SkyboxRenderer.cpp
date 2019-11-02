@@ -66,7 +66,7 @@ CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Co
 
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
-		const CMaterial* pMaterial = pRenderNode->pMaterial;
+		auto pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);

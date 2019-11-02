@@ -227,7 +227,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 		// Apply material, if changed
 
-		const CMaterial* pMaterial = pRenderNode->pMaterial;
+		auto pMaterial = pRenderNode->pMaterial;
 		if (pMaterial != pCurrMaterial)
 		{
 			n_assert_dbg(pMaterial);

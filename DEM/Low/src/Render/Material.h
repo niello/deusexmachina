@@ -26,7 +26,7 @@ public:
 	CMaterial(CEffect& Effect, CShaderParamStorage&& Values);
 	virtual ~CMaterial() override;
 
-	bool     Apply() const { return _Values.Apply(); }
+	bool     Apply() { return _Values.Apply(); }
 
 	bool     IsValid() const { return _Effect.IsValidPtr(); }
 	CEffect* GetEffect() const { return _Effect.Get(); }

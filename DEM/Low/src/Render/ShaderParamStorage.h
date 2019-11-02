@@ -51,7 +51,7 @@ public:
 	bool                     SetSampler(CStrID ID, CSampler* pSampler);
 	bool                     SetSampler(size_t Index, CSampler* pSampler);
 
-	bool                     Apply() const;
+	bool                     Apply();
 
 	const CShaderParamTable& GetParamTable() const { return *_Table; }
 };

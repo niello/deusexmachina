@@ -22,7 +22,7 @@ struct CRenderNode
 	UPTR					Order;				// Rendering order, used to sort by alpha etc
 	float					SqDistanceToCamera;
 
-	const CMaterial*		pMaterial;
+	CMaterial*              pMaterial;          // Non-constant because of temporary buffers in a shader param storage
 	const CEffect*			pEffect;			// For searching instanced tech in a model renderer only (for now)
 	const CTechnique*		pTech;
 	const CMesh*			pMesh;
