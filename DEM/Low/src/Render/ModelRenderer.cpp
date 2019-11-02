@@ -17,11 +17,6 @@ __ImplementClass(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
 bool CModelRenderer::Init(bool LightingEnabled)
 {
-	// Setup dynamic enumeration
-	InputSet_Model = RegisterShaderInputSetID(CStrID("Model"));
-	InputSet_ModelSkinned = RegisterShaderInputSetID(CStrID("ModelSkinned"));
-	InputSet_ModelInstanced = RegisterShaderInputSetID(CStrID("ModelInstanced"));
-
 	InstanceDataDecl.SetSize(4);
 
 	// World matrix
@@ -64,6 +59,9 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 	}
 
 	if (!pEffect) FAIL;
+
+	static const CStrID InputSet_Model("Model");
+	static const CStrID InputSet_ModelSkinned("ModelSkinned");
 
 	Node.pMaterial = pMaterial;
 	Node.pEffect = pEffect;
@@ -279,6 +277,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 			if (ItInstEnd - ItCurr > 1)
 			{
+				static const CStrID InputSet_ModelInstanced("ModelInstanced");
 				const CTechnique* pInstancedTech = pRenderNode->pEffect->GetTechByInputSet(InputSet_ModelInstanced);
 				if (pInstancedTech)
 				{
@@ -290,9 +289,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 		// Select tech variation for the current instancing mode and light count
 
-		const CPassList* pPasses = pTech->GetPasses(LightCount);
-		n_assert_dbg(pPasses); // To test if it could happen at all
-		if (!pPasses)
+		const auto& Passes = pTech->GetPasses(LightCount);
+		if (Passes.empty())
 		{
 			ItCurr = ItInstEnd;
 			continue;
@@ -347,11 +345,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				GPU.SetVertexLayout(pVL);
 
-				CConstantBufferSet PerInstanceBuffers;
-				PerInstanceBuffers.SetGPU(&GPU);
-
-				CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(ConstInstanceDataVS.GetConstantBufferIndex(), ConstInstanceDataVS.ShaderType);
-				CConstantBuffer* pPSCB = ConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(ConstInstanceDataPS.GetConstantBufferIndex(), ConstInstanceDataPS.ShaderType) : nullptr;
+				CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
 
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
@@ -361,9 +355,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 					// Setup instance transformation
 
-					auto CurrWorldMatrix = CurrInstanceDataVS[sidWorldMatrix];
-					if (CurrWorldMatrix)
-						CurrWorldMatrix.SetMatrix(*pVSCB, pRenderNode->Transform);
+					PerInstance.SetMatrix(CurrInstanceDataVS[sidWorldMatrix], pRenderNode->Transform);
 
 					// Setup instance lights
 
@@ -377,10 +369,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						if (LightCount == 0)
 						{
 							// If tech is variable-light-count, set it per instance
-							ActualLightCount = (U32)n_min(TechLightCount, pRenderNode->LightCount);
-							CShaderConstantParam CurrLightCount = CurrInstanceDataPS[sidLightCount];
-							if (CurrLightCount)
-								CurrLightCount.SetUInt(*pPSCB, ActualLightCount);
+							ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
+							PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], ActualLightCount);
 						}
 						else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
 
@@ -397,12 +387,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 									//!!!???what with batch-local indices?!
 								}
 								const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-								CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, LightRec.GPULightIndex);
+								PerInstance.SetInt(CurrLightIndices[InstLightIdx], LightRec.GPULightIndex); //!!!writing to component!
 							}
 
 							// If tech is fixed-light-count, fill the first unused light index with the special value
 							if (LightCount && InstLightIdx < TechLightCount)
-								CurrLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
+								PerInstance.SetInt(CurrLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
 						}
 					}
 
@@ -414,10 +404,10 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 					if (InstanceCount == MaxInstanceCountConst)
 					{
-						PerInstanceBuffers.CommitChanges();
-						for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+						PerInstance.CommitChanges();
+						for (const auto& Pass : Passes)
 						{
-							GPU.SetRenderState((*pPasses)[i]);
+							GPU.SetRenderState(Pass);
 							GPU.DrawInstanced(*pGroup, InstanceCount);
 						}
 						InstanceCount = 0;
@@ -429,10 +419,10 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				if (InstanceCount)
 				{
-					PerInstanceBuffers.CommitChanges();
-					for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+					PerInstance.CommitChanges();
+					for (const auto& Pass : Passes)
 					{
-						GPU.SetRenderState((*pPasses)[i]);
+						GPU.SetRenderState(Pass);
 						GPU.DrawInstanced(*pGroup, InstanceCount);
 					}
 				}
@@ -487,9 +477,9 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					if (InstanceCount == MaxInstanceCount)
 					{
 						GPU.UnmapResource(*InstanceVB);
-						for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+						for (const auto& Pass : Passes)
 						{
-							GPU.SetRenderState((*pPasses)[i]);
+							GPU.SetRenderState(Pass);
 							GPU.DrawInstanced(*pGroup, InstanceCount);
 						}
 						InstanceCount = 0;
@@ -501,9 +491,9 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				if (InstanceCount)
 				{
 					GPU.UnmapResource(*InstanceVB);
-					for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+					for (const auto& Pass : Passes)
 					{
-						GPU.SetRenderState((*pPasses)[i]);
+						GPU.SetRenderState(Pass);
 						GPU.DrawInstanced(*pGroup, InstanceCount);
 					}
 				}
@@ -538,23 +528,14 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 			for (; ItCurr != ItInstEnd; ++ItCurr, pRenderNode = *ItCurr)
 			{
 				//???use persistent, create once and store associatively Tech->Values?
-				CConstantBufferSet PerInstanceBuffers;
-				PerInstanceBuffers.SetGPU(&GPU);
+				CShaderParamStorage PerInstance(pTech->GetParamTable(), GPU);
 
 				// Setup per-instance information
 
-				if (ConstInstanceDataVS)
-				{
-					CConstantBuffer* pVSCB = PerInstanceBuffers.RequestBuffer(ConstInstanceDataVS.GetConstantBufferHandle(), ConstInstanceDataVS.ShaderType);
-					
-					if (ConstWorldMatrix)
-						ConstWorldMatrix->SetMatrix(*pVSCB, &pRenderNode->Transform);
-				}
+				PerInstance.SetMatrix(ConstWorldMatrix, pRenderNode->Transform);
 
 				if (ConstInstanceDataPS)
 				{
-					CConstantBuffer* pPSCB = ConstInstanceDataPS ? PerInstanceBuffers.RequestBuffer(ConstInstanceDataPS.GetConstantBufferHandle(), ConstInstanceDataPS.ShaderType) : nullptr;
-
 					if (LightingEnabled && ConstLightIndices)
 					{
 						U32 ActualLightCount;
@@ -562,9 +543,8 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 						if (LightCount == 0)
 						{
 							// If tech is variable-light-count, set it per instance
-							ActualLightCount = (U32)n_min(TechLightCount, pRenderNode->LightCount);
-							if (ConstLightCount)
-								ConstLightCount.SetUInt(*pPSCB, ActualLightCount);
+							ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
+							PerInstance.SetUInt(ConstLightCount, ActualLightCount);
 						}
 						else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
 
@@ -581,12 +561,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 									//!!!???what with batch-local indices?!
 								}
 								const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-								ConstLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, LightRec.GPULightIndex);
+								PerInstance.SetInt(ConstLightIndices[InstLightIdx], LightRec.GPULightIndex); //!!!writing to component!
 							}
 
 							// If tech is fixed-light-count, fill the first unused light index with the special value
 							if (LightCount && InstLightIdx < TechLightCount)
-								ConstLightIndices.SetSIntComponent(*pPSCB, InstLightIdx, EMPTY_LIGHT_INDEX);
+								PerInstance.SetInt(ConstLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
 						}
 					}
 				}
@@ -594,30 +574,29 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				if (ConstSkinPalette && pRenderNode->pSkinPalette)
 				{
 					const UPTR BoneCount = n_min(pRenderNode->BoneCount, ConstSkinPalette.GetElementCount());
-					CConstantBuffer* pCB = PerInstanceBuffers.RequestBuffer(ConstSkinPalette.GetConstantBufferIndex(), ConstSkinPalette.ShaderType);
 					if (pRenderNode->pSkinMapping)
 					{
 						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
 						{
 							const matrix44* pBoneMatrix = pRenderNode->pSkinPalette + pRenderNode->pSkinMapping[BoneIdxIdx];
-							ConstSkinPalette[BoneIdxIdx].SetMatrix(*pCB, *pBoneMatrix);
+							PerInstance.SetMatrix(ConstSkinPalette[BoneIdxIdx], *pBoneMatrix);
 						}
 					}
 					else
 					{
 						// No mapping, use skin palette directly
-						ConstSkinPalette.SetMatrixArray(*pCB, pRenderNode->pSkinPalette, BoneCount);
+						PerInstance.SetMatrixArray(ConstSkinPalette, pRenderNode->pSkinPalette, BoneCount);
 					}
 				}
 
-				PerInstanceBuffers.CommitChanges();
+				PerInstance.CommitChanges();
 
 				// Rendering
 
 				//???loop by pass, then by instance? possibly less render state switches, but possibly more data binding. Does order matter?
-				for (UPTR i = 0; i < pPasses->GetCount(); ++i)
+				for (const auto& Pass : Passes)
 				{
-					GPU.SetRenderState((*pPasses)[i]);
+					GPU.SetRenderState(Pass);
 					GPU.Draw(*pGroup);
 				}
 			}

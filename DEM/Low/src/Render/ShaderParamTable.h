@@ -20,6 +20,7 @@ enum EShaderConstantFlags : U8
 	ColumnMajor = 0x01
 };
 
+// Common part of constant metadata. Available in every API, necessary for writing values.
 struct CShaderConstantMeta
 {
 	CStrID Name;
@@ -136,7 +137,7 @@ public:
 	CShaderConstantParam Z() const { return GetComponent(2); }
 	CShaderConstantParam W() const { return GetComponent(3); }
 
-	CShaderConstantParam operator [](const char* pName) const { return GetMember(CStrID(pName)); }
+	CShaderConstantParam operator [](const std::string_view& Name) const { return GetMember(CStrID(Name.data())); }
 	CShaderConstantParam operator [](CStrID Name) const { return GetMember(Name); }
 	CShaderConstantParam operator [](U32 Index) const;
 	CShaderConstantParam operator ()(U32 Row, U32 Column) const { return GetComponent(Row, Column); }

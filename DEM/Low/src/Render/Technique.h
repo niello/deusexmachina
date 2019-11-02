@@ -29,10 +29,10 @@ public:
 	CTechnique(CStrID Name, std::vector<PRenderState>&& Passes, IPTR MaxLights, PShaderParamTable Params);
 	virtual ~CTechnique() override;
 
-	CStrID                   GetName() const { return _Name; }
-	const auto&              GetPasses(UPTR& LightCount) const { return _Passes; }
-	IPTR                     GetMaxLightCount() const { return _MaxLightCount; }
-	const CShaderParamTable& GetParamTable() const { return *_Params; }
+	CStrID             GetName() const { return _Name; }
+	const auto&        GetPasses(UPTR& LightCount) const { return _Passes; }
+	IPTR               GetMaxLightCount() const { return _MaxLightCount; }
+	CShaderParamTable& GetParamTable() const { return *_Params; }
 };
 
 typedef Ptr<CTechnique> PTechnique;

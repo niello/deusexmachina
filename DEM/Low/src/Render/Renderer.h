@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_RENDERER_H__
-#define __DEM_L1_RENDER_RENDERER_H__
-
 #include <Core/RTTIBaseClass.h>
 #include <Data/Array.h>
 #include <Math/Matrix44.h>
@@ -42,5 +39,3 @@ public:
 };
 
 }
-
-#endif
