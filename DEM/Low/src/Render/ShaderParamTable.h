@@ -20,19 +20,24 @@ enum EShaderConstantFlags : U8
 	ColumnMajor = 0x01
 };
 
+struct CShaderConstantMeta
+{
+	CStrID Name;
+	U32    LocalOffset;
+	U32    ElementStride;
+	U32    ElementCount;
+	U32    ComponentStride;
+	U8     Rows;
+	U8     Columns;
+	U8     Flags;
+};
+
 class CShaderConstantInfo : public Core::CObject
 {
 protected:
 
-	CStrID _ID;
-	size_t _CBIndex;
-	U32    _LocalOffset;
-	U32    _ElementStride;
-	U32    _ElementCount;
-	U32    _ComponentStride;
-	U8     _Rows;
-	U8     _Columns;
-	U8     _Flags;
+	CShaderConstantMeta _Meta;
+	size_t              _CBIndex;
 
 	// Cached sub-constant info. Any array has elements. Any single structure has members.
 	// Any single vector has components. Any single matrix has components and rows.
@@ -49,21 +54,20 @@ protected:
 
 public:
 
-	// CShaderConstantInfo
+	CShaderConstantInfo(size_t ConstantBufferIndex, const CShaderConstantMeta& Meta);
 	virtual ~CShaderConstantInfo() override;
 
-	CStrID GetID() const { return _ID; }
+	CStrID GetID() const { return _Meta.Name; }
 	size_t GetConstantBufferIndex() const { return _CBIndex; }
-	U32    GetLocalOffset() const { return _LocalOffset; }
-	U32    GetElementStride() const { return _ElementStride; }
-	U32    GetElementCount() const { return _ElementCount; }
-	U32    GetComponentStride() const { return _ComponentStride; }
-	U32    GetRowCount() const { return _Rows; }
-	U32    GetColumnCount() const { return _Columns; }
-	bool   IsColumnMajor() const { return _Flags & EShaderConstantFlags::ColumnMajor; }
-
-	virtual bool   HasElementPadding() const = 0;
-	virtual bool   NeedConversionFrom(/*type*/) const = 0;
+	U32    GetLocalOffset() const { return _Meta.LocalOffset; }
+	U32    GetElementStride() const { return _Meta.ElementStride; }
+	U32    GetElementCount() const { return _Meta.ElementCount; }
+	U32    GetComponentStride() const { return _Meta.ComponentStride; }
+	U32    GetRowCount() const { return _Meta.Rows; }
+	U32    GetColumnCount() const { return _Meta.Columns; }
+	bool   IsColumnMajor() const { return _Meta.Flags & EShaderConstantFlags::ColumnMajor; }
+	bool   HasElementPadding() const;
+	bool   NeedConversionFrom(/*type*/) const;
 
 	virtual void   SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
 	virtual void   SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
@@ -71,9 +75,9 @@ public:
 	virtual void   SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pValue, UPTR Count) const = 0;
 	virtual void   SetBools(CConstantBuffer& CB, U32 Offset, const bool* pValue, UPTR Count) const = 0;
 
-	virtual PShaderConstantInfo GetMemberInfo(const char* pName) const = 0;
-	virtual PShaderConstantInfo GetElementInfo() const = 0;
-	virtual PShaderConstantInfo GetComponentInfo() const = 0;
+	PShaderConstantInfo GetMemberInfo(const char* pName) const;
+	PShaderConstantInfo GetElementInfo() const;
+	PShaderConstantInfo GetComponentInfo() const;
 };
 
 class CShaderConstantParam final

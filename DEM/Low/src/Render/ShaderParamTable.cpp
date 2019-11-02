@@ -5,7 +5,15 @@ namespace Render
 {
 __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
+CShaderConstantInfo::CShaderConstantInfo(size_t ConstantBufferIndex, const CShaderConstantMeta& Meta)
+	: _CBIndex(ConstantBufferIndex)
+	, _Meta(Meta)
+{
+}
+//---------------------------------------------------------------------
+
 CShaderConstantInfo::~CShaderConstantInfo() = default;
+//---------------------------------------------------------------------
 
 CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
 	: _Info(Info)

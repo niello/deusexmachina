@@ -2836,11 +2836,8 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		auto& Struct = *StructPtr;
 
 		Struct.Members.resize(R.Read<U32>());
-		for (auto& MemberPtr : Struct.Members)
+		for (auto& Member : Struct.Members)
 		{
-			MemberPtr = n_new(CSM30ConstantMeta);
-			auto& Member = *MemberPtr;
-
 			if (!R.Read(Member.Name)) return nullptr;
 
 			U32 StructIndex;
@@ -2848,8 +2845,8 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			if (StructIndex != static_cast<U32>(-1))
 				Member.Struct = Structs[StructIndex];
 
-			if (!R.Read(Member.RegisterStart)) return nullptr;
-			if (!R.Read(Member.ElementRegisterCount)) return nullptr;
+			if (!R.Read(Member.LocalOffset)) return nullptr;
+			if (!R.Read(Member.ElementStride)) return nullptr;
 			if (!R.Read(Member.ElementCount)) return nullptr;
 			if (!R.Read(Member.Columns)) return nullptr;
 			if (!R.Read(Member.Rows)) return nullptr;
@@ -2859,13 +2856,13 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 
 	if (!R.Read(Count)) return nullptr;
 	std::vector<CShaderConstantParam> Consts(Count);
-	for (auto& ConstPtr : Consts)
+	for (auto& Const : Consts)
 	{
 		U8 ShaderTypeMask;
 		if (!R.Read(ShaderTypeMask)) return nullptr;
 
-		PSM30ConstantMeta Meta = n_new(CSM30ConstantMeta);
-		if (!R.Read(Meta->Name)) return nullptr;
+		CSM30ConstantMeta Meta;
+		if (!R.Read(Meta.Name)) return nullptr;
 
 		U32 BufferIndex;
 		if (!R.Read(BufferIndex)) return nullptr;
@@ -2874,76 +2871,22 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		U32 StructIndex;
 		if (!R.Read(StructIndex)) return nullptr;
 		if (StructIndex != static_cast<U32>(-1))
-			Meta->Struct = Structs[StructIndex];
+			Meta.Struct = Structs[StructIndex];
 
 		ESM30RegisterSet RegisterSet = static_cast<ESM30RegisterSet>(R.Read<U8>());
 		if (RegisterSet == Reg_Invalid) return nullptr;
 
-		if (!R.Read(Meta->RegisterStart)) return nullptr;
-		if (!R.Read(Meta->ElementRegisterCount)) return nullptr;
-		if (!R.Read(Meta->ElementCount)) return nullptr;
-		if (!R.Read(Meta->Columns)) return nullptr;
-		if (!R.Read(Meta->Rows)) return nullptr;
-		if (!R.Read(Meta->Flags)) return nullptr;
+		if (!R.Read(Meta.LocalOffset)) return nullptr;
+		if (!R.Read(Meta.ElementStride)) return nullptr;
+		if (!R.Read(Meta.ElementCount)) return nullptr;
+		if (!R.Read(Meta.Columns)) return nullptr;
+		if (!R.Read(Meta.Rows)) return nullptr;
+		if (!R.Read(Meta.Flags)) return nullptr;
 
 		auto pBuffer = static_cast<CSM30ConstantBufferParam*>(Buffers[BufferIndex].Get());
 		pBuffer->ShaderTypeMask |= ShaderTypeMask;
 
-		// TODO: move into cf-hlsl
-
-		CSM30ConstantBufferParam::CRanges* pRanges;
-		U32 BytesPerRegister;
-		switch (RegisterSet)
-		{
-			case Reg_Float4:
-			{
-				pRanges = &pBuffer->Float4;
-				BytesPerRegister = sizeof(float) * 4;
-				break;
-			}
-			case Reg_Int4:
-			{
-				pRanges = &pBuffer->Int4;
-				BytesPerRegister = sizeof(I32) * 4;
-				break;
-			}
-			case Reg_Bool:
-			{
-				pRanges = &pBuffer->Bool;
-				BytesPerRegister = sizeof(BOOL);
-				break;
-			}
-		};
-
-		U32 Offset = 0;
-		bool RangeFound = false;
-
-		for (const auto& Range : *pRanges)
-		{
-			// Ranges are sorted ascending, so that means that the buffer has no required range
-			if (Range.first > Meta->RegisterStart) break;
-
-			if (Range.first + Range.second > Meta->RegisterStart)
-			{
-				// Found range
-				n_assert_dbg(Range.first + Range.second >= Meta->RegisterStart + Meta->ElementRegisterCount * Meta->ElementCount);
-				Offset += Meta->RegisterStart - Range.first;
-				RangeFound = true;
-				break;
-			}
-
-			Offset += Range.second;
-		}
-
-		if (!RangeFound)
-		{
-			::Sys::Error("CD3D9GPUDriver::LoadShaderParamTable() > provided buffer doesn't contain the constant");
-			return nullptr;
-		}
-
-		auto SizeInBytes = Meta->ElementCount * Meta->ElementRegisterCount * BytesPerRegister;
-
-		ConstPtr = n_new(CSM30ConstantParam(pBuffer, Meta, RegisterSet));
+		Const = CShaderConstantParam(n_new(CSM30ConstantInfo(BufferIndex, Meta, RegisterSet)));
 	}
 
 	if (!R.Read(Count)) return nullptr;

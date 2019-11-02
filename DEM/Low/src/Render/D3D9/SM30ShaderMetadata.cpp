@@ -41,9 +41,9 @@ static inline void ConvertAndWrite(CD3D9ConstantBuffer* pCB, ESM30RegisterSet Re
 }
 //---------------------------------------------------------------------
 
-CSM30ConstantInfo::CSM30ConstantInfo(PSM30ConstantMeta Meta, ESM30RegisterSet RegisterSet, U32 OffsetInBytes)
-	: _Buffer(Buffer)
-	, _Meta(Meta)
+CSM30ConstantInfo::CSM30ConstantInfo(size_t ConstantBufferIndex, const CSM30ConstantMeta& Meta, ESM30RegisterSet RegisterSet)
+	: CShaderConstantInfo(ConstantBufferIndex, Meta)
+	, _Struct(Meta.Struct)
 	, _RegisterSet(RegisterSet)
 {
 }
@@ -54,7 +54,7 @@ void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void*
 	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
-		pCB->WriteData(_RegisterSet, Offset, pValue, std::min(Size, _Meta->SizeInBytes));
+		pCB->WriteData(_RegisterSet, Offset, pValue, std::min(Size, _Meta.ElementCount * _Meta.ElementStride)); //!!!need byte size from meta, it has no last element padding!
 }
 //---------------------------------------------------------------------
 
@@ -64,11 +64,13 @@ void CSM30ConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* 
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride; //!!!need byte size from meta, it has no last element padding!
+
 		switch (_RegisterSet)
 		{
-			case Reg_Float4: pCB->WriteData(Reg_Float4, Offset, pValue, std::min(Count * sizeof(float), _Meta->SizeInBytes)); break;
-			case Reg_Int4:   ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
-			case Reg_Bool:   ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Float4: pCB->WriteData(Reg_Float4, Offset, pValue, std::min(Count * sizeof(float), SizeInBytes)); break;
+			case Reg_Int4:   ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
+			case Reg_Bool:   ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
 		}
 	}
 }
@@ -80,11 +82,13 @@ void CSM30ConstantInfo::SetInts(CConstantBuffer& CB, U32 Offset, const I32* pVal
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride; //!!!need byte size from meta, it has no last element padding!
+
 		switch (_RegisterSet)
 		{
-			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
 			case Reg_Int4:
-			case Reg_Bool:   pCB->WriteData(Reg_Int4, Offset, pValue, std::min(Count * sizeof(I32), _Meta->SizeInBytes)); break;
+			case Reg_Bool:   pCB->WriteData(Reg_Int4, Offset, pValue, std::min(Count * sizeof(I32), SizeInBytes)); break;
 		}
 	}
 }
@@ -96,12 +100,14 @@ void CSM30ConstantInfo::SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pVa
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride; //!!!need byte size from meta, it has no last element padding!
+
 		// NB: no need to convert U32 to I32, write as is
 		switch (_RegisterSet)
 		{
-			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
 			case Reg_Int4:
-			case Reg_Bool:   pCB->WriteData(Reg_Int4, Offset, pValue, std::min(Count * sizeof(U32), _Meta->SizeInBytes)); break;
+			case Reg_Bool:   pCB->WriteData(Reg_Int4, Offset, pValue, std::min(Count * sizeof(U32), SizeInBytes)); break;
 		}
 	}
 }
@@ -113,11 +119,13 @@ void CSM30ConstantInfo::SetBools(CConstantBuffer& CB, U32 Offset, const bool* pV
 
 	if (auto pCB = Cast<CD3D9ConstantBuffer>(CB))
 	{
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride; //!!!need byte size from meta, it has no last element padding!
+
 		switch (_RegisterSet)
 		{
-			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
-			case Reg_Int4:   ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
-			case Reg_Bool:   ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, _Meta->SizeInBytes); break;
+			case Reg_Float4: ConvertAndWrite<float>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
+			case Reg_Int4:   ConvertAndWrite<I32>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
+			case Reg_Bool:   ConvertAndWrite<BOOL>(pCB, _RegisterSet, Offset, pValue, Count, SizeInBytes); break;
 		}
 	}
 }

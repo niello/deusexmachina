@@ -37,22 +37,20 @@ static inline void ConvertAndWrite(CD3D11ConstantBuffer* pCB, U32 Offset, const 
 }
 //---------------------------------------------------------------------
 
-/*
-CUSMConstantInfo::CUSMConstantInfo(PUSMConstantBufferParam Buffer, PUSMConstantMeta Meta, U32 Offset)
-	: _Buffer(Buffer)
-	, _Meta(Meta)
-	, _OffsetInBytes(Meta->Offset + Offset)
+CUSMConstantInfo::CUSMConstantInfo(size_t ConstantBufferIndex, const CUSMConstantMeta& Meta)
+	: CShaderConstantInfo(ConstantBufferIndex, Meta)
+	, _Struct(Meta.Struct)
+	, _Type(Meta.Type)
 {
 }
 //---------------------------------------------------------------------
-*/
 
 void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
-		pCB->WriteData(Offset, pValue, std::min(Size, _Meta->ElementCount * _Meta->ElementStride));
+		pCB->WriteData(Offset, pValue, std::min(Size, _Meta.ElementCount * _Meta.ElementStride)); //!!!need byte size from meta, it has no last element padding!
 }
 //---------------------------------------------------------------------
 
@@ -62,9 +60,9 @@ void CUSMConstantInfo::SetFloats(CConstantBuffer& CB, U32 Offset, const float* p
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride; //!!!need byte size from meta!
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride; //!!!need byte size from meta, it has no last element padding!
 
-		switch (_Meta->Type)
+		switch (_Type)
 		{
 			case USMConst_Float: pCB->WriteData(Offset, pValue, std::min(Count * sizeof(float), SizeInBytes)); break;
 			case USMConst_Int:
@@ -81,9 +79,9 @@ void CUSMConstantInfo::SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValu
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride;
 
-		switch (_Meta->Type)
+		switch (_Type)
 		{
 			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
 			case USMConst_Int:
@@ -100,9 +98,9 @@ void CUSMConstantInfo::SetUInts(CConstantBuffer& CB, U32 Offset, const U32* pVal
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride;
 
-		switch (_Meta->Type)
+		switch (_Type)
 		{
 			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
 			case USMConst_Int:
@@ -119,9 +117,9 @@ void CUSMConstantInfo::SetBools(CConstantBuffer& CB, U32 Offset, const bool* pVa
 
 	if (auto pCB = Cast<CD3D11ConstantBuffer>(CB))
 	{
-		const auto SizeInBytes = _Meta->ElementCount * _Meta->ElementStride;
+		const auto SizeInBytes = _Meta.ElementCount * _Meta.ElementStride;
 
-		switch (_Meta->Type)
+		switch (_Type)
 		{
 			case USMConst_Float: ConvertAndWrite<float>(pCB, Offset, pValue, Count, SizeInBytes); break;
 			case USMConst_Int:
