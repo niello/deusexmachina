@@ -2851,8 +2851,8 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 		if (RegisterSet != Reg_Float4 && RegisterSet != Reg_Int4 && RegisterSet != Reg_Bool) return nullptr;
 		const auto BytesPerRegister = GetBytesPerRegister(RegisterSet);
 
-		Struct.Members.resize(R.Read<U32>());
-		for (auto& MemberPtr : Struct.Members)
+		std::vector<PShaderConstantInfo> Members(R.Read<U32>());
+		for (auto& MemberPtr : Members)
 		{
 			MemberPtr = n_new(CSM30ConstantInfo());
 			auto& Member = *static_cast<CSM30ConstantInfo*>(MemberPtr.Get());
@@ -2875,6 +2875,8 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 			Member.LocalOffset = RegisterStart * BytesPerRegister;
 			Member.ElementStride = ElementRegisterCount * BytesPerRegister;
 		}
+
+		Struct.SetMembers(std::move(Members));
 	}
 
 	if (!R.Read(Count)) return nullptr;

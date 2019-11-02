@@ -16,10 +16,10 @@ PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 	// Not a structure
 	if (!Struct) return nullptr;
 
-	const auto MemberIndex = GetMemberIndex(Name);
+	const auto MemberIndex = Struct->FindMemberIndex(Name);
 
 	// Has no member with requested Name
-	if (MemberIndex >= Struct->Members.size()) return nullptr;
+	if (MemberIndex >= Struct->GetMemberCount()) return nullptr;
 
 	if (SubInfo)
 	{
@@ -29,10 +29,10 @@ PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 	else
 	{
 		// Member cache is not created yet, allocate
-		SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->Members.size());
+		SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->GetMemberCount());
 	}
 
-	SubInfo[MemberIndex] = Struct->Members[MemberIndex]->Clone();
+	SubInfo[MemberIndex] = Struct->GetMember(MemberIndex)->Clone();
 	// patch fields!
 
 	// find member
@@ -123,6 +123,26 @@ PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 	//!!!fix stride!
 
 	return SubInfo[1];
+}
+//---------------------------------------------------------------------
+
+void CShaderStructureInfo::SetMembers(std::vector<PShaderConstantInfo>&& Members)
+{
+	_Members = std::move(Members);
+	std::sort(_Members.begin(), _Members.end(), [](const PShaderConstantInfo& a, const PShaderConstantInfo& b)
+	{
+		return a->Name < b->Name;
+	});
+}
+//---------------------------------------------------------------------
+
+size_t CShaderStructureInfo::FindMemberIndex(CStrID Name) const
+{
+	auto It = std::lower_bound(_Members.cbegin(), _Members.cend(), Name, [](const PShaderConstantInfo& Member, CStrID Name)
+	{
+		return Member->Name < Name;
+	});
+	return (It != _Members.cend() && (*It)->Name == Name) ? std::distance(_Members.cbegin(), It) : _Members.size();
 }
 //---------------------------------------------------------------------
 

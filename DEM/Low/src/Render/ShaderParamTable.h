@@ -75,12 +75,17 @@ public:
 
 class CShaderStructureInfo : public Data::CRefCounted
 {
-public:
-
-	//!!!members must be sorted by CStrID ID!
+protected:
 
 	//CStrID Name;
-	std::vector<PShaderConstantInfo> Members;
+	std::vector<PShaderConstantInfo> _Members;
+
+public:
+
+	void                 SetMembers(std::vector<PShaderConstantInfo>&& Members);
+	size_t               GetMemberCount() const { return _Members.size(); }
+	CShaderConstantInfo* GetMember(size_t Index) { return (Index < _Members.size()) ? _Members[Index].Get() : nullptr; }
+	size_t               FindMemberIndex(CStrID Name) const;
 };
 
 class CShaderConstantParam final
