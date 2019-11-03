@@ -3482,7 +3482,8 @@ bool CD3D11GPUDriver::CommitShaderConstants(CConstantBuffer& Buffer)
 
 		if (CB11.GetMappedVRAM())
 		{
-			n_assert_dbg(CB11.IsDirty()); // Ensure something was written. Else all the buffer contents are discarded.
+			// Buffer was mapped with discard. Ensure something was written, otherwise contents are invalid.
+			n_assert_dbg(CB11.IsDirty());
 			pD3DImmContext->Unmap(pBuffer, 0);
 		}
 	}

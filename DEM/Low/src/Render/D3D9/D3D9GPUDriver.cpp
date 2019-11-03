@@ -1598,6 +1598,9 @@ bool CD3D9GPUDriver::SetRenderState(CRenderState* pState)
 	if (pD3DState->PS != CurrRS->PS)
 		pD3DDevice->SetPixelShader(pD3DState->PS.IsValidPtr() ? pD3DState->PS.Get()->GetD3DPixelShader() : nullptr);
 
+	// FIXME: if shader changes, do I need to resend all constants? Mark all dirty?
+	// https://developer.nvidia.com/content/constant-buffers-without-constant-pain-0
+
 	DWORD* pValues = pD3DState->D3DStateValues;
 	for (int i = 0; i < CD3D9RenderState::D3D9_RS_COUNT; ++i)
 	{
