@@ -274,22 +274,29 @@ CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
 }
 //---------------------------------------------------------------------
 
+CShaderConstantParam CShaderConstantParam::GetRow(U32 Index) const
+{
+	//const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	//if (MajorDim > 1) return GetRow(Index);
+}
+//---------------------------------------------------------------------
+
 CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 {
-	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	if (!_Info || _Info->Struct) return CShaderConstantParam(nullptr, 0);
 
-	//???!!!recalc into row-column with majority and call that method?
-	//???!!!allow to get components from elements of the array using single index!?
-
-	if (_Info->GetElementCount() > 1 ||
-		_Info->Struct ||
-		_Info->GetRowCount() * _Info->GetColumnCount() <= Index)
+	const auto ComponentCount = _Info->GetRowCount() * _Info->GetColumnCount();
+	if (Index > ComponentCount)
 	{
-		return CShaderConstantParam(nullptr, 0);
+		const auto ElementIndex = Index / ComponentCount;
+		const auto ComponentIndex = Index % ComponentCount;
+		return GetElement(ElementIndex).GetComponent(ComponentIndex);
 	}
-
-	//???is component stride enough or for matrix3x2 there will be padding between rows?
-	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+	else
+	{
+		//???is component stride enough or for matrix3x2 there will be padding between rows?
+		return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+	}
 }
 //---------------------------------------------------------------------
 
@@ -320,7 +327,7 @@ CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
 	if (_Info->GetElementCount() > 1) return GetElement(Index);
 
 	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
-	//!!!if (MajorDim > 1) return GetRow(Index);
+	if (MajorDim > 1) return GetRow(Index);
 
 	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
 	if (MinorDim) return GetComponent(Index);

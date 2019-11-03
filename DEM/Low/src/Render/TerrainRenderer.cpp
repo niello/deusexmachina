@@ -915,14 +915,14 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 					{
 						I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
 						if (CurrGPUIdx < 0) break;
-						PerInstance.SetInt(CurrLightIndices[InstLightIdx], CurrGPUIdx); //!!!writing to component!
+						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
 					}
 
 					if (LightCount)
 					{
 						// If tech is fixed-light-count, fill the first unused light index with the special value
 						if (InstLightIdx < TechLightCount)
-							PerInstance.SetInt(CurrLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
+							PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
 					}
 					else
 					{
@@ -953,14 +953,14 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 					{
 						I32 CurrGPUIdx = CurrPatch.LightIndex[InstLightIdx];
 						if (CurrGPUIdx < 0) break;
-						PerInstance.SetInt(CurrLightIndices[InstLightIdx], CurrGPUIdx); //!!!writing to component!
+						PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), CurrGPUIdx);
 					}
 
 					if (LightCount)
 					{
 						// If tech is fixed-light-count, fill the first unused light index with the special value
 						if (InstLightIdx < TechLightCount)
-							PerInstance.SetInt(CurrLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
+							PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
 					}
 					else
 					{

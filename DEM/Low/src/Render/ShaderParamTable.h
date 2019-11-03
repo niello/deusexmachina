@@ -135,6 +135,7 @@ public:
 
 	CShaderConstantParam GetMember(CStrID Name) const;
 	CShaderConstantParam GetElement(U32 Index) const;
+	CShaderConstantParam GetRow(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Row, U32 Column) const;
 

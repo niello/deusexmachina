@@ -385,12 +385,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 									//!!!???what with batch-local indices?!
 								}
 								const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-								PerInstance.SetInt(CurrLightIndices[InstLightIdx], LightRec.GPULightIndex); //!!!writing to component!
+								PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
 							}
 
 							// If tech is fixed-light-count, fill the first unused light index with the special value
 							if (LightCount && InstLightIdx < TechLightCount)
-								PerInstance.SetInt(CurrLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
+								PerInstance.SetInt(CurrLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
 						}
 					}
 
@@ -556,12 +556,12 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 								//!!!???what with batch-local indices?!
 							}
 							const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-							PerInstance.SetInt(ConstLightIndices[InstLightIdx], LightRec.GPULightIndex); //!!!writing to component!
+							PerInstance.SetInt(ConstLightIndices.GetComponent(InstLightIdx), LightRec.GPULightIndex);
 						}
 
 						// If tech is fixed-light-count, fill the first unused light index with the special value
 						if (LightCount && InstLightIdx < TechLightCount)
-							PerInstance.SetInt(ConstLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
+							PerInstance.SetInt(ConstLightIndices.GetComponent(InstLightIdx), EMPTY_LIGHT_INDEX);
 					}
 				}
 
