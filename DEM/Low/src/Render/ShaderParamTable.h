@@ -27,7 +27,7 @@ class CShaderConstantInfo : public Core::CObject
 protected:
 
 	// Cached sub-constant info. Any array has elements. Any single structure has members.
-	// Any single vector has components. Any single matrix has components at [0] and rows at [1].
+	// Any single vector has components. Any single matrix has components at [0] and vectors at [1].
 	// Member info is a sorted array mapped to struct members array. It could be a union,
 	// but it makes default constructor deleted.
 	std::unique_ptr<PShaderConstantInfo[]> SubInfo;
@@ -43,7 +43,8 @@ public:
 	U32                  LocalOffset;
 	U32                  ElementStride;
 	U32                  ElementCount;
-	U32                  ComponentStride;
+	U32                  VectorStride;
+	U32                  ComponentSize;
 	U8                   Rows;
 	U8                   Columns;
 	U8                   Flags;
@@ -61,7 +62,8 @@ public:
 	U32    GetLocalOffset() const { return LocalOffset; }
 	U32    GetElementStride() const { return ElementStride; }
 	U32    GetElementCount() const { return ElementCount; }
-	U32    GetComponentStride() const { return ComponentStride; }
+	U32    GetVectorStride() const { return VectorStride; }
+	U32    GetComponentSize() const { return ComponentSize; }
 	U32    GetRowCount() const { return Rows; }
 	U32    GetColumnCount() const { return Columns; }
 	bool   IsColumnMajor() const { return Flags & EShaderConstantFlags::ColumnMajor; }
@@ -70,7 +72,7 @@ public:
 
 	PShaderConstantInfo GetMemberInfo(CStrID Name);
 	PShaderConstantInfo GetElementInfo();
-	PShaderConstantInfo GetRowInfo();
+	PShaderConstantInfo GetVectorInfo();
 	PShaderConstantInfo GetComponentInfo();
 };
 
@@ -117,6 +119,7 @@ public:
 	void   SetInt(CConstantBuffer& CB, I32 Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetInts(CB, _Offset, &Value, 1); }
 	void   SetUInt(CConstantBuffer& CB, U32 Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetUInts(CB, _Offset, &Value, 1); }
 	void   SetBool(CConstantBuffer& CB, bool Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetBools(CB, _Offset, &Value, 1); }
+	void   SetVector(CConstantBuffer& CB, const vector2& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 2); }
 	void   SetVector(CConstantBuffer& CB, const vector3& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 3); }
 	void   SetVector(CConstantBuffer& CB, const vector4& Value) const { n_assert_dbg(_Info); if (_Info) _Info->SetFloats(CB, _Offset, Value.v, 4); }
 	void   SetMatrix(CConstantBuffer& CB, const matrix44& Value, bool ColumnMajor = false) const { n_assert_dbg(_Info); if (_Info) { if (ColumnMajor == _Info->IsColumnMajor()) InternalSetMatrix(CB, Value); else InternalSetMatrix(CB, Value.transposed()); } }
@@ -131,11 +134,11 @@ public:
 	void   SetBoolArray(CConstantBuffer& CB, std::initializer_list<bool> Values, U32 StartIndex = 0) const { SetBoolArray(CB, Values.begin(), Values.size(), StartIndex); }
 	//void   SetVectorArray(CConstantBuffer& CB, const vector3* pValues, UPTR Count, U32 StartIndex = 0) const;
 	//void   SetVectorArray(CConstantBuffer& CB, const vector4* pValues, UPTR Count, U32 StartIndex = 0) const;
-	//void   SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex = 0) const;
+	//void   SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex = 0, bool ColumnMajor = false) const;
 
 	CShaderConstantParam GetMember(CStrID Name) const;
 	CShaderConstantParam GetElement(U32 Index) const;
-	CShaderConstantParam GetRow(U32 Index) const;
+	CShaderConstantParam GetVector(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Index) const;
 	CShaderConstantParam GetComponent(U32 Row, U32 Column) const;
 

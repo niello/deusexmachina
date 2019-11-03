@@ -42,6 +42,7 @@ public:
 	bool                     SetFloat(const CShaderConstantParam& Param, float Value);
 	bool                     SetInt(const CShaderConstantParam& Param, I32 Value);
 	bool                     SetUInt(const CShaderConstantParam& Param, U32 Value);
+	bool                     SetVector(const CShaderConstantParam& Param, const vector2& Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector3& Value);
 	bool                     SetVector(const CShaderConstantParam& Param, const vector4& Value);
 	bool                     SetMatrix(const CShaderConstantParam& Param, const matrix44& Value, bool ColumnMajor = false);

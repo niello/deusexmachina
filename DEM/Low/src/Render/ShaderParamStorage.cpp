@@ -146,16 +146,12 @@ bool CShaderParamStorage::Apply()
 	}
 
 	for (size_t i = 0; i < _Resources.size(); ++i)
-	{
 		if (_Resources[i])
 			if (!_Table->GetResource(i)->Apply(*_GPU, _Resources[i])) return false;
-	}
 
 	for (size_t i = 0; i < _Samplers.size(); ++i)
-	{
 		if (_Samplers[i])
 			if (!_Table->GetSampler(i)->Apply(*_GPU, _Samplers[i])) return false;
-	}
 
 	return true;
 }

@@ -17,7 +17,8 @@ void CShaderConstantInfo::CShaderConstantInfo_CopyFields(const CShaderConstantIn
 	LocalOffset = Source.LocalOffset;
 	ElementStride = Source.ElementStride;
 	ElementCount = Source.ElementCount;
-	ComponentStride = Source.ComponentStride;
+	VectorStride = Source.VectorStride;
+	ComponentSize = Source.ComponentSize;
 	Rows = Source.Rows;
 	Columns = Source.Columns;
 	Flags = Source.Flags;
@@ -48,13 +49,10 @@ PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 		SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->GetMemberCount());
 	}
 
-	SubInfo[MemberIndex] = Struct->GetMember(MemberIndex)->Clone();
-	// patch fields!
+	auto& Member = SubInfo[MemberIndex];
+	Member = Struct->GetMember(MemberIndex)->Clone();
+	Member->BufferIndex = BufferIndex;
 
-	// find member
-	// if not found in structure, return nullptr;
-	// create mutable cached pointer
-	// return member
 	return SubInfo[MemberIndex];
 }
 //---------------------------------------------------------------------
@@ -75,7 +73,7 @@ PShaderConstantInfo CShaderConstantInfo::GetElementInfo()
 }
 //---------------------------------------------------------------------
 
-PShaderConstantInfo CShaderConstantInfo::GetRowInfo()
+PShaderConstantInfo CShaderConstantInfo::GetVectorInfo()
 {
 	// An array, can't access components
 	if (ElementCount > 1) return nullptr;
@@ -83,11 +81,11 @@ PShaderConstantInfo CShaderConstantInfo::GetRowInfo()
 	// Don't check if it is a structure, because structure must have MajorDim = 1
 	n_assert_dbg(!Struct);
 
-	// Not a matrix (2-dimensional object), has no rows
+	// Not a matrix (2-dimensional object), has no vectors
 	const auto MajorDim = IsColumnMajor() ? Columns : Rows;
 	if (MajorDim < 2) return nullptr;
 
-	// If cache is valid, there are component at [0] and row at [1]
+	// If cache is valid, there are component at [0] and vector at [1]
 	if (SubInfo)
 	{
 		if (SubInfo[1]) return SubInfo[1];
@@ -99,11 +97,15 @@ PShaderConstantInfo CShaderConstantInfo::GetRowInfo()
 
 	SubInfo[1] = Clone();
 	if (IsColumnMajor())
+	{
 		SubInfo[1]->Columns = 1;
+		//SubInfo[1]->ElementStride = component size * SubInfo[1]->Rows;
+	}
 	else
+	{
 		SubInfo[1]->Rows = 1;
-
-	//!!!fix stride!
+		//SubInfo[1]->ElementStride = component size * SubInfo[1]->Columns;
+	}
 
 	return SubInfo[1];
 }
@@ -135,10 +137,9 @@ PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 	SubInfo[0] = Clone();
 	SubInfo[0]->Columns = 1;
 	SubInfo[0]->Rows = 1;
+	//SubInfo[0]->ElementStride = component size;
 
-	//!!!fix stride!
-
-	return SubInfo[1];
+	return SubInfo[0];
 }
 //---------------------------------------------------------------------
 
@@ -274,10 +275,10 @@ CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
 }
 //---------------------------------------------------------------------
 
-CShaderConstantParam CShaderConstantParam::GetRow(U32 Index) const
+CShaderConstantParam CShaderConstantParam::GetVector(U32 Index) const
 {
-	//const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
-	//if (MajorDim > 1) return GetRow(Index);
+	if (!_Info || _Info->Struct) return CShaderConstantParam(nullptr, 0);
+	return CShaderConstantParam(_Info->GetVectorInfo(), _Offset + Index * _Info->GetVectorStride());
 }
 //---------------------------------------------------------------------
 
@@ -285,17 +286,18 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 {
 	if (!_Info || _Info->Struct) return CShaderConstantParam(nullptr, 0);
 
-	const auto ComponentCount = _Info->GetRowCount() * _Info->GetColumnCount();
+	const auto Rows = _Info->GetRowCount();
+	const auto Cols = _Info->GetColumnCount();
+	const auto ComponentCount = Rows * Cols;
 	if (Index > ComponentCount)
 	{
-		const auto ElementIndex = Index / ComponentCount;
-		const auto ComponentIndex = Index % ComponentCount;
-		return GetElement(ElementIndex).GetComponent(ComponentIndex);
+		return GetElement(Index / ComponentCount).GetComponent(Index % ComponentCount);
 	}
 	else
 	{
-		//???is component stride enough or for matrix3x2 there will be padding between rows?
-		return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+		return _Info->IsColumnMajor() ?
+			GetComponent(Index / Rows, Index % Rows) :
+			GetComponent(Index % Cols, Index / Cols);
 	}
 }
 //---------------------------------------------------------------------
@@ -311,12 +313,16 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 		return CShaderConstantParam(nullptr, 0);
 	}
 
-	//???is component stride enough or for matrix3x2 there will be padding between rows?
-	const auto Index = _Info->IsColumnMajor() ?
-		Row * _Info->GetColumnCount() + Column :
-		Column * _Info->GetRowCount() + Row;
-
-	return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + Index * _Info->GetComponentStride());
+	if (_Info->IsColumnMajor())
+	{
+		const auto LocalOffset = Column * _Info->GetVectorStride() + Row * _Info->GetComponentSize();
+		return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + LocalOffset);
+	}
+	else
+	{
+		const auto LocalOffset = Row * _Info->GetVectorStride() + Column * _Info->GetComponentSize();
+		return CShaderConstantParam(_Info->GetComponentInfo(), _Offset + LocalOffset);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -327,8 +333,9 @@ CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
 	if (_Info->GetElementCount() > 1) return GetElement(Index);
 
 	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
-	if (MajorDim > 1) return GetRow(Index);
+	if (MajorDim > 1) return GetVector(Index);
 
+	// FIXME: can use more lightweight GetComponent version here? Some calcs are already done!
 	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
 	if (MinorDim) return GetComponent(Index);
 
