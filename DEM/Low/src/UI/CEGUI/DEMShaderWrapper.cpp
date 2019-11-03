@@ -2,13 +2,11 @@
 #include "DEMShaderWrapper.h"
 
 #include <Render/GPUDriver.h>
-#include <Render/RenderStateDesc.h>
-#include <Render/RenderState.h>
-#include <Render/Shader.h>
+#include <Render/Effect.h>
+#include <Render/ShaderParamStorage.h>
 #include <Render/ShaderParamTable.h>
 #include <Render/SamplerDesc.h>
 #include <Render/Sampler.h>
-#include <Render/ConstantBuffer.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMTexture.h>
 
@@ -18,173 +16,48 @@
 namespace CEGUI
 {
 
-CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Render::PShader PSRegular, Render::PShader PSOpaque)
-	: Renderer(Owner)
+CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect)
+	: _Renderer(Owner)
+	, _Effect(&Effect)
 {
-	Render::CGPUDriver* pGPU = Owner.getGPUDriver();
-
-	Render::CRenderStateDesc RSDesc;
-	Render::CRenderStateDesc::CRTBlend& RTBlendDesc = RSDesc.RTBlend[0];
-	RSDesc.SetDefaults();
-	RSDesc.VertexShader = VS;
-	RSDesc.PixelShader = PSRegular;
-	RSDesc.Flags.Set(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::DS_DepthEnable |
-		Render::CRenderStateDesc::DS_DepthWriteEnable |
-		Render::CRenderStateDesc::Rasterizer_DepthClipEnable |
-		Render::CRenderStateDesc::Rasterizer_Wireframe |
-		Render::CRenderStateDesc::Rasterizer_CullFront |
-		Render::CRenderStateDesc::Rasterizer_CullBack |
-		Render::CRenderStateDesc::Blend_AlphaToCoverage |
-		Render::CRenderStateDesc::Blend_Independent);
-
-	// Regular shader with normal blend
-	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_InvDestAlpha;
-	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_One;
-	RTBlendDesc.SrcBlendArg = Render::BlendArg_SrcAlpha;
-	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
-
-	// Unclipped
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	RegularUnclipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(RegularUnclipped.IsValidPtr());
-
-	// Clipped
-	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	RegularClipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(RegularClipped.IsValidPtr());
-
-	// Premultiplied alpha blend
-	RTBlendDesc.SrcBlendArgAlpha = Render::BlendArg_One;
-	RTBlendDesc.DestBlendArgAlpha = Render::BlendArg_InvSrcAlpha;
-	RTBlendDesc.SrcBlendArg = Render::BlendArg_One;
-	RTBlendDesc.DestBlendArg = Render::BlendArg_InvSrcAlpha;
-
-	// Clipped
-	PremultipliedClipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(PremultipliedClipped.IsValidPtr());
-
-	// Unclipped
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	PremultipliedUnclipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(PremultipliedUnclipped.IsValidPtr());
-
-	// Opaque
-	RSDesc.PixelShader = PSOpaque;
-	RSDesc.Flags.Clear(Render::CRenderStateDesc::Blend_RTBlendEnable << 0);
-	RSDesc.Flags.Set(Render::CRenderStateDesc::DS_DepthEnable |
-		Render::CRenderStateDesc::DS_DepthWriteEnable);
-	RSDesc.DepthFunc = Render::Cmp_Always;
-
-	// Unclipped
-	OpaqueUnclipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(OpaqueUnclipped.IsValidPtr());
-
-	// Clipped
-	RSDesc.Flags.Set(Render::CRenderStateDesc::Rasterizer_ScissorEnable);
-
-	OpaqueClipped = pGPU->CreateRenderState(RSDesc);
-	n_assert(OpaqueClipped.IsValidPtr());
-
-	// NB: all pixel shaders must have compatible metadata
-	pVSParams = VS->GetParamTable();
-	pPSParams = PSRegular->GetParamTable();
+	Render::CSamplerDesc SampDesc;
+	SampDesc.SetDefaults();
+	SampDesc.AddressU = Render::TexAddr_Clamp;
+	SampDesc.AddressV = Render::TexAddr_Clamp;
+	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+	_LinearSampler = _Renderer.getGPUDriver()->CreateSampler(SampDesc);
+	n_assert(_LinearSampler.IsValidPtr());
 }
 //---------------------------------------------------------------------
 
 CDEMShaderWrapper::~CDEMShaderWrapper() = default;
 //---------------------------------------------------------------------
 
-void CDEMShaderWrapper::setupParameterForShader(CStrID Name, Render::EShaderType ShaderType)
+void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaque)
 {
-	const Render::CShaderParamTable* pShaderParams;
-	switch (ShaderType)
-	{
-		case Render::ShaderType_Vertex:	pShaderParams = pVSParams; break;
-		case Render::ShaderType_Pixel:	pShaderParams = pPSParams; break;
-		default:						return;
-	}
-
-	if (!pShaderParams) return;
-
-	const auto& Constant = pShaderParams->GetConstant(Name);
-
-	//for (const auto& Const : pShaderParams->GetConstants())
-	//	Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
-
-	Render::PConstantBuffer	CB;
-
-	for (const auto& Rec : Constants)
-	{
-		if (Rec.Constant->GetConstantBufferHandle() == hCB)
-		{
-			CB = Rec.Buffer;
-			break;
-		}
-	}
-
-	if (!CB)
-		CB = Renderer.getGPUDriver()->CreateConstantBuffer(hCB, Render::Access_GPU_Read | Render::Access_CPU_Write);
-
-	CConstRecord Rec;
-	Rec.Name = Name;
-	Rec.Constant = Constant;
-	Rec.ShaderType = ShaderType;
-	Rec.Buffer = CB;
-
-	Constants.push_back(std::move(Rec));
-}
-//---------------------------------------------------------------------
-
-void CDEMShaderWrapper::setupParameter(const char* pName)
-{
-	CStrID Name(pName);
-	setupParameterForShader(Name, Render::ShaderType_Vertex);
-	setupParameterForShader(Name, Render::ShaderType_Pixel);
-}
-//---------------------------------------------------------------------
-
-void CDEMShaderWrapper::setupMainTexture(const char* pTextureName, const char* pSamplerName)
-{
-	if (!pPSParams) return;
-
-	TextureParam = pPSParams->GetResource(CStrID(pTextureName));
-	LinearSamplerParam = pPSParams->GetSampler(CStrID(pSamplerName));
-
-	if (!LinearSampler)
-	{
-		Render::CSamplerDesc SampDesc;
-		SampDesc.SetDefaults();
-		SampDesc.AddressU = Render::TexAddr_Clamp;
-		SampDesc.AddressV = Render::TexAddr_Clamp;
-		SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-		LinearSampler = Renderer.getGPUDriver()->CreateSampler(SampDesc);
-		n_assert(LinearSampler.IsValidPtr());
-	}
-}
-//---------------------------------------------------------------------
-
-void CDEMShaderWrapper::bindRenderState(BlendMode BlendMode, bool Clipped, bool Opaque) const
-{
-	Render::CGPUDriver* pGPU = Renderer.getGPUDriver();
-
+	static const CStrID RegularUnclipped("RegularUnclippedUI");
+	static const CStrID PremultipliedUnclipped("PremultipliedUnclippedUI");
+	static const CStrID OpaqueUnclipped("OpaqueUnclippedUI");
+	static const CStrID RegularClipped("RegularClippedUI");
+	static const CStrID PremultipliedClipped("PremultipliedClippedUI");
+	static const CStrID OpaqueClipped("OpaqueClippedUI");
 	if (Opaque)
-		pGPU->SetRenderState(Clipped ? OpaqueClipped : OpaqueUnclipped);
+		_CurrInputSet = Clipped ? OpaqueClipped : OpaqueUnclipped;
 	else if (BlendMode == BlendMode::RttPremultiplied)
-		pGPU->SetRenderState(Clipped ? PremultipliedClipped : PremultipliedUnclipped);
+		_CurrInputSet = Clipped ? PremultipliedClipped : PremultipliedUnclipped;
 	else
-		pGPU->SetRenderState(Clipped ? RegularClipped : RegularUnclipped);
+		_CurrInputSet = Clipped ? RegularClipped : RegularUnclipped;
 }
 //---------------------------------------------------------------------
 
 void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shaderParameterBindings)
 {
-	// Shader is set in bindRenderState
+	const auto* pTech = _Effect->GetTechByInputSet(_CurrInputSet);
+	if (!pTech) return;
 
-	Render::CGPUDriver* pGPU = Renderer.getGPUDriver();
+	Render::CGPUDriver* pGPU = _Renderer.getGPUDriver();
+
+	Render::CShaderParamStorage Storage(pTech->GetParamTable(), *pGPU);
 
 	const ShaderParameterBindings::ShaderParameterBindingsMap& paramMap = shaderParameterBindings->getShaderParameterBindings();
 	for (auto&& param : paramMap)
@@ -192,68 +65,59 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 		// Default CEGUI texture. Hardcoded inside CEGUI as "texture0".
 		if (param.first == "texture0")
 		{
-			if (TextureParam && LinearSamplerParam)
+			static const CStrID sidTextureID("BoundTexture");
+			static const CStrID sidSamplerID("LinearSampler");
+
+			if (auto TextureParam = pTech->GetParamTable().GetResource(sidTextureID))
 			{
 				const CEGUI::ShaderParameterTexture* pPrm = static_cast<const CEGUI::ShaderParameterTexture*>(param.second);
 				const CEGUI::CDEMTexture* pTex = static_cast<const CEGUI::CDEMTexture*>(pPrm->d_parameterValue);
 				TextureParam->Apply(*pGPU, pTex->getTexture());
-				LinearSamplerParam->Apply(*pGPU, LinearSampler.Get());
+
+				if (auto SamplerParam = pTech->GetParamTable().GetSampler(sidSamplerID))
+					SamplerParam->Apply(*pGPU, _LinearSampler.Get());
 			}
 
 			continue;
 		}
 
-		// Constants
-		for (const auto& Rec : Constants)
+		auto Const = pTech->GetParamTable().GetConstant(CStrID(param.first.c_str()));
+		if (!Const) continue;
+
+		switch (param.second->getType())
 		{
-			// Set in each shader where this constant exists by name, don't break after the first name match
-			if (Rec.Name != param.first.c_str()) continue;
-
-			if (!Rec.Buffer->IsInWriteMode())
+			case CEGUI::ShaderParamType::Matrix4X4:
 			{
-				pGPU->BindConstantBuffer(Rec.ShaderType, Rec.Constant.GetConstantBufferIndex(), Rec.Buffer.Get());
-				pGPU->BeginShaderConstants(*Rec.Buffer.Get());
+				const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
+				Storage.SetRawConstant(Const, glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
+				break;
 			}
-
-			switch (param.second->getType())
+			case CEGUI::ShaderParamType::Float:
 			{
-				case CEGUI::ShaderParamType::Matrix4X4:
-				{
-					const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
-					Rec.Constant.SetRawValue(*Rec.Buffer.Get(), glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
-					break;
-				}
-				case CEGUI::ShaderParamType::Float:
-				{
-					const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
-					Rec.Constant.SetFloat(*Rec.Buffer.Get(), pPrm->d_parameterValue);
-					break;
-				}
-				case CEGUI::ShaderParamType::Int:
-				{
-					const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
-					Rec.Constant.SetInt(*Rec.Buffer.Get(), pPrm->d_parameterValue);
-					break;
-				}
-				case CEGUI::ShaderParamType::Texture:
-				{
-					::Sys::Error("CDEMShaderWrapper::prepareForRendering() > CEGUI arbitrary texture not implemented\n");
-					break;
-				}
-				default:
-				{
-					::Sys::Error("CDEMShaderWrapper::prepareForRendering() > unknown shader parameter type\n");
-					break;
-				}
+				const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
+				Storage.SetFloat(Const, pPrm->d_parameterValue);
+				break;
+			}
+			case CEGUI::ShaderParamType::Int:
+			{
+				const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
+				Storage.SetInt(Const, pPrm->d_parameterValue);
+				break;
+			}
+			case CEGUI::ShaderParamType::Texture:
+			{
+				::Sys::Error("CDEMShaderWrapper::prepareForRendering() > CEGUI arbitrary texture not implemented\n");
+				break;
+			}
+			default:
+			{
+				::Sys::Error("CDEMShaderWrapper::prepareForRendering() > unknown shader parameter type\n");
+				break;
 			}
 		}
 	}
 
-	for (const auto& Rec : Constants)
-	{
-		if (Rec.Buffer->IsInWriteMode())
-			pGPU->CommitShaderConstants(*Rec.Buffer.Get());
-	}
+	Storage.Apply();
 }
 //---------------------------------------------------------------------
 

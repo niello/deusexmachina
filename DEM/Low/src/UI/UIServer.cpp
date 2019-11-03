@@ -36,9 +36,7 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	Logger = n_new(CEGUI::CDEMLogger);
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
-	Renderer = &CEGUI::CDEMRenderer::create(
-		*Settings.GPU,
-		Settings.VertexShaderID, Settings.PixelShaderRegularID, Settings.PixelShaderOpaqueID);
+	Renderer = &CEGUI::CDEMRenderer::create(*Settings.GPU, *Settings.Effect);
 
 	//!!!TMP!
 	// TODO: CEGUI implement - get display size from GPU output 0 or don't use display size at all

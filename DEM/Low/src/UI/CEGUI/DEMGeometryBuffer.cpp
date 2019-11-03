@@ -96,11 +96,11 @@ void CDEMGeometryBuffer::draw(std::uint32_t drawModeMask) const
 	if (drawModeMask & (DrawModeFlagWindowRegular | DrawModeFlagMouseCursor))
 	{
 		shaderParameterBindings->setParameter("AlphaPercentage", d_alpha);
-		ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, false);
+		const_cast<CDEMShaderWrapper&>(ShaderWrapper).setInputSet(d_blendMode, d_clippingActive, false);
 	}
 	else if (drawModeMask & UI::DrawModeFlagWindowOpaque)
 	{
-		ShaderWrapper.bindRenderState(d_blendMode, d_clippingActive, true);
+		const_cast<CDEMShaderWrapper&>(ShaderWrapper).setInputSet(d_blendMode, d_clippingActive, true);
 	}
 	else
 	{

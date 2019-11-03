@@ -57,10 +57,12 @@ public:
 				return false;
 			}
 
+			std::ostringstream HRDErrors;
+
 			Data::CHRDParser Parser;
-			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
+			if (!Parser.ParseBuffer(In.data(), In.size(), Desc, &HRDErrors))
 			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error:\n" + HRDErrors.str());
 				return false;
 			}
 		}

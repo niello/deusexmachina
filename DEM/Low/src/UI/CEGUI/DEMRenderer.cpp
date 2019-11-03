@@ -1,48 +1,22 @@
 #include "DEMRenderer.h"
-
-#include <Render/GPUDriver.h>
-#include <Render/RenderState.h>
-#include <Render/RenderTarget.h>
-#include <Render/Shader.h>
-#include <Render/SamplerDesc.h>
-#include <Render/Sampler.h>
-#include <Render/ConstantBuffer.h>
-#include <Render/VertexBuffer.h>
-#include <Resources/ResourceManager.h>
-#include <Resources/Resource.h>
-#include <IO/PathUtils.h>
-#include <IO/IOServer.h>
-#include <Data/Buffer.h>
-#include <Data/StringUtils.h>
 #include "DEMGeometryBuffer.h"
 #include "DEMTextureTarget.h"
 #include "DEMViewportTarget.h"
 #include "DEMTexture.h"
 #include "DEMShaderWrapper.h"
-#include "CEGUI/System.h"
-#include "CEGUI/Logger.h"
+#include <Render/GPUDriver.h>
+#include <Render/VertexLayout.h>
+#include <CEGUI/System.h>
+#include <CEGUI/Logger.h>
 
 namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID)
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect)
 	: GPU(&GPUDriver)
 {
-	//???to GUI render phase? get shaders there from Frame mgr, set when render? or create shader wrapper on phase Init?
-	//must not pass shader resource IDs here! better to move these settings to phase. Effect can't handle 2 pixel shaders,
-	//but if use tech, it may work. Or use 2 effects.
-	Render::PShader VS = GPU->GetShader(VertexShaderID);
-	Render::PShader PSRegular = GPU->GetShader(PixelShaderRegularID);
-	Render::PShader PSOpaque = GPU->GetShader(PixelShaderOpaqueID);
-	n_assert(VS && PSRegular && PSOpaque && VS->IsValid() && PSRegular->IsValid() && PSOpaque->IsValid());
-
-	// NB: regular and opaque pixel shaders must be compatible
-
-	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, VS, PSRegular, PSOpaque));
-	ShaderWrapperTextured->setupMainTexture("BoundTexture", "LinearSampler");
-	ShaderWrapperTextured->setupParameter("WVP");
-	ShaderWrapperTextured->setupParameter("AlphaPercentage");
+	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, Effect));
 
 	//!!!TODO: non-textured shaders!
 	//ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);
@@ -79,12 +53,10 @@ CDEMRenderer::~CDEMRenderer()
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver,
-								   CStrID VertexShaderID, CStrID PixelShaderRegularID,
-								   CStrID PixelShaderOpaqueID, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, VertexShaderID, PixelShaderRegularID, PixelShaderOpaqueID);
+	return *n_new(CDEMRenderer)(GPUDriver, Effect);
 }
 //--------------------------------------------------------------------
 

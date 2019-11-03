@@ -244,7 +244,7 @@ inline void matrix44::transpose()
 	std::swap(M34, M43);
 }
 
-matrix44 matrix44::transposed() const
+inline matrix44 matrix44::transposed() const
 {
 	return matrix44(
 		M11, M21, M31, M41,

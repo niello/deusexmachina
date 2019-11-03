@@ -27,7 +27,7 @@ namespace Data
 namespace Render
 {
 	typedef Ptr<class CGPUDriver> PGPUDriver;
-	typedef Ptr<class CShader> PShader;
+	typedef Ptr<class CEffect> PEffect;
 }
 
 namespace DEM { namespace Sys
@@ -44,9 +44,7 @@ typedef Ptr<class CUIContext> PUIContext;
 struct CUISettings
 {
 	Render::PGPUDriver	GPU;
-	CStrID				VertexShaderID;
-	CStrID				PixelShaderRegularID;
-	CStrID				PixelShaderOpaqueID;
+	Render::PEffect     Effect;
 	CString				DefaultCursor;
 	Data::PParams		ResourceGroups;
 	Data::PParams		LoadOnStartup;

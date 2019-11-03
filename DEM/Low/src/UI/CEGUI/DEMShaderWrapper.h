@@ -8,51 +8,22 @@ namespace CEGUI
 {
 class CDEMRenderer;
 
-//!!!texture & sampler are not needed for non-textured shader!
-
 class CDEMShaderWrapper: public ShaderWrapper
 {
 protected:
 
-	//???need? or use storage?
-	struct CConstRecord
-	{
-		CStrID							Name;
-		Render::CShaderConstantParam	Constant;
-		Render::PConstantBuffer			Buffer;
-		Render::EShaderType				ShaderType;
-	};
-
-	CDEMRenderer&						Renderer;
-
-	Render::PRenderState				RegularUnclipped;
-	Render::PRenderState				RegularClipped;
-	Render::PRenderState				PremultipliedUnclipped;
-	Render::PRenderState				PremultipliedClipped;
-	Render::PRenderState				OpaqueUnclipped;
-	Render::PRenderState				OpaqueClipped;
-
-	const Render::CShaderParamTable*	pVSParams = nullptr;
-	const Render::CShaderParamTable*	pPSParams = nullptr;
-
-	std::vector<CConstRecord>			Constants;
-
-	// Main texture (CEGUI 'texture0')
-	Render::PResourceParam				TextureParam;
-	Render::PSamplerParam				LinearSamplerParam;
-	Render::PSampler					LinearSampler;
-
-	void			setupParameterForShader(CStrID Name, Render::EShaderType ShaderType);
+	CDEMRenderer&    _Renderer;
+	Render::PEffect  _Effect;
+	CStrID           _CurrInputSet;
+	Render::PSampler _LinearSampler; //???can define in effect?
 
 public:
 
-	CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Render::PShader PSRegular, Render::PShader PSOpaque);
+	CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect);
 	virtual ~CDEMShaderWrapper();
 
-	void			setupParameter(const char* pName);
-	void			setupMainTexture(const char* pTextureName, const char* pSamplerName);
-	void			bindRenderState(BlendMode BlendMode, bool Clipped, bool Opaque) const;
-	virtual void	prepareForRendering(const ShaderParameterBindings* shaderParameterBindings) override;
+	void         setInputSet(BlendMode BlendMode, bool Clipped, bool Opaque);
+	virtual void prepareForRendering(const ShaderParameterBindings* shaderParameterBindings) override;
 };
 
 }

@@ -32,15 +32,15 @@ protected:
 	PDEMShaderWrapper					ShaderWrapperTextured;
 	PDEMShaderWrapper					ShaderWrapperColoured;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID);
-	virtual ~CDEMRenderer();
+	CDEMRenderer(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect);
+	virtual ~CDEMRenderer() override;
 
 	static void logTextureCreation(const String& name);
 	static void logTextureDestruction(const String& name);
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, CStrID VertexShaderID, CStrID PixelShaderRegularID, CStrID PixelShaderOpaqueID, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
