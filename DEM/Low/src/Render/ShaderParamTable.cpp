@@ -276,10 +276,12 @@ CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
 
 CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 {
-	//???!!!recalc into row-column with majority and call that method?
+	if (!_Info) return CShaderConstantParam(nullptr, 0);
 
-	if (!_Info ||
-		_Info->GetElementCount() > 1 ||
+	//???!!!recalc into row-column with majority and call that method?
+	//???!!!allow to get components from elements of the array using single index!?
+
+	if (_Info->GetElementCount() > 1 ||
 		_Info->Struct ||
 		_Info->GetRowCount() * _Info->GetColumnCount() <= Index)
 	{

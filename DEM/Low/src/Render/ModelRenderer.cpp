@@ -197,9 +197,9 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 	CVertexLayout* pVLInstanced = nullptr;
 
 	// Effect constants
-	CShaderConstantParam ConstInstanceDataVS;	// Model, ModelSkinned, ModelInstanced
-	CShaderConstantParam ConstInstanceDataPS;	// Model, ModelSkinned, ModelInstanced
-	CShaderConstantParam ConstSkinPalette;	// ModelSkinned
+	CShaderConstantParam ConstInstanceDataVS; // Model, ModelSkinned, ModelInstanced
+	CShaderConstantParam ConstInstanceDataPS; // Model, ModelSkinned, ModelInstanced
+	CShaderConstantParam ConstSkinPalette;    // ModelSkinned
 
 	// Subsequent shader constants for single-instance case
 	CShaderConstantParam ConstWorldMatrix;
@@ -327,8 +327,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				if (LightingEnabled && ConstInstanceDataPS)
 				{
 					ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
-					if (ConstLightIndices)
-						TechLightCount = ConstLightIndices.GetElementCount() * ConstLightIndices.GetColumnCount() * ConstLightIndices.GetRowCount();
+					TechLightCount = ConstLightIndices.GetTotalComponentCount();
 				}
 			}
 
@@ -350,7 +349,6 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				UPTR InstanceCount = 0;
 				while (ItCurr != ItInstEnd)
 				{
-					// PERF: can be optimized if necessary (pool allocation, element and member caches, whole buffer construction & commit)
 					auto CurrInstanceDataVS = ConstInstanceDataVS[InstanceCount];
 
 					// Setup instance transformation
@@ -359,7 +357,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 					// Setup instance lights
 
-					if (LightingEnabled && ConstInstanceDataPS && TechLightCount)
+					if (TechLightCount)
 					{
 						CShaderConstantParam CurrInstanceDataPS = ConstInstanceDataPS.GetElement(InstanceCount);
 						CShaderConstantParam CurrLightIndices = CurrInstanceDataPS[sidLightIndices];
@@ -372,7 +370,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 							ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
 							PerInstance.SetUInt(CurrInstanceDataPS[sidLightCount], ActualLightCount);
 						}
-						else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
+						else ActualLightCount = std::min(LightCount, TechLightCount);
 
 						// Set per-instance light indices
 						if (ActualLightCount)
@@ -516,8 +514,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 				{
 					ConstLightCount = ConstInstanceDataPS.GetMember(sidLightCount);
 					ConstLightIndices = ConstInstanceDataPS.GetMember(sidLightIndices);
-					if (ConstLightIndices)
-						TechLightCount = ConstLightIndices.GetElementCount() * ConstLightIndices.GetColumnCount() * ConstLightIndices.GetRowCount();
+					TechLightCount = ConstLightIndices.GetTotalComponentCount();
 				}
 
 				pCurrTech = pTech;
@@ -534,40 +531,37 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				PerInstance.SetMatrix(ConstWorldMatrix, pRenderNode->Transform);
 
-				if (ConstInstanceDataPS)
+				if (TechLightCount)
 				{
-					if (LightingEnabled && ConstLightIndices)
+					U32 ActualLightCount;
+
+					if (LightCount == 0)
 					{
-						U32 ActualLightCount;
+						// If tech is variable-light-count, set it per instance
+						ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
+						PerInstance.SetUInt(ConstLightCount, ActualLightCount);
+					}
+					else ActualLightCount = std::min(LightCount, TechLightCount);
 
-						if (LightCount == 0)
+					// Set per-instance light indices
+					if (ActualLightCount)
+					{
+						CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(pRenderNode->LightIndexBase);
+						U32 InstLightIdx;
+						for (InstLightIdx = 0; InstLightIdx < pRenderNode->LightCount; ++InstLightIdx, ++ItIdx)
 						{
-							// If tech is variable-light-count, set it per instance
-							ActualLightCount = std::min(TechLightCount, static_cast<UPTR>(pRenderNode->LightCount));
-							PerInstance.SetUInt(ConstLightCount, ActualLightCount);
-						}
-						else ActualLightCount = (U32)n_min(LightCount, TechLightCount);
-
-						// Set per-instance light indices
-						if (ActualLightCount)
-						{
-							CArray<U16>::CIterator ItIdx = Context.pLightIndices->IteratorAt(pRenderNode->LightIndexBase);
-							U32 InstLightIdx;
-							for (InstLightIdx = 0; InstLightIdx < pRenderNode->LightCount; ++InstLightIdx, ++ItIdx)
+							if (!Context.UsesGlobalLightBuffer)
 							{
-								if (!Context.UsesGlobalLightBuffer)
-								{
-									NOT_IMPLEMENTED;
-									//!!!???what with batch-local indices?!
-								}
-								const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
-								PerInstance.SetInt(ConstLightIndices[InstLightIdx], LightRec.GPULightIndex); //!!!writing to component!
+								NOT_IMPLEMENTED;
+								//!!!???what with batch-local indices?!
 							}
-
-							// If tech is fixed-light-count, fill the first unused light index with the special value
-							if (LightCount && InstLightIdx < TechLightCount)
-								PerInstance.SetInt(ConstLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
+							const CLightRecord& LightRec = (*Context.pLights)[(*ItIdx)];
+							PerInstance.SetInt(ConstLightIndices[InstLightIdx], LightRec.GPULightIndex); //!!!writing to component!
 						}
+
+						// If tech is fixed-light-count, fill the first unused light index with the special value
+						if (LightCount && InstLightIdx < TechLightCount)
+							PerInstance.SetInt(ConstLightIndices[InstLightIdx], EMPTY_LIGHT_INDEX); //!!!writing to component!
 					}
 				}
 

@@ -114,6 +114,9 @@ void CDEMShaderWrapper::setupParameterForShader(CStrID Name, Render::EShaderType
 
 	const auto& Constant = pShaderParams->GetConstant(Name);
 
+	//for (const auto& Const : pShaderParams->GetConstants())
+	//	Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
+
 	Render::PConstantBuffer	CB;
 
 	for (const auto& Rec : Constants)

@@ -833,8 +833,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			if (LightingEnabled && ConstInstanceDataPS)
 			{
 				ConstLightIndices = ConstInstanceDataPS[0][sidLightIndices];
-				if (ConstLightIndices)
-					TechLightCount = ConstLightIndices.GetElementCount() * ConstLightIndices.GetColumnCount() * ConstLightIndices.GetRowCount();
+				TechLightCount = ConstLightIndices.GetTotalComponentCount();
 			}
 
 			auto pVSLinearSampler = ParamTable.GetSampler(CStrID("VSLinearSampler"));
@@ -890,7 +889,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			n_assert_dbg(MaxInstanceCountConst >= (PatchCount + QuarterPatchCount));
 
 			const bool UploadLightInfo = LightingEnabled && ConstInstanceDataPS && TechLightCount;
-			U32 AvailableLightCount = (LightCount == 0) ? (U32)TechLightCount : (U32)n_min(LightCount, TechLightCount);
+			U32 AvailableLightCount = (LightCount == 0) ? TechLightCount : std::min(LightCount, TechLightCount);
 			if (AvailableLightCount > INSTANCE_MAX_LIGHT_COUNT) AvailableLightCount = INSTANCE_MAX_LIGHT_COUNT;
 
 			//???PERF: optimize uploading? use paddings to maintain align16?

@@ -109,6 +109,7 @@ public:
 	bool   IsValid() const { return _Info.IsValidPtr(); }
 	size_t GetConstantBufferIndex() const { return _Info ? _Info->GetConstantBufferIndex() : InvalidParamIndex; }
 	U32    GetElementCount() const { return _Info ? _Info->GetElementCount() : 0; }
+	U32    GetTotalComponentCount() const { return _Info ? _Info->GetElementCount() * _Info->GetRowCount() * _Info->GetColumnCount() : 0; }
 
 	void   SetRawValue(CConstantBuffer& CB, const void* pValue, UPTR Size) const { n_assert_dbg(_Info); if (_Info) _Info->SetRawValue(CB, _Offset, pValue, Size); }
 
