@@ -62,8 +62,8 @@ public:
 	U32    GetLocalOffset() const { return LocalOffset; }
 	U32    GetElementStride() const { return ElementStride; }
 	U32    GetElementCount() const { return ElementCount; }
-	U32    GetVectorStride() const { return VectorStride; }
-	U32    GetComponentSize() const { return ComponentSize; }
+	U32    GetVectorStride() const { NOT_IMPLEMENTED_MSG("Init value!"); return VectorStride; }
+	U32    GetComponentSize() const { NOT_IMPLEMENTED_MSG("Init value!"); return ComponentSize; }
 	U32    GetRowCount() const { return Rows; }
 	U32    GetColumnCount() const { return Columns; }
 	bool   IsColumnMajor() const { return Flags & EShaderConstantFlags::ColumnMajor; }

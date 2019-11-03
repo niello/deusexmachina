@@ -253,7 +253,7 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CNodeAttrRenderable>())
 		{
 			CAABB AttrBox;
-			((Frame::CNodeAttrRenderable&)Attr).ValidateResources(GetEntity()->GetLevel()->GetHostGPU());
+			((Frame::CNodeAttrRenderable&)Attr).ValidateResources(/*need level view -> GRM or use GPU-independent AABB (need MeshData)!*/);
 			((Frame::CNodeAttrRenderable&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
