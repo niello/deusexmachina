@@ -99,12 +99,12 @@ PShaderConstantInfo CShaderConstantInfo::GetVectorInfo()
 	if (IsColumnMajor())
 	{
 		SubInfo[1]->Columns = 1;
-		//SubInfo[1]->ElementStride = component size * SubInfo[1]->Rows;
+		SubInfo[1]->ElementStride = ComponentSize * Rows;
 	}
 	else
 	{
 		SubInfo[1]->Rows = 1;
-		//SubInfo[1]->ElementStride = component size * SubInfo[1]->Columns;
+		SubInfo[1]->ElementStride = ComponentSize * Columns;
 	}
 
 	return SubInfo[1];
@@ -137,7 +137,7 @@ PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 	SubInfo[0] = Clone();
 	SubInfo[0]->Columns = 1;
 	SubInfo[0]->Rows = 1;
-	//SubInfo[0]->ElementStride = component size;
+	SubInfo[0]->ElementStride = ComponentSize;
 
 	return SubInfo[0];
 }
