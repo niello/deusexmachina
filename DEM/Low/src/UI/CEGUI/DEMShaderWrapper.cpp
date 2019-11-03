@@ -95,9 +95,7 @@ CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::PShader VS, Re
 }
 //---------------------------------------------------------------------
 
-CDEMShaderWrapper::~CDEMShaderWrapper()
-{
-}
+CDEMShaderWrapper::~CDEMShaderWrapper() = default;
 //---------------------------------------------------------------------
 
 void CDEMShaderWrapper::setupParameterForShader(CStrID Name, Render::EShaderType ShaderType)
