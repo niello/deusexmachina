@@ -154,6 +154,12 @@ bool CSM30ConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) c
 }
 //---------------------------------------------------------------------
 
+void CSM30ConstantBufferParam::Unapply(CGPUDriver& GPU, CConstantBuffer* pValue) const
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 bool CSM30ConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 {
 	const auto* pCB = Cast<CD3D9ConstantBuffer>(Value);
@@ -183,6 +189,12 @@ bool CSM30ResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 }
 //---------------------------------------------------------------------
 
+void CSM30ResourceParam::Unapply(CGPUDriver& GPU, CTexture* pValue) const
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 bool CSM30SamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 {
 	auto pGPU = Cast<CD3D9GPUDriver>(GPU);
@@ -202,6 +214,12 @@ bool CSM30SamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CSM30SamplerParam::Unapply(CGPUDriver& GPU, CSampler* pValue) const
+{
+	NOT_IMPLEMENTED;
 }
 //---------------------------------------------------------------------
 

@@ -79,6 +79,7 @@ public:
 
 	virtual CStrID GetID() const override { return Name; }
 	virtual bool   Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const override;
+	virtual void   Unapply(CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 	virtual bool   IsBufferCompatible(CConstantBuffer& Value) const override;
 };
 
@@ -98,6 +99,7 @@ public:
 
 	virtual CStrID GetID() const override { return _Name; }
 	virtual bool   Apply(CGPUDriver& GPU, CTexture* pValue) const override;
+	virtual void   Unapply(CGPUDriver& GPU, CTexture* pValue) const override;
 };
 
 class CUSMSamplerParam : public ISamplerParam
@@ -115,6 +117,7 @@ public:
 
 	virtual CStrID GetID() const override { return _Name; }
 	virtual bool   Apply(CGPUDriver& GPU, CSampler* pValue) const override;
+	virtual void   Unapply(CGPUDriver& GPU, CSampler* pValue) const override;
 };
 
 }

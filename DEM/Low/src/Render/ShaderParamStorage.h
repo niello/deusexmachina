@@ -19,6 +19,7 @@ protected:
 
 	PShaderParamTable            _Table;
 	PGPUDriver                   _GPU;
+	bool                         _UnapplyOnDestruction;
 
 	std::vector<PConstantBuffer> _ConstantBuffers;
 	std::vector<PTexture>        _Resources;
@@ -26,7 +27,7 @@ protected:
 
 public:
 
-	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU);
+	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU, bool UnapplyOnDestruction = false);
 	CShaderParamStorage(CShaderParamStorage&& Other);
 	~CShaderParamStorage();
 
@@ -53,6 +54,7 @@ public:
 	bool                     SetSampler(size_t Index, CSampler* pSampler);
 
 	bool                     Apply();
+	void                     Unapply();
 
 	const CShaderParamTable& GetParamTable() const { return *_Table; }
 };

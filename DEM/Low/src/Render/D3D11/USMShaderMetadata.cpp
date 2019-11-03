@@ -151,6 +151,12 @@ bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) co
 }
 //---------------------------------------------------------------------
 
+void CUSMConstantBufferParam::Unapply(CGPUDriver& GPU, CConstantBuffer* pValue) const
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 bool CUSMConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 {
 	const auto* pCB = Cast<CD3D11ConstantBuffer>(Value);
@@ -180,6 +186,12 @@ bool CUSMResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 }
 //---------------------------------------------------------------------
 
+void CUSMResourceParam::Unapply(CGPUDriver& GPU, CTexture* pValue) const
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 bool CUSMSamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 {
 	auto pGPU = Cast<CD3D11GPUDriver>(GPU);
@@ -199,6 +211,12 @@ bool CUSMSamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CUSMSamplerParam::Unapply(CGPUDriver& GPU, CSampler* pValue) const
+{
+	NOT_IMPLEMENTED;
 }
 //---------------------------------------------------------------------
 

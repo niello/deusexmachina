@@ -1906,11 +1906,12 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 		}
 	}
 
-	Render::PD3D11ConstantBuffer CB = InternalCreateConstantBuffer(pUSMParam->Type, NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
-	return CB.Get();
+	return InternalCreateConstantBuffer(pUSMParam->Type, NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
 }
 //---------------------------------------------------------------------
 
+// NB: when buffer is freed, we can reuse it immediately due to dynamic CB renaming, see:
+// https://developer.nvidia.com/content/constant-buffers-without-constant-pain-0
 void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 {
 	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CBuffer;

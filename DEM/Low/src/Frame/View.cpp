@@ -23,7 +23,7 @@ CView::CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int
 	: _GraphicsMgr(&GraphicsMgr)
 	, _SwapChainID(SwapChainID)
 	, _RenderPath(&RenderPath)
-	, Globals(RenderPath.GetGlobalParamTable(), *GraphicsMgr.GetGPU())
+	, Globals(RenderPath.GetGlobalParamTable(), *GraphicsMgr.GetGPU(), true)
 {
 	// Allocate storage for global shader params
 
@@ -50,11 +50,7 @@ CView::CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int
 }
 //---------------------------------------------------------------------
 
-CView::~CView()
-{
-	//???must be in a CShaderParamStorage destructor? or control unbinding manually? or bool flag in constructor?
-	Globals.UnbindAndClear();
-}
+CView::~CView() = default;
 //---------------------------------------------------------------------
 
 bool CView::CreateUIContext(CStrID RenderTargetID)

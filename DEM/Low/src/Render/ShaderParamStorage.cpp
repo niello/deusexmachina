@@ -8,9 +8,10 @@
 namespace Render
 {
 
-CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU)
+CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU, bool UnapplyOnDestruction)
 	: _Table(&Table)
 	, _GPU(&GPU)
+	, _UnapplyOnDestruction(UnapplyOnDestruction)
 {
 	_ConstantBuffers.resize(Table.GetConstantBuffers().size());
 	_Resources.resize(Table.GetResources().size());
@@ -21,7 +22,10 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 CShaderParamStorage::CShaderParamStorage(CShaderParamStorage&& Other) = default;
 //---------------------------------------------------------------------
 
-CShaderParamStorage::~CShaderParamStorage() = default;
+CShaderParamStorage::~CShaderParamStorage()
+{
+	if (_UnapplyOnDestruction) Unapply();
+}
 //---------------------------------------------------------------------
 
 bool CShaderParamStorage::SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer)
@@ -154,6 +158,23 @@ bool CShaderParamStorage::Apply()
 	}
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+void CShaderParamStorage::Unapply()
+{
+	// Don't unbind temporary buffers. If it was applied it would be cleared from here.
+	for (size_t i = 0; i < _ConstantBuffers.size(); ++i)
+		if (_ConstantBuffers[i] && !_ConstantBuffers[i]->IsTemporary())
+			_Table->GetConstantBuffer(i)->Unapply(*_GPU, _ConstantBuffers[i]);
+
+	for (size_t i = 0; i < _Resources.size(); ++i)
+		if (_Resources[i])
+			_Table->GetResource(i)->Unapply(*_GPU, _Resources[i]);
+
+	for (size_t i = 0; i < _Samplers.size(); ++i)
+		if (_Samplers[i])
+			_Table->GetSampler(i)->Unapply(*_GPU, _Samplers[i]);
 }
 //---------------------------------------------------------------------
 
