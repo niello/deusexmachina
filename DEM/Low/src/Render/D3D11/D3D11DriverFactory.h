@@ -40,12 +40,9 @@ enum EFormatType
 	FmtType_Float
 };
 
-#define D3D11DrvFactory Render::CD3D11DriverFactory::Instance()
-
 class CD3D11DriverFactory: public CVideoDriverFactory
 {
 	__DeclareClassNoFactory;
-	__DeclareSingleton(CD3D11DriverFactory);
 
 protected:
 
@@ -59,8 +56,7 @@ protected:
 
 public:
 
-	CD3D11DriverFactory() { __ConstructSingleton; }
-	virtual ~CD3D11DriverFactory() { if (IsOpened()) Release(); __DestructSingleton; }
+	virtual ~CD3D11DriverFactory() override { if (IsOpened()) Release(); }
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
 	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);

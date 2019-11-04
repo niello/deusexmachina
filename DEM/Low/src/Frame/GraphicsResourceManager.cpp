@@ -30,12 +30,18 @@ namespace Frame
 
 CGraphicsResourceManager::CGraphicsResourceManager(Resources::CResourceManager& ResMgr, Render::CGPUDriver& GPU)
 	: pResMgr(&ResMgr)
-	, pGPU(&GPU)
+	, GPU(&GPU)
 {
 }
 //---------------------------------------------------------------------
 
-CGraphicsResourceManager::~CGraphicsResourceManager() {}
+CGraphicsResourceManager::~CGraphicsResourceManager() = default;
+//---------------------------------------------------------------------
+
+Render::CGPUDriver* CGraphicsResourceManager::GetGPU() const
+{
+	return GPU;
+}
 //---------------------------------------------------------------------
 
 Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
@@ -43,7 +49,7 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 	auto It = Meshes.find(UID);
 	if (It != Meshes.cend() && It->second) return It->second;
 
-	if (!pResMgr || !pGPU) return nullptr;
+	if (!pResMgr || !GPU) return nullptr;
 
 	Resources::PResource RMeshData = pResMgr->RegisterResource<Render::CMeshData>(UID);
 	Render::PMeshData MeshData = RMeshData->ValidateObject<Render::CMeshData>();
@@ -52,11 +58,11 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 
-	Render::PVertexLayout VertexLayout = pGPU->CreateVertexLayout(&MeshData->VertexFormat.Front(), MeshData->VertexFormat.GetCount());
-	Render::PVertexBuffer VB = pGPU->CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->VBData->GetPtr());
+	Render::PVertexLayout VertexLayout = GPU->CreateVertexLayout(&MeshData->VertexFormat.Front(), MeshData->VertexFormat.GetCount());
+	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->VBData->GetPtr());
 	Render::PIndexBuffer IB;
 	if (MeshData->IndexCount)
-		IB = pGPU->CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
+		IB = GPU->CreateIndexBuffer(MeshData->IndexType, MeshData->IndexCount, Render::Access_GPU_Read, MeshData->IBData->GetPtr());
 
 	Render::PMesh Mesh = n_new(Render::CMesh);
 	const bool Result = Mesh->Create(MeshData, VB, IB);
@@ -80,14 +86,14 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 		return It->second;
 	}
 
-	if (!pResMgr || !pGPU) return nullptr;
+	if (!pResMgr || !GPU) return nullptr;
 
 	Resources::PResource RTexData = pResMgr->RegisterResource<Render::CTextureData>(UID);
 	Render::PTextureData TexData = RTexData->ValidateObject<Render::CTextureData>();
 
 	if (!TexData->UseRAMData()) return nullptr;
 
-	Render::PTexture Texture = pGPU->CreateTexture(TexData, AccessFlags);
+	Render::PTexture Texture = GPU->CreateTexture(TexData, AccessFlags);
 
 	TexData->ReleaseRAMData();
 
@@ -113,7 +119,7 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 
 	// Tough resource manager doesn't keep track of shaders, it is used
 	// for shader library loading and for accessing an IO service.
-	if (!pResMgr || !pGPU) return nullptr;
+	if (!pResMgr || !GPU) return nullptr;
 
 	IO::PStream Stream;
 	Render::PShaderLibrary ShaderLibrary;
@@ -141,7 +147,7 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 
 	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
 
-	Render::PShader Shader = pGPU->CreateShader(*Stream, ShaderLibrary.Get(), NeedParamTable);
+	Render::PShader Shader = GPU->CreateShader(*Stream, ShaderLibrary.Get(), NeedParamTable);
 
 	if (Shader) Shaders.emplace(UID, Shader);
 
@@ -247,7 +253,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 			Reader.Read<U8>(U8Value);
 			SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
 
-			Render::PSampler Sampler = pGPU->CreateSampler(SamplerDesc);
+			Render::PSampler Sampler = GPU->CreateSampler(SamplerDesc);
 			if (Sampler.IsNullPtr()) FAIL;
 			Out.SamplerValues.emplace(ParamID, Sampler);
 		}
@@ -377,7 +383,7 @@ bool CGraphicsResourceManager::LoadRenderStateDesc(IO::CBinaryReader& Reader, Re
 
 Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 {
-	if (!pResMgr || !pGPU) return nullptr;
+	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
@@ -418,7 +424,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 		U32 Offset;
 		if (!Reader.Read(Offset)) return nullptr;
 
-		if (pGPU->SupportsShaderFormat(Format))
+		if (GPU->SupportsShaderFormat(Format))
 			Offsets.emplace(Format, Offset);
 	}
 
@@ -442,7 +448,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 		// Skip material meta size, read table
 		Reader.Read<U32>();
-		Render::PShaderParamTable MaterialParams = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
+		Render::PShaderParamTable MaterialParams = GPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 		if (!MaterialParams) return nullptr;
 
 		// Load techniques and select the best one for each input set
@@ -466,7 +472,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			U32 SkipOffset;
 			if (!Reader.Read(SkipOffset)) return nullptr;
 
-			if (static_cast<Render::EGPUFeatureLevel>(FeatureLevel) > pGPU->GetFeatureLevel())
+			if (static_cast<Render::EGPUFeatureLevel>(FeatureLevel) > GPU->GetFeatureLevel())
 			{
 				Reader.GetStream().Seek(SkipOffset, IO::Seek_Begin);
 				continue;
@@ -495,7 +501,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 				if (!Reader.Read(RSIndex)) return nullptr;
 			}
 
-			TechData.Params = pGPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
+			TechData.Params = GPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 			if (!TechData.Params) return nullptr;
 
 			// Tech is valid, mark its render states as used
@@ -519,7 +525,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			// Load only used render states
 			if (UsedRenderStateIndices.find(RSIndex) != UsedRenderStateIndices.cend())
 			{
-				RenderStates[RSIndex] = pGPU->CreateRenderState(Desc);
+				RenderStates[RSIndex] = GPU->CreateRenderState(Desc);
 				if (!RenderStates[RSIndex]) return nullptr;
 			}
 		}
@@ -561,7 +567,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 {
-	if (!pResMgr || !pGPU) return nullptr;
+	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
@@ -589,7 +595,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	Render::CShaderParamValues Values;
 	if (!LoadShaderParamValues(Reader, Table, Values)) return nullptr;
 
-	Render::CShaderParamStorage Storage(Table, *pGPU);
+	Render::CShaderParamStorage Storage(Table, *GPU);
 
 	// Constants will be filled into RAM buffers, and they will be used as initial data for immutable GPU buffers.
 	// D3D9 buffer is CPU+GPU, so it can be reused directly, but D3D11 requires data transfer.
@@ -597,8 +603,8 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	std::vector<Render::PConstantBuffer> RAMBuffers(Table.GetConstantBuffers().size());
 	for (size_t i = 0; i < Table.GetConstantBuffers().size(); ++i)
 	{
-		RAMBuffers[i] = pGPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_CPU_Write);
-		if (!pGPU->BeginShaderConstants(*RAMBuffers[i])) return nullptr;
+		RAMBuffers[i] = GPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_CPU_Write);
+		if (!GPU->BeginShaderConstants(*RAMBuffers[i])) return nullptr;
 	}
 
 	// Fill intermediate buffers with constant values
@@ -614,11 +620,11 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	for (size_t i = 0; i < Table.GetConstantBuffers().size(); ++i)
 	{
 		auto& Buffer = RAMBuffers[i];
-		if (!pGPU->CommitShaderConstants(*Buffer)) return nullptr;
+		if (!GPU->CommitShaderConstants(*Buffer)) return nullptr;
 
 		// Transfer temporary data to immutable VRAM if required
 		if (!(Buffer->GetAccessFlags() & Render::Access_GPU_Read))
-			Buffer = pGPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_GPU_Read, Buffer.Get());
+			Buffer = GPU->CreateConstantBuffer(*Table.GetConstantBuffer(i), Render::Access_GPU_Read, Buffer.Get());
 
 		Storage.SetConstantBuffer(i, Buffer);
 	}
@@ -645,7 +651,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 
 PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 {
-	if (!pResMgr || !pGPU) return nullptr;
+	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
@@ -724,11 +730,11 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		U32 Offset;
 		if (!Reader.Read(Offset)) return nullptr;
 
-		if (pGPU->SupportsShaderFormat(Format))
+		if (GPU->SupportsShaderFormat(Format))
 		{
 			Reader.GetStream().Seek(Offset, IO::Seek_Begin);
 
-			RP->Globals = pGPU->LoadShaderParamTable(Format, Reader.GetStream());
+			RP->Globals = GPU->LoadShaderParamTable(Format, Reader.GetStream());
 			if (!RP->Globals) return nullptr;
 
 			// NB: file has no useful data after this, so leave the stream at any position it is now

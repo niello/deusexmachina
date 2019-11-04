@@ -1,7 +1,6 @@
 #include "D3D11DisplayDriver.h"
 
 #include <Render/D3D11/D3D11DriverFactory.h>
-#include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #include <DXGI.h>
 
@@ -12,14 +11,20 @@ pDXGIOutput->GetParent(__uuidof(IDXGIAdapter1), (void**)&pAdapter);
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11DisplayDriver, 'D1DD', Render::CDisplayDriver);
+__ImplementClassNoFactory(Render::CD3D11DisplayDriver, Render::CDisplayDriver);
+
+CD3D11DisplayDriver::CD3D11DisplayDriver(CD3D11DriverFactory& DriverFactory)
+	: _DriverFactory(&DriverFactory)
+{
+}
+//---------------------------------------------------------------------
 
 bool CD3D11DisplayDriver::Init(UPTR AdapterNumber, UPTR OutputNumber)
 {
 	if (!CDisplayDriver::Init(AdapterNumber, OutputNumber)) FAIL;
 
 	IDXGIAdapter1* pAdapter = nullptr;
-	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter)))
+	if (!SUCCEEDED(_DriverFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter)))
 	{
 		Term();
 		FAIL;

@@ -24,7 +24,6 @@
 #include <IO/IOServer.h> //!!!DBG TMP!
 #include <IO/BinaryReader.h>
 #include <Data/RAMData.h>
-#include <Core/Factory.h>
 #include <string>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
@@ -41,15 +40,14 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11GPUDriver, '11GD', Render::CGPUDriver);
+__ImplementClassNoFactory(Render::CD3D11GPUDriver, Render::CGPUDriver);
 
-CD3D11GPUDriver::CD3D11GPUDriver():
-	SwapChains(1, 1),
-	CurrSRV(16, 16),
-	MaxSRVSlotIndex(0),
-	RenderStates(32, 32),
-	Samplers(16, 16),
-	MaxViewportCount(0) /*, IsInsideFrame(false)*/
+CD3D11GPUDriver::CD3D11GPUDriver(CD3D11DriverFactory& DriverFactory)
+	: _DriverFactory(&DriverFactory)
+	, SwapChains(1, 1)
+	, CurrSRV(16, 16)
+	, RenderStates(32, 32)
+	, Samplers(16, 16)
 {
 }
 //---------------------------------------------------------------------
@@ -64,7 +62,7 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 {
 	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;
 
-	n_assert(AdapterID == Adapter_AutoSelect || D3D11DrvFactory->AdapterExists(AdapterID));
+	n_assert(AdapterID == Adapter_AutoSelect || _DriverFactory->AdapterExists(AdapterID));
 
 	//!!!fix if will be multithreaded, forex job-based!
 	UPTR CreateFlags = D3D11_CREATE_DEVICE_SINGLETHREADED;
@@ -84,7 +82,7 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	// If we use nullptr adapter (Adapter_AutoSelect), new DXGI factory will be created. We avoid it.
 	IDXGIAdapter1* pAdapter = nullptr;
 	if (AdapterID == Adapter_AutoSelect) AdapterID = 0;
-	if (!SUCCEEDED(D3D11DrvFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter))) FAIL;
+	if (!SUCCEEDED(_DriverFactory->GetDXGIFactory()->EnumAdapters1(AdapterID, &pAdapter))) FAIL;
 
 	// NB: All mapped pointers will be SSE-friendly 16-byte aligned for these feature levels, and other
 	// code relies on it. Adding feature levels 9.x may require to change resource mapping code.
@@ -487,7 +485,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	// Instead, use CreateSwapChainForHwnd (c) Docs
 	//!!!can add requirement for a platform update for win 7 and use d3d11.1 + dxgi 1.2 codepath!
 
-	IDXGIFactory1* pDXGIFactory = D3D11DrvFactory->GetDXGIFactory();
+	IDXGIFactory1* pDXGIFactory = _DriverFactory->GetDXGIFactory();
 	IDXGISwapChain* pSwapChain = nullptr;
 	HRESULT hr = pDXGIFactory->CreateSwapChain(pD3DDevice, &SCDesc, &pSwapChain);
 
@@ -631,7 +629,7 @@ bool CD3D11GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDisp
 	{
 		IDXGIOutput* pOutput = nullptr;
 		if (FAILED(SC.pSwapChain->GetContainingOutput(&pOutput))) FAIL;
-		SC.TargetDisplay = D3D11DrvFactory->CreateDisplayDriver(pOutput);
+		SC.TargetDisplay = _DriverFactory->CreateDisplayDriver(pOutput);
 		if (!SC.TargetDisplay)
 		{
 			pOutput->Release();
@@ -752,7 +750,7 @@ PDisplayDriver CD3D11GPUDriver::GetSwapChainDisplay(UPTR SwapChainID) const
 	// that contains the most part of the swap chain window
 	IDXGIOutput* pOutput = nullptr;
 	if (FAILED(SC.pSwapChain->GetContainingOutput(&pOutput))) FAIL;
-	auto Display = D3D11DrvFactory->CreateDisplayDriver(pOutput);
+	auto Display = _DriverFactory->CreateDisplayDriver(pOutput);
 	if (!Display) pOutput->Release();
 	return Display;
 }
@@ -1622,7 +1620,7 @@ ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& Vertex
 
 	if (!pSignature)
 	{
-		pSignature = D3D11DrvFactory->FindShaderInputSignature(ShaderInputSignatureID);
+		pSignature = _DriverFactory->FindShaderInputSignature(ShaderInputSignatureID);
 		if (!pSignature) return nullptr;
 	}
 
@@ -2727,17 +2725,17 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 		// This must never happen for shaders built in DEM, so we omit handling this case.
 		if (InputSignatureID == 0)
 		{
-			if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
+			if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Data))) return nullptr;
 		}
 		*/
 
-		if (!D3D11DrvFactory->FindShaderInputSignature(InputSignatureID))
+		if (!_DriverFactory->FindShaderInputSignature(InputSignatureID))
 		{
 			if (pLibrary)
 			{
 				Data::PBuffer Buf = pLibrary->CopyRawData(InputSignatureID);
 				if (!Buf) return nullptr;
-				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(*Buf))) return nullptr;
+				if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(*Buf))) return nullptr;
 			}
 			else
 			{
@@ -2755,7 +2753,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 				Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
 				if (Buffer.GetSize() != FileSize) return nullptr;
 
-				if (!D3D11DrvFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
+				if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
 			}
 		}
 	}

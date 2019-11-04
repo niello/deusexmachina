@@ -31,7 +31,7 @@ class CGraphicsResourceManager : public Data::CRefCounted
 private:
 
 	Resources::CResourceManager* pResMgr = nullptr; //???strong ref?
-	Render::CGPUDriver* pGPU = nullptr; //???strong ref?
+	Render::PGPUDriver GPU;
 
 	std::unordered_map<CStrID, Render::PMesh>     Meshes;
 	std::unordered_map<CStrID, Render::PTexture>  Textures;
@@ -67,7 +67,7 @@ public:
 	//???render node pool?
 
 	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
-	Render::CGPUDriver*          GetGPU() const { return pGPU; }
+	Render::CGPUDriver*          GetGPU() const;
 };
 
 }

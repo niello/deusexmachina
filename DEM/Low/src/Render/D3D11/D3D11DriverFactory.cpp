@@ -15,7 +15,6 @@
 namespace Render
 {
 __ImplementClassNoFactory(Render::CD3D11DriverFactory, Render::CVideoDriverFactory);
-__ImplementSingleton(Render::CD3D11DriverFactory);
 
 bool CD3D11DriverFactory::Create()
 {
@@ -125,7 +124,7 @@ UPTR CD3D11DriverFactory::GetAdapterOutputCount(UPTR Adapter) const
 
 PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Output)
 {
-	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
+	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver(*this));
 	if (!Driver->Init(Adapter, Output)) Driver = nullptr;
 	return Driver.Get();
 }
@@ -134,7 +133,7 @@ PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(UPTR Adapter, UPTR Outpu
 PDisplayDriver CD3D11DriverFactory::CreateDisplayDriver(IDXGIOutput* pOutput)
 {
 	if (!pOutput) return nullptr;
-	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver);
+	PD3D11DisplayDriver Driver = n_new(CD3D11DisplayDriver(*this));
 	Driver->pDXGIOutput = pOutput;
 	//???determine adapter and output?
 	//if (!Driver->Init(Adapter, Output)) Driver = nullptr;
@@ -167,7 +166,7 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 	}
 #endif
 
-	PD3D11GPUDriver Driver = n_new(CD3D11GPUDriver);
+	PD3D11GPUDriver Driver = n_new(CD3D11GPUDriver(*this));
 	if (!Driver->Init(Adapter, DriverType)) Driver = nullptr;
 	return Driver.Get();
 }

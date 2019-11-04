@@ -28,6 +28,7 @@ typedef unsigned int UINT;
 
 namespace Render
 {
+typedef Ptr<class CD3D11DriverFactory> PD3D11DriverFactory;
 typedef Ptr<class CD3D11VertexLayout> PD3D11VertexLayout;
 typedef Ptr<class CD3D11VertexBuffer> PD3D11VertexBuffer;
 typedef Ptr<class CD3D11IndexBuffer> PD3D11IndexBuffer;
@@ -41,7 +42,7 @@ enum EUSMBufferType;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
-	__DeclareClass(CD3D11GPUDriver);
+	__DeclareClassNoFactory;
 
 public:
 
@@ -63,6 +64,8 @@ public:
 	};
 
 protected:
+
+	friend class CD3D11DriverFactory;
 
 	enum
 	{
@@ -100,7 +103,7 @@ protected:
 	PD3D11RenderState					NewRS;
 	D3D11_VIEWPORT*						CurrVP = nullptr;
 	RECT*								CurrSR = nullptr;	//???SR corresp to VP, mb set in pairs and use all 32 bits each for a pair?
-	UPTR								MaxViewportCount;
+	UPTR								MaxViewportCount = 0;
 	Data::CFlags						VPSRSetFlags;		// 16 low bits indicate whether VP is set or not, same for SR in 16 high bits
 	static const UPTR					VP_OR_SR_SET_FLAG_COUNT = 16;
 	CFixedArray<PD3D11ConstantBuffer>	CurrCB;
@@ -114,7 +117,7 @@ protected:
 
 	CDict<UPTR, CSRVRecord>				CurrSRV; // ShaderType|Register to SRV mapping, not to store all 128 possible SRV values per shader type
 
-	UPTR								MaxSRVSlotIndex;
+	UPTR								MaxSRVSlotIndex = 0;
 
 	CArray<CD3D11SwapChain>				SwapChains;
 	CDict<CStrID, PD3D11VertexLayout>	VertexLayouts;
@@ -123,6 +126,7 @@ protected:
 	//bool								IsInsideFrame;
 	//bool								Wireframe;
 
+	PD3D11DriverFactory                 _DriverFactory;
 	ID3D11Device*						pD3DDevice = nullptr;
 	ID3D11DeviceContext*				pD3DImmContext = nullptr;
 	//???store also D3D11.1 interfaces? and use for 11.1 methods only.
@@ -139,7 +143,7 @@ protected:
 	CDict<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list
 	CTmpCB*								pPendingCBHead = nullptr;
 
-	CD3D11GPUDriver();
+	CD3D11GPUDriver(CD3D11DriverFactory& DriverFactory);
 
 	bool								OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool								OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -169,11 +173,9 @@ protected:
 	bool								IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage = ShaderType_Invalid, UPTR ExceptSlot = 0);
 	void								FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot);
 
-	friend class CD3D11DriverFactory;
-
 public:
 
-	virtual ~CD3D11GPUDriver();
+	virtual ~CD3D11GPUDriver() override;
 
 	virtual bool				Init(UPTR AdapterNumber, EGPUDriverType DriverType) override;
 	virtual bool				CheckCaps(ECaps Cap) const override;
