@@ -62,30 +62,34 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 CView::~CView() = default;
 //---------------------------------------------------------------------
 
+// Pass empty RenderTargetID to use swap chain render target
 bool CView::CreateUIContext(CStrID RenderTargetID)
 {
 	if (!UI::CUIServer::HasInstance() || RTs.empty()) FAIL;
 
-	// Get render target for resolution
-	Render::CRenderTarget* pRT = nullptr;
+	const Render::CRenderTarget* pRT = nullptr;
+	const Render::CRenderTarget* pSwapChainRT = (_SwapChainID >= 0) ? _GraphicsMgr->GetGPU()->GetSwapChainRenderTarget(_SwapChainID) : nullptr;
 	if (RenderTargetID)
 	{
 		auto It = RTs.find(RenderTargetID);
-		if (It == RTs.cend()) FAIL;
+		if (It == RTs.cend() || !It->second) FAIL;
 		pRT = It->second;
 	}
-	else if (_GraphicsMgr && _SwapChainID >= 0)
+	else if (pSwapChainRT)
 	{
-		pRT = _GraphicsMgr->GetGPU()->GetSwapChainRenderTarget(_SwapChainID);
+		pRT = pSwapChainRT;
 	}
-
-	if (!pRT) FAIL;
+	else FAIL;
 
 	UI::CUIContextSettings UICtxSettings;
-	UICtxSettings.HostWindow = GetTargetWindow();
+
+	if (pRT == pSwapChainRT)
+		UICtxSettings.HostWindow = GetTargetWindow();
+
 	UICtxSettings.Width = static_cast<float>(pRT->GetDesc().Width);
 	UICtxSettings.Height = static_cast<float>(pRT->GetDesc().Height);
-	UIContext = UISrv->CreateContext(UICtxSettings);
+
+	UIContext = UI::CUIServer::Instance()->CreateContext(UICtxSettings);
 
 	return UIContext.IsValidPtr();
 }

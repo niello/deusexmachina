@@ -115,11 +115,10 @@ void CUIServer::Trigger(float FrameTime)
 
 PUIContext CUIServer::CreateContext(const CUIContextSettings& Settings)
 {
+	//???to UI context constructor? CEGUI context destroyed there, so must be created there too!
+	//???W+H+Window instead of CUIContextSettings?
 	CEGUI::RenderTarget* pTarget = Renderer->createViewportTarget(Settings.Width, Settings.Height);
-	CEGUI::GUIContext& CEGUICtx = CEGUISystem->createGUIContext(*pTarget);
-	PUIContext Ctx = n_new(CUIContext);
-	Ctx->Init(&CEGUICtx, Settings.HostWindow.Get());
-	return Ctx;
+	return n_new(CUIContext(&CEGUISystem->createGUIContext(*pTarget), Settings.HostWindow.Get()));
 }
 //---------------------------------------------------------------------
 

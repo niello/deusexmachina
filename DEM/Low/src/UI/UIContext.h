@@ -6,10 +6,10 @@
 // UI context is a set of elements rendered to one target and receiving the same input.
 // Each engine window or viewport may have it's own UI context independent of each other.
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 	typedef Ptr<class COSWindow> POSWindow;
-}}
+}
 
 namespace UI
 {
@@ -39,12 +39,9 @@ private:
 
 public:
 
-	//!!!pass OS window and render target params, either intermediate RT or swap chain index! or unify?
-	CUIContext();
+	//???pass RT params and create CEGUI context inside?
+	CUIContext(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow);
 	virtual ~CUIContext() override;
-
-	void				Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow);
-	//CEGUI::GUIContext*	GetCEGUIContext() const { return pCtx; }
 
 	// Pass absolute viewport coordinates here
 	bool				Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom);

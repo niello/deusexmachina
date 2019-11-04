@@ -12,38 +12,12 @@
 
 namespace UI
 {
-CUIContext::CUIContext() {}
 
-CUIContext::~CUIContext()
+CUIContext::CUIContext(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
+	: pCtx(pContext)
+	, OSWindow(pHostWindow)
 {
-	SAFE_DELETE(pInput);
-
-	if (pCtx)
-		CEGUI::System::getSingleton().destroyGUIContext(*pCtx);
-}
-//---------------------------------------------------------------------
-
-void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
-{
-	UNSUBSCRIBE_EVENT(OnToggleFullscreen);
-	UNSUBSCRIBE_EVENT(OSWindowResized);
-
-	SAFE_DELETE(pInput);
-
-	OSWindow = pHostWindow;
-	pCtx = pContext;
-
 	if (!pContext) return;
-
-	// FIXME: CEGUI doesn't calculate proper font size at the start
-	if (OSWindow)
-	{
-		const Data::CRect& WndRect = OSWindow->GetRect();
-		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
-
-		// FIXME: must be per-context, not global!
-		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
-	}
 
 	pInput = n_new(CEGUI::InputAggregator(pCtx));
 	pInput->initialise(InputEventsOnKeyUp);
@@ -51,9 +25,24 @@ void CUIContext::Init(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWin
 
 	if (pHostWindow)
 	{
+		// FIXME: CEGUI doesn't calculate proper font size at the start
+		// FIXME: must be per-context, not global!
+		const Data::CRect& WndRect = pHostWindow->GetRect();
+		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
+		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
+
 		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnToggleFullscreen, CUIContext, OnViewportSizeChanged);
 		DISP_SUBSCRIBE_NEVENT(pHostWindow, OSWindowResized, CUIContext, OnViewportSizeChanged);
 	}
+}
+//---------------------------------------------------------------------
+
+CUIContext::~CUIContext()
+{
+	SAFE_DELETE(pInput);
+
+	if (pCtx)
+		CEGUI::System::getSingleton().destroyGUIContext(*pCtx);
 }
 //---------------------------------------------------------------------
 

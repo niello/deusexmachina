@@ -47,11 +47,6 @@ namespace Input
 	typedef std::unique_ptr<class CInputTranslator> PInputTranslator;
 }
 
-namespace UI
-{
-	class CUIServer;
-}
-
 namespace Frame
 {
 	typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;

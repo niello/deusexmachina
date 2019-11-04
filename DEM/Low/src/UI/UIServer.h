@@ -57,8 +57,6 @@ struct CUIContextSettings
 	float				Height;
 };
 
-#define UISrv UI::CUIServer::Instance()
-
 class CUIServer
 {
 	__DeclareSingleton(CUIServer);
