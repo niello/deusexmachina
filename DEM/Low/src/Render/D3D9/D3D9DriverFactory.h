@@ -1,10 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_DRIVER_FACTORY_H__
-#define __DEM_L1_RENDER_D3D9_DRIVER_FACTORY_H__
-
 #include <Render/VideoDriverFactory.h>
-#include <Data/Singleton.h>
-#include <Data/HandleManager.h>
 
 // D3D9 implementation of CVideoDriverFactory
 
@@ -14,22 +9,19 @@ typedef enum _D3DMULTISAMPLE_TYPE D3DMULTISAMPLE_TYPE;
 
 namespace Render
 {
-#define D3D9DrvFactory Render::CD3D9DriverFactory::Instance()
 
 class CD3D9DriverFactory: public CVideoDriverFactory
 {
 	__DeclareClassNoFactory;
-	__DeclareSingleton(CD3D9DriverFactory);
 
 protected:
 
-	IDirect3D9*		pD3D9;
-	UPTR			AdapterCount;	// Valid during a lifetime of the D3D9 object
+	IDirect3D9* pD3D9 = nullptr;
+	UPTR        AdapterCount = 0;	// Valid during a lifetime of the D3D9 object
 
 public:
 
-	CD3D9DriverFactory(): pD3D9(nullptr), AdapterCount(0) { __ConstructSingleton; }
-	virtual ~CD3D9DriverFactory() { if (IsOpened()) Release(); __DestructSingleton; }
+	virtual ~CD3D9DriverFactory() override { if (IsOpened()) Release(); }
 
 	static D3DFORMAT		PixelFormatToD3DFormat(EPixelFormat Format);
 	static EPixelFormat		D3DFormatToPixelFormat(D3DFORMAT D3DFormat);
@@ -57,5 +49,3 @@ public:
 typedef Ptr<CD3D9DriverFactory> PD3D9DriverFactory;
 
 }
-
-#endif

@@ -24,7 +24,6 @@
 #include <System/SystemEvents.h>
 #include <Data/RAMData.h>
 #include <Data/Buffer.h>
-#include <Core/Factory.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>
@@ -34,10 +33,11 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9GPUDriver, 'D9GD', Render::CGPUDriver);
+__ImplementClassNoFactory(Render::CD3D9GPUDriver, Render::CGPUDriver);
 
-CD3D9GPUDriver::CD3D9GPUDriver():
-	SwapChains(1, 1)
+CD3D9GPUDriver::CD3D9GPUDriver(CD3D9DriverFactory& DriverFactory)
+	: _DriverFactory(&DriverFactory)
+	, SwapChains(1, 1)
 {
 }
 //---------------------------------------------------------------------
@@ -53,7 +53,7 @@ bool CD3D9GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	if (!CGPUDriver::Init(AdapterNumber, DriverType)) FAIL;
 
 	n_assert(AdapterID != Adapter_AutoSelect || Type != GPU_AutoSelect);
-	n_assert(AdapterID == Adapter_AutoSelect || D3D9DrvFactory->AdapterExists(AdapterID));
+	n_assert(AdapterID == Adapter_AutoSelect || _DriverFactory->AdapterExists(AdapterID));
 
 	Type = DriverType; // Cache requested value for further initialization
 	OK;
@@ -779,7 +779,7 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap) const
 		case Caps_VSTex_R16:
 		{
 			// return SUCCEEDED(...) returns false for some reason
-			HRESULT hr = SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
+			HRESULT hr = SUCCEEDED(_DriverFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
 																						GetD3DDriverType(Type),
 																						D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
 																						D3DUSAGE_QUERY_VERTEXTEXTURE,
@@ -788,7 +788,7 @@ bool CD3D9GPUDriver::CheckCaps(ECaps Cap) const
 			return SUCCEEDED(hr);
 		}
 		case Caps_ReadDepthAsTexture:
-			return SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
+			return SUCCEEDED(_DriverFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
 																				GetD3DDriverType(Type),
 																				D3DFMT_UNKNOWN, //D3DPresentParams.BackBufferFormat,
 																				D3DUSAGE_DEPTHSTENCIL,
@@ -896,7 +896,7 @@ bool CD3D9GPUDriver::GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESEN
 
 bool CD3D9GPUDriver::CreateD3DDevice(UPTR CurrAdapterID, EGPUDriverType CurrDriverType, D3DPRESENT_PARAMETERS D3DPresentParams)
 {
-	IDirect3D9* pD3D9 = D3D9DrvFactory->GetDirect3D9();
+	IDirect3D9* pD3D9 = _DriverFactory->GetDirect3D9();
 
 	D3DDEVTYPE D3DDriverType = GetD3DDriverType(CurrDriverType);
 
@@ -1128,7 +1128,7 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 		bool DeviceCreated = false;
 		if (AdapterID == Adapter_AutoSelect)
 		{
-			UPTR AdapterCount = D3D9DrvFactory->GetAdapterCount();
+			UPTR AdapterCount = _DriverFactory->GetAdapterCount();
 			for (UPTR CurrAdapterID = 0; CurrAdapterID < AdapterCount; ++CurrAdapterID)
 			{
 				DeviceCreated = CreateD3DDevice(CurrAdapterID, Type, D3DPresentParams);
@@ -1271,7 +1271,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDispl
 	}
 
 	// Only one output per adapter in a current implementation, use output ID 0 for default display
-	SC.TargetDisplay = pDisplay ? pDisplay : D3D9DrvFactory->CreateDisplayDriver(AdapterID, 0);
+	SC.TargetDisplay = pDisplay ? pDisplay : _DriverFactory->CreateDisplayDriver(AdapterID, 0);
 	if (SC.TargetDisplay.IsNullPtr()) FAIL;
 
 	CDisplayMode CurrentMode;
@@ -1377,7 +1377,7 @@ PDisplayDriver CD3D9GPUDriver::GetSwapChainDisplay(UPTR SwapChainID) const
 
 	// Only one output per adapter in a current implementation, use output ID 0 for default display
 	auto Display = SwapChains[SwapChainID].TargetDisplay;
-	return Display ? Display : D3D9DrvFactory->CreateDisplayDriver(AdapterID, 0);
+	return Display ? Display : _DriverFactory->CreateDisplayDriver(AdapterID, 0);
 }
 //---------------------------------------------------------------------
 
@@ -2582,7 +2582,7 @@ PDepthStencilBuffer CD3D9GPUDriver::CreateDepthStencilBuffer(const CRenderTarget
 	D3DFORMAT BBFmt = CD3D9DriverFactory::PixelFormatToD3DFormat(PixelFmt_DefaultBackBuffer);
 
 	// Make sure the device supports a depth buffer specified
-	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
+	HRESULT hr = _DriverFactory->GetDirect3D9()->CheckDeviceFormat(	AdapterID,
 																	GetD3DDriverType(Type),
 																	BBFmt,
 																	D3DUSAGE_DEPTHSTENCIL,
@@ -3714,7 +3714,7 @@ bool CD3D9GPUDriver::GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMU
 	};
 
 	DWORD QualLevels = 0;
-	HRESULT hr = D3D9DrvFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
+	HRESULT hr = _DriverFactory->GetDirect3D9()->CheckDeviceMultiSampleType(AdapterID,
 																			GetD3DDriverType(Type),
 																			Format,
 																			FALSE, // Windowed

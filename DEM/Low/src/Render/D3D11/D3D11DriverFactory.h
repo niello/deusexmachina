@@ -1,10 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_DRIVER_FACTORY_H__
-#define __DEM_L1_RENDER_D3D11_DRIVER_FACTORY_H__
-
 #include <Render/VideoDriverFactory.h>
-#include <Data/Singleton.h>
-#include <Data/HandleManager.h>
 #include <Data/HashTable.h>
 #include <Data/Buffer.h>
 #include <vector>
@@ -88,5 +83,3 @@ public:
 typedef Ptr<CD3D11DriverFactory> PD3D11DriverFactory;
 
 }
-
-#endif

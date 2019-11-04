@@ -21,6 +21,7 @@
 
 namespace Render
 {
+typedef Ptr<class CD3D9DriverFactory> PD3D9DriverFactory;
 typedef Ptr<class CD3D9VertexLayout> PD3D9VertexLayout;
 typedef Ptr<class CD3D9VertexBuffer> PD3D9VertexBuffer;
 typedef Ptr<class CD3D9IndexBuffer> PD3D9IndexBuffer;
@@ -34,9 +35,11 @@ class CSM30ConstantBufferParam;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
-	__DeclareClass(CD3D9GPUDriver);
+	__DeclareClassNoFactory;
 
 protected:
+
+	friend class CD3D9DriverFactory;
 
 	static const UPTR CB_Slot_Count = 4;				// Pseudoregisters for CB binding
 	static const UPTR SM30_VS_Int4Count = 16;
@@ -96,6 +99,7 @@ protected:
 	PD3D9Sampler						DefaultSampler;
 	bool								IsInsideFrame = false;
 
+	PD3D9DriverFactory                  _DriverFactory;
 	D3DCAPS9							D3DCaps;
 	IDirect3DDevice9*					pD3DDevice = nullptr;
 
@@ -111,7 +115,7 @@ protected:
 
 	Events::PSub						Sub_OnPaint; // Fullscreen-only, so only one swap chain will be subscribed
 
-	CD3D9GPUDriver();
+	CD3D9GPUDriver(CD3D9DriverFactory& DriverFactory);
 
 	// Events are received from swap chain windows, so subscriptions are in swap chains
 	bool						OnOSWindowToggleFullscreen(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -141,8 +145,6 @@ protected:
 	static D3DBLENDOP			GetD3DBlendOp(EBlendOp Operation);
 	static D3DTEXTUREADDRESS	GetD3DTexAddressMode(ETexAddressMode Mode);
 	static void					GetD3DTexFilter(ETexFilter Filter, D3DTEXTUREFILTERTYPE& OutMin, D3DTEXTUREFILTERTYPE& OutMag, D3DTEXTUREFILTERTYPE& OutMip);
-
-	friend class CD3D9DriverFactory;
 
 public:
 

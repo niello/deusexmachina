@@ -1,23 +1,23 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_DISPLAY_DRIVER_H__
-#define __DEM_L1_RENDER_D3D9_DISPLAY_DRIVER_H__
-
 #include <Render/DisplayDriver.h>
 
 // Direct3D9 display adapter driver
 
 namespace Render
 {
+typedef Ptr<class CD3D9DriverFactory> PD3D9DriverFactory;
 
 class CD3D9DisplayDriver: public CDisplayDriver
 {
-	__DeclareClass(CD3D9DisplayDriver);
+	__DeclareClassNoFactory;
 
 protected:
 
 	friend class CD3D9DriverFactory;
 
-	CD3D9DisplayDriver() {}
+	PD3D9DriverFactory _DriverFactory;
+
+	CD3D9DisplayDriver(CD3D9DriverFactory& DriverFactory);
 
 	virtual bool	Init(UPTR AdapterNumber, UPTR OutputNumber);
 	//virtual void	Term() { InternalTerm(); CDisplayDriver::Term(); } //???need? or never manually-destructible?
@@ -36,5 +36,3 @@ public:
 typedef Ptr<CD3D9DisplayDriver> PD3D9DisplayDriver;
 
 }
-
-#endif

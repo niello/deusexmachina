@@ -1,14 +1,19 @@
 #include "D3D9DisplayDriver.h"
 
 #include <Render/D3D9/D3D9DriverFactory.h>
-#include <Core/Factory.h>
 #define WIN32_LEAN_AND_MEAN
 #define D3D_DISABLE_9EX
 #include <d3d9.h>
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9DisplayDriver, 'D9DD', Render::CDisplayDriver);
+__ImplementClassNoFactory(Render::CD3D9DisplayDriver, Render::CDisplayDriver);
+
+CD3D9DisplayDriver::CD3D9DisplayDriver(CD3D9DriverFactory& DriverFactory)
+	: _DriverFactory(&DriverFactory)
+{
+}
+//---------------------------------------------------------------------
 
 bool CD3D9DisplayDriver::Init(UPTR AdapterNumber, UPTR OutputNumber)
 {
@@ -22,11 +27,11 @@ UPTR CD3D9DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vect
 {
 	D3DDISPLAYMODE D3DDisplayMode = { 0 };
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Format);
-	UINT ModeCount = D3D9DrvFactory->GetDirect3D9()->GetAdapterModeCount(AdapterID, D3DFormat);
+	UINT ModeCount = _DriverFactory->GetDirect3D9()->GetAdapterModeCount(AdapterID, D3DFormat);
 	UPTR Total = 0;
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
-		if (!SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->EnumAdapterModes(AdapterID, D3DFormat, i, &D3DDisplayMode))) continue;
+		if (!SUCCEEDED(_DriverFactory->GetDirect3D9()->EnumAdapterModes(AdapterID, D3DFormat, i, &D3DDisplayMode))) continue;
 		
 		CDisplayMode Mode(
 			D3DDisplayMode.Width,
@@ -51,10 +56,10 @@ bool CD3D9DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 {
 	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
 	D3DFORMAT D3DFormat = CD3D9DriverFactory::PixelFormatToD3DFormat(Mode.PixelFormat);
-	UINT ModeCount = D3D9DrvFactory->GetDirect3D9()->GetAdapterModeCount(AdapterID, D3DFormat);
+	UINT ModeCount = _DriverFactory->GetDirect3D9()->GetAdapterModeCount(AdapterID, D3DFormat);
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
-		if (!SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->EnumAdapterModes(AdapterID, D3DFormat, i, &D3DDisplayMode))) continue;
+		if (!SUCCEEDED(_DriverFactory->GetDirect3D9()->EnumAdapterModes(AdapterID, D3DFormat, i, &D3DDisplayMode))) continue;
 		if (Mode.Width == D3DDisplayMode.Width &&
 			Mode.Height == D3DDisplayMode.Height &&
 			D3DFormat == D3DDisplayMode.Format && //???doesn't always match?
@@ -69,7 +74,7 @@ bool CD3D9DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 bool CD3D9DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 {
 	D3DDISPLAYMODE D3DDisplayMode = { 0 }; 
-	if (!SUCCEEDED(D3D9DrvFactory->GetDirect3D9()->GetAdapterDisplayMode(AdapterID, &D3DDisplayMode))) FAIL;
+	if (!SUCCEEDED(_DriverFactory->GetDirect3D9()->GetAdapterDisplayMode(AdapterID, &D3DDisplayMode))) FAIL;
 	OutMode.Width = D3DDisplayMode.Width;
 	OutMode.Height = D3DDisplayMode.Height;
 	OutMode.PixelFormat = CD3D9DriverFactory::D3DFormatToPixelFormat(D3DDisplayMode.Format);
@@ -83,7 +88,7 @@ bool CD3D9DisplayDriver::GetCurrentDisplayMode(CDisplayMode& OutMode) const
 bool CD3D9DisplayDriver::GetDisplayMonitorInfo(CMonitorInfo& OutInfo) const
 {
 	//???store in CD3D9DisplayDriver on creation?
-	HMONITOR hMonitor = D3D9DrvFactory->GetDirect3D9()->GetAdapterMonitor(AdapterID);
+	HMONITOR hMonitor = _DriverFactory->GetDirect3D9()->GetAdapterMonitor(AdapterID);
 
 	MONITORINFO Win32MonitorInfo;
 	Win32MonitorInfo.cbSize = sizeof(Win32MonitorInfo);
