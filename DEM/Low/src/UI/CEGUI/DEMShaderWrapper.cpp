@@ -57,6 +57,10 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 
 	Render::CGPUDriver* pGPU = _Renderer.getGPUDriver();
 
+	// FIXME: no multipass support for now
+	UPTR LightCount = 0;
+	pGPU->SetRenderState(pTech->GetPasses(LightCount)[0]);
+
 	Render::CShaderParamStorage Storage(pTech->GetParamTable(), *pGPU);
 
 	const ShaderParameterBindings::ShaderParameterBindingsMap& paramMap = shaderParameterBindings->getShaderParameterBindings();
