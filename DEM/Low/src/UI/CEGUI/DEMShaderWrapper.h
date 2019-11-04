@@ -1,5 +1,5 @@
 #pragma once
-#include <Render/ShaderParamTable.h> // FIXME: ShaderParams / ShaderConstant?
+#include <Render/ShaderParamTable.h>
 #include <CEGUI/ShaderWrapper.h>
 #include <CEGUI/Renderer.h>
 #include <vector>

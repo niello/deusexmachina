@@ -200,6 +200,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/Sampler.h
 	DEM/Low/src/Render/SamplerDesc.h
 	DEM/Low/src/Render/Shader.h
+	DEM/Low/src/Render/ShaderConstantInfo.h
 	DEM/Low/src/Render/ShaderLibrary.h
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.h
 	DEM/Low/src/Render/ShaderParamStorage.h
@@ -447,6 +448,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/RenderStateDesc.cpp
 	DEM/Low/src/Render/RenderTarget.cpp
 	DEM/Low/src/Render/SamplerDesc.cpp
+	DEM/Low/src/Render/ShaderConstantInfo.cpp
 	DEM/Low/src/Render/ShaderLibrary.cpp
 	DEM/Low/src/Render/ShaderLibraryLoaderSLB.cpp
 	DEM/Low/src/Render/ShaderParamStorage.cpp

@@ -1,6 +1,6 @@
 #pragma once
 #include <Frame/RenderPhase.h>
-#include <Render/ShaderParamTable.h> // FIXME: ShaderParams / ShaderConstant?
+#include <Render/ShaderParamTable.h>
 #include <Data/Dictionary.h>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.

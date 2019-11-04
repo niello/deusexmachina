@@ -1,6 +1,6 @@
 #pragma once
 #include <Frame/RenderPhase.h>
-#include <Render/ShaderParamTable.h> // FIXME: ShaderParams / ShaderConstant?
+#include <Render/ShaderParamTable.h>
 
 // Performs setup of global shader variables and other frame-wide params.
 

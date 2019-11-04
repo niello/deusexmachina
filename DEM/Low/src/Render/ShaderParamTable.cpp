@@ -5,163 +5,7 @@ namespace Render
 {
 __ImplementClassNoFactory(IConstantBufferParam, Core::CObject);
 
-CShaderConstantInfo::~CShaderConstantInfo() = default;
-//---------------------------------------------------------------------
-
-// TODO: is there better way to clone fields from the base class?
-void CShaderConstantInfo::CShaderConstantInfo_CopyFields(const CShaderConstantInfo& Source)
-{
-	Struct = Source.Struct;
-	BufferIndex = Source.Struct;
-	Name = Source.Name;
-	LocalOffset = Source.LocalOffset;
-	ElementStride = Source.ElementStride;
-	ElementCount = Source.ElementCount;
-	VectorStride = Source.VectorStride;
-	ComponentSize = Source.ComponentSize;
-	Rows = Source.Rows;
-	Columns = Source.Columns;
-	Flags = Source.Flags;
-}
-//---------------------------------------------------------------------
-
-PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
-{
-	// An array, can't access members even if array element is a structure
-	if (ElementCount > 1) return nullptr;
-
-	// Not a structure
-	if (!Struct) return nullptr;
-
-	const auto MemberIndex = Struct->FindMemberIndex(Name);
-
-	// Has no member with requested Name
-	if (MemberIndex >= Struct->GetMemberCount()) return nullptr;
-
-	if (SubInfo)
-	{
-		// Cache is mapped to struct members, check at member index
-		if (SubInfo[MemberIndex]) return SubInfo[MemberIndex];
-	}
-	else
-	{
-		// Member cache is not created yet, allocate
-		SubInfo = std::make_unique<PShaderConstantInfo[]>(Struct->GetMemberCount());
-	}
-
-	auto& Member = SubInfo[MemberIndex];
-	Member = Struct->GetMember(MemberIndex)->Clone();
-	Member->BufferIndex = BufferIndex;
-
-	return SubInfo[MemberIndex];
-}
-//---------------------------------------------------------------------
-
-PShaderConstantInfo CShaderConstantInfo::GetElementInfo()
-{
-	// Not an array, is element itself 
-	if (ElementCount < 2) return this;
-
-	// If cache is valid, there is the only element there
-	if (SubInfo) return SubInfo[0];
-
-	SubInfo = std::make_unique<PShaderConstantInfo[]>(1);
-	SubInfo[0] = Clone();
-	SubInfo[0]->ElementCount = 1;
-
-	return SubInfo[0];
-}
-//---------------------------------------------------------------------
-
-PShaderConstantInfo CShaderConstantInfo::GetVectorInfo()
-{
-	// An array, can't access components
-	if (ElementCount > 1) return nullptr;
-
-	// Don't check if it is a structure, because structure must have MajorDim = 1
-	n_assert_dbg(!Struct);
-
-	// Not a matrix (2-dimensional object), has no vectors
-	const auto MajorDim = IsColumnMajor() ? Columns : Rows;
-	if (MajorDim < 2) return nullptr;
-
-	// If cache is valid, there are component at [0] and vector at [1]
-	if (SubInfo)
-	{
-		if (SubInfo[1]) return SubInfo[1];
-	}
-	else
-	{
-		SubInfo = std::make_unique<PShaderConstantInfo[]>(2);
-	}
-
-	SubInfo[1] = Clone();
-	if (IsColumnMajor())
-	{
-		SubInfo[1]->Columns = 1;
-		SubInfo[1]->ElementStride = ComponentSize * Rows;
-	}
-	else
-	{
-		SubInfo[1]->Rows = 1;
-		SubInfo[1]->ElementStride = ComponentSize * Columns;
-	}
-
-	return SubInfo[1];
-}
-//---------------------------------------------------------------------
-
-PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
-{
-	// An array, can't access components
-	if (ElementCount > 1) return nullptr;
-
-	// A structure, can't access components
-	if (Struct) return nullptr;
-
-	// Single component constant is a component itself
-	if (Rows < 2 && Columns < 2) return this;
-
-	// If cache is valid, there is component at [0]
-	if (SubInfo)
-	{
-		if (SubInfo[0]) return SubInfo[0];
-	}
-	else
-	{
-		// If it is a matrix, allocate slot for the row info too
-		const auto MajorDim = IsColumnMajor() ? Columns : Rows;
-		SubInfo = std::make_unique<PShaderConstantInfo[]>((MajorDim > 1) ? 2 : 1);
-	}
-
-	SubInfo[0] = Clone();
-	SubInfo[0]->Columns = 1;
-	SubInfo[0]->Rows = 1;
-	SubInfo[0]->ElementStride = ComponentSize;
-
-	return SubInfo[0];
-}
-//---------------------------------------------------------------------
-
-void CShaderStructureInfo::SetMembers(std::vector<PShaderConstantInfo>&& Members)
-{
-	_Members = std::move(Members);
-	std::sort(_Members.begin(), _Members.end(), [](const PShaderConstantInfo& a, const PShaderConstantInfo& b)
-	{
-		return a->Name < b->Name;
-	});
-}
-//---------------------------------------------------------------------
-
-size_t CShaderStructureInfo::FindMemberIndex(CStrID Name) const
-{
-	auto It = std::lower_bound(_Members.cbegin(), _Members.cend(), Name, [](const PShaderConstantInfo& Member, CStrID Name)
-	{
-		return Member->Name < Name;
-	});
-	return (It != _Members.cend() && (*It)->Name == Name) ? std::distance(_Members.cbegin(), It) : _Members.size();
-}
-//---------------------------------------------------------------------
+const CShaderConstantParam CShaderConstantParam::Empty;
 
 // Create sub-constant with offset precalculated in the parent
 CShaderConstantParam::CShaderConstantParam(PShaderConstantInfo Info, U32 Offset)
@@ -263,28 +107,28 @@ void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44
 
 CShaderConstantParam CShaderConstantParam::GetMember(CStrID Name) const
 {
-	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	if (!_Info) return CShaderConstantParam();
 	return CShaderConstantParam(_Info->GetMemberInfo(Name), _Offset + _Info->GetLocalOffset());
 }
 //---------------------------------------------------------------------
 
 CShaderConstantParam CShaderConstantParam::GetElement(U32 Index) const
 {
-	if (!_Info || _Info->GetElementCount() <= Index) return CShaderConstantParam(nullptr, 0);
+	if (!_Info || _Info->GetElementCount() <= Index) return CShaderConstantParam();
 	return CShaderConstantParam(_Info->GetElementInfo(), _Offset + Index * _Info->GetElementStride());
 }
 //---------------------------------------------------------------------
 
 CShaderConstantParam CShaderConstantParam::GetVector(U32 Index) const
 {
-	if (!_Info || _Info->Struct) return CShaderConstantParam(nullptr, 0);
+	if (!_Info || _Info->Struct) return CShaderConstantParam();
 	return CShaderConstantParam(_Info->GetVectorInfo(), _Offset + Index * _Info->GetVectorStride());
 }
 //---------------------------------------------------------------------
 
 CShaderConstantParam CShaderConstantParam::GetComponent(U32 Index) const
 {
-	if (!_Info || _Info->Struct) return CShaderConstantParam(nullptr, 0);
+	if (!_Info || _Info->Struct) return CShaderConstantParam();
 
 	const auto Rows = _Info->GetRowCount();
 	const auto Cols = _Info->GetColumnCount();
@@ -310,7 +154,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 		_Info->GetRowCount() <= Row ||
 		_Info->GetColumnCount() <= Column)
 	{
-		return CShaderConstantParam(nullptr, 0);
+		return CShaderConstantParam();
 	}
 
 	if (_Info->IsColumnMajor())
@@ -328,7 +172,7 @@ CShaderConstantParam CShaderConstantParam::GetComponent(U32 Row, U32 Column) con
 
 CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
 {
-	if (!_Info) return CShaderConstantParam(nullptr, 0);
+	if (!_Info) return CShaderConstantParam();
 
 	if (_Info->GetElementCount() > 1) return GetElement(Index);
 
@@ -339,7 +183,7 @@ CShaderConstantParam CShaderConstantParam::operator [](U32 Index) const
 	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
 	if (MinorDim) return GetComponent(Index);
 
-	return CShaderConstantParam(nullptr, 0);
+	return CShaderConstantParam();
 }
 //---------------------------------------------------------------------
 
@@ -353,22 +197,69 @@ CShaderParamTable::CShaderParamTable(std::vector<CShaderConstantParam>&& Constan
 	, _Resources(std::move(Resources))
 	, _Samplers(std::move(Samplers))
 {
+	_Constants.shrink_to_fit();
 	std::sort(_Constants.begin(), _Constants.end(), [](const CShaderConstantParam& a, const CShaderConstantParam& b)
 	{
 		return a.GetID() < b.GetID();
 	});
+
+	_ConstantBuffers.shrink_to_fit();
 	std::sort(_ConstantBuffers.begin(), _ConstantBuffers.end(), [](const PConstantBufferParam& a, const PConstantBufferParam& b)
 	{
 		return a->GetID() < b->GetID();
 	});
+
+	_Resources.shrink_to_fit();
 	std::sort(_Resources.begin(), _Resources.end(), [](const PResourceParam& a, const PResourceParam& b)
 	{
 		return a->GetID() < b->GetID();
 	});
+
+	_Samplers.shrink_to_fit();
 	std::sort(_Samplers.begin(), _Samplers.end(), [](const PSamplerParam& a, const PSamplerParam& b)
 	{
 		return a->GetID() < b->GetID();
 	});
+}
+//---------------------------------------------------------------------
+
+size_t CShaderParamTable::GetConstantIndex(CStrID ID) const
+{
+	auto It = std::lower_bound(_Constants.cbegin(), _Constants.cend(), ID, [](const CShaderConstantParam& Obj, CStrID ID)
+	{
+		return Obj.GetID() < ID;
+	});
+	return (It != _Constants.cend() && (*It).GetID() == ID) ? std::distance(_Constants.cbegin(), It) : _Constants.size();
+}
+//---------------------------------------------------------------------
+
+size_t CShaderParamTable::GetConstantBufferIndex(CStrID ID) const
+{
+	auto It = std::lower_bound(_ConstantBuffers.cbegin(), _ConstantBuffers.cend(), ID, [](const PConstantBufferParam& Obj, CStrID ID)
+	{
+		return Obj->GetID() < ID;
+	});
+	return (It != _ConstantBuffers.cend() && (*It)->GetID() == ID) ? std::distance(_ConstantBuffers.cbegin(), It) : _ConstantBuffers.size();
+}
+//---------------------------------------------------------------------
+
+size_t CShaderParamTable::GetResourceIndex(CStrID ID) const
+{
+	auto It = std::lower_bound(_Resources.cbegin(), _Resources.cend(), ID, [](const PResourceParam& Obj, CStrID ID)
+	{
+		return Obj->GetID() < ID;
+	});
+	return (It != _Resources.cend() && (*It)->GetID() == ID) ? std::distance(_Resources.cbegin(), It) : _Resources.size();
+}
+//---------------------------------------------------------------------
+
+size_t CShaderParamTable::GetSamplerIndex(CStrID ID) const
+{
+	auto It = std::lower_bound(_Samplers.cbegin(), _Samplers.cend(), ID, [](const PSamplerParam& Obj, CStrID ID)
+	{
+		return Obj->GetID() < ID;
+	});
+	return (It != _Samplers.cend() && (*It)->GetID() == ID) ? std::distance(_Samplers.cbegin(), It) : _Samplers.size();
 }
 //---------------------------------------------------------------------
 
