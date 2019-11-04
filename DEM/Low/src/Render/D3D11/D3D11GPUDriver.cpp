@@ -2776,7 +2776,6 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	std::vector<PConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
-		//auto ShaderTypeMask = R.Read<U8>();
 		auto Name = R.Read<CStrID>();
 		auto Register = R.Read<U32>();
 		auto Size = R.Read<U32>();

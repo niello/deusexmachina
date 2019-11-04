@@ -46,6 +46,8 @@ Render::CGPUDriver* CGraphicsResourceManager::GetGPU() const
 
 Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 {
+	if (!UID) return nullptr;
+
 	auto It = Meshes.find(UID);
 	if (It != Meshes.cend() && It->second) return It->second;
 
@@ -79,6 +81,8 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 
 Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFlags)
 {
+	if (!UID) return nullptr;
+
 	auto It = Textures.find(UID);
 	if (It != Textures.cend() && It->second)
 	{
@@ -105,6 +109,8 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 
 Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTable)
 {
+	if (!UID) return nullptr;
+
 	auto It = Shaders.find(UID);
 	if (It != Shaders.cend() && It->second)
 	{
@@ -157,6 +163,8 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 
 Render::PEffect CGraphicsResourceManager::GetEffect(CStrID UID)
 {
+	if (!UID) return nullptr;
+
 	auto It = Effects.find(UID);
 	if (It != Effects.cend() && It->second) return It->second;
 
@@ -171,6 +179,8 @@ Render::PEffect CGraphicsResourceManager::GetEffect(CStrID UID)
 
 Render::PMaterial CGraphicsResourceManager::GetMaterial(CStrID UID)
 {
+	if (!UID) return nullptr;
+
 	auto It = Materials.find(UID);
 	if (It != Materials.cend() && It->second) return It->second;
 
@@ -185,6 +195,8 @@ Render::PMaterial CGraphicsResourceManager::GetMaterial(CStrID UID)
 
 PRenderPath CGraphicsResourceManager::GetRenderPath(CStrID UID)
 {
+	if (!UID) return nullptr;
+
 	auto It = RenderPaths.find(UID);
 	if (It != RenderPaths.cend() && It->second) return It->second;
 
@@ -501,6 +513,8 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 				if (!Reader.Read(RSIndex)) return nullptr;
 			}
 
+			// Skip tech meta size, read table
+			Reader.Read<U32>();
 			TechData.Params = GPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 			if (!TechData.Params) return nullptr;
 

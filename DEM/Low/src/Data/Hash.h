@@ -15,7 +15,7 @@ inline uint32_t Hash(const void* pData, int Length)
 
 inline uint32_t Hash(const char* pStr)
 {
-	return Hash(pStr, strlen(pStr));
+	return pStr ? Hash(pStr, strlen(pStr)) : 0;
 }
 //---------------------------------------------------------------------
 
