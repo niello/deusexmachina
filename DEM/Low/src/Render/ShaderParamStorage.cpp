@@ -85,6 +85,9 @@ bool CShaderParamStorage::SetRawConstant(const CShaderConstantParam& Param, cons
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
 	Param.SetRawValue(*pCB, pData, Size);
 
 	OK;
@@ -96,6 +99,9 @@ bool CShaderParamStorage::SetFloat(const CShaderConstantParam& Param, float Valu
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
 
 	Param.SetFloat(*pCB, Value);
 
@@ -109,6 +115,9 @@ bool CShaderParamStorage::SetInt(const CShaderConstantParam& Param, I32 Value)
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
 	Param.SetInt(*pCB, Value);
 
 	OK;
@@ -120,6 +129,9 @@ bool CShaderParamStorage::SetUInt(const CShaderConstantParam& Param, U32 Value)
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
 
 	Param.SetUInt(*pCB, Value);
 
@@ -133,6 +145,9 @@ bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vec
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
 	Param.SetVector(*pCB, Value);
 
 	OK;
@@ -144,6 +159,9 @@ bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vec
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
 
 	Param.SetVector(*pCB, Value);
 
@@ -157,6 +175,9 @@ bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vec
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
 	Param.SetVector(*pCB, Value);
 
 	OK;
@@ -168,6 +189,9 @@ bool CShaderParamStorage::SetMatrix(const CShaderConstantParam& Param, const mat
 	if (!Param) FAIL;
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
+
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
 
 	Param.SetMatrix(*pCB, Value, ColumnMajor);
 
@@ -181,12 +205,14 @@ bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, cons
 	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
+	if (!pCB->IsInWriteMode())
+		_GPU->BeginShaderConstants(*pCB);
+
 	Param.SetMatrixArray(*pCB, pValues, Count, ColumnMajor);
 
 	OK;
 }
 //---------------------------------------------------------------------
-
 
 bool CShaderParamStorage::SetResource(CStrID ID, CTexture* pTexture)
 {
