@@ -1875,23 +1875,23 @@ PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(EUSMBufferTyp
 PConstantBuffer CD3D11GPUDriver::CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData)
 {
 	auto pUSMParam = Param.As<CUSMConstantBufferParam>();
-	if (!pD3DDevice || !pUSMParam || !pUSMParam->Size) return nullptr;
+	if (!pD3DDevice || !pUSMParam || !pUSMParam->GetSize()) return nullptr;
 
-	return InternalCreateConstantBuffer(pUSMParam->Type, pUSMParam->Size, AccessFlags, pData, false);
+	return InternalCreateConstantBuffer(pUSMParam->GetType(), pUSMParam->GetSize(), AccessFlags, pData, false);
 }
 //---------------------------------------------------------------------
 
 PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferParam& Param)
 {
 	auto pUSMParam = Param.As<CUSMConstantBufferParam>();
-	if (!pD3DDevice || !pUSMParam || !pUSMParam->Size) return nullptr;
+	if (!pD3DDevice || !pUSMParam || !pUSMParam->GetSize()) return nullptr;
 
 	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
 	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
-	UPTR NextPow2Size = n_max(16, NextPow2(pUSMParam->Size)/* * ElementCount; //!!!for StructuredBuffer!*/); 
+	UPTR NextPow2Size = n_max(16, NextPow2(pUSMParam->GetSize())/* * ElementCount; //!!!for StructuredBuffer!*/); 
 	CDict<UPTR, CTmpCB*>& BufferPool = 
-		pUSMParam->Type == USMBuffer_Structured ? TmpStructuredBuffers :
-		(pUSMParam->Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
+		pUSMParam->GetType() == USMBuffer_Structured ? TmpStructuredBuffers :
+		(pUSMParam->GetType() == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
 
 	IPTR Idx = BufferPool.FindIndex(NextPow2Size);
 	if (Idx != INVALID_INDEX)
@@ -1906,7 +1906,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 		}
 	}
 
-	return InternalCreateConstantBuffer(pUSMParam->Type, NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
+	return InternalCreateConstantBuffer(pUSMParam->GetType(), NextPow2Size, Access_CPU_Write | Access_GPU_Read, nullptr, true);
 }
 //---------------------------------------------------------------------
 
@@ -2778,15 +2778,23 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 	std::vector<PConstantBufferParam> Buffers(Count);
 	for (auto& BufferPtr : Buffers)
 	{
-		BufferPtr = n_new(CUSMConstantBufferParam);
-		auto& Buffer = static_cast<CUSMConstantBufferParam&>(*BufferPtr);
+		//auto ShaderTypeMask = R.Read<U8>();
+		auto Name = R.Read<CStrID>();
+		auto Register = R.Read<U32>();
+		auto Size = R.Read<U32>();
 
-		if (!R.Read(Buffer.Name)) return nullptr;
-		if (!R.Read(Buffer.Register)) return nullptr;
-		if (!R.Read(Buffer.Size)) return nullptr;
+		EUSMBufferType Type;
+		switch (Register >> 30)
+		{
+			case 0:		Type = USMBuffer_Constant; break;
+			case 1:		Type = USMBuffer_Texture; break;
+			case 2:		Type = USMBuffer_Structured; break;
+			default:	return nullptr;
+		};
 
-		//!!!???get type from register?
-		NOT_IMPLEMENTED;
+		Register &= 0x3fffffff; // Clear bits 30 and 31
+
+		BufferPtr = n_new(CUSMConstantBufferParam(Name, 0, Type, Register, Size));
 	}
 
 	if (!R.Read(Count)) return nullptr;
@@ -2854,7 +2862,7 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 		if (!R.Read(Info->Flags)) return nullptr;
 
 		auto pBuffer = static_cast<CUSMConstantBufferParam*>(Buffers[Info->BufferIndex].Get());
-		pBuffer->ShaderTypeMask |= ShaderTypeMask;
+		pBuffer->AddShaderTypes(ShaderTypeMask);
 
 		Const = CShaderConstantParam(Info);
 	}

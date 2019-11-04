@@ -69,18 +69,26 @@ class CUSMConstantBufferParam : public IConstantBufferParam
 {
 	__DeclareClassNoFactory;
 
+protected:
+
+	CStrID         _Name;
+	EUSMBufferType _Type;
+	U32            _Register;
+	U32            _Size;           // For structured buffers - StructureByteStride
+	U8             _ShaderTypeMask;
+
 public:
 
-	CStrID         Name;
-	EUSMBufferType Type;
-	U32            Register;
-	U32            Size;           // For structured buffers - StructureByteStride
-	U8             ShaderTypeMask;
+	CUSMConstantBufferParam(CStrID Name, U8 ShaderTypeMask, EUSMBufferType Type, U32 Register, U32 Size);
 
-	virtual CStrID GetID() const override { return Name; }
+	virtual CStrID GetID() const override { return _Name; }
 	virtual bool   Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 	virtual void   Unapply(CGPUDriver& GPU, CConstantBuffer* pValue) const override;
 	virtual bool   IsBufferCompatible(CConstantBuffer& Value) const override;
+
+	EUSMBufferType GetType() const { return _Type; }
+	U32            GetSize() const { return _Size; }
+	void           AddShaderTypes(U8 Mask) { _ShaderTypeMask |= Mask; }
 };
 
 class CUSMResourceParam : public IResourceParam

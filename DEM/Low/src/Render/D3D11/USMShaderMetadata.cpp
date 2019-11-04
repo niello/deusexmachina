@@ -131,6 +131,16 @@ void CUSMConstantInfo::SetBools(CConstantBuffer& CB, U32 Offset, const bool* pVa
 }
 //---------------------------------------------------------------------
 
+CUSMConstantBufferParam::CUSMConstantBufferParam(CStrID Name, U8 ShaderTypeMask, EUSMBufferType Type, U32 Register, U32 Size)
+	: _Name(Name)
+	, _Type(Type)
+	, _Register(Register)
+	, _Size(Size)
+	, _ShaderTypeMask(ShaderTypeMask)
+{
+}
+//---------------------------------------------------------------------
+
 bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) const
 {
 	auto pGPU = Cast<CD3D11GPUDriver>(GPU);
@@ -141,9 +151,9 @@ bool CUSMConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) co
 
 	for (U8 i = 0; i < ShaderType_COUNT; ++i)
 	{
-		if (ShaderTypeMask & (1 << i))
+		if (_ShaderTypeMask & (1 << i))
 		{
-			if (!pGPU->BindConstantBuffer(static_cast<EShaderType>(i), Type, Register, pCB)) FAIL;
+			if (!pGPU->BindConstantBuffer(static_cast<EShaderType>(i), _Type, _Register, pCB)) FAIL;
 		}
 	}
 
@@ -168,7 +178,17 @@ void CUSMConstantBufferParam::Unapply(CGPUDriver& GPU, CConstantBuffer* pValue) 
 bool CUSMConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 {
 	const auto* pCB = Cast<CD3D11ConstantBuffer>(Value);
-	return pCB && Type == pCB->GetType() && Size <= pCB->GetSizeInBytes();
+	return pCB && _Type == pCB->GetType() && _Size <= pCB->GetSizeInBytes();
+}
+//---------------------------------------------------------------------
+
+CUSMResourceParam::CUSMResourceParam(CStrID Name, U8 ShaderTypeMask, EUSMResourceType Type, U32 RegisterStart, U32 RegisterCount)
+	: _Name(Name)
+	, _Type(Type)
+	, _RegisterStart(RegisterStart)
+	, _RegisterCount(RegisterCount)
+	, _ShaderTypeMask(ShaderTypeMask)
+{
 }
 //---------------------------------------------------------------------
 
@@ -205,6 +225,15 @@ void CUSMResourceParam::Unapply(CGPUDriver& GPU, CTexture* pValue) const
 	if (!pTex) return;
 
 	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
+CUSMSamplerParam::CUSMSamplerParam(CStrID Name, U8 ShaderTypeMask, U32 RegisterStart, U32 RegisterCount)
+	: _Name(Name)
+	, _RegisterStart(RegisterStart)
+	, _RegisterCount(RegisterCount)
+	, _ShaderTypeMask(ShaderTypeMask)
+{
 }
 //---------------------------------------------------------------------
 

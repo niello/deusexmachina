@@ -90,6 +90,12 @@ void CShaderConstantParam::SetBoolArray(CConstantBuffer& CB, const bool* pValues
 }
 //---------------------------------------------------------------------
 
+void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex, bool ColumnMajor) const
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 void CShaderConstantParam::InternalSetMatrix(CConstantBuffer& CB, const matrix44& Value) const
 {
 	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();

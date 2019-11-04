@@ -73,26 +73,114 @@ CConstantBuffer* CShaderParamStorage::GetConstantBuffer(size_t Index, bool Creat
 }
 //---------------------------------------------------------------------
 
-bool CShaderParamStorage::SetRawConstant(CStrID ID, const void* pData, UPTR Size)
+bool CShaderParamStorage::SetRawConstant(const CShaderConstantParam& Param, const void* pData, UPTR Size)
 {
-	return SetRawConstant(_Table->GetConstantIndex(ID), pData, Size);
-}
-//---------------------------------------------------------------------
-
-bool CShaderParamStorage::SetRawConstant(size_t Index, const void* pData, UPTR Size)
-{
-	if (Index >= _Table->GetConstants().size()) FAIL;
-
-	const auto& Constant = _Table->GetConstant(Index);
-
-	auto* pCB = GetConstantBuffer(Constant.GetConstantBufferIndex());
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
 	if (!pCB) FAIL;
 
-	Constant.SetRawValue(*pCB, pData, Size);
+	Param.SetRawValue(*pCB, pData, Size);
 
 	OK;
 }
 //---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetFloat(const CShaderConstantParam& Param, float Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetFloat(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetInt(const CShaderConstantParam& Param, I32 Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetInt(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetUInt(const CShaderConstantParam& Param, U32 Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetUInt(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vector2& Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetVector(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vector3& Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetVector(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetVector(const CShaderConstantParam& Param, const vector4& Value)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetVector(*pCB, Value);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetMatrix(const CShaderConstantParam& Param, const matrix44& Value, bool ColumnMajor)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetMatrix(*pCB, Value, ColumnMajor);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CShaderParamStorage::SetMatrixArray(const CShaderConstantParam& Param, const matrix44* pValues, UPTR Count, bool ColumnMajor)
+{
+	if (!Param) FAIL;
+	auto* pCB = GetConstantBuffer(Param.GetConstantBufferIndex());
+	if (!pCB) FAIL;
+
+	Param.SetMatrixArray(*pCB, pValues, Count, ColumnMajor);
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 
 bool CShaderParamStorage::SetResource(CStrID ID, CTexture* pTexture)
 {

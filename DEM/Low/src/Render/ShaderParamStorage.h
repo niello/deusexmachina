@@ -1,5 +1,5 @@
 #pragma once
-#include <Render/RenderFwd.h>
+#include <Render/ShaderParamTable.h>
 
 // Shader parameter storage stores values in a form ready to be committed to the GPU.
 // In a combination with shader parameter table this class simplifies the process of
@@ -7,8 +7,6 @@
 // Indices are stable and can be used as handles for fast parameter setting.
 // Constant buffers are managed automatically. User can set the buffer explicitly
 // or a temporary one will be created at the first time it is required.
-
-//???!!!offset indices / add type bits to avoid using an index for parameter of another class?!
 
 namespace Render
 {
@@ -36,8 +34,8 @@ public:
 	CConstantBuffer*         CreatePermanentConstantBuffer(size_t Index, U8 AccessFlags);
 	CConstantBuffer*         GetConstantBuffer(size_t Index, bool Create = true);
 
-	bool                     SetRawConstant(CStrID ID, const void* pData, UPTR Size);
-	bool                     SetRawConstant(size_t Index, const void* pData, UPTR Size);
+	bool                     SetRawConstant(CStrID ID, const void* pData, UPTR Size) { return SetRawConstant(_Table->GetConstant(ID), pData, Size); }
+	bool                     SetRawConstant(size_t Index, const void* pData, UPTR Size) { return SetRawConstant(_Table->GetConstant(Index), pData, Size); }
 	bool                     SetRawConstant(const CShaderConstantParam& Param, const void* pData, UPTR Size);
 	bool                     SetFloat(const CShaderConstantParam& Param, float Value);
 	bool                     SetInt(const CShaderConstantParam& Param, I32 Value);
