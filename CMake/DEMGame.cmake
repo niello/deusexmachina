@@ -56,7 +56,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Process.h
 	DEM/Game/src/Game/ProcessContext.h
 	DEM/Game/src/Game/Property.h
-	DEM/Game/src/Game/SceneNodeValidateAttrs.h
 	DEM/Game/src/Game/Target.h
 	DEM/Game/src/Game/TargetEntity.h
 	DEM/Game/src/Game/TargetGround.h
@@ -128,7 +127,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/GameServer.cpp
 	DEM/Game/src/Game/Process.cpp
 	DEM/Game/src/Game/Property.cpp
-	DEM/Game/src/Game/SceneNodeValidateAttrs.cpp
 	DEM/Game/src/Game/TargetEntity.cpp
 	DEM/Game/src/Game/TargetGround.cpp
 	DEM/Game/src/Physics/CharacterController.cpp

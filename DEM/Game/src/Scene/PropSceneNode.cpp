@@ -2,7 +2,6 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Game/SceneNodeValidateAttrs.h>
 #include <Scripting/PropScriptable.h>
 #include <Scene/Events/SetTransform.h>
 #include <Render/Model.h>
@@ -10,6 +9,7 @@
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceCreator.h>
 #include <Frame/NodeAttrRenderable.h>
+#include <Frame/SceneNodeValidateAttrs.h>
 #include <Physics/NodeAttrCollision.h>
 #include <Data/DataArray.h>
 #include <IO/PathUtils.h>
@@ -81,8 +81,7 @@ bool CPropSceneNode::InternalActivate()
 
 		PathNode->AddChild(GetEntity()->GetUID(), *Node.Get());
 
-		Game::CSceneNodeValidateAttrs Visitor;
-		Visitor.Level = GetEntity()->GetLevel();
+		Frame::CSceneNodeValidateAttrs Visitor(*GetEntity()->GetLevel()->_pGRM);
 		Node->AcceptVisitor(Visitor);
 	}
 	else

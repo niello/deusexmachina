@@ -2,9 +2,7 @@
 
 #include <Game/GameLevel.h>
 #include <Game/GameLevelView.h>
-#include <Game/SceneNodeValidateAttrs.h>
 #include <AI/AIServer.h>
-#include <Frame/SceneNodeValidateResources.h>
 #include <Frame/SceneNodeUpdateInSPS.h>
 #include <Frame/NodeAttrCamera.h>
 #include <Physics/PhysicsLevel.h>
@@ -203,10 +201,10 @@ bool CGameServer::IsLevelLoaded(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::ValidateAllLevels(Render::CGPUDriver* pGPU)
+bool CGameServer::ValidateAllLevels(Frame::CGraphicsResourceManager* pGRM)
 {
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
-		if (!Levels.ValueAt(i)->Validate(pGPU)) FAIL;
+		if (!Levels.ValueAt(i)->Validate(pGRM)) FAIL;
 	OK;
 }
 //---------------------------------------------------------------------

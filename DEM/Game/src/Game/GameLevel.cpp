@@ -2,9 +2,9 @@
 
 #include <Frame/View.h>
 #include <Frame/NodeAttrCamera.h>
+#include <Frame/SceneNodeValidateAttrs.h>
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
-#include <Game/SceneNodeValidateAttrs.h>
 #include <Scripting/ScriptObject.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
@@ -218,15 +218,14 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 //???validation or activation? activation must be one-time, validation must only validate resources!
 //!!!OnLevelValidated and OnLevelActivated must be separate events!
-bool CGameLevel::Validate(Render::CGPUDriver* pGPU)
+bool CGameLevel::Validate(Frame::CGraphicsResourceManager* pGRM)
 {
-	HostGPU = pGPU;
+	_pGRM = pGRM;
 
 	bool Result;
 	if (SceneRoot.IsValidPtr())
 	{
-		CSceneNodeValidateAttrs Visitor;
-		Visitor.Level = this;
+		Frame::CSceneNodeValidateAttrs Visitor(*_pGRM);
 		Result = SceneRoot->AcceptVisitor(Visitor);
 	}
 	else Result = true; // Nothing to validate

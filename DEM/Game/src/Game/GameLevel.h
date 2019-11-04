@@ -1,10 +1,7 @@
 #pragma once
-#ifndef __DEM_L2_GAME_LEVEL_H__
-#define __DEM_L2_GAME_LEVEL_H__
-
 #include <Events/EventDispatcher.h>
 #include <Scene/SPS.h>
-#include <Render/GPUDriver.h>
+#include <Frame/GraphicsResourceManager.h> // FIXME: view, not model!
 #include <Data/Regions.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
@@ -64,17 +61,19 @@ protected:
 	Scene::CSPS					SPS;			// Spatial partitioning structure
 	Physics::PPhysicsLevel		PhysicsLevel;
 	AI::PAILevel				AILevel;
-	Render::PGPUDriver			HostGPU;
 
 	bool OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 
 public:
 
+	// FIXME: view, not model!
+	Frame::CGraphicsResourceManager* _pGRM = nullptr;
+
 	CGameLevel();
 	virtual ~CGameLevel();
 
 	bool					Load(CStrID LevelID, const Data::CParams& Desc);
-	bool					Validate(Render::CGPUDriver* pGPU);
+	bool					Validate(Frame::CGraphicsResourceManager* pGRM);
 	void					Term();
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
 	//void					RenderDebug();
@@ -105,11 +104,8 @@ public:
 	Scene::CSPS*			GetSPS() { return &SPS; }
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
 	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
-	Render::CGPUDriver*		GetHostGPU() const { return HostGPU.Get(); }
 };
 
 typedef Ptr<CGameLevel> PGameLevel;
 
 }
-
-#endif

@@ -9,8 +9,8 @@ namespace Render
 {
 __ImplementClass(Render::CTerrain, 'TERR', Render::IRenderable);
 
-CTerrain::CTerrain() {}
-CTerrain::~CTerrain() {}
+CTerrain::CTerrain() = default;
+CTerrain::~CTerrain() = default;
 
 PRenderable CTerrain::Clone()
 {
