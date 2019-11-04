@@ -2877,6 +2877,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 
 			Member.LocalOffset = RegisterStart * BytesPerRegister;
 			Member.ElementStride = ElementRegisterCount * BytesPerRegister;
+			Member.CalculateCachedValues();
 		}
 
 		Struct.SetMembers(std::move(Members));
@@ -2955,6 +2956,7 @@ PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode
 
 		Info->LocalOffset *= BytesPerRegister;
 		Info->ElementStride = ElementRegisterCount * BytesPerRegister;
+		Info->CalculateCachedValues();
 
 		Const = CShaderConstantParam(Info);
 	}

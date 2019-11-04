@@ -35,6 +35,7 @@ public:
 	CStrID               Name;
 	U32                  LocalOffset;
 	U32                  ElementStride;
+	U32                  ElementSize;
 	U32                  ElementCount;
 	U32                  VectorStride;
 	U32                  ComponentSize;
@@ -43,6 +44,8 @@ public:
 	U8                   Flags;
 
 	virtual ~CShaderConstantInfo() override;
+
+	virtual void CalculateCachedValues() = 0;
 
 	virtual void SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const = 0;
 	virtual void SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const = 0;
@@ -54,14 +57,13 @@ public:
 	size_t GetConstantBufferIndex() const { return BufferIndex; }
 	U32    GetLocalOffset() const { return LocalOffset; }
 	U32    GetElementStride() const { return ElementStride; }
+	U32    GetElementSize() const { return ElementSize; }
 	U32    GetElementCount() const { return ElementCount; }
 	U32    GetVectorStride() const { NOT_IMPLEMENTED_MSG("Init value!"); return VectorStride; }
 	U32    GetComponentSize() const { NOT_IMPLEMENTED_MSG("Init value!"); return ComponentSize; }
 	U32    GetRowCount() const { return Rows; }
 	U32    GetColumnCount() const { return Columns; }
 	bool   IsColumnMajor() const { return Flags & EShaderConstantFlags::ColumnMajor; }
-	bool   HasElementPadding() const;
-	bool   NeedConversionFrom(/*type*/) const;
 
 	PShaderConstantInfo GetMemberInfo(CStrID Name);
 	PShaderConstantInfo GetElementInfo();

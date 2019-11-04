@@ -50,6 +50,37 @@ PShaderConstantInfo CSM30ConstantInfo::Clone() const
 }
 //---------------------------------------------------------------------
 
+// FIXME: to constructor? or even to shader metadata file?
+// Packing is by whole registers, and only BOOL registers are scalar, others are 4-component
+void CSM30ConstantInfo::CalculateCachedValues()
+{
+	ComponentSize = 4; // All register components are 32-bit
+
+	if (Struct)
+	{
+		VectorStride = 0;
+		ElementSize = ElementStride;
+	}
+	else
+	{
+		const auto MajorDim = IsColumnMajor() ? Columns : Rows;
+		const auto MinorDim = IsColumnMajor() ? Rows : Columns;
+		if (RegisterSet == Reg_Bool)
+		{
+			// TODO: could check how bool vectors and matrices work on sm3.0,
+			// but no one probably will ever use that
+			VectorStride = MinorDim * ComponentSize;
+			ElementSize = MajorDim * VectorStride;
+		}
+		else
+		{
+			VectorStride = (MajorDim > 1 ? 4 : MinorDim) * ComponentSize;
+			ElementSize = (MajorDim - 1) * VectorStride + MinorDim * ComponentSize;
+		}
+	}
+}
+//---------------------------------------------------------------------
+
 void CSM30ConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

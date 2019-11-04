@@ -41,6 +41,8 @@ public:
 
 	ESM30RegisterSet RegisterSet;
 
+	virtual void CalculateCachedValues() override;
+
 	virtual void SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const override;
 	virtual void SetFloats(CConstantBuffer& CB, U32 Offset, const float* pValue, UPTR Count) const override;
 	virtual void SetInts(CConstantBuffer& CB, U32 Offset, const I32* pValue, UPTR Count) const override;

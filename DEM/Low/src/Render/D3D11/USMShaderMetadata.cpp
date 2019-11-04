@@ -46,6 +46,27 @@ PShaderConstantInfo CUSMConstantInfo::Clone() const
 }
 //---------------------------------------------------------------------
 
+// FIXME: to constructor? or even to shader metadata file?
+// https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules
+void CUSMConstantInfo::CalculateCachedValues()
+{
+	ComponentSize = 4; // All register components are 32-bit
+
+	if (Struct)
+	{
+		VectorStride = 0;
+		ElementSize = ElementStride;
+	}
+	else
+	{
+		const auto MajorDim = IsColumnMajor() ? Columns : Rows;
+		const auto MinorDim = IsColumnMajor() ? Rows : Columns;
+		VectorStride = (MajorDim > 1 ? 4 : MinorDim) * ComponentSize;
+		ElementSize = (MajorDim - 1) * VectorStride + MinorDim * ComponentSize;
+	}
+}
+//---------------------------------------------------------------------
+
 void CUSMConstantInfo::SetRawValue(CConstantBuffer& CB, U32 Offset, const void* pValue, UPTR Size) const
 {
 	if (!pValue || !Size) return;

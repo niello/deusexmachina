@@ -2828,6 +2828,8 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 			if (!R.Read(Member.Columns)) return nullptr;
 			if (!R.Read(Member.Rows)) return nullptr;
 			if (!R.Read(Member.Flags)) return nullptr;
+
+			Member.CalculateCachedValues();
 		}
 
 		Struct.SetMembers(std::move(Members));
@@ -2863,6 +2865,8 @@ PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCod
 
 		auto pBuffer = static_cast<CUSMConstantBufferParam*>(Buffers[Info->BufferIndex].Get());
 		pBuffer->AddShaderTypes(ShaderTypeMask);
+
+		Info->CalculateCachedValues();
 
 		Const = CShaderConstantParam(Info);
 	}

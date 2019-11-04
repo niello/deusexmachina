@@ -50,18 +50,20 @@ static inline void SetArray(CShaderConstantInfo* Info, CConstantBuffer& CB, U32 
 
 	Offset += StartIndex * Info->GetElementStride();
 
-	if (Info->HasElementPadding() || Info->NeedConversionFrom(/*float*/))
+	if (Info->GetElementStride() == Info->GetElementSize())
 	{
+		// Can write sequentially, there are no padding gaps
+		SetValues(Info, CB, Offset, pValues, Count);
+	}
+	else
+	{
+		//Write elements one by one, skipping padding gaps
 		const auto* pEnd = pValues + Count;
 		for (; pValues < pEnd; ++pValues)
 		{
 			SetValues(Info, CB, Offset, pValues, 1);
 			Offset += Info->GetElementStride();
 		}
-	}
-	else
-	{
-		SetValues(Info, CB, Offset, pValues, Count);
 	}
 }
 //---------------------------------------------------------------------

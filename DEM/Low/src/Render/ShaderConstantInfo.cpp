@@ -49,6 +49,7 @@ PShaderConstantInfo CShaderConstantInfo::GetMemberInfo(CStrID Name)
 	auto& Member = SubInfo[MemberIndex];
 	Member = Struct->GetMember(MemberIndex)->Clone();
 	Member->BufferIndex = BufferIndex;
+	Member->CalculateCachedValues();
 
 	return SubInfo[MemberIndex];
 }
@@ -65,6 +66,7 @@ PShaderConstantInfo CShaderConstantInfo::GetElementInfo()
 	SubInfo = std::make_unique<PShaderConstantInfo[]>(1);
 	SubInfo[0] = Clone();
 	SubInfo[0]->ElementCount = 1;
+	SubInfo[0]->CalculateCachedValues();
 
 	return SubInfo[0];
 }
@@ -104,6 +106,8 @@ PShaderConstantInfo CShaderConstantInfo::GetVectorInfo()
 		SubInfo[1]->ElementStride = ComponentSize * Columns;
 	}
 
+	SubInfo[1]->CalculateCachedValues();
+
 	return SubInfo[1];
 }
 //---------------------------------------------------------------------
@@ -135,6 +139,7 @@ PShaderConstantInfo CShaderConstantInfo::GetComponentInfo()
 	SubInfo[0]->Columns = 1;
 	SubInfo[0]->Rows = 1;
 	SubInfo[0]->ElementStride = ComponentSize;
+	SubInfo[0]->CalculateCachedValues();
 
 	return SubInfo[0];
 }
