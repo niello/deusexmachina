@@ -460,7 +460,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 		// Skip material meta size, read table
 		Reader.Read<U32>();
-		Render::PShaderParamTable MaterialParams = GPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
+		MaterialParams = GPU->LoadShaderParamTable(Pair.first, Reader.GetStream());
 		if (!MaterialParams) return nullptr;
 
 		// Load techniques and select the best one for each input set
@@ -521,6 +521,8 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 			// Tech is valid, mark its render states as used
 			for (auto RSIndex : TechData.RSIndices)
 				UsedRenderStateIndices.insert(RSIndex);
+
+			TechPerInputSet.emplace(InputSet, std::move(TechData));
 		}
 
 		// Load only used render states
