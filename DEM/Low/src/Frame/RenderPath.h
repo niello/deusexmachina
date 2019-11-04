@@ -42,14 +42,14 @@ protected:
 		U8		StencilClearValue;
 	};
 
-	std::map<CStrID, CRenderTargetSlot>		RTSlots;
-	std::map<CStrID, CDepthStencilSlot>		DSSlots;
-
-	std::vector<PRenderPhase>				Phases;
-
-	Render::PShaderParamTable				Globals;
+	std::map<CStrID, CRenderTargetSlot> RTSlots;
+	std::map<CStrID, CDepthStencilSlot> DSSlots;
 
 public:
+
+	// FIXME: for loading
+	std::vector<PRenderPhase>           Phases;
+	Render::PShaderParamTable           Globals;
 
 	CRenderPath();
 	virtual ~CRenderPath() override;

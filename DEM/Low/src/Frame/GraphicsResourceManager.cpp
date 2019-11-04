@@ -713,8 +713,6 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 
 	// Read global params compatible with our GPU
 
-	Render::PShaderParamTable GlobalParams;
-
 	U32 ShaderFormatCount;
 	if (!Reader.Read<U32>(ShaderFormatCount)) return nullptr;
 
@@ -730,8 +728,8 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		{
 			Reader.GetStream().Seek(Offset, IO::Seek_Begin);
 
-			GlobalParams = pGPU->LoadShaderParamTable(Format, Reader.GetStream());
-			if (!GlobalParams) return nullptr;
+			RP->Globals = pGPU->LoadShaderParamTable(Format, Reader.GetStream());
+			if (!RP->Globals) return nullptr;
 
 			// NB: file has no useful data after this, so leave the stream at any position it is now
 			break;
@@ -755,6 +753,8 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 
 		Phases[i] = CurrPhase;
 	}
+
+	RP->Phases = std::move(Phases);
 
 	return RP.Get();
 }
