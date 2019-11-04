@@ -1,6 +1,7 @@
 #include "GraphicsResourceManager.h"
 #include <Frame/RenderPath.h>
 #include <Frame/RenderPhase.h>
+#include <Frame/View.h>
 #include <Render/GPUDriver.h>
 #include <Render/VertexLayout.h>
 #include <Render/Texture.h>
@@ -779,6 +780,12 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	RP->Phases = std::move(Phases);
 
 	return RP.Get();
+}
+//---------------------------------------------------------------------
+
+PView CGraphicsResourceManager::CreateView(CStrID RenderPathID, int SwapChainID, CStrID SwapChainRenderTargetID)
+{
+	return PView(n_new(CView(*this, RenderPathID, SwapChainID, SwapChainRenderTargetID)));
 }
 //---------------------------------------------------------------------
 

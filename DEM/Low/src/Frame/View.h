@@ -68,6 +68,10 @@ protected:
 	ELODType									MaterialLODType = LOD_None;
 	CFixedArray<float>							MaterialLODScale;
 
+	friend class CGraphicsResourceManager;
+
+	CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID, CStrID SwapChainRTID);
+
 public:
 
 	//???add viewport settings here? to render multiple views into one RT
@@ -83,7 +87,6 @@ public:
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
-	CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
 	~CView();
 
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars

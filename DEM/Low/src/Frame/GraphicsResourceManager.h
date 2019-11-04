@@ -25,6 +25,7 @@ namespace Frame
 {
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 typedef Ptr<class CRenderPath> PRenderPath;
+typedef std::unique_ptr<class CView> PView;
 
 class CGraphicsResourceManager : public Data::CRefCounted
 {
@@ -61,10 +62,7 @@ public:
 	Render::PMaterial GetMaterial(CStrID UID);
 	PRenderPath       GetRenderPath(CStrID ID);
 
-	//???CreateView here? or CView constructor is enough?
-
-	//???temporary CBs?
-	//???render node pool?
+	PView             CreateView(CStrID RenderPathID, int SwapChainID = INVALID_INDEX, CStrID SwapChainRenderTargetID = CStrID::Empty);
 
 	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
 	Render::CGPUDriver*          GetGPU() const;
