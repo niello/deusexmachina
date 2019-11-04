@@ -175,6 +175,14 @@ bool CSM30ConstantBufferParam::IsBufferCompatible(CConstantBuffer& Value) const
 }
 //---------------------------------------------------------------------
 
+CSM30ResourceParam::CSM30ResourceParam(CStrID Name, U8 ShaderTypeMask, U32 Register)
+	: _Name(Name)
+	, _Register(Register)
+	, _ShaderTypeMask(ShaderTypeMask)
+{
+}
+//---------------------------------------------------------------------
+
 bool CSM30ResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 {
 	auto pGPU = Cast<CD3D9GPUDriver>(GPU);
@@ -208,6 +216,16 @@ void CSM30ResourceParam::Unapply(CGPUDriver& GPU, CTexture* pValue) const
 	if (!pTex) return;
 
 	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
+CSM30SamplerParam::CSM30SamplerParam(CStrID Name, U8 ShaderTypeMask, ESM30SamplerType Type, U32 RegisterStart, U32 RegisterCount)
+	: _Name(Name)
+	, _Type(Type)
+	, _RegisterStart(RegisterStart)
+	, _RegisterCount(RegisterCount)
+	, _ShaderTypeMask(ShaderTypeMask)
+{
 }
 //---------------------------------------------------------------------
 
