@@ -110,6 +110,6 @@ struct CRenderState
 	void SetFlags(uint32_t Mask, bool On)
 	{
 		if (On) Flags |= Mask;
-		else Flags &= !Mask;
+		else Flags &= ~Mask;
 	}
 };
