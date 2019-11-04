@@ -1,7 +1,10 @@
 #include "ModelAttribute.h"
 #include <Frame/GraphicsResourceManager.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Render/Model.h>
 #include <Render/Mesh.h>
+#include <Render/MeshData.h>
 #include <Render/Material.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>
@@ -51,7 +54,20 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-bool CModelAttribute::ValidateResources(CGraphicsResourceManager& ResMgr)
+bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
+{
+	if (!Renderable) FAIL;
+
+	auto pModel = static_cast<Render::CModel*>(Renderable.get());
+
+	// Store mesh data pointer for GPU-independent local AABB access
+	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(MeshUID);
+	pModel->MeshData = RMeshData->ValidateObject<Render::CMeshData>();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
 	if (!Renderable) FAIL;
 

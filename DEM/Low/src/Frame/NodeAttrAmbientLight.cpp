@@ -34,7 +34,7 @@ bool CNodeAttrAmbientLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR C
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrAmbientLight::ValidateResources(CGraphicsResourceManager& ResMgr)
+bool CNodeAttrAmbientLight::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
 	IrradianceMap = ResMgr.GetTexture(UIDIrradianceMap, Render::Access_GPU_Read);
 	RadianceEnvMap = ResMgr.GetTexture(UIDRadianceEnvMap, Render::Access_GPU_Read);

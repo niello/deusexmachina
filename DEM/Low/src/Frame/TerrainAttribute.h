@@ -19,7 +19,8 @@ protected:
 public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
-	virtual bool                  ValidateResources(CGraphicsResourceManager& ResMgr) override;
+	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
+	virtual bool                  ValidateGPUResources(CGraphicsResourceManager& ResMgr) override;
 	virtual Scene::PNodeAttribute Clone() override;
 };
 

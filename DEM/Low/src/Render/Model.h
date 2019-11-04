@@ -10,6 +10,7 @@
 namespace Render
 {
 typedef Ptr<class CMesh> PMesh;
+typedef Ptr<class CMeshData> PMeshData;
 typedef Ptr<class CMaterial> PMaterial;
 
 class CModel: public IRenderable
@@ -18,10 +19,11 @@ class CModel: public IRenderable
 
 public:
 
-	PMaterial			Material; //???!!!materialset!?
-	PMesh				Mesh;
-	UPTR				MeshGroupIndex = 0;
-	CFixedArray<int>	BoneIndices;	// For skinning splits due to shader constants limit only
+	PMaterial        Material; //???!!!materialset!?
+	PMesh            Mesh;
+	PMeshData        MeshData;           // For GPU-independent AABB access
+	UPTR             MeshGroupIndex = 0;
+	CFixedArray<int> BoneIndices;        // For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
 

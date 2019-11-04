@@ -45,7 +45,7 @@ public:
 	virtual Scene::PNodeAttribute	Clone();
 	void							UpdateInSPS(Scene::CSPS& SPS);
 
-	bool							ValidateResources(CGraphicsResourceManager& ResMgr);
+	bool							ValidateGPUResources(CGraphicsResourceManager& ResMgr);
 	bool							GetGlobalAABB(CAABB& OutBox) const;
 	Render::CTexture*				GetIrradianceMap() const { return IrradianceMap.Get(); }
 	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }

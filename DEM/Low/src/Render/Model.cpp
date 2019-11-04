@@ -1,5 +1,6 @@
 #include "Model.h"
 #include <Render/Mesh.h>
+#include <Render/MeshData.h>
 #include <Render/Material.h>
 #include <Core/Factory.h>
 
@@ -20,8 +21,11 @@ PRenderable CModel::Clone()
 
 bool CModel::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	if (Mesh.IsNullPtr() || !Mesh->IsResourceValid()) FAIL;
-	const Render::CPrimitiveGroup* pGroup = Mesh->GetGroup(MeshGroupIndex, LOD);
+	const CPrimitiveGroup* pGroup =
+		MeshData ? MeshData->GetGroup(MeshGroupIndex, LOD) :
+		Mesh ? Mesh->GetGroup(MeshGroupIndex, LOD) :
+		nullptr;
+
 	if (!pGroup) FAIL;
 	OutBox = pGroup->AABB;
 	OK;

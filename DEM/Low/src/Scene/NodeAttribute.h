@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_NODE_ATTR_H__
-#define __DEM_L1_SCENE_NODE_ATTR_H__
-
 #include <Core/Object.h>
 #include <Data/Flags.h>
 #include <Data/StringID.h>
@@ -13,6 +10,11 @@
 namespace IO
 {
 	class CBinaryReader;
+}
+
+namespace Resources
+{
+	class CResourceManager;
 }
 
 namespace Scene
@@ -47,7 +49,8 @@ public:
 	virtual void			OnDetachFromNode() { pNode = nullptr; }
 	virtual void			OnDetachFromScene() { }
 
-	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) { FAIL; }
+	virtual bool			LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) { OK; }
+	virtual bool            ValidateResources(Resources::CResourceManager& ResMgr) { OK; }
 	virtual PNodeAttribute	Clone() = 0;
 	virtual void			Update(const vector3* pCOIArray, UPTR COICount);
 	void					RemoveFromNode();
@@ -59,5 +62,3 @@ public:
 };
 
 }
-
-#endif

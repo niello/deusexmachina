@@ -38,10 +38,10 @@ protected:
 
 public:
 
-	virtual bool         ValidateResources(CGraphicsResourceManager& ResMgr) = 0;
+	virtual bool         ValidateGPUResources(CGraphicsResourceManager& ResMgr) = 0;
 	void                 UpdateInSPS(Scene::CSPS& SPS);
 
-	bool                 GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const; //!!!can get from a spatial record!
+	bool                 GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
 	Render::IRenderable* GetRenderable() const { return Renderable.get(); }
 };
 

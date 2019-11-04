@@ -52,14 +52,15 @@ void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 
 bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	n_assert_dbg(pNode);
+	if (!pNode) FAIL;
+
 	if (pSPSRecord && Flags.IsNot(WorldMatrixChanged)) //!!! && LocalBox not changed!
 	{
 		OutBox = pSPSRecord->GlobalBox;
 	}
 	else
 	{
-		if (!Renderable->GetLocalAABB(OutBox, LOD)) FAIL;
+		if (!Renderable || !Renderable->GetLocalAABB(OutBox, LOD)) FAIL;
 		OutBox.Transform(pNode->GetWorldMatrix());
 	}
 

@@ -1,4 +1,4 @@
-#include "SceneNodeValidateResources.h"
+#include "SceneNodeValidateGPUResources.h"
 #include <Scene/SceneNode.h>
 #include <Frame/NodeAttrRenderable.h>
 #include <Frame/NodeAttrAmbientLight.h>
@@ -6,7 +6,7 @@
 namespace Frame
 {
 
-bool CSceneNodeValidateResources::Visit(Scene::CSceneNode& Node)
+bool CSceneNodeValidateGPUResources::Visit(Scene::CSceneNode& Node)
 {
 	//???active only?
 	for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
@@ -14,12 +14,12 @@ bool CSceneNodeValidateResources::Visit(Scene::CSceneNode& Node)
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (auto RenderableAttr = Attr.As<CNodeAttrRenderable>())
 		{
-			if (!RenderableAttr->ValidateResources(_ResMgr)) FAIL;
+			if (!RenderableAttr->ValidateGPUResources(_ResMgr)) FAIL;
 		}
 		else if (auto LightAttr = Attr.As<CNodeAttrAmbientLight>())
 		{
 			//???must be IRenderable?
-			if (!LightAttr->ValidateResources(_ResMgr)) FAIL;
+			if (!LightAttr->ValidateGPUResources(_ResMgr)) FAIL;
 		}
 	}
 

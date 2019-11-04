@@ -89,7 +89,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
 	DEM/Low/src/Frame/RenderPhaseGlobalSetup.h
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.h
-	DEM/Low/src/Frame/SceneNodeValidateResources.h
+	DEM/Low/src/Frame/SceneNodeValidateGPUResources.h
 	DEM/Low/src/Frame/SkyboxAttribute.h
 	DEM/Low/src/Frame/TerrainAttribute.h
 	DEM/Low/src/Frame/View.h
@@ -365,7 +365,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
 	DEM/Low/src/Frame/RenderPhaseGlobalSetup.cpp
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.cpp
-	DEM/Low/src/Frame/SceneNodeValidateResources.cpp
+	DEM/Low/src/Frame/SceneNodeValidateGPUResources.cpp
 	DEM/Low/src/Frame/SkyboxAttribute.cpp
 	DEM/Low/src/Frame/TerrainAttribute.cpp
 	DEM/Low/src/Frame/View.cpp

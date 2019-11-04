@@ -36,7 +36,7 @@ bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-bool CSkyboxAttribute::ValidateResources(CGraphicsResourceManager& ResMgr)
+bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
 	if (!Renderable) FAIL;
 

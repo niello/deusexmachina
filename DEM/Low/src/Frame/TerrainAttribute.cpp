@@ -55,7 +55,19 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 }
 //---------------------------------------------------------------------
 
-bool CTerrainAttribute::ValidateResources(CGraphicsResourceManager& ResMgr)
+bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
+{
+	if (!Renderable) FAIL;
+
+	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
+
+	auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(CDLODDataUID);
+	pTerrain->CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
+	OK;
+}
+//---------------------------------------------------------------------
+
+bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
 	if (!Renderable || !ResMgr.GetGPU()) FAIL;
 
@@ -63,18 +75,22 @@ bool CTerrainAttribute::ValidateResources(CGraphicsResourceManager& ResMgr)
 	//!!!write R32F variant!
 	if (!ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) FAIL;
 
-	auto RCDLODData = ResMgr.GetResourceManager()->RegisterResource<Render::CCDLODData>(CDLODDataUID);
-	auto CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
+	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
+
+	if (!pTerrain->CDLODData)
+	{
+		// Could load CDLOD data right here, but let's enforce right calling order for now
+		::Sys::Error("CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
+		FAIL;
+	}
 
 	//!!!if CDLOD will not include texture, just height data, create texture here, if not created!
 	//can create CDLOD textures here per GPU with fixed sub-ID, so with no unnecessary recreation
 
-	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
-
 	pTerrain->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
 	pTerrain->HeightMap = HeightMapUID ? ResMgr.GetTexture(HeightMapUID, Render::Access_GPU_Read) : nullptr;
 
-	U32 PatchSize = CDLODData->GetPatchSize();
+	U32 PatchSize = pTerrain->CDLODData->GetPatchSize();
 	if (IsPow2(PatchSize) && PatchSize >= 4)
 	{
 		CString PatchName;
