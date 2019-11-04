@@ -83,7 +83,7 @@ public:
 	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
-	CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
+	CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID = INVALID_INDEX, CStrID SwapChainRTID = CStrID::Empty);
 	~CView();
 
 	//named/indexed texture RTs and mb named readonly system textures and named shader vars

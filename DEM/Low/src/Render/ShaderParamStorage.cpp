@@ -8,6 +8,9 @@
 namespace Render
 {
 
+CShaderParamStorage::CShaderParamStorage() = default;
+//---------------------------------------------------------------------
+
 CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU, bool UnapplyOnDestruction)
 	: _Table(&Table)
 	, _GPU(&GPU)
@@ -20,6 +23,9 @@ CShaderParamStorage::CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& G
 //---------------------------------------------------------------------
 
 CShaderParamStorage::CShaderParamStorage(CShaderParamStorage&& Other) = default;
+//---------------------------------------------------------------------
+
+CShaderParamStorage& CShaderParamStorage::operator =(CShaderParamStorage&& Other) = default;
 //---------------------------------------------------------------------
 
 CShaderParamStorage::~CShaderParamStorage()

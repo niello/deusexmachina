@@ -19,12 +19,21 @@
 namespace Frame
 {
 
-CView::CView(CRenderPath& RenderPath, CGraphicsResourceManager& GraphicsMgr, int SwapChainID, CStrID SwapChainRTID)
+CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID, CStrID SwapChainRTID)
 	: _GraphicsMgr(&GraphicsMgr)
 	, _SwapChainID(SwapChainID)
-	, _RenderPath(&RenderPath)
-	, Globals(RenderPath.GetGlobalParamTable(), *GraphicsMgr.GetGPU(), true)
 {
+	// Obtain the render path resource
+
+	_RenderPath = GraphicsMgr.GetRenderPath(RenderPathID);
+	if (!_RenderPath)
+	{
+		::Sys::Error("CView() > no render path with ID " + RenderPathID);
+		return;
+	}
+
+	Globals = Render::CShaderParamStorage(_RenderPath->GetGlobalParamTable(), *GraphicsMgr.GetGPU(), true);
+		
 	// Allocate storage for global shader params
 
 	auto& GlobalParams = _RenderPath->GetGlobalParamTable();

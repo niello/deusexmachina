@@ -25,9 +25,12 @@ protected:
 
 public:
 
+	CShaderParamStorage();
 	CShaderParamStorage(CShaderParamTable& Table, CGPUDriver& GPU, bool UnapplyOnDestruction = false);
 	CShaderParamStorage(CShaderParamStorage&& Other);
 	~CShaderParamStorage();
+
+	CShaderParamStorage& operator =(CShaderParamStorage&& Other);
 
 	bool                     SetConstantBuffer(CStrID ID, CConstantBuffer* pBuffer);
 	bool                     SetConstantBuffer(size_t Index, CConstantBuffer* pBuffer);

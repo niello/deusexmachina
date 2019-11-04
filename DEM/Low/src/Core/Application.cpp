@@ -600,7 +600,7 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Hei
 // Initializes 3D graphics, resources etc and makes an application ready to work with 3D scenes.
 // This function is intended for fast typical setup and may be completely replaced with an application
 // code if more sophisticated initialization is required. Don't call more than once!
-Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID, CStrID SwapChainRTID)
+Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDriverFactory Gfx)
 {
 	// Register render path classes in the factory
 
@@ -629,8 +629,6 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 		return nullptr;
 	}
 
-	Frame::CGraphicsResourceManager FrameMgr(*ResMgr, *GPU);
-
 	// Register resource loaders
 
 	ResMgr->RegisterDefaultCreator("slb", &Render::CShaderLibrary::RTTI, n_new(Resources::CShaderLibraryLoaderSLB(*ResMgr)));
@@ -643,14 +641,9 @@ Frame::PView CApplication::BootstrapView(Render::PVideoDriverFactory Gfx, U32 Wi
 	ResMgr->RegisterDefaultCreator("tga", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderTGA(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("prm", &Physics::CCollisionShape::RTTI, n_new(Resources::CCollisionShapeLoaderPRM(*ResMgr)));
 
-	// Create and setup the main window
+	// Return graphics resource manager object, which allows to create frame views
 
-	const int SwapChainID = CreateRenderWindow(*GPU, WindowWidth, WindowHeight);
-	ExitOnWindowClosed(GPU->GetSwapChainWindow(SwapChainID));
-
-	// Create a frame view based on the specified render path
-
-	return Frame::PView(n_new(Frame::CView(*FrameMgr.GetRenderPath(CStrID(pRenderPathID)), FrameMgr, SwapChainID, SwapChainRTID)));
+	return n_new(Frame::CGraphicsResourceManager(*ResMgr, *GPU));
 }
 //---------------------------------------------------------------------
 

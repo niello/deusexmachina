@@ -54,7 +54,7 @@ namespace UI
 
 namespace Frame
 {
-	typedef std::unique_ptr<class CView> PView;
+	typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 }
 
 namespace DEM
@@ -165,7 +165,7 @@ public:
 	//POSConsoleWindow CreateConsoleWindow();
 
 	// Quickstart methods
-	Frame::PView		BootstrapView(Render::PVideoDriverFactory Gfx, U32 WindowWidth, U32 WindowHeight, const char* pRenderPathID, CStrID SwapChainRTID);
+	Frame::PGraphicsResourceManager BootstrapGraphics(Render::PVideoDriverFactory Gfx);
 };
 
 }
