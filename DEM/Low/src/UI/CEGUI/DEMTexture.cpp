@@ -181,7 +181,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 			{
 				const U32 Pixel = *pSrc++;
 				const U32 Tmp = Pixel & 0x00FF00FF;
-				*pDest++ = Pixel & 0xFF00FF00 | (Tmp << 16) | (Tmp >> 16);
+				*pDest++ = (Pixel & 0xFF00FF00) | (Tmp << 16) | (Tmp >> 16);
 			}
 		}
 	}
@@ -197,7 +197,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	Data->Desc.Type = Render::Texture_2D;
 	Data->Desc.Width = (UPTR)buffer_size.d_width;
 	Data->Desc.Height = (UPTR)buffer_size.d_height;
-	Data->Desc.Depth = 1;
+	Data->Desc.Depth = 0;
 	Data->Desc.MipLevels = 1;
 	Data->Desc.ArraySize = 1;
 	Data->Desc.Format = CEGUIPixelFormatToPixelFormat(pixel_format);
@@ -220,17 +220,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 
 void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 {
-	if (DEMTexture.IsNullPtr()) return;
-
-	U32 SrcPitch = ((U32)area.getWidth()) * 4;
-
-	//!!!convert only if format is not supported!
-	U32* pBuf = n_new_array(U32, static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight()));
-	blitFromSurface(static_cast<const U32*>(sourceData), pBuf, area.getSize(), SrcPitch);
-
-	Render::CImageData SrcData;
-	SrcData.pData = (char*)pBuf;
-	SrcData.RowPitch = SrcPitch;
+	if (DEMTexture.IsNullPtr() || !sourceData) return;
 
 	Data::CBox Region(
 		static_cast<int>(area.left()),
@@ -240,10 +230,26 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 		static_cast<unsigned int>(area.getHeight()),
 		0);
 
-	bool Result = Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region);
+	Render::CImageData SrcData;
+	SrcData.RowPitch = static_cast<U32>(area.getWidth()) * 4;
 
-	n_delete_array(pBuf);
-	n_assert(Result);
+	if (DEMTexture->GetDesc().Format == Render::PixelFmt_R8G8B8A8)
+	{
+		SrcData.pData = (char*)sourceData;
+		n_verify(Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region));
+	}
+	else
+	{
+		// Convert from RGBA to texture format
+		const auto PixelCount = static_cast<size_t>(area.getWidth()) * static_cast<size_t>(area.getHeight());
+		U32* pBuf = (U32*)n_malloc_aligned(PixelCount * sizeof(U32), 16);
+		blitFromSurface(static_cast<const U32*>(sourceData), pBuf, area.getSize(), SrcData.RowPitch);
+
+		SrcData.pData = (char*)pBuf;
+		n_verify(Owner.getGPUDriver()->WriteToResource(*DEMTexture, SrcData, 0, 0, &Region));
+
+		n_free_aligned(pBuf);
+	}
 }
 //--------------------------------------------------------------------
 
