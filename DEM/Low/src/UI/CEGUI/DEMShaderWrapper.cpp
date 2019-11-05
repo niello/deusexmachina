@@ -3,8 +3,6 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/Effect.h>
-#include <Render/ShaderParamStorage.h>
-#include <Render/ShaderParamTable.h>
 #include <Render/SamplerDesc.h>
 #include <Render/Sampler.h>
 #include <UI/CEGUI/DEMRenderer.h>
@@ -41,27 +39,66 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 	static const CStrID RegularClipped("RegularClippedUI");
 	static const CStrID PremultipliedClipped("PremultipliedClippedUI");
 	static const CStrID OpaqueClipped("OpaqueClippedUI");
+
+	CStrID NewInputSet;
 	if (Opaque)
-		_CurrInputSet = Clipped ? OpaqueClipped : OpaqueUnclipped;
+		NewInputSet = Clipped ? OpaqueClipped : OpaqueUnclipped;
 	else if (BlendMode == BlendMode::RttPremultiplied)
-		_CurrInputSet = Clipped ? PremultipliedClipped : PremultipliedUnclipped;
+		NewInputSet = Clipped ? PremultipliedClipped : PremultipliedUnclipped;
 	else
-		_CurrInputSet = Clipped ? RegularClipped : RegularUnclipped;
+		NewInputSet = Clipped ? RegularClipped : RegularUnclipped;
+
+	if (_CurrInputSet == NewInputSet) return;
+
+	_CurrInputSet = NewInputSet;
+
+	auto It = _TechCache.find(NewInputSet);
+	if (It == _TechCache.cend())
+	{
+		static const CStrID sidTextureID("BoundTexture");
+		static const CStrID sidSamplerID("LinearSampler");
+		static const CStrID sidWVP("WVP");
+		static const CStrID sidAlphaPercentage("AlphaPercentage");
+
+		const auto* pTech = _Effect->GetTechByInputSet(_CurrInputSet);
+		Render::IResourceParam* pMainTextureParam = pTech ? pTech->GetParamTable().GetResource(sidTextureID) : nullptr;
+		Render::ISamplerParam* pLinearSamplerParam = pTech ? pTech->GetParamTable().GetSampler(sidSamplerID) : nullptr;
+		Render::CShaderConstantParam WVPParam = pTech ? pTech->GetParamTable().GetConstant(sidWVP) : Render::CShaderConstantParam();
+		Render::CShaderConstantParam AlphaPercentageParam = pTech ? pTech->GetParamTable().GetConstant(sidAlphaPercentage) : Render::CShaderConstantParam();
+
+		CTechCache NewCache
+		{
+			pTech,
+			pMainTextureParam,
+			pLinearSamplerParam,
+			WVPParam,
+			AlphaPercentageParam,
+			Render::CShaderParamStorage(pTech->GetParamTable(), *_Renderer.getGPUDriver())
+		};
+
+		It = _TechCache.emplace(NewInputSet, std::move(NewCache)).first;
+	}
+	
+	_pCurrCache = &It->second;
+
+	if (!_pCurrCache || !_pCurrCache->pTech) return;
+
+	Render::CGPUDriver* pGPU = _Renderer.getGPUDriver();
+
+	// FIXME: no multipass support for now, CEGUI does multiple passes in its effects
+	UPTR LightCount = 0;
+	pGPU->SetRenderState(_pCurrCache->pTech->GetPasses(LightCount)[0]);
+
+	if (_pCurrCache && _pCurrCache->pLinearSamplerParam)
+		_pCurrCache->pLinearSamplerParam->Apply(*pGPU, _LinearSampler.Get());
 }
 //---------------------------------------------------------------------
 
 void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shaderParameterBindings)
 {
-	const auto* pTech = _Effect->GetTechByInputSet(_CurrInputSet);
-	if (!pTech) return;
+	if (!_pCurrCache || !_pCurrCache->pTech) return;
 
 	Render::CGPUDriver* pGPU = _Renderer.getGPUDriver();
-
-	// FIXME: no multipass support for now
-	UPTR LightCount = 0;
-	pGPU->SetRenderState(pTech->GetPasses(LightCount)[0]);
-
-	Render::CShaderParamStorage Storage(pTech->GetParamTable(), *pGPU);
 
 	const ShaderParameterBindings::ShaderParameterBindingsMap& paramMap = shaderParameterBindings->getShaderParameterBindings();
 	for (auto&& param : paramMap)
@@ -69,23 +106,34 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 		// Default CEGUI texture. Hardcoded inside CEGUI as "texture0".
 		if (param.first == "texture0")
 		{
-			static const CStrID sidTextureID("BoundTexture");
-			static const CStrID sidSamplerID("LinearSampler");
-
-			if (auto TextureParam = pTech->GetParamTable().GetResource(sidTextureID))
+			if (_pCurrCache->pMainTextureParam)
 			{
 				const CEGUI::ShaderParameterTexture* pPrm = static_cast<const CEGUI::ShaderParameterTexture*>(param.second);
 				const CEGUI::CDEMTexture* pTex = static_cast<const CEGUI::CDEMTexture*>(pPrm->d_parameterValue);
-				TextureParam->Apply(*pGPU, pTex->getTexture());
-
-				if (auto SamplerParam = pTech->GetParamTable().GetSampler(sidSamplerID))
-					SamplerParam->Apply(*pGPU, _LinearSampler.Get());
+				_pCurrCache->pMainTextureParam->Apply(*pGPU, pTex->getTexture());
 			}
-
+			continue;
+		}
+		else if (param.first == "WVP") // Cached for faster access
+		{
+			if (_pCurrCache->WVPParam)
+			{
+				const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
+				_pCurrCache->Storage.SetRawConstant(_pCurrCache->WVPParam, glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
+			}
+			continue;
+		}
+		else if (param.first == "AlphaPercentage") // Cached for faster access
+		{
+			if (_pCurrCache->AlphaPercentageParam)
+			{
+				const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
+				_pCurrCache->Storage.SetFloat(_pCurrCache->AlphaPercentageParam, pPrm->d_parameterValue);
+			}
 			continue;
 		}
 
-		auto Const = pTech->GetParamTable().GetConstant(CStrID(param.first.c_str()));
+		auto Const = _pCurrCache->pTech->GetParamTable().GetConstant(CStrID(param.first.c_str()));
 		if (!Const) continue;
 
 		switch (param.second->getType())
@@ -93,19 +141,19 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 			case CEGUI::ShaderParamType::Matrix4X4:
 			{
 				const CEGUI::ShaderParameterMatrix* pPrm = static_cast<const CEGUI::ShaderParameterMatrix*>(param.second);
-				Storage.SetRawConstant(Const, glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
+				_pCurrCache->Storage.SetRawConstant(Const, glm::value_ptr(pPrm->d_parameterValue), sizeof(glm::mat4));
 				break;
 			}
 			case CEGUI::ShaderParamType::Float:
 			{
 				const CEGUI::ShaderParameterFloat* pPrm = static_cast<const CEGUI::ShaderParameterFloat*>(param.second);
-				Storage.SetFloat(Const, pPrm->d_parameterValue);
+				_pCurrCache->Storage.SetFloat(Const, pPrm->d_parameterValue);
 				break;
 			}
 			case CEGUI::ShaderParamType::Int:
 			{
 				const CEGUI::ShaderParameterInt* pPrm = static_cast<const CEGUI::ShaderParameterInt*>(param.second);
-				Storage.SetInt(Const, pPrm->d_parameterValue);
+				_pCurrCache->Storage.SetInt(Const, pPrm->d_parameterValue);
 				break;
 			}
 			case CEGUI::ShaderParamType::Texture:
@@ -121,7 +169,7 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 		}
 	}
 
-	Storage.Apply();
+	_pCurrCache->Storage.Apply();
 }
 //---------------------------------------------------------------------
 

@@ -1,8 +1,9 @@
 #pragma once
-#include <Render/ShaderParamTable.h>
+#include <Render/ShaderParamStorage.h>
 #include <CEGUI/ShaderWrapper.h>
 #include <CEGUI/Renderer.h>
 #include <vector>
+#include <map>
 
 namespace CEGUI
 {
@@ -12,10 +13,23 @@ class CDEMShaderWrapper: public ShaderWrapper
 {
 protected:
 
+	struct CTechCache
+	{
+		const Render::CTechnique*    pTech = nullptr;
+		Render::IResourceParam*      pMainTextureParam = nullptr;
+		Render::ISamplerParam*       pLinearSamplerParam = nullptr;
+		Render::CShaderConstantParam WVPParam;
+		Render::CShaderConstantParam AlphaPercentageParam;
+		Render::CShaderParamStorage  Storage;
+	};
+
 	CDEMRenderer&    _Renderer;
 	Render::PEffect  _Effect;
 	CStrID           _CurrInputSet;
+	CTechCache*      _pCurrCache = nullptr;
 	Render::PSampler _LinearSampler; //???can define in effect?
+
+	std::map<CStrID, CTechCache> _TechCache;
 
 public:
 
