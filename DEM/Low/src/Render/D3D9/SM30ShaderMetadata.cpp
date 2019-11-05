@@ -171,12 +171,12 @@ bool CSM30ConstantBufferParam::Apply(CGPUDriver& GPU, CConstantBuffer* pValue) c
 	auto pCB = pValue ? Cast<CD3D9ConstantBuffer>(*pValue) : nullptr;
 	if (pValue && !pCB) FAIL;
 
-	if (ShaderTypeMask & ShaderType_Vertex)
+	if (ShaderTypeMask & (1 << ShaderType_Vertex))
 	{
 		if (!pGPU->BindConstantBuffer(ShaderType_Vertex, SlotIndex, pCB)) FAIL;
 	}
 
-	if (ShaderTypeMask & ShaderType_Pixel)
+	if (ShaderTypeMask & (1 << ShaderType_Pixel))
 	{
 		if (!pGPU->BindConstantBuffer(ShaderType_Pixel, SlotIndex, pCB)) FAIL;
 	}
@@ -222,12 +222,12 @@ bool CSM30ResourceParam::Apply(CGPUDriver& GPU, CTexture* pValue) const
 	auto pTex = pValue ? Cast<CD3D9Texture>(*pValue) : nullptr;
 	if (pValue && !pTex) FAIL;
 
-	if (_ShaderTypeMask & ShaderType_Vertex)
+	if (_ShaderTypeMask & (1 << ShaderType_Vertex))
 	{
 		if (!pGPU->BindResource(ShaderType_Vertex, _Register, pTex)) FAIL;
 	}
 
-	if (_ShaderTypeMask & ShaderType_Pixel)
+	if (_ShaderTypeMask & (1 << ShaderType_Pixel))
 	{
 		if (!pGPU->BindResource(ShaderType_Pixel, _Register, pTex)) FAIL;
 	}
@@ -268,12 +268,12 @@ bool CSM30SamplerParam::Apply(CGPUDriver& GPU, CSampler* pValue) const
 	auto pSampler = pValue ? Cast<CD3D9Sampler>(*pValue) : nullptr;
 	if (pValue && !pSampler) FAIL;
 
-	if (_ShaderTypeMask & ShaderType_Vertex)
+	if (_ShaderTypeMask & (1 << ShaderType_Vertex))
 	{
 		if (!pGPU->BindSampler(ShaderType_Vertex, _RegisterStart, _RegisterCount, pSampler)) FAIL;
 	}
 
-	if (_ShaderTypeMask & ShaderType_Pixel)
+	if (_ShaderTypeMask & (1 << ShaderType_Pixel))
 	{
 		if (!pGPU->BindSampler(ShaderType_Pixel, _RegisterStart, _RegisterCount, pSampler)) FAIL;
 	}
