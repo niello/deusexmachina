@@ -30,6 +30,12 @@ namespace UI
 
 CUIServer::CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Data::CParams* pSettings)
 {
+	if (CEGUI::System::getSingletonPtr())
+	{
+		::Sys::Error("CUIServer::CUIServer() > CEGUI is singleton-based, can't create second UI server!");
+		return;
+	}
+
 	Logger = n_new(CEGUI::CDEMLogger);
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
@@ -106,8 +112,6 @@ void CUIServer::Trigger(float FrameTime)
 	CEGUI::WindowManager::getSingleton().cleanDeadPool();
 
 	CEGUISystem->injectTimePulse(FrameTime);
-	for (auto pCtx : CEGUISystem->getGUIContexts())
-		pCtx->injectTimePulse(FrameTime);
 
 	EventSrv->FireEvent(CStrID("OnUIUpdate"));
 }

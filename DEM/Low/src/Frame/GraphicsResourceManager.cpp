@@ -802,4 +802,10 @@ PView CGraphicsResourceManager::CreateView(CStrID RenderPathID, int SwapChainID,
 }
 //---------------------------------------------------------------------
 
+void CGraphicsResourceManager::Update(float dt)
+{
+	if (UIServer) UIServer->Trigger(dt);
+}
+//---------------------------------------------------------------------
+
 }

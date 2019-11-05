@@ -77,6 +77,8 @@ public:
 
 	PView             CreateView(CStrID RenderPathID, int SwapChainID = INVALID_INDEX, CStrID SwapChainRenderTargetID = CStrID::Empty);
 
+	void              Update(float dt);
+
 	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
 	Render::CGPUDriver*          GetGPU() const;
 	UI::CUIServer*               GetUI() const { return UIServer.get(); }

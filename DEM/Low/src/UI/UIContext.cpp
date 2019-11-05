@@ -80,6 +80,12 @@ bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, floa
 }
 //---------------------------------------------------------------------
 
+void CUIContext::Update(float dt)
+{
+	if (pCtx) pCtx->injectTimePulse(dt);
+}
+//---------------------------------------------------------------------
+
 bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority)
 {
 	if (!pDispatcher || !pCtx || !pInput) FAIL;

@@ -44,6 +44,7 @@ public:
 
 	// Pass absolute viewport coordinates here
 	bool				Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom);
+	void                Update(float dt);
 
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
 	void				UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher);
