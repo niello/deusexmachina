@@ -5,7 +5,7 @@ namespace Render
 {
 __ImplementClassNoFactory(Render::CTexture, Core::CObject);
 
-CTexture::CTexture() {}
+CTexture::CTexture() = default;
 
 CTexture::~CTexture()
 {

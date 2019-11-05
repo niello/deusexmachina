@@ -101,6 +101,9 @@ void CDEMTexture::createEmptyTexture(const Sizef& sz)
 	Data->Desc.Format = Render::PixelFmt_B8G8R8A8;
 	Data->Desc.MSAAQuality = Render::MSAA_None;
 
+	//???is there any way to know will CEGUI write to texture or not?
+	//can create immutable textures!
+	// NB: intentionaly not a dynamic texture, CEGUI will probably write it once on load
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, Render::Access_GPU_Read | Render::Access_GPU_Write);
 	n_assert(DEMTexture.IsValidPtr());
 
@@ -208,7 +211,9 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 
 	//???is there any way to know will CEGUI write to texture or not?
 	//can create immutable textures!
-	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, Render::Access_GPU_Read | Render::Access_GPU_Write);
+	const UPTR AccessFlags = DEMTexture ? DEMTexture->GetAccess() : (Render::Access_GPU_Read | Render::Access_GPU_Write);
+
+	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, AccessFlags);
 
 	n_assert(DEMTexture.IsValidPtr());
 

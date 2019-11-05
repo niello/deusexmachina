@@ -3344,21 +3344,23 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 
 	CImageData DestData;
 
+	const auto& D3D9Rsrc = static_cast<const CD3D9Texture&>(Resource);
+
 	IDirect3DTexture9* pSrcTex = nullptr;
 	IDirect3DSurface9* pSrcSurf = nullptr;
 	IDirect3DSurface9* pDestSurf = nullptr;
-	UINT Usage = ((const CD3D9Texture&)Resource).GetD3DUsage();
-	const bool IsNonMappable = (((const CD3D9Texture&)Resource).GetD3DPool() == D3DPOOL_DEFAULT);
+	UINT Usage = D3D9Rsrc.GetD3DUsage();
+	const bool IsNonMappable = (D3D9Rsrc.GetD3DPool() == D3DPOOL_DEFAULT && Usage != D3DUSAGE_DYNAMIC);
 	if (IsNonMappable)
 	{
 		if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
 		{
-			IDirect3DTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DTexture();
+			IDirect3DTexture9* pTex = D3D9Rsrc.GetD3DTexture();
 			if (FAILED(pTex->GetSurfaceLevel(MipLevel, &pDestSurf)))  FAIL;
 		}
 		else if (Desc.Type == Texture_Cube)
 		{
-			IDirect3DCubeTexture9* pTex = ((const CD3D9Texture&)Resource).GetD3DCubeTexture();
+			IDirect3DCubeTexture9* pTex = D3D9Rsrc.GetD3DCubeTexture();
 			if (FAILED(pTex->GetCubeMapSurface(GetD3DCubeMapFace((ECubeMapFace)ArraySlice), MipLevel, &pDestSurf))) FAIL;
 		}
 		else Sys::Error("CD3D9GPUDriver::WriteToResource() > Unsupported non-mappable texture type\n");

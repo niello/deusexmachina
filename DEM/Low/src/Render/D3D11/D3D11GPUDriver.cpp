@@ -3351,7 +3351,7 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 	if (Usage == D3D11_USAGE_DYNAMIC)
 	{
 		const bool UpdateWhole = !pRegion || (SizeX == TotalSizeX && (Dims < 2 || SizeY == TotalSizeY && (Dims < 3 || SizeZ == TotalSizeZ)));
-		MapType = UpdateWhole ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE;
+		MapType = UpdateWhole ? D3D11_MAP_WRITE_DISCARD : D3D11_MAP_WRITE_NO_OVERWRITE;
 	}
 	else MapType = D3D11_MAP_WRITE;
 
