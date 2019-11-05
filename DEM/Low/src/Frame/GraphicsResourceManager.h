@@ -21,6 +21,16 @@ namespace Render
 	struct CShaderParamValues;
 }
 
+namespace Data
+{
+	class CParams;
+}
+
+namespace UI
+{
+	class CUIServer;
+}
+
 namespace Frame
 {
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
@@ -31,8 +41,9 @@ class CGraphicsResourceManager : public Data::CRefCounted
 {
 private:
 
-	Resources::CResourceManager* pResMgr = nullptr; //???strong ref?
-	Render::PGPUDriver GPU;
+	Resources::CResourceManager*                  pResMgr = nullptr; //???strong ref?
+	Render::PGPUDriver                            GPU;
+	std::unique_ptr<UI::CUIServer>                UIServer;
 
 	std::unordered_map<CStrID, Render::PMesh>     Meshes;
 	std::unordered_map<CStrID, Render::PTexture>  Textures;
@@ -62,10 +73,13 @@ public:
 	Render::PMaterial GetMaterial(CStrID UID);
 	PRenderPath       GetRenderPath(CStrID ID);
 
+	bool              InitUI(CStrID EffectID, const Data::CParams* pSettings = nullptr);
+
 	PView             CreateView(CStrID RenderPathID, int SwapChainID = INVALID_INDEX, CStrID SwapChainRenderTargetID = CStrID::Empty);
 
 	Resources::CResourceManager* GetResourceManager() const { return pResMgr; }
 	Render::CGPUDriver*          GetGPU() const;
+	UI::CUIServer*               GetUI() const { return UIServer.get(); }
 };
 
 }

@@ -17,6 +17,7 @@
 #include <Render/MeshData.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
+#include <UI/UIServer.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <IO/Stream.h>
@@ -780,6 +781,18 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	RP->Phases = std::move(Phases);
 
 	return RP.Get();
+}
+//---------------------------------------------------------------------
+
+bool CGraphicsResourceManager::InitUI(CStrID EffectID, const Data::CParams* pSettings)
+{
+	if (UIServer || !GPU) FAIL;
+
+	auto Effect = GetEffect(EffectID);
+	if (!Effect) FAIL;
+
+	UIServer.reset(n_new(UI::CUIServer)(*GPU, *Effect, pSettings));
+	return !!UIServer;
 }
 //---------------------------------------------------------------------
 

@@ -65,7 +65,8 @@ CView::~CView() = default;
 // Pass empty RenderTargetID to use swap chain render target
 bool CView::CreateUIContext(CStrID RenderTargetID)
 {
-	if (!UI::CUIServer::HasInstance() || RTs.empty()) FAIL;
+	auto* pUI = _GraphicsMgr->GetUI();
+	if (!pUI || RTs.empty()) FAIL;
 
 	const Render::CRenderTarget* pRT = nullptr;
 	const Render::CRenderTarget* pSwapChainRT = (_SwapChainID >= 0) ? _GraphicsMgr->GetGPU()->GetSwapChainRenderTarget(_SwapChainID) : nullptr;
@@ -81,15 +82,10 @@ bool CView::CreateUIContext(CStrID RenderTargetID)
 	}
 	else FAIL;
 
-	UI::CUIContextSettings UICtxSettings;
-
-	if (pRT == pSwapChainRT)
-		UICtxSettings.HostWindow = GetTargetWindow();
-
-	UICtxSettings.Width = static_cast<float>(pRT->GetDesc().Width);
-	UICtxSettings.Height = static_cast<float>(pRT->GetDesc().Height);
-
-	UIContext = UI::CUIServer::Instance()->CreateContext(UICtxSettings);
+	UIContext = pUI->CreateContext(
+		static_cast<float>(pRT->GetDesc().Width),
+		static_cast<float>(pRT->GetDesc().Height),
+		(pRT == pSwapChainRT) ? GetTargetWindow() : nullptr);
 
 	return UIContext.IsValidPtr();
 }

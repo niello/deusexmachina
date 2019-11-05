@@ -1,9 +1,6 @@
 #pragma once
-#include <Core/Object.h>
-#include <Data/Singleton.h>
-#include <Data/StringID.h>
 #include <Events/EventsFwd.h>
-#include <Data/Dictionary.h>
+#include <Data/Ptr.h>
 #include <CEGUI/Event.h>
 
 // UI server (CEGUI launcher & manager). This server creates top-level screens and manages
@@ -21,46 +18,27 @@ namespace CEGUI
 
 namespace Data
 {
-	typedef Ptr<class CParams> PParams;
+	class CParams;
 }
 
 namespace Render
 {
-	typedef Ptr<class CGPUDriver> PGPUDriver;
-	typedef Ptr<class CEffect> PEffect;
+	class CGPUDriver;
+	class CEffect;
 }
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 	typedef Ptr<class COSWindow> POSWindow;
-}}
+}
 
 namespace UI
 {
 typedef Ptr<class CUIWindow> PUIWindow;
 typedef Ptr<class CUIContext> PUIContext;
 
-// Service-wide settings
-struct CUISettings
+class CUIServer final
 {
-	Render::PGPUDriver	GPU;
-	Render::PEffect     Effect;
-	CString				DefaultCursor;
-	Data::PParams		ResourceGroups;
-	Data::PParams		LoadOnStartup;
-};
-
-struct CUIContextSettings
-{
-	DEM::Sys::POSWindow	HostWindow;
-	float				Width;
-	float				Height;
-};
-
-class CUIServer
-{
-	__DeclareSingleton(CUIServer);
-
 private:
 
 	CEGUI::CDEMRenderer*				Renderer;
@@ -69,29 +47,28 @@ private:
 	CEGUI::CDEMResourceProvider*		ResourceProvider;
 	CEGUI::TinyXML2Parser*				XMLParser;
 
-	CArray<CEGUI::Event::Connection>	ConnectionsToDisconnect;
+	std::vector<CEGUI::Event::Connection> ConnectionsToDisconnect;
 
 	DECLARE_EVENT_HANDLER(OnRenderDeviceLost, OnDeviceLost);
 	DECLARE_EVENT_HANDLER(OnRenderDeviceReset, OnDeviceReset);
 
 public:
 
-	CUIServer(const CUISettings& Settings);
+	CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Data::CParams* pSettings = nullptr);
 	~CUIServer();
 	
 	// Internal use, set by config
-	void			LoadScheme(const char* pResourceFile);
-	void			LoadFont(const char* pResourceFile);
+	void       LoadScheme(const char* pResourceFile);
+	void       LoadFont(const char* pResourceFile);
 	//!!!create dynamic fonts! see article!
 
-	void			Trigger(float FrameTime);
+	void       Trigger(float FrameTime);
 
-	PUIContext		CreateContext(const CUIContextSettings& Settings);
-	void			DestroyContext(PUIContext Context);
+	PUIContext CreateContext(float Width, float Height, DEM::Sys::COSWindow* pHostWindow = nullptr);
 	
 	// Event will be disconnected at the beginning of the next GUI update loop.
 	// Attention! This method is not thread safe. You must call it only from GUI thread.
-	void			DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.Add(Connection); }
+	void       DelayedDisconnect(CEGUI::Event::Connection Connection) { ConnectionsToDisconnect.push_back(Connection); }
 };
 
 }

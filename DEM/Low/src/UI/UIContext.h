@@ -39,8 +39,7 @@ private:
 
 public:
 
-	//???pass RT params and create CEGUI context inside?
-	CUIContext(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow);
+	CUIContext(float Width, float Height, DEM::Sys::COSWindow* pHostWindow);
 	virtual ~CUIContext() override;
 
 	// Pass absolute viewport coordinates here

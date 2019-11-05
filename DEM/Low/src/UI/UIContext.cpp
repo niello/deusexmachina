@@ -13,11 +13,13 @@
 namespace UI
 {
 
-CUIContext::CUIContext(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWindow)
-	: pCtx(pContext)
-	, OSWindow(pHostWindow)
+CUIContext::CUIContext(float Width, float Height, DEM::Sys::COSWindow* pHostWindow)
 {
-	if (!pContext) return;
+	if (!Width || !Height) return;
+
+	auto pRenderer = static_cast<CEGUI::CDEMRenderer*>(CEGUI::System::getSingleton().getRenderer());
+	CEGUI::RenderTarget* pTarget = pRenderer->createViewportTarget(Width, Height);
+	pCtx = &CEGUI::System::getSingleton().createGUIContext(*pTarget);
 
 	pInput = n_new(CEGUI::InputAggregator(pCtx));
 	pInput->initialise(InputEventsOnKeyUp);
@@ -25,6 +27,8 @@ CUIContext::CUIContext(CEGUI::GUIContext* pContext, DEM::Sys::COSWindow* pHostWi
 
 	if (pHostWindow)
 	{
+		OSWindow = pHostWindow;
+
 		// FIXME: CEGUI doesn't calculate proper font size at the start
 		// FIXME: must be per-context, not global!
 		const Data::CRect& WndRect = pHostWindow->GetRect();

@@ -27,16 +27,13 @@
 
 namespace UI
 {
-__ImplementSingleton(UI::CUIServer);
 
-CUIServer::CUIServer(const CUISettings& Settings)
+CUIServer::CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Data::CParams* pSettings)
 {
-	__ConstructSingleton;
-
 	Logger = n_new(CEGUI::CDEMLogger);
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
-	Renderer = &CEGUI::CDEMRenderer::create(*Settings.GPU, *Settings.Effect);
+	Renderer = &CEGUI::CDEMRenderer::create(GPU, Effect);
 
 	//!!!TMP!
 	// TODO: CEGUI implement - get display size from GPU output 0 or don't use display size at all
@@ -50,11 +47,12 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	CEGUI::System::create(*Renderer, ResourceProvider, XMLParser);
 	CEGUISystem = CEGUI::System::getSingletonPtr();
 
-	if (Settings.ResourceGroups.IsValidPtr())
+	Data::PParams ResourceGroups;
+	if (pSettings && pSettings->Get<Data::PParams>(ResourceGroups, CStrID("ResourceGroups")))
 	{
-		for (UPTR i = 0; i < Settings.ResourceGroups->GetCount(); ++i)
+		for (UPTR i = 0; i < ResourceGroups->GetCount(); ++i)
 		{
-			Data::CParam& Prm = Settings.ResourceGroups->Get(i);
+			Data::CParam& Prm = ResourceGroups->Get(i);
 			ResourceProvider->setResourceGroupDirectory(Prm.GetName().CStr(), Prm.GetValue<CString>().CStr());
 		}
 	}
@@ -65,19 +63,24 @@ CUIServer::CUIServer(const CUISettings& Settings)
 	CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
 
-	Data::PDataArray ResourcesToLoad;
+	Data::PParams LoadOnStartup;
+	if (pSettings && pSettings->Get<Data::PParams>(LoadOnStartup, CStrID("LoadOnStartup")))
+	{
+		Data::PDataArray ResourcesToLoad;
 
-	// TODO: move to CEGUI scheme, it already has capability of font autoloading
-	if (Settings.LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Fonts")))
-		for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
-			LoadFont(ResourcesToLoad->Get<CString>(i).CStr());
+		// TODO: move to CEGUI scheme, it already has capability of font autoloading
+		if (LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Fonts")))
+			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
+				LoadFont(ResourcesToLoad->Get<CString>(i).CStr());
 
-	if (Settings.LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
-		for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
-			LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
+		if (LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
+			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
+				LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
+	}
 
-	if (Settings.DefaultCursor.IsValid())
-		CEGUISystem->setDefaultCursorName(Settings.DefaultCursor.CStr());
+	const CString& DefaultCursor = pSettings ? pSettings->Get<CString>(CStrID("DefaultCursor"), CString::Empty) : CString::Empty;
+	if (DefaultCursor.IsValid())
+		CEGUISystem->setDefaultCursorName(DefaultCursor.CStr());
 
 	SUBSCRIBE_PEVENT(OnRenderDeviceLost, CUIServer, OnDeviceLost);
 	SUBSCRIBE_PEVENT(OnRenderDeviceReset, CUIServer, OnDeviceReset);
@@ -91,17 +94,14 @@ CUIServer::~CUIServer()
 	n_delete(ResourceProvider);
 	CEGUI::CDEMRenderer::destroy(*Renderer);
 	n_delete(Logger);
-
-	__DestructSingleton;
 }
 //---------------------------------------------------------------------
 
 void CUIServer::Trigger(float FrameTime)
 {
-	CArray<CEGUI::Event::Connection>::CIterator It = ConnectionsToDisconnect.Begin();
-	for (; It != ConnectionsToDisconnect.End(); ++It)
-		(*It)->disconnect();
-	ConnectionsToDisconnect.Clear();
+	for (auto& Connection : ConnectionsToDisconnect)
+		Connection->disconnect();
+	ConnectionsToDisconnect.clear();
 
 	CEGUI::WindowManager::getSingleton().cleanDeadPool();
 
@@ -113,12 +113,9 @@ void CUIServer::Trigger(float FrameTime)
 }
 //---------------------------------------------------------------------
 
-PUIContext CUIServer::CreateContext(const CUIContextSettings& Settings)
+PUIContext CUIServer::CreateContext(float Width, float Height, DEM::Sys::COSWindow* pHostWindow)
 {
-	//???to UI context constructor? CEGUI context destroyed there, so must be created there too!
-	//???W+H+Window instead of CUIContextSettings?
-	CEGUI::RenderTarget* pTarget = Renderer->createViewportTarget(Settings.Width, Settings.Height);
-	return n_new(CUIContext(&CEGUISystem->createGUIContext(*pTarget), Settings.HostWindow.Get()));
+	return n_new(CUIContext(Width, Height, pHostWindow));
 }
 //---------------------------------------------------------------------
 

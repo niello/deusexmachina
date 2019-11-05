@@ -44,7 +44,7 @@ public:
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
-	RenderTarget*			createViewportTarget(float width, float height);
+	RenderTarget*			createViewportTarget(float width, float height); // TODO: to base class!
 	void					destroyViewportTarget(RenderTarget* target);
 
 	// Implement interface from Renderer
