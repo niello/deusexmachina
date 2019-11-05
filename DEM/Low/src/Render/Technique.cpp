@@ -13,7 +13,7 @@ CTechnique::CTechnique(CStrID Name, std::vector<PRenderState>&& Passes, IPTR Max
 }
 //---------------------------------------------------------------------
 
-CTechnique::~CTechnique() {}
+CTechnique::~CTechnique() = default;
 //---------------------------------------------------------------------
 
 }

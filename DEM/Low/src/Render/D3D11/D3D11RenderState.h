@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_STATE_H__
-#define __DEM_L1_RENDER_D3D11_STATE_H__
-
 #include <Render/RenderState.h>
 
 // Direct3D11 render state implementation
@@ -16,7 +13,7 @@ typedef Ptr<class CD3D11Shader> PD3D11Shader;
 
 class CD3D11RenderState: public CRenderState
 {
-	__DeclareClass(CD3D11RenderState);
+	__DeclareClassNoFactory;
 
 public:
 
@@ -33,11 +30,9 @@ public:
 	unsigned int				SampleMask; //???get from stored desc?
 
 	CD3D11RenderState();
-	virtual ~CD3D11RenderState();
+	virtual ~CD3D11RenderState() override;
 };
 
 typedef Ptr<CD3D11RenderState> PD3D11RenderState;
 
 }
-
-#endif

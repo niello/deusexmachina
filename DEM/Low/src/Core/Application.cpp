@@ -53,7 +53,7 @@
 #include <Scene/SceneNode.h>
 #include <Scene/SceneNodeLoaderSCN.h>
 
-namespace DEM { namespace Core
+namespace DEM::Core
 {
 
 CString GetProfilesPath(const CString& AppDataPath)
@@ -792,4 +792,4 @@ bool CApplication::OnInputDeviceRemoved(Events::CEventDispatcher* pDispatcher, c
 }
 //---------------------------------------------------------------------
 
-}};
+}

@@ -278,14 +278,9 @@ void CD3D11GPUDriver::Release()
 	CurrSS.SetSize(0);
 	CurrRT.SetSize(0);
 
-	//!!!UnbindD3DResources();
-	//!!!can call the same event as on lost device!
-
-	//for (int i = 1; i < MaxRenderTargetCount; ++i)
-	//	pD3DDevice->SetRenderTarget(i, nullptr);
-	//pD3DDevice->SetDepthStencilSurface(nullptr); //???need when auto depth stencil?
-
-	//EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
+	CurrRS = nullptr;
+	NewRS = nullptr;
+	CurrVL = nullptr;
 
 	//!!!ReleaseQueries();
 
@@ -297,7 +292,7 @@ void CD3D11GPUDriver::Release()
 
 	SAFE_RELEASE(pD3DImmContext);
 
-//#if (DEM_RENDER_DEBUG != 0)
+//#if DEM_RENDER_DEBUG
 //	ID3D11Debug* pD3D11Debug = nullptr;
 //	pD3DDevice->QueryInterface(__uuidof(ID3D11Debug), reinterpret_cast<void**>(&pD3D11Debug));
 //	if (pD3D11Debug)
@@ -308,8 +303,6 @@ void CD3D11GPUDriver::Release()
 //#endif
 
 	SAFE_RELEASE(pD3DDevice);
-
-	//!!!MUST somehow release all shared resources depengent on this GPU (shaders, meshes etc)!
 
 //	IsInsideFrame = false;
 }
@@ -917,7 +910,7 @@ bool CD3D11GPUDriver::GetScissorRect(UPTR Index, Data::CRect& OutScissorRect)
 bool CD3D11GPUDriver::SetVertexLayout(CVertexLayout* pVLayout)
 {
 	if (CurrVL.Get() == pVLayout) OK;
-	CurrVL = (CD3D11VertexLayout*)pVLayout;
+	CurrVL = static_cast<CD3D11VertexLayout*>(pVLayout);
 	CurrDirtyFlags.Set(GPU_Dirty_VL);
 	OK;
 }
@@ -946,8 +939,8 @@ bool CD3D11GPUDriver::SetIndexBuffer(CIndexBuffer* pIB)
 
 bool CD3D11GPUDriver::SetRenderState(CRenderState* pState)
 {
-	if (CurrRS.Get() == pState || NewRS.Get() == pState) OK;
-	NewRS = (CD3D11RenderState*)pState;
+	if (CurrRS == pState || NewRS == pState) OK;
+	NewRS = static_cast<CD3D11RenderState*>(pState);
 	CurrDirtyFlags.Set(GPU_Dirty_RS);
 	OK;
 }
@@ -1235,7 +1228,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 	bool InputLayoutDirty = false;
 	if (Update.Is(GPU_Dirty_RS) && CurrDirtyFlags.Is(GPU_Dirty_RS))
 	{
-		CD3D11RenderState* pNewRS = NewRS.Get();
+		const CD3D11RenderState* pNewRS = NewRS.Get();
 
 		if (pNewRS)
 		{
@@ -1279,7 +1272,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 		}
 		else
 		{
-			const float EmptyFloats[4] = { 0 };
+			constexpr float EmptyFloats[4] = { 0 };
 			pD3DImmContext->VSSetShader(nullptr, nullptr, 0);
 			pD3DImmContext->HSSetShader(nullptr, nullptr, 0);
 			pD3DImmContext->DSSetShader(nullptr, nullptr, 0);
@@ -1290,7 +1283,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 			pD3DImmContext->RSSetState(nullptr);
 		}
 
-		CurrRS = NewRS;
+		CurrRS = std::move(NewRS);
 		CurrDirtyFlags.Clear(GPU_Dirty_RS);
 	}
 
@@ -2611,7 +2604,7 @@ PRenderState CD3D11GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 
 		RenderStates.Add(RS);
 
-		return RS.Get();
+		return RS;
 	}
 
 ProcessFailure:
