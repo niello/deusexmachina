@@ -3,7 +3,7 @@
 #define __DEM_L2_PROP_UI_CONTROL_H__
 
 #include <Game/Property.h>
-#include <Physics/NodeAttrCollision.h>
+#include <Physics/CollisionAttribute.h>
 #include <Events/EventHandler.h>
 #include <Data/Array.h>
 
@@ -57,7 +57,7 @@ public:
 
 protected:
 
-	Physics::PNodeAttrCollision	MousePickShape;
+	Physics::PCollisionAttribute	MousePickShape;
 	CString						UIName;	//???use attribute?
 	CString						UIDesc;	//???use attribute?
 	CArray<CAction>				Actions;

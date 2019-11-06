@@ -79,7 +79,7 @@ bool CPropUIControl::InternalActivate()
 		U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePickTarget");
 		U16 Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 
-		MousePickShape = n_new(Physics::CNodeAttrCollision);
+		MousePickShape = n_new(Physics::CCollisionAttribute);
 		MousePickShape->CollObj = n_new(Physics::CCollisionObjMoving);
 		MousePickShape->CollObj->Init(*Shape, Group, Mask); // Can specify offset
 		MousePickShape->CollObj->SetUserData(*(void**)&GetEntity()->GetUID());

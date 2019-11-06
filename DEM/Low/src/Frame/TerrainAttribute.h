@@ -1,12 +1,12 @@
 #pragma once
-#include <Frame/NodeAttrRenderable.h>
+#include <Frame/RenderableAttribute.h>
 
 // Scene node attribute with renderable terrain
 
 namespace Frame
 {
 
-class CTerrainAttribute: public CNodeAttrRenderable
+class CTerrainAttribute: public CRenderableAttribute
 {
 	__DeclareClass(CTerrainAttribute);
 

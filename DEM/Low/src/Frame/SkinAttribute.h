@@ -12,9 +12,9 @@ namespace Render
 namespace Frame
 {
 
-class CNodeAttrSkin : public Scene::CNodeAttribute
+class CSkinAttribute : public Scene::CNodeAttribute
 {
-	__DeclareClass(CNodeAttrSkin);
+	__DeclareClass(CSkinAttribute);
 
 protected:
 
@@ -38,7 +38,7 @@ protected:
 
 public:
 
-	virtual ~CNodeAttrSkin() override;
+	virtual ~CSkinAttribute() override;
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
@@ -49,6 +49,6 @@ public:
 	const matrix44*               GetSkinPalette() const { return pSkinPalette; }
 };
 
-typedef Ptr<CNodeAttrSkin> PNodeAttrSkin;
+typedef Ptr<CSkinAttribute> PSkinAttribute;
 
 }

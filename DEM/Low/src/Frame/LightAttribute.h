@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_NODE_ATTR_LIGHT_H__
-#define __DEM_L1_FRAME_NODE_ATTR_LIGHT_H__
-
 #include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
 #include <Render/Light.h>
@@ -24,9 +21,9 @@ namespace Render
 namespace Frame
 {
 
-class CNodeAttrLight: public Scene::CNodeAttribute
+class CLightAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClass(CNodeAttrLight);
+	__DeclareClass(CLightAttribute);
 
 protected:
 
@@ -38,7 +35,7 @@ protected:
 
 public:
 
-	CNodeAttrLight(): pSPS(nullptr), pSPSRecord(nullptr) {}
+	CLightAttribute(): pSPS(nullptr), pSPSRecord(nullptr) {}
 
 	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute	Clone();
@@ -52,8 +49,6 @@ public:
 	const Render::CLight&			GetLight() const { return Light; }
 };
 
-typedef Ptr<CNodeAttrLight> PNodeAttrLight;
+typedef Ptr<CLightAttribute> PLightAttribute;
 
 }
-
-#endif

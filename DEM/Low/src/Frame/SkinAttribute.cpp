@@ -1,4 +1,4 @@
-#include "NodeAttrSkin.h"
+#include "SkinAttribute.h"
 #include <Render/SkinInfo.h>
 #include <Scene/SceneNode.h>
 #include <Resources/Resource.h>
@@ -8,16 +8,16 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CNodeAttrSkin, 'SKIN', Scene::CNodeAttribute);
+__ImplementClass(Frame::CSkinAttribute, 'SKIN', Scene::CNodeAttribute);
 
-CNodeAttrSkin::~CNodeAttrSkin()
+CSkinAttribute::~CSkinAttribute()
 {
 	SAFE_DELETE_ARRAY(pBoneNodes);
 	SAFE_FREE_ALIGNED(pSkinPalette);
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrSkin::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
+bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
 	for (UPTR j = 0; j < Count; ++j)
 	{
@@ -44,7 +44,7 @@ bool CNodeAttrSkin::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 #define NOT_PROCESSED_NODE (pNode)
 
-Scene::CSceneNode* CNodeAttrSkin::SetupBoneNode(UPTR BoneIndex)
+Scene::CSceneNode* CSkinAttribute::SetupBoneNode(UPTR BoneIndex)
 {
 	if (pBoneNodes[BoneIndex] == NOT_PROCESSED_NODE)
 	{
@@ -72,7 +72,7 @@ Scene::CSceneNode* CNodeAttrSkin::SetupBoneNode(UPTR BoneIndex)
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrSkin::ValidateResources(Resources::CResourceManager& ResMgr)
+bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
 	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(SkinInfoID);
 	SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
@@ -100,16 +100,16 @@ bool CNodeAttrSkin::ValidateResources(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CNodeAttrSkin::Clone()
+Scene::PNodeAttribute CSkinAttribute::Clone()
 {
-	PNodeAttrSkin ClonedAttr = n_new(CNodeAttrSkin);
+	PSkinAttribute ClonedAttr = n_new(CSkinAttribute);
 	ClonedAttr->SkinInfo = SkinInfo;
 	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
 	return ClonedAttr.Get();
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrSkin::Update(const vector3* pCOIArray, UPTR COICount)
+void CSkinAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
 

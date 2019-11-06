@@ -4,7 +4,7 @@
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Scene/PropSceneNode.h>
-#include <Frame/NodeAttrCamera.h>
+#include <Frame/CameraAttribute.h>
 #include <Render/RenderTarget.h>
 #include <UI/UIContext.h>
 #include <Events/Subscription.h>
@@ -35,7 +35,7 @@ void CGameLevelView::Trigger()
 		float XRel, YRel;
 		View->UIContext->GetCursorPositionRel(XRel, YRel);
 
-		const Frame::CNodeAttrCamera* pCamera = View->GetCamera();
+		const Frame::CCameraAttribute* pCamera = View->GetCamera();
 		if (pCamera)
 		{
 			line3 Ray;
@@ -92,7 +92,7 @@ bool CGameLevelView::RemoveFromSelection(CStrID EntityID)
 
 bool CGameLevelView::GetEntityScreenRectRel(Data::CRectF& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	const Frame::CNodeAttrCamera* pCamera = View->GetCamera();
+	const Frame::CCameraAttribute* pCamera = View->GetCamera();
 	if (!pCamera) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();

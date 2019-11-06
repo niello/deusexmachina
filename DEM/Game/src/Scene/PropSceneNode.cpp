@@ -8,9 +8,9 @@
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceCreator.h>
-#include <Frame/NodeAttrRenderable.h>
+#include <Frame/RenderableAttribute.h>
 #include <Frame/SceneNodeValidateAttrs.h>
-#include <Physics/NodeAttrCollision.h>
+#include <Physics/CollisionAttribute.h>
 #include <Data/DataArray.h>
 #include <IO/PathUtils.h>
 #include <Debug/DebugDraw.h>
@@ -249,17 +249,17 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 	for (UPTR i = 0; i < Node->GetAttributeCount(); ++i)
 	{
 		Scene::CNodeAttribute& Attr = *Node->GetAttribute(i);
-		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CNodeAttrRenderable>())
+		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CRenderableAttribute>())
 		{
 			CAABB AttrBox;
-			((Frame::CNodeAttrRenderable&)Attr).ValidateResources(*ResourceMgr);
-			((Frame::CNodeAttrRenderable&)Attr).GetGlobalAABB(AttrBox);
+			((Frame::CRenderableAttribute&)Attr).ValidateResources(*ResourceMgr);
+			((Frame::CRenderableAttribute&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
-		else if ((TypeFlags & AABB_Phys) && Attr.IsA<Physics::CNodeAttrCollision>())
+		else if ((TypeFlags & AABB_Phys) && Attr.IsA<Physics::CCollisionAttribute>())
 		{
 			CAABB AttrBox;
-			((Physics::CNodeAttrCollision&)Attr).GetGlobalAABB(AttrBox);
+			((Physics::CCollisionAttribute&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
 		}
 	}

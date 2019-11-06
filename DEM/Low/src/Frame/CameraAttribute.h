@@ -13,9 +13,9 @@
 namespace Frame
 {
 
-class CNodeAttrCamera: public Scene::CNodeAttribute
+class CCameraAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClass(CNodeAttrCamera);
+	__DeclareClass(CCameraAttribute);
 
 protected:
 
@@ -40,7 +40,7 @@ protected:
 
 public:
 
-	CNodeAttrCamera(): FOV(n_deg2rad(60.0f)), Width(1024.f), Height(768.f), NearPlane(0.1f), FarPlane(5000.f) { Flags.Set(ProjDirty); }
+	CCameraAttribute(): FOV(n_deg2rad(60.0f)), Width(1024.f), Height(768.f), NearPlane(0.1f), FarPlane(5000.f) { Flags.Set(ProjDirty); }
 
 	//background color
 	//???clip planes computing? or from any matrix?
@@ -76,7 +76,7 @@ public:
 	const matrix44&					GetViewProjMatrix() const { return ViewProj; }
 };
 
-typedef Ptr<CNodeAttrCamera> PNodeAttrCamera;
+typedef Ptr<CCameraAttribute> PCameraAttribute;
 
 }
 

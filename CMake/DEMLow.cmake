@@ -77,13 +77,12 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/EventServer.h
 	DEM/Low/src/Events/EventsFwd.h
 	DEM/Low/src/Events/Subscription.h
+	DEM/Low/src/Frame/AmbientLightAttribute.h
+	DEM/Low/src/Frame/CameraAttribute.h
 	DEM/Low/src/Frame/GraphicsResourceManager.h
+	DEM/Low/src/Frame/LightAttribute.h
 	DEM/Low/src/Frame/ModelAttribute.h
-	DEM/Low/src/Frame/NodeAttrAmbientLight.h
-	DEM/Low/src/Frame/NodeAttrCamera.h
-	DEM/Low/src/Frame/NodeAttrLight.h
-	DEM/Low/src/Frame/NodeAttrRenderable.h
-	DEM/Low/src/Frame/NodeAttrSkin.h
+	DEM/Low/src/Frame/RenderableAttribute.h
 	DEM/Low/src/Frame/RenderPath.h
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
@@ -91,6 +90,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.h
 	DEM/Low/src/Frame/SceneNodeValidateAttrs.h
 	DEM/Low/src/Frame/SceneNodeValidateGPUResources.h
+	DEM/Low/src/Frame/SkinAttribute.h
 	DEM/Low/src/Frame/SkyboxAttribute.h
 	DEM/Low/src/Frame/TerrainAttribute.h
 	DEM/Low/src/Frame/View.h
@@ -157,6 +157,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Math/Vector4.h
 	DEM/Low/src/Physics/BulletConv.h
 	DEM/Low/src/Physics/ClosestNotMeRayResultCallback.h
+	DEM/Low/src/Physics/CollisionAttribute.h
 	DEM/Low/src/Physics/CollisionObjMoving.h
 	DEM/Low/src/Physics/CollisionObjStatic.h
 	DEM/Low/src/Physics/CollisionShape.h
@@ -164,7 +165,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/HeightfieldShape.h
 	DEM/Low/src/Physics/MotionStateDynamic.h
 	DEM/Low/src/Physics/MotionStateKinematic.h
-	DEM/Low/src/Physics/NodeAttrCollision.h
 	DEM/Low/src/Physics/NodeControllerRigidBody.h
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
 	DEM/Low/src/Physics/PhysicsLevel.h
@@ -356,13 +356,12 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/EventNative.cpp
 	DEM/Low/src/Events/EventServer.cpp
 	DEM/Low/src/Events/Subscription.cpp
+	DEM/Low/src/Frame/AmbientLightAttribute.cpp
+	DEM/Low/src/Frame/CameraAttribute.cpp
 	DEM/Low/src/Frame/GraphicsResourceManager.cpp
+	DEM/Low/src/Frame/LightAttribute.cpp
 	DEM/Low/src/Frame/ModelAttribute.cpp
-	DEM/Low/src/Frame/NodeAttrAmbientLight.cpp
-	DEM/Low/src/Frame/NodeAttrCamera.cpp
-	DEM/Low/src/Frame/NodeAttrLight.cpp
-	DEM/Low/src/Frame/NodeAttrRenderable.cpp
-	DEM/Low/src/Frame/NodeAttrSkin.cpp
+	DEM/Low/src/Frame/RenderableAttribute.cpp
 	DEM/Low/src/Frame/RenderPath.cpp
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
@@ -370,6 +369,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.cpp
 	DEM/Low/src/Frame/SceneNodeValidateAttrs.cpp
 	DEM/Low/src/Frame/SceneNodeValidateGPUResources.cpp
+	DEM/Low/src/Frame/SkinAttribute.cpp
 	DEM/Low/src/Frame/SkyboxAttribute.cpp
 	DEM/Low/src/Frame/TerrainAttribute.cpp
 	DEM/Low/src/Frame/View.cpp
@@ -416,12 +416,12 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Math/Vector2.cpp
 	DEM/Low/src/Math/Vector3.cpp
 	DEM/Low/src/Math/Vector4.cpp
+	DEM/Low/src/Physics/CollisionAttribute.cpp
 	DEM/Low/src/Physics/CollisionObjMoving.cpp
 	DEM/Low/src/Physics/CollisionObjStatic.cpp
 	DEM/Low/src/Physics/CollisionShape.cpp
 	DEM/Low/src/Physics/CollisionShapeLoader.cpp
 	DEM/Low/src/Physics/HeightfieldShape.cpp
-	DEM/Low/src/Physics/NodeAttrCollision.cpp
 	DEM/Low/src/Physics/NodeControllerRigidBody.cpp
 	DEM/Low/src/Physics/PhysicsDebugDraw.cpp
 	DEM/Low/src/Physics/PhysicsLevel.cpp

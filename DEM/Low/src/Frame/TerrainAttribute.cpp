@@ -14,7 +14,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CTerrainAttribute, 'TRNA', Frame::CNodeAttrRenderable);
+__ImplementClass(Frame::CTerrainAttribute, 'TRNA', Frame::CRenderableAttribute);
 
 bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

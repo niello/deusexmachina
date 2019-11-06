@@ -1,12 +1,12 @@
 #pragma once
-#include <Frame/NodeAttrRenderable.h>
+#include <Frame/RenderableAttribute.h>
 
 // Scene node attribute with renderable model
 
 namespace Frame
 {
 
-class CModelAttribute: public CNodeAttrRenderable
+class CModelAttribute: public CRenderableAttribute
 {
 	__DeclareClass(CModelAttribute);
 

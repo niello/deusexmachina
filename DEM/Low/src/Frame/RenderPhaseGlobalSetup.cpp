@@ -1,7 +1,7 @@
 #include "RenderPhaseGlobalSetup.h"
 #include <Frame/View.h>
 #include <Frame/RenderPath.h>
-#include <Frame/NodeAttrCamera.h>
+#include <Frame/CameraAttribute.h>
 #include <Data/Params.h>
 #include <Core/Factory.h>
 

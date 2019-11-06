@@ -4,7 +4,7 @@
 #include <Game/GameLevelView.h>
 #include <AI/AIServer.h>
 #include <Frame/SceneNodeUpdateInSPS.h>
-#include <Frame/NodeAttrCamera.h>
+#include <Frame/CameraAttribute.h>
 #include <Physics/PhysicsLevel.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>

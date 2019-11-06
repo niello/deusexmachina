@@ -24,7 +24,7 @@ namespace Frame
 {
 class CGraphicsResourceManager;
 
-class CNodeAttrRenderable: public Scene::CNodeAttribute
+class CRenderableAttribute: public Scene::CNodeAttribute
 {
 	__DeclareClassNoFactory;
 
@@ -45,6 +45,6 @@ public:
 	Render::IRenderable* GetRenderable() const { return Renderable.get(); }
 };
 
-typedef Ptr<CNodeAttrRenderable> PNodeAttrRenderable;
+typedef Ptr<CRenderableAttribute> PRenderableAttribute;
 
 }

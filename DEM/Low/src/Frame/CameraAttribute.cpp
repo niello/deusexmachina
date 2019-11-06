@@ -1,12 +1,12 @@
-#include "NodeAttrCamera.h"
+#include "CameraAttribute.h"
 
 #include <Core/Factory.h>
 
 namespace Frame
 {
-__ImplementClass(Frame::CNodeAttrCamera, 'CAMR', Scene::CNodeAttribute);
+__ImplementClass(Frame::CCameraAttribute, 'CAMR', Scene::CNodeAttribute);
 
-bool CNodeAttrCamera::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
+bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
 	/*
 	for (UPTR j = 0; j < Count; ++j)
@@ -30,9 +30,9 @@ bool CNodeAttrCamera::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CNodeAttrCamera::Clone()
+Scene::PNodeAttribute CCameraAttribute::Clone()
 {
-	PNodeAttrCamera ClonedAttr = n_new(CNodeAttrCamera);
+	PCameraAttribute ClonedAttr = n_new(CCameraAttribute);
 	ClonedAttr->FOV = FOV;
 	ClonedAttr->Width = Width;
 	ClonedAttr->Height = Height;
@@ -43,7 +43,7 @@ Scene::PNodeAttribute CNodeAttrCamera::Clone()
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrCamera::Update(const vector3* pCOIArray, UPTR COICount)
+void CCameraAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
 
@@ -75,7 +75,7 @@ void CNodeAttrCamera::Update(const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const
+void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const
 {
 	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
 	vector3 ViewLocalPos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
@@ -87,7 +87,7 @@ void CNodeAttrCamera::GetRay3D(float RelX, float RelY, float Length, line3& OutR
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrCamera::GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const
+void CCameraAttribute::GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const
 {
 	vector4 WorldPos = View * Point3D;
 	WorldPos.w = 0.f;

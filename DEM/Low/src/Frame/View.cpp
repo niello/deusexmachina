@@ -1,7 +1,7 @@
 #include "View.h"
-#include <Frame/NodeAttrCamera.h>
-#include <Frame/NodeAttrAmbientLight.h>
-#include <Frame/NodeAttrLight.h>
+#include <Frame/CameraAttribute.h>
+#include <Frame/AmbientLightAttribute.h>
+#include <Frame/LightAttribute.h>
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Scene/SPS.h>
@@ -102,19 +102,19 @@ void CView::UpdateVisibilityCache()
 		for (UPTR i = 0; i < VisibilityCache.GetCount();)
 		{
 			Scene::CNodeAttribute* pAttr = VisibilityCache[i];
-			if (pAttr->IsA<CNodeAttrLight>())
+			if (pAttr->IsA<CLightAttribute>())
 			{
 				Render::CLightRecord& Rec = *LightCache.Add();
-				Rec.pLight = &((CNodeAttrLight*)pAttr)->GetLight();
+				Rec.pLight = &((CLightAttribute*)pAttr)->GetLight();
 				Rec.Transform = pAttr->GetNode()->GetWorldMatrix();
 				Rec.UseCount = 0;
 				Rec.GPULightIndex = INVALID_INDEX;
 
 				VisibilityCache.RemoveAt(i);
 			}
-			else if (pAttr->IsA<CNodeAttrAmbientLight>())
+			else if (pAttr->IsA<CAmbientLightAttribute>())
 			{
-				EnvironmentCache.Add(pAttr->As<CNodeAttrAmbientLight>());
+				EnvironmentCache.Add(pAttr->As<CAmbientLightAttribute>());
 				VisibilityCache.RemoveAt(i);
 			}
 			else ++i;
@@ -262,7 +262,7 @@ Render::CDepthStencilBuffer* CView::GetDepthStencilBuffer(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CView::SetCamera(CNodeAttrCamera* pNewCamera)
+bool CView::SetCamera(CCameraAttribute* pNewCamera)
 {
 	if (pCamera == pNewCamera) OK;
 	if (!pNewCamera)

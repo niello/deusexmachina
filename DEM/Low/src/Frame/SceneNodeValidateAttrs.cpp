@@ -1,8 +1,8 @@
 #include "SceneNodeValidateAttrs.h"
 #include <Scene/SceneNode.h>
 #include <Frame/GraphicsResourceManager.h>
-#include <Frame/NodeAttrRenderable.h>
-#include <Frame/NodeAttrSkin.h>
+#include <Frame/RenderableAttribute.h>
+#include <Frame/SkinAttribute.h>
 
 namespace Frame
 {
@@ -22,7 +22,7 @@ bool CSceneNodeValidateAttrs::Visit(Scene::CSceneNode& Node)
 
 		Attr.ValidateResources(*_ResMgr.GetResourceManager());
 
-		if (auto Renderable = Attr.As<Frame::CNodeAttrRenderable>())
+		if (auto Renderable = Attr.As<Frame::CRenderableAttribute>())
 		{
 			if (!Renderable->ValidateGPUResources(_ResMgr)) FAIL;
 		}

@@ -16,7 +16,7 @@
 namespace Physics
 {
 
-class CNodeAttrCollision: public Scene::CNodeAttribute
+class CCollisionAttribute: public Scene::CNodeAttribute
 {
 	__DeclareClassNoFactory;
 
@@ -29,7 +29,7 @@ public:
 	void							GetGlobalAABB(CAABB& OutBox) const { CollObj->GetGlobalAABB(OutBox); }
 };
 
-typedef Ptr<CNodeAttrCollision> PNodeAttrCollision;
+typedef Ptr<CCollisionAttribute> PCollisionAttribute;
 
 }
 

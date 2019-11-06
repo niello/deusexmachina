@@ -32,8 +32,8 @@ namespace UI
 
 namespace Frame
 {
-class CNodeAttrCamera;
-class CNodeAttrAmbientLight;
+class CCameraAttribute;
+class CAmbientLightAttribute;
 typedef Ptr<class CRenderPath> PRenderPath;
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 typedef std::unique_ptr<class CView> PView;
@@ -53,14 +53,14 @@ protected:
 	PRenderPath									_RenderPath;
 	PGraphicsResourceManager					_GraphicsMgr;
 	int											_SwapChainID = INVALID_INDEX;
-	CNodeAttrCamera*							pCamera = nullptr; //???smart ptr?
+	CCameraAttribute*							pCamera = nullptr; //???smart ptr?
 
 	std::map<CStrID, Render::PRenderTarget>			RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
-	CArray<CNodeAttrAmbientLight*>				EnvironmentCache;
+	CArray<CAmbientLightAttribute*>				EnvironmentCache;
 	bool										VisibilityCacheDirty = true; //???to flags?
 
 	ELODType									MeshLODType = LOD_None;
@@ -101,7 +101,7 @@ public:
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }
-	CArray<CNodeAttrAmbientLight*>&	GetEnvironmentCache() { return EnvironmentCache; }
+	CArray<CAmbientLightAttribute*>&	GetEnvironmentCache() { return EnvironmentCache; }
 	UPTR							GetMeshLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	UPTR							GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRel) const;
 	bool							RequiresObjectScreenSize() const { return MeshLODType == LOD_ScreenSizeRelative || MeshLODType == LOD_ScreenSizeAbsolute || MaterialLODType == LOD_ScreenSizeRelative || MaterialLODType == LOD_ScreenSizeAbsolute; }
@@ -113,8 +113,8 @@ public:
 	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
 	bool							SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS);
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
-	bool							SetCamera(CNodeAttrCamera* pNewCamera);
-	const CNodeAttrCamera*			GetCamera() const { return pCamera; }
+	bool							SetCamera(CCameraAttribute* pNewCamera);
+	const CCameraAttribute*			GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
 	Render::CGPUDriver*				GetGPU() const;
 	DEM::Sys::COSWindow*			GetTargetWindow() const;

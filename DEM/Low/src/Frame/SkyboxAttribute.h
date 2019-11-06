@@ -1,12 +1,12 @@
 #pragma once
-#include <Frame/NodeAttrRenderable.h>
+#include <Frame/RenderableAttribute.h>
 
 // Scene node attribute with renderable skybox
 
 namespace Frame
 {
 
-class CSkyboxAttribute: public CNodeAttrRenderable
+class CSkyboxAttribute: public CRenderableAttribute
 {
 	__DeclareClass(CSkyboxAttribute);
 

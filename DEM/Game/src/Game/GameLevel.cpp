@@ -1,7 +1,7 @@
 #include "GameLevel.h"
 
 #include <Frame/View.h>
-#include <Frame/NodeAttrCamera.h>
+#include <Frame/CameraAttribute.h>
 #include <Frame/SceneNodeValidateAttrs.h>
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
@@ -484,7 +484,7 @@ UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRec
 
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
+	Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
 	if (Offset) EntityPos += *Offset;
@@ -495,7 +495,7 @@ bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, c
 
 bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
 {
-	Frame::PNodeAttrCamera MainCamera; //!!!DBG TMP!
+	Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
 	if (MainCamera.IsNullPtr()) FAIL;
 
 	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();

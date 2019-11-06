@@ -1,4 +1,4 @@
-#include "NodeAttrLight.h"
+#include "LightAttribute.h"
 #include <Scene/SPS.h>
 #include <Render/Light.h>
 #include <Core/Factory.h>
@@ -6,9 +6,9 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CNodeAttrLight, 'NALT', Scene::CNodeAttribute);
+__ImplementClass(Frame::CLightAttribute, 'NALT', Scene::CNodeAttribute);
 
-bool CNodeAttrLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
+bool CLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
 	for (UPTR j = 0; j < Count; ++j)
 	{
@@ -59,15 +59,15 @@ bool CNodeAttrLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CNodeAttrLight::Clone()
+Scene::PNodeAttribute CLightAttribute::Clone()
 {
-	PNodeAttrLight ClonedAttr = n_new(CNodeAttrLight);
+	PLightAttribute ClonedAttr = n_new(CLightAttribute);
 	ClonedAttr->Light = Light;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrLight::OnDetachFromScene()
+void CLightAttribute::OnDetachFromScene()
 {
 	//???do it on deactivation of an attribute? even it is not detached from node
 	if (pSPS)
@@ -86,7 +86,7 @@ void CNodeAttrLight::OnDetachFromScene()
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrLight::UpdateInSPS(Scene::CSPS& SPS)
+void CLightAttribute::UpdateInSPS(Scene::CSPS& SPS)
 {
 	if (Light.Type == Render::Light_Directional)
 	{
@@ -137,7 +137,7 @@ void CNodeAttrLight::UpdateInSPS(Scene::CSPS& SPS)
 //---------------------------------------------------------------------
 
 //!!!GetGlobalAABB & CalcBox must be separate!
-bool CNodeAttrLight::GetGlobalAABB(CAABB& OutBox) const
+bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 {
 	//!!!If local params changed, recompute AABB
 	//!!!If transform of host node changed, update global space AABB (rotate, scale)
@@ -168,7 +168,7 @@ bool CNodeAttrLight::GetGlobalAABB(CAABB& OutBox) const
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrLight::CalcFrustum(matrix44& OutFrustum) const
+void CLightAttribute::CalcFrustum(matrix44& OutFrustum) const
 {
 	matrix44 LocalFrustum;
 	Light.CalcLocalFrustum(LocalFrustum);

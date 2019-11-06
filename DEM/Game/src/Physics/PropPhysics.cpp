@@ -133,7 +133,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		}
 		else
 		{
-			Physics::PNodeAttrCollision Attr = n_new(Physics::CNodeAttrCollision);
+			Physics::PCollisionAttribute Attr = n_new(Physics::CCollisionAttribute);
 			Attr->CollObj = (Physics::CCollisionObjMoving*)Obj.Get();
 			pCurrNode->AddAttribute(*Attr);
 			Attrs.Add(Attr);

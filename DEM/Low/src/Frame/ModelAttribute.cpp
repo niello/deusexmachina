@@ -11,7 +11,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CModelAttribute, 'MDLA', Frame::CNodeAttrRenderable);
+__ImplementClass(Frame::CModelAttribute, 'MDLA', Frame::CRenderableAttribute);
 
 bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

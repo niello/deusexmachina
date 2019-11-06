@@ -24,9 +24,9 @@ namespace Frame
 {
 class CGraphicsResourceManager;
 
-class CNodeAttrAmbientLight: public Scene::CNodeAttribute
+class CAmbientLightAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClass(CNodeAttrAmbientLight);
+	__DeclareClass(CAmbientLightAttribute);
 
 protected:
 
@@ -51,6 +51,6 @@ public:
 	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }
 };
 
-typedef Ptr<CNodeAttrAmbientLight> PNodeAttrAmbientLight;
+typedef Ptr<CAmbientLightAttribute> PAmbientLightAttribute;
 
 }

@@ -1,13 +1,13 @@
-#include "NodeAttrRenderable.h"
+#include "RenderableAttribute.h"
 #include <Scene/SPS.h>
 #include <Scene/SceneNode.h>
 #include <Render/Renderable.h>
 
 namespace Frame
 {
-__ImplementClassNoFactory(Frame::CNodeAttrRenderable, Scene::CNodeAttribute);
+__ImplementClassNoFactory(Frame::CRenderableAttribute, Scene::CNodeAttribute);
 
-void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
+void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 {
 	CAABB AABB;
 	const bool AABBIsValid = Renderable->GetLocalAABB(AABB);
@@ -50,7 +50,7 @@ void CNodeAttrRenderable::UpdateInSPS(Scene::CSPS& SPS)
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
+bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
 	if (!pNode) FAIL;
 
@@ -68,7 +68,7 @@ bool CNodeAttrRenderable::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrRenderable::OnDetachFromScene()
+void CRenderableAttribute::OnDetachFromScene()
 {
 //	//???do it on deactivation of an attribute? even it is not detached from node
 	if (pSPSRecord)

@@ -1,4 +1,4 @@
-#include "NodeAttrAmbientLight.h"
+#include "AmbientLightAttribute.h"
 #include <Frame/GraphicsResourceManager.h>
 #include <Scene/SPS.h>
 #include <Render/GPUDriver.h>
@@ -7,9 +7,9 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CNodeAttrAmbientLight, 'NAAL', Scene::CNodeAttribute);
+__ImplementClass(Frame::CAmbientLightAttribute, 'NAAL', Scene::CNodeAttribute);
 
-bool CNodeAttrAmbientLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
+bool CAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
 	for (UPTR j = 0; j < Count; ++j)
 	{
@@ -34,7 +34,7 @@ bool CNodeAttrAmbientLight::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR C
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrAmbientLight::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
+bool CAmbientLightAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
 	IrradianceMap = ResMgr.GetTexture(UIDIrradianceMap, Render::Access_GPU_Read);
 	RadianceEnvMap = ResMgr.GetTexture(UIDRadianceEnvMap, Render::Access_GPU_Read);
@@ -42,9 +42,9 @@ bool CNodeAttrAmbientLight::ValidateGPUResources(CGraphicsResourceManager& ResMg
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CNodeAttrAmbientLight::Clone()
+Scene::PNodeAttribute CAmbientLightAttribute::Clone()
 {
-	PNodeAttrAmbientLight ClonedAttr = n_new(CNodeAttrAmbientLight);
+	PAmbientLightAttribute ClonedAttr = n_new(CAmbientLightAttribute);
 	ClonedAttr->UIDIrradianceMap = UIDIrradianceMap;
 	ClonedAttr->UIDRadianceEnvMap = UIDRadianceEnvMap;
 	ClonedAttr->IrradianceMap = IrradianceMap;
@@ -53,7 +53,7 @@ Scene::PNodeAttribute CNodeAttrAmbientLight::Clone()
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrAmbientLight::OnDetachFromScene()
+void CAmbientLightAttribute::OnDetachFromScene()
 {
 	//???do it on deactivation of an attribute? even it is not detached from node
 	if (pSPS)
@@ -72,7 +72,7 @@ void CNodeAttrAmbientLight::OnDetachFromScene()
 }
 //---------------------------------------------------------------------
 
-void CNodeAttrAmbientLight::UpdateInSPS(Scene::CSPS& SPS)
+void CAmbientLightAttribute::UpdateInSPS(Scene::CSPS& SPS)
 {
 	const bool Global = true;
 	if (Global)
@@ -128,7 +128,7 @@ void CNodeAttrAmbientLight::UpdateInSPS(Scene::CSPS& SPS)
 //---------------------------------------------------------------------
 
 //!!!GetGlobalAABB & CalcBox must be separate!
-bool CNodeAttrAmbientLight::GetGlobalAABB(CAABB& OutBox) const
+bool CAmbientLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 {
 	NOT_IMPLEMENTED;
 	FAIL;

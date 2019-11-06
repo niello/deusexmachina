@@ -1,9 +1,9 @@
 #include "SceneNodeUpdateInSPS.h"
 
 #include <Scene/SceneNode.h>
-#include <Frame/NodeAttrRenderable.h>
-#include <Frame/NodeAttrLight.h>
-#include <Frame/NodeAttrAmbientLight.h>
+#include <Frame/RenderableAttribute.h>
+#include <Frame/LightAttribute.h>
+#include <Frame/AmbientLightAttribute.h>
 
 namespace Frame
 {
@@ -17,9 +17,9 @@ bool CSceneNodeUpdateInSPS::Visit(Scene::CSceneNode& Node)
 		Scene::CNodeAttribute& Attr = *Node.GetAttribute(i);
 		if (Attr.IsActive())
 		{
-			if (Attr.IsA<CNodeAttrRenderable>()) ((CNodeAttrRenderable&)Attr).UpdateInSPS(*pSPS);
-			else if (Attr.IsA<CNodeAttrLight>()) ((CNodeAttrLight&)Attr).UpdateInSPS(*pSPS);
-			else if (Attr.IsA<CNodeAttrAmbientLight>()) ((CNodeAttrAmbientLight&)Attr).UpdateInSPS(*pSPS);
+			if (Attr.IsA<CRenderableAttribute>()) ((CRenderableAttribute&)Attr).UpdateInSPS(*pSPS);
+			else if (Attr.IsA<CLightAttribute>()) ((CLightAttribute&)Attr).UpdateInSPS(*pSPS);
+			else if (Attr.IsA<CAmbientLightAttribute>()) ((CAmbientLightAttribute&)Attr).UpdateInSPS(*pSPS);
 		}
 	}
 

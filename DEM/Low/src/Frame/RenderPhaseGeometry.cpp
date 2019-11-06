@@ -3,11 +3,11 @@
 #include <Frame/View.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Frame/RenderPath.h>
-#include <Frame/NodeAttrCamera.h>
-#include <Frame/NodeAttrRenderable.h>
-#include <Frame/NodeAttrAmbientLight.h>
-#include <Frame/NodeAttrLight.h>
-#include <Frame/NodeAttrSkin.h>
+#include <Frame/CameraAttribute.h>
+#include <Frame/RenderableAttribute.h>
+#include <Frame/AmbientLightAttribute.h>
+#include <Frame/LightAttribute.h>
+#include <Frame/SkinAttribute.h>
 #include <Render/Renderable.h>
 #include <Render/Renderer.h>
 #include <Render/Material.h>
@@ -112,9 +112,9 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	{
 		Scene::CNodeAttribute* pAttr = *It;
 		const Core::CRTTI* pAttrType = pAttr->GetRTTI();
-		if (!pAttrType->IsDerivedFrom(Frame::CNodeAttrRenderable::RTTI)) continue;
+		if (!pAttrType->IsDerivedFrom(Frame::CRenderableAttribute::RTTI)) continue;
 
-		Frame::CNodeAttrRenderable* pAttrRenderable = (Frame::CNodeAttrRenderable*)pAttr;
+		Frame::CRenderableAttribute* pAttrRenderable = (Frame::CRenderableAttribute*)pAttr;
 		Render::IRenderable* pRenderable = pAttrRenderable->GetRenderable();
 
 		IPTR Idx = Renderers.FindIndex(pRenderable->GetRTTI());
@@ -127,7 +127,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		pNode->pRenderer = pRenderer;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
 
-		Frame::CNodeAttrSkin* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CNodeAttrSkin>();
+		Frame::CSkinAttribute* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CSkinAttribute>();
 		if (pSkinAttr)
 		{
 			pNode->pSkinPalette = pSkinAttr->GetSkinPalette();
@@ -243,10 +243,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 		//???need visibility check for env maps? or select through separate spatial query?! SPS.FindClosest(COI, AttrRTTI, MaxCount)!
 		//may refresh only when COI changes, because maps are considered static
-		CArray<CNodeAttrAmbientLight*>& EnvCache = View.GetEnvironmentCache();
+		CArray<CAmbientLightAttribute*>& EnvCache = View.GetEnvironmentCache();
 		if (EnvCache.GetCount())
 		{
-			CNodeAttrAmbientLight* pGlobalAmbientLight = EnvCache[0];
+			CAmbientLightAttribute* pGlobalAmbientLight = EnvCache[0];
 
 			if (RsrcIrradianceMap)
 				RsrcIrradianceMap->Apply(*pGPU, pGlobalAmbientLight->GetIrradianceMap());
