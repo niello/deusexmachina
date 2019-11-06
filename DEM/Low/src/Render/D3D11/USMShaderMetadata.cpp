@@ -192,7 +192,9 @@ void CUSMConstantBufferParam::Unapply(CGPUDriver& GPU, CConstantBuffer* pValue) 
 	auto pCB = Cast<CD3D11ConstantBuffer>(*pValue);
 	if (!pCB) return;
 
-	NOT_IMPLEMENTED;
+	for (U8 i = 0; i < ShaderType_COUNT; ++i)
+		if (_ShaderTypeMask & (1 << i))
+			pGPU->UnbindConstantBuffer(static_cast<EShaderType>(i), _Type, _Register, *pCB);
 }
 //---------------------------------------------------------------------
 
@@ -245,7 +247,9 @@ void CUSMResourceParam::Unapply(CGPUDriver& GPU, CTexture* pValue) const
 	auto pTex = Cast<CD3D11Texture>(*pValue);
 	if (!pTex) return;
 
-	NOT_IMPLEMENTED;
+	for (U8 i = 0; i < ShaderType_COUNT; ++i)
+		if (_ShaderTypeMask & (1 << i))
+			pGPU->UnbindResource(static_cast<EShaderType>(i), _RegisterStart, *pTex);
 }
 //---------------------------------------------------------------------
 
@@ -290,7 +294,9 @@ void CUSMSamplerParam::Unapply(CGPUDriver& GPU, CSampler* pValue) const
 	auto pSampler = Cast<CD3D11Sampler>(*pValue);
 	if (!pSampler) return;
 
-	NOT_IMPLEMENTED;
+	for (U8 i = 0; i < ShaderType_COUNT; ++i)
+		if (_ShaderTypeMask & (1 << i))
+			pGPU->UnbindSampler(static_cast<EShaderType>(i), _RegisterStart, *pSampler);
 }
 //---------------------------------------------------------------------
 

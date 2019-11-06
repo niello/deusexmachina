@@ -195,7 +195,15 @@ void CSM30ConstantBufferParam::Unapply(CGPUDriver& GPU, CConstantBuffer* pValue)
 	auto pCB = Cast<CD3D9ConstantBuffer>(*pValue);
 	if (!pCB) return;
 
-	NOT_IMPLEMENTED;
+	if (ShaderTypeMask & (1 << ShaderType_Vertex))
+	{
+		pGPU->UnbindConstantBuffer(ShaderType_Vertex, SlotIndex, *pCB);
+	}
+
+	if (ShaderTypeMask & (1 << ShaderType_Pixel))
+	{
+		pGPU->UnbindConstantBuffer(ShaderType_Pixel, SlotIndex, *pCB);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -246,7 +254,15 @@ void CSM30ResourceParam::Unapply(CGPUDriver& GPU, CTexture* pValue) const
 	auto pTex = Cast<CD3D9Texture>(*pValue);
 	if (!pTex) return;
 
-	NOT_IMPLEMENTED;
+	if (_ShaderTypeMask & (1 << ShaderType_Vertex))
+	{
+		pGPU->UnbindResource(ShaderType_Vertex, _Register, *pTex);
+	}
+
+	if (_ShaderTypeMask & (1 << ShaderType_Pixel))
+	{
+		pGPU->UnbindResource(ShaderType_Pixel, _Register, *pTex);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -292,7 +308,15 @@ void CSM30SamplerParam::Unapply(CGPUDriver& GPU, CSampler* pValue) const
 	auto pSampler = Cast<CD3D9Sampler>(*pValue);
 	if (!pSampler) return;
 
-	NOT_IMPLEMENTED;
+	if (_ShaderTypeMask & (1 << ShaderType_Vertex))
+	{
+		pGPU->UnbindSampler(ShaderType_Vertex, _RegisterStart, _RegisterCount, *pSampler);
+	}
+
+	if (_ShaderTypeMask & (1 << ShaderType_Pixel))
+	{
+		pGPU->UnbindSampler(ShaderType_Pixel, _RegisterStart, _RegisterCount, *pSampler);
+	}
 }
 //---------------------------------------------------------------------
 

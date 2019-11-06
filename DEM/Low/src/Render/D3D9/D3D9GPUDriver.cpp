@@ -1858,6 +1858,24 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 
 }
 //---------------------------------------------------------------------
 
+void CD3D9GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer& CBuffer)
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::UnbindResource(EShaderType ShaderType, U32 Register, CD3D9Texture& Resource)
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
+void CD3D9GPUDriver::UnbindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler& Sampler)
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
 bool CD3D9GPUDriver::BeginFrame()
 {
 	n_assert_dbg(!IsInsideFrame);
@@ -2194,7 +2212,7 @@ PVertexBuffer CD3D9GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, UP
 
 	DWORD Usage;
 	D3DPOOL Pool;
-	GetUsagePool(AccessFlags, Usage, Pool);
+	if (!GetUsagePool(AccessFlags, Usage, Pool)) return nullptr;
 	if (Pool == D3DPOOL_DEFAULT) Usage |= D3DUSAGE_WRITEONLY;
 
 	UPTR ByteSize = VertexCount * VertexLayout.GetVertexSizeInBytes();
@@ -2237,7 +2255,7 @@ PIndexBuffer CD3D9GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR IndexC
 
 	DWORD Usage;
 	D3DPOOL Pool;
-	GetUsagePool(AccessFlags, Usage, Pool);
+	if (!GetUsagePool(AccessFlags, Usage, Pool)) return nullptr;
 	if (Pool == D3DPOOL_DEFAULT) Usage |= D3DUSAGE_WRITEONLY;
 
 	D3DFORMAT Format = (IndexType == Index_16) ? D3DFMT_INDEX16 : D3DFMT_INDEX32;
@@ -2359,7 +2377,7 @@ PTexture CD3D9GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 
 	DWORD Usage;
 	D3DPOOL Pool;
-	GetUsagePool(AccessFlags, Usage, Pool);
+	if (!GetUsagePool(AccessFlags, Usage, Pool)) return nullptr;
 	if (!Data->MipDataProvided && Desc.MipLevels != 1) Usage |= D3DUSAGE_AUTOGENMIPMAP;
 
 	if (Desc.Type == Texture_1D || Desc.Type == Texture_2D)
@@ -3537,24 +3555,32 @@ D3DDEVTYPE CD3D9GPUDriver::GetD3DDriverType(EGPUDriverType DriverType)
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::GetUsagePool(UPTR InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool)
+bool CD3D9GPUDriver::GetUsagePool(UPTR InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool)
 {
 	Data::CFlags AccessFlags(InAccessFlags);
 	if (AccessFlags.IsNot(Access_CPU_Write | Access_CPU_Read))
 	{
-		OutPool = D3DPOOL_MANAGED; //!!!set default if resmgr will manage reloading!
+		// No CPU access needed, use GPU memory
+		// TODO: can use D3DPOOL_DEFAULT if DEM will manage reloading and updating
+		//???does D3DPOOL_MANAGED provide full CPU and GPU access to the resource?
+		OutPool = D3DPOOL_MANAGED;
 		OutUsage = 0;
 	}
 	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
 	{
+		// Special case - dynamic resources, frequently updateable from CPU side
 		OutPool = D3DPOOL_DEFAULT;
 		OutUsage = D3DUSAGE_DYNAMIC;
 	}
-	else
+	else if (AccessFlags.IsNot(Access_GPU_Write | Access_GPU_Read))
 	{
+		// No GPU access needed, system RAM resource
 		OutPool = D3DPOOL_SYSTEMMEM;
-		OutUsage = D3DUSAGE_DYNAMIC; //???has meaning?
+		OutUsage = 0;
 	}
+	else FAIL; // Unsupported combination of access capabilities
+
+	OK;
 }
 //---------------------------------------------------------------------
 

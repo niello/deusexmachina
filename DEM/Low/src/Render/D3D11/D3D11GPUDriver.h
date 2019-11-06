@@ -157,7 +157,7 @@ protected:
 
 	static D3D_DRIVER_TYPE				GetD3DDriverType(EGPUDriverType DriverType);
 	static EGPUDriverType				GetDEMDriverType(D3D_DRIVER_TYPE DriverType);
-	static void							GetUsageAccess(UPTR InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
+	static bool							GetUsageAccess(UPTR InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess);
 	static void							GetD3DMapTypeAndFlags(EResourceMapMode MapMode, D3D11_MAP& OutMapType, UPTR& OutMapFlags);
 	static D3D11_COMPARISON_FUNC		GetD3DCmpFunc(ECmpFunc Func);
 	static D3D11_STENCIL_OP				GetD3DStencilOp(EStencilOp Operation);
@@ -170,6 +170,7 @@ protected:
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, UPTR Size, UPTR Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
 	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);
+	void								UnbindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV);
 	bool								IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage = ShaderType_Invalid, UPTR ExceptSlot = 0);
 	void								FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot);
 
@@ -255,9 +256,12 @@ public:
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
 
-	bool                        BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CConstantBuffer* pCBuffer);
-	bool                        BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource);
-	bool                        BindSampler(EShaderType ShaderType, U32 Register, CSampler* pSampler);
+	bool                        BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pCBuffer);
+	bool                        BindResource(EShaderType ShaderType, U32 Register, CD3D11Texture* pResource);
+	bool                        BindSampler(EShaderType ShaderType, U32 Register, CD3D11Sampler* pSampler);
+	void                        UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer& CBuffer);
+	void                        UnbindResource(EShaderType ShaderType, U32 Register, CD3D11Texture& Resource);
+	void                        UnbindSampler(EShaderType ShaderType, U32 Register, CD3D11Sampler& Sampler);
 
 	//void					SetWireframe(bool Wire);
 	//bool					IsWireframe() const { return Wireframe; }

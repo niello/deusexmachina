@@ -985,11 +985,11 @@ CDepthStencilBuffer* CD3D11GPUDriver::GetDepthStencilBuffer() const
 }
 //---------------------------------------------------------------------
 
-//!!!ID3D11ShaderResourceView* or PObject!
 bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB)
 {
 	if (SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) FAIL;
 
+	auto Register = SlotIndex;
 	if (MaxSRVSlotIndex < SlotIndex) MaxSRVSlotIndex = SlotIndex;
 	SlotIndex |= (ShaderType << 16); // Encode shader type in a high word
 
@@ -999,11 +999,12 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 	{
 		pSRVRec = &CurrSRV.ValueAt(DictIdx);
 		if (pSRVRec->pSRV == pSRV) OK;
+
+		// Free temporary buffer previously bound to this slot
+		FreePendingTemporaryBuffer(pSRVRec->CB.Get(), ShaderType, Register);
 	}
 	else
 	{
-		// Conflicts with CurrSRV.FindIndex()
-		//if (!CurrSRV.IsInAddMode()) CurrSRV.BeginAdd();
 		pSRVRec = &CurrSRV.Add(SlotIndex);
 	}
 
@@ -1016,31 +1017,20 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CConstantBuffer* pCBuffer)
+bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pCBuffer)
 {
-	UPTR Index = Register;
-
-	const CD3D11ConstantBuffer* pCurrBuffer;	
-	if (Type == USMBuffer_Constant)
-		pCurrBuffer = CurrCB[Index + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT].Get();
-	else
-	{
-		IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
-		pCurrBuffer = (DictIdx == INVALID_INDEX) ? nullptr : CurrSRV.ValueAt(DictIdx).CB.Get();
-	}
-
-	// Free temporary buffer previously bound to this slot
-	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, Index);
-
 	if (Type == USMBuffer_Constant)
 	{
-		if (Index >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
+		if (Register >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) FAIL;
 
-		Index += ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
-		const CD3D11ConstantBuffer* pCurrCB = CurrCB[Index].Get();
-		if (pCurrCB == pCBuffer) OK;
+		const UPTR Index = Register + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
 
-		CurrCB[Index] = (CD3D11ConstantBuffer*)pCBuffer;
+		if (CurrCB[Index] == pCBuffer) OK;
+
+		// Free temporary buffer previously bound to this slot
+		FreePendingTemporaryBuffer(CurrCB[Index], ShaderType, Register);
+
+		CurrCB[Index] = pCBuffer;
 		CurrDirtyFlags.Set(GPU_Dirty_CB);
 		ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_CBuffers + ShaderType));
 
@@ -1048,41 +1038,95 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType 
 	}
 	else
 	{
-		ID3D11ShaderResourceView* pSRV = pCBuffer ? ((CD3D11ConstantBuffer*)pCBuffer)->GetD3DSRView() : nullptr;
-		return BindSRV(ShaderType, Register, pSRV, (CD3D11ConstantBuffer*)pCBuffer);
+		ID3D11ShaderResourceView* pSRV = pCBuffer ? pCBuffer->GetD3DSRView() : nullptr;
+		return BindSRV(ShaderType, Register, pSRV, pCBuffer);
 	}
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CTexture* pResource)
+bool CD3D11GPUDriver::BindResource(EShaderType ShaderType, U32 Register, CD3D11Texture* pResource)
 {
-	UPTR Index = Register;
-
-	// Free temporary buffer previously bound to this slot
-	IPTR DictIdx = CurrSRV.FindIndex(Index | (ShaderType << 16));
-	const CD3D11ConstantBuffer* pCurrBuffer = (DictIdx == INVALID_INDEX) ? nullptr : CurrSRV.ValueAt(DictIdx).CB.Get();
-	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, Index);
-
-	ID3D11ShaderResourceView* pSRV = pResource ? ((CD3D11Texture*)pResource)->GetD3DSRView() : nullptr;
-	return BindSRV(ShaderType, Index, pSRV, nullptr);
+	ID3D11ShaderResourceView* pSRV = pResource ? pResource->GetD3DSRView() : nullptr;
+	return BindSRV(ShaderType, Register, pSRV, nullptr);
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, U32 Register, CSampler* pSampler)
+bool CD3D11GPUDriver::BindSampler(EShaderType ShaderType, U32 Register, CD3D11Sampler* pSampler)
 {
-	UPTR Index = Register;
-	if (Index >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
+	if (Register >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) FAIL;
 
-	Index += ((UPTR)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+	const UPTR Index = Register + ((UPTR)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
 	const CD3D11Sampler* pCurrSamp = CurrSS[Index].Get();
 	if (pCurrSamp == pSampler) OK;
-	if (pCurrSamp && pSampler && pCurrSamp->GetD3DSampler() == ((const CD3D11Sampler*)pSampler)->GetD3DSampler()) OK;
+	if (pCurrSamp && pSampler && pCurrSamp->GetD3DSampler() == pSampler->GetD3DSampler()) OK;
 
-	CurrSS[Index] = (CD3D11Sampler*)pSampler;
+	CurrSS[Index] = pSampler;
 	CurrDirtyFlags.Set(GPU_Dirty_SS);
 	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Samplers + ShaderType));
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::UnbindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV)
+{
+	if (SlotIndex >= D3D11_COMMONSHADER_INPUT_RESOURCE_SLOT_COUNT) return;
+
+	CSRVRecord* pSRVRec;
+	IPTR DictIdx = CurrSRV.FindIndex(SlotIndex | (ShaderType << 16));
+	if (DictIdx == INVALID_INDEX) return;
+
+	pSRVRec = &CurrSRV.ValueAt(DictIdx);
+	if (pSRVRec->pSRV != pSRV) return;
+
+	// Free temporary buffer previously bound to this slot
+	FreePendingTemporaryBuffer(pSRVRec->CB.Get(), ShaderType, SlotIndex);
+
+	CurrDirtyFlags.Set(GPU_Dirty_SRV);
+	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer& CBuffer)
+{
+	if (Type == USMBuffer_Constant)
+	{
+		if (Register >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) return;
+
+		const UPTR Index = Register + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
+		if (CurrCB[Index] == &CBuffer)
+		{
+			// Free temporary buffer
+			FreePendingTemporaryBuffer(CurrCB[Index], ShaderType, Register);
+
+			CurrCB[Index] = nullptr;
+			CurrDirtyFlags.Set(GPU_Dirty_CB);
+			ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_CBuffers + ShaderType));
+		}
+	}
+	else
+	{
+		UnbindSRV(ShaderType, Register, CBuffer.GetD3DSRView());
+	}
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::UnbindResource(EShaderType ShaderType, U32 Register, CD3D11Texture& Resource)
+{
+	UnbindSRV(ShaderType, Register, Resource.GetD3DSRView());
+}
+//---------------------------------------------------------------------
+
+void CD3D11GPUDriver::UnbindSampler(EShaderType ShaderType, U32 Register, CD3D11Sampler& Sampler)
+{
+	if (Register >= D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT) return;
+	const UPTR Index = Register + ((UPTR)ShaderType) * D3D11_COMMONSHADER_SAMPLER_SLOT_COUNT;
+	if (CurrSS[Index] == &Sampler)
+	{
+		CurrSS[Index] = nullptr;
+		CurrDirtyFlags.Set(GPU_Dirty_SS);
+		ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Samplers + ShaderType));
+	}
 }
 //---------------------------------------------------------------------
 
@@ -1713,9 +1757,9 @@ PVertexBuffer CD3D11GPUDriver::CreateVertexBuffer(CVertexLayout& VertexLayout, U
 {
 	if (!pD3DDevice || !VertexCount || !VertexLayout.GetVertexSizeInBytes()) return nullptr;
 
-	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	D3D11_USAGE Usage;
 	UINT CPUAccess;
-	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+	if (!GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess)) return nullptr;
 
 	D3D11_BUFFER_DESC Desc;
 	Desc.Usage = Usage;
@@ -1750,9 +1794,9 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 {
 	if (!pD3DDevice || !IndexCount) return nullptr;
 
-	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	D3D11_USAGE Usage;
 	UINT CPUAccess;
-	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+	if (!GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess)) return nullptr;
 
 	D3D11_BUFFER_DESC Desc;
 	Desc.Usage = Usage;
@@ -1787,9 +1831,9 @@ PIndexBuffer CD3D11GPUDriver::CreateIndexBuffer(EIndexType IndexType, UPTR Index
 //!!!or we must determine buffer size in shader comments(annotations?) / in effect desc!
 PD3D11ConstantBuffer CD3D11GPUDriver::InternalCreateConstantBuffer(EUSMBufferType Type, U32 Size, UPTR AccessFlags, const CConstantBuffer* pData, bool Temporary)
 {
-	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	D3D11_USAGE Usage;
 	UINT CPUAccess;
-	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+	if (!GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess)) return nullptr;
 
 	D3D11_BUFFER_DESC Desc;
 	Desc.Usage = Usage;
@@ -1986,7 +2030,7 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer
 
 void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot)
 {
-	// Check whether there are pending buffer, this buffer is temporary and this buffer is not bound
+	// Check whether there are pending buffers, this buffer is temporary and this buffer is not bound
 	if (!pPendingCBHead || !pCBuffer || !pCBuffer->IsTemporary() || IsConstantBufferBound(pCBuffer, Stage, Slot)) return;
 
 	EUSMBufferType Type = pCBuffer->GetType();
@@ -2040,9 +2084,6 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		return nullptr;
 	}
 
-	PD3D11Texture Tex = n_new(CD3D11Texture);
-	if (Tex.IsNullPtr()) return nullptr;
-
 	const void* pData = Data->Data ? Data->Data->GetConstPtr() : nullptr;
 	DXGI_FORMAT DXGIFormat = CD3D11DriverFactory::PixelFormatToDXGIFormat(Desc.Format);
 	UPTR QualityLvlCount = 0;
@@ -2053,9 +2094,9 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		pData = nullptr; // MSAA resources can't be initialized with data
 	}
 
-	D3D11_USAGE Usage; // GetUsageAccess() never returns immutable usage if data is not provided
+	D3D11_USAGE Usage;
 	UINT CPUAccess;
-	GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess);
+	if (!GetUsageAccess(AccessFlags, !!pData, Usage, CPUAccess)) return nullptr;
 
 	UPTR MipLevels = Desc.MipLevels;
 	UPTR ArraySize = (Desc.Type == Texture_3D) ? 1 : ((Desc.Type == Texture_Cube) ? 6 * Desc.ArraySize : Desc.ArraySize);
@@ -2255,6 +2296,9 @@ PTexture CD3D11GPUDriver::CreateTexture(PTextureData Data, UPTR AccessFlags)
 		pTexRsrc->Release();
 		return nullptr;
 	}
+
+	PD3D11Texture Tex = n_new(CD3D11Texture);
+	if (Tex.IsNullPtr()) return nullptr;
 
 	if (!Tex->Create(Data, Usage, AccessFlags, pTexRsrc, pSRV))
 	{
@@ -3529,29 +3573,41 @@ EGPUDriverType CD3D11GPUDriver::GetDEMDriverType(D3D_DRIVER_TYPE DriverType)
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::GetUsageAccess(UPTR InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
+bool CD3D11GPUDriver::GetUsageAccess(UPTR InAccessFlags, bool InitDataProvided, D3D11_USAGE& OutUsage, UINT& OutCPUAccess)
 {
-	if (InAccessFlags == Access_GPU_Read || InAccessFlags == 0)
+	Data::CFlags AccessFlags(InAccessFlags);
+	if (AccessFlags.IsNot(Access_CPU_Write | Access_CPU_Read))
 	{
-		OutUsage = InitDataProvided ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+		// No CPU access needed, use GPU memory
+		if (InAccessFlags == Access_GPU_Read || InAccessFlags == 0)
+		{
+			// Use the best read-only GPU memory
+			OutUsage = InitDataProvided ? D3D11_USAGE_IMMUTABLE : D3D11_USAGE_DEFAULT;
+		}
+		else
+		{
+			// Use read-write GPU memory
+			OutUsage = D3D11_USAGE_DEFAULT;
+		}
 	}
-	else if (InAccessFlags == (Access_GPU_Read | Access_GPU_Write) ||
-			 InAccessFlags == Access_GPU_Write)
+	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write))
 	{
-		OutUsage = D3D11_USAGE_DEFAULT;
-	}
-	else if (InAccessFlags == (Access_GPU_Read | Access_CPU_Write)) //???allow GPU_Write?
-	{
+		// Special case - dynamic resources, frequently updateable from CPU side
 		OutUsage = D3D11_USAGE_DYNAMIC;
 	}
-	else //???are there any unsupported combinations? user wants to get a resource with a specified access or nullptr!
+	else if (AccessFlags.IsNot(Access_GPU_Write | Access_GPU_Read))
 	{
-		OutUsage = D3D11_USAGE_STAGING; // Can't be a depth-stencil buffer or a multisampled render target
+		// No GPU access needed, system RAM resource.
+		// Can't be a depth-stencil buffer or a multisampled render target.
+		OutUsage = D3D11_USAGE_STAGING;
 	}
+	else FAIL; // Unsupported combination of access capabilities
 
 	OutCPUAccess = 0;
 	if (InAccessFlags & Access_CPU_Read) OutCPUAccess |= D3D11_CPU_ACCESS_READ;
 	if (InAccessFlags & Access_CPU_Write) OutCPUAccess |= D3D11_CPU_ACCESS_WRITE;
+
+	OK;
 }
 //---------------------------------------------------------------------
 

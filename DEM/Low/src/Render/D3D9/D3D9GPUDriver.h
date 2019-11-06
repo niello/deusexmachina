@@ -133,7 +133,7 @@ protected:
 	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, HWND hWnd, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	static D3DDEVTYPE			GetD3DDriverType(EGPUDriverType DriverType);
-	static void					GetUsagePool(UPTR InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
+	static bool					GetUsagePool(UPTR InAccessFlags, DWORD& OutUsage, D3DPOOL& OutPool);
 	static UINT					GetD3DLockFlags(EResourceMapMode MapMode);
 	static D3DCUBEMAP_FACES		GetD3DCubeMapFace(ECubeMapFace Face);
 	static D3DCMPFUNC			GetD3DCmpFunc(ECmpFunc Func);
@@ -226,6 +226,9 @@ public:
 	bool                        BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pCBuffer);
 	bool                        BindResource(EShaderType ShaderType, U32 Register, CD3D9Texture* pResource);
 	bool                        BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler* pSampler);
+	void                        UnbindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer& CBuffer);
+	void                        UnbindResource(EShaderType ShaderType, U32 Register, CD3D9Texture& Resource);
+	void                        UnbindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler& Sampler);
 
 	bool						GetD3DMSAAParams(EMSAAQuality MSAA, D3DFORMAT Format, D3DMULTISAMPLE_TYPE& OutType, DWORD& OutQuality) const;
 	IDirect3DDevice9*			GetD3DDevice() const { return pD3DDevice; }
