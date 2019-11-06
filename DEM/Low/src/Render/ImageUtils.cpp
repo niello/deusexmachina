@@ -36,14 +36,15 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Fl
 
 	const char* pSrc = Src.pData;
 	if (Flags & CopyImage_AdjustSrc)
-		pSrc = pSrc + Params.Offset[Z] * Src.SlicePitch + OffsetBlocksY * Src.RowPitch + OffsetBytesX;
+		pSrc += Params.Offset[Z] * Src.SlicePitch + OffsetBlocksY * Src.RowPitch + OffsetBytesX;
 
 	char* pDest = Dest.pData;
 	if (Flags & CopyImage_AdjustDest)
-		pDest = pDest + Params.Offset[Z] * Dest.SlicePitch + OffsetBlocksY * Dest.RowPitch + OffsetBytesX;
+		pDest += Params.Offset[Z] * Dest.SlicePitch + OffsetBlocksY * Dest.RowPitch + OffsetBytesX;
 
 #ifdef _DEBUG
-	if (!IsAligned16(pSrc) || !IsAligned16(pDest))
+	// Don't check adjusted pointers, user can't align offsets
+	if ((!IsAligned16(pSrc) && !(Flags & CopyImage_AdjustSrc))  || (!IsAligned16(pDest) && !(Flags & CopyImage_AdjustDest)))
 		Sys::DbgOut("Render::CopyImage() > Either pSrc or pDest is not aligned at 16 bytes boundary. Align your pointers to achieve MUCH faster copying.\n");
 #endif
 
@@ -74,7 +75,7 @@ void __fastcall CopyImage(const CImageData& Src, const CImageData& Dest, UPTR Fl
 			char* pDestRow = pDest;
 			for (UPTR j = 0; j < CopyBlocksH; ++j)
 			{
-				memcpy(pDest, pSrc, RowPartSize);
+				memcpy(pDestRow, pSrcRow, RowPartSize);
 				pSrcRow += Src.RowPitch;
 				pDestRow += Dest.RowPitch;
 			}
