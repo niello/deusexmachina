@@ -56,24 +56,25 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!Renderable) FAIL;
-
+	if (!Renderable) Renderable.reset(n_new(Render::CModel));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
 	// Store mesh data pointer for GPU-independent local AABB access
 	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(MeshUID);
 	pModel->MeshData = RMeshData->ValidateObject<Render::CMeshData>();
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	if (!Renderable) FAIL;
-
+	if (!Renderable) Renderable.reset(n_new(Render::CModel));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
+
 	pModel->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
 	pModel->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
+
 	OK;
 }
 //---------------------------------------------------------------------

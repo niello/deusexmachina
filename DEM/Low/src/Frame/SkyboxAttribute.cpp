@@ -15,9 +15,6 @@ __ImplementClass(Frame::CSkyboxAttribute, 'SKBA', Frame::CRenderableAttribute);
 
 bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CSkybox));
-	auto pSkybox = static_cast<Render::CSkybox*>(Renderable.get());
-
 	for (UPTR j = 0; j < Count; ++j)
 	{
 		const uint32_t Code = DataReader.Read<uint32_t>();
@@ -38,18 +35,19 @@ bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	if (!Renderable) FAIL;
-
 	//!!!double searching! Here and in ResMgr.CreateMesh!
 	CStrID MeshUID("#Mesh_Skybox");
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
 	{
-		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorSkybox));
+		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorSkybox()));
 	}
 
+	if (!Renderable) Renderable.reset(n_new(Render::CSkybox));
 	auto pSkybox = static_cast<Render::CSkybox*>(Renderable.get());
+
 	pSkybox->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
 	pSkybox->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
+
 	OK;
 }
 //---------------------------------------------------------------------

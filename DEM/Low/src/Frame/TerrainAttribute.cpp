@@ -57,35 +57,32 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 
 bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!Renderable) FAIL;
-
+	if (!Renderable) Renderable.reset(n_new(Render::CTerrain));
 	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
 
 	auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(CDLODDataUID);
 	pTerrain->CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
+
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	if (!Renderable || !ResMgr.GetGPU()) FAIL;
+	if (!ResMgr.GetGPU()) FAIL;
 
 	// HeightMap support check
 	//!!!write R32F variant!
 	if (!ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) FAIL;
 
+	if (!Renderable) Renderable.reset(n_new(Render::CTerrain));
 	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
 
 	if (!pTerrain->CDLODData)
 	{
-		// Could load CDLOD data right here, but let's enforce right calling order for now
-		::Sys::Error("CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
-		FAIL;
+		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
+		if (!ValidateResources(*ResMgr.GetResourceManager())) FAIL;
 	}
-
-	//!!!if CDLOD will not include texture, just height data, create texture here, if not created!
-	//can create CDLOD textures here per GPU with fixed sub-ID, so with no unnecessary recreation
 
 	pTerrain->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
 	pTerrain->HeightMap = HeightMapUID ? ResMgr.GetTexture(HeightMapUID, Render::Access_GPU_Read) : nullptr;
