@@ -351,12 +351,10 @@ bool CGameServer::ContinueGame(const char* pFileName)
 {
 	n_assert(CurrProfile.IsValid() && !Levels.GetCount() && !Attrs.GetCount());
 
-	Data::PParams InitialCommon;
-	if (!ParamsUtils::LoadParamsFromPRM(pFileName, InitialCommon)) FAIL;
+	Data::PParams InitialCommon = ParamsUtils::LoadParamsFromPRM(pFileName);
 	if (InitialCommon.IsNullPtr()) FAIL;
 
-	Data::PParams SGCommon;
-	ParamsUtils::LoadParamsFromPRM("AppData:Profiles/" + CurrProfile + "/Continue/Main.prm", SGCommon);
+	Data::PParams SGCommon = ParamsUtils::LoadParamsFromPRM("AppData:Profiles/" + CurrProfile + "/Continue/Main.prm");
 
 	Data::PParams GameDesc;
 	if (SGCommon.IsValidPtr())
@@ -399,15 +397,14 @@ bool CGameServer::LoadGameLevel(CStrID ID)
 {
 	CString RelLevelPath = CString(ID.CStr()) + ".prm";
 
-	Data::PParams InitialLvl;
-	if (!ParamsUtils::LoadParamsFromPRM("Levels:" + RelLevelPath, InitialLvl)) FAIL;
+	Data::PParams InitialLvl = ParamsUtils::LoadParamsFromPRM("Levels:" + RelLevelPath);
 	n_assert(InitialLvl.IsValidPtr());
 
 	Data::PParams SGLvl;
 	if (CurrProfile.IsValid())
 	{
 		CString DiffPath = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";
-		ParamsUtils::LoadParamsFromPRM(DiffPath + RelLevelPath, SGLvl);
+		SGLvl = ParamsUtils::LoadParamsFromPRM(DiffPath + RelLevelPath);
 	}
 
 	Data::PParams LevelDesc;
@@ -464,8 +461,7 @@ bool CGameServer::CommitContinueData()
 		LoadedLevels->Add(Levels.KeyAt(i));
 	SetGlobalAttr(CStrID("LoadedLevels"), LoadedLevels);
 
-	Data::PParams GameDesc;
-	if (!ParamsUtils::LoadParamsFromPRM(GameFileName, GameDesc)) FAIL;
+	Data::PParams GameDesc = ParamsUtils::LoadParamsFromPRM(GameFileName);
 	if (GameDesc.IsNullPtr()) FAIL;
 
 	// Save main game file with common data
@@ -517,9 +513,8 @@ bool CGameServer::CommitLevelDiff(CGameLevel& Level)
 	EntityManager.DeferredDeleteEntities();
 
 	Data::PParams SGLevel = n_new(Data::CParams);
-	Data::PParams LevelDesc;
-	if (!ParamsUtils::LoadParamsFromPRM(CString("Levels:") + Level.GetID().CStr() + ".prm", LevelDesc)) FAIL;
-	if (!Level.Save(*SGLevel, LevelDesc)) FAIL;
+	Data::PParams LevelDesc = ParamsUtils::LoadParamsFromPRM(CString("Levels:") + Level.GetID().CStr() + ".prm");
+	if (!LevelDesc || !Level.Save(*SGLevel, LevelDesc)) FAIL;
 	if (SGLevel->GetCount())
 	{
 		CString DirName = "AppData:Profiles/" + CurrProfile + "/Continue/Levels/";

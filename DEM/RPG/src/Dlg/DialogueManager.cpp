@@ -71,9 +71,8 @@ PDlgGraph CDialogueManager::GetDialogueGraph(CStrID ID)
 	if (Idx > -1) return DlgRegistry.ValueAt(Idx);
 	else
 	{
-		Data::PParams Desc;
-		if (!ParamsUtils::LoadParamsFromPRM(CString("Dlg:") + ID.CStr() + ".prm", Desc)) return nullptr;
-		return Desc.IsValidPtr() ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : nullptr;
+		Data::PParams Desc = ParamsUtils::LoadParamsFromPRM(CString("Dlg:") + ID.CStr() + ".prm");
+		return Desc ? DlgRegistry.Add(ID, CreateDialogueGraph(*Desc)) : nullptr;
 	}
 }
 //---------------------------------------------------------------------

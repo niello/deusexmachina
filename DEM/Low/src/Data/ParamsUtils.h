@@ -17,9 +17,9 @@ namespace Data
 namespace ParamsUtils
 {
 
-bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams);
-bool LoadParamsFromPRM(const char* pFileName, Data::PParams& OutParams);
-bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data::PParams& OutParams);
+Data::PParams LoadParamsFromHRD(const char* pFileName);
+Data::PParams LoadParamsFromPRM(const char* pFileName);
+Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName);
 bool LoadDataSerializationSchemesFromDSS(const char* pFileName, CDict<CStrID, Data::PDataScheme>& OutSchemes);
 bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params);
 bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params);

@@ -261,8 +261,8 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 	// OnSettingsLoaded is not sent here, subscribe on OnUserActivated
 	CUser NewUser;
 	NewUser.ID = UserID;
-	if (!ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID), NewUser.Settings))
-		return CStrID::Empty;
+	NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID));
+	if (!NewUser.Settings) return CStrID::Empty;
 
 	if (Input)
 	{
@@ -393,8 +393,8 @@ bool CApplication::LoadGlobalSettings(const char* pFilePath)
 {
 	GlobalSettingsPath = pFilePath;
 
-	Data::PParams NewSettings;
-	if (!ParamsUtils::LoadParamsFromHRD(pFilePath, NewSettings)) FAIL;
+	Data::PParams NewSettings = ParamsUtils::LoadParamsFromHRD(pFilePath);
+	if (!NewSettings) FAIL;
 
 	GlobalSettings = NewSettings;
 	GlobalSettingsChanged = false;

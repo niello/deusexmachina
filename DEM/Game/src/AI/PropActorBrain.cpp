@@ -73,8 +73,7 @@ bool CPropActorBrain::InternalActivate()
 // END Blackboard
 
 	//???need to cache?
-	PParams Desc;
-	if (ParamsUtils::LoadDescFromPRM(CString("Actors:"), GetEntity()->GetAttr<CString>(CStrID("ActorDesc")) + ".prm", Desc))
+	if (PParams Desc = ParamsUtils::LoadDescFromPRM(CString("Actors:"), GetEntity()->GetAttr<CString>(CStrID("ActorDesc")) + ".prm"))
 	{
 		PParams DescSection;
 		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))

@@ -157,8 +157,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 			const CString& TplName = EntityDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
 			if (TplName.IsValid())
 			{
-				Data::PParams Tpl;
-				ParamsUtils::LoadParamsFromPRM("EntityTpls:" + TplName + ".prm", Tpl);
+				Data::PParams Tpl = ParamsUtils::LoadParamsFromPRM("EntityTpls:" + TplName + ".prm");
 				if (Tpl.IsNullPtr())
 				{
 					Sys::Log("Entity template '%s' not found for entity %s in level %s\n",
@@ -317,8 +316,7 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 			const CString& TplName = InitialDesc->Get<CString>(CStrID("Tpl"), CString::Empty);
 			if (TplName.IsValid())
 			{
-				Data::PParams Tpl;
-				ParamsUtils::LoadParamsFromPRM("EntityTpls:" + TplName + ".prm", Tpl);
+				Data::PParams Tpl = ParamsUtils::LoadParamsFromPRM("EntityTpls:" + TplName + ".prm");
 				n_assert(Tpl.IsValidPtr());
 				Data::PParams MergedDesc = n_new(Data::CParams(InitialDesc->GetCount() + Tpl->GetCount()));
 				Tpl->MergeDiff(*MergedDesc, *InitialDesc);

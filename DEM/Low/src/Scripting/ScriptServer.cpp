@@ -430,9 +430,8 @@ bool CScriptServer::LoadClass(const char* Name)
 	n_assert2(Name, "Invalid class name to register");
 
 	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
-	Data::PParams ClassDesc;
-	ParamsUtils::LoadParamsFromPRM(CString("ScriptClasses:") + Name + ".cls", ClassDesc);
-	if (ClassDesc.IsNullPtr()) FAIL;
+	Data::PParams ClassDesc = ParamsUtils::LoadParamsFromPRM(CString("ScriptClasses:") + Name + ".cls");
+	if (!ClassDesc) FAIL;
 
 	const CString& BaseClass = ClassDesc->Get<CString>(CStrID("Base"), CString::Empty);
 	if (!BeginClass(Name, BaseClass.IsValid() ? BaseClass.CStr() : nullptr)) FAIL;

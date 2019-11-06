@@ -56,9 +56,8 @@ void CQuestManager::Trigger()
 
 bool CQuestManager::LoadQuest(CStrID QuestID, CStrID* OutStartingTaskID)
 {
-	Data::PParams QuestDesc;
-	ParamsUtils::LoadParamsFromPRM(CString("Quests:") + QuestID.CStr() + "/_Quest.prm", QuestDesc);
-	if (QuestDesc.IsNullPtr()) FAIL;
+	Data::PParams QuestDesc = ParamsUtils::LoadParamsFromPRM(CString("Quests:") + QuestID.CStr() + "/_Quest.prm");
+	if (!QuestDesc) FAIL;
 
 	Ptr<CQuest> Quest = n_new(CQuest);
 	Quest->Name = QuestDesc->Get<CString>(CStrID("Name"), CString("<No quest name>"));

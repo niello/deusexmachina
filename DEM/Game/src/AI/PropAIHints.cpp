@@ -99,71 +99,71 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 	//???need to cache?
 	Data::PParams Desc;
 	const CString& DescName = GetEntity()->GetAttr<CString>(CStrID("AIHintsDesc"), CString::Empty);
-	if (DescName.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("AIHints:") + DescName + ".prm", Desc);
+	if (DescName.IsValid())
+		Desc = ParamsUtils::LoadParamsFromPRM(CString("AIHints:") + DescName + ".prm");
 
-	if (Desc.IsValidPtr())
+	if (!Desc) OK;
+
+	const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
+
+	Hints.Clear();
+	Hints.BeginAdd();
+	for (UPTR i = 0; i < Desc->GetCount(); ++i)
 	{
-		const vector3& Pos = GetEntity()->GetAttr<matrix44>(CStrID("Transform")).Translation();
-
-		Hints.Clear();
-		Hints.BeginAdd();
-		for (UPTR i = 0; i < Desc->GetCount(); ++i)
-		{
-			const CParam& Prm = Desc->Get(i);
-			PParams PrmVal = Prm.GetValue<PParams>();
-			CRecord Rec;
+		const CParam& Prm = Desc->Get(i);
+		PParams PrmVal = Prm.GetValue<PParams>();
+		CRecord Rec;
 			
-			Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), CString::Empty));
+		Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), CString::Empty));
 
-			Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
-			Rec.Stimulus->Position = Pos; //!!!offset * tfm!
-			Rec.Stimulus->Intensity = PrmVal->Get<float>(CStrID("Intensity"), 1.f);
-			Rec.Stimulus->ExpireTime = PrmVal->Get<float>(CStrID("ExpireTime"), -1.f);
+		Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
+		Rec.Stimulus->Position = Pos; //!!!offset * tfm!
+		Rec.Stimulus->Intensity = PrmVal->Get<float>(CStrID("Intensity"), 1.f);
+		Rec.Stimulus->ExpireTime = PrmVal->Get<float>(CStrID("ExpireTime"), -1.f);
 
-			const CString& SizeStr = PrmVal->Get<CString>(CStrID("Size"), CString::Empty);
+		const CString& SizeStr = PrmVal->Get<CString>(CStrID("Size"), CString::Empty);
 
-			if (SizeStr.IsEmpty())
-			{
-				Rec.Stimulus->Radius = PrmVal->Get<float>(CStrID("Radius"), 0.f);
-				//!!!Rec.Stimulus->Height = PrmVal->Get<float>(CStrID("Height"), 0.f);
-			}
-			else if (SizeStr == "Box" || SizeStr == "GfxBox")
-			{
-				CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
-				if (pNode)
-				{
-					CAABB AABB;
-					pNode->GetAABB(AABB);
-					vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
-					Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
-					//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
-				}
-			}
-			else if (SizeStr == "PhysBox")
-			{
-				CPropPhysics* pPropPhys = GetEntity()->GetProperty<CPropPhysics>();
-				if (pPropPhys)
-				{
-					CAABB AABB;
-					pPropPhys->GetAABB(AABB);
-					vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
-					Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
-					//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
-				}
-			}
-			else if (SizeStr == "Attr")
-			{
-				Rec.Stimulus->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
-				//!!!Rec.Stimulus->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
-			}
-
-			//???Rec.Stimulus->Init(PrmVal);
-
-			Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : nullptr;
-			Hints.Add(Prm.GetName(), Rec);
+		if (SizeStr.IsEmpty())
+		{
+			Rec.Stimulus->Radius = PrmVal->Get<float>(CStrID("Radius"), 0.f);
+			//!!!Rec.Stimulus->Height = PrmVal->Get<float>(CStrID("Height"), 0.f);
 		}
-		Hints.EndAdd();
+		else if (SizeStr == "Box" || SizeStr == "GfxBox")
+		{
+			CPropSceneNode* pNode = GetEntity()->GetProperty<CPropSceneNode>();
+			if (pNode)
+			{
+				CAABB AABB;
+				pNode->GetAABB(AABB);
+				vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
+				Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
+				//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
+			}
+		}
+		else if (SizeStr == "PhysBox")
+		{
+			CPropPhysics* pPropPhys = GetEntity()->GetProperty<CPropPhysics>();
+			if (pPropPhys)
+			{
+				CAABB AABB;
+				pPropPhys->GetAABB(AABB);
+				vector2 HorizDiag(AABB.Max.x - AABB.Min.x, AABB.Max.z - AABB.Min.z);
+				Rec.Stimulus->Radius = HorizDiag.Length() * 0.5f;
+				//!!!Rec.Stimulus->Height = AABB.Max.y - AABB.Min.y;
+			}
+		}
+		else if (SizeStr == "Attr")
+		{
+			Rec.Stimulus->Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
+			//!!!Rec.Stimulus->Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
+		}
+
+		//???Rec.Stimulus->Init(PrmVal);
+
+		Rec.QTNode = PrmVal->Get(CStrID("Enabled"), false) ? GetEntity()->GetLevel()->GetAI()->RegisterStimulus(Rec.Stimulus) : nullptr;
+		Hints.Add(Prm.GetName(), Rec);
 	}
+	Hints.EndAdd();
 
 	OK;
 }

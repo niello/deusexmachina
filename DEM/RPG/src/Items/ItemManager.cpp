@@ -24,16 +24,13 @@ PItemTpl CItemManager::GetItemTpl(CStrID ID)
 	if (ItemTplRegistry.Get(ID, Tpl)) return Tpl;
 	else
 	{
-		Data::PParams HRD;
-		if (!ParamsUtils::LoadParamsFromPRM(CString("Items:") + ID.CStr() + ".prm", HRD)) FAIL;
-		if (HRD.IsValidPtr())
-		{
-			Tpl = CreateItemTpl(ID, *HRD);
-			n_assert(Tpl.IsValidPtr());
-			ItemTplRegistry.Add(ID, Tpl);
-			return Tpl;
-		}
-		else return PItemTpl();
+		Data::PParams HRD = ParamsUtils::LoadParamsFromPRM(CString("Items:") + ID.CStr() + ".prm");
+		if (!HRD) return PItemTpl();
+
+		Tpl = CreateItemTpl(ID, *HRD);
+		n_assert(Tpl.IsValidPtr());
+		ItemTplRegistry.Add(ID, Tpl);
+		return Tpl;
 	}
 }
 //---------------------------------------------------------------------

@@ -35,9 +35,11 @@ bool CPropUIControl::InternalActivate()
 	UIDesc = GetEntity()->GetAttr<CString>(CStrID("Desc"), CString::Empty);
 	ReflectSOActions = false;
 
-	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
 	Data::PParams Desc;
-	if (UIDescPath.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("GameUI:") + UIDescPath + ".prm", Desc);
+	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
+	if (UIDescPath.IsValid())
+		Desc = ParamsUtils::LoadParamsFromPRM(CString("GameUI:") + UIDescPath + ".prm");
+
 	if (Desc.IsValidPtr())
 	{
 		if (UIName.IsEmpty()) UIName = Desc->Get<CString>(CStrID("UIName"), CString::Empty);
@@ -189,10 +191,11 @@ bool CPropUIControl::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, c
 
 void CPropUIControl::AddSOActions(CPropSmartObject& Prop)
 {
-	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
 	Data::PParams UIDesc;
-	if (UIDescPath.IsValid()) ParamsUtils::LoadParamsFromPRM(CString("GameUI:") + UIDescPath + ".prm", UIDesc);
-	Data::PParams Desc = UIDesc.IsValidPtr() ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), nullptr) : nullptr;
+	const CString& UIDescPath = GetEntity()->GetAttr<CString>(CStrID("UIDesc"), CString::Empty);
+	if (UIDescPath.IsValid())
+		UIDesc = ParamsUtils::LoadParamsFromPRM(CString("GameUI:") + UIDescPath + ".prm");
+	Data::PParams Desc = UIDesc ? UIDesc->Get<Data::PParams>(CStrID("SmartObjActions"), nullptr) : nullptr;
 	if (Desc.IsNullPtr()) return;
 
 	const CPropSmartObject::CActionList& SOActions = Prop.GetActions();

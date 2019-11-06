@@ -11,58 +11,62 @@
 namespace ParamsUtils
 {
 
-bool LoadParamsFromHRD(const char* pFileName, Data::PParams& OutParams)
+Data::PParams LoadParamsFromHRD(const char* pFileName)
 {
 	Data::CBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File || !File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	if (!File || !File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
-	if (Buffer.GetSize() != FileSize) FAIL;
+	if (Buffer.GetSize() != FileSize) return nullptr;
 
+	Data::PParams Params;
 	Data::CHRDParser Parser;
-	return Parser.ParseBuffer(static_cast<const char*>(Buffer.GetPtr()), Buffer.GetSize(), OutParams);
+	return Parser.ParseBuffer(static_cast<const char*>(Buffer.GetPtr()), Buffer.GetSize(), Params) ?
+		Params :
+		nullptr;
 }
 //---------------------------------------------------------------------
 
-bool LoadParamsFromPRM(const char* pFileName, Data::PParams& OutParams)
+Data::PParams LoadParamsFromPRM(const char* pFileName)
 {
 	IO::PStream File = IOSrv->CreateStream(pFileName);
 	if (!File || !File->Open(IO::SAM_READ)) return nullptr;
 	IO::CBinaryReader Reader(*File);
 
 	Data::PParams Params = n_new(Data::CParams);
-	if (!Reader.ReadParams(*Params)) FAIL;
-	OutParams = Params;
-	OK;
+	return Reader.ReadParams(*Params) ? Params : nullptr;
 }
 //---------------------------------------------------------------------
 
-bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data::PParams& OutParams)
+Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName)
 {
-	Data::PParams Main;
-	if (!ParamsUtils::LoadParamsFromPRM(CString(pRootPath) + pRelativeFileName, Main)) FAIL;
-	if (Main.IsNullPtr()) FAIL;
+	Data::PParams Main = ParamsUtils::LoadParamsFromPRM(CString(pRootPath) + pRelativeFileName);
+	if (!Main) return nullptr;
 
 	CString BaseName;
-	if (Main->Get(BaseName, CStrID("_Base_")))
-	{
-		n_assert(BaseName != pRelativeFileName);
-		if (!LoadDescFromPRM(pRootPath, BaseName + ".prm", OutParams)) FAIL;
-		OutParams->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!
-	}
-	else OutParams = n_new(Data::CParams(*Main));
+	if (!Main->Get(BaseName, CStrID("_Base_"))) return Main;
 
-	OK;
+	if (BaseName == pRelativeFileName)
+	{
+		::Sys::Error("LoadDescFromPRM() > _Base_ can't be self!");
+		return nullptr;
+	}
+
+	Data::PParams Params = LoadDescFromPRM(pRootPath, BaseName + ".prm");
+	if (!Params) return nullptr;
+
+	Params->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!
+
+	return Params;
 }
 //---------------------------------------------------------------------
 
 bool LoadDataSerializationSchemesFromDSS(const char* pFileName, CDict<CStrID, Data::PDataScheme>& OutSchemes)
 {
-	Data::PParams SchemeDescs;
-	if (!ParamsUtils::LoadParamsFromHRD(pFileName, SchemeDescs)) FAIL;
-	if (SchemeDescs.IsNullPtr()) FAIL;
+	Data::PParams SchemeDescs = ParamsUtils::LoadParamsFromHRD(pFileName);
+	if (!SchemeDescs) FAIL;
 
 	for (UPTR i = 0; i < SchemeDescs->GetCount(); ++i)
 	{
