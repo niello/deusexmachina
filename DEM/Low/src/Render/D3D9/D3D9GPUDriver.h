@@ -4,10 +4,7 @@
 #include <Data/FixedArray.h>
 #include <Data/HashTable.h>
 #include <System/Allocators/PoolAllocator.h>
-
-#define WIN32_LEAN_AND_MEAN
-#define D3D_DISABLE_9EX
-#include <d3d9.h> // At least for a CAPS structure
+#include "DEMD3D9.h" // At least for a CAPS structure
 
 #undef min
 #undef max

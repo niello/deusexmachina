@@ -3232,6 +3232,7 @@ bool CD3D9GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Re
 		}
 		SrcData.pData = (char*)D3DRect.pBits;
 		SrcData.RowPitch = D3DRect.Pitch;
+		SrcData.SlicePitch = 0;
 	}
 	else
 	{
@@ -3398,6 +3399,7 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 		}
 		DestData.pData = (char*)D3DRect.pBits;
 		DestData.RowPitch = D3DRect.Pitch;
+		DestData.SlicePitch = 0;
 	}
 	else
 	{
@@ -3423,7 +3425,8 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 	UPTR ImageCopyFlags = CopyImage_AdjustDest;
 	if (CD3D9DriverFactory::D3DFormatBlockSize(D3DFormat) > 1)
 		ImageCopyFlags |= CopyImage_BlockCompressed;
-	if (Desc.Type == Texture_3D) ImageCopyFlags |= CopyImage_3DImage;
+	if (Desc.Type == Texture_3D)
+		ImageCopyFlags |= CopyImage_3DImage;
 
 	CopyImage(SrcData, DestData, ImageCopyFlags, Params);
 

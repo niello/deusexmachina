@@ -2,9 +2,7 @@
 
 #include <Render/D3D9/D3D9Shader.h>
 #include <Core/Factory.h>
-#define WIN32_LEAN_AND_MEAN
-#define D3D_DISABLE_9EX
-#include <d3d9.h>
+#include "DEMD3D9.h"
 
 namespace Render
 {

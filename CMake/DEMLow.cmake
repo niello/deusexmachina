@@ -251,6 +251,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/D3D9/D3D9Texture.h
 	DEM/Low/src/Render/D3D9/D3D9VertexBuffer.h
 	DEM/Low/src/Render/D3D9/D3D9VertexLayout.h
+	DEM/Low/src/Render/D3D9/DEMD3D9.h
 	DEM/Low/src/Render/D3D9/SM30ShaderMetadata.h
 	DEM/Low/src/Resources/Resource.h
 	DEM/Low/src/Resources/ResourceCreator.h

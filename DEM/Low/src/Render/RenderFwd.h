@@ -306,9 +306,9 @@ enum EConstComponent
 
 struct CImageData
 {
-	char*	pData;			// Data sequentially placed in memory
-	UPTR	RowPitch;		// Distance in bytes between first bytes of two rows (undefined for 1D)
-	UPTR	SlicePitch;		// Distance in bytes between first bytes of two depth slices (undefined for 1D & 2D)
+	char* pData;      // Data sequentially placed in memory
+	UPTR  RowPitch;   // Distance in bytes between first bytes of two rows (undefined for 1D)
+	UPTR  SlicePitch; // Distance in bytes between first bytes of two depth slices (undefined for 1D & 2D)
 };
 
 struct CTextureDesc

@@ -237,6 +237,7 @@ void CDEMTexture::blitFromMemory(const void* sourceData, const Rectf& area)
 
 	Render::CImageData SrcData;
 	SrcData.RowPitch = static_cast<U32>(area.getWidth()) * 4;
+	SrcData.SlicePitch = 0;
 
 	if (DEMTexture->GetDesc().Format == Render::PixelFmt_R8G8B8A8)
 	{
@@ -265,8 +266,9 @@ void CDEMTexture::blitToMemory(void* targetData)
 	Render::CImageData Dest;
 	Dest.pData = (char*)targetData;
 	Dest.RowPitch = DEMTexture->GetRowPitch();
+	Dest.SlicePitch = DEMTexture->GetSlicePitch();
 
-////!!!convert only if format is not supported!
+	////!!!convert only if format is not supported!
 //	blitFromSurface(static_cast<U32*>(mapped_tex.pData),
 //                    static_cast<U32*>(targetData),
 //                    Sizef(static_cast<float>(tex_desc.Width),
