@@ -38,15 +38,6 @@ protected:
 
 	friend class CD3D9DriverFactory;
 
-	static const UPTR CB_Slot_Count = 4;				// Pseudoregisters for CB binding
-	static const UPTR SM30_VS_Int4Count = 16;
-	static const UPTR SM30_VS_BoolCount = 16;
-	static const UPTR SM30_VS_SamplerCount = 4;
-	static const UPTR SM30_PS_Float4Count = 224;
-	static const UPTR SM30_PS_Int4Count = 16;
-	static const UPTR SM30_PS_BoolCount = 16;
-	static const UPTR SM30_PS_SamplerCount = 16;
-
 	enum
 	{
 		CB_ApplyFloat4	= 0x01,
@@ -129,6 +120,7 @@ protected:
 	bool						FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR CurrConst, UPTR ApplyFlag, UPTR& FoundRangeStart, UPTR& FoundRangeEnd, CCBRec*& pFoundRec);
 	void						ApplyShaderConstChanges();
 	UPTR						InternalDraw(const CPrimitiveGroup& PrimGroup);
+	void						FreePendingTemporaryBuffer(const CD3D9ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot);
 
 	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, HWND hWnd, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;

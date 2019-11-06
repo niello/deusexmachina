@@ -1028,7 +1028,7 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType 
 		if (CurrCB[Index] == pCBuffer) OK;
 
 		// Free temporary buffer previously bound to this slot
-		FreePendingTemporaryBuffer(CurrCB[Index], ShaderType, Register);
+		FreePendingTemporaryBuffer(CurrCB[Index].Get(), ShaderType, Register);
 
 		CurrCB[Index] = pCBuffer;
 		CurrDirtyFlags.Set(GPU_Dirty_CB);
@@ -1082,6 +1082,7 @@ void CD3D11GPUDriver::UnbindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Sh
 	// Free temporary buffer previously bound to this slot
 	FreePendingTemporaryBuffer(pSRVRec->CB.Get(), ShaderType, SlotIndex);
 
+	CurrSRV.RemoveAt(DictIdx);
 	CurrDirtyFlags.Set(GPU_Dirty_SRV);
 	ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_Resources + ShaderType));
 }
