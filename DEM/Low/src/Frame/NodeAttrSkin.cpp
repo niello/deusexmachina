@@ -1,16 +1,10 @@
 #include "NodeAttrSkin.h"
-
 #include <Render/SkinInfo.h>
 #include <Scene/SceneNode.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
-#include <Resources/ResourceCreator.h>
 #include <IO/BinaryReader.h>
-#include <IO/PathUtils.h>
 #include <Core/Factory.h>
-
-// See CNodeAttrSkin::Initialize()
-#define NOT_PROCESSED_NODE (pNode)
 
 namespace Frame
 {
@@ -32,12 +26,7 @@ bool CNodeAttrSkin::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 		{
 			case 'SKIF':
 			{
-				//???!!!store the whole URI in a file?!
-				//???store resource locally for reloading? or reload in ValidateResources?
-				CString RsrcID = DataReader.Read<CString>();
-				CStrID RUID = CStrID(CString("Scene:") + RsrcID.CStr() + ".skn"); //???Skins:?
-				Resources::PResource Rsrc = ResourceMgr->RegisterResource<Render::CSkinInfo>(RUID);
-				SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
+				SkinInfoID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'ACBN':
@@ -53,14 +42,7 @@ bool CNodeAttrSkin::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CNodeAttrSkin::Clone()
-{
-	PNodeAttrSkin ClonedAttr = n_new(CNodeAttrSkin);
-	ClonedAttr->SkinInfo = SkinInfo;
-	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
-	return ClonedAttr.Get();
-}
-//---------------------------------------------------------------------
+#define NOT_PROCESSED_NODE (pNode)
 
 Scene::CSceneNode* CNodeAttrSkin::SetupBoneNode(UPTR BoneIndex)
 {
@@ -90,11 +72,14 @@ Scene::CSceneNode* CNodeAttrSkin::SetupBoneNode(UPTR BoneIndex)
 }
 //---------------------------------------------------------------------
 
-bool CNodeAttrSkin::Initialize()
+bool CNodeAttrSkin::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!pNode || SkinInfo.IsNullPtr()) FAIL;
+	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(SkinInfoID);
+	SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
 
-	UPTR BoneCount = SkinInfo->GetBoneCount();
+	if (!pNode || !SkinInfo) FAIL;
+
+	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	pSkinPalette = (matrix44*)n_malloc_aligned(BoneCount * sizeof(matrix44), 16);
 	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
 
@@ -115,6 +100,15 @@ bool CNodeAttrSkin::Initialize()
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CNodeAttrSkin::Clone()
+{
+	PNodeAttrSkin ClonedAttr = n_new(CNodeAttrSkin);
+	ClonedAttr->SkinInfo = SkinInfo;
+	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
+	return ClonedAttr.Get();
+}
+//---------------------------------------------------------------------
+
 void CNodeAttrSkin::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
@@ -128,12 +122,6 @@ void CNodeAttrSkin::Update(const vector3* pCOIArray, UPTR COICount)
 		if (pBoneNode && pBoneNode->IsWorldMatrixChanged())
 			pSkinPalette[i].mult2_simple(SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
 	}
-}
-//---------------------------------------------------------------------
-
-Render::CSkinInfo* CNodeAttrSkin::GetSkinInfo() const
-{
-	return SkinInfo;
 }
 //---------------------------------------------------------------------
 

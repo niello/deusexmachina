@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_NODE_ATTR_SKIN_H__
-#define __DEM_L1_FRAME_NODE_ATTR_SKIN_H__
-
 #include <Scene/NodeAttribute.h>
 #include <Math/Matrix44.h>
 
@@ -15,7 +12,7 @@ namespace Render
 namespace Frame
 {
 
-class CNodeAttrSkin: public Scene::CNodeAttribute
+class CNodeAttrSkin : public Scene::CNodeAttribute
 {
 	__DeclareClass(CNodeAttrSkin);
 
@@ -28,11 +25,12 @@ protected:
 		Skin_AutocreateBones = 0x04
 	};
 
-	Render::PSkinInfo	SkinInfo;
-	matrix44*			pSkinPalette = nullptr;
-	Scene::CSceneNode**	pBoneNodes = nullptr; //???strong refs?
+	CStrID              SkinInfoID;
+	Render::PSkinInfo   SkinInfo;
+	matrix44*           pSkinPalette = nullptr;
+	Scene::CSceneNode** pBoneNodes = nullptr; //???strong refs?
 
-	Scene::CSceneNode*	SetupBoneNode(UPTR BoneIndex);
+	Scene::CSceneNode* SetupBoneNode(UPTR BoneIndex);
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets
@@ -40,20 +38,17 @@ protected:
 
 public:
 
-	virtual ~CNodeAttrSkin();
+	virtual ~CNodeAttrSkin() override;
 
-	bool							Initialize();
+	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
+	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
+	virtual Scene::PNodeAttribute Clone();
+	virtual void                  Update(const vector3* pCOIArray, UPTR COICount);
 
-	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual Scene::PNodeAttribute	Clone();
-	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
-
-	Render::CSkinInfo*				GetSkinInfo() const;
-	const matrix44*					GetSkinPalette() const { return pSkinPalette; }
+	Render::CSkinInfo*            GetSkinInfo() const { return SkinInfo.Get(); }
+	const matrix44*               GetSkinPalette() const { return pSkinPalette; }
 };
 
 typedef Ptr<CNodeAttrSkin> PNodeAttrSkin;
 
 }
-
-#endif
