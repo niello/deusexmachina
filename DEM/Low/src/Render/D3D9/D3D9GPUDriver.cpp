@@ -241,9 +241,29 @@ void CD3D9GPUDriver::Release()
 	//!!!UnbindD3D9Resources();
 	//!!!can call the same event as on lost device!
 
-	//for (int i = 1; i < MaxRenderTargetCount; ++i)
-	//	pD3DDevice->SetRenderTarget(i, nullptr);
+	pD3DDevice->SetVertexDeclaration(nullptr);
+	pD3DDevice->SetIndices(nullptr);
+	pD3DDevice->SetVertexShader(nullptr);
+	pD3DDevice->SetPixelShader(nullptr);
 	pD3DDevice->SetDepthStencilSurface(nullptr);
+
+	for (int i = 0; i < SM30_PS_SamplerCount; ++i)
+		pD3DDevice->SetTexture(i, nullptr);
+
+	pD3DDevice->SetTexture(D3DVERTEXTEXTURESAMPLER0, nullptr);
+	pD3DDevice->SetTexture(D3DVERTEXTEXTURESAMPLER1, nullptr);
+	pD3DDevice->SetTexture(D3DVERTEXTEXTURESAMPLER2, nullptr);
+	pD3DDevice->SetTexture(D3DVERTEXTEXTURESAMPLER3, nullptr);
+
+	for (DWORD i = 0; i < D3DCaps.MaxStreams; ++i)
+		pD3DDevice->SetStreamSource(i, nullptr, 0, 0);
+
+	for (DWORD i = 0; i < D3DCaps.NumSimultaneousRTs; ++i)
+		pD3DDevice->SetRenderTarget(i, nullptr);
+
+	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
+		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
+	SwapChains.Clear();
 
 	SAFE_FREE_ALIGNED(pCurrShaderConsts);
 	pCurrVSFloat4 = nullptr;
@@ -257,14 +277,21 @@ void CD3D9GPUDriver::Release()
 	CurrSS.SetSize(0);
 	CurrTex.SetSize(0);
 	CurrVB.SetSize(0);
-	VertexLayouts.Clear();
 	CurrRT.SetSize(0);
+	VertexLayouts.Clear();
+	RenderStates.Clear();
+	Samplers.Clear();
 
-	//!!!if code won't be reused in Reset(), call DestroySwapChain()!
-	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
-		if (SwapChains[i].IsValid()) SwapChains[i].Destroy();
+	DefaultRenderState = nullptr;
+	DefaultSampler = nullptr;
+	CurrVL = nullptr;
+	CurrIB = nullptr;
+	CurrDS = nullptr;
+	CurrRS = nullptr;
 
-	//EventSrv->FireEvent(CStrID("OnRenderDeviceRelease"));
+	TmpConstantBuffers.Clear();
+	pPendingCBHead = nullptr;
+	TmpCBPool.Clear();
 
 	//!!!ReleaseQueries();
 
