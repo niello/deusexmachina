@@ -208,6 +208,13 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 
 	std::cout << "Successful: " << (_Tasks.size() - FailedTasks) << ", Failed: " << FailedTasks << LineEnd << LineEnd;
 
+	// Run custom termination code
+
+	{
+		const int Code = Term();
+		if (Code != 0) return Code;
+	}
+
 	if (_WaitKey) _getch();
 
 	return 0;

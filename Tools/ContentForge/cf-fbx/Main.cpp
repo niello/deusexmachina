@@ -1,5 +1,6 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
+#include <fbxsdk.h>
 //#include <CLI11.hpp>
 //#include <thread>
 //#include <filesystem>
@@ -12,6 +13,10 @@ namespace fs = std::filesystem;
 
 class CFBXTool : public CContentForgeTool
 {
+protected:
+
+	FbxManager* pFbxManager = nullptr;
+
 public:
 
 	CFBXTool(const std::string& Name, const std::string& Desc, CVersion Version) :
@@ -26,6 +31,19 @@ public:
 		// FIXME: must handle duplicate targets (for example 2 metafiles writing the same resulting file, like depth_atest_ps)
 		// FIXME: CStrID
 		return false;
+	}
+
+	virtual int Init() override
+	{
+		pFbxManager = FbxManager::Create();
+		return pFbxManager ? 0 : 1;
+	}
+
+	virtual int Term() override
+	{
+		pFbxManager->Destroy();
+		pFbxManager = nullptr;
+		return 0;
 	}
 
 	//virtual void ProcessCommandLine(CLI::App& CLIApp) override
