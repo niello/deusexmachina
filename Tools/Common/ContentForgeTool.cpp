@@ -61,6 +61,8 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 		if (Code != 0) return Code;
 	}
 
+	// Print tool name and version
+
 	const auto LineEnd = std::cout.widen('\n');
 
 	if (_LogVerbosity >= EVerbosity::Info)
