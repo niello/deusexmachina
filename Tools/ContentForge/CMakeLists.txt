@@ -46,3 +46,27 @@ add_executable(cf-material ${DEM_CF_MTL_HEADERS} ${DEM_CF_MTL_SOURCES})
 target_include_directories(cf-material PRIVATE "cf-material")
 target_link_libraries(cf-material PRIVATE ToolsCommon)
 set_target_properties(cf-material PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
+
+# Tool: cf-fbx
+
+# TODO: get rid of cf-fbx folder inside VS!
+
+# FIXME: FBX import must depend on compiler and architecture
+set(FBX_SDK_PATH "" CACHE STRING "FBX SDK path")
+option(FBX_SDK_DEBUG "Link debug FBX SDK libraries" OFF)
+
+if(${MSVC_TOOLSET_VERSION} EQUAL 141)
+  set(FBX_SDK_COMPILER_SUBFOLDER vs2017)
+elseif(${MSVC_TOOLSET_VERSION} EQUAL 140)
+  set(FBX_SDK_COMPILER_SUBFOLDER vs2015)
+else()
+  set(FBX_SDK_COMPILER_SUBFOLDER "VS_VERSION_NOT_DETECTED")
+endif()
+
+include("${CMAKE_CURRENT_SOURCE_DIR}/cf-fbx/src.cmake")
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
+add_executable(cf-fbx ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
+target_include_directories(cf-fbx PRIVATE "cf-fbx" "${FBX_SDK_PATH}/include")
+target_link_libraries(cf-fbx PRIVATE ToolsCommon)
+target_link_libraries(cf-fbx PRIVATE "${FBX_SDK_PATH}/lib/${FBX_SDK_COMPILER_SUBFOLDER}/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/$<IF:$<BOOL:FBX_SDK_DEBUG>,debug,release>/libfbxsdk-md.lib")
+set_target_properties(cf-fbx PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
