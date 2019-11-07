@@ -68,5 +68,5 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_FBX_HEADERS} ${DE
 add_executable(cf-fbx ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
 target_include_directories(cf-fbx PRIVATE "cf-fbx" "${FBX_SDK_PATH}/include")
 target_link_libraries(cf-fbx PRIVATE ToolsCommon)
-target_link_libraries(cf-fbx PRIVATE "${FBX_SDK_PATH}/lib/${FBX_SDK_COMPILER_SUBFOLDER}/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/$<IF:$<BOOL:FBX_SDK_DEBUG>,debug,release>/libfbxsdk-md.lib")
+target_link_libraries(cf-fbx PRIVATE "${FBX_SDK_PATH}/lib/${FBX_SDK_COMPILER_SUBFOLDER}/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/$<IF:$<BOOL:${FBX_SDK_DEBUG}>,debug,release>/libfbxsdk-md.lib")
 set_target_properties(cf-fbx PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
