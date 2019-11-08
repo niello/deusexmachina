@@ -72,7 +72,7 @@ public:
 		// Use the first argument as the filename for the importer.
 		if (!pImporter->Initialize(SrcPath.c_str(), -1, pFbxManager->GetIOSettings()))
 		{
-			Task.Log.LogError("Failed to create FbxImporter for " + SrcPath);
+			Task.Log.LogError("Failed to create FbxImporter for " + SrcPath + ": " + pImporter->GetStatus().GetErrorString());
 			return false;
 		}
 
@@ -84,14 +84,15 @@ public:
 		}
 
 		FbxScene* pScene = FbxScene::Create(pFbxManager, "SourceScene");
-		const bool Imported = pImporter->Import(pScene);
-		pImporter->Destroy();			
 
-		if (!Imported)
+		if (!pImporter->Import(pScene))
 		{
-			Task.Log.LogError("Failed to import " + SrcPath);
+			Task.Log.LogError("Failed to import " + SrcPath + ": " + pImporter->GetStatus().GetErrorString());
+			pImporter->Destroy();
 			return false;
 		}
+
+		pImporter->Destroy();
 
 		//!!!DBG TMP!
 		if (FbxNode* pRootNode = pScene->GetRootNode())
