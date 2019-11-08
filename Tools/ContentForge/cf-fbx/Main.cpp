@@ -2,8 +2,6 @@
 #include <Utils.h>
 #include <fbxsdk.h>
 //#include <CLI11.hpp>
-//#include <thread>
-//#include <filesystem>
 
 namespace fs = std::filesystem;
 
@@ -76,6 +74,13 @@ public:
 		{
 			Task.Log.LogError("Failed to create FbxImporter for " + SrcPath);
 			return false;
+		}
+
+		if (pImporter->IsFBX())
+		{
+			int Major, Minor, Revision;
+			pImporter->GetFileVersion(Major, Minor, Revision);
+			Task.Log.LogDebug("Source format: FBX v" + std::to_string(Major) + '.' + std::to_string(Minor) + '.' + std::to_string(Revision));
 		}
 
 		FbxScene* pScene = FbxScene::Create(pFbxManager, "SourceScene");

@@ -3,7 +3,6 @@
 #include <Utils.h>
 #include <CLI11.hpp>
 #include <thread>
-#include <filesystem>
 
 namespace fs = std::filesystem;
 
