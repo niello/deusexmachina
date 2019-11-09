@@ -9,6 +9,9 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes
 
+constexpr size_t MaxUV = 1;
+constexpr size_t MaxBonesPerVertex = 1;
+
 static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
 {
 	FbxVector4 lZero(0, 0, 0);
@@ -47,6 +50,19 @@ protected:
 	struct CContext
 	{
 		CThreadSafeLog& Log;
+	};
+
+	struct CVertex
+	{
+		int        ControlPointIndex;
+		FbxDouble3 Position;
+		FbxDouble3 Normal;
+		FbxDouble3 Tangent;
+		FbxDouble3 Bitangent;
+		FbxColor   Color;
+		FbxVector2 UV[MaxUV];
+		int        BlendIndices[MaxBonesPerVertex];
+		double     BlendWeights[MaxBonesPerVertex];
 	};
 
 	FbxManager* pFBXManager = nullptr;
@@ -236,11 +252,33 @@ public:
 	{
 		Ctx.Log.LogDebug("Model");
 
-		const FbxVector4* lControlPoints = pMesh->GetControlPoints();
+		const FbxVector4* pControlPoints = pMesh->GetControlPoints();
 		const int PolyCount = pMesh->GetPolygonCount();
 
-		//faces.reserve(static_cast<size_t>(PolyCount));
-		//vertices.reserve(static_cast<size_t>(PolyCount * 3));
+		const auto NormalCount = std::min(1, pMesh->GetElementNormalCount());
+		if (pMesh->GetElementNormalCount() > NormalCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(NormalCount) + '/' + std::to_string(pMesh->GetElementNormalCount()) + " normals");
+
+		const auto TangentCount = std::min(1, pMesh->GetElementTangentCount());
+		if (pMesh->GetElementTangentCount() > TangentCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(TangentCount) + '/' + std::to_string(pMesh->GetElementTangentCount()) + " tangents");
+
+		const auto BitangentCount = std::min(1, pMesh->GetElementBinormalCount());
+		if (pMesh->GetElementBinormalCount() > BitangentCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(BitangentCount) + '/' + std::to_string(pMesh->GetElementBinormalCount()) + " bitangents");
+
+		const auto UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
+		if (pMesh->GetElementUVCount() > UVCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
+
+		const auto ColorCount = std::min(1, pMesh->GetElementVertexColorCount());
+		if (pMesh->GetElementVertexColorCount() > ColorCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(ColorCount) + '/' + std::to_string(pMesh->GetElementVertexColorCount()) + " colors");
+
+		std::vector<CVertex> Vertices;
+		std::vector<unsigned int> Indices;
+		Vertices.reserve(static_cast<size_t>(PolyCount * 3));
+		Indices.reserve(static_cast<size_t>(PolyCount * 3));
 
 		for (int p = 0; p < PolyCount; ++p)
 		{
@@ -261,21 +299,28 @@ public:
 
 			for (int v = 0; v < PolyCount; ++v)
 			{
-				const int ControlPointIndex = pMesh->GetPolygonVertex(p, v);
+				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
+				Indices.push_back(VertexIndex);
 
-				//VertexID = vertices.size()
+				CVertex Vertex;
+				Vertex.ControlPointIndex = pMesh->GetPolygonVertex(p, v);
+				Vertex.Position = pControlPoints[Vertex.ControlPointIndex];
 
-				//VertexStruct vertInfo;
-				//vertInfo.ControlPointIndex = ControlPointIndex;
-				//vertInfo.vertCoordVal = lControlPoints[ControlPointIndex];
+				Vertices.push_back(std::move(Vertex));
+
 				//vertInfo.uvTextureVal = GetUVs(pMesh, ControlPointIndex, p, v);
 				//vertInfo.normalVal = GetNormals(pMesh, ControlPointIndex, VertexID);
 				//vertInfo.vertexColor = GetVertexColor(pMesh, ControlPointIndex, VertexID);
-
-				//face.controlPointIndex[v] = VertexID;
-				//vertices.emplace_back(vertInfo);
 			}
 		}
+
+		// merge vertices by control point + other params
+		// patch faces with new indices
+		// meshopt_generateVertexRemap
+		// meshopt_remapVertexBuffer
+		// meshopt_remapIndexBuffer
+
+		// meshopt_generateShadowIndexBuffer for Z prepass
 
 		// mesh
 		// - build vertex declaration (check layer elements and skin deformer)
