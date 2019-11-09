@@ -3,6 +3,9 @@ project(DEM-Tools-ContentForge)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# Dependency: meshoptimizer
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/meshoptimizer" "${CMAKE_CURRENT_BINARY_DIR}/Deps/meshoptimizer")
+
 # Tool: cf-hlsl
 
 # TODO: get rid of cf-hlsl folder inside VS!
@@ -69,13 +72,10 @@ include("${CMAKE_CURRENT_SOURCE_DIR}/cf-fbx/src.cmake")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
 add_executable(cf-fbx ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
 target_include_directories(cf-fbx PRIVATE "cf-fbx" "${FBX_SDK_PATH}/include")
-target_link_libraries(cf-fbx PRIVATE ToolsCommon)
 target_link_libraries(cf-fbx PRIVATE
-	debug ${FBX_SDK_LIB_PATH_DEBUG}libfbxsdk-md.lib
-	debug ${FBX_SDK_LIB_PATH_DEBUG}libxml2-md.lib
-	debug ${FBX_SDK_LIB_PATH_DEBUG}zlib-md.lib)
-target_link_libraries(cf-fbx PRIVATE
-	optimized ${FBX_SDK_LIB_PATH_RELEASE}libfbxsdk-md.lib
-	optimized ${FBX_SDK_LIB_PATH_RELEASE}libxml2-md.lib
-	optimized ${FBX_SDK_LIB_PATH_RELEASE}zlib-md.lib)
+	ToolsCommon
+	meshoptimizer
+	debug ${FBX_SDK_LIB_PATH_DEBUG}libfbxsdk-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libfbxsdk-md.lib
+	debug ${FBX_SDK_LIB_PATH_DEBUG}libxml2-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libxml2-md.lib
+	debug ${FBX_SDK_LIB_PATH_DEBUG}zlib-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}zlib-md.lib)
 set_target_properties(cf-fbx PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem

@@ -1,6 +1,7 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
 #include <fbxsdk.h>
+#include <meshoptimizer.h>
 //#include <CLI11.hpp>
 
 namespace fs = std::filesystem;
@@ -76,7 +77,7 @@ protected:
 	struct CVertex
 	{
 		int        ControlPointIndex;
-		FbxDouble3 Position;
+		float      Position[3];
 		FbxDouble3 Normal;
 		FbxDouble3 Tangent;
 		FbxDouble3 Bitangent;
@@ -296,10 +297,8 @@ public:
 		if (pMesh->GetElementUVCount() > UVCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
 
-		std::vector<CVertex> Vertices;
-		std::vector<unsigned int> Indices;
-		Vertices.reserve(static_cast<size_t>(PolyCount * 3));
-		Indices.reserve(static_cast<size_t>(PolyCount * 3));
+		std::vector<CVertex> RawVertices;
+		RawVertices.reserve(static_cast<size_t>(PolyCount * 3));
 
 		for (int p = 0; p < PolyCount; ++p)
 		{
@@ -320,39 +319,59 @@ public:
 
 			for (int v = 0; v < PolySize; ++v)
 			{
-				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
-				Indices.push_back(VertexIndex);
+				const auto VertexIndex = static_cast<unsigned int>(RawVertices.size());
+				const auto ControlPointIndex = pMesh->GetPolygonVertex(p, v);
+
+				const auto ControlPoint = pControlPoints[ControlPointIndex];
 
 				CVertex Vertex{0};
-				Vertex.ControlPointIndex = pMesh->GetPolygonVertex(p, v);
-				Vertex.Position = pControlPoints[Vertex.ControlPointIndex];
+				Vertex.ControlPointIndex = ControlPointIndex;
+
+				// We need float3 positions for meshopt_optimizeOverdraw
+				Vertex.Position[0] = static_cast<float>(ControlPoint[0]);
+				Vertex.Position[1] = static_cast<float>(ControlPoint[1]);
+				Vertex.Position[2] = static_cast<float>(ControlPoint[2]);
 
 				if (NormalCount)
-					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), Vertex.ControlPointIndex, VertexIndex);
+					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), ControlPointIndex, VertexIndex);
 
 				if (TangentCount)
-					GetVertexElement(Vertex.Tangent, pMesh->GetElementTangent(), Vertex.ControlPointIndex, VertexIndex);
+					GetVertexElement(Vertex.Tangent, pMesh->GetElementTangent(), ControlPointIndex, VertexIndex);
 
 				if (BitangentCount)
-					GetVertexElement(Vertex.Bitangent, pMesh->GetElementBinormal(), Vertex.ControlPointIndex, VertexIndex);
+					GetVertexElement(Vertex.Bitangent, pMesh->GetElementBinormal(), ControlPointIndex, VertexIndex);
 
 				if (ColorCount)
-					GetVertexElement(Vertex.Color, pMesh->GetElementVertexColor(), Vertex.ControlPointIndex, VertexIndex);
+					GetVertexElement(Vertex.Color, pMesh->GetElementVertexColor(), ControlPointIndex, VertexIndex);
 
 				for (int e = 0; e < MaxUV; ++e)
-					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), Vertex.ControlPointIndex, VertexIndex);
+					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), ControlPointIndex, VertexIndex);
 
-				Vertices.push_back(std::move(Vertex));
+				RawVertices.push_back(std::move(Vertex));
 			}
 		}
 
-		// merge vertices by control point + other params
-		// patch faces with new indices
-		// meshopt_generateVertexRemap
-		// meshopt_remapVertexBuffer
-		// meshopt_remapIndexBuffer
+		std::vector<unsigned int> Indices(RawVertices.size());
+		const auto VertexCount = meshopt_generateVertexRemap(Indices.data(), nullptr, RawVertices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
 
-		// meshopt_generateShadowIndexBuffer for Z prepass
+		std::vector<CVertex> Vertices(VertexCount);
+		meshopt_remapVertexBuffer(Vertices.data(), RawVertices.data(), RawVertices.size(), sizeof(CVertex), Indices.data());
+
+		// NB: meshopt_remapIndexBuffer is not needed, as we have no source indices,
+		//     and remap array is effectively an index array
+		//std::vector<unsigned int> Indices2(Indices.size());
+		//meshopt_remapIndexBuffer(Indices2.data(), nullptr, Indices.size(), Indices.data());
+
+		// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
+		// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
+
+		meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
+
+		meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position[0], Vertices.size(), sizeof(CVertex), 1.05f);
+
+		meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
+
+		// TODO: simplify, quantize and compress if required, see meshoptimizer readme
 
 		//!!!skinning is per-control-point, so it is much better to optimize at first
 		// and then fill blend params!
