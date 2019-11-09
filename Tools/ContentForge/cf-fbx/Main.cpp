@@ -152,9 +152,16 @@ public:
 
 		// Export node hierarchy to DEM format
 
+		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
 		CContext Ctx{ Task.Log };
 
-		return ExportNode(pScene->GetRootNode(), Ctx);
+		if (!ExportNode(pScene->GetRootNode(), Ctx)) return false;
+
+		// Export animations
+
+		// ...
+
+		return true;
 	}
 
 	bool ExportNode(FbxNode* pNode, CContext& Ctx)
@@ -172,6 +179,8 @@ public:
 		FbxDouble3 Scaling = pNode->LclScaling.Get();
 		FbxQuaternion Rotation;
 		Rotation.ComposeSphericalXYZ(pNode->LclRotation.Get());
+
+		Ctx.Log.LogDebug("Node");
 
 		// Process attributes
 
@@ -225,21 +234,41 @@ public:
 
 	void ExportModel(FbxMesh* pMesh, CContext& Ctx)
 	{
+		Ctx.Log.LogDebug("Model");
+
 		// mesh
-		// material
+		// - build vertex declaration (check layer elements and skin deformer)
+		// - collect vertices (normal, tangent (if needed), UV etc)
+		// - for skinned mesh add blend indices/bones and weights
+		// - collect indices (faces)
+		// - use 16-bit indices when possible, warn if 32 required
+
 		// skin
+		// - collect bind pose matrices
+		//???separate vertex stream for skin data? or never required.
+
+		// Optimize geometry
+		// Save geomerty
+
+		// material
+		// - custom constants?
+		// - texture pathes (PBR through layered texture? or custom channels?)
+		//???how to process animated materials?
 	}
 
 	void ExportLight(FbxLight* pLight, CContext& Ctx)
 	{
+		Ctx.Log.LogDebug("Light");
 	}
 
 	void ExportCamera(FbxCamera* pCamera, CContext& Ctx)
 	{
+		Ctx.Log.LogDebug("Camera");
 	}
 
 	void ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx)
 	{
+		Ctx.Log.LogDebug("LOD group");
 	}
 };
 
