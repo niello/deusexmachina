@@ -178,7 +178,7 @@ public:
 
 		pImporter->Destroy();
 
-		// Preprocess scene transforms and geometry to a more suitable format
+		// Convert scene transforms and geometry to a more suitable format
 		// TODO: save results back to FBX?
 
 		ConvertTransformsToSRTRecursive(pScene->GetRootNode());
@@ -379,14 +379,14 @@ public:
 		//std::vector<unsigned int> Indices2(Indices.size());
 		//meshopt_remapIndexBuffer(Indices2.data(), nullptr, Indices.size(), Indices.data());
 
-		// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
-		// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
-
 		meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
 
 		meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position[0], Vertices.size(), sizeof(CVertex), 1.05f);
 
 		meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
+
+		// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
+		// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
 
 		// Process skin
 		// NB: skin is per-control-point, so it is better done after optimizing out redundant vertices
@@ -432,6 +432,12 @@ public:
 					for (auto& Vertex : Vertices)
 					{
 						if (Vertex.ControlPointIndex != ControlPointIndex) continue;
+
+						if (Vertex.BonesUsed >= MaxBonesPerVertex)
+						{
+							Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of influencing bones, the rest is discarded");
+							continue;
+						}
 
 						++VerticesAffected;
 
