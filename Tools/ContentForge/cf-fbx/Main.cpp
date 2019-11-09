@@ -457,10 +457,28 @@ public:
 		// TODO: simplify, quantize and compress if required, see meshoptimizer readme, can simplify for lower LODs
 
 		// Save mesh groups (always 1 group x 1 LOD now, may change later)
+		/*
+		UPTR				FirstVertex;
+		UPTR				VertexCount;
+		UPTR				FirstIndex;
+		UPTR				IndexCount;
+		EPrimitiveTopology	Topology;
+		CAABB				AABB;
+		*/
+
 		// Save vertex format
-		// Save vertices
-		// Save indices
-		if (Vertices.size() > std::numeric_limits<uint16_t>().max())
+		/*
+		Cmp.Format = Render::VCFmt_Float32_3;
+		Cmp.Semantic = Render::VCSem_Position;
+		Cmp.Index = 0;
+		Cmp.Stream = 0;
+		*/
+
+		// Save vertex & index count, index size
+		//???Save skin palette offset?
+
+		const bool Indices32 = (Vertices.size() > std::numeric_limits<uint16_t>().max());
+		if (Indices32)
 		{
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(Vertices.size()) + " vertices and will use 32-bit indices");
 			static_assert(sizeof(unsigned int) == 4);
@@ -471,7 +489,12 @@ public:
 			// save 16-bit indices
 		}
 
-		// Save skin palette
+		// Save vertices (write one by one, component by component)
+
+		// Save indices
+
+		// Save skin palette (separate file? or no reason to split? two resources in one file?)
+		//???or mesh resource stores skin palette resource pointer?
 
 		// Material
 
@@ -489,6 +512,7 @@ public:
 		else
 		{
 			//???use some custom property to set external material by resource ID?
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has no material attached");
 		}
 
 		return true;

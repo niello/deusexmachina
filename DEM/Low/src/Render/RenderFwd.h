@@ -88,9 +88,10 @@ enum EGPUFeatureLevel
 	GPU_Level_D3D12_1	= 0xc100
 };
 
+// Don't change order and starting index
 enum EShaderType
 {
-	ShaderType_Vertex = 0,	// Don't change order and starting index
+	ShaderType_Vertex = 0,
 	ShaderType_Pixel,
 	ShaderType_Geometry,
 	ShaderType_Hull,
@@ -109,6 +110,7 @@ enum EClearFlag
 	Clear_All		= (Clear_Color | Clear_Depth | Clear_Stencil)
 };
 
+// Don't change order and starting index
 enum EPrimitiveTopology
 {
 	Prim_PointList,
@@ -360,10 +362,10 @@ struct CPrimitiveGroup
 // Also I don't like hacks like "render A after B and C for no reason". But you may implement it.
 enum EEffectType
 {
-	EffectType_Opaque = 0,		// No transparency, all possible depth optimizations
-	EffectType_AlphaTest,	// No transparency, Z-write in a PS
-	EffectType_Skybox,		// Infinitely far opaque object for non-filled part of the screen only
-	EffectType_AlphaBlend,	// Back to front, requires all objects behind to be already drawn
+	EffectType_Opaque = 0, // No transparency, all possible depth optimizations
+	EffectType_AlphaTest,  // No transparency, Z-write in a PS
+	EffectType_Skybox,     // Infinitely far opaque object for non-filled part of the screen only
+	EffectType_AlphaBlend, // Back to front, requires all objects behind to be already drawn
 
 	EffectType_Other,
 

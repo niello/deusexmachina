@@ -240,92 +240,18 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 
 	SetupVertexComponents(Header.vertexComponentMask, MeshData->VertexFormat);
 
-	//!!!map data through MMF instead!
+	//!!!can map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
 	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
 	Stream->Read(MeshData->VBData->GetPtr(), DataSize);
 
-	//!!!map data through MMF instead!
+	//!!!can map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
 	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
 	Stream->Read(MeshData->IBData->GetPtr(), DataSize);
 
-	for (UPTR i = 0; i < Groups.GetCount(); ++i)
-	{
-		Render::CPrimitiveGroup& MeshGroup = Groups[i];
-		MeshGroup.AABB.BeginExtend();
-		U16* pIndex = static_cast<U16*>(MeshData->IBData->GetPtr()) + MeshGroup.FirstIndex;
-		for (U32 j = 0; j < MeshGroup.IndexCount; ++j)
-		{
-			float* pVertex = static_cast<float*>(MeshData->VBData->GetPtr()) + (pIndex[j] * Header.vertexWidth);
-			MeshGroup.AABB.Extend(pVertex[0], pVertex[1], pVertex[2]);
-		}
-		MeshGroup.AABB.EndExtend();
-	}
-
-	MeshData->InitGroups(&Groups.Front(), Groups.GetCount(), Groups.GetCount(), 1, false);
+	MeshData->InitGroups(&Groups.Front(), Groups.GetCount(), Groups.GetCount(), 1, false, true);
 
 	return MeshData;
 }
 //---------------------------------------------------------------------
-
-}
-
-////!!!this must be offline-processed! if it is hardware-dependent, need to research!
-///*
-////if (GetUsage() == WriteOnce)
-//
-//void
-//nD3D9Mesh::OptimizeFaces(U16* indices, int numFaces, int numVertices)
-//{
-//    UPTR* pdwRemap = n_new_array(UPTR, numFaces);
-//    D3DXOptimizeFaces(indices, numFaces, numVertices, FALSE, pdwRemap);
-//
-//    U16* dstIndices = n_new_array(U16, numFaces * 3);
-//    n_assert(dstIndices);
-//    memcpy(dstIndices, indices, numFaces * 6); // = 3 * sizeof(U16)
-//
-//    for (int i = 0; i < numFaces; ++i)
-//    {
-//        int newFace = (int) pdwRemap[i];
-//        for (int j = 0; j < 3; ++j)
-//            indices[newFace * 3 + j] = dstIndices[i * 3 + j];
-//    }
-//
-//    n_delete_array(dstIndices);
-//    n_delete_array(pdwRemap);
-//}
-//
-//void
-//nD3D9Mesh::OptimizeVertices(float* vertices, U16* indices, int numVertices, int numFaces)
-//{
-//    UPTR* pdwRemap = n_new_array(UPTR, numVertices);
-//
-//    D3DXOptimizeVertices(indices, numFaces, numVertices, FALSE, pdwRemap);
-//
-//    // remap vertices
-//    float* dstVertices = n_new_array(float, numVertices * this->GetVertexWidth());
-//    n_assert(dstVertices);
-//    memcpy(dstVertices, vertices, numVertices * this->GetVertexWidth() * sizeof(float));
-//
-//    for (int i = 0; i < numVertices; ++i)
-//    {
-//        float* src = dstVertices + (i * this->GetVertexWidth());
-//        float* dst = vertices + (pdwRemap[i] * this->GetVertexWidth());
-//        memcpy(dst, src, this->GetVertexWidth() * sizeof(float));
-//    }
-//
-//    // remap triangles
-//    for (int faceIndex = 0; faceIndex < numFaces; ++faceIndex)
-//    {
-//        for (int index = 0; index < 3; ++index)
-//        {
-//            indices[faceIndex * 3 + index] = (U16) pdwRemap[indices[faceIndex * 3 + index]];
-//        }
-//    }
-//
-//    n_delete_array(dstVertices);
-//    n_delete_array(pdwRemap);
-//}
-//
-//*/

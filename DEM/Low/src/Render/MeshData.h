@@ -53,10 +53,12 @@ public:
 	virtual bool			IsResourceValid() const { return VBData && VertexCount; }
 	void					Destroy();
 
-	void					InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount, UPTR LODCount, bool UseMapping);
+	void					InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount, UPTR LODCount, bool UseMapping, bool UpdateAABBs);
 	const CPrimitiveGroup*	GetGroup(UPTR SubMeshIdx, UPTR LOD = 0) const;
 	UPTR					GetSubMeshCount() const { return _SubMeshCount; }
 	UPTR					GetLODCount() const { return _LODCount; }
+
+	U32                     GetVertexSize() const;
 
 	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
 	bool					UseRAMData();

@@ -20,10 +20,27 @@ void CMeshData::Destroy()
 }
 //---------------------------------------------------------------------
 
-void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount, UPTR LODCount, bool UseMapping)
+void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount, UPTR LODCount, bool UseMapping, bool UpdateAABBs)
 {
 	_SubMeshCount = SubMeshCount;
 	_LODCount = LODCount;
+
+	if (UpdateAABBs)
+	{
+		const U32 VertexSize = GetVertexSize();
+		for (UPTR i = 0; i < Count; ++i)
+		{
+			Render::CPrimitiveGroup& MeshGroup = pData[i];
+			MeshGroup.AABB.BeginExtend();
+			const U16* pIndex = static_cast<U16*>(IBData->GetPtr()) + MeshGroup.FirstIndex;
+			for (U32 j = 0; j < MeshGroup.IndexCount; ++j)
+			{
+				const float* pVertex = static_cast<float*>(VBData->GetPtr()) + (pIndex[j] * VertexSize);
+				MeshGroup.AABB.Extend(pVertex[0], pVertex[1], pVertex[2]);
+			}
+			MeshGroup.AABB.EndExtend();
+		}
+	}
 
 	UPTR TotalSize;
 	if (UseMapping)
@@ -41,6 +58,15 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 	pGroups = (CPrimitiveGroup*)n_malloc(TotalSize);
 	memcpy(pGroups, pData, TotalSize);
 	if (UseMapping) pGroupLODMapping = (CPrimitiveGroup**)(pGroups + _GroupCount);
+}
+//---------------------------------------------------------------------
+
+U32 CMeshData::GetVertexSize() const
+{
+	U32 Total = 0;
+	for (UPTR i = 0; i < VertexFormat.GetCount(); ++i)
+		Total += VertexFormat[i].GetSize();
+	return Total;
 }
 //---------------------------------------------------------------------
 

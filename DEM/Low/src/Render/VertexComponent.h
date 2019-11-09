@@ -9,6 +9,7 @@
 namespace Render
 {
 
+// Don't change order and starting index
 enum EVertexComponentSemantic
 {
 	VCSem_Position = 0,
@@ -23,6 +24,7 @@ enum EVertexComponentSemantic
 	VCSem_Invalid
 };
 
+// Don't change order and starting index
 enum EVertexComponentFormat
 {
 	VCFmt_Float32_1,		//> one-component float, expanded to (float, 0, 0, 1)
