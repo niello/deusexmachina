@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 // -s src/scenes
 
 constexpr size_t MaxUV = 1;
-constexpr size_t MaxBonesPerVertex = 1;
+constexpr size_t MaxBonesPerVertex = 4;
 
 static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
 {
@@ -323,7 +323,7 @@ public:
 				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
 				Indices.push_back(VertexIndex);
 
-				CVertex Vertex;
+				CVertex Vertex{0};
 				Vertex.ControlPointIndex = pMesh->GetPolygonVertex(p, v);
 				Vertex.Position = pControlPoints[Vertex.ControlPointIndex];
 
@@ -353,6 +353,9 @@ public:
 		// meshopt_remapIndexBuffer
 
 		// meshopt_generateShadowIndexBuffer for Z prepass
+
+		//!!!skinning is per-control-point, so it is much better to optimize at first
+		// and then fill blend params!
 
 		// mesh
 		// - build vertex declaration (check layer elements and skin deformer)
