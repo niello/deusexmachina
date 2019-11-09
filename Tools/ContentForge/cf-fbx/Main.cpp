@@ -9,11 +9,47 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes
 
+static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
+{
+	FbxVector4 lZero(0, 0, 0);
+
+	// Activate pivot converting
+	pNode->SetPivotState(FbxNode::eSourcePivot, FbxNode::ePivotActive);
+	pNode->SetPivotState(FbxNode::eDestinationPivot, FbxNode::ePivotActive);
+
+	// We want to set all these to 0 and bake them into the transforms.
+	pNode->SetPostRotation(FbxNode::eDestinationPivot, lZero);
+	pNode->SetPreRotation(FbxNode::eDestinationPivot, lZero);
+	pNode->SetRotationOffset(FbxNode::eDestinationPivot, lZero);
+	pNode->SetScalingOffset(FbxNode::eDestinationPivot, lZero);
+	pNode->SetRotationPivot(FbxNode::eDestinationPivot, lZero);
+	pNode->SetScalingPivot(FbxNode::eDestinationPivot, lZero);
+
+	// Bake rotation order
+	pNode->SetRotationOrder(FbxNode::eDestinationPivot, FbxEuler::eOrderXYZ);
+
+	// Bake geometric transforms to avoid creating DEM nodes for them
+	pNode->SetGeometricTranslation(FbxNode::eDestinationPivot, lZero);
+	pNode->SetGeometricRotation(FbxNode::eDestinationPivot, lZero);
+	pNode->SetGeometricScaling(FbxNode::eDestinationPivot, lZero);
+
+	// DEM is capable of slerp
+	pNode->SetQuaternionInterpolation(FbxNode::eDestinationPivot, EFbxQuatInterpMode::eQuatInterpSlerp);
+
+	for (int i = 0; i < pNode->GetChildCount(); ++i)
+		ConvertTransformsToSRTRecursive(pNode->GetChild(i));
+}
+
 class CFBXTool : public CContentForgeTool
 {
 protected:
 
-	FbxManager* pFbxManager = nullptr;
+	struct CContext
+	{
+		CThreadSafeLog& Log;
+	};
+
+	FbxManager* pFBXManager = nullptr;
 
 public:
 
@@ -32,19 +68,19 @@ public:
 
 	virtual int Init() override
 	{
-		pFbxManager = FbxManager::Create();
-		if (!pFbxManager) return 1;
+		pFBXManager = FbxManager::Create();
+		if (!pFBXManager) return 1;
 
-		FbxIOSettings* pIOSettings = FbxIOSettings::Create(pFbxManager, IOSROOT);
-		pFbxManager->SetIOSettings(pIOSettings);
+		FbxIOSettings* pIOSettings = FbxIOSettings::Create(pFBXManager, IOSROOT);
+		pFBXManager->SetIOSettings(pIOSettings);
 
 		return 0;
 	}
 
 	virtual int Term() override
 	{
-		pFbxManager->Destroy();
-		pFbxManager = nullptr;
+		pFBXManager->Destroy();
+		pFBXManager = nullptr;
 		return 0;
 	}
 
@@ -63,14 +99,16 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
+		const double animSamplingRate = 30.0;
+
 		// Import FBX scene from the source file
 
-		FbxImporter* pImporter = FbxImporter::Create(pFbxManager, "");
+		FbxImporter* pImporter = FbxImporter::Create(pFBXManager, "");
 
 		const auto SrcPath = Task.SrcFilePath.string();
 
 		// Use the first argument as the filename for the importer.
-		if (!pImporter->Initialize(SrcPath.c_str(), -1, pFbxManager->GetIOSettings()))
+		if (!pImporter->Initialize(SrcPath.c_str(), -1, pFBXManager->GetIOSettings()))
 		{
 			Task.Log.LogError("Failed to create FbxImporter for " + SrcPath + ": " + pImporter->GetStatus().GetErrorString());
 			return false;
@@ -83,7 +121,7 @@ public:
 			Task.Log.LogDebug("Source format: FBX v" + std::to_string(Major) + '.' + std::to_string(Minor) + '.' + std::to_string(Revision));
 		}
 
-		FbxScene* pScene = FbxScene::Create(pFbxManager, "SourceScene");
+		FbxScene* pScene = FbxScene::Create(pFBXManager, "SourceScene");
 
 		if (!pImporter->Import(pScene))
 		{
@@ -94,94 +132,115 @@ public:
 
 		pImporter->Destroy();
 
-		//!!!DBG TMP!
-		if (FbxNode* pRootNode = pScene->GetRootNode())
+		// Preprocess scene transforms and geometry to a more suitable format
+		// TODO: save results back to FBX?
+
+		ConvertTransformsToSRTRecursive(pScene->GetRootNode());
+		pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, animSamplingRate);
+
 		{
-			for (int i = 0; i < pRootNode->GetChildCount(); ++i)
-				PrintNode(pRootNode->GetChild(i), 0);
+			FbxGeometryConverter GeometryConverter(pFBXManager);
+
+			if (!GeometryConverter.Triangulate(pScene, true))
+				Task.Log.LogWarning("Couldn't triangulate some geometry");
+
+			GeometryConverter.RemoveBadPolygonsFromMeshes(pScene);
+
+			if (!GeometryConverter.SplitMeshesPerMaterial(pScene, true))
+				Task.Log.LogWarning("Couldn't split some meshes per material");
 		}
+
+		// Export node hierarchy to DEM format
+
+		CContext Ctx{ Task.Log };
+
+		return ExportNode(pScene->GetRootNode(), Ctx);
+	}
+
+	bool ExportNode(FbxNode* pNode, CContext& Ctx)
+	{
+		if (!pNode)
+		{
+			Ctx.Log.LogWarning("Empty FBX node encountered");
+			return true;
+		}
+
+		// Process node info
+
+		const char* pName = pNode->GetName();
+		FbxDouble3 Translation = pNode->LclTranslation.Get();
+		FbxDouble3 Scaling = pNode->LclScaling.Get();
+		FbxQuaternion Rotation;
+		Rotation.ComposeSphericalXYZ(pNode->LclRotation.Get());
+
+		// Process attributes
+
+		for (int i = 0; i < pNode->GetNodeAttributeCount(); ++i)
+		{
+			auto pAttribute = pNode->GetNodeAttributeByIndex(i);
+
+			switch (pAttribute->GetAttributeType())
+			{
+				case FbxNodeAttribute::eMesh:
+				{
+					ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx);
+					break;
+				}
+				case FbxNodeAttribute::eLight:
+				{
+					ExportLight(static_cast<FbxLight*>(pAttribute), Ctx);
+					break;
+				}
+				case FbxNodeAttribute::eCamera:
+				{
+					ExportCamera(static_cast<FbxCamera*>(pAttribute), Ctx);
+					break;
+				}
+				case FbxNodeAttribute::eLODGroup:
+				{
+					ExportLODGroup(static_cast<FbxLODGroup*>(pAttribute), Ctx);
+					break;
+				}
+				/*
+				eSkeleton, 
+				eShape,
+				eCachedEffect,
+				eLine
+				*/
+				default:
+				{
+					Ctx.Log.LogInfo("Skipped unsupported attribute of type " + std::to_string(pAttribute->GetAttributeType()));
+					break;
+				}
+			}
+		}
+
+		// Process children
+
+		for (int i = 0; i < pNode->GetChildCount(); ++i)
+			if (!ExportNode(pNode->GetChild(i), Ctx)) return false;
 
 		return true;
 	}
 
-
-	//======================
-
-	std::string GetAttributeTypeName(FbxNodeAttribute::EType type)
+	void ExportModel(FbxMesh* pMesh, CContext& Ctx)
 	{
-		switch(type)
-		{
-			case FbxNodeAttribute::eUnknown: return "unidentified";
-			case FbxNodeAttribute::eNull: return "null";
-			case FbxNodeAttribute::eMarker: return "marker";
-			case FbxNodeAttribute::eSkeleton: return "skeleton";
-			case FbxNodeAttribute::eMesh: return "mesh";
-			case FbxNodeAttribute::eNurbs: return "nurbs";
-			case FbxNodeAttribute::ePatch: return "patch";
-			case FbxNodeAttribute::eCamera: return "camera";
-			case FbxNodeAttribute::eCameraStereo: return "stereo";
-			case FbxNodeAttribute::eCameraSwitcher: return "camera switcher";
-			case FbxNodeAttribute::eLight: return "light";
-			case FbxNodeAttribute::eOpticalReference: return "optical reference";
-			case FbxNodeAttribute::eOpticalMarker: return "marker";
-			case FbxNodeAttribute::eNurbsCurve: return "nurbs curve";
-			case FbxNodeAttribute::eTrimNurbsSurface: return "trim nurbs surface";
-			case FbxNodeAttribute::eBoundary: return "boundary";
-			case FbxNodeAttribute::eNurbsSurface: return "nurbs surface";
-			case FbxNodeAttribute::eShape: return "shape";
-			case FbxNodeAttribute::eLODGroup: return "lodgroup";
-			case FbxNodeAttribute::eSubDiv: return "subdiv";
-			default: return "unknown";
-		}
+		// mesh
+		// material
+		// skin
 	}
 
-	void PrintAttribute(FbxNodeAttribute* pAttribute, int depth)
+	void ExportLight(FbxLight* pLight, CContext& Ctx)
 	{
-		if (!pAttribute) return;
-
-		auto typeName = GetAttributeTypeName(pAttribute->GetAttributeType());
-
-		for(int i = 0; i < depth; i++)
-			printf(" ");
-
-		printf("<attribute type='%s' name='%s'/>\n", typeName.c_str(), pAttribute->GetName());
 	}
 
-	void PrintNode(FbxNode* pNode, int depth)
+	void ExportCamera(FbxCamera* pCamera, CContext& Ctx)
 	{
-		for(int i = 0; i < depth; i++)
-			printf(" ");
-
-		const char* nodeName = pNode->GetName();
-		FbxDouble3 translation = pNode->LclTranslation.Get();
-		FbxDouble3 rotation = pNode->LclRotation.Get();
-		FbxDouble3 scaling = pNode->LclScaling.Get();
-
-		// Print the contents of the node.
-		printf("<node name='%s' translation='(%f, %f, %f)' rotation='(%f, %f, %f)' scaling='(%f, %f, %f)'>\n",
-			nodeName,
-			translation[0], translation[1], translation[2],
-			rotation[0], rotation[1], rotation[2],
-			scaling[0], scaling[1], scaling[2]
-		);
-
-		// Print the node's attributes.
-		for(int i = 0; i < pNode->GetNodeAttributeCount(); i++)
-			PrintAttribute(pNode->GetNodeAttributeByIndex(i), depth + 1);
-
-		// Recursively print the children.
-		for(int j = 0; j < pNode->GetChildCount(); j++)
-			PrintNode(pNode->GetChild(j), depth + 1);
-
-		for(int i = 0; i < depth; i++)
-			printf(" ");
-
-		printf("</node>\n");
 	}
 
-	//=======================
-
-
+	void ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx)
+	{
+	}
 };
 
 int main(int argc, const char** argv)
