@@ -43,6 +43,27 @@ static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
 		ConvertTransformsToSRTRecursive(pNode->GetChild(i));
 }
 
+template<typename TOut, typename TElement>
+static void GetVertexElement(TOut& OutValue, TElement* pElement, int ControlPointIndex, int VertexIndex)
+{
+	if (!pElement) return;
+
+	int ID;
+	switch (pElement->GetMappingMode())
+	{
+		case FbxGeometryElement::eByControlPoint: ID = ControlPointIndex; break;
+		case FbxGeometryElement::eByPolygonVertex: ID = VertexIndex; break;
+		case FbxGeometryElement::eByPolygon: ID = VertexIndex / 3; break;
+		case FbxGeometryElement::eAllSame: ID = 0; break;
+		default: return;
+	}
+
+	if (pElement->GetReferenceMode() != FbxGeometryElement::eDirect)
+		ID = pElement->GetIndexArray().GetAt(ID);
+
+	OutValue = pElement->GetDirectArray().GetAt(ID);
+}
+
 class CFBXTool : public CContentForgeTool
 {
 protected:
@@ -291,7 +312,7 @@ public:
 			}
 			else if (PolySize < 3)
 			{
-				Ctx.Log.LogWarning("Degenerate polygon " + std::to_string(p) + " found in mesh " + pMesh->GetName());
+				Ctx.Log.LogWarning("Degenerate polygon " + std::to_string(p) + " skipped in mesh " + pMesh->GetName());
 				continue;
 			}
 
@@ -305,6 +326,9 @@ public:
 				CVertex Vertex;
 				Vertex.ControlPointIndex = pMesh->GetPolygonVertex(p, v);
 				Vertex.Position = pControlPoints[Vertex.ControlPointIndex];
+
+				if (NormalCount)
+					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), Vertex.ControlPointIndex, VertexIndex);
 
 				Vertices.push_back(std::move(Vertex));
 
