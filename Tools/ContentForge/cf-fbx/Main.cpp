@@ -74,6 +74,7 @@ protected:
 		CThreadSafeLog& Log;
 	};
 
+	//???TODO: floats? convert on read from FbxMesh?
 	struct CVertex
 	{
 		int        ControlPointIndex;
@@ -84,7 +85,14 @@ protected:
 		FbxColor   Color;
 		FbxVector2 UV[MaxUV];
 		int        BlendIndices[MaxBonesPerVertex];
-		double     BlendWeights[MaxBonesPerVertex];
+		float      BlendWeights[MaxBonesPerVertex];
+		size_t     BonesUsed = 0;
+	};
+
+	struct CBone
+	{
+		const FbxNode* pBone;
+		FbxAMatrix     InvLocalBindPose;
 	};
 
 	FbxManager* pFBXManager = nullptr;
@@ -270,12 +278,13 @@ public:
 		return true;
 	}
 
-	bool ExportModel(FbxMesh* pMesh, CContext& Ctx)
+	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx)
 	{
 		Ctx.Log.LogDebug("Model");
 
+		// Determine vertex format
+
 		const FbxVector4* pControlPoints = pMesh->GetControlPoints();
-		const int PolyCount = pMesh->GetPolygonCount();
 
 		const auto NormalCount = std::min(1, pMesh->GetElementNormalCount());
 		if (pMesh->GetElementNormalCount() > NormalCount)
@@ -296,6 +305,12 @@ public:
 		const auto UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
 		if (pMesh->GetElementUVCount() > UVCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
+
+		const auto SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+
+		// Collect vertices
+
+		const int PolyCount = pMesh->GetPolygonCount();
 
 		std::vector<CVertex> RawVertices;
 		RawVertices.reserve(static_cast<size_t>(PolyCount * 3));
@@ -324,7 +339,7 @@ public:
 
 				const auto ControlPoint = pControlPoints[ControlPointIndex];
 
-				CVertex Vertex{0};
+				CVertex Vertex{ 0 };
 				Vertex.ControlPointIndex = ControlPointIndex;
 
 				// We need float3 positions for meshopt_optimizeOverdraw
@@ -351,6 +366,8 @@ public:
 			}
 		}
 
+		// Index and optimize vertices
+
 		std::vector<unsigned int> Indices(RawVertices.size());
 		const auto VertexCount = meshopt_generateVertexRemap(Indices.data(), nullptr, RawVertices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
 
@@ -371,24 +388,90 @@ public:
 
 		meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
 
-		// TODO: simplify, quantize and compress if required, see meshoptimizer readme
+		// Process skin
+		// NB: skin is per-control-point, so it is better done after optimizing out redundant vertices
 
-		//!!!skinning is per-control-point, so it is much better to optimize at first
-		// and then fill blend params!
+		std::vector<CBone> Bones;
+		size_t MaxBonesPerVertex = 0;
 
-		// mesh
-		// - build vertex declaration (check layer elements and skin deformer)
-		// - collect vertices (normal, tangent (if needed), UV etc)
-		// - for skinned mesh add blend indices/bones and weights
-		// - collect indices (faces)
-		// - use 16-bit indices when possible, warn if 32 required
+		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
-		// skin
-		// - collect bind pose matrices
-		//???separate vertex stream for skin data? or never required.
+		for (int s = 0; s < SkinCount; ++s)
+		{
+			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
+			const auto ClusterCount = pSkin->GetClusterCount();
 
-		// Optimize geometry
-		// Save geomerty
+			for (int c = 0; c < ClusterCount; ++c)
+			{
+				const FbxCluster* pCluster = pSkin->GetCluster(c);
+
+				const int IndexCount = pCluster->GetControlPointIndicesCount();
+				const int* pIndices = pCluster->GetControlPointIndices();
+				const double* pWeights = pCluster->GetControlPointWeights();
+				const FbxNode* pBone = pCluster->GetLink();
+
+				if (!pBone || !pIndices || !pWeights || !IndexCount)
+				{
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has empty bone " + (pBone ? pBone->GetName() : "<null>"));
+					continue;
+				}
+
+				// Write blend indices and weights to vertices
+
+				const int BoneIndex = static_cast<int>(Bones.size());
+
+				size_t VerticesAffected = 0;
+				for (int i = 0; i < IndexCount; ++i)
+				{
+					const int ControlPointIndex = pIndices[i];
+					const float Weight = static_cast<float>(pWeights[i]);
+
+					// Skip (almost) zero weights
+					if (std::fabsf(Weight) <= std::numeric_limits<float>().epsilon()) continue;
+
+					for (auto& Vertex : Vertices)
+					{
+						if (Vertex.ControlPointIndex != ControlPointIndex) continue;
+
+						++VerticesAffected;
+
+						Vertex.BlendIndices[Vertex.BonesUsed] = BoneIndex;
+						Vertex.BlendWeights[Vertex.BonesUsed] = Weight;
+
+						++Vertex.BonesUsed;
+						if (Vertex.BonesUsed > MaxBonesPerVertex)
+							MaxBonesPerVertex = Vertex.BonesUsed;
+					}
+				}
+
+				if (VerticesAffected)
+				{
+					FbxAMatrix WorldBindPose;
+					pCluster->GetTransformLinkMatrix(WorldBindPose);
+
+					Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse() });
+				}
+			}
+		}
+
+		// TODO: simplify, quantize and compress if required, see meshoptimizer readme, can simplify for lower LODs
+
+		// Save mesh groups (always 1 group x 1 LOD now, may change later)
+		// Save vertex format
+		// Save vertices
+		// Save indices
+		if (Vertices.size() > std::numeric_limits<uint16_t>().max())
+		{
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(Vertices.size()) + " vertices and will use 32-bit indices");
+			static_assert(sizeof(unsigned int) == 4);
+			// save index buffer as is
+		}
+		else
+		{
+			// save 16-bit indices
+		}
+
+		// Save skin palette
 
 		// Material
 
