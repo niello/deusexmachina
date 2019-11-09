@@ -192,22 +192,22 @@ public:
 			{
 				case FbxNodeAttribute::eMesh:
 				{
-					ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx);
+					if (!ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eLight:
 				{
-					ExportLight(static_cast<FbxLight*>(pAttribute), Ctx);
+					if (!ExportLight(static_cast<FbxLight*>(pAttribute), Ctx)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eCamera:
 				{
-					ExportCamera(static_cast<FbxCamera*>(pAttribute), Ctx);
+					if (!ExportCamera(static_cast<FbxCamera*>(pAttribute), Ctx)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eLODGroup:
 				{
-					ExportLODGroup(static_cast<FbxLODGroup*>(pAttribute), Ctx);
+					if (!ExportLODGroup(static_cast<FbxLODGroup*>(pAttribute), Ctx)) return false;
 					break;
 				}
 				/*
@@ -232,9 +232,50 @@ public:
 		return true;
 	}
 
-	void ExportModel(FbxMesh* pMesh, CContext& Ctx)
+	bool ExportModel(FbxMesh* pMesh, CContext& Ctx)
 	{
 		Ctx.Log.LogDebug("Model");
+
+		const FbxVector4* lControlPoints = pMesh->GetControlPoints();
+		const int PolyCount = pMesh->GetPolygonCount();
+
+		//faces.reserve(static_cast<size_t>(PolyCount));
+		//vertices.reserve(static_cast<size_t>(PolyCount * 3));
+
+		for (int p = 0; p < PolyCount; ++p)
+		{
+			// Polygon must be a triangle
+			const int PolySize = pMesh->GetPolygonSize(p);
+			if (PolySize > 3)
+			{
+				Ctx.Log.LogError("Polygon " + std::to_string(p) + " in mesh " + pMesh->GetName() + " is not triangulated, can't proceed");
+				return false;
+			}
+			else if (PolySize < 3)
+			{
+				Ctx.Log.LogWarning("Degenerate polygon " + std::to_string(p) + " found in mesh " + pMesh->GetName());
+				continue;
+			}
+
+			// Process polygon vertices
+
+			for (int v = 0; v < PolyCount; ++v)
+			{
+				const int ControlPointIndex = pMesh->GetPolygonVertex(p, v);
+
+				//VertexID = vertices.size()
+
+				//VertexStruct vertInfo;
+				//vertInfo.ControlPointIndex = ControlPointIndex;
+				//vertInfo.vertCoordVal = lControlPoints[ControlPointIndex];
+				//vertInfo.uvTextureVal = GetUVs(pMesh, ControlPointIndex, p, v);
+				//vertInfo.normalVal = GetNormals(pMesh, ControlPointIndex, VertexID);
+				//vertInfo.vertexColor = GetVertexColor(pMesh, ControlPointIndex, VertexID);
+
+				//face.controlPointIndex[v] = VertexID;
+				//vertices.emplace_back(vertInfo);
+			}
+		}
 
 		// mesh
 		// - build vertex declaration (check layer elements and skin deformer)
@@ -250,25 +291,46 @@ public:
 		// Optimize geometry
 		// Save geomerty
 
-		// material
-		// - custom constants?
-		// - texture pathes (PBR through layered texture? or custom channels?)
-		//???how to process animated materials?
+		// Material
+
+		if (pMesh->GetElementMaterialCount())
+		{
+			// We splitted meshes per material at the start
+			assert(pMesh->GetElementMaterialCount() < 2);
+
+			auto pMaterial = pMesh->GetElementMaterial(0);
+
+			// - custom constants?
+			// - texture pathes (PBR through layered texture? or custom channels?)
+			//???how to process animated materials?
+		}
+		else
+		{
+			//???use some custom property to set external material by resource ID?
+		}
+
+		return true;
 	}
 
-	void ExportLight(FbxLight* pLight, CContext& Ctx)
+	bool ExportLight(FbxLight* pLight, CContext& Ctx)
 	{
 		Ctx.Log.LogDebug("Light");
+
+		return true;
 	}
 
-	void ExportCamera(FbxCamera* pCamera, CContext& Ctx)
+	bool ExportCamera(FbxCamera* pCamera, CContext& Ctx)
 	{
 		Ctx.Log.LogDebug("Camera");
+
+		return true;
 	}
 
-	void ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx)
+	bool ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx)
 	{
 		Ctx.Log.LogDebug("LOD group");
+
+		return true;
 	}
 };
 
