@@ -288,13 +288,13 @@ public:
 		if (pMesh->GetElementBinormalCount() > BitangentCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(BitangentCount) + '/' + std::to_string(pMesh->GetElementBinormalCount()) + " bitangents");
 
-		const auto UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
-		if (pMesh->GetElementUVCount() > UVCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
-
 		const auto ColorCount = std::min(1, pMesh->GetElementVertexColorCount());
 		if (pMesh->GetElementVertexColorCount() > ColorCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(ColorCount) + '/' + std::to_string(pMesh->GetElementVertexColorCount()) + " colors");
+
+		const auto UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
+		if (pMesh->GetElementUVCount() > UVCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
 
 		std::vector<CVertex> Vertices;
 		std::vector<unsigned int> Indices;
@@ -318,7 +318,7 @@ public:
 
 			// Process polygon vertices
 
-			for (int v = 0; v < PolyCount; ++v)
+			for (int v = 0; v < PolySize; ++v)
 			{
 				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
 				Indices.push_back(VertexIndex);
@@ -330,11 +330,19 @@ public:
 				if (NormalCount)
 					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), Vertex.ControlPointIndex, VertexIndex);
 
-				Vertices.push_back(std::move(Vertex));
+				if (TangentCount)
+					GetVertexElement(Vertex.Tangent, pMesh->GetElementTangent(), Vertex.ControlPointIndex, VertexIndex);
 
-				//vertInfo.uvTextureVal = GetUVs(pMesh, ControlPointIndex, p, v);
-				//vertInfo.normalVal = GetNormals(pMesh, ControlPointIndex, VertexID);
-				//vertInfo.vertexColor = GetVertexColor(pMesh, ControlPointIndex, VertexID);
+				if (BitangentCount)
+					GetVertexElement(Vertex.Bitangent, pMesh->GetElementBinormal(), Vertex.ControlPointIndex, VertexIndex);
+
+				if (ColorCount)
+					GetVertexElement(Vertex.Color, pMesh->GetElementVertexColor(), Vertex.ControlPointIndex, VertexIndex);
+
+				for (int e = 0; e < MaxUV; ++e)
+					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), Vertex.ControlPointIndex, VertexIndex);
+
+				Vertices.push_back(std::move(Vertex));
 			}
 		}
 
