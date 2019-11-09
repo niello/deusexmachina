@@ -108,7 +108,7 @@ public:
 
 	virtual bool SupportsMultithreading() const override
 	{
-		// FBX SDK as of 2020.0 is not guaranteed to be multithreaded
+		// FBX SDK as of 2020.0 is not guaranteed to be thread-safe
 		return false;
 	}
 
@@ -145,7 +145,7 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
-		const double animSamplingRate = 30.0;
+		constexpr double AnimSamplingRate = 30.0;
 
 		// Import FBX scene from the source file
 
@@ -153,10 +153,10 @@ public:
 
 		const auto SrcPath = Task.SrcFilePath.string();
 
-		// Use the first argument as the filename for the importer.
 		if (!pImporter->Initialize(SrcPath.c_str(), -1, pFBXManager->GetIOSettings()))
 		{
 			Task.Log.LogError("Failed to create FbxImporter for " + SrcPath + ": " + pImporter->GetStatus().GetErrorString());
+			pImporter->Destroy();
 			return false;
 		}
 
@@ -182,7 +182,7 @@ public:
 		// TODO: save results back to FBX?
 
 		ConvertTransformsToSRTRecursive(pScene->GetRootNode());
-		pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, animSamplingRate);
+		pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, AnimSamplingRate);
 
 		{
 			FbxGeometryConverter GeometryConverter(pFBXManager);
@@ -392,7 +392,7 @@ public:
 		// NB: skin is per-control-point, so it is better done after optimizing out redundant vertices
 
 		std::vector<CBone> Bones;
-		size_t MaxBonesPerVertex = 0;
+		size_t MaxBonesPerVertexUsed = 0;
 
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
@@ -445,8 +445,8 @@ public:
 						Vertex.BlendWeights[Vertex.BonesUsed] = Weight;
 
 						++Vertex.BonesUsed;
-						if (Vertex.BonesUsed > MaxBonesPerVertex)
-							MaxBonesPerVertex = Vertex.BonesUsed;
+						if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
+							MaxBonesPerVertexUsed = Vertex.BonesUsed;
 					}
 				}
 
