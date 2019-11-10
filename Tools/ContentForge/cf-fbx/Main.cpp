@@ -14,6 +14,104 @@ namespace fs = std::filesystem;
 constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
 
+struct float2
+{
+	union
+	{
+		float v[2];
+		struct
+		{
+			float x, y;
+		};
+	};
+
+	float2() : x(0.f), y(0.f) {}
+	float2(const FbxDouble2& Value)
+		: x(static_cast<float>(Value[0]))
+		, y(static_cast<float>(Value[1]))
+	{}
+
+	float2 operator =(const FbxDouble2& Value)
+	{
+		x = static_cast<float>(Value[0]);
+		y = static_cast<float>(Value[1]);
+		return *this;
+	}
+};
+
+struct float3
+{
+	union
+	{
+		float v[3];
+		struct
+		{
+			float x, y, z;
+		};
+	};
+
+	float3() : x(0.f), y(0.f), z(0.f) {}
+	float3(const FbxDouble3& Value)
+		: x(static_cast<float>(Value[0]))
+		, y(static_cast<float>(Value[1]))
+		, z(static_cast<float>(Value[2]))
+	{}
+
+	float3 operator =(const FbxDouble3& Value)
+	{
+		x = static_cast<float>(Value[0]);
+		y = static_cast<float>(Value[1]);
+		z = static_cast<float>(Value[2]);
+		return *this;
+	}
+};
+
+struct float4
+{
+	union
+	{
+		float v[4];
+		struct
+		{
+			float x, y, z, w;
+		};
+	};
+
+	float4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
+
+	float4(const FbxDouble4& Value)
+		: x(static_cast<float>(Value[0]))
+		, y(static_cast<float>(Value[1]))
+		, z(static_cast<float>(Value[2]))
+		, w(static_cast<float>(Value[3]))
+	{}
+
+	float4(const FbxColor& Value)
+		: x(static_cast<float>(Value[0]))
+		, y(static_cast<float>(Value[1]))
+		, z(static_cast<float>(Value[2]))
+		, w(static_cast<float>(Value[3]))
+	{}
+
+	float4 operator =(const FbxDouble4& Value)
+	{
+		x = static_cast<float>(Value[0]);
+		y = static_cast<float>(Value[1]);
+		z = static_cast<float>(Value[2]);
+		w = static_cast<float>(Value[3]);
+		return *this;
+	}
+
+	float4 operator =(const FbxColor& Value)
+	{
+		x = static_cast<float>(Value[0]);
+		y = static_cast<float>(Value[1]);
+		z = static_cast<float>(Value[2]);
+		w = static_cast<float>(Value[3]);
+		return *this;
+	}
+};
+
 static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
 {
 	FbxVector4 lZero(0, 0, 0);
@@ -86,19 +184,18 @@ protected:
 		std::string     DefaultName;
 	};
 
-	//???TODO: floats? convert on read from FbxMesh?
 	struct CVertex
 	{
-		int        ControlPointIndex;
-		float      Position[3];
-		FbxDouble3 Normal;
-		FbxDouble3 Tangent;
-		FbxDouble3 Bitangent;
-		FbxColor   Color;
-		FbxVector2 UV[MaxUV];
-		int        BlendIndices[MaxBonesPerVertex];
-		float      BlendWeights[MaxBonesPerVertex];
-		size_t     BonesUsed = 0;
+		int    ControlPointIndex;
+		float3 Position;
+		float3 Normal;
+		float3 Tangent;
+		float3 Bitangent;
+		float4 Color;
+		float2 UV[MaxUV];
+		int    BlendIndices[MaxBonesPerVertex];
+		float  BlendWeights[MaxBonesPerVertex];
+		size_t BonesUsed = 0;
 	};
 
 	struct CBone
@@ -358,10 +455,8 @@ public:
 				CVertex Vertex{ 0 };
 				Vertex.ControlPointIndex = ControlPointIndex;
 
-				// We need float3 positions for meshopt_optimizeOverdraw
-				Vertex.Position[0] = static_cast<float>(ControlPoint[0]);
-				Vertex.Position[1] = static_cast<float>(ControlPoint[1]);
-				Vertex.Position[2] = static_cast<float>(ControlPoint[2]);
+				// NB: we need float3 positions for meshopt_optimizeOverdraw
+				Vertex.Position = pControlPoints[ControlPointIndex];
 
 				if (NormalCount)
 					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), ControlPointIndex, VertexIndex);
@@ -397,7 +492,7 @@ public:
 
 		meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
 
-		meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position[0], Vertices.size(), sizeof(CVertex), 1.05f);
+		meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position.x, Vertices.size(), sizeof(CVertex), 1.05f);
 
 		meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
 
@@ -550,6 +645,7 @@ public:
 		if (MaxBonesPerVertexUsed)
 		{
 			if (Bones.size() > 256)
+				// Could use unsigned, but it is not supported in D3D9. > 32k bones is nonsence anyway.
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_SInt16_4, 0, 0);
 			else
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_UInt8_4, 0, 0);
@@ -576,13 +672,56 @@ public:
 
 		// TODO: precalculate group AABB!
 
-		// TODO: save padding size and padding for vertices and indices, so that memory-mapped file
-		// will have vertex and index arrays aligned! instead of padding may save offsets to data,
-		// ensure they are aligned-16.
+		// Align vertex and index data offsets to 16 bytes. It should speed up loading from memory-mapped file.
+		// TODO: test!
+
+		// Delay writing vertex and index data offsets.
+		const auto DataOffsetsPos = File.tellp();
+		WriteStream<uint32_t>(File, 0);
+		WriteStream<uint32_t>(File, 0);
+
+		uint32_t VertexStartPos = static_cast<uint32_t>(DataOffsetsPos) + 2 * sizeof(uint32_t);
+		if (const auto VertexStartPadding = VertexStartPos % 16)
+		{
+			VertexStartPos += (16 - VertexStartPadding);
+			for (auto i = VertexStartPadding; i < 16; ++i)
+				WriteStream<uint8_t>(File, 0);
+		}
 
 		for (const auto& Vertex : Vertices)
 		{
 			WriteStream(File, Vertex.Position);
+
+			if (NormalCount) WriteStream(File, Vertex.Normal);
+			if (TangentCount) WriteStream(File, Vertex.Tangent);
+			if (BitangentCount) WriteStream(File, Vertex.Bitangent);
+			if (ColorCount) WriteStream(File, Vertex.Color);
+
+			for (int i = 0; i < UVCount; ++i)
+				WriteStream(File, Vertex.UV[i]);
+
+			if (MaxBonesPerVertexUsed)
+			{
+				// Blend indices are always 4-component
+				for (int i = 0; i < 4; ++i)
+				{
+					const int BoneIndex = (i < MaxBonesPerVertex) ? Vertex.BlendIndices[i] : 0;
+					if (Bones.size() > 256)
+						WriteStream(File, static_cast<int16_t>(BoneIndex));
+					else
+						WriteStream(File, static_cast<uint8_t>(BoneIndex));
+				}
+
+				File.write(reinterpret_cast<const char*>(Vertex.BlendWeights), MaxBonesPerVertexUsed * sizeof(float));
+			}
+		}
+
+		uint32_t IndexStartPos = static_cast<uint32_t>(File.tellp());
+		if (const auto IndexStartPadding = IndexStartPos % 16)
+		{
+			IndexStartPos += (16 - IndexStartPadding);
+			for (auto i = IndexStartPadding; i < 16; ++i)
+				WriteStream<uint8_t>(File, 0);
 		}
 
 		if (Indices32)
@@ -595,7 +734,12 @@ public:
 				WriteStream(File, static_cast<uint16_t>(Index));
 		}
 
-		// Save indices
+		// Write delayed values
+		File.seekp(DataOffsetsPos);
+		WriteStream<uint32_t>(File, VertexStartPos);
+		WriteStream<uint32_t>(File, IndexStartPos);
+
+		File.close();
 
 		// Save skin palette (separate file? or no reason to split? two resources in one file?)
 		//???or mesh resource stores skin palette resource pointer?
