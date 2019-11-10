@@ -554,13 +554,16 @@ public:
 			else
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_UInt8_4, 0, 0);
 
+			// Max 4 bones per vertex are supported, at least for now
+			assert(MaxBonesPerVertexUsed < 5);
+
 			if (MaxBonesPerVertexUsed == 1)
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
 			else if (MaxBonesPerVertexUsed == 2)
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
 			else if (MaxBonesPerVertexUsed == 3)
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
-			else if (MaxBonesPerVertexUsed == 4)
+			else
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
 		}
 
@@ -577,7 +580,20 @@ public:
 		// will have vertex and index arrays aligned! instead of padding may save offsets to data,
 		// ensure they are aligned-16.
 
-		// Save vertices (write one by one, component by component)
+		for (const auto& Vertex : Vertices)
+		{
+			WriteStream(File, Vertex.Position);
+		}
+
+		if (Indices32)
+		{
+			File.write(reinterpret_cast<const char*>(Indices.data()), Indices.size() * 4);
+		}
+		else
+		{
+			for (auto Index : Indices)
+				WriteStream(File, static_cast<uint16_t>(Index));
+		}
 
 		// Save indices
 
