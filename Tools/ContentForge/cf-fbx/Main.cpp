@@ -422,6 +422,9 @@ public:
 		if (!Children.empty())
 			NodeSection.emplace(sidChildren, std::move(Children));
 
+		if (!Nodes.emplace(CStrID(pNode->GetName()), std::move(NodeSection)).second)
+			Ctx.Log.LogWarning("Duplicated node overwritten with name " + std::string(pNode->GetName()));
+
 		return true;
 	}
 
