@@ -319,8 +319,10 @@ public:
 			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
 
 		// Export node hierarchy to DEM format
+		
+		Data::CParams Nodes;
 
-		if (!ExportNode(pScene->GetRootNode(), Ctx)) return false;
+		if (!ExportNode(pScene->GetRootNode(), Ctx, Nodes)) return false;
 
 		// Export animations
 
@@ -329,7 +331,7 @@ public:
 		return true;
 	}
 
-	bool ExportNode(FbxNode* pNode, CContext& Ctx)
+	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes)
 	{
 		if (!pNode)
 		{
@@ -337,24 +339,38 @@ public:
 			return true;
 		}
 
+		static const CStrID sidTranslation("Translation");
+		static const CStrID sidRotation("Rotation");
+		static const CStrID sidScale("Scale");
+		static const CStrID sidAttrs("Attrs");
+		static const CStrID sidChildren("Children");
+
 		Data::CParams NodeSection;
 
 		// Process node info
 
 		const char* pName = pNode->GetName();
-		FbxDouble3 Translation = pNode->LclTranslation.Get();
-		FbxDouble3 Scaling = pNode->LclScaling.Get();
-		FbxQuaternion Rotation;
-		Rotation.ComposeSphericalXYZ(pNode->LclRotation.Get());
+		float3 Translation = pNode->LclTranslation.Get();
+		float3 Scaling = pNode->LclScaling.Get();
+		float4 Rotation;
+		{
+			FbxQuaternion Quat;
+			Quat.ComposeSphericalXYZ(pNode->LclRotation.Get());
+			Rotation = Quat;
+		}
+
+		NodeSection.emplace(sidTranslation, vector4(Translation.v, 3));
+		NodeSection.emplace(sidRotation, vector4(Rotation.v, 4));
+		NodeSection.emplace(sidScale, vector4(Scaling.v, 3));
 
 		Ctx.Log.LogDebug("Node");
 
 		// Process attributes
 
+		Data::CDataArray Attributes;
+
 		for (int i = 0; i < pNode->GetNodeAttributeCount(); ++i)
 		{
-			Data::CDataArray Attributes;
-
 			auto pAttribute = pNode->GetNodeAttributeByIndex(i);
 
 			switch (pAttribute->GetAttributeType())
@@ -393,10 +409,18 @@ public:
 			}
 		}
 
+		if (!Attributes.empty())
+			NodeSection.emplace(sidAttrs, std::move(Attributes));
+
 		// Process children
 
+		Data::CParams Children;
+
 		for (int i = 0; i < pNode->GetChildCount(); ++i)
-			if (!ExportNode(pNode->GetChild(i), Ctx)) return false;
+			if (!ExportNode(pNode->GetChild(i), Ctx, Children)) return false;
+
+		if (!Children.empty())
+			NodeSection.emplace(sidChildren, std::move(Children));
 
 		return true;
 	}
@@ -854,6 +878,7 @@ public:
 		if (LightType != 0)
 		{
 			// FIXME: how to calculate light range from FBX?
+			//???use some min threshold over the function based on intensity and decay type?
 			Attribute.emplace(CStrID("Intensity"), static_cast<float>(pLight->NearAttenuationEnd.Get()));
 
 			if (LightType == 2)
