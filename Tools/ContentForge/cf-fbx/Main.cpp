@@ -4,6 +4,7 @@
 #include <fbxsdk.h>
 #include <meshoptimizer.h>
 //#include <CLI11.hpp>
+#include <unordered_map>
 
 namespace fs = std::filesystem;
 
@@ -182,6 +183,9 @@ protected:
 		fs::path        MeshPath;
 		fs::path        SkinPath;
 		std::string     DefaultName;
+
+		std::unordered_map<const FbxMesh*, std::string> ProcessedMeshes;
+		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
 	};
 
 	struct CVertex
@@ -333,6 +337,8 @@ public:
 			return true;
 		}
 
+		Data::CParams NodeSection;
+
 		// Process node info
 
 		const char* pName = pNode->GetName();
@@ -347,28 +353,30 @@ public:
 
 		for (int i = 0; i < pNode->GetNodeAttributeCount(); ++i)
 		{
+			Data::CDataArray Attributes;
+
 			auto pAttribute = pNode->GetNodeAttributeByIndex(i);
 
 			switch (pAttribute->GetAttributeType())
 			{
 				case FbxNodeAttribute::eMesh:
 				{
-					if (!ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx)) return false;
+					if (!ExportModel(static_cast<FbxMesh*>(pAttribute), Ctx, Attributes)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eLight:
 				{
-					if (!ExportLight(static_cast<FbxLight*>(pAttribute), Ctx)) return false;
+					if (!ExportLight(static_cast<FbxLight*>(pAttribute), Ctx, Attributes)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eCamera:
 				{
-					if (!ExportCamera(static_cast<FbxCamera*>(pAttribute), Ctx)) return false;
+					if (!ExportCamera(static_cast<FbxCamera*>(pAttribute), Ctx, Attributes)) return false;
 					break;
 				}
 				case FbxNodeAttribute::eLODGroup:
 				{
-					if (!ExportLODGroup(static_cast<FbxLODGroup*>(pAttribute), Ctx)) return false;
+					if (!ExportLODGroup(static_cast<FbxLODGroup*>(pAttribute), Ctx, Attributes)) return false;
 					break;
 				}
 				/*
@@ -393,10 +401,70 @@ public:
 		return true;
 	}
 
-	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx)
+	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx, Data::CDataArray& Attributes)
 	{
 		Ctx.Log.LogDebug("Model");
 
+		// Mesh (optionally skinned)
+
+		std::string MeshID, SkinID;
+
+		auto MeshIt = Ctx.ProcessedMeshes.find(pMesh);
+		if (MeshIt == Ctx.ProcessedMeshes.cend())
+		{
+			if (!ExportMesh(pMesh, Ctx, MeshID, SkinID)) return false;
+		}
+		else
+		{
+			MeshID = MeshIt->second;
+
+			auto SkinIt = Ctx.ProcessedSkins.find(pMesh);
+			if (SkinIt != Ctx.ProcessedSkins.cend())
+				SkinID = SkinIt->second;
+		}
+
+		// Material
+
+		if (pMesh->GetElementMaterialCount())
+		{
+			// We splitted meshes per material at the start
+			assert(pMesh->GetElementMaterialCount() < 2);
+
+			auto pMaterial = pMesh->GetElementMaterial(0);
+
+			// - custom constants?
+			// - texture pathes (PBR through layered texture? or custom channels?)
+			//???how to process animated materials?
+		}
+		else
+		{
+			//???use some custom property to set external material by resource ID?
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has no material attached");
+		}
+
+		// Assemble attributes
+
+		//!!!FIXME: material!
+		Data::CParams ModelAttribute;
+		ModelAttribute.emplace(CStrID("Class"), std::string("Frame::CModelAttribute"));
+		ModelAttribute.emplace(CStrID("Mesh"), MeshID);
+		Attributes.push_back(std::move(ModelAttribute));
+
+		if (!SkinID.empty())
+		{
+			Data::CParams SkinAttribute;
+			SkinAttribute.emplace(CStrID("Class"), std::string("Frame::CSkinAttribute"));
+			SkinAttribute.emplace(CStrID("SkinInfo"), SkinID);
+			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
+			Attributes.push_back(std::move(SkinAttribute));
+		}
+
+		return true;
+	}
+
+	// Export mesh and optional skin to DEM-native format
+	bool ExportMesh(const FbxMesh* pMesh, CContext& Ctx, std::string& OutMeshID, std::string& OutSkinID)
+	{
 		// Determine vertex format
 
 		const FbxVector4* pControlPoints = pMesh->GetControlPoints();
@@ -576,211 +644,238 @@ public:
 
 		// Write resulting mesh file
 
-		fs::create_directories(Ctx.MeshPath);
-
-		std::string MeshName = pMesh->GetName();
-		if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
-		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
-		ToLower(MeshName);
-
-		// TODO: replace forbidden characters (std::transform with replacer callback?)
-
-		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
-
-		std::ofstream File(DestPath, std::ios_base::binary);
-		if (!File)
 		{
-			Ctx.Log.LogError("Error opening an output file " + DestPath.string());
-			return false;
-		}
+			fs::create_directories(Ctx.MeshPath);
 
-		WriteStream<uint32_t>(File, 'MESH');        // Format magic value
-		WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
-		WriteStream<uint32_t>(File, 1);             // Group count, now always 1, may change later!
+			std::string MeshName = pMesh->GetName();
+			if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
+			if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
+			ToLower(MeshName);
 
-		WriteStream(File, static_cast<uint32_t>(Vertices.size()));
-		WriteStream(File, static_cast<uint32_t>(Indices.size()));
+			// TODO: replace forbidden characters (std::transform with replacer callback?)
 
-		// One index size in bytes
-		const bool Indices32 = (Vertices.size() > std::numeric_limits<uint16_t>().max());
-		if (Indices32)
-		{
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(Vertices.size()) + " vertices and will use 32-bit indices");
-			static_assert(sizeof(unsigned int) == 4);
-			WriteStream<uint8_t>(File, 4);
-		}
-		else
-		{
-			WriteStream<uint8_t>(File, 2);
-		}
+			const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
 
-		const uint32_t VertexComponentCount =
-			1 + // Position
-			NormalCount +
-			TangentCount +
-			BitangentCount +
-			UVCount +
-			ColorCount +
-			(MaxBonesPerVertexUsed ? 2 : 0); // Blend indices and weights
+			std::ofstream File(DestPath, std::ios_base::binary);
+			if (!File)
+			{
+				Ctx.Log.LogError("Error opening an output file " + DestPath.string());
+				return false;
+			}
 
-		WriteStream(File, VertexComponentCount);
+			WriteStream<uint32_t>(File, 'MESH');        // Format magic value
+			WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+			WriteStream<uint32_t>(File, 1);             // Group count, now always 1, may change later!
 
-		WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Position, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+			WriteStream(File, static_cast<uint32_t>(Vertices.size()));
+			WriteStream(File, static_cast<uint32_t>(Indices.size()));
 
-		for (int i = 0; i < NormalCount; ++i)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Normal, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
-
-		for (int i = 0; i < TangentCount; ++i)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Tangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
-
-		for (int i = 0; i < BitangentCount; ++i)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Bitangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
-
-		for (int i = 0; i < ColorCount; ++i)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Color, EVertexComponentFormat::VCFmt_Float32_4, i, 0);
-
-		for (int i = 0; i < UVCount; ++i)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_TexCoord, EVertexComponentFormat::VCFmt_Float32_2, i, 0);
-
-		if (MaxBonesPerVertexUsed)
-		{
-			if (Bones.size() > 256)
-				// Could use unsigned, but it is not supported in D3D9. > 32k bones is nonsence anyway.
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_SInt16_4, 0, 0);
+			// One index size in bytes
+			const bool Indices32 = (Vertices.size() > std::numeric_limits<uint16_t>().max());
+			if (Indices32)
+			{
+				Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(Vertices.size()) + " vertices and will use 32-bit indices");
+				static_assert(sizeof(unsigned int) == 4);
+				WriteStream<uint8_t>(File, 4);
+			}
 			else
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_UInt8_4, 0, 0);
+			{
+				WriteStream<uint8_t>(File, 2);
+			}
 
-			// Max 4 bones per vertex are supported, at least for now
-			assert(MaxBonesPerVertexUsed < 5);
+			const uint32_t VertexComponentCount =
+				1 + // Position
+				NormalCount +
+				TangentCount +
+				BitangentCount +
+				UVCount +
+				ColorCount +
+				(MaxBonesPerVertexUsed ? 2 : 0); // Blend indices and weights
 
-			if (MaxBonesPerVertexUsed == 1)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
-			else if (MaxBonesPerVertexUsed == 2)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
-			else if (MaxBonesPerVertexUsed == 3)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
-			else
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
-		}
+			WriteStream(File, VertexComponentCount);
 
-		// Save mesh groups (always 1 group x 1 LOD now, may change later)
-		WriteStream<uint32_t>(File, 0);                            // First vertex
-		WriteStream(File, static_cast<uint32_t>(Vertices.size())); // Vertex count
-		WriteStream<uint32_t>(File, 0);                            // First index
-		WriteStream(File, static_cast<uint32_t>(Indices.size()));  // Index count
-		WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Position, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
 
-		// TODO: precalculate group AABB!
+			for (int i = 0; i < NormalCount; ++i)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Normal, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
 
-		// Align vertex and index data offsets to 16 bytes. It should speed up loading from memory-mapped file.
-		// TODO: test!
+			for (int i = 0; i < TangentCount; ++i)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Tangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
 
-		// Delay writing vertex and index data offsets.
-		const auto DataOffsetsPos = File.tellp();
-		WriteStream<uint32_t>(File, 0);
-		WriteStream<uint32_t>(File, 0);
+			for (int i = 0; i < BitangentCount; ++i)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Bitangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
 
-		uint32_t VertexStartPos = static_cast<uint32_t>(DataOffsetsPos) + 2 * sizeof(uint32_t);
-		if (const auto VertexStartPadding = VertexStartPos % 16)
-		{
-			VertexStartPos += (16 - VertexStartPadding);
-			for (auto i = VertexStartPadding; i < 16; ++i)
-				WriteStream<uint8_t>(File, 0);
-		}
-
-		for (const auto& Vertex : Vertices)
-		{
-			WriteStream(File, Vertex.Position);
-
-			if (NormalCount) WriteStream(File, Vertex.Normal);
-			if (TangentCount) WriteStream(File, Vertex.Tangent);
-			if (BitangentCount) WriteStream(File, Vertex.Bitangent);
-			if (ColorCount) WriteStream(File, Vertex.Color);
+			for (int i = 0; i < ColorCount; ++i)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Color, EVertexComponentFormat::VCFmt_Float32_4, i, 0);
 
 			for (int i = 0; i < UVCount; ++i)
-				WriteStream(File, Vertex.UV[i]);
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_TexCoord, EVertexComponentFormat::VCFmt_Float32_2, i, 0);
 
 			if (MaxBonesPerVertexUsed)
 			{
-				// Blend indices are always 4-component
-				for (int i = 0; i < 4; ++i)
-				{
-					const int BoneIndex = (i < MaxBonesPerVertex) ? Vertex.BlendIndices[i] : 0;
-					if (Bones.size() > 256)
-						WriteStream(File, static_cast<int16_t>(BoneIndex));
-					else
-						WriteStream(File, static_cast<uint8_t>(BoneIndex));
-				}
+				if (Bones.size() > 256)
+					// Could use unsigned, but it is not supported in D3D9. > 32k bones is nonsence anyway.
+					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_SInt16_4, 0, 0);
+				else
+					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_UInt8_4, 0, 0);
 
-				File.write(reinterpret_cast<const char*>(Vertex.BlendWeights), MaxBonesPerVertexUsed * sizeof(float));
+				// Max 4 bones per vertex are supported, at least for now
+				assert(MaxBonesPerVertexUsed < 5);
+
+				if (MaxBonesPerVertexUsed == 1)
+					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
+				else if (MaxBonesPerVertexUsed == 2)
+					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
+				else if (MaxBonesPerVertexUsed == 3)
+					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+				else
+					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
 			}
-		}
 
-		uint32_t IndexStartPos = static_cast<uint32_t>(File.tellp());
-		if (const auto IndexStartPadding = IndexStartPos % 16)
-		{
-			IndexStartPos += (16 - IndexStartPadding);
-			for (auto i = IndexStartPadding; i < 16; ++i)
-				WriteStream<uint8_t>(File, 0);
-		}
+			// Save mesh groups (always 1 group x 1 LOD now, may change later)
+			WriteStream<uint32_t>(File, 0);                            // First vertex
+			WriteStream(File, static_cast<uint32_t>(Vertices.size())); // Vertex count
+			WriteStream<uint32_t>(File, 0);                            // First index
+			WriteStream(File, static_cast<uint32_t>(Indices.size()));  // Index count
+			WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
 
-		if (Indices32)
-		{
-			File.write(reinterpret_cast<const char*>(Indices.data()), Indices.size() * 4);
-		}
-		else
-		{
-			for (auto Index : Indices)
-				WriteStream(File, static_cast<uint16_t>(Index));
-		}
+			// TODO: precalculate group AABB!
 
-		// Write delayed values
-		File.seekp(DataOffsetsPos);
-		WriteStream<uint32_t>(File, VertexStartPos);
-		WriteStream<uint32_t>(File, IndexStartPos);
+			// Align vertex and index data offsets to 16 bytes. It should speed up loading from memory-mapped file.
+			// TODO: test!
 
-		File.close();
+			// Delay writing vertex and index data offsets.
+			const auto DataOffsetsPos = File.tellp();
+			WriteStream<uint32_t>(File, 0);
+			WriteStream<uint32_t>(File, 0);
+
+			uint32_t VertexStartPos = static_cast<uint32_t>(DataOffsetsPos) + 2 * sizeof(uint32_t);
+			if (const auto VertexStartPadding = VertexStartPos % 16)
+			{
+				VertexStartPos += (16 - VertexStartPadding);
+				for (auto i = VertexStartPadding; i < 16; ++i)
+					WriteStream<uint8_t>(File, 0);
+			}
+
+			for (const auto& Vertex : Vertices)
+			{
+				WriteStream(File, Vertex.Position);
+
+				if (NormalCount) WriteStream(File, Vertex.Normal);
+				if (TangentCount) WriteStream(File, Vertex.Tangent);
+				if (BitangentCount) WriteStream(File, Vertex.Bitangent);
+				if (ColorCount) WriteStream(File, Vertex.Color);
+
+				for (int i = 0; i < UVCount; ++i)
+					WriteStream(File, Vertex.UV[i]);
+
+				if (MaxBonesPerVertexUsed)
+				{
+					// Blend indices are always 4-component
+					for (int i = 0; i < 4; ++i)
+					{
+						const int BoneIndex = (i < MaxBonesPerVertex) ? Vertex.BlendIndices[i] : 0;
+						if (Bones.size() > 256)
+							WriteStream(File, static_cast<int16_t>(BoneIndex));
+						else
+							WriteStream(File, static_cast<uint8_t>(BoneIndex));
+					}
+
+					File.write(reinterpret_cast<const char*>(Vertex.BlendWeights), MaxBonesPerVertexUsed * sizeof(float));
+				}
+			}
+
+			uint32_t IndexStartPos = static_cast<uint32_t>(File.tellp());
+			if (const auto IndexStartPadding = IndexStartPos % 16)
+			{
+				IndexStartPos += (16 - IndexStartPadding);
+				for (auto i = IndexStartPadding; i < 16; ++i)
+					WriteStream<uint8_t>(File, 0);
+			}
+
+			if (Indices32)
+			{
+				File.write(reinterpret_cast<const char*>(Indices.data()), Indices.size() * 4);
+			}
+			else
+			{
+				for (auto Index : Indices)
+					WriteStream(File, static_cast<uint16_t>(Index));
+			}
+
+			// Write delayed values
+			File.seekp(DataOffsetsPos);
+			WriteStream<uint32_t>(File, VertexStartPos);
+			WriteStream<uint32_t>(File, IndexStartPos);
+		}
 
 		// Save skin palette (separate file? or no reason to split? two resources in one file?)
 		//???or mesh resource stores skin palette resource pointer?
 
-		// Material
+		//!!!FIXME: fill!
+		std::string MeshID, SkinID;
 
-		if (pMesh->GetElementMaterialCount())
-		{
-			// We splitted meshes per material at the start
-			assert(pMesh->GetElementMaterialCount() < 2);
+		Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshID));
 
-			auto pMaterial = pMesh->GetElementMaterial(0);
-
-			// - custom constants?
-			// - texture pathes (PBR through layered texture? or custom channels?)
-			//???how to process animated materials?
-		}
-		else
-		{
-			//???use some custom property to set external material by resource ID?
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has no material attached");
-		}
+		if (MaxBonesPerVertexUsed)
+			Ctx.ProcessedSkins.emplace(pMesh, std::move(SkinID));
 
 		return true;
 	}
 
-	bool ExportLight(FbxLight* pLight, CContext& Ctx)
+	bool ExportLight(FbxLight* pLight, CContext& Ctx, Data::CDataArray& Attributes)
 	{
 		Ctx.Log.LogDebug("Light");
 
+		int LightType = 0;
+		switch (pLight->LightType.Get())
+		{
+			case FbxLight::eDirectional: LightType = 0; break;
+			case FbxLight::ePoint: LightType = 1; break;
+			case FbxLight::eSpot: LightType = 2; break;
+			default:
+			{
+				Ctx.Log.LogWarning(std::string("Light ") + pLight->GetName() + " is of unsupported type, skipped");
+				return true;
+			}
+		}
+
+		const float3 Color = pLight->Color.Get();
+
+		Data::CParams Attribute;
+		Attribute.emplace(CStrID("Class"), std::string("Frame::CLightAttribute"));
+		Attribute.emplace(CStrID("LightType"), LightType);
+		Attribute.emplace(CStrID("Color"), vector4(Color.v, 3));
+		Attribute.emplace(CStrID("Intensity"), static_cast<float>(pLight->Intensity.Get() / 100.0));
+
+		if (pLight->CastShadows.Get())
+			Attribute.emplace(CStrID("CastShadows"), true);
+
+		if (LightType != 0)
+		{
+			// FIXME: how to calculate light range from FBX?
+			Attribute.emplace(CStrID("Intensity"), static_cast<float>(pLight->NearAttenuationEnd.Get()));
+
+			if (LightType == 2)
+			{
+				Attribute.emplace(CStrID("ConeInner"), static_cast<float>(pLight->InnerAngle.Get()));
+				Attribute.emplace(CStrID("ConeOuter"), static_cast<float>(pLight->OuterAngle.Get()));
+			}
+		}
+
+		Attributes.push_back(std::move(Attribute));
+
 		return true;
 	}
 
-	bool ExportCamera(FbxCamera* pCamera, CContext& Ctx)
+	bool ExportCamera(FbxCamera* pCamera, CContext& Ctx, Data::CDataArray& Attributes)
 	{
 		Ctx.Log.LogDebug("Camera");
 
 		return true;
 	}
 
-	bool ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx)
+	bool ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx, Data::CDataArray& Attributes)
 	{
 		Ctx.Log.LogDebug("LOD group");
 

@@ -14,6 +14,15 @@ struct vector4
 {
 	float x, y, z, w;
 
+	vector4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
+
+	vector4(const float* pFloats, size_t Count)
+		: x(Count > 0 ? pFloats[0] : 0.f)
+		, y(Count > 1 ? pFloats[1] : 0.f)
+		, z(Count > 2 ? pFloats[2] : 0.f)
+		, w(Count > 3 ? pFloats[3] : 0.f)
+	{}
+
 	bool operator ==(const vector4& Other) const { return x == Other.x && y == Other.y && z == Other.z && w == Other.w; }
 };
 
