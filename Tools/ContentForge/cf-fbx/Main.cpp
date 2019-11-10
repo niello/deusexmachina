@@ -283,7 +283,7 @@ public:
 		{
 			int Major, Minor, Revision;
 			pImporter->GetFileVersion(Major, Minor, Revision);
-			Task.Log.LogDebug("Source format: FBX v" + std::to_string(Major) + '.' + std::to_string(Minor) + '.' + std::to_string(Revision));
+			Task.Log.LogInfo("Source format: FBX v" + std::to_string(Major) + '.' + std::to_string(Minor) + '.' + std::to_string(Revision));
 		}
 
 		FbxScene* pScene = FbxScene::Create(pFBXManager, "SourceScene");
@@ -336,11 +336,12 @@ public:
 		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
 			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
 
-		// Export node hierarchy to DEM format
+		// Export node hierarchy to DEM format, omit FBX root node
 		
 		Data::CParams Nodes;
 
-		if (!ExportNode(pScene->GetRootNode(), Ctx, Nodes)) return false;
+		for (int i = 0; i < pScene->GetRootNode()->GetChildCount(); ++i)
+			if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes)) return false;
 
 		// Export animations
 
