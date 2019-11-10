@@ -923,10 +923,10 @@ public:
 			WriteStream(File, static_cast<uint32_t>(Bones.size()));
 			WriteStream<uint32_t>(File, 0);             // Padding to align matrices offset to 16 bytes boundary
 
-			// Save matrices row-major for DEM
+			// Save matrices row-major for DEM (FBX SDK uses column-major)
 			for (const auto& Bone : Bones)
-				for (int j = 0; j < 4; ++j)
-					for (int i = 0; i < 4; ++i)
+				for (int i = 0; i < 4; ++i)
+					for (int j = 0; j < 4; ++j)
 						WriteStream(File, static_cast<float>(Bone.InvLocalBindPose[i][j]));
 
 			for (const auto& Bone : Bones)
