@@ -1,6 +1,4 @@
 #include "Utils.h"
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h> // For the directory chain creation
 
 static const uint32_t CRCKey = 0x04c11db7;
 static uint32_t CRCTable[256] = { 0 };
@@ -21,6 +19,7 @@ std::vector<std::string> SplitString(const std::string& Str, char Sep)
 
 	return std::move(result);
 }
+//---------------------------------------------------------------------
 
 uint32_t CalcCRC(const uint8_t* pData, size_t Size)
 {

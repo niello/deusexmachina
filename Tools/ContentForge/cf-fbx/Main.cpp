@@ -3,7 +3,7 @@
 #include <Utils.h>
 #include <fbxsdk.h>
 #include <meshoptimizer.h>
-//#include <CLI11.hpp>
+#include <CLI11.hpp>
 #include <unordered_map>
 
 namespace fs = std::filesystem;
@@ -143,6 +143,7 @@ static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
 	for (int i = 0; i < pNode->GetChildCount(); ++i)
 		ConvertTransformsToSRTRecursive(pNode->GetChild(i));
 }
+//---------------------------------------------------------------------
 
 template<typename TOut, typename TElement>
 static void GetVertexElement(TOut& OutValue, TElement* pElement, int ControlPointIndex, int VertexIndex)
@@ -164,6 +165,7 @@ static void GetVertexElement(TOut& OutValue, TElement* pElement, int ControlPoin
 
 	OutValue = pElement->GetDirectArray().GetAt(ID);
 }
+//---------------------------------------------------------------------
 
 static void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex)
 {
@@ -172,6 +174,7 @@ static void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic 
 	WriteStream(Stream, Index);
 	WriteStream(Stream, StreamIndex);
 }
+//---------------------------------------------------------------------
 
 class CFBXTool : public CContentForgeTool
 {
@@ -180,6 +183,7 @@ protected:
 	struct CContext
 	{
 		CThreadSafeLog& Log;
+
 		fs::path        MeshPath;
 		fs::path        SkinPath;
 		std::string     DefaultName;
@@ -210,10 +214,13 @@ protected:
 
 	FbxManager* pFBXManager = nullptr;
 
+	std::string _ResourceRoot;
+
 public:
 
-	CFBXTool(const std::string& Name, const std::string& Desc, CVersion Version) :
-		CContentForgeTool(Name, Desc, Version)
+	CFBXTool(const std::string& Name, const std::string& Desc, CVersion Version)
+		: CContentForgeTool(Name, Desc, Version)
+		, _ResourceRoot("Data:")
 	{
 		// Set default before parsing command line
 		_RootDir = "../../../content";
@@ -230,6 +237,10 @@ public:
 		pFBXManager = FbxManager::Create();
 		if (!pFBXManager) return 1;
 
+		if (_ResourceRoot.empty())
+			if (_LogVerbosity >= EVerbosity::Warnings)
+				std::cout << "Resource root is empty, external references may not be resolved from the game!";
+
 		FbxIOSettings* pIOSettings = FbxIOSettings::Create(pFBXManager, IOSROOT);
 		pFBXManager->SetIOSettings(pIOSettings);
 
@@ -243,16 +254,15 @@ public:
 		return 0;
 	}
 
-	//virtual void ProcessCommandLine(CLI::App& CLIApp) override
-	//{
-	//	CContentForgeTool::ProcessCommandLine(CLIApp);
-	//}
+	virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	{
+		CContentForgeTool::ProcessCommandLine(CLIApp);
+		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
+	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		// TODO: check whether the metafile can be processed by this tool
-
-		constexpr double AnimSamplingRate = 30.0;
 
 		// Import FBX scene from the source file
 
@@ -288,6 +298,8 @@ public:
 		// Convert scene transforms and geometry to a more suitable format
 		// TODO: save results back to FBX?
 
+		constexpr double AnimSamplingRate = 30.0;
+
 		ConvertTransformsToSRTRecursive(pScene->GetRootNode());
 		pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, AnimSamplingRate);
 
@@ -299,6 +311,10 @@ public:
 
 			GeometryConverter.RemoveBadPolygonsFromMeshes(pScene);
 
+			// FIXME: multiple submeshes can use the same skin. Better to use mesh groups!
+			// Splitting meshes by material will split skins and result in redundant skinning calculations.
+			//???or find a way to merge skin back? Probably manually splitting submeshes is easier.
+			//???what if process skin and then split mesh (one by one with SplitMeshPerMaterial)?
 			if (!GeometryConverter.SplitMeshesPerMaterial(pScene, true))
 				Task.Log.LogWarning("Couldn't split some meshes per material");
 		}
@@ -450,7 +466,11 @@ public:
 				SkinID = SkinIt->second;
 		}
 
+		assert(!MeshID.empty());
+
 		// Material
+
+		std::string MaterialID;
 
 		if (pMesh->GetElementMaterialCount())
 		{
@@ -466,15 +486,18 @@ public:
 		else
 		{
 			//???use some custom property to set external material by resource ID?
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has no material attached");
 		}
 
 		// Assemble attributes
 
-		//!!!FIXME: material!
 		Data::CParams ModelAttribute;
 		ModelAttribute.emplace(CStrID("Class"), std::string("Frame::CModelAttribute"));
 		ModelAttribute.emplace(CStrID("Mesh"), MeshID);
+		// TODO: MeshGroupIndex, 0 by default
+		if (!MaterialID.empty())
+			ModelAttribute.emplace(CStrID("Material"), MaterialID);
+		else
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has no material attached");
 		Attributes.push_back(std::move(ModelAttribute));
 
 		if (!SkinID.empty())
@@ -671,17 +694,16 @@ public:
 
 		// Write resulting mesh file
 
+		// TODO: replace forbidden characters (std::transform with replacer callback?)
+		std::string MeshName = pMesh->GetName();
+		if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
+		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
+		ToLower(MeshName);
+
+		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+
 		{
 			fs::create_directories(Ctx.MeshPath);
-
-			std::string MeshName = pMesh->GetName();
-			if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
-			if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
-			ToLower(MeshName);
-
-			// TODO: replace forbidden characters (std::transform with replacer callback?)
-
-			const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
 
 			std::ofstream File(DestPath, std::ios_base::binary);
 			if (!File)
@@ -836,16 +858,21 @@ public:
 			WriteStream<uint32_t>(File, IndexStartPos);
 		}
 
-		// Save skin palette (separate file? or no reason to split? two resources in one file?)
-		//???or mesh resource stores skin palette resource pointer?
+		OutMeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 
-		//!!!FIXME: fill!
-		std::string MeshID, SkinID;
-
-		Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshID));
+		Ctx.ProcessedMeshes.emplace(pMesh, OutMeshID);
 
 		if (MaxBonesPerVertexUsed)
+		{
+			// Save skin palette
+
+			// ... IMPLEMENT ...
+
+			//!!!FIXME: fill!
+			std::string SkinID;
+
 			Ctx.ProcessedSkins.emplace(pMesh, std::move(SkinID));
+		}
 
 		return true;
 	}
@@ -928,12 +955,16 @@ public:
 	{
 		Ctx.Log.LogDebug("Camera");
 
+		assert(false && "IMPLEMENT ME!!!");
+
 		return true;
 	}
 
 	bool ExportLODGroup(FbxLODGroup* pLODGroup, CContext& Ctx, Data::CDataArray& Attributes)
 	{
 		Ctx.Log.LogDebug("LOD group");
+
+		assert(false && "IMPLEMENT ME!!!");
 
 		return true;
 	}

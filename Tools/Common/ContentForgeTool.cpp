@@ -66,9 +66,14 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	const auto LineEnd = std::cout.widen('\n');
 
 	if (_LogVerbosity >= EVerbosity::Info)
+	{
 		std::cout << _Name << " v" << static_cast<uint32_t>(_Version.Major) <<
 			'.' << static_cast<uint32_t>(_Version.Minor) <<
 			'.' << static_cast<uint32_t>(_Version.Patch) << LineEnd;
+
+		//const auto Now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+		//std::cout << "Started: " << std::ctime(&Now) << LineEnd;
+	}
 
 	// Build a list of conversion tasks from source metafiles
 
