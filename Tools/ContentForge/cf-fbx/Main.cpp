@@ -350,6 +350,7 @@ public:
 		// Export additional info
 
 		// pScene->GetGlobalSettings().GetAmbientColor();
+		// Scene->GetPoseCount();
 
 		return true;
 	}
