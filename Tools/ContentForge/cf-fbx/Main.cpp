@@ -1,4 +1,5 @@
 #include <ContentForgeTool.h>
+#include <Render/RenderEnums.h>
 #include <Utils.h>
 #include <fbxsdk.h>
 #include <meshoptimizer.h>
@@ -10,7 +11,7 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes
 
-constexpr size_t MaxUV = 1;
+constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
 
 static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
@@ -65,6 +66,14 @@ static void GetVertexElement(TOut& OutValue, TElement* pElement, int ControlPoin
 	OutValue = pElement->GetDirectArray().GetAt(ID);
 }
 
+static void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex)
+{
+	WriteStream(Stream, static_cast<uint8_t>(Semantic));
+	WriteStream(Stream, static_cast<uint8_t>(Format));
+	WriteStream(Stream, Index);
+	WriteStream(Stream, StreamIndex);
+}
+
 class CFBXTool : public CContentForgeTool
 {
 protected:
@@ -72,6 +81,9 @@ protected:
 	struct CContext
 	{
 		CThreadSafeLog& Log;
+		fs::path        MeshPath;
+		fs::path        SkinPath;
+		std::string     DefaultName;
 	};
 
 	//???TODO: floats? convert on read from FbxMesh?
@@ -139,12 +151,6 @@ public:
 	{
 		// TODO: check whether the metafile can be processed by this tool
 
-		const std::string MeshOutput = GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
-		const std::string TaskID(Task.TaskID.CStr());
-		auto DestPath = fs::path(MeshOutput) / (TaskID + ".msh");
-		if (!_RootDir.empty() && DestPath.is_relative())
-			DestPath = fs::path(_RootDir) / DestPath;
-
 		constexpr double AnimSamplingRate = 30.0;
 
 		// Import FBX scene from the source file
@@ -196,10 +202,22 @@ public:
 				Task.Log.LogWarning("Couldn't split some meshes per material");
 		}
 
-		// Export node hierarchy to DEM format
+		// Prepare task context
 
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
 		CContext Ctx{ Task.Log };
+
+		Ctx.DefaultName = Task.TaskID.CStr();
+
+		Ctx.MeshPath = GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
+		if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
+			Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
+
+		Ctx.SkinPath = GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
+		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
+			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
+
+		// Export node hierarchy to DEM format
 
 		if (!ExportNode(pScene->GetRootNode(), Ctx)) return false;
 
@@ -288,25 +306,23 @@ public:
 
 		const auto NormalCount = std::min(1, pMesh->GetElementNormalCount());
 		if (pMesh->GetElementNormalCount() > NormalCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(NormalCount) + '/' + std::to_string(pMesh->GetElementNormalCount()) + " normals");
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(NormalCount) + '/' + std::to_string(pMesh->GetElementNormalCount()) + " normals");
 
 		const auto TangentCount = std::min(1, pMesh->GetElementTangentCount());
 		if (pMesh->GetElementTangentCount() > TangentCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(TangentCount) + '/' + std::to_string(pMesh->GetElementTangentCount()) + " tangents");
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(TangentCount) + '/' + std::to_string(pMesh->GetElementTangentCount()) + " tangents");
 
 		const auto BitangentCount = std::min(1, pMesh->GetElementBinormalCount());
 		if (pMesh->GetElementBinormalCount() > BitangentCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(BitangentCount) + '/' + std::to_string(pMesh->GetElementBinormalCount()) + " bitangents");
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(BitangentCount) + '/' + std::to_string(pMesh->GetElementBinormalCount()) + " bitangents");
 
 		const auto ColorCount = std::min(1, pMesh->GetElementVertexColorCount());
 		if (pMesh->GetElementVertexColorCount() > ColorCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(ColorCount) + '/' + std::to_string(pMesh->GetElementVertexColorCount()) + " colors");
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(ColorCount) + '/' + std::to_string(pMesh->GetElementVertexColorCount()) + " colors");
 
 		const auto UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
 		if (pMesh->GetElementUVCount() > UVCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " uses " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
-
-		const auto SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
 
 		// Collect vertices
 
@@ -396,6 +412,7 @@ public:
 
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
+		const auto SkinCount = pMesh->GetDeformerCount(FbxDeformer::eSkin);
 		for (int s = 0; s < SkinCount; ++s)
 		{
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
@@ -462,38 +479,103 @@ public:
 
 		// TODO: simplify, quantize and compress if required, see meshoptimizer readme, can simplify for lower LODs
 
-		// Save mesh groups (always 1 group x 1 LOD now, may change later)
-		/*
-		UPTR				FirstVertex;
-		UPTR				VertexCount;
-		UPTR				FirstIndex;
-		UPTR				IndexCount;
-		EPrimitiveTopology	Topology;
-		CAABB				AABB;
-		*/
+		// Write resulting mesh file
 
-		// Save vertex format
-		/*
-		Cmp.Format = Render::VCFmt_Float32_3;
-		Cmp.Semantic = Render::VCSem_Position;
-		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		*/
+		fs::create_directories(Ctx.MeshPath);
 
-		// Save vertex & index count, index size
-		//???Save skin palette offset?
+		std::string MeshName = pMesh->GetName();
+		if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
+		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
+		ToLower(MeshName);
 
+		// TODO: replace forbidden characters (std::transform with replacer callback?)
+
+		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+
+		std::ofstream File(DestPath, std::ios_base::binary);
+		if (!File)
+		{
+			Ctx.Log.LogError("Error opening an output file " + DestPath.string());
+			return false;
+		}
+
+		WriteStream<uint32_t>(File, 'MESH');        // Format magic value
+		WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+		WriteStream<uint32_t>(File, 1);             // Group count, now always 1, may change later!
+
+		WriteStream(File, static_cast<uint32_t>(Vertices.size()));
+		WriteStream(File, static_cast<uint32_t>(Indices.size()));
+
+		// One index size in bytes
 		const bool Indices32 = (Vertices.size() > std::numeric_limits<uint16_t>().max());
 		if (Indices32)
 		{
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(Vertices.size()) + " vertices and will use 32-bit indices");
 			static_assert(sizeof(unsigned int) == 4);
-			// save index buffer as is
+			WriteStream<uint8_t>(File, 4);
 		}
 		else
 		{
-			// save 16-bit indices
+			WriteStream<uint8_t>(File, 2);
 		}
+
+		const uint32_t VertexComponentCount =
+			1 + // Position
+			NormalCount +
+			TangentCount +
+			BitangentCount +
+			UVCount +
+			ColorCount +
+			(MaxBonesPerVertexUsed ? 2 : 0); // Blend indices and weights
+
+		WriteStream(File, VertexComponentCount);
+
+		WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Position, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+
+		for (int i = 0; i < NormalCount; ++i)
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Normal, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
+
+		for (int i = 0; i < TangentCount; ++i)
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Tangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
+
+		for (int i = 0; i < BitangentCount; ++i)
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Bitangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
+
+		for (int i = 0; i < ColorCount; ++i)
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Color, EVertexComponentFormat::VCFmt_Float32_4, i, 0);
+
+		for (int i = 0; i < UVCount; ++i)
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_TexCoord, EVertexComponentFormat::VCFmt_Float32_2, i, 0);
+
+		if (MaxBonesPerVertexUsed)
+		{
+			if (Bones.size() > 256)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_SInt16_4, 0, 0);
+			else
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_UInt8_4, 0, 0);
+
+			if (MaxBonesPerVertexUsed == 1)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
+			else if (MaxBonesPerVertexUsed == 2)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
+			else if (MaxBonesPerVertexUsed == 3)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+			else if (MaxBonesPerVertexUsed == 4)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
+		}
+
+		// Save mesh groups (always 1 group x 1 LOD now, may change later)
+		WriteStream<uint32_t>(File, 0);                            // First vertex
+		WriteStream(File, static_cast<uint32_t>(Vertices.size())); // Vertex count
+		WriteStream<uint32_t>(File, 0);                            // First index
+		WriteStream(File, static_cast<uint32_t>(Indices.size()));  // Index count
+		WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
+
+		// TODO: precalculate group AABB!
+
+		// TODO: save padding size and padding for vertices and indices, so that memory-mapped file
+		// will have vertex and index arrays aligned! instead of padding may save offsets to data,
+		// ensure they are aligned-16.
 
 		// Save vertices (write one by one, component by component)
 

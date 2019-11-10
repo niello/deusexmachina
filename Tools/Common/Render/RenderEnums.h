@@ -103,3 +103,49 @@ enum ETexFilter
 	TexFilter_Anisotropic
 };
 ETexFilter StringToTexFilter(std::string Str);
+
+// Don't change order and starting index
+enum EPrimitiveTopology
+{
+	Prim_PointList,
+	Prim_LineList,
+	Prim_LineStrip,
+	Prim_TriList,
+	Prim_TriStrip,
+	Prim_Invalid
+};
+
+// Don't change order and starting index
+enum EVertexComponentSemantic
+{
+	VCSem_Position = 0,
+	VCSem_Normal,
+	VCSem_Tangent,
+	VCSem_Bitangent,
+	VCSem_TexCoord,        
+	VCSem_Color,
+	VCSem_BoneWeights,
+	VCSem_BoneIndices,
+	VCSem_UserDefined,
+	VCSem_Invalid
+};
+
+// Don't change order and starting index
+enum EVertexComponentFormat
+{
+	VCFmt_Float32_1,		//> one-component float, expanded to (float, 0, 0, 1)
+	VCFmt_Float32_2,		//> two-component float, expanded to (float, float, 0, 1)
+	VCFmt_Float32_3,		//> three-component float, expanded to (float, float, float, 1)
+	VCFmt_Float32_4,		//> four-component float
+	VCFmt_Float16_2,		//> Two 16-bit floating point values, expanded to (value, value, 0, 1)
+	VCFmt_Float16_4,		//> Four 16-bit floating point values
+	VCFmt_UInt8_4,			//> four-component unsigned byte
+	VCFmt_UInt8_4_Norm,		//> four-component normalized unsigned byte (value / 255.0f)
+	VCFmt_SInt16_2,			//> two-component signed short, expanded to (value, value, 0, 1)
+	VCFmt_SInt16_4,			//> four-component signed short
+	VCFmt_SInt16_2_Norm,	//> two-component normalized signed short (value / 32767.0f)
+	VCFmt_SInt16_4_Norm,	//> four-component normalized signed short (value / 32767.0f)
+	VCFmt_UInt16_2_Norm,	//> two-component normalized unsigned short (value / 65535.0f)
+	VCFmt_UInt16_4_Norm,	//> four-component normalized unsigned short (value / 65535.0f)
+	VCFmt_Invalid
+};
