@@ -1070,7 +1070,7 @@ public:
 			return true;
 		}
 
-		std::vector<float> Thresholds(ThresholdCount + (UseMinMax ? 2 : 0));
+		std::vector<std::pair<float, std::string>> Thresholds(ThresholdCount + (UseMinMax ? 2 : 0));
 		for (int i = 0; i < ThresholdCount; ++i)
 		{
 			FbxDistance Value;
@@ -1080,26 +1080,35 @@ public:
 				return true;
 			}
 
-			Thresholds[i] = Value.value();
+			Thresholds[i].first = Value.value();
 
-			//!!!can't store float -> string in a Data::CParams! Use array of sections with 2 fields each?
-			//const FbxNode* pChild = pLODGroup->GetNode()->GetChild(i);
-			//std::string ID = pChild ? pChild->GetName() : std::string();
+			const FbxNode* pChild = pLODGroup->GetNode()->GetChild(i);
+			Thresholds[i].second = pChild ? pChild->GetName() : std::string();
 		}
+
+		const FbxNode* pLastChild = pLODGroup->GetNode()->GetChild(pLODGroup->GetNode()->GetChildCount());
+		std::string LastID = pLastChild ? pLastChild->GetName() : std::string();
 
 		if (UseMinMax)
 		{
-			const float Min = static_cast<float>(pLODGroup->MinDistance.Get());
-			const float Max = static_cast<float>(pLODGroup->MaxDistance.Get());
+			// .second is left empty, nothing is rendered before the MinDistance
+			Thresholds[ThresholdCount].first = static_cast<float>(pLODGroup->MinDistance.Get());
 
-			Thresholds[ThresholdCount] = Min;
-			Thresholds[ThresholdCount + 1] = Max;
+			// Now the last node is rendered only before the MaxDistance
+			Thresholds[ThresholdCount + 1].first = static_cast<float>(pLODGroup->MaxDistance.Get());
+			Thresholds[ThresholdCount + 1].second = LastID;
+
+			// Nothing is rendered after the MaxDistance
+			LastID.clear();
 		}
 
-		std::sort(Thresholds.begin(), Thresholds.end(), [](float a, float b) { return a < b; });
+		std::sort(Thresholds.begin(), Thresholds.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 
 		Data::CParams Attribute;
 		Attribute.emplace(CStrID("Class"), std::string("Scene::CLODGroup"));
+
+		//!!!can't store float -> string in a Data::CParams! Use array of sections with 2 fields each?
+		//!!!store the last one! //???use FLT_MAX for uniformity of the list?
 
 		assert(false && "IMPLEMENT ME!!!");
 

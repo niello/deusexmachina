@@ -17,6 +17,9 @@ bool CLODGroup::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 		{
 			case 'TRSH':
 			{
+				// FIXME: must store last LOD (what is rendered after the last threshold).
+				// Nodes are 1 more than thresholds, if min and max distances aren't used.
+
 				short Count;
 				if (!DataReader.Read(Count)) FAIL;
 				SqThresholds.BeginAdd(Count);
