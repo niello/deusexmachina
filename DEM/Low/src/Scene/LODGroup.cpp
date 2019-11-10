@@ -64,8 +64,12 @@ void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 
 	CStrID SelectedChild;
 	for (UPTR i = 0; i < SqThresholds.GetCount(); ++i)
-		if (SqThresholds.KeyAt(i) > SqDistance) SelectedChild = SqThresholds.ValueAt(i);
-		else break;
+	{
+		if (SqThresholds.KeyAt(i) > SqDistance)
+			SelectedChild = SqThresholds.ValueAt(i);
+		else
+			break;
+	}
 
 	for (UPTR i = 0; i < pNode->GetChildCount(); ++i)
 	{

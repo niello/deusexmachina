@@ -1058,7 +1058,52 @@ public:
 	{
 		Ctx.Log.LogDebug("LOD group");
 
+		assert(!pLODGroup->ThresholdsUsedAsPercentage.Get());
+		assert(pLODGroup->WorldSpace.Get());
+
+		const int ThresholdCount = std::min(pLODGroup->GetNumThresholds(), std::max(0, pLODGroup->GetNode()->GetChildCount() - 1));
+		const bool UseMinMax = pLODGroup->MinMaxDistance.Get();
+
+		if (!ThresholdCount && !UseMinMax)
+		{
+			Ctx.Log.LogWarning(std::string("LOD group ") + pLODGroup->GetName() + " has no thresholds or nodes to switch, skipped");
+			return true;
+		}
+
+		std::vector<float> Thresholds(ThresholdCount + (UseMinMax ? 2 : 0));
+		for (int i = 0; i < ThresholdCount; ++i)
+		{
+			FbxDistance Value;
+			if (!pLODGroup->GetThreshold(i, Value))
+			{
+				Ctx.Log.LogWarning(std::string("LOD group ") + pLODGroup->GetName() + " has invalid threshold, skipped");
+				return true;
+			}
+
+			Thresholds[i] = Value.value();
+
+			//!!!can't store float -> string in a Data::CParams! Use array of sections with 2 fields each?
+			//const FbxNode* pChild = pLODGroup->GetNode()->GetChild(i);
+			//std::string ID = pChild ? pChild->GetName() : std::string();
+		}
+
+		if (UseMinMax)
+		{
+			const float Min = static_cast<float>(pLODGroup->MinDistance.Get());
+			const float Max = static_cast<float>(pLODGroup->MaxDistance.Get());
+
+			Thresholds[ThresholdCount] = Min;
+			Thresholds[ThresholdCount + 1] = Max;
+		}
+
+		std::sort(Thresholds.begin(), Thresholds.end(), [](float a, float b) { return a < b; });
+
+		Data::CParams Attribute;
+		Attribute.emplace(CStrID("Class"), std::string("Scene::CLODGroup"));
+
 		assert(false && "IMPLEMENT ME!!!");
+
+		Attributes.push_back(std::move(Attribute));
 
 		return true;
 	}

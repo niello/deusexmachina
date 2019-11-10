@@ -14,9 +14,6 @@ SceneNodeAttr
 	// Generic
 	Class			{ Type = "string" }
 	
-	// Any with animable shader vars (light, material)
-	Vars			{ FourCC = "VARS" WriteChildKeys = true } //???split to static and animable? or store only animable in nodes?
-	
 	// Light
 	LightType		{ FourCC = "LGHT" Type = "int" }
 	CastShadows		{ FourCC = "CSHD" Type = "bool" }
@@ -47,18 +44,10 @@ SceneNodeAttr
 	// Skin
 	SkinInfo		{ FourCC = "SKIF" Type = "string" }
 	AutocreateBones	{ FourCC = "ACBN" Type = "bool" }
-	
-	// Bone
-	PoseT			{ FourCC = "PSET" Type = "vector3" }
-	PoseR			{ FourCC = "PSER" Type = "vector4" }
-	PoseS			{ FourCC = "PSES" Type = "vector3" }
-	BoneIndex		{ FourCC = "BIDX" Type = "int" }
-	BoneType		{ FourCC = "BNTP" Type = "string" }
 
 	// LODGroup
+	// FIXME: float to string ID pairs
 	Thresholds		{ FourCC = "TRSH" Type = "float" }		// Array
-	MinDistance		{ FourCC = "DMIN" Type = "float" }
-	MaxDistance		{ FourCC = "DMAX" Type = "float" }
 
 	// Terrain
 	CDLODFile		{ FourCC = "CDLD" Type = "string" }
