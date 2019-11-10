@@ -840,10 +840,10 @@ bool CHRDParser::ParseVector(const std::vector<CToken>& Tokens, CData& Output)
 			switch (Floats.size())
 			{
 				case 3:
-					Output = vector4(Floats, 3);
+					Output = vector4(Floats.data(), 3);
 					break;
 				case 4:
-					Output = vector4(Floats, 4);
+					Output = vector4(Floats.data(), 4);
 					break;
 
 				//case 16:

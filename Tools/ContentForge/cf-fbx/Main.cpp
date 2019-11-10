@@ -868,21 +868,49 @@ public:
 		}
 
 		const float3 Color = pLight->Color.Get();
+		const float Intensity = static_cast<float>(pLight->Intensity.Get() / 100.0);
+
+		float Range = 0.f;
+		if (LightType != 0)
+		{
+			if (pLight->EnableFarAttenuation.Get())
+			{
+				Range = static_cast<float>(pLight->FarAttenuationEnd.Get());
+			}
+			else
+			{
+				// Proportion of original intensity at which we consider the light decayed to nothing
+				constexpr float DecayThreshold = 0.01f;
+
+				const float DecayStart = static_cast<float>(pLight->DecayStart.Get());
+				const float LinearRange = Intensity / (DecayStart * DecayThreshold);
+
+				switch (pLight->DecayType.Get())
+				{
+					case FbxLight::eLinear: Range = LinearRange; break;
+					case FbxLight::eQuadratic: Range = std::sqrtf(LinearRange); break;
+					case FbxLight::eCubic: Range = std::powf(LinearRange, 1.f / 3.f); break;
+					default:
+					{
+						Ctx.Log.LogWarning(std::string("Light ") + pLight->GetName() + " has unsupported decay type, skipped");
+						return true;
+					}
+				}
+			}
+		}
 
 		Data::CParams Attribute;
 		Attribute.emplace(CStrID("Class"), std::string("Frame::CLightAttribute"));
 		Attribute.emplace(CStrID("LightType"), LightType);
 		Attribute.emplace(CStrID("Color"), vector4(Color.v, 3));
-		Attribute.emplace(CStrID("Intensity"), static_cast<float>(pLight->Intensity.Get() / 100.0));
+		Attribute.emplace(CStrID("Intensity"), Intensity);
 
 		if (pLight->CastShadows.Get())
 			Attribute.emplace(CStrID("CastShadows"), true);
 
 		if (LightType != 0)
 		{
-			// FIXME: how to calculate light range from FBX?
-			//???use some min threshold over the function based on intensity and decay type?
-			Attribute.emplace(CStrID("Intensity"), static_cast<float>(pLight->NearAttenuationEnd.Get()));
+			Attribute.emplace(CStrID("Range"), Range);
 
 			if (LightType == 2)
 			{
