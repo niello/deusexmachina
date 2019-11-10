@@ -13,9 +13,6 @@ SceneNodeAttr
 {
 	// Generic
 	Class			{ Type = "string" }
-
-	// Renderable
-	RenderableClass	{ FourCC = "RCLS" Type = "string" }
 	
 	// Any with animable shader vars (light, material)
 	Vars			{ FourCC = "VARS" WriteChildKeys = true } //???split to static and animable? or store only animable in nodes?
@@ -34,6 +31,12 @@ SceneNodeAttr
 	RadianceEnvMap	{ FourCC = "PMRM" Type = "string" } // Prefiltered mipmapped REM
 
 	// Camera
+	Orthogonal		{ FourCC = "ORTH" Type = "bool" }
+	FOV				{ FourCC = "FOVW" Type = "float" }
+	Width			{ FourCC = "WDTH" Type = "float" }
+	Height			{ FourCC = "HGHT" Type = "float" }
+	NearPlane		{ FourCC = "NEPL" Type = "float" }
+	FarPlane		{ FourCC = "FAPL" Type = "float" }
 	
 	// Mesh and material
 	Material		{ FourCC = "MTRL" Type = "string" }

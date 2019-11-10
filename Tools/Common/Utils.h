@@ -48,6 +48,12 @@ bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 }
 //---------------------------------------------------------------------
 
+inline bool CompareFloat(float a, float b, float e = std::numeric_limits<float>().epsilon())
+{
+	return std::fabsf(a - b) <= e;
+}
+//---------------------------------------------------------------------
+
 inline void EnsurePathHasEndingDirSeparator(std::string& Path)
 {
 	const size_t PathLen = Path.size();

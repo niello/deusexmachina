@@ -347,6 +347,10 @@ public:
 
 		// ...
 
+		// Export additional info
+
+		// pScene->GetGlobalSettings().GetAmbientColor();
+
 		return true;
 	}
 
@@ -414,8 +418,18 @@ public:
 					if (!ExportLODGroup(static_cast<FbxLODGroup*>(pAttribute), Ctx, Attributes)) return false;
 					break;
 				}
+				case FbxNodeAttribute::eSkeleton:
+				{
+					// TODO: can extract some useful data?
+					break;
+				}
+				case FbxNodeAttribute::eMarker:
+				{
+					// TODO: can extract some useful data?
+					break;
+				}
+				case FbxNodeAttribute::eNull: break;
 				/*
-				eSkeleton, 
 				eShape,
 				eCachedEffect,
 				eLine
@@ -662,7 +676,7 @@ public:
 					const float Weight = static_cast<float>(pWeights[i]);
 
 					// Skip (almost) zero weights
-					if (std::fabsf(Weight) <= std::numeric_limits<float>().epsilon()) continue;
+					if (CompareFloat(Weight, 0.f)) continue;
 
 					for (auto& Vertex : Vertices)
 					{
@@ -958,10 +972,18 @@ public:
 			}
 			else
 			{
+				// TODO: ensure this algorithm is correct, test on real lights!
+
 				// Proportion of original intensity at which we consider the light decayed to nothing
 				constexpr float DecayThreshold = 0.01f;
 
 				const float DecayStart = static_cast<float>(pLight->DecayStart.Get());
+				if (CompareFloat(DecayStart, 0.f))
+				{
+					Ctx.Log.LogWarning(std::string("Light ") + pLight->GetName() + " has infinite range, skipped as unsupported");
+					return true;
+				}
+
 				const float LinearRange = Intensity / (DecayStart * DecayThreshold);
 
 				switch (pLight->DecayType.Get())
@@ -1007,7 +1029,27 @@ public:
 	{
 		Ctx.Log.LogDebug("Camera");
 
-		assert(false && "IMPLEMENT ME!!!");
+		Data::CParams Attribute;
+		Attribute.emplace(CStrID("Class"), std::string("Frame::CCameraAttribute"));
+
+		if (pCamera->ProjectionType.Get() == FbxCamera::eOrthogonal)
+			Attribute.emplace(CStrID("Orthogonal"), true);
+
+		float Width = static_cast<float>(pCamera->AspectWidth.Get());
+		float Height = static_cast<float>(pCamera->AspectHeight.Get());
+		switch (pCamera->AspectRatioMode.Get())
+		{
+			case FbxCamera::eFixedWidth:  Height *= Width; break;
+			case FbxCamera::eFixedHeight: Width *= Height; break;
+		}
+
+		Attribute.emplace(CStrID("FOV"), static_cast<float>(pCamera->FieldOfView.Get()));
+		Attribute.emplace(CStrID("Width"), static_cast<float>(pCamera->AspectWidth.Get()));
+		Attribute.emplace(CStrID("Height"), static_cast<float>(pCamera->AspectHeight.Get()));
+		Attribute.emplace(CStrID("NearPlane"), static_cast<float>(pCamera->NearPlane.Get()));
+		Attribute.emplace(CStrID("FarPlane"), static_cast<float>(pCamera->FarPlane.Get()));
+
+		Attributes.push_back(std::move(Attribute));
 
 		return true;
 	}
