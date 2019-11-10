@@ -24,7 +24,7 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	IO::CBinaryReader Reader(*Stream);
 
 	U32 Magic;
-	if (!Reader.Read(Magic) || Magic != 'SKIF') return nullptr;
+	if (!Reader.Read(Magic) || Magic != 'SKIN') return nullptr;
 
 	U32 FormatVersion;
 	if (!Reader.Read(FormatVersion)) return nullptr;
@@ -32,7 +32,10 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	U32 BoneCount;
 	if (!Reader.Read(BoneCount)) return nullptr;
 
-	//!!!may use MMF for bind pose matrices!
+	// Skip padding
+	Reader.Read<U32>();
+
+	//!!!may use MMF for bind pose matrices! their offset is aligned-16!
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
 	SkinInfo->Create(BoneCount);
 

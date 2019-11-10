@@ -46,6 +46,8 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 Scene::CSceneNode* CSkinAttribute::SetupBoneNode(UPTR BoneIndex)
 {
+	// FIXME: if no parent node, must search by ID from the object root node!
+
 	if (pBoneNodes[BoneIndex] == NOT_PROCESSED_NODE)
 	{
 		const Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(BoneIndex);
@@ -115,7 +117,7 @@ void CSkinAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 
 	if (SkinInfo.IsNullPtr() || !pBoneNodes || !pSkinPalette) return;
 
-	UPTR BoneCount = SkinInfo->GetBoneCount();
+	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
 		Scene::CSceneNode* pBoneNode = pBoneNodes[i];

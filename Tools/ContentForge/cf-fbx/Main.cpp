@@ -210,6 +210,8 @@ protected:
 	{
 		const FbxNode* pBone;
 		FbxAMatrix     InvLocalBindPose;
+		std::string    ID;
+		uint16_t       ParentBoneIndex;
 	};
 
 	FbxManager* pFBXManager = nullptr;
@@ -237,12 +239,12 @@ public:
 		pFBXManager = FbxManager::Create();
 		if (!pFBXManager) return 1;
 
+		FbxIOSettings* pIOSettings = FbxIOSettings::Create(pFBXManager, IOSROOT);
+		pFBXManager->SetIOSettings(pIOSettings);
+
 		if (_ResourceRoot.empty())
 			if (_LogVerbosity >= EVerbosity::Warnings)
 				std::cout << "Resource root is empty, external references may not be resolved from the game!";
-
-		FbxIOSettings* pIOSettings = FbxIOSettings::Create(pFBXManager, IOSROOT);
-		pFBXManager->SetIOSettings(pIOSettings);
 
 		return 0;
 	}
@@ -631,6 +633,8 @@ public:
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
 			const auto ClusterCount = pSkin->GetClusterCount();
 
+			constexpr uint16_t NoParent = static_cast<uint16_t>(-1);
+
 			for (int c = 0; c < ClusterCount; ++c)
 			{
 				const FbxCluster* pCluster = pSkin->GetCluster(c);
@@ -682,11 +686,33 @@ public:
 
 				if (VerticesAffected)
 				{
+					// Calculate inverse local bind pose and save the bone
 					FbxAMatrix WorldBindPose;
 					pCluster->GetTransformLinkMatrix(WorldBindPose);
-
-					Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse() });
+					Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse(), pBone->GetName(), NoParent });
 				}
+			}
+
+			// Establish parent-child links and check IDs
+
+			// There are a couple of approaches for saving bones:
+			// 1. Save node names, ensure they are unique and search all the scene node tree for them
+			// 2. Save node name and parent bone index, or full path if parent is not a bone
+			// 3. Hybrid - save node name and parent bone index. If parent is not a bone, search like in 1.
+			// Approach 3 is used here.
+
+			std::set<std::string> BoneNames;
+			for (auto& Bone : Bones)
+			{
+				if (BoneNames.find(Bone.ID) != BoneNames.cend())
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
+				else
+					BoneNames.insert(Bone.ID);
+
+				const FbxNode* pParent = Bone.pBone->GetParent();
+				const auto It = std::find_if(Bones.cbegin(), Bones.cend(), [pParent](const CBone& b) { return b.pBone == pParent; });
+				if (It == Bones.cend())
+					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Bones.cbegin(), It));
 			}
 		}
 
@@ -700,9 +726,9 @@ public:
 		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
 		ToLower(MeshName);
 
-		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
-
 		{
+			const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+
 			fs::create_directories(Ctx.MeshPath);
 
 			std::ofstream File(DestPath, std::ios_base::binary);
@@ -856,22 +882,47 @@ public:
 			File.seekp(DataOffsetsPos);
 			WriteStream<uint32_t>(File, VertexStartPos);
 			WriteStream<uint32_t>(File, IndexStartPos);
+
+			OutMeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+
+			Ctx.ProcessedMeshes.emplace(pMesh, OutMeshID);
 		}
 
-		OutMeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-
-		Ctx.ProcessedMeshes.emplace(pMesh, OutMeshID);
+		// Write resulting skin file (if skinned)
 
 		if (MaxBonesPerVertexUsed)
 		{
-			// Save skin palette
+			const auto DestPath = Ctx.SkinPath / (MeshName + ".skn");
 
-			// ... IMPLEMENT ...
+			fs::create_directories(Ctx.SkinPath);
 
-			//!!!FIXME: fill!
-			std::string SkinID;
+			std::ofstream File(DestPath, std::ios_base::binary);
+			if (!File)
+			{
+				Ctx.Log.LogError("Error opening an output file " + DestPath.string());
+				return false;
+			}
 
-			Ctx.ProcessedSkins.emplace(pMesh, std::move(SkinID));
+			WriteStream<uint32_t>(File, 'SKIN');        // Format magic value
+			WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+			WriteStream(File, static_cast<uint32_t>(Bones.size()));
+			WriteStream<uint32_t>(File, 0);             // Padding to align matrices offset to 16 bytes boundary
+
+			// Save matrices row-major for DEM
+			for (const auto& Bone : Bones)
+				for (int j = 0; j < 4; ++j)
+					for (int i = 0; i < 4; ++i)
+						WriteStream(File, static_cast<float>(Bone.InvLocalBindPose[i][j]));
+
+			for (const auto& Bone : Bones)
+			{
+				WriteStream(File, Bone.ParentBoneIndex);
+				WriteStream(File, Bone.ID);
+			}
+				
+			OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+
+			Ctx.ProcessedSkins.emplace(pMesh, OutSkinID);
 		}
 
 		return true;
