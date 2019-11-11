@@ -153,14 +153,14 @@ static void GetVertexElement(TOut& OutValue, TElement* pElement, int ControlPoin
 	int ID;
 	switch (pElement->GetMappingMode())
 	{
-		case FbxGeometryElement::eByControlPoint: ID = ControlPointIndex; break;
-		case FbxGeometryElement::eByPolygonVertex: ID = VertexIndex; break;
-		case FbxGeometryElement::eByPolygon: ID = VertexIndex / 3; break;
-		case FbxGeometryElement::eAllSame: ID = 0; break;
+		case FbxLayerElement::eByControlPoint: ID = ControlPointIndex; break;
+		case FbxLayerElement::eByPolygonVertex: ID = VertexIndex; break;
+		case FbxLayerElement::eByPolygon: ID = VertexIndex / 3; break;
+		case FbxLayerElement::eAllSame: ID = 0; break;
 		default: return;
 	}
 
-	if (pElement->GetReferenceMode() != FbxGeometryElement::eDirect)
+	if (pElement->GetReferenceMode() != FbxLayerElement::eDirect)
 		ID = pElement->GetIndexArray().GetAt(ID);
 
 	OutValue = pElement->GetDirectArray().GetAt(ID);
@@ -488,6 +488,13 @@ public:
 
 		// Material
 
+		//!!!FIXME: per mesh group!
+
+		// PBR materials aren't supported in FBX, can't export.
+		// Blender FBX exporter saves no textures, so parsing is completely useless for now.
+		// Instead of this, materials must be precreated and explicitly declared in .meta.
+		// glTF 2.0 exporter will address this issue.
+
 		std::string MaterialID;
 
 		if (pMesh->GetElementMaterialCount())
@@ -495,14 +502,27 @@ public:
 			// We splitted meshes per material at the start
 			assert(pMesh->GetElementMaterialCount() < 2);
 
-			auto pMaterial = pMesh->GetElementMaterial(0);
+			auto pMaterialElement = pMesh->GetElementMaterial(0);
+			if (pMaterialElement && pMaterialElement->GetIndexArray().GetCount())
+			{
+				assert(pMaterialElement->GetMappingMode() == FbxLayerElement::eAllSame);
 
-			// - custom constants?
-			// - texture pathes (PBR through layered texture? or custom channels?)
-			//???how to process animated materials?
+				const int MaterialIdx = pMaterialElement->GetIndexArray().GetAt(0);
+
+				const auto* pMaterial = pMesh->GetNode()->GetMaterial(MaterialIdx);
+				if (pMaterial)
+				{
+					MaterialID = pMaterial->GetName();
+
+					//???material search path or association map Name -> external precreated material resource ID?
+
+					Ctx.Log.LogDebug("Material: " + MaterialID);
+				}
+			}
 		}
 		else
 		{
+			// no material specified for the model
 			//???use some custom property to set external material by resource ID?
 		}
 
