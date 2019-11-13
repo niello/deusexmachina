@@ -666,7 +666,8 @@ public:
 		size_t TotalIndices = 0;
 		for (auto& Pair : SubMeshes)
 		{
-			auto RawVertices = std::move(Pair.second.Vertices);
+			std::vector<CVertex> RawVertices;
+			std::swap(RawVertices, Pair.second.Vertices);
 
 			auto& Indices = Pair.second.Indices;
 			Indices.resize(RawVertices.size());
