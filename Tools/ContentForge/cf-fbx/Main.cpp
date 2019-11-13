@@ -206,6 +206,12 @@ protected:
 		size_t BonesUsed = 0;
 	};
 
+	struct CSubMesh
+	{
+		std::vector<CVertex> Vertices;
+		std::vector<unsigned int> Indices;
+	};
+
 	struct CBone
 	{
 		const FbxNode* pBone;
@@ -313,12 +319,7 @@ public:
 
 			GeometryConverter.RemoveBadPolygonsFromMeshes(pScene);
 
-			// FIXME: multiple submeshes can use the same skin. Better to use mesh groups!
-			// Splitting meshes by material will split skins and result in redundant skinning calculations.
-			//???or find a way to merge skin back? Probably manually splitting submeshes is easier.
-			//???what if process skin and then split mesh (one by one with SplitMeshPerMaterial)?
-			if (!GeometryConverter.SplitMeshesPerMaterial(pScene, true))
-				Task.Log.LogWarning("Couldn't split some meshes per material");
+			// Don't use GeometryConverter.SplitMeshesPerMaterial to preserve integrity of skins
 		}
 
 		// Prepare task context
@@ -577,12 +578,16 @@ public:
 		if (pMesh->GetElementUVCount() > UVCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
 
-		// Collect vertices
+		const auto MaterialLayerCount = std::min(1, pMesh->GetElementMaterialCount());
+		if (pMesh->GetElementMaterialCount() > MaterialLayerCount)
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(MaterialLayerCount) + '/' + std::to_string(pMesh->GetElementMaterialCount()) + " material layers");
+
+		// Collect vertices for each material separately
 
 		const int PolyCount = pMesh->GetPolygonCount();
+		const auto pMaterial = pMesh->GetElementMaterial();
 
-		std::vector<CVertex> RawVertices;
-		RawVertices.reserve(static_cast<size_t>(PolyCount * 3));
+		std::map<int, CSubMesh> SubMeshes;
 
 		for (int p = 0; p < PolyCount; ++p)
 		{
@@ -599,11 +604,33 @@ public:
 				continue;
 			}
 
+			// Get material index and corresponding group (submesh)
+
+			int MaterialIndex = -1;
+			if (pMaterial)
+			{
+				switch (pMaterial->GetMappingMode())
+				{
+					case FbxLayerElement::eByPolygon: MaterialIndex = pMaterial->GetIndexArray().GetAt(p); break;
+					case FbxLayerElement::eAllSame: MaterialIndex = pMaterial->GetIndexArray().GetAt(0); break;
+					default: assert(false && "Unsupported material mapping mode");
+				}
+			}
+
+			auto GroupIt = SubMeshes.find(MaterialIndex);
+			if (GroupIt == SubMeshes.cend())
+			{
+				GroupIt = SubMeshes.emplace(MaterialIndex, CSubMesh{}).first;
+				GroupIt->second.Vertices.reserve(static_cast<size_t>((PolyCount - p) * 3));
+			}
+
+			auto& Vertices = GroupIt->second.Vertices;
+
 			// Process polygon vertices
 
 			for (int v = 0; v < PolySize; ++v)
 			{
-				const auto VertexIndex = static_cast<unsigned int>(RawVertices.size());
+				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
 				const auto ControlPointIndex = pMesh->GetPolygonVertex(p, v);
 
 				const auto ControlPoint = pControlPoints[ControlPointIndex];
@@ -629,33 +656,45 @@ public:
 				for (int e = 0; e < MaxUV; ++e)
 					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), ControlPointIndex, VertexIndex);
 
-				RawVertices.push_back(std::move(Vertex));
+				Vertices.push_back(std::move(Vertex));
 			}
 		}
 
 		// Index and optimize vertices
 
-		std::vector<unsigned int> Indices(RawVertices.size());
-		const auto VertexCount = meshopt_generateVertexRemap(Indices.data(), nullptr, RawVertices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
+		size_t TotalVertices = 0;
+		size_t TotalIndices = 0;
+		for (auto& Pair : SubMeshes)
+		{
+			auto RawVertices = std::move(Pair.second.Vertices);
 
-		std::vector<CVertex> Vertices(VertexCount);
-		meshopt_remapVertexBuffer(Vertices.data(), RawVertices.data(), RawVertices.size(), sizeof(CVertex), Indices.data());
+			auto& Indices = Pair.second.Indices;
+			Indices.resize(RawVertices.size());
+			const auto VertexCount = meshopt_generateVertexRemap(Indices.data(), nullptr, RawVertices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
 
-		// NB: meshopt_remapIndexBuffer is not needed, as we have no source indices,
-		//     and remap array is effectively an index array
-		//std::vector<unsigned int> Indices2(Indices.size());
-		//meshopt_remapIndexBuffer(Indices2.data(), nullptr, Indices.size(), Indices.data());
+			auto& Vertices = Pair.second.Vertices;
+			Vertices.resize(VertexCount);
+			meshopt_remapVertexBuffer(Vertices.data(), RawVertices.data(), RawVertices.size(), sizeof(CVertex), Indices.data());
 
-		meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
+			// NB: meshopt_remapIndexBuffer is not needed, as we have no source indices,
+			//     and remap array is effectively an index array
+			//std::vector<unsigned int> Indices2(Indices.size());
+			//meshopt_remapIndexBuffer(Indices2.data(), nullptr, Indices.size(), Indices.data());
 
-		meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position.x, Vertices.size(), sizeof(CVertex), 1.05f);
+			meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
 
-		meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
+			meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position.x, Vertices.size(), sizeof(CVertex), 1.05f);
 
-		// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
-		// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
+			meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
 
-		// Process skin
+			// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
+			// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
+
+			TotalVertices += Vertices.size();
+			TotalIndices += Indices.size();
+		}
+
+		// Process skin, one for all submeshes
 		// NB: skin is per-control-point, so it is better done after optimizing out redundant vertices
 
 		std::vector<CBone> Bones;
@@ -699,24 +738,28 @@ public:
 					// Skip (almost) zero weights
 					if (CompareFloat(Weight, 0.f)) continue;
 
-					for (auto& Vertex : Vertices)
+					for (auto& Pair : SubMeshes)
 					{
-						if (Vertex.ControlPointIndex != ControlPointIndex) continue;
-
-						if (Vertex.BonesUsed >= MaxBonesPerVertex)
+						auto& Vertices = Pair.second.Vertices;
+						for (auto& Vertex : Vertices)
 						{
-							Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of influencing bones, the rest is discarded");
-							continue;
+							if (Vertex.ControlPointIndex != ControlPointIndex) continue;
+
+							if (Vertex.BonesUsed >= MaxBonesPerVertex)
+							{
+								Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of influencing bones, the rest is discarded");
+								continue;
+							}
+
+							++VerticesAffected;
+
+							Vertex.BlendIndices[Vertex.BonesUsed] = BoneIndex;
+							Vertex.BlendWeights[Vertex.BonesUsed] = Weight;
+
+							++Vertex.BonesUsed;
+							if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
+								MaxBonesPerVertexUsed = Vertex.BonesUsed;
 						}
-
-						++VerticesAffected;
-
-						Vertex.BlendIndices[Vertex.BonesUsed] = BoneIndex;
-						Vertex.BlendWeights[Vertex.BonesUsed] = Weight;
-
-						++Vertex.BonesUsed;
-						if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
-							MaxBonesPerVertexUsed = Vertex.BonesUsed;
 					}
 				}
 
@@ -776,16 +819,16 @@ public:
 
 			WriteStream<uint32_t>(File, 'MESH');        // Format magic value
 			WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
-			WriteStream<uint32_t>(File, 1);             // Group count, now always 1, may change later!
 
-			WriteStream(File, static_cast<uint32_t>(Vertices.size()));
-			WriteStream(File, static_cast<uint32_t>(Indices.size()));
+			WriteStream(File, static_cast<uint32_t>(SubMeshes.size()));
+			WriteStream(File, static_cast<uint32_t>(TotalVertices));
+			WriteStream(File, static_cast<uint32_t>(TotalIndices));
 
 			// One index size in bytes
-			const bool Indices32 = (Vertices.size() > std::numeric_limits<uint16_t>().max());
+			const bool Indices32 = (TotalVertices > std::numeric_limits<uint16_t>().max());
 			if (Indices32)
 			{
-				Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(Vertices.size()) + " vertices and will use 32-bit indices");
+				Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(TotalVertices) + " vertices and will use 32-bit indices");
 				static_assert(sizeof(unsigned int) == 4);
 				WriteStream<uint8_t>(File, 4);
 			}
@@ -843,14 +886,22 @@ public:
 					WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
 			}
 
-			// Save mesh groups (always 1 group x 1 LOD now, may change later)
-			WriteStream<uint32_t>(File, 0);                            // First vertex
-			WriteStream(File, static_cast<uint32_t>(Vertices.size())); // Vertex count
-			WriteStream<uint32_t>(File, 0);                            // First index
-			WriteStream(File, static_cast<uint32_t>(Indices.size()));  // Index count
-			WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
+			// Save mesh groups (always 1 LOD now, may change later)
 
-			// TODO: precalculate group AABB!
+			// TODO: test if index offset is needed, each submesh starts from zero now
+			for (const auto& Pair : SubMeshes)
+			{
+				const auto& Indices = Pair.second.Indices;
+				const auto& Vertices = Pair.second.Vertices;
+
+				WriteStream<uint32_t>(File, 0);                            // First vertex
+				WriteStream(File, static_cast<uint32_t>(Vertices.size())); // Vertex count
+				WriteStream<uint32_t>(File, 0);                            // First index
+				WriteStream(File, static_cast<uint32_t>(Indices.size()));  // Index count
+				WriteStream(File, static_cast<uint8_t>(EPrimitiveTopology::Prim_TriList));
+
+				// TODO: precalculate group AABB!
+			}
 
 			// Align vertex and index data offsets to 16 bytes. It should speed up loading from memory-mapped file.
 			// TODO: test!
@@ -868,31 +919,35 @@ public:
 					WriteStream<uint8_t>(File, 0);
 			}
 
-			for (const auto& Vertex : Vertices)
+			for (const auto& Pair : SubMeshes)
 			{
-				WriteStream(File, Vertex.Position);
-
-				if (NormalCount) WriteStream(File, Vertex.Normal);
-				if (TangentCount) WriteStream(File, Vertex.Tangent);
-				if (BitangentCount) WriteStream(File, Vertex.Bitangent);
-				if (ColorCount) WriteStream(File, Vertex.Color);
-
-				for (int i = 0; i < UVCount; ++i)
-					WriteStream(File, Vertex.UV[i]);
-
-				if (MaxBonesPerVertexUsed)
+				const auto& Vertices = Pair.second.Vertices;
+				for (const auto& Vertex : Vertices)
 				{
-					// Blend indices are always 4-component
-					for (int i = 0; i < 4; ++i)
-					{
-						const int BoneIndex = (i < MaxBonesPerVertex) ? Vertex.BlendIndices[i] : 0;
-						if (Bones.size() > 256)
-							WriteStream(File, static_cast<int16_t>(BoneIndex));
-						else
-							WriteStream(File, static_cast<uint8_t>(BoneIndex));
-					}
+					WriteStream(File, Vertex.Position);
 
-					File.write(reinterpret_cast<const char*>(Vertex.BlendWeights), MaxBonesPerVertexUsed * sizeof(float));
+					if (NormalCount) WriteStream(File, Vertex.Normal);
+					if (TangentCount) WriteStream(File, Vertex.Tangent);
+					if (BitangentCount) WriteStream(File, Vertex.Bitangent);
+					if (ColorCount) WriteStream(File, Vertex.Color);
+
+					for (int i = 0; i < UVCount; ++i)
+						WriteStream(File, Vertex.UV[i]);
+
+					if (MaxBonesPerVertexUsed)
+					{
+						// Blend indices are always 4-component
+						for (int i = 0; i < 4; ++i)
+						{
+							const int BoneIndex = (i < MaxBonesPerVertex) ? Vertex.BlendIndices[i] : 0;
+							if (Bones.size() > 256)
+								WriteStream(File, static_cast<int16_t>(BoneIndex));
+							else
+								WriteStream(File, static_cast<uint8_t>(BoneIndex));
+						}
+
+						File.write(reinterpret_cast<const char*>(Vertex.BlendWeights), MaxBonesPerVertexUsed * sizeof(float));
+					}
 				}
 			}
 
@@ -904,14 +959,18 @@ public:
 					WriteStream<uint8_t>(File, 0);
 			}
 
-			if (Indices32)
+			for (const auto& Pair : SubMeshes)
 			{
-				File.write(reinterpret_cast<const char*>(Indices.data()), Indices.size() * 4);
-			}
-			else
-			{
-				for (auto Index : Indices)
-					WriteStream(File, static_cast<uint16_t>(Index));
+				const auto& Indices = Pair.second.Indices;
+				if (Indices32)
+				{
+					File.write(reinterpret_cast<const char*>(Indices.data()), Indices.size() * 4);
+				}
+				else
+				{
+					for (auto Index : Indices)
+						WriteStream(File, static_cast<uint16_t>(Index));
+				}
 			}
 
 			// Write delayed values
