@@ -180,6 +180,12 @@ class CFBXTool : public CContentForgeTool
 {
 protected:
 
+	struct CMeshAttrInfo
+	{
+		std::string MeshID;
+		std::vector<const FbxSurfaceMaterial*> Materials; // Per group (submesh)
+	};
+
 	struct CContext
 	{
 		CThreadSafeLog& Log;
@@ -188,7 +194,7 @@ protected:
 		fs::path        SkinPath;
 		std::string     DefaultName;
 
-		std::unordered_map<const FbxMesh*, std::string> ProcessedMeshes;
+		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
 	};
 
@@ -206,7 +212,7 @@ protected:
 		size_t BonesUsed = 0;
 	};
 
-	struct CSubMesh
+	struct CMeshData
 	{
 		std::vector<CVertex> Vertices;
 		std::vector<unsigned int> Indices;
@@ -467,77 +473,59 @@ public:
 	{
 		Ctx.Log.LogDebug("Model");
 
-		// Mesh (optionally skinned)
-
-		std::string MeshID, SkinID;
+		// Export mesh (optionally skinned)
 
 		auto MeshIt = Ctx.ProcessedMeshes.find(pMesh);
 		if (MeshIt == Ctx.ProcessedMeshes.cend())
 		{
-			if (!ExportMesh(pMesh, Ctx, MeshID, SkinID)) return false;
-		}
-		else
-		{
-			MeshID = MeshIt->second;
-
-			auto SkinIt = Ctx.ProcessedSkins.find(pMesh);
-			if (SkinIt != Ctx.ProcessedSkins.cend())
-				SkinID = SkinIt->second;
+			if (!ExportMesh(pMesh, Ctx)) return false;
+			MeshIt = Ctx.ProcessedMeshes.find(pMesh);
+			if (MeshIt == Ctx.ProcessedMeshes.cend()) return false;
 		}
 
-		assert(!MeshID.empty());
+		const CMeshAttrInfo& MeshInfo = MeshIt->second;
 
-		// Material
+		// Add models per mesh group
 
-		//!!!FIXME: per mesh group!
-
-		// PBR materials aren't supported in FBX, can't export.
-		// Blender FBX exporter saves no textures, so parsing is completely useless for now.
-		// Instead of this, materials must be precreated and explicitly declared in .meta.
-		// glTF 2.0 exporter will address this issue.
-
-		std::string MaterialID;
-
-		if (pMesh->GetElementMaterialCount())
+		int GroupIndex = 0;
+		for (const FbxSurfaceMaterial* pMaterial : MeshInfo.Materials)
 		{
-			// We splitted meshes per material at the start
-			assert(pMesh->GetElementMaterialCount() < 2);
+			// Export material for the current submesh
 
-			auto pMaterialElement = pMesh->GetElementMaterial(0);
-			if (pMaterialElement && pMaterialElement->GetIndexArray().GetCount())
+			// PBR materials aren't supported in FBX, can't export.
+			// Blender FBX exporter saves no textures, so parsing is completely useless for now.
+			// Instead of this, materials must be precreated and explicitly declared in .meta.
+			// glTF 2.0 exporter will address this issue.
+
+			std::string MaterialID;
+			if (pMaterial)
 			{
-				assert(pMaterialElement->GetMappingMode() == FbxLayerElement::eAllSame);
+				MaterialID = pMaterial->GetName();
 
-				const int MaterialIdx = pMaterialElement->GetIndexArray().GetAt(0);
+				//???material search path or association map Name -> external precreated material resource ID?
 
-				const auto* pMaterial = pMesh->GetNode()->GetMaterial(MaterialIdx);
-				if (pMaterial)
-				{
-					MaterialID = pMaterial->GetName();
-
-					//???material search path or association map Name -> external precreated material resource ID?
-
-					Ctx.Log.LogDebug("Material: " + MaterialID);
-				}
+				Ctx.Log.LogDebug(std::string("Mesh ") + pMesh->GetName() + ':' + std::to_string(GroupIndex) + " material: " + MaterialID);
 			}
-		}
-		else
-		{
-			// no material specified for the model
-			//???use some custom property to set external material by resource ID?
+
+			// Assemble a model attribute
+
+			Data::CParams ModelAttribute;
+			ModelAttribute.emplace(CStrID("Class"), std::string("Frame::CModelAttribute"));
+			ModelAttribute.emplace(CStrID("Mesh"), MeshInfo.MeshID);
+			ModelAttribute.emplace(CStrID("MeshGroupIndex"), GroupIndex);
+			if (!MaterialID.empty())
+				ModelAttribute.emplace(CStrID("Material"), MaterialID);
+			else
+				Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has a group with no material attached");
+			Attributes.push_back(std::move(ModelAttribute));
+
+			++GroupIndex;
 		}
 
-		// Assemble attributes
+		// Assemble the skin attribute if required
 
-		Data::CParams ModelAttribute;
-		ModelAttribute.emplace(CStrID("Class"), std::string("Frame::CModelAttribute"));
-		ModelAttribute.emplace(CStrID("Mesh"), MeshID);
-		// TODO: MeshGroupIndex, 0 by default
-		if (!MaterialID.empty())
-			ModelAttribute.emplace(CStrID("Material"), MaterialID);
-		else
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has no material attached");
-		Attributes.push_back(std::move(ModelAttribute));
+		auto SkinIt = Ctx.ProcessedSkins.find(pMesh);
+		std::string SkinID = (SkinIt != Ctx.ProcessedSkins.cend()) ? SkinIt->second : std::string{};
 
 		if (!SkinID.empty())
 		{
@@ -552,7 +540,7 @@ public:
 	}
 
 	// Export mesh and optional skin to DEM-native format
-	bool ExportMesh(const FbxMesh* pMesh, CContext& Ctx, std::string& OutMeshID, std::string& OutSkinID)
+	bool ExportMesh(const FbxMesh* pMesh, CContext& Ctx)
 	{
 		// Determine vertex format
 
@@ -585,9 +573,9 @@ public:
 		// Collect vertices for each material separately
 
 		const int PolyCount = pMesh->GetPolygonCount();
-		const auto pMaterial = pMesh->GetElementMaterial();
+		const auto pMaterialElement = pMesh->GetElementMaterial();
 
-		std::map<int, CSubMesh> SubMeshes;
+		std::map<const FbxSurfaceMaterial*, CMeshData> SubMeshes;
 
 		for (int p = 0; p < PolyCount; ++p)
 		{
@@ -606,21 +594,24 @@ public:
 
 			// Get material index and corresponding group (submesh)
 
-			int MaterialIndex = -1;
-			if (pMaterial)
+			const FbxSurfaceMaterial* pMaterial = nullptr;
+			if (pMaterialElement)
 			{
-				switch (pMaterial->GetMappingMode())
+				int MaterialIndex = -1;
+				switch (pMaterialElement->GetMappingMode())
 				{
-					case FbxLayerElement::eByPolygon: MaterialIndex = pMaterial->GetIndexArray().GetAt(p); break;
-					case FbxLayerElement::eAllSame: MaterialIndex = pMaterial->GetIndexArray().GetAt(0); break;
+					case FbxLayerElement::eByPolygon: MaterialIndex = pMaterialElement->GetIndexArray().GetAt(p); break;
+					case FbxLayerElement::eAllSame: MaterialIndex = pMaterialElement->GetIndexArray().GetAt(0); break;
 					default: assert(false && "Unsupported material mapping mode");
 				}
+
+				pMaterial = pMesh->GetNode()->GetMaterial(MaterialIndex);
 			}
 
-			auto GroupIt = SubMeshes.find(MaterialIndex);
+			auto GroupIt = SubMeshes.find(pMaterial);
 			if (GroupIt == SubMeshes.cend())
 			{
-				GroupIt = SubMeshes.emplace(MaterialIndex, CSubMesh{}).first;
+				GroupIt = SubMeshes.emplace(pMaterial, CMeshData{}).first;
 				GroupIt->second.Vertices.reserve(static_cast<size_t>((PolyCount - p) * 3));
 			}
 
@@ -830,7 +821,6 @@ public:
 			if (Indices32)
 			{
 				Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has " + std::to_string(TotalVertices) + " vertices and will use 32-bit indices");
-				static_assert(sizeof(unsigned int) == 4);
 				WriteStream<uint8_t>(File, 4);
 			}
 			else
@@ -965,6 +955,7 @@ public:
 				const auto& Indices = Pair.second.Indices;
 				if (Indices32)
 				{
+					static_assert(sizeof(unsigned int) == 4);
 					File.write(reinterpret_cast<const char*>(Indices.data()), Indices.size() * 4);
 				}
 				else
@@ -979,9 +970,12 @@ public:
 			WriteStream<uint32_t>(File, VertexStartPos);
 			WriteStream<uint32_t>(File, IndexStartPos);
 
-			OutMeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+			CMeshAttrInfo MeshInfo;
+			MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+			for (const auto& Pair : SubMeshes)
+				MeshInfo.Materials.push_back(Pair.first);
 
-			Ctx.ProcessedMeshes.emplace(pMesh, OutMeshID);
+			Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo)).first->second;
 		}
 
 		// Write resulting skin file (if skinned)
@@ -1016,9 +1010,9 @@ public:
 				WriteStream(File, Bone.ID);
 			}
 				
-			OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+			std::string SkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 
-			Ctx.ProcessedSkins.emplace(pMesh, OutSkinID);
+			Ctx.ProcessedSkins.emplace(pMesh, std::move(SkinID));
 		}
 
 		return true;
