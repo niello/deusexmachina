@@ -394,7 +394,7 @@ public:
 		NodeSection.emplace(sidRotation, vector4(Rotation.v, 4));
 		NodeSection.emplace(sidScale, vector4(Scaling.v, 3));
 
-		Ctx.Log.LogDebug("Node");
+		Ctx.Log.LogDebug(std::string("Node ") + pNode->GetName());
 
 		// Process attributes
 
@@ -471,7 +471,7 @@ public:
 
 	bool ExportModel(const FbxMesh* pMesh, CContext& Ctx, Data::CDataArray& Attributes)
 	{
-		Ctx.Log.LogDebug("Model");
+		Ctx.Log.LogDebug(std::string("Model ") + pMesh->GetName());
 
 		// Export mesh (optionally skinned)
 
