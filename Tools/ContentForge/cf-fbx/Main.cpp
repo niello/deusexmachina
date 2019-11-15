@@ -314,6 +314,8 @@ public:
 
 		constexpr double AnimSamplingRate = 30.0;
 
+		//FbxTime::SetGlobalTimeMode(FbxTime::eCustom, _fps);
+
 		ConvertTransformsToSRTRecursive(pScene->GetRootNode());
 		pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, AnimSamplingRate);
 
@@ -356,7 +358,7 @@ public:
 		for (int i = 0; i < AnimationCount; ++i)
 		{
 			const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
-			if (!ExportAnimation(pAnimStack, pScene->GetRootNode(), Ctx)) return false;
+			if (!ExportAnimation(pAnimStack, pScene, Ctx)) return false;
 		}
 
 		// Export additional info
@@ -1197,10 +1199,8 @@ public:
 		return true;
 	}
 
-	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxNode* pRootNode, CContext& Ctx)
+	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxScene* pScene, CContext& Ctx)
 	{
-		Ctx.Log.LogDebug(std::string("Animation ") + pAnimStack->GetName());
-
 		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
 		if (LayerCount <= 0)
 		{
@@ -1212,7 +1212,40 @@ public:
 			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has more than one layer. Additional ones are skipped. Please merge them into the base layer.");
 		}
 
+		const FbxTakeInfo* pTakeInfo = pScene->GetTakeInfo(pAnimStack->GetName());
+		FbxLongLong StartFrame = pTakeInfo->mLocalTimeSpan.GetStart().GetFrameCount(FbxTime::GetGlobalTimeMode());
+		FbxLongLong EndFrame = pTakeInfo->mLocalTimeSpan.GetStop().GetFrameCount(FbxTime::GetGlobalTimeMode());
+
+		Ctx.Log.LogDebug(std::string("Animation ") + pAnimStack->GetName() +
+			", frames " + std::to_string(StartFrame) + '-' + std::to_string(EndFrame));
+
+		//FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode())
+
 		const auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(0);
+
+		if (!ExportNodeAnimation(pLayer, pScene->GetRootNode(), Ctx)) return false;
+
+		return true;
+	}
+
+	bool ExportNodeAnimation(FbxAnimLayer* pLayer, FbxNode* pNode, CContext& Ctx)
+	{
+		//if (!FbxAnimUtilities::IsAnimated(pNode)) return;
+
+		//???or resample instead of saving curves? anyway need to know wnat curves exist,
+		//not to compare sampled values for non-animated properties to determine they had no curve.
+
+		if (const auto pAnimCurve = pNode->LclTranslation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
+		{
+		}
+
+		if (const auto pAnimCurve = pNode->LclRotation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
+		{
+		}
+
+		if (const auto pAnimCurve = pNode->LclScaling.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
+		{
+		}
 
 		return true;
 	}
