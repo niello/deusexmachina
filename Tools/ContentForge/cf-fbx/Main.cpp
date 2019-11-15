@@ -352,7 +352,12 @@ public:
 
 		// Export animations
 
-		// ...
+		const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
+		for (int i = 0; i < AnimationCount; ++i)
+		{
+			const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
+			if (!ExportAnimation(pAnimStack, pScene->GetRootNode(), Ctx)) return false;
+		}
 
 		// Export additional info
 
@@ -1188,6 +1193,26 @@ public:
 		assert(false && "IMPLEMENT ME!!!");
 
 		Attributes.push_back(std::move(Attribute));
+
+		return true;
+	}
+
+	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxNode* pRootNode, CContext& Ctx)
+	{
+		Ctx.Log.LogDebug(std::string("Animation ") + pAnimStack->GetName());
+
+		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
+		if (LayerCount <= 0)
+		{
+			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has no layers, skipped");
+			return true;
+		}
+		else if (LayerCount > 1)
+		{
+			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has more than one layer. Additional ones are skipped. Please merge them into the base layer.");
+		}
+
+		const auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(0);
 
 		return true;
 	}
