@@ -1274,7 +1274,8 @@ public:
 		return true;
 	}
 
-	// FbxAnimUtilities::IsChannelAnimated is broken completely and FbxAnimUtilities::IsAnimated is an overshot
+	// FbxAnimUtilities::IsChannelAnimated is broken completely and FbxAnimUtilities::IsAnimated is an overshot.
+	// Also this one allows us to check per clip (animation stack).
 	static bool IsPropertyAnimated(FbxAnimStack* pAnimStack, FbxProperty& Property)
 	{
 		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
