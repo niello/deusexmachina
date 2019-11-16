@@ -113,6 +113,7 @@ struct float4
 	}
 };
 
+// TODO: remove if not required
 static void SetupDestinationSRTRecursive(FbxNode* pNode)
 {
 	FbxVector4 lZero(0, 0, 0);
@@ -137,8 +138,9 @@ static void SetupDestinationSRTRecursive(FbxNode* pNode)
 	pNode->SetGeometricRotation(FbxNode::eDestinationPivot, lZero);
 	pNode->SetGeometricScaling(FbxNode::eDestinationPivot, lZero);
 
-	// DEM is capable of slerp
-	pNode->SetQuaternionInterpolation(FbxNode::eDestinationPivot, EFbxQuatInterpMode::eQuatInterpSlerp);
+	// DEM is capable of slerp, but this setting probably makes sense inside the FBX SDK, not with resulting anim samples
+	//pNode->SetQuaternionInterpolation(FbxNode::eDestinationPivot, EFbxQuatInterpMode::eQuatInterpSlerp);
+	pNode->SetQuaternionInterpolation(FbxNode::eDestinationPivot, pNode->GetQuaternionInterpolation(FbxNode::eSourcePivot));
 
 	for (int i = 0; i < pNode->GetChildCount(); ++i)
 		SetupDestinationSRTRecursive(pNode->GetChild(i));
@@ -321,7 +323,8 @@ public:
 				" to " + std::to_string(static_cast<uint32_t>(_AnimSamplingRate)));
 		}
 
-		SetupDestinationSRTRecursive(pScene->GetRootNode());
+		//SetupDestinationSRTRecursive(pScene->GetRootNode());
+		//pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, _AnimSamplingRate);
 
 		{
 			FbxGeometryConverter GeometryConverter(pFBXManager);
@@ -460,7 +463,7 @@ public:
 			float3 Scaling;
 			float4 Rotation;
 
-			//???what is more correct?
+			// Raw properties are left for testing purposes
 			constexpr bool UseRawProperties = false;
 			if (UseRawProperties)
 			{
@@ -473,8 +476,7 @@ public:
 			}
 			else
 			{
-				//???need destination pivot, or someway process geometric SRT by hand?
-				const auto LocalTfm = pNode->EvaluateLocalTransform(FBXSDK_TIME_INFINITE, FbxNode::eDestinationPivot);
+				const auto LocalTfm = pNode->EvaluateLocalTransform();
 				Translation = LocalTfm.GetT();
 				Scaling = LocalTfm.GetS();
 				Rotation = LocalTfm.GetQ();
@@ -490,7 +492,16 @@ public:
 		Data::CParams Children;
 
 		for (int i = 0; i < pNode->GetChildCount(); ++i)
+		{
+			// Blender FBX exporter bug
+			if (pNode->GetChild(i)->GetParent() != pNode)
+			{
+				Ctx.Log.LogWarning("Node " + std::string(pNode->GetName()) + " has a child with broken parent link");
+				continue;
+			}
+
 			if (!ExportNode(pNode->GetChild(i), Ctx, Children)) return false;
+		}
 
 		if (!Children.empty())
 			NodeSection.emplace(sidChildren, std::move(Children));
@@ -1257,48 +1268,73 @@ public:
 		for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame)
 		{
 			FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
-			if (!ExportNodeAnimation(pLayer, pScene->GetRootNode(), FrameTime, Ctx)) return false;
+			if (!ExportNodeAnimation(pAnimStack, pScene->GetRootNode(), FrameTime, Ctx)) return false;
 		}
 
 		return true;
 	}
 
+	// FbxAnimUtilities::IsChannelAnimated is broken completely and FbxAnimUtilities::IsAnimated is an overshot
+	static bool IsPropertyAnimated(FbxAnimStack* pAnimStack, FbxProperty& Property)
+	{
+		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
+		for (int i = 0; i < LayerCount; ++i)
+		{
+			auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(i);
+			if (Property.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X) ||
+				Property.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_Y) ||
+				Property.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_Z))
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Don't understand, why evaluation doesn't allow to pass FbxAnimLayer to evaluate only that one.
 	// Also not sure if FBX guarantees that animation stacks do not overlap or at least will not mix.
 	// Perform uniform sampling of the curves here, don't save raw curves.
-	bool ExportNodeAnimation(FbxAnimLayer* pLayer, FbxNode* pNode, FbxTime FrameTime, CContext& Ctx)
+	bool ExportNodeAnimation(FbxAnimStack* pAnimStack, FbxNode* pNode, FbxTime FrameTime, CContext& Ctx)
 	{
-		// Not needed if sampling curves directly.
-		const bool ScalingAnimated = FbxAnimUtilities::IsChannelAnimated(pNode, "LclScaling");
-		const bool RotationAnimated = FbxAnimUtilities::IsChannelAnimated(pNode, "LclRotation");
-		const bool TranslationAnimated = FbxAnimUtilities::IsChannelAnimated(pNode, "LclTranslation");
-		if (!ScalingAnimated && !RotationAnimated && !TranslationAnimated) return true;
+		// FIXME: once per animation stack per node, time-independent and layer-independent check!
+		const bool ScalingAnimated = IsPropertyAnimated(pAnimStack, pNode->LclScaling);
+		const bool RotationAnimated = IsPropertyAnimated(pAnimStack, pNode->LclRotation);
+		const bool TranslationAnimated = IsPropertyAnimated(pAnimStack, pNode->LclTranslation);
+		if (ScalingAnimated || RotationAnimated || TranslationAnimated)
+		{
+			// TODO: detect uniform scale!
+			// TODO: detect 1-key track with default value! Blender FBX exporter bug, probably inactual, but we still
+			//       need no animations which don't really animate.
+			// Or let the ACL deal with these cases?
 
-		// TODO: detect uniform scale!
-		// TODO: detect 1-key track with default value! Blender FBX exporter bug, probably inactual, but we still
-		//       need no animations which don't really animate.
-		// Or let the ACL deal with these cases?
+			const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime);
 
-		// NB: geometric transforms are baked into the destination pivot set of all nodes
-		const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime, FbxNode::eDestinationPivot);
+			//if (ScalingAnimated)
+			const float3 Scaling = LocalTfm.GetS();
 
-		const float3 Translation = LocalTfm.GetT();
-		const float3 Scaling = LocalTfm.GetS();
-		const float4 Rotation = LocalTfm.GetQ();
+			//if (RotationAnimated)
+			const float4 Rotation = LocalTfm.GetQ();
+
+			//if (TranslationAnimated)
+			const float3 Translation = LocalTfm.GetT();
+		}
+
+		for (int i = 0; i < pNode->GetChildCount(); ++i)
+			if (!ExportNodeAnimation(pAnimStack, pNode->GetChild(i), FrameTime, Ctx)) return false;
 
 		// =====================================================
 		// There are different ways to get node animation data
 
 		// With limits, pivots etc:
-		//pNode->EvaluateLocalTransform(FrameTime); //, FbxNode::eDestinationPivot);
+		//pNode->EvaluateLocalTransform(FrameTime);
 
 		// With limits, but no pivots etc:
-		//pNode->EvaluateLocalRotation(FrameTime); //, FbxNode::eDestinationPivot);
+		//pNode->EvaluateLocalRotation(FrameTime);
 
 		// Property only:
 		//pNode->LclTranslation.EvaluateValue(FrameTime);
 
-		// Property per component per animation layer:
+		// Property per component per animation layer (sample curve directly):
 		//if (const auto pAnimCurve = pNode->LclTranslation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
 		//	pAnimCurve->Evaluate(FrameTime);
 		// =====================================================
