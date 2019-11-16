@@ -113,7 +113,7 @@ struct float4
 	}
 };
 
-static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
+static void SetupDestinationSRTRecursive(FbxNode* pNode)
 {
 	FbxVector4 lZero(0, 0, 0);
 
@@ -141,7 +141,7 @@ static void ConvertTransformsToSRTRecursive(FbxNode* pNode)
 	pNode->SetQuaternionInterpolation(FbxNode::eDestinationPivot, EFbxQuatInterpMode::eQuatInterpSlerp);
 
 	for (int i = 0; i < pNode->GetChildCount(); ++i)
-		ConvertTransformsToSRTRecursive(pNode->GetChild(i));
+		SetupDestinationSRTRecursive(pNode->GetChild(i));
 }
 //---------------------------------------------------------------------
 
@@ -229,6 +229,7 @@ protected:
 	FbxManager* pFBXManager = nullptr;
 
 	std::string _ResourceRoot;
+	double _AnimSamplingRate = 30.0;
 
 public:
 
@@ -272,6 +273,7 @@ public:
 	{
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
+		CLIApp.add_option("--fps", _AnimSamplingRate, "Animation sampling rate in frames per second, default is 30");
 	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
@@ -310,14 +312,16 @@ public:
 		pImporter->Destroy();
 
 		// Convert scene transforms and geometry to a more suitable format
-		// TODO: save results back to FBX?
 
-		constexpr double AnimSamplingRate = 30.0;
+		const auto SceneFrameRate = FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode());
+		if (!FbxEqual(SceneFrameRate, _AnimSamplingRate))
+		{
+			FbxTime::SetGlobalTimeMode(FbxTime::eCustom, _AnimSamplingRate);
+			Task.Log.LogInfo("Scene frame rate changed from " + std::to_string(static_cast<uint32_t>(SceneFrameRate)) +
+				" to " + std::to_string(static_cast<uint32_t>(_AnimSamplingRate)));
+		}
 
-		//FbxTime::SetGlobalTimeMode(FbxTime::eCustom, _fps);
-
-		ConvertTransformsToSRTRecursive(pScene->GetRootNode());
-		pScene->GetRootNode()->ConvertPivotAnimationRecursive(nullptr, FbxNode::eDestinationPivot, AnimSamplingRate);
+		SetupDestinationSRTRecursive(pScene->GetRootNode());
 
 		{
 			FbxGeometryConverter GeometryConverter(pFBXManager);
@@ -354,6 +358,8 @@ public:
 
 		// Export animations
 
+		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
+		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
 		const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
 		for (int i = 0; i < AnimationCount; ++i)
 		{
@@ -373,9 +379,11 @@ public:
 	{
 		if (!pNode)
 		{
-			Ctx.Log.LogWarning("Empty FBX node encountered");
+			Ctx.Log.LogWarning("Nullptr FBX node encountered");
 			return true;
 		}
+
+		Ctx.Log.LogDebug(std::string("Node ") + pNode->GetName());
 
 		static const CStrID sidTranslation("Translation");
 		static const CStrID sidRotation("Rotation");
@@ -385,27 +393,10 @@ public:
 
 		Data::CParams NodeSection;
 
-		// Process node info
-
-		const char* pName = pNode->GetName();
-		float3 Translation = pNode->LclTranslation.Get();
-		float3 Scaling = pNode->LclScaling.Get();
-		float4 Rotation;
-		{
-			FbxQuaternion Quat;
-			Quat.ComposeSphericalXYZ(pNode->LclRotation.Get());
-			Rotation = Quat;
-		}
-
-		NodeSection.emplace(sidTranslation, vector4(Translation.v, 3));
-		NodeSection.emplace(sidRotation, vector4(Rotation.v, 4));
-		NodeSection.emplace(sidScale, vector4(Scaling.v, 3));
-
-		Ctx.Log.LogDebug(std::string("Node ") + pNode->GetName());
-
 		// Process attributes
 
 		Data::CDataArray Attributes;
+		bool IsBone = false;
 
 		for (int i = 0; i < pNode->GetNodeAttributeCount(); ++i)
 		{
@@ -435,7 +426,7 @@ public:
 				}
 				case FbxNodeAttribute::eSkeleton:
 				{
-					// TODO: can extract some useful data?
+					IsBone = true;
 					break;
 				}
 				case FbxNodeAttribute::eMarker:
@@ -459,6 +450,40 @@ public:
 
 		if (!Attributes.empty())
 			NodeSection.emplace(sidAttrs, std::move(Attributes));
+
+		// Process transform
+
+		// Bone transformation is determined by the bind pose and animations
+		if (!IsBone)
+		{
+			float3 Translation;
+			float3 Scaling;
+			float4 Rotation;
+
+			//???what is more correct?
+			constexpr bool UseRawProperties = false;
+			if (UseRawProperties)
+			{
+				Translation = pNode->LclTranslation.Get();
+				Scaling = pNode->LclScaling.Get();
+
+				FbxQuaternion Quat;
+				Quat.ComposeSphericalXYZ(pNode->LclRotation.Get());
+				Rotation = Quat;
+			}
+			else
+			{
+				//???need destination pivot, or someway process geometric SRT by hand?
+				const auto LocalTfm = pNode->EvaluateLocalTransform(FBXSDK_TIME_INFINITE, FbxNode::eDestinationPivot);
+				Translation = LocalTfm.GetT();
+				Scaling = LocalTfm.GetS();
+				Rotation = LocalTfm.GetQ();
+			}
+
+			NodeSection.emplace(sidTranslation, vector4(Translation.v, 3));
+			NodeSection.emplace(sidRotation, vector4(Rotation.v, 4));
+			NodeSection.emplace(sidScale, vector4(Scaling.v, 3));
+		}
 
 		// Process children
 
@@ -1209,43 +1234,74 @@ public:
 		}
 		else if (LayerCount > 1)
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has more than one layer. Additional ones are skipped. Please merge them into the base layer.");
+			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has more than one layer");
 		}
 
 		const FbxTakeInfo* pTakeInfo = pScene->GetTakeInfo(pAnimStack->GetName());
-		FbxLongLong StartFrame = pTakeInfo->mLocalTimeSpan.GetStart().GetFrameCount(FbxTime::GetGlobalTimeMode());
-		FbxLongLong EndFrame = pTakeInfo->mLocalTimeSpan.GetStop().GetFrameCount(FbxTime::GetGlobalTimeMode());
+		const FbxLongLong StartFrame = pTakeInfo->mLocalTimeSpan.GetStart().GetFrameCount(FbxTime::GetGlobalTimeMode());
+		const FbxLongLong EndFrame = pTakeInfo->mLocalTimeSpan.GetStop().GetFrameCount(FbxTime::GetGlobalTimeMode());
 
 		Ctx.Log.LogDebug(std::string("Animation ") + pAnimStack->GetName() +
 			", frames " + std::to_string(StartFrame) + '-' + std::to_string(EndFrame));
 
-		//FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode())
+		const auto FrameRate = FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode());
 
 		const auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(0);
+		if (!pLayer || !pLayer->GetMemberCount())
+		{
+			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " is empty, skipped");
+			return true;
+		}
 
-		if (!ExportNodeAnimation(pLayer, pScene->GetRootNode(), Ctx)) return false;
+		FbxTime FrameTime;
+		for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame)
+		{
+			FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+			if (!ExportNodeAnimation(pLayer, pScene->GetRootNode(), FrameTime, Ctx)) return false;
+		}
 
 		return true;
 	}
 
-	bool ExportNodeAnimation(FbxAnimLayer* pLayer, FbxNode* pNode, CContext& Ctx)
+	// Don't understand, why evaluation doesn't allow to pass FbxAnimLayer to evaluate only that one.
+	// Also not sure if FBX guarantees that animation stacks do not overlap or at least will not mix.
+	// Perform uniform sampling of the curves here, don't save raw curves.
+	bool ExportNodeAnimation(FbxAnimLayer* pLayer, FbxNode* pNode, FbxTime FrameTime, CContext& Ctx)
 	{
-		//if (!FbxAnimUtilities::IsAnimated(pNode)) return;
+		// Not needed if sampling curves directly.
+		const bool ScalingAnimated = FbxAnimUtilities::IsChannelAnimated(pNode, "LclScaling");
+		const bool RotationAnimated = FbxAnimUtilities::IsChannelAnimated(pNode, "LclRotation");
+		const bool TranslationAnimated = FbxAnimUtilities::IsChannelAnimated(pNode, "LclTranslation");
+		if (!ScalingAnimated && !RotationAnimated && !TranslationAnimated) return true;
 
-		//???or resample instead of saving curves? anyway need to know wnat curves exist,
-		//not to compare sampled values for non-animated properties to determine they had no curve.
+		// TODO: detect uniform scale!
+		// TODO: detect 1-key track with default value! Blender FBX exporter bug, probably inactual, but we still
+		//       need no animations which don't really animate.
+		// Or let the ACL deal with these cases?
 
-		if (const auto pAnimCurve = pNode->LclTranslation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
-		{
-		}
+		// NB: geometric transforms are baked into the destination pivot set of all nodes
+		const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime, FbxNode::eDestinationPivot);
 
-		if (const auto pAnimCurve = pNode->LclRotation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
-		{
-		}
+		const float3 Translation = LocalTfm.GetT();
+		const float3 Scaling = LocalTfm.GetS();
+		const float4 Rotation = LocalTfm.GetQ();
 
-		if (const auto pAnimCurve = pNode->LclScaling.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
-		{
-		}
+		// =====================================================
+		// There are different ways to get node animation data
+
+		// With limits, pivots etc:
+		//pNode->EvaluateLocalTransform(FrameTime); //, FbxNode::eDestinationPivot);
+
+		// With limits, but no pivots etc:
+		//pNode->EvaluateLocalRotation(FrameTime); //, FbxNode::eDestinationPivot);
+
+		// Property only:
+		//pNode->LclTranslation.EvaluateValue(FrameTime);
+
+		// Property per component per animation layer:
+		//if (const auto pAnimCurve = pNode->LclTranslation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
+		//	pAnimCurve->Evaluate(FrameTime);
+		// =====================================================
 
 		return true;
 	}
