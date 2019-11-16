@@ -4,6 +4,7 @@
 #include <fbxsdk.h>
 #include <meshoptimizer.h>
 #include <CLI11.hpp>
+//#include <acl/core/ansi_allocator.h>
 #include <unordered_map>
 
 namespace fs = std::filesystem;
@@ -226,6 +227,7 @@ protected:
 		FbxAMatrix     InvLocalBindPose;
 		std::string    ID;
 		uint16_t       ParentBoneIndex;
+		// TODO: bone object-space or local-space AABB
 	};
 
 	FbxManager* pFBXManager = nullptr;
@@ -798,13 +800,15 @@ public:
 					}
 				}
 
-				if (VerticesAffected)
-				{
-					// Calculate inverse local bind pose and save the bone
-					FbxAMatrix WorldBindPose;
-					pCluster->GetTransformLinkMatrix(WorldBindPose);
-					Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse(), pBone->GetName(), NoParent });
-				}
+				// If bone affects nothing it can be dropped
+				if (!VerticesAffected) continue;
+
+				// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
+
+				// Calculate inverse local bind pose and save the bone
+				FbxAMatrix WorldBindPose;
+				pCluster->GetTransformLinkMatrix(WorldBindPose);
+				Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse(), pBone->GetName(), NoParent });
 			}
 
 			// Establish parent-child links and check IDs

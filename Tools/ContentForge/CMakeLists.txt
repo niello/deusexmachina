@@ -71,7 +71,7 @@ set(FBX_SDK_LIB_PATH_RELEASE "${FBX_SDK_PATH}/lib/${FBX_SDK_COMPILER_SUBFOLDER}/
 include("${CMAKE_CURRENT_SOURCE_DIR}/cf-fbx/src.cmake")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
 add_executable(cf-fbx ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
-target_include_directories(cf-fbx PRIVATE "cf-fbx" "${FBX_SDK_PATH}/include")
+target_include_directories(cf-fbx PRIVATE "cf-fbx" "${FBX_SDK_PATH}/include" "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/acl/includes")
 target_link_libraries(cf-fbx PRIVATE
 	ToolsCommon
 	meshoptimizer
