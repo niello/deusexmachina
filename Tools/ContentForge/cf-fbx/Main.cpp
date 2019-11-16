@@ -1353,3 +1353,78 @@ int main(int argc, const char** argv)
 	CFBXTool Tool("cf-fbx", "FBX to DeusExMachina resource converter", { 0, 1, 0 });
 	return Tool.Execute(argc, argv);
 }
+
+/*
+//!!!NB: Bones array contains only skinned bones, real skeleton must be built separately
+//from FbxNodeAttribute::eSkeleton or raw animated nodes, per scene or maybe model!
+
+#include <acl/algorithm/uniformly_sampled/encoder.h>
+
+RigidBone bones[num_bones];
+for (int bone_index = 0; bone_index < num_bones; ++bone_index)
+{
+    if (bone_index != 0)
+        bones[bone_index].parent_index = bone_index - 1;	// Single bone chain
+
+    bones[bone_index].vertex_distance = 3.0f;
+}
+
+RigidSkeleton(allocator, bones, num_bones);
+
+uint32_t num_samples_per_track = 20;
+float sample_rate = 30.0f;
+String name(allocator, "Run Cycle");
+AnimationClip clip(allocator, skeleton, num_samples_per_track, sample_rate, name);
+
+AnimatedBone& bone = clip.get_animated_bone(bone_index);
+for (uint32_t sample_index = 0; sample_index < num_samples_per_track; ++sample_index)
+{
+    bone.rotation_track.set_sample(sample_index, quat_identity_64());
+    bone.translation_track.set_sample(sample_index, vector_zero_64());
+    bone.scale_track.set_sample(sample_index, vector_set(1.0));
+}
+
+//get_default_compression_settings()
+CompressionSettings settings;
+settings.level = CompressionLevel8::Medium;
+settings.rotation_format = RotationFormat8::QuatDropW_Variable;
+settings.translation_format = VectorFormat8::Vector3_Variable;
+settings.scale_format = VectorFormat8::Vector3_Variable;
+settings.range_reduction = RangeReductionFlags8::AllTracks;
+settings.segmenting.enabled = true;
+settings.segmenting.range_reduction = RangeReductionFlags8::AllTracks;
+
+TransformErrorMetric error_metric;
+settings.error_metric = &error_metric;
+
+OutputStats stats;
+CompressedClip* compressed_clip = nullptr;
+ErrorResult error_result = uniformly_sampled::compress_clip(allocator, raw_clip, settings, compressed_clip, stats);
+
+std::ofstream output_file_stream(options.output_bin_filename, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+if (output_file_stream.is_open())
+	output_file_stream.write(reinterpret_cast<const char*>(compressed_clip), compressed_clip->get_size());
+
+//-----------------------------------------------------------------------
+
+DecompressionContext<DefaultDecompressionSettings> context;
+//DecompressionSettings::disable_fp_exceptions()
+
+context.initialize(*compressed_clip);
+context.seek(sample_time, SampleRoundingPolicy::None);
+
+context.decompress_bone(bone_index, &rotation, &translation, &scale);
+
+//is_dirty(const CompressedClip& clip)
+//make_decompression_context(...)
+
+//Every decompression function supported by the context is prefixed with decompress_.
+//Uniform sampling supports decompressing a whole pose with a custom OutputWriter for
+//optimized pose writing. You can implement your own and coerce to your own math types.
+//The type is templated on the decompress_pose function in order to be easily inlined.
+Transform_32* transforms = new Transform_32[num_bones];
+DefaultOutputWriter pose_writer(transforms, num_bones);
+context.decompress_pose(pose_writer);
+
+
+*/
