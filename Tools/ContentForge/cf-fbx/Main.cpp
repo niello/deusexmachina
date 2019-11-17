@@ -1308,6 +1308,8 @@ public:
 
 		// TODO: can cache ACL skeletons! Build once for the whole scene, check transform animation in all stacks!
 
+		// FIXME: ACL supports multiple root bones since 1.3.0!
+
 		// Theoretically we can have more than one skeleton hierarchy animated with the same stack. Process them all.
 		// Note that here we implicitly skip all non-transform animations, like light color animation etc.
 		// TODO: support non-transform animations if necessary.
