@@ -1,11 +1,18 @@
 #include <ContentForgeTool.h>
 #include <Render/RenderEnums.h>
 #include <Utils.h>
+#include <CLI11.hpp>
 #include <fbxsdk.h>
 #include <meshoptimizer.h>
-#include <CLI11.hpp>
-//#include <acl/core/ansi_allocator.h>
-#include <unordered_map>
+#include <acl/core/ansi_allocator.h>
+#include <acl/core/unique_ptr.h>
+#include <acl/algorithm/uniformly_sampled/encoder.h>
+
+namespace acl
+{
+	typedef std::unique_ptr<AnimationClip, Deleter<AnimationClip>> AnimationClipPtr;
+	typedef std::unique_ptr<RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
+}
 
 namespace fs = std::filesystem;
 
@@ -191,11 +198,15 @@ protected:
 
 	struct CContext
 	{
-		CThreadSafeLog& Log;
+		CThreadSafeLog&           Log;
 
-		fs::path        MeshPath;
-		fs::path        SkinPath;
-		std::string     DefaultName;
+		acl::ANSIAllocator        ACLAllocator;
+		acl::CompressionSettings  ACLSettings;
+		acl::TransformErrorMetric ACLErrorMetric;
+
+		fs::path                  MeshPath;
+		fs::path                  SkinPath;
+		std::string               DefaultName;
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
@@ -228,6 +239,12 @@ protected:
 		std::string    ID;
 		uint16_t       ParentBoneIndex;
 		// TODO: bone object-space or local-space AABB
+	};
+
+	struct CSkeletonACLBinding
+	{
+		acl::RigidSkeletonPtr Skeleton;
+		std::vector<FbxNode*> FbxBones; // Indices in this array are used as bone indices in ACL
 	};
 
 	FbxManager* pFBXManager = nullptr;
@@ -363,13 +380,26 @@ public:
 
 		// Export animations
 
+		// Could also use acl::get_default_compression_settings()
+		Ctx.ACLSettings.level = acl::CompressionLevel8::Medium;
+		Ctx.ACLSettings.rotation_format = acl::RotationFormat8::QuatDropW_Variable;
+		Ctx.ACLSettings.translation_format = acl::VectorFormat8::Vector3_Variable;
+		Ctx.ACLSettings.scale_format = acl::VectorFormat8::Vector3_Variable;
+		Ctx.ACLSettings.range_reduction = acl::RangeReductionFlags8::AllTracks;
+		Ctx.ACLSettings.segmenting.enabled = true;
+		Ctx.ACLSettings.segmenting.range_reduction = acl::RangeReductionFlags8::AllTracks;
+		Ctx.ACLSettings.error_metric = &Ctx.ACLErrorMetric;
+
 		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
 		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
 		const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
-		for (int i = 0; i < AnimationCount; ++i)
+		if (AnimationCount)
 		{
-			const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
-			if (!ExportAnimation(pAnimStack, pScene, Ctx)) return false;
+			for (int i = 0; i < AnimationCount; ++i)
+			{
+				const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
+				if (!ExportAnimation(pAnimStack, pScene, Ctx)) return false;
+			}
 		}
 
 		// Export additional info
@@ -1259,8 +1289,6 @@ public:
 		Ctx.Log.LogDebug(std::string("Animation ") + pAnimStack->GetName() +
 			", frames " + std::to_string(StartFrame) + '-' + std::to_string(EndFrame));
 
-		const auto FrameRate = FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode());
-
 		const auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(0);
 		if (!pLayer || !pLayer->GetMemberCount())
 		{
@@ -1268,11 +1296,83 @@ public:
 			return true;
 		}
 
-		FbxTime FrameTime;
-		for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame)
+		// TODO: can cache ACL skeletons! Build once for the whole scene, check transform animation in all stacks!
+
+		// Theoretically we can have more than one skeleton hierarchy animated with the same stack. Process them all.
+		// Note that here we implicitly skip all non-transform animations, like light color animation etc.
+		// TODO: support non-transform animations if necessary.
+		std::vector<FbxNode*> SkeletonRoots;
+		FindSkeletonRoots(pAnimStack, pScene->GetRootNode(), SkeletonRoots);
+		if (SkeletonRoots.empty())
 		{
-			FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
-			if (!ExportNodeAnimation(pAnimStack, pScene->GetRootNode(), FrameTime, Ctx)) return false;
+			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " doesn't affect any node transformation, skipped");
+			return true;
+		}
+
+		// Create rigid skeletons and associate ACL bones with FbxNode instances
+
+		std::vector<CSkeletonACLBinding> Skeletons;
+		for (FbxNode* pRoot : SkeletonRoots)
+		{
+			CSkeletonACLBinding Skeleton;
+
+			std::vector<acl::RigidBone> Bones;
+			BuildACLSkeleton(pRoot, Skeleton.FbxBones, Bones);
+
+			assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
+
+			Skeleton.Skeleton = acl::make_unique<acl::RigidSkeleton>(
+				Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
+
+			Skeletons.push_back(std::move(Skeleton));
+		}
+
+		// Evaluate animation of all skeletons frame by frame and compress with ACL
+
+		const auto FrameRate = static_cast<float>(FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode()));
+		const auto FrameCount = static_cast<uint32_t>(EndFrame - StartFrame + 1);
+
+		for (CSkeletonACLBinding& Skeleton : Skeletons)
+		{
+			// FIXME: now bone indices are per-skeleton, can't use one clip for all!
+			//???must create different clips (like now) or unify bones?
+			acl::String ClipName(Ctx.ACLAllocator, "Run Cycle");
+			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, FrameRate, ClipName);
+
+			uint32_t SampleIndex = 0;
+			FbxTime FrameTime;
+			for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
+			{
+				FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+
+				for (size_t BoneIdx = 0; BoneIdx < Skeleton.FbxBones.size(); ++BoneIdx)
+				{
+					const auto LocalTfm = Skeleton.FbxBones[BoneIdx]->EvaluateLocalTransform(FrameTime);
+					const auto Scaling = LocalTfm.GetS();
+					const auto Rotation = LocalTfm.GetQ();
+					const auto Translation = LocalTfm.GetT();
+
+					acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
+					Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
+					Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
+					Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
+				}
+			}
+
+			acl::OutputStats Stats;
+			acl::CompressedClip* CompressedClip = nullptr;
+			acl::ErrorResult ErrorResult = acl::uniformly_sampled::compress_clip(Ctx.ACLAllocator, Clip, Ctx.ACLSettings, CompressedClip, Stats);
+			if (!ErrorResult.empty())
+			{
+				Ctx.Log.LogWarning(std::string("ACL failed to compress animation ") + pAnimStack->GetName() + " for one of skeletons");
+				continue;
+			}
+
+			Ctx.Log.LogDebug(std::string("ACL compressed animation ") + pAnimStack->GetName() + " to " + std::to_string(CompressedClip->get_size()) + " bytes");
+
+			//std::ofstream output_file_stream(options.output_bin_filename, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+			//if (output_file_stream.is_open())
+			//	output_file_stream.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
 		}
 
 		return true;
@@ -1296,55 +1396,52 @@ public:
 		return false;
 	}
 
-	// Don't understand, why evaluation doesn't allow to pass FbxAnimLayer to evaluate only that one.
-	// Also not sure if FBX guarantees that animation stacks do not overlap or at least will not mix.
-	// Perform uniform sampling of the curves here, don't save raw curves.
-	bool ExportNodeAnimation(FbxAnimStack* pAnimStack, FbxNode* pNode, FbxTime FrameTime, CContext& Ctx)
+	void FindSkeletonRoots(FbxAnimStack* pAnimStack, FbxNode* pNode, std::vector<FbxNode*>& SkeletonRoots)
 	{
-		// FIXME: once per animation stack per node, time-independent and layer-independent check!
-		const bool ScalingAnimated = IsPropertyAnimated(pAnimStack, pNode->LclScaling);
-		const bool RotationAnimated = IsPropertyAnimated(pAnimStack, pNode->LclRotation);
-		const bool TranslationAnimated = IsPropertyAnimated(pAnimStack, pNode->LclTranslation);
-		if (ScalingAnimated || RotationAnimated || TranslationAnimated)
+		if (IsPropertyAnimated(pAnimStack, pNode->LclScaling) ||
+			IsPropertyAnimated(pAnimStack, pNode->LclRotation) ||
+			IsPropertyAnimated(pAnimStack, pNode->LclTranslation))
 		{
-			// TODO: detect uniform scale!
-			// TODO: detect 1-key track with default value! Blender FBX exporter bug, probably inactual, but we still
-			//       need no animations which don't really animate.
-			// Or let the ACL deal with these cases?
-
-			const auto LocalTfm = pNode->EvaluateLocalTransform(FrameTime);
-
-			//if (ScalingAnimated)
-			const float3 Scaling = LocalTfm.GetS();
-
-			//if (RotationAnimated)
-			const float4 Rotation = LocalTfm.GetQ();
-
-			//if (TranslationAnimated)
-			const float3 Translation = LocalTfm.GetT();
+			SkeletonRoots.push_back(pNode);
+			return;
 		}
 
 		for (int i = 0; i < pNode->GetChildCount(); ++i)
-			if (!ExportNodeAnimation(pAnimStack, pNode->GetChild(i), FrameTime, Ctx)) return false;
+			FindSkeletonRoots(pAnimStack, pNode->GetChild(i), SkeletonRoots);
+	}
 
-		// =====================================================
-		// There are different ways to get node animation data
+	void BuildACLSkeleton(FbxNode* pNode, std::vector<FbxNode*>& FbxBones, std::vector<acl::RigidBone>& Bones)
+	{
+		acl::RigidBone Bone;
+		if (FbxBones.empty())
+		{
+			Bone.parent_index = acl::k_invalid_bone_index;
+		}
+		else
+		{
+			auto It = std::find(FbxBones.crbegin(), FbxBones.crend(), pNode->GetParent());
+			assert(It != FbxBones.crend());
+			Bone.parent_index = static_cast<uint16_t>(std::distance(FbxBones.cbegin(), It.base()) - 1);
+		}
 
-		// With limits, pivots etc:
-		//pNode->EvaluateLocalTransform(FrameTime);
+		// TODO: metric from per-bone AABBs?
+		Bone.vertex_distance = 3.f;
 
-		// With limits, but no pivots etc:
-		//pNode->EvaluateLocalRotation(FrameTime);
+		FbxBones.push_back(pNode);
+		Bones.push_back(std::move(Bone));
 
-		// Property only:
-		//pNode->LclTranslation.EvaluateValue(FrameTime);
-
-		// Property per component per animation layer (sample curve directly):
-		//if (const auto pAnimCurve = pNode->LclTranslation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
-		//	pAnimCurve->Evaluate(FrameTime);
-		// =====================================================
-
-		return true;
+		for (int i = 0; i < pNode->GetChildCount(); ++i)
+		{
+			// Traverse only through bones
+			for (int i = 0; i < pNode->GetNodeAttributeCount(); ++i)
+			{
+				if (pNode->GetNodeAttributeByIndex(i)->GetAttributeType() == FbxNodeAttribute::eSkeleton)
+				{
+					BuildACLSkeleton(pNode->GetChild(i), FbxBones, Bones);
+					break;
+				}
+			}
+		}
 	}
 };
 
@@ -1354,56 +1451,24 @@ int main(int argc, const char** argv)
 	return Tool.Execute(argc, argv);
 }
 
+// =====================================================
+// There are different ways to get node animation data
+
+// With limits, pivots etc:
+//pNode->EvaluateLocalTransform(FrameTime);
+
+// With limits, but no pivots etc:
+//pNode->EvaluateLocalRotation(FrameTime);
+
+// Property only:
+//pNode->LclTranslation.EvaluateValue(FrameTime);
+
+// Property per component per animation layer (sample curve directly):
+//if (const auto pAnimCurve = pNode->LclTranslation.GetCurve(pLayer, FBXSDK_CURVENODE_COMPONENT_X))
+//	pAnimCurve->Evaluate(FrameTime);
+// =====================================================
+
 /*
-//!!!NB: Bones array contains only skinned bones, real skeleton must be built separately
-//from FbxNodeAttribute::eSkeleton or raw animated nodes, per scene or maybe model!
-
-#include <acl/algorithm/uniformly_sampled/encoder.h>
-
-RigidBone bones[num_bones];
-for (int bone_index = 0; bone_index < num_bones; ++bone_index)
-{
-    if (bone_index != 0)
-        bones[bone_index].parent_index = bone_index - 1;	// Single bone chain
-
-    bones[bone_index].vertex_distance = 3.0f;
-}
-
-RigidSkeleton(allocator, bones, num_bones);
-
-uint32_t num_samples_per_track = 20;
-float sample_rate = 30.0f;
-String name(allocator, "Run Cycle");
-AnimationClip clip(allocator, skeleton, num_samples_per_track, sample_rate, name);
-
-AnimatedBone& bone = clip.get_animated_bone(bone_index);
-for (uint32_t sample_index = 0; sample_index < num_samples_per_track; ++sample_index)
-{
-    bone.rotation_track.set_sample(sample_index, quat_identity_64());
-    bone.translation_track.set_sample(sample_index, vector_zero_64());
-    bone.scale_track.set_sample(sample_index, vector_set(1.0));
-}
-
-//get_default_compression_settings()
-CompressionSettings settings;
-settings.level = CompressionLevel8::Medium;
-settings.rotation_format = RotationFormat8::QuatDropW_Variable;
-settings.translation_format = VectorFormat8::Vector3_Variable;
-settings.scale_format = VectorFormat8::Vector3_Variable;
-settings.range_reduction = RangeReductionFlags8::AllTracks;
-settings.segmenting.enabled = true;
-settings.segmenting.range_reduction = RangeReductionFlags8::AllTracks;
-
-TransformErrorMetric error_metric;
-settings.error_metric = &error_metric;
-
-OutputStats stats;
-CompressedClip* compressed_clip = nullptr;
-ErrorResult error_result = uniformly_sampled::compress_clip(allocator, raw_clip, settings, compressed_clip, stats);
-
-std::ofstream output_file_stream(options.output_bin_filename, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-if (output_file_stream.is_open())
-	output_file_stream.write(reinterpret_cast<const char*>(compressed_clip), compressed_clip->get_size());
 
 //-----------------------------------------------------------------------
 
