@@ -206,6 +206,7 @@ protected:
 
 		fs::path                  MeshPath;
 		fs::path                  SkinPath;
+		fs::path                  AnimPath;
 		std::string               DefaultName;
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
@@ -370,6 +371,10 @@ public:
 		Ctx.SkinPath = GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
 		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
 			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
+
+		Ctx.AnimPath = GetParam<std::string>(Task.Params, "AnimOutput", std::string{});
+		if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
+			Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
 
 		// Export node hierarchy to DEM format, omit FBX root node
 		
@@ -1271,28 +1276,33 @@ public:
 
 	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxScene* pScene, CContext& Ctx)
 	{
+		// TODO: to utility function for name validation, return bool if were changes
+		std::string AnimName = pAnimStack->GetName();
+		ToLower(AnimName);
+		std::replace(AnimName.begin(), AnimName.end(), ' ', '_'); // Can use std::transform and the list of forbidden characters
+
 		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
 		if (LayerCount <= 0)
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has no layers, skipped");
+			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " has no layers, skipped");
 			return true;
 		}
 		else if (LayerCount > 1)
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " has more than one layer");
+			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " has more than one layer");
 		}
 
 		const FbxTakeInfo* pTakeInfo = pScene->GetTakeInfo(pAnimStack->GetName());
 		const FbxLongLong StartFrame = pTakeInfo->mLocalTimeSpan.GetStart().GetFrameCount(FbxTime::GetGlobalTimeMode());
 		const FbxLongLong EndFrame = pTakeInfo->mLocalTimeSpan.GetStop().GetFrameCount(FbxTime::GetGlobalTimeMode());
 
-		Ctx.Log.LogDebug(std::string("Animation ") + pAnimStack->GetName() +
+		Ctx.Log.LogDebug(std::string("Animation ") + AnimName +
 			", frames " + std::to_string(StartFrame) + '-' + std::to_string(EndFrame));
 
 		const auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(0);
 		if (!pLayer || !pLayer->GetMemberCount())
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " is empty, skipped");
+			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " is empty, skipped");
 			return true;
 		}
 
@@ -1305,7 +1315,7 @@ public:
 		FindSkeletonRoots(pAnimStack, pScene->GetRootNode(), SkeletonRoots);
 		if (SkeletonRoots.empty())
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + pAnimStack->GetName() + " doesn't affect any node transformation, skipped");
+			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " doesn't affect any node transformation, skipped");
 			return true;
 		}
 
@@ -1364,15 +1374,28 @@ public:
 			acl::ErrorResult ErrorResult = acl::uniformly_sampled::compress_clip(Ctx.ACLAllocator, Clip, Ctx.ACLSettings, CompressedClip, Stats);
 			if (!ErrorResult.empty())
 			{
-				Ctx.Log.LogWarning(std::string("ACL failed to compress animation ") + pAnimStack->GetName() + " for one of skeletons");
+				Ctx.Log.LogWarning(std::string("ACL failed to compress animation ") + AnimName + " for one of skeletons");
 				continue;
 			}
 
-			Ctx.Log.LogDebug(std::string("ACL compressed animation ") + pAnimStack->GetName() + " to " + std::to_string(CompressedClip->get_size()) + " bytes");
+			Ctx.Log.LogDebug(std::string("ACL compressed animation ") + AnimName + " to " + std::to_string(CompressedClip->get_size()) + " bytes");
 
-			//std::ofstream output_file_stream(options.output_bin_filename, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-			//if (output_file_stream.is_open())
-			//	output_file_stream.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
+			{
+				const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
+
+				fs::create_directories(Ctx.AnimPath);
+
+				//???save bone mapping? name to index, like in skins. ACL doesn't know how to associate bones with tracks by name.
+
+				std::ofstream File(DestPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+				if (!File)
+				{
+					Ctx.Log.LogError("Error opening an output file " + DestPath.string());
+					return false;
+				}
+
+				File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
+			}
 		}
 
 		return true;
