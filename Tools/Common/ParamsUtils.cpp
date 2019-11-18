@@ -317,38 +317,37 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 		else 
 		{
 			// Data (self) is {} or [], get subscheme if declared
-			Data::PDataScheme SubScheme;
-			if (Rec.SchemeID.IsValid())
+			const Data::CDataScheme* pSubScheme;
+			if (Rec.SchemeID)
 			{
-				IPTR Idx = Schemes.FindIndex(Rec.SchemeID);
-				if (Idx == INVALID_INDEX) return false;
-				SubScheme = Schemes.ValueAt(Idx);
-				if (SubScheme.IsNullPtr()) return false;
+				auto SubIt = SchemeSet.find(Rec.SchemeID);
+				if (SubIt == SchemeSet.cend()) return false;
+				pSubScheme = &SubIt->second;
 			}
-			else SubScheme = Rec.Scheme;
+			else pSubScheme = Rec.Scheme.get();
 
-			if (PrmValue->IsA<Data::PParams>())
+			if (PrmValue->IsA<Data::CParams>())
 			{
 				// Data (self) is {}
-				const Data::CParams& PrmParams = *PrmValue->GetValue<Data::PParams>();
+				const Data::CParams& PrmParams = PrmValue->GetValue<Data::CParams>();
 
 				// Write element count of self
-				U64 CountPos;
+				uint64_t CountPos;
 				short CountWritten;
-				if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT))
+				if (Rec.WriteCount)
 				{
 					CountPos = Stream.GetPosition();
 					CountWritten = PrmParams.GetCount();
 					if (!Write<short>(CountWritten)) return false;
 				}
 
-				if (SubScheme.IsValidPtr() && Rec.Flags.Is(Data::CDataScheme::APPLY_SCHEME_TO_SELF))
+				if (SubScheme.IsValidPtr() && Rec.ApplySchemeToSelf)
 				{
 					// Apply scheme on self, then fix element count of self
 					UPTR Count;
 					if (!WriteParamsByScheme(PrmParams, *SubScheme, Schemes, Count)) return false;
 
-					if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT) && Count != CountWritten)
+					if (Rec.WriteCount && Count != CountWritten)
 					{
 						U64 CurrPos = Stream.GetPosition();
 						Stream.Seek(CountPos, IO::Seek_Begin);
@@ -362,17 +361,17 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 					const Data::CParam& SubPrm = PrmParams.Get(j);
 
 					// Write key (ID) of current child
-					if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_KEYS))
+					if (Rec.WriteChildKeys)
 						if (!Write(SubPrm.GetName())) return false;
 
 					// Save data of current child
-					if (SubPrm.IsA<Data::PParams>())
+					if (SubPrm.IsA<Data::CParams>())
 					{
 						// Current child is {}
-						const Data::CParams& SubPrmParams = *SubPrm.GetValue<Data::PParams>();
+						const Data::CParams& SubPrmParams = SubPrm.GetValue<Data::CParams>();
 
 						// Write element count of current child
-						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
+						if (Rec.WriteChildCount)
 						{
 							CountPos = Stream.GetPosition();
 							CountWritten = SubPrmParams.GetCount();
@@ -385,7 +384,7 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 							UPTR Count;
 							if (!WriteParamsByScheme(SubPrmParams, *SubScheme, Schemes, Count)) return false;
 
-							if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT) && Count != CountWritten)
+							if (Rec.WriteChildCount && Count != CountWritten)
 							{
 								U64 CurrPos = Stream.GetPosition();
 								Stream.Seek(CountPos, IO::Seek_Begin);
@@ -395,13 +394,13 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 						}
 						else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) return false;
 					}
-					else if (SubPrm.IsA<Data::PDataArray>())
+					else if (SubPrm.IsA<Data::CDataArray>())
 					{
 						// Current child is []
 						const Data::CDataArray& SubPrmArray = *SubPrm.GetValue<Data::PDataArray>();
 
 						// Write element count of current child
-						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
+						if (Rec.WriteChildCount)
 							if (!Write<short>(SubPrmArray.GetCount())) return false;
 
 						// Write array elements one-by-one
@@ -417,7 +416,7 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 				const Data::CDataArray& PrmArray = *PrmValue->GetValue<Data::PDataArray>();
 
 				// Write element count of self
-				if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT))
+				if (Rec.WriteCount)
 					if (!Write<short>(PrmArray.GetCount())) return false;
 
 				// Write array elements one-by-one
@@ -431,7 +430,7 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 						// Write element count of current child
 						//!!!
 						// NB: This may cause some problems. Need clarify behaviour of { [ { } ] } structure.
-						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
+						if (Rec.WriteChildCount)
 							if (!Write<short>(SubPrmParams.GetCount())) return false;
 
 						// If element is {} and subscheme is declared, save element by subscheme
@@ -443,7 +442,7 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 		}
 	}
 
-	OK;
+	return true;
 }
 //---------------------------------------------------------------------
 
