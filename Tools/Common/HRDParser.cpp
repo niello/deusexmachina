@@ -656,7 +656,7 @@ bool CHRDParser::ParseParam(const std::vector<CToken>& Tokens, CParams& Output)
 		}
 
 		//!!!can check duplicates here!
-		Output.emplace(CStrID(TableID[CurrToken.Index].c_str()), std::move(Data));
+		Output.emplace_back(CStrID(TableID[CurrToken.Index].c_str()), std::move(Data));
 		return true;
 	}
 	

@@ -52,7 +52,7 @@ protected:
 	int _LogVerbosity;
 	bool _WaitKey = false;
 
-	void ProcessMetafile(const std::filesystem::path& Path, Data::CHRDParser& Parser, std::unordered_set<std::string>& Processed);
+	void ProcessMetafile(const std::filesystem::path& Path, std::unordered_set<std::string>& Processed);
 
 public:
 

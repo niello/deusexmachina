@@ -1,5 +1,5 @@
 #include "ContentForgeTool.h"
-#include <HRDParser.h>
+#include <ParamsUtils.h>
 #include <Utils.h>
 #include <CLI11.hpp>
 #include <algorithm>
@@ -78,7 +78,6 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 	// Build a list of conversion tasks from source metafiles
 
 	{
-		Data::CHRDParser Parser;
 		std::unordered_set<std::string> Processed;
 		for (const auto& SrcPath : _SrcPathes)
 		{
@@ -105,7 +104,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 				for (const auto& Entry : fs::recursive_directory_iterator(FullSrcPath))
 				{
 					if (!Entry.is_directory() && Entry.path().extension() == ".meta")
-						ProcessMetafile(Entry.path(), Parser, Processed);
+						ProcessMetafile(Entry.path(), Processed);
 				}
 			}
 			else
@@ -123,7 +122,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 					}
 				}
 
-				ProcessMetafile(FullSrcPath, Parser, Processed);
+				ProcessMetafile(FullSrcPath, Processed);
 			}
 		}
 	}
@@ -228,7 +227,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 }
 //---------------------------------------------------------------------
 
-void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data::CHRDParser& Parser, std::unordered_set<std::string>& Processed)
+void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, std::unordered_set<std::string>& Processed)
 {
 	const auto LineEnd = std::cout.widen('\n');
 
@@ -245,21 +244,11 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, Data:
 
 	// Read metafile
 	Data::CParams Meta;
+	if (!ParamsUtils::LoadParamsFromHRD(Path.string().c_str(), Meta))
 	{
-		std::vector<char> In;
-		if (!ReadAllFile(Path.string().c_str(), In, false))
-		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << Path.generic_string() << " reading error" << LineEnd;
-			return;
-		}
-
-		if (!Parser.ParseBuffer(In.data(), In.size(), Meta))
-		{
-			if (_LogVerbosity >= EVerbosity::Errors)
-				std::cout << Path.generic_string() << " HRD parsing error" << LineEnd;
-			return;
-		}
+		if (_LogVerbosity >= EVerbosity::Errors)
+			std::cout << Path.generic_string() << " HRD loading or parsing error" << LineEnd;
+		return;
 	}
 
 	// NB: probably some other fields may be added to the metafile, but now it must consist of sections only

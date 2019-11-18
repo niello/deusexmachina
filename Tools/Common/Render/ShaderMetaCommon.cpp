@@ -2,6 +2,7 @@
 #include "ShaderMetaCommon.h"
 #include <Render/RenderEnums.h>
 #include <Utils.h>
+#include <ParamsUtils.h>
 #include <Logging.h>
 #include <sstream>
 
@@ -83,37 +84,37 @@ static void SerializeSamplerState(std::ostream& Stream, const Data::CParams& Sam
 	std::string StrValue;
 	vector4 ColorRGBA;
 
-	if (TryGetParam(StrValue, SamplerDesc, "AddressU"))
+	if (ParamsUtils::TryGetParam(StrValue, SamplerDesc, "AddressU"))
 		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));
 	else
 		WriteStream<uint8_t>(Stream, TexAddr_Wrap);
 
-	if (TryGetParam(StrValue, SamplerDesc, "AddressV"))
+	if (ParamsUtils::TryGetParam(StrValue, SamplerDesc, "AddressV"))
 		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));
 	else
 		WriteStream<uint8_t>(Stream, TexAddr_Wrap);
 
-	if (TryGetParam(StrValue, SamplerDesc, "AddressW"))
+	if (ParamsUtils::TryGetParam(StrValue, SamplerDesc, "AddressW"))
 		WriteStream<uint8_t>(Stream, StringToTexAddressMode(StrValue));
 	else
 		WriteStream<uint8_t>(Stream, TexAddr_Wrap);
 
-	if (TryGetParam(StrValue, SamplerDesc, "Filter"))
+	if (ParamsUtils::TryGetParam(StrValue, SamplerDesc, "Filter"))
 		WriteStream<uint8_t>(Stream, StringToTexFilter(StrValue));
 	else
 		WriteStream<uint8_t>(Stream, TexFilter_MinMagMip_Linear);
 
-	if (!TryGetParam(ColorRGBA, SamplerDesc, "BorderColorRGBA"))
+	if (!ParamsUtils::TryGetParam(ColorRGBA, SamplerDesc, "BorderColorRGBA"))
 		ColorRGBA = { 0.f, 0.f, 0.f, 0.f };
 
 	WriteStream(Stream, ColorRGBA);
 
-	WriteStream(Stream, GetParam(SamplerDesc, "MipMapLODBias", 0.f));
-	WriteStream(Stream, GetParam(SamplerDesc, "FinestMipMapLOD", 0.f));
-	WriteStream(Stream, GetParam(SamplerDesc, "CoarsestMipMapLOD", std::numeric_limits<float>().max()));
-	WriteStream<uint32_t>(Stream, GetParam<int>(SamplerDesc, "MaxAnisotropy", 1));
+	WriteStream(Stream, ParamsUtils::GetParam(SamplerDesc, "MipMapLODBias", 0.f));
+	WriteStream(Stream, ParamsUtils::GetParam(SamplerDesc, "FinestMipMapLOD", 0.f));
+	WriteStream(Stream, ParamsUtils::GetParam(SamplerDesc, "CoarsestMipMapLOD", std::numeric_limits<float>().max()));
+	WriteStream<uint32_t>(Stream, ParamsUtils::GetParam<int>(SamplerDesc, "MaxAnisotropy", 1));
 
-	if (TryGetParam(StrValue, SamplerDesc, "CmpFunc"))
+	if (ParamsUtils::TryGetParam(StrValue, SamplerDesc, "CmpFunc"))
 		WriteStream<uint8_t>(Stream, StringToCmpFunc(StrValue));
 	else
 		WriteStream<uint8_t>(Stream, Cmp_Never);

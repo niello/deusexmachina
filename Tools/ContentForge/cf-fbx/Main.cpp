@@ -1,6 +1,7 @@
 #include <ContentForgeTool.h>
 #include <Render/RenderEnums.h>
 #include <Utils.h>
+#include <ParamsUtils.h>
 #include <CLI11.hpp>
 #include <fbxsdk.h>
 #include <meshoptimizer.h>
@@ -364,15 +365,15 @@ public:
 
 		Ctx.DefaultName = Task.TaskID.CStr();
 
-		Ctx.MeshPath = GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
+		Ctx.MeshPath = ParamsUtils::GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
 		if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
 			Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
 
-		Ctx.SkinPath = GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
+		Ctx.SkinPath = ParamsUtils::GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
 		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
 			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
 
-		Ctx.AnimPath = GetParam<std::string>(Task.Params, "AnimOutput", std::string{});
+		Ctx.AnimPath = ParamsUtils::GetParam<std::string>(Task.Params, "AnimOutput", std::string{});
 		if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
 			Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
 
@@ -489,7 +490,7 @@ public:
 		}
 
 		if (!Attributes.empty())
-			NodeSection.emplace(sidAttrs, std::move(Attributes));
+			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
 
 		// Process transform
 
@@ -519,9 +520,9 @@ public:
 				Rotation = LocalTfm.GetQ();
 			}
 
-			NodeSection.emplace(sidTranslation, vector4(Translation.v, 3));
-			NodeSection.emplace(sidRotation, vector4(Rotation.v, 4));
-			NodeSection.emplace(sidScale, vector4(Scaling.v, 3));
+			NodeSection.emplace_back(sidTranslation, vector4(Translation.v, 3));
+			NodeSection.emplace_back(sidRotation, vector4(Rotation.v, 4));
+			NodeSection.emplace_back(sidScale, vector4(Scaling.v, 3));
 		}
 
 		// Process children
@@ -541,10 +542,12 @@ public:
 		}
 
 		if (!Children.empty())
-			NodeSection.emplace(sidChildren, std::move(Children));
+			NodeSection.emplace_back(sidChildren, std::move(Children));
 
-		if (!Nodes.emplace(CStrID(pNode->GetName()), std::move(NodeSection)).second)
+		if (ParamsUtils::HasParam(Nodes, CStrID(pNode->GetName())))
 			Ctx.Log.LogWarning("Duplicated node overwritten with name " + std::string(pNode->GetName()));
+
+		Nodes.emplace_back(CStrID(pNode->GetName()), std::move(NodeSection));
 
 		return true;
 	}
@@ -590,11 +593,11 @@ public:
 			// Assemble a model attribute
 
 			Data::CParams ModelAttribute;
-			ModelAttribute.emplace(CStrID("Class"), std::string("Frame::CModelAttribute"));
-			ModelAttribute.emplace(CStrID("Mesh"), MeshInfo.MeshID);
-			ModelAttribute.emplace(CStrID("MeshGroupIndex"), GroupIndex);
+			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
+			ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
+			ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
 			if (!MaterialID.empty())
-				ModelAttribute.emplace(CStrID("Material"), MaterialID);
+				ModelAttribute.emplace_back(CStrID("Material"), MaterialID);
 			else
 				Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " has a group with no material attached");
 			Attributes.push_back(std::move(ModelAttribute));
@@ -610,8 +613,8 @@ public:
 		if (!SkinID.empty())
 		{
 			Data::CParams SkinAttribute;
-			SkinAttribute.emplace(CStrID("Class"), std::string("Frame::CSkinAttribute"));
-			SkinAttribute.emplace(CStrID("SkinInfo"), SkinID);
+			SkinAttribute.emplace_back(CStrID("Class"), std::string("Frame::CSkinAttribute"));
+			SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinID);
 			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
 			Attributes.push_back(std::move(SkinAttribute));
 		}
@@ -1158,22 +1161,22 @@ public:
 		}
 
 		Data::CParams Attribute;
-		Attribute.emplace(CStrID("Class"), std::string("Frame::CLightAttribute"));
-		Attribute.emplace(CStrID("LightType"), LightType);
-		Attribute.emplace(CStrID("Color"), vector4(Color.v, 3));
-		Attribute.emplace(CStrID("Intensity"), Intensity);
+		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CLightAttribute"));
+		Attribute.emplace_back(CStrID("LightType"), LightType);
+		Attribute.emplace_back(CStrID("Color"), vector4(Color.v, 3));
+		Attribute.emplace_back(CStrID("Intensity"), Intensity);
 
 		if (pLight->CastShadows.Get())
-			Attribute.emplace(CStrID("CastShadows"), true);
+			Attribute.emplace_back(CStrID("CastShadows"), true);
 
 		if (LightType != 0)
 		{
-			Attribute.emplace(CStrID("Range"), Range);
+			Attribute.emplace_back(CStrID("Range"), Range);
 
 			if (LightType == 2)
 			{
-				Attribute.emplace(CStrID("ConeInner"), static_cast<float>(pLight->InnerAngle.Get()));
-				Attribute.emplace(CStrID("ConeOuter"), static_cast<float>(pLight->OuterAngle.Get()));
+				Attribute.emplace_back(CStrID("ConeInner"), static_cast<float>(pLight->InnerAngle.Get()));
+				Attribute.emplace_back(CStrID("ConeOuter"), static_cast<float>(pLight->OuterAngle.Get()));
 			}
 		}
 
@@ -1187,10 +1190,10 @@ public:
 		Ctx.Log.LogDebug("Camera");
 
 		Data::CParams Attribute;
-		Attribute.emplace(CStrID("Class"), std::string("Frame::CCameraAttribute"));
+		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CCameraAttribute"));
 
 		if (pCamera->ProjectionType.Get() == FbxCamera::eOrthogonal)
-			Attribute.emplace(CStrID("Orthogonal"), true);
+			Attribute.emplace_back(CStrID("Orthogonal"), true);
 
 		float Width = static_cast<float>(pCamera->AspectWidth.Get());
 		float Height = static_cast<float>(pCamera->AspectHeight.Get());
@@ -1200,11 +1203,11 @@ public:
 			case FbxCamera::eFixedHeight: Width *= Height; break;
 		}
 
-		Attribute.emplace(CStrID("FOV"), static_cast<float>(pCamera->FieldOfView.Get()));
-		Attribute.emplace(CStrID("Width"), static_cast<float>(pCamera->AspectWidth.Get()));
-		Attribute.emplace(CStrID("Height"), static_cast<float>(pCamera->AspectHeight.Get()));
-		Attribute.emplace(CStrID("NearPlane"), static_cast<float>(pCamera->NearPlane.Get()));
-		Attribute.emplace(CStrID("FarPlane"), static_cast<float>(pCamera->FarPlane.Get()));
+		Attribute.emplace_back(CStrID("FOV"), static_cast<float>(pCamera->FieldOfView.Get()));
+		Attribute.emplace_back(CStrID("Width"), static_cast<float>(pCamera->AspectWidth.Get()));
+		Attribute.emplace_back(CStrID("Height"), static_cast<float>(pCamera->AspectHeight.Get()));
+		Attribute.emplace_back(CStrID("NearPlane"), static_cast<float>(pCamera->NearPlane.Get()));
+		Attribute.emplace_back(CStrID("FarPlane"), static_cast<float>(pCamera->FarPlane.Get()));
 
 		Attributes.push_back(std::move(Attribute));
 
@@ -1262,7 +1265,7 @@ public:
 		std::sort(Thresholds.begin(), Thresholds.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 
 		Data::CParams Attribute;
-		Attribute.emplace(CStrID("Class"), std::string("Scene::CLODGroup"));
+		Attribute.emplace_back(CStrID("Class"), std::string("Scene::CLODGroup"));
 
 		//!!!can't store float -> string in a Data::CParams! Use array of sections with 2 fields each?
 		//!!!store the last one! //???use FLT_MAX for uniformity of the list?

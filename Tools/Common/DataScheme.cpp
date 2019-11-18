@@ -1,5 +1,6 @@
 #include "DataScheme.h"
 #include <Utils.h>
+#include <ParamsUtils.h>
 
 namespace Data
 {
@@ -15,31 +16,30 @@ bool CDataScheme::Init(const CParams& Desc)
 
 		Rec.ID = Prm.first;
 
-		Rec.WriteKey = GetParam<bool>(Value, CStrID("WriteKey"), false);
-		Rec.WriteCount = GetParam<bool>(Value, CStrID("WriteCount"), true);
-		Rec.WriteChildKeys = GetParam<bool>(Value, CStrID("WriteChildKeys"), false);
-		Rec.WriteChildCount = GetParam<bool>(Value, CStrID("WriteChildCount"), true);
-		Rec.ApplySchemeToSelf = GetParam<bool>(Value, CStrID("ApplySchemeToSelf"), false);
+		Rec.WriteKey = ParamsUtils::GetParam<bool>(Value, "WriteKey", false);
+		Rec.WriteCount = ParamsUtils::GetParam<bool>(Value, "WriteCount", true);
+		Rec.WriteChildKeys = ParamsUtils::GetParam<bool>(Value, "WriteChildKeys", false);
+		Rec.WriteChildCount = ParamsUtils::GetParam<bool>(Value, "WriteChildCount", true);
+		Rec.ApplySchemeToSelf = ParamsUtils::GetParam<bool>(Value, "ApplySchemeToSelf", false);
 
 		Rec.FourCC = 0;
-		auto It = Value.find(CStrID("FourCC"));
-		if (It != Value.cend()) 
+
+		std::string FourCC;
+		if (ParamsUtils::TryGetParam(FourCC, Value, "FourCC"))
 		{
-			const auto& FourCC = It->second.GetValue<std::string>();
 			if (FourCC.size() == 4)
 			{
 				Rec.FourCC = FourCC[3] | (FourCC[2] << 8) | (FourCC[1] << 16) | (FourCC[0] << 24);
 			}
 		}
 
-		It = Value.find(CStrID("Type"));
-		if (It != Value.cend())
+		Data::CData TypeIDVal;
+		if (ParamsUtils::TryGetParam(TypeIDVal, Value, "Type"))
 		{
-			const CData* TypeIDVal = &It->second;
-			if (TypeIDVal->IsA<int>()) Rec.TypeID = *TypeIDVal;
-			else if (TypeIDVal->IsA<std::string>())
+			if (TypeIDVal.IsA<int>()) Rec.TypeID = TypeIDVal;
+			else if (TypeIDVal.IsA<std::string>())
 			{
-				const char* pTypeString = TypeIDVal->GetValue<std::string>().c_str();
+				const char* pTypeString = TypeIDVal.GetValue<std::string>().c_str();
 
 				//???move somewhere as common? or even store map of string-to-ID
 				if (!_stricmp(pTypeString, "bool")) Rec.TypeID = DATA_TYPE_ID(bool);
@@ -55,22 +55,19 @@ bool CDataScheme::Init(const CParams& Desc)
 		}
 		else Rec.TypeID = -1;
 
-		It = Value.find(CStrID("Scheme"));
-		if (It != Value.cend())
+		Data::CData SchemeVal;
+		if (ParamsUtils::TryGetParam(SchemeVal, Value, "Scheme"))
 		{
-			const CData* SchemeVal = &It->second;
-			if (SchemeVal->IsA<CParams>())
+			if (SchemeVal.IsA<CParams>())
 			{
 				Rec.Scheme.reset(new CDataScheme());
-				if (!Rec.Scheme->Init(SchemeVal->GetValue<CParams>())) return false;
+				if (!Rec.Scheme->Init(SchemeVal.GetValue<CParams>())) return false;
 			}
-			else if (SchemeVal->IsA<CStrID>()) Rec.SchemeID = SchemeVal->GetValue<CStrID>();
+			else if (SchemeVal.IsA<CStrID>()) Rec.SchemeID = SchemeVal.GetValue<CStrID>();
 			else assert(false && "CDataScheme::Init -> Wrong type of Scheme param. Must be params or strid.");
 		}
 
-		It = Value.find(CStrID("Default"));
-		if (It != Value.cend())
-			Rec.Default = It->second;
+		ParamsUtils::TryGetParam(Rec.Default, Value, "Default");
 
 		Records.push_back(std::move(Rec));
 	}

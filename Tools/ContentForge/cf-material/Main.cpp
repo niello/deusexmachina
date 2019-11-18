@@ -2,7 +2,7 @@
 #include <Render/SM30ShaderMeta.h>
 #include <Render/USMShaderMeta.h>
 #include <Utils.h>
-#include <HRDParser.h>
+#include <ParamsUtils.h>
 
 namespace fs = std::filesystem;
 
@@ -32,7 +32,7 @@ public:
 	{
 		// TODO: check whether the metafile can be processed by this tool
 
-		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
+		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
 		auto DestPath = fs::path(Output) / (TaskID + ".mtl");
 		if (!_RootDir.empty() && DestPath.is_relative())
@@ -41,23 +41,14 @@ public:
 		// Read effect hrd
 
 		Data::CParams Desc;
+		if (!ParamsUtils::LoadParamsFromHRD(Task.SrcFilePath.string().c_str(), Desc))
 		{
-			std::vector<char> In;
-			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
-			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
-				return false;
-			}
-
-			Data::CHRDParser Parser;
-			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
-			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
-				return false;
-			}
+			if (_LogVerbosity >= EVerbosity::Errors)
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
+			return false;
 		}
 
-		const std::string EffectID = GetParam<std::string>(Desc, "Effect", std::string{});
+		const std::string EffectID = ParamsUtils::GetParam<std::string>(Desc, "Effect", std::string{});
 		if (EffectID.empty())
 		{
 			Task.Log.LogError("Material must reference an effect");
@@ -66,10 +57,10 @@ public:
 
 		CMaterialParams MaterialParams;
 
-		auto ItParams = Desc.find(CStrID("Params"));
-		if (ItParams != Desc.cend())
+		const Data::CData* pParams;
+		if (ParamsUtils::TryGetParam(pParams, Desc, "Params"))
 		{
-			if (!ItParams->second.IsA<Data::CParams>())
+			if (!pParams->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'RenderStates' must be a section");
 				return false;
@@ -172,9 +163,9 @@ public:
 		WriteStream(File, EffectID);
 
 		// Serialize values
-		if (ItParams != Desc.cend())
+		if (pParams)
 		{
-			const auto& ParamDescs = ItParams->second.GetValue<Data::CParams>();
+			const auto& ParamDescs = pParams->GetValue<Data::CParams>();
 			if (!WriteMaterialParams(File, MaterialParams, ParamDescs, Task.Log))
 			{
 				Task.Log.LogError("Error serializing values");

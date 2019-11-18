@@ -7,7 +7,7 @@ class CValueTable;
 
 namespace Data
 {
-	typedef std::map<class CStringID, class CData> CParams;
+	typedef std::vector<std::pair<class CStringID, class CData>> CParams;
 }
 
 namespace DB

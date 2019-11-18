@@ -368,10 +368,10 @@ void CloseConnection()
 bool FindShaderRecord(CShaderRecord& InOut)
 {
 	Data::CParams Params;
-	Params.emplace(CStrID("Path"), InOut.SrcFile.Path);
-	Params.emplace(CStrID("Type"), static_cast<int>(InOut.ShaderType));
-	Params.emplace(CStrID("Target"), static_cast<int>(InOut.Target));
-	Params.emplace(CStrID("Entry"), InOut.EntryPoint);
+	Params.emplace_back(CStrID("Path"), InOut.SrcFile.Path);
+	Params.emplace_back(CStrID("Type"), static_cast<int>(InOut.ShaderType));
+	Params.emplace_back(CStrID("Target"), static_cast<int>(InOut.Target));
+	Params.emplace_back(CStrID("Entry"), InOut.EntryPoint);
 
 	constexpr char* pSQLSelect =
 		"SELECT ID, CompilerVersion, CompilerFlags, SrcModifyTimestamp, SrcSize, SrcCRC, BinaryFileID, InputSigFileID "
@@ -388,7 +388,7 @@ bool FindShaderRecord(CShaderRecord& InOut)
 	const int Col_ID = Shaders.GetColumnIndex(CStrID("ID"));
 	for (size_t ShIdx = 0; ShIdx < Shaders.GetRowCount(); ++ShIdx)
 	{
-		DefineParams.emplace(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
+		DefineParams.emplace_back(CStrID("ShaderID"), Shaders.Get<int>(Col_ID, ShIdx));
 
 		CValueTable Defines;
 		if (!ExecuteSQLQuery("SELECT Name, Value FROM Macros WHERE ShaderID = :ShaderID"/*ORDER BY Name*/, &Defines, &DefineParams)) return false;
@@ -458,17 +458,17 @@ bool FindShaderRecord(CShaderRecord& InOut)
 bool WriteShaderRecord(CShaderRecord& InOut)
 {
 	Data::CParams Params;
-	Params.emplace(CStrID("ShaderType"), static_cast<int>(InOut.ShaderType));
-	Params.emplace(CStrID("Target"), static_cast<int>(InOut.Target));
-	Params.emplace(CStrID("EntryPoint"), InOut.EntryPoint);
-	Params.emplace(CStrID("CompilerVersion"), static_cast<int>(InOut.CompilerVersion));
-	Params.emplace(CStrID("CompilerFlags"), static_cast<int>(InOut.CompilerFlags));
-	Params.emplace(CStrID("SrcPath"), InOut.SrcFile.Path);
-	Params.emplace(CStrID("SrcModifyTimestamp"), static_cast<int>(InOut.SrcModifyTimestamp));
-	Params.emplace(CStrID("SrcSize"), static_cast<int>(InOut.SrcFile.Size));
-	Params.emplace(CStrID("SrcCRC"), static_cast<int>(InOut.SrcFile.CRC));
-	Params.emplace(CStrID("BinaryFileID"), static_cast<int>(InOut.ObjFile.ID));
-	Params.emplace(CStrID("InputSigFileID"), static_cast<int>(InOut.InputSigFile.ID));
+	Params.emplace_back(CStrID("ShaderType"), static_cast<int>(InOut.ShaderType));
+	Params.emplace_back(CStrID("Target"), static_cast<int>(InOut.Target));
+	Params.emplace_back(CStrID("EntryPoint"), InOut.EntryPoint);
+	Params.emplace_back(CStrID("CompilerVersion"), static_cast<int>(InOut.CompilerVersion));
+	Params.emplace_back(CStrID("CompilerFlags"), static_cast<int>(InOut.CompilerFlags));
+	Params.emplace_back(CStrID("SrcPath"), InOut.SrcFile.Path);
+	Params.emplace_back(CStrID("SrcModifyTimestamp"), static_cast<int>(InOut.SrcModifyTimestamp));
+	Params.emplace_back(CStrID("SrcSize"), static_cast<int>(InOut.SrcFile.Size));
+	Params.emplace_back(CStrID("SrcCRC"), static_cast<int>(InOut.SrcFile.CRC));
+	Params.emplace_back(CStrID("BinaryFileID"), static_cast<int>(InOut.ObjFile.ID));
+	Params.emplace_back(CStrID("InputSigFileID"), static_cast<int>(InOut.InputSigFile.ID));
 
 	auto ID = InOut.ID;
 	if (!ID)
@@ -487,7 +487,7 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 	else
 	{
 		// We have ID, update existing row
-		Params.emplace(CStrID("ID"), static_cast<int>(ID));
+		Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
 
 		constexpr char* pSQLUpdate =
 			"UPDATE Shaders SET "
@@ -521,14 +521,14 @@ bool WriteShaderRecord(CShaderRecord& InOut)
 	*/
 
 	Params.clear();
-	Params.emplace(CStrID("ShaderID"), static_cast<int>(InOut.ID));
+	Params.emplace_back(CStrID("ShaderID"), static_cast<int>(InOut.ID));
 	if (!ExecuteSQLQuery("DELETE FROM Macros WHERE ShaderID = :ShaderID", nullptr, &Params)) return false;
 
 	for (const auto& Macro : InOut.Defines)
 	{
 		if (Macro.first.empty()) continue;
-		Params.emplace(CStrID("Name"), Macro.first);
-		Params.emplace(CStrID("Value"), Macro.second);
+		Params.emplace_back(CStrID("Name"), Macro.first);
+		Params.emplace_back(CStrID("Value"), Macro.second);
 		if (!ExecuteSQLQuery("INSERT INTO Macros (ShaderID, Name, Value) VALUES (:ShaderID, :Name, :Value)", nullptr, &Params)) return false;
 	}
 
@@ -544,8 +544,8 @@ bool FindSignatureRecord(CSignatureRecord& InOut, const char* pBasePath, const v
 	if (!InOut.Size) return false; // Not found
 
 	Data::CParams Params;
-	Params.emplace(CStrID("Size"), static_cast<int>(InOut.Size));
-	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
+	Params.emplace_back(CStrID("Size"), static_cast<int>(InOut.Size));
+	Params.emplace_back(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT ID, Folder FROM InputSignatures WHERE Size=:Size AND CRC=:CRC", &Result, &Params)) return false;
@@ -594,9 +594,9 @@ bool WriteSignatureRecord(CSignatureRecord& InOut)
 	}
 
 	Data::CParams Params;
-	Params.emplace(CStrID("Folder"), InOut.Folder);
-	Params.emplace(CStrID("Size"), static_cast<int>(InOut.Size));
-	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
+	Params.emplace_back(CStrID("Folder"), InOut.Folder);
+	Params.emplace_back(CStrID("Size"), static_cast<int>(InOut.Size));
+	Params.emplace_back(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
 	if (!ID)
 	{
@@ -608,7 +608,7 @@ bool WriteSignatureRecord(CSignatureRecord& InOut)
 	else
 	{
 		// We have ID, update existing row
-		Params.emplace(CStrID("ID"), static_cast<int>(ID));
+		Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
 		if (!ExecuteSQLQuery("UPDATE InputSignatures SET Folder=:Folder, Size=:Size, CRC=:CRC WHERE ID=:ID", nullptr, &Params)) return false;
 	}
 
@@ -622,7 +622,7 @@ bool ReleaseSignatureRecord(uint32_t ID, std::string& OutPath)
 	if (ID == 0) return false;
 
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), static_cast<int>(ID));
+	Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT ID FROM Shaders WHERE InputSigFileID=:ID", &Result, &Params)) return false;
@@ -650,8 +650,8 @@ bool FindBinaryRecord(CBinaryRecord& InOut, const char* pBasePath, const void* p
 	if (!InOut.BytecodeSize) return false; // Not found
 
 	Data::CParams Params;
-	Params.emplace(CStrID("BytecodeSize"), static_cast<int>(InOut.BytecodeSize));
-	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
+	Params.emplace_back(CStrID("BytecodeSize"), static_cast<int>(InOut.BytecodeSize));
+	Params.emplace_back(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT ID, Path FROM ShaderBinaries WHERE BytecodeSize=:BytecodeSize AND CRC=:CRC", &Result, &Params)) return false;
@@ -717,10 +717,10 @@ bool WriteBinaryRecord(CBinaryRecord& InOut)
 	}
 
 	Data::CParams Params;
-	Params.emplace(CStrID("Path"), InOut.Path);
-	Params.emplace(CStrID("Size"), static_cast<int>(InOut.Size));
-	Params.emplace(CStrID("BytecodeSize"), static_cast<int>(InOut.BytecodeSize));
-	Params.emplace(CStrID("CRC"), static_cast<int>(InOut.CRC));
+	Params.emplace_back(CStrID("Path"), InOut.Path);
+	Params.emplace_back(CStrID("Size"), static_cast<int>(InOut.Size));
+	Params.emplace_back(CStrID("BytecodeSize"), static_cast<int>(InOut.BytecodeSize));
+	Params.emplace_back(CStrID("CRC"), static_cast<int>(InOut.CRC));
 
 	if (!ID)
 	{
@@ -732,7 +732,7 @@ bool WriteBinaryRecord(CBinaryRecord& InOut)
 	else
 	{
 		// We have ID, update existing row
-		Params.emplace(CStrID("ID"), static_cast<int>(ID));
+		Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
 		if (!ExecuteSQLQuery("UPDATE ShaderBinaries SET Path=:Path, Size=:Size, BytecodeSize=:BytecodeSize, CRC=:CRC WHERE ID=:ID", nullptr, &Params)) return false;
 	}
 
@@ -746,7 +746,7 @@ bool ReleaseBinaryRecord(uint32_t ID, std::string& OutPath)
 	if (ID == 0) return false;
 
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), static_cast<int>(ID));
+	Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT ID FROM Shaders WHERE BinaryFileID=:ID", &Result, &Params)) return false;
@@ -766,7 +766,7 @@ bool ReleaseBinaryRecord(uint32_t ID, std::string& OutPath)
 bool FindObjFileByID(uint32_t ID, CBinaryRecord& Out)
 {
 	Data::CParams Params;
-	Params.emplace(CStrID("ID"), static_cast<int>(ID));
+	Params.emplace_back(CStrID("ID"), static_cast<int>(ID));
 
 	CValueTable Result;
 	if (!ExecuteSQLQuery("SELECT * FROM ShaderBinaries WHERE ID=:ID", &Result, &Params)) return false;

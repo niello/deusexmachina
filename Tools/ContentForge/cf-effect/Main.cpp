@@ -1,7 +1,7 @@
 #include <ContentForgeTool.h>
 #include <CFEffectFwd.h>
 #include <Utils.h>
-#include <HRDParser.h>
+#include <ParamsUtils.h>
 #include <Render/ShaderMetaCommon.h>
 #include <thread>
 #include <iostream>
@@ -40,7 +40,7 @@ public:
 	{
 		// TODO: check whether the metafile can be processed by this tool
 
-		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
+		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
 		auto DestPath = fs::path(Output) / (TaskID + ".eff");
 		if (!_RootDir.empty() && DestPath.is_relative())
@@ -49,27 +49,16 @@ public:
 		// Read effect hrd
 
 		Data::CParams Desc;
+		if (!ParamsUtils::LoadParamsFromHRD(Task.SrcFilePath.string().c_str(), Desc))
 		{
-			std::vector<char> In;
-			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
-			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
-				return false;
-			}
-
-			std::ostringstream HRDErrors;
-
-			Data::CHRDParser Parser;
-			if (!Parser.ParseBuffer(In.data(), In.size(), Desc, &HRDErrors))
-			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error:\n" + HRDErrors.str());
-				return false;
-			}
+			if (_LogVerbosity >= EVerbosity::Errors)
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
+			return false;
 		}
 
 		// Get and validate material type
 
-		const CStrID MaterialType = GetParam<CStrID>(Desc, "Type", CStrID::Empty);
+		const CStrID MaterialType = ParamsUtils::GetParam<CStrID>(Desc, "Type", CStrID::Empty);
 		if (!MaterialType)
 		{
 			Task.Log.LogError("Material type not specified, Type = '<string ID>' expected");
@@ -81,17 +70,18 @@ public:
 		CContext Ctx;
 		Ctx.Log = &Task.Log;
 
-		auto ItGlobalParams = Desc.find(CStrID("GlobalParams"));
-		const bool HasGlobalParams = (ItGlobalParams != Desc.cend() && !ItGlobalParams->second.IsVoid());
+		const Data::CData* pGlobalParams;
+		ParamsUtils::TryGetParam(pGlobalParams, Desc, "GlobalParams");
+		const bool HasGlobalParams = pGlobalParams && !pGlobalParams->IsVoid();
 		if (HasGlobalParams)
 		{
-			if (!ItGlobalParams->second.IsA<Data::CDataArray>())
+			if (!pGlobalParams->IsA<Data::CDataArray>())
 			{
 				Task.Log.LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
 				return false;
 			}
 
-			const auto& GlobalParamsDesc = ItGlobalParams->second.GetValue<Data::CDataArray>();
+			const auto& GlobalParamsDesc = pGlobalParams->GetValue<Data::CDataArray>();
 			for (const auto& Data : GlobalParamsDesc)
 			{
 				if (!Data.IsA<CStrID>())
@@ -104,17 +94,18 @@ public:
 			}
 		}
 
-		auto ItMaterialParams = Desc.find(CStrID("MaterialParams"));
-		const bool HasMaterialParams = (ItMaterialParams != Desc.cend() && !ItMaterialParams->second.IsVoid());
+		const Data::CData* pMaterialParams;
+		ParamsUtils::TryGetParam(pMaterialParams, Desc, "MaterialParams");
+		const bool HasMaterialParams = pMaterialParams && !pMaterialParams->IsVoid();
 		if (HasMaterialParams)
 		{
-			if (!ItMaterialParams->second.IsA<Data::CParams>())
+			if (!pMaterialParams->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'MaterialParams' must be a section");
 				return false;
 			}
 
-			Ctx.MaterialParams = std::move(ItMaterialParams->second.GetValue<Data::CParams>());
+			Ctx.MaterialParams = std::move(pMaterialParams->GetValue<Data::CParams>());
 		}
 
 		if (HasGlobalParams && HasMaterialParams)
@@ -123,7 +114,7 @@ public:
 			bool HasErrors = false;
 			for (const auto& ParamID : Ctx.GlobalParams)
 			{
-				if (Ctx.MaterialParams.find(ParamID) != Ctx.MaterialParams.cend())
+				if (ParamsUtils::HasParam(Ctx.MaterialParams, ParamID))
 				{
 					Task.Log.LogError('\'' + ParamID.ToString() + "' appears in both global and material params");
 					HasErrors = true;
@@ -133,22 +124,22 @@ public:
 
 		// Parse, validate and sort techniques
 
-		auto ItRenderStates = Desc.find(CStrID("RenderStates"));
-		if (ItRenderStates == Desc.cend() || !ItRenderStates->second.IsA<Data::CParams>())
+		Data::CParams* pRenderStates;
+		if (!ParamsUtils::TryGetParam(pRenderStates, Desc, "RenderStates"))
 		{
 			Task.Log.LogError("'RenderStates' must be a section");
 			return false;
 		}
 
-		auto ItTechs = Desc.find(CStrID("Techniques"));
-		if (ItTechs == Desc.cend() || !ItTechs->second.IsA<Data::CParams>() || ItTechs->second.GetValue<Data::CParams>().empty())
+		const Data::CParams* pTechs;
+		if (!ParamsUtils::TryGetParam(pTechs, Desc, "Techniques") || pTechs->empty())
 		{
 			Task.Log.LogError("'Techniques' must be a section and contain at least one input set");
 			return false;
 		}
 
-		auto& RenderStateDescs = ItRenderStates->second.GetValue<Data::CParams>();
-		const auto& InputSetDescs = ItTechs->second.GetValue<Data::CParams>();
+		auto& RenderStateDescs = *pRenderStates;
+		const auto& InputSetDescs = *pTechs;
 		for (const auto& InputSetDesc : InputSetDescs)
 		{
 			CStrID InputSet = InputSetDesc.first;
@@ -379,19 +370,19 @@ private:
 
 		// Get a HRD section for this render state
 
-		auto It = RenderStateDescs.find(ID);
-		if (It == RenderStateDescs.cend() || !It->second.IsA<Data::CParams>())
+		Data::CParams* pDesc;
+		if (!ParamsUtils::TryGetParam(pDesc, RenderStateDescs, ID))
 		{
 			Ctx.Log->LogError("Render state '" + ID.ToString() + "' not found or is not a section");
 			return false;
 		}
 
 		// Intentionally non-const, see blend settings reading
-		auto& Desc = It->second.GetValue<Data::CParams>();
+		auto& Desc = *pDesc;
 
 		// Load base state if specified
 
-		const CStrID BaseID = GetParam(Desc, "Base", CStrID::Empty);
+		const CStrID BaseID = ParamsUtils::GetParam(Desc, "Base", CStrID::Empty);
 		if (BaseID)
 		{
 			auto ItRS = Ctx.RSCache.find(BaseID);
@@ -414,18 +405,18 @@ private:
 
 		// Load explicit state
 
-		TryGetParam(RS.VertexShader, Desc, "VS");
-		TryGetParam(RS.HullShader, Desc, "HS");
-		TryGetParam(RS.DomainShader, Desc, "DS");
-		TryGetParam(RS.GeometryShader, Desc, "GS");
-		TryGetParam(RS.PixelShader, Desc, "PS");
+		ParamsUtils::TryGetParam(RS.VertexShader, Desc, "VS");
+		ParamsUtils::TryGetParam(RS.HullShader, Desc, "HS");
+		ParamsUtils::TryGetParam(RS.DomainShader, Desc, "DS");
+		ParamsUtils::TryGetParam(RS.GeometryShader, Desc, "GS");
+		ParamsUtils::TryGetParam(RS.PixelShader, Desc, "PS");
 
 		std::string StrValue;
 		int IntValue;
 		bool FlagValue;
 		vector4 Vector4Value;
 
-		if (TryGetParam(StrValue, Desc, "Cull"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "Cull"))
 		{
 			trim(StrValue, " \r\n\t");
 			ToLower(StrValue);
@@ -451,77 +442,77 @@ private:
 			}
 		}
 
-		if (TryGetParam(FlagValue, Desc, "Wireframe"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "Wireframe"))
 			RS.SetFlags(CRenderState::Rasterizer_Wireframe, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "FrontCCW"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "FrontCCW"))
 			RS.SetFlags(CRenderState::Rasterizer_FrontCCW, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "DepthClipEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "DepthClipEnable"))
 			RS.SetFlags(CRenderState::Rasterizer_DepthClipEnable, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "ScissorEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "ScissorEnable"))
 			RS.SetFlags(CRenderState::Rasterizer_ScissorEnable, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "MSAAEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "MSAAEnable"))
 			RS.SetFlags(CRenderState::Rasterizer_MSAAEnable, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "MSAALinesEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "MSAALinesEnable"))
 			RS.SetFlags(CRenderState::Rasterizer_MSAALinesEnable, FlagValue);
 
-		TryGetParam(RS.DepthBias, Desc, "DepthBias");
-		TryGetParam(RS.DepthBiasClamp, Desc, "DepthBiasClamp");
-		TryGetParam(RS.SlopeScaledDepthBias, Desc, "SlopeScaledDepthBias");
+		ParamsUtils::TryGetParam(RS.DepthBias, Desc, "DepthBias");
+		ParamsUtils::TryGetParam(RS.DepthBiasClamp, Desc, "DepthBiasClamp");
+		ParamsUtils::TryGetParam(RS.SlopeScaledDepthBias, Desc, "SlopeScaledDepthBias");
 
-		if (TryGetParam(FlagValue, Desc, "DepthEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "DepthEnable"))
 			RS.SetFlags(CRenderState::DS_DepthEnable, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "DepthWriteEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "DepthWriteEnable"))
 			RS.SetFlags(CRenderState::DS_DepthWriteEnable, FlagValue);
-		if (TryGetParam(FlagValue, Desc, "StencilEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "StencilEnable"))
 			RS.SetFlags(CRenderState::DS_StencilEnable, FlagValue);
 
-		if (TryGetParam(StrValue, Desc, "DepthFunc"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "DepthFunc"))
 			RS.DepthFunc = StringToCmpFunc(StrValue);
 
-		if (TryGetParam(IntValue, Desc, "StencilReadMask"))
+		if (ParamsUtils::TryGetParam(IntValue, Desc, "StencilReadMask"))
 			RS.StencilReadMask = IntValue;
-		if (TryGetParam(IntValue, Desc, "StencilWriteMask"))
+		if (ParamsUtils::TryGetParam(IntValue, Desc, "StencilWriteMask"))
 			RS.StencilWriteMask = IntValue;
-		if (TryGetParam(StrValue, Desc, "StencilFrontFunc"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilFrontFunc"))
 			RS.StencilFrontFace.StencilFunc = StringToCmpFunc(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilFrontPassOp"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilFrontPassOp"))
 			RS.StencilFrontFace.StencilPassOp = StringToStencilOp(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilFrontFailOp"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilFrontFailOp"))
 			RS.StencilFrontFace.StencilFailOp = StringToStencilOp(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilFrontDepthFailOp"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilFrontDepthFailOp"))
 			RS.StencilFrontFace.StencilDepthFailOp = StringToStencilOp(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilBackFunc"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilBackFunc"))
 			RS.StencilBackFace.StencilFunc = StringToCmpFunc(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilBackPassOp"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilBackPassOp"))
 			RS.StencilBackFace.StencilPassOp = StringToStencilOp(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilBackFailOp"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilBackFailOp"))
 			RS.StencilBackFace.StencilFailOp = StringToStencilOp(StrValue);
-		if (TryGetParam(StrValue, Desc, "StencilBackDepthFailOp"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "StencilBackDepthFailOp"))
 			RS.StencilBackFace.StencilDepthFailOp = StringToStencilOp(StrValue);
-		if (TryGetParam(IntValue, Desc, "StencilRef"))
+		if (ParamsUtils::TryGetParam(IntValue, Desc, "StencilRef"))
 			RS.StencilRef = IntValue;
 
-		if (TryGetParam(FlagValue, Desc, "AlphaToCoverage"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "AlphaToCoverage"))
 			RS.SetFlags(CRenderState::Blend_AlphaToCoverage, FlagValue);
 
-		if (TryGetParam(Vector4Value, Desc, "BlendFactor"))
+		if (ParamsUtils::TryGetParam(Vector4Value, Desc, "BlendFactor"))
 			memcpy(RS.BlendFactorRGBA, &Vector4Value, sizeof(vector4));
-		if (TryGetParam(IntValue, Desc, "SampleMask"))
+		if (ParamsUtils::TryGetParam(IntValue, Desc, "SampleMask"))
 			RS.SampleMask = IntValue;
 
-		auto ItBlend = Desc.find(CStrID("Blend"));
-		if (ItBlend != Desc.cend())
+		Data::CData* pBlend;
+		if (ParamsUtils::TryGetParam(pBlend, Desc, "Blend"))
 		{
-			if (ItBlend->second.IsA<Data::CParams>())
+			if (pBlend->IsA<Data::CParams>())
 			{
 				// Slightly simplify further processing
 				Data::CDataArray HelperArray;
-				HelperArray.push_back(std::move(ItBlend->second));
-				ItBlend->second.SetValue<Data::CDataArray>(HelperArray);
+				HelperArray.push_back(std::move(*pBlend));
+				pBlend->SetValue<Data::CDataArray>(HelperArray);
 
 				RS.Flags &= ~CRenderState::Blend_Independent;
 			}
-			else if (ItBlend->second.IsA<Data::CDataArray>())
+			else if (pBlend->IsA<Data::CDataArray>())
 			{
 				RS.Flags |= CRenderState::Blend_Independent;
 			}
@@ -531,7 +522,7 @@ private:
 				return false;
 			}
 
-			const auto& BlendDescs = ItBlend->second.GetValue<Data::CDataArray>();
+			const auto& BlendDescs = pBlend->GetValue<Data::CDataArray>();
 			if (BlendDescs.size() > 8)
 				Ctx.Log->LogWarning("Render state '" + ID.ToString() + "' has 'Blend' array of size " + std::to_string(BlendDescs.size()) + ", note that only 8 first elements will be processed");
 
@@ -547,34 +538,34 @@ private:
 
 				const auto& BlendDesc = BlendDescs[i].GetValue<Data::CParams>();
 
-				if (TryGetParam(FlagValue, BlendDesc, "Enable"))
+				if (ParamsUtils::TryGetParam(FlagValue, BlendDesc, "Enable"))
 					RS.SetFlags(CRenderState::Blend_RTBlendEnable << i, FlagValue);
 
 				CRenderState::CRTBlend& Blend = RS.RTBlend[i];
 
-				if (TryGetParam(StrValue, BlendDesc, "SrcBlendArg"))
+				if (ParamsUtils::TryGetParam(StrValue, BlendDesc, "SrcBlendArg"))
 					Blend.SrcBlendArg = StringToBlendArg(StrValue);
-				if (TryGetParam(StrValue, BlendDesc, "SrcBlendArgAlpha"))
+				if (ParamsUtils::TryGetParam(StrValue, BlendDesc, "SrcBlendArgAlpha"))
 					Blend.SrcBlendArgAlpha = StringToBlendArg(StrValue);
-				if (TryGetParam(StrValue, BlendDesc, "DestBlendArg"))
+				if (ParamsUtils::TryGetParam(StrValue, BlendDesc, "DestBlendArg"))
 					Blend.DestBlendArg = StringToBlendArg(StrValue);
-				if (TryGetParam(StrValue, BlendDesc, "DestBlendArgAlpha"))
+				if (ParamsUtils::TryGetParam(StrValue, BlendDesc, "DestBlendArgAlpha"))
 					Blend.DestBlendArgAlpha = StringToBlendArg(StrValue);
-				if (TryGetParam(StrValue, BlendDesc, "BlendOp"))
+				if (ParamsUtils::TryGetParam(StrValue, BlendDesc, "BlendOp"))
 					Blend.BlendOp = StringToBlendOp(StrValue);
-				if (TryGetParam(StrValue, BlendDesc, "BlendOpAlpha"))
+				if (ParamsUtils::TryGetParam(StrValue, BlendDesc, "BlendOpAlpha"))
 					Blend.BlendOpAlpha = StringToBlendOp(StrValue);
 
-				auto ItWriteMask = BlendDesc.find(CStrID("WriteMask"));
-				if (ItWriteMask != BlendDesc.cend())
+				Data::CData WriteMask;
+				if (ParamsUtils::TryGetParam(WriteMask, BlendDesc, "WriteMask"))
 				{
-					if (ItWriteMask->second.IsVoid())
+					if (WriteMask.IsVoid())
 						Blend.WriteMask = 0;
-					else if (ItWriteMask->second.IsA<int>())
-						Blend.WriteMask = ItWriteMask->second.GetValue<int>() & 0x0f;
-					else if (ItWriteMask->second.IsA<std::string>())
+					else if (WriteMask.IsA<int>())
+						Blend.WriteMask = WriteMask.GetValue<int>() & 0x0f;
+					else if (WriteMask.IsA<std::string>())
 					{
-						StrValue = ItWriteMask->second.GetValue<std::string>();
+						StrValue = WriteMask.GetValue<std::string>();
 						trim(StrValue, " \r\n\t");
 						ToLower(StrValue);
 
@@ -597,32 +588,32 @@ private:
 			}
 		}
 
-		if (TryGetParam(FlagValue, Desc, "AlphaTestEnable"))
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "AlphaTestEnable"))
 			RS.SetFlags(CRenderState::Misc_AlphaTestEnable, FlagValue);
-		if (TryGetParam(IntValue, Desc, "AlphaTestRef"))
+		if (ParamsUtils::TryGetParam(IntValue, Desc, "AlphaTestRef"))
 			RS.AlphaTestRef = IntValue;
-		if (TryGetParam(StrValue, Desc, "AlphaTestFunc"))
+		if (ParamsUtils::TryGetParam(StrValue, Desc, "AlphaTestFunc"))
 			RS.AlphaTestFunc = StringToCmpFunc(StrValue);
 
-		auto ItClipPlanes = Desc.find(CStrID("ClipPlanes"));
-		if (ItClipPlanes != Desc.cend())
+		const Data::CData* pClipPlanes;
+		if (ParamsUtils::TryGetParam(pClipPlanes, Desc, "ClipPlanes"))
 		{
-			if (ItClipPlanes->second.IsA<bool>() && ItClipPlanes->second == false)
+			if (pClipPlanes->IsA<bool>() && pClipPlanes->GetValue<bool>() == false)
 			{
 				// All clip planes disabled
 			}
-			else if (ItClipPlanes->second.IsA<int>())
+			else if (pClipPlanes->IsA<int>())
 			{
-				const int CP = ItClipPlanes->second;
+				const int CP = pClipPlanes->GetValue<int>();
 				for (int i = 0; i < 5; ++i)
 					RS.SetFlags(CRenderState::Misc_ClipPlaneEnable << i, !!(CP & (1 << i)));
 			}
-			else if (ItClipPlanes->second.IsA<Data::CDataArray>())
+			else if (pClipPlanes->IsA<Data::CDataArray>())
 			{			
 				for (size_t i = 0; i < 5; ++i)
 					RS.Flags &= ~(CRenderState::Misc_ClipPlaneEnable << i);
 			
-				const Data::CDataArray& CP = ItClipPlanes->second.GetValue<Data::CDataArray>();
+				const Data::CDataArray& CP = pClipPlanes->GetValue<Data::CDataArray>();
 				for (const auto& Val : CP)
 				{
 					if (!Val.IsA<int>()) continue;

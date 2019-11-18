@@ -35,7 +35,10 @@ struct vector4
 
 namespace Data
 {
-typedef std::map<CStringID, class CData> CParams; //!!! FIXME: some code relies on order preservation of loaded HRD, can't use map!
+// CParamsSorted is for faster search, CParams is for source file order preservation
+typedef std::pair<CStringID, class CData> CParam;
+typedef std::vector<std::pair<CStringID, class CData>> CParams;
+typedef std::map<CStringID, class CData> CParamsSorted;
 typedef std::vector<class CData> CDataArray;
 
 class CData

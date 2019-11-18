@@ -1,6 +1,7 @@
 #include <ContentForgeTool.h>
 #include <ShaderCompiler.h>
 #include <Utils.h>
+#include <ParamsUtils.h>
 #include <CLI11.hpp>
 #include <thread>
 
@@ -81,16 +82,16 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		const std::string EntryPoint = GetParam<std::string>(Task.Params, "Entry", std::string{});
+		const std::string EntryPoint = ParamsUtils::GetParam<std::string>(Task.Params, "Entry", std::string{});
 		if (EntryPoint.empty()) return false;
 
-		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
-		const int Target = GetParam<int>(Task.Params, "Target", 0);
-		const std::string Defines = GetParam<std::string>(Task.Params, "Defines", std::string{});
-		const bool Debug = GetParam<bool>(Task.Params, "Debug", false);
+		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
+		const int Target = ParamsUtils::GetParam<int>(Task.Params, "Target", 0);
+		const std::string Defines = ParamsUtils::GetParam<std::string>(Task.Params, "Defines", std::string{});
+		const bool Debug = ParamsUtils::GetParam<bool>(Task.Params, "Debug", false);
 
 		EShaderType ShaderType;
-		const CStrID Type = GetParam<CStrID>(Task.Params, "Type", CStrID::Empty);
+		const CStrID Type = ParamsUtils::GetParam<CStrID>(Task.Params, "Type", CStrID::Empty);
 		if (Type == "Vertex") ShaderType = ShaderType_Vertex;
 		else if (Type == "Pixel") ShaderType = ShaderType_Pixel;
 		else if (Type == "Geometry") ShaderType = ShaderType_Geometry;

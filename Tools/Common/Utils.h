@@ -16,24 +16,6 @@ struct membuf : std::streambuf
 std::vector<std::string> SplitString(const std::string& Str, char Sep);
 uint32_t CalcCRC(const uint8_t* pData, size_t Size);
 
-template<class T>
-const T& GetParam(const std::map<CStrID, class Data::CData>& Params, const char* pKey, const T& Default)
-{
-	auto It = Params.find(CStrID(pKey));
-	return (It == Params.cend()) ? Default : It->second;
-}
-//---------------------------------------------------------------------
-
-template<class T>
-const bool TryGetParam(T& Out, const std::map<CStrID, class Data::CData>& Params, const char* pKey)
-{
-	auto It = Params.find(CStrID(pKey));
-	if (It == Params.cend() || !It->second.IsA<T>()) return false;
-	Out = It->second.GetValue<T>();
-	return true;
-}
-//---------------------------------------------------------------------
-
 template<typename T>
 bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 {
@@ -93,6 +75,16 @@ template<class T> T ReadStream(std::istream& Stream)
 template<class T> void WriteStream(std::ostream& Stream, const T& Value)
 {
 	Stream.write(reinterpret_cast<const char*>(&Value), sizeof(T));
+}
+//---------------------------------------------------------------------
+
+template<size_t N>
+void WriteCharArrayToStream(std::ostream& Stream, const char (&Value)[N])
+{
+	auto Length = static_cast<uint16_t>(N);
+	if (Value[N - 1] == 0) --Length;
+	WriteStream<uint16_t>(Stream, Length);
+	if (Length) Stream.write(Value, Length);
 }
 //---------------------------------------------------------------------
 

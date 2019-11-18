@@ -1,7 +1,7 @@
 #include <CFRenderPathFwd.h>
 #include <ContentForgeTool.h>
 #include <Utils.h>
-#include <HRDParser.h>
+#include <ParamsUtils.h>
 #include <thread>
 #include <iostream>
 
@@ -41,7 +41,7 @@ public:
 	{
 		// TODO: check whether the metafile can be processed by this tool
 
-		const std::string Output = GetParam<std::string>(Task.Params, "Output", std::string{});
+		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
 		auto DestPath = fs::path(Output) / (TaskID + ".rp");
 		if (!_RootDir.empty() && DestPath.is_relative())
@@ -50,29 +50,20 @@ public:
 		// Read render path hrd
 
 		Data::CParams Desc;
+		if (!ParamsUtils::LoadParamsFromHRD(Task.SrcFilePath.string().c_str(), Desc))
 		{
-			std::vector<char> In;
-			if (!ReadAllFile(Task.SrcFilePath.string().c_str(), In, false))
-			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " reading error");
-				return false;
-			}
-
-			Data::CHRDParser Parser;
-			if (!Parser.ParseBuffer(In.data(), In.size(), Desc))
-			{
-				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD parsing error");
-				return false;
-			}
+			if (_LogVerbosity >= EVerbosity::Errors)
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
+			return false;
 		}
 
 		// Build and verify global parameter table
 
 		std::map<uint32_t, CGlobalTable> Globals;
-		auto ItEffects = Desc.find(CStrID("Effects"));
-		if (ItEffects != Desc.cend())
+		const Data::CData* pEffectPathes;
+		if (ParamsUtils::TryGetParam(pEffectPathes, Desc, "Effects"))
 		{
-			if (!ItEffects->second.IsA<Data::CDataArray>())
+			if (!pEffectPathes->IsA<Data::CDataArray>())
 			{
 				Task.Log.LogError("'Phases' must be an array of pathes to .eff files");
 				return false;
@@ -80,7 +71,7 @@ public:
 
 			// Collect global metadata sources
 
-			const auto& EffectPathes = ItEffects->second.GetValue<Data::CDataArray>();
+			const auto& EffectPathes = pEffectPathes->GetValue<Data::CDataArray>();
 			for (const auto& EffectPathData : EffectPathes)
 			{
 				if (!EffectPathData.IsA<std::string>())
@@ -183,16 +174,16 @@ public:
 		};
 
 		std::map<CStrID, CRenderTarget> RenderTargets;
-		auto ItRenderTargets = Desc.find(CStrID("RenderTargets"));
-		if (ItRenderTargets != Desc.cend())
+		const Data::CData* pRenderTargets;
+		if (ParamsUtils::TryGetParam(pRenderTargets, Desc, "RenderTargets"))
 		{
-			if (!ItRenderTargets->second.IsA<Data::CParams>())
+			if (!pRenderTargets->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'RenderTargets' must be a section");
 				return false;
 			}
 
-			const auto& RenderTargetsDesc = ItRenderTargets->second.GetValue<Data::CParams>();
+			const auto& RenderTargetsDesc = pRenderTargets->GetValue<Data::CParams>();
 			for (const auto& RTPair : RenderTargetsDesc)
 			{
 				if (!RTPair.second.IsA<Data::CParams>())
@@ -203,7 +194,7 @@ public:
 
 				const auto& RTDesc = RTPair.second.GetValue<Data::CParams>();
 				CRenderTarget RT;
-				RT.ClearValue = GetParam(RTDesc, "ClearValue", vector4{ 0.f, 0.f, 0.f, 1.f });
+				RT.ClearValue = ParamsUtils::GetParam(RTDesc, "ClearValue", vector4{ 0.f, 0.f, 0.f, 1.f });
 				RenderTargets.emplace(RTPair.first, std::move(RT));
 			}
 		}
@@ -220,16 +211,16 @@ public:
 		};
 
 		std::map<CStrID, CDepthStencilBuffer> DepthStencilBuffers;
-		auto ItDepthStencilBuffers = Desc.find(CStrID("DepthStencilBuffers"));
-		if (ItDepthStencilBuffers != Desc.cend())
+		const Data::CData* pDepthStencilBuffers;
+		if (ParamsUtils::TryGetParam(pDepthStencilBuffers, Desc, "DepthStencilBuffers"))
 		{
-			if (!ItDepthStencilBuffers->second.IsA<Data::CParams>())
+			if (!pDepthStencilBuffers->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'DepthStencilBuffers' must be a section");
 				return false;
 			}
 
-			const auto& DepthStencilBuffersDesc = ItDepthStencilBuffers->second.GetValue<Data::CParams>();
+			const auto& DepthStencilBuffersDesc = pDepthStencilBuffers->GetValue<Data::CParams>();
 			for (const auto& DSPair : DepthStencilBuffersDesc)
 			{
 				if (!DSPair.second.IsA<Data::CParams>())
@@ -241,11 +232,11 @@ public:
 				const auto& DSDesc = DSPair.second.GetValue<Data::CParams>();
 				CDepthStencilBuffer DS;
 
-				if (TryGetParam(DS.DepthClearValue, DSDesc, "DepthClearValue"))
+				if (ParamsUtils::TryGetParam(DS.DepthClearValue, DSDesc, "DepthClearValue"))
 					DS.ClearFlags |= Flag_ClearDepth;
 
 				int StencilClearValue;
-				if (TryGetParam(StencilClearValue, DSDesc, "StencilClearValue"))
+				if (ParamsUtils::TryGetParam(StencilClearValue, DSDesc, "StencilClearValue"))
 				{
 					DS.StencilClearValue = static_cast<uint8_t>(StencilClearValue);
 					DS.ClearFlags |= Flag_ClearStencil;
@@ -257,14 +248,14 @@ public:
 
 		// Process phases
 
-		auto ItPhases = Desc.find(CStrID("Phases"));
-		if (ItPhases == Desc.cend() || !ItPhases->second.IsA<Data::CParams>())
+		const Data::CParams* pPhases;
+		if (!ParamsUtils::TryGetParam(pPhases, Desc, "Phases"))
 		{
 			Task.Log.LogError("'Phases' must be a section");
 			return false;
 		}
 
-		const auto& PhaseDescs = ItPhases->second.GetValue<Data::CParams>();
+		const auto& PhaseDescs = *pPhases;
 		for (const auto& PhasePair : PhaseDescs)
 		{
 			if (!PhasePair.second.IsA<Data::CParams>())
@@ -275,28 +266,28 @@ public:
 
 			const auto& PhaseDesc = PhasePair.second.GetValue<Data::CParams>();
 
-			const auto Type = GetParam<std::string>(PhaseDesc, "Type", {});
+			const auto Type = ParamsUtils::GetParam<std::string>(PhaseDesc, "Type", {});
 			if (Type.empty())
 			{
 				Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' type not specified, Type = \"<string>\" expected");
 				return false;
 			}
 
-			auto ItRT = PhaseDesc.find(CStrID("RenderTarget"));
-			if (ItRT != PhaseDesc.cend())
+			const Data::CData* pRT;
+			if (ParamsUtils::TryGetParam(pRT, PhaseDesc, "RenderTarget"))
 			{
-				if (ItRT->second.IsA<CStrID>())
+				if (pRT->IsA<CStrID>())
 				{
-					const CStrID RefID = ItRT->second.GetValue<CStrID>();
+					const CStrID RefID = pRT->GetValue<CStrID>();
 					if (RenderTargets.find(RefID) == RenderTargets.cend())
 					{
 						Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
 						return false;
 					}
 				}
-				else if (ItRT->second.IsA<Data::CDataArray>())
+				else if (pRT->IsA<Data::CDataArray>())
 				{
-					for (const auto& Ref : ItRT->second.GetValue<Data::CDataArray>())
+					for (const auto& Ref : pRT->GetValue<Data::CDataArray>())
 					{
 						if (!Ref.IsA<CStrID>())
 						{
@@ -312,25 +303,25 @@ public:
 						}
 					}
 				}
-				else if (!ItRT->second.IsVoid())
+				else if (!pRT->IsVoid())
 				{
 					Task.Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'RenderTarget' which is not a string ID or an array of them");
 				}
 			}
 
-			auto ItDS = PhaseDesc.find(CStrID("DepthStencilBuffer"));
-			if (ItDS != PhaseDesc.cend())
+			const Data::CData* pDS;
+			if (ParamsUtils::TryGetParam(pDS, PhaseDesc, "DepthStencilBuffer"))
 			{
-				if (ItDS->second.IsA<CStrID>())
+				if (pDS->IsA<CStrID>())
 				{
-					const CStrID RefID = ItDS->second.GetValue<CStrID>();
+					const CStrID RefID = pDS->GetValue<CStrID>();
 					if (DepthStencilBuffers.find(RefID) == DepthStencilBuffers.cend())
 					{
 						Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown depth-stencil buffer '" + RefID.ToString() + '\'');
 						return false;
 					}
 				}
-				else if (!ItDS->second.IsVoid())
+				else if (!pDS->IsVoid())
 				{
 					Task.Log.LogWarning("Phase '" + PhasePair.first.ToString() + "' declares 'DepthStencilBuffer' which is not a string ID");
 				}

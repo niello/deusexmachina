@@ -1,6 +1,7 @@
 #include <CFEffectFwd.h>
 #include <Render/USMShaderMeta.h>
 #include <Utils.h>
+#include <ParamsUtils.h>
 #include <Logging.h>
 #include <iostream>
 #include <sstream>
@@ -194,7 +195,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					{
 						if (!ProcessConstant(ShaderTypeMask, Const, ShaderMeta, GlobalMeta, MaterialMeta, TechMeta, Ctx)) return false;
 					}
-					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
+					else if (ParamsUtils::HasParam(Ctx.MaterialParams, ID))
 					{
 						if (!ProcessConstant(ShaderTypeMask, Const, ShaderMeta, MaterialMeta, GlobalMeta, TechMeta, Ctx)) return false;
 					}
@@ -213,7 +214,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					{
 						if (!ProcessResource(ShaderTypeMask, Rsrc, GlobalMeta, MaterialMeta, TechMeta, Ctx)) return false;
 					}
-					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
+					else if (ParamsUtils::HasParam(Ctx.MaterialParams, ID))
 					{
 						if (!ProcessResource(ShaderTypeMask, Rsrc, MaterialMeta, GlobalMeta, TechMeta, Ctx)) return false;
 					}
@@ -232,7 +233,7 @@ bool WriteParameterTablesForDXBC(std::ostream& Stream, std::vector<CTechnique>& 
 					{
 						if (!ProcessSampler(ShaderTypeMask, Sampler, GlobalMeta, MaterialMeta, TechMeta, Ctx)) return false;
 					}
-					else if (Ctx.MaterialParams.find(ID) != Ctx.MaterialParams.cend())
+					else if (ParamsUtils::HasParam(Ctx.MaterialParams, ID))
 					{
 						if (!ProcessSampler(ShaderTypeMask, Sampler, MaterialMeta, GlobalMeta, TechMeta, Ctx)) return false;
 					}
