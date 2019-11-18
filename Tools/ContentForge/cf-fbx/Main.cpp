@@ -253,6 +253,8 @@ protected:
 
 	std::string _ResourceRoot;
 	double _AnimSamplingRate = 30.0;
+	bool _OutputBin = true;
+	bool _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
 
 public:
 
@@ -282,6 +284,8 @@ public:
 			if (_LogVerbosity >= EVerbosity::Warnings)
 				std::cout << "Resource root is empty, external references may not be resolved from the game!";
 
+		if (!_OutputHRD) _OutputBin = true;
+
 		return 0;
 	}
 
@@ -297,6 +301,8 @@ public:
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
 		CLIApp.add_option("--fps", _AnimSamplingRate, "Animation sampling rate in frames per second, default is 30");
+		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
+		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
 	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
@@ -417,8 +423,17 @@ public:
 		// pScene->GetGlobalSettings().GetAmbientColor();
 		// Scene->GetPoseCount();
 
-		const auto DestPath = OutPath / (Task.TaskID.ToString() + ".hrd");
-		ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes);
+		if (_OutputHRD)
+		{
+			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".hrd");
+			ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes);
+		}
+
+		if (_OutputBin)
+		{
+			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".scn");
+			//ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes);
+		}
 
 		return true;
 	}
