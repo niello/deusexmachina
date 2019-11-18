@@ -85,53 +85,53 @@ static bool WriteParamAsHRD(std::ostream& Stream, const Data::CParam& Value, siz
 
 static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_t Depth)
 {
-	if (Value.IsVoid()) WriteCharArrayToStream(Stream, "null");
+	if (Value.IsVoid()) WriteText(Stream, "null");
 	else if (Value.IsA<bool>())
 	{
 		if (Value.GetValue<bool>())
-			WriteCharArrayToStream(Stream, "true");
+			WriteText(Stream, "true");
 		else
-			WriteCharArrayToStream(Stream, "false");
+			WriteText(Stream, "false");
 	}
 	else if (Value.IsA<int>())
 	{
-		WriteStream(Stream, std::to_string(Value.GetValue<int>()));
+		WriteText(Stream, std::to_string(Value.GetValue<int>()));
 	}
 	else if (Value.IsA<float>())
 	{
-		WriteStream(Stream, std::to_string(Value.GetValue<float>()));
+		WriteText(Stream, std::to_string(Value.GetValue<float>()));
 	}
 	else if (Value.IsA<std::string>())
 	{
-		WriteCharArrayToStream(Stream, "\"");
-		WriteStream(Stream, Value.GetValue<std::string>());
-		WriteCharArrayToStream(Stream, "\"");
+		WriteText(Stream, "\"");
+		WriteText(Stream, Value.GetValue<std::string>());
+		WriteText(Stream, "\"");
 	}
 	else if (Value.IsA<CStrID>())
 	{
 		//!!!correctly serialize \n, \t etc!
-		WriteCharArrayToStream(Stream, "'");
-		WriteStream(Stream, Value.GetValue<CStrID>());
-		WriteCharArrayToStream(Stream, "'");
+		WriteText(Stream, "'");
+		WriteText(Stream, Value.GetValue<CStrID>());
+		WriteText(Stream, "'");
 	}
 	else if (Value.IsA<vector4>())
 	{
 		const vector4& V = Value.GetValue<vector4>();
-		WriteCharArrayToStream(Stream, "(");
-		WriteStream(Stream, std::to_string(V.x));
-		WriteCharArrayToStream(Stream, ", ");
-		WriteStream(Stream, std::to_string(V.y));
-		WriteCharArrayToStream(Stream, ", ");
-		WriteStream(Stream, std::to_string(V.z));
-		WriteCharArrayToStream(Stream, ", ");
-		WriteStream(Stream, std::to_string(V.w));
-		WriteCharArrayToStream(Stream, ")");
+		WriteText(Stream, "(");
+		WriteText(Stream, std::to_string(V.x));
+		WriteText(Stream, ", ");
+		WriteText(Stream, std::to_string(V.y));
+		WriteText(Stream, ", ");
+		WriteText(Stream, std::to_string(V.z));
+		WriteText(Stream, ", ");
+		WriteText(Stream, std::to_string(V.w));
+		WriteText(Stream, ")");
 	}
 	else if (Value.IsA<Data::CDataArray>())
 	{
 		const std::string Indentation = GetIndentation(Depth);
-		WriteStream(Stream, Indentation);
-		WriteCharArrayToStream(Stream, "[\n");
+		WriteText(Stream, Indentation);
+		WriteText(Stream, "[\n");
 
 		++Depth;
 		const std::string InnerIndentation = GetIndentation(Depth);
@@ -141,24 +141,24 @@ static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_
 		{
 			const Data::CData& Elm = A[i];
 			if (!Elm.IsA<Data::CParams>() && !Elm.IsA<Data::CDataArray>())
-				WriteStream(Stream, InnerIndentation);
+				WriteText(Stream, InnerIndentation);
 			if (!WriteDataAsHRD(Stream, Elm, Depth)) return false;
 
 			if (i < A.size() - 1)
-				WriteCharArrayToStream(Stream, ",\n");
+				WriteText(Stream, ",\n");
 			else
-				WriteCharArrayToStream(Stream, "\n");
+				WriteText(Stream, "\n");
 		}
 
 		--Depth;
-		WriteStream(Stream, Indentation);
-		WriteCharArrayToStream(Stream, "]");
+		WriteText(Stream, Indentation);
+		WriteText(Stream, "]");
 	}
 	else if (Value.IsA<Data::CParams>())
 	{
 		const std::string Indentation = GetIndentation(Depth);
-		WriteStream(Stream, Indentation);
-		WriteCharArrayToStream(Stream, "{\n");
+		WriteText(Stream, Indentation);
+		WriteText(Stream, "{\n");
 
 		++Depth;
 		const std::string InnerIndentation = GetIndentation(Depth);
@@ -166,13 +166,13 @@ static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_
 		const Data::CParams& P = Value.GetValue<Data::CParams>();
 		for (const auto& Param : P)
 		{
-			WriteStream(Stream, InnerIndentation);
+			WriteText(Stream, InnerIndentation);
 			if (!WriteParamAsHRD(Stream, Param, Depth)) return false;
 		}
 
 		--Depth;
-		WriteStream(Stream, Indentation);
-		WriteCharArrayToStream(Stream, "}");
+		WriteText(Stream, Indentation);
+		WriteText(Stream, "}");
 	}
 	else
 	{
@@ -186,16 +186,16 @@ static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_
 
 static bool WriteParamAsHRD(std::ostream& Stream, const Data::CParam& Value, size_t Depth)
 {
-	WriteStream(Stream, Value.first);
+	WriteText(Stream, Value.first);
 
 	if (Value.second.IsA<Data::CParams>() || Value.second.IsA<Data::CDataArray>())
-		WriteCharArrayToStream(Stream, "\n");
+		WriteText(Stream, "\n");
 	else
-		WriteCharArrayToStream(Stream, " = ");
+		WriteText(Stream, " = ");
 
 	if (!WriteDataAsHRD(Stream, Value.second, Depth)) return false;
 
-	WriteCharArrayToStream(Stream, "\n");
+	WriteText(Stream, "\n");
 	return true;
 }
 //---------------------------------------------------------------------
@@ -206,7 +206,7 @@ static bool WriteParamsAsHRD(std::ostream& Stream, const Data::CParams& Value, s
 	{
 		if (!WriteParamAsHRD(Stream, Param, Depth)) return false;
 		if (Param.second.IsA<Data::CParams>())
-			WriteCharArrayToStream(Stream, "\n");
+			WriteText(Stream, "\n");
 	}
 	return true;
 }

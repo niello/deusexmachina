@@ -365,6 +365,10 @@ public:
 
 		Ctx.DefaultName = Task.TaskID.CStr();
 
+		fs::path OutPath = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
+		if (!_RootDir.empty() && OutPath.is_relative())
+			OutPath = fs::path(_RootDir) / OutPath;
+
 		Ctx.MeshPath = ParamsUtils::GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
 		if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
 			Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
@@ -412,6 +416,9 @@ public:
 
 		// pScene->GetGlobalSettings().GetAmbientColor();
 		// Scene->GetPoseCount();
+
+		const auto DestPath = OutPath / (Task.TaskID.ToString() + ".hrd");
+		ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes);
 
 		return true;
 	}

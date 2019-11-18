@@ -43,7 +43,7 @@ inline void EnsurePathHasEndingDirSeparator(std::string& Path)
 }
 //---------------------------------------------------------------------
 
-template<class T> void ReadStream(std::istream& Stream, T& Out)
+template<class T> inline void ReadStream(std::istream& Stream, T& Out)
 {
 	Stream.read(reinterpret_cast<char*>(&Out), sizeof(T));
 }
@@ -64,7 +64,7 @@ inline void ReadStream(std::istream& Stream, std::string& Data)
 //---------------------------------------------------------------------
 
 // Can be used to skip data
-template<class T> T ReadStream(std::istream& Stream)
+template<class T> inline T ReadStream(std::istream& Stream)
 {
 	T Out;
 	ReadStream(Stream, Out);
@@ -72,9 +72,28 @@ template<class T> T ReadStream(std::istream& Stream)
 }
 //---------------------------------------------------------------------
 
-template<class T> void WriteStream(std::ostream& Stream, const T& Value)
+template<class T> inline void WriteStream(std::ostream& Stream, const T& Value)
 {
 	Stream.write(reinterpret_cast<const char*>(&Value), sizeof(T));
+}
+//---------------------------------------------------------------------
+
+inline void WriteText(std::ostream& Stream, const std::string& Value)
+{
+	Stream.write(Value.c_str(), Value.size());
+}
+//---------------------------------------------------------------------
+
+inline void WriteText(std::ostream& Stream, const char* Value)
+{
+	if (Value) Stream.write(Value, strlen(Value));
+}
+//---------------------------------------------------------------------
+
+template<size_t N>
+inline void WriteText(std::ostream& Stream, const char (&Value)[N])
+{
+	Stream.write(Value, N - 1);
 }
 //---------------------------------------------------------------------
 
