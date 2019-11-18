@@ -7,11 +7,6 @@
 
 // Base class for different console tools
 
-namespace Data
-{
-	class CHRDParser;
-}
-
 namespace CLI
 {
 	class App;
