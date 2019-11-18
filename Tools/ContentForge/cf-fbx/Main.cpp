@@ -884,7 +884,7 @@ public:
 
 			fs::create_directories(Ctx.MeshPath);
 
-			std::ofstream File(DestPath, std::ios_base::binary);
+			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 			if (!File)
 			{
 				Ctx.Log.LogError("Error opening an output file " + DestPath.string());
@@ -1068,7 +1068,7 @@ public:
 
 			fs::create_directories(Ctx.SkinPath);
 
-			std::ofstream File(DestPath, std::ios_base::binary);
+			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 			if (!File)
 			{
 				Ctx.Log.LogError("Error opening an output file " + DestPath.string());

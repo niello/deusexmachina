@@ -341,7 +341,7 @@ public:
 
 		fs::create_directories(DestPath.parent_path());
 
-		std::ofstream File(DestPath, std::ios_base::binary);
+		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 		if (!File)
 		{
 			Task.Log.LogError("Error opening an output file");

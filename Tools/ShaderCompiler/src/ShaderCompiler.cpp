@@ -143,7 +143,7 @@ static int ProcessInputSignature(const char* pBasePath, const char* pInputSigDir
 
 		fs::create_directories(PathFS.parent_path());
 
-		std::ofstream File(PathFS, std::ios_base::binary);
+		std::ofstream File(PathFS, std::ios_base::binary | std::ios_base::trunc);
 		if (!File || !File.write((const char*)pInputSig->GetBufferPointer(), pInputSig->GetBufferSize()))
 		{
 			pInputSig->Release();
@@ -205,7 +205,7 @@ static int ProcessShaderBinaryUSM(const char* pBasePath, const char* pDestPath, 
 
 	fs::create_directories(DestPathFS.parent_path());
 
-	std::ofstream File(DestPathFS, std::ios_base::binary);
+	std::ofstream File(DestPathFS, std::ios_base::binary | std::ios_base::trunc);
 	if (!File) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 
 	// Save common header
@@ -276,7 +276,7 @@ static int ProcessShaderBinarySM30(const char* pBasePath, const char* pDestPath,
 
 	fs::create_directories(DestPathFS.parent_path());
 
-	std::ofstream File(DestPathFS, std::ios_base::binary);
+	std::ofstream File(DestPathFS, std::ios_base::binary | std::ios_base::trunc);
 	if (!File) return DEM_SHADER_COMPILER_IO_WRITE_ERROR;
 
 	// Save common header
@@ -561,7 +561,7 @@ DEM_DLL_API uint32_t DEM_DLLCALL PackShaders(const char* pCommaSeparatedShaderID
 	if (!DB::ExecuteSQLQuery(SQL.c_str(), &Result)) return 0;
 	if (!Result.GetRowCount()) return 0;
 
-	std::ofstream File(pLibraryFilePath, std::ios_base::binary);
+	std::ofstream File(pLibraryFilePath, std::ios_base::binary | std::ios_base::trunc);
 	if (!File) return 0;
 
 	WriteStream<uint32_t>(File, 'SLIB');				// Magic
