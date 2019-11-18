@@ -1,0 +1,56 @@
+// Data serialization scheme for DEM scene nodes and their attributes
+
+SceneNode
+{
+	Scale		{ Type = "vector3" Default = (1.0, 1.0, 1.0) }
+	Rotation	{ Type = "vector4" Default = (0.0, 0.0, 0.0, 1.0) }
+	Translation	{ Type = "vector3" Default = (0.0, 0.0, 0.0) }
+	Attrs		{ Scheme = 'SceneNodeAttr' Default = [] }
+	Children	{ Scheme = 'SceneNode' WriteChildKeys = true Default = {} }
+}
+
+SceneNodeAttr
+{
+	// Generic
+	Class			{ Type = "string" }
+	
+	// Light
+	LightType		{ FourCC = "LGHT" Type = "int" }
+	CastShadows		{ FourCC = "CSHD" Type = "bool" }
+	Intensity		{ FourCC = "LINT" Type = "float" }
+	Color			{ FourCC = "LCLR" Type = "vector3" }
+	Range			{ FourCC = "LRNG" Type = "float" }
+	ConeInner		{ FourCC = "LCIN" Type = "float" }
+	ConeOuter		{ FourCC = "LCOU" Type = "float" }
+
+	// Ambient light
+	IrradianceMap	{ FourCC = "IRRM" Type = "string" }
+	RadianceEnvMap	{ FourCC = "PMRM" Type = "string" } // Prefiltered mipmapped REM
+
+	// Camera
+	Orthogonal		{ FourCC = "ORTH" Type = "bool" }
+	FOV				{ FourCC = "FOVW" Type = "float" }
+	Width			{ FourCC = "WDTH" Type = "float" }
+	Height			{ FourCC = "HGHT" Type = "float" }
+	NearPlane		{ FourCC = "NEPL" Type = "float" }
+	FarPlane		{ FourCC = "FAPL" Type = "float" }
+	
+	// Mesh and material
+	Material		{ FourCC = "MTRL" Type = "string" }
+	Mesh			{ FourCC = "MESH" Type = "string" }
+	MeshGroupIndex	{ FourCC = "MSGR" Type = "int" }
+	JointPalette	{ FourCC = "JPLT" Type = "int" }		// Array
+
+	// Skin
+	SkinInfo		{ FourCC = "SKIF" Type = "string" }
+	AutocreateBones	{ FourCC = "ACBN" Type = "bool" }
+
+	// LODGroup
+	// FIXME: float to string ID pairs
+	Thresholds		{ FourCC = "TRSH" Type = "float" }		// Array
+
+	// Terrain
+	CDLODFile		{ FourCC = "CDLD" Type = "string" }
+	SplatSizeX		{ FourCC = "TSSX" Type = "float" }
+	SplatSizeZ		{ FourCC = "TSSZ" Type = "float" }
+}

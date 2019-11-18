@@ -13,7 +13,6 @@ class CString;
 
 namespace Data
 {
-	class CDataScheme;
 	class CBuffer;
 	typedef Ptr<class CDataArray> PDataArray;
 	typedef Ptr<class CDataScheme> PDataScheme;

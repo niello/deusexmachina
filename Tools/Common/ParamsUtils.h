@@ -1,6 +1,7 @@
 #pragma once
 #include <DataScheme.h>
 #include <algorithm>
+#include <iostream>
 
 // Utilities for CParams and descs (description format based on HRD/PRM with inheritance support)
 
@@ -10,9 +11,11 @@ namespace ParamsUtils
 bool LoadParamsFromHRD(const char* pFileName, Data::CParams& OutParams);
 bool LoadParamsFromPRM(const char* pFileName, Data::CParams& OutParams);
 bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data::CParams& OutParams);
-bool LoadDataSerializationSchemesFromDSS(const char* pFileName, std::map<CStrID, Data::CDataScheme>& OutSchemes);
+bool LoadSchemes(const char* pFileName, Data::CSchemeSet& OutSchemes);
 bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params);
 bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params);
+bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet);
+bool SaveParamsByScheme(const char* pFileName, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet);
 
 inline Data::CParamsSorted OrderedParamsToSorted(const Data::CParams& ParamsOrdered)
 {

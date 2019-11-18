@@ -9,6 +9,7 @@
 
 namespace Data
 {
+typedef std::map<CStringID, class CDataScheme> CSchemeSet;
 
 class CDataScheme
 {
@@ -28,6 +29,7 @@ public:
 		CStrID			ID;
 		uint32_t		FourCC;
 		int				TypeID; //???or type ptr?
+		uint8_t         ComponentCount = 1;
 		CStrID			SchemeID;
 		std::unique_ptr<CDataScheme> Scheme;
 		CData			Default;

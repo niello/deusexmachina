@@ -12,7 +12,6 @@ class CString;
 
 namespace Data
 {
-	class CDataScheme;
 	typedef Ptr<class CDataArray> PDataArray;
 }
 

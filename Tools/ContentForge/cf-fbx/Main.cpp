@@ -250,10 +250,12 @@ protected:
 	};
 
 	FbxManager* pFBXManager = nullptr;
+	Data::CSchemeSet _SceneSchemes;
 
 	std::string _ResourceRoot;
+	std::string _SchemeFile;
 	double _AnimSamplingRate = 30.0;
-	bool _OutputBin = true;
+	bool _OutputBin = false;
 	bool _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
 
 public:
@@ -264,6 +266,7 @@ public:
 	{
 		// Set default before parsing command line
 		_RootDir = "../../../content";
+		_SchemeFile = "../schemes/scene.dss";
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -286,6 +289,11 @@ public:
 
 		if (!_OutputHRD) _OutputBin = true;
 
+		if (_OutputBin)
+		{
+			if (!ParamsUtils::LoadSchemes(_SchemeFile.c_str(), _SceneSchemes)) return 2;
+		}
+
 		return 0;
 	}
 
@@ -300,6 +308,7 @@ public:
 	{
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
+		CLIApp.add_option("--scheme,--schema", _SchemeFile, "Scene binary serialization scheme file path");
 		CLIApp.add_option("--fps", _AnimSamplingRate, "Animation sampling rate in frames per second, default is 30");
 		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
@@ -423,16 +432,26 @@ public:
 		// pScene->GetGlobalSettings().GetAmbientColor();
 		// Scene->GetPoseCount();
 
+		const std::string TaskName = Task.TaskID.ToString();
+
 		if (_OutputHRD)
 		{
-			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".hrd");
-			ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes);
+			const auto DestPath = OutPath / (TaskName + ".hrd");
+			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes))
+			{
+				Task.Log.LogError("Error serializing " + TaskName + " to text");
+				return false;
+			}
 		}
 
 		if (_OutputBin)
 		{
 			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".scn");
-			//ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes);
+			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Nodes, CStrID("SceneNode"), _SceneSchemes))
+			{
+				Task.Log.LogError("Error serializing " + TaskName + " to binary");
+				return false;
+			}
 		}
 
 		return true;

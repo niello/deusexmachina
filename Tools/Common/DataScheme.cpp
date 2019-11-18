@@ -47,11 +47,29 @@ bool CDataScheme::Init(const CParams& Desc)
 				else if (!_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
 				else if (!_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(std::string);
 				else if (!_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
-				//else if (!_stricmp(pTypeString, "vector4")) Rec.TypeID = DATA_TYPE_ID(vector4);
+				else if (!_stricmp(pTypeString, "vector2"))
+				{
+					Rec.TypeID = DATA_TYPE_ID(vector4);
+					Rec.ComponentCount = 2;
+				}
+				else if (!_stricmp(pTypeString, "vector3"))
+				{
+					Rec.TypeID = DATA_TYPE_ID(vector4);
+					Rec.ComponentCount = 3;
+				}
+				else if (!_stricmp(pTypeString, "vector4"))
+				{
+					Rec.TypeID = DATA_TYPE_ID(vector4);
+					Rec.ComponentCount = 4;
+				}
 				//else if (!_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
-				else Rec.TypeID = -1;
+				else
+				{
+					assert(false && "CDataScheme::Init() > Unsupported TypeID");
+					Rec.TypeID = -1;
+				}
 			}
-			else assert(false && "CDataScheme::Init -> Wrong type of TypeID param. Must be int or string.");
+			else assert(false && "CDataScheme::Init() > Wrong type of TypeID param. Must be int or string.");
 		}
 		else Rec.TypeID = -1;
 

@@ -52,7 +52,7 @@ bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data:
 //---------------------------------------------------------------------
 */
 
-bool LoadDataSerializationSchemesFromDSS(const char* pFileName, std::map<CStrID, Data::CDataScheme>& OutSchemes)
+bool LoadSchemes(const char* pFileName, Data::CSchemeSet& OutSchemes)
 {
 	Data::CParams SchemeDescs;
 	if (!ParamsUtils::LoadParamsFromHRD(pFileName, SchemeDescs)) return false;
@@ -235,6 +235,185 @@ bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params)
 }
 //---------------------------------------------------------------------
 */
+
+/*
+bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet)
+{
+	auto It = SchemeSet.find(SchemeID);
+	if (It == SchemeSet.cend()) return false;
+
+	const Data::CDataScheme& Scheme = It->second;
+
+	for (const auto& Rec : Scheme.Records)
+	{
+		const Data::CData* PrmValue;
+		if (!TryGetParam(PrmValue, Params, Rec.ID))
+		{
+			if (Rec.Default.IsValid()) PrmValue = &Rec.Default;
+			else continue;
+		}
+
+		// Write Key or FourCC of current param
+		if (Rec.FourCC)
+		{
+			if (!Write<int>(Rec.FourCC)) FAIL;
+		}
+		else if (Rec.Flags.Is(Data::CDataScheme::WRITE_KEY))
+		{
+			if (!Write(Rec.ID)) FAIL;
+		}
+
+		// Write data (self)
+		if (!PrmValue->IsA<Data::PParams>() && !PrmValue->IsA<Data::PDataArray>())
+		{
+			// Data (self) is not {} or [], write as of type
+			if (!WriteDataAsOfType(*PrmValue, Rec.TypeID, Rec.Flags)) FAIL;
+		}
+		else 
+		{
+			// Data (self) is {} or [], get subscheme if declared
+			Data::PDataScheme SubScheme;
+			if (Rec.SchemeID.IsValid())
+			{
+				IPTR Idx = Schemes.FindIndex(Rec.SchemeID);
+				if (Idx == INVALID_INDEX) FAIL;
+				SubScheme = Schemes.ValueAt(Idx);
+				if (SubScheme.IsNullPtr()) FAIL;
+			}
+			else SubScheme = Rec.Scheme;
+
+			if (PrmValue->IsA<Data::PParams>())
+			{
+				// Data (self) is {}
+				const Data::CParams& PrmParams = *PrmValue->GetValue<Data::PParams>();
+
+				// Write element count of self
+				U64 CountPos;
+				short CountWritten;
+				if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT))
+				{
+					CountPos = Stream.GetPosition();
+					CountWritten = PrmParams.GetCount();
+					if (!Write<short>(CountWritten)) FAIL;
+				}
+
+				if (SubScheme.IsValidPtr() && Rec.Flags.Is(Data::CDataScheme::APPLY_SCHEME_TO_SELF))
+				{
+					// Apply scheme on self, then fix element count of self
+					UPTR Count;
+					if (!WriteParamsByScheme(PrmParams, *SubScheme, Schemes, Count)) FAIL;
+
+					if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT) && Count != CountWritten)
+					{
+						U64 CurrPos = Stream.GetPosition();
+						Stream.Seek(CountPos, IO::Seek_Begin);
+						if (!Write<short>((short)Count)) FAIL;
+						Stream.Seek(CurrPos, IO::Seek_Begin);
+					}
+				}
+				else for (UPTR j = 0; j < PrmParams.GetCount(); ++j)
+				{
+					// Apply scheme on children, iterate over them one by one
+					const Data::CParam& SubPrm = PrmParams.Get(j);
+
+					// Write key (ID) of current child
+					if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_KEYS))
+						if (!Write(SubPrm.GetName())) FAIL;
+
+					// Save data of current child
+					if (SubPrm.IsA<Data::PParams>())
+					{
+						// Current child is {}
+						const Data::CParams& SubPrmParams = *SubPrm.GetValue<Data::PParams>();
+
+						// Write element count of current child
+						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
+						{
+							CountPos = Stream.GetPosition();
+							CountWritten = SubPrmParams.GetCount();
+							if (!Write<short>(CountWritten)) FAIL;
+						}
+
+						if (SubScheme.IsValidPtr())
+						{
+							// If subscheme is declared, write this child by subscheme and fix its element count
+							UPTR Count;
+							if (!WriteParamsByScheme(SubPrmParams, *SubScheme, Schemes, Count)) FAIL;
+
+							if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT) && Count != CountWritten)
+							{
+								U64 CurrPos = Stream.GetPosition();
+								Stream.Seek(CountPos, IO::Seek_Begin);
+								if (!Write<short>((short)Count)) FAIL;
+								Stream.Seek(CurrPos, IO::Seek_Begin);
+							}
+						}
+						else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) FAIL;
+					}
+					else if (SubPrm.IsA<Data::PDataArray>())
+					{
+						// Current child is []
+						const Data::CDataArray& SubPrmArray = *SubPrm.GetValue<Data::PDataArray>();
+
+						// Write element count of current child
+						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
+							if (!Write<short>(SubPrmArray.GetCount())) FAIL;
+
+						// Write array elements one-by-one
+						for (UPTR k = 0; k < SubPrmArray.GetCount(); ++k)
+							if (!WriteDataAsOfType(SubPrmArray[k], Rec.TypeID, Rec.Flags)) FAIL;
+					}
+					else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) FAIL;
+				}
+			}
+			else // PDataArray
+			{
+				// Data (self) is []
+				const Data::CDataArray& PrmArray = *PrmValue->GetValue<Data::PDataArray>();
+
+				// Write element count of self
+				if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT))
+					if (!Write<short>(PrmArray.GetCount())) FAIL;
+
+				// Write array elements one-by-one
+				for (UPTR j = 0; j < PrmArray.GetCount(); ++j)
+				{
+					const Data::CData& Element = PrmArray[j];
+					if (SubScheme.IsValidPtr() && Element.IsA<Data::PParams>())
+					{
+						Data::CParams& SubPrmParams = *Element.GetValue<Data::PParams>();
+
+						// Write element count of current child
+						//!!!
+						// NB: This may cause some problems. Need clarify behaviour of { [ { } ] } structure.
+						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
+							if (!Write<short>(SubPrmParams.GetCount())) FAIL;
+
+						// If element is {} and subscheme is declared, save element by subscheme
+						if (!WriteParams(SubPrmParams, *SubScheme, Schemes)) FAIL;
+					}
+					else if (!WriteDataAsOfType(Element, Rec.TypeID, Rec.Flags)) FAIL;
+				}
+			}
+		}
+	}
+
+	OK;
+}
+//---------------------------------------------------------------------
+*/
+bool SaveParamsByScheme(const char* pFileName, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet)
+{
+	auto Path = fs::path(pFileName);
+
+	fs::create_directories(Path.parent_path());
+
+	std::ofstream File(Path, std::ios_base::trunc);
+	if (!File) return false;
+
+	return true; //SaveParamsByScheme(File, Params, SchemeID, SchemeSet);
+}
+//---------------------------------------------------------------------
 
 template<>
 const bool TryGetParam(Data::CData& Out, const Data::CParams& Params, const char* pKey)
