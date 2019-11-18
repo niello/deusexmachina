@@ -14,7 +14,7 @@ bool LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileName, Data:
 bool LoadSchemes(const char* pFileName, Data::CSchemeSet& OutSchemes);
 bool SaveParamsToHRD(const char* pFileName, const Data::CParams& Params);
 bool SaveParamsToPRM(const char* pFileName, const Data::CParams& Params);
-bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet);
+bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, const Data::CDataScheme& Scheme, const Data::CSchemeSet& SchemeSet, size_t* pElementsWritten = nullptr);
 bool SaveParamsByScheme(const char* pFileName, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet);
 
 inline Data::CParamsSorted OrderedParamsToSorted(const Data::CParams& ParamsOrdered)

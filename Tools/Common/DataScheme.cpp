@@ -39,30 +39,33 @@ bool CDataScheme::Init(const CParams& Desc)
 			if (TypeIDVal.IsA<int>()) Rec.TypeID = TypeIDVal;
 			else if (TypeIDVal.IsA<std::string>())
 			{
-				const char* pTypeString = TypeIDVal.GetValue<std::string>().c_str();
+				std::string TypeString = TypeIDVal.GetValue<std::string>();
+				ToLower(TypeString);
+
+				//!!!TODO: support unsigned types and bit count (uint64_t etc)!
 
 				//???move somewhere as common? or even store map of string-to-ID
-				if (!_stricmp(pTypeString, "bool")) Rec.TypeID = DATA_TYPE_ID(bool);
-				else if (!_stricmp(pTypeString, "int")) Rec.TypeID = DATA_TYPE_ID(int);
-				else if (!_stricmp(pTypeString, "float")) Rec.TypeID = DATA_TYPE_ID(float);
-				else if (!_stricmp(pTypeString, "string")) Rec.TypeID = DATA_TYPE_ID(std::string);
-				else if (!_stricmp(pTypeString, "strid")) Rec.TypeID = DATA_TYPE_ID(CStrID);
-				else if (!_stricmp(pTypeString, "vector2"))
+				if (TypeString == "bool") Rec.TypeID = DATA_TYPE_ID(bool);
+				else if (TypeString == "int") Rec.TypeID = DATA_TYPE_ID(int);
+				else if (TypeString == "float") Rec.TypeID = DATA_TYPE_ID(float);
+				else if (TypeString == "string") Rec.TypeID = DATA_TYPE_ID(std::string);
+				else if (TypeString == "strid") Rec.TypeID = DATA_TYPE_ID(CStrID);
+				else if (TypeString == "vector2")
 				{
 					Rec.TypeID = DATA_TYPE_ID(vector4);
 					Rec.ComponentCount = 2;
 				}
-				else if (!_stricmp(pTypeString, "vector3"))
+				else if (TypeString == "vector3")
 				{
 					Rec.TypeID = DATA_TYPE_ID(vector4);
 					Rec.ComponentCount = 3;
 				}
-				else if (!_stricmp(pTypeString, "vector4"))
+				else if (TypeString == "vector4")
 				{
 					Rec.TypeID = DATA_TYPE_ID(vector4);
 					Rec.ComponentCount = 4;
 				}
-				//else if (!_stricmp(pTypeString, "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
+				//else if (TypeString == "matrix")) Rec.TypeID = DATA_TYPE_ID(matrix44);
 				else
 				{
 					assert(false && "CDataScheme::Init() > Unsupported TypeID");

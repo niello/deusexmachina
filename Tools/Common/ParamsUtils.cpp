@@ -248,11 +248,11 @@ static bool WriteDataAsOfType(std::ostream& Stream, const Data::CData& Value, in
 		{
 			// Conversion cases //!!!Need CType conversion!
 			if (TypeID == DATA_TYPE_ID(float) && Value.IsA<int>())
-				WriteStream(Stream, (float)Value.GetValue<int>());
+				WriteStream(Stream, static_cast<float>(Value.GetValue<int>()));
 			else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<float>())
-				WriteStream(Stream, (int)Value.GetValue<float>());
+				WriteStream(Stream, static_cast<int>(Value.GetValue<float>()));
 			else if (TypeID == DATA_TYPE_ID(int) && Value.IsA<bool>())
-				WriteStream(Stream, (int)Value.GetValue<bool>());
+				WriteStream(Stream, static_cast<int>(Value.GetValue<bool>()));
 			else if (TypeID == DATA_TYPE_ID(CStrID) && Value.IsA<std::string>())
 				WriteStream(Stream, Value.GetValue<std::string>());
 			else if (TypeID == DATA_TYPE_ID(std::string) && Value.IsA<CStrID>())
@@ -282,21 +282,20 @@ static bool WriteDataAsOfType(std::ostream& Stream, const Data::CData& Value, in
 }
 //---------------------------------------------------------------------
 
-bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet)
+bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, const Data::CDataScheme& Scheme, const Data::CSchemeSet& SchemeSet, size_t* pElementsWritten)
 {
-	auto It = SchemeSet.find(SchemeID);
-	if (It == SchemeSet.cend()) return false;
-
-	const Data::CDataScheme& Scheme = It->second;
+	if (pElementsWritten) *pElementsWritten = 0;
 
 	for (const auto& Rec : Scheme.Records)
 	{
-		const Data::CData* PrmValue;
-		if (!TryGetParam(PrmValue, Params, Rec.ID))
+		const Data::CData* pPrmValue;
+		if (!TryGetParam(pPrmValue, Params, Rec.ID))
 		{
-			if (Rec.Default.IsValid()) PrmValue = &Rec.Default;
+			if (Rec.Default.IsValid()) pPrmValue = &Rec.Default;
 			else continue;
 		}
+
+		if (pElementsWritten) ++(*pElementsWritten);
 
 		// Write Key or FourCC of current param
 		if (Rec.FourCC)
@@ -309,10 +308,10 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 		}
 
 		// Write data (self)
-		if (!PrmValue->IsA<Data::CParams>() && !PrmValue->IsA<Data::CDataArray>())
+		if (!pPrmValue->IsA<Data::CParams>() && !pPrmValue->IsA<Data::CDataArray>())
 		{
 			// Data (self) is not {} or [], write as of type
-			if (!WriteDataAsOfType(Stream, *PrmValue, Rec.TypeID, Rec.ComponentCount)) return false;
+			if (!WriteDataAsOfType(Stream, *pPrmValue, Rec.TypeID, Rec.ComponentCount)) return false;
 		}
 		else 
 		{
@@ -326,117 +325,130 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 			}
 			else pSubScheme = Rec.Scheme.get();
 
-			if (PrmValue->IsA<Data::CParams>())
+			if (pPrmValue->IsA<Data::CParams>())
 			{
 				// Data (self) is {}
-				const Data::CParams& PrmParams = PrmValue->GetValue<Data::CParams>();
+				const Data::CParams& PrmParams = pPrmValue->GetValue<Data::CParams>();
 
 				// Write element count of self
-				uint64_t CountPos;
-				short CountWritten;
+				std::streampos CountPos;
+				size_t CountWritten;
 				if (Rec.WriteCount)
 				{
-					CountPos = Stream.GetPosition();
-					CountWritten = PrmParams.GetCount();
-					if (!Write<short>(CountWritten)) return false;
+					CountPos = Stream.tellp();
+					CountWritten = PrmParams.size();
+					WriteStream(Stream, static_cast<uint16_t>(CountWritten));
 				}
 
-				if (SubScheme.IsValidPtr() && Rec.ApplySchemeToSelf)
+				if (pSubScheme && Rec.ApplySchemeToSelf)
 				{
-					// Apply scheme on self, then fix element count of self
-					UPTR Count;
-					if (!WriteParamsByScheme(PrmParams, *SubScheme, Schemes, Count)) return false;
+					// Apply scheme on self
+					size_t Count;
+					if (!SaveParamsByScheme(Stream, PrmParams, *pSubScheme, SchemeSet, &Count)) return false;
 
+					// Fix element count of self
 					if (Rec.WriteCount && Count != CountWritten)
 					{
-						U64 CurrPos = Stream.GetPosition();
-						Stream.Seek(CountPos, IO::Seek_Begin);
-						if (!Write<short>((short)Count)) return false;
-						Stream.Seek(CurrPos, IO::Seek_Begin);
+						auto CurrPos = Stream.tellp();
+						Stream.seekp(CountPos, std::ios_base::beg);
+						WriteStream(Stream, static_cast<uint16_t>(Count));
+						Stream.seekp(CurrPos, std::ios_base::beg);
 					}
 				}
-				else for (UPTR j = 0; j < PrmParams.GetCount(); ++j)
+				else
 				{
 					// Apply scheme on children, iterate over them one by one
-					const Data::CParam& SubPrm = PrmParams.Get(j);
-
-					// Write key (ID) of current child
-					if (Rec.WriteChildKeys)
-						if (!Write(SubPrm.GetName())) return false;
-
-					// Save data of current child
-					if (SubPrm.IsA<Data::CParams>())
+					for (const auto& SubPrm : PrmParams)
 					{
-						// Current child is {}
-						const Data::CParams& SubPrmParams = SubPrm.GetValue<Data::CParams>();
+						// Write key (ID) of current child
+						if (Rec.WriteChildKeys)
+							WriteStream(Stream, SubPrm.first);
 
-						// Write element count of current child
-						if (Rec.WriteChildCount)
+						// Save data of current child
+						if (SubPrm.second.IsA<Data::CParams>())
 						{
-							CountPos = Stream.GetPosition();
-							CountWritten = SubPrmParams.GetCount();
-							if (!Write<short>(CountWritten)) return false;
-						}
+							// Current child is {}
+							const Data::CParams& SubPrmParams = SubPrm.second.GetValue<Data::CParams>();
 
-						if (SubScheme.IsValidPtr())
-						{
-							// If subscheme is declared, write this child by subscheme and fix its element count
-							UPTR Count;
-							if (!WriteParamsByScheme(SubPrmParams, *SubScheme, Schemes, Count)) return false;
-
-							if (Rec.WriteChildCount && Count != CountWritten)
+							// Write element count of current child
+							if (Rec.WriteChildCount)
 							{
-								U64 CurrPos = Stream.GetPosition();
-								Stream.Seek(CountPos, IO::Seek_Begin);
-								if (!Write<short>((short)Count)) return false;
-								Stream.Seek(CurrPos, IO::Seek_Begin);
+								CountPos = Stream.tellp();
+								CountWritten = PrmParams.size();
+								WriteStream(Stream, static_cast<uint16_t>(CountWritten));
+							}
+
+							if (pSubScheme)
+							{
+								// FIXME: duplicated code! if all subschemes are processed with this,
+								// move count writing into SaveParamsByScheme?
+
+								// If subscheme is declared, write this child by subscheme and fix its element count
+								size_t Count;
+								if (!SaveParamsByScheme(Stream, SubPrmParams, *pSubScheme, SchemeSet, &Count)) return false;
+
+								if (Rec.WriteCount && Count != CountWritten)
+								{
+									auto CurrPos = Stream.tellp();
+									Stream.seekp(CountPos, std::ios_base::beg);
+									WriteStream(Stream, static_cast<uint16_t>(Count));
+									Stream.seekp(CurrPos, std::ios_base::beg);
+								}
+							}
+							else
+							{
+								if (!WriteDataAsOfType(Stream, SubPrm.second, Rec.TypeID, Rec.ComponentCount)) return false;
 							}
 						}
-						else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) return false;
-					}
-					else if (SubPrm.IsA<Data::CDataArray>())
-					{
-						// Current child is []
-						const Data::CDataArray& SubPrmArray = *SubPrm.GetValue<Data::PDataArray>();
+						else if (SubPrm.second.IsA<Data::CDataArray>())
+						{
+							// Current child is []
+							const Data::CDataArray& SubPrmArray = SubPrm.second.GetValue<Data::CDataArray>();
 
-						// Write element count of current child
-						if (Rec.WriteChildCount)
-							if (!Write<short>(SubPrmArray.GetCount())) return false;
+							// Write element count of current child
+							if (Rec.WriteChildCount)
+								WriteStream(Stream, static_cast<uint16_t>(SubPrmArray.size()));
 
-						// Write array elements one-by-one
-						for (UPTR k = 0; k < SubPrmArray.GetCount(); ++k)
-							if (!WriteDataAsOfType(SubPrmArray[k], Rec.TypeID, Rec.Flags)) return false;
+							// Write array elements one-by-one
+							for (const auto& Element : SubPrmArray)
+								if (!WriteDataAsOfType(Stream, Element, Rec.TypeID, Rec.ComponentCount)) return false;
+						}
+						else
+						{
+							if (!WriteDataAsOfType(Stream, SubPrm.second, Rec.TypeID, Rec.ComponentCount)) return false;
+						}
 					}
-					else if (!WriteDataAsOfType(SubPrm.GetRawValue(), Rec.TypeID, Rec.Flags)) return false;
 				}
 			}
 			else // PDataArray
 			{
 				// Data (self) is []
-				const Data::CDataArray& PrmArray = *PrmValue->GetValue<Data::PDataArray>();
+				const Data::CDataArray& PrmArray = pPrmValue->GetValue<Data::CDataArray>();
 
 				// Write element count of self
 				if (Rec.WriteCount)
-					if (!Write<short>(PrmArray.GetCount())) return false;
+					WriteStream(Stream, static_cast<uint16_t>(PrmArray.size()));
 
 				// Write array elements one-by-one
-				for (UPTR j = 0; j < PrmArray.GetCount(); ++j)
+				for (const auto& Element : PrmArray)
 				{
-					const Data::CData& Element = PrmArray[j];
-					if (SubScheme.IsValidPtr() && Element.IsA<Data::PParams>())
+					if (pSubScheme && Element.IsA<Data::CParams>())
 					{
-						Data::CParams& SubPrmParams = *Element.GetValue<Data::PParams>();
+						const Data::CParams& SubPrmParams = Element.GetValue<Data::CParams>();
 
 						// Write element count of current child
 						//!!!
 						// NB: This may cause some problems. Need clarify behaviour of { [ { } ] } structure.
 						if (Rec.WriteChildCount)
-							if (!Write<short>(SubPrmParams.GetCount())) return false;
+							WriteStream(Stream, static_cast<uint16_t>(SubPrmParams.size()));
 
 						// If element is {} and subscheme is declared, save element by subscheme
-						if (!WriteParams(SubPrmParams, *SubScheme, Schemes)) return false;
+						if (!SaveParamsByScheme(Stream, SubPrmParams, *pSubScheme, SchemeSet)) return false;
 					}
-					else if (!WriteDataAsOfType(Element, Rec.TypeID, Rec.Flags)) return false;
+					else
+					{
+						if (!WriteDataAsOfType(Stream, Element, Rec.TypeID, Rec.ComponentCount)) return false;
+					}
 				}
 			}
 		}
@@ -448,6 +460,11 @@ bool SaveParamsByScheme(std::ostream& Stream, const Data::CParams& Params, CStrI
 
 bool SaveParamsByScheme(const char* pFileName, const Data::CParams& Params, CStrID SchemeID, const Data::CSchemeSet& SchemeSet)
 {
+	auto It = SchemeSet.find(SchemeID);
+	if (It == SchemeSet.cend()) return false;
+
+	const Data::CDataScheme& Scheme = It->second;
+
 	auto Path = fs::path(pFileName);
 
 	fs::create_directories(Path.parent_path());
@@ -455,7 +472,7 @@ bool SaveParamsByScheme(const char* pFileName, const Data::CParams& Params, CStr
 	std::ofstream File(Path, std::ios_base::trunc);
 	if (!File) return false;
 
-	return SaveParamsByScheme(File, Params, SchemeID, SchemeSet);
+	return SaveParamsByScheme(File, Params, Scheme, SchemeSet);
 }
 //---------------------------------------------------------------------
 
