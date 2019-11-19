@@ -203,7 +203,6 @@ protected:
 
 		acl::ANSIAllocator        ACLAllocator;
 		acl::CompressionSettings  ACLSettings;
-		acl::TransformErrorMetric ACLErrorMetric;
 
 		fs::path                  MeshPath;
 		fs::path                  SkinPath;
@@ -249,14 +248,15 @@ protected:
 		std::vector<FbxNode*> FbxBones; // Indices in this array are used as bone indices in ACL
 	};
 
-	FbxManager* pFBXManager = nullptr;
-	Data::CSchemeSet _SceneSchemes;
+	FbxManager*                pFBXManager = nullptr;
+	Data::CSchemeSet          _SceneSchemes;
+	acl::TransformErrorMetric _ACLErrorMetric; // Stateless and therefore reusable
 
-	std::string _ResourceRoot;
-	std::string _SchemeFile;
-	double _AnimSamplingRate = 30.0;
-	bool _OutputBin = false;
-	bool _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
+	std::string               _ResourceRoot;
+	std::string               _SchemeFile;
+	double                    _AnimSamplingRate = 30.0;
+	bool                      _OutputBin = false;
+	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
 
 public:
 
@@ -413,7 +413,7 @@ public:
 		Ctx.ACLSettings.range_reduction = acl::RangeReductionFlags8::AllTracks;
 		Ctx.ACLSettings.segmenting.enabled = true;
 		Ctx.ACLSettings.segmenting.range_reduction = acl::RangeReductionFlags8::AllTracks;
-		Ctx.ACLSettings.error_metric = &Ctx.ACLErrorMetric;
+		Ctx.ACLSettings.error_metric = &_ACLErrorMetric;
 
 		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
 		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
@@ -432,12 +432,27 @@ public:
 		// pScene->GetGlobalSettings().GetAmbientColor();
 		// Scene->GetPoseCount();
 
+		// Finalize and save the scene
+
 		const std::string TaskName = Task.TaskID.ToString();
+
+		Data::CParams Result;
+		//if (Nodes.size() == 1)
+		//{
+		//	// TODO: FBX doesn't have useful data at the root node. Is it a goiod idea to save its only
+		//	// child as a root instead?
+		//	Result = std::move(Nodes[0].second.GetValue<Data::CParams>());
+		//}
+		//else
+		if (!Nodes.empty())
+		{
+			Result.emplace_back(CStrID("Children"), std::move(Nodes));
+		}
 
 		if (_OutputHRD)
 		{
 			const auto DestPath = OutPath / (TaskName + ".hrd");
-			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Nodes))
+			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to text");
 				return false;
@@ -447,7 +462,7 @@ public:
 		if (_OutputBin)
 		{
 			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".scn");
-			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Nodes, CStrID("SceneNode"), _SceneSchemes))
+			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to binary");
 				return false;
