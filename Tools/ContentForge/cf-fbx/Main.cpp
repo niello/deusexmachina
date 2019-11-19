@@ -208,6 +208,7 @@ protected:
 		fs::path                  SkinPath;
 		fs::path                  AnimPath;
 		std::string               DefaultName;
+		Data::CParamsSorted       MaterialMap;
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
@@ -377,6 +378,8 @@ public:
 
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
 		CContext Ctx{ Task.Log };
+
+		Ctx.MaterialMap = ParamsUtils::OrderedParamsToSorted(ParamsUtils::GetParam<Data::CParams>(Task.Params, "Materials", {}));
 
 		Ctx.DefaultName = Task.TaskID.CStr();
 
@@ -639,11 +642,22 @@ public:
 			std::string MaterialID;
 			if (pMaterial)
 			{
-				MaterialID = pMaterial->GetName();
+				std::string MaterialName = pMaterial->GetName();
+				std::replace(MaterialName.begin(), MaterialName.end(), ' ', '_');
 
-				//???material search path or association map Name -> external precreated material resource ID?
+				auto MtlIt = Ctx.MaterialMap.find(CStrID(MaterialName.c_str()));
+				if (MtlIt != Ctx.MaterialMap.cend())
+				{
+					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
+					if (!_RootDir.empty() && MtlPath.is_relative())
+						MtlPath = fs::path(_RootDir) / MtlPath;
 
-				Ctx.Log.LogDebug(std::string("Mesh ") + pMesh->GetName() + ':' + std::to_string(GroupIndex) + " material: " + MaterialID);
+					MaterialID = _ResourceRoot + fs::relative(MtlPath, _RootDir).generic_string();
+				}
+				else
+				{
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + ':' + std::to_string(GroupIndex) + " references undefined material " + MaterialID);
+				}
 			}
 
 			// Assemble a model attribute
