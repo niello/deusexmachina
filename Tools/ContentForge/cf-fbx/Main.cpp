@@ -876,20 +876,31 @@ public:
 						{
 							if (Vertex.ControlPointIndex != ControlPointIndex) continue;
 
+							size_t BoneOrderNumber;
 							if (Vertex.BonesUsed >= MaxBonesPerVertex)
 							{
-								Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of influencing bones, the rest is discarded");
-								continue;
+								Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
+
+								BoneOrderNumber = 0;
+								for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
+								{
+									if (Vertex.BlendWeights[bo] < Vertex.BlendWeights[BoneOrderNumber])
+										BoneOrderNumber = bo;
+								}
+							}
+							else
+							{
+								BoneOrderNumber = Vertex.BonesUsed;
+
+								++Vertex.BonesUsed;
+								if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
+									MaxBonesPerVertexUsed = Vertex.BonesUsed;
 							}
 
+							Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
+							Vertex.BlendWeights[BoneOrderNumber] = Weight;
+
 							++VerticesAffected;
-
-							Vertex.BlendIndices[Vertex.BonesUsed] = BoneIndex;
-							Vertex.BlendWeights[Vertex.BonesUsed] = Weight;
-
-							++Vertex.BonesUsed;
-							if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
-								MaxBonesPerVertexUsed = Vertex.BonesUsed;
 						}
 					}
 				}
