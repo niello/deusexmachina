@@ -127,7 +127,11 @@ public:
 
 		if (_OutputBin)
 		{
-			if (!ParamsUtils::LoadSchemes(_SchemeFile.c_str(), _SceneSchemes)) return 2;
+			if (!ParamsUtils::LoadSchemes(_SchemeFile.c_str(), _SceneSchemes))
+			{
+				std::cout << "Couldn't load scene binary serialization scheme from " << _SchemeFile;
+				return 2;
+			}
 		}
 
 		return 0;
