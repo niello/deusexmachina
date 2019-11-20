@@ -9,6 +9,7 @@
 #include <acl/core/unique_ptr.h>
 #include <acl/algorithm/uniformly_sampled/encoder.h>
 
+// TODO: look at fbx2acl
 namespace acl
 {
 	typedef std::unique_ptr<AnimationClip, Deleter<AnimationClip>> AnimationClipPtr;
