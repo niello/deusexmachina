@@ -442,7 +442,7 @@ public:
 		Data::CParams Result;
 		//if (Nodes.size() == 1)
 		//{
-		//	// TODO: FBX doesn't have useful data at the root node. Is it a goiod idea to save its only
+		//	// TODO: FBX doesn't have useful data at the root node. Is it a good idea to save its only
 		//	// child as a root instead?
 		//	Result = std::move(Nodes[0].second.GetValue<Data::CParams>());
 		//}
@@ -1556,7 +1556,7 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CFBXTool Tool("cf-fbx", "FBX to DeusExMachina resource converter", { 0, 1, 0 });
+	CFBXTool Tool("cf-fbx", "FBX to DeusExMachina resource converter", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }
 

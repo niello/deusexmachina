@@ -17,10 +17,11 @@ if __name__ == "__main__":
 	# Tools
 	update_src_lists("DEM_TOOLS_COMMON", os.path.join(PROJECT_FOLDER, "Tools", "Common", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "Common"))
 	update_src_lists("DEM_SHADER_COMPILER", os.path.join(PROJECT_FOLDER, "Tools", "ShaderCompiler", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ShaderCompiler", "src"))
-	update_src_lists("DEM_CF_HLSL", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
-	update_src_lists("DEM_CF_EFFECT", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-effect", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-effect"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
-	update_src_lists("DEM_CF_RPATH", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-rpath", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-rpath"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
-	update_src_lists("DEM_CF_MTL", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-material", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-material"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
-	update_src_lists("DEM_CF_FBX", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-fbx", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-fbx"), root_folder=os.path.join(PROJECT_FOLDER, "Tools", "ContentForge"))
+	update_src_lists("DEM_CF_HLSL", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-hlsl"))
+	update_src_lists("DEM_CF_EFFECT", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-effect", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-effect"))
+	update_src_lists("DEM_CF_RPATH", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-rpath", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-rpath"))
+	update_src_lists("DEM_CF_MTL", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-material", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-material"))
+	update_src_lists("DEM_CF_FBX", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-fbx", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-fbx"))
+	update_src_lists("DEM_CF_GLTF", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-gltf", "src.cmake"), os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-gltf"))
 
 	print("Done updating engine source lists")

@@ -3,82 +3,16 @@ project(DEM-Tools-ContentForge)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
-# Dependency: meshoptimizer
+# Dependency: meshoptimizer (cf-fbx, cf-gltf)
+set(BUILD_DEMO OFF CACHE INTERNAL "" FORCE)
+set(BUILD_TOOLS OFF CACHE INTERNAL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/meshoptimizer" "${CMAKE_CURRENT_BINARY_DIR}/Deps/meshoptimizer")
 
-# Dependency: glTF SDK
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/GLTFSDK" "${CMAKE_CURRENT_BINARY_DIR}/Deps/GLTFSDK")
-
-# Tool: cf-hlsl
-
-# TODO: get rid of cf-hlsl folder inside VS!
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cf-hlsl/src.cmake")
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
-add_executable(cf-hlsl ${DEM_CF_HLSL_HEADERS} ${DEM_CF_HLSL_SOURCES})
-target_include_directories(cf-hlsl PRIVATE "cf-hlsl")
-target_link_libraries(cf-hlsl PRIVATE ToolsCommon ShaderCompiler)
-set_target_properties(cf-hlsl PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
-
-# Tool: cf-effect
-
-# TODO: get rid of cf-effect folder inside VS!
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cf-effect/src.cmake")
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_EFFECT_HEADERS} ${DEM_CF_EFFECT_SOURCES})
-add_executable(cf-effect ${DEM_CF_EFFECT_HEADERS} ${DEM_CF_EFFECT_SOURCES})
-target_include_directories(cf-effect PRIVATE "cf-effect")
-target_link_libraries(cf-effect PRIVATE ToolsCommon)
-set_target_properties(cf-effect PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
-
-# Tool: cf-rpath
-
-# TODO: get rid of cf-rpath folder inside VS!
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cf-rpath/src.cmake")
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_RPATH_HEADERS} ${DEM_CF_RPATH_SOURCES})
-add_executable(cf-rpath ${DEM_CF_RPATH_HEADERS} ${DEM_CF_RPATH_SOURCES})
-target_include_directories(cf-rpath PRIVATE "cf-rpath")
-target_link_libraries(cf-rpath PRIVATE ToolsCommon)
-set_target_properties(cf-rpath PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
-
-# Tool: cf-material
-
-# TODO: get rid of cf-material folder inside VS!
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cf-material/src.cmake")
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_MTL_HEADERS} ${DEM_CF_MTL_SOURCES})
-add_executable(cf-material ${DEM_CF_MTL_HEADERS} ${DEM_CF_MTL_SOURCES})
-target_include_directories(cf-material PRIVATE "cf-material")
-target_link_libraries(cf-material PRIVATE ToolsCommon)
-set_target_properties(cf-material PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
-
-# Tool: cf-fbx
-
-# TODO: get rid of cf-fbx folder inside VS!
-
-# FIXME: FBX import must depend on compiler and architecture
-set(FBX_SDK_PATH "" CACHE STRING "FBX SDK path")
-
-if(${MSVC_TOOLSET_VERSION} EQUAL 141)
-  set(FBX_SDK_COMPILER_SUBFOLDER vs2017)
-elseif(${MSVC_TOOLSET_VERSION} EQUAL 140)
-  set(FBX_SDK_COMPILER_SUBFOLDER vs2015)
-else()
-  set(FBX_SDK_COMPILER_SUBFOLDER "VS_VERSION_NOT_DETECTED")
-endif()
-
-set(FBX_SDK_LIB_PATH_DEBUG "${FBX_SDK_PATH}/lib/${FBX_SDK_COMPILER_SUBFOLDER}/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/debug/")
-set(FBX_SDK_LIB_PATH_RELEASE "${FBX_SDK_PATH}/lib/${FBX_SDK_COMPILER_SUBFOLDER}/$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,x64,x86>/release/")
-
-include("${CMAKE_CURRENT_SOURCE_DIR}/cf-fbx/src.cmake")
-source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
-add_executable(cf-fbx ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
-target_include_directories(cf-fbx PRIVATE "cf-fbx" "${FBX_SDK_PATH}/include" "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/acl/includes")
-target_link_libraries(cf-fbx PRIVATE
-	ToolsCommon
-	meshoptimizer
-	debug ${FBX_SDK_LIB_PATH_DEBUG}libfbxsdk-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libfbxsdk-md.lib
-	debug ${FBX_SDK_LIB_PATH_DEBUG}libxml2-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libxml2-md.lib
-	debug ${FBX_SDK_LIB_PATH_DEBUG}zlib-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}zlib-md.lib)
-set_target_properties(cf-fbx PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
+# Tools
+add_subdirectory(cf-hlsl)
+add_subdirectory(cf-effect)
+add_subdirectory(cf-rpath)
+add_subdirectory(cf-material)
+add_subdirectory(cf-fbx)
+add_subdirectory(cf-gltf)
