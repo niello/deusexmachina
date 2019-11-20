@@ -6,6 +6,9 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 # Dependency: meshoptimizer
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/meshoptimizer" "${CMAKE_CURRENT_BINARY_DIR}/Deps/meshoptimizer")
 
+# Dependency: glTF SDK
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/GLTFSDK" "${CMAKE_CURRENT_BINARY_DIR}/Deps/GLTFSDK")
+
 # Tool: cf-hlsl
 
 # TODO: get rid of cf-hlsl folder inside VS!
