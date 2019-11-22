@@ -182,7 +182,6 @@ public:
 		{
 			Task.Log.LogWarning("Filename extension must be .gltf or .glb");
 			return false;
-
 		}
 
 		// Open glTF document
