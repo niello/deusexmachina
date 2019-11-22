@@ -608,10 +608,11 @@ public:
 		if (!Children.empty())
 			NodeSection.emplace_back(sidChildren, std::move(Children));
 
-		if (ParamsUtils::HasParam(Nodes, CStrID(pNode->GetName())))
+		CStrID NodeID = CStrID(pNode->GetName());
+		if (ParamsUtils::HasParam(Nodes, NodeID))
 			Ctx.Log.LogWarning("Duplicated node overwritten with name " + std::string(pNode->GetName()));
 
-		Nodes.emplace_back(CStrID(pNode->GetName()), std::move(NodeSection));
+		Nodes.emplace_back(NodeID, std::move(NodeSection));
 
 		return true;
 	}

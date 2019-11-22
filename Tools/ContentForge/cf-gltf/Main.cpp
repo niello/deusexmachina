@@ -18,6 +18,7 @@ namespace acl
 }
 
 namespace fs = std::filesystem;
+namespace gltf = Microsoft::glTF;
 
 //!!!DBG TMP!
 void PrintInfo(const fs::path& path, CThreadSafeLog& Log);
@@ -28,6 +29,24 @@ void PrintInfo(const fs::path& path, CThreadSafeLog& Log);
 
 constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
+
+class CStreamReader : public gltf::IStreamReader
+{
+public:
+
+	CStreamReader(fs::path&& pathBase) : _BasePath(std::move(pathBase)) {}
+
+	std::shared_ptr<std::istream> GetInputStream(const std::string& FileName) const override
+	{
+		auto StreamPath = _BasePath / fs::u8path(FileName);
+		auto Stream = std::make_shared<std::ifstream>(StreamPath, std::ios_base::binary);
+		return (Stream && *Stream) ? Stream : nullptr;
+	}
+
+private:
+
+	fs::path _BasePath;
+};
 
 class CGLTFTool : public CContentForgeTool
 {
@@ -42,6 +61,8 @@ protected:
 	struct CContext
 	{
 		CThreadSafeLog&           Log;
+
+		const gltf::Document&     Doc;
 
 		acl::ANSIAllocator        ACLAllocator;
 		acl::CompressionSettings  ACLSettings;
@@ -155,20 +176,72 @@ public:
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		const auto Extension = Task.SrcFilePath.extension();
-		if (Extension != ".gltf" && Extension != ".glb")
+		const bool IsGLTF = (Extension == ".gltf");
+		const bool IsGLB = (Extension == ".glb");
+		if (!IsGLTF && !IsGLB)
 		{
 			Task.Log.LogWarning("Filename extension must be .gltf or .glb");
 			return false;
 
 		}
 
-		// TODO: check whether the metafile can be processed by this tool
-		PrintInfo(Task.SrcFilePath, Task.Log);
+		// Open glTF document
+
+		auto StreamReader = std::make_unique<CStreamReader>(Task.SrcFilePath.parent_path());
+
+		std::unique_ptr<gltf::GLTFResourceReader> ResourceReader;
+		gltf::Document Doc;
+
+		const auto SrcFileName = Task.SrcFilePath.filename().u8string();
+		auto gltfStream = StreamReader->GetInputStream(SrcFileName);
+
+		if (IsGLTF)
+		{
+			auto gltfResourceReader = std::make_unique<gltf::GLTFResourceReader>(std::move(StreamReader));
+
+			std::stringstream manifestStream;
+			manifestStream << gltfStream->rdbuf();
+
+			try
+			{
+				Doc = gltf::Deserialize(manifestStream.str());
+			}
+			catch (const gltf::GLTFException& e)
+			{
+				Task.Log.LogError("Error deserializing glTF file " + SrcFileName + ":\n" + e.what());
+				return false;
+			}
+
+			ResourceReader = std::move(gltfResourceReader);
+		}
+		else
+		{
+			auto glbResourceReader = std::make_unique<gltf::GLBResourceReader>(std::move(StreamReader), std::move(gltfStream));
+
+			try
+			{
+				Doc = gltf::Deserialize(glbResourceReader->GetJson());
+			}
+			catch (const gltf::GLTFException& e)
+			{
+				Task.Log.LogError("Error deserializing glB file " + SrcFileName + ":\n" + e.what());
+				return false;
+			}
+
+			ResourceReader = std::move(glbResourceReader);
+		}
+
+		// Output file info
+
+		Task.Log.LogInfo("Asset Version:    " + Doc.asset.version);
+		Task.Log.LogInfo("Asset MinVersion: " + Doc.asset.minVersion);
+		Task.Log.LogInfo("Asset Generator:  " + Doc.asset.generator);
+		Task.Log.LogInfo("Asset Copyright:  " + Doc.asset.copyright + Task.Log.GetLineEnd());
 
 		// Prepare task context
 
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
-		CContext Ctx{ Task.Log };
+		CContext Ctx{ Task.Log, Doc };
 
 		Ctx.DefaultName = Task.TaskID.CStr();
 
@@ -188,11 +261,24 @@ public:
 		if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
 			Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
 
-		// Export node hierarchy to DEM format, omit FBX root node
+		// Export node hierarchy to DEM format
+
+		if (Doc.scenes.Size() > 1)
+		{
+			Task.Log.LogWarning("File contains multiple scenes, only default one will be exported!");
+		}
+		else if (Doc.scenes.Size() < 1)
+		{
+			Task.Log.LogError("File contains no scenes!");
+			return false;
+		}
+
+		const auto& Scene = Doc.scenes[Doc.defaultSceneId];
 		
 		Data::CParams Nodes;
 
-		//...
+		for (const auto& Node : Scene.nodes)
+			if (!ExportNode(Node, Ctx, Nodes)) return false;
 
 		// Export animations
 
@@ -251,252 +337,47 @@ public:
 
 		return true;
 	}
+
+	bool ExportNode(const std::string& NodeName, CContext& Ctx, Data::CParams& Nodes)
+	{
+		const auto& Node = Ctx.Doc.nodes[NodeName];
+
+		Ctx.Log.LogDebug(std::string("Node ") + Node.name);
+
+		static const CStrID sidTranslation("Translation");
+		static const CStrID sidRotation("Rotation");
+		static const CStrID sidScale("Scale");
+		static const CStrID sidAttrs("Attrs");
+		static const CStrID sidChildren("Children");
+
+		Data::CParams NodeSection;
+
+		// Process attributes
+
+		//...
+
+		// Process children
+
+		Data::CParams Children;
+
+		for (const auto& Child : Node.children)
+			if (!ExportNode(Child, Ctx, Children)) return false;
+
+		if (!Children.empty())
+			NodeSection.emplace_back(sidChildren, std::move(Children));
+
+		CStrID NodeID = CStrID(Node.name.c_str());
+		if (ParamsUtils::HasParam(Nodes, NodeID))
+			Ctx.Log.LogWarning("Duplicated node overwritten with name " + Node.name);
+
+		Nodes.emplace_back(NodeID, std::move(NodeSection));
+
+		return true;
+	}
 };
 
 int main(int argc, const char** argv)
 {
 	CGLTFTool Tool("cf-gltf", "glTF 2.0 to DeusExMachina resource converter", { 0, 1, 0 });
 	return Tool.Execute(argc, argv);
-}
-
-
-//////////////
-//!!!DBG TMP!
-
-using namespace Microsoft::glTF;
-
-// The glTF SDK is decoupled from all file I/O by the IStreamReader (and IStreamWriter)
-// interface(s) and the C++ stream-based I/O library. This allows the glTF SDK to be used in
-// sandboxed environments, such as WebAssembly modules and UWP apps, where any file I/O code
-// must be platform or use-case specific.
-class StreamReader : public IStreamReader
-{
-public:
-	StreamReader(fs::path pathBase) : m_pathBase(std::move(pathBase))
-	{
-	}
-
-	// Resolves the relative URIs of any external resources declared in the glTF manifest
-	std::shared_ptr<std::istream> GetInputStream(const std::string& filename) const override
-	{
-		// In order to construct a valid stream:
-		// 1. The filename argument will be encoded as UTF-8 so use filesystem::u8path to
-		//    correctly construct a path instance.
-		// 2. Generate an absolute path by concatenating m_pathBase with the specified filename
-		//    path. The filesystem::operator/ uses the platform's preferred directory separator
-		//    if appropriate.
-		// 3. Always open the file stream in binary mode. The glTF SDK will handle any text
-		//    encoding issues for us.
-		auto streamPath = m_pathBase / fs::u8path(filename);
-		auto stream = std::make_shared<std::ifstream>(streamPath, std::ios_base::binary);
-
-		// Check if the stream has no errors and is ready for I/O operations
-		if (!stream || !(*stream))
-		{
-			throw std::runtime_error("Unable to create a valid input stream for uri: " + filename);
-		}
-
-		return stream;
-	}
-
-private:
-	fs::path m_pathBase;
-};
-
-// Uses the Document class to print some basic information about various top-level glTF entities
-void PrintDocumentInfo(const Document& document, CThreadSafeLog& Log)
-{
-	// Asset Info
-	Log.GetStream() << "Asset Version:    " << document.asset.version << "\n";
-	Log.GetStream() << "Asset MinVersion: " << document.asset.minVersion << "\n";
-	Log.GetStream() << "Asset Generator:  " << document.asset.generator << "\n";
-	Log.GetStream() << "Asset Copyright:  " << document.asset.copyright << "\n\n";
-
-	// Scene Info
-	Log.GetStream() << "Scene Count: " << document.scenes.Size() << "\n";
-
-	if (document.scenes.Size() > 0U)
-	{
-		Log.GetStream() << "Default Scene Index: " << document.GetDefaultScene().id << "\n\n";
-	}
-	else
-	{
-		Log.GetStream() << "\n";
-	}
-
-	// Entity Info
-	Log.GetStream() << "Node Count:     " << document.nodes.Size() << "\n";
-	Log.GetStream() << "Camera Count:   " << document.cameras.Size() << "\n";
-	Log.GetStream() << "Material Count: " << document.materials.Size() << "\n\n";
-
-	// Mesh Info
-	Log.GetStream() << "Mesh Count: " << document.meshes.Size() << "\n";
-	Log.GetStream() << "Skin Count: " << document.skins.Size() << "\n\n";
-
-	// Texture Info
-	Log.GetStream() << "Image Count:   " << document.images.Size() << "\n";
-	Log.GetStream() << "Texture Count: " << document.textures.Size() << "\n";
-	Log.GetStream() << "Sampler Count: " << document.samplers.Size() << "\n\n";
-
-	// Buffer Info
-	Log.GetStream() << "Buffer Count:     " << document.buffers.Size() << "\n";
-	Log.GetStream() << "BufferView Count: " << document.bufferViews.Size() << "\n";
-	Log.GetStream() << "Accessor Count:   " << document.accessors.Size() << "\n\n";
-
-	// Animation Info
-	Log.GetStream() << "Animation Count: " << document.animations.Size() << "\n\n";
-
-	for (const auto& extension : document.extensionsUsed)
-	{
-		Log.GetStream() << "Extension Used: " << extension << "\n";
-	}
-
-	if (!document.extensionsUsed.empty())
-	{
-		Log.GetStream() << "\n";
-	}
-
-	for (const auto& extension : document.extensionsRequired)
-	{
-		Log.GetStream() << "Extension Required: " << extension << "\n";
-	}
-
-	if (!document.extensionsRequired.empty())
-	{
-		Log.GetStream() << "\n";
-	}
-}
-
-// Uses the Document and GLTFResourceReader classes to print information about various glTF binary resources
-void PrintResourceInfo(const Document& document, const GLTFResourceReader& resourceReader, CThreadSafeLog& Log)
-{
-	// Use the resource reader to get each mesh primitive's position data
-	for (const auto& mesh : document.meshes.Elements())
-	{
-		Log.GetStream() << "Mesh: " << mesh.id << "\n";
-
-		for (const auto& meshPrimitive : mesh.primitives)
-		{
-			std::string accessorId;
-
-			if (meshPrimitive.TryGetAttributeAccessorId(ACCESSOR_POSITION, accessorId))
-			{
-				const Accessor& accessor = document.accessors.Get(accessorId);
-
-				const auto data = resourceReader.ReadBinaryData<float>(document, accessor);
-				const auto dataByteLength = data.size() * sizeof(float);
-
-				Log.GetStream() << "MeshPrimitive: " << dataByteLength << " bytes of position data\n";
-			}
-		}
-
-		Log.GetStream() << "\n";
-	}
-
-	// Use the resource reader to get each image's data
-	for (const auto& image : document.images.Elements())
-	{
-		std::string filename;
-
-		if (image.uri.empty())
-		{
-			assert(!image.bufferViewId.empty());
-
-			auto& bufferView = document.bufferViews.Get(image.bufferViewId);
-			auto& buffer = document.buffers.Get(bufferView.bufferId);
-
-			filename += buffer.uri; //NOTE: buffer uri is empty if image is stored in GLB binary chunk
-		}
-		else if (IsUriBase64(image.uri))
-		{
-			filename = "Data URI";
-		}
-		else
-		{
-			filename = image.uri;
-		}
-
-		auto data = resourceReader.ReadBinaryData(document, image);
-
-		Log.GetStream() << "Image: " << image.id << "\n";
-		Log.GetStream() << "Image: " << data.size() << " bytes of image data\n";
-
-		if (!filename.empty())
-		{
-			Log.GetStream() << "Image filename: " << filename << "\n\n";
-		}
-	}
-}
-
-void PrintInfo(const fs::path& path, CThreadSafeLog& Log)
-{
-	// Pass the absolute path, without the filename, to the stream reader
-	auto streamReader = std::make_unique<StreamReader>(path.parent_path());
-
-	fs::path pathFile = path.filename();
-	fs::path pathFileExt = pathFile.extension();
-
-	std::string manifest;
-
-	auto MakePathExt = [](const std::string& ext)
-	{
-		return "." + ext;
-	};
-
-	std::unique_ptr<GLTFResourceReader> resourceReader;
-
-	// If the file has a '.gltf' extension then create a GLTFResourceReader
-	if (pathFileExt == MakePathExt(GLTF_EXTENSION))
-	{
-		auto gltfStream = streamReader->GetInputStream(pathFile.u8string()); // Pass a UTF-8 encoded filename to GetInputString
-		auto gltfResourceReader = std::make_unique<GLTFResourceReader>(std::move(streamReader));
-
-		std::stringstream manifestStream;
-
-		// Read the contents of the glTF file into a string using a std::stringstream
-		manifestStream << gltfStream->rdbuf();
-		manifest = manifestStream.str();
-
-		resourceReader = std::move(gltfResourceReader);
-	}
-
-	// If the file has a '.glb' extension then create a GLBResourceReader. This class derives
-	// from GLTFResourceReader and adds support for reading manifests from a GLB container's
-	// JSON chunk and resource data from the binary chunk.
-	if (pathFileExt == MakePathExt(GLB_EXTENSION))
-	{
-		auto glbStream = streamReader->GetInputStream(pathFile.u8string()); // Pass a UTF-8 encoded filename to GetInputString
-		auto glbResourceReader = std::make_unique<GLBResourceReader>(std::move(streamReader), std::move(glbStream));
-
-		manifest = glbResourceReader->GetJson(); // Get the manifest from the JSON chunk
-
-		resourceReader = std::move(glbResourceReader);
-	}
-
-	if (!resourceReader)
-	{
-		Log.GetStream() << "Command line argument path filename extension must be .gltf or .glb\n";
-		return;
-	}
-
-	Document document;
-
-	try
-	{
-		document = Deserialize(manifest);
-	}
-	catch (const GLTFException& ex)
-	{
-		std::stringstream ss;
-
-		ss << "Microsoft::glTF::Deserialize failed: ";
-		ss << ex.what();
-
-		throw std::runtime_error(ss.str());
-	}
-
-	Log.GetStream() << "### glTF Info - " << pathFile << " ###\n\n";
-
-	PrintDocumentInfo(document, Log);
-	PrintResourceInfo(document, *resourceReader, Log);
 }
