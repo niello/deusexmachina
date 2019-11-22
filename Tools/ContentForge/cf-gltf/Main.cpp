@@ -419,6 +419,27 @@ public:
 
 		Ctx.Log.LogDebug(std::string("Mesh ") + Mesh.name);
 
+		int GroupIndex = 0;
+		for (const auto& Primitive : Mesh.primitives)
+		{
+			Ctx.Log.LogDebug(std::string("Submesh ") + Primitive.materialId);
+
+			for (const auto& Pair : Primitive.attributes)
+			{
+				Ctx.Log.LogDebug(Pair.first + " > " + Pair.second);
+			}
+
+			Data::CParams ModelAttribute;
+			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
+			//ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
+			if (GroupIndex > 0)
+				ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
+			//ModelAttribute.emplace_back(CStrID("Material"), MaterialID);
+			Attributes.push_back(std::move(ModelAttribute));
+
+			++GroupIndex;
+		}
+
 		return true;
 	}
 

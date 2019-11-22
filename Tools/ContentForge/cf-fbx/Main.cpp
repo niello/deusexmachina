@@ -671,7 +671,8 @@ public:
 			Data::CParams ModelAttribute;
 			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
 			ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
-			ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
+			if (GroupIndex > 0)
+				ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
 			if (!MaterialID.empty())
 				ModelAttribute.emplace_back(CStrID("Material"), MaterialID);
 			else
