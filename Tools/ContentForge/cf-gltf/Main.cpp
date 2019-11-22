@@ -20,15 +20,15 @@ namespace acl
 namespace fs = std::filesystem;
 namespace gltf = Microsoft::glTF;
 
-//!!!DBG TMP!
-void PrintInfo(const fs::path& path, CThreadSafeLog& Log);
-
 // Set working directory to $(TargetDir)
 // Example args:
 // -s src/scenes
 
 constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
+
+inline float RadToDeg(float Rad) { return Rad * 180.0f / 3.1415926535897932385f; }
+inline float DegToRad(float Deg) { return Deg * 3.1415926535897932385f / 180.0f; }
 
 class CStreamReader : public gltf::IStreamReader
 {
@@ -356,19 +356,18 @@ public:
 		Data::CDataArray Attributes;
 
 		if (!Node.cameraId.empty())
-		{
-			//...
-		}
+			if (!ExportCamera(Node.cameraId, Ctx, Attributes)) return false;
 
 		if (!Node.meshId.empty())
-		{
-			//...
-		}
+			if (!ExportModel(Node.meshId, Ctx, Attributes)) return false;
 
 		if (!Node.skinId.empty())
 		{
 			//...
 		}
+
+		//!!!KHR_lights_punctual
+		//!!!MSFT_lod
 
 		if (!Attributes.empty())
 			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
@@ -380,8 +379,10 @@ public:
 
 		if (Node.matrix != gltf::Matrix4::IDENTITY)
 		{
+			// TODO: decompose affine, then R matrix to quaternion //???use RTM from ACL?
+			// NB: column-major!
 			assert(false && "IMPLEMENT MATRIX DECOMPOSITION TO SRT");
-			Node.matrix; // TODO: decompose affine, then R matrix to quaternion //???use RTM from ACL?
+			Node.matrix;
 		}
 		else
 		{
@@ -408,6 +409,64 @@ public:
 			Ctx.Log.LogWarning("Duplicated node overwritten with name " + Node.name);
 
 		Nodes.emplace_back(NodeID, std::move(NodeSection));
+
+		return true;
+	}
+
+	bool ExportModel(const std::string& MeshName, CContext& Ctx, Data::CDataArray& Attributes)
+	{
+		const auto& Mesh = Ctx.Doc.meshes[MeshName];
+
+		Ctx.Log.LogDebug(std::string("Mesh ") + Mesh.name);
+
+		return true;
+	}
+
+	bool ExportCamera(const std::string& CameraName, CContext& Ctx, Data::CDataArray& Attributes)
+	{
+		const auto& Camera = Ctx.Doc.cameras[CameraName];
+
+		Ctx.Log.LogDebug(std::string("Camera ") + Camera.name);
+
+		Data::CParams Attribute;
+		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CCameraAttribute"));
+
+		if (const auto* pOrthographic = dynamic_cast<gltf::Orthographic*>(Camera.projection.get()))
+		{
+			Attribute.emplace_back(CStrID("Orthogonal"), true);
+
+			Attribute.emplace_back(CStrID("NearPlane"), pOrthographic->znear);
+			Attribute.emplace_back(CStrID("FarPlane"), pOrthographic->zfar);
+
+			assert(false && "IMPLEMENT!");
+			//pOrthographic->xmag;
+			//pOrthographic->ymag;
+		}
+		else if (const auto* pPerspective = dynamic_cast<gltf::Perspective*>(Camera.projection.get()))
+		{
+			Attribute.emplace_back(CStrID("FOV"), RadToDeg(pPerspective->yfov));
+
+			if (pPerspective->HasCustomAspectRatio())
+			{
+				//Attribute.emplace_back(CStrID("Aspect"), pPerspective->aspectRatio.Get());
+
+				constexpr float DefaultHeight = 1024.f;
+				Attribute.emplace_back(CStrID("Width"), DefaultHeight * pPerspective->aspectRatio.Get());
+				Attribute.emplace_back(CStrID("Height"), DefaultHeight);
+			}
+
+			Attribute.emplace_back(CStrID("NearPlane"), pPerspective->znear);
+
+			if (pPerspective->IsFinite())
+				Attribute.emplace_back(CStrID("FarPlane"), pPerspective->zfar.Get());
+		}
+		else
+		{
+			Ctx.Log.LogError("Unknown camera projection type!");
+			return false;
+		}
+
+		Attributes.push_back(std::move(Attribute));
 
 		return true;
 	}

@@ -1282,6 +1282,8 @@ public:
 		if (pCamera->ProjectionType.Get() == FbxCamera::eOrthogonal)
 			Attribute.emplace_back(CStrID("Orthogonal"), true);
 
+		// FIXME: not all of subsequent params are needed for orthographic cameras!
+
 		float Width = static_cast<float>(pCamera->AspectWidth.Get());
 		float Height = static_cast<float>(pCamera->AspectHeight.Get());
 		switch (pCamera->AspectRatioMode.Get())
