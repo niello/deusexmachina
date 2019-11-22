@@ -353,7 +353,45 @@ public:
 
 		// Process attributes
 
+		Data::CDataArray Attributes;
+
+		if (!Node.cameraId.empty())
+		{
+			//...
+		}
+
+		if (!Node.meshId.empty())
+		{
+			//...
+		}
+
+		if (!Node.skinId.empty())
+		{
+			//...
+		}
+
+		if (!Attributes.empty())
+			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
+
+		// Process transform
+
+		// Bone transformation is determined by the bind pose and animations
 		//...
+
+		if (Node.matrix != gltf::Matrix4::IDENTITY)
+		{
+			assert(false && "IMPLEMENT MATRIX DECOMPOSITION TO SRT");
+			Node.matrix; // TODO: decompose affine, then R matrix to quaternion //???use RTM from ACL?
+		}
+		else
+		{
+			if (Node.translation != gltf::Vector3::ZERO)
+				NodeSection.emplace_back(sidTranslation, vector4({ Node.translation.x, Node.translation.y, Node.translation.z }));
+			if (Node.rotation != gltf::Quaternion::IDENTITY)
+				NodeSection.emplace_back(sidRotation, vector4({ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w }));
+			if (Node.scale != gltf::Vector3::ONE)
+				NodeSection.emplace_back(sidScale, vector4({ Node.scale.x, Node.scale.y, Node.scale.z }));
+		}
 
 		// Process children
 
