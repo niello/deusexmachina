@@ -7,6 +7,7 @@
 #include <GLTFSDK/GLTFResourceReader.h>
 #include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/Deserialize.h>
+#include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
 #include <acl/algorithm/uniformly_sampled/encoder.h>
@@ -219,7 +220,7 @@ public:
 
 			try
 			{
-				Doc = gltf::Deserialize(glbResourceReader->GetJson());
+				Doc = gltf::Deserialize(glbResourceReader->GetJson(), gltf::KHR::GetKHRExtensionDeserializer_DEM());
 			}
 			catch (const gltf::GLTFException& e)
 			{
@@ -366,16 +367,24 @@ public:
 			//...
 		}
 
-		if (Node.extensions.find("KHR_lights_punctual") != Node.extensions.cend())
 		{
-			//...
-			Ctx.Log.LogDebug(std::string("KHR_lights_punctual ") + Node.name);
+			auto ItLights = Node.extensions.find("KHR_lights_punctual");
+			if (ItLights != Node.extensions.cend())
+			{
+				//auto JSON = gltf::RapidJsonUtils::CreateDocumentFromString(ItLights->second);
+				//auto ItLight = JSON.FindMember("light");
+				//if (ItLight != JSON.MemberEnd() && ItLight->value.IsInt())
+				//	if (!ExportLight(ItLight->value.GetInt(), Ctx, Attributes)) return false;
+			}
 		}
 
-		if (Node.extensions.find("MSFT_lod") != Node.extensions.cend())
 		{
-			//...
-			Ctx.Log.LogDebug(std::string("MSFT_lod ") + Node.name);
+			auto ItLOD = Node.extensions.find("MSFT_lod");
+			if (ItLOD != Node.extensions.cend())
+			{
+				//...
+				Ctx.Log.LogDebug(ItLOD->first + " > " + ItLOD->second);
+			}
 		}
 
 		if (!Attributes.empty())
@@ -541,6 +550,12 @@ public:
 
 		Attributes.push_back(std::move(Attribute));
 
+		return true;
+	}
+
+	bool ExportLight(int LightIndex, CContext& Ctx, Data::CDataArray& Attributes)
+	{
+		// get pre-parsed extension or parse now
 		return true;
 	}
 };
