@@ -366,8 +366,17 @@ public:
 			//...
 		}
 
-		//!!!KHR_lights_punctual
-		//!!!MSFT_lod
+		if (Node.extensions.find("KHR_lights_punctual") != Node.extensions.cend())
+		{
+			//...
+			Ctx.Log.LogDebug(std::string("KHR_lights_punctual ") + Node.name);
+		}
+
+		if (Node.extensions.find("MSFT_lod") != Node.extensions.cend())
+		{
+			//...
+			Ctx.Log.LogDebug(std::string("MSFT_lod ") + Node.name);
+		}
 
 		if (!Attributes.empty())
 			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
@@ -379,10 +388,38 @@ public:
 
 		if (Node.matrix != gltf::Matrix4::IDENTITY)
 		{
-			// TODO: decompose affine, then R matrix to quaternion //???use RTM from ACL?
-			// NB: column-major!
-			assert(false && "IMPLEMENT MATRIX DECOMPOSITION TO SRT");
-			Node.matrix;
+			const acl::AffineMatrix_32 ACLMatrix = acl::matrix_set(
+				acl::Vector4_32{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
+				acl::Vector4_32{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
+				acl::Vector4_32{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
+				acl::Vector4_32{ 0.f, 0.f, 0.f, 1.f });
+
+			const acl::Vector4_32 Scale = {
+				acl::vector_length3(ACLMatrix.x_axis),
+				acl::vector_length3(ACLMatrix.y_axis),
+				acl::vector_length3(ACLMatrix.z_axis),
+				0.f };
+
+			const acl::Vector4_32 Translation = {
+				Node.matrix.values[12],
+				Node.matrix.values[13],
+				Node.matrix.values[14],
+				1.f };
+
+			const acl::Quat_32 Rotation = acl::quat_from_matrix(acl::matrix_remove_scale(ACLMatrix));
+
+			constexpr acl::Vector4_32 Unit3 = { 1.f, 1.f, 1.f, 0.f };
+			constexpr acl::Vector4_32 Zero3 = { 0.f, 0.f, 0.f, 0.f };
+			constexpr acl::Quat_32 IdentityQuat = { 0.f, 0.f, 0.f, 1.f };
+
+			if (!acl::vector_all_near_equal3(Scale, Unit3))
+				NodeSection.emplace_back(sidScale, vector4({ acl::vector_get_x(Scale), acl::vector_get_y(Scale), acl::vector_get_z(Scale) }));
+
+			if (!acl::quat_near_equal(Rotation, IdentityQuat))
+				NodeSection.emplace_back(sidRotation, vector4({ acl::quat_get_x(Rotation), acl::quat_get_y(Rotation), acl::quat_get_z(Rotation), acl::quat_get_w(Rotation) }));
+
+			if (!acl::vector_all_near_equal3(Translation, Zero3))
+				NodeSection.emplace_back(sidTranslation, vector4({ acl::vector_get_x(Translation), acl::vector_get_y(Translation), acl::vector_get_z(Translation) }));
 		}
 		else
 		{
@@ -418,6 +455,20 @@ public:
 		const auto& Mesh = Ctx.Doc.meshes[MeshName];
 
 		Ctx.Log.LogDebug(std::string("Mesh ") + Mesh.name);
+
+		// Export mesh (optionally skinned)
+
+		//auto MeshIt = Ctx.ProcessedMeshes.find(pMesh);
+		//if (MeshIt == Ctx.ProcessedMeshes.cend())
+		//{
+		//	if (!ExportMesh(pMesh, Ctx)) return false;
+		//	MeshIt = Ctx.ProcessedMeshes.find(pMesh);
+		//	if (MeshIt == Ctx.ProcessedMeshes.cend()) return false;
+		//}
+
+		//const CMeshAttrInfo& MeshInfo = MeshIt->second;
+
+		// Add models per mesh group
 
 		int GroupIndex = 0;
 		for (const auto& Primitive : Mesh.primitives)
@@ -469,6 +520,7 @@ public:
 
 			if (pPerspective->HasCustomAspectRatio())
 			{
+				// FIXME: aspect instead of W&H?
 				//Attribute.emplace_back(CStrID("Aspect"), pPerspective->aspectRatio.Get());
 
 				constexpr float DefaultHeight = 1024.f;
