@@ -19,8 +19,7 @@ namespace Lights
 		Spot
 	};
 
-    // KHR_lights_punctual
-    struct LightPunctual : Extension, glTFProperty
+    struct Light
     {
 		Type type;
 		std::string name;
@@ -29,13 +28,29 @@ namespace Lights
 		Optional<float> range;
 		float innerConeAngle = 0.f;
 		float outerConeAngle = PI / 4.f;
-
-        std::unique_ptr<Extension> Clone() const override;
-        bool IsEqual(const Extension& rhs) const override;
     };
 
-    std::string SerializeLightPunctual(const LightPunctual& specGloss, const Document& gltfDocument, const ExtensionSerializer& extensionSerializer);
-    std::unique_ptr<Extension> DeserializeLightPunctual(const std::string& json, const ExtensionDeserializer& extensionDeserializer);
+	struct LightsPunctual : Extension, glTFProperty
+	{
+		std::vector<Light> lights;
+
+		std::unique_ptr<Extension> Clone() const override { return std::make_unique<LightsPunctual>(*this); }
+		bool IsEqual(const Extension& rhs) const override;
+	};
+
+	std::string SerializeLightsPunctual(const LightsPunctual& lights, const Document& gltfDocument, const ExtensionSerializer& extensionSerializer);
+	std::unique_ptr<Extension> DeserializeLightsPunctual(const std::string& json, const ExtensionDeserializer& extensionDeserializer);
+
+	struct NodeLightPunctual : Extension, glTFProperty
+	{
+		int lightIndex = -1;
+
+		std::unique_ptr<Extension> Clone() const override { return std::make_unique<NodeLightPunctual>(*this); }
+		bool IsEqual(const Extension& rhs) const override;
+	};
+
+	std::string SerializeNodeLightPunctual(const NodeLightPunctual& light, const Document& gltfDocument, const ExtensionSerializer& extensionSerializer);
+	std::unique_ptr<Extension> DeserializeNodeLightPunctual(const std::string& json, const ExtensionDeserializer& extensionDeserializer);
 }
 
 }

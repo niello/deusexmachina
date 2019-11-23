@@ -109,84 +109,93 @@ namespace
 ExtensionSerializer KHR::GetKHRExtensionSerializer_DEM()
 {
     ExtensionSerializer extensionSerializer = GetKHRExtensionSerializer();
-    extensionSerializer.AddHandler<Lights::LightPunctual, Node>(Lights::LIGHTS_PUNCTUAL_NAME, Lights::SerializeLightPunctual);
-    return extensionSerializer;
+	extensionSerializer.AddHandler<Lights::LightsPunctual, Document>(Lights::LIGHTS_PUNCTUAL_NAME, Lights::SerializeLightsPunctual);
+	extensionSerializer.AddHandler<Lights::NodeLightPunctual, Node>(Lights::LIGHTS_PUNCTUAL_NAME, Lights::SerializeNodeLightPunctual);
+	return extensionSerializer;
 }
 
 ExtensionDeserializer KHR::GetKHRExtensionDeserializer_DEM()
 {
     ExtensionDeserializer extensionDeserializer = GetKHRExtensionDeserializer();
-    extensionDeserializer.AddHandler<Lights::LightPunctual, Node>(Lights::LIGHTS_PUNCTUAL_NAME, Lights::DeserializeLightPunctual);
-    return extensionDeserializer;
+	extensionDeserializer.AddHandler<Lights::LightsPunctual, Document>(Lights::LIGHTS_PUNCTUAL_NAME, Lights::DeserializeLightsPunctual);
+	extensionDeserializer.AddHandler<Lights::NodeLightPunctual, Node>(Lights::LIGHTS_PUNCTUAL_NAME, Lights::DeserializeNodeLightPunctual);
+	return extensionDeserializer;
 }
 
-// KHR::Lights::LightPunctual
+// KHR_lights_punctual
 
-std::unique_ptr<Extension> KHR::Lights::LightPunctual::Clone() const
+bool KHR::Lights::LightsPunctual::IsEqual(const Extension& rhs) const
 {
-    return std::make_unique<LightPunctual>(*this);
+	return &rhs == this;
+
+	//const auto other = dynamic_cast<const LightsPunctual*>(&rhs);
+
+	//return other != nullptr
+	//	&& glTFProperty::Equals(*this, *other)
+	//	&& this->type == other->type
+	//	&& this->name == other->name
+	//	&& this->color == other->color
+	//	&& this->intensity == other->intensity
+	//	&& this->range == other->range;
 }
 
-bool KHR::Lights::LightPunctual::IsEqual(const Extension& rhs) const
-{
-    const auto other = dynamic_cast<const LightPunctual*>(&rhs);
-
-    return other != nullptr
-        && glTFProperty::Equals(*this, *other)
-		&& this->type == other->type
-		&& this->name == other->name
-		&& this->color == other->color
-		&& this->intensity == other->intensity
-		&& this->range == other->range;
-}
-
-std::string KHR::Lights::SerializeLightPunctual(const Lights::LightPunctual& light, const Document& gltfDocument, const ExtensionSerializer& extensionSerializer)
+std::string KHR::Lights::SerializeLightsPunctual(const Lights::LightsPunctual& lights, const Document& gltfDocument, const ExtensionSerializer& extensionSerializer)
 {
     rapidjson::Document doc;
     auto& a = doc.GetAllocator();
-    rapidjson::Value extensionJson(rapidjson::kObjectType);
+	rapidjson::Value lightArrayJson(rapidjson::kArrayType);
 
-	switch (light.type)
+	for (const auto& light : lights.lights)
 	{
-		case Type::Directional: extensionJson.AddMember("type", "directional", a); break;
-		case Type::Point: extensionJson.AddMember("type", "point", a); break;
-		case Type::Spot: extensionJson.AddMember("type", "spot", a); break;
+		rapidjson::Value lightJson(rapidjson::kObjectType);
+
+		switch (light.type)
+		{
+			case Type::Directional: lightJson.AddMember("type", "directional", a); break;
+			case Type::Point: lightJson.AddMember("type", "point", a); break;
+			case Type::Spot: lightJson.AddMember("type", "spot", a); break;
+		}
+
+		if (!light.name.empty())
+		{
+			lightJson.AddMember("name", rapidjson::Value(light.name.c_str(), light.name.size()), a);
+		}
+
+		if (light.color != Color3(1.0f, 1.0f, 1.0f))
+		{
+			lightJson.AddMember("color", RapidJsonUtils::ToJsonArray(light.color, a), a);
+		}
+
+		if (light.intensity != 1.f)
+		{
+			lightJson.AddMember("intensity", light.intensity, a);
+		}
+
+		if (light.range.HasValue())
+		{
+			lightJson.AddMember("range", light.range.Get(), a);
+		}
+
+		if (light.type == Type::Spot && (light.innerConeAngle != 0.f || light.outerConeAngle != PI / 4.f))
+		{
+			rapidjson::Value spot(rapidjson::kObjectType);
+
+			if (light.innerConeAngle != 0.f)
+				spot.AddMember("innerConeAngle", light.innerConeAngle, a);
+
+			if (light.outerConeAngle != PI / 4.f)
+				spot.AddMember("outerConeAngle", light.outerConeAngle, a);
+
+			lightJson.AddMember("spot", spot, a);
+		}
+
+		lightArrayJson.PushBack(lightJson, a);
 	}
 
-	if (!light.name.empty())
-	{
-		extensionJson.AddMember("name", rapidjson::Value(light.name.c_str(), light.name.size()), a);
-	}
+	rapidjson::Value extensionJson(rapidjson::kObjectType);
+	extensionJson.AddMember("lights", lightArrayJson, a);
 
-    if (light.color != Color3(1.0f, 1.0f, 1.0f))
-    {
-		extensionJson.AddMember("color", RapidJsonUtils::ToJsonArray(light.color, a), a);
-    }
-
-	if (light.intensity != 1.f)
-	{
-		extensionJson.AddMember("intensity", light.intensity, a);
-	}
-
-	if (light.range.HasValue())
-	{
-		extensionJson.AddMember("range", light.range.Get(), a);
-	}
-
-	if (light.type == Type::Spot && (light.innerConeAngle != 0.f || light.outerConeAngle != PI / 4.f))
-	{
-		rapidjson::Value spot(rapidjson::kObjectType);
-
-		if (light.innerConeAngle != 0.f)
-			spot.AddMember("innerConeAngle", light.innerConeAngle, a);
-
-		if (light.outerConeAngle != PI / 4.f)
-			spot.AddMember("outerConeAngle", light.outerConeAngle, a);
-
-		extensionJson.AddMember("spot", spot, a);
-	}
-
-    SerializeProperty(gltfDocument, light, extensionJson, a, extensionSerializer);
+	SerializeProperty(gltfDocument, lights, extensionJson, a, extensionSerializer);
 
     rapidjson::StringBuffer buffer;
     rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
@@ -195,78 +204,133 @@ std::string KHR::Lights::SerializeLightPunctual(const Lights::LightPunctual& lig
     return buffer.GetString();
 }
 
-std::unique_ptr<Extension> KHR::Lights::DeserializeLightPunctual(const std::string& json, const ExtensionDeserializer& extensionDeserializer)
+std::unique_ptr<Extension> KHR::Lights::DeserializeLightsPunctual(const std::string& json, const ExtensionDeserializer& extensionDeserializer)
 {
-	Lights::LightPunctual light;
+	Lights::LightsPunctual lights;
 
     auto doc = RapidJsonUtils::CreateDocumentFromString(json);
-    const rapidjson::Value sit = doc.GetObject();
+    const rapidjson::Value lightsObj = doc.GetObject();
 
-	// Type
-
-	auto typeIt = sit.FindMember("type");
-	if (typeIt == sit.MemberEnd() || !typeIt->value.IsString())
-		return nullptr;
-
-	const std::string typeString = typeIt->value.GetString();
-	if (typeString == "directional")
-		light.type = Type::Directional;
-	else if (typeString == "point")
-		light.type = Type::Point;
-	else if (typeString == "spot")
-		light.type = Type::Spot;
-	else
-		return nullptr;
-
-	// Name
-	
-	auto nameIt = sit.FindMember("name");
-	if (nameIt != sit.MemberEnd())
-		light.name = nameIt->value.GetString();
-
-    // Color
-
-	auto colorIt = sit.FindMember("color");
-    if (colorIt != sit.MemberEnd())
-    {
-        std::vector<float> color;
-        for (auto ait = colorIt->value.Begin(); ait != colorIt->value.End(); ++ait)
-        {
-			color.push_back(static_cast<float>(ait->GetDouble()));
-        }
-		light.color = Color3(color[0], color[1], color[2]);
-    }
-
-	// Intensity
-
-	auto intensityIt = sit.FindMember("intensity");
-	if (intensityIt != sit.MemberEnd())
-		light.intensity = intensityIt->value.GetFloat();
-
-	// Range
-
-	auto rangeIt = sit.FindMember("range");
-	if (rangeIt != sit.MemberEnd())
-		light.range = rangeIt->value.GetFloat();
-
-	if (light.type == Type::Spot)
+	auto lightsIt = lightsObj.FindMember("lights");
+	if (lightsIt != lightsObj.MemberEnd() && lightsIt->value.IsArray())
 	{
-		auto spotIt = sit.FindMember("spot");
-		if (spotIt != sit.MemberEnd() && spotIt->value.IsObject())
+		for (auto lightIt = lightsIt->value.Begin(); lightIt != lightsIt->value.End(); ++lightIt)
 		{
-			auto spotObj = spotIt->value.GetObject();
+			Light light;
 
-			auto innerIt = spotObj.FindMember("innerConeAngle");
-			if (innerIt != spotObj.MemberEnd())
-				light.innerConeAngle = innerIt->value.GetFloat();
+			// Type
 
-			auto outerIt = spotObj.FindMember("outerConeAngle");
-			if (outerIt != spotObj.MemberEnd())
-				light.outerConeAngle = outerIt->value.GetFloat();
+			auto typeIt = lightIt->FindMember("type");
+			if (typeIt == lightIt->MemberEnd() || !typeIt->value.IsString())
+				return nullptr;
+
+			const std::string typeString = typeIt->value.GetString();
+			if (typeString == "directional")
+				light.type = Type::Directional;
+			else if (typeString == "point")
+				light.type = Type::Point;
+			else if (typeString == "spot")
+				light.type = Type::Spot;
+			else
+				return nullptr;
+
+			// Name
+
+			auto nameIt = lightIt->FindMember("name");
+			if (nameIt != lightIt->MemberEnd())
+				light.name = nameIt->value.GetString();
+
+			// Color
+
+			auto colorIt = lightIt->FindMember("color");
+			if (colorIt != lightIt->MemberEnd())
+			{
+				std::vector<float> color;
+				for (auto ait = colorIt->value.Begin(); ait != colorIt->value.End(); ++ait)
+				{
+					color.push_back(static_cast<float>(ait->GetDouble()));
+				}
+				light.color = Color3(color[0], color[1], color[2]);
+			}
+
+			// Intensity
+
+			auto intensityIt = lightIt->FindMember("intensity");
+			if (intensityIt != lightIt->MemberEnd())
+				light.intensity = intensityIt->value.GetFloat();
+
+			// Range
+
+			auto rangeIt = lightIt->FindMember("range");
+			if (rangeIt != lightIt->MemberEnd())
+				light.range = rangeIt->value.GetFloat();
+
+			// Stop
+
+			if (light.type == Type::Spot)
+			{
+				auto spotIt = lightIt->FindMember("spot");
+				if (spotIt != lightIt->MemberEnd() && spotIt->value.IsObject())
+				{
+					auto spotObj = spotIt->value.GetObject();
+
+					auto innerIt = spotObj.FindMember("innerConeAngle");
+					if (innerIt != spotObj.MemberEnd())
+						light.innerConeAngle = innerIt->value.GetFloat();
+
+					auto outerIt = spotObj.FindMember("outerConeAngle");
+					if (outerIt != spotObj.MemberEnd())
+						light.outerConeAngle = outerIt->value.GetFloat();
+				}
+			}
+
+			lights.lights.push_back(std::move(light));
 		}
 	}
 
-    ParseProperty(sit, light, extensionDeserializer);
+    ParseProperty(lightsObj, lights, extensionDeserializer);
 
-    return std::make_unique<LightPunctual>(light);
+    return std::make_unique<LightsPunctual>(lights);
+}
+
+bool KHR::Lights::NodeLightPunctual::IsEqual(const Extension& rhs) const
+{
+	const auto other = dynamic_cast<const NodeLightPunctual*>(&rhs);
+
+	return other != nullptr
+		&& glTFProperty::Equals(*this, *other)
+		&& this->lightIndex == other->lightIndex;
+}
+
+std::string KHR::Lights::SerializeNodeLightPunctual(const NodeLightPunctual& light, const Document& gltfDocument, const ExtensionSerializer& extensionSerializer)
+{
+	rapidjson::Document doc;
+	auto& a = doc.GetAllocator();
+
+	rapidjson::Value extensionJson(rapidjson::kObjectType);
+	extensionJson.AddMember("light", light.lightIndex, a);
+
+	SerializeProperty(gltfDocument, light, extensionJson, a, extensionSerializer);
+
+	rapidjson::StringBuffer buffer;
+	rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+	extensionJson.Accept(writer);
+
+	return buffer.GetString();
+}
+
+std::unique_ptr<Extension> KHR::Lights::DeserializeNodeLightPunctual(const std::string& json, const ExtensionDeserializer& extensionDeserializer)
+{
+	NodeLightPunctual light;
+
+	auto doc = RapidJsonUtils::CreateDocumentFromString(json);
+	const rapidjson::Value lightObj = doc.GetObject();
+
+	auto it = lightObj.FindMember("light");
+	if (it != lightObj.MemberEnd())
+		light.lightIndex = it->value.GetInt();
+
+	ParseProperty(lightObj, light, extensionDeserializer);
+
+	return std::make_unique<NodeLightPunctual>(light);
 }

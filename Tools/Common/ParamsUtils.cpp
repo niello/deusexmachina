@@ -83,6 +83,21 @@ static std::string GetIndentation(size_t Depth, const std::string& Element = "\t
 
 static bool WriteParamAsHRD(std::ostream& Stream, const Data::CParam& Value, size_t Depth);
 
+static std::string ToStringNoTrailingZeroes(float Value)
+{
+	std::string Str = std::to_string(Value);
+	const auto DotPos = Str.find_first_of('.');
+	if (DotPos != std::string::npos)
+	{
+		auto BeforeZeroPos = Str.find_last_not_of('0');
+		if (BeforeZeroPos == DotPos)
+			++BeforeZeroPos;
+		Str.erase(BeforeZeroPos + 1, std::string::npos);
+	}
+	return Str;
+}
+//---------------------------------------------------------------------
+
 static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_t Depth)
 {
 	if (Value.IsVoid()) WriteText(Stream, "null");
@@ -99,7 +114,7 @@ static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_
 	}
 	else if (Value.IsA<float>())
 	{
-		WriteText(Stream, std::to_string(Value.GetValue<float>()));
+		WriteText(Stream, ToStringNoTrailingZeroes(Value.GetValue<float>()));
 	}
 	else if (Value.IsA<std::string>())
 	{
@@ -118,13 +133,13 @@ static bool WriteDataAsHRD(std::ostream& Stream, const Data::CData& Value, size_
 	{
 		const vector4& V = Value.GetValue<vector4>();
 		WriteText(Stream, "(");
-		WriteText(Stream, std::to_string(V.x));
+		WriteText(Stream, ToStringNoTrailingZeroes(V.x));
 		WriteText(Stream, ", ");
-		WriteText(Stream, std::to_string(V.y));
+		WriteText(Stream, ToStringNoTrailingZeroes(V.y));
 		WriteText(Stream, ", ");
-		WriteText(Stream, std::to_string(V.z));
+		WriteText(Stream, ToStringNoTrailingZeroes(V.z));
 		WriteText(Stream, ", ");
-		WriteText(Stream, std::to_string(V.w));
+		WriteText(Stream, ToStringNoTrailingZeroes(V.w));
 		WriteText(Stream, ")");
 	}
 	else if (Value.IsA<Data::CDataArray>())

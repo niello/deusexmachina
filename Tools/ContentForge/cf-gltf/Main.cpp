@@ -195,40 +195,30 @@ public:
 		const auto SrcFileName = Task.SrcFilePath.filename().u8string();
 		auto gltfStream = StreamReader->GetInputStream(SrcFileName);
 
+		std::string Manifest;
 		if (IsGLTF)
 		{
-			auto gltfResourceReader = std::make_unique<gltf::GLTFResourceReader>(std::move(StreamReader));
+			ResourceReader = std::make_unique<gltf::GLTFResourceReader>(std::move(StreamReader));
 
 			std::stringstream manifestStream;
 			manifestStream << gltfStream->rdbuf();
-
-			try
-			{
-				Doc = gltf::Deserialize(manifestStream.str());
-			}
-			catch (const gltf::GLTFException& e)
-			{
-				Task.Log.LogError("Error deserializing glTF file " + SrcFileName + ":\n" + e.what());
-				return false;
-			}
-
-			ResourceReader = std::move(gltfResourceReader);
+			Manifest = manifestStream.str();
 		}
 		else
 		{
 			auto glbResourceReader = std::make_unique<gltf::GLBResourceReader>(std::move(StreamReader), std::move(gltfStream));
-
-			try
-			{
-				Doc = gltf::Deserialize(glbResourceReader->GetJson(), gltf::KHR::GetKHRExtensionDeserializer_DEM());
-			}
-			catch (const gltf::GLTFException& e)
-			{
-				Task.Log.LogError("Error deserializing glB file " + SrcFileName + ":\n" + e.what());
-				return false;
-			}
-
+			Manifest = glbResourceReader->GetJson();
 			ResourceReader = std::move(glbResourceReader);
+		}
+
+		try
+		{
+			Doc = gltf::Deserialize(Manifest, gltf::KHR::GetKHRExtensionDeserializer_DEM());
+		}
+		catch (const gltf::GLTFException& e)
+		{
+			Task.Log.LogError("Error deserializing glTF file " + SrcFileName + ":\n" + e.what());
+			return false;
 		}
 
 		// Output file info
@@ -368,13 +358,10 @@ public:
 		}
 
 		{
-			auto ItLights = Node.extensions.find("KHR_lights_punctual");
-			if (ItLights != Node.extensions.cend())
+			if (Node.HasExtension<gltf::KHR::Lights::NodeLightPunctual>())
 			{
-				//auto JSON = gltf::RapidJsonUtils::CreateDocumentFromString(ItLights->second);
-				//auto ItLight = JSON.FindMember("light");
-				//if (ItLight != JSON.MemberEnd() && ItLight->value.IsInt())
-				//	if (!ExportLight(ItLight->value.GetInt(), Ctx, Attributes)) return false;
+				const auto& LightsExt = Node.GetExtension<gltf::KHR::Lights::NodeLightPunctual>();
+				if (!ExportLight(LightsExt.lightIndex, Ctx, Attributes)) return false;
 			}
 		}
 
@@ -553,9 +540,70 @@ public:
 		return true;
 	}
 
+	// https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual
 	bool ExportLight(int LightIndex, CContext& Ctx, Data::CDataArray& Attributes)
 	{
-		// get pre-parsed extension or parse now
+		if (!Ctx.Doc.HasExtension<gltf::KHR::Lights::LightsPunctual>())
+		{
+			Ctx.Log.LogError("KHR_lights_punctual reference exists in a node but no extension present in the document");
+			return false;
+		}
+
+		const auto& LightsExt = Ctx.Doc.GetExtension<gltf::KHR::Lights::LightsPunctual>();
+		if (static_cast<int>(LightsExt.lights.size()) <= LightIndex || LightIndex < 0)
+		{
+			Ctx.Log.LogError("Invalid KHR_lights_punctual light index " + std::to_string(LightIndex));
+			return false;
+		}
+
+		const auto& Light = LightsExt.lights[LightIndex];
+
+		int LightType = 0;
+		switch (Light.type)
+		{
+			case gltf::KHR::Lights::Type::Directional: LightType = 0; break;
+			case gltf::KHR::Lights::Type::Point: LightType = 1; break;
+			case gltf::KHR::Lights::Type::Spot: LightType = 2; break;
+			default:
+			{
+				Ctx.Log.LogWarning(std::string("Light ") + Light.name + " is of unsupported type, skipped");
+				return true;
+			}
+		}
+
+		// TODO: choose correct base! glTF uses physical units for the light intensity and we need relative value.
+		constexpr float BaseIntensity = 100.f;
+		const float Intensity = Light.intensity / BaseIntensity;
+
+		Data::CParams Attribute;
+		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CLightAttribute"));
+		Attribute.emplace_back(CStrID("LightType"), LightType);
+		Attribute.emplace_back(CStrID("Color"), vector4({ Light.color.r, Light.color.g, Light.color.b }));
+		Attribute.emplace_back(CStrID("Intensity"), Intensity);
+
+		if (LightType != 0)
+		{
+			// attenuation = max( min( 1.0 - ( current_distance / range )^4, 1 ), 0 ) / current_distance^2
+			if (Light.range.HasValue())
+			{
+				Attribute.emplace_back(CStrID("Range"), Light.range.Get());
+			}
+			else
+			{
+				// Range is calculated based on link below with intensity in [0; 1]
+				// https://developer.valvesoftware.com/wiki/Constant-Linear-Quadratic_Falloff
+				Attribute.emplace_back(CStrID("Range"), std::sqrtf(Light.intensity) * 100.f);
+			}
+
+			if (LightType == 2)
+			{
+				Attribute.emplace_back(CStrID("ConeInner"), RadToDeg(Light.innerConeAngle));
+				Attribute.emplace_back(CStrID("ConeOuter"), RadToDeg(Light.outerConeAngle));
+			}
+		}
+
+		Attributes.push_back(std::move(Attribute));
+
 		return true;
 	}
 };
