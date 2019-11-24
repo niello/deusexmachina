@@ -134,7 +134,8 @@ protected:
 		uint32_t Color; // RGBA
 		float2 UV[MaxUV];
 		int    BlendIndices[MaxBonesPerVertex];
-		float  BlendWeights[MaxBonesPerVertex];
+		//float  BlendWeights[MaxBonesPerVertex];
+		uint32_t BlendWeights; // Packed info byte values
 		size_t BonesUsed = 0;
 	};
 
@@ -513,10 +514,10 @@ public:
 		{
 			Data::CParams ModelAttribute;
 			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
-			//ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
+			ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
 			if (GroupIndex > 0)
 				ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
-			//ModelAttribute.emplace_back(CStrID("Material"), MaterialID);
+			ModelAttribute.emplace_back(CStrID("Material"), MaterialID);
 			Attributes.push_back(std::move(ModelAttribute));
 
 			++GroupIndex;
@@ -532,25 +533,31 @@ public:
 		bool HasNormals = false;
 		bool HasTangents = false;
 		bool HasColors = false;
-		bool HasUV0 = false;
-		bool HasUV1 = false;
+		bool HasSkin = false;
+		bool HasUV[MaxUV] = {};
+		constexpr const char* UVAttributes[] = { gltf::ACCESSOR_TEXCOORD_0, gltf::ACCESSOR_TEXCOORD_1 };
+
+		std::map<std::string, CMeshData> SubMeshes;
 
 		for (const auto& Primitive : Mesh.primitives)
 		{
-			Ctx.Log.LogDebug(std::string("Submesh ") + Primitive.materialId);
+			// Extract vertex data from glTF
 
 			std::string AccessorId;
 
 			if (!Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_POSITION, AccessorId))
 			{
-				Ctx.Log.LogWarning(std::string("Submesh ") + Mesh.name + '.' + Primitive.materialId + " has no vertex positions, skipped");
+				Ctx.Log.LogWarning("Submesh " + Mesh.name + '.' + Primitive.materialId + " has no vertex positions, skipped");
 				continue;
 			}
 
-			std::vector<CVertex> Vertices;
+			CMeshData& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshData{}).first->second;
+			auto& Vertices = SubMesh.Vertices;
 
 			{
-				const auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+				const auto& Accessor = Ctx.Doc.accessors[AccessorId];
+
+				const auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Accessor);
 
 				Vertices.resize(Positions.size() / 3);
 
@@ -561,6 +568,10 @@ public:
 					Vertex.Position.y = *AttrIt++;
 					Vertex.Position.z = *AttrIt++;
 				}
+
+				// TODO: save group AABB!
+				//Accessor.min;
+				//Accessor.max;
 			}
 
 			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_NORMAL, AccessorId))
@@ -582,7 +593,7 @@ public:
 			{
 				HasTangents = true;
 
-				const auto Tangents = gltf::MeshPrimitiveUtils::GetNormals(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+				const auto Tangents = gltf::MeshPrimitiveUtils::GetTangents(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Tangents.cbegin();
 				for (auto& Vertex : Vertices)
@@ -610,23 +621,93 @@ public:
 			{
 				HasColors = true;
 
-				const auto& Accessor = Ctx.Doc.accessors[AccessorId];
-				gltf::Accessor::GetTypeCount(Accessor.type);
-
-				const auto Colors = gltf::MeshPrimitiveUtils::GetColors(Ctx.Doc, *Ctx.ResourceReader, Accessor);
+				const auto Colors = gltf::MeshPrimitiveUtils::GetColors(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Colors.cbegin();
 				for (auto& Vertex : Vertices)
+					Vertex.Color = *AttrIt++;
+			}
+
+			for (int UVIdx = 0; UVIdx < MaxUV; ++UVIdx)
+			{
+				if (Primitive.TryGetAttributeAccessorId(UVAttributes[UVIdx], AccessorId))
 				{
-					Vertex.Color.x = *AttrIt++;
-					Vertex.Normal.y = *AttrIt++;
-					Vertex.Normal.z = *AttrIt++;
+					HasUV[UVIdx] = true;
+
+					const auto UV = gltf::MeshPrimitiveUtils::GetTexCoords(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+
+					auto AttrIt = UV.cbegin();
+					for (auto& Vertex : Vertices)
+					{
+						Vertex.UV[UVIdx].x = *AttrIt++;
+						Vertex.UV[UVIdx].y = *AttrIt++;
+					}
 				}
 			}
 
-			int DBG = 0;
+			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_JOINTS_0, AccessorId))
+			{
+				HasSkin = true;
 
-			// TODO: calc group AABB! look at position accessor's min and max!
+				const auto Joints = gltf::MeshPrimitiveUtils::GetJointIndices64(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+
+				auto AttrIt = Joints.cbegin();
+				for (auto& Vertex : Vertices)
+				{
+					const uint64_t Packed = *AttrIt++;
+					Vertex.BlendIndices[0] = (Packed & 0xffff);
+					Vertex.BlendIndices[1] = ((Packed >> 16) & 0xffff);
+					Vertex.BlendIndices[2] = ((Packed >> 32) & 0xffff);
+					Vertex.BlendIndices[3] = ((Packed >> 48) & 0xffff);
+				}
+			}
+
+			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_WEIGHTS_0, AccessorId))
+			{
+				// Must have joint indices
+				assert(HasSkin);
+
+				const auto Joints = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+
+				auto AttrIt = Joints.cbegin();
+				for (auto& Vertex : Vertices)
+				{
+					Vertex.BlendWeights = *AttrIt++;
+
+					// TODO: store 4 float weights? Then get floats from accessor, don't pack with GetJointWeights32.
+					// Or store uint32_t weights, then can store as is here, don't unpack!
+					//const uint32_t Packed = *AttrIt++;
+					//Vertex.BlendWeights[0] = gltf::Math::ByteToFloat(Packed & 0xffff);
+					//Vertex.BlendWeights[1] = gltf::Math::ByteToFloat((Packed >> 16) & 0xffff);
+					//Vertex.BlendWeights[2] = gltf::Math::ByteToFloat((Packed >> 32) & 0xffff);
+					//Vertex.BlendWeights[3] = gltf::Math::ByteToFloat((Packed >> 48) & 0xffff);
+				}
+			}
+
+			// Extract vertex indices from glTF
+
+			// ...
+
+			// Optimize vertices and indices
+
+			// ...
+
+			// Write resulting mesh file
+
+			{
+				const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+
+				//...
+
+				CMeshAttrInfo MeshInfo;
+				MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+				for (const auto& Pair : SubMeshes)
+					MeshInfo.MaterialIDs.push_back(Pair.first);
+
+				Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo)).first->second;
+			}
+
+			int DBG = 0;
 		}
 
 		return true;
