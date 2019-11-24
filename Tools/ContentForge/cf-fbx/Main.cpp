@@ -222,7 +222,7 @@ protected:
 		float3 Normal;
 		float3 Tangent;
 		float3 Bitangent;
-		float4 Color;
+		uint32_t Color;
 		float2 UV[MaxUV];
 		int    BlendIndices[MaxBonesPerVertex];
 		float  BlendWeights[MaxBonesPerVertex];
@@ -802,7 +802,15 @@ public:
 					GetVertexElement(Vertex.Bitangent, pMesh->GetElementBinormal(), ControlPointIndex, VertexIndex);
 
 				if (ColorCount)
-					GetVertexElement(Vertex.Color, pMesh->GetElementVertexColor(), ControlPointIndex, VertexIndex);
+				{
+					float4 Color;
+					GetVertexElement(Color, pMesh->GetElementVertexColor(), ControlPointIndex, VertexIndex);
+					Vertex.Color =
+						(static_cast<uint8_t>(Color.w * 255.0f + 0.5f) << 24) |
+						(static_cast<uint8_t>(Color.z * 255.0f + 0.5f) << 16) |
+						(static_cast<uint8_t>(Color.y * 255.0f + 0.5f) << 8) |
+						(static_cast<uint8_t>(Color.x * 255.0f + 0.5f));
+				}
 
 				for (int e = 0; e < MaxUV; ++e)
 					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), ControlPointIndex, VertexIndex);
@@ -1024,7 +1032,7 @@ public:
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Bitangent, EVertexComponentFormat::VCFmt_Float32_3, i, 0);
 
 			for (int i = 0; i < ColorCount; ++i)
-				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Color, EVertexComponentFormat::VCFmt_Float32_4, i, 0);
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_Color, EVertexComponentFormat::VCFmt_UInt8_4_Norm, i, 0);
 
 			for (int i = 0; i < UVCount; ++i)
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_TexCoord, EVertexComponentFormat::VCFmt_Float32_2, i, 0);

@@ -126,11 +126,12 @@ protected:
 
 	struct CVertex
 	{
+		//???use 32-bit ACL/RTM vectors?
 		float3 Position;
 		float3 Normal;
 		float3 Tangent;
 		float3 Bitangent;
-		float4 Color;
+		uint32_t Color; // RGBA
 		float2 UV[MaxUV];
 		int    BlendIndices[MaxBonesPerVertex];
 		float  BlendWeights[MaxBonesPerVertex];
@@ -549,22 +550,78 @@ public:
 			std::vector<CVertex> Vertices;
 
 			{
-				auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+				const auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				Vertices.resize(Positions.size() / 3);
 
-				auto PosIt = Positions.cbegin();
+				auto AttrIt = Positions.cbegin();
 				for (auto& Vertex : Vertices)
 				{
-					Vertex.Position.x = *PosIt++;
-					Vertex.Position.y = *PosIt++;
-					Vertex.Position.z = *PosIt++;
+					Vertex.Position.x = *AttrIt++;
+					Vertex.Position.y = *AttrIt++;
+					Vertex.Position.z = *AttrIt++;
 				}
 			}
 
 			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_NORMAL, AccessorId))
 			{
-				auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+				HasNormals = true;
+
+				const auto Normals = gltf::MeshPrimitiveUtils::GetNormals(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+
+				auto AttrIt = Normals.cbegin();
+				for (auto& Vertex : Vertices)
+				{
+					Vertex.Normal.x = *AttrIt++;
+					Vertex.Normal.y = *AttrIt++;
+					Vertex.Normal.z = *AttrIt++;
+				}
+			}
+
+			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_TANGENT, AccessorId))
+			{
+				HasTangents = true;
+
+				const auto Tangents = gltf::MeshPrimitiveUtils::GetNormals(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+
+				auto AttrIt = Tangents.cbegin();
+				for (auto& Vertex : Vertices)
+				{
+					Vertex.Tangent.x = *AttrIt++;
+					Vertex.Tangent.y = *AttrIt++;
+					Vertex.Tangent.z = *AttrIt++;
+
+					// Calculate bitangent. See implementation details at:
+					// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#meshes
+
+					const float Sign = *AttrIt++;
+
+					const acl::Vector4_32 Normal = { Vertex.Normal.x, Vertex.Normal.y, Vertex.Normal.z };
+					const acl::Vector4_32 Tangent = { Vertex.Tangent.x, Vertex.Tangent.y, Vertex.Tangent.z };
+					const acl::Vector4_32 Bitangent = acl::vector_cross3(Normal, Tangent);
+
+					Vertex.Bitangent.x = acl::vector_get_x(Bitangent) * Sign;
+					Vertex.Bitangent.y = acl::vector_get_y(Bitangent) * Sign;
+					Vertex.Bitangent.z = acl::vector_get_z(Bitangent) * Sign;
+				}
+			}
+
+			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_COLOR_0, AccessorId))
+			{
+				HasColors = true;
+
+				const auto& Accessor = Ctx.Doc.accessors[AccessorId];
+				gltf::Accessor::GetTypeCount(Accessor.type);
+
+				const auto Colors = gltf::MeshPrimitiveUtils::GetColors(Ctx.Doc, *Ctx.ResourceReader, Accessor);
+
+				auto AttrIt = Colors.cbegin();
+				for (auto& Vertex : Vertices)
+				{
+					Vertex.Color.x = *AttrIt++;
+					Vertex.Normal.y = *AttrIt++;
+					Vertex.Normal.z = *AttrIt++;
+				}
 			}
 
 			int DBG = 0;
