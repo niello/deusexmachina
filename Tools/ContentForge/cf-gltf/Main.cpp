@@ -7,6 +7,7 @@
 #include <GLTFSDK/GLTFResourceReader.h>
 #include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/Deserialize.h>
+#include <GLTFSDK/MeshPrimitiveUtils.h>
 #include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
@@ -25,11 +26,55 @@ namespace gltf = Microsoft::glTF;
 // Example args:
 // -s src/scenes
 
-constexpr size_t MaxUV = 4;
+// According to the core glTF 2.0 spec:
+// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#meshes
+constexpr size_t MaxUV = 2;
 constexpr size_t MaxBonesPerVertex = 4;
 
 inline float RadToDeg(float Rad) { return Rad * 180.0f / 3.1415926535897932385f; }
 inline float DegToRad(float Deg) { return Deg * 3.1415926535897932385f / 180.0f; }
+
+struct float2
+{
+	union
+	{
+		float v[2];
+		struct
+		{
+			float x, y;
+		};
+	};
+
+	float2() : x(0.f), y(0.f) {}
+};
+
+struct float3
+{
+	union
+	{
+		float v[3];
+		struct
+		{
+			float x, y, z;
+		};
+	};
+
+	float3() : x(0.f), y(0.f), z(0.f) {}
+};
+
+struct float4
+{
+	union
+	{
+		float v[4];
+		struct
+		{
+			float x, y, z, w;
+		};
+	};
+
+	float4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
+};
 
 class CStreamReader : public gltf::IStreamReader
 {
@@ -56,14 +101,15 @@ protected:
 	struct CMeshAttrInfo
 	{
 		std::string MeshID;
-		//std::vector<const FbxSurfaceMaterial*> Materials; // Per group (submesh)
+		std::vector<std::string> MaterialIDs; // Per group (submesh)
 	};
 
 	struct CContext
 	{
 		CThreadSafeLog&           Log;
 
-		const gltf::Document&     Doc;
+		gltf::Document Doc;
+		std::unique_ptr<gltf::GLTFResourceReader> ResourceReader;
 
 		acl::ANSIAllocator        ACLAllocator;
 		acl::CompressionSettings  ACLSettings;
@@ -74,19 +120,18 @@ protected:
 		std::string               DefaultName;
 		Data::CParamsSorted       MaterialMap;
 
-		//std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
-		//std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
+		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
+		std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
 	struct CVertex
 	{
-		int    ControlPointIndex;
-		//float3 Position;
-		//float3 Normal;
-		//float3 Tangent;
-		//float3 Bitangent;
-		//float4 Color;
-		//float2 UV[MaxUV];
+		float3 Position;
+		float3 Normal;
+		float3 Tangent;
+		float3 Bitangent;
+		float4 Color;
+		float2 UV[MaxUV];
 		int    BlendIndices[MaxBonesPerVertex];
 		float  BlendWeights[MaxBonesPerVertex];
 		size_t BonesUsed = 0;
@@ -101,7 +146,7 @@ protected:
 	struct CBone
 	{
 		//const FbxNode* pBone;
-		//FbxAMatrix     InvLocalBindPose;
+		gltf::Matrix4  InvLocalBindPose;
 		std::string    ID;
 		uint16_t       ParentBoneIndex;
 		// TODO: bone object-space or local-space AABB
@@ -187,10 +232,9 @@ public:
 
 		// Open glTF document
 
-		auto StreamReader = std::make_unique<CStreamReader>(Task.SrcFilePath.parent_path());
+		CContext Ctx{ Task.Log };
 
-		std::unique_ptr<gltf::GLTFResourceReader> ResourceReader;
-		gltf::Document Doc;
+		auto StreamReader = std::make_unique<CStreamReader>(Task.SrcFilePath.parent_path());
 
 		const auto SrcFileName = Task.SrcFilePath.filename().u8string();
 		auto gltfStream = StreamReader->GetInputStream(SrcFileName);
@@ -198,7 +242,7 @@ public:
 		std::string Manifest;
 		if (IsGLTF)
 		{
-			ResourceReader = std::make_unique<gltf::GLTFResourceReader>(std::move(StreamReader));
+			Ctx.ResourceReader = std::make_unique<gltf::GLTFResourceReader>(std::move(StreamReader));
 
 			std::stringstream manifestStream;
 			manifestStream << gltfStream->rdbuf();
@@ -208,12 +252,12 @@ public:
 		{
 			auto glbResourceReader = std::make_unique<gltf::GLBResourceReader>(std::move(StreamReader), std::move(gltfStream));
 			Manifest = glbResourceReader->GetJson();
-			ResourceReader = std::move(glbResourceReader);
+			Ctx.ResourceReader = std::move(glbResourceReader);
 		}
 
 		try
 		{
-			Doc = gltf::Deserialize(Manifest, gltf::KHR::GetKHRExtensionDeserializer_DEM());
+			Ctx.Doc = gltf::Deserialize(Manifest, gltf::KHR::GetKHRExtensionDeserializer_DEM());
 		}
 		catch (const gltf::GLTFException& e)
 		{
@@ -223,15 +267,14 @@ public:
 
 		// Output file info
 
-		Task.Log.LogInfo("Asset Version:    " + Doc.asset.version);
-		Task.Log.LogInfo("Asset MinVersion: " + Doc.asset.minVersion);
-		Task.Log.LogInfo("Asset Generator:  " + Doc.asset.generator);
-		Task.Log.LogInfo("Asset Copyright:  " + Doc.asset.copyright + Task.Log.GetLineEnd());
+		Task.Log.LogInfo("Asset Version:    " + Ctx.Doc.asset.version);
+		Task.Log.LogInfo("Asset MinVersion: " + Ctx.Doc.asset.minVersion);
+		Task.Log.LogInfo("Asset Generator:  " + Ctx.Doc.asset.generator);
+		Task.Log.LogInfo("Asset Copyright:  " + Ctx.Doc.asset.copyright + Task.Log.GetLineEnd());
 
-		// Prepare task context
+		// Prepare other task context details
 
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
-		CContext Ctx{ Task.Log, Doc };
 
 		Ctx.DefaultName = Task.TaskID.CStr();
 
@@ -253,17 +296,17 @@ public:
 
 		// Export node hierarchy to DEM format
 
-		if (Doc.scenes.Size() > 1)
+		if (Ctx.Doc.scenes.Size() > 1)
 		{
 			Task.Log.LogWarning("File contains multiple scenes, only default one will be exported!");
 		}
-		else if (Doc.scenes.Size() < 1)
+		else if (Ctx.Doc.scenes.Size() < 1)
 		{
 			Task.Log.LogError("File contains no scenes!");
 			return false;
 		}
 
-		const auto& Scene = Doc.scenes[Doc.defaultSceneId];
+		const auto& Scene = Ctx.Doc.scenes[Ctx.Doc.defaultSceneId];
 		
 		Data::CParams Nodes;
 
@@ -353,9 +396,7 @@ public:
 			if (!ExportModel(Node.meshId, Ctx, Attributes)) return false;
 
 		if (!Node.skinId.empty())
-		{
-			//...
-		}
+			if (!ExportSkin(Node.skinId, Ctx, Attributes)) return false;
 
 		{
 			if (Node.HasExtension<gltf::KHR::Lights::NodeLightPunctual>())
@@ -369,7 +410,7 @@ public:
 			auto ItLOD = Node.extensions.find("MSFT_lod");
 			if (ItLOD != Node.extensions.cend())
 			{
-				//...
+				assert(false && "IMPLEMENT ME!");
 				Ctx.Log.LogDebug(ItLOD->first + " > " + ItLOD->second);
 			}
 		}
@@ -450,32 +491,25 @@ public:
 	{
 		const auto& Mesh = Ctx.Doc.meshes[MeshName];
 
-		Ctx.Log.LogDebug(std::string("Mesh ") + Mesh.name);
+		Ctx.Log.LogDebug(std::string("Model ") + Mesh.name);
 
 		// Export mesh (optionally skinned)
 
-		//auto MeshIt = Ctx.ProcessedMeshes.find(pMesh);
-		//if (MeshIt == Ctx.ProcessedMeshes.cend())
-		//{
-		//	if (!ExportMesh(pMesh, Ctx)) return false;
-		//	MeshIt = Ctx.ProcessedMeshes.find(pMesh);
-		//	if (MeshIt == Ctx.ProcessedMeshes.cend()) return false;
-		//}
+		auto MeshIt = Ctx.ProcessedMeshes.find(MeshName);
+		if (MeshIt == Ctx.ProcessedMeshes.cend())
+		{
+			if (!ExportMesh(MeshName, Ctx)) return false;
+			MeshIt = Ctx.ProcessedMeshes.find(MeshName);
+			if (MeshIt == Ctx.ProcessedMeshes.cend()) return false;
+		}
 
-		//const CMeshAttrInfo& MeshInfo = MeshIt->second;
+		const CMeshAttrInfo& MeshInfo = MeshIt->second;
 
 		// Add models per mesh group
 
 		int GroupIndex = 0;
-		for (const auto& Primitive : Mesh.primitives)
+		for (const auto& MaterialID : MeshInfo.MaterialIDs)
 		{
-			Ctx.Log.LogDebug(std::string("Submesh ") + Primitive.materialId);
-
-			for (const auto& Pair : Primitive.attributes)
-			{
-				Ctx.Log.LogDebug(Pair.first + " > " + Pair.second);
-			}
-
 			Data::CParams ModelAttribute;
 			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
 			//ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
@@ -486,6 +520,66 @@ public:
 
 			++GroupIndex;
 		}
+
+		return true;
+	}
+
+	bool ExportMesh(const std::string& MeshName, CContext& Ctx)
+	{
+		const auto& Mesh = Ctx.Doc.meshes[MeshName];
+
+		bool HasNormals = false;
+		bool HasTangents = false;
+		bool HasColors = false;
+		bool HasUV0 = false;
+		bool HasUV1 = false;
+
+		for (const auto& Primitive : Mesh.primitives)
+		{
+			Ctx.Log.LogDebug(std::string("Submesh ") + Primitive.materialId);
+
+			std::string AccessorId;
+
+			if (!Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_POSITION, AccessorId))
+			{
+				Ctx.Log.LogWarning(std::string("Submesh ") + Mesh.name + '.' + Primitive.materialId + " has no vertex positions, skipped");
+				continue;
+			}
+
+			std::vector<CVertex> Vertices;
+
+			{
+				auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+
+				Vertices.resize(Positions.size() / 3);
+
+				auto PosIt = Positions.cbegin();
+				for (auto& Vertex : Vertices)
+				{
+					Vertex.Position.x = *PosIt++;
+					Vertex.Position.y = *PosIt++;
+					Vertex.Position.z = *PosIt++;
+				}
+			}
+
+			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_NORMAL, AccessorId))
+			{
+				auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+			}
+
+			int DBG = 0;
+
+			// TODO: calc group AABB! look at position accessor's min and max!
+		}
+
+		return true;
+	}
+
+	bool ExportSkin(const std::string& SkinName, CContext& Ctx, Data::CDataArray& Attributes)
+	{
+		const auto& Skin = Ctx.Doc.skins[SkinName];
+
+		Ctx.Log.LogDebug(std::string("Skin ") + Skin.name);
 
 		return true;
 	}
