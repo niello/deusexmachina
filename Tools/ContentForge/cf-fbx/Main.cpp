@@ -1154,7 +1154,7 @@ public:
 			for (const auto& Pair : SubMeshes)
 				MeshInfo.Materials.push_back(Pair.first);
 
-			Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo)).first->second;
+			Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo));
 		}
 
 		// Write resulting skin file (if skinned)

@@ -732,7 +732,7 @@ public:
 	{
 		const auto& Mesh = Ctx.Doc.meshes[MeshName];
 
-		Ctx.Log.LogDebug(std::string("Model ") + Mesh.name);
+		Ctx.Log.LogDebug("Model " + Mesh.name);
 
 		// Export mesh (optionally skinned)
 
@@ -781,6 +781,7 @@ public:
 		{
 			// Extract vertex data from glTF
 
+			CMeshData& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshData{}).first->second;
 			std::string AccessorId;
 
 			if (!Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_POSITION, AccessorId))
@@ -806,9 +807,12 @@ public:
 					Vertex.Position.z = *AttrIt++;
 				}
 
-				// TODO: save group AABB!
-				//Accessor.min;
-				//Accessor.max;
+				SubMesh.AABBMin.x = Accessor.min[0];
+				SubMesh.AABBMin.y = Accessor.min[1];
+				SubMesh.AABBMin.z = Accessor.min[2];
+				SubMesh.AABBMax.x = Accessor.max[0];
+				SubMesh.AABBMax.y = Accessor.max[1];
+				SubMesh.AABBMax.z = Accessor.max[2];
 			}
 
 			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_NORMAL, AccessorId))
@@ -944,7 +948,6 @@ public:
 
 			// Optimize vertices and indices
 
-			CMeshData& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshData{}).first->second;
 			ProcessGeometry(RawVertices, RawIndices, SubMesh.Vertices, SubMesh.Indices);
 		}
 
@@ -965,7 +968,7 @@ public:
 			for (const auto& Pair : SubMeshes)
 				MeshInfo.MaterialIDs.push_back(Pair.first);
 
-			Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo)).first->second;
+			Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo));
 		}
 
 		return true;
