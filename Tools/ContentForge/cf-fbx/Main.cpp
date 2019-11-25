@@ -784,8 +784,6 @@ public:
 				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
 				const auto ControlPointIndex = pMesh->GetPolygonVertex(p, v);
 
-				const auto ControlPoint = pControlPoints[ControlPointIndex];
-
 				CVertex Vertex{ 0 };
 				Vertex.ControlPointIndex = ControlPointIndex;
 
