@@ -117,7 +117,7 @@ protected:
 		fs::path                  MeshPath;
 		fs::path                  SkinPath;
 		fs::path                  AnimPath;
-		std::string               DefaultName;
+		std::string               TaskName;
 		Data::CParamsSorted       MaterialMap;
 
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
@@ -278,7 +278,8 @@ public:
 
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
 
-		Ctx.DefaultName = Task.TaskID.CStr();
+		Ctx.TaskName = Task.TaskID.CStr();
+		// TODO: replace forbidden characters!
 
 		fs::path OutPath = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		if (!_RootDir.empty() && OutPath.is_relative())
@@ -462,12 +463,12 @@ public:
 		}
 		else
 		{
-			if (Node.translation != gltf::Vector3::ZERO)
-				NodeSection.emplace_back(sidTranslation, vector4({ Node.translation.x, Node.translation.y, Node.translation.z }));
-			if (Node.rotation != gltf::Quaternion::IDENTITY)
-				NodeSection.emplace_back(sidRotation, vector4({ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w }));
 			if (Node.scale != gltf::Vector3::ONE)
 				NodeSection.emplace_back(sidScale, vector4({ Node.scale.x, Node.scale.y, Node.scale.z }));
+			if (Node.rotation != gltf::Quaternion::IDENTITY)
+				NodeSection.emplace_back(sidRotation, vector4({ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w }));
+			if (Node.translation != gltf::Vector3::ZERO)
+				NodeSection.emplace_back(sidTranslation, vector4({ Node.translation.x, Node.translation.y, Node.translation.z }));
 		}
 
 		// Process children
@@ -537,7 +538,11 @@ public:
 		bool HasUV[MaxUV] = {};
 		constexpr const char* UVAttributes[] = { gltf::ACCESSOR_TEXCOORD_0, gltf::ACCESSOR_TEXCOORD_1 };
 
+		// Extract mesh groups (submeshes)
+
 		std::map<std::string, CMeshData> SubMeshes;
+		size_t TotalVertices = 0;
+		size_t TotalIndices = 0;
 
 		for (const auto& Primitive : Mesh.primitives)
 		{
@@ -551,18 +556,17 @@ public:
 				continue;
 			}
 
-			CMeshData& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshData{}).first->second;
-			auto& Vertices = SubMesh.Vertices;
+			std::vector<CVertex> RawVertices;
 
 			{
 				const auto& Accessor = Ctx.Doc.accessors[AccessorId];
 
 				const auto Positions = gltf::MeshPrimitiveUtils::GetPositions(Ctx.Doc, *Ctx.ResourceReader, Accessor);
 
-				Vertices.resize(Positions.size() / 3);
+				RawVertices.resize(Positions.size() / 3);
 
 				auto AttrIt = Positions.cbegin();
-				for (auto& Vertex : Vertices)
+				for (auto& Vertex : RawVertices)
 				{
 					Vertex.Position.x = *AttrIt++;
 					Vertex.Position.y = *AttrIt++;
@@ -581,7 +585,7 @@ public:
 				const auto Normals = gltf::MeshPrimitiveUtils::GetNormals(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Normals.cbegin();
-				for (auto& Vertex : Vertices)
+				for (auto& Vertex : RawVertices)
 				{
 					Vertex.Normal.x = *AttrIt++;
 					Vertex.Normal.y = *AttrIt++;
@@ -596,7 +600,7 @@ public:
 				const auto Tangents = gltf::MeshPrimitiveUtils::GetTangents(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Tangents.cbegin();
-				for (auto& Vertex : Vertices)
+				for (auto& Vertex : RawVertices)
 				{
 					Vertex.Tangent.x = *AttrIt++;
 					Vertex.Tangent.y = *AttrIt++;
@@ -624,7 +628,7 @@ public:
 				const auto Colors = gltf::MeshPrimitiveUtils::GetColors(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Colors.cbegin();
-				for (auto& Vertex : Vertices)
+				for (auto& Vertex : RawVertices)
 					Vertex.Color = *AttrIt++;
 			}
 
@@ -637,7 +641,7 @@ public:
 					const auto UV = gltf::MeshPrimitiveUtils::GetTexCoords(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 					auto AttrIt = UV.cbegin();
-					for (auto& Vertex : Vertices)
+					for (auto& Vertex : RawVertices)
 					{
 						Vertex.UV[UVIdx].x = *AttrIt++;
 						Vertex.UV[UVIdx].y = *AttrIt++;
@@ -652,7 +656,7 @@ public:
 				const auto Joints = gltf::MeshPrimitiveUtils::GetJointIndices64(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Joints.cbegin();
-				for (auto& Vertex : Vertices)
+				for (auto& Vertex : RawVertices)
 				{
 					const uint64_t Packed = *AttrIt++;
 					Vertex.BlendIndices[0] = (Packed & 0xffff);
@@ -670,7 +674,7 @@ public:
 				const auto Joints = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
 				auto AttrIt = Joints.cbegin();
-				for (auto& Vertex : Vertices)
+				for (auto& Vertex : RawVertices)
 				{
 					Vertex.BlendWeights = *AttrIt++;
 
@@ -684,30 +688,70 @@ public:
 				}
 			}
 
-			// Extract vertex indices from glTF
-
-			// ...
-
 			// Optimize vertices and indices
 
-			// ...
+			CMeshData& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshData{}).first->second;
+			auto& Vertices = SubMesh.Vertices;
+			auto& Indices = SubMesh.Indices;
 
-			// Write resulting mesh file
-
+			if (Primitive.indicesAccessorId.empty())
 			{
-				const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+				// Index not indexed mesh
+				Indices.resize(RawVertices.size());
+				const auto VertexCount = meshopt_generateVertexRemap(Indices.data(), nullptr, RawVertices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
 
-				//...
+				Vertices.resize(VertexCount);
+				meshopt_remapVertexBuffer(Vertices.data(), RawVertices.data(), RawVertices.size(), sizeof(CVertex), Indices.data());
+			}
+			else
+			{
+				// Remap indexed mesh
+				// NB: glTF indices are CCW
+				auto RawIndices = gltf::MeshPrimitiveUtils::GetIndices32(Ctx.Doc, *Ctx.ResourceReader, Primitive);
 
-				CMeshAttrInfo MeshInfo;
-				MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-				for (const auto& Pair : SubMeshes)
-					MeshInfo.MaterialIDs.push_back(Pair.first);
+				std::vector<unsigned int> Remap(RawVertices.size());
+				const auto VertexCount = meshopt_generateVertexRemap(Remap.data(), RawIndices.data(), RawIndices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
 
-				Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo)).first->second;
+				Vertices.resize(VertexCount);
+				meshopt_remapVertexBuffer(Vertices.data(), RawVertices.data(), RawVertices.size(), sizeof(CVertex), Remap.data());
+
+				Indices.resize(RawIndices.size());
+				meshopt_remapIndexBuffer(Indices.data(), RawIndices.data(), RawIndices.size(), Remap.data());
 			}
 
-			int DBG = 0;
+			meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
+
+			meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position.x, Vertices.size(), sizeof(CVertex), 1.05f);
+
+			meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
+
+			// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
+			// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
+
+			TotalVertices += Vertices.size();
+			TotalIndices += Indices.size();
+		}
+
+		// Write resulting mesh file
+
+		//???attach like TaskName_MeshName? Or only if doesn't start with TaskName?
+
+		// TODO: replace forbidden characters (std::transform with replacer callback?)
+		//???use node name when possible?
+		std::string MeshRsrcName = Ctx.TaskName + '_' + MeshName;
+		ToLower(MeshRsrcName);
+
+		{
+			const auto DestPath = Ctx.MeshPath / (MeshRsrcName + ".msh");
+
+			//...
+
+			CMeshAttrInfo MeshInfo;
+			MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+			for (const auto& Pair : SubMeshes)
+				MeshInfo.MaterialIDs.push_back(Pair.first);
+
+			Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo)).first->second;
 		}
 
 		return true;
