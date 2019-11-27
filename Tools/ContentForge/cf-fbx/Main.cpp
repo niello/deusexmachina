@@ -1,10 +1,9 @@
 #include <ContentForgeTool.h>
-#include <Render/RenderEnums.h>
+#include <SceneTools.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
 #include <CLI11.hpp>
 #include <fbxsdk.h>
-#include <meshoptimizer.h>
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
 #include <acl/algorithm/uniformly_sampled/encoder.h>
@@ -22,106 +21,15 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes
 
-constexpr size_t MaxUV = 4;
-constexpr size_t MaxBonesPerVertex = 4;
-
-struct float2
+static float3 FbxToDEMVec3(const FbxDouble3& Value)
 {
-	union
-	{
-		float v[2];
-		struct
-		{
-			float x, y;
-		};
-	};
+	return float3{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]) };
+}
 
-	float2() : x(0.f), y(0.f) {}
-	float2(const FbxDouble2& Value)
-		: x(static_cast<float>(Value[0]))
-		, y(static_cast<float>(Value[1]))
-	{}
-
-	float2 operator =(const FbxDouble2& Value)
-	{
-		x = static_cast<float>(Value[0]);
-		y = static_cast<float>(Value[1]);
-		return *this;
-	}
-};
-
-struct float3
+static float4 FbxToDEMVec4(const FbxDouble4& Value)
 {
-	union
-	{
-		float v[3];
-		struct
-		{
-			float x, y, z;
-		};
-	};
-
-	float3() : x(0.f), y(0.f), z(0.f) {}
-	float3(const FbxDouble3& Value)
-		: x(static_cast<float>(Value[0]))
-		, y(static_cast<float>(Value[1]))
-		, z(static_cast<float>(Value[2]))
-	{}
-
-	float3 operator =(const FbxDouble3& Value)
-	{
-		x = static_cast<float>(Value[0]);
-		y = static_cast<float>(Value[1]);
-		z = static_cast<float>(Value[2]);
-		return *this;
-	}
-};
-
-struct float4
-{
-	union
-	{
-		float v[4];
-		struct
-		{
-			float x, y, z, w;
-		};
-	};
-
-	float4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
-
-	float4(const FbxDouble4& Value)
-		: x(static_cast<float>(Value[0]))
-		, y(static_cast<float>(Value[1]))
-		, z(static_cast<float>(Value[2]))
-		, w(static_cast<float>(Value[3]))
-	{}
-
-	float4(const FbxColor& Value)
-		: x(static_cast<float>(Value[0]))
-		, y(static_cast<float>(Value[1]))
-		, z(static_cast<float>(Value[2]))
-		, w(static_cast<float>(Value[3]))
-	{}
-
-	float4 operator =(const FbxDouble4& Value)
-	{
-		x = static_cast<float>(Value[0]);
-		y = static_cast<float>(Value[1]);
-		z = static_cast<float>(Value[2]);
-		w = static_cast<float>(Value[3]);
-		return *this;
-	}
-
-	float4 operator =(const FbxColor& Value)
-	{
-		x = static_cast<float>(Value[0]);
-		y = static_cast<float>(Value[1]);
-		z = static_cast<float>(Value[2]);
-		w = static_cast<float>(Value[3]);
-		return *this;
-	}
-};
+	return float4{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]), static_cast<float>(Value[3]) };
+}
 
 // TODO: remove if not required
 static void SetupDestinationSRTRecursive(FbxNode* pNode)
@@ -569,19 +477,19 @@ public:
 			constexpr bool UseRawProperties = false;
 			if (UseRawProperties)
 			{
-				Translation = pNode->LclTranslation.Get();
-				Scaling = pNode->LclScaling.Get();
+				Translation = FbxToDEMVec3(pNode->LclTranslation.Get());
+				Scaling = FbxToDEMVec3(pNode->LclScaling.Get());
 
 				FbxQuaternion Quat;
 				Quat.ComposeSphericalXYZ(pNode->LclRotation.Get());
-				Rotation = Quat;
+				Rotation = FbxToDEMVec4(Quat);
 			}
 			else
 			{
 				const auto LocalTfm = pNode->EvaluateLocalTransform();
-				Translation = LocalTfm.GetT();
-				Scaling = LocalTfm.GetS();
-				Rotation = LocalTfm.GetQ();
+				Translation = FbxToDEMVec3(LocalTfm.GetT());
+				Scaling = FbxToDEMVec3(LocalTfm.GetS());
+				Rotation = FbxToDEMVec4(LocalTfm.GetQ());
 			}
 
 			NodeSection.emplace_back(sidTranslation, vector4(Translation.v, 3));
@@ -788,7 +696,7 @@ public:
 				Vertex.ControlPointIndex = ControlPointIndex;
 
 				// NB: we need float3 positions for meshopt_optimizeOverdraw
-				Vertex.Position = pControlPoints[ControlPointIndex];
+				Vertex.Position = FbxToDEMVec3(pControlPoints[ControlPointIndex]);
 
 				if (NormalCount)
 					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), ControlPointIndex, VertexIndex);
@@ -819,37 +727,14 @@ public:
 
 		// Index and optimize vertices
 
-		size_t TotalVertices = 0;
-		size_t TotalIndices = 0;
 		for (auto& Pair : SubMeshes)
 		{
 			std::vector<CVertex> RawVertices;
 			std::swap(RawVertices, Pair.second.Vertices);
 
-			auto& Indices = Pair.second.Indices;
-			Indices.resize(RawVertices.size());
-			const auto VertexCount = meshopt_generateVertexRemap(Indices.data(), nullptr, RawVertices.size(), RawVertices.data(), RawVertices.size(), sizeof(CVertex));
+			std::vector<unsigned int> RawIndices;
 
-			auto& Vertices = Pair.second.Vertices;
-			Vertices.resize(VertexCount);
-			meshopt_remapVertexBuffer(Vertices.data(), RawVertices.data(), RawVertices.size(), sizeof(CVertex), Indices.data());
-
-			// NB: meshopt_remapIndexBuffer is not needed, as we have no source indices,
-			//     and remap array is effectively an index array
-			//std::vector<unsigned int> Indices2(Indices.size());
-			//meshopt_remapIndexBuffer(Indices2.data(), nullptr, Indices.size(), Indices.data());
-
-			meshopt_optimizeVertexCache(Indices.data(), Indices.data(), Indices.size(), Vertices.size());
-
-			meshopt_optimizeOverdraw(Indices.data(), Indices.data(), Indices.size(), &Vertices[0].Position.x, Vertices.size(), sizeof(CVertex), 1.05f);
-
-			meshopt_optimizeVertexFetch(Vertices.data(), Indices.data(), Indices.size(), Vertices.data(), Vertices.size(), sizeof(CVertex));
-
-			// TODO: meshopt_generateShadowIndexBuffer for Z prepass and shadow rendering.
-			// Also can separate positions from all other data into 2 vertex streams, and use only positions for shadows & Z prepass.
-
-			TotalVertices += Vertices.size();
-			TotalIndices += Indices.size();
+			ProcessGeometry(RawVertices, RawIndices, Pair.second.Vertices, Pair.second.Indices);
 		}
 
 		// Process skin, one for all submeshes

@@ -11,6 +11,7 @@ include(../CMake/DEMCMakeUtils.cmake)
 #???run python script to update cmake src lists?
 
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/Common" "${CMAKE_CURRENT_BINARY_DIR}/Common")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/SceneCommon" "${CMAKE_CURRENT_BINARY_DIR}/SceneCommon")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ShaderCompiler" "${CMAKE_CURRENT_BINARY_DIR}/ShaderCompiler")
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/ContentForge" "${CMAKE_CURRENT_BINARY_DIR}/ContentForge")
 

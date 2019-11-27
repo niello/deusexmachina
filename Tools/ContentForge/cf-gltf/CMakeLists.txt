@@ -18,6 +18,5 @@ add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../Deps/GLTFSDK" "${CMAKE_CU
 include("${CMAKE_CURRENT_SOURCE_DIR}/src.cmake")
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_GLTF_HEADERS} ${DEM_CF_GLTF_SOURCES})
 add_executable(cf-gltf ${DEM_CF_GLTF_HEADERS} ${DEM_CF_GLTF_SOURCES})
-target_include_directories(cf-gltf PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/../../../Deps/acl/includes")
-target_link_libraries(cf-gltf PRIVATE ToolsCommon meshoptimizer GLTFSDK)
+target_link_libraries(cf-gltf PRIVATE SceneCommon GLTFSDK)
 set_target_properties(cf-gltf PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)

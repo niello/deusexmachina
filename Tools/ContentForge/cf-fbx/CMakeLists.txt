@@ -22,11 +22,9 @@ source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_CF_FBX_HEADERS} ${DE
 add_executable(cf-fbx ${DEM_CF_FBX_HEADERS} ${DEM_CF_FBX_SOURCES})
 target_include_directories(cf-fbx PRIVATE
 	"${CMAKE_CURRENT_SOURCE_DIR}"
-	"${FBX_SDK_PATH}/include"
-	"${CMAKE_CURRENT_SOURCE_DIR}/../../../Deps/acl/includes")
+	"${FBX_SDK_PATH}/include")
 target_link_libraries(cf-fbx PRIVATE
-	ToolsCommon
-	meshoptimizer
+	SceneCommon
 	debug ${FBX_SDK_LIB_PATH_DEBUG}libfbxsdk-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libfbxsdk-md.lib
 	debug ${FBX_SDK_LIB_PATH_DEBUG}libxml2-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}libxml2-md.lib
 	debug ${FBX_SDK_LIB_PATH_DEBUG}zlib-md.lib optimized ${FBX_SDK_LIB_PATH_RELEASE}zlib-md.lib)
