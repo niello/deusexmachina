@@ -455,7 +455,9 @@ public:
 
 		CVertexFormat VertexFormat;
 		int BoneCount = 0;
+
 		constexpr const char* UVAttributes[] = { gltf::ACCESSOR_TEXCOORD_0, gltf::ACCESSOR_TEXCOORD_1 };
+		constexpr size_t glTFMaxUV = (sizeof(UVAttributes) / sizeof(UVAttributes[0]));
 
 		// Extract mesh groups (submeshes)
 
@@ -554,7 +556,7 @@ public:
 				++VertexFormat.ColorCount;
 			}
 
-			for (int UVIdx = 0; UVIdx < MaxUV; ++UVIdx)
+			for (int UVIdx = 0; UVIdx < glTFMaxUV; ++UVIdx)
 			{
 				if (Primitive.TryGetAttributeAccessorId(UVAttributes[UVIdx], AccessorId))
 				{
