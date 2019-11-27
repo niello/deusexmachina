@@ -64,7 +64,8 @@ protected:
 		Data::CParamsSorted       MaterialMap;
 
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
-		std::unordered_map<std::string, std::string> ProcessedSkins;
+		std::unordered_map<std::string, std::string> ProcessedMaterials;
+		//std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
 	struct CBone
@@ -250,7 +251,8 @@ public:
 		Ctx.ACLSettings.segmenting.range_reduction = acl::RangeReductionFlags8::AllTracks;
 		Ctx.ACLSettings.error_metric = &_ACLErrorMetric;
 
-		//...
+		//for (const auto& Anim : Ctx.Doc.animations)
+		//	if (!ExportAnimation(Anim, Ctx)) return false;
 
 		// Export additional info
 
@@ -639,23 +641,42 @@ public:
 
 		// Write resulting mesh file
 
+		// TODO: replace forbidden characters (std::transform with replacer callback?)
+		//???use node name when possible?
+		std::string MeshRsrcName = Mesh.name.empty() ? Ctx.TaskName + '_' + MeshName : Mesh.name;
+		ToLower(MeshRsrcName);
+
+		const auto DestPath = Ctx.MeshPath / (MeshRsrcName + ".msh");
+
+		if (!WriteDEMMesh(DestPath, SubMeshes, VertexFormat, static_cast<size_t>(BoneCount), Ctx.Log)) return false;
+
+		// Export materials
+
+		CMeshAttrInfo MeshInfo;
+		MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		for (const auto& Pair : SubMeshes)
 		{
-			// TODO: replace forbidden characters (std::transform with replacer callback?)
-			//???use node name when possible?
-			std::string MeshRsrcName = Mesh.name.empty() ? Ctx.TaskName + '_' + MeshName : Mesh.name;
-			ToLower(MeshRsrcName);
+			auto MtlIt = Ctx.ProcessedMaterials.find(Pair.first);
+			if (MtlIt == Ctx.ProcessedMaterials.cend())
+			{
+				if (!ExportMaterial(Pair.first, Ctx)) return false;
+				MtlIt = Ctx.ProcessedMaterials.find(Pair.first);
+				if (MtlIt == Ctx.ProcessedMaterials.cend()) return false;
+			}
 
-			const auto DestPath = Ctx.MeshPath / (MeshRsrcName + ".msh");
-
-			if (!WriteDEMMesh(DestPath, SubMeshes, VertexFormat, static_cast<size_t>(BoneCount), Ctx.Log)) return false;
-
-			CMeshAttrInfo MeshInfo;
-			MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-			for (const auto& Pair : SubMeshes)
-				MeshInfo.MaterialIDs.push_back(Pair.first);
-
-			Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo));
+			MeshInfo.MaterialIDs.push_back(MtlIt->second);
 		}
+
+		Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo));
+
+		return true;
+	}
+
+	bool ExportMaterial(const std::string& MtlName, CContext& Ctx)
+	{
+		const auto& Mtl = Ctx.Doc.materials[MtlName];
+
+		Ctx.Log.LogDebug("Material " + Mtl.name);
 
 		return true;
 	}
@@ -664,7 +685,7 @@ public:
 	{
 		const auto& Skin = Ctx.Doc.skins[SkinName];
 
-		Ctx.Log.LogDebug(std::string("Skin ") + Skin.name);
+		Ctx.Log.LogDebug("Skin " + Skin.name);
 
 		return true;
 	}
@@ -673,7 +694,7 @@ public:
 	{
 		const auto& Camera = Ctx.Doc.cameras[CameraName];
 
-		Ctx.Log.LogDebug(std::string("Camera ") + Camera.name);
+		Ctx.Log.LogDebug("Camera " + Camera.name);
 
 		Data::CParams Attribute;
 		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CCameraAttribute"));
@@ -745,7 +766,7 @@ public:
 			case gltf::KHR::Lights::Type::Spot: LightType = 2; break;
 			default:
 			{
-				Ctx.Log.LogWarning(std::string("Light ") + Light.name + " is of unsupported type, skipped");
+				Ctx.Log.LogWarning("Light " + Light.name + " is of unsupported type, skipped");
 				return true;
 			}
 		}

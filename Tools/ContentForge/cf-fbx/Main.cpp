@@ -352,13 +352,10 @@ public:
 		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
 		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
 		const int AnimationCount = pScene->GetSrcObjectCount<FbxAnimStack>();
-		if (AnimationCount)
+		for (int i = 0; i < AnimationCount; ++i)
 		{
-			for (int i = 0; i < AnimationCount; ++i)
-			{
-				const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
-				if (!ExportAnimation(pAnimStack, pScene, Ctx)) return false;
-			}
+			const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
+			if (!ExportAnimation(pAnimStack, pScene, Ctx)) return false;
 		}
 
 		// Export additional info
@@ -568,36 +565,9 @@ public:
 		// Add models per mesh group
 
 		int GroupIndex = 0;
-		for (std::string MaterialName : MeshInfo.MaterialIDs)
+		for (const std::string& MaterialID : MeshInfo.MaterialIDs)
 		{
-			// Export material for the current submesh
-
-			// PBR materials aren't supported in FBX, can't export.
-			// Blender FBX exporter saves no textures, so parsing is completely useless for now.
-			// Instead of this, materials must be precreated and explicitly declared in .meta.
-			// glTF 2.0 exporter will address this issue.
-
-			std::string MaterialID;
-			if (!MaterialName.empty())
-			{
-				std::replace(MaterialName.begin(), MaterialName.end(), ' ', '_');
-
-				auto MtlIt = Ctx.MaterialMap.find(CStrID(MaterialName.c_str()));
-				if (MtlIt != Ctx.MaterialMap.cend())
-				{
-					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
-					if (!_RootDir.empty() && MtlPath.is_relative())
-						MtlPath = fs::path(_RootDir) / MtlPath;
-
-					MaterialID = _ResourceRoot + fs::relative(MtlPath, _RootDir).generic_string();
-				}
-				else
-				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + ':' + std::to_string(GroupIndex) + " references undefined material " + MaterialID);
-				}
-			}
-
-			// Assemble a model attribute
+			// Assemble a model attribute per submesh
 
 			Data::CParams ModelAttribute;
 			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
@@ -888,18 +858,46 @@ public:
 		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
 		ToLower(MeshName);
 
+		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+
+		if (!WriteDEMMesh(DestPath, SubMeshes, VertexFormat, Bones.size(), Ctx.Log)) return false;
+
+		// Export materials
+
+		CMeshAttrInfo MeshInfo;
+		MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		for (const auto& Pair : SubMeshes)
 		{
-			const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
+			// PBR materials aren't supported in FBX, can't export.
+			// Blender FBX exporter saves no textures, so parsing is completely useless for now.
+			// Instead of this, materials must be precreated and explicitly declared in .meta.
+			// glTF 2.0 exporter will address this issue.
 
-			if (!WriteDEMMesh(DestPath, SubMeshes, VertexFormat, Bones.size(), Ctx.Log)) return false;
+			std::string MaterialID;
+			if (!Pair.first.empty())
+			{
+				std::string MaterialName = Pair.first;
+				std::replace(MaterialName.begin(), MaterialName.end(), ' ', '_');
 
-			CMeshAttrInfo MeshInfo;
-			MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-			for (const auto& Pair : SubMeshes)
-				MeshInfo.MaterialIDs.push_back(Pair.first);
+				auto MtlIt = Ctx.MaterialMap.find(CStrID(MaterialName.c_str()));
+				if (MtlIt != Ctx.MaterialMap.cend())
+				{
+					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
+					if (!_RootDir.empty() && MtlPath.is_relative())
+						MtlPath = fs::path(_RootDir) / MtlPath;
 
-			Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo));
+					MaterialID = _ResourceRoot + fs::relative(MtlPath, _RootDir).generic_string();
+				}
+				else
+				{
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " references undefined material " + MaterialName);
+				}
+			}
+
+			MeshInfo.MaterialIDs.push_back(MaterialID);
 		}
+
+		Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo));
 
 		// Write resulting skin file (if skinned)
 
