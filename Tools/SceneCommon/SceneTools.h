@@ -1,5 +1,6 @@
 #pragma once
 #include <Render/RenderEnums.h>
+#include <Utils.h>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -29,8 +30,11 @@ struct float2
 		};
 	};
 
-	float2() : x(0.f), y(0.f) {}
-	float2(float x_, float y_) : x(x_), y(y_) {}
+	constexpr float2() : x(0.f), y(0.f) {}
+	constexpr float2(float x_, float y_) : x(x_), y(y_) {}
+
+	bool operator ==(const float2& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y); }
+	bool operator !=(const float2& Other) const { return !(*this == Other); }
 };
 
 //???use 32-bit ACL/RTM vectors?
@@ -45,8 +49,11 @@ struct float3
 		};
 	};
 
-	float3() : x(0.f), y(0.f), z(0.f) {}
-	float3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+	constexpr float3() : x(0.f), y(0.f), z(0.f) {}
+	constexpr float3(float x_, float y_, float z_) : x(x_), y(y_), z(z_) {}
+
+	bool operator ==(const float3& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z); }
+	bool operator !=(const float3& Other) const { return !(*this == Other); }
 };
 
 //???use 32-bit ACL/RTM vectors?
@@ -61,8 +68,11 @@ struct float4
 		};
 	};
 
-	float4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
-	float4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
+	constexpr float4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
+	constexpr float4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
+
+	bool operator ==(const float4& Other) const { return CompareFloat(x, Other.x) && CompareFloat(y, Other.y) && CompareFloat(z, Other.z) && CompareFloat(w, Other.w); }
+	bool operator !=(const float4& Other) const { return !(*this == Other); }
 };
 
 struct CVertex

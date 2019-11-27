@@ -510,9 +510,15 @@ public:
 				Rotation = FbxToDEMVec4(LocalTfm.GetQ());
 			}
 
-			NodeSection.emplace_back(sidTranslation, vector4(Translation.v, 3));
-			NodeSection.emplace_back(sidRotation, vector4(Rotation.v, 4));
-			NodeSection.emplace_back(sidScale, vector4(Scaling.v, 3));
+			constexpr float3 Unit3(1.f, 1.f, 1.f);
+			constexpr float3 Zero3(0.f, 0.f, 0.f);
+			constexpr float4 IdentityQuat(0.f, 0.f, 0.f, 1.f);
+			if (Scaling != Unit3)
+				NodeSection.emplace_back(sidScale, vector4(Scaling.v, 3));
+			if (Rotation != IdentityQuat)
+				NodeSection.emplace_back(sidRotation, vector4(Rotation.v, 4));
+			if (Translation != Zero3)
+				NodeSection.emplace_back(sidTranslation, vector4(Translation.v, 3));
 		}
 
 		// Process children
