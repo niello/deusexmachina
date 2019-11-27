@@ -1,6 +1,13 @@
 cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 project(DEM-Tools-SceneCommon)
 
+# Dependency: meshoptimizer
+set(BUILD_DEMO OFF CACHE INTERNAL "" FORCE)
+set(BUILD_TOOLS OFF CACHE INTERNAL "" FORCE)
+set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/meshoptimizer" "${CMAKE_CURRENT_BINARY_DIR}/Deps/meshoptimizer")
+
+# SceneCommon
 include(src.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}" FILES ${DEM_SCENE_COMMON_HEADERS} ${DEM_SCENE_COMMON_SOURCES})
 add_library(SceneCommon STATIC ${DEM_SCENE_COMMON_HEADERS} ${DEM_SCENE_COMMON_SOURCES})
