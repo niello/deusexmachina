@@ -16,6 +16,18 @@ struct membuf : std::streambuf
 std::vector<std::string> SplitString(const std::string& Str, char Sep);
 uint32_t CalcCRC(const uint8_t* pData, size_t Size);
 
+inline float ByteToNormalizedFloat(uint8_t value)
+{
+	return value / 255.0f;
+}
+//---------------------------------------------------------------------
+
+inline uint8_t NormalizedFloatToByte(float value)
+{
+	return static_cast<uint8_t>(value * 255.0f + 0.5f);
+}
+//---------------------------------------------------------------------
+
 template<typename T>
 bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 {

@@ -7,9 +7,9 @@
 // Common tools for scene hierarchy and resources processing.
 // Used by converters from different common formats (FBX, glTF) to DEM.
 
-// According to the core glTF 2.0 spec:
+// At least 2 UVs and 4 bones according to the core glTF 2.0 spec:
 // https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#meshes
-constexpr size_t MaxUV = 2;
+constexpr size_t MaxUV = 4;
 constexpr size_t MaxBonesPerVertex = 4;
 
 inline float RadToDeg(float Rad) { return Rad * 180.0f / 3.1415926535897932385f; }
@@ -78,6 +78,9 @@ struct CVertex
 	//float  BlendWeights[MaxBonesPerVertex];
 	uint32_t BlendWeights; // Packed info byte values
 	size_t BonesUsed = 0;
+
+	float GetBlendWeight(size_t Index) const;
+	void SetBlendWeight(size_t Index, float Weight);
 };
 
 struct CVertexFormat
@@ -90,7 +93,7 @@ struct CVertexFormat
 	size_t BonesPerVertex = 0;
 };
 
-struct CMeshData
+struct CMeshGroup
 {
 	std::vector<CVertex> Vertices;
 	std::vector<unsigned int> Indices;
@@ -98,6 +101,12 @@ struct CMeshData
 	float3 AABBMax;
 };
 
+struct CMeshAttrInfo
+{
+	std::string MeshID;
+	std::vector<std::string> MaterialIDs; // Per group (submesh)
+};
+
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices, std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices);
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
-bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshData>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
+bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);

@@ -15,6 +15,20 @@ namespace acl
 
 namespace fs = std::filesystem;
 
+float CVertex::GetBlendWeight(size_t Index) const
+{
+	// return BlendWeights[Index];
+	return ByteToNormalizedFloat((BlendWeights >> (Index * 8)) & 0xff);
+}
+//---------------------------------------------------------------------
+
+void CVertex::SetBlendWeight(size_t Index, float Weight)
+{
+	// BlendWeights[Index] = Weight;
+	reinterpret_cast<uint8_t*>(&BlendWeights)[3 - Index] = NormalizedFloatToByte(Weight);
+}
+//---------------------------------------------------------------------
+
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices,
 	std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices)
 {
@@ -60,7 +74,7 @@ void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semanti
 }
 //---------------------------------------------------------------------
 
-bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshData>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log)
+bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log)
 {
 	fs::create_directories(DestPath.parent_path());
 

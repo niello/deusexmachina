@@ -47,12 +47,6 @@ class CGLTFTool : public CContentForgeTool
 {
 protected:
 
-	struct CMeshAttrInfo
-	{
-		std::string MeshID;
-		std::vector<std::string> MaterialIDs; // Per group (submesh)
-	};
-
 	struct CContext
 	{
 		CThreadSafeLog&           Log;
@@ -465,13 +459,13 @@ public:
 
 		// Extract mesh groups (submeshes)
 
-		std::map<std::string, CMeshData> SubMeshes;
+		std::map<std::string, CMeshGroup> SubMeshes;
 
 		for (const auto& Primitive : Mesh.primitives)
 		{
 			// Extract vertex data from glTF
 
-			CMeshData& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshData{}).first->second;
+			auto& SubMesh = SubMeshes.emplace(Primitive.materialId, CMeshGroup{}).first->second;
 			std::string AccessorId;
 
 			if (!Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_POSITION, AccessorId))
@@ -622,10 +616,10 @@ public:
 					// TODO: store 4 float weights? Then get floats from accessor, don't pack with GetJointWeights32.
 					// Or store uint32_t weights, then can store as is here, don't unpack!
 					//const uint32_t Packed = *AttrIt++;
-					//Vertex.BlendWeights[0] = gltf::Math::ByteToFloat(Packed & 0xffff);
-					//Vertex.BlendWeights[1] = gltf::Math::ByteToFloat((Packed >> 16) & 0xffff);
-					//Vertex.BlendWeights[2] = gltf::Math::ByteToFloat((Packed >> 32) & 0xffff);
-					//Vertex.BlendWeights[3] = gltf::Math::ByteToFloat((Packed >> 48) & 0xffff);
+					//Vertex.BlendWeights[0] = gltf::Math::ByteToFloat((Packed >>  0) & 0xff);
+					//Vertex.BlendWeights[1] = gltf::Math::ByteToFloat((Packed >>  8) & 0xff);
+					//Vertex.BlendWeights[2] = gltf::Math::ByteToFloat((Packed >> 16) & 0xff);
+					//Vertex.BlendWeights[3] = gltf::Math::ByteToFloat((Packed >> 24) & 0xff);
 				}
 			}
 
@@ -634,7 +628,7 @@ public:
 
 			std::vector<uint32_t> RawIndices;
 			if (!Primitive.indicesAccessorId.empty())
-				RawIndices = std::move(gltf::MeshPrimitiveUtils::GetIndices32(Ctx.Doc, *Ctx.ResourceReader, Primitive));
+				RawIndices = std::move(gltf::MeshPrimitiveUtils::GetTriangulatedIndices32(Ctx.Doc, *Ctx.ResourceReader, Primitive));
 
 			// Optimize vertices and indices
 

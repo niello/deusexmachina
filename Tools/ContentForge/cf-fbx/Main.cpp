@@ -21,15 +21,59 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/scenes
 
-static float3 FbxToDEMVec3(const FbxDouble3& Value)
+template<class TDEM, class TFBX>
+static TDEM FbxToDEM(const TFBX& Value)
+{
+	static_assert(false, "FbxToDEM not implemented for these types!");
+}
+//---------------------------------------------------------------------
+
+template<>
+static inline float2 FbxToDEM(const FbxVector2& Value)
+{
+	return float2{ static_cast<float>(Value[0]), static_cast<float>(Value[1]) };
+}
+//---------------------------------------------------------------------
+
+template<>
+static inline float3 FbxToDEM(const FbxDouble3& Value)
 {
 	return float3{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]) };
 }
+//---------------------------------------------------------------------
 
-static float4 FbxToDEMVec4(const FbxDouble4& Value)
+template<>
+static inline float3 FbxToDEM(const FbxVector4& Value)
+{
+	return float3{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]) };
+}
+//---------------------------------------------------------------------
+
+template<>
+static inline float4 FbxToDEM(const FbxVector4& Value)
 {
 	return float4{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]), static_cast<float>(Value[3]) };
 }
+//---------------------------------------------------------------------
+
+template<>
+static inline float4 FbxToDEM(const FbxColor& Value)
+{
+	return float4{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]), static_cast<float>(Value[3]) };
+}
+//---------------------------------------------------------------------
+
+static inline float3 FbxToDEMVec3(const FbxDouble3& Value)
+{
+	return float3{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]) };
+}
+//---------------------------------------------------------------------
+
+static inline float4 FbxToDEMVec4(const FbxDouble4& Value)
+{
+	return float4{ static_cast<float>(Value[0]), static_cast<float>(Value[1]), static_cast<float>(Value[2]), static_cast<float>(Value[3]) };
+}
+//---------------------------------------------------------------------
 
 // TODO: remove if not required
 static void SetupDestinationSRTRecursive(FbxNode* pNode)
@@ -83,7 +127,7 @@ static void GetVertexElement(TOut& OutValue, TElement* pElement, int ControlPoin
 	if (pElement->GetReferenceMode() != FbxLayerElement::eDirect)
 		ID = pElement->GetIndexArray().GetAt(ID);
 
-	OutValue = pElement->GetDirectArray().GetAt(ID);
+	OutValue = FbxToDEM<TOut>(pElement->GetDirectArray().GetAt(ID));
 }
 //---------------------------------------------------------------------
 
@@ -100,12 +144,6 @@ class CFBXTool : public CContentForgeTool
 {
 protected:
 
-	struct CMeshAttrInfo
-	{
-		std::string MeshID;
-		std::vector<const FbxSurfaceMaterial*> Materials; // Per group (submesh)
-	};
-
 	struct CContext
 	{
 		CThreadSafeLog&           Log;
@@ -121,26 +159,6 @@ protected:
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
-	};
-
-	struct CVertex
-	{
-		int    ControlPointIndex;
-		float3 Position;
-		float3 Normal;
-		float3 Tangent;
-		float3 Bitangent;
-		uint32_t Color;
-		float2 UV[MaxUV];
-		int    BlendIndices[MaxBonesPerVertex];
-		float  BlendWeights[MaxBonesPerVertex];
-		size_t BonesUsed = 0;
-	};
-
-	struct CMeshData
-	{
-		std::vector<CVertex> Vertices;
-		std::vector<unsigned int> Indices;
 	};
 
 	struct CBone
@@ -544,7 +562,7 @@ public:
 		// Add models per mesh group
 
 		int GroupIndex = 0;
-		for (const FbxSurfaceMaterial* pMaterial : MeshInfo.Materials)
+		for (std::string MaterialName : MeshInfo.MaterialIDs)
 		{
 			// Export material for the current submesh
 
@@ -554,9 +572,8 @@ public:
 			// glTF 2.0 exporter will address this issue.
 
 			std::string MaterialID;
-			if (pMaterial)
+			if (!MaterialName.empty())
 			{
-				std::string MaterialName = pMaterial->GetName();
 				std::replace(MaterialName.begin(), MaterialName.end(), ' ', '_');
 
 				auto MtlIt = Ctx.MaterialMap.find(CStrID(MaterialName.c_str()));
@@ -612,136 +629,36 @@ public:
 	{
 		// Determine vertex format
 
-		const FbxVector4* pControlPoints = pMesh->GetControlPoints();
+		CVertexFormat VertexFormat;
 
-		const auto NormalCount = std::min(1, pMesh->GetElementNormalCount());
-		if (pMesh->GetElementNormalCount() > NormalCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(NormalCount) + '/' + std::to_string(pMesh->GetElementNormalCount()) + " normals");
+		VertexFormat.NormalCount = std::min(1, pMesh->GetElementNormalCount());
+		if (pMesh->GetElementNormalCount() > static_cast<int>(VertexFormat.NormalCount))
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(VertexFormat.NormalCount) + '/' + std::to_string(pMesh->GetElementNormalCount()) + " normals");
 
-		const auto TangentCount = std::min(1, pMesh->GetElementTangentCount());
-		if (pMesh->GetElementTangentCount() > TangentCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(TangentCount) + '/' + std::to_string(pMesh->GetElementTangentCount()) + " tangents");
+		VertexFormat.TangentCount = std::min(1, pMesh->GetElementTangentCount());
+		if (pMesh->GetElementTangentCount() > static_cast<int>(VertexFormat.TangentCount))
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(VertexFormat.TangentCount) + '/' + std::to_string(pMesh->GetElementTangentCount()) + " tangents");
 
-		const auto BitangentCount = std::min(1, pMesh->GetElementBinormalCount());
-		if (pMesh->GetElementBinormalCount() > BitangentCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(BitangentCount) + '/' + std::to_string(pMesh->GetElementBinormalCount()) + " bitangents");
+		VertexFormat.BitangentCount = std::min(1, pMesh->GetElementBinormalCount());
+		if (pMesh->GetElementBinormalCount() > static_cast<int>(VertexFormat.BitangentCount))
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(VertexFormat.BitangentCount) + '/' + std::to_string(pMesh->GetElementBinormalCount()) + " bitangents");
 
-		const auto ColorCount = std::min(1, pMesh->GetElementVertexColorCount());
-		if (pMesh->GetElementVertexColorCount() > ColorCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(ColorCount) + '/' + std::to_string(pMesh->GetElementVertexColorCount()) + " colors");
+		VertexFormat.ColorCount = std::min(1, pMesh->GetElementVertexColorCount());
+		if (pMesh->GetElementVertexColorCount() > static_cast<int>(VertexFormat.ColorCount))
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(VertexFormat.ColorCount) + '/' + std::to_string(pMesh->GetElementVertexColorCount()) + " colors");
 
-		const auto UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
-		if (pMesh->GetElementUVCount() > UVCount)
-			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
+		VertexFormat.UVCount = std::min(static_cast<int>(MaxUV), pMesh->GetElementUVCount());
+		if (pMesh->GetElementUVCount() > static_cast<int>(VertexFormat.UVCount))
+			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(VertexFormat.UVCount) + '/' + std::to_string(pMesh->GetElementUVCount()) + " UVs");
 
 		const auto MaterialLayerCount = std::min(1, pMesh->GetElementMaterialCount());
 		if (pMesh->GetElementMaterialCount() > MaterialLayerCount)
 			Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " will use only " + std::to_string(MaterialLayerCount) + '/' + std::to_string(pMesh->GetElementMaterialCount()) + " material layers");
 
-		// Collect vertices for each material separately
-
-		const int PolyCount = pMesh->GetPolygonCount();
-		const auto pMaterialElement = pMesh->GetElementMaterial();
-
-		std::map<const FbxSurfaceMaterial*, CMeshData> SubMeshes;
-
-		for (int p = 0; p < PolyCount; ++p)
-		{
-			// Polygon must be a triangle
-			const int PolySize = pMesh->GetPolygonSize(p);
-			if (PolySize > 3)
-			{
-				Ctx.Log.LogError("Polygon " + std::to_string(p) + " in mesh " + pMesh->GetName() + " is not triangulated, can't proceed");
-				return false;
-			}
-			else if (PolySize < 3)
-			{
-				Ctx.Log.LogWarning("Degenerate polygon " + std::to_string(p) + " skipped in mesh " + pMesh->GetName());
-				continue;
-			}
-
-			// Get material index and corresponding group (submesh)
-
-			const FbxSurfaceMaterial* pMaterial = nullptr;
-			if (pMaterialElement)
-			{
-				int MaterialIndex = -1;
-				switch (pMaterialElement->GetMappingMode())
-				{
-					case FbxLayerElement::eByPolygon: MaterialIndex = pMaterialElement->GetIndexArray().GetAt(p); break;
-					case FbxLayerElement::eAllSame: MaterialIndex = pMaterialElement->GetIndexArray().GetAt(0); break;
-					default: assert(false && "Unsupported material mapping mode");
-				}
-
-				pMaterial = pMesh->GetNode()->GetMaterial(MaterialIndex);
-			}
-
-			auto GroupIt = SubMeshes.find(pMaterial);
-			if (GroupIt == SubMeshes.cend())
-			{
-				GroupIt = SubMeshes.emplace(pMaterial, CMeshData{}).first;
-				GroupIt->second.Vertices.reserve(static_cast<size_t>((PolyCount - p) * 3));
-			}
-
-			auto& Vertices = GroupIt->second.Vertices;
-
-			// Process polygon vertices
-
-			for (int v = 0; v < PolySize; ++v)
-			{
-				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
-				const auto ControlPointIndex = pMesh->GetPolygonVertex(p, v);
-
-				CVertex Vertex{ 0 };
-				Vertex.ControlPointIndex = ControlPointIndex;
-
-				// NB: we need float3 positions for meshopt_optimizeOverdraw
-				Vertex.Position = FbxToDEMVec3(pControlPoints[ControlPointIndex]);
-
-				if (NormalCount)
-					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), ControlPointIndex, VertexIndex);
-
-				if (TangentCount)
-					GetVertexElement(Vertex.Tangent, pMesh->GetElementTangent(), ControlPointIndex, VertexIndex);
-
-				if (BitangentCount)
-					GetVertexElement(Vertex.Bitangent, pMesh->GetElementBinormal(), ControlPointIndex, VertexIndex);
-
-				if (ColorCount)
-				{
-					float4 Color;
-					GetVertexElement(Color, pMesh->GetElementVertexColor(), ControlPointIndex, VertexIndex);
-					Vertex.Color =
-						(static_cast<uint8_t>(Color.w * 255.0f + 0.5f) << 24) |
-						(static_cast<uint8_t>(Color.z * 255.0f + 0.5f) << 16) |
-						(static_cast<uint8_t>(Color.y * 255.0f + 0.5f) << 8) |
-						(static_cast<uint8_t>(Color.x * 255.0f + 0.5f));
-				}
-
-				for (int e = 0; e < MaxUV; ++e)
-					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), ControlPointIndex, VertexIndex);
-
-				Vertices.push_back(std::move(Vertex));
-			}
-		}
-
-		// Index and optimize vertices
-
-		for (auto& Pair : SubMeshes)
-		{
-			std::vector<CVertex> RawVertices;
-			std::swap(RawVertices, Pair.second.Vertices);
-
-			std::vector<unsigned int> RawIndices;
-
-			ProcessGeometry(RawVertices, RawIndices, Pair.second.Vertices, Pair.second.Indices);
-		}
-
 		// Process skin, one for all submeshes
-		// NB: skin is per-control-point, so it is better done after optimizing out redundant vertices
 
 		std::vector<CBone> Bones;
-		size_t MaxBonesPerVertexUsed = 0;
+		std::vector<std::pair<const FbxCluster*, size_t>> BoneClusters; // Cluster -> Number of vertices really affected
 
 		const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
 
@@ -768,74 +685,164 @@ public:
 					continue;
 				}
 
-				// Write blend indices and weights to vertices
-
-				const int BoneIndex = static_cast<int>(Bones.size());
-
-				size_t VerticesAffected = 0;
-				for (int i = 0; i < IndexCount; ++i)
-				{
-					const int ControlPointIndex = pIndices[i];
-					const float Weight = static_cast<float>(pWeights[i]);
-
-					// Skip (almost) zero weights
-					if (CompareFloat(Weight, 0.f)) continue;
-
-					for (auto& Pair : SubMeshes)
-					{
-						auto& Vertices = Pair.second.Vertices;
-						for (auto& Vertex : Vertices)
-						{
-							if (Vertex.ControlPointIndex != ControlPointIndex) continue;
-
-							size_t BoneOrderNumber;
-							if (Vertex.BonesUsed >= MaxBonesPerVertex)
-							{
-								Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
-
-								BoneOrderNumber = 0;
-								for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
-								{
-									if (Vertex.BlendWeights[bo] < Vertex.BlendWeights[BoneOrderNumber])
-										BoneOrderNumber = bo;
-								}
-							}
-							else
-							{
-								BoneOrderNumber = Vertex.BonesUsed;
-
-								++Vertex.BonesUsed;
-								if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
-									MaxBonesPerVertexUsed = Vertex.BonesUsed;
-							}
-
-							Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
-							Vertex.BlendWeights[BoneOrderNumber] = Weight;
-
-							++VerticesAffected;
-						}
-					}
-				}
-
-				// If bone affects nothing it can be dropped
-				if (!VerticesAffected) continue;
-
-				// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
-
 				// Calculate inverse local bind pose and save the bone
 				FbxAMatrix WorldBindPose;
 				pCluster->GetTransformLinkMatrix(WorldBindPose);
 				Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse(), pBone->GetName(), NoParent });
+
+				// Remember valid cluster for vertex processing
+				BoneClusters.emplace_back(pCluster, 0);
+			}
+		}
+
+		// Collect vertices for each material separately (split mesh to groups)
+
+		const int PolyCount = pMesh->GetPolygonCount();
+		const auto pMaterialElement = pMesh->GetElementMaterial();
+
+		std::map<std::string, CMeshGroup> SubMeshes;
+		size_t MaxBonesPerVertexUsed = 0;
+
+		for (int p = 0; p < PolyCount; ++p)
+		{
+			// Polygon must be a triangle
+			const int PolySize = pMesh->GetPolygonSize(p);
+			if (PolySize > 3)
+			{
+				Ctx.Log.LogError("Polygon " + std::to_string(p) + " in mesh " + pMesh->GetName() + " is not triangulated, can't proceed");
+				return false;
+			}
+			else if (PolySize < 3)
+			{
+				Ctx.Log.LogWarning("Degenerate polygon " + std::to_string(p) + " skipped in mesh " + pMesh->GetName());
+				continue;
 			}
 
-			// Establish parent-child links and check IDs
+			// Get mesh group for the current polygon material
 
-			// There are a couple of approaches for saving bones:
-			// 1. Save node names, ensure they are unique and search all the scene node tree for them
-			// 2. Save node name and parent bone index, or full path if parent is not a bone
-			// 3. Hybrid - save node name and parent bone index. If parent is not a bone, search like in 1.
-			// Approach 3 is used here.
+			std::string MaterialName;
+			if (pMaterialElement)
+			{
+				int MaterialIndex = -1;
+				switch (pMaterialElement->GetMappingMode())
+				{
+					case FbxLayerElement::eByPolygon: MaterialIndex = pMaterialElement->GetIndexArray().GetAt(p); break;
+					case FbxLayerElement::eAllSame: MaterialIndex = pMaterialElement->GetIndexArray().GetAt(0); break;
+					default: assert(false && "Unsupported material mapping mode");
+				}
 
+				auto pMaterial = pMesh->GetNode()->GetMaterial(MaterialIndex);
+				MaterialName = pMaterial ? pMaterial->GetName() : "";
+			}
+
+			auto GroupIt = SubMeshes.find(MaterialName);
+			if (GroupIt == SubMeshes.cend())
+			{
+				GroupIt = SubMeshes.emplace(MaterialName, CMeshGroup{}).first;
+				GroupIt->second.Vertices.reserve(static_cast<size_t>((PolyCount - p) * 3));
+			}
+
+			// Process polygon vertices
+
+			auto& Vertices = GroupIt->second.Vertices;
+			const FbxVector4* pControlPoints = pMesh->GetControlPoints();
+
+			for (int v = 0; v < PolySize; ++v)
+			{
+				const auto VertexIndex = static_cast<unsigned int>(Vertices.size());
+				const auto ControlPointIndex = pMesh->GetPolygonVertex(p, v);
+
+				CVertex Vertex{};
+
+				// NB: we need float3 positions for meshopt_optimizeOverdraw
+				Vertex.Position = FbxToDEMVec3(pControlPoints[ControlPointIndex]);
+
+				if (VertexFormat.NormalCount)
+					GetVertexElement(Vertex.Normal, pMesh->GetElementNormal(), ControlPointIndex, VertexIndex);
+
+				if (VertexFormat.TangentCount)
+					GetVertexElement(Vertex.Tangent, pMesh->GetElementTangent(), ControlPointIndex, VertexIndex);
+
+				if (VertexFormat.BitangentCount)
+					GetVertexElement(Vertex.Bitangent, pMesh->GetElementBinormal(), ControlPointIndex, VertexIndex);
+
+				if (VertexFormat.ColorCount)
+				{
+					float4 Color;
+					GetVertexElement(Color, pMesh->GetElementVertexColor(), ControlPointIndex, VertexIndex);
+					Vertex.Color =
+						(static_cast<uint8_t>(Color.w * 255.0f + 0.5f) << 24) |
+						(static_cast<uint8_t>(Color.z * 255.0f + 0.5f) << 16) |
+						(static_cast<uint8_t>(Color.y * 255.0f + 0.5f) << 8) |
+						(static_cast<uint8_t>(Color.x * 255.0f + 0.5f));
+				}
+
+				for (size_t e = 0; e < VertexFormat.UVCount; ++e)
+					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), ControlPointIndex, VertexIndex);
+
+				// Fill skin data
+				for (size_t BoneIndex = 0; BoneIndex < BoneClusters.size(); ++BoneIndex)
+				{
+					const FbxCluster* pCluster = BoneClusters[BoneIndex].first;
+
+					const int IndexCount = pCluster->GetControlPointIndicesCount();
+					for (int i = 0; i < IndexCount; ++i)
+					{
+						const int BoneControlPointIndex = pCluster->GetControlPointIndices()[i];
+						if (BoneControlPointIndex != ControlPointIndex) continue;
+
+						const float Weight = static_cast<float>(pCluster->GetControlPointWeights()[i]);
+						if (CompareFloat(Weight, 0.f)) continue;
+
+						size_t BoneOrderNumber;
+						if (Vertex.BonesUsed >= MaxBonesPerVertex)
+						{
+							Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
+
+							BoneOrderNumber = 0;
+							for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
+							{
+								if (Vertex.GetBlendWeight(bo) < Vertex.GetBlendWeight(BoneOrderNumber))
+									BoneOrderNumber = bo;
+							}
+
+							// The least influencing bone loses a vertex
+							--BoneClusters[Vertex.BlendIndices[BoneOrderNumber]].second;
+						}
+						else
+						{
+							BoneOrderNumber = Vertex.BonesUsed;
+
+							++Vertex.BonesUsed;
+							if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
+								MaxBonesPerVertexUsed = Vertex.BonesUsed;
+						}
+
+						Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
+						Vertex.SetBlendWeight(BoneOrderNumber, Weight);
+
+						++BoneClusters[BoneIndex].second;
+					}
+				}
+
+				Vertices.push_back(std::move(Vertex));
+			}
+		}
+
+		// Check that all bones influence at least one vertex
+		// TODO: if validation failed, should implement removal of unnecessary bones, fixing vertex blend indices
+		for (const auto& ClusterInfo : BoneClusters)
+			assert(ClusterInfo.second > 0);
+
+		// Establish bone parent-child links and check IDs
+
+		// There are a couple of approaches for saving bones:
+		// 1. Save node names, ensure they are unique and search all the scene node tree for them
+		// 2. Save node name and parent bone index, or full path if parent is not a bone
+		// 3. Hybrid - save node name and parent bone index. If parent is not a bone, search like in 1.
+		// Approach 3 is used here.
+
+		{
 			std::set<std::string> BoneNames;
 			for (auto& Bone : Bones)
 			{
@@ -848,7 +855,21 @@ public:
 				const auto It = std::find_if(Bones.cbegin(), Bones.cend(), [pParent](const CBone& b) { return b.pBone == pParent; });
 				if (It == Bones.cend())
 					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Bones.cbegin(), It));
+
+				// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
 			}
+		}
+
+		// Index and optimize vertices
+
+		for (auto& Pair : SubMeshes)
+		{
+			std::vector<CVertex> RawVertices;
+			std::swap(RawVertices, Pair.second.Vertices);
+
+			std::vector<unsigned int> RawIndices;
+
+			ProcessGeometry(RawVertices, RawIndices, Pair.second.Vertices, Pair.second.Indices);
 		}
 
 		// TODO: simplify, quantize and compress if required, see meshoptimizer readme, can simplify for lower LODs
@@ -869,7 +890,7 @@ public:
 			CMeshAttrInfo MeshInfo;
 			MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 			for (const auto& Pair : SubMeshes)
-				MeshInfo.Materials.push_back(Pair.first);
+				MeshInfo.MaterialIDs.push_back(Pair.first);
 
 			Ctx.ProcessedMeshes.emplace(pMesh, std::move(MeshInfo));
 		}
@@ -931,7 +952,7 @@ public:
 			}
 		}
 
-		const float3 Color = pLight->Color.Get();
+		const float3 Color = FbxToDEMVec3(pLight->Color.Get());
 		const float Intensity = static_cast<float>(pLight->Intensity.Get() / 100.0);
 
 		float Range = 0.f;
