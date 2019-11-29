@@ -876,10 +876,7 @@ public:
 			std::string MaterialID;
 			if (!Pair.first.empty())
 			{
-				std::string MaterialName = Pair.first;
-				std::replace(MaterialName.begin(), MaterialName.end(), ' ', '_');
-
-				auto MtlIt = Ctx.MaterialMap.find(CStrID(MaterialName.c_str()));
+				auto MtlIt = Ctx.MaterialMap.find(CStrID(Pair.first.c_str()));
 				if (MtlIt != Ctx.MaterialMap.cend())
 				{
 					fs::path MtlPath = MtlIt->second.GetValue<std::string>();
@@ -890,7 +887,7 @@ public:
 				}
 				else
 				{
-					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " references undefined material " + MaterialName);
+					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " references undefined material " + Pair.first);
 				}
 			}
 

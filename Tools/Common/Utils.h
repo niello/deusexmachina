@@ -215,3 +215,12 @@ inline void ToUpper(std::string& s)
 	std::transform(s.begin(), s.end(), s.begin(), ::toupper);
 }
 //---------------------------------------------------------------------
+
+inline std::string GetValidResourceName(const std::string& BaseName)
+{
+	std::string RsrcName = BaseName;
+	std::replace(RsrcName.begin(), RsrcName.end(), ' ', '_');
+	ToLower(RsrcName);
+	return RsrcName;
+}
+//---------------------------------------------------------------------

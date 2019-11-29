@@ -29,7 +29,7 @@ class CStreamReader : public gltf::IStreamReader
 {
 public:
 
-	CStreamReader(fs::path&& pathBase) : _BasePath(std::move(pathBase)) {}
+	explicit CStreamReader(const fs::path& BasePath) : _BasePath(BasePath) {}
 
 	std::shared_ptr<std::istream> GetInputStream(const std::string& FileName) const override
 	{
@@ -57,11 +57,13 @@ protected:
 		acl::ANSIAllocator        ACLAllocator;
 		acl::CompressionSettings  ACLSettings;
 
+		fs::path                  SrcFolder;
 		fs::path                  MeshPath;
+		fs::path                  MaterialPath;
+		fs::path                  TexturePath;
 		fs::path                  SkinPath;
 		fs::path                  AnimPath;
 		std::string               TaskName;
-		Data::CParamsSorted       MaterialMap;
 
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<std::string, std::string> ProcessedMaterials;
@@ -159,7 +161,9 @@ public:
 
 		CContext Ctx{ Task.Log };
 
-		auto StreamReader = std::make_unique<CStreamReader>(Task.SrcFilePath.parent_path());
+		Ctx.SrcFolder = Task.SrcFilePath.parent_path();
+
+		auto StreamReader = std::make_unique<CStreamReader>(Ctx.SrcFolder);
 
 		const auto SrcFileName = Task.SrcFilePath.filename().u8string();
 		auto gltfStream = StreamReader->GetInputStream(SrcFileName);
@@ -212,6 +216,14 @@ public:
 		if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
 			Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
 
+		Ctx.MaterialPath = ParamsUtils::GetParam<std::string>(Task.Params, "MaterialOutput", std::string{});
+		if (!_RootDir.empty() && Ctx.MaterialPath.is_relative())
+			Ctx.MaterialPath = fs::path(_RootDir) / Ctx.MaterialPath;
+
+		Ctx.TexturePath = ParamsUtils::GetParam<std::string>(Task.Params, "TextureOutput", std::string{});
+		if (!_RootDir.empty() && Ctx.TexturePath.is_relative())
+			Ctx.TexturePath = fs::path(_RootDir) / Ctx.TexturePath;
+
 		Ctx.SkinPath = ParamsUtils::GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
 		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
 			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
@@ -233,7 +245,7 @@ public:
 		}
 
 		const auto& Scene = Ctx.Doc.scenes[Ctx.Doc.defaultSceneId];
-		
+
 		Data::CParams Nodes;
 
 		for (const auto& Node : Scene.nodes)
@@ -677,6 +689,30 @@ public:
 		const auto& Mtl = Ctx.Doc.materials[MtlName];
 
 		Ctx.Log.LogDebug("Material " + Mtl.name);
+
+		Data::CParams MtlDesc;
+
+		MtlDesc.emplace_back(CStrID("Effect"), std::string("<FILL_ME>"));
+
+		Data::CParams MtlParams;
+		//Params: TexAlbedo, TexNormalMap
+		MtlDesc.emplace_back(CStrID("Params"), std::move(MtlParams));
+
+		//!!!TODO: if effect's default sampler is the same as metariel sampler, don't create another sampler in engine when loading material,
+		//even if the material has the sampler explicitly defined!
+
+		// Material source is saved near the scene source because it highly depends on the scene and its textures.
+		// Materials exported from scenes are not typically reusable, but different materials with the same name
+		// can be exported to the same compiled material resource (overwriting it) and therefore reused.
+		const auto DestPath = Ctx.SrcFolder / (GetValidResourceName(Mtl.name) + ".hrd");
+		if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), MtlDesc))
+		{
+			Ctx.Log.LogError("Error saving material source " + DestPath.generic_string());
+			return false;
+		}
+
+		// create material metafile (or support inline meta through the command line argument?)
+		// and/or export material with cf-material
 
 		return true;
 	}
