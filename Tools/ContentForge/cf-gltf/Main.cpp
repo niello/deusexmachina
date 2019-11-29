@@ -212,25 +212,48 @@ public:
 		if (!_RootDir.empty() && OutPath.is_relative())
 			OutPath = fs::path(_RootDir) / OutPath;
 
-		Ctx.MeshPath = ParamsUtils::GetParam<std::string>(Task.Params, "MeshOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
-			Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
+		const std::string OutPathStr = OutPath.generic_string();
+		std::string PathValue;
 
-		Ctx.MaterialPath = ParamsUtils::GetParam<std::string>(Task.Params, "MaterialOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.MaterialPath.is_relative())
-			Ctx.MaterialPath = fs::path(_RootDir) / Ctx.MaterialPath;
+		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "MeshOutput"))
+		{
+			Ctx.MeshPath = PathValue;
+			if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
+				Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
+		}
+		else Ctx.MeshPath = OutPathStr;
 
-		Ctx.TexturePath = ParamsUtils::GetParam<std::string>(Task.Params, "TextureOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.TexturePath.is_relative())
-			Ctx.TexturePath = fs::path(_RootDir) / Ctx.TexturePath;
+		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "MaterialOutput"))
+		{
+			Ctx.MaterialPath = PathValue;
+			if (!_RootDir.empty() && Ctx.MaterialPath.is_relative())
+				Ctx.MaterialPath = fs::path(_RootDir) / Ctx.MaterialPath;
+		}
+		else Ctx.MaterialPath = OutPathStr;
 
-		Ctx.SkinPath = ParamsUtils::GetParam<std::string>(Task.Params, "SkinOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
-			Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
+		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "TextureOutput"))
+		{
+			Ctx.TexturePath = PathValue;
+			if (!_RootDir.empty() && Ctx.TexturePath.is_relative())
+				Ctx.TexturePath = fs::path(_RootDir) / Ctx.TexturePath;
+		}
+		else Ctx.TexturePath = OutPathStr;
 
-		Ctx.AnimPath = ParamsUtils::GetParam<std::string>(Task.Params, "AnimOutput", std::string{});
-		if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
-			Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
+		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "SkinOutput"))
+		{
+			Ctx.SkinPath = PathValue;
+			if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
+				Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
+		}
+		else Ctx.SkinPath = OutPathStr;
+
+		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "AnimOutput"))
+		{
+			Ctx.AnimPath = PathValue;
+			if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
+				Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
+		}
+		else Ctx.AnimPath = OutPathStr;
 
 		// Export node hierarchy to DEM format
 
@@ -690,21 +713,31 @@ public:
 
 		Ctx.Log.LogDebug("Material " + Mtl.name);
 
+		//!!!TODO:
+		//???don't save DEM material source to the disk? export glTF->mtl directly? no need in separate source really.
+		//cf-material must be able to process inline HRD input or even be linked as a library.
+
 		Data::CParams MtlDesc;
 
 		MtlDesc.emplace_back(CStrID("Effect"), std::string("<FILL_ME>"));
 
+		const auto& AlbedoCoeff = Mtl.metallicRoughness.baseColorFactor;
+
 		Data::CParams MtlParams;
+		if (AlbedoCoeff != gltf::Color4(1.f, 1.f, 1.f, 1.f))
+			MtlParams.emplace_back(CStrID("AlbedoCoeff"), vector4(AlbedoCoeff.r, AlbedoCoeff.g, AlbedoCoeff.b, AlbedoCoeff.a));
 		//Params: TexAlbedo, TexNormalMap
 		MtlDesc.emplace_back(CStrID("Params"), std::move(MtlParams));
 
-		//!!!TODO: if effect's default sampler is the same as metariel sampler, don't create another sampler in engine when loading material,
-		//even if the material has the sampler explicitly defined!
+		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
+		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
+
+		const auto MtlRsrcName = GetValidResourceName(Mtl.name);
 
 		// Material source is saved near the scene source because it highly depends on the scene and its textures.
 		// Materials exported from scenes are not typically reusable, but different materials with the same name
 		// can be exported to the same compiled material resource (overwriting it) and therefore reused.
-		const auto DestPath = Ctx.SrcFolder / (GetValidResourceName(Mtl.name) + ".hrd");
+		auto DestPath = Ctx.SrcFolder / (MtlRsrcName + ".hrd");
 		if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), MtlDesc))
 		{
 			Ctx.Log.LogError("Error saving material source " + DestPath.generic_string());
@@ -713,6 +746,11 @@ public:
 
 		// create material metafile (or support inline meta through the command line argument?)
 		// and/or export material with cf-material
+
+		DestPath = Ctx.MaterialPath / (MtlRsrcName + ".mtl");
+
+		auto MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		Ctx.ProcessedMaterials.emplace(MtlName, std::move(MaterialID));
 
 		return true;
 	}

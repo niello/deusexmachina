@@ -217,10 +217,11 @@ static bool WriteParamAsHRD(std::ostream& Stream, const Data::CParam& Value, siz
 
 static bool WriteParamsAsHRD(std::ostream& Stream, const Data::CParams& Value, size_t Depth)
 {
-	for (const auto Param : Value)
+	const auto Count = Value.size();
+	for (size_t i = 0; i < Count; ++i)
 	{
-		if (!WriteParamAsHRD(Stream, Param, Depth)) return false;
-		if (Param.second.IsA<Data::CParams>())
+		if (!WriteParamAsHRD(Stream, Value[i], Depth)) return false;
+		if (i < (Count - 1) && Value[i].second.IsA<Data::CParams>())
 			WriteText(Stream, "\n");
 	}
 	return true;

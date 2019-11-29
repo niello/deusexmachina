@@ -15,6 +15,7 @@ struct vector4
 	float x, y, z, w;
 
 	vector4() : x(0.f), y(0.f), z(0.f), w(0.f) {}
+	vector4(float x_, float y_, float z_, float w_) : x(x_), y(y_), z(z_), w(w_) {}
 	vector4(std::initializer_list<float> List) : vector4(List.begin(), List.size()) {}
 
 	vector4(const vector4& Other) = default;
