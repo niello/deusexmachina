@@ -715,11 +715,32 @@ public:
 		// FIXME: need correct effect!
 		std::string EffectID("Data:effects/pbr_opaque.eff");
 
+		// Factors for effect selection: 
+		//Mtl.metallicRoughness
+		//Mtl.alphaMode [Mtl.alphaCutoff]
+		//Mtl.doubleSided
+
 		Data::CParams MtlParams;
 
-		const auto& AlbedoCoeff = Mtl.metallicRoughness.baseColorFactor;
-		if (AlbedoCoeff != gltf::Color4(1.f, 1.f, 1.f, 1.f))
-			MtlParams.emplace_back(CStrID("AlbedoCoeff"), vector4(AlbedoCoeff.r, AlbedoCoeff.g, AlbedoCoeff.b, AlbedoCoeff.a));
+		const auto& AlbedoFactor = Mtl.metallicRoughness.baseColorFactor;
+		if (AlbedoFactor != gltf::Color4(1.f, 1.f, 1.f, 1.f))
+			MtlParams.emplace_back(CStrID("AlbedoFactor"), vector4(AlbedoFactor.r, AlbedoFactor.g, AlbedoFactor.b, AlbedoFactor.a));
+
+		if (Mtl.metallicRoughness.metallicFactor != 1.f)
+			MtlParams.emplace_back(CStrID("MetallicFactor"), Mtl.metallicRoughness.metallicFactor);
+
+		if (Mtl.metallicRoughness.roughnessFactor != 1.f)
+			MtlParams.emplace_back(CStrID("RoughnessFactor"), Mtl.metallicRoughness.roughnessFactor);
+
+		if (Mtl.emissiveFactor != gltf::Color3(0.f, 0.f, 0.f))
+			MtlParams.emplace_back(CStrID("EmissiveFactor"), vector4(Mtl.emissiveFactor.r, Mtl.emissiveFactor.g, Mtl.emissiveFactor.b, 0.f));
+
+		//Mtl.metallicRoughness.baseColorTexture
+		//Mtl.metallicRoughness.metallicRoughnessTexture
+		//Mtl.emissiveTexture
+		//Mtl.normalTexture
+		//Mtl.occlusionTexture
+
 		//Params: TexAlbedo, TexNormalMap
 
 		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
@@ -727,10 +748,10 @@ public:
 
 		// Get material table from the effect file
 
-		CMaterialParams MaterialParams;
+		CMaterialParams MtlParamTable;
 		auto Path = ResolvePathAliases(EffectID).generic_string();
 		Ctx.Log.LogDebug("Opening effect " + Path);
-		if (!GetEffectMaterialParams(MaterialParams, Path, Ctx.Log)) return false;
+		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
 
 		// Write resulting file
 
@@ -741,7 +762,9 @@ public:
 
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
-		if (!SaveMaterial(File, EffectID, MaterialParams, MtlParams, Ctx.Log)) return false;
+		if (!SaveMaterial(File, EffectID, MtlParamTable, MtlParams, Ctx.Log)) return false;
+
+		// Register exported material in the cache
 
 		auto MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		Ctx.ProcessedMaterials.emplace(MtlName, std::move(MaterialID));
