@@ -1,5 +1,6 @@
 #include <ContentForgeTool.h>
 #include <SceneTools.h>
+#include <Render/ShaderMetaCommon.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
 #include <CLI11.hpp>
@@ -23,7 +24,7 @@ namespace gltf = Microsoft::glTF;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/scenes
+// -s src/scenes --path Data ../../../content
 
 class CStreamReader : public gltf::IStreamReader
 {
@@ -676,10 +677,8 @@ public:
 
 		// Write resulting mesh file
 
-		// TODO: replace forbidden characters (std::transform with replacer callback?)
 		//???use node name when possible?
-		std::string MeshRsrcName = Mesh.name.empty() ? Ctx.TaskName + '_' + MeshName : Mesh.name;
-		ToLower(MeshRsrcName);
+		const auto MeshRsrcName = GetValidResourceName(Mesh.name.empty() ? Ctx.TaskName + '_' + MeshName : Mesh.name);
 
 		const auto DestPath = Ctx.MeshPath / (MeshRsrcName + ".msh");
 
@@ -713,41 +712,36 @@ public:
 
 		Ctx.Log.LogDebug("Material " + Mtl.name);
 
-		//!!!TODO:
-		//???don't save DEM material source to the disk? export glTF->mtl directly? no need in separate source really.
-		//cf-material must be able to process inline HRD input or even be linked as a library.
-
-		Data::CParams MtlDesc;
-
-		MtlDesc.emplace_back(CStrID("Effect"), std::string("<FILL_ME>"));
-
-		const auto& AlbedoCoeff = Mtl.metallicRoughness.baseColorFactor;
+		// FIXME: need correct effect!
+		std::string EffectID("Data:effects/pbr_opaque.eff");
 
 		Data::CParams MtlParams;
+
+		const auto& AlbedoCoeff = Mtl.metallicRoughness.baseColorFactor;
 		if (AlbedoCoeff != gltf::Color4(1.f, 1.f, 1.f, 1.f))
 			MtlParams.emplace_back(CStrID("AlbedoCoeff"), vector4(AlbedoCoeff.r, AlbedoCoeff.g, AlbedoCoeff.b, AlbedoCoeff.a));
 		//Params: TexAlbedo, TexNormalMap
-		MtlDesc.emplace_back(CStrID("Params"), std::move(MtlParams));
 
 		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
 		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
 
+		// Get material table from the effect file
+
+		CMaterialParams MaterialParams;
+		auto Path = ResolvePathAliases(EffectID).generic_string();
+		Ctx.Log.LogDebug("Opening effect " + Path);
+		if (!GetEffectMaterialParams(MaterialParams, Path, Ctx.Log)) return false;
+
+		// Write resulting file
+
 		const auto MtlRsrcName = GetValidResourceName(Mtl.name);
+		const auto DestPath = Ctx.MaterialPath / (MtlRsrcName + ".mtl");
 
-		// Material source is saved near the scene source because it highly depends on the scene and its textures.
-		// Materials exported from scenes are not typically reusable, but different materials with the same name
-		// can be exported to the same compiled material resource (overwriting it) and therefore reused.
-		auto DestPath = Ctx.SrcFolder / (MtlRsrcName + ".hrd");
-		if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), MtlDesc))
-		{
-			Ctx.Log.LogError("Error saving material source " + DestPath.generic_string());
-			return false;
-		}
+		fs::create_directories(DestPath.parent_path());
 
-		// create material metafile (or support inline meta through the command line argument?)
-		// and/or export material with cf-material
+		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
-		DestPath = Ctx.MaterialPath / (MtlRsrcName + ".mtl");
+		if (!SaveMaterial(File, EffectID, MaterialParams, MtlParams, Ctx.Log)) return false;
 
 		auto MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		Ctx.ProcessedMaterials.emplace(MtlName, std::move(MaterialID));

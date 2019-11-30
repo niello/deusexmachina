@@ -27,11 +27,9 @@ struct CMaterialParams
 	std::set<std::string> Samplers;
 };
 
-//uint32_t WriteFloatDefault(std::ostream& Stream, const Data::CData& DefaultValue);
-//uint32_t WriteIntDefault(std::ostream& Stream, const Data::CData& DefaultValue);
-//uint32_t WriteBoolDefault(std::ostream& Stream, const Data::CData& DefaultValue);
-//void SerializeSamplerState(std::ostream& Stream, const Data::CParams& SamplerDesc);
+bool GetEffectMaterialParams(CMaterialParams& Out, const std::string& EffectPath, CThreadSafeLog& Log);
 bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, const Data::CParams& Values, CThreadSafeLog& Log);
+bool SaveMaterial(std::ostream& Stream, const std::string& EffectID, const CMaterialParams& Table, const Data::CParams& Values, CThreadSafeLog& Log);
 
 template<class TStructMeta>
 void CopyStructMetadata(uint32_t& StructIndex, const std::vector<TStructMeta>& SrcStructs, std::vector<TStructMeta>& TargetStructs)

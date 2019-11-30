@@ -1,6 +1,8 @@
 #pragma once
 #include "ShaderMetaCommon.h"
 #include <Render/RenderEnums.h>
+#include <Render/SM30ShaderMeta.h> // For material param collection
+#include <Render/USMShaderMeta.h> // For material param collection
 #include <Utils.h>
 #include <ParamsUtils.h>
 #include <Logging.h>
@@ -77,7 +79,7 @@ static uint32_t WriteBoolValue(std::ostream& Stream, const Data::CData& Value, u
 }
 //---------------------------------------------------------------------
 
-static void SerializeSamplerState(std::ostream& Stream, const Data::CParams& SamplerDesc)
+static void WriteSamplerState(std::ostream& Stream, const Data::CParams& SamplerDesc)
 {
 	// NB: default values are different for D3D9 and D3D11, but we use the same defaults for consistency
 
@@ -121,10 +123,93 @@ static void SerializeSamplerState(std::ostream& Stream, const Data::CParams& Sam
 }
 //---------------------------------------------------------------------
 
+bool GetEffectMaterialParams(CMaterialParams& Out, const std::string& EffectPath, CThreadSafeLog& Log)
+{
+	auto FilePtr = std::make_shared<std::ifstream>(EffectPath, std::ios_base::binary);
+	auto& File = *FilePtr;
+	if (!File)
+	{
+		Log.LogError("Can't open effect " + EffectPath);
+		return false;
+	}
+
+	if (ReadStream<uint32_t>(File) != 'SHFX')
+	{
+		Log.LogError("Wrong effect file format in " + EffectPath);
+		return false;
+	}
+
+	if (ReadStream<uint32_t>(File) > 0x00010000)
+	{
+		Log.LogError("Unsupported effect version in " + EffectPath);
+		return false;
+	}
+
+	// Skip material type
+	ReadStream<std::string>(File);
+
+	std::map<uint32_t, uint32_t> MaterialTableOffsets;
+	const uint32_t FormatCount = ReadStream<uint32_t>(File);
+	for (size_t i = 0; i < FormatCount; ++i)
+	{
+		const auto ShaderFormat = ReadStream<uint32_t>(File);
+		const auto Offset = ReadStream<uint32_t>(File);
+		MaterialTableOffsets.emplace(ShaderFormat, Offset);
+	}
+
+	// Process material tables for all formats, build cross-format table
+
+	for (auto& Pair : MaterialTableOffsets)
+	{
+		File.seekg(Pair.second, std::ios_base::beg);
+
+		// Get offset to material param table (the end of the global table)
+		// Skip to the material table start (skip uint32_t table size too)
+		const auto Offset = ReadStream<uint32_t>(File);
+		File.seekg(Offset + sizeof(uint32_t), std::ios_base::cur);
+
+		switch (Pair.first)
+		{
+			case 'DX9C':
+			{
+				CSM30EffectMeta Meta;
+				File >> Meta;
+				if (!CollectMaterialParams(Out, Meta))
+				{
+					Log.LogError("Material metadata is incompatible across different shader formats");
+					return false;
+				}
+				break;
+			}
+			case 'DXBC':
+			{
+				CUSMEffectMeta Meta;
+				File >> Meta;
+				if (!CollectMaterialParams(Out, Meta))
+				{
+					Log.LogError("Material metadata is incompatible across different shader formats");
+					return false;
+				}
+				break;
+			}
+			default:
+			{
+				Log.LogWarning("Skipping unsupported shader format: " + FourCC(Pair.first));
+				continue;
+			}
+		}
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, const Data::CParams& Values, CThreadSafeLog& Log)
 {
 	const auto CountOffset = Stream.tellp();
 	WriteStream<uint32_t>(Stream, 0);
+
+	if (Values.empty()) return true;
 
 	uint32_t Count = 0;
 	std::ostringstream ConstsStream(std::ios_base::binary);
@@ -221,7 +306,7 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 			if (MaterialParam.second.IsA<Data::CParams>())
 			{
 				WriteStream(Stream, ID);
-				SerializeSamplerState(Stream, MaterialParam.second.GetValue<Data::CParams>());
+				WriteSamplerState(Stream, MaterialParam.second.GetValue<Data::CParams>());
 				++Count;
 			}
 			else
@@ -248,6 +333,28 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 	WriteStream(Stream, static_cast<uint32_t>(ConstsBuffer.size()));
 	if (!ConstsBuffer.empty())
 		Stream.write(ConstsBuffer.c_str(), ConstsBuffer.size());
+
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool SaveMaterial(std::ostream& Stream, const std::string& EffectID, const CMaterialParams& Table, const Data::CParams& Values, CThreadSafeLog& Log)
+{
+	if (!Stream)
+	{
+		Log.LogError("SaveMaterial() > invalid stream");
+		return false;
+	}
+
+	WriteStream<uint32_t>(Stream, 'MTRL');     // Format magic value
+	WriteStream<uint32_t>(Stream, 0x00010000); // Version 0.1.0.0
+	WriteStream(Stream, EffectID);
+
+	if (!WriteMaterialParams(Stream, Table, Values, Log))
+	{
+		Log.LogError("SaveMaterial() > error serializing material values");
+		return false;
+	}
 
 	return true;
 }
