@@ -689,8 +689,6 @@ public:
 				{
 					Vertex.BlendWeights = *AttrIt++;
 
-					assert(Vertex.BlendWeights == 255);
-
 					// TODO: store 4 float weights? Then get floats from accessor, don't pack with GetJointWeights32.
 					// Or store uint32_t weights, then can store as is here, don't unpack!
 					//const uint32_t Packed = *AttrIt++;
@@ -912,7 +910,7 @@ public:
 		return true;
 	}
 
-	bool ExportTexture(const gltf::TextureInfo& TexInfo, std::string& OutTextureID, std::set<std::string> OutGLTFSamplers, CContext& Ctx)
+	bool ExportTexture(const gltf::TextureInfo& TexInfo, std::string& OutTextureID, std::set<std::string>& OutGLTFSamplers, CContext& Ctx)
 	{
 		// TODO: maybe support other UVs later, but for now only UV0 is used with PBR materials in DEM
 		assert(TexInfo.texCoord == 0);
