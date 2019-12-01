@@ -25,6 +25,10 @@ struct CMaterialParams
 	std::map<std::string, CMaterialConst> Consts;
 	std::set<std::string> Resources;
 	std::set<std::string> Samplers;
+
+	bool HasConstant(const std::string& ID) const { return Consts.find(ID) != Consts.cend(); }
+	bool HasResource(const std::string& ID) const { return Resources.find(ID) != Resources.cend(); }
+	bool HasSampler(const std::string& ID) const { return Samplers.find(ID) != Samplers.cend(); }
 };
 
 bool GetEffectMaterialParams(CMaterialParams& Out, const std::string& EffectPath, CThreadSafeLog& Log);

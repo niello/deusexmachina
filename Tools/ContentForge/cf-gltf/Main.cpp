@@ -89,8 +89,12 @@ protected:
 	Data::CSchemeSet          _SceneSchemes;
 	acl::TransformErrorMetric _ACLErrorMetric; // Stateless and therefore reusable
 
+	std::map<std::string, std::string> _EffectsByType;
+	std::map<std::string, std::string> _EffectParamAliases;
+
 	std::string               _ResourceRoot;
 	std::string               _SchemeFile;
+	std::string               _EffectSettingsFile;
 	double                    _AnimSamplingRate = 30.0;
 	bool                      _OutputBin = false;
 	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
@@ -104,6 +108,7 @@ public:
 		// Set default before parsing command line
 		_RootDir = "../../../content";
 		_SchemeFile = "../schemes/scene.dss";
+		_EffectSettingsFile = "../schemes/effect_settings.hrd";
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -126,6 +131,27 @@ public:
 			{
 				std::cout << "Couldn't load scene binary serialization scheme from " << _SchemeFile;
 				return 2;
+			}
+		}
+
+		{
+			Data::CParams EffectSettings;
+			if (!ParamsUtils::LoadParamsFromHRD(_EffectSettingsFile.c_str(), EffectSettings))
+			{
+				std::cout << "Couldn't load effect settings from " << _EffectSettingsFile;
+				return 3;
+			}
+
+			const Data::CParams* pMap;
+			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Effects"))
+			{
+				for (const auto& Pair : *pMap)
+					_EffectsByType.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
+			}
+			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Params"))
+			{
+				for (const auto& Pair : *pMap)
+					_EffectParamAliases.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
 			}
 		}
 
@@ -706,34 +732,96 @@ public:
 		return true;
 	}
 
+	const std::string& GetEffectParamID(const std::string& Alias)
+	{
+		auto It = _EffectParamAliases.find(Alias);
+		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
+	}
+
 	bool ExportMaterial(const std::string& MtlName, CContext& Ctx)
 	{
 		const auto& Mtl = Ctx.Doc.materials[MtlName];
 
 		Ctx.Log.LogDebug("Material " + Mtl.name);
 
-		// FIXME: need correct effect!
-		std::string EffectID("Data:effects/pbr_opaque.eff");
+		// Build abstract effect type ID
 
-		// Factors for effect selection: 
-		//Mtl.metallicRoughness
-		//Mtl.alphaMode [Mtl.alphaCutoff]
-		//Mtl.doubleSided
+		std::string EffectTypeID = "MetallicRoughness";
+		switch (Mtl.alphaMode)
+		{
+			case gltf::AlphaMode::ALPHA_BLEND: EffectTypeID += "Alpha"; break;
+			case gltf::AlphaMode::ALPHA_MASK: EffectTypeID += "AlphaTest"; break;
+			case gltf::AlphaMode::ALPHA_OPAQUE: EffectTypeID += "Opaque"; break;
+			default:
+			{
+				//???Where to handle additive? Some extension?
+				Ctx.Log.LogError("glTF material " + Mtl.name + " has unknown alpha mode!");
+				return false;
+			}
+		}
+
+		EffectTypeID += Mtl.doubleSided ? "DoubleSided" : "Culled";
+
+		// Get effect resource ID and material table from the effect file
+
+		auto EffectIt = _EffectsByType.find(EffectTypeID);
+		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
+		{
+			Ctx.Log.LogError("glTF material " + Mtl.name + " with type " + EffectTypeID + " has no mapped DEM effect file in effect settings");
+			return false;
+		}
+
+		CMaterialParams MtlParamTable;
+		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		Ctx.Log.LogDebug("Opening effect " + Path);
+		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
+
+		// Fill material parameter values
 
 		Data::CParams MtlParams;
 
-		const auto& AlbedoFactor = Mtl.metallicRoughness.baseColorFactor;
-		if (AlbedoFactor != gltf::Color4(1.f, 1.f, 1.f, 1.f))
-			MtlParams.emplace_back(CStrID("AlbedoFactor"), vector4(AlbedoFactor.r, AlbedoFactor.g, AlbedoFactor.b, AlbedoFactor.a));
+		// get albedo factor alias (no alias - use the same name)
+		// if exists in effect params and not default, write
+		//???or write even defaults? default is glTF, not DEM, despite they are typically equal
 
-		if (Mtl.metallicRoughness.metallicFactor != 1.f)
-			MtlParams.emplace_back(CStrID("MetallicFactor"), Mtl.metallicRoughness.metallicFactor);
+		const auto& AlbedoFactorID = GetEffectParamID("AlbedoFactor");
+		if (MtlParamTable.HasConstant(AlbedoFactorID))
+		{
+			const auto& AlbedoFactor = Mtl.metallicRoughness.baseColorFactor;
+			if (AlbedoFactor != gltf::Color4(1.f, 1.f, 1.f, 1.f))
+				MtlParams.emplace_back(CStrID(AlbedoFactorID), vector4(AlbedoFactor.r, AlbedoFactor.g, AlbedoFactor.b, AlbedoFactor.a));
+		}
 
-		if (Mtl.metallicRoughness.roughnessFactor != 1.f)
-			MtlParams.emplace_back(CStrID("RoughnessFactor"), Mtl.metallicRoughness.roughnessFactor);
+		const auto& MetallicFactorID = GetEffectParamID("MetallicFactor");
+		if (MtlParamTable.HasConstant(MetallicFactorID))
+		{
+			if (Mtl.metallicRoughness.metallicFactor != 1.f)
+				MtlParams.emplace_back(MetallicFactorID, Mtl.metallicRoughness.metallicFactor);
+		}
 
-		if (Mtl.emissiveFactor != gltf::Color3(0.f, 0.f, 0.f))
-			MtlParams.emplace_back(CStrID("EmissiveFactor"), vector4(Mtl.emissiveFactor.r, Mtl.emissiveFactor.g, Mtl.emissiveFactor.b, 0.f));
+		const auto& RoughnessFactorID = GetEffectParamID("RoughnessFactor");
+		if (MtlParamTable.HasConstant(RoughnessFactorID))
+		{
+			if (Mtl.metallicRoughness.roughnessFactor != 1.f)
+				MtlParams.emplace_back(RoughnessFactorID, Mtl.metallicRoughness.roughnessFactor);
+		}
+
+		const auto& EmissiveFactorID = GetEffectParamID("EmissiveFactor");
+		if (MtlParamTable.HasConstant(EmissiveFactorID))
+		{
+			if (Mtl.emissiveFactor != gltf::Color3(0.f, 0.f, 0.f))
+				MtlParams.emplace_back(EmissiveFactorID, vector4(Mtl.emissiveFactor.r, Mtl.emissiveFactor.g, Mtl.emissiveFactor.b, 0.f));
+		}
+
+		if (Mtl.alphaMode == gltf::AlphaMode::ALPHA_MASK)
+		{
+			const auto& AlphaCutoffID = GetEffectParamID("AlphaCutoff");
+			if (MtlParamTable.HasConstant(AlphaCutoffID))
+			{
+				if (Mtl.alphaCutoff != 0.5f)
+					MtlParams.emplace_back(AlphaCutoffID, Mtl.alphaCutoff);
+			}
+		}
 
 		//Mtl.metallicRoughness.baseColorTexture
 		//Mtl.metallicRoughness.metallicRoughnessTexture
@@ -741,17 +829,12 @@ public:
 		//Mtl.normalTexture
 		//Mtl.occlusionTexture
 
+		//texCoord index, default 0, we support only UV0 for mtls for now
+
 		//Params: TexAlbedo, TexNormalMap
 
 		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
 		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
-
-		// Get material table from the effect file
-
-		CMaterialParams MtlParamTable;
-		auto Path = ResolvePathAliases(EffectID).generic_string();
-		Ctx.Log.LogDebug("Opening effect " + Path);
-		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
 
 		// Write resulting file
 
@@ -762,7 +845,7 @@ public:
 
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
-		if (!SaveMaterial(File, EffectID, MtlParamTable, MtlParams, Ctx.Log)) return false;
+		if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Ctx.Log)) return false;
 
 		// Register exported material in the cache
 

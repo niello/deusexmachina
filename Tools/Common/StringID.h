@@ -31,6 +31,7 @@ public:
 	explicit // So I can later search all static StrIDs and predefine them
 #endif
 	CStringID(const char* pStr, bool OnlyExisting = false);
+	explicit CStringID(const std::string& Str): CStringID(Str.c_str()) {}
 	explicit CStringID(void* StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
 	explicit CStringID(size_t StrID): pString((const char*)StrID) {} // Direct constructor. Be careful.
 

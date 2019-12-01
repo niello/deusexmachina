@@ -1,0 +1,17 @@
+// Abstract effect types to DEM files
+Effects
+{
+	MetallicRoughnessOpaqueCulled = "Data:effects/pbr_opaque.eff"
+	MetallicRoughnessAlphaTestCulled = "Data:effects/pbr_atest.eff"
+	//MetallicRoughnessAlphaCulled = "Data:effects/pbr_alpha.eff"
+
+	// FIXME: not really double-sided, added for error suppression
+	MetallicRoughnessOpaqueDoubleSided = "Data:effects/pbr_opaque.eff"
+}
+
+// Effect parameter aliases
+Params
+{
+	AlbedoTexture = "TexAlbedo"
+	NormalTexture = "TexNormalMap"
+}
