@@ -876,19 +876,72 @@ public:
 			MtlParams.emplace_back(EmissiveTextureID, TextureID);
 		}
 
+		// FIXME: if no sampler, may need to save glTF-default sampler with repeat wrapping and auto-filtering
+		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
+		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
 		if (!GLTFSamplers.empty())
 		{
 			std::string SamplerName;
 			if (GLTFSamplers.size() > 1)
 				Ctx.Log.LogWarning("Material " + Mtl.name + " uses more than one sampler, but DEM supports only one sampler per PBR material");
 
-			// FIXME: if no sampler, may need to save glTF-default sampler with repeat wrapping and auto-filtering
+			const auto& PBRTextureSamplerID = GetEffectParamID("PBRTextureSampler");
+			if (MtlParamTable.HasSampler(PBRTextureSamplerID))
+			{
+				const std::string& SamplerGLTFID = *GLTFSamplers.begin();
+				const auto& Sampler = Ctx.Doc.samplers[SamplerGLTFID];
 
-			//!!!use base color sampler, NOT random 'first' sampler stored in the set!
-			assert(false && "IMPLEMENT SAMPLER EXPORTING!");
+				Data::CParams SamplerDesc;
 
-			//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
-			//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
+				switch (Sampler.wrapS)
+				{
+					case gltf::WrapMode::Wrap_REPEAT: SamplerDesc.emplace_back(CStrID("AddressU"), "wrap"); break;
+					case gltf::WrapMode::Wrap_MIRRORED_REPEAT: SamplerDesc.emplace_back(CStrID("AddressU"), "mirror"); break;
+					case gltf::WrapMode::Wrap_CLAMP_TO_EDGE: SamplerDesc.emplace_back(CStrID("AddressU"), "clamp"); break;
+				}
+
+				switch (Sampler.wrapT)
+				{
+					case gltf::WrapMode::Wrap_REPEAT: SamplerDesc.emplace_back(CStrID("AddressV"), "wrap"); break;
+					case gltf::WrapMode::Wrap_MIRRORED_REPEAT: SamplerDesc.emplace_back(CStrID("AddressV"), "mirror"); break;
+					case gltf::WrapMode::Wrap_CLAMP_TO_EDGE: SamplerDesc.emplace_back(CStrID("AddressV"), "clamp"); break;
+				}
+
+				const bool IsMagPoint = Sampler.magFilter.HasValue() && Sampler.magFilter.Get() == gltf::MagFilterMode::MagFilter_NEAREST;
+				auto MinFilter = Sampler.minFilter.HasValue() ? Sampler.minFilter.Get() : gltf::MinFilterMode::MinFilter_LINEAR;
+				switch (MinFilter)
+				{
+					case gltf::MinFilterMode::MinFilter_LINEAR:
+						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						break;
+					case gltf::MinFilterMode::MinFilter_LINEAR_MIPMAP_LINEAR:
+						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						break;
+					case gltf::MinFilterMode::MinFilter_LINEAR_MIPMAP_NEAREST:
+						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						break;
+					case gltf::MinFilterMode::MinFilter_NEAREST:
+						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						break;
+					case gltf::MinFilterMode::MinFilter_NEAREST_MIPMAP_LINEAR:
+						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						break;
+					case gltf::MinFilterMode::MinFilter_NEAREST_MIPMAP_NEAREST:
+						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						break;
+				}
+				//if (Str == "minmag_point_mip_linear") return TexFilter_MinMag_Point_Mip_Linear;
+				//if (Str == "min_point_mag_linear_mip_point") return TexFilter_Min_Point_Mag_Linear_Mip_Point;
+				//if (Str == "min_point_magmip_linear") return TexFilter_Min_Point_MagMip_Linear;
+				//if (Str == "min_linear_magmip_point") return TexFilter_Min_Linear_MagMip_Point;
+				//if (Str == "min_linear_mag_point_mip_linear") return TexFilter_Min_Linear_Mag_Point_Mip_Linear;
+				//if (Str == "minmag_linear_mip_point") return TexFilter_MinMag_Linear_Mip_Point;
+				//if (Str == "linear" || Str == "minmagmip_linear") return TexFilter_MinMagMip_Linear;
+				//if (Str == "anisotropic") return TexFilter_Anisotropic;
+				//return TexFilter_MinMagMip_Point -> "point";
+
+				MtlParams.emplace_back(EmissiveTextureID, std::move(SamplerDesc));
+			}
 		}
 
 		// Write resulting file
