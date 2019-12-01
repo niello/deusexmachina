@@ -716,15 +716,9 @@ public:
 		MeshInfo.MeshID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		for (const auto& Pair : SubMeshes)
 		{
-			auto MtlIt = Ctx.ProcessedMaterials.find(Pair.first);
-			if (MtlIt == Ctx.ProcessedMaterials.cend())
-			{
-				if (!ExportMaterial(Pair.first, Ctx)) return false;
-				MtlIt = Ctx.ProcessedMaterials.find(Pair.first);
-				if (MtlIt == Ctx.ProcessedMaterials.cend()) return false;
-			}
-
-			MeshInfo.MaterialIDs.push_back(MtlIt->second);
+			std::string MaterialID;
+			if (!ExportMaterial(Pair.first, MaterialID, Ctx)) return false;
+			MeshInfo.MaterialIDs.push_back(std::move(MaterialID));
 		}
 
 		Ctx.ProcessedMeshes.emplace(MeshName, std::move(MeshInfo));
@@ -738,8 +732,15 @@ public:
 		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
 	}
 
-	bool ExportMaterial(const std::string& MtlName, CContext& Ctx)
+	bool ExportMaterial(const std::string& MtlName, std::string& OutMaterialID, CContext& Ctx)
 	{
+		auto MtlIt = Ctx.ProcessedMaterials.find(MtlName);
+		if (MtlIt != Ctx.ProcessedMaterials.cend())
+		{
+			OutMaterialID = MtlIt->second;
+			return true;
+		}
+
 		const auto& Mtl = Ctx.Doc.materials[MtlName];
 
 		Ctx.Log.LogDebug("Material " + Mtl.name);
@@ -776,13 +777,9 @@ public:
 		Ctx.Log.LogDebug("Opening effect " + Path);
 		if (!GetEffectMaterialParams(MtlParamTable, Path, Ctx.Log)) return false;
 
-		// Fill material parameter values
-
 		Data::CParams MtlParams;
 
-		// get albedo factor alias (no alias - use the same name)
-		// if exists in effect params and not default, write
-		//???or write even defaults? default is glTF, not DEM, despite they are typically equal
+		// Fill material constants
 
 		const auto& AlbedoFactorID = GetEffectParamID("AlbedoFactor");
 		if (MtlParamTable.HasConstant(AlbedoFactorID))
@@ -823,15 +820,52 @@ public:
 			}
 		}
 
-		//Mtl.metallicRoughness.baseColorTexture
-		//Mtl.metallicRoughness.metallicRoughnessTexture
-		//Mtl.emissiveTexture
-		//Mtl.normalTexture
-		//Mtl.occlusionTexture
+		// Fill material textures and samplers
 
-		//texCoord index, default 0, we support only UV0 for mtls for now
+		std::set<std::string> GLTFSamplers;
 
-		//Params: TexAlbedo, TexNormalMap
+		const auto& AlbedoTextureID = GetEffectParamID("AlbedoTexture");
+		if (MtlParamTable.HasConstant(AlbedoTextureID))
+		{
+			std::string TextureID;
+			if (!ExportTexture(Mtl.metallicRoughness.baseColorTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(AlbedoTextureID, TextureID);
+		}
+
+		const auto& MetallicRoughnessTextureID = GetEffectParamID("MetallicRoughnessTexture");
+		if (MtlParamTable.HasConstant(MetallicRoughnessTextureID))
+		{
+			std::string TextureID;
+			if (!ExportTexture(Mtl.metallicRoughness.metallicRoughnessTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(MetallicRoughnessTextureID, TextureID);
+		}
+
+		const auto& NormalTextureID = GetEffectParamID("NormalTexture");
+		if (MtlParamTable.HasConstant(NormalTextureID))
+		{
+			std::string TextureID;
+			if (!ExportTexture(Mtl.normalTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(NormalTextureID, TextureID);
+		}
+
+		const auto& OcclusionTextureID = GetEffectParamID("OcclusionTexture");
+		if (MtlParamTable.HasConstant(OcclusionTextureID))
+		{
+			std::string TextureID;
+			if (!ExportTexture(Mtl.occlusionTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(OcclusionTextureID, TextureID);
+		}
+
+		const auto& EmissiveTextureID = GetEffectParamID("EmissiveTexture");
+		if (MtlParamTable.HasConstant(EmissiveTextureID))
+		{
+			std::string TextureID;
+			if (!ExportTexture(Mtl.emissiveTexture, TextureID, GLTFSamplers, Ctx)) return false;
+			MtlParams.emplace_back(EmissiveTextureID, TextureID);
+		}
+
+		// Only one sampler for all PBR textures is supported for now
+		assert(GLTFSamplers.size() < 2);
 
 		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
 		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
@@ -849,8 +883,24 @@ public:
 
 		// Register exported material in the cache
 
-		auto MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-		Ctx.ProcessedMaterials.emplace(MtlName, std::move(MaterialID));
+		OutMaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		Ctx.ProcessedMaterials.emplace(MtlName, OutMaterialID);
+
+		return true;
+	}
+
+	bool ExportTexture(const gltf::TextureInfo& TexInfo, std::string& OutTextureID, std::set<std::string> OutGLTFSamplers, CContext& Ctx)
+	{
+		// TODO: maybe support other UVs later, but for now only UV0 is used with PBR materials in DEM
+		assert(TexInfo.texCoord == 0);
+
+		const auto& Texture = Ctx.Doc.textures[TexInfo.textureId];
+
+		Ctx.Log.LogDebug("Texture " + Texture.name);
+
+		//!!!!!!save sampler too! how to choose sampler? or always use the same one, aliased to the LinearSampler?
+		if (!Texture.samplerId.empty())
+			OutGLTFSamplers.insert(Texture.samplerId);
 
 		return true;
 	}
