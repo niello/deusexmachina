@@ -95,7 +95,7 @@ protected:
 
 	std::string               _ResourceRoot;
 	std::string               _SchemeFile;
-	std::string               _EffectSettingsFile;
+	std::string               _SettingsFile;
 	double                    _AnimSamplingRate = 30.0;
 	bool                      _OutputBin = false;
 	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
@@ -109,7 +109,7 @@ public:
 		// Set default before parsing command line
 		_RootDir = "../../../content";
 		_SchemeFile = "../schemes/scene.dss";
-		_EffectSettingsFile = "../schemes/effect_settings.hrd";
+		_SettingsFile = "../schemes/settings.hrd";
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -137,9 +137,9 @@ public:
 
 		{
 			Data::CParams EffectSettings;
-			if (!ParamsUtils::LoadParamsFromHRD(_EffectSettingsFile.c_str(), EffectSettings))
+			if (!ParamsUtils::LoadParamsFromHRD(_SettingsFile.c_str(), EffectSettings))
 			{
-				std::cout << "Couldn't load effect settings from " << _EffectSettingsFile;
+				std::cout << "Couldn't load effect settings from " << _SettingsFile;
 				return 3;
 			}
 
@@ -166,9 +166,11 @@ public:
 
 	virtual void ProcessCommandLine(CLI::App& CLIApp) override
 	{
+		//???use --project-file instead of --res-root + --settings?
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
 		CLIApp.add_option("--scheme,--schema", _SchemeFile, "Scene binary serialization scheme file path");
+		CLIApp.add_option("--settings", _SettingsFile, "Settings file path");
 		CLIApp.add_option("--fps", _AnimSamplingRate, "Animation sampling rate in frames per second, default is 30");
 		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
@@ -871,12 +873,14 @@ public:
 			if (GLTFSamplers.size() > 1)
 				Ctx.Log.LogWarning("Material " + Mtl.name + " uses more than one sampler, but DEM supports only one sampler per PBR material");
 
+			// FIXME: if no sampler, may need to save glTF-default sampler with repeat wrapping and auto-filtering
+
 			//!!!use base color sampler, NOT random 'first' sampler stored in the set!
 			assert(false && "IMPLEMENT SAMPLER EXPORTING!");
-		}
 
-		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
-		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
+			//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
+			//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
+		}
 
 		// Write resulting file
 
@@ -931,6 +935,7 @@ public:
 
 		try
 		{
+			// TODO: copy as is for now, but may need format conversion or N one-channel to 1 multi-channel baking
 			fs::create_directories(DestPath.parent_path());
 			fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
 		}
