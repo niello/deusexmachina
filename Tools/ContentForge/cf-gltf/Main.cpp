@@ -8,6 +8,7 @@
 #include <GLTFSDK/GLBResourceReader.h>
 #include <GLTFSDK/Deserialize.h>
 #include <GLTFSDK/MeshPrimitiveUtils.h>
+#include <GLTFSDK/AnimationUtils.h>
 #include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
@@ -69,7 +70,7 @@ protected:
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<std::string, std::string> ProcessedMaterials;
 		std::unordered_map<std::string, std::string> ProcessedTextures;
-		//std::unordered_map<std::string, std::string> ProcessedSkins;
+		std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
 	struct CBone
@@ -388,7 +389,16 @@ public:
 			if (!ExportModel(Node.meshId, Ctx, Attributes)) return false;
 
 		if (!Node.skinId.empty())
-			if (!ExportSkin(Node.skinId, Ctx, Attributes)) return false;
+		{
+			std::string SkinID;
+			if (!ExportSkin(Node.skinId, SkinID, Ctx)) return false;
+
+			Data::CParams SkinAttribute;
+			SkinAttribute.emplace_back(CStrID("Class"), std::string("Frame::CSkinAttribute"));
+			SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinID);
+			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
+			Attributes.push_back(std::move(SkinAttribute));
+		}
 
 		{
 			if (Node.HasExtension<gltf::KHR::Lights::NodeLightPunctual>())
@@ -735,6 +745,8 @@ public:
 		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
 	}
 
+	// TODO: there is SGToMR in glTF SDK PBRUtils, can add SG source support through conversion to MR
+	// Or just add a requirement for DEM assets to be authored in MR model.
 	bool ExportMaterial(const std::string& MtlName, std::string& OutMaterialID, CContext& Ctx)
 	{
 		auto MtlIt = Ctx.ProcessedMaterials.find(MtlName);
@@ -951,11 +963,44 @@ public:
 		return true;
 	}
 
-	bool ExportSkin(const std::string& SkinName, CContext& Ctx, Data::CDataArray& Attributes)
+	bool ExportSkin(const std::string& SkinName, std::string& OutSkinID, CContext& Ctx)
 	{
+		auto It = Ctx.ProcessedSkins.find(SkinName);
+		if (It != Ctx.ProcessedSkins.cend())
+		{
+			OutSkinID = It->second;
+			return true;
+		}
+
 		const auto& Skin = Ctx.Doc.skins[SkinName];
 
-		Ctx.Log.LogDebug("Skin " + Skin.name);
+		Ctx.Log.LogDebug("Skin " + SkinName + ": " + Skin.name);
+
+		// NB: glTF matrices are column-major
+		auto InvBindMatrices = gltf::AnimationUtils::GetInverseBindMatrices(Ctx.Doc, *Ctx.ResourceReader, Skin);
+
+		//Skin.skeletonId - skeleton root, or use scene root if not specified (root of joint transforms)
+		//Skin.jointIds - vector of nodes used as bones/joints
+
+		//struct CBone
+		//{
+		//	const FbxNode* pBone;
+		//	FbxAMatrix     InvLocalBindPose;
+		//	std::string    ID;
+		//	uint16_t       ParentBoneIndex;
+		//	// TODO: bone object-space or local-space AABB
+		//};
+		//const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
+		//(InvMeshWorldMatrix * WorldBindPose).Inverse()
+
+		// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
+
+		const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + SkinName : Skin.name);
+		const auto DestPath = Ctx.SkinPath / (RsrcName + ".skn");
+
+		OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+
+		Ctx.ProcessedSkins.emplace(SkinName, OutSkinID);
 
 		return true;
 	}
