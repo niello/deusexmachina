@@ -635,8 +635,6 @@ public:
 			const FbxSkin* pSkin = static_cast<FbxSkin*>(pMesh->GetDeformer(s, FbxDeformer::eSkin));
 			const auto ClusterCount = pSkin->GetClusterCount();
 
-			constexpr uint16_t NoParent = static_cast<uint16_t>(-1);
-
 			for (int c = 0; c < ClusterCount; ++c)
 			{
 				const FbxCluster* pCluster = pSkin->GetCluster(c);
@@ -658,12 +656,11 @@ public:
 
 				CBone NewBone;
 				NewBone.ID = pBone->GetName();
-				NewBone.ParentBoneIndex = NoParent;
 
 				// Save matrices row-major for DEM (FBX SDK uses column-major)
-				for (int i = 0; i < 4; ++i)
-					for (int j = 0; j < 4; ++j)
-						NewBone.InvLocalBindPose[i * 4 + j] = static_cast<float>(InvLocalBind[i][j]);
+				for (int Col = 0; Col < 4; ++Col)
+					for (int Row = 0; Row < 4; ++Row)
+						NewBone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBind[Col][Row]);
 
 				Bones.push_back(std::move(NewBone));
 
@@ -830,7 +827,7 @@ public:
 				{
 					return Pair.first->GetLink() == pParent;
 				});
-				if (It == BoneClusters.cend())
+				if (It != BoneClusters.cend())
 					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(BoneClusters.cbegin(), It));
 
 				// TODO: could calculate optional per-bone AABB. May be also useful for ACL.

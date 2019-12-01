@@ -117,6 +117,8 @@ struct CMeshAttrInfo
 	std::vector<std::string> MaterialIDs; // Per group (submesh)
 };
 
+constexpr uint16_t NoParentBone = static_cast<uint16_t>(-1);
+
 // There are a couple of approaches for saving bones:
 // 1. Save node names, ensure they are unique and search all the scene node tree recursively for them
 // 2. Save node name and parent bone index, or full path if parent is not a bone
@@ -126,7 +128,7 @@ struct CBone
 {
 	float       InvLocalBindPose[16];
 	std::string ID;
-	uint16_t    ParentBoneIndex;
+	uint16_t    ParentBoneIndex = NoParentBone;
 	// TODO: bone object-space or local-space AABB
 };
 

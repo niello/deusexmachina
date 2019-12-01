@@ -87,15 +87,6 @@ protected:
 		std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
-	struct CBone
-	{
-		//const FbxNode* pBone;
-		gltf::Matrix4  InvLocalBindPose;
-		std::string    ID;
-		uint16_t       ParentBoneIndex;
-		// TODO: bone object-space or local-space AABB
-	};
-
 	struct CSkeletonACLBinding
 	{
 		acl::RigidSkeletonPtr Skeleton;
@@ -1029,30 +1020,48 @@ public:
 
 		Ctx.Log.LogDebug("Skin " + SkinName + ": " + Skin.name);
 
+		std::vector<CBone> Bones;
+		Bones.reserve(Skin.jointIds.size());
+
 		// NB: glTF matrices are column-major
 		auto InvBindMatrices = gltf::AnimationUtils::GetInverseBindMatrices(Ctx.Doc, *Ctx.ResourceReader, Skin);
+		const float* pInvBindMatrix = InvBindMatrices.data();
 
+		// TODO: use for inv bind matrices recalculation?
 		//Skin.skeletonId - skeleton root, or use scene root if not specified (root of joint transforms)
-		//Skin.jointIds - vector of nodes used as bones/joints
 
-		//struct CBone
-		//{
-		//	const FbxNode* pBone;
-		//	FbxAMatrix     InvLocalBindPose;
-		//	std::string    ID;
-		//	uint16_t       ParentBoneIndex;
-		//	// TODO: bone object-space or local-space AABB
-		//};
-		//const FbxAMatrix InvMeshWorldMatrix = pMesh->GetNode()->EvaluateGlobalTransform().Inverse();
-		//(InvMeshWorldMatrix * WorldBindPose).Inverse()
+		for (const auto& JointID : Skin.jointIds)
+		{
+			const auto& Joint = Ctx.Doc.nodes[JointID];
 
-		// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
+			CBone NewBone;
+			NewBone.ID = Joint.name.empty() ? JointID : Joint.name;
+
+			if (const auto* pParent = GetParentNode(Ctx.Doc, JointID))
+			{
+				const auto It = std::find(Skin.jointIds.cbegin(), Skin.jointIds.cend(), pParent->id);
+				if (It != Skin.jointIds.cend())
+					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
+			}
+
+			// Save matrices row-major for DEM (glTF uses column-major)
+			for (int Col = 0; Col < 4; ++Col)
+				for (int Row = 0; Row < 4; ++Row)
+					NewBone.InvLocalBindPose[Col * 4 + Row] = pInvBindMatrix[Row * 4 + Col];
+
+			pInvBindMatrix += 16;
+
+			// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
+
+			Bones.push_back(std::move(NewBone));
+		}
 
 		const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + SkinName : Skin.name);
 		const auto DestPath = Ctx.SkinPath / (RsrcName + ".skn");
 
-		OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return false;
 
+		OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		Ctx.ProcessedSkins.emplace(SkinName, OutSkinID);
 
 		return true;
