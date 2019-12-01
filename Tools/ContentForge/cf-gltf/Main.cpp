@@ -825,7 +825,7 @@ public:
 		std::set<std::string> GLTFSamplers;
 
 		const auto& AlbedoTextureID = GetEffectParamID("AlbedoTexture");
-		if (MtlParamTable.HasConstant(AlbedoTextureID))
+		if (!Mtl.metallicRoughness.baseColorTexture.textureId.empty() && MtlParamTable.HasResource(AlbedoTextureID))
 		{
 			std::string TextureID;
 			if (!ExportTexture(Mtl.metallicRoughness.baseColorTexture, TextureID, GLTFSamplers, Ctx)) return false;
@@ -833,7 +833,7 @@ public:
 		}
 
 		const auto& MetallicRoughnessTextureID = GetEffectParamID("MetallicRoughnessTexture");
-		if (MtlParamTable.HasConstant(MetallicRoughnessTextureID))
+		if (!Mtl.metallicRoughness.metallicRoughnessTexture.textureId.empty() && MtlParamTable.HasResource(MetallicRoughnessTextureID))
 		{
 			std::string TextureID;
 			if (!ExportTexture(Mtl.metallicRoughness.metallicRoughnessTexture, TextureID, GLTFSamplers, Ctx)) return false;
@@ -841,7 +841,7 @@ public:
 		}
 
 		const auto& NormalTextureID = GetEffectParamID("NormalTexture");
-		if (MtlParamTable.HasConstant(NormalTextureID))
+		if (!Mtl.normalTexture.textureId.empty() && MtlParamTable.HasResource(NormalTextureID))
 		{
 			std::string TextureID;
 			if (!ExportTexture(Mtl.normalTexture, TextureID, GLTFSamplers, Ctx)) return false;
@@ -849,7 +849,7 @@ public:
 		}
 
 		const auto& OcclusionTextureID = GetEffectParamID("OcclusionTexture");
-		if (MtlParamTable.HasConstant(OcclusionTextureID))
+		if (!Mtl.occlusionTexture.textureId.empty() && MtlParamTable.HasResource(OcclusionTextureID))
 		{
 			std::string TextureID;
 			if (!ExportTexture(Mtl.occlusionTexture, TextureID, GLTFSamplers, Ctx)) return false;
@@ -857,7 +857,7 @@ public:
 		}
 
 		const auto& EmissiveTextureID = GetEffectParamID("EmissiveTexture");
-		if (MtlParamTable.HasConstant(EmissiveTextureID))
+		if (!Mtl.emissiveTexture.textureId.empty() && MtlParamTable.HasResource(EmissiveTextureID))
 		{
 			std::string TextureID;
 			if (!ExportTexture(Mtl.emissiveTexture, TextureID, GLTFSamplers, Ctx)) return false;
