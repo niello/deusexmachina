@@ -117,6 +117,20 @@ struct CMeshAttrInfo
 	std::vector<std::string> MaterialIDs; // Per group (submesh)
 };
 
+// There are a couple of approaches for saving bones:
+// 1. Save node names, ensure they are unique and search all the scene node tree recursively for them
+// 2. Save node name and parent bone index, or full path if parent is not a bone
+// 3. Hybrid - save node name and parent bone index. If no parent bone specified, search recursively like in 1.
+// Approach 3 is used here.
+struct CBone
+{
+	float       InvLocalBindPose[16];
+	std::string ID;
+	uint16_t    ParentBoneIndex;
+	// TODO: bone object-space or local-space AABB
+};
+
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices, std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices);
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
+bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);

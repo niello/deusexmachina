@@ -27,6 +27,20 @@ namespace gltf = Microsoft::glTF;
 // Example args:
 // -s src/scenes --path Data ../../../content
 
+static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::string& NodeID)
+{
+	for (size_t i = 0; i < Doc.nodes.Size(); ++i)
+	{
+		const auto& Node = Doc.nodes[i];
+		const auto& Children = Node.children;
+		if (std::find(Children.cbegin(), Children.cend(), NodeID) != Children.cend())
+			return &Node;
+	}
+
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 class CStreamReader : public gltf::IStreamReader
 {
 public:

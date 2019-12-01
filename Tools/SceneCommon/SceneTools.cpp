@@ -254,3 +254,32 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 	return true;
 }
 //---------------------------------------------------------------------
+
+bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log)
+{
+	fs::create_directories(DestPath.parent_path());
+
+	std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+	if (!File)
+	{
+		Log.LogError("Error opening an output file " + DestPath.string());
+		return false;
+	}
+
+	WriteStream<uint32_t>(File, 'SKIN');        // Format magic value
+	WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+	WriteStream(File, static_cast<uint32_t>(Bones.size()));
+	WriteStream<uint32_t>(File, 0);             // Padding to align matrices offset to 16 bytes boundary
+
+	for (const auto& Bone : Bones)
+		WriteStream(File, Bone.InvLocalBindPose);
+
+	for (const auto& Bone : Bones)
+	{
+		WriteStream(File, Bone.ParentBoneIndex);
+		WriteStream(File, Bone.ID);
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------

@@ -161,15 +161,6 @@ protected:
 		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
 	};
 
-	struct CBone
-	{
-		const FbxNode* pBone;
-		FbxAMatrix     InvLocalBindPose;
-		std::string    ID;
-		uint16_t       ParentBoneIndex;
-		// TODO: bone object-space or local-space AABB
-	};
-
 	struct CSkeletonACLBinding
 	{
 		acl::RigidSkeletonPtr Skeleton;
@@ -661,12 +652,22 @@ public:
 					continue;
 				}
 
-				// Calculate inverse local bind pose and save the bone
 				FbxAMatrix WorldBindPose;
 				pCluster->GetTransformLinkMatrix(WorldBindPose);
-				Bones.push_back(CBone{ pBone, (InvMeshWorldMatrix * WorldBindPose).Inverse(), pBone->GetName(), NoParent });
+				const auto InvLocalBind = (InvMeshWorldMatrix * WorldBindPose).Inverse();
 
-				// Remember valid cluster for vertex processing
+				CBone NewBone;
+				NewBone.ID = pBone->GetName();
+				NewBone.ParentBoneIndex = NoParent;
+
+				// Save matrices row-major for DEM (FBX SDK uses column-major)
+				for (int i = 0; i < 4; ++i)
+					for (int j = 0; j < 4; ++j)
+						NewBone.InvLocalBindPose[i * 4 + j] = static_cast<float>(InvLocalBind[i][j]);
+
+				Bones.push_back(std::move(NewBone));
+
+				// Remember valid cluster for vertex processing and parent index finding
 				BoneClusters.emplace_back(pCluster, 0);
 			}
 		}
@@ -812,25 +813,25 @@ public:
 
 		// Establish bone parent-child links and check IDs
 
-		// There are a couple of approaches for saving bones:
-		// 1. Save node names, ensure they are unique and search all the scene node tree for them
-		// 2. Save node name and parent bone index, or full path if parent is not a bone
-		// 3. Hybrid - save node name and parent bone index. If parent is not a bone, search like in 1.
-		// Approach 3 is used here.
-
 		{
 			std::set<std::string> BoneNames;
-			for (auto& Bone : Bones)
+			for (size_t i = 0; i < Bones.size(); ++i)
 			{
+				auto& Bone = Bones[i];
+				const auto* pCluster = BoneClusters[i].first;
+
 				if (BoneNames.find(Bone.ID) != BoneNames.cend())
 					Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " bone " + Bone.ID + " occurs more than once, skin may be broken");
 				else
 					BoneNames.insert(Bone.ID);
 
-				const FbxNode* pParent = Bone.pBone->GetParent();
-				const auto It = std::find_if(Bones.cbegin(), Bones.cend(), [pParent](const CBone& b) { return b.pBone == pParent; });
-				if (It == Bones.cend())
-					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Bones.cbegin(), It));
+				const FbxNode* pParent = pCluster->GetLink()->GetParent();
+				const auto It = std::find_if(BoneClusters.cbegin(), BoneClusters.cend(), [pParent](const auto& Pair)
+				{
+					return Pair.first->GetLink() == pParent;
+				});
+				if (It == BoneClusters.cend())
+					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(BoneClusters.cbegin(), It));
 
 				// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
 			}
@@ -901,35 +902,8 @@ public:
 		if (MaxBonesPerVertexUsed)
 		{
 			const auto DestPath = Ctx.SkinPath / (MeshName + ".skn");
-
-			fs::create_directories(Ctx.SkinPath);
-
-			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
-			if (!File)
-			{
-				Ctx.Log.LogError("Error opening an output file " + DestPath.string());
-				return false;
-			}
-
-			WriteStream<uint32_t>(File, 'SKIN');        // Format magic value
-			WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
-			WriteStream(File, static_cast<uint32_t>(Bones.size()));
-			WriteStream<uint32_t>(File, 0);             // Padding to align matrices offset to 16 bytes boundary
-
-			// Save matrices row-major for DEM (FBX SDK uses column-major)
-			for (const auto& Bone : Bones)
-				for (int i = 0; i < 4; ++i)
-					for (int j = 0; j < 4; ++j)
-						WriteStream(File, static_cast<float>(Bone.InvLocalBindPose[i][j]));
-
-			for (const auto& Bone : Bones)
-			{
-				WriteStream(File, Bone.ParentBoneIndex);
-				WriteStream(File, Bone.ID);
-			}
-				
+			if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return false;
 			std::string SkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-
 			Ctx.ProcessedSkins.emplace(pMesh, std::move(SkinID));
 		}
 
