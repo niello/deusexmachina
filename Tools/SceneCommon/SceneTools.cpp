@@ -283,3 +283,39 @@ bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CTh
 	return true;
 }
 //---------------------------------------------------------------------
+
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, CThreadSafeLog& Log)
+{
+	const auto AnimName = DestPath.filename().string();
+
+	acl::TransformErrorMetric ACLErrorMetric;
+	acl::CompressionSettings  ACLSettings = acl::get_default_compression_settings();
+	ACLSettings.error_metric = &ACLErrorMetric;
+
+	acl::OutputStats Stats;
+	acl::CompressedClip* CompressedClip = nullptr;
+	acl::ErrorResult ErrorResult = acl::uniformly_sampled::compress_clip(ACLAllocator, Clip, ACLSettings, CompressedClip, Stats);
+	if (!ErrorResult.empty())
+	{
+		Log.LogWarning(std::string("ACL failed to compress animation ") + AnimName + " for one of skeletons");
+		return true;
+	}
+
+	Log.LogDebug(std::string("ACL compressed animation ") + AnimName + " to " + std::to_string(CompressedClip->get_size()) + " bytes");
+
+	fs::create_directories(DestPath.parent_path());
+
+	//???save node mapping? name to index, like in skins. ACL doesn't know how to associate nodes with tracks by name.
+
+	std::ofstream File(DestPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+	if (!File)
+	{
+		Log.LogError("Error opening an output file " + DestPath.string());
+		return false;
+	}
+
+	File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
+
+	return true;
+}
+//---------------------------------------------------------------------

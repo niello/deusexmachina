@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/RenderEnums.h>
 #include <Utils.h>
+#include <acl/core/unique_ptr.h>
 #include <vector>
 #include <map>
 #include <filesystem>
@@ -17,6 +18,14 @@ inline float RadToDeg(float Rad) { return Rad * 180.0f / 3.1415926535897932385f;
 inline float DegToRad(float Deg) { return Deg * 3.1415926535897932385f / 180.0f; }
 
 class CThreadSafeLog;
+
+// TODO: look at fbx2acl for correct FBX animation export
+namespace acl
+{
+	class IAllocator;
+	class AnimationClip;
+	typedef std::unique_ptr<class RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
+}
 
 //???use 32-bit ACL/RTM vectors?
 struct float2
@@ -136,3 +145,4 @@ void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
+bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, CThreadSafeLog& Log);

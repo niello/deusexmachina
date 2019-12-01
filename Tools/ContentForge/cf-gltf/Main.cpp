@@ -11,14 +11,7 @@
 #include <GLTFSDK/AnimationUtils.h>
 #include "GLTFExtensions.h"
 #include <acl/core/ansi_allocator.h>
-#include <acl/core/unique_ptr.h>
-#include <acl/algorithm/uniformly_sampled/encoder.h>
-
-namespace acl
-{
-	typedef std::unique_ptr<AnimationClip, Deleter<AnimationClip>> AnimationClipPtr;
-	typedef std::unique_ptr<RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
-}
+#include <acl/compression/animation_clip.h>
 
 namespace fs = std::filesystem;
 namespace gltf = Microsoft::glTF;
@@ -29,9 +22,8 @@ namespace gltf = Microsoft::glTF;
 
 static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::string& NodeID)
 {
-	for (size_t i = 0; i < Doc.nodes.Size(); ++i)
+	for (const auto& Node: Doc.nodes.Elements())
 	{
-		const auto& Node = Doc.nodes[i];
 		const auto& Children = Node.children;
 		if (std::find(Children.cbegin(), Children.cend(), NodeID) != Children.cend())
 			return &Node;
@@ -71,7 +63,6 @@ protected:
 		std::unique_ptr<gltf::GLTFResourceReader> ResourceReader;
 
 		acl::ANSIAllocator        ACLAllocator;
-		acl::CompressionSettings  ACLSettings;
 
 		fs::path                  SrcFolder;
 		fs::path                  MeshPath;
@@ -90,11 +81,10 @@ protected:
 	struct CSkeletonACLBinding
 	{
 		acl::RigidSkeletonPtr Skeleton;
-		//std::vector<FbxNode*> FbxBones; // Indices in this array are used as bone indices in ACL
+		std::vector<const gltf::Node*> Nodes; // Indices in this array are used as bone indices in ACL
 	};
 
 	Data::CSchemeSet          _SceneSchemes;
-	acl::TransformErrorMetric _ACLErrorMetric; // Stateless and therefore reusable
 
 	std::map<std::string, std::string> _EffectsByType;
 	std::map<std::string, std::string> _EffectParamAliases;
@@ -312,11 +302,8 @@ public:
 
 		// Export animations
 
-		Ctx.ACLSettings = acl::get_default_compression_settings();
-		Ctx.ACLSettings.error_metric = &_ACLErrorMetric;
-
-		for (size_t i = 0; i < Ctx.Doc.animations.Size(); ++i)
-			if (!ExportAnimation(Ctx.Doc.animations[i], Ctx)) return false;
+		for (const auto& Anim : Ctx.Doc.animations.Elements())
+			if (!ExportAnimation(Anim, Ctx)) return false;
 
 		// Finalize and save the scene
 
@@ -1102,34 +1089,6 @@ public:
 		return true;
 	}
 
-	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
-	{
-		const auto RsrcName = GetValidResourceName(Anim.name.empty() ? Ctx.TaskName + '_' + Anim.id : Anim.name);
-
-		Ctx.Log.LogDebug("Animation " + Anim.id + ": " + RsrcName);
-
-		//
-
-		{
-			const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
-
-			fs::create_directories(Ctx.AnimPath);
-
-			//???save node mapping? name to index, like in skins. ACL doesn't know how to associate nodes with tracks by name.
-
-			std::ofstream File(DestPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-			if (!File)
-			{
-				Ctx.Log.LogError("Error opening an output file " + DestPath.string());
-				return false;
-			}
-
-			//File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
-		}
-
-		return true;
-	}
-
 	// https://github.com/KhronosGroup/glTF/tree/master/extensions/2.0/Khronos/KHR_lights_punctual
 	bool ExportLight(int LightIndex, CContext& Ctx, Data::CDataArray& Attributes)
 	{
@@ -1193,6 +1152,40 @@ public:
 		}
 
 		Attributes.push_back(std::move(Attribute));
+
+		return true;
+	}
+
+	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
+	{
+		const auto RsrcName = GetValidResourceName(Anim.name.empty() ? Ctx.TaskName + '_' + Anim.id : Anim.name);
+
+		Ctx.Log.LogDebug("Animation " + Anim.id + ": " + RsrcName);
+
+		// Collect nodes animated by this animation
+		// Detect their common root (all animated nodes must be in the same scene)
+		// Theoretically there can be many roots, as glTF scene can have many top-level nodes
+		// Build ACL skeleton bindings for these roots
+		// Process all nodes, animating those with curves and passing static values when no curves are present
+		//???does ACL support non-animated nodes in the middle of the skeleton?
+
+		//Anim.channels [ sampler -> node property to animate ]
+		//Anim.samplers [ key frames -> curve key values + interpolation mode ]
+		//for (const auto& Sampler : Anim.samplers.Elements())
+		//{
+		//	gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler);
+		//}
+
+		for (CSkeletonACLBinding& Skeleton : Skeletons)
+		{
+			acl::String ClipName(Ctx.ACLAllocator, RsrcName.c_str());
+			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, _AnimSamplingRate, ClipName);
+
+			// fill clip with raw data
+
+			const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
+			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log)) return false;
+		}
 
 		return true;
 	}

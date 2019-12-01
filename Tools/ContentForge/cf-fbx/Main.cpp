@@ -5,15 +5,7 @@
 #include <CLI11.hpp>
 #include <fbxsdk.h>
 #include <acl/core/ansi_allocator.h>
-#include <acl/core/unique_ptr.h>
-#include <acl/algorithm/uniformly_sampled/encoder.h>
-
-// TODO: look at fbx2acl
-namespace acl
-{
-	typedef std::unique_ptr<AnimationClip, Deleter<AnimationClip>> AnimationClipPtr;
-	typedef std::unique_ptr<RigidSkeleton, Deleter<RigidSkeleton>> RigidSkeletonPtr;
-}
+#include <acl/compression/animation_clip.h>
 
 namespace fs = std::filesystem;
 
@@ -149,7 +141,6 @@ protected:
 		CThreadSafeLog&           Log;
 
 		acl::ANSIAllocator        ACLAllocator;
-		acl::CompressionSettings  ACLSettings;
 
 		fs::path                  MeshPath;
 		fs::path                  SkinPath;
@@ -164,12 +155,11 @@ protected:
 	struct CSkeletonACLBinding
 	{
 		acl::RigidSkeletonPtr Skeleton;
-		std::vector<FbxNode*> FbxBones; // Indices in this array are used as bone indices in ACL
+		std::vector<FbxNode*> Nodes; // Indices in this array are used as bone indices in ACL
 	};
 
 	FbxManager*                pFBXManager = nullptr;
 	Data::CSchemeSet          _SceneSchemes;
-	acl::TransformErrorMetric _ACLErrorMetric; // Stateless and therefore reusable
 
 	std::string               _ResourceRoot;
 	std::string               _SchemeFile;
@@ -329,9 +319,6 @@ public:
 			if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes)) return false;
 
 		// Export animations
-
-		Ctx.ACLSettings = acl::get_default_compression_settings();
-		Ctx.ACLSettings.error_metric = &_ACLErrorMetric;
 
 		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
 		// blending info saved. Nodes are processed from the root recursively and each can have up to 3 tracks.
@@ -1128,7 +1115,7 @@ public:
 			CSkeletonACLBinding Skeleton;
 
 			std::vector<acl::RigidBone> Bones;
-			BuildACLSkeleton(pRoot, Skeleton.FbxBones, Bones);
+			BuildACLSkeleton(pRoot, Skeleton.Nodes, Bones);
 
 			assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
 
@@ -1145,9 +1132,7 @@ public:
 
 		for (CSkeletonACLBinding& Skeleton : Skeletons)
 		{
-			// FIXME: now bone indices are per-skeleton, can't use one clip for all!
-			//???must create different clips (like now) or unify bones?
-			acl::String ClipName(Ctx.ACLAllocator, "Run Cycle");
+			acl::String ClipName(Ctx.ACLAllocator, AnimName.c_str());
 			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, FrameRate, ClipName);
 
 			uint32_t SampleIndex = 0;
@@ -1156,9 +1141,9 @@ public:
 			{
 				FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
 
-				for (size_t BoneIdx = 0; BoneIdx < Skeleton.FbxBones.size(); ++BoneIdx)
+				for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
 				{
-					const auto LocalTfm = Skeleton.FbxBones[BoneIdx]->EvaluateLocalTransform(FrameTime);
+					const auto LocalTfm = Skeleton.Nodes[BoneIdx]->EvaluateLocalTransform(FrameTime);
 					const auto Scaling = LocalTfm.GetS();
 					const auto Rotation = LocalTfm.GetQ();
 					const auto Translation = LocalTfm.GetT();
@@ -1170,33 +1155,8 @@ public:
 				}
 			}
 
-			acl::OutputStats Stats;
-			acl::CompressedClip* CompressedClip = nullptr;
-			acl::ErrorResult ErrorResult = acl::uniformly_sampled::compress_clip(Ctx.ACLAllocator, Clip, Ctx.ACLSettings, CompressedClip, Stats);
-			if (!ErrorResult.empty())
-			{
-				Ctx.Log.LogWarning(std::string("ACL failed to compress animation ") + AnimName + " for one of skeletons");
-				continue;
-			}
-
-			Ctx.Log.LogDebug(std::string("ACL compressed animation ") + AnimName + " to " + std::to_string(CompressedClip->get_size()) + " bytes");
-
-			{
-				const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
-
-				fs::create_directories(Ctx.AnimPath);
-
-				//???save node mapping? name to index, like in skins. ACL doesn't know how to associate nodes with tracks by name.
-
-				std::ofstream File(DestPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
-				if (!File)
-				{
-					Ctx.Log.LogError("Error opening an output file " + DestPath.string());
-					return false;
-				}
-
-				File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
-			}
+			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
+			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log)) return false;
 		}
 
 		return true;
@@ -1234,24 +1194,24 @@ public:
 			FindSkeletonRoots(pAnimStack, pNode->GetChild(i), SkeletonRoots);
 	}
 
-	void BuildACLSkeleton(FbxNode* pNode, std::vector<FbxNode*>& FbxBones, std::vector<acl::RigidBone>& Bones)
+	void BuildACLSkeleton(FbxNode* pNode, std::vector<FbxNode*>& Nodes, std::vector<acl::RigidBone>& Bones)
 	{
 		acl::RigidBone Bone;
-		if (FbxBones.empty())
+		if (Nodes.empty())
 		{
 			Bone.parent_index = acl::k_invalid_bone_index;
 		}
 		else
 		{
-			auto It = std::find(FbxBones.crbegin(), FbxBones.crend(), pNode->GetParent());
-			assert(It != FbxBones.crend());
-			Bone.parent_index = static_cast<uint16_t>(std::distance(FbxBones.cbegin(), It.base()) - 1);
+			auto It = std::find(Nodes.crbegin(), Nodes.crend(), pNode->GetParent());
+			assert(It != Nodes.crend());
+			Bone.parent_index = static_cast<uint16_t>(std::distance(Nodes.cbegin(), It.base()) - 1);
 		}
 
 		// TODO: metric from per-bone AABBs?
 		Bone.vertex_distance = 3.f;
 
-		FbxBones.push_back(pNode);
+		Nodes.push_back(pNode);
 		Bones.push_back(std::move(Bone));
 
 		for (int i = 0; i < pNode->GetChildCount(); ++i)
@@ -1261,7 +1221,7 @@ public:
 			{
 				if (pNode->GetNodeAttributeByIndex(i)->GetAttributeType() == FbxNodeAttribute::eSkeleton)
 				{
-					BuildACLSkeleton(pNode->GetChild(i), FbxBones, Bones);
+					BuildACLSkeleton(pNode->GetChild(i), Nodes, Bones);
 					break;
 				}
 			}
