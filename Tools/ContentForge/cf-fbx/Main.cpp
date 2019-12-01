@@ -330,14 +330,7 @@ public:
 
 		// Export animations
 
-		// Could also use acl::get_default_compression_settings()
-		Ctx.ACLSettings.level = acl::CompressionLevel8::Medium;
-		Ctx.ACLSettings.rotation_format = acl::RotationFormat8::QuatDropW_Variable;
-		Ctx.ACLSettings.translation_format = acl::VectorFormat8::Vector3_Variable;
-		Ctx.ACLSettings.scale_format = acl::VectorFormat8::Vector3_Variable;
-		Ctx.ACLSettings.range_reduction = acl::RangeReductionFlags8::AllTracks;
-		Ctx.ACLSettings.segmenting.enabled = true;
-		Ctx.ACLSettings.segmenting.range_reduction = acl::RangeReductionFlags8::AllTracks;
+		Ctx.ACLSettings = acl::get_default_compression_settings();
 		Ctx.ACLSettings.error_metric = &_ACLErrorMetric;
 
 		// Each stack is a clip. Only one layer (or combined result of all stack layers) is considered, no
@@ -1085,33 +1078,30 @@ public:
 
 	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxScene* pScene, CContext& Ctx)
 	{
-		// TODO: to utility function for name validation, return bool if were changes
-		std::string AnimName = pAnimStack->GetName();
-		ToLower(AnimName);
-		std::replace(AnimName.begin(), AnimName.end(), ' ', '_'); // Can use std::transform and the list of forbidden characters
+		std::string AnimName = GetValidResourceName(pAnimStack->GetName());
 
 		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
 		if (LayerCount <= 0)
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " has no layers, skipped");
+			Ctx.Log.LogWarning("Animation " + AnimName + " has no layers, skipped");
 			return true;
 		}
 		else if (LayerCount > 1)
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " has more than one layer");
+			Ctx.Log.LogWarning("Animation " + AnimName + " has more than one layer");
 		}
 
 		const FbxTakeInfo* pTakeInfo = pScene->GetTakeInfo(pAnimStack->GetName());
 		const FbxLongLong StartFrame = pTakeInfo->mLocalTimeSpan.GetStart().GetFrameCount(FbxTime::GetGlobalTimeMode());
 		const FbxLongLong EndFrame = pTakeInfo->mLocalTimeSpan.GetStop().GetFrameCount(FbxTime::GetGlobalTimeMode());
 
-		Ctx.Log.LogDebug(std::string("Animation ") + AnimName +
+		Ctx.Log.LogDebug("Animation " + AnimName +
 			", frames " + std::to_string(StartFrame) + '-' + std::to_string(EndFrame));
 
 		const auto pLayer = pAnimStack->GetMember<FbxAnimLayer>(0);
 		if (!pLayer || !pLayer->GetMemberCount())
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " is empty, skipped");
+			Ctx.Log.LogWarning("Animation " + AnimName + " is empty, skipped");
 			return true;
 		}
 
@@ -1126,7 +1116,7 @@ public:
 		FindSkeletonRoots(pAnimStack, pScene->GetRootNode(), SkeletonRoots);
 		if (SkeletonRoots.empty())
 		{
-			Ctx.Log.LogWarning(std::string("Animation ") + AnimName + " doesn't affect any node transformation, skipped");
+			Ctx.Log.LogWarning("Animation " + AnimName + " doesn't affect any node transformation, skipped");
 			return true;
 		}
 
@@ -1196,7 +1186,7 @@ public:
 
 				fs::create_directories(Ctx.AnimPath);
 
-				//???save bone mapping? name to index, like in skins. ACL doesn't know how to associate bones with tracks by name.
+				//???save node mapping? name to index, like in skins. ACL doesn't know how to associate nodes with tracks by name.
 
 				std::ofstream File(DestPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
 				if (!File)

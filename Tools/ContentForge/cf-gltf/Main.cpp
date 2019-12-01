@@ -312,23 +312,11 @@ public:
 
 		// Export animations
 
-		// Could also use acl::get_default_compression_settings()
-		Ctx.ACLSettings.level = acl::CompressionLevel8::Medium;
-		Ctx.ACLSettings.rotation_format = acl::RotationFormat8::QuatDropW_Variable;
-		Ctx.ACLSettings.translation_format = acl::VectorFormat8::Vector3_Variable;
-		Ctx.ACLSettings.scale_format = acl::VectorFormat8::Vector3_Variable;
-		Ctx.ACLSettings.range_reduction = acl::RangeReductionFlags8::AllTracks;
-		Ctx.ACLSettings.segmenting.enabled = true;
-		Ctx.ACLSettings.segmenting.range_reduction = acl::RangeReductionFlags8::AllTracks;
+		Ctx.ACLSettings = acl::get_default_compression_settings();
 		Ctx.ACLSettings.error_metric = &_ACLErrorMetric;
 
-		//for (const auto& Anim : Ctx.Doc.animations)
-		//	if (!ExportAnimation(Anim, Ctx)) return false;
-
-		// Export additional info
-
-		// pScene->GetGlobalSettings().GetAmbientColor();
-		// Scene->GetPoseCount();
+		for (size_t i = 0; i < Ctx.Doc.animations.Size(); ++i)
+			if (!ExportAnimation(Ctx.Doc.animations[i], Ctx)) return false;
 
 		// Finalize and save the scene
 
@@ -426,9 +414,6 @@ public:
 			NodeSection.emplace_back(sidAttrs, std::move(Attributes));
 
 		// Process transform
-
-		// Bone transformation is determined by the bind pose and animations
-		//...
 
 		if (Node.matrix != gltf::Matrix4::IDENTITY)
 		{
@@ -1113,6 +1098,34 @@ public:
 		}
 
 		Attributes.push_back(std::move(Attribute));
+
+		return true;
+	}
+
+	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
+	{
+		const auto RsrcName = GetValidResourceName(Anim.name.empty() ? Ctx.TaskName + '_' + Anim.id : Anim.name);
+
+		Ctx.Log.LogDebug("Animation " + Anim.id + ": " + RsrcName);
+
+		//
+
+		{
+			const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
+
+			fs::create_directories(Ctx.AnimPath);
+
+			//???save node mapping? name to index, like in skins. ACL doesn't know how to associate nodes with tracks by name.
+
+			std::ofstream File(DestPath, std::ios_base::out | std::ios_base::binary | std::ios_base::trunc);
+			if (!File)
+			{
+				Ctx.Log.LogError("Error opening an output file " + DestPath.string());
+				return false;
+			}
+
+			//File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
+		}
 
 		return true;
 	}
