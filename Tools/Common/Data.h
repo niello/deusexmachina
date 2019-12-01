@@ -55,6 +55,7 @@ protected:
 		bool							As_bool;
 		int								As_int;
 		float							As_float;
+		const std::string*				As_string;
 		const char*						As_CStrID;
 		CBuffer*						As_CBuffer;
 		CParams*						As_CParams;

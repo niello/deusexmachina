@@ -895,52 +895,41 @@ public:
 
 				switch (Sampler.wrapS)
 				{
-					case gltf::WrapMode::Wrap_REPEAT: SamplerDesc.emplace_back(CStrID("AddressU"), "wrap"); break;
-					case gltf::WrapMode::Wrap_MIRRORED_REPEAT: SamplerDesc.emplace_back(CStrID("AddressU"), "mirror"); break;
-					case gltf::WrapMode::Wrap_CLAMP_TO_EDGE: SamplerDesc.emplace_back(CStrID("AddressU"), "clamp"); break;
+					case gltf::WrapMode::Wrap_REPEAT: SamplerDesc.emplace_back(CStrID("AddressU"), std::string("wrap")); break;
+					case gltf::WrapMode::Wrap_MIRRORED_REPEAT: SamplerDesc.emplace_back(CStrID("AddressU"), std::string("mirror")); break;
+					case gltf::WrapMode::Wrap_CLAMP_TO_EDGE: SamplerDesc.emplace_back(CStrID("AddressU"), std::string("clamp")); break;
 				}
 
 				switch (Sampler.wrapT)
 				{
-					case gltf::WrapMode::Wrap_REPEAT: SamplerDesc.emplace_back(CStrID("AddressV"), "wrap"); break;
-					case gltf::WrapMode::Wrap_MIRRORED_REPEAT: SamplerDesc.emplace_back(CStrID("AddressV"), "mirror"); break;
-					case gltf::WrapMode::Wrap_CLAMP_TO_EDGE: SamplerDesc.emplace_back(CStrID("AddressV"), "clamp"); break;
+					case gltf::WrapMode::Wrap_REPEAT: SamplerDesc.emplace_back(CStrID("AddressV"), std::string("wrap")); break;
+					case gltf::WrapMode::Wrap_MIRRORED_REPEAT: SamplerDesc.emplace_back(CStrID("AddressV"), std::string("mirror")); break;
+					case gltf::WrapMode::Wrap_CLAMP_TO_EDGE: SamplerDesc.emplace_back(CStrID("AddressV"), std::string("clamp")); break;
 				}
 
+				// NB: glTF 2.0 doesn't support anisotropic filtering. DEM should enable it through renderer settings,
+				//     replacing exported sampler filter with anisotropic one.
 				const bool IsMagPoint = Sampler.magFilter.HasValue() && Sampler.magFilter.Get() == gltf::MagFilterMode::MagFilter_NEAREST;
 				auto MinFilter = Sampler.minFilter.HasValue() ? Sampler.minFilter.Get() : gltf::MinFilterMode::MinFilter_LINEAR;
 				switch (MinFilter)
 				{
 					case gltf::MinFilterMode::MinFilter_LINEAR:
-						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
-						break;
 					case gltf::MinFilterMode::MinFilter_LINEAR_MIPMAP_LINEAR:
-						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						SamplerDesc.emplace_back(CStrID("Filter"), std::string(IsMagPoint ? "min_linear_mag_point_mip_linear" : "linear"));
 						break;
 					case gltf::MinFilterMode::MinFilter_LINEAR_MIPMAP_NEAREST:
-						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						SamplerDesc.emplace_back(CStrID("Filter"), std::string(IsMagPoint ? "min_linear_magmip_point" : "minmag_linear_mip_point"));
 						break;
 					case gltf::MinFilterMode::MinFilter_NEAREST:
-						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+					case gltf::MinFilterMode::MinFilter_NEAREST_MIPMAP_NEAREST:
+						SamplerDesc.emplace_back(CStrID("Filter"), std::string(IsMagPoint ? "point" : "min_point_mag_linear_mip_point"));
 						break;
 					case gltf::MinFilterMode::MinFilter_NEAREST_MIPMAP_LINEAR:
-						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
-						break;
-					case gltf::MinFilterMode::MinFilter_NEAREST_MIPMAP_NEAREST:
-						SamplerDesc.emplace_back(CStrID("Filter"), IsMagPoint ? "" : "");
+						SamplerDesc.emplace_back(CStrID("Filter"), std::string(IsMagPoint ? "minmag_point_mip_linear" : "min_point_magmip_linear"));
 						break;
 				}
-				//if (Str == "minmag_point_mip_linear") return TexFilter_MinMag_Point_Mip_Linear;
-				//if (Str == "min_point_mag_linear_mip_point") return TexFilter_Min_Point_Mag_Linear_Mip_Point;
-				//if (Str == "min_point_magmip_linear") return TexFilter_Min_Point_MagMip_Linear;
-				//if (Str == "min_linear_magmip_point") return TexFilter_Min_Linear_MagMip_Point;
-				//if (Str == "min_linear_mag_point_mip_linear") return TexFilter_Min_Linear_Mag_Point_Mip_Linear;
-				//if (Str == "minmag_linear_mip_point") return TexFilter_MinMag_Linear_Mip_Point;
-				//if (Str == "linear" || Str == "minmagmip_linear") return TexFilter_MinMagMip_Linear;
-				//if (Str == "anisotropic") return TexFilter_Anisotropic;
-				//return TexFilter_MinMagMip_Point -> "point";
 
-				MtlParams.emplace_back(EmissiveTextureID, std::move(SamplerDesc));
+				MtlParams.emplace_back(PBRTextureSamplerID, std::move(SamplerDesc));
 			}
 		}
 
