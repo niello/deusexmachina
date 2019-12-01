@@ -68,6 +68,7 @@ protected:
 
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
 		std::unordered_map<std::string, std::string> ProcessedMaterials;
+		std::unordered_map<std::string, std::string> ProcessedTextures;
 		//std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
@@ -864,8 +865,15 @@ public:
 			MtlParams.emplace_back(EmissiveTextureID, TextureID);
 		}
 
-		// Only one sampler for all PBR textures is supported for now
-		assert(GLTFSamplers.size() < 2);
+		if (!GLTFSamplers.empty())
+		{
+			std::string SamplerName;
+			if (GLTFSamplers.size() > 1)
+				Ctx.Log.LogWarning("Material " + Mtl.name + " uses more than one sampler, but DEM supports only one sampler per PBR material");
+
+			//!!!use base color sampler, NOT random 'first' sampler stored in the set!
+			assert(false && "IMPLEMENT SAMPLER EXPORTING!");
+		}
 
 		//!!!TODO: if effect's default sampler is the same as material sampler, don't create another sampler in engine when loading material,
 		//even if the material has the sampler explicitly defined! Compare CSamplerDesc.
@@ -896,11 +904,44 @@ public:
 
 		const auto& Texture = Ctx.Doc.textures[TexInfo.textureId];
 
-		Ctx.Log.LogDebug("Texture " + Texture.name);
-
-		//!!!!!!save sampler too! how to choose sampler? or always use the same one, aliased to the LinearSampler?
 		if (!Texture.samplerId.empty())
 			OutGLTFSamplers.insert(Texture.samplerId);
+
+		auto It = Ctx.ProcessedTextures.find(Texture.imageId);
+		if (It != Ctx.ProcessedTextures.cend())
+		{
+			OutTextureID = It->second;
+			return true;
+		}
+
+		const auto& Image = Ctx.Doc.images[Texture.imageId];
+
+		Ctx.Log.LogDebug("Texture image " + Image.name);
+
+		if (Image.uri.empty())
+		{
+			Ctx.Log.LogError("FIXME: embedded glTF textures not supported, IMPLEMENT!");
+			return false;
+		}
+
+		const auto SrcPath = Ctx.SrcFolder / Image.uri;
+
+		const auto RsrcName = GetValidResourceName(fs::path(Image.uri).filename().string());
+		const auto DestPath = Ctx.TexturePath / RsrcName;
+
+		try
+		{
+			fs::create_directories(DestPath.parent_path());
+			fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
+		}
+		catch (fs::filesystem_error& e)
+		{
+			Ctx.Log.LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + e.what());
+			return false;
+		}
+
+		OutTextureID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		Ctx.ProcessedTextures.emplace(Texture.imageId, OutTextureID);
 
 		return true;
 	}
