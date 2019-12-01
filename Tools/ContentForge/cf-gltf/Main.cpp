@@ -92,7 +92,7 @@ protected:
 	std::string               _ResourceRoot;
 	std::string               _SchemeFile;
 	std::string               _SettingsFile;
-	double                    _AnimSamplingRate = 30.0;
+	float                     _AnimSamplingRate = 30.f;
 	bool                      _OutputBin = false;
 	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
 
@@ -1162,6 +1162,23 @@ public:
 
 		Ctx.Log.LogDebug("Animation " + Anim.id + ": " + RsrcName);
 
+		float MinTime = std::numeric_limits<float>().max();
+		float MaxTime = std::numeric_limits<float>().lowest();
+		for (const auto& Sampler : Anim.samplers.Elements())
+		{
+			const auto& Accessor = Ctx.Doc.accessors[Sampler.inputAccessorId];
+			if (MinTime > Accessor.min[0]) MinTime = Accessor.min[0];
+			if (MaxTime < Accessor.max[0]) MaxTime = Accessor.max[0];
+		}
+
+		if (MinTime >= MaxTime)
+		{
+			Ctx.Log.LogWarning("Animation " + RsrcName + " has zero or negative duration, skipped");
+			return true;
+		}
+
+		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate));
+
 		// Collect nodes animated by this animation
 		// Detect their common root (all animated nodes must be in the same scene)
 		// Theoretically there can be many roots, as glTF scene can have many top-level nodes
@@ -1171,10 +1188,8 @@ public:
 
 		//Anim.channels [ sampler -> node property to animate ]
 		//Anim.samplers [ key frames -> curve key values + interpolation mode ]
-		//for (const auto& Sampler : Anim.samplers.Elements())
-		//{
-		//	gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler);
-		//}
+
+		std::vector<CSkeletonACLBinding> Skeletons;
 
 		for (CSkeletonACLBinding& Skeleton : Skeletons)
 		{
