@@ -682,15 +682,14 @@ public:
 				// Must have joint indices
 				assert(VertexFormat.BonesPerVertex == 4);
 
-				//!!!check weights format!
-				assert(false);
+				const auto Weights = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
 
-				const auto Joints = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
-
-				auto AttrIt = Joints.cbegin();
+				auto AttrIt = Weights.cbegin();
 				for (auto& Vertex : RawVertices)
 				{
 					Vertex.BlendWeights = *AttrIt++;
+
+					assert(Vertex.BlendWeights == 255);
 
 					// TODO: store 4 float weights? Then get floats from accessor, don't pack with GetJointWeights32.
 					// Or store uint32_t weights, then can store as is here, don't unpack!

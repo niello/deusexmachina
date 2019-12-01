@@ -218,7 +218,7 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 						WriteStream(File, static_cast<uint8_t>(BoneIndex));
 				}
 
-				File.write(reinterpret_cast<const char*>(Vertex.BlendWeights), VertexFormat.BonesPerVertex * sizeof(float));
+				WriteStream<uint32_t>(File, Vertex.BlendWeights);
 			}
 		}
 	}
