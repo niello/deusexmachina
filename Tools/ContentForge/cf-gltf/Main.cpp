@@ -402,6 +402,10 @@ public:
 
 		// Process transform
 
+		constexpr acl::Vector4_32 Unit3 = { 1.f, 1.f, 1.f, 0.f };
+		constexpr acl::Vector4_32 Zero3 = { 0.f, 0.f, 0.f, 0.f };
+		constexpr acl::Quat_32 IdentityQuat = { 0.f, 0.f, 0.f, 1.f };
+
 		if (Node.matrix != gltf::Matrix4::IDENTITY)
 		{
 			const acl::AffineMatrix_32 ACLMatrix = acl::matrix_set(
@@ -424,10 +428,6 @@ public:
 
 			const acl::Quat_32 Rotation = acl::quat_from_matrix(acl::matrix_remove_scale(ACLMatrix));
 
-			constexpr acl::Vector4_32 Unit3 = { 1.f, 1.f, 1.f, 0.f };
-			constexpr acl::Vector4_32 Zero3 = { 0.f, 0.f, 0.f, 0.f };
-			constexpr acl::Quat_32 IdentityQuat = { 0.f, 0.f, 0.f, 1.f };
-
 			if (!acl::vector_all_near_equal3(Scale, Unit3))
 				NodeSection.emplace_back(sidScale, vector4({ acl::vector_get_x(Scale), acl::vector_get_y(Scale), acl::vector_get_z(Scale) }));
 
@@ -439,11 +439,14 @@ public:
 		}
 		else
 		{
-			if (Node.scale != gltf::Vector3::ONE)
+			const acl::Vector4_32 Scale = { Node.scale.x, Node.scale.y, Node.scale.z, 0.f };
+			const acl::Vector4_32 Translation = { Node.translation.x, Node.translation.y, Node.translation.z, 1.f };
+
+			if (!acl::vector_all_near_equal3(Scale, Unit3))
 				NodeSection.emplace_back(sidScale, vector4({ Node.scale.x, Node.scale.y, Node.scale.z }));
 			if (Node.rotation != gltf::Quaternion::IDENTITY)
 				NodeSection.emplace_back(sidRotation, vector4({ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w }));
-			if (Node.translation != gltf::Vector3::ZERO)
+			if (!acl::vector_all_near_equal3(Translation, Zero3))
 				NodeSection.emplace_back(sidTranslation, vector4({ Node.translation.x, Node.translation.y, Node.translation.z }));
 		}
 
