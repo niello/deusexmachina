@@ -78,12 +78,6 @@ protected:
 		std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
-	struct CSkeletonACLBinding
-	{
-		acl::RigidSkeletonPtr Skeleton;
-		std::vector<const gltf::Node*> Nodes; // Indices in this array are used as bone indices in ACL
-	};
-
 	Data::CSchemeSet          _SceneSchemes;
 
 	std::map<std::string, std::string> _EffectsByType;
@@ -1164,6 +1158,32 @@ public:
 		return true;
 	}
 
+	static void BuildACLSkeleton()
+	{
+		acl::RigidBone Bone;
+		if (Nodes.empty())
+		{
+			Bone.parent_index = acl::k_invalid_bone_index;
+		}
+		else
+		{
+			auto It = std::find(Nodes.crbegin(), Nodes.crend(), pNode->GetParent());
+			assert(It != Nodes.crend());
+			Bone.parent_index = static_cast<uint16_t>(std::distance(Nodes.cbegin(), It.base()) - 1);
+		}
+
+		const auto Range = Hierarchy.equal_range(CurrNodeID);
+		for (auto It = Range.first; It != Range.second; ++It)
+		{
+		}
+
+		// TODO: metric from per-bone AABBs?
+		Bone.vertex_distance = 3.f;
+
+		Nodes.push_back(pNode);
+		Bones.push_back(std::move(Bone));
+	}
+
 	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
 	{
 		const auto RsrcName = GetValidResourceName(Anim.name.empty() ? Ctx.TaskName + '_' + Anim.id : Anim.name);
@@ -1189,59 +1209,78 @@ public:
 
 		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate));
 
-		// Gather animated nodes and build a hierarchy from the single root
+		// Build parent-child pairs from the scene root to all animated nodes
 
 		std::set<std::string> AnimatedNodes;
 		for (const auto& Channel : Anim.channels.Elements())
 			AnimatedNodes.insert(Channel.target.nodeId);
 
-		std::set<std::string> HierarchyNodes = AnimatedNodes;
-		std::set<std::string> NodesToProcess = AnimatedNodes;
-		std::set<std::string> ProcessedNodes;
-		while (NodesToProcess.size() > 1)
+		// TODO: build once for the whole scene?
+		std::multimap<std::string, std::string> Hierarchy;
+		std::set<std::string> OpenList = AnimatedNodes;
+		std::set<std::string> ClosedList;
+		while (!OpenList.empty())
 		{
-			std::string CurrNodeID = *NodesToProcess.begin();
-			if (const gltf::Node* pParent = GetParentNode(Ctx.Doc, CurrNodeID))
+			std::string CurrNodeID = std::move(*OpenList.begin());
+			OpenList.erase(OpenList.begin());
+
+			if (auto pParent = GetParentNode(Ctx.Doc, CurrNodeID))
 			{
-				HierarchyNodes.insert(pParent->id);
-				NodesToProcess.erase(NodesToProcess.begin());
-				if (ProcessedNodes.find(pParent->id) == ProcessedNodes.cend())
-					NodesToProcess.insert(pParent->id);
+				Hierarchy.emplace(pParent->id, CurrNodeID);
+				if (ClosedList.find(pParent->id) == ClosedList.cend())
+					OpenList.insert(pParent->id);
 			}
 			else
 			{
 				// Insert global root. If animated nodes have no common root, this will be the one.
-				HierarchyNodes.insert(std::string());
-				NodesToProcess.erase(NodesToProcess.begin());
+				Hierarchy.emplace(std::string(), CurrNodeID);
 			}
 
-			ProcessedNodes.insert(std::move(CurrNodeID));
+			ClosedList.insert(std::move(CurrNodeID));
 		}
 
-		// Collect nodes animated by this animation
-		// Detect their common root (all animated nodes must be in the same scene)
-		// Theoretically there can be many roots, as glTF scene can have many top-level nodes
-		// Build ACL skeleton bindings for these roots
-		// Process all nodes, animating those with curves and passing static values when no curves are present
-		//???does ACL support non-animated nodes in the middle of the skeleton?
+		// Find the deepest common root for all animated nodes
 
+		// Start from the global root, not present in glTF and never animated
+		std::string RootNodeID;
+		while (true)
+		{
+			const auto Range = Hierarchy.equal_range(RootNodeID);
+			const auto ChildCount = std::distance(Range.first, Range.second);
+			assert(ChildCount > 0);
+
+			// Node has more than one branch with animated nodes, so it is a root
+			if (ChildCount > 1) break;
+
+			RootNodeID = Range.first->second;
+
+			// Node's only child is animated, this child is a root
+			if (AnimatedNodes.find(RootNodeID) != AnimatedNodes.cend()) break;
+		}
+
+		// Build ACL skeleton from hierarchy data
+
+		std::vector<acl::RigidBone> Bones;
+		std::vector<const gltf::Node*> Nodes;
+		BuildACLSkeleton(RootNodeID, Hierarchy, Bones, Nodes);
+
+		acl::RigidSkeletonPtr Skeleton = acl::make_unique<acl::RigidSkeleton>(
+			Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
+
+		assert(Nodes.size() <= std::numeric_limits<uint16_t>().max());
+
+		acl::String ClipName(Ctx.ACLAllocator, RsrcName.c_str());
+		acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton, FrameCount, _AnimSamplingRate, ClipName);
+
+		// Process all nodes, animating those with curves and passing static values when no curves are present
 		//Anim.channels [ sampler -> node property to animate ]
 		//Anim.samplers [ key frames -> curve key values + interpolation mode ]
+		//???does ACL support non-animated nodes in the middle of the skeleton?
 
-		std::vector<CSkeletonACLBinding> Skeletons;
+		// fill clip with raw data
 
-		for (CSkeletonACLBinding& Skeleton : Skeletons)
-		{
-			acl::String ClipName(Ctx.ACLAllocator, RsrcName.c_str());
-			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, _AnimSamplingRate, ClipName);
-
-			// fill clip with raw data
-
-			const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
-			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log)) return false;
-		}
-
-		return true;
+		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
+		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log);
 	}
 };
 
