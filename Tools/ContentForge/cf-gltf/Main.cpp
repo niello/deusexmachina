@@ -1170,6 +1170,8 @@ public:
 
 		Ctx.Log.LogDebug("Animation " + Anim.id + ": " + RsrcName);
 
+		// Calculate animation duration in seconds and frames
+
 		float MinTime = std::numeric_limits<float>().max();
 		float MaxTime = std::numeric_limits<float>().lowest();
 		for (const auto& Sampler : Anim.samplers.Elements())
@@ -1186,6 +1188,35 @@ public:
 		}
 
 		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate));
+
+		// Gather animated nodes and build a hierarchy from the single root
+
+		std::set<std::string> AnimatedNodes;
+		for (const auto& Channel : Anim.channels.Elements())
+			AnimatedNodes.insert(Channel.target.nodeId);
+
+		std::set<std::string> HierarchyNodes = AnimatedNodes;
+		std::set<std::string> NodesToProcess = AnimatedNodes;
+		std::set<std::string> ProcessedNodes;
+		while (NodesToProcess.size() > 1)
+		{
+			std::string CurrNodeID = *NodesToProcess.begin();
+			if (const gltf::Node* pParent = GetParentNode(Ctx.Doc, CurrNodeID))
+			{
+				HierarchyNodes.insert(pParent->id);
+				NodesToProcess.erase(NodesToProcess.begin());
+				if (ProcessedNodes.find(pParent->id) == ProcessedNodes.cend())
+					NodesToProcess.insert(pParent->id);
+			}
+			else
+			{
+				// Insert global root. If animated nodes have no common root, this will be the one.
+				HierarchyNodes.insert(std::string());
+				NodesToProcess.erase(NodesToProcess.begin());
+			}
+
+			ProcessedNodes.insert(std::move(CurrNodeID));
+		}
 
 		// Collect nodes animated by this animation
 		// Detect their common root (all animated nodes must be in the same scene)

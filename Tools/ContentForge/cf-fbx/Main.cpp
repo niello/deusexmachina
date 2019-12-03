@@ -1139,6 +1139,9 @@ public:
 		const auto FrameRate = static_cast<float>(FbxTime::GetFrameRate(FbxTime::GetGlobalTimeMode()));
 		const auto FrameCount = static_cast<uint32_t>(EndFrame - StartFrame + 1);
 
+		// FIXME: saving clip for each skeleton separately will erase previously saved .anm file
+		assert(Skeletons.size() == 1);
+
 		for (CSkeletonACLBinding& Skeleton : Skeletons)
 		{
 			acl::String ClipName(Ctx.ACLAllocator, AnimName.c_str());
