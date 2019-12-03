@@ -577,6 +577,7 @@ public:
 		// Determine vertex format
 
 		CVertexFormat VertexFormat;
+		VertexFormat.FloatBlendWeights = false;
 
 		VertexFormat.NormalCount = std::min(1, pMesh->GetElementNormalCount());
 		if (pMesh->GetElementNormalCount() > static_cast<int>(VertexFormat.NormalCount))
@@ -754,10 +755,15 @@ public:
 							Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
 
 							BoneOrderNumber = 0;
+							float MinWeight = VertexFormat.FloatBlendWeights ? Vertex.BlendWeightsF[0] : ByteToNormalizedFloat((Vertex.BlendWeightsI >> (0 * 8)) & 0xff);
 							for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
 							{
-								if (Vertex.GetBlendWeight(bo) < Vertex.GetBlendWeight(BoneOrderNumber))
+								const float Weight = VertexFormat.FloatBlendWeights ? Vertex.BlendWeightsF[bo] : ByteToNormalizedFloat((Vertex.BlendWeightsI >> (bo * 8)) & 0xff);
+								if (Weight < MinWeight)
+								{
 									BoneOrderNumber = bo;
+									MinWeight = Weight;
+								}
 							}
 
 							// The least influencing bone loses a vertex
@@ -773,7 +779,10 @@ public:
 						}
 
 						Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
-						Vertex.SetBlendWeight(BoneOrderNumber, Weight);
+						if (VertexFormat.FloatBlendWeights)
+							Vertex.BlendWeightsF[BoneOrderNumber] = Weight;
+						else
+							reinterpret_cast<uint8_t*>(&Vertex.BlendWeightsI)[3 - BoneOrderNumber] = NormalizedFloatToByte(Weight);
 
 						++BoneClusters[BoneIndex].second;
 					}

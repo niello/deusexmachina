@@ -15,20 +15,6 @@ namespace acl
 
 namespace fs = std::filesystem;
 
-float CVertex::GetBlendWeight(size_t Index) const
-{
-	// return BlendWeights[Index];
-	return ByteToNormalizedFloat((BlendWeights >> (Index * 8)) & 0xff);
-}
-//---------------------------------------------------------------------
-
-void CVertex::SetBlendWeight(size_t Index, float Weight)
-{
-	// BlendWeights[Index] = Weight;
-	reinterpret_cast<uint8_t*>(&BlendWeights)[3 - Index] = NormalizedFloatToByte(Weight);
-}
-//---------------------------------------------------------------------
-
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices,
 	std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices)
 {
@@ -151,14 +137,21 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 		// Max 4 bones per vertex are supported, at least for now
 		assert(VertexFormat.BonesPerVertex < 5);
 
-		if (VertexFormat.BonesPerVertex == 1)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
-		else if (VertexFormat.BonesPerVertex == 2)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
-		else if (VertexFormat.BonesPerVertex == 3)
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+		if (VertexFormat.FloatBlendWeights)
+		{
+			if (VertexFormat.BonesPerVertex == 1)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
+			else if (VertexFormat.BonesPerVertex == 2)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_2, 0, 0);
+			else if (VertexFormat.BonesPerVertex == 3)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
+			else
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
+		}
 		else
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
+		{
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt8_4_Norm, 0, 0);
+		}
 	}
 
 	// Save mesh groups (always 1 LOD now, may change later)
@@ -218,7 +211,10 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 						WriteStream(File, static_cast<uint8_t>(BoneIndex));
 				}
 
-				WriteStream<uint32_t>(File, Vertex.BlendWeights);
+				if (VertexFormat.FloatBlendWeights)
+					File.write(reinterpret_cast<const char*>(Vertex.BlendWeightsF), VertexFormat.BonesPerVertex * sizeof(float));
+				else
+					WriteStream<uint32_t>(File, Vertex.BlendWeightsI);
 			}
 		}
 	}

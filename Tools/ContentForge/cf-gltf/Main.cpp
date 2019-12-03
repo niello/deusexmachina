@@ -457,7 +457,7 @@ public:
 		if (!Children.empty())
 			NodeSection.emplace_back(sidChildren, std::move(Children));
 
-		CStrID NodeID = CStrID(Node.name.c_str());
+		CStrID NodeID = CStrID(Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name.c_str());
 		if (ParamsUtils::HasParam(Nodes, NodeID))
 			Ctx.Log.LogWarning("Duplicated node overwritten with name " + Node.name);
 
@@ -508,6 +508,7 @@ public:
 		const auto& Mesh = Ctx.Doc.meshes[MeshName];
 
 		CVertexFormat VertexFormat;
+		VertexFormat.FloatBlendWeights = false;
 		int BoneCount = 0;
 
 		constexpr const char* UVAttributes[] = { gltf::ACCESSOR_TEXCOORD_0, gltf::ACCESSOR_TEXCOORD_1 };
@@ -664,15 +665,18 @@ public:
 				auto AttrIt = Weights.cbegin();
 				for (auto& Vertex : RawVertices)
 				{
-					Vertex.BlendWeights = *AttrIt++;
-
-					// TODO: store 4 float weights? Then get floats from accessor, don't pack with GetJointWeights32.
-					// Or store uint32_t weights, then can store as is here, don't unpack!
-					//const uint32_t Packed = *AttrIt++;
-					//Vertex.BlendWeights[0] = gltf::Math::ByteToFloat((Packed >>  0) & 0xff);
-					//Vertex.BlendWeights[1] = gltf::Math::ByteToFloat((Packed >>  8) & 0xff);
-					//Vertex.BlendWeights[2] = gltf::Math::ByteToFloat((Packed >> 16) & 0xff);
-					//Vertex.BlendWeights[3] = gltf::Math::ByteToFloat((Packed >> 24) & 0xff);
+					if (VertexFormat.FloatBlendWeights)
+					{
+						const uint32_t Packed = *AttrIt++;
+						Vertex.BlendWeightsF[0] = gltf::Math::ByteToFloat((Packed >>  0) & 0xff);
+						Vertex.BlendWeightsF[1] = gltf::Math::ByteToFloat((Packed >>  8) & 0xff);
+						Vertex.BlendWeightsF[2] = gltf::Math::ByteToFloat((Packed >> 16) & 0xff);
+						Vertex.BlendWeightsF[3] = gltf::Math::ByteToFloat((Packed >> 24) & 0xff);
+					}
+					else
+					{
+						Vertex.BlendWeightsI = *AttrIt++;
+					}
 				}
 			}
 
@@ -744,7 +748,8 @@ public:
 			case gltf::AlphaMode::ALPHA_OPAQUE: EffectTypeID += "Opaque"; break;
 			default:
 			{
-				//???Where to handle additive? Some extension?
+				// Additive KHR_blend: https://github.com/KhronosGroup/glTF/pull/1302
+				// May be additive must be hardcoded for particles.
 				Ctx.Log.LogError("glTF material " + Mtl.name + " has unknown alpha mode!");
 				return false;
 			}

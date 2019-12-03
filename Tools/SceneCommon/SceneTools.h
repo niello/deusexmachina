@@ -87,19 +87,16 @@ struct float4
 struct CVertex
 {
 	//???use 32-bit ACL/RTM vectors?
-	float3 Position;
-	float3 Normal;
-	float3 Tangent;
-	float3 Bitangent;
+	float3   Position;
+	float3   Normal;
+	float3   Tangent;
+	float3   Bitangent;
 	uint32_t Color; // RGBA
-	float2 UV[MaxUV];
-	int    BlendIndices[MaxBonesPerVertex];
-	//float  BlendWeights[MaxBonesPerVertex];
-	uint32_t BlendWeights; // Packed info byte values
-	size_t BonesUsed = 0;
-
-	float GetBlendWeight(size_t Index) const;
-	void SetBlendWeight(size_t Index, float Weight);
+	float2   UV[MaxUV];
+	size_t   BonesUsed = 0;
+	int      BlendIndices[MaxBonesPerVertex];
+	float    BlendWeightsF[MaxBonesPerVertex];
+	uint32_t BlendWeightsI; // 4x uint8_t packed
 };
 
 struct CVertexFormat
@@ -110,6 +107,7 @@ struct CVertexFormat
 	size_t ColorCount = 0;
 	size_t UVCount = 0;
 	size_t BonesPerVertex = 0;
+	bool   FloatBlendWeights = false;
 };
 
 struct CMeshGroup
