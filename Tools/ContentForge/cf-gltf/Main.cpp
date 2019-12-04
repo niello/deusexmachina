@@ -63,8 +63,9 @@ static inline gltf::Vector3 LerpVector3(const gltf::Vector3& a, const gltf::Vect
 }
 //---------------------------------------------------------------------
 
-static inline gltf::Quaternion SlerpQuaternion(const gltf::Quaternion& a, const gltf::Quaternion& b, float Factor)
+static inline gltf::Quaternion LerpQuaternion(const gltf::Quaternion& a, const gltf::Quaternion& b, float Factor)
 {
+	// Is slerp?
 	const auto q = acl::quat_lerp({ a.x, a.y, a.z, a.w }, { b.x, b.y, b.z, b.w }, Factor);
 	return { acl::quat_get_x(q), acl::quat_get_y(q), acl::quat_get_z(q), acl::quat_get_w(q) };
 }
@@ -1384,7 +1385,7 @@ public:
 						const float Factor = (Time - PrevTime) / (*ItNextKey - PrevTime);
 
 						Scaling = LerpVector3(pScalings[NextKeyNumber - 1], pScalings[NextKeyNumber], Factor);
-						Rotation = SlerpQuaternion(pRotations[NextKeyNumber - 1], pRotations[NextKeyNumber], Factor);
+						Rotation = LerpQuaternion(pRotations[NextKeyNumber - 1], pRotations[NextKeyNumber], Factor);
 						Translation = LerpVector3(pTranslations[NextKeyNumber - 1], pTranslations[NextKeyNumber], Factor);
 					}
 				}
