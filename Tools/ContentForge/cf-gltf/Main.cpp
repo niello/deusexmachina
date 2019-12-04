@@ -33,6 +33,43 @@ static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::str
 }
 //---------------------------------------------------------------------
 
+static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
+	std::vector<acl::RigidBone>& Bones, std::vector<const gltf::Node*>& Nodes, const gltf::Document& Doc)
+{
+	acl::RigidBone Bone;
+	Bone.parent_index = ParentIndex;
+
+	// TODO: metric from per-bone AABBs?
+	Bone.vertex_distance = 3.f;
+
+	const auto BoneIndex = static_cast<uint16_t>(Bones.size());
+
+	Nodes.push_back(&Doc.nodes[NodeID]);
+	Bones.push_back(std::move(Bone));
+
+	const auto Range = Hierarchy.equal_range(NodeID);
+	for (auto It = Range.first; It != Range.second; ++It)
+		BuildACLSkeleton(It->second, BoneIndex, Hierarchy, Bones, Nodes, Doc);
+}
+//---------------------------------------------------------------------
+
+static inline gltf::Vector3 LerpVector3(const gltf::Vector3& a, const gltf::Vector3& b, float Factor)
+{
+	gltf::Vector3 Result;
+	Result.x = a.x * (1.f - Factor) + b.x * Factor;
+	Result.y = a.y * (1.f - Factor) + b.y * Factor;
+	Result.z = a.z * (1.f - Factor) + b.z * Factor;
+	return Result;
+}
+//---------------------------------------------------------------------
+
+static inline gltf::Quaternion SlerpQuaternion(const gltf::Quaternion& a, const gltf::Quaternion& b, float Factor)
+{
+	const auto q = acl::quat_lerp({ a.x, a.y, a.z, a.w }, { b.x, b.y, b.z, b.w }, Factor);
+	return { acl::quat_get_x(q), acl::quat_get_y(q), acl::quat_get_z(q), acl::quat_get_w(q) };
+}
+//---------------------------------------------------------------------
+
 class CStreamReader : public gltf::IStreamReader
 {
 public:
@@ -1158,25 +1195,6 @@ public:
 		return true;
 	}
 
-	static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
-		std::vector<acl::RigidBone>& Bones, std::vector<const gltf::Node*>& Nodes, const gltf::Document& Doc)
-	{
-		acl::RigidBone Bone;
-		Bone.parent_index = ParentIndex;
-
-		// TODO: metric from per-bone AABBs?
-		Bone.vertex_distance = 3.f;
-
-		const auto BoneIndex = static_cast<uint16_t>(Bones.size());
-
-		Nodes.push_back(&Doc.nodes[NodeID]);
-		Bones.push_back(std::move(Bone));
-
-		const auto Range = Hierarchy.equal_range(NodeID);
-		for (auto It = Range.first; It != Range.second; ++It)
-			BuildACLSkeleton(It->second, BoneIndex, Hierarchy, Bones, Nodes, Doc);
-	}
-
 	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
 	{
 		const auto RsrcName = GetValidResourceName(Anim.name.empty() ? Ctx.TaskName + '_' + Anim.id : Anim.name);
@@ -1202,13 +1220,17 @@ public:
 
 		const auto FrameCount = static_cast<uint32_t>(std::ceilf((MaxTime - MinTime) * _AnimSamplingRate));
 
-		// Build parent-child pairs from the scene root to all animated nodes
+		// Collect animation data for each animated node
 
 		struct CNodeAnimation
 		{
-			const gltf::AnimationChannel* pScaling = nullptr;
-			const gltf::AnimationChannel* pRotation = nullptr;
-			const gltf::AnimationChannel* pTranslation = nullptr;
+			// For verification only
+			std::string KeyTimesAccessorID;
+
+			std::vector<float> KeyTimes;
+			std::vector<float> ScalingValues;
+			std::vector<float> RotationValues;
+			std::vector<float> TranslationValues;
 		};
 
 		std::set<std::string> OpenList;
@@ -1228,13 +1250,37 @@ public:
 			if (It == AnimatedNodes.end())
 				It = AnimatedNodes.emplace(Channel.target.nodeId, CNodeAnimation{}).first;
 
+			const auto& Sampler = Anim.samplers[Channel.samplerId];
+
+			// Time source must be the same for all SRT channels
+			if (It->second.KeyTimes.empty())
+			{
+				It->second.KeyTimes = std::move(gltf::AnimationUtils::GetKeyframeTimes(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+				It->second.KeyTimesAccessorID = Sampler.inputAccessorId;
+			}
+			else
+			{
+				assert(It->second.KeyTimesAccessorID == Sampler.inputAccessorId);
+			}
+
+			// Only linear interpolation is supported now
+			assert(Sampler.interpolation == gltf::InterpolationType::INTERPOLATION_LINEAR);
+
 			switch (Channel.target.path)
 			{
-				case gltf::TargetPath::TARGET_SCALE:       It->second.pScaling = &Channel; break;
-				case gltf::TargetPath::TARGET_ROTATION:    It->second.pRotation = &Channel; break;
-				case gltf::TargetPath::TARGET_TRANSLATION: It->second.pTranslation = &Channel; break;
+				case gltf::TargetPath::TARGET_SCALE:
+					It->second.ScalingValues = std::move(gltf::AnimationUtils::GetScales(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					break;
+				case gltf::TargetPath::TARGET_ROTATION:
+					It->second.RotationValues = std::move(gltf::AnimationUtils::GetRotations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					break;
+				case gltf::TargetPath::TARGET_TRANSLATION:
+					It->second.TranslationValues = std::move(gltf::AnimationUtils::GetTranslations(Ctx.Doc, *Ctx.ResourceReader, Sampler));
+					break;
 			}
 		}
+
+		// Build parent-child pairs from the scene root to all animated nodes
 
 		// TODO: build hierarchy once for the whole scene?
 		std::multimap<std::string, std::string> Hierarchy;
@@ -1290,16 +1336,13 @@ public:
 			Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
 
 		acl::String ClipName(Ctx.ACLAllocator, RsrcName.c_str());
-		acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton, FrameCount, _AnimSamplingRate, ClipName);
+		acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton, FrameCount + 1, _AnimSamplingRate, ClipName);
 
-		// Process all nodes, animating those with curves and passing static values when no curves are present
-		//Anim.channels [ sampler -> node property to animate ]
-		//Anim.samplers [ key frames -> curve key values + interpolation mode ]
-		//???does ACL support non-animated nodes in the middle of the skeleton?
+		// Sample animation curves and write into ACL
 
 		CNodeAnimation NoAnimation;
 
-		for (uint32_t SampleIndex = 0; SampleIndex < FrameCount; ++SampleIndex)
+		for (uint32_t SampleIndex = 0; SampleIndex <= FrameCount; ++SampleIndex)
 		{
 			const float Time = MinTime + static_cast<float>(SampleIndex) / _AnimSamplingRate;
 
@@ -1307,40 +1350,49 @@ public:
 			{
 				const auto pNode = Nodes[BoneIdx];
 
+				//???or can ignore completely in ACL if channel is not animated? Would be especially good for completely not animated nodes!
+				auto Scaling = pNode->scale;
+				auto Rotation = pNode->rotation;
+				auto Translation = pNode->translation;
+
 				const auto It = AnimatedNodes.find(pNode->id);
-				const CNodeAnimation& Channels = (It == AnimatedNodes.cend()) ? NoAnimation : It->second;
+				if (It != AnimatedNodes.cend() && !It->second.KeyTimes.empty())
+				{
+					const CNodeAnimation& NodeAnim = It->second;
 
-				if (Channels.pScaling)
-				{
-					// Sample
-				}
-				else
-				{
-					// Get from node or skip in ACL
-				}
+					auto pScalings = reinterpret_cast<const gltf::Vector3*>(NodeAnim.ScalingValues.data());
+					auto pRotations = reinterpret_cast<const gltf::Quaternion*>(NodeAnim.RotationValues.data());
+					auto pTranslations = reinterpret_cast<const gltf::Vector3*>(NodeAnim.TranslationValues.data());
 
-				if (Channels.pRotation)
-				{
-					// Sample
-				}
-				else
-				{
-					// Get from node or skip in ACL
-				}
+					auto ItNextKey = std::lower_bound(NodeAnim.KeyTimes.cbegin(), NodeAnim.KeyTimes.cend(), Time);
+					const auto NextKeyNumber = std::distance(NodeAnim.KeyTimes.cbegin(), ItNextKey);
+					const bool IsLastKey = (ItNextKey == NodeAnim.KeyTimes.cend());
+					if (NextKeyNumber == 0 || IsLastKey || CompareFloat(*ItNextKey, Time, 0.0001f))
+					{
+						// Get keyframe value without interpolation
+						const auto KeyNumber = IsLastKey ? NextKeyNumber - 1 : NextKeyNumber;
+						Scaling = pScalings[KeyNumber];
+						Rotation = pRotations[KeyNumber];
+						Translation = pTranslations[KeyNumber];
+					}
+					else
+					{
+						// Interpolate
+						auto ItPrevKey = ItNextKey;
+						--ItPrevKey;
+						const float PrevTime = *ItPrevKey;
+						const float Factor = (Time - PrevTime) / (*ItNextKey - PrevTime);
 
-				if (Channels.pTranslation)
-				{
-					// Sample
-				}
-				else
-				{
-					// Get from node or skip in ACL
+						Scaling = LerpVector3(pScalings[NextKeyNumber - 1], pScalings[NextKeyNumber], Factor);
+						Rotation = SlerpQuaternion(pRotations[NextKeyNumber - 1], pRotations[NextKeyNumber], Factor);
+						Translation = LerpVector3(pTranslations[NextKeyNumber - 1], pTranslations[NextKeyNumber], Factor);
+					}
 				}
 
 				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
-				//Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
-				//Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
-				//Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
+				Bone.scale_track.set_sample(SampleIndex, { Scaling.x, Scaling.y, Scaling.z, 1.0 });
+				Bone.rotation_track.set_sample(SampleIndex, { Rotation.x, Rotation.y, Rotation.z, Rotation.w });
+				Bone.translation_track.set_sample(SampleIndex, { Translation.x, Translation.y, Translation.z, 1.0 });
 			}
 		}
 
