@@ -1158,30 +1158,23 @@ public:
 		return true;
 	}
 
-	static void BuildACLSkeleton()
+	static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
+		std::vector<acl::RigidBone>& Bones, std::vector<std::string>& Nodes)
 	{
 		acl::RigidBone Bone;
-		if (Nodes.empty())
-		{
-			Bone.parent_index = acl::k_invalid_bone_index;
-		}
-		else
-		{
-			auto It = std::find(Nodes.crbegin(), Nodes.crend(), pNode->GetParent());
-			assert(It != Nodes.crend());
-			Bone.parent_index = static_cast<uint16_t>(std::distance(Nodes.cbegin(), It.base()) - 1);
-		}
-
-		const auto Range = Hierarchy.equal_range(CurrNodeID);
-		for (auto It = Range.first; It != Range.second; ++It)
-		{
-		}
+		Bone.parent_index = ParentIndex;
 
 		// TODO: metric from per-bone AABBs?
 		Bone.vertex_distance = 3.f;
 
-		Nodes.push_back(pNode);
+		const auto BoneIndex = static_cast<uint16_t>(Bones.size());
+
+		Nodes.push_back(NodeID);
 		Bones.push_back(std::move(Bone));
+
+		const auto Range = Hierarchy.equal_range(NodeID);
+		for (auto It = Range.first; It != Range.second; ++It)
+			BuildACLSkeleton(It->second, BoneIndex, Hierarchy, Bones, Nodes);
 	}
 
 	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
@@ -1261,13 +1254,13 @@ public:
 		// Build ACL skeleton from hierarchy data
 
 		std::vector<acl::RigidBone> Bones;
-		std::vector<const gltf::Node*> Nodes;
-		BuildACLSkeleton(RootNodeID, Hierarchy, Bones, Nodes);
+		std::vector<std::string> Nodes;
+		BuildACLSkeleton(RootNodeID, acl::k_invalid_bone_index, Hierarchy, Bones, Nodes);
+
+		assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
 
 		acl::RigidSkeletonPtr Skeleton = acl::make_unique<acl::RigidSkeleton>(
 			Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
-
-		assert(Nodes.size() <= std::numeric_limits<uint16_t>().max());
 
 		acl::String ClipName(Ctx.ACLAllocator, RsrcName.c_str());
 		acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton, FrameCount, _AnimSamplingRate, ClipName);
@@ -1277,7 +1270,27 @@ public:
 		//Anim.samplers [ key frames -> curve key values + interpolation mode ]
 		//???does ACL support non-animated nodes in the middle of the skeleton?
 
-		// fill clip with raw data
+		/*
+		uint32_t SampleIndex = 0;
+		FbxTime FrameTime;
+		for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
+		{
+			FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+
+			for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
+			{
+				const auto LocalTfm = Nodes[BoneIdx]->EvaluateLocalTransform(FrameTime);
+				const auto Scaling = LocalTfm.GetS();
+				const auto Rotation = LocalTfm.GetQ();
+				const auto Translation = LocalTfm.GetT();
+
+				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
+				Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
+				Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
+				Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
+			}
+		}
+		*/
 
 		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
 		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log);
