@@ -1159,7 +1159,7 @@ public:
 	}
 
 	static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
-		std::vector<acl::RigidBone>& Bones, std::vector<std::string>& Nodes)
+		std::vector<acl::RigidBone>& Bones, std::vector<const gltf::Node*>& Nodes, const gltf::Document& Doc)
 	{
 		acl::RigidBone Bone;
 		Bone.parent_index = ParentIndex;
@@ -1169,12 +1169,12 @@ public:
 
 		const auto BoneIndex = static_cast<uint16_t>(Bones.size());
 
-		Nodes.push_back(NodeID);
+		Nodes.push_back(&Doc.nodes[NodeID]);
 		Bones.push_back(std::move(Bone));
 
 		const auto Range = Hierarchy.equal_range(NodeID);
 		for (auto It = Range.first; It != Range.second; ++It)
-			BuildACLSkeleton(It->second, BoneIndex, Hierarchy, Bones, Nodes);
+			BuildACLSkeleton(It->second, BoneIndex, Hierarchy, Bones, Nodes, Doc);
 	}
 
 	bool ExportAnimation(const gltf::Animation& Anim, CContext& Ctx)
@@ -1204,13 +1204,40 @@ public:
 
 		// Build parent-child pairs from the scene root to all animated nodes
 
-		std::set<std::string> AnimatedNodes;
-		for (const auto& Channel : Anim.channels.Elements())
-			AnimatedNodes.insert(Channel.target.nodeId);
+		struct CNodeAnimation
+		{
+			const gltf::AnimationChannel* pScaling = nullptr;
+			const gltf::AnimationChannel* pRotation = nullptr;
+			const gltf::AnimationChannel* pTranslation = nullptr;
+		};
 
-		// TODO: build once for the whole scene?
+		std::set<std::string> OpenList;
+		std::map<std::string, CNodeAnimation> AnimatedNodes;
+		for (const auto& Channel : Anim.channels.Elements())
+		{
+			if (Channel.target.path != gltf::TargetPath::TARGET_SCALE &&
+				Channel.target.path != gltf::TargetPath::TARGET_ROTATION &&
+				Channel.target.path != gltf::TargetPath::TARGET_TRANSLATION)
+			{
+				continue;
+			}
+
+			OpenList.insert(Channel.target.nodeId);
+
+			auto It = AnimatedNodes.find(Channel.target.nodeId);
+			if (It == AnimatedNodes.end())
+				It = AnimatedNodes.emplace(Channel.target.nodeId, CNodeAnimation{}).first;
+
+			switch (Channel.target.path)
+			{
+				case gltf::TargetPath::TARGET_SCALE:       It->second.pScaling = &Channel; break;
+				case gltf::TargetPath::TARGET_ROTATION:    It->second.pRotation = &Channel; break;
+				case gltf::TargetPath::TARGET_TRANSLATION: It->second.pTranslation = &Channel; break;
+			}
+		}
+
+		// TODO: build hierarchy once for the whole scene?
 		std::multimap<std::string, std::string> Hierarchy;
-		std::set<std::string> OpenList = AnimatedNodes;
 		std::set<std::string> ClosedList;
 		while (!OpenList.empty())
 		{
@@ -1254,8 +1281,8 @@ public:
 		// Build ACL skeleton from hierarchy data
 
 		std::vector<acl::RigidBone> Bones;
-		std::vector<std::string> Nodes;
-		BuildACLSkeleton(RootNodeID, acl::k_invalid_bone_index, Hierarchy, Bones, Nodes);
+		std::vector<const gltf::Node*> Nodes;
+		BuildACLSkeleton(RootNodeID, acl::k_invalid_bone_index, Hierarchy, Bones, Nodes, Ctx.Doc);
 
 		assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
 
@@ -1270,27 +1297,52 @@ public:
 		//Anim.samplers [ key frames -> curve key values + interpolation mode ]
 		//???does ACL support non-animated nodes in the middle of the skeleton?
 
-		/*
-		uint32_t SampleIndex = 0;
-		FbxTime FrameTime;
-		for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
+		CNodeAnimation NoAnimation;
+
+		for (uint32_t SampleIndex = 0; SampleIndex < FrameCount; ++SampleIndex)
 		{
-			FrameTime.SetFrame(Frame, FbxTime::GetGlobalTimeMode());
+			const float Time = MinTime + static_cast<float>(SampleIndex) / _AnimSamplingRate;
 
 			for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
 			{
-				const auto LocalTfm = Nodes[BoneIdx]->EvaluateLocalTransform(FrameTime);
-				const auto Scaling = LocalTfm.GetS();
-				const auto Rotation = LocalTfm.GetQ();
-				const auto Translation = LocalTfm.GetT();
+				const auto pNode = Nodes[BoneIdx];
+
+				const auto It = AnimatedNodes.find(pNode->id);
+				const CNodeAnimation& Channels = (It == AnimatedNodes.cend()) ? NoAnimation : It->second;
+
+				if (Channels.pScaling)
+				{
+					// Sample
+				}
+				else
+				{
+					// Get from node or skip in ACL
+				}
+
+				if (Channels.pRotation)
+				{
+					// Sample
+				}
+				else
+				{
+					// Get from node or skip in ACL
+				}
+
+				if (Channels.pTranslation)
+				{
+					// Sample
+				}
+				else
+				{
+					// Get from node or skip in ACL
+				}
 
 				acl::AnimatedBone& Bone = Clip.get_animated_bone(static_cast<uint16_t>(BoneIdx));
-				Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
-				Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
-				Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
+				//Bone.scale_track.set_sample(SampleIndex, { Scaling[0], Scaling[1], Scaling[2], 1.0 });
+				//Bone.rotation_track.set_sample(SampleIndex, { Rotation[0], Rotation[1], Rotation[2], Rotation[3] });
+				//Bone.translation_track.set_sample(SampleIndex, { Translation[0], Translation[1], Translation[2], 1.0 });
 			}
 		}
-		*/
 
 		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
 		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log);
