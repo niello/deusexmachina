@@ -380,7 +380,9 @@ public:
 	{
 		const auto& Node = Ctx.Doc.nodes[NodeName];
 
-		Ctx.Log.LogDebug(std::string("Node ") + Node.name);
+		std::string NodeID = Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name;
+
+		Ctx.Log.LogDebug("Node " + NodeID);
 
 		static const CStrID sidTranslation("Translation");
 		static const CStrID sidRotation("Rotation");
@@ -492,11 +494,10 @@ public:
 		if (!Children.empty())
 			NodeSection.emplace_back(sidChildren, std::move(Children));
 
-		CStrID NodeID = CStrID(Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name.c_str());
-		if (ParamsUtils::HasParam(Nodes, NodeID))
+		if (ParamsUtils::HasParam(Nodes, CStrID(NodeID)))
 			Ctx.Log.LogWarning("Duplicated node overwritten with name " + Node.name);
 
-		Nodes.emplace_back(NodeID, std::move(NodeSection));
+		Nodes.emplace_back(CStrID(NodeID), std::move(NodeSection));
 
 		return true;
 	}
@@ -988,13 +989,13 @@ public:
 
 		const auto& Image = Ctx.Doc.images[Texture.imageId];
 
-		Ctx.Log.LogDebug("Texture image " + Image.name);
-
 		if (Image.uri.empty())
 		{
 			Ctx.Log.LogError("FIXME: embedded glTF textures not supported, IMPLEMENT!");
 			return false;
 		}
+
+		Ctx.Log.LogDebug("Texture image " + Image.id + ": " + Image.uri + " (" + Image.name + ')');
 
 		const auto SrcPath = Ctx.SrcFolder / Image.uri;
 
