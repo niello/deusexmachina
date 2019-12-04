@@ -1405,6 +1405,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CGLTFTool Tool("cf-gltf", "glTF 2.0 to DeusExMachina resource converter", { 0, 1, 0 });
+	CGLTFTool Tool("cf-gltf", "glTF 2.0 to DeusExMachina resource converter", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }
