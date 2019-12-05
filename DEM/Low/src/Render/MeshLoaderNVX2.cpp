@@ -32,21 +32,21 @@ struct CNVX2Group
 
 enum ENVX2VertexComponent
 {
-	Coord    = (1<<0),
-	Normal   = (1<<1),
-	Uv0      = (1<<2),
-	Uv1      = (1<<3),
-	Uv2      = (1<<4),
-	Uv3      = (1<<5),
-	Color    = (1<<6),
-	Tangent  = (1<<7),
-	Bitangent = (1<<8),
-	Weights  = (1<<9),
-	JIndices = (1<<10),
-	Coord4   = (1<<11),
+	Coord = (1 << 0),
+	Normal = (1 << 1),
+	Uv0 = (1 << 2),
+	Uv1 = (1 << 3),
+	Uv2 = (1 << 4),
+	Uv3 = (1 << 5),
+	Color = (1 << 6),
+	Tangent = (1 << 7),
+	Bitangent = (1 << 8),
+	Weights = (1 << 9),
+	JIndices = (1 << 10),
+	Coord4 = (1 << 11),
 
 	NumVertexComponents = 12,
-	AllComponents = ((1<<NumVertexComponents) - 1)
+	AllComponents = ((1 << NumVertexComponents) - 1)
 };
 
 static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Components)
@@ -255,3 +255,5 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 	return MeshData;
 }
 //---------------------------------------------------------------------
+
+}

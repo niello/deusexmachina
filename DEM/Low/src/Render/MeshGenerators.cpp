@@ -89,7 +89,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	Group.AABB.Min = vector3::Zero;
 	Group.AABB.Max.set(1.f, 0.f, 1.f);
 
-	MeshData->InitGroups(&Group, 1, 1, 1, false);
+	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 
 	return MeshData;
 }
@@ -159,7 +159,7 @@ PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 	Group.AABB.Min.set(-0.5f, -0.5f, -0.5f);
 	Group.AABB.Max.set(0.5f, 0.5f, 0.5f);
 
-	MeshData->InitGroups(&Group, 1, 1, 1, false);
+	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 
 	return MeshData;
 }
