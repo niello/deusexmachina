@@ -485,7 +485,7 @@ bool SaveParamsByScheme(const char* pFileName, const Data::CParams& Params, CStr
 
 	fs::create_directories(Path.parent_path());
 
-	std::ofstream File(Path, std::ios_base::trunc);
+	std::ofstream File(Path, std::ios_base::binary | std::ios_base::trunc);
 	if (!File) return false;
 
 	return SaveParamsByScheme(File, Params, Scheme, SchemeSet);
