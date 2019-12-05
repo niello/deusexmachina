@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CGoalIdle, 'GIDL', AI::CGoal);
+FACTORY_CLASS_IMPL(AI::CGoalIdle, 'GIDL', AI::CGoal);
 
 void CGoalIdle::GetDesiredProps(CWorldState& Dest)
 {

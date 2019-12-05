@@ -2,7 +2,7 @@
 
 namespace Core
 {
-__ImplementClassNoFactory(Core::CObject, Core::CRTTIBaseClass);
+RTTI_CLASS_IMPL(Core::CObject, Core::CRTTIBaseClass);
 
 #ifdef _DEBUG
 CObject::CObjList CObject::List;
@@ -18,7 +18,7 @@ void CObject::DumpLeaks() //???dump CRefCounted leaks too? without class names.
 		{
 			Sys::DbgOut("*** REFCOUNT LEAK %d: Object of class '%s' at address '0x%08lx', refcount is '%d'\n",
 				Number,
-				(*It)->GetClassName().CStr(),
+				(*It)->GetClassName().c_str(),
 				(*It),
 				(*It)->GetRefCount());
 		}

@@ -3,7 +3,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CTextureData, Resources::CResourceObject);
+RTTI_CLASS_IMPL(Render::CTextureData, Resources::CResourceObject);
 
 CTextureData::CTextureData() {}
 CTextureData::~CTextureData() {}

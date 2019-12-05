@@ -6,7 +6,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CLightAttribute, 'NALT', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Frame::CLightAttribute, 'NALT', Scene::CNodeAttribute);
 
 bool CLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

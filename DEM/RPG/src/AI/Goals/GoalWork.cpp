@@ -10,7 +10,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CGoalWork, 'GWRK', AI::CGoal);
+FACTORY_CLASS_IMPL(AI::CGoalWork, 'GWRK', AI::CGoal);
 
 void CGoalWork::Init(Data::PParams Params)
 {

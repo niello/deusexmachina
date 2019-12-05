@@ -12,7 +12,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropAIHints, 'PRAH', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropAIHints, 'PRAH', Game::CProperty);
 __ImplementPropertyStorage(CPropAIHints);
 
 using namespace Data;
@@ -114,7 +114,7 @@ bool CPropAIHints::OnPropsActivated(Events::CEventDispatcher* pDispatcher, const
 		PParams PrmVal = Prm.GetValue<PParams>();
 		CRecord Rec;
 			
-		Rec.Stimulus = (CStimulus*)Factory->Create(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), CString::Empty));
+		Rec.Stimulus = Core::CFactory::Instance().Create<CStimulus>(StrStimulusPrefix + PrmVal->Get<CString>(CStrID("Type"), CString::Empty));
 
 		Rec.Stimulus->SourceEntityID = GetEntity()->GetUID();
 		Rec.Stimulus->Position = Pos; //!!!offset * tfm!

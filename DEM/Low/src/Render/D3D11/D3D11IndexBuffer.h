@@ -14,7 +14,7 @@ namespace Render
 
 class CD3D11IndexBuffer: public CIndexBuffer
 {
-	__DeclareClass(CD3D11IndexBuffer);
+	FACTORY_CLASS_DECL;
 
 protected:
 

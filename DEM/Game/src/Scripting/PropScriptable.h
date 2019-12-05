@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_SCRIPTABLE_H__
-#define __DEM_L2_PROP_SCRIPTABLE_H__
-
 #include <Game/Property.h>
 #include <Scripting/EntityScriptObject.h>
 
@@ -13,7 +10,7 @@ using namespace Scripting;
 
 class CPropScriptable: public Game::CProperty
 {
-	__DeclareClass(CPropScriptable);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -37,5 +34,3 @@ public:
 };
 
 }
-
-#endif

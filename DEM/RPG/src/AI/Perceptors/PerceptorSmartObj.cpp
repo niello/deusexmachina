@@ -9,7 +9,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CPerceptorSmartObj, 'PESO', AI::CPerceptor);
+FACTORY_CLASS_IMPL(AI::CPerceptorSmartObj, 'PESO', AI::CPerceptor);
 
 void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {

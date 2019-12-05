@@ -9,7 +9,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropWeapon, 'PWPN', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropWeapon, 'PWPN', Game::CProperty);
 __ImplementPropertyStorage(CPropWeapon);
 
 //!!!not here, in strid (static CStrID::Attack)!

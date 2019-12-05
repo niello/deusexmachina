@@ -18,7 +18,7 @@ namespace App
 
 class CStateHandler: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

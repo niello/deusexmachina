@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_PERCEPTOR_OBSTACLE_H__
-#define __DEM_L3_AI_PERCEPTOR_OBSTACLE_H__
-
 #include <AI/Perception/Perceptor.h>
 
 // Processes visual and tactile info and generates obstacles to avoid
@@ -14,7 +11,7 @@ namespace AI
 
 class CPerceptorObstacle: public CPerceptor
 {
-	__DeclareClass(CPerceptorObstacle);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -22,5 +19,3 @@ public:
 };
 
 }
-
-#endif

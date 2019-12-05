@@ -26,7 +26,7 @@ class CGraphicsResourceManager;
 
 class CAmbientLightAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClass(CAmbientLightAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 

@@ -24,7 +24,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
+FACTORY_CLASS_IMPL(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
 struct CRenderQueueCmp_FrontToBack
 {
@@ -367,14 +367,14 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 
 		const Core::CRTTI* pObjType = nullptr;
 		const Data::CParam& PrmObject = RendererDesc.Get(CStrID("Object"));
-		if (PrmObject.IsA<int>()) pObjType = Factory->GetRTTI(Data::CFourCC((I32)PrmObject.GetValue<int>()));
-		else if (PrmObject.IsA<CString>()) pObjType = Factory->GetRTTI(PrmObject.GetValue<CString>());
+		if (PrmObject.IsA<int>()) pObjType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PrmObject.GetValue<int>()));
+		else if (PrmObject.IsA<CString>()) pObjType = Core::CFactory::Instance().GetRTTI(PrmObject.GetValue<CString>());
 		if (!pObjType) FAIL;
 
 		const Core::CRTTI* pRendererType = nullptr;
 		const Data::CParam& PrmRenderer = RendererDesc.Get(CStrID("Renderer"));
-		if (PrmRenderer.IsA<int>()) pRendererType = Factory->GetRTTI(Data::CFourCC((I32)PrmRenderer.GetValue<int>()));
-		else if (PrmRenderer.IsA<CString>()) pRendererType = Factory->GetRTTI(PrmRenderer.GetValue<CString>());
+		if (PrmRenderer.IsA<int>()) pRendererType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PrmRenderer.GetValue<int>()));
+		else if (PrmRenderer.IsA<CString>()) pRendererType = Core::CFactory::Instance().GetRTTI(PrmRenderer.GetValue<CString>());
 		if (!pRendererType) FAIL;
 
 		Render::IRenderer* pRenderer = nullptr;

@@ -10,7 +10,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionTplUseSmartObj, 'ATUS', AI::CActionTpl);
+FACTORY_CLASS_IMPL(AI::CActionTplUseSmartObj, 'ATUS', AI::CActionTpl);
 
 void CActionTplUseSmartObj::Init(Data::PParams Params)
 {

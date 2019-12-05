@@ -144,7 +144,7 @@ CProperty* CEntityManager::AttachProperty(CEntity& Entity, const Core::CRTTI* pR
 
 	PProperty Prop = (CProperty*)pRTTI->CreateClassInstance();
 	CPropertyStorage* pStorage = Prop->GetStorage();
-	n_assert2_dbg(pStorage, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
+	n_assert2_dbg(pStorage, ("Property " + pRTTI->GetName() + " is not registered!").c_str());
 
 	if (!pStorage->Get(Entity.GetUID(), Prop))
 	{
@@ -162,7 +162,7 @@ void CEntityManager::RemoveProperty(CEntity& Entity, const Core::CRTTI* pRTTI) c
 {
 	if (!pRTTI) return;
 	IPTR Idx = PropStorages.FindIndex(pRTTI);
-	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
+	n_assert2_dbg(Idx != INVALID_INDEX, ("Property " + pRTTI->GetName() + " is not registered!").c_str());
 	if (Idx == INVALID_INDEX) return;
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);
 	n_assert_dbg(pStorage);
@@ -189,7 +189,7 @@ CProperty* CEntityManager::GetProperty(CStrID EntityID, const Core::CRTTI* pRTTI
 		pStorageRTTI = pStorageRTTI->GetParent();
 		Idx = PropStorages.FindIndex(pStorageRTTI);
 	}
-	n_assert2_dbg(Idx != INVALID_INDEX, (CString("Property ") + pRTTI->GetName() + " is not registered!").CStr());
+	n_assert2_dbg(Idx != INVALID_INDEX, ("Property " + pRTTI->GetName() + " is not registered!").c_str());
 	if (Idx == INVALID_INDEX) return nullptr;
 
 	CPropertyStorage* pStorage = *PropStorages.ValueAt(Idx);

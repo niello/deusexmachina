@@ -10,7 +10,7 @@ namespace Render
 
 class CTexture: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

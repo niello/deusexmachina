@@ -13,18 +13,17 @@ namespace Render
 
 class CD3D9VertexLayout: public CVertexLayout
 {
-	__DeclareClass(CD3D9VertexLayout);
+	FACTORY_CLASS_DECL;
 
 protected:
 
-	IDirect3DVertexDeclaration9*	pDecl;
-	U32								InstanceStreamFlags;	// (1 << StreamIndex) is set if it is an instance data stream
+	IDirect3DVertexDeclaration9* pDecl = nullptr;
+	U32                          InstanceStreamFlags = 0; // (1 << StreamIndex) is set if it is an instance data stream
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9VertexLayout(): pDecl(nullptr), InstanceStreamFlags(0) {}
 	virtual ~CD3D9VertexLayout() { InternalDestroy(); }
 
 	bool							Create(const CVertexComponent* pComponents, UPTR Count, IDirect3DVertexDeclaration9* pD3DDecl);

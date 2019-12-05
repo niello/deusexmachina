@@ -11,7 +11,7 @@ namespace Frame
 
 class CRenderPhaseGeometry: public CRenderPhase
 {
-	__DeclareClass(CRenderPhaseGeometry);
+	FACTORY_CLASS_DECL;
 
 protected:
 

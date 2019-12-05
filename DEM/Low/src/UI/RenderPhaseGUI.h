@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_UI_RENDERER_H__
-#define __DEM_L1_UI_RENDERER_H__
-
 #include <Frame/RenderPhase.h>
 #include <UI/UIFwd.h>
 
@@ -12,7 +9,7 @@ namespace Frame
 
 class CRenderPhaseGUI: public CRenderPhase
 {
-	__DeclareClass(CRenderPhaseGUI);
+	FACTORY_CLASS_DECL;
 
 private:
 
@@ -28,5 +25,3 @@ public:
 typedef Ptr<CRenderPhaseGUI> PRenderPhaseGUI;
 
 }
-
-#endif

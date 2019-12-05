@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_PROP_EQUIPMENT_H__
-#define __DEM_L3_PROP_EQUIPMENT_H__
-
 #include <Items/Prop/PropInventory.h>
 #include <Data/Dictionary.h>
 
@@ -13,7 +10,7 @@ namespace Prop
 
 class CPropEquipment: public CPropInventory
 {
-	__DeclareClass(CPropEquipment);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -41,5 +38,3 @@ public:
 };
 
 }
-
-#endif

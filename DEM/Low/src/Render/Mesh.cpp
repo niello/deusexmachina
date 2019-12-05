@@ -4,7 +4,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CMesh, 'MESH', Resources::CResourceObject);
+FACTORY_CLASS_IMPL(Render::CMesh, 'MESH', Resources::CResourceObject);
 
 CMesh::CMesh() {}
 

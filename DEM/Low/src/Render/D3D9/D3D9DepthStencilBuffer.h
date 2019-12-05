@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_DEPTH_STENCIL_BUFFER_H__
-#define __DEM_L1_RENDER_D3D9_DEPTH_STENCIL_BUFFER_H__
-
 #include <Render/DepthStencilBuffer.h>
 
 // D3D9 implementation of a depth-stencil buffer.
@@ -14,20 +11,20 @@ namespace Render
 
 class CD3D9DepthStencilBuffer: public CDepthStencilBuffer
 {
-	__DeclareClass(CD3D9DepthStencilBuffer);
+	FACTORY_CLASS_DECL;
 
 protected:
 
-	IDirect3DSurface9* pDSSurface;
+	IDirect3DSurface9* pDSSurface = nullptr;
 
 	// Requested clear operation parameters. For some strange reason in D3D9 we can't
 	// clear RT, clear DS, then set RT and set DS. Setting a new RT results in breaking
 	// of the depth buffer in a such way that it must be cleared again. Until reasons of
 	// this behaviour remain unknown, I will cache ClearDepthStencilBuffer() request and
 	// delay actual clear to the moment of setting DS surface.
-	U32					D3D9ClearFlags;
-	float				ZClearValue;
-	U8					StencilClearValue;
+	U32					D3D9ClearFlags = 0;
+	float				ZClearValue = 1.f;
+	U8					StencilClearValue = 0;
 
 	void				InternalDestroy();
 
@@ -35,8 +32,7 @@ protected:
 
 public:
 
-	CD3D9DepthStencilBuffer(): pDSSurface(nullptr), D3D9ClearFlags(0), ZClearValue(1.f), StencilClearValue(0) {}
-	virtual ~CD3D9DepthStencilBuffer() { InternalDestroy(); }
+	virtual ~CD3D9DepthStencilBuffer() override { InternalDestroy(); }
 
 	bool				Create(IDirect3DSurface9* pSurface); // For internal use
 	virtual void		Destroy() { InternalDestroy(); }
@@ -48,5 +44,3 @@ public:
 typedef Ptr<CD3D9DepthStencilBuffer> PD3D9DepthStencilBuffer;
 
 }
-
-#endif

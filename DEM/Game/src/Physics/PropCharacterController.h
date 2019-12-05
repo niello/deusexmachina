@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_CHARACTER_CTLR_H__
-#define __DEM_L2_PROP_CHARACTER_CTLR_H__
-
 #include <Game/Property.h>
 #include <Physics/CharacterController.h>
 #include <Physics/NodeControllerRigidBody.h>
@@ -17,7 +14,7 @@ class CPropSceneNode;
 
 class CPropCharacterController: public Game::CProperty //???derive from physics property?
 {
-	__DeclareClass(CPropCharacterController);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -52,5 +49,3 @@ public:
 };
 
 }
-
-#endif

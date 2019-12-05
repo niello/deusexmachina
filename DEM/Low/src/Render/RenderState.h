@@ -34,7 +34,7 @@ namespace Render
 
 class CRenderState: public Core::CObject
 {
-	//__DeclareClassNoFactory;
+	//RTTI_CLASS_DECL;
 
 public:
 

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_SAMPLER_H__
-#define __DEM_L1_RENDER_D3D9_SAMPLER_H__
-
 #include <Render/Sampler.h>
 
 // A Direct3D9 implementation of a sampler state object
@@ -19,7 +16,7 @@ namespace Render
 
 class CD3D9Sampler: public CSampler
 {
-	__DeclareClass(CD3D9Sampler);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -49,5 +46,3 @@ public:
 typedef Ptr<CD3D9Sampler> PD3D9Sampler;
 
 }
-
-#endif

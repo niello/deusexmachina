@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_DBG_WATCHER_WINDOW_H__
-#define __DEM_L1_DBG_WATCHER_WINDOW_H__
-
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
@@ -24,7 +21,7 @@ namespace Debug
 
 class CWatcherWindow: public UI::CUIWindow
 {
-	__DeclareClass(CWatcherWindow);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -80,5 +77,3 @@ public:
 typedef Ptr<CWatcherWindow> PWatcherWindow;
 
 }
-
-#endif

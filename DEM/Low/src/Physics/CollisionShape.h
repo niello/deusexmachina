@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_COLLISION_SHAPE_H__
-#define __DEM_L1_COLLISION_SHAPE_H__
-
 #include <Resources/ResourceObject.h>
 
 // Shared collision shape, which can be used by multiple collision objects and rigid bodies
@@ -14,7 +11,7 @@ namespace Physics
 
 class CCollisionShape: public Resources::CResourceObject
 {
-	__DeclareClass(CCollisionShape);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -35,5 +32,3 @@ public:
 typedef Ptr<CCollisionShape> PCollisionShape;
 
 }
-
-#endif

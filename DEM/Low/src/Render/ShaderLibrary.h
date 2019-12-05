@@ -30,7 +30,7 @@ namespace Render
 
 class CShaderLibrary: public Resources::CResourceObject
 {
-	__DeclareClass(CShaderLibrary);
+	FACTORY_CLASS_DECL;
 
 protected:
 

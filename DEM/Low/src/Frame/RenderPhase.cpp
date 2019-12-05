@@ -5,7 +5,7 @@
 
 namespace Frame
 {
-__ImplementClassNoFactory(Frame::CRenderPhase, Core::CObject);
+RTTI_CLASS_IMPL(Frame::CRenderPhase, Core::CObject);
 
 	/*
 bool CRenderPhase::Init(const Data::CParams& Desc, const CRenderPath& Owner)

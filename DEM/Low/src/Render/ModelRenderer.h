@@ -17,7 +17,7 @@ typedef Ptr<class CVertexBuffer> PVertexBuffer;
 
 class CModelRenderer: public IRenderer
 {
-	__DeclareClass(CModelRenderer);
+	FACTORY_CLASS_DECL;
 
 protected:
 

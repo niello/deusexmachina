@@ -2,7 +2,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CGoal, Core::CObject);
+RTTI_CLASS_IMPL(AI::CGoal, Core::CObject);
 
 void CGoal::Init(Data::PParams Params)
 {

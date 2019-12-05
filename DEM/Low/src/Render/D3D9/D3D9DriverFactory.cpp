@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CD3D9DriverFactory, Render::CVideoDriverFactory);
+RTTI_CLASS_IMPL(Render::CD3D9DriverFactory, Render::CVideoDriverFactory);
 
 bool CD3D9DriverFactory::Create()
 {

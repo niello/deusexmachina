@@ -14,7 +14,7 @@ namespace Render
 
 class CSkybox: public IRenderable
 {
-	__DeclareClass(CSkybox);
+	FACTORY_CLASS_DECL;
 
 public:
 

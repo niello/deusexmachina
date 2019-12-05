@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_GOAL_IDLE_H__
-#define __DEM_L2_AI_GOAL_IDLE_H__
-
 #include <AI/Planning/Goal.h>
 
 // Special goal that makes actor want nothing but to be idle. Use this to ensure that actor
@@ -13,7 +10,7 @@ namespace AI
 
 class CGoalIdle: public CGoal
 {
-	__DeclareClass(CGoalIdle);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -22,5 +19,3 @@ public:
 };
 
 }
-
-#endif

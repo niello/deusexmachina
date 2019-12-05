@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_PHYSICS_H__
-#define __DEM_L2_PROP_PHYSICS_H__
-
 #include <Game/Property.h>
 #include <Physics/NodeControllerRigidBody.h>
 #include <Physics/CollisionAttribute.h>
@@ -18,7 +15,7 @@ class CPropSceneNode;
 
 class CPropPhysics: public Game::CProperty
 {
-	__DeclareClass(CPropPhysics);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -44,5 +41,3 @@ public:
 };
 
 }
-
-#endif

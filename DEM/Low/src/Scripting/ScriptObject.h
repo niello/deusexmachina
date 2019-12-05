@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_SCRIPT_OBJ_H__
-#define __DEM_L1_SCRIPT_OBJ_H__
-
 #include <Core/Object.h>
 #include <Data/Array.h>
 #include <Events/EventsFwd.h>
@@ -34,7 +31,7 @@ namespace Scripting
 
 class CScriptObject: public Core::CObject
 {
-	__DeclareClass(CScriptObject);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -97,5 +94,3 @@ int CScriptObject_SubscribeEvent(lua_State* l);
 int CScriptObject_UnsubscribeEvent(lua_State* l);
 
 }
-
-#endif

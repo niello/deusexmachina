@@ -12,7 +12,7 @@ namespace Render
 
 class CD3D9DriverFactory: public CVideoDriverFactory
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

@@ -8,7 +8,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CPerceptorObstacle, 'PEOB', AI::CPerceptor);
+FACTORY_CLASS_IMPL(AI::CPerceptorObstacle, 'PEOB', AI::CPerceptor);
 
 void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, float Confidence)
 {

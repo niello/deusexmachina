@@ -15,7 +15,7 @@ namespace Physics
 //???own motion state or inherit from it?
 class CCollisionObjMoving: public CPhysicsObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

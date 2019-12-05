@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_GOAL_WORK_H__
-#define __DEM_L3_AI_GOAL_WORK_H__
-
 #include <AI/Planning/Goal.h>
 #include <Data/Dictionary.h>
 
@@ -13,7 +10,7 @@ namespace AI
 
 class CGoalWork: public CGoal
 {
-	__DeclareClass(CGoalWork);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -31,5 +28,3 @@ public:
 };
 
 }
-
-#endif

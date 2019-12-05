@@ -17,7 +17,7 @@ class CGPUDriver;
 
 class IRenderer: public Core::CRTTIBaseClass
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

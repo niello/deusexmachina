@@ -10,7 +10,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CSensorVision, 'SEVI', AI::CSensor);
+FACTORY_CLASS_IMPL(AI::CSensorVision, 'SEVI', AI::CSensor);
 
 void CSensorVision::Init(const Data::CParams& Desc)
 {

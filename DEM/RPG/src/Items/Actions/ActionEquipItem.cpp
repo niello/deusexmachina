@@ -6,7 +6,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionEquipItem, 'AEQI', AI::CAction);
+FACTORY_CLASS_IMPL(AI::CActionEquipItem, 'AEQI', AI::CAction);
 
 bool CActionEquipItem::Activate(CActor* pActor)
 {

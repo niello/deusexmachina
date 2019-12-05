@@ -4,7 +4,7 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CNodeAttribute, Core::CObject);
+RTTI_CLASS_IMPL(Scene::CNodeAttribute, Core::CObject);
 
 void CNodeAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 {

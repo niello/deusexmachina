@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_SENSOR_VISION_H__
-#define __DEM_L3_AI_SENSOR_VISION_H__
-
 #include <AI/Perception/Sensor.h>
 
 // Basic human-like vision in optical spectrum with a FOV
@@ -11,7 +8,7 @@ namespace AI
 
 class CSensorVision: public CSensor
 {
-	__DeclareClass(CSensorVision);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -30,5 +27,3 @@ public:
 };
 
 }
-
-#endif

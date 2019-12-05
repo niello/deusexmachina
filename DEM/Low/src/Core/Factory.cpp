@@ -1,41 +1,64 @@
 #include "Factory.h"
-
 #include <Core/RTTI.h>
 
 namespace Core
 {
 
-CFactory* CFactory::Instance()
+CFactory& CFactory::Instance()
 {
 	static CFactory Singleton;
-	return &Singleton;
+	return Singleton;
 }
 //---------------------------------------------------------------------
 
-void CFactory::Register(const CRTTI& RTTI, const char* pClassName, Data::CFourCC FourCC)
+void CFactory::Register(const CRTTI& RTTI, const char* pClassName, uint32_t FourCC)
 {
 	n_assert2(!IsNameRegistered(pClassName), pClassName);
-	if (FourCC != 0) n_assert2(!IsFourCCRegistered(FourCC), FourCC.ToString());
-	NameToRTTI.Add(CString(pClassName), &RTTI);
-	if (FourCC != 0) FourCCToRTTI.Add(FourCC, &RTTI);
+	if (FourCC != 0) n_assert2(!IsFourCCRegistered(FourCC), pClassName);
+	NameToRTTI.emplace(std::string(pClassName), &RTTI);
+	if (FourCC != 0) FourCCToRTTI.emplace(FourCC, &RTTI);
+}
+//---------------------------------------------------------------------
+
+bool CFactory::IsNameRegistered(const char* pClassName) const
+{
+	return NameToRTTI.find(std::string(pClassName)) != NameToRTTI.cend();
+}
+//---------------------------------------------------------------------
+
+bool CFactory::IsFourCCRegistered(uint32_t ClassFourCC) const
+{
+	return FourCCToRTTI.find(ClassFourCC) != FourCCToRTTI.cend();
+}
+//---------------------------------------------------------------------
+
+const CRTTI* CFactory::GetRTTI(const char* pClassName) const
+{
+	auto It = NameToRTTI.find(std::string(pClassName));
+	return (It == NameToRTTI.cend()) ? nullptr : It->second;
+}
+//---------------------------------------------------------------------
+
+const CRTTI* CFactory::GetRTTI(uint32_t ClassFourCC) const
+{
+	auto It = FourCCToRTTI.find(ClassFourCC);
+	return (It == FourCCToRTTI.cend()) ? nullptr : It->second;
 }
 //---------------------------------------------------------------------
 
 CRTTIBaseClass* CFactory::Create(const char* pClassName, void* pParam) const
 {
-	n_assert2_dbg(IsNameRegistered(pClassName), pClassName);
 	const CRTTI* pRTTI = GetRTTI(pClassName);
 	n_assert_dbg(pRTTI);
-	return pRTTI->CreateClassInstance(pParam);
+	return pRTTI ? pRTTI->CreateClassInstance(pParam) : nullptr;
 }
 //---------------------------------------------------------------------
 
-CRTTIBaseClass* CFactory::Create(Data::CFourCC ClassFourCC, void* pParam) const
+CRTTIBaseClass* CFactory::Create(uint32_t ClassFourCC, void* pParam) const
 {
-	n_assert2_dbg(IsFourCCRegistered(ClassFourCC), ClassFourCC.ToString());
 	const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 	n_assert_dbg(pRTTI);
-	return pRTTI->CreateClassInstance(pParam);
+	return pRTTI ? pRTTI->CreateClassInstance(pParam) : nullptr;
 }
 //---------------------------------------------------------------------
 

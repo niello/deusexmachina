@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_TPL_GOTO_SO_H__
-#define __DEM_L2_AI_ACTION_TPL_GOTO_SO_H__
-
 #include <AI/Planning/ActionTpl.h>
 
 // Template of GotoSmartObj action, that performs custom actions on interactive objects.
@@ -11,7 +8,7 @@ namespace AI
 
 class CActionTplGotoSmartObj: public CActionTpl //!!!???CActionTplGoto?!
 {
-	__DeclareClass(CActionTplGotoSmartObj);
+	FACTORY_CLASS_DECL;
 
 private:
 
@@ -25,5 +22,3 @@ public:
 typedef Ptr<CActionTplGotoSmartObj> PActionTplGotoSmartObj;
 
 }
-
-#endif

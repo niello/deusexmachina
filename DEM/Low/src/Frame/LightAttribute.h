@@ -23,7 +23,7 @@ namespace Frame
 
 class CLightAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClass(CLightAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 

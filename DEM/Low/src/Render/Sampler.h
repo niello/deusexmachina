@@ -8,7 +8,7 @@ namespace Render
 
 class CSampler: public Core::CObject
 {
-	//__DeclareClassNoFactory;
+	//RTTI_CLASS_DECL;
 
 public:
 

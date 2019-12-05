@@ -26,7 +26,7 @@ typedef Ptr<class CRenderPhase> PRenderPhase;
 
 class CRenderPath: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

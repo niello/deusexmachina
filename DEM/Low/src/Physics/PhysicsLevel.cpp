@@ -12,7 +12,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysicsLevel, Core::CObject);
+RTTI_CLASS_IMPL(Physics::CPhysicsLevel, Core::CObject);
 
 CPhysicsLevel::~CPhysicsLevel()
 {

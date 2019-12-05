@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_SEQUENCE_H__
-#define __DEM_L2_AI_ACTION_SEQUENCE_H__
-
 #include "Action.h"
 #include <Data/Array.h>
 
@@ -12,7 +9,7 @@ namespace AI
 
 class CActionSequence: public CAction
 {
-	__DeclareClass(CActionSequence);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -37,5 +34,3 @@ public:
 typedef Ptr<CActionSequence> PActionSequence;
 
 }
-
-#endif

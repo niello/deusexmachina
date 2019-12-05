@@ -14,7 +14,7 @@ namespace Anim
 
 class CMocapClip: public CAnimClip
 {
-	__DeclareClass(CMocapClip);
+	FACTORY_CLASS_DECL;
 
 protected:
 

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_INDEX_BUFFER_H__
-#define __DEM_L1_RENDER_D3D9_INDEX_BUFFER_H__
-
 #include <Render/IndexBuffer.h>
 
 // Direct3D9 implementation of an index buffer
@@ -14,19 +11,18 @@ namespace Render
 
 class CD3D9IndexBuffer: public CIndexBuffer
 {
-	__DeclareClass(CD3D9IndexBuffer);
+	FACTORY_CLASS_DECL;
 
 protected:
 
-	IDirect3DIndexBuffer9*	pBuffer;
-	UINT					Usage;
-	//UPTR					LockCount;
+	IDirect3DIndexBuffer9*	pBuffer = nullptr;
+	UINT					Usage = 0;
+	//UPTR					LockCount = 0;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9IndexBuffer(): pBuffer(nullptr)/*, LockCount(0)*/ {}
 	virtual ~CD3D9IndexBuffer() { InternalDestroy(); }
 
 	bool					Create(EIndexType Type, IDirect3DIndexBuffer9* pIB);
@@ -40,5 +36,3 @@ public:
 typedef Ptr<CD3D9IndexBuffer> PD3D9IndexBuffer;
 
 }
-
-#endif

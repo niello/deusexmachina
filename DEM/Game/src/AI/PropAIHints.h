@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_AI_HINTS_H__
-#define __DEM_L2_PROP_AI_HINTS_H__
-
 #include <Game/Property.h>
 #include <AI/Perception/Stimulus.h>
 
@@ -14,7 +11,7 @@ using namespace AI;
 
 class CPropAIHints: public Game::CProperty
 {
-	__DeclareClass(CPropAIHints);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -52,5 +49,3 @@ public:
 };
 
 }
-
-#endif

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_MEM_FACT_OVERSEER_H__
-#define __DEM_L3_AI_MEM_FACT_OVERSEER_H__
-
 #include <AI/Memory/MemFact.h>
 #include <Data/StringID.h>
 
@@ -13,7 +10,7 @@ typedef Ptr<class CStimulus> PStimulus;
 
 class CMemFactOverseer: public CMemFact
 {
-	__DeclareClass(CMemFactOverseer);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -28,5 +25,3 @@ public:
 typedef Ptr<CMemFactOverseer> PMemFactOverseer;
 
 }
-
-#endif

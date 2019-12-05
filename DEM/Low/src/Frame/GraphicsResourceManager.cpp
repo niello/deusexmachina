@@ -771,9 +771,9 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 
 		const CString& PhaseType = PhaseDesc.Get<CString>(CStrID("Type"), CString::Empty); //???use FourCC in PRM?
 		CString ClassName = "Frame::CRenderPhase" + PhaseType;
-		Frame::PRenderPhase CurrPhase = (Frame::CRenderPhase*)Factory->Create(ClassName.CStr());
+		Frame::PRenderPhase CurrPhase = Core::CFactory::Instance().Create<Frame::CRenderPhase>(ClassName.CStr());
 
-		if (!CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return nullptr;
+		if (!CurrPhase || !CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return nullptr;
 
 		Phases[i] = CurrPhase;
 	}

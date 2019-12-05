@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CMemFactSmartObj, 'MFSO', AI::CMemFact);
+FACTORY_CLASS_IMPL(AI::CMemFactSmartObj, 'MFSO', AI::CMemFact);
 
 bool CMemFactSmartObj::Match(const CMemFact& Pattern, Data::CFlags FieldMask) const
 {

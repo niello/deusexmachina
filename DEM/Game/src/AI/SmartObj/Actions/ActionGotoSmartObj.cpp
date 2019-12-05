@@ -7,7 +7,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
+FACTORY_CLASS_IMPL(AI::CActionGotoSmartObj, 'AGSO', AI::CActionGoto)
 
 bool CActionGotoSmartObj::Activate(CActor* pActor)
 {

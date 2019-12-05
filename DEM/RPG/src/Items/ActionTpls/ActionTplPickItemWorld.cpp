@@ -10,7 +10,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionTplPickItemWorld, 'ATIW', AI::CActionTpl);
+FACTORY_CLASS_IMPL(AI::CActionTplPickItemWorld, 'ATIW', AI::CActionTpl);
 
 void CActionTplPickItemWorld::Init(Data::PParams Params)
 {

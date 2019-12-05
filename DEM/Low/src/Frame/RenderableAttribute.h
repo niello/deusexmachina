@@ -26,7 +26,7 @@ class CGraphicsResourceManager;
 
 class CRenderableAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

@@ -196,8 +196,8 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 				{
 					const Data::CData& PropID = Props->Get(i);
 					const Core::CRTTI* pRTTI = nullptr;
-					if (PropID.IsA<int>()) pRTTI = Factory->GetRTTI((Data::CFourCC)PropID.GetValue<int>());
-					else if (PropID.IsA<CString>()) pRTTI = Factory->GetRTTI(PropID.GetValue<CString>());
+					if (PropID.IsA<int>()) pRTTI = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PropID.GetValue<int>()));
+					else if (PropID.IsA<CString>()) pRTTI = Core::CFactory::Instance().GetRTTI(PropID.GetValue<CString>());
 
 					if (pRTTI) GameSrv->GetEntityMgr()->AttachProperty(*Entity, pRTTI);
 					else Sys::Log("Failed to attach property #%d to entity %s at level %s\n", i, EntityPrm.GetName().CStr(), ID.CStr());

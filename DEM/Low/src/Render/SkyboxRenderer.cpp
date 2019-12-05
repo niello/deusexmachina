@@ -9,7 +9,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CSkyboxRenderer, 'SBXR', Render::IRenderer);
+FACTORY_CLASS_IMPL(Render::CSkyboxRenderer, 'SBXR', Render::IRenderer);
 
 CSkyboxRenderer::CSkyboxRenderer() = default;
 //---------------------------------------------------------------------

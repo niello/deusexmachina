@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_UI_CONTROL_H__
-#define __DEM_L2_PROP_UI_CONTROL_H__
-
 #include <Game/Property.h>
 #include <Physics/CollisionAttribute.h>
 #include <Events/EventHandler.h>
@@ -27,7 +24,7 @@ class CGameLevelView;
 
 class CPropUIControl: public Game::CProperty
 {
-	__DeclareClass(CPropUIControl);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 public:
@@ -139,5 +136,3 @@ inline CPropUIControl::CAction* CPropUIControl::GetActionByID(CStrID ID)
 //---------------------------------------------------------------------
 
 }
-
-#endif

@@ -17,7 +17,7 @@ typedef Ptr<class CApplicationState> PApplicationState;
 
 class CApplicationState : public ::Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

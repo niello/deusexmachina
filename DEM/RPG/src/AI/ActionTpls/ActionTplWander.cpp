@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionTplWander, 'ATWN', AI::CActionTpl);
+FACTORY_CLASS_IMPL(AI::CActionTplWander, 'ATWN', AI::CActionTpl);
 
 void CActionTplWander::Init(Data::PParams Params)
 {

@@ -2,5 +2,5 @@
 
 namespace App
 {
-__ImplementClassNoFactory(App::CStateHandler, Core::CObject);
+RTTI_CLASS_IMPL(App::CStateHandler, Core::CObject);
 } // namespace App

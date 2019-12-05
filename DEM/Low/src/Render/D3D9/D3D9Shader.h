@@ -13,7 +13,7 @@ class CD3D9GPUDriver;
 
 class CD3D9Shader: public CShader
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

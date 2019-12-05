@@ -5,7 +5,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9VertexBuffer, 'VB09', Render::CVertexBuffer);
+FACTORY_CLASS_IMPL(Render::CD3D9VertexBuffer, 'VB09', Render::CVertexBuffer);
 
 //!!!???assert destroyed?!
 bool CD3D9VertexBuffer::Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB)

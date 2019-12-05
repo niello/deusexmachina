@@ -14,7 +14,7 @@ namespace Frame
 
 class CSkinAttribute : public Scene::CNodeAttribute
 {
-	__DeclareClass(CSkinAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 

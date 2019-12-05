@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_HEIGHTFIELD_SHAPE_H__
-#define __DEM_L1_HEIGHTFIELD_SHAPE_H__
-
 #include <Physics/CollisionShape.h>
 #include <Math/Vector3.h>
 
@@ -14,7 +11,7 @@ namespace Physics
 
 class CHeightfieldShape: public CCollisionShape
 {
-	__DeclareClass(CHeightfieldShape);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -37,5 +34,3 @@ public:
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;
 
 }
-
-#endif

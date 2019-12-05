@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_STATE_H__
-#define __DEM_L1_RENDER_D3D9_STATE_H__
-
 #include <Render/RenderState.h>
 
 // Direct3D9 render state implementation
@@ -28,7 +25,7 @@ typedef Ptr<class CD3D9Shader> PD3D9Shader;
 
 class CD3D9RenderState: public CRenderState
 {
-	__DeclareClass(CD3D9RenderState);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -100,5 +97,3 @@ public:
 typedef Ptr<CD3D9RenderState> PD3D9RenderState;
 
 }
-
-#endif

@@ -2,5 +2,5 @@
 
 namespace Resources
 {
-__ImplementClassNoFactory(Resources::CResourceObject, Core::CObject);
+RTTI_CLASS_IMPL(Resources::CResourceObject, Core::CObject);
 }

@@ -3,7 +3,7 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputConditionEventTemplate, Input::CInputConditionEvent);
+RTTI_CLASS_IMPL(Input::CInputConditionEventTemplate, Input::CInputConditionEvent);
 
 CInputConditionEventTemplate::CInputConditionEventTemplate(const std::string& RuleTemplate)
 	: _RuleTemplate(RuleTemplate)

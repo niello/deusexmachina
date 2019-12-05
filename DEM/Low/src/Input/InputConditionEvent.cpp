@@ -2,5 +2,5 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputConditionEvent, Core::CRTTIBaseClass);
+RTTI_CLASS_IMPL(Input::CInputConditionEvent, Core::CRTTIBaseClass);
 }

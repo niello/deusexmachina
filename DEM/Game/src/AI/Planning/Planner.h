@@ -67,7 +67,7 @@ inline const CActionTpl* CPlanner::FindActionTpl(const char* Name) const
 {
 	CString ClassName = StrActTplPrefix + Name;
 	for (CArray<PActionTpl>::CIterator ppTpl = ActionTpls.Begin(); ppTpl != ActionTpls.End(); ++ppTpl)
-		if ((*ppTpl)->IsInstanceOf(ClassName))
+		if ((*ppTpl)->IsExactly(ClassName))
 			return (*ppTpl).Get();
 	return nullptr;
 }

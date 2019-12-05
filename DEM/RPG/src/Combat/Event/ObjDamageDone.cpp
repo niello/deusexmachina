@@ -2,5 +2,5 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::ObjDamageDone, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::ObjDamageDone, Events::CEventNative);
 }

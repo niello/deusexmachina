@@ -16,7 +16,7 @@ namespace Render
 
 class CVertexLayout: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

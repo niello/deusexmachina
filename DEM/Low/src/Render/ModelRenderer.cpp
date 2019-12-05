@@ -13,7 +13,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CModelRenderer, 'MDLR', Render::IRenderer);
+FACTORY_CLASS_IMPL(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
 bool CModelRenderer::Init(bool LightingEnabled)
 {

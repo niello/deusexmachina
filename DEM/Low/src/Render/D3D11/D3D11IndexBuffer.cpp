@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11IndexBuffer, 'IB11', Render::CIndexBuffer);
+FACTORY_CLASS_IMPL(Render::CD3D11IndexBuffer, 'IB11', Render::CIndexBuffer);
 
 //!!!???assert destroyed?!
 bool CD3D11IndexBuffer::Create(EIndexType Type, ID3D11Buffer* pIB)

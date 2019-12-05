@@ -15,7 +15,7 @@
 
 namespace Debug
 {
-__ImplementClass(Debug::CLuaConsole, 'DLUA', Core::CObject); //UI::CUIWindow);
+FACTORY_CLASS_IMPL(Debug::CLuaConsole, 'DLUA', Core::CObject); //UI::CUIWindow);
 
 CLuaConsole::CLuaConsole()
 	: CmdHistoryCursor(0)

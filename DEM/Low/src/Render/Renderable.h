@@ -17,7 +17,7 @@ typedef std::unique_ptr<class IRenderable> PRenderable;
 
 class IRenderable: public Core::CRTTIBaseClass //???or CObject?
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

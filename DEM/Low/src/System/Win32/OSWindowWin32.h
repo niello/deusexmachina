@@ -13,7 +13,7 @@ typedef Ptr<class COSWindowWin32> POSWindowWin32;
 
 class COSWindowWin32 : public COSWindow
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

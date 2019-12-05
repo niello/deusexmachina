@@ -17,7 +17,7 @@ namespace Story
 
 class CQuestManager: public Core::CObject //???Game::CManager?
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 	__DeclareSingleton(CQuestManager);
 
 private:

@@ -12,7 +12,7 @@ namespace App
 
 class CAppStateVideo: public CStateHandler
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 private:
 

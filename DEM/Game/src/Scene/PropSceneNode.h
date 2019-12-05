@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_SCENE_NODE_H__
-#define __DEM_L2_PROP_SCENE_NODE_H__
-
 #include <Game/Property.h>
 #include <Scene/SceneNode.h>
 #include <Math/AABB.h>
@@ -13,7 +10,7 @@ namespace Prop
 
 class CPropSceneNode: public Game::CProperty
 {
-	__DeclareClass(CPropSceneNode);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -70,5 +67,3 @@ inline Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
 //---------------------------------------------------------------------
 
 }
-
-#endif

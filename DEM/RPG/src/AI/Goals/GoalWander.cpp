@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CGoalWander, 'GWDR', AI::CGoal);
+FACTORY_CLASS_IMPL(AI::CGoalWander, 'GWDR', AI::CGoal);
 
 void CGoalWander::GetDesiredProps(CWorldState& Dest)
 {

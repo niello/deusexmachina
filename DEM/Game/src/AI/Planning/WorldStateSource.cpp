@@ -2,5 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CWorldStateSource, Core::CObject);
+RTTI_CLASS_IMPL(AI::CWorldStateSource, Core::CObject);
 }

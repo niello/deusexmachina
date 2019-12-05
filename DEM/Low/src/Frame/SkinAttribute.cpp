@@ -8,7 +8,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CSkinAttribute, 'SKIN', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Frame::CSkinAttribute, 'SKIN', Scene::CNodeAttribute);
 
 CSkinAttribute::~CSkinAttribute()
 {

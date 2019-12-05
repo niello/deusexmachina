@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FRAME_CAMERA_H__
-#define __DEM_L1_FRAME_CAMERA_H__
-
 #include <Scene/NodeAttribute.h>
 #include <Scene/SceneNode.h>
 #include <Math/Line.h>
@@ -15,7 +12,7 @@ namespace Frame
 
 class CCameraAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClass(CCameraAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -79,5 +76,3 @@ public:
 typedef Ptr<CCameraAttribute> PCameraAttribute;
 
 }
-
-#endif

@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionTplGotoSmartObj, 'ATGS', AI::CActionTpl);
+FACTORY_CLASS_IMPL(AI::CActionTplGotoSmartObj, 'ATGS', AI::CActionTpl);
 
 void CActionTplGotoSmartObj::Init(Data::PParams Params)
 {

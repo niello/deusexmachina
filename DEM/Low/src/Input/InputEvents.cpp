@@ -2,8 +2,8 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::AxisMove, Events::CEventNative);
-__ImplementClassNoFactory(Event::ButtonDown, Events::CEventNative);
-__ImplementClassNoFactory(Event::ButtonUp, Events::CEventNative);
-__ImplementClassNoFactory(Event::TextInput, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::AxisMove, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::ButtonDown, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::ButtonUp, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::TextInput, Events::CEventNative);
 }

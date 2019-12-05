@@ -4,7 +4,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CSkybox, 'SKBX', Render::IRenderable);
+FACTORY_CLASS_IMPL(Render::CSkybox, 'SKBX', Render::IRenderable);
 
 PRenderable CSkybox::Clone()
 {

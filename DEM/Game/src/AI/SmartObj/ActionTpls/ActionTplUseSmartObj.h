@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_TPL_USE_SO_H__
-#define __DEM_L2_AI_ACTION_TPL_USE_SO_H__
-
 #include <AI/Planning/ActionTpl.h>
 
 // Template of UseSmartObj action, that performs custom actions on interactive objects.
@@ -11,7 +8,7 @@ namespace AI
 
 class CActionTplUseSmartObj: public CActionTpl
 {
-	__DeclareClass(CActionTplUseSmartObj);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -24,5 +21,3 @@ public:
 typedef Ptr<CActionTplUseSmartObj> PActionTplUseSmartObj;
 
 }
-
-#endif

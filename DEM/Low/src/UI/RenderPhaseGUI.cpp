@@ -9,7 +9,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CRenderPhaseGUI, 'PHUI', Frame::CRenderPhase);
+FACTORY_CLASS_IMPL(Frame::CRenderPhaseGUI, 'PHUI', Frame::CRenderPhase);
 
 bool CRenderPhaseGUI::Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc)
 {

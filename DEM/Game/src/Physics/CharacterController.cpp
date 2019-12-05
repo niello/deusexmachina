@@ -11,7 +11,7 @@
 
 namespace Physics
 {
-//__ImplementClass(Physics::CCharacterController, 'CCTL', Core::CObject);
+//FACTORY_CLASS_IMPL(Physics::CCharacterController, 'CCTL', Core::CObject);
 
 bool CCharacterController::Init(const Data::CParams& Desc)
 {

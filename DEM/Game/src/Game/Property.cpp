@@ -5,7 +5,7 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CProperty, Core::CObject);
+RTTI_CLASS_IMPL(Game::CProperty, Core::CObject);
 
 CProperty::CProperty(): Active(false), pEntity(nullptr)
 {

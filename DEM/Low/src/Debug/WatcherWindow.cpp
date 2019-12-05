@@ -23,7 +23,7 @@
 
 namespace Debug
 {
-__ImplementClass(Debug::CWatcherWindow, 'DWWW', UI::CUIWindow);
+FACTORY_CLASS_IMPL(Debug::CWatcherWindow, 'DWWW', UI::CUIWindow);
 
 CWatcherWindow::CWatcherWindow()
 {

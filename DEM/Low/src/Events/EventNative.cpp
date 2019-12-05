@@ -2,5 +2,5 @@
 
 namespace Events
 {
-__ImplementClassNoFactory(Events::CEventNative, Core::CObject);
+RTTI_CLASS_IMPL(Events::CEventNative, Core::CObject);
 }

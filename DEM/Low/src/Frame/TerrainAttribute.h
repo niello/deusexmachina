@@ -8,7 +8,7 @@ namespace Frame
 
 class CTerrainAttribute: public CRenderableAttribute
 {
-	__DeclareClass(CTerrainAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 

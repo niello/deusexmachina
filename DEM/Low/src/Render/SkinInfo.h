@@ -21,7 +21,7 @@ struct CBoneInfo
 
 class CSkinInfo: public Resources::CResourceObject
 {
-	__DeclareClass(CSkinInfo);
+	FACTORY_CLASS_DECL;
 
 protected:
 

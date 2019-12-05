@@ -6,7 +6,7 @@
 
 namespace RPG
 {
-__ImplementClassNoFactory(RPG::CFactionManager, Core::CObject);
+RTTI_CLASS_IMPL(RPG::CFactionManager, Core::CObject);
 __ImplementSingleton(RPG::CFactionManager);
 
 CFactionManager::CFactionManager()

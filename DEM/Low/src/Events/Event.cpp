@@ -2,7 +2,7 @@
 
 namespace Events
 {
-__ImplementClassNoFactory(Events::CEvent, Core::CObject);
+RTTI_CLASS_IMPL(Events::CEvent, Core::CObject);
 
 //CPoolAllocator<CEvent, 512> CEvent::Pool;
 }

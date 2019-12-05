@@ -12,7 +12,7 @@ namespace Physics
 
 class CCollisionObjStatic: public CPhysicsObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

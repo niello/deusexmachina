@@ -6,7 +6,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionFaceTarget, 'AFTG', AI::CActionFace)
+FACTORY_CLASS_IMPL(AI::CActionFaceTarget, 'AFTG', AI::CActionFace)
 
 void CActionFaceTarget::Init(const Data::CParams& Desc)
 {

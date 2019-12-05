@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_ACTION_TPL_WANDER_H__
-#define __DEM_L3_AI_ACTION_TPL_WANDER_H__
-
 #include <AI/Planning/ActionTpl.h>
 
 // Wander action switches actor between moving in certain radius and standing still,
@@ -12,7 +9,7 @@ namespace AI
 
 class CActionTplWander: public CActionTpl
 {
-	__DeclareClass(CActionTplWander);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -24,5 +21,3 @@ public:
 typedef Ptr<CActionTplWander> PActionTplWander;
 
 }
-
-#endif

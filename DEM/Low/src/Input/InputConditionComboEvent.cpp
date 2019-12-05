@@ -4,7 +4,7 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputConditionComboEvent, Input::CInputConditionEvent);
+RTTI_CLASS_IMPL(Input::CInputConditionComboEvent, Input::CInputConditionEvent);
 
 void CInputConditionComboEvent::AddChild(PInputConditionEvent&& NewChild)
 {

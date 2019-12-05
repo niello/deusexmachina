@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_MEM_FACT_SMART_OBJ_H__
-#define __DEM_L3_AI_MEM_FACT_SMART_OBJ_H__
-
 #include <AI/Memory/MemFact.h>
 #include <Data/StringID.h>
 
@@ -13,7 +10,7 @@ typedef Ptr<class CStimulus> PStimulus;
 
 class CMemFactSmartObj: public CMemFact
 {
-	__DeclareClass(CMemFactSmartObj);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -29,5 +26,3 @@ public:
 typedef Ptr<CMemFactSmartObj> PMemFactSmartObj;
 
 }
-
-#endif

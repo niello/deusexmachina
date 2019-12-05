@@ -18,7 +18,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropSceneNode, 'PSCN', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropSceneNode, 'PSCN', Game::CProperty);
 __ImplementPropertyStorage(CPropSceneNode);
 
 IMPL_EVENT_HANDLER_VIRTUAL(OnRenderDebug, CPropSceneNode, OnRenderDebug)

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_ACTION_EQUIP_ITEM_H__
-#define __DEM_L3_AI_ACTION_EQUIP_ITEM_H__
-
 #include <AI/Behaviour/Action.h>
 #include <Data/StringID.h>
 
@@ -13,7 +10,7 @@ namespace AI
 
 class CActionEquipItem: public CAction
 {
-	__DeclareClass(CActionEquipItem);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -26,11 +23,9 @@ public:
 	void				Init(CStrID ItemID, CStrID SlotID = CStrID::Empty) { Item = ItemID; Slot = SlotID; }
 	virtual bool		Activate(CActor* pActor);
 
-	virtual void		GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), Item.CStr(), Slot.CStr()); }
+	//virtual void		GetDebugString(std::string& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), Item.CStr(), Slot.CStr()); }
 };
 
 typedef Ptr<CActionEquipItem> PActionEquipItem;
 
 }
-
-#endif

@@ -8,7 +8,7 @@
 
 namespace RPG
 {
-__ImplementClassNoFactory(RPG::CWorldManager, Core::CObject);
+RTTI_CLASS_IMPL(RPG::CWorldManager, Core::CObject);
 __ImplementSingleton(RPG::CWorldManager);
 
 CWorldManager::CWorldManager()

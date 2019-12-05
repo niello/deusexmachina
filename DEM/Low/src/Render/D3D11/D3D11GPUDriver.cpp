@@ -40,7 +40,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CD3D11GPUDriver, Render::CGPUDriver);
+RTTI_CLASS_IMPL(Render::CD3D11GPUDriver, Render::CGPUDriver);
 
 CD3D11GPUDriver::CD3D11GPUDriver(CD3D11DriverFactory& DriverFactory)
 	: _DriverFactory(&DriverFactory)

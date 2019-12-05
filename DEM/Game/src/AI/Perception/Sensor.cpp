@@ -2,5 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CSensor, Core::CObject);
+RTTI_CLASS_IMPL(AI::CSensor, Core::CObject);
 }

@@ -2,14 +2,12 @@
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsDebugDraw.h>
-#include <Core/Factory.h>
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
 
 namespace Physics
 {
-__ImplementClass(Physics::CPhysicsServer, 'PHSR', Core::CObject);
 __ImplementSingleton(Physics::CPhysicsServer);
 
 CPhysicsServer::CPhysicsServer(): _IsOpen(false)

@@ -5,7 +5,7 @@
 
 namespace Physics
 {
-__ImplementClass(Physics::CCollisionShape, 'CSHP', Resources::CResourceObject);
+FACTORY_CLASS_IMPL(Physics::CCollisionShape, 'CSHP', Resources::CResourceObject);
 
 bool CCollisionShape::Setup(btCollisionShape* pShape)
 {

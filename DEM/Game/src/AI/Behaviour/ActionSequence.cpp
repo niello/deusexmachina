@@ -6,7 +6,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionSequence, 'ASEQ', AI::CAction)
+FACTORY_CLASS_IMPL(AI::CActionSequence, 'ASEQ', AI::CAction)
 
 void CActionSequence::Init(const Data::CParams& Desc)
 {

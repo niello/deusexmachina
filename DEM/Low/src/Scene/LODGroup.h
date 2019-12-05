@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_LOD_GROUP_H__
-#define __DEM_L1_SCENE_LOD_GROUP_H__
-
 #include <Scene/NodeAttribute.h>
 #include <Data/Dictionary.h>
 
@@ -18,7 +15,7 @@ struct CSPSRecord;
 
 class CLODGroup: public CNodeAttribute
 {
-	__DeclareClass(CLODGroup);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -37,5 +34,3 @@ public:
 typedef Ptr<CLODGroup> PLODGroup;
 
 }
-
-#endif

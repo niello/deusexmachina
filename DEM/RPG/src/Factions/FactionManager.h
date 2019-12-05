@@ -18,7 +18,7 @@ namespace RPG
 
 class CFactionManager: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 	__DeclareSingleton(CFactionManager);
 
 private:

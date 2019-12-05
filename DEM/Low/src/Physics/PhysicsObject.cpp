@@ -15,7 +15,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CPhysicsObject, Core::CObject);
+RTTI_CLASS_IMPL(Physics::CPhysicsObject, Core::CObject);
 
 bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 {

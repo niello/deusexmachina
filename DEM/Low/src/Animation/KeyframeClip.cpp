@@ -5,7 +5,7 @@
 
 namespace Anim
 {
-__ImplementClass(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
+FACTORY_CLASS_IMPL(Anim::CKeyframeClip, 'KCLP', Anim::CAnimClip);
 
 bool CKeyframeClip::Setup(const CArray<CKeyframeTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 						  const CArray<CEventTrack>* _EventTracks, float Length)

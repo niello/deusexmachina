@@ -7,7 +7,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionTplEquipItem, 'ATEI', AI::CActionTpl);
+FACTORY_CLASS_IMPL(AI::CActionTplEquipItem, 'ATEI', AI::CActionTpl);
 
 using namespace Prop;
 

@@ -2,5 +2,5 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::IRenderable, Core::CRTTIBaseClass);
+RTTI_CLASS_IMPL(Render::IRenderable, Core::CRTTIBaseClass);
 }

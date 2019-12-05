@@ -8,26 +8,26 @@ namespace Core
 
 class CRTTIBaseClass
 {
-	__DeclareClassNoFactory; // virtual methods inside
+	RTTI_CLASS_DECL; // virtual methods inside
 
 public:
 
 	virtual ~CRTTIBaseClass() = default;
 
-	bool			IsInstanceOf(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
-	bool			IsInstanceOf(const char* pName) const { return GetRTTI()->GetName() == pName; }
-	bool			IsInstanceOf(Data::CFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
+	bool               IsExactly(const CRTTI& RTTI) const { return GetRTTI() == &RTTI; }
+	bool               IsExactly(const char* pName) const { return GetRTTI()->GetName() == pName; }
+	bool               IsExactly(Data::CFourCC FourCC) const { return GetRTTI()->GetFourCC() == FourCC; }
 	template<class T>
-	bool			IsA() const { return IsA(T::RTTI); }
-	bool			IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
-	bool			IsA(const char* pName) const { return GetRTTI()->IsDerivedFrom(pName); }
-	bool			IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
+	bool               IsA() const { return IsA(T::RTTI); }
+	bool               IsA(const CRTTI& RTTI) const { return GetRTTI()->IsDerivedFrom(RTTI); }
+	bool               IsA(const char* pName) const { return GetRTTI()->IsDerivedFrom(pName); }
+	bool               IsA(Data::CFourCC FourCC) const { return GetRTTI()->IsDerivedFrom(FourCC); }
 	template<class T>
-	T*				As() { return IsA(T::RTTI) ? static_cast<T*>(this) : nullptr; }
+	T*                 As() { return IsA(T::RTTI) ? static_cast<T*>(this) : nullptr; }
 	template<class T>
-	const T*		As() const { return IsA(T::RTTI) ? static_cast<T*>(this) : nullptr; }
-	const CString&	GetClassName() const { return GetRTTI()->GetName(); }
-	Data::CFourCC	GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
+	const T*           As() const { return IsA(T::RTTI) ? static_cast<T*>(this) : nullptr; }
+	const std::string& GetClassName() const { return GetRTTI()->GetName(); }
+	Data::CFourCC      GetClassFourCC() const { return GetRTTI()->GetFourCC(); }
 };
 
 }

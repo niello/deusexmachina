@@ -9,7 +9,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropItem, 'PITM', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropItem, 'PITM', Game::CProperty);
 __ImplementPropertyStorage(CPropItem);
 
 CPropItem::CPropItem() {}

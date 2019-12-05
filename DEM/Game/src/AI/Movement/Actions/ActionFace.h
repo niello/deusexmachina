@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_FACE_H__
-#define __DEM_L2_AI_ACTION_FACE_H__
-
 #include <AI/Behaviour/Action.h>
 #include <Data/StringID.h>
 
@@ -13,7 +10,7 @@ namespace AI
 
 class CActionFace: public CAction
 {
-	__DeclareClass(CActionFace);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -24,5 +21,3 @@ public:
 typedef Ptr<CActionFace> PActionFace;
 
 }
-
-#endif

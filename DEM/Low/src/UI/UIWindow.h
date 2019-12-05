@@ -17,7 +17,7 @@ namespace UI
 
 class CUIWindow: public Core::CObject
 {
-	__DeclareClass(CUIWindow);
+	FACTORY_CLASS_DECL;
 
 protected:
 

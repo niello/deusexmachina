@@ -22,7 +22,7 @@ namespace Render
 
 class CMeshData: public Resources::CResourceObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

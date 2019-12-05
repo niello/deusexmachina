@@ -8,7 +8,7 @@ namespace Frame
 
 class CModelAttribute: public CRenderableAttribute
 {
-	__DeclareClass(CModelAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 

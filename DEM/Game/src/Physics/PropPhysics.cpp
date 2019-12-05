@@ -13,7 +13,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropPhysics, 'PPHY', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropPhysics, 'PPHY', Game::CProperty);
 __ImplementPropertyStorage(CPropPhysics);
 
 bool CPropPhysics::InternalActivate()

@@ -14,7 +14,7 @@ typedef Ptr<class CObject> PObject;
 
 class CObject: public Data::CRefCounted, public CRTTIBaseClass
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 #ifdef _DEBUG
 private:

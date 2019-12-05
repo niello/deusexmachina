@@ -11,7 +11,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CSkyboxAttribute, 'SKBA', Frame::CRenderableAttribute);
+FACTORY_CLASS_IMPL(Frame::CSkyboxAttribute, 'SKBA', Frame::CRenderableAttribute);
 
 bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

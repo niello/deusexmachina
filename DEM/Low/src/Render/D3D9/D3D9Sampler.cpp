@@ -5,7 +5,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9Sampler, 'SAM9', Render::CSampler);
+FACTORY_CLASS_IMPL(Render::CD3D9Sampler, 'SAM9', Render::CSampler);
 
 const D3DSAMPLERSTATETYPE CD3D9Sampler::D3DStates[D3D9_SS_COUNT] =
 {

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_ITEM_TPL_H__
-#define __DEM_L3_ITEM_TPL_H__
-
 #include <Core/Object.h>
 #include <Data/StringID.h>
 
@@ -21,7 +18,7 @@ class CItem;
 
 class CItemTpl: public Core::CObject
 {
-	__DeclareClass(CItemTpl);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -51,5 +48,3 @@ public:
 typedef Ptr<CItemTpl> PItemTpl;
 
 }
-
-#endif

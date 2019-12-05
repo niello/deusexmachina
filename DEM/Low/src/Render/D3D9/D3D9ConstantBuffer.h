@@ -13,7 +13,7 @@ namespace Render
 
 class CD3D9ConstantBuffer: public CConstantBuffer
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

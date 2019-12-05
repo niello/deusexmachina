@@ -2,5 +2,5 @@
 
 namespace DEM { namespace Core
 {
-__ImplementClassNoFactory(DEM::Core::CApplicationState, ::Core::CObject);
+RTTI_CLASS_IMPL(DEM::Core::CApplicationState, ::Core::CObject);
 }};

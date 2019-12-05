@@ -7,7 +7,7 @@
 
 namespace Items
 {
-__ImplementClass(Items::CItemTpl, 'ITPL', Core::CObject);
+FACTORY_CLASS_IMPL(Items::CItemTpl, 'ITPL', Core::CObject);
 
 void CItemTpl::Init(CStrID SID, const Data::CParams& Params)
 {

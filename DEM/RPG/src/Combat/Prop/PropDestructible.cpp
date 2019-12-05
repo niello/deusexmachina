@@ -7,7 +7,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropDestructible, 'PDST', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropDestructible, 'PDST', Game::CProperty);
 __ImplementPropertyStorage(CPropDestructible);
 
 bool CPropDestructible::InternalActivate()

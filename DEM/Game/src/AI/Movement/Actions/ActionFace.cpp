@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionFace, 'AFAC', AI::CAction)
+FACTORY_CLASS_IMPL(AI::CActionFace, 'AFAC', AI::CAction)
 
 UPTR CActionFace::Update(CActor* pActor)
 {

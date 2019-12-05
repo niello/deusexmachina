@@ -10,7 +10,7 @@
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CDialogueManager, Core::CObject);
+RTTI_CLASS_IMPL(Story::CDialogueManager, Core::CObject);
 __ImplementSingleton(Story::CDialogueManager);
 
 //???use DSS for PRM?

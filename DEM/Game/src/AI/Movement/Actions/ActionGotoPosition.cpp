@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionGotoPosition, 'AGPS', AI::CActionGoto)
+FACTORY_CLASS_IMPL(AI::CActionGotoPosition, 'AGPS', AI::CActionGoto)
 
 bool CActionGotoPosition::Activate(CActor* pActor)
 {

@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_GOTO_TARGET_H__
-#define __DEM_L2_AI_ACTION_GOTO_TARGET_H__
-
 #include "ActionGoto.h"
 #include <Data/StringID.h>
 
@@ -12,7 +9,7 @@ namespace AI
 
 class CActionGotoTarget: public CActionGoto
 {
-	__DeclareClass(CActionGotoTarget);
+	FACTORY_CLASS_DECL;
 
 private:
 
@@ -29,5 +26,3 @@ public:
 typedef Ptr<CActionGotoTarget> PActionGotoTarget;
 
 }
-
-#endif

@@ -13,7 +13,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropActorBrain, 'PRAB', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropActorBrain, 'PRAB', Game::CProperty);
 __ImplementPropertyStorage(CPropActorBrain);
 
 using namespace Data;
@@ -82,7 +82,7 @@ bool CPropActorBrain::InternalActivate()
 			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
-				PPerceptor New = (CPerceptor*)Factory->Create(StrPercPrefix + DescParam.GetName().CStr());
+				PPerceptor New = Core::CFactory::Instance().Create<CPerceptor>(StrPercPrefix + DescParam.GetName().CStr());
 				New->Init(*DescParam.GetValue<PParams>());
 				Perceptors.Add(New);
 			}
@@ -94,7 +94,7 @@ bool CPropActorBrain::InternalActivate()
 			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
-				PSensor New = (CSensor*)Factory->Create(StrSensorPrefix + DescParam.GetName().CStr());
+				PSensor New = Core::CFactory::Instance().Create<CSensor>(StrSensorPrefix + DescParam.GetName().CStr());
 				PParams NewDesc = DescParam.GetValue<PParams>();
 				New->Init(*NewDesc);
 				Sensors.Add(New);
@@ -112,7 +112,7 @@ bool CPropActorBrain::InternalActivate()
 						for (ItPerc = Perceptors.Begin(); ItPerc != Perceptors.End(); ++ItPerc)
 						{
 							//???store class name as CStrID to compare faster?
-							if ((*ItPerc)->GetClassName() == PercClass)
+							if ((*ItPerc)->GetClassName() == PercClass.CStr())
 							{
 								New->AddPerceptor(*ItPerc);
 								Found = true;
@@ -137,7 +137,7 @@ bool CPropActorBrain::InternalActivate()
 			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
 			{
 				const CParam& DescParam = DescSection->Get(i);
-				PGoal New = (CGoal*)Factory->Create(StrGoalPrefix + DescParam.GetName().CStr());
+				PGoal New = Core::CFactory::Instance().Create<CGoal>(StrGoalPrefix + DescParam.GetName().CStr());
 				New->Init(DescParam.GetValue<PParams>());
 				Goals.Add(New);
 			}

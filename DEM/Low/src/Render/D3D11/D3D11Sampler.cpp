@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11Sampler, 'SAM1', Render::CSampler);
+FACTORY_CLASS_IMPL(Render::CD3D11Sampler, 'SAM1', Render::CSampler);
 
 bool CD3D11Sampler::Create(ID3D11SamplerState* pSampler)
 {

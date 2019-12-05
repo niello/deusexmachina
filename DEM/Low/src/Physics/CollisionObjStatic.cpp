@@ -6,7 +6,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjStatic, Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CCollisionObjStatic, Physics::CPhysicsObject);
 
 bool CCollisionObjStatic::Init(const Data::CParams& Desc, const vector3& Offset)
 {

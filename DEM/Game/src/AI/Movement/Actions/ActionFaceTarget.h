@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_FACE_TARGET_H__
-#define __DEM_L2_AI_ACTION_FACE_TARGET_H__
-
 #include <AI/Movement/Actions/ActionFace.h>
 
 // Face target action makes actor face target entity, which can be dynamic, so actor can track target.
@@ -11,7 +8,7 @@ namespace AI
 
 class CActionFaceTarget: public CActionFace
 {
-	__DeclareClass(CActionFaceTarget);
+	FACTORY_CLASS_DECL;
 
 private:
 
@@ -32,5 +29,3 @@ public:
 typedef Ptr<CActionFaceTarget> PActionFaceTarget;
 
 }
-
-#endif

@@ -42,7 +42,7 @@ enum EUSMBufferType;
 
 class CD3D11GPUDriver: public CGPUDriver
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

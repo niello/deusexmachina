@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_ACTION_TPL_EQUIP_ITEM_H__
-#define __DEM_L3_AI_ACTION_TPL_EQUIP_ITEM_H__
-
 #include <AI/Planning/ActionTpl.h>
 
 // EquipItem action switches actor between moving in certain radius and standing still,
@@ -12,7 +9,7 @@ namespace AI
 
 class CActionTplEquipItem: public CActionTpl
 {
-	__DeclareClass(CActionTplEquipItem);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -25,5 +22,3 @@ public:
 typedef Ptr<CActionTplEquipItem> PActionTplEquipItem;
 
 }
-
-#endif

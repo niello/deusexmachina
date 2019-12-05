@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_IDLE_H__
-#define __DEM_L2_AI_ACTION_IDLE_H__
-
 #include <AI/Behaviour/Action.h>
 
 // Idle action does exactly nothing and never ends. This is coupled with GoalIdle to provide
@@ -14,7 +11,7 @@ namespace AI
 
 class CActionIdle: public CAction
 {
-	__DeclareClass(CActionIdle);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -24,5 +21,3 @@ public:
 typedef Ptr<CActionIdle> PActionIdle;
 
 }
-
-#endif

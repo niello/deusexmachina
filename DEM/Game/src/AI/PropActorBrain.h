@@ -1,9 +1,5 @@
 #pragma once
-#ifndef __DEM_L2_PROP_ACTOR_BRAIN_H__
-#define __DEM_L2_PROP_ACTOR_BRAIN_H__
-
 #include <Game/Property.h>
-
 #include <AI/Perception/Sensor.h>
 #include <AI/Perception/Perceptor.h>
 #include <AI/Planning/Goal.h>
@@ -44,7 +40,7 @@ using namespace AI;
 
 class CPropActorBrain: public Game::CProperty
 {
-	__DeclareClass(CPropActorBrain);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -185,5 +181,3 @@ inline bool CPropActorBrain::IsLookingAtDir(const vector3& Direction) const
 //---------------------------------------------------------------------
 
 }
-
-#endif

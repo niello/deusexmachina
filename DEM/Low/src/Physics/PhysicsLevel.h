@@ -15,7 +15,7 @@ namespace Physics
 
 class CPhysicsLevel: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

@@ -2,7 +2,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CCDLODData, Resources::CResourceObject);
+RTTI_CLASS_IMPL(Render::CCDLODData, Resources::CResourceObject);
 
 CCDLODData::CCDLODData() {}
 

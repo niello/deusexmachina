@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9RenderState, 'RS09', Render::CRenderState);
+FACTORY_CLASS_IMPL(Render::CD3D9RenderState, 'RS09', Render::CRenderState);
 
 CD3D9RenderState::CD3D9RenderState() {}
 CD3D9RenderState::~CD3D9RenderState() {}

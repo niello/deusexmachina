@@ -11,7 +11,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CRigidBody, Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CRigidBody, Physics::CPhysicsObject);
 
 bool CRigidBody::Init(const Data::CParams& Desc, const vector3& Offset)
 {

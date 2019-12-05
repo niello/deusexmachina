@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionGoto, 'AGTO', AI::CAction);
+FACTORY_CLASS_IMPL(AI::CActionGoto, 'AGTO', AI::CAction);
 
 UPTR CActionGoto::Update(CActor* pActor)
 {
@@ -63,7 +63,7 @@ UPTR CActionGoto::AdvancePath(CActor* pActor)
 		SubActionID = NewActionID;
 
 		static const CString ActNameBase("AI::CAction");
-		SubAction = (CActionTraversePathEdge*)Factory->Create(ActNameBase + SubActionID.CStr());
+		SubAction = Core::CFactory::Instance().Create<CActionTraversePathEdge>(ActNameBase + SubActionID.CStr());
 		if (!SubAction->Activate(pActor))				
 		{
 			SubAction = nullptr;

@@ -6,7 +6,7 @@
 
 namespace Scene
 {
-__ImplementClass(Scene::CLODGroup, 'LODG', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Scene::CLODGroup, 'LODG', Scene::CNodeAttribute);
 
 bool CLODGroup::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

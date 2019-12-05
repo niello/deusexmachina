@@ -15,7 +15,7 @@ typedef Ptr<class CMaterial> PMaterial;
 
 class CModel: public IRenderable
 {
-	__DeclareClass(CModel);
+	FACTORY_CLASS_DECL;
 
 public:
 

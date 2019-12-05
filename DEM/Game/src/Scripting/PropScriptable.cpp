@@ -6,7 +6,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropScriptable, 'PSCR', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropScriptable, 'PSCR', Game::CProperty);
 __ImplementPropertyStorage(CPropScriptable);
 
 CPropScriptable::CPropScriptable() {}

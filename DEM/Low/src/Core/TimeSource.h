@@ -14,7 +14,7 @@ namespace Core
 
 class CTimeSource: public CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

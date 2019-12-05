@@ -8,7 +8,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionWander, 'AWDR', AI::CAction);
+FACTORY_CLASS_IMPL(AI::CActionWander, 'AWDR', AI::CAction);
 
 bool CActionWander::SelectAction(CActor* pActor)
 {

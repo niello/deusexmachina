@@ -21,7 +21,7 @@ namespace Prop
 
 class CPropSmartObject: public Game::CProperty
 {
-	__DeclareClass(CPropSmartObject);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 public:

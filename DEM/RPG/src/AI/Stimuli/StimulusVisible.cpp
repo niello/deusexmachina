@@ -4,5 +4,5 @@
 
 namespace AI
 {
-__ImplementClass(AI::CStimulusVisible, 'STVI', AI::CStimulus);
+FACTORY_CLASS_IMPL(AI::CStimulusVisible, 'STVI', AI::CStimulus);
 }

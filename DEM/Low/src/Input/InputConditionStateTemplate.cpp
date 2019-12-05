@@ -3,7 +3,7 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputConditionStateTemplate, Input::CInputConditionState);
+RTTI_CLASS_IMPL(Input::CInputConditionStateTemplate, Input::CInputConditionState);
 
 CInputConditionStateTemplate::CInputConditionStateTemplate(const std::string& RuleTemplate)
 	: _RuleTemplate(RuleTemplate)

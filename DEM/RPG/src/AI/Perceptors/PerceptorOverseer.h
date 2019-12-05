@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_PERCEPTOR_OVERSEER_H__
-#define __DEM_L3_AI_PERCEPTOR_OVERSEER_H__
-
 #include <AI/Perception/Perceptor.h>
 
 // Processes visual and aural info and detects overseer actors. This can be used for a discipline
@@ -12,7 +9,7 @@ namespace AI
 
 class CPerceptorOverseer: public CPerceptor
 {
-	__DeclareClass(CPerceptorOverseer);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -27,5 +24,3 @@ public:
 };
 
 }
-
-#endif

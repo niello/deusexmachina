@@ -17,7 +17,7 @@ class CStimulus;
 
 class CPerceptor: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

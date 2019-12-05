@@ -12,7 +12,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropInventory, 'PINV', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropInventory, 'PINV', Game::CProperty);
 __ImplementPropertyStorage(CPropInventory);
 
 CPropInventory::~CPropInventory()

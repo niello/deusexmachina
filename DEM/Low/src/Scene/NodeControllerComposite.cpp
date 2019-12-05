@@ -2,7 +2,7 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CNodeControllerComposite, CNodeController);
+RTTI_CLASS_IMPL(Scene::CNodeControllerComposite, CNodeController);
 
 bool CNodeControllerComposite::OnAttachToNode(Scene::CSceneNode* pSceneNode)
 {

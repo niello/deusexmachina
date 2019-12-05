@@ -2,5 +2,5 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::SetTransform, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::SetTransform, Events::CEventNative);
 }

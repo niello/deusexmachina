@@ -4,5 +4,5 @@
 
 namespace AI
 {
-__ImplementClass(AI::CStimulusSound, 'STSD', AI::CStimulus);
+FACTORY_CLASS_IMPL(AI::CStimulusSound, 'STSD', AI::CStimulus);
 }

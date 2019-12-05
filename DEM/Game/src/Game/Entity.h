@@ -14,7 +14,7 @@ typedef Ptr<class CGameLevel> PGameLevel;
 
 class CEntity: public Events::CEventDispatcher, public Data::CRefCounted
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

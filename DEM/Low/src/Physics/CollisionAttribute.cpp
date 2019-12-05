@@ -4,7 +4,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionAttribute, Scene::CNodeAttribute);
+RTTI_CLASS_IMPL(Physics::CCollisionAttribute, Scene::CNodeAttribute);
 
 Scene::PNodeAttribute CCollisionAttribute::Clone()
 {

@@ -31,7 +31,7 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 		//???!!!use FOURCC?!
 		CString ClassName;
 		n_assert(Reader.ReadString(ClassName));
-		Scene::PNodeAttribute Attr = (Scene::CNodeAttribute*)Factory->Create(ClassName);
+		Scene::PNodeAttribute Attr = Core::CFactory::Instance().Create<Scene::CNodeAttribute>(ClassName);
 
 		//!!!not all attrs may be saved with blocks! change SCN format?
 		if (!Attr->LoadDataBlocks(Reader, DataBlockCount)) FAIL;

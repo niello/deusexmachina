@@ -12,7 +12,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropCharacterController, 'PCCT', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropCharacterController, 'PCCT', Game::CProperty);
 __ImplementPropertyStorage(CPropCharacterController);
 
 bool CPropCharacterController::InternalActivate()

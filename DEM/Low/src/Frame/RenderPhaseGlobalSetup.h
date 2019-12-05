@@ -9,7 +9,7 @@ namespace Frame
 
 class CRenderPhaseGlobalSetup: public CRenderPhase
 {
-	__DeclareClass(CRenderPhaseGlobalSetup);
+	FACTORY_CLASS_DECL;
 
 protected:
 

@@ -14,7 +14,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CTerrainRenderer, 'TRNR', Render::IRenderer);
+FACTORY_CLASS_IMPL(Render::CTerrainRenderer, 'TRNR', Render::IRenderer);
 
 CTerrainRenderer::CTerrainRenderer() = default;
 

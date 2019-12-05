@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_PROP_INVENTORY_H__
-#define __DEM_L3_PROP_INVENTORY_H__
-
 #include <Game/Property.h>
 #include <Items/ItemManager.h>
 #include <Items/ItemStack.h>
@@ -23,7 +20,7 @@ namespace Prop
 
 class CPropInventory: public Game::CProperty
 {
-	__DeclareClass(CPropInventory);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -100,5 +97,3 @@ inline Items::CItemStack* CPropInventory::FindItemStack(CStrID ItemID)
 //---------------------------------------------------------------------
 
 }
-
-#endif

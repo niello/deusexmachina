@@ -9,7 +9,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropTalking, 'PTLK', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropTalking, 'PTLK', Game::CProperty);
 __ImplementPropertyStorage(CPropTalking);
 
 bool CPropTalking::InternalActivate()

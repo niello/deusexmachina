@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_ITEM_TPL_WEAPON_H__
-#define __DEM_L3_ITEM_TPL_WEAPON_H__
-
 #include "ItemTpl.h" 
 #include <Combat/Dmg/Damage.h>
 
@@ -13,7 +10,7 @@ namespace Items
 
 class CItemTplWeapon: public CItemTpl
 {
-	__DeclareClass(CItemTplWeapon);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -37,5 +34,3 @@ public:
 };
 
 }
-
-#endif

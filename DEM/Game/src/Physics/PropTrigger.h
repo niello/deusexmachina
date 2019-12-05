@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_PROP_TRIGGER_H__
-#define __DEM_L2_PROP_TRIGGER_H__
-
 #include <Game/Property.h>
 #include <Physics/CollisionObjStatic.h>
 
@@ -36,7 +33,7 @@ using namespace Scripting;
 
 class CPropTrigger: public Game::CProperty
 {
-	__DeclareClass(CPropTrigger);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -69,5 +66,3 @@ public:
 };
 
 }
-
-#endif

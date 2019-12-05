@@ -14,7 +14,7 @@ namespace Physics
 
 class CRigidBody: public CPhysicsObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

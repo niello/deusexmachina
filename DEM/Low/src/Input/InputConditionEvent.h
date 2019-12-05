@@ -10,7 +10,7 @@ namespace Input
 
 class CInputConditionEvent: public Core::CRTTIBaseClass
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

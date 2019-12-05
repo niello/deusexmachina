@@ -8,7 +8,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
+FACTORY_CLASS_IMPL(AI::CActionUseSmartObj, 'AUSO', AI::CAction)
 
 UPTR CActionUseSmartObj::SetDone(CActor* pActor, Prop::CPropSmartObject* pSO, const CSmartAction& ActTpl)
 {

@@ -17,7 +17,7 @@ class CCDLODData;
 
 class CTerrainRenderer: public IRenderer
 {
-	__DeclareClass(CTerrainRenderer);
+	FACTORY_CLASS_DECL;
 
 protected:
 

@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D9DepthStencilBuffer, 'DSB9', Render::CDepthStencilBuffer);
+FACTORY_CLASS_IMPL(Render::CD3D9DepthStencilBuffer, 'DSB9', Render::CDepthStencilBuffer);
 
 //!!!???assert destroyed?!
 bool CD3D9DepthStencilBuffer::Create(IDirect3DSurface9* pSurface)

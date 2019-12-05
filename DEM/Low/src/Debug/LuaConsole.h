@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_DBG_LUA_CONSOLE_H__
-#define __DEM_L1_DBG_LUA_CONSOLE_H__
-
 #include <UI/UIWindow.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
@@ -22,7 +19,7 @@ namespace Debug
 
 class CLuaConsole: public UI::CUIWindow
 {
-	__DeclareClass(CLuaConsole);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -55,5 +52,3 @@ public:
 typedef Ptr<CLuaConsole> PLuaConsole;
 
 }
-
-#endif

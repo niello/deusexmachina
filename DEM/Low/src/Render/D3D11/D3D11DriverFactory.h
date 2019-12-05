@@ -37,7 +37,7 @@ enum EFormatType
 
 class CD3D11DriverFactory: public CVideoDriverFactory
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

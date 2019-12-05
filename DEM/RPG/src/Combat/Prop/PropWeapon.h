@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __IPG_PROP_WEAPON_H__
-#define __IPG_PROP_WEAPON_H__
-
 #include <Game/Property.h>
 #include <Combat/Dmg/Damage.h>
 
@@ -17,7 +14,7 @@ namespace Prop
 
 class CPropWeapon: public Game::CProperty
 {
-	__DeclareClass(CPropWeapon);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -63,5 +60,3 @@ public:
 };
 
 }
-
-#endif

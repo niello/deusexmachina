@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CShaderLibrary, 'SLIB', Resources::CResourceObject);
+FACTORY_CLASS_IMPL(Render::CShaderLibrary, 'SLIB', Resources::CResourceObject);
 
 CShaderLibrary::CShaderLibrary() {}
 CShaderLibrary::~CShaderLibrary() {}

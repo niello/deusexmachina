@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_SKYBOX_RENDERER_H__
-#define __DEM_L1_RENDER_SKYBOX_RENDERER_H__
-
 #include <Render/Renderer.h>
 
 // Default renderer for CSkybox render objects.
@@ -12,7 +9,7 @@ class CSkybox;
 
 class CSkyboxRenderer: public IRenderer
 {
-	__DeclareClass(CSkyboxRenderer);
+	FACTORY_CLASS_DECL;
 
 public:
 
@@ -24,5 +21,3 @@ public:
 };
 
 }
-
-#endif

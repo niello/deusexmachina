@@ -32,7 +32,7 @@ class CSM30ConstantBufferParam;
 
 class CD3D9GPUDriver: public CGPUDriver
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

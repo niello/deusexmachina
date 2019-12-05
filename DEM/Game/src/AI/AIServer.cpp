@@ -12,7 +12,7 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CAIServer, Core::CObject);
+RTTI_CLASS_IMPL(AI::CAIServer, Core::CObject);
 __ImplementSingleton(AI::CAIServer);
 
 CAIServer::CAIServer()
@@ -87,7 +87,7 @@ PAction CAIServer::CreatePlanFromDesc(Data::PParams Desc)
 
 	CString StrClass("AI::CAction");
 	StrClass += Desc->Get<CString>(CStrID("Class"));
-	PAction Plan = (CAction*)Factory->Create(StrClass);
+	PAction Plan = Core::CFactory::Instance().Create<CAction>(StrClass);
 	Plan->Init(*Desc);
 	return Plan;
 }

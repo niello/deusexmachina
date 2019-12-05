@@ -7,7 +7,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CTerrain, 'TERR', Render::IRenderable);
+FACTORY_CLASS_IMPL(Render::CTerrain, 'TERR', Render::IRenderable);
 
 CTerrain::CTerrain() = default;
 CTerrain::~CTerrain() = default;

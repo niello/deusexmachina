@@ -14,7 +14,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropTrigger, 'PTRG', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropTrigger, 'PTRG', Game::CProperty);
 __ImplementPropertyStorage(CPropTrigger);
 
 bool CPropTrigger::InternalActivate()

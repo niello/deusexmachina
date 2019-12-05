@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_PROP_ITEM_H__
-#define __DEM_L3_PROP_ITEM_H__
-
 #include <Game/Property.h>
 #include <Items/ItemStack.h>
 
@@ -12,7 +9,7 @@ namespace Prop
 
 class CPropItem: public Game::CProperty
 {
-	__DeclareClass(CPropItem);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -32,5 +29,3 @@ public:
 };
 
 }
-
-#endif

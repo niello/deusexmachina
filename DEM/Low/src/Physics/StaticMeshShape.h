@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_STATIC_MESH_SHAPE_H__
-#define __DEM_L1_STATIC_MESH_SHAPE_H__
-
 #include <Physics/CollisionShape.h>
 
 // Collision shape, that represents a static triangle mesh which can't change.
@@ -12,7 +9,7 @@ namespace Physics
 
 class CStaticMeshShape: public CCollisionShape
 {
-	__DeclareClass(CStaticMeshShape);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -30,5 +27,3 @@ public:
 typedef Ptr<CStaticMeshShape> PStaticMeshShape;
 
 }
-
-#endif

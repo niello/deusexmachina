@@ -71,7 +71,7 @@ inline CStateHandler* CAppFSM::FindStateHandlerByID(CStrID ID) const
 inline CStateHandler* CAppFSM::FindStateHandlerByRTTI(const Core::CRTTI& RTTI) const
 {
 	for (UPTR i = 0; i < StateHandlers.GetCount(); ++i)
-		if (StateHandlers[i]->IsInstanceOf(RTTI))
+		if (StateHandlers[i]->IsExactly(RTTI))
 			return StateHandlers[i];
 	return nullptr;
 }

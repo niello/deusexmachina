@@ -4,7 +4,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CCameraAttribute, 'CAMR', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Frame::CCameraAttribute, 'CAMR', Scene::CNodeAttribute);
 
 bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

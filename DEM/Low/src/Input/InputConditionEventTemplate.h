@@ -8,7 +8,7 @@ namespace Input
 
 class CInputConditionEventTemplate: public CInputConditionEvent
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

@@ -7,7 +7,7 @@
 
 namespace Video
 {
-__ImplementClassNoFactory(Video::CVideoServer, Core::CObject);
+RTTI_CLASS_IMPL(Video::CVideoServer, Core::CObject);
 __ImplementSingleton(Video::CVideoServer);
 
 CVideoServer::CVideoServer():

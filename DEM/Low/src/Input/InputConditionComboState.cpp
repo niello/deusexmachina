@@ -2,7 +2,7 @@
 
 namespace Input
 {
-__ImplementClassNoFactory(Input::CInputConditionComboState, Input::CInputConditionState);
+RTTI_CLASS_IMPL(Input::CInputConditionComboState, Input::CInputConditionState);
 
 void CInputConditionComboState::AddChild(PInputConditionState&& NewChild)
 {

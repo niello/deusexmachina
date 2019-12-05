@@ -8,7 +8,7 @@
 
 namespace Game
 {
-__ImplementClassNoFactory(Game::CEntity, Core::CObject);
+RTTI_CLASS_IMPL(Game::CEntity, Core::CObject);
 
 CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID), Flags(WaitingForLevelActivation)
 {
@@ -94,7 +94,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 		for (UPTR i = 0; i < Props.GetCount(); ++i)
 		{
 			int ClassFourCC = (int)Props[i]->GetClassFourCC().Code;
-			const CString& ClassName = Props[i]->GetClassName();
+			const auto& ClassName = Props[i]->GetClassName();
 			UPTR j;
 			for (j = 0; j < InitialProps->GetCount(); ++j)
 			{

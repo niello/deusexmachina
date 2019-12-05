@@ -9,7 +9,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11RenderTarget, 'RT11', Render::CRenderTarget);
+FACTORY_CLASS_IMPL(Render::CD3D11RenderTarget, 'RT11', Render::CRenderTarget);
 
 //!!!???assert destroyed?!
 bool CD3D11RenderTarget::Create(ID3D11RenderTargetView* pRTV, ID3D11ShaderResourceView* pSRV)

@@ -12,7 +12,7 @@ struct CPathEdge;
 
 class CActionTraversePathEdge: public CAction
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

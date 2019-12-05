@@ -5,7 +5,7 @@
 
 namespace Frame
 {
-__ImplementClassNoFactory(Frame::CRenderPath, Core::CObject);
+RTTI_CLASS_IMPL(Frame::CRenderPath, Core::CObject);
 
 CRenderPath::CRenderPath() {}
 

@@ -12,7 +12,7 @@ typedef Ptr<class CMeshData> PMeshData;
 
 class CMesh: public Resources::CResourceObject
 {
-	__DeclareClass(CMesh);
+	FACTORY_CLASS_DECL;
 
 protected:
 

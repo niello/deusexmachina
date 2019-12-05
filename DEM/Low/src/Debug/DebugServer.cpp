@@ -19,7 +19,7 @@
 
 namespace Debug
 {
-__ImplementClassNoFactory(Debug::CDebugServer, Core::CObject);
+RTTI_CLASS_IMPL(Debug::CDebugServer, Core::CObject);
 __ImplementSingleton(Debug::CDebugServer);
 
 CDebugServer::CDebugServer()
@@ -38,7 +38,7 @@ bool CDebugServer::RegisterPlugin(CStrID Name, const char* CppClassName, const c
 {
 	CPlugin New;
 	New.UIResource = UIResource;
-	New.Window = static_cast<UI::CUIWindow*>(Factory->Create(CppClassName));
+	New.Window = static_cast<UI::CUIWindow*>(Core::CFactory::Instance().Create(CppClassName));
 	n_assert(New.Window.IsValidPtr());
 	//!!!call InitPlugin or write all Init code in the virtual CUIWindow::Init!
 	Plugins.Add(Name, New);

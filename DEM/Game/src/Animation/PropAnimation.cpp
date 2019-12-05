@@ -21,7 +21,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropAnimation, 'PANM', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropAnimation, 'PANM', Game::CProperty);
 __ImplementPropertyStorage(CPropAnimation);
 
 bool CPropAnimation::InternalActivate()

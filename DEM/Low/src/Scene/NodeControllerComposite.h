@@ -14,7 +14,7 @@ namespace Scene
 
 class CNodeControllerComposite: public CNodeController
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

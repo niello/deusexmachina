@@ -35,7 +35,7 @@ namespace Anim
 
 class CAnimClip: public Resources::CResourceObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

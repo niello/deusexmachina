@@ -6,12 +6,12 @@
 
 namespace Items
 {
-__ImplementClassNoFactory(Items::CItemManager, Core::CObject);
+RTTI_CLASS_IMPL(Items::CItemManager, Core::CObject);
 __ImplementSingleton(Items::CItemManager);
 
 PItemTpl CItemManager::CreateItemTpl(CStrID ID, const Data::CParams& Params)
 {
-	PItemTpl Tpl = (CItemTpl*)Factory->Create(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), CString::Empty));
+	PItemTpl Tpl = Core::CFactory::Instance().Create<CItemTpl>(CString("Items::CItemTpl") + Params.Get<CString>(CStrID("Type"), CString::Empty));
 	n_assert(Tpl.IsValidPtr());
 	Tpl->Init(ID, Params);
 	return Tpl;

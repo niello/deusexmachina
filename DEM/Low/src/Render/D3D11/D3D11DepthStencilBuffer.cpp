@@ -9,7 +9,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11DepthStencilBuffer, 'DSB1', Render::CDepthStencilBuffer);
+FACTORY_CLASS_IMPL(Render::CD3D11DepthStencilBuffer, 'DSB1', Render::CDepthStencilBuffer);
 
 //!!!???assert destroyed?!
 bool CD3D11DepthStencilBuffer::Create(ID3D11DepthStencilView* pDSV, ID3D11ShaderResourceView* pSRV)

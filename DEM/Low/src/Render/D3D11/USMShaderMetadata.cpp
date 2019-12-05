@@ -8,7 +8,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(CUSMConstantBufferParam, IConstantBufferParam);
+RTTI_CLASS_IMPL(CUSMConstantBufferParam, IConstantBufferParam);
 
 template<typename T>
 static inline T* Cast(Core::CRTTIBaseClass& Value)

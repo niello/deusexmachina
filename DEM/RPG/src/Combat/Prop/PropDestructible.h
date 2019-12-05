@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __IPG_PROP_DESTRUCTIBLE_H__
-#define __IPG_PROP_DESTRUCTIBLE_H__
-
 #include <Game/Property.h>
 
 // Destructible property allows to logically destroy owning entity by applying damage to it.
@@ -13,7 +10,7 @@ using namespace Events;
 
 class CPropDestructible: public Game::CProperty
 {
-	__DeclareClass(CPropDestructible);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -35,5 +32,3 @@ public:
 };
 
 }
-
-#endif

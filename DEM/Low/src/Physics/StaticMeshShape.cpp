@@ -4,7 +4,7 @@
 
 namespace Physics
 {
-__ImplementClass(Physics::CStaticMeshShape, 'SMSH', Physics::CCollisionShape);
+FACTORY_CLASS_IMPL(Physics::CStaticMeshShape, 'SMSH', Physics::CCollisionShape);
 
 /*
 bool CStaticMeshShape::Setup(btBvhTriangleMeshShape* pShape)

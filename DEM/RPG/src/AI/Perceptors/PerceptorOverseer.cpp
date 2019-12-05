@@ -9,7 +9,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CPerceptorOverseer, 'PEOV', AI::CPerceptor);
+FACTORY_CLASS_IMPL(AI::CPerceptorOverseer, 'PEOV', AI::CPerceptor);
 
 void CPerceptorOverseer::Init(const Data::CParams& Desc)
 {

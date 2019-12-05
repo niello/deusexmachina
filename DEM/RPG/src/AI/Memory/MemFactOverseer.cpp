@@ -5,7 +5,7 @@
 
 namespace AI
 {
-__ImplementClass(AI::CMemFactOverseer, 'MFOV', AI::CMemFact);
+FACTORY_CLASS_IMPL(AI::CMemFactOverseer, 'MFOV', AI::CMemFact);
 
 bool CMemFactOverseer::Match(const CMemFact& Pattern, Data::CFlags FieldMask) const
 {

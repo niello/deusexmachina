@@ -8,7 +8,7 @@ namespace Input
 
 class CInputConditionComboState: public CInputConditionState
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

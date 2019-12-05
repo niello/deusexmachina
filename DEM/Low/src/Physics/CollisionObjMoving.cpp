@@ -10,7 +10,7 @@
 
 namespace Physics
 {
-__ImplementClassNoFactory(Physics::CCollisionObjMoving, Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CCollisionObjMoving, Physics::CPhysicsObject);
 
 bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
 {

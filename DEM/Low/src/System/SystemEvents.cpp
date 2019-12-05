@@ -2,7 +2,7 @@
 
 namespace Event
 {
-__ImplementClassNoFactory(Event::OSWindowResized, Events::CEventNative);
-__ImplementClassNoFactory(Event::InputDeviceArrived, Events::CEventNative);
-__ImplementClassNoFactory(Event::InputDeviceRemoved, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::OSWindowResized, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::InputDeviceArrived, Events::CEventNative);
+RTTI_CLASS_IMPL(Event::InputDeviceRemoved, Events::CEventNative);
 }

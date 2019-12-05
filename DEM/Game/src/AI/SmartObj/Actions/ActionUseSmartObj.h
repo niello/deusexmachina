@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_USE_SMART_OBJ_H__
-#define __DEM_L2_AI_ACTION_USE_SMART_OBJ_H__
-
 #include <AI/Behaviour/Action.h>
 #include <Data/StringID.h>
 
@@ -19,7 +16,7 @@ namespace AI
 
 class CActionUseSmartObj: public CAction
 {
-	__DeclareClass(CActionUseSmartObj);
+	FACTORY_CLASS_DECL;
 
 private:
 
@@ -39,11 +36,9 @@ public:
 	virtual void	Deactivate(CActor* pActor);
 	virtual bool	IsValid(CActor* pActor) const;
 
-	virtual void	GetDebugString(CString& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
+	//virtual void	GetDebugString(std::string& Out) const { Out.Format("%s(%s, %s)", GetClassName().CStr(), TargetID.CStr(), ActionID.CStr()); }
 };
 
 typedef Ptr<CActionUseSmartObj> PActionUseSmartObj;
 
 }
-
-#endif

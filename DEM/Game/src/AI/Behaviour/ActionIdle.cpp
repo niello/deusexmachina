@@ -4,5 +4,5 @@
 
 namespace AI
 {
-__ImplementClass(AI::CActionIdle, 'AIDL', AI::CAction);
+FACTORY_CLASS_IMPL(AI::CActionIdle, 'AIDL', AI::CAction);
 }

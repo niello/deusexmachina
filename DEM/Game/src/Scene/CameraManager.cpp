@@ -4,7 +4,7 @@
 
 namespace Scene
 {
-__ImplementClassNoFactory(Scene::CCameraManager, Core::CObject);
+RTTI_CLASS_IMPL(Scene::CCameraManager, Core::CObject);
 
 bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 {

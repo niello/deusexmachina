@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_D3D9_RENDER_TARGET_H__
-#define __DEM_L1_D3D9_RENDER_TARGET_H__
-
 #include <Render/RenderTarget.h>
 
 // D3D9 implementation of a render target. Note that an MSAA target must be created as a
@@ -16,11 +13,11 @@ typedef Ptr<class CD3D9Texture> PD3D9Texture;
 
 class CD3D9RenderTarget: public CRenderTarget
 {
-	__DeclareClass(CD3D9RenderTarget);
+	FACTORY_CLASS_DECL;
 
 protected:
 
-	IDirect3DSurface9*	pRTSurface;
+	IDirect3DSurface9*	pRTSurface = nullptr;
 	PD3D9Texture		SRTexture;
 	bool				NeedResolve; // Autoresolve RT surface to SR texture
 
@@ -32,7 +29,6 @@ protected:
 
 public:
 
-	CD3D9RenderTarget(): pRTSurface(nullptr) {}
 	virtual ~CD3D9RenderTarget() { InternalDestroy(); }
 
 	bool				Create(IDirect3DSurface9* pSurface, PD3D9Texture Texture); // For internal use
@@ -46,5 +42,3 @@ public:
 typedef Ptr<CD3D9RenderTarget> PD3D9RenderTarget;
 
 }
-
-#endif

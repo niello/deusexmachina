@@ -15,7 +15,7 @@ typedef Ptr<class CTexture> PTexture;
 
 class CTerrain: public IRenderable
 {
-	__DeclareClass(CTerrain);
+	FACTORY_CLASS_DECL;
 
 public:
 

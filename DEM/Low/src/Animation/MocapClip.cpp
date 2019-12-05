@@ -5,7 +5,7 @@
 
 namespace Anim
 {
-__ImplementClass(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
+FACTORY_CLASS_IMPL(Anim::CMocapClip, 'MCLP', Anim::CAnimClip);
 
 bool CMocapClip::Setup(const CArray<CMocapTrack>& _Tracks, const CArray<CStrID>& TrackMapping,
 					   const CArray<CEventTrack>* _EventTracks, vector4* _pKeys,

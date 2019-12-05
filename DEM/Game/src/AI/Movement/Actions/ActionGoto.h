@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_ACTION_GOTO_H__
-#define __DEM_L2_AI_ACTION_GOTO_H__
-
 #include <AI/Behaviour/ActionSequence.h>
 #include <AI/Navigation/PathEdge.h>
 #include "ActionTraversePathEdge.h"
@@ -16,7 +13,7 @@ namespace AI
 
 class CActionGoto: public CAction
 {
-	__DeclareClass(CActionGoto);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -36,5 +33,3 @@ public:
 typedef Ptr<CActionGoto> PActionGoto;
 
 }
-
-#endif

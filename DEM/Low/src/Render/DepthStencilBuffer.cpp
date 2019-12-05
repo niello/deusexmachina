@@ -2,5 +2,5 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CDepthStencilBuffer, Core::CObject);
+RTTI_CLASS_IMPL(Render::CDepthStencilBuffer, Core::CObject);
 }

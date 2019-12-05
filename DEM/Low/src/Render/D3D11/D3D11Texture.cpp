@@ -9,7 +9,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11Texture, 'TEX1', Render::CTexture);
+FACTORY_CLASS_IMPL(Render::CD3D11Texture, 'TEX1', Render::CTexture);
 
 bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlags, ID3D11ShaderResourceView* pSRV, bool HoldRAMCopy)
 {

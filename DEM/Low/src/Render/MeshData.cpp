@@ -3,7 +3,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CMeshData, Resources::CResourceObject);
+RTTI_CLASS_IMPL(Render::CMeshData, Resources::CResourceObject);
 
 CMeshData::CMeshData() {}
 

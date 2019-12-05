@@ -7,7 +7,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CRenderPhaseGlobalSetup, 'PHGS', Frame::CRenderPhase);
+FACTORY_CLASS_IMPL(Frame::CRenderPhaseGlobalSetup, 'PHGS', Frame::CRenderPhase);
 
 bool CRenderPhaseGlobalSetup::Render(CView& View)
 {

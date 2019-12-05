@@ -13,7 +13,7 @@ const CString StrUnderline("_");
 
 namespace Story
 {
-__ImplementClassNoFactory(Story::CQuestManager, Core::CObject);
+RTTI_CLASS_IMPL(Story::CQuestManager, Core::CObject);
 __ImplementSingleton(Story::CQuestManager);
 
 CQuestManager::CQuestManager()

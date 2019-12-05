@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11VertexLayout, 'VL11', Render::CVertexLayout);
+FACTORY_CLASS_IMPL(Render::CD3D11VertexLayout, 'VL11', Render::CVertexLayout);
 
 //!!!???assert destroyed?!
 bool CD3D11VertexLayout::Create(const CVertexComponent* pComponents, UPTR Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc)

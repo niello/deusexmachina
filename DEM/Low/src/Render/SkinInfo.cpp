@@ -4,7 +4,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CSkinInfo, 'SKIF', Resources::CResourceObject);
+FACTORY_CLASS_IMPL(Render::CSkinInfo, 'SKIF', Resources::CResourceObject);
 
 bool CSkinInfo::Create(UPTR BoneCount)
 {

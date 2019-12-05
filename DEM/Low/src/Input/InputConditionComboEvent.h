@@ -10,7 +10,7 @@ namespace Input
 
 class CInputConditionComboEvent: public CInputConditionEvent
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

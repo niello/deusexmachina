@@ -14,7 +14,7 @@ namespace Render
 //!!!GPU resource, Buffer!
 class CVertexBuffer: public Core::CObject
 {
-	//__DeclareClassNoFactory;
+	//RTTI_CLASS_DECL;
 
 protected:
 

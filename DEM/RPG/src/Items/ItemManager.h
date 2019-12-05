@@ -21,7 +21,7 @@ namespace Items
 
 class CItemManager: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 	__DeclareSingleton(CItemManager);
 
 private:

@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CModel, 'MODL', Render::IRenderable);
+FACTORY_CLASS_IMPL(Render::CModel, 'MODL', Render::IRenderable);
 
 PRenderable CModel::Clone()
 {

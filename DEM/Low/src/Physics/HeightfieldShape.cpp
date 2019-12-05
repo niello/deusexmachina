@@ -5,7 +5,7 @@
 
 namespace Physics
 {
-__ImplementClass(Physics::CHeightfieldShape, 'HFSH', Physics::CCollisionShape);
+FACTORY_CLASS_IMPL(Physics::CHeightfieldShape, 'HFSH', Physics::CCollisionShape);
 
 bool CHeightfieldShape::Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset)
 {

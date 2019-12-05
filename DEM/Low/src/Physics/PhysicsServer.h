@@ -17,7 +17,6 @@ class CPhysicsDebugDraw;
 
 class CPhysicsServer: public Core::CObject
 {
-	__DeclareClass(CPhysicsServer);
 	__DeclareSingleton(CPhysicsServer);
 
 protected:

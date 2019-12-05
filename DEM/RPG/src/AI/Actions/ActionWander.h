@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_AI_ACTION_WANDER_H__
-#define __DEM_L3_AI_ACTION_WANDER_H__
-
 #include <AI/Behaviour/Action.h> //Sequence.h>
 #include <Math/Vector2.h>
 
@@ -13,7 +10,7 @@ namespace AI
 
 class CActionWander: public CAction //Sequence
 {
-	__DeclareClass(CActionWander);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -37,5 +34,3 @@ public:
 typedef Ptr<CActionWander> PActionWander;
 
 }
-
-#endif

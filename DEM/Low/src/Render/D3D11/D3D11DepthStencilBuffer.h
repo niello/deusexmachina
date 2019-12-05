@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_DEPTH_STENCIL_BUFFER_H__
-#define __DEM_L1_RENDER_D3D11_DEPTH_STENCIL_BUFFER_H__
-
 #include <Render/DepthStencilBuffer.h>
 
 // D3D11 implementation of depth-stencil buffer
@@ -15,7 +12,7 @@ typedef Ptr<class CD3D11Texture> PD3D11Texture;
 
 class CD3D11DepthStencilBuffer: public CDepthStencilBuffer
 {
-	__DeclareClass(CD3D11DepthStencilBuffer);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -39,5 +36,3 @@ public:
 typedef Ptr<CD3D11DepthStencilBuffer> PD3D11DepthStencilBuffer;
 
 }
-
-#endif

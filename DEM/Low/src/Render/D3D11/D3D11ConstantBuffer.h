@@ -20,7 +20,7 @@ enum EUSMBufferType;
 
 class CD3D11ConstantBuffer: public CConstantBuffer
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 protected:
 

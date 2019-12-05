@@ -6,7 +6,7 @@
 
 namespace Items
 {
-__ImplementClass(Items::CItemTplWeapon, 'ITWP', Items::CItemTpl);
+FACTORY_CLASS_IMPL(Items::CItemTplWeapon, 'ITWP', Items::CItemTpl);
 
 void CItemTplWeapon::Init(CStrID SID, const Data::CParams& Params)
 {

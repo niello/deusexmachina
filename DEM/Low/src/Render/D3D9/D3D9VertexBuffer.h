@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D9_VERTEX_BUFFER_H__
-#define __DEM_L1_RENDER_D3D9_VERTEX_BUFFER_H__
-
 #include <Render/VertexBuffer.h>
 
 // Direct3D9 implementation of a vertex buffer
@@ -14,19 +11,18 @@ namespace Render
 
 class CD3D9VertexBuffer: public CVertexBuffer
 {
-	__DeclareClass(CD3D9VertexBuffer);
+	FACTORY_CLASS_DECL;
 
 protected:
 
-	IDirect3DVertexBuffer9*	pBuffer;
-	UINT					Usage;
-	//UPTR					LockCount;
+	IDirect3DVertexBuffer9*	pBuffer = nullptr;
+	UINT					Usage = 0;
+	//UPTR					LockCount = 0;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D9VertexBuffer(): pBuffer(nullptr)/*, LockCount(0)*/ {}
 	virtual ~CD3D9VertexBuffer() { InternalDestroy(); }
 
 	bool					Create(CVertexLayout& Layout, IDirect3DVertexBuffer9* pVB);
@@ -39,5 +35,3 @@ public:
 typedef Ptr<CD3D9VertexBuffer> PD3D9VertexBuffer;
 
 }
-
-#endif

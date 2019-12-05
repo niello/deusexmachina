@@ -32,7 +32,7 @@ enum EDlgMode
 
 class CDialogueManager: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 	__DeclareSingleton(CDialogueManager);
 
 private:

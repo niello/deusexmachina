@@ -42,7 +42,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 	Data::PParams SubDesc;
 	if (Desc.Get<Data::PParams>(SubDesc, CStrID("Preconditions")))
 	{
-		Preconditions = (CWorldStateSource*)Factory->Create(StrWSSrcPfx + SubDesc->Get<CString>(CStrID("Type")));
+		Preconditions = Core::CFactory::Instance().Create<CWorldStateSource>(StrWSSrcPfx + SubDesc->Get<CString>(CStrID("Type")));
 		Preconditions->Init(SubDesc);
 	}
 	else Preconditions = nullptr;

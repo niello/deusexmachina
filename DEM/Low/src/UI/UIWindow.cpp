@@ -7,7 +7,7 @@
 
 namespace UI
 {
-__ImplementClass(UI::CUIWindow, 'UIWN', Core::CObject);
+FACTORY_CLASS_IMPL(UI::CUIWindow, 'UIWN', Core::CObject);
 
 CUIWindow::~CUIWindow()
 {

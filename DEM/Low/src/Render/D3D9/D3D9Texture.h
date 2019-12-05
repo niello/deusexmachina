@@ -15,7 +15,7 @@ namespace Render
 
 class CD3D9Texture: public CTexture
 {
-	__DeclareClass(CD3D9Texture);
+	FACTORY_CLASS_DECL;
 
 protected:
 

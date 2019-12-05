@@ -10,7 +10,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropEquipment, 'PEQI', CPropInventory);
+FACTORY_CLASS_IMPL(Prop::CPropEquipment, 'PEQI', CPropInventory);
 
 CPropEquipment::CPropEquipment()
 {

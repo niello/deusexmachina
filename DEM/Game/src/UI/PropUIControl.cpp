@@ -20,7 +20,7 @@
 
 namespace Prop
 {
-__ImplementClass(Prop::CPropUIControl, 'PUIC', Game::CProperty);
+FACTORY_CLASS_IMPL(Prop::CPropUIControl, 'PUIC', Game::CProperty);
 __ImplementPropertyStorage(CPropUIControl);
 
 CPropUIControl::CAction::CAction() {}

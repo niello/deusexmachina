@@ -8,7 +8,7 @@
 
 namespace App
 {
-__ImplementClassNoFactory(App::CAppStateVideo, App::CStateHandler);
+RTTI_CLASS_IMPL(App::CAppStateVideo, App::CStateHandler);
 
 void CAppStateVideo::OnStateEnter(CStrID PrevState, Data::PParams Params)
 {

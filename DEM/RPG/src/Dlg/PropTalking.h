@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L3_PROP_TALKING_H__
-#define __DEM_L3_PROP_TALKING_H__
-
 #include <Game/Property.h>
 #include <StdDEM.h>
 
@@ -18,7 +15,7 @@ namespace Prop
 
 class CPropTalking: public Game::CProperty
 {
-	__DeclareClass(CPropTalking);
+	FACTORY_CLASS_DECL;
 	__DeclarePropertyStorage;
 
 protected:
@@ -46,5 +43,3 @@ public:
 };
 
 }
-
-#endif

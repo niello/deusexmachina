@@ -36,6 +36,7 @@
 #include <Render/TerrainRenderer.h>
 //
 #include <Frame/RenderPath.h>
+#include <Frame/ModelAttribute.h>
 #include <Render/SkinInfo.h>
 #include <Render/SkinInfoLoaderSKN.h>
 #include <Render/MeshData.h>
@@ -607,6 +608,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	Frame::CRenderPhaseGUI::ForceFactoryRegistration();
 	Frame::CRenderPhaseGlobalSetup::ForceFactoryRegistration();
 	Frame::CRenderPhaseGeometry::ForceFactoryRegistration();
+	Frame::CModelAttribute::ForceFactoryRegistration();
 	Render::CModel::ForceFactoryRegistration();
 	Render::CModelRenderer::ForceFactoryRegistration();
 	Render::CSkybox::ForceFactoryRegistration();

@@ -6,7 +6,7 @@
 
 namespace Render
 {
-__ImplementClass(Render::CD3D11VertexBuffer, 'VB11', Render::CVertexBuffer);
+FACTORY_CLASS_IMPL(Render::CD3D11VertexBuffer, 'VB11', Render::CVertexBuffer);
 
 //!!!???assert destroyed?!
 bool CD3D11VertexBuffer::Create(CVertexLayout& Layout, ID3D11Buffer* pVB)

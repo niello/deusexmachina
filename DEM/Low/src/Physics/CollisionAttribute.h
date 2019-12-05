@@ -18,7 +18,7 @@ namespace Physics
 
 class CCollisionAttribute: public Scene::CNodeAttribute
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

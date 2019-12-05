@@ -16,7 +16,7 @@ void CPlanner::RegisterActionTpl(const char* Name, Data::PParams Params)
 {
 	if (!FindActionTpl(Name))
 	{
-		PActionTpl NewTpl = (CActionTpl*)Factory->Create(StrActTplPrefix + Name);
+		PActionTpl NewTpl = Core::CFactory::Instance().Create<CActionTpl>(StrActTplPrefix + Name);
 		NewTpl->Init(Params);
 		ActionTpls.Add(NewTpl); //???dictionary? CStrID -> Tpl?
 	}
@@ -311,9 +311,9 @@ PAction CPlanner::BuildPlan(CActor* pActor, CGoal* pGoal)
 		if (CurrAction.IsValidPtr())
 		{
 #ifdef _DEBUG
-			CString DbgString;
+			std::string DbgString;
 			CurrAction->GetDebugString(DbgString);
-			Sys::Log("Planner -> '%s' Action added: '%s'\n", pActor->GetEntity()->GetUID(), DbgString.CStr());
+			Sys::Log("Planner -> '%s' Action added: '%s'\n", pActor->GetEntity()->GetUID(), DbgString.c_str());
 #endif
 
 			if (Plan.IsNullPtr()) Plan = CurrAction;

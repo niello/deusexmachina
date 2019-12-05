@@ -5,7 +5,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CD3D11ConstantBuffer, Render::CConstantBuffer);
+RTTI_CLASS_IMPL(Render::CD3D11ConstantBuffer, Render::CConstantBuffer);
 
 CD3D11ConstantBuffer::CD3D11ConstantBuffer(ID3D11Buffer* pCB, ID3D11ShaderResourceView* pSRV, bool Temporary)
 {

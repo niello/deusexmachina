@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_ENTITY_SCRIPT_OBJ_H__
-#define __DEM_L2_ENTITY_SCRIPT_OBJ_H__
-
 #include <Scripting/ScriptObject.h>
 
 // Entity script object is bound to some game entity instance.
@@ -16,7 +13,7 @@ namespace Scripting
 
 class CEntityScriptObject: public CScriptObject
 {
-	__DeclareClass(CEntityScriptObject);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -60,5 +57,3 @@ typedef Ptr<CEntityScriptObject> PEntityScriptObject;
 	Scripting::CEntityScriptObject* This = (Scripting::CEntityScriptObject*)CScriptObject::GetFromStack(l, 1);	\
 	n_assert2_dbg(This, "Entity script call doesn't specify CEntityScriptObject This, make sure : and not . is used for the call!"); \
 	if (!This) return 0;
-
-#endif

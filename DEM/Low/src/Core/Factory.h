@@ -1,44 +1,47 @@
 #pragma once
-#ifndef __DEM_L1_CORE_FACTORY_H__
-#define __DEM_L1_CORE_FACTORY_H__
+#include <StdCfg.h>
+#include <unordered_map>
 
-// Allows object creation by type name or FourCC code
-
-#include <Data/Ptr.h>
-#include <Data/FourCC.h>
-#include <Data/HashTable.h>
-#include <Data/Dictionary.h>
-#include <Data/String.h>
+// Allows RTTI-enabled object creation by type name or FourCC code
 
 namespace Core
 {
 class CRTTI;
 class CRTTIBaseClass;
 
-#define Factory Core::CFactory::Instance()
-
 class CFactory
 {
 protected:
 
-	CHashTable<CString, const CRTTI*>	NameToRTTI;
-	CDict<Data::CFourCC, const CRTTI*>	FourCCToRTTI; //???hash table too?
+	std::unordered_map<std::string, const CRTTI*> NameToRTTI;
+	std::unordered_map<uint32_t, const CRTTI*>    FourCCToRTTI;
 
-	CFactory(): NameToRTTI(512) {}
+	CFactory() = default;
+	CFactory(const CFactory&) = delete;
+	CFactory(CFactory&&) = delete;
+	CFactory& operator =(const CFactory&) = delete;
+	CFactory& operator =(CFactory&&) = delete;
 
 public:
 
-	static CFactory* Instance();
+	static CFactory& Instance();
 
-	void			Register(const CRTTI& RTTI, const char* pClassName, Data::CFourCC FourCC = 0);
-	bool			IsNameRegistered(const char* pClassName) const { return NameToRTTI.Contains(CString(pClassName)); }
-	bool			IsFourCCRegistered(Data::CFourCC ClassFourCC) const { return FourCCToRTTI.Contains(ClassFourCC); }
-	const CRTTI*	GetRTTI(const char* pClassName) const { return NameToRTTI[CString(pClassName)]; }
-	const CRTTI*	GetRTTI(Data::CFourCC ClassFourCC) const { return FourCCToRTTI[ClassFourCC]; }
+	void			Register(const CRTTI& RTTI, const char* pClassName, uint32_t FourCC = 0);
+	bool			IsNameRegistered(const char* pClassName) const;
+	bool			IsFourCCRegistered(uint32_t ClassFourCC) const;
+	const CRTTI*	GetRTTI(const char* pClassName) const;
+	const CRTTI*	GetRTTI(uint32_t ClassFourCC) const;
 	CRTTIBaseClass*	Create(const char* pClassName, void* pParam = nullptr) const;
-	CRTTIBaseClass*	Create(Data::CFourCC ClassFourCC, void* pParam = nullptr) const;
+	CRTTIBaseClass*	Create(uint32_t ClassFourCC, void* pParam = nullptr) const;
+
+	template<class T> T* Create(const char* pClassName, void* pParam = nullptr) const
+	{
+		const CRTTI* pRTTI = GetRTTI(pClassName);
+
+		// FIXME: use Verify instead of duplicating condition!
+		n_assert_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI));
+		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
+	}
 };
 
 }
-
-#endif

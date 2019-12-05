@@ -7,7 +7,7 @@
 
 namespace Frame
 {
-__ImplementClass(Frame::CAmbientLightAttribute, 'NAAL', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Frame::CAmbientLightAttribute, 'NAAL', Scene::CNodeAttribute);
 
 bool CAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

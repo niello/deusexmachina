@@ -8,7 +8,7 @@ namespace Frame
 
 class CSkyboxAttribute: public CRenderableAttribute
 {
-	__DeclareClass(CSkyboxAttribute);
+	FACTORY_CLASS_DECL;
 
 protected:
 

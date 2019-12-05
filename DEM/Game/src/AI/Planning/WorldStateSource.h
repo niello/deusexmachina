@@ -23,7 +23,7 @@ class CWorldState;
 
 class CWorldStateSource: public Core::CObject
 {
-	__DeclareClassNoFactory;
+	RTTI_CLASS_DECL;
 
 public:
 

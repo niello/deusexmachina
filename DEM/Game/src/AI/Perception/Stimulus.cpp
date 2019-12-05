@@ -2,5 +2,5 @@
 
 namespace AI
 {
-__ImplementClassNoFactory(AI::CStimulus, Core::CObject);
+RTTI_CLASS_IMPL(AI::CStimulus, Core::CObject);
 }

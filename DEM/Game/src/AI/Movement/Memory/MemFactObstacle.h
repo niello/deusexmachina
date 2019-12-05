@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_MEM_FACT_OBSTACLE_H__
-#define __DEM_L2_AI_MEM_FACT_OBSTACLE_H__
-
 #include <AI/Memory/MemFact.h>
 #include <Data/StringID.h>
 #include <Math/Vector3.h>
@@ -14,7 +11,7 @@ typedef Ptr<class CStimulus> PStimulus;
 
 class CMemFactObstacle: public CMemFact
 {
-	__DeclareClass(CMemFactObstacle);
+	FACTORY_CLASS_DECL;
 
 protected:
 
@@ -33,5 +30,3 @@ public:
 typedef Ptr<CMemFactObstacle> PMemFactObstacle;
 
 }
-
-#endif

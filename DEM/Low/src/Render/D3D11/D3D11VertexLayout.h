@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_D3D11_VERTEX_LAYOUT_H__
-#define __DEM_L1_RENDER_D3D11_VERTEX_LAYOUT_H__
-
 #include <Render/VertexLayout.h>
 #include <Data/Dictionary.h>
 
@@ -15,19 +12,18 @@ namespace Render
 
 class CD3D11VertexLayout: public CVertexLayout
 {
-	__DeclareClass(CD3D11VertexLayout);
+	FACTORY_CLASS_DECL;
 
 protected:
 
-	CDict<UPTR, ID3D11InputLayout*>	ShaderSignatureToLayout;	// Actual layouts indexed by a shader input signature
-	D3D11_INPUT_ELEMENT_DESC*		pD3DDesc;					// Is reused for each actual input layout creation
-	char*							pSemanticNames;
+	CDict<UPTR, ID3D11InputLayout*>	ShaderSignatureToLayout;  // Actual layouts indexed by a shader input signature
+	D3D11_INPUT_ELEMENT_DESC*		pD3DDesc = nullptr;       // Is reused for each actual input layout creation
+	char*							pSemanticNames = nullptr;
 
 	void InternalDestroy();
 
 public:
 
-	CD3D11VertexLayout(): pD3DDesc(nullptr), pSemanticNames(nullptr) {}
 	virtual ~CD3D11VertexLayout() { InternalDestroy(); }
 
 	bool							Create(const CVertexComponent* pComponents, UPTR Count, D3D11_INPUT_ELEMENT_DESC* pD3DElementDesc);
@@ -58,5 +54,3 @@ inline ID3D11InputLayout* CD3D11VertexLayout::GetD3DInputLayout(UPTR ShaderInput
 //---------------------------------------------------------------------
 
 }
-
-#endif

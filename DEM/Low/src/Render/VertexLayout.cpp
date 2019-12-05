@@ -2,7 +2,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CVertexLayout, Core::CObject);
+RTTI_CLASS_IMPL(Render::CVertexLayout, Core::CObject);
 
 const char* CVertexComponent::SemanticNames[] =
 {

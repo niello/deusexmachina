@@ -5,7 +5,7 @@
 
 namespace Render
 {
-__ImplementClassNoFactory(Render::CD3D11RenderState, Render::CRenderState);
+RTTI_CLASS_IMPL(Render::CD3D11RenderState, Render::CRenderState);
 
 CD3D11RenderState::CD3D11RenderState() = default;
 

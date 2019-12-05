@@ -4,7 +4,7 @@
 
 namespace Anim
 {
-__ImplementClassNoFactory(Anim::CAnimClip, Resources::CResourceObject);
+RTTI_CLASS_IMPL(Anim::CAnimClip, Resources::CResourceObject);
 
 void CAnimClip::FireEvents(float ExactCursorPos, bool Loop, Events::CEventDispatcher* pDisp, Data::PParams Params) const
 {
