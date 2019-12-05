@@ -6,6 +6,7 @@ project(ShaderCompiler)
 
 # Dependency: SQLite 3
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/sqlite" "${CMAKE_CURRENT_BINARY_DIR}/Deps/sqlite")
+set_target_properties(sqlite3 PROPERTIES FOLDER "Deps")
 
 include(src.cmake)
 source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" FILES ${DEM_SHADER_COMPILER_HEADERS} ${DEM_SHADER_COMPILER_SOURCES})

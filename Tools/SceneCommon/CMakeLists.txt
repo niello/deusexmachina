@@ -6,6 +6,7 @@ set(BUILD_DEMO OFF CACHE INTERNAL "" FORCE)
 set(BUILD_TOOLS OFF CACHE INTERNAL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/meshoptimizer" "${CMAKE_CURRENT_BINARY_DIR}/Deps/meshoptimizer")
+set_target_properties(meshoptimizer PROPERTIES FOLDER "Deps")
 
 # SceneCommon
 include(src.cmake)

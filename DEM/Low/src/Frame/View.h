@@ -96,6 +96,8 @@ public:
 	//shadow map buffers (sort of RT / DS, no special case?)
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
+	//!!!CCameraAttribute* CreateDefaultCamera();!
+
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 
 	void							UpdateVisibilityCache();
