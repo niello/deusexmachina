@@ -45,10 +45,10 @@ protected:
 	matrix44					LocalMatrix;	// For caching only
 	matrix44					WorldMatrix;
 
-	CSceneNode*					pParent;
+	CSceneNode*					pParent = nullptr;
 	PNodeController				Controller;
-	CDict<CStrID, PSceneNode>	Children;	//???or sorted array? don't store IDs twice if possible
-	CArray<PNodeAttribute>		Attrs; //???or list? List seems to be better //???WHY?
+	std::vector<PSceneNode>     Children; // Always sorted by ID
+	std::vector<PNodeAttribute> Attrs;
 
 	void					OnDetachFromScene();
 
@@ -72,15 +72,15 @@ public:
 
 	CSceneNode*				CreateChild(CStrID ChildName);
 	CSceneNode*				CreateChildChain(const char* pPath);
-	void					AddChild(CStrID ChildName, CSceneNode& Node);
+	bool					AddChild(CStrID ChildName, CSceneNode& Node, bool Replace = false);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(UPTR Idx);
 	void					RemoveChild(CStrID ChildName);
 	CSceneNode*				GetParent() const { return pParent; }
-	UPTR					GetChildCount() const { return Children.GetCount(); }
-	CSceneNode*				GetChild(UPTR Idx) const { return Children.ValueAt(Idx); }
+	UPTR					GetChildCount() const { return Children.size(); }
+	CSceneNode*				GetChild(UPTR Idx) const { return Children[Idx]; }
 	CSceneNode*				GetChild(CStrID ChildName) const;
-	CSceneNode*				GetChild(const char* pPath) const;
+	CSceneNode*				GetChildByPath(const char* pPath) const;
 	CSceneNode*				FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const;
 
 	bool					SetController(CNodeController* pCtlr);
@@ -89,7 +89,7 @@ public:
 	bool					AddAttribute(CNodeAttribute& Attr);
 	void					RemoveAttribute(CNodeAttribute& Attr);
 	void					RemoveAttribute(UPTR Idx);
-	UPTR					GetAttributeCount() const { return Attrs.GetCount(); }
+	UPTR					GetAttributeCount() const { return Attrs.size(); }
 	CNodeAttribute*			GetAttribute(IPTR Idx) const { return Attrs[Idx]; }
 	template<class T> T*	FindFirstAttribute() const;
 
@@ -117,23 +117,7 @@ public:
 	const vector3&			GetWorldPosition() const { return WorldMatrix.Translation(); }
 };
 
-inline void CSceneNode::RemoveChild(CSceneNode& Node)
-{
-	n_assert(Node.pParent == this);
-	Node.OnDetachFromScene();
-	Children.Remove(Node.Name);
-	Node.pParent = nullptr;
-}
-//---------------------------------------------------------------------
-
-inline CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
-{
-	IPTR Idx = Children.FindIndex(ChildName);
-	return Idx == INVALID_INDEX ? nullptr : Children.ValueAt(Idx).Get();
-}
-//---------------------------------------------------------------------
-
-inline CSceneNode* CSceneNode::GetChild(const char* pPath) const
+inline CSceneNode* CSceneNode::GetChildByPath(const char* pPath) const
 {
 	const char* pUnprocessed;
 	CSceneNode* pNode = FindDeepestChild(pPath, pUnprocessed);
@@ -143,11 +127,8 @@ inline CSceneNode* CSceneNode::GetChild(const char* pPath) const
 
 template<class T> inline T* CSceneNode::FindFirstAttribute() const
 {
-	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
-	{
-		CNodeAttribute* pAttr = Attrs[i];
-		if (pAttr->IsA(T::RTTI)) return (T*)pAttr;
-	}
+	for (const auto& Attr : Attrs)
+		if (auto Casted = Attr->As<T>()) return Casted;
 	return nullptr;
 }
 //---------------------------------------------------------------------
@@ -166,27 +147,6 @@ inline void CSceneNode::SetWorldTransform(const matrix44& Transform)
 	WorldMatrix = Transform;
 	Flags.Set(WorldMatrixChanged);
 	UpdateLocalFromWorld();
-}
-//---------------------------------------------------------------------
-
-inline bool CSceneNode::AcceptVisitor(INodeVisitor& Visitor)
-{
-	if (!Visitor.Visit(*this)) FAIL;
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-		if (!Children.ValueAt(i)->AcceptVisitor(Visitor)) FAIL;
-	OK;
-}
-//---------------------------------------------------------------------
-
-inline bool CSceneNode::IsChild(const CSceneNode* pParentNode) const
-{
-	const CSceneNode* pCurr = pParent;
-	while (pCurr)
-	{
-		if (pCurr == pParentNode) OK;
-		pCurr = pCurr->pParent;
-	}
-	FAIL;
 }
 //---------------------------------------------------------------------
 

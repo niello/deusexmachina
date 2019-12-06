@@ -1,5 +1,4 @@
 #include "SceneNode.h"
-
 #include <Scene/NodeController.h>
 #include <Data/StringTokenizer.h>
 
@@ -7,24 +6,23 @@ namespace Scene
 {
 const UPTR MAX_NODE_NAME_LEN = 64;
 
-CSceneNode::CSceneNode(CStrID NodeName):
-	pParent(nullptr),
-	Name(NodeName),
-	Flags(Active | LocalMatrixDirty | LocalTransformValid)
+CSceneNode::CSceneNode(CStrID NodeName)
+	: Name(NodeName)
+	, Flags(Active | LocalMatrixDirty | LocalTransformValid)
 {
-	Attrs.Flags.Clear(Array_KeepOrder);
 }
 //---------------------------------------------------------------------
 
 CSceneNode::~CSceneNode()
 {
-	Children.Clear();
+	// Destroy children first
+	Children.clear();
 
-	if (Controller.IsValidPtr()) Controller->OnDetachFromScene();
+	if (Controller) Controller->OnDetachFromScene();
 
-	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
-		(*It)->OnDetachFromScene();
-	Attrs.Clear();
+	for (const auto& Attr : Attrs)
+		Attr->OnDetachFromScene();
+	Attrs.clear();
 }
 //---------------------------------------------------------------------
 
@@ -67,13 +65,13 @@ void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
 	else UpdateWorldFromLocal();
 
 	// LOD attrs may disable some children, so process attributes before children
-	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
-		if (Attrs[i]->IsActive())
-			Attrs[i]->Update(pCOIArray, COICount);
+	for (const auto& Attr : Attrs)
+		if (Attr->IsActive())
+			Attr->Update(pCOIArray, COICount);
 
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-		if (Children.ValueAt(i)->IsActive())
-			Children.ValueAt(i)->UpdateTransform(pCOIArray, COICount, ProcessDefferedController, pOutDefferedNodes);
+	for (const auto& Child : Children)
+		if (Child->IsActive())
+			Child->UpdateTransform(pCOIArray, COICount, ProcessDefferedController, pOutDefferedNodes);
 }
 //---------------------------------------------------------------------
 
@@ -121,21 +119,21 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 	ClonedNode->SetRotation(Tfm.Rotation);
 	ClonedNode->SetPosition(Tfm.Translation);
 
-	ClonedNode->Attrs.Resize(Attrs.GetCount());
-	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
-		ClonedNode->AddAttribute(*Attrs[i]->Clone().Get());
+	ClonedNode->Attrs.reserve(Attrs.size());
+	for (const auto& Attr : Attrs)
+		ClonedNode->AddAttribute(*Attr->Clone());
 
-	UPTR ChildCount = Children.GetCount();
+	const auto ChildCount = Children.size();
 	if (CloneChildren && ChildCount)
 	{
-		ClonedNode->Children.BeginAdd(ChildCount);
-		for (UPTR i = 0; i < ChildCount; ++i)
+		ClonedNode->Children.reserve(ChildCount);
+		for (const auto& Child : Children)
 		{
-			PSceneNode CurrChild = Children.ValueAt(i)->Clone(true);
-			CurrChild->pParent = ClonedNode.Get();
-			ClonedNode->Children.Add(CurrChild->GetName(), CurrChild);
+			PSceneNode ClonedChild = Child->Clone(true);
+			ClonedChild->pParent = ClonedNode.Get();
+			ClonedNode->Children.push_back(ClonedChild);
 		}
-		ClonedNode->Children.EndAdd();
+		std::sort(ClonedNode->Children.begin(), ClonedNode->Children.end(), [](const PSceneNode& a, const PSceneNode& b) { return a->GetName() < b->GetName(); });
 	}
 
 	//???clone controller?
@@ -147,13 +145,13 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 
 CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 {
-	IPTR Idx = Children.FindIndex(ChildName);
-	if (Idx != INVALID_INDEX) return Children.ValueAt(Idx);
+	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
+	if (It != Children.end() && (*It)->GetName() == ChildName) return *It;
 
 	//!!!USE POOL!
 	PSceneNode Node = n_new(CSceneNode)(ChildName);
 	Node->pParent = this;
-	Children.Add(ChildName, Node);
+	Children.insert(It, Node);
 	return Node;
 }
 //---------------------------------------------------------------------
@@ -173,11 +171,48 @@ CSceneNode* CSceneNode::CreateChildChain(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node)
+bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
 {
-	Node.Name = ChildName;
+	auto It = std::lower_bound(Children.begin(), Children.end(), &Node);
+	if (!Replace && It != Children.end() && (*It)->GetName() == ChildName) return false;
+
+	if (ChildName) Node.Name = ChildName;
 	Node.pParent = this;
-	Children.Add(ChildName, &Node);
+	Children.insert(It, &Node);
+	return true;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::RemoveChild(CSceneNode& Node)
+{
+	if (Node.pParent != this) return;
+
+	auto It = std::lower_bound(Children.begin(), Children.end(), &Node);
+	if (It != Children.end() && (*It).Get() == &Node)
+	{
+		Node.OnDetachFromScene();
+		Children.erase(It);
+		Node.pParent = nullptr;
+	}
+}
+//---------------------------------------------------------------------
+
+CSceneNode* CSceneNode::GetChild(CStrID ChildName) const
+{
+	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
+	return (It != Children.end() && (*It)->GetName() == ChildName) ? (*It).Get() : nullptr;
+}
+//---------------------------------------------------------------------
+
+bool CSceneNode::IsChild(const CSceneNode* pParentNode) const
+{
+	const CSceneNode* pCurr = pParent;
+	while (pCurr)
+	{
+		if (pCurr == pParentNode) OK;
+		pCurr = pCurr->pParent;
+	}
+	FAIL;
 }
 //---------------------------------------------------------------------
 
@@ -199,13 +234,16 @@ CSceneNode* CSceneNode::FindDeepestChild(const char* pPath, char const* & pUnres
 	Data::CStringTokenizer StrTok(pPath, Buffer, MAX_NODE_NAME_LEN);
 	while (StrTok.GetNextToken('.'))
 	{
-		CStrID ChildID(StrTok.GetCurrToken());
-		IPTR Idx = pCurrNode->Children.FindIndex(ChildID);
-		if (Idx == INVALID_INDEX) return const_cast<CSceneNode*>(pCurrNode);
-		else
+		CStrID ChildName(StrTok.GetCurrToken());
+		auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
+		if (It != Children.end() && (*It)->GetName() == ChildName)
 		{
 			pUnresolvedPathPart = StrTok.GetCursor();
-			pCurrNode = pCurrNode->Children.ValueAt(Idx);
+			pCurrNode = *It;
+		}
+		else
+		{
+			return const_cast<CSceneNode*>(pCurrNode);
 		}
 	}
 
@@ -236,39 +274,60 @@ bool CSceneNode::SetController(CNodeController* pCtlr)
 bool CSceneNode::AddAttribute(CNodeAttribute& Attr)
 {
 	if (!Attr.OnAttachToNode(this)) FAIL;
-	Attrs.Add(&Attr);
+	Attrs.push_back(&Attr);
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CSceneNode::RemoveAttribute(CNodeAttribute& Attr)
 {
-	n_assert(Attr.GetNode() == this);
+	if (Attr.GetNode() != this) return;
+
 	Attr.OnDetachFromScene();
 	Attr.OnDetachFromNode();
-	Attrs.RemoveByValue(&Attr);
+
+	// Don't care about order
+	auto It = std::find(Attrs.begin(), Attrs.end(), &Attr);
+	if (It != Attrs.end())
+	{
+		*It = std::move(Attrs.back());
+		Attrs.pop_back();
+	}
 }
 //---------------------------------------------------------------------
 
 void CSceneNode::RemoveAttribute(UPTR Idx)
 {
-	n_assert(Idx < Attrs.GetCount());
+	if (Idx >= Attrs.size()) return;
+
 	CNodeAttribute& Attr = *Attrs[Idx];
 	Attr.OnDetachFromScene();
 	Attr.OnDetachFromNode();
-	Attrs.RemoveAt(Idx);
+
+	// Don't care about order
+	Attrs[Idx] = std::move(Attrs.back());
+	Attrs.pop_back();
 }
 //---------------------------------------------------------------------
 
 void CSceneNode::OnDetachFromScene()
 {
-	for (UPTR i = 0; i < Children.GetCount(); ++i)
-		Children.ValueAt(i)->OnDetachFromScene();
+	for (const auto& Child : Children)
+		Child->OnDetachFromScene();
 
 	if (Controller.IsValidPtr()) Controller->OnDetachFromScene();
 
-	for (CArray<PNodeAttribute>::CIterator It = Attrs.Begin(); It != Attrs.End(); ++It)
-		(*It)->OnDetachFromScene();
+	for (const auto& Attr : Attrs)
+		Attr->OnDetachFromScene();
+}
+//---------------------------------------------------------------------
+
+bool CSceneNode::AcceptVisitor(INodeVisitor& Visitor)
+{
+	if (!Visitor.Visit(*this)) FAIL;
+	for (const auto& Child : Children)
+		if (!Child->AcceptVisitor(Visitor)) FAIL;
+	OK;
 }
 //---------------------------------------------------------------------
 

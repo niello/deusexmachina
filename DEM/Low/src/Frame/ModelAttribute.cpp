@@ -61,7 +61,7 @@ bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 
 	// Store mesh data pointer for GPU-independent local AABB access
 	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(MeshUID);
-	pModel->MeshData = RMeshData->ValidateObject<Render::CMeshData>();
+	pModel->MeshData = RMeshData ? RMeshData->ValidateObject<Render::CMeshData>() : nullptr;
 
 	OK;
 }

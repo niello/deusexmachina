@@ -31,8 +31,6 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))
 	{
-		Rsrc = n_new(CResource(UID));
-
 		CString Ext(PathUtils::GetExtension(UID.CStr()));
 		if (Ext.IsValid())
 		{
@@ -40,7 +38,11 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 			if (SharpIdx >= 0) Ext.TruncateRight(Ext.GetLength() - SharpIdx);
 		}
 
-		Rsrc->SetCreator(GetDefaultCreator(Ext, &RsrcType));
+		auto pCreator = GetDefaultCreator(Ext, &RsrcType).Get();
+		if (!pCreator) return nullptr;
+
+		Rsrc = n_new(CResource(UID));
+		Rsrc->SetCreator(pCreator);
 		Registry.Add(UID, Rsrc);
 	}
 	return Rsrc;
@@ -160,7 +162,10 @@ PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, 
 
 	if (!pRec)
 	{
-		Sys::Error("CResourceManager::GetDefaultCreator() > no record for ext '%s' and type '%s'\n", Ext.CStr(), pRsrcType ? pRsrcType->GetName().c_str() : "<any>");
+		if (pRsrcType)
+			Sys::Error("CResourceManager::GetDefaultCreator() > no record for extension '%s' and type '%s'\n", Ext.CStr(), pRsrcType->GetName().c_str());
+		else
+			Sys::Error("CResourceManager::GetDefaultCreator() > no record for extension '%s'\n", Ext.CStr());
 		return nullptr;
 	}
 

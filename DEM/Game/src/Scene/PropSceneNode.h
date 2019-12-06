@@ -50,20 +50,4 @@ public:
 	void				GetAABB(CAABB& OutBox, UPTR TypeFlags = AABB_Gfx | AABB_Phys) const;
 };
 
-inline Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
-{
-	if (!ID.IsValid()) return Node.Get();
-	if (Node.IsNullPtr()) return nullptr;
-
-	IPTR NodeIdx = ChildCache.FindIndex(ID);
-	if (NodeIdx == INVALID_INDEX)
-	{
-		Scene::CSceneNode* pNode = Node->GetChild(ID.CStr());
-		if (pNode) ChildCache.Add(ID, pNode);
-		return pNode;
-	}
-	else return ChildCache.ValueAt(NodeIdx);
-}
-//---------------------------------------------------------------------
-
 }

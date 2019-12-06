@@ -267,6 +267,22 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 }
 //---------------------------------------------------------------------
 
+Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
+{
+	if (!ID.IsValid()) return Node.Get();
+	if (Node.IsNullPtr()) return nullptr;
+
+	IPTR NodeIdx = ChildCache.FindIndex(ID);
+	if (NodeIdx == INVALID_INDEX)
+	{
+		Scene::CSceneNode* pNode = Node->GetChildByPath(ID.CStr());
+		if (pNode) ChildCache.Add(ID, pNode);
+		return pNode;
+	}
+	else return ChildCache.ValueAt(NodeIdx);
+}
+//---------------------------------------------------------------------
+
 void CPropSceneNode::SetTransform(const matrix44& NewTfm)
 {
 	if (Node.IsValidPtr()) Node->SetWorldTransform(NewTfm);

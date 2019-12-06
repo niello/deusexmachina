@@ -44,8 +44,8 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 		CStrID ChildID;
 		n_verify(Reader.Read(ChildID));
 
-		//!!!REDUNDANCY! { [ { } ] } problem.
-		short SMTH = Reader.Read<short>();
+		//!!!FIXME: REDUNDANCY! { [ { } ] } problem.
+		Reader.Read<short>();
 
 		Scene::PSceneNode ChildNode = Node->CreateChild(ChildID);
 		if (!ChildNode || !LoadNode(Reader, ChildNode)) FAIL;

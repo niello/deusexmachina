@@ -56,9 +56,10 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	Resources::PResource RMeshData = pResMgr->RegisterResource<Render::CMeshData>(UID);
-	Render::PMeshData MeshData = RMeshData->ValidateObject<Render::CMeshData>();
+	if (!RMeshData) return nullptr;
 
-	if (!MeshData->UseRAMData()) return nullptr;
+	Render::PMeshData MeshData = RMeshData->ValidateObject<Render::CMeshData>();
+	if (!MeshData || !MeshData->UseRAMData()) return nullptr;
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 
@@ -95,9 +96,10 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 	if (!pResMgr || !GPU) return nullptr;
 
 	Resources::PResource RTexData = pResMgr->RegisterResource<Render::CTextureData>(UID);
-	Render::PTextureData TexData = RTexData->ValidateObject<Render::CTextureData>();
+	if (!RTexData) return nullptr;
 
-	if (!TexData->UseRAMData()) return nullptr;
+	Render::PTextureData TexData = RTexData->ValidateObject<Render::CTextureData>();
+	if (!TexData || !TexData->UseRAMData()) return nullptr;
 
 	Render::PTexture Texture = GPU->CreateTexture(TexData, AccessFlags);
 
