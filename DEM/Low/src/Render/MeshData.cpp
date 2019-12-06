@@ -64,8 +64,8 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 U32 CMeshData::GetVertexSize() const
 {
 	U32 Total = 0;
-	for (UPTR i = 0; i < VertexFormat.GetCount(); ++i)
-		Total += VertexFormat[i].GetSize();
+	for (const auto& Component : VertexFormat)
+		Total += Component.GetSize();
 	return Total;
 }
 //---------------------------------------------------------------------

@@ -42,7 +42,7 @@ public:
 
 	Data::PRAMData						VBData;
 	Data::PRAMData						IBData;
-	CArray<Render::CVertexComponent>	VertexFormat;
+	std::vector<Render::CVertexComponent> VertexFormat;
 	Render::EIndexType					IndexType = Render::Index_16;
 	U32									VertexCount = 0;
 	U32									IndexCount = 0;

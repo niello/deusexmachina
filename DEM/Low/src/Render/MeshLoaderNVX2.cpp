@@ -49,7 +49,7 @@ enum ENVX2VertexComponent
 	AllComponents = ((1 << NumVertexComponents) - 1)
 };
 
-static void SetupVertexComponents(U32 Mask, CArray<Render::CVertexComponent>& Components)
+static void SetupVertexComponents(U32 Mask, std::vector<Render::CVertexComponent>& Components)
 {
 	if (Mask & Coord)
 	{

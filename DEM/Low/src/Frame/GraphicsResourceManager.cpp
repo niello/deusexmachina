@@ -63,7 +63,7 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 
-	Render::PVertexLayout VertexLayout = GPU->CreateVertexLayout(&MeshData->VertexFormat.Front(), MeshData->VertexFormat.GetCount());
+	Render::PVertexLayout VertexLayout = GPU->CreateVertexLayout(MeshData->VertexFormat.data(), MeshData->VertexFormat.size());
 	Render::PVertexBuffer VB = GPU->CreateVertexBuffer(*VertexLayout, MeshData->VertexCount, Render::Access_GPU_Read, MeshData->VBData->GetPtr());
 	Render::PIndexBuffer IB;
 	if (MeshData->IndexCount)

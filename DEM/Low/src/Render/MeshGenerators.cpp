@@ -29,7 +29,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	MeshData->VertexCount = VertexCount;
 	MeshData->IndexCount = IndexCount;
 
-	auto& VC = *MeshData->VertexFormat.Reserve(1);
+	Render::CVertexComponent VC;
 	VC.Format = Render::VCFmt_Float32_2;
 	VC.Semantic = Render::VCSem_Position;
 	VC.Index = 0;
@@ -38,6 +38,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	VC.Stream = 0;
 	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
 	VC.PerInstanceData = false;
+	MeshData->VertexFormat.push_back(std::move(VC));
 
 	const UPTR VertexSize = VC.GetSize();
 
@@ -99,7 +100,7 @@ PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 
-	auto& VC = *MeshData->VertexFormat.Reserve(1);
+	Render::CVertexComponent VC;
 	VC.Format = Render::VCFmt_Float32_3;
 	VC.Semantic = Render::VCSem_Position;
 	VC.Index = 0;
@@ -108,6 +109,7 @@ PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 	VC.Stream = 0;
 	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
 	VC.PerInstanceData = false;
+	MeshData->VertexFormat.push_back(std::move(VC));
 
 	const UPTR VertexSize = VC.GetSize();
 
