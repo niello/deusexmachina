@@ -222,6 +222,9 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 
 	U32 ParamCount;
 	if (!Reader.Read<U32>(ParamCount)) FAIL;
+
+	if (!ParamCount) OK;
+
 	for (UPTR ParamIdx = 0; ParamIdx < ParamCount; ++ParamIdx)
 	{
 		CStrID ParamID;
