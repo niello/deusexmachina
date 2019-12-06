@@ -1,5 +1,6 @@
 #include "MemStream.h"
 #include <memory.h>
+#include <algorithm>
 
 namespace IO
 {
@@ -28,7 +29,7 @@ void CMemStream::Close()
 UPTR CMemStream::Read(void* pData, UPTR Size)
 {
 	n_assert(IsOpen() && pConstBuffer && !IsMapped() && (AccessMode & SAM_READ));
-	UPTR BytesToRead = n_min(Size, DataSize - Pos);
+	UPTR BytesToRead = std::min(Size, DataSize - Pos);
 	if (BytesToRead > 0)
 	{
 		memcpy(pData, pConstBuffer + Pos, BytesToRead);
@@ -87,7 +88,7 @@ bool CMemStream::Seek(I64 Offset, ESeekOrigin Origin)
 		case Seek_End:		SeekPos = DataSize + Offset; break;
 		default:			Sys::Error("CMemStream::Seek -> Unknown origin");
 	}
-	Pos = (IPTR)Clamp<I64>(SeekPos, 0, DataSize);
+	Pos = static_cast<UPTR>(std::clamp<I64>(SeekPos, 0, DataSize));
 	return Pos == SeekPos;
 }
 //---------------------------------------------------------------------

@@ -72,8 +72,10 @@ void CGameServer::Trigger()
 
 	// Update levels
 
-	UPTR ViewCount = LevelViews.GetCount();
-	vector3* pCOIArray = ViewCount ? (vector3*)_malloca(sizeof(vector3) * ViewCount) : nullptr;
+	constexpr UPTR MAX_VIEWS = 8;
+	vector3 COIArray[MAX_VIEWS];
+
+	UPTR ViewCount = std::min(LevelViews.GetCount(), MAX_VIEWS);
 
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
 	{
@@ -86,13 +88,13 @@ void CGameServer::Trigger()
 		{
 			CGameLevelView* pView = LevelViews[i];
 			if (pView->GetLevel() == pLevel)
-				pCOIArray[COICount++] = pView->GetCenterOfInterest();
+				COIArray[COICount++] = pView->GetCenterOfInterest();
 		}
 
 		Scene::CSceneNode* pSceneRoot = pLevel->GetSceneRoot();
 
 		DefferedNodes.Clear(false);
-		if (pSceneRoot) pSceneRoot->UpdateTransform(pCOIArray, COICount, false, &DefferedNodes);
+		if (pSceneRoot) pSceneRoot->UpdateTransform(COIArray, COICount, false, &DefferedNodes);
 
 		Physics::CPhysicsLevel* pPhysLvl = pLevel->GetPhysics();
 		if (pPhysLvl)
@@ -103,7 +105,7 @@ void CGameServer::Trigger()
 		}
 
 		for (UPTR i = 0; i < DefferedNodes.GetCount(); ++i)
-			DefferedNodes[i]->UpdateTransform(pCOIArray, COICount, true, nullptr);
+			DefferedNodes[i]->UpdateTransform(COIArray, COICount, true, nullptr);
 
 		pLevel->FireEvent(CStrID("AfterTransforms"));
 
@@ -114,8 +116,6 @@ void CGameServer::Trigger()
 			pSceneRoot->AcceptVisitor(Visitor);
 		}
 	}
-
-	if (pCOIArray) _freea(pCOIArray);
 
 	// Update level views
 

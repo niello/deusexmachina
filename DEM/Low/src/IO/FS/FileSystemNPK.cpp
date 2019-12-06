@@ -259,7 +259,7 @@ bool CFileSystemNPK::Seek(void* hFile, I64 Offset, ESeekOrigin Origin)
 	}
 	else
 	{
-		((CNPKFile*)hFile)->Offset = n_max(SeekPos, 0);
+		((CNPKFile*)hFile)->Offset = std::max(SeekPos, 0);
 		OK;
 	}
 }

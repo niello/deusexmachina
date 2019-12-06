@@ -1,6 +1,7 @@
 #pragma once
 #if DEM_PLATFORM_WIN32
 #include <System/OSWindow.h>
+#include <algorithm>
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -64,8 +65,8 @@ inline bool COSWindowWin32::GetAbsoluteXY(float XRel, float YRel, int& XAbs, int
 {
 	RECT r;
 	if (!hWnd || !::GetClientRect(hWnd, &r)) FAIL;
-	XAbs = (int)(XRel * n_max(r.right - r.left, 1));
-	YAbs = (int)(YRel * n_max(r.bottom - r.top, 1));
+	XAbs = (int)(XRel * std::max<LONG>(r.right - r.left, 1));
+	YAbs = (int)(YRel * std::max<LONG>(r.bottom - r.top, 1));
 	OK;
 }
 //---------------------------------------------------------------------
@@ -74,8 +75,8 @@ inline bool COSWindowWin32::GetRelativeXY(int XAbs, int YAbs, float& XRel, float
 {
 	RECT r;
 	if (!hWnd || !::GetClientRect(hWnd, &r)) FAIL;
-	XRel = XAbs / float(n_max(r.right - r.left, 1));
-	YRel = YAbs / float(n_max(r.bottom - r.top, 1));
+	XRel = XAbs / float(std::max<LONG>(r.right - r.left, 1));
+	YRel = YAbs / float(std::max<LONG>(r.bottom - r.top, 1));
 	OK;
 }
 //---------------------------------------------------------------------

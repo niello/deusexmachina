@@ -1,10 +1,8 @@
 #pragma once
-#ifndef __DEM_L1_MATH_AABB_H__
-#define __DEM_L1_MATH_AABB_H__
-
 #include <Math/Matrix44.h>
 #include <Math/plane.h>
 #include <System/System.h>
+#include <algorithm>
 
 // An axis-aligned bounding box class
 
@@ -77,9 +75,9 @@ public:
 // Center point, and the x,y,z vectors of the matrix define the Extents.
 inline void CAABB::Set(const matrix44& m)
 {
-	float xExtent = n_max(n_max(n_fabs(m.M11), n_fabs(m.M21)), n_fabs(m.M31));
-	float yExtent = n_max(n_max(n_fabs(m.M12), n_fabs(m.M22)), n_fabs(m.M32));
-	float zExtent = n_max(n_max(n_fabs(m.M13), n_fabs(m.M23)), n_fabs(m.M33));
+	float xExtent = std::max(std::max(n_fabs(m.M11), n_fabs(m.M21)), n_fabs(m.M31));
+	float yExtent = std::max(std::max(n_fabs(m.M12), n_fabs(m.M22)), n_fabs(m.M32));
+	float zExtent = std::max(std::max(n_fabs(m.M13), n_fabs(m.M23)), n_fabs(m.M33));
 	vector3 extent(xExtent, yExtent, zExtent);
 	vector3 Center = m.Translation();
 	Min = Center - extent;
@@ -445,5 +443,3 @@ inline int CAABB::intersect(const CAABB& box)
 	return OUTSIDE;
 }
 //---------------------------------------------------------------------
-
-#endif

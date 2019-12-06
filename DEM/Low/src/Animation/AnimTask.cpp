@@ -38,7 +38,7 @@ void CAnimTask::Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Sp
 			}
 			if (FadeInLength + FadeOutLength > Clip->GetDuration())
 			{
-				FadeOutLength = n_max(0.f, Clip->GetDuration() - FadeInLength);
+				FadeOutLength = std::max(0.f, Clip->GetDuration() - FadeInLength);
 				FadeInLength = Clip->GetDuration() - FadeOutLength;
 			}
 			FadeOutStartPos = Clip->GetDuration() - FadeOutLength;
@@ -52,7 +52,7 @@ void CAnimTask::Init(Anim::PAnimClip _Clip, bool _Loop, float _Offset, float _Sp
 			}
 			if (FadeInLength + FadeOutLength < -Clip->GetDuration())
 			{
-				FadeOutLength = n_min(0.f, -Clip->GetDuration() - FadeInLength);
+				FadeOutLength = std::min(0.f, -Clip->GetDuration() - FadeInLength);
 				FadeInLength = -Clip->GetDuration() - FadeOutLength;
 			}
 			FadeOutStartPos = -FadeOutLength;

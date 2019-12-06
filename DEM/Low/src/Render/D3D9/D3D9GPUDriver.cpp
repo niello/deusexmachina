@@ -849,7 +849,7 @@ UPTR CD3D9GPUDriver::GetMaxTextureSize(ETextureType Type) const
 	{
 		case Texture_1D: return (UPTR)D3DCaps.MaxTextureWidth;
 		case Texture_3D: return (UPTR)D3DCaps.MaxVolumeExtent;
-		default: return n_min((UPTR)D3DCaps.MaxTextureWidth, (UPTR)D3DCaps.MaxTextureHeight);
+		default: return std::min((UPTR)D3DCaps.MaxTextureWidth, (UPTR)D3DCaps.MaxTextureHeight);
 	}
 }
 //---------------------------------------------------------------------
@@ -2550,7 +2550,7 @@ PSampler CD3D9GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 					(D3DTEXTUREFILTERTYPE&)pValues[CD3D9Sampler::D3D9_MINFILTER],
 					(D3DTEXTUREFILTERTYPE&)pValues[CD3D9Sampler::D3D9_MAGFILTER],
 					(D3DTEXTUREFILTERTYPE&)pValues[CD3D9Sampler::D3D9_MIPFILTER]);
-	pValues[CD3D9Sampler::D3D9_MAXANISOTROPY] = Clamp<unsigned int>(Desc.MaxAnisotropy, 1, D3DCaps.MaxAnisotropy);
+	pValues[CD3D9Sampler::D3D9_MAXANISOTROPY] = std::clamp<unsigned int>(Desc.MaxAnisotropy, 1, D3DCaps.MaxAnisotropy);
 	pValues[CD3D9Sampler::D3D9_MAXMIPLEVEL] = *(DWORD*)&Desc.FinestMipMapLOD;
 	pValues[CD3D9Sampler::D3D9_MIPMAPLODBIAS] = *(DWORD*)&Desc.MipMapLODBias;
 
@@ -3202,7 +3202,7 @@ bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CVertexBuffer& Resource
 
 	UPTR BufferSize = VB9.GetSizeInBytes();
 	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	char* pSrc = nullptr;
@@ -3223,7 +3223,7 @@ bool CD3D9GPUDriver::ReadFromResource(void* pDest, const CIndexBuffer& Resource,
 
 	UPTR BufferSize = IB9.GetSizeInBytes();
 	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	char* pSrc = nullptr;
@@ -3253,9 +3253,9 @@ bool CD3D9GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& Re
 	UPTR BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
 	if (!BPP) FAIL;
 
-	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = std::max<UPTR>(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = std::max<UPTR>(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = std::max<UPTR>(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 	Params.BitsPerPixel = BPP;
@@ -3349,7 +3349,7 @@ bool CD3D9GPUDriver::WriteToResource(CVertexBuffer& Resource, const void* pData,
 
 	UPTR BufferSize = VB9.GetSizeInBytes();
 	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
@@ -3375,7 +3375,7 @@ bool CD3D9GPUDriver::WriteToResource(CIndexBuffer& Resource, const void* pData, 
 
 	UPTR BufferSize = IB9.GetSizeInBytes();
 	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
@@ -3405,9 +3405,9 @@ bool CD3D9GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcDa
 	UPTR BPP = CD3D9DriverFactory::D3DFormatBitsPerPixel(D3DFormat);
 	if (!BPP) FAIL;
 
-	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = std::max<UPTR>(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = std::max<UPTR>(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = std::max<UPTR>(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 	Params.BitsPerPixel = BPP;

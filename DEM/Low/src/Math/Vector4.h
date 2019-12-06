@@ -84,8 +84,6 @@ public:
     void lerp(const vector4& v0, float lerpVal);
     /// linear interpolation between v0 and v1
     void lerp(const vector4& v0, const vector4& v1, float lerpVal);
-    /// saturate components between 0 and 1
-    void saturate();
     /// dot product
     float dot(const vector4& v0) const;
 
@@ -489,20 +487,6 @@ vector4::lerp(const vector4& v0, const vector4& v1, float lerpVal)
     y = v0.y + ((v1.y - v0.y) * lerpVal);
     z = v0.z + ((v1.z - v0.z) * lerpVal);
     w = v0.w + ((v1.w - v0.w) * lerpVal);
-}
-
-
-//------------------------------------------------------------------------------
-/**
-*/
-inline
-void
-vector4::saturate()
-{
-    x = Saturate(x);
-    y = Saturate(y);
-    z = Saturate(z);
-    w = Saturate(w);
 }
 
 //------------------------------------------------------------------------------

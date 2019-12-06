@@ -106,7 +106,7 @@ void CMotorSystem::Update(float FrameTime)
 			((2.f * SlowDownRadius - pActor->DistanceToNavDest) * pActor->DistanceToNavDest) / (SlowDownRadius * SlowDownRadius) :
 			1.f;
 
-		Speed *= n_min(LocalArrive, GlobalArrive);
+		Speed *= std::min(LocalArrive, GlobalArrive);
 
 		// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
 		// if frame rate is variable, so abowe we detect if actor crossed destination last frame.
@@ -377,7 +377,7 @@ void CMotorSystem::SetFaceDirection(const vector3& Dir)
 
 float CMotorSystem::GetMaxSpeed() const
 {
-	return n_max(MaxSpeed[pActor->MvmtType], 0.f);
+	return std::max(MaxSpeed[pActor->MvmtType], 0.f);
 }
 //---------------------------------------------------------------------
 

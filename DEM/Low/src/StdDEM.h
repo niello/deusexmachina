@@ -9,10 +9,6 @@
 #define OK				return true
 #define FAIL			return false
 
-#ifndef nullptr
-#define nullptr			(0L)
-#endif
-
 #define INVALID_INDEX	(-1)
 
 // http://cnicholson.net/2011/01/stupid-c-tricks-a-better-sizeof_array
@@ -73,26 +69,9 @@ typedef UPTR				HHandle;
 #define n_stricmp _stricmp
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 1800 // 1800 is VS2013. Not tested vith VS2010&VS2012.
-#define va_copy(d, s) d = s
-#endif
-
-#ifdef __GNUC__
-// Hey! Look! A cute GNU C++ extension!
-#define min(a, b)   a <? b
-#define max(a, b)   a >? b
-#endif
-
 //---------------------------------------------------------------------
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
-template<class T> inline T n_min(T a, T b) { return a < b ? a : b; }
-template<class T> inline T n_max(T a, T b) { return a > b ? a : b; }
-template<class T, class T2> inline T n_min(T a, T2 b) { return a < (T)b ? a : (T)b; }
-template<class T, class T2> inline T n_max(T a, T2 b) { return a > (T)b ? a : (T)b; }
-
-template <class T> inline T Clamp(T Value, T Min, T Max) { return (Value < Min) ? Min : ((Value > Max) ? Max : Value); }
-inline float Saturate(float Value) { return Clamp(Value, 0.f, 1.f); }
 inline bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
 template <class T> inline T NextPow2(T x)
 {

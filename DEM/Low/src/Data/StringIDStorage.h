@@ -1,5 +1,4 @@
 #pragma once
-#define _HAS_EXCEPTIONS 0
 #include "StringID.h"
 #include <vector>
 

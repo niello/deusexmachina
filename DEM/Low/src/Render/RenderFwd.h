@@ -375,7 +375,7 @@ enum EEffectType
 
 inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 {
-	UPTR MaxDim = n_max(Width, Height);
+	UPTR MaxDim = std::max(Width, Height);
 	UPTR MipLevels = 1;
 	while (MaxDim > BlockSize)
 	{

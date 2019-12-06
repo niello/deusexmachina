@@ -60,7 +60,7 @@ template<class T> void CFixedArray<T>::SetSize(UPTR NewSize, bool KeepValues)
 	{
 		T* pOldData = pData;
 		pData = (NewSize > 0) ? n_new_array(T, NewSize) : nullptr;
-		UPTR MinSize = n_min(NewSize, Count);
+		UPTR MinSize = std::min(NewSize, Count);
 		for (UPTR i = 0; i < MinSize; ++i) pData[i] = pOldData[i];
 		if (pOldData) n_delete_array(pOldData);
 	}

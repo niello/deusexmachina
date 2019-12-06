@@ -56,15 +56,14 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vec
 
 	HRESULT hr;
 	UINT ModeCount = 0;
-	DXGI_MODE_DESC* pDXGIModes = nullptr;
+	std::unique_ptr<DXGI_MODE_DESC[]> DXGIModes;
 	do
 	{
 		// Starting with Direct3D 11.1, we recommend not to use GetDisplayModeList anymore to retrieve the matching 
 		// display mode. Instead, use IDXGIOutput1::GetDisplayModeList1, which supports stereo display mode. (c) Docs
-		if (pDXGIModes) _freea(pDXGIModes);
 		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, nullptr)) || !ModeCount) return 0;
-		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
-		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, pDXGIModes);
+		DXGIModes = std::make_unique<DXGI_MODE_DESC[]>(ModeCount);
+		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, DXGIModes.get());
 	}
 	while (hr == DXGI_ERROR_MORE_DATA); // Somtimes new modes become available right between two calls, see DXGI docs
 
@@ -72,7 +71,7 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vec
 	OutModes.reserve(ModeCount);
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
-		const DXGI_MODE_DESC& DXGIMode = pDXGIModes[i];
+		const DXGI_MODE_DESC& DXGIMode = DXGIModes[i];
 
 		CDisplayMode NewMode;
 		NewMode.Width = DXGIMode.Width;
@@ -89,8 +88,6 @@ UPTR CD3D11DisplayDriver::GetAvailableDisplayModes(EPixelFormat Format, std::vec
 		}
 	}
 
-	_freea(pDXGIModes);
-
 	return Total;
 }
 //---------------------------------------------------------------------
@@ -103,21 +100,20 @@ bool CD3D11DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 
 	HRESULT hr;
 	UINT ModeCount = 0;
-	DXGI_MODE_DESC* pDXGIModes = nullptr;
+	std::unique_ptr<DXGI_MODE_DESC[]> DXGIModes;
 	do
 	{
 		// Starting with Direct3D 11.1, we recommend not to use GetDisplayModeList anymore to retrieve the matching 
 		// display mode. Instead, use IDXGIOutput1::GetDisplayModeList1, which supports stereo display mode. (c) Docs
-		if (pDXGIModes) _freea(pDXGIModes);
 		if (!SUCCEEDED(pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, nullptr)) || !ModeCount) FAIL;
-		pDXGIModes = (DXGI_MODE_DESC*)_malloca(sizeof(DXGI_MODE_DESC) * ModeCount);
-		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, pDXGIModes);
+		DXGIModes = std::make_unique<DXGI_MODE_DESC[]>(ModeCount);
+		hr = pDXGIOutput->GetDisplayModeList(DXGIFormat, 0, &ModeCount, DXGIModes.get());
 	}
 	while (hr == DXGI_ERROR_MORE_DATA); // Sometimes new modes become available right between two calls, see DXGI docs
 
 	for (UINT i = 0; i < ModeCount; ++i)
 	{
-		DXGI_MODE_DESC& DXGIMode = pDXGIModes[i];
+		DXGI_MODE_DESC& DXGIMode = DXGIModes[i];
 		if (Mode.Width == DXGIMode.Width &&
 			Mode.Height == DXGIMode.Height &&
 			DXGIFormat == DXGIMode.Format && //???doesn't always match?
@@ -125,12 +121,10 @@ bool CD3D11DisplayDriver::SupportsDisplayMode(const CDisplayMode& Mode) const
 			Mode.RefreshRate.Denominator == DXGIMode.RefreshRate.Denominator &&
 			!Mode.Stereo)
 		{
-			_freea(pDXGIModes);
 			OK;
 		}
 	}
 
-	_freea(pDXGIModes);
 	FAIL;
 }
 //---------------------------------------------------------------------

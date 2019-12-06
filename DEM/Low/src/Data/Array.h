@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_ARRAY_H__
-#define __DEM_L1_ARRAY_H__
-
 #include <Data/Flags.h>
 #include <System/System.h>
 #include <Data/ArrayUtils.h>	// Search and closest index
@@ -231,7 +228,7 @@ void CArray<T>::Resize(UPTR NewAllocSize)
 	n_assert_dbg(!NewAllocSize || pData);
 
 	Allocated = NewAllocSize;
-	Count = n_min(Allocated, Count);
+	Count = std::min(Allocated, Count);
 
 	/*
 	// NB: variant above doesn't construct objects above the Count! It is good, and Move() relies on it!
@@ -317,7 +314,7 @@ void CArray<T>::Move(IPTR FromIdx, IPTR ToIdx)
 	{
 		// NB Nebula2: Be aware of uninitialized slots between FromIdx and ToIdx
 
-		UPTR OldDataEndIdx = n_min(Count, ToIdx);
+		UPTR OldDataEndIdx = std::min(Count, static_cast<UPTR>(ToIdx));
 
 		T* pDataSrc = pData + Count - 1;
 		T* pDataDest = pData + NewCount - 1;
@@ -520,5 +517,3 @@ UPTR CArray<T>::Difference(const CArray<T>& Other, CArray<T>& Out) const
 	return Out.GetCount() - OutCount;
 }
 //---------------------------------------------------------------------
-
-#endif

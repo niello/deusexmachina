@@ -295,7 +295,7 @@ void CNavSystem::Update(float FrameTime)
 							{
 								memmove(Path + i - 1, Path + i + 1, sizeof(dtPolyRef) * (PathSize - (i + 1)));
 								PathSize -= 2;
-								i = n_min(i - 2, 1);
+								i = std::min(i - 2, 1);
 							}						
 					}
 
@@ -415,7 +415,7 @@ void CNavSystem::ResetPositionPoly(bool ForceResetState)
 			if (!pActor->IsNavSystemIdle())
 			{
 				// No poly found, try to find nearest valid poly in a recovery radius. Radius may be changed.
-				const float RecoveryRadius = n_min(pActor->Radius * 2.f, 20.f);
+				const float RecoveryRadius = std::min(pActor->Radius * 2.f, 20.f);
 				const float RecoveryExtents[3] = { RecoveryRadius, pActor->Height, RecoveryRadius };
 				pNavQuery->findNearestPoly(pActor->Position.v, RecoveryExtents, pNavFilter, &Ref, nullptr);
 			}

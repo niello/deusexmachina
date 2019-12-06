@@ -188,7 +188,7 @@ U16 CPropInventory::AddItem(Items::PItem NewItem, U16 Count, bool AsManyAsCan)
 		{
 			U16 ExcessCountW = (U16)n_ceil(OverW / Tpl->Weight);
 			U16 ExcessCountV = (U16)n_ceil(OverV / Tpl->Volume);
-			U16 ExcessCount = n_max(ExcessCountW, ExcessCountV);
+			U16 ExcessCount = std::max(ExcessCountW, ExcessCountV);
 			if (Count <= ExcessCount) return 0;
 			Count -= ExcessCount;
 			TotalW = Tpl->Weight * Count;

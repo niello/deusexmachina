@@ -82,10 +82,9 @@ bool CD3D11DriverFactory::GetAdapterInfo(UPTR Adapter, CAdapterInfo& OutInfo) co
 	int Len = WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), nullptr, 0, nullptr, nullptr);
 	if (Len > 0)
 	{
-		char* pBuf = (char*)_malloca(Len); // Len includes terminating nullptr
-		WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), pBuf, Len, nullptr, nullptr);
-		OutInfo.Description = pBuf;
-		_freea(pBuf);
+		std::string Buffer(Len, '\0');
+		WideCharToMultiByte(CP_UTF8, 0, D3DAdapterInfo.Description, sizeof_array(D3DAdapterInfo.Description), Buffer.data(), Len, nullptr, nullptr);
+		OutInfo.Description = Buffer.c_str();
 	}
 
 	OutInfo.VendorID = D3DAdapterInfo.VendorId;

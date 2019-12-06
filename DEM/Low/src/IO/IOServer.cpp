@@ -173,10 +173,10 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 	bool Result = true;
 	U64 Size = Src->GetSize();
 	const U64 MaxBytesPerOp = 16 * 1024 * 1024; // 16 MB
-	void* pBuffer = n_malloc((UPTR)n_min(Size, MaxBytesPerOp));
+	void* pBuffer = n_malloc((UPTR)std::min(Size, MaxBytesPerOp));
 	while (Size > 0)
 	{
-		UPTR CurrOpBytes = (UPTR)n_min(Size, MaxBytesPerOp);
+		UPTR CurrOpBytes = (UPTR)std::min(Size, MaxBytesPerOp);
 		if (Src->Read(pBuffer, CurrOpBytes) != CurrOpBytes)
 		{
 			Result = false;

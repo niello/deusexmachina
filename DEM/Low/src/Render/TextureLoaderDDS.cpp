@@ -266,7 +266,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 	TexDesc.Width = Header.width;
 	TexDesc.Height = Header.height;
 	TexDesc.Depth = Header.depth;
-	TexDesc.MipLevels = Clamp(Header.mipMapCount, 1U, (U32)DEM_MAX_MIP_LEVELS); //!!!set DesiredMipCount, if provided! some value for 'as in file', some for 'full chain' 
+	TexDesc.MipLevels = std::clamp(Header.mipMapCount, 1U, (U32)DEM_MAX_MIP_LEVELS); //!!!set DesiredMipCount, if provided! some value for 'as in file', some for 'full chain' 
 	TexDesc.MSAAQuality = Render::MSAA_None;
 	const bool MipDataProvided = (Header.mipMapCount > 1);
 

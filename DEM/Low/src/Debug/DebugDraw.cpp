@@ -187,7 +187,7 @@ __ImplementSingleton(CDebugDraw);
 //			UPTR Remain = Insts.GetCount();
 //			while (Remain > 0)
 //			{
-//				UPTR Count = n_min(MaxShapesPerDIP, Remain);
+//				UPTR Count = std::min(MaxShapesPerDIP, Remain);
 //				Remain -= Count;
 //				void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
 //				memcpy(pInstData, Insts.Begin(), Count * sizeof(CDDShapeInst));
@@ -283,7 +283,7 @@ __ImplementSingleton(CDebugDraw);
 //		RenderSrv->GetDisplay().GetAbsoluteXY(Text.Left, Text.Top, X, Y);
 //		r.left = X;
 //		r.top = Y;
-//		RenderSrv->GetDisplay().GetAbsoluteXY(n_min(Text.Left + Text.Width, 1.f), 1.f, X, Y);
+//		RenderSrv->GetDisplay().GetAbsoluteXY(std::min(Text.Left + Text.Width, 1.f), 1.f, X, Y);
 //		r.right = X;
 //		r.bottom = Y;
 //

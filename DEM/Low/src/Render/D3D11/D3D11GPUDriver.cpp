@@ -176,7 +176,7 @@ bool CD3D11GPUDriver::Init(UPTR AdapterNumber, EGPUDriverType DriverType)
 	//???and also one dirty flag? when set VP do D3D11 remember its SR or it resets SR size?
 	//!!!need static assert!
 	n_assert_dbg(sizeof(VPSRSetFlags) * 4 >= VP_OR_SR_SET_FLAG_COUNT);
-	MaxViewportCount = n_min(MaxViewportCountCaps, VP_OR_SR_SET_FLAG_COUNT);
+	MaxViewportCount = std::min(MaxViewportCountCaps, VP_OR_SR_SET_FLAG_COUNT);
 	CurrVP = n_new_array(D3D11_VIEWPORT, MaxViewportCount);
 	CurrSR = n_new_array(RECT, MaxViewportCount);
 	VPSRSetFlags.ClearAll();
@@ -452,7 +452,7 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	SCDesc.BufferDesc.Format = BackBufferFormat;
 	SCDesc.BufferDesc.RefreshRate.Numerator = 0;
 	SCDesc.BufferDesc.RefreshRate.Denominator = 0;
-	SCDesc.BufferCount = n_min(BackBufferCount, DXGI_MAX_SWAP_CHAIN_BUFFERS);
+	SCDesc.BufferCount = std::min<UPTR>(BackBufferCount, DXGI_MAX_SWAP_CHAIN_BUFFERS);
 	SCDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	if (BackBufferDesc.UseAsShaderInput)
 		SCDesc.BufferUsage |= DXGI_USAGE_SHADER_INPUT;
@@ -1924,7 +1924,7 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 
 	// We create temporary buffers sized by powers of 2, to make reuse easier (the same
 	// principle as for a small allocator). 16 bytes is the smallest possible buffer.
-	UPTR NextPow2Size = n_max(16, NextPow2(pUSMParam->GetSize())/* * ElementCount; //!!!for StructuredBuffer!*/); 
+	UPTR NextPow2Size = std::max<U32>(16, NextPow2(pUSMParam->GetSize())/* * ElementCount; //!!!for StructuredBuffer!*/); 
 	CDict<UPTR, CTmpCB*>& BufferPool = 
 		pUSMParam->GetType() == USMBuffer_Structured ? TmpStructuredBuffers :
 		(pUSMParam->GetType() == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
@@ -2321,7 +2321,7 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	memcpy(D3DDesc.BorderColor, Desc.BorderColorRGBA, sizeof(D3DDesc.BorderColor));
 	D3DDesc.ComparisonFunc = GetD3DCmpFunc(Desc.CmpFunc);
 	D3DDesc.Filter = GetD3DTexFilter(Desc.Filter, (Desc.CmpFunc != Cmp_Never));
-	D3DDesc.MaxAnisotropy = Clamp<unsigned int>(Desc.MaxAnisotropy, 1, 16);
+	D3DDesc.MaxAnisotropy = std::clamp<unsigned int>(Desc.MaxAnisotropy, 1, 16);
 	D3DDesc.MaxLOD = Desc.CoarsestMipMapLOD;
 	D3DDesc.MinLOD = Desc.FinestMipMapLOD;
 	D3DDesc.MipLODBias = Desc.MipMapLODBias;
@@ -3085,7 +3085,7 @@ bool CD3D11GPUDriver::ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_U
 	if (!pDest || !pBuf || !BufferSize) FAIL;
 
 	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	const bool IsNonMappable = (Usage == D3D11_USAGE_DEFAULT || Usage == D3D11_USAGE_IMMUTABLE);
@@ -3160,9 +3160,9 @@ bool CD3D11GPUDriver::ReadFromResource(const CImageData& Dest, const CTexture& R
 	UPTR BPP = CD3D11DriverFactory::DXGIFormatBitsPerPixel(DXGIFormat);
 	if (!BPP) FAIL;
 
-	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = std::max<UPTR>(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = std::max<UPTR>(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = std::max<UPTR>(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 	Params.BitsPerPixel = BPP;
@@ -3285,7 +3285,7 @@ bool CD3D11GPUDriver::WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UP
 	if (!pBuf || Usage == D3D11_USAGE_IMMUTABLE || !pData || !BufferSize) FAIL;
 
 	UPTR RequestedSize = Size ? Size : BufferSize;
-	UPTR SizeToCopy = n_min(RequestedSize, BufferSize - Offset);
+	UPTR SizeToCopy = std::min(RequestedSize, BufferSize - Offset);
 	if (!SizeToCopy) OK;
 
 	const int UpdateWhole = (!Offset && SizeToCopy == BufferSize);
@@ -3355,9 +3355,9 @@ bool CD3D11GPUDriver::WriteToResource(CTexture& Resource, const CImageData& SrcD
 	UPTR Dims = Resource.GetDimensionCount();
 	if (!pTexRsrc || Usage == D3D11_USAGE_IMMUTABLE || !Dims) FAIL;
 
-	UPTR TotalSizeX = n_max(Desc.Width >> MipLevel, 1);
-	UPTR TotalSizeY = n_max(Desc.Height >> MipLevel, 1);
-	UPTR TotalSizeZ = n_max(Desc.Depth >> MipLevel, 1);
+	UPTR TotalSizeX = std::max<UPTR>(Desc.Width >> MipLevel, 1);
+	UPTR TotalSizeY = std::max<UPTR>(Desc.Height >> MipLevel, 1);
+	UPTR TotalSizeZ = std::max<UPTR>(Desc.Depth >> MipLevel, 1);
 
 	CCopyImageParams Params;
 

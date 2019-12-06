@@ -117,7 +117,7 @@ n_assert(false);
 	n_verify(SUCCEEDED(pGraphBuilder->QueryInterface(IID_IVideoWindow, (void**)&pVideoWnd)));
 	pGraphBuilder->QueryInterface(IID_IBasicVideo, (void**)&pBasicVideo);
 
-	OAHWND OwnerHWnd = nullptr;
+	OAHWND OwnerHWnd = 0;
 	CoreSrv->GetGlobal(CString("hwnd"), (int&)OwnerHWnd);
 	RECT Rect;
 	GetClientRect((HWND)OwnerHWnd, &Rect);

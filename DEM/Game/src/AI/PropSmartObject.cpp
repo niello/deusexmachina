@@ -386,7 +386,7 @@ void CPropSmartObject::SetTransitionDuration(float Time)
 void CPropSmartObject::SetTransitionProgress(float Time)
 {
 	if (!IsInTransition()) return;
-	TrProgress = Clamp(Time, 0.f, TrDuration);
+	TrProgress = std::clamp(Time, 0.f, TrDuration);
 	UpdateAnimationCursor();
 	if (TrProgress >= TrDuration) CompleteTransition();
 }

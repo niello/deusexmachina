@@ -94,20 +94,20 @@ bool __fastcall CalcValidImageRegion(const Data::CBox* pInRegion, UPTR Dimension
 {
 	if (pInRegion)
 	{
-		int OffsetX = n_max(pInRegion->X, 0);
-		int SizeX = n_min(pInRegion->W, ImageWidth - OffsetX);
+		int OffsetX = std::max(pInRegion->X, 0);
+		int SizeX = std::min(pInRegion->W, ImageWidth - OffsetX);
 		if (SizeX <= 0) FAIL;
 
 		if (Dimensions > 1)
 		{
-			int OffsetY = n_max(pInRegion->Y, 0);
-			int SizeY = n_min(pInRegion->H, ImageHeight - OffsetY);
+			int OffsetY = std::max(pInRegion->Y, 0);
+			int SizeY = std::min(pInRegion->H, ImageHeight - OffsetY);
 			if (SizeY <= 0) FAIL;
 
 			if (Dimensions > 2)
 			{
-				int OffsetZ = n_max(pInRegion->Z, 0);
-				int SizeZ = n_min(pInRegion->D, ImageDepth - OffsetZ);
+				int OffsetZ = std::max(pInRegion->Z, 0);
+				int SizeZ = std::min(pInRegion->D, ImageDepth - OffsetZ);
 				if (SizeZ <= 0) FAIL;
 
 				OutOffsetZ = OffsetZ;

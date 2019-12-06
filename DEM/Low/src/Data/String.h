@@ -1,10 +1,8 @@
 #pragma once
-#ifndef DEM_L1_STRING_H
-#define DEM_L1_STRING_H
-
 #include <Data/Hash.h>
 #include <System/System.h>
 #include <stdarg.h>
+#include <algorithm>
 
 // Character string. Set(SrcString) and CString(SrcString) copy data to newly allocated buffer.
 
@@ -210,7 +208,7 @@ inline void CString::Add(char Chr)
 
 inline void CString::TruncateRight(UPTR CharCount)
 {
-	Length = n_max(Length - CharCount, 0);
+	Length = std::max(Length - CharCount, static_cast<UPTR>(0));
 	pString[Length] = 0;
 }
 //---------------------------------------------------------------------
@@ -341,56 +339,3 @@ static inline CString operator +(char Char, const CString& Str)
 	else return Str;
 }
 //---------------------------------------------------------------------
-
-/*
-	static CString	Concatenate(const CArray<CString>& Strings, const CString& WhiteSpace);
-	void			Strip(UPTR Idx);
-	void			Strip(const char* CharSet);
-
-inline CString CString::Trim(const char* CharSet, bool Left, bool Right) const
-{
-//!!!GetTrimmedSubstring(const char* pStr, const char* CharSet, bool Left, bool Right, OutStart, OutLength);!
-	CString Str(*this);
-	Str.Trim(CharSet, Left, Right);
-	return Str;
-}
-//---------------------------------------------------------------------
-
-inline void CString::Strip(UPTR Idx)
-{
-	n_assert(Idx < (UPTR)Length());
-	char* pStr = pString ? pString : pLocalString;
-	pStr[Idx] = 0;
-	SetLength(Idx);
-}
-//---------------------------------------------------------------------
-
-// Terminates the string at the first occurrence of one of the characters in a CharSet
-inline void CString::Strip(const char* CharSet)
-{
-	n_assert(CharSet);
-	char* pStr = pString ? pString : pLocalString;
-	char* pOccur = strpbrk(pStr, CharSet);
-	if (pOccur)
-	{
-		*pOccur = 0;
-		SetLength(pOccur - pStr);
-	}
-}
-//---------------------------------------------------------------------
-
-inline CString CString::Concatenate(const CArray<CString>& Strings, const CString& WhiteSpace)
-{
-	CString Result;
-	for (UPTR i = 0; i < Strings.GetCount(); ++i)
-	{
-		Result.Add(Strings[i]);
-		if (i < Strings.GetCount() - 1)
-			Result.Add(WhiteSpace);
-	}
-	return Result;
-}
-//---------------------------------------------------------------------
-*/
-
-#endif

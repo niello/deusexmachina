@@ -40,7 +40,7 @@ bool CTerrainRenderer::Init(bool LightingEnabled)
 		// determined by DEM_LIGHT_COUNT of a tech, lighting stops at the first light index == -1.
 		// Clamp to maximum free VS input/output register count of 10, other 6 are used for other values.
 		const UPTR LightIdxVectorCount = (INSTANCE_MAX_LIGHT_COUNT + 3) / 4;
-		InstanceDataDecl.SetSize(n_min(2 + LightIdxVectorCount, 10));
+		InstanceDataDecl.SetSize(std::min<UPTR>(2 + LightIdxVectorCount, 10));
 	}
 	else
 	{
@@ -687,8 +687,9 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 
 		CTerrain* pTerrain = pRenderNode->pRenderable->As<CTerrain>();
 
-		const float VisibilityRange = 1000.f;
-		const float MorphStartRatio = 0.7f;
+		constexpr float VisibilityRange = 1000.f;
+		constexpr float MorphStartRatio = 0.7f;
+		constexpr UPTR MAX_LOD_COUNT = 32;
 
 		const CCDLODData* pCDLOD = pTerrain->GetCDLODData();
 		U32 LODCount = pCDLOD->GetLODCount();
@@ -698,8 +699,8 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		//!!!PERF: may recalculate only when LODCount / VisibilityRange changes!
 		float MorphStart = 0.f;
 		float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
-		float* pMorphConsts = (float*)_malloca(sizeof(float) * 2 * LODCount);
-		float* pCurrMorphConst = pMorphConsts;
+		float MorphConsts[2 * MAX_LOD_COUNT];
+		float* pCurrMorphConst = MorphConsts;
 		for (U32 j = 0; j < LODCount; ++j)
 		{
 			float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
@@ -733,7 +734,7 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		CProcessTerrainNodeArgs Args;
 		Args.pCDLOD = pTerrain->GetCDLODData();
 		Args.pInstances = pInstances;
-		Args.pMorphConsts = pMorphConsts;
+		Args.pMorphConsts = MorphConsts;
 		Args.pRenderContext = &Context;
 		Args.MaxInstanceCount = MaxInstanceCount;
 		Args.AABBMinX = AABBMinX;
@@ -757,8 +758,6 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 		// The first unused light index is always equal -1 so no matter how much lights are, all unused ones are ignored.
 		// For constant instancing this value never gets used, tech with LightCount = 0 is always selected.
 		if (CurrMaxLightCount > MaxLightCount) MaxLightCount = CurrMaxLightCount;
-
-		_freea(pMorphConsts);
 
 		if (!PatchCount && !QuarterPatchCount)
 		{
@@ -1055,16 +1054,25 @@ CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& C
 			IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
 			if (VLIdx == INVALID_INDEX)
 			{
+				constexpr UPTR MAX_COMPONENTS = 64;
+
 				UPTR BaseComponentCount = pVL->GetComponentCount();
 				UPTR InstComponentCount = InstanceVB->GetVertexLayout()->GetComponentCount();
 				UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
-				CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
-				memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-				memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstComponentCount * sizeof(CVertexComponent));
 
-				PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
+				if (DescComponentCount > MAX_COMPONENTS)
+				{
+					::Sys::Error("CModelRenderer::Render() > too many vertex layout components");
+					BaseComponentCount = std::min(BaseComponentCount, MAX_COMPONENTS);
+					DescComponentCount = std::min(DescComponentCount, MAX_COMPONENTS);
+					InstComponentCount = DescComponentCount - BaseComponentCount;
+				}
 
-				_freea(pInstancedDecl);
+				CVertexComponent InstancedDecl[MAX_COMPONENTS];
+				memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
+				memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstComponentCount * sizeof(CVertexComponent));
+
+				PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
 
 				n_assert_dbg(VLInstanced.IsValidPtr());
 				InstancedLayouts.Add(pVL, VLInstanced);

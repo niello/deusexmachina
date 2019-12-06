@@ -1,5 +1,6 @@
 #include "Light.h"
 #include <Math/Matrix44.h>
+#include <algorithm>
 
 namespace Render
 {
@@ -25,7 +26,7 @@ float CLight::CalcLightPriority(const vector3& ObjectPos, const vector3& LightPo
 		ModelLight *= Math::RSqrt(SqDistance); //!!!TEST IT!
 		float CosAlpha = ModelLight.Dot(LightInvDir);
 		float Falloff = (CosAlpha - CosHalfOuter) / (CosHalfInner - CosHalfOuter);
-		return SqIntensity * Attenuation * Clamp(Falloff, 0.f, 1.f);
+		return SqIntensity * Attenuation * std::clamp(Falloff, 0.f, 1.f);
 	}
 
 	return SqIntensity * Attenuation;

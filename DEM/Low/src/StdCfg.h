@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __DEM_STDCFG_H__
-#define __DEM_STDCFG_H__
 
 #define DEM_STATS
 //#define DEM_NO_ASSERT
@@ -60,6 +58,4 @@ const int DEM_THREAD_COUNT = 1;
 //------------------------------------------------------------------------------
 #ifndef __GNUC__
 #  define  __attribute__(x)  /**/
-#endif
-
 #endif

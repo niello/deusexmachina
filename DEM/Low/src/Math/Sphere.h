@@ -174,10 +174,10 @@ inline Data::CRect sphere::project_screen_rh(const matrix44& view, const matrix4
     if (frontZ > -nearZ) frontZ = -nearZ;
     vector3 screenSize = projection.mult_divw(vector3(this->r, this->r, frontZ));
     screenSize.y = -screenSize.y;
-    float left   = Saturate(0.5f * (1.0f + (screenPos.x - screenSize.x)));
-    float right  = Saturate(0.5f * (1.0f + (screenPos.x + screenSize.x)));
-    float top    = Saturate(0.5f * (1.0f + (screenPos.y + screenSize.y)));
-    float bottom = Saturate(0.5f * (1.0f + (screenPos.y - screenSize.y)));
+    float left   = std::clamp(0.5f * (1.0f + (screenPos.x - screenSize.x)), 0.f, 1.f);
+    float right  = std::clamp(0.5f * (1.0f + (screenPos.x + screenSize.x)), 0.f, 1.f);
+    float top    = std::clamp(0.5f * (1.0f + (screenPos.y + screenSize.y)), 0.f, 1.f);
+    float bottom = std::clamp(0.5f * (1.0f + (screenPos.y - screenSize.y)), 0.f, 1.f);
 
     return Data::CRect((IPTR)left, (IPTR)top, (UPTR)(right - left), (UPTR)(bottom - top));
 }

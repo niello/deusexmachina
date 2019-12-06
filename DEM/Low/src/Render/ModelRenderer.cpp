@@ -441,18 +441,27 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 					IPTR VLIdx = InstancedLayouts.FindIndex(pVL);
 					if (VLIdx == INVALID_INDEX)
 					{
+						constexpr UPTR MAX_COMPONENTS = 64;
+
 						UPTR BaseComponentCount = pVL->GetComponentCount();
-						UPTR DescComponentCount = BaseComponentCount + InstanceDataDecl.GetCount();
-						CVertexComponent* pInstancedDecl = (CVertexComponent*)_malloca(DescComponentCount * sizeof(CVertexComponent));
-						memcpy(pInstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
-						memcpy(pInstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount() * sizeof(CVertexComponent));
+						UPTR InstComponentCount = InstanceDataDecl.GetCount();
+						UPTR DescComponentCount = BaseComponentCount + InstComponentCount;
 
-						PVertexLayout VLInstanced = GPU.CreateVertexLayout(pInstancedDecl, DescComponentCount);
+						if (DescComponentCount > MAX_COMPONENTS)
+						{
+							::Sys::Error("CModelRenderer::Render() > too many vertex layout components");
+							BaseComponentCount = std::min(BaseComponentCount, MAX_COMPONENTS);
+							DescComponentCount = std::min(DescComponentCount, MAX_COMPONENTS);
+							InstComponentCount = DescComponentCount - BaseComponentCount;
+						}
 
-						_freea(pInstancedDecl);
+						CVertexComponent InstancedDecl[MAX_COMPONENTS];
+						memcpy(InstancedDecl, pVL->GetComponent(0), BaseComponentCount * sizeof(CVertexComponent));
+						memcpy(InstancedDecl + BaseComponentCount, InstanceDataDecl.GetPtr(), InstComponentCount * sizeof(CVertexComponent));
+
+						PVertexLayout VLInstanced = GPU.CreateVertexLayout(InstancedDecl, DescComponentCount);
 
 						pVLInstanced = VLInstanced.Get();
-						n_assert_dbg(pVLInstanced);
 						InstancedLayouts.Add(pVL, VLInstanced);
 					}
 					else pVLInstanced = InstancedLayouts.ValueAt(VLIdx).Get();
@@ -567,7 +576,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 
 				if (ConstSkinPalette && pRenderNode->pSkinPalette)
 				{
-					const UPTR BoneCount = n_min(pRenderNode->BoneCount, ConstSkinPalette.GetElementCount());
+					const UPTR BoneCount = std::min(pRenderNode->BoneCount, ConstSkinPalette.GetElementCount());
 					if (pRenderNode->pSkinMapping)
 					{
 						for (UPTR BoneIdxIdx = 0; BoneIdxIdx < BoneCount; ++BoneIdxIdx)
