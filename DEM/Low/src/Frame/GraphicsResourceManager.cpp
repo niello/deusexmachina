@@ -240,7 +240,11 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 			CStrID RUID;
 			if (!Reader.Read(RUID)) FAIL;
 			Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
-			if (Texture.IsNullPtr()) FAIL;
+			if (Texture.IsNullPtr())
+			{
+				::Sys::Error(("Can't load effect or material texture: " + RUID.ToString()).c_str());
+				FAIL;
+			}
 			Out.ResourceValues.emplace(ParamID, Texture);
 		}
 		else if (MaterialTable.GetSampler(ParamID))
