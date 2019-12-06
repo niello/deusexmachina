@@ -41,6 +41,7 @@
 #include <Render/SkinInfoLoaderSKN.h>
 #include <Render/MeshData.h>
 #include <Render/MeshLoaderNVX2.h>
+#include <Render/MeshLoaderMSH.h>
 #include <Render/TextureData.h>
 #include <Render/TextureLoaderTGA.h>
 #include <Render/TextureLoaderDDS.h>
@@ -638,6 +639,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CCDLODData::RTTI, n_new(Resources::CCDLODDataLoader(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderCDLOD(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("nvx2", &Render::CMeshData::RTTI, n_new(Resources::CMeshLoaderNVX2(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("msh", &Render::CMeshData::RTTI, n_new(Resources::CMeshLoaderMSH(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("skn", &Render::CSkinInfo::RTTI, n_new(Resources::CSkinInfoLoaderSKN(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("dds", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderDDS(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("tga", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderTGA(*ResMgr)));

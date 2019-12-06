@@ -186,6 +186,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Render/Mesh.h
 	DEM/Low/src/Render/MeshData.h
 	DEM/Low/src/Render/MeshGenerators.h
+	DEM/Low/src/Render/MeshLoaderMSH.h
 	DEM/Low/src/Render/MeshLoaderNVX2.h
 	DEM/Low/src/Render/Model.h
 	DEM/Low/src/Render/ModelRenderer.h
@@ -439,6 +440,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Render/Mesh.cpp
 	DEM/Low/src/Render/MeshData.cpp
 	DEM/Low/src/Render/MeshGenerators.cpp
+	DEM/Low/src/Render/MeshLoaderMSH.cpp
 	DEM/Low/src/Render/MeshLoaderNVX2.cpp
 	DEM/Low/src/Render/Model.cpp
 	DEM/Low/src/Render/ModelRenderer.cpp
