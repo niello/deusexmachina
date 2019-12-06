@@ -28,13 +28,12 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 		Reader.Read(DataBlockCount);
 		--DataBlockCount;
 
-		//???!!!use FOURCC?!
-		CString ClassName;
-		n_assert(Reader.ReadString(ClassName));
-		Scene::PNodeAttribute Attr = Core::CFactory::Instance().Create<Scene::CNodeAttribute>(ClassName);
+		U32 ClassFourCC;
+		n_verify(Reader.Read(ClassFourCC));
+		Scene::PNodeAttribute Attr = Core::CFactory::Instance().Create<Scene::CNodeAttribute>(ClassFourCC);
 
 		//!!!not all attrs may be saved with blocks! change SCN format?
-		if (!Attr->LoadDataBlocks(Reader, DataBlockCount)) FAIL;
+		if (!Attr || !Attr->LoadDataBlocks(Reader, DataBlockCount)) FAIL;
 
 		Node->AddAttribute(*Attr);
 	}
@@ -42,14 +41,14 @@ bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 	Reader.Read(Count);
 	for (U16 i = 0; i < Count; ++i)
 	{
-		char ChildName[256];
-		n_assert(Reader.ReadString(ChildName, sizeof(ChildName)));
+		CStrID ChildID;
+		n_verify(Reader.Read(ChildID));
 
 		//!!!REDUNDANCY! { [ { } ] } problem.
 		short SMTH = Reader.Read<short>();
 
-		Scene::PSceneNode ChildNode = Node->CreateChild(CStrID(ChildName));
-		if (ChildNode.IsNullPtr() || !LoadNode(Reader, ChildNode)) FAIL;
+		Scene::PSceneNode ChildNode = Node->CreateChild(ChildID);
+		if (!ChildNode || !LoadNode(Reader, ChildNode)) FAIL;
 	}
 
 	OK;

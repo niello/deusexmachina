@@ -541,7 +541,7 @@ public:
 			// Assemble a model attribute per submesh
 
 			Data::CParams ModelAttribute;
-			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
+			ModelAttribute.emplace_back(CStrID("Class"), 'MDLA'); //std::string("Frame::CModelAttribute"));
 			ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
 			if (GroupIndex > 0)
 				ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
@@ -562,7 +562,7 @@ public:
 		if (!SkinID.empty())
 		{
 			Data::CParams SkinAttribute;
-			SkinAttribute.emplace_back(CStrID("Class"), std::string("Frame::CSkinAttribute"));
+			SkinAttribute.emplace_back(CStrID("Class"), 'SKIN'); //std::string("Frame::CSkinAttribute"));
 			SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinID);
 			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
 			Attributes.push_back(std::move(SkinAttribute));
@@ -954,7 +954,7 @@ public:
 		}
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CLightAttribute"));
+		Attribute.emplace_back(CStrID("Class"), 'LGTA'); //std::string("Frame::CLightAttribute"));
 		Attribute.emplace_back(CStrID("LightType"), LightType);
 		Attribute.emplace_back(CStrID("Color"), vector4(Color.v, 3));
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);
@@ -983,7 +983,7 @@ public:
 		Ctx.Log.LogDebug("Camera");
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CCameraAttribute"));
+		Attribute.emplace_back(CStrID("Class"), 'CAMR'); //std::string("Frame::CCameraAttribute"));
 
 		if (pCamera->ProjectionType.Get() == FbxCamera::eOrthogonal)
 			Attribute.emplace_back(CStrID("Orthogonal"), true);
@@ -1060,7 +1060,7 @@ public:
 		std::sort(Thresholds.begin(), Thresholds.end(), [](const auto& a, const auto& b) { return a.first < b.first; });
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), std::string("Scene::CLODGroup"));
+		Attribute.emplace_back(CStrID("Class"), 'LODG'); //std::string("Scene::CLODGroup"));
 
 		//!!!can't store float -> string in a Data::CParams! Use array of sections with 2 fields each?
 		//!!!store the last one! //???use FLT_MAX for uniformity of the list?

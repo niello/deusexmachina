@@ -408,7 +408,7 @@ public:
 			if (!ExportSkin(Node.skinId, SkinID, Ctx)) return false;
 
 			Data::CParams SkinAttribute;
-			SkinAttribute.emplace_back(CStrID("Class"), std::string("Frame::CSkinAttribute"));
+			SkinAttribute.emplace_back(CStrID("Class"), 'SKIN'); //std::string("Frame::CSkinAttribute"));
 			SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinID);
 			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
 			Attributes.push_back(std::move(SkinAttribute));
@@ -526,7 +526,7 @@ public:
 		for (const auto& MaterialID : MeshInfo.MaterialIDs)
 		{
 			Data::CParams ModelAttribute;
-			ModelAttribute.emplace_back(CStrID("Class"), std::string("Frame::CModelAttribute"));
+			ModelAttribute.emplace_back(CStrID("Class"), 'MDLA'); //std::string("Frame::CModelAttribute"));
 			ModelAttribute.emplace_back(CStrID("Mesh"), MeshInfo.MeshID);
 			if (GroupIndex > 0)
 				ModelAttribute.emplace_back(CStrID("MeshGroupIndex"), GroupIndex);
@@ -1087,7 +1087,7 @@ public:
 		Ctx.Log.LogDebug("Camera " + Camera.name);
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CCameraAttribute"));
+		Attribute.emplace_back(CStrID("Class"), 'CAMR'); //std::string("Frame::CCameraAttribute"));
 
 		if (const auto* pOrthographic = dynamic_cast<gltf::Orthographic*>(Camera.projection.get()))
 		{
@@ -1166,7 +1166,7 @@ public:
 		const float Intensity = Light.intensity / BaseIntensity;
 
 		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), std::string("Frame::CLightAttribute"));
+		Attribute.emplace_back(CStrID("Class"), 'LGTA'); //std::string("Frame::CLightAttribute"));
 		Attribute.emplace_back(CStrID("LightType"), LightType);
 		Attribute.emplace_back(CStrID("Color"), vector4({ Light.color.r, Light.color.g, Light.color.b }));
 		Attribute.emplace_back(CStrID("Intensity"), Intensity);

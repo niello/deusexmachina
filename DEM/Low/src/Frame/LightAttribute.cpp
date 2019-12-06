@@ -6,7 +6,7 @@
 
 namespace Frame
 {
-FACTORY_CLASS_IMPL(Frame::CLightAttribute, 'NALT', Scene::CNodeAttribute);
+FACTORY_CLASS_IMPL(Frame::CLightAttribute, 'LGTA', Scene::CNodeAttribute);
 
 bool CLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {

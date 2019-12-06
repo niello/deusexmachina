@@ -12,7 +12,7 @@ SceneNode
 SceneNodeAttr
 {
 	// Generic
-	Class			{ Type = "string" }
+	Class			{ Type = "int" } // FourCC
 	
 	// Light
 	LightType		{ FourCC = "LGHT" Type = "int" }

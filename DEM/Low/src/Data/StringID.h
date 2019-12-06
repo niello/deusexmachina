@@ -1,6 +1,6 @@
 #pragma once
 #include <Data/Hash.h>
-#include <type_traits>
+#include <string>
 
 // Static string identifier. The actual string is stored only once and all CStrIDs reference it
 // by pointers. That is guaranteed that each string (case-sensitive) will have its unique address
@@ -25,7 +25,7 @@ public:
 
 	static const CStringID Empty;
 
-	CStringID() {}
+	CStringID() = default;
 	CStringID(const CStringID& Other) : pString(Other.pString) {}
 	CStringID(CStringID&& Other) : pString(Other.pString) {}
 #ifdef _DEBUG
@@ -37,6 +37,7 @@ public:
 
 	uintptr_t	GetID() const { return reinterpret_cast<uintptr_t>(pString); }
 	const char*	CStr() const { return pString; }
+	std::string ToString() const { return pString ? std::string(pString) : std::string(); }
 
 	operator	uintptr_t() const { return reinterpret_cast<uintptr_t>(pString); }
 	operator	const char*() const { return pString; }

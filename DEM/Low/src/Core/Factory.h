@@ -42,6 +42,15 @@ public:
 		n_assert_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI));
 		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
 	}
+
+	template<class T> T* Create(uint32_t ClassFourCC, void* pParam = nullptr) const
+	{
+		const CRTTI* pRTTI = GetRTTI(ClassFourCC);
+
+		// FIXME: use Verify instead of duplicating condition!
+		n_assert_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI));
+		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
+	}
 };
 
 }
