@@ -5,7 +5,7 @@ namespace Render
 {
 RTTI_CLASS_IMPL(Render::CMeshData, Resources::CResourceObject);
 
-CMeshData::CMeshData() {}
+CMeshData::CMeshData() = default;
 
 CMeshData::~CMeshData()
 {
@@ -27,18 +27,49 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 
 	if (UpdateAABBs)
 	{
-		const U32 VertexSize = GetVertexSize();
-		for (UPTR i = 0; i < Count; ++i)
+		UPTR VertexSize = 0;
+		UPTR PositionOffset = static_cast<UPTR>(-1);
+		for (const auto& Component : VertexFormat)
 		{
-			Render::CPrimitiveGroup& MeshGroup = pData[i];
-			MeshGroup.AABB.BeginExtend();
-			const U16* pIndex = static_cast<U16*>(IBData->GetPtr()) + MeshGroup.FirstIndex;
-			for (U32 j = 0; j < MeshGroup.IndexCount; ++j)
+			if (Component.Semantic == EVertexComponentSemantic::VCSem_Position &&
+				Component.Format == EVertexComponentFormat::VCFmt_Float32_3)
+				PositionOffset = VertexSize;
+
+			VertexSize += Component.GetSize();
+		}
+
+		if (PositionOffset < VertexSize)
+		{
+			auto pPositionData = static_cast<const char*>(VBData->GetPtr()) + PositionOffset;
+			for (UPTR i = 0; i < Count; ++i)
 			{
-				const float* pVertex = static_cast<float*>(VBData->GetPtr()) + (pIndex[j] * VertexSize);
-				MeshGroup.AABB.Extend(pVertex[0], pVertex[1], pVertex[2]);
+				Render::CPrimitiveGroup& MeshGroup = pData[i];
+				MeshGroup.AABB = CAABB::Empty;
+				MeshGroup.AABB.BeginExtend();
+
+				if (IndexType == Index_16)
+				{
+					const U16* pIndex = static_cast<U16*>(IBData->GetPtr()) + MeshGroup.FirstIndex;
+					const U16* pIndexEnd = pIndex + MeshGroup.IndexCount;
+					for (; pIndex < pIndexEnd; ++pIndex)
+					{
+						auto pVertex = reinterpret_cast<const vector3*>(pPositionData + (*pIndex) * VertexSize);
+						MeshGroup.AABB.Extend(pVertex->x, pVertex->y, pVertex->z);
+					}
+				}
+				else
+				{
+					const U32* pIndex = static_cast<U32*>(IBData->GetPtr()) + MeshGroup.FirstIndex;
+					const U32* pIndexEnd = pIndex + MeshGroup.IndexCount;
+					for (; pIndex < pIndexEnd; ++pIndex)
+					{
+						auto pVertex = reinterpret_cast<const vector3*>(pPositionData + (*pIndex) * VertexSize);
+						MeshGroup.AABB.Extend(pVertex->x, pVertex->y, pVertex->z);
+					}
+				}
+
+				MeshGroup.AABB.EndExtend();
 			}
-			MeshGroup.AABB.EndExtend();
 		}
 	}
 
@@ -61,9 +92,9 @@ void CMeshData::InitGroups(CPrimitiveGroup* pData, UPTR Count, UPTR SubMeshCount
 }
 //---------------------------------------------------------------------
 
-U32 CMeshData::GetVertexSize() const
+UPTR CMeshData::GetVertexSize() const
 {
-	U32 Total = 0;
+	UPTR Total = 0;
 	for (const auto& Component : VertexFormat)
 		Total += Component.GetSize();
 	return Total;

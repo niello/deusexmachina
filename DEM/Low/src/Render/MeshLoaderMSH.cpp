@@ -6,6 +6,18 @@
 
 namespace Resources
 {
+#pragma pack(push, 1)
+struct CMSHMeshGroup
+{
+	U32     FirstVertex;
+	U32     VertexCount;
+	U32     FirstIndex;
+	U32     IndexCount;
+	U8      TopologyCode;
+	vector3 AABBMin;
+	vector3 AABBMax;
+};
+#pragma pack(pop)
 
 const Core::CRTTI& CMeshLoaderMSH::GetResultType() const
 {
@@ -48,28 +60,57 @@ PResourceObject CMeshLoaderMSH::CreateResource(CStrID UID)
 	MeshData->VertexFormat.resize(VertexComponentCount);
 	for (auto& Component : MeshData->VertexFormat)
 	{
-		//
+		U8 SemanticCode, FormatCode, Index, StreamIndex;
+		if (!Reader.Read(SemanticCode)) return nullptr;
+		if (!Reader.Read(FormatCode)) return nullptr;
+		if (!Reader.Read(Index)) return nullptr;
+		if (!Reader.Read(StreamIndex)) return nullptr;
+
+		Component.Format = static_cast<Render::EVertexComponentFormat>(FormatCode);
+		Component.Semantic = static_cast<Render::EVertexComponentSemantic>(SemanticCode);
+		Component.Index = Index;
+		Component.Stream = StreamIndex;
+		Component.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+		Component.UserDefinedName = nullptr;
+		Component.PerInstanceData = false;
 	}
 
 	std::vector<Render::CPrimitiveGroup> Groups(GroupCount);
 	for (auto& MeshGroup : Groups)
 	{
-		MeshGroup.FirstVertex = Group.firstVertex;
-		MeshGroup.VertexCount = Group.numVertices;
-		MeshGroup.FirstIndex = Group.firstTriangle * 3;
-		MeshGroup.IndexCount = Group.numTriangles * 3;
-		MeshGroup.Topology = Render::Prim_TriList;
+		CMSHMeshGroup Group;
+		Reader.Read(Group);
+
+		MeshGroup.FirstVertex = Group.FirstVertex;
+		MeshGroup.VertexCount = Group.VertexCount;
+		MeshGroup.FirstIndex = Group.FirstIndex;
+		MeshGroup.IndexCount = Group.IndexCount;
+		MeshGroup.Topology = static_cast<Render::EPrimitiveTopology>(Group.TopologyCode);
+		MeshGroup.AABB.Min = Group.AABBMin;
+		MeshGroup.AABB.Max = Group.AABBMax;
 	}
 
-	//!!!can map data through MMF instead!
-	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
-	Stream->Read(MeshData->VBData->GetPtr(), DataSize);
+	U32 VertexStartPos, IndexStartPos;
+	if (!Reader.Read(VertexStartPos)) return nullptr;
+	if (!Reader.Read(IndexStartPos)) return nullptr;
 
-	//!!!can map data through MMF instead!
-	DataSize = Header.numIndices * sizeof(U16);
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
-	Stream->Read(MeshData->IBData->GetPtr(), DataSize);
+	if (VertexCount)
+	{
+		//!!!can map data through MMF instead!
+		Stream->Seek(VertexStartPos, IO::Seek_Begin);
+		const auto DataSize = VertexCount * MeshData->GetVertexSize();
+		MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		Stream->Read(MeshData->VBData->GetPtr(), DataSize);
+	}
+
+	if (IndexCount)
+	{
+		//!!!can map data through MMF instead!
+		Stream->Seek(IndexStartPos, IO::Seek_Begin);
+		const auto DataSize = IndexCount * IndexSize;
+		MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		Stream->Read(MeshData->IBData->GetPtr(), DataSize);
+	}
 
 	MeshData->InitGroups(Groups.data(), Groups.size(), Groups.size(), 1, false, false);
 

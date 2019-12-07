@@ -51,148 +51,105 @@ enum ENVX2VertexComponent
 
 static void SetupVertexComponents(U32 Mask, std::vector<Render::CVertexComponent>& Components)
 {
+	Render::CVertexComponent Cmp;
+	Cmp.Stream = 0;
+	Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	Cmp.UserDefinedName = nullptr;
+	Cmp.PerInstanceData = false;
+
 	if (Mask & Coord)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_3;
 		Cmp.Semantic = Render::VCSem_Position;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 	else if (Mask & Coord4)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_4;
 		Cmp.Semantic = Render::VCSem_Position;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Normal)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_3;
 		Cmp.Semantic = Render::VCSem_Normal;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv0)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_2;
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv1)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_2;
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 1;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv2)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_2;
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 2;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Uv3)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_2;
 		Cmp.Semantic = Render::VCSem_TexCoord;
 		Cmp.Index = 3;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Color)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_4;
 		Cmp.Semantic = Render::VCSem_Color;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Tangent)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_3;
 		Cmp.Semantic = Render::VCSem_Tangent;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Bitangent)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_3;
 		Cmp.Semantic = Render::VCSem_Bitangent;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
 	if (Mask & Weights)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_4;
 		Cmp.Semantic = Render::VCSem_BoneWeights;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 
-	//???use ubyte4 for my geometry format?
 	if (Mask & JIndices)
 	{
-		Render::CVertexComponent& Cmp = *Components.Reserve(1);
 		Cmp.Format = Render::VCFmt_Float32_4;
 		Cmp.Semantic = Render::VCSem_BoneIndices;
 		Cmp.Index = 0;
-		Cmp.Stream = 0;
-		Cmp.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
-		Cmp.UserDefinedName = nullptr;
-		Cmp.PerInstanceData = false;
+		Components.push_back(Cmp);
 	}
 }
 //---------------------------------------------------------------------

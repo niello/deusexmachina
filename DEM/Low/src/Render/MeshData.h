@@ -58,7 +58,7 @@ public:
 	UPTR					GetSubMeshCount() const { return _SubMeshCount; }
 	UPTR					GetLODCount() const { return _LODCount; }
 
-	U32                     GetVertexSize() const;
+	UPTR                    GetVertexSize() const;
 
 	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
 	bool					UseRAMData();
