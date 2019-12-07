@@ -63,13 +63,13 @@ bool CPropSceneNode::InternalActivate()
 	GetEntity()->GetAttr<CString>(NodePath, CStrID("ScenePath"));
 
 	const char* pUnresolved;
-	Scene::PSceneNode PathNode = GetEntity()->GetLevel()->GetSceneRoot()->FindDeepestChild(NodePath.CStr(), pUnresolved);
+	Scene::PSceneNode PathNode = GetEntity()->GetLevel()->GetSceneRoot()->FindLastNodeAtPath(NodePath.CStr(), pUnresolved);
 	if (pUnresolved)
 	{
 #ifdef _DEBUG
 		Sys::Log("CPropSceneNode::InternalActivate() > ScenePath chain incomplete, created '%s'\n", pUnresolved);
 #endif
-		PathNode = PathNode->CreateChildChain(pUnresolved);
+		PathNode = PathNode->CreateNodeChain(pUnresolved);
 	}
 	n_assert(PathNode.IsValidPtr());
 

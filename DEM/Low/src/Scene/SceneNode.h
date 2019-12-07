@@ -1,11 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_NODE_H__
-#define __DEM_L1_SCENE_NODE_H__
-
 #include <Resources/ResourceObject.h>
-#include <Scene/NodeAttribute.h> // definition is required by FindFirstAttr()
-#include <Scene/NodeVisitor.h>
-#include <Data/Dictionary.h>
+#include <Data/StringID.h>
+#include <Data/Flags.h>
 #include <Math/TransformSRT.h>
 
 // Scene nodes represent hierarchical transform frames and together form a scene graph.
@@ -23,6 +19,8 @@ namespace Scene
 {
 typedef Ptr<class CSceneNode> PSceneNode;
 typedef Ptr<class CNodeController> PNodeController;
+typedef Ptr<class CNodeAttribute> PNodeAttribute;
+class INodeVisitor;
 
 class CSceneNode: public Resources::CResourceObject
 {
@@ -59,7 +57,7 @@ public:
 
 	virtual bool			IsResourceValid() const { OK; }
 
-	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes = nullptr);
+	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, std::vector<CSceneNode*>* pOutDefferedNodes = nullptr);
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
@@ -71,7 +69,7 @@ public:
 	CStrID					GetName() const { return Name; }
 
 	CSceneNode*				CreateChild(CStrID ChildName);
-	CSceneNode*				CreateChildChain(const char* pPath);
+	CSceneNode*				CreateNodeChain(const char* pPath);
 	bool					AddChild(CStrID ChildName, CSceneNode& Node, bool Replace = false);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(UPTR Idx);
@@ -151,5 +149,3 @@ inline void CSceneNode::SetWorldTransform(const matrix44& Transform)
 //---------------------------------------------------------------------
 
 }
-
-#endif

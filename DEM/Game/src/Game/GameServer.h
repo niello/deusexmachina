@@ -53,7 +53,7 @@ protected:
 	CDict<CStrID, PGameLevel>		Levels;
 	CArray<CGameLevelView*>			LevelViews;
 	Data::CHandleManager			LevelViewHandles;
-	CArray<Scene::CSceneNode*>		DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
+	std::vector<Scene::CSceneNode*> DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
 	bool CommitContinueData();
 	bool CommitLevelDiff(CGameLevel& Level);

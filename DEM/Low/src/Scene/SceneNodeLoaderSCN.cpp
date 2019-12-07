@@ -1,6 +1,6 @@
 #include "SceneNodeLoaderSCN.h"
-
 #include <Scene/SceneNode.h>
+#include <Scene/NodeAttribute.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
 #include <Core/Factory.h>

@@ -1,10 +1,13 @@
 #include "SceneNode.h"
+#include <Scene/NodeAttribute.h>
 #include <Scene/NodeController.h>
+#include <Scene/NodeVisitor.h>
 #include <Data/StringTokenizer.h>
 
 namespace Scene
 {
-const UPTR MAX_NODE_NAME_LEN = 64;
+constexpr UPTR MAX_NODE_NAME_LEN = 64;
+const std::string ParentToken("^");
 
 CSceneNode::CSceneNode(CStrID NodeName)
 	: Name(NodeName)
@@ -33,13 +36,13 @@ CSceneNode::~CSceneNode()
 // NB: All deffered nodes are either processed or not, so there are at most two steps of scene graph updating -
 // 1st update down to first deffered node (not inclusive) in each branch, 2nd update all nodes not updated in a 1st step.
 void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
-								 bool ProcessDefferedController, CArray<CSceneNode*>* pOutDefferedNodes)
+								 bool ProcessDefferedController, std::vector<CSceneNode*>* pOutDefferedNodes)
 {
 	if (Controller.IsValidPtr() && Controller->IsActive())
 	{
 		if (!ProcessDefferedController && Controller->IsDeffered())
 		{
-			if (pOutDefferedNodes) pOutDefferedNodes->Add(this);
+			if (pOutDefferedNodes) pOutDefferedNodes->push_back(this);
 			return;
 		}
 
@@ -156,7 +159,7 @@ CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 }
 //---------------------------------------------------------------------
 
-CSceneNode* CSceneNode::CreateChildChain(const char* pPath)
+CSceneNode* CSceneNode::CreateNodeChain(const char* pPath)
 {
 	CSceneNode* pCurrNode = this;
 
@@ -164,8 +167,13 @@ CSceneNode* CSceneNode::CreateChildChain(const char* pPath)
 
 	char Buffer[MAX_NODE_NAME_LEN];
 	Data::CStringTokenizer StrTok(pPath, Buffer, MAX_NODE_NAME_LEN);
-	while (StrTok.GetNextToken('.'))
-		pCurrNode = pCurrNode->CreateChild(CStrID(StrTok.GetCurrToken()));
+	while (pCurrNode && StrTok.GetNextToken('.'))
+	{
+		if (StrTok.GetCurrToken() == ParentToken)
+			pCurrNode = pCurrNode->GetParent();
+		else
+			pCurrNode = pCurrNode->CreateChild(CStrID(StrTok.GetCurrToken()));
+	}
 
 	return pCurrNode;
 }
@@ -225,8 +233,6 @@ CSceneNode* CSceneNode::FindLastNodeAtPath(const char* pPath, char const* & pUnr
 		pUnresolvedPathPart = nullptr;
 		return const_cast<CSceneNode*>(this);
 	}
-
-	const std::string ParentToken("^");
 
 	const CSceneNode* pCurrNode = this;
 	pUnresolvedPathPart = pPath;

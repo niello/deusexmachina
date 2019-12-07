@@ -1,6 +1,7 @@
 #pragma once
 #include <Game/Property.h>
 #include <Scene/SceneNode.h>
+#include <Data/Dictionary.h>
 #include <Math/AABB.h>
 
 // Scene node property associates entity transform with scene graph node
