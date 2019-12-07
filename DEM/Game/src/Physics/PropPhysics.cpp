@@ -110,7 +110,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		if (RelNodePath.IsValid())
 		{
 			//???!!!use node cache?!
-			pCurrNode = Prop.GetNode()->GetChildByPath(RelNodePath.CStr());
+			pCurrNode = Prop.GetNode()->FindNodeByPath(RelNodePath.CStr());
 			n_assert2_dbg(pCurrNode && "Child node not found", RelNodePath.CStr());
 		}
 		else

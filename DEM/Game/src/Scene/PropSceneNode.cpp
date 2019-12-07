@@ -275,7 +275,7 @@ Scene::CSceneNode* CPropSceneNode::GetChildNode(CStrID ID)
 	IPTR NodeIdx = ChildCache.FindIndex(ID);
 	if (NodeIdx == INVALID_INDEX)
 	{
-		Scene::CSceneNode* pNode = Node->GetChildByPath(ID.CStr());
+		Scene::CSceneNode* pNode = Node->FindNodeByPath(ID.CStr());
 		if (pNode) ChildCache.Add(ID, pNode);
 		return pNode;
 	}

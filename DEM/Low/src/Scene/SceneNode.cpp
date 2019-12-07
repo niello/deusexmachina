@@ -217,29 +217,42 @@ bool CSceneNode::IsChild(const CSceneNode* pParentNode) const
 //---------------------------------------------------------------------
 
 // NB: no data is changed inside this method, but const_cast is required to return non-const node pointer.
-// If pUnresolvedPathPart == nullptr, the child node is found, return this node. Else the deepest found node is returned.
-CSceneNode* CSceneNode::FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const
+// If pUnresolvedPathPart == nullptr, the whole path was resolved. Otherwise the last existing node is returned.
+CSceneNode* CSceneNode::FindLastNodeAtPath(const char* pPath, char const* & pUnresolvedPathPart) const
 {
-	const CSceneNode* pCurrNode = this;
-
 	if (!pPath || !*pPath)
 	{
 		pUnresolvedPathPart = nullptr;
-		return const_cast<CSceneNode*>(pCurrNode);
+		return const_cast<CSceneNode*>(this);
 	}
 
+	const std::string ParentToken("^");
+
+	const CSceneNode* pCurrNode = this;
 	pUnresolvedPathPart = pPath;
 
 	char Buffer[MAX_NODE_NAME_LEN];
 	Data::CStringTokenizer StrTok(pPath, Buffer, MAX_NODE_NAME_LEN);
 	while (StrTok.GetNextToken('.'))
 	{
-		CStrID ChildName(StrTok.GetCurrToken());
-		auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
-		if (It != Children.end() && (*It)->GetName() == ChildName)
+		CSceneNode* pNextNode = nullptr;
+		if (StrTok.GetCurrToken() == ParentToken)
+		{
+			pNextNode = pCurrNode->GetParent();
+		}
+		else
+		{
+			// Get child
+			CStrID ChildName(StrTok.GetCurrToken());
+			auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
+			if (It != Children.end() && (*It)->GetName() == ChildName)
+				pNextNode = *It;
+		}
+
+		if (pNextNode)
 		{
 			pUnresolvedPathPart = StrTok.GetCursor();
-			pCurrNode = *It;
+			pCurrNode = pNextNode;
 		}
 		else
 		{

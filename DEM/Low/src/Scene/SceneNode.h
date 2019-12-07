@@ -80,8 +80,8 @@ public:
 	UPTR					GetChildCount() const { return Children.size(); }
 	CSceneNode*				GetChild(UPTR Idx) const { return Children[Idx]; }
 	CSceneNode*				GetChild(CStrID ChildName) const;
-	CSceneNode*				GetChildByPath(const char* pPath) const;
-	CSceneNode*				FindDeepestChild(const char* pPath, char const* & pUnresolvedPathPart) const;
+	CSceneNode*				FindNodeByPath(const char* pPath) const;
+	CSceneNode*				FindLastNodeAtPath(const char* pPath, char const* & pUnresolvedPathPart) const;
 
 	bool					SetController(CNodeController* pCtlr);
 	CNodeController*		GetController() const { return Controller.Get(); }
@@ -117,10 +117,10 @@ public:
 	const vector3&			GetWorldPosition() const { return WorldMatrix.Translation(); }
 };
 
-inline CSceneNode* CSceneNode::GetChildByPath(const char* pPath) const
+inline CSceneNode* CSceneNode::FindNodeByPath(const char* pPath) const
 {
 	const char* pUnprocessed;
-	CSceneNode* pNode = FindDeepestChild(pPath, pUnprocessed);
+	CSceneNode* pNode = FindLastNodeAtPath(pPath, pUnprocessed);
 	return pUnprocessed ? nullptr : pNode;
 }
 //---------------------------------------------------------------------
