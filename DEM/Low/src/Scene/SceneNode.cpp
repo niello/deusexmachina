@@ -243,17 +243,9 @@ CSceneNode* CSceneNode::FindLastNodeAtPath(const char* pPath, char const* & pUnr
 	{
 		CSceneNode* pNextNode = nullptr;
 		if (StrTok.GetCurrToken() == ParentToken)
-		{
 			pNextNode = pCurrNode->GetParent();
-		}
 		else
-		{
-			// Get child
-			CStrID ChildName(StrTok.GetCurrToken());
-			auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
-			if (It != Children.end() && (*It)->GetName() == ChildName)
-				pNextNode = *It;
-		}
+			pNextNode = pCurrNode->GetChild(CStrID(StrTok.GetCurrToken()));
 
 		if (pNextNode)
 		{

@@ -86,6 +86,9 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 
 	if (!pNode || !SkinInfo) FAIL;
 
+	auto pRootParent = pNode->FindNodeByPath(RootSearchPath.CStr());
+	if (!pRootParent) FAIL;
+
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
 	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
