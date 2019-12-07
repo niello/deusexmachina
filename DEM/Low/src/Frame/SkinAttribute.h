@@ -25,13 +25,13 @@ protected:
 		Skin_AutocreateBones = 0x04
 	};
 
-	CString             RootSearchPath;
-	CStrID              SkinInfoID;
-	Render::PSkinInfo   SkinInfo;
-	matrix44*           pSkinPalette = nullptr;
-	Scene::CSceneNode** pBoneNodes = nullptr; //???strong refs?
+	CString                         RootSearchPath;
+	CStrID                          SkinInfoID;
+	Render::PSkinInfo               SkinInfo;
+	matrix44*                       pSkinPalette = nullptr;
+	std::vector<Scene::CSceneNode*> BoneNodes; //???strong refs?
 
-	Scene::CSceneNode* SetupBoneNode(UPTR BoneIndex);
+	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParentNode);
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets

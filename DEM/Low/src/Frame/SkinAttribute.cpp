@@ -12,7 +12,6 @@ FACTORY_CLASS_IMPL(Frame::CSkinAttribute, 'SKIN', Scene::CNodeAttribute);
 
 CSkinAttribute::~CSkinAttribute()
 {
-	SAFE_DELETE_ARRAY(pBoneNodes);
 	SAFE_FREE_ALIGNED(pSkinPalette);
 }
 //---------------------------------------------------------------------
@@ -47,35 +46,33 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-// FIXME: if no parent node, must search by ID from the object root node!
-// FIXME: knowing root, can do it recursively without this hack.
-Scene::CSceneNode* NOT_PROCESSED_NODE = reinterpret_cast<Scene::CSceneNode*>(static_cast<UPTR>(-1));
-
-Scene::CSceneNode* CSkinAttribute::SetupBoneNode(UPTR BoneIndex)
+void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParentNode)
 {
-	if (pBoneNodes[BoneIndex] == NOT_PROCESSED_NODE)
+	const UPTR BoneCount = SkinInfo->GetBoneCount();
+	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		const Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(BoneIndex);
-		Scene::CSceneNode* pParentBoneNode = (BoneInfo.ParentIndex == INVALID_INDEX) ? pNode : SetupBoneNode(BoneInfo.ParentIndex);
-		if (pParentBoneNode)
-		{
-			Scene::CSceneNode* pBoneNode = pParentBoneNode->GetChild(BoneInfo.ID);
-			if (!pBoneNode && Flags.Is(Skin_AutocreateBones)) pBoneNode = pParentBoneNode->CreateChild(BoneInfo.ID);
-			pBoneNodes[BoneIndex] = pBoneNode;
+		const auto& BoneInfo = SkinInfo->GetBoneInfo(i);
 
-			// Set skinned mesh into a bind pose initially
-			if (pBoneNode)
-			{
-				matrix44 BindPoseLocal;
-				SkinInfo->GetInvBindPose(BoneIndex).invert_simple(BindPoseLocal);
-				if (BoneInfo.ParentIndex != INVALID_INDEX)
-					BindPoseLocal.mult_simple(SkinInfo->GetInvBindPose(BoneInfo.ParentIndex));
-				pBoneNode->SetLocalTransform(BindPoseLocal);
-			}
+		if (BoneInfo.ParentIndex != ParentIndex) continue;
+
+		auto& pBoneNode = BoneNodes[i];
+
+		pBoneNode = pParentNode->GetChild(BoneInfo.ID);
+		if (!pBoneNode && Flags.Is(Skin_AutocreateBones))
+			pBoneNode = pParentNode->CreateChild(BoneInfo.ID);
+
+		// Set skinned mesh into a bind pose initially
+		if (pBoneNode)
+		{
+			matrix44 BindPoseLocal;
+			SkinInfo->GetInvBindPose(i).invert_simple(BindPoseLocal);
+			if (ParentIndex != INVALID_INDEX)
+				BindPoseLocal.mult_simple(SkinInfo->GetInvBindPose(ParentIndex));
+			pBoneNode->SetLocalTransform(BindPoseLocal);
+
+			SetupBoneNodes(i, pBoneNode);
 		}
-		else pBoneNodes[BoneIndex] = nullptr;
 	}
-	return pBoneNodes[BoneIndex];
 }
 //---------------------------------------------------------------------
 
@@ -91,17 +88,12 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
-	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
 
-	// Here we fill an array of scene nodes associated with bones of this skin instance. NB: nullptr values
-	// are valid result for bones that don't exist and must not be autocreated. Since processing is
-	// recursive and random-access, we must clear array in a first pass and then process it in a second pass.
+	BoneNodes.clear();
+	BoneNodes.resize(BoneCount, nullptr);
 
-	for (UPTR i = 0; i < BoneCount; ++i)
-		pBoneNodes[i] = NOT_PROCESSED_NODE;
-
-	for (UPTR i = 0; i < BoneCount; ++i)
-		SetupBoneNode(i);
+	// Setup root bone(s) and recurse down the hierarchy
+	SetupBoneNodes(INVALID_INDEX, pRootParent);
 
 	OK;
 }
@@ -120,12 +112,12 @@ void CSkinAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
 
-	if (SkinInfo.IsNullPtr() || !pBoneNodes || !pSkinPalette) return;
+	if (!SkinInfo || BoneNodes.empty() || !pSkinPalette) return;
 
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		Scene::CSceneNode* pBoneNode = pBoneNodes[i];
+		const Scene::CSceneNode* pBoneNode = BoneNodes[i];
 		if (pBoneNode && pBoneNode->IsWorldMatrixChanged())
 			pSkinPalette[i].mult2_simple(SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
 	}
