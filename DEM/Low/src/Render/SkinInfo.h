@@ -1,9 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_SKIN_INFO_H__
-#define __DEM_L1_RENDER_SKIN_INFO_H__
-
 #include <Resources/ResourceObject.h>
-#include <Data/FixedArray.h>
 #include <Data/StringID.h>
 #include <Math/Matrix44.h>
 
@@ -25,8 +21,8 @@ class CSkinInfo: public Resources::CResourceObject
 
 protected:
 
-	matrix44*				pInvBindPose;
-	CFixedArray<CBoneInfo>	Bones;
+	matrix44*              pInvBindPose;
+	std::vector<CBoneInfo> Bones;
 	//???root and terminal node indices?
 
 public:
@@ -43,11 +39,9 @@ public:
 	const matrix44&		GetInvBindPose(UPTR BoneIndex) const { return pInvBindPose[BoneIndex]; }
 	CBoneInfo&			GetBoneInfoEditable(UPTR BoneIndex) { return Bones[BoneIndex]; }
 	const CBoneInfo&	GetBoneInfo(UPTR BoneIndex) const { return Bones[BoneIndex]; }
-	UPTR				GetBoneCount() const { return Bones.GetCount(); }
+	UPTR				GetBoneCount() const { return Bones.size(); }
 };
 
 typedef Ptr<CSkinInfo> PSkinInfo;
 
 }
-
-#endif

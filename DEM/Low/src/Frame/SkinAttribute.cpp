@@ -82,7 +82,7 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 	if (!pNode || !SkinInfo) FAIL;
 
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
-	pSkinPalette = (matrix44*)n_malloc_aligned(BoneCount * sizeof(matrix44), 16);
+	pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
 	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
 
 	// Here we fill an array of scene nodes associated with bones of this skin instance. nullptr values
