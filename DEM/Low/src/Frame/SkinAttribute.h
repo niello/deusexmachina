@@ -25,6 +25,7 @@ protected:
 		Skin_AutocreateBones = 0x04
 	};
 
+	CString             RootSearchPath;
 	CStrID              SkinInfoID;
 	Render::PSkinInfo   SkinInfo;
 	matrix44*           pSkinPalette = nullptr;

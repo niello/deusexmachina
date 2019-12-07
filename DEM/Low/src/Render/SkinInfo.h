@@ -19,25 +19,21 @@ class CSkinInfo: public Resources::CResourceObject
 {
 	FACTORY_CLASS_DECL;
 
-protected:
+public:
 
-	matrix44*              pInvBindPose;
+	// FIXME: public for loaders
+	matrix44*              pInvBindPose = nullptr;
 	std::vector<CBoneInfo> Bones;
 	//???root and terminal node indices?
 
-public:
-
-	CSkinInfo(): pInvBindPose(nullptr) {}
-	virtual ~CSkinInfo() { Destroy(); }
+	virtual ~CSkinInfo() override { Destroy(); }
 
 	bool				Create(UPTR BoneCount);
 	void				Destroy();
 
 	virtual bool		IsResourceValid() const { return !!pInvBindPose; }
 
-	matrix44*			GetInvBindPoseData() { return pInvBindPose; }
 	const matrix44&		GetInvBindPose(UPTR BoneIndex) const { return pInvBindPose[BoneIndex]; }
-	CBoneInfo&			GetBoneInfoEditable(UPTR BoneIndex) { return Bones[BoneIndex]; }
 	const CBoneInfo&	GetBoneInfo(UPTR BoneIndex) const { return Bones[BoneIndex]; }
 	UPTR				GetBoneCount() const { return Bones.size(); }
 };

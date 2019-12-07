@@ -35,7 +35,7 @@ SceneNodeAttr
 	NearPlane		{ FourCC = "NEPL" Type = "float" }
 	FarPlane		{ FourCC = "FAPL" Type = "float" }
 	
-	// Mesh and material
+	// Model
 	Material		{ FourCC = "MTRL" Type = "string" }
 	Mesh			{ FourCC = "MESH" Type = "string" }
 	MeshGroupIndex	{ FourCC = "MSGR" Type = "int" }
@@ -43,10 +43,11 @@ SceneNodeAttr
 
 	// Skin
 	SkinInfo		{ FourCC = "SKIF" Type = "string" }
+	RootSearchPath  { FourCC = "RSPH" Type = "string" }
 	AutocreateBones	{ FourCC = "ACBN" Type = "bool" }
 
 	// LODGroup
-	// FIXME: float to string ID pairs
+	// FIXME: float to string ID pairs or reorder child nodes on export
 	Thresholds		{ FourCC = "TRSH" Type = "float" }		// Array
 
 	// Terrain

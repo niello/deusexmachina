@@ -29,6 +29,11 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 				SkinInfoID = DataReader.Read<CStrID>();
 				break;
 			}
+			case 'RSPH':
+			{
+				RootSearchPath = DataReader.Read<CString>();
+				break;
+			}
 			case 'ACBN':
 			{
 				Flags.SetTo(Skin_AutocreateBones, DataReader.Read<bool>());
@@ -42,12 +47,12 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-#define NOT_PROCESSED_NODE (pNode)
+// FIXME: if no parent node, must search by ID from the object root node!
+// FIXME: knowing root, can do it recursively without this hack.
+Scene::CSceneNode* NOT_PROCESSED_NODE = reinterpret_cast<Scene::CSceneNode*>(static_cast<UPTR>(-1));
 
 Scene::CSceneNode* CSkinAttribute::SetupBoneNode(UPTR BoneIndex)
 {
-	// FIXME: if no parent node, must search by ID from the object root node!
-
 	if (pBoneNodes[BoneIndex] == NOT_PROCESSED_NODE)
 	{
 		const Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfo(BoneIndex);
@@ -85,12 +90,9 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 	pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
 	pBoneNodes = n_new_array(Scene::CSceneNode*, BoneCount);
 
-	// Here we fill an array of scene nodes associated with bones of this skin instance. nullptr values
-	// are valid for the case when bone doesn't exist and must not be autocreated. To make distinstion
-	// between nullptr and not processed nodes we fill not processed ones with the value of pNode (skin
-	// owner). No bone can use this node, so this value means 'not processed yet'. Hacky but convenient.
-	// Since processing is recursive and random-access, we must clear array in a first pass and then
-	// process it in a second pass.
+	// Here we fill an array of scene nodes associated with bones of this skin instance. NB: nullptr values
+	// are valid result for bones that don't exist and must not be autocreated. Since processing is
+	// recursive and random-access, we must clear array in a first pass and then process it in a second pass.
 
 	for (UPTR i = 0; i < BoneCount; ++i)
 		pBoneNodes[i] = NOT_PROCESSED_NODE;

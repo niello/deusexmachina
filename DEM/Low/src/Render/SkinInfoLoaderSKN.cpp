@@ -39,14 +39,13 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
 	SkinInfo->Create(BoneCount);
 
-	Stream->Read(SkinInfo->GetInvBindPoseData(), BoneCount * sizeof(matrix44));
+	Stream->Read(SkinInfo->pInvBindPose, BoneCount * sizeof(matrix44));
 
-	for (U32 i = 0; i < BoneCount; ++i)
+	for (auto& BoneInfo : SkinInfo->Bones)
 	{
-		Render::CBoneInfo& BoneInfo = SkinInfo->GetBoneInfoEditable(i);
 		U16 ParentIndex;
 		if (!Reader.Read(ParentIndex)) return nullptr;
-		BoneInfo.ParentIndex = (ParentIndex == (U16)INVALID_INDEX) ? INVALID_INDEX : ParentIndex;
+		BoneInfo.ParentIndex = (ParentIndex == static_cast<U16>(-1)) ? INVALID_INDEX : ParentIndex;
 		if (!Reader.Read(BoneInfo.ID)) return nullptr;
 	}
 
