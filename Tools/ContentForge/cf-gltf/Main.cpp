@@ -1048,7 +1048,7 @@ public:
 			const auto& Joint = Ctx.Doc.nodes[JointID];
 
 			CBone NewBone;
-			NewBone.ID = Joint.name.empty() ? JointID : Joint.name;
+			NewBone.ID = Joint.name.empty() ? Ctx.TaskName + '_' + Joint.id : Joint.name;
 
 			if (const auto* pParent = GetParentNode(Ctx.Doc, JointID))
 			{
