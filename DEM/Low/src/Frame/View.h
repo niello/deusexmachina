@@ -96,8 +96,6 @@ public:
 	//shadow map buffers (sort of RT / DS, no special case?)
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
-	//!!!CCameraAttribute* CreateDefaultCamera();!
-
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 
 	void							UpdateVisibilityCache();
@@ -115,8 +113,9 @@ public:
 	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
 	bool							SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS);
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
+	//CCameraAttribute*               SetDefaultCamera();
 	bool							SetCamera(CCameraAttribute* pNewCamera);
-	const CCameraAttribute*			GetCamera() const { return pCamera; }
+	CCameraAttribute*               GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
 	Render::CGPUDriver*				GetGPU() const;
 	DEM::Sys::COSWindow*			GetTargetWindow() const;

@@ -18,7 +18,7 @@ CGameLevelView::~CGameLevelView() {}
 bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 {
 	Level = &GameLevel;
-	View->pSPS = GameLevel.GetSPS();
+	View->pSPS = &GameLevel.GetSPS();
 	//???fill other fields?
 	DISP_SUBSCRIBE_PEVENT(Level.Get(), OnEntityDeactivated, CGameLevelView, OnEntityDeactivated);
 	OK;

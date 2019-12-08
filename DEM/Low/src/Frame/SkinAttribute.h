@@ -29,9 +29,9 @@ protected:
 	CStrID                          SkinInfoUID;
 	Render::PSkinInfo               SkinInfo;
 	matrix44*                       pSkinPalette = nullptr;
-	std::vector<Scene::CSceneNode*> BoneNodes; //???strong refs?
+	std::vector<Scene::CSceneNode*> BoneNodes; //???FIXME: strong refs? or weak, but not raw!
 
-	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParentNode);
+	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode);
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets
@@ -41,10 +41,10 @@ public:
 
 	virtual ~CSkinAttribute() override;
 
-	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
+	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
-	virtual Scene::PNodeAttribute Clone();
-	virtual void                  Update(const vector3* pCOIArray, UPTR COICount);
+	virtual Scene::PNodeAttribute Clone() override;
+	virtual void                  Update(const vector3* pCOIArray, UPTR COICount) override;
 
 	Render::CSkinInfo*            GetSkinInfo() const { return SkinInfo.Get(); }
 	const matrix44*               GetSkinPalette() const { return pSkinPalette; }

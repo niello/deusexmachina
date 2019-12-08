@@ -46,7 +46,7 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
-void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParentNode)
+void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode)
 {
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
@@ -57,9 +57,9 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParent
 		const auto& BoneInfo = SkinInfo->GetBoneInfo(i);
 		if (BoneInfo.ParentIndex != ParentIndex) continue;
 
-		pBoneNode = pParentNode->GetChild(BoneInfo.ID);
+		pBoneNode = ParentNode.GetChild(BoneInfo.ID);
 		if (!pBoneNode && Flags.Is(Skin_AutocreateBones))
-			pBoneNode = pParentNode->CreateChild(BoneInfo.ID);
+			pBoneNode = ParentNode.CreateChild(BoneInfo.ID);
 
 		if (pBoneNode)
 		{
@@ -70,7 +70,7 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParent
 				BindPoseLocal.mult_simple(SkinInfo->GetInvBindPose(ParentIndex));
 			pBoneNode->SetLocalTransform(BindPoseLocal);
 
-			SetupBoneNodes(i, pBoneNode);
+			SetupBoneNodes(i, *pBoneNode);
 		}
 	}
 }
@@ -93,7 +93,7 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 	BoneNodes.resize(BoneCount, nullptr);
 
 	// Setup root bone(s) and recurse down the hierarchy
-	SetupBoneNodes(INVALID_INDEX, pRootParent);
+	SetupBoneNodes(INVALID_INDEX, *pRootParent);
 
 	OK;
 }

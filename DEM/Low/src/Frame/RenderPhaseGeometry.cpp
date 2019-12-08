@@ -110,12 +110,10 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 	for (CArray<Scene::CNodeAttribute*>::CIterator It = VisibleObjects.Begin(); It != VisibleObjects.End(); ++It)
 	{
-		Scene::CNodeAttribute* pAttr = *It;
-		const Core::CRTTI* pAttrType = pAttr->GetRTTI();
-		if (!pAttrType->IsDerivedFrom(Frame::CRenderableAttribute::RTTI)) continue;
+		auto pAttr = (*It)->As<Frame::CRenderableAttribute>();
+		if (!pAttr) continue;
 
-		Frame::CRenderableAttribute* pAttrRenderable = (Frame::CRenderableAttribute*)pAttr;
-		Render::IRenderable* pRenderable = pAttrRenderable->GetRenderable();
+		Render::IRenderable* pRenderable = pAttr->GetRenderable();
 
 		IPTR Idx = Renderers.FindIndex(pRenderable->GetRTTI());
 		if (Idx == INVALID_INDEX) continue;
@@ -127,15 +125,14 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		pNode->pRenderer = pRenderer;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
 
-		Frame::CSkinAttribute* pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CSkinAttribute>();
-		if (pSkinAttr)
+		if (auto pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CSkinAttribute>())
 		{
 			pNode->pSkinPalette = pSkinAttr->GetSkinPalette();
 			pNode->BoneCount = pSkinAttr->GetSkinInfo()->GetBoneCount();
 		}
 		else pNode->pSkinPalette = nullptr;
 
-		if (pAttrRenderable->GetGlobalAABB(Context.AABB, 0))
+		if (pAttr->GetGlobalAABB(Context.AABB, 0))
 		{
 			float ScreenSizeRel;
 			if (CalcScreenSize)

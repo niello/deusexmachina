@@ -89,8 +89,8 @@ public:
 
 	CArray<CNodeAttribute*>	OversizedObjects;
 	CSPSQuadTree			QuadTree;
-	float					SceneMinY;
-	float					SceneMaxY;
+	float					SceneMinY = 0.f;
+	float					SceneMaxY = 0.f;
 
 	void		Init(const vector3& Center, const vector3& Size, UPTR HierarchyDepth);
 	CSPSRecord*	AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData);

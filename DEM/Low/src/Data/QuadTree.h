@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_QUADTREE_H__
-#define __DEM_L1_QUADTREE_H__
-
 #include <Math/AABB.h>
 #include <Data/FixedArray.h>
 
@@ -36,7 +33,7 @@ protected:
 
 	vector2				Center;
 	vector2				Size;
-	U8					Depth;
+	U8					Depth = 0;
 	CFixedArray<CNode>	Nodes;
 
 	static CHandle	MoveElement(TStorage& From, TStorage& To, CHandle Handle);
@@ -84,7 +81,7 @@ public:
 		//CQuadTree<TObject, TStorage>*	GetOwner() { return pOwner; }
 	};
 
-	CQuadTree() {}
+	CQuadTree() = default;
 	CQuadTree(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth) { Build(CenterX, CenterZ, SizeX, SizeZ, TreeDepth); }
 
 	void			Build(float CenterX, float CenterZ, float SizeX, float SizeZ, U8 TreeDepth);
@@ -93,7 +90,7 @@ public:
 	void			UpdateHandle(CHandle& InOutHandle, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ, CNode*& pInOutNode);
 
 	CNode*			GetNode(UPTR Col, UPTR Row, UPTR Level) const;
-	CNode*			GetRootNode() const { return &Nodes[0]; }
+	CNode*			GetRootNode() const { return Nodes.GetCount() ? &Nodes[0] : nullptr; }
 	const vector2&	GetSize() const { return Size; }
 
 	//!!!Test against circle (center, r) & 2d box (two corners or center & half)
@@ -274,12 +271,19 @@ template<class TObject, class TStorage>
 inline void CQuadTree<TObject, TStorage>::AddObject(const TObject& Object, float CenterX, float CenterZ, float HalfSizeX, float HalfSizeZ,
 													CNode*& pOutNode, CHandle* pOutHandle)
 {
-	CNode* pNode = GetRootNode();
-	++pNode->TotalObjCount;
-	pNode = RelocateAndUpdateCounters(pNode, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
-	CHandle Handle = pNode->Data.Add(Object);
-	pOutNode = pNode;
-	if (pOutHandle) *pOutHandle = Handle;
+	if (auto pNode = GetRootNode())
+	{
+		++pNode->TotalObjCount;
+		pNode = RelocateAndUpdateCounters(pNode, CenterX, CenterZ, HalfSizeX, HalfSizeZ);
+		CHandle Handle = pNode->Data.Add(Object);
+		pOutNode = pNode;
+		if (pOutHandle) *pOutHandle = Handle;
+	}
+	else
+	{
+		pOutNode = nullptr;
+		pOutHandle = nullptr;
+	}
 }
 //---------------------------------------------------------------------
 
@@ -337,8 +341,10 @@ void CQuadTree<TObject, TStorage>::UpdateHandle(typename CQuadTree<TObject, TSto
 template<class TObject, class TStorage>
 inline typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage>::GetNode(UPTR Col, UPTR Row, UPTR Level) const
 {
+	// TODO: assert?
+	if (Level >= Depth) return nullptr;
+
 	// Don't ask. Just believe.
-	n_assert(Level < Depth);
 	return &Nodes[(0x55555555 & ((1 << (Level << 1)) - 1)) +
 		(((1 << (Level - 1)) * (Row >> 1) + (Col >> 1)) << 2) +
 		(1 & Col) + ((1 & Row) << 1)];
@@ -346,5 +352,3 @@ inline typename CQuadTree<TObject, TStorage>::CNode* CQuadTree<TObject, TStorage
 //---------------------------------------------------------------------
 
 };
-
-#endif

@@ -68,14 +68,14 @@ void CGameServer::Trigger()
 
 	AISrv->Trigger(); // Pathfinding queries inside
 
-	float FrameTime = (float)GameTimeSrc->GetFrameTime();
+	const auto FrameTime = static_cast<float>(GameTimeSrc->GetFrameTime());
 
 	// Update levels
 
 	constexpr UPTR MAX_VIEWS = 8;
 	vector3 COIArray[MAX_VIEWS];
 
-	UPTR ViewCount = std::min(LevelViews.GetCount(), MAX_VIEWS);
+	const UPTR ViewCount = std::min(LevelViews.GetCount(), MAX_VIEWS);
 
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
 	{
@@ -110,11 +110,7 @@ void CGameServer::Trigger()
 		pLevel->FireEvent(CStrID("AfterTransforms"));
 
 		if (pSceneRoot && COICount > 0)
-		{
-			Frame::CSceneNodeUpdateInSPS Visitor;
-			Visitor.pSPS = pLevel->GetSPS();
-			pSceneRoot->AcceptVisitor(Visitor);
-		}
+			pSceneRoot->AcceptVisitor(Frame::CSceneNodeUpdateInSPS(pLevel->GetSPS()));
 	}
 
 	// Update level views

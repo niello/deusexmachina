@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_SNV_UPDATE_IN_SPS_H__
-#define __DEM_L1_SNV_UPDATE_IN_SPS_H__
-
 #include <Scene/NodeVisitor.h>
 #include <Data/Array.h>
 
@@ -17,15 +14,15 @@ namespace Frame
 
 class CSceneNodeUpdateInSPS: public Scene::INodeVisitor
 {
+protected:
+
+	Scene::CSPS& _SPS;
+
 public:
 
-	Scene::CSPS* pSPS;
-
-	CSceneNodeUpdateInSPS(): pSPS(nullptr) {} 
+	CSceneNodeUpdateInSPS(Scene::CSPS& SPS) : _SPS(SPS) {}
 
 	virtual bool Visit(Scene::CSceneNode& Node);
 };
 
 }
-
-#endif
