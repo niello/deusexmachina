@@ -34,6 +34,8 @@ static inline void SetValues(CShaderConstantInfo* Info, CConstantBuffer& CB, U32
 		Info->SetUInts(CB, Offset, pValues, Count);
 	else if constexpr (std::is_same<T, bool>())
 		Info->SetBools(CB, Offset, pValues, Count);
+	else if constexpr (std::is_same<T, matrix44>())
+		Info->SetFloats(CB, Offset, *pValues->m, Count * 16); // NB: only 4x4 matrices are supported here
 	else
 		static_assert(false, "Unsupported type in shader constant SetValues");
 }
@@ -94,7 +96,63 @@ void CShaderConstantParam::SetBoolArray(CConstantBuffer& CB, const bool* pValues
 
 void CShaderConstantParam::SetMatrixArray(CConstantBuffer& CB, const matrix44* pValues, UPTR Count, U32 StartIndex, bool ColumnMajor) const
 {
-	NOT_IMPLEMENTED;
+	n_assert_dbg(_Info);
+	if (!_Info) return;
+
+	const auto MajorDim = _Info->IsColumnMajor() ? _Info->GetColumnCount() : _Info->GetRowCount();
+	const auto MinorDim = _Info->IsColumnMajor() ? _Info->GetRowCount() : _Info->GetColumnCount();
+	const auto ComponentCount = MajorDim * MinorDim;
+
+	if (ComponentCount == 16)
+	{
+		// Can set whole matrices (16 floats a time) or even all floats at once
+
+		if (ColumnMajor == _Info->IsColumnMajor())
+		{
+			SetArray(_Info, CB, _Offset, pValues, Count, StartIndex);
+		}
+		else
+		{
+			// Transpose and set one by one
+			auto Offset = _Offset + StartIndex * _Info->GetElementStride();
+			const auto* pEnd = pValues + Count;
+			for (; pValues < pEnd; ++pValues)
+			{
+				_Info->SetFloats(CB, Offset, *pValues->transposed().m, ComponentCount);
+				Offset += _Info->GetElementStride();
+			}
+		}
+	}
+	else if (MajorDim == 4)
+	{
+		// Can set row by row (4 floats a time) or even whole matrices (4 * MinorDim floats a time)
+
+		if (ColumnMajor == _Info->IsColumnMajor())
+		{
+			// Set one by one
+			NOT_IMPLEMENTED;
+		}
+		else
+		{
+			// Set one by one transposed
+			NOT_IMPLEMENTED;
+		}
+	}
+	else
+	{
+		// Must set row by row (MajorDim / MinorDim floats a time)
+
+		if (ColumnMajor == _Info->IsColumnMajor())
+		{
+			// Set one by one
+			NOT_IMPLEMENTED;
+		}
+		else
+		{
+			// Set one by one transposed
+			NOT_IMPLEMENTED;
+		}
+	}
 }
 //---------------------------------------------------------------------
 

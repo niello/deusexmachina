@@ -9,7 +9,7 @@ CShaderConstantInfo::~CShaderConstantInfo() = default;
 void CShaderConstantInfo::CShaderConstantInfo_CopyFields(const CShaderConstantInfo& Source)
 {
 	Struct = Source.Struct;
-	BufferIndex = Source.Struct;
+	BufferIndex = Source.BufferIndex;
 	Name = Source.Name;
 	LocalOffset = Source.LocalOffset;
 	ElementStride = Source.ElementStride;
