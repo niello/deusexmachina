@@ -14,21 +14,26 @@ static bool ProcessConstant(uint8_t ShaderTypeMask, CUSMConstMeta& Param, const 
 	{
 		// Check register overlapping, because it prevents correct param setup from effects
 
-		const uint32_t BufferRegister = SrcMeta.Buffers[Param.BufferIndex].Register;
+		const uint32_t BufferRegisterMasked = SrcMeta.Buffers[Param.BufferIndex].Register;
+		const bool IsTexture = (BufferRegisterMasked & (USMBuffer_Texture | USMBuffer_Structured));
+		const uint32_t BufferRegister = (BufferRegisterMasked & ~(USMBuffer_Texture | USMBuffer_Structured));
 
-		if (OtherMeta1.UsedConstantBuffers.find(BufferRegister) != OtherMeta1.UsedConstantBuffers.cend())
+		const auto& Meta1Buffers = IsTexture ? OtherMeta1.UsedResources : OtherMeta1.UsedConstantBuffers;
+		if (Meta1Buffers.find(BufferRegister) != Meta1Buffers.cend())
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " buffer containing '" + Param.Name + "' uses a register used by " + OtherMeta1.PrintableName + " params");
 			return false;
 		}
 
-		if (OtherMeta2.UsedConstantBuffers.find(BufferRegister) != OtherMeta2.UsedConstantBuffers.cend())
+		const auto& Meta2Buffers = IsTexture ? OtherMeta2.UsedResources : OtherMeta2.UsedConstantBuffers;
+		if (Meta2Buffers.find(BufferRegister) != Meta2Buffers.cend())
 		{
 			Ctx.Log->LogError(TargetMeta.PrintableName + " buffer containing '" + Param.Name + "' uses a register used by " + OtherMeta2.PrintableName + " params");
 			return false;
 		}
 
-		TargetMeta.UsedConstantBuffers.insert(BufferRegister);
+		auto& UsedBuffers = IsTexture ? TargetMeta.UsedResources : TargetMeta.UsedConstantBuffers;
+		UsedBuffers.insert(BufferRegister);
 
 		// Copy necessary metadata
 
