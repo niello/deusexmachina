@@ -20,6 +20,9 @@ class CShaderConstantParam final
 {
 private:
 
+	// For buffer index patching after sorting metadata by ID
+	friend class CShaderParamTable;
+
 	PShaderConstantInfo _Info;
 	U32                 _Offset = 0;
 

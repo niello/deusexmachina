@@ -264,16 +264,32 @@ CShaderParamTable::CShaderParamTable(std::vector<CShaderConstantParam>&& Constan
 	, _Samplers(std::move(Samplers))
 {
 	_Constants.shrink_to_fit();
-	std::sort(_Constants.begin(), _Constants.end(), [](const CShaderConstantParam& a, const CShaderConstantParam& b)
-	{
-		return a.GetID() < b.GetID();
-	});
-
 	_ConstantBuffers.shrink_to_fit();
-	std::sort(_ConstantBuffers.begin(), _ConstantBuffers.end(), [](const PConstantBufferParam& a, const PConstantBufferParam& b)
+
+	if (!_Constants.empty())
 	{
-		return a->GetID() < b->GetID();
-	});
+		std::sort(_Constants.begin(), _Constants.end(), [](const CShaderConstantParam& a, const CShaderConstantParam& b)
+		{
+			return a.GetID() < b.GetID();
+		});
+
+		// Store constant to constant buffer mapping
+		std::vector<IConstantBufferParam*> BufferMapping(_Constants.size());
+		for (size_t i = 0; i < _Constants.size(); ++i)
+			BufferMapping[i] = _ConstantBuffers[_Constants[i].GetConstantBufferIndex()];
+
+		std::sort(_ConstantBuffers.begin(), _ConstantBuffers.end(), [](const PConstantBufferParam& a, const PConstantBufferParam& b)
+		{
+			return a->GetID() < b->GetID();
+		});
+
+		// Update constant buffer indices after sorting them
+		for (size_t i = 0; i < _Constants.size(); ++i)
+		{
+			auto It = std::find(_ConstantBuffers.cbegin(), _ConstantBuffers.cend(), BufferMapping[i]);
+			_Constants[i]._Info->BufferIndex = std::distance(_ConstantBuffers.cbegin(), It);
+		}
+	}
 
 	_Resources.shrink_to_fit();
 	std::sort(_Resources.begin(), _Resources.end(), [](const PResourceParam& a, const PResourceParam& b)
