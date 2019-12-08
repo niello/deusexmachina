@@ -26,7 +26,7 @@ protected:
 	};
 
 	CString                         RootSearchPath;
-	CStrID                          SkinInfoID;
+	CStrID                          SkinInfoUID;
 	Render::PSkinInfo               SkinInfo;
 	matrix44*                       pSkinPalette = nullptr;
 	std::vector<Scene::CSceneNode*> BoneNodes; //???strong refs?

@@ -25,7 +25,7 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 		{
 			case 'SKIF':
 			{
-				SkinInfoID = DataReader.Read<CStrID>();
+				SkinInfoUID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'RSPH':
@@ -51,19 +51,19 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParent
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		const auto& BoneInfo = SkinInfo->GetBoneInfo(i);
-
-		if (BoneInfo.ParentIndex != ParentIndex) continue;
-
 		auto& pBoneNode = BoneNodes[i];
+		if (pBoneNode) continue;
+
+		const auto& BoneInfo = SkinInfo->GetBoneInfo(i);
+		if (BoneInfo.ParentIndex != ParentIndex) continue;
 
 		pBoneNode = pParentNode->GetChild(BoneInfo.ID);
 		if (!pBoneNode && Flags.Is(Skin_AutocreateBones))
 			pBoneNode = pParentNode->CreateChild(BoneInfo.ID);
 
-		// Set skinned mesh into a bind pose initially
 		if (pBoneNode)
 		{
+			// Set skinned mesh into a bind pose initially
 			matrix44 BindPoseLocal;
 			SkinInfo->GetInvBindPose(i).invert_simple(BindPoseLocal);
 			if (ParentIndex != INVALID_INDEX)
@@ -78,7 +78,7 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode* pParent
 
 bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(SkinInfoID);
+	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(SkinInfoUID);
 	SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
 
 	if (!pNode || !SkinInfo) FAIL;
@@ -102,7 +102,8 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 Scene::PNodeAttribute CSkinAttribute::Clone()
 {
 	PSkinAttribute ClonedAttr = n_new(CSkinAttribute);
-	ClonedAttr->SkinInfo = SkinInfo;
+	ClonedAttr->RootSearchPath = RootSearchPath;
+	ClonedAttr->SkinInfoUID = SkinInfoUID;
 	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
 	return ClonedAttr.Get();
 }
