@@ -35,10 +35,10 @@ PResourceObject CSkinInfoLoaderSKN::CreateResource(CStrID UID)
 	// Skip padding
 	Reader.Read<U32>();
 
-	//!!!may use MMF for bind pose matrices! their offset is aligned-16!
 	Render::PSkinInfo SkinInfo = n_new(Render::CSkinInfo);
 	SkinInfo->Create(BoneCount);
 
+	//!!!may use MMF for bind pose matrices! their offset in a file is aligned-16!
 	Stream->Read(SkinInfo->pInvBindPose, BoneCount * sizeof(matrix44));
 
 	for (auto& BoneInfo : SkinInfo->Bones)
