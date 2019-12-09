@@ -18,12 +18,12 @@ bool CAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR 
 		{
 			case 'IRRM':
 			{
-				UIDIrradianceMap = CStrID(DataReader.Read<CString>());
+				IrradianceMapUID = CStrID(DataReader.Read<CString>());
 				break;
 			}
 			case 'PMRM':
 			{
-				UIDRadianceEnvMap = CStrID(DataReader.Read<CString>());
+				RadianceEnvMapUID = CStrID(DataReader.Read<CString>());
 				break;
 			}
 			default: FAIL;
@@ -36,8 +36,8 @@ bool CAmbientLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR 
 
 bool CAmbientLightAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	IrradianceMap = ResMgr.GetTexture(UIDIrradianceMap, Render::Access_GPU_Read);
-	RadianceEnvMap = ResMgr.GetTexture(UIDRadianceEnvMap, Render::Access_GPU_Read);
+	IrradianceMap = ResMgr.GetTexture(IrradianceMapUID, Render::Access_GPU_Read);
+	RadianceEnvMap = ResMgr.GetTexture(RadianceEnvMapUID, Render::Access_GPU_Read);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -45,8 +45,8 @@ bool CAmbientLightAttribute::ValidateGPUResources(CGraphicsResourceManager& ResM
 Scene::PNodeAttribute CAmbientLightAttribute::Clone()
 {
 	PAmbientLightAttribute ClonedAttr = n_new(CAmbientLightAttribute);
-	ClonedAttr->UIDIrradianceMap = UIDIrradianceMap;
-	ClonedAttr->UIDRadianceEnvMap = UIDRadianceEnvMap;
+	ClonedAttr->IrradianceMapUID = IrradianceMapUID;
+	ClonedAttr->RadianceEnvMapUID = RadianceEnvMapUID;
 	ClonedAttr->IrradianceMap = IrradianceMap;
 	ClonedAttr->RadianceEnvMap = RadianceEnvMap;
 	return ClonedAttr.Get();

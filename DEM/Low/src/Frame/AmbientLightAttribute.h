@@ -30,8 +30,8 @@ class CAmbientLightAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	CStrID					UIDIrradianceMap;
-	CStrID					UIDRadianceEnvMap;
+	CStrID					IrradianceMapUID;
+	CStrID					RadianceEnvMapUID;
 	Render::PTexture		IrradianceMap;
 	Render::PTexture		RadianceEnvMap;
 	Scene::CSPS*			pSPS = nullptr;
@@ -41,14 +41,17 @@ protected:
 
 public:
 
-	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual Scene::PNodeAttribute	Clone();
-	void							UpdateInSPS(Scene::CSPS& SPS);
+	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
+	virtual Scene::PNodeAttribute Clone() override;
+	void                          UpdateInSPS(Scene::CSPS& SPS);
 
-	bool							ValidateGPUResources(CGraphicsResourceManager& ResMgr);
-	bool							GetGlobalAABB(CAABB& OutBox) const;
-	Render::CTexture*				GetIrradianceMap() const { return IrradianceMap.Get(); }
-	Render::CTexture*				GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }
+	void                          SetIrradianceMap(CStrID UID) { IrradianceMapUID = UID; IrradianceMap = nullptr; }
+	void                          SetRadianceEnvMap(CStrID UID) { RadianceEnvMapUID = UID; RadianceEnvMap = nullptr; }
+
+	bool                          ValidateGPUResources(CGraphicsResourceManager& ResMgr);
+	bool                          GetGlobalAABB(CAABB& OutBox) const;
+	Render::CTexture*             GetIrradianceMap() const { return IrradianceMap.Get(); }
+	Render::CTexture*             GetRadianceEnvMap() const { return RadianceEnvMap.Get(); }
 };
 
 typedef Ptr<CAmbientLightAttribute> PAmbientLightAttribute;
