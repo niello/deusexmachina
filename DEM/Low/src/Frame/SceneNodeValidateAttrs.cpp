@@ -2,7 +2,7 @@
 #include <Scene/SceneNode.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Frame/RenderableAttribute.h>
-#include <Frame/SkinAttribute.h>
+#include <Frame/AmbientLightAttribute.h>
 
 namespace Frame
 {
@@ -22,9 +22,13 @@ bool CSceneNodeValidateAttrs::Visit(Scene::CSceneNode& Node)
 
 		Attr.ValidateResources(*_ResMgr.GetResourceManager());
 
-		if (auto Renderable = Attr.As<Frame::CRenderableAttribute>())
+		if (auto pAttrTyped = Attr.As<Frame::CRenderableAttribute>())
 		{
-			if (!Renderable->ValidateGPUResources(_ResMgr)) FAIL;
+			if (!pAttrTyped->ValidateGPUResources(_ResMgr)) FAIL;
+		}
+		else if (auto pAttrTyped = Attr.As<Frame::CAmbientLightAttribute>())
+		{
+			if (!pAttrTyped->ValidateGPUResources(_ResMgr)) FAIL;
 		}
 	}
 	OK;
