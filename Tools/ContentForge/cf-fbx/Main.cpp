@@ -638,7 +638,7 @@ public:
 				CBone NewBone;
 				NewBone.ID = pBone->GetName();
 
-				// Save matrices row-major for DEM (FBX SDK uses column-major)
+				// Save matrices (both DEM and FBX SDK use column-major)
 				for (int Col = 0; Col < 4; ++Col)
 					for (int Row = 0; Row < 4; ++Row)
 						NewBone.InvLocalBindPose[Col * 4 + Row] = static_cast<float>(InvLocalBind[Col][Row]);

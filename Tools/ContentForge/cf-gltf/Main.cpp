@@ -1050,7 +1050,7 @@ public:
 		std::vector<CBone> Bones;
 		Bones.reserve(Skin.jointIds.size());
 
-		// NB: glTF matrices are column-major
+		// glTF matrices are column-major, like in DEM
 		auto InvBindMatrices = gltf::AnimationUtils::GetInverseBindMatrices(Ctx.Doc, *Ctx.ResourceReader, Skin);
 		const float* pInvBindMatrix = InvBindMatrices.data();
 
@@ -1068,10 +1068,7 @@ public:
 					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
 			}
 
-			// Save matrices row-major for DEM (glTF uses column-major)
-			for (int Col = 0; Col < 4; ++Col)
-				for (int Row = 0; Row < 4; ++Row)
-					NewBone.InvLocalBindPose[Col * 4 + Row] = pInvBindMatrix[Row * 4 + Col];
+			memcpy(NewBone.InvLocalBindPose, pInvBindMatrix, 16 *sizeof(float));
 
 			pInvBindMatrix += 16;
 
