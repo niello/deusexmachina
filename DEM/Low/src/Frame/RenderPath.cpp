@@ -41,17 +41,12 @@ bool CRenderPath::Render(CView& View)
 	// whether it is the first who writes to the target.
 
 	for (const auto& Slot : RTSlots)
-	{
-		Render::CRenderTarget* pRT = View.GetRenderTarget(Slot.first);
-		if (pRT) pGPU->ClearRenderTarget(*pRT, Slot.second.ClearValue);
-	}
+		if (auto pRT = View.GetRenderTarget(Slot.first))
+			pGPU->ClearRenderTarget(*pRT, Slot.second.ClearValue);
 
 	for (const auto& Slot : DSSlots)
-	{
-		Render::CDepthStencilBuffer* pDS = View.GetDepthStencilBuffer(Slot.first);
-		if (pDS)
+		if (auto pDS = View.GetDepthStencilBuffer(Slot.first))
 			pGPU->ClearDepthStencilBuffer(*pDS, Slot.second.ClearFlags, Slot.second.DepthClearValue, Slot.second.StencilClearValue);
-	}
 
 	for (auto& Phase : Phases)
 	{
