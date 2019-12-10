@@ -711,21 +711,53 @@ public:
 				assert(VertexFormat.BonesPerVertex == 4);
 
 				const auto Weights = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+				assert(Weights.size() == RawVertices.size());
+
+				//!!!DBG TMP!
+				size_t Vtx = 0;
 
 				auto AttrIt = Weights.cbegin();
 				for (auto& Vertex : RawVertices)
 				{
+					const uint32_t Packed = *AttrIt++;
+					auto W1 = ((Packed >>  0) & 0xff);
+					auto W2 = ((Packed >>  8) & 0xff);
+					auto W3 = ((Packed >> 16) & 0xff);
+					auto W4 = ((Packed >> 24) & 0xff);
+
 					if (VertexFormat.FloatBlendWeights)
 					{
-						const uint32_t Packed = *AttrIt++;
-						Vertex.BlendWeightsF[0] = gltf::Math::ByteToFloat((Packed >>  0) & 0xff);
-						Vertex.BlendWeightsF[1] = gltf::Math::ByteToFloat((Packed >>  8) & 0xff);
-						Vertex.BlendWeightsF[2] = gltf::Math::ByteToFloat((Packed >> 16) & 0xff);
-						Vertex.BlendWeightsF[3] = gltf::Math::ByteToFloat((Packed >> 24) & 0xff);
+						// With normalization
+
+						float4 BlendWeightsF = { gltf::Math::ByteToFloat(W1), gltf::Math::ByteToFloat(W2), gltf::Math::ByteToFloat(W3), gltf::Math::ByteToFloat(W4) };
+						const auto Sum = BlendWeightsF.x + BlendWeightsF.y + BlendWeightsF.z + BlendWeightsF.w;
+
+						Vertex.BlendWeightsF[0] = BlendWeightsF.x / Sum;
+						Vertex.BlendWeightsF[1] = BlendWeightsF.y / Sum;
+						Vertex.BlendWeightsF[2] = BlendWeightsF.z / Sum;
+						Vertex.BlendWeightsF[3] = BlendWeightsF.w / Sum;
+
+						// Without normalization
+						//Vertex.BlendWeightsF[0] = gltf::Math::ByteToFloat(W1);
+						//Vertex.BlendWeightsF[1] = gltf::Math::ByteToFloat(W2);
+						//Vertex.BlendWeightsF[2] = gltf::Math::ByteToFloat(W3);
+						//Vertex.BlendWeightsF[3] = gltf::Math::ByteToFloat(W4);
 					}
 					else
 					{
-						Vertex.BlendWeightsI = *AttrIt++;
+						// With normalization
+
+						float4 BlendWeightsF = { gltf::Math::ByteToFloat(W1), gltf::Math::ByteToFloat(W2), gltf::Math::ByteToFloat(W3), gltf::Math::ByteToFloat(W4) };
+						const auto Sum = BlendWeightsF.x + BlendWeightsF.y + BlendWeightsF.z + BlendWeightsF.w;
+
+						Vertex.BlendWeightsI =
+							(gltf::Math::FloatToByte((BlendWeightsF.w / Sum)) << 24) |
+							(gltf::Math::FloatToByte((BlendWeightsF.z / Sum)) << 16) |
+							(gltf::Math::FloatToByte((BlendWeightsF.y / Sum)) << 8) |
+							(gltf::Math::FloatToByte((BlendWeightsF.x / Sum)));
+
+						// Without normalization
+						//Vertex.BlendWeightsI = Packed;
 					}
 				}
 			}
