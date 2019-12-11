@@ -44,6 +44,59 @@ static void BuildNodePath(const gltf::Document& Doc, const gltf::Node* pNode, st
 }
 //---------------------------------------------------------------------
 
+static acl::Transform_32 GetNodeTransform(const gltf::Node& Node)
+{
+	if (Node.matrix != gltf::Matrix4::IDENTITY)
+	{
+		const acl::AffineMatrix_32 ACLMatrix = acl::matrix_set(
+			acl::Vector4_32{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
+			acl::Vector4_32{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
+			acl::Vector4_32{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
+			acl::Vector4_32{ 0.f, 0.f, 0.f, 1.f });
+
+		return
+		{
+			acl::quat_from_matrix(acl::matrix_remove_scale(ACLMatrix)),
+			{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f },
+			{ acl::vector_length3(ACLMatrix.x_axis), acl::vector_length3(ACLMatrix.y_axis), acl::vector_length3(ACLMatrix.z_axis), 0.f }
+		};
+	}
+	else
+	{
+		return
+		{
+			{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
+			{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
+			{ Node.scale.x, Node.scale.y, Node.scale.z, 0.f }
+		};
+	}
+}
+//---------------------------------------------------------------------
+
+static acl::AffineMatrix_32 GetNodeMatrix(const gltf::Node& Node)
+{
+	if (Node.matrix != gltf::Matrix4::IDENTITY)
+	{
+		return acl::matrix_set(
+			acl::Vector4_32{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
+			acl::Vector4_32{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
+			acl::Vector4_32{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
+			acl::Vector4_32{ Node.matrix.values[12], Node.matrix.values[13], Node.matrix.values[14], 1.f });
+	}
+	else
+	{
+		const acl::Transform_32 Tfm =
+		{
+			{ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w },
+			{ Node.translation.x, Node.translation.y, Node.translation.z, 1.f },
+			{ Node.scale.x, Node.scale.y, Node.scale.z, 0.f }
+		};
+
+		return acl::matrix_from_transform(Tfm);
+	}
+}
+//---------------------------------------------------------------------
+
 static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
 	std::vector<acl::RigidBone>& Bones, std::vector<const gltf::Node*>& Nodes, const gltf::Document& Doc)
 {
@@ -454,49 +507,16 @@ public:
 		constexpr acl::Vector4_32 Zero3 = { 0.f, 0.f, 0.f, 0.f };
 		constexpr acl::Quat_32 IdentityQuat = { 0.f, 0.f, 0.f, 1.f };
 
-		if (Node.matrix != gltf::Matrix4::IDENTITY)
-		{
-			const acl::AffineMatrix_32 ACLMatrix = acl::matrix_set(
-				acl::Vector4_32{ Node.matrix.values[0], Node.matrix.values[1], Node.matrix.values[2], Node.matrix.values[3] },
-				acl::Vector4_32{ Node.matrix.values[4], Node.matrix.values[5], Node.matrix.values[6], Node.matrix.values[7] },
-				acl::Vector4_32{ Node.matrix.values[8], Node.matrix.values[9], Node.matrix.values[10], Node.matrix.values[11] },
-				acl::Vector4_32{ 0.f, 0.f, 0.f, 1.f });
+		const auto Tfm = GetNodeTransform(Node);
 
-			const acl::Vector4_32 Scale = {
-				acl::vector_length3(ACLMatrix.x_axis),
-				acl::vector_length3(ACLMatrix.y_axis),
-				acl::vector_length3(ACLMatrix.z_axis),
-				0.f };
+		if (!acl::vector_all_near_equal3(Tfm.scale, Unit3))
+			NodeSection.emplace_back(sidScale, vector4({ acl::vector_get_x(Tfm.scale), acl::vector_get_y(Tfm.scale), acl::vector_get_z(Tfm.scale) }));
 
-			const acl::Vector4_32 Translation = {
-				Node.matrix.values[12],
-				Node.matrix.values[13],
-				Node.matrix.values[14],
-				1.f };
+		if (!acl::quat_near_equal(Tfm.rotation, IdentityQuat))
+			NodeSection.emplace_back(sidRotation, vector4({ acl::quat_get_x(Tfm.rotation), acl::quat_get_y(Tfm.rotation), acl::quat_get_z(Tfm.rotation), acl::quat_get_w(Tfm.rotation) }));
 
-			const acl::Quat_32 Rotation = acl::quat_from_matrix(acl::matrix_remove_scale(ACLMatrix));
-
-			if (!acl::vector_all_near_equal3(Scale, Unit3))
-				NodeSection.emplace_back(sidScale, vector4({ acl::vector_get_x(Scale), acl::vector_get_y(Scale), acl::vector_get_z(Scale) }));
-
-			if (!acl::quat_near_equal(Rotation, IdentityQuat))
-				NodeSection.emplace_back(sidRotation, vector4({ acl::quat_get_x(Rotation), acl::quat_get_y(Rotation), acl::quat_get_z(Rotation), acl::quat_get_w(Rotation) }));
-
-			if (!acl::vector_all_near_equal3(Translation, Zero3))
-				NodeSection.emplace_back(sidTranslation, vector4({ acl::vector_get_x(Translation), acl::vector_get_y(Translation), acl::vector_get_z(Translation) }));
-		}
-		else
-		{
-			const acl::Vector4_32 Scale = { Node.scale.x, Node.scale.y, Node.scale.z, 0.f };
-			const acl::Vector4_32 Translation = { Node.translation.x, Node.translation.y, Node.translation.z, 1.f };
-
-			if (!acl::vector_all_near_equal3(Scale, Unit3))
-				NodeSection.emplace_back(sidScale, vector4({ Node.scale.x, Node.scale.y, Node.scale.z }));
-			if (Node.rotation != gltf::Quaternion::IDENTITY)
-				NodeSection.emplace_back(sidRotation, vector4({ Node.rotation.x, Node.rotation.y, Node.rotation.z, Node.rotation.w }));
-			if (!acl::vector_all_near_equal3(Translation, Zero3))
-				NodeSection.emplace_back(sidTranslation, vector4({ Node.translation.x, Node.translation.y, Node.translation.z }));
-		}
+		if (!acl::vector_all_near_equal3(Tfm.translation, Zero3))
+			NodeSection.emplace_back(sidTranslation, vector4({ acl::vector_get_x(Tfm.translation), acl::vector_get_y(Tfm.translation), acl::vector_get_z(Tfm.translation) }));
 
 		// Process children
 
@@ -1066,18 +1086,74 @@ public:
 		return true;
 	}
 
-	bool ExportSkin(const gltf::Node& Node, std::string& OutSkinID, std::string& OutRootSearchPath, CContext& Ctx)
+	bool ExportSkin(const gltf::Node& SkinNode, std::string& OutSkinID, std::string& OutRootSearchPath, CContext& Ctx)
 	{
-		auto It = Ctx.ProcessedSkins.find(Node.skinId);
+		auto It = Ctx.ProcessedSkins.find(SkinNode.skinId);
 		if (It != Ctx.ProcessedSkins.cend())
 		{
 			OutSkinID = It->second;
 			return true;
 		}
 
-		const auto& Skin = Ctx.Doc.skins[Node.skinId];
+		const auto& Skin = Ctx.Doc.skins[SkinNode.skinId];
 
-		Ctx.Log.LogDebug("Skin " + Node.skinId + ": " + Skin.name);
+		Ctx.Log.LogDebug("Skin " + SkinNode.skinId + ": " + Skin.name);
+
+		// Calculate relative path from the skin node to the root joint
+
+		// Since bind matrices are relative to the skeleton root, we must add
+		// a transformation from the mesh node to the skeleton root to each of them.
+		auto MeshToRoot = acl::matrix_identity_32();
+
+		if (SkinNode.id != Skin.skeletonId)
+		{
+			std::vector<std::string> CurrNodePath;
+			BuildNodePath(Ctx.Doc, &SkinNode, CurrNodePath);
+
+			std::vector<std::string> SkeletonRootNodePath;
+			if (!Skin.skeletonId.empty())
+			{
+				BuildNodePath(Ctx.Doc, &Ctx.Doc.nodes[Skin.skeletonId], SkeletonRootNodePath);
+
+				while (!CurrNodePath.empty() &&
+					!SkeletonRootNodePath.empty() &&
+					CurrNodePath.back() == SkeletonRootNodePath.back())
+				{
+					CurrNodePath.pop_back();
+					SkeletonRootNodePath.pop_back();
+				}
+			}
+
+			for (const auto& NodeID : CurrNodePath)
+			{
+				if (!OutRootSearchPath.empty()) OutRootSearchPath += '.';
+				OutRootSearchPath += '^';
+
+				// Accumulate transform from the mesh node to the common parent
+				const auto InvLocalMatrix = acl::matrix_inverse(GetNodeMatrix(Ctx.Doc.nodes[NodeID]));
+				MeshToRoot = acl::matrix_mul(MeshToRoot, InvLocalMatrix);
+			}
+
+			SkeletonRootNodePath.erase(SkeletonRootNodePath.begin());
+			for (auto It = SkeletonRootNodePath.crbegin(); It != SkeletonRootNodePath.crend(); ++It)
+			{
+				const auto& Node = Ctx.Doc.nodes[*It];
+
+				// When not erasing root node itself:
+				//if (It.base() - 1 != SkeletonRootNodePath.cbegin())
+				//{
+					if (!OutRootSearchPath.empty()) OutRootSearchPath += '.';
+
+					OutRootSearchPath += (Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name);
+				//}
+
+				// Accumulate transform from the common parent to the skeleton root
+
+				MeshToRoot = acl::matrix_mul(MeshToRoot, GetNodeMatrix(Node));
+			}
+		}
+
+		// Collect bone info
 
 		std::vector<CBone> Bones;
 		Bones.reserve(Skin.jointIds.size());
@@ -1100,6 +1176,8 @@ public:
 					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
 			}
 
+			auto InvBindMatrix = acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix);
+
 			memcpy(NewBone.InvLocalBindPose, pInvBindMatrix, 16 *sizeof(float));
 
 			pInvBindMatrix += 16;
@@ -1109,52 +1187,15 @@ public:
 			Bones.push_back(std::move(NewBone));
 		}
 
-		// Calculate relative path from the skin node to the root joint
-
-		if (Node.id != Skin.skeletonId)
-		{
-			std::vector<std::string> CurrNodePath;
-			BuildNodePath(Ctx.Doc, &Node, CurrNodePath);
-
-			std::vector<std::string> SkeletonRootNodePath;
-			if (!Skin.skeletonId.empty())
-			{
-				BuildNodePath(Ctx.Doc, &Ctx.Doc.nodes[Skin.skeletonId], SkeletonRootNodePath);
-
-				while (!CurrNodePath.empty() &&
-					!SkeletonRootNodePath.empty() &&
-					CurrNodePath.back() == SkeletonRootNodePath.back())
-				{
-					CurrNodePath.pop_back();
-					SkeletonRootNodePath.pop_back();
-				}
-			}
-
-			for (size_t i = 0; i < CurrNodePath.size(); ++i)
-			{
-				if (!OutRootSearchPath.empty()) OutRootSearchPath += '.';
-				OutRootSearchPath += '^';
-			}
-
-			SkeletonRootNodePath.erase(SkeletonRootNodePath.begin());
-			for (auto It = SkeletonRootNodePath.crbegin(); It != SkeletonRootNodePath.crend(); ++It)
-			{
-				if (!OutRootSearchPath.empty()) OutRootSearchPath += '.';
-
-				const auto& Node = Ctx.Doc.nodes[*It];
-				OutRootSearchPath += (Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name);
-			}
-		}
-
 		// Write resulting file
 
-		const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + Node.skinId : Skin.name);
+		const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + SkinNode.skinId : Skin.name);
 		const auto DestPath = Ctx.SkinPath / (RsrcName + ".skn");
 
 		if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return false;
 
 		OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-		Ctx.ProcessedSkins.emplace(Node.skinId, OutSkinID);
+		Ctx.ProcessedSkins.emplace(SkinNode.skinId, OutSkinID);
 
 		return true;
 	}
