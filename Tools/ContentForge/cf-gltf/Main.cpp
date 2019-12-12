@@ -1176,9 +1176,9 @@ public:
 					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
 			}
 
-			auto InvBindMatrix = acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix);
+			auto InvBindMatrix = acl::matrix_mul(MeshToRoot, acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix));
 
-			memcpy(NewBone.InvLocalBindPose, pInvBindMatrix, 16 *sizeof(float));
+			acl::unaligned_write(InvBindMatrix, NewBone.InvLocalBindPose);
 
 			pInvBindMatrix += 16;
 
