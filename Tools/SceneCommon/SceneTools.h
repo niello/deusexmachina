@@ -95,8 +95,9 @@ struct CVertex
 	float2   UV[MaxUV];
 	size_t   BonesUsed = 0;
 	int      BlendIndices[MaxBonesPerVertex];
-	float    BlendWeightsF[MaxBonesPerVertex];
-	uint32_t BlendWeightsI; // 4x uint8_t packed
+	float    BlendWeights32[MaxBonesPerVertex];
+	uint16_t BlendWeights16[MaxBonesPerVertex];
+	uint32_t BlendWeights8; // 4x uint8_t packed
 };
 
 struct CVertexFormat
@@ -107,7 +108,7 @@ struct CVertexFormat
 	size_t ColorCount = 0;
 	size_t UVCount = 0;
 	size_t BonesPerVertex = 0;
-	bool   FloatBlendWeights = false;
+	size_t BlendWeightSize = 16;
 };
 
 struct CMeshGroup
@@ -138,6 +139,46 @@ struct CBone
 	uint16_t    ParentBoneIndex = NoParentBone;
 	// TODO: bone object-space or local-space AABB
 };
+
+inline void NormalizeWeights32x4(float& w1, float& w2, float& w3, float& w4)
+{
+	const auto Sum = w1 + w2 + w3 + w4;
+	w1 /= Sum;
+	w2 /= Sum;
+	w3 /= Sum;
+	w4 /= Sum;
+}
+//---------------------------------------------------------------------
+
+// FIXME: rounding error may lead to a sum != 65535
+inline void NormalizeWeights16x4(uint16_t& w1, uint16_t& w2, uint16_t& w3, uint16_t& w4)
+{
+	float f1 = ShortToNormalizedFloat(w1);
+	float f2 = ShortToNormalizedFloat(w2);
+	float f3 = ShortToNormalizedFloat(w3);
+	float f4 = ShortToNormalizedFloat(w4);
+	NormalizeWeights32x4(f1, f2, f3, f4);
+	w1 = NormalizedFloatToShort(f1);
+	w2 = NormalizedFloatToShort(f2);
+	w3 = NormalizedFloatToShort(f3);
+	w4 = NormalizedFloatToShort(f4);
+}
+//---------------------------------------------------------------------
+
+// FIXME: rounding error may lead to a sum != 255
+inline void NormalizeWeights8x4(uint8_t& w1, uint8_t& w2, uint8_t& w3, uint8_t& w4)
+{
+	float f1 = ByteToNormalizedFloat(w1);
+	float f2 = ByteToNormalizedFloat(w2);
+	float f3 = ByteToNormalizedFloat(w3);
+	float f4 = ByteToNormalizedFloat(w4);
+	NormalizeWeights32x4(f1, f2, f3, f4);
+	w1 = NormalizedFloatToByte(f1);
+	w2 = NormalizedFloatToByte(f2);
+	w3 = NormalizedFloatToByte(f3);
+	w4 = NormalizedFloatToByte(f4);
+}
+//---------------------------------------------------------------------
 
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices, std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices);
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);

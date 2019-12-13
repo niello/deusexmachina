@@ -97,6 +97,78 @@ static acl::AffineMatrix_32 GetNodeMatrix(const gltf::Node& Node)
 }
 //---------------------------------------------------------------------
 
+std::vector<float> GetJointWeights32x4(const gltf::Document& doc, const gltf::GLTFResourceReader& reader, const gltf::Accessor& accessor)
+{
+	if (accessor.type != gltf::TYPE_VEC4)
+	{
+		throw gltf::GLTFException("Invalid type for weights accessor " + accessor.id);
+	}
+
+	switch (accessor.componentType)
+	{
+		case gltf::COMPONENT_FLOAT:
+			return reader.ReadBinaryData<float>(doc, accessor);
+
+		case gltf::COMPONENT_UNSIGNED_BYTE:
+		{
+			auto raw = reader.ReadBinaryData<uint8_t>(doc, accessor);
+			std::vector<float> result(raw.size());
+			for (size_t i = 0; i < raw.size(); ++i)
+				result[i] = gltf::Math::ByteToFloat(raw[i]);
+			return std::move(result);
+		}
+
+		case gltf::COMPONENT_UNSIGNED_SHORT:
+		{
+			auto raw = reader.ReadBinaryData<uint16_t>(doc, accessor);
+			std::vector<float> result(raw.size());
+			for (size_t i = 0; i < raw.size(); ++i)
+				result[i] = ShortToNormalizedFloat(raw[i]);
+			return std::move(result);
+		}
+
+		default:
+			throw gltf::GLTFException("Invalid componentType for weights accessor " + accessor.id);
+	}
+}
+//---------------------------------------------------------------------
+
+std::vector<uint16_t> GetJointWeights16x4(const gltf::Document& doc, const gltf::GLTFResourceReader& reader, const gltf::Accessor& accessor)
+{
+	if (accessor.type != gltf::TYPE_VEC4)
+	{
+		throw gltf::GLTFException("Invalid type for weights accessor " + accessor.id);
+	}
+
+	switch (accessor.componentType)
+	{
+		case gltf::COMPONENT_FLOAT:
+		{
+			auto raw = reader.ReadBinaryData<float>(doc, accessor);
+			std::vector<uint16_t> result(raw.size());
+			for (size_t i = 0; i < raw.size(); ++i)
+				result[i] = NormalizedFloatToShort(raw[i]);
+			return std::move(result);
+		}
+
+		case gltf::COMPONENT_UNSIGNED_BYTE:
+		{
+			auto raw = reader.ReadBinaryData<uint8_t>(doc, accessor);
+			std::vector<uint16_t> result(raw.size());
+			for (size_t i = 0; i < raw.size(); ++i)
+				result[i] = NormalizedFloatToShort(gltf::Math::ByteToFloat(raw[i]));
+			return std::move(result);
+		}
+
+		case gltf::COMPONENT_UNSIGNED_SHORT:
+			return reader.ReadBinaryData<uint16_t>(doc, accessor);
+
+		default:
+			throw gltf::GLTFException("Invalid componentType for weights accessor " + accessor.id);
+	}
+}
+//---------------------------------------------------------------------
+
 static void BuildACLSkeleton(const std::string& NodeID, uint16_t ParentIndex, const std::multimap<std::string, std::string>& Hierarchy,
 	std::vector<acl::RigidBone>& Bones, std::vector<const gltf::Node*>& Nodes, const gltf::Document& Doc)
 {
@@ -578,7 +650,7 @@ public:
 		const auto& Mesh = Ctx.Doc.meshes[MeshName];
 
 		CVertexFormat VertexFormat;
-		VertexFormat.FloatBlendWeights = false;
+		VertexFormat.BlendWeightSize = 16;
 		int BoneCount = 0;
 
 		constexpr const char* UVAttributes[] = { gltf::ACCESSOR_TEXCOORD_0, gltf::ACCESSOR_TEXCOORD_1 };
@@ -727,57 +799,72 @@ public:
 
 			if (Primitive.TryGetAttributeAccessorId(gltf::ACCESSOR_WEIGHTS_0, AccessorId))
 			{
+				if (VertexFormat.BlendWeightSize != 8 && VertexFormat.BlendWeightSize != 16 && VertexFormat.BlendWeightSize != 32)
+					Ctx.Log.LogWarning("Unsupported blend weight size, defaulting to full-precision floats (32). Supported values are 8/16/32.");
+
 				// Must have joint indices
 				assert(VertexFormat.BonesPerVertex == 4);
 
-				const auto Weights = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
-				assert(Weights.size() == RawVertices.size());
+				constexpr bool RenormalizeWeights = true;
 
-				//!!!DBG TMP!
-				size_t Vtx = 0;
-
-				auto AttrIt = Weights.cbegin();
-				for (auto& Vertex : RawVertices)
+				if (VertexFormat.BlendWeightSize == 8)
 				{
-					const uint32_t Packed = *AttrIt++;
-					auto W1 = ((Packed >>  0) & 0xff);
-					auto W2 = ((Packed >>  8) & 0xff);
-					auto W3 = ((Packed >> 16) & 0xff);
-					auto W4 = ((Packed >> 24) & 0xff);
+					const auto Weights = gltf::MeshPrimitiveUtils::GetJointWeights32(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+					assert(Weights.size() == RawVertices.size());
 
-					if (VertexFormat.FloatBlendWeights)
+					auto AttrIt = Weights.cbegin();
+					for (auto& Vertex : RawVertices)
 					{
-						// With normalization
+						if (RenormalizeWeights)
+						{
+							const uint32_t Packed = *AttrIt++;
+							auto W1 = static_cast<uint8_t>((Packed >> 0) & 0xff);
+							auto W2 = static_cast<uint8_t>((Packed >> 8) & 0xff);
+							auto W3 = static_cast<uint8_t>((Packed >> 16) & 0xff);
+							auto W4 = static_cast<uint8_t>((Packed >> 24) & 0xff);
 
-						float4 BlendWeightsF = { gltf::Math::ByteToFloat(W1), gltf::Math::ByteToFloat(W2), gltf::Math::ByteToFloat(W3), gltf::Math::ByteToFloat(W4) };
-						const auto Sum = BlendWeightsF.x + BlendWeightsF.y + BlendWeightsF.z + BlendWeightsF.w;
+							NormalizeWeights8x4(W1, W2, W3, W4);
 
-						Vertex.BlendWeightsF[0] = BlendWeightsF.x / Sum;
-						Vertex.BlendWeightsF[1] = BlendWeightsF.y / Sum;
-						Vertex.BlendWeightsF[2] = BlendWeightsF.z / Sum;
-						Vertex.BlendWeightsF[3] = BlendWeightsF.w / Sum;
-
-						// Without normalization
-						//Vertex.BlendWeightsF[0] = gltf::Math::ByteToFloat(W1);
-						//Vertex.BlendWeightsF[1] = gltf::Math::ByteToFloat(W2);
-						//Vertex.BlendWeightsF[2] = gltf::Math::ByteToFloat(W3);
-						//Vertex.BlendWeightsF[3] = gltf::Math::ByteToFloat(W4);
+							Vertex.BlendWeights8 = (W4 << 24) | (W3 << 16) | (W2 << 8) | W1;
+						}
+						else
+						{
+							Vertex.BlendWeights8 = *AttrIt++;
+						}
 					}
-					else
+				}
+				else if (VertexFormat.BlendWeightSize == 16)
+				{
+					const auto Weights = GetJointWeights16x4(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+					assert(Weights.size() == RawVertices.size() * 4);
+
+					auto AttrIt = Weights.cbegin();
+					for (auto& Vertex : RawVertices)
 					{
-						// With normalization
+						Vertex.BlendWeights16[0] = *AttrIt++;
+						Vertex.BlendWeights16[1] = *AttrIt++;
+						Vertex.BlendWeights16[2] = *AttrIt++;
+						Vertex.BlendWeights16[3] = *AttrIt++;
 
-						float4 BlendWeightsF = { gltf::Math::ByteToFloat(W1), gltf::Math::ByteToFloat(W2), gltf::Math::ByteToFloat(W3), gltf::Math::ByteToFloat(W4) };
-						const auto Sum = BlendWeightsF.x + BlendWeightsF.y + BlendWeightsF.z + BlendWeightsF.w;
+						if (RenormalizeWeights)
+							NormalizeWeights16x4(Vertex.BlendWeights16[0], Vertex.BlendWeights16[1], Vertex.BlendWeights16[2], Vertex.BlendWeights16[3]);
+					}
+				}
+				else
+				{
+					const auto Weights = GetJointWeights32x4(Ctx.Doc, *Ctx.ResourceReader, Ctx.Doc.accessors[AccessorId]);
+					assert(Weights.size() == RawVertices.size() * 4);
 
-						Vertex.BlendWeightsI =
-							(gltf::Math::FloatToByte((BlendWeightsF.w / Sum)) << 24) |
-							(gltf::Math::FloatToByte((BlendWeightsF.z / Sum)) << 16) |
-							(gltf::Math::FloatToByte((BlendWeightsF.y / Sum)) << 8) |
-							(gltf::Math::FloatToByte((BlendWeightsF.x / Sum)));
+					auto AttrIt = Weights.cbegin();
+					for (auto& Vertex : RawVertices)
+					{
+						Vertex.BlendWeights32[0] = *AttrIt++;
+						Vertex.BlendWeights32[1] = *AttrIt++;
+						Vertex.BlendWeights32[2] = *AttrIt++;
+						Vertex.BlendWeights32[3] = *AttrIt++;
 
-						// Without normalization
-						//Vertex.BlendWeightsI = Packed;
+						if (RenormalizeWeights)
+							NormalizeWeights32x4(Vertex.BlendWeights32[0], Vertex.BlendWeights32[1], Vertex.BlendWeights32[2], Vertex.BlendWeights32[3]);
 					}
 				}
 			}
@@ -1176,7 +1263,8 @@ public:
 					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
 			}
 
-			auto InvBindMatrix = acl::matrix_mul(MeshToRoot, acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix));
+			//auto InvBindMatrix = acl::matrix_mul(MeshToRoot, acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix));
+			auto InvBindMatrix = acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix);
 
 			acl::unaligned_write(InvBindMatrix, NewBone.InvLocalBindPose);
 

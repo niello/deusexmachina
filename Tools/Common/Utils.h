@@ -28,6 +28,18 @@ inline uint8_t NormalizedFloatToByte(float value)
 }
 //---------------------------------------------------------------------
 
+inline float ShortToNormalizedFloat(uint16_t value)
+{
+	return value / 65535.0f;
+}
+//---------------------------------------------------------------------
+
+inline uint16_t NormalizedFloatToShort(float value)
+{
+	return static_cast<uint16_t>(value * 65535.0f + 0.5f);
+}
+//---------------------------------------------------------------------
+
 template<typename T>
 bool ReadAllFile(const char* pPath, std::vector<T>& Out, bool Binary = true)
 {

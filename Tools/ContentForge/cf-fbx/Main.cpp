@@ -577,7 +577,7 @@ public:
 		// Determine vertex format
 
 		CVertexFormat VertexFormat;
-		VertexFormat.FloatBlendWeights = false;
+		VertexFormat.BlendWeightSize = 32;
 
 		VertexFormat.NormalCount = std::min(1, pMesh->GetElementNormalCount());
 		if (pMesh->GetElementNormalCount() > static_cast<int>(VertexFormat.NormalCount))
@@ -736,6 +736,10 @@ public:
 					GetVertexElement(Vertex.UV[e], pMesh->GetElementUV(e), ControlPointIndex, VertexIndex);
 
 				// Fill skin data
+				
+				if (VertexFormat.BlendWeightSize != 8 && VertexFormat.BlendWeightSize != 32)
+					Ctx.Log.LogWarning("Unsupported blend weight size, defaulting to full-precision floats (32). Supported values are 8/32.");
+
 				for (size_t BoneIndex = 0; BoneIndex < BoneClusters.size(); ++BoneIndex)
 				{
 					const FbxCluster* pCluster = BoneClusters[BoneIndex].first;
@@ -755,10 +759,10 @@ public:
 							Ctx.Log.LogWarning(std::string("Mesh ") + pMesh->GetName() + " control point " + std::to_string(ControlPointIndex) + " reached the limit of bones, the least influencing bone discarded");
 
 							BoneOrderNumber = 0;
-							float MinWeight = VertexFormat.FloatBlendWeights ? Vertex.BlendWeightsF[0] : ByteToNormalizedFloat((Vertex.BlendWeightsI >> (0 * 8)) & 0xff);
+							float MinWeight = (VertexFormat.BlendWeightSize != 8) ? Vertex.BlendWeights32[0] : ByteToNormalizedFloat((Vertex.BlendWeights8 >> (0 * 8)) & 0xff);
 							for (size_t bo = 1; bo < MaxBonesPerVertex; ++bo)
 							{
-								const float Weight = VertexFormat.FloatBlendWeights ? Vertex.BlendWeightsF[bo] : ByteToNormalizedFloat((Vertex.BlendWeightsI >> (bo * 8)) & 0xff);
+								const float Weight = (VertexFormat.BlendWeightSize != 8) ? Vertex.BlendWeights32[bo] : ByteToNormalizedFloat((Vertex.BlendWeights8 >> (bo * 8)) & 0xff);
 								if (Weight < MinWeight)
 								{
 									BoneOrderNumber = bo;
@@ -779,10 +783,10 @@ public:
 						}
 
 						Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
-						if (VertexFormat.FloatBlendWeights)
-							Vertex.BlendWeightsF[BoneOrderNumber] = Weight;
+						if (VertexFormat.BlendWeightSize != 8)
+							Vertex.BlendWeights32[BoneOrderNumber] = Weight;
 						else
-							reinterpret_cast<uint8_t*>(&Vertex.BlendWeightsI)[3 - BoneOrderNumber] = NormalizedFloatToByte(Weight);
+							reinterpret_cast<uint8_t*>(&Vertex.BlendWeights8)[3 - BoneOrderNumber] = NormalizedFloatToByte(Weight);
 
 						++BoneClusters[BoneIndex].second;
 					}

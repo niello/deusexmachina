@@ -71,6 +71,9 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 		return false;
 	}
 
+	if (VertexFormat.BlendWeightSize != 8 && VertexFormat.BlendWeightSize != 16 && VertexFormat.BlendWeightSize != 32)
+		Log.LogWarning("Unsupported blend weight size, defaulting to full-precision floats (32). Supported values are 8/16/32.");
+
 	size_t TotalVertices = 0;
 	size_t TotalIndices = 0;
 	for (const auto& Pair : SubMeshes)
@@ -137,7 +140,18 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 		// Max 4 bones per vertex are supported, at least for now
 		assert(VertexFormat.BonesPerVertex < 5);
 
-		if (VertexFormat.FloatBlendWeights)
+		if (VertexFormat.BlendWeightSize == 8)
+		{
+			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt8_4_Norm, 0, 0);
+		}
+		else if (VertexFormat.BlendWeightSize == 16)
+		{
+			if (VertexFormat.BonesPerVertex <= 2)
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt16_2_Norm, 0, 0);
+			else
+				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt16_4_Norm, 0, 0);
+		}
+		else
 		{
 			if (VertexFormat.BonesPerVertex == 1)
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_1, 0, 0);
@@ -147,10 +161,6 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_3, 0, 0);
 			else
 				WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_Float32_4, 0, 0);
-		}
-		else
-		{
-			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneWeights, EVertexComponentFormat::VCFmt_UInt8_4_Norm, 0, 0);
 		}
 	}
 
@@ -211,10 +221,17 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 						WriteStream(File, static_cast<uint8_t>(BoneIndex));
 				}
 
-				if (VertexFormat.FloatBlendWeights)
-					File.write(reinterpret_cast<const char*>(Vertex.BlendWeightsF), VertexFormat.BonesPerVertex * sizeof(float));
+				if (VertexFormat.BlendWeightSize == 8)
+					WriteStream<uint32_t>(File, Vertex.BlendWeights8);
+				else if (VertexFormat.BlendWeightSize == 16)
+				{
+					if (VertexFormat.BonesPerVertex <= 2)
+						File.write(reinterpret_cast<const char*>(Vertex.BlendWeights16), 2 * sizeof(uint16_t));
+					else
+						File.write(reinterpret_cast<const char*>(Vertex.BlendWeights16), 4 * sizeof(uint16_t));
+				}
 				else
-					WriteStream<uint32_t>(File, Vertex.BlendWeightsI);
+					File.write(reinterpret_cast<const char*>(Vertex.BlendWeights32), VertexFormat.BonesPerVertex * sizeof(float));
 			}
 		}
 	}
