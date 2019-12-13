@@ -259,6 +259,8 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 		}
 	}
 
+	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved");
+
 	// Write delayed values
 	File.seekp(DataOffsetsPos);
 	WriteStream<uint32_t>(File, VertexStartPos);
@@ -292,6 +294,8 @@ bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CTh
 		WriteStream(File, Bone.ParentBoneIndex);
 		WriteStream(File, Bone.ID);
 	}
+
+	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved");
 
 	return true;
 }
@@ -328,6 +332,8 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	}
 
 	File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
+
+	Log.LogInfo(DestPath.filename().generic_string() + " " + std::to_string(File.tellp()) + " bytes saved");
 
 	return true;
 }
