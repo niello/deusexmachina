@@ -1,6 +1,8 @@
 set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/StdCfg.h
 	DEM/Low/src/StdDEM.h
+	DEM/Low/src/Animation/AnimationClip.h
+	DEM/Low/src/Animation/AnimationPlayer.h
 	DEM/Low/src/Animation/AnimClip.h
 	DEM/Low/src/Animation/AnimFwd.h
 	DEM/Low/src/Animation/AnimTask.h
@@ -315,6 +317,8 @@ set(DEM_L1_LOW_HEADERS
 )
 
 set(DEM_L1_LOW_SOURCES
+	DEM/Low/src/Animation/AnimationClip.cpp
+	DEM/Low/src/Animation/AnimationPlayer.cpp
 	DEM/Low/src/Animation/AnimClip.cpp
 	DEM/Low/src/Animation/AnimTask.cpp
 	DEM/Low/src/Animation/KeyframeClip.cpp
