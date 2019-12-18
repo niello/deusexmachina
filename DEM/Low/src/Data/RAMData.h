@@ -19,7 +19,7 @@ class IRAMData
 {
 public:
 
-	virtual ~IRAMData() {}
+	virtual ~IRAMData() = default;
 
 	virtual void* GetPtr() = 0;
 	virtual const void* GetConstPtr() const = 0;
@@ -35,7 +35,7 @@ public:
 
 	CRAMDataNotOwned(void* pData) : _pData(pData) {}
 
-	virtual ~CRAMDataNotOwned() {}
+	virtual ~CRAMDataNotOwned() override = default;
 
 	virtual void* GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
@@ -51,7 +51,7 @@ public:
 
 	CRAMDataNotOwnedImmutable(const void* pData) : _pData(pData) {}
 
-	virtual ~CRAMDataNotOwnedImmutable() {}
+	virtual ~CRAMDataNotOwnedImmutable() override = default;
 
 	virtual void* GetPtr() override { return nullptr; }
 	virtual const void* GetConstPtr() const override { return _pData; }
@@ -67,7 +67,7 @@ public:
 
 	CRAMDataNew(UPTR Size) : _pData(Size ? n_new_array(char, Size) : nullptr) {}
 
-	virtual ~CRAMDataNew() { if (_pData) n_delete_array(_pData); }
+	virtual ~CRAMDataNew() override { if (_pData) n_delete_array(_pData); }
 
 	virtual void* GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
@@ -83,7 +83,7 @@ public:
 
 	CRAMDataMalloc(UPTR Size) : _pData(Size ? n_malloc(Size) : nullptr) {}
 
-	virtual ~CRAMDataMalloc() { if (_pData) n_free(_pData); }
+	virtual ~CRAMDataMalloc() override { if (_pData) n_free(_pData); }
 
 	virtual void* GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
@@ -99,7 +99,7 @@ public:
 
 	CRAMDataMallocAligned(UPTR Size, UPTR Alignment) : _pData((Size && Alignment) ? n_malloc_aligned(Size, Alignment) : nullptr) {}
 
-	virtual ~CRAMDataMallocAligned() { if (_pData) n_free_aligned(_pData); }
+	virtual ~CRAMDataMallocAligned() override { if (_pData) n_free_aligned(_pData); }
 
 	virtual void* GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
@@ -116,7 +116,7 @@ public:
 
 	CRAMDataMappedStream(IO::PStream Stream);
 
-	virtual ~CRAMDataMappedStream();
+	virtual ~CRAMDataMappedStream() override;
 
 	virtual void* GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }

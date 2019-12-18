@@ -18,7 +18,7 @@ class CResourceObject: public Core::CObject
 
 public:
 
-	virtual ~CResourceObject() {}
+	virtual ~CResourceObject() override = default;
 
 	virtual bool IsResourceValid() const = 0;
 };

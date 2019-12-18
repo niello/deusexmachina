@@ -50,6 +50,8 @@
 #include <Render/CDLODDataLoader.h>
 #include <Render/ShaderLibrary.h>
 #include <Render/ShaderLibraryLoaderSLB.h>
+#include <Animation/AnimationClip.h>
+#include <Animation/AnimationLoaderANM.h>
 #include <Physics/CollisionShape.h>
 #include <Physics/CollisionShapeLoader.h>
 #include <Scene/SceneNode.h>
@@ -636,6 +638,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 
 	ResMgr->RegisterDefaultCreator("slb", &Render::CShaderLibrary::RTTI, n_new(Resources::CShaderLibraryLoaderSLB(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("scn", &Scene::CSceneNode::RTTI, n_new(Resources::CSceneNodeLoaderSCN(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("anm", &DEM::Anim::CAnimationClip::RTTI, n_new(Resources::CAnimationLoaderANM(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CCDLODData::RTTI, n_new(Resources::CCDLODDataLoader(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderCDLOD(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("nvx2", &Render::CMeshData::RTTI, n_new(Resources::CMeshLoaderNVX2(*ResMgr)));
