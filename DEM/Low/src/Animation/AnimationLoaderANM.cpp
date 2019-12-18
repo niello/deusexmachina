@@ -28,7 +28,9 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 
 	U32 ClipDataSize;
 	if (!Reader.Read(ClipDataSize) || !ClipDataSize) return nullptr;
-	Stream->Seek(-sizeof(U32), IO::Seek_Current);
+
+	// Clip size is a part of clip data, so it must be read again as a part of the clip
+	Stream->Seek(-4, IO::Seek_Current);
 
 	void* pBuffer = n_malloc_aligned(ClipDataSize, alignof(acl::CompressedClip));
 
