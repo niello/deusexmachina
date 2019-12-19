@@ -3,10 +3,14 @@
 
 namespace DEM::Anim
 {
+CAnimationPlayer::CAnimationPlayer() = default;
+CAnimationPlayer::~CAnimationPlayer() = default;
 
-bool CAnimationPlayer::Play(const CAnimationClip& Clip, float Speed, bool Loop)
+bool CAnimationPlayer::Initialize(const Scene::CSceneNode& RootNode, PAnimationClip Clip, float Speed, bool Loop)
 {
-	const auto* pClip = Clip.GetACLClip();
+	if (!Clip) return false;
+
+	const auto* pClip = Clip->GetACLClip();
 	if (pClip) return false;
 
 	if (_Context.is_dirty(*pClip))
@@ -14,6 +18,16 @@ bool CAnimationPlayer::Play(const CAnimationClip& Clip, float Speed, bool Loop)
 		_Context.initialize(*pClip);
 		_Context.seek(0.f, acl::SampleRoundingPolicy::None);
 	}
+
+	if (_Clip != Clip)
+	{
+		// map nodes
+
+		_Clip = Clip;
+	}
+
+	_CurrTime = 0.f;
+	_Paused = true;
 
 	/*
 	context.decompress_bone(bone_index, &rotation, &translation, &scale);

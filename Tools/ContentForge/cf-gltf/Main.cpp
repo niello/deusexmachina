@@ -1542,6 +1542,10 @@ public:
 
 		assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
 
+		std::vector<std::string> NodeNames(Nodes.size());
+		for (size_t BoneIdx = 0; BoneIdx < Nodes.size(); ++BoneIdx)
+			NodeNames[BoneIdx] = (Nodes[BoneIdx]->name.empty() ? Ctx.TaskName + '_' + Nodes[BoneIdx]->id : Nodes[BoneIdx]->name);
+
 		acl::RigidSkeletonPtr Skeleton = acl::make_unique<acl::RigidSkeleton>(
 			Ctx.ACLAllocator, Ctx.ACLAllocator, Bones.data(), static_cast<uint16_t>(Bones.size()));
 
@@ -1560,6 +1564,7 @@ public:
 			{
 				const auto pNode = Nodes[BoneIdx];
 
+				// Initialize with static node transform by default
 				//???or can ignore completely in ACL if channel is not animated? Would be especially good for completely not animated nodes!
 				auto Scaling = pNode->scale;
 				auto Rotation = pNode->rotation;
@@ -1574,10 +1579,12 @@ public:
 					auto pRotations = reinterpret_cast<const gltf::Quaternion*>(NodeAnim.RotationValues.data());
 					auto pTranslations = reinterpret_cast<const gltf::Vector3*>(NodeAnim.TranslationValues.data());
 
-					auto ItNextKey = std::lower_bound(NodeAnim.KeyTimes.cbegin(), NodeAnim.KeyTimes.cend(), Time);
+					constexpr float Tolerance = 0.0001f;
+
+					auto ItNextKey = std::lower_bound(NodeAnim.KeyTimes.cbegin(), NodeAnim.KeyTimes.cend(), Time - Tolerance);
 					const auto NextKeyNumber = std::distance(NodeAnim.KeyTimes.cbegin(), ItNextKey);
 					const bool IsLastKey = (ItNextKey == NodeAnim.KeyTimes.cend());
-					if (NextKeyNumber == 0 || IsLastKey || CompareFloat(*ItNextKey, Time, 0.0001f))
+					if (NextKeyNumber == 0 || IsLastKey || CompareFloat(*ItNextKey, Time, Tolerance))
 					{
 						// Get keyframe value without interpolation
 						const auto KeyNumber = IsLastKey ? NextKeyNumber - 1 : NextKeyNumber;
@@ -1607,7 +1614,7 @@ public:
 		}
 
 		const auto DestPath = Ctx.AnimPath / (RsrcName + ".anm");
-		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log);
+		return WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, Ctx.Log);
 	}
 };
 
