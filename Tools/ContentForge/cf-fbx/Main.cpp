@@ -1151,6 +1151,10 @@ public:
 			acl::String ClipName(Ctx.ACLAllocator, AnimName.c_str());
 			acl::AnimationClip Clip(Ctx.ACLAllocator, *Skeleton.Skeleton, FrameCount, FrameRate, ClipName);
 
+			std::vector<std::string> NodeNames(Skeleton.Nodes.size());
+			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
+				NodeNames[BoneIdx] = Skeleton.Nodes[BoneIdx]->GetName();
+
 			uint32_t SampleIndex = 0;
 			FbxTime FrameTime;
 			for (FbxLongLong Frame = StartFrame; Frame <= EndFrame; ++Frame, ++SampleIndex)
@@ -1172,7 +1176,7 @@ public:
 			}
 
 			const auto DestPath = Ctx.AnimPath / (AnimName + ".anm");
-			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, Ctx.Log)) return false;
+			if (!WriteDEMAnimation(DestPath, Ctx.ACLAllocator, Clip, NodeNames, Ctx.Log)) return false;
 		}
 
 		return true;

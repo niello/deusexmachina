@@ -23,8 +23,21 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 
 	IO::CBinaryReader Reader(*Stream);
 
-	//U32 Magic;
-	//if (!Reader.Read(Magic) || Magic != 'ANIM') return nullptr;
+	U32 Magic;
+	if (!Reader.Read(Magic) || Magic != 'ANIM') return nullptr;
+
+	U32 FormatVersion;
+	if (!Reader.Read(FormatVersion)) return nullptr;
+
+	U16 NodeCount;
+	if (!Reader.Read(NodeCount) || !NodeCount) return nullptr;
+
+	std::vector<DEM::Anim::CAnimationClip::CNodeInfo> NodeMapping(NodeCount);
+	for (U16 i = 0; i < NodeCount; ++i)
+	{
+		if (!Reader.Read(NodeMapping[i].ParentIndex)) return nullptr;
+		if (!Reader.Read(NodeMapping[i].Name)) return nullptr;
+	}
 
 	U32 ClipDataSize;
 	if (!Reader.Read(ClipDataSize) || !ClipDataSize) return nullptr;
@@ -47,7 +60,7 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	return n_new(DEM::Anim::CAnimationClip(pClip));
+	return n_new(DEM::Anim::CAnimationClip(pClip, std::move(NodeMapping)));
 }
 //---------------------------------------------------------------------
 

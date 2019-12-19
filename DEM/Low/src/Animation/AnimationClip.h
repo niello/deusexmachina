@@ -1,5 +1,6 @@
 #pragma once
 #include <Resources/ResourceObject.h>
+#include <Data/StringID.h>
 
 // ACL-compressed animation clip. Animates local SRT transform.
 
@@ -15,13 +16,22 @@ class CAnimationClip: public Resources::CResourceObject
 {
 	RTTI_CLASS_DECL;
 
+public:
+
+	struct CNodeInfo
+	{
+		CStrID Name;
+		uint16_t ParentIndex = -1;
+	};
+
 protected:
 
-	acl::CompressedClip* _pClip = nullptr;
+	acl::CompressedClip*   _pClip = nullptr;
+	std::vector<CNodeInfo> _NodeMapping;
 
 public:
 
-	CAnimationClip(acl::CompressedClip* pClip);
+	CAnimationClip(acl::CompressedClip* pClip, std::vector<CNodeInfo>&& NodeMapping);
 	virtual ~CAnimationClip() override;
 
 	virtual bool IsResourceValid() const override { return !!_pClip; }

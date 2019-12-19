@@ -330,7 +330,8 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 		return false;
 	}
 
-	WriteStream<uint32_t>(File, 'ANIM'); // Format magic value
+	WriteStream<uint32_t>(File, 'ANIM');     // Format magic value
+	WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
 
 	const auto& Skeleton = Clip.get_skeleton();
 	const auto NodeCount = Skeleton.get_num_bones();
