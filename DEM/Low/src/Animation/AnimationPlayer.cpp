@@ -24,7 +24,7 @@ void CAnimationPlayer::SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& Paren
 }
 //---------------------------------------------------------------------
 
-bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, float Speed, bool Loop)
+bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop, float Speed)
 {
 	if (!Clip || !Clip->GetNodeCount()) return false;
 
@@ -44,6 +44,9 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 		SetupChildNodes(0, RootNode);
 	}
 
+	_Speed = Speed;
+	_Loop = Loop;
+
 	_CurrTime = 0.f;
 	_Paused = true;
 
@@ -58,6 +61,31 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 	*/
 
 	return false;
+}
+//---------------------------------------------------------------------
+
+void CAnimationPlayer::Update(float dt)
+{
+	if (!_Clip || _Paused) return;
+
+	SetCursor(_CurrTime + dt * _Speed);
+
+	_Context.seek(_CurrTime, acl::SampleRoundingPolicy::None);
+
+	// FIXME: use pose decompression instead!
+	for (UPTR i = 0; i < _Nodes.size(); ++i)
+	{
+		if (!_Nodes[i]) continue;
+
+		acl::Quat_32 R;
+		acl::Vector4_32 T;
+		acl::Vector4_32 S;
+		_Context.decompress_bone(i, &R, &T, &S);
+
+		_Nodes[i]->SetRotation(quaternion(acl::quat_get_x(R), acl::quat_get_y(R), acl::quat_get_z(R), acl::quat_get_w(R)));
+		_Nodes[i]->SetPosition(vector3(acl::vector_get_x(T), acl::vector_get_y(T), acl::vector_get_z(T)));
+		_Nodes[i]->SetScale(vector3(acl::vector_get_x(S), acl::vector_get_y(S), acl::vector_get_z(S)));
+	}
 }
 //---------------------------------------------------------------------
 

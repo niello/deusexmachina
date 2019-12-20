@@ -40,8 +40,10 @@ public:
 	//???split into SetClip and Play/Stop/Pause/Rewind etc?
 	//!!!need Weight! possibly into Update/Apply/Advance or whatever name sampling takes!
 
-	bool Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, float Speed = 1.f, bool Loop = false);
-	//Reset()
+	bool  Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
+	void  Reset();
+
+	void  Update(float dt);
 
 	void  Play() { _Paused = false; }
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
