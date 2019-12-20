@@ -61,4 +61,12 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 }
 //---------------------------------------------------------------------
 
+void CAnimationPlayer::SetCursor(float Time)
+{
+	if (!_Clip) return;
+	if (_Loop) _CurrTime = std::fmodf(Time, _Clip->GetDuration());
+	else _CurrTime = std::clamp(Time, 0.f, _Clip->GetDuration());
+}
+//---------------------------------------------------------------------
+
 }

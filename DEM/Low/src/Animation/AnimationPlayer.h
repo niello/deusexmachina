@@ -43,7 +43,11 @@ public:
 	bool Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, float Speed = 1.f, bool Loop = false);
 	//Reset()
 
-	bool Play();
+	void  Play() { _Paused = false; }
+	void  Stop() { _Paused = true; _CurrTime = 0.f; }
+	void  Pause() { _Paused = true; }
+	void  SetCursor(float Time);
+	float GetCursor() const { return _CurrTime; }
 };
 
 }

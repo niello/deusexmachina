@@ -194,6 +194,8 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 			WriteStream<uint8_t>(File, 0);
 	}
 
+	assert(!(static_cast<uint32_t>(File.tellp()) % 16));
+
 	for (const auto& Pair : SubMeshes)
 	{
 		const auto& Vertices = Pair.second.Vertices;
@@ -244,6 +246,8 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 			WriteStream<uint8_t>(File, 0);
 	}
 
+	assert(!(static_cast<uint32_t>(File.tellp()) % 16));
+
 	for (const auto& Pair : SubMeshes)
 	{
 		const auto& Indices = Pair.second.Indices;
@@ -285,6 +289,8 @@ bool WriteDEMSkin(const fs::path& DestPath, const std::vector<CBone>& Bones, CTh
 	WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
 	WriteStream(File, static_cast<uint32_t>(Bones.size()));
 	WriteStream<uint32_t>(File, 0);             // Padding to align matrices offset to 16 bytes boundary
+
+	assert(!(static_cast<uint32_t>(File.tellp()) % 16));
 
 	for (const auto& Bone : Bones)
 		WriteStream(File, Bone.InvLocalBindPose);
@@ -333,6 +339,8 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	WriteStream<uint32_t>(File, 'ANIM');     // Format magic value
 	WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
 
+	WriteStream<float>(File, Clip.get_duration());
+
 	const auto& Skeleton = Clip.get_skeleton();
 	const auto NodeCount = Skeleton.get_num_bones();
 
@@ -344,6 +352,21 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 		WriteStream<uint16_t>(File, Skeleton.get_bone(i).parent_index);
 		WriteStream(File, NodeNames[i]);
 	}
+
+	// Align-16 compressed clip data in a file
+	uint32_t CurrPos = static_cast<uint32_t>(File.tellp()) + sizeof(uint8_t); // Added padding size
+	if (const auto PaddingStart = CurrPos % 16)
+	{
+		WriteStream<uint8_t>(File, 16 - PaddingStart);
+		for (auto i = PaddingStart; i < 16; ++i)
+			WriteStream<uint8_t>(File, 0);
+	}
+	else
+	{
+		WriteStream<uint8_t>(File, 0);
+	}
+
+	assert(!(static_cast<uint32_t>(File.tellp()) % 16));
 
 	File.write(reinterpret_cast<const char*>(CompressedClip), CompressedClip->get_size());
 

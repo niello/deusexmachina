@@ -29,6 +29,9 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	U32 FormatVersion;
 	if (!Reader.Read(FormatVersion)) return nullptr;
 
+	float Duration;
+	if (!Reader.Read(Duration)) return nullptr;
+
 	U16 NodeCount;
 	if (!Reader.Read(NodeCount) || !NodeCount) return nullptr;
 
@@ -40,6 +43,11 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		if (!Reader.Read(NodeMapping[i].ID)) return nullptr;
 	}
 
+	// Skip padding
+	U8 Padding;
+	if (!Reader.Read(Padding)) return nullptr;
+	Stream->Seek(Padding, IO::Seek_Current);
+
 	U32 ClipDataSize;
 	if (!Reader.Read(ClipDataSize) || !ClipDataSize) return nullptr;
 
@@ -48,6 +56,7 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 
 	void* pBuffer = n_malloc_aligned(ClipDataSize, alignof(acl::CompressedClip));
 
+	//!!!clip data is aligned-16 relatively to the file beginning! can use MMF!
 	if (!pBuffer || Stream->Read(pBuffer, ClipDataSize) != ClipDataSize)
 	{
 		SAFE_FREE_ALIGNED(pBuffer);
@@ -61,7 +70,7 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 		return nullptr;
 	}
 
-	return n_new(DEM::Anim::CAnimationClip(pClip, std::move(NodeMapping)));
+	return n_new(DEM::Anim::CAnimationClip(pClip, Duration, std::move(NodeMapping)));
 }
 //---------------------------------------------------------------------
 
