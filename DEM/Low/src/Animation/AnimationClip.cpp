@@ -8,6 +8,8 @@ CAnimationClip::CAnimationClip(acl::CompressedClip* pClip, std::vector<CNodeInfo
 	: _pClip(pClip)
 	, _NodeMapping(std::move(NodeMapping))
 {
+	// DEM animation format forces the root to be at position 0
+	n_assert(!_NodeMapping.empty() && _NodeMapping.front().ParentIndex == NoParentIndex);
 }
 //---------------------------------------------------------------------
 

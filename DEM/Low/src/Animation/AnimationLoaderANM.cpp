@@ -32,11 +32,12 @@ PResourceObject CAnimationLoaderANM::CreateResource(CStrID UID)
 	U16 NodeCount;
 	if (!Reader.Read(NodeCount) || !NodeCount) return nullptr;
 
+	// Children are always after the parent
 	std::vector<DEM::Anim::CAnimationClip::CNodeInfo> NodeMapping(NodeCount);
 	for (U16 i = 0; i < NodeCount; ++i)
 	{
 		if (!Reader.Read(NodeMapping[i].ParentIndex)) return nullptr;
-		if (!Reader.Read(NodeMapping[i].Name)) return nullptr;
+		if (!Reader.Read(NodeMapping[i].ID)) return nullptr;
 	}
 
 	U32 ClipDataSize;

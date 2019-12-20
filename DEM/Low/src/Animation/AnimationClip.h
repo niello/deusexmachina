@@ -18,10 +18,12 @@ class CAnimationClip: public Resources::CResourceObject
 
 public:
 
+	constexpr static U16 NoParentIndex = std::numeric_limits<U16>().max();
+
 	struct CNodeInfo
 	{
-		CStrID Name;
-		uint16_t ParentIndex = -1;
+		CStrID ID;
+		U16    ParentIndex = NoParentIndex;
 	};
 
 protected:
@@ -37,6 +39,8 @@ public:
 	virtual bool IsResourceValid() const override { return !!_pClip; }
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
+	const UPTR GetNodeCount() const { return _NodeMapping.size(); }
+	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _NodeMapping[Index]; }
 };
 
 typedef Ptr<CAnimationClip> PAnimationClip;

@@ -12,22 +12,27 @@ namespace Scene
 namespace DEM::Anim
 {
 typedef Ptr<class CAnimationClip> PAnimationClip;
+typedef std::unique_ptr<class CAnimationPlayer> PAnimationPlayer;
+typedef acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> CACLContext;
 
-class CAnimationPlayer final
+class alignas(CACLContext) CAnimationPlayer final
 {
 protected:
 
-	acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> _Context;
+	CACLContext                     _Context; // At offset 0
+	PAnimationClip                  _Clip;
+	std::vector<Scene::CSceneNode*> _Nodes; //???strong refs to nodes? or weak refs?
 
-	PAnimationClip _Clip;
-	//???strong refs to nodes? or weak refs?
+	float                           _Speed = 1.f;
+	float                           _CurrTime = 0.f;
+	bool                            _Paused = true;
+	bool                            _Loop = false;
 
-	float _Speed = 1.f;
-	float _CurrTime = 0.f;
-	bool _Paused = true;
-	bool _Loop = false;
+	void SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& ParentNode);
 
 public:
+
+	DEM_ALLOCATE_ALIGNED(alignof(CAnimationPlayer));
 
 	CAnimationPlayer();
 	~CAnimationPlayer();
@@ -35,7 +40,7 @@ public:
 	//???split into SetClip and Play/Stop/Pause/Rewind etc?
 	//!!!need Weight! possibly into Update/Apply/Advance or whatever name sampling takes!
 
-	bool Initialize(const Scene::CSceneNode& RootNode, PAnimationClip Clip, float Speed = 1.f, bool Loop = false);
+	bool Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, float Speed = 1.f, bool Loop = false);
 	//Reset()
 
 	bool Play();
