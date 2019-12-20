@@ -9,6 +9,7 @@
 
 namespace Frame
 {
+typedef Ptr<class CCameraAttribute> PCameraAttribute;
 
 class CCameraAttribute: public Scene::CNodeAttribute
 {
@@ -24,20 +25,22 @@ protected:
 		Orthogonal	= 0x08	// Projection is orthogonal, not perspective
 	};
 
-	float		FOV;
-	float		Width;
-	float		Height;
-	float		NearPlane;
-	float		FarPlane;
+	float		_FOV = n_deg2rad(60.0f);
+	float		_Width = 1024.f;
+	float		_Height = 768.f;
+	float		_NearPlane = 0.1f;
+	float		_FarPlane = 5000.f;
 
-	matrix44	View; // InvView is node world tfm
-	matrix44	Proj;
-	matrix44	InvProj;
-	matrix44	ViewProj;
+	matrix44	_View; // InvView is node world tfm
+	matrix44	_Proj;
+	matrix44	_InvProj;
+	matrix44	_ViewProj;
 
 public:
 
-	CCameraAttribute(): FOV(n_deg2rad(60.0f)), Width(1024.f), Height(768.f), NearPlane(0.1f), FarPlane(5000.f) { Flags.Set(ProjDirty); }
+	static PCameraAttribute CreatePerspective(float Aspect = (16.f / 9.f), float FOV = n_deg2rad(60.0f), float NearPlane = 0.1f, float FarPlane = 5000.f);
+
+	CCameraAttribute() { Flags.Set(ProjDirty); }
 
 	//background color
 	//???clip planes computing? or from any matrix?
@@ -54,25 +57,23 @@ public:
 	void							SetPerspectiveMode() { if (Flags.Is(Orthogonal)) { Flags.Clear(Orthogonal); Flags.Set(ProjDirty); } }
 	void							SetOrthogonalMode() { if (!Flags.Is(Orthogonal)) { Flags.Set(Orthogonal); Flags.Set(ProjDirty); } }
 	bool							IsOrthogonal() const { return Flags.Is(Orthogonal); }
-	void							SetFOV(float NewFOV) { if (FOV != NewFOV) { FOV = NewFOV; Flags.Set(ProjDirty); } }
-	float							GetFOV() const { return FOV; }
-	void							SetWidth(float W) { if (Width != W) { Width = W; Flags.Set(ProjDirty); } }
-	float							GetWidth() const { return Width; }
-	void							SetHeight(float H) { if (Height != H) { Height = H; Flags.Set(ProjDirty); } }
-	float							GetHeight() const { return Height; }
-	float							GetAspectRatio() const { return Width / Height; }
-	void							SetNearPlane(float Near) { if (NearPlane != Near) { NearPlane = Near; Flags.Set(ProjDirty); } }
-	float							GetNearPlane() const { return NearPlane; }
-	void							SetFarPlane(float Far) { if (FarPlane != Far) { FarPlane = Far; Flags.Set(ProjDirty); } }
-	float							GetFarPlane() const { return FarPlane; }
+	void							SetFOV(float NewFOV) { if (_FOV != NewFOV) { _FOV = NewFOV; Flags.Set(ProjDirty); } }
+	float							GetFOV() const { return _FOV; }
+	void							SetWidth(float W) { if (_Width != W) { _Width = W; Flags.Set(ProjDirty); } }
+	float							GetWidth() const { return _Width; }
+	void							SetHeight(float H) { if (_Height != H) { _Height = H; Flags.Set(ProjDirty); } }
+	float							GetHeight() const { return _Height; }
+	float							GetAspectRatio() const { return _Width / _Height; }
+	void							SetNearPlane(float Near) { if (_NearPlane != Near) { _NearPlane = Near; Flags.Set(ProjDirty); } }
+	float							GetNearPlane() const { return _NearPlane; }
+	void							SetFarPlane(float Far) { if (_FarPlane != Far) { _FarPlane = Far; Flags.Set(ProjDirty); } }
+	float							GetFarPlane() const { return _FarPlane; }
 	const vector3&					GetPosition() const { return pNode->GetWorldPosition(); }
-	const matrix44&					GetViewMatrix() const { return View; }
+	const matrix44&					GetViewMatrix() const { return _View; }
 	const matrix44&					GetInvViewMatrix() const { return pNode->GetWorldMatrix(); }
-	const matrix44&					GetProjMatrix() const { return Proj; }
-	const matrix44&					GetInvProjMatrix() const { return InvProj; }
-	const matrix44&					GetViewProjMatrix() const { return ViewProj; }
+	const matrix44&					GetProjMatrix() const { return _Proj; }
+	const matrix44&					GetInvProjMatrix() const { return _InvProj; }
+	const matrix44&					GetViewProjMatrix() const { return _ViewProj; }
 };
-
-typedef Ptr<CCameraAttribute> PCameraAttribute;
 
 }

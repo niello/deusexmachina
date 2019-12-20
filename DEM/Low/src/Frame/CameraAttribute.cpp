@@ -1,10 +1,20 @@
 #include "CameraAttribute.h"
-
 #include <Core/Factory.h>
 
 namespace Frame
 {
 FACTORY_CLASS_IMPL(Frame::CCameraAttribute, 'CAMR', Scene::CNodeAttribute);
+
+PCameraAttribute CCameraAttribute::CreatePerspective(float Aspect, float FOV, float NearPlane, float FarPlane)
+{
+	Frame::PCameraAttribute Camera = n_new(Frame::CCameraAttribute);
+	Camera->SetWidth(Aspect);
+	Camera->SetHeight(1.f);
+	Camera->SetNearPlane(NearPlane);
+	Camera->SetFarPlane(FarPlane);
+	return Camera;
+}
+//---------------------------------------------------------------------
 
 bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
@@ -33,11 +43,11 @@ bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 Scene::PNodeAttribute CCameraAttribute::Clone()
 {
 	PCameraAttribute ClonedAttr = n_new(CCameraAttribute);
-	ClonedAttr->FOV = FOV;
-	ClonedAttr->Width = Width;
-	ClonedAttr->Height = Height;
-	ClonedAttr->NearPlane = NearPlane;
-	ClonedAttr->FarPlane = FarPlane;
+	ClonedAttr->_FOV = _FOV;
+	ClonedAttr->_Width = _Width;
+	ClonedAttr->_Height = _Height;
+	ClonedAttr->_NearPlane = _NearPlane;
+	ClonedAttr->_FarPlane = _FarPlane;
 	ClonedAttr->Flags.SetTo(Orthogonal, IsOrthogonal());
 	return ClonedAttr.Get();
 }
@@ -51,15 +61,15 @@ void CCameraAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 
 	if (Flags.Is(ProjDirty))
 	{
-		if (Flags.Is(Orthogonal)) Proj.orthoRh(Width, Height, NearPlane, FarPlane);
-		else Proj.perspFovRh(FOV, Width / Height, NearPlane, FarPlane);
+		if (Flags.Is(Orthogonal)) _Proj.orthoRh(_Width, _Height, _NearPlane, _FarPlane);
+		else _Proj.perspFovRh(_FOV, _Width / _Height, _NearPlane, _FarPlane);
 
 		// Shadow proj was calculated with:
 		//nearPlane - shadowOffset, farPlane - shadowOffset, shadowOffset(0.00007f)
 
 		//!!!avoid copying!
-		InvProj = Proj;
-		InvProj.invert();
+		_InvProj = _Proj;
+		_InvProj.invert();
 
 		Flags.Clear(ProjDirty);
 		ViewOrProjChanged = true;
@@ -67,18 +77,18 @@ void CCameraAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 
 	if (pNode->IsWorldMatrixChanged())
 	{
-		pNode->GetWorldMatrix().invert_simple(View);
+		pNode->GetWorldMatrix().invert_simple(_View);
 		ViewOrProjChanged = true;
 	}
 
-	if (ViewOrProjChanged) ViewProj = View * Proj;
+	if (ViewOrProjChanged) _ViewProj = _View * _Proj;
 }
 //---------------------------------------------------------------------
 
 void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const
 {
 	vector3 ScreenCoord3D((RelX - 0.5f) * 2.0f, (RelY - 0.5f) * 2.0f, 1.0f);
-	vector3 ViewLocalPos = (InvProj * ScreenCoord3D) * NearPlane * 1.1f;
+	vector3 ViewLocalPos = (_InvProj * ScreenCoord3D) * _NearPlane * 1.1f;
 	ViewLocalPos.y = -ViewLocalPos.y;
 	const matrix44&	InvView = GetInvViewMatrix();
 	OutRay.Start = InvView * ViewLocalPos;
@@ -89,9 +99,9 @@ void CCameraAttribute::GetRay3D(float RelX, float RelY, float Length, line3& Out
 
 void CCameraAttribute::GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const
 {
-	vector4 WorldPos = View * Point3D;
+	vector4 WorldPos = _View * Point3D;
 	WorldPos.w = 0.f;
-	WorldPos = Proj * WorldPos;
+	WorldPos = _Proj * WorldPos;
 	WorldPos /= WorldPos.w;
 	OutRelX = 0.5f + WorldPos.x * 0.5f;
 	OutRelY = 0.5f - WorldPos.y * 0.5f;
