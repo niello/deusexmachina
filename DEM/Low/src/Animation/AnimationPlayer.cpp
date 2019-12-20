@@ -4,6 +4,33 @@
 
 namespace DEM::Anim
 {
+
+struct CPoseWriter : acl::OutputWriter
+{
+	CPoseWriter(Scene::CSceneNode** pNodes)
+		: _pNodes(pNodes)
+	{
+		n_assert_dbg(_pNodes);
+	}
+
+	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation)
+	{
+		_pNodes[bone_index]->SetRotation(quaternion(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation)));
+	}
+
+	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
+	{
+		_pNodes[bone_index]->SetPosition(vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation)));
+	}
+
+	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
+	{
+		_pNodes[bone_index]->SetScale(vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
+	}
+
+	Scene::CSceneNode** _pNodes;
+};
+
 CAnimationPlayer::CAnimationPlayer() = default;
 CAnimationPlayer::~CAnimationPlayer() = default;
 
@@ -50,42 +77,28 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 	_CurrTime = 0.f;
 	_Paused = true;
 
-	/*
-	_Context.seek(0.f, acl::SampleRoundingPolicy::None);
-
-	context.decompress_bone(bone_index, &rotation, &translation, &scale);
-
-	Transform_32* transforms = new Transform_32[num_bones];
-	DefaultOutputWriter pose_writer(transforms, num_bones);
-	context.decompress_pose(pose_writer);
-	*/
-
-	return false;
+	return true;
 }
 //---------------------------------------------------------------------
 
+void CAnimationPlayer::Reset()
+{
+	_Clip = nullptr;
+	_Nodes.clear();
+	_CurrTime = 0.f;
+	_Paused = true;
+}
+//---------------------------------------------------------------------
+
+//???use per-bone decompression when many nodes are not bound? May be useful for LOD.
 void CAnimationPlayer::Update(float dt)
 {
-	if (!_Clip || _Paused) return;
+	if (_Paused) return;
 
 	SetCursor(_CurrTime + dt * _Speed);
 
 	_Context.seek(_CurrTime, acl::SampleRoundingPolicy::None);
-
-	// FIXME: use pose decompression instead!
-	for (UPTR i = 0; i < _Nodes.size(); ++i)
-	{
-		if (!_Nodes[i]) continue;
-
-		acl::Quat_32 R;
-		acl::Vector4_32 T;
-		acl::Vector4_32 S;
-		_Context.decompress_bone(i, &R, &T, &S);
-
-		_Nodes[i]->SetRotation(quaternion(acl::quat_get_x(R), acl::quat_get_y(R), acl::quat_get_z(R), acl::quat_get_w(R)));
-		_Nodes[i]->SetPosition(vector3(acl::vector_get_x(T), acl::vector_get_y(T), acl::vector_get_z(T)));
-		_Nodes[i]->SetScale(vector3(acl::vector_get_x(S), acl::vector_get_y(S), acl::vector_get_z(S)));
-	}
+	_Context.decompress_pose(CPoseWriter(_Nodes.data()));
 }
 //---------------------------------------------------------------------
 

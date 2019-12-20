@@ -45,11 +45,19 @@ public:
 
 	void  Update(float dt);
 
-	void  Play() { _Paused = false; }
+	bool  Play() { _Paused = (!_Clip || _Nodes.empty()); return !_Paused; }
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
 	void  Pause() { _Paused = true; }
+
+	void  SetSpeed(float Speed) { _Speed = Speed; }
+	void  SetLooped(bool Loop) { _Loop = Loop; }
 	void  SetCursor(float Time);
+
+	auto* GetClip() const { return _Clip.Get(); }
+	float GetSpeed() const { return _Speed; }
 	float GetCursor() const { return _CurrTime; }
+	bool  IsLooped() const { return _Loop; }
+	bool  IsPlaying() const { return !_Paused; }
 };
 
 }
