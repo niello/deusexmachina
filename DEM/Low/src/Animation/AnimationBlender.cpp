@@ -18,11 +18,14 @@ void CAnimationBlender::Apply()
 {
 	const auto PortCount = _Nodes.size();
 	const auto SourceCount = _SourceInfo.size();
+	if (!PortCount || !SourceCount) return;
+
 	UPTR i = 0;
 	for (UPTR Port = 0; Port < PortCount; ++Port)
 	{
 		Math::CTransformSRT FinalTfm;
 		U8 FinalMask = 0;
+		//!!!accumulate weights and priorities per channel!
 
 		for (UPTR Source = 0; Source < SourceCount; ++Source, ++i)
 		{
@@ -30,18 +33,26 @@ void CAnimationBlender::Apply()
 
 			if (ChannelMask & Scene::Tfm_Scaling)
 			{
-				const auto& Scale = _Transforms[i].Scale;
+				FinalTfm.Scale = _Transforms[i].Scale;
 				// blend
+
+				FinalMask |= Scene::Tfm_Scaling;
 			}
 
 			if (ChannelMask & Scene::Tfm_Rotation)
 			{
+				FinalTfm.Rotation = _Transforms[i].Rotation;
 				// blend
+
+				FinalMask |= Scene::Tfm_Rotation;
 			}
 
 			if (ChannelMask & Scene::Tfm_Translation)
 			{
+				FinalTfm.Translation = _Transforms[i].Translation;
 				// blend
+
+				FinalMask |= Scene::Tfm_Translation;
 			}
 		}
 

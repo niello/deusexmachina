@@ -41,6 +41,9 @@ protected:
 
 public:
 
+	CAnimationBlender() = default;
+	CAnimationBlender(U8 SourceCount) { Initialize(SourceCount); }
+
 	void               Initialize(U8 SourceCount);
 	void               Apply();
 

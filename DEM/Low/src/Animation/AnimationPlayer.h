@@ -12,6 +12,7 @@ namespace Scene
 namespace DEM::Anim
 {
 typedef Ptr<class CAnimationClip> PAnimationClip;
+typedef Ptr<class CAnimationBlender> PAnimationBlender;
 typedef std::unique_ptr<class CAnimationPlayer> PAnimationPlayer;
 typedef std::unique_ptr<class CStaticPose> PStaticPose;
 typedef acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> CACLContext;
@@ -40,6 +41,7 @@ public:
 
 	bool  Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
 	void  Reset();
+	void  SetBlending(PAnimationBlender Blender, U8 SourceIndex);
 
 	void  Update(float dt);
 
