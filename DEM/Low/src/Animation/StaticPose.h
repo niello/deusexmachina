@@ -25,6 +25,8 @@ public:
 
 	CStaticPose(std::vector<Scene::CSceneNode*>&& Nodes, std::vector<Math::CTransformSRT>&& Transforms);
 	~CStaticPose();
+
+	void Apply();
 };
 
 }

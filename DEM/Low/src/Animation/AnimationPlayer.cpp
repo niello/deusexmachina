@@ -48,7 +48,7 @@ struct CStaticPoseWriter : acl::OutputWriter
 
 	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
 	{
-		_pTransforms->Translation = vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation));
+		_pTransforms[bone_index].Translation = vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation));
 	}
 
 	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
@@ -150,7 +150,7 @@ PStaticPose CAnimationPlayer::BakePose(float Time)
 
 	std::vector<Math::CTransformSRT> Tfms(_Nodes.size());
 
-	_Context.seek(_CurrTime, acl::SampleRoundingPolicy::None);
+	_Context.seek(Time, acl::SampleRoundingPolicy::None);
 	_Context.decompress_pose(CStaticPoseWriter(Tfms.data()));
 
 	auto Nodes = _Nodes;

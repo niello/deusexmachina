@@ -1,5 +1,5 @@
 #include "StaticPose.h"
-#include <System/System.h>
+#include <Scene/SceneNode.h>
 
 namespace DEM::Anim
 {
@@ -13,5 +13,13 @@ CStaticPose::CStaticPose(std::vector<Scene::CSceneNode*>&& Nodes, std::vector<Ma
 //---------------------------------------------------------------------
 
 CStaticPose::~CStaticPose() = default;
+//---------------------------------------------------------------------
+
+void CStaticPose::Apply()
+{
+	for (UPTR i = 0; i < _Nodes.size(); ++i)
+		_Nodes[i]->SetLocalTransform(_Transforms[i]);
+}
+//---------------------------------------------------------------------
 
 }
