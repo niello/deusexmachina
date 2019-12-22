@@ -25,10 +25,13 @@ protected:
 		Scene::CSceneNode* Node; //???strong refs to nodes? or weak refs?
 		U16                BlenderPort;
 	};
-	std::vector<UOutput> _Outputs;
+	std::vector<UOutput>             _Outputs;
 
-	std::vector<Scene::CSceneNode*> _Nodes; //???strong refs to nodes? or weak refs?
+	std::vector<Scene::CSceneNode*>  _Nodes; //???strong refs to nodes? or weak refs?
 	std::vector<Math::CTransformSRT> _Transforms;
+
+	PAnimationBlender                _Blender;
+	U8                               _SourceIndex = 0;
 
 public:
 

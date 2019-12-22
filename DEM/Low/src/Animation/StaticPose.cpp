@@ -24,8 +24,8 @@ void CStaticPose::SetBlending(PAnimationBlender Blender, U8 SourceIndex)
 {
 	if (Blender)
 	{
-		auto _Blender = std::move(Blender);
-		auto _SourceIndex = SourceIndex;
+		_Blender = std::move(Blender);
+		_SourceIndex = SourceIndex;
 
 		for (auto& Output : _Outputs)
 			Output.BlenderPort = _Blender->GetOrCreateNodePort(*Output.Node);
@@ -33,17 +33,28 @@ void CStaticPose::SetBlending(PAnimationBlender Blender, U8 SourceIndex)
 	else
 	{
 		for (auto& Output : _Outputs)
-			Output.Node = Blender->GetPortNode(Output.BlenderPort);
+			Output.Node = _Blender->GetPortNode(Output.BlenderPort);
 
-		//_Blender.reset();
+		_Blender = nullptr;
 	}
 }
 //---------------------------------------------------------------------
 
 void CStaticPose::Apply()
 {
-	for (UPTR i = 0; i < _Nodes.size(); ++i)
-		_Nodes[i]->SetLocalTransform(_Transforms[i]);
+	if (_Blender)
+	{
+		for (UPTR i = 0; i < _Outputs.size(); ++i)
+			_Blender->SetTransform(_SourceIndex, _Outputs[i].BlenderPort, _Transforms[i]);
+	}
+	else
+	{
+		for (UPTR i = 0; i < _Outputs.size(); ++i)
+			_Outputs[i].Node->SetLocalTransform(_Transforms[i]);
+	}
+
+	//for (UPTR i = 0; i < _Nodes.size(); ++i)
+	//	_Nodes[i]->SetLocalTransform(_Transforms[i]);
 }
 //---------------------------------------------------------------------
 

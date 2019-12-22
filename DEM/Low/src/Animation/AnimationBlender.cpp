@@ -59,13 +59,13 @@ void CAnimationBlender::Apply()
 		// Apply accumulated transform
 
 		if (FinalMask & Scene::Tfm_Scaling)
-			_Nodes[i]->SetScale(FinalTfm.Scale);
+			_Nodes[Port]->SetScale(FinalTfm.Scale);
 
 		if (FinalMask & Scene::Tfm_Rotation)
-			_Nodes[i]->SetRotation(FinalTfm.Rotation);
+			_Nodes[Port]->SetRotation(FinalTfm.Rotation);
 
 		if (FinalMask & Scene::Tfm_Translation)
-			_Nodes[i]->SetPosition(FinalTfm.Translation);
+			_Nodes[Port]->SetPosition(FinalTfm.Translation);
 	}
 
 	std::memset(_ChannelMasks.data(), 0, _ChannelMasks.size());
