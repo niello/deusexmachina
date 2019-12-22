@@ -13,6 +13,7 @@ namespace DEM::Anim
 {
 typedef Ptr<class CAnimationClip> PAnimationClip;
 typedef std::unique_ptr<class CAnimationPlayer> PAnimationPlayer;
+typedef std::unique_ptr<class CStaticPose> PStaticPose;
 typedef acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> CACLContext;
 
 class alignas(CACLContext) CAnimationPlayer final
@@ -37,13 +38,12 @@ public:
 	CAnimationPlayer();
 	~CAnimationPlayer();
 
-	//???split into SetClip and Play/Stop/Pause/Rewind etc?
-	//!!!need Weight! possibly into Update/Apply/Advance or whatever name sampling takes!
-
 	bool  Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
 	void  Reset();
 
 	void  Update(float dt);
+
+	PStaticPose BakePose(float Time);
 
 	bool  Play() { _Paused = (!_Clip || _Nodes.empty()); return !_Paused; }
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
