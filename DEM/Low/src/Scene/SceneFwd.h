@@ -1,6 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_SCENE_FWD_H__
-#define __DEM_L1_SCENE_FWD_H__
 
 // Scene graph forward declarations
 
@@ -15,5 +13,3 @@ enum ETransformChannel
 };
 
 }
-
-#endif

@@ -100,6 +100,7 @@ public:
 	bool					IsWorldMatrixDirty() const { return Flags.Is(WorldMatrixDirty); }
 	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
 
+	//!!!TODO: if not LocalMatrixDirty, can first compare new to current and skip change, saves hierarchy recalculation!
 	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
 	const vector3&			GetPosition() const { return Tfm.Translation; }
 	void					SetRotation(const quaternion& Rot) { Tfm.Rotation = Rot; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
