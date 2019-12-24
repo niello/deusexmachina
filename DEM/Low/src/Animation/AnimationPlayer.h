@@ -1,5 +1,5 @@
 #pragma once
-#include <Data/Ptr.h>
+#include <Animation/TransformSource.h>
 #include <acl/algorithm/uniformly_sampled/decoder.h>
 
 // Transformation source that samples an animation clip into the node hierarchy
@@ -12,18 +12,16 @@ namespace Scene
 namespace DEM::Anim
 {
 typedef Ptr<class CAnimationClip> PAnimationClip;
-typedef Ptr<class CAnimationBlender> PAnimationBlender;
 typedef std::unique_ptr<class CAnimationPlayer> PAnimationPlayer;
 typedef std::unique_ptr<class CStaticPose> PStaticPose;
 typedef acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> CACLContext;
 
-class alignas(CACLContext) CAnimationPlayer final
+class alignas(CACLContext) CAnimationPlayer final : public CTransformSource
 {
 protected:
 
 	CACLContext                     _Context; // At offset 0
 	PAnimationClip                  _Clip;
-	std::vector<Scene::CSceneNode*> _Nodes; //???strong refs to nodes? or weak refs?
 
 	float                           _Speed = 1.f;
 	float                           _CurrTime = 0.f;

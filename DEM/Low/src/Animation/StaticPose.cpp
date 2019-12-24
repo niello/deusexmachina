@@ -6,9 +6,9 @@ namespace DEM::Anim
 {
 
 CStaticPose::CStaticPose(std::vector<Scene::PSceneNode>&& Nodes, std::vector<Math::CTransformSRT>&& Transforms)
-	: _Nodes(std::move(Nodes))
-	, _Transforms(std::move(Transforms))
+	: _Transforms(std::move(Transforms))
 {
+	_Nodes = std::move(Nodes);
 	n_assert_dbg(_Nodes.size() == _Transforms.size());
 }
 //---------------------------------------------------------------------
@@ -16,38 +16,28 @@ CStaticPose::CStaticPose(std::vector<Scene::PSceneNode>&& Nodes, std::vector<Mat
 CStaticPose::~CStaticPose() = default;
 //---------------------------------------------------------------------
 
-void CStaticPose::SetBlending(PAnimationBlender Blender, U8 SourceIndex)
-{
-	if (Blender)
-	{
-		_Blender = std::move(Blender);
-		_SourceIndex = SourceIndex;
-
-		//for (auto& Output : _Outputs)
-		//	Output.BlenderPort = _Blender->GetOrCreateNodePort(*Output.Node);
-	}
-	else
-	{
-		//for (auto& Output : _Outputs)
-		//	Output.Node = _Blender->GetPortNode(Output.BlenderPort);
-
-		_Blender = nullptr;
-	}
-}
-//---------------------------------------------------------------------
-
 void CStaticPose::Apply()
 {
-	if (_Blender)
+	const auto OutputCount = GetTransformCount();
+	for (UPTR i = 0; i < OutputCount; ++i)
+		SetTransform(i, _Transforms[i]);
+
+	// TODO: profile if performance problems arise
+/*
+	if (_BlendInfo)
 	{
-		//for (UPTR i = 0; i < _Outputs.size(); ++i)
-		//	_Blender->SetTransform(_SourceIndex, _Outputs[i].BlenderPort, _Transforms[i]);
+		const auto SourceIndex = _BlendInfo->SourceIndex;
+		const auto OutputCount = _BlendInfo->Ports.size();
+		for (UPTR i = 0; i < OutputCount; ++i)
+			_BlendInfo->Blender->SetTransform(SourceIndex, _BlendInfo->Ports[i], _Transforms[i]);
 	}
 	else
 	{
-		//for (UPTR i = 0; i < _Outputs.size(); ++i)
-		//	_Outputs[i].Node->SetLocalTransform(_Transforms[i]);
+		const auto OutputCount = _Nodes.size();
+		for (UPTR i = 0; i < OutputCount; ++i)
+			_Nodes[i]->SetLocalTransform(_Transforms[i]);
 	}
+*/
 }
 //---------------------------------------------------------------------
 

@@ -73,17 +73,17 @@ void CAnimationBlender::Apply()
 //---------------------------------------------------------------------
 
 // NB: slow operation
-U32 CAnimationBlender::GetOrCreateNodePort(Scene::CSceneNode& Node)
+U32 CAnimationBlender::GetOrCreateNodePort(Scene::CSceneNode* pNode)
 {
-	if (_Nodes.size() >= std::numeric_limits<U32>().max())
+	if (!pNode || _Nodes.size() >= std::numeric_limits<U32>().max())
 		return InvalidPort;
 
 	const auto PortCount = _Nodes.size();
 	for (UPTR Port = 0; Port < PortCount; ++Port)
-		if (_Nodes[Port] == &Node)
+		if (_Nodes[Port] == pNode)
 			return Port;
 
-	_Nodes.push_back(&Node);
+	_Nodes.push_back(pNode);
 	_Transforms.resize(_Transforms.size() + _SourceInfo.size());
 	_ChannelMasks.resize(_ChannelMasks.size() + _SourceInfo.size());
 

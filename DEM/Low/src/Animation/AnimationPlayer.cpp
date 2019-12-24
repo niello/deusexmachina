@@ -8,28 +8,28 @@ namespace DEM::Anim
 
 struct CScenePoseWriter : acl::OutputWriter
 {
-	CScenePoseWriter(Scene::CSceneNode** pNodes)
-		: _pNodes(pNodes)
+	CScenePoseWriter(CTransformSource* pTfmSource)
+		: _pTfmSource(pTfmSource)
 	{
-		n_assert_dbg(_pNodes);
+		n_assert_dbg(_pTfmSource);
 	}
 
 	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation)
 	{
-		_pNodes[bone_index]->SetRotation(quaternion(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation)));
+		_pTfmSource->SetRotation(bone_index, quaternion(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation)));
 	}
 
 	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
 	{
-		_pNodes[bone_index]->SetPosition(vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation)));
+		_pTfmSource->SetTranslation(bone_index, vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation)));
 	}
 
 	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
 	{
-		_pNodes[bone_index]->SetScale(vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
+		_pTfmSource->SetScale(bone_index, vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
 	}
 
-	Scene::CSceneNode** _pNodes;
+	CTransformSource* _pTfmSource;
 };
 
 struct CStaticPoseWriter : acl::OutputWriter
@@ -138,7 +138,7 @@ void CAnimationPlayer::Update(float dt)
 	_CurrTime = NormalizeAnimationCursor(_CurrTime + dt * _Speed, _Clip->GetDuration(), _Loop);
 
 	_Context.seek(_CurrTime, acl::SampleRoundingPolicy::None);
-	_Context.decompress_pose(CScenePoseWriter(_Nodes.data()));
+	_Context.decompress_pose(CScenePoseWriter(this));
 }
 //---------------------------------------------------------------------
 

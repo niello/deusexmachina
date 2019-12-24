@@ -1,9 +1,9 @@
 #pragma once
-#include <Data/Ptr.h>
-#include <vector>
-#include <memory>
+#include <Animation/AnimationBlender.h>
+#include <Scene/SceneNode.h>
 
 // Transformation source for scene node animation. Supports direct writing and blending.
+// One source can't be reused for animating different node hierarchies at the same time.
 
 namespace Scene
 {
@@ -12,32 +12,67 @@ namespace Scene
 
 namespace DEM::Anim
 {
-typedef Ptr<class CAnimationBlender> PAnimationBlender;
 
-class CTransformSource final
+class CTransformSource
 {
 protected:
 
-	//union UOutput
-	//{
-	//	Scene::PSceneNode Node;
-	//	U16               BlenderPort;
-	//};
-
-	PAnimationBlender      _Blender;
-	U8                     _SourceIndex = 0;
-
-	////////////////////////////
-	U16                    _NodeCount = 0;
-	union
+	struct CBlendInfo
 	{
-		Scene::PSceneNode* _pNodes = nullptr; // Used if _Blender is nullptr
-		U16*               _pBlenderPorts;    // Used if _Blender is set
+		PAnimationBlender Blender;
+		std::vector<U16>  Ports;
+		U8                SourceIndex;
 	};
+
+	std::vector<Scene::PSceneNode> _Nodes;
+	std::unique_ptr<CBlendInfo>    _BlendInfo; // If empty, direct writing will be performed
 
 public:
 
 	void SetBlending(PAnimationBlender Blender, U8 SourceIndex);
+
+	void SetScale(UPTR Index, const vector3& Scale);
+	void SetRotation(UPTR Index, const quaternion& Rotation);
+	void SetTranslation(UPTR Index, const vector3& Translation);
+	void SetTransform(UPTR Index, const Math::CTransformSRT& Tfm);
+
+	UPTR GetTransformCount() const { return _BlendInfo ? _BlendInfo->Ports.size() : _Nodes.size(); }
 };
+
+inline void CTransformSource::SetScale(UPTR Index, const vector3& Scale)
+{
+	if (_BlendInfo)
+		_BlendInfo->Blender->SetScale(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Scale);
+	else
+		_Nodes[Index]->SetScale(Scale);
+}
+//---------------------------------------------------------------------
+
+inline void CTransformSource::SetRotation(UPTR Index, const quaternion& Rotation)
+{
+	if (_BlendInfo)
+		_BlendInfo->Blender->SetRotation(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Rotation);
+	else
+		_Nodes[Index]->SetRotation(Rotation);
+}
+//---------------------------------------------------------------------
+
+inline void CTransformSource::SetTranslation(UPTR Index, const vector3& Translation)
+{
+	if (_BlendInfo)
+		_BlendInfo->Blender->SetTranslation(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Translation);
+	else
+		_Nodes[Index]->SetPosition(Translation);
+}
+//---------------------------------------------------------------------
+
+inline void CTransformSource::SetTransform(UPTR Index, const Math::CTransformSRT& Tfm)
+{
+	if (_BlendInfo)
+		_BlendInfo->Blender->SetTransform(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Tfm);
+	else
+		_Nodes[Index]->SetLocalTransform(Tfm);
+}
+//---------------------------------------------------------------------
 
 }

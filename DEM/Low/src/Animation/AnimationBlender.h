@@ -55,7 +55,7 @@ public:
 	void               SetTranslation(U8 Source, U16 Port, const vector3& Translation);
 	void               SetTransform(U8 Source, U16 Port, const Math::CTransformSRT& Tfm);
 
-	U32                GetOrCreateNodePort(Scene::CSceneNode& Node);
+	U32                GetOrCreateNodePort(Scene::CSceneNode* pNode);
 	Scene::CSceneNode* GetPortNode(U16 Port) const;
 };
 
