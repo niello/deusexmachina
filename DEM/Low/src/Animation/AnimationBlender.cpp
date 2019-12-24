@@ -38,7 +38,7 @@ void CAnimationBlender::Apply()
 		for (const auto& SourceIndex : _SourcesByPriority)
 		{
 			const float SourceWeight = _SourceInfo[SourceIndex].Weight;
-			if (SourceWeight <= 0.f) return;
+			if (SourceWeight <= 0.f) continue;
 
 			const auto CurrTfm = _Transforms[Offset + SourceIndex];
 			const U8 ChannelMask = _ChannelMasks[Offset + SourceIndex];
