@@ -39,7 +39,6 @@ public:
 
 	bool  Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
 	void  Reset();
-	void  SetBlending(PAnimationBlender Blender, U8 SourceIndex);
 
 	void  Update(float dt);
 

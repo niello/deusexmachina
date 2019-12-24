@@ -11,6 +11,11 @@ void CAnimationBlender::Initialize(U8 SourceCount)
 	_Nodes.clear();
 	_Transforms.clear();
 	_ChannelMasks.clear();
+
+	// All sources initially have the same priority, order is not important
+	_SourcesByPriority.resize(SourceCount);
+	for (size_t i = 0; i < SourceCount; ++i)
+		_SourcesByPriority[i] = i;
 }
 //---------------------------------------------------------------------
 
@@ -20,39 +25,64 @@ void CAnimationBlender::Apply()
 	const auto SourceCount = _SourceInfo.size();
 	if (!PortCount || !SourceCount) return;
 
-	UPTR i = 0;
 	for (UPTR Port = 0; Port < PortCount; ++Port)
 	{
 		Math::CTransformSRT FinalTfm;
 		U8 FinalMask = 0;
-		//!!!accumulate weights and priorities per channel!
+		float ScaleWeights = 0.f;
+		float RotationWeights = 0.f;
+		float TranslationWeights = 0.f;
 
-		for (UPTR Source = 0; Source < SourceCount; ++Source, ++i)
+		const auto Offset = Port * SourceCount;
+
+		for (const auto& SourceIndex : _SourcesByPriority)
 		{
-			const U8 ChannelMask = _ChannelMasks[i];
+			const float SourceWeight = _SourceInfo[SourceIndex].Weight;
+			if (SourceWeight <= 0.f) return;
 
-			if (ChannelMask & Scene::Tfm_Scaling)
+			const auto CurrTfm = _Transforms[Offset + SourceIndex];
+			const U8 ChannelMask = _ChannelMasks[Offset + SourceIndex];
+
+			if ((ChannelMask & Scene::Tfm_Scaling) && ScaleWeights < 1.f)
 			{
-				FinalTfm.Scale = _Transforms[i].Scale;
-				// blend
+				const float Weight = std::min(SourceWeight, 1.f - ScaleWeights);
+
+				// Scale is 1.f by default. To blend correctly, we must reset it to zero before applying the first source.
+				if (FinalMask & Scene::Tfm_Scaling)
+					FinalTfm.Scale += CurrTfm.Scale * Weight;
+				else
+					FinalTfm.Scale = CurrTfm.Scale * Weight;
 
 				FinalMask |= Scene::Tfm_Scaling;
+				ScaleWeights += Weight;
 			}
 
-			if (ChannelMask & Scene::Tfm_Rotation)
+			if ((ChannelMask & Scene::Tfm_Rotation) && RotationWeights < 1.f)
 			{
-				FinalTfm.Rotation = _Transforms[i].Rotation;
-				// blend
+				const float Weight = std::min(SourceWeight, 1.f - RotationWeights);
+
+				//???how to correctly blend more rotations?
+				if (FinalMask & Scene::Tfm_Rotation)
+				{
+					//???can write inplace slerp?
+					quaternion Tmp = FinalTfm.Rotation;
+					FinalTfm.Rotation.slerp(Tmp, CurrTfm.Rotation, Weight / (RotationWeights + Weight));
+				}
+				else
+				{
+					FinalTfm.Rotation.slerp(quaternion(), CurrTfm.Rotation, Weight);
+				}
 
 				FinalMask |= Scene::Tfm_Rotation;
+				RotationWeights += Weight;
 			}
 
-			if (ChannelMask & Scene::Tfm_Translation)
+			if ((ChannelMask & Scene::Tfm_Translation) && TranslationWeights < 1.f)
 			{
-				FinalTfm.Translation = _Transforms[i].Translation;
-				// blend
-
+				const float Weight = std::min(SourceWeight, 1.f - TranslationWeights);
+				FinalTfm.Translation += CurrTfm.Translation * Weight;
 				FinalMask |= Scene::Tfm_Translation;
+				TranslationWeights += Weight;
 			}
 		}
 
@@ -69,6 +99,20 @@ void CAnimationBlender::Apply()
 	}
 
 	std::memset(_ChannelMasks.data(), 0, _ChannelMasks.size());
+}
+//---------------------------------------------------------------------
+
+void CAnimationBlender::SetPriority(U8 Source, U32 Priority)
+{
+	if (Source < _SourceInfo.size() && _SourceInfo[Source].Priority != Priority)
+	{
+		_SourceInfo[Source].Priority = Priority;
+
+		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](UPTR a, UPTR b)
+		{
+			return _SourceInfo[a].Priority > _SourceInfo[b].Priority;
+		});
+	}
 }
 //---------------------------------------------------------------------
 

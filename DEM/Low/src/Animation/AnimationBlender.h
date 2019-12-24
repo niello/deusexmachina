@@ -8,6 +8,7 @@
 // a blender port (referenced by stable index). Port receives incoming transforms and applies
 // the final one to the node after blending. Source count must be specified at creation,
 // changing the input count invalidates current transformations.
+// NB: higher priority values are first in a queue.
 
 // TODO: can use as an input into another blender!
 
@@ -30,11 +31,12 @@ protected:
 
 	struct CSourceInfo
 	{
-		U32   Priority;
-		float Weight;   // Set <= 0.f to deactivate this source
+		U32   Priority = 0;
+		float Weight = 0.f; // Set <= 0.f to deactivate this source
 	};
 
 	std::vector<CSourceInfo>         _SourceInfo;
+	std::vector<UPTR>                _SourcesByPriority;
 	std::vector<Scene::CSceneNode*>  _Nodes;
 	std::vector<Math::CTransformSRT> _Transforms;   // per node per source
 	std::vector<U8>                  _ChannelMasks; // per node per source
@@ -47,7 +49,7 @@ public:
 	void               Initialize(U8 SourceCount);
 	void               Apply();
 
-	void               SetPriority(U8 Source, U32 Priority) { if (Source < _SourceInfo.size()) _SourceInfo[Source].Priority = Priority; }
+	void               SetPriority(U8 Source, U32 Priority);
 	void               SetWeight(U8 Source, float Weight) { if (Source < _SourceInfo.size()) _SourceInfo[Source].Weight = Weight; }
 
 	void               SetScale(U8 Source, U16 Port, const vector3& Scale);
