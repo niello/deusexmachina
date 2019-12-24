@@ -63,6 +63,7 @@ public:
 
 inline void CAnimationBlender::SetScale(U8 Source, U16 Port, const vector3& Scale)
 {
+	if (Port >= _Nodes.size()) return;
 	const UPTR Idx = Port * _SourceInfo.size() + Source;
 	_Transforms[Idx].Scale = Scale;
 	_ChannelMasks[Idx] |= Scene::Tfm_Scaling;
@@ -71,6 +72,7 @@ inline void CAnimationBlender::SetScale(U8 Source, U16 Port, const vector3& Scal
 
 inline void CAnimationBlender::SetRotation(U8 Source, U16 Port, const quaternion& Rotation)
 {
+	if (Port >= _Nodes.size()) return;
 	const UPTR Idx = Port * _SourceInfo.size() + Source;
 	_Transforms[Idx].Rotation = Rotation;
 	_ChannelMasks[Idx] |= Scene::Tfm_Rotation;
@@ -79,6 +81,7 @@ inline void CAnimationBlender::SetRotation(U8 Source, U16 Port, const quaternion
 
 inline void CAnimationBlender::SetTranslation(U8 Source, U16 Port, const vector3& Translation)
 {
+	if (Port >= _Nodes.size()) return;
 	const UPTR Idx = Port * _SourceInfo.size() + Source;
 	_Transforms[Idx].Translation = Translation;
 	_ChannelMasks[Idx] |= Scene::Tfm_Translation;
@@ -87,6 +90,7 @@ inline void CAnimationBlender::SetTranslation(U8 Source, U16 Port, const vector3
 
 inline void CAnimationBlender::SetTransform(U8 Source, U16 Port, const Math::CTransformSRT& Tfm)
 {
+	if (Port >= _Nodes.size()) return;
 	const UPTR Idx = Port * _SourceInfo.size() + Source;
 	_Transforms[Idx] = Tfm;
 	_ChannelMasks[Idx] |= (Scene::Tfm_Scaling | Scene::Tfm_Rotation | Scene::Tfm_Translation);

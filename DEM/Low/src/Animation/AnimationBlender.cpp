@@ -61,16 +61,17 @@ void CAnimationBlender::Apply()
 			{
 				const float Weight = std::min(SourceWeight, 1.f - RotationWeights);
 
-				//???how to correctly blend more rotations?
+				// TODO: check this hardcore stuff for multiple quaternion blending:
+				// https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20070017872.pdf
 				if (FinalMask & Scene::Tfm_Rotation)
 				{
-					//???can write inplace slerp?
-					quaternion Tmp = FinalTfm.Rotation;
-					FinalTfm.Rotation.slerp(Tmp, CurrTfm.Rotation, Weight / (RotationWeights + Weight));
+					quaternion Q;
+					Q.slerp(quaternion::Identity, CurrTfm.Rotation, Weight);
+					FinalTfm.Rotation *= Q;
 				}
 				else
 				{
-					FinalTfm.Rotation.slerp(quaternion(), CurrTfm.Rotation, Weight);
+					FinalTfm.Rotation.slerp(quaternion::Identity, CurrTfm.Rotation, Weight);
 				}
 
 				FinalMask |= Scene::Tfm_Rotation;
@@ -92,7 +93,10 @@ void CAnimationBlender::Apply()
 			_Nodes[Port]->SetScale(FinalTfm.Scale);
 
 		if (FinalMask & Scene::Tfm_Rotation)
+		{
+			if (RotationWeights < 1.f) FinalTfm.Rotation.normalize();
 			_Nodes[Port]->SetRotation(FinalTfm.Rotation);
+		}
 
 		if (FinalMask & Scene::Tfm_Translation)
 			_Nodes[Port]->SetPosition(FinalTfm.Translation);
