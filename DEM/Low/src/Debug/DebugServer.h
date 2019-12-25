@@ -20,7 +20,7 @@ private:
 
 	struct CPlugin
 	{
-		CString				UIResource;
+		std::string			UIResource;
 		UI::PUIWindow		Window;
 	};
 

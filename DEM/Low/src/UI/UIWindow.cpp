@@ -1,6 +1,7 @@
 #include "UIWindow.h"
 
 #include <Core/Factory.h>
+#include <Data/String.h>
 #include <CEGUI/WindowManager.h>
 #include <CEGUI/CoordConverter.h>
 #include <CEGUI/widgets/PushButton.h>

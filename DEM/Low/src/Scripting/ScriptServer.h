@@ -5,6 +5,7 @@
 #include <Core/Object.h>
 #include <Data/Singleton.h>
 #include <Data/Array.h>
+#include <Data/String.h>
 
 // Script server is a central point for script objects creation, registration and script running
 // Should store script interpreter, loader from file etc

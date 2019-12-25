@@ -5,6 +5,7 @@
 #include <Core/Object.h>
 #include <Data/StringID.h>
 #include <Data/Array.h>
+#include <Data/String.h>
 
 // Dialogue graph node is associated with optional phrase and offers links to next nodes.
 // One of valid links must be selected according to a link selection mode.

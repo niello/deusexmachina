@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_VIDEO_DRIVER_FACTORY_H__
-#define __DEM_L1_RENDER_VIDEO_DRIVER_FACTORY_H__
-
 #include <Core/Object.h>
 #include <Render/RenderFwd.h>
 
@@ -36,18 +33,16 @@ public:
 
 	struct CAdapterInfo
 	{
-		CString	Description;
-		U32		VendorID;
-		U32		DeviceID;
-		U32		SubSysID;
-		U32		Revision;
-		U64		VideoMemBytes;
-		U64		DedicatedSystemMemBytes;
-		U64		SharedSystemMemBytes;
-		bool	IsSoftware;
+		std::string Description;
+		U32         VendorID;
+		U32         DeviceID;
+		U32         SubSysID;
+		U32         Revision;
+		U64         VideoMemBytes;
+		U64         DedicatedSystemMemBytes;
+		U64         SharedSystemMemBytes;
+		bool        IsSoftware;
 	};
-
-	virtual ~CVideoDriverFactory() { }
 
 	virtual bool			Create() = 0;
 	virtual void			Release() = 0;
@@ -62,5 +57,3 @@ public:
 typedef Ptr<CVideoDriverFactory> PVideoDriverFactory;
 
 }
-
-#endif

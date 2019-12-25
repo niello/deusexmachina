@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/Array.h>
+#include <Data/String.h>
 #include <Events/EventsFwd.h>
 #include <Events/Subscription.h>
 

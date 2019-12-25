@@ -3,6 +3,7 @@
 #define __DEM_L1_EVENT_HANDLER_SCRIPT_H__
 
 #include <Events/EventHandler.h>
+#include <Data/String.h>
 
 // Event handler that calls scripted function (global or owned by object).
 // For parametric events only, at least for now.

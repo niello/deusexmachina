@@ -4,6 +4,7 @@
 
 #include <Core/Object.h>
 #include <Data/StringID.h>
+#include <Data/String.h>
 
 // Task is an atomic part of the quest which can be activated and then completed or failed
 // Task failure may or may not result in a whole quest failure

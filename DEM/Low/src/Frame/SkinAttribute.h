@@ -1,6 +1,7 @@
 #pragma once
 #include <Scene/NodeAttribute.h>
 #include <Math/Matrix44.h>
+#include <Data/String.h>
 
 // Skin attribute adds a skinned rendering capability to sibling models, providing the skin palette for them
 

@@ -2,7 +2,6 @@
 #include <Data/Hash.h>
 #include <System/System.h>
 #include <stdarg.h>
-#include <algorithm>
 
 // Character string. Set(SrcString) and CString(SrcString) copy data to newly allocated buffer.
 
@@ -208,7 +207,7 @@ inline void CString::Add(char Chr)
 
 inline void CString::TruncateRight(UPTR CharCount)
 {
-	Length = std::max(Length - CharCount, static_cast<UPTR>(0));
+	Length = static_cast<UPTR>(std::max<IPTR>(Length - CharCount, 0));
 	pString[Length] = 0;
 }
 //---------------------------------------------------------------------

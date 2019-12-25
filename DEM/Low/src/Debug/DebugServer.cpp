@@ -67,7 +67,7 @@ void CDebugServer::SetUIContext(UI::PUIContext Context)
 		//UNSUBSCRIBE_EVENT(ShowDebugWatcher);
 
 		for (UPTR i = 0; i < Plugins.GetCount(); ++i)
-			if (Plugins.ValueAt(i).UIResource.IsValid())
+			if (!Plugins.ValueAt(i).UIResource.empty())
 				Plugins.ValueAt(i).Window.Reset();
 	}
 }
@@ -87,7 +87,7 @@ void CDebugServer::TogglePluginWindow(CStrID Name)
 	{
 		if (!UI.GetWnd())
 		{
-			UI.Load(CString(pPlugin->UIResource.CStr()));
+			UI.Load(CString(pPlugin->UIResource.c_str()));
 			n_assert(UI.GetWnd());
 		}
 		if (UI.GetWnd()->getParent() != RootWnd.GetWnd())

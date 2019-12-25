@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_CORE_TIME_SOURCE_H__
-#define __DEM_L1_CORE_TIME_SOURCE_H__
-
 #include <Core/Object.h>
 
 // A generic time source object which is attached to the CCoreServer.
@@ -20,19 +17,16 @@ protected:
 
 	friend class CCoreServer; //!!!For loading, revisit
 
-	float	Time;
-	float	FrameTime;
-	float	TimeFactor;
-	UPTR	FrameID;
-	int		PauseCounter;
+	float	Time = 0.f;
+	float	FrameTime = 0.001f;
+	float	TimeFactor = 1.0f;
+	UPTR	FrameID = 0;
+	int		PauseCounter = 0;
 
 public:
 
-	CTimeSource();
-	virtual ~CTimeSource() {}
-
 	void	Update(float _FrameTime);
-	void	Reset() { Time = 0.0; FrameTime = 0.0; }
+	void	Reset() { Time = 0.f; FrameTime = 0.f; }
 	void	Pause() { ++PauseCounter; }
 	void	Unpause() { if (PauseCounter > 0) --PauseCounter; }
 	void	ForceUnpause() { PauseCounter = 0; }
@@ -48,16 +42,4 @@ public:
 
 typedef Ptr<CTimeSource> PTimeSource;
 
-inline CTimeSource::CTimeSource():
-	FrameTime(0.001f),
-	Time(0.0),
-	PauseCounter(0),
-	TimeFactor(1.0f),
-	FrameID(0)
-{
 }
-//---------------------------------------------------------------------
-
-}
-
-#endif

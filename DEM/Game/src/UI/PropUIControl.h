@@ -3,6 +3,7 @@
 #include <Physics/CollisionAttribute.h>
 #include <Events/EventHandler.h>
 #include <Data/Array.h>
+#include <Data/String.h>
 
 // InterActiveObject (AO, IAO) property. IAO is a 3D world GUI entity similar to GUI controls like buttons.
 // It has highlighting, hint and causes actions on activation, e.g. clicking.

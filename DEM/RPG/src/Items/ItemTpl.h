@@ -1,6 +1,7 @@
 #pragma once
 #include <Core/Object.h>
 #include <Data/StringID.h>
+#include <Data/String.h>
 
 // Item template is a factory for creation of item instances. It is a "class" of concrete items like
 // "Wooden arrow" or "Plate Mail +1". This class creates template item instance which is a blueprint for
