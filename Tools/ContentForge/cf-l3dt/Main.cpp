@@ -34,9 +34,11 @@ public:
 		if (!_RootDir.empty() && DestPath.is_relative())
 			DestPath = fs::path(_RootDir) / DestPath;
 
-		// Read project XML
+		// Read project XML (pugixml)
 
-		// Merge alpha maps
+		// Check all necessary maps exist in appropriate format
+
+		// Merge alpha maps (optionally, if required)
 
 		// Write material
 
