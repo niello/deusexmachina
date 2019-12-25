@@ -89,7 +89,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	// Update child nodes' world transform recursively. There are no controllers, so update is finished.
 	// It is necessary because dynamic bodies may require subnode world tfm to set their initial tfm.
 	// World transform of the prop root node is updated by owner prop.
-	Prop.GetNode()->UpdateTransform(nullptr, 0, true, nullptr);
+	Prop.GetNode()->Update(nullptr, 0);
 
 	const Data::CDataArray& Objects = *PhysicsDesc->Get<Data::PDataArray>(CStrID("Objects"));
 	for (UPTR i = 0; i < Objects.GetCount(); ++i)
@@ -123,12 +123,12 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		{
 			Obj->SetTransform(pCurrNode->GetWorldMatrix());
 
-			Physics::PNodeControllerRigidBody Ctlr = n_new(Physics::CNodeControllerRigidBody);
-			Ctlr->SetBody(*(Physics::CRigidBody*)Obj.Get());
-			pCurrNode->SetController(Ctlr);
-			Ctlr->Activate(true);
+			//Physics::PNodeControllerRigidBody Ctlr = n_new(Physics::CNodeControllerRigidBody);
+			//Ctlr->SetBody(*(Physics::CRigidBody*)Obj.Get());
+			//pCurrNode->SetController(Ctlr);
+			//Ctlr->Activate(true);
 
-			Ctlrs.Add(Ctlr);
+			//Ctlrs.Add(Ctlr);
 		}
 		else
 		{
@@ -158,13 +158,6 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 	//!!!unload joints!
 
 	RootBody = nullptr;
-
-	for (UPTR i = 0; i < Ctlrs.GetCount(); ++i)
-	{
-		Ctlrs[i]->GetBody()->RemoveFromLevel();
-		Ctlrs[i]->RemoveFromNode();
-	}
-	Ctlrs.Clear(); //???create once and attach/detach?
 
 	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 	{

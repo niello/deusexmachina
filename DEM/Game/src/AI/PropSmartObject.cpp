@@ -4,7 +4,6 @@
 #include <AI/AIServer.h>
 #include <AI/SmartObj/SmartAction.h>
 #include <AI/PropActorBrain.h> // For GetEntity() only
-#include <Animation/PropAnimation.h>
 #include <Scripting/PropScriptable.h>
 #include <Events/EventServer.h>
 #include <Data/ParamsUtils.h>
@@ -97,9 +96,6 @@ bool CPropSmartObject::InternalActivate()
 	CPropScriptable* pPropScript = GetEntity()->GetProperty<CPropScriptable>();
 	if (pPropScript && pPropScript->IsActive()) EnableSI(*pPropScript);
 
-	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
-	if (pPropAnim && pPropAnim->IsActive()) InitAnimation(Desc, *pPropAnim);
-
 	PROP_SUBSCRIBE_PEVENT(OnPropActivated, CPropSmartObject, OnPropActivated);
 	PROP_SUBSCRIBE_PEVENT(OnPropDeactivating, CPropSmartObject, OnPropDeactivating);
 	PROP_SUBSCRIBE_PEVENT(OnLevelSaving, CPropSmartObject, OnLevelSaving);
@@ -158,14 +154,6 @@ bool CPropSmartObject::OnPropActivated(Events::CEventDispatcher* pDispatcher, co
 		OK;
 	}
 
-	if (pProp->IsA<CPropAnimation>())
-	{
-		const CString& DescResource = GetEntity()->GetAttr<CString>(CStrID("SODesc"), CString::Empty);
-		Data::PParams Desc = ParamsUtils::LoadParamsFromPRM(CString("Smarts:") + DescResource + ".prm");
-		InitAnimation(Desc, *(CPropAnimation*)pProp);
-		OK;
-	}
-
 	FAIL;
 }
 //---------------------------------------------------------------------
@@ -179,16 +167,6 @@ bool CPropSmartObject::OnPropDeactivating(Events::CEventDispatcher* pDispatcher,
 	if (pProp->IsA<CPropScriptable>())
 	{
 		DisableSI(*(CPropScriptable*)pProp);
-		OK;
-	}
-
-	if (pProp->IsA<CPropAnimation>())
-	{
-		AnimTaskID = INVALID_INDEX;
-		pCurrAnimInfo = nullptr;
-		ActionAnimIndices.Clear();
-		StateAnimIndices.Clear();
-		Anims.Clear();
 		OK;
 	}
 
@@ -229,68 +207,6 @@ bool CPropSmartObject::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const
 	float Time = (float)GameSrv->GetFrameTime();
 	if (Time != 0.f) SetTransitionProgress(TrProgress + Time);
 	OK;
-}
-//---------------------------------------------------------------------
-
-void CPropSmartObject::InitAnimation(Data::PParams Desc, CPropAnimation& Prop)
-{
-	Data::PDataArray AnimsDesc;
-	if (Desc->Get<Data::PDataArray>(AnimsDesc, CStrID("Anims")))
-	{
-		CAnimInfo* pAnimInfo = Anims.Reserve(AnimsDesc->GetCount());
-		for (UPTR i = 0; i < AnimsDesc->GetCount(); ++i)
-		{
-			const Data::CParams& SubDesc = *AnimsDesc->Get<Data::PParams>(i);
-			pAnimInfo->ClipID = SubDesc.Get<CStrID>(CStrID("Clip"), CStrID::Empty);
-			n_assert(pAnimInfo->ClipID.IsValid());
-			pAnimInfo->Loop = SubDesc.Get(CStrID("Loop"), false);
-			pAnimInfo->Speed = SubDesc.Get(CStrID("Speed"), 1.f);
-			pAnimInfo->Weight = SubDesc.Get(CStrID("Weight"), 1.f);
-			pAnimInfo->Duration = Prop.GetAnimLength(pAnimInfo->ClipID);
-			if (SubDesc.Get(pAnimInfo->Offset, CStrID("RelOffset")))
-				pAnimInfo->Offset *= pAnimInfo->Duration;
-			else pAnimInfo->Offset = SubDesc.Get(CStrID("Offset"), 0.f);
-			//???priority, fadein, fadeout?
-			++pAnimInfo;
-		}
-	}
-
-	Data::PParams AnimRefDesc;
-	if (Desc->Get<Data::PParams>(AnimRefDesc, CStrID("ActionAnims")))
-	{
-		for (UPTR i = 0; i < AnimRefDesc->GetCount(); ++i)
-		{
-			Data::CParam& Prm = AnimRefDesc->Get(i);
-			IPTR Idx = (IPTR)Prm.GetValue<int>();
-			if (Idx <= (IPTR)Anims.GetCount()) ActionAnimIndices.Add(Prm.GetName(), Idx);
-			else Sys::Log("AI,SO,Warning: entity '%s', action anim '%s' = '%d' idx is out of range, skipped\n",
-					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
-		}
-	}
-
-	if (Desc->Get<Data::PParams>(AnimRefDesc, CStrID("StateAnims")))
-	{
-		for (UPTR i = 0; i < AnimRefDesc->GetCount(); ++i)
-		{
-			Data::CParam& Prm = AnimRefDesc->Get(i);
-			IPTR Idx = (IPTR)Prm.GetValue<int>();
-			if (Idx <= (IPTR)Anims.GetCount()) StateAnimIndices.Add(Prm.GetName(), Idx);
-			else Sys::Log("AI,SO,Warning: entity '%s', state anim '%s' = '%d' idx is out of range, skipped\n",
-					GetEntity()->GetUID().CStr(), Prm.GetName().CStr(), Idx);
-		}
-	}
-
-	if (IsInTransition())
-	{
-		IPTR Idx = ActionAnimIndices.FindIndex(CurrState);
-		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[ActionAnimIndices.ValueAt(Idx)] : nullptr);
-		UpdateAnimationCursor();
-	}
-	else
-	{
-		IPTR Idx = StateAnimIndices.FindIndex(CurrState);
-		SwitchAnimation((Idx != INVALID_INDEX) ? &Anims[StateAnimIndices.ValueAt(Idx)] : nullptr);
-	}
 }
 //---------------------------------------------------------------------
 
@@ -427,37 +343,16 @@ void CPropSmartObject::SwitchAnimation(const CAnimInfo* pAnimInfo)
 {
 	if (pAnimInfo == pCurrAnimInfo) return;
 	if (AnimTaskID == INVALID_INDEX && !pAnimInfo) return;
-	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
-	if (!pPropAnim) return;
-
-	if (AnimTaskID != INVALID_INDEX) pPropAnim->StopAnim(AnimTaskID);
-
-	if (pAnimInfo)
-	{
-		if (pAnimInfo->Speed == 0.f)
-		{
-			pPropAnim->SetPose(pAnimInfo->ClipID, pAnimInfo->Offset, pAnimInfo->Loop);
-			AnimTaskID = INVALID_INDEX;
-		}
-		else AnimTaskID = pPropAnim->StartAnim(pAnimInfo->ClipID, pAnimInfo->Loop, pAnimInfo->Offset, pAnimInfo->Speed,
-							true, AnimPriority_Default, pAnimInfo->Weight);
-	}
-	else AnimTaskID = INVALID_INDEX;
-
-	pCurrAnimInfo = pAnimInfo;
 }
 //---------------------------------------------------------------------
 
 void CPropSmartObject::UpdateAnimationCursor()
 {
 	if (AnimTaskID == INVALID_INDEX || !pCurrAnimInfo || pCurrAnimInfo->Speed == 0.f) return;
-	CPropAnimation* pPropAnim = GetEntity()->GetProperty<CPropAnimation>();
-	if (!pPropAnim) return;
 
 	float CursorPos = pCurrAnimInfo->Offset + TrProgress * pCurrAnimInfo->Speed;
 	if (!pCurrAnimInfo->Loop && pCurrAnimInfo->Duration != TrProgress && TrDuration != 0.f)
 		CursorPos *= pCurrAnimInfo->Duration / TrDuration;
-	pPropAnim->SetAnimCursorPos(AnimTaskID, CursorPos);
 }
 //---------------------------------------------------------------------
 

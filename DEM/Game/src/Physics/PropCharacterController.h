@@ -1,7 +1,6 @@
 #pragma once
 #include <Game/Property.h>
 #include <Physics/CharacterController.h>
-#include <Physics/NodeControllerRigidBody.h>
 
 // Special physics property that controls the root node of the entity by a character controller.
 // Controller can be disabled, removing its body from the world, to switch to ragdoll.
@@ -19,7 +18,6 @@ class CPropCharacterController: public Game::CProperty //???derive from physics 
 
 protected:
 
-	Physics::PNodeControllerRigidBody	NodeCtlr;
 	Physics::PCharacterController		CharCtlr;
 
 	virtual bool	InternalActivate();
@@ -41,11 +39,11 @@ public:
 
 	bool			Enable();
 	void			Disable();
-	bool			IsEnabled() const { return NodeCtlr.IsValidPtr() && NodeCtlr->IsActive(); }
+	bool			IsEnabled() const { return !!CharCtlr; } //NodeCtlr.IsValidPtr() && NodeCtlr->IsActive();
 
 	Physics::CCharacterController* GetController() const { return CharCtlr.Get(); }
 	//!!!WRITE!
-	void			GetAABB(CAABB& AABB) const { Sys::Error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
+	//void			GetAABB(CAABB& AABB) const { Sys::Error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
 };
 
 }

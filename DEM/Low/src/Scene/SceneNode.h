@@ -8,8 +8,8 @@
 // Each 3D scene consists of one scene graph starting at the root scene node.
 // Each scene node can contain:
 // - child nodes, which inherit its transformation
-// - controller, which changes its transformation
 // - attributes, which receive its transformation
+// Controllers, which change node transformation, are completely external.
 
 //!!!NB - completely unscaled nodes/meshes can be rendered through dual quat skinning!
 //???apply scaling ONLY to attributes and not to child nodes? what about skeletons in such a situation?
@@ -18,7 +18,6 @@
 namespace Scene
 {
 typedef Ptr<class CSceneNode> PSceneNode;
-typedef Ptr<class CNodeController> PNodeController;
 typedef Ptr<class CNodeAttribute> PNodeAttribute;
 class INodeVisitor;
 
@@ -44,7 +43,6 @@ protected:
 	matrix44					WorldMatrix;
 
 	CSceneNode*					pParent = nullptr;
-	PNodeController				Controller;
 	std::vector<PSceneNode>     Children; // Always sorted by ID
 	std::vector<PNodeAttribute> Attrs;
 
@@ -53,11 +51,11 @@ protected:
 public:
 
 	CSceneNode(CStrID NodeName = CStrID::Empty);
-	virtual ~CSceneNode();
+	virtual ~CSceneNode() override;
 
-	virtual bool			IsResourceValid() const { OK; }
+	virtual bool			IsResourceValid() const override { OK; }
 
-	void					UpdateTransform(const vector3* pCOIArray, UPTR COICount, bool ProcessDefferedController, std::vector<CSceneNode*>* pOutDefferedNodes = nullptr);
+	void					Update(const vector3* pCOIArray, UPTR COICount);
 	void					UpdateWorldFromLocal();
 	void					UpdateLocalFromWorld();
 
@@ -80,9 +78,6 @@ public:
 	CSceneNode*				GetChild(CStrID ChildName) const;
 	CSceneNode*				FindNodeByPath(const char* pPath) const;
 	CSceneNode*				FindLastNodeAtPath(const char* pPath, char const* & pUnresolvedPathPart) const;
-
-	bool					SetController(CNodeController* pCtlr);
-	CNodeController*		GetController() const { return Controller.Get(); }
 
 	bool					AddAttribute(CNodeAttribute& Attr);
 	void					RemoveAttribute(CNodeAttribute& Attr);

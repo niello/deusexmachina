@@ -5,6 +5,7 @@
 #include <vector>
 #include <set>
 #include <functional>
+#include <algorithm>
 
 #define OK				return true
 #define FAIL			return false

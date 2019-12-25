@@ -4,6 +4,8 @@
 
 // ACL-compressed animation clip. Animates local SRT transform.
 
+//!!!TODO: event tracks!
+
 namespace acl
 {
 	class CompressedClip;

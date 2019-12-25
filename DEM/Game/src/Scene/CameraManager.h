@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L2_CAMERA_MANAGER_H__
-#define __DEM_L2_CAMERA_MANAGER_H__
-
-//#include <Core/Object.h>
+#include <Core/Object.h>
 #include <Data/Singleton.h>
 #include <Scene/NodeControllerThirdPerson.h>
 //#include <Frame/CameraAttribute.h>
@@ -22,6 +19,7 @@
 // Set camera (which camera to use)
 // Focus on entity - smooth move from curr state to new object
 
+/*
 namespace Scene
 {
 class CSceneNode;
@@ -97,5 +95,4 @@ public:
 typedef Ptr<CCameraManager> PCameraManager;
 
 }
-
-#endif
+*/

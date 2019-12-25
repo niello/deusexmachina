@@ -5,18 +5,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/AnimationClip.h
 	DEM/Low/src/Animation/AnimationLoaderANM.h
 	DEM/Low/src/Animation/AnimationPlayer.h
-	DEM/Low/src/Animation/AnimClip.h
-	DEM/Low/src/Animation/AnimFwd.h
-	DEM/Low/src/Animation/AnimTask.h
-	DEM/Low/src/Animation/EventTrack.h
-	DEM/Low/src/Animation/KeyframeClip.h
-	DEM/Low/src/Animation/KeyframeClipLoaderKFA.h
-	DEM/Low/src/Animation/KeyframeTrack.h
-	DEM/Low/src/Animation/MocapClip.h
-	DEM/Low/src/Animation/MocapClipLoaderNAX2.h
-	DEM/Low/src/Animation/MocapTrack.h
-	DEM/Low/src/Animation/NodeControllerKeyframe.h
-	DEM/Low/src/Animation/NodeControllerMocap.h
 	DEM/Low/src/Animation/StaticPose.h
 	DEM/Low/src/Animation/TransformSource.h
 	DEM/Low/src/Core/Application.h
@@ -170,7 +158,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/HeightfieldShape.h
 	DEM/Low/src/Physics/MotionStateDynamic.h
 	DEM/Low/src/Physics/MotionStateKinematic.h
-	DEM/Low/src/Physics/NodeControllerRigidBody.h
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
 	DEM/Low/src/Physics/PhysicsLevel.h
 	DEM/Low/src/Physics/PhysicsObject.h
@@ -266,10 +253,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Resources/ResourceObject.h
 	DEM/Low/src/Scene/LODGroup.h
 	DEM/Low/src/Scene/NodeAttribute.h
-	DEM/Low/src/Scene/NodeController.h
-	DEM/Low/src/Scene/NodeControllerComposite.h
-	DEM/Low/src/Scene/NodeControllerPriorityBlend.h
-	DEM/Low/src/Scene/NodeControllerStatic.h
 	DEM/Low/src/Scene/NodeControllerThirdPerson.h
 	DEM/Low/src/Scene/NodeVisitor.h
 	DEM/Low/src/Scene/SceneFwd.h
@@ -325,16 +308,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/AnimationClip.cpp
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationPlayer.cpp
-	DEM/Low/src/Animation/AnimClip.cpp
-	DEM/Low/src/Animation/AnimTask.cpp
-	DEM/Low/src/Animation/KeyframeClip.cpp
-	DEM/Low/src/Animation/KeyframeClipLoaderKFA.cpp
-	DEM/Low/src/Animation/KeyframeTrack.cpp
-	DEM/Low/src/Animation/MocapClip.cpp
-	DEM/Low/src/Animation/MocapClipLoaderNAX2.cpp
-	DEM/Low/src/Animation/MocapTrack.cpp
-	DEM/Low/src/Animation/NodeControllerKeyframe.cpp
-	DEM/Low/src/Animation/NodeControllerMocap.cpp
 	DEM/Low/src/Animation/StaticPose.cpp
 	DEM/Low/src/Animation/TransformSource.cpp
 	DEM/Low/src/Core/Application.cpp
@@ -433,7 +406,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/CollisionShape.cpp
 	DEM/Low/src/Physics/CollisionShapeLoader.cpp
 	DEM/Low/src/Physics/HeightfieldShape.cpp
-	DEM/Low/src/Physics/NodeControllerRigidBody.cpp
 	DEM/Low/src/Physics/PhysicsDebugDraw.cpp
 	DEM/Low/src/Physics/PhysicsLevel.cpp
 	DEM/Low/src/Physics/PhysicsObject.cpp
@@ -515,9 +487,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Resources/ResourceObject.cpp
 	DEM/Low/src/Scene/LODGroup.cpp
 	DEM/Low/src/Scene/NodeAttribute.cpp
-	DEM/Low/src/Scene/NodeController.cpp
-	DEM/Low/src/Scene/NodeControllerComposite.cpp
-	DEM/Low/src/Scene/NodeControllerPriorityBlend.cpp
 	DEM/Low/src/Scene/NodeControllerThirdPerson.cpp
 	DEM/Low/src/Scene/SceneNode.cpp
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp

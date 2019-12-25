@@ -1,6 +1,5 @@
 #include "SceneNode.h"
 #include <Scene/NodeAttribute.h>
-#include <Scene/NodeController.h>
 #include <Scene/NodeVisitor.h>
 #include <Data/StringTokenizer.h>
 
@@ -21,51 +20,16 @@ CSceneNode::~CSceneNode()
 	// Destroy children first
 	Children.clear();
 
-	if (Controller) Controller->OnDetachFromScene();
-
 	for (const auto& Attr : Attrs)
 		Attr->OnDetachFromScene();
 	Attrs.clear();
 }
 //---------------------------------------------------------------------
 
-// Some nodes may be driven by a deffered controller, i.e. a controller that is driven by some closed external system
-// like a physics simulation, but is dependent on a parent node transform. Example is a rigid body carried by an
-// animated character. So, we update character animation, those providing correct physical constraint position,
-// then leave scene graph branch, perform physics simulation and finally update deffered rigid-body-controlled nodes.
-// NB: All deffered nodes are either processed or not, so there are at most two steps of scene graph updating -
-// 1st update down to first deffered node (not inclusive) in each branch, 2nd update all nodes not updated in a 1st step.
-void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
-								 bool ProcessDefferedController, std::vector<CSceneNode*>* pOutDefferedNodes)
+void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 {
-	if (Controller.IsValidPtr() && Controller->IsActive())
-	{
-		if (!ProcessDefferedController && Controller->IsDeffered())
-		{
-			if (pOutDefferedNodes) pOutDefferedNodes->push_back(this);
-			return;
-		}
-
-		if (Controller->IsLocalSpace())
-		{
-			if (Controller->ApplyTo(Tfm)) Flags.Set(LocalMatrixDirty | LocalTransformValid);
-			UpdateWorldFromLocal();
-		}
-		else
-		{
-			Math::CTransformSRT WorldSRT;
-			if (Controller->ApplyTo(WorldSRT))
-			{
-				WorldSRT.ToMatrix(WorldMatrix);
-				Flags.Clear(WorldMatrixDirty);
-				Flags.Set(WorldMatrixChanged);
-				if (Controller->NeedToUpdateLocalSpace()) UpdateLocalFromWorld();
-				else Flags.Clear(LocalTransformValid);
-			}
-			else Flags.Clear(WorldMatrixChanged);
-		}
-	}
-	else UpdateWorldFromLocal();
+	// FIXME: update only on demand? When GetWorldMatrix requested, it is updated and returned.
+	UpdateWorldFromLocal();
 
 	// LOD attrs may disable some children, so process attributes before children
 	for (const auto& Attr : Attrs)
@@ -74,7 +38,7 @@ void CSceneNode::UpdateTransform(const vector3* pCOIArray, UPTR COICount,
 
 	for (const auto& Child : Children)
 		if (Child->IsActive())
-			Child->UpdateTransform(pCOIArray, COICount, ProcessDefferedController, pOutDefferedNodes);
+			Child->Update(pCOIArray, COICount);
 }
 //---------------------------------------------------------------------
 
@@ -263,25 +227,6 @@ CSceneNode* CSceneNode::FindLastNodeAtPath(const char* pPath, char const* & pUnr
 }
 //---------------------------------------------------------------------
 
-bool CSceneNode::SetController(CNodeController* pCtlr)
-{
-	if (Controller.Get() == pCtlr) OK;
-	if (pCtlr && pCtlr->IsAttachedToNode()) FAIL;
-
-	if (Controller.IsValidPtr())
-	{
-		n_assert(Controller->GetNode() == this);
-		Controller->OnDetachFromScene();
-	}
-
-	if (pCtlr && !pCtlr->OnAttachToNode(this)) FAIL;
-
-	Controller = pCtlr;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 bool CSceneNode::AddAttribute(CNodeAttribute& Attr)
 {
 	if (!Attr.OnAttachToNode(this)) FAIL;
@@ -325,8 +270,6 @@ void CSceneNode::OnDetachFromScene()
 {
 	for (const auto& Child : Children)
 		Child->OnDetachFromScene();
-
-	if (Controller.IsValidPtr()) Controller->OnDetachFromScene();
 
 	for (const auto& Attr : Attrs)
 		Attr->OnDetachFromScene();

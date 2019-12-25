@@ -4,6 +4,7 @@
 
 namespace Scene
 {
+/*
 RTTI_CLASS_IMPL(Scene::CCameraManager, Core::CObject);
 
 bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
@@ -19,6 +20,7 @@ bool CCameraManager::InitThirdPersonCamera(CSceneNode& NodeWithCamera)
 	OK;
 }
 //---------------------------------------------------------------------
+*/
 
 /* deactivation
 	if (Ctlr.IsValid())

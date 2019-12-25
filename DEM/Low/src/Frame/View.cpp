@@ -274,11 +274,6 @@ bool CView::SetCamera(CCameraAttribute* pNewCamera)
 	Scene::CSceneNode* pNode = pNewCamera->GetNode();
 	if (!pNode) FAIL;
 
-	//!!!if scene node specified, test here if camera belongs to the same scene!
-
-	// Set valid camera transform before updating/rending the first frame
-	pNode->UpdateTransform(nullptr, 0, true);
-
 	pCamera = pNewCamera;
 	VisibilityCacheDirty = true;
 	OK;

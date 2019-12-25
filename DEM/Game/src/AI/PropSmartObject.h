@@ -69,7 +69,6 @@ protected:
 	virtual void	InternalDeactivate();
 	void			EnableSI(class CPropScriptable& Prop);
 	void			DisableSI(class CPropScriptable& Prop);
-	void			InitAnimation(Data::PParams Desc, class CPropAnimation& Prop);
 
 	void			CompleteTransition();
 	void			SwitchAnimation(const CAnimInfo* pAnimInfo);

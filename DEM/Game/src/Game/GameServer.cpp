@@ -91,11 +91,6 @@ void CGameServer::Trigger()
 				COIArray[COICount++] = pView->GetCenterOfInterest();
 		}
 
-		Scene::CSceneNode* pSceneRoot = pLevel->GetSceneRoot();
-
-		DefferedNodes.clear();
-		if (pSceneRoot) pSceneRoot->UpdateTransform(COIArray, COICount, false, &DefferedNodes);
-
 		Physics::CPhysicsLevel* pPhysLvl = pLevel->GetPhysics();
 		if (pPhysLvl)
 		{
@@ -104,8 +99,8 @@ void CGameServer::Trigger()
 			pLevel->FireEvent(CStrID("AfterPhysics"));
 		}
 
-		for (auto* pNode : DefferedNodes)
-			pNode->UpdateTransform(COIArray, COICount, true, nullptr);
+		auto pSceneRoot = pLevel->GetSceneRoot();
+		if (pSceneRoot) pSceneRoot->Update(COIArray, COICount);
 
 		pLevel->FireEvent(CStrID("AfterTransforms"));
 

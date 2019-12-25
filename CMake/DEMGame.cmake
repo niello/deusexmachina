@@ -41,7 +41,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/SmartObj/Actions/ActionUseSmartObj.h
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplGotoSmartObj.h
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.h
-	DEM/Game/src/Animation/PropAnimation.h
 	DEM/Game/src/App/AppFSM.h
 	DEM/Game/src/App/AppStateVideo.h
 	DEM/Game/src/App/StateHandler.h
@@ -115,8 +114,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/SmartObj/Actions/ActionUseSmartObj.cpp
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplGotoSmartObj.cpp
 	DEM/Game/src/AI/SmartObj/ActionTpls/ActionTplUseSmartObj.cpp
-	DEM/Game/src/Animation/PropAnimation.cpp
-	DEM/Game/src/Animation/PropAnimationSI.cpp
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
 	DEM/Game/src/App/StateHandler.cpp

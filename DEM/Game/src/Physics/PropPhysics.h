@@ -1,7 +1,7 @@
 #pragma once
 #include <Game/Property.h>
-#include <Physics/NodeControllerRigidBody.h>
 #include <Physics/CollisionAttribute.h>
+#include <Physics/RigidBody.h>
 
 // Allows to assign physics objects to the scene nodes of this entity. Objects can be
 // dynamic (which control node transform) and kinematic (which only collide with dynamic ones).
@@ -20,9 +20,8 @@ class CPropPhysics: public Game::CProperty
 
 protected:
 
-	CArray<Physics::PNodeControllerRigidBody>	Ctlrs;
-	CArray<Physics::PCollisionAttribute>			Attrs;
-	Physics::PRigidBody							RootBody; // Rigid body attached to a root node, velocity source
+	CArray<Physics::PCollisionAttribute>	Attrs;
+	Physics::PRigidBody						RootBody; // Rigid body attached to a root node, velocity source
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

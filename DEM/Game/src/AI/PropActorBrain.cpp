@@ -4,6 +4,7 @@
 #include <AI/AIServer.h>
 #include <AI/Behaviour/Action.h>
 #include <Physics/PropCharacterController.h>
+#include <Physics/RigidBody.h>
 #include <Scripting/PropScriptable.h>
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>

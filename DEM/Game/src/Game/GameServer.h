@@ -22,11 +22,6 @@ namespace Render
 	class CGPUDriver;	// For level validation only //???redesign?
 }
 
-namespace Scene
-{
-	class CSceneNode;
-}
-
 namespace Game
 {
 typedef Ptr<class CGameLevel> PGameLevel;
@@ -53,7 +48,6 @@ protected:
 	CDict<CStrID, PGameLevel>		Levels;
 	CArray<CGameLevelView*>			LevelViews;
 	Data::CHandleManager			LevelViewHandles;
-	std::vector<Scene::CSceneNode*> DefferedNodes;	// See Trigger() method, cached to avoid per-frame reallocations
 
 	bool CommitContinueData();
 	bool CommitLevelDiff(CGameLevel& Level);

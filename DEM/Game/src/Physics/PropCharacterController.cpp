@@ -4,6 +4,7 @@
 #include <Game/GameLevel.h>
 #include <Scene/PropSceneNode.h>
 #include <Scene/Events/SetTransform.h>
+#include <Physics/RigidBody.h>
 #include <Events/Subscription.h>
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
@@ -77,9 +78,6 @@ void CPropCharacterController::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
 	if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
 
-	NodeCtlr = n_new(Physics::CNodeControllerRigidBody);
-	NodeCtlr->SetBody(*CharCtlr->GetBody());
-
 	Enable();
 }
 //---------------------------------------------------------------------
@@ -89,29 +87,35 @@ void CPropCharacterController::TermSceneNodeModifiers(CPropSceneNode& Prop)
 	if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
 
 	Disable();
-
-	if (NodeCtlr.IsValidPtr())
-	{
-		NodeCtlr->RemoveFromNode();
-		NodeCtlr = nullptr; //???create once and attach/detach?
-	}
 }
 //---------------------------------------------------------------------
 
 bool CPropCharacterController::Enable()
 {
-	if (NodeCtlr.IsNullPtr() || CharCtlr.IsNullPtr()) FAIL;
+	//if (NodeCtlr.IsNullPtr() || CharCtlr.IsNullPtr()) FAIL;
 
-	if (IsEnabled()) OK;
+	//if (IsEnabled()) OK;
 
-	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
-	if (!pProp || !pProp->IsActive()) FAIL;
+	//CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
+	//if (!pProp || !pProp->IsActive()) FAIL;
 
-	//CharCtlr->GetBody()->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
-	CharCtlr->GetBody()->SetTransform(pProp->GetNode()->GetWorldMatrix());
-	CharCtlr->AttachToLevel(*GetEntity()->GetLevel()->GetPhysics());
-	pProp->GetNode()->SetController(NodeCtlr);
-	NodeCtlr->Activate(true);
+	////CharCtlr->GetBody()->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+	//CharCtlr->GetBody()->SetTransform(pProp->GetNode()->GetWorldMatrix());
+	//CharCtlr->AttachToLevel(*GetEntity()->GetLevel()->GetPhysics());
+	//pProp->GetNode()->SetController(NodeCtlr);
+	//NodeCtlr->Activate(true);
+
+	/*
+	Channels.Set(Scene::Tfm_Translation | Scene::Tfm_Rotation);
+	Body->SetTransformChanged(true); // To enforce first update
+
+	...
+
+	if (Body.IsNullPtr() || !Body->IsTransformChanged()) FAIL;
+
+	Body->GetTransform(DestTfm.Translation, DestTfm.Rotation);
+	Body->SetTransformChanged(false);
+	*/
 
 	OK;
 }
@@ -121,8 +125,8 @@ void CPropCharacterController::Disable()
 {
 	if (IsEnabled())
 	{
-		NodeCtlr->Activate(false);
-		NodeCtlr->GetBody()->RemoveFromLevel();
+		//NodeCtlr->Activate(false);
+		//NodeCtlr->GetBody()->RemoveFromLevel();
 	}
 }
 //---------------------------------------------------------------------
