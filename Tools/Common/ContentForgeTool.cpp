@@ -12,6 +12,7 @@ CContentForgeTool::CContentForgeTool(const std::string& Name, const std::string&
 	: _Name(Name)
 	, _Desc(Desc)
 	, _Version(Version)
+	, _RootDir("../../../content") // Set default for typical layout before parsing the command line
 #if _DEBUG
 	, _LogVerbosity(static_cast<int>(EVerbosity::Debug))
 #else

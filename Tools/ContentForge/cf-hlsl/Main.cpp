@@ -45,8 +45,6 @@ public:
 	CHLSLTool(const std::string& Name, const std::string& Desc, CVersion Version) :
 		CContentForgeTool(Name, Desc, Version)
 	{
-		// Set default before parsing command line
-		_RootDir = "../../../content";
 	}
 
 	virtual int Init() override

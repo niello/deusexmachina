@@ -271,7 +271,6 @@ public:
 		, _ResourceRoot("Data:")
 	{
 		// Set default before parsing command line
-		_RootDir = "../../../content";
 		_SchemeFile = "../schemes/scene.dss";
 		_SettingsFile = "../schemes/settings.hrd";
 	}
