@@ -6,6 +6,8 @@ set(BUILD_TESTING OFF CACHE INTERNAL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../../Deps/pugixml" "${CMAKE_CURRENT_BINARY_DIR}/Deps/pugixml")
 set_target_properties(pugixml PROPERTIES FOLDER "Deps")
+set_target_properties(pugixml-shared PROPERTIES FOLDER "Deps")
+set_target_properties(pugixml-static PROPERTIES FOLDER "Deps")
 
 # Tool
 
