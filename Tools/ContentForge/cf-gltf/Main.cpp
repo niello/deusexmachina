@@ -339,6 +339,23 @@ public:
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
 	}
 
+	fs::path GetPath(const Data::CParams& TaskParams, const char* pPathID)
+	{
+		fs::path Result;
+
+		std::string PathValue;
+		if (ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
+			Result = PathValue;
+		else if (ParamsUtils::TryGetParam(PathValue, TaskParams, "Output"))
+			Result = PathValue;
+		else return Result;
+
+		if (!_RootDir.empty() && Result.is_relative())
+			Result = fs::path(_RootDir) / Result;
+
+		return Result;
+	}
+
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		const auto Extension = Task.SrcFilePath.extension();
@@ -401,52 +418,11 @@ public:
 		Ctx.TaskName = Task.TaskID.CStr();
 		// TODO: replace forbidden characters!
 
-		fs::path OutPath = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
-		if (!_RootDir.empty() && OutPath.is_relative())
-			OutPath = fs::path(_RootDir) / OutPath;
-
-		const std::string OutPathStr = OutPath.generic_string();
-		std::string PathValue;
-
-		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "MeshOutput"))
-		{
-			Ctx.MeshPath = PathValue;
-			if (!_RootDir.empty() && Ctx.MeshPath.is_relative())
-				Ctx.MeshPath = fs::path(_RootDir) / Ctx.MeshPath;
-		}
-		else Ctx.MeshPath = OutPathStr;
-
-		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "MaterialOutput"))
-		{
-			Ctx.MaterialPath = PathValue;
-			if (!_RootDir.empty() && Ctx.MaterialPath.is_relative())
-				Ctx.MaterialPath = fs::path(_RootDir) / Ctx.MaterialPath;
-		}
-		else Ctx.MaterialPath = OutPathStr;
-
-		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "TextureOutput"))
-		{
-			Ctx.TexturePath = PathValue;
-			if (!_RootDir.empty() && Ctx.TexturePath.is_relative())
-				Ctx.TexturePath = fs::path(_RootDir) / Ctx.TexturePath;
-		}
-		else Ctx.TexturePath = OutPathStr;
-
-		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "SkinOutput"))
-		{
-			Ctx.SkinPath = PathValue;
-			if (!_RootDir.empty() && Ctx.SkinPath.is_relative())
-				Ctx.SkinPath = fs::path(_RootDir) / Ctx.SkinPath;
-		}
-		else Ctx.SkinPath = OutPathStr;
-
-		if (ParamsUtils::TryGetParam(PathValue, Task.Params, "AnimOutput"))
-		{
-			Ctx.AnimPath = PathValue;
-			if (!_RootDir.empty() && Ctx.AnimPath.is_relative())
-				Ctx.AnimPath = fs::path(_RootDir) / Ctx.AnimPath;
-		}
-		else Ctx.AnimPath = OutPathStr;
+		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
+		Ctx.MaterialPath = GetPath(Task.Params, "MaterialOutput");
+		Ctx.TexturePath = GetPath(Task.Params, "TextureOutput");
+		Ctx.SkinPath = GetPath(Task.Params, "SkinOutput");
+		Ctx.AnimPath = GetPath(Task.Params, "AnimOutput");
 
 		// Export node hierarchy to DEM format
 
@@ -487,6 +463,8 @@ public:
 		{
 			Result.emplace_back(CStrID("Children"), std::move(Nodes));
 		}
+
+		const fs::path OutPath = GetPath(Task.Params, "Output");
 
 		if (_OutputHRD)
 		{

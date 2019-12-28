@@ -2,13 +2,14 @@
 #include <BTFile.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
+#include <CLI11.hpp>
 #include <pugixml.hpp>
 
 namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/terrain
+// -s src/terrain --path Data ../../../content
 
 static inline bool IsPow2(uint32_t Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
 
@@ -27,11 +28,28 @@ template <class T> inline T NextPow2(T x)
 
 class CL3DTTool : public CContentForgeTool
 {
+protected:
+
+	Data::CSchemeSet          _SceneSchemes;
+
+	std::map<std::string, std::string> _EffectsByType;
+	std::map<std::string, std::string> _EffectParamAliases;
+
+	std::string               _ResourceRoot;
+	std::string               _SchemeFile;
+	std::string               _SettingsFile;
+	bool                      _OutputBin = false;
+	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
+
 public:
 
-	CL3DTTool(const std::string& Name, const std::string& Desc, CVersion Version) :
-		CContentForgeTool(Name, Desc, Version)
+	CL3DTTool(const std::string& Name, const std::string& Desc, CVersion Version)
+		: CContentForgeTool(Name, Desc, Version)
+		, _ResourceRoot("Data:")
 	{
+		// Set default before parsing command line
+		_SchemeFile = "../schemes/scene.dss";
+		_SettingsFile = "../schemes/settings.hrd";
 	}
 
 	virtual bool SupportsMultithreading() const override
@@ -41,15 +59,80 @@ public:
 		return false;
 	}
 
+	virtual int Init() override
+	{
+		if (_ResourceRoot.empty())
+			if (_LogVerbosity >= EVerbosity::Warnings)
+				std::cout << "Resource root is empty, external references may not be resolved from the game!";
+
+		if (!_OutputHRD) _OutputBin = true;
+
+		if (_OutputBin)
+		{
+			if (!ParamsUtils::LoadSchemes(_SchemeFile.c_str(), _SceneSchemes))
+			{
+				std::cout << "Couldn't load scene binary serialization scheme from " << _SchemeFile;
+				return 2;
+			}
+		}
+
+		{
+			Data::CParams EffectSettings;
+			if (!ParamsUtils::LoadParamsFromHRD(_SettingsFile.c_str(), EffectSettings))
+			{
+				std::cout << "Couldn't load effect settings from " << _SettingsFile;
+				return 3;
+			}
+
+			const Data::CParams* pMap;
+			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Effects"))
+			{
+				for (const auto& Pair : *pMap)
+					_EffectsByType.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
+			}
+			if (ParamsUtils::TryGetParam(pMap, EffectSettings, "Params"))
+			{
+				for (const auto& Pair : *pMap)
+					_EffectParamAliases.emplace(Pair.first.ToString(), Pair.second.GetValue<std::string>());
+			}
+		}
+
+		return 0;
+	}
+
+	virtual void ProcessCommandLine(CLI::App& CLIApp) override
+	{
+		//???use --project-file instead of --res-root + --settings?
+		CContentForgeTool::ProcessCommandLine(CLIApp);
+		CLIApp.add_option("--res-root", _ResourceRoot, "Resource root prefix for referencing external subresources by path");
+		CLIApp.add_option("--scheme,--schema", _SchemeFile, "Scene binary serialization scheme file path");
+		CLIApp.add_option("--settings", _SettingsFile, "Settings file path");
+		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
+		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
+	}
+
+	fs::path GetPath(const Data::CParams& TaskParams, const char* pPathID)
+	{
+		fs::path Result;
+
+		std::string PathValue;
+		if (ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
+			Result = PathValue;
+		else if (ParamsUtils::TryGetParam(PathValue, TaskParams, "Output"))
+			Result = PathValue;
+		else return Result;
+
+		if (!_RootDir.empty() && Result.is_relative())
+			Result = fs::path(_RootDir) / Result;
+
+		return Result;
+	}
+
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		// TODO: check whether the metafile can be processed by this tool
 
-		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
-		const std::string TaskID(Task.TaskID.CStr());
-		auto DestPath = fs::path(Output) / (TaskID + ".cdlod");
-		if (!_RootDir.empty() && DestPath.is_relative())
-			DestPath = fs::path(_RootDir) / DestPath;
+		const std::string TaskName = Task.TaskID.ToString();
 
 		// Validate task params
 
@@ -173,19 +256,7 @@ public:
 			return false;
 		}
 
-		//!!!get climate, detect absolute path and warn/fail if not found locally!
-		//may declare climate data (textures only?) in .meta
-		//???offer to copy climate data to src folder and patch pathes in a project?
-		//!!!it is hard to use climate without parsing AM, also textures aren't production!
-		//probably explicit material declaration is better. Material can be hand-authored and set
-		//into .meta instead of an effect.
-		// Validate splat texture channel count is equal to splatting texture (ground type) count
-
 		// Write CDLOD file
-
-		//???TODO: unified normals+heightmap? 4-channel, single vertex texture fetch operation.
-		//Physics will require separate data, but physics uses CPU RAM, and rendering uses VRAM.
-		//Could create unified texture on loading, combining 3-channel normal map and HF.
 
 		std::vector<char> HeightfieldFileData;
 		if (!ReadAllFile(HFPath.string().c_str(), HeightfieldFileData))
@@ -194,6 +265,7 @@ public:
 			return false;
 		}
 
+		std::string CDLODID;
 		if (HFPath.extension() == ".bt")
 		{
 			CBTFile BTFile(HeightfieldFileData.data());
@@ -212,9 +284,12 @@ public:
 			const uint32_t PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
 
 			// TODO: support float BT!
-
-			// S->N col-major to N->S row-major, convert to ushort for L16 texture format
 			// TODO: there are different possible formats: D3DFMT_R16F, D3DFMT_R32F, D3DFMT_L16
+			//???TODO: unified normals+heightmap? 4-channel, single vertex texture fetch operation.
+			//Physics will require separate data, but physics uses CPU RAM, and rendering uses VRAM.
+			//Could create unified texture on loading, combining 3-channel normal map and HF.
+
+			// S->N col-major to N->S row-major, convert to ushort for D3DFMT_L16 texture format
 			std::vector<uint16_t> HeightMap(Width * Height);
 			for (uint32_t Row = 0; Row < Height; ++Row)
 				for (uint32_t Col = 0; Col < Width; ++Col)
@@ -224,16 +299,16 @@ public:
 
 			uint32_t CurrPatchesW = PatchesW;
 			uint32_t CurrPatchesH = PatchesH;
-			uint32_t TotalMinMaxDataSize = CurrPatchesW * CurrPatchesH;
+			uint32_t TotalMinMaxDataCount = CurrPatchesW * CurrPatchesH;
 			for (uint32_t LOD = 1; LOD < LODCount; ++LOD)
 			{
 				CurrPatchesW = (CurrPatchesW + 1) / 2;
 				CurrPatchesH = (CurrPatchesH + 1) / 2;
-				TotalMinMaxDataSize += CurrPatchesW * CurrPatchesH;
+				TotalMinMaxDataCount += CurrPatchesW * CurrPatchesH;
 			}
-			TotalMinMaxDataSize *= 2;
+			TotalMinMaxDataCount *= 2;
 
-			std::vector<uint16_t> MinMaxData(TotalMinMaxDataSize);
+			std::vector<uint16_t> MinMaxData(TotalMinMaxDataCount);
 
 			// Generate top-level minmax map
 			for (uint32_t Row = 0; Row < PatchesH; ++Row)
@@ -308,6 +383,7 @@ public:
 			// Write resulting CDLOD file
 
 			{
+				auto DestPath = GetPath(Task.Params, "CDLODOutput") / (TaskName + ".cdlod");
 				fs::create_directories(DestPath.parent_path());
 
 				std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
@@ -323,7 +399,7 @@ public:
 				WriteStream(File, Height);
 				WriteStream(File, PatchSize);
 				WriteStream(File, LODCount);
-				WriteStream(File, TotalMinMaxDataSize * sizeof(short));
+				WriteStream(File, TotalMinMaxDataCount);
 				WriteStream(File, BTFile.GetVerticalScale());
 				WriteStream(File, static_cast<float>(BTFile.GetLeftExtent())); // Min X
 				WriteStream(File, static_cast<float>(BTFile.GetRightExtent())); // Max X
@@ -334,17 +410,63 @@ public:
 
 				File.write(reinterpret_cast<const char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
 				File.write(reinterpret_cast<const char*>(MinMaxData.data()), MinMaxData.size() * sizeof(uint16_t));
+
+				CDLODID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 			}
 		}
 		else
 		{
 			// TODO: support different formats
-			assert(false);
+			assert(false && "Heightfield format not supported");
+			return false;
 		}
 
 		// Write material file
 
+		// ...
+		// MetallicRoughnessTerrain
+		// NormalTexture
+		// SplatMapTexture
+		// SplatTexture
+
 		// Write scene file
+
+		Data::CParams Result;
+
+		Data::CDataArray Attributes;
+		Data::CParams SkinAttribute;
+		SkinAttribute.emplace_back(CStrID("Class"), 'TRNA'); //std::string("Frame::CTerrainAttribute"));
+		SkinAttribute.emplace_back(CStrID("CDLODFile"), CDLODID);
+		Attributes.push_back(std::move(SkinAttribute));
+		Result.emplace_back(CStrID("Attrs"), std::move(Attributes));
+
+		/*
+		Material = 'Terrain/SteepDryCliffs'
+		SplatSizeX = 5.0
+		SplatSizeZ = 5.0
+		*/
+
+		const fs::path OutPath = GetPath(Task.Params, "Output");
+
+		if (_OutputHRD)
+		{
+			const auto DestPath = OutPath / (TaskName + ".hrd");
+			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
+			{
+				Task.Log.LogError("Error serializing " + TaskName + " to text");
+				return false;
+			}
+		}
+
+		if (_OutputBin)
+		{
+			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".scn");
+			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
+			{
+				Task.Log.LogError("Error serializing " + TaskName + " to binary");
+				return false;
+			}
+		}
 
 		return true;
 	}
