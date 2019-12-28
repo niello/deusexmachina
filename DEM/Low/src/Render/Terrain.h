@@ -25,8 +25,8 @@ public:
 	PMesh					PatchMesh;
 	PMesh					QuarterPatchMesh;
 
-	float					InvSplatSizeX = 0.1f;
-	float					InvSplatSizeZ = 0.1f;
+	float					InvSplatSizeX = 1.f;
+	float					InvSplatSizeZ = 1.f;
 
 	CTerrain();
 	virtual ~CTerrain();

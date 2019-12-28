@@ -423,6 +423,7 @@ public:
 
 		// Write material file
 
+		std::string MaterialID;
 		// ...
 		// MetallicRoughnessTerrain
 		// NormalTexture
@@ -431,20 +432,24 @@ public:
 
 		// Write scene file
 
+		const auto SplatSizeX = ParamsUtils::GetParam<float>(Task.Params, "SplatSizeX", 1.f);
+		const auto SplatSizeZ = ParamsUtils::GetParam<float>(Task.Params, "SplatSizeZ", 1.f);
+
 		Data::CParams Result;
 
 		Data::CDataArray Attributes;
 		Data::CParams SkinAttribute;
 		SkinAttribute.emplace_back(CStrID("Class"), 'TRNA'); //std::string("Frame::CTerrainAttribute"));
-		SkinAttribute.emplace_back(CStrID("CDLODFile"), CDLODID);
+		if (!CDLODID.empty())
+			SkinAttribute.emplace_back(CStrID("CDLODFile"), CDLODID);
+		if (!MaterialID.empty())
+			SkinAttribute.emplace_back(CStrID("Material"), MaterialID);
+		if (SplatSizeX > 0.f && SplatSizeX != 1.f)
+			SkinAttribute.emplace_back(CStrID("SplatSizeX"), SplatSizeX);
+		if (SplatSizeZ > 0.f && SplatSizeZ != 1.f)
+			SkinAttribute.emplace_back(CStrID("SplatSizeZ"), SplatSizeZ);
 		Attributes.push_back(std::move(SkinAttribute));
 		Result.emplace_back(CStrID("Attrs"), std::move(Attributes));
-
-		/*
-		Material = 'Terrain/SteepDryCliffs'
-		SplatSizeX = 5.0
-		SplatSizeZ = 5.0
-		*/
 
 		const fs::path OutPath = GetPath(Task.Params, "Output");
 
