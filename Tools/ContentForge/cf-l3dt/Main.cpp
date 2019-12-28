@@ -68,6 +68,8 @@ public:
 
 		// Read project XML
 
+		const fs::path SrcFolder = Task.SrcFilePath.parent_path();
+
 		pugi::xml_document XMLDoc;
 		auto XMLResult = XMLDoc.load_buffer(Task.SrcFileData->data(), Task.SrcFileData->size());
 		if (!XMLResult)
@@ -79,12 +81,98 @@ public:
 		auto XMLRoot = XMLDoc.first_child();
 		auto XMLVersion = XMLRoot.find_child_by_attribute("int", "name", "FileVersion");
 		if (!XMLVersion || XMLVersion.text().as_int() != 1)
+			Task.Log.LogWarning(std::string("Possibly unsupported version of L3DT XML: ") + XMLVersion.text().as_string());
+
+		uint32_t Width = 0, Height = 0;
+		float MinY = 0.f, MaxY = 0.f, HorizScale = 1.f;
+		if (auto XMLTerrain = XMLRoot.find_child_by_attribute("name", "MapInfo").find_child_by_attribute("name", "Terrain"))
 		{
-			Task.Log.LogError(std::string("Unsupported version of L3DT XML: ") + XMLVersion.text().as_string());
+			Width = XMLTerrain.find_child_by_attribute("int", "name", "nx").text().as_int();
+			Height = XMLTerrain.find_child_by_attribute("int", "name", "ny").text().as_int();
+			MinY = XMLTerrain.find_child_by_attribute("float", "name", "MinAlt").text().as_float();
+			MaxY = XMLTerrain.find_child_by_attribute("float", "name", "MaxAlt").text().as_float();
+			HorizScale = XMLTerrain.find_child_by_attribute("float", "name", "HorizScale").text().as_float();
+		}
+
+		// Check all necessary maps exist in appropriate formats
+
+		auto XMLMaps = XMLRoot.find_child_by_attribute("name", "Maps");
+		if (!XMLMaps)
+		{
+			Task.Log.LogError(std::string("No maps declared in L3DT XML"));
 			return false;
 		}
 
-		// Check all necessary maps exist in appropriate format
+		fs::path HFPath;
+		if (auto XMLHFMap = XMLMaps.find_child_by_attribute("name", "HF"))
+		{
+			HFPath = SrcFolder / XMLHFMap.find_child_by_attribute("name", "Filename").text().as_string();
+			if (HFPath.extension() != ".bt")
+			{
+				Task.Log.LogError(std::string("HF map format must be BT"));
+				return false;
+			}
+			if (!fs::exists(HFPath))
+			{
+				Task.Log.LogError(HFPath.generic_string() + " doesn't exist");
+				return false;
+			}
+		}
+		else
+		{
+			Task.Log.LogError(std::string("No HF map declared in L3DT XML"));
+			return false;
+		}
+
+		fs::path TNPath;
+		if (auto XMLTNMap = XMLMaps.find_child_by_attribute("name", "TN"))
+		{
+			TNPath = SrcFolder / XMLTNMap.find_child_by_attribute("name", "Filename").text().as_string();
+			if (TNPath.extension() != ".dds")
+			{
+				Task.Log.LogError(std::string("TN map format must be DDS"));
+				return false;
+			}
+			if (!fs::exists(TNPath))
+			{
+				Task.Log.LogError(TNPath.generic_string() + " doesn't exist");
+				return false;
+			}
+		}
+		else
+		{
+			Task.Log.LogError(std::string("No TN map declared in L3DT XML"));
+			return false;
+		}
+
+		fs::path SplatMapPath;
+		if (auto XMLAlpha1Map = XMLMaps.find_child_by_attribute("name", "Alpha_1"))
+		{
+			SplatMapPath = SrcFolder / XMLAlpha1Map.find_child_by_attribute("name", "Filename").text().as_string();
+
+			const auto Ext = SplatMapPath.extension();
+			if (Ext != ".dds" && Ext != ".tga")
+			{
+				Task.Log.LogError(std::string("Alpha (splatting) map format must be DDS or TGA"));
+				return false;
+			}
+			if (!fs::exists(SplatMapPath))
+			{
+				Task.Log.LogError(SplatMapPath.generic_string() + " doesn't exist");
+				return false;
+			}
+			if (!strcmp(XMLAlpha1Map.find_child_by_attribute("name", "MapType").text().as_string(), "BYTE"))
+				Task.Log.LogWarning("Alpha (splatting) map is one channel. Use L3DT Professional to generate one multichannel map. It is freeware now.");
+			if (XMLMaps.find_child_by_attribute("name", "Alpha_2"))
+				Task.Log.LogWarning("Multiple alpha (splatting) maps are declared. Use L3DT Professional to generate one multichannel map. It is freeware now.");
+		}
+		else
+		{
+			Task.Log.LogError(std::string("No Alpha_1 map declared in L3DT XML, use Operations->Alpha maps->Generate maps..."));
+			return false;
+		}
+
+		int DBG = 0;
 
 		// Write CDLOD file
 
