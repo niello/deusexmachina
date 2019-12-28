@@ -1,4 +1,5 @@
 #include <ContentForgeTool.h>
+#include <Render/ShaderMetaCommon.h>
 #include <BTFile.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
@@ -126,6 +127,12 @@ public:
 			Result = fs::path(_RootDir) / Result;
 
 		return Result;
+	}
+
+	const std::string& GetEffectParamID(const std::string& Alias)
+	{
+		auto It = _EffectParamAliases.find(Alias);
+		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
 	}
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
@@ -421,14 +428,75 @@ public:
 			return false;
 		}
 
-		// Write material file
-
+		// Generate material
+		
 		std::string MaterialID;
-		// ...
-		// MetallicRoughnessTerrain
-		// NormalTexture
-		// SplatMapTexture
-		// SplatTexture
+
+		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
+
+		auto EffectIt = _EffectsByType.find("MetallicRoughnessTerrain");
+		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
+		{
+			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
+			return false;
+		}
+
+		CMaterialParams MtlParamTable;
+		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		Task.Log.LogDebug("Opening effect " + Path);
+		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
+		{
+			Task.Log.LogError("Error reading material param table for effect " + Path);
+			return false;
+		}
+
+		Data::CParams MtlParams;
+
+		const auto& NormalTextureID = GetEffectParamID("NormalTexture");
+		if (MtlParamTable.HasResource(NormalTextureID))
+		{
+			std::string FileName = TNPath.filename().generic_string();
+			ToLower(FileName);
+			auto DestPath = TexturePath / FileName;
+			fs::create_directories(DestPath.parent_path());
+			if (!fs::copy_file(TNPath, DestPath))
+			{
+				Task.Log.LogError("Error copying texture from " + TNPath.generic_string() + " to " + DestPath.generic_string());
+				return false;
+			}
+
+			MtlParams.emplace_back(CStrID(NormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
+		}
+
+		const auto& SplatMapTextureID = GetEffectParamID("SplatMapTexture");
+		if (MtlParamTable.HasResource(SplatMapTextureID))
+		{
+			std::string FileName = SplatMapPath.filename().generic_string();
+			ToLower(FileName);
+			auto DestPath = TexturePath / FileName;
+			fs::create_directories(DestPath.parent_path());
+			if (!fs::copy_file(SplatMapPath, DestPath))
+			{
+				Task.Log.LogError("Error copying texture from " + SplatMapPath.generic_string() + " to " + DestPath.generic_string());
+				return false;
+			}
+
+			MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
+		}
+
+		// AlbedoTexture[N], NormalTexture[N]
+
+		{
+			auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
+
+			fs::create_directories(DestPath.parent_path());
+
+			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+
+			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log)) return false;
+
+			MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		}
 
 		// Write scene file
 
