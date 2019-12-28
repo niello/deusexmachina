@@ -1,7 +1,6 @@
 #pragma once
 #include <Render/RenderEnums.h>
 #include <StringID.h>
-#include <stdint.h>
 
 // API-independent description of a rendering pipeline state.
 // This is a tool version of desc, using strings instead of resource objects.

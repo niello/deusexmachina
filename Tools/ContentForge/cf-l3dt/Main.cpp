@@ -1,4 +1,5 @@
 #include <ContentForgeTool.h>
+#include <BTFile.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
 #include <pugixml.hpp>
@@ -172,161 +173,176 @@ public:
 			return false;
 		}
 
-		int DBG = 0;
+		//!!!get climate, detect absolute path and warn/fail if not found locally!
+		//may declare climate data (textures only?) in .meta
+		//???offer to copy climate data to src folder and patch pathes in a project?
+		//!!!it is hard to use climate without parsing AM, also textures aren't production!
+		//probably explicit material declaration is better. Material can be hand-authored and set
+		//into .meta instead of an effect.
+		// Validate splat texture channel count is equal to splatting texture (ground type) count
 
 		// Write CDLOD file
 
-		/*
-		Data::CBuffer Buffer;
-		IOSrv->LoadFileToBuffer(InFileName, Buffer);
-		IO::CBTFile BTFile(Buffer.GetPtr());
-		n_assert(BTFile.GetFileSize() == Buffer.GetSize());
-		UPTR Width = BTFile.GetWidth();
-		UPTR Height = BTFile.GetHeight();
+		//???TODO: unified normals+heightmap? 4-channel, single vertex texture fetch operation.
+		//Physics will require separate data, but physics uses CPU RAM, and rendering uses VRAM.
+		//Could create unified texture on loading, combining 3-channel normal map and HF.
 
-		CString OutPath = PathUtils::ExtractDirName(OutFileName);
-		if (!IOSrv->DirectoryExists(OutPath)) IOSrv->CreateDirectory(OutPath);
-
-		IO::PStream OutFile = IOSrv->CreateStream(OutFileName);
-		if (!OutFile->Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+		std::vector<char> HeightfieldFileData;
+		if (!ReadAllFile(HFPath.string().c_str(), HeightfieldFileData))
 		{
-			n_msg(VL_ERROR, "Can't open output file" );
-			return ExitApp(ERR_IO_WRITE, WaitKey);
+			Task.Log.LogError("HF map reading failed");
+			return false;
 		}
 
-		UPTR PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
-		UPTR PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
-		UPTR TotalMinMaxDataSize = PatchesW * PatchesH;
-		for (UPTR LOD = 1; LOD < LODCount; ++LOD)
+		if (HFPath.extension() == ".bt")
 		{
-			PatchesW = (PatchesW + 1) / 2;
-			PatchesH = (PatchesH + 1) / 2;
-			TotalMinMaxDataSize += PatchesW * PatchesH;
-		}
-		TotalMinMaxDataSize *= 2 * sizeof(short);
+			CBTFile BTFile(HeightfieldFileData.data());
 
-		IO::CBinaryWriter Writer(*OutFile);
-		Writer.Write('CDLD');							// Magic
-		Writer.Write(CDLOD_VERSION);
-		Writer.Write(Width);
-		Writer.Write(Height);
-		Writer.Write(PatchSize);
-		Writer.Write(LODCount);
-		Writer.Write(TotalMinMaxDataSize);
-		Writer.Write(BTFile.GetVerticalScale());
-		Writer.Write((float)BTFile.GetLeftExtent());	// Min X
-		Writer.Write(BTFile.GetMinHeight());			// Min Y
-		Writer.Write((float)BTFile.GetBottomExtent());	// Min Z
-		Writer.Write((float)BTFile.GetRightExtent());	// Max X
-		Writer.Write(BTFile.GetMaxHeight());			// Max Y
-		Writer.Write((float)BTFile.GetTopExtent());		// Max Z
+			//if (HFSampleSize >= 4 && !BTFile.IsFloatData())
+			//{
+			//	Task.Log.LogError("Source BT file must store uncompressed float data!");
+			//	return false;
+			//}
 
-		// S->N col-major to N->S row-major
-		UPTR HeightDataSize = (UPTR)BTFile.GetHFDataSize();
-		short* pHeights = (short*)n_malloc(HeightDataSize);
-		for (UPTR Row = 0; Row < Height; ++Row)
-			for (UPTR Col = 0; Col < Width; ++Col)
-				pHeights[Row * Width + Col] = BTFile.GetHeightsS()[Col * Height + Height - 1 - Row];
+			if (!Width) Width = BTFile.GetWidth();
+			if (!Height) Height = BTFile.GetHeight();
+			assert(Width == BTFile.GetWidth() && Height == BTFile.GetHeight());
 
-		bool FormatL16 = true;
-		if (FormatL16)
-		{
-			unsigned short* pHFL16 = (unsigned short*)n_malloc(HeightDataSize);
-			for (UPTR i = 0; i < BTFile.GetHeightCount(); ++i)
-				pHFL16[i] = pHeights[i] + 32768;
-			OutFile->Write(pHFL16, HeightDataSize);
-			n_free(pHFL16);
-		}
-		else OutFile->Write(pHeights, HeightDataSize);
+			const uint32_t PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
+			const uint32_t PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
 
-		PatchesW = (Width - 1 + PatchSize - 1) / PatchSize;
-		PatchesH = (Height - 1 + PatchSize - 1) / PatchSize;
+			// TODO: support float BT!
 
-		UPTR MinMaxDataSize = PatchesW * PatchesH * 2 * sizeof(short);
-		short* pMinMaxBuffer = (short*)n_malloc(MinMaxDataSize);
+			// S->N col-major to N->S row-major, convert to ushort for L16 texture format
+			// TODO: there are different possible formats: D3DFMT_R16F, D3DFMT_R32F, D3DFMT_L16
+			std::vector<uint16_t> HeightMap(Width * Height);
+			for (uint32_t Row = 0; Row < Height; ++Row)
+				for (uint32_t Col = 0; Col < Width; ++Col)
+					HeightMap[Row * Width + Col] = static_cast<uint16_t>(static_cast<int>(BTFile.GetHeightsS()[Col * Height + Height - 1 - Row]) + 32768);
 
-		// Generate top-level minmax map
+			// Calculate minmax data
 
-		for (UPTR Row = 0; Row < PatchesH; ++Row)
-		{
-			UPTR StopAtZ = n_min((Row + 1) * PatchSize + 1, Height);
-
-			for (UPTR Col = 0; Col < PatchesW; ++Col)
+			uint32_t CurrPatchesW = PatchesW;
+			uint32_t CurrPatchesH = PatchesH;
+			uint32_t TotalMinMaxDataSize = CurrPatchesW * CurrPatchesH;
+			for (uint32_t LOD = 1; LOD < LODCount; ++LOD)
 			{
-				UPTR StopAtX = n_min((Col + 1) * PatchSize + 1, Width);
+				CurrPatchesW = (CurrPatchesW + 1) / 2;
+				CurrPatchesH = (CurrPatchesH + 1) / 2;
+				TotalMinMaxDataSize += CurrPatchesW * CurrPatchesH;
+			}
+			TotalMinMaxDataSize *= 2;
 
-				short MinHeight = pHeights[Row * PatchSize * Width + Col * PatchSize];
-				short MaxHeight = MinHeight;
-				for (UPTR Z = Row * PatchSize; Z < StopAtZ; ++Z)
-					for (UPTR X = Col * PatchSize; X < StopAtX; ++X)
+			std::vector<uint16_t> MinMaxData(TotalMinMaxDataSize);
+
+			// Generate top-level minmax map
+			for (uint32_t Row = 0; Row < PatchesH; ++Row)
+			{
+				uint32_t StopAtZ = std::min((Row + 1) * PatchSize + 1, Height);
+
+				for (uint32_t Col = 0; Col < PatchesW; ++Col)
+				{
+					uint32_t StopAtX = std::min((Col + 1) * PatchSize + 1, Width);
+
+					auto MinHeight = HeightMap[Row * PatchSize * Width + Col * PatchSize];
+					auto MaxHeight = MinHeight;
+					for (uint32_t Z = Row * PatchSize; Z < StopAtZ; ++Z)
 					{
-						short CurrHeight = pHeights[Z * Width + X];
-						if (CurrHeight != IO::CBTFile::NoDataS)
+						for (uint32_t X = Col * PatchSize; X < StopAtX; ++X)
 						{
-							if (CurrHeight < MinHeight) MinHeight = CurrHeight;
-							else if (CurrHeight > MaxHeight) MaxHeight = CurrHeight;
+							const auto CurrHeight = HeightMap[Z * Width + X];
+							if (CurrHeight != CBTFile::NoDataUS)
+							{
+								if (CurrHeight < MinHeight) MinHeight = CurrHeight;
+								else if (CurrHeight > MaxHeight) MaxHeight = CurrHeight;
+							}
 						}
 					}
-				UPTR Idx = Row * PatchesW + Col;
-				pMinMaxBuffer[Idx * 2] = MinHeight;
-				pMinMaxBuffer[Idx * 2 + 1] = MaxHeight;
-			}
-		}
 
-		n_free(pHeights);
-
-		OutFile->Write(pMinMaxBuffer, MinMaxDataSize);
-
-		// Generate minmax map hierarchy
-
-		short* pPrevData = pMinMaxBuffer;
-		UPTR PrevPatchesW = PatchesW;
-		UPTR PrevPatchesH = PatchesH;
-		for (UPTR LOD = 1; LOD < LODCount; ++LOD)
-		{
-			PatchesW = (PrevPatchesW + 1) / 2;
-			PatchesH = (PrevPatchesH + 1) / 2;
-
-			UPTR MinMaxDataSize = PatchesW * PatchesH * 2 * sizeof(short);
-			short* pMinMaxBuffer = (short*)n_malloc(MinMaxDataSize);
-
-			short* pSrc = pPrevData;
-			short* pDst = pMinMaxBuffer;
-
-			// Algorithm from the original CDLOD code
-
-			for (UPTR i = 0; i < PatchesW * PatchesH * 2; i += 2)
-			{
-				pMinMaxBuffer[i] = 32767;
-				pMinMaxBuffer[i + 1] = -32767;
-			}
-
-			for (UPTR Z = 0; Z < PrevPatchesH; ++Z)
-			{
-				for (UPTR X = 0; X < PrevPatchesW; ++X)
-				{
-					const int Idx = (X / 2) * 2;
-					pDst[Idx] = n_min(pDst[Idx], pSrc[X * 2]);
-					pDst[Idx + 1] = n_max(pDst[Idx + 1], pSrc[X * 2 + 1]);
+					const uint32_t Idx = Row * PatchesW + Col;
+					MinMaxData[Idx * 2] = MinHeight;
+					MinMaxData[Idx * 2 + 1] = MaxHeight;
 				}
-				pSrc += PrevPatchesW * 2;
-				if (Z % 2 == 1) pDst += PatchesW * 2;
 			}
 
-			OutFile->Write(pMinMaxBuffer, MinMaxDataSize);
+			// Generate minmax map hierarchy
+			size_t PrevDataOffset = 0;
+			size_t CurrDataOffset = PatchesW * PatchesH * 2;
+			auto PrevPatchesW = PatchesW;
+			auto PrevPatchesH = PatchesH;
+			for (uint32_t LOD = 1; LOD < LODCount; ++LOD)
+			{
+				auto CurrPatchesW = (PrevPatchesW + 1) / 2;
+				auto CurrPatchesH = (PrevPatchesH + 1) / 2;
+				auto CurrDataSize = CurrPatchesW * CurrPatchesH * 2;
 
-			n_free(pPrevData);
-			pPrevData = pMinMaxBuffer;
-			PrevPatchesW = PatchesW;
-			PrevPatchesH = PatchesH;
+				auto* pSrc = MinMaxData.data() + PrevDataOffset;
+				auto* pDst = MinMaxData.data() + CurrDataOffset;
+
+				// Algorithm from the original CDLOD code modified for unsigned values
+
+				for (uint32_t i = 0; i < CurrDataSize; i += 2)
+				{
+					pDst[i] = 65535;
+					pDst[i + 1] = 0;
+				}
+
+				for (uint32_t Z = 0; Z < PrevPatchesH; ++Z)
+				{
+					for (uint32_t X = 0; X < PrevPatchesW; ++X)
+					{
+						const int Idx = (X / 2) * 2;
+						pDst[Idx] = std::min(pDst[Idx], pSrc[X * 2]);
+						pDst[Idx + 1] = std::max(pDst[Idx + 1], pSrc[X * 2 + 1]);
+					}
+					pSrc += PrevPatchesW * 2;
+					if (Z % 2 == 1) pDst += CurrPatchesW * 2;
+				}
+
+				PrevDataOffset = CurrDataOffset;
+				CurrDataOffset += CurrDataSize;
+				PrevPatchesW = CurrPatchesW;
+				PrevPatchesH = CurrPatchesH;
+			}
+
+			// Write resulting CDLOD file
+
+			{
+				fs::create_directories(DestPath.parent_path());
+
+				std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+				if (!File)
+				{
+					Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
+					return false;
+				}
+
+				WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
+				WriteStream<uint32_t>(File, 0x00010000);    // Version 0.1.0.0
+				WriteStream(File, Width);
+				WriteStream(File, Height);
+				WriteStream(File, PatchSize);
+				WriteStream(File, LODCount);
+				WriteStream(File, TotalMinMaxDataSize * sizeof(short));
+				WriteStream(File, BTFile.GetVerticalScale());
+				WriteStream(File, static_cast<float>(BTFile.GetLeftExtent())); // Min X
+				WriteStream(File, static_cast<float>(BTFile.GetRightExtent())); // Max X
+				WriteStream(File, static_cast<float>(BTFile.GetBottomExtent())); // Min Z
+				WriteStream(File, static_cast<float>(BTFile.GetTopExtent())); // Max Z
+				WriteStream(File, BTFile.GetMinHeight()); // Min Y
+				WriteStream(File, BTFile.GetMaxHeight()); // Max Y
+
+				File.write(reinterpret_cast<const char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
+				File.write(reinterpret_cast<const char*>(MinMaxData.data()), MinMaxData.size() * sizeof(uint16_t));
+			}
+		}
+		else
+		{
+			// TODO: support different formats
+			assert(false);
 		}
 
-		n_free(pPrevData);
-		*/
-
-		// Merge alpha maps (optionally, if required)
-
-		// Write material
+		// Write material file
 
 		// Write scene file
 

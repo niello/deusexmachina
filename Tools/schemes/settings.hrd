@@ -14,5 +14,6 @@ Params
 {
 	AlbedoTexture = "TexAlbedo"
 	NormalTexture = "TexNormalMap"
+	SplatMapTexture = "TexSplatMap"
 	PBRTextureSampler = "LinearSampler"
 }

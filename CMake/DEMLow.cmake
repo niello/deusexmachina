@@ -110,7 +110,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Input/InputTranslator.h
 	DEM/Low/src/IO/BinaryReader.h
 	DEM/Low/src/IO/BinaryWriter.h
-	DEM/Low/src/IO/BTFile.h
 	DEM/Low/src/IO/FileSystem.h
 	DEM/Low/src/IO/FSBrowser.h
 	DEM/Low/src/IO/HRDWriter.h
@@ -379,7 +378,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Input/InputTranslator.cpp
 	DEM/Low/src/IO/BinaryReader.cpp
 	DEM/Low/src/IO/BinaryWriter.cpp
-	DEM/Low/src/IO/BTFile.cpp
 	DEM/Low/src/IO/FSBrowser.cpp
 	DEM/Low/src/IO/HRDWriter.cpp
 	DEM/Low/src/IO/IOServer.cpp

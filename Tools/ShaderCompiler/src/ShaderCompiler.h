@@ -1,7 +1,6 @@
 #pragma once
 #include <LogDelegate.h>
 #include <string>
-#include <stdint.h> // for uint32_t only
 
 // Main public API header
 
