@@ -452,20 +452,21 @@ public:
 
 		Data::CParams MtlParams;
 
-		const auto& NormalTextureID = GetEffectParamID("NormalTexture");
-		if (MtlParamTable.HasResource(NormalTextureID))
+		const auto& GeomNormalTextureID = GetEffectParamID("TerrainGeometryNormalTexture");
+		if (MtlParamTable.HasResource(GeomNormalTextureID))
 		{
 			std::string FileName = TNPath.filename().generic_string();
 			ToLower(FileName);
 			auto DestPath = TexturePath / FileName;
 			fs::create_directories(DestPath.parent_path());
-			if (!fs::copy_file(TNPath, DestPath))
+			std::error_code ec;
+			if (!fs::copy_file(TNPath, DestPath, fs::copy_options::overwrite_existing, ec))
 			{
-				Task.Log.LogError("Error copying texture from " + TNPath.generic_string() + " to " + DestPath.generic_string());
+				Task.Log.LogError("Error copying texture from " + TNPath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
 				return false;
 			}
 
-			MtlParams.emplace_back(CStrID(NormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
+			MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 		}
 
 		const auto& SplatMapTextureID = GetEffectParamID("SplatMapTexture");
@@ -475,16 +476,30 @@ public:
 			ToLower(FileName);
 			auto DestPath = TexturePath / FileName;
 			fs::create_directories(DestPath.parent_path());
-			if (!fs::copy_file(SplatMapPath, DestPath))
+			std::error_code ec;
+			if (!fs::copy_file(SplatMapPath, DestPath, fs::copy_options::overwrite_existing, ec))
 			{
-				Task.Log.LogError("Error copying texture from " + SplatMapPath.generic_string() + " to " + DestPath.generic_string());
+				Task.Log.LogError("Error copying texture from " + SplatMapPath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
 				return false;
 			}
 
 			MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
 		}
 
-		// AlbedoTexture[N], NormalTexture[N]
+		const auto& AlbedoTextureID = GetEffectParamID("AlbedoTexture");
+		Data::CDataArray* pAlbedoTextures;
+		if (ParamsUtils::TryGetParam(pAlbedoTextures, Task.Params, "AlbedoTexture"))
+		{
+			const auto Size = pAlbedoTextures->size();
+			for (size_t i = 0; i < Size; ++i)
+			{
+				const std::string TexParamID = AlbedoTextureID + std::to_string(i);
+				if (MtlParamTable.HasResource(TexParamID))
+					MtlParams.emplace_back(CStrID(TexParamID), _ResourceRoot + pAlbedoTextures->at(i).GetValue<std::string>());
+			}
+		}
+
+		// TODO: NormalTexture, MRTexture
 
 		{
 			auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
