@@ -11,10 +11,7 @@ class CMeshGenerator: public IResourceCreator
 {
 public:
 
-	bool FrontClockWise = true;
-
-	CMeshGenerator();
-	virtual ~CMeshGenerator();
+	bool FrontClockWise = false;
 
 	virtual const Core::CRTTI& GetResultType() const override;
 };

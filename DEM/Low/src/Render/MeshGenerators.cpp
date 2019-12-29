@@ -1,13 +1,10 @@
 #include "MeshGenerators.h"
-
 #include <Render/MeshData.h>
 #include <Render/VertexComponent.h>
 #include <Data/RAMData.h>
 
 namespace Resources
 {
-CMeshGenerator::CMeshGenerator() {}
-CMeshGenerator::~CMeshGenerator() {}
 
 const Core::CRTTI& CMeshGenerator::GetResultType() const
 {
@@ -45,18 +42,20 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexCount * VertexSize * sizeof(float), 16)));
 	float* pVBCurr = static_cast<float*>(MeshData->VBData->GetPtr());
 	for (UPTR z = 0; z < VerticesPerEdge; ++z)
+	{
 		for (UPTR x = 0; x < VerticesPerEdge; ++x)
 		{
 			*pVBCurr++ = x * InvEdgeSize;
 			*pVBCurr++ = z * InvEdgeSize;
 		}
-
+	}
 
 	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexCount * sizeof(U16), 16)));
 	U16* pIBCurr = static_cast<U16*>(MeshData->IBData->GetPtr());
 	if (FrontClockWise)
 	{
 		for (UPTR z = 0; z < _QuadsPerEdge; ++z)
+		{
 			for (UPTR x = 0; x < _QuadsPerEdge; ++x)
 			{
 				*pIBCurr++ = (U16)(z * VerticesPerEdge + x);
@@ -66,10 +65,12 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 				*pIBCurr++ = (U16)((z + 1) * VerticesPerEdge + (x + 1));
 				*pIBCurr++ = (U16)((z + 1) * VerticesPerEdge + x);
 			}
+		}
 	}
 	else
 	{
 		for (UPTR z = 0; z < _QuadsPerEdge; ++z)
+		{
 			for (UPTR x = 0; x < _QuadsPerEdge; ++x)
 			{
 				*pIBCurr++ = (U16)(z * VerticesPerEdge + x);
@@ -79,6 +80,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 				*pIBCurr++ = (U16)((z + 1) * VerticesPerEdge + x);
 				*pIBCurr++ = (U16)((z + 1) * VerticesPerEdge + (x + 1));
 			}
+		}
 	}
 
 	Render::CPrimitiveGroup Group;

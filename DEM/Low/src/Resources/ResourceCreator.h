@@ -16,8 +16,6 @@ class IResourceCreator: public Data::CRefCounted
 {
 public:
 
-	virtual ~IResourceCreator() {}
-
 	virtual const Core::CRTTI&	GetResultType() const = 0;
 	virtual PResourceObject		CreateResource(CStrID UID) = 0;
 };
