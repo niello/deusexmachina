@@ -440,10 +440,15 @@ private:
 			}
 		}
 
-		if (ParamsUtils::TryGetParam(FlagValue, Desc, "Wireframe"))
-			RS.SetFlags(CRenderState::Rasterizer_Wireframe, FlagValue);
+		// Triangle winding is defaulted to CCW, because glTF 2.0, Maya and probably
+		// other popular formats/software also default to it
 		if (ParamsUtils::TryGetParam(FlagValue, Desc, "FrontCCW"))
 			RS.SetFlags(CRenderState::Rasterizer_FrontCCW, FlagValue);
+		else
+			RS.SetFlags(CRenderState::Rasterizer_FrontCCW, true);
+
+		if (ParamsUtils::TryGetParam(FlagValue, Desc, "Wireframe"))
+			RS.SetFlags(CRenderState::Rasterizer_Wireframe, FlagValue);
 		if (ParamsUtils::TryGetParam(FlagValue, Desc, "DepthClipEnable"))
 			RS.SetFlags(CRenderState::Rasterizer_DepthClipEnable, FlagValue);
 		if (ParamsUtils::TryGetParam(FlagValue, Desc, "ScissorEnable"))
