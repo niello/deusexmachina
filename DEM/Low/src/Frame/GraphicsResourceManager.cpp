@@ -661,7 +661,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	{
 		const CStrID ID = Table.GetResource(i)->GetID();
 		auto It = Values.ResourceValues.find(ID);
-		Storage.SetResource(i, (It != Values.ResourceValues.cend()) ? It->second : Effect->GetResourceDefaultValue(ID));
+		Storage.SetResource(i, (It != Values.ResourceValues.cend()) ? It->second.Get() : Effect->GetResourceDefaultValue(ID));
 	}
 
 	// Set samplers
@@ -669,7 +669,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	{
 		const CStrID ID = Table.GetSampler(i)->GetID();
 		auto It = Values.SamplerValues.find(ID);
-		Storage.SetSampler(i, (It != Values.SamplerValues.cend()) ? It->second : Effect->GetSamplerDefaultValue(ID));
+		Storage.SetSampler(i, (It != Values.SamplerValues.cend()) ? It->second.Get() : Effect->GetSamplerDefaultValue(ID));
 	}
 
 	return n_new(Render::CMaterial(*Effect, std::move(Storage)));

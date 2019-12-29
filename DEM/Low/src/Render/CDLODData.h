@@ -26,7 +26,7 @@ protected:
 		I16*	pData;
 	};
 
-	I16*					pMinMaxData = nullptr;
+	std::unique_ptr<I16[]>  pMinMaxData = nullptr;
 	CFixedArray<CMinMaxMap>	MinMaxMaps;
 
 	U32						HFWidth;
@@ -41,9 +41,6 @@ protected:
 	friend class Resources::CCDLODDataLoader;
 
 public:
-
-	CCDLODData();
-	virtual ~CCDLODData();
 
 	virtual bool		IsResourceValid() const { return !!pMinMaxData; }
 	U32					GetHeightMapWidth() const { return HFWidth; }

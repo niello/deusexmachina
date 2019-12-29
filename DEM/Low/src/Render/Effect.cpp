@@ -13,9 +13,7 @@ CEffect::CEffect(EEffectType Type, PShaderParamTable MaterialParams, CShaderPara
 }
 //---------------------------------------------------------------------
 
-CEffect::~CEffect()
-{
-}
+CEffect::~CEffect() = default;
 //---------------------------------------------------------------------
 
 void CEffect::SetTechnique(CStrID InputSet, PTechnique Tech)
@@ -47,17 +45,17 @@ const CShaderConstValue* CEffect::GetConstantDefaultValue(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-PTexture CEffect::GetResourceDefaultValue(CStrID ID) const
+CTexture* CEffect::GetResourceDefaultValue(CStrID ID) const
 {
 	auto It = _MaterialDefaults.ResourceValues.find(ID);
-	return (It == _MaterialDefaults.ResourceValues.cend()) ? nullptr : It->second;
+	return (It == _MaterialDefaults.ResourceValues.cend()) ? nullptr : It->second.Get();
 }
 //---------------------------------------------------------------------
 
-PSampler CEffect::GetSamplerDefaultValue(CStrID ID) const
+CSampler* CEffect::GetSamplerDefaultValue(CStrID ID) const
 {
 	auto It = _MaterialDefaults.SamplerValues.find(ID);
-	return (It == _MaterialDefaults.SamplerValues.cend()) ? nullptr : It->second;
+	return (It == _MaterialDefaults.SamplerValues.cend()) ? nullptr : It->second.Get();
 }
 //---------------------------------------------------------------------
 

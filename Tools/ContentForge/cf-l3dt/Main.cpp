@@ -416,7 +416,12 @@ public:
 				WriteStream(File, BTFile.GetMaxHeight()); // Max Y
 
 				File.write(reinterpret_cast<const char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
-				File.write(reinterpret_cast<const char*>(MinMaxData.data()), MinMaxData.size() * sizeof(uint16_t));
+
+				// Convert minmax back to signed
+				// FIXME: improve?
+				//File.write(reinterpret_cast<const char*>(MinMaxData.data()), MinMaxData.size() * sizeof(uint16_t));
+				for (uint16_t Value : MinMaxData)
+					WriteStream(File, static_cast<int16_t>(static_cast<int>(Value) - 32768));
 
 				CDLODID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 			}
@@ -455,9 +460,10 @@ public:
 		const auto& GeomNormalTextureID = GetEffectParamID("TerrainGeometryNormalTexture");
 		if (MtlParamTable.HasResource(GeomNormalTextureID))
 		{
-			std::string FileName = TNPath.filename().generic_string();
-			ToLower(FileName);
-			auto DestPath = TexturePath / FileName;
+			//std::string FileName = TNPath.filename().generic_string();
+			//ToLower(FileName);
+			//auto DestPath = TexturePath / FileName;
+			auto DestPath = TexturePath / (TaskName + "_tn" + TNPath.extension().string());
 			fs::create_directories(DestPath.parent_path());
 			std::error_code ec;
 			if (!fs::copy_file(TNPath, DestPath, fs::copy_options::overwrite_existing, ec))
@@ -472,9 +478,10 @@ public:
 		const auto& SplatMapTextureID = GetEffectParamID("SplatMapTexture");
 		if (MtlParamTable.HasResource(SplatMapTextureID))
 		{
-			std::string FileName = SplatMapPath.filename().generic_string();
-			ToLower(FileName);
-			auto DestPath = TexturePath / FileName;
+			//std::string FileName = SplatMapPath.filename().generic_string();
+			//ToLower(FileName);
+			//auto DestPath = TexturePath / FileName;
+			auto DestPath = TexturePath / (TaskName + "_sm" + SplatMapPath.extension().string());
 			fs::create_directories(DestPath.parent_path());
 			std::error_code ec;
 			if (!fs::copy_file(SplatMapPath, DestPath, fs::copy_options::overwrite_existing, ec))
@@ -562,6 +569,6 @@ public:
 
 int main(int argc, const char** argv)
 {
-	CL3DTTool Tool("cf-l3dt", "L3DT (Large 3D Terrain) to DeusExMachina scene asset converter", { 0, 1, 0 });
+	CL3DTTool Tool("cf-l3dt", "L3DT (Large 3D Terrain) to DeusExMachina scene asset converter", { 1, 0, 0 });
 	return Tool.Execute(argc, argv);
 }

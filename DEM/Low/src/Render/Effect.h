@@ -55,8 +55,8 @@ public:
 	EEffectType              GetType() const { return _Type; }
 	CShaderParamTable&       GetMaterialParamTable() const { return *_MaterialParams; }
 	const CShaderConstValue* GetConstantDefaultValue(CStrID ID) const;
-	PTexture                 GetResourceDefaultValue(CStrID ID) const;
-	PSampler                 GetSamplerDefaultValue(CStrID ID) const;
+	CTexture*                GetResourceDefaultValue(CStrID ID) const;
+	CSampler*                GetSamplerDefaultValue(CStrID ID) const;
 };
 
 }
