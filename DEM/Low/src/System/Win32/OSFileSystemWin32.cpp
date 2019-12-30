@@ -297,7 +297,7 @@ bool COSFileSystemWin32::Seek(void* hFile, I64 Offset, IO::ESeekOrigin Origin)
 	switch (Origin)
 	{
 		case IO::Seek_Current:	SeekOrigin = FILE_CURRENT; break;
-		case IO::Seek_End:		SeekOrigin = FILE_END; break;
+		case IO::Seek_End:		SeekOrigin = FILE_END; Offset = -Offset; break;
 		default:				SeekOrigin = FILE_BEGIN; break;
 	}
 	LARGE_INTEGER LIOffset;
@@ -318,9 +318,7 @@ bool COSFileSystemWin32::IsEOF(void* hFile) const
 	n_assert(hFile);
 	LARGE_INTEGER Pos;
 	LARGE_INTEGER Size;
-	LARGE_INTEGER Zero;
-	Zero.QuadPart = 0LL;
-	if (!::SetFilePointerEx(hFile, Zero, &Pos, FILE_CURRENT)) OK;
+	if (!::SetFilePointerEx(hFile, { 0 }, &Pos, FILE_CURRENT)) OK;
 	if (!::GetFileSizeEx(hFile, &Size)) OK;
 	return Pos.QuadPart >= Size.QuadPart;
 }
@@ -352,9 +350,7 @@ U64 COSFileSystemWin32::Tell(void* hFile) const
 {
 	n_assert(hFile);
 	LARGE_INTEGER Pos;
-	LARGE_INTEGER Zero;
-	Zero.QuadPart = 0LL;
-	if (!::SetFilePointerEx(hFile, Zero, &Pos, FILE_CURRENT)) return 0;
+	if (!::SetFilePointerEx(hFile, { 0 }, &Pos, FILE_CURRENT)) return 0;
 	return (U64)Pos.QuadPart;
 }
 //---------------------------------------------------------------------

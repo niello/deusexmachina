@@ -5,7 +5,7 @@
 #include <IO/BinaryReader.h>
 #include <Data/RAMData.h>
 
-// Supports loading of TrueColor images only. //???support black-and-white too? RLE?
+// Supports loading of TrueColor images only. //???support black-and-white too?
 // Only a required subset is implemented, in accordance with a specification at:
 //http://www.dca.fee.unicamp.br/~martino/disciplinas/ea978/tgaffs.pdf
 
@@ -69,6 +69,7 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 
 	const bool IsRLECompressed = (Header.ImageType == 10);
 
+	static_assert(sizeof(CTGAFooter) == 26);
 	if (!Stream->Seek(26, IO::Seek_End)) return nullptr;
 	CTGAFooter Footer;
 	if (!Reader.Read(Footer)) return nullptr;
