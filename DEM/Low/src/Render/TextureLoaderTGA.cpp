@@ -39,9 +39,9 @@ struct CTGAFooter
 #pragma pack(pop)
 
 // For CTGAHeader.ImageDescriptor bit checking
-#define TGA_RIGHT_TO_LEFT	(1 << 4)
-#define TGA_TOP_TO_BOTTOM	(1 << 5)
-#define TGA_ATTRIBUTE_BITS	0x0f
+constexpr U8 TGA_RIGHT_TO_LEFT = (1 << 4);
+constexpr U8 TGA_TOP_TO_BOTTOM = (1 << 5);
+constexpr U8 TGA_ATTRIBUTE_BITS = 0x0f;
 
 constexpr const char ReferenceSignature[] = "TRUEVISION-XFILE";
 
@@ -68,13 +68,16 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	if (Header.ImageType != 2 && Header.ImageType != 10) return nullptr;
 
 	const bool IsRLECompressed = (Header.ImageType == 10);
+	const bool FlipVertically = !(Header.ImageDescriptor & TGA_TOP_TO_BOTTOM);
 
 	static_assert(sizeof(CTGAFooter) == 26);
 	if (!Stream->Seek(26, IO::Seek_End)) return nullptr;
 	CTGAFooter Footer;
 	if (!Reader.Read(Footer)) return nullptr;
 
-	bool HasAlpha;
+	// 32-bit TGA is alpha-enabled by default. For newer format versions
+	// more reliable information can be extracted.
+	bool HasAlpha = (Header.ImageDescriptor & TGA_ATTRIBUTE_BITS) || Header.BitsPerPixel == 32;
 	if (!memcmp(Footer.Signature, ReferenceSignature, sizeof(ReferenceSignature) - 1))
 	{
 		// New TGA
@@ -85,15 +88,9 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 			U8 AttributesType;
 			if (!Reader.Read(AttributesType)) return nullptr;
 
+			// 4 for premultiplied
 			HasAlpha = (AttributesType == 3 || AttributesType == 4);
-			//!!!???AttributesType == 4 is a premultiplied alpha. How to handle?
 		}
-		else HasAlpha = !!(Header.ImageDescriptor & TGA_ATTRIBUTE_BITS);
-	}
-	else
-	{
-		// Original TGA
-		HasAlpha = !!(Header.ImageDescriptor & TGA_ATTRIBUTE_BITS);
 	}
 
 	Render::CTextureDesc TexDesc;
@@ -123,90 +120,68 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 			return nullptr;
 	}
 
-	UPTR BytesPerPixel = Header.BitsPerPixel >> 3;
+	const UPTR BytesPerPixel = (Header.BitsPerPixel >> 3);
+
+	// NB: some algorithms below rely on this
 	n_assert_dbg(BytesPerPixel <= BytesPerTargetPixel);
 
 	if (!Stream->Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return nullptr;
 
 	Data::PRAMData Data;
+	const UPTR RowSize = Header.ImageWidth * BytesPerTargetPixel;
+	const UPTR DataSize = RowSize * Header.ImageHeight;
 	if (IsRLECompressed)
 	{
-		const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
 		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
-		U8* pData = static_cast<U8*>(Data->GetPtr());
-		U8* pCurrPixel = pData;
-		const U8* pDataEnd = pData + DataSize;
+		U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
+		const U8* pDataEnd = pCurrPixel + DataSize;
 
-		n_assert_dbg(BytesPerPixel <= 4); // We never expect TGA with more than 32 bpp
+		// We never expect TGA with more than 32 bpp
+		n_assert_dbg(BytesPerPixel <= 4);
+
 		while (pCurrPixel < pDataEnd)
 		{
 			U8 ChunkHeader;
-			if (Stream->Read(&ChunkHeader, sizeof(U8)) != sizeof(U8)) return nullptr;
+			if (!Reader.Read(ChunkHeader)) return nullptr;
 
-			if (ChunkHeader & 0x80)
+			if (ChunkHeader & 0x80) // RLE
 			{
-				// RLE
+				// Read repeating pixel value
 				U32 PixelValue;
 				if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
 
+				// Copy the pixel into the destination buffer N times
 				const U8 ChunkPixelCount = ChunkHeader - 127; // (ChunkHeader & 0x7f) + 1
-				if (BytesPerPixel == 4)
-				{
-					const U8* pChunkEnd = pCurrPixel + BytesPerTargetPixel * ChunkPixelCount;
-					while (pCurrPixel < pChunkEnd)
-					{
-						*((U32*)pCurrPixel) = PixelValue;
-						pCurrPixel += BytesPerTargetPixel;
-					}
-				}
-				else
-				{
-					const U8* pChunkEnd = pCurrPixel + BytesPerTargetPixel * ChunkPixelCount;
-					while (pCurrPixel < pChunkEnd)
-					{
-						pCurrPixel[0] = ((U8*)&PixelValue)[0];
-						if (BytesPerPixel > 1)
-						{
-							pCurrPixel[1] = ((U8*)&PixelValue)[1];
-							if (BytesPerPixel > 2)
-							{
-								pCurrPixel[2] = ((U8*)&PixelValue)[2];
-							}
-						}
-						if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
-						pCurrPixel += BytesPerTargetPixel;
-					}
-				}
+				const U8* pChunkEnd = pCurrPixel + BytesPerTargetPixel * ChunkPixelCount;
+				for (; pCurrPixel < pChunkEnd; pCurrPixel += BytesPerTargetPixel)
+					memcpy(pCurrPixel, &PixelValue, BytesPerTargetPixel);
 			}
-			else
+			else // Raw
 			{
-				// Raw
-				const U8 ChunkPixelCount = ChunkHeader + 1;
+				const UPTR ChunkSize = BytesPerTargetPixel * (ChunkHeader + 1);
 				if (BytesPerPixel == BytesPerTargetPixel)
 				{
-					const UPTR ChunkSize = BytesPerPixel * ChunkPixelCount;
 					if (Stream->Read(pCurrPixel, ChunkSize) != ChunkSize) return nullptr;
 					pCurrPixel += ChunkSize;
 				}
 				else
 				{
-					for (UPTR Curr = 0; Curr < ChunkPixelCount; ++Curr)
-					{
-						U32 PixelValue;
-						if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
-						pCurrPixel[0] = ((U8*)&PixelValue)[0];
-						if (BytesPerPixel > 1)
-						{
-							pCurrPixel[1] = ((U8*)&PixelValue)[1];
-							if (BytesPerPixel > 2)
-							{
-								pCurrPixel[2] = ((U8*)&PixelValue)[2];
-							}
-						}
-						if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
-						pCurrPixel += BytesPerTargetPixel;
-					}
+					const U8* pChunkEnd = pCurrPixel + ChunkSize;
+					for (; pCurrPixel < pChunkEnd; pCurrPixel += BytesPerTargetPixel)
+						if (Stream->Read(pCurrPixel, BytesPerPixel) != BytesPerPixel) return nullptr;
 				}
+			}
+		}
+
+		// It is hard to flip during decompression, separate pass is much easier to implement
+		if (FlipVertically)
+		{
+			const UPTR EndRow = Header.ImageHeight / 2;
+			for (UPTR Row = 0; Row < EndRow; ++Row)
+			{
+				U8* pRow1 = static_cast<U8*>(Data->GetPtr()) + Row * RowSize;
+				U8* pRow2 = static_cast<U8*>(Data->GetPtr()) + (Header.ImageHeight - 1 - Row) * RowSize;
+				std::swap_ranges(pRow1, pRow1 + RowSize, pRow2);
 			}
 		}
 	}
@@ -214,38 +189,46 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	{
 		if (BytesPerPixel == BytesPerTargetPixel)
 		{
-			// No conversion needed, can use data as is
-			if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
-			if (!Data || !Data->GetPtr()) // Not mapped
+			if (FlipVertically)
 			{
-				const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
+				// Only flipping required, read row by row
 				Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
-				if (Stream->Read(Data->GetPtr(), DataSize) != DataSize) return nullptr;
+				auto* pDataStart = static_cast<char*>(Data->GetPtr());
+				for (IPTR i = Header.ImageHeight - 1; i >= 0; --i)
+					if (Stream->Read(pDataStart + (RowSize * i), RowSize) != RowSize) return nullptr;
+			}
+			else
+			{
+				// No conversion needed, can use data as is. First try to map the stream.
+				// If mapping not succeeded, copy data to new buffer.
+				if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+				if (!Data || !Data->GetPtr())
+				{
+					Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+					if (Stream->Read(Data->GetPtr(), DataSize) != DataSize) return nullptr;
+				}
 			}
 		}
 		else
 		{
-			const UPTR DataSize = Header.ImageWidth * Header.ImageHeight * BytesPerTargetPixel;
 			Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
-			U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
-			UPTR PixelCount = Header.ImageWidth * Header.ImageHeight;
-			for (UPTR Curr = 0; Curr < PixelCount; ++Curr)
+			for (UPTR Row = 0; Row < Header.ImageHeight; ++Row)
 			{
-				U32 PixelValue;
-				if (Stream->Read(&PixelValue, BytesPerPixel) != BytesPerPixel) return nullptr;
-				pCurrPixel[0] = ((U8*)&PixelValue)[0];
-				if (BytesPerPixel > 1)
-				{
-					pCurrPixel[1] = ((U8*)&PixelValue)[1];
-					if (BytesPerPixel > 2)
-					{
-						pCurrPixel[2] = ((U8*)&PixelValue)[2];
-					}
-				}
-				if (BytesPerTargetPixel > 3) pCurrPixel[3] = 0xff;
-				pCurrPixel += BytesPerTargetPixel;
+				U8* pCurrPixel = static_cast<U8*>(Data->GetPtr()) + (FlipVertically ? (Header.ImageHeight - 1 - Row) : Row) * RowSize;
+				const U8* pRowEnd = pCurrPixel + Header.ImageWidth * BytesPerTargetPixel;
+				for (; pCurrPixel < pRowEnd; pCurrPixel += BytesPerTargetPixel)
+					if (Stream->Read(pCurrPixel, BytesPerPixel) != BytesPerPixel) return nullptr;
 			}
 		}
+	}
+
+	// If alpha is not present in a file but exists in a destination buffer, fill it with 255
+	if (BytesPerTargetPixel == 4 && BytesPerPixel < 4)
+	{
+		U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
+		const U8* pDataEnd = pCurrPixel + DataSize;
+		for (; pCurrPixel < pDataEnd; pCurrPixel += 4)
+			pCurrPixel[3] = 0xff;
 	}
 
 	Render::PTextureData TexData = n_new(Render::CTextureData);
@@ -253,7 +236,7 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 	TexData->MipDataProvided = false;
 	TexData->Desc = std::move(TexDesc);
 
-	return TexData.Get();
+	return TexData;
 }
 //---------------------------------------------------------------------
 
