@@ -5,6 +5,7 @@ Effects
 	MetallicRoughnessAlphaTestCulled = "Data:effects/pbr_atest.eff"
 	//MetallicRoughnessAlphaCulled = "Data:effects/pbr_alpha.eff"
 	MetallicRoughnessTerrain = "Data:effects/pbr_splatting.eff"
+	MetallicRoughnessSkybox = "Data:effects/skybox.eff"
 
 	// FIXME: not really double-sided, added for error suppression
 	MetallicRoughnessOpaqueDoubleSided = "Data:effects/pbr_opaque.eff"
@@ -17,5 +18,6 @@ Params
 	NormalTexture = "TexNormalMap"
 	TerrainGeometryNormalTexture = "TexGeometryNormalMap"
 	SplatMapTexture = "TexSplatMap"
+	SkyboxTexture = "TexCubeMap"
 	PBRTextureSampler = "LinearSampler"
 }

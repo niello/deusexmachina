@@ -8,6 +8,7 @@ set(DEM_TOOLS_COMMON_HEADERS
 	ParamsUtils.h
 	StringID.h
 	StringIDStorage.h
+	Subprocess.h
 	Type.h
 	Utils.h
 	ValueTable.h
@@ -26,6 +27,7 @@ set(DEM_TOOLS_COMMON_SOURCES
 	ParamsUtils.cpp
 	StringID.cpp
 	StringIDStorage.cpp
+	SubprocessWin32.cpp
 	Utils.cpp
 	ValueTable.cpp
 	Render/RenderEnums.cpp

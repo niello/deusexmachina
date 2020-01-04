@@ -2,13 +2,14 @@
 #include <Render/ShaderMetaCommon.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
+#include <Subprocess.h>
 #include <CLI11.hpp>
 
 namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/sky
+// -s src/sky --path Data ../../../content --ibl -b -t
 
 class CSkyboxTool : public CContentForgeTool
 {
@@ -126,29 +127,99 @@ public:
 
 		const std::string TaskName = Task.TaskID.ToString();
 
-		// Copy skybox cubemap to resources
+		std::string SkyboxFileName = Task.SrcFilePath.filename().generic_string();
+		ToLower(SkyboxFileName);
 
-		// Write material file
+		// Generate material
+
+		std::string MaterialID;
+
+		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
+
+		auto EffectIt = _EffectsByType.find("MetallicRoughnessSkybox");
+		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
+		{
+			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
+			return false;
+		}
+
+		CMaterialParams MtlParamTable;
+		auto Path = ResolvePathAliases(EffectIt->second).generic_string();
+		Task.Log.LogDebug("Opening effect " + Path);
+		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
+		{
+			Task.Log.LogError("Error reading material param table for effect " + Path);
+			return false;
+		}
+
+		Data::CParams MtlParams;
+
+		const auto& SkyboxTextureID = GetEffectParamID("SkyboxTexture");
+		if (MtlParamTable.HasResource(SkyboxTextureID))
+		{
+			auto DestPath = TexturePath / SkyboxFileName;
+			fs::create_directories(DestPath.parent_path());
+			std::error_code ec;
+			if (!fs::copy_file(Task.SrcFilePath, DestPath, fs::copy_options::overwrite_existing, ec))
+			{
+				Task.Log.LogError("Error copying texture from " + Task.SrcFilePath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
+				return false;
+			}
+
+			MtlParams.emplace_back(CStrID(SkyboxTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
+		}
+		else
+		{
+			Task.Log.LogError("No SkyboxTexture (" + SkyboxTextureID + ") parameter found in a material");
+			return false;
+		}
+
+		{
+			auto DestPath = GetPath(Task.Params, "MaterialOutput") / (TaskName + ".mtl");
+
+			fs::create_directories(DestPath.parent_path());
+
+			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+
+			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log)) return false;
+
+			MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		}
 
 		// Calculate IBL resources
+
+		if (_CalcIBL)
+		{
+			// See https://seblagarde.wordpress.com/2012/06/10/amd-cubemapgen-for-physically-based-rendering/
+
+			// Calculate IEM
+			//!!!must return 0!
+
+			// Calculate PMREM (Mipmap mode)
+			//!!!must return 0!
+		}
 
 		// Write scene file
 
 		Data::CParams Result;
 
 		Data::CDataArray Attributes;
+
 		{
 			Data::CParams Attribute;
-			Attribute.emplace_back(CStrID("Class"), 'SKBA'); //std::string("Frame::CSkyboxAttribute"));
+			Attribute.emplace_back(CStrID("Class"), 'SKBA'); // Frame::CSkyboxAttribute
+			Attribute.emplace_back(CStrID("Material"), MaterialID);
+			Attributes.push_back(std::move(Attribute));
+		}
+
+		if (_CalcIBL)
+		{
+			Data::CParams Attribute;
+			Attribute.emplace_back(CStrID("Class"), 'NAAL'); // Frame::CAmbientLightAttribute
 			//Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
 			Attributes.push_back(std::move(Attribute));
 		}
-		{
-			Data::CParams Attribute;
-			Attribute.emplace_back(CStrID("Class"), 'NAAL'); //std::string("Frame::CAmbientLightAttribute"));
-			//Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
-			Attributes.push_back(std::move(Attribute));
-		}
+
 		Result.emplace_back(CStrID("Attrs"), std::move(Attributes));
 
 		const fs::path OutPath = GetPath(Task.Params, "Output");

@@ -434,7 +434,7 @@ public:
 		}
 
 		// Generate material
-		
+
 		std::string MaterialID;
 
 		const auto TexturePath = GetPath(Task.Params, "TextureOutput");
