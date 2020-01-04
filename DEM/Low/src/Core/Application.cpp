@@ -39,6 +39,7 @@
 #include <Frame/ModelAttribute.h>
 #include <Frame/TerrainAttribute.h>
 #include <Frame/SkyboxAttribute.h>
+#include <Frame/AmbientLightAttribute.h>
 #include <Render/SkinInfo.h>
 #include <Render/SkinInfoLoaderSKN.h>
 #include <Render/MeshData.h>
@@ -616,6 +617,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	Frame::CModelAttribute::ForceFactoryRegistration();
 	Frame::CTerrainAttribute::ForceFactoryRegistration();
 	Frame::CSkyboxAttribute::ForceFactoryRegistration();
+	Frame::CAmbientLightAttribute::ForceFactoryRegistration();
 	Render::CModel::ForceFactoryRegistration();
 	Render::CModelRenderer::ForceFactoryRegistration();
 	Render::CSkybox::ForceFactoryRegistration();

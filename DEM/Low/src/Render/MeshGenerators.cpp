@@ -101,6 +101,9 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 PResourceObject CMeshGeneratorSkybox::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
+	MeshData->IndexType = Render::Index_16;
+	MeshData->VertexCount = 24;
+	MeshData->IndexCount = 36;
 
 	Render::CVertexComponent VC;
 	VC.Format = Render::VCFmt_Float32_3;

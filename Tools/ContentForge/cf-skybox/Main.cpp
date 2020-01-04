@@ -188,15 +188,57 @@ public:
 
 		// Calculate IBL resources
 
+		std::string IEMID, PMREMID;
+
 		if (_CalcIBL)
 		{
 			// See https://seblagarde.wordpress.com/2012/06/10/amd-cubemapgen-for-physically-based-rendering/
 
 			// Calculate IEM
-			//!!!must return 0!
+
+			auto IEMPath = TexturePath / (fs::path(SkyboxFileName).filename().replace_extension().string() + "_iem.dds");
+			const int IEMDimensionSize = ParamsUtils::GetParam(Task.Params, "IEMDimensionSize", 128);
+			const std::string IEMFormat = ParamsUtils::GetParam(Task.Params, "IEMFormat", std::string("A8R8G8B8"));
+
+			const std::string IEMCmdLine = "cubemapgen/mcmg.exe -IrradianceCubemap -importCubeDDS:\"" + Task.SrcFilePath.string() +
+				"\" -exportCubeDDS -exportFilename:\"" + IEMPath.string() + "\" -exportSize:" + std::to_string(IEMDimensionSize) +
+				" -exportPixelFormat:" + IEMFormat + " -consoleErrorOutput -exit";
+			if (RunSubprocess(IEMCmdLine, &Task.Log) == 0)
+			{
+				IEMID = _ResourceRoot + fs::relative(IEMPath, _RootDir).generic_string();
+			}
+			else
+			{
+				Task.Log.LogError("Error generating irradiance environment map (IEM)");
+				return false;
+			}
 
 			// Calculate PMREM (Mipmap mode)
-			//!!!must return 0!
+
+			auto PMREMPath = TexturePath / (fs::path(SkyboxFileName).filename().replace_extension().string() + "_pmrem.dds");
+			const int PMREMDimensionSize = ParamsUtils::GetParam(Task.Params, "PMREMDimensionSize", 256);
+			const std::string PMREMFormat = ParamsUtils::GetParam(Task.Params, "PMREMFormat", std::string("A8R8G8B8"));
+			const int PMREMMipCount = ParamsUtils::GetParam(Task.Params, "PMREMMipCount", 7);
+			const float PMREMGlossScale = ParamsUtils::GetParam(Task.Params, "PMREMGlossScale", 10.f);
+			const float PMREMGlossBias = ParamsUtils::GetParam(Task.Params, "PMREMGlossBias", 1.f);
+
+			const std::string PMREMCmdLine = "cubemapgen/mcmg.exe -filterTech:CosinePower -CosinePowerMipmapChainMode:Mipmap"
+				" -NumMipmap:" + std::to_string(PMREMMipCount) +
+				" -GlossScale:" + std::to_string(PMREMGlossScale) +
+				" -GlossBias:" + std::to_string(PMREMGlossBias) +
+				" -importCubeDDS:\"" + Task.SrcFilePath.string() + "\""
+				" -LightingModel:PhongBRDF -ExcludeBase -solidAngleWeighting -edgeFixupTech:Warp -importDegamma:1.0 -exportGamma:1.0 "
+				" -exportCubeDDS -exportFilename:\"" + PMREMPath.string() + "\" -exportSize:" + std::to_string(PMREMDimensionSize) +
+				" -exportPixelFormat:A8R8G8B8 -exportMipChain -consoleErrorOutput -exit";
+			if (RunSubprocess(PMREMCmdLine, &Task.Log) == 0)
+			{
+				PMREMID = _ResourceRoot + fs::relative(PMREMPath, _RootDir).generic_string();
+			}
+			else
+			{
+				Task.Log.LogError("Error generating prefiltered mipmaped radiance environment map (PMREM)");
+				return false;
+			}
 		}
 
 		// Write scene file
@@ -216,7 +258,8 @@ public:
 		{
 			Data::CParams Attribute;
 			Attribute.emplace_back(CStrID("Class"), 'NAAL'); // Frame::CAmbientLightAttribute
-			//Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
+			Attribute.emplace_back(CStrID("IrradianceMap"), IEMID);
+			Attribute.emplace_back(CStrID("RadianceEnvMap"), PMREMID);
 			Attributes.push_back(std::move(Attribute));
 		}
 
