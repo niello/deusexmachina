@@ -203,6 +203,13 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 }
 //---------------------------------------------------------------------
 
+void CView::Update(float dt)
+{
+	if (_GraphicsMgr) _GraphicsMgr->Update(dt);
+	if (UIContext) UIContext->Update(dt);
+}
+//---------------------------------------------------------------------
+
 bool CView::Render()
 {
 	if (!_RenderPath) FAIL;
