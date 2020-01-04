@@ -5,9 +5,11 @@ SOURCE_EXT_LIST = ['.cpp', '.cc', '.c', '.cxx']
 HEADER_EXT_LIST = ['.h', '.inc', '.hpp', '.inl']
 
 
-def update_src_lists(var_name, out_file_path, source_folder, append=False,
+def update_src_lists(var_name, out_file_path, source_folder=None, append=False,
                      root_folder=None, source_ext_list=SOURCE_EXT_LIST,
                      header_ext_list=HEADER_EXT_LIST):
+    if source_folder is None:
+        source_folder = os.path.dirname(out_file_path)
     if root_folder is None:
         root_folder = os.path.commonprefix(
             [os.path.dirname(out_file_path), source_folder])
