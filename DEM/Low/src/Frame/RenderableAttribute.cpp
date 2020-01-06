@@ -9,6 +9,8 @@ RTTI_CLASS_IMPL(Frame::CRenderableAttribute, Scene::CNodeAttribute);
 
 void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 {
+	if (!Renderable) return;
+
 	CAABB AABB;
 	const bool AABBIsValid = Renderable->GetLocalAABB(AABB);
 	const bool SPSChanged = (pSPS != &SPS);

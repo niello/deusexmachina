@@ -184,9 +184,7 @@ bool CModelRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Co
 // single-pass tech, than that the same material will be used with many different techs. We have great chances
 // to set render state only once as our tech is single-pass, and to render many materials without switching it,
 // just rebinding constants, resources and samplers.
-CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Context,
-													   CArray<CRenderNode*>& RenderQueue,
-													   CArray<CRenderNode*>::CIterator ItCurr)
+CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
@@ -214,7 +212,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 	static const CStrID sidLightIndices("LightIndices");
 	const I32 EMPTY_LIGHT_INDEX = -1;
 
-	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
+	CRenderQueueIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
 	{
 		CRenderNode* pRenderNode = *ItCurr;
@@ -256,7 +254,7 @@ CArray<CRenderNode*>::CIterator CModelRenderer::Render(const CRenderContext& Con
 		UPTR LightCount = pRenderNode->LightCount;
 
 		bool HardwareInstancing = false;
-		CArray<CRenderNode*>::CIterator ItInstEnd = ItCurr + 1;
+		CRenderQueueIterator ItInstEnd = ItCurr + 1;
 		if (!pRenderNode->pSkinPalette)
 		{
 			while (ItInstEnd != ItEnd &&

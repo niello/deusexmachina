@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_RENDER_NODE_H__
-#define __DEM_L1_RENDER_NODE_H__
-
 #include <Data/RefCounted.h>
 #include <Render/RenderFwd.h>
 #include <Math/Matrix44.h>
@@ -56,5 +53,3 @@ struct CRenderNodeContext
 };
 
 }
-
-#endif

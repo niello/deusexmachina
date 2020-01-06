@@ -1,6 +1,7 @@
 #pragma once
 #include <Render/RenderFwd.h>
 #include <Render/RenderNode.h>
+#include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
@@ -84,7 +85,7 @@ public:
 	Render::PSampler							TrilinearCubeSampler; // For IBL
 
 	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
-	CArray<Render::CRenderNode*>				RenderQueue;	// Cached to avoid per-frame allocations
+	Render::CRenderQueue        				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
 	~CView();

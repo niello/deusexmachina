@@ -637,11 +637,11 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 }
 //---------------------------------------------------------------------
 
-CArray<CRenderNode*>::CIterator CTerrainRenderer::Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr)
+CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
-	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
+	CRenderQueueIterator ItEnd = RenderQueue.End();
 
 	if (!GPU.CheckCaps(Caps_VSTexFiltering_Linear))
 	{

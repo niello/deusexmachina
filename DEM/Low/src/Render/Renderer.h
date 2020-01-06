@@ -14,6 +14,8 @@ struct CRenderNode;
 struct CRenderNodeContext;
 struct CLightRecord;
 class CGPUDriver;
+typedef CArray<CRenderNode*> CRenderQueue;
+typedef CArray<CRenderNode*>::CIterator CRenderQueueIterator;
 
 class IRenderer: public Core::CRTTIBaseClass
 {
@@ -31,11 +33,9 @@ public:
 		bool					UsesGlobalLightBuffer;
 	};
 
-	virtual ~IRenderer() {}
-
-	virtual bool							Init(bool LightingEnabled) = 0;
-	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) = 0;
-	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr) = 0;
+	virtual bool                 Init(bool LightingEnabled) = 0;
+	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) = 0;
+	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) = 0;
 };
 
 }

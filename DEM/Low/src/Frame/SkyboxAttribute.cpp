@@ -35,7 +35,6 @@ bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	//!!!double searching! Here and in ResMgr.CreateMesh!
 	CStrID MeshUID("#Mesh_Skybox");
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
 	{

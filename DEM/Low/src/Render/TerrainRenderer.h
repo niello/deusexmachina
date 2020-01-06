@@ -96,7 +96,7 @@ public:
 
 	virtual bool							Init(bool LightingEnabled);
 	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
-	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr);
+	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr);
 };
 
 }

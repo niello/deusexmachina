@@ -26,6 +26,8 @@ namespace Frame
 {
 FACTORY_CLASS_IMPL(Frame::CRenderPhaseGeometry, 'PHGE', Frame::CRenderPhase);
 
+constexpr UPTR AlphaBlendStartOrder = 40;
+
 struct CRenderQueueCmp_FrontToBack
 {
 	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
@@ -41,7 +43,7 @@ struct CRenderQueueCmp_Material
 	inline bool operator()(const Render::CRenderNode* a, const Render::CRenderNode* b) const
 	{
 		if (a->Order != b->Order) return a->Order < b->Order;
-		if (a->Order >= 40)
+		if (a->Order >= AlphaBlendStartOrder)
 		{
 			return a->SqDistanceToCamera > b->SqDistanceToCamera;
 		}
@@ -57,7 +59,7 @@ struct CRenderQueueCmp_Material
 };
 //---------------------------------------------------------------------
 
-CRenderPhaseGeometry::CRenderPhaseGeometry() {}
+CRenderPhaseGeometry::CRenderPhaseGeometry() = default;
 //---------------------------------------------------------------------
 
 CRenderPhaseGeometry::~CRenderPhaseGeometry()
@@ -77,11 +79,12 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
 	if (!VisibleObjects.GetCount()) OK;
+	OK;
 
 	const vector3& CameraPos = View.GetCamera()->GetPosition();
 	const bool CalcScreenSize = View.RequiresObjectScreenSize();
 
-	CArray<Render::CRenderNode*>& RenderQueue = View.RenderQueue;
+	auto& RenderQueue = View.RenderQueue;
 	RenderQueue.Resize(VisibleObjects.GetCount());
 
 	n_assert_dbg(!View.LightIndices.GetCount());
@@ -174,7 +177,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 			case Render::EffectType_Opaque:		pNode->Order = 10; break;
 			case Render::EffectType_AlphaTest:	pNode->Order = 20; break;
 			case Render::EffectType_Skybox:		pNode->Order = 30; break;
-			case Render::EffectType_AlphaBlend:	pNode->Order = 40; break;
+			case Render::EffectType_AlphaBlend:	pNode->Order = AlphaBlendStartOrder; break;
 			default:							pNode->Order = 100; break;
 		}
 	}
@@ -295,8 +298,8 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		Ctx.UsesGlobalLightBuffer = false;
 	}
 
-	CArray<Render::CRenderNode*>::CIterator ItCurr = RenderQueue.Begin();
-	CArray<Render::CRenderNode*>::CIterator ItEnd = RenderQueue.End();
+	Render::CRenderQueueIterator ItCurr = RenderQueue.Begin();
+	Render::CRenderQueueIterator ItEnd = RenderQueue.End();
 	while (ItCurr != ItEnd)
 		ItCurr = (*ItCurr)->pRenderer->Render(Ctx, RenderQueue, ItCurr);
 

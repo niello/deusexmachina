@@ -1,5 +1,4 @@
 #include "SkyboxRenderer.h"
-
 #include <Render/GPUDriver.h>
 #include <Render/RenderNode.h>
 #include <Render/Skybox.h>
@@ -19,7 +18,7 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 	CSkybox* pSkybox = Node.pRenderable->As<CSkybox>();
 	n_assert_dbg(pSkybox);
 
-	CMaterial* pMaterial = pSkybox->Material; //!!!Get by MaterialLOD / quality level!
+	CMaterial* pMaterial = pSkybox->Material.Get(); //!!!Get by MaterialLOD / quality level!
 	if (!pMaterial) FAIL;
 
 	CEffect* pEffect = pMaterial->GetEffect();
@@ -49,11 +48,11 @@ bool CSkyboxRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& C
 }
 //---------------------------------------------------------------------
 
-CArray<CRenderNode*>::CIterator CSkyboxRenderer::Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr)
+CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr)
 {
 	CGPUDriver& GPU = *Context.pGPU;
 
-	CArray<CRenderNode*>::CIterator ItEnd = RenderQueue.End();
+	CRenderQueueIterator ItEnd = RenderQueue.End();
 
 	const CMaterial* pCurrMaterial = nullptr;
 	const CTechnique* pCurrTech = nullptr;

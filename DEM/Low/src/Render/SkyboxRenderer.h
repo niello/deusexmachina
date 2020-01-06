@@ -5,7 +5,6 @@
 
 namespace Render
 {
-class CSkybox;
 
 class CSkyboxRenderer: public IRenderer
 {
@@ -15,9 +14,9 @@ public:
 
 	CSkyboxRenderer();
 
-	virtual bool							Init(bool LightingEnabled) { OK; }
-	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
-	virtual CArray<CRenderNode*>::CIterator	Render(const CRenderContext& Context, CArray<CRenderNode*>& RenderQueue, CArray<CRenderNode*>::CIterator ItCurr);
+	virtual bool                 Init(bool LightingEnabled) { OK; }
+	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
+	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr);
 };
 
 }
