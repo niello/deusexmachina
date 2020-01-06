@@ -278,17 +278,19 @@ void CD3D11GPUDriver::Release()
 	CurrSS.SetSize(0);
 	CurrRT.SetSize(0);
 
+	CurrDS = nullptr;
+	CurrIB = nullptr;
 	CurrRS = nullptr;
 	NewRS = nullptr;
 	CurrVL = nullptr;
 
 	//!!!ReleaseQueries();
 
-	pD3DImmContext->ClearState();
-
 //#if (DEM_RENDER_DEBUG != 0)
 //	pD3DImmContext->Flush();
 //#endif
+
+	pD3DImmContext->ClearState();
 
 	SAFE_RELEASE(pD3DImmContext);
 

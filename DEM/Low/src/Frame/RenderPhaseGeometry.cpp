@@ -79,7 +79,6 @@ bool CRenderPhaseGeometry::Render(CView& View)
 	CArray<Scene::CNodeAttribute*>& VisibleObjects = View.GetVisibilityCache();
 
 	if (!VisibleObjects.GetCount()) OK;
-	OK;
 
 	const vector3& CameraPos = View.GetCamera()->GetPosition();
 	const bool CalcScreenSize = View.RequiresObjectScreenSize();
