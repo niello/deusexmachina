@@ -84,34 +84,27 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 		if (!ValidateResources(*ResMgr.GetResourceManager()) || !pTerrain->CDLODData) FAIL;
 	}
 
+	const auto PatchSize = pTerrain->CDLODData->GetPatchSize();
+	if (!IsPow2(PatchSize) || PatchSize < 4) FAIL;
+
 	pTerrain->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
 	pTerrain->HeightMap = HeightMapUID ? ResMgr.GetTexture(HeightMapUID, Render::Access_GPU_Read) : nullptr;
 
-	U32 PatchSize = pTerrain->CDLODData->GetPatchSize();
-	if (IsPow2(PatchSize) && PatchSize >= 4)
-	{
-		CString PatchName;
-		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
+	CString PatchName;
+	PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
+	CStrID MeshUID(PatchName);
+	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
+		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
 
-		//!!!double searching! Here and in GPU->CreateMesh!
-		CStrID MeshUID(PatchName);
-		if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
-		{
-			ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
-		}
+	pTerrain->PatchMesh = ResMgr.GetMesh(MeshUID);
 
-		pTerrain->PatchMesh = ResMgr.GetMesh(MeshUID);
+	const auto QPatchSize = (PatchSize >> 1);
+	PatchName.Format("#Mesh_Patch%dx%d", QPatchSize, QPatchSize);
+	CStrID QuarterMeshUID(PatchName);
+	if (!ResMgr.GetResourceManager()->FindResource(QuarterMeshUID))
+		ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID, n_new(Resources::CMeshGeneratorQuadPatch(QPatchSize)));
 
-		PatchSize >>= 1;
-		PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
-		CStrID QuarterMeshUID(PatchName);
-		if (!ResMgr.GetResourceManager()->FindResource(QuarterMeshUID))
-		{
-			ResMgr.GetResourceManager()->RegisterResource(QuarterMeshUID, n_new(Resources::CMeshGeneratorQuadPatch(PatchSize)));
-		}
-
-		pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
-	}
+	pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
 
 	OK;
 }

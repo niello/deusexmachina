@@ -174,13 +174,13 @@ bool CTerrainRenderer::CheckNodeFrustumIntersection(const CLightTestArgs& Args, 
 
 bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context)
 {
-	CTerrain* pTerrain = Node.pRenderable->As<CTerrain>();
+	const CTerrain* pTerrain = Node.pRenderable->As<CTerrain>();
 	n_assert_dbg(pTerrain);
 
 	CMaterial* pMaterial = pTerrain->GetMaterial(); //!!!Get by MaterialLOD!
 	if (!pMaterial) FAIL;
 
-	CEffect* pEffect = pMaterial->GetEffect();
+	const CEffect* pEffect = pMaterial->GetEffect();
 	EEffectType EffType = pEffect->GetType();
 	for (UPTR i = 0; i < Context.EffectOverrides.GetCount(); ++i)
 	{
