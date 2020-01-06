@@ -20,7 +20,7 @@ protected:
 
 public:
 
-	virtual ~CD3D11Sampler() { InternalDestroy(); }
+	virtual ~CD3D11Sampler() override { InternalDestroy(); }
 
 	bool				Create(ID3D11SamplerState* pSampler); 
 	virtual void		Destroy() { InternalDestroy(); }

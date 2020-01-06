@@ -29,7 +29,7 @@ public:
 	float					InvSplatSizeZ = 1.f;
 
 	CTerrain();
-	virtual ~CTerrain();
+	virtual ~CTerrain() override;
 
 	virtual PRenderable Clone() override;
 	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD) const override;

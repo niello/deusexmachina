@@ -283,6 +283,7 @@ void CD3D11GPUDriver::Release()
 	CurrRS = nullptr;
 	NewRS = nullptr;
 	CurrVL = nullptr;
+	pCurrIL = nullptr;
 
 	//!!!ReleaseQueries();
 
@@ -2337,7 +2338,11 @@ PSampler CD3D11GPUDriver::CreateSampler(const CSamplerDesc& Desc)
 	for (UPTR i = 0; i < Samplers.GetCount(); ++i)
 	{
 		CD3D11Sampler* pSamp = Samplers[i].Get();
-		if (pSamp->GetD3DSampler() == pD3DSamplerState) return pSamp; //???release pD3DSamplerState?
+		if (pSamp->GetD3DSampler() == pD3DSamplerState)
+		{
+			pD3DSamplerState->Release();
+			return pSamp;
+		}
 	}
 
 	PD3D11Sampler Samp = n_new(CD3D11Sampler);

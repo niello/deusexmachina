@@ -92,11 +92,11 @@ protected:
 public:
 
 	CTerrainRenderer();
-	virtual ~CTerrainRenderer();
+	virtual ~CTerrainRenderer() override;
 
-	virtual bool							Init(bool LightingEnabled);
-	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
-	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr);
+	virtual bool                 Init(bool LightingEnabled) override;
+	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) override;
+	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) override;
 };
 
 }
