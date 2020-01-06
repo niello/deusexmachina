@@ -201,7 +201,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	if (!Node.pTech) FAIL;
 
 	Node.pMesh = pTerrain->GetPatchMesh();
-	Node.pGroup = pTerrain->GetPatchMesh()->GetGroup(0, 0); // For sorting, different terrain objects with the same mesh will be rendered sequentially
+	Node.pGroup = Node.pMesh ? pTerrain->GetPatchMesh()->GetGroup(0, 0) : nullptr; // For sorting, different terrain objects with the same mesh will be rendered sequentially
 
 	U8 LightCount = 0;
 
@@ -686,6 +686,13 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		if (pRenderNode->pRenderer != this) return ItCurr;
 
 		CTerrain* pTerrain = pRenderNode->pRenderable->As<CTerrain>();
+
+		if (!pTerrain->GetPatchMesh() || !pTerrain->GetQuarterPatchMesh() || !pTerrain->GetCDLODData())
+		{
+			//::Sys::Error("CTerrainRenderer::Render() > terrain object resources are not initialized!");
+			++ItCurr;
+			continue;
+		}
 
 		constexpr float VisibilityRange = 1000.f;
 		constexpr float MorphStartRatio = 0.7f;

@@ -25,6 +25,7 @@ PRenderable CTerrain::Clone()
 
 bool CTerrain::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
+	if (!CDLODData) FAIL;
 	OutBox = CDLODData->GetAABB();
 	OK;
 }

@@ -81,7 +81,7 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	if (!pTerrain->CDLODData)
 	{
 		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
-		if (!ValidateResources(*ResMgr.GetResourceManager())) FAIL;
+		if (!ValidateResources(*ResMgr.GetResourceManager()) || !pTerrain->CDLODData) FAIL;
 	}
 
 	pTerrain->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
