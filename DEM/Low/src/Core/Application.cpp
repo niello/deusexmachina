@@ -300,14 +300,7 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 	if (!CurrentUserID.IsValid())
 	{
 		// All unclaimed input is assigned to the first user
-		// FIXME: is per-end-application?
-		CArray<Input::IInputDevice*> InputDevices;
-		UnclaimedInput->GetConnectedDevices(InputDevices);
-		for (auto pDevice : InputDevices)
-		{
-			UnclaimedInput->DisconnectFromDevice(pDevice);
-			ActiveUsers.back().Input->ConnectToDevice(pDevice);
-		}
+		UnclaimedInput->TransferAllDevices(ActiveUsers.back().Input.get());
 
 		CurrentUserID = UserID;
 
@@ -330,13 +323,7 @@ void CApplication::DeactivateUser(CStrID UserID)
 		ParamsUtils::SaveParamsToHRD(GetUserSettingsFilePath(WritablePath, UserID), *It->Settings);
 
 	// All user input is returned to unclaimed
-	CArray<Input::IInputDevice*> InputDevices;
-	It->Input->GetConnectedDevices(InputDevices);
-	for (auto pDevice : InputDevices)
-	{
-		It->Input->DisconnectFromDevice(pDevice);
-		UnclaimedInput->ConnectToDevice(pDevice);
-	}
+	It->Input->TransferAllDevices(UnclaimedInput.get());
 
 	if (CurrentUserID == UserID)
 	{

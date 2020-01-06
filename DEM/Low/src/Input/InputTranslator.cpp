@@ -144,6 +144,8 @@ void CInputTranslator::DisableContext(CStrID ID)
 
 void CInputTranslator::ConnectToDevice(IInputDevice* pDevice, U16 Priority)
 {
+	if (!pDevice || IsConnectedToDevice(pDevice)) return;
+
 	if (pDevice->GetAxisCount() > 0)
 	{
 		Events::PSub NewSub;
@@ -190,6 +192,28 @@ UPTR CInputTranslator::GetConnectedDevices(CArray<IInputDevice*>& OutDevices) co
 			OutDevices.Add(pDevice);
 	}
 	return OutDevices.GetCount() - PrevCount;
+}
+//---------------------------------------------------------------------
+
+bool CInputTranslator::IsConnectedToDevice(const IInputDevice* pDevice) const
+{
+	for (const auto& Sub : DeviceSubs)
+		if (Sub->GetDispatcher() == pDevice)
+			return true;
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+void CInputTranslator::TransferAllDevices(CInputTranslator* pNewOwner)
+{
+	if (pNewOwner)
+	{
+		for (const auto& Sub : DeviceSubs)
+			pNewOwner->ConnectToDevice(static_cast<IInputDevice*>(Sub->GetDispatcher()));
+	}
+
+	DeviceSubs.Clear();
 }
 //---------------------------------------------------------------------
 

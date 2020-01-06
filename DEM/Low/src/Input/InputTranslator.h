@@ -52,7 +52,7 @@ public:
 	bool			CreateContext(CStrID ID, bool Bypass = false);
 	void			DestroyContext(CStrID ID);
 	bool			HasContext(CStrID ID) const;
-	CControlLayout*	GetContextLayout(CStrID ID);	// Intentionally editable
+	CControlLayout* GetContextLayout(CStrID ID);	// Intentionally editable
 	void			EnableContext(CStrID ID);
 	void			DisableContext(CStrID ID);
 	void			EnableAllContexts();
@@ -62,6 +62,8 @@ public:
 	void			ConnectToDevice(IInputDevice* pDevice, U16 Priority = 100);
 	void			DisconnectFromDevice(const IInputDevice* pDevice);
 	UPTR			GetConnectedDevices(CArray<IInputDevice*>& OutDevices) const;
+	bool            IsConnectedToDevice(const IInputDevice* pDevice) const;
+	void            TransferAllDevices(CInputTranslator* pNewOwner);
 
 	void			UpdateTime(float ElapsedTime);
 	void			FireQueuedEvents(/*max count*/);

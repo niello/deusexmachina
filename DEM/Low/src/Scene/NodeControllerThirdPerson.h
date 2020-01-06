@@ -27,18 +27,17 @@ protected:
 
 public:
 
-	CThirdPersonCameraController();
-
-	//virtual bool	ApplyTo(Math::CTransformSRT& DestTfm);
-
 	void			SetVerticalAngleLimits(float Min, float Max);
 	void			SetDistanceLimits(float Min, float Max);
-	void			SetAngles(float Vertical, float Horizontal);
+
+	void			SetVerticalAngle(float AngleRad);
+	void			SetHorizontalAngle(float AngleRad);
 	void			SetDirection(const vector3& Dir);
 	void			SetDistance(float Value);
 	void			SetCOI(const vector3& NewCOI);
-	void			OrbitVertical(float Angle);
-	void			OrbitHorizontal(float Angle);
+
+	void			OrbitVertical(float AngleRad);
+	void			OrbitHorizontal(float AngleRad);
 	void			Zoom(float Amount);
 	void			Move(const vector3& Translation);
 
@@ -46,17 +45,11 @@ public:
 	float			GetVerticalAngleMax() const { return MaxVertAngle; }
 	float			GetDistanceMin() const { return MinDistance; }
 	float			GetDistanceMax() const { return MaxDistance; }
-	const CPolar&	GetAngles() const {return Angles; }
+	float           GetVerticalAngle() const {return Angles.Theta; }
+	float           GetHorizontalAngle() const {return Angles.Phi; }
 	float			GetDistance() const {return Distance; }
 	const vector3&	GetCOI() const { return COI; }
 };
-
-inline CThirdPersonCameraController::CThirdPersonCameraController()
-{
-	//Flags.Set(LocalSpace); // For now, later mb world space + offset + position of target node
-	//Channels.Set(Tfm_Translation | Tfm_Rotation);
-}
-//---------------------------------------------------------------------
 
 inline void CThirdPersonCameraController::SetVerticalAngleLimits(float Min, float Max)
 {
@@ -78,10 +71,16 @@ inline void CThirdPersonCameraController::SetDistanceLimits(float Min, float Max
 }
 //---------------------------------------------------------------------
 
-inline void CThirdPersonCameraController::SetAngles(float Vertical, float Horizontal)
+void CThirdPersonCameraController::SetVerticalAngle(float AngleRad)
 {
-	Angles.Theta = std::clamp(Vertical, MinVertAngle, MaxVertAngle);
-	Angles.Phi = Horizontal;
+	Angles.Theta = std::clamp(AngleRad, MinVertAngle, MaxVertAngle);
+	Dirty = true;
+}
+//---------------------------------------------------------------------
+
+void CThirdPersonCameraController::SetHorizontalAngle(float AngleRad)
+{
+	Angles.Phi = AngleRad;
 	Dirty = true;
 }
 //---------------------------------------------------------------------
