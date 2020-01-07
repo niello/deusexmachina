@@ -63,7 +63,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h
-	DEM/Game/src/Scene/CameraManager.h
 	DEM/Game/src/Scene/PropSceneNode.h
 	DEM/Game/src/Scene/Events/SetTransform.h
 	DEM/Game/src/Scripting/EntityScriptObject.h
@@ -131,7 +130,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp
-	DEM/Game/src/Scene/CameraManager.cpp
 	DEM/Game/src/Scene/PropSceneNode.cpp
 	DEM/Game/src/Scene/PropSceneNodeSI.cpp
 	DEM/Game/src/Scene/Events/SetTransform.cpp

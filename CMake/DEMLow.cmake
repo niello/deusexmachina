@@ -73,6 +73,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Events/Subscription.h
 	DEM/Low/src/Frame/AmbientLightAttribute.h
 	DEM/Low/src/Frame/CameraAttribute.h
+	DEM/Low/src/Frame/CameraController.h
 	DEM/Low/src/Frame/GraphicsResourceManager.h
 	DEM/Low/src/Frame/LightAttribute.h
 	DEM/Low/src/Frame/ModelAttribute.h
@@ -252,7 +253,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Resources/ResourceObject.h
 	DEM/Low/src/Scene/LODGroup.h
 	DEM/Low/src/Scene/NodeAttribute.h
-	DEM/Low/src/Scene/NodeControllerThirdPerson.h
 	DEM/Low/src/Scene/NodeVisitor.h
 	DEM/Low/src/Scene/SceneFwd.h
 	DEM/Low/src/Scene/SceneNode.h
@@ -342,6 +342,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Events/Subscription.cpp
 	DEM/Low/src/Frame/AmbientLightAttribute.cpp
 	DEM/Low/src/Frame/CameraAttribute.cpp
+	DEM/Low/src/Frame/CameraController.cpp
 	DEM/Low/src/Frame/GraphicsResourceManager.cpp
 	DEM/Low/src/Frame/LightAttribute.cpp
 	DEM/Low/src/Frame/ModelAttribute.cpp
@@ -485,7 +486,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Resources/ResourceObject.cpp
 	DEM/Low/src/Scene/LODGroup.cpp
 	DEM/Low/src/Scene/NodeAttribute.cpp
-	DEM/Low/src/Scene/NodeControllerThirdPerson.cpp
 	DEM/Low/src/Scene/SceneNode.cpp
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp
 	DEM/Low/src/Scene/SceneNodeRenderDebug.cpp
