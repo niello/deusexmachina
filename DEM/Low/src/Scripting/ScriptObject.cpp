@@ -250,9 +250,9 @@ UPTR CScriptObject::RunFunctionOneArg(const char* pFuncName, const Data::CData& 
 
 bool CScriptObject::SubscribeEvent(CStrID EventID, const char* HandlerFuncName, Events::CEventDispatcher* pDisp, U16 Priority)
 {
-	Events::PSub Sub;
-	if (!pDisp->Subscribe(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority), &Sub)) FAIL;
-	Subscriptions.Add(Sub);
+	auto Sub = pDisp->Subscribe(EventID, n_new(Events::CEventHandlerScript)(this, HandlerFuncName, Priority));
+	if (!Sub) FAIL;
+	Subscriptions.Add(std::move(Sub));
 	OK;
 }
 //---------------------------------------------------------------------

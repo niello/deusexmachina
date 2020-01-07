@@ -1,31 +1,30 @@
 #pragma once
-#ifndef __DEM_L1_EVENT_HANDLER_H__
-#define __DEM_L1_EVENT_HANDLER_H__
-
-#include <Core/Object.h>
+#include <Data/RefCounted.h>
 #include <Events/EventsFwd.h>
 
-// Event handler is an abstract wrapper to event handling function (functor)
+// Abstract wrapper for different event callback types
 
 namespace Events
 {
 
-class CEventHandler: public Core::CObject
+class CEventHandler: public Data::CRefCounted //???is unique_ptr enough?
 {
 protected:
 
-	U16			Priority; //???int?
+	U16 Priority;
 
 public:
 
-	PEventHandler	Next;
+	virtual ~CEventHandler() override = default;
+
+	PEventHandler Next;
 
 	CEventHandler(U16 _Priority = Priority_Default): Priority(_Priority) {}
 
-	U16			GetPriority() const { return Priority; }
-	virtual bool	Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) = 0;
+	U16          GetPriority() const { return Priority; }
+	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) = 0;
 
-	bool			operator()(CEventDispatcher* pDispatcher, const CEventBase& Event) { return Invoke(pDispatcher, Event); }
+	bool         operator()(CEventDispatcher* pDispatcher, const CEventBase& Event) { return Invoke(pDispatcher, Event); }
 };
 //---------------------------------------------------------------------
 
@@ -40,6 +39,21 @@ public:
 	CEventHandlerCallback(CEventCallback Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(Func) {}
 
 	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return (*Handler)(pDispatcher, Event); }
+};
+//---------------------------------------------------------------------
+
+class CEventHandlerFunctor: public CEventHandler
+{
+private:
+
+	CEventFunctor Handler;
+
+public:
+
+	CEventHandlerFunctor(CEventFunctor&& Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(std::move(Func)) {}
+	CEventHandlerFunctor(const CEventFunctor& Func, U16 _Priority = Priority_Default): CEventHandler(_Priority), Handler(Func) {}
+
+	virtual bool Invoke(CEventDispatcher* pDispatcher, const CEventBase& Event) { return Handler(pDispatcher, Event); }
 };
 //---------------------------------------------------------------------
 
@@ -62,5 +76,3 @@ public:
 //---------------------------------------------------------------------
 
 }
-
-#endif

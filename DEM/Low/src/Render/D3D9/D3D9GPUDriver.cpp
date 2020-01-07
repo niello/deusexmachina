@@ -184,7 +184,7 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, UPTR TargetS
 		{
 			// In a fullscreen mode only the fullscreen swap chain will be valid
 			if (!SC.IsFullscreen()) continue;
-			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint, &Sub_OnPaint);
+			Sub_OnPaint = SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnPaint"), this, &CD3D9GPUDriver::OnOSWindowPaint);
 		}
 		else
 		{
@@ -214,13 +214,13 @@ bool CD3D9GPUDriver::Reset(D3DPRESENT_PARAMETERS& D3DPresentParams, UPTR TargetS
 			}
 
 			if (SC.Desc.Flags.Is(SwapChain_AutoAdjustSize))
-				SC.TargetWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized, &SC.Sub_OnSizeChanged);
+				SC.Sub_OnSizeChanged = SC.TargetWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized);
 		}
 
 		n_assert(InitSwapChainRenderTarget(SC));
 
-		SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &SC.Sub_OnToggleFullscreen);
-		SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &SC.Sub_OnClosing);
+		SC.Sub_OnToggleFullscreen = SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen);
+		SC.Sub_OnClosing = SC.TargetWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing);
 
 		if (IsFullscreenNow) break;
 	}
@@ -1207,10 +1207,10 @@ int CD3D9GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, con
 	ItSC->TargetDisplay = nullptr;
 	ItSC->Desc = SwapChainDesc;
 
-	pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
-	pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
+	ItSC->Sub_OnToggleFullscreen = pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D9GPUDriver::OnOSWindowToggleFullscreen);
+	ItSC->Sub_OnClosing = pWindow->Subscribe<CD3D9GPUDriver>(CStrID("OnClosing"), this, &CD3D9GPUDriver::OnOSWindowClosing);
 	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		pWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized, &ItSC->Sub_OnSizeChanged);
+		ItSC->Sub_OnSizeChanged = pWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -1348,7 +1348,7 @@ bool CD3D9GPUDriver::SwitchToFullscreen(UPTR SwapChainID, CDisplayDriver* pDispl
 		//???call SwitchToWindowed?
 		SC.TargetWindow->SetRect(SC.LastWindowRect);
 		if (SC.Desc.Flags.Is(SwapChain_AutoAdjustSize))
-			SC.TargetWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized, &SC.Sub_OnSizeChanged);
+			SC.Sub_OnSizeChanged = SC.TargetWindow->Subscribe<CD3D9GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D9GPUDriver::OnOSWindowResized);
 		FAIL;
 	}
 

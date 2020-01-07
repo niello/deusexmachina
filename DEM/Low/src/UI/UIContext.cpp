@@ -90,15 +90,10 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 {
 	if (!pDispatcher || !pCtx || !pInput) FAIL;
 
-	Events::PSub NewSub;
-	pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, &NewSub, Priority);
-	InputSubs.Add(NewSub);
-	pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, &NewSub, Priority);
-	InputSubs.Add(NewSub);
-	pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, &NewSub, Priority);
-	InputSubs.Add(NewSub);
-	pDispatcher->Subscribe(&Event::TextInput::RTTI, this, &CUIContext::OnTextInput, &NewSub, Priority);
-	InputSubs.Add(NewSub);
+	InputSubs.Add(pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, Priority));
+	InputSubs.Add(pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, Priority));
+	InputSubs.Add(pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, Priority));
+	InputSubs.Add(pDispatcher->Subscribe(&Event::TextInput::RTTI, this, &CUIContext::OnTextInput, Priority));
 
 	OK;
 }

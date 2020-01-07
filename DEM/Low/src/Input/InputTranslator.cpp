@@ -147,27 +147,16 @@ void CInputTranslator::ConnectToDevice(IInputDevice* pDevice, U16 Priority)
 	if (!pDevice || IsConnectedToDevice(pDevice)) return;
 
 	if (pDevice->GetAxisCount() > 0)
-	{
-		Events::PSub NewSub;
-		pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove, &NewSub);
-		DeviceSubs.Add(NewSub);
-	}
+		DeviceSubs.Add(pDevice->Subscribe(&Event::AxisMove::RTTI, this, &CInputTranslator::OnAxisMove));
 
 	if (pDevice->GetButtonCount() > 0)
 	{
-		Events::PSub NewSub;
-		pDevice->Subscribe(&Event::ButtonDown::RTTI, this, &CInputTranslator::OnButtonDown, &NewSub);
-		DeviceSubs.Add(NewSub);
-		pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp, &NewSub);
-		DeviceSubs.Add(NewSub);
+		DeviceSubs.Add(pDevice->Subscribe(&Event::ButtonDown::RTTI, this, &CInputTranslator::OnButtonDown));
+		DeviceSubs.Add(pDevice->Subscribe(&Event::ButtonUp::RTTI, this, &CInputTranslator::OnButtonUp));
 	}
 
 	if (pDevice->CanInputText())
-	{
-		Events::PSub NewSub;
-		pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput, &NewSub);
-		DeviceSubs.Add(NewSub);
-	}
+		DeviceSubs.Add(pDevice->Subscribe(&Event::TextInput::RTTI, this, &CInputTranslator::OnTextInput));
 }
 //---------------------------------------------------------------------
 

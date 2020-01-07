@@ -57,10 +57,10 @@ public:
 	Game::CPropertyStorage* Class::GetStorage() const { return pStorage; }
 
 #define PROP_SUBSCRIBE_NEVENT(EventName, Class, Handler) \
-	GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
 #define PROP_SUBSCRIBE_NEVENT_PRIORITY(EventName, Class, Handler, Priority) \
-	GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = GetEntity()->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, Priority)
 #define PROP_SUBSCRIBE_PEVENT(EventName, Class, Handler) \
-	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
 #define PROP_SUBSCRIBE_PEVENT_PRIORITY(EventName, Class, Handler, Priority) \
-	GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = GetEntity()->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, Priority)

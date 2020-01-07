@@ -209,7 +209,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 	// Broadcast all global events to the level script and hosted entities
 
-	EventSrv->Subscribe(nullptr, this, &CGameLevel::OnEvent, &GlobalSub);
+	GlobalSub = EventSrv->Subscribe(nullptr, this, &CGameLevel::OnEvent);
 
 	OK;
 }

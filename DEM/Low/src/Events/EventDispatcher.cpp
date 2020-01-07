@@ -48,10 +48,10 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 }
 //---------------------------------------------------------------------
 
-bool CEventDispatcher::Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub)
+PSub CEventDispatcher::Subscribe(CEventID ID, PEventHandler Handler)
 {
 	PEventHandler& CurrSlot = Subscriptions.At(ID);
-	if (CurrSlot.IsValidPtr())
+	if (CurrSlot)
 	{
 		PEventHandler Prev, Curr = CurrSlot;
 		while (Curr.IsValidPtr() && Curr->GetPriority() > Handler->GetPriority())
@@ -60,13 +60,13 @@ bool CEventDispatcher::Subscribe(CEventID ID, PEventHandler Handler, PSub* pSub)
 			Curr = Curr->Next;
 		}
 
-		if (Prev.IsValidPtr()) Prev->Next = Handler;
+		if (Prev) Prev->Next = Handler;
 		else CurrSlot = Handler;
 		Handler->Next = Curr;
 	}
 	else CurrSlot = Handler;
-	if (pSub) *pSub = n_new(CSubscription)(this, ID, Handler);
-	OK;
+
+	return n_new(CSubscription)(this, ID, Handler);
 }
 //---------------------------------------------------------------------
 

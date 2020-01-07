@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_EVENTS_H__
-#define __DEM_L1_EVENTS_H__
-
 #include <Data/Ptr.h>
 
 // Event system declarations and helpers
@@ -13,6 +10,7 @@ class CEventDispatcher;
 typedef Ptr<class CSubscription> PSub;
 typedef Ptr<class CEventHandler> PEventHandler;
 typedef bool (*CEventCallback)(CEventDispatcher*, const CEventBase&);
+typedef std::function<bool(CEventDispatcher*, const CEventBase&)> CEventFunctor;
 
 enum EEventPriority
 {
@@ -44,45 +42,43 @@ enum EEventPriority
 	bool Class::HandlerName##Proc(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event) { HandlerName(); OK; }
 
 #define SUBSCRIBE_NEVENT(EventName, Class, Handler) \
-	EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
 
 #define SUBSCRIBE_NEVENT_PRIORITY(EventName, Class, Handler, Priority) \
-	EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = EventSrv->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, Priority)
 
 #define SUBSCRIBE_PEVENT(EventName, Class, Handler) \
-	EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
 
 #define SUBSCRIBE_PEVENT_PRIORITY(EventName, Class, Handler, Priority) \
-	EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
+	EventSrv->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, Priority)
 
 #define SUBSCRIBE_ALL_EVENTS(Class, Handler) \
-	EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler)
 
 #define SUBSCRIBE_ALL_EVENTS_PRIORITY(Class, Handler, Priority) \
-	EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = EventSrv->Subscribe<Class>(nullptr, this, &Class::Handler, Priority)
 
 #define DISP_SUBSCRIBE_NEVENT(Dispatcher, EventName, Class, Handler) \
-	(Dispatcher)->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler)
 
 #define DISP_SUBSCRIBE_NEVENT_PRIORITY(Dispatcher, EventName, Class, Handler, Priority) \
-	(Dispatcher)->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(&Event::EventName::RTTI, this, &Class::Handler, Priority)
 
 #define DISP_SUBSCRIBE_PEVENT(Dispatcher, EventName, Class, Handler) \
-	(Dispatcher)->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler)
 
 #define DISP_SUBSCRIBE_PEVENT_PRIORITY(Dispatcher, EventName, Class, Handler, Priority) \
-	(Dispatcher)->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(CStrID(#EventName), this, &Class::Handler, Priority)
 
 #define DISP_SUBSCRIBE_ALL_EVENTS(Dispatcher, Class, Handler) \
-	(Dispatcher)->Subscribe<Class>(nullptr, this, &Class::Handler, &Sub_##EventName)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(nullptr, this, &Class::Handler)
 
 #define DISP_SUBSCRIBE_ALL_EVENTS_PRIORITY(Dispatcher, Class, Handler, Priority) \
-	(Dispatcher)->Subscribe<Class>(nullptr, this, &Class::Handler, &Sub_##EventName, Priority)
+	Sub_##EventName = (Dispatcher)->Subscribe<Class>(nullptr, this, &Class::Handler, Priority)
 
 #define UNSUBSCRIBE_EVENT(EventName) \
 	Sub_##EventName = nullptr
 
 #define IS_SUBSCRIBED(EventName) \
 	(Sub_##EventName.IsValidPtr())
-
-#endif

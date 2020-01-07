@@ -517,10 +517,10 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	// Disable DXGI reaction on Alt+Enter & PrintScreen
 	pDXGIFactory->MakeWindowAssociation(pWndWin32->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES);
 
-	pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen, &ItSC->Sub_OnToggleFullscreen);
-	pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing, &ItSC->Sub_OnClosing);
+	ItSC->Sub_OnToggleFullscreen = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen);
+	ItSC->Sub_OnClosing = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing);
 	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		pWindow->Subscribe<CD3D11GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D11GPUDriver::OnOSWindowResized, &ItSC->Sub_OnSizeChanged);
+		ItSC->Sub_OnSizeChanged = pWindow->Subscribe<CD3D11GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D11GPUDriver::OnOSWindowResized);
 
 	return SwapChains.IndexOf(ItSC);
 }
