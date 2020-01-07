@@ -91,13 +91,13 @@ bool CUIContext::SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Pri
 	if (!pDispatcher || !pCtx || !pInput) FAIL;
 
 	Events::PSub NewSub;
-	pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, &NewSub);
+	pDispatcher->Subscribe(&Event::AxisMove::RTTI, this, &CUIContext::OnAxisMove, &NewSub, Priority);
 	InputSubs.Add(NewSub);
-	pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, &NewSub);
+	pDispatcher->Subscribe(&Event::ButtonDown::RTTI, this, &CUIContext::OnButtonDown, &NewSub, Priority);
 	InputSubs.Add(NewSub);
-	pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, &NewSub);
+	pDispatcher->Subscribe(&Event::ButtonUp::RTTI, this, &CUIContext::OnButtonUp, &NewSub, Priority);
 	InputSubs.Add(NewSub);
-	pDispatcher->Subscribe(&Event::TextInput::RTTI, this, &CUIContext::OnTextInput, &NewSub);
+	pDispatcher->Subscribe(&Event::TextInput::RTTI, this, &CUIContext::OnTextInput, &NewSub, Priority);
 	InputSubs.Add(NewSub);
 
 	OK;
@@ -108,7 +108,7 @@ void CUIContext::UnsubscribeFromInput(Events::CEventDispatcher* pDispatcher)
 {
 	if (!pDispatcher) return;
 
-	for (UPTR i = 0; i < InputSubs.GetCount(); )
+	for (UPTR i = 0; i < InputSubs.GetCount(); /**/)
 	{
 		if (InputSubs[i]->GetDispatcher() == pDispatcher)
 			InputSubs.RemoveAt(i);

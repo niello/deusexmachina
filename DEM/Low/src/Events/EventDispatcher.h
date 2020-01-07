@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_EVENT_DISPATCHER_H__
-#define __DEM_L1_EVENT_DISPATCHER_H__
-
 #include <Data/HashTable.h>
 #include <Events/EventHandler.h>
 #include <Events/Event.h>
@@ -32,7 +29,7 @@ protected:
 
 	CHashTable<CEventID, PEventHandler> Subscriptions;
 
-	virtual ~CEventDispatcher() {} // Object should never be deleted by the pointer to a mix-in part
+	virtual ~CEventDispatcher() = default; // Object should never be deleted by the pointer to a mix-in part
 
 public:
 
@@ -68,5 +65,3 @@ inline bool CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callba
 //---------------------------------------------------------------------
 
 }
-
-#endif
