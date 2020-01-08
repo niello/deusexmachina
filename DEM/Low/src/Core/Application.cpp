@@ -121,12 +121,7 @@ CApplication::CApplication(Sys::IPlatform& _Platform)
 
 	// Initialize unclaimed input translator. It is used to translate input from
 	// devices not yet tied to a specific user. Typically only UI receives that input.
-	UnclaimedInput.reset(n_new(Input::CInputTranslator(CStrID::Empty)));
-
-	// Initialize a bypass context for UI
-	const CStrID UIContextID("UI");
-	UnclaimedInput->CreateContext(UIContextID, true);
-	UnclaimedInput->EnableContext(UIContextID);
+	UnclaimedInput = std::move(CreateInput(CStrID::Empty));
 
 	// Attach all existing input devices to the unclaimed context
 	CArray<Input::PInputDevice> InputDevices;
@@ -271,6 +266,9 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 	NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID));
 	if (!NewUser.Settings) return CStrID::Empty;
 
+	// Activate before loading input params
+	ActiveUsers.push_back(std::move(NewUser));
+
 	if (Input)
 	{
 		NewUser.Input = std::move(Input);
@@ -278,18 +276,8 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 	}
 	else
 	{
-		NewUser.Input.reset(n_new(Input::CInputTranslator(UserID)));
+		NewUser.Input = std::move(CreateInput(UserID));
 	}
-	//!!!load input contexts from app & user settings! may use separate files, not settings files
-	//or use sections in settings
-	//???shared CInputLayout for app contexts like Debug?
-
-	// Initialize a bypass context for UI
-	const CStrID UIContextID("UI");
-	NewUser.Input->CreateContext(UIContextID, true);
-	NewUser.Input->EnableContext(UIContextID);
-
-	ActiveUsers.push_back(std::move(NewUser));
 
 	Data::PParams Params = n_new(Data::CParams(1));
 	Params->Set(CStrID("UserID"), UserID);
@@ -362,6 +350,25 @@ Input::CInputTranslator* CApplication::GetUserInput(CStrID UserID) const
 Input::CInputTranslator* CApplication::GetUnclaimedInput() const
 {
 	return UnclaimedInput.get();
+}
+//---------------------------------------------------------------------
+
+Input::PInputTranslator CApplication::CreateInput(CStrID UserID) const
+{
+	Input::PInputTranslator NewInput(n_new(Input::CInputTranslator(UserID)));
+
+	// Initialize a bypass context for UI
+	const CStrID UIContextID("UIBypass");
+	NewInput->CreateContext(UIContextID, true);
+	NewInput->EnableContext(UIContextID);
+
+	if (InputDesc)
+	{
+		NewInput->LoadSettings(*InputDesc);
+		NewInput->UpdateParams(*this);
+	}
+
+	return NewInput;
 }
 //---------------------------------------------------------------------
 
@@ -472,25 +479,25 @@ T CApplication::GetSetting(const char* pKey, const T& Default, CStrID UserID) co
 }
 //---------------------------------------------------------------------
 
-bool CApplication::GetBoolSetting(const char* pKey, bool Default, CStrID UserID)
+bool CApplication::GetBoolSetting(const char* pKey, bool Default, CStrID UserID) const
 {
 	return GetSetting<bool>(pKey, Default, UserID);
 }
 //---------------------------------------------------------------------
 
-int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID)
+int CApplication::GetIntSetting(const char* pKey, int Default, CStrID UserID) const
 {
 	return GetSetting<int>(pKey, Default, UserID);
 }
 //---------------------------------------------------------------------
 
-float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID UserID)
+float CApplication::GetFloatSetting(const char* pKey, float Default, CStrID UserID) const
 {
 	return GetSetting<float>(pKey, Default, UserID);
 }
 //---------------------------------------------------------------------
 
-CString CApplication::GetStringSetting(const char* pKey, const CString& Default, CStrID UserID)
+CString CApplication::GetStringSetting(const char* pKey, const CString& Default, CStrID UserID) const
 {
 	return GetSetting<CString>(pKey, Default, UserID);
 }

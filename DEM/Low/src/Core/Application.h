@@ -91,6 +91,7 @@ protected:
 	CStrID CurrentUserID;
 	std::vector<CUser> ActiveUsers;
 	Input::PInputTranslator UnclaimedInput;
+	Data::PParams InputDesc;
 
 	PApplicationState CurrState;
 	PApplicationState RequestedState;
@@ -114,11 +115,12 @@ public:
 
 	Sys::IPlatform&	GetPlatform() const { return Platform; }
 
-	IO::CIOServer&	IO() const;
+	IO::CIOServer& IO() const;
 	Resources::CResourceManager& ResourceManager() const;
 
 	void				SetWritablePath(const char* pPath) { WritablePath = pPath; }
 	void				SetUserSettingsTemplate(const char* pFilePath) { UserSettingsTemplate = pFilePath; }
+	void				SetInputTranslationDesc(Data::PParams Desc) { InputDesc = Desc; }
 	bool				IsValidUserProfileName(const char* pUserID, UPTR MaxLength = 40) const;
 	bool				UserProfileExists(const char* pUserID) const;
 	CStrID				CreateUserProfile(const char* pUserID, bool Overwrite = false);
@@ -131,14 +133,15 @@ public:
 
 	Input::CInputTranslator* GetUserInput(CStrID UserID) const;
 	Input::CInputTranslator* GetUnclaimedInput() const;
+	Input::PInputTranslator  CreateInput(CStrID UserID) const;
 
 	void				ParseCommandLine(const char* pCmdLine);
 	bool				LoadGlobalSettings(const char* pFilePath);
 	Data::CData*		FindSetting(const char* pKey, CStrID UserID) const;
-	bool				GetBoolSetting(const char* pKey, bool Default, CStrID UserID);
-	int					GetIntSetting(const char* pKey, int Default, CStrID UserID);
-	float				GetFloatSetting(const char* pKey, float Default, CStrID UserID);
-	CString				GetStringSetting(const char* pKey, const CString& Default, CStrID UserID);
+	bool				GetBoolSetting(const char* pKey, bool Default, CStrID UserID) const;
+	int					GetIntSetting(const char* pKey, int Default, CStrID UserID) const;
+	float				GetFloatSetting(const char* pKey, float Default, CStrID UserID) const;
+	CString				GetStringSetting(const char* pKey, const CString& Default, CStrID UserID) const;
 	bool				SetSetting(const char* pKey, const Data::CData& Value, CStrID UserID);
 	bool				SetBoolSetting(const char* pKey, bool Value, CStrID UserID);
 	bool				SetIntSetting(const char* pKey, int Value, CStrID UserID);

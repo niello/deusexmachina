@@ -51,7 +51,7 @@ bool CInputTranslator::LoadSettings(const Data::CParams& Desc)
 }
 //---------------------------------------------------------------------
 
-bool CInputTranslator::UpdateParams(DEM::Core::CApplication& App, std::set<std::string>* pOutParams)
+bool CInputTranslator::UpdateParams(const DEM::Core::CApplication& App, std::set<std::string>* pOutParams)
 {
 	auto ParamGetter = [&App, UserID = _UserID](const char* pKey) -> std::string
 	{
@@ -136,7 +136,8 @@ void CInputTranslator::DisableContext(CStrID ID)
 		if (Contexts[i].ID == ID)
 		{
 			Contexts[i].Enabled = false;
-			Contexts[i].pLayout->Reset();
+			if (Contexts[i].pLayout)
+				Contexts[i].pLayout->Reset();
 			break;
 		}
 }
@@ -215,8 +216,7 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		CControlLayout* pLayout = Ctx.pLayout;
-		if (pLayout)
+		if (auto pLayout = Ctx.pLayout)
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnAxisMove(Ev.Device, Ev);
@@ -254,8 +254,7 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		CControlLayout* pLayout = Ctx.pLayout;
-		if (pLayout)
+		if (auto pLayout = Ctx.pLayout)
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnButtonDown(Ev.Device, Ev);
@@ -291,8 +290,7 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		CControlLayout* pLayout = Ctx.pLayout;
-		if (pLayout)
+		if (auto pLayout = Ctx.pLayout)
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnButtonUp(Ev.Device, Ev);
@@ -328,8 +326,7 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		CControlLayout* pLayout = Ctx.pLayout;
-		if (pLayout)
+		if (auto pLayout = Ctx.pLayout)
 		{
 			for (auto& Pair : pLayout->States)
 				Pair.second->OnTextInput(Ev.Device, Ev);
@@ -363,17 +360,18 @@ void CInputTranslator::UpdateTime(float ElapsedTime)
 		CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		CControlLayout* pLayout = Ctx.pLayout;
-
-		for (auto& Pair : pLayout->States)
-			Pair.second->OnTimeElapsed(ElapsedTime);
-
-		for (auto& Rec : pLayout->Events)
+		if (auto pLayout = Ctx.pLayout)
 		{
-			if (Rec.Event->OnTimeElapsed(ElapsedTime))
+			for (auto& Pair : pLayout->States)
+				Pair.second->OnTimeElapsed(ElapsedTime);
+
+			for (auto& Rec : pLayout->Events)
 			{
-				Events::CEvent& NewEvent = *EventQueue.Add();
-				NewEvent.ID = Rec.OutEventID;
+				if (Rec.Event->OnTimeElapsed(ElapsedTime))
+				{
+					Events::CEvent& NewEvent = *EventQueue.Add();
+					NewEvent.ID = Rec.OutEventID;
+				}
 			}
 		}
 	}
@@ -395,8 +393,11 @@ bool CInputTranslator::CheckState(CStrID StateID) const
 		const CInputContext& Ctx = Contexts[i];
 		if (!Ctx.Enabled) continue;
 
-		auto It = Ctx.pLayout->States.find(StateID);
-		if (It != Ctx.pLayout->States.cend() && It->second->IsOn()) OK;
+		if (auto pLayout = Ctx.pLayout)
+		{
+			auto It = pLayout->States.find(StateID);
+			if (It != pLayout->States.cend() && It->second->IsOn()) OK;
+		}
 	}
 
 	FAIL;
@@ -406,7 +407,7 @@ bool CInputTranslator::CheckState(CStrID StateID) const
 void CInputTranslator::Reset(/*device type*/)
 {
 	for (UPTR i = 0; i < Contexts.GetCount(); ++i)
-		if (Contexts[i].Enabled)
+		if (Contexts[i].Enabled && Contexts[i].pLayout)
 			Contexts[i].pLayout->Reset();
 }
 //---------------------------------------------------------------------
