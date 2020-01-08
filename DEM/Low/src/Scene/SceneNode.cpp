@@ -145,7 +145,7 @@ CSceneNode* CSceneNode::CreateNodeChain(const char* pPath)
 
 bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
 {
-	auto It = std::lower_bound(Children.begin(), Children.end(), &Node);
+	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
 	if (!Replace && It != Children.end() && (*It)->GetName() == ChildName) return false;
 
 	if (ChildName) Node.Name = ChildName;
@@ -159,8 +159,8 @@ void CSceneNode::RemoveChild(CSceneNode& Node)
 {
 	if (Node.pParent != this) return;
 
-	auto It = std::lower_bound(Children.begin(), Children.end(), &Node);
-	if (It != Children.end() && (*It).Get() == &Node)
+	auto It = std::find(Children.begin(), Children.end(), &Node);
+	if (It != Children.end())
 	{
 		Node.OnDetachFromScene();
 		Children.erase(It);
