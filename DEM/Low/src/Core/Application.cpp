@@ -260,23 +260,26 @@ CStrID CApplication::ActivateUser(CStrID UserID, Input::PInputTranslator&& Input
 
 	if (!IO().DirectoryExists(Path)) return CStrID::Empty;
 
-	// OnSettingsLoaded is not sent here, subscribe on OnUserActivated
-	CUser NewUser;
-	NewUser.ID = UserID;
-	NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID));
-	if (!NewUser.Settings) return CStrID::Empty;
+	{
+		CUser NewUser;
+		NewUser.ID = UserID;
 
-	// Activate before loading input params
-	ActiveUsers.push_back(std::move(NewUser));
+		// OnSettingsLoaded is not sent here, subscribe on OnUserActivated
+		NewUser.Settings = ParamsUtils::LoadParamsFromHRD(GetUserSettingsFilePath(WritablePath, UserID));
+		if (!NewUser.Settings) return CStrID::Empty;
 
+		ActiveUsers.push_back(std::move(NewUser));
+	}
+
+	// Load input params after activating the user
 	if (Input)
 	{
-		NewUser.Input = std::move(Input);
-		NewUser.Input->SetUserID(UserID);
+		ActiveUsers.back().Input = std::move(Input);
+		ActiveUsers.back().Input->SetUserID(UserID);
 	}
 	else
 	{
-		NewUser.Input = std::move(CreateInput(UserID));
+		ActiveUsers.back().Input = std::move(CreateInput(UserID));
 	}
 
 	Data::PParams Params = n_new(Data::CParams(1));
