@@ -8,7 +8,7 @@ namespace Events
 class CEventBase;
 class CEventDispatcher;
 typedef Ptr<class CSubscription> PSub;
-typedef Ptr<class CEventHandler> PEventHandler;
+typedef std::unique_ptr<class CEventHandler> PEventHandler;
 typedef bool (*CEventCallback)(CEventDispatcher*, const CEventBase&);
 typedef std::function<bool(CEventDispatcher*, const CEventBase&)> CEventFunctor;
 

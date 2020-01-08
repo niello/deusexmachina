@@ -1,5 +1,4 @@
 #pragma once
-#include <Data/HashTable.h>
 #include <Events/EventHandler.h>
 #include <Events/Event.h>
 #include <Events/Subscription.h>
@@ -28,13 +27,11 @@ protected:
 
 	static UPTR EventsFiredTotal; // Can be used as an event UID
 
-	CHashTable<CEventID, PEventHandler> Subscriptions;
+	std::unordered_map<CEventID, PEventHandler> Handlers;
 
 	virtual ~CEventDispatcher() = default; // Object should never be deleted by the pointer to a mix-in part
 
 public:
-
-	CEventDispatcher(UPTR HashTableCapacity = CHashTable<CEventID, PEventHandler>::DEFAULT_SIZE): Subscriptions(HashTableCapacity) {}
 
 	static UPTR	GetFiredEventsCount() { return EventsFiredTotal; }
 
@@ -42,7 +39,7 @@ public:
 	UPTR		FireEvent(const CEventBase& Event, U8 Flags = 0);
 	UPTR		FireEvent(CStrID ID, Data::PParams Params = nullptr, U8 Flags = 0) { return FireEvent(CEvent(ID, Params), Flags); }
 
-	PSub		Subscribe(CEventID ID, PEventHandler Handler);
+	PSub		Subscribe(CEventID ID, PEventHandler&& Handler);
 	PSub		Subscribe(CEventID ID, CEventCallback Callback, U16 Priority = Priority_Default);
 	PSub		Subscribe(CEventID ID, CEventFunctor&& Functor, U16 Priority = Priority_Default);
 	PSub		Subscribe(CEventID ID, const CEventFunctor& Functor, U16 Priority = Priority_Default);
@@ -51,31 +48,31 @@ public:
 	PSub		Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), U16 Priority = Priority_Default);
 
 	void		Unsubscribe(CEventID ID, CEventHandler* pHandler);
-	void		UnsubscribeAll() { Subscriptions.Clear(); }
+	void		UnsubscribeAll() { Handlers.clear(); }
 };
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerCallback)(Callback, Priority));
+	return Subscribe(ID, std::make_unique<CEventHandlerCallback>(Callback, Priority));
 }
 //---------------------------------------------------------------------
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, CEventFunctor&& Functor, U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerFunctor)(std::move(Functor), Priority));
+	return Subscribe(ID, std::make_unique<CEventHandlerFunctor>(std::move(Functor), Priority));
 }
 //---------------------------------------------------------------------
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, const CEventFunctor& Functor, U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerFunctor)(Functor, Priority));
+	return Subscribe(ID, std::make_unique<CEventHandlerFunctor>(Functor, Priority));
 }
 //---------------------------------------------------------------------
 
 template<class T>
 inline PSub CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), U16 Priority)
 {
-	return Subscribe(ID, n_new(CEventHandlerMember<T>)(Object, Callback, Priority));
+	return Subscribe(ID, std::make_unique<CEventHandlerMember<T>>(Object, Callback, Priority));
 }
 //---------------------------------------------------------------------
 

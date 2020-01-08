@@ -10,7 +10,7 @@ namespace Game
 {
 RTTI_CLASS_IMPL(Game::CEntity, Core::CObject);
 
-CEntity::CEntity(CStrID _UID): CEventDispatcher(16), UID(_UID), Flags(WaitingForLevelActivation)
+CEntity::CEntity(CStrID _UID): UID(_UID), Flags(WaitingForLevelActivation)
 {
 }
 //---------------------------------------------------------------------

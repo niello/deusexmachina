@@ -7,7 +7,6 @@ namespace Events
 __ImplementSingleton(Events::CEventServer);
 
 CEventServer::CEventServer()
-	: CEventDispatcher(256)
 {
 	__ConstructSingleton;
 }

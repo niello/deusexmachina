@@ -35,7 +35,7 @@ bool CMouseWin32::HandleRawInput(const RAWINPUT& Data)
 	if (Data.header.dwType != RIM_TYPEMOUSE) FAIL;
 
 	// No one reads our input
-	if (Subscriptions.IsEmpty()) FAIL;
+	if (Handlers.empty()) FAIL;
 
 	const RAWMOUSE& MouseData = Data.data.mouse;
 

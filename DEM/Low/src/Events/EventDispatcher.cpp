@@ -1,5 +1,4 @@
 #include "EventDispatcher.h"
-
 #include <Events/Subscription.h>
 
 namespace Events
@@ -9,64 +8,74 @@ UPTR CEventDispatcher::EventsFiredTotal = 0;
 UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 {
 	UPTR HandledCounter = 0;
-	PEventHandler Sub;
 	CEventID EvID = Event.GetID();
 
-	//!!!MT! need interlocked operation for MT safety!
+	//!!!FIXME: MT! need interlocked operation for MT safety!
 	++EventsFiredTotal;
 
 	Event.UniqueNumber = EventsFiredTotal;
 
-	// Look for subscriptions to this event
-	if (Subscriptions.Get(EvID, Sub)) do
+	// Look for Handlers to this event
 	{
-		if (Sub->Invoke(this, Event))
+		auto It = Handlers.find(EvID);
+		CEventHandler* pSub = (It == Handlers.cend()) ? nullptr : It->second.get();
+		while (pSub)
 		{
-			++HandledCounter;
-			if (Flags & Event_TermOnHandled) return HandledCounter;
-		}
-		Sub = Sub->Next;
-	}
-	while (Sub.IsValidPtr());
-
-	// Look for subscriptions to any event
-	if (!(Flags & Event_IgnoreAllEventSubs))
-	{
-		if (Subscriptions.Get(nullptr, Sub)) do
-		{
-			if (Sub->Invoke(this, Event))
+			if (pSub->Invoke(this, Event))
 			{
 				++HandledCounter;
 				if (Flags & Event_TermOnHandled) return HandledCounter;
 			}
-			Sub = Sub->Next;
+			pSub = pSub->Next.get();
 		}
-		while (Sub.IsValidPtr());
+	}
+
+	// Look for Handlers to any event
+	if (!(Flags & Event_IgnoreAllEventSubs))
+	{
+		auto It = Handlers.find(nullptr);
+		CEventHandler* pSub = (It == Handlers.cend()) ? nullptr : It->second.get();
+		while (pSub)
+		{
+			if (pSub->Invoke(this, Event))
+			{
+				++HandledCounter;
+				if (Flags & Event_TermOnHandled) return HandledCounter;
+			}
+			pSub = pSub->Next.get();
+		}
 	}
 
 	return HandledCounter;
 }
 //---------------------------------------------------------------------
 
-PSub CEventDispatcher::Subscribe(CEventID ID, PEventHandler Handler)
+PSub CEventDispatcher::Subscribe(CEventID ID, PEventHandler&& Handler)
 {
-	PEventHandler& CurrSlot = Subscriptions.At(ID);
-	if (CurrSlot)
+	n_assert_dbg(Handler);
+
+	CEventHandler* pHandler = Handler.get();
+	const auto Priority = pHandler->GetPriority();
+
+	auto It = Handlers.find(ID);
+	if (It != Handlers.cend())
 	{
-		PEventHandler Prev, Curr = CurrSlot;
-		while (Curr.IsValidPtr() && Curr->GetPriority() > Handler->GetPriority())
+		PEventHandler* pPrev = nullptr;
+		PEventHandler* pCurr = &It->second;
+		while ((*pCurr) && (*pCurr)->GetPriority() > Priority)
 		{
-			Prev = Curr;
-			Curr = Curr->Next;
+			pPrev = pCurr;
+			pCurr = &(*pCurr)->Next;
 		}
 
-		if (Prev) Prev->Next = Handler;
-		else CurrSlot = Handler;
-		Handler->Next = Curr;
-	}
-	else CurrSlot = Handler;
+		Handler->Next = std::move(*pCurr);
 
-	return n_new(CSubscription)(this, ID, Handler);
+		if (pPrev) (*pPrev)->Next = std::move(Handler);
+		else It->second = std::move(Handler);
+	}
+	else Handlers.emplace(ID, std::move(Handler));
+
+	return n_new(CSubscription)(this, ID, pHandler);
 }
 //---------------------------------------------------------------------
 
@@ -74,29 +83,34 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 {
 	n_assert_dbg(pHandler);
 
-	PEventHandler* pCurrSlot = Subscriptions.Get(ID);
-	if (pCurrSlot)
+	auto It = Handlers.find(ID);
+	if (It == Handlers.cend())
 	{
-		PEventHandler Prev, Curr = *pCurrSlot;
-		do
-		{
-			if (Curr.Get() == pHandler)
-			{
-				if (Prev.IsValidPtr()) Prev->Next = pHandler->Next;
-				else
-				{
-					if (pHandler->Next.IsValidPtr()) (*pCurrSlot) = pHandler->Next;
-					else Subscriptions.Remove(ID); //!!!optimize duplicate search! use CIterator!
-				}
-				return;
-			}
-			Prev = Curr;
-			Curr = Curr->Next;
-		}
-		while (Curr.IsValidPtr());
+		::Sys::Error("Subscription on '%s' not found, perhaps double unsubscription occurred", ID.ID);
+		return;
 	}
 
-	Sys::Error("Subscription on '%s' not found, mb double unsubscription", ID.ID);
+	PEventHandler* pPrev = nullptr;
+	PEventHandler* pCurr = &It->second;
+	do
+	{
+		if ((*pCurr).get() == pHandler)
+		{
+			if (pPrev) (*pPrev)->Next = std::move(pHandler->Next);
+			else
+			{
+				if (pHandler->Next) It->second = std::move(pHandler->Next);
+				else Handlers.erase(It);
+			}
+			break;
+		}
+		else
+		{
+			pPrev = pCurr;
+			pCurr = &(*pCurr)->Next;
+		}
+	}
+	while (*pCurr);
 }
 //---------------------------------------------------------------------
 

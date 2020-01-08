@@ -70,7 +70,7 @@ protected:
 	void			EnableSI(class CPropScriptable& Prop);
 	void			DisableSI(class CPropScriptable& Prop);
 
-	bool			AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction = false);
+	bool			AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler&& Handler, int Priority, bool IsSOAction = false);
 	bool			ExecuteAction(Game::CEntity* pActorEnt, CAction& Action);
 	bool			OnExecuteExploreAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
 	bool			OnExecuteSelectAction(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event);
@@ -115,7 +115,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName,
 											 Events::CEventCallback Callback,
 											 int Priority, bool IsSOAction)
 {
-	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerCallback)(Callback), Priority, IsSOAction);
+	return AddActionHandler(ID, UIName, std::make_unique<Events::CEventHandlerCallback>(Callback), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 
@@ -124,7 +124,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, T* O
 											 bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&),
 											 int Priority, bool IsSOAction)
 {
-	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerMember<T>)(Object, Callback), Priority, IsSOAction);
+	return AddActionHandler(ID, UIName, std::make_unique<Events::CEventHandlerMember<T>>(Object, Callback), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 

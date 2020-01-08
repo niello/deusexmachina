@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_EVENT_ID_H__
-#define __DEM_L1_EVENT_ID_H__
-
 #include <Core/RTTI.h>
 #include <Data/StringID.h>
 
@@ -42,4 +39,20 @@ struct CEventID
 
 }
 
-#endif
+namespace std
+{
+
+template<>
+struct hash<Events::CEventID>
+{
+	std::size_t operator()(Events::CEventID Value) const
+	{
+		// NB: the pointer hash is calculated intentionally, not a string one! See docs:
+		// https://en.cppreference.com/w/cpp/utility/hash
+		// There is no specialization for C strings. std::hash<const char*> produces a hash of the value
+		// of the pointer (the memory address), it does not examine the contents of any character array. (c)
+		return std::hash<const char*>()(Value.ID);
+	}
+};
+
+}

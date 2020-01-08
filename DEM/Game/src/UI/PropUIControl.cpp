@@ -329,11 +329,11 @@ bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, const char*
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : nullptr;
 	if (!pScriptObj) FAIL;
-	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, IsSOAction);
+	return AddActionHandler(ID, UIName, std::make_unique<Events::CEventHandlerScript>(pScriptObj, ScriptFuncName), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 
-bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler Handler, int Priority, bool IsSOAction)
+bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, Events::PEventHandler&& Handler, int Priority, bool IsSOAction)
 {
 	for (CArray<CAction>::CIterator It = Actions.Begin(); It != Actions.End(); ++It)
 		if (It->ID == ID) FAIL;
@@ -343,7 +343,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, Events::PEv
 	char EvIDString[64];
 	sprintf_s(EvIDString, 63, "OnUIAction%s", ID.CStr());
 	Act.EventID = CStrID(EvIDString);
-	Act.Sub = GetEntity()->Subscribe(Act.EventID, Handler);
+	Act.Sub = GetEntity()->Subscribe(Act.EventID, std::move(Handler));
 	if (Act.Sub.IsNullPtr()) FAIL;
 	Act.IsSOAction = IsSOAction;
 

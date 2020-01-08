@@ -10,7 +10,7 @@
 namespace Events
 {
 class CEventDispatcher;
-typedef Ptr<class CEventHandler> PEventHandler;
+class CEventHandler;
 
 class CSubscription: public Data::CRefCounted
 {
@@ -18,15 +18,15 @@ private:
 
 	CEventDispatcher*	pDispatcher;
 	CEventID			Event;
-	PEventHandler		Handler;
+	CEventHandler*		pHandler;
 
 public:
 
-	CSubscription(CEventDispatcher* d, CEventID e, PEventHandler h);
-	virtual ~CSubscription();
+	CSubscription(CEventDispatcher* d, CEventID e, CEventHandler* h) : pDispatcher(d), Event(e), pHandler(h) {}
+	virtual ~CSubscription() override;
 
 	CEventID				GetEvent() const { return Event; }
-	const CEventHandler*	GetHandler() const { return Handler; }
+	const CEventHandler*	GetHandler() const { return pHandler; }
 	CEventDispatcher*		GetDispatcher() const { return pDispatcher; }
 };
 
