@@ -1,4 +1,5 @@
 #pragma once
+#include <Data/Ptr.h>
 #include <Math/Polar.h>
 #include <System/System.h>
 
@@ -10,12 +11,19 @@
 
 //???separate 1st/3rd person behaviour and other logic (effects, collision, occlusion etc)?
 
+namespace Scene
+{
+	typedef Ptr<class CSceneNode> PSceneNode;
+}
+
 namespace Frame
 {
 
 class CCameraController final
 {
 protected:
+
+	Scene::PSceneNode _Node;
 
 	CPolar	Angles;
 	vector3	COI;          // Center of interest, eye target in parent coordinates
@@ -29,6 +37,9 @@ protected:
 	bool	Dirty = true;
 
 public:
+
+	void           SetNode(Scene::PSceneNode Node);
+	void           Update(float dt);
 
 	void           SetVerticalAngleLimits(float Min, float Max);
 	void           SetDistanceLimits(float Min, float Max);

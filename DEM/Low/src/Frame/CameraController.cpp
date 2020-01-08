@@ -1,7 +1,39 @@
 #include "CameraController.h"
+#include <Scene/SceneNode.h>
 
 namespace Frame
 {
+
+void CCameraController::SetNode(Scene::PSceneNode Node)
+{
+	_Node = Node;
+	Dirty = true;
+}
+//---------------------------------------------------------------------
+
+void CCameraController::Update(float dt)
+{
+	if (!_Node) return;
+
+	// Smoothing
+	// Shaking
+	// Collisions
+	//???cache raycast for collision/occlusion handling?
+
+	if (Dirty)
+	{
+		quaternion Qx, Qy;
+		Qx.set_rotate_x(-Angles.Theta);
+		Qy.set_rotate_y(-Angles.Phi);
+
+		// Optimized Qx * Qy. Z is negated to switch handedness to RH.
+		_Node->SetRotation(quaternion(Qx.x * Qy.w, Qx.w * Qy.y, -Qx.x * Qy.y, Qx.w * Qy.w));
+		_Node->SetPosition(COI + Angles.GetCartesianZ() * Distance);
+
+		Dirty = false;
+	}
+}
+//---------------------------------------------------------------------
 
 void CCameraController::SetVerticalAngleLimits(float Min, float Max)
 {
@@ -91,23 +123,5 @@ void CCameraController::Move(const vector3& Translation)
 	Dirty = true;
 }
 //---------------------------------------------------------------------
-
-//bool CCameraController::ApplyTo(Math::CTransformSRT& DestTfm)
-//{
-//	if (!Dirty) FAIL;
-//
-//	quaternion Qx, Qy;
-//	Qx.set_rotate_x(-Angles.Theta);
-//	Qy.set_rotate_y(-Angles.Phi);
-//
-//	// Optimized Qx * Qy. Z is negated to switch handedness to RH.
-//	DestTfm.Rotation.set(Qx.x * Qy.w, Qx.w * Qy.y, -Qx.x * Qy.y, Qx.w * Qy.w);
-//
-//	DestTfm.Translation = COI + Angles.GetCartesianZ() * Distance;
-//
-//	Dirty = false;
-//	OK;
-//}
-////---------------------------------------------------------------------
 
 }
