@@ -229,7 +229,7 @@ bool CInputTranslator::OnAxisMove(Events::CEventDispatcher* pDispatcher, const E
 					NewEvent.ID = Rec.OutEventID;
 					NewEvent.Params = n_new(Data::CParams(1));
 					NewEvent.Params->Set<float>(CStrID("Amount"), Ev.Amount);
-					OK;
+					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
 				}
 			}
 		}
@@ -265,7 +265,7 @@ bool CInputTranslator::OnButtonDown(Events::CEventDispatcher* pDispatcher, const
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = Rec.OutEventID;
-					OK;
+					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
 				}
 			}
 		}
@@ -301,7 +301,7 @@ bool CInputTranslator::OnButtonUp(Events::CEventDispatcher* pDispatcher, const E
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = Rec.OutEventID;
-					OK;
+					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
 				}
 			}
 		}
@@ -337,7 +337,7 @@ bool CInputTranslator::OnTextInput(Events::CEventDispatcher* pDispatcher, const 
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = Rec.OutEventID;
-					OK;
+					if (FireEvent(NewEvent, Events::Event_TermOnHandled) > 0) OK;
 				}
 			}
 		}
@@ -371,6 +371,7 @@ void CInputTranslator::UpdateTime(float ElapsedTime)
 				{
 					Events::CEvent& NewEvent = *EventQueue.Add();
 					NewEvent.ID = Rec.OutEventID;
+					FireEvent(NewEvent, Events::Event_TermOnHandled);
 				}
 			}
 		}

@@ -15,6 +15,7 @@ void CCameraController::Update(float dt)
 {
 	if (!_Node) return;
 
+	// Screen edge moving (active zone in pixels & percents?)
 	// Smoothing
 	// Shaking
 	// Collisions
