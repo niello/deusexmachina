@@ -301,7 +301,7 @@ inline EClipStatus CAABB::GetClipStatus(const matrix44& ViewProj) const
 	UPTR ORFlags = 0;
 	for (UPTR i = 0; i < 8; ++i)
 	{
-		vector4 CornerProj = ViewProj * vector4(GetCorner(i));
+		const vector4 CornerProj = ViewProj * vector4(GetCorner(i));
 		UPTR ClipBits = 0;
 		if (CornerProj.x < -CornerProj.w)		ClipBits |= (1 << 0);	// Left
 		else if (CornerProj.x > CornerProj.w)	ClipBits |= (1 << 1);	// Right
@@ -332,7 +332,7 @@ inline void CAABB::ToMatrix44(matrix44& Out) const
 inline bool CAABB::isect_const_x(const float x, const line3& l, vector3& out) const
 {
 	if (l.Vector.x == 0.f) FAIL;
-	float t = (x - l.Start.x) / l.Vector.x;
+	const float t = (x - l.Start.x) / l.Vector.x;
 	if (t < 0.f || t > 1.f) FAIL;
 	out = l.ipol(t);
 	OK;
@@ -342,7 +342,7 @@ inline bool CAABB::isect_const_x(const float x, const line3& l, vector3& out) co
 inline bool CAABB::isect_const_y(const float y, const line3& l, vector3& out) const
 {
 	if (l.Vector.y == 0.f) FAIL;
-	float t = (y - l.Start.y) / l.Vector.y;
+	const float t = (y - l.Start.y) / l.Vector.y;
 	if (t < 0.f || t > 1.f) FAIL;
 	out = l.ipol(t);
 	OK;
@@ -352,7 +352,7 @@ inline bool CAABB::isect_const_y(const float y, const line3& l, vector3& out) co
 inline bool CAABB::isect_const_z(const float z, const line3& l, vector3& out) const
 {
 	if (l.Vector.z == 0.f) FAIL;
-	float t = (z - l.Start.z) / l.Vector.z;
+	const float t = (z - l.Start.z) / l.Vector.z;
 	if (t < 0.f || t > 1.f) FAIL;
 	out = l.ipol(t);
 	OK;

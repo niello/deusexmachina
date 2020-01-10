@@ -387,11 +387,11 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 	// Node has no data, skip it completely
 	if (MaxY < MinY) return Node_Invisible;
 
-	U32 NodeSize = pCDLOD->GetPatchSize() << LOD;
-	float ScaleX = NodeSize * Args.ScaleBaseX;
-	float ScaleZ = NodeSize * Args.ScaleBaseZ;
-	float NodeMinX = Args.AABBMinX + X * ScaleX;
-	float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
+	const U32 NodeSize = pCDLOD->GetPatchSize() << LOD;
+	const float ScaleX = NodeSize * Args.ScaleBaseX;
+	const float ScaleZ = NodeSize * Args.ScaleBaseZ;
+	const float NodeMinX = Args.AABBMinX + X * ScaleX;
+	const float NodeMinZ = Args.AABBMinZ + Z * ScaleZ;
 
 	CAABB NodeAABB;
 	NodeAABB.Min.x = NodeMinX;
