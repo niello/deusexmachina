@@ -37,6 +37,7 @@ public:
 	void SetTransform(UPTR Index, const Math::CTransformSRT& Tfm);
 
 	UPTR GetTransformCount() const { return _BlendInfo ? _BlendInfo->Ports.size() : _Nodes.size(); }
+	bool IsNodeActive(UPTR Index) const;
 };
 
 inline void CTransformSource::SetScale(UPTR Index, const vector3& Scale)
@@ -72,6 +73,14 @@ inline void CTransformSource::SetTransform(UPTR Index, const Math::CTransformSRT
 		_BlendInfo->Blender->SetTransform(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Tfm);
 	else
 		_Nodes[Index]->SetLocalTransform(Tfm);
+}
+//---------------------------------------------------------------------
+
+inline bool CTransformSource::IsNodeActive(UPTR Index) const
+{
+	return _BlendInfo ?
+		_BlendInfo->Blender->IsNodeActive(Index) :
+		(_Nodes[Index] && _Nodes[Index]->IsActive());
 }
 //---------------------------------------------------------------------
 

@@ -254,7 +254,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scene/LODGroup.h
 	DEM/Low/src/Scene/NodeAttribute.h
 	DEM/Low/src/Scene/NodeVisitor.h
-	DEM/Low/src/Scene/SceneFwd.h
 	DEM/Low/src/Scene/SceneNode.h
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.h
 	DEM/Low/src/Scene/SceneNodeRenderDebug.h

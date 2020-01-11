@@ -29,6 +29,10 @@ struct CScenePoseWriter : acl::OutputWriter
 		_pTfmSource->SetScale(bone_index, vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
 	}
 
+	bool skip_bone_rotation(uint16_t bone_index) const { return !_pTfmSource->IsNodeActive(bone_index); }
+	bool skip_bone_translation(uint16_t bone_index) const { return !_pTfmSource->IsNodeActive(bone_index); }
+	bool skip_bone_scale(uint16_t bone_index) const { return !_pTfmSource->IsNodeActive(bone_index); }
+
 	CTransformSource* _pTfmSource;
 };
 
