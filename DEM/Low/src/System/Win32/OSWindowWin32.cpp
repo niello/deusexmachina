@@ -387,7 +387,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 			break;
 
 		case WM_KILLFOCUS:
-			FireEvent(CStrID("OnKillFocus"));
+			FireEvent(CStrID("OnFocusLost"));
 			::ReleaseCapture();
 			break;
 
