@@ -694,6 +694,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			continue;
 		}
 
+		// FIXME: to renderer settings!
 		constexpr float VisibilityRange = 1000.f;
 		constexpr float MorphStartRatio = 0.7f;
 		constexpr UPTR MAX_LOD_COUNT = 32;

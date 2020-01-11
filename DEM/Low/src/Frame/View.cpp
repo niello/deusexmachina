@@ -99,7 +99,7 @@ void CView::UpdateVisibilityCache()
 	{
 		pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
 
-		for (UPTR i = 0; i < VisibilityCache.GetCount();)
+		for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
 		{
 			Scene::CNodeAttribute* pAttr = VisibilityCache[i];
 			if (pAttr->IsA<CLightAttribute>())

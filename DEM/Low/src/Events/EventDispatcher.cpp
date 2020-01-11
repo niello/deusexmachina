@@ -15,34 +15,34 @@ UPTR CEventDispatcher::FireEvent(const CEventBase& Event, U8 Flags)
 
 	Event.UniqueNumber = EventsFiredTotal;
 
-	// Look for Handlers to this event
+	// Look for this event handlers
 	{
 		auto It = Handlers.find(EvID);
-		CEventHandler* pSub = (It == Handlers.cend()) ? nullptr : It->second.get();
-		while (pSub)
+		PEventHandler Sub = (It == Handlers.cend()) ? nullptr : It->second;
+		while (Sub)
 		{
-			if (pSub->Invoke(this, Event))
+			if (Sub->Invoke(this, Event))
 			{
 				++HandledCounter;
 				if (Flags & Event_TermOnHandled) return HandledCounter;
 			}
-			pSub = pSub->Next.get();
+			Sub = Sub->Next;
 		}
 	}
 
-	// Look for Handlers to any event
+	// Look for any event handlers
 	if (!(Flags & Event_IgnoreAllEventSubs))
 	{
 		auto It = Handlers.find(nullptr);
-		CEventHandler* pSub = (It == Handlers.cend()) ? nullptr : It->second.get();
-		while (pSub)
+		PEventHandler Sub = (It == Handlers.cend()) ? nullptr : It->second;
+		while (Sub)
 		{
-			if (pSub->Invoke(this, Event))
+			if (Sub->Invoke(this, Event))
 			{
 				++HandledCounter;
 				if (Flags & Event_TermOnHandled) return HandledCounter;
 			}
-			pSub = pSub->Next.get();
+			Sub = Sub->Next;
 		}
 	}
 
@@ -54,7 +54,7 @@ PSub CEventDispatcher::Subscribe(CEventID ID, PEventHandler&& Handler)
 {
 	n_assert_dbg(Handler);
 
-	CEventHandler* pHandler = Handler.get();
+	CEventHandler* pHandler = Handler.Get();
 	const auto Priority = pHandler->GetPriority();
 
 	auto It = Handlers.find(ID);
@@ -94,7 +94,7 @@ void CEventDispatcher::Unsubscribe(CEventID ID, CEventHandler* pHandler)
 	PEventHandler* pCurr = &It->second;
 	do
 	{
-		if ((*pCurr).get() == pHandler)
+		if ((*pCurr) == pHandler)
 		{
 			if (pPrev) (*pPrev)->Next = std::move(pHandler->Next);
 			else

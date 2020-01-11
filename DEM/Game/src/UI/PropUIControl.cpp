@@ -329,7 +329,7 @@ bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, const char*
 	CPropScriptable* pScriptable = GetEntity()->GetProperty<CPropScriptable>();
 	CScriptObject* pScriptObj = pScriptable ? pScriptable->GetScriptObject() : nullptr;
 	if (!pScriptObj) FAIL;
-	return AddActionHandler(ID, UIName, std::make_unique<Events::CEventHandlerScript>(pScriptObj, ScriptFuncName), Priority, IsSOAction);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerScript)(pScriptObj, ScriptFuncName), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 

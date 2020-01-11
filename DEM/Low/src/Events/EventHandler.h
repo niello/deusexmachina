@@ -7,7 +7,8 @@
 namespace Events
 {
 
-class CEventHandler: public Data::CRefCounted //???is unique_ptr enough?
+// NB: refcounting is required for unsubscribing from an event inside its handler
+class CEventHandler: public Data::CRefCounted
 {
 protected:
 

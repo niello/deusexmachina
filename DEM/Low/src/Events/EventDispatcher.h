@@ -53,26 +53,26 @@ public:
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, CEventCallback Callback, U16 Priority)
 {
-	return Subscribe(ID, std::make_unique<CEventHandlerCallback>(Callback, Priority));
+	return Subscribe(ID, n_new(CEventHandlerCallback)(Callback, Priority));
 }
 //---------------------------------------------------------------------
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, CEventFunctor&& Functor, U16 Priority)
 {
-	return Subscribe(ID, std::make_unique<CEventHandlerFunctor>(std::move(Functor), Priority));
+	return Subscribe(ID, n_new(CEventHandlerFunctor)(std::move(Functor), Priority));
 }
 //---------------------------------------------------------------------
 
 inline PSub CEventDispatcher::Subscribe(CEventID ID, const CEventFunctor& Functor, U16 Priority)
 {
-	return Subscribe(ID, std::make_unique<CEventHandlerFunctor>(Functor, Priority));
+	return Subscribe(ID, n_new(CEventHandlerFunctor)(Functor, Priority));
 }
 //---------------------------------------------------------------------
 
 template<class T>
 inline PSub CEventDispatcher::Subscribe(CEventID ID, T* Object, bool (T::*Callback)(CEventDispatcher*, const CEventBase&), U16 Priority)
 {
-	return Subscribe(ID, std::make_unique<CEventHandlerMember<T>>(Object, Callback, Priority));
+	return Subscribe(ID, n_new(CEventHandlerMember<T>)(Object, Callback, Priority));
 }
 //---------------------------------------------------------------------
 

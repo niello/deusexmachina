@@ -115,7 +115,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName,
 											 Events::CEventCallback Callback,
 											 int Priority, bool IsSOAction)
 {
-	return AddActionHandler(ID, UIName, std::make_unique<Events::CEventHandlerCallback>(Callback), Priority, IsSOAction);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerCallback)(Callback), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 
@@ -124,7 +124,7 @@ inline bool CPropUIControl::AddActionHandler(CStrID ID, const char* UIName, T* O
 											 bool (T::*Callback)(Events::CEventDispatcher*, const Events::CEventBase&),
 											 int Priority, bool IsSOAction)
 {
-	return AddActionHandler(ID, UIName, std::make_unique<Events::CEventHandlerMember<T>>(Object, Callback), Priority, IsSOAction);
+	return AddActionHandler(ID, UIName, n_new(Events::CEventHandlerMember<T>)(Object, Callback), Priority, IsSOAction);
 }
 //---------------------------------------------------------------------
 
