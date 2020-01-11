@@ -8,15 +8,19 @@ namespace Events
 {
 
 // NB: refcounting is required for unsubscribing from an event inside its handler
-class CEventHandler: public Data::CRefCounted
+class CEventHandler
 {
 protected:
 
+	U16 RefCount = 0;
 	U16 Priority;
+
+	friend inline void DEMPtrAddRef(Events::CEventHandler* p) noexcept { ++p->RefCount; }
+	friend inline void DEMPtrRelease(Events::CEventHandler* p) noexcept { n_assert_dbg(p->RefCount > 0); if (--p->RefCount == 0) n_delete(p); }
 
 public:
 
-	virtual ~CEventHandler() override = default;
+	virtual ~CEventHandler() = default;
 
 	PEventHandler Next;
 
