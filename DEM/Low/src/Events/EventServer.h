@@ -40,24 +40,17 @@ public:
 	CEventServer();
 	virtual ~CEventServer() override;
 
-	void		ScheduleEvent(CEventBase& Event, U8 Flags = 0, CEventDispatcher* pDisp = nullptr, float RelTime = 0.f);
+	void		ScheduleEvent(PEventBase&& Event, U8 Flags = 0, CEventDispatcher* pDisp = nullptr, float RelTime = 0.f);
 	void		ScheduleEvent(CStrID ID, Data::PParams Params = nullptr, U8 Flags = 0, CEventDispatcher* pDisp = nullptr, float RelTime = 0.f);
 	UPTR		RemoveScheduledEvents(CEventDispatcher* pDisp);
 	UPTR		RemoveAllScheduledEvents();
 
 	void		ProcessPendingEvents();
-
-	//!!!use pool inside! from map RTTI->Pool (store such mapping in Factory?)
-	//!!!or use small allocator!
-	//Ptr<CEventNative>			CreateNativeEvent(const Core::CRTTI* RTTI);
-	//template<class T> Ptr<T>	CreateNativeEvent();
 };
 
 inline void CEventServer::ScheduleEvent(CStrID ID, Data::PParams Params, U8 Flags, CEventDispatcher* pDisp, float RelTime)
 {
-	//!!!event pools! can't allocate on stack here!
-	Ptr<CEvent> Event = n_new(CEvent)(ID, Params);
-	ScheduleEvent(*Event, Flags, pDisp, RelTime);
+	ScheduleEvent(std::make_unique<CEvent>(ID, Params), Flags, pDisp, RelTime);
 }
 //---------------------------------------------------------------------
 

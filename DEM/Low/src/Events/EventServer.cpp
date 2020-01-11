@@ -19,12 +19,12 @@ CEventServer::~CEventServer()
 }
 //---------------------------------------------------------------------
 
-void CEventServer::ScheduleEvent(CEventBase& Event, U8 Flags, CEventDispatcher* pDisp, float RelTime)
+void CEventServer::ScheduleEvent(PEventBase&& Event, U8 Flags, CEventDispatcher* pDisp, float RelTime)
 {
 	CEventNode* pNewNode = EventNodes.Construct();
 	n_assert2(pNewNode, "Nervous system of the engine was paralyzed! Can't allocate event node");
 	pNewNode->FireTime = (float)CoreSrv->GetTime() + RelTime;
-	pNewNode->Event = &Event;
+	pNewNode->Event = std::move(Event);
 	pNewNode->pDispatcher = pDisp ? pDisp : this;
 	pNewNode->Flags = Flags;
 	if (PendingEventsTail)

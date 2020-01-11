@@ -9,7 +9,7 @@
 namespace Events
 {
 
-class CEventBase: public Core::CObject
+class CEventBase : public Core::CRTTIBaseClass
 {
 protected:
 
@@ -19,10 +19,10 @@ protected:
 
 public:
 
-	virtual CEventID	GetID() const = 0;
-	UPTR				GetUniqueNumber() const { return UniqueNumber; }
+	virtual CEventID GetID() const = 0;
+	UPTR             GetUniqueNumber() const { return UniqueNumber; }
 };
 
-typedef Ptr<CEventBase> PEventBase;
+typedef std::unique_ptr<CEventBase> PEventBase;
 
 }

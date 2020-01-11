@@ -22,16 +22,14 @@ protected:
 
 public:
 
-	CStrID			ID;		// Event ID (string like "OnItemPicked")
-	Data::PParams	Params;	// Event parameters
+	CStrID        ID;     // Event ID (string like "OnItemPicked")
+	Data::PParams Params; // Event parameters
 
 	CEvent() {}
 	CEvent(CStrID _ID): ID(_ID) {}
 	CEvent(CStrID _ID, Data::PParams _Params = nullptr): ID(_ID), Params(_Params) {}
 
 	virtual CEventID GetID() const { return ID; }
-
-	CStrID GetStrID() const { return ID; }
 
 //	void* operator new (size_t size) { return Pool.Allocate(); }
 //	void* operator new (size_t size, void* Place) { return Place; }
