@@ -125,4 +125,24 @@ void CCameraController::Move(const vector3& Translation)
 }
 //---------------------------------------------------------------------
 
+void CCameraController::MoveForward(float Amount)
+{
+	if (Amount == 0.f) return;
+	auto ForwardAxis = vector3::AxisZ;
+	ForwardAxis.rotate(vector3::AxisY, -Angles.Phi);
+	COI += (ForwardAxis * Amount);
+	Dirty = true;
+}
+//---------------------------------------------------------------------
+
+void CCameraController::MoveSide(float Amount)
+{
+	if (Amount == 0.f) return;
+	auto RightAxis = vector3::AxisX;
+	RightAxis.rotate(vector3::AxisY, -Angles.Phi);
+	COI += (RightAxis * Amount);
+	Dirty = true;
+}
+//---------------------------------------------------------------------
+
 }

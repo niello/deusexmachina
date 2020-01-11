@@ -54,6 +54,8 @@ public:
 	void           OrbitHorizontal(float AngleRad);
 	void           Zoom(float Amount);
 	void           Move(const vector3& Translation);
+	void           MoveForward(float Amount);
+	void           MoveSide(float Amount);
 
 	float          GetVerticalAngleMin() const { return MinVertAngle; }
 	float          GetVerticalAngleMax() const { return MaxVertAngle; }
