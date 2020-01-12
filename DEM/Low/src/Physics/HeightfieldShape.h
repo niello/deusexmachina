@@ -15,16 +15,15 @@ class CHeightfieldShape: public CCollisionShape
 
 protected:
 
-	void*				pHFData;
+	void*   pHFData = nullptr;
 
 	// Bullet shape is created with an origin at the center of a heightmap AABB
 	// This is an offset between that center and the real origin
-	vector3				Offset;
+	vector3 Offset;
 
 public:
 
-	CHeightfieldShape(): pHFData(nullptr) {}
-	virtual ~CHeightfieldShape() { Unload(); }
+	virtual ~CHeightfieldShape() override { Unload(); }
 
 	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset);
 	virtual void	Unload();

@@ -20,18 +20,6 @@ protected:
 	btDiscreteDynamicsWorld* pBtDynWorld = nullptr;
 	float                    StepTime = 1.f / 60.f;
 
-	// TODO: remove
-	CArray<PPhysicsObject>			Objects;
-
-	// TODO: remove
-	// Cross-dependence of collision objects and the level.
-	// Only objects know, how to add them, but only the level knows, when it is killed.
-	// On level term all objects must be removed from it.
-	friend class CPhysicsObject;
-
-	bool	AddCollisionObject(CPhysicsObject& Obj);
-	void	RemoveCollisionObject(CPhysicsObject& Obj);
-
 public:
 
 	CPhysicsLevel(const CAABB& Bounds);

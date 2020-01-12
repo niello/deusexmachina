@@ -85,7 +85,6 @@ bool CPhysicsObject::AttachToLevel(CPhysicsLevel& World)
 
 	n_assert(!pWorld);
 	pWorld = &World;
-	pWorld->AddCollisionObject(*this);
 
 	OK;
 }
@@ -95,7 +94,6 @@ void CPhysicsObject::RemoveFromLevel()
 {
 	if (pWorld)
 	{
-		pWorld->RemoveCollisionObject(*this);
 		pWorld = nullptr;
 	}
 }

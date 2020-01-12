@@ -25,13 +25,13 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	btCollisionDispatcher* pBtCollDisp = new btCollisionDispatcher(pBtCollCfg);
 
 	//http://bulletphysics.org/mediawiki-1.5.8/index.php/BtContactSolverInfo
-	btSequentialImpulseConstraintSolver* pBtSolver = new btSequentialImpulseConstraintSolver;
+	btSequentialImpulseConstraintSolver* pBtSolver = new btSequentialImpulseConstraintSolver();
 
 	pBtDynWorld = new btDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
 
-	auto pBtDebugDrawer = n_new(CPhysicsDebugDraw);
+	auto pBtDebugDrawer = n_new(CPhysicsDebugDraw());
 	pBtDebugDrawer->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
 	pBtDynWorld->setDebugDrawer(pBtDebugDrawer);
 
@@ -67,9 +67,6 @@ CPhysicsLevel::~CPhysicsLevel()
 {
 	if (pBtDynWorld)
 	{
-		for (UPTR i = 0; i < Objects.GetCount(); ++i)
-			Objects[i]->RemoveFromLevel();
-
 		auto pBtDebugDrawer = pBtDynWorld->getDebugDrawer();
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
@@ -82,11 +79,7 @@ CPhysicsLevel::~CPhysicsLevel()
 		delete pBtCollDisp;
 		delete pBtCollCfg;
 		delete pBtBroadPhase;
-
-		pBtDynWorld = nullptr;
 	}
-
-	Objects.Clear();
 }
 //---------------------------------------------------------------------
 
@@ -99,20 +92,6 @@ void CPhysicsLevel::Update(float dt)
 void CPhysicsLevel::RenderDebug()
 {
 	if (pBtDynWorld) pBtDynWorld->debugDrawWorld();
-}
-//---------------------------------------------------------------------
-
-bool CPhysicsLevel::AddCollisionObject(CPhysicsObject& Obj)
-{
-	n_assert(pBtDynWorld && Obj.GetBtObject());
-	Objects.Add(&Obj);
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CPhysicsLevel::RemoveCollisionObject(CPhysicsObject& Obj)
-{
-	Objects.RemoveByValue(&Obj);
 }
 //---------------------------------------------------------------------
 
@@ -131,7 +110,6 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 
 	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
 	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObject*)RayCB.m_collisionObject->getUserPointer() : nullptr;
-	n_assert_dbg(!pOutObj || !(*pOutObj).IsValidPtr() || Objects.Contains(*pOutObj));
 
 	OK;
 }

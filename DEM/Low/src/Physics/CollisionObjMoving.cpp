@@ -35,9 +35,10 @@ void CCollisionObjMoving::Term()
 
 bool CCollisionObjMoving::InternalInit()
 {
-	CMotionStateKinematic* pMS = new CMotionStateKinematic;
-	btRigidBody::btRigidBodyConstructionInfo CI(0.f, pMS, Shape->GetBtShape());
-
+	btRigidBody::btRigidBodyConstructionInfo CI(
+		0.f,
+		new CMotionStateKinematic(),
+		Shape->GetBtShape());
 	//!!!set friction and restitution!
 
 	pBtCollObj = new btRigidBody(CI);
