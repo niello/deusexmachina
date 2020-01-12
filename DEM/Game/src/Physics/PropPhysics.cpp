@@ -98,7 +98,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 		bool IsDynamic = ObjDesc.Get(CStrID("Dynamic"), false);
 
-		Physics::PPhysicsObj Obj;
+		Physics::PPhysicsObject Obj;
 		if (IsDynamic) Obj = n_new(Physics::CRigidBody);
 		else Obj = n_new(Physics::CCollisionObjMoving);
 		Obj->SetUserData(*(void**)&GetEntity()->GetUID());

@@ -139,7 +139,7 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 		if (Collisions[i] == pCurrObj) continue;
 		pCurrObj = Collisions[i];
 		if (!pCurrObj || !pCurrObj->getUserPointer()) continue;
-		Physics::PPhysicsObj PhysObj = (Physics::CPhysicsObject*)pCurrObj->getUserPointer();
+		Physics::PPhysicsObject PhysObj = (Physics::CPhysicsObject*)pCurrObj->getUserPointer();
 		void* pUserData = PhysObj->GetUserData();
 		if (!pUserData) continue;
 		CStrID EntityID = *(CStrID*)&pUserData;

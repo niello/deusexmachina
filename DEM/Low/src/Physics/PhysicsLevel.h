@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_PHYSICS_LEVEL_H__
-#define __DEM_L1_PHYSICS_LEVEL_H__
-
-#include <Physics/CollisionObjStatic.h>
+#include <Data/Ptr.h>
 #include <Data/Array.h>
+#include <Math/Vector3.h>
 
 // Physics level represents a space where physics bodies and collision objects live.
 
@@ -12,17 +10,20 @@ class btDiscreteDynamicsWorld;
 
 namespace Physics
 {
+typedef Ptr<class CPhysicsObject> PPhysicsObject;
+typedef std::unique_ptr<class CPhysicsLevel> PPhysicsLevel;
 
-class CPhysicsLevel: public Core::CObject
+class CPhysicsLevel final
 {
-	RTTI_CLASS_DECL;
-
 protected:
 
-	btDiscreteDynamicsWorld*	pBtDynWorld;
-	float						StepTime;
-	CArray<PPhysicsObj>			Objects;
+	btDiscreteDynamicsWorld* pBtDynWorld = nullptr;
+	float                    StepTime = 1.f / 60.f;
 
+	// TODO: remove
+	CArray<PPhysicsObject>			Objects;
+
+	// TODO: remove
 	// Cross-dependence of collision objects and the level.
 	// Only objects know, how to add them, but only the level knows, when it is killed.
 	// On level term all objects must be removed from it.
@@ -33,15 +34,13 @@ protected:
 
 public:
 
-	CPhysicsLevel(): pBtDynWorld(nullptr), StepTime(1.f / 60.f) {}
+	CPhysicsLevel(const CAABB& Bounds);
 	~CPhysicsLevel();
 
-	bool	Init(const CAABB& Bounds);
-	void	Term();
-	void	Trigger(float FrameTime);
+	void	Update(float dt);
 	void	RenderDebug();
 
-	bool	GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = nullptr, PPhysicsObj* pOutObj = nullptr) const;
+	bool	GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr) const;
 	UPTR	GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const;
 
 	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, CArray<PEntity>& Result);
@@ -51,14 +50,7 @@ public:
 	void	SetGravity(const vector3& NewGravity);
 	void	GetGravity(vector3& Out) const;
 
-	//void			SetPointOfInterest(const vector3& NewPOI) { POI = NewPOI; }
-	//const vector3&	GetPointOfInterest() const { return POI; }
-
 	btDiscreteDynamicsWorld* GetBtWorld() const { return pBtDynWorld; }
 };
 
-typedef Ptr<CPhysicsLevel> PPhysicsLevel;
-
 }
-
-#endif

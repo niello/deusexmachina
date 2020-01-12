@@ -10,6 +10,7 @@
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsObject.h>
 #include <AI/AILevel.h>
 #include <Events/EventServer.h>
 #include <IO/IOServer.h>
@@ -104,10 +105,8 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 	{
 		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
-		CAABB Bounds(Center, Extents);
 
-		PhysicsLevel = n_new(Physics::CPhysicsLevel);
-		if (!PhysicsLevel->Init(Bounds)) FAIL;
+		PhysicsLevel.reset(n_new(Physics::CPhysicsLevel(CAABB(Center, Extents))));
 
 		//???load .bullet base contents, useful for static collisions?
 
@@ -452,11 +451,11 @@ void CGameLevel::RenderDebug()
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
 {
-	if (PhysicsLevel.IsNullPtr()) FAIL;
+	if (!PhysicsLevel) FAIL;
 
 	U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
-	Physics::PPhysicsObj PhysObj;
+	Physics::PPhysicsObject PhysObj;
 	if (!PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 
 	if (pOutEntityUID)

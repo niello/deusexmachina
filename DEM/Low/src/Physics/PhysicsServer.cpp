@@ -1,7 +1,7 @@
 #include "PhysicsServer.h"
 
 #include <Physics/BulletConv.h>
-#include <Physics/PhysicsDebugDraw.h>
+#include <Physics/CollisionShape.h>
 #include <BulletCollision/CollisionShapes/btBoxShape.h>
 #include <BulletCollision/CollisionShapes/btSphereShape.h>
 #include <BulletCollision/CollisionShapes/btCapsuleShape.h>
@@ -10,7 +10,7 @@ namespace Physics
 {
 __ImplementSingleton(Physics::CPhysicsServer);
 
-CPhysicsServer::CPhysicsServer(): _IsOpen(false)
+CPhysicsServer::CPhysicsServer()
 {
 	__ConstructSingleton;
 
@@ -36,34 +36,7 @@ CPhysicsServer::CPhysicsServer(): _IsOpen(false)
 
 CPhysicsServer::~CPhysicsServer()
 {
-	n_assert(!_IsOpen);
 	__DestructSingleton;
-}
-//---------------------------------------------------------------------
-
-bool CPhysicsServer::Open()
-{
-	n_assert(!_IsOpen);
-
-	pDD = n_new(CPhysicsDebugDraw);
-	pDD->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
-
-	_IsOpen = true;
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CPhysicsServer::Close()
-{
-	n_assert(_IsOpen);
-
-	if (pDD)
-	{
-		n_delete(pDD);
-		pDD = nullptr;
-	}
-
-	_IsOpen = false;
 }
 //---------------------------------------------------------------------
 

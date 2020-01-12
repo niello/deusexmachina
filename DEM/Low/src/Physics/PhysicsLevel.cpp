@@ -2,6 +2,7 @@
 
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsServer.h>
+#include <Physics/PhysicsObject.h>
 #include <Physics/PhysicsDebugDraw.h>
 #include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
@@ -12,19 +13,9 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CPhysicsLevel, Core::CObject);
 
-CPhysicsLevel::~CPhysicsLevel()
+CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 {
-	Term();
-}
-//---------------------------------------------------------------------
-
-// Called by Physics::Server when the Level is attached to the server.
-bool CPhysicsLevel::Init(const CAABB& Bounds)
-{
-	n_assert(!pBtDynWorld);
-
 	btVector3 Min = VectorToBtVector(Bounds.Min);
 	btVector3 Max = VectorToBtVector(Bounds.Max);
 	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
@@ -39,7 +30,10 @@ bool CPhysicsLevel::Init(const CAABB& Bounds)
 	pBtDynWorld = new btDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
-	pBtDynWorld->setDebugDrawer(PhysicsSrv->GetDebugDrawer());
+
+	auto pBtDebugDrawer = n_new(CPhysicsDebugDraw);
+	pBtDebugDrawer->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
+	pBtDynWorld->setDebugDrawer(pBtDebugDrawer);
 
 	//!!!can reimplement with some notifications like FireEvent(OnCollision)!
 	//btGhostPairCallback* pGhostPairCB = new btGhostPairCallback(); //!!!delete!
@@ -66,24 +60,24 @@ bool CPhysicsLevel::Init(const CAABB& Bounds)
 	materials - restitution and friction
 	there is a multithreading support
 	*/
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::Term()
+CPhysicsLevel::~CPhysicsLevel()
 {
 	if (pBtDynWorld)
 	{
 		for (UPTR i = 0; i < Objects.GetCount(); ++i)
 			Objects[i]->RemoveFromLevel();
 
+		auto pBtDebugDrawer = pBtDynWorld->getDebugDrawer();
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
 		btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
 		btBroadphaseInterface* pBtBroadPhase = pBtDynWorld->getBroadphase();
 
 		delete pBtDynWorld;
+		delete pBtDebugDrawer;
 		delete pBtSolver;
 		delete pBtCollDisp;
 		delete pBtCollCfg;
@@ -96,17 +90,15 @@ void CPhysicsLevel::Term()
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::Trigger(float FrameTime)
+void CPhysicsLevel::Update(float dt)
 {
-	n_assert(pBtDynWorld);
-	pBtDynWorld->stepSimulation(FrameTime, 10, StepTime);
+	if (pBtDynWorld) pBtDynWorld->stepSimulation(dt, 10, StepTime);
 }
 //---------------------------------------------------------------------
 
 void CPhysicsLevel::RenderDebug()
 {
-	n_assert(pBtDynWorld);
-	pBtDynWorld->debugDrawWorld();
+	if (pBtDynWorld) pBtDynWorld->debugDrawWorld();
 }
 //---------------------------------------------------------------------
 
@@ -124,7 +116,7 @@ void CPhysicsLevel::RemoveCollisionObject(CPhysicsObject& Obj)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObj* pOutObj) const
+bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObject* pOutObj) const
 {
 	n_assert(pBtDynWorld);
 

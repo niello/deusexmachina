@@ -65,7 +65,7 @@ public:
 	const vector3&		GetShapeOffset() const { return ShapeOffset; }
 };
 
-typedef Ptr<CPhysicsObject> PPhysicsObj;
+typedef Ptr<CPhysicsObject> PPhysicsObject;
 
 }
 

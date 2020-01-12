@@ -95,7 +95,7 @@ void CGameServer::Trigger()
 		if (pPhysLvl)
 		{
 			pLevel->FireEvent(CStrID("BeforePhysics"));
-			pPhysLvl->Trigger(FrameTime);
+			pPhysLvl->Update(FrameTime);
 			pLevel->FireEvent(CStrID("AfterPhysics"));
 		}
 

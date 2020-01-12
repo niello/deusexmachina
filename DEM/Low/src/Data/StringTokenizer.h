@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_STRING_TOKENIZER_H__
-#define __DEM_L1_STRING_TOKENIZER_H__
-
-#include <StdDEM.h>
+#include <System/System.h>
 
 // Helper class for splitting read-only strings to tokens with minimal overhead
 
@@ -141,5 +138,3 @@ inline const char* CStringTokenizer::GetNextToken(const char* pSplitChars, char 
 //---------------------------------------------------------------------
 
 }
-
-#endif

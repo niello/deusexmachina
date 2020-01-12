@@ -24,7 +24,7 @@ namespace Scene
 
 namespace Physics
 {
-	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
+	typedef std::unique_ptr<class CPhysicsLevel> PPhysicsLevel;
 	typedef int CMaterialType;
 }
 
@@ -102,7 +102,7 @@ public:
 
 	Scene::CSceneNode*		GetSceneRoot() { return SceneRoot.Get(); }
 	Scene::CSPS&			GetSPS() { return SPS; }
-	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
+	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.get(); }
 	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
 };
 
