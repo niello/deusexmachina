@@ -162,8 +162,8 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
 	DEM/Low/src/Physics/PhysicsLevel.h
 	DEM/Low/src/Physics/PhysicsObject.h
-	DEM/Low/src/Physics/PhysicsServer.h
 	DEM/Low/src/Physics/RigidBody.h
+	DEM/Low/src/Physics/RigidBodySet.h
 	DEM/Low/src/Physics/SceneNodeValidatePhysics.h
 	DEM/Low/src/Physics/StaticMeshShape.h
 	DEM/Low/src/Render/CDLODData.h
@@ -410,8 +410,8 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/PhysicsDebugDraw.cpp
 	DEM/Low/src/Physics/PhysicsLevel.cpp
 	DEM/Low/src/Physics/PhysicsObject.cpp
-	DEM/Low/src/Physics/PhysicsServer.cpp
 	DEM/Low/src/Physics/RigidBody.cpp
+	DEM/Low/src/Physics/RigidBodySet.cpp
 	DEM/Low/src/Physics/SceneNodeValidatePhysics.cpp
 	DEM/Low/src/Physics/StaticMeshShape.cpp
 	DEM/Low/src/Render/CDLODData.cpp

@@ -1,7 +1,6 @@
 #include "PhysicsObject.h"
 
 #include <Physics/BulletConv.h>
-#include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceCreator.h>
@@ -28,10 +27,10 @@ bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
 	CStrID ShapeUID = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
 	Resources::PResource RShape = ResourceMgr->RegisterResource<Physics::CCollisionShape>(ShapeUID);
 	Shape = RShape->ValidateObject<Physics::CCollisionShape>();
-	*/
 
 	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), CString("Default")));
 	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), CString("All")));
+	*/
 
 	ShapeOffset = Offset;
 

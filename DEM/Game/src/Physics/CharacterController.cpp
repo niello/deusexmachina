@@ -1,7 +1,6 @@
 #include "CharacterController.h"
 
 #include <Physics/BulletConv.h>
-#include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/ClosestNotMeRayResultCallback.h>
@@ -28,12 +27,12 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 	float CapsuleHeight = Height - Radius - Radius - Hover;
 	n_assert (CapsuleHeight > 0.f);
 
-	PCollisionShape Shape = PhysicsSrv->CreateCapsuleShape(Radius, CapsuleHeight);
-
 	vector3 Offset(0.f, (Hover + Height) * 0.5f, 0.f);
 
-	static const U16 MaskCharacter = PhysicsSrv->CollisionGroups.GetMask("Character");
-	static const U16 MaskAll = PhysicsSrv->CollisionGroups.GetMask("All");
+	PCollisionShape Shape = CCollisionShape::CreateCapsuleY(Offset, Radius, CapsuleHeight);
+
+	const U16 MaskCharacter = -1;// PhysicsSrv->CollisionGroups.GetMask("Character");
+	const U16 MaskAll = -1; // PhysicsSrv->CollisionGroups.GetMask("All");
 
 	Body = n_new(CRigidBody);
 	Body->Init(*Shape, Mass, MaskCharacter, MaskAll, Offset);

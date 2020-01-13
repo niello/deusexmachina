@@ -81,6 +81,7 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr,
 	// FIXME: need implicit method!
 	if (pNode->IsWorldMatrixDirty()) pNode->UpdateWorldFromLocal();
 
+	// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
 	Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
 
 	OK;

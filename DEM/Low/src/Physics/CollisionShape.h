@@ -8,6 +8,7 @@ class btCollisionShape;
 
 namespace Physics
 {
+typedef Ptr<class CCollisionShape> PCollisionShape;
 
 class CCollisionShape : public Resources::CResourceObject
 {
@@ -19,6 +20,11 @@ protected:
 
 public:
 
+	static PCollisionShape CreateSphere(const vector3& Offset, float Radius);
+	static PCollisionShape CreateBox(const vector3& Offset, const vector3& Size);
+	static PCollisionShape CreateCapsuleY(const vector3& Offset, float Radius, float CylinderLength);
+	// TODO: CreateMesh(Render::PMeshData MeshData)
+
 	CCollisionShape(btCollisionShape* pShape);
 	virtual ~CCollisionShape() override;
 
@@ -26,7 +32,5 @@ public:
 	virtual const vector3& GetOffset() const { return vector3::Zero; } // Could use btCompoundShape instead
 	btCollisionShape*      GetBulletShape() const { return pBtShape; }
 };
-
-typedef Ptr<CCollisionShape> PCollisionShape;
 
 }

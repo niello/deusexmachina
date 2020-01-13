@@ -1,7 +1,6 @@
 #include "PhysicsLevel.h"
 
 #include <Physics/BulletConv.h>
-#include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsObject.h>
 #include <Physics/PhysicsDebugDraw.h>
 #include <Math/AABB.h>

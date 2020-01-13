@@ -44,7 +44,7 @@ CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape,
 		0.f,
 		new CKinematicMotionState(InitialTfm, Shape.GetOffset()),
 		Shape.GetBulletShape());
-	//!!!set friction and restitution! for spheres always need rolling friction!
+	//!!!set friction and restitution! for spheres always need rolling friction! TODO: physics material
 
 	_pBtObject = new btRigidBody(CI);
 	_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
@@ -56,17 +56,14 @@ CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape,
 
 CMovableCollider::~CMovableCollider()
 {
-	if (_Level && _pBtObject)
-	{
-		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-		_Level->GetBtWorld()->removeRigidBody(_pBtObject);
-		delete _pBtObject->getMotionState();
-		delete _pBtObject;
+	_Level->GetBtWorld()->removeRigidBody(_pBtObject);
+	delete _pBtObject->getMotionState();
+	delete _pBtObject;
 
-		// See constructor
-		pShape->Release();
-	}
+	// See constructor
+	pShape->Release();
 }
 //---------------------------------------------------------------------
 

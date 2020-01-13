@@ -7,7 +7,6 @@
 #include <AI/Behaviour/ActionSequence.h>
 #include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
-#include <Physics/PhysicsServer.h>
 #include <Scene/PropSceneNode.h>
 #include <Scripting/PropScriptable.h>
 #include <Scripting/EventHandlerScript.h>

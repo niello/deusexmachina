@@ -4,11 +4,6 @@
 
 // Transformation source that samples an animation clip into the node hierarchy
 
-namespace Scene
-{
-	class CSceneNode;
-}
-
 namespace DEM::Anim
 {
 typedef Ptr<class CAnimationClip> PAnimationClip;
@@ -20,13 +15,13 @@ class alignas(CACLContext) CAnimationPlayer final : public CTransformSource
 {
 protected:
 
-	CACLContext                     _Context; // At offset 0
-	PAnimationClip                  _Clip;
+	CACLContext    _Context; // At offset 0
+	PAnimationClip _Clip;
 
-	float                           _Speed = 1.f;
-	float                           _CurrTime = 0.f;
-	bool                            _Paused = true;
-	bool                            _Loop = false;
+	float          _Speed = 1.f;
+	float          _CurrTime = 0.f;
+	bool           _Paused = true;
+	bool           _Loop = false;
 
 	void SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& ParentNode);
 

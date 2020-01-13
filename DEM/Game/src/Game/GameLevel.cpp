@@ -9,7 +9,6 @@
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsLevel.h>
-#include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsObject.h>
 #include <AI/AILevel.h>
 #include <Events/EventServer.h>
@@ -454,8 +453,8 @@ bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3
 {
 	if (!PhysicsLevel) FAIL;
 
-	U16 Group = PhysicsSrv->CollisionGroups.GetMask("MousePick");
-	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All|MousePickTarget");
+	U16 Group = PhysicsLevel->CollisionGroups.GetMask("MousePick");
+	U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All|MousePickTarget");
 	Physics::PPhysicsObject PhysObj;
 	if (!PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 
@@ -533,8 +532,8 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
 	//!!!can request closest contacts for Default and Terrain!
-	U16 Group = PhysicsSrv->CollisionGroups.GetMask("Default");
-	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All");
+	U16 Group = PhysicsLevel->CollisionGroups.GetMask("Default");
+	U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All");
 	vector3 ContactPos;
 	if (!PhysicsLevel->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
 	Out.WorldHeight = ContactPos.y;

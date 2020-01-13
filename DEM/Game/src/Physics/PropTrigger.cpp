@@ -3,7 +3,6 @@
 #include <Game/Entity.h>
 #include <Game/GameServer.h>
 #include <Game/GameLevel.h>
-#include <Physics/PhysicsServer.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/TriggerContactCallback.h>
 #include <Scripting/PropScriptable.h>
@@ -27,17 +26,17 @@ bool CPropTrigger::InternalActivate()
 	const vector4& ShapeParams = GetEntity()->GetAttr<vector4>(CStrID("TrgShapeParams"), vector4::White);
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
-		case 1: Shape = PhysicsSrv->CreateBoxShape(ShapeParams); break;
-		case 2: Shape = PhysicsSrv->CreateSphereShape(ShapeParams.x); break;
-		case 4: Shape = PhysicsSrv->CreateCapsuleShape(ShapeParams.x, ShapeParams.y); break;
+		case 1: Shape = Physics::CCollisionShape::CreateBox(vector3::Zero, ShapeParams); break;
+		case 2: Shape = Physics::CCollisionShape::CreateSphere(vector3::Zero, ShapeParams.x); break;
+		case 4: Shape = Physics::CCollisionShape::CreateCapsuleY(vector3::Zero, ShapeParams.x, ShapeParams.y); break;
 		default: Sys::Error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
 					 GetEntity()->GetUID().CStr(),
 					 GetEntity()->GetAttr<int>(CStrID("TrgShapeType")));
 	}
 
 	CollObj = n_new(Physics::CCollisionObjStatic);
-	U16 Group = PhysicsSrv->CollisionGroups.GetMask("Trigger");
-	U16 Mask = PhysicsSrv->CollisionGroups.GetMask("All") & ~Group;
+	U16 Group = GetEntity()->GetLevel()->GetPhysics()->CollisionGroups.GetMask("Trigger");
+	U16 Mask = GetEntity()->GetLevel()->GetPhysics()->CollisionGroups.GetMask("All") & ~Group;
 	CollObj->Init(*Shape, Group, Mask); // Can specify offset
 	CollObj->GetBtObject()->setCollisionFlags(CollObj->GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
