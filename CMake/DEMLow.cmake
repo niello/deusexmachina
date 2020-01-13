@@ -156,8 +156,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/CollisionShape.h
 	DEM/Low/src/Physics/CollisionShapeLoader.h
 	DEM/Low/src/Physics/HeightfieldShape.h
-	DEM/Low/src/Physics/MotionStateDynamic.h
-	DEM/Low/src/Physics/MotionStateKinematic.h
 	DEM/Low/src/Physics/MovableCollider.h
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
 	DEM/Low/src/Physics/PhysicsLevel.h

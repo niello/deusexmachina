@@ -29,6 +29,7 @@ enum ECharacterState
 	Char_Falling
 };
 
+//???subclass rigid body? to access bullet body pointer. or add interfaces for all required data. or add GetBulletBody() to RB.
 class CCharacterController: public Core::CObject
 {
 protected:

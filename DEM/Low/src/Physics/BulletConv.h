@@ -30,4 +30,14 @@ inline btTransform TfmToBtTfm(const matrix44& Tfm)
 		VectorToBtVector(Tfm.Translation()));
 }
 
+inline matrix44 BtTfmToTfm(const btTransform& BtTfm)
+{
+	matrix44 Tfm;
+	Tfm.AxisX() = BtVectorToVector(BtTfm.getBasis().getColumn(0));
+	Tfm.AxisY() = BtVectorToVector(BtTfm.getBasis().getColumn(1));
+	Tfm.AxisZ() = BtVectorToVector(BtTfm.getBasis().getColumn(2));
+	Tfm.Translation() = BtVectorToVector(BtTfm.getOrigin());
+	return Tfm;
+}
+
 #endif

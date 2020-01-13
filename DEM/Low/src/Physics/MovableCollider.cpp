@@ -10,7 +10,7 @@ namespace Physics
 {
 RTTI_CLASS_IMPL(Physics::CMovableCollider, Core::CObject); //Physics::CPhysicsObject);
 
-// Physics object doesn't know the source of its transform, ot only stores an incoming copy
+// Physics object doesn't know the source of its transform, it only stores an incoming copy
 class CKinematicMotionState: public btMotionState
 {
 protected:
@@ -26,11 +26,11 @@ public:
 	void SetTransform(const matrix44& NewTfm, const vector3& Offset)
 	{
 		_Tfm = TfmToBtTfm(NewTfm);
-		_Tfm.getOrigin() += VectorToBtVector(Offset);
+		_Tfm.getOrigin() += VectorToBtVector(Offset); //???must rotate?
 	}
 
-	virtual void getWorldTransform(btTransform& worldTrans) const { worldTrans = _Tfm; }
-	virtual void setWorldTransform(const btTransform& worldTrans) { /* must not be called on static and kinematic objects */ }
+	virtual void getWorldTransform(btTransform& worldTrans) const override { worldTrans = _Tfm; }
+	virtual void setWorldTransform(const btTransform& worldTrans) override { /* must not be called on static and kinematic objects */ }
 };
 
 CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm)
@@ -95,7 +95,7 @@ void CMovableCollider::GetTransform(vector3& OutPos, quaternion& OutRot) const
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
 	OutRot = BtQuatToQuat(Tfm.getRotation());
-	OutPos = BtVectorToVector(Tfm.getOrigin()) - pShape->GetOffset();
+	OutPos = BtVectorToVector(Tfm.getOrigin()) - OutRot.rotate(pShape->GetOffset());
 }
 //---------------------------------------------------------------------
 

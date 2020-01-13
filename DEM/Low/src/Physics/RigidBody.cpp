@@ -1,101 +1,92 @@
 #include "RigidBody.h"
-
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
-#include <Physics/MotionStateDynamic.h>
-#include <Data/Params.h>
-#include <Math/AABB.h>
+#include <Physics/CollisionShape.h>
+#include <Scene/SceneNode.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CRigidBody, Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CRigidBody, Core::CObject); //Physics::CPhysicsObject);
 
-bool CRigidBody::Init(const Data::CParams& Desc, const vector3& Offset)
+// To be useful, rigid body must be connected to a scene node to serve as its transformation source
+class CDynamicMotionState: public btMotionState
 {
-	if (!CPhysicsObject::Init(Desc, Offset)) FAIL;
-	return InternalInit(Desc.Get<float>(CStrID("Mass"), 1.f));
-}
-//---------------------------------------------------------------------
+protected:
 
-bool CRigidBody::Init(CCollisionShape& CollShape, float BodyMass, U16 CollGroup, U16 CollMask, const vector3& Offset)
-{
-	if (!CPhysicsObject::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
-	return InternalInit(BodyMass);
-}
-//---------------------------------------------------------------------
+	Scene::PSceneNode _Node;
 
-void CRigidBody::Term()
-{
-	InternalTerm();
-	CPhysicsObject::Term();
-}
-//---------------------------------------------------------------------
+public:
 
-bool CRigidBody::InternalInit(float BodyMass)
-{
-	auto pBtShape = Shape->GetBulletShape();
+	BT_DECLARE_ALIGNED_ALLOCATOR();
 
-	Mass = BodyMass;
-	btVector3 Inertia;
-	pBtShape->calculateLocalInertia(Mass, Inertia);
+	void SetSceneNode(Scene::PSceneNode Node) { _Node = Node; }
 
-	CMotionStateDynamic* pMS = new CMotionStateDynamic;
-	btRigidBody::btRigidBodyConstructionInfo CI(Mass, pMS, pBtShape, Inertia);
-
-	//!!!set friction and restitution!
-
-	pBtCollObj = new btRigidBody(CI);
-	pBtCollObj->setUserPointer(this);
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CRigidBody::InternalTerm()
-{
-	if (!pBtCollObj) return;
-
-	btMotionState* pMS = ((btRigidBody*)pBtCollObj)->getMotionState();
-	if (pMS)
+	virtual void getWorldTransform(btTransform& worldTrans) const override
 	{
-		((btRigidBody*)pBtCollObj)->setMotionState(nullptr);
-		delete pMS;
+		//!!!update world matrix if dirty inside GetWorldMatrix()!
+		const matrix44& Tfm = _Node ? _Node->GetWorldMatrix() : matrix44::Identity;
+		worldTrans = TfmToBtTfm(Tfm);
 	}
-}
-//---------------------------------------------------------------------
 
-bool CRigidBody::AttachToLevel(CPhysicsLevel& World)
+	virtual void setWorldTransform(const btTransform& worldTrans) override
+	{
+		if (_Node) _Node->SetWorldTransform(BtTfmToTfm(worldTrans));
+	}
+};
+
+//!!!dynamic motion state shape offset?
+
+CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, float Mass, const matrix44& InitialTfm)
+	: _Level(&Level)
 {
-	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
+	// Instead of storing strong ref, we manually control refcount and use
+	// a pointer from the bullet collision shape
+	Shape.AddRef();
 
-	// Enforce offline transform update to be taken into account
-	btRigidBody* pRB = (btRigidBody*)pBtCollObj;
-	pRB->setMotionState(pRB->getMotionState());
-	pWorld->GetBtWorld()->addRigidBody(pRB, Group, Mask);
+	btVector3 Inertia;
+	Shape.GetBulletShape()->calculateLocalInertia(Mass, Inertia);
+
+	btRigidBody::btRigidBodyConstructionInfo CI(
+		Mass,
+		new CDynamicMotionState(/*Node or initial tfm*/),
+		Shape.GetBulletShape(),
+		Inertia);
+	//!!!set friction and restitution! for spheres always need rolling friction! TODO: physics material
+
+	_pBtObject = new btRigidBody(CI);
+	_pBtObject->setUserPointer(this);
+
+	_Level->GetBtWorld()->addRigidBody(_pBtObject, CollisionGroup, CollisionMask);
 
 	// Sometimes we read tfm from motion state before any real tick is performed.
 	// For this case make that tfm up-to-date.
-	pRB->setInterpolationWorldTransform(pRB->getWorldTransform());
-
-	OK;
+	//???is getWorldTransform up to date?! must set before!
+	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::RemoveFromLevel()
+CRigidBody::~CRigidBody()
 {
-	if (!pWorld || !pWorld->GetBtWorld()) return;
-	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
-	CPhysicsObject::RemoveFromLevel();
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+
+	_Level->GetBtWorld()->removeRigidBody(_pBtObject);
+	delete _pBtObject->getMotionState();
+	delete _pBtObject;
+
+	// See constructor
+	pShape->Release();
 }
 //---------------------------------------------------------------------
+
+// After node change:
+//// Enforce offline transform update to be taken into account
+//pRB->setMotionState(pRB->getMotionState());
 
 void CRigidBody::SetTransform(const matrix44& Tfm)
 {
-	n_assert_dbg(pBtCollObj);
-
 	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
 	if (pMotionState)
 	{
