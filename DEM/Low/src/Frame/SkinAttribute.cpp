@@ -105,7 +105,7 @@ Scene::PNodeAttribute CSkinAttribute::Clone()
 	ClonedAttr->RootSearchPath = RootSearchPath;
 	ClonedAttr->SkinInfoUID = SkinInfoUID;
 	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

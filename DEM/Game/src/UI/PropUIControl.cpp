@@ -74,6 +74,8 @@ bool CPropUIControl::InternalActivate()
 	CStrID PickShapeID = GetEntity()->GetAttr<CStrID>(CStrID("PickShape"), CStrID::Empty);
 	if (PickShapeID.IsValid() && GetEntity()->GetLevel()->GetPhysics())
 	{
+		NOT_IMPLEMENTED;
+		/*
 		CStrID PickShapeUID = CStrID(CString("Physics:") + PickShapeID.CStr() + ".prm");
 		Resources::PResource RShape = ResourceMgr->RegisterResource<Physics::CCollisionShape>(PickShapeUID);
 		Physics::PCollisionShape Shape = RShape->ValidateObject<Physics::CCollisionShape>();
@@ -82,7 +84,7 @@ bool CPropUIControl::InternalActivate()
 		U16 Mask = PhysicsSrv->CollisionGroups.GetMask("MousePick");
 
 		MousePickShape = n_new(Physics::CCollisionAttribute);
-		MousePickShape->CollObj = n_new(Physics::CCollisionObjMoving);
+		MousePickShape->CollObj = n_new(Physics::CMovableCollider);
 		MousePickShape->CollObj->Init(*Shape, Group, Mask); // Can specify offset
 		MousePickShape->CollObj->SetUserData(*(void**)&GetEntity()->GetUID());
 		MousePickShape->CollObj->SetTransform(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
@@ -91,6 +93,7 @@ bool CPropUIControl::InternalActivate()
 		CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 		if (pProp && pProp->IsActive())
 			pProp->GetNode()->AddAttribute(*MousePickShape);
+		*/
 	}
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -123,10 +126,11 @@ void CPropUIControl::InternalDeactivate()
 
 	Actions.Clear();
 
+	NOT_IMPLEMENTED;
 	if (MousePickShape.IsValidPtr())
 	{
 		MousePickShape->RemoveFromNode();
-		MousePickShape->CollObj->RemoveFromLevel();
+		//MousePickShape->CollObj->RemoveFromLevel();
 		MousePickShape = nullptr;
 	}
 }

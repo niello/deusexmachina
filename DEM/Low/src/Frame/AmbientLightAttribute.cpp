@@ -44,12 +44,12 @@ bool CAmbientLightAttribute::ValidateGPUResources(CGraphicsResourceManager& ResM
 
 Scene::PNodeAttribute CAmbientLightAttribute::Clone()
 {
-	PAmbientLightAttribute ClonedAttr = n_new(CAmbientLightAttribute);
+	PAmbientLightAttribute ClonedAttr = n_new(CAmbientLightAttribute());
 	ClonedAttr->IrradianceMapUID = IrradianceMapUID;
 	ClonedAttr->RadianceEnvMapUID = RadianceEnvMapUID;
 	ClonedAttr->IrradianceMap = IrradianceMap;
 	ClonedAttr->RadianceEnvMap = RadianceEnvMap;
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

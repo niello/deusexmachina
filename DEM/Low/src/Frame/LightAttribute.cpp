@@ -61,7 +61,7 @@ bool CLightAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 Scene::PNodeAttribute CLightAttribute::Clone()
 {
-	PLightAttribute ClonedAttr = n_new(CLightAttribute);
+	PLightAttribute ClonedAttr = n_new(CLightAttribute());
 	ClonedAttr->Light = Light;
 	return ClonedAttr;
 }

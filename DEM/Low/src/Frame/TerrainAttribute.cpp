@@ -18,7 +18,7 @@ FACTORY_CLASS_IMPL(Frame::CTerrainAttribute, 'TRNA', Frame::CRenderableAttribute
 
 bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CTerrain));
+	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
 	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
 
 	for (UPTR j = 0; j < Count; ++j)
@@ -57,7 +57,7 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 
 bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CTerrain));
+	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
 	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
 
 	auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(CDLODDataUID);
@@ -75,7 +75,7 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	//!!!write R32F variant!
 	if (!ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) FAIL;
 
-	if (!Renderable) Renderable.reset(n_new(Render::CTerrain));
+	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
 	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
 
 	if (!pTerrain->CDLODData)
@@ -112,12 +112,12 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 
 Scene::PNodeAttribute CTerrainAttribute::Clone()
 {
-	PTerrainAttribute ClonedAttr = n_new(CTerrainAttribute);
+	PTerrainAttribute ClonedAttr = n_new(CTerrainAttribute());
 	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
 	ClonedAttr->MaterialUID = MaterialUID;
 	ClonedAttr->CDLODDataUID = CDLODDataUID;
 	ClonedAttr->HeightMapUID = HeightMapUID;
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

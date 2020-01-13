@@ -15,7 +15,7 @@ FACTORY_CLASS_IMPL(Frame::CModelAttribute, 'MDLA', Frame::CRenderableAttribute);
 
 bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CModel));
+	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
 	for (UPTR j = 0; j < Count; ++j)
@@ -56,7 +56,7 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CModel));
+	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
 	// Store mesh data pointer for GPU-independent local AABB access
@@ -69,7 +69,7 @@ bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 
 bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CModel));
+	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
 	pModel->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
@@ -81,11 +81,11 @@ bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 
 Scene::PNodeAttribute CModelAttribute::Clone()
 {
-	PModelAttribute ClonedAttr = n_new(CModelAttribute);
+	PModelAttribute ClonedAttr = n_new(CModelAttribute());
 	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
 	ClonedAttr->MeshUID = MeshUID;
 	ClonedAttr->MaterialUID = MaterialUID;
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

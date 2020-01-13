@@ -41,7 +41,7 @@ bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorSkybox()));
 	}
 
-	if (!Renderable) Renderable.reset(n_new(Render::CSkybox));
+	if (!Renderable) Renderable.reset(n_new(Render::CSkybox()));
 	auto pSkybox = static_cast<Render::CSkybox*>(Renderable.get());
 
 	pSkybox->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
@@ -53,10 +53,10 @@ bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 
 Scene::PNodeAttribute CSkyboxAttribute::Clone()
 {
-	PSkyboxAttribute ClonedAttr = n_new(CSkyboxAttribute);
+	PSkyboxAttribute ClonedAttr = n_new(CSkyboxAttribute());
 	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
 	ClonedAttr->MaterialUID = MaterialUID;
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

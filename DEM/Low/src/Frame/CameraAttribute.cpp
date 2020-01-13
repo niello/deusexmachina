@@ -7,7 +7,7 @@ FACTORY_CLASS_IMPL(Frame::CCameraAttribute, 'CAMR', Scene::CNodeAttribute);
 
 PCameraAttribute CCameraAttribute::CreatePerspective(float Aspect, float FOV, float NearPlane, float FarPlane)
 {
-	Frame::PCameraAttribute Camera = n_new(Frame::CCameraAttribute);
+	Frame::PCameraAttribute Camera = n_new(Frame::CCameraAttribute());
 	Camera->SetWidth(Aspect);
 	Camera->SetHeight(1.f);
 	Camera->SetNearPlane(NearPlane);
@@ -42,14 +42,14 @@ bool CCameraAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 Scene::PNodeAttribute CCameraAttribute::Clone()
 {
-	PCameraAttribute ClonedAttr = n_new(CCameraAttribute);
+	PCameraAttribute ClonedAttr = n_new(CCameraAttribute());
 	ClonedAttr->_FOV = _FOV;
 	ClonedAttr->_Width = _Width;
 	ClonedAttr->_Height = _Height;
 	ClonedAttr->_NearPlane = _NearPlane;
 	ClonedAttr->_FarPlane = _FarPlane;
 	ClonedAttr->Flags.SetTo(Orthogonal, IsOrthogonal());
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

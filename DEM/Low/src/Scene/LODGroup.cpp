@@ -47,7 +47,7 @@ PNodeAttribute CLODGroup::Clone()
 {
 	PLODGroup ClonedAttr = n_new(CLODGroup);
 	SqThresholds.Copy(ClonedAttr->SqThresholds);
-	return ClonedAttr.Get();
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 

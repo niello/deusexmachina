@@ -10,30 +10,30 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CCollisionObjMoving, Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CMovableCollider, Physics::CPhysicsObject);
 
-bool CCollisionObjMoving::Init(const Data::CParams& Desc, const vector3& Offset)
+bool CMovableCollider::Init(const Data::CParams& Desc, const vector3& Offset)
 {
 	if (!CPhysicsObject::Init(Desc, Offset)) FAIL;
 	return InternalInit();
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObjMoving::Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset)
+bool CMovableCollider::Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset)
 {
 	if (!CPhysicsObject::Init(CollShape, CollGroup, CollMask, Offset)) FAIL;
 	return InternalInit();
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::Term()
+void CMovableCollider::Term()
 {
 	InternalTerm();
 	CPhysicsObject::Term();
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObjMoving::InternalInit()
+bool CMovableCollider::InternalInit()
 {
 	btRigidBody::btRigidBodyConstructionInfo CI(
 		0.f,
@@ -52,7 +52,7 @@ bool CCollisionObjMoving::InternalInit()
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::InternalTerm()
+void CMovableCollider::InternalTerm()
 {
 	if (!pBtCollObj) return;
 
@@ -65,7 +65,7 @@ void CCollisionObjMoving::InternalTerm()
 }
 //---------------------------------------------------------------------
 
-bool CCollisionObjMoving::AttachToLevel(CPhysicsLevel& World)
+bool CMovableCollider::AttachToLevel(CPhysicsLevel& World)
 {
 	if (!CPhysicsObject::AttachToLevel(World)) FAIL;
 
@@ -78,7 +78,7 @@ bool CCollisionObjMoving::AttachToLevel(CPhysicsLevel& World)
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::RemoveFromLevel()
+void CMovableCollider::RemoveFromLevel()
 {
 	if (!pWorld || !pWorld->GetBtWorld()) return;
 	pWorld->GetBtWorld()->removeRigidBody((btRigidBody*)pBtCollObj);
@@ -86,7 +86,7 @@ void CCollisionObjMoving::RemoveFromLevel()
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::SetTransform(const matrix44& Tfm)
+void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
 	n_assert_dbg(pBtCollObj);
 
@@ -102,7 +102,7 @@ void CCollisionObjMoving::SetTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CCollisionObjMoving::GetTransform(btTransform& Out) const
+void CMovableCollider::GetTransform(btTransform& Out) const
 {
 	n_assert_dbg(pBtCollObj);
 

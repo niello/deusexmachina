@@ -13,7 +13,7 @@ namespace Physics
 {
 
 //???own motion state or inherit from it?
-class CCollisionObjMoving: public CPhysicsObject
+class CMovableCollider: public CPhysicsObject
 {
 	RTTI_CLASS_DECL;
 
@@ -25,7 +25,7 @@ protected:
 
 public:
 
-	virtual ~CCollisionObjMoving() { InternalTerm(); }
+	virtual ~CMovableCollider() { InternalTerm(); }
 
 	virtual bool	Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
 	bool			Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
@@ -36,7 +36,7 @@ public:
 	virtual void	SetTransform(const matrix44& Tfm);
 };
 
-typedef Ptr<CCollisionObjMoving> PCollisionObjMoving;
+typedef Ptr<CMovableCollider> PMovableCollider;
 
 }
 

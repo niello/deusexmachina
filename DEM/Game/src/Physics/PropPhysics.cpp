@@ -75,6 +75,8 @@ bool CPropPhysics::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, con
 
 void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
+	NOT_IMPLEMENTED;
+
 	if (!Prop.GetNode()) return;
 
 	Physics::CPhysicsLevel* pPhysWorld = GetEntity()->GetLevel()->GetPhysics();
@@ -100,7 +102,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 		Physics::PPhysicsObject Obj;
 		if (IsDynamic) Obj = n_new(Physics::CRigidBody);
-		else Obj = n_new(Physics::CCollisionObjMoving);
+		//else Obj = n_new(Physics::CMovableCollider);
 		Obj->SetUserData(*(void**)&GetEntity()->GetUID());
 
 		n_verify_dbg(Obj->Init(ObjDesc, ObjDesc.Get(CStrID("Offset"), vector3::Zero)));
@@ -132,10 +134,12 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		}
 		else
 		{
+			/*
 			Physics::PCollisionAttribute Attr = n_new(Physics::CCollisionAttribute);
-			Attr->CollObj = (Physics::CCollisionObjMoving*)Obj.Get();
+			Attr->CollObj = (Physics::CMovableCollider*)Obj.Get();
 			pCurrNode->AddAttribute(*Attr);
 			Attrs.Add(Attr);
+			*/
 		}
 
 		Obj->AttachToLevel(*pPhysWorld);
@@ -161,7 +165,7 @@ void CPropPhysics::TermSceneNodeModifiers(CPropSceneNode& Prop)
 
 	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 	{
-		Attrs[i]->CollObj->RemoveFromLevel();
+		//Attrs[i]->CollObj->RemoveFromLevel();
 		Attrs[i]->RemoveFromNode();
 	}
 	Attrs.Clear(); //???create once and attach/detach?
@@ -180,9 +184,13 @@ bool CPropPhysics::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const
 
 bool CPropPhysics::OnSetTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	NOT_IMPLEMENTED;
+
+	/*
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	for (UPTR i = 0; i < Attrs.GetCount(); ++i)
 		Attrs[i]->CollObj->SetTransform(Tfm);
+	*/
 	OK;
 }
 //---------------------------------------------------------------------
