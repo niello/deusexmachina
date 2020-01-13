@@ -35,12 +35,15 @@ public:
 
 CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm)
 	: _Level(&Level)
-	, _Shape(&Shape)
 {
+	// Instead of storing strong ref, we manually control refcount and use
+	// a pointer from the bullet collision shape
+	Shape.AddRef();
+
 	btRigidBody::btRigidBodyConstructionInfo CI(
 		0.f,
-		new CKinematicMotionState(InitialTfm, _Shape->GetOffset()),
-		_Shape->GetBulletShape());
+		new CKinematicMotionState(InitialTfm, Shape.GetOffset()),
+		Shape.GetBulletShape());
 	//!!!set friction and restitution! for spheres always need rolling friction!
 
 	_pBtObject = new btRigidBody(CI);
@@ -55,9 +58,14 @@ CMovableCollider::~CMovableCollider()
 {
 	if (_Level && _pBtObject)
 	{
+		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+
 		_Level->GetBtWorld()->removeRigidBody(_pBtObject);
 		delete _pBtObject->getMotionState();
 		delete _pBtObject;
+
+		// See constructor
+		pShape->Release();
 	}
 }
 //---------------------------------------------------------------------
@@ -76,7 +84,8 @@ bool CMovableCollider::IsActive() const
 
 void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
-	static_cast<CKinematicMotionState*>(_pBtObject->getMotionState())->SetTransform(Tfm, _Shape->GetOffset());
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	static_cast<CKinematicMotionState*>(_pBtObject->getMotionState())->SetTransform(Tfm, pShape->GetOffset());
 	SetActive(true);
 }
 //---------------------------------------------------------------------
@@ -85,8 +94,11 @@ void CMovableCollider::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
 	btTransform Tfm;
 	_pBtObject->getMotionState()->getWorldTransform(Tfm);
+
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+
 	OutRot = BtQuatToQuat(Tfm.getRotation());
-	OutPos = BtVectorToVector(Tfm.getOrigin()) - _Shape->GetOffset();
+	OutPos = BtVectorToVector(Tfm.getOrigin()) - pShape->GetOffset();
 }
 //---------------------------------------------------------------------
 

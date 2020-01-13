@@ -12,7 +12,7 @@ class btRigidBody;
 namespace Physics
 {
 typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
-typedef Ptr<class CCollisionShape> PCollisionShape;
+class CCollisionShape;
 
 class CMovableCollider : public Core::CObject
 {
@@ -22,7 +22,6 @@ protected:
 
 	btRigidBody*    _pBtObject = nullptr;
 	PPhysicsLevel   _Level;
-	PCollisionShape _Shape;
 
 public:
 
