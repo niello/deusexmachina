@@ -31,6 +31,7 @@ public:
 
 		// Necessary for static collision data removal, if loaded from .bullet
 		// TODO: not tested, maybe a better way exists! For example store .bullet-loaded object refs in a game level.
+		if (m_collisionObjects.size() > 0)
 		{
 			std::vector<btCollisionObject*> CollisionObjects(m_collisionObjects.size());
 			for (int i = 0; i < m_collisionObjects.size(); ++i)
@@ -65,7 +66,7 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
 
-	auto pBtDebugDrawer = n_new(CPhysicsDebugDraw());
+	auto pBtDebugDrawer = new CPhysicsDebugDraw();
 	pBtDebugDrawer->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
 	pBtDynWorld->setDebugDrawer(pBtDebugDrawer);
 
