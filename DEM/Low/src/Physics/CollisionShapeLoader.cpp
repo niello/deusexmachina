@@ -115,6 +115,8 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 		}
 		else return nullptr;
 
+		NOT_IMPLEMENTED;
+		/*
 		Physics::PHeightfieldShape HFShape = n_new(Physics::CHeightfieldShape);
 		if (HFShape.IsValidPtr())
 		{
@@ -131,7 +133,8 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 			delete pBtShape;
 		}
 
-		n_free(pHFData);
+		return n_new(Physics::CHeightfieldShape(pBtShape));
+		*/
 	}
 	else
 	{
@@ -153,10 +156,7 @@ PResourceObject CCollisionShapeLoaderPRM::CreateResource(CStrID UID)
 		}
 		else return nullptr;
 
-		Physics::PCollisionShape Shape = n_new(Physics::CCollisionShape);
-		if (Shape.IsValidPtr() && Shape->Setup(pBtShape)) return Shape.Get();
-
-		delete pBtShape;
+		return n_new(Physics::CCollisionShape(pBtShape));
 	}
 
 	return nullptr;

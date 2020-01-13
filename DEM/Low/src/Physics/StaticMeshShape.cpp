@@ -1,10 +1,7 @@
 #include "StaticMeshShape.h"
 
-#include <Core/Factory.h>
-
 namespace Physics
 {
-FACTORY_CLASS_IMPL(Physics::CStaticMeshShape, 'SMSH', Physics::CCollisionShape);
 
 /*
 bool CStaticMeshShape::Setup(btBvhTriangleMeshShape* pShape)

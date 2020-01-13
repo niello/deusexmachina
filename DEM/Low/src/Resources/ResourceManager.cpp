@@ -8,20 +8,15 @@
 
 namespace Resources
 {
-__ImplementSingleton(CResourceManager);
 
 CResourceManager::CResourceManager(IO::CIOServer* pIOServer, UPTR InitialCapacity)
 	: Registry(InitialCapacity)
 	, pIO(pIOServer)
 {
-	__ConstructSingleton;
 }
 //---------------------------------------------------------------------
 
-CResourceManager::~CResourceManager()
-{
-	__DestructSingleton;
-}
+CResourceManager::~CResourceManager() = default;
 //---------------------------------------------------------------------
 
 // NB: does not change creator for existing resource

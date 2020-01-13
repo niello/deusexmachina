@@ -36,12 +36,14 @@ void CRigidBody::Term()
 
 bool CRigidBody::InternalInit(float BodyMass)
 {
+	auto pBtShape = Shape->GetBulletShape();
+
 	Mass = BodyMass;
 	btVector3 Inertia;
-	Shape->GetBtShape()->calculateLocalInertia(Mass, Inertia);
+	pBtShape->calculateLocalInertia(Mass, Inertia);
 
 	CMotionStateDynamic* pMS = new CMotionStateDynamic;
-	btRigidBody::btRigidBodyConstructionInfo CI(Mass, pMS, Shape->GetBtShape(), Inertia);
+	btRigidBody::btRigidBodyConstructionInfo CI(Mass, pMS, pBtShape, Inertia);
 
 	//!!!set friction and restitution!
 

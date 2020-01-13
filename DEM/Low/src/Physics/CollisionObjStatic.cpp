@@ -25,7 +25,7 @@ bool CCollisionObjStatic::Init(CCollisionShape& CollShape, U16 CollGroup, U16 Co
 bool CCollisionObjStatic::InternalInit()
 {
 	pBtCollObj = new btCollisionObject();
-	pBtCollObj->setCollisionShape(Shape->GetBtShape());
+	pBtCollObj->setCollisionShape(Shape->GetBulletShape());
 	pBtCollObj->setUserPointer(this);
 
 	//!!!set friction and restitution!

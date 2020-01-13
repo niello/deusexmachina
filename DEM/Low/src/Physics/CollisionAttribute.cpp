@@ -34,7 +34,6 @@ Scene::PNodeAttribute CCollisionAttribute::Clone()
 {
 	PCollisionAttribute ClonedAttr = n_new(CCollisionAttribute());
 	ClonedAttr->ShapeUID = ShapeUID;
-	//ClonedAttr->Collider = Collider->Clone();
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
@@ -54,8 +53,8 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr,
 	auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 	if (!Shape) FAIL;
 
-	// create collision object using shape, offset, initial tfm, group, mask and probably friction & restitution
-	//Collider = Level.CreateMovableCollider();
+	// create collision object using shape, initial tfm, group, mask and probably friction & restitution
+	//Collider = Level.CreateMovableCollider(Shape);
 	//store level inside a collider to self-remove it on destroy
 
 	OK;

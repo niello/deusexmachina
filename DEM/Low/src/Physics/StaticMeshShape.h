@@ -9,8 +9,6 @@ namespace Physics
 
 class CStaticMeshShape: public CCollisionShape
 {
-	FACTORY_CLASS_DECL;
-
 protected:
 
 	//btStridingMeshInterface* pMeshIface; //???store here? write some implementation with embedded storage? 

@@ -43,9 +43,12 @@ bool CPropSceneNode::Initialize()
 	{
 		if (NodeFile.IsValid())
 		{
+			NOT_IMPLEMENTED; // ResourceMgr singleton removed
+			/*
 			CString RUID = "Scene:" + NodeFile + ".scn";
 			Resources::PResource Rsrc = ResourceMgr->RegisterResource<Scene::CSceneNode>(CStrID(RUID));
 			Node = Rsrc->ValidateObject<Scene::CSceneNode>()->Clone(true);
+			*/
 		}
 		else
 		{
@@ -251,10 +254,13 @@ void CPropSceneNode::GetAABB(CAABB& OutBox, UPTR TypeFlags) const
 		Scene::CNodeAttribute& Attr = *Node->GetAttribute(i);
 		if ((TypeFlags & AABB_Gfx) && Attr.IsA<Frame::CRenderableAttribute>())
 		{
+			NOT_IMPLEMENTED; // ResourceMgr singleton removed
+			/*
 			CAABB AttrBox;
 			((Frame::CRenderableAttribute&)Attr).ValidateResources(*ResourceMgr);
 			((Frame::CRenderableAttribute&)Attr).GetGlobalAABB(AttrBox);
 			OutBox.Extend(AttrBox);
+			*/
 		}
 		else if ((TypeFlags & AABB_Phys) && Attr.IsA<Physics::CCollisionAttribute>())
 		{

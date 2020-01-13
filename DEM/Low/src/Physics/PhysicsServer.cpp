@@ -42,29 +42,23 @@ CPhysicsServer::~CPhysicsServer()
 
 PCollisionShape CPhysicsServer::CreateBoxShape(const vector3& Size)
 {
-	PCollisionShape Shape = n_new(CCollisionShape);
 	btBoxShape* pBtShape = new btBoxShape(VectorToBtVector(Size * 0.5f));
-	Shape->Setup(pBtShape);
-	return Shape;
+	return n_new(Physics::CCollisionShape(pBtShape));
 }
 //---------------------------------------------------------------------
 
 PCollisionShape CPhysicsServer::CreateSphereShape(float Radius)
 {
-	PCollisionShape Shape = n_new(CCollisionShape);
 	btSphereShape* pBtShape = new btSphereShape(Radius);
-	Shape->Setup(pBtShape);
-	return Shape;
+	return n_new(Physics::CCollisionShape(pBtShape));
 }
 //---------------------------------------------------------------------
 
 // Vertical capsule (around Y axis)
 PCollisionShape CPhysicsServer::CreateCapsuleShape(float Radius, float Height)
 {
-	PCollisionShape Shape = n_new(CCollisionShape);
 	btCapsuleShape* pBtShape = new btCapsuleShape(Radius, Height);
-	Shape->Setup(pBtShape);
-	return Shape;
+	return n_new(Physics::CCollisionShape(pBtShape));
 }
 //---------------------------------------------------------------------
 

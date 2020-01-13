@@ -151,6 +151,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/BulletConv.h
 	DEM/Low/src/Physics/ClosestNotMeRayResultCallback.h
 	DEM/Low/src/Physics/CollisionAttribute.h
+	DEM/Low/src/Physics/CollisionLoaderCDLOD.h
 	DEM/Low/src/Physics/CollisionObjMoving.h
 	DEM/Low/src/Physics/CollisionObjStatic.h
 	DEM/Low/src/Physics/CollisionShape.h
@@ -163,6 +164,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/PhysicsObject.h
 	DEM/Low/src/Physics/PhysicsServer.h
 	DEM/Low/src/Physics/RigidBody.h
+	DEM/Low/src/Physics/SceneNodeValidatePhysics.h
 	DEM/Low/src/Physics/StaticMeshShape.h
 	DEM/Low/src/Render/CDLODData.h
 	DEM/Low/src/Render/CDLODDataLoader.h
@@ -399,6 +401,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Math/Vector3.cpp
 	DEM/Low/src/Math/Vector4.cpp
 	DEM/Low/src/Physics/CollisionAttribute.cpp
+	DEM/Low/src/Physics/CollisionLoaderCDLOD.cpp
 	DEM/Low/src/Physics/CollisionObjMoving.cpp
 	DEM/Low/src/Physics/CollisionObjStatic.cpp
 	DEM/Low/src/Physics/CollisionShape.cpp
@@ -409,6 +412,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/PhysicsObject.cpp
 	DEM/Low/src/Physics/PhysicsServer.cpp
 	DEM/Low/src/Physics/RigidBody.cpp
+	DEM/Low/src/Physics/SceneNodeValidatePhysics.cpp
 	DEM/Low/src/Physics/StaticMeshShape.cpp
 	DEM/Low/src/Render/CDLODData.cpp
 	DEM/Low/src/Render/CDLODDataLoader.cpp

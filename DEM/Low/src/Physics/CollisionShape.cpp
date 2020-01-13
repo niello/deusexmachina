@@ -1,30 +1,21 @@
 #include "CollisionShape.h"
-
-#include <Core/Factory.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 
 namespace Physics
 {
-FACTORY_CLASS_IMPL(Physics::CCollisionShape, 'CSHP', Resources::CResourceObject);
+RTTI_CLASS_IMPL(Physics::CCollisionShape, Resources::CResourceObject);
 
-bool CCollisionShape::Setup(btCollisionShape* pShape)
+CCollisionShape::CCollisionShape(btCollisionShape* pShape)
+	: pBtShape(pShape)
 {
-	if (!pShape) FAIL;
-	n_assert(!pShape->getUserPointer());
-	pShape->setUserPointer(this);
-	pBtShape = pShape;
-	OK;
+	n_assert(pBtShape && !pBtShape->getUserPointer());
+	pBtShape->setUserPointer(this);
 }
 //---------------------------------------------------------------------
 
-void CCollisionShape::Unload()
+CCollisionShape::~CCollisionShape()
 {
-	n_assert(GetRefCount() <= 1); //!!!if unload when used, physics will crash!
-	if (pBtShape)
-	{
-		delete pBtShape;
-		pBtShape = nullptr;
-	}
+	delete pBtShape;
 }
 //---------------------------------------------------------------------
 

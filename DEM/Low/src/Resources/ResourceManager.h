@@ -2,7 +2,6 @@
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Data/HashTable.h>
-#include <Data/Singleton.h>
 #include <vector>
 
 // Resource manager controls resource loading, lifetime, uniquity, and serves as
@@ -25,12 +24,8 @@ namespace Resources
 typedef Ptr<class CResource> PResource;
 typedef Ptr<class IResourceCreator> PResourceCreator;
 
-#define ResourceMgr Resources::CResourceManager::Instance()
-
-class CResourceManager
+class CResourceManager final
 {
-	__DeclareSingleton(CResourceManager);
-
 protected:
 
 	struct CDefaultCreatorRecord

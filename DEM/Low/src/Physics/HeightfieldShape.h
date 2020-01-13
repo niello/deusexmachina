@@ -8,26 +8,23 @@ class btHeightfieldTerrainShape;
 
 namespace Physics
 {
+typedef std::unique_ptr<char[]> PHeightfieldData;
 
-class CHeightfieldShape: public CCollisionShape
+class CHeightfieldShape : public CCollisionShape
 {
-	FACTORY_CLASS_DECL;
-
 protected:
 
-	void*   pHFData = nullptr;
+	PHeightfieldData _HeightfieldData;
 
-	// Bullet shape is created with an origin at the center of a heightmap AABB
-	// This is an offset between that center and the real origin
-	vector3 Offset;
+	// Bullet shape is created with an origin at the center of a heightmap AABB.
+	// This is an offset between that center and the real origin.
+	vector3          _Offset;
 
 public:
 
-	virtual ~CHeightfieldShape() override { Unload(); }
+	CHeightfieldShape(btHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset);
 
-	bool			Setup(btHeightfieldTerrainShape* pShape, void* pHeightMapData, const vector3& ShapeOffset);
-	virtual void	Unload();
-	virtual bool	GetOffset(vector3& Out) const { Out = Offset; OK; }
+	virtual const vector3& GetOffset() const override { return _Offset; } // Could use btCompoundShape instead
 };
 
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;

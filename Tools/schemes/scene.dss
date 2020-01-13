@@ -54,4 +54,7 @@ SceneNodeAttr
 	CDLODFile		{ FourCC = "CDLD" Type = "string" }
 	SplatSizeX		{ FourCC = "TSSX" Type = "float" }
 	SplatSizeZ		{ FourCC = "TSSZ" Type = "float" }
+	
+	// Collision
+	Shape           { FourCC = "SHAP" Type = "string" }
 }

@@ -38,7 +38,7 @@ bool CMovableCollider::InternalInit()
 	btRigidBody::btRigidBodyConstructionInfo CI(
 		0.f,
 		new CMotionStateKinematic(),
-		Shape->GetBtShape());
+		Shape->GetBulletShape());
 	//!!!set friction and restitution!
 
 	pBtCollObj = new btRigidBody(CI);

@@ -528,17 +528,29 @@ public:
 		Data::CParams Result;
 
 		Data::CDataArray Attributes;
-		Data::CParams Attribute;
-		Attribute.emplace_back(CStrID("Class"), 'TRNA'); //std::string("Frame::CTerrainAttribute"));
-		if (!CDLODID.empty())
-			Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
-		if (!MaterialID.empty())
-			Attribute.emplace_back(CStrID("Material"), MaterialID);
-		if (SplatSizeX > 0.f && SplatSizeX != 1.f)
-			Attribute.emplace_back(CStrID("SplatSizeX"), SplatSizeX);
-		if (SplatSizeZ > 0.f && SplatSizeZ != 1.f)
-			Attribute.emplace_back(CStrID("SplatSizeZ"), SplatSizeZ);
-		Attributes.push_back(std::move(Attribute));
+
+		{
+			Data::CParams Attribute;
+			Attribute.emplace_back(CStrID("Class"), 'TRNA'); // Frame::CTerrainAttribute
+			if (!CDLODID.empty())
+				Attribute.emplace_back(CStrID("CDLODFile"), CDLODID);
+			if (!MaterialID.empty())
+				Attribute.emplace_back(CStrID("Material"), MaterialID);
+			if (SplatSizeX > 0.f && SplatSizeX != 1.f)
+				Attribute.emplace_back(CStrID("SplatSizeX"), SplatSizeX);
+			if (SplatSizeZ > 0.f && SplatSizeZ != 1.f)
+				Attribute.emplace_back(CStrID("SplatSizeZ"), SplatSizeZ);
+			Attributes.push_back(std::move(Attribute));
+		}
+
+		{
+			Data::CParams Attribute;
+			Attribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
+			if (!CDLODID.empty())
+				Attribute.emplace_back(CStrID("Shape"), CDLODID + "#Collision");
+			Attributes.push_back(std::move(Attribute));
+		}
+
 		Result.emplace_back(CStrID("Attrs"), std::move(Attributes));
 
 		const fs::path OutPath = GetPath(Task.Params, "Output");

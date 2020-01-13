@@ -1,32 +1,30 @@
 #pragma once
 #include <Resources/ResourceObject.h>
+#include <Math/Vector3.h>
 
 // Shared collision shape, which can be used by multiple collision objects and rigid bodies
 
-class vector3;
 class btCollisionShape;
 
 namespace Physics
 {
 
-class CCollisionShape: public Resources::CResourceObject
+class CCollisionShape : public Resources::CResourceObject
 {
-	FACTORY_CLASS_DECL;
+	RTTI_CLASS_DECL;
 
 protected:
 
-	btCollisionShape*	pBtShape;
+	btCollisionShape* pBtShape = nullptr;
 
 public:
 
-	CCollisionShape(): pBtShape(nullptr) {}
-	virtual ~CCollisionShape() { Unload(); }
+	CCollisionShape(btCollisionShape* pShape);
+	virtual ~CCollisionShape() override;
 
-	bool				Setup(btCollisionShape* pShape);
-	virtual void		Unload();
-	virtual bool		IsResourceValid() const { return !!pBtShape; }
-	virtual bool		GetOffset(vector3& Out) const { FAIL; }
-	btCollisionShape*	GetBtShape() const { return pBtShape; }
+	virtual bool           IsResourceValid() const { return !!pBtShape; }
+	virtual const vector3& GetOffset() const { return vector3::Zero; } // Could use btCompoundShape instead
+	btCollisionShape*      GetBulletShape() const { return pBtShape; }
 };
 
 typedef Ptr<CCollisionShape> PCollisionShape;
