@@ -20,6 +20,8 @@ class CCollisionAttribute: public Scene::CNodeAttribute
 protected:
 
 	CStrID           ShapeUID;
+	CStrID           CollisionGroupID;
+	CStrID           CollisionMaskID;
 	PMovableCollider Collider;
 
 public:

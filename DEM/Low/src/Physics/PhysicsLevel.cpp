@@ -11,6 +11,40 @@
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 
+// TODO: probably newer bullet versions allow to clear or at least access all objects
+class CMyDiscreteDynamicsWorld : public btDiscreteDynamicsWorld
+{
+public:
+
+	CMyDiscreteDynamicsWorld(btDispatcher* dispatcher, btBroadphaseInterface* pairCache, btConstraintSolver* constraintSolver, btCollisionConfiguration* collisionConfiguration)
+		: btDiscreteDynamicsWorld(dispatcher, pairCache, constraintSolver, collisionConfiguration)
+	{}
+
+	virtual ~CMyDiscreteDynamicsWorld() override
+	{
+		// TODO: or these objects are always stored in a game?
+		//removeAction
+		//removeCharacter
+		//removeConstraint
+		//removeVehicle
+		//removeRigidBody
+
+		// Necessary for static collision data removal, if loaded from .bullet
+		// TODO: not tested, maybe a better way exists! For example store .bullet-loaded object refs in a game level.
+		{
+			std::vector<btCollisionObject*> CollisionObjects(m_collisionObjects.size());
+			for (int i = 0; i < m_collisionObjects.size(); ++i)
+				CollisionObjects[i] = m_collisionObjects[i];
+
+			for (btCollisionObject* pObject : CollisionObjects)
+			{
+				removeCollisionObject(pObject);
+				delete pObject;
+			}
+		}
+	}
+};
+
 namespace Physics
 {
 
@@ -27,7 +61,7 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	//http://bulletphysics.org/mediawiki-1.5.8/index.php/BtContactSolverInfo
 	btSequentialImpulseConstraintSolver* pBtSolver = new btSequentialImpulseConstraintSolver();
 
-	pBtDynWorld = new btDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
+	pBtDynWorld = new CMyDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
 
@@ -60,6 +94,25 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	materials - restitution and friction
 	there is a multithreading support
 	*/
+
+	// Initialize collision group IDs
+
+	/* Bullet predefined collision filters as of v2.81 SDK:
+	DefaultFilter = 1,
+	StaticFilter = 2,
+	KinematicFilter = 4,
+	DebrisFilter = 8,
+	SensorTrigger = 16,
+	CharacterFilter = 32,
+	AllFilter = -1
+	*/
+
+	CollisionGroups.SetAlias(CStrID("DefaultFilter"), "Default");
+
+	U16 PickMask = CollisionGroups.GetMask("MousePick");
+	U16 PickTargetMask = CollisionGroups.GetMask("MousePickTarget");
+	CollisionGroups.SetAlias(CStrID("All"), ~PickTargetMask);
+	CollisionGroups.SetAlias(CStrID("AllNoPick"), (~PickTargetMask) & (~PickMask));
 }
 //---------------------------------------------------------------------
 
@@ -67,6 +120,8 @@ CPhysicsLevel::~CPhysicsLevel()
 {
 	if (pBtDynWorld)
 	{
+		// FIXME: must delete all remaining objects in the world!
+
 		auto pBtDebugDrawer = pBtDynWorld->getDebugDrawer();
 		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();

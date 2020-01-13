@@ -1,5 +1,7 @@
 #include "CollisionAttribute.h"
-#include <Physics/CollisionObjMoving.h>
+#include <Physics/MovableCollider.h>
+#include <Physics/CollisionShape.h>
+#include <Physics/PhysicsLevel.h>
 #include <Scene/SceneNode.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -22,6 +24,16 @@ bool CCollisionAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 				ShapeUID = DataReader.Read<CStrID>();
 				break;
 			}
+			case 'COGR':
+			{
+				CollisionGroupID = DataReader.Read<CStrID>();
+				break;
+			}
+			case 'COMA':
+			{
+				CollisionMaskID = DataReader.Read<CStrID>();
+				break;
+			}
 			default: FAIL;
 		}
 	}
@@ -34,6 +46,8 @@ Scene::PNodeAttribute CCollisionAttribute::Clone()
 {
 	PCollisionAttribute ClonedAttr = n_new(CCollisionAttribute());
 	ClonedAttr->ShapeUID = ShapeUID;
+	ClonedAttr->CollisionGroupID = CollisionGroupID;
+	ClonedAttr->CollisionMaskID = CollisionMaskID;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
@@ -41,21 +55,33 @@ Scene::PNodeAttribute CCollisionAttribute::Clone()
 void CCollisionAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	CNodeAttribute::Update(pCOIArray, COICount);
-	if (Collider && pNode->IsWorldMatrixChanged()) Collider->SetTransform(pNode->GetWorldMatrix());
+
+	if (!Collider) return;
+
+	if (pNode->IsWorldMatrixChanged())
+		Collider->SetTransform(pNode->GetWorldMatrix());
+	else
+		Collider->SetActive(false);
 }
 //---------------------------------------------------------------------
 
 bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr, CPhysicsLevel& Level)
 {
+	if (!pNode) FAIL;
+
 	Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(ShapeUID);
 	if (!RShape) FAIL;
 
 	auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 	if (!Shape) FAIL;
 
-	// create collision object using shape, initial tfm, group, mask and probably friction & restitution
-	//Collider = Level.CreateMovableCollider(Shape);
-	//store level inside a collider to self-remove it on destroy
+	const U16 Group = Level.CollisionGroups.GetMask(CollisionGroupID ? CollisionGroupID.CStr() : "Default");
+	const U16 Mask = Level.CollisionGroups.GetMask(CollisionMaskID ? CollisionMaskID.CStr() : "All");
+
+	// FIXME: need implicit method!
+	if (pNode->IsWorldMatrixDirty()) pNode->UpdateWorldFromLocal();
+
+	Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
 
 	OK;
 }

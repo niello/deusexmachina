@@ -152,13 +152,13 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/ClosestNotMeRayResultCallback.h
 	DEM/Low/src/Physics/CollisionAttribute.h
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.h
-	DEM/Low/src/Physics/CollisionObjMoving.h
 	DEM/Low/src/Physics/CollisionObjStatic.h
 	DEM/Low/src/Physics/CollisionShape.h
 	DEM/Low/src/Physics/CollisionShapeLoader.h
 	DEM/Low/src/Physics/HeightfieldShape.h
 	DEM/Low/src/Physics/MotionStateDynamic.h
 	DEM/Low/src/Physics/MotionStateKinematic.h
+	DEM/Low/src/Physics/MovableCollider.h
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
 	DEM/Low/src/Physics/PhysicsLevel.h
 	DEM/Low/src/Physics/PhysicsObject.h
@@ -402,11 +402,11 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Math/Vector4.cpp
 	DEM/Low/src/Physics/CollisionAttribute.cpp
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.cpp
-	DEM/Low/src/Physics/CollisionObjMoving.cpp
 	DEM/Low/src/Physics/CollisionObjStatic.cpp
 	DEM/Low/src/Physics/CollisionShape.cpp
 	DEM/Low/src/Physics/CollisionShapeLoader.cpp
 	DEM/Low/src/Physics/HeightfieldShape.cpp
+	DEM/Low/src/Physics/MovableCollider.cpp
 	DEM/Low/src/Physics/PhysicsDebugDraw.cpp
 	DEM/Low/src/Physics/PhysicsLevel.cpp
 	DEM/Low/src/Physics/PhysicsObject.cpp

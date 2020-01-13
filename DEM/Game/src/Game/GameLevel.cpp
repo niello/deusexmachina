@@ -106,9 +106,10 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 		vector3 Center = SubDesc->Get(CStrID("Center"), vector3::Zero);
 		vector3 Extents = SubDesc->Get(CStrID("Extents"), vector3(512.f, 128.f, 512.f));
 
-		PhysicsLevel.reset(n_new(Physics::CPhysicsLevel(CAABB(Center, Extents))));
+		PhysicsLevel = n_new(Physics::CPhysicsLevel(CAABB(Center, Extents)));
 
-		//???load .bullet base contents, useful for static collisions?
+		//!!!???load .bullet base contents!? useful for static collisions!
+		// .bullet with non-entity data is not a resource, it is more like a level data part!
 
 		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsPreTick, this, true);
 		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsTick, this, false);

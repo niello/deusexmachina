@@ -1,11 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_DYNAMIC_ENUM_H__
-#define __DEM_L1_DYNAMIC_ENUM_H__
-
-#include <StdDEM.h>
 #include <Data/StringID.h>
 #include <Data/StringTokenizer.h>
-#include <Data/Dictionary.h>
+#include <map>
 
 // Dynamic enum associates string names with bits. Use integer types as a template type.
 // This class is designed for flag enums, where each value reserves a bit, and values can
@@ -19,16 +15,14 @@ class CDynamicEnumT
 {
 protected:
 
-	CDict<CStrID, T>	Flags;
-	UPTR				BitsUsed;
+	std::map<CStrID, T> Flags;
+	U8                  BitsUsed = 0;
 
 public:
 
-	CDynamicEnumT(): BitsUsed(0) {}
-
 	T		GetMask(const char* pFlagStr);
-	void	SetAlias(CStrID Alias, const char* pFlagStr) { Flags.Add(Alias, GetMask(pFlagStr)); }
-	void	SetAlias(CStrID Alias, T Mask) { Flags.Add(Alias, Mask); }
+	void	SetAlias(CStrID Alias, const char* pFlagStr) { Flags.emplace(Alias, GetMask(pFlagStr)); }
+	void	SetAlias(CStrID Alias, T Mask) { Flags.emplace(Alias, Mask); }
 };
 
 typedef CDynamicEnumT<U16> CDynamicEnum16;
@@ -44,23 +38,30 @@ T CDynamicEnumT<T>::GetMask(const char* pFlagStr)
 	while (StrTok.GetNextToken("\t |") && *StrTok.GetCurrToken())
 	{
 		CStrID Flag = CStrID(StrTok.GetCurrToken());
-		IPTR Idx = Flags.FindIndex(Flag);
-		if (Idx != INVALID_INDEX) Mask |= Flags.ValueAt(Idx);
+
+		auto It = Flags.find(Flag);
+		if (It != Flags.cend())
+		{
+			Mask |= It->second;
+		}
 		else
 		{
 			if (BitsUsed >= (sizeof(T) << 3))
 			{
-				Sys::Error("CDynamicEnumT: overflow, flag '%s' would be %d-th", Flag.CStr(), BitsUsed + 1);
+				::Sys::Error("CDynamicEnumT: overflow, flag '%s' would be %d-th", Flag.CStr(), BitsUsed + 1);
 				return 0;
 			}
-			Mask |= Flags.Add(Flag, (1 << BitsUsed));
+
+			const auto BitValue = (1 << BitsUsed);
+			Flags.emplace(Flag, BitValue);
 			++BitsUsed;
+
+			Mask |= BitValue;
 		}
 	}
+
 	return Mask;
 }
 //---------------------------------------------------------------------
 
 }
-
-#endif

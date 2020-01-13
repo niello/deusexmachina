@@ -3,6 +3,7 @@
 #define __DEM_L2_GAME_TARGET_H__
 
 #include <Data/Ptr.h>
+#include <Data/Array.h>
 #include <Data/DynamicEnum.h>
 
 // Target can accept action context to determine available actions.

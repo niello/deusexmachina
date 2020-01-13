@@ -1,6 +1,6 @@
 #pragma once
-#include <Data/Ptr.h>
-#include <Data/Array.h>
+#include <Data/RefCounted.h>
+#include <Data/DynamicEnum.h>
 #include <Math/Vector3.h>
 
 // Physics level represents a space where physics bodies and collision objects live.
@@ -10,10 +10,11 @@ class btDiscreteDynamicsWorld;
 
 namespace Physics
 {
+typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
+//typedef Ptr<class CCollisionShape> PCollisionShape;
 typedef Ptr<class CPhysicsObject> PPhysicsObject;
-typedef std::unique_ptr<class CPhysicsLevel> PPhysicsLevel;
 
-class CPhysicsLevel final
+class CPhysicsLevel : public Data::CRefCounted
 {
 protected:
 
@@ -22,8 +23,10 @@ protected:
 
 public:
 
+	Data::CDynamicEnum16     CollisionGroups;
+
 	CPhysicsLevel(const CAABB& Bounds);
-	~CPhysicsLevel();
+	virtual ~CPhysicsLevel() override;
 
 	void	Update(float dt);
 	void	RenderDebug();

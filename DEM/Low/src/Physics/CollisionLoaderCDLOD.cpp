@@ -37,6 +37,9 @@ PResourceObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 	if (!Reader.Read(HFWidth)) return nullptr;
 	if (!Reader.Read(HFHeight)) return nullptr;
 
+	// Heightfield must have an area
+	if (HFWidth < 2 || HFHeight < 2) return nullptr;
+
 	// Skip PatchSize, LODCount and MinMaxDataSize
 	if (!Stream->Seek(3 * sizeof(U32), IO::Seek_Current)) return nullptr;
 
@@ -71,6 +74,10 @@ PResourceObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 
 	btHeightfieldTerrainShape* pBtShape =
 		new btHeightfieldTerrainShape(HFWidth, HFHeight, Data.get(), VerticalScale, MinY, MaxY, 1, PHY_SHORT, false);
+
+	// Convert W & H from heightmap samples to 3D units
+	btVector3 LocalScaling((MaxX - MinX) / static_cast<float>(HFWidth - 1), 1.f, (MaxZ - MinZ) / static_cast<float>(HFHeight - 1));
+	pBtShape->setLocalScaling(LocalScaling);
 
 	return n_new(Physics::CHeightfieldShape(pBtShape, std::move(Data), Offset));
 }
