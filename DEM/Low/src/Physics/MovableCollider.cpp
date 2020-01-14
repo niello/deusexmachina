@@ -26,7 +26,7 @@ public:
 	void SetTransform(const matrix44& NewTfm, const vector3& Offset)
 	{
 		_Tfm = TfmToBtTfm(NewTfm);
-		_Tfm.getOrigin() += VectorToBtVector(Offset); //???must rotate?
+		_Tfm.getOrigin() = _Tfm * VectorToBtVector(Offset);
 	}
 
 	virtual void getWorldTransform(btTransform& worldTrans) const override { worldTrans = _Tfm; }

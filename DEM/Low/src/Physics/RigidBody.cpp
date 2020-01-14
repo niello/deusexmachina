@@ -23,25 +23,27 @@ public:
 	BT_DECLARE_ALIGNED_ALLOCATOR();
 
 	void SetSceneNode(Scene::PSceneNode Node) { _Node = Node; }
+	Scene::CSceneNode* GetSceneNode() const { return _Node.Get(); }
 
+	//!!!dynamic motion state shape offset?
 	virtual void getWorldTransform(btTransform& worldTrans) const override
 	{
 		//!!!update world matrix if dirty inside GetWorldMatrix()!
-		const matrix44& Tfm = _Node ? _Node->GetWorldMatrix() : matrix44::Identity;
-		worldTrans = TfmToBtTfm(Tfm);
+		worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : matrix44::Identity);
 	}
 
+	//!!!dynamic motion state shape offset?
 	virtual void setWorldTransform(const btTransform& worldTrans) override
 	{
 		if (_Node) _Node->SetWorldTransform(BtTfmToTfm(worldTrans));
 	}
 };
 
-//!!!dynamic motion state shape offset?
-
 CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, float Mass, const matrix44& InitialTfm)
 	: _Level(&Level)
 {
+	n_assert(Mass != 0.f);
+
 	// Instead of storing strong ref, we manually control refcount and use
 	// a pointer from the bullet collision shape
 	Shape.AddRef();
@@ -81,105 +83,52 @@ CRigidBody::~CRigidBody()
 }
 //---------------------------------------------------------------------
 
-// After node change:
-//// Enforce offline transform update to be taken into account
-//pRB->setMotionState(pRB->getMotionState());
-
 void CRigidBody::SetTransform(const matrix44& Tfm)
 {
-	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
-	if (pMotionState)
-	{
-		btTransform BtTfm = TfmToBtTfm(Tfm);
-		BtTfm.getOrigin() = BtTfm * VectorToBtVector(ShapeOffset);
-		pMotionState->setWorldTransform(BtTfm);
-	}
-	if (!pMotionState || pWorld) CPhysicsObject::SetTransform(Tfm);
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	btTransform BtTfm = TfmToBtTfm(Tfm);
+	BtTfm.getOrigin() = BtTfm * VectorToBtVector(pShape->GetOffset());
+	_pBtObject->setWorldTransform(BtTfm);
+	_pBtObject->activate();
 }
 //---------------------------------------------------------------------
 
 void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
-	n_assert_dbg(pBtCollObj);
+	auto pMotionState = static_cast<CDynamicMotionState*>(_pBtObject->getMotionState());
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
-	if (pMotionState)
-	{
-		OutRot = BtQuatToQuat(pMotionState->Rotation);
-		OutPos = BtVectorToVector(pMotionState->Position) - OutRot.rotate(ShapeOffset);
-	}
-	else CPhysicsObject::GetTransform(OutPos, OutRot);
-}
-//---------------------------------------------------------------------
+	btTransform Tfm;
+	if (pMotionState->GetSceneNode())
+		_pBtObject->getMotionState()->getWorldTransform(Tfm); //!!!can return Node's non-converted world tfm right here!
+	else
+		Tfm = _pBtObject->getWorldTransform();
 
-void CRigidBody::GetTransform(btTransform& Out) const
-{
-	n_assert_dbg(pBtCollObj);
-
-	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
-	if (pMotionState)
-	{
-		pMotionState->getWorldTransform(Out);
-		Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
-	}
-	else CPhysicsObject::GetTransform(Out);
-}
-//---------------------------------------------------------------------
-
-void CRigidBody::SetTransformChanged(bool Changed)
-{
-	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
-	if (pMotionState) pMotionState->TfmChanged = Changed;
-}
-//---------------------------------------------------------------------
-
-bool CRigidBody::IsTransformChanged() const
-{
-	CMotionStateDynamic* pMotionState = (CMotionStateDynamic*)((btRigidBody*)pBtCollObj)->getMotionState();
-	return pMotionState ? pMotionState->TfmChanged : true;
+	OutRot = BtQuatToQuat(Tfm.getRotation());
+	OutPos = BtVectorToVector(Tfm.getOrigin()) - OutRot.rotate(pShape->GetOffset());
 }
 //---------------------------------------------------------------------
 
 float CRigidBody::GetInvMass() const
 {
-	return ((btRigidBody*)pBtCollObj)->getInvMass();
+	return _pBtObject->getInvMass();
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::SetActive(bool Active, bool Always)
+{
+	if (Always)
+		_pBtObject->forceActivationState(Active ? DISABLE_DEACTIVATION : DISABLE_SIMULATION);
+	else if (Active)
+		_pBtObject->activate();
+	else
+		_pBtObject->forceActivationState(WANTS_DEACTIVATION);
 }
 //---------------------------------------------------------------------
 
 bool CRigidBody::IsActive() const
 {
-	int ActState = ((btRigidBody*)pBtCollObj)->getActivationState();
-	return ActState == DISABLE_DEACTIVATION || ActState == ACTIVE_TAG;
-}
-//---------------------------------------------------------------------
-
-bool CRigidBody::IsAlwaysActive() const
-{
-	return ((btRigidBody*)pBtCollObj)->getActivationState() == DISABLE_DEACTIVATION;
-}
-//---------------------------------------------------------------------
-
-bool CRigidBody::IsAlwaysInactive() const
-{
-	return ((btRigidBody*)pBtCollObj)->getActivationState() == DISABLE_SIMULATION;
-}
-//---------------------------------------------------------------------
-
-void CRigidBody::MakeActive()
-{
-	((btRigidBody*)pBtCollObj)->forceActivationState(ACTIVE_TAG);
-}
-//---------------------------------------------------------------------
-
-void CRigidBody::MakeAlwaysActive()
-{
-	((btRigidBody*)pBtCollObj)->forceActivationState(DISABLE_DEACTIVATION);
-}
-//---------------------------------------------------------------------
-
-void CRigidBody::MakeAlwaysInactive()
-{
-	((btRigidBody*)pBtCollObj)->forceActivationState(DISABLE_SIMULATION);
+	return _pBtObject->isActive();
 }
 //---------------------------------------------------------------------
 

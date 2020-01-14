@@ -63,9 +63,6 @@ public:
 
 	bool			Init(const Data::CParams& Desc);
 	void			Term();
-	bool			AttachToLevel(CPhysicsLevel& World);
-	void			RemoveFromLevel();
-	bool			IsAttachedToLevel() const;
 
 	void			Update();
 

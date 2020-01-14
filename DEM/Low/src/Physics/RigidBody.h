@@ -28,16 +28,10 @@ public:
 
 	virtual void	SetTransform(const matrix44& Tfm);
 	virtual void	GetTransform(vector3& OutPos, quaternion& OutRot) const;
-	void			SetTransformChanged(bool Changed);
-	bool			IsTransformChanged() const;
 	float			GetInvMass() const;
-	float			GetMass();
+	float			GetMass() const { return 1.f / GetInvMass(); }
+	void            SetActive(bool Active, bool Always);
 	bool			IsActive() const;
-	bool			IsAlwaysActive() const;
-	bool			IsAlwaysInactive() const;
-	void			MakeActive();
-	void			MakeAlwaysActive();
-	void			MakeAlwaysInactive();
 };
 
 typedef Ptr<CRigidBody> PRigidBody;

@@ -75,8 +75,10 @@ bool CPropPhysics::OnPropDeactivating(Events::CEventDispatcher* pDispatcher, con
 
 void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
+	// FIXME PHYSICS
 	NOT_IMPLEMENTED;
 
+	/*
 	if (!Prop.GetNode()) return;
 
 	Physics::CPhysicsLevel* pPhysWorld = GetEntity()->GetLevel()->GetPhysics();
@@ -134,12 +136,10 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 		}
 		else
 		{
-			/*
 			Physics::PCollisionAttribute Attr = n_new(Physics::CCollisionAttribute);
 			Attr->CollObj = (Physics::CMovableCollider*)Obj.Get();
 			pCurrNode->AddAttribute(*Attr);
 			Attrs.Add(Attr);
-			*/
 		}
 
 		Obj->AttachToLevel(*pPhysWorld);
@@ -154,6 +154,7 @@ void CPropPhysics::InitSceneNodeModifiers(CPropSceneNode& Prop)
 	}
 
 	//!!!load joints!
+	*/
 }
 //---------------------------------------------------------------------
 
@@ -176,8 +177,9 @@ bool CPropPhysics::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const
 {
 	//!!!subscribe only when has meaning!
 	//???!!!angular too?!
-	if (RootBody.IsNullPtr() || !RootBody->IsInitialized()) FAIL;
-	GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), BtVectorToVector(RootBody->GetBtBody()->getLinearVelocity()));
+	if (!RootBody.IsNullPtr()) FAIL;
+	// FIXME PHYSICS
+//	GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), BtVectorToVector(RootBody->GetBtBody()->getLinearVelocity()));
 	OK;
 }
 //---------------------------------------------------------------------

@@ -70,7 +70,8 @@ void CPropCharacterController::CreateController()
 
 	CharCtlr = n_new(Physics::CCharacterController);
 	CharCtlr->Init(*PhysicsDesc);
-	CharCtlr->GetBody()->SetUserData(*(void**)&GetEntity()->GetUID());
+	// FIXME PHYSICS
+	//	CharCtlr->GetBody()->SetUserData(*(void**)&GetEntity()->GetUID());
 }
 //---------------------------------------------------------------------
 
@@ -229,7 +230,8 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + CharCtlr->GetRequestedLinearVelocity(), ColorReqVel);
 
 	matrix44 CapsuleTfm = Tfm;
-	CapsuleTfm.translate(CharCtlr->GetBody()->GetShapeOffset());
+	// FIXME PHYSICS
+//	CapsuleTfm.translate(CharCtlr->GetBody()->GetShapeOffset());
 	float CapsuleHeight = CharCtlr->GetHeight() - CharCtlr->GetRadius() - CharCtlr->GetRadius() - CharCtlr->GetHover();
 	const vector4& Color = CharCtlr->GetBody()->IsActive() ? ColorCapsuleActive : ColorCapsuleFrozen;
 	DebugDraw->DrawCapsule(CapsuleTfm, CharCtlr->GetRadius(), CapsuleHeight, Color);

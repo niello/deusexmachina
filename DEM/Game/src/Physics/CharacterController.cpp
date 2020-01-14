@@ -3,6 +3,7 @@
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
+#include <Physics/CollisionShape.h>
 #include <Physics/ClosestNotMeRayResultCallback.h>
 #include <Data/Params.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
@@ -31,12 +32,14 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 
 	PCollisionShape Shape = CCollisionShape::CreateCapsuleY(Offset, Radius, CapsuleHeight);
 
+	// FIXME PHYSICS
 	const U16 MaskCharacter = -1;// PhysicsSrv->CollisionGroups.GetMask("Character");
 	const U16 MaskAll = -1; // PhysicsSrv->CollisionGroups.GetMask("All");
 
-	Body = n_new(CRigidBody);
-	Body->Init(*Shape, Mass, MaskCharacter, MaskAll, Offset);
-	Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
+	// FIXME PHYSICS
+	//Body = n_new(CRigidBody);
+	//Body->Init(*Shape, Mass, MaskCharacter, MaskAll, Offset);
+	//Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
 
 	ReqLinVel = vector3::Zero;
 	ReqAngVel = 0.f;
@@ -47,39 +50,19 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 
 void CCharacterController::Term()
 {
-	RemoveFromLevel();
 	Body = nullptr;
-}
-//---------------------------------------------------------------------
-
-bool CCharacterController::AttachToLevel(CPhysicsLevel& World)
-{
-	return Body.IsValidPtr() && Body->AttachToLevel(World);
-}
-//---------------------------------------------------------------------
-
-void CCharacterController::RemoveFromLevel()
-{
-	if (Body.IsValidPtr()) Body->RemoveFromLevel();
-}
-//---------------------------------------------------------------------
-
-bool CCharacterController::IsAttachedToLevel() const
-{
-	return Body.IsValidPtr() && Body->IsAttachedToLevel();
 }
 //---------------------------------------------------------------------
 
 void CCharacterController::Update()
 {
-	if (!IsAttachedToLevel()) return;
-
 	//!!!FIXME! write to the Bullet support:
 	// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
 	// has an outdated transformation here. So we have to access object's world tfm.
 	vector3 Pos;
 	quaternion Rot;
-	Body->CPhysicsObject::GetTransform(Pos, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	// FIXME PHYSICS
+	//Body->CPhysicsObject::GetTransform(Pos, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
 
 	const float GroundProbeLength = 0.5f;
 
@@ -87,10 +70,13 @@ void CCharacterController::Update()
 	btVector3 BtEnd = BtStart;
 	BtStart.m_floats[1] += Height;
 	BtEnd.m_floats[1] -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
-	CClosestNotMeRayResultCallback RayCB(BtStart, BtEnd, Body->GetBtObject());
-	Body->GetWorld()->GetBtWorld()->rayTest(BtStart, BtEnd, RayCB);
 
-	float DistanceToGround = RayCB.hasHit() ? Pos.y - RayCB.m_hitPointWorld.y() : FLT_MAX;
+	// FIXME PHYSICS
+	//CClosestNotMeRayResultCallback RayCB(BtStart, BtEnd, Body->GetBtObject());
+	//Body->GetWorld()->GetBtWorld()->rayTest(BtStart, BtEnd, RayCB);
+
+	//float DistanceToGround = RayCB.hasHit() ? Pos.y - RayCB.m_hitPointWorld.y() : FLT_MAX;
+	float DistanceToGround = 0.f;
 
 	if (DistanceToGround <= 0.f && State != Char_Standing)
 	{
@@ -121,19 +107,23 @@ void CCharacterController::Update()
 		{
 			// send event OnEnd[state] (//???through callback?)
 			// send event OnStartFalling (//???through callback?)
-			Body->MakeActive();
+			// FIXME PHYSICS
+			//Body->MakeActive();
 		}
 		else if (VerticalImpulse > 0.f)
 		{
 			// send event OnEnd[state] (//???through callback?)
 			// send event OnStartJumping (//???through callback?)
-			Body->MakeActive();
+			// FIXME PHYSICS
+			//Body->MakeActive();
 		}
 		//???else if VerticalImpulse == 0.f levitate?
 	}
 
 	if (State == Char_Standing)
 	{
+		// FIXME PHYSICS
+		/*
 		// We want a precise control over the movement, so deny freezing on low speed, if movement is requested
 		bool AlwaysActive = Body->IsAlwaysActive();
 		bool HasReq = IsMotionRequested();
@@ -171,6 +161,7 @@ void CCharacterController::Update()
 		// We want to compensate our DistanceToGround in a single simulation step
 		const float ReqVerticalVel = -DistanceToGround * InvTickTime;
 		Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * Body->GetMass(), 0.f));
+		*/
 	}
 	else
 	{
@@ -184,15 +175,17 @@ void CCharacterController::Update()
 
 bool CCharacterController::GetLinearVelocity(vector3& Out) const
 {
-	if (!Body->IsInitialized()) FAIL;
-	Out = BtVectorToVector(Body->GetBtBody()->getLinearVelocity());
+	// FIXME PHYSICS
+//	Out = BtVectorToVector(Body->GetBtBody()->getLinearVelocity());
 	OK;
 }
 //---------------------------------------------------------------------
 
 float CCharacterController::GetAngularVelocity() const
 {
-	return Body->GetBtBody()->getAngularVelocity().y();
+	// FIXME PHYSICS
+//	return Body->GetBtBody()->getAngularVelocity().y();
+	return 0.f;
 }
 //---------------------------------------------------------------------
 

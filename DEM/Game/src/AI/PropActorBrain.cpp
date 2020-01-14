@@ -468,7 +468,7 @@ bool CPropActorBrain::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, co
 	// has an outdated transformation here. So we have to access object's world tfm.
 	vector3 OldPos = Position;
 	quaternion Rot;
-	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+//FIXME PHYSICS	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
 	LookatDir = Rot.rotate(vector3::BaseDir);
 
 	if (OldPos != Position)
