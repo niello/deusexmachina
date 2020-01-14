@@ -46,6 +46,8 @@ protected:
 
 	void					OnDetachFromScene();
 	void                    SetParent(CSceneNode* pNewParent);
+	void					UpdateWorldTransform();
+	void					UpdateLocalTransform();
 
 public:
 
@@ -55,8 +57,6 @@ public:
 	virtual bool			IsResourceValid() const override { OK; }
 
 	void					Update(const vector3* pCOIArray, UPTR COICount);
-	void					UpdateWorldFromLocal();
-	void					UpdateLocalFromWorld();
 
 	PSceneNode				Clone(bool CloneChildren);
 	void					Remove() { if (pParent) pParent->RemoveChild(*this); }
@@ -102,13 +102,13 @@ public:
 	void					SetWorldPosition(const vector3& Value);
 	void					SetWorldTransform(const matrix44& Value);
 
-	const vector3&			GetLocalPosition() { UpdateLocalFromWorld(); return LocalTfm.Translation; }
-	const quaternion&		GetLocalRotation() { UpdateLocalFromWorld(); return LocalTfm.Rotation; }
-	const vector3&			GetLocalScale() { UpdateLocalFromWorld(); return LocalTfm.Scale; }
-	const Math::CTransform&	GetLocalTransform() { UpdateLocalFromWorld(); return LocalTfm; }
-	matrix44			    GetLocalMatrix() { UpdateLocalFromWorld(); matrix44 m; LocalTfm.ToMatrix(m); return m; }
-	const vector3&			GetWorldPosition() { UpdateWorldFromLocal(); return WorldMatrix.Translation(); }
-	const matrix44&			GetWorldMatrix() { UpdateWorldFromLocal(); return WorldMatrix; }
+	const vector3&			GetLocalPosition() { UpdateLocalTransform(); return LocalTfm.Translation; }
+	const quaternion&		GetLocalRotation() { UpdateLocalTransform(); return LocalTfm.Rotation; }
+	const vector3&			GetLocalScale() { UpdateLocalTransform(); return LocalTfm.Scale; }
+	const Math::CTransform&	GetLocalTransform() { UpdateLocalTransform(); return LocalTfm; }
+	matrix44			    GetLocalMatrix() { UpdateLocalTransform(); matrix44 m; LocalTfm.ToMatrix(m); return m; }
+	const vector3&			GetWorldPosition() { UpdateWorldTransform(); return WorldMatrix.Translation(); }
+	const matrix44&			GetWorldMatrix() { UpdateWorldTransform(); return WorldMatrix; }
 
 	/*
 	// Constant getters don't recalculate dirty transforms and therefore can return invalid values.
