@@ -168,13 +168,13 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 
 PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 {
-	// TODO: twice as much vertices on longitude!
-	const U16 _LineCount = _SliceCount;
+	// Twice as much vertices on longitude result in more sphere-looking mesh
+	const U16 MeridianCount = _RowCount * 2;
 
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
-	MeshData->VertexCount = 2 + _LineCount * (_LineCount - 1);
-	MeshData->IndexCount = 6 * _LineCount * (_LineCount - 1);
+	MeshData->VertexCount = MeridianCount * (_RowCount - 1) + 2;
+	MeshData->IndexCount = 6 * MeridianCount * (_RowCount - 1);
 
 	Render::CVertexComponent VC;
 	VC.Format = Render::VCFmt_Float32_3;
@@ -187,21 +187,21 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
-	const float LatitudeStepInRadians = PI / static_cast<float>(_LineCount);
-	const float LongitudeStepInRadians = (2.f * PI) / static_cast<float>(_LineCount);
+	const float LatitudeStepInRadians = PI / static_cast<float>(_RowCount);
+	const float LongitudeStepInRadians = (2.f * PI) / static_cast<float>(MeridianCount);
 	constexpr float Radius = 0.5f;
 
 	std::vector<vector3> Vertices;
 	Vertices.reserve(MeshData->VertexCount);
 
-	Vertices.push_back({ 0.f, Radius, 0.f }); // Top tip
-	for (UPTR i = 1; i < _LineCount; ++i)
+	Vertices.push_back({ 0.f, Radius, 0.f }); // North pole
+	for (UPTR i = 1; i < _RowCount; ++i)
 	{
 		const float Latitude = LatitudeStepInRadians * i;
 		const float SinLat = std::sinf(Latitude);
 		const float CosLat = std::cosf(Latitude);
 
-		for (UPTR j = 0; j < _LineCount; ++j)
+		for (UPTR j = 0; j < MeridianCount; ++j)
 		{
 			const float Longitude = LongitudeStepInRadians * j;
 			const float SinLon = std::sinf(Longitude);
@@ -212,34 +212,34 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 			Vertices.push_back({ Radius * SinLat * CosLon, Radius * CosLat, Radius * SinLat * SinLon });
 		}
 	}
-	Vertices.push_back({ 0.f, -Radius, 0.f }); // Bottom tip
+	Vertices.push_back({ 0.f, -Radius, 0.f }); // South pole
 
 	std::vector<U16> Indices;
 	Indices.reserve(MeshData->IndexCount);
 
 	// Top cap
-	for (U16 i = 1; i < _LineCount; ++i)
+	for (U16 i = 1; i < MeridianCount; ++i)
 		Indices.insert(Indices.end(), { 0, i, static_cast<U16>(i + 1) });
-	Indices.insert(Indices.end(), { 0, _LineCount, 1 });
+	Indices.insert(Indices.end(), { 0, MeridianCount, 1 });
 
 	// Rows
-	for (U16 Row = 0; Row < (_LineCount - 2); ++Row)
+	for (U16 Row = 0; Row < (_RowCount - 2); ++Row)
 	{
-		const U16 Offset = Row * _LineCount + 1;
-		const U16 End = Offset + _LineCount - 1;
+		const U16 Offset = Row * MeridianCount + 1;
+		const U16 End = Offset + MeridianCount - 1;
 
 		for (U16 i = Offset; i < End; ++i)
 		{
 			Indices.insert(Indices.end(),
 				{
 					static_cast<U16>(i),
-					static_cast<U16>(i + _LineCount),
-					static_cast<U16>(i + _LineCount + 1)
+					static_cast<U16>(i + MeridianCount),
+					static_cast<U16>(i + MeridianCount + 1)
 				});
 			Indices.insert(Indices.end(),
 				{
 					static_cast<U16>(i),
-					static_cast<U16>(i + _LineCount + 1),
+					static_cast<U16>(i + MeridianCount + 1),
 					static_cast<U16>(i + 1)
 				});
 		}
@@ -248,7 +248,7 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 		Indices.insert(Indices.end(),
 			{
 				static_cast<U16>(End),
-				static_cast<U16>(End + _LineCount),
+				static_cast<U16>(End + MeridianCount),
 				static_cast<U16>(End + 1)
 			});
 		Indices.insert(Indices.end(),
@@ -260,11 +260,11 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 	}
 
 	// Bottom cap
-	const U16 BottomCapStart = (_LineCount - 2) * _LineCount + 1;
-	const U16 LastIndex = (_LineCount - 1) * _LineCount + 1;
-	for (U16 i = BottomCapStart; i < BottomCapStart + _LineCount - 1; ++i)
+	const U16 LastIndex = MeridianCount * (_RowCount - 1) + 1;
+	const U16 BottomCapStart = LastIndex - MeridianCount;
+	for (U16 i = BottomCapStart; i < LastIndex - 1; ++i)
 		Indices.insert(Indices.end(), { LastIndex, static_cast<U16>(i + 1), i });
-	Indices.insert(Indices.end(), { LastIndex, BottomCapStart, static_cast<U16>(BottomCapStart + _LineCount - 1) });
+	Indices.insert(Indices.end(), { LastIndex, BottomCapStart, static_cast<U16>(LastIndex - 1) });
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
 	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));

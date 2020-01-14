@@ -46,11 +46,11 @@ class CMeshGeneratorSphere: public CMeshGenerator
 {
 private:
 
-	U16 _SliceCount = 4;
+	U16 _RowCount = 4;
 
 public:
 
-	CMeshGeneratorSphere(U16 SliceCount, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _SliceCount(std::max<U16>(SliceCount, 4)) {}
+	CMeshGeneratorSphere(U16 RowCount, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _RowCount(std::max<U16>(RowCount, 4)) {}
 
 	virtual PResourceObject CreateResource(CStrID UID) override;
 };
