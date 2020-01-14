@@ -51,7 +51,7 @@ public:
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
 	virtual Scene::PNodeAttribute Clone() override;
-	virtual void                  Update(const vector3* pCOIArray, UPTR COICount) override;
+	virtual void                  UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
 
 	Render::CSkinInfo*            GetSkinInfo() const { return SkinInfo.Get(); }
 	const matrix44*               GetSkinPalette() const { return pSkinPalette; }

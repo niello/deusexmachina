@@ -53,10 +53,8 @@ Scene::PNodeAttribute CCameraAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CCameraAttribute::Update(const vector3* pCOIArray, UPTR COICount)
+void CCameraAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 {
-	CNodeAttribute::Update(pCOIArray, COICount);
-
 	bool ViewOrProjChanged = false;
 
 	if (Flags.Is(ProjDirty))

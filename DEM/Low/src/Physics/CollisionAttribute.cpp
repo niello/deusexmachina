@@ -52,10 +52,8 @@ Scene::PNodeAttribute CCollisionAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CCollisionAttribute::Update(const vector3* pCOIArray, UPTR COICount)
+void CCollisionAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 {
-	CNodeAttribute::Update(pCOIArray, COICount);
-
 	if (!Collider) return;
 
 	if (pNode->GetTransformVersion() != LastTransformVersion)

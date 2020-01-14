@@ -29,7 +29,7 @@ public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual Scene::PNodeAttribute Clone() override;
-	virtual void                  Update(const vector3* pCOIArray, UPTR COICount) override;
+	virtual void                  UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
 	bool                          ValidateResources(Resources::CResourceManager& ResMgr, CPhysicsLevel& Level);
 	bool                          GetGlobalAABB(CAABB& OutBox) const;
 };

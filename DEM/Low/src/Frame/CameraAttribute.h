@@ -49,9 +49,9 @@ public:
 	//???flag ManualProjMatrix? Perspective, Orthogonal, Manual
 	//???need BBox calculation? projection box, mul view matrix = viewproj box
 
-	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
-	virtual Scene::PNodeAttribute	Clone();
-	virtual void					Update(const vector3* pCOIArray, UPTR COICount);
+	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
+	virtual Scene::PNodeAttribute	Clone() override;
+	virtual void					UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
 
 	void							GetRay3D(float RelX, float RelY, float Length, line3& OutRay) const;
 	void							GetPoint2D(const vector3& Point3D, float& OutRelX, float& OutRelY) const;

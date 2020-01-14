@@ -51,7 +51,7 @@ PNodeAttribute CLODGroup::Clone()
 }
 //---------------------------------------------------------------------
 
-void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
+void CLODGroup::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 {
 	if (!pNode || !pCOIArray || !COICount) return;
 
@@ -77,10 +77,7 @@ void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 	for (UPTR i = 0; i < pNode->GetChildCount(); ++i)
 	{
 		CSceneNode& Node = *pNode->GetChild(i);
-		if (Node.GetName() == SelectedChild)
-			Node.Activate();
-		else
-			Node.Deactivate();
+		Node.SetActive(Node.GetName() == SelectedChild);
 	}
 }
 //---------------------------------------------------------------------

@@ -30,14 +30,17 @@ void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 {
 	UpdateWorldTransform();
 
-	// LOD attrs may disable some children, so process attributes before children
 	for (const auto& Attr : Attrs)
 		if (Attr->IsActive())
-			Attr->Update(pCOIArray, COICount);
+			Attr->UpdateBeforeChildren(pCOIArray, COICount);
 
 	for (const auto& Child : Children)
 		if (Child->IsActive())
 			Child->Update(pCOIArray, COICount);
+
+	for (const auto& Attr : Attrs)
+		if (Attr->IsActive())
+			Attr->UpdateAfterChildren(pCOIArray, COICount);
 }
 //---------------------------------------------------------------------
 
@@ -75,7 +78,6 @@ void CSceneNode::SetLocalPosition(const vector3& Value)
 
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
-	++TransformVersion;
 }
 //---------------------------------------------------------------------
 
@@ -91,7 +93,6 @@ void CSceneNode::SetLocalRotation(const quaternion& Value)
 
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
-	++TransformVersion;
 }
 //---------------------------------------------------------------------
 
@@ -107,7 +108,6 @@ void CSceneNode::SetLocalScale(const vector3& Value)
 
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
-	++TransformVersion;
 }
 //---------------------------------------------------------------------
 
@@ -116,7 +116,6 @@ void CSceneNode::SetLocalTransform(const Math::CTransform& Value)
 	LocalTfm = Value;
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
-	++TransformVersion;
 }
 //---------------------------------------------------------------------
 
@@ -125,7 +124,6 @@ void CSceneNode::SetLocalTransform(const matrix44& Value)
 	LocalTfm.FromMatrix(Value);
 	Flags.Clear(LocalTransformDirty);
 	Flags.Set(WorldTransformDirty);
-	++TransformVersion;
 }
 //---------------------------------------------------------------------
 
@@ -158,24 +156,20 @@ void CSceneNode::UpdateWorldTransform()
 {
 	if (pParent)
 	{
-		const bool ParentTfmChanged = (pParent->GetTransformVersion() != LastParentTransformVersion);
-		if (!IsWorldTransformDirty() && !ParentTfmChanged) return;
+		if (!IsWorldTransformDirty() && pParent->GetTransformVersion() == LastParentTransformVersion) return;
 
 		LocalTfm.ToMatrix(WorldMatrix);
 		WorldMatrix.mult_simple(pParent->GetWorldMatrix());
 
-		if (ParentTfmChanged)
-		{
-			// Increment world transform version if changed due to parent
-			LastParentTransformVersion = pParent->GetTransformVersion();
-			++TransformVersion;
-		}
+		LastParentTransformVersion = pParent->GetTransformVersion();
 	}
 	else
 	{
 		if (!IsWorldTransformDirty()) return;
 		LocalTfm.ToMatrix(WorldMatrix);
 	}
+
+	++TransformVersion;
 
 	// It is strange to update already valid world transform from an invalid local
 	n_assert_dbg(!IsLocalTransformDirty());
@@ -199,8 +193,6 @@ void CSceneNode::UpdateLocalTransform()
 		LocalTfm.FromMatrix(LocalMatrix);
 
 		LastParentTransformVersion = pParent->GetTransformVersion();
-
-		// NB: world transform doesn't change, so TransformVersion isn't updated
 	}
 	else
 	{
@@ -234,10 +226,7 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 		std::sort(ClonedNode->Children.begin(), ClonedNode->Children.end(), [](const PSceneNode& a, const PSceneNode& b) { return a->GetName() < b->GetName(); });
 	}
 
-	if (IsActive())
-		ClonedNode->Activate();
-	else
-		ClonedNode->Deactivate();
+	ClonedNode->SetActive(IsActive());
 
 	return ClonedNode;
 }
@@ -424,7 +413,7 @@ void CSceneNode::OnDetachFromScene()
 void CSceneNode::SetParent(CSceneNode* pNewParent)
 {
 	pParent = pNewParent;
-	if (pParent) LastParentTransformVersion = pParent->GetTransformVersion() - 1;
+	if (pParent) LastParentTransformVersion = pParent->TransformVersion - 1;
 }
 //---------------------------------------------------------------------
 

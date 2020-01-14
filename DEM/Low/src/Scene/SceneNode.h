@@ -93,11 +93,10 @@ public:
 	bool					IsRoot() const { return !pParent; }
 	bool					IsChild(const CSceneNode* pParentNode) const;
 	bool					IsActive() const { return Flags.Is(Active); }
-	void					Activate() { return Flags.Set(Active); }
-	void					Deactivate() { return Flags.Clear(Active); }
+	void					SetActive(bool Enable) { return Flags.SetTo(Active, Enable); }
 	bool					IsLocalTransformDirty() const { return Flags.Is(LocalTransformDirty); }
 	bool					IsWorldTransformDirty() const { return Flags.Is(WorldTransformDirty); }
-	U32						GetTransformVersion() const { return TransformVersion; }
+	U32						GetTransformVersion() const { n_assert_dbg(!IsWorldTransformDirty()); return TransformVersion; }
 
 	void					SetLocalPosition(const vector3& Value);
 	void					SetLocalRotation(const quaternion& Value);

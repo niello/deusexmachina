@@ -109,9 +109,9 @@ Scene::PNodeAttribute CSkinAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CSkinAttribute::Update(const vector3* pCOIArray, UPTR COICount)
+void CSkinAttribute::UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount)
 {
-	CNodeAttribute::Update(pCOIArray, COICount);
+	CNodeAttribute::UpdateAfterChildren(pCOIArray, COICount);
 
 	if (!SkinInfo || BoneNodes.empty() || !pSkinPalette) return;
 
