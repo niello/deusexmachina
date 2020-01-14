@@ -22,7 +22,7 @@ public:
 	PMaterial        Material; //???!!!materialset!?
 	PMesh            Mesh;
 	PMeshData        MeshData;           // For GPU-independent AABB access
-	UPTR             MeshGroupIndex = 0;
+	U32              MeshGroupIndex = 0;
 	CFixedArray<int> BoneIndices;        // For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)

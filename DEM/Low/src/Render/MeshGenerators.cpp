@@ -37,9 +37,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
-	const UPTR VertexSize = VC.GetSize();
-
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexCount * VertexSize * sizeof(float), 16)));
+	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexCount * MeshData->GetVertexSize(), 16)));
 	float* pVBCurr = static_cast<float*>(MeshData->VBData->GetPtr());
 	for (UPTR z = 0; z < VerticesPerEdge; ++z)
 	{
@@ -116,8 +114,6 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
-	const UPTR VertexSize = VC.GetSize();
-
 	constexpr float VBData[24] =
 	{
 		-0.5f, -0.5f, -0.5f,
@@ -129,7 +125,7 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 		-0.5f, +0.5f, +0.5f,
 		+0.5f, +0.5f, +0.5f
 	};
-	const UPTR VertexDataSize = sizeof_array(VBData) * VertexSize * sizeof(float);
+	const UPTR VertexDataSize = sizeof(VBData);
 	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
 	memcpy(MeshData->VBData->GetPtr(), VBData, VertexDataSize);
 
@@ -151,7 +147,7 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 		6, 0, 2, 0, 6, 4,	// Left		(-X)
 		4, 5, 0, 0, 5, 1	// Down		(-Y)
 	};
-	const UPTR IndexDataSize = sizeof_array(IBDataCW) * sizeof(U16);
+	const UPTR IndexDataSize = sizeof(IBDataCW);
 	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
 	memcpy(MeshData->IBData->GetPtr(), _FrontClockWise ? IBDataCW : IBDataCCW, IndexDataSize);
 

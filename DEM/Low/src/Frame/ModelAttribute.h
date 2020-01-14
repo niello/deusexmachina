@@ -6,16 +6,19 @@
 namespace Frame
 {
 
-class CModelAttribute: public CRenderableAttribute
+class CModelAttribute : public CRenderableAttribute
 {
 	FACTORY_CLASS_DECL;
 
 protected:
 
-	CStrID MeshUID;
-	CStrID MaterialUID;
+	CStrID _MeshUID;
+	CStrID _MaterialUID;
 
 public:
+
+	CModelAttribute() = default;
+	CModelAttribute(CStrID MeshUID, CStrID MaterialUID, U32 MeshGroupIndex = 0);
 
 	virtual bool LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual bool ValidateResources(Resources::CResourceManager& ResMgr) override;

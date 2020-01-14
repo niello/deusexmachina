@@ -13,6 +13,16 @@ namespace Frame
 {
 FACTORY_CLASS_IMPL(Frame::CModelAttribute, 'MDLA', Frame::CRenderableAttribute);
 
+CModelAttribute::CModelAttribute(CStrID MeshUID, CStrID MaterialUID, U32 MeshGroupIndex)
+	: _MeshUID(MeshUID)
+	, _MaterialUID(MaterialUID)
+{
+	Renderable.reset(n_new(Render::CModel()));
+	auto pModel = static_cast<Render::CModel*>(Renderable.get());
+	pModel->MeshGroupIndex = MeshGroupIndex;
+}
+//---------------------------------------------------------------------
+
 bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
 	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
@@ -25,12 +35,12 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 		{
 			case 'MTRL':
 			{
-				MaterialUID = DataReader.Read<CStrID>();
+				_MaterialUID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'MESH':
 			{
-				MeshUID = DataReader.Read<CStrID>();
+				_MeshUID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'MSGR':
@@ -60,7 +70,7 @@ bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
 	// Store mesh data pointer for GPU-independent local AABB access
-	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(MeshUID);
+	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(_MeshUID);
 	pModel->MeshData = RMeshData ? RMeshData->ValidateObject<Render::CMeshData>() : nullptr;
 
 	OK;
@@ -72,8 +82,8 @@ bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
-	pModel->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
-	pModel->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
+	pModel->Mesh = _MeshUID ? ResMgr.GetMesh(_MeshUID) : nullptr;
+	pModel->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
 
 	OK;
 }
@@ -83,8 +93,8 @@ Scene::PNodeAttribute CModelAttribute::Clone()
 {
 	PModelAttribute ClonedAttr = n_new(CModelAttribute());
 	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
-	ClonedAttr->MeshUID = MeshUID;
-	ClonedAttr->MaterialUID = MaterialUID;
+	ClonedAttr->_MeshUID = _MeshUID;
+	ClonedAttr->_MaterialUID = _MaterialUID;
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
