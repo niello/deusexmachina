@@ -77,7 +77,10 @@ void CLODGroup::Update(const vector3* pCOIArray, UPTR COICount)
 	for (UPTR i = 0; i < pNode->GetChildCount(); ++i)
 	{
 		CSceneNode& Node = *pNode->GetChild(i);
-		Node.Activate(Node.GetName() == SelectedChild);
+		if (Node.GetName() == SelectedChild)
+			Node.Activate();
+		else
+			Node.Deactivate();
 	}
 }
 //---------------------------------------------------------------------

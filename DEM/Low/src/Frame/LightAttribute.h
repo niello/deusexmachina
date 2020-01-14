@@ -28,14 +28,13 @@ class CLightAttribute: public Scene::CNodeAttribute
 protected:
 
 	Render::CLight		Light;
-	Scene::CSPS*		pSPS;
-	Scene::CSPSRecord*	pSPSRecord;		// nullptr if oversized
+	Scene::CSPS*		pSPS = nullptr;
+	Scene::CSPSRecord*	pSPSRecord = nullptr;
+	U32                 LastTransformVersion = 0;
 
 	virtual void	OnDetachFromScene();
 
 public:
-
-	CLightAttribute(): pSPS(nullptr), pSPSRecord(nullptr) {}
 
 	virtual bool					LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count);
 	virtual Scene::PNodeAttribute	Clone();

@@ -132,10 +132,10 @@ void CSceneNode::SetWorldTransform(const matrix44& Value)
 
 void CSceneNode::UpdateWorldFromLocal()
 {
+	if (!IsWorldTransformDirty() && (!pParent || pParent->GetTransformVersion() == LastParentTransformVersion)) return;
+
 	// It is strange to update already valid world transform from an invalid local
 	n_assert_dbg(!IsLocalTransformDirty());
-
-	if (!IsWorldTransformDirty() && (!pParent || pParent->GetTransformVersion() == LastParentTransformVersion)) return;
 
 	LocalTfm.ToMatrix(WorldMatrix);
 
@@ -151,10 +151,10 @@ void CSceneNode::UpdateWorldFromLocal()
 
 void CSceneNode::UpdateLocalFromWorld()
 {
+	if (!IsLocalTransformDirty() && (!pParent || pParent->GetTransformVersion() == LastParentTransformVersion)) return;
+
 	// It is strange to update already valid local transform from an invalid world
 	n_assert_dbg(!IsWorldTransformDirty());
-
-	if (!IsLocalTransformDirty() && (!pParent || pParent->GetTransformVersion() == LastParentTransformVersion)) return;
 
 	if (pParent)
 	{
@@ -189,7 +189,7 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 		for (const auto& Child : Children)
 		{
 			PSceneNode ClonedChild = Child->Clone(true);
-			ClonedChild->pParent = ClonedNode.Get();
+			ClonedChild->SetParent(ClonedNode.Get());
 			ClonedNode->Children.push_back(ClonedChild);
 		}
 		std::sort(ClonedNode->Children.begin(), ClonedNode->Children.end(), [](const PSceneNode& a, const PSceneNode& b) { return a->GetName() < b->GetName(); });
@@ -211,7 +211,7 @@ CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
 
 	//!!!USE POOL!
 	PSceneNode Node = n_new(CSceneNode)(ChildName);
-	Node->pParent = this;
+	Node->SetParent(this);
 	Children.insert(It, Node);
 	return Node;
 }
@@ -243,7 +243,7 @@ bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
 	if (!Replace && It != Children.end() && (*It)->GetName() == ChildName) return false;
 
 	if (ChildName) Node.Name = ChildName;
-	Node.pParent = this;
+	Node.SetParent(this);
 	Children.insert(It, &Node);
 	return true;
 }
@@ -258,7 +258,7 @@ void CSceneNode::RemoveChild(CSceneNode& Node)
 	{
 		Node.OnDetachFromScene();
 		Children.erase(It);
-		Node.pParent = nullptr;
+		Node.SetParent(nullptr);
 	}
 }
 //---------------------------------------------------------------------
@@ -379,6 +379,13 @@ void CSceneNode::OnDetachFromScene()
 
 	for (const auto& Attr : Attrs)
 		Attr->OnDetachFromScene();
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetParent(CSceneNode* pNewParent)
+{
+	pParent = pNewParent;
+	if (pParent) LastParentTransformVersion = pParent->GetTransformVersion() - 1;
 }
 //---------------------------------------------------------------------
 

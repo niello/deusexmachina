@@ -16,9 +16,9 @@ const Core::CRTTI& CSceneNodeLoaderSCN::GetResultType() const
 
 bool LoadNode(IO::CBinaryReader& Reader, Scene::PSceneNode Node)
 {
-	Node->SetScale(Reader.Read<vector3>());
-	Node->SetRotation(Reader.Read<quaternion>());
-	Node->SetPosition(Reader.Read<vector3>());
+	Node->SetLocalScale(Reader.Read<vector3>());
+	Node->SetLocalRotation(Reader.Read<quaternion>());
+	Node->SetLocalPosition(Reader.Read<vector3>());
 
 	U16 Count;
 	Reader.Read(Count);

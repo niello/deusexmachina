@@ -45,6 +45,7 @@ protected:
 	std::vector<PNodeAttribute> Attrs;
 
 	void					OnDetachFromScene();
+	void                    SetParent(CSceneNode* pNewParent);
 
 public:
 

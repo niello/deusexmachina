@@ -33,6 +33,7 @@ protected:
 	Render::PRenderable	Renderable;
 	Scene::CSPS*		pSPS = nullptr;
 	Scene::CSPSRecord*	pSPSRecord = nullptr;
+	U32                 LastTransformVersion = 0;
 
 	virtual void         OnDetachFromScene();
 

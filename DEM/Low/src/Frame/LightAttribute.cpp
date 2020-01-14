@@ -124,13 +124,13 @@ void CLightAttribute::UpdateInSPS(Scene::CSPS& SPS)
 			CAABB Box;
 			GetGlobalAABB(Box); //???calc cached and reuse here?
 			pSPSRecord = SPS.AddRecord(Box, this);
-			Flags.Clear(WorldMatrixChanged);
+			LastTransformVersion = pNode->GetTransformVersion();
 		}
-		else if (Flags.Is(WorldMatrixChanged)) //!!! || Range/Cone changed
+		else if (pNode->GetTransformVersion() != LastTransformVersion) //!!! || Range/Cone changed
 		{
 			GetGlobalAABB(pSPSRecord->GlobalBox);
 			SPS.UpdateRecord(pSPSRecord);
-			Flags.Clear(WorldMatrixChanged);
+			LastTransformVersion = pNode->GetTransformVersion();
 		}
 	}
 }

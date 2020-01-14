@@ -16,10 +16,11 @@ class CPropSceneNode: public Game::CProperty
 
 protected:
 
-	Scene::PSceneNode					Node;
-	bool								ExistingNode;
-	CDict<CStrID, Scene::CSceneNode*>	ChildCache;
-	CArray<CStrID>						ChildrenToSave;
+	Scene::PSceneNode                 Node;
+	U32                               LastTransformVersion = 0;
+	bool                              ExistingNode;
+	CDict<CStrID, Scene::CSceneNode*> ChildCache;
+	CArray<CStrID>                    ChildrenToSave;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();

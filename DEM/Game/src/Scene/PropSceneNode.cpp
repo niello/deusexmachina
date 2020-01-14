@@ -119,10 +119,10 @@ bool CPropSceneNode::InternalActivate()
 				Scene::CSceneNode* pNode = GetChildNode(ChildID);
 				if (pNode)
 				{
-					pNode->SetScale(ChildTfm->Get<vector3>(CStrID("S")));
+					pNode->SetLocalScale(ChildTfm->Get<vector3>(CStrID("S")));
 					const vector4& Rot = ChildTfm->Get<vector4>(CStrID("R"));
-					pNode->SetRotation(quaternion(Rot.x, Rot.y, Rot.z, Rot.w));
-					pNode->SetPosition(ChildTfm->Get<vector3>(CStrID("T")));
+					pNode->SetLocalRotation(quaternion(Rot.x, Rot.y, Rot.z, Rot.w));
+					pNode->SetLocalPosition(ChildTfm->Get<vector3>(CStrID("T")));
 				}
 			}
 		}
@@ -213,13 +213,12 @@ bool CPropSceneNode::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const 
 		CStrID ChildID = ChildrenToSave[i];
 		Scene::CSceneNode* pNode = GetChildNode(ChildID);
 		if (!pNode) continue;
-		if (!pNode->IsLocalTransformValid()) pNode->UpdateLocalFromWorld();
 		Data::PParams ChildTfm = n_new(Data::CParams(4));
 		ChildTfm->Set(CStrID("ID"), ChildID);
-		ChildTfm->Set(CStrID("S"), pNode->GetScale());
-		const quaternion& Rot = pNode->GetRotation();
+		ChildTfm->Set(CStrID("S"), pNode->GetLocalScale());
+		const quaternion& Rot = pNode->GetLocalRotation();
 		ChildTfm->Set(CStrID("R"), vector4(Rot.x, Rot.y, Rot.z, Rot.w));
-		ChildTfm->Set(CStrID("T"), pNode->GetPosition());
+		ChildTfm->Set(CStrID("T"), pNode->GetLocalPosition());
 		*pData = ChildTfm;
 		++pData;
 	}
@@ -306,10 +305,11 @@ bool CPropSceneNode::OnSetTransform(Events::CEventDispatcher* pDispatcher, const
 
 bool CPropSceneNode::AfterTransforms(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	if (Node.IsValidPtr() && Node->IsWorldMatrixChanged())
+	if (Node && Node->GetTransformVersion() != LastTransformVersion)
 	{
 		GetEntity()->SetAttr<matrix44>(CStrID("Transform"), Node->GetWorldMatrix());
 		GetEntity()->FireEvent(CStrID("UpdateTransform"));
+		LastTransformVersion = Node->GetTransformVersion();
 	}
 	OK;
 }

@@ -40,15 +40,15 @@ void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 			AABB.Transform(pNode->GetWorldMatrix());
 			pSPSRecord = SPS.AddRecord(AABB, this);
 		}
-		else if (Flags.Is(WorldMatrixChanged)) //!!! || LocalBox changed!
+		else if (pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
 		{
 			AABB.Transform(pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
 			SPS.UpdateRecord(pSPSRecord);
 		}
+
+		LastTransformVersion = pNode->GetTransformVersion();
 	}
 	else pSPS = nullptr;
-
-	Flags.Clear(WorldMatrixChanged);
 }
 //---------------------------------------------------------------------
 
@@ -56,7 +56,7 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
 	if (!pNode) FAIL;
 
-	if (pSPSRecord && Flags.IsNot(WorldMatrixChanged)) //!!! && LocalBox not changed!
+	if (pSPSRecord && pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
 	{
 		OutBox = pSPSRecord->GlobalBox;
 	}
