@@ -10,7 +10,7 @@ const std::string ParentToken("^");
 
 CSceneNode::CSceneNode(CStrID NodeName)
 	: Name(NodeName)
-	, Flags(Active | LocalMatrixDirty | LocalTransformValid)
+	, Flags(Active) // All transforms are identity and considered valid
 {
 }
 //---------------------------------------------------------------------
@@ -28,9 +28,6 @@ CSceneNode::~CSceneNode()
 
 void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 {
-	// FIXME: update only on demand? When GetWorldMatrix requested, it is updated and returned.
-	UpdateWorldFromLocal();
-
 	// LOD attrs may disable some children, so process attributes before children
 	for (const auto& Attr : Attrs)
 		if (Attr->IsActive())
@@ -42,49 +39,144 @@ void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
+void CSceneNode::SetLocalPosition(const vector3& Value)
+{
+	// Update before partial change
+	if (IsLocalTransformDirty()) UpdateLocalFromWorld();
+
+	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
+	if (LocalTfm.Translation == Value) return;
+
+	LocalTfm.Translation = Value;
+
+	Flags.Clear(LocalTransformDirty);
+	Flags.Set(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetLocalRotation(const quaternion& Value)
+{
+	// Update before partial change
+	if (IsLocalTransformDirty()) UpdateLocalFromWorld();
+
+	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
+	if (LocalTfm.Rotation == Value) return;
+
+	LocalTfm.Rotation = Value;
+
+	Flags.Clear(LocalTransformDirty);
+	Flags.Set(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetLocalScale(const vector3& Value)
+{
+	// Update before partial change
+	if (IsLocalTransformDirty()) UpdateLocalFromWorld();
+
+	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
+	if (LocalTfm.Scale == Value) return;
+
+	LocalTfm.Scale = Value;
+
+	Flags.Clear(LocalTransformDirty);
+	Flags.Set(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetLocalTransform(const Math::CTransform& Value)
+{
+	LocalTfm = Value;
+	Flags.Clear(LocalTransformDirty);
+	Flags.Set(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetLocalTransform(const matrix44& Value)
+{
+	LocalTfm.FromMatrix(Value);
+	Flags.Clear(LocalTransformDirty);
+	Flags.Set(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetWorldPosition(const vector3& Value)
+{
+	// Update before partial change
+	if (IsWorldTransformDirty()) UpdateWorldFromLocal();
+
+	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
+	if (WorldMatrix.Translation() == Value) return;
+
+	WorldMatrix.Translation() = Value;
+
+	Flags.Set(LocalTransformDirty);
+	Flags.Clear(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::SetWorldTransform(const matrix44& Value)
+{
+	WorldMatrix = Value;
+	Flags.Set(LocalTransformDirty);
+	Flags.Clear(WorldTransformDirty);
+	++TransformVersion;
+}
+//---------------------------------------------------------------------
+
 void CSceneNode::UpdateWorldFromLocal()
 {
-	if (Flags.Is(LocalMatrixDirty))
+	// It is strange to update already valid world transform from an invalid local
+	n_assert_dbg(!IsLocalTransformDirty());
+
+	if (!IsWorldTransformDirty() && (!pParent || pParent->GetTransformVersion() == LastParentTransformVersion)) return;
+
+	LocalTfm.ToMatrix(WorldMatrix);
+
+	if (pParent)
 	{
-		Tfm.ToMatrix(LocalMatrix);
-		Flags.Clear(LocalMatrixDirty);
-		Flags.Set(WorldMatrixDirty);
+		WorldMatrix.mult_simple(pParent->GetWorldMatrix());
+		LastParentTransformVersion = pParent->GetTransformVersion();
 	}
 
-	if (Flags.Is(WorldMatrixDirty) || (pParent /*&& !pParent->IsRoot()*/ && pParent->IsWorldMatrixChanged()))
-	{
-		if (pParent) WorldMatrix.mult2_simple(LocalMatrix, pParent->WorldMatrix);
-		else WorldMatrix = LocalMatrix;
-		Flags.Clear(WorldMatrixDirty);
-		Flags.Set(WorldMatrixChanged);
-	}
-	else Flags.Clear(WorldMatrixChanged);
-
-	Flags.Set(LocalTransformValid);
+	Flags.Clear(LocalTransformDirty | WorldTransformDirty);
 }
 //---------------------------------------------------------------------
 
 void CSceneNode::UpdateLocalFromWorld()
 {
+	// It is strange to update already valid local transform from an invalid world
+	n_assert_dbg(!IsWorldTransformDirty());
+
+	if (!IsLocalTransformDirty() && (!pParent || pParent->GetTransformVersion() == LastParentTransformVersion)) return;
+
 	if (pParent)
 	{
-		matrix44 InvParentTfm;
-		pParent->WorldMatrix.invert_simple(InvParentTfm);
-		LocalMatrix.mult2_simple(InvParentTfm, WorldMatrix);
+		matrix44 LocalMatrix;
+		pParent->GetWorldMatrix().invert_simple(LocalMatrix);
+		LocalMatrix.mult_simple(WorldMatrix);
+		LocalTfm.FromMatrix(LocalMatrix);
+		LastParentTransformVersion = pParent->GetTransformVersion();
 	}
-	else LocalMatrix = WorldMatrix;
-	Tfm.FromMatrix(LocalMatrix);
-	Flags.Clear(WorldMatrixDirty | LocalMatrixDirty);
-	Flags.Set(LocalTransformValid);
+	else
+	{
+		LocalTfm.FromMatrix(WorldMatrix);
+	}
+
+	Flags.Clear(LocalTransformDirty | WorldTransformDirty);
 }
 //---------------------------------------------------------------------
 
 PSceneNode CSceneNode::Clone(bool CloneChildren)
 {
 	PSceneNode ClonedNode = n_new(CSceneNode(Name));
-	ClonedNode->SetScale(Tfm.Scale);
-	ClonedNode->SetRotation(Tfm.Rotation);
-	ClonedNode->SetPosition(Tfm.Translation);
+	ClonedNode->SetLocalTransform(LocalTfm);
 
 	ClonedNode->Attrs.reserve(Attrs.size());
 	for (const auto& Attr : Attrs)
@@ -103,9 +195,11 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 		std::sort(ClonedNode->Children.begin(), ClonedNode->Children.end(), [](const PSceneNode& a, const PSceneNode& b) { return a->GetName() < b->GetName(); });
 	}
 
-	//???clone controller?
+	if (IsActive())
+		ClonedNode->Activate();
+	else
+		ClonedNode->Deactivate();
 
-	ClonedNode->Activate(IsActive());
 	return ClonedNode;
 }
 //---------------------------------------------------------------------
@@ -166,6 +260,18 @@ void CSceneNode::RemoveChild(CSceneNode& Node)
 		Children.erase(It);
 		Node.pParent = nullptr;
 	}
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::RemoveChild(UPTR Idx)
+{
+	NOT_IMPLEMENTED;
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::RemoveChild(CStrID ChildName)
+{
+	NOT_IMPLEMENTED;
 }
 //---------------------------------------------------------------------
 

@@ -26,7 +26,7 @@ protected:
 	Scene::PSceneNode _Node;
 
 	CPolar	Angles;
-	vector3	COI;          // Center of interest, eye target in parent coordinates
+	vector3	COI;          // Center of interest, eye target in world coordinates
 	float	Distance = 1.f;
 
 	float	MinVertAngle = 0.f;

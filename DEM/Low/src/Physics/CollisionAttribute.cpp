@@ -58,10 +58,15 @@ void CCollisionAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 
 	if (!Collider) return;
 
-	if (pNode->IsWorldMatrixChanged())
+	if (pNode->GetTransformVersion() != LastTransformVersion)
+	{
 		Collider->SetTransform(pNode->GetWorldMatrix());
+		LastTransformVersion = pNode->GetTransformVersion();
+	}
 	else
+	{
 		Collider->SetActive(false);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -77,9 +82,6 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr,
 
 	const U16 Group = Level.CollisionGroups.GetMask(CollisionGroupID ? CollisionGroupID.CStr() : "Default");
 	const U16 Mask = Level.CollisionGroups.GetMask(CollisionMaskID ? CollisionMaskID.CStr() : "All");
-
-	// FIXME: need implicit method!
-	if (pNode->IsWorldMatrixDirty()) pNode->UpdateWorldFromLocal();
 
 	// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
 	Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));

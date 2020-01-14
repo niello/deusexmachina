@@ -75,9 +75,10 @@ void CCameraAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 		ViewOrProjChanged = true;
 	}
 
-	if (pNode->IsWorldMatrixChanged())
+	if (pNode->GetTransformVersion() != _LastTransformVersion)
 	{
 		pNode->GetWorldMatrix().invert_simple(_View);
+		_LastTransformVersion = pNode->GetTransformVersion();
 		ViewOrProjChanged = true;
 	}
 

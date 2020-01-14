@@ -28,8 +28,8 @@ void CCameraController::Update(float dt)
 		Qy.set_rotate_y(-Angles.Phi);
 
 		// Optimized Qx * Qy. Z is negated to switch handedness to RH.
-		_Node->SetRotation(quaternion(Qx.x * Qy.w, Qx.w * Qy.y, -Qx.x * Qy.y, Qx.w * Qy.w));
-		_Node->SetPosition(COI + Angles.GetCartesianZ() * Distance);
+		_Node->SetLocalRotation(quaternion(Qx.x * Qy.w, Qx.w * Qy.y, -Qx.x * Qy.y, Qx.w * Qy.w));
+		_Node->SetWorldPosition(COI + Angles.GetCartesianZ() * Distance);
 
 		Dirty = false;
 	}

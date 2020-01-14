@@ -7,12 +7,17 @@
 
 class btRigidBody;
 
+namespace Scene
+{
+	class CSceneNode;
+}
+
 namespace Physics
 {
 typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
 class CCollisionShape;
 
-class CRigidBody: public Core::CObject //CPhysicsObject
+class CRigidBody : public Core::CObject //CPhysicsObject
 {
 	RTTI_CLASS_DECL;
 
@@ -25,6 +30,8 @@ public:
 
 	CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, float Mass, const matrix44& InitialTfm = matrix44::Identity);
 	virtual ~CRigidBody() override;
+
+	void SetControlledNode(Scene::CSceneNode* pNode);
 
 	virtual void	SetTransform(const matrix44& Tfm);
 	virtual void	GetTransform(vector3& OutPos, quaternion& OutRot) const;

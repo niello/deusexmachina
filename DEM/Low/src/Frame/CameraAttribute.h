@@ -25,16 +25,18 @@ protected:
 		Orthogonal	= 0x08	// Projection is orthogonal, not perspective
 	};
 
-	float		_FOV = n_deg2rad(60.0f);
-	float		_Width = 1024.f;
-	float		_Height = 768.f;
-	float		_NearPlane = 0.1f;
-	float		_FarPlane = 5000.f;
+	float    _FOV = n_deg2rad(60.0f);
+	float    _Width = 1024.f;
+	float    _Height = 768.f;
+	float    _NearPlane = 0.1f;
+	float    _FarPlane = 5000.f;
 
-	matrix44	_View; // InvView is node world tfm
-	matrix44	_Proj;
-	matrix44	_InvProj;
-	matrix44	_ViewProj;
+	matrix44 _View; // InvView is node world tfm
+	matrix44 _Proj;
+	matrix44 _InvProj;
+	matrix44 _ViewProj;
+
+	U32      _LastTransformVersion = 0;
 
 public:
 

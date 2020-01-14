@@ -26,11 +26,17 @@ protected:
 		Skin_AutocreateBones = 0x04
 	};
 
-	CString                         RootSearchPath;
-	CStrID                          SkinInfoUID;
-	Render::PSkinInfo               SkinInfo;
-	matrix44*                       pSkinPalette = nullptr;
-	std::vector<Scene::CSceneNode*> BoneNodes; //???FIXME: strong refs? or weak, but not raw!
+	struct CBoneInfo
+	{
+		Scene::CSceneNode* pNode = nullptr; //???FIXME: strong refs? or weak, but not raw!
+		U32 LastTransformVersion = 0;
+	};
+
+	CString                RootSearchPath;
+	CStrID                 SkinInfoUID;
+	Render::PSkinInfo      SkinInfo;
+	matrix44*              pSkinPalette = nullptr;
+	std::vector<CBoneInfo> BoneNodes;
 
 	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode);
 

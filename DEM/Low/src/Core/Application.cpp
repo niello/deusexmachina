@@ -52,6 +52,7 @@
 #include <Render/CDLODData.h>
 #include <Render/CDLODDataLoader.h>
 #include <Physics/CollisionLoaderCDLOD.h>
+#include <Physics/CollisionAttribute.h>
 #include <Animation/AnimationClip.h>
 #include <Animation/AnimationLoaderANM.h>
 #include <Physics/CollisionShape.h>
@@ -614,6 +615,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	Frame::CTerrainAttribute::ForceFactoryRegistration();
 	Frame::CSkyboxAttribute::ForceFactoryRegistration();
 	Frame::CAmbientLightAttribute::ForceFactoryRegistration();
+	Physics::CCollisionAttribute::ForceFactoryRegistration();
 	Render::CModel::ForceFactoryRegistration();
 	Render::CModelRenderer::ForceFactoryRegistration();
 	Render::CSkybox::ForceFactoryRegistration();

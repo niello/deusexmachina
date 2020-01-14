@@ -22,7 +22,7 @@ public:
 
 	BT_DECLARE_ALIGNED_ALLOCATOR();
 
-	void SetSceneNode(Scene::PSceneNode Node) { _Node = Node; }
+	void SetSceneNode(Scene::PSceneNode&& Node) { _Node = std::move(Node); }
 	Scene::CSceneNode* GetSceneNode() const { return _Node.Get(); }
 
 	//!!!dynamic motion state shape offset?
@@ -53,20 +53,17 @@ CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 Collisi
 
 	btRigidBody::btRigidBodyConstructionInfo CI(
 		Mass,
-		new CDynamicMotionState(/*Node or initial tfm*/),
+		new CDynamicMotionState(),
 		Shape.GetBulletShape(),
 		Inertia);
 	//!!!set friction and restitution! for spheres always need rolling friction! TODO: physics material
 
 	_pBtObject = new btRigidBody(CI);
 	_pBtObject->setUserPointer(this);
+	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //???shape offset?
+	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
 
 	_Level->GetBtWorld()->addRigidBody(_pBtObject, CollisionGroup, CollisionMask);
-
-	// Sometimes we read tfm from motion state before any real tick is performed.
-	// For this case make that tfm up-to-date.
-	//???is getWorldTransform up to date?! must set before!
-	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
 }
 //---------------------------------------------------------------------
 
@@ -80,6 +77,18 @@ CRigidBody::~CRigidBody()
 
 	// See constructor
 	pShape->Release();
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
+{
+	auto pMotionState = static_cast<CDynamicMotionState*>(_pBtObject->getMotionState());
+	pMotionState->SetSceneNode(pNode);
+	if (pNode)
+	{
+		_Level->GetBtWorld()->synchronizeSingleMotionState(_pBtObject);
+		_pBtObject->activate();
+	}
 }
 //---------------------------------------------------------------------
 

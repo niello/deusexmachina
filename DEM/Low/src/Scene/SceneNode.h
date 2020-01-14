@@ -11,9 +11,7 @@
 // - attributes, which receive its transformation
 // Controllers, which change node transformation, are completely external.
 
-//!!!NB - completely unscaled nodes/meshes can be rendered through dual quat skinning!
-//???apply scaling ONLY to attributes and not to child nodes? what about skeletons in such a situation?
-// DON'T FORGET, now physics & graphics are separated at entity level
+//!!!completely unscaled nodes/meshes can be rendered through dual quat skinning!
 
 namespace Scene
 {
@@ -27,19 +25,19 @@ protected:
 
 	enum
 	{
-		Active				= 0x01,	// Node must be processed
-		LocalTransformValid	= 0x02,	// Local transform is actual and not invalidated by world space controller
-		LocalMatrixDirty	= 0x04,	// Local transform components were changed, but matrix is not updated
-		WorldMatrixDirty	= 0x08,	// Local matrix changed, and world matrix need to be updated
-		WorldMatrixChanged	= 0x10	// World matrix of this node was changed this frame
+		Active                    = 0x01,
+		LocalTransformDirty       = 0x02,
+		WorldTransformDirty       = 0x04,
+		// TODO: add LockTransform? (now locked through static pose)
 	};
 
 	CStrID						Name;
-	Data::CFlags				Flags; // ?UniformScale?, LockTransform (now lock tfm through static controller)
+	Data::CFlags				Flags;
+	U32                         TransformVersion = 1;
+	U32                         LastParentTransformVersion = 0;
 
 	//!!!can write special 4x3 tfm matrix without 0,0,0,1 column to save memory! is good for SSE?
-	Math::CTransformSRT			Tfm;
-	matrix44					LocalMatrix;	// For caching only
+	Math::CTransform			LocalTfm;
 	matrix44					WorldMatrix;
 
 	CSceneNode*					pParent = nullptr;
@@ -89,26 +87,39 @@ public:
 	bool					IsRoot() const { return !pParent; }
 	bool					IsChild(const CSceneNode* pParentNode) const;
 	bool					IsActive() const { return Flags.Is(Active); }
-	void					Activate(bool Enable) { return Flags.SetTo(Active, Enable); }
-	bool					IsLocalTransformValid() const { return Flags.Is(LocalTransformValid); }
-	bool					IsLocalMatrixDirty() const { return Flags.Is(LocalMatrixDirty); }
-	bool					IsWorldMatrixDirty() const { return Flags.Is(WorldMatrixDirty); }
-	bool					IsWorldMatrixChanged() const { return Flags.Is(WorldMatrixChanged); }
+	void					Activate() { return Flags.Set(Active); }
+	void					Deactivate() { return Flags.Clear(Active); }
+	bool					IsLocalTransformDirty() const { return Flags.Is(LocalTransformDirty); }
+	bool					IsWorldTransformDirty() const { return Flags.Is(WorldTransformDirty); }
+	U32						GetTransformVersion() const { return TransformVersion; }
 
-	//!!!TODO: if not LocalMatrixDirty, can first compare new to current and skip change, saves hierarchy recalculation!
-	void					SetPosition(const vector3& Pos) { Tfm.Translation = Pos; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
-	const vector3&			GetPosition() const { return Tfm.Translation; }
-	void					SetRotation(const quaternion& Rot) { Tfm.Rotation = Rot; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
-	const quaternion&		GetRotation() const { return Tfm.Rotation; }
-	void					SetScale(const vector3& Scale) { Tfm.Scale = Scale; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
-	const vector3&			GetScale() const { return Tfm.Scale; }
-	void					SetLocalTransform(const Math::CTransform& NewTfm) { Tfm = NewTfm; Flags.Set(LocalMatrixDirty | LocalTransformValid); }
-	void					SetLocalTransform(const matrix44& Transform);
-	const Math::CTransform&	GetLocalTransform() const { return Tfm; }
-	void					SetWorldTransform(const matrix44& Transform);
-	const matrix44&			GetLocalMatrix() const { return LocalMatrix; }
-	const matrix44&			GetWorldMatrix() const { return WorldMatrix; }
-	const vector3&			GetWorldPosition() const { return WorldMatrix.Translation(); }
+	void					SetLocalPosition(const vector3& Value);
+	void					SetLocalRotation(const quaternion& Value);
+	void					SetLocalScale(const vector3& Value);
+	void					SetLocalTransform(const Math::CTransform& Value);
+	void					SetLocalTransform(const matrix44& Value);
+	void					SetWorldPosition(const vector3& Value);
+	void					SetWorldTransform(const matrix44& Value);
+
+	const vector3&			GetLocalPosition() { UpdateLocalFromWorld(); return LocalTfm.Translation; }
+	const quaternion&		GetLocalRotation() { UpdateLocalFromWorld(); return LocalTfm.Rotation; }
+	const vector3&			GetLocalScale() { UpdateLocalFromWorld(); return LocalTfm.Scale; }
+	const Math::CTransform&	GetLocalTransform() { UpdateLocalFromWorld(); return LocalTfm; }
+	matrix44			    GetLocalMatrix() { UpdateLocalFromWorld(); matrix44 m; LocalTfm.ToMatrix(m); return m; }
+	const vector3&			GetWorldPosition() { UpdateWorldFromLocal(); return WorldMatrix.Translation(); }
+	const matrix44&			GetWorldMatrix() { UpdateWorldFromLocal(); return WorldMatrix; }
+
+	/*
+	// Constant getters don't recalculate dirty transforms and therefore can return invalid values.
+	// Use if you have to access constant scene node and it is up to date.
+	const vector3&			GetLocalPosition() const { n_assert(!IsLocalTransformDirty()); return LocalTfm.Translation; }
+	const quaternion&		GetLocalRotation() const { n_assert(!IsLocalTransformDirty()); return LocalTfm.Rotation; }
+	const vector3&			GetLocalScale() const { n_assert(!IsLocalTransformDirty()); return LocalTfm.Scale; }
+	const Math::CTransform&	GetLocalTransform() const { n_assert(!IsLocalTransformDirty()); return LocalTfm; }
+	matrix44			    GetLocalMatrix() const { n_assert(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
+	const matrix44&			GetWorldMatrix() const { n_assert(!IsWorldTransformDirty()); return WorldMatrix; }
+	const vector3&			GetWorldPosition() const { n_assert(!IsWorldTransformDirty()); return WorldMatrix.Translation(); }
+	*/
 };
 
 inline CSceneNode* CSceneNode::FindNodeByPath(const char* pPath) const
@@ -124,23 +135,6 @@ template<class T> inline T* CSceneNode::FindFirstAttribute() const
 	for (const auto& Attr : Attrs)
 		if (auto Casted = Attr->As<T>()) return Casted;
 	return nullptr;
-}
-//---------------------------------------------------------------------
-
-inline void CSceneNode::SetLocalTransform(const matrix44& Transform)
-{
-	LocalMatrix = Transform;
-	Tfm.FromMatrix(LocalMatrix);
-	Flags.Clear(LocalMatrixDirty);
-	Flags.Set(WorldMatrixDirty | LocalTransformValid);
-}
-//---------------------------------------------------------------------
-
-inline void CSceneNode::SetWorldTransform(const matrix44& Transform)
-{
-	WorldMatrix = Transform;
-	Flags.Set(WorldMatrixChanged);
-	UpdateLocalFromWorld();
 }
 //---------------------------------------------------------------------
 

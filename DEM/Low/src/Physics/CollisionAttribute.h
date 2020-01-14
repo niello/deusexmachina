@@ -23,6 +23,7 @@ protected:
 	CStrID           CollisionGroupID;
 	CStrID           CollisionMaskID;
 	PMovableCollider Collider;
+	U32              LastTransformVersion = 0;
 
 public:
 

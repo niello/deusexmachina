@@ -45,7 +45,7 @@ inline void CTransformSource::SetScale(UPTR Index, const vector3& Scale)
 	if (_BlendInfo)
 		_BlendInfo->Blender->SetScale(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Scale);
 	else
-		_Nodes[Index]->SetScale(Scale);
+		_Nodes[Index]->SetLocalScale(Scale);
 }
 //---------------------------------------------------------------------
 
@@ -54,7 +54,7 @@ inline void CTransformSource::SetRotation(UPTR Index, const quaternion& Rotation
 	if (_BlendInfo)
 		_BlendInfo->Blender->SetRotation(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Rotation);
 	else
-		_Nodes[Index]->SetRotation(Rotation);
+		_Nodes[Index]->SetLocalRotation(Rotation);
 }
 //---------------------------------------------------------------------
 
@@ -63,7 +63,7 @@ inline void CTransformSource::SetTranslation(UPTR Index, const vector3& Translat
 	if (_BlendInfo)
 		_BlendInfo->Blender->SetTranslation(_BlendInfo->SourceIndex, _BlendInfo->Ports[Index], Translation);
 	else
-		_Nodes[Index]->SetPosition(Translation);
+		_Nodes[Index]->SetLocalPosition(Translation);
 }
 //---------------------------------------------------------------------
 

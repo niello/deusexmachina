@@ -24,7 +24,7 @@ public:
 	void	ToMatrix(matrix44& Out) const;
 };
 
-// Default transform to this class
+// Make this class a default transform representation
 typedef CTransformSRT CTransform;
 
 inline void CTransformSRT::ToMatrix(matrix44& Out) const

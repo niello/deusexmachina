@@ -51,7 +51,7 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentN
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		auto& pBoneNode = BoneNodes[i];
+		auto& pBoneNode = BoneNodes[i].pNode;
 		if (pBoneNode) continue;
 
 		const auto& BoneInfo = SkinInfo->GetBoneInfo(i);
@@ -90,7 +90,7 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 	pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
 
 	BoneNodes.clear();
-	BoneNodes.resize(BoneCount, nullptr);
+	BoneNodes.resize(BoneCount);
 
 	// Setup root bone(s) and recurse down the hierarchy
 	SetupBoneNodes(INVALID_INDEX, *pRootParent);
@@ -118,9 +118,12 @@ void CSkinAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		const Scene::CSceneNode* pBoneNode = BoneNodes[i];
-		if (pBoneNode && pBoneNode->IsWorldMatrixChanged())
+		Scene::CSceneNode* pBoneNode = BoneNodes[i].pNode;
+		if (pBoneNode && pBoneNode->GetTransformVersion() != BoneNodes[i].LastTransformVersion)
+		{
 			pSkinPalette[i].mult2_simple(SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
+			BoneNodes[i].LastTransformVersion = pBoneNode->GetTransformVersion();
+		}
 	}
 }
 //---------------------------------------------------------------------
