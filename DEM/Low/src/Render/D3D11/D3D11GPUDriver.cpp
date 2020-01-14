@@ -828,8 +828,7 @@ bool CD3D11GPUDriver::GetViewport(UPTR Index, CViewport& OutViewport)
 	{
 		for (UPTR i = 0; i < CurrRT.GetCount(); ++i)
 		{
-			CD3D11RenderTarget* pRT = CurrRT[i].Get();
-			if (pRT)
+			if (auto pRT = CurrRT[i].Get())
 			{
 				OutViewport.Left = 0.f;
 				OutViewport.Top = 0.f;

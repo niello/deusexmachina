@@ -38,7 +38,8 @@ bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	CStrID MeshUID("#Mesh_Skybox");
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
 	{
-		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorSkybox()));
+		// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox
+		ResMgr.GetResourceManager()->RegisterResource(MeshUID, n_new(Resources::CMeshGeneratorBox(true)));
 	}
 
 	if (!Renderable) Renderable.reset(n_new(Render::CSkybox()));

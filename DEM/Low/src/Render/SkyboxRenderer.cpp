@@ -107,12 +107,27 @@ CRenderQueueIterator CSkyboxRenderer::Render(const CRenderContext& Context, CRen
 		GPU.SetVertexBuffer(0, pVB);
 		GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
 
+		// Render sky at the far clipping plane
+		// TODO: 0.f for reverse depth
+		// TODO: control in a shader (VS output Z, W) instead of here? If so, don't forget to remove all SetViewport calls here.
+		Render::CViewport VP;
+		GPU.GetViewport(0, VP);
+		const float OldMinDepth = VP.MinDepth;
+		const float OldMaxDepth = VP.MaxDepth;
+		VP.MinDepth = 1.0f;
+		VP.MaxDepth = 1.0f;
+		GPU.SetViewport(0, &VP);
+
 		const CPrimitiveGroup* pGroup = pMesh->GetGroup(0);
 		for (const auto& Pass : Passes)
 		{
 			GPU.SetRenderState(Pass);
 			GPU.Draw(*pGroup);
 		}
+
+		VP.MinDepth = OldMinDepth;
+		VP.MaxDepth = OldMaxDepth;
+		GPU.SetViewport(0, &VP);
 
 		++ItCurr;
 	};
