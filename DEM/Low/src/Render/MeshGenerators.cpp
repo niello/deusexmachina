@@ -266,6 +266,11 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 		Indices.insert(Indices.end(), { LastIndex, static_cast<U16>(i + 1), i });
 	Indices.insert(Indices.end(), { LastIndex, BottomCapStart, static_cast<U16>(LastIndex - 1) });
 
+	// Swap winding if required
+	if (_FrontClockWise)
+		for (UPTR i = 0; i < Indices.size(); i += 3)
+			std::swap(Indices[i + 1], Indices[i + 2]);
+
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
 	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
 	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
@@ -280,8 +285,87 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 	Group.VertexCount = Vertices.size();
 	Group.FirstIndex = 0;
 	Group.IndexCount = Indices.size();
-	Group.AABB.Min.set(-0.5f, -0.5f, -0.5f);
-	Group.AABB.Max.set(0.5f, 0.5f, 0.5f);
+	Group.AABB.Min.set(-Radius, -Radius, -Radius);
+	Group.AABB.Max.set(Radius, Radius, Radius);
+
+	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
+
+	return MeshData;
+}
+//---------------------------------------------------------------------
+
+PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
+{
+	Render::PMeshData MeshData = n_new(Render::CMeshData);
+	MeshData->IndexType = Render::Index_16;
+	MeshData->VertexCount = 2 * _SectorCount + 2;
+	MeshData->IndexCount = 12 * _SectorCount;
+
+	Render::CVertexComponent VC;
+	VC.Format = Render::VCFmt_Float32_3;
+	VC.Semantic = Render::VCSem_Position;
+	VC.Index = 0;
+	VC.Stream = 0;
+	VC.UserDefinedName = nullptr;
+	VC.Stream = 0;
+	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.PerInstanceData = false;
+	MeshData->VertexFormat.push_back(std::move(VC));
+
+	std::vector<vector3> Vertices;
+	Vertices.reserve(MeshData->VertexCount);
+
+	const float StepInRadians = (2.f * PI) / static_cast<float>(_SectorCount);
+	constexpr float Radius = 0.5f;
+	constexpr float HalfHeight = 0.5f;
+
+	Vertices.push_back({ 0.f, HalfHeight, 0.f });
+	Vertices.push_back({ 0.f, -HalfHeight, 0.f });
+
+	for (U16 i = 0; i < _SectorCount; ++i)
+	{
+		const float Longitude = StepInRadians * i;
+		const float X = Radius * std::sinf(Longitude);
+		const float Z = Radius * std::cosf(Longitude);
+
+		Vertices.push_back({ X, HalfHeight, Z });
+		Vertices.push_back({ X, -HalfHeight, Z });
+	}
+
+	std::vector<U16> Indices;
+	Indices.reserve(MeshData->IndexCount);
+
+	for (U16 i = 0; i < _SectorCount; ++i)
+	{
+		const float Longitude = StepInRadians * i;
+		const float X = Radius * std::sinf(Longitude);
+		const float Z = Radius * std::cosf(Longitude);
+
+		Vertices.push_back({ X, HalfHeight, Z });
+		Vertices.push_back({ X, -HalfHeight, Z });
+	}
+
+	// Swap winding if required
+	if (_FrontClockWise)
+		for (UPTR i = 0; i < Indices.size(); i += 3)
+			std::swap(Indices[i + 1], Indices[i + 2]);
+
+	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
+	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
+	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
+
+	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
+	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
+	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
+
+	Render::CPrimitiveGroup Group;
+	Group.Topology = Render::Prim_TriList;
+	Group.FirstVertex = 0;
+	Group.VertexCount = Vertices.size();
+	Group.FirstIndex = 0;
+	Group.IndexCount = Indices.size();
+	Group.AABB.Min.set(-Radius, -HalfHeight, -Radius);
+	Group.AABB.Max.set(Radius, HalfHeight, Radius);
 
 	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
 

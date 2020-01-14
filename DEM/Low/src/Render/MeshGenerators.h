@@ -55,4 +55,17 @@ public:
 	virtual PResourceObject CreateResource(CStrID UID) override;
 };
 
+class CMeshGeneratorCylinder: public CMeshGenerator
+{
+private:
+
+	U16 _SectorCount = 3;
+
+public:
+
+	CMeshGeneratorCylinder(U16 SectorCount, bool FrontClockWise = false) : CMeshGenerator(FrontClockWise), _SectorCount(std::max<U16>(SectorCount, 3)) {}
+
+	virtual PResourceObject CreateResource(CStrID UID) override;
+};
+
 }
