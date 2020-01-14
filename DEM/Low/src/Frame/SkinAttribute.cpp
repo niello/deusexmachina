@@ -118,7 +118,7 @@ void CSkinAttribute::Update(const vector3* pCOIArray, UPTR COICount)
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		Scene::CSceneNode* pBoneNode = BoneNodes[i].pNode;
+		const Scene::CSceneNode* pBoneNode = BoneNodes[i].pNode;
 		if (pBoneNode && pBoneNode->GetTransformVersion() != BoneNodes[i].LastTransformVersion)
 		{
 			pSkinPalette[i].mult2_simple(SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());

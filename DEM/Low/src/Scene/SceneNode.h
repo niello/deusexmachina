@@ -11,6 +11,10 @@
 // - attributes, which receive its transformation
 // Controllers, which change node transformation, are completely external.
 
+// NB: an attempt was made to implement on-demand update of node transformations.
+// This leads to repeated recursive parent checking each time tfm is accessed.
+// Reverted back to a single hierarchy update traversal.
+
 //!!!completely unscaled nodes/meshes can be rendered through dual quat skinning!
 
 namespace Scene
@@ -57,6 +61,7 @@ public:
 	virtual bool			IsResourceValid() const override { OK; }
 
 	void					Update(const vector3* pCOIArray, UPTR COICount);
+	bool                    UpdateTransform();
 
 	PSceneNode				Clone(bool CloneChildren);
 	void					Remove() { if (pParent) pParent->RemoveChild(*this); }
@@ -76,7 +81,7 @@ public:
 	CSceneNode*				GetChild(UPTR Idx) const { return Children[Idx]; }
 	CSceneNode*				GetChild(CStrID ChildName) const;
 	CSceneNode*				FindNodeByPath(const char* pPath) const;
-	CSceneNode*				FindLastNodeAtPath(const char* pPath, char const* & pUnresolvedPathPart) const;
+	CSceneNode*				FindLastNodeAtPath(const char* pPath, char const*& pUnresolvedPathPart) const;
 
 	bool					AddAttribute(CNodeAttribute& Attr);
 	void					RemoveAttribute(CNodeAttribute& Attr);
@@ -102,25 +107,13 @@ public:
 	void					SetWorldPosition(const vector3& Value);
 	void					SetWorldTransform(const matrix44& Value);
 
-	const vector3&			GetLocalPosition() { UpdateLocalTransform(); return LocalTfm.Translation; }
-	const quaternion&		GetLocalRotation() { UpdateLocalTransform(); return LocalTfm.Rotation; }
-	const vector3&			GetLocalScale() { UpdateLocalTransform(); return LocalTfm.Scale; }
-	const Math::CTransform&	GetLocalTransform() { UpdateLocalTransform(); return LocalTfm; }
-	matrix44			    GetLocalMatrix() { UpdateLocalTransform(); matrix44 m; LocalTfm.ToMatrix(m); return m; }
-	const vector3&			GetWorldPosition() { UpdateWorldTransform(); return WorldMatrix.Translation(); }
-	const matrix44&			GetWorldMatrix() { UpdateWorldTransform(); return WorldMatrix; }
-
-	/*
-	// Constant getters don't recalculate dirty transforms and therefore can return invalid values.
-	// Use if you have to access constant scene node and it is up to date.
-	const vector3&			GetLocalPosition() const { n_assert(!IsLocalTransformDirty()); return LocalTfm.Translation; }
-	const quaternion&		GetLocalRotation() const { n_assert(!IsLocalTransformDirty()); return LocalTfm.Rotation; }
-	const vector3&			GetLocalScale() const { n_assert(!IsLocalTransformDirty()); return LocalTfm.Scale; }
-	const Math::CTransform&	GetLocalTransform() const { n_assert(!IsLocalTransformDirty()); return LocalTfm; }
-	matrix44			    GetLocalMatrix() const { n_assert(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
-	const matrix44&			GetWorldMatrix() const { n_assert(!IsWorldTransformDirty()); return WorldMatrix; }
-	const vector3&			GetWorldPosition() const { n_assert(!IsWorldTransformDirty()); return WorldMatrix.Translation(); }
-	*/
+	const vector3&			GetLocalPosition() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.Translation; }
+	const quaternion&		GetLocalRotation() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.Rotation; }
+	const vector3&			GetLocalScale() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm.Scale; }
+	const Math::CTransform&	GetLocalTransform() const { n_assert_dbg(!IsLocalTransformDirty()); return LocalTfm; }
+	matrix44			    GetLocalMatrix() const { n_assert_dbg(!IsLocalTransformDirty()); matrix44 m; LocalTfm.ToMatrix(m); return m; }
+	const matrix44&			GetWorldMatrix() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix; }
+	const vector3&			GetWorldPosition() const { n_assert_dbg(!IsWorldTransformDirty()); return WorldMatrix.Translation(); }
 };
 
 inline CSceneNode* CSceneNode::FindNodeByPath(const char* pPath) const

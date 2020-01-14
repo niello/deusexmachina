@@ -35,18 +35,21 @@ void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 		{
 			if (SPSChanged) SPS.OversizedObjects.Add(this);
 		}
-		else if (!pSPSRecord)
+		else
 		{
-			AABB.Transform(pNode->GetWorldMatrix());
-			pSPSRecord = SPS.AddRecord(AABB, this);
-		}
-		else if (pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
-		{
-			AABB.Transform(pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
-			SPS.UpdateRecord(pSPSRecord);
-		}
+			if (!pSPSRecord)
+			{
+				AABB.Transform(pNode->GetWorldMatrix());
+				pSPSRecord = SPS.AddRecord(AABB, this);
+			}
+			else if (pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
+			{
+				AABB.Transform(pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
+				SPS.UpdateRecord(pSPSRecord);
+			}
 
-		LastTransformVersion = pNode->GetTransformVersion();
+			LastTransformVersion = pNode->GetTransformVersion();
+		}
 	}
 	else pSPS = nullptr;
 }

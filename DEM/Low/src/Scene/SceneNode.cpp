@@ -28,6 +28,8 @@ CSceneNode::~CSceneNode()
 
 void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 {
+	UpdateWorldTransform();
+
 	// LOD attrs may disable some children, so process attributes before children
 	for (const auto& Attr : Attrs)
 		if (Attr->IsActive())
@@ -39,10 +41,32 @@ void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 }
 //---------------------------------------------------------------------
 
+// Recalculates the hierarchy up to the root and updates all current node transforms.
+// May be slow, use on initialization or when absolutely necessary.
+bool CSceneNode::UpdateTransform()
+{
+	// Do we have invalid transform?
+	bool Changed = Flags.IsAny(LocalTransformDirty | WorldTransformDirty);
+
+	// Update parent, its transform may change too
+	if (pParent) Changed |= pParent->UpdateTransform();
+
+	// All is up to date
+	if (!Changed) FAIL;
+
+	// Update our transforms based on updated parent transform.
+	// NB: world transform is kept intact if it was set directly and local is not updated yet.
+	if (IsLocalTransformDirty()) UpdateLocalTransform();
+	else UpdateWorldTransform();
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 void CSceneNode::SetLocalPosition(const vector3& Value)
 {
 	// Update before partial change
-	if (IsLocalTransformDirty()) UpdateLocalTransform();
+	if (IsLocalTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
 	if (LocalTfm.Translation == Value) return;
@@ -58,7 +82,7 @@ void CSceneNode::SetLocalPosition(const vector3& Value)
 void CSceneNode::SetLocalRotation(const quaternion& Value)
 {
 	// Update before partial change
-	if (IsLocalTransformDirty()) UpdateLocalTransform();
+	if (IsLocalTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
 	if (LocalTfm.Rotation == Value) return;
@@ -74,7 +98,7 @@ void CSceneNode::SetLocalRotation(const quaternion& Value)
 void CSceneNode::SetLocalScale(const vector3& Value)
 {
 	// Update before partial change
-	if (IsLocalTransformDirty()) UpdateLocalTransform();
+	if (IsLocalTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
 	if (LocalTfm.Scale == Value) return;
@@ -108,7 +132,7 @@ void CSceneNode::SetLocalTransform(const matrix44& Value)
 void CSceneNode::SetWorldPosition(const vector3& Value)
 {
 	// Update before partial change
-	if (IsWorldTransformDirty()) UpdateWorldTransform();
+	if (IsWorldTransformDirty()) UpdateTransform();
 
 	// Save us from recalculating unchanged hierarchy (static poses, constant animation tracks)
 	if (WorldMatrix.Translation() == Value) return;
@@ -134,21 +158,24 @@ void CSceneNode::UpdateWorldTransform()
 {
 	if (pParent)
 	{
-		const matrix44& ParentWorld = pParent->GetWorldMatrix();
-
-		if (!IsWorldTransformDirty() && pParent->GetTransformVersion() == LastParentTransformVersion) return;
+		const bool ParentTfmChanged = (pParent->GetTransformVersion() != LastParentTransformVersion);
+		if (!IsWorldTransformDirty() && !ParentTfmChanged) return;
 
 		LocalTfm.ToMatrix(WorldMatrix);
 		WorldMatrix.mult_simple(pParent->GetWorldMatrix());
-		LastParentTransformVersion = pParent->GetTransformVersion();
+
+		if (ParentTfmChanged)
+		{
+			// Increment world transform version if changed due to parent
+			LastParentTransformVersion = pParent->GetTransformVersion();
+			++TransformVersion;
+		}
 	}
 	else
 	{
 		if (!IsWorldTransformDirty()) return;
 		LocalTfm.ToMatrix(WorldMatrix);
 	}
-
-	++TransformVersion;
 
 	// It is strange to update already valid world transform from an invalid local
 	n_assert_dbg(!IsLocalTransformDirty());
@@ -157,30 +184,29 @@ void CSceneNode::UpdateWorldTransform()
 }
 //---------------------------------------------------------------------
 
-// NB: world transform doesn't change, so TransformVersion isn't updated
 void CSceneNode::UpdateLocalTransform()
 {
+	// It is strange to update already valid local transform from an invalid world
+	n_assert_dbg(!IsWorldTransformDirty());
+
 	if (pParent)
 	{
-		const matrix44& ParentWorld = pParent->GetWorldMatrix();
-
 		if (!IsLocalTransformDirty() && pParent->GetTransformVersion() == LastParentTransformVersion) return;
 
 		matrix44 LocalMatrix;
-		ParentWorld.invert_simple(LocalMatrix);
+		pParent->GetWorldMatrix().invert_simple(LocalMatrix);
 		LocalMatrix.mult_simple(WorldMatrix);
 		LocalTfm.FromMatrix(LocalMatrix);
 
 		LastParentTransformVersion = pParent->GetTransformVersion();
+
+		// NB: world transform doesn't change, so TransformVersion isn't updated
 	}
 	else
 	{
 		if (!IsLocalTransformDirty()) return;
 		LocalTfm.FromMatrix(WorldMatrix);
 	}
-
-	// It is strange to update already valid local transform from an invalid world
-	n_assert_dbg(!IsWorldTransformDirty());
 
 	Flags.Clear(LocalTransformDirty | WorldTransformDirty);
 }
