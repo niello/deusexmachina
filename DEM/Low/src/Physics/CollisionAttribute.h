@@ -10,7 +10,7 @@
 
 namespace Physics
 {
-typedef Ptr<class CMovableCollider> PMovableCollider;
+typedef Ptr<class CPhysicsObject> PPhysicsObject;
 class CPhysicsLevel;
 
 class CCollisionAttribute: public Scene::CNodeAttribute
@@ -19,11 +19,12 @@ class CCollisionAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	CStrID           ShapeUID;
-	CStrID           CollisionGroupID;
-	CStrID           CollisionMaskID;
-	PMovableCollider Collider;
-	U32              LastTransformVersion = 0;
+	PPhysicsObject Collider;
+	U32            LastTransformVersion = 0;
+	CStrID         ShapeUID;
+	CStrID         CollisionGroupID;
+	CStrID         CollisionMaskID;
+	bool           Static = false;
 
 public:
 

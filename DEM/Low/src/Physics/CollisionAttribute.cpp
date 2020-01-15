@@ -1,4 +1,5 @@
 #include "CollisionAttribute.h"
+#include <Physics/StaticCollider.h>
 #include <Physics/MovableCollider.h>
 #include <Physics/CollisionShape.h>
 #include <Physics/PhysicsLevel.h>
@@ -22,6 +23,11 @@ bool CCollisionAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 			case 'SHAP':
 			{
 				ShapeUID = DataReader.Read<CStrID>();
+				break;
+			}
+			case 'STAT':
+			{
+				Static = DataReader.Read<bool>();
 				break;
 			}
 			case 'COGR':
@@ -82,7 +88,13 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr,
 	const U16 Mask = Level.CollisionGroups.GetMask(CollisionMaskID ? CollisionMaskID.CStr() : "All");
 
 	// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
-	Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
+	if (Static)
+		Collider = n_new(Physics::CStaticCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
+	else
+		Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
+
+	// Just updated, save redundant update
+	LastTransformVersion = pNode->GetTransformVersion();
 
 	OK;
 }

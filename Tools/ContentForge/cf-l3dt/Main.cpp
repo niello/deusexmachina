@@ -543,11 +543,12 @@ public:
 			Attributes.push_back(std::move(Attribute));
 		}
 
+		if (!CDLODID.empty())
 		{
 			Data::CParams Attribute;
 			Attribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
-			if (!CDLODID.empty())
-				Attribute.emplace_back(CStrID("Shape"), CDLODID + "#Collision");
+			Attribute.emplace_back(CStrID("Shape"), CDLODID + "#Collision");
+			Attribute.emplace_back(CStrID("Static"), true);
 			Attributes.push_back(std::move(Attribute));
 		}
 
