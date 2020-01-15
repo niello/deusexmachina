@@ -299,7 +299,7 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
 	MeshData->VertexCount = 2 * _SectorCount;
-	MeshData->IndexCount = 12 * _SectorCount;
+	MeshData->IndexCount = 12 * _SectorCount - 12;
 
 	Render::CVertexComponent VC;
 	VC.Format = Render::VCFmt_Float32_3;
@@ -333,7 +333,44 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 	std::vector<U16> Indices;
 	Indices.reserve(MeshData->IndexCount);
 
-	// Calc indices
+	// Top circle
+	for (U16 i = 1; i < (_SectorCount - 1); ++i)
+		Indices.insert(Indices.end(), { 0, i, static_cast<U16>(i + 1) });
+
+	// Bottom circle
+	for (U16 i = 1; i < (_SectorCount - 1); ++i)
+		Indices.insert(Indices.end(), { _SectorCount, static_cast<U16>(_SectorCount + i), static_cast<U16>(_SectorCount + i + 1) });
+
+	// Side
+	for (U16 i = 0; i < (_SectorCount - 1); ++i)
+	{
+		Indices.insert(Indices.end(),
+			{
+				static_cast<U16>(i),
+				static_cast<U16>(i + _SectorCount),
+				static_cast<U16>(i + _SectorCount + 1)
+			});
+		Indices.insert(Indices.end(),
+			{
+				static_cast<U16>(i),
+				static_cast<U16>(i + _SectorCount + 1),
+				static_cast<U16>(i + 1)
+			});
+	}
+
+	// Tie up the strip
+	Indices.insert(Indices.end(),
+		{
+			static_cast<U16>(_SectorCount - 1),
+			static_cast<U16>(2 * _SectorCount - 1),
+			static_cast<U16>(_SectorCount)
+		});
+	Indices.insert(Indices.end(),
+		{
+			static_cast<U16>(_SectorCount - 1),
+			static_cast<U16>(_SectorCount),
+			static_cast<U16>(0)
+		});
 
 	// Swap winding if required
 	if (_FrontClockWise)
