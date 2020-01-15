@@ -5,7 +5,7 @@ namespace Physics
 {
 
 CHeightfieldShape::CHeightfieldShape(btHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset)
-	: CCollisionShape(pShape)
+	: CCollisionShape(pShape, Offset)
 	, _HeightfieldData(std::move(HeightfieldData))
 {
 }
