@@ -436,7 +436,7 @@ void CMotorSystem::RenderDebug()
 		Text += Text2;
 	}
 
-	DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
+	//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
 }
 //---------------------------------------------------------------------
 

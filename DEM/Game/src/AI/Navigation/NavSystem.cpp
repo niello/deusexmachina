@@ -910,7 +910,7 @@ void CNavSystem::RenderDebug()
 		Corridor.getFirstPoly(),
 		DestRef,
 		DestPoint.x, DestPoint.y, DestPoint.z);
-	DebugDraw->DrawText(Text.CStr(), 0.65f, 0.1f);
+	//DebugDraw->DrawText(Text.CStr(), 0.65f, 0.1f);
 
 	// Path polys, path lines with corners as points
 	if (pActor->NavState == AINav_Planning || pActor->NavState == AINav_Following)

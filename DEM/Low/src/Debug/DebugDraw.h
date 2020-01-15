@@ -46,7 +46,7 @@ public:
 		Sphere,
 		Cylinder,
 		Cone,
-		ShapeCount
+		SHAPE_TYPE_COUNT
 	};
 
 protected:
@@ -81,17 +81,12 @@ protected:
 
 	Frame::PGraphicsResourceManager _GraphicsMgr;
 	Render::PEffect                 _Effect;
-	Render::PMesh                   _Shapes[ShapeCount];
+	Render::PMesh                   _Shapes[SHAPE_TYPE_COUNT];
 	Render::PVertexLayout           _ShapeVertexLayout;
-	Render::PVertexLayout           _PrimitiveVertexLayout;
 	Render::PVertexBuffer           _ShapeInstanceBuffer;
+	Render::PVertexBuffer           _PrimitiveBuffer;
 
-	//PVertexLayout			ShapeInstVL;
-	//PVertexLayout			InstVL;
-	//PVertexLayout			PrimVL;
-	//PVertexBuffer			InstanceBuffer;
-
-	std::vector<CDDShapeInst>	ShapeInsts[ShapeCount];
+	std::vector<CDDShapeInst>	ShapeInsts[SHAPE_TYPE_COUNT];
 	std::vector<CDDVertex>		Points;
 	std::vector<CDDVertex>		Lines;
 	std::vector<CDDVertex>		Tris;
@@ -115,7 +110,7 @@ public:
 	void DrawCross();
 	void DrawBoxWireframe(const CAABB& Box, const vector4& Color = vector4::White);
 	void DrawArc();
-	void DrawCircle(const vector3& Pos, float Radius, const vector4& Color = vector4::White);
+	void DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCount = 16, const vector4& Color = vector4::White);
 	void DrawGridXZ(); //???or pass arbitrary axes?
 	void DrawCoordAxes(const matrix44& Tfm, bool DrawX = true, bool DrawY = true, bool DrawZ = true);
 

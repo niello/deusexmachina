@@ -13,6 +13,7 @@ namespace Debug
 __ImplementSingleton(CDebugDraw);
 
 constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 256;
+constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 4096;
 
 CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect Effect)
 	: _GraphicsMgr(&GraphicsMgr)
@@ -44,7 +45,8 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEf
 		{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false },
 		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false } };
 
-	_PrimitiveVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(PrimitiveComponents, sizeof_array(PrimitiveComponents));
+	auto PrimitiveVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(PrimitiveComponents, sizeof_array(PrimitiveComponents));
+	_PrimitiveBuffer = GraphicsMgr.GetGPU()->CreateVertexBuffer(*PrimitiveVertexLayout, MAX_PRIMITIVE_VERTICES_PER_DIP, Render::Access_CPU_Write | Render::Access_GPU_Read);
 }
 //---------------------------------------------------------------------
 
@@ -53,94 +55,153 @@ CDebugDraw::~CDebugDraw() { __DestructSingleton; }
 
 void CDebugDraw::Render()
 {
-//	if (!InstanceBuffer->IsValid())
-//		n_assert(InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write));
-//
-//	UPTR TotalShapeCount = 0;
-//	for (int i = 0; i < ShapeCount; ++i)
-//		TotalShapeCount += ShapeInsts[i].GetCount();
-//
-//	if (TotalShapeCount)
-//	{
-//		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(RenderSrv->GetFeatureFlagInstanced()));
-//
-//		n_assert(ShapeShader->Begin(true) == 1);
-//		ShapeShader->BeginPass(0);
-//
-//		RenderSrv->SetVertexBuffer(0, Shapes->GetVertexBuffer());
-//		RenderSrv->SetVertexLayout(ShapeInstVL);
-//		RenderSrv->SetIndexBuffer(Shapes->GetIndexBuffer());
-//		for (int i = 0; i < ShapeCount; ++i)
-//		{
-//			CArray<CDDShapeInst>& Insts = ShapeInsts[i];
-//			if (!Insts.GetCount()) continue;
-//
-//			RenderSrv->SetPrimitiveGroup(Shapes->GetGroup(i));
-//
-//			UPTR Remain = Insts.GetCount();
-//			while (Remain > 0)
-//			{
-//				UPTR Count = std::min(MaxShapesPerDIP, Remain);
-//				Remain -= Count;
-//				void* pInstData = InstanceBuffer->Map(Map_WriteDiscard);
-//				memcpy(pInstData, Insts.Begin(), Count * sizeof(CDDShapeInst));
-//				InstanceBuffer->Unmap();
-//
-//				RenderSrv->SetInstanceBuffer(1, InstanceBuffer, Count);
-//				RenderSrv->Draw();
-//			}
-//		}
-//
-//		RenderSrv->SetInstanceBuffer(1, nullptr, 0);
-//
-//		ShapeShader->EndPass();
-//		ShapeShader->End();
-//
-//		for (int i = 0; i < ShapeCount; ++i)
-//			ShapeInsts[i].Clear();
-//	}
-//
-//	if (Lines.GetCount() || Tris.GetCount() || Points.GetCount())
-//		RenderSrv->SetVertexLayout(PrimVL);
-//
-//	if (Lines.GetCount() || Tris.GetCount())
-//	{
-//		UPTR FeatFlagDefault = RenderSrv->ShaderFeatures.GetMask("Default");
-//		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlagDefault));
-//
-//		n_assert(ShapeShader->Begin(true) == 1);
-//		ShapeShader->BeginPass(0);
-//
-//		if (Tris.GetCount())
-//		{
-//			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_TRIANGLELIST, Tris.GetCount() / 3, Tris.Begin(), sizeof(CDDVertex));
-//			Tris.Clear();
-//		}
-//
-//		if (Lines.GetCount())
-//		{
-//			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_LINELIST, Lines.GetCount() / 2, Lines.Begin(), sizeof(CDDVertex));
-//			Lines.Clear();
-//		}
-//
-//		ShapeShader->EndPass();
-//		ShapeShader->End();
-//	}
-//
-//	if (Points.GetCount())
-//	{
-//		UPTR FeatFlag = RenderSrv->ShaderFeatures.GetMask("Point");
-//		ShapeShader->SetTech(ShapeShader->GetTechByFeatures(FeatFlag));
-//
-//		n_assert(ShapeShader->Begin(true) == 1);
-//		ShapeShader->BeginPass(0);
-//
-//		RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.GetCount(), Points.Begin(), sizeof(CDDVertex));
-//		Points.Clear();
-//
-//		ShapeShader->EndPass();
-//		ShapeShader->End();
-//	}
+	if (!_Effect) return;
+
+	auto& GPU = *_GraphicsMgr->GetGPU();
+
+	bool HasShapes = false;
+	for (int i = 0; i < SHAPE_TYPE_COUNT; ++i)
+	{
+		if (!ShapeInsts[i].empty())
+		{
+			HasShapes = true;
+			break;
+		}
+	}
+
+	if (HasShapes)
+	{
+		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugShape")))
+		{
+			GPU.SetVertexLayout(_ShapeVertexLayout);
+			GPU.SetVertexBuffer(1, _ShapeInstanceBuffer);
+
+			const auto& Passes = pTech->GetPasses();
+
+			for (int i = 0; i < SHAPE_TYPE_COUNT; ++i)
+			{
+				const auto pMesh = _Shapes[i].Get();
+				const auto* pGroup = pMesh->GetGroup(0);
+
+				GPU.SetVertexBuffer(0, pMesh->GetVertexBuffer());
+				GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
+
+				const UPTR ShapeCount = ShapeInsts[i].size();
+				for (UPTR Offset = 0; Offset < ShapeCount; Offset += MAX_SHAPE_INSTANCES_PER_DIP)
+				{
+					const UPTR BatchSize = std::min(MAX_SHAPE_INSTANCES_PER_DIP, ShapeCount - Offset);
+
+					void* pInstData;
+					if (!GPU.MapResource(&pInstData, *_ShapeInstanceBuffer, Render::Map_WriteDiscard))
+					{
+						::Sys::Error("CDebugDraw::Render() > can't map shape instance VB!");
+						return;
+					}
+
+					memcpy(pInstData, ShapeInsts[i].data() + Offset, BatchSize * sizeof(CDDShapeInst));
+					GPU.UnmapResource(*_ShapeInstanceBuffer);
+
+					for (const auto& Pass : Passes)
+					{
+						GPU.SetRenderState(Pass);
+						GPU.DrawInstanced(*pGroup, BatchSize);
+					}
+				}
+			}
+
+			GPU.SetVertexBuffer(1, nullptr);
+			GPU.SetIndexBuffer(nullptr);
+		}
+
+		for (int i = 0; i < SHAPE_TYPE_COUNT; ++i)
+			ShapeInsts[i].clear();
+	}
+
+	if (!Lines.empty() || !Tris.empty())
+	{
+		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugPrimitive")))
+		{
+			GPU.SetVertexLayout(_PrimitiveBuffer->GetVertexLayout());
+			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
+
+			const auto& Passes = pTech->GetPasses();
+
+			if (!Tris.empty())
+			{
+				constexpr auto MAX_TRI_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 3) * 3;
+				static_assert(MAX_TRI_VERTICES_PER_DIP > 2);
+				for (UPTR Offset = 0; Offset < Tris.size(); Offset += MAX_TRI_VERTICES_PER_DIP)
+				{
+					const UPTR BatchSize = std::min(MAX_TRI_VERTICES_PER_DIP, Tris.size() - Offset);
+
+					void* pInstData;
+					if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
+					{
+						::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
+						return;
+					}
+
+					memcpy(pInstData, Tris.data() + Offset, BatchSize * sizeof(CDDVertex));
+					GPU.UnmapResource(*_PrimitiveBuffer);
+
+					for (const auto& Pass : Passes)
+					{
+						GPU.SetRenderState(Pass);
+						GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_TriList, {} });
+					}
+				}
+			}
+
+			if (!Lines.empty())
+			{
+				constexpr auto MAX_LINE_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 2) * 2;
+				static_assert(MAX_LINE_VERTICES_PER_DIP > 1);
+				for (UPTR Offset = 0; Offset < Lines.size(); Offset += MAX_LINE_VERTICES_PER_DIP)
+				{
+					const UPTR BatchSize = std::min(MAX_LINE_VERTICES_PER_DIP, Lines.size() - Offset);
+
+					void* pInstData;
+					if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
+					{
+						::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
+						return;
+					}
+
+					memcpy(pInstData, Lines.data() + Offset, BatchSize * sizeof(CDDVertex));
+					GPU.UnmapResource(*_PrimitiveBuffer);
+
+					for (const auto& Pass : Passes)
+					{
+						GPU.SetRenderState(Pass);
+						GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_LineList, {} });
+					}
+				}
+			}
+		}
+
+		Tris.clear();
+		Lines.clear();
+	}
+
+	if (!Points.empty())
+	{
+		NOT_IMPLEMENTED;
+
+		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugPoint")))
+		{
+			GPU.SetVertexLayout(_PrimitiveBuffer->GetVertexLayout());
+			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
+
+			static_assert(MAX_PRIMITIVE_VERTICES_PER_DIP > 0);
+			/*
+			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.GetCount(), Points.Begin(), sizeof(CDDVertex));
+			*/
+		}
+
+		Points.clear();
+	}
+
+	GPU.SetVertexBuffer(0, nullptr);
 }
 //---------------------------------------------------------------------
 
@@ -226,6 +287,24 @@ void CDebugDraw::DrawBoxWireframe(const CAABB& Box, const vector4& Color)
 	DrawLine(Mmm, MmM, Color);
 	DrawLine(mmM, MmM, Color);
 	DrawLine(MMm, Mmm, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCount, const vector4& Color)
+{
+	const float StepInRadians = (2.f * PI) / static_cast<float>(SegmentCount);
+
+	AddLineVertex({ 0.f, 0.f, Radius });
+
+	for (U16 i = 1; i < SegmentCount; ++i)
+	{
+		const float Longitude = StepInRadians * i;
+		vector3 Vertex(Radius * std::sinf(Longitude), 0.f, Radius * std::cosf(Longitude)); 
+		AddLineVertex(Vertex);
+		AddLineVertex(Vertex);
+	}
+
+	AddLineVertex({ 0.f, 0.f, Radius });
 }
 //---------------------------------------------------------------------
 

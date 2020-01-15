@@ -259,7 +259,7 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 			CharCtlr->GetAngularVelocity(),
 			CharCtlr->GetRequestedLinearVelocity().Length(),
 			LVel.Length());
-		DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
+		//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
 	}
 
 	OK;
