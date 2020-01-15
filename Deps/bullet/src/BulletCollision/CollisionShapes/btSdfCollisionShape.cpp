@@ -4,6 +4,8 @@
 
 struct btSdfCollisionShapeInternalData
 {
+	BT_DECLARE_ALIGNED_ALLOCATOR();
+
 	btVector3 m_localScaling;
 	btScalar m_margin;
 	btMiniSDF m_sdf;
