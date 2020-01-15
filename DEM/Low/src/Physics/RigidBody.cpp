@@ -9,7 +9,7 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CRigidBody, Core::CObject); //Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CRigidBody, Physics::CPhysicsObject);
 
 // To be useful, rigid body must be connected to a scene node to serve as its transformation source
 class CDynamicMotionState: public btMotionState
@@ -40,7 +40,7 @@ public:
 };
 
 CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, float Mass, const matrix44& InitialTfm)
-	: _Level(&Level)
+	: CPhysicsObject(Level)
 {
 	n_assert(Mass != 0.f);
 
@@ -63,7 +63,7 @@ CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 Collisi
 	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //???shape offset?
 	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
 
-	_Level->GetBtWorld()->addRigidBody(_pBtObject, CollisionGroup, CollisionMask);
+	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), CollisionGroup, CollisionMask);
 }
 //---------------------------------------------------------------------
 
@@ -71,8 +71,8 @@ CRigidBody::~CRigidBody()
 {
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-	_Level->GetBtWorld()->removeRigidBody(_pBtObject);
-	delete _pBtObject->getMotionState();
+	_Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
+	delete static_cast<btRigidBody*>(_pBtObject)->getMotionState();
 	delete _pBtObject;
 
 	// See constructor
@@ -82,11 +82,11 @@ CRigidBody::~CRigidBody()
 
 void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
 {
-	auto pMotionState = static_cast<CDynamicMotionState*>(_pBtObject->getMotionState());
+	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
 	pMotionState->SetSceneNode(pNode);
 	if (pNode)
 	{
-		_Level->GetBtWorld()->synchronizeSingleMotionState(_pBtObject);
+		_Level->GetBtWorld()->synchronizeSingleMotionState(static_cast<btRigidBody*>(_pBtObject));
 		_pBtObject->activate();
 	}
 }
@@ -104,12 +104,12 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 
 void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
-	auto pMotionState = static_cast<CDynamicMotionState*>(_pBtObject->getMotionState());
+	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
 	btTransform Tfm;
 	if (pMotionState->GetSceneNode())
-		_pBtObject->getMotionState()->getWorldTransform(Tfm); //!!!can return Node's non-converted world tfm right here!
+		pMotionState->getWorldTransform(Tfm); //!!!can return Node's non-converted world tfm right here!
 	else
 		Tfm = _pBtObject->getWorldTransform();
 
@@ -120,7 +120,7 @@ void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
 
 float CRigidBody::GetInvMass() const
 {
-	return _pBtObject->getInvMass();
+	return static_cast<btRigidBody*>(_pBtObject)->getInvMass();
 }
 //---------------------------------------------------------------------
 
@@ -132,12 +132,6 @@ void CRigidBody::SetActive(bool Active, bool Always)
 		_pBtObject->activate();
 	else
 		_pBtObject->forceActivationState(WANTS_DEACTIVATION);
-}
-//---------------------------------------------------------------------
-
-bool CRigidBody::IsActive() const
-{
-	return _pBtObject->isActive();
 }
 //---------------------------------------------------------------------
 

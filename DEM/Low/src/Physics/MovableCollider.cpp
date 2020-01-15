@@ -8,7 +8,7 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CMovableCollider, Core::CObject); //Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CMovableCollider, Physics::CPhysicsObject);
 
 // Physics object doesn't know the source of its transform, it only stores an incoming copy
 class CKinematicMotionState: public btMotionState
@@ -34,7 +34,7 @@ public:
 };
 
 CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm)
-	: _Level(&Level)
+	: CPhysicsObject(Level)
 {
 	// Instead of storing strong ref, we manually control refcount and use
 	// a pointer from the bullet collision shape
@@ -56,7 +56,7 @@ CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape,
 	if (Shape.IsA<CHeightfieldShape>())
 		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
 
-	_Level->GetBtWorld()->addRigidBody(_pBtObject, CollisionGroup, CollisionMask);
+	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), CollisionGroup, CollisionMask);
 }
 //---------------------------------------------------------------------
 
@@ -64,8 +64,8 @@ CMovableCollider::~CMovableCollider()
 {
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-	_Level->GetBtWorld()->removeRigidBody(_pBtObject);
-	delete _pBtObject->getMotionState();
+	_Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
+	delete static_cast<btRigidBody*>(_pBtObject)->getMotionState();
 	delete _pBtObject;
 
 	// See constructor
@@ -79,16 +79,10 @@ void CMovableCollider::SetActive(bool Active)
 }
 //---------------------------------------------------------------------
 
-bool CMovableCollider::IsActive() const
-{
-	return _pBtObject->isActive();
-}
-//---------------------------------------------------------------------
-
 void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-	static_cast<CKinematicMotionState*>(_pBtObject->getMotionState())->SetTransform(Tfm, pShape->GetOffset());
+	static_cast<CKinematicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState())->SetTransform(Tfm, pShape->GetOffset());
 	SetActive(true);
 }
 //---------------------------------------------------------------------
@@ -96,7 +90,7 @@ void CMovableCollider::SetTransform(const matrix44& Tfm)
 void CMovableCollider::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
 	btTransform Tfm;
-	_pBtObject->getMotionState()->getWorldTransform(Tfm);
+	static_cast<btRigidBody*>(_pBtObject)->getMotionState()->getWorldTransform(Tfm);
 
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
@@ -109,7 +103,7 @@ void CMovableCollider::GetTransform(vector3& OutPos, quaternion& OutRot) const
 void CMovableCollider::GetGlobalAABB(CAABB& OutBox) const
 {
 	btTransform Tfm;
-	_pBtObject->getMotionState()->getWorldTransform(Tfm);
+	static_cast<btRigidBody*>(_pBtObject)->getMotionState()->getWorldTransform(Tfm);
 
 	btVector3 Min, Max;
 	_pBtObject->getCollisionShape()->getAabb(Tfm, Min, Max);

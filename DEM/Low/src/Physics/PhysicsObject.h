@@ -1,26 +1,15 @@
 #pragma once
-#ifndef __DEM_L1_PHYSICS_OBJECT_H__
-#define __DEM_L1_PHYSICS_OBJECT_H__
+#include <Core/Object.h>
+#include <Math/AABB.h>
 
-#include <Physics/CollisionShape.h>
-#include <Math/Vector3.h>
+// Base class for all physics objects. Has collision shape and transformation.
 
-// Base class for all physics objects. Instantiates shared shape and locates it in a physics world.
-
-class CAABB;
-class quaternion;
-class matrix44;
-class btTransform;
 class btCollisionObject;
-
-namespace Data
-{
-	class CParams;
-}
 
 namespace Physics
 {
-class CPhysicsLevel;
+typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
+class CCollisionShape;
 
 class CPhysicsObject: public Core::CObject
 {
@@ -28,45 +17,25 @@ class CPhysicsObject: public Core::CObject
 
 protected:
 
-	PCollisionShape		Shape;
-	vector3				ShapeOffset;	// Offset between a center of mass and a graphics
-	U16					Group;
-	U16					Mask;
-	btCollisionObject*	pBtCollObj;
-	CPhysicsLevel*		pWorld;
-	void*				pUserPtr;
-
-	bool				Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset = vector3::Zero);
-	void				InternalTerm();
-	virtual void		GetTransform(btTransform& Out) const;
+	btCollisionObject* _pBtObject = nullptr;
+	PPhysicsLevel      _Level;
 
 public:
 
-	CPhysicsObject(): pBtCollObj(nullptr), pWorld(nullptr), pUserPtr(nullptr) {}
-	virtual ~CPhysicsObject() { InternalTerm(); }
+	CPhysicsObject(CPhysicsLevel& Level);
+	virtual ~CPhysicsObject() override;
 
-	virtual bool		Init(const Data::CParams& Desc, const vector3& Offset = vector3::Zero);
-	virtual void		Term();
-	virtual bool		AttachToLevel(CPhysicsLevel& World);
-	virtual void		RemoveFromLevel();
-	bool				IsInitialized() const { return Shape.IsValidPtr() && pBtCollObj; }
-	bool				IsAttachedToLevel() const { return !!pWorld; }
-
-	virtual void		SetTransform(const matrix44& Tfm);
-	virtual void		GetTransform(vector3& OutPos, quaternion& OutRot) const;
-	void				SetUserData(void* pPtr) { pUserPtr = pPtr; }
-	void*				GetUserData() const { return pUserPtr; }
-	void				GetGlobalAABB(CAABB& OutBox) const;
-	void				GetPhysicsAABB(CAABB& OutBox) const;
-	btCollisionObject*	GetBtObject() const { return pBtCollObj; }
-	CPhysicsLevel*		GetWorld() const { return pWorld; }
-	U16					GetCollisionGroup() const { return Group; }
-	U16					GetCollisionMask() const { return Mask; }
-	const vector3&		GetShapeOffset() const { return ShapeOffset; }
+	virtual void           SetTransform(const matrix44& Tfm);
+	virtual void           GetTransform(vector3& OutPos, quaternion& OutRot) const;
+	void                   GetGlobalAABB(CAABB& OutBox) const;
+	void                   GetPhysicsAABB(CAABB& OutBox) const;
+	const CCollisionShape* GetCollisionShape() const;
+	U16                    GetCollisionGroup() const;
+	U16                    GetCollisionMask() const;
+	//void SetActive(bool Active);
+	bool                   IsActive() const;
 };
 
 typedef Ptr<CPhysicsObject> PPhysicsObject;
 
 }
-
-#endif

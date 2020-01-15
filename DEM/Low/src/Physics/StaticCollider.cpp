@@ -8,9 +8,10 @@
 
 namespace Physics
 {
-RTTI_CLASS_IMPL(Physics::CStaticCollider, Core::CObject); //Physics::CPhysicsObject);
+RTTI_CLASS_IMPL(Physics::CStaticCollider, Physics::CPhysicsObject);
 
 CStaticCollider::CStaticCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm)
+	: CPhysicsObject(Level)
 {
 	// Instead of storing strong ref, we manually control refcount and use
 	// a pointer from the bullet collision shape

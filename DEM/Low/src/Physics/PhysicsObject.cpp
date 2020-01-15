@@ -1,105 +1,33 @@
 #include "PhysicsObject.h"
-
-#include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
-#include <Resources/ResourceManager.h>
-#include <Resources/ResourceCreator.h>
-#include <Resources/Resource.h>
-#include <Data/Params.h>
-#include <IO/PathUtils.h>
-#include <Math/AABB.h>
-#include <Math/Matrix44.h>
-#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
+#include <BulletCollision/CollisionDispatch/btCollisionObject.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
+#include <BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
 
 namespace Physics
 {
 RTTI_CLASS_IMPL(Physics::CPhysicsObject, Core::CObject);
 
-bool CPhysicsObject::Init(const Data::CParams& Desc, const vector3& Offset)
+CPhysicsObject::CPhysicsObject(CPhysicsLevel& Level)
+	: _Level(&Level)
 {
-	n_assert(!pWorld);
-
-	NOT_IMPLEMENTED; // ResourceMgr singleton removed
-	/*
-	//???!!!store the whole URI in a file?!
-	CStrID ShapeID = Desc.Get<CStrID>(CStrID("Shape"));
-	CStrID ShapeUID = CStrID(CString("Physics:") + ShapeID.CStr() + ".prm");
-	Resources::PResource RShape = ResourceMgr->RegisterResource<Physics::CCollisionShape>(ShapeUID);
-	Shape = RShape->ValidateObject<Physics::CCollisionShape>();
-
-	Group = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Group"), CString("Default")));
-	Mask = PhysicsSrv->CollisionGroups.GetMask(Desc.Get<CString>(CStrID("Mask"), CString("All")));
-	*/
-
-	ShapeOffset = Offset;
-
-	//???get rid of self-offset? prop can calc heightmap offset
-	ShapeOffset += Shape->GetOffset();
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsObject::Init(CCollisionShape& CollShape, U16 CollGroup, U16 CollMask, const vector3& Offset)
+CPhysicsObject::~CPhysicsObject()
 {
-	n_assert(CollShape.IsResourceValid());
-	Shape = &CollShape;
-	Group = CollGroup;
-	Mask = CollMask;
-
-	ShapeOffset = Offset;
-
-	ShapeOffset += Shape->GetOffset();
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-// Is required to aviod virtual call from destructor
-void CPhysicsObject::InternalTerm()
+bool CPhysicsObject::IsActive() const
 {
-	n_assert2(!pWorld, "CPhysicsObject::InternalTerm() -> Object must be removed from level");
-
-	if (pBtCollObj)
-	{
-		delete pBtCollObj;
-		pBtCollObj = nullptr;
-	}
-
-	Shape = nullptr;
-}
-//---------------------------------------------------------------------
-
-void CPhysicsObject::Term()
-{
-	RemoveFromLevel();
-	InternalTerm();
-}
-//---------------------------------------------------------------------
-
-bool CPhysicsObject::AttachToLevel(CPhysicsLevel& World)
-{
-	if (!pBtCollObj) FAIL;
-
-	n_assert(!pWorld);
-	pWorld = &World;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CPhysicsObject::RemoveFromLevel()
-{
-	if (pWorld)
-	{
-		pWorld = nullptr;
-	}
+	return _pBtObject->isActive();
 }
 //---------------------------------------------------------------------
 
 void CPhysicsObject::SetTransform(const matrix44& Tfm)
 {
+	/*
 	n_assert_dbg(pBtCollObj);
 
 	btTransform BtTfm = TfmToBtTfm(Tfm);
@@ -107,49 +35,68 @@ void CPhysicsObject::SetTransform(const matrix44& Tfm)
 
 	pBtCollObj->setWorldTransform(BtTfm);
 	if (pWorld) pWorld->GetBtWorld()->updateSingleAabb(pBtCollObj);
-}
-//---------------------------------------------------------------------
-
-void CPhysicsObject::GetTransform(btTransform& Out) const
-{
-	n_assert_dbg(pBtCollObj);
-	Out = pBtCollObj->getWorldTransform();
-	Out.getOrigin() = Out * VectorToBtVector(-ShapeOffset);
+	*/
 }
 //---------------------------------------------------------------------
 
 void CPhysicsObject::GetTransform(vector3& OutPos, quaternion& OutRot) const
 {
-	btTransform Tfm;
-	CPhysicsObject::GetTransform(Tfm); //???to nonvirtual GetWorldTransform()?
-	OutRot = BtQuatToQuat(Tfm.getRotation());
+/*
+btTransform Tfm;
+Tfm = pBtCollObj->getWorldTransform();
+Tfm.getOrigin() = Tfm * VectorToBtVector(-ShapeOffset);
+OutRot = BtQuatToQuat(Tfm.getRotation());
 	OutPos = BtVectorToVector(Tfm.getOrigin());
+	*/
 }
 //---------------------------------------------------------------------
 
 // If possible, returns interpolated AABB from motion state. It matches the graphics representation.
 void CPhysicsObject::GetGlobalAABB(CAABB& OutBox) const
 {
-	btTransform Tfm;
-	GetTransform(Tfm);
+/*
+btTransform Tfm;
+Tfm = pBtCollObj->getWorldTransform();
+Tfm.getOrigin() = Tfm * VectorToBtVector(-ShapeOffset);
 
 	btVector3 Min, Max;
 	pBtCollObj->getCollisionShape()->getAabb(Tfm, Min, Max);
 	OutBox.Min = BtVectorToVector(Min);
 	OutBox.Max = BtVectorToVector(Max);
+	*/
 }
 //---------------------------------------------------------------------
 
 // Returns AABB from the physics world
 void CPhysicsObject::GetPhysicsAABB(CAABB& OutBox) const
 {
-	n_assert_dbg(pBtCollObj);
+/*
+n_assert_dbg(pBtCollObj);
 
 	btVector3 Min, Max;
-	if (pWorld) pWorld->GetBtWorld()->getBroadphase()->getAabb(pBtCollObj->getBroadphaseHandle(), Min, Max);
-	else pBtCollObj->getCollisionShape()->getAabb(pBtCollObj->getWorldTransform(), Min, Max);
+	pWorld->GetBtWorld()->getBroadphase()->getAabb(pBtCollObj->getBroadphaseHandle(), Min, Max);
+	//pBtCollObj->getCollisionShape()->getAabb(pBtCollObj->getWorldTransform(), Min, Max);
 	OutBox.Min = BtVectorToVector(Min);
 	OutBox.Max = BtVectorToVector(Max);
+	*/
+}
+//---------------------------------------------------------------------
+
+const CCollisionShape* CPhysicsObject::GetCollisionShape() const
+{
+	return _pBtObject ? static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer()) : nullptr;
+}
+//---------------------------------------------------------------------
+
+U16 CPhysicsObject::GetCollisionGroup() const
+{
+	return _pBtObject ? _pBtObject->getBroadphaseHandle()->m_collisionFilterGroup : 0;
+}
+//---------------------------------------------------------------------
+
+U16 CPhysicsObject::GetCollisionMask() const
+{
+	return _pBtObject ? _pBtObject->getBroadphaseHandle()->m_collisionFilterMask : 0;
 }
 //---------------------------------------------------------------------
 

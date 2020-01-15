@@ -460,8 +460,9 @@ bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3
 
 	if (pOutEntityUID)
 	{
-		void* pUserData = PhysObj.IsValidPtr() ? PhysObj->GetUserData() : nullptr;
-		*pOutEntityUID = pUserData ? *(CStrID*)&pUserData : CStrID::Empty;
+		//!!!FIXME PHYSICS:
+		//void* pUserData = PhysObj.IsValidPtr() ? PhysObj->GetUserData() : nullptr;
+		//*pOutEntityUID = pUserData ? *(CStrID*)&pUserData : CStrID::Empty;
 	}
 
 	OK;

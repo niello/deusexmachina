@@ -1,27 +1,17 @@
 #pragma once
-#include <Core/Object.h>
-#include <Math/AABB.h>
+#include <Physics/PhysicsObject.h>
 
 // Moving collision object inherits transform from the scene node, collides with
 // dynamic bodies as a moving object, but doesn't respond to collisions.
 // Use this type of objects to represent objects controlled by an animation,
 // by user input or any other non-physics controller.
 
-class btRigidBody;
-
 namespace Physics
 {
-typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
-class CCollisionShape;
 
-class CMovableCollider : public Core::CObject
+class CMovableCollider : public CPhysicsObject
 {
 	RTTI_CLASS_DECL;
-
-protected:
-
-	btRigidBody*    _pBtObject = nullptr;
-	PPhysicsLevel   _Level;
 
 public:
 
@@ -29,7 +19,6 @@ public:
 	virtual ~CMovableCollider() override;
 
 	void SetActive(bool Active);
-	bool IsActive() const;
 
 	// FIXME: need consistency! both matrix or both vector+quat!
 	void GetTransform(vector3& OutPos, quaternion& OutRot) const;

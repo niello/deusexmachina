@@ -1,11 +1,7 @@
 #pragma once
-#include <Core/Object.h>
-#include <Math/AABB.h>
-//#include <Physics/PhysicsObject.h>
+#include <Physics/PhysicsObject.h>
 
 // Rigid body simulated by physics. Can be used as a transformation source for a scene node.
-
-class btRigidBody;
 
 namespace Scene
 {
@@ -14,17 +10,10 @@ namespace Scene
 
 namespace Physics
 {
-typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
-class CCollisionShape;
 
-class CRigidBody : public Core::CObject //CPhysicsObject
+class CRigidBody : public CPhysicsObject
 {
 	RTTI_CLASS_DECL;
-
-protected:
-
-	btRigidBody*    _pBtObject = nullptr;
-	PPhysicsLevel   _Level;
 
 public:
 
@@ -38,7 +27,6 @@ public:
 	float			GetInvMass() const;
 	float			GetMass() const { return 1.f / GetInvMass(); }
 	void            SetActive(bool Active, bool Always);
-	bool			IsActive() const;
 };
 
 typedef Ptr<CRigidBody> PRigidBody;
