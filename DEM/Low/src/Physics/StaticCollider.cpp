@@ -46,4 +46,30 @@ CStaticCollider::~CStaticCollider()
 }
 //---------------------------------------------------------------------
 
+void CStaticCollider::SetTransform(const matrix44& Tfm)
+{
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	btTransform BtTfm = TfmToBtTfm(Tfm);
+	BtTfm.getOrigin() = BtTfm * VectorToBtVector(pShape->GetOffset());
+	_pBtObject->setWorldTransform(BtTfm);
+	//???need? _Level->GetBtWorld()->updateSingleAabb(_pBtObject);
+}
+//---------------------------------------------------------------------
+
+void CStaticCollider::GetTransform(matrix44& OutTfm) const
+{
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	OutTfm = BtTfmToTfm(_pBtObject->getWorldTransform());
+	OutTfm.Translation() = OutTfm * (-pShape->GetOffset());
+}
+//---------------------------------------------------------------------
+
+// Interpolated AABB from motion state, matches the graphics representation
+void CStaticCollider::GetGlobalAABB(CAABB& OutBox) const
+{
+	// Static object is not interpolated, use physics AABB
+	GetPhysicsAABB(OutBox);
+}
+//---------------------------------------------------------------------
+
 }

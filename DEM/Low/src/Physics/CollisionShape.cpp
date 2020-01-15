@@ -8,43 +8,44 @@ namespace Physics
 {
 RTTI_CLASS_IMPL(Physics::CCollisionShape, Resources::CResourceObject);
 
-CCollisionShape::CCollisionShape(btCollisionShape* pShape)
-	: pBtShape(pShape)
+CCollisionShape::CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset)
+	: _pBtShape(pBtShape)
+	, _Offset(Offset)
 {
 	// NB: it is very important to store resource object pointer inside a bullet shape.
 	// This pointer is used in manual refcounting in CMovableCollider and similar shape users.
-	n_assert(pBtShape && !pBtShape->getUserPointer());
-	pBtShape->setUserPointer(this);
+	n_assert(_pBtShape && !_pBtShape->getUserPointer());
+	_pBtShape->setUserPointer(this);
 }
 //---------------------------------------------------------------------
 
 CCollisionShape::~CCollisionShape()
 {
-	delete pBtShape;
+	delete _pBtShape;
 }
 //---------------------------------------------------------------------
 
-PCollisionShape CCollisionShape::CreateSphere(const vector3& Offset, float Radius)
+PCollisionShape CCollisionShape::CreateSphere(float Radius, const vector3& Offset)
 {
 	if (Radius <= 0.f) return nullptr;
 
-	return n_new(Physics::CCollisionShape(new btSphereShape(Radius)));
+	return n_new(Physics::CCollisionShape(new btSphereShape(Radius), Offset));
 }
 //---------------------------------------------------------------------
 
-PCollisionShape CCollisionShape::CreateBox(const vector3& Offset, const vector3& Size)
+PCollisionShape CCollisionShape::CreateBox(const vector3& Size, const vector3& Offset)
 {
 	if (Size.x <= 0.f || Size.y <= 0.f || Size.z <= 0.f) return nullptr;
 
-	return n_new(Physics::CCollisionShape(new btBoxShape(VectorToBtVector(Size * 0.5f))));
+	return n_new(Physics::CCollisionShape(new btBoxShape(VectorToBtVector(Size * 0.5f)), Offset));
 }
 //---------------------------------------------------------------------
 
-PCollisionShape CCollisionShape::CreateCapsuleY(const vector3& Offset, float Radius, float CylinderLength)
+PCollisionShape CCollisionShape::CreateCapsuleY(float Radius, float CylinderLength, const vector3& Offset)
 {
-	if (CylinderLength <= 0.f) return CreateSphere(Offset, Radius);
+	if (CylinderLength <= 0.f) return CreateSphere(Radius, Offset);
 
-	return n_new(Physics::CCollisionShape(new btCapsuleShape(Radius, CylinderLength)));
+	return n_new(Physics::CCollisionShape(new btCapsuleShape(Radius, CylinderLength), Offset));
 }
 //---------------------------------------------------------------------
 

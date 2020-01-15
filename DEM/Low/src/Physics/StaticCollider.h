@@ -16,7 +16,10 @@ public:
 	CStaticCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm = matrix44::Identity);
 	virtual ~CStaticCollider() override;
 
-	virtual void SetActive(bool Active, bool Always = false) { /* Static object is never active */ }
+	virtual void SetTransform(const matrix44& Tfm) override;
+	virtual void GetTransform(matrix44& OutTfm) const override;
+	virtual void GetGlobalAABB(CAABB& OutBox) const override;
+	virtual void SetActive(bool Active, bool Always = false) override { /* Static object is never active */ }
 };
 
 typedef Ptr<CStaticCollider> PStaticCollider;

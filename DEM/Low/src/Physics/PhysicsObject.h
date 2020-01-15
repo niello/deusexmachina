@@ -25,9 +25,9 @@ public:
 	CPhysicsObject(CPhysicsLevel& Level);
 	virtual ~CPhysicsObject() override;
 
-	virtual void           SetTransform(const matrix44& Tfm);
-	virtual void           GetTransform(vector3& OutPos, quaternion& OutRot) const;
-	void                   GetGlobalAABB(CAABB& OutBox) const;
+	virtual void           SetTransform(const matrix44& Tfm) = 0;
+	virtual void           GetTransform(matrix44& OutTfm) const = 0;
+	virtual void           GetGlobalAABB(CAABB& OutBox) const = 0;
 	void                   GetPhysicsAABB(CAABB& OutBox) const;
 	const CCollisionShape* GetCollisionShape() const;
 	U16                    GetCollisionGroup() const;

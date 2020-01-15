@@ -23,8 +23,9 @@ public:
 
 	void         SetControlledNode(Scene::CSceneNode* pNode);
 
-	virtual void SetTransform(const matrix44& Tfm);
-	virtual void GetTransform(vector3& OutPos, quaternion& OutRot) const;
+	virtual void SetTransform(const matrix44& Tfm) override;
+	virtual void GetTransform(matrix44& OutTfm) const override;
+	virtual void GetGlobalAABB(CAABB& OutBox) const override;
 	virtual void SetActive(bool Active, bool Always = false) override;
 	float        GetInvMass() const;
 	float        GetMass() const { return 1.f / GetInvMass(); }

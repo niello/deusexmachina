@@ -1,5 +1,7 @@
 #include "PhysicsObject.h"
+#include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/CollisionDispatch/btCollisionObject.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
 #include <BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
@@ -14,71 +16,25 @@ CPhysicsObject::CPhysicsObject(CPhysicsLevel& Level)
 }
 //---------------------------------------------------------------------
 
-CPhysicsObject::~CPhysicsObject()
-{
-}
+CPhysicsObject::~CPhysicsObject() = default;
 //---------------------------------------------------------------------
 
 bool CPhysicsObject::IsActive() const
 {
-	return _pBtObject->isActive();
+	return _pBtObject ? _pBtObject->isActive() : false;
 }
 //---------------------------------------------------------------------
 
-void CPhysicsObject::SetTransform(const matrix44& Tfm)
-{
-	/*
-	n_assert_dbg(pBtCollObj);
-
-	btTransform BtTfm = TfmToBtTfm(Tfm);
-	BtTfm.getOrigin() = BtTfm * VectorToBtVector(ShapeOffset);
-
-	pBtCollObj->setWorldTransform(BtTfm);
-	if (pWorld) pWorld->GetBtWorld()->updateSingleAabb(pBtCollObj);
-	*/
-}
-//---------------------------------------------------------------------
-
-void CPhysicsObject::GetTransform(vector3& OutPos, quaternion& OutRot) const
-{
-/*
-btTransform Tfm;
-Tfm = pBtCollObj->getWorldTransform();
-Tfm.getOrigin() = Tfm * VectorToBtVector(-ShapeOffset);
-OutRot = BtQuatToQuat(Tfm.getRotation());
-	OutPos = BtVectorToVector(Tfm.getOrigin());
-	*/
-}
-//---------------------------------------------------------------------
-
-// If possible, returns interpolated AABB from motion state. It matches the graphics representation.
-void CPhysicsObject::GetGlobalAABB(CAABB& OutBox) const
-{
-/*
-btTransform Tfm;
-Tfm = pBtCollObj->getWorldTransform();
-Tfm.getOrigin() = Tfm * VectorToBtVector(-ShapeOffset);
-
-	btVector3 Min, Max;
-	pBtCollObj->getCollisionShape()->getAabb(Tfm, Min, Max);
-	OutBox.Min = BtVectorToVector(Min);
-	OutBox.Max = BtVectorToVector(Max);
-	*/
-}
-//---------------------------------------------------------------------
-
-// Returns AABB from the physics world
+// Returns end-of-tick AABB from the physics world
 void CPhysicsObject::GetPhysicsAABB(CAABB& OutBox) const
 {
-/*
-n_assert_dbg(pBtCollObj);
+	if (!_pBtObject) return;
 
 	btVector3 Min, Max;
-	pWorld->GetBtWorld()->getBroadphase()->getAabb(pBtCollObj->getBroadphaseHandle(), Min, Max);
+	_Level->GetBtWorld()->getBroadphase()->getAabb(_pBtObject->getBroadphaseHandle(), Min, Max);
 	//pBtCollObj->getCollisionShape()->getAabb(pBtCollObj->getWorldTransform(), Min, Max);
 	OutBox.Min = BtVectorToVector(Min);
 	OutBox.Max = BtVectorToVector(Max);
-	*/
 }
 //---------------------------------------------------------------------
 

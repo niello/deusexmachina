@@ -28,9 +28,9 @@ bool CPropTrigger::InternalActivate()
 	const vector4& ShapeParams = GetEntity()->GetAttr<vector4>(CStrID("TrgShapeParams"), vector4::White);
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
-		case 1: Shape = Physics::CCollisionShape::CreateBox(vector3::Zero, ShapeParams); break;
-		case 2: Shape = Physics::CCollisionShape::CreateSphere(vector3::Zero, ShapeParams.x); break;
-		case 4: Shape = Physics::CCollisionShape::CreateCapsuleY(vector3::Zero, ShapeParams.x, ShapeParams.y); break;
+		case 1: Shape = Physics::CCollisionShape::CreateBox(ShapeParams); break;
+		case 2: Shape = Physics::CCollisionShape::CreateSphere(ShapeParams.x); break;
+		case 4: Shape = Physics::CCollisionShape::CreateCapsuleY(ShapeParams.x, ShapeParams.y); break;
 		default: Sys::Error("Entity '%s': CPropTrigger::Activate(): Shape type %d unsupported\n",
 					 GetEntity()->GetUID().CStr(),
 					 GetEntity()->GetAttr<int>(CStrID("TrgShapeType")));

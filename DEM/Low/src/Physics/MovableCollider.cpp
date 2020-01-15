@@ -85,21 +85,21 @@ void CMovableCollider::SetActive(bool Active, bool Always)
 
 void CMovableCollider::SetTransform(const matrix44& Tfm)
 {
+	_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 	static_cast<CKinematicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState())->SetTransform(Tfm, pShape->GetOffset());
-	SetActive(true);
 }
 //---------------------------------------------------------------------
 
-void CMovableCollider::GetTransform(vector3& OutPos, quaternion& OutRot) const
+void CMovableCollider::GetTransform(matrix44& OutTfm) const
 {
 	btTransform Tfm;
 	static_cast<btRigidBody*>(_pBtObject)->getMotionState()->getWorldTransform(Tfm);
 
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 
-	OutRot = BtQuatToQuat(Tfm.getRotation());
-	OutPos = BtVectorToVector(Tfm.getOrigin()) - OutRot.rotate(pShape->GetOffset());
+	OutTfm = BtTfmToTfm(Tfm);
+	OutTfm.Translation() = OutTfm * (-pShape->GetOffset());
 }
 //---------------------------------------------------------------------
 

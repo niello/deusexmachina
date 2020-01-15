@@ -1,7 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_PHYSICS_BULLET_FWD_H__
-#define __DEM_L1_PHYSICS_BULLET_FWD_H__
-
+#if defined (_WIN32) || defined (__i386__)
+#define BT_USE_SSE_IN_API
+#endif
 #include <Math/Matrix44.h>
 #include <LinearMath/btTransform.h>
 
@@ -39,5 +39,3 @@ inline matrix44 BtTfmToTfm(const btTransform& BtTfm)
 	Tfm.Translation() = BtVectorToVector(BtTfm.getOrigin());
 	return Tfm;
 }
-
-#endif

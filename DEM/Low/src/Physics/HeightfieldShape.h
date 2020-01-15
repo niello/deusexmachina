@@ -16,15 +16,9 @@ protected:
 
 	PHeightfieldData _HeightfieldData;
 
-	// Bullet shape is created with an origin at the center of a heightmap AABB.
-	// This is an offset between that center and the real origin.
-	vector3          _Offset;
-
 public:
 
-	CHeightfieldShape(btHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset);
-
-	virtual const vector3& GetOffset() const override { return _Offset; } // Could use btCompoundShape instead
+	CHeightfieldShape(btHeightfieldTerrainShape* pShape, PHeightfieldData&& HeightfieldData, const vector3& Offset = vector3::Zero);
 };
 
 typedef Ptr<CHeightfieldShape> PHeightfieldShape;

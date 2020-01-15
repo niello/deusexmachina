@@ -12,30 +12,37 @@ namespace Physics
 RTTI_CLASS_IMPL(Physics::CRigidBody, Physics::CPhysicsObject);
 
 // To be useful, rigid body must be connected to a scene node to serve as its transformation source
+// TODO: try make _Offset btVector3 SSE. Last attempt expanded *this size from 20 to 48, need more effort.
 class CDynamicMotionState: public btMotionState
 {
 protected:
 
 	Scene::PSceneNode _Node;
+	vector3           _Offset;
 
 public:
 
 	BT_DECLARE_ALIGNED_ALLOCATOR();
 
+	CDynamicMotionState(const vector3& Offset) : _Offset(Offset) {}
+
 	void SetSceneNode(Scene::PSceneNode&& Node) { _Node = std::move(Node); }
 	Scene::CSceneNode* GetSceneNode() const { return _Node.Get(); }
 
-	//!!!dynamic motion state shape offset?
 	virtual void getWorldTransform(btTransform& worldTrans) const override
 	{
-		//!!!update world matrix if dirty inside GetWorldMatrix()!
 		worldTrans = TfmToBtTfm(_Node ? _Node->GetWorldMatrix() : matrix44::Identity);
+		worldTrans.getOrigin() = worldTrans * VectorToBtVector(_Offset);
 	}
 
-	//!!!dynamic motion state shape offset?
 	virtual void setWorldTransform(const btTransform& worldTrans) override
 	{
-		if (_Node) _Node->SetWorldTransform(BtTfmToTfm(worldTrans));
+		if (_Node)
+		{
+			auto Tfm = BtTfmToTfm(worldTrans);
+			Tfm.Translation() = Tfm * (-_Offset);
+			_Node->SetWorldTransform(Tfm);
+		}
 	}
 };
 
@@ -53,7 +60,7 @@ CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 Collisi
 
 	btRigidBody::btRigidBodyConstructionInfo CI(
 		Mass,
-		new CDynamicMotionState(),
+		new CDynamicMotionState(Shape.GetOffset()),
 		Shape.GetBulletShape(),
 		Inertia);
 	//!!!set friction and restitution! for spheres always need rolling friction! TODO: physics material
@@ -102,19 +109,37 @@ void CRigidBody::SetTransform(const matrix44& Tfm)
 }
 //---------------------------------------------------------------------
 
-void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
+void CRigidBody::GetTransform(matrix44& OutTfm) const
 {
 	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	if (pMotionState->GetSceneNode())
+	{
+		OutTfm = pMotionState->GetSceneNode()->GetWorldMatrix();
+	}
+	else
+	{
+		auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+		OutTfm = BtTfmToTfm(_pBtObject->getWorldTransform());
+		OutTfm.Translation() = OutTfm * (-pShape->GetOffset());
+	}
+}
+//---------------------------------------------------------------------
+
+// Interpolated AABB from motion state, matches the graphics representation
+void CRigidBody::GetGlobalAABB(CAABB& OutBox) const
+{
+	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
 
 	btTransform Tfm;
 	if (pMotionState->GetSceneNode())
-		pMotionState->getWorldTransform(Tfm); //!!!can return Node's non-converted world tfm right here!
+		pMotionState->getWorldTransform(Tfm);
 	else
-		Tfm = _pBtObject->getWorldTransform();
+		Tfm = _pBtObject->getWorldTransform(); //???or getInterpolationWorldTransform()?
 
-	OutRot = BtQuatToQuat(Tfm.getRotation());
-	OutPos = BtVectorToVector(Tfm.getOrigin()) - OutRot.rotate(pShape->GetOffset());
+	btVector3 Min, Max;
+	_pBtObject->getCollisionShape()->getAabb(Tfm, Min, Max);
+	OutBox.Min = BtVectorToVector(Min);
+	OutBox.Max = BtVectorToVector(Max);
 }
 //---------------------------------------------------------------------
 

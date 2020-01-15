@@ -18,12 +18,10 @@ public:
 	CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm = matrix44::Identity);
 	virtual ~CMovableCollider() override;
 
+	virtual void SetTransform(const matrix44& Tfm) override;
+	virtual void GetTransform(matrix44& OutTfm) const override;
+	virtual void GetGlobalAABB(CAABB& OutBox) const override;
 	virtual void SetActive(bool Active, bool Always = false) override;
-
-	// FIXME: need consistency! both matrix or both vector+quat!
-	void GetTransform(vector3& OutPos, quaternion& OutRot) const;
-	void SetTransform(const matrix44& Tfm);
-	void GetGlobalAABB(CAABB& OutBox) const;
 };
 
 typedef Ptr<CMovableCollider> PMovableCollider;

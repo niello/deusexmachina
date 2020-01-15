@@ -30,7 +30,7 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 
 	vector3 Offset(0.f, (Hover + Height) * 0.5f, 0.f);
 
-	PCollisionShape Shape = CCollisionShape::CreateCapsuleY(Offset, Radius, CapsuleHeight);
+	PCollisionShape Shape = CCollisionShape::CreateCapsuleY(Radius, CapsuleHeight, Offset);
 
 	// FIXME PHYSICS
 	const U16 MaskCharacter = -1;// PhysicsSrv->CollisionGroups.GetMask("Character");

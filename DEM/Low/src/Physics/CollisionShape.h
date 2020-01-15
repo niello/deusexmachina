@@ -16,21 +16,22 @@ class CCollisionShape : public Resources::CResourceObject
 
 protected:
 
-	btCollisionShape* pBtShape = nullptr;
+	btCollisionShape* _pBtShape = nullptr;
+	vector3           _Offset; // Could use btCompoundShape instead, but for offset only it is an overkill
 
 public:
 
-	static PCollisionShape CreateSphere(const vector3& Offset, float Radius);
-	static PCollisionShape CreateBox(const vector3& Offset, const vector3& Size);
-	static PCollisionShape CreateCapsuleY(const vector3& Offset, float Radius, float CylinderLength);
+	static PCollisionShape CreateSphere(float Radius, const vector3& Offset = vector3::Zero);
+	static PCollisionShape CreateBox(const vector3& Size, const vector3& Offset = vector3::Zero);
+	static PCollisionShape CreateCapsuleY(float Radius, float CylinderLength, const vector3& Offset = vector3::Zero);
 	// TODO: CreateMesh(Render::PMeshData MeshData)
 
-	CCollisionShape(btCollisionShape* pShape);
+	CCollisionShape(btCollisionShape* pBtShape, const vector3& Offset = vector3::Zero);
 	virtual ~CCollisionShape() override;
 
-	virtual bool           IsResourceValid() const { return !!pBtShape; }
-	virtual const vector3& GetOffset() const { return vector3::Zero; } // Could use btCompoundShape instead
-	btCollisionShape*      GetBulletShape() const { return pBtShape; }
+	virtual bool      IsResourceValid() const { return !!_pBtShape; }
+	const vector3&    GetOffset() const { return _Offset; }
+	btCollisionShape* GetBulletShape() const { return _pBtShape; }
 };
 
 }
