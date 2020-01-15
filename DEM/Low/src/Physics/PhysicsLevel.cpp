@@ -118,8 +118,6 @@ CPhysicsLevel::~CPhysicsLevel()
 
 	// FIXME: must delete all remaining objects in the world!
 
-	SetDebugRenderer(nullptr);
-
 	btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
 	btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
 	btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
@@ -139,26 +137,16 @@ void CPhysicsLevel::Update(float dt)
 }
 //---------------------------------------------------------------------
 
-void CPhysicsLevel::SetDebugRenderer(Debug::CDebugDraw* pDebugDraw)
+void CPhysicsLevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 {
-	if (auto pBtDebugDrawer = pBtDynWorld->getDebugDrawer())
+	if (pBtDynWorld)
 	{
-		delete pBtDebugDrawer;
+		CPhysicsDebugDraw DD(DebugDraw);
+		DD.setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
+		pBtDynWorld->setDebugDrawer(&DD);
+		pBtDynWorld->debugDrawWorld();
 		pBtDynWorld->setDebugDrawer(nullptr);
 	}
-
-	if (pDebugDraw)
-	{
-		auto pBtDebugDrawer = new CPhysicsDebugDraw(*pDebugDraw);
-		pBtDebugDrawer->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
-		pBtDynWorld->setDebugDrawer(pBtDebugDrawer);
-	}
-}
-//---------------------------------------------------------------------
-
-void CPhysicsLevel::RenderDebug()
-{
-	if (pBtDynWorld) pBtDynWorld->debugDrawWorld();
 }
 //---------------------------------------------------------------------
 

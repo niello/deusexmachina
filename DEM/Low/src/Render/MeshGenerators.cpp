@@ -100,7 +100,7 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
-	MeshData->VertexCount = 24;
+	MeshData->VertexCount = 8;
 	MeshData->IndexCount = 36;
 
 	Render::CVertexComponent VC;
@@ -154,9 +154,9 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
 	Group.FirstVertex = 0;
-	Group.VertexCount = 8;
+	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
-	Group.IndexCount = 36;
+	Group.IndexCount = MeshData->IndexCount;
 	Group.AABB.Min.set(-0.5f, -0.5f, -0.5f);
 	Group.AABB.Max.set(0.5f, 0.5f, 0.5f);
 
@@ -282,9 +282,9 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
 	Group.FirstVertex = 0;
-	Group.VertexCount = Vertices.size();
+	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
-	Group.IndexCount = Indices.size();
+	Group.IndexCount = MeshData->IndexCount;
 	Group.AABB.Min.set(-Radius, -Radius, -Radius);
 	Group.AABB.Max.set(Radius, Radius, Radius);
 
@@ -388,9 +388,9 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
 	Group.FirstVertex = 0;
-	Group.VertexCount = Vertices.size();
+	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
-	Group.IndexCount = Indices.size();
+	Group.IndexCount = MeshData->IndexCount;
 	Group.AABB.Min.set(-Radius, -HalfHeight, -Radius);
 	Group.AABB.Max.set(Radius, HalfHeight, Radius);
 
@@ -463,9 +463,9 @@ PResourceObject CMeshGeneratorCone::CreateResource(CStrID UID)
 	Render::CPrimitiveGroup Group;
 	Group.Topology = Render::Prim_TriList;
 	Group.FirstVertex = 0;
-	Group.VertexCount = Vertices.size();
+	Group.VertexCount = MeshData->VertexCount;
 	Group.FirstIndex = 0;
-	Group.IndexCount = Indices.size();
+	Group.IndexCount = MeshData->IndexCount;
 	Group.AABB.Min.set(-Radius, -HalfHeight, -Radius);
 	Group.AABB.Max.set(Radius, HalfHeight, Radius);
 

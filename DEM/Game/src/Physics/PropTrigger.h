@@ -1,6 +1,6 @@
 #pragma once
 #include <Game/Property.h>
-#include <Physics/CollisionObjStatic.h>
+#include <Physics/StaticCollider.h>
 
 // Trigger is an abstract level geometry that produces some events/effects on entities
 // colliding with it. Trigger usually doesn't cause collision response.
@@ -38,7 +38,7 @@ class CPropTrigger: public Game::CProperty
 
 protected:
 
-	Physics::PCollisionObjStatic	CollObj;
+	Physics::PStaticCollider	CollObj;
 	const CScriptObject*			pScriptObj;	// Cached pointer to CPropScriptable object
 	CArray<CStrID>					CurrInsiders;
 	float							Period;

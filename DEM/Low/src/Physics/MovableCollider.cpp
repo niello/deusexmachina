@@ -1,7 +1,7 @@
 #include "MovableCollider.h"
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
-#include <Physics/CollisionShape.h>
+#include <Physics/HeightfieldShape.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
@@ -49,6 +49,12 @@ CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape,
 	_pBtObject = new btRigidBody(CI);
 	_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
 	_pBtObject->setUserPointer(this);
+
+	// As of Bullet v2.81 SDK, debug drawer tries to draw each heightfield triangle wireframe,
+	// so we disable debug drawing of terrain at all
+	// TODO: terrain is most probably a static collider, not movable!
+	if (Shape.IsA<CHeightfieldShape>())
+		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
 
 	_Level->GetBtWorld()->addRigidBody(_pBtObject, CollisionGroup, CollisionMask);
 }

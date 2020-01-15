@@ -4,6 +4,8 @@
 #include <Game/GameServer.h>
 #include <Game/GameLevel.h>
 #include <Physics/PhysicsLevel.h>
+#include <Physics/CollisionShape.h>
+#include <Physics/StaticCollider.h>
 #include <Physics/TriggerContactCallback.h>
 #include <Scripting/PropScriptable.h>
 #include <Events/Subscription.h>
@@ -34,11 +36,12 @@ bool CPropTrigger::InternalActivate()
 					 GetEntity()->GetAttr<int>(CStrID("TrgShapeType")));
 	}
 
-	CollObj = n_new(Physics::CCollisionObjStatic);
-	U16 Group = GetEntity()->GetLevel()->GetPhysics()->CollisionGroups.GetMask("Trigger");
-	U16 Mask = GetEntity()->GetLevel()->GetPhysics()->CollisionGroups.GetMask("All") & ~Group;
-	CollObj->Init(*Shape, Group, Mask); // Can specify offset
-	CollObj->GetBtObject()->setCollisionFlags(CollObj->GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
+	auto& PhysicsLevel = *GetEntity()->GetLevel()->GetPhysics();
+	U16 Group = PhysicsLevel.CollisionGroups.GetMask("Trigger");
+	U16 Mask = PhysicsLevel.CollisionGroups.GetMask("All") & ~Group;
+
+	CollObj = n_new(Physics::CStaticCollider(PhysicsLevel, *Shape, Group, Mask));
+	//!!!FIXME PHYSICS: CollObj->GetBtObject()->setCollisionFlags(CollObj->GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
 	SetEnabled(GetEntity()->GetAttr<bool>(CStrID("TrgEnabled")));
 
@@ -125,8 +128,10 @@ void CPropTrigger::SetEnabled(bool Enable)
 bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	CArray<const btCollisionObject*> Collisions(16, 16);
-	Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
-	GetEntity()->GetLevel()->GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
+
+	//!!!FIXME PHYSICS:
+	//Physics::CTriggerContactCallback TriggerCB(CollObj->GetBtObject(), Collisions, CollObj->GetCollisionGroup(), CollObj->GetCollisionMask());
+	//GetEntity()->GetLevel()->GetPhysics()->GetBtWorld()->contactTest(CollObj->GetBtObject(), TriggerCB);
 
 	CArray<CStrID> NewInsiders(16, 16);
 
@@ -138,8 +143,10 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 		if (Collisions[i] == pCurrObj) continue;
 		pCurrObj = Collisions[i];
 		if (!pCurrObj || !pCurrObj->getUserPointer()) continue;
-		Physics::PPhysicsObject PhysObj = (Physics::CPhysicsObject*)pCurrObj->getUserPointer();
-		void* pUserData = PhysObj->GetUserData();
+
+		//!!!FIXME PHYSICS:
+		//Physics::PPhysicsObject PhysObj = (Physics::CPhysicsObject*)pCurrObj->getUserPointer();
+		void* pUserData = nullptr; // PhysObj->GetUserData();
 		if (!pUserData) continue;
 		CStrID EntityID = *(CStrID*)&pUserData;
 		if (pScriptObj && CurrInsiders.FindIndexSorted(EntityID) == INVALID_INDEX)
@@ -186,13 +193,13 @@ bool CPropTrigger::OnLevelSaving(Events::CEventDispatcher* pDispatcher, const Ev
 
 bool CPropTrigger::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	/*
 	static const vector4 ColorOn(0.9f, 0.58f, 1.0f, 0.3f); // purple
 	static const vector4 ColorOff(0.0f, 0.0f, 0.0f, 0.08f); // black
 
 	matrix44 EntityTfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	EntityTfm.translate(CollObj->GetShapeOffset());
 
-	/*
 	const vector4& ShapeParams = GetEntity()->GetAttr<vector4>(CStrID("TrgShapeParams"));
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
