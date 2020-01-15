@@ -6,6 +6,7 @@
 #include <Render/Mesh.h>
 #include <Render/Effect.h>
 #include <Render/GPUDriver.h>
+#include <Render/ShaderParamStorage.h>
 #include <Render/VertexComponent.h>
 
 namespace Debug
@@ -13,13 +14,25 @@ namespace Debug
 constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 256;
 constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 4096;
 
-CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect Effect)
-	: _GraphicsMgr(&GraphicsMgr)
+CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, CStrID EffectUID)
+	: CDebugDraw(GraphicsMgr, GraphicsMgr.GetEffect(EffectUID))
 {
-	_Shapes[Box] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_BoxCCW"), n_new(Resources::CMeshGeneratorBox()))->ValidateObject<Render::CMesh>();
-	_Shapes[Sphere] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_SphereCCW12"), n_new(Resources::CMeshGeneratorSphere(12)))->ValidateObject<Render::CMesh>();
-	_Shapes[Cylinder] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_CylinderCCW12"), n_new(Resources::CMeshGeneratorCylinder(12)))->ValidateObject<Render::CMesh>();
-	_Shapes[Cone] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_ConeCCW12"), n_new(Resources::CMeshGeneratorCone(12)))->ValidateObject<Render::CMesh>();
+}
+//---------------------------------------------------------------------
+
+CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect&& Effect)
+	: _GraphicsMgr(&GraphicsMgr)
+	, _Effect(std::move(Effect))
+{
+	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_BoxCCW"), n_new(Resources::CMeshGeneratorBox()));
+	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_SphereCCW12"), n_new(Resources::CMeshGeneratorSphere(12)));
+	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_CylinderCCW12"), n_new(Resources::CMeshGeneratorCylinder(12)));
+	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_ConeCCW12"), n_new(Resources::CMeshGeneratorCone(12)));
+
+	_Shapes[Box] = GraphicsMgr.GetMesh(CStrID("#Mesh_BoxCCW"));
+	_Shapes[Sphere] = GraphicsMgr.GetMesh(CStrID("#Mesh_SphereCCW12"));
+	_Shapes[Cylinder] = GraphicsMgr.GetMesh(CStrID("#Mesh_CylinderCCW12"));
+	_Shapes[Cone] = GraphicsMgr.GetMesh(CStrID("#Mesh_ConeCCW12"));
 
 	// Position, transformation matrix44, color
 	Render::CVertexComponent ShapeComponents[] = {
@@ -49,11 +62,14 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEf
 CDebugDraw::~CDebugDraw() = default;
 //---------------------------------------------------------------------
 
-void CDebugDraw::Render()
+// TODO: check visibility, skip invisible
+void CDebugDraw::Render(const matrix44& ViewProj)
 {
 	if (!_Effect) return;
 
 	auto& GPU = *_GraphicsMgr->GetGPU();
+
+	GPU.SetDepthStencilBuffer(nullptr);
 
 	bool HasShapes = false;
 	for (int i = 0; i < SHAPE_TYPE_COUNT; ++i)
@@ -69,6 +85,10 @@ void CDebugDraw::Render()
 	{
 		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugShape")))
 		{
+			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
+			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
+			Globals.Apply();
+
 			GPU.SetVertexLayout(_ShapeVertexLayout);
 			GPU.SetVertexBuffer(1, _ShapeInstanceBuffer);
 
@@ -77,7 +97,9 @@ void CDebugDraw::Render()
 			for (int i = 0; i < SHAPE_TYPE_COUNT; ++i)
 			{
 				const auto pMesh = _Shapes[i].Get();
+				n_assert(pMesh);
 				const auto* pGroup = pMesh->GetGroup(0);
+				n_assert(pGroup);
 
 				GPU.SetVertexBuffer(0, pMesh->GetVertexBuffer());
 				GPU.SetIndexBuffer(pMesh->GetIndexBuffer().Get());
@@ -117,6 +139,10 @@ void CDebugDraw::Render()
 	{
 		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugPrimitive")))
 		{
+			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
+			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
+			Globals.Apply();
+
 			GPU.SetVertexLayout(_PrimitiveBuffer->GetVertexLayout());
 			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
 
@@ -185,6 +211,10 @@ void CDebugDraw::Render()
 
 		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugPoint")))
 		{
+			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
+			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
+			Globals.Apply();
+
 			GPU.SetVertexLayout(_PrimitiveBuffer->GetVertexLayout());
 			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
 
@@ -232,7 +262,7 @@ void CDebugDraw::DrawSphere(const vector3& Pos, float R, const vector4& Color)
 
 void CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color)
 {
-	ShapeInsts[Sphere].push_back(
+	ShapeInsts[Cylinder].push_back(
 	{
 		matrix44
 		{
