@@ -1,10 +1,12 @@
 #pragma once
-#ifndef __DEM_L1_PHYSICS_DEBUG_DRAW_H__
-#define __DEM_L1_PHYSICS_DEBUG_DRAW_H__
-
 #include <LinearMath/btIDebugDraw.h>
 
 // DEM implementation of the Bullet debug draw interface
+
+namespace Debug
+{
+	class CDebugDraw;
+}
 
 namespace Physics
 {
@@ -13,9 +15,12 @@ class CPhysicsDebugDraw: public btIDebugDraw
 {
 protected:
 
+	Debug::CDebugDraw& _DebugDraw;
 	int Mode;
 
 public:
+
+	CPhysicsDebugDraw(Debug::CDebugDraw& DebugDraw) : _DebugDraw(DebugDraw) {}
 
 	virtual void	drawLine(const btVector3& from,const btVector3& to,const btVector3& color);
 	virtual void	drawContactPoint(const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color);
@@ -26,5 +31,3 @@ public:
 };
 
 }
-
-#endif

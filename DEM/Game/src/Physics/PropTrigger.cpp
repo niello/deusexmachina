@@ -192,6 +192,7 @@ bool CPropTrigger::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Ev
 	matrix44 EntityTfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
 	EntityTfm.translate(CollObj->GetShapeOffset());
 
+	/*
 	const vector4& ShapeParams = GetEntity()->GetAttr<vector4>(CStrID("TrgShapeParams"));
 	switch (GetEntity()->GetAttr<int>(CStrID("TrgShapeType")))
 	{
@@ -213,6 +214,7 @@ bool CPropTrigger::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Ev
 			break;
 		default: break;
 	}
+	*/
 
 	OK;
 }

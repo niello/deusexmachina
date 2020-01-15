@@ -65,10 +65,6 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
 
-	auto pBtDebugDrawer = new CPhysicsDebugDraw();
-	pBtDebugDrawer->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
-	pBtDynWorld->setDebugDrawer(pBtDebugDrawer);
-
 	//!!!can reimplement with some notifications like FireEvent(OnCollision)!
 	//btGhostPairCallback* pGhostPairCB = new btGhostPairCallback(); //!!!delete!
 	//pBtDynWorld->getPairCache()->setInternalGhostPairCallback(pGhostPairCB);
@@ -118,29 +114,45 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 
 CPhysicsLevel::~CPhysicsLevel()
 {
-	if (pBtDynWorld)
-	{
-		// FIXME: must delete all remaining objects in the world!
+	if (!pBtDynWorld) return;
 
-		auto pBtDebugDrawer = pBtDynWorld->getDebugDrawer();
-		btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
-		btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
-		btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
-		btBroadphaseInterface* pBtBroadPhase = pBtDynWorld->getBroadphase();
+	// FIXME: must delete all remaining objects in the world!
 
-		delete pBtDynWorld;
-		delete pBtDebugDrawer;
-		delete pBtSolver;
-		delete pBtCollDisp;
-		delete pBtCollCfg;
-		delete pBtBroadPhase;
-	}
+	SetDebugRenderer(nullptr);
+
+	btConstraintSolver* pBtSolver = pBtDynWorld->getConstraintSolver();
+	btCollisionDispatcher* pBtCollDisp = (btCollisionDispatcher*)pBtDynWorld->getDispatcher();
+	btCollisionConfiguration* pBtCollCfg = pBtCollDisp->getCollisionConfiguration();
+	btBroadphaseInterface* pBtBroadPhase = pBtDynWorld->getBroadphase();
+
+	delete pBtDynWorld;
+	delete pBtSolver;
+	delete pBtCollDisp;
+	delete pBtCollCfg;
+	delete pBtBroadPhase;
 }
 //---------------------------------------------------------------------
 
 void CPhysicsLevel::Update(float dt)
 {
 	if (pBtDynWorld) pBtDynWorld->stepSimulation(dt, 10, StepTime);
+}
+//---------------------------------------------------------------------
+
+void CPhysicsLevel::SetDebugRenderer(Debug::CDebugDraw* pDebugDraw)
+{
+	if (auto pBtDebugDrawer = pBtDynWorld->getDebugDrawer())
+	{
+		delete pBtDebugDrawer;
+		pBtDynWorld->setDebugDrawer(nullptr);
+	}
+
+	if (pDebugDraw)
+	{
+		auto pBtDebugDrawer = new CPhysicsDebugDraw(*pDebugDraw);
+		pBtDebugDrawer->setDebugMode(CPhysicsDebugDraw::DBG_DrawAabb | CPhysicsDebugDraw::DBG_DrawWireframe | CPhysicsDebugDraw::DBG_FastWireframe);
+		pBtDynWorld->setDebugDrawer(pBtDebugDrawer);
+	}
 }
 //---------------------------------------------------------------------
 

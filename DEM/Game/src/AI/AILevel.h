@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_LEVEL_H__
-#define __DEM_L2_AI_LEVEL_H__
-
 #include <StdDEM.h>
 #include <Data/Buffer.h>
 #include <AI/ActorFwd.h>
@@ -14,6 +11,11 @@
 // a navigation manager.
 
 //!!!autoremove expired stimuli!
+
+namespace Debug
+{
+	class CDebugDraw;
+}
 
 namespace AI
 {
@@ -35,7 +37,7 @@ public:
 	~CAILevel();
 
 	bool			Init(const CAABB& LevelBox, U8 QuadTreeDepth);
-	void			RenderDebug();
+	void			RenderDebug(Debug::CDebugDraw& DebugDraw);
 
 	bool			LoadNavMesh(const char* pFileName);
 	void			UnloadNavMesh();
@@ -95,5 +97,3 @@ inline void CAILevel::ClearNavRegionFlags(CStrID ID, U16 Flags, float ActorRadiu
 //---------------------------------------------------------------------
 
 }
-
-#endif

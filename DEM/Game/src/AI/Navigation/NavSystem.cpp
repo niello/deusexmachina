@@ -887,7 +887,7 @@ bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, const
 }
 //---------------------------------------------------------------------
 
-void CNavSystem::RenderDebug()
+void CNavSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 {
 	if (!pNavQuery) return;
 
@@ -919,7 +919,7 @@ void CNavSystem::RenderDebug()
 		static const vector4 ColorPathCorner(1.f, 0.9f, 0.f, 1.f);
 		static const unsigned int ColorPoly = duRGBA(255, 196, 0, 64);
 
-		CNavMeshDebugDraw DD;
+		CNavMeshDebugDraw DD(DebugDraw);
 		for (int i = 0; i < Corridor.getPathCount(); ++i)
 			duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Corridor.getPath()[i], ColorPoly);
 
@@ -934,8 +934,8 @@ void CNavSystem::RenderDebug()
 		for (int i = 0; i < CornerCount; ++i)
 		{
 			vector3 To = CornerVerts + (i * 3);
-			DebugDraw->DrawLine(From, To, ColorPathLine);
-			DebugDraw->DrawPoint(To, 5, ColorPathCorner);
+			DebugDraw.DrawLine(From, To, ColorPathLine);
+			DebugDraw.DrawPoint(To, 5, ColorPathCorner);
 			From = To;
 		}
 	}

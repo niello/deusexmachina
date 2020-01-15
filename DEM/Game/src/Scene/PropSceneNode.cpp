@@ -317,7 +317,7 @@ bool CPropSceneNode::AfterTransforms(Events::CEventDispatcher* pDispatcher, cons
 
 void CPropSceneNode::OnRenderDebug()
 {
-	DebugDraw->DrawCoordAxes(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
+	//DebugDraw->DrawCoordAxes(GetEntity()->GetAttr<matrix44>(CStrID("Transform")));
 }
 //---------------------------------------------------------------------
 

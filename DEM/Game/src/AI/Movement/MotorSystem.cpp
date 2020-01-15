@@ -381,13 +381,13 @@ float CMotorSystem::GetMaxSpeed() const
 }
 //---------------------------------------------------------------------
 
-void CMotorSystem::RenderDebug()
+void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 {
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
 	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
 
 	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
-		DebugDraw->DrawLine(
+		DebugDraw.DrawLine(
 			DestPoint,
 			vector3(DestPoint.x, DestPoint.y + 1.f, DestPoint.z),
 			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
@@ -404,7 +404,7 @@ void CMotorSystem::RenderDebug()
 			Color.x = 0.4f;
 			Color.z = 0.9f;
 		}
-		DebugDraw->DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
+		DebugDraw.DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
 	}
 
 	const char* pMvmt = nullptr;

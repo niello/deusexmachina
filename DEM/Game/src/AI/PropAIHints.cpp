@@ -212,6 +212,7 @@ bool CPropAIHints::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, cons
 
 bool CPropAIHints::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	/*
 	static const vector4 ColorVisible(0.7f, 0.0f, 0.0f, 0.5f);
 	static const vector4 ColorSound(0.0f, 0.0f, 0.7f, 0.5f);
 	static const vector4 ColorOther(0.5f, 0.25f, 0.0f, 0.5f);
@@ -232,6 +233,7 @@ bool CPropAIHints::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Ev
 		}
 		else DebugDraw->DrawSphere(Rec.Stimulus->Position, 0.2f, ColorDisabled);
 	}
+	*/
 
 	OK;
 }

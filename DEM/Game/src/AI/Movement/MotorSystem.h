@@ -16,6 +16,11 @@ namespace Data
 	typedef Ptr<class CParams> PParams;
 };
 
+namespace Debug
+{
+	class CDebugDraw;
+}
+
 namespace AI
 {
 class CMemFactObstacle;
@@ -102,7 +107,7 @@ public:
 	void	UpdatePosition();
 	void	ResetMovement(bool Success);
 	void	ResetRotation(bool Success);
-	void	RenderDebug();
+	void	RenderDebug(Debug::CDebugDraw& DebugDraw);
 
 	void	SetDest(const vector3& Dest);
 	void	SetNextDest(const vector3& NextDest) { NextDestPoint = NextDest; }

@@ -505,8 +505,8 @@ bool CPropActorBrain::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const
 {
 	if (GetEntity()->GetUID() == "GG") //!!!write debug focus or smth!
 	{
-		NavSystem.RenderDebug();
-		MotorSystem.RenderDebug();
+		//NavSystem.RenderDebug(DebugDraw);
+		//MotorSystem.RenderDebug(DebugDraw);
 	}
 	OK;
 }

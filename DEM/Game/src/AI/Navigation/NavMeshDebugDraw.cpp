@@ -1,5 +1,4 @@
 #include "NavMeshDebugDraw.h"
-
 #include <Debug/DebugDraw.h>
 
 namespace AI
@@ -33,9 +32,10 @@ void CNavMeshDebugDraw::vertex(const float x, const float y, const float z, unsi
 
 	switch (PrimType)
 	{
-		case Render::Prim_PointList:	DebugDraw->DrawPoint(Pos, Size, VColor); break;
-		case Render::Prim_LineList:		DebugDraw->AddLineVertex(Pos, VColor); break;
-		case Render::Prim_TriList:		DebugDraw->AddTriangleVertex(Pos, VColor); break;
+		case Render::Prim_PointList: _DebugDraw.DrawPoint(Pos, Size, VColor); break;
+		case Render::Prim_LineList:  _DebugDraw.AddLineVertex(Pos, VColor); break;
+		case Render::Prim_TriList:   _DebugDraw.AddTriangleVertex(Pos, VColor); break;
+		default: break;
 	}
 }
 //---------------------------------------------------------------------

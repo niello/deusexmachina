@@ -17,6 +17,11 @@ namespace Resources
 	class CResourceManager;
 }
 
+namespace Debug
+{
+	class CDebugDraw;
+}
+
 namespace Scene
 {
 class CSceneNode;
@@ -49,6 +54,7 @@ public:
 	virtual PNodeAttribute	Clone() = 0;
 	virtual void			UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) {}
 	virtual void			UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) {}
+	virtual void            RenderDebug(Debug::CDebugDraw& DebugDraw) const {}
 	void					RemoveFromNode();
 
 	CSceneNode*				GetNode() const { return pNode; }

@@ -1,6 +1,4 @@
 #pragma once
-#include <Data/RefCounted.h>
-#include <Data/Singleton.h>
 #include <Render/RenderFwd.h>
 #include <Math/AABB.h>
 
@@ -14,8 +12,6 @@ namespace Frame
 
 namespace Debug
 {
-
-#define DebugDraw Debug::CDebugDraw::Instance()
 
 /*
 enum EHAlign
@@ -34,10 +30,8 @@ enum EVAlign
 };
 */
 
-class CDebugDraw: public Data::CRefCounted
+class CDebugDraw final
 {
-	__DeclareSingleton(CDebugDraw);
-
 public:
 
 	enum EShape

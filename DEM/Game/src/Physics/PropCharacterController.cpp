@@ -210,6 +210,7 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 {
 	if (!IsEnabled()) OK;
 
+	/*
 	static const vector4 ColorVel(1.0f, 0.5f, 0.0f, 1.0f);
 	static const vector4 ColorReqVel(0.0f, 1.0f, 1.0f, 1.0f);
 	static const vector4 ColorCapsuleActive(0.0f, 1.0f, 0.0f, 0.5f);
@@ -261,6 +262,7 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 			LVel.Length());
 		//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
 	}
+	*/
 
 	OK;
 }

@@ -1,5 +1,4 @@
 #include "PhysicsDebugDraw.h"
-
 #include <Physics/BulletConv.h>
 #include <Debug/DebugDraw.h>
 
@@ -8,7 +7,7 @@ namespace Physics
 
 void CPhysicsDebugDraw::drawLine(const btVector3& from,const btVector3& to,const btVector3& color)
 {
-	DebugDraw->DrawLine(BtVectorToVector(from), BtVectorToVector(to), BtVectorToVector(color));
+	_DebugDraw.DrawLine(BtVectorToVector(from), BtVectorToVector(to), BtVectorToVector(color));
 }
 //---------------------------------------------------------------------
 

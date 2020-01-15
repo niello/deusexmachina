@@ -10,16 +10,12 @@
 
 namespace Debug
 {
-__ImplementSingleton(CDebugDraw);
-
 constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 256;
 constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 4096;
 
 CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect Effect)
 	: _GraphicsMgr(&GraphicsMgr)
 {
-	__ConstructSingleton;
-
 	_Shapes[Box] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_BoxCCW"), n_new(Resources::CMeshGeneratorBox()))->ValidateObject<Render::CMesh>();
 	_Shapes[Sphere] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_SphereCCW12"), n_new(Resources::CMeshGeneratorSphere(12)))->ValidateObject<Render::CMesh>();
 	_Shapes[Cylinder] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_CylinderCCW12"), n_new(Resources::CMeshGeneratorCylinder(12)))->ValidateObject<Render::CMesh>();
@@ -50,7 +46,7 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEf
 }
 //---------------------------------------------------------------------
 
-CDebugDraw::~CDebugDraw() { __DestructSingleton; }
+CDebugDraw::~CDebugDraw() = default;
 //---------------------------------------------------------------------
 
 void CDebugDraw::Render()

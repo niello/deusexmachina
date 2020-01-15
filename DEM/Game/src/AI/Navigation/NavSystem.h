@@ -20,6 +20,11 @@ namespace Data
 	typedef Ptr<class CParams> PParams;
 };
 
+namespace Debug
+{
+	class CDebugDraw;
+}
+
 class dtLocalBoundary;
 class dtObstacleAvoidanceQuery;
 
@@ -82,7 +87,7 @@ public:
 	void			Update(float FrameTime);
 	void			Reset(bool Success);
 	void			SetupState();
-	void			RenderDebug();
+	void			RenderDebug(Debug::CDebugDraw& DebugDraw);
 
 	void			UpdatePosition();
 	void			EndEdgeTraversal();

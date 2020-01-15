@@ -222,13 +222,13 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 }
 //---------------------------------------------------------------------
 
-void CAILevel::RenderDebug()
+void CAILevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 {
 	// Render the first NavMesh (later render navmesh used by the current actor)
 	dtNavMeshQuery* pNavQuery = GetSyncNavQuery(0.f);
 	if (pNavQuery)
 	{
-		CNavMeshDebugDraw DD;
+		CNavMeshDebugDraw DD(DebugDraw);
 		duDebugDrawNavMesh(&DD, *pNavQuery->getAttachedNavMesh(), DU_DRAWNAVMESH_OFFMESHCONS);
 		duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
 		//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
