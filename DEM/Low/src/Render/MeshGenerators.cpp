@@ -298,7 +298,7 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 {
 	Render::PMeshData MeshData = n_new(Render::CMeshData);
 	MeshData->IndexType = Render::Index_16;
-	MeshData->VertexCount = 2 * _SectorCount + 2;
+	MeshData->VertexCount = 2 * _SectorCount;
 	MeshData->IndexCount = 12 * _SectorCount;
 
 	Render::CVertexComponent VC;
@@ -319,31 +319,21 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 	constexpr float Radius = 0.5f;
 	constexpr float HalfHeight = 0.5f;
 
-	Vertices.push_back({ 0.f, HalfHeight, 0.f });
-	Vertices.push_back({ 0.f, -HalfHeight, 0.f });
-
+	// Top circle
 	for (U16 i = 0; i < _SectorCount; ++i)
 	{
 		const float Longitude = StepInRadians * i;
-		const float X = Radius * std::sinf(Longitude);
-		const float Z = Radius * std::cosf(Longitude);
-
-		Vertices.push_back({ X, HalfHeight, Z });
-		Vertices.push_back({ X, -HalfHeight, Z });
+		Vertices.push_back({ Radius * std::sinf(Longitude), HalfHeight, Radius * std::cosf(Longitude) });
 	}
+
+	// Bottom circle
+	for (U16 i = 0; i < _SectorCount; ++i)
+		Vertices.push_back({ Vertices[i].x, -Vertices[i].y, Vertices[i].z });
 
 	std::vector<U16> Indices;
 	Indices.reserve(MeshData->IndexCount);
 
-	for (U16 i = 0; i < _SectorCount; ++i)
-	{
-		const float Longitude = StepInRadians * i;
-		const float X = Radius * std::sinf(Longitude);
-		const float Z = Radius * std::cosf(Longitude);
-
-		Vertices.push_back({ X, HalfHeight, Z });
-		Vertices.push_back({ X, -HalfHeight, Z });
-	}
+	// Calc indices
 
 	// Swap winding if required
 	if (_FrontClockWise)
