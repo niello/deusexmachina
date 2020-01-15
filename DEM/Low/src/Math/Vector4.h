@@ -37,8 +37,7 @@ public:
     vector4(const float _x, const float _y, const float _z, const float _w);
     /// constructor 3
     vector4(const vector4& vec);
-    /// constructor from vector3 (w will be set to 1.0)
-    vector4(const vector3& vec3);
+    vector4(const vector3& vec3, float w_ = 1.f);
     /// set elements 1
     void set(const float _x, const float _y, const float _z, const float _w);
     /// set elements 2
@@ -136,11 +135,11 @@ vector4::vector4(const vector4& v) :
 /**
 */
 inline
-vector4::vector4(const vector3& v) :
-    x(v.x),
+vector4::vector4(const vector3& v, float w_) :
+	x(v.x),
     y(v.y),
     z(v.z),
-    w(1.0f)
+    w(w_)
 {
     // empty
 }

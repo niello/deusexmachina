@@ -35,7 +35,7 @@ bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 {
-	CStrID MeshUID("#Mesh_Skybox");
+	CStrID MeshUID("#Mesh_BoxCW");
 	if (!ResMgr.GetResourceManager()->FindResource(MeshUID))
 	{
 		// NB: CW box is created, because rendering is CCW, but front sides of polygons must be inside the skybox

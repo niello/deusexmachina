@@ -1,165 +1,58 @@
 #include "DebugDraw.h"
-
-//#include <Render/RenderServer.h>
-//
-//#ifdef DEM_USE_D3DX9
-//#define WIN32_LEAN_AND_MEAN
-//#define D3D_DISABLE_9EX
-//#include <d3dx9.h>
-//#endif
+#include <Frame/GraphicsResourceManager.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
+#include <Render/MeshGenerators.h>
+#include <Render/Mesh.h>
+#include <Render/Effect.h>
+#include <Render/GPUDriver.h>
+#include <Render/VertexComponent.h>
 
 namespace Debug
 {
 __ImplementSingleton(CDebugDraw);
 
-//bool CDebugDraw::Open()
-//{
-//	D3DXCreateSprite(RenderSrv->GetD3DDevice(), &pD3DXSprite);
-//	D3DXCreateFont(RenderSrv->GetD3DDevice(), 16, 0, FW_NORMAL, 1, FALSE, RUSSIAN_CHARSET,
-//		OUT_DEFAULT_PRECIS, ANTIALIASED_QUALITY, FF_MODERN | DEFAULT_PITCH, "Courier New", &pD3DXFont);
-//
-//	ShapeShader = RenderSrv->ShaderMgr.GetTypedResource(CStrID("Shapes"));
-//	if (!ShapeShader->IsLoaded()) FAIL;
-//
-//	CArray<CVertexComponent> VC(1, 1);
-//	CVertexComponent* pCmp = VC.Reserve(1);
-//	pCmp->Format = CVertexComponent::Float3;
-//	pCmp->Semantic = CVertexComponent::Position;
-//	pCmp->Index = 0;
-//	pCmp->Stream = 0;
-//
-//	PVertexLayout ShapeVL = RenderSrv->GetVertexLayout(VC);
-//
-//	pCmp = VC.Reserve(5);
-//	for (int i = 0; i < 4; ++i)
-//	{
-//		pCmp->Format = CVertexComponent::Float4;
-//		pCmp->Semantic = CVertexComponent::TexCoord;
-//		pCmp->Index = i + 4; // TEXCOORD 4, 5, 6, 7 are used
-//		pCmp->Stream = 1;
-//		++pCmp;
-//	}
-//
-//	pCmp->Format = CVertexComponent::Float4;
-//	pCmp->Semantic = CVertexComponent::Color;
-//	pCmp->Index = 0;
-//	pCmp->Stream = 1;
-//
-//	ShapeInstVL = RenderSrv->GetVertexLayout(VC);
-//
-//	VC.RemoveAt(0);
-//	InstVL = RenderSrv->GetVertexLayout(VC);
-//	InstanceBuffer = n_new(CVertexBuffer);
-//
-//	VC.Clear();
-//	pCmp = VC.Reserve(2);
-//	pCmp->Format = CVertexComponent::Float4;
-//	pCmp->Semantic = CVertexComponent::Position;
-//	pCmp->Index = 0;
-//	pCmp->Stream = 0;
-//	++pCmp;
-//	pCmp->Format = CVertexComponent::Float4;
-//	pCmp->Semantic = CVertexComponent::Color;
-//	pCmp->Index = 0;
-//	pCmp->Stream = 0;
-//
-//	PrimVL = RenderSrv->GetVertexLayout(VC);
-//
-//	Shapes = RenderSrv->MeshMgr.GetOrCreateTypedResource(CStrID("DebugShapes"));
-//	if (Shapes->IsLoaded()) OK;
-//
-//	ID3DXMesh* pDXMesh[ShapeCount];
-//	n_verify(SUCCEEDED(D3DXCreateBox(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, &pDXMesh[0], nullptr)));
-//	n_verify(SUCCEEDED(D3DXCreateSphere(RenderSrv->GetD3DDevice(), 1.0f, 12, 6, &pDXMesh[1], nullptr)));
-//	n_verify(SUCCEEDED(D3DXCreateCylinder(RenderSrv->GetD3DDevice(), 1.0f, 1.0f, 1.0f, 18, 1, &pDXMesh[2], nullptr)));
-//
-//	UPTR VCount = 0, ICount = 0;
-//	for (int i = 0; i < ShapeCount; ++i)
-//	{
-//		VCount += pDXMesh[i]->GetNumVertices();
-//		ICount += pDXMesh[i]->GetNumFaces();
-//	}
-//	ICount *= 3;
-//
-//	n_assert(VCount < 65536); // 16-bit IB
-//
-//	PVertexBuffer VB = n_new(CVertexBuffer);
-//	if (!VB->Create(ShapeVL, VCount, Usage_Immutable, CPU_NoAccess))
-//	{
-//		for (int i = 0; i < ShapeCount; ++i)
-//			pDXMesh[i]->Release();
-//		FAIL;
-//	}
-//
-//	PIndexBuffer IB = n_new(CIndexBuffer);
-//	if (!IB->Create(CIndexBuffer::Index16, ICount, Usage_Immutable, CPU_NoAccess))
-//	{
-//		for (int i = 0; i < ShapeCount; ++i)
-//			pDXMesh[i]->Release();
-//		FAIL;
-//	}
-//
-//	CArray<CPrimitiveGroup> Groups(ShapeCount, 0);
-//
-//	UPTR VertexOffset = 0, IndexOffset = 0;
-//	vector3* pVBData = (vector3*)VB->Map(Map_Setup);
-//	U16* pIBData = (U16*)IB->Map(Map_Setup);
-//	CPrimitiveGroup* pGroup = Groups.Reserve(ShapeCount);
-//	for (UPTR i = 0; i < ShapeCount; ++i)
-//	{
-//		UPTR VertexCount = pDXMesh[i]->GetNumVertices();
-//		UPTR IndexCount = pDXMesh[i]->GetNumFaces() * 3;
-//
-//		char* pDXVB;
-//		n_verify(SUCCEEDED(pDXMesh[i]->LockVertexBuffer(0, (LPVOID*)&pDXVB)));
-//		for (UPTR j = 0; j < VertexCount; ++j, pDXVB += pDXMesh[i]->GetNumBytesPerVertex())
-//			*pVBData++ = *(vector3*)pDXVB;
-//		pDXMesh[i]->UnlockVertexBuffer();
-//
-//		U16* pDXIB;
-//		n_verify(SUCCEEDED(pDXMesh[i]->LockIndexBuffer(0, (LPVOID*)&pDXIB)));
-//		for (UPTR j = 0; j < IndexCount; ++j, ++pDXIB)
-//			*pIBData++ = (*pDXIB) + (U16)VertexOffset;
-//		pDXMesh[i]->UnlockIndexBuffer();
-//
-//		pGroup->Topology = TriList;
-//		pGroup->FirstVertex = VertexOffset;
-//		pGroup->VertexCount = VertexCount;
-//		pGroup->FirstIndex = IndexOffset;
-//		pGroup->IndexCount = IndexCount;
-//		++pGroup;
-//
-//		VertexOffset += VertexCount;
-//		IndexOffset += IndexCount;
-//	}
-//	VB->Unmap();
-//	IB->Unmap();
-//
-//	for (int i = 0; i < ShapeCount; ++i)
-//		pDXMesh[i]->Release();
-//
-//	return Shapes->Setup(VB, IB, Groups);
-//}
-////---------------------------------------------------------------------
-//
-//void CDebugDraw::Close()
-//{
-//	for (int i = 0; i < ShapeCount; ++i)
-//		ShapeInsts[i].Clear();
-//	Tris.Clear();
-//	Lines.Clear();
-//	Points.Clear();
-//
-//	ShapeInstVL = nullptr;
-//	InstVL = nullptr;
-//	PrimVL = nullptr;
-//	Shapes = nullptr;
-//	InstanceBuffer = nullptr;
-//}
-////---------------------------------------------------------------------
-//
-//void CDebugDraw::RenderGeometry()
-//{
+constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 256;
+
+CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect Effect)
+	: _GraphicsMgr(&GraphicsMgr)
+{
+	__ConstructSingleton;
+
+	_Shapes[Box] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_BoxCCW"), n_new(Resources::CMeshGeneratorBox()))->ValidateObject<Render::CMesh>();
+	_Shapes[Sphere] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_SphereCCW12"), n_new(Resources::CMeshGeneratorSphere(12)))->ValidateObject<Render::CMesh>();
+	_Shapes[Cylinder] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_CylinderCCW12"), n_new(Resources::CMeshGeneratorCylinder(12)))->ValidateObject<Render::CMesh>();
+	_Shapes[Cone] = GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_ConeCCW12"), n_new(Resources::CMeshGeneratorCone(12)))->ValidateObject<Render::CMesh>();
+
+	// Position, transformation matrix44, color
+	Render::CVertexComponent ShapeComponents[] = {
+		{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_3, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false },
+		{ Render::VCSem_TexCoord, nullptr, 4, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
+		{ Render::VCSem_TexCoord, nullptr, 5, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
+		{ Render::VCSem_TexCoord, nullptr, 6, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
+		{ Render::VCSem_TexCoord, nullptr, 7, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
+		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true } };
+
+	_ShapeVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(ShapeComponents, sizeof_array(ShapeComponents));
+
+	// TODO: dynamically growing buffers!
+	auto ShapeInstanceVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(ShapeComponents + 1, sizeof_array(ShapeComponents) - 1);
+	_ShapeInstanceBuffer = GraphicsMgr.GetGPU()->CreateVertexBuffer(*ShapeInstanceVertexLayout, MAX_SHAPE_INSTANCES_PER_DIP, Render::Access_CPU_Write | Render::Access_GPU_Read);
+
+	// Position with size in W, color
+	Render::CVertexComponent PrimitiveComponents[] = {
+		{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false },
+		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false } };
+
+	_PrimitiveVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(PrimitiveComponents, sizeof_array(PrimitiveComponents));
+}
+//---------------------------------------------------------------------
+
+CDebugDraw::~CDebugDraw() { __DestructSingleton; }
+//---------------------------------------------------------------------
+
+void CDebugDraw::Render()
+{
 //	if (!InstanceBuffer->IsValid())
 //		n_assert(InstanceBuffer->Create(InstVL, MaxShapesPerDIP, Usage_Dynamic, CPU_Write));
 //
@@ -248,54 +141,117 @@ __ImplementSingleton(CDebugDraw);
 //		ShapeShader->EndPass();
 //		ShapeShader->End();
 //	}
-//}
-////---------------------------------------------------------------------
-//
-//void CDebugDraw::RenderText()
-//{
-//	if (!Texts.GetCount() || !pD3DXFont) return;
-//
-//	pD3DXSprite->Begin(D3DXSPRITE_ALPHABLEND | D3DXSPRITE_SORT_TEXTURE);
-//
-//	RECT r;
-//	for (int i = 0; i < Texts.GetCount(); ++i)
-//	{
-//		const CDDText& Text = Texts[i];
-//
-//		DWORD Fmt = DT_NOCLIP | DT_EXPANDTABS;
-//		if (Text.Wrap) Fmt |= DT_WORDBREAK;
-//
-//		switch (Text.HAlign)
-//		{
-//			case Align_Left:	Fmt |= DT_LEFT; break;
-//			case Align_HCenter:	Fmt |= DT_CENTER; break;
-//			case Align_Right:	Fmt |= DT_RIGHT; break;
-//		}
-//
-//		switch (Text.VAlign)
-//		{
-//			case Align_Top:		Fmt |= DT_TOP; break;
-//			case Align_VCenter:	Fmt |= DT_VCENTER; break;
-//			case Align_Bottom:	Fmt |= DT_BOTTOM; break;
-//		}
-//
-//		int X, Y;
-//		RenderSrv->GetDisplay().GetAbsoluteXY(Text.Left, Text.Top, X, Y);
-//		r.left = X;
-//		r.top = Y;
-//		RenderSrv->GetDisplay().GetAbsoluteXY(std::min(Text.Left + Text.Width, 1.f), 1.f, X, Y);
-//		r.right = X;
-//		r.bottom = Y;
-//
-//		D3DCOLOR Color = D3DCOLOR_COLORVALUE(Text.Color.x, Text.Color.y, Text.Color.z, Text.Color.w);
-//
-//		pD3DXFont->DrawTextA(pD3DXSprite, Text.Text.CStr(), -1, &r, Fmt, Color);
-//	}
-//
-//	pD3DXSprite->End();
-//
-//	Texts.Clear();
-//}
-////---------------------------------------------------------------------
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color)
+{
+	AddTriangleVertex(P1, Color);
+	AddTriangleVertex(P2, Color);
+	AddTriangleVertex(P3, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawBox(const matrix44& Tfm, const vector4& Color)
+{
+	ShapeInsts[Box].push_back({ Tfm, Color });
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawSphere(const vector3& Pos, float R, const vector4& Color)
+{
+	ShapeInsts[Sphere].push_back(
+	{
+		{
+			R, 0.f, 0.f, 0.f,
+			0.f, R, 0.f, 0.f,
+			0.f, 0.f, R, 0.f,
+			Pos.x, Pos.y, Pos.z, 1.f
+		},
+		Color
+	});
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color)
+{
+	ShapeInsts[Sphere].push_back(
+	{
+		matrix44
+		{
+			R, 0.f, 0.f, 0.f,
+			0.f, Length, 0.f, 0.f,
+			0.f, 0.f, R, 0.f,
+			0.f, 0.f, 0.f, 1.f
+		} * Tfm,
+		Color
+	});
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color)
+{
+	DrawSphere(Tfm * vector3(0.0f, Length * -0.5f, 0.0f), R, Color);
+	DrawSphere(Tfm * vector3(0.0f, Length * 0.5f, 0.0f), R, Color);
+	DrawCylinder(Tfm, R, Length, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, const vector4& Color)
+{
+	AddLineVertex(P1, Color);
+	AddLineVertex(P2, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawBoxWireframe(const CAABB& Box, const vector4& Color)
+{
+	vector3 mmm = Box.GetCorner(0);
+	vector3 mMm = Box.GetCorner(1);
+	vector3 MMm = Box.GetCorner(2);
+	vector3 Mmm = Box.GetCorner(3);
+	vector3 MMM = Box.GetCorner(4);
+	vector3 mMM = Box.GetCorner(5);
+	vector3 mmM = Box.GetCorner(6);
+	vector3 MmM = Box.GetCorner(7);
+	DrawLine(mmm, Mmm, Color);
+	DrawLine(mmm, mMm, Color);
+	DrawLine(mmm, mmM, Color);
+	DrawLine(MMM, MMm, Color);
+	DrawLine(MMM, mMM, Color);
+	DrawLine(MMM, MmM, Color);
+	DrawLine(mMm, mMM, Color);
+	DrawLine(mMm, MMm, Color);
+	DrawLine(mMM, mmM, Color);
+	DrawLine(Mmm, MmM, Color);
+	DrawLine(mmM, MmM, Color);
+	DrawLine(MMm, Mmm, Color);
+}
+//---------------------------------------------------------------------
+
+void CDebugDraw::DrawCoordAxes(const matrix44& Tfm, bool DrawX, bool DrawY, bool DrawZ)
+{
+	if (DrawX) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisX(), vector4::Red);
+	if (DrawY) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisY(), vector4::Green);
+	if (DrawZ) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisZ(), vector4::Blue);
+}
+//---------------------------------------------------------------------
+
+/*
+bool CDebugDraw::DrawText(const char* pText, float Left, float Top, const vector4& Color, float Width, bool Wrap, EHAlign HAlign, EVAlign VAlign)
+{
+	CDDText* pT = Texts.Reserve(1);
+	pT->Text = pText;
+	pT->Color = Color;
+	pT->Left = Left;
+	pT->Top = Top;
+	pT->Width = Width;
+	pT->Wrap = Wrap;
+	pT->HAlign = HAlign;
+	pT->VAlign = VAlign;
+	OK;
+}
+//---------------------------------------------------------------------
+*/
 
 }

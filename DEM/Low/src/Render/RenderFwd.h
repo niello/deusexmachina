@@ -57,9 +57,6 @@ const UPTR Adapter_Primary = 0;
 const UPTR Adapter_Secondary = 1;
 const UPTR Output_None = (UPTR)-1;
 
-// Named data flow conventions between CPU and GPU, see Renderer.cpp for implementation and details
-UPTR RegisterShaderInputSetID(CStrID InputSetName);
-
 enum EGPUDriverType
 {
 	// Prefers hardware driver when possible and falls back to reference device.
