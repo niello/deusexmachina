@@ -400,4 +400,79 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 }
 //---------------------------------------------------------------------
 
+PResourceObject CMeshGeneratorCone::CreateResource(CStrID UID)
+{
+	Render::PMeshData MeshData = n_new(Render::CMeshData);
+	MeshData->IndexType = Render::Index_16;
+	MeshData->VertexCount = _SectorCount + 1;
+	MeshData->IndexCount = 6 * _SectorCount - 6;
+
+	Render::CVertexComponent VC;
+	VC.Format = Render::VCFmt_Float32_3;
+	VC.Semantic = Render::VCSem_Position;
+	VC.Index = 0;
+	VC.Stream = 0;
+	VC.UserDefinedName = nullptr;
+	VC.Stream = 0;
+	VC.OffsetInVertex = DEM_VERTEX_COMPONENT_OFFSET_DEFAULT;
+	VC.PerInstanceData = false;
+	MeshData->VertexFormat.push_back(std::move(VC));
+
+	std::vector<vector3> Vertices;
+	Vertices.reserve(MeshData->VertexCount);
+
+	const float StepInRadians = (2.f * PI) / static_cast<float>(_SectorCount);
+	constexpr float Radius = 0.5f;
+	constexpr float HalfHeight = 0.5f;
+
+	// Tip
+	Vertices.push_back({ 0.f, HalfHeight, 0.f });
+
+	// Circle
+	for (U16 i = 0; i < _SectorCount; ++i)
+	{
+		const float Longitude = StepInRadians * i;
+		Vertices.push_back({ Radius * std::sinf(Longitude), -HalfHeight, Radius * std::cosf(Longitude) });
+	}
+
+	std::vector<U16> Indices;
+	Indices.reserve(MeshData->IndexCount);
+
+	// Skirt
+	for (U16 i = 0; i < (_SectorCount - 1); ++i)
+		Indices.insert(Indices.end(), { 0, static_cast<U16>(i + 1), static_cast<U16>(i + 2) });
+	Indices.insert(Indices.end(), { 0, _SectorCount, 1 });
+
+	// Circle
+	for (U16 i = 2; i < _SectorCount; ++i)
+		Indices.insert(Indices.end(), { 1, static_cast<U16>(i + 1), i });
+
+	// Swap winding if required
+	if (_FrontClockWise)
+		for (UPTR i = 0; i < Indices.size(); i += 3)
+			std::swap(Indices[i + 1], Indices[i + 2]);
+
+	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
+	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
+	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
+
+	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
+	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
+	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
+
+	Render::CPrimitiveGroup Group;
+	Group.Topology = Render::Prim_TriList;
+	Group.FirstVertex = 0;
+	Group.VertexCount = Vertices.size();
+	Group.FirstIndex = 0;
+	Group.IndexCount = Indices.size();
+	Group.AABB.Min.set(-Radius, -HalfHeight, -Radius);
+	Group.AABB.Max.set(Radius, HalfHeight, Radius);
+
+	MeshData->InitGroups(&Group, 1, 1, 1, false, false);
+
+	return MeshData;
+}
+//---------------------------------------------------------------------
+
 }
