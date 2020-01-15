@@ -32,7 +32,7 @@ public:
 	const CCollisionShape* GetCollisionShape() const;
 	U16                    GetCollisionGroup() const;
 	U16                    GetCollisionMask() const;
-	//void SetActive(bool Active);
+	virtual void           SetActive(bool Active, bool Always = false) = 0;
 	bool                   IsActive() const;
 };
 

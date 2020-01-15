@@ -73,9 +73,13 @@ CMovableCollider::~CMovableCollider()
 }
 //---------------------------------------------------------------------
 
-void CMovableCollider::SetActive(bool Active)
+void CMovableCollider::SetActive(bool Active, bool Always)
 {
-	_pBtObject->forceActivationState(Active ? DISABLE_DEACTIVATION : WANTS_DEACTIVATION /* DISABLE_SIMULATION */);
+	// Kinematic object must never be auto-deactivated
+	if (Active)
+		_pBtObject->forceActivationState(DISABLE_DEACTIVATION);
+	else
+		_pBtObject->forceActivationState(Always ? DISABLE_SIMULATION : WANTS_DEACTIVATION);
 }
 //---------------------------------------------------------------------
 

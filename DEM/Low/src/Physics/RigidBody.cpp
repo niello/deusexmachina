@@ -118,20 +118,21 @@ void CRigidBody::GetTransform(vector3& OutPos, quaternion& OutRot) const
 }
 //---------------------------------------------------------------------
 
-float CRigidBody::GetInvMass() const
-{
-	return static_cast<btRigidBody*>(_pBtObject)->getInvMass();
-}
-//---------------------------------------------------------------------
-
 void CRigidBody::SetActive(bool Active, bool Always)
 {
+	// Dynamic object activates and deactivates normally
 	if (Always)
 		_pBtObject->forceActivationState(Active ? DISABLE_DEACTIVATION : DISABLE_SIMULATION);
 	else if (Active)
 		_pBtObject->activate();
 	else
 		_pBtObject->forceActivationState(WANTS_DEACTIVATION);
+}
+//---------------------------------------------------------------------
+
+float CRigidBody::GetInvMass() const
+{
+	return static_cast<btRigidBody*>(_pBtObject)->getInvMass();
 }
 //---------------------------------------------------------------------
 
