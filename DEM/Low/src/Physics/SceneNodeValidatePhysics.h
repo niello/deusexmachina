@@ -17,12 +17,11 @@ class CSceneNodeValidatePhysics: public Scene::INodeVisitor
 {
 protected:
 
-	Resources::CResourceManager& _ResMgr;
 	CPhysicsLevel& _Level;
 
 public:
 
-	CSceneNodeValidatePhysics(Resources::CResourceManager& ResMgr, CPhysicsLevel& Level);
+	CSceneNodeValidatePhysics(CPhysicsLevel& Level) : _Level(Level) {}
 
 	virtual bool Visit(Scene::CSceneNode& Node) override;
 };

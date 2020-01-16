@@ -46,8 +46,8 @@ public:
 	}
 };
 
-CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, float Mass, const matrix44& InitialTfm)
-	: CPhysicsObject(Level)
+CRigidBody::CRigidBody(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, float Mass, const matrix44& InitialTfm)
+	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
 	n_assert(Mass != 0.f);
 
@@ -69,21 +69,31 @@ CRigidBody::CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 Collisi
 	_pBtObject->setUserPointer(this);
 	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //???shape offset?
 	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
-
-	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), CollisionGroup, CollisionMask);
 }
 //---------------------------------------------------------------------
 
 CRigidBody::~CRigidBody()
 {
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	if (_Level) _Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
 
-	_Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 	delete static_cast<btRigidBody*>(_pBtObject)->getMotionState();
 	delete _pBtObject;
+	pShape->Release(); // See constructor
+}
+//---------------------------------------------------------------------
 
-	// See constructor
-	pShape->Release();
+void CRigidBody::AttachToLevelInternal()
+{
+	const U16 Group = _Level->CollisionGroups.GetMask(_CollisionGroupID ? _CollisionGroupID.CStr() : "Default");
+	const U16 Mask = _Level->CollisionGroups.GetMask(_CollisionMaskID ? _CollisionMaskID.CStr() : "All");
+	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), Group, Mask);
+}
+//---------------------------------------------------------------------
+
+void CRigidBody::RemoveFromLevelInternal()
+{
+	_Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
 }
 //---------------------------------------------------------------------
 
@@ -93,7 +103,7 @@ void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
 	pMotionState->SetSceneNode(pNode);
 	if (pNode)
 	{
-		_Level->GetBtWorld()->synchronizeSingleMotionState(static_cast<btRigidBody*>(_pBtObject));
+		if (_Level) _Level->GetBtWorld()->synchronizeSingleMotionState(static_cast<btRigidBody*>(_pBtObject));
 		_pBtObject->activate();
 	}
 }

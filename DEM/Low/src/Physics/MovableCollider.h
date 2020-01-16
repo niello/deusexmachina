@@ -13,9 +13,14 @@ class CMovableCollider : public CPhysicsObject
 {
 	RTTI_CLASS_DECL;
 
+protected:
+
+	virtual void AttachToLevelInternal() override;
+	virtual void RemoveFromLevelInternal() override;
+
 public:
 
-	CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm = matrix44::Identity);
+	CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm = matrix44::Identity);
 	virtual ~CMovableCollider() override;
 
 	virtual void SetTransform(const matrix44& Tfm) override;

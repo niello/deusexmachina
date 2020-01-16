@@ -22,22 +22,22 @@ bool CCollisionAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 		{
 			case 'SHAP':
 			{
-				ShapeUID = DataReader.Read<CStrID>();
+				_ShapeUID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'STAT':
 			{
-				Static = DataReader.Read<bool>();
+				_Static = DataReader.Read<bool>();
 				break;
 			}
 			case 'COGR':
 			{
-				CollisionGroupID = DataReader.Read<CStrID>();
+				_CollisionGroupID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'COMA':
 			{
-				CollisionMaskID = DataReader.Read<CStrID>();
+				_CollisionMaskID = DataReader.Read<CStrID>();
 				break;
 			}
 			default: FAIL;
@@ -51,66 +51,77 @@ bool CCollisionAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Cou
 Scene::PNodeAttribute CCollisionAttribute::Clone()
 {
 	PCollisionAttribute ClonedAttr = n_new(CCollisionAttribute());
-	ClonedAttr->ShapeUID = ShapeUID;
-	ClonedAttr->CollisionGroupID = CollisionGroupID;
-	ClonedAttr->CollisionMaskID = CollisionMaskID;
+	ClonedAttr->_ShapeUID = _ShapeUID;
+	ClonedAttr->_CollisionGroupID = _CollisionGroupID;
+	ClonedAttr->_CollisionMaskID = _CollisionMaskID;
 	return ClonedAttr;
-}
-//---------------------------------------------------------------------
-
-void CCollisionAttribute::OnActivityChanged(bool Active)
-{
-	// detach from physics level!
-	//!!!level must be stored in attr!
 }
 //---------------------------------------------------------------------
 
 void CCollisionAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 {
-	if (!Collider) return;
+	if (!_Collider) return;
 
-	if (_pNode->GetTransformVersion() != LastTransformVersion)
+	if (_pNode->GetTransformVersion() != _LastTransformVersion)
 	{
-		Collider->SetTransform(_pNode->GetWorldMatrix());
-		LastTransformVersion = _pNode->GetTransformVersion();
+		_Collider->SetTransform(_pNode->GetWorldMatrix());
+		_LastTransformVersion = _pNode->GetTransformVersion();
 	}
 	else
 	{
-		Collider->SetActive(false);
+		_Collider->SetActive(false);
 	}
 }
 //---------------------------------------------------------------------
 
-bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr, CPhysicsLevel& Level)
+bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
 	if (!_pNode) FAIL;
 
-	Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(ShapeUID);
+	Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(_ShapeUID);
 	if (!RShape) FAIL;
 
 	auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
 	if (!Shape) FAIL;
 
-	const U16 Group = Level.CollisionGroups.GetMask(CollisionGroupID ? CollisionGroupID.CStr() : "Default");
-	const U16 Mask = Level.CollisionGroups.GetMask(CollisionMaskID ? CollisionMaskID.CStr() : "All");
-
 	// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
-	if (Static)
-		Collider = n_new(Physics::CStaticCollider(Level, *Shape, Group, Mask, _pNode->GetWorldMatrix()));
+	if (_Static)
+		_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
 	else
-		Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, _pNode->GetWorldMatrix()));
+		_Collider = n_new(Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
 
 	// Just updated, save redundant update
-	LastTransformVersion = _pNode->GetTransformVersion();
+	_LastTransformVersion = _pNode->GetTransformVersion();
+
+	if (IsActive() && _Level) _Collider->AttachToLevel(*_Level);
+	else _Collider->RemoveFromLevel();
 
 	OK;
 }
 //---------------------------------------------------------------------
 
+void CCollisionAttribute::SetPhysicsLevel(PPhysicsLevel Level)
+{
+	_Level = Level;
+	if (IsActive() && _Collider)
+	{
+		if (_Level) _Collider->AttachToLevel(*_Level);
+		else _Collider->RemoveFromLevel();
+	}
+}
+//---------------------------------------------------------------------
+
+void CCollisionAttribute::OnActivityChanged(bool Active)
+{
+	if (Active && _Level) _Collider->AttachToLevel(*_Level);
+	else _Collider->RemoveFromLevel();
+}
+//---------------------------------------------------------------------
+
 bool CCollisionAttribute::GetGlobalAABB(CAABB& OutBox) const
 {
-	if (!Collider) FAIL;
-	Collider->GetGlobalAABB(OutBox);
+	if (!_Collider) FAIL;
+	_Collider->GetGlobalAABB(OutBox);
 	OK;
 }
 //---------------------------------------------------------------------

@@ -4,24 +4,34 @@
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/CollisionDispatch/btCollisionObject.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
-#include <BulletCollision/BroadphaseCollision/btBroadphaseProxy.h>
 
 namespace Physics
 {
 RTTI_CLASS_IMPL(Physics::CPhysicsObject, Core::CObject);
 
-CPhysicsObject::CPhysicsObject(CPhysicsLevel& Level)
-	: _Level(&Level)
+CPhysicsObject::CPhysicsObject(CStrID CollisionGroupID, CStrID CollisionMaskID)
+	: _CollisionGroupID(CollisionGroupID)
+	, _CollisionMaskID(CollisionMaskID)
 {
 }
 //---------------------------------------------------------------------
 
-CPhysicsObject::~CPhysicsObject() = default;
+void CPhysicsObject::AttachToLevel(CPhysicsLevel& Level)
+{
+	if (_Level == &Level) return;
+
+	if (_Level) RemoveFromLevel();
+
+	_Level = &Level;
+	AttachToLevelInternal();
+}
 //---------------------------------------------------------------------
 
-bool CPhysicsObject::IsActive() const
+void CPhysicsObject::RemoveFromLevel()
 {
-	return _pBtObject ? _pBtObject->isActive() : false;
+	if (!_Level) return;
+	RemoveFromLevelInternal();
+	_Level = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -31,8 +41,10 @@ void CPhysicsObject::GetPhysicsAABB(CAABB& OutBox) const
 	if (!_pBtObject) return;
 
 	btVector3 Min, Max;
-	_Level->GetBtWorld()->getBroadphase()->getAabb(_pBtObject->getBroadphaseHandle(), Min, Max);
-	//pBtCollObj->getCollisionShape()->getAabb(pBtCollObj->getWorldTransform(), Min, Max);
+	if (_Level)
+		_Level->GetBtWorld()->getBroadphase()->getAabb(_pBtObject->getBroadphaseHandle(), Min, Max);
+	else
+		_pBtObject->getCollisionShape()->getAabb(_pBtObject->getWorldTransform(), Min, Max);
 	OutBox.Min = BtVectorToVector(Min);
 	OutBox.Max = BtVectorToVector(Max);
 }
@@ -44,15 +56,9 @@ const CCollisionShape* CPhysicsObject::GetCollisionShape() const
 }
 //---------------------------------------------------------------------
 
-U16 CPhysicsObject::GetCollisionGroup() const
+bool CPhysicsObject::IsActive() const
 {
-	return _pBtObject ? _pBtObject->getBroadphaseHandle()->m_collisionFilterGroup : 0;
-}
-//---------------------------------------------------------------------
-
-U16 CPhysicsObject::GetCollisionMask() const
-{
-	return _pBtObject ? _pBtObject->getBroadphaseHandle()->m_collisionFilterMask : 0;
+	return _pBtObject ? _pBtObject->isActive() : false;
 }
 //---------------------------------------------------------------------
 

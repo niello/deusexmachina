@@ -16,9 +16,14 @@ class CRigidBody : public CPhysicsObject
 {
 	RTTI_CLASS_DECL;
 
+protected:
+
+	virtual void AttachToLevelInternal() override;
+	virtual void RemoveFromLevelInternal() override;
+
 public:
 
-	CRigidBody(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, float Mass, const matrix44& InitialTfm = matrix44::Identity);
+	CRigidBody(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, float Mass, const matrix44& InitialTfm = matrix44::Identity);
 	virtual ~CRigidBody() override;
 
 	void         SetControlledNode(Scene::CSceneNode* pNode);

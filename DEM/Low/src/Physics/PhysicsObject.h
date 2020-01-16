@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Object.h>
+#include <Data/StringID.h>
 #include <Math/AABB.h>
 
 // Base class for all physics objects. Has collision shape and transformation.
@@ -19,21 +20,29 @@ protected:
 
 	btCollisionObject* _pBtObject = nullptr;
 	PPhysicsLevel      _Level;
+	CStrID             _CollisionGroupID;
+	CStrID             _CollisionMaskID;
+
+	virtual void           AttachToLevelInternal() = 0;
+	virtual void           RemoveFromLevelInternal() = 0;
 
 public:
 
-	CPhysicsObject(CPhysicsLevel& Level);
-	virtual ~CPhysicsObject() override;
+	CPhysicsObject(CStrID CollisionGroupID, CStrID CollisionMaskID);
+
+	void                   AttachToLevel(CPhysicsLevel& Level);
+	void                   RemoveFromLevel();
 
 	virtual void           SetTransform(const matrix44& Tfm) = 0;
 	virtual void           GetTransform(matrix44& OutTfm) const = 0;
 	virtual void           GetGlobalAABB(CAABB& OutBox) const = 0;
 	void                   GetPhysicsAABB(CAABB& OutBox) const;
 	const CCollisionShape* GetCollisionShape() const;
-	U16                    GetCollisionGroup() const;
-	U16                    GetCollisionMask() const;
+	CStrID                 GetCollisionGroup() const { return _CollisionGroupID; }
+	CStrID                 GetCollisionMask() const { return _CollisionMaskID; }
 	virtual void           SetActive(bool Active, bool Always = false) = 0;
 	bool                   IsActive() const;
+	CPhysicsLevel*         GetLevel() const { return _Level.Get(); }
 };
 
 typedef Ptr<CPhysicsObject> PPhysicsObject;

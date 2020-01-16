@@ -36,11 +36,8 @@ bool CPropTrigger::InternalActivate()
 					 GetEntity()->GetAttr<int>(CStrID("TrgShapeType")));
 	}
 
-	auto& PhysicsLevel = *GetEntity()->GetLevel()->GetPhysics();
-	U16 Group = PhysicsLevel.CollisionGroups.GetMask("Trigger");
-	U16 Mask = PhysicsLevel.CollisionGroups.GetMask("All") & ~Group;
-
-	CollObj = n_new(Physics::CStaticCollider(PhysicsLevel, *Shape, Group, Mask));
+	CollObj = n_new(Physics::CStaticCollider(*Shape, CStrID("Trigger"), CStrID("All&~Trigger")));
+	CollObj->AttachToLevel(*GetEntity()->GetLevel()->GetPhysics());
 	//!!!FIXME PHYSICS: CollObj->GetBtObject()->setCollisionFlags(CollObj->GetBtObject()->getCollisionFlags() | btCollisionObject::CF_NO_CONTACT_RESPONSE);
 
 	SetEnabled(GetEntity()->GetAttr<bool>(CStrID("TrgEnabled")));

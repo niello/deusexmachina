@@ -33,8 +33,8 @@ public:
 	virtual void setWorldTransform(const btTransform& worldTrans) override { /* must not be called on static and kinematic objects */ }
 };
 
-CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm)
-	: CPhysicsObject(Level)
+CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm)
+	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
 	// Instead of storing strong ref, we manually control refcount and use
 	// a pointer from the bullet collision shape
@@ -55,21 +55,31 @@ CMovableCollider::CMovableCollider(CPhysicsLevel& Level, CCollisionShape& Shape,
 	// TODO: terrain is most probably a static collider, not movable!
 	if (Shape.IsA<CHeightfieldShape>())
 		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
-
-	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), CollisionGroup, CollisionMask);
 }
 //---------------------------------------------------------------------
 
 CMovableCollider::~CMovableCollider()
 {
-	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
+	if (_Level) _Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
 
-	_Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
+	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
 	delete static_cast<btRigidBody*>(_pBtObject)->getMotionState();
 	delete _pBtObject;
+	pShape->Release(); // See constructor
+}
+//---------------------------------------------------------------------
 
-	// See constructor
-	pShape->Release();
+void CMovableCollider::AttachToLevelInternal()
+{
+	const U16 Group = _Level->CollisionGroups.GetMask(_CollisionGroupID ? _CollisionGroupID.CStr() : "Default");
+	const U16 Mask = _Level->CollisionGroups.GetMask(_CollisionMaskID ? _CollisionMaskID.CStr() : "All");
+	_Level->GetBtWorld()->addRigidBody(static_cast<btRigidBody*>(_pBtObject), Group, Mask);
+}
+//---------------------------------------------------------------------
+
+void CMovableCollider::RemoveFromLevelInternal()
+{
+	_Level->GetBtWorld()->removeRigidBody(static_cast<btRigidBody*>(_pBtObject));
 }
 //---------------------------------------------------------------------
 

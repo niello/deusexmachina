@@ -10,8 +10,8 @@ namespace Physics
 {
 RTTI_CLASS_IMPL(Physics::CStaticCollider, Physics::CPhysicsObject);
 
-CStaticCollider::CStaticCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U16 CollisionGroup, U16 CollisionMask, const matrix44& InitialTfm)
-	: CPhysicsObject(Level)
+CStaticCollider::CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm)
+	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
 	// Instead of storing strong ref, we manually control refcount and use
 	// a pointer from the bullet collision shape
@@ -29,20 +29,30 @@ CStaticCollider::CStaticCollider(CPhysicsLevel& Level, CCollisionShape& Shape, U
 	// TODO: terrain is most probably a static collider, not movable!
 	if (Shape.IsA<CHeightfieldShape>())
 		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
-
-	_Level->GetBtWorld()->addCollisionObject(_pBtObject, CollisionGroup, CollisionMask);
 }
 //---------------------------------------------------------------------
 
 CStaticCollider::~CStaticCollider()
 {
+	if (_Level) _Level->GetBtWorld()->removeCollisionObject(_pBtObject);
+
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());
-
-	_Level->GetBtWorld()->removeCollisionObject(_pBtObject);
 	delete _pBtObject;
+	pShape->Release(); // See constructor
+}
+//---------------------------------------------------------------------
 
-	// See constructor
-	pShape->Release();
+void CStaticCollider::AttachToLevelInternal()
+{
+	const U16 Group = _Level->CollisionGroups.GetMask(_CollisionGroupID ? _CollisionGroupID.CStr() : "Default");
+	const U16 Mask = _Level->CollisionGroups.GetMask(_CollisionMaskID ? _CollisionMaskID.CStr() : "All");
+	_Level->GetBtWorld()->addCollisionObject(_pBtObject, Group, Mask);
+}
+//---------------------------------------------------------------------
+
+void CStaticCollider::RemoveFromLevelInternal()
+{
+	_Level->GetBtWorld()->removeCollisionObject(_pBtObject);
 }
 //---------------------------------------------------------------------
 
@@ -52,7 +62,7 @@ void CStaticCollider::SetTransform(const matrix44& Tfm)
 	btTransform BtTfm = TfmToBtTfm(Tfm);
 	BtTfm.getOrigin() = BtTfm * VectorToBtVector(pShape->GetOffset());
 	_pBtObject->setWorldTransform(BtTfm);
-	//???need? _Level->GetBtWorld()->updateSingleAabb(_pBtObject);
+	//???need? if (_Level) _Level->GetBtWorld()->updateSingleAabb(_pBtObject);
 }
 //---------------------------------------------------------------------
 

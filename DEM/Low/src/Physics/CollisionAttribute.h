@@ -11,7 +11,7 @@
 namespace Physics
 {
 typedef Ptr<class CPhysicsObject> PPhysicsObject;
-class CPhysicsLevel;
+typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
 
 class CCollisionAttribute: public Scene::CNodeAttribute
 {
@@ -19,12 +19,13 @@ class CCollisionAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	PPhysicsObject Collider;
-	U32            LastTransformVersion = 0;
-	CStrID         ShapeUID;
-	CStrID         CollisionGroupID;
-	CStrID         CollisionMaskID;
-	bool           Static = false;
+	PPhysicsObject _Collider;
+	PPhysicsLevel  _Level;
+	U32            _LastTransformVersion = 0;
+	CStrID         _ShapeUID;
+	CStrID         _CollisionGroupID;
+	CStrID         _CollisionMaskID;
+	bool           _Static = false;
 
 	virtual void                  OnActivityChanged(bool Active) override;
 
@@ -33,7 +34,8 @@ public:
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual Scene::PNodeAttribute Clone() override;
 	virtual void                  UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount) override;
-	bool                          ValidateResources(Resources::CResourceManager& ResMgr, CPhysicsLevel& Level);
+	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
+	void                          SetPhysicsLevel(PPhysicsLevel Level);
 	bool                          GetGlobalAABB(CAABB& OutBox) const;
 };
 
