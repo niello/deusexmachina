@@ -153,7 +153,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/CollisionAttribute.h
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.h
 	DEM/Low/src/Physics/CollisionShape.h
-	DEM/Low/src/Physics/CollisionShapeLoader.h
 	DEM/Low/src/Physics/HeightfieldShape.h
 	DEM/Low/src/Physics/MovableCollider.h
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
@@ -330,7 +329,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/StringID.cpp
 	DEM/Low/src/Data/StringIDStorage.cpp
 	DEM/Low/src/Data/StringUtils.cpp
-	DEM/Low/src/Data/Loaders/StringTableFromExcelXML.cpp
 	DEM/Low/src/Debug/DebugDraw.cpp
 	DEM/Low/src/Debug/DebugServer.cpp
 	DEM/Low/src/Debug/LuaConsole.cpp
@@ -402,7 +400,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Physics/CollisionAttribute.cpp
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.cpp
 	DEM/Low/src/Physics/CollisionShape.cpp
-	DEM/Low/src/Physics/CollisionShapeLoader.cpp
 	DEM/Low/src/Physics/HeightfieldShape.cpp
 	DEM/Low/src/Physics/MovableCollider.cpp
 	DEM/Low/src/Physics/PhysicsDebugDraw.cpp
