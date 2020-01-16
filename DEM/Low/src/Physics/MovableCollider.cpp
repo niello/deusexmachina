@@ -1,7 +1,7 @@
 #include "MovableCollider.h"
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
-#include <Physics/HeightfieldShape.h>
+#include <Physics/CollisionShape.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletCollision/CollisionShapes/btCollisionShape.h>
@@ -33,7 +33,7 @@ public:
 	virtual void setWorldTransform(const btTransform& worldTrans) override { /* must not be called on static and kinematic objects */ }
 };
 
-CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm)
+CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
 	// Instead of storing strong ref, we manually control refcount and use
@@ -44,17 +44,9 @@ CMovableCollider::CMovableCollider(CCollisionShape& Shape, CStrID CollisionGroup
 		0.f,
 		new CKinematicMotionState(InitialTfm, Shape.GetOffset()),
 		Shape.GetBulletShape());
-	//!!!set friction and restitution! for spheres always need rolling friction! TODO: physics material
 
-	_pBtObject = new btRigidBody(CI);
+	SetupInternalObject(new btRigidBody(CI), Shape, Material);
 	_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btRigidBody::CF_KINEMATIC_OBJECT);
-	_pBtObject->setUserPointer(this);
-
-	// As of Bullet v2.81 SDK, debug drawer tries to draw each heightfield triangle wireframe,
-	// so we disable debug drawing of terrain at all
-	// TODO: terrain is most probably a static collider, not movable!
-	if (Shape.IsA<CHeightfieldShape>())
-		_pBtObject->setCollisionFlags(_pBtObject->getCollisionFlags() | btCollisionObject::CF_DISABLE_VISUALIZE_OBJECT);
 }
 //---------------------------------------------------------------------
 

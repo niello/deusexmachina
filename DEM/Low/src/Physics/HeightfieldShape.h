@@ -12,6 +12,8 @@ typedef std::unique_ptr<char[]> PHeightfieldData;
 
 class CHeightfieldShape : public CCollisionShape
 {
+	RTTI_CLASS_DECL;
+
 protected:
 
 	PHeightfieldData _HeightfieldData;

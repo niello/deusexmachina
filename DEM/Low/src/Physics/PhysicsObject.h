@@ -1,5 +1,6 @@
 #pragma once
 #include <Core/Object.h>
+#include <Physics/PhysicsMaterial.h>
 #include <Data/StringID.h>
 #include <Math/AABB.h>
 
@@ -25,6 +26,8 @@ protected:
 
 	virtual void           AttachToLevelInternal() = 0;
 	virtual void           RemoveFromLevelInternal() = 0;
+
+	void                   SetupInternalObject(btCollisionObject* pBtObject, const CCollisionShape& Shape, const CPhysicsMaterial& Material);
 
 public:
 

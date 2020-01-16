@@ -46,7 +46,7 @@ public:
 	}
 };
 
-CRigidBody::CRigidBody(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, float Mass, const matrix44& InitialTfm)
+CRigidBody::CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm, const CPhysicsMaterial& Material)
 	: CPhysicsObject(CollisionGroupID, CollisionMaskID)
 {
 	n_assert(Mass != 0.f);
@@ -63,10 +63,8 @@ CRigidBody::CRigidBody(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID C
 		new CDynamicMotionState(Shape.GetOffset()),
 		Shape.GetBulletShape(),
 		Inertia);
-	//!!!set friction and restitution! for spheres always need rolling friction! TODO: physics material
 
-	_pBtObject = new btRigidBody(CI);
-	_pBtObject->setUserPointer(this);
+	SetupInternalObject(new btRigidBody(CI), Shape, Material);
 	_pBtObject->setWorldTransform(TfmToBtTfm(InitialTfm)); //???shape offset?
 	_pBtObject->setInterpolationWorldTransform(_pBtObject->getWorldTransform());
 }

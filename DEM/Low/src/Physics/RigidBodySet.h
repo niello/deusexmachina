@@ -30,7 +30,6 @@ protected:
 
 public:
 
-	CRigidBodySet(Scene::CSceneNode& Node /*, rigid body (or its params)*/);
 	~CRigidBodySet();
 
 	// Add body

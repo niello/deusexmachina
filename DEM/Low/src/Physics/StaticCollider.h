@@ -18,7 +18,7 @@ protected:
 
 public:
 
-	CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, const matrix44& InitialTfm = matrix44::Identity);
+	CStaticCollider(CCollisionShape& Shape, CStrID CollisionGroupID = CStrID::Empty, CStrID CollisionMaskID = CStrID::Empty, const matrix44& InitialTfm = matrix44::Identity, const CPhysicsMaterial& Material = CPhysicsMaterial::Default());
 	virtual ~CStaticCollider() override;
 
 	virtual void SetTransform(const matrix44& Tfm) override;

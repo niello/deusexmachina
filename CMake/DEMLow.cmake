@@ -158,6 +158,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/MovableCollider.h
 	DEM/Low/src/Physics/PhysicsDebugDraw.h
 	DEM/Low/src/Physics/PhysicsLevel.h
+	DEM/Low/src/Physics/PhysicsMaterial.h
 	DEM/Low/src/Physics/PhysicsObject.h
 	DEM/Low/src/Physics/RigidBody.h
 	DEM/Low/src/Physics/RigidBodySet.h

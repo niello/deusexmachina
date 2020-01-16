@@ -23,7 +23,7 @@ protected:
 
 public:
 
-	CRigidBody(CCollisionShape& Shape, CStrID CollisionGroupID, CStrID CollisionMaskID, float Mass, const matrix44& InitialTfm = matrix44::Identity);
+	CRigidBody(float Mass, CCollisionShape& Shape, CStrID CollisionGroupID = CStrID::Empty, CStrID CollisionMaskID = CStrID::Empty, const matrix44& InitialTfm = matrix44::Identity, const CPhysicsMaterial& Material = CPhysicsMaterial::Default());
 	virtual ~CRigidBody() override;
 
 	void         SetControlledNode(Scene::CSceneNode* pNode);
