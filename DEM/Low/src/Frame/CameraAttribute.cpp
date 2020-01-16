@@ -1,4 +1,5 @@
 #include "CameraAttribute.h"
+#include <Scene/SceneNode.h>
 #include <Core/Factory.h>
 
 namespace Frame
@@ -48,7 +49,7 @@ Scene::PNodeAttribute CCameraAttribute::Clone()
 	ClonedAttr->_Height = _Height;
 	ClonedAttr->_NearPlane = _NearPlane;
 	ClonedAttr->_FarPlane = _FarPlane;
-	ClonedAttr->Flags.SetTo(Orthogonal, IsOrthogonal());
+	ClonedAttr->_Flags.SetTo(Orthogonal, IsOrthogonal());
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------
@@ -57,9 +58,9 @@ void CCameraAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICo
 {
 	bool ViewOrProjChanged = false;
 
-	if (Flags.Is(ProjDirty))
+	if (_Flags.Is(ProjDirty))
 	{
-		if (Flags.Is(Orthogonal)) _Proj.orthoRh(_Width, _Height, _NearPlane, _FarPlane);
+		if (_Flags.Is(Orthogonal)) _Proj.orthoRh(_Width, _Height, _NearPlane, _FarPlane);
 		else _Proj.perspFovRh(_FOV, _Width / _Height, _NearPlane, _FarPlane);
 
 		// Shadow proj was calculated with:
@@ -69,14 +70,14 @@ void CCameraAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICo
 		_InvProj = _Proj;
 		_InvProj.invert();
 
-		Flags.Clear(ProjDirty);
+		_Flags.Clear(ProjDirty);
 		ViewOrProjChanged = true;
 	}
 
-	if (pNode->GetTransformVersion() != _LastTransformVersion)
+	if (_pNode->GetTransformVersion() != _LastTransformVersion)
 	{
-		pNode->GetWorldMatrix().invert_simple(_View);
-		_LastTransformVersion = pNode->GetTransformVersion();
+		_pNode->GetWorldMatrix().invert_simple(_View);
+		_LastTransformVersion = _pNode->GetTransformVersion();
 		ViewOrProjChanged = true;
 	}
 
@@ -104,6 +105,18 @@ void CCameraAttribute::GetPoint2D(const vector3& Point3D, float& OutRelX, float&
 	WorldPos /= WorldPos.w;
 	OutRelX = 0.5f + WorldPos.x * 0.5f;
 	OutRelY = 0.5f - WorldPos.y * 0.5f;
+}
+//---------------------------------------------------------------------
+
+const vector3& CCameraAttribute::GetPosition() const
+{
+	return _pNode->GetWorldPosition();
+}
+//---------------------------------------------------------------------
+
+const matrix44& CCameraAttribute::GetInvViewMatrix() const
+{
+	return _pNode->GetWorldMatrix();
 }
 //---------------------------------------------------------------------
 

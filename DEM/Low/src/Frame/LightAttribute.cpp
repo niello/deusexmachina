@@ -67,10 +67,9 @@ Scene::PNodeAttribute CLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CLightAttribute::OnDetachFromScene()
+void CLightAttribute::OnActivityChanged(bool Active)
 {
-	//???do it on deactivation of an attribute? even it is not detached from node
-	if (pSPS)
+	if (!Active && pSPS)
 	{
 		if (pSPSRecord)
 		{
@@ -81,8 +80,6 @@ void CLightAttribute::OnDetachFromScene()
 
 		pSPS = nullptr;
 	}
-
-	CNodeAttribute::OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 
@@ -124,13 +121,13 @@ void CLightAttribute::UpdateInSPS(Scene::CSPS& SPS)
 			CAABB Box;
 			GetGlobalAABB(Box); //???calc cached and reuse here?
 			pSPSRecord = SPS.AddRecord(Box, this);
-			LastTransformVersion = pNode->GetTransformVersion();
+			LastTransformVersion = _pNode->GetTransformVersion();
 		}
-		else if (pNode->GetTransformVersion() != LastTransformVersion) //!!! || Range/Cone changed
+		else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || Range/Cone changed
 		{
 			GetGlobalAABB(pSPSRecord->GlobalBox);
 			SPS.UpdateRecord(pSPSRecord);
-			LastTransformVersion = pNode->GetTransformVersion();
+			LastTransformVersion = _pNode->GetTransformVersion();
 		}
 	}
 }
@@ -158,7 +155,7 @@ bool CLightAttribute::GetGlobalAABB(CAABB& OutBox) const
 			float HalfFarExtent = Range * n_tan(ConeOuter * 0.5f);
 			OutBox.Min.set(-HalfFarExtent, -HalfFarExtent, -Range);
 			OutBox.Max.set(HalfFarExtent, HalfFarExtent, 0.f);
-			OutBox.Transform(pNode->GetWorldMatrix());
+			OutBox.Transform(_pNode->GetWorldMatrix());
 			OK;
 		}
 		default:	Sys::Error("Invalid light type!");
@@ -172,7 +169,7 @@ void CLightAttribute::CalcFrustum(matrix44& OutFrustum) const
 {
 	matrix44 LocalFrustum;
 	Light.CalcLocalFrustum(LocalFrustum);
-	pNode->GetWorldMatrix().invert_simple(OutFrustum);
+	_pNode->GetWorldMatrix().invert_simple(OutFrustum);
 	OutFrustum *= LocalFrustum;
 }
 //---------------------------------------------------------------------

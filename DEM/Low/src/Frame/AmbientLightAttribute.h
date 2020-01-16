@@ -40,7 +40,7 @@ protected:
 	Scene::CSPS*       pSPS = nullptr;
 	Scene::CSPSRecord* pSPSRecord = nullptr; // remains nullptr if oversized (global)
 
-	virtual void OnDetachFromScene();
+	virtual void                  OnActivityChanged(bool Active) override;
 
 public:
 

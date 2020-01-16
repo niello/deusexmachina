@@ -35,6 +35,7 @@ protected:
 
 	friend class CSceneNode;
 
+	// First 4 bits are reserved, children may use ones from 0x10
 	enum
 	{
 		SelfActive        = 0x01, // Attribute itself is active

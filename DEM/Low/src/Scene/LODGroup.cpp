@@ -53,10 +53,10 @@ PNodeAttribute CLODGroup::Clone()
 
 void CLODGroup::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 {
-	if (!pNode || !pCOIArray || !COICount) return;
+	if (!_pNode || !pCOIArray || !COICount) return;
 
 	// Select minimal distance, if there are multiple COIs
-	const vector3& NodePos = pNode->GetWorldPosition();
+	const vector3& NodePos = _pNode->GetWorldPosition();
 	float SqDistance = FLT_MAX;
 	for (UPTR i = 0; i < COICount; ++i)
 	{
@@ -74,9 +74,9 @@ void CLODGroup::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 			break;
 	}
 
-	for (UPTR i = 0; i < pNode->GetChildCount(); ++i)
+	for (UPTR i = 0; i < _pNode->GetChildCount(); ++i)
 	{
-		CSceneNode& Node = *pNode->GetChild(i);
+		CSceneNode& Node = *_pNode->GetChild(i);
 		Node.SetActive(Node.GetName() == SelectedChild);
 	}
 }

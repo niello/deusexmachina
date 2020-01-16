@@ -8,9 +8,11 @@ namespace Scene
 constexpr UPTR MAX_NODE_NAME_LEN = 64;
 const std::string ParentToken("^");
 
+// All transforms are identity and considered valid, so LocalTransformDirty & WorldTransformDirty aren't set.
+// Root node is assumed effectively inactive until the first Update from user, so EffectivelyActive is not set.
 CSceneNode::CSceneNode(CStrID NodeName)
 	: Name(NodeName)
-	, Flags(SelfActive | EffectivelyActive) // All transforms are identity and considered valid
+	, Flags(SelfActive)
 {
 }
 //---------------------------------------------------------------------
@@ -47,6 +49,10 @@ void CSceneNode::UpdateInternal(const vector3* pCOIArray, UPTR COICount)
 
 void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 {
+	// The first time an active root node is updated by user, it must be effectively activated.
+	// This is the difference between a scene root and a detached part of the scene.
+	if (IsActiveSelf() && !pParent) UpdateActivity();
+
 	if (!IsActive())
 	{
 		::Sys::Error("CSceneNode::Update() > can't update an inactive node");
@@ -249,8 +255,8 @@ CSceneNode* CSceneNode::CreateChild(CStrID ChildName, bool Replace)
 	}
 
 	PSceneNode Node = n_new(CSceneNode)(ChildName);
-	Node->SetParent(this);
 	Children.insert(It, Node);
+	Node->SetParent(this);
 	return Node;
 }
 //---------------------------------------------------------------------
@@ -285,8 +291,8 @@ bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
 	}
 
 	if (ChildName) Node.Name = ChildName;
-	Node.SetParent(this);
 	Children.insert(It, &Node);
+	Node.SetParent(this);
 	return true;
 }
 //---------------------------------------------------------------------
@@ -298,21 +304,30 @@ void CSceneNode::RemoveChild(CSceneNode& Node)
 	auto It = std::find(Children.begin(), Children.end(), &Node);
 	if (It != Children.end())
 	{
-		Children.erase(It);
 		Node.SetParent(nullptr);
+		Children.erase(It);
 	}
 }
 //---------------------------------------------------------------------
 
 void CSceneNode::RemoveChild(UPTR Idx)
 {
-	NOT_IMPLEMENTED;
+	if (Idx >= Children.size()) return;
+
+	auto It = Children.begin() + Idx;
+	It->Get()->SetParent(nullptr);
+	Children.erase(It);
 }
 //---------------------------------------------------------------------
 
 void CSceneNode::RemoveChild(CStrID ChildName)
 {
-	NOT_IMPLEMENTED;
+	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
+	if (It != Children.end() && (*It)->GetName() == ChildName)
+	{
+		It->Get()->SetParent(nullptr);
+		Children.erase(It);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -422,14 +437,16 @@ void CSceneNode::SetParent(CSceneNode* pNewParent)
 
 	pParent = pNewParent;
 	if (pParent) LastParentTransformVersion = pParent->TransformVersion - 1;
-	UpdateActivity();
+	UpdateActivity(!pParent);
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::UpdateActivity()
+// NB: node is always effectively deactivated on detach from parent. Update it if you want to use it as
+// a standalone scene root. It will be automatically effectively activated on the first user Update.
+void CSceneNode::UpdateActivity(bool OnDetach)
 {
 	const bool WasActive = IsActive();
-	const bool NowActive = IsActiveSelf() && (!pParent || pParent->IsActive());
+	const bool NowActive = IsActiveSelf() && !OnDetach && (!pParent || pParent->IsActive());
 	if (WasActive != NowActive)
 	{
 		Flags.SetTo(EffectivelyActive, NowActive);

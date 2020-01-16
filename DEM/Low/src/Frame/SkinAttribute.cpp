@@ -35,7 +35,7 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 			}
 			case 'ACBN':
 			{
-				Flags.SetTo(Skin_AutocreateBones, DataReader.Read<bool>());
+				_Flags.SetTo(Skin_AutocreateBones, DataReader.Read<bool>());
 				break;
 			}
 			default: FAIL;
@@ -58,7 +58,7 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentN
 		if (BoneInfo.ParentIndex != ParentIndex) continue;
 
 		pBoneNode = ParentNode.GetChild(BoneInfo.ID);
-		if (!pBoneNode && Flags.Is(Skin_AutocreateBones))
+		if (!pBoneNode && _Flags.Is(Skin_AutocreateBones))
 			pBoneNode = ParentNode.CreateChild(BoneInfo.ID);
 
 		if (pBoneNode)
@@ -81,9 +81,9 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(SkinInfoUID);
 	SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
 
-	if (!pNode || !SkinInfo) FAIL;
+	if (!_pNode || !SkinInfo) FAIL;
 
-	auto pRootParent = pNode->FindNodeByPath(RootSearchPath.CStr());
+	auto pRootParent = _pNode->FindNodeByPath(RootSearchPath.CStr());
 	if (!pRootParent) FAIL;
 
 	const UPTR BoneCount = SkinInfo->GetBoneCount();
@@ -104,7 +104,7 @@ Scene::PNodeAttribute CSkinAttribute::Clone()
 	PSkinAttribute ClonedAttr = n_new(CSkinAttribute);
 	ClonedAttr->RootSearchPath = RootSearchPath;
 	ClonedAttr->SkinInfoUID = SkinInfoUID;
-	ClonedAttr->Flags.SetTo(Skin_AutocreateBones, Flags.Is(Skin_AutocreateBones));
+	ClonedAttr->_Flags.SetTo(Skin_AutocreateBones, _Flags.Is(Skin_AutocreateBones));
 	return ClonedAttr;
 }
 //---------------------------------------------------------------------

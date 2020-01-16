@@ -53,10 +53,9 @@ Scene::PNodeAttribute CAmbientLightAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
-void CAmbientLightAttribute::OnDetachFromScene()
+void CAmbientLightAttribute::OnActivityChanged(bool Active)
 {
-	//???do it on deactivation of an attribute? even it is not detached from node
-	if (pSPS)
+	if (!Active && pSPS)
 	{
 		if (pSPSRecord)
 		{
@@ -67,8 +66,6 @@ void CAmbientLightAttribute::OnDetachFromScene()
 
 		pSPS = nullptr;
 	}
-
-	CNodeAttribute::OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 

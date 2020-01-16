@@ -39,16 +39,16 @@ void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 		{
 			if (!pSPSRecord)
 			{
-				AABB.Transform(pNode->GetWorldMatrix());
+				AABB.Transform(_pNode->GetWorldMatrix());
 				pSPSRecord = SPS.AddRecord(AABB, this);
 			}
-			else if (pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
+			else if (_pNode->GetTransformVersion() != LastTransformVersion) //!!! || LocalBox changed!
 			{
-				AABB.Transform(pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
+				AABB.Transform(_pNode->GetWorldMatrix(), pSPSRecord->GlobalBox);
 				SPS.UpdateRecord(pSPSRecord);
 			}
 
-			LastTransformVersion = pNode->GetTransformVersion();
+			LastTransformVersion = _pNode->GetTransformVersion();
 		}
 	}
 	else pSPS = nullptr;
@@ -57,38 +57,37 @@ void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 
 bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	if (!pNode) FAIL;
+	if (!_pNode) FAIL;
 
-	if (pSPSRecord && pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
+	if (pSPSRecord && _pNode->GetTransformVersion() == LastTransformVersion) //!!! && LocalBox not changed!
 	{
 		OutBox = pSPSRecord->GlobalBox;
 	}
 	else
 	{
 		if (!Renderable || !Renderable->GetLocalAABB(OutBox, LOD)) FAIL;
-		OutBox.Transform(pNode->GetWorldMatrix());
+		OutBox.Transform(_pNode->GetWorldMatrix());
 	}
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CRenderableAttribute::OnDetachFromScene()
+void CRenderableAttribute::OnActivityChanged(bool Active)
 {
-//	//???do it on deactivation of an attribute? even it is not detached from node
-	if (pSPSRecord)
+	if (!Active && pSPS)
 	{
-		pSPS->RemoveRecord(pSPSRecord);
-		pSPSRecord = nullptr;
+		if (pSPSRecord)
+		{
+			pSPS->RemoveRecord(pSPSRecord);
+			pSPSRecord = nullptr;
+		}
+		else
+		{
+			pSPS->OversizedObjects.RemoveByValue(this);
+		}
 		pSPS = nullptr;
 	}
-	else if (pSPS)
-	{
-		pSPS->OversizedObjects.RemoveByValue(this);
-		pSPS = nullptr;
-	}
-
-	CNodeAttribute::OnDetachFromScene();
 }
 //---------------------------------------------------------------------
 

@@ -6,6 +6,7 @@
 #include <Frame/SceneNodeUpdateInSPS.h>
 #include <Frame/CameraAttribute.h>
 #include <Physics/PhysicsLevel.h>
+#include <Scene/SceneNode.h>
 #include <IO/IOServer.h>
 #include <IO/FSBrowser.h>
 #include <UI/UIServer.h>

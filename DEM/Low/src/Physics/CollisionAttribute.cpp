@@ -58,14 +58,21 @@ Scene::PNodeAttribute CCollisionAttribute::Clone()
 }
 //---------------------------------------------------------------------
 
+void CCollisionAttribute::OnActivityChanged(bool Active)
+{
+	// detach from physics level!
+	//!!!level must be stored in attr!
+}
+//---------------------------------------------------------------------
+
 void CCollisionAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR COICount)
 {
 	if (!Collider) return;
 
-	if (pNode->GetTransformVersion() != LastTransformVersion)
+	if (_pNode->GetTransformVersion() != LastTransformVersion)
 	{
-		Collider->SetTransform(pNode->GetWorldMatrix());
-		LastTransformVersion = pNode->GetTransformVersion();
+		Collider->SetTransform(_pNode->GetWorldMatrix());
+		LastTransformVersion = _pNode->GetTransformVersion();
 	}
 	else
 	{
@@ -76,7 +83,7 @@ void CCollisionAttribute::UpdateBeforeChildren(const vector3* pCOIArray, UPTR CO
 
 bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr, CPhysicsLevel& Level)
 {
-	if (!pNode) FAIL;
+	if (!_pNode) FAIL;
 
 	Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(ShapeUID);
 	if (!RShape) FAIL;
@@ -89,12 +96,12 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr,
 
 	// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
 	if (Static)
-		Collider = n_new(Physics::CStaticCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
+		Collider = n_new(Physics::CStaticCollider(Level, *Shape, Group, Mask, _pNode->GetWorldMatrix()));
 	else
-		Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, pNode->GetWorldMatrix()));
+		Collider = n_new(Physics::CMovableCollider(Level, *Shape, Group, Mask, _pNode->GetWorldMatrix()));
 
 	// Just updated, save redundant update
-	LastTransformVersion = pNode->GetTransformVersion();
+	LastTransformVersion = _pNode->GetTransformVersion();
 
 	OK;
 }

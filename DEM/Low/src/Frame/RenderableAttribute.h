@@ -35,7 +35,7 @@ protected:
 	Scene::CSPSRecord*	pSPSRecord = nullptr;
 	U32                 LastTransformVersion = 0;
 
-	virtual void         OnDetachFromScene();
+	virtual void         OnActivityChanged(bool Active) override;
 
 public:
 

@@ -23,7 +23,7 @@ protected:
 	{
 		// Active
 		// WorldMatrixChanged
-		Skin_AutocreateBones = 0x04
+		Skin_AutocreateBones = 0x10
 	};
 
 	struct CBoneInfo
@@ -38,7 +38,9 @@ protected:
 	matrix44*              pSkinPalette = nullptr;
 	std::vector<CBoneInfo> BoneNodes;
 
-	void SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode);
+	virtual void                  UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
+
+	void                          SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode);
 
 	//!!!if no joint palette, model uses all skin palette as a variable, copying directly,
 	//with palette it copies only a part! catch redundant sets
@@ -51,7 +53,6 @@ public:
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
 	virtual Scene::PNodeAttribute Clone() override;
-	virtual void                  UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
 
 	Render::CSkinInfo*            GetSkinInfo() const { return SkinInfo.Get(); }
 	const matrix44*               GetSkinPalette() const { return pSkinPalette; }

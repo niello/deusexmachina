@@ -54,7 +54,7 @@ protected:
 	void					UpdateLocalTransform();
 
 	void                    SetParent(CSceneNode* pNewParent);
-	void                    UpdateActivity();
+	void                    UpdateActivity(bool OnDetach = false);
 
 public:
 

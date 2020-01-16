@@ -26,6 +26,8 @@ protected:
 	CStrID         CollisionMaskID;
 	bool           Static = false;
 
+	virtual void                  OnActivityChanged(bool Active) override;
+
 public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;

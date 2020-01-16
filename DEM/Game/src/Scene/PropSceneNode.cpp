@@ -163,7 +163,7 @@ void CPropSceneNode::InternalDeactivate()
 	ChildrenToSave.Clear();
 
 	// Remove node if we created it in a property
-	if (Node.IsValidPtr() && !ExistingNode) Node->Remove();
+	if (Node.IsValidPtr() && !ExistingNode) Node->RemoveFromParent();
 }
 //---------------------------------------------------------------------
 

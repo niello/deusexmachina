@@ -8,6 +8,8 @@ namespace Scene
 
 bool CSceneNodeRenderDebug::Visit(Scene::CSceneNode& Node)
 {
+	if (!Node.IsActive()) OK;
+
 	// Draw nothing for the root, coordinate frames for top-level children and hierarchies for deeper ones
 	if (Node.GetParent())
 	{
@@ -17,6 +19,7 @@ bool CSceneNodeRenderDebug::Visit(Scene::CSceneNode& Node)
 			_DebugDraw.DrawCoordAxes(Node.GetWorldMatrix());
 	}
 
+	// FIXME: node and attribute must not know about rendering. ISceneDebugDraw?
 	for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
 		Node.GetAttribute(i)->RenderDebug(_DebugDraw);
 
