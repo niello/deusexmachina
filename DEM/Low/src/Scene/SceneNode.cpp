@@ -10,23 +10,24 @@ const std::string ParentToken("^");
 
 CSceneNode::CSceneNode(CStrID NodeName)
 	: Name(NodeName)
-	, Flags(Active) // All transforms are identity and considered valid
+	, Flags(SelfActive | EffectivelyActive) // All transforms are identity and considered valid
 {
 }
 //---------------------------------------------------------------------
 
+// NB: strong refs to children and attributes may exist, can't assume them being destroyed here
 CSceneNode::~CSceneNode()
 {
-	// Destroy children first
-	Children.clear();
+	// Detach children before attributes
+	for (const auto& Child : Children)
+		Child->SetParent(nullptr);
 
 	for (const auto& Attr : Attrs)
-		Attr->OnDetachFromScene();
-	Attrs.clear();
+		Attr->SetNode(nullptr);
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
+void CSceneNode::UpdateInternal(const vector3* pCOIArray, UPTR COICount)
 {
 	UpdateWorldTransform();
 
@@ -36,11 +37,23 @@ void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
 
 	for (const auto& Child : Children)
 		if (Child->IsActive())
-			Child->Update(pCOIArray, COICount);
+			Child->UpdateInternal(pCOIArray, COICount);
 
 	for (const auto& Attr : Attrs)
 		if (Attr->IsActive())
 			Attr->UpdateAfterChildren(pCOIArray, COICount);
+}
+//---------------------------------------------------------------------
+
+void CSceneNode::Update(const vector3* pCOIArray, UPTR COICount)
+{
+	if (!IsActive())
+	{
+		::Sys::Error("CSceneNode::Update() > can't update an inactive node");
+		return;
+	}
+
+	UpdateInternal(pCOIArray, COICount);
 }
 //---------------------------------------------------------------------
 
@@ -51,7 +64,7 @@ bool CSceneNode::UpdateTransform()
 	// Do we have invalid transform?
 	bool Changed = Flags.IsAny(LocalTransformDirty | WorldTransformDirty);
 
-	// Update parent, its transform may change too
+	// Update parent, its transform might change too
 	if (pParent) Changed |= pParent->UpdateTransform();
 
 	// All is up to date
@@ -204,9 +217,10 @@ void CSceneNode::UpdateLocalTransform()
 }
 //---------------------------------------------------------------------
 
-PSceneNode CSceneNode::Clone(bool CloneChildren)
+PSceneNode CSceneNode::Clone(CSceneNode* pNewParent, bool CloneChildren)
 {
-	PSceneNode ClonedNode = n_new(CSceneNode(Name));
+	PSceneNode ClonedNode = pNewParent ? pNewParent->CreateChild(Name) : n_new(CSceneNode(Name));
+	ClonedNode->SetActive(IsActiveSelf());
 	ClonedNode->SetLocalTransform(LocalTfm);
 
 	ClonedNode->Attrs.reserve(Attrs.size());
@@ -218,26 +232,22 @@ PSceneNode CSceneNode::Clone(bool CloneChildren)
 	{
 		ClonedNode->Children.reserve(ChildCount);
 		for (const auto& Child : Children)
-		{
-			PSceneNode ClonedChild = Child->Clone(true);
-			ClonedChild->SetParent(ClonedNode.Get());
-			ClonedNode->Children.push_back(ClonedChild);
-		}
-		std::sort(ClonedNode->Children.begin(), ClonedNode->Children.end(), [](const PSceneNode& a, const PSceneNode& b) { return a->GetName() < b->GetName(); });
+			Child->Clone(ClonedNode.Get(), true);
 	}
-
-	ClonedNode->SetActive(IsActive());
 
 	return ClonedNode;
 }
 //---------------------------------------------------------------------
 
-CSceneNode* CSceneNode::CreateChild(CStrID ChildName)
+CSceneNode* CSceneNode::CreateChild(CStrID ChildName, bool Replace)
 {
 	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
-	if (It != Children.end() && (*It)->GetName() == ChildName) return *It;
+	if (It != Children.end() && (*It)->GetName() == ChildName)
+	{
+		if (Replace) It = Children.erase(It);
+		else return *It;
+	}
 
-	//!!!USE POOL!
 	PSceneNode Node = n_new(CSceneNode)(ChildName);
 	Node->SetParent(this);
 	Children.insert(It, Node);
@@ -268,7 +278,11 @@ CSceneNode* CSceneNode::CreateNodeChain(const char* pPath)
 bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
 {
 	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
-	if (!Replace && It != Children.end() && (*It)->GetName() == ChildName) return false;
+	if (It != Children.end() && (*It)->GetName() == ChildName)
+	{
+		if (Replace) It = Children.erase(It);
+		else return *It;
+	}
 
 	if (ChildName) Node.Name = ChildName;
 	Node.SetParent(this);
@@ -284,7 +298,6 @@ void CSceneNode::RemoveChild(CSceneNode& Node)
 	auto It = std::find(Children.begin(), Children.end(), &Node);
 	if (It != Children.end())
 	{
-		Node.OnDetachFromScene();
 		Children.erase(It);
 		Node.SetParent(nullptr);
 	}
@@ -363,7 +376,9 @@ CSceneNode* CSceneNode::FindLastNodeAtPath(const char* pPath, char const* & pUnr
 
 bool CSceneNode::AddAttribute(CNodeAttribute& Attr)
 {
-	if (!Attr.OnAttachToNode(this)) FAIL;
+	if (Attr.GetNode()) FAIL;
+
+	Attr.SetNode(this);
 	Attrs.push_back(&Attr);
 	OK;
 }
@@ -373,8 +388,7 @@ void CSceneNode::RemoveAttribute(CNodeAttribute& Attr)
 {
 	if (Attr.GetNode() != this) return;
 
-	Attr.OnDetachFromScene();
-	Attr.OnDetachFromNode();
+	Attr.SetNode(nullptr);
 
 	// Don't care about order
 	auto It = std::find(Attrs.begin(), Attrs.end(), &Attr);
@@ -391,8 +405,8 @@ void CSceneNode::RemoveAttribute(UPTR Idx)
 	if (Idx >= Attrs.size()) return;
 
 	CNodeAttribute& Attr = *Attrs[Idx];
-	Attr.OnDetachFromScene();
-	Attr.OnDetachFromNode();
+
+	Attr.SetNode(nullptr);
 
 	// Don't care about order
 	Attrs[Idx] = std::move(Attrs.back());
@@ -400,20 +414,32 @@ void CSceneNode::RemoveAttribute(UPTR Idx)
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::OnDetachFromScene()
+void CSceneNode::SetParent(CSceneNode* pNewParent)
 {
-	for (const auto& Child : Children)
-		Child->OnDetachFromScene();
+	// TODO: remove both lines if never happens
+	n_assert_dbg(pParent != pNewParent);
+	//if (pParent == pNewParent) return;
 
-	for (const auto& Attr : Attrs)
-		Attr->OnDetachFromScene();
+	pParent = pNewParent;
+	if (pParent) LastParentTransformVersion = pParent->TransformVersion - 1;
+	UpdateActivity();
 }
 //---------------------------------------------------------------------
 
-void CSceneNode::SetParent(CSceneNode* pNewParent)
+void CSceneNode::UpdateActivity()
 {
-	pParent = pNewParent;
-	if (pParent) LastParentTransformVersion = pParent->TransformVersion - 1;
+	const bool WasActive = IsActive();
+	const bool NowActive = IsActiveSelf() && (!pParent || pParent->IsActive());
+	if (WasActive != NowActive)
+	{
+		Flags.SetTo(EffectivelyActive, NowActive);
+
+		for (const auto& Attr : Attrs)
+			Attr->UpdateActivity();
+
+		for (const auto& Child : Children)
+			Child->UpdateActivity();
+	}
 }
 //---------------------------------------------------------------------
 

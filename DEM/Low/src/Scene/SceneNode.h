@@ -29,9 +29,10 @@ protected:
 
 	enum
 	{
-		Active                    = 0x01,
-		LocalTransformDirty       = 0x02,
-		WorldTransformDirty       = 0x04,
+		SelfActive          = 0x01, // Node itself is active
+		EffectivelyActive   = 0x02, // Node is effectively active, meaning it has no inactive parents
+		LocalTransformDirty = 0x04,
+		WorldTransformDirty = 0x08
 		// TODO: add LockTransform? (now locked through static pose)
 	};
 
@@ -48,10 +49,12 @@ protected:
 	std::vector<PSceneNode>     Children; // Always sorted by ID
 	std::vector<PNodeAttribute> Attrs;
 
-	void					OnDetachFromScene();
-	void                    SetParent(CSceneNode* pNewParent);
+	void					UpdateInternal(const vector3* pCOIArray, UPTR COICount);
 	void					UpdateWorldTransform();
 	void					UpdateLocalTransform();
+
+	void                    SetParent(CSceneNode* pNewParent);
+	void                    UpdateActivity();
 
 public:
 
@@ -63,14 +66,14 @@ public:
 	void					Update(const vector3* pCOIArray, UPTR COICount);
 	bool                    UpdateTransform();
 
-	PSceneNode				Clone(bool CloneChildren);
-	void					Remove() { if (pParent) pParent->RemoveChild(*this); }
+	PSceneNode				Clone(CSceneNode* pNewParent = nullptr, bool CloneChildren = true);
+	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
 
 	bool					AcceptVisitor(INodeVisitor& Visitor);
 
 	CStrID					GetName() const { return Name; }
 
-	CSceneNode*				CreateChild(CStrID ChildName);
+	CSceneNode*				CreateChild(CStrID ChildName, bool Replace = false);
 	CSceneNode*				CreateNodeChain(const char* pPath);
 	bool					AddChild(CStrID ChildName, CSceneNode& Node, bool Replace = false);
 	void					RemoveChild(CSceneNode& Node);
@@ -92,8 +95,9 @@ public:
 
 	bool					IsRoot() const { return !pParent; }
 	bool					IsChild(const CSceneNode* pParentNode) const;
-	bool					IsActive() const { return Flags.Is(Active); }
-	void					SetActive(bool Enable) { return Flags.SetTo(Active, Enable); }
+	bool					IsActiveSelf() const { return Flags.Is(SelfActive); }
+	bool					IsActive() const { return Flags.Is(EffectivelyActive); }
+	void					SetActive(bool Enable) { Flags.SetTo(SelfActive, Enable); UpdateActivity(); }
 	bool					IsLocalTransformDirty() const { return Flags.Is(LocalTransformDirty); }
 	bool					IsWorldTransformDirty() const { return Flags.Is(WorldTransformDirty); }
 	U32						GetTransformVersion() const { n_assert_dbg(!IsWorldTransformDirty()); return TransformVersion; }
