@@ -4,7 +4,7 @@
 
 // Operating system window base
 
-namespace DEM { namespace Sys
+namespace DEM::Sys
 {
 typedef Ptr<class COSWindow> POSWindow;
 
@@ -22,7 +22,7 @@ protected:
 
 	CString			IconName;
 
-	Data::CRect		Rect;					// Client rect
+	Data::CRect		Rect;   // Client rect
 	Data::CFlags	Flags;
 
 public:
@@ -57,4 +57,4 @@ public:
 	bool					IsFullscreen() const { return Flags.Is(Wnd_Fullscreen); }
 };
 
-}}
+}

@@ -3,6 +3,7 @@
 #include <Render/RenderNode.h>
 #include <Render/Renderer.h>
 #include <Render/ShaderParamStorage.h>
+#include <Events/EventsFwd.h>
 #include <Data/FixedArray.h>
 #include <Data/Array.h>
 #include <System/Allocators/PoolAllocator.h>
@@ -11,8 +12,6 @@
 // View is a data context required to render a frame. It is defined by a scene (what to render),
 // a camera (from where), render target(s) (to where), a render path (how) and some other
 // parameters. Scene = nullptr is valid and may be used for GUI-only views.
-// Customizable frame properties like a screen resolution, color depth, depth buffer bits
-// and LOD scales are controlled and stored here.
 // Frame view may be targeted to the swap chain or to intermediate RT(s).
 
 namespace Scene
@@ -72,6 +71,8 @@ protected:
 	friend class CGraphicsResourceManager;
 
 	CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int SwapChainID, CStrID SwapChainRTID);
+
+	DECLARE_EVENT_HANDLER(OSWindowResized, OnOSWindowResized);
 
 public:
 

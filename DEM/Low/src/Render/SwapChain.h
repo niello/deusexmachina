@@ -28,8 +28,7 @@ enum ESwapChainFlags
 	//ManualRotationHandling
 	//AutoSwitchModeOnResizeTarget // switches on resize target and on wnd->fullscr //???always handle by app?
 	//FrameLatencyWaitable // DXGI since Win8.1
-	SwapChain_AutoAdjustSize	= 0x01,	// Listens OS window resize event and resizes buffers accordingly
-	SwapChain_VSync				= 0x02	//???need other intervals, like 2-4 (each 2nd-4th vsync)? if need, move to separate enum or use integer!
+	SwapChain_VSync				= 0x01	//???need other intervals, like 2-4 (each 2nd-4th vsync)? if need, move to separate enum or use integer!
 };
 
 enum ESwapMode
@@ -46,7 +45,7 @@ struct CSwapChainDesc
 	ESwapMode		SwapMode;
 	UPTR			BackBufferCount;
 
-	CSwapChainDesc(): Flags(SwapChain_AutoAdjustSize | SwapChain_VSync) {}
+	CSwapChainDesc(): Flags(SwapChain_VSync) {}
 };
 
 class CSwapChain

@@ -19,7 +19,6 @@ CD3D9SwapChain::~CD3D9SwapChain()
 void CD3D9SwapChain::Release()
 {
 	Sub_OnClosing = nullptr;
-	Sub_OnSizeChanged = nullptr;
 	Sub_OnToggleFullscreen = nullptr;
 
 	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();

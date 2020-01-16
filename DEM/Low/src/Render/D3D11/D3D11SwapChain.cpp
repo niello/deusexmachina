@@ -21,7 +21,6 @@ CD3D11SwapChain::~CD3D11SwapChain()
 void CD3D11SwapChain::Destroy()
 {
 	Sub_OnClosing = nullptr;
-	Sub_OnSizeChanged = nullptr;
 	Sub_OnToggleFullscreen = nullptr;
 
 	if (BackBufferRT.IsValidPtr()) BackBufferRT->Destroy();

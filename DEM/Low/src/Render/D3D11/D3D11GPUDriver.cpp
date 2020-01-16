@@ -190,7 +190,7 @@ bool CD3D11GPUDriver::InitSwapChainRenderTarget(CD3D11SwapChain& SC)
 	n_assert(SC.pSwapChain);
 
 	// Already initialized, can't reinitialize
-	if (SC.BackBufferRT.IsValidPtr() && SC.BackBufferRT->IsValid()) FAIL;
+	if (SC.BackBufferRT && SC.BackBufferRT->IsValid()) FAIL;
 
 	ID3D11Texture2D* pBackBuffer = nullptr;
 	if (FAILED(SC.pSwapChain->GetBuffer(0, __uuidof(ID3D11Texture2D), reinterpret_cast<void**>(&pBackBuffer)))) FAIL;
@@ -200,7 +200,7 @@ bool CD3D11GPUDriver::InitSwapChainRenderTarget(CD3D11SwapChain& SC)
 	pBackBuffer->Release();
 	if (FAILED(hr)) FAIL;
 
-	if (!SC.BackBufferRT.IsValidPtr()) SC.BackBufferRT = n_new(CD3D11RenderTarget);
+	if (!SC.BackBufferRT) SC.BackBufferRT = n_new(CD3D11RenderTarget);
 	if (!SC.BackBufferRT->As<CD3D11RenderTarget>()->Create(pRTV, nullptr))
 	{
 		pRTV->Release();
@@ -515,12 +515,10 @@ int CD3D11GPUDriver::CreateSwapChain(const CRenderTargetDesc& BackBufferDesc, co
 	ItSC->Desc = SwapChainDesc;
 
 	// Disable DXGI reaction on Alt+Enter & PrintScreen
-	pDXGIFactory->MakeWindowAssociation(pWndWin32->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES);
+	pDXGIFactory->MakeWindowAssociation(pWndWin32->GetHWND(), DXGI_MWA_NO_WINDOW_CHANGES | DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_PRINT_SCREEN);
 
 	ItSC->Sub_OnToggleFullscreen = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnToggleFullscreen"), this, &CD3D11GPUDriver::OnOSWindowToggleFullscreen);
 	ItSC->Sub_OnClosing = pWindow->Subscribe<CD3D11GPUDriver>(CStrID("OnClosing"), this, &CD3D11GPUDriver::OnOSWindowClosing);
-	if (SwapChainDesc.Flags.Is(SwapChain_AutoAdjustSize))
-		ItSC->Sub_OnSizeChanged = pWindow->Subscribe<CD3D11GPUDriver>(Event::OSWindowResized::RTTI, this, &CD3D11GPUDriver::OnOSWindowResized);
 
 	return SwapChains.IndexOf(ItSC);
 }
@@ -578,7 +576,7 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 	//???for child window, assert that size passed is a window size?
 
 	//???or this method must resize target? in fact, need two swap chain resizing methods?
-	//one as command (ResizeTarget), one as handler (ResizeBuffers), second can be OnOSWindowResized handler
+	//one as command (ResizeTarget), one as handler (ResizeBuffers)
 
 	UPTR RemovedRTIdx;
 	for (RemovedRTIdx = 0; RemovedRTIdx < CurrRT.GetCount(); ++RemovedRTIdx)
@@ -602,8 +600,6 @@ Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, W
 		SC.Destroy();
 		FAIL;
 	}
-
-	//!!update DS!
 
 	if (RemovedRTIdx < CurrRT.GetCount()) SetRenderTarget(RemovedRTIdx, SC.BackBufferRT);
 
@@ -3797,26 +3793,6 @@ bool CD3D11GPUDriver::OnOSWindowClosing(Events::CEventDispatcher* pDispatcher, c
 		}
 	}
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CD3D11GPUDriver::OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
-{
-	const auto& Ev = static_cast<const Event::OSWindowResized&>(Event);
-	if (Ev.ManualResizingInProgress) FAIL;
-
-	DEM::Sys::COSWindow* pWnd = (DEM::Sys::COSWindow*)pDispatcher;
-	for (UPTR i = 0; i < SwapChains.GetCount(); ++i)
-	{
-		CD3D11SwapChain& SC = SwapChains[i];
-		if (SC.TargetWindow.Get() == pWnd)
-		{
-			ResizeSwapChain(i, pWnd->GetWidth(), pWnd->GetHeight());
-			OK; // Only one swap chain is allowed for each window
-		}
-	}
-
-	FAIL;
 }
 //---------------------------------------------------------------------
 

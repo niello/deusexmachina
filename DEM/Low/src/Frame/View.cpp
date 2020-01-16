@@ -15,6 +15,7 @@
 #include <UI/UIContext.h>
 #include <UI/UIServer.h>
 #include <System/OSWindow.h>
+#include <System/SystemEvents.h>
 
 namespace Frame
 {
@@ -55,7 +56,11 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 
 	// If our view is attached to the swap chain, set the back buffer as its first RT
 	if (SwapChainID >= 0 && SwapChainRTID)
+	{
 		SetRenderTarget(SwapChainRTID, GraphicsMgr.GetGPU()->GetSwapChainRenderTarget(SwapChainID));
+		if (auto pOSWindow = GetTargetWindow())
+			DISP_SUBSCRIBE_NEVENT(pOSWindow, OSWindowResized, CView, OnOSWindowResized);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -235,6 +240,8 @@ bool CView::Present() const
 }
 //---------------------------------------------------------------------
 
+// FIXME: what if swap chain target is replaced and then window resizing happens?
+// Must unsubscribe or resubscribe, dependent on what a new RT is.
 bool CView::SetRenderTarget(CStrID ID, Render::PRenderTarget RT)
 {
 	if (!_RenderPath || !_RenderPath->HasRenderTarget(ID)) FAIL;
@@ -319,6 +326,44 @@ bool CView::IsFullscreen() const
 
 	auto GPU = GetGPU();
 	return GPU && GPU->IsFullscreen(_SwapChainID);
+}
+//---------------------------------------------------------------------
+
+// TODO: fullscreen handling here too?
+bool CView::OnOSWindowResized(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	const auto& Ev = static_cast<const Event::OSWindowResized&>(Event);
+	auto GPU = GetGPU();
+
+	if (!GPU || Ev.ManualResizingInProgress) FAIL;
+
+	// May not be fired in fullscreen mode by design. If happened, related code may need rewriting.
+	n_assert_dbg(!GPU->IsFullscreen(_SwapChainID));
+
+	GPU->SetDepthStencilBuffer(nullptr);
+
+	GPU->ResizeSwapChain(_SwapChainID, Ev.NewWidth, Ev.NewHeight);
+
+	//???really need to resize ALL DS buffers? May need some flag declared in a render path or CView::SetDepthStencilAutosized()
+	//or add into render path an ability to specify RT/DS size relative to swap chain or some other RT / DS.
+	for (auto& [ID, DS] : DSBuffers)
+	{
+		if (!DS) continue;
+
+		auto Desc = DS->GetDesc();
+		Desc.Width = Ev.NewWidth;
+		Desc.Height = Ev.NewHeight;
+
+		DS = GPU->CreateDepthStencilBuffer(Desc);
+	}
+
+	if (pCamera)
+	{
+		pCamera->SetWidth(Ev.NewWidth);
+		pCamera->SetHeight(Ev.NewHeight);
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 

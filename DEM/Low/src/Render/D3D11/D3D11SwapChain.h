@@ -18,7 +18,6 @@ public:
 
 	//???need? DXGI handles OS window!
 	Events::PSub		Sub_OnToggleFullscreen;
-	Events::PSub		Sub_OnSizeChanged;
 	Events::PSub		Sub_OnClosing;
 
 	IDXGISwapChain*		pSwapChain = nullptr;

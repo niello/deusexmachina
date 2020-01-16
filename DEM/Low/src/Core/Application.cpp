@@ -593,7 +593,7 @@ int CApplication::CreateRenderWindow(Render::CGPUDriver& GPU, U32 Width, U32 Hei
 	Render::CSwapChainDesc SCDesc;
 	SCDesc.BackBufferCount = 2;
 	SCDesc.SwapMode = Render::SwapMode_CopyDiscard;
-	SCDesc.Flags = Render::SwapChain_AutoAdjustSize | Render::SwapChain_VSync;
+	SCDesc.Flags = Render::SwapChain_VSync;
 
 	const int SwapChainID = GPU.CreateSwapChain(BBDesc, SCDesc, Wnd);
 	n_assert(GPU.SwapChainExists(SwapChainID));
