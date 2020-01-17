@@ -74,16 +74,18 @@ Scene::PNodeAttribute CModelAttribute::Clone()
 bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
 	// Store mesh data pointer for GPU-independent local AABB access
-	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(_MeshUID);
-	_MeshData = RMeshData ? RMeshData->ValidateObject<Render::CMeshData>() : nullptr;
+	if (!_MeshData)
+	{
+		Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(_MeshUID);
+		_MeshData = RMeshData ? RMeshData->ValidateObject<Render::CMeshData>() : nullptr;
+	}
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
+Render::PRenderable CModelAttribute::CreateRenderable(CGraphicsResourceManager& ResMgr) const
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
-	auto pModel = static_cast<Render::CModel*>(Renderable.get());
+	auto pModel = n_new(Render::CModel());
 
 	// TODO: don't copy, store once!
 	pModel->BoneIndices = _BoneIndices;
@@ -92,7 +94,7 @@ bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	pModel->Mesh = _MeshUID ? ResMgr.GetMesh(_MeshUID) : nullptr;
 	pModel->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
 
-	OK;
+	return Render::PRenderable(pModel);
 }
 //---------------------------------------------------------------------
 

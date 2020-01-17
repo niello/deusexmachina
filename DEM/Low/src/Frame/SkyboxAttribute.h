@@ -18,7 +18,7 @@ public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
 	virtual Scene::PNodeAttribute Clone() override;
-	virtual bool                  ValidateGPUResources(CGraphicsResourceManager& ResMgr) override;
+	virtual Render::PRenderable   CreateRenderable(CGraphicsResourceManager& ResMgr) const override;
 	virtual bool                  GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const override;
 };
 

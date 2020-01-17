@@ -34,6 +34,7 @@ namespace Frame
 {
 class CCameraAttribute;
 class CAmbientLightAttribute;
+class CRenderableAttribute;
 typedef Ptr<class CRenderPath> PRenderPath;
 typedef Ptr<class CGraphicsResourceManager> PGraphicsResourceManager;
 typedef std::unique_ptr<class CView> PView;
@@ -57,6 +58,8 @@ protected:
 
 	std::map<CStrID, Render::PRenderTarget>			RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
+
+	std::unordered_map<CRenderableAttribute*, Render::PRenderable> _RenderObjects;
 
 	CArray<Scene::CNodeAttribute*>				VisibilityCache;
 	CArray<Render::CLightRecord>				LightCache;
@@ -100,6 +103,7 @@ public:
 
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
 
+	Render::IRenderable*            GetRenderObject(CRenderableAttribute& Attr);
 	void							UpdateVisibilityCache();
 	CArray<Scene::CNodeAttribute*>&	GetVisibilityCache() { return VisibilityCache; }
 	CArray<Render::CLightRecord>&	GetLightCache() { return LightCache; }

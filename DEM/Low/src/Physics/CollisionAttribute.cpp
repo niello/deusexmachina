@@ -78,20 +78,23 @@ bool CCollisionAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
 	if (!_pNode) FAIL;
 
-	Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(_ShapeUID);
-	if (!RShape) FAIL;
+	if (!_Collider)
+	{
+		Resources::PResource RShape = ResMgr.RegisterResource<Physics::CCollisionShape>(_ShapeUID);
+		if (!RShape) FAIL;
 
-	auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
-	if (!Shape) FAIL;
+		auto Shape = RShape->ValidateObject<Physics::CCollisionShape>();
+		if (!Shape) FAIL;
 
-	// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
-	if (_Static)
-		_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
-	else
-		_Collider = n_new(Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
+		// Also can create bullet kinematic body right here without CMovableCollider wrapper, think of it
+		if (_Static)
+			_Collider = n_new(Physics::CStaticCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
+		else
+			_Collider = n_new(Physics::CMovableCollider(*Shape, _CollisionGroupID, _CollisionMaskID, _pNode->GetWorldMatrix()));
 
-	// Just updated, save redundant update
-	_LastTransformVersion = _pNode->GetTransformVersion();
+		// Just updated, save redundant update
+		_LastTransformVersion = _pNode->GetTransformVersion();
+	}
 
 	if (IsActive() && _Level) _Collider->AttachToLevel(*_Level);
 	else _Collider->RemoveFromLevel();

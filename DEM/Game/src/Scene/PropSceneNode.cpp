@@ -3,13 +3,13 @@
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
 #include <Scripting/PropScriptable.h>
-#include <Scene/Events/SetTransform.h>
 #include <Render/Model.h>
 #include <Resources/Resource.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/ResourceCreator.h>
 #include <Frame/RenderableAttribute.h>
-#include <Frame/SceneNodeValidateAttrs.h>
+#include <Scene/Events/SetTransform.h>
+#include <Scene/SceneNodeValidateResources.h>
 #include <Physics/CollisionAttribute.h>
 #include <Data/DataArray.h>
 #include <IO/PathUtils.h>
@@ -84,8 +84,8 @@ bool CPropSceneNode::InternalActivate()
 
 		PathNode->AddChild(GetEntity()->GetUID(), *Node.Get());
 
-		Frame::CSceneNodeValidateAttrs Visitor(*GetEntity()->GetLevel()->_pGRM);
-		Node->AcceptVisitor(Visitor);
+		// FIXME: need resource manager from App. Validate here?
+		//Node->AcceptVisitor(Scene::CSceneNodeValidateResources(ResMgr));
 	}
 	else
 	{

@@ -193,10 +193,10 @@ bool CGameServer::IsLevelLoaded(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CGameServer::ValidateAllLevels(Frame::CGraphicsResourceManager* pGRM)
+bool CGameServer::ValidateAllLevels(Resources::CResourceManager& ResMgr)
 {
 	for (UPTR i = 0; i < Levels.GetCount(); ++i)
-		if (!Levels.ValueAt(i)->Validate(pGRM)) FAIL;
+		if (!Levels.ValueAt(i)->Validate(ResMgr)) FAIL;
 	OK;
 }
 //---------------------------------------------------------------------

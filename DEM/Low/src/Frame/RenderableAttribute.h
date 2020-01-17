@@ -30,21 +30,18 @@ class CRenderableAttribute: public Scene::CNodeAttribute
 
 protected:
 
-	Render::PRenderable	Renderable;
 	Scene::CSPS*		pSPS = nullptr;
 	Scene::CSPSRecord*	pSPSRecord = nullptr;
 	U32                 LastTransformVersion = 0;
 
-	virtual void         OnActivityChanged(bool Active) override;
+	virtual void OnActivityChanged(bool Active) override;
 
 public:
 
-	virtual bool         ValidateGPUResources(CGraphicsResourceManager& ResMgr) = 0;
-	void                 UpdateInSPS(Scene::CSPS& SPS);
-
-	virtual bool         GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
-	bool                 GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
-	Render::IRenderable* GetRenderable() const { return Renderable.get(); }
+	virtual Render::PRenderable CreateRenderable(CGraphicsResourceManager& ResMgr) const = 0;
+	virtual bool                GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
+	bool                        GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
+	void                        UpdateInSPS(Scene::CSPS& SPS);
 };
 
 typedef Ptr<CRenderableAttribute> PRenderableAttribute;

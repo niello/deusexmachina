@@ -2,9 +2,11 @@
 #include <Frame/CameraAttribute.h>
 #include <Frame/AmbientLightAttribute.h>
 #include <Frame/LightAttribute.h>
+#include <Frame/RenderableAttribute.h>
 #include <Frame/RenderPath.h>
 #include <Frame/GraphicsResourceManager.h>
 #include <Scene/SPS.h>
+#include <Render/Renderable.h>
 #include <Render/RenderTarget.h>
 #include <Render/ConstantBuffer.h>
 #include <Render/GPUDriver.h>
@@ -93,6 +95,25 @@ bool CView::CreateUIContext(CStrID RenderTargetID)
 		(pRT == pSwapChainRT) ? GetTargetWindow() : nullptr);
 
 	return UIContext.IsValidPtr();
+}
+//---------------------------------------------------------------------
+
+//!!!IRenderable children may now serve as parts of the rendering cache / render nodes!
+Render::IRenderable* CView::GetRenderObject(CRenderableAttribute& Attr)
+{
+	auto It = _RenderObjects.find(&Attr);
+	if (It == _RenderObjects.cend())
+	{
+		// Different views on the same GPU will create different renderables,
+		// which is not necessary. Render object cache might be stored in a
+		// graphics manager, but it seems wrong for now. Anyway, GPU resources
+		// are shared between these objects and views.
+		auto Renderable = Attr.CreateRenderable(*_GraphicsMgr);
+		if (!Renderable) return nullptr;
+		It = _RenderObjects.emplace(&Attr, std::move(Renderable)).first;
+	}
+
+	return It->second.get();
 }
 //---------------------------------------------------------------------
 

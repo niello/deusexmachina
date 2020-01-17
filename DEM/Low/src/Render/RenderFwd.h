@@ -50,6 +50,7 @@ typedef Ptr<class CSampler> PSampler;
 typedef Ptr<class CMesh> PMesh;
 typedef Ptr<class CMeshData> PMeshData;
 typedef Ptr<class CMaterial> PMaterial;
+typedef std::unique_ptr<class IRenderable> PRenderable;
 
 const UPTR Adapter_AutoSelect = (UPTR)-2;
 const UPTR Adapter_None = (UPTR)-1;

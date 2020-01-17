@@ -67,28 +67,30 @@ Scene::PNodeAttribute CTerrainAttribute::Clone()
 
 bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(_CDLODDataUID);
-	_CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
+	if (!_CDLODData)
+	{
+		auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(_CDLODDataUID);
+		_CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
+	}
 	OK;
 }
 //---------------------------------------------------------------------
 
-bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
+Render::PRenderable CTerrainAttribute::CreateRenderable(CGraphicsResourceManager& ResMgr) const
 {
+	if (!_CDLODData)
+	{
+		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
+		FAIL;
+	}
+
 	if (!ResMgr.GetGPU()) FAIL;
 
 	// HeightMap support check
 	//!!!write R32F variant!
 	if (!ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) FAIL;
 
-	if (!_CDLODData)
-	{
-		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
-		if (!ValidateResources(*ResMgr.GetResourceManager()) || !_CDLODData) FAIL;
-	}
-
-	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
-	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
+	auto pTerrain = n_new(Render::CTerrain());
 
 	const auto PatchSize = _CDLODData->GetPatchSize();
 	if (!IsPow2(PatchSize) || PatchSize < 4) FAIL;
@@ -117,7 +119,7 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 
 	pTerrain->QuarterPatchMesh = ResMgr.GetMesh(QuarterMeshUID);
 
-	OK;
+	return Render::PRenderable(pTerrain);
 }
 //---------------------------------------------------------------------
 

@@ -1,7 +1,6 @@
 #pragma once
 #include <Events/EventDispatcher.h>
 #include <Scene/SPS.h>
-#include <Frame/GraphicsResourceManager.h> // FIXME: view, not model!
 #include <Data/Regions.h>
 
 // Represents one game location, including all entities in it and property worlds (physics, AI, scene).
@@ -31,6 +30,11 @@ namespace Physics
 namespace AI
 {
 	typedef Ptr<class CAILevel> PAILevel;
+}
+
+namespace Resources
+{
+	class CResourceManager;
 }
 
 namespace Game
@@ -66,14 +70,11 @@ protected:
 
 public:
 
-	// FIXME: view, not model!
-	Frame::CGraphicsResourceManager* _pGRM = nullptr;
-
 	CGameLevel();
 	virtual ~CGameLevel();
 
 	bool					Load(CStrID LevelID, const Data::CParams& Desc);
-	bool					Validate(Frame::CGraphicsResourceManager* pGRM);
+	bool					Validate(Resources::CResourceManager& ResMgr);
 	void					Term();
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
 	//void					RenderDebug();

@@ -115,7 +115,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		auto pAttr = (*It)->As<Frame::CRenderableAttribute>();
 		if (!pAttr) continue;
 
-		Render::IRenderable* pRenderable = pAttr->GetRenderable();
+		Render::IRenderable* pRenderable = View.GetRenderObject(*pAttr);
 
 		IPTR Idx = Renderers.FindIndex(pRenderable->GetRTTI());
 		if (Idx == INVALID_INDEX) continue;

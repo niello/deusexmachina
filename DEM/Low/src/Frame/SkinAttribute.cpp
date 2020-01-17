@@ -12,7 +12,7 @@ FACTORY_CLASS_IMPL(Frame::CSkinAttribute, 'SKIN', Scene::CNodeAttribute);
 
 CSkinAttribute::~CSkinAttribute()
 {
-	SAFE_FREE_ALIGNED(pSkinPalette);
+	SAFE_FREE_ALIGNED(_pSkinPalette);
 }
 //---------------------------------------------------------------------
 
@@ -25,12 +25,12 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 		{
 			case 'SKIF':
 			{
-				SkinInfoUID = DataReader.Read<CStrID>();
+				_SkinInfoUID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'RSPH':
 			{
-				RootSearchPath = DataReader.Read<CString>();
+				_RootSearchPath = DataReader.Read<CString>();
 				break;
 			}
 			case 'ACBN':
@@ -48,13 +48,13 @@ bool CSkinAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 
 void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentNode)
 {
-	const UPTR BoneCount = SkinInfo->GetBoneCount();
+	const UPTR BoneCount = _SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		auto& pBoneNode = BoneNodes[i].pNode;
+		auto& pBoneNode = _BoneNodes[i].pNode;
 		if (pBoneNode) continue;
 
-		const auto& BoneInfo = SkinInfo->GetBoneInfo(i);
+		const auto& BoneInfo = _SkinInfo->GetBoneInfo(i);
 		if (BoneInfo.ParentIndex != ParentIndex) continue;
 
 		pBoneNode = ParentNode.GetChild(BoneInfo.ID);
@@ -65,9 +65,9 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentN
 		{
 			// Set skinned mesh into a bind pose initially
 			matrix44 BindPoseLocal;
-			SkinInfo->GetInvBindPose(i).invert_simple(BindPoseLocal);
+			_SkinInfo->GetInvBindPose(i).invert_simple(BindPoseLocal);
 			if (ParentIndex != INVALID_INDEX)
-				BindPoseLocal.mult_simple(SkinInfo->GetInvBindPose(ParentIndex));
+				BindPoseLocal.mult_simple(_SkinInfo->GetInvBindPose(ParentIndex));
 			pBoneNode->SetLocalTransform(BindPoseLocal);
 
 			SetupBoneNodes(i, *pBoneNode);
@@ -78,19 +78,22 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentN
 
 bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(SkinInfoUID);
-	SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
+	if (!_SkinInfo)
+	{
+		Resources::PResource Rsrc = ResMgr.RegisterResource<Render::CSkinInfo>(_SkinInfoUID);
+		_SkinInfo = Rsrc->ValidateObject<Render::CSkinInfo>();
+	}
 
-	if (!_pNode || !SkinInfo) FAIL;
+	if (!_pNode || !_SkinInfo) FAIL;
 
-	auto pRootParent = _pNode->FindNodeByPath(RootSearchPath.CStr());
+	auto pRootParent = _pNode->FindNodeByPath(_RootSearchPath.CStr());
 	if (!pRootParent) FAIL;
 
-	const UPTR BoneCount = SkinInfo->GetBoneCount();
-	pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
+	const UPTR BoneCount = _SkinInfo->GetBoneCount();
+	_pSkinPalette = static_cast<matrix44*>(n_malloc_aligned(BoneCount * sizeof(matrix44), 16));
 
-	BoneNodes.clear();
-	BoneNodes.resize(BoneCount);
+	_BoneNodes.clear();
+	_BoneNodes.resize(BoneCount);
 
 	// Setup root bone(s) and recurse down the hierarchy
 	SetupBoneNodes(INVALID_INDEX, *pRootParent);
@@ -102,8 +105,8 @@ bool CSkinAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 Scene::PNodeAttribute CSkinAttribute::Clone()
 {
 	PSkinAttribute ClonedAttr = n_new(CSkinAttribute);
-	ClonedAttr->RootSearchPath = RootSearchPath;
-	ClonedAttr->SkinInfoUID = SkinInfoUID;
+	ClonedAttr->_RootSearchPath = _RootSearchPath;
+	ClonedAttr->_SkinInfoUID = _SkinInfoUID;
 	ClonedAttr->_Flags.SetTo(Skin_AutocreateBones, _Flags.Is(Skin_AutocreateBones));
 	return ClonedAttr;
 }
@@ -113,16 +116,16 @@ void CSkinAttribute::UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount
 {
 	CNodeAttribute::UpdateAfterChildren(pCOIArray, COICount);
 
-	if (!SkinInfo || BoneNodes.empty() || !pSkinPalette) return;
+	if (!_SkinInfo || _BoneNodes.empty() || !_pSkinPalette) return;
 
-	const UPTR BoneCount = SkinInfo->GetBoneCount();
+	const UPTR BoneCount = _SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
-		const Scene::CSceneNode* pBoneNode = BoneNodes[i].pNode;
-		if (pBoneNode && pBoneNode->GetTransformVersion() != BoneNodes[i].LastTransformVersion)
+		const Scene::CSceneNode* pBoneNode = _BoneNodes[i].pNode;
+		if (pBoneNode && pBoneNode->GetTransformVersion() != _BoneNodes[i].LastTransformVersion)
 		{
-			pSkinPalette[i].mult2_simple(SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
-			BoneNodes[i].LastTransformVersion = pBoneNode->GetTransformVersion();
+			_pSkinPalette[i].mult2_simple(_SkinInfo->GetInvBindPose(i), pBoneNode->GetWorldMatrix());
+			_BoneNodes[i].LastTransformVersion = pBoneNode->GetTransformVersion();
 		}
 	}
 }

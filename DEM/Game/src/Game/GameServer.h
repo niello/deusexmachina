@@ -4,7 +4,6 @@
 #include <Game/EntityManager.h>
 #include <Data/HandleManager.h>
 #include <Data/Data.h>
-#include <Frame/GraphicsResourceManager.h> // FIXME: view, not model!
 
 // Central game engine object. It drives level loading, updating, game saving and loading, entities
 // and the main game timer. The server uses events to trigger entities and custom gameplay systems
@@ -17,9 +16,9 @@ namespace Data
 	class CParams;
 }
 
-namespace Render
+namespace Resources
 {
-	class CGPUDriver;	// For level validation only //???redesign?
+	class CResourceManager;
 }
 
 namespace Game
@@ -65,7 +64,7 @@ public:
 	void			UnloadLevel(CStrID ID);
 	CGameLevel*		GetLevel(CStrID ID) const;
 	bool			IsLevelLoaded(CStrID ID) const;
-	bool			ValidateAllLevels(Frame::CGraphicsResourceManager* pGRM);
+	bool			ValidateAllLevels(Resources::CResourceManager& ResMgr);
 
 	HHandle			CreateLevelView(CStrID LevelID);
 	void			DestroyLevelView(HHandle hView);

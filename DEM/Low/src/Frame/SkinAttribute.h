@@ -32,11 +32,11 @@ protected:
 		U32 LastTransformVersion = 0;
 	};
 
-	CString                RootSearchPath;
-	CStrID                 SkinInfoUID;
-	Render::PSkinInfo      SkinInfo;
-	matrix44*              pSkinPalette = nullptr;
-	std::vector<CBoneInfo> BoneNodes;
+	CString                _RootSearchPath;
+	CStrID                 _SkinInfoUID;
+	Render::PSkinInfo      _SkinInfo;
+	matrix44*              _pSkinPalette = nullptr;
+	std::vector<CBoneInfo> _BoneNodes;
 
 	virtual void                  UpdateAfterChildren(const vector3* pCOIArray, UPTR COICount) override;
 
@@ -54,8 +54,8 @@ public:
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
 	virtual Scene::PNodeAttribute Clone() override;
 
-	Render::CSkinInfo*            GetSkinInfo() const { return SkinInfo.Get(); }
-	const matrix44*               GetSkinPalette() const { return pSkinPalette; }
+	Render::CSkinInfo*            GetSkinInfo() const { return _SkinInfo.Get(); }
+	const matrix44*               GetSkinPalette() const { return _pSkinPalette; }
 };
 
 typedef Ptr<CSkinAttribute> PSkinAttribute;
