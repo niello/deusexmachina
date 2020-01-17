@@ -16,18 +16,13 @@ FACTORY_CLASS_IMPL(Frame::CModelAttribute, 'MDLA', Frame::CRenderableAttribute);
 CModelAttribute::CModelAttribute(CStrID MeshUID, CStrID MaterialUID, U32 MeshGroupIndex)
 	: _MeshUID(MeshUID)
 	, _MaterialUID(MaterialUID)
+	, _MeshGroupIndex(MeshGroupIndex)
 {
-	Renderable.reset(n_new(Render::CModel()));
-	auto pModel = static_cast<Render::CModel*>(Renderable.get());
-	pModel->MeshGroupIndex = MeshGroupIndex;
 }
 //---------------------------------------------------------------------
 
 bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
-	auto pModel = static_cast<Render::CModel*>(Renderable.get());
-
 	for (UPTR j = 0; j < Count; ++j)
 	{
 		const uint32_t Code = DataReader.Read<uint32_t>();
@@ -45,15 +40,15 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 			}
 			case 'MSGR':
 			{
-				if (!DataReader.Read(pModel->MeshGroupIndex)) FAIL;
+				if (!DataReader.Read(_MeshGroupIndex)) FAIL;
 				break;
 			}
 			case 'JPLT':
 			{
 				U16 Count;
 				if (!DataReader.Read(Count)) FAIL;
-				pModel->BoneIndices.SetSize(Count);
-				if (DataReader.GetStream().Read(pModel->BoneIndices.GetPtr(), Count * sizeof(int)) != Count * sizeof(int)) FAIL;
+				_BoneIndices.SetSize(Count);
+				if (DataReader.GetStream().Read(_BoneIndices.GetPtr(), Count * sizeof(int)) != Count * sizeof(int)) FAIL;
 				break;
 			}
 			default: FAIL;
@@ -64,15 +59,23 @@ bool CModelAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CModelAttribute::Clone()
+{
+	PModelAttribute ClonedAttr = n_new(CModelAttribute());
+	ClonedAttr->_MeshUID = _MeshUID;
+	ClonedAttr->_MaterialUID = _MaterialUID;
+	ClonedAttr->_MeshGroupIndex = _MeshGroupIndex;
+	ClonedAttr->_BoneIndices = _BoneIndices;
+	ClonedAttr->_MeshData = _MeshData;
+	return ClonedAttr;
+}
+//---------------------------------------------------------------------
+
 bool CModelAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
-	auto pModel = static_cast<Render::CModel*>(Renderable.get());
-
 	// Store mesh data pointer for GPU-independent local AABB access
 	Resources::PResource RMeshData = ResMgr.RegisterResource<Render::CMeshData>(_MeshUID);
-	pModel->MeshData = RMeshData ? RMeshData->ValidateObject<Render::CMeshData>() : nullptr;
-
+	_MeshData = RMeshData ? RMeshData->ValidateObject<Render::CMeshData>() : nullptr;
 	OK;
 }
 //---------------------------------------------------------------------
@@ -82,6 +85,10 @@ bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	if (!Renderable) Renderable.reset(n_new(Render::CModel()));
 	auto pModel = static_cast<Render::CModel*>(Renderable.get());
 
+	// TODO: don't copy, store once!
+	pModel->BoneIndices = _BoneIndices;
+	pModel->MeshGroupIndex = _MeshGroupIndex;
+
 	pModel->Mesh = _MeshUID ? ResMgr.GetMesh(_MeshUID) : nullptr;
 	pModel->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
 
@@ -89,13 +96,15 @@ bool CModelAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CModelAttribute::Clone()
+bool CModelAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	PModelAttribute ClonedAttr = n_new(CModelAttribute());
-	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
-	ClonedAttr->_MeshUID = _MeshUID;
-	ClonedAttr->_MaterialUID = _MaterialUID;
-	return ClonedAttr;
+	if (!_MeshData) FAIL;
+
+	const Render::CPrimitiveGroup* pGroup = _MeshData->GetGroup(_MeshGroupIndex, LOD);
+	if (!pGroup) FAIL;
+
+	OutBox = pGroup->AABB;
+	OK;
 }
 //---------------------------------------------------------------------
 

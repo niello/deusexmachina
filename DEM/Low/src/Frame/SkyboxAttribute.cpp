@@ -22,7 +22,7 @@ bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 		{
 			case 'MTRL':
 			{
-				MaterialUID = DataReader.Read<CStrID>();
+				_MaterialUID = DataReader.Read<CStrID>();
 				break;
 			}
 			default: FAIL;
@@ -30,6 +30,14 @@ bool CSkyboxAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 	}
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+Scene::PNodeAttribute CSkyboxAttribute::Clone()
+{
+	PSkyboxAttribute ClonedAttr = n_new(CSkyboxAttribute());
+	ClonedAttr->_MaterialUID = _MaterialUID;
+	return ClonedAttr;
 }
 //---------------------------------------------------------------------
 
@@ -46,18 +54,18 @@ bool CSkyboxAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	auto pSkybox = static_cast<Render::CSkybox*>(Renderable.get());
 
 	pSkybox->Mesh = MeshUID ? ResMgr.GetMesh(MeshUID) : nullptr;
-	pSkybox->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
+	pSkybox->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CSkyboxAttribute::Clone()
+bool CSkyboxAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	PSkyboxAttribute ClonedAttr = n_new(CSkyboxAttribute());
-	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
-	ClonedAttr->MaterialUID = MaterialUID;
-	return ClonedAttr;
+	// Infinite size
+	// FIXME: make return false mean an oversized object and detect invalid data otherwise, not by get AABB return value?
+	OutBox = CAABB::Empty;
+	OK;
 }
 //---------------------------------------------------------------------
 

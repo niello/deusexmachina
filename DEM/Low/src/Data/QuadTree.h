@@ -125,14 +125,17 @@ inline bool CQuadTree<TObject, TStorage>::CNode::Contains(float CenterX, float C
 }
 //---------------------------------------------------------------------
 
-// Returns true if nodes share common space (intersect)
+// Returns true if nodes share common space (intersect or one contains another)
 template<class TObject, class TStorage>
 inline bool CQuadTree<TObject, TStorage>::CNode::SharesSpaceWith(const CNode& Other) const
 {
+	// The same node, the space is definitely common
 	if (this == &Other) OK;
+
+	// Two different nodes on the same level never share space (NB: non-loose quadtree only)
 	if (Level == Other.Level) FAIL;
 
-	// If not the same node and not at equal levels, check if one node is a N-level parent of another
+	// Check if one node is a N-level parent of another
 	const CQuadTree<TObject, TStorage>::CNode* pMin;
 	const CQuadTree<TObject, TStorage>::CNode* pMax;
 	if (Level < Other.Level)

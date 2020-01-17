@@ -12,13 +12,14 @@ class CSkyboxAttribute: public CRenderableAttribute
 
 protected:
 
-	CStrID MaterialUID;
+	CStrID _MaterialUID;
 
 public:
 
 	virtual bool                  LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count) override;
-	virtual bool                  ValidateGPUResources(CGraphicsResourceManager& ResMgr) override;
 	virtual Scene::PNodeAttribute Clone() override;
+	virtual bool                  ValidateGPUResources(CGraphicsResourceManager& ResMgr) override;
+	virtual bool                  GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const override;
 };
 
 typedef Ptr<CSkyboxAttribute> PSkyboxAttribute;

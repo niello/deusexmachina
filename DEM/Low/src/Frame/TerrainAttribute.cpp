@@ -18,9 +18,6 @@ FACTORY_CLASS_IMPL(Frame::CTerrainAttribute, 'TRNA', Frame::CRenderableAttribute
 
 bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
-	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
-
 	for (UPTR j = 0; j < Count; ++j)
 	{
 		const uint32_t Code = DataReader.Read<uint32_t>();
@@ -28,23 +25,23 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 		{
 			case 'CDLD':
 			{
-				CDLODDataUID = DataReader.Read<CStrID>();
-				HeightMapUID = CStrID(CDLODDataUID.CStr() + CString("#HM"));
+				_CDLODDataUID = DataReader.Read<CStrID>();
+				_HeightMapUID = CStrID(_CDLODDataUID.CStr() + CString("#HM"));
 				break;
 			}
 			case 'MTRL':
 			{
-				MaterialUID = DataReader.Read<CStrID>();
+				_MaterialUID = DataReader.Read<CStrID>();
 				break;
 			}
 			case 'TSSX':
 			{
-				pTerrain->InvSplatSizeX = 1.f / DataReader.Read<float>();
+				_InvSplatSizeX = 1.f / DataReader.Read<float>();
 				break;
 			}
 			case 'TSSZ':
 			{
-				pTerrain->InvSplatSizeZ = 1.f / DataReader.Read<float>();
+				_InvSplatSizeZ = 1.f / DataReader.Read<float>();
 				break;
 			}
 			default: FAIL;
@@ -55,14 +52,23 @@ bool CTerrainAttribute::LoadDataBlocks(IO::CBinaryReader& DataReader, UPTR Count
 }
 //---------------------------------------------------------------------
 
+Scene::PNodeAttribute CTerrainAttribute::Clone()
+{
+	PTerrainAttribute ClonedAttr = n_new(CTerrainAttribute());
+	ClonedAttr->_MaterialUID = _MaterialUID;
+	ClonedAttr->_CDLODDataUID = _CDLODDataUID;
+	ClonedAttr->_HeightMapUID = _HeightMapUID;
+	ClonedAttr->_InvSplatSizeX = _InvSplatSizeX;
+	ClonedAttr->_InvSplatSizeZ = _InvSplatSizeZ;
+	ClonedAttr->_CDLODData = _CDLODData;
+	return ClonedAttr;
+}
+//---------------------------------------------------------------------
+
 bool CTerrainAttribute::ValidateResources(Resources::CResourceManager& ResMgr)
 {
-	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
-	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
-
-	auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(CDLODDataUID);
-	pTerrain->CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
-
+	auto RCDLODData = ResMgr.RegisterResource<Render::CCDLODData>(_CDLODDataUID);
+	_CDLODData = RCDLODData->ValidateObject<Render::CCDLODData>();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -75,20 +81,25 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 	//!!!write R32F variant!
 	if (!ResMgr.GetGPU()->CheckCaps(Render::Caps_VSTex_R16)) FAIL;
 
+	if (!_CDLODData)
+	{
+		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
+		if (!ValidateResources(*ResMgr.GetResourceManager()) || !_CDLODData) FAIL;
+	}
+
 	if (!Renderable) Renderable.reset(n_new(Render::CTerrain()));
 	auto pTerrain = static_cast<Render::CTerrain*>(Renderable.get());
 
-	if (!pTerrain->CDLODData)
-	{
-		n_assert2(false, "CTerrainAttribute::ValidateGPUResources() > ValidateResources must be called before this!");
-		if (!ValidateResources(*ResMgr.GetResourceManager()) || !pTerrain->CDLODData) FAIL;
-	}
-
-	const auto PatchSize = pTerrain->CDLODData->GetPatchSize();
+	const auto PatchSize = _CDLODData->GetPatchSize();
 	if (!IsPow2(PatchSize) || PatchSize < 4) FAIL;
 
-	pTerrain->Material = MaterialUID ? ResMgr.GetMaterial(MaterialUID) : nullptr;
-	pTerrain->HeightMap = HeightMapUID ? ResMgr.GetTexture(HeightMapUID, Render::Access_GPU_Read) : nullptr;
+	// TODO: don't copy, store once!
+	pTerrain->InvSplatSizeX = _InvSplatSizeX;
+	pTerrain->InvSplatSizeZ = _InvSplatSizeZ;
+	pTerrain->CDLODData = _CDLODData;
+
+	pTerrain->Material = _MaterialUID ? ResMgr.GetMaterial(_MaterialUID) : nullptr;
+	pTerrain->HeightMap = _HeightMapUID ? ResMgr.GetTexture(_HeightMapUID, Render::Access_GPU_Read) : nullptr;
 
 	CString PatchName;
 	PatchName.Format("#Mesh_Patch%dx%d", PatchSize, PatchSize);
@@ -110,14 +121,11 @@ bool CTerrainAttribute::ValidateGPUResources(CGraphicsResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-Scene::PNodeAttribute CTerrainAttribute::Clone()
+bool CTerrainAttribute::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
 {
-	PTerrainAttribute ClonedAttr = n_new(CTerrainAttribute());
-	if (Renderable) ClonedAttr->Renderable = std::move(Renderable->Clone());
-	ClonedAttr->MaterialUID = MaterialUID;
-	ClonedAttr->CDLODDataUID = CDLODDataUID;
-	ClonedAttr->HeightMapUID = HeightMapUID;
-	return ClonedAttr;
+	if (!_CDLODData) FAIL;
+	OutBox = _CDLODData->GetAABB();
+	OK;
 }
 //---------------------------------------------------------------------
 

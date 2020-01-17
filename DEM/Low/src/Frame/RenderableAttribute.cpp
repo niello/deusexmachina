@@ -65,7 +65,7 @@ bool CRenderableAttribute::GetGlobalAABB(CAABB& OutBox, UPTR LOD) const
 	}
 	else
 	{
-		if (!Renderable || !Renderable->GetLocalAABB(OutBox, LOD)) FAIL;
+		if (GetLocalAABB(OutBox, LOD)) FAIL;
 		OutBox.Transform(_pNode->GetWorldMatrix());
 	}
 

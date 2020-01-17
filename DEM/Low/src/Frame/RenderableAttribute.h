@@ -42,6 +42,7 @@ public:
 	virtual bool         ValidateGPUResources(CGraphicsResourceManager& ResMgr) = 0;
 	void                 UpdateInSPS(Scene::CSPS& SPS);
 
+	virtual bool         GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 	bool                 GetGlobalAABB(CAABB& OutBox, UPTR LOD = 0) const;
 	Render::IRenderable* GetRenderable() const { return Renderable.get(); }
 };
