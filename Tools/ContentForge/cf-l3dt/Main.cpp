@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/terrain --path Data ../../../content
+// -s src/terrain -c --path Data ../../../content
 
 static inline bool IsPow2(uint32_t Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
 
@@ -41,6 +41,7 @@ protected:
 	std::string               _SettingsFile;
 	bool                      _OutputBin = false;
 	bool                      _OutputHRD = false; // For debug purposes, saves scene hierarchies in a human-readable format
+	bool                      _NeedCollision = false;
 
 public:
 
@@ -110,6 +111,7 @@ public:
 		CLIApp.add_option("--settings", _SettingsFile, "Settings file path");
 		CLIApp.add_flag("-t,--txt", _OutputHRD, "Output scenes in a human-readable format, suitable for debugging only");
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
+		CLIApp.add_flag("-c,--collision", _NeedCollision, "Add a collision attribute to the asset");
 	}
 
 	fs::path GetPath(const Data::CParams& TaskParams, const char* pPathID)
@@ -543,7 +545,7 @@ public:
 			Attributes.push_back(std::move(Attribute));
 		}
 
-		if (!CDLODID.empty())
+		if (_NeedCollision && !CDLODID.empty())
 		{
 			Data::CParams Attribute;
 			Attribute.emplace_back(CStrID("Class"), 'COLA'); // Physics::CCollisionAttribute
