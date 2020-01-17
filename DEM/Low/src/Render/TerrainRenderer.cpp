@@ -222,11 +222,11 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 		float AABBSizeZ = Context.AABB.Max.z - AABBMinZ;
 
 		CLightTestArgs Args;
-		Args.pCDLOD = pTerrain->GetCDLODData();
+		Args.pCDLOD = &CDLOD;
 		Args.AABBMinX = AABBMinX;
 		Args.AABBMinZ = AABBMinZ;
-		Args.ScaleBaseX = AABBSizeX / (float)(pTerrain->GetCDLODData()->GetHeightMapWidth() - 1);
-		Args.ScaleBaseZ = AABBSizeZ / (float)(pTerrain->GetCDLODData()->GetHeightMapHeight() - 1);
+		Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
+		Args.ScaleBaseZ = AABBSizeZ / (float)(CDLOD.GetHeightMapHeight() - 1);
 
 		CArray<U16>& LightIndices = *Context.pLightIndices;
 		Node.LightIndexBase = LightIndices.GetCount();
@@ -699,8 +699,8 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		constexpr float MorphStartRatio = 0.7f;
 		constexpr UPTR MAX_LOD_COUNT = 32;
 
-		const CCDLODData* pCDLOD = pTerrain->GetCDLODData();
-		U32 LODCount = pCDLOD->GetLODCount();
+		const CCDLODData& CDLOD = *pTerrain->GetCDLODData();
+		const U32 LODCount = CDLOD.GetLODCount();
 
 		// Calculate morph constants
 
@@ -731,7 +731,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			n_assert_dbg(pInstances);
 		}
 
-		CAABB AABB = pTerrain->GetCDLODData()->GetAABB();
+		CAABB AABB = CDLOD.GetAABB();
 		AABB.Transform(pRenderNode->Transform);
 		float AABBMinX = AABB.Min.x;
 		float AABBMinZ = AABB.Min.z;
@@ -739,21 +739,21 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		float AABBSizeZ = AABB.Max.z - AABBMinZ;
 
 		CProcessTerrainNodeArgs Args;
-		Args.pCDLOD = pTerrain->GetCDLODData();
+		Args.pCDLOD = &CDLOD;
 		Args.pInstances = pInstances;
 		Args.pMorphConsts = MorphConsts;
 		Args.pRenderContext = &Context;
 		Args.MaxInstanceCount = MaxInstanceCount;
 		Args.AABBMinX = AABBMinX;
 		Args.AABBMinZ = AABBMinZ;
-		Args.ScaleBaseX = AABBSizeX / (float)(pCDLOD->GetHeightMapWidth() - 1);
-		Args.ScaleBaseZ = AABBSizeZ / (float)(pCDLOD->GetHeightMapHeight() - 1);
+		Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
+		Args.ScaleBaseZ = AABBSizeZ / (float)(CDLOD.GetHeightMapHeight() - 1);
 		Args.LightIndexBase = pRenderNode->LightIndexBase;
 		Args.LightCount = pRenderNode->LightCount;
 
 		U8 MaxLightCount = 0;
-		const U32 TopPatchesW = pCDLOD->GetTopPatchCountW();
-		const U32 TopPatchesH = pCDLOD->GetTopPatchCountH();
+		const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
+		const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
 		const U32 TopLOD = LODCount - 1;
 		for (U32 Z = 0; Z < TopPatchesH; ++Z)
 			for (U32 X = 0; X < TopPatchesW; ++X)
@@ -869,12 +869,12 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			CDLODParams.WorldToHM[1] = 1.f / AABBSizeZ;
 			CDLODParams.WorldToHM[2] = -AABBMinX * CDLODParams.WorldToHM[0];
 			CDLODParams.WorldToHM[3] = -AABBMinZ * CDLODParams.WorldToHM[1];
-			CDLODParams.TerrainYScale = 65535.f * pCDLOD->GetVerticalScale();
-			CDLODParams.TerrainYOffset = -32767.f * pCDLOD->GetVerticalScale() + pRenderNode->Transform.m[3][1]; // [3][1] = Translation.y
+			CDLODParams.TerrainYScale = 65535.f * CDLOD.GetVerticalScale();
+			CDLODParams.TerrainYOffset = -32767.f * CDLOD.GetVerticalScale() + pRenderNode->Transform.m[3][1]; // [3][1] = Translation.y
 			CDLODParams.InvSplatSizeX = pTerrain->GetInvSplatSizeX();
 			CDLODParams.InvSplatSizeZ = pTerrain->GetInvSplatSizeZ();
-			CDLODParams.TexelSize[0] = 1.f / (float)pCDLOD->GetHeightMapWidth();
-			CDLODParams.TexelSize[1] = 1.f / (float)pCDLOD->GetHeightMapHeight();
+			CDLODParams.TexelSize[0] = 1.f / (float)CDLOD.GetHeightMapWidth();
+			CDLODParams.TexelSize[1] = 1.f / (float)CDLOD.GetHeightMapHeight();
 
 			PerInstance.SetRawConstant(ConstVSCDLODParams, &CDLODParams, sizeof(CDLODParams));
 		}
@@ -1096,7 +1096,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			if (ConstGridConsts)
 			{
 				float GridConsts[2];
-				GridConsts[0] = pCDLOD->GetPatchSize() * 0.5f;
+				GridConsts[0] = CDLOD.GetPatchSize() * 0.5f;
 				GridConsts[1] = 1.f / GridConsts[0];
 				PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
 			}
@@ -1124,7 +1124,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			if (ConstGridConsts)
 			{
 				float GridConsts[2];
-				GridConsts[0] = pCDLOD->GetPatchSize() * 0.25f;
+				GridConsts[0] = CDLOD.GetPatchSize() * 0.25f;
 				GridConsts[1] = 1.f / GridConsts[0];
 				PerInstance.SetRawConstant(ConstGridConsts, &GridConsts, sizeof(GridConsts));
 			}
