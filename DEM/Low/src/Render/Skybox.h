@@ -20,9 +20,6 @@ public:
 
 	PMaterial				Material;
 	PMesh					Mesh;
-
-	virtual PRenderable Clone() override;
-	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD) const override { OutBox = CAABB::Empty; OK; }	// Infinite size
 };
 
 typedef Ptr<CSkybox> PSkybox;

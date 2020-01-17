@@ -12,7 +12,7 @@ void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 	if (!Renderable) return;
 
 	CAABB AABB;
-	const bool AABBIsValid = Renderable->GetLocalAABB(AABB);
+	const bool AABBIsValid = GetLocalAABB(AABB);
 	const bool SPSChanged = (pSPS != &SPS);
 
 	// Remove record, if AABB is invalid or object is moved to another SPS (one scene - one SPS for now)

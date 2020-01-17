@@ -731,8 +731,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			n_assert_dbg(pInstances);
 		}
 
-		CAABB AABB;
-		n_verify_dbg(pTerrain->GetLocalAABB(AABB, 0));
+		CAABB AABB = pTerrain->GetCDLODData()->GetAABB();
 		AABB.Transform(pRenderNode->Transform);
 		float AABBMinX = AABB.Min.x;
 		float AABBMinZ = AABB.Min.z;

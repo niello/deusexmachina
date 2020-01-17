@@ -31,9 +31,6 @@ public:
 	CTerrain();
 	virtual ~CTerrain() override;
 
-	virtual PRenderable Clone() override;
-	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD) const override;
-
 	CCDLODData*         GetCDLODData() const { return CDLODData.Get(); }
 	CMaterial*          GetMaterial() const { return Material.Get(); }
 	CTexture*           GetHeightMap() const { return HeightMap.Get(); }

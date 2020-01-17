@@ -33,8 +33,6 @@ protected:
 
 public:
 
-	virtual PRenderable Clone() = 0;
-	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD = 0) const = 0;
 };
 
 }

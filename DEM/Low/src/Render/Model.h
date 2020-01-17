@@ -24,9 +24,6 @@ public:
 	CFixedArray<int> BoneIndices;        // For skinning splits due to shader constants limit only
 
 	// ERenderFlag: ShadowCaster, ShadowReceiver, DoOcclusionCulling (Skinned, EnableInstancing etc too?)
-
-	virtual PRenderable Clone() override;
-	virtual bool        GetLocalAABB(CAABB& OutBox, UPTR LOD) const override;
 };
 
 }

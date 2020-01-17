@@ -11,24 +11,4 @@ FACTORY_CLASS_IMPL(Render::CTerrain, 'TERR', Render::IRenderable);
 
 CTerrain::CTerrain() = default;
 CTerrain::~CTerrain() = default;
-
-PRenderable CTerrain::Clone()
-{
-	CTerrain* pCloned = n_new(CTerrain);
-	pCloned->PatchMesh = PatchMesh;
-	pCloned->QuarterPatchMesh = QuarterPatchMesh;
-	pCloned->InvSplatSizeX = InvSplatSizeX;
-	pCloned->InvSplatSizeZ = InvSplatSizeZ;
-	return PRenderable(pCloned);
-}
-//---------------------------------------------------------------------
-
-bool CTerrain::GetLocalAABB(CAABB& OutBox, UPTR LOD) const
-{
-	if (!CDLODData) FAIL;
-	OutBox = CDLODData->GetAABB();
-	OK;
-}
-//---------------------------------------------------------------------
-
 }
