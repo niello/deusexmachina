@@ -1,7 +1,6 @@
 #include "RenderableAttribute.h"
 #include <Scene/SPS.h>
 #include <Scene/SceneNode.h>
-#include <Render/Renderable.h>
 
 namespace Frame
 {
@@ -9,7 +8,7 @@ RTTI_CLASS_IMPL(Frame::CRenderableAttribute, Scene::CNodeAttribute);
 
 void CRenderableAttribute::UpdateInSPS(Scene::CSPS& SPS)
 {
-	if (!Renderable) return;
+	n_assert_dbg(IsActive());
 
 	CAABB AABB;
 	const bool AABBIsValid = GetLocalAABB(AABB);
