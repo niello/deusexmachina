@@ -1,9 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_REGIONS_H__
-#define __DEM_L1_REGIONS_H__
 
 // Line 1D, rect 2D and cuboid 3D axis-aligned region descriptions.
-// Implicit constructors allow to interchange these objects.
+// Implicit constructors allow to convert between these objects.
 
 //!!!make templated!
 
@@ -79,5 +77,3 @@ inline CSegment::CSegment(const CBox& Box): X(Box.X), W(Box.W) {}
 inline CRect::CRect(const CBox& Box): X(Box.X), Y(Box.Y), W(Box.W), H(Box.H) {}
 
 }
-
-#endif

@@ -1,4 +1,37 @@
 #include "GameLevel.h"
+#include <Scene/SceneNode.h>
+#include <Physics/PhysicsLevel.h>
+
+namespace DEM::Game
+{
+
+// FIXME: calculate based on size, 1 unit = 1 meter
+static UPTR GetDefaultHierarchyDepth(const vector3& Size)
+{
+	return 5;
+}
+//---------------------------------------------------------------------
+
+CGameLevel::CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
+	: _ID(ID)
+	, _SceneRoot(n_new(Scene::CSceneNode(ID)))
+	, _PhysicsLevel(n_new(Physics::CPhysicsLevel(Bounds)))
+{
+	_SPS.Init(Bounds.Center(), Bounds.Size(), SubdivisionDepth ? SubdivisionDepth : GetDefaultHierarchyDepth(Bounds.Size()));
+}
+//---------------------------------------------------------------------
+
+CGameLevel::~CGameLevel()
+{
+	// Order of destruction is important
+	_SceneRoot = nullptr;
+	_PhysicsLevel = nullptr;
+}
+//---------------------------------------------------------------------
+
+}
+
+//////////////// TODO: REMOVE ///////////////////////////////
 
 #include <Frame/View.h>
 #include <Frame/CameraAttribute.h>
@@ -8,7 +41,6 @@
 #include <Scene/SceneNodeValidateResources.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
-#include <Physics/PhysicsLevel.h>
 #include <Physics/PhysicsObject.h>
 #include <AI/AILevel.h>
 #include <Events/EventServer.h>
@@ -37,11 +69,11 @@ void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
 	P->Set(CStrID("FrameTime"), (float)timeStep);
 	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("AfterPhysicsTick"), P);
 
-	/*for (int i = 0; i < world->getDispatcher()->getNumManifolds(); ++i)
-	{
-		btPersistentManifold* pManifold = world->getDispatcher()->getManifoldByIndexInternal(i);
-		//pManifold->getBody0();
-	}*/
+	//for (int i = 0; i < world->getDispatcher()->getNumManifolds(); ++i)
+	//{
+	//	btPersistentManifold* pManifold = world->getDispatcher()->getManifoldByIndexInternal(i);
+	//	//pManifold->getBody0();
+	//}
 }
 //---------------------------------------------------------------------
 
@@ -60,6 +92,7 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 {
 	//n_assert(!Initialized);
 
+	/*
 	ID = LevelID; //Desc.Get<CStrID>(CStrID("ID"), CStrID::Empty);
 	Name = Desc.Get<CString>(CStrID("Name"), CString::Empty);
 
@@ -210,6 +243,8 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 	GlobalSub = EventSrv->Subscribe(nullptr, this, &CGameLevel::OnEvent);
 
+	*/
+
 	OK;
 }
 //---------------------------------------------------------------------
@@ -260,29 +295,29 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 
 	// Save nav. regions status
 	// No iterator, no consistency. Needs redesign.
-/*	if (AILevel.IsValid())
-	{
-		Data::PParams SGAI = n_new(Data::CParams);
-		OutDesc.Set(CStrID("AI"), SGAI);
+	//if (AILevel.IsValid())
+	//{
+	//	Data::PParams SGAI = n_new(Data::CParams);
+	//	OutDesc.Set(CStrID("AI"), SGAI);
 
-		// In fact, must save per-nav-poly flags, because regions may intersect
-		Data::PParams CurrRegionsDesc = n_new(Data::CParams);
-		for ()
+	//	// In fact, must save per-nav-poly flags, because regions may intersect
+	//	Data::PParams CurrRegionsDesc = n_new(Data::CParams);
+	//	for ()
 
-		Data::PParams InitialAI;
-		Data::PParams InitialRegions;
-		if (pInitialDesc &&
-			pInitialDesc->Get(InitialAI, CStrID("AI")) &&
-			InitialAI->Get(InitialRegions, CStrID("Regions")))
-		{
-			Data::PParams SGRegions = n_new(Data::CParams);
-			InitialRegions->GetDiff(*SGRegions, *CurrRegionsDesc);
-			if (SGRegions->GetCount()) SGAI->Set(CStrID("Regions"), SGRegions);
-		}
-		else SGAI->Set(CStrID("Regions"), CurrRegionsDesc);
-	}
-*/
+	//	Data::PParams InitialAI;
+	//	Data::PParams InitialRegions;
+	//	if (pInitialDesc &&
+	//		pInitialDesc->Get(InitialAI, CStrID("AI")) &&
+	//		InitialAI->Get(InitialRegions, CStrID("Regions")))
+	//	{
+	//		Data::PParams SGRegions = n_new(Data::CParams);
+	//		InitialRegions->GetDiff(*SGRegions, *CurrRegionsDesc);
+	//		if (SGRegions->GetCount()) SGAI->Set(CStrID("Regions"), SGRegions);
+	//	}
+	//	else SGAI->Set(CStrID("Regions"), CurrRegionsDesc);
+	//}
 
+	/*
 	// Save entities diff
 	Data::PParams SGEntities = n_new(Data::CParams);
 
@@ -325,39 +360,38 @@ bool CGameLevel::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	}
 
 	OutDesc.Set(CStrID("Entities"), SGEntities);
+	*/
 
 	OK;
 }
 //---------------------------------------------------------------------
 
-/*
-bool CGameServer::SetActiveLevel(CStrID ID)
-{
-	PGameLevel NewLevel;
-	if (ID.IsValid())
-	{
-		IPTR LevelIdx = Levels.FindIndex(ID);
-		if (LevelIdx == INVALID_INDEX) FAIL;
-		NewLevel = Levels.ValueAt(LevelIdx);
-	}
-
-	if (NewLevel != ActiveLevel)
-	{
-		EventSrv->FireEvent(CStrID("OnActiveLevelChanging"));
-		ActiveLevel = NewLevel;
-		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValidPtr() ? ID : CStrID::Empty);
-
-		EntityUnderMouse = CStrID::Empty;
-		HasMouseIsect = false;
-		UpdateMouseIntersectionInfo();
-
-		EventSrv->FireEvent(CStrID("OnActiveLevelChanged"));
-	}
-
-	OK;
-}
-//---------------------------------------------------------------------
-*/
+//bool CGameServer::SetActiveLevel(CStrID ID)
+//{
+//	PGameLevel NewLevel;
+//	if (ID.IsValid())
+//	{
+//		IPTR LevelIdx = Levels.FindIndex(ID);
+//		if (LevelIdx == INVALID_INDEX) FAIL;
+//		NewLevel = Levels.ValueAt(LevelIdx);
+//	}
+//
+//	if (NewLevel != ActiveLevel)
+//	{
+//		EventSrv->FireEvent(CStrID("OnActiveLevelChanging"));
+//		ActiveLevel = NewLevel;
+//		SetGlobalAttr<CStrID>(CStrID("ActiveLevel"), ActiveLevel.IsValidPtr() ? ID : CStrID::Empty);
+//
+//		EntityUnderMouse = CStrID::Empty;
+//		HasMouseIsect = false;
+//		UpdateMouseIntersectionInfo();
+//
+//		EventSrv->FireEvent(CStrID("OnActiveLevelChanged"));
+//	}
+//
+//	OK;
+//}
+////---------------------------------------------------------------------
 
 bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
@@ -365,13 +399,13 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 }
 //---------------------------------------------------------------------
 
-/*void CGameLevel::RenderScene()
-{
-//???add to each view variables?
-	RenderSrv->SetAmbientLight(AmbientLight);
-	RenderSrv->SetCameraPosition(MainCamera->GetPosition());
-	RenderSrv->SetViewProjection(ViewProj);
-*/
+//void CGameLevel::RenderScene()
+//{
+////???add to each view variables?
+//	RenderSrv->SetAmbientLight(AmbientLight);
+//	RenderSrv->SetCameraPosition(MainCamera->GetPosition());
+//	RenderSrv->SetViewProjection(ViewProj);
+//
 // Dependent cameras:
 	// Some shapes may request textures that are RTs of specific cameras
 	// These textures must be rendered before shapes are rendered
@@ -429,22 +463,20 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 //}
 ////---------------------------------------------------------------------
 
-/*
-//!!!???bool flags what subsystems to render?
-void CGameLevel::RenderDebug()
-{
-	PhysicsLevel->RenderDebug();
-
-	FireEvent(CStrID("OnRenderDebug"));
-
-	if (SceneRoot.IsValidPtr())
-	{
-		Scene::CSceneNodeRenderDebug RD;
-		SceneRoot->AcceptVisitor(RD);
-	}
-}
-//---------------------------------------------------------------------
-*/
+////!!!???bool flags what subsystems to render?
+//void CGameLevel::RenderDebug()
+//{
+//	PhysicsLevel->RenderDebug();
+//
+//	FireEvent(CStrID("OnRenderDebug"));
+//
+//	if (SceneRoot.IsValidPtr())
+//	{
+//		Scene::CSceneNodeRenderDebug RD;
+//		SceneRoot->AcceptVisitor(RD);
+//	}
+//}
+////---------------------------------------------------------------------
 
 //???write 2 versions, physics-based and mesh-based?
 bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3D, CStrID* pOutEntityUID) const
@@ -480,27 +512,27 @@ UPTR CGameLevel::GetEntitiesAtScreenRect(CArray<CEntity*>& Out, const Data::CRec
 
 bool CGameLevel::GetEntityScreenPos(vector2& Out, const Game::CEntity& Entity, const vector3* Offset) const
 {
-	Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
-	if (MainCamera.IsNullPtr()) FAIL;
-	vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
-	if (Offset) EntityPos += *Offset;
-	MainCamera->GetPoint2D(EntityPos, Out.x, Out.y);
+	//Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
+	//if (MainCamera.IsNullPtr()) FAIL;
+	//vector3 EntityPos = Entity.GetAttr<matrix44>(CStrID("Transform")).Translation();
+	//if (Offset) EntityPos += *Offset;
+	//MainCamera->GetPoint2D(EntityPos, Out.x, Out.y);
 	OK;
 }
 //---------------------------------------------------------------------
 
 bool CGameLevel::GetEntityScreenPosUpper(vector2& Out, const Game::CEntity& Entity) const
 {
-	Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
-	if (MainCamera.IsNullPtr()) FAIL;
+	//Frame::PCameraAttribute MainCamera; //!!!DBG TMP!
+	//if (MainCamera.IsNullPtr()) FAIL;
 
-	Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
-	if (!pNode) FAIL;
+	//Prop::CPropSceneNode* pNode = Entity.GetProperty<Prop::CPropSceneNode>();
+	//if (!pNode) FAIL;
 
-	CAABB AABB;
-	pNode->GetAABB(AABB);
-	vector3 Center = AABB.Center();
-	MainCamera->GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
+	//CAABB AABB;
+	//pNode->GetAABB(AABB);
+	//vector3 Center = AABB.Center();
+	//MainCamera->GetPoint2D(vector3(Center.x, AABB.Max.y, Center.z), Out.x, Out.y);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -527,17 +559,17 @@ UPTR CGameLevel::GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& C
 
 bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength) const
 {
-	n_assert(ProbeLength > 0);
-	vector3 Dir(0.0f, -ProbeLength, 0.0f);
+	//n_assert(ProbeLength > 0);
+	//vector3 Dir(0.0f, -ProbeLength, 0.0f);
 
-	//!!!can request closest contacts for Default and Terrain!
-	U16 Group = PhysicsLevel->CollisionGroups.GetMask("Default");
-	U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All");
-	vector3 ContactPos;
-	if (!PhysicsLevel->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
-	Out.WorldHeight = ContactPos.y;
+	////!!!can request closest contacts for Default and Terrain!
+	//U16 Group = PhysicsLevel->CollisionGroups.GetMask("Default");
+	//U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All");
+	//vector3 ContactPos;
+	//if (!PhysicsLevel->GetClosestRayContact(Position, Position + Dir, Group, Mask, &ContactPos)) FAIL;
+	//Out.WorldHeight = ContactPos.y;
 
-	//!!!material from CPhysicsObject!
+	////!!!material from CPhysicsObject!
 
 	OK;
 }

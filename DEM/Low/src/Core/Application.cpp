@@ -378,6 +378,9 @@ void CApplication::ParseCommandLine(const char* pCmdLine)
 {
 	if (!pCmdLine || !*pCmdLine) return;
 
+	// TODO: implement through CLI11
+	NOT_IMPLEMENTED;
+
 	//!!!DBG TMP!
 	if (!strcmp(pCmdLine, "-O TestFloat=999.0"))
 	{

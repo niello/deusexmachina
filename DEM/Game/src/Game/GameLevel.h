@@ -1,20 +1,14 @@
 #pragma once
-#include <Events/EventDispatcher.h>
-#include <Scene/SPS.h>
+#include <Data/RefCounted.h>
 #include <Data/Regions.h>
+#include <Data/StringID.h>
+#include <Scene/SPS.h>
+#include <Math/AABB.h>
 
-// Represents one game location, including all entities in it and property worlds (physics, AI, scene).
-// In MVC pattern level would be a Model.
+// Represents one game location. Consists of subsystem worlds (scene, graphics, physics, AI).
+// In MVC pattern it is a model.
 
-namespace Data
-{
-	class CParams;
-}
-
-namespace Scripting
-{
-	typedef Ptr<class CScriptObject> PScriptObject;
-}
+// TODO: are physics & AI (and other) worlds optional?
 
 namespace Scene
 {
@@ -24,7 +18,50 @@ namespace Scene
 namespace Physics
 {
 	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
-	typedef int CMaterialType;
+}
+
+namespace DEM::Game
+{
+typedef Ptr<class CGameLevel> PGameLevel;
+
+class CGameLevel : public Data::CRefCounted
+{
+protected:
+
+	CStrID                 _ID;
+
+	Scene::PSceneNode      _SceneRoot;
+	Scene::CSPS            _SPS;
+	Physics::PPhysicsLevel _PhysicsLevel;
+	//AI::PAILevel           AILevel;
+
+public:
+
+	CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
+	virtual ~CGameLevel() override;
+
+	CStrID					GetID() const { return _ID; }
+
+	Scene::CSceneNode&		GetSceneRoot() { return *_SceneRoot.Get(); }
+	Scene::CSPS&			GetSPS() { return _SPS; }
+	Physics::CPhysicsLevel*	GetPhysics() const { return _PhysicsLevel.Get(); }
+	//AI::CAILevel*			GetAI() const { return AILevel.Get(); }
+};
+
+}
+
+
+//////////////// TODO: REMOVE ///////////////////////////////
+#include <Events/EventDispatcher.h>
+
+namespace Data
+{
+	class CParams;
+}
+
+namespace Scripting
+{
+	typedef Ptr<class CScriptObject> PScriptObject;
 }
 
 namespace AI
@@ -46,7 +83,7 @@ struct CSurfaceInfo
 {
 	//float					TerrainHeight;
 	float					WorldHeight;
-	Physics::CMaterialType	Material;
+	// Physics material or at least its ID
 	//???where to ignore dynamic/AI objects, where not to?
 	//???how to check multilevel ground (bridge above a road etc)?
 	//???how to check is point inside world geom?
@@ -79,8 +116,6 @@ public:
 	bool					Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc = nullptr);
 	//void					RenderDebug();
 
-	//???GetEntityAABB(AABB_Gfx | AABB_Phys);?
-
 	//!!!ensure there are SPS-accelerated queries!
 	// Screen queries
 	//???pass camera? or move to view? here is more universal, but may need renaming as there is no "screen" at the server part
@@ -106,7 +141,5 @@ public:
 	Physics::CPhysicsLevel*	GetPhysics() const { return PhysicsLevel.Get(); }
 	AI::CAILevel*			GetAI() const { return AILevel.Get(); }
 };
-
-typedef Ptr<CGameLevel> PGameLevel;
 
 }

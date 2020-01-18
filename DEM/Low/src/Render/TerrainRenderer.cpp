@@ -200,8 +200,10 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 	Node.pTech = pEffect->GetTechByInputSet(InputSet_CDLOD);
 	if (!Node.pTech) FAIL;
 
+	// For sorting, different terrain objects with the same mesh will be rendered sequentially.
+	// NB: doesn't save redundant sets because of quarter patches. Still need or set nullptrs?
 	Node.pMesh = pTerrain->GetPatchMesh();
-	Node.pGroup = Node.pMesh ? pTerrain->GetPatchMesh()->GetGroup(0, 0) : nullptr; // For sorting, different terrain objects with the same mesh will be rendered sequentially
+	Node.pGroup = Node.pMesh ? pTerrain->GetPatchMesh()->GetGroup(0, 0) : nullptr;
 
 	U8 LightCount = 0;
 
@@ -216,10 +218,10 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 		const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
 		const U32 TopLOD = CDLOD.GetLODCount() - 1;
 
-		float AABBMinX = Context.AABB.Min.x;
-		float AABBMinZ = Context.AABB.Min.z;
-		float AABBSizeX = Context.AABB.Max.x - AABBMinX;
-		float AABBSizeZ = Context.AABB.Max.z - AABBMinZ;
+		const float AABBMinX = Context.AABB.Min.x;
+		const float AABBMinZ = Context.AABB.Min.z;
+		const float AABBSizeX = Context.AABB.Max.x - AABBMinX;
+		const float AABBSizeZ = Context.AABB.Max.z - AABBMinZ;
 
 		CLightTestArgs Args;
 		Args.pCDLOD = &CDLOD;
@@ -241,7 +243,7 @@ bool CTerrainRenderer::PrepareNode(CRenderNode& Node, const CRenderNodeContext& 
 			{
 				case Light_Point:
 				{
-					//!!!???avoid object creation, rewrite functions so that testing against vector + float is possible!?
+					//!!!???rewrite functions so that testing against vector + float is possible!?
 					sphere LightBounds(LightRec.Transform.Translation(), pLight->GetRange());
 					if (LightBounds.GetClipStatus(Context.AABB) == Outside) continue;
 
@@ -986,14 +988,11 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 
 			// If current buffer doesn't suit the tech, recreate it. Since we only grow tech LightCount and never
 			// shrink it, buffer reallocation will be requested only if can't handle desired light count.
-			if (InstanceVB.IsNullPtr() || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
+			if (!InstanceVB || InstanceVB->GetVertexLayout()->GetComponentCount() != DeclSize)
 			{
 				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), DeclSize);
 				InstanceVB = nullptr; // Drop before allocating new buffer
 				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
-
-				//!!!DBG TMP!
-				Sys::DbgOut("New terrain instance buffer allocated, %d vertex decl elements\n", DeclSize);
 			}
 
 			// Upload instance data to IA stream

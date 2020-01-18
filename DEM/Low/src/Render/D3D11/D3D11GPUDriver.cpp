@@ -550,7 +550,7 @@ bool CD3D11GPUDriver::SwapChainExists(UPTR SwapChainID) const
 //---------------------------------------------------------------------
 
 //!!!call ResizeTarget to resize fullscreen or windowed to resize a target window too!
-//!!!use what is written now to respond do changes!
+//!!!use what is written now to respond to changes!
 // Does not resize an OS window, because often is called in response to an OS window resize
 //???bool ResizeOSWindow?
 bool CD3D11GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsigned int Height)
@@ -558,12 +558,6 @@ bool CD3D11GPUDriver::ResizeSwapChain(UPTR SwapChainID, unsigned int Width, unsi
 	if (!SwapChainExists(SwapChainID)) FAIL;
 
 	CD3D11SwapChain& SC = SwapChains[SwapChainID];
-
-//!!!DBG TMP!
-BOOL FScr;
-SC.pSwapChain->GetFullscreenState(&FScr, nullptr);
-Sys::DbgOut("CD3D11GPUDriver::ResizeSwapChain(%d, %d, %d), %s\n", SwapChainID, Width, Height, FScr == TRUE ? "Full" : "Wnd");
-//!!!DBG TMP!
 
 	const CRenderTargetDesc& BackBufDesc = SC.BackBufferRT->GetDesc();
 

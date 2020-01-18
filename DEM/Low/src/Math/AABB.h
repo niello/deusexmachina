@@ -24,8 +24,8 @@ public:
 	vector3 Min;
 	vector3 Max;
 
-	CAABB() {}
-	CAABB(const vector3& Center, const vector3& Extents): Min(Center - Extents), Max(Center + Extents) {}
+	CAABB() = default;
+	CAABB(const vector3& Center, const vector3& HalfSize): Min(Center - HalfSize), Max(Center + HalfSize) {}
 	CAABB(const matrix44& m) { Set(m); }
 
 	vector3		Center() const { return (Min + Max) * 0.5f; }

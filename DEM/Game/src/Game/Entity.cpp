@@ -104,7 +104,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 				}
 				else if (InitialProp.IsA<CString>())
 				{
-					if (InitialProp == ClassName) break;
+					if (InitialProp.GetValue<CString>().CStr() == ClassName) break;
 				}
 				else Sys::Error("Inappropriate property record type, only string class name and int FourCC are allowed!");
 			}
