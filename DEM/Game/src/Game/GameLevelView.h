@@ -23,6 +23,8 @@ protected:
 	PGameLevel    _Level;
 	Frame::CView& _View; //???or hold strong/weak reference?
 
+	//???different debug draw options? Physics, separate property types etc?
+
 public:
 
 	CGameLevelView(CGameLevel& Level, Frame::CView& View);

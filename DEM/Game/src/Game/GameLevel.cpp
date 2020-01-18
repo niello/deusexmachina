@@ -1,4 +1,5 @@
 #include "GameLevel.h"
+#include <Frame/SceneNodeUpdateInSPS.h>
 #include <Scene/SceneNode.h>
 #include <Scene/SceneNodeValidateResources.h>
 #include <Physics/PhysicsLevel.h>
@@ -40,6 +41,26 @@ bool CGameLevel::Validate(Resources::CResourceManager& ResMgr)
 	if (_PhysicsLevel && !_SceneRoot->AcceptVisitor(Physics::CSceneNodeValidatePhysics(*_PhysicsLevel))) FAIL;
 
 	OK;
+}
+//---------------------------------------------------------------------
+
+void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
+{
+	// Local transforms
+
+	// ... update animations etc (only in entities, may trigger animation system here, which updates CAnimationComponent's)
+
+	// Global transforms
+
+	if (_PhysicsLevel) _PhysicsLevel->Update(dt);
+
+	// ... update other global transform controllers
+
+	// Scene
+
+	_SceneRoot->Update(pCOIArray, COICount);
+
+	_SceneRoot->AcceptVisitor(Frame::CSceneNodeUpdateInSPS(_SPS));
 }
 //---------------------------------------------------------------------
 

@@ -9,6 +9,7 @@
 // In MVC pattern it is a model.
 
 // TODO: are physics & AI (and other) worlds optional?
+// TODO: CreateView(Frame::CView& View)?
 
 namespace Scene
 {
@@ -46,6 +47,7 @@ public:
 	virtual ~CGameLevel() override;
 
 	bool                    Validate(Resources::CResourceManager& ResMgr);
+	void                    Update(float dt, const vector3* pCOIArray, UPTR COICount);
 
 	CStrID					GetID() const { return _ID; }
 

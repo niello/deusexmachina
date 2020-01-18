@@ -30,7 +30,6 @@ class CGameLevelView;
 
 class CGameServer
 {
-	RTTI_CLASS_DECL;
 	__DeclareSingleton(CGameServer);
 
 protected:

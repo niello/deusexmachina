@@ -18,7 +18,6 @@
 
 namespace Game
 {
-RTTI_CLASS_IMPL(Game::CGameServer, Core::CObject);
 __ImplementSingleton(CGameServer);
 
 CGameServer::CGameServer(): LevelViews(0, 1), LevelViewHandles(1)
