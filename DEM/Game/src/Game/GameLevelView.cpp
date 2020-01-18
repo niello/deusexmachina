@@ -1,6 +1,25 @@
 #include "GameLevelView.h"
-
 #include <Game/GameLevel.h>
+#include <Frame/SceneNodePrecreateRenderObjects.h>
+#include <Frame/SceneNodeUpdateInSPS.h>
+#include <Scene/SceneNode.h>
+
+namespace DEM::Game
+{
+
+CGameLevelView::CGameLevelView(CGameLevel& Level, Frame::CView& View)
+	: _Level(&Level)
+	, _View(View)
+{
+	_View.pSPS = &_Level->GetSPS();
+	_Level->GetSceneRoot().AcceptVisitor(Frame::CSceneNodePrecreateRenderObjects(_View));
+}
+//---------------------------------------------------------------------
+
+}
+
+
+//////////////// TODO: REMOVE ///////////////////////////////
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Scene/PropSceneNode.h>

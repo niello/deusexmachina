@@ -1,14 +1,41 @@
 #pragma once
-#ifndef __DEM_L2_GAME_LEVEL_VIEW_H__
-#define __DEM_L2_GAME_LEVEL_VIEW_H__
+#include <Data/Ptr.h>
 
+// Represents a client view of a game location. Manages rendering and input.
+// In MVC pattern it is a view.
+
+//???camera controller here?
+
+namespace Frame
+{
+	class CView;
+}
+
+namespace DEM::Game
+{
+typedef Ptr<class CGameLevel> PGameLevel;
+typedef std::unique_ptr<class CGameLevelView> PGameLevelView;
+
+class CGameLevelView final
+{
+protected:
+
+	PGameLevel    _Level;
+	Frame::CView& _View; //???or hold strong/weak reference?
+
+public:
+
+	CGameLevelView(CGameLevel& Level, Frame::CView& View);
+};
+
+}
+
+
+//////////////// TODO: REMOVE ///////////////////////////////
 #include <Frame/View.h>
 #include <Data/StringID.h>
 #include <Math/Vector3.h>
 #include <Events/EventsFwd.h>
-
-// Represents a client view of a game location. Manages rendering and input.
-// In MVC pattern level view would be a View.
 
 namespace Data
 {
@@ -65,5 +92,3 @@ public:
 };
 
 }
-
-#endif

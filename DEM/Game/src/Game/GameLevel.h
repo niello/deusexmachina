@@ -20,6 +20,11 @@ namespace Physics
 	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
 }
 
+namespace Resources
+{
+	class CResourceManager;
+}
+
 namespace DEM::Game
 {
 typedef Ptr<class CGameLevel> PGameLevel;
@@ -39,6 +44,8 @@ public:
 
 	CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	virtual ~CGameLevel() override;
+
+	bool                    Validate(Resources::CResourceManager& ResMgr);
 
 	CStrID					GetID() const { return _ID; }
 
@@ -67,11 +74,6 @@ namespace Scripting
 namespace AI
 {
 	typedef Ptr<class CAILevel> PAILevel;
-}
-
-namespace Resources
-{
-	class CResourceManager;
 }
 
 namespace Game

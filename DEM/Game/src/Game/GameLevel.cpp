@@ -1,6 +1,8 @@
 #include "GameLevel.h"
 #include <Scene/SceneNode.h>
+#include <Scene/SceneNodeValidateResources.h>
 #include <Physics/PhysicsLevel.h>
+#include <Physics/SceneNodeValidatePhysics.h>
 
 namespace DEM::Game
 {
@@ -29,6 +31,18 @@ CGameLevel::~CGameLevel()
 }
 //---------------------------------------------------------------------
 
+bool CGameLevel::Validate(Resources::CResourceManager& ResMgr)
+{
+	// force entities to spawn into worlds (scene, physics etc)
+
+	if (!_SceneRoot->AcceptVisitor(Scene::CSceneNodeValidateResources(ResMgr))) FAIL;
+
+	if (_PhysicsLevel && !_SceneRoot->AcceptVisitor(Physics::CSceneNodeValidatePhysics(*_PhysicsLevel))) FAIL;
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 }
 
 //////////////// TODO: REMOVE ///////////////////////////////
@@ -38,7 +52,6 @@ CGameLevel::~CGameLevel()
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Scripting/ScriptObject.h>
-#include <Scene/SceneNodeValidateResources.h>
 #include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsObject.h>
