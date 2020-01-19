@@ -21,6 +21,11 @@ namespace Physics
 	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
 }
 
+namespace AI
+{
+	typedef Ptr<class CAILevel> PAILevel;
+}
+
 namespace Resources
 {
 	class CResourceManager;
@@ -39,7 +44,7 @@ protected:
 	Scene::PSceneNode      _SceneRoot;
 	Scene::CSPS            _SPS;
 	Physics::PPhysicsLevel _PhysicsLevel;
-	//AI::PAILevel           AILevel;
+	AI::PAILevel           _AILevel;
 
 public:
 
@@ -49,12 +54,12 @@ public:
 	bool                    Validate(Resources::CResourceManager& ResMgr);
 	void                    Update(float dt, const vector3* pCOIArray, UPTR COICount);
 
-	CStrID					GetID() const { return _ID; }
+	CStrID                  GetID() const { return _ID; }
 
-	Scene::CSceneNode&		GetSceneRoot() { return *_SceneRoot.Get(); }
-	Scene::CSPS&			GetSPS() { return _SPS; }
-	Physics::CPhysicsLevel*	GetPhysics() const { return _PhysicsLevel.Get(); }
-	//AI::CAILevel*			GetAI() const { return AILevel.Get(); }
+	Scene::CSceneNode&      GetSceneRoot() { return *_SceneRoot.Get(); }
+	Scene::CSPS&            GetSPS() { return _SPS; }
+	Physics::CPhysicsLevel* GetPhysics() const { return _PhysicsLevel.Get(); }
+	AI::CAILevel*           GetAI() const { return _AILevel.Get(); }
 };
 
 }
@@ -71,11 +76,6 @@ namespace Data
 namespace Scripting
 {
 	typedef Ptr<class CScriptObject> PScriptObject;
-}
-
-namespace AI
-{
-	typedef Ptr<class CAILevel> PAILevel;
 }
 
 namespace Game

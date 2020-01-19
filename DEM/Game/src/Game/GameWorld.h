@@ -11,14 +11,27 @@
 
 // TODO: move entity management and API into separate object and store it inside? World.Entities().Create(...) etc.
 
+namespace Data
+{
+	class CParams;
+}
+
+namespace Resources
+{
+	class CResourceManager;
+}
+
 namespace DEM::Game
 {
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
+class ISaveLoadDelegate;
 
 class CGameWorld final
 {
 protected:
+
+	Resources::CResourceManager& _ResMgr;
 
 	// entity by level list (or store in levels?), entity must know its current level (in some component? or component remembers if wants?)
 	// components by type list
@@ -32,6 +45,8 @@ protected:
 
 public:
 
+	CGameWorld(Resources::CResourceManager& ResMgr);
+
 	//???factory or n_new, then load in a client code?
 	// LoadState(params / delegate)
 	// SaveState(params / delegate)
@@ -43,7 +58,7 @@ public:
 	// GetTime
 
 	CGameLevel* CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
-	CGameLevel* LoadLevel(CStrID ID /*CParams or delegate*/);
+	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& BaseData, ISaveLoadDelegate* pStateLoader = nullptr);
 	// SaveLevel(id, out params / delegate)
 	// UnloadLevel(id)
 	// FindLevel(id)
