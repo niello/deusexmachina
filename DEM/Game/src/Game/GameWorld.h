@@ -25,7 +25,16 @@ namespace DEM::Game
 {
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
-class ISaveLoadDelegate;
+
+class ISaveLoadDelegate
+{
+public:
+
+	virtual ~ISaveLoadDelegate() = default;
+
+	//???pass level or level ID?
+	virtual bool LoadEntities(CGameWorld& World, CGameLevel& Level, const Data::CParams& ) = 0;
+};
 
 class CGameWorld final
 {
