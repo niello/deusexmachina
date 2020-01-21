@@ -44,7 +44,7 @@ HHandle CHandleManager::FindHandle(void* pData) const
 			NOT_IMPLEMENTED;
 		}
 
-	return INVALID_HANDLE;
+	return 0;
 }
 //---------------------------------------------------------------------
 

@@ -54,7 +54,6 @@ const UPTR INVALID_HALF_INDEX = (1 << HalfRegisterBits) - 1;
 #define UPTR_HIGH_HALF(x)	((x) >> HalfRegisterBits)
 
 typedef UPTR				HHandle;
-#define INVALID_HANDLE		((HHandle)(0))
 
 //???use template C++ std facility?
 #ifndef I32_MAX

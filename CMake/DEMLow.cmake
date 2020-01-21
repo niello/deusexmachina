@@ -27,6 +27,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/FixedArray.h
 	DEM/Low/src/Data/Flags.h
 	DEM/Low/src/Data/FourCC.h
+	DEM/Low/src/Data/HandleArray.h
 	DEM/Low/src/Data/HandleManager.h
 	DEM/Low/src/Data/Hash.h
 	DEM/Low/src/Data/HashPairT.h
@@ -320,6 +321,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/Data.cpp
 	DEM/Low/src/Data/DataArray.cpp
 	DEM/Low/src/Data/DataScheme.cpp
+	DEM/Low/src/Data/HandleArray.cpp
 	DEM/Low/src/Data/HandleManager.cpp
 	DEM/Low/src/Data/HRDParser.cpp
 	DEM/Low/src/Data/MurmurHash3.cpp
