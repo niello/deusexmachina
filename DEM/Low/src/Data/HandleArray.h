@@ -1,10 +1,12 @@
 #pragma once
-#include <StdDEM.h>
+#include <cstdint>
 
 // Handle array combines a growable array and a pool allocator. For element referencing
 // it provides persistent handles which are never invalidated, unlike pointers or iterators.
 // Handle dereferencing is very fast. Don't store raw pointers obtained through handles.
-// There are template parameters:
+// NB: free record linked list reuses records evenly. Dynamic growing keeps even highly
+// dynamic collections from spreading across the memory, if initial size is not very big.
+// Template parameters:
 // T               - value type
 // H               - handle internal representation, must be any unsigned integral type
 // IndexBits       - amount of bits in H reserved for element indexing. Determines a maximum
@@ -13,6 +15,8 @@
 // ResetOnOverflow - when slot reaches its reuse limit it is excluded by default. Setting this
 //                   to true overrides this behaviour and removes the element allocation limit,
 //                   but in a cost of a possibility of multiple identical handles to exist.
+
+// TODO: try raw array and inplace constructors?
 
 namespace Data
 {
@@ -23,11 +27,18 @@ class CHandleArray
 	static_assert(std::is_unsigned_v<H> && std::is_integral_v<H>, "CHandleArray > H must be an unsigned integral type");
 	static_assert(IndexBits > 0, "CHandleArray > IndexBits must not be 0");
 	static_assert((sizeof(H) * 8 - IndexBits) > 1, "CHandleArray > too few reuse bits, try less IndexBits or bigger H");
-	static_assert(sizeof(UPTR) * 8 > IndexBits, "CHandleArray > too many index bits, not supported by underlying structure");
+	static_assert(sizeof(size_t) * 8 > IndexBits, "CHandleArray > too many index bits, not supported by underlying structure");
+
+public:
+
+	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
+
+	typedef struct { H Raw; } CHandle; // A new type is required for the type safety
+
+	static constexpr CHandle INVALID_HANDLE = { MAX_CAPACITY };
 
 protected:
 
-	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
 	static constexpr H INDEX_ALLOCATED = MAX_CAPACITY;
 	static constexpr H REUSE_BITS_MASK = (static_cast<H>(-1) << IndexBits);
 	static constexpr H INDEX_BITS_MASK = ~REUSE_BITS_MASK;
@@ -39,16 +50,16 @@ protected:
 	};
 
 	std::vector<CHandleRec> _Records;
-	UPTR                    _ElementCount = 0;
-	UPTR                    _FirstFreeIndex = MAX_CAPACITY;
-	UPTR                    _LastFreeIndex = MAX_CAPACITY;
+	size_t                  _ElementCount = 0;
+	size_t                  _FirstFreeIndex = MAX_CAPACITY;
+	size_t                  _LastFreeIndex = MAX_CAPACITY;
 
 	bool IsFull() const { return _LastFreeIndex == MAX_CAPACITY; }
 
 	// Links newly added records to a single linked list of free records
-	void BuildFreeList(UPTR StartIndex = 0)
+	void BuildFreeList(size_t StartIndex = 0)
 	{
-		const UPTR Size = _Records.size();
+		const size_t Size = _Records.size();
 		if (StartIndex >= Size) return;
 
 		if (IsFull())
@@ -69,22 +80,16 @@ protected:
 
 		_LastFreeIndex = Size - 1;
 	}
+	//---------------------------------------------------------------------
 
-public:
-
-	typedef struct { H Raw; } CHandle; // A new type is required for the type safety
-
-	static constexpr CHandle INVALID_HANDLE = { MAX_CAPACITY };
-
-	CHandleArray() = default;
-	CHandleArray(UPTR InitialSize) : _Records(InitialSize) { BuildFreeList(); }
-	CHandleArray(UPTR InitialSize, const T& Prototype) : _Records(InitialSize, CHandleRec{ Prototype, 0 }) { BuildFreeList(); }
-
-	CHandle Allocate()
+	H AllocateEmpty()
 	{
 		if (!IsFull())
 		{
 			// Use a free record
+			auto& Record = _Records[_FirstFreeIndex];
+			const auto ReuseBits = (Record.Handle & REUSE_BITS_MASK);
+			const H NewHandle = ReuseBits | _FirstFreeIndex;
 
 			if (_FirstFreeIndex == _LastFreeIndex)
 			{
@@ -94,63 +99,105 @@ public:
 			}
 			else
 			{
-				//!!!fix free record list!
+				// Set the next free index as the first
+				_FirstFreeIndex = (Record.Handle & INDEX_BITS_MASK);
 			}
 
-			return { WTF };
+			Record.Handle = ReuseBits | INDEX_ALLOCATED;
+
+			return NewHandle;
 		}
 
-		const UPTR Size = _Records.size();
+		const size_t Size = _Records.size();
 		if (Size < MAX_CAPACITY)
 		{
 			// All records are used but an index space is not exhausted
 			_Records.push_back({ T(), INDEX_ALLOCATED });
-			return { Size };
+			return Size;
 		}
 
 		if (ResetOnOverflow)
 		{
-			// Scan for records with exhausted reuse count, resurrect the first found.
-			// Since reuse count is incremented on release, the record is surely free.
-			for (UPTR i = 0; i < Size; ++i)
+			// Scan for records with exhausted reuse count, resurrect the first one found.
+			// Since the reuse count is incremented on release, the record is surely free.
+			for (size_t i = 0; i < Size; ++i)
 			{
-				//Record
+				auto& Record = _Records[i];
 				if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
 				{
-					//
+					Record.Handle = INDEX_ALLOCATED; // Reuse bits are cleared to 0
+					return i;
 				}
 			}
 		}
 
 		// Can't allocate a new record
-		return INVALID_HANDLE;
+		return MAX_CAPACITY;
+	}
+	//---------------------------------------------------------------------
 
-		// find first free slot + first invalid one (for ResetOnOverflow)
-		// if no free but size is not maximal, grow
-		// if ResetOnOverflow and no free slots, resurrect the first invalid slot
-		//???store starting index for the search? update on allocate and free
+public:
+
+	CHandleArray() = default;
+	CHandleArray(size_t InitialSize) : _Records(InitialSize) { BuildFreeList(); }
+	CHandleArray(size_t InitialSize, const T& Prototype) : _Records(InitialSize, CHandleRec{ Prototype, 0 }) { BuildFreeList(); }
+
+	CHandle Allocate(T&& Value = T())
+	{
+		auto Handle = AllocateEmpty();
+		if (Handle != MAX_CAPACITY)
+			_Records[Handle & INDEX_BITS_MASK].Value = std::move(Value);
+		return { Handle };
 	}
 
-	CHandle  Allocate(const T& Value);
-	CHandle  Allocate(T&& Value);
-	void     Free(CHandle Handle); //!!!don't add to the free list if reuse exhausted!
-	void     ResetExhaustedReuse(); //explicit reset of exhausted reuse counters
+	CHandle Allocate(const T& Value)
+	{
+		auto Handle = AllocateEmpty();
+		if (Handle != MAX_CAPACITY)
+			_Records[Handle & INDEX_BITS_MASK].Value = Value;
+		return { Handle };
+	}
 
-	bool IsHandleValid(CHandle Handle) const
+	void     Free(CHandle Handle); //!!!don't add to the free list if reuse exhausted!
+	void     ResetExhaustedReuse(); //explicit reset of exhausted reuse counters, rebuild free list on the fly!
+
+	//SetToHandle(Handle, const T& Value)
+	//SetToHandle(Handle, T&& Value)
+
+	T* GetValue(CHandle Handle)
 	{
 		const auto Index = (Handle & INDEX_BITS_MASK);
-		return Index < _Records.size() && // Index itself is valid
-			(Handle & REUSE_BITS_MASK) == (_Records[Index].Handle & REUSE_BITS_MASK); // Reuse count is the same
+		if (Index < _Records.size())
+		{
+			// Check that reuse count is the same and the record is not free
+			auto& Record = _Records[Index];
+			if (((Handle & REUSE_BITS_MASK) | INDEX_ALLOCATED) == Record.Handle)
+				return &Record.Value;
+		}
+
+		return nullptr;
 	}
 
-	T*       GetValue(CHandle Handle);
-	const T* GetValue(CHandle Handle) const;
+	const T* GetValue(CHandle Handle) const
+	{
+		const auto Index = (Handle & INDEX_BITS_MASK);
+		if (Index < _Records.size())
+		{
+			// Check that reuse count is the same and the record is not free
+			auto& Record = _Records[Index];
+			if (((Handle & REUSE_BITS_MASK) | INDEX_ALLOCATED) == Record.Handle)
+				return &Record.Value;
+		}
 
-	constexpr UPTR GetMaxSize() const { return MAX_CAPACITY; }
+		return nullptr;
+	}
+
+	constexpr size_t GetMaxCapacity() const { return MAX_CAPACITY; }
+	size_t           GetCurrentCapacity() const { return _Records.size(); }
 
 	//!!!begin, end! not trivial, must skip invalid slots, must stop when _Size of processed elements is reached!
-	UPTR size() const { return _ElementCount; }
-	bool empty() const { return !_ElementCount; }
+	size_t           size() const { return _ElementCount; }
+	bool             empty() const { return !_ElementCount; }
 };
 
 }

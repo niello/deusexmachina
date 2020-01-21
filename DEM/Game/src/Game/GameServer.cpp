@@ -203,25 +203,25 @@ bool CGameServer::ValidateAllLevels(Resources::CResourceManager& ResMgr)
 HHandle CGameServer::CreateLevelView(CStrID LevelID)
 {
 	IPTR Idx = Levels.FindIndex(LevelID);
-	if (Idx == INVALID_INDEX) return INVALID_HANDLE;
+	if (Idx == INVALID_INDEX) return 0;
 
 	CGameLevel* pLevel = Levels.ValueAt(Idx);
-	if (!pLevel) return INVALID_HANDLE;
+	if (!pLevel) return 0;
 
 	CGameLevelView* pView = n_new(CGameLevelView);
 
 	HHandle hView = LevelViewHandles.OpenHandle(pView);
-	if (hView == INVALID_HANDLE)
+	if (hView == 0)
 	{
 		n_delete(pView);
-		return INVALID_HANDLE;
+		return 0;
 	}
 
 	if (!pView->Setup(*pLevel, hView))
 	{
 		LevelViewHandles.CloseHandle(hView);
 		n_delete(pView);
-		return INVALID_HANDLE;
+		return 0;
 	}
 
 	LevelViews.Add(pView);
