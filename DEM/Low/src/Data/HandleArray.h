@@ -23,7 +23,8 @@ namespace Data
 template<typename T, typename H = uint32_t, size_t IndexBits = 20, bool ResetOnOverflow = false>
 class CHandleArray
 {
-	static_assert(std::is_unsigned_v<H> && std::is_integral_v<H>, "CHandleArray > H must be an unsigned integral type");
+	static_assert(std::is_unsigned_v<H> && std::is_integral_v<H> && !std::is_same_v<H, bool>,
+		"CHandleArray > H must be an unsigned integral type other than bool");
 	static_assert(IndexBits > 0, "CHandleArray > IndexBits must not be 0");
 	static_assert((sizeof(H) * 8 - IndexBits) > 1, "CHandleArray > too few reuse bits, try less IndexBits or bigger H");
 	static_assert(sizeof(size_t) * 8 > IndexBits, "CHandleArray > too many index bits, not supported by underlying structure");
@@ -58,7 +59,7 @@ protected:
 	bool IsFull() const { return _LastFreeIndex == MAX_CAPACITY; }
 
 	// Links newly added records to a single linked list of free records
-	void BuildFreeList(size_t StartIndex, size_t EndIndex)
+	void AddRangeToFreeList(size_t StartIndex, size_t EndIndex)
 	{
 		if (IsFull())
 		{
@@ -134,7 +135,7 @@ protected:
 		{
 			// Record[Index] is immediately allocated, all other added records are attached to the free list
 			_Records.resize(Index + 1, { _Prototype, 0 } );
-			BuildFreeList(Size, Index - 1);
+			AddRangeToFreeList(Size, Index - 1);
 		}
 		else
 		{
@@ -194,25 +195,6 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
-	void AddIndexToFreeList(size_t Index)
-	{
-		// Add the record to the free list end
-		if (IsFull())
-		{
-			// The first free record, start the free list
-			_FirstFreeIndex = Index;
-		}
-		else
-		{
-			// Attach the record to the end of the free list
-			auto& PrevFree = _Records[_LastFreeIndex].Handle;
-			PrevFree = (PrevFree & REUSE_BITS_MASK) | Index;
-		}
-
-		_LastFreeIndex = Index;
-	}
-	//---------------------------------------------------------------------
-
 public:
 
 	CHandleArray() = default;
@@ -221,14 +203,14 @@ public:
 	CHandleArray(size_t InitialSize)
 		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY))
 	{
-		BuildFreeList(0, _Records.size() - 1);
+		AddRangeToFreeList(0, _Records.size() - 1);
 	}
 
 	CHandleArray(size_t InitialSize, const T& Prototype)
 		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY), CHandleRec{ Prototype, 0 })
 		, _Prototype(Prototype)
 	{
-		BuildFreeList(0, _Records.size() - 1);
+		AddRangeToFreeList(0, _Records.size() - 1);
 	}
 
 	CHandle Allocate() { return { AllocateEmpty() }; }
@@ -287,7 +269,7 @@ public:
 			}
 		}
 
-		AddIndexToFreeList(Index);
+		AddRangeToFreeList(Index, Index);
 	}
 
 	// Explicit reset of exhausted reuse counters. The effect is the same as from ResetOnOverflow = true.
@@ -302,7 +284,7 @@ public:
 			if ((Handle & REUSE_BITS_MASK) != REUSE_BITS_MASK) continue;
 
 			Handle &= (~REUSE_BITS_MASK);
-			AddIndexToFreeList(i);
+			AddRangeToFreeList(i, i);
 		}
 	}
 
