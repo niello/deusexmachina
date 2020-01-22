@@ -6,6 +6,7 @@
 // Handle dereferencing is very fast. Don't store raw pointers obtained through handles.
 // NB: free record linked list reuses records evenly. Dynamic growing keeps even highly
 // dynamic collections from spreading across the memory, if initial size is not very big.
+// All records are initialized with a prototype or T() by default.
 // Template parameters:
 // T               - value type
 // H               - handle internal representation, must be any unsigned integral type
@@ -15,8 +16,6 @@
 // ResetOnOverflow - when slot reaches its reuse limit it is excluded by default. Setting this
 //                   to true overrides this behaviour and removes the element allocation limit,
 //                   but in a cost of a possibility of multiple identical handles to exist.
-
-// TODO: try raw array and inplace constructors?
 
 namespace Data
 {
@@ -53,6 +52,7 @@ protected:
 	size_t                  _ElementCount = 0;
 	size_t                  _FirstFreeIndex = MAX_CAPACITY;
 	size_t                  _LastFreeIndex = MAX_CAPACITY;
+	T                       _Prototype;
 
 	bool IsFull() const { return _LastFreeIndex == MAX_CAPACITY; }
 
@@ -112,23 +112,8 @@ protected:
 		if (Size < MAX_CAPACITY)
 		{
 			// All records are used but an index space is not exhausted
-			_Records.push_back({ T(), INDEX_ALLOCATED });
+			_Records.push_back({ _Prototype, INDEX_ALLOCATED });
 			return Size;
-		}
-
-		if (ResetOnOverflow)
-		{
-			// Scan for records with exhausted reuse count, resurrect the first one found.
-			// Since the reuse count is incremented on release, the record is surely free.
-			for (size_t i = 0; i < Size; ++i)
-			{
-				auto& Record = _Records[i];
-				if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
-				{
-					Record.Handle = INDEX_ALLOCATED; // Reuse bits are cleared to 0
-					return i;
-				}
-			}
 		}
 
 		// Can't allocate a new record
@@ -139,10 +124,24 @@ protected:
 public:
 
 	CHandleArray() = default;
-	CHandleArray(size_t InitialSize) : _Records(InitialSize) { BuildFreeList(); }
-	CHandleArray(size_t InitialSize, const T& Prototype) : _Records(InitialSize, CHandleRec{ Prototype, 0 }) { BuildFreeList(); }
+	CHandleArray(const T& Prototype) : _Prototype(Prototype) {}
 
-	CHandle Allocate(T&& Value = T())
+	CHandleArray(size_t InitialSize)
+		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY))
+	{
+		BuildFreeList();
+	}
+
+	CHandleArray(size_t InitialSize, const T& Prototype)
+		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY), CHandleRec{ Prototype, 0 })
+		, _Prototype(Prototype)
+	{
+		BuildFreeList();
+	}
+
+	CHandle Allocate() { return { AllocateEmpty() }; }
+
+	CHandle Allocate(T&& Value)
 	{
 		auto Handle = AllocateEmpty();
 		if (Handle != MAX_CAPACITY)
@@ -158,20 +157,47 @@ public:
 		return { Handle };
 	}
 
-	void     Free(CHandle Handle); //!!!don't add to the free list if reuse exhausted!
-	void     ResetExhaustedReuse(); //explicit reset of exhausted reuse counters, rebuild free list on the fly!
+	void Free(CHandle Handle)
+	{
+		//!!!don't add to the free list if reuse exhausted!
+		//???or instead of searching in AllocateEmpty, resurrect right here?!
 
+		//if (ResetOnOverflow)
+		//{
+		//	// Scan for records with exhausted reuse count, resurrect the first one found.
+		//	// Since the reuse count is incremented on release, the record is surely free.
+		//	for (size_t i = 0; i < Size; ++i)
+		//	{
+		//		auto& Record = _Records[i];
+		//		if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
+		//		{
+		//			Record.Handle = INDEX_ALLOCATED; // Reuse bits are cleared to 0
+		//			return i;
+		//		}
+		//	}
+		//}
+	}
+
+	// NB: advanced method, increased risk!
+	void ResetExhaustedReuse()
+	{
+		//explicit reset of exhausted reuse counters, rebuild free list on the fly!
+	}
+
+	// NB: advanced method, increased risk!
 	//SetToHandle(Handle, const T& Value)
+
+	// NB: advanced method, increased risk!
 	//SetToHandle(Handle, T&& Value)
 
 	T* GetValue(CHandle Handle)
 	{
-		const auto Index = (Handle & INDEX_BITS_MASK);
+		const auto Index = (Handle.Raw & INDEX_BITS_MASK);
 		if (Index < _Records.size())
 		{
 			// Check that reuse count is the same and the record is not free
 			auto& Record = _Records[Index];
-			if (((Handle & REUSE_BITS_MASK) | INDEX_ALLOCATED) == Record.Handle)
+			if (((Handle.Raw & REUSE_BITS_MASK) | INDEX_ALLOCATED) == Record.Handle)
 				return &Record.Value;
 		}
 
@@ -180,12 +206,12 @@ public:
 
 	const T* GetValue(CHandle Handle) const
 	{
-		const auto Index = (Handle & INDEX_BITS_MASK);
+		const auto Index = (Handle.Raw & INDEX_BITS_MASK);
 		if (Index < _Records.size())
 		{
 			// Check that reuse count is the same and the record is not free
 			auto& Record = _Records[Index];
-			if (((Handle & REUSE_BITS_MASK) | INDEX_ALLOCATED) == Record.Handle)
+			if (((Handle.Raw & REUSE_BITS_MASK) | INDEX_ALLOCATED) == Record.Handle)
 				return &Record.Value;
 		}
 
