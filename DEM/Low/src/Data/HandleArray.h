@@ -31,10 +31,11 @@ class CHandleArray
 public:
 
 	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
+	static constexpr H INVALID_HANDLE_VALUE = MAX_CAPACITY;
 
-	using CHandle = struct { H Raw; }; // A new type is required for the type safety
+	using CHandle = struct { H Raw; }; // A new type is required for type safety
 
-	static constexpr CHandle INVALID_HANDLE = { MAX_CAPACITY };
+	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };
 
 protected:
 
@@ -116,14 +117,17 @@ protected:
 		}
 
 		// Can't allocate a new record
-		return MAX_CAPACITY;
+		return INVALID_HANDLE_VALUE;
 	}
 	//---------------------------------------------------------------------
 
 	H AllocateEmptyAt(H Handle)
 	{
+		// Can't add a handle with exhausted reuse counter
+		if ((Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK) return INVALID_HANDLE_VALUE;
+
 		const auto Index = (Handle & INDEX_BITS_MASK);
-		if (Index >= MAX_CAPACITY) return MAX_CAPACITY;
+		if (Index >= MAX_CAPACITY) return INVALID_HANDLE_VALUE;
 
 		const size_t Size = _Records.size();
 		if (Index >= Size)
@@ -135,7 +139,7 @@ protected:
 		else
 		{
 			// Fail if target record is already allocated
-			if ((_Records[Index].Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) return MAX_CAPACITY;
+			if ((_Records[Index].Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) return INVALID_HANDLE_VALUE;
 
 			// Fixup the free list. It is not empty because at least our target record is free.
 			if (Index == _FirstFreeIndex)
@@ -187,6 +191,25 @@ protected:
 		_Records[Index].Handle = (Handle | INDEX_ALLOCATED);
 
 		return Handle;
+	}
+	//---------------------------------------------------------------------
+
+	void AddIndexToFreeList(size_t Index)
+	{
+		// Add the record to the free list end
+		if (IsFull())
+		{
+			// The first free record, start the free list
+			_FirstFreeIndex = Index;
+		}
+		else
+		{
+			// Attach the record to the end of the free list
+			auto& PrevFree = _Records[_LastFreeIndex].Handle;
+			PrevFree = (PrevFree & REUSE_BITS_MASK) | Index;
+		}
+
+		_LastFreeIndex = Index;
 	}
 	//---------------------------------------------------------------------
 
@@ -264,28 +287,23 @@ public:
 			}
 		}
 
-		// Add the record to the free list end
-		if (IsFull())
-		{
-			// The first free record, start the free list
-			_FirstFreeIndex = Index;
-		}
-		else
-		{
-			// Attach the record to the end of the free list
-			auto& PrevFree = _Records[_LastFreeIndex].Handle;
-			PrevFree = (PrevFree & REUSE_BITS_MASK) | Index;
-		}
-
-		_LastFreeIndex = Index;
+		AddIndexToFreeList(Index);
 	}
 
-	// Explicit reset of exhausted reuse counters. Call when you're sure that no expired handles will become valid.
+	// Explicit reset of exhausted reuse counters. The effect is the same as from ResetOnOverflow = true.
+	// Call when you're sure that no expired handles exist in a client code that can become "valid".
 	// NB: advanced method, increased risk!
 	void ResetExhaustedReuse()
 	{
-		//explicit reset of exhausted reuse counters, rebuild free list on the fly!
-		NOT_IMPLEMENTED;
+		const size_t Size = _Records.size();
+		for (size_t i = 0; i < Size; ++i)
+		{
+			auto& Handle = _Records[i].Handle;
+			if ((Handle & REUSE_BITS_MASK) != REUSE_BITS_MASK) continue;
+
+			Handle &= (~REUSE_BITS_MASK);
+			AddIndexToFreeList(i);
+		}
 	}
 
 	// Store the value with the specified handle. Useful for serialization and replication.
@@ -318,7 +336,6 @@ public:
 	}
 
 	T*               GetValue(CHandle Handle) { return const_cast<T*>(const_cast<const CHandleArray*>(this)->GetValue(Handle)); }
-
 	constexpr size_t GetMaxCapacity() const { return MAX_CAPACITY; }
 	size_t           GetCurrentCapacity() const { return _Records.size(); }
 
