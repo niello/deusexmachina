@@ -125,13 +125,13 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
-	H AllocateEmptyAt(H Handle)
+	bool AllocateEmptyAt(H Handle)
 	{
 		// Can't add a handle with exhausted reuse counter
-		if ((Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK) return INVALID_HANDLE_VALUE;
+		if ((Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK) return false;
 
 		const auto Index = (Handle & INDEX_BITS_MASK);
-		if (Index >= MAX_CAPACITY) return INVALID_HANDLE_VALUE;
+		if (Index >= MAX_CAPACITY) return false;
 
 		const size_t Size = _Records.size();
 		if (Index >= Size)
@@ -143,7 +143,7 @@ protected:
 		else
 		{
 			// Fail if target record is already allocated
-			if ((_Records[Index].Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) return INVALID_HANDLE_VALUE;
+			if ((_Records[Index].Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) return false;
 
 			// Fixup the free list. It is not empty because at least our target record is free.
 			if (Index == _FirstFreeIndex)
@@ -186,7 +186,7 @@ protected:
 		_Records[Index].Handle = (Handle | INDEX_ALLOCATED);
 
 		++_ElementCount;
-		return Handle;
+		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -325,9 +325,8 @@ public:
 	// NB: advanced method, increased risk!
 	CHandle AllocateWithHandle(H Handle, const T& Value)
 	{
-		Handle = AllocateEmptyAt(Handle);
-		if (Handle != MAX_CAPACITY)
-			_Records[Handle & INDEX_BITS_MASK].Value = Value;
+		if (!AllocateEmptyAt(Handle)) return { INVALID_HANDLE_VALUE };
+		_Records[Handle & INDEX_BITS_MASK].Value = Value;
 		return { Handle };
 	}
 
@@ -336,9 +335,8 @@ public:
 	// NB: advanced method, increased risk!
 	CHandle AllocateWithHandle(H Handle, T&& Value)
 	{
-		Handle = AllocateEmptyAt(Handle);
-		if (Handle != MAX_CAPACITY)
-			_Records[Handle & INDEX_BITS_MASK].Value = std::move(Value);
+		if (!AllocateEmptyAt(Handle)) return { INVALID_HANDLE_VALUE };
+		_Records[Handle & INDEX_BITS_MASK].Value = std::move(Value);
 		return { Handle };
 	}
 
