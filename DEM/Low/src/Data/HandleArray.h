@@ -185,6 +185,7 @@ protected:
 		// Get reuse counter from the specified handle and mark the record allocated
 		_Records[Index].Handle = (Handle | INDEX_ALLOCATED);
 
+		++_ElementCount;
 		return Handle;
 	}
 	//---------------------------------------------------------------------
@@ -264,6 +265,43 @@ public:
 		}
 
 		AddRangeToFreeList(Index, Index);
+	}
+
+	// Deletes unused records from the tail of the inner storage. Doesn't invalidate handles but
+	// leads to loss of reuse counters, so growing may lead to "validation" of expired handles.
+	// NB: advanced method, increased risk!
+	void ShrinkToFit()
+	{
+		// Find first allocated record from the end
+		auto Rit = _Records.crbegin();
+		for (; Rit != _Records.crend(); ++Rit)
+			if ((Rit->Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) break;
+
+		// base() returns us the first record to delete
+		auto It = Rit.base();
+		if (It != _Records.end())
+		{
+			_Records.erase(It, _Records.end());
+
+			// Rebuild the free list from scratch, it is easier than repairing it for all possible cases
+
+			_FirstFreeIndex = MAX_CAPACITY;
+			_LastFreeIndex = MAX_CAPACITY;
+
+			const size_t Size = _Records.size();
+			for (size_t i = 0; i < Size; ++i)
+			{
+				// Skip allocated and exhausted records, process free only
+				auto& Handle = _Records[i].Handle;
+				if ((Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK) continue;
+				if ((Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) continue;
+
+				AddRangeToFreeList(i, i);
+			}
+		}
+
+		// Finally free unused memory
+		_Records.shrink_to_fit();
 	}
 
 	// Explicit reset of exhausted reuse counters. The effect is the same as from ResetOnOverflow = true.
