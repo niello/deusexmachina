@@ -31,11 +31,10 @@ class CHandleArray
 
 public:
 
-	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
-	static constexpr H INVALID_HANDLE_VALUE = MAX_CAPACITY;
-
 	using CHandle = struct { H Raw; }; // A new type is required for type safety
 
+	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
+	static constexpr H INVALID_HANDLE_VALUE = MAX_CAPACITY;
 	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };
 
 protected:
@@ -81,29 +80,33 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
+	void ConsumeFirstFreeRecord()
+	{
+		auto& Handle = _Records[_FirstFreeIndex].Handle;
+
+		if (_FirstFreeIndex == _LastFreeIndex)
+		{
+			// The last free record was used
+			_FirstFreeIndex = MAX_CAPACITY;
+			_LastFreeIndex = MAX_CAPACITY;
+		}
+		else
+		{
+			// Set the next free index as the first
+			_FirstFreeIndex = (Handle & INDEX_BITS_MASK);
+		}
+
+		Handle |= INDEX_ALLOCATED;
+	}
+	//---------------------------------------------------------------------
+
 	H AllocateEmpty()
 	{
 		if (!IsFull())
 		{
 			// Use a free record
-			auto& Record = _Records[_FirstFreeIndex];
-			const auto ReuseBits = (Record.Handle & REUSE_BITS_MASK);
-			const H NewHandle = ReuseBits | _FirstFreeIndex;
-
-			if (_FirstFreeIndex == _LastFreeIndex)
-			{
-				// The last free record was used
-				_FirstFreeIndex = MAX_CAPACITY;
-				_LastFreeIndex = MAX_CAPACITY;
-			}
-			else
-			{
-				// Set the next free index as the first
-				_FirstFreeIndex = (Record.Handle & INDEX_BITS_MASK);
-			}
-
-			Record.Handle = ReuseBits | INDEX_ALLOCATED;
-
+			const H NewHandle = (_Records[_FirstFreeIndex].Handle & REUSE_BITS_MASK) | _FirstFreeIndex;
+			ConsumeFirstFreeRecord();
 			++_ElementCount;
 			return NewHandle;
 		}
@@ -146,17 +149,7 @@ protected:
 			if (Index == _FirstFreeIndex)
 			{
 				// Our record is the first, do standard allocation logic
-				if (_FirstFreeIndex == _LastFreeIndex)
-				{
-					// The last free record was used
-					_FirstFreeIndex = MAX_CAPACITY;
-					_LastFreeIndex = MAX_CAPACITY;
-				}
-				else
-				{
-					// Set the next free index as the first
-					_FirstFreeIndex = (_Records[_FirstFreeIndex].Handle & INDEX_BITS_MASK);
-				}
+				ConsumeFirstFreeRecord();
 			}
 			else
 			{
@@ -189,6 +182,7 @@ protected:
 			}
 		}
 
+		// Get reuse counter from the specified handle and mark the record allocated
 		_Records[Index].Handle = (Handle | INDEX_ALLOCATED);
 
 		return Handle;
