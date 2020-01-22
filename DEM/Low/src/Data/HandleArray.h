@@ -235,33 +235,34 @@ public:
 		if ((Handle.Raw | INDEX_ALLOCATED) != Record.Handle) return;
 
 		// Clear the record value to default, destroying freed object
+		// TODO: compare to Record.Value.~T(); new (&Record.Value) T(_Prototype);?
 		Record.Value = _Prototype;
-		//Record.Value.~T();
-		//new (&Record.Value) T(_Prototype);
 
 		--_ElementCount;
 
-		// Increment reuse counter. Existing handles immediately become invalid.
-		Record.Handle += (1 << IndexBits);
-
-		// Clear the index part, this allows allocated record detection in iterators
-		Record.Handle &= (~INDEX_BITS_MASK);
-
-		// Check if the record reuse resource had been exhausted
-		if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
+		// Reuse counter of freed record is incremented. Index bits are reset to 0
+		// to clear INDEX_ALLOCATED. Existing handles immediately become invalid.
+		const auto ReuseBits = (Record.Handle & REUSE_BITS_MASK);
+		constexpr H LAST_REUSE_VALUE = (REUSE_BITS_MASK - (1 << IndexBits));
+		if (ReuseBits == LAST_REUSE_VALUE)
 		{
-			if (ResetOnOverflow)
+			if constexpr (ResetOnOverflow)
 			{
-				// Clear reuse counter. The record is considered free again, but
-				// a very old handle may exist that now becomes incorrectly "valid".
-				// A probability of this is very low in practice.
-				Record.Handle &= (~REUSE_BITS_MASK);
+				// Clear reuse counter. The record is considered free again, but a very old
+				// handle may exist that now becomes incorrectly "valid". A probability of this
+				// is very low in practice. Index bits must be cleared too (see below).
+				Record.Handle = 0;
 			}
 			else
 			{
-				// Don't add this record to the free list
+				// Don't add this record to the free list. Mark as exhausted.
+				Record.Handle = REUSE_BITS_MASK;
 				return;
 			}
+		}
+		else
+		{
+			Record.Handle = ReuseBits + (1 << IndexBits);
 		}
 
 		AddRangeToFreeList(Index, Index);
@@ -284,7 +285,6 @@ public:
 			_Records.erase(It, _Records.end());
 
 			// Rebuild the free list from scratch, it is easier than repairing it for all possible cases
-
 			_FirstFreeIndex = MAX_CAPACITY;
 			_LastFreeIndex = MAX_CAPACITY;
 
@@ -300,7 +300,7 @@ public:
 			}
 		}
 
-		// Finally free unused memory
+		// Finally free unused memory even if no records were deleted
 		_Records.shrink_to_fit();
 	}
 
