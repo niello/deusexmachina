@@ -105,6 +105,7 @@ protected:
 
 			Record.Handle = ReuseBits | INDEX_ALLOCATED;
 
+			++_ElementCount;
 			return NewHandle;
 		}
 
@@ -113,6 +114,7 @@ protected:
 		{
 			// All records are used but an index space is not exhausted
 			_Records.push_back({ _Prototype, INDEX_ALLOCATED });
+			++_ElementCount;
 			return Size;
 		}
 
@@ -159,23 +161,53 @@ public:
 
 	void Free(CHandle Handle)
 	{
-		//!!!don't add to the free list if reuse exhausted!
-		//???or instead of searching in AllocateEmpty, resurrect right here?!
+		const auto Index = (Handle.Raw & INDEX_BITS_MASK);
+		if (Index >= _Records.size()) return;
 
-		//if (ResetOnOverflow)
-		//{
-		//	// Scan for records with exhausted reuse count, resurrect the first one found.
-		//	// Since the reuse count is incremented on release, the record is surely free.
-		//	for (size_t i = 0; i < Size; ++i)
-		//	{
-		//		auto& Record = _Records[i];
-		//		if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
-		//		{
-		//			Record.Handle = INDEX_ALLOCATED; // Reuse bits are cleared to 0
-		//			return i;
-		//		}
-		//	}
-		//}
+		auto& Record = _Records[Index];
+		if (((Handle.Raw & REUSE_BITS_MASK) | INDEX_ALLOCATED) != Record.Handle) return;
+
+		// Clear the record value to default, destroying freed object
+		Record.Value = _Prototype;
+		//Record.Value.~T();
+		//new (&Record.Value) T(_Prototype);
+
+		--_ElementCount;
+
+		// Increment reuse counter. Existing handles immediately become invalid.
+		Record.Handle += (1 << IndexBits);
+
+		// Check if the record reuse resource had been exhausted
+		if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
+		{
+			if (ResetOnOverflow)
+			{
+				// Clear reuse counter. The record is considered free again, but
+				// a very old handle may exist that now becomes incorrectly "valid".
+				// A probability of this is very low in practice.
+				Record.Handle &= (~REUSE_BITS_MASK);
+			}
+			else
+			{
+				// Don't add this record to the free list
+				return;
+			}
+		}
+
+		// Add the record to the free list end
+		if (IsFull())
+		{
+			// The first free record, start the free list
+			_FirstFreeIndex = Index;
+		}
+		else
+		{
+			// Attach the record to the end of the free list
+			auto& PrevFree = _Records[_LastFreeIndex].Handle;
+			PrevFree = (PrevFree & REUSE_BITS_MASK) | Index;
+		}
+
+		_LastFreeIndex = Index;
 	}
 
 	// NB: advanced method, increased risk!
