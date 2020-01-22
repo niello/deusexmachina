@@ -48,6 +48,40 @@ protected:
 		H Handle = 0; // Index bits store the next free slot index or INDEX_ALLOCATED value, _not_ this slot index
 	};
 
+	template<typename internal_it>
+	class iterator_tpl
+	{
+	private:
+
+		internal_it _It;
+
+	public:
+
+		using iterator_category = std::bidirectional_iterator_tag;
+
+		using value_type = typename internal_it::value_type;
+		using difference_type = typename internal_it::difference_type;
+		using pointer = typename internal_it::pointer;
+		using reference = typename internal_it::reference;
+
+		iterator_tpl() = default;
+		iterator_tpl(internal_it It) : _It(It) {}
+		iterator_tpl(const iterator_tpl& It) = default;
+		iterator_tpl& operator =(const iterator_tpl& It) = default;
+
+		reference operator *() const { return *_It; }
+		pointer operator ->() const { return _It; }
+		iterator_tpl& operator ++() { do ++_It; while (!IsAllocated()); return *this; }
+		iterator_tpl operator ++(int) { auto Tmp = *this; ++(*this); return Tmp; }
+		iterator_tpl& operator --() { do --_It; while (!IsAllocated()); return *this; }
+		iterator_tpl operator --(int) { auto Tmp = *this; --(*this); return Tmp; }
+
+		bool operator ==(const iterator_tpl& Right) const { return _It == Right._It; }
+		bool operator !=(const iterator_tpl& Right) const { return _It != Right._It; }
+
+		bool IsAllocated() const { return (_It->Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED; }
+	};
+
 	std::vector<CHandleRec> _Records;
 	size_t                  _ElementCount = 0;
 	size_t                  _FirstFreeIndex = MAX_CAPACITY;
@@ -125,6 +159,9 @@ protected:
 
 public:
 
+	using iterator = iterator_tpl<typename std::vector<CHandleRec>::iterator>;
+	using const_iterator = iterator_tpl<typename std::vector<CHandleRec>::const_iterator>;
+
 	CHandleArray() = default;
 	CHandleArray(const T& Prototype) : _Prototype(Prototype) {}
 
@@ -177,6 +214,9 @@ public:
 		// Increment reuse counter. Existing handles immediately become invalid.
 		Record.Handle += (1 << IndexBits);
 
+		// Clear the index part, this allows allocated record detection in iterators
+		Record.Handle &= (~INDEX_BITS_MASK);
+
 		// Check if the record reuse resource had been exhausted
 		if ((Record.Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK)
 		{
@@ -214,6 +254,7 @@ public:
 	void ResetExhaustedReuse()
 	{
 		//explicit reset of exhausted reuse counters, rebuild free list on the fly!
+		NOT_IMPLEMENTED;
 	}
 
 	// NB: advanced method, increased risk!
@@ -253,7 +294,26 @@ public:
 	constexpr size_t GetMaxCapacity() const { return MAX_CAPACITY; }
 	size_t           GetCurrentCapacity() const { return _Records.size(); }
 
-	//!!!begin, end! not trivial, must skip invalid slots, must stop when _Size of processed elements is reached!
+	const_iterator cbegin() const
+	{
+		const_iterator It(_Records.cbegin());
+		const_iterator ItEnd(_Records.cend());
+		while (It != ItEnd && !It.IsAllocated()) ++It;
+		return It;
+	}
+
+	iterator begin()
+	{
+		iterator It(_Records.begin());
+		iterator ItEnd(_Records.end());
+		while (It != ItEnd && !It.IsAllocated()) ++It;
+		return It;
+	}
+
+	const_iterator   begin() const { return cbegin(); }
+	const_iterator   cend() const { return const_iterator(_Records.cend()); }
+	iterator         end() { return iterator(_Records.end()); }
+	const_iterator   end() const { return cend(); }
 	size_t           size() const { return _ElementCount; }
 	bool             empty() const { return !_ElementCount; }
 };
