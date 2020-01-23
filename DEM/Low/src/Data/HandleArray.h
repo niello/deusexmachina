@@ -72,9 +72,9 @@ protected:
 			PrevFree = (PrevFree & REUSE_BITS_MASK) | StartIndex;
 		}
 
-		// Reuse bits of the new record are always zero, only set an index part
+		// Keep reuse bits intact
 		for (auto i = StartIndex; i < EndIndex; ++i)
-			_Records[i].Handle = i + 1;
+			_Records[i].Handle = (_Records[i].Handle & REUSE_BITS_MASK) | (i + 1);
 
 		_LastFreeIndex = EndIndex;
 	}
