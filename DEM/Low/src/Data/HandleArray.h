@@ -234,8 +234,7 @@ public:
 		auto& Record = _Records[Index];
 		if ((Handle.Raw | INDEX_ALLOCATED) != Record.Handle) return;
 
-		// Clear the record value to default, destroying freed object
-		// TODO: compare to Record.Value.~T(); new (&Record.Value) T(_Prototype);?
+		// Clear the record value to default, this clears freed object resources
 		Record.Value = _Prototype;
 
 		--_ElementCount;
@@ -248,9 +247,9 @@ public:
 		{
 			if constexpr (ResetOnOverflow)
 			{
-				// Clear reuse counter. The record is considered free again, but a very old
-				// handle may exist that now becomes incorrectly "valid". A probability of this
-				// is very low in practice. Index bits must be cleared too (see below).
+				// Clear reuse counter. The record is considered free again, but a
+				// very old handle may exist that now becomes incorrectly "valid".
+				// A probability of this is very low in practice.
 				Record.Handle = 0;
 			}
 			else
