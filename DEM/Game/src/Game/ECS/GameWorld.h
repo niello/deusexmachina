@@ -1,6 +1,7 @@
 #pragma once
 #include <Game/ECS/Component.h>
 #include <Math/AABB.h>
+#include <typeindex>
 
 // A complete game world with objects, time and space. Space is subdivided into levels.
 // All levels share the same time. Objects (or entities) can move between levels, but
@@ -39,10 +40,10 @@ class CGameWorld final
 {
 protected:
 
-	Resources::CResourceManager&                                _ResMgr;
+	Resources::CResourceManager&                           _ResMgr;
 
-	CEntityStorage                                              _Entities; //???add unordered_map index by name?
-	std::unordered_map<const ::Core::CRTTI*, PComponentStorage> _Components;
+	CEntityStorage                                         _Entities; //???add unordered_map index by name?
+	std::unordered_map<std::type_index, PComponentStorage> _Components;
 
 	// system by type list
 	// fast-access map entity -> components? Component stores entity ID, but need also to find components by entity ID and type
@@ -85,7 +86,7 @@ public:
 	// CreateEntity(desc)
 
 	template<class T> void RegisterComponent(UPTR InitialCapacity = 0);
-	// AddComponent<T>(entity)
+	template<class T> T* AddComponent(HEntity EntityID);
 	// RemoveComponent<T>(entity)
 	// FindComponent<T>(entity)
 	//???public iterators over components of requested type? return some wrapper with .begin() and .end()?
@@ -98,15 +99,31 @@ public:
 template<class T>
 void CGameWorld::RegisterComponent(UPTR InitialCapacity)
 {
-	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>, "T must be derived from CComponent");
-	static_assert(std::is_base_of_v<IComponentStorage, TComponentTraits<T>::TStorage>, "Storage must implement IComponentStorage");
+	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
+		"CGameWorld::RegisterComponent() > T must be derived from CComponent");
+	static_assert(std::is_base_of_v<IComponentStorage, TComponentTraits<T>::TStorage>,
+		"CGameWorld::RegisterComponent() > Storage must implement IComponentStorage");
 
-	auto It = _Components.find(&TComponentTraits<T>::TStorage::RTTI);
+	// Static type is enough for distinguishing between different components, no dynamic RTTI needed
+	auto Key = std::type_index(typeid(T));
+
+	auto It = _Components.find(Key);
 	if (It != _Components.cend()) return;
 
-	//auto& Key = typeid(T);
+	_Components.emplace(Key, std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity));
+}
+//---------------------------------------------------------------------
 
-	_Components.emplace(&TComponentTraits<T>::TStorage::RTTI, std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity));
+template<class T>
+T* CGameWorld::AddComponent(HEntity EntityID)
+{
+	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
+		"CGameWorld::AddComponent() > T must be derived from CComponent");
+
+	auto It = _Components.find(std::type_index(typeid(T)));
+	if (It == _Components.cend()) return nullptr;
+
+	// can call non-virtual Add method
 }
 //---------------------------------------------------------------------
 
