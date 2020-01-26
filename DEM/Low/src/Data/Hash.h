@@ -21,7 +21,7 @@ inline uint32_t Hash(const char* pStr)
 
 template<class T> inline uint32_t Hash(const T& Key)
 {
-	//???what about smaller than int?
+	//???what about smaller than int? what about x64 pointers?
 	if (sizeof(T) == sizeof(int)) return WangIntegerHash((int)*(void* const*)&Key);
 	else return Hash(&Key, sizeof(T));
 }

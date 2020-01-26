@@ -1,6 +1,5 @@
 #pragma once
-#include <Data/Ptr.h>
-#include <Data/StringID.h>
+#include <Game/ECS/Component.h>
 #include <Math/AABB.h>
 
 // A complete game world with objects, time and space. Space is subdivided into levels.
@@ -40,13 +39,12 @@ class CGameWorld final
 {
 protected:
 
-	Resources::CResourceManager& _ResMgr;
+	Resources::CResourceManager&                                _ResMgr;
 
-	// entity by level list (or store in levels?), entity must know its current level (in some component? or component remembers if wants?)
-	// components by type list
+	CEntityStorage                                              _Entities; //???add unordered_map index by name?
+	std::unordered_map<const ::Core::CRTTI*, PComponentStorage> _Components;
+
 	// system by type list
-
-	// component pools by type
 	// fast-access map entity -> components? Component stores entity ID, but need also to find components by entity ID and type
 
 	// loaded level list (main place for them)
@@ -86,6 +84,7 @@ public:
 	// LoadEntityTemplate(desc)
 	// CreateEntity(desc)
 
+	template<class T> void RegisterComponent(UPTR InitialCapacity = 0);
 	// AddComponent<T>(entity)
 	// RemoveComponent<T>(entity)
 	// FindComponent<T>(entity)
@@ -95,5 +94,18 @@ public:
 	// UnregisterSystem<T>()
 	// GetSystem<T>()
 };
+
+template<class T>
+void CGameWorld::RegisterComponent(UPTR InitialCapacity)
+{
+	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>, "T must be derived from CComponent");
+	static_assert(std::is_base_of_v<IComponentStorage, TComponentTraits<T>::TStorage>, "Storage must implement IComponentStorage");
+
+	auto It = _Components.find(&TComponentTraits<T>::TStorage::RTTI);
+	if (It != _Components.cend()) return;
+
+	_Components.emplace(&TComponentTraits<T>::TStorage::RTTI, std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity));
+}
+//---------------------------------------------------------------------
 
 }

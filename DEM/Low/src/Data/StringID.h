@@ -63,7 +63,7 @@ typedef Data::CStringID CStrID;
 namespace std
 {
 
-// ’эшируем атом как сырой указатель, без учЄта контента
+// Hash raw pointer only, don't use string contents
 template<>
 struct hash<CStrID>
 {

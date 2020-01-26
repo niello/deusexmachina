@@ -16,4 +16,11 @@ struct CComponent
 	HEntity EntityID;
 };
 
+template<class T>
+struct TComponentTraits
+{
+	using TStorage = CHandleArrayComponentStorage<T>;
+	using THandle = typename TStorage::CInnerStorage::CHandle;
+};
+
 }

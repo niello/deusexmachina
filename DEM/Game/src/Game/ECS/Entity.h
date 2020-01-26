@@ -27,3 +27,17 @@ using CEntityStorage = Data::CHandleArray<CEntity, uint32_t, 18, true>;
 using HEntity = CEntityStorage::CHandle;
 
 }
+
+namespace std
+{
+
+template<>
+struct hash<DEM::Game::HEntity>
+{
+	size_t operator()(const DEM::Game::HEntity _Keyval) const noexcept
+	{
+		return static_cast<size_t>(Hash(_Keyval));
+	}
+};
+
+}

@@ -1,6 +1,6 @@
 #pragma once
-#include <Data/HandleArray.h>
 #include <Game/ECS/Entity.h>
+#include <Core/RTTIBaseClass.h>
 
 // Stores components of specified type. Each component type can have only one storage type.
 // Interface is provided for the game world to handle all storages transparently. In places
@@ -10,9 +10,12 @@
 
 namespace DEM::Game
 {
+typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 
-class IComponentStorage
+class IComponentStorage : public ::Core::CRTTIBaseClass
 {
+	RTTI_CLASS_DECL;
+
 public:
 
 	virtual ~IComponentStorage() = default;
@@ -27,6 +30,8 @@ public:
 template<typename T, typename H = uint32_t, size_t IndexBits = 17, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
+	//RTTI_CLASS_DECL;
+
 public:
 
 	using CInnerStorage = Data::CHandleArray<T, H, IndexBits, ResetOnOverflow>;
@@ -34,15 +39,10 @@ public:
 	CInnerStorage                   Data;
 	std::unordered_map<HEntity, T*> IndexByEntity;
 
-	virtual bool LoadComponent() {}
-	virtual bool SaveComponent() const {}
-};
+	CHandleArrayComponentStorage(UPTR InitialCapacity) : Data(InitialCapacity) {}
 
-template<class T>
-struct TComponentTraits
-{
-	using TStorage = CHandleArrayComponentStorage<T>;
-	using THandle = typename TStorage::CHandle;
+	virtual bool LoadComponent() { return false; }
+	virtual bool SaveComponent() const { return false; }
 };
 
 }

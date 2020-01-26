@@ -200,14 +200,16 @@ public:
 	CHandleArray(size_t InitialSize)
 		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY))
 	{
-		AddRangeToFreeList(0, _Records.size() - 1);
+		if (auto Size = _Records.size())
+			AddRangeToFreeList(0, Size - 1);
 	}
 
 	CHandleArray(size_t InitialSize, const T& Prototype)
 		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY), CHandleRec{ Prototype, 0 })
 		, _Prototype(Prototype)
 	{
-		AddRangeToFreeList(0, _Records.size() - 1);
+		if (auto Size = _Records.size())
+			AddRangeToFreeList(0, Size - 1);
 	}
 
 	CHandle Allocate() { return { AllocateEmpty() }; }
