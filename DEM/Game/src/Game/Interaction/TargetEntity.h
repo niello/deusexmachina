@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_GAME_TARGET_ENTITY_H__
 #define __DEM_L2_GAME_TARGET_ENTITY_H__
 
-#include <Game/Target.h>
+#include <Game/Interaction/Target.h>
 
 // Target for interaction with entities in a game level
 

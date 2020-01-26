@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_GAME_TARGET_GROUND_H__
 #define __DEM_L2_GAME_TARGET_GROUND_H__
 
-#include <Game/Target.h>
+#include <Game/Interaction/Target.h>
 #include <Math/vector3.h>
 
 // Target for interaction with a static level geometry

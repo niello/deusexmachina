@@ -1,5 +1,6 @@
 #pragma once
-#include <cstdint>
+#include <type_traits>
+#include <vector>
 
 // Handle array combines a growable array and a pool allocator. For element referencing
 // it provides persistent handles which are never invalidated, unlike pointers or iterators.
@@ -31,10 +32,11 @@ class CHandleArray
 
 public:
 
-	using CHandle = struct { H Raw; }; // A new type is required for type safety
-
 	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
 	static constexpr H INVALID_HANDLE_VALUE = MAX_CAPACITY;
+
+	using CHandle = struct { H Raw = INVALID_HANDLE_VALUE; }; // A new type is required for type safety
+
 	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };
 
 protected:

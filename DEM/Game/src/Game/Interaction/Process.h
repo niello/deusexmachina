@@ -2,7 +2,7 @@
 #ifndef __DEM_L2_GAME_PROCESS_H__
 #define __DEM_L2_GAME_PROCESS_H__
 
-#include <Game/Action.h>
+#include <Game/Interaction/Action.h>
 
 // Process is a kind of action that lasts in time. It can start, progress and stop.
 // Unlike an immediate action, process must be managed by some external system that

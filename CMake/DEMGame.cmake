@@ -44,21 +44,24 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/App/AppFSM.h
 	DEM/Game/src/App/AppStateVideo.h
 	DEM/Game/src/App/StateHandler.h
-	DEM/Game/src/Game/Ability.h
-	DEM/Game/src/Game/Action.h
-	DEM/Game/src/Game/ActionContext.h
 	DEM/Game/src/Game/Entity.h
 	DEM/Game/src/Game/EntityManager.h
 	DEM/Game/src/Game/GameLevel.h
 	DEM/Game/src/Game/GameLevelView.h
 	DEM/Game/src/Game/GameServer.h
-	DEM/Game/src/Game/GameWorld.h
-	DEM/Game/src/Game/Process.h
-	DEM/Game/src/Game/ProcessContext.h
 	DEM/Game/src/Game/Property.h
-	DEM/Game/src/Game/Target.h
-	DEM/Game/src/Game/TargetEntity.h
-	DEM/Game/src/Game/TargetGround.h
+	DEM/Game/src/Game/ECS/Component.h
+	DEM/Game/src/Game/ECS/ComponentStorage.h
+	DEM/Game/src/Game/ECS/Entity.h
+	DEM/Game/src/Game/ECS/GameWorld.h
+	DEM/Game/src/Game/Interaction/Ability.h
+	DEM/Game/src/Game/Interaction/Action.h
+	DEM/Game/src/Game/Interaction/ActionContext.h
+	DEM/Game/src/Game/Interaction/Process.h
+	DEM/Game/src/Game/Interaction/ProcessContext.h
+	DEM/Game/src/Game/Interaction/Target.h
+	DEM/Game/src/Game/Interaction/TargetEntity.h
+	DEM/Game/src/Game/Interaction/TargetGround.h
 	DEM/Game/src/Physics/CharacterController.h
 	DEM/Game/src/Physics/PropCharacterController.h
 	DEM/Game/src/Physics/PropPhysics.h
@@ -117,16 +120,19 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
 	DEM/Game/src/App/StateHandler.cpp
-	DEM/Game/src/Game/Entity.cpp
 	DEM/Game/src/Game/EntityManager.cpp
+	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameLevelView.cpp
 	DEM/Game/src/Game/GameServer.cpp
-	DEM/Game/src/Game/GameWorld.cpp
-	DEM/Game/src/Game/Process.cpp
 	DEM/Game/src/Game/Property.cpp
-	DEM/Game/src/Game/TargetEntity.cpp
-	DEM/Game/src/Game/TargetGround.cpp
+	DEM/Game/src/Game/ECS/Component.cpp
+	DEM/Game/src/Game/ECS/ComponentStorage.cpp
+	DEM/Game/src/Game/ECS/Entity.cpp
+	DEM/Game/src/Game/ECS/GameWorld.cpp
+	DEM/Game/src/Game/Interaction/Process.cpp
+	DEM/Game/src/Game/Interaction/TargetEntity.cpp
+	DEM/Game/src/Game/Interaction/TargetGround.cpp
 	DEM/Game/src/Physics/CharacterController.cpp
 	DEM/Game/src/Physics/PropCharacterController.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp

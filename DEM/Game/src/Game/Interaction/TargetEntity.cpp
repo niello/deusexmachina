@@ -1,8 +1,8 @@
 #include "TargetEntity.h"
 
-#include <Game/ActionContext.h>
-#include <Game/Ability.h>
-#include <Game/Action.h>
+#include <Game/Interaction/ActionContext.h>
+#include <Game/Interaction/Ability.h>
+#include <Game/Interaction/Action.h>
 #include <Game/GameServer.h>
 #include <AI/PropSmartObject.h> //!!!must be in Game, not AI!
 
