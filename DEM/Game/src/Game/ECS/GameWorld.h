@@ -104,6 +104,8 @@ void CGameWorld::RegisterComponent(UPTR InitialCapacity)
 	auto It = _Components.find(&TComponentTraits<T>::TStorage::RTTI);
 	if (It != _Components.cend()) return;
 
+	//auto& Key = typeid(T);
+
 	_Components.emplace(&TComponentTraits<T>::TStorage::RTTI, std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity));
 }
 //---------------------------------------------------------------------

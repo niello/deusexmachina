@@ -30,7 +30,12 @@ public:
 template<typename T, typename H = uint32_t, size_t IndexBits = 17, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
+	//???can add automatic or leave some functions pure virtual and make user
+	// inherit IComponentStorage / CHandleArrayComponentStorage for each component?
 	//RTTI_CLASS_DECL;
+	//#define ENABLE_TYPENAME(A) template<> struct TypeName<A> { constexpr char* Get() { return #A; }};
+//#define RTTI_CLASS_IMPL(Class, ParentClass) \
+	//::Core::CRTTI Class::RTTI(TypeName<Class>::Get(), 0, nullptr, &ParentClass::RTTI, 0);
 
 public:
 
