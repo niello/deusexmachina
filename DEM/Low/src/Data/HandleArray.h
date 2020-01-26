@@ -339,6 +339,23 @@ public:
 		return { Handle };
 	}
 
+	// Returns a handle by value pointer. Inversion of GetValue. Unsafe, because the value pointer is not
+	// guaranteed to be pointing to the same object as at the creation time. To detect actual value change,
+	// user must store previous handle and compare with returned one.
+	// NB: advanced method, increased risk!
+	CHandle GetHandle(const T* pValue) const
+	{
+		// Slightly hacky, but O(1) is O(1). Uses the fact that pValue has a handle only if it is stored
+		// in _Records[index].Value. Record is obtained from value with the structure member offset, and
+		// then is checked against _Records address range to calculate the index.
+		auto pRecord = reinterpret_cast<const CHandleRec*>(reinterpret_cast<size_t>(pValue) - offsetof(CHandleRec, Value));
+		auto Index = static_cast<size_t>(pRecord - _Records.data());
+		if (Index >= _Records.size()) return INVALID_HANDLE;
+		if ((pRecord->Handle & INDEX_BITS_MASK) != INDEX_ALLOCATED) return INVALID_HANDLE;
+		const auto ReuseBits = (pRecord->Handle & REUSE_BITS_MASK);
+		return (ReuseBits == REUSE_BITS_MASK) ? INVALID_HANDLE : CHandle{ ReuseBits | Index };
+	}
+
 	const T* GetValue(CHandle Handle) const
 	{
 		const auto Index = (Handle.Raw & INDEX_BITS_MASK);
