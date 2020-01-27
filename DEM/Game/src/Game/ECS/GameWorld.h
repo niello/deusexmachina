@@ -40,10 +40,15 @@ class CGameWorld final
 {
 protected:
 
+	// Zero-based type index for fast component storage access
+	inline static uint32_t ComponentTypeCount = 0;
+	template<class T> inline static uint32_t ComponentTypeIndex = ComponentTypeCount++;
+
 	Resources::CResourceManager&                           _ResMgr;
 
 	CEntityStorage                                         _Entities; //???add unordered_map index by name?
-	std::unordered_map<std::type_index, PComponentStorage> _Components;
+	//std::unordered_map<std::type_index, PComponentStorage> _Components;
+	std::vector<PComponentStorage> _Components;
 
 	// system by type list
 	// fast-access map entity -> components? Component stores entity ID, but need also to find components by entity ID and type
@@ -106,12 +111,9 @@ void CGameWorld::RegisterComponent(UPTR InitialCapacity)
 		"CGameWorld::RegisterComponent() > Storage must implement IComponentStorage");
 
 	// Static type is enough for distinguishing between different components, no dynamic RTTI needed
-	auto Key = std::type_index(typeid(T));
-
-	auto It = _Components.find(Key);
-	if (It != _Components.cend()) return;
-
-	_Components.emplace(Key, std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity));
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Components.size() <= TypeIndex) _Components.resize(TypeIndex + 1);
+	_Components[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity);
 }
 //---------------------------------------------------------------------
 
@@ -121,14 +123,16 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
 		"CGameWorld::AddComponent() > T must be derived from CComponent");
 
+	// Invalid entity ID is forbidden
 	if (!EntityID) return nullptr;
 
-	auto It = _Components.find(std::type_index(typeid(T)));
-	if (It == _Components.cend()) return nullptr;
+	// Component type is not registered yet
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
 
 	//???check entity exists? create if not? or fail?
 
-	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(It->second.get());
+	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
 	return Storage.Add(EntityID);
 }
 //---------------------------------------------------------------------
@@ -139,14 +143,16 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
 		"CGameWorld::AddComponent() > T must be derived from CComponent");
 
+	// Invalid entity ID is forbidden
 	if (!EntityID) FAIL;
 
-	auto It = _Components.find(std::type_index(typeid(T)));
-	if (It == _Components.cend()) return nullptr;
+	// Component type is not registered yet
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
 
 	//???check entity exists?
 
-	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(It->second.get());
+	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
 	return Storage.Remove(EntityID);
 }
 //---------------------------------------------------------------------
