@@ -67,10 +67,12 @@ CStrID CVertexLayout::BuildSignature(const CVertexComponent* pComponents, UPTR C
 			pCurr += Len;
 		}
 
-		pSrc = Cmp.GetFormatString();
-		Len = strlen(pSrc);
-		if (memcpy_s(pCurr, pEnd - pCurr, pSrc, Len) != 0) break;
-		pCurr += Len;
+		if (pSrc = Cmp.GetFormatString())
+		{
+			Len = strlen(pSrc);
+			if (memcpy_s(pCurr, pEnd - pCurr, pSrc, Len) != 0) break;
+			pCurr += Len;
+		}
 
 		UPTR CmpStream = Cmp.Stream;
 		if (CmpStream > 0)
