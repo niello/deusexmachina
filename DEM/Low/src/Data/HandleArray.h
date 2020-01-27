@@ -35,7 +35,15 @@ public:
 	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
 	static constexpr H INVALID_HANDLE_VALUE = MAX_CAPACITY;
 
-	using CHandle = struct { H Raw = INVALID_HANDLE_VALUE; }; // A new type is required for type safety
+	// A new type is required for type safety
+	struct CHandle
+	{
+		H Raw = INVALID_HANDLE_VALUE;
+
+		bool operator ==(CHandle Other) const { return Raw == Other.Raw; }
+		bool operator !=(CHandle Other) const { return Raw != Other.Raw; }
+		operator bool() const { return Raw != INVALID_HANDLE_VALUE; }
+	};
 
 	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };
 

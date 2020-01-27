@@ -30,28 +30,41 @@ class CHandleArrayComponentStorage : public IComponentStorage
 public:
 
 	using CInnerStorage = Data::CHandleArray<T, H, IndexBits, ResetOnOverflow>;
+	using CHandle = typename CInnerStorage::CHandle;
 
 protected:
 
-	CInnerStorage                   _Data;
-	std::unordered_map<HEntity, T*> _IndexByEntity;
+	CInnerStorage                        _Data;
+	std::unordered_map<HEntity, CHandle> _IndexByEntity;
 
 public:
 
 	CHandleArrayComponentStorage(UPTR InitialCapacity) : _Data(InitialCapacity) {}
 
+	// TODO: describe as a static interface part
 	T* Add(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend()) return It->second;
+		if (It != _IndexByEntity.cend()) return _Data.GetValue(It->second);
 
 		auto Handle = _Data.Allocate();
 		T* pComponent = _Data.GetValue(Handle);
 		if (!pComponent) return nullptr;
 
 		pComponent->EntityID = EntityID;
-		_IndexByEntity.emplace(EntityID, pComponent);
-		return EntityID;
+		_IndexByEntity.emplace(EntityID, Handle);
+		return pComponent;
+	}
+
+	// TODO: describe as a static interface part
+	bool Remove(HEntity EntityID)
+	{
+		auto It = _IndexByEntity.find(EntityID);
+		if (It == _IndexByEntity.cend()) FAIL;
+
+		_Data.Free(It->second);
+		_IndexByEntity.erase(It);
+		OK;
 	}
 
 	//!!!could call T::Load/T::Save non-virtual methods here and avoid subclassing storages explicitly for every component!

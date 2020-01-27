@@ -74,8 +74,9 @@ public:
 	// ValidateLevels() - need API? or automatic? resmgr as param or stored inside the world? must be consistent across validations!
 	// AddLevelCOI(id, vector3) - cleared after update
 
+	HEntity CreateEntity(/*level or level ID?*/) { return _Entities.Allocate(); }
 	// CreateEntity(template)
-	// CreateEntity(component type list)
+	// CreateEntity(component type list, templated?)
 	// CreateEntity(prototype entity ID for cloning)
 	// DeleteEntity
 	// EntityExists
@@ -86,8 +87,8 @@ public:
 	// CreateEntity(desc)
 
 	template<class T> void RegisterComponent(UPTR InitialCapacity = 0);
-	template<class T> T* AddComponent(HEntity EntityID);
-	// RemoveComponent<T>(entity)
+	template<class T> T*   AddComponent(HEntity EntityID);
+	template<class T> bool RemoveComponent(HEntity EntityID);
 	// FindComponent<T>(entity)
 	//???public iterators over components of requested type? return some wrapper with .begin() and .end()?
 
@@ -120,10 +121,33 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
 		"CGameWorld::AddComponent() > T must be derived from CComponent");
 
+	if (!EntityID) return nullptr;
+
 	auto It = _Components.find(std::type_index(typeid(T)));
 	if (It == _Components.cend()) return nullptr;
 
-	// can call non-virtual Add method
+	//???check entity exists? create if not? or fail?
+
+	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(It->second.get());
+	return Storage.Add(EntityID);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+bool CGameWorld::RemoveComponent(HEntity EntityID)
+{
+	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
+		"CGameWorld::AddComponent() > T must be derived from CComponent");
+
+	if (!EntityID) FAIL;
+
+	auto It = _Components.find(std::type_index(typeid(T)));
+	if (It == _Components.cend()) return nullptr;
+
+	//???check entity exists?
+
+	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(It->second.get());
+	return Storage.Remove(EntityID);
 }
 //---------------------------------------------------------------------
 
