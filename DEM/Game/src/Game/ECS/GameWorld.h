@@ -42,7 +42,7 @@ protected:
 
 	// Zero-based type index for fast component storage access
 	inline static uint32_t ComponentTypeCount = 0;
-	template<class T> inline static uint32_t ComponentTypeIndex = ComponentTypeCount++;
+	template<class T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
 
 	Resources::CResourceManager&                           _ResMgr;
 
