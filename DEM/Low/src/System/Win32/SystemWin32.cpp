@@ -186,12 +186,21 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 	if (!::SymInitialize(hProcess, (PCSTR)PathBuf, true)) FAIL;
 
 	STACKFRAME64 Frame = { 0 };
-	Frame.AddrPC.Offset = ThreadCtx.Eip;
 	Frame.AddrPC.Mode = AddrModeFlat;
-	Frame.AddrStack.Offset = ThreadCtx.Esp;
 	Frame.AddrStack.Mode = AddrModeFlat;
-	Frame.AddrFrame.Offset = ThreadCtx.Ebp;
 	Frame.AddrFrame.Mode = AddrModeFlat;
+
+#if _M_IX86
+	Frame.AddrPC.Offset = ThreadCtx.Eip;
+	Frame.AddrStack.Offset = ThreadCtx.Esp;
+	Frame.AddrFrame.Offset = ThreadCtx.Ebp;
+	constexpr DWORD Arch = IMAGE_FILE_MACHINE_I386;
+#elif _M_X64
+	Frame.AddrPC.Offset = ThreadCtx.Rip;
+	Frame.AddrStack.Offset = ThreadCtx.Rsp;
+	Frame.AddrFrame.Offset = ThreadCtx.Rbp;
+	constexpr DWORD Arch = IMAGE_FILE_MACHINE_AMD64;
+#endif
 
 	char* pOut = pTrace;
 
@@ -199,12 +208,12 @@ bool TraceStack(char* pTrace, unsigned int MaxLength)
 	SYMBOL_INFO* pSymInfo = (SYMBOL_INFO*)n_malloc(sizeof(SYMBOL_INFO) + MAX_NAME_LEN);
 
 	while (::StackWalk64(
-				IMAGE_FILE_MACHINE_I386, // IMAGE_FILE_MACHINE_AMD64 for x64
+				Arch,
 				hProcess,
 				hThread,
 				&Frame,
 				&ThreadCtx,
-				0,
+				nullptr,
 				::SymFunctionTableAccess64,
 				::SymGetModuleBase64,
 				nullptr))
