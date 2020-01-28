@@ -16,11 +16,12 @@ class CEntityComponentMap
 private:
 
 	static constexpr size_t MIN_BUCKETS = 8;
-	static constexpr size_t MAX_BUCKETS = std::numeric_limits<size_t>().max() / 16; //!!!must be pow2!
+	static constexpr size_t MAX_BUCKETS = std::numeric_limits<size_t>().max() / 16;
 	static constexpr float MAX_LOAD_FACTOR = 1.5f;
 
 	struct CRecord
 	{
+		CRecord* pPrev = nullptr;
 		CRecord* pNext = nullptr;
 		HEntity  EntityID;
 		T        Handle;
@@ -28,33 +29,152 @@ private:
 
 	// FIXME: thread safety! can use lock-free pool.
 	// FIXME: review my old pool allocator, maybe less effective than modern ones.
-	static CPoolAllocator<CRecord, 1024> _Pool;
+	static inline CPoolAllocator<CRecord, 1024> _Pool;
 
 	std::vector<CRecord*> _Records;
 	size_t                _Size = 0;
-	size_t                _HashMask; // Bucket count - 1. Buckets are always pow2, and applying this mask to the hash gives the bucket index.
+	size_t                _HashMask;
 
-	//void Rehash(new bucket count, but must be next pow2 and not more than max buckets)
+	void Rehash(size_t BucketCount)
+	{
+		BucketCount = NextPow2(std::clamp(BucketCount, MIN_BUCKETS, MAX_BUCKETS));
+		if (BucketCount == _Records.size()) return;
+
+		std::vector<CRecord*> OldRecords;
+		std::swap(OldRecords, _Records);
+
+		_Records.resize(BucketCount, nullptr);
+
+		// Buckets are always pow2, so (hash & (bucket count - 1)) gives the bucket index like % operator.
+		// It is guaranteed that two valid entities have different index, which is more or less evenly
+		// distributed, so we use index bits as a hash value and incorporate their mask here.
+		_HashMask = ((BucketCount - 1) & CEntityStorage::INDEX_BITS_MASK);
+
+		for (auto* pRecord : OldRecords)
+		{
+			while (pRecord)
+			{
+				auto pNext = pRecord->pNext;
+
+				auto& Bucket = _Records[pRecord->EntityID.Raw & _HashMask];
+				pRecord->pPrev = nullptr;
+				pRecord->pNext = Bucket;
+				if (Bucket) Bucket->pPrev = pRecord;
+				Bucket = pRecord;
+
+				pRecord = pNext;
+			}
+		}
+	}
 
 public:
 
-	CEntityComponentMap(size_t BucketCount = 0) : _Records(std::min(BucketCount, MIN_BUCKETS), nullptr) { _HashMask = _Records.size() - 1; }
+	// Not really an iterator, just a handle for erasing already found record
+	class iterator
+	{
+	private:
+
+		void* _pRecord = nullptr;
+
+		friend class CEntityComponentMap;
+
+	public:
+
+		iterator() = default;
+		iterator(void* pRecord) : _pRecord(pRecord) {}
+
+		T    operator *() const { return _pRecord ? static_cast<CRecord*>(_pRecord)->Handle : T(); }
+		bool operator ==(const iterator Other) const { return _pRecord == Other._pRecord; }
+		bool operator !=(const iterator Other) const { return _pRecord != Other._pRecord; }
+	};
+
+	using const_iterator = const iterator;
+
+	CEntityComponentMap(size_t BucketCount = 0)
+	{
+		Rehash(BucketCount);
+	}
 
 	void emplace(HEntity EntityID, T ComponentHandle)
 	{
-		// check if already exists, replace value and return prev one if required
+		n_assert_dbg(EntityID && ComponentHandle);
 
-		// check total count, rehash if too many, load factor is elements/buckets
-		const float LoadFactor = (_Size + 1) / _Records.size();
-		//if (_Size + 1 < )
-		//{
-		//}
+		auto BucketIndex = (EntityID.Raw & _HashMask);
+
+		// Try to find existing record in the bucket and replace its value
+		auto pRecord = _Records[BucketIndex];
+		while (pRecord)
+		{
+			if (pRecord->EntityID == EntityID)
+			{
+				pRecord->Handle = ComponentHandle;
+				return;
+			}
+
+			pRecord = pRecord->pNext;
+		}
+
+		// If this record makes load factor too high, rehash the table and update bucket index
+		const auto BucketCount = _Records.size();
+		const float LoadFactor = (_Size + 1) / static_cast<float>(BucketCount);
+		if (LoadFactor > MAX_LOAD_FACTOR)
+		{
+			// Grow faster at the beginning
+			Rehash(BucketCount * (BucketCount < 2048 ? 8 : 2));
+			BucketIndex = (EntityID.Raw & _HashMask);
+		}
+
+		// Add new record to the bucket
+		auto& Bucket = _Records[BucketIndex];
+		auto pNewRecord = _Pool.Construct({ nullptr, Bucket, EntityID, ComponentHandle });
+		if (Bucket) Bucket->pPrev = pNewRecord;
+		Bucket = pNewRecord;
+		++_Size;
 	}
 
-	//iterator       find(HEntity EntityID);
-	//const_iterator cend();
-	//void           emplace(HEntity EntityID, T ComponentHandle);
-	//void           erase(iterator It);
+	iterator find(HEntity EntityID)
+	{
+		auto pRecord = _Records[EntityID.Raw & _HashMask];
+		while (pRecord)
+		{
+			if (pRecord->EntityID == EntityID) return iterator{ pRecord };
+			pRecord = pRecord->pNext;
+		}
+		return end();
+	}
+
+	const_iterator find(HEntity EntityID) const
+	{
+		auto pRecord = _Records[EntityID.Raw & _HashMask];
+		while (pRecord)
+		{
+			if (pRecord->EntityID == EntityID) return iterator{ pRecord };
+			pRecord = pRecord->pNext;
+		}
+		return cend();
+	}
+
+	void erase(iterator It)
+	{
+		if (!It._pRecord) return;
+
+		auto pRecord = static_cast<CRecord*>(It._pRecord);
+		if (pRecord->pPrev)
+			pRecord->pPrev->pNext = pRecord->pNext;
+		else
+			_Records[pRecord->EntityID.Raw & _HashMask] = pRecord->pNext;
+
+		if (pRecord->pNext) pRecord->pNext->pPrev = pRecord->pPrev;
+
+		_Pool.Destroy(pRecord);
+		--_Size;
+	}
+
+	iterator       end() { return iterator(); }
+	const_iterator end() const { return cend(); }
+	const_iterator cend() const { return iterator(); }
+	size_t         size() const { return _Size; }
+	bool           empty() const { return !_Size; }
 };
 
 }

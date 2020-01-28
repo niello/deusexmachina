@@ -26,7 +26,7 @@ public:
 };
 
 //, typename = std::enable_if_t<std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>>
-template<typename T, typename H = uint32_t, size_t IndexBits = 17, bool ResetOnOverflow = true>
+template<typename T, typename H = uint32_t, size_t IndexBits = 20, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
 public:
@@ -37,8 +37,8 @@ public:
 protected:
 
 	CInnerStorage                        _Data;
-	std::unordered_map<HEntity, CHandle> _IndexByEntity;
-	CEntityComponentMap<CHandle>         _IndexByEntity2;
+	std::unordered_map<HEntity, CHandle> _IndexByEntityMap;
+	CEntityComponentMap<CHandle>         _IndexByEntity;
 
 public:
 
@@ -48,7 +48,7 @@ public:
 	T* Add(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend()) return _Data.GetValue(It->second);
+		if (It != _IndexByEntity.cend()) return _Data.GetValue(*It); //(It->second);
 
 		auto Handle = _Data.Allocate();
 		T* pComponent = _Data.GetValue(Handle);
@@ -65,7 +65,8 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (It == _IndexByEntity.cend()) FAIL;
 
-		_Data.Free(It->second);
+		//_Data.Free(It->second);
+		_Data.Free(*It);
 		_IndexByEntity.erase(It);
 		OK;
 	}

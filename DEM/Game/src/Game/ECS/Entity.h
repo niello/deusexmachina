@@ -24,7 +24,7 @@ struct CEntity final
 };
 
 // NB: can't store HEntity inside a CEntity (but could store uint32_t if necessary)
-using CEntityStorage = Data::CHandleArray<CEntity, uint32_t, 18, true>;
+using CEntityStorage = Data::CHandleArray<CEntity, uint32_t, 20, true>;
 using HEntity = CEntityStorage::CHandle;
 
 }

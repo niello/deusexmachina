@@ -33,6 +33,9 @@ class CHandleArray
 public:
 
 	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
+	static constexpr H INDEX_ALLOCATED = MAX_CAPACITY;
+	static constexpr H REUSE_BITS_MASK = (static_cast<H>(-1) << IndexBits);
+	static constexpr H INDEX_BITS_MASK = ~REUSE_BITS_MASK;
 	static constexpr H INVALID_HANDLE_VALUE = MAX_CAPACITY;
 
 	// A new type is required for type safety
@@ -48,10 +51,6 @@ public:
 	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };
 
 protected:
-
-	static constexpr H INDEX_ALLOCATED = MAX_CAPACITY;
-	static constexpr H REUSE_BITS_MASK = (static_cast<H>(-1) << IndexBits);
-	static constexpr H INDEX_BITS_MASK = ~REUSE_BITS_MASK;
 
 	struct CHandleRec
 	{

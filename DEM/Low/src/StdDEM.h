@@ -73,16 +73,25 @@ typedef UPTR				HHandle;
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
 inline bool IsPow2(unsigned int Value) { return Value > 0 && (Value & (Value - 1)) == 0; }
-template <class T> inline T NextPow2(T x)
+
+template <class T>
+inline T NextPow2(T x)
 {
-	// For unsigned only, else uncomment the next line
-	//if (x < 0) return 0;
+	if constexpr (std::is_signed_v<T>)
+	{
+		if (x < 0) return 0;
+	}
+
 	--x;
 	x |= x >> 1;
 	x |= x >> 2;
 	x |= x >> 4;
 	x |= x >> 8;
 	x |= x >> 16;
+
+	if constexpr (sizeof(T) > 4)
+		x |= x >> 32;
+
 	return x + 1;
 }
 

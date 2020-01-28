@@ -44,10 +44,9 @@ protected:
 	inline static uint32_t ComponentTypeCount = 0;
 	template<class T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
 
-	Resources::CResourceManager&                           _ResMgr;
+	Resources::CResourceManager&   _ResMgr;
 
-	CEntityStorage                                         _Entities; //???add unordered_map index by name?
-	//std::unordered_map<std::type_index, PComponentStorage> _Components;
+	CEntityStorage                 _Entities; //???add unordered_map index by name?
 	std::vector<PComponentStorage> _Components;
 
 	// system by type list
