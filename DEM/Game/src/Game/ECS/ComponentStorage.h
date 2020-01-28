@@ -1,5 +1,6 @@
 #pragma once
 #include <Game/ECS/Entity.h>
+#include <Game/ECS/EntityComponentMap.h>
 
 // Stores components of specified type. Each component type can have only one storage type.
 // Interface is provided for the game world to handle all storages transparently. In places
@@ -24,6 +25,7 @@ public:
 	virtual bool SaveComponent() const = 0;
 };
 
+//, typename = std::enable_if_t<std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>>
 template<typename T, typename H = uint32_t, size_t IndexBits = 17, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
@@ -36,6 +38,7 @@ protected:
 
 	CInnerStorage                        _Data;
 	std::unordered_map<HEntity, CHandle> _IndexByEntity;
+	CEntityComponentMap<CHandle>         _IndexByEntity2;
 
 public:
 

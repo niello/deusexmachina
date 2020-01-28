@@ -1,17 +1,15 @@
 #pragma once
-#ifndef __DEM_L1_ALLOC_POOL_H__
-#define __DEM_L1_ALLOC_POOL_H__
-
 #include <StdDEM.h>
 
 // Simple pool for fast allocation of multiple frequently used objects, typically small.
 
-//!!!TODO: use MaxChunks!
 //???template bytesize instead of T? can wrap bytesize allocator into a T wrapper
 
-template <class T, UPTR ChunkSize = 128, UPTR MaxChunks = 64>
+template <class T, UPTR ChunkSize = 128>
 class CPoolAllocator
 {
+	static_assert(ChunkSize > 0);
+
 protected:
 
 	template <class T>
@@ -34,11 +32,11 @@ protected:
 		~CChunkNode() { if (Next) n_delete(Next); n_delete_array(ChunkRecords); }
 	};
 
-	CChunkNode<T>*	Chunks;
-	CRecord<T>*		FreeRecords;
+	CChunkNode<T>*	Chunks = nullptr;
+	CRecord<T>*		FreeRecords = nullptr;
 
 #ifdef _DEBUG
-	UPTR			CurrAllocatedCount;
+	UPTR			CurrAllocatedCount = 0;
 #endif
 
 public:
@@ -50,12 +48,13 @@ public:
 	void	Free(void* pPtr);
 	T*		Construct();
 	T*		Construct(const T& Other);
+	T*		Construct(T&& Other);
 	void	Destroy(T* pPtr);
 	void	Clear();
 };
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-CPoolAllocator<T, ChunkSize, MaxChunks>::CPoolAllocator():
+template<class T, UPTR ChunkSize>
+CPoolAllocator<T, ChunkSize>::CPoolAllocator():
 #ifdef _DEBUG
 	CurrAllocatedCount(0),
 #endif
@@ -66,8 +65,8 @@ CPoolAllocator<T, ChunkSize, MaxChunks>::CPoolAllocator():
 }
 //---------------------------------------------------------------------
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-void* CPoolAllocator<T, ChunkSize, MaxChunks>::Allocate()
+template<class T, UPTR ChunkSize>
+void* CPoolAllocator<T, ChunkSize>::Allocate()
 {
 	T* AllocatedRec(nullptr);
 
@@ -103,8 +102,8 @@ void* CPoolAllocator<T, ChunkSize, MaxChunks>::Allocate()
 }
 //---------------------------------------------------------------------
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Free(void* pPtr)
+template<class T, UPTR ChunkSize>
+inline void CPoolAllocator<T, ChunkSize>::Free(void* pPtr)
 {
 	if (!pPtr) return;
 
@@ -117,8 +116,8 @@ inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Free(void* pPtr)
 }
 //---------------------------------------------------------------------
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-inline T* CPoolAllocator<T, ChunkSize, MaxChunks>::Construct()
+template<class T, UPTR ChunkSize>
+inline T* CPoolAllocator<T, ChunkSize>::Construct()
 {
 	T* pNew = (T*)Allocate();
 	n_placement_new(pNew, T);
@@ -126,8 +125,8 @@ inline T* CPoolAllocator<T, ChunkSize, MaxChunks>::Construct()
 }
 //---------------------------------------------------------------------
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-inline T* CPoolAllocator<T, ChunkSize, MaxChunks>::Construct(const T& Other)
+template<class T, UPTR ChunkSize>
+inline T* CPoolAllocator<T, ChunkSize>::Construct(const T& Other)
 {
 	T* pNew = (T*)Allocate();
 	n_placement_new(pNew, T)(Other);
@@ -135,8 +134,17 @@ inline T* CPoolAllocator<T, ChunkSize, MaxChunks>::Construct(const T& Other)
 }
 //---------------------------------------------------------------------
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Destroy(T* pPtr)
+template<class T, UPTR ChunkSize>
+inline T* CPoolAllocator<T, ChunkSize>::Construct(T&& Other)
+{
+	T* pNew = (T*)Allocate();
+	n_placement_new(pNew, T)(std::move(Other));
+	return pNew;
+}
+//---------------------------------------------------------------------
+
+template<class T, UPTR ChunkSize>
+inline void CPoolAllocator<T, ChunkSize>::Destroy(T* pPtr)
 {
 	if (pPtr)
 	{
@@ -146,8 +154,8 @@ inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Destroy(T* pPtr)
 }
 //---------------------------------------------------------------------
 
-template<class T, UPTR ChunkSize, UPTR MaxChunks>
-inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Clear()
+template<class T, UPTR ChunkSize>
+inline void CPoolAllocator<T, ChunkSize>::Clear()
 {
 #ifdef _DEBUG
 	if (CurrAllocatedCount > 0)
@@ -161,5 +169,3 @@ inline void CPoolAllocator<T, ChunkSize, MaxChunks>::Clear()
 	}
 }
 //---------------------------------------------------------------------
-
-#endif
