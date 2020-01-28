@@ -36,9 +36,8 @@ public:
 
 protected:
 
-	CInnerStorage                        _Data;
-	std::unordered_map<HEntity, CHandle> _IndexByEntityMap;
-	CEntityComponentMap<CHandle>         _IndexByEntity;
+	CInnerStorage                _Data;
+	CEntityComponentMap<CHandle> _IndexByEntity;
 
 public:
 
@@ -48,7 +47,7 @@ public:
 	T* Add(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend()) return _Data.GetValue(*It); //(It->second);
+		if (It != _IndexByEntity.cend()) return _Data.GetValue(*It);
 
 		auto Handle = _Data.Allocate();
 		T* pComponent = _Data.GetValue(Handle);
@@ -65,7 +64,6 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (It == _IndexByEntity.cend()) FAIL;
 
-		//_Data.Free(It->second);
 		_Data.Free(*It);
 		_IndexByEntity.erase(It);
 		OK;
