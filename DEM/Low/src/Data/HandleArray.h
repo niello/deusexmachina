@@ -378,6 +378,11 @@ public:
 	constexpr size_t GetMaxCapacity() const { return MAX_CAPACITY; }
 	size_t           GetCurrentCapacity() const { return _Records.size(); }
 
+	// Bypasses all validity checks. Useful for performance-critical code with external validity guarantee.
+	// NB: advanced method, increased risk!
+	const T*         GetValueUnsafe(CHandle Handle) const { return &_Records[Handle.Raw & INDEX_BITS_MASK].Value; }
+	T*               GetValueUnsafe(CHandle Handle) { return &_Records[Handle.Raw & INDEX_BITS_MASK].Value; }
+
 // *** STL part ***
 
 protected:

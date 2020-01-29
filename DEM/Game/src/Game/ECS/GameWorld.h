@@ -78,22 +78,27 @@ public:
 	// ValidateLevels() - need API? or automatic? resmgr as param or stored inside the world? must be consistent across validations!
 	// AddLevelCOI(id, vector3) - cleared after update
 
-	HEntity CreateEntity(/*level or level ID?*/) { return _Entities.Allocate(); }
-	// CreateEntity(template)
-	// CreateEntity(component type list, templated?)
-	// CreateEntity(prototype entity ID for cloning)
-	// DeleteEntity
-	// EntityExists
-	// MoveEntity(id, level[id?])
-
 	//???
 	// LoadEntityTemplate(desc)
 	// CreateEntity(desc)
 
+	HEntity     CreateEntity(/*level or level ID?*/) { return _Entities.Allocate(); }
+	// CreateEntity(template)
+	// CreateEntity(component type list, templated?)
+	// CreateEntity(prototype entity ID for cloning)
+	// DeleteEntity
+	// MoveEntity(id, level[id?])
+	bool        EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
+	auto        GetEntity(HEntity EntityID) const { return _Entities.GetValue(EntityID); }
+	auto        GetEntityUnsafe(HEntity EntityID) const { return _Entities.GetValueUnsafe(EntityID); }
+	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
+	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
+
 	template<class T> void RegisterComponent(UPTR InitialCapacity = 0);
 	template<class T> T*   AddComponent(HEntity EntityID);
 	template<class T> bool RemoveComponent(HEntity EntityID);
-	// FindComponent<T>(entity)
+	template<class T> T*   FindComponent(HEntity EntityID);
+	template<class T> typename TComponentTraits<T>::TStorage* FindComponentStorage();
 	//???public iterators over components of requested type? return some wrapper with .begin() and .end()?
 
 	// RegisterSystem<T>(system instance, update priority? or system tells its dependencies and world sorts them? explicit order?)
@@ -140,19 +145,50 @@ template<class T>
 bool CGameWorld::RemoveComponent(HEntity EntityID)
 {
 	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
-		"CGameWorld::AddComponent() > T must be derived from CComponent");
+		"CGameWorld::RemoveComponent() > T must be derived from CComponent");
 
 	// Invalid entity ID is forbidden
 	if (!EntityID) FAIL;
 
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
+	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) FAIL;
 
 	//???check entity exists?
 
 	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
 	return Storage.Remove(EntityID);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+T* CGameWorld::FindComponent(HEntity EntityID)
+{
+	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
+		"CGameWorld::FindComponent() > T must be derived from CComponent");
+
+	// Invalid entity ID is forbidden
+	if (!EntityID) return nullptr;
+
+	// Component type is not registered yet
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
+
+	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
+	return Storage.Find(EntityID);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+typename TComponentTraits<T>::TStorage* CGameWorld::FindComponentStorage()
+{
+	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
+		"CGameWorld::FindComponentStorage() > T must be derived from CComponent");
+
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Components.size() <= TypeIndex) return nullptr;
+
+	return static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
 }
 //---------------------------------------------------------------------
 

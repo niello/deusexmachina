@@ -46,7 +46,7 @@ private:
 		_Records.resize(BucketCount, nullptr);
 
 		// Buckets are always pow2, so (hash & (bucket count - 1)) gives the bucket index like % operator.
-		// It is guaranteed that two valid entities have different index, which is more or less evenly
+		// It is guaranteed that all valid entities have different indices, which are more or less evenly
 		// distributed, so we use index bits as a hash value and incorporate their mask here.
 		_HashMask = ((BucketCount - 1) & CEntityStorage::INDEX_BITS_MASK);
 
@@ -69,7 +69,7 @@ private:
 
 public:
 
-	// Not really an iterator, just a handle for erasing already found record
+	// Not really an iterator, just a handle for acessing and erasing already found record
 	class iterator
 	{
 	private:

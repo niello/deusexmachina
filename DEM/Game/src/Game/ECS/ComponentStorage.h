@@ -41,16 +41,17 @@ protected:
 
 public:
 
-	CHandleArrayComponentStorage(UPTR InitialCapacity) : _Data(InitialCapacity) {}
+	CHandleArrayComponentStorage(UPTR InitialCapacity) : _Data(InitialCapacity), _IndexByEntity(InitialCapacity) {}
 
 	// TODO: describe as a static interface part
 	T* Add(HEntity EntityID)
 	{
+		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend()) return _Data.GetValue(*It);
+		if (It != _IndexByEntity.cend()) return _Data.GetValueUnsafe(*It);
 
 		auto Handle = _Data.Allocate();
-		T* pComponent = _Data.GetValue(Handle);
+		T* pComponent = _Data.GetValueUnsafe(Handle);
 		if (!pComponent) return nullptr;
 
 		pComponent->EntityID = EntityID;
@@ -69,11 +70,26 @@ public:
 		OK;
 	}
 
+	// TODO: describe as a static interface part
+	T* Find(HEntity EntityID)
+	{
+		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
+		auto It = _IndexByEntity.find(EntityID);
+		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
+	}
+
 	//!!!could call T::Load/T::Save non-virtual methods here and avoid subclassing storages explicitly for every component!
 	//can even have templated methods outside structs if it is cleaner for some reason, but probably not.
 	//The one benefit of template (traits-like) external method is an empty default implementation.
 	virtual bool LoadComponent() { return false; }
 	virtual bool SaveComponent() const { return false; }
+
+	auto begin() { return _Data.begin(); }
+	auto begin() const { return _Data.begin(); }
+	auto cbegin() const { return _Data.cbegin(); }
+	auto end() { return _Data.end(); }
+	auto end() const { return _Data.end(); }
+	auto cend() const { return _Data.cend(); }
 };
 
 }
