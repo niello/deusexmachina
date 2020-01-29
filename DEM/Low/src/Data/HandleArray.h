@@ -410,8 +410,8 @@ protected:
 		iterator_tpl(const iterator_tpl& It) = default;
 		iterator_tpl& operator =(const iterator_tpl& It) = default;
 
-		reference operator *() const { return *_It; }
-		pointer operator ->() const { return _It; }
+		auto& operator *() const { return _It->Value; }
+		auto* operator ->() const { return &_It->Value; }
 		iterator_tpl& operator ++() { do ++_It; while (_It != _ItEnd && !IsAllocated()); return *this; }
 		iterator_tpl operator ++(int) { auto Tmp = *this; ++(*this); return Tmp; }
 		iterator_tpl& operator --() { do --_It; while (_It != _ItEnd && !IsAllocated()); return *this; }
