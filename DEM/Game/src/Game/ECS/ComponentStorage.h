@@ -41,7 +41,12 @@ protected:
 
 public:
 
-	CHandleArrayComponentStorage(UPTR InitialCapacity) : _Data(InitialCapacity), _IndexByEntity(InitialCapacity) {}
+	CHandleArrayComponentStorage(UPTR InitialCapacity)
+		: _Data(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
+		, _IndexByEntity(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
+	{
+		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
+	}
 
 	// TODO: describe as a static interface part
 	T* Add(HEntity EntityID)
