@@ -22,13 +22,20 @@ namespace Resources
 }
 
 template<class T>
-struct just_pointer
+struct ensure_pointer
 {
 	using type = std::remove_reference_t<std::remove_pointer_t<T>>*;
 };
 
-template<class T> using just_pointer_t = typename just_pointer<T>::type;
+template<class T> using ensure_pointer_t = typename ensure_pointer<T>::type;
 
+template<class T>
+struct just_type
+{
+	using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+};
+
+template<class T> using just_type_t = typename just_type<T>::type;
 
 namespace DEM::Game
 {
@@ -64,26 +71,8 @@ protected:
 	// loaded level list (main place for them)
 	//???accumulated COIs for levels?
 
-	// Used by join-iterator ForEachEntityWith()
 	template<typename TComponent, typename... Components>
-	bool GetNextComponents(HEntity EntityID, std::tuple<just_pointer_t<TComponent>, just_pointer_t<Components>...>& Out)
-	{
-		just_pointer_t<TComponent> pComponent = nullptr;
-		std::tuple<just_pointer_t<Components>...> NextComponents;
-		if constexpr(sizeof...(Components) > 0)
-		{
-			if (GetNextComponents<Components...>(EntityID, NextComponents))
-				if (auto pStorage = FindComponentStorage<std::remove_pointer_t<TComponent>>())
-					pComponent = pStorage->Find(EntityID);
-		}
-
-		Out = std::tuple_cat(std::make_tuple(pComponent), NextComponents);
-
-		if constexpr (std::is_pointer_v<TComponent>)
-			return true;
-		else
-			return !!pComponent;
-	}
+	bool GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out);
 
 public:
 
@@ -129,29 +118,9 @@ public:
 	template<class T> bool RemoveComponent(HEntity EntityID);
 	template<class T> T*   FindComponent(HEntity EntityID);
 	template<class T> typename TComponentTraits<T>::TStorage* FindComponentStorage();
-	//???public iterators over components of requested type? return some wrapper with .begin() and .end()?
 
-	// Join-iterator over entities containing a set of components. Components specified by pointer are optional.
-	// They are nullptr if not present. Mandatory ones are references. It is recommended to specify mandatory ones first.
 	template<typename TComponent, typename... Components>
-	void ForEachEntityWith(std::function<void(HEntity, TComponent&&, Components&&...)>&& Callback)//, std::conditional<std::is_pointer_v<Components>, Components, Components&>...)>&& Callback)
-	{
-		static_assert(!std::is_pointer_v<TComponent>, "First component in ForEachEntityWith must be mandatory!");
-
-		// The first component is mandatory
-		if (auto pStorage = FindComponentStorage<TComponent>())
-		{
-			for (auto&& Component : *pStorage)
-			{
-				auto pEntity = GetEntityUnsafe(Component.EntityID);
-				if (!pEntity || !pEntity->IsActive) continue;
-
-				std::tuple<just_pointer_t<Components>...> NextComponents;
-				if (GetNextComponents<Components...>(Component.EntityID, NextComponents))
-					std::apply(std::forward<decltype(Callback)>(Callback), std::tuple_cat(std::make_tuple(Component.EntityID, Component), NextComponents));
-			}
-		}
-	}
+	void ForEachEntityWith(std::function<void(CEntity&, TComponent&&, ensure_pointer_t<Components>&&...)>&& Callback);
 
 	// RegisterSystem<T>(system instance, update priority? or system tells its dependencies and world sorts them? explicit order?)
 	// UnregisterSystem<T>()
@@ -241,6 +210,56 @@ typename TComponentTraits<T>::TStorage* CGameWorld::FindComponentStorage()
 	if (_Components.size() <= TypeIndex) return nullptr;
 
 	return static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
+}
+//---------------------------------------------------------------------
+
+// Used by join-iterator ForEachEntityWith()
+template<typename TComponent, typename... Components>
+bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out)
+{
+	ensure_pointer_t<TComponent> pComponent = nullptr;
+	std::tuple<ensure_pointer_t<Components>...> NextComponents;
+
+	bool NextOk = true;
+	if constexpr(sizeof...(Components) > 0)
+		NextOk = GetNextComponents<Components...>(EntityID, NextComponents);
+
+	if (NextOk)
+		if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
+			pComponent = pStorage->Find(EntityID);
+
+	Out = std::tuple_cat(std::make_tuple(pComponent), NextComponents);
+
+	if constexpr (std::is_pointer_v<TComponent>)
+		return true;
+	else
+		return !!pComponent;
+}
+//---------------------------------------------------------------------
+
+// Join-iterator over entities containing a set of components. Components specified by pointer are optional.
+// They are nullptr if not present. It is recommended to specify mandatory ones first. Respects 'const' specifier.
+// Callback args are an entity ref followed by component pointers in the same order as in args.
+// TODO: pass mandatory components by reference into a Callback?
+// TODO: find storages once before the loop and save in a tuple!
+template<typename TComponent, typename... Components>
+void CGameWorld::ForEachEntityWith(std::function<void(CEntity&, TComponent&&, ensure_pointer_t<Components>&&...)>&& Callback)
+{
+	static_assert(!std::is_pointer_v<TComponent>, "First component in ForEachEntityWith must be mandatory!");
+
+	// The first component is mandatory
+	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
+	{
+		for (auto&& Component : *pStorage)
+		{
+			auto pEntity = GetEntityUnsafe(Component.EntityID);
+			if (!pEntity || !pEntity->IsActive) continue;
+
+			std::tuple<ensure_pointer_t<Components>...> NextComponents;
+			if (GetNextComponents<Components...>(Component.EntityID, NextComponents))
+				std::apply(std::forward<decltype(Callback)>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
+		}
+	}
 }
 //---------------------------------------------------------------------
 
