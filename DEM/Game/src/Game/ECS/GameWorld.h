@@ -21,6 +21,15 @@ namespace Resources
 	class CResourceManager;
 }
 
+template<class T>
+struct just_pointer
+{
+	using type = std::remove_reference_t<std::remove_pointer_t<T>>*;
+};
+
+template<class T> using just_pointer_t = typename just_pointer<T>::type;
+
+
 namespace DEM::Game
 {
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
@@ -54,6 +63,27 @@ protected:
 
 	// loaded level list (main place for them)
 	//???accumulated COIs for levels?
+
+	// Used by join-iterator ForEachEntityWith()
+	template<typename TComponent, typename... Components>
+	bool GetNextComponents(HEntity EntityID, std::tuple<just_pointer_t<TComponent>, just_pointer_t<Components>...>& Out)
+	{
+		just_pointer_t<TComponent> pComponent = nullptr;
+		std::tuple<just_pointer_t<Components>...> NextComponents;
+		if constexpr(sizeof...(Components) > 0)
+		{
+			if (GetNextComponents<Components...>(EntityID, NextComponents))
+				if (auto pStorage = FindComponentStorage<std::remove_pointer_t<TComponent>>())
+					pComponent = pStorage->Find(EntityID);
+		}
+
+		Out = std::tuple_cat(std::make_tuple(pComponent), NextComponents);
+
+		if constexpr (std::is_pointer_v<TComponent>)
+			return true;
+		else
+			return !!pComponent;
+	}
 
 public:
 
@@ -100,6 +130,28 @@ public:
 	template<class T> T*   FindComponent(HEntity EntityID);
 	template<class T> typename TComponentTraits<T>::TStorage* FindComponentStorage();
 	//???public iterators over components of requested type? return some wrapper with .begin() and .end()?
+
+	// Join-iterator over entities containing a set of components. Components specified by pointer are optional.
+	// They are nullptr if not present. Mandatory ones are references. It is recommended to specify mandatory ones first.
+	template<typename TComponent, typename... Components>
+	void ForEachEntityWith(std::function<void(HEntity, TComponent&&, Components&&...)>&& Callback)//, std::conditional<std::is_pointer_v<Components>, Components, Components&>...)>&& Callback)
+	{
+		static_assert(!std::is_pointer_v<TComponent>, "First component in ForEachEntityWith must be mandatory!");
+
+		// The first component is mandatory
+		if (auto pStorage = FindComponentStorage<TComponent>())
+		{
+			for (auto&& Component : *pStorage)
+			{
+				auto pEntity = GetEntityUnsafe(Component.EntityID);
+				if (!pEntity || !pEntity->IsActive) continue;
+
+				std::tuple<just_pointer_t<Components>...> NextComponents;
+				if (GetNextComponents<Components...>(Component.EntityID, NextComponents))
+					std::apply(std::forward<decltype(Callback)>(Callback), std::tuple_cat(std::make_tuple(Component.EntityID, Component), NextComponents));
+			}
+		}
+	}
 
 	// RegisterSystem<T>(system instance, update priority? or system tells its dependencies and world sorts them? explicit order?)
 	// UnregisterSystem<T>()
