@@ -249,7 +249,6 @@ DEM_FORCE_INLINE bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple
 // They are nullptr if not present. It is recommended to specify mandatory ones first. Respects 'const' specifier.
 // Callback args are an entity ref followed by component pointers in the same order as in args.
 // TODO: pass mandatory components by reference into a Callback?
-// TODO: find storages once before the loop and save in a tuple!
 template<typename TComponent, typename... Components, typename TCallback>
 inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 {
