@@ -36,6 +36,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/KeyList.h
 	DEM/Low/src/Data/LineBuffer.h
 	DEM/Low/src/Data/List.h
+	DEM/Low/src/Data/Metadata.h
 	DEM/Low/src/Data/MurmurHash3.h
 	DEM/Low/src/Data/PairT.h
 	DEM/Low/src/Data/Param.h
