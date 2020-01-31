@@ -105,8 +105,8 @@ public:
 	template<class T> T*   FindComponent(HEntity EntityID);
 	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
 
-	template<typename TComponent, typename... Components>
-	void ForEachEntityWith(std::function<void(CEntity&, TComponent&&, ensure_pointer_t<Components>&&...)>&& Callback);
+	template<typename TComponent, typename... Components, typename TCallback>
+	void ForEachEntityWith(TCallback Callback);
 
 	// RegisterSystem<T>(system instance, update priority? or system tells its dependencies and world sorts them? explicit order?)
 	// UnregisterSystem<T>()
@@ -200,7 +200,7 @@ typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 //---------------------------------------------------------------------
 
 template<typename TComponent, typename... Components>
-bool CGameWorld::GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Out)
+inline bool CGameWorld::GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Out)
 {
 	TComponentStoragePtr<TComponent> pStorage = nullptr;
 	std::tuple<TComponentStoragePtr<Components>...> NextStorages;
@@ -223,7 +223,7 @@ bool CGameWorld::GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TC
 
 // Used by join-iterator ForEachEntityWith()
 template<typename TComponent, typename... Components>
-bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out, const std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Storages)
+DEM_FORCE_INLINE bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out, const std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Storages)
 {
 	ensure_pointer_t<TComponent> pComponent = nullptr;
 	std::tuple<ensure_pointer_t<Components>...> NextComponents;
@@ -250,8 +250,8 @@ bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t
 // Callback args are an entity ref followed by component pointers in the same order as in args.
 // TODO: pass mandatory components by reference into a Callback?
 // TODO: find storages once before the loop and save in a tuple!
-template<typename TComponent, typename... Components>
-void CGameWorld::ForEachEntityWith(std::function<void(CEntity&, TComponent&&, ensure_pointer_t<Components>&&...)>&& Callback)
+template<typename TComponent, typename... Components, typename TCallback>
+inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 {
 	static_assert(!std::is_pointer_v<TComponent>, "First component in ForEachEntityWith must be mandatory!");
 
@@ -268,7 +268,7 @@ void CGameWorld::ForEachEntityWith(std::function<void(CEntity&, TComponent&&, en
 
 			std::tuple<ensure_pointer_t<Components>...> NextComponents;
 			if (GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages))
-				std::apply(std::forward<decltype(Callback)>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
+				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
 		}
 	}
 }

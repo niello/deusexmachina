@@ -64,6 +64,20 @@ typedef UPTR				HHandle;
 #define n_stricmp _stricmp
 #endif
 
+#ifdef _MSC_VER
+    #define DEM_FORCE_INLINE __forceinline
+#elif defined(__GNUC__)
+    #define DEM_FORCE_INLINE inline __attribute__((__always_inline__))
+#elif defined(__CLANG__)
+    #if __has_attribute(__always_inline__)
+        #define DEM_FORCE_INLINE inline __attribute__((__always_inline__))
+    #else
+        #define DEM_FORCE_INLINE inline
+    #endif
+#else
+    #define DEM_FORCE_INLINE inline
+#endif
+
 //---------------------------------------------------------------------
 // Template magic not in std (yet?)
 //---------------------------------------------------------------------
