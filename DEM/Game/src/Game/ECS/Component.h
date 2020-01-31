@@ -23,4 +23,6 @@ struct TComponentTraits
 	using THandle = typename TStorage::CInnerStorage::CHandle;
 };
 
+template<typename T> using TComponentStoragePtr = typename TComponentTraits<just_type_t<T>>::TStorage*;
+
 }

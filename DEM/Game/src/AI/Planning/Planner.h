@@ -28,16 +28,14 @@ private:
 
 	struct CNode
 	{
-		CActionTpl*	pAction;
+		CActionTpl*	pAction = nullptr;
 		CWorldState	WSCurr;
 		CWorldState	WSGoal;
 		CWorldState	WSPreconditions;
 		bool		HasPreconditions; //???track num of props set in CWorldState?
 		int			Goal;
-		int			Fitness;	// Goal + Heuristic
-		CNode*		pParent;
-
-		CNode(): pAction(nullptr), pParent(nullptr), Fitness(I32_MAX) {}
+		int			Fitness = std::numeric_limits<int>::max();	// Goal + Heuristic
+		CNode*		pParent = nullptr;
 	};
 
 	CPoolAllocator<CNode, 32>	NodePool;

@@ -55,11 +55,6 @@ const UPTR INVALID_HALF_INDEX = (1 << HalfRegisterBits) - 1;
 
 typedef UPTR				HHandle;
 
-//???use template C++ std facility?
-#ifndef I32_MAX
-#define I32_MAX				(0x7fffffff)
-#endif
-
 //---------------------------------------------------------------------
 //  Compiler-dependent aliases
 //---------------------------------------------------------------------
@@ -68,6 +63,26 @@ typedef UPTR				HHandle;
 #else
 #define n_stricmp _stricmp
 #endif
+
+//---------------------------------------------------------------------
+// Template magic not in std (yet?)
+//---------------------------------------------------------------------
+
+template<class T>
+struct just_type
+{
+	using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
+};
+
+template<class T> using just_type_t = typename just_type<T>::type;
+
+template<class T>
+struct ensure_pointer
+{
+	using type = std::remove_reference_t<std::remove_pointer_t<T>>*;
+};
+
+template<class T> using ensure_pointer_t = typename ensure_pointer<T>::type;
 
 //---------------------------------------------------------------------
 //  Kernel and aux functions and enums

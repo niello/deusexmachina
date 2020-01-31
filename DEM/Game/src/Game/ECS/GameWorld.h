@@ -21,22 +21,6 @@ namespace Resources
 	class CResourceManager;
 }
 
-template<class T>
-struct ensure_pointer
-{
-	using type = std::remove_reference_t<std::remove_pointer_t<T>>*;
-};
-
-template<class T> using ensure_pointer_t = typename ensure_pointer<T>::type;
-
-template<class T>
-struct just_type
-{
-	using type = std::remove_cv_t<std::remove_reference_t<std::remove_pointer_t<T>>>;
-};
-
-template<class T> using just_type_t = typename just_type<T>::type;
-
 namespace DEM::Game
 {
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
@@ -72,7 +56,9 @@ protected:
 	//???accumulated COIs for levels?
 
 	template<typename TComponent, typename... Components>
-	bool GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out);
+	bool GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Out);
+	template<typename TComponent, typename... Components>
+	bool GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out, const std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Storages);
 
 public:
 
@@ -117,7 +103,7 @@ public:
 	template<class T> T*   AddComponent(HEntity EntityID);
 	template<class T> bool RemoveComponent(HEntity EntityID);
 	template<class T> T*   FindComponent(HEntity EntityID);
-	template<class T> typename TComponentTraits<T>::TStorage* FindComponentStorage();
+	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
 
 	template<typename TComponent, typename... Components>
 	void ForEachEntityWith(std::function<void(CEntity&, TComponent&&, ensure_pointer_t<Components>&&...)>&& Callback);
@@ -157,7 +143,7 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 
 	//???check entity exists? create if not? or fail?
 
-	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
+	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
 	return Storage.Add(EntityID);
 }
 //---------------------------------------------------------------------
@@ -177,7 +163,7 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 
 	//???check entity exists?
 
-	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
+	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
 	return Storage.Remove(EntityID);
 }
 //---------------------------------------------------------------------
@@ -195,13 +181,13 @@ T* CGameWorld::FindComponent(HEntity EntityID)
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
 
-	auto& Storage = *static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
+	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
 	return Storage.Find(EntityID);
 }
 //---------------------------------------------------------------------
 
 template<class T>
-typename TComponentTraits<T>::TStorage* CGameWorld::FindComponentStorage()
+typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 {
 	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
 		"CGameWorld::FindComponentStorage() > T must be derived from CComponent");
@@ -209,23 +195,45 @@ typename TComponentTraits<T>::TStorage* CGameWorld::FindComponentStorage()
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Components.size() <= TypeIndex) return nullptr;
 
-	return static_cast<TComponentTraits<T>::TStorage*>(_Components[TypeIndex].get());
+	return static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
+}
+//---------------------------------------------------------------------
+
+template<typename TComponent, typename... Components>
+bool CGameWorld::GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Out)
+{
+	TComponentStoragePtr<TComponent> pStorage = nullptr;
+	std::tuple<TComponentStoragePtr<Components>...> NextStorages;
+
+	bool NextOk = true;
+	if constexpr(sizeof...(Components) > 0)
+		NextOk = GetNextStorages<Components...>(NextStorages);
+
+	if (NextOk)
+		pStorage = FindComponentStorage<just_type_t<TComponent>>();
+
+	Out = std::tuple_cat(std::make_tuple(pStorage), NextStorages);
+
+	if constexpr (std::is_pointer_v<TComponent>)
+		return true;
+	else
+		return !!pStorage;
 }
 //---------------------------------------------------------------------
 
 // Used by join-iterator ForEachEntityWith()
 template<typename TComponent, typename... Components>
-bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out)
+bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t<TComponent>, ensure_pointer_t<Components>...>& Out, const std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Storages)
 {
 	ensure_pointer_t<TComponent> pComponent = nullptr;
 	std::tuple<ensure_pointer_t<Components>...> NextComponents;
 
 	bool NextOk = true;
 	if constexpr(sizeof...(Components) > 0)
-		NextOk = GetNextComponents<Components...>(EntityID, NextComponents);
+		NextOk = GetNextComponents<Components...>(EntityID, NextComponents, Storages);
 
 	if (NextOk)
-		if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
+		if (auto pStorage = std::get<0>(Storages))
 			pComponent = pStorage->Find(EntityID);
 
 	Out = std::tuple_cat(std::make_tuple(pComponent), NextComponents);
@@ -250,13 +258,16 @@ void CGameWorld::ForEachEntityWith(std::function<void(CEntity&, TComponent&&, en
 	// The first component is mandatory
 	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
 	{
+		std::tuple<TComponentStoragePtr<Components>...> NextStorages;
+		if (!GetNextStorages<Components...>(NextStorages)) return;
+
 		for (auto&& Component : *pStorage)
 		{
 			auto pEntity = GetEntityUnsafe(Component.EntityID);
 			if (!pEntity || !pEntity->IsActive) continue;
 
 			std::tuple<ensure_pointer_t<Components>...> NextComponents;
-			if (GetNextComponents<Components...>(Component.EntityID, NextComponents))
+			if (GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages))
 				std::apply(std::forward<decltype(Callback)>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
 		}
 	}
