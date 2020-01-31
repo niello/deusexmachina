@@ -230,7 +230,7 @@ bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple<ensure_pointer_t
 
 	bool NextOk = true;
 	if constexpr(sizeof...(Components) > 0)
-		NextOk = GetNextComponents<Components...>(EntityID, NextComponents, Storages);
+		NextOk = GetNextComponents<Components...>(EntityID, NextComponents, tuple_pop_front(Storages));
 
 	if (NextOk)
 		if (auto pStorage = std::get<0>(Storages))

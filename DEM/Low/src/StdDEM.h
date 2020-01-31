@@ -84,6 +84,18 @@ struct ensure_pointer
 
 template<class T> using ensure_pointer_t = typename ensure_pointer<T>::type;
 
+template <typename T, std::size_t ... Indices>
+auto tuple_pop_front_impl(const T& tuple, std::index_sequence<Indices...>)
+{
+	return std::make_tuple(std::get<1 + Indices>(tuple)...);
+}
+
+template <typename T>
+auto tuple_pop_front(const T& tuple)
+{
+	return tuple_pop_front_impl(tuple, std::make_index_sequence<std::tuple_size<T>::value - 1>());
+}
+
 //---------------------------------------------------------------------
 //  Kernel and aux functions and enums
 //---------------------------------------------------------------------
