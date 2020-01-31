@@ -76,7 +76,7 @@ public:
 	}
 
 	// TODO: describe as a static interface part
-	T* Find(HEntity EntityID)
+	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
