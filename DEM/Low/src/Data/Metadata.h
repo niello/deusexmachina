@@ -10,8 +10,15 @@ namespace DEM::Meta
 // Specialize this for your types
 template<typename T> inline constexpr auto RegisterMetadata() { return std::make_tuple(); }
 
-template <typename TClass, typename T>
-using member_ptr_t = T TClass::*;
+// Access this to work with registered types
+template<typename T, typename TMembers>
+struct CMetadata
+{
+	// TODO: CMetadata is a static object itself, members, name, isregistered etc are fields
+
+	static inline TMembers Members = RegisterMetadata<T>();
+	//static const char* Name() { return registerName<T>(); }
+};
 
 template<typename TClass, typename T, typename TAccessor>
 struct MemberAccess
@@ -24,20 +31,21 @@ struct MemberAccess
 };
 
 template<typename TClass, typename T>
-struct MemberAccess<TClass, T, member_ptr_t<TClass, T>>
+struct MemberAccess<TClass, T, T TClass::*> // Pointer-to-member specialization
 {
-	static inline const T* ConstPtr(member_ptr_t<TClass, T> pGetter, const TClass& Instance) { return &Instance.*pGetter; }
-	static inline T*       Ptr(member_ptr_t<TClass, T> pSetter, TClass& Instance) { return &Instance.*pSetter; }
-	static inline const T& ConstRef(member_ptr_t<TClass, T> pGetter, const TClass& Instance) { return Instance.*pGetter; }
-	static inline T&       Ref(member_ptr_t<TClass, T> pSetter, TClass& Instance) { return Instance.*pSetter; }
-	static inline T        Copy(member_ptr_t<TClass, T> pGetter, TClass& Instance) { return Instance.*pGetter; }
+	using TAccessor = T TClass::*;
+
+	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &Instance.*pGetter; }
+	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &Instance.*pSetter; }
+	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }
+	static inline T&       Ref(TAccessor pSetter, TClass& Instance) { return Instance.*pSetter; }
+	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return Instance.*pGetter; }
 };
 
-//  = std::nullptr_t
 template<typename TClass, typename T, typename TGetter, typename TSetter>
 class CMember final
 {
-	static_assert(!std::is_null_pointer_v<TGetter> || !std::is_null_pointer_v<TSetter>);
+	static_assert(!std::is_null_pointer_v<TGetter> || !std::is_null_pointer_v<TSetter>, "Inacessible members are not allowed, please add setter or getter");
 
 public:
 
@@ -48,6 +56,7 @@ public:
 
 	//CMember& Get(TGetter pGetter) { _pGetter = pGetter; }
 	//CMember& Set(TSetter pSetter) { _pSetter = pSetter; }
+	// TODO: specials like SetRange for numerics
 
 	constexpr const T& GetConstValueRef(const TClass& Instance) const
 	{
@@ -69,16 +78,21 @@ private:
 };
 
 template<typename TClass, typename T, typename TGetter = std::nullptr_t, typename TSetter = std::nullptr_t>
-CMember<TClass, T, TGetter, TSetter> Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
+inline CMember<TClass, T, TGetter, TSetter> Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
 {
 	return CMember<TClass, T, TGetter, TSetter>(pName, pGetter, pSetter);
 }
 
-template<typename T, typename TMembers>
-struct CMetadata
+template<typename TClass, typename T>
+inline CMember<TClass, T, T TClass::*, std::nullptr_t> Member(const char* pName, T TClass::* pGetter)
 {
-	static inline TMembers Members = RegisterMetadata<T>();
-	//static const char* Name() { return registerName<T>(); }
-};
+	return CMember<TClass, T, T TClass::*, std::nullptr_t>(pName, pGetter, nullptr);
+}
+
+template<typename TClass, typename T>
+inline CMember<TClass, T, T TClass::*, T TClass::*> Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
+{
+	return CMember<TClass, T, T TClass::*, T TClass::*>(pName, pGetter, pSetter);
+}
 
 }
