@@ -9,7 +9,8 @@ namespace DEM::Meta
 {
 
 // Specialize this for your types
-template<typename T> inline constexpr auto RegisterMetadata() { return std::make_tuple(); }
+template<typename T> inline constexpr auto RegisterMembers() { return std::make_tuple(); }
+template<typename T> inline constexpr auto RegisterClassName() { return "<no class name specified>"; } //???typeid(T).name()?
 
 // Specialize this to add more meta info to your types
 template<typename T> struct CTypeMetadata {};
@@ -20,13 +21,14 @@ class CMetadata final
 {
 private:
 
-	// TODO: CMetadata is a static object itself, members, name, isregistered etc are fields
-	// TODO: constexpr metadata? All is defined in a compile time, so why not?
+	//static inline constexpr auto _Instance = RegisterMetadata<T>();
+	// TODO: CMetadata is a static object itself, members, name, isRegistered etc are fields
 
-	static inline constexpr auto _Members = RegisterMetadata<T>();
-	//static const char* Name() { return registerName<T>(); }
+	static inline constexpr auto _Members = RegisterMembers<T>();
 
 public:
+
+	static inline constexpr const char* GetClassName() { return RegisterClassName<T>(); }
 
 	template<size_t Index>
 	static inline constexpr auto   GetMember() { return std::get<Index>(_Members); }
@@ -123,7 +125,7 @@ public:
 		return MemberAccess<TClass, T, TSetter>::BestGet(_pSetter, Instance);
 	}
 
-	template<typename U>
+	template<typename U> //, typename = std::enable_if_t<std::is_constructible_v<T, U>>
 	void SetValue(TClass& Instance, U&& Value) const
 	{
 		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
