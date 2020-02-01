@@ -1,5 +1,6 @@
 #pragma once
-#include <StdDEM.h>
+//#include <StdDEM.h>
+#include <Data/MemberAccess.h>
 
 // Provides type-safe introspection and serialization info for arbitrary objects
 // Inspired by https://github.com/eliasdaler/MetaStuff
@@ -11,84 +12,19 @@ namespace DEM::Meta
 template<typename T> inline constexpr auto RegisterMetadata() { return std::make_tuple(); }
 
 // Access this to work with registered types
-template<typename T, typename TMembers>
-struct CMetadata
+template<typename T>
+class CMetadata final
 {
+private:
+
 	// TODO: CMetadata is a static object itself, members, name, isregistered etc are fields
 
-	static inline TMembers Members = RegisterMetadata<T>();
+	static inline auto Members = RegisterMetadata<T>();
 	//static const char* Name() { return registerName<T>(); }
-};
 
-template<typename TClass, typename T, typename TAccessor>
-struct MemberAccess
-{
-	static inline const T* ConstPtr(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline T        Copy(TAccessor, TClass&) { static_assert(false, "Invalid getter"); }
-};
+public:
 
-// FIXME:
-//!!!void Set(const T& / T&& / T)!
-template<typename TClass, typename T, typename TAccessor,
-	typename std::enable_if<std::is_arithmetic<TAccessor>::value>::type* = nullptr> // Setter specialization
-struct MemberAccess
-{
-	static inline const T* ConstPtr(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline T        Copy(TAccessor, TClass&) { static_assert(false, "Invalid getter"); }
-};
-
-template<typename TClass, typename T>
-struct MemberAccess<TClass, T, T TClass::*> // Pointer-to-member specialization
-{
-	using TAccessor = T TClass::*;
-
-	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &Instance.*pGetter; }
-	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &Instance.*pSetter; }
-	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }
-	static inline T&       Ref(TAccessor pSetter, TClass& Instance) { return Instance.*pSetter; }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return Instance.*pGetter; }
-};
-
-template<typename TClass, typename T>
-struct MemberAccess<TClass, T, const T& (TClass::*)() const> // Const ref getter specialization
-{
-	using TAccessor = const T& (TClass::*)() const;
-
-	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &(Instance.*pGetter)(); }
-	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
-	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return (Instance.*pGetter)(); }
-};
-
-template<typename TClass, typename T>
-struct MemberAccess<TClass, T, T& (TClass::*)()> // Mutable ref getter specialization
-{
-	using TAccessor = T& (TClass::*)();
-
-	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &(Instance.*pGetter)(); }
-	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &(Instance.*pSetter)(); }
-	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
-	static inline T&       Ref(TAccessor pSetter, TClass& Instance) { return (Instance.*pSetter)(); }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return (Instance.*pGetter)(); }
-};
-
-template<typename TClass, typename T>
-struct MemberAccess<TClass, T, T (TClass::*)() const> // Value getter specialization
-{
-	using TAccessor = T (TClass::*)() const;
-
-	static inline const T* ConstPtr(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return (Instance.*pGetter)(); }
+	template<size_t Index> static inline auto GetMember() { return std::get<Index>(Members); }
 };
 
 template<typename TClass, typename T, typename TGetter, typename TSetter>
@@ -109,35 +45,40 @@ public:
 
 	constexpr const T* GetConstValuePtr(const TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, nullptr_t>, "Member is write-only");
+		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::ConstPtr(_pGetter, Instance);
 	}
 
 	constexpr T* GetValuePtr(TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TSetter, nullptr_t>, "Member is read-only");
+		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::Ptr(_pSetter, Instance);
 	}
 
 	constexpr const T& GetConstValueRef(const TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, nullptr_t>, "Member is write-only");
+		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::ConstRef(_pGetter, Instance);
 	}
 
 	constexpr T& GetValueRef(TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TSetter, nullptr_t>, "Member is read-only");
+		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::Ref(_pSetter, Instance);
 	}
 
 	constexpr T GetValueCopy(TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, nullptr_t>, "Member is write-only");
+		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::Copy(_pGetter, Instance);
 	}
 
-	//set value &&
+	template<typename U>
+	void SetValue(TClass& Instance, U&& Value) const
+	{
+		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
+		return MemberAccess<TClass, T, TSetter>::Set(_pSetter, Instance, std::forward<U>(Value));
+	}
 
 private:
 
