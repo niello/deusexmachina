@@ -11,6 +11,9 @@ namespace DEM::Meta
 // Specialize this for your types
 template<typename T> inline constexpr auto RegisterMetadata() { return std::make_tuple(); }
 
+// Specialize this to add more meta info to your types
+template<typename T> struct CTypeMetadata {};
+
 // Access this to work with registered types
 template<typename T>
 class CMetadata final
@@ -20,7 +23,7 @@ private:
 	// TODO: CMetadata is a static object itself, members, name, isregistered etc are fields
 	// TODO: constexpr metadata? All is defined in a compile time, so why not?
 
-	static inline auto _Members = RegisterMetadata<T>();
+	static inline constexpr auto _Members = RegisterMetadata<T>();
 	//static const char* Name() { return registerName<T>(); }
 
 public:
@@ -35,7 +38,7 @@ public:
 		std::apply([Callback](auto& ...Members) { (..., Callback(Members)); }, _Members);
 	}
 
-	static inline bool HasMember(std::string_view Name)
+	static inline constexpr bool HasMember(std::string_view Name)
 	{
 		return std::apply([Name](auto& ...Members) { return (... || (Members.GetName() == Name)); }, _Members);
 	}
@@ -72,6 +75,11 @@ public:
 	//CMember& Get(TGetter pGetter) { _pGetter = pGetter; }
 	//CMember& Set(TSetter pSetter) { _pSetter = pSetter; }
 	// TODO: specials like SetRange for numerics
+
+	constexpr CMember& Extras(CTypeMetadata<T>&& Value) { _Extras = std::move(Value); return *this; }
+	constexpr auto&    Extras() const { return _Extras; }
+
+	template<typename U> static constexpr bool Is() { return std::is_same_v<std::decay_t<T>, U>; }
 
 	constexpr const T* GetConstValuePtr(const TClass& Instance) const
 	{
@@ -126,25 +134,26 @@ public:
 
 private:
 
-	const char* _pName = nullptr;
-	TGetter     _pGetter = nullptr;
-	TSetter     _pSetter = nullptr;
+	const char*      _pName = nullptr;
+	TGetter          _pGetter = nullptr;
+	TSetter          _pSetter = nullptr;
+	CTypeMetadata<T> _Extras;
 };
 
 template<typename TClass, typename T, typename TGetter = std::nullptr_t, typename TSetter = std::nullptr_t>
-inline CMember<TClass, T, TGetter, TSetter> Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
+inline constexpr CMember<TClass, T, TGetter, TSetter> Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
 {
 	return CMember<TClass, T, TGetter, TSetter>(pName, pGetter, pSetter);
 }
 
 template<typename TClass, typename T>
-inline CMember<TClass, T, T TClass::*, std::nullptr_t> Member(const char* pName, T TClass::* pGetter)
+inline constexpr CMember<TClass, T, T TClass::*, std::nullptr_t> Member(const char* pName, T TClass::* pGetter)
 {
 	return CMember<TClass, T, T TClass::*, std::nullptr_t>(pName, pGetter, nullptr);
 }
 
 template<typename TClass, typename T>
-inline CMember<TClass, T, T TClass::*, T TClass::*> Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
+inline constexpr CMember<TClass, T, T TClass::*, T TClass::*> Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
 {
 	return CMember<TClass, T, T TClass::*, T TClass::*>(pName, pGetter, pSetter);
 }

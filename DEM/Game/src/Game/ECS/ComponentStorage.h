@@ -26,7 +26,7 @@ public:
 };
 
 //, typename = std::enable_if_t<std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>>
-template<typename T, typename H = uint32_t, size_t IndexBits = 20, bool ResetOnOverflow = true>
+template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
 public:
