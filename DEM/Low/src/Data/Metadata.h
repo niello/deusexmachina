@@ -79,7 +79,7 @@ public:
 	constexpr CMember& Extras(CTypeMetadata<T>&& Value) { _Extras = std::move(Value); return *this; }
 	constexpr auto&    Extras() const { return _Extras; }
 
-	template<typename U> static constexpr bool Is() { return std::is_same_v<std::decay_t<T>, U>; }
+	template<typename U> static constexpr bool Is() { return std::is_same_v<T, U>; }
 
 	constexpr const T* GetConstValuePtr(const TClass& Instance) const
 	{
@@ -137,7 +137,7 @@ private:
 	const char*      _pName = nullptr;
 	TGetter          _pGetter = nullptr;
 	TSetter          _pSetter = nullptr;
-	CTypeMetadata<T> _Extras;
+	CTypeMetadata<T> _Extras;             // TODO: when empty, can use C++20 [[no_unique_address]]
 };
 
 template<typename TClass, typename T, typename TGetter = std::nullptr_t, typename TSetter = std::nullptr_t>
