@@ -97,11 +97,22 @@ public:
 		return MemberAccess<TClass, T, TSetter>::Ref(_pSetter, Instance);
 	}
 
-	// TODO: auto GetValue() / GetConstValue() with the best return type available! if constexpr()?
 	constexpr T GetValueCopy(TClass& Instance) const
 	{
 		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::Copy(_pGetter, Instance);
+	}
+
+	constexpr decltype(auto) GetConstValue(TClass& Instance) const
+	{
+		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
+		return MemberAccess<TClass, T, TGetter>::BestGetConst(_pGetter, Instance);
+	}
+
+	constexpr decltype(auto) GetValue(TClass& Instance) const
+	{
+		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
+		return MemberAccess<TClass, T, TSetter>::BestGet(_pSetter, Instance);
 	}
 
 	template<typename U>
