@@ -142,7 +142,18 @@ private:
 	CTypeMetadata<T> _Extras;             // TODO: when empty, can use C++20 [[no_unique_address]]
 };
 
-template<typename TClass, typename T, typename TGetter = std::nullptr_t, typename TSetter = std::nullptr_t>
+// TODO: template deduction guides replace multiple trivial factory functions
+// Not usable without std::enable_if_t<is_setter_v<TAccessor, TClass, T>>> etc
+//template<typename TClass, typename T>
+//CMember(const char*, T TClass::*, T TClass::*) -> CMember<TClass, T, T TClass::*, T TClass::*>;
+//template<typename TClass, typename T>
+//CMember(const char*, T TClass::*) -> CMember<TClass, T, T TClass::*, std::nullptr_t>;
+//template<typename TClass, typename T>
+//CMember(const char*, std::nullptr_t, T TClass::*) -> CMember<TClass, T, std::nullptr_t, T TClass::*>;
+//template<typename TClass, typename T>
+//CMember(const char*, const T& (TClass::*)() const) -> CMember<TClass, T, const T& (TClass::*)() const, std::nullptr_t>;
+
+template<typename TClass, typename T, typename TGetter, typename TSetter>
 inline constexpr auto Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
 {
 	return CMember<TClass, T, TGetter, TSetter>(pName, pGetter, pSetter);
