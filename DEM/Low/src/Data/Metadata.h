@@ -45,6 +45,11 @@ public:
 		return std::apply([Name](auto& ...Members) { return (... || (Members.GetName() == Name)); }, _Members);
 	}
 
+	static inline constexpr bool HasMember(std::uint32_t Code)
+	{
+		return std::apply([Code](auto& ...Members) { return (... || (Members.GetCode() == Code)); }, _Members);
+	}
+
 	template<typename TCallback>
 	static inline bool WithMember(std::string_view Name, TCallback Callback)
 	{
@@ -52,6 +57,21 @@ public:
 		ForEachMember([Name, Callback, &Found](const auto& Member)
 		{
 			if (!Found && Member.GetName() == Name)
+			{
+				Callback(Member);
+				Found = true;
+			}
+		});
+		return Found;
+	}
+
+	template<typename TCallback>
+	static inline bool WithMember(std::uint32_t Code, TCallback Callback)
+	{
+		bool Found = false;
+		ForEachMember([Code, Callback, &Found](const auto& Member)
+		{
+			if (!Found && Member.GetCode() == Code)
 			{
 				Callback(Member);
 				Found = true;
@@ -71,6 +91,11 @@ public:
 
 	constexpr CMember(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr) noexcept
 		: _pName(pName), _pGetter(pGetter), _pSetter(pSetter)
+	{
+	}
+
+	constexpr CMember(std::uint32_t Code, const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr) noexcept
+		: _Code(Code), _pName(pName), _pGetter(pGetter), _pSetter(pSetter)
 	{
 	}
 
@@ -132,10 +157,12 @@ public:
 		return MemberAccess<TClass, T, TSetter>::Set(_pSetter, Instance, std::forward<U>(Value));
 	}
 
-	const char* GetName() const { return _pName; }
+	const char*   GetName() const { return _pName; }
+	std::uint32_t GetCode() const { return _Code; }
 
 private:
 
+	std::uint32_t    _Code = std::numeric_limits<std::uint32_t>::max();
 	const char*      _pName = nullptr;
 	TGetter          _pGetter = nullptr;
 	TSetter          _pSetter = nullptr;
@@ -169,6 +196,24 @@ template<typename TClass, typename T>
 inline constexpr auto Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
 {
 	return CMember<TClass, T, T TClass::*, T TClass::*>(pName, pGetter, pSetter);
+}
+
+template<typename TClass, typename T, typename TGetter, typename TSetter>
+inline constexpr auto Member(std::uint32_t Code, const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
+{
+	return CMember<TClass, T, TGetter, TSetter>(Code, pName, pGetter, pSetter);
+}
+
+template<typename TClass, typename T>
+inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* pGetter)
+{
+	return CMember<TClass, T, T TClass::*, std::nullptr_t>(Code, pName, pGetter, nullptr);
+}
+
+template<typename TClass, typename T>
+inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* pGetter, T TClass::* pSetter)
+{
+	return CMember<TClass, T, T TClass::*, T TClass::*>(Code, pName, pGetter, pSetter);
 }
 
 }
