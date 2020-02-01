@@ -72,9 +72,9 @@ public:
 	{
 	}
 
-	//CMember& Get(TGetter pGetter) { _pGetter = pGetter; }
-	//CMember& Set(TSetter pSetter) { _pSetter = pSetter; }
-	// TODO: specials like SetRange for numerics
+	// TODO: nicer Extras. But how?
+	// CMember(n, g, s, Ex<T>().Min().Max())?
+	//???or CMemberBase + per-type overloads with embedded extras?
 
 	constexpr CMember& Extras(CTypeMetadata<T>&& Value) { _Extras = std::move(Value); return *this; }
 	constexpr auto&    Extras() const { return _Extras; }
@@ -141,19 +141,19 @@ private:
 };
 
 template<typename TClass, typename T, typename TGetter = std::nullptr_t, typename TSetter = std::nullptr_t>
-inline constexpr CMember<TClass, T, TGetter, TSetter> Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
+inline constexpr auto Member(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr)
 {
 	return CMember<TClass, T, TGetter, TSetter>(pName, pGetter, pSetter);
 }
 
 template<typename TClass, typename T>
-inline constexpr CMember<TClass, T, T TClass::*, std::nullptr_t> Member(const char* pName, T TClass::* pGetter)
+inline constexpr auto Member(const char* pName, T TClass::* pGetter)
 {
 	return CMember<TClass, T, T TClass::*, std::nullptr_t>(pName, pGetter, nullptr);
 }
 
 template<typename TClass, typename T>
-inline constexpr CMember<TClass, T, T TClass::*, T TClass::*> Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
+inline constexpr auto Member(const char* pName, T TClass::* pGetter, T TClass::* pSetter)
 {
 	return CMember<TClass, T, T TClass::*, T TClass::*>(pName, pGetter, pSetter);
 }
