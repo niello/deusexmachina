@@ -18,13 +18,20 @@ class CMetadata final
 private:
 
 	// TODO: CMetadata is a static object itself, members, name, isregistered etc are fields
+	// TODO: constexpr metadata? All is defined in a compile time, so why not?
 
-	static inline auto Members = RegisterMetadata<T>();
+	static inline auto _Members = RegisterMetadata<T>();
 	//static const char* Name() { return registerName<T>(); }
 
 public:
 
-	template<size_t Index> static inline auto GetMember() { return std::get<Index>(Members); }
+	template<size_t Index> static inline constexpr auto GetMember() { return std::get<Index>(_Members); }
+
+	template<typename TCallback>
+	static inline void ForEachMember(TCallback Callback)
+	{
+		std::apply([Callback](auto& ...Members) { (..., Callback(Members)); }, _Members);
+	}
 };
 
 template<typename TClass, typename T, typename TGetter, typename TSetter>
@@ -79,6 +86,8 @@ public:
 		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::Set(_pSetter, Instance, std::forward<U>(Value));
 	}
+
+	const char* GetName() const { return _pName; }
 
 private:
 

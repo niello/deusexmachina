@@ -9,14 +9,14 @@ namespace DEM::Meta
 template<typename TClass, typename T, typename TAccessor, typename SFINAE_Enabled = void>
 struct MemberAccess
 {
-	static inline const T* ConstPtr(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Invalid getter"); }
-	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Invalid setter"); }
-	static inline T        Copy(TAccessor, TClass&) { static_assert(false, "Invalid getter"); }
+	static inline const T* ConstPtr(TAccessor, const TClass&) { static_assert(false, "Unsupported getter type"); }
+	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Unsupported setter type"); }
+	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Unsupported getter type"); }
+	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Unsupported setter type"); }
+	static inline T        Copy(TAccessor, TClass&) { static_assert(false, "Unsupported getter type"); }
 
 	template<typename U>
-	static inline void     Set(TAccessor, TClass&, U&&) { static_assert(false, "Invalid setter"); }
+	static inline void     Set(TAccessor, TClass&, U&&) { static_assert(false, "Unsupported setter type"); }
 };
 
 // Pointer-to-member specialization
@@ -95,11 +95,12 @@ struct MemberAccess<TClass, T, TAccessor,
 };
 
 // Mutable ref getter specialization
-template<typename TClass, typename T>
-struct MemberAccess<TClass, T, T& (TClass::*)()>
+template<typename TClass, typename T, typename TAccessor>
+struct MemberAccess<TClass, T, TAccessor,
+	typename std::enable_if_t<
+	std::is_same_v<TAccessor, T& (TClass::*)()> ||
+	std::is_same_v<TAccessor, T& (TClass::*)() noexcept>>>
 {
-	using TAccessor = T& (TClass::*)();
-
 	static inline const T* ConstPtr(TAccessor pGetter, const TClass& Instance) { return &(Instance.*pGetter)(); }
 	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &(Instance.*pSetter)(); }
 	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
