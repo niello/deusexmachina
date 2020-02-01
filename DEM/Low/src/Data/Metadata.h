@@ -34,6 +34,26 @@ public:
 	{
 		std::apply([Callback](auto& ...Members) { (..., Callback(Members)); }, _Members);
 	}
+
+	static inline bool HasMember(std::string_view Name)
+	{
+		return std::apply([Name](auto& ...Members) { return (... || (Members.GetName() == Name)); }, _Members);
+	}
+
+	template<typename TCallback>
+	static inline bool WithMember(std::string_view Name, TCallback Callback)
+	{
+		bool Found = false;
+		ForEachMember([Name, Callback, &Found](const auto& Member)
+		{
+			if (!Found && Member.GetName() == Name)
+			{
+				Callback(Member);
+				Found = true;
+			}
+		});
+		return Found;
+	}
 };
 
 // Interface to a registered member metadata
@@ -77,6 +97,7 @@ public:
 		return MemberAccess<TClass, T, TSetter>::Ref(_pSetter, Instance);
 	}
 
+	// TODO: auto GetValue() / GetConstValue() with the best return type available! if constexpr()?
 	constexpr T GetValueCopy(TClass& Instance) const
 	{
 		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
