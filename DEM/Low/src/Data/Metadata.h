@@ -25,7 +25,9 @@ private:
 
 public:
 
-	template<size_t Index> static inline constexpr auto GetMember() { return std::get<Index>(_Members); }
+	template<size_t Index>
+	static inline constexpr auto   GetMember() { return std::get<Index>(_Members); }
+	static inline constexpr size_t GetMemberCount() { return std::tuple_size_v<decltype(_Members)>; }
 
 	template<typename TCallback>
 	static inline void ForEachMember(TCallback Callback)
@@ -34,6 +36,7 @@ public:
 	}
 };
 
+// Interface to a registered member metadata
 template<typename TClass, typename T, typename TGetter, typename TSetter>
 class CMember final
 {
