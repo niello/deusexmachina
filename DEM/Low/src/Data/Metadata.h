@@ -33,7 +33,7 @@ private:
 
 public:
 
-	static inline constexpr bool IsRegistered = !std::is_same_v<decltype(_Members), std::tuple<>>;
+	static inline constexpr bool IsRegistered = (std::tuple_size_v<decltype(_Members)> != 0);
 
 	static inline constexpr auto   GetClassName() { return RegisterClassName<T>(); }
 	template<size_t Index>

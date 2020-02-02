@@ -16,7 +16,7 @@ namespace DEM::Meta
 template<typename TFormat, typename TOutput, typename TValue, std::enable_if_t<!CMetadata<std::decay_t<TValue>>::IsRegistered>* = nullptr>
 inline void Serialize(TOutput& Output, const TValue& Value)
 {
-	TFormat::Serialize(Output, Value);
+	TFormat::SerializeValue(Output, Value);
 }
 
 template<typename TFormat, typename TOutput, typename TValue, std::enable_if_t<CMetadata<std::decay_t<TValue>>::IsRegistered>* = nullptr>
@@ -28,51 +28,30 @@ inline void Serialize(TOutput& Output, const TValue& Value)
 	});
 }
 
-struct NullFormat
-{
-	// Generic value serialization method, specialize it to define a format
-	template<typename TOutput, typename TValue>
-	static void Serialize(TOutput& Output, const TValue& Value)
-	{
-	}
-
-	// Generic value serialization method, specialize it to define a format
-	template<typename TOutput, typename TValue, typename TMember>
-	static void SerializeMember(TOutput& Output, const TValue& Value, const TMember& Member)
-	{
-	}
-
-	// Generic key+value serialization method, specialize it to define a format
-	template<typename TOutput, typename TKey, typename TValue>
-	static void SerializeKeyValue(TOutput& Output, const TKey& Key, const TValue& Value)
-	{
-	}
-};
-
 struct TextFormat
 {
 	template<typename TOutput, typename TValue>
-	static void Serialize(TOutput& Output, const TValue& Value)
+	static void SerializeValue(TOutput& Output, const TValue& Value)
 	{
-		if constexpr (std::is_same_v<std::decay_t<TValue>, std::string> || std::is_convertible_v<std::decay_t<TValue>, const char *>)
+		if constexpr (std::is_same_v<std::decay_t<TValue>, std::string> || std::is_convertible_v<TValue, const char*>)
 			Output << Value;
 		else
 			Output << std::to_string(Value);
+	}
+
+	template<typename TOutput, typename TKey, typename TValue>
+	static void SerializeKeyValue(TOutput& Output, const TKey& Key, const TValue& Value)
+	{
+		SerializeValue(Output, Key);
+		Output << " = ";
+		Serialize<TextFormat>(Output, Value);
+		Output << "; ";
 	}
 
 	template<typename TOutput, typename TValue, typename TMember>
 	static void SerializeMember(TOutput& Output, const TValue& Value, const TMember& Member)
 	{
 		SerializeKeyValue(Output, Member.GetName(), Member.GetConstValue(Value));
-	}
-
-	template<typename TOutput, typename TKey, typename TValue>
-	static void SerializeKeyValue(TOutput& Output, const TKey& Key, const TValue& Value)
-	{
-		Serialize(Output, Key);
-		Output << " = ";
-		Serialize(Output, Value);
-		Output << "; ";
 	}
 };
 
