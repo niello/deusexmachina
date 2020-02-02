@@ -258,7 +258,8 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
 	{
 		std::tuple<TComponentStoragePtr<Components>...> NextStorages;
-		if (!GetNextStorages<Components...>(NextStorages)) return;
+		if constexpr(sizeof...(Components) > 0)
+			if (!GetNextStorages<Components...>(NextStorages)) return;
 
 		for (auto&& Component : *pStorage)
 		{
@@ -266,8 +267,10 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 			if (!pEntity || !pEntity->IsActive) continue;
 
 			std::tuple<ensure_pointer_t<Components>...> NextComponents;
-			if (GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages))
-				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
+			if constexpr(sizeof...(Components) > 0)
+				if (GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages)) continue;
+
+			std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
 		}
 	}
 }

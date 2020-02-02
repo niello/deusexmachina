@@ -46,12 +46,12 @@ struct MemberAccess
 	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Unsupported setter type"); }
 	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Unsupported getter type"); }
 	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Unsupported setter type"); }
-	static inline T        Copy(TAccessor, TClass&) { static_assert(false, "Unsupported getter type"); }
+	static inline T        Copy(TAccessor, const TClass&) { static_assert(false, "Unsupported getter type"); }
 
 	template<typename U>
 	static inline void     Set(TAccessor, TClass&, U&&) { static_assert(false, "Unsupported setter type"); }
 
-	static inline auto     BestGetConst(TAccessor, TClass&) { static_assert(false, "Unsupported getter type"); }
+	static inline auto     BestGetConst(TAccessor, const TClass&) { static_assert(false, "Unsupported getter type"); }
 	static inline auto     BestGet(TAccessor, TClass&) { static_assert(false, "Unsupported setter type"); }
 };
 
@@ -63,12 +63,12 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_pointer_t
 	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &Instance.*pSetter; }
 	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }
 	static inline T&       Ref(TAccessor pSetter, TClass& Instance) { return Instance.*pSetter; }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return Instance.*pGetter; }
+	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }
 
 	template<typename U>
 	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { Instance.*pSetter = std::forward<U>(Value); }
 
-	static inline const T& BestGetConst(TAccessor pGetter, TClass& Instance) { return ConstRef(pGetter, Instance); }
+	static inline const T& BestGetConst(TAccessor pGetter, const TClass& Instance) { return ConstRef(pGetter, Instance); }
 	static inline T&       BestGet(TAccessor pSetter, TClass& Instance) { return Ref(pSetter, Instance); }
 };
 
@@ -80,12 +80,12 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_setter_v<
 	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Can't get value with a setter function"); }
 	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Can't get value with a setter function"); }
 	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Can't get value with a setter function"); }
-	static inline T        Copy(TAccessor, TClass&) { static_assert(false, "Can't get value with a setter function"); }
+	static inline T        Copy(TAccessor, const TClass&) { static_assert(false, "Can't get value with a setter function"); }
 
 	template<typename U>
 	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { (Instance.*pSetter)(std::forward<U>(Value)); }
 
-	static inline auto     BestGetConst(TAccessor, TClass&) { static_assert(false, "Can't get value with a setter function"); }
+	static inline auto     BestGetConst(TAccessor, const TClass&) { static_assert(false, "Can't get value with a setter function"); }
 	static inline auto     BestGet(TAccessor, TClass&) { static_assert(false, "Can't get value with a setter function"); }
 };
 
@@ -97,12 +97,12 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_value_get
 	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Can't get pointer with a value getter"); }
 	static inline const T& ConstRef(TAccessor, const TClass&) { static_assert(false, "Can't get reference with a value getter"); }
 	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Can't get reference with a value getter"); }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return (Instance.*pGetter)(); }
+	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
 
 	template<typename U>
 	static inline void     Set(TAccessor, TClass&, U&&) { static_assert(false, "Can't set value with a getter function"); }
 
-	static inline T        BestGetConst(TAccessor pGetter, TClass& Instance) { return Copy(pGetter, Instance); }
+	static inline T        BestGetConst(TAccessor pGetter, const TClass& Instance) { return Copy(pGetter, Instance); }
 	static inline auto     BestGet(TAccessor, TClass&) { static_assert(false, "Can't get reference with a value getter"); }
 };
 
@@ -114,12 +114,12 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_const_ref
 	static inline T*       Ptr(TAccessor, TClass&) { static_assert(false, "Can't get mutable pointer with a const getter"); }
 	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
 	static inline T&       Ref(TAccessor, TClass&) { static_assert(false, "Can't get mutable reference with a const getter"); }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return (Instance.*pGetter)(); }
+	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
 
 	template<typename U>
 	static inline void     Set(TAccessor, TClass&, U&&) { static_assert(false, "Can't set value with a getter function"); }
 
-	static inline const T& BestGetConst(TAccessor pGetter, TClass& Instance) { return ConstRef(pGetter, Instance); }
+	static inline const T& BestGetConst(TAccessor pGetter, const TClass& Instance) { return ConstRef(pGetter, Instance); }
 	static inline auto     BestGet(TAccessor, TClass&) { static_assert(false, "Can't get mutable reference with a const getter"); }
 };
 
@@ -131,12 +131,12 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_mutable_r
 	static inline T*       Ptr(TAccessor pSetter, TClass& Instance) { return &(Instance.*pSetter)(); }
 	static inline const T& ConstRef(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
 	static inline T&       Ref(TAccessor pSetter, TClass& Instance) { return (Instance.*pSetter)(); }
-	static inline T        Copy(TAccessor pGetter, TClass& Instance) { return (Instance.*pGetter)(); }
+	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
 
 	template<typename U>
 	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { (Instance.*pSetter)() = std::forward<U>(Value); }
 
-	static inline const T& BestGetConst(TAccessor pGetter, TClass& Instance) { return ConstRef(pGetter, Instance); }
+	static inline const T& BestGetConst(TAccessor pGetter, const TClass& Instance) { return ConstRef(pGetter, Instance); }
 	static inline T&       BestGet(TAccessor pSetter, TClass& Instance) { return Ref(pSetter, Instance); }
 };
 

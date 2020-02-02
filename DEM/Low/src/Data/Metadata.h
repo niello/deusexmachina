@@ -1,16 +1,24 @@
 #pragma once
-//#include <StdDEM.h>
 #include <Data/MemberAccess.h>
+#include <cstdint>
+#include <string>
 
 // Provides type-safe introspection and serialization info for arbitrary objects
 // Inspired by https://github.com/eliasdaler/MetaStuff
+
+// TODO: CMetadata is a static object itself. Members, Name, IsRegistered etc are fields.
+// TODO: CMember template deduction guides to replace multiple trivial Member(...) factory functions
+// TODO: nicer Extras. CMember(n, g, s, Ex<T>().Min().Max())? or CMemberBase + per-type overloads with embedded extras?
+// TODO: mark empty exras with [[no_unique_address]] in C++20?
+// TODO: avoid duplicating Member() functions for Code+Name and Name-only? One constructor? Code is optional.
+// TODO: better IsRegistered!
 
 namespace DEM::Meta
 {
 
 // Specialize this for your types
 template<typename T> inline constexpr auto RegisterMembers() { return std::make_tuple(); }
-template<typename T> inline constexpr auto RegisterClassName() { return "<no class name specified>"; } //???typeid(T).name()?
+template<typename T> inline constexpr auto RegisterClassName() { return "<no class name specified>"; } // typeid(T).name()
 
 // Specialize this to add more meta info to your types
 template<typename T> struct CTypeMetadata {};
@@ -21,15 +29,13 @@ class CMetadata final
 {
 private:
 
-	//static inline constexpr auto _Instance = RegisterMetadata<T>();
-	// TODO: CMetadata is a static object itself, members, name, isRegistered etc are fields
-
 	static inline constexpr auto _Members = RegisterMembers<T>();
 
 public:
 
-	static inline constexpr const char* GetClassName() { return RegisterClassName<T>(); }
+	static inline constexpr bool IsRegistered = !std::is_same_v<decltype(_Members), std::tuple<>>;
 
+	static inline constexpr auto   GetClassName() { return RegisterClassName<T>(); }
 	template<size_t Index>
 	static inline constexpr auto   GetMember() { return std::get<Index>(_Members); }
 	static inline constexpr size_t GetMemberCount() { return std::tuple_size_v<decltype(_Members)>; }
@@ -99,10 +105,6 @@ public:
 	{
 	}
 
-	// TODO: nicer Extras. But how?
-	// CMember(n, g, s, Ex<T>().Min().Max())?
-	//???or CMemberBase + per-type overloads with embedded extras?
-
 	constexpr CMember& Extras(CTypeMetadata<T>&& Value) { _Extras = std::move(Value); return *this; }
 	constexpr auto&    Extras() const { return _Extras; }
 
@@ -132,13 +134,13 @@ public:
 		return MemberAccess<TClass, T, TSetter>::Ref(_pSetter, Instance);
 	}
 
-	constexpr T GetValueCopy(TClass& Instance) const
+	constexpr T GetValueCopy(const TClass& Instance) const
 	{
 		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::Copy(_pGetter, Instance);
 	}
 
-	constexpr decltype(auto) GetConstValue(TClass& Instance) const
+	constexpr decltype(auto) GetConstValue(const TClass& Instance) const
 	{
 		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::BestGetConst(_pGetter, Instance);
@@ -166,11 +168,10 @@ private:
 	const char*      _pName = nullptr;
 	TGetter          _pGetter = nullptr;
 	TSetter          _pSetter = nullptr;
-	CTypeMetadata<T> _Extras;             // TODO: when empty, can use C++20 [[no_unique_address]]
+	CTypeMetadata<T> _Extras;
 };
 
-// TODO: template deduction guides replace multiple trivial factory functions
-// Not usable without std::enable_if_t<is_setter_v<TAccessor, TClass, T>>> etc
+// FIXME: not usable without std::enable_if_t<is_setter_v<TAccessor, TClass, T>>> etc
 //template<typename TClass, typename T>
 //CMember(const char*, T TClass::*, T TClass::*) -> CMember<TClass, T, T TClass::*, T TClass::*>;
 //template<typename TClass, typename T>
