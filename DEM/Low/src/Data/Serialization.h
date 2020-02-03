@@ -28,6 +28,24 @@ inline void Serialize(TOutput& Output, const TValue& Value)
 	});
 }
 
+template<typename TFormat, typename TOutput, typename TValue>
+inline void Serialize(TOutput& Output, const std::vector<TValue>& Value)
+{
+	static_assert(false, "vector");
+	// for vector
+	//TFormat::SerializeValue(Output, Value);
+}
+
+template<typename TFormat, typename TOutput, typename TKey, typename TValue>
+inline void Serialize(TOutput& Output, const std::unordered_map<TKey, TValue>& Value)
+{
+	static_assert(false, "map");
+	// for map
+	//TFormat::SerializeKeyValue(Output, Value);
+}
+
+
+/*
 struct TextFormat
 {
 	template<typename TOutput, typename TValue>
@@ -54,5 +72,6 @@ struct TextFormat
 		SerializeKeyValue(Output, Member.GetName(), Member.GetConstValue(Value));
 	}
 };
+*/
 
 }

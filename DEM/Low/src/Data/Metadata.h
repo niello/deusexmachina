@@ -6,7 +6,7 @@
 // Provides type-safe introspection and serialization info for arbitrary objects
 // Inspired by https://github.com/eliasdaler/MetaStuff
 
-// TODO: CMetadata is a static object itself. Members, Name, IsRegistered etc are fields.
+// TODO: CMetadata is a static object itself. Members, Name, IsRegistered etc are fields. return Meta<T>("name").Members(a, b, c, ...)
 // TODO: CMember template deduction guides to replace multiple trivial Member(...) factory functions
 // TODO: nicer Extras. CMember(n, g, s, Ex<T>().Min().Max())? or CMemberBase + per-type overloads with embedded extras?
 // TODO: mark empty exras with [[no_unique_address]] in C++20?
