@@ -16,7 +16,7 @@ class CDataArray: public CArray<CData>, public Data::CRefCounted
 public:
 
 	CDataArray() {}
-	CDataArray(UPTR _Count, UPTR _GrowSize): CArray(_Count, _GrowSize) {}
+	CDataArray(UPTR _Count, UPTR _GrowSize = 0): CArray(_Count, _GrowSize) {}
 	CDataArray(const CDataArray& Other) { Copy(Other); }
 
 	template<class T>
