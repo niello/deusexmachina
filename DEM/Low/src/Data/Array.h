@@ -44,6 +44,7 @@ public:
 
 	CIterator	Add();
 	CIterator	Add(const T& Val);
+	CIterator	Add(T&& Val);
 	CIterator	AddBefore(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) : 0, Val); }
 	CIterator	AddAfter(CIterator It, const T& Val) { return Insert(It ? IndexOf(It) + 1 : 0, Val); }
 	CIterator	Reserve(UPTR Num, bool Grow = true);
@@ -350,6 +351,16 @@ typename CArray<T>::CIterator CArray<T>::Add(const T& Val)
 {
 	if (Count == Allocated) Grow();
 	n_placement_new(pData + Count, T)(Val);
+	++Count;
+	return pData + Count - 1;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+typename CArray<T>::CIterator CArray<T>::Add(T&& Val)
+{
+	if (Count == Allocated) Grow();
+	n_placement_new(pData + Count, T)(std::move(Val));
 	++Count;
 	return pData + Count - 1;
 }

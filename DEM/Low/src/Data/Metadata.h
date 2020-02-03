@@ -11,7 +11,9 @@
 // TODO: nicer Extras. CMember(n, g, s, Ex<T>().Min().Max())? or CMemberBase + per-type overloads with embedded extras?
 // TODO: mark empty exras with [[no_unique_address]] in C++20?
 // TODO: avoid duplicating Member() functions for Code+Name and Name-only? One constructor? Code is optional.
-// TODO: better IsRegistered!
+// TODO: better IsRegistered detection? Can register a type without members.
+// TODO: add free function accessors for non-class types? is really needed? CMetadata<int64_t> for example, but what for?
+// TODO: compile-time member access by name, like constexpr size_t CMetadata<T>::MemberName = MemberIndex or like this. Is possible?
 
 namespace DEM::Meta
 {
