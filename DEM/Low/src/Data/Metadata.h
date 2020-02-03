@@ -14,6 +14,7 @@
 // TODO: better IsRegistered detection? Can register a type without members.
 // TODO: add free function accessors for non-class types? is really needed? CMetadata<int64_t> for example, but what for?
 // TODO: compile-time member access by name, like constexpr size_t CMetadata<T>::MemberName = MemberIndex or like this. Is possible?
+// TODO: implicit support for class hierarchies (or use composition)? Now each meta must register its members even if its base class meta already declared.
 
 namespace DEM::Meta
 {
@@ -89,6 +90,9 @@ public:
 	}
 };
 
+template<typename TMember>
+using TMemberValue = typename std::decay_t<TMember>::TValue;
+
 // Interface to a registered member metadata
 template<typename TClass, typename T, typename TGetter, typename TSetter>
 class CMember final
@@ -96,6 +100,8 @@ class CMember final
 	static_assert(!std::is_null_pointer_v<TGetter> || !std::is_null_pointer_v<TSetter>, "Inacessible members are not allowed, please add setter or getter");
 
 public:
+
+	using TValue = T;
 
 	constexpr CMember(const char* pName, TGetter pGetter = nullptr, TSetter pSetter = nullptr) noexcept
 		: _pName(pName), _pGetter(pGetter), _pSetter(pSetter)

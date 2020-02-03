@@ -69,6 +69,7 @@ public:
 	template<class T> void		SetValue(const T& Src);			
 	void						SetValue(const CData& Src);
 	
+	template<class T> const T*	As() const { return (Type == CType::GetType<T>()) ? GetValuePtr<T>() : nullptr; }
 	template<class T> bool		GetValue(T& Dest) const;
 	template<class T> T&		GetValue();
 	template<class T> const T&	GetValue() const;
