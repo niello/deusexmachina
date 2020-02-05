@@ -68,7 +68,8 @@ public:
 	// LoadState(params / delegate)
 	// SaveState(params / delegate)
 	// TEMPORARY METHODS:
-	void SaveParamsEntityWiseFull(Data::CParams& Out);
+	void SaveParamsEntityWiseFull(Data::CParams& Out) const;
+	void LoadParamsEntityWiseFull(const Data::CParams& In);
 
 	// Update(float dt)
 
@@ -270,9 +271,12 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 
 			std::tuple<ensure_pointer_t<Components>...> NextComponents;
 			if constexpr(sizeof...(Components) > 0)
-				if (GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages)) continue;
+				if (!GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages)) continue;
 
-			std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, Component), NextComponents));
+			if constexpr (std::is_const_v<TComponent>)
+				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, std::cref(Component)), NextComponents));
+			else
+				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, std::ref(Component)), NextComponents));
 		}
 	}
 }

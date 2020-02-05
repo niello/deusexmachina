@@ -1,6 +1,8 @@
 #pragma once
 #include <Game/ECS/Entity.h>
 #include <Game/ECS/EntityComponentMap.h>
+#include <Data/SerializeToParams.h>
+#include <Data/SerializeToCompactBinary.h>
 
 // Stores components of specified type. Each component type can have only one storage type.
 // Interface is provided for the game world to handle all storages transparently. In places
@@ -19,11 +21,11 @@ public:
 	virtual ~IComponentStorage() = default;
 
 	virtual CStrID GetComponentName() const = 0;
-	virtual bool   LoadComponent(HEntity EntityID /*, In*/) = 0;
-	virtual bool   SaveComponent(HEntity EntityID /*, Out*/) const = 0;
+
+	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
+	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 };
 
-//, typename = std::enable_if_t<std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>>
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
@@ -36,12 +38,14 @@ protected:
 
 	CInnerStorage                _Data;
 	CEntityComponentMap<CHandle> _IndexByEntity;
+	CStrID                       _ComponentName;
 
 public:
 
 	CHandleArrayComponentStorage(UPTR InitialCapacity)
 		: _Data(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
 		, _IndexByEntity(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
+		, _ComponentName(DEM::Meta::CMetadata<T>::GetClassName())
 	{
 		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
 	}
@@ -81,14 +85,40 @@ public:
 		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
 	}
 
+	// TODO: describe as a static interface part
+	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
+	{
+		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
+		auto It = _IndexByEntity.find(EntityID);
+		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
+	}
+
 	// TODO: remove by CHandle
 	// TODO: find by CHandle
 
-	//!!!could call T::Load/T::Save non-virtual methods here and avoid subclassing storages explicitly for every component!
-	//can even have templated methods outside structs if it is cleaner for some reason, but probably not.
-	//The one benefit of template (traits-like) external method is an empty default implementation Save/Load(){}.
-	virtual bool LoadComponent(HEntity EntityID /*, In*/) { return false; }
-	virtual bool SaveComponent(HEntity EntityID /*, Out*/) const { return false; }
+	virtual CStrID GetComponentName() const override { return _ComponentName; }
+
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
+	{
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+			if (auto pComponent = Find(EntityID))
+			{
+				DEM::ParamsFormat::Deserialize(In, *pComponent);
+				return true;
+			}
+		return false;
+	}
+
+	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
+	{
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+			if (auto pComponent = Find(EntityID))
+			{
+				DEM::ParamsFormat::Serialize(Out, *pComponent);
+				return true;
+			}
+		return false;
+	}
 
 	auto begin() { return _Data.begin(); }
 	auto begin() const { return _Data.begin(); }

@@ -15,27 +15,34 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out)
+void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
 {
 	for (const auto& Entity : _Entities)
 	{
 		auto EntityID = _Entities.GetHandle(&Entity); // FIXME: must be free when iterating an array
 
 		Data::PParams SEntity = n_new(Data::CParams());
+		SEntity->Set(CStrID("ID"), static_cast<int>(EntityID.Raw));
 		if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
 		if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
 		for (const auto& Storage : _Components)
 		{
-			Data::PParams SComponent = n_new(Data::CParams());
-			Storage->SaveComponent(EntityID, *SComponent);
+			Data::CData SComponent;
+			Storage->SaveComponentToParams(EntityID, SComponent);
 			SEntity->Set(Storage->GetComponentName(), std::move(SComponent));
 		}
 
 		if (Entity.Name)
 			Out.Set(Entity.Name, std::move(SEntity));
 		else
-			Out.Set(CStrID(("_E_" + std::to_string(EntityID)).c_str()), std::move(SEntity));
+			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
 	}
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
+{
+	NOT_IMPLEMENTED;
 }
 //---------------------------------------------------------------------
 
