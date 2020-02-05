@@ -67,6 +67,8 @@ public:
 	//???factory or n_new, then load in a client code?
 	// LoadState(params / delegate)
 	// SaveState(params / delegate)
+	// TEMPORARY METHODS:
+	void SaveParamsEntityWiseFull(Data::CParams& Out);
 
 	// Update(float dt)
 

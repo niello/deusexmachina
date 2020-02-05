@@ -18,11 +18,9 @@ public:
 
 	virtual ~IComponentStorage() = default;
 
-	// add, remove (performs indexing inside if required, allocates/frees objects etc)
-	// remove by own handle and by HEntity
-
-	virtual bool LoadComponent() = 0;
-	virtual bool SaveComponent() const = 0;
+	virtual CStrID GetComponentName() const = 0;
+	virtual bool   LoadComponent(HEntity EntityID /*, In*/) = 0;
+	virtual bool   SaveComponent(HEntity EntityID /*, Out*/) const = 0;
 };
 
 //, typename = std::enable_if_t<std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>>
@@ -83,11 +81,14 @@ public:
 		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
 	}
 
+	// TODO: remove by CHandle
+	// TODO: find by CHandle
+
 	//!!!could call T::Load/T::Save non-virtual methods here and avoid subclassing storages explicitly for every component!
 	//can even have templated methods outside structs if it is cleaner for some reason, but probably not.
-	//The one benefit of template (traits-like) external method is an empty default implementation.
-	virtual bool LoadComponent() { return false; }
-	virtual bool SaveComponent() const { return false; }
+	//The one benefit of template (traits-like) external method is an empty default implementation Save/Load(){}.
+	virtual bool LoadComponent(HEntity EntityID /*, In*/) { return false; }
+	virtual bool SaveComponent(HEntity EntityID /*, Out*/) const { return false; }
 
 	auto begin() { return _Data.begin(); }
 	auto begin() const { return _Data.begin(); }

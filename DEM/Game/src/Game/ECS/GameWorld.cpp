@@ -15,6 +15,30 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out)
+{
+	for (const auto& Entity : _Entities)
+	{
+		auto EntityID = _Entities.GetHandle(&Entity); // FIXME: must be free when iterating an array
+
+		Data::PParams SEntity = n_new(Data::CParams());
+		if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
+		if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
+		for (const auto& Storage : _Components)
+		{
+			Data::PParams SComponent = n_new(Data::CParams());
+			Storage->SaveComponent(EntityID, *SComponent);
+			SEntity->Set(Storage->GetComponentName(), std::move(SComponent));
+		}
+
+		if (Entity.Name)
+			Out.Set(Entity.Name, std::move(SEntity));
+		else
+			Out.Set(CStrID(("_E_" + std::to_string(EntityID)).c_str()), std::move(SEntity));
+	}
+}
+//---------------------------------------------------------------------
+
 // FIXME: make difference between 'non-interactive' and 'interactive same as whole'. AABB::Empty + AABB::Invalid?
 CGameLevel* CGameWorld::CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
 {
