@@ -113,57 +113,59 @@ public:
 	{
 	}
 
-	constexpr CMember& Extras(CTypeMetadata<T>&& Value) { _Extras = std::move(Value); return *this; }
-	constexpr auto&    Extras() const { return _Extras; }
-
-	template<typename U> static constexpr bool Is() { return std::is_same_v<T, U>; }
+	constexpr CMember&    Extras(CTypeMetadata<T>&& Value) { _Extras = std::move(Value); return *this; }
+	constexpr auto&       Extras() const { return _Extras; }
+	static constexpr bool CanRead() { return !std::is_same_v<TGetter, std::nullptr_t>; }
+	static constexpr bool CanWrite() { return !std::is_same_v<TSetter, std::nullptr_t>; }
+	template<typename U>
+	static constexpr bool Is() { return std::is_same_v<T, U>; }
 
 	constexpr const T* GetConstValuePtr(const TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
+		static_assert(CanRead(), "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::ConstPtr(_pGetter, Instance);
 	}
 
 	constexpr T* GetValuePtr(TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
+		static_assert(CanWrite(), "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::Ptr(_pSetter, Instance);
 	}
 
 	constexpr const T& GetConstValueRef(const TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
+		static_assert(CanRead(), "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::ConstRef(_pGetter, Instance);
 	}
 
 	constexpr T& GetValueRef(TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
+		static_assert(CanWrite(), "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::Ref(_pSetter, Instance);
 	}
 
 	constexpr T GetValueCopy(const TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
+		static_assert(CanRead(), "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::Copy(_pGetter, Instance);
 	}
 
 	constexpr decltype(auto) GetConstValue(const TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TGetter, std::nullptr_t>, "Member is write-only");
+		static_assert(CanRead(), "Member is write-only");
 		return MemberAccess<TClass, T, TGetter>::BestGetConst(_pGetter, Instance);
 	}
 
 	constexpr decltype(auto) GetValue(TClass& Instance) const
 	{
-		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
+		static_assert(CanWrite(), "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::BestGet(_pSetter, Instance);
 	}
 
 	template<typename U> //, typename = std::enable_if_t<std::is_constructible_v<T, U>>
 	void SetValue(TClass& Instance, U&& Value) const
 	{
-		static_assert(!std::is_same_v<TSetter, std::nullptr_t>, "Member is read-only");
+		static_assert(CanWrite(), "Member is read-only");
 		return MemberAccess<TClass, T, TSetter>::Set(_pSetter, Instance, std::forward<U>(Value));
 	}
 

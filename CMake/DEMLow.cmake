@@ -49,7 +49,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/RefCounted.h
 	DEM/Low/src/Data/Regions.h
 	DEM/Low/src/Data/RingBuffer.h
-	DEM/Low/src/Data/SerializeToCompactBinary.h
+	DEM/Low/src/Data/SerializeToBinary.h
 	DEM/Low/src/Data/SerializeToParams.h
 	DEM/Low/src/Data/Singleton.h
 	DEM/Low/src/Data/Stack.h

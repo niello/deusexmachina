@@ -45,6 +45,9 @@ public:
 	//template<> bool		Read<PParams>(const PParams& OutValue) { return OutValue.IsValid() ? Read(*OutValue) : true; }
 	//template<> bool		Read<CParam>(const CParam& OutValue) { return WriteParam(OutValue); }
 	template<> bool		Read<Data::CData>(Data::CData& OutValue) { return ReadData(OutValue); }
+
+	template<class T>
+	CBinaryReader& operator >>(T& OutValue) { Read(OutValue); return *this; }
 };
 
 template<> inline bool CBinaryReader::Read<CStrID>(CStrID& OutValue)

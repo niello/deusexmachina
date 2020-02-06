@@ -2,7 +2,7 @@
 #include <Game/ECS/Entity.h>
 #include <Game/ECS/EntityComponentMap.h>
 #include <Data/SerializeToParams.h>
-#include <Data/SerializeToCompactBinary.h>
+#include <Data/SerializeToBinary.h>
 
 // Stores components of specified type. Each component type can have only one storage type.
 // Interface is provided for the game world to handle all storages transparently. In places

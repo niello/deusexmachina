@@ -16,6 +16,11 @@ namespace Data
 	class CParams;
 }
 
+namespace IO
+{
+	class CBinaryWriter;
+}
+
 namespace Resources
 {
 	class CResourceManager;
@@ -70,6 +75,7 @@ public:
 	// TEMPORARY METHODS:
 	void SaveParamsEntityWiseFull(Data::CParams& Out) const;
 	void LoadParamsEntityWiseFull(const Data::CParams& In);
+	void SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const;
 
 	// Update(float dt)
 

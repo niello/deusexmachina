@@ -64,6 +64,20 @@ void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
+//!!!level(s)!
+void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
+{
+	// save entity count
+	// save entities
+	for (const auto& Storage : _Components)
+	{
+		// save this component count
+		// save all components from the storage at once, include entity IDs
+		// NB: storage may save entity array first for diff base search indexing, then component bodies
+	}
+}
+//---------------------------------------------------------------------
+
 // FIXME: make difference between 'non-interactive' and 'interactive same as whole'. AABB::Empty + AABB::Invalid?
 CGameLevel* CGameWorld::CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
 {

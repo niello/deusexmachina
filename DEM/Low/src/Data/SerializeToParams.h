@@ -54,7 +54,7 @@ struct ParamsFormat
 	static inline void Serialize(Data::CData& Output, const std::vector<TValue>& Vector)
 	{
 		Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
-		for (auto& Value : Vector)
+		for (const auto& Value : Vector)
 		{
 			Data::CData ValueData;
 			Serialize(ValueData, Value);
@@ -68,7 +68,7 @@ struct ParamsFormat
 	static inline void Serialize(Data::CData& Output, const std::unordered_map<TKey, TValue>& Map)
 	{
 		Data::PParams Out(n_new(Data::CParams(Map.size())));
-		for (auto& [Key, Value] : Map)
+		for (const auto& [Key, Value] : Map)
 			SerializeKeyValue(*Out, Key, Value);
 		Output = std::move(Out);
 	}

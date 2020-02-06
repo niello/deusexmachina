@@ -3,36 +3,55 @@
 #include <vector>
 #include <unordered_map>
 
-// Serialization of arbitrary data to compact binary format.
-// Uses additional knowledge about field ranges, but always preserves information.
+// Serialization of arbitrary data to binary format.
 // TOutput must define <<, TInput must define >>.
+
+// TODO: use additional knowledge about field ranges
 
 namespace DEM
 {
 
-struct CompactBinaryFormat
+template<bool WriteMemberName = false, bool WriteMemberCode = false>
+struct BinaryFormat
 {
-	template<typename TOutput, typename TKey, typename TValue>
-	static inline void SerializeKeyValue(TOutput& Output, TKey Key, const TValue& Value)
-	{
-	}
-	//---------------------------------------------------------------------
-
 	template<typename TOutput, typename TValue>
 	static inline void Serialize(TOutput& Output, const TValue& Value)
 	{
+		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		{
+			static_assert(DEM::Meta::CMetadata<TValue>::GetMemberCount() < 256);
+			Output << static_cast<uint8_t>(DEM::Meta::CMetadata<TValue>::GetMemberCount());
+			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value](const auto& Member)
+			{
+				if constexpr (WriteMemberName) Output << Member.GetName();
+				if constexpr (WriteMemberCode) Output << Member.GetCode();
+				Serialize(Output, Member.GetConstValue(Value));
+			});
+		}
+		else Output << Value;
 	}
 	//---------------------------------------------------------------------
 
+	//???TODO: extend to all iterable?
 	template<typename TOutput, typename TValue>
 	static inline void Serialize(TOutput& Output, const std::vector<TValue>& Vector)
 	{
+		Output << static_cast<uint32_t>(Vector.size());
+		for (const auto& Value : Vector)
+			Serialize(Output, Value);
 	}
 	//---------------------------------------------------------------------
 
+	//???TODO: extend to all pair-iterable?
 	template<typename TOutput, typename TKey, typename TValue>
 	static inline void Serialize(TOutput& Output, const std::unordered_map<TKey, TValue>& Map)
 	{
+		Output << static_cast<uint32_t>(Map.size());
+		for (const auto& [Key, Value] : Map)
+		{
+			Serialize(Output, Key);
+			Serialize(Output, Value);
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -54,5 +73,8 @@ struct CompactBinaryFormat
 	}
 	//---------------------------------------------------------------------
 };
+
+using BinaryFormatWithName = BinaryFormat<true, false>;
+using BinaryFormatWithCode = BinaryFormat<false, true>;
 
 }

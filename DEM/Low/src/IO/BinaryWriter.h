@@ -53,6 +53,9 @@ public:
 	template<> bool		Write<Data::CDataArray>(const Data::CDataArray& Value);
 	template<> bool		Write<Data::PDataArray>(const Data::PDataArray& Value) { return Value.IsValidPtr() ? Write<Data::CDataArray>(*Value) : true; }
 	template<> bool		Write<Data::CBuffer>(const Data::CBuffer& Value);
+
+	template<class T>
+	CBinaryWriter& operator <<(const T& Value) { Write(Value); return *this; }
 };
 
 inline bool CBinaryWriter::WriteString(const char* Value)
