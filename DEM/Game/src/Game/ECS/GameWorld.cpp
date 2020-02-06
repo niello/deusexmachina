@@ -4,6 +4,7 @@
 #include <Scene/SceneNode.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
+#include <IO/BinaryWriter.h>
 
 namespace DEM::Game
 {
@@ -67,7 +68,7 @@ void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 //!!!level(s)!
 void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
 {
-	// save entity count
+	Out.Write(static_cast<uint32_t>(_Entities.size()));
 	// save entities
 	for (const auto& Storage : _Components)
 	{
