@@ -207,35 +207,17 @@ bool CHRDParser::Tokenize(CArray<CToken>& Tokens)
 
 bool CHRDParser::LexProcessID(CArray<CToken>& Tokens)
 {
-	bool HasLetter = ((*LexerCursor) != '_'); //isalpha(*LexerCursor);
 	LexerCursor++;
 	Col++;
 	while (LexerCursor < EndOfBuffer)
 	{
 		char CurrChar = *LexerCursor;
-		if (isalpha(CurrChar))
-		{
-			LexerCursor++;
-			Col++;
-			HasLetter = true;
-		}
-		else if (isdigit(CurrChar) || CurrChar == '_')
+		if (isalpha(CurrChar) || isdigit(CurrChar) || CurrChar == '_')
 		{
 			LexerCursor++;
 			Col++;
 		}
 		else break;
-	}
-
-	if (!HasLetter)
-	{
-		if (pErr)
-		{
-			CString S;
-			S.Format("'_' allowed only in IDs, but ID should contain at least one letter (Ln:%u, Col:%u)\n", Line, Col);
-			pErr->Add(S);
-		}
-		FAIL;
 	}
 	
 	CString NewID;

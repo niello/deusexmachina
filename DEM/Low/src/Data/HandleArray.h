@@ -32,6 +32,8 @@ class CHandleArray
 
 public:
 
+	using THandleValue = H;
+
 	static constexpr H MAX_CAPACITY = ((1 << IndexBits) - 1);
 	static constexpr H INDEX_ALLOCATED = MAX_CAPACITY;
 	static constexpr H REUSE_BITS_MASK = (static_cast<H>(-1) << IndexBits);
@@ -147,7 +149,8 @@ protected:
 		{
 			// Record[Index] is immediately allocated, all other added records are attached to the free list
 			_Records.resize(Index + 1, { _Prototype, 0 } );
-			AddRangeToFreeList(Size, Index - 1);
+			if (Index > Size)
+				AddRangeToFreeList(Size, Index - 1);
 		}
 		else
 		{

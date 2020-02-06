@@ -15,6 +15,7 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+//!!!level(s)!
 void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
 {
 	for (const auto& Entity : _Entities)
@@ -40,9 +41,26 @@ void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
 }
 //---------------------------------------------------------------------
 
+//!!!level(s)!
 void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 {
-	NOT_IMPLEMENTED;
+	for (const auto& Param : In)
+	{
+		const auto& SEntity = *Param.GetValue<Data::PParams>();
+		auto RawHandle = SEntity.Get<int>(CStrID("ID"), CEntityStorage::INVALID_HANDLE_VALUE);
+
+		CEntity NewEntity;
+		NewEntity.Name = Param.GetName();
+		NewEntity.IsActive = SEntity.Get(CStrID("Active"), true);
+		NewEntity.TemplateID = SEntity.Get(CStrID("Tpl"), CStrID::Empty);
+
+		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
+		if (!EntityID) continue;
+
+		for (const auto& Storage : _Components)
+			if (auto pParam = SEntity.Find(Storage->GetComponentName()))
+				Storage->LoadComponentFromParams(EntityID, pParam->GetRawValue());
+	}
 }
 //---------------------------------------------------------------------
 

@@ -23,7 +23,8 @@ Data::PParams LoadParamsFromHRD(const char* pFileName)
 
 	Data::PParams Params;
 	Data::CHRDParser Parser;
-	return Parser.ParseBuffer(static_cast<const char*>(Buffer.GetPtr()), Buffer.GetSize(), Params) ?
+	//CString Errors;
+	return Parser.ParseBuffer(static_cast<const char*>(Buffer.GetPtr()), Buffer.GetSize(), Params/*, &Errors*/) ?
 		Params :
 		nullptr;
 }
