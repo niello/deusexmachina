@@ -31,6 +31,7 @@ public:
 
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
+	virtual bool   LoadAllComponentsFromBinary(IO::CBinaryReader& In) = 0;
 	virtual bool   SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const = 0;
 };
 
@@ -129,12 +130,34 @@ public:
 		return false;
 	}
 
+	virtual bool LoadAllComponentsFromBinary(IO::CBinaryReader& In) override
+	{
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		{
+			const auto ComponentCount = In.Read<uint32_t>();
+			for (uint32_t i = 0; i < ComponentCount; ++i)
+			{
+				const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
+				//???read component ID?
+				if (auto pComponent = Add({ EntityIDRaw }))
+					DEM::BinaryFormat::Deserialize(In, *pComponent);
+			}
+			return true;
+		}
+		return false;
+	}
+
 	virtual bool SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
+			Out.Write(static_cast<uint32_t>(GetComponentCount()));
 			for (const auto& Component : _Data)
+			{
+				Out.Write(Component.EntityID.Raw);
+				//???write component ID?
 				DEM::BinaryFormat::Serialize(Out, Component);
+			}
 			return true;
 		}
 		return false;

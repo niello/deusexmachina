@@ -90,7 +90,6 @@ void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
 	for (const auto& Storage : _Components)
 	{
 		Out.Write(Storage->GetComponentName());
-		Out.Write(static_cast<uint32_t>(Storage->GetComponentCount()));
 		Storage->SaveAllComponentsToBinary(Out);
 	}
 }
@@ -117,9 +116,11 @@ void CGameWorld::LoadBinaryStorageWiseFull(IO::CBinaryReader& In)
 	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{
 		const auto TypeID = In.Read<CStrID>();
-		const auto ComponentCount = In.Read<uint32_t>();
-
-		int DBG_TMP = 0;
+		auto It = std::find_if(_Components.cbegin(), _Components.cend(), [TypeID](const PComponentStorage& Storage)
+		{
+			return Storage->GetComponentName() == TypeID;
+		});
+		if (It != _Components.cend()) It->get()->LoadAllComponentsFromBinary(In);
 	}
 }
 //---------------------------------------------------------------------

@@ -11,20 +11,15 @@
 namespace DEM
 {
 
-template<bool WriteMemberName = false, bool WriteMemberCode = false>
-struct BinaryFormatT
+struct BinaryFormat
 {
 	template<typename TOutput, typename TValue>
 	static inline void Serialize(TOutput& Output, const TValue& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
 		{
-			static_assert(DEM::Meta::CMetadata<TValue>::GetMemberCount() < 256);
-			Output << static_cast<uint8_t>(DEM::Meta::CMetadata<TValue>::GetMemberCount());
 			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value](const auto& Member)
 			{
-				if constexpr (WriteMemberName) Output << Member.GetName();
-				if constexpr (WriteMemberCode) Output << Member.GetCode();
 				Serialize(Output, Member.GetConstValue(Value));
 			});
 		}
@@ -58,24 +53,45 @@ struct BinaryFormatT
 	template<typename TInput, typename TValue>
 	static inline void Deserialize(TInput& Input, TValue& Value)
 	{
+		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		{
+			DEM::Meta::CMetadata<TValue>::ForEachMember([&Input, &Value](const auto& Member)
+			{
+				DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
+				Deserialize(Input, FieldValue);
+				Member.SetValue(Value, FieldValue);
+			});
+		}
+		else Input >> Value;
 	}
 	//---------------------------------------------------------------------
 
 	template<typename TInput, typename TValue>
 	static inline void Deserialize(TInput& Input, std::vector<TValue>& Vector)
 	{
+		uint32_t Count;
+		Input >> Count;
+		Vector.resize(Count);
+		for (size_t i = 0; i < Count; ++i)
+			Deserialize(Input, Value[i]);
 	}
 	//---------------------------------------------------------------------
 
 	template<typename TInput, typename TKey, typename TValue>
 	static inline void Deserialize(TInput& Input, std::unordered_map<TKey, TValue>& Map)
 	{
+		uint32_t Count;
+		Input >> Count;
+		for (size_t i = 0; i < Count; ++i)
+		{
+			TKey Key;
+			TValue Value;
+			Deserialize(Input, Key);
+			Deserialize(Input, Value);
+			Map.emplace(std::move(Key), std::move(Value));
+		}
 	}
 	//---------------------------------------------------------------------
 };
-
-using BinaryFormat = BinaryFormatT<false, false>;
-using BinaryFormatWithName = BinaryFormatT<true, false>;
-using BinaryFormatWithCode = BinaryFormatT<false, true>;
 
 }
