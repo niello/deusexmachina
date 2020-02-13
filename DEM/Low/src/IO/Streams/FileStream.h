@@ -21,8 +21,8 @@ protected:
 
 public:
 
-	CFileStream(const char* pPath, IFileSystem* pFS): FileName(pPath), FS(pFS) {}
-	virtual ~CFileStream() { if (IsOpen()) Close(); }
+	CFileStream(const char* pPath, IFileSystem* pFS);
+	virtual ~CFileStream() override;
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual void	Close();

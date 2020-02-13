@@ -12,7 +12,7 @@ namespace DEM
 {
 
 template<bool WriteMemberName = false, bool WriteMemberCode = false>
-struct BinaryFormat
+struct BinaryFormatT
 {
 	template<typename TOutput, typename TValue>
 	static inline void Serialize(TOutput& Output, const TValue& Value)
@@ -74,7 +74,8 @@ struct BinaryFormat
 	//---------------------------------------------------------------------
 };
 
-using BinaryFormatWithName = BinaryFormat<true, false>;
-using BinaryFormatWithCode = BinaryFormat<false, true>;
+using BinaryFormat = BinaryFormatT<false, false>;
+using BinaryFormatWithName = BinaryFormatT<true, false>;
+using BinaryFormatWithCode = BinaryFormatT<false, true>;
 
 }

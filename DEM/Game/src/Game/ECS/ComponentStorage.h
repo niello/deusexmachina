@@ -10,6 +10,12 @@
 // TComponentTraits determine what type of storage which component type uses.
 // Effective and compact handle array storage is used by default.
 
+namespace IO
+{
+	class CBinaryReader;
+	class CBinaryWriter;
+}
+
 namespace DEM::Game
 {
 typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
@@ -21,9 +27,11 @@ public:
 	virtual ~IComponentStorage() = default;
 
 	virtual CStrID GetComponentName() const = 0;
+	virtual size_t GetComponentCount() const = 0;
 
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
+	virtual bool   SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const = 0;
 };
 
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
@@ -97,6 +105,7 @@ public:
 	// TODO: find by CHandle
 
 	virtual CStrID GetComponentName() const override { return _ComponentName; }
+	virtual size_t GetComponentCount() const override { return _Data.size(); }
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
@@ -117,6 +126,17 @@ public:
 				DEM::ParamsFormat::Serialize(Out, *pComponent);
 				return true;
 			}
+		return false;
+	}
+
+	virtual bool SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const override
+	{
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		{
+			for (const auto& Component : _Data)
+				DEM::BinaryFormat::Serialize(Out, Component);
+			return true;
+		}
 		return false;
 	}
 

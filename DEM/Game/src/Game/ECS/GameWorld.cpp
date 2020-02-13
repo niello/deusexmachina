@@ -4,6 +4,7 @@
 #include <Scene/SceneNode.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
+#include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 
 namespace DEM::Game
@@ -21,12 +22,13 @@ void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
 {
 	for (const auto& Entity : _Entities)
 	{
-		auto EntityID = _Entities.GetHandle(&Entity); // FIXME: must be free when iterating an array
+		// FIXME: must be free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
 
 		Data::PParams SEntity = n_new(Data::CParams());
 		SEntity->Set(CStrID("ID"), static_cast<int>(EntityID.Raw));
-		if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
 		if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
+		if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
 		for (const auto& Storage : _Components)
 		{
 			Data::CData SComponent;
@@ -52,8 +54,8 @@ void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 
 		CEntity NewEntity;
 		NewEntity.Name = Param.GetName();
-		NewEntity.IsActive = SEntity.Get(CStrID("Active"), true);
 		NewEntity.TemplateID = SEntity.Get(CStrID("Tpl"), CStrID::Empty);
+		NewEntity.IsActive = SEntity.Get(CStrID("Active"), true);
 
 		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
 		if (!EntityID) continue;
@@ -61,6 +63,8 @@ void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 		for (const auto& Storage : _Components)
 			if (auto pParam = SEntity.Find(Storage->GetComponentName()))
 				Storage->LoadComponentFromParams(EntityID, pParam->GetRawValue());
+
+		// TODO: load unspecified components from tpl?
 	}
 }
 //---------------------------------------------------------------------
@@ -69,12 +73,53 @@ void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
 {
 	Out.Write(static_cast<uint32_t>(_Entities.size()));
-	// save entities
+	for (const auto& Entity : _Entities)
+	{
+		// FIXME: must be free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
+
+		Out.Write(EntityID.Raw);
+		Out.Write(Entity.Name);
+		Out.Write(Entity.TemplateID);
+		Out.Write(Entity.IsActive);
+
+		//???template processing? need at runtime?
+	}
+
+	Out.Write(static_cast<uint32_t>(_Components.size()));
 	for (const auto& Storage : _Components)
 	{
-		// save this component count
-		// save all components from the storage at once, include entity IDs
-		// NB: storage may save entity array first for diff base search indexing, then component bodies
+		Out.Write(Storage->GetComponentName());
+		Out.Write(static_cast<uint32_t>(Storage->GetComponentCount()));
+		Storage->SaveAllComponentsToBinary(Out);
+	}
+}
+//---------------------------------------------------------------------
+
+//!!!level(s)!
+void CGameWorld::LoadBinaryStorageWiseFull(IO::CBinaryReader& In)
+{
+	const auto EntityCount = In.Read<uint32_t>();
+	for (uint32_t i = 0; i < EntityCount; ++i)
+	{
+		const auto EntityIDRaw = In.Read<CEntityStorage::THandleValue>();
+		CEntity NewEntity;
+		In.Read(NewEntity.Name);
+		In.Read(NewEntity.TemplateID);
+		In.Read(NewEntity.IsActive);
+		const auto EntityID = _Entities.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
+		n_assert_dbg(EntityID);
+
+		//???template processing? need at runtime?
+	}
+
+	const auto ComponentTypeCount = In.Read<uint32_t>();
+	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
+	{
+		const auto TypeID = In.Read<CStrID>();
+		const auto ComponentCount = In.Read<uint32_t>();
+
+		int DBG_TMP = 0;
 	}
 }
 //---------------------------------------------------------------------

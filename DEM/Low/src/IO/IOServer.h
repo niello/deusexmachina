@@ -26,6 +26,8 @@ private:
 		PFileSystem	FS;
 		CString		Name;
 		CString		RootPath;
+
+		//~CFSRecord();
 	};
 
 	std::vector<CFSRecord>			FileSystems;

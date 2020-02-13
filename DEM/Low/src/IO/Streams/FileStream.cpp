@@ -5,6 +5,19 @@
 namespace IO
 {
 
+CFileStream::CFileStream(const char* pPath, IFileSystem* pFS)
+	: FileName(pPath)
+	, FS(pFS)
+{
+}
+//---------------------------------------------------------------------
+
+CFileStream::~CFileStream()
+{
+	if (IsOpen()) Close();
+}
+//---------------------------------------------------------------------
+
 bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
 	n_assert(!IsOpen() && !hFile);

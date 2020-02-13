@@ -9,6 +9,8 @@ namespace IO
 {
 __ImplementSingleton(IO::CIOServer);
 
+//CIOServer::CFSRecord::~CFSRecord() = default;
+
 CIOServer::CIOServer(): Assigns(32)
 {
 	__ConstructSingleton;
