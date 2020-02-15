@@ -311,4 +311,12 @@ CGameLevel* CGameWorld::LoadLevel(CStrID ID, const Data::CParams& BaseData, ISav
 }
 //---------------------------------------------------------------------
 
+const IComponentStorage* CGameWorld::FindComponentStorage(CStrID ComponentName) const
+{
+	// TODO: associative map
+	NOT_IMPLEMENTED;
+	return nullptr;
+}
+//---------------------------------------------------------------------
+
 }

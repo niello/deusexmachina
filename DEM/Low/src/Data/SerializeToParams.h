@@ -75,7 +75,7 @@ struct ParamsFormat
 	//---------------------------------------------------------------------
 
 	template<typename TKey, typename TValue>
-	static inline void SerializeKeyValueDiff(Data::CParams& Output, TKey Key, const TValue& Value, const TValue& BaseValue)
+	static inline bool SerializeKeyValueDiff(Data::CParams& Output, TKey Key, const TValue& Value, const TValue& BaseValue)
 	{
 		Data::CData ValueData;
 		if (!SerializeDiff(ValueData, Value, BaseValue)) return false;
@@ -99,7 +99,7 @@ struct ParamsFormat
 		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
 		{
 			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<TValue>::GetMemberCount())));
-			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value](const auto& Member)
+			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value, &BaseValue](const auto& Member)
 			{
 				SerializeKeyValueDiff(*Out, Member.GetName(), Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
 			});

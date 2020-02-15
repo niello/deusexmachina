@@ -137,7 +137,7 @@ public:
 		if (!pBaseStorage) return SaveComponentToParams(EntityID, Out);
 
 		auto pComponent = Find(EntityID);
-		auto pBaseComponent = static_cast<decltype(this)>(pBaseStorage)->Find(EntityID)
+		auto pBaseComponent = static_cast<decltype(this)>(pBaseStorage)->Find(EntityID);
 		if (pComponent)
 		{
 			if (pBaseComponent)
