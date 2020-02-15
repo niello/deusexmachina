@@ -31,6 +31,7 @@ public:
 
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
+	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out, const IComponentStorage* pBaseStorage) const = 0;
 	virtual bool   LoadAllComponentsFromBinary(IO::CBinaryReader& In) = 0;
 	virtual bool   SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const = 0;
 };
@@ -127,6 +128,29 @@ public:
 				DEM::ParamsFormat::Serialize(Out, *pComponent);
 				return true;
 			}
+		return false;
+	}
+
+	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out, const IComponentStorage* pBaseStorage) const override
+	{
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+		if (!pBaseStorage) return SaveComponentToParams(EntityID, Out);
+
+		auto pComponent = Find(EntityID);
+		auto pBaseComponent = static_cast<decltype(this)>(pBaseStorage)->Find(EntityID)
+		if (pComponent)
+		{
+			if (pBaseComponent)
+				return DEM::ParamsFormat::SerializeDiff(Out, *pComponent, *pBaseComponent);
+			else
+				return SaveComponentToParams(EntityID, Out);
+		}
+		else if (pBaseComponent)
+		{
+			// Explicitly deleted
+			Out = Data::CData();
+			return true;
+		}
 		return false;
 	}
 

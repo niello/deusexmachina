@@ -47,7 +47,7 @@ protected:
 	Resources::CResourceManager&   _ResMgr;
 
 	CEntityStorage                 _Entities; //???add unordered_map index by name?
-	std::vector<PComponentStorage> _Components;
+	std::vector<PComponentStorage> _Components; //???map by CStrID name?!
 
 	// system by type list
 	// fast-access map entity -> components? Component stores entity ID, but need also to find components by entity ID and type
@@ -64,14 +64,14 @@ public:
 
 	CGameWorld(Resources::CResourceManager& ResMgr);
 
-	//???factory or n_new, then load in a client code?
-	// LoadState(params / delegate)
-	// SaveState(params / delegate)
-	// TEMPORARY METHODS:
-	void SaveParamsEntityWiseFull(Data::CParams& Out) const;
-	void LoadParamsEntityWiseFull(const Data::CParams& In);
-	void SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const;
-	void LoadBinaryStorageWiseFull(IO::CBinaryReader& In);
+	void SaveParams(Data::CParams& Out) const;
+	void LoadParams(const Data::CParams& In);
+	void SaveParamsDiff(Data::CParams& Out, const CGameWorld& Base) const;
+	void LoadParamsDiff(const Data::CParams& In);
+	void SaveBinary(IO::CBinaryWriter& Out) const;
+	void LoadBinary(IO::CBinaryReader& In);
+	void SaveBinaryDiff(IO::CBinaryWriter& Out, const CGameWorld& Base) const;
+	void LoadBinaryDiff(IO::CBinaryReader& In);
 
 	// Update(float dt)
 
@@ -101,14 +101,16 @@ public:
 	bool        EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
 	auto        GetEntity(HEntity EntityID) const { return _Entities.GetValue(EntityID); }
 	auto        GetEntityUnsafe(HEntity EntityID) const { return _Entities.GetValueUnsafe(EntityID); }
+	const auto& GetEntities() const { return _Entities; }
 	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
 	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
 
-	template<class T> void RegisterComponent(UPTR InitialCapacity = 0);
-	template<class T> T*   AddComponent(HEntity EntityID);
-	template<class T> bool RemoveComponent(HEntity EntityID);
-	template<class T> T*   FindComponent(HEntity EntityID);
+	template<class T> void  RegisterComponent(UPTR InitialCapacity = 0);
+	template<class T> T*    AddComponent(HEntity EntityID);
+	template<class T> bool  RemoveComponent(HEntity EntityID);
+	template<class T> T*    FindComponent(HEntity EntityID);
 	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
+	const IComponentStorage* FindComponentStorage(CStrID ComponentName) const;
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);

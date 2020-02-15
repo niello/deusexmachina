@@ -18,7 +18,7 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 //---------------------------------------------------------------------
 
 //!!!level(s)!
-void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
+void CGameWorld::SaveParams(Data::CParams& Out) const
 {
 	for (const auto& Entity : _Entities)
 	{
@@ -29,6 +29,8 @@ void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
 		SEntity->Set(CStrID("ID"), static_cast<int>(EntityID.Raw));
 		if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
 		if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
+
+		// TODO: if tpl present, save diff?
 		for (const auto& Storage : _Components)
 		{
 			Data::CData SComponent;
@@ -45,7 +47,7 @@ void CGameWorld::SaveParamsEntityWiseFull(Data::CParams& Out) const
 //---------------------------------------------------------------------
 
 //!!!level(s)!
-void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
+void CGameWorld::LoadParams(const Data::CParams& In)
 {
 	for (const auto& Param : In)
 	{
@@ -60,17 +62,96 @@ void CGameWorld::LoadParamsEntityWiseFull(const Data::CParams& In)
 		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
 		if (!EntityID) continue;
 
+		// TODO: instatiate template, then merge state from saved components
+
 		for (const auto& Storage : _Components)
 			if (auto pParam = SEntity.Find(Storage->GetComponentName()))
 				Storage->LoadComponentFromParams(EntityID, pParam->GetRawValue());
-
-		// TODO: load unspecified components from tpl?
 	}
 }
 //---------------------------------------------------------------------
 
 //!!!level(s)!
-void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
+void CGameWorld::SaveParamsDiff(Data::CParams& Out, const CGameWorld& Base) const
+{
+	CStrID LevelID;
+
+	// Save entities deleted from the level as explicit nulls
+	for (const auto& Entity : Base.GetEntities())
+	{
+		// FIXME: must be free when iterating an array
+		auto EntityID = Base.GetEntities().GetHandle(&Entity);
+
+		if (auto pEntity = GetEntity(EntityID))
+			if (pEntity->Level->GetID() == LevelID) continue;
+
+		Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), Data::CData());
+	}
+
+	for (const auto& Entity : _Entities)
+	{
+		// FIXME: must be free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
+
+		Data::PParams SEntity = n_new(Data::CParams());
+
+		auto pBaseEntity = Base.GetEntity(EntityID);
+		if (pBaseEntity && pBaseEntity->Level->GetID() == LevelID)
+		{
+			// Existing entity, save modified part
+			for (const auto& Storage : _Components)
+			{
+				Data::CData SComponent;
+				// TODO: nothing if ==, null if deleted, full if new, changes if modified
+				if (Storage->SaveComponentDiffToParams(EntityID, SComponent, Base.FindComponentStorage(Storage->GetComponentName())))
+				{
+					if (!SEntity) SEntity = n_new(Data::CParams());
+					SEntity->Set(Storage->GetComponentName(), std::move(SComponent));
+				}
+			}
+		}
+		else
+		{
+			// New entity, save full data
+			// TODO: if tpl present, save diff?
+			SEntity = n_new(Data::CParams());
+			for (const auto& Storage : _Components)
+			{
+				Data::CData SComponent;
+				Storage->SaveComponentToParams(EntityID, SComponent);
+				SEntity->Set(Storage->GetComponentName(), std::move(SComponent));
+			}
+		}
+
+		// Save entity only if something changed
+		if (SEntity)
+		{
+			SEntity->Set(CStrID("ID"), static_cast<int>(EntityID.Raw));
+			if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
+			if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
+
+			if (Entity.Name)
+				Out.Set(Entity.Name, std::move(SEntity));
+			else
+				Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+//!!!level(s)!
+void CGameWorld::LoadParamsDiff(const Data::CParams& In)
+{
+	// iterate the list of entities in the In
+	// if entity is saved as null and it exists in the crrent level, erase it
+	// Else entity must be created ifit doesn't exist
+	// Then data from In is loaded to the entity, creating components when needed and applying diff fields
+	// If component is null, it is erased
+}
+//---------------------------------------------------------------------
+
+//!!!level(s)!
+void CGameWorld::SaveBinary(IO::CBinaryWriter& Out) const
 {
 	Out.Write(static_cast<uint32_t>(_Entities.size()));
 	for (const auto& Entity : _Entities)
@@ -82,9 +163,10 @@ void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
 		Out.Write(Entity.Name);
 		Out.Write(Entity.TemplateID);
 		Out.Write(Entity.IsActive);
-
-		//???template processing? need at runtime?
 	}
+
+	// TODO: save components only for entities without TemplateID
+	//???unordered set of IDs with tpls? or map to Tpl data? To check the component presence.
 
 	Out.Write(static_cast<uint32_t>(_Components.size()));
 	for (const auto& Storage : _Components)
@@ -92,11 +174,14 @@ void CGameWorld::SaveBinaryStorageWiseFull(IO::CBinaryWriter& Out) const
 		Out.Write(Storage->GetComponentName());
 		Storage->SaveAllComponentsToBinary(Out);
 	}
+
+	// TODO: for modified templated entities save diff between tpl components and actual components (optional)
+	// Don't process added components that aren't present in the template.
 }
 //---------------------------------------------------------------------
 
 //!!!level(s)!
-void CGameWorld::LoadBinaryStorageWiseFull(IO::CBinaryReader& In)
+void CGameWorld::LoadBinary(IO::CBinaryReader& In)
 {
 	const auto EntityCount = In.Read<uint32_t>();
 	for (uint32_t i = 0; i < EntityCount; ++i)
@@ -108,10 +193,9 @@ void CGameWorld::LoadBinaryStorageWiseFull(IO::CBinaryReader& In)
 		In.Read(NewEntity.IsActive);
 		const auto EntityID = _Entities.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
 		n_assert_dbg(EntityID);
-
-		//???template processing? need at runtime?
 	}
 
+	// Components that come from templates aren't saved
 	const auto ComponentTypeCount = In.Read<uint32_t>();
 	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{
@@ -122,6 +206,27 @@ void CGameWorld::LoadBinaryStorageWiseFull(IO::CBinaryReader& In)
 		});
 		if (It != _Components.cend()) It->get()->LoadAllComponentsFromBinary(In);
 	}
+
+	for (auto& Entity : _Entities)
+	{
+		if (!Entity.TemplateID) continue;
+
+		// TODO: create components from template for this entity, don't erase existing entity components
+	}
+
+	// TODO: load diff part to modify templated components (optional, for per-entity tpl modification)
+}
+//---------------------------------------------------------------------
+
+//!!!level(s)!
+void CGameWorld::SaveBinaryDiff(IO::CBinaryWriter& Out, const CGameWorld& Base) const
+{
+}
+//---------------------------------------------------------------------
+
+//!!!level(s)!
+void CGameWorld::LoadBinaryDiff(IO::CBinaryReader& In)
+{
 }
 //---------------------------------------------------------------------
 

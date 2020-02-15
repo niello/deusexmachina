@@ -74,6 +74,105 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
+	template<typename TKey, typename TValue>
+	static inline void SerializeKeyValueDiff(Data::CParams& Output, TKey Key, const TValue& Value, const TValue& BaseValue)
+	{
+		Data::CData ValueData;
+		if (!SerializeDiff(ValueData, Value, BaseValue)) return false;
+
+		if constexpr (!is_string_compatible_v<TKey>)
+			static_assert(false, "CData serialization supports only string map keys");
+		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+			Output.Set(Key, std::move(ValueData));
+		else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
+			Output.Set(CStrID(Key.c_str()), std::move(ValueData));
+		else
+			Output.Set(CStrID(Key), std::move(ValueData));
+
+		return true;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename TValue>
+	static inline bool SerializeDiff(Data::CData& Output, const TValue& Value, const TValue& BaseValue)
+	{
+		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		{
+			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<TValue>::GetMemberCount())));
+			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value](const auto& Member)
+			{
+				SerializeKeyValueDiff(*Out, Member.GetName(), Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
+			});
+			if (Out->GetCount())
+			{
+				Output = std::move(Out);
+				return true;
+			}
+		}
+		else if constexpr (Data::CTypeID<TValue>::IsDeclared)
+		{
+			if (Value != BaseValue)
+			{
+				Output = Value;
+				return true;
+			}
+		}
+		else
+			static_assert(false, "CData serialization supports only types registered with CTypeID");
+
+		return false;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename TValue>
+	static inline bool SerializeDiff(Data::CData& Output, const std::vector<TValue>& Vector, const std::vector<TValue>& BaseVector)
+	{
+		//???what if count or order changed? iterate the longer one? or maybe always save only curr vector, without diff?
+		static_assert(false, "How to implement array diff? All elements, each one saved as diff? If all skipped, skip array.");
+		//Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
+		//for (const auto& Value : Vector)
+		//{
+		//	Data::CData ValueData;
+		//	Serialize(ValueData, Value);
+		//	Out->Add(std::move(ValueData));
+		//}
+		//Output = std::move(Out);
+	}
+	//---------------------------------------------------------------------
+
+	template<typename TKey, typename TValue>
+	static inline bool SerializeDiff(Data::CData& Output, const std::unordered_map<TKey, TValue>& Map, const std::unordered_map<TKey, TValue>& BaseMap)
+	{
+		Data::PParams Out(n_new(Data::CParams(Map.size())));
+
+		for (const auto& [Key, Value] : Map)
+		{
+			auto BaseIt = BaseMap.find(Key);
+			if (BaseIt == BaseMap.cend())
+				// Added
+				SerializeKeyValue(*Out, Key, Value);
+			else
+				// Modified
+				SerializeKeyValueDiff(*Out, Key, Value, BaseIt->second);
+		}
+
+		for (const auto& [Key, Value] : BaseMap)
+		{
+			if (Map.find(Key) == Map.cend())
+				// Deleted
+				Out->Set(CStrID(Key), Data::CData());
+		}
+
+		if (Out->GetCount())
+		{
+			Output = std::move(Out);
+			return true;
+		}
+
+		return false;
+	}
+	//---------------------------------------------------------------------
+
 	template<typename TValue>
 	static inline void Deserialize(const Data::CData& Input, TValue& Value)
 	{
