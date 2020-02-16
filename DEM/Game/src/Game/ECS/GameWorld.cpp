@@ -281,7 +281,12 @@ CGameLevel* CGameWorld::LoadLevel(CStrID ID, const Data::CParams& In)
 	vector3 InteractiveCenter = In.Get(CStrID("InteractiveCenter"), Center);
 	vector3 InteractiveSize = In.Get(CStrID("InteractiveSize"), Size);
 
-	auto Level = n_new(DEM::Game::CGameLevel(ID, CAABB(Center, Size * 0.5f), CAABB(InteractiveCenter, InteractiveSize * 0.5f), SubdivisionDepth));
+	CGameLevel* pLevel;
+	{
+		PGameLevel Level = n_new(DEM::Game::CGameLevel(ID, CAABB(Center, Size * 0.5f), CAABB(InteractiveCenter, InteractiveSize * 0.5f), SubdivisionDepth));
+		pLevel = _Levels.emplace(ID, std::move(Level)).first->second.Get();
+		if (!pLevel) return nullptr;
+	}
 
 	// Load optional scene with static graphics, collision and other attributes. No entity is associated with it.
 	auto StaticSceneID = In.Get(CStrID("StaticScene"), CString::Empty);
@@ -291,20 +296,28 @@ CGameLevel* CGameWorld::LoadLevel(CStrID ID, const Data::CParams& In)
 		// The most practical way is to check resources with refcount = 1, they are held by a resource manager only.
 		// Use StaticSceneIsUnique = false if you expect to use the scene in multuple level instances and you
 		// plan to modify it in the runtime (which is not recommended nor typical for _static_ scenes).
-		const bool IsUnique = In.Get(CStrID("StaticSceneIsUnique"), true);
 		auto Rsrc = _ResMgr.RegisterResource<Scene::CSceneNode>(CStrID(StaticSceneID.CStr()));
 		if (auto StaticSceneNode = Rsrc->ValidateObject<Scene::CSceneNode>())
-			Level->GetSceneRoot().AddChild(CStrID("StaticScene"), IsUnique ? *StaticSceneNode : *StaticSceneNode->Clone());
+		{
+			if (In.Get(CStrID("StaticSceneIsUnique"), true))
+			{
+				// Unregister unique scene from resources to prevent unintended reuse which can cause huge problems
+				pLevel->GetSceneRoot().AddChild(CStrID("StaticScene"), *StaticSceneNode);
+				_ResMgr.UnregisterResource(Rsrc->GetUID());
+			}
+			else
+			{
+				pLevel->GetSceneRoot().AddChild(CStrID("StaticScene"), *StaticSceneNode->Clone());
+			}
+		}
 	}
 
 	// Load navigation map, if present
 	auto NavigationMapID = In.Get(CStrID("NavigationMap"), CString::Empty);
-	if (!NavigationMapID.IsEmpty() && Level->GetAI())
+	if (!NavigationMapID.IsEmpty() && pLevel->GetAI())
 	{
-		n_verify(Level->GetAI()->LoadNavMesh(NavigationMapID.CStr()));
+		n_verify(pLevel->GetAI()->LoadNavMesh(NavigationMapID.CStr()));
 	}
-
-	auto pLevel = _Levels.emplace(ID, std::move(Level)).first->second.Get();
 
 	Data::PParams EntitiesDesc;
 	if (In.Get(EntitiesDesc, CStrID("Entities")))
