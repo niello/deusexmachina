@@ -26,16 +26,6 @@ namespace DEM::Game
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
 
-class ISaveLoadDelegate
-{
-public:
-
-	virtual ~ISaveLoadDelegate() = default;
-
-	//???pass level or level ID?
-	virtual bool LoadEntities(CGameWorld& World, CGameLevel& Level, const Data::CParams& ) = 0;
-};
-
 class CGameWorld final
 {
 protected:
@@ -47,12 +37,13 @@ protected:
 	Resources::CResourceManager&   _ResMgr;
 
 	CEntityStorage                 _Entities; //???add unordered_map index by name?
-	std::vector<PComponentStorage> _Components; //???map by CStrID name?!
+	std::vector<PComponentStorage> _Storages;
+	std::unordered_map<CStrID, IComponentStorage*> _StorageMap;
 
 	// system by type list
 	// fast-access map entity -> components? Component stores entity ID, but need also to find components by entity ID and type
 
-	// loaded level list (main place for them)
+	std::unordered_map<CStrID, PGameLevel> _Levels;
 	//???accumulated COIs for levels?
 
 	template<typename TComponent, typename... Components>
@@ -64,14 +55,14 @@ public:
 
 	CGameWorld(Resources::CResourceManager& ResMgr);
 
-	void SaveParams(Data::CParams& Out) const;
-	void LoadParams(const Data::CParams& In);
-	void SaveParamsDiff(Data::CParams& Out, const CGameWorld& Base) const;
-	void LoadParamsDiff(const Data::CParams& In);
-	void SaveBinary(IO::CBinaryWriter& Out) const;
-	void LoadBinary(IO::CBinaryReader& In);
-	void SaveBinaryDiff(IO::CBinaryWriter& Out, const CGameWorld& Base) const;
-	void LoadBinaryDiff(IO::CBinaryReader& In);
+	void SaveEntities(CStrID LevelID, Data::CParams& Out) const;
+	void LoadEntities(CStrID LevelID, const Data::CParams& In);
+	void SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGameWorld& Base) const;
+	void LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In);
+	void SaveEntities(CStrID LevelID, IO::CBinaryWriter& Out) const;
+	void LoadEntities(CStrID LevelID, IO::CBinaryReader& In);
+	void SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const CGameWorld& Base) const;
+	void LoadEntitiesDiff(CStrID LevelID, IO::CBinaryReader& In);
 
 	// Update(float dt)
 
@@ -80,10 +71,10 @@ public:
 	// GetTime
 
 	CGameLevel* CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
-	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& BaseData, ISaveLoadDelegate* pStateLoader = nullptr);
+	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& In);
+	CGameLevel* FindLevel(CStrID ID) const;
 	// SaveLevel(id, out params / delegate)
 	// UnloadLevel(id)
-	// FindLevel(id)
 	// SetLevelActive(bool) - exclude level from updating, maybe even allow to unload its heavy resources?
 	// ValidateLevels() - need API? or automatic? resmgr as param or stored inside the world? must be consistent across validations!
 	// AddLevelCOI(id, vector3) - cleared after update
@@ -111,6 +102,7 @@ public:
 	template<class T> T*    FindComponent(HEntity EntityID);
 	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
 	const IComponentStorage* FindComponentStorage(CStrID ComponentName) const;
+	IComponentStorage* FindComponentStorage(CStrID ComponentName);
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);
@@ -130,8 +122,9 @@ void CGameWorld::RegisterComponent(UPTR InitialCapacity)
 
 	// Static type is enough for distinguishing between different components, no dynamic RTTI needed
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Components.size() <= TypeIndex) _Components.resize(TypeIndex + 1);
-	_Components[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity);
+	if (_Storages.size() <= TypeIndex) _Storages.resize(TypeIndex + 1);
+	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity);
+	_StorageMap[_Storages[TypeIndex]->GetComponentName()] = _Storages[TypeIndex].get();
 }
 //---------------------------------------------------------------------
 
@@ -146,11 +139,11 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
 
 	//???check entity exists? create if not? or fail?
 
-	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
+	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
 	return Storage.Add(EntityID);
 }
 //---------------------------------------------------------------------
@@ -166,11 +159,11 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) FAIL;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) FAIL;
 
 	//???check entity exists?
 
-	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
+	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
 	return Storage.Remove(EntityID);
 }
 //---------------------------------------------------------------------
@@ -186,9 +179,9 @@ T* CGameWorld::FindComponent(HEntity EntityID)
 
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Components.size() <= TypeIndex || !_Components[TypeIndex]) return nullptr;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
 
-	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
+	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
 	return Storage.Find(EntityID);
 }
 //---------------------------------------------------------------------
@@ -200,9 +193,9 @@ typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 		"CGameWorld::FindComponentStorage() > T must be derived from CComponent");
 
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Components.size() <= TypeIndex) return nullptr;
+	if (_Storages.size() <= TypeIndex) return nullptr;
 
-	return static_cast<TComponentStoragePtr<T>>(_Components[TypeIndex].get());
+	return static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
 }
 //---------------------------------------------------------------------
 
