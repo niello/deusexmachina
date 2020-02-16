@@ -19,9 +19,12 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 
 void CGameWorld::SaveEntities(CStrID LevelID, Data::CParams& Out) const
 {
+	auto pLevel = FindLevel(LevelID);
+	if (!pLevel) return;
+
 	for (const auto& Entity : _Entities)
 	{
-		if (Entity.Level->GetID() != LevelID) continue;
+		if (Entity.Level != pLevel) continue;
 
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
@@ -85,23 +88,34 @@ void CGameWorld::LoadEntities(CStrID LevelID, const Data::CParams& In)
 
 void CGameWorld::SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGameWorld& Base) const
 {
+	auto pBaseLevel = Base.FindLevel(LevelID);
+	if (!pBaseLevel)
+	{
+		// If base world has no such level, the diff will be a whole level
+		SaveEntities(LevelID, Out);
+		return;
+	}
+
+	auto pLevel = FindLevel(LevelID);
+	if (!pLevel) return;
+
 	// Save entities deleted from the level as explicit nulls
 	for (const auto& BaseEntity : Base.GetEntities())
 	{
-		if (BaseEntity.Level->GetID() != LevelID) continue;
+		if (BaseEntity.Level != pBaseLevel) continue;
 
 		// FIXME: must get for free when iterating an array
 		auto EntityID = Base.GetEntities().GetHandle(&BaseEntity);
 
 		if (auto pEntity = GetEntity(EntityID))
-			if (pEntity->Level->GetID() == LevelID) continue;
+			if (pEntity->Level == pLevel) continue;
 
 		Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), Data::CData());
 	}
 
 	for (const auto& Entity : _Entities)
 	{
-		if (Entity.Level->GetID() != LevelID) continue;
+		if (Entity.Level != pLevel) continue;
 
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
@@ -109,7 +123,7 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGam
 		Data::PParams SEntity;
 
 		auto pBaseEntity = Base.GetEntity(EntityID);
-		if (pBaseEntity && pBaseEntity->Level->GetID() == LevelID)
+		if (pBaseEntity && pBaseEntity->Level == pBaseLevel)
 		{
 			// Existing entity, save modified part
 			for (const auto& [ComponentID, Storage] : _StorageMap)
@@ -162,12 +176,16 @@ void CGameWorld::LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-//!!!level(s)!
 void CGameWorld::SaveEntities(CStrID LevelID, IO::CBinaryWriter& Out) const
 {
+	auto pLevel = FindLevel(LevelID);
+	if (!pLevel) return;
+
 	Out.Write(static_cast<uint32_t>(_Entities.size()));
 	for (const auto& Entity : _Entities)
 	{
+		if (Entity.Level != pLevel) continue;
+
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
@@ -183,6 +201,9 @@ void CGameWorld::SaveEntities(CStrID LevelID, IO::CBinaryWriter& Out) const
 	Out.Write(static_cast<uint32_t>(_Storages.size()));
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
+		// FIXME: LevelID!!!
+		// if (Entity.Level != pLevel) continue;
+
 		Out.Write(ComponentID);
 		Storage->SaveAllComponentsToBinary(Out);
 	}
@@ -225,7 +246,7 @@ void CGameWorld::LoadEntities(CStrID LevelID, IO::CBinaryReader& In)
 
 	for (auto& Entity : _Entities)
 	{
-		if (!Entity.TemplateID) continue;
+		if (!Entity.TemplateID || Entity.Level != pLevel) continue;
 
 		// TODO: create components from template for this entity, don't erase existing entity components
 	}
