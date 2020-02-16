@@ -106,7 +106,7 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGam
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
-		Data::PParams SEntity = n_new(Data::CParams());
+		Data::PParams SEntity;
 
 		auto pBaseEntity = Base.GetEntity(EntityID);
 		if (pBaseEntity && pBaseEntity->Level->GetID() == LevelID)
@@ -320,6 +320,30 @@ CGameLevel* CGameWorld::FindLevel(CStrID ID) const
 {
 	auto It = _Levels.find(ID);
 	return (It == _Levels.cend()) ? nullptr : It->second.Get();
+}
+//---------------------------------------------------------------------
+
+HEntity CGameWorld::CreateEntity(CStrID LevelID)
+{
+	if (auto pLevel = FindLevel(LevelID))
+	{
+		auto EntityID = _Entities.Allocate();
+		if (auto pEntity = _Entities.GetValueUnsafe(EntityID))
+		{
+			pEntity->Level = pLevel;
+			return EntityID;
+		}
+	}
+
+	return CEntityStorage::INVALID_HANDLE;
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::DeleteEntity(HEntity EntityID)
+{
+	if (!_Entities.Free(EntityID)) return;
+	for (auto& Storage : _Storages)
+		Storage->RemoveComponent(EntityID);
 }
 //---------------------------------------------------------------------
 

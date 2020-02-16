@@ -83,11 +83,11 @@ public:
 	// LoadEntityTemplate(desc)
 	// CreateEntity(desc)
 
-	HEntity     CreateEntity(/*level or level ID?*/) { return _Entities.Allocate(); }
+	HEntity     CreateEntity(CStrID LevelID);
 	// CreateEntity(template)
 	// CreateEntity(component type list, templated?)
 	// CreateEntity(prototype entity ID for cloning)
-	// DeleteEntity
+	void        DeleteEntity(HEntity EntityID);
 	// MoveEntity(id, level[id?])
 	bool        EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
 	auto        GetEntity(HEntity EntityID) const { return _Entities.GetValue(EntityID); }

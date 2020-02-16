@@ -240,13 +240,13 @@ public:
 		return { Handle };
 	}
 
-	void Free(CHandle Handle)
+	bool Free(CHandle Handle)
 	{
 		const auto Index = (Handle.Raw & INDEX_BITS_MASK);
-		if (Index >= _Records.size()) return;
+		if (Index >= _Records.size()) return false;
 
 		auto& Record = _Records[Index];
-		if ((Handle.Raw | INDEX_ALLOCATED) != Record.Handle) return;
+		if ((Handle.Raw | INDEX_ALLOCATED) != Record.Handle) return false;
 
 		// Clear the record value to default, this clears freed object resources
 		Record.Value = _Prototype;
@@ -270,7 +270,7 @@ public:
 			{
 				// Don't add this record to the free list. Mark as exhausted.
 				Record.Handle = REUSE_BITS_MASK;
-				return;
+				return true;
 			}
 		}
 		else
@@ -279,6 +279,7 @@ public:
 		}
 
 		AddRangeToFreeList(Index, Index);
+		return true;
 	}
 
 	// Deletes unused records from the tail of the inner storage. Doesn't invalidate handles but
