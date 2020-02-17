@@ -165,14 +165,61 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGam
 }
 //---------------------------------------------------------------------
 
-//!!!level(s)!
 void CGameWorld::LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In)
 {
-	// iterate the list of entities in the In
-	// if entity is saved as null and it exists in the crrent level, erase it
-	// Else entity must be created ifit doesn't exist
-	// Then data from In is loaded to the entity, creating components when needed and applying diff fields
-	// If component is null, it is erased
+	auto pLevel = FindLevel(LevelID);
+	if (!pLevel)
+	{
+		::Sys::Error("CGameWorld::LoadEntitiesDiff() > level doesn't exist");
+		return;
+	}
+
+	const CStrID sidID("ID");
+	const CStrID sidTpl("Tpl");
+	const CStrID sidActive("Active");
+
+	for (const auto& EntityParam : In)
+	{
+		if (EntityParam.GetRawValue().IsVoid())
+		{
+			// Deleted entity is always named as __UID. Skip leading "__".
+			auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(EntityParam.GetName().CStr() + 2));
+			DeleteEntity({ RawHandle });
+		}
+		else
+		{
+			const auto& SEntity = *EntityParam.GetValue<Data::PParams>();
+			auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
+
+			HEntity EntityID{ RawHandle };
+			auto pEntity = _Entities.GetValue(EntityID);
+			if (!pEntity)
+			{
+				CEntity NewEntity;
+				NewEntity.Level = pLevel;
+				NewEntity.Name = EntityParam.GetName();
+				NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
+				NewEntity.IsActive = SEntity.Get(sidActive, true);
+
+				EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
+				pEntity = _Entities.GetValue(EntityID);
+				if (!pEntity) continue;
+
+				// TODO: instatiate template, then merge state from saved components
+			}
+
+			for (const auto& ComponentParam : SEntity)
+			{
+				auto pStorage = FindComponentStorage(ComponentParam.GetName());
+				if (!pStorage) continue;
+
+				if (ComponentParam.GetRawValue().IsVoid())
+					pStorage->RemoveComponent(EntityID);
+				else
+					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue());
+			}
+		}
+	}
 }
 //---------------------------------------------------------------------
 

@@ -115,11 +115,15 @@ public:
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
-			if (auto pComponent = Add(EntityID))
+		{
+			auto pComponent = Find(EntityID);
+			if (!pComponent) pComponent = Add(EntityID);
+			if (pComponent)
 			{
 				DEM::ParamsFormat::Deserialize(In, *pComponent);
 				return true;
 			}
+		}
 		return false;
 	}
 
