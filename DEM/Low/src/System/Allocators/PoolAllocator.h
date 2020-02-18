@@ -159,7 +159,7 @@ inline void CPoolAllocator<T, ChunkSize>::Clear()
 {
 #ifdef _DEBUG
 	if (CurrAllocatedCount > 0)
-		Sys::Error("Pool reports %d unreleased records", CurrAllocatedCount);
+		Sys::Error("Pool reports %d unreleased records\n", CurrAllocatedCount);
 #endif
 
 	if (Chunks)

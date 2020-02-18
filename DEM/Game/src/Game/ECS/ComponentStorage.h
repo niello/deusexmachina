@@ -26,9 +26,6 @@ public:
 
 	virtual ~IComponentStorage() = default;
 
-	virtual CStrID GetComponentName() const = 0;
-	virtual size_t GetComponentCount() const = 0;
-
 	virtual bool   RemoveComponent(HEntity EntityID) = 0;
 
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
@@ -50,14 +47,12 @@ protected:
 
 	CInnerStorage                _Data;
 	CEntityComponentMap<CHandle> _IndexByEntity;
-	CStrID                       _ComponentName;
 
 public:
 
 	CHandleArrayComponentStorage(UPTR InitialCapacity)
 		: _Data(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
 		, _IndexByEntity(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
-		, _ComponentName(DEM::Meta::CMetadata<T>::GetClassName())
 	{
 		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
 	}
@@ -108,8 +103,6 @@ public:
 	// TODO: remove by CHandle
 	// TODO: find by CHandle
 
-	virtual CStrID GetComponentName() const override { return _ComponentName; }
-	virtual size_t GetComponentCount() const override { return _Data.size(); }
 	virtual bool   RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
@@ -169,7 +162,6 @@ public:
 			for (uint32_t i = 0; i < ComponentCount; ++i)
 			{
 				const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
-				//???read component ID?
 				if (auto pComponent = Add({ EntityIDRaw }))
 					DEM::BinaryFormat::Deserialize(In, *pComponent);
 			}
@@ -182,11 +174,10 @@ public:
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			Out.Write(static_cast<uint32_t>(GetComponentCount()));
+			Out.Write(static_cast<uint32_t>(_Data.size()));
 			for (const auto& Component : _Data)
 			{
 				Out.Write(Component.EntityID.Raw);
-				//???write component ID?
 				DEM::BinaryFormat::Serialize(Out, Component);
 			}
 			return true;

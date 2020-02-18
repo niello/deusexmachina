@@ -96,7 +96,7 @@ public:
 	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
 	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
 
-	template<class T> void  RegisterComponent(UPTR InitialCapacity = 0);
+	template<class T> void  RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
 	template<class T> T*    AddComponent(HEntity EntityID);
 	template<class T> bool  RemoveComponent(HEntity EntityID);
 	template<class T> T*    FindComponent(HEntity EntityID);
@@ -113,7 +113,7 @@ public:
 };
 
 template<class T>
-void CGameWorld::RegisterComponent(UPTR InitialCapacity)
+void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 {
 	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
 		"CGameWorld::RegisterComponent() > T must be derived from CComponent");
@@ -124,7 +124,7 @@ void CGameWorld::RegisterComponent(UPTR InitialCapacity)
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Storages.size() <= TypeIndex) _Storages.resize(TypeIndex + 1);
 	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity);
-	_StorageMap[_Storages[TypeIndex]->GetComponentName()] = _Storages[TypeIndex].get();
+	_StorageMap[Name] = _Storages[TypeIndex].get();
 }
 //---------------------------------------------------------------------
 

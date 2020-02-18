@@ -160,10 +160,7 @@ template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 	{
 		const CParam& Param = Params[i];
 		if (Param.GetName() == Name)
-		{
-			const CData& ParamData = (const CData&)Param.GetRawValue();
-			return ParamData.GetValue<T>(Dest);
-		}
+			return Param.GetRawValue().GetValue<T>(Dest);
 	}
 	FAIL;
 }
