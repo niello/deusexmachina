@@ -2,6 +2,7 @@
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Data/HandleArray.h>
+#include <Data/Metadata.h>
 
 // Any world object is an entity, and entity itself is not anything in particular.
 // All "meat" is stored inside components. In a pure ECS an entity must be no more
@@ -26,6 +27,22 @@ struct CEntity final
 // NB: can't store HEntity inside a CEntity (but could store uint32_t if necessary)
 using CEntityStorage = Data::CHandleArray<CEntity, uint32_t, 18, true>;
 using HEntity = CEntityStorage::CHandle;
+
+}
+
+namespace DEM::Meta
+{
+
+template<> inline constexpr auto RegisterClassName<Game::CEntity>() { return "DEM::Game::CEntity"; }
+template<> inline constexpr auto RegisterMembers<Game::CEntity>()
+{
+	return std::make_tuple
+	(
+		Member(1, "Name", &Game::CEntity::Name, &Game::CEntity::Name),
+		Member(2, "TemplateID", &Game::CEntity::TemplateID, &Game::CEntity::TemplateID),
+		Member(3, "IsActive", &Game::CEntity::IsActive, &Game::CEntity::IsActive)
+	);
+}
 
 }
 

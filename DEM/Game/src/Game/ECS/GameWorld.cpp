@@ -340,22 +340,6 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const 
 	// End the list of deleted entities with an invalid handle (much like a trailing \0)
 	Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
-	//!!!for existing entities save diff/full! (like "component zero")
-	//n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
-
-	// Save component diffs per storage
-	Out.Write(static_cast<uint32_t>(_Storages.size()));
-	for (const auto& [ComponentID, Storage] : _StorageMap)
-	{
-		// FIXME: LevelID!!!
-		// if (Entity.Level != pLevel) continue;
-
-		Out.Write(ComponentID);
-
-		//!!!save diff!
-		Storage->SaveAllComponentsToBinary(Out);
-	}
-	/*
 	for (const auto& Entity : _Entities)
 	{
 		if (Entity.Level != pLevel) continue;
@@ -363,34 +347,50 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const 
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
+		Out << EntityID.Raw;
+
 		auto pBaseEntity = Base.GetEntity(EntityID);
 		if (pBaseEntity && pBaseEntity->Level == pBaseLevel)
 		{
 			// Existing entity, save modified part
-			for (const auto& [ComponentID, Storage] : _StorageMap)
-			{
-				Data::CData SComponent;
-				if (Storage->SaveComponentDiffToParams(EntityID, SComponent, Base.FindComponentStorage(ComponentID)))
-				{
-					if (!SEntity) SEntity = n_new(Data::CParams());
-					SEntity->Set(ComponentID, std::move(SComponent));
-				}
-			}
+			n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
+			DEM::BinaryFormat::SerializeDiff(Out, Entity, *pBaseEntity);
 		}
 		else
 		{
-			// New entity, save full data
-			// TODO: if tpl present, save diff?
-			SEntity = n_new(Data::CParams());
-			for (const auto& [ComponentID, Storage] : _StorageMap)
-			{
-				Data::CData SComponent;
-				Storage->SaveComponentToParams(EntityID, SComponent);
-				SEntity->Set(ComponentID, std::move(SComponent));
-			}
+			// New entity, save diff from default-created entity (better than full data!)
+			DEM::BinaryFormat::SerializeDiff(Out, Entity, CEntity{});
 		}
 	}
-	*/
+
+	// End the list of new and modified entities
+	Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+	// Save component diffs per storage
+	Out.Write(static_cast<uint32_t>(_Storages.size()));
+	for (const auto& [ComponentID, Storage] : _StorageMap)
+	{
+		if (auto pBaseStorage = Base.FindComponentStorage(ComponentID))
+		{
+			Out.Write(ComponentID);
+
+			//???collect entity IDs for the level? maybe faster check than finding and comparing level ptr each time!
+
+			// for each entity with this component in Base:
+				//if (BaseEntity.Level != pBaseLevel) continue;
+				//if (auto pEntity = GetEntity(EntityID))
+				//	if (pEntity->Level == pLevel) continue;
+				//save entity ID as deleted
+
+			// finalize deleted list
+
+			// for each entity with this component in Curr:
+				// if (Entity.Level != pLevel) continue;
+				//!!!save diff!
+
+			// finalize new and modified list
+		}
+	}
 }
 //---------------------------------------------------------------------
 

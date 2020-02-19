@@ -50,6 +50,32 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
+	template<typename TOutput, typename TValue>
+	static inline bool SerializeDiff(TOutput& Output, const TValue& Value, const TValue& BaseValue)
+	{
+		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		{
+			bool HasDiff = false;
+			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value, &BaseValue, &HasDiff](const auto& Member)
+			{
+				//!!!must write code if diff!
+				//???if no code, skip?
+				//also could have per-member constexpr bool "need serialization/need diff/...?"
+				//???what about nested diffs? special code for diff begin? member code is a special code!
+				HasDiff |= SerializeDiff(Output, Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
+			});
+			//???!!!write non-field code as a list end!?
+			return HasDiff;
+		}
+		else if (BaseValue != Value)
+		{
+			Output << Value;
+			return true;
+		}
+		return false;
+	}
+	//---------------------------------------------------------------------
+
 	template<typename TInput, typename TValue>
 	static inline void Deserialize(TInput& Input, TValue& Value)
 	{
