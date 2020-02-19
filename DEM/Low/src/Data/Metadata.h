@@ -93,6 +93,8 @@ public:
 template<typename TMember>
 using TMemberValue = typename std::decay_t<TMember>::TValue;
 
+constexpr std::uint32_t NO_MEMBER_CODE = std::numeric_limits<std::uint32_t>::max();
+
 // Interface to a registered member metadata
 template<typename TClass, typename T, typename TGetter, typename TSetter>
 class CMember final
@@ -174,7 +176,7 @@ public:
 
 private:
 
-	std::uint32_t    _Code = std::numeric_limits<std::uint32_t>::max();
+	std::uint32_t    _Code = NO_MEMBER_CODE;
 	const char*      _pName = nullptr;
 	TGetter          _pGetter = nullptr;
 	TSetter          _pSetter = nullptr;

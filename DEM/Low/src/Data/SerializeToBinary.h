@@ -5,6 +5,8 @@
 
 // Serialization of arbitrary data to binary format.
 // TOutput must define <<, TInput must define >>.
+// For diff serialization TOutput must also define Seek & Tell.
+// FIXME: effectively this restricts us to use CBinaryReader or IStream, make universal!
 
 // TODO: use additional knowledge about field ranges
 
@@ -58,13 +60,28 @@ struct BinaryFormat
 			bool HasDiff = false;
 			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value, &BaseValue, &HasDiff](const auto& Member)
 			{
-				//!!!must write code if diff!
-				//???if no code, skip?
-				//also could have per-member constexpr bool "need serialization/need diff/...?"
-				//???what about nested diffs? special code for diff begin? member code is a special code!
-				HasDiff |= SerializeDiff(Output, Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
+				// Can diff-serialize only members with code, otherwise it couldn't be identified
+				// TODO: in addition could have per-member constexpr bool "need serialization/need diff/...?"
+				if constexpr (Member.GetCode() == NO_MEMBER_CODE) return;
+
+				// Write the code to identify the member. If member is equal in both objects,
+				// code will be overwritten.
+				// TODO: PROFILE! Code is written for each member, but changed % is typically much less than 100.
+				// If too slow, can write to RAM buffer and explicitly deny to flush. Then with first difference
+				// detected flush the code too. Discarding code in RAM is just a pointer subtraction, not fseek.
+				const auto CurrPos = Output.Tell();
+				Output << Member.GetCode();
+
+				if (SerializeDiff(Output, Member.GetConstValue(Value), Member.GetConstValue(BaseValue)))
+					HasDiff = true;
+				else
+					Output.Seek(CurrPos);
 			});
-			//???!!!write non-field code as a list end!?
+
+			// End the list of changed members (much like a trailing \0).
+			// If HasDiff is false, calling code must skip the object entirely instead.
+			if (HasDiff) Output << NO_MEMBER_CODE;
+
 			return HasDiff;
 		}
 		else if (BaseValue != Value)
