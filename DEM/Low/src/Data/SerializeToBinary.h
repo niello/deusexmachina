@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/Metadata.h>
-#include <IO/BinaryWriter.h>
 #include <vector>
 #include <unordered_map>
 
@@ -73,7 +72,7 @@ struct BinaryFormat
 				if (SerializeDiff(Output, Member.GetConstValue(Value), Member.GetConstValue(BaseValue)))
 					HasDiff = true;
 		//		else
-		//			Output.Seek(CurrPos); // FIXME: must pop (unwrite), not just seek
+		//			Output.Seek(CurrPos); // FIXME: must pop (unwrite), not just seek. Or at least truncate when finished.
 			});
 
 			// End the list of changed members (much like a trailing \0).
