@@ -33,6 +33,7 @@ public:
 	virtual U64		GetFileWriteTime(void* hFile) const override;
 	virtual bool	Seek(void* hFile, I64 Offset, IO::ESeekOrigin Origin) override;
 	virtual U64		Tell(void* hFile) const override;
+	virtual bool	Truncate(void* hFile) override;
 	virtual void	Flush(void* hFile) override;
 	virtual bool	IsEOF(void* hFile) const override;
 };

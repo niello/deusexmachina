@@ -160,4 +160,10 @@ U64 CFileSystemNative::Tell(void* hFile) const
 }
 //---------------------------------------------------------------------
 
+bool CFileSystemNative::Truncate(void* hFile)
+{
+	return pFS->Truncate(hFile);
+}
+//---------------------------------------------------------------------
+
 }

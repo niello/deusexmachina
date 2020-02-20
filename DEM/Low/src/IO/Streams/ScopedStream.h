@@ -27,6 +27,7 @@ public:
 	virtual UPTR	Write(const void* pData, UPTR Size) override { return HostStream->Write(pData, Size); }
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
 	virtual U64		Tell() const override { return HostStream->Tell() - ScopeOffset; }
+	virtual bool    Truncate() override;
 	virtual void	Flush() override { HostStream->Flush(); }
 	virtual void*	Map() override { return ((char*)HostStream->Map()) + ScopeOffset; }
 	virtual void	Unmap() override { HostStream->Unmap(); }

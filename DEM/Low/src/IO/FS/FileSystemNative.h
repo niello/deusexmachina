@@ -51,6 +51,7 @@ public:
 	virtual U64		GetFileWriteTime(void* hFile) const;
 	virtual bool	Seek(void* hFile, I64 Offset, ESeekOrigin Origin);
 	virtual U64		Tell(void* hFile) const;
+	virtual bool	Truncate(void* hFile) override;
 	virtual void	Flush(void* hFile);
 	virtual bool	IsEOF(void* hFile) const;
 };

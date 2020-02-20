@@ -30,6 +30,7 @@ public:
 	virtual UPTR	Write(const void* pData, UPTR Size) override;
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
 	virtual U64		Tell() const override;
+	virtual bool    Truncate() override;
 	virtual void	Flush() override;
 	virtual void*	Map() override;
 	virtual void	Unmap() override;

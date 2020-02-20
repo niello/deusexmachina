@@ -41,6 +41,7 @@ public:
 	UPTR			Fill(U8 Value, UPTR ByteCount);
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
 	virtual U64		Tell() const override { return Pos; }
+	virtual bool    Truncate() override { DataSize = Pos; }
 	virtual void	Flush() override {}
 	virtual void*	Map() override;
 

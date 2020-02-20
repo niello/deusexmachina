@@ -272,6 +272,13 @@ U64 CFileSystemNPK::Tell(void* hFile) const
 }
 //---------------------------------------------------------------------
 
+bool CFileSystemNPK::Truncate(void* hFile)
+{
+	Sys::Error("CFileSystemNPK is read only");
+	return false;
+}
+//---------------------------------------------------------------------
+
 bool CFileSystemNPK::IsEOF(void* hFile) const
 {
 	n_assert(hFile);

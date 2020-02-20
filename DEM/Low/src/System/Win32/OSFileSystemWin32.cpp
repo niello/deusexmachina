@@ -355,6 +355,13 @@ U64 COSFileSystemWin32::Tell(void* hFile) const
 }
 //---------------------------------------------------------------------
 
+bool COSFileSystemWin32::Truncate(void* hFile)
+{
+	n_assert(hFile);
+	return ::SetEndOfFile(hFile) != 0;
+}
+//---------------------------------------------------------------------
+
 }};
 
 #endif

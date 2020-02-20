@@ -1,12 +1,10 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <IO/BinaryWriter.h>
 #include <vector>
 #include <unordered_map>
 
-// Serialization of arbitrary data to binary format.
-// TOutput must define <<, TInput must define >>.
-// For diff serialization TOutput must also define Seek & Tell.
-// FIXME: effectively this restricts us to use CBinaryReader or IStream, make universal!
+// Serialization of arbitrary data to binary format
 
 // TODO: use additional knowledge about field ranges
 

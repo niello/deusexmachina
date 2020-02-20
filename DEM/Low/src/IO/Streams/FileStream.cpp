@@ -69,6 +69,13 @@ U64 CFileStream::Tell() const
 }
 //---------------------------------------------------------------------
 
+bool CFileStream::Truncate()
+{
+	n_assert(hFile);
+	return FS->Truncate(hFile);
+}
+//---------------------------------------------------------------------
+
 void CFileStream::Flush()
 {
 	n_assert(!IsMapped() && hFile);
