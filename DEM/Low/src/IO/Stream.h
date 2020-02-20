@@ -1,10 +1,8 @@
 #pragma once
 #include <IO/IOFwd.h>
-#include <Data/Flags.h>
 #include <Data/RefCounted.h>
 
 // Base stream interface for byte sequence access.
-// Partially based on Nebula 3 (c) IO::Stream class
 
 namespace IO
 {
@@ -13,8 +11,7 @@ class IStream: public Data::CRefCounted
 {
 public:
 
-	//IStream();
-	virtual ~IStream() override {}
+	virtual ~IStream() override = default;
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	Close() = 0;
@@ -25,7 +22,7 @@ public:
 	virtual bool    Truncate() = 0;
 	virtual void	Flush() = 0;
 	virtual void*	Map() = 0;
-	virtual void	Unmap() {}
+	virtual void	Unmap() = 0;
 
 	virtual U64		GetSize() const = 0;
 	virtual bool	IsOpened() const = 0;

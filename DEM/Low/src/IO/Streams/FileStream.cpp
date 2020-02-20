@@ -5,9 +5,11 @@
 namespace IO
 {
 
-CFileStream::CFileStream(const char* pPath, IFileSystem* pFS)
+CFileStream::CFileStream(const char* pPath, IFileSystem* pFS/*, EStreamAccessMode Mode, EStreamAccessPattern Pattern*/)
 	: FileName(pPath)
 	, FS(pFS)
+	//, _Mode(Mode)
+	//, _Pattern(Pattern)
 {
 }
 //---------------------------------------------------------------------

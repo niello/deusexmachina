@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FILE_STREAM_H__
-#define __DEM_L1_FILE_STREAM_H__
-
 #include <IO/Stream.h>
 #include <Data/String.h>
 
@@ -15,13 +12,15 @@ class CFileStream: public IStream
 {
 protected:
 
-	CString		FileName;
-	PFileSystem	FS;
-	void*		hFile = nullptr;
+	CString              FileName;
+	//EStreamAccessMode    _Mode;
+	//EStreamAccessPattern _Pattern;
+	PFileSystem          FS;
+	void*                hFile = nullptr;
 
 public:
 
-	CFileStream(const char* pPath, IFileSystem* pFS);
+	CFileStream(const char* pPath, IFileSystem* pFS/*, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT*/);
 	virtual ~CFileStream() override;
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) override;
@@ -50,5 +49,3 @@ public:
 typedef Ptr<CFileStream> PFileStream;
 
 }
-
-#endif
