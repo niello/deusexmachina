@@ -10,7 +10,8 @@ bool CNavData::LoadFromStream(IO::CStream& Stream)
 {
 	Clear();
 
-	int NMDataSize = Stream.Get<int>();
+	IO::CBinaryReader Reader(Stream);
+	int NMDataSize = Reader.Read<int>();
 	U8* pData = (U8*)dtAlloc(NMDataSize, DT_ALLOC_PERM);
 	int BytesRead = Stream.Read(pData, NMDataSize);
 	n_assert(BytesRead == NMDataSize);
@@ -38,13 +39,12 @@ bool CNavData::LoadFromStream(IO::CStream& Stream)
 		}
 	}
 
-	IO::CBinaryReader Reader(Stream);
-	int RegionCount = Stream.Get<int>();
+	int RegionCount = Reader.Read<int>();
 	Regions.BeginAdd(RegionCount);
 	for (int RIdx = 0; RIdx < RegionCount; ++RIdx)
 	{
 		CNavRegion& Region = Regions.Add(Reader.Read<CStrID>());
-		Region.SetSize(Stream.Get<int>());
+		Region.SetSize(Reader.Read<int>());
 		Stream.Read(Region.GetPtr(), sizeof(dtPolyRef) * Region.GetCount());
 	}
 	Regions.EndAdd();

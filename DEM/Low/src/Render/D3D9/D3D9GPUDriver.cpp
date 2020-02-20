@@ -2821,7 +2821,7 @@ PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibra
 		if (!Stream.Seek(MetadataSize, IO::Seek_Current)) return nullptr;
 	}
 
-	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.GetPosition());
+	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.Tell());
 	if (!BinarySize) return nullptr;
 
 	Data::CBuffer Data(BinarySize);

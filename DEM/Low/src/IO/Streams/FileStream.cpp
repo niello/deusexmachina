@@ -62,6 +62,13 @@ bool CFileStream::Seek(I64 Offset, ESeekOrigin Origin)
 }
 //---------------------------------------------------------------------
 
+U64 CFileStream::Tell() const
+{
+	n_assert(hFile);
+	return FS->Tell(hFile);
+}
+//---------------------------------------------------------------------
+
 void CFileStream::Flush()
 {
 	n_assert(!IsMapped() && hFile);
@@ -105,13 +112,6 @@ U64 CFileStream::GetSize() const
 {
 	n_assert(hFile);
 	return FS->GetFileSize(hFile);
-}
-//---------------------------------------------------------------------
-
-U64 CFileStream::GetPosition() const
-{
-	n_assert(hFile);
-	return FS->Tell(hFile);
 }
 //---------------------------------------------------------------------
 

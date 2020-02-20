@@ -104,7 +104,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 				short CountWritten;
 				if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT))
 				{
-					CountPos = Stream.GetPosition();
+					CountPos = Stream.Tell();
 					CountWritten = PrmParams.GetCount();
 					if (!Write<short>(CountWritten)) FAIL;
 				}
@@ -117,7 +117,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 
 					if (Rec.Flags.Is(Data::CDataScheme::WRITE_COUNT) && Count != CountWritten)
 					{
-						U64 CurrPos = Stream.GetPosition();
+						U64 CurrPos = Stream.Tell();
 						Stream.Seek(CountPos, IO::Seek_Begin);
 						if (!Write<short>((short)Count)) FAIL;
 						Stream.Seek(CurrPos, IO::Seek_Begin);
@@ -141,7 +141,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 						// Write element count of current child
 						if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT))
 						{
-							CountPos = Stream.GetPosition();
+							CountPos = Stream.Tell();
 							CountWritten = SubPrmParams.GetCount();
 							if (!Write<short>(CountWritten)) FAIL;
 						}
@@ -154,7 +154,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 
 							if (Rec.Flags.Is(Data::CDataScheme::WRITE_CHILD_COUNT) && Count != CountWritten)
 							{
-								U64 CurrPos = Stream.GetPosition();
+								U64 CurrPos = Stream.Tell();
 								Stream.Seek(CountPos, IO::Seek_Begin);
 								if (!Write<short>((short)Count)) FAIL;
 								Stream.Seek(CurrPos, IO::Seek_Begin);

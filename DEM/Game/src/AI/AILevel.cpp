@@ -4,7 +4,7 @@
 #include <AI/Perception/Sensor.h>
 #include <AI/Navigation/NavMeshDebugDraw.h>
 #include <IO/IOServer.h>
-#include <IO/Stream.h>
+#include <IO/BinaryReader.h>
 #include <Events/EventServer.h>
 #include <DetourDebugDraw.h>
 #include <Debug/DebugDraw.h>
@@ -34,16 +34,17 @@ bool CAILevel::LoadNavMesh(const char* pFileName)
 	IO::PStream File = IOSrv->CreateStream(pFileName);
 	if (!File->Open(IO::SAM_READ)) FAIL;
 
-	if (File->Get<int>() != '_NM_') FAIL;
-	int Version = File->Get<int>();
+	IO::CBinaryReader Reader(*File);
+	if (Reader.Read<int>() != '_NM_') FAIL;
+	int Version = Reader.Read<int>();
 
-	int NMCount = File->Get<int>();
+	int NMCount = Reader.Read<int>();
 	for (int NMIdx = 0; NMIdx < NMCount; ++NMIdx)
 	{
-		float Radius = File->Get<float>();
+		float Radius = Reader.Read<float>();
 		CNavData& New = NavData.Add(Radius);
 		New.AgentRadius = Radius;
-		New.AgentHeight = File->Get<float>();
+		New.AgentHeight = Reader.Read<float>();
 		if (!New.LoadFromStream(*File))
 		{
 			UnloadNavMesh();

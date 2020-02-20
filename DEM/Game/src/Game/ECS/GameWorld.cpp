@@ -375,6 +375,10 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const 
 			Out.Write(ComponentID);
 
 			//???collect entity IDs for the level? maybe faster check than finding and comparing level ptr each time!
+			//!!!can then pass collected entity array into the storage processor instead of multiple virtual calls!
+			// A: EntityID -> seek Entity by handle -> compare with level
+			// B: EntityID -> allocate unordered_set -> find in set
+			// Seeking each time is probably faster? need performance profiling!
 
 			// for each entity with this component in Base:
 				//if (BaseEntity.Level != pBaseLevel) continue;

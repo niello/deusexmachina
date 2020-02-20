@@ -60,7 +60,7 @@ bool CScopedStream::Seek(I64 Offset, ESeekOrigin Origin)
 
 bool CScopedStream::IsEOF() const
 {
-	return HostStream->IsEOF() || HostStream->GetPosition() >= ScopeOffset + ScopeSize;
+	return HostStream->IsEOF() || HostStream->Tell() >= ScopeOffset + ScopeSize;
 }
 //---------------------------------------------------------------------
 

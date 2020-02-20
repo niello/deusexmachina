@@ -308,7 +308,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 		else TexDesc.Type = Render::Texture_2D;
 	}
 
-	U64 DataSize64 = FileSize - Stream->GetPosition();
+	U64 DataSize64 = FileSize - Stream->Tell();
 	UPTR DataSize = (UPTR)DataSize64;
 	if ((U64)DataSize != DataSize64) return nullptr;
 

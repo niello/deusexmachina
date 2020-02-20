@@ -29,7 +29,7 @@ Data::PBuffer CShaderLibrary::CopyRawData(U32 ID)
 	CRecord& Rec = TOC[Idx];
 
 	// Store CurrOffset to enable nested loads
-	U64 CurrOffset = Storage->GetPosition();
+	U64 CurrOffset = Storage->Tell();
 	if (!Storage->Seek(Rec.Offset, IO::Seek_Begin)) return nullptr;
 
 	// Read data into the buffer

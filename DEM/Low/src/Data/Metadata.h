@@ -44,7 +44,7 @@ public:
 	static inline constexpr size_t GetMemberCount() { return std::tuple_size_v<decltype(_Members)>; }
 
 	template<typename TCallback>
-	static inline void ForEachMember(TCallback Callback)
+	static inline constexpr void ForEachMember(TCallback Callback)
 	{
 		std::apply([Callback](auto& ...Members) { (..., Callback(Members)); }, _Members);
 	}
@@ -60,7 +60,7 @@ public:
 	}
 
 	template<typename TCallback>
-	static inline bool WithMember(std::string_view Name, TCallback Callback)
+	static inline constexpr bool WithMember(std::string_view Name, TCallback Callback)
 	{
 		bool Found = false;
 		ForEachMember([Name, Callback, &Found](const auto& Member)
@@ -75,7 +75,7 @@ public:
 	}
 
 	template<typename TCallback>
-	static inline bool WithMember(std::uint32_t Code, TCallback Callback)
+	static inline constexpr bool WithMember(std::uint32_t Code, TCallback Callback)
 	{
 		bool Found = false;
 		ForEachMember([Code, Callback, &Found](const auto& Member)
@@ -171,8 +171,8 @@ public:
 		return MemberAccess<TClass, T, TSetter>::Set(_pSetter, Instance, std::forward<U>(Value));
 	}
 
-	const char*   GetName() const { return _pName; }
-	std::uint32_t GetCode() const { return _Code; }
+	constexpr const char*   GetName() const { return _pName; }
+	constexpr std::uint32_t GetCode() const { return _Code; }
 
 private:
 

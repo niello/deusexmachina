@@ -24,24 +24,24 @@ public:
 	CFileStream(const char* pPath, IFileSystem* pFS);
 	virtual ~CFileStream() override;
 
-	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
-	virtual void	Close();
-	virtual UPTR	Read(void* pData, UPTR Size);
-	virtual UPTR	Write(const void* pData, UPTR Size);
-	virtual bool	Seek(I64 Offset, ESeekOrigin Origin);
-	virtual void	Flush();
-	virtual void*	Map();
-	virtual void	Unmap();
+	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) override;
+	virtual void	Close() override;
+	virtual UPTR	Read(void* pData, UPTR Size) override;
+	virtual UPTR	Write(const void* pData, UPTR Size) override;
+	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
+	virtual U64		Tell() const override;
+	virtual void	Flush() override;
+	virtual void*	Map() override;
+	virtual void	Unmap() override;
 
 	void			SetFileName(const char* pPath) { n_assert(!IsOpen()); FileName = pPath; }
 	const CString&	GetFileName() const { return FileName; }
-	virtual U64		GetSize() const;
-	virtual U64		GetPosition() const;
-	virtual bool	IsEOF() const;
-	virtual bool	CanRead() const { OK; }
-	virtual bool	CanWrite() const { OK; }
-	virtual bool	CanSeek() const { OK; }
-	virtual bool	CanBeMapped() const { OK; }
+	virtual U64		GetSize() const override;
+	virtual bool	IsEOF() const override;
+	virtual bool	CanRead() const override { OK; }
+	virtual bool	CanWrite() const override { OK; }
+	virtual bool	CanSeek() const override { OK; }
+	virtual bool	CanBeMapped() const override { OK; }
 };
 
 typedef Ptr<CFileStream> PFileStream;

@@ -30,27 +30,26 @@ protected:
 public:
 
 	CMemStream(): pBuffer(nullptr), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
-	virtual ~CMemStream() { if (IsOpen()) Close(); }
+	virtual ~CMemStream() override { if (IsOpen()) Close(); }
 
 	bool			Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	bool			Open(const void* pData, UPTR Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
-	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
-	virtual void	Close();
-	virtual UPTR	Read(void* pData, UPTR Size);
-	virtual UPTR	Write(const void* pData, UPTR Size);
+	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) override;
+	virtual void	Close() override;
+	virtual UPTR	Read(void* pData, UPTR Size) override;
+	virtual UPTR	Write(const void* pData, UPTR Size) override;
 	UPTR			Fill(U8 Value, UPTR ByteCount);
-	virtual bool	Seek(I64 Offset, ESeekOrigin Origin);
-	virtual void	Flush() {}
-	virtual void*	Map();
+	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
+	virtual U64		Tell() const override { return Pos; }
+	virtual void	Flush() override {}
+	virtual void*	Map() override;
 
-	const char*		GetPtr() const { return pBuffer; }
-	virtual U64		GetSize() const { return DataSize; }
-	virtual U64		GetPosition() const { return Pos; }
-	virtual bool	IsEOF() const;
-	virtual bool	CanRead() const { OK; }
-	virtual bool	CanWrite() const { OK; }
-	virtual bool	CanSeek() const { OK; }
-	virtual bool	CanBeMapped() const { OK; }
+	virtual U64		GetSize() const override { return DataSize; }
+	virtual bool	IsEOF() const override;
+	virtual bool	CanRead() const override { OK; }
+	virtual bool	CanWrite() const override { OK; }
+	virtual bool	CanSeek() const override { OK; }
+	virtual bool	CanBeMapped() const override { OK; }
 };
 
 typedef Ptr<CMemStream> PMemStream;

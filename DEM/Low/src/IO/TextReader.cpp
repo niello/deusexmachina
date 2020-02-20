@@ -10,7 +10,7 @@ bool CTextReader::ReadLine(char* pOutValue, UPTR MaxLen)
 
 	if (Stream.IsEOF() || MaxLen < 2) FAIL;
 
-	U64 StartPos = Stream.GetPosition();
+	U64 StartPos = Stream.Tell();
 
 	char* pCurr = pOutValue;
 	char* pEnd = pOutValue + MaxLen - 1;

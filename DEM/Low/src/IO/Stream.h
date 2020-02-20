@@ -36,6 +36,7 @@ public:
 	virtual UPTR	Read(void* pData, UPTR Size) = 0;
 	virtual UPTR	Write(const void* pData, UPTR Size) = 0;
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) = 0;
+	virtual U64		Tell() const = 0;
 	virtual void	Flush() = 0;
 	virtual void*	Map() { n_assert(!IsMapped()); return nullptr; }
 	virtual void	Unmap() {}
@@ -43,20 +44,11 @@ public:
 	bool			IsOpen() const { return Flags.Is(IS_OPEN); }
 	bool			IsMapped() const { return Flags.Is(IS_MAPPED); }
 	virtual U64		GetSize() const = 0;
-	virtual U64		GetPosition() const = 0;
 	virtual bool	IsEOF() const = 0;
 	virtual bool	CanRead() const { FAIL; }
 	virtual bool	CanWrite() const { FAIL; }
 	virtual bool	CanSeek() const { FAIL; }
 	virtual bool	CanBeMapped() const { FAIL; }
-
-	// For simple types (integrated or struct). Use stream writers for things like CString etc.
-	template<class T>
-	bool			Put(const T& Value) { return Write(&Value, sizeof(T)) == sizeof(T); }
-	template<class T>
-	bool			Get(T& Value) { return Read(&Value, sizeof(T)) == sizeof(T); }
-	template<class T>
-	T				Get() { T Value; Read(&Value, sizeof(T)); return Value; }
 };
 
 typedef Ptr<CStream> PStream;
