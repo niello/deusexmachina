@@ -20,6 +20,9 @@ namespace DEM::Game
 {
 typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 
+class CGameWorld;
+class CGameLevel;
+
 class IComponentStorage
 {
 public:
@@ -32,8 +35,8 @@ public:
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out, const IComponentStorage* pBaseStorage) const = 0;
 	virtual bool   LoadAllComponentsFromBinary(IO::CBinaryReader& In) = 0;
-	virtual bool   SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const = 0;
-	virtual bool   SaveAllComponentsDiffToBinary(IO::CBinaryWriter& Out, const IComponentStorage* pBaseStorage) const = 0;
+	virtual bool   SaveAllComponentsToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level) const = 0;
+	virtual bool   SaveAllComponentsDiffToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const = 0;
 };
 
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
@@ -171,47 +174,60 @@ public:
 		return false;
 	}
 
-	virtual bool SaveAllComponentsToBinary(IO::CBinaryWriter& Out) const override
+	virtual bool SaveAllComponentsToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level) const override
 	{
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		Out.Write(static_cast<uint32_t>(_Data.size()));
+		for (const auto& Component : _Data)
 		{
-			Out.Write(static_cast<uint32_t>(_Data.size()));
-			for (const auto& Component : _Data)
+			auto pEntity = World.GetEntityUnsafe(Component.EntityID);
+			if (pEntity && pEntity->Level == &Level)
 			{
 				Out.Write(Component.EntityID.Raw);
 				DEM::BinaryFormat::Serialize(Out, Component);
 			}
-			return true;
 		}
-		return false;
+
+		return true;
 	}
 
-	virtual bool SaveAllComponentsDiffToBinary(IO::CBinaryWriter& Out, const IComponentStorage* pBaseStorage) const override
+	virtual bool SaveAllComponentsDiffToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		/*
-		//???collect entity IDs for the level? maybe faster check than finding and comparing level ptr each time!
-		//!!!can then pass collected entity array into the storage processor instead of multiple virtual calls!
-		// A: EntityID -> seek Entity by handle -> compare with level
-		// B: EntityID -> allocate unordered_set -> find in set
-		// Seeking each time is probably faster? need performance profiling!
+		//???or store world pointer in each storage? then can pass BaseStorage ref, omit both worlds and component ID!
+		auto pBaseStorage = static_cast<decltype(this)>(BaseWorld.FindComponentStorage(ComponentID));
+		if (!pBaseStorage) return false;
 
-		// for each entity with this component in Base:
-		//if (BaseEntity.Level != pBaseLevel) continue;
-		//if (auto pEntity = GetEntity(EntityID))
-		//	if (pEntity->Level == pLevel) continue;
-		//save entity ID as deleted
+		//!!!we're interested only in entities both exist and are in the same level.
+		//other cases are processed by entity "component zero" diff.
 
-		// finalize deleted list
+		// Save entity IDs where this component is deleted
+		for (const auto& BaseComponent : pBaseStorage->_Data)
+		{
+			//!!!both entities exist and are in the same level, but components aren't in sync!
 
-		// for each entity with this component in Curr:
-		// if (Entity.Level != pLevel) continue;
-		//!!!save diff!
+			//auto pBaseEntity = BaseWorld.GetEntityUnsafe(BaseComponent.EntityID);
+			//if (!pBaseEntity || pBaseEntity->Level != pBaseLevel) continue;
 
-		// finalize new and modified list
-		*/
-		return false;
+			//auto pEntity = World.GetEntity(EntityID);
+			//if (pEntity && pEntity->Level == pLevel) continue;
+
+			//Out << BaseComponent.EntityID.Raw;
+		}
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		for (const auto& Component : _Data)
+		{
+			// if (Entity.Level != pLevel) continue;
+			//!!!save diff!
+		}
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		return true;
 	}
 
 	auto begin() { return _Data.begin(); }
