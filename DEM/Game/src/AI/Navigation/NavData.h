@@ -20,7 +20,7 @@ class dtNavMeshQuery;
 
 namespace IO
 {
-	class CStream;
+	class IStream;
 }
 
 namespace AI
@@ -44,7 +44,7 @@ public:
 
 	CNavData(): pNavMesh(nullptr) { memset(pNavMeshQuery, 0, sizeof(pNavMeshQuery)); }
 
-	bool LoadFromStream(IO::CStream& Stream);
+	bool LoadFromStream(IO::IStream& Stream);
 	void Clear();
 };
 

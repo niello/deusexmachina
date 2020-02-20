@@ -22,7 +22,7 @@ class CBinaryReader: public CStreamReader
 {
 public:
 
-	CBinaryReader(CStream& SrcStream): CStreamReader(SrcStream) { }
+	CBinaryReader(IStream& SrcStream): CStreamReader(SrcStream) { }
 
 	bool				ReadString(char* OutValue, UPTR MaxLen);
 	bool				ReadString(char*& OutValue); // Allocates memory

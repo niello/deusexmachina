@@ -31,7 +31,7 @@ protected:
 
 public:
 
-	CFileSystemNPK(CStream* pSource);
+	CFileSystemNPK(IStream* pSource);
 	virtual ~CFileSystemNPK();
 
 	virtual bool	Init() override;

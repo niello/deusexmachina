@@ -156,14 +156,14 @@ public:
 	virtual DEM::Sys::COSWindow*	GetSwapChainWindow(UPTR SwapChainID) const override;
 	virtual PDisplayDriver		GetSwapChainDisplay(UPTR SwapChainID) const override;
 	virtual bool				Present(UPTR SwapChainID);
-	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const;
+	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::IStream& OutStream) const;
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count);
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
-	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) override;
-	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream) override;
+	virtual PShader				CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) override;
+	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream) override;
 	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr);
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param);
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);

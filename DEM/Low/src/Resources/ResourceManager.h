@@ -16,7 +16,7 @@ namespace Core
 namespace IO
 {
 	class CIOServer;
-	typedef Ptr<class CStream> PStream;
+	typedef Ptr<class IStream> PStream;
 }
 
 namespace Resources

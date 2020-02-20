@@ -6,7 +6,7 @@
 namespace IO
 {
 
-class CScopedStream: public CStream
+class CScopedStream: public IStream
 {
 protected:
 
@@ -16,8 +16,8 @@ protected:
 
 public:
 
-	CScopedStream(PStream Host): HostStream(Host) { Flags.SetTo(IS_OPEN, Host.IsValidPtr() && Host->IsOpen()); }
-	virtual ~CScopedStream() override { if (IsOpen()) Close(); }
+	CScopedStream(PStream Host): HostStream(Host) {}
+	virtual ~CScopedStream() override { if (IsOpened()) Close(); }
 
 	bool			SetScope(U64 Offset, U64 Size);
 
@@ -33,6 +33,8 @@ public:
 	virtual void	Unmap() override { HostStream->Unmap(); }
 
 	virtual U64		GetSize() const override { return ScopeSize; }
+	virtual bool	IsOpened() const override { return HostStream->IsOpened(); }
+	virtual bool    IsMapped() const override { return HostStream->IsMapped(); }
 	virtual bool	IsEOF() const override;
 	virtual bool	CanRead() const override { return HostStream->CanRead(); }
 	virtual bool	CanWrite() const override { return HostStream->CanWrite(); }

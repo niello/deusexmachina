@@ -4,13 +4,11 @@ namespace IO
 {
 
 // NB: it doesn't set IS_OPEN flag, derived class must set it on success
-bool CStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+bool IStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert(!IsOpen());
+	n_assert(!IsOpened());
 	if ((Mode & SAM_READ) && !CanRead()) FAIL;
 	if (((Mode & SAM_WRITE) || (Mode & SAM_APPEND)) && !CanWrite()) FAIL;
-	AccessMode = Mode;
-	AccessPattern = Pattern;
 	OK;
 }
 //---------------------------------------------------------------------

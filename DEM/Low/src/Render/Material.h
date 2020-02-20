@@ -7,7 +7,7 @@
 
 namespace IO
 {
-	class CStream;
+	class IStream;
 }
 
 namespace Render

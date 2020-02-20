@@ -7,28 +7,25 @@ namespace IO
 
 bool CMemStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert(!IsOpen());
-	if (!CStream::Open(Mode, Pattern)) FAIL;
+	n_assert(!IsOpened());
+	if (!IStream::Open(Mode, Pattern)) FAIL;
 	Pos = (Mode == SAM_APPEND) ? DataSize : 0;
-	Flags.Set(IS_OPEN);
 	OK;
 }
 //---------------------------------------------------------------------
 
 void CMemStream::Close()
 {
-	n_assert(IsOpen());
+	n_assert(IsOpened());
 	if (IsMapped()) Unmap();
 	if (SelfAlloc && pBuffer) n_free(pBuffer);
 	pBuffer = nullptr;
-	Flags.Clear(IS_OPEN);
-	//CStream::Close();
 }
 //---------------------------------------------------------------------
 
 UPTR CMemStream::Read(void* pData, UPTR Size)
 {
-	n_assert(IsOpen() && pConstBuffer && !IsMapped() && (AccessMode & SAM_READ));
+	n_assert_dbg(IsOpened() && pConstBuffer && !IsMapped());
 	UPTR BytesToRead = std::min(Size, DataSize - Pos);
 	if (BytesToRead > 0)
 	{
@@ -58,7 +55,7 @@ void CMemStream::Allocate(UPTR AddedBytes)
 
 UPTR CMemStream::Write(const void* pData, UPTR Size)
 {
-	n_assert(IsOpen() && !IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
+	n_assert_dbg(IsOpened() && !IsMapped());
 	Allocate(Size);
 	memcpy(pBuffer + Pos, pData, Size);
 	Pos += Size;
@@ -69,7 +66,7 @@ UPTR CMemStream::Write(const void* pData, UPTR Size)
 
 UPTR CMemStream::Fill(U8 Value, UPTR ByteCount)
 {
-	n_assert(IsOpen() && !IsMapped() && ((AccessMode & SAM_WRITE) || (AccessMode & SAM_APPEND)));
+	n_assert_dbg(IsOpened() && !IsMapped());
 	Allocate(ByteCount);
 	memset(pBuffer + Pos, Value, ByteCount);
 	Pos += ByteCount;
@@ -95,7 +92,7 @@ bool CMemStream::Seek(I64 Offset, ESeekOrigin Origin)
 
 bool CMemStream::IsEOF() const
 {
-	n_assert(IsOpen() && !IsMapped() && Pos >= 0 && Pos <= DataSize);
+	n_assert(IsOpened() && !IsMapped() && Pos >= 0 && Pos <= DataSize);
 	return Pos == DataSize;
 }
 //---------------------------------------------------------------------

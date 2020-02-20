@@ -30,7 +30,7 @@ protected:
 
 public:
 
-	CBinaryWriter(CStream& DestStream): CStreamWriter(DestStream) { }
+	CBinaryWriter(IStream& DestStream): CStreamWriter(DestStream) { }
 
 	bool				WriteString(const char* Value);
 	bool				WriteString(const CString& Value);

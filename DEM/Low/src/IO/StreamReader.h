@@ -13,13 +13,13 @@ class CStreamReader
 {
 protected:
 
-	CStream& Stream;
+	IStream& Stream;
 
 public:
 
-	CStreamReader(CStream& SrcStream): Stream(SrcStream) { n_assert(Stream.IsOpen()); }
+	CStreamReader(IStream& SrcStream): Stream(SrcStream) { n_assert(Stream.IsOpened()); }
 
-	CStream& GetStream() const { return Stream; }
+	IStream& GetStream() const { return Stream; }
 };
 
 }

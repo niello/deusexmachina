@@ -13,7 +13,7 @@
 
 namespace IO
 {
-	typedef Ptr<class CStream> PStream;
+	typedef Ptr<class IStream> PStream;
 }
 
 namespace Video
@@ -51,7 +51,7 @@ protected:
 	CTime				currentTime;
 	UPTR				decodedFrames;
 
-	int buffer_data(IO::CStream *in,ogg_sync_state *oy);
+	int buffer_data(IO::IStream *in,ogg_sync_state *oy);
 	int queue_page(ogg_page *page);
 	void DecodeYUV(yuv_buffer& yuv,unsigned char* rgbBuffer);
 	void StopTheora();

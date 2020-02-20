@@ -14,14 +14,14 @@ class CStreamWriter
 {
 protected:
 
-	CStream& Stream;
+	IStream& Stream;
 
 public:
 
-	CStreamWriter(CStream& DestStream): Stream(DestStream) { n_assert(Stream.IsOpen()); }
+	CStreamWriter(IStream& DestStream): Stream(DestStream) { n_assert(Stream.IsOpened()); }
 
 	bool		WriteCharString(const char* pString);
-	CStream&	GetStream() const { return Stream; }
+	IStream&	GetStream() const { return Stream; }
 };
 
 inline bool CStreamWriter::WriteCharString(const char* pString)

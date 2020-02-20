@@ -1449,7 +1449,7 @@ bool CD3D9GPUDriver::Present(UPTR SwapChainID)
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const
+bool CD3D9GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::IStream& OutStream) const
 {
 	if (!pD3DDevice || IsInsideFrame || !SwapChainExists(SwapChainID)) FAIL;
 
@@ -1477,7 +1477,7 @@ bool CD3D9GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream)
 		FAIL;
 	}
 
-	bool WasOpen = OutStream.IsOpen();
+	bool WasOpen = OutStream.IsOpened();
 	if (WasOpen || OutStream.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
 	{
 		OutStream.Write(D3DRect.pBits, D3DRect.Pitch * Desc.Height);
@@ -2793,7 +2793,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 }
 //---------------------------------------------------------------------
 
-PShader CD3D9GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
+PShader CD3D9GPUDriver::CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
 {
 	IO::CBinaryReader R(Stream);
 
@@ -2866,7 +2866,7 @@ static inline U32 GetBytesPerRegister(ESM30RegisterSet RegisterSet)
 }
 //---------------------------------------------------------------------
 
-PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
+PShaderParamTable CD3D9GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream)
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
 

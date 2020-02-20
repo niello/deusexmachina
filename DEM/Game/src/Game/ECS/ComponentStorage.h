@@ -200,13 +200,15 @@ public:
 		auto pBaseStorage = static_cast<decltype(this)>(BaseWorld.FindComponentStorage(ComponentID));
 		if (!pBaseStorage) return false;
 
-		//!!!we're interested only in entities both exist and are in the same level.
-		//other cases are processed by entity "component zero" diff.
-
 		// Save entity IDs where this component is deleted
 		for (const auto& BaseComponent : pBaseStorage->_Data)
 		{
-			//!!!both entities exist and are in the same level, but components aren't in sync!
+			//!!!compare only components by entity ID, not entities themselves!?
+			//no matter if entity moved from level to level?
+			//we save level diff, so possibly we must process only entities that didn't change their level?
+			//if component is on entity deleted or moved to another level, the whole entity is deleted,
+			//and all its components are too, but we can skip saving deleted info for them because we know
+			//that the whole entity was deleted.
 
 			//auto pBaseEntity = BaseWorld.GetEntityUnsafe(BaseComponent.EntityID);
 			//if (!pBaseEntity || pBaseEntity->Level != pBaseLevel) continue;

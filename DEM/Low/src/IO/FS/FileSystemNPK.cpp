@@ -7,7 +7,7 @@
 namespace IO
 {
 
-CFileSystemNPK::CFileSystemNPK(CStream* pSource)
+CFileSystemNPK::CFileSystemNPK(IStream* pSource)
 	: NPKStream(pSource)
 {
 }

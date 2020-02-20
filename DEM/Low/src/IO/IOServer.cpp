@@ -349,7 +349,7 @@ PStream CIOServer::CreateStream(const char* pPath) const
 	IFileSystem* pFS = nullptr;
 	const char* pLocalPath = nullptr;
 
-	//!!!duplicate search for NPK, finds FS record twice, here and in CStream::Open()!
+	//!!!duplicate search for NPK, finds FS record twice, here and in IStream::Open()!
 	for (auto& Rec : FileSystems)
 	{
 		pLocalPath = GetFSLocalPath(Rec, Path.CStr(), ColonIdx);

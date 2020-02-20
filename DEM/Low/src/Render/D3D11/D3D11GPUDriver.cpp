@@ -752,7 +752,7 @@ bool CD3D11GPUDriver::Present(UPTR SwapChainID)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const
+bool CD3D11GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::IStream& OutStream) const
 {
 	Sys::Error("IMPLEMENT ME!!! CD3D11GPUDriver::CaptureScreenshot()\n");
 	FAIL;
@@ -2658,7 +2658,7 @@ ProcessFailure:
 }
 //---------------------------------------------------------------------
 
-PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
+PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
 {
 	IO::CBinaryReader R(Stream);
 
@@ -2798,7 +2798,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::CStream& Stream, CShaderLibrary* pLibr
 }
 //---------------------------------------------------------------------
 
-PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream)
+PShaderParamTable CD3D11GPUDriver::LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream)
 {
 	if (!SupportsShaderFormat(ShaderFormatCode)) return nullptr;
 

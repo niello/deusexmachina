@@ -6,7 +6,7 @@
 namespace AI
 {
 
-bool CNavData::LoadFromStream(IO::CStream& Stream)
+bool CNavData::LoadFromStream(IO::IStream& Stream)
 {
 	Clear();
 

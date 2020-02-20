@@ -17,7 +17,7 @@ class CTextReader: public CStreamReader
 {
 public:
 
-	CTextReader(CStream& SrcStream): CStreamReader(SrcStream) { }
+	CTextReader(IStream& SrcStream): CStreamReader(SrcStream) { }
 
 	bool ReadLine(char* pOutValue, UPTR MaxLen = (UPTR)(-1));
 	bool ReadLine(CString& OutValue);

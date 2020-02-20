@@ -11,7 +11,7 @@
 namespace IO
 {
 typedef Ptr<class IFileSystem> PFileSystem;
-typedef Ptr<class CStream> PStream;
+typedef Ptr<class IStream> PStream;
 
 #define IOSrv IO::CIOServer::Instance()
 

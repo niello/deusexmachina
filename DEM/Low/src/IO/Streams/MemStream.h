@@ -10,7 +10,7 @@
 namespace IO
 {
 
-class CMemStream: public CStream
+class CMemStream: public IStream
 {
 protected:
 
@@ -30,7 +30,7 @@ protected:
 public:
 
 	CMemStream(): pBuffer(nullptr), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
-	virtual ~CMemStream() override { if (IsOpen()) Close(); }
+	virtual ~CMemStream() override { if (IsOpened()) Close(); }
 
 	bool			Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	bool			Open(const void* pData, UPTR Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
@@ -46,6 +46,8 @@ public:
 	virtual void*	Map() override;
 
 	virtual U64		GetSize() const override { return DataSize; }
+	virtual bool	IsOpened() const override { return !!pBuffer; }
+	virtual bool    IsMapped() const override { return true; }
 	virtual bool	IsEOF() const override;
 	virtual bool	CanRead() const override { OK; }
 	virtual bool	CanWrite() const override { OK; }

@@ -31,7 +31,7 @@ protected:
 
 public:
 
-	CHRDWriter(CStream& DestStream): CStreamWriter(DestStream) { }
+	CHRDWriter(IStream& DestStream): CStreamWriter(DestStream) { }
 
 	bool WriteParams(const Data::CParams& Value);
 	bool WriteParam(const Data::CParam& Value);

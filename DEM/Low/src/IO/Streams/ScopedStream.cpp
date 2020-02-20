@@ -5,7 +5,7 @@ namespace IO
 
 bool CScopedStream::SetScope(U64 Offset, U64 Size)
 {
-	if (HostStream->IsOpen())
+	if (HostStream->IsOpened())
 	{
 		U64 RealSize = HostStream->GetSize();
 		if (Size)
@@ -23,16 +23,15 @@ bool CScopedStream::SetScope(U64 Offset, U64 Size)
 
 bool CScopedStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	if (HostStream.IsNullPtr()) FAIL;
-	if (!IsOpen())
+	if (!HostStream) FAIL;
+	if (!IsOpened())
 	{
-		if (!HostStream->IsOpen() && !HostStream->Open(Mode, Pattern)) FAIL;
+		if (!HostStream->IsOpened() && !HostStream->Open(Mode, Pattern)) FAIL;
 
 		U64 RealSize = HostStream->GetSize();
 		if (ScopeOffset + ScopeSize > RealSize) ScopeSize = RealSize - ScopeOffset;
 
 		if (!HostStream->Seek(ScopeOffset, Seek_Begin)) FAIL;
-		Flags.Set(IS_OPEN);
 	}
 	OK;
 }
@@ -40,7 +39,6 @@ bool CScopedStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 
 void CScopedStream::Close()
 {
-	if (IsOpen()) Flags.Clear(IS_OPEN);
 }
 //---------------------------------------------------------------------
 

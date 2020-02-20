@@ -20,7 +20,7 @@
 
 namespace IO
 {
-	class CStream;
+	class IStream;
 }
 
 namespace Data
@@ -78,14 +78,14 @@ public:
 	virtual PDisplayDriver		GetSwapChainDisplay(UPTR SwapChainID) const = 0;
 	virtual bool				Present(UPTR SwapChainID) = 0;
 	bool						PresentBlankScreen(UPTR SwapChainID, const vector4& ColorRGBA);
-	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::CStream& OutStream) const = 0;
+	virtual bool				CaptureScreenshot(UPTR SwapChainID, IO::IStream& OutStream) const = 0;
 
 	virtual PVertexLayout		CreateVertexLayout(const CVertexComponent* pComponents, UPTR Count) = 0;
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
-	virtual PShader				CreateShader(IO::CStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) = 0;
-	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::CStream& Stream) = 0;
+	virtual PShader				CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) = 0;
+	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream) = 0;
 	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) = 0;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param) = 0;
 	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) = 0;

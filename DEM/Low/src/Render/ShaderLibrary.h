@@ -17,7 +17,7 @@ namespace Data
 
 namespace IO
 {
-	typedef Ptr<class CStream> PStream;
+	typedef Ptr<class IStream> PStream;
 }
 
 namespace Resources

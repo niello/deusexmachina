@@ -12,24 +12,12 @@
 namespace IO
 {
 
-class CStream: public Data::CRefCounted
+class IStream: public Data::CRefCounted
 {
-protected:
-
-	enum
-	{
-		IS_OPEN		= 0x01,
-		IS_MAPPED	= 0x02
-	};
-
-	EStreamAccessMode		AccessMode;
-	EStreamAccessPattern	AccessPattern;
-	Data::CFlags			Flags;
-
 public:
 
-	//CStream();
-	virtual ~CStream() { n_assert(!IsOpen()); }
+	//IStream();
+	virtual ~IStream() override { n_assert(!IsOpened()); }
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	Close() = 0;
@@ -39,12 +27,12 @@ public:
 	virtual U64		Tell() const = 0;
 	virtual bool    Truncate() = 0;
 	virtual void	Flush() = 0;
-	virtual void*	Map() { n_assert(!IsMapped()); return nullptr; }
+	virtual void*	Map() = 0;
 	virtual void	Unmap() {}
 
-	bool			IsOpen() const { return Flags.Is(IS_OPEN); }
-	bool			IsMapped() const { return Flags.Is(IS_MAPPED); }
 	virtual U64		GetSize() const = 0;
+	virtual bool	IsOpened() const = 0;
+	virtual bool    IsMapped() const = 0;
 	virtual bool	IsEOF() const = 0;
 	virtual bool	CanRead() const { FAIL; }
 	virtual bool	CanWrite() const { FAIL; }
@@ -52,7 +40,7 @@ public:
 	virtual bool	CanBeMapped() const { FAIL; }
 };
 
-typedef Ptr<CStream> PStream;
+typedef Ptr<IStream> PStream;
 
 }
 
