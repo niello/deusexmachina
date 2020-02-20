@@ -13,7 +13,8 @@
 
 namespace IO
 {
-	typedef Ptr<class IStream> PStream;
+	class IStream;
+	typedef Ptr<IStream> PStream;
 }
 
 namespace Video

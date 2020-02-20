@@ -387,7 +387,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/IO/HRDWriter.cpp
 	DEM/Low/src/IO/IOServer.cpp
 	DEM/Low/src/IO/PathUtils.cpp
-	DEM/Low/src/IO/Stream.cpp
 	DEM/Low/src/IO/TextReader.cpp
 	DEM/Low/src/IO/FS/FileSystemNative.cpp
 	DEM/Low/src/IO/FS/FileSystemNPK.cpp

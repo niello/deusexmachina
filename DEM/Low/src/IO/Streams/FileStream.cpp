@@ -20,9 +20,8 @@ CFileStream::~CFileStream()
 
 bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
-	n_assert_dbg(!IsOpened() && !hFile);
-	if (!FileName.IsValid() || FS.IsNullPtr()) FAIL;
-	if (!IStream::Open(Mode, Pattern)) FAIL;
+	n_assert_dbg(!IsOpened());
+	if (!FileName.IsValid() || !FS) FAIL;
 	hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
 	return !!hFile;
 }
@@ -30,7 +29,7 @@ bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 
 void CFileStream::Close()
 {
-	n_assert_dbg(IsOpened() && hFile);
+	n_assert_dbg(IsOpened());
 	if (IsMapped()) Unmap();
 	FS->CloseFile(hFile);
 	hFile = nullptr;

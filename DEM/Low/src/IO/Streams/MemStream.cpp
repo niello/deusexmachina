@@ -8,7 +8,6 @@ namespace IO
 bool CMemStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 {
 	n_assert(!IsOpened());
-	if (!IStream::Open(Mode, Pattern)) FAIL;
 	Pos = (Mode == SAM_APPEND) ? DataSize : 0;
 	OK;
 }

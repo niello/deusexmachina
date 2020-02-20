@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_STREAM_H__
-#define __DEM_L1_STREAM_H__
-
 #include <IO/IOFwd.h>
 #include <Data/Flags.h>
 #include <Data/RefCounted.h>
@@ -17,7 +14,7 @@ class IStream: public Data::CRefCounted
 public:
 
 	//IStream();
-	virtual ~IStream() override { n_assert(!IsOpened()); }
+	virtual ~IStream() override {}
 
 	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
 	virtual void	Close() = 0;
@@ -43,5 +40,3 @@ public:
 typedef Ptr<IStream> PStream;
 
 }
-
-#endif
