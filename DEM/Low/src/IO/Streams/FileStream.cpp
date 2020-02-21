@@ -5,11 +5,11 @@
 namespace IO
 {
 
-CFileStream::CFileStream(const char* pPath, IFileSystem* pFS/*, EStreamAccessMode Mode, EStreamAccessPattern Pattern*/)
+CFileStream::CFileStream(const char* pPath, IFileSystem* pFS, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 	: FileName(pPath)
 	, FS(pFS)
-	//, _Mode(Mode)
-	//, _Pattern(Pattern)
+	, _Mode(Mode)
+	, _Pattern(Pattern)
 {
 }
 //---------------------------------------------------------------------
@@ -20,11 +20,11 @@ CFileStream::~CFileStream()
 }
 //---------------------------------------------------------------------
 
-bool CFileStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+bool CFileStream::Open()
 {
 	n_assert_dbg(!IsOpened());
 	if (!FileName.IsValid() || !FS) FAIL;
-	hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
+	hFile = FS->OpenFile(FileName.CStr(), _Mode, _Pattern);
 	return !!hFile;
 }
 //---------------------------------------------------------------------

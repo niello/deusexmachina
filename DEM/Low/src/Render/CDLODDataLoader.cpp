@@ -18,8 +18,8 @@ PResourceObject CCDLODDataLoader::CreateResource(CStrID UID)
 	if (!pResMgr) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
-	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	if (!Stream || !Stream->Open()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

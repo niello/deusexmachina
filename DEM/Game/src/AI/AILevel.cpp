@@ -31,8 +31,8 @@ bool CAILevel::Init(const CAABB& LevelBox, U8 QuadTreeDepth)
 
 bool CAILevel::LoadNavMesh(const char* pFileName)
 {
-	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_READ)) FAIL;
+	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ);
+	if (!File->Open()) FAIL;
 
 	IO::CBinaryReader Reader(*File);
 	if (Reader.Read<int>() != '_NM_') FAIL;

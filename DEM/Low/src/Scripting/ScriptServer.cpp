@@ -254,8 +254,8 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 UPTR CScriptServer::RunScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
-	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	if (!File->Open()) FAIL;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));

@@ -1477,8 +1477,8 @@ bool CD3D9GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::IStream& OutStream)
 		FAIL;
 	}
 
-	bool WasOpen = OutStream.IsOpened();
-	if (WasOpen || OutStream.Open(IO::SAM_WRITE, IO::SAP_SEQUENTIAL))
+	const bool WasOpen = OutStream.IsOpened();
+	if (WasOpen || OutStream.Open())
 	{
 		OutStream.Write(D3DRect.pBits, D3DRect.Pitch * Desc.Height);
 		if (!WasOpen) OutStream.Close();

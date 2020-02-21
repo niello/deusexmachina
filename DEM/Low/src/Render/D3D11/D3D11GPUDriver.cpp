@@ -2780,8 +2780,8 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, CShaderLibrary* pLibr
 				FileName += ".sig";
 
 				Data::CBuffer Buffer;
-				IO::PStream File = IOSrv->CreateStream(FileName.c_str());
-				if (!File || !File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) return nullptr;
+				IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
+				if (!File || !File->Open()) return nullptr;
 				const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 				Buffer.Reserve(FileSize);
 				Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));

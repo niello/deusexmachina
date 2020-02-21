@@ -5,14 +5,6 @@
 namespace IO
 {
 
-bool CMemStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
-{
-	n_assert(!IsOpened());
-	Pos = (Mode == SAM_APPEND) ? DataSize : 0;
-	OK;
-}
-//---------------------------------------------------------------------
-
 void CMemStream::Close()
 {
 	n_assert(IsOpened());

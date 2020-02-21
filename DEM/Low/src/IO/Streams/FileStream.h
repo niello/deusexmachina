@@ -13,17 +13,17 @@ class CFileStream: public IStream
 protected:
 
 	CString              FileName;
-	//EStreamAccessMode    _Mode;
-	//EStreamAccessPattern _Pattern;
+	EStreamAccessMode    _Mode;
+	EStreamAccessPattern _Pattern;
 	PFileSystem          FS;
 	void*                hFile = nullptr;
 
 public:
 
-	CFileStream(const char* pPath, IFileSystem* pFS/*, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT*/);
+	CFileStream(const char* pPath, IFileSystem* pFS, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
 	virtual ~CFileStream() override;
 
-	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) override;
+	virtual bool	Open() override;
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override;
 	virtual UPTR	Write(const void* pData, UPTR Size) override;

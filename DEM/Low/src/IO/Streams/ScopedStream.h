@@ -21,7 +21,7 @@ public:
 
 	bool			SetScope(U64 Offset, U64 Size);
 
-	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) override;
+	virtual bool	Open() override;
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override { return HostStream->Read(pData, Size); }
 	virtual UPTR	Write(const void* pData, UPTR Size) override { return HostStream->Write(pData, Size); }

@@ -147,8 +147,8 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 UPTR CScriptObject::LoadScriptFile(const char* pFileName)
 {
 	Data::CBuffer Buffer;
-	IO::PStream File = IOSrv->CreateStream(pFileName);
-	if (!File->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL)) FAIL;
+	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
+	if (!File->Open()) FAIL;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
 	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));

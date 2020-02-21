@@ -1,19 +1,20 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <IO/BinaryWriter.h>
 #include <vector>
 #include <unordered_map>
 
 // Serialization of arbitrary data to binary format
 
-// TODO: use additional knowledge about field ranges
+// TODO: use additional knowledge about field ranges for float quantization, max str len for small char counter etc
 
 namespace DEM
 {
 
 struct BinaryFormat
 {
-	template<typename TOutput, typename TValue>
-	static inline void Serialize(TOutput& Output, const TValue& Value)
+	template<typename TValue>
+	static inline void Serialize(IO::CBinaryWriter& Output, const TValue& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
 		{
@@ -27,8 +28,8 @@ struct BinaryFormat
 	//---------------------------------------------------------------------
 
 	//???TODO: extend to all iterable?
-	template<typename TOutput, typename TValue>
-	static inline void Serialize(TOutput& Output, const std::vector<TValue>& Vector)
+	template<typename TValue>
+	static inline void Serialize(IO::CBinaryWriter& Output, const std::vector<TValue>& Vector)
 	{
 		Output << static_cast<uint32_t>(Vector.size());
 		for (const auto& Value : Vector)
@@ -37,8 +38,8 @@ struct BinaryFormat
 	//---------------------------------------------------------------------
 
 	//???TODO: extend to all pair-iterable?
-	template<typename TOutput, typename TKey, typename TValue>
-	static inline void Serialize(TOutput& Output, const std::unordered_map<TKey, TValue>& Map)
+	template<typename TKey, typename TValue>
+	static inline void Serialize(IO::CBinaryWriter& Output, const std::unordered_map<TKey, TValue>& Map)
 	{
 		Output << static_cast<uint32_t>(Map.size());
 		for (const auto& [Key, Value] : Map)
@@ -49,8 +50,8 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TOutput, typename TValue>
-	static inline bool SerializeDiff(TOutput& Output, const TValue& Value, const TValue& BaseValue)
+	template<typename TValue>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const TValue& Value, const TValue& BaseValue)
 	{
 		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
 		{
@@ -61,18 +62,21 @@ struct BinaryFormat
 				// TODO: in addition could have per-member constexpr bool "need serialization/need diff/...?"
 				if (Member.GetCode() == DEM::Meta::NO_MEMBER_CODE) return;
 
-				// Write the code to identify the member. If member is equal in both objects,
-				// code will be overwritten.
+				// Write the code to identify the member. If member is equal in both objects, this will be reverted.
 				// TODO: PROFILE! Code is written for each member, but changed % is typically much less than 100.
 				// If too slow, can write to RAM buffer and explicitly deny to flush. Then with first difference
 				// detected flush the code too. Discarding code in RAM is just a pointer subtraction, not fseek.
-		//		const auto CurrPos = Output.Tell();
+				const auto CurrPos = Output.GetStream().Tell();
 				Output << Member.GetCode();
 
 				if (SerializeDiff(Output, Member.GetConstValue(Value), Member.GetConstValue(BaseValue)))
 					HasDiff = true;
-		//		else
-		//			Output.Seek(CurrPos); // FIXME: must pop (unwrite), not just seek. Or at least truncate when finished.
+				else
+				{
+					// "Unwrite" code
+					Output.GetStream().Seek(CurrPos, IO::Seek_Begin);
+					Output.GetStream().Truncate();
+				}
 			});
 
 			// End the list of changed members (much like a trailing \0).

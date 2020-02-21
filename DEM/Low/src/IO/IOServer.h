@@ -59,7 +59,7 @@ public:
 	void*			OpenFile(PFileSystem& OutFS, const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 	void*			OpenDirectory(const char* pPath, const char* pFilter, PFileSystem& OutFS, CString& OutName, EFSEntryType& OutType) const;
 
-	PStream			CreateStream(const char* pPath) const;
+	PStream			CreateStream(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) const;
 
 	void			SetAssign(const char* pAssign, const char* pPath);
 	CString			GetAssign(const char* pAssign) const;

@@ -168,7 +168,7 @@ PResourceCreator CResourceManager::GetDefaultCreator(const char* pFmtExtension, 
 }
 //---------------------------------------------------------------------
 
-IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*& pOutSubId)
+IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*& pOutSubId, IO::EStreamAccessPattern Pattern)
 {
 	// Only generated resources are supported for resource manager not backed by an IO server
 	if (!pIO) return nullptr;
@@ -181,12 +181,12 @@ IO::PStream CResourceManager::CreateResourceStream(const char* pUID, const char*
 		if (pOutSubId == pUID) return nullptr;
 
 		CString Path(pUID, pOutSubId - pUID);
-		Stream = pIO->CreateStream(Path);
+		Stream = pIO->CreateStream(Path, IO::SAM_READ, Pattern);
 
 		++pOutSubId; // Skip '#'
 		if (*pOutSubId == 0) pOutSubId = nullptr;
 	}
-	else Stream = pIO->CreateStream(pUID);
+	else Stream = pIO->CreateStream(pUID, IO::SAM_READ, Pattern);
 
 	return (Stream && Stream->CanRead()) ? Stream : nullptr;
 }

@@ -21,7 +21,7 @@ bool CFileSystemNPK::Init()
 	// Already initialized
 	if (TOC.GetRootEntry()) OK;
 
-	if (!NPKStream || !NPKStream->Open(SAM_READ, SAP_RANDOM)) FAIL;
+	if (!NPKStream || !NPKStream->Open()) FAIL;
 
 	int Value;
 	NPKStream->Read(&Value, sizeof(int));

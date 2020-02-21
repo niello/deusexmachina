@@ -2,6 +2,7 @@
 #include <Data/Ptr.h>
 #include <Data/StringID.h>
 #include <Data/HashTable.h>
+#include <IO/IOFwd.h>
 #include <vector>
 
 // Resource manager controls resource loading, lifetime, uniquity, and serves as
@@ -58,7 +59,7 @@ public:
 	void				UnregisterResource(const char* pUID);
 	void				UnregisterResource(CStrID UID);
 
-	IO::PStream			CreateResourceStream(const char* pUID, const char*& pOutSubId);
+	IO::PStream			CreateResourceStream(const char* pUID, const char*& pOutSubId, IO::EStreamAccessPattern Pattern = IO::SAP_DEFAULT);
 };
 
 }

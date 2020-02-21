@@ -32,9 +32,9 @@ public:
 	CMemStream(): pBuffer(nullptr), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
 	virtual ~CMemStream() override { if (IsOpened()) Close(); }
 
-	bool			Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT);
-	bool			Open(const void* pData, UPTR Size, EStreamAccessPattern Pattern = SAP_DEFAULT);
-	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) override;
+	bool			Open(void* pData, UPTR Size);
+	bool			Open(const void* pData, UPTR Size);
+	virtual bool	Open() override {}
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override;
 	virtual UPTR	Write(const void* pData, UPTR Size) override;
@@ -57,19 +57,19 @@ public:
 
 typedef Ptr<CMemStream> PMemStream;
 
-inline bool CMemStream::Open(void* pData, UPTR Size, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+inline bool CMemStream::Open(void* pData, UPTR Size)
 {
 	pBuffer = (char*)pData;
 	DataSize = Size;
-	return Open(Mode, Pattern);
+	return Open();
 }
 //---------------------------------------------------------------------
 
-inline bool CMemStream::Open(const void* pData, UPTR Size, EStreamAccessPattern Pattern)
+inline bool CMemStream::Open(const void* pData, UPTR Size)
 {
 	pConstBuffer = (const char*)pData;
 	DataSize = Size;
-	return Open(SAM_READ, Pattern);
+	return Open();
 }
 //---------------------------------------------------------------------
 

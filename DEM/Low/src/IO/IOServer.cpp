@@ -167,10 +167,10 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	if (FileExists(DestPath) && !SetFileReadOnly(DestPath, false)) FAIL;
 
-	IO::PStream Src = CreateStream(SrcPath);
-	IO::PStream Dest = CreateStream(DestPath);
-	if (!Src || !Src->Open(SAM_READ, SAP_SEQUENTIAL)) FAIL;
-	if (!Dest || !Dest->Open(SAM_WRITE, SAP_SEQUENTIAL)) FAIL;
+	IO::PStream Src = CreateStream(SrcPath, SAM_READ, SAP_SEQUENTIAL);
+	IO::PStream Dest = CreateStream(DestPath, SAM_WRITE, SAP_SEQUENTIAL);
+	if (!Src || !Src->Open()) FAIL;
+	if (!Dest || !Dest->Open()) FAIL;
 
 	bool Result = true;
 	U64 Size = Src->GetSize();
@@ -339,7 +339,7 @@ void* CIOServer::OpenDirectory(const char* pPath, const char* pFilter, PFileSyst
 }
 //---------------------------------------------------------------------
 
-PStream CIOServer::CreateStream(const char* pPath) const
+PStream CIOServer::CreateStream(const char* pPath, EStreamAccessMode Mode, EStreamAccessPattern Pattern) const
 {
 	const CString Path = ResolveAssigns(pPath);
 	if (Path.IsEmpty()) return nullptr;
@@ -374,7 +374,7 @@ PStream CIOServer::CreateStream(const char* pPath) const
 		}
 	}
 
-	return pFS ? n_new(CFileStream(pLocalPath, pFS)) : nullptr;
+	return pFS ? n_new(CFileStream(pLocalPath, pFS, Mode, Pattern)) : nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -29,9 +29,9 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 	const std::string& Filename = FinalFilename.getString();
 #endif
 
-	IO::PStream File = IOSrv->CreateStream(Filename.c_str());
+	IO::PStream File = IOSrv->CreateStream(Filename.c_str(), IO::SAM_READ);
 
-	if (File && File->Open(IO::SAM_READ))
+	if (File && File->Open())
 	{
 		const UPTR Size = (UPTR)File->GetSize();
 		unsigned char* const pBuffer = n_new_array(unsigned char, Size);

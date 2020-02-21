@@ -21,12 +21,12 @@ bool CScopedStream::SetScope(U64 Offset, U64 Size)
 }
 //---------------------------------------------------------------------
 
-bool CScopedStream::Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern)
+bool CScopedStream::Open()
 {
 	if (!HostStream) FAIL;
 	if (!IsOpened())
 	{
-		if (!HostStream->IsOpened() && !HostStream->Open(Mode, Pattern)) FAIL;
+		if (!HostStream->IsOpened() && !HostStream->Open()) FAIL;
 
 		U64 RealSize = HostStream->GetSize();
 		if (ScopeOffset + ScopeSize > RealSize) ScopeSize = RealSize - ScopeOffset;

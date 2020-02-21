@@ -153,9 +153,9 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 		const U32 ElementID = StringUtils::ToInt(pSubId);
 		Stream = ShaderLibrary->GetElementStream(ElementID);
 	}
-	else Stream = pResMgr->CreateResourceStream(UID, pSubId);
+	else Stream = pResMgr->CreateResourceStream(UID, pSubId, IO::SAP_SEQUENTIAL);
 
-	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
 
 	Render::PShader Shader = GPU->CreateShader(*Stream, ShaderLibrary.Get(), NeedParamTable);
 
@@ -409,8 +409,8 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
-	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 
@@ -597,8 +597,8 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
-	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 
@@ -681,8 +681,8 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 	if (!pResMgr || !GPU) return nullptr;
 
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId);
-	if (!Stream || !Stream->Open(IO::SAM_READ, IO::SAP_SEQUENTIAL) || !Stream->CanRead()) return nullptr;
+	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

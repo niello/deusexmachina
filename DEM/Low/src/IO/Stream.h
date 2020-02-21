@@ -13,7 +13,7 @@ public:
 
 	virtual ~IStream() override = default;
 
-	virtual bool	Open(EStreamAccessMode Mode, EStreamAccessPattern Pattern = SAP_DEFAULT) = 0;
+	virtual bool	Open() = 0;
 	virtual void	Close() = 0;
 	virtual UPTR	Read(void* pData, UPTR Size) = 0;
 	virtual UPTR	Write(const void* pData, UPTR Size) = 0;
