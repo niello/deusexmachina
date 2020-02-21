@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_BINARY_WRITER_H__
-#define __DEM_L1_BINARY_WRITER_H__
-
-#include <IO/StreamWriter.h>
+#include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/String.h>
 #include <Data/Dictionary.h>
@@ -21,16 +18,18 @@ namespace Data
 namespace IO
 {
 
-class CBinaryWriter: public CStreamWriter
+class CBinaryWriter final
 {
 protected:
+
+	IStream& Stream;
 
 	bool WriteParamsByScheme(const Data::CParams& Value, const Data::CDataScheme& Scheme, const CDict<CStrID, Data::PDataScheme>& Schemes, UPTR& Written);
 	bool WriteDataAsOfType(const Data::CData& Value, int TypeID, Data::CFlags Flags);
 
 public:
 
-	CBinaryWriter(IStream& DestStream): CStreamWriter(DestStream) { }
+	CBinaryWriter(IStream& DestStream): Stream(DestStream) { }
 
 	bool				WriteString(const char* Value);
 	bool				WriteString(const CString& Value);
@@ -56,6 +55,8 @@ public:
 
 	template<class T>
 	CBinaryWriter& operator <<(const T& Value) { Write(Value); return *this; }
+
+	IStream& GetStream() const { return Stream; }
 };
 
 inline bool CBinaryWriter::WriteString(const char* Value)
@@ -82,5 +83,3 @@ inline bool CBinaryWriter::WriteParams(const Data::CParams& Value)
 //---------------------------------------------------------------------
 
 }
-
-#endif

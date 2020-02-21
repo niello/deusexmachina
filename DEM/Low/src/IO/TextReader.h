@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_TEXT_READER_H__
-#define __DEM_L1_TEXT_READER_H__
-
-#include <IO/StreamReader.h>
+#include <IO/Stream.h>
 #include <Data/String.h>
 #include <Data/Array.h>
 
@@ -13,18 +10,22 @@ class CString;
 namespace IO
 {
 
-class CTextReader: public CStreamReader
+class CTextReader final
 {
+protected:
+
+	IStream& Stream;
+
 public:
 
-	CTextReader(IStream& SrcStream): CStreamReader(SrcStream) { }
+	CTextReader(IStream& SrcStream) : Stream(SrcStream) {}
 
 	bool ReadLine(char* pOutValue, UPTR MaxLen = (UPTR)(-1));
 	bool ReadLine(CString& OutValue);
 	bool ReadLines(CArray<CString>& OutValues, UPTR Count = (UPTR)(-1));
 	bool ReadAll(CString& OutValue);
+
+	IStream& GetStream() const { return Stream; }
 };
 
 }
-
-#endif

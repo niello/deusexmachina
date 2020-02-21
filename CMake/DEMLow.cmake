@@ -123,8 +123,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/IO/IOServer.h
 	DEM/Low/src/IO/PathUtils.h
 	DEM/Low/src/IO/Stream.h
-	DEM/Low/src/IO/StreamReader.h
-	DEM/Low/src/IO/StreamWriter.h
 	DEM/Low/src/IO/TextReader.h
 	DEM/Low/src/IO/FS/FileSystemNative.h
 	DEM/Low/src/IO/FS/FileSystemNPK.h

@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_BINARY_READER_H__
-#define __DEM_L1_BINARY_READER_H__
-
-#include <IO/StreamReader.h>
+#include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/String.h>
 
@@ -18,11 +15,15 @@ namespace Data
 namespace IO
 {
 
-class CBinaryReader: public CStreamReader
+class CBinaryReader final
 {
+protected:
+
+	IStream& Stream;
+
 public:
 
-	CBinaryReader(IStream& SrcStream): CStreamReader(SrcStream) { }
+	CBinaryReader(IStream& SrcStream) : Stream(SrcStream) {}
 
 	bool				ReadString(char* OutValue, UPTR MaxLen);
 	bool				ReadString(char*& OutValue); // Allocates memory
@@ -48,6 +49,8 @@ public:
 
 	template<class T>
 	CBinaryReader& operator >>(T& OutValue) { Read(OutValue); return *this; }
+
+	IStream& GetStream() const { return Stream; }
 };
 
 template<> inline bool CBinaryReader::Read<CStrID>(CStrID& OutValue)
@@ -60,5 +63,3 @@ template<> inline bool CBinaryReader::Read<CStrID>(CStrID& OutValue)
 //---------------------------------------------------------------------
 
 }
-
-#endif

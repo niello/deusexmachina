@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L1_HRD_WRITER_H__
-#define __DEM_L1_HRD_WRITER_H__
-
-#include <IO/StreamWriter.h>
+#include <IO/Stream.h>
 #include <Data/Ptr.h>
 
 // Serializer for HRD files
@@ -20,9 +17,11 @@ namespace Data
 namespace IO
 {
 
-class CHRDWriter: public CStreamWriter
+class CHRDWriter final
 {
 protected:
+
+	IStream& Stream;
 
 	int CurrTabLevel;
 	//!!!CFlags Flags; like OneLineArray, Separator(TabChar) etc!
@@ -31,13 +30,19 @@ protected:
 
 public:
 
-	CHRDWriter(IStream& DestStream): CStreamWriter(DestStream) { }
+	CHRDWriter(IStream& DestStream) : Stream(DestStream) {}
 
 	bool WriteParams(const Data::CParams& Value);
 	bool WriteParam(const Data::CParam& Value);
 	bool WriteData(const Data::CData& Value);
+
+	inline bool WriteCharString(const char* pString)
+	{
+		const UPTR Len = pString ? strlen(pString) : 0;
+		return Stream.Write(pString, Len) == Len;
+	}
+
+	IStream& GetStream() const { return Stream; }
 };
 
 }
-
-#endif
