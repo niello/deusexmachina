@@ -137,7 +137,7 @@ protected:
 		CTmpCB*					pNext;
 	};
 
-	CPoolAllocator<CTmpCB>				TmpCBPool;
+	CPool<CTmpCB>				        TmpCBPool;
 	CDict<UPTR, CTmpCB*>				TmpConstantBuffers;	// Key is a size (pow2), value is a linked list
 	CDict<UPTR, CTmpCB*>				TmpTextureBuffers;	// Key is a size (pow2), value is a linked list
 	CDict<UPTR, CTmpCB*>				TmpStructuredBuffers;	// Key is a size (pow2), value is a linked list

@@ -88,7 +88,7 @@ public:
 	Render::CShaderParamStorage					Globals;
 	Render::PSampler							TrilinearCubeSampler; // For IBL
 
-	CPoolAllocator<Render::CRenderNode>			RenderNodePool;
+	CPool<Render::CRenderNode>			RenderNodePool;
 	Render::CRenderQueue        				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 

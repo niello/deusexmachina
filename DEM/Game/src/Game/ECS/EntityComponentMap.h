@@ -29,7 +29,7 @@ private:
 
 	// FIXME: thread safety! can use lock-free pool.
 	// FIXME: review my old pool allocator, maybe less effective than modern ones.
-	static inline CPoolAllocator<CRecord, 1024> _Pool;
+	static inline CPool<CRecord, 1024> _Pool;
 
 	std::vector<CRecord*> _Records;
 	size_t                _Size = 0;
@@ -139,7 +139,7 @@ public:
 
 		// Add new record to the bucket
 		auto& Bucket = _Records[BucketIndex];
-		auto pNewRecord = _Pool.Construct({ nullptr, Bucket, EntityID, ComponentHandle });
+		auto pNewRecord = _Pool.Construct(CRecord{ nullptr, Bucket, EntityID, ComponentHandle });
 		if (Bucket) Bucket->pPrev = pNewRecord;
 		Bucket = pNewRecord;
 		++_Size;

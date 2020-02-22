@@ -30,7 +30,7 @@ protected:
 		CEventNode(): Next(nullptr) {}
 	};
 
-	CPoolAllocator<CEventNode>	EventNodes;
+	CPool<CEventNode>	EventNodes;
 	CEventNode*					PendingEventsHead = nullptr;
 	CEventNode*					PendingEventsTail = nullptr; // To preserve events' fire order, insert to the end of the list
 	CEventNode*					EventsToAdd = nullptr;

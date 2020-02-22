@@ -81,7 +81,7 @@ class CSPS
 {
 protected:
 
-	CPoolAllocator<CSPSRecord, 512> RecordPool;
+	CPool<CSPSRecord, 512> RecordPool;
 
 	void		QueryObjectsInsideFrustum(CSPSNode* pNode, const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects, EClipStatus Clip) const;
 

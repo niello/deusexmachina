@@ -97,7 +97,7 @@ protected:
 		CTmpCB*				pNext;
 	};
 
-	CPoolAllocator<CTmpCB>				TmpCBPool;
+	CPool<CTmpCB>				        TmpCBPool;
 	CHashTable<const CSM30ConstantBufferParam*, CTmpCB*>	TmpConstantBuffers;
 	CTmpCB*								pPendingCBHead = nullptr;
 

@@ -38,10 +38,10 @@ private:
 		CNode*		pParent = nullptr;
 	};
 
-	CPoolAllocator<CNode, 32>	NodePool;
-	CArray<PActionTpl>			ActionTpls;
-	CArray<CActionTpl*>			EffectToActions[WSP_Count];
-	UPTR						NewActIdx;
+	CPool<CNode, 32>    NodePool;
+	CArray<PActionTpl>  ActionTpls;
+	CArray<CActionTpl*> EffectToActions[WSP_Count];
+	UPTR                NewActIdx;
 
 	static int CmpPlannerNodes(const void* First, const void* Second);
 
