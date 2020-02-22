@@ -11,7 +11,7 @@ namespace DEM::Game
 {
 
 template<class T>
-class CEntityComponentMap
+class CEntityComponentMap final
 {
 private:
 
@@ -93,6 +93,19 @@ public:
 	CEntityComponentMap(size_t BucketCount = 0)
 	{
 		Rehash(BucketCount);
+	}
+
+	~CEntityComponentMap()
+	{
+		for (CRecord* pRecord : _Records)
+		{
+			while (pRecord)
+			{
+				auto pDestroyMe = pRecord;
+				pRecord = pRecord->pNext;
+				_Pool.Destroy(pDestroyMe);
+			}
+		}
 	}
 
 	void emplace(HEntity EntityID, T ComponentHandle)
