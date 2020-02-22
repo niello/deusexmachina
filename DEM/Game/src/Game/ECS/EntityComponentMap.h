@@ -74,16 +74,16 @@ public:
 	{
 	private:
 
-		void* _pRecord = nullptr;
+		CRecord* _pRecord = nullptr;
 
 		friend class CEntityComponentMap;
 
 	public:
 
 		iterator() = default;
-		iterator(void* pRecord) : _pRecord(pRecord) {}
+		iterator(CRecord* pRecord) : _pRecord(pRecord) {}
 
-		T    operator *() const { return _pRecord ? static_cast<CRecord*>(_pRecord)->Handle : T(); }
+		T    operator *() const { return _pRecord ? _pRecord->Handle : T(); }
 		bool operator ==(const iterator Other) const { return _pRecord == Other._pRecord; }
 		bool operator !=(const iterator Other) const { return _pRecord != Other._pRecord; }
 	};

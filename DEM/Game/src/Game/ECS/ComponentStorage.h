@@ -25,8 +25,13 @@ class CGameLevel;
 
 class IComponentStorage
 {
+protected:
+
+	const CGameWorld& _World;
+
 public:
 
+	IComponentStorage(const CGameWorld& World) : _World(World) {}
 	virtual ~IComponentStorage() = default;
 
 	virtual bool   RemoveComponent(HEntity EntityID) = 0;
@@ -34,9 +39,9 @@ public:
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out, const IComponentStorage* pBaseStorage) const = 0;
-	virtual bool   LoadAllComponentsFromBinary(IO::CBinaryReader& In) = 0;
-	virtual bool   SaveAllComponentsToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level) const = 0;
-	virtual bool   SaveAllComponentsDiffToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const = 0;
+	virtual bool   LoadFromBinary(IO::CBinaryReader& In) = 0;
+	virtual bool   SaveToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level) const = 0;
+	virtual bool   SaveDiffToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const = 0;
 };
 
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
@@ -54,8 +59,9 @@ protected:
 
 public:
 
-	CHandleArrayComponentStorage(UPTR InitialCapacity)
-		: _Data(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
+	CHandleArrayComponentStorage(const CGameWorld& World, UPTR InitialCapacity)
+		: IComponentStorage(World)
+		, _Data(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
 		, _IndexByEntity(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
 	{
 		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
@@ -104,10 +110,7 @@ public:
 		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
 	}
 
-	// TODO: remove by CHandle
-	// TODO: find by CHandle
-
-	virtual bool   RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
+	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
@@ -147,7 +150,7 @@ public:
 			if (pBaseComponent)
 				return DEM::ParamsFormat::SerializeDiff(Out, *pComponent, *pBaseComponent);
 			else
-				return SaveComponentToParams(EntityID, Out);
+				return SaveComponentToParams(EntityID, Out); //???or diff against T{}? PROFILE!
 		}
 		else if (pBaseComponent)
 		{
@@ -158,7 +161,7 @@ public:
 		return false;
 	}
 
-	virtual bool LoadAllComponentsFromBinary(IO::CBinaryReader& In) override
+	virtual bool LoadFromBinary(IO::CBinaryReader& In) override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
@@ -174,14 +177,14 @@ public:
 		return false;
 	}
 
-	virtual bool SaveAllComponentsToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level) const override
+	virtual bool SaveToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		Out.Write(static_cast<uint32_t>(_Data.size()));
 		for (const auto& Component : _Data)
 		{
-			auto pEntity = World.GetEntityUnsafe(Component.EntityID);
+			auto pEntity = _World.GetEntityUnsafe(Component.EntityID);
 			if (pEntity && pEntity->Level == &Level)
 			{
 				Out.Write(Component.EntityID.Raw);
@@ -192,7 +195,7 @@ public:
 		return true;
 	}
 
-	virtual bool SaveAllComponentsDiffToBinary(IO::CBinaryWriter& Out, const CGameWorld& World, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const override
+	virtual bool SaveDiffToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
@@ -203,6 +206,16 @@ public:
 		// Save entity IDs where this component is deleted
 		for (const auto& BaseComponent : pBaseStorage->_Data)
 		{
+			// Process only components that were in this level
+			const auto pBaseEntity = BaseWorld.GetEntityUnsafe(BaseComponent.EntityID);
+			if (pBaseEntity->Level != &BaseLevel) continue;
+
+			// If entity was deleted or moved to another level, 
+			const auto pEntity = _World.GetEntity(BaseComponent.EntityID);
+			if (!pEntity || pEntity->Level != &Level) continue;
+
+			//
+
 			//!!!compare only components by entity ID, not entities themselves!?
 			//no matter if entity moved from level to level?
 			//we save level diff, so possibly we must process only entities that didn't change their level?

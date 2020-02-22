@@ -257,7 +257,7 @@ void CGameWorld::SaveEntities(CStrID LevelID, IO::CBinaryWriter& Out) const
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
-		Storage->SaveAllComponentsToBinary(Out, *this, *pLevel);
+		Storage->SaveToBinary(Out, *pLevel);
 	}
 
 	// TODO: for modified templated entities save diff between tpl components and actual components (optional)
@@ -278,6 +278,10 @@ void CGameWorld::LoadEntities(CStrID LevelID, IO::CBinaryReader& In)
 	for (uint32_t i = 0; i < EntityCount; ++i)
 	{
 		const auto EntityIDRaw = In.Read<CEntityStorage::THandleValue>();
+
+		// Entity may exist if another level base+diff were already loaded.
+		if (auto pEntity = GetEntity({ EntityIDRaw })) continue;
+
 		CEntity NewEntity;
 		NewEntity.Level = pLevel;
 		In.Read(NewEntity.Name);
@@ -293,7 +297,7 @@ void CGameWorld::LoadEntities(CStrID LevelID, IO::CBinaryReader& In)
 	{
 		const auto TypeID = In.Read<CStrID>();
 		if (auto pStorage = FindComponentStorage(TypeID))
-			pStorage->LoadAllComponentsFromBinary(In);
+			pStorage->LoadFromBinary(In);
 	}
 
 	for (auto& Entity : _Entities)
@@ -368,7 +372,7 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const 
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
-		Storage->SaveAllComponentsDiffToBinary(Out, *this, *pLevel, Base, *pBaseLevel, ComponentID);
+		Storage->SaveDiffToBinary(Out, *pLevel, Base, *pBaseLevel, ComponentID);
 	}
 }
 //---------------------------------------------------------------------

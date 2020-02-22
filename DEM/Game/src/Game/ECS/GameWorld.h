@@ -123,7 +123,7 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 	// Static type is enough for distinguishing between different components, no dynamic RTTI needed
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Storages.size() <= TypeIndex) _Storages.resize(TypeIndex + 1);
-	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(InitialCapacity);
+	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(*this, InitialCapacity);
 	_StorageMap[Name] = _Storages[TypeIndex].get();
 }
 //---------------------------------------------------------------------
