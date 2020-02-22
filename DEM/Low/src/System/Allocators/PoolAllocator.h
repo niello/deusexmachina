@@ -6,7 +6,7 @@
 // CPool is a wrapper for a single type pool.
 
 template <UPTR ObjectByteSize, UPTR ObjectsPerChunk = 128>
-class CPoolAllocator
+class CPoolAllocator final
 {
 	static_assert(ObjectByteSize > 0 && ObjectsPerChunk > 0);
 
@@ -75,6 +75,7 @@ public:
 		if (!pAllocatedRec) return;
 
 #ifdef _DEBUG
+		// TODO: add optional debug validation of incoming pointer
 		--CurrAllocatedCount;
 #endif
 
@@ -116,13 +117,14 @@ public:
 };
 
 template<typename T, UPTR ObjectsPerChunk = 128>
-class CPool : public CPoolAllocator<sizeof(T), ObjectsPerChunk>
+class CPool final
 {
+private:
+
+	CPoolAllocator<sizeof(T), ObjectsPerChunk> _Allocator;
+
 public:
 
-	using CPoolAllocator::Construct;
-	using CPoolAllocator::Destroy;
-
-	template<typename... TArgs> T* Construct(TArgs&&... Args) { return Construct<T, TArgs...>(std::forward<TArgs>(Args)...); }
-	void Destroy(T* pPtr)  { Destroy<T>(pPtr); }
+	template<typename... TArgs> T* Construct(TArgs&&... Args) { return _Allocator.Construct<T, TArgs...>(std::forward<TArgs>(Args)...); }
+	void Destroy(T* pPtr)  { _Allocator.Destroy<T>(pPtr); }
 };
