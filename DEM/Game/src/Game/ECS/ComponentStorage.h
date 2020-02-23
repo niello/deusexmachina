@@ -50,7 +50,8 @@ class CHandleArrayComponentStorage : public IComponentStorage
 {
 public:
 
-	using CInnerStorage = Data::CHandleArray<T, H, IndexBits, ResetOnOverflow>;
+	using CPair = std::pair<T, HEntity>;
+	using CInnerStorage = Data::CHandleArray<CPair, H, IndexBits, ResetOnOverflow>;
 	using CHandle = typename CInnerStorage::CHandle;
 
 protected:
@@ -84,15 +85,16 @@ public:
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend()) return _Data.GetValueUnsafe(It->ComponentHandle);
+		if (It != _IndexByEntity.cend() && It->ComponentHandle)
+			return &_Data.GetValueUnsafe(It->ComponentHandle)->first;
 
 		auto Handle = _Data.Allocate();
-		T* pComponent = _Data.GetValueUnsafe(Handle);
-		if (!pComponent) return nullptr;
+		CPair* pPair = _Data.GetValueUnsafe(Handle);
+		if (!pPair) return nullptr;
 
-		pComponent->EntityID = EntityID;
+		pPair->second = EntityID;
 		_IndexByEntity.emplace(EntityID, { Handle, NO_BASE_DATA, nullptr });
-		return pComponent;
+		return &pPair->first;
 	}
 
 	// TODO: describe as a static interface part
@@ -109,17 +111,21 @@ public:
 	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
-		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(It->ComponentHandle);
+		if (It == _IndexByEntity.cend() || !It->ComponentHandle) return nullptr;
+
+		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
+		return &_Data.GetValueUnsafe(It->ComponentHandle)->first;
 	}
 
 	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
-		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(It->ComponentHandle);
+		if (It == _IndexByEntity.cend() || !It->ComponentHandle) return nullptr;
+
+		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
+		return &_Data.GetValueUnsafe(It->ComponentHandle)->first;
 	}
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
@@ -207,10 +213,10 @@ public:
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		Out.Write(static_cast<uint32_t>(_Data.size()));
-		for (const auto& Component : _Data)
+		for (const auto& [Component, EntityID] : _Data)
 		{
 			// save actual component (if not loaded, restore right now for writing)
-			Out.Write(Component.EntityID.Raw);
+			Out.Write(EntityID.Raw);
 			DEM::BinaryFormat::Serialize(Out, Component);
 		}
 
@@ -247,5 +253,14 @@ public:
 	auto end() const { return _Data.end(); }
 	auto cend() const { return _Data.cend(); }
 };
+
+template<class T>
+struct TComponentTraits
+{
+	using TStorage = CHandleArrayComponentStorage<T>;
+	using THandle = typename TStorage::CInnerStorage::CHandle;
+};
+
+template<typename T> using TComponentStoragePtr = typename TComponentTraits<just_type_t<T>>::TStorage*;
 
 }

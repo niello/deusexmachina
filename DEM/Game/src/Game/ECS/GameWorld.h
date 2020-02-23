@@ -1,5 +1,5 @@
 #pragma once
-#include <Game/ECS/Component.h>
+#include <Game/ECS/ComponentStorage.h>
 #include <Math/AABB.h>
 #include <typeindex>
 
@@ -117,8 +117,6 @@ public:
 template<class T>
 void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 {
-	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
-		"CGameWorld::RegisterComponent() > T must be derived from CComponent");
 	static_assert(std::is_base_of_v<IComponentStorage, TComponentTraits<T>::TStorage>,
 		"CGameWorld::RegisterComponent() > Storage must implement IComponentStorage");
 
@@ -133,9 +131,6 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 template<class T>
 T* CGameWorld::AddComponent(HEntity EntityID)
 {
-	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
-		"CGameWorld::AddComponent() > T must be derived from CComponent");
-
 	// Invalid entity ID is forbidden
 	if (!EntityID) return nullptr;
 
@@ -153,9 +148,6 @@ T* CGameWorld::AddComponent(HEntity EntityID)
 template<class T>
 bool CGameWorld::RemoveComponent(HEntity EntityID)
 {
-	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
-		"CGameWorld::RemoveComponent() > T must be derived from CComponent");
-
 	// Invalid entity ID is forbidden
 	if (!EntityID) FAIL;
 
@@ -173,9 +165,6 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 template<class T>
 T* CGameWorld::FindComponent(HEntity EntityID)
 {
-	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
-		"CGameWorld::FindComponent() > T must be derived from CComponent");
-
 	// Invalid entity ID is forbidden
 	if (!EntityID) return nullptr;
 
@@ -191,9 +180,6 @@ T* CGameWorld::FindComponent(HEntity EntityID)
 template<class T>
 typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 {
-	static_assert(std::is_base_of_v<CComponent, T> && !std::is_same_v<CComponent, T>,
-		"CGameWorld::FindComponentStorage() > T must be derived from CComponent");
-
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Storages.size() <= TypeIndex) return nullptr;
 
@@ -263,19 +249,19 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 		if constexpr(sizeof...(Components) > 0)
 			if (!GetNextStorages<Components...>(NextStorages)) return;
 
-		for (auto&& Component : *pStorage)
+		for (auto&& [Component, EntityID] : *pStorage)
 		{
-			auto pEntity = GetEntityUnsafe(Component.EntityID);
+			auto pEntity = GetEntityUnsafe(EntityID);
 			if (!pEntity || !pEntity->IsActive) continue;
 
 			std::tuple<ensure_pointer_t<Components>...> NextComponents;
 			if constexpr(sizeof...(Components) > 0)
-				if (!GetNextComponents<Components...>(Component.EntityID, NextComponents, NextStorages)) continue;
+				if (!GetNextComponents<Components...>(EntityID, NextComponents, NextStorages)) continue;
 
 			if constexpr (std::is_const_v<TComponent>)
-				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, std::cref(Component)), NextComponents));
+				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::cref(Component)), NextComponents));
 			else
-				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(*pEntity, std::ref(Component)), NextComponents));
+				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::ref(Component)), NextComponents));
 		}
 	}
 }

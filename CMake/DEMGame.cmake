@@ -50,7 +50,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/GameLevelView.h
 	DEM/Game/src/Game/GameServer.h
 	DEM/Game/src/Game/Property.h
-	DEM/Game/src/Game/ECS/Component.h
 	DEM/Game/src/Game/ECS/ComponentStorage.h
 	DEM/Game/src/Game/ECS/Entity.h
 	DEM/Game/src/Game/ECS/EntityMap.h
@@ -127,7 +126,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/GameLevelView.cpp
 	DEM/Game/src/Game/GameServer.cpp
 	DEM/Game/src/Game/Property.cpp
-	DEM/Game/src/Game/ECS/Component.cpp
 	DEM/Game/src/Game/ECS/ComponentStorage.cpp
 	DEM/Game/src/Game/ECS/Entity.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
