@@ -55,6 +55,11 @@ public:
 
 	CGameWorld(Resources::CResourceManager& ResMgr);
 
+	void LoadBase(const Data::CParams& In);
+	void LoadBase(IO::CBinaryReader& In);
+	void LoadDiff(const Data::CParams& In);
+	void LoadDiff(IO::CBinaryReader& In);
+
 	void SaveEntities(CStrID LevelID, Data::CParams& Out) const;
 	void LoadEntities(CStrID LevelID, const Data::CParams& In);
 	void SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGameWorld& Base) const;

@@ -127,4 +127,5 @@ public:
 
 	template<typename... TArgs> T* Construct(TArgs&&... Args) { return _Allocator.Construct<T, TArgs...>(std::forward<TArgs>(Args)...); }
 	void Destroy(T* pPtr)  { _Allocator.Destroy<T>(pPtr); }
+	void Clear() { _Allocator.Clear(); }
 };

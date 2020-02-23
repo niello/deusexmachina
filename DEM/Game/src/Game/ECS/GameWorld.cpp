@@ -17,6 +17,35 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+void CGameWorld::LoadBase(const Data::CParams& In)
+{
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::LoadBase(IO::CBinaryReader& In)
+{
+	// read base list of entities C0
+	// leave actual list empty for now (or just copy?)
+
+	// per component storage
+	//   register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::LoadDiff(const Data::CParams& In)
+{
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::LoadDiff(IO::CBinaryReader& In)
+{
+	// from base list of C0 and diff build actual entity C0 list
+
+	// per component storage
+	//   if diff data for this object is present, copy it into RAM (or restore component?)
+}
+//---------------------------------------------------------------------
+
 void CGameWorld::SaveEntities(CStrID LevelID, Data::CParams& Out) const
 {
 	auto pLevel = FindLevel(LevelID);

@@ -136,6 +136,51 @@ struct BinaryFormat
 		}
 	}
 	//---------------------------------------------------------------------
+
+	template<typename>
+	struct is_std_vector : std::false_type {};
+
+	template<typename T, typename V>
+	struct is_std_vector<std::vector<T, V>> : std::true_type {};
+
+	template<typename>
+	struct is_std_map : std::false_type {};
+
+	template<typename T, typename K, typename V>
+	struct is_std_map<std::unordered_map<T, K, V>> : std::true_type {};
+
+	template<typename TValue>
+	static inline constexpr size_t GetMaxDiffSize()
+	{
+		if constexpr (is_std_vector<TValue>::value)
+		{
+			return std::numeric_limits<size_t>().max();
+		}
+		else if constexpr (is_std_map<TValue>::value)
+		{
+			return std::numeric_limits<size_t>().max();
+		}
+		else if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		{
+			size_t Size = 0;
+			DEM::Meta::CMetadata<TValue>::ForEachMember([&Size](const auto& Member)
+			{
+				if (Member.GetCode() == DEM::Meta::NO_MEMBER_CODE) return;
+
+				if (Size < std::numeric_limits<size_t>().max())
+				{
+					constexpr auto MemberSize = GetMaxDiffSize<DEM::Meta::TMemberValue<decltype(Member)>>();
+					if constexpr (MemberSize == std::numeric_limits<size_t>().max())
+						Size = MemberSize;
+					else
+						Size += sizeof(Member.GetCode()) + MemberSize;
+				}
+			});
+			return Size;
+		}
+		else return sizeof(TValue);
+	}
+	//---------------------------------------------------------------------
 };
 
 }
