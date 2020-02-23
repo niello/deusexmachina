@@ -33,5 +33,8 @@ def update_src_lists(var_name, out_file_path, source_folder=None, append=False,
         out_text += 'set({}_SOURCES{}\n)\n\n'.format(
             var_name, source_list.replace("\\", "/"))
 
+    if os.path.isfile(out_file_path) and open(out_file_path).read() == out_text:
+        return
+
     with open(out_file_path, "a" if append else "w") as file:
         file.write(out_text)
