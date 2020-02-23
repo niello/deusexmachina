@@ -41,7 +41,7 @@ bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, co
 
 	Data::PParams GameDesc = ((const Events::CEvent&)Event).Params;
 	Data::PParams SGFactions;
-	if (!GameDesc->Get(SGFactions, CStrID("Factions")) || !SGFactions->GetCount()) OK;
+	if (!GameDesc->TryGet(SGFactions, CStrID("Factions")) || !SGFactions->GetCount()) OK;
 
 	Factions.BeginAdd();
 	for (UPTR i = 0; i < SGFactions->GetCount(); ++i)
@@ -58,7 +58,7 @@ bool CFactionManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, co
 		//!!!without OnFactionMemberAdopted etc events!
 
 		Data::PParams Members;
-		if (FactionDesc->Get(Members, CStrID("Members")))
+		if (FactionDesc->TryGet(Members, CStrID("Members")))
 			for (UPTR j = 0; j < Members->GetCount(); ++j)
 			{
 				Data::CParam& MemberRec = Members->Get(j);

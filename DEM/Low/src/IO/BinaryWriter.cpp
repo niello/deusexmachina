@@ -57,7 +57,7 @@ bool CBinaryWriter::WriteParamsByScheme(const Data::CParams& Value,
 		const Data::CDataScheme::CRecord& Rec = Scheme.Records[i];
 
 		const Data::CData* PrmValue;
-		if (!Value.Get(PrmValue, Rec.ID))
+		if (!Value.TryGet(PrmValue, Rec.ID))
 		{
 			if (Rec.Default.IsValid()) PrmValue = &Rec.Default;
 			else continue;

@@ -40,7 +40,7 @@ void CSmartAction::Init(CStrID ActionID, const Data::CParams& Desc)
 
 	static const CString StrWSSrcPfx("AI::CWorldStateSource");
 	Data::PParams SubDesc;
-	if (Desc.Get<Data::PParams>(SubDesc, CStrID("Preconditions")))
+	if (Desc.TryGet<Data::PParams>(SubDesc, CStrID("Preconditions")))
 	{
 		Preconditions = Core::CFactory::Instance().Create<CWorldStateSource>(StrWSSrcPfx + SubDesc->Get<CString>(CStrID("Type")));
 		Preconditions->Init(SubDesc);

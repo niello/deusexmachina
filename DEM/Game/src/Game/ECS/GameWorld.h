@@ -36,7 +36,8 @@ protected:
 
 	Resources::CResourceManager&   _ResMgr;
 
-	CEntityStorage                 _Entities; //???add unordered_map index by name?
+	CEntityStorage                 _EntitiesBase;
+	CEntityStorage                 _Entities;
 	std::vector<PComponentStorage> _Storages;
 	std::unordered_map<CStrID, IComponentStorage*> _StorageMap;
 
@@ -59,15 +60,10 @@ public:
 	void LoadBase(IO::CBinaryReader& In);
 	void LoadDiff(const Data::CParams& In);
 	void LoadDiff(IO::CBinaryReader& In);
-
-	void SaveEntities(CStrID LevelID, Data::CParams& Out) const;
-	void LoadEntities(CStrID LevelID, const Data::CParams& In);
-	void SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGameWorld& Base) const;
-	void LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In);
-	void SaveEntities(CStrID LevelID, IO::CBinaryWriter& Out) const;
-	void LoadEntities(CStrID LevelID, IO::CBinaryReader& In);
-	void SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const CGameWorld& Base) const;
-	void LoadEntitiesDiff(CStrID LevelID, IO::CBinaryReader& In);
+	void SaveAll(Data::CParams& Out);
+	void SaveAll(IO::CBinaryWriter& Out);
+	void SaveDiff(Data::CParams& Out);
+	void SaveDiff(IO::CBinaryWriter& Out);
 
 	// Update(float dt)
 

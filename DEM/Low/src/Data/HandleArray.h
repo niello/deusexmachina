@@ -354,6 +354,16 @@ public:
 		return { Handle };
 	}
 
+	void Clear(size_t NewInitialSize = 0)
+	{
+		_ElementCount = 0;
+		_FirstFreeIndex = MAX_CAPACITY;
+		_LastFreeIndex = MAX_CAPACITY;
+		_Records.resize(std::min<size_t>(NewInitialSize, MAX_CAPACITY), { _Prototype, 0 });
+		if (auto Size = _Records.size())
+			AddRangeToFreeList(0, Size - 1);
+	}
+
 	// Returns a handle by value pointer. Inversion of GetValue. Unsafe, because the value pointer is not
 	// guaranteed to be pointing to the same object as at the creation time. To detect actual value change,
 	// user must store previous handle and compare with returned one.

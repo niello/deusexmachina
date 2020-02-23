@@ -18,9 +18,10 @@ typedef Ptr<class CGameLevel> PGameLevel;
 
 struct CEntity final
 {
-	PGameLevel Level;           // Is never nullptr for a valid entity. Also gives access to the world.
-	CStrID     Name;            // Useful for editors, debug and scripting. Can be used in serialization.
+	CStrID     LevelID;         // Is never empty for a valid entity. Cached level ptr gives access to the world.
 	CStrID     TemplateID;      // Empty if this entity is not created from a template
+	CStrID     Name;            // Useful for editors, debug and scripting. Can be used in serialization.
+	PGameLevel Level;
 	bool       IsActive = true; // TODO: lifecycle flags here too
 };
 
@@ -38,9 +39,10 @@ template<> inline constexpr auto RegisterMembers<Game::CEntity>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Name", &Game::CEntity::Name, &Game::CEntity::Name),
+		Member(1, "LevelID", &Game::CEntity::TemplateID, &Game::CEntity::TemplateID),
 		Member(2, "TemplateID", &Game::CEntity::TemplateID, &Game::CEntity::TemplateID),
-		Member(3, "IsActive", &Game::CEntity::IsActive, &Game::CEntity::IsActive)
+		Member(3, "Name", &Game::CEntity::Name, &Game::CEntity::Name),
+		Member(4, "IsActive", &Game::CEntity::IsActive, &Game::CEntity::IsActive)
 	);
 }
 

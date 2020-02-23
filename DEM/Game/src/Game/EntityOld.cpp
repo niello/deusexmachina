@@ -76,13 +76,13 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 {
 	Data::PParams SGAttrs = n_new(Data::CParams);
 	Data::PParams InitialAttrs;
-	if (!pInitialDesc || !pInitialDesc->Get<Data::PParams>(InitialAttrs, CStrID("Attrs")))
+	if (!pInitialDesc || !pInitialDesc->TryGet<Data::PParams>(InitialAttrs, CStrID("Attrs")))
 		InitialAttrs = n_new(Data::CParams);
 	InitialAttrs->GetDiff(*SGAttrs, Attrs);
 	if (SGAttrs->GetCount()) OutDesc.Set(CStrID("Attrs"), SGAttrs);
 
 	Data::PDataArray InitialProps;
-	if (pInitialDesc) pInitialDesc->Get<Data::PDataArray>(InitialProps, CStrID("Props"));
+	if (pInitialDesc) pInitialDesc->TryGet<Data::PDataArray>(InitialProps, CStrID("Props"));
 
 	CArray<CProperty*> Props;
 	GameSrv->GetEntityMgr()->GetPropertiesOfEntity(UID, Props);

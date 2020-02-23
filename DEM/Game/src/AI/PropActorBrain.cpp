@@ -77,7 +77,7 @@ bool CPropActorBrain::InternalActivate()
 	if (PParams Desc = ParamsUtils::LoadDescFromPRM(CString("Actors:"), GetEntity()->GetAttr<CString>(CStrID("ActorDesc")) + ".prm"))
 	{
 		PParams DescSection;
-		if (Desc->Get<PParams>(DescSection, CStrID("Perceptors")))
+		if (Desc->TryGet<PParams>(DescSection, CStrID("Perceptors")))
 		{
 			Perceptors.Reallocate(DescSection->GetCount(), 0);
 			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
@@ -89,7 +89,7 @@ bool CPropActorBrain::InternalActivate()
 			}
 		}
 
-		if (Desc->Get<PParams>(DescSection, CStrID("Sensors")))
+		if (Desc->TryGet<PParams>(DescSection, CStrID("Sensors")))
 		{
 			Sensors.Reallocate(DescSection->GetCount(), 0);
 			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
@@ -130,7 +130,7 @@ bool CPropActorBrain::InternalActivate()
 			}
 		}
 		
-		if (Desc->Get<PParams>(DescSection, CStrID("Goals")))
+		if (Desc->TryGet<PParams>(DescSection, CStrID("Goals")))
 		{
 			//int HasIdleGoal = DescSection->Has(CStrID("Idle")) ? 1 : 0;
 
@@ -152,7 +152,7 @@ bool CPropActorBrain::InternalActivate()
 		}
 
 		PDataArray ActionArray;
-		if (Desc->Get<PDataArray>(ActionArray, CStrID("Actions")))
+		if (Desc->TryGet<PDataArray>(ActionArray, CStrID("Actions")))
 		{
 			ActionTpls.Reallocate(ActionArray->GetCount(), 0);
 			for (UPTR i = 0; i < ActionArray->GetCount(); ++i)

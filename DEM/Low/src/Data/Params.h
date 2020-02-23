@@ -50,8 +50,8 @@ public:
 	const CParam&				Get(CStrID Name) const; //???explicit specialization?
 	template<class T> const T&	Get(CStrID Name) const;
 	template<class T> const T&	Get(CStrID Name, const T& Default) const; //???what about nonconst?
-	bool						Get(CParam*& Dest, CStrID Name) const;
-	template<class T> bool		Get(T& Dest, CStrID Name) const;
+	bool						TryGet(CParam*& Dest, CStrID Name) const;
+	template<class T> bool		TryGet(T& Dest, CStrID Name) const;
 	void						Set(const CParam& Param);
 	void						Set(CStrID Name, const CData& Value);
 	template<class T> void		Set(CStrID Name, const T& Value) { Set(Name, CData(Value)); }
@@ -142,7 +142,7 @@ template<class T> inline const T& CParams::Get(CStrID Name, const T& Default) co
 }
 //---------------------------------------------------------------------
 
-inline bool CParams::Get(CParam*& Dest, CStrID Name) const
+inline bool CParams::TryGet(CParam*& Dest, CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
@@ -154,7 +154,7 @@ inline bool CParams::Get(CParam*& Dest, CStrID Name) const
 }
 //---------------------------------------------------------------------
 
-template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
+template<class T> inline bool CParams::TryGet(T& Dest, CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 	{
@@ -167,7 +167,7 @@ template<class T> inline bool CParams::Get(T& Dest, CStrID Name) const
 //---------------------------------------------------------------------
 
 template<>
-inline bool CParams::Get<const CData*>(const CData*& Dest, CStrID Name) const
+inline bool CParams::TryGet<const CData*>(const CData*& Dest, CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
@@ -180,7 +180,7 @@ inline bool CParams::Get<const CData*>(const CData*& Dest, CStrID Name) const
 //---------------------------------------------------------------------
 
 template<>
-inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
+inline bool CParams::TryGet<CData*>(CData*& Dest, CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
@@ -193,7 +193,7 @@ inline bool CParams::Get<CData*>(CData*& Dest, CStrID Name) const
 //---------------------------------------------------------------------
 
 template<>
-inline bool CParams::Get<CData>(CData& Dest, CStrID Name) const
+inline bool CParams::TryGet<CData>(CData& Dest, CStrID Name) const
 {
 	for (UPTR i = 0; i < Params.GetCount(); ++i)
 		if (Params[i].GetName() == Name)
@@ -236,7 +236,7 @@ inline bool CParams::Remove(CStrID Name)
 inline float GetFloat(const Data::CParams& P, CStrID Name, float Default = 0.f)
 {
 	Data::CParam* pPrm;
-	if (P.Get(pPrm, Name))
+	if (P.TryGet(pPrm, Name))
 		return pPrm->IsA<float>() ? pPrm->GetValue<float>() : (float)pPrm->GetValue<int>();
 	return Default;
 }
@@ -253,7 +253,7 @@ inline CStrID GetStrID(const Data::CData& Data)
 inline CStrID GetStrID(const Data::CParams& P, CStrID Name, CStrID Default = CStrID::Empty)
 {
 	Data::CParam* pPrm;
-	if (P.Get(pPrm, Name))
+	if (P.TryGet(pPrm, Name))
 		return pPrm->IsA<CStrID>() ? pPrm->GetValue<CStrID>() : CStrID(pPrm->GetValue<CString>().CStr());
 	return Default;
 }

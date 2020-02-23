@@ -44,7 +44,7 @@ PDlgGraph CDialogueManager::CreateDialogueGraph(const Data::CParams& Params)
 		const Data::CParams& NodeDesc = *Prm.GetValue<Data::PParams>();
 
 		Data::PDataArray Links;
-		if (!NodeDesc.Get<Data::PDataArray>(Links, CStrID("Links")) || !Links->GetCount()) continue;
+		if (!NodeDesc.TryGet<Data::PDataArray>(Links, CStrID("Links")) || !Links->GetCount()) continue;
 
 		CDlgNode* pFrom = LoadedNodes[Prm.GetName()].Get();
 

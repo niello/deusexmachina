@@ -7,88 +7,21 @@
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 
+// TODO: entity templates!
+
 namespace DEM::Game
 {
 
 CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 	: _ResMgr(ResMgr)
 {
-	//???register default loader for entity template?
 }
 //---------------------------------------------------------------------
 
 void CGameWorld::LoadBase(const Data::CParams& In)
 {
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::LoadBase(IO::CBinaryReader& In)
-{
-	// read base list of entities C0
-	// leave actual list empty for now (or just copy?)
-
-	// per component storage
-	//   register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::LoadDiff(const Data::CParams& In)
-{
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::LoadDiff(IO::CBinaryReader& In)
-{
-	// from base list of C0 and diff build actual entity C0 list
-
-	// per component storage
-	//   if diff data for this object is present, copy it into RAM (or restore component?)
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::SaveEntities(CStrID LevelID, Data::CParams& Out) const
-{
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel) return;
-
-	for (const auto& Entity : _Entities)
-	{
-		if (Entity.Level != pLevel) continue;
-
-		// FIXME: must get for free when iterating an array
-		auto EntityID = _Entities.GetHandle(&Entity);
-
-		Data::PParams SEntity = n_new(Data::CParams());
-		SEntity->Set(CStrID("ID"), static_cast<int>(EntityID.Raw));
-		if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
-		if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
-
-		// TODO: if tpl present, save diff?
-		for (const auto& [ComponentID, Storage] : _StorageMap)
-		{
-			Data::CData SComponent;
-			Storage->SaveComponentToParams(EntityID, SComponent);
-			SEntity->Set(ComponentID, std::move(SComponent));
-		}
-
-		if (Entity.Name)
-			Out.Set(Entity.Name, std::move(SEntity));
-		else
-			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
-	}
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::LoadEntities(CStrID LevelID, const Data::CParams& In)
-{
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel)
-	{
-		::Sys::Error("CGameWorld::LoadEntities() > level doesn't exist");
-		return;
-	}
-
 	const CStrID sidID("ID");
+	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
 	const CStrID sidActive("Active");
 
@@ -98,15 +31,13 @@ void CGameWorld::LoadEntities(CStrID LevelID, const Data::CParams& In)
 		auto RawHandle = SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE);
 
 		CEntity NewEntity;
-		NewEntity.Level = pLevel;
-		NewEntity.Name = Param.GetName();
+		NewEntity.LevelID = SEntity.Get<CStrID>(sidLevel, CStrID::Empty);
 		NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
+		NewEntity.Name = Param.GetName();
 		NewEntity.IsActive = SEntity.Get(sidActive, true);
 
 		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
 		if (!EntityID) continue;
-
-		// TODO: instatiate template, then merge state from saved components
 
 		for (const auto& Param : SEntity)
 			if (auto pStorage = FindComponentStorage(Param.GetName()))
@@ -115,98 +46,45 @@ void CGameWorld::LoadEntities(CStrID LevelID, const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveEntitiesDiff(CStrID LevelID, Data::CParams& Out, const CGameWorld& Base) const
+void CGameWorld::LoadBase(IO::CBinaryReader& In)
 {
-	auto pBaseLevel = Base.FindLevel(LevelID);
-	if (!pBaseLevel)
+	const auto EntityCount = In.Read<uint32_t>();
+
+	// Erase all previous data in the world
+	_EntitiesBase.Clear(EntityCount);
+	_Entities.Clear(EntityCount);
+
+	// Load base list of entities
+	for (uint32_t i = 0; i < EntityCount; ++i)
 	{
-		// If base world has no such level, the diff will be a whole level
-		SaveEntities(LevelID, Out);
-		return;
+		const auto EntityIDRaw = In.Read<CEntityStorage::THandleValue>();
+
+		CEntity NewEntity;
+		DEM::BinaryFormat::Deserialize(In, NewEntity);
+
+		const auto EntityID = _Entities.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
+		n_assert_dbg(EntityID && EntityID == HEntity{ EntityIDRaw });
 	}
 
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel) return;
+	// leave actual list empty for now (or just copy?)
 
-	// Save entities deleted from the level as explicit nulls
-	for (const auto& BaseEntity : Base.GetEntities())
+	// Components that come from templates aren't saved and therefore won't be loaded here
+	//???or store template data in base file, merged by value, all templated object reference the same offset?
+	const auto ComponentTypeCount = In.Read<uint32_t>();
+	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{
-		if (BaseEntity.Level != pBaseLevel) continue;
-
-		// FIXME: must get for free when iterating an array
-		auto EntityID = Base.GetEntities().GetHandle(&BaseEntity);
-
-		if (auto pEntity = GetEntity(EntityID))
-			if (pEntity->Level == pLevel) continue;
-
-		Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), Data::CData());
-	}
-
-	for (const auto& Entity : _Entities)
-	{
-		if (Entity.Level != pLevel) continue;
-
-		// FIXME: must get for free when iterating an array
-		auto EntityID = _Entities.GetHandle(&Entity);
-
-		Data::PParams SEntity;
-
-		auto pBaseEntity = Base.GetEntity(EntityID);
-		if (pBaseEntity && pBaseEntity->Level == pBaseLevel)
-		{
-			// Existing entity, save modified part
-			n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
-			if (Entity.IsActive != pBaseEntity->IsActive) SEntity->Set(CStrID("Active"), Entity.IsActive);
-			for (const auto& [ComponentID, Storage] : _StorageMap)
-			{
-				Data::CData SComponent;
-				if (Storage->SaveComponentDiffToParams(EntityID, SComponent, Base.FindComponentStorage(ComponentID)))
-				{
-					if (!SEntity) SEntity = n_new(Data::CParams());
-					SEntity->Set(ComponentID, std::move(SComponent));
-				}
-			}
-		}
-		else
-		{
-			// New entity, save full data
-			// TODO: if tpl present, save diff?
-			SEntity = n_new(Data::CParams());
-			if (Entity.TemplateID) SEntity->Set(CStrID("Tpl"), Entity.TemplateID);
-			if (!Entity.IsActive) SEntity->Set(CStrID("Active"), false);
-			for (const auto& [ComponentID, Storage] : _StorageMap)
-			{
-				Data::CData SComponent;
-				Storage->SaveComponentToParams(EntityID, SComponent);
-				SEntity->Set(ComponentID, std::move(SComponent));
-			}
-		}
-
-		// Save entity only if something changed
-		if (SEntity)
-		{
-			// NB: TemplateID can't change, so it is saved only with full data
-			SEntity->Set(CStrID("ID"), static_cast<int>(EntityID.Raw));
-
-			if (Entity.Name)
-				Out.Set(Entity.Name, std::move(SEntity));
-			else
-				Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
-		}
+		const auto TypeID = In.Read<CStrID>();
+		if (auto pStorage = FindComponentStorage(TypeID))
+			//   register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }, don't create components
+			pStorage->LoadFromBinary(In);
 	}
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In)
+void CGameWorld::LoadDiff(const Data::CParams& In)
 {
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel)
-	{
-		::Sys::Error("CGameWorld::LoadEntitiesDiff() > level doesn't exist");
-		return;
-	}
-
 	const CStrID sidID("ID");
+	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
 	const CStrID sidActive("Active");
 
@@ -228,14 +106,15 @@ void CGameWorld::LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In)
 			if (pEntity)
 			{
 				pEntity->Name = EntityParam.GetName();
-				SEntity.Get<bool>(pEntity->IsActive, sidActive);
+				SEntity.TryGet<CStrID>(pEntity->LevelID, sidLevel);
+				SEntity.TryGet<bool>(pEntity->IsActive, sidActive);
 			}
 			else
 			{
 				CEntity NewEntity;
-				NewEntity.Level = pLevel;
-				NewEntity.Name = EntityParam.GetName();
+				NewEntity.LevelID = SEntity.Get<CStrID>(sidLevel, CStrID::Empty);
 				NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
+				NewEntity.Name = EntityParam.GetName();
 				NewEntity.IsActive = SEntity.Get(sidActive, true);
 
 				EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
@@ -260,127 +139,165 @@ void CGameWorld::LoadEntitiesDiff(CStrID LevelID, const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveEntities(CStrID LevelID, IO::CBinaryWriter& Out) const
+void CGameWorld::LoadDiff(IO::CBinaryReader& In)
 {
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel) return;
+	// Clear previous diff info, keep base intact
+	if (_Entities.size()) _Entities.Clear(_EntitiesBase.size());
+	//!!!clear diffs and non-base-added objects in storages!
 
+	// from base list of C0 and diff build actual entity C0 list
+
+	// per component storage
+	//   if diff data for this object is present, copy it into RAM (or restore component?)
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::SaveAll(Data::CParams& Out)
+{
+	const CStrID sidID("ID");
+	const CStrID sidLevel("Level");
+	const CStrID sidTpl("Tpl");
+	const CStrID sidActive("Active");
+
+	for (const auto& Entity : _Entities)
+	{
+		// FIXME: must get for free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
+
+		Data::PParams SEntity = n_new(Data::CParams(4));
+		SEntity->Set(sidID, static_cast<int>(EntityID.Raw));
+		SEntity->Set(sidLevel, static_cast<int>(Entity.LevelID));
+		if (Entity.TemplateID) SEntity->Set(sidTpl, Entity.TemplateID);
+		if (!Entity.IsActive) SEntity->Set(sidActive, false);
+
+		for (const auto& [ComponentID, Storage] : _StorageMap)
+		{
+			Data::CData SComponent;
+			Storage->SaveComponentToParams(EntityID, SComponent);
+			SEntity->Set(ComponentID, std::move(SComponent));
+		}
+
+		if (Entity.Name)
+			Out.Set(Entity.Name, std::move(SEntity));
+		else
+			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
+	}
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::SaveAll(IO::CBinaryWriter& Out)
+{
 	Out.Write(static_cast<uint32_t>(_Entities.size()));
 	for (const auto& Entity : _Entities)
 	{
-		if (Entity.Level != pLevel) continue;
-
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
 		Out.Write(EntityID.Raw);
-		Out.Write(Entity.Name);
-		Out.Write(Entity.TemplateID);
-		Out.Write(Entity.IsActive);
+		DEM::BinaryFormat::Serialize(Out, Entity);
 	}
-
-	// TODO: save components only for entities without TemplateID
-	//???unordered set of IDs with tpls? or map to Tpl data? To check the component presence.
 
 	Out.Write(static_cast<uint32_t>(_Storages.size()));
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
-		Storage->SaveToBinary(Out, *pLevel);
+		Storage->SaveToBinary(Out);
 	}
-
-	// TODO: for modified templated entities save diff between tpl components and actual components (optional)
-	// Don't process added components that aren't present in the template.
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::LoadEntities(CStrID LevelID, IO::CBinaryReader& In)
+void CGameWorld::SaveDiff(Data::CParams& Out)
 {
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel)
+	const CStrID sidID("ID");
+	const CStrID sidLevel("Level");
+	const CStrID sidTpl("Tpl");
+	const CStrID sidActive("Active");
+
+	// Save entities deleted from the level as explicit nulls
+	for (const auto& BaseEntity : _EntitiesBase)
 	{
-		::Sys::Error("CGameWorld::LoadEntities() > level doesn't exist");
-		return;
-	}
-
-	const auto EntityCount = In.Read<uint32_t>();
-	for (uint32_t i = 0; i < EntityCount; ++i)
-	{
-		const auto EntityIDRaw = In.Read<CEntityStorage::THandleValue>();
-
-		// Entity may exist if another level base+diff were already loaded.
-		if (auto pEntity = GetEntity({ EntityIDRaw })) continue;
-
-		CEntity NewEntity;
-		NewEntity.Level = pLevel;
-		In.Read(NewEntity.Name);
-		In.Read(NewEntity.TemplateID);
-		In.Read(NewEntity.IsActive);
-		const auto EntityID = _Entities.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
-		n_assert_dbg(EntityID);
-	}
-
-	// Components that come from templates aren't saved and therefore won't be loaded here
-	const auto ComponentTypeCount = In.Read<uint32_t>();
-	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
-	{
-		const auto TypeID = In.Read<CStrID>();
-		if (auto pStorage = FindComponentStorage(TypeID))
-			pStorage->LoadFromBinary(In);
-	}
-
-	for (auto& Entity : _Entities)
-	{
-		if (!Entity.TemplateID || Entity.Level != pLevel) continue;
-
-		// TODO: create components from template for this entity, don't erase existing entity components
-	}
-
-	// TODO: load diff part to modify templated components (optional, for per-entity tpl modification)
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const CGameWorld& Base) const
-{
-	auto pBaseLevel = Base.FindLevel(LevelID);
-	if (!pBaseLevel)
-	{
-		// If base world has no such level, the diff will be a whole level
-		SaveEntities(LevelID, Out);
-		return;
-	}
-
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel) return;
-
-	// Save a list of entities deleted from the level
-	for (const auto& BaseEntity : Base.GetEntities())
-	{
-		if (BaseEntity.Level != pBaseLevel) continue;
-
 		// FIXME: must get for free when iterating an array
-		auto EntityID = Base.GetEntities().GetHandle(&BaseEntity);
+		auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
+		if (!GetEntity(EntityID))
+			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), Data::CData());
+	}
 
-		if (auto pEntity = GetEntity(EntityID))
-			if (pEntity->Level == pLevel) continue;
+	// Save modified / added entities and their components
+	for (const auto& Entity : _Entities)
+	{
+		// FIXME: must get for free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
 
-		Out << EntityID.Raw;
+		Data::PParams SEntity;
+
+		if (auto pBaseEntity = _EntitiesBase.GetValue(EntityID))
+		{
+			// Existing entity, save modified part
+			n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
+			if (Entity.LevelID != pBaseEntity->LevelID) SEntity->Set(sidLevel, Entity.LevelID);
+			if (Entity.IsActive != pBaseEntity->IsActive) SEntity->Set(sidActive, Entity.IsActive);
+			for (const auto& [ComponentID, Storage] : _StorageMap)
+			{
+				Data::CData SComponent;
+				if (Storage->SaveComponentDiffToParams(EntityID, SComponent))
+				{
+					if (!SEntity) SEntity = n_new(Data::CParams());
+					SEntity->Set(ComponentID, std::move(SComponent));
+				}
+			}
+		}
+		else
+		{
+			// New entity, save full data
+			SEntity = n_new(Data::CParams());
+			if (Entity.LevelID) SEntity->Set(sidLevel, Entity.LevelID);
+			if (Entity.TemplateID) SEntity->Set(sidTpl, Entity.TemplateID);
+			if (!Entity.IsActive) SEntity->Set(sidActive, false);
+			for (const auto& [ComponentID, Storage] : _StorageMap)
+			{
+				Data::CData SComponent;
+				Storage->SaveComponentToParams(EntityID, SComponent);
+				SEntity->Set(ComponentID, std::move(SComponent));
+			}
+		}
+
+		// Save entity only if something changed
+		if (SEntity)
+		{
+			SEntity->Set(sidID, static_cast<int>(EntityID.Raw));
+
+			if (Entity.Name)
+				Out.Set(Entity.Name, std::move(SEntity));
+			else
+				Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
+{
+	// Save a list of entities deleted from the level
+	for (const auto& BaseEntity : _EntitiesBase)
+	{
+		// FIXME: must get for free when iterating an array
+		auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
+		if (!GetEntity(EntityID))
+			Out << EntityID.Raw;
 	}
 
 	// End the list of deleted entities with an invalid handle (much like a trailing \0)
 	Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
+	// Save diffs for all changed and added entities in actual list
 	for (const auto& Entity : _Entities)
 	{
-		if (Entity.Level != pLevel) continue;
-
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
 		Out << EntityID.Raw;
 
-		auto pBaseEntity = Base.GetEntity(EntityID);
-		if (pBaseEntity && pBaseEntity->Level == pBaseLevel)
+		if (auto pBaseEntity = _EntitiesBase.GetValue(EntityID))
 		{
 			// Existing entity, save modified part
 			n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
@@ -401,68 +318,8 @@ void CGameWorld::SaveEntitiesDiff(CStrID LevelID, IO::CBinaryWriter& Out, const 
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
-		Storage->SaveDiffToBinary(Out, *pLevel, Base, *pBaseLevel, ComponentID);
+		Storage->SaveDiffToBinary(Out);
 	}
-}
-//---------------------------------------------------------------------
-
-void CGameWorld::LoadEntitiesDiff(CStrID LevelID, IO::CBinaryReader& In)
-{
-/*
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel)
-	{
-		::Sys::Error("CGameWorld::LoadEntitiesDiff() > level doesn't exist");
-		return;
-	}
-
-	const CStrID sidID("ID");
-	const CStrID sidTpl("Tpl");
-	const CStrID sidActive("Active");
-
-	for (const auto& EntityParam : In)
-	{
-		if (EntityParam.GetRawValue().IsVoid())
-		{
-			// Deleted entity is always named as __UID. Skip leading "__".
-			auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(EntityParam.GetName().CStr() + 2));
-			DeleteEntity({ RawHandle });
-		}
-		else
-		{
-			const auto& SEntity = *EntityParam.GetValue<Data::PParams>();
-			auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
-
-			HEntity EntityID{ RawHandle };
-			auto pEntity = _Entities.GetValue(EntityID);
-			if (!pEntity)
-			{
-				CEntity NewEntity;
-				NewEntity.Level = pLevel;
-				NewEntity.Name = EntityParam.GetName();
-				NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
-				NewEntity.IsActive = SEntity.Get(sidActive, true);
-
-				EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
-				pEntity = _Entities.GetValue(EntityID);
-				if (!pEntity) continue;
-
-				// TODO: instatiate template, then merge state from saved components
-			}
-
-			for (const auto& ComponentParam : SEntity)
-			{
-				auto pStorage = FindComponentStorage(ComponentParam.GetName());
-				if (!pStorage) continue;
-
-				if (ComponentParam.GetRawValue().IsVoid())
-					pStorage->RemoveComponent(EntityID);
-				else
-					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue());
-			}
-		}
-	}
-*/
 }
 //---------------------------------------------------------------------
 
@@ -495,9 +352,9 @@ CGameLevel* CGameWorld::LoadLevel(CStrID ID, const Data::CParams& In)
 	vector3 Size(512.f, 128.f, 512.f);
 	int SubdivisionDepth = 0;
 
-	In.Get(Center, CStrID("Center"));
-	In.Get(Size, CStrID("Size"));
-	In.Get(SubdivisionDepth, CStrID("SubdivisionDepth"));
+	In.TryGet(Center, CStrID("Center"));
+	In.TryGet(Size, CStrID("Size"));
+	In.TryGet(SubdivisionDepth, CStrID("SubdivisionDepth"));
 	vector3 InteractiveCenter = In.Get(CStrID("InteractiveCenter"), Center);
 	vector3 InteractiveSize = In.Get(CStrID("InteractiveSize"), Size);
 
@@ -540,8 +397,8 @@ CGameLevel* CGameWorld::LoadLevel(CStrID ID, const Data::CParams& In)
 	}
 
 	Data::PParams EntitiesDesc;
-	if (In.Get(EntitiesDesc, CStrID("Entities")))
-		LoadEntities(ID, *EntitiesDesc);
+	if (In.TryGet(EntitiesDesc, CStrID("Entities")))
+		LoadBase(*EntitiesDesc);
 
 	// Notify level loaded / activated, validate if automatic
 

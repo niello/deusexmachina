@@ -25,12 +25,12 @@ bool CDataScheme::Init(const CParams& Desc)
 		Rec.Flags.SetTo(APPLY_SCHEME_TO_SELF, Value.Get<bool>(CStrID("ApplySchemeToSelf"), false));
 
 		CString FourCC;
-		if (Value.Get<CString>(FourCC, CStrID("FourCC")))
+		if (Value.TryGet<CString>(FourCC, CStrID("FourCC")))
 			Rec.FourCC.FromString(FourCC.CStr());
 		else Rec.FourCC = 0;
 
 		CData* TypeIDVal;
-		if (Value.Get(TypeIDVal, CStrID("Type")))
+		if (Value.TryGet(TypeIDVal, CStrID("Type")))
 		{
 			if (TypeIDVal->IsA<int>()) Rec.TypeID = *TypeIDVal;
 			else if (TypeIDVal->IsA<CString>())
@@ -53,7 +53,7 @@ bool CDataScheme::Init(const CParams& Desc)
 		else Rec.TypeID = -1;
 
 		CData* SchemeVal;
-		if (Value.Get(SchemeVal, CStrID("Scheme")))
+		if (Value.TryGet(SchemeVal, CStrID("Scheme")))
 		{
 			if (SchemeVal->IsA<PParams>())
 			{
@@ -65,7 +65,7 @@ bool CDataScheme::Init(const CParams& Desc)
 		}
 
 		CParam* pDflt;
-		if (Value.Get(pDflt, CStrID("Default")))
+		if (Value.TryGet(pDflt, CStrID("Default")))
 			Rec.Default = pDflt->GetRawValue();
 
 		Records.Add(Rec);

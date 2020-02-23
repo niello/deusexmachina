@@ -41,7 +41,7 @@ bool CPropSmartObject::InternalActivate()
 		GetEntity()->GetAttr(ActionsEnabled, CStrID("SOActionsEnabled"));
 
 		Data::PParams DescSection;
-		if (Desc->Get<Data::PParams>(DescSection, CStrID("Actions")))
+		if (Desc->TryGet<Data::PParams>(DescSection, CStrID("Actions")))
 		{
 			Actions.BeginAdd(DescSection->GetCount());
 			for (UPTR i = 0; i < DescSection->GetCount(); ++i)
@@ -53,7 +53,7 @@ bool CPropSmartObject::InternalActivate()
 					CAction& Action = Actions.Add(Prm.GetName());
 					Action.pTpl = pTpl;
 					Action.FreeUserSlots = pTpl->MaxUserCount;
-					Action.Enabled = ActionsEnabled.IsValidPtr() ? ActionsEnabled->Get(Action.Enabled, Prm.GetName()) : false;
+					Action.Enabled = ActionsEnabled.IsValidPtr() ? ActionsEnabled->TryGet(Action.Enabled, Prm.GetName()) : false;
 				}
 				else Sys::Log("AI,SO,Warning: entity '%s', can't find smart object action template '%s'\n",
 						GetEntity()->GetUID().CStr(), Prm.GetValue<CStrID>().CStr());

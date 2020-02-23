@@ -452,7 +452,7 @@ Data::CData* CApplication::FindSetting(const char* pKey, CStrID UserID) const
 	CStrID Key(pKey);
 	Data::CData* pData = nullptr;
 
-	if (OverrideSettings && OverrideSettings->Get(pData, Key))
+	if (OverrideSettings && OverrideSettings->TryGet(pData, Key))
 		return pData;
 
 	if (UserID.IsValid())
@@ -464,11 +464,11 @@ Data::CData* CApplication::FindSetting(const char* pKey, CStrID UserID) const
 			return nullptr;
 		}
 
-		if (It->Settings && It->Settings->Get(pData, Key))
+		if (It->Settings && It->Settings->TryGet(pData, Key))
 			return pData;
 	}
 
-	if (GlobalSettings && GlobalSettings->Get(pData, Key))
+	if (GlobalSettings && GlobalSettings->TryGet(pData, Key))
 		return pData;
 
 	return nullptr;

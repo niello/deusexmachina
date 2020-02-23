@@ -38,10 +38,10 @@ public:
 
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
-	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out, const IComponentStorage* pBaseStorage) const = 0;
+	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   LoadFromBinary(IO::CBinaryReader& In) = 0;
-	virtual bool   SaveToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level) const = 0;
-	virtual bool   SaveDiffToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const = 0;
+	virtual bool   SaveToBinary(IO::CBinaryWriter& Out) const = 0;
+	virtual bool   SaveDiffToBinary(IO::CBinaryWriter& Out) const = 0;
 };
 
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
@@ -138,19 +138,16 @@ public:
 		return false;
 	}
 
-	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out, const IComponentStorage* pBaseStorage) const override
+	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-		if (!pBaseStorage) return SaveComponentToParams(EntityID, Out);
 
-		auto pComponent = Find(EntityID);
-		auto pBaseComponent = static_cast<decltype(this)>(pBaseStorage)->Find(EntityID);
-		if (pComponent)
+		// FIXME: load base data if offset is valid (_World.GetBaseReader(Offset))
+		T* pBaseComponent = nullptr;
+
+		if (auto pComponent = Find(EntityID))
 		{
-			if (pBaseComponent)
-				return DEM::ParamsFormat::SerializeDiff(Out, *pComponent, *pBaseComponent);
-			else
-				return SaveComponentToParams(EntityID, Out); //???or diff against T{}? PROFILE!
+			return DEM::ParamsFormat::SerializeDiff(Out, *pComponent, pBaseComponent ? *pBaseComponent : T{});
 		}
 		else if (pBaseComponent)
 		{
@@ -177,62 +174,32 @@ public:
 		return false;
 	}
 
-	virtual bool SaveToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level) const override
+	virtual bool SaveToBinary(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		Out.Write(static_cast<uint32_t>(_Data.size()));
 		for (const auto& Component : _Data)
 		{
-			auto pEntity = _World.GetEntityUnsafe(Component.EntityID);
-			if (pEntity && pEntity->Level == &Level)
-			{
-				Out.Write(Component.EntityID.Raw);
-				DEM::BinaryFormat::Serialize(Out, Component);
-			}
+			// save actual component (if not loaded, restore right now for writing)
+			Out.Write(Component.EntityID.Raw);
+			DEM::BinaryFormat::Serialize(Out, Component);
 		}
 
 		return true;
 	}
 
-	virtual bool SaveDiffToBinary(IO::CBinaryWriter& Out, const CGameLevel& Level, const CGameWorld& BaseWorld, const CGameLevel& BaseLevel, CStrID ComponentID) const override
+	virtual bool SaveDiffToBinary(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		//???or store world pointer in each storage? then can pass BaseStorage ref, omit both worlds and component ID!
-		auto pBaseStorage = static_cast<decltype(this)>(BaseWorld.FindComponentStorage(ComponentID));
-		if (!pBaseStorage) return false;
-
-		// Save entity IDs where this component is deleted
-		for (const auto& BaseComponent : pBaseStorage->_Data)
-		{
-			// Process only components that were in this level
-			const auto pBaseEntity = BaseWorld.GetEntityUnsafe(BaseComponent.EntityID);
-			if (pBaseEntity->Level != &BaseLevel) continue;
-
-			// If entity was deleted or moved to another level, 
-			const auto pEntity = _World.GetEntity(BaseComponent.EntityID);
-			if (!pEntity || pEntity->Level != &Level) continue;
-
-			//
-
-			//!!!compare only components by entity ID, not entities themselves!?
-			//no matter if entity moved from level to level?
-			//we save level diff, so possibly we must process only entities that didn't change their level?
-			//if component is on entity deleted or moved to another level, the whole entity is deleted,
-			//and all its components are too, but we can skip saving deleted info for them because we know
-			//that the whole entity was deleted.
-
-			//auto pBaseEntity = BaseWorld.GetEntityUnsafe(BaseComponent.EntityID);
-			//if (!pBaseEntity || pBaseEntity->Level != pBaseLevel) continue;
-
-			//auto pEntity = World.GetEntity(EntityID);
-			//if (pEntity && pEntity->Level == pLevel) continue;
-
-			//Out << BaseComponent.EntityID.Raw;
-		}
-
-		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+		//   per component
+		//     if component is data-less, just write a list of entities with deleted component, then with added
+		//     if component is loaded, update diff: load base component, write diff current / base
+		//     if modified, diff against base, if new, diff against default-created object
+		//     if component is really deleted, not just 'not loaded', write special 'deleted' diff flag
+		//     save diff data or 'deleted' flag to the output
+		//     could write deleted components first, then added/modified
 
 		for (const auto& Component : _Data)
 		{

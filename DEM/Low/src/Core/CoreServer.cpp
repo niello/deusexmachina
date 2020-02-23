@@ -152,7 +152,7 @@ void CCoreServer::Save(Data::CParams& TimeParams)
 void CCoreServer::Load(const Data::CParams& TimeParams)
 {
 	Data::PParams SubSection;
-	if (TimeParams.Get<Data::PParams>(SubSection, CStrID("TimeSources")) && SubSection->GetCount())
+	if (TimeParams.TryGet<Data::PParams>(SubSection, CStrID("TimeSources")) && SubSection->GetCount())
 	{
 		for (UPTR i = 0; i < SubSection->GetCount(); ++i)
 		{
@@ -160,24 +160,24 @@ void CCoreServer::Load(const Data::CParams& TimeParams)
 			Data::PParams TimeSrcDesc = Prm.GetValue<Data::PParams>();
 			PTimeSource TimeSrc = TimeSources.GetOrAdd(Prm.GetName());
 			TimeSrc->FrameID = TimeSrcDesc->Get<int>(CStrID("FrameID"));
-			TimeSrcDesc->Get(TimeSrc->Time, CStrID("Time"));
-			TimeSrcDesc->Get(TimeSrc->TimeFactor, CStrID("TimeFactor"));
-			TimeSrcDesc->Get(TimeSrc->PauseCounter, CStrID("PauseCounter"));
+			TimeSrcDesc->TryGet(TimeSrc->Time, CStrID("Time"));
+			TimeSrcDesc->TryGet(TimeSrc->TimeFactor, CStrID("TimeFactor"));
+			TimeSrcDesc->TryGet(TimeSrc->PauseCounter, CStrID("PauseCounter"));
 		}
 	}
 
 	Timers.Clear();
-	if (TimeParams.Get<Data::PParams>(SubSection, CStrID("Timers")) && SubSection->GetCount())
+	if (TimeParams.TryGet<Data::PParams>(SubSection, CStrID("Timers")) && SubSection->GetCount())
 	{
 		for (UPTR i = 0; i < SubSection->GetCount(); ++i)
 		{
 			const Data::CParam& Prm = SubSection->Get(i);
 			Data::PParams TimerDesc = Prm.GetValue<Data::PParams>();
 			CTimer& Timer = Timers.Add(Prm.GetName());
-			TimerDesc->Get(Timer.Time, CStrID("Time"));
-			TimerDesc->Get(Timer.CurrTime, CStrID("CurrTime"));
-			TimerDesc->Get(Timer.Loop, CStrID("Loop"));
-			TimerDesc->Get(Timer.Active, CStrID("Active"));
+			TimerDesc->TryGet(Timer.Time, CStrID("Time"));
+			TimerDesc->TryGet(Timer.CurrTime, CStrID("CurrTime"));
+			TimerDesc->TryGet(Timer.Loop, CStrID("Loop"));
+			TimerDesc->TryGet(Timer.Active, CStrID("Active"));
 			Timer.TimeSrc = TimerDesc->Get(CStrID("TimeSrc"), CStrID::Empty);
 			Timer.EventID = TimerDesc->Get<CStrID>(CStrID("EventID"));
 		}

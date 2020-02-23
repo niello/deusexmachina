@@ -32,7 +32,7 @@ void CParams::Merge(const CParams& Other, int Method)
 		const CParam& Prm = Other.Get(i);
 		CParam* pMyPrm;
 
-		if (Get(pMyPrm, Prm.GetName()))
+		if (TryGet(pMyPrm, Prm.GetName()))
 		{
 			if (Method & Merge_Replace)
 			{
@@ -60,7 +60,7 @@ void CParams::MergeDiff(CParams& OutChangedData, const CParams& Diff) const
 	{
 		const CParam& Prm = Params[i];
 		CParam* pDiffPrm;
-		if (Diff.Get(pDiffPrm, Prm.GetName()))
+		if (Diff.TryGet(pDiffPrm, Prm.GetName()))
 		{
 			if (pDiffPrm->GetRawValue().IsVoid()) continue;
 
@@ -93,7 +93,7 @@ void CParams::GetDiff(CParams& OutDiff, const CParams& ChangedData) const
 		CStrID Key = ChangedData.Get(i).GetName();
 		const Data::CData& ChangedVal = ChangedData.Get(i).GetRawValue();
 		Data::CParam* pInitialParam;
-		bool IsNew = !Params.GetCount() || !Get(pInitialParam, Key);
+		bool IsNew = !Params.GetCount() || !TryGet(pInitialParam, Key);
 		if (IsNew || pInitialParam->GetRawValue() != ChangedVal)
 		{
 			// Recursively diff CParams //???can recurse to CDataArray?
@@ -122,7 +122,7 @@ void CParams::GetDiff(CParams& OutDiff, const CDataDict& ChangedData) const
 	for (UPTR i = 0; i < ChangedData.GetCount(); ++i)
 	{
 		Data::CParam* pInitialParam;
-		bool IsNew = !Params.GetCount() || !Get(pInitialParam, ChangedData.KeyAt(i));
+		bool IsNew = !Params.GetCount() || !TryGet(pInitialParam, ChangedData.KeyAt(i));
 		const Data::CData& ChangedVal = ChangedData.ValueAt(i);
 		if (IsNew || pInitialParam->GetRawValue() != ChangedVal)
 		{

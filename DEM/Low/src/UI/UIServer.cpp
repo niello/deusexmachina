@@ -54,7 +54,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Dat
 	CEGUISystem = CEGUI::System::getSingletonPtr();
 
 	Data::PParams ResourceGroups;
-	if (pSettings && pSettings->Get<Data::PParams>(ResourceGroups, CStrID("ResourceGroups")))
+	if (pSettings && pSettings->TryGet<Data::PParams>(ResourceGroups, CStrID("ResourceGroups")))
 	{
 		for (UPTR i = 0; i < ResourceGroups->GetCount(); ++i)
 		{
@@ -70,16 +70,16 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Dat
 	CEGUI::WindowManager::setDefaultResourceGroup("layouts");
 
 	Data::PParams LoadOnStartup;
-	if (pSettings && pSettings->Get<Data::PParams>(LoadOnStartup, CStrID("LoadOnStartup")))
+	if (pSettings && pSettings->TryGet<Data::PParams>(LoadOnStartup, CStrID("LoadOnStartup")))
 	{
 		Data::PDataArray ResourcesToLoad;
 
 		// TODO: move to CEGUI scheme, it already has capability of font autoloading
-		if (LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Fonts")))
+		if (LoadOnStartup->TryGet<Data::PDataArray>(ResourcesToLoad, CStrID("Fonts")))
 			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
 				LoadFont(ResourcesToLoad->Get<CString>(i).CStr());
 
-		if (LoadOnStartup->Get<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
+		if (LoadOnStartup->TryGet<Data::PDataArray>(ResourcesToLoad, CStrID("Schemes")))
 			for (UPTR i = 0; i < ResourcesToLoad->GetCount(); ++i)
 				LoadScheme(ResourcesToLoad->Get<CString>(i).CStr());
 	}

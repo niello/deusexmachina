@@ -282,7 +282,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 
 	Data::PParams GameDesc = ((const Events::CEvent&)Event).Params;
 	Data::PDataArray SGQuests;
-	if (!GameDesc->Get(SGQuests, CStrID("Quests")) || !SGQuests->GetCount())
+	if (!GameDesc->TryGet(SGQuests, CStrID("Quests")) || !SGQuests->GetCount())
 	{
 		Quests.Clear();
 		OK;
@@ -324,7 +324,7 @@ bool CQuestManager::OnGameDescLoaded(Events::CEventDispatcher* pDispatcher, cons
 		QuestRec->Status = (CQuest::EStatus)SGQuest->Get<int>(CStrID("Status"));
 
 		Data::PParams SGTasks;
-		if (SGQuest->Get(SGTasks, CStrID("Tasks")))
+		if (SGQuest->TryGet(SGTasks, CStrID("Tasks")))
 		{
 			for (UPTR j = 0; j < SGTasks->GetCount(); ++j)
 			{

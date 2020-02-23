@@ -356,10 +356,10 @@ bool CGameServer::ContinueGame(const char* pFileName)
 	else GameDesc = InitialCommon;
 
 	Data::PParams SubSection;
-	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Game")) && SubSection->GetCount())
+	if (GameDesc->TryGet<Data::PParams>(SubSection, CStrID("Game")) && SubSection->GetCount())
 		SubSection->ToDataDict(Attrs);
 
-	if (GameDesc->Get<Data::PParams>(SubSection, CStrID("Time")) && SubSection->GetCount())
+	if (GameDesc->TryGet<Data::PParams>(SubSection, CStrID("Time")) && SubSection->GetCount())
 		CoreSrv->Load(*SubSection);
 	else CoreSrv->ResetAll();
 
@@ -461,7 +461,7 @@ bool CGameServer::CommitContinueData()
 	// Save global game attributes diff
 	Data::PParams SGGame = n_new(Data::CParams);
 	Data::PParams GameSection;
-	if (!GameDesc->Get<Data::PParams>(GameSection, CStrID("Game")))
+	if (!GameDesc->TryGet<Data::PParams>(GameSection, CStrID("Game")))
 		GameSection = n_new(Data::CParams);
 	GameSection->GetDiff(*SGGame, Attrs);
 	if (SGGame->GetCount()) SGCommon->Set(CStrID("Game"), SGGame);
@@ -476,7 +476,7 @@ bool CGameServer::CommitContinueData()
 	Data::PParams NewManagers = n_new(Data::CParams);
 	EventSrv->FireEvent(CStrID("OnGameSaving"), NewManagers);
 	Data::PParams InitialManagers;
-	if (GameDesc->Get<Data::PParams>(InitialManagers, CStrID("Managers")))
+	if (GameDesc->TryGet<Data::PParams>(InitialManagers, CStrID("Managers")))
 	{
 		SGManagers = n_new(Data::CParams);
 		InitialManagers->GetDiff(*SGManagers, *NewManagers);

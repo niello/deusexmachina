@@ -21,9 +21,9 @@ void CItemTplWeapon::Init(CStrID SID, const Data::CParams& Params)
 	//???where to store defaults and does need to store them?
 	const Data::CParams& Dmg = *Params.Get<Data::PParams>(CStrID("Dmg"));
 	DmgType = (Dmg::EDmgType)Dmg.Get<int>(CStrID("Type"), 0);
-	if (!Dmg.Get<int>(x, CStrID("x"))) x = Dmg.Get<int>(CStrID("X"), 1);
-	if (!Dmg.Get<int>(y, CStrID("y"))) y = Dmg.Get<int>(CStrID("Y"), 6);
-	if (!Dmg.Get<int>(z, CStrID("z"))) z = Dmg.Get<int>(CStrID("Z"), 0);
+	if (!Dmg.TryGet<int>(x, CStrID("x"))) x = Dmg.Get<int>(CStrID("X"), 1);
+	if (!Dmg.TryGet<int>(y, CStrID("y"))) y = Dmg.Get<int>(CStrID("Y"), 6);
+	if (!Dmg.TryGet<int>(z, CStrID("z"))) z = Dmg.Get<int>(CStrID("Z"), 0);
 
 	// Can create CItemWeapon here if needed and init its fields from Params
 

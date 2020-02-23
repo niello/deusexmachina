@@ -440,7 +440,7 @@ bool CScriptServer::LoadClass(const char* Name)
 	UPTR Size = 0;
 
 	Data::CParam* pCodePrm;
-	if (ClassDesc->Get(pCodePrm, CStrID("Code")))
+	if (ClassDesc->TryGet(pCodePrm, CStrID("Code")))
 	{
 		if (pCodePrm->IsA<Data::CBuffer>())
 		{
