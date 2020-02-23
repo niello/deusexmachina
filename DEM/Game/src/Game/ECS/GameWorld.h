@@ -245,10 +245,14 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 	// The first component is mandatory
 	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
 	{
+		// Collect a tuple of requested component storages once outside the main loop
 		std::tuple<TComponentStoragePtr<Components>...> NextStorages;
 		if constexpr(sizeof...(Components) > 0)
 			if (!GetNextStorages<Components...>(NextStorages)) return;
 
+		// Iterate the first, mandatory component
+		// NB: choose that of your mandatory components that will most probably have the least instance count
+		// TODO: can split into slices and dispatch to different threads (ForEachEntityWith<...>(Start, Count)?)
 		for (auto&& [Component, EntityID] : *pStorage)
 		{
 			auto pEntity = GetEntityUnsafe(EntityID);

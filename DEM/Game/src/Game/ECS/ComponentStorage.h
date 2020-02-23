@@ -85,8 +85,8 @@ public:
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend() && It->ComponentHandle)
-			return &_Data.GetValueUnsafe(It->ComponentHandle)->first;
+		if (It != _IndexByEntity.cend())
+			return It->ComponentHandle ? &_Data.GetValueUnsafe(It->ComponentHandle)->first : nullptr;
 
 		auto Handle = _Data.Allocate();
 		CPair* pPair = _Data.GetValueUnsafe(Handle);
@@ -103,7 +103,7 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (It == _IndexByEntity.cend()) FAIL;
 
-		_Data.Free(It->ComponentHandle);
+		if (It->ComponentHandle) _Data.Free(It->ComponentHandle);
 		_IndexByEntity.erase(It);
 		OK;
 	}
