@@ -24,7 +24,7 @@ private:
 		CRecord* pPrev = nullptr;
 		CRecord* pNext = nullptr;
 		HEntity  EntityID;
-		T        Handle;
+		T        Value;
 	};
 
 	// FIXME: thread safety! can use lock-free pool.
@@ -83,7 +83,8 @@ public:
 		iterator() = default;
 		iterator(CRecord* pRecord) : _pRecord(pRecord) {}
 
-		T    operator *() const { return _pRecord ? _pRecord->Handle : T(); }
+		T    operator *() const { return _pRecord ? _pRecord->Value : T(); }
+		T*   operator ->() const { return _pRecord ? &_pRecord->Value : nullptr; }
 		bool operator ==(const iterator Other) const { return _pRecord == Other._pRecord; }
 		bool operator !=(const iterator Other) const { return _pRecord != Other._pRecord; }
 	};
@@ -108,9 +109,9 @@ public:
 		}
 	}
 
-	void emplace(HEntity EntityID, T ComponentHandle)
+	void emplace(HEntity EntityID, T&& Value)
 	{
-		n_assert_dbg(EntityID && ComponentHandle);
+		n_assert_dbg(EntityID);
 
 		auto BucketIndex = (EntityID.Raw & _HashMask);
 
@@ -120,7 +121,7 @@ public:
 		{
 			if (pRecord->EntityID == EntityID)
 			{
-				pRecord->Handle = ComponentHandle;
+				pRecord->Value = std::move(Value);
 				return;
 			}
 
@@ -139,7 +140,7 @@ public:
 
 		// Add new record to the bucket
 		auto& Bucket = _Records[BucketIndex];
-		auto pNewRecord = _Pool.Construct(CRecord{ nullptr, Bucket, EntityID, ComponentHandle });
+		auto pNewRecord = _Pool.Construct(CRecord{ nullptr, Bucket, EntityID, std::move(Value) });
 		if (Bucket) Bucket->pPrev = pNewRecord;
 		Bucket = pNewRecord;
 		++_Size;

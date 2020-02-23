@@ -1,6 +1,6 @@
 #pragma once
 #include <Game/ECS/Entity.h>
-#include <Game/ECS/EntityComponentMap.h>
+#include <Game/ECS/EntityMap.h>
 #include <Data/SerializeToParams.h>
 #include <Data/SerializeToBinary.h>
 
@@ -55,7 +55,7 @@ public:
 
 protected:
 
-	constexpr static inline NO_BASE_DATA = std::numeric_limits<size_t>().max();
+	constexpr static inline size_t NO_BASE_DATA = std::numeric_limits<size_t>().max();
 
 	struct CIndexRecord
 	{
@@ -84,7 +84,7 @@ public:
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend()) return _Data.GetValueUnsafe(*It);
+		if (It != _IndexByEntity.cend()) return _Data.GetValueUnsafe(It->ComponentHandle);
 
 		auto Handle = _Data.Allocate();
 		T* pComponent = _Data.GetValueUnsafe(Handle);
@@ -101,7 +101,7 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (It == _IndexByEntity.cend()) FAIL;
 
-		_Data.Free(*It);
+		_Data.Free(It->ComponentHandle);
 		_IndexByEntity.erase(It);
 		OK;
 	}
@@ -111,7 +111,7 @@ public:
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
+		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(It->ComponentHandle);
 	}
 
 	// TODO: describe as a static interface part
@@ -119,7 +119,7 @@ public:
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		auto It = _IndexByEntity.find(EntityID);
-		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(*It);
+		return (It == _IndexByEntity.cend()) ? nullptr : _Data.GetValueUnsafe(It->ComponentHandle);
 	}
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
