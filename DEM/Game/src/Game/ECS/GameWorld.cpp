@@ -20,6 +20,15 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 
 void CGameWorld::LoadBase(const Data::CParams& In)
 {
+	// CParams source doesn't support on-demand base access, diff will be populated
+	// with the whole world data. It is acceptable for debug-only functionality.
+	_BaseStream.Reset();
+
+	// Erase all previous data in the world
+	_EntitiesBase.Clear(In.GetCount());
+	_Entities.Clear(In.GetCount());
+	// FIXME: erase components
+
 	const CStrID sidID("ID");
 	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
@@ -53,6 +62,7 @@ void CGameWorld::LoadBase(IO::CBinaryReader& In)
 	// Erase all previous data in the world
 	_EntitiesBase.Clear(EntityCount);
 	_Entities.Clear(EntityCount);
+	// FIXME: erase components
 
 	// Load base list of entities
 	for (uint32_t i = 0; i < EntityCount; ++i)
@@ -66,7 +76,7 @@ void CGameWorld::LoadBase(IO::CBinaryReader& In)
 		n_assert_dbg(EntityID && EntityID == HEntity{ EntityIDRaw });
 	}
 
-	// leave actual list empty for now (or just copy?)
+	// leave actual list empty for now (or just copy? don't want to copy because diff may be loaded next)
 
 	// Components that come from templates aren't saved and therefore won't be loaded here
 	//???or store template data in base file, merged by value, all templated object reference the same offset?
@@ -75,7 +85,6 @@ void CGameWorld::LoadBase(IO::CBinaryReader& In)
 	{
 		const auto TypeID = In.Read<CStrID>();
 		if (auto pStorage = FindComponentStorage(TypeID))
-			//   register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }, don't create components
 			pStorage->LoadFromBinary(In);
 	}
 }
@@ -146,6 +155,9 @@ void CGameWorld::LoadDiff(IO::CBinaryReader& In)
 	//!!!clear diffs and non-base-added objects in storages!
 
 	// from base list of C0 and diff build actual entity C0 list
+	// read deleted list, don't create actual C0 for these IDs
+	// for each base, if not deleted, copy to actual list
+	// for each added/modified create/apply to active list
 
 	// per component storage
 	//   if diff data for this object is present, copy it into RAM (or restore component?)

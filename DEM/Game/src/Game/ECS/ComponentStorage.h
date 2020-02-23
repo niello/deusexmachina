@@ -44,6 +44,7 @@ public:
 	virtual bool   SaveDiffToBinary(IO::CBinaryWriter& Out) const = 0;
 };
 
+// Default component storage with a handle array for component data and a special map for entity -> component indexing
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage
 {
@@ -54,8 +55,19 @@ public:
 
 protected:
 
-	CInnerStorage                _Data;
-	CEntityComponentMap<CHandle> _IndexByEntity;
+	constexpr static inline NO_BASE_DATA = std::numeric_limits<size_t>().max();
+
+	struct CIndexRecord
+	{
+		CHandle ComponentHandle;
+		size_t  BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
+		// binary diff data fixed or dynamic // Pre-serialized diff allows to unload objects, saving both RAM and savegame time
+		// FIXME: for now:
+		void* pBinaryDiffData = nullptr;
+	};
+
+	CInnerStorage            _Data;
+	CEntityMap<CIndexRecord> _IndexByEntity;
 
 public:
 
@@ -79,7 +91,7 @@ public:
 		if (!pComponent) return nullptr;
 
 		pComponent->EntityID = EntityID;
-		_IndexByEntity.emplace(EntityID, Handle);
+		_IndexByEntity.emplace(EntityID, { Handle, NO_BASE_DATA, nullptr });
 		return pComponent;
 	}
 
@@ -142,7 +154,7 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		// FIXME: load base data if offset is valid (_World.GetBaseReader(Offset))
+		// FIXME: load base data if offset is valid (_World.GetBaseReader(Offset) / _World.GetBaseDataPtr(Offset))
 		T* pBaseComponent = nullptr;
 
 		if (auto pComponent = Find(EntityID))
@@ -160,18 +172,34 @@ public:
 
 	virtual bool LoadFromBinary(IO::CBinaryReader& In) override
 	{
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		// register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }, don't Deserialize components
+		// registry could be a sparse set, now it is a CEntityMap
+		//!!!for reuse of identical data EntityID->Offset index must be prebuilt! Write without merging first, then add.
+		// In this case we can restore mapping by adding a component full data size (constexpr from meta? or saved in file?).
+		// We could load base component data right here but we don't need it in runtime, so load on demand to the stack.
+
+		//!!!separate function must exist to restore actual components from base data pointer and optional diff!
+		// When unloading the level, may delete component and write binary diff to the field or may keep actual component
+		// and build diff from it each save. Caching diff reduces base reading too! If can detect component changes
+		// (at least getting mutable value ref by handle), could skip updating diff. Or explicit 'commit/save' to mark changed?
+		// So, saving binary diffs:
+		// + allows to save diff once for unloaded objects or objects that didnt change
+		// + allows to read base component data only at diff update, not every save
+		// + speedup saves by writing ready pieces of binary data
+		// - require binary storage, sometimes of size unknown at the compile time (cant use pool of ready made chunks)
+		// - don't support HRD diffs
+
+		const auto ComponentCount = In.Read<uint32_t>();
+		for (uint32_t i = 0; i < ComponentCount; ++i)
 		{
-			const auto ComponentCount = In.Read<uint32_t>();
-			for (uint32_t i = 0; i < ComponentCount; ++i)
-			{
-				const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
-				if (auto pComponent = Add({ EntityIDRaw }))
-					DEM::BinaryFormat::Deserialize(In, *pComponent);
-			}
-			return true;
+			const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
+			if (auto pComponent = Add({ EntityIDRaw }))
+				DEM::BinaryFormat::Deserialize(In, *pComponent);
 		}
-		return false;
+
+		return true;
 	}
 
 	virtual bool SaveToBinary(IO::CBinaryWriter& Out) const override

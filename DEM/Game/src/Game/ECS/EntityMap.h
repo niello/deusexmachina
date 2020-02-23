@@ -11,7 +11,7 @@ namespace DEM::Game
 {
 
 template<class T>
-class CEntityComponentMap final
+class CEntityMap final
 {
 private:
 
@@ -76,7 +76,7 @@ public:
 
 		CRecord* _pRecord = nullptr;
 
-		friend class CEntityComponentMap;
+		friend class CEntityMap;
 
 	public:
 
@@ -90,12 +90,12 @@ public:
 
 	using const_iterator = const iterator;
 
-	CEntityComponentMap(size_t BucketCount = 0)
+	CEntityMap(size_t BucketCount = 0)
 	{
 		Rehash(BucketCount);
 	}
 
-	~CEntityComponentMap()
+	~CEntityMap()
 	{
 		for (CRecord* pRecord : _Records)
 		{

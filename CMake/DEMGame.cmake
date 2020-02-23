@@ -53,7 +53,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/Component.h
 	DEM/Game/src/Game/ECS/ComponentStorage.h
 	DEM/Game/src/Game/ECS/Entity.h
-	DEM/Game/src/Game/ECS/EntityComponentMap.h
+	DEM/Game/src/Game/ECS/EntityMap.h
 	DEM/Game/src/Game/ECS/GameWorld.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/Action.h

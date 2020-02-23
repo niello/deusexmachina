@@ -35,6 +35,7 @@ protected:
 	template<class T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
 
 	Resources::CResourceManager&   _ResMgr;
+	IO::PStream                    _BaseStream; // Base data is accessed on demand in RAM or in a mapped file
 
 	CEntityStorage                 _EntitiesBase;
 	CEntityStorage                 _Entities;
