@@ -137,6 +137,7 @@ struct ParamsFormat
 		//	Out->Add(std::move(ValueData));
 		//}
 		//Output = std::move(Out);
+		return false;
 	}
 	//---------------------------------------------------------------------
 
@@ -159,8 +160,15 @@ struct ParamsFormat
 		for (const auto& [Key, Value] : BaseMap)
 		{
 			if (Map.find(Key) == Map.cend())
+			{
 				// Deleted
-				Out->Set(CStrID(Key), Data::CData());
+				if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+					Out->Set(Key, Data::CData());
+				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
+					Out->Set(CStrID(Key.c_str()), Data::CData());
+				else
+					Out->Set(CStrID(Key), Data::CData());
+			}
 		}
 
 		if (Out->GetCount())

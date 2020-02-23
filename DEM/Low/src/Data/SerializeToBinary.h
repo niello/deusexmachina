@@ -117,7 +117,7 @@ struct BinaryFormat
 		Input >> Count;
 		Vector.resize(Count);
 		for (size_t i = 0; i < Count; ++i)
-			Deserialize(Input, Value[i]);
+			Deserialize(Input, Vector[i]);
 	}
 	//---------------------------------------------------------------------
 
