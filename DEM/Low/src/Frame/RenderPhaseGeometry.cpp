@@ -396,7 +396,7 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CStrID PhaseName, cons
 	//two effect instances created with different GPUs
 	n_assert_dbg(!EffectOverrides.GetCount());
 	Data::PParams EffectsDesc;
-	if (Desc.Get(EffectsDesc, CStrID("Effects")))
+	if (Desc.TryGet(EffectsDesc, CStrID("Effects")))
 	{
 		for (UPTR i = 0; i < EffectsDesc->GetCount(); ++i)
 		{

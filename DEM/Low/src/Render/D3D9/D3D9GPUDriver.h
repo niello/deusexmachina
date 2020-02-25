@@ -119,7 +119,7 @@ protected:
 	bool						FindNextShaderConstRegion(UPTR BufStart, UPTR BufEnd, UPTR CurrConst, UPTR ApplyFlag, UPTR& FoundRangeStart, UPTR& FoundRangeEnd, CCBRec*& pFoundRec);
 	void						ApplyShaderConstChanges();
 	UPTR						InternalDraw(const CPrimitiveGroup& PrimGroup);
-	void						FreePendingTemporaryBuffer(const CD3D9ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot);
+	void						FreePendingTemporaryBuffer(const CD3D9ConstantBuffer* pBuffer, EShaderType Stage, UPTR Slot);
 
 	void						FillD3DPresentParams(const CRenderTargetDesc& BackBufferDesc, const CSwapChainDesc& SwapChainDesc, HWND hWnd, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
 	bool						GetCurrD3DPresentParams(const CD3D9SwapChain& SC, D3DPRESENT_PARAMETERS& D3DPresentParams) const;
@@ -162,11 +162,11 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr);
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr);
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc);
-	virtual PShader				CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) override;
+	virtual PShader				CreateShader(IO::IStream& Stream, bool LoadParamTable = true) override;
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream) override;
 	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr);
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param);
-	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer);
+	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& Buffer);
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags);
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc);
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc);
@@ -214,10 +214,10 @@ public:
 	//void						SetWireframe(bool Wire);
 	//bool						IsWireframe() const { return Wireframe; }
 
-	bool                        BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pCBuffer);
+	bool                        BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pBuffer);
 	bool                        BindResource(EShaderType ShaderType, U32 Register, CD3D9Texture* pResource);
 	bool                        BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler* pSampler);
-	void                        UnbindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer& CBuffer);
+	void                        UnbindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer& Buffer);
 	void                        UnbindResource(EShaderType ShaderType, U32 Register, CD3D9Texture& Resource);
 	void                        UnbindSampler(EShaderType ShaderType, U32 RegisterStart, U32 RegisterCount, CD3D9Sampler& Sampler);
 

@@ -9,7 +9,6 @@
 #include <Render/Sampler.h>
 #include <Render/ConstantBuffer.h>
 #include <Render/Shader.h>
-#include <Render/ShaderLibrary.h>
 #include <Render/RenderState.h>
 #include <Render/Effect.h>
 #include <Render/Material.h>
@@ -132,10 +131,11 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 	if (!pResMgr || !GPU) return nullptr;
 
 	IO::PStream Stream;
-	Render::PShaderLibrary ShaderLibrary;
 	const char* pSubId = strchr(UID.CStr(), '#');
 	if (pSubId)
 	{
+		NOT_IMPLEMENTED_MSG("Shader library is deprecated, need a replacement or use NPK/ZIP?");
+		/*
 		// Generated shaders are not supported, must be a file
 		if (pSubId == UID.CStr()) return nullptr;
 
@@ -152,12 +152,14 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 
 		const U32 ElementID = StringUtils::ToInt(pSubId);
 		Stream = ShaderLibrary->GetElementStream(ElementID);
+		*/
 	}
-	else Stream = pResMgr->CreateResourceStream(UID, pSubId, IO::SAP_SEQUENTIAL);
+	else
+		Stream = pResMgr->CreateResourceStream(UID, pSubId, IO::SAP_SEQUENTIAL);
 
 	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
 
-	Render::PShader Shader = GPU->CreateShader(*Stream, ShaderLibrary.Get(), NeedParamTable);
+	Render::PShader Shader = GPU->CreateShader(*Stream, NeedParamTable);
 
 	if (Shader) Shaders.emplace(UID, Shader);
 

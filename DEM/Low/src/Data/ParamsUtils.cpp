@@ -18,7 +18,7 @@ Data::PParams LoadParamsFromHRD(const char* pFileName)
 	if (!File || !File->Open()) return nullptr;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
-	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
+	Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
 	if (Buffer.GetSize() != FileSize) return nullptr;
 
 	Data::PParams Params;
@@ -47,7 +47,7 @@ Data::PParams LoadDescFromPRM(const char* pRootPath, const char* pRelativeFileNa
 	if (!Main) return nullptr;
 
 	CString BaseName;
-	if (!Main->Get(BaseName, CStrID("_Base_"))) return Main;
+	if (!Main->TryGet(BaseName, CStrID("_Base_"))) return Main;
 
 	if (BaseName == pRelativeFileName)
 	{

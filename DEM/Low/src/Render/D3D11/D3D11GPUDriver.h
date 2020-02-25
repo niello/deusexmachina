@@ -170,8 +170,8 @@ protected:
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
 	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);
 	void								UnbindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV);
-	bool								IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage = ShaderType_Invalid, UPTR ExceptSlot = 0);
-	void								FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot);
+	bool								IsConstantBufferBound(const CD3D11ConstantBuffer* pBuffer, EShaderType ExceptStage = ShaderType_Invalid, UPTR ExceptSlot = 0);
+	void								FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pBuffer, EShaderType Stage, UPTR Slot);
 
 public:
 
@@ -201,11 +201,11 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr) override;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr) override;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) override;
-	virtual PShader				CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) override;
+	virtual PShader				CreateShader(IO::IStream& Stream, bool LoadParamTable = true) override;
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream) override;
 	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) override;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param) override;
-	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer) override;
+	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& Buffer) override;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) override;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) override;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) override;
@@ -255,10 +255,10 @@ public:
 	virtual bool				BeginShaderConstants(CConstantBuffer& Buffer) override;
 	virtual bool				CommitShaderConstants(CConstantBuffer& Buffer) override;
 
-	bool                        BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pCBuffer);
+	bool                        BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pBuffer);
 	bool                        BindResource(EShaderType ShaderType, U32 Register, CD3D11Texture* pResource);
 	bool                        BindSampler(EShaderType ShaderType, U32 Register, CD3D11Sampler* pSampler);
-	void                        UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer& CBuffer);
+	void                        UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer& Buffer);
 	void                        UnbindResource(EShaderType ShaderType, U32 Register, CD3D11Texture& Resource);
 	void                        UnbindSampler(EShaderType ShaderType, U32 Register, CD3D11Sampler& Sampler);
 

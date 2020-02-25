@@ -57,22 +57,6 @@ public:
 	virtual const void* GetConstPtr() const override { return _pData; }
 };
 
-class CRAMDataNew : public IRAMData
-{
-private:
-
-	void* _pData = nullptr;
-
-public:
-
-	CRAMDataNew(UPTR Size) : _pData(Size ? n_new_array(char, Size) : nullptr) {}
-
-	virtual ~CRAMDataNew() override { if (_pData) n_delete_array(_pData); }
-
-	virtual void* GetPtr() override { return _pData; }
-	virtual const void* GetConstPtr() const override { return _pData; }
-};
-
 class CRAMDataMalloc : public IRAMData
 {
 private:

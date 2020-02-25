@@ -84,7 +84,7 @@ public:
 	virtual PVertexBuffer		CreateVertexBuffer(CVertexLayout& VertexLayout, UPTR VertexCount, UPTR AccessFlags, const void* pData = nullptr) = 0;
 	virtual PIndexBuffer		CreateIndexBuffer(EIndexType IndexType, UPTR IndexCount, UPTR AccessFlags, const void* pData = nullptr) = 0;
 	virtual PRenderState		CreateRenderState(const CRenderStateDesc& Desc) = 0;
-	virtual PShader				CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary = nullptr, bool LoadParamTable = true) = 0;
+	virtual PShader				CreateShader(IO::IStream& Stream, bool LoadParamTable = true) = 0;
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream) = 0;
 	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) = 0;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param) = 0;

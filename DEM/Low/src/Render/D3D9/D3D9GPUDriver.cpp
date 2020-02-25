@@ -1713,21 +1713,21 @@ CDepthStencilBuffer* CD3D9GPUDriver::GetDepthStencilBuffer() const
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::FreePendingTemporaryBuffer(const CD3D9ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot)
+void CD3D9GPUDriver::FreePendingTemporaryBuffer(const CD3D9ConstantBuffer* pBuffer, EShaderType Stage, UPTR Slot)
 {
-	if (!pPendingCBHead || !pCBuffer || !pCBuffer->IsTemporary()) return;
+	if (!pPendingCBHead || !pBuffer || !pBuffer->IsTemporary()) return;
 
 	// We have only two slots where the buffer may be bound (one in VS and one in PS)
 	const UPTR OppositeIndex = (Stage == ShaderType_Vertex) ? (CB_Slot_Count + Slot) : Slot;
 
 	// Is this buffer bound to the other shader stage, don't free
-	if (CurrCB[OppositeIndex].CB == pCBuffer) return;
+	if (CurrCB[OppositeIndex].CB == pBuffer) return;
 
 	CTmpCB* pPrevNode = nullptr;
 	CTmpCB* pCurrNode = pPendingCBHead;
 	while (pCurrNode)
 	{
-		if (pCurrNode->CB == pCBuffer)
+		if (pCurrNode->CB == pBuffer)
 		{
 			if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 			else pPendingCBHead = pCurrNode->pNext;
@@ -1752,7 +1752,7 @@ void CD3D9GPUDriver::FreePendingTemporaryBuffer(const CD3D9ConstantBuffer* pCBuf
 }
 //---------------------------------------------------------------------
 
-bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pCBuffer)
+bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer* pBuffer)
 {
 	n_assert_dbg(ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Pixel);
 
@@ -1761,13 +1761,13 @@ bool CD3D9GPUDriver::BindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, C
 	const UPTR Index = (ShaderType == ShaderType_Vertex) ? SlotIndex : (CB_Slot_Count + SlotIndex);
 	CCBRec& CurrCBRec = CurrCB[Index];
 	CD3D9ConstantBuffer* pCurrBuffer = CurrCBRec.CB.Get();
-	if (pCurrBuffer == pCBuffer) OK;
+	if (pCurrBuffer == pBuffer) OK;
 
 	// Free temporary buffer, if not bound to other stages
 	FreePendingTemporaryBuffer(pCurrBuffer, ShaderType, SlotIndex);
 
-	CurrCBRec.CB = pCBuffer;
-	if (pCBuffer) CurrCBRec.ApplyFlags.Set(CB_ApplyAll);
+	CurrCBRec.CB = pBuffer;
+	if (pBuffer) CurrCBRec.ApplyFlags.Set(CB_ApplyAll);
 	else CurrCBRec.ApplyFlags.ClearAll();
 
 	OK;
@@ -1843,16 +1843,16 @@ bool CD3D9GPUDriver::BindSampler(EShaderType ShaderType, U32 RegisterStart, U32 
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer& CBuffer)
+void CD3D9GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, U32 SlotIndex, CD3D9ConstantBuffer& Buffer)
 {
 	n_assert_dbg(ShaderType == ShaderType_Vertex || ShaderType == ShaderType_Pixel);
 
 	const UPTR Index = (ShaderType == ShaderType_Vertex) ? SlotIndex : (CB_Slot_Count + SlotIndex);
 	CCBRec& CurrCBRec = CurrCB[Index];
-	if (CurrCBRec.CB == &CBuffer)
+	if (CurrCBRec.CB == &Buffer)
 	{
 		// Free temporary buffer, if not bound to other stages
-		FreePendingTemporaryBuffer(&CBuffer, ShaderType, SlotIndex);
+		FreePendingTemporaryBuffer(&Buffer, ShaderType, SlotIndex);
 
 		CurrCBRec.CB = nullptr;
 		CurrCBRec.ApplyFlags.ClearAll();
@@ -2350,9 +2350,9 @@ PConstantBuffer CD3D9GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPar
 }
 //---------------------------------------------------------------------
 
-void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
+void CD3D9GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& Buffer)
 {
-	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)CBuffer;
+	CD3D9ConstantBuffer& CB9 = (CD3D9ConstantBuffer&)Buffer;
 	n_assert_dbg(CB9.IsTemporary());
 
 	CTmpCB* pNewNode = TmpCBPool.Construct();
@@ -2793,7 +2793,7 @@ PRenderState CD3D9GPUDriver::CreateRenderState(const CRenderStateDesc& Desc)
 }
 //---------------------------------------------------------------------
 
-PShader CD3D9GPUDriver::CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
+PShader CD3D9GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 {
 	IO::CBinaryReader R(Stream);
 

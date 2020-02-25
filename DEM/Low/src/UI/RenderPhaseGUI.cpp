@@ -17,7 +17,7 @@ bool CRenderPhaseGUI::Init(const CRenderPath& Owner, CStrID PhaseName, const Dat
 
 	RenderTargetID = Desc.Get(CStrID("RenderTarget")).GetValue<CStrID>();
 	CString ModeStr;
-	if (Desc.Get<CString>(ModeStr, CStrID("Mode")))
+	if (Desc.TryGet<CString>(ModeStr, CStrID("Mode")))
 	{
 		if (!n_stricmp(ModeStr.CStr(), "opaque")) DrawMode = UI::DrawMode_Opaque;
 		else if (!n_stricmp(ModeStr.CStr(), "transparent")) DrawMode = UI::DrawMode_Transparent;

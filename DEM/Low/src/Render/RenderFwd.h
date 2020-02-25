@@ -41,7 +41,6 @@ typedef Ptr<class IConstantBufferParam> PConstantBufferParam;
 typedef Ptr<class IResourceParam> PResourceParam;
 typedef Ptr<class ISamplerParam> PSamplerParam;
 typedef Ptr<class CShaderParamTable> PShaderParamTable;
-typedef Ptr<class CShaderLibrary> PShaderLibrary;
 typedef Ptr<class CEffect> PEffect;
 typedef Ptr<class CConstantBuffer> PConstantBuffer;
 typedef Ptr<class CTexture> PTexture;

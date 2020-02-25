@@ -85,7 +85,7 @@ void CGameWorld::LoadBase(IO::CBinaryReader& In)
 	{
 		const auto TypeID = In.Read<CStrID>();
 		if (auto pStorage = FindComponentStorage(TypeID))
-			pStorage->LoadFromBinary(In);
+			pStorage->LoadBase(In);
 	}
 }
 //---------------------------------------------------------------------
@@ -213,7 +213,7 @@ void CGameWorld::SaveAll(IO::CBinaryWriter& Out)
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
-		Storage->SaveToBinary(Out);
+		Storage->SaveAll(Out);
 	}
 }
 //---------------------------------------------------------------------
@@ -330,7 +330,7 @@ void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
-		Storage->SaveDiffToBinary(Out);
+		Storage->SaveDiff(Out);
 	}
 }
 //---------------------------------------------------------------------

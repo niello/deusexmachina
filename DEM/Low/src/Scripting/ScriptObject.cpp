@@ -151,7 +151,7 @@ UPTR CScriptObject::LoadScriptFile(const char* pFileName)
 	if (!File->Open()) FAIL;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
-	Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
+	Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
 	if (Buffer.GetSize() != FileSize) FAIL;
 
 	return LoadScript((const char*)Buffer.GetPtr(), Buffer.GetSize());

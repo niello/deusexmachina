@@ -15,7 +15,6 @@
 #include <Render/D3D11/USMShaderMetadata.h>
 #include <Render/RenderStateDesc.h>
 #include <Render/SamplerDesc.h>
-#include <Render/ShaderLibrary.h>
 #include <Render/TextureData.h>
 #include <Render/ImageUtils.h>
 #include <Events/EventServer.h>
@@ -1009,7 +1008,7 @@ bool CD3D11GPUDriver::BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Shad
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pCBuffer)
+bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer* pBuffer)
 {
 	if (Type == USMBuffer_Constant)
 	{
@@ -1017,12 +1016,12 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType 
 
 		const UPTR Index = Register + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
 
-		if (CurrCB[Index] == pCBuffer) OK;
+		if (CurrCB[Index] == pBuffer) OK;
 
 		// Free temporary buffer previously bound to this slot
 		FreePendingTemporaryBuffer(CurrCB[Index].Get(), ShaderType, Register);
 
-		CurrCB[Index] = pCBuffer;
+		CurrCB[Index] = pBuffer;
 		CurrDirtyFlags.Set(GPU_Dirty_CB);
 		ShaderParamsDirtyFlags.Set(1 << (Shader_Dirty_CBuffers + ShaderType));
 
@@ -1030,8 +1029,8 @@ bool CD3D11GPUDriver::BindConstantBuffer(EShaderType ShaderType, EUSMBufferType 
 	}
 	else
 	{
-		ID3D11ShaderResourceView* pSRV = pCBuffer ? pCBuffer->GetD3DSRView() : nullptr;
-		return BindSRV(ShaderType, Register, pSRV, pCBuffer);
+		ID3D11ShaderResourceView* pSRV = pBuffer ? pBuffer->GetD3DSRView() : nullptr;
+		return BindSRV(ShaderType, Register, pSRV, pBuffer);
 	}
 }
 //---------------------------------------------------------------------
@@ -1080,14 +1079,14 @@ void CD3D11GPUDriver::UnbindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11Sh
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer& CBuffer)
+void CD3D11GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferType Type, U32 Register, CD3D11ConstantBuffer& Buffer)
 {
 	if (Type == USMBuffer_Constant)
 	{
 		if (Register >= D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT) return;
 
 		const UPTR Index = Register + ((UPTR)ShaderType) * D3D11_COMMONSHADER_CONSTANT_BUFFER_API_SLOT_COUNT;
-		if (CurrCB[Index] == &CBuffer)
+		if (CurrCB[Index] == &Buffer)
 		{
 			// Free temporary buffer
 			FreePendingTemporaryBuffer(CurrCB[Index], ShaderType, Register);
@@ -1099,7 +1098,7 @@ void CD3D11GPUDriver::UnbindConstantBuffer(EShaderType ShaderType, EUSMBufferTyp
 	}
 	else
 	{
-		UnbindSRV(ShaderType, Register, CBuffer.GetD3DSRView());
+		UnbindSRV(ShaderType, Register, Buffer.GetD3DSRView());
 	}
 }
 //---------------------------------------------------------------------
@@ -1940,9 +1939,9 @@ PConstantBuffer CD3D11GPUDriver::CreateTemporaryConstantBuffer(IConstantBufferPa
 
 // NB: when buffer is freed, we can reuse it immediately due to dynamic CB renaming, see:
 // https://developer.nvidia.com/content/constant-buffers-without-constant-pain-0
-void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
+void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& Buffer)
 {
-	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)CBuffer;
+	CD3D11ConstantBuffer& CB11 = (CD3D11ConstantBuffer&)Buffer;
 
 	UPTR BufferSize = CB11.GetSizeInBytes();
 #ifdef _DEBUG
@@ -1978,16 +1977,16 @@ void CD3D11GPUDriver::FreeTemporaryConstantBuffer(CConstantBuffer& CBuffer)
 }
 //---------------------------------------------------------------------
 
-bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer, EShaderType ExceptStage, UPTR ExceptSlot)
+bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pBuffer, EShaderType ExceptStage, UPTR ExceptSlot)
 {
-	if (!pCBuffer) FAIL;
+	if (!pBuffer) FAIL;
 
-	if (pCBuffer->GetType() == USMBuffer_Constant)
+	if (pBuffer->GetType() == USMBuffer_Constant)
 	{
 		if (ExceptStage == ShaderType_Invalid)
 		{
 			for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
-				if (CurrCB[i].Get() == pCBuffer) OK;
+				if (CurrCB[i].Get() == pBuffer) OK;
 		}
 		else
 		{
@@ -1995,7 +1994,7 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer
 			for (UPTR i = 0; i < CurrCB.GetCount(); ++i)
 			{
 				if (i == ExceptIndex) continue;
-				if (CurrCB[i].Get() == pCBuffer) OK;
+				if (CurrCB[i].Get() == pBuffer) OK;
 			}
 		}
 	}
@@ -2004,7 +2003,7 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer
 		if (ExceptStage == ShaderType_Invalid)
 		{
 			for (UPTR i = 0; i < CurrSRV.GetCount(); ++i)
-				if (CurrSRV.ValueAt(i).CB.Get() == pCBuffer) OK;
+				if (CurrSRV.ValueAt(i).CB.Get() == pBuffer) OK;
 		}
 		else
 		{
@@ -2012,7 +2011,7 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer
 			for (UPTR i = 0; i < CurrSRV.GetCount(); ++i)
 			{
 				if (CurrSRV.KeyAt(i) == ExceptIndex) continue;
-				if (CurrSRV.ValueAt(i).CB.Get() == pCBuffer) OK;
+				if (CurrSRV.ValueAt(i).CB.Get() == pBuffer) OK;
 			}
 		}
 	}
@@ -2021,12 +2020,12 @@ bool CD3D11GPUDriver::IsConstantBufferBound(const CD3D11ConstantBuffer* pCBuffer
 }
 //---------------------------------------------------------------------
 
-void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCBuffer, EShaderType Stage, UPTR Slot)
+void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pBuffer, EShaderType Stage, UPTR Slot)
 {
 	// Check whether there are pending buffers, this buffer is temporary and this buffer is not bound
-	if (!pPendingCBHead || !pCBuffer || !pCBuffer->IsTemporary() || IsConstantBufferBound(pCBuffer, Stage, Slot)) return;
+	if (!pPendingCBHead || !pBuffer || !pBuffer->IsTemporary() || IsConstantBufferBound(pBuffer, Stage, Slot)) return;
 
-	EUSMBufferType Type = pCBuffer->GetType();
+	EUSMBufferType Type = pBuffer->GetType();
 	CDict<UPTR, CTmpCB*>& BufferPool = 
 		Type == USMBuffer_Structured ? TmpStructuredBuffers :
 		(Type == USMBuffer_Texture ? TmpTextureBuffers : TmpConstantBuffers);
@@ -2035,13 +2034,13 @@ void CD3D11GPUDriver::FreePendingTemporaryBuffer(const CD3D11ConstantBuffer* pCB
 	CTmpCB* pCurrNode = pPendingCBHead;
 	while (pCurrNode)
 	{
-		if (pCurrNode->CB == pCBuffer)
+		if (pCurrNode->CB == pBuffer)
 		{
 			if (pPrevNode) pPrevNode->pNext = pCurrNode->pNext;
 			else pPendingCBHead = pCurrNode->pNext;
 
-			UPTR BufferSize = pCBuffer->GetSizeInBytes();
-			n_assert_dbg(BufferSize == NextPow2(pCBuffer->GetSizeInBytes()));
+			UPTR BufferSize = pBuffer->GetSizeInBytes();
+			n_assert_dbg(BufferSize == NextPow2(pBuffer->GetSizeInBytes()));
 			IPTR Idx = BufferPool.FindIndex(BufferSize);
 			if (Idx != INVALID_INDEX)
 			{
@@ -2658,7 +2657,7 @@ ProcessFailure:
 }
 //---------------------------------------------------------------------
 
-PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, CShaderLibrary* pLibrary, bool LoadParamTable)
+PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 {
 	IO::CBinaryReader R(Stream);
 
@@ -2765,30 +2764,21 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, CShaderLibrary* pLibr
 
 		if (!_DriverFactory->FindShaderInputSignature(InputSignatureID))
 		{
-			if (pLibrary)
-			{
-				Data::PBuffer Buf = pLibrary->CopyRawData(InputSignatureID);
-				if (!Buf) return nullptr;
-				if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(*Buf))) return nullptr;
-			}
-			else
-			{
-				//!!!DBG TMP!
+			//!!!DBG TMP!
 
-				std::string FileName("Data:shaders/d3d_usm/sig/");
-				FileName += std::to_string(InputSignatureID);
-				FileName += ".sig";
+			std::string FileName("Data:shaders/d3d_usm/sig/");
+			FileName += std::to_string(InputSignatureID);
+			FileName += ".sig";
 
-				Data::CBuffer Buffer;
-				IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
-				if (!File || !File->Open()) return nullptr;
-				const UPTR FileSize = static_cast<UPTR>(File->GetSize());
-				Buffer.Reserve(FileSize);
-				Buffer.Trim(File->Read(Buffer.GetPtr(), FileSize));
-				if (Buffer.GetSize() != FileSize) return nullptr;
+			Data::CBuffer Buffer;
+			IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
+			if (!File || !File->Open()) return nullptr;
+			const UPTR FileSize = static_cast<UPTR>(File->GetSize());
+			Buffer.Reserve(FileSize);
+			Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
+			if (Buffer.GetSize() != FileSize) return nullptr;
 
-				if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
-			}
+			if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
 		}
 	}
 
