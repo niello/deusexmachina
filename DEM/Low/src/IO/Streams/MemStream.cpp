@@ -6,6 +6,12 @@
 namespace IO
 {
 
+CMemStream::CMemStream()
+	: CMemStream(std::make_unique<Data::CBufferMalloc>(0))
+{
+}
+//---------------------------------------------------------------------
+
 CMemStream::CMemStream(void* pData, UPTR BufferSize, UPTR DataSize)
 	: _pData((char*)pData)
 	, _BufferSize(BufferSize)
@@ -81,7 +87,10 @@ UPTR CMemStream::Write(const void* pData, UPTR Size)
 		if (_Buffer)
 		{
 			if (auto pNewData = _Buffer->Resize(NewSize))
+			{
 				_pData = (char*)pNewData;
+				_BufferSize = _Buffer->GetSize();
+			}
 			else
 				Size = _BufferSize - _Pos;
 		}
@@ -110,7 +119,10 @@ UPTR CMemStream::Fill(U8 Value, UPTR Size)
 		if (_Buffer)
 		{
 			if (auto pNewData = _Buffer->Resize(NewSize))
+			{
 				_pData = (char*)pNewData;
+				_BufferSize = _Buffer->GetSize();
+			}
 			else
 				Size = _BufferSize - _Pos;
 		}

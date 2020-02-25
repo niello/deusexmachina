@@ -53,7 +53,7 @@ void n_free_aligned_dbg(void* memblock, const char* filename, int line);
 #define n_malloc_aligned(size, alignment) n_malloc_aligned_dbg(size, alignment, __FILE__, __LINE__)
 #define n_calloc(num, size) n_calloc_dbg(num, size, __FILE__, __LINE__)
 #define n_realloc(memblock, size) n_realloc_dbg(memblock, size, __FILE__, __LINE__)
-#define n_realloc_aligned(memblock, size, alignment) n_realloc_dbg(memblock, size, alignment, __FILE__, __LINE__)
+#define n_realloc_aligned(memblock, size, alignment) n_realloc_aligned_dbg(memblock, size, alignment, __FILE__, __LINE__)
 #define n_free(memblock) n_free_dbg(memblock, __FILE__, __LINE__)
 #define n_free_aligned(memblock) n_free_aligned_dbg(memblock, __FILE__, __LINE__)
 #else

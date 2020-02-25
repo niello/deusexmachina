@@ -28,7 +28,13 @@ protected:
 
 	UPTR          _BufferSize = 0;
 
-	Data::PBuffer _Buffer;
+	union
+	{
+		//???instead give up unique_ptr and manually delete in destructor if owning?
+		//if buffers become refcounted this problem will be solved
+		Data::PBuffer  _Buffer;
+		Data::IBuffer* _pBuffer;
+	};
 
 	UPTR          _Pos = 0;
 	UPTR          _UnusedStart = 0; // To track part not written into
@@ -36,8 +42,10 @@ protected:
 
 public:
 
+	CMemStream(); // MRO
 	CMemStream(void* pData, UPTR BufferSize, UPTR DataSize = 0); // CFN
 	CMemStream(const void* pData, UPTR BufferSize, UPTR DataSize = 0); // MFN
+	CMemStream(Data::IBuffer& Buffer); // CFN/MFN/MRN, depends on the buffer implementation
 	CMemStream(Data::PBuffer&& Buffer); // CFO/MFO/MRO, depends on the buffer implementation
 	virtual ~CMemStream() override { if (IsOpened()) Close(); }
 
@@ -52,9 +60,10 @@ public:
 	virtual bool    Truncate() override { if (_UnusedStart > _Pos) _UnusedStart = _Pos; OK; }
 	virtual void	Flush() override {}
 	virtual void*	Map() override;
+	virtual void	Unmap() override {}
 
 	virtual U64		GetSize() const override { return _BufferSize; }
-	virtual bool	IsOpened() const override { return !!_pData; }
+	virtual bool	IsOpened() const override { return _pData || _Buffer; }
 	virtual bool    IsMapped() const override { return false; }
 	virtual bool	IsEOF() const override { return _pConstData ? (_Pos >= _BufferSize) : true; }
 	virtual bool	CanRead() const override { OK; }

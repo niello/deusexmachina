@@ -2,6 +2,8 @@
 #include <Game/ECS/EntityMap.h>
 #include <Data/SerializeToParams.h>
 #include <Data/SerializeToBinary.h>
+#include <Data/Buffer.h>
+#include <IO/Streams/MemStream.h>
 
 // Stores components of specified type. Each component type can have only one storage type.
 // Interface is provided for the game world to handle all storages transparently. In places
@@ -48,14 +50,16 @@ public:
 protected:
 
 	constexpr static inline size_t NO_BASE_DATA = std::numeric_limits<size_t>().max();
+	constexpr static inline size_t MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
 
 	struct CIndexRecord
 	{
 		CHandle ComponentHandle;
 		size_t  BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
-		// binary diff data fixed or dynamic // Pre-serialized diff allows to unload objects, saving both RAM and savegame time
-		// FIXME: for now:
-		void* pBinaryDiffData = nullptr;
+		std::conditional_t<
+			MAX_DIFF_SIZE <= 512,
+			void*,
+			Data::PBuffer> BinaryDiffData; // Pre-serialized diff allows to unload objects, saving both RAM and savegame time
 	};
 
 	CInnerStorage            _Data;
@@ -104,6 +108,7 @@ public:
 		else
 		{
 			// write 'deleted' diff/flag
+			// drop buffer
 		}
 
 		OK;

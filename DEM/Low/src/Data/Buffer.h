@@ -20,11 +20,11 @@ public:
 
 	virtual ~IBuffer() = default;
 
-	virtual void* GetPtr() = 0;
+	virtual void*       GetPtr() = 0;
 	virtual const void* GetConstPtr() const = 0;
-	virtual UPTR GetSize() const = 0;
-	virtual void* Resize(UPTR NewSize) { return nullptr; }
-	virtual bool IsOwning() const = 0;
+	virtual UPTR        GetSize() const = 0;
+	virtual void*       Resize(UPTR NewSize) { return nullptr; }
+	virtual bool        IsOwning() const = 0;
 };
 
 class CBufferNotOwned : public IBuffer
@@ -40,10 +40,10 @@ public:
 
 	virtual ~CBufferNotOwned() override = default;
 
-	virtual void* GetPtr() override { return _pData; }
+	virtual void*       GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
-	virtual UPTR GetSize() const override { return _Size; }
-	virtual bool IsOwning() const override { return false; }
+	virtual UPTR        GetSize() const override { return _Size; }
+	virtual bool        IsOwning() const override { return false; }
 };
 
 class CBufferNotOwnedImmutable : public IBuffer
@@ -59,10 +59,10 @@ public:
 
 	virtual ~CBufferNotOwnedImmutable() override = default;
 
-	virtual void* GetPtr() override { return nullptr; }
+	virtual void*       GetPtr() override { return nullptr; }
 	virtual const void* GetConstPtr() const override { return _pData; }
-	virtual UPTR GetSize() const override { return _Size; }
-	virtual bool IsOwning() const override { return false; }
+	virtual UPTR        GetSize() const override { return _Size; }
+	virtual bool        IsOwning() const override { return false; }
 };
 
 class CBufferMalloc : public IBuffer
@@ -78,10 +78,11 @@ public:
 
 	virtual ~CBufferMalloc() override { if (_pData) n_free(_pData); }
 
-	virtual void* GetPtr() override { return _pData; }
+	virtual void*       GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
-	virtual UPTR GetSize() const override { return _Size; }
-	virtual bool IsOwning() const override { return true; }
+	virtual UPTR        GetSize() const override { return _Size; }
+	virtual void*       Resize(UPTR NewSize) override;
+	virtual bool        IsOwning() const override { return true; }
 };
 
 class CBufferMallocAligned : public IBuffer
@@ -90,19 +91,22 @@ private:
 
 	void* _pData = nullptr;
 	UPTR _Size = 0;
+	UPTR _Alignment = 16;
 
 public:
 
-	CBufferMallocAligned(UPTR Size, UPTR Alignment) : _pData((Size && Alignment) ? n_malloc_aligned(Size, Alignment) : nullptr), _Size(Size) {}
+	CBufferMallocAligned(UPTR Size, UPTR Alignment = 16) : _pData((Size && Alignment) ? n_malloc_aligned(Size, Alignment) : nullptr), _Size(Size), _Alignment(Alignment) {}
 
 	virtual ~CBufferMallocAligned() override { if (_pData) n_free_aligned(_pData); }
 
-	virtual void* GetPtr() override { return _pData; }
+	virtual void*       GetPtr() override { return _pData; }
 	virtual const void* GetConstPtr() const override { return _pData; }
-	virtual UPTR GetSize() const override { return _Size; }
-	virtual bool IsOwning() const override { return true; }
+	virtual UPTR        GetSize() const override { return _Size; }
+	virtual void*       Resize(UPTR NewSize) override;
+	virtual bool        IsOwning() const override { return true; }
 };
 
+// NB: mapped stream typically can't be resized, so Resize() is not implemented
 class CBufferMappedStream : public IBuffer
 {
 private:
@@ -116,10 +120,10 @@ public:
 
 	virtual ~CBufferMappedStream() override;
 
-	virtual void* GetPtr() override { return _pData; }
-	virtual const void* GetConstPtr() const override { return _pData; }
-	virtual UPTR GetSize() const override;
-	virtual bool IsOwning() const override { return true; } // Because it holds the stream
+	virtual void*       GetPtr() override;
+	virtual const void* GetConstPtr() const override;
+	virtual UPTR        GetSize() const override;
+	virtual bool        IsOwning() const override { return true; } // Because it holds the stream
 };
 
 }
