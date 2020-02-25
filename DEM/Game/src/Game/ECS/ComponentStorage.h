@@ -1,5 +1,4 @@
 #pragma once
-#include <Game/ECS/Entity.h>
 #include <Game/ECS/EntityMap.h>
 #include <Data/SerializeToParams.h>
 #include <Data/SerializeToBinary.h>
@@ -10,18 +9,10 @@
 // TComponentTraits determine what type of storage which component type uses.
 // Effective and compact handle array storage is used by default.
 
-namespace IO
-{
-	class CBinaryReader;
-	class CBinaryWriter;
-}
-
 namespace DEM::Game
 {
-typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
-
 class CGameWorld;
-class CGameLevel;
+typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 
 class IComponentStorage
 {
@@ -39,9 +30,9 @@ public:
 	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
-	virtual bool   LoadFromBinary(IO::CBinaryReader& In) = 0;
-	virtual bool   SaveToBinary(IO::CBinaryWriter& Out) const = 0;
-	virtual bool   SaveDiffToBinary(IO::CBinaryWriter& Out) const = 0;
+	virtual bool   LoadBase(IO::CBinaryReader& In) = 0;
+	virtual bool   SaveAll(IO::CBinaryWriter& Out) const = 0;
+	virtual bool   SaveDiff(IO::CBinaryWriter& Out) const = 0;
 };
 
 // Default component storage with a handle array for component data and a special map for entity -> component indexing
@@ -81,6 +72,7 @@ public:
 	}
 
 	// TODO: describe as a static interface part
+	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
@@ -104,7 +96,16 @@ public:
 		if (It == _IndexByEntity.cend()) FAIL;
 
 		if (It->ComponentHandle) _Data.Free(It->ComponentHandle);
-		_IndexByEntity.erase(It);
+
+		if (It->BaseDataOffset == NO_BASE_DATA)
+		{
+			_IndexByEntity.erase(It);
+		}
+		else
+		{
+			// write 'deleted' diff/flag
+		}
+
 		OK;
 	}
 
@@ -176,9 +177,11 @@ public:
 		return false;
 	}
 
-	virtual bool LoadFromBinary(IO::CBinaryReader& In) override
+	virtual bool LoadBase(IO::CBinaryReader& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		//erase all previous data
 
 		// register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }, don't Deserialize components
 		// registry could be a sparse set, now it is a CEntityMap
@@ -208,7 +211,8 @@ public:
 		return true;
 	}
 
-	virtual bool SaveToBinary(IO::CBinaryWriter& Out) const override
+	//!!!TODO: merge identical (compare bytes AFTER serialization)! Optional flag?
+	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
@@ -223,7 +227,8 @@ public:
 		return true;
 	}
 
-	virtual bool SaveDiffToBinary(IO::CBinaryWriter& Out) const override
+	// update diffs of all loaded entities, write to Out
+	virtual bool SaveDiff(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
@@ -245,6 +250,15 @@ public:
 
 		return true;
 	}
+
+	//LoadDiff - delete diff data and objects without base, unload components for affected recs, cache new diff binary data, (reload unloaded??? optional?)
+	//!!!if diff data is 'deleted', don't load component! may even force-unload it.
+
+	//???all entities in a level? or different functions for single entity and for level?
+	//!!!first create what will be used right now!
+	//LoadEntity - skip if no record, create base/T(), apply diff on it if present, register and return resulting component, if diff is 'deleted' simply destroy component if loaded and return null
+	//UnloadEntity - SaveEntity for what is unloaded (see skips there too!), delete component from storage, clear handle in record
+	//SaveEntity - skip if no record, not loaded, not saveable or not dirty, get base/T(), calc diff against it and write to diff cache
 
 	auto begin() { return _Data.begin(); }
 	auto begin() const { return _Data.begin(); }

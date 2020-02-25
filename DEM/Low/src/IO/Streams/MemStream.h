@@ -1,11 +1,7 @@
 #pragma once
-#ifndef __DEM_L1_MEM_STREAM_H__
-#define __DEM_L1_MEM_STREAM_H__
-
 #include <IO/Stream.h>
 
 // RAM access stream
-// Partially based on Nebula 3 (c) IO::MemoryStream class
 
 namespace IO
 {
@@ -16,25 +12,24 @@ protected:
 
 	union
 	{
-		char*		pBuffer;
+		char*		pBuffer = nullptr;
 		const char*	pConstBuffer;
 	};
 
-	UPTR	Pos;
-	UPTR	DataSize;
-	UPTR	AllocSize;
-	bool	SelfAlloc;
+	UPTR	Pos = 0;
+	UPTR	DataSize = 0;
+	UPTR	AllocSize = 0;
+	bool	SelfAlloc = false;
 
 	void			Allocate(UPTR AddedBytes);
 
 public:
 
-	CMemStream(): pBuffer(nullptr), Pos(0), DataSize(0), AllocSize(0), SelfAlloc(false) {}
 	virtual ~CMemStream() override { if (IsOpened()) Close(); }
 
 	bool			Open(void* pData, UPTR Size);
 	bool			Open(const void* pData, UPTR Size);
-	virtual bool	Open() override {}
+	virtual bool	Open() override { OK; }
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override;
 	virtual UPTR	Write(const void* pData, UPTR Size) override;
@@ -74,5 +69,3 @@ inline bool CMemStream::Open(const void* pData, UPTR Size)
 //---------------------------------------------------------------------
 
 }
-
-#endif

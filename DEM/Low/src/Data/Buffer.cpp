@@ -5,6 +5,53 @@ namespace Data
 {
 DEFINE_TYPE(CBuffer, CBuffer())
 
+void CBuffer::Allocate(UPTR Size)
+{
+	n_assert(!IsValid());
+	pData = (char*)n_malloc(Size);
+	Allocated = Size;
+	DataSize = Size;
+}
+//---------------------------------------------------------------------
+
+void CBuffer::Clear()
+{
+	if (IsValid())
+	{
+		n_free(pData);
+		pData = nullptr;
+		DataSize = 0;
+		Allocated = 0;
+	}
+}
+//---------------------------------------------------------------------
+
+void CBuffer::Set(const void* pSrc, UPTR SrcSize)
+{
+	n_assert(pSrc || !SrcSize);
+
+	if (!pData || Allocated < SrcSize)
+	{
+		n_free(pData);
+		pData = (char*)n_malloc(SrcSize);
+		Allocated = SrcSize;
+	}
+	DataSize = SrcSize;
+	if (SrcSize) memcpy(pData, pSrc, SrcSize);
+}
+//---------------------------------------------------------------------
+
+void CBuffer::Reserve(UPTR Size)
+{
+	if (Allocated < Size)
+	{
+		Clear();
+		Allocate(Size);
+	}
+	DataSize = Size;
+}
+//---------------------------------------------------------------------
+
 int CBuffer::BinaryCompare(const CBuffer& Other) const
 {
 	n_assert(pData && Other.pData);

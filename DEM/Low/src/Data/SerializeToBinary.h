@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/Metadata.h>
 #include <IO/BinaryWriter.h>
+#include <IO/BinaryReader.h>
 #include <vector>
 #include <unordered_map>
 
@@ -94,8 +95,8 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TInput, typename TValue>
-	static inline void Deserialize(TInput& Input, TValue& Value)
+	template<typename TValue>
+	static inline void Deserialize(IO::CBinaryReader& Input, TValue& Value)
 	{
 		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
 		{
@@ -110,8 +111,8 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TInput, typename TValue>
-	static inline void Deserialize(TInput& Input, std::vector<TValue>& Vector)
+	template<typename TValue>
+	static inline void Deserialize(IO::CBinaryReader& Input, std::vector<TValue>& Vector)
 	{
 		uint32_t Count;
 		Input >> Count;
@@ -121,8 +122,8 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TInput, typename TKey, typename TValue>
-	static inline void Deserialize(TInput& Input, std::unordered_map<TKey, TValue>& Map)
+	template<typename TKey, typename TValue>
+	static inline void Deserialize(IO::CBinaryReader& Input, std::unordered_map<TKey, TValue>& Map)
 	{
 		uint32_t Count;
 		Input >> Count;

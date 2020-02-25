@@ -126,7 +126,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/GameLevelView.cpp
 	DEM/Game/src/Game/GameServer.cpp
 	DEM/Game/src/Game/Property.cpp
-	DEM/Game/src/Game/ECS/ComponentStorage.cpp
 	DEM/Game/src/Game/ECS/Entity.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
 	DEM/Game/src/Game/Interaction/Process.cpp

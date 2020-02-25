@@ -1,4 +1,5 @@
 #pragma once
+#include <Game/ECS/Entity.h>
 #include <System/Allocators/PoolAllocator.h>
 
 // Specialized hash map for entity -> component index.
