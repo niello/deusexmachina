@@ -1,7 +1,17 @@
 #pragma once
 #include <IO/Stream.h>
 
-// RAM access stream
+// Stream that works with a memory region. It can be RAM, mapped file or any other source
+// represented as a memory address. Sources are divided by following attributes:
+// - constant (read-only, C) or mutable (M)
+// - fixed-size (F) or resizeable (R)
+// - owned (O) or not owned (N)
+// See constructor annotations to choose what you need.
+
+namespace Data
+{
+	typedef std::unique_ptr<class IBuffer> PBuffer;
+}
 
 namespace IO
 {
@@ -12,37 +22,41 @@ protected:
 
 	union
 	{
-		char*		pBuffer = nullptr;
-		const char*	pConstBuffer;
+		char*		_pData = nullptr;
+		const char*	_pConstData;
 	};
 
-	UPTR	Pos = 0;
-	UPTR	DataSize = 0;
-	UPTR	AllocSize = 0;
-	bool	SelfAlloc = false;
+	UPTR          _BufferSize = 0;
 
-	void			Allocate(UPTR AddedBytes);
+	Data::PBuffer _Buffer;
+
+	UPTR          _Pos = 0;
+	UPTR          _UnusedStart = 0; // To track part not written into
+	bool          _ReadOnly : 1;
 
 public:
 
-	CMemStream(void* pData, UPTR Size) : pBuffer((char*)pData), DataSize(Size) {}
-	CMemStream(const void* pData, UPTR Size) : pConstBuffer((const char*)pData), DataSize(Size) {}
+	CMemStream(void* pData, UPTR BufferSize, UPTR DataSize = 0); // CFN
+	CMemStream(const void* pData, UPTR BufferSize, UPTR DataSize = 0); // MFN
+	CMemStream(Data::PBuffer&& Buffer); // CFO/MFO/MRO, depends on the buffer implementation
 	virtual ~CMemStream() override { if (IsOpened()) Close(); }
+
+	Data::PBuffer&& Detach();
 
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override;
 	virtual UPTR	Write(const void* pData, UPTR Size) override;
-	UPTR			Fill(U8 Value, UPTR ByteCount);
+	UPTR			Fill(U8 Value, UPTR Size);
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
-	virtual U64		Tell() const override { return Pos; }
-	virtual bool    Truncate() override { DataSize = Pos; }
+	virtual U64		Tell() const override { return _Pos; }
+	virtual bool    Truncate() override { if (_UnusedStart > _Pos) _UnusedStart = _Pos; OK; }
 	virtual void	Flush() override {}
 	virtual void*	Map() override;
 
-	virtual U64		GetSize() const override { return DataSize; }
-	virtual bool	IsOpened() const override { return !!pBuffer; }
-	virtual bool    IsMapped() const override { return true; }
-	virtual bool	IsEOF() const override;
+	virtual U64		GetSize() const override { return _BufferSize; }
+	virtual bool	IsOpened() const override { return !!_pData; }
+	virtual bool    IsMapped() const override { return false; }
+	virtual bool	IsEOF() const override { return _pConstData ? (_Pos >= _BufferSize) : true; }
 	virtual bool	CanRead() const override { OK; }
 	virtual bool	CanWrite() const override { OK; }
 	virtual bool	CanSeek() const override { OK; }

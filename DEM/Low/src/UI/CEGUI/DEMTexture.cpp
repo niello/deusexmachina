@@ -188,7 +188,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	else
 	{
 		// FIXME: could transfer ownership if CEGUI would allow, to keep RAM data (now destroyed after GPU texture creation)
-		Bytes.reset(n_new(Data::CBufferNotOwnedImmutable(buffer)));
+		Bytes.reset(n_new(Data::CBufferNotOwnedImmutable(buffer, 0)));
 	}
 
 	//!!!can reuse texture without recreation if desc is the same and not immutable!
