@@ -3,9 +3,9 @@
 
 namespace Data
 {
-DEFINE_TYPE(CBuffer, CBuffer())
+DEFINE_TYPE(CDataBuffer, CDataBuffer())
 
-void CBuffer::Allocate(UPTR Size)
+void CDataBuffer::Allocate(UPTR Size)
 {
 	n_assert(!IsValid());
 	pData = (char*)n_malloc(Size);
@@ -14,7 +14,7 @@ void CBuffer::Allocate(UPTR Size)
 }
 //---------------------------------------------------------------------
 
-void CBuffer::Clear()
+void CDataBuffer::Clear()
 {
 	if (IsValid())
 	{
@@ -26,7 +26,7 @@ void CBuffer::Clear()
 }
 //---------------------------------------------------------------------
 
-void CBuffer::Set(const void* pSrc, UPTR SrcSize)
+void CDataBuffer::Set(const void* pSrc, UPTR SrcSize)
 {
 	n_assert(pSrc || !SrcSize);
 
@@ -41,7 +41,7 @@ void CBuffer::Set(const void* pSrc, UPTR SrcSize)
 }
 //---------------------------------------------------------------------
 
-void CBuffer::Reserve(UPTR Size)
+void CDataBuffer::Reserve(UPTR Size)
 {
 	if (Allocated < Size)
 	{
@@ -52,7 +52,7 @@ void CBuffer::Reserve(UPTR Size)
 }
 //---------------------------------------------------------------------
 
-int CBuffer::BinaryCompare(const CBuffer& Other) const
+int CDataBuffer::BinaryCompare(const CDataBuffer& Other) const
 {
 	n_assert(pData && Other.pData);
 	if (DataSize == Other.DataSize) return memcmp(this->pData, Other.pData, this->DataSize);

@@ -13,7 +13,7 @@ namespace ParamsUtils
 
 Data::PParams LoadParamsFromHRD(const char* pFileName)
 {
-	Data::CBuffer Buffer;
+	Data::CDataBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!File || !File->Open()) return nullptr;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());

@@ -253,7 +253,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 
 UPTR CScriptServer::RunScriptFile(const char* pFileName)
 {
-	Data::CBuffer Buffer;
+	Data::CDataBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!File->Open()) FAIL;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
@@ -429,7 +429,7 @@ bool CScriptServer::LoadClass(const char* Name)
 {
 	n_assert2(Name, "Invalid class name to register");
 
-	//!!!use custom format for compiled class, because CBuffer is copied during read! Or solve this problem!
+	//!!!use custom format for compiled class, because CDataBuffer is copied during read! Or solve this problem!
 	Data::PParams ClassDesc = ParamsUtils::LoadParamsFromPRM(CString("ScriptClasses:") + Name + ".cls");
 	if (!ClassDesc) FAIL;
 
@@ -442,9 +442,9 @@ bool CScriptServer::LoadClass(const char* Name)
 	Data::CParam* pCodePrm;
 	if (ClassDesc->TryGet(pCodePrm, CStrID("Code")))
 	{
-		if (pCodePrm->IsA<Data::CBuffer>())
+		if (pCodePrm->IsA<Data::CDataBuffer>())
 		{
-			const Data::CBuffer& Code = pCodePrm->GetValue<Data::CBuffer>();
+			const Data::CDataBuffer& Code = pCodePrm->GetValue<Data::CDataBuffer>();
 			pData = (const char*)Code.GetPtr();
 			Size = Code.GetSize();
 		}

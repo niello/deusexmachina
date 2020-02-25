@@ -122,10 +122,10 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 
 		OutValue = A;
 	}
-	else if (Type == DATA_TYPE_ID(Data::CBuffer))
+	else if (Type == DATA_TYPE_ID(Data::CDataBuffer))
 	{
-		OutValue = Data::CBuffer();
-		Data::CBuffer& Buf = OutValue;
+		OutValue = Data::CDataBuffer();
+		Data::CDataBuffer& Buf = OutValue;
 		Buf.Reserve(Read<int>());
 		Stream.Read(Buf.GetPtr(), Buf.GetSize());
 	}

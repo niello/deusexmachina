@@ -3,13 +3,13 @@
 #include <Data/Hash.h>
 #include <System/System.h>
 
-// The CBuffer class encapsulates a chunk of raw memory into a C++ object which can be copied, compared and hashed
+// The CDataBuffer class encapsulates a chunk of raw memory into a C++ object which can be copied, compared and hashed
 
 namespace Data
 {
-typedef std::unique_ptr<class CBuffer> PBuffer;
+typedef std::unique_ptr<class CDataBuffer> PDataBuffer;
 
-class CBuffer final
+class CDataBuffer final
 {
 protected:
 
@@ -18,16 +18,16 @@ protected:
 	UPTR	Allocated = 0;
 
 	void	Allocate(UPTR Size);
-	int		BinaryCompare(const CBuffer& Other) const;
+	int		BinaryCompare(const CDataBuffer& Other) const;
 
 public:
 
-	CBuffer() = default;
-	CBuffer(const void* pSrc, UPTR SrcSize) { Set(pSrc, SrcSize); }
-	CBuffer(UPTR Size) { Allocate(Size); }
-	CBuffer(const CBuffer& Other) { Set(Other.pData, Other.DataSize); }
-	CBuffer(CBuffer&& Other): pData(Other.pData), DataSize(Other.DataSize), Allocated(Other.Allocated) { Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
-	~CBuffer() { if (pData) n_free(pData); }
+	CDataBuffer() = default;
+	CDataBuffer(const void* pSrc, UPTR SrcSize) { Set(pSrc, SrcSize); }
+	CDataBuffer(UPTR Size) { Allocate(Size); }
+	CDataBuffer(const CDataBuffer& Other) { Set(Other.pData, Other.DataSize); }
+	CDataBuffer(CDataBuffer&& Other): pData(Other.pData), DataSize(Other.DataSize), Allocated(Other.Allocated) { Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
+	~CDataBuffer() { if (pData) n_free(pData); }
 
 	void	Reserve(UPTR Size);
 	void	Clear();
@@ -43,17 +43,17 @@ public:
 	void	Read(char* pDst, UPTR StartIdx, UPTR EndIdx);
 	void	Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx);
 
-	void operator =(const CBuffer& Other) { Set(Other.pData, Other.DataSize); }
-	void operator =(CBuffer&& Other) { pData = Other.pData; DataSize = Other.DataSize; Allocated = Other.Allocated; Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
-	bool operator ==(const CBuffer& Other) const { return !BinaryCompare(Other); }
-	bool operator !=(const CBuffer& Other) const { return !!BinaryCompare(Other); }
-	bool operator >(const CBuffer& Other) const { return BinaryCompare(Other) > 0; }
-	bool operator <(const CBuffer& Other) const { return BinaryCompare(Other) < 0; }
-	bool operator >=(const CBuffer& Other) const { return BinaryCompare(Other) >= 0; }
-	bool operator <=(const CBuffer& Other) const { return BinaryCompare(Other) <= 0; }
+	void operator =(const CDataBuffer& Other) { Set(Other.pData, Other.DataSize); }
+	void operator =(CDataBuffer&& Other) { pData = Other.pData; DataSize = Other.DataSize; Allocated = Other.Allocated; Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
+	bool operator ==(const CDataBuffer& Other) const { return !BinaryCompare(Other); }
+	bool operator !=(const CDataBuffer& Other) const { return !!BinaryCompare(Other); }
+	bool operator >(const CDataBuffer& Other) const { return BinaryCompare(Other) > 0; }
+	bool operator <(const CDataBuffer& Other) const { return BinaryCompare(Other) < 0; }
+	bool operator >=(const CDataBuffer& Other) const { return BinaryCompare(Other) >= 0; }
+	bool operator <=(const CDataBuffer& Other) const { return BinaryCompare(Other) <= 0; }
 };
 
-inline void CBuffer::Read(char* pDst, UPTR StartIdx, UPTR EndIdx)
+inline void CDataBuffer::Read(char* pDst, UPTR StartIdx, UPTR EndIdx)
 {
 	n_assert_dbg(pDst &&
 		StartIdx < Allocated &&
@@ -64,7 +64,7 @@ inline void CBuffer::Read(char* pDst, UPTR StartIdx, UPTR EndIdx)
 }
 //---------------------------------------------------------------------
 
-inline void CBuffer::Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx)
+inline void CDataBuffer::Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx)
 {
 	n_assert_dbg(pSrc &&
 		StartIdx < Allocated &&
@@ -78,6 +78,6 @@ inline void CBuffer::Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx)
 
 }
 
-//???PBuffer?
-DECLARE_TYPE(Data::CBuffer, 9)
-#define TBuffer DATA_TYPE(Data::CBuffer)
+//???PDataBuffer?
+DECLARE_TYPE(Data::CDataBuffer, 9)
+#define TBuffer DATA_TYPE(Data::CDataBuffer)

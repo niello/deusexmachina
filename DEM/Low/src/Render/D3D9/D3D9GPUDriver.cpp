@@ -2824,7 +2824,7 @@ PShader CD3D9GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.Tell());
 	if (!BinarySize) return nullptr;
 
-	Data::CBuffer Data(BinarySize);
+	Data::CDataBuffer Data(BinarySize);
 	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
 
 	Render::PD3D9Shader Shader;

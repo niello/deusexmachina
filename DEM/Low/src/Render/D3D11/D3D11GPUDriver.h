@@ -165,7 +165,7 @@ protected:
 	static D3D11_TEXTURE_ADDRESS_MODE	GetD3DTexAddressMode(ETexAddressMode Mode);
 	static D3D11_FILTER					GetD3DTexFilter(ETexFilter Filter, bool Comparison);
 
-	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature = nullptr);
+	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CDataBuffer* pSignature = nullptr);
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, UPTR Size, UPTR Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
 	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);

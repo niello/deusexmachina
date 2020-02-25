@@ -1637,7 +1637,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 //---------------------------------------------------------------------
 
 // Gets or creates an actual layout for the given vertex layout and shader input signature
-ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CBuffer* pSignature)
+ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CDataBuffer* pSignature)
 {
 	if (!ShaderInputSignatureID) return nullptr;
 
@@ -2698,7 +2698,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.Tell());
 	if (!BinarySize) return nullptr;
 
-	Data::CBuffer Data(BinarySize);
+	Data::CDataBuffer Data(BinarySize);
 	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
 
 	PD3D11Shader Shader;
@@ -2770,7 +2770,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 			FileName += std::to_string(InputSignatureID);
 			FileName += ".sig";
 
-			Data::CBuffer Buffer;
+			Data::CDataBuffer Buffer;
 			IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
 			if (!File || !File->Open()) return nullptr;
 			const UPTR FileSize = static_cast<UPTR>(File->GetSize());

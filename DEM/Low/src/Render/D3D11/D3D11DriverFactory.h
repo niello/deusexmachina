@@ -18,7 +18,7 @@ enum DXGI_FORMAT;
 
 namespace Data
 {
-	typedef std::unique_ptr<class CBuffer> PBuffer;
+	typedef std::unique_ptr<class CDataBuffer> PDataBuffer;
 }
 
 namespace Render
@@ -46,7 +46,7 @@ protected:
 	IDXGIDebug*					pDXGIDebug = nullptr;
 #endif
 	UPTR						AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
-	std::vector<Data::CBuffer>	ShaderSignatures;
+	std::vector<Data::CDataBuffer>	ShaderSignatures;
 	CHashTable<U32, UPTR>		ShaderSigIDToIndex;
 
 public:
@@ -74,8 +74,8 @@ public:
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
-	bool					RegisterShaderInputSignature(U32 ID, Data::CBuffer&& Data);
-	const Data::CBuffer*	FindShaderInputSignature(U32 ID) const;
+	bool					RegisterShaderInputSignature(U32 ID, Data::CDataBuffer&& Data);
+	const Data::CDataBuffer*	FindShaderInputSignature(U32 ID) const;
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

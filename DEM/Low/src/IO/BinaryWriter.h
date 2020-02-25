@@ -10,7 +10,7 @@ class CString;
 
 namespace Data
 {
-	class CBuffer;
+	class CDataBuffer;
 	typedef Ptr<class CDataArray> PDataArray;
 	typedef Ptr<class CDataScheme> PDataScheme;
 }
@@ -51,7 +51,7 @@ public:
 	template<> bool		Write<Data::CData>(const Data::CData& Value) { return WriteData(Value); }
 	template<> bool		Write<Data::CDataArray>(const Data::CDataArray& Value);
 	template<> bool		Write<Data::PDataArray>(const Data::PDataArray& Value) { return Value.IsValidPtr() ? Write<Data::CDataArray>(*Value) : true; }
-	template<> bool		Write<Data::CBuffer>(const Data::CBuffer& Value);
+	template<> bool		Write<Data::CDataBuffer>(const Data::CDataBuffer& Value);
 
 	template<class T>
 	CBinaryWriter& operator <<(const T& Value) { Write(Value); return *this; }

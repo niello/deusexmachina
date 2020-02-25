@@ -172,7 +172,7 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 //---------------------------------------------------------------------
 
 // NB: Doesn't copy data, so pData must be dynamically allocated and must not be freed externally
-bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::CBuffer&& Data)
+bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::CDataBuffer&& Data)
 {
 	ShaderSignatures.push_back(std::move(Data));
 	ShaderSigIDToIndex.Add(ID, ShaderSignatures.size() - 1, true);
@@ -180,7 +180,7 @@ bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::CBuffer&& D
 }
 //---------------------------------------------------------------------
 
-const Data::CBuffer* CD3D11DriverFactory::FindShaderInputSignature(U32 ID) const
+const Data::CDataBuffer* CD3D11DriverFactory::FindShaderInputSignature(U32 ID) const
 {
 	UPTR Index;
 	if (!ShaderSigIDToIndex.Get(ID, Index)) return nullptr;

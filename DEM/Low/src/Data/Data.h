@@ -11,7 +11,7 @@ class CStringID;
 #ifdef _DEBUG
 	class CDataArray;
 	class CParams;
-	class CBuffer;
+	class CDataBuffer;
 #endif
 
 class CData
@@ -31,7 +31,7 @@ protected:
 		const char*						As_CStrID;
 		const CDataArray*				As_CDataArray;
 		const CParams*					As_CParams;
-		const CBuffer*					As_CBuffer;
+		const CDataBuffer*					As_CBuffer;
 		struct { float x, y, z; }*		As_vector3;
 		struct { float x, y, z, w; }*	As_vector4;
 		struct { float m[4][4]; }*		As_matrix44;

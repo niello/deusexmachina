@@ -23,7 +23,7 @@ bool CBinaryWriter::WriteData(const Data::CData& Value)
 	else if (Value.IsA<matrix44>()) return Write<matrix44>(Value);
 	else if (Value.IsA<Data::PParams>()) return Write<Data::PParams>(Value);
 	else if (Value.IsA<Data::PDataArray>()) return Write<Data::PDataArray>(Value);
-	else if (Value.IsA<Data::CBuffer>())  return Write<Data::CBuffer>(Value);
+	else if (Value.IsA<Data::CDataBuffer>())  return Write<Data::CDataBuffer>(Value);
 	else FAIL;
 
 	OK;
@@ -39,7 +39,7 @@ template<> bool CBinaryWriter::Write<Data::CDataArray>(const Data::CDataArray& V
 }
 //---------------------------------------------------------------------
 
-template<> bool CBinaryWriter::Write<Data::CBuffer>(const Data::CBuffer& Value)
+template<> bool CBinaryWriter::Write<Data::CDataBuffer>(const Data::CDataBuffer& Value)
 {
 	return Write<U32>(Value.GetSize()) && (!Value.GetSize() || Stream.Write(Value.GetPtr(), Value.GetSize()));
 }
