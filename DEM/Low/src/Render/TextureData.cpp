@@ -1,5 +1,5 @@
 #include "TextureData.h"
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 namespace Render
 {
@@ -8,18 +8,18 @@ RTTI_CLASS_IMPL(Render::CTextureData, Resources::CResourceObject);
 CTextureData::CTextureData() {}
 CTextureData::~CTextureData() {}
 
-bool CTextureData::UseRAMData()
+bool CTextureData::UseBuffer()
 {
 	if (!Data) FAIL;
-	++RAMDataUseCounter;
+	++BufferUseCounter;
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CTextureData::ReleaseRAMData()
+void CTextureData::ReleaseBuffer()
 {
-	--RAMDataUseCounter;
-	if (!RAMDataUseCounter) Data.reset();
+	--BufferUseCounter;
+	if (!BufferUseCounter) Data.reset();
 }
 //---------------------------------------------------------------------
 

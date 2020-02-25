@@ -21,7 +21,7 @@
 #include <Resources/Resource.h>
 #include <IO/Stream.h>
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 #include <Data/StringUtils.h>
 #include <Core/Factory.h>
 #include <map>
@@ -58,7 +58,7 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 	if (!RMeshData) return nullptr;
 
 	Render::PMeshData MeshData = RMeshData->ValidateObject<Render::CMeshData>();
-	if (!MeshData || !MeshData->UseRAMData()) return nullptr;
+	if (!MeshData || !MeshData->UseBuffer()) return nullptr;
 
 	//!!!Now all VBs and IBs are not shared! later this may change!
 
@@ -71,7 +71,7 @@ Render::PMesh CGraphicsResourceManager::GetMesh(CStrID UID)
 	Render::PMesh Mesh = n_new(Render::CMesh);
 	const bool Result = Mesh->Create(MeshData, VB, IB);
 
-	MeshData->ReleaseRAMData();
+	MeshData->ReleaseBuffer();
 
 	if (!Result) return nullptr;
 
@@ -98,11 +98,11 @@ Render::PTexture CGraphicsResourceManager::GetTexture(CStrID UID, UPTR AccessFla
 	if (!RTexData) return nullptr;
 
 	Render::PTextureData TexData = RTexData->ValidateObject<Render::CTextureData>();
-	if (!TexData || !TexData->UseRAMData()) return nullptr;
+	if (!TexData || !TexData->UseBuffer()) return nullptr;
 
 	Render::PTexture Texture = GPU->CreateTexture(TexData, AccessFlags);
 
-	TexData->ReleaseRAMData();
+	TexData->ReleaseBuffer();
 
 	if (Texture) Textures.emplace(UID, Texture);
 

@@ -14,7 +14,7 @@
 
 namespace Data
 {
-	typedef std::unique_ptr<class IRAMData> PRAMData;
+	typedef std::unique_ptr<class IBuffer> PBuffer;
 }
 
 namespace Render
@@ -36,12 +36,12 @@ protected:
 	UPTR								_LODCount = 0;
 	UPTR								_GroupCount = 0;
 
-	UPTR								RAMDataUseCounter = 0;
+	UPTR								BufferUseCounter = 0;
 
 public:
 
-	Data::PRAMData						VBData;
-	Data::PRAMData						IBData;
+	Data::PBuffer						VBData;
+	Data::PBuffer						IBData;
 	std::vector<Render::CVertexComponent> VertexFormat;
 	Render::EIndexType					IndexType = Render::Index_16;
 	U32									VertexCount = 0;
@@ -61,8 +61,8 @@ public:
 	UPTR                    GetVertexSize() const;
 
 	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
-	bool					UseRAMData();
-	void					ReleaseRAMData();
+	bool					UseBuffer();
+	void					ReleaseBuffer();
 };
 
 typedef Ptr<CMeshData> PMeshData;

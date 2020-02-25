@@ -22,8 +22,8 @@
 #include <IO/BinaryReader.h>
 #include <System/Win32/OSWindowWin32.h>
 #include <System/SystemEvents.h>
-#include <Data/RAMData.h>
 #include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>

@@ -39,7 +39,7 @@ bool CD3D11Texture::Create(PTextureData Data, D3D11_USAGE Usage, UPTR AccessFlag
 	D3DUsage = Usage;
 
 	HoldRAMBackingData = HoldRAMCopy;
-	if (HoldRAMCopy) n_verify(TextureData->UseRAMData());
+	if (HoldRAMCopy) n_verify(TextureData->UseBuffer());
 
 	switch (Data->Desc.Type)
 	{

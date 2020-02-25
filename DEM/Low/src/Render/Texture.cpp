@@ -15,7 +15,7 @@ CTexture::~CTexture()
 
 void CTexture::InternalDestroy()
 {
-	if (HoldRAMBackingData) TextureData->ReleaseRAMData();
+	if (HoldRAMBackingData) TextureData->ReleaseBuffer();
 	TextureData = nullptr;
 }
 //---------------------------------------------------------------------

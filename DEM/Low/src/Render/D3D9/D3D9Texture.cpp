@@ -32,7 +32,7 @@ bool CD3D9Texture::Create(PTextureData Data, UINT Usage, D3DPOOL Pool, IDirect3D
 	}
 
 	HoldRAMBackingData = HoldRAMCopy;
-	if (HoldRAMCopy) n_verify(TextureData->UseRAMData());
+	if (HoldRAMCopy) n_verify(TextureData->UseBuffer());
 
 	switch (Data->Desc.Type)
 	{

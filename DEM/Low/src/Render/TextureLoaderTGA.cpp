@@ -3,7 +3,7 @@
 #include <Render/TextureData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 // Supports loading of TrueColor images only. //???support black-and-white too?
 // Only a required subset is implemented, in accordance with a specification at:
@@ -127,12 +127,12 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 
 	if (!Stream->Seek(sizeof(Header) + Header.IDLength, IO::Seek_Begin)) return nullptr;
 
-	Data::PRAMData Data;
+	Data::PBuffer Data;
 	const UPTR RowSize = Header.ImageWidth * BytesPerTargetPixel;
 	const UPTR DataSize = RowSize * Header.ImageHeight;
 	if (IsRLECompressed)
 	{
-		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		U8* pCurrPixel = static_cast<U8*>(Data->GetPtr());
 		const U8* pDataEnd = pCurrPixel + DataSize;
 
@@ -192,7 +192,7 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 			if (FlipVertically)
 			{
 				// Only flipping required, read row by row
-				Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+				Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 				auto* pDataStart = static_cast<char*>(Data->GetPtr());
 				for (IPTR i = Header.ImageHeight - 1; i >= 0; --i)
 					if (Stream->Read(pDataStart + (RowSize * i), RowSize) != RowSize) return nullptr;
@@ -201,17 +201,17 @@ PResourceObject CTextureLoaderTGA::CreateResource(CStrID UID)
 			{
 				// No conversion needed, can use data as is. First try to map the stream.
 				// If mapping not succeeded, copy data to new buffer.
-				if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+				if (Stream->CanBeMapped()) Data.reset(n_new(Data::CBufferMappedStream(Stream)));
 				if (!Data || !Data->GetPtr())
 				{
-					Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+					Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 					if (Stream->Read(Data->GetPtr(), DataSize) != DataSize) return nullptr;
 				}
 			}
 		}
 		else
 		{
-			Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+			Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 			for (UPTR Row = 0; Row < Header.ImageHeight; ++Row)
 			{
 				U8* pCurrPixel = static_cast<U8*>(Data->GetPtr()) + (FlipVertically ? (Header.ImageHeight - 1 - Row) : Row) * RowSize;

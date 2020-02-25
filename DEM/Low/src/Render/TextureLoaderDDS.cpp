@@ -3,7 +3,7 @@
 #include <Render/TextureData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 // DDS code and definitions are based on:
 // https://github.com/Microsoft/DirectXTex/blob/master/DDSTextureLoader/DDSTextureLoader.cpp
@@ -314,11 +314,11 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	const bool ConversionRequired = (!IsDX10 && Header.ddspf.RGBBitCount == 24 && TexDesc.Format == Render::PixelFmt_B8G8R8X8);
 
-	Data::PRAMData Data;
-	if (!ConversionRequired && Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+	Data::PBuffer Data;
+	if (!ConversionRequired && Stream->CanBeMapped()) Data.reset(n_new(Data::CBufferMappedStream(Stream)));
 	if (!Data || !Data->GetPtr()) // Not mapped
 	{
-		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		if (Stream->Read(Data->GetPtr(), DataSize) != DataSize)
 		{
 			return nullptr;
@@ -333,7 +333,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 		const U8* pDataEnd = pCurrData + DataSize;
 
 		DataSize = DataSize * 4 / 3;
-		Data::PRAMData NewData(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		Data::PBuffer NewData(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		U8* pNewData = static_cast<U8*>(NewData->GetPtr());
 		U8* pCurrNewData = pNewData;
 

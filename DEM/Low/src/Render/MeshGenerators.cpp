@@ -1,7 +1,7 @@
 #include "MeshGenerators.h"
 #include <Render/MeshData.h>
 #include <Render/VertexComponent.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 namespace Resources
 {
@@ -37,7 +37,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 	VC.PerInstanceData = false;
 	MeshData->VertexFormat.push_back(std::move(VC));
 
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexCount * MeshData->GetVertexSize(), 16)));
+	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexCount * MeshData->GetVertexSize(), 16)));
 	float* pVBCurr = static_cast<float*>(MeshData->VBData->GetPtr());
 	for (UPTR z = 0; z < VerticesPerEdge; ++z)
 	{
@@ -48,7 +48,7 @@ PResourceObject CMeshGeneratorQuadPatch::CreateResource(CStrID UID)
 		}
 	}
 
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexCount * sizeof(U16), 16)));
+	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexCount * sizeof(U16), 16)));
 	U16* pIBCurr = static_cast<U16*>(MeshData->IBData->GetPtr());
 	if (_FrontClockWise)
 	{
@@ -126,7 +126,7 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 		+0.5f, +0.5f, +0.5f
 	};
 	const UPTR VertexDataSize = sizeof(VBData);
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
+	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
 	memcpy(MeshData->VBData->GetPtr(), VBData, VertexDataSize);
 
 	constexpr U16 IBDataCCW[36] =
@@ -148,7 +148,7 @@ PResourceObject CMeshGeneratorBox::CreateResource(CStrID UID)
 		4, 5, 0, 0, 5, 1	// Down		(-Y)
 	};
 	const UPTR IndexDataSize = sizeof(IBDataCW);
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
+	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
 	memcpy(MeshData->IBData->GetPtr(), _FrontClockWise ? IBDataCW : IBDataCCW, IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
@@ -272,11 +272,11 @@ PResourceObject CMeshGeneratorSphere::CreateResource(CStrID UID)
 			std::swap(Indices[i + 1], Indices[i + 2]);
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
+	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
 	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
 
 	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
+	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
 	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
@@ -378,11 +378,11 @@ PResourceObject CMeshGeneratorCylinder::CreateResource(CStrID UID)
 			std::swap(Indices[i + 1], Indices[i + 2]);
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
+	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
 	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
 
 	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
+	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
 	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
 
 	Render::CPrimitiveGroup Group;
@@ -453,11 +453,11 @@ PResourceObject CMeshGeneratorCone::CreateResource(CStrID UID)
 			std::swap(Indices[i + 1], Indices[i + 2]);
 
 	const UPTR VertexDataSize = Vertices.size() * MeshData->GetVertexSize();
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(VertexDataSize, 16)));
+	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(VertexDataSize, 16)));
 	memcpy(MeshData->VBData->GetPtr(), Vertices.data(), VertexDataSize);
 
 	const UPTR IndexDataSize = Indices.size() * sizeof(U16);
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(IndexDataSize, 16)));
+	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(IndexDataSize, 16)));
 	memcpy(MeshData->IBData->GetPtr(), Indices.data(), IndexDataSize);
 
 	Render::CPrimitiveGroup Group;

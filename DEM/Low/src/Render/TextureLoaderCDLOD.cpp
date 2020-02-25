@@ -3,7 +3,7 @@
 #include <Render/TextureData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 namespace Resources
 {
@@ -45,12 +45,12 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 		6 * sizeof(float); // AABB
 	if (!Stream->Seek(SkipSize, IO::Seek_Current)) return nullptr;
 
-	Data::PRAMData Data;
-	if (Stream->CanBeMapped()) Data.reset(n_new(Data::CRAMDataMappedStream(Stream)));
+	Data::PBuffer Data;
+	if (Stream->CanBeMapped()) Data.reset(n_new(Data::CBufferMappedStream(Stream)));
 	if (!Data || !Data->GetPtr()) // Not mapped
 	{
 		const UPTR DataSize = HFWidth * HFHeight * sizeof(unsigned short);
-		Data.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		Data.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		if (Stream->Read(Data->GetPtr(), DataSize) != DataSize)
 		{
 			return nullptr;

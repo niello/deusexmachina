@@ -9,7 +9,7 @@
 
 namespace Data
 {
-	typedef std::unique_ptr<class IRAMData> PRAMData;
+	typedef std::unique_ptr<class IBuffer> PBuffer;
 }
 
 namespace Render
@@ -21,13 +21,13 @@ class CTextureData: public Resources::CResourceObject
 
 private:
 
-	UPTR			RAMDataUseCounter = 0;
+	UPTR          BufferUseCounter = 0;
 
 public:
 
-	Data::PRAMData	Data;
-	CTextureDesc	Desc;
-	bool			MipDataProvided = false; // Does Data provide all mips or only a top-level data
+	Data::PBuffer Data;
+	CTextureDesc  Desc;
+	bool          MipDataProvided = false; // Does Data provide all mips or only a top-level data
 
 	CTextureData();
 	virtual ~CTextureData();
@@ -35,8 +35,8 @@ public:
 	virtual bool	IsResourceValid() const { return Data && Desc.Width; }
 
 	// Controls RAM texture data lifetime. Some GPU resources may want to keep this data in RAM.
-	bool			UseRAMData();
-	void			ReleaseRAMData();
+	bool			UseBuffer();
+	void			ReleaseBuffer();
 };
 
 typedef Ptr<CTextureData> PTextureData;

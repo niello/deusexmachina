@@ -1,83 +1,123 @@
 #pragma once
-#include <Data/Type.h>
-#include <Data/Hash.h>
-#include <System/System.h>
+#include <Data/Ptr.h>
 
-// The CDataBuffer class encapsulates a chunk of raw memory into a C++ object which can be copied, compared and hashed
+// Different RAM data holders. All store raw memory pointers, but differently
+// manage memory ownership, lifetime and destruction. These holders aren't
+// suited for storing typed data, they must store raw bytes only.
+
+namespace IO
+{
+	typedef Ptr<class IStream> PStream;
+}
 
 namespace Data
 {
-typedef std::unique_ptr<class CDataBuffer> PDataBuffer;
+typedef std::unique_ptr<class IBuffer> PBuffer; // Can add refcount
 
-class CDataBuffer final
+class IBuffer
 {
-protected:
+public:
 
-	char*	pData = nullptr;
-	UPTR	DataSize = 0;
-	UPTR	Allocated = 0;
+	virtual ~IBuffer() = default;
 
-	void	Allocate(UPTR Size);
-	int		BinaryCompare(const CDataBuffer& Other) const;
+	virtual void* GetPtr() = 0;
+	virtual const void* GetConstPtr() const = 0;
+	virtual UPTR GetSize() const = 0;
+	virtual bool Resize(UPTR NewSize) { FAIL; }
+	virtual bool IsOwning() const = 0;
+};
+
+class CBufferNotOwned : public IBuffer
+{
+private:
+
+	void* _pData = nullptr;
 
 public:
 
-	CDataBuffer() = default;
-	CDataBuffer(const void* pSrc, UPTR SrcSize) { Set(pSrc, SrcSize); }
-	CDataBuffer(UPTR Size) { Allocate(Size); }
-	CDataBuffer(const CDataBuffer& Other) { Set(Other.pData, Other.DataSize); }
-	CDataBuffer(CDataBuffer&& Other): pData(Other.pData), DataSize(Other.DataSize), Allocated(Other.Allocated) { Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
-	~CDataBuffer() { if (pData) n_free(pData); }
+	CBufferNotOwned(void* pData) : _pData(pData) {}
 
-	void	Reserve(UPTR Size);
-	void	Clear();
-	void	Truncate(UPTR Size) { if (Size < DataSize) DataSize = Size; }
-	int		HashCode() const { Hash(pData, DataSize); }
+	virtual ~CBufferNotOwned() override = default;
 
-	bool	IsValid() const { return !!pData; }
-	bool	IsEmpty() const { return !pData || !DataSize; }
-	void*	GetPtr() const { return pData; }
-	int		GetSize() const { return DataSize; }
-	int		GetCapacity() const { return Allocated; }
-	void	Set(const void* pSrc, UPTR SrcSize);
-	void	Read(char* pDst, UPTR StartIdx, UPTR EndIdx);
-	void	Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx);
-
-	void operator =(const CDataBuffer& Other) { Set(Other.pData, Other.DataSize); }
-	void operator =(CDataBuffer&& Other) { pData = Other.pData; DataSize = Other.DataSize; Allocated = Other.Allocated; Other.pData = nullptr; Other.DataSize = 0; Other.Allocated = 0; }
-	bool operator ==(const CDataBuffer& Other) const { return !BinaryCompare(Other); }
-	bool operator !=(const CDataBuffer& Other) const { return !!BinaryCompare(Other); }
-	bool operator >(const CDataBuffer& Other) const { return BinaryCompare(Other) > 0; }
-	bool operator <(const CDataBuffer& Other) const { return BinaryCompare(Other) < 0; }
-	bool operator >=(const CDataBuffer& Other) const { return BinaryCompare(Other) >= 0; }
-	bool operator <=(const CDataBuffer& Other) const { return BinaryCompare(Other) <= 0; }
+	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
+	virtual UPTR GetSize() const { return 0; } // FIXME: size?
+	virtual bool IsOwning() const { return false; }
 };
 
-inline void CDataBuffer::Read(char* pDst, UPTR StartIdx, UPTR EndIdx)
+class CBufferNotOwnedImmutable : public IBuffer
 {
-	n_assert_dbg(pDst &&
-		StartIdx < Allocated &&
-		EndIdx < Allocated &&
-		EndIdx >= StartIdx);
+private:
 
-	memcpy(pDst, pData + StartIdx, EndIdx - StartIdx + 1);
-}
-//---------------------------------------------------------------------
+	const void* _pData = nullptr;
 
-inline void CDataBuffer::Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx)
+public:
+
+	CBufferNotOwnedImmutable(const void* pData) : _pData(pData) {}
+
+	virtual ~CBufferNotOwnedImmutable() override = default;
+
+	virtual void* GetPtr() override { return nullptr; }
+	virtual const void* GetConstPtr() const override { return _pData; }
+	virtual UPTR GetSize() const { return 0; } // FIXME: size?
+	virtual bool IsOwning() const { return false; }
+};
+
+class CBufferMalloc : public IBuffer
 {
-	n_assert_dbg(pSrc &&
-		StartIdx < Allocated &&
-		EndIdx < Allocated &&
-		EndIdx >= StartIdx);
+private:
 
-	memcpy(pData + StartIdx, pSrc, EndIdx - StartIdx + 1);
-	if (DataSize < EndIdx) DataSize = EndIdx + 1;
+	void* _pData = nullptr;
+	UPTR _Size = 0;
+
+public:
+
+	CBufferMalloc(UPTR Size) : _pData(Size ? n_malloc(Size) : nullptr), _Size(Size) {}
+
+	virtual ~CBufferMalloc() override { if (_pData) n_free(_pData); }
+
+	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
+	virtual UPTR GetSize() const { return _Size; }
+	virtual bool IsOwning() const { return true; }
+};
+
+class CBufferMallocAligned : public IBuffer
+{
+private:
+
+	void* _pData = nullptr;
+	UPTR _Size = 0;
+
+public:
+
+	CBufferMallocAligned(UPTR Size, UPTR Alignment) : _pData((Size && Alignment) ? n_malloc_aligned(Size, Alignment) : nullptr), _Size(Size) {}
+
+	virtual ~CBufferMallocAligned() override { if (_pData) n_free_aligned(_pData); }
+
+	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
+	virtual UPTR GetSize() const { return _Size; }
+	virtual bool IsOwning() const { return true; }
+};
+
+class CBufferMappedStream : public IBuffer
+{
+private:
+
+	IO::PStream	_Stream;
+	void*		_pData = nullptr;
+
+public:
+
+	CBufferMappedStream(IO::PStream Stream);
+
+	virtual ~CBufferMappedStream() override;
+
+	virtual void* GetPtr() override { return _pData; }
+	virtual const void* GetConstPtr() const override { return _pData; }
+	virtual UPTR GetSize() const;
+	virtual bool IsOwning() const { return true; } // Because it holds the stream
+};
+
 }
-//---------------------------------------------------------------------
-
-}
-
-//???PDataBuffer?
-DECLARE_TYPE(Data::CDataBuffer, 9)
-#define TBuffer DATA_TYPE(Data::CDataBuffer)

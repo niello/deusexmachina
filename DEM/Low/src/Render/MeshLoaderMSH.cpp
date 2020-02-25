@@ -2,7 +2,7 @@
 #include <Render/MeshData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 namespace Resources
 {
@@ -99,7 +99,7 @@ PResourceObject CMeshLoaderMSH::CreateResource(CStrID UID)
 		//!!!can map data through MMF instead!
 		Stream->Seek(VertexStartPos, IO::Seek_Begin);
 		const auto DataSize = VertexCount * MeshData->GetVertexSize();
-		MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		Stream->Read(MeshData->VBData->GetPtr(), DataSize);
 	}
 
@@ -108,7 +108,7 @@ PResourceObject CMeshLoaderMSH::CreateResource(CStrID UID)
 		//!!!can map data through MMF instead!
 		Stream->Seek(IndexStartPos, IO::Seek_Begin);
 		const auto DataSize = IndexCount * IndexSize;
-		MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+		MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 		Stream->Read(MeshData->IBData->GetPtr(), DataSize);
 	}
 

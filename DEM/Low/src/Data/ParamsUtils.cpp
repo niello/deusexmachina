@@ -1,7 +1,7 @@
 #include "ParamsUtils.h"
 
 #include <Data/HRDParser.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <Data/DataScheme.h>
 #include <IO/IOServer.h>
 #include <IO/HRDWriter.h>

@@ -3,7 +3,7 @@
 #include "ScriptServer.h"
 #include "EventHandlerScript.h"
 #include <Events/EventServer.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <IO/IOServer.h>
 #include <IO/Stream.h>
 #include <Core/Factory.h>

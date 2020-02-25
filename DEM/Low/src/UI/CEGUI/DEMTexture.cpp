@@ -5,7 +5,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/Texture.h>
 #include <Render/TextureData.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 #include <CEGUI/System.h>
 #include <CEGUI/ImageCodec.h>
@@ -129,8 +129,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 {
 	n_assert(isPixelFormatSupported(pixel_format));
 
-	Data::PRAMData Bytes;
-	bool IsCopy;
+	Data::PBuffer Bytes;
 
 	// Invert to BGR(A), as DX9 doesn't support RGBA textures
 	if (pixel_format == PixelFormat::Rgb)
@@ -149,8 +148,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
 		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
 
-		Bytes.reset(n_new(Data::CRAMDataMallocAligned(W * H * 3, 16)));
-		IsCopy = true;
+		Bytes.reset(n_new(Data::CBufferMallocAligned(W * H * 3, 16)));
 			
 		U8* pDest = static_cast<U8*>(Bytes->GetPtr());
 		const U8* pSrc = static_cast<const U8*>(buffer);
@@ -171,8 +169,7 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 		const UPTR W = static_cast<UPTR>(buffer_size.d_width);
 		const UPTR H = static_cast<UPTR>(buffer_size.d_height);
 
-		Bytes.reset(n_new(Data::CRAMDataMallocAligned(W * H * 4, 16)));
-		IsCopy = true;
+		Bytes.reset(n_new(Data::CBufferMallocAligned(W * H * 4, 16)));
 
 		U32* pDest = static_cast<U32*>(Bytes->GetPtr());
 		const U32* pSrc = static_cast<const U32*>(buffer);
@@ -190,8 +187,8 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	}
 	else
 	{
-		Bytes.reset(n_new(Data::CRAMDataNotOwnedImmutable(buffer)));
-		IsCopy = false;
+		// FIXME: could transfer ownership if CEGUI would allow, to keep RAM data (now destroyed after GPU texture creation)
+		Bytes.reset(n_new(Data::CBufferNotOwnedImmutable(buffer)));
 	}
 
 	//!!!can reuse texture without recreation if desc is the same and not immutable!
@@ -214,6 +211,8 @@ void CDEMTexture::loadFromMemory(const void* buffer, const Sizef& buffer_size, P
 	const UPTR AccessFlags = DEMTexture ? DEMTexture->GetAccess() : (Render::Access_GPU_Read | Render::Access_GPU_Write);
 
 	DEMTexture = Owner.getGPUDriver()->CreateTexture(Data, AccessFlags);
+
+	if (!Data->Data->IsOwning()) Data->Data.reset();
 
 	n_assert(DEMTexture.IsValidPtr());
 

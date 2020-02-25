@@ -21,6 +21,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Buffer.h
 	DEM/Low/src/Data/Data.h
 	DEM/Low/src/Data/DataArray.h
+	DEM/Low/src/Data/DataBuffer.h
 	DEM/Low/src/Data/DataScheme.h
 	DEM/Low/src/Data/Dictionary.h
 	DEM/Low/src/Data/DynamicEnum.h
@@ -45,7 +46,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/ParamsUtils.h
 	DEM/Low/src/Data/Ptr.h
 	DEM/Low/src/Data/QuadTree.h
-	DEM/Low/src/Data/RAMData.h
 	DEM/Low/src/Data/RefCounted.h
 	DEM/Low/src/Data/Regions.h
 	DEM/Low/src/Data/RingBuffer.h
@@ -320,13 +320,13 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/Buffer.cpp
 	DEM/Low/src/Data/Data.cpp
 	DEM/Low/src/Data/DataArray.cpp
+	DEM/Low/src/Data/DataBuffer.cpp
 	DEM/Low/src/Data/DataScheme.cpp
 	DEM/Low/src/Data/HandleManager.cpp
 	DEM/Low/src/Data/HRDParser.cpp
 	DEM/Low/src/Data/MurmurHash3.cpp
 	DEM/Low/src/Data/Params.cpp
 	DEM/Low/src/Data/ParamsUtils.cpp
-	DEM/Low/src/Data/RAMData.cpp
 	DEM/Low/src/Data/String.cpp
 	DEM/Low/src/Data/StringID.cpp
 	DEM/Low/src/Data/StringIDStorage.cpp

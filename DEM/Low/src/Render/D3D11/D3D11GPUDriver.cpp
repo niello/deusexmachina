@@ -22,7 +22,7 @@
 #include <System/SystemEvents.h>
 #include <IO/IOServer.h> //!!!DBG TMP!
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 #include <string>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>

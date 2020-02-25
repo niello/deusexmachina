@@ -1,6 +1,6 @@
 #pragma once
 #include <StdDEM.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <AI/ActorFwd.h>
 #include <AI/Perception/Stimulus.h>
 #include <AI/Navigation/NavData.h>

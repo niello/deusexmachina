@@ -52,7 +52,7 @@ public:
 	virtual U8                  GetAccessFlags() const override;
 
 	bool						CreateRAMCopy();
-	void						ResetRAMCopy(const void* pVRAMData);
+	void						ResetRAMCopy(const void* pVBuffer);
 	void						DestroyRAMCopy();
 
 	void						WriteData(UPTR Offset, const void* pData, UPTR Size);

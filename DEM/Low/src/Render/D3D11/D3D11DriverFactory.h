@@ -1,7 +1,7 @@
 #pragma once
 #include <Render/VideoDriverFactory.h>
 #include <Data/HashTable.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <vector>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory

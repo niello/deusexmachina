@@ -23,7 +23,7 @@ bool CMesh::Create(PMeshData Data, PVertexBuffer VertexBuffer, PIndexBuffer Inde
 	IB = IndexBuffer;
 
 	HoldRAMBackingData = HoldRAMCopy;
-	if (HoldRAMCopy) n_verify(MeshData->UseRAMData());
+	if (HoldRAMCopy) n_verify(MeshData->UseBuffer());
 
 	OK;
 }
@@ -33,7 +33,7 @@ void CMesh::Destroy()
 {
 	IB = nullptr;
 	VB = nullptr;
-	if (HoldRAMBackingData) MeshData->ReleaseRAMData();
+	if (HoldRAMBackingData) MeshData->ReleaseBuffer();
 	MeshData = nullptr;
 }
 //---------------------------------------------------------------------

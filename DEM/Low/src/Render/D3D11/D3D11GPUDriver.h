@@ -2,7 +2,7 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <System/Allocators/PoolAllocator.h>
 
 // Direct3D11 GPU device driver.

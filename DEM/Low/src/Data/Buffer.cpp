@@ -1,63 +1,25 @@
 #include "Buffer.h"
-#include <string.h>
+#include <IO/Stream.h>
 
 namespace Data
 {
-DEFINE_TYPE(CDataBuffer, CDataBuffer())
 
-void CDataBuffer::Allocate(UPTR Size)
+// NB: stream must be opened
+CBufferMappedStream::CBufferMappedStream(IO::PStream Stream) : _Stream(Stream)
 {
-	n_assert(!IsValid());
-	pData = (char*)n_malloc(Size);
-	Allocated = Size;
-	DataSize = Size;
+	_pData = (_Stream && _Stream->IsOpened()) ? _Stream->Map() : nullptr;
 }
 //---------------------------------------------------------------------
 
-void CDataBuffer::Clear()
+CBufferMappedStream::~CBufferMappedStream()
 {
-	if (IsValid())
-	{
-		n_free(pData);
-		pData = nullptr;
-		DataSize = 0;
-		Allocated = 0;
-	}
+	if (_pData && _Stream) _Stream->Unmap();
 }
 //---------------------------------------------------------------------
 
-void CDataBuffer::Set(const void* pSrc, UPTR SrcSize)
+UPTR CBufferMappedStream::GetSize() const
 {
-	n_assert(pSrc || !SrcSize);
-
-	if (!pData || Allocated < SrcSize)
-	{
-		n_free(pData);
-		pData = (char*)n_malloc(SrcSize);
-		Allocated = SrcSize;
-	}
-	DataSize = SrcSize;
-	if (SrcSize) memcpy(pData, pSrc, SrcSize);
-}
-//---------------------------------------------------------------------
-
-void CDataBuffer::Reserve(UPTR Size)
-{
-	if (Allocated < Size)
-	{
-		Clear();
-		Allocate(Size);
-	}
-	DataSize = Size;
-}
-//---------------------------------------------------------------------
-
-int CDataBuffer::BinaryCompare(const CDataBuffer& Other) const
-{
-	n_assert(pData && Other.pData);
-	if (DataSize == Other.DataSize) return memcmp(this->pData, Other.pData, this->DataSize);
-	else if (DataSize > Other.DataSize) return 1;
-	else return -1;
+	return _Stream ? static_cast<UPTR>(_Stream->GetSize()) : 0;
 }
 //---------------------------------------------------------------------
 

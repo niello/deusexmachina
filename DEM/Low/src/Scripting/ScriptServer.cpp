@@ -4,7 +4,7 @@
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
 #include <Data/ParamsUtils.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
 #include <IO/IOServer.h>

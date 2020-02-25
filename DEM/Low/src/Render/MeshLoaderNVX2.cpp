@@ -3,7 +3,7 @@
 #include <Render/MeshData.h>
 #include <Resources/ResourceManager.h>
 #include <IO/BinaryReader.h>
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 namespace Resources
 {
@@ -199,12 +199,12 @@ PResourceObject CMeshLoaderNVX2::CreateResource(CStrID UID)
 
 	//!!!can map data through MMF instead!
 	UPTR DataSize = Header.numVertices * Header.vertexWidth * sizeof(float);
-	MeshData->VBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+	MeshData->VBData.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 	Stream->Read(MeshData->VBData->GetPtr(), DataSize);
 
 	//!!!can map data through MMF instead!
 	DataSize = Header.numIndices * sizeof(U16);
-	MeshData->IBData.reset(n_new(Data::CRAMDataMallocAligned(DataSize, 16)));
+	MeshData->IBData.reset(n_new(Data::CBufferMallocAligned(DataSize, 16)));
 	Stream->Read(MeshData->IBData->GetPtr(), DataSize);
 
 	MeshData->InitGroups(&Groups.Front(), Groups.GetCount(), Groups.GetCount(), 1, false, true);

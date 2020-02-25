@@ -73,11 +73,11 @@ bool CD3D11ConstantBuffer::CreateRAMCopy()
 }
 //---------------------------------------------------------------------
 
-void CD3D11ConstantBuffer::ResetRAMCopy(const void* pVRAMData)
+void CD3D11ConstantBuffer::ResetRAMCopy(const void* pVBuffer)
 {
 	if (Flags.Is(CB11_UsesRAMCopy))
 	{
-		if (pVRAMData) memcpy(pMapped, pVRAMData, SizeInBytes);
+		if (pVBuffer) memcpy(pMapped, pVBuffer, SizeInBytes);
 		else memset(pMapped, 0, SizeInBytes);
 		Flags.Clear(CB11_Dirty);
 	}

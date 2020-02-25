@@ -1,5 +1,5 @@
 #include "MeshData.h"
-#include <Data/RAMData.h>
+#include <Data/Buffer.h>
 
 namespace Render
 {
@@ -101,18 +101,18 @@ UPTR CMeshData::GetVertexSize() const
 }
 //---------------------------------------------------------------------
 
-bool CMeshData::UseRAMData()
+bool CMeshData::UseBuffer()
 {
 	if (!VBData) FAIL;
-	++RAMDataUseCounter;
+	++BufferUseCounter;
 	OK;
 }
 //---------------------------------------------------------------------
 
-void CMeshData::ReleaseRAMData()
+void CMeshData::ReleaseBuffer()
 {
-	--RAMDataUseCounter;
-	if (!RAMDataUseCounter)
+	--BufferUseCounter;
+	if (!BufferUseCounter)
 	{
 		VBData.reset();
 		IBData.reset();

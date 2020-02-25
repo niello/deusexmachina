@@ -2,7 +2,7 @@
 
 #include <Data/DataArray.h>
 #include <Data/DataScheme.h>
-#include <Data/Buffer.h>
+#include <Data/DataBuffer.h>
 #include <Math/Matrix44.h>
 
 namespace IO
