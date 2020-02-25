@@ -2772,7 +2772,7 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 
 			Data::CDataBuffer Buffer;
 			IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
-			if (!File || !File->Open()) return nullptr;
+			if (!File || !File->IsOpened()) return nullptr;
 			const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 			Buffer.Reserve(FileSize);
 			Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));

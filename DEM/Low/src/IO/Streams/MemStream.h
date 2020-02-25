@@ -25,11 +25,10 @@ protected:
 
 public:
 
+	CMemStream(void* pData, UPTR Size) : pBuffer((char*)pData), DataSize(Size) {}
+	CMemStream(const void* pData, UPTR Size) : pConstBuffer((const char*)pData), DataSize(Size) {}
 	virtual ~CMemStream() override { if (IsOpened()) Close(); }
 
-	bool			Open(void* pData, UPTR Size);
-	bool			Open(const void* pData, UPTR Size);
-	virtual bool	Open() override { OK; }
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override;
 	virtual UPTR	Write(const void* pData, UPTR Size) override;
@@ -51,21 +50,5 @@ public:
 };
 
 typedef Ptr<CMemStream> PMemStream;
-
-inline bool CMemStream::Open(void* pData, UPTR Size)
-{
-	pBuffer = (char*)pData;
-	DataSize = Size;
-	return Open();
-}
-//---------------------------------------------------------------------
-
-inline bool CMemStream::Open(const void* pData, UPTR Size)
-{
-	pConstBuffer = (const char*)pData;
-	DataSize = Size;
-	return Open();
-}
-//---------------------------------------------------------------------
 
 }

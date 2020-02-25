@@ -30,8 +30,7 @@ void CDEMResourceProvider::loadRawDataContainer(const String& filename, RawDataC
 #endif
 
 	IO::PStream File = IOSrv->CreateStream(Filename.c_str(), IO::SAM_READ);
-
-	if (File && File->Open())
+	if (File && File->IsOpened())
 	{
 		const UPTR Size = (UPTR)File->GetSize();
 		unsigned char* const pBuffer = n_new_array(unsigned char, Size);

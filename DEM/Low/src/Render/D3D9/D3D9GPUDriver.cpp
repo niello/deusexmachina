@@ -1477,12 +1477,7 @@ bool CD3D9GPUDriver::CaptureScreenshot(UPTR SwapChainID, IO::IStream& OutStream)
 		FAIL;
 	}
 
-	const bool WasOpen = OutStream.IsOpened();
-	if (WasOpen || OutStream.Open())
-	{
-		OutStream.Write(D3DRect.pBits, D3DRect.Pitch * Desc.Height);
-		if (!WasOpen) OutStream.Close();
-	}
+	OutStream.Write(D3DRect.pBits, D3DRect.Pitch * Desc.Height);
 
 	const bool Result = SUCCEEDED(pCaptureSurface->UnlockRect());
 	pCaptureSurface->Release();

@@ -13,7 +13,6 @@ public:
 
 	virtual ~IStream() override = default;
 
-	virtual bool	Open() = 0;
 	virtual void	Close() = 0;
 	virtual UPTR	Read(void* pData, UPTR Size) = 0;
 	virtual UPTR	Write(const void* pData, UPTR Size) = 0;
@@ -32,6 +31,8 @@ public:
 	virtual bool	CanWrite() const { FAIL; }
 	virtual bool	CanSeek() const { FAIL; }
 	virtual bool	CanBeMapped() const { FAIL; }
+
+	operator bool() const { return IsOpened(); }
 };
 
 typedef Ptr<IStream> PStream;

@@ -8,24 +8,15 @@ namespace IO
 CFileStream::CFileStream(const char* pPath, IFileSystem* pFS, EStreamAccessMode Mode, EStreamAccessPattern Pattern)
 	: FileName(pPath)
 	, FS(pFS)
-	, _Mode(Mode)
-	, _Pattern(Pattern)
 {
+	if (FileName.IsValid() && FS)
+		hFile = FS->OpenFile(FileName.CStr(), Mode, Pattern);
 }
 //---------------------------------------------------------------------
 
 CFileStream::~CFileStream()
 {
 	if (IsOpened()) Close();
-}
-//---------------------------------------------------------------------
-
-bool CFileStream::Open()
-{
-	n_assert_dbg(!IsOpened());
-	if (!FileName.IsValid() || !FS) FAIL;
-	hFile = FS->OpenFile(FileName.CStr(), _Mode, _Pattern);
-	return !!hFile;
 }
 //---------------------------------------------------------------------
 

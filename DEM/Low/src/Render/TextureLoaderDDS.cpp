@@ -249,7 +249,7 @@ PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	if (!Stream || !Stream->Open()) return nullptr;
+	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	U64 FileSize = Stream->GetSize();
 	if (FileSize < sizeof(DDS_HEADER) + 4) return nullptr; // Too small to be a valid DDS

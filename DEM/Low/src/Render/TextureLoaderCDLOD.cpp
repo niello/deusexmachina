@@ -20,7 +20,7 @@ PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	if (!Stream || !Stream->Open()) return nullptr;
+	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	// Only "HM" sub-id is supported
 	if (strcmp("HM", pOutSubId)) return nullptr;

@@ -20,7 +20,7 @@ PResourceObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	if (!Stream || !Stream->Open()) return nullptr;
+	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	// Only "Collision" sub-id is supported
 	if (strcmp("Collision", pOutSubId)) return nullptr;

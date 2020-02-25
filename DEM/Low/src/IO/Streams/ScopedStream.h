@@ -11,17 +11,16 @@ class CScopedStream: public IStream
 protected:
 
 	PStream	HostStream;
-	U64		ScopeOffset;
-	U64		ScopeSize;
+	U64		ScopeOffset = 0;
+	U64		ScopeSize = 0;
 
 public:
 
-	CScopedStream(PStream Host): HostStream(Host) {}
+	CScopedStream(PStream Host, U64 Offset, U64 Size);
 	virtual ~CScopedStream() override { if (IsOpened()) Close(); }
 
 	bool			SetScope(U64 Offset, U64 Size);
 
-	virtual bool	Open() override;
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override { return HostStream->Read(pData, Size); }
 	virtual UPTR	Write(const void* pData, UPTR Size) override { return HostStream->Write(pData, Size); }
@@ -33,13 +32,13 @@ public:
 	virtual void	Unmap() override { HostStream->Unmap(); }
 
 	virtual U64		GetSize() const override { return ScopeSize; }
-	virtual bool	IsOpened() const override { return HostStream->IsOpened(); }
-	virtual bool    IsMapped() const override { return HostStream->IsMapped(); }
+	virtual bool	IsOpened() const override { return HostStream && HostStream->IsOpened() && ScopeSize; }
+	virtual bool    IsMapped() const override { return HostStream && HostStream->IsMapped(); }
 	virtual bool	IsEOF() const override;
-	virtual bool	CanRead() const override { return HostStream->CanRead(); }
-	virtual bool	CanWrite() const override { return HostStream->CanWrite(); }
-	virtual bool	CanSeek() const override { return HostStream->CanSeek(); }
-	virtual bool	CanBeMapped() const override { return HostStream->CanBeMapped(); }
+	virtual bool	CanRead() const override { return HostStream && HostStream->CanRead(); }
+	virtual bool	CanWrite() const override { return HostStream && HostStream->CanWrite(); }
+	virtual bool	CanSeek() const override { return HostStream && HostStream->CanSeek(); }
+	virtual bool	CanBeMapped() const override { return HostStream && HostStream->CanBeMapped(); }
 };
 
 typedef Ptr<CScopedStream> PScopedStream;

@@ -148,7 +148,7 @@ UPTR CScriptObject::LoadScriptFile(const char* pFileName)
 {
 	Data::CDataBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
-	if (!File->Open()) FAIL;
+	if (!File || !File->IsOpened()) FAIL;
 	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
 	Buffer.Reserve(FileSize);
 	Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));

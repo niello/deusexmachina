@@ -157,7 +157,7 @@ Render::PShader CGraphicsResourceManager::GetShader(CStrID UID, bool NeedParamTa
 	else
 		Stream = pResMgr->CreateResourceStream(UID, pSubId, IO::SAP_SEQUENTIAL);
 
-	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
+	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	Render::PShader Shader = GPU->CreateShader(*Stream, NeedParamTable);
 
@@ -412,7 +412,7 @@ Render::PEffect CGraphicsResourceManager::LoadEffect(CStrID UID)
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
+	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 
@@ -600,7 +600,7 @@ Render::PMaterial CGraphicsResourceManager::LoadMaterial(CStrID UID)
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
+	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 
@@ -684,7 +684,7 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 
 	const char* pOutSubId;
 	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	if (!Stream || !Stream->Open() || !Stream->CanRead()) return nullptr;
+	if (!Stream || !Stream->IsOpened() || !Stream->CanRead()) return nullptr;
 
 	IO::CBinaryReader Reader(*Stream);
 

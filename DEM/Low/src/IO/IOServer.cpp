@@ -169,8 +169,8 @@ bool CIOServer::CopyFile(const char* pSrcPath, const char* pDestPath)
 
 	IO::PStream Src = CreateStream(SrcPath, SAM_READ, SAP_SEQUENTIAL);
 	IO::PStream Dest = CreateStream(DestPath, SAM_WRITE, SAP_SEQUENTIAL);
-	if (!Src || !Src->Open()) FAIL;
-	if (!Dest || !Dest->Open()) FAIL;
+	if (!Src || !Src->IsOpened()) FAIL;
+	if (!Dest || !Dest->IsOpened()) FAIL;
 
 	bool Result = true;
 	U64 Size = Src->GetSize();

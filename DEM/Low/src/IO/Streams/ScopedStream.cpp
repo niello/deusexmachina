@@ -3,6 +3,21 @@
 namespace IO
 {
 
+CScopedStream::CScopedStream(PStream Host, U64 Offset, U64 Size)
+	: HostStream(Host)
+	, ScopeOffset(Offset)
+{
+	if (HostStream && HostStream->IsOpened())
+	{
+		const U64 RealSize = HostStream->GetSize();
+		ScopeSize = std::min(Size, RealSize - ScopeOffset);
+
+		if (!HostStream->CanSeek() || !HostStream->Seek(ScopeOffset, Seek_Begin))
+			HostStream = nullptr;
+	}
+}
+//---------------------------------------------------------------------
+
 bool CScopedStream::SetScope(U64 Offset, U64 Size)
 {
 	if (HostStream->IsOpened())
@@ -21,24 +36,9 @@ bool CScopedStream::SetScope(U64 Offset, U64 Size)
 }
 //---------------------------------------------------------------------
 
-bool CScopedStream::Open()
-{
-	if (!HostStream) FAIL;
-	if (!IsOpened())
-	{
-		if (!HostStream->IsOpened() && !HostStream->Open()) FAIL;
-
-		U64 RealSize = HostStream->GetSize();
-		if (ScopeOffset + ScopeSize > RealSize) ScopeSize = RealSize - ScopeOffset;
-
-		if (!HostStream->Seek(ScopeOffset, Seek_Begin)) FAIL;
-	}
-	OK;
-}
-//---------------------------------------------------------------------
-
 void CScopedStream::Close()
 {
+	HostStream = nullptr;
 }
 //---------------------------------------------------------------------
 

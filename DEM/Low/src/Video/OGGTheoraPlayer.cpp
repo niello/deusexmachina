@@ -234,7 +234,6 @@ COGGTheoraPlayer::Open()
     n_assert(FileName != "");
     // open file
 	infile = IOSrv->CreateStream(FileName.CStr(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
-	infile->Open();
     // rewind
     Rewind();
     // setup framebuffer
