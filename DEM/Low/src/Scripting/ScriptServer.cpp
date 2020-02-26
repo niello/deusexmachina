@@ -3,7 +3,6 @@
 #include "ScriptObject.h"
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
-#include <Data/DataBuffer.h>
 #include <Data/ParamsUtils.h>
 #include <Data/Buffer.h>
 #include <Data/StringTokenizer.h>
@@ -440,10 +439,10 @@ bool CScriptServer::LoadClass(const char* Name)
 	Data::CParam* pCodePrm;
 	if (ClassDesc->TryGet(pCodePrm, CStrID("Code")))
 	{
-		if (pCodePrm->IsA<Data::CDataBuffer>())
+		if (pCodePrm->IsA<Data::CBufferMalloc>())
 		{
-			const Data::CDataBuffer& Code = pCodePrm->GetValue<Data::CDataBuffer>();
-			pData = (const char*)Code.GetPtr();
+			const Data::CBufferMalloc& Code = pCodePrm->GetValue<Data::CBufferMalloc>();
+			pData = (const char*)Code.GetConstPtr();
 			Size = Code.GetSize();
 		}
 		else if (pCodePrm->IsA<CString>())

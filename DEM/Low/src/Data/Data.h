@@ -1,5 +1,5 @@
 #pragma once
-#include "Type.h"
+#include <Data/Type.h>
 #include <Data/String.h>
 
 // Variant data type with compile-time extendable type list
@@ -11,7 +11,7 @@ class CStringID;
 #ifdef _DEBUG
 	class CDataArray;
 	class CParams;
-	class CDataBuffer;
+	class IBuffer;
 #endif
 
 class CData
@@ -31,7 +31,7 @@ protected:
 		const char*						As_CStrID;
 		const CDataArray*				As_CDataArray;
 		const CParams*					As_CParams;
-		const CDataBuffer*					As_CBuffer;
+		const IBuffer*				    As_PBuffer;
 		struct { float x, y, z; }*		As_vector3;
 		struct { float x, y, z, w; }*	As_vector4;
 		struct { float m[4][4]; }*		As_matrix44;
@@ -79,8 +79,9 @@ public:
 
 	const char*					ToString() const { return Type ? Type->ToString(Value) : nullptr; }
 
-	CData&						operator =(const CData& Src) { SetTypeValue(Src); return *this; }
 	template<class T> CData&	operator =(const T& Src) { SetTypeValue(Src); return *this; }
+	template<class T> CData&	operator =(T& Src) { SetTypeValue(Src); return *this; }
+	template<class T> CData&	operator =(T&& Src);
 
 	bool						operator ==(const CData& Other) const;
 	template<class T> bool		operator ==(const T& Other) const;
@@ -197,6 +198,47 @@ template<class T> inline bool CData::operator ==(const T& Other) const
 	//!!!compare by comparator & return IsEqual!
 	if (Type != DATA_TYPE(T)) FAIL;
 	return (IsVoid() || Type->IsEqualT(&Value, &Other));
+}
+//---------------------------------------------------------------------
+
+template<class T> inline CData& CData::operator =(T&& Src)
+{
+	if (Type)
+	{
+		if (Type == DATA_TYPE(T))
+		{
+			DATA_TYPE_NV(T)::MoveT(&Value, std::move(Src));
+			return *this;
+		}
+		else Type->Delete(&Value);
+	}
+
+	Type = DATA_TYPE(T);
+	DATA_TYPE_NV(T)::NewMoveT(&Value, std::move(Src));
+
+	return *this;
+}
+//---------------------------------------------------------------------
+
+template<> inline CData& CData::operator =(const CData& Src)
+{
+	SetTypeValue(Src);
+	return *this;
+}
+//---------------------------------------------------------------------
+
+template<> inline CData& CData::operator =(CData& Src)
+{
+	SetTypeValue(Src);
+	return *this;
+}
+//---------------------------------------------------------------------
+
+template<> inline CData& CData::operator =(CData&& Src)
+{
+	// FIXME: move instead of copying!
+	SetTypeValue(Src);
+	return *this;
 }
 //---------------------------------------------------------------------
 

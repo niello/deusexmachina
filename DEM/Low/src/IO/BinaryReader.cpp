@@ -1,7 +1,7 @@
 #include "BinaryReader.h"
 
 #include <Data/DataArray.h>
-#include <Data/DataBuffer.h>
+#include <Data/Buffer.h>
 #include <Math/Matrix44.h>
 
 namespace IO
@@ -105,7 +105,7 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 	{
 		Data::PParams P = n_new(Data::CParams);
 		if (!ReadParams(*P)) FAIL;
-		OutValue = P;
+		OutValue = std::move(P);
 	}
 	else if (Type == DATA_TYPE_ID(Data::PDataArray))
 	{
@@ -120,14 +120,14 @@ bool CBinaryReader::ReadData(Data::CData& OutValue)
 				if (!ReadData(A->At(i))) FAIL;
 		}
 
-		OutValue = A;
+		OutValue = std::move(A);
 	}
-	else if (Type == DATA_TYPE_ID(Data::CDataBuffer))
+	else if (Type == DATA_TYPE_ID(Data::CBufferMalloc))
 	{
-		OutValue = Data::CDataBuffer();
-		Data::CDataBuffer& Buf = OutValue;
-		Buf.Reserve(Read<int>());
-		Stream.Read(Buf.GetPtr(), Buf.GetSize());
+		const auto Size = Read<int>();
+		Data::CBufferMalloc Buffer(Size);
+		Stream.Read(Buffer.GetPtr(), Size);
+		OutValue = std::move(Buffer);
 	}
 	else FAIL;
 

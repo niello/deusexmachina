@@ -81,6 +81,27 @@ public:
 	inline void*		GetPtr(void* pObj) const;
 	inline const void*	GetPtr(const void* pObj) const;
 
+	void NewMoveT(void** pObj, T&& Value) const
+	{
+		if constexpr (sizeof(T) <= sizeof(void*))
+			n_placement_new(pObj, T)(std::move(Value));
+		else
+			*(T**)pObj = n_new(T)(std::move(Value));
+	}
+
+	void MoveT(void** pObj, T&& Value) const
+	{
+		if constexpr (sizeof(T) <= sizeof(void*))
+		{
+			*(T*)pObj = std::move(Value);
+		}
+		else
+		{
+			if (*(T**)pObj) **(T**)pObj = std::move(Value);
+			else *(T**)pObj = n_new(T)(std::move(Value));
+		}
+	}
+
 	//convert, compare, save, load
 };
 

@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
+#include <Data/Type.h>
 #include <Data/Hash.h>
 
 // Different RAM data holders. All store raw memory pointers, but differently
@@ -29,6 +30,13 @@ public:
 
 	uint32_t            GetHash() const { return Hash(GetConstPtr(), GetSize()); }
 	int                 Compare(const IBuffer& Other) const;
+
+	bool operator ==(const IBuffer& Other) const { return Compare(Other) != 0; }
+	bool operator !=(const IBuffer& Other) const { return Compare(Other) == 0; }
+	bool operator >(const IBuffer& Other) const { return Compare(Other) > 0; }
+	bool operator <(const IBuffer& Other) const { return Compare(Other) < 0; }
+	bool operator >=(const IBuffer& Other) const { return Compare(Other) >= 0; }
+	bool operator <=(const IBuffer& Other) const { return Compare(Other) <= 0; }
 };
 
 class CBufferNotOwned : public IBuffer
@@ -131,3 +139,5 @@ public:
 };
 
 }
+
+DECLARE_TYPE(Data::CBufferMalloc, 9)

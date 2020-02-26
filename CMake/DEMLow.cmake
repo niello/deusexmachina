@@ -21,7 +21,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/Buffer.h
 	DEM/Low/src/Data/Data.h
 	DEM/Low/src/Data/DataArray.h
-	DEM/Low/src/Data/DataBuffer.h
 	DEM/Low/src/Data/DataScheme.h
 	DEM/Low/src/Data/Dictionary.h
 	DEM/Low/src/Data/DynamicEnum.h
@@ -320,7 +319,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Data/Buffer.cpp
 	DEM/Low/src/Data/Data.cpp
 	DEM/Low/src/Data/DataArray.cpp
-	DEM/Low/src/Data/DataBuffer.cpp
 	DEM/Low/src/Data/DataScheme.cpp
 	DEM/Low/src/Data/HandleManager.cpp
 	DEM/Low/src/Data/HRDParser.cpp

@@ -3,6 +3,7 @@
 
 namespace Data
 {
+DEFINE_TYPE(CBufferMalloc, CBufferMalloc(0))
 
 int IBuffer::Compare(const IBuffer& Other) const
 {
