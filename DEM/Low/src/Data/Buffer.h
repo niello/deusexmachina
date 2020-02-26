@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
+#include <Data/Hash.h>
 
 // Different RAM data holders. All store raw memory pointers, but differently
 // manage memory ownership, lifetime and destruction. These holders aren't
@@ -25,6 +26,9 @@ public:
 	virtual UPTR        GetSize() const = 0;
 	virtual void*       Resize(UPTR NewSize) { return nullptr; }
 	virtual bool        IsOwning() const = 0;
+
+	uint32_t            GetHash() const { return Hash(GetConstPtr(), GetSize()); }
+	int                 Compare(const IBuffer& Other) const;
 };
 
 class CBufferNotOwned : public IBuffer

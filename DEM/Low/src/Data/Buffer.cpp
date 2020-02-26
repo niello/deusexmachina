@@ -4,6 +4,20 @@
 namespace Data
 {
 
+int IBuffer::Compare(const IBuffer& Other) const
+{
+	auto MySize = GetSize();
+	auto OtherSize = GetSize();
+	if (MySize != OtherSize) return MySize - OtherSize;
+
+	auto pMyData = GetConstPtr();
+	auto pOtherData = Other.GetConstPtr();
+	if (pMyData == pOtherData) return 0;
+
+	return memcmp(pMyData, pOtherData, MySize);
+}
+//---------------------------------------------------------------------
+
 void* CBufferMalloc::Resize(UPTR NewSize)
 {
 	if (auto pNewData = n_realloc(_pData, NewSize))

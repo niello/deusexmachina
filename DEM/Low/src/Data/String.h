@@ -109,7 +109,7 @@ inline bool operator !=(const char* pStr1, const CString& Str2)
 }
 //---------------------------------------------------------------------
 
-template<> inline unsigned int Hash<CString>(const CString& Key)
+template<> inline uint32_t Hash<CString>(const CString& Key)
 {
 	return Hash(Key.CStr(), Key.GetLength());
 }
