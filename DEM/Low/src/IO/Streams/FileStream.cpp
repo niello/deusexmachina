@@ -121,7 +121,7 @@ Data::PBuffer CFileStream::ReadAll()
 {
 	if (!IsOpened() || IsEOF()) return nullptr;
 
-	const auto Size = GetSize() - Tell();
+	const auto Size = static_cast<UPTR>(GetSize() - Tell());
 	auto Buffer = std::make_unique<Data::CBufferMalloc>(Size);
 	if (Size) Read(Buffer->GetPtr(), Size);
 

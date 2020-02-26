@@ -73,7 +73,7 @@ Data::PBuffer CScopedStream::ReadAll()
 {
 	if (!IsOpened() || IsEOF()) return nullptr;
 
-	const auto Size = (ScopeOffset + ScopeSize) - HostStream->Tell();
+	const auto Size = static_cast<UPTR>((ScopeOffset + ScopeSize) - HostStream->Tell());
 	auto Buffer = std::make_unique<Data::CBufferMalloc>(Size);
 	if (Size) Read(Buffer->GetPtr(), Size);
 
