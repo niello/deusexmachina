@@ -84,7 +84,7 @@ public:
 		iterator() = default;
 		iterator(CRecord* pRecord) : _pRecord(pRecord) {}
 
-		T    operator *() const { return _pRecord ? _pRecord->Value : T(); }
+		T&   operator *() const { return _pRecord->Value; }
 		T*   operator ->() const { return _pRecord ? &_pRecord->Value : nullptr; }
 		bool operator ==(const iterator Other) const { return _pRecord == Other._pRecord; }
 		bool operator !=(const iterator Other) const { return _pRecord != Other._pRecord; }

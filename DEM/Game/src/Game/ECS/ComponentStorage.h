@@ -4,6 +4,7 @@
 #include <Data/SerializeToBinary.h>
 #include <Data/Buffer.h>
 #include <IO/Streams/MemStream.h>
+#include <System/Allocators/PoolAllocator.h>
 
 // Stores components of specified type. Each component type can have only one storage type.
 // Interface is provided for the game world to handle all storages transparently. In places
@@ -37,9 +38,14 @@ public:
 	virtual bool   SaveDiff(IO::CBinaryWriter& Out) const = 0;
 };
 
+// Conditional pool member for CHandleArrayComponentStorage
+template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _Pool; };
+struct CStorageNoPool {};
+
 // Default component storage with a handle array for component data and a special map for entity -> component indexing
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
-class CHandleArrayComponentStorage : public IComponentStorage
+class CHandleArrayComponentStorage : public IComponentStorage,
+	std::conditional_t<DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512, CStoragePool<T>, CStorageNoPool>
 {
 public:
 
@@ -49,21 +55,34 @@ public:
 
 protected:
 
-	constexpr static inline size_t NO_BASE_DATA = std::numeric_limits<size_t>().max();
-	constexpr static inline size_t MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
+	constexpr static inline U64 NO_BASE_DATA = std::numeric_limits<U64>().max();
 
 	struct CIndexRecord
 	{
 		CHandle ComponentHandle;
-		size_t  BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
+		U64     BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
+
+		// Pre-serialized diff allows to unload objects, saving both RAM and savegame time.
+		// For diffs of known small maximum size memory chunks are allocated from the pool.
 		std::conditional_t<
-			MAX_DIFF_SIZE <= 512,
+			DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512,
 			void*,
-			Data::PBuffer> BinaryDiffData; // Pre-serialized diff allows to unload objects, saving both RAM and savegame time
+			Data::PBuffer> BinaryDiffData;
+
+		bool Deleted = false;
 	};
 
 	CInnerStorage            _Data;
 	CEntityMap<CIndexRecord> _IndexByEntity;
+
+	void ClearDiffBuffer(CIndexRecord& Record)
+	{
+		if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
+			if (Record.BinaryDiffData)
+				_Pool.Free(Record.BinaryDiffData);
+
+		Record.BinaryDiffData = nullptr;
+	}
 
 public:
 
@@ -99,16 +118,21 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (It == _IndexByEntity.cend()) FAIL;
 
-		if (It->ComponentHandle) _Data.Free(It->ComponentHandle);
+		if (It->ComponentHandle)
+		{
+			_Data.Free(It->ComponentHandle);
+			It->ComponentHandle = CInnerStorage::INVALID_HANDLE;
+		}
 
 		if (It->BaseDataOffset == NO_BASE_DATA)
 		{
+			// Component not present in a base can be deleted without a trace
 			_IndexByEntity.erase(It);
 		}
 		else
 		{
-			// write 'deleted' diff/flag
-			// drop buffer
+			It->Deleted = true;
+			ClearDiffBuffer(*It);
 		}
 
 		OK;
@@ -166,19 +190,29 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		// FIXME: load base data if offset is valid (_World.GetBaseReader(Offset) / _World.GetBaseDataPtr(Offset))
-		T* pBaseComponent = nullptr;
+		auto It = _IndexByEntity.find(EntityID);
+		if (It == _IndexByEntity.cend()) return false;
 
-		if (auto pComponent = Find(EntityID))
-		{
-			return DEM::ParamsFormat::SerializeDiff(Out, *pComponent, pBaseComponent ? *pBaseComponent : T{});
-		}
-		else if (pBaseComponent)
+		if (It->Deleted)
 		{
 			// Explicitly deleted
 			Out = Data::CData();
 			return true;
 		}
+		else
+		{
+			//???FIXME: or read binary diff into a temporary stack object?
+			if (!It->ComponentHandle) return false;
+
+			const T& Component = _Data.GetValueUnsafe(It->ComponentHandle)->first;
+
+			T BaseComponent;
+			if (auto pBaseStream = _World.GetBaseStream(It->BaseDataOffset))
+				DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
+
+			return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+		}
+
 		return false;
 	}
 

@@ -55,14 +55,21 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::LoadBase(IO::CBinaryReader& In)
+void CGameWorld::LoadBase(IO::PStream InStream)
 {
+	if (!InStream) return;
+
+	IO::CBinaryReader In(*InStream);
+
 	const auto EntityCount = In.Read<uint32_t>();
 
 	// Erase all previous data in the world
 	_EntitiesBase.Clear(EntityCount);
 	_Entities.Clear(EntityCount);
 	// FIXME: erase components
+
+	// Required for delayed loading of components
+	_BaseStream = InStream;
 
 	// Load base list of entities
 	for (uint32_t i = 0; i < EntityCount; ++i)
@@ -148,8 +155,12 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::LoadDiff(IO::CBinaryReader& In)
+void CGameWorld::LoadDiff(IO::PStream InStream)
 {
+	if (!InStream) return;
+
+	IO::CBinaryReader In(*InStream);
+
 	// Clear previous diff info, keep base intact
 	if (_Entities.size()) _Entities.Clear(_EntitiesBase.size());
 	//!!!clear diffs and non-base-added objects in storages!
@@ -332,6 +343,14 @@ void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 		Out.Write(ComponentID);
 		Storage->SaveDiff(Out);
 	}
+}
+//---------------------------------------------------------------------
+
+IO::IStream* CGameWorld::GetBaseStream(U64 Offset) const
+{
+	if (!_BaseStream || Offset >= _BaseStream->GetSize()) return nullptr;
+	if (!_BaseStream->Seek(static_cast<I64>(Offset), IO::Seek_Begin)) return nullptr;
+	return _BaseStream.Get();
 }
 //---------------------------------------------------------------------
 
