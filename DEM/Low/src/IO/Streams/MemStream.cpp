@@ -16,6 +16,8 @@ CMemStream::CMemStream(void* pData, UPTR BufferSize, UPTR DataSize)
 	: _pData((char*)pData)
 	, _BufferSize(BufferSize)
 	, _UnusedStart(DataSize)
+	, _ReadOnly(false)
+	, _BufferOwned(false)
 {
 }
 //---------------------------------------------------------------------
@@ -24,32 +26,53 @@ CMemStream::CMemStream(const void* pData, UPTR BufferSize, UPTR DataSize)
 	: _pConstData((const char*)pData)
 	, _BufferSize(BufferSize)
 	, _UnusedStart(DataSize)
+	, _ReadOnly(false)
+	, _BufferOwned(false)
 {
 }
 //---------------------------------------------------------------------
 
-CMemStream::CMemStream(Data::PBuffer&& Buffer)
-	: _Buffer(std::move(Buffer))
+CMemStream::CMemStream(Data::IBuffer& Buffer)
+	: _pBuffer(&Buffer)
+	, _BufferOwned(false)
 {
-	if (_Buffer)
+	if (_pBuffer)
 	{
-		if (_pData = (char*)_Buffer->GetPtr())
+		if (_pData = (char*)_pBuffer->GetPtr())
 			_ReadOnly = false;
-		else if (_pConstData = (const char*)_Buffer->GetConstPtr())
+		else if (_pConstData = (const char*)_pBuffer->GetConstPtr())
 			_ReadOnly = true;
 
-		_BufferSize = _Buffer->GetSize();
+		_BufferSize = _pBuffer->GetSize();
+	}
+}
+//---------------------------------------------------------------------
+
+CMemStream::CMemStream(Data::PBuffer&& Buffer)
+	: _pBuffer(Buffer.release())
+	, _BufferOwned(true)
+{
+	if (_pBuffer)
+	{
+		if (_pData = (char*)_pBuffer->GetPtr())
+			_ReadOnly = false;
+		else if (_pConstData = (const char*)_pBuffer->GetConstPtr())
+			_ReadOnly = true;
+
+		_BufferSize = _pBuffer->GetSize();
 	}
 }
 //---------------------------------------------------------------------
 
 Data::PBuffer&& CMemStream::Detach()
 {
+	if (!_pBuffer || !_BufferOwned) return nullptr;
+
 	_pData = nullptr;
 	_BufferSize = 0;
 	_Pos = 0;
 	_UnusedStart = 0;
-	return std::move(_Buffer);
+	return Data::PBuffer(_pBuffer);
 }
 //---------------------------------------------------------------------
 
@@ -59,7 +82,8 @@ void CMemStream::Close()
 	_BufferSize = 0;
 	_Pos = 0;
 	_UnusedStart = 0;
-	_Buffer = nullptr;
+	if (_pBuffer && _BufferOwned) delete _pBuffer;
+	_pBuffer = nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -84,12 +108,12 @@ UPTR CMemStream::Write(const void* pData, UPTR Size)
 	const auto NewSize = _Pos + Size;
 	if (NewSize > _BufferSize)
 	{
-		if (_Buffer)
+		if (_pBuffer)
 		{
-			if (auto pNewData = _Buffer->Resize(NewSize))
+			if (auto pNewData = _pBuffer->Resize(NewSize))
 			{
 				_pData = (char*)pNewData;
-				_BufferSize = _Buffer->GetSize();
+				_BufferSize = _pBuffer->GetSize();
 			}
 			else
 				Size = _BufferSize - _Pos;
@@ -116,12 +140,12 @@ UPTR CMemStream::Fill(U8 Value, UPTR Size)
 	const auto NewSize = _Pos + Size;
 	if (NewSize > _BufferSize)
 	{
-		if (_Buffer)
+		if (_pBuffer)
 		{
-			if (auto pNewData = _Buffer->Resize(NewSize))
+			if (auto pNewData = _pBuffer->Resize(NewSize))
 			{
 				_pData = (char*)pNewData;
-				_BufferSize = _Buffer->GetSize();
+				_BufferSize = _pBuffer->GetSize();
 			}
 			else
 				Size = _BufferSize - _Pos;

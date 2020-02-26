@@ -26,19 +26,14 @@ protected:
 		const char*	_pConstData;
 	};
 
-	UPTR          _BufferSize = 0;
+	UPTR           _BufferSize = 0;
 
-	union
-	{
-		//???instead give up unique_ptr and manually delete in destructor if owning?
-		//if buffers become refcounted this problem will be solved
-		Data::PBuffer  _Buffer;
-		Data::IBuffer* _pBuffer;
-	};
+	Data::IBuffer* _pBuffer = nullptr;
 
-	UPTR          _Pos = 0;
-	UPTR          _UnusedStart = 0; // To track part not written into
-	bool          _ReadOnly : 1;
+	UPTR           _Pos = 0;
+	UPTR           _UnusedStart = 0; // To track part not written into
+	bool           _ReadOnly : 1;
+	bool           _BufferOwned : 1;
 
 public:
 
@@ -63,7 +58,7 @@ public:
 	virtual void	Unmap() override {}
 
 	virtual U64		GetSize() const override { return _BufferSize; }
-	virtual bool	IsOpened() const override { return _pData || _Buffer; }
+	virtual bool	IsOpened() const override { return _pData || _pBuffer; }
 	virtual bool    IsMapped() const override { return false; }
 	virtual bool	IsEOF() const override { return _pConstData ? (_Pos >= _BufferSize) : true; }
 	virtual bool	CanRead() const override { OK; }
