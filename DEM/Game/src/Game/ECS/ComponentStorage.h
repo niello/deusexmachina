@@ -99,9 +99,8 @@ public:
 	T* Add(HEntity EntityID)
 	{
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
-		auto It = _IndexByEntity.find(EntityID);
-		if (It != _IndexByEntity.cend())
-			return It->ComponentHandle ? &_Data.GetValueUnsafe(It->ComponentHandle)->first : nullptr;
+		if (auto It = _IndexByEntity.find(EntityID))
+			return It->Value.ComponentHandle ? &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first : nullptr;
 
 		auto Handle = _Data.Allocate();
 		CPair* pPair = _Data.GetValueUnsafe(Handle);
@@ -116,23 +115,24 @@ public:
 	bool Remove(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (It == _IndexByEntity.cend()) FAIL;
+		if (!It) FAIL;
+		auto& IndexRecord = It->Value;
 
-		if (It->ComponentHandle)
+		if (IndexRecord.ComponentHandle)
 		{
-			_Data.Free(It->ComponentHandle);
-			It->ComponentHandle = CInnerStorage::INVALID_HANDLE;
+			_Data.Free(IndexRecord.ComponentHandle);
+			IndexRecord.ComponentHandle = CInnerStorage::INVALID_HANDLE;
 		}
 
-		if (It->BaseDataOffset == NO_BASE_DATA)
+		if (IndexRecord.BaseDataOffset == NO_BASE_DATA)
 		{
 			// Component not present in a base can be deleted without a trace
 			_IndexByEntity.erase(It);
 		}
 		else
 		{
-			It->Deleted = true;
-			ClearDiffBuffer(*It);
+			IndexRecord.Deleted = true;
+			ClearDiffBuffer(IndexRecord);
 		}
 
 		OK;
@@ -142,20 +142,20 @@ public:
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (It == _IndexByEntity.cend() || !It->ComponentHandle) return nullptr;
+		if (!It || !It->Value.ComponentHandle) return nullptr;
 
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
-		return &_Data.GetValueUnsafe(It->ComponentHandle)->first;
+		return &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first;
 	}
 
 	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (It == _IndexByEntity.cend() || !It->ComponentHandle) return nullptr;
+		if (!It || !It->Value.ComponentHandle) return nullptr;
 
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
-		return &_Data.GetValueUnsafe(It->ComponentHandle)->first;
+		return &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first;
 	}
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
@@ -191,9 +191,10 @@ public:
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		auto It = _IndexByEntity.find(EntityID);
-		if (It == _IndexByEntity.cend()) return false;
+		if (!It) return false;
+		const auto& IndexRecord = It->Value;
 
-		if (It->Deleted)
+		if (IndexRecord.Deleted)
 		{
 			// Explicitly deleted
 			Out = Data::CData();
@@ -202,12 +203,12 @@ public:
 		else
 		{
 			//???FIXME: or read binary diff into a temporary stack object?
-			if (!It->ComponentHandle) return false;
+			if (!IndexRecord.ComponentHandle) return false;
 
-			const T& Component = _Data.GetValueUnsafe(It->ComponentHandle)->first;
+			const T& Component = _Data.GetValueUnsafe(IndexRecord.ComponentHandle)->first;
 
 			T BaseComponent;
-			if (auto pBaseStream = _World.GetBaseStream(It->BaseDataOffset))
+			if (auto pBaseStream = _World.GetBaseStream(IndexRecord.BaseDataOffset))
 				DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
 
 			return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
@@ -220,15 +221,23 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		//erase all previous data
+		// Erase all existing data, both base and diff
+		for (auto& IndexRecord : _IndexByEntity)
+			ClearDiffBuffer(IndexRecord);
+		_IndexByEntity.clear();
+		_Data.Clear();
 
-		// register EntityID -> { HComponent = invalid, OffsetInBase, DiffData = nullptr }, don't Deserialize components
-		// registry could be a sparse set, now it is a CEntityMap
-		//!!!for reuse of identical data EntityID->Offset index must be prebuilt! Write without merging first, then add.
-		// In this case we can restore mapping by adding a component full data size (constexpr from meta? or saved in file?).
-		// We could load base component data right here but we don't need it in runtime, so load on demand to the stack.
+		// We could create base components from data right here, but we will deserialize them on demand instead
+		const auto Count = In.Read<U32>();
+		for (U32 i = 0; i < Count; ++i)
+		{
+			const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
+			const auto OffsetInBase = In.Read<U64>();
+			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, { CInnerStorage::INVALID_HANDLE, OffsetInBase, nullptr });
+		}
 
 		//!!!separate function must exist to restore actual components from base data pointer and optional diff!
+		// DEM::BinaryFormat::Deserialize(In, *pComponent);
 		// When unloading the level, may delete component and write binary diff to the field or may keep actual component
 		// and build diff from it each save. Caching diff reduces base reading too! If can detect component changes
 		// (at least getting mutable value ref by handle), could skip updating diff. Or explicit 'commit/save' to mark changed?
@@ -239,29 +248,29 @@ public:
 		// - require binary storage, sometimes of size unknown at the compile time (cant use pool of ready made chunks)
 		// - don't support HRD diffs
 
-		const auto ComponentCount = In.Read<uint32_t>();
-		for (uint32_t i = 0; i < ComponentCount; ++i)
-		{
-			const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
-			if (auto pComponent = Add({ EntityIDRaw }))
-				DEM::BinaryFormat::Deserialize(In, *pComponent);
-		}
-
 		return true;
 	}
 
-	//!!!TODO: merge identical (compare bytes AFTER serialization)! Optional flag?
-	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
+	virtual bool SaveAll(IO::CBinaryWriter& Out, bool MergeIdentical = false) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		// force load all components not loaded
 
 		Out.Write(static_cast<uint32_t>(_Data.size()));
 		for (const auto& [Component, EntityID] : _Data)
 		{
-			// save actual component (if not loaded, restore right now for writing)
+			// serialize to intermediate buffer (created once, resizeable when needed)
+			// if MergeIdentical, compare with all already saved blocks
+			// copy saved data into separate tightly fitting buffer
+			// store buffers in vector of { Data, Offset }, Offset is a sum of prev sizes + base offset
+
 			Out.Write(EntityID.Raw);
-			DEM::BinaryFormat::Serialize(Out, Component);
+			// save offset
 		}
+
+		// For each component stored in vector:
+		//DEM::BinaryFormat::Serialize(Out, Component);
 
 		return true;
 	}

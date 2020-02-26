@@ -14,11 +14,7 @@ namespace DEM::Game
 template<class T>
 class CEntityMap final
 {
-private:
-
-	static constexpr size_t MIN_BUCKETS = 8;
-	static constexpr size_t MAX_BUCKETS = std::numeric_limits<size_t>().max() / 16;
-	static constexpr float MAX_LOAD_FACTOR = 1.5f;
+public:
 
 	struct CRecord
 	{
@@ -27,6 +23,12 @@ private:
 		HEntity  EntityID;
 		T        Value;
 	};
+
+private:
+
+	static constexpr size_t MIN_BUCKETS = 8;
+	static constexpr size_t MAX_BUCKETS = std::numeric_limits<size_t>().max() / 16;
+	static constexpr float MAX_LOAD_FACTOR = 1.5f;
 
 	// FIXME: thread safety! can use lock-free pool.
 	// FIXME: review my old pool allocator, maybe less effective than modern ones.
@@ -70,26 +72,56 @@ private:
 
 public:
 
-	// Not really an iterator, just a handle for acessing and erasing already found record
 	class iterator
 	{
 	private:
 
+		using TBucket = typename std::vector<CRecord*>::iterator;
+
+		TBucket _BucketIt;
+		TBucket _EndIt;
 		CRecord* _pRecord = nullptr;
 
 		friend class CEntityMap;
 
 	public:
 
+		using iterator_category = std::forward_iterator_tag;
+
+		using value_type = T;
+		using difference_type = ptrdiff_t;
+		using pointer = T*;
+		using reference = T&;
+
 		iterator() = default;
-		iterator(CRecord* pRecord) : _pRecord(pRecord) {}
+		iterator(TBucket BucketIt, TBucket EndIt, CRecord* pRecord) : _BucketIt(BucketIt), _EndIt(EndIt), _pRecord(pRecord) {}
+		iterator(const iterator& It) = default;
+		iterator& operator =(const iterator& It) = default;
 
 		T&   operator *() const { return _pRecord->Value; }
 		T*   operator ->() const { return _pRecord ? &_pRecord->Value : nullptr; }
 		bool operator ==(const iterator Other) const { return _pRecord == Other._pRecord; }
 		bool operator !=(const iterator Other) const { return _pRecord != Other._pRecord; }
+
+		iterator operator ++(int) { auto Tmp = *this; ++(*this); return Tmp; }
+		iterator& operator ++()
+		{
+			if (_pRecord)
+			{
+				if (_pRecord->pNext) _pRecord = _pRecord->pNext;
+				else
+				{
+					++_BucketIt;
+					if (_BucketIt == _EndIt) _pRecord = nullptr;
+					else _pRecord = *_BucketIt;
+				}
+			}
+
+			return *this;
+		}
 	};
 
+	// FIXME: define template and specialize for T and const T?
 	using const_iterator = const iterator;
 
 	CEntityMap(size_t BucketCount = 0)
@@ -99,15 +131,7 @@ public:
 
 	~CEntityMap()
 	{
-		for (CRecord* pRecord : _Records)
-		{
-			while (pRecord)
-			{
-				auto pDestroyMe = pRecord;
-				pRecord = pRecord->pNext;
-				_Pool.Destroy(pDestroyMe);
-			}
-		}
+		clear();
 	}
 
 	void emplace(HEntity EntityID, T&& Value)
@@ -147,33 +171,32 @@ public:
 		++_Size;
 	}
 
-	iterator find(HEntity EntityID)
+	CRecord* find(HEntity EntityID)
 	{
 		auto pRecord = _Records[EntityID.Raw & _HashMask];
 		while (pRecord)
 		{
-			if (pRecord->EntityID == EntityID) return iterator{ pRecord };
+			if (pRecord->EntityID == EntityID) return pRecord;
 			pRecord = pRecord->pNext;
 		}
-		return end();
+		return nullptr;
 	}
 
-	const_iterator find(HEntity EntityID) const
+	const CRecord* find(HEntity EntityID) const
 	{
 		auto pRecord = _Records[EntityID.Raw & _HashMask];
 		while (pRecord)
 		{
-			if (pRecord->EntityID == EntityID) return iterator{ pRecord };
+			if (pRecord->EntityID == EntityID) return pRecord;
 			pRecord = pRecord->pNext;
 		}
-		return cend();
+		return nullptr;
 	}
 
-	void erase(iterator It)
+	void erase(CRecord* pRecord)
 	{
-		if (!It._pRecord) return;
+		if (!pRecord) return;
 
-		auto pRecord = static_cast<CRecord*>(It._pRecord);
 		if (pRecord->pPrev)
 			pRecord->pPrev->pNext = pRecord->pNext;
 		else
@@ -185,8 +208,23 @@ public:
 		--_Size;
 	}
 
+	void clear()
+	{
+		for (CRecord* pRecord : _Records)
+		{
+			while (pRecord)
+			{
+				auto pDestroyMe = pRecord;
+				pRecord = pRecord->pNext;
+				_Pool.Destroy(pDestroyMe);
+			}
+		}
+	}
+
+	iterator       begin() { return iterator{ _Records.begin(), _Records.end(), _Records.front() };  }
 	iterator       end() { return iterator(); }
 	const_iterator end() const { return cend(); }
+	const_iterator cbegin() { return iterator{ _Records.begin(), _Records.end(), _Records.front() };  }
 	const_iterator cend() const { return iterator(); }
 	size_t         size() const { return _Size; }
 	bool           empty() const { return !_Size; }

@@ -66,7 +66,6 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 	// Erase all previous data in the world
 	_EntitiesBase.Clear(EntityCount);
 	_Entities.Clear(EntityCount);
-	// FIXME: erase components
 
 	// Required for delayed loading of components
 	_BaseStream = InStream;
@@ -155,6 +154,7 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
+//???store loading state (none, base, diff) to avoid duplicate work and partially uninitialized state?
 void CGameWorld::LoadDiff(IO::PStream InStream)
 {
 	if (!InStream) return;
