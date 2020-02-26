@@ -251,7 +251,7 @@ public:
 		return true;
 	}
 
-	virtual bool SaveAll(IO::CBinaryWriter& Out, bool MergeIdentical = false) const override
+	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
