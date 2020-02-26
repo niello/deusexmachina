@@ -1,4 +1,5 @@
 #include "ScopedStream.h"
+#include <Data/Buffer.h>
 
 namespace IO
 {
@@ -65,6 +66,18 @@ bool CScopedStream::Truncate()
 bool CScopedStream::IsEOF() const
 {
 	return HostStream->IsEOF() || HostStream->Tell() >= ScopeOffset + ScopeSize;
+}
+//---------------------------------------------------------------------
+
+Data::PBuffer CScopedStream::ReadAll()
+{
+	if (!IsOpened() || IsEOF()) return nullptr;
+
+	const auto Size = (ScopeOffset + ScopeSize) - HostStream->Tell();
+	auto Buffer = std::make_unique<Data::CBufferMalloc>(Size);
+	if (Size) Read(Buffer->GetPtr(), Size);
+
+	return Buffer;
 }
 //---------------------------------------------------------------------
 

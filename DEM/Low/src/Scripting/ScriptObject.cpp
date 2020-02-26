@@ -3,7 +3,7 @@
 #include "ScriptServer.h"
 #include "EventHandlerScript.h"
 #include <Events/EventServer.h>
-#include <Data/DataBuffer.h>
+#include <Data/Buffer.h>
 #include <IO/IOServer.h>
 #include <IO/Stream.h>
 #include <Core/Factory.h>
@@ -146,15 +146,12 @@ int CScriptObject_UnsubscribeEvent(lua_State* l)
 
 UPTR CScriptObject::LoadScriptFile(const char* pFileName)
 {
-	Data::CDataBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!File || !File->IsOpened()) FAIL;
-	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
-	Buffer.Reserve(FileSize);
-	Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
-	if (Buffer.GetSize() != FileSize) FAIL;
+	auto Buffer = File->ReadAll();
+	if (!Buffer) FAIL;
 
-	return LoadScript((const char*)Buffer.GetPtr(), Buffer.GetSize());
+	return LoadScript((const char*)Buffer->GetConstPtr(), Buffer->GetSize());
 }
 //---------------------------------------------------------------------
 

@@ -1637,7 +1637,7 @@ UPTR CD3D11GPUDriver::ApplyChanges(UPTR ChangesToUpdate)
 //---------------------------------------------------------------------
 
 // Gets or creates an actual layout for the given vertex layout and shader input signature
-ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CDataBuffer* pSignature)
+ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::IBuffer* pSignature)
 {
 	if (!ShaderInputSignatureID) return nullptr;
 
@@ -1653,7 +1653,7 @@ ID3D11InputLayout* CD3D11GPUDriver::GetD3DInputLayout(CD3D11VertexLayout& Vertex
 		if (!pSignature) return nullptr;
 	}
 
-	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pSignature->GetPtr(), pSignature->GetSize(), &pLayout)))
+	if (FAILED(pD3DDevice->CreateInputLayout(pD3DDesc, VertexLayout.GetComponentCount(), pSignature->GetConstPtr(), pSignature->GetSize(), &pLayout)))
 		return nullptr;
 
 	n_verify_dbg(VertexLayout.AddLayoutObject(ShaderInputSignatureID, pLayout));
@@ -2695,11 +2695,9 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 		if (!Stream.Seek(MetadataSize, IO::Seek_Current)) return nullptr;
 	}
 
-	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.Tell());
-	if (!BinarySize) return nullptr;
-
-	Data::CDataBuffer Data(BinarySize);
-	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
+	// Read the shader binary from rest of the stream
+	auto ShaderBinary = Stream.ReadAll();
+	if (!ShaderBinary || !ShaderBinary->GetSize()) return nullptr;
 
 	PD3D11Shader Shader;
 
@@ -2708,14 +2706,14 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 		case ShaderType_Vertex:
 		{
 			ID3D11VertexShader* pVS = nullptr;
-			if (FAILED(pD3DDevice->CreateVertexShader(Data.GetPtr(), BinarySize, nullptr, &pVS))) return nullptr;
+			if (FAILED(pD3DDevice->CreateVertexShader(ShaderBinary->GetConstPtr(), ShaderBinary->GetSize(), nullptr, &pVS))) return nullptr;
 			Shader = n_new(CD3D11Shader(pVS, InputSignatureID, Params));
 			break;
 		}
 		case ShaderType_Pixel:
 		{
 			ID3D11PixelShader* pPS = nullptr;
-			if (FAILED(pD3DDevice->CreatePixelShader(Data.GetPtr(), BinarySize, nullptr, &pPS))) return nullptr;
+			if (FAILED(pD3DDevice->CreatePixelShader(ShaderBinary->GetConstPtr(), ShaderBinary->GetSize(), nullptr, &pPS))) return nullptr;
 			Shader = n_new(CD3D11Shader(pPS, Params));
 			break;
 		}
@@ -2723,21 +2721,21 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 		{
 			//???need stream output? or separate method? or separate shader type?
 			ID3D11GeometryShader* pGS = nullptr;
-			if (FAILED(pD3DDevice->CreateGeometryShader(Data.GetPtr(), BinarySize, nullptr, &pGS))) return nullptr;
+			if (FAILED(pD3DDevice->CreateGeometryShader(ShaderBinary->GetConstPtr(), ShaderBinary->GetSize(), nullptr, &pGS))) return nullptr;
 			Shader = n_new(CD3D11Shader(pGS, InputSignatureID, Params));
 			break;
 		}
 		case ShaderType_Hull:
 		{
 			ID3D11HullShader* pHS = nullptr;
-			if (FAILED(pD3DDevice->CreateHullShader(Data.GetPtr(), BinarySize, nullptr, &pHS))) return nullptr;
+			if (FAILED(pD3DDevice->CreateHullShader(ShaderBinary->GetConstPtr(), ShaderBinary->GetSize(), nullptr, &pHS))) return nullptr;
 			Shader = n_new(CD3D11Shader(pHS, Params));
 			break;
 		}
 		case ShaderType_Domain:
 		{
 			ID3D11DomainShader* pDS = nullptr;
-			if (FAILED(pD3DDevice->CreateDomainShader(Data.GetPtr(), BinarySize, nullptr, &pDS))) return nullptr;
+			if (FAILED(pD3DDevice->CreateDomainShader(ShaderBinary->GetConstPtr(), ShaderBinary->GetSize(), nullptr, &pDS))) return nullptr;
 			Shader = n_new(CD3D11Shader(pDS, Params));
 			break;
 		}
@@ -2770,19 +2768,14 @@ PShader CD3D11GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 			FileName += std::to_string(InputSignatureID);
 			FileName += ".sig";
 
-			Data::CDataBuffer Buffer;
 			IO::PStream File = IOSrv->CreateStream(FileName.c_str(), IO::SAM_READ, IO::SAP_SEQUENTIAL);
 			if (!File || !File->IsOpened()) return nullptr;
-			const UPTR FileSize = static_cast<UPTR>(File->GetSize());
-			Buffer.Reserve(FileSize);
-			Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
-			if (Buffer.GetSize() != FileSize) return nullptr;
+			auto Buffer = File->ReadAll();
+			if (!Buffer) return nullptr;
 
 			if (!_DriverFactory->RegisterShaderInputSignature(InputSignatureID, std::move(Buffer))) return nullptr;
 		}
 	}
-
-	Data.Clear();
 
 	return Shader.Get();
 }

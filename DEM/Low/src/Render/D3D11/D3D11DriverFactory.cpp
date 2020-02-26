@@ -1,7 +1,7 @@
 #include "D3D11DriverFactory.h"
-
 #include <Render/D3D11/D3D11DisplayDriver.h>
 #include <Render/D3D11/D3D11GPUDriver.h>
+#include <Data/Buffer.h>
 
 // Windows 8.1 SDK is missing definitions for debug GUIDs
 #if (DEM_RENDER_DEBUG) && (WINVER <= 0x0603)
@@ -15,6 +15,15 @@
 namespace Render
 {
 RTTI_CLASS_IMPL(Render::CD3D11DriverFactory, Render::CVideoDriverFactory);
+
+CD3D11DriverFactory::CD3D11DriverFactory() = default;
+//---------------------------------------------------------------------
+
+CD3D11DriverFactory::~CD3D11DriverFactory()
+{
+	if (IsOpened()) Release();
+}
+//---------------------------------------------------------------------
 
 bool CD3D11DriverFactory::Create()
 {
@@ -172,7 +181,7 @@ PGPUDriver CD3D11DriverFactory::CreateGPUDriver(UPTR Adapter, EGPUDriverType Dri
 //---------------------------------------------------------------------
 
 // NB: Doesn't copy data, so pData must be dynamically allocated and must not be freed externally
-bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::CDataBuffer&& Data)
+bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::PBuffer&& Data)
 {
 	ShaderSignatures.push_back(std::move(Data));
 	ShaderSigIDToIndex.Add(ID, ShaderSignatures.size() - 1, true);
@@ -180,11 +189,11 @@ bool CD3D11DriverFactory::RegisterShaderInputSignature(U32 ID, Data::CDataBuffer
 }
 //---------------------------------------------------------------------
 
-const Data::CDataBuffer* CD3D11DriverFactory::FindShaderInputSignature(U32 ID) const
+const Data::IBuffer* CD3D11DriverFactory::FindShaderInputSignature(U32 ID) const
 {
 	UPTR Index;
 	if (!ShaderSigIDToIndex.Get(ID, Index)) return nullptr;
-	return &ShaderSignatures[Index];
+	return ShaderSignatures[Index].get();
 }
 //---------------------------------------------------------------------
 

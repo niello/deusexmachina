@@ -3,8 +3,9 @@
 #include "ScriptObject.h"
 #include <Events/EventServer.h>
 #include <Data/DataArray.h>
-#include <Data/ParamsUtils.h>
 #include <Data/DataBuffer.h>
+#include <Data/ParamsUtils.h>
+#include <Data/Buffer.h>
 #include <Data/StringTokenizer.h>
 #include <Data/StringUtils.h>
 #include <IO/IOServer.h>
@@ -253,15 +254,12 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 
 UPTR CScriptServer::RunScriptFile(const char* pFileName)
 {
-	Data::CDataBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!File || !File->IsOpened()) FAIL;
-	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
-	Buffer.Reserve(FileSize);
-	Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
-	if (Buffer.GetSize() != FileSize) FAIL;
+	auto Buffer = File->ReadAll();
+	if (!Buffer) FAIL;
 
-	return RunScript((const char*)Buffer.GetPtr(), Buffer.GetSize());
+	return RunScript((const char*)Buffer->GetConstPtr(), Buffer->GetSize());
 }
 //---------------------------------------------------------------------
 

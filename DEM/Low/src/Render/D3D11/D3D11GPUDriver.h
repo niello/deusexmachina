@@ -2,7 +2,6 @@
 #include <Render/GPUDriver.h>
 #include <Render/D3D11/D3D11SwapChain.h>
 #include <Data/FixedArray.h>
-#include <Data/DataBuffer.h>
 #include <System/Allocators/PoolAllocator.h>
 
 // Direct3D11 GPU device driver.
@@ -25,6 +24,11 @@ enum D3D11_TEXTURE_ADDRESS_MODE;
 enum D3D11_FILTER;
 typedef struct tagRECT RECT;
 typedef unsigned int UINT;
+
+namespace Data
+{
+	typedef std::unique_ptr<class IBuffer> PBuffer;
+}
 
 namespace Render
 {
@@ -165,7 +169,7 @@ protected:
 	static D3D11_TEXTURE_ADDRESS_MODE	GetD3DTexAddressMode(ETexAddressMode Mode);
 	static D3D11_FILTER					GetD3DTexFilter(ETexFilter Filter, bool Comparison);
 
-	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::CDataBuffer* pSignature = nullptr);
+	ID3D11InputLayout*					GetD3DInputLayout(CD3D11VertexLayout& VertexLayout, UPTR ShaderInputSignatureID, const Data::IBuffer* pSignature = nullptr);
 	bool								ReadFromD3DBuffer(void* pDest, ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, UPTR Size, UPTR Offset);
 	bool								WriteToD3DBuffer(ID3D11Buffer* pBuf, D3D11_USAGE Usage, UPTR BufferSize, const void* pData, UPTR Size, UPTR Offset);
 	bool								BindSRV(EShaderType ShaderType, UPTR SlotIndex, ID3D11ShaderResourceView* pSRV, CD3D11ConstantBuffer* pCB);

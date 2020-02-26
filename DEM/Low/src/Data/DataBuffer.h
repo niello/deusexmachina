@@ -7,7 +7,6 @@
 
 namespace Data
 {
-typedef std::unique_ptr<class CDataBuffer> PDataBuffer;
 
 class CDataBuffer final
 {
@@ -78,6 +77,5 @@ inline void CDataBuffer::Write(const char* pSrc, UPTR StartIdx, UPTR EndIdx)
 
 }
 
-//???PDataBuffer?
 DECLARE_TYPE(Data::CDataBuffer, 9)
 #define TBuffer DATA_TYPE(Data::CDataBuffer)

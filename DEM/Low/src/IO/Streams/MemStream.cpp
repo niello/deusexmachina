@@ -64,15 +64,17 @@ CMemStream::CMemStream(Data::PBuffer&& Buffer)
 }
 //---------------------------------------------------------------------
 
-Data::PBuffer&& CMemStream::Detach()
+Data::PBuffer CMemStream::Detach()
 {
-	if (!_pBuffer || !_BufferOwned) return nullptr;
+	if (!_pBuffer || !_BufferOwned) return Data::PBuffer();
 
 	_pData = nullptr;
 	_BufferSize = 0;
 	_Pos = 0;
 	_UnusedStart = 0;
-	return Data::PBuffer(_pBuffer);
+	auto OutBuffer = Data::PBuffer(_pBuffer);
+	_pBuffer = nullptr;
+	return OutBuffer;
 }
 //---------------------------------------------------------------------
 
@@ -184,6 +186,18 @@ void* CMemStream::Map()
 {
 	// FIXME: MapRead / MapWrite? Must not return read-only data for writing!
 	return _pData;
+}
+//---------------------------------------------------------------------
+
+Data::PBuffer CMemStream::ReadAll()
+{
+	if (!IsOpened() || IsEOF()) return nullptr;
+
+	const auto Size = _BufferSize - _Pos;
+	auto Buffer = std::make_unique<Data::CBufferMalloc>(Size);
+	if (Size) Read(Buffer->GetPtr(), Size);
+
+	return Buffer;
 }
 //---------------------------------------------------------------------
 

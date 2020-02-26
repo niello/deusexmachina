@@ -8,11 +8,6 @@
 // - owned (O) or not owned (N)
 // See constructor annotations to choose what you need.
 
-namespace Data
-{
-	typedef std::unique_ptr<class IBuffer> PBuffer;
-}
-
 namespace IO
 {
 
@@ -44,7 +39,7 @@ public:
 	CMemStream(Data::PBuffer&& Buffer); // CFO/MFO/MRO, depends on the buffer implementation
 	virtual ~CMemStream() override { if (IsOpened()) Close(); }
 
-	Data::PBuffer&& Detach();
+	Data::PBuffer   Detach();
 
 	virtual void	Close() override;
 	virtual UPTR	Read(void* pData, UPTR Size) override;
@@ -65,6 +60,8 @@ public:
 	virtual bool	CanWrite() const override { OK; }
 	virtual bool	CanSeek() const override { OK; }
 	virtual bool	CanBeMapped() const override { OK; }
+
+	virtual Data::PBuffer ReadAll() override;
 };
 
 typedef Ptr<CMemStream> PMemStream;

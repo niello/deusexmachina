@@ -41,6 +41,8 @@ public:
 	virtual bool	CanWrite() const override { OK; }
 	virtual bool	CanSeek() const override { OK; }
 	virtual bool	CanBeMapped() const override { OK; }
+
+	virtual Data::PBuffer ReadAll() override;
 };
 
 typedef Ptr<CFileStream> PFileStream;

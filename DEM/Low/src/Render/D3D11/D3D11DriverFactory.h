@@ -1,7 +1,6 @@
 #pragma once
 #include <Render/VideoDriverFactory.h>
 #include <Data/HashTable.h>
-#include <Data/DataBuffer.h>
 #include <vector>
 
 // Direct3D 11 and DXGI 1.1 implementation of CVideoDriverFactory
@@ -18,7 +17,7 @@ enum DXGI_FORMAT;
 
 namespace Data
 {
-	typedef std::unique_ptr<class CDataBuffer> PDataBuffer;
+	typedef std::unique_ptr<class IBuffer> PBuffer;
 }
 
 namespace Render
@@ -46,12 +45,13 @@ protected:
 	IDXGIDebug*					pDXGIDebug = nullptr;
 #endif
 	UPTR						AdapterCount = 0;		// Valid during a lifetime of the DXGI factory object
-	std::vector<Data::CDataBuffer>	ShaderSignatures;
+	std::vector<Data::PBuffer>	ShaderSignatures;
 	CHashTable<U32, UPTR>		ShaderSigIDToIndex;
 
 public:
 
-	virtual ~CD3D11DriverFactory() override { if (IsOpened()) Release(); }
+	CD3D11DriverFactory();
+	virtual ~CD3D11DriverFactory() override;
 
 	static DXGI_FORMAT		PixelFormatToDXGIFormat(EPixelFormat Format);
 	static EPixelFormat		DXGIFormatToPixelFormat(DXGI_FORMAT D3DFormat);
@@ -74,8 +74,8 @@ public:
 	PDisplayDriver			CreateDisplayDriver(IDXGIOutput* pOutput);
 	virtual PGPUDriver		CreateGPUDriver(UPTR Adapter = Adapter_AutoSelect, EGPUDriverType DriverType = GPU_AutoSelect);
 
-	bool					RegisterShaderInputSignature(U32 ID, Data::CDataBuffer&& Data);
-	const Data::CDataBuffer*	FindShaderInputSignature(U32 ID) const;
+	bool					RegisterShaderInputSignature(U32 ID, Data::PBuffer&& Data);
+	const Data::IBuffer*    FindShaderInputSignature(U32 ID) const;
 
 	IDXGIFactory1*			GetDXGIFactory() const { return pDXGIFactory; }
 };

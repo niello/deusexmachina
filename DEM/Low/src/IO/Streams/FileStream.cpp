@@ -1,6 +1,6 @@
 #include "FileStream.h"
-
 #include <IO/FileSystem.h>
+#include <Data/Buffer.h>
 
 namespace IO
 {
@@ -114,6 +114,18 @@ U64 CFileStream::GetSize() const
 {
 	n_assert_dbg(hFile);
 	return FS->GetFileSize(hFile);
+}
+//---------------------------------------------------------------------
+
+Data::PBuffer CFileStream::ReadAll()
+{
+	if (!IsOpened() || IsEOF()) return nullptr;
+
+	const auto Size = GetSize() - Tell();
+	auto Buffer = std::make_unique<Data::CBufferMalloc>(Size);
+	if (Size) Read(Buffer->GetPtr(), Size);
+
+	return Buffer;
 }
 //---------------------------------------------------------------------
 

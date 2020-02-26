@@ -39,6 +39,8 @@ public:
 	virtual bool	CanWrite() const override { return HostStream && HostStream->CanWrite(); }
 	virtual bool	CanSeek() const override { return HostStream && HostStream->CanSeek(); }
 	virtual bool	CanBeMapped() const override { return HostStream && HostStream->CanBeMapped(); }
+
+	virtual Data::PBuffer ReadAll() override;
 };
 
 typedef Ptr<CScopedStream> PScopedStream;

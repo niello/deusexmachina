@@ -1,7 +1,7 @@
 #include "ParamsUtils.h"
 
 #include <Data/HRDParser.h>
-#include <Data/DataBuffer.h>
+#include <Data/Buffer.h>
 #include <Data/DataScheme.h>
 #include <IO/IOServer.h>
 #include <IO/HRDWriter.h>
@@ -13,18 +13,15 @@ namespace ParamsUtils
 
 Data::PParams LoadParamsFromHRD(const char* pFileName)
 {
-	Data::CDataBuffer Buffer;
 	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
 	if (!File || !File->IsOpened()) return nullptr;
-	const UPTR FileSize = static_cast<UPTR>(File->GetSize());
-	Buffer.Reserve(FileSize);
-	Buffer.Truncate(File->Read(Buffer.GetPtr(), FileSize));
-	if (Buffer.GetSize() != FileSize) return nullptr;
+	auto Buffer = File->ReadAll();
+	if (!Buffer) return nullptr;
 
 	Data::PParams Params;
 	Data::CHRDParser Parser;
 	//CString Errors;
-	return Parser.ParseBuffer(static_cast<const char*>(Buffer.GetPtr()), Buffer.GetSize(), Params/*, &Errors*/) ?
+	return Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params/*, &Errors*/) ?
 		Params :
 		nullptr;
 }

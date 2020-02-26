@@ -88,7 +88,7 @@ public:
 	virtual PShaderParamTable   LoadShaderParamTable(uint32_t ShaderFormatCode, IO::IStream& Stream) = 0;
 	virtual PConstantBuffer		CreateConstantBuffer(IConstantBufferParam& Param, UPTR AccessFlags, const CConstantBuffer* pData = nullptr) = 0;
 	virtual PConstantBuffer		CreateTemporaryConstantBuffer(IConstantBufferParam& Param) = 0;
-	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& CDataBuffer) = 0;
+	virtual void				FreeTemporaryConstantBuffer(CConstantBuffer& Buffer) = 0;
 	virtual PTexture			CreateTexture(PTextureData Data, UPTR AccessFlags) = 0;
 	virtual PSampler			CreateSampler(const CSamplerDesc& Desc) = 0;
 	virtual PRenderTarget		CreateRenderTarget(const CRenderTargetDesc& Desc) = 0;

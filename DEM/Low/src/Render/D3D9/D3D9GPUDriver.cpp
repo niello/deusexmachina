@@ -23,7 +23,6 @@
 #include <System/Win32/OSWindowWin32.h>
 #include <System/SystemEvents.h>
 #include <Data/Buffer.h>
-#include <Data/DataBuffer.h>
 #ifdef DEM_STATS
 #include <Core/CoreServer.h>
 #include <Data/StringUtils.h>
@@ -2816,11 +2815,9 @@ PShader CD3D9GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 		if (!Stream.Seek(MetadataSize, IO::Seek_Current)) return nullptr;
 	}
 
-	const UPTR BinarySize = static_cast<UPTR>(Stream.GetSize() - Stream.Tell());
-	if (!BinarySize) return nullptr;
-
-	Data::CDataBuffer Data(BinarySize);
-	if (Stream.Read(Data.GetPtr(), BinarySize) != BinarySize) return nullptr;
+	// Read the shader binary from rest of the stream
+	auto ShaderBinary = Stream.ReadAll();
+	if (!ShaderBinary || !ShaderBinary->GetSize()) return nullptr;
 
 	Render::PD3D9Shader Shader;
 
@@ -2829,14 +2826,14 @@ PShader CD3D9GPUDriver::CreateShader(IO::IStream& Stream, bool LoadParamTable)
 		case ShaderType_Vertex:
 		{
 			IDirect3DVertexShader9* pVS = nullptr;
-			if (FAILED(pD3DDevice->CreateVertexShader((const DWORD*)Data.GetPtr(), &pVS))) return nullptr;
+			if (FAILED(pD3DDevice->CreateVertexShader((const DWORD*)ShaderBinary->GetConstPtr(), &pVS))) return nullptr;
 			Shader = n_new(CD3D9Shader(pVS, Params));
 			break;
 		}
 		case ShaderType_Pixel:
 		{
 			IDirect3DPixelShader9* pPS = nullptr;
-			if (FAILED(pD3DDevice->CreatePixelShader((const DWORD*)Data.GetPtr(), &pPS))) return nullptr;
+			if (FAILED(pD3DDevice->CreatePixelShader((const DWORD*)ShaderBinary->GetConstPtr(), &pPS))) return nullptr;
 			Shader = n_new(CD3D9Shader(pPS, Params));
 			break;
 		}
