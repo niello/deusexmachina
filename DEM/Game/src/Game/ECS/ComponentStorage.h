@@ -55,7 +55,8 @@ public:
 
 protected:
 
-	constexpr static inline U64 NO_BASE_DATA = std::numeric_limits<U64>().max();
+	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
+	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
 
 	struct CIndexRecord
 	{
@@ -65,7 +66,7 @@ protected:
 		// Pre-serialized diff allows to unload objects, saving both RAM and savegame time.
 		// For diffs of known small maximum size memory chunks are allocated from the pool.
 		std::conditional_t<
-			DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512,
+			MAX_DIFF_SIZE <= 512,
 			void*,
 			Data::PBuffer> BinaryDiffData;
 
@@ -82,6 +83,26 @@ protected:
 				_Pool.Free(Record.BinaryDiffData);
 
 		Record.BinaryDiffData = nullptr;
+	}
+
+	T LoadComponent(const CIndexRecord& Record) const
+	{
+		T Component;
+
+		// If base data is available for this component, load it
+		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
+			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
+
+		// If diff data is available, apply it on top of base data
+		if (Record.BinaryDiffData)
+		{
+			if constexpr (MAX_DIFF_SIZE <= 512)
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component, Component);
+			else
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(*Record.BinaryDiffData)), Component, Component);
+		}
+
+		return Component;
 	}
 
 public:
@@ -251,26 +272,61 @@ public:
 		return true;
 	}
 
+	// This method is primarily suited for saving levels in the editor, not for ingame use. Use SaveDiff to save game.
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		// force load all components not loaded
+		std::vector<std::pair<Data::CBufferMalloc, U64>> BinaryData;
+		std::vector<std::pair<HEntity, size_t>> EntityToData;
+		BinaryData.reserve(_IndexByEntity.size());
+		EntityToData.reserve(_IndexByEntity.size());
 
-		Out.Write(static_cast<uint32_t>(_Data.size()));
-		for (const auto& [Component, EntityID] : _Data)
+		// Choose some reasonable initial size of the buffer to minimize reallocations
+		IO::CBinaryWriter Intermediate(IO::CMemStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512)));
+
+		_IndexByEntity.ForEach([this, &Intermediate](HEntity EntityID, const CIndexRecord& Record)
 		{
-			// serialize to intermediate buffer (created once, resizeable when needed)
-			// if MergeIdentical, compare with all already saved blocks
-			// copy saved data into separate tightly fitting buffer
-			// store buffers in vector of { Data, Offset }, Offset is a sum of prev sizes + base offset
+			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
 
-			Out.Write(EntityID.Raw);
-			// save offset
+			if (Record.ComponentHandle)
+				DEM::BinaryFormat::Serialize(Intermediate, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
+			else if (!Record.Deleted)
+				DEM::BinaryFormat::Serialize(Intermediate, LoadComponent(Record));
+			else
+				return;
+
+			const void* pComponentData = Intermediate.GetStream().Map();
+			const auto SerializedSize = Intermediate.GetStream().Tell();
+
+			//???use hashes for faster comparison?
+			for (size_t i = 0; i < BinaryData.size(); ++i)
+				if (!BinaryData[i].Compare(pComponentData, SerializedSize))
+				{
+					EntityToData.emplace_back(EntityID, i);
+					return;
+				}
+
+			//!!!calculate offsets!
+
+			Data::CBufferMalloc NewBuffer(SerializedSize);
+			memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
+			BinaryData.emplace_back(std::move(NewBuffer), 0);
+
+			EntityToData.emplace_back(EntityID, BinaryData.size() - 1);
+		});
+
+		// Save index EntityID -> component data offset
+		Out.Write(static_cast<uint32_t>(EntityToData.size()));
+		for (const auto& Record : EntityToData)
+		{
+			Out.Write(Record.first.Raw);
+			Out.Write(BinaryData[Record.second].second);
 		}
 
-		// For each component stored in vector:
-		//DEM::BinaryFormat::Serialize(Out, Component);
+		// Store component data
+		for (const auto& Record : BinaryData)
+			Out.GetStream().Write(Record.first.GetConstPtr(), Record.first.GetSize());
 
 		return true;
 	}

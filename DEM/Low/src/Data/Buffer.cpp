@@ -5,17 +5,44 @@ namespace Data
 {
 DEFINE_TYPE(CBufferMalloc, CBufferMalloc(0))
 
-int IBuffer::Compare(const IBuffer& Other) const
+int IBuffer::Compare(const void* pOtherData, UPTR OtherSize) const
 {
 	auto MySize = GetSize();
-	auto OtherSize = GetSize();
 	if (MySize != OtherSize) return MySize - OtherSize;
 
 	auto pMyData = GetConstPtr();
-	auto pOtherData = Other.GetConstPtr();
 	if (pMyData == pOtherData) return 0;
 
 	return memcmp(pMyData, pOtherData, MySize);
+}
+//---------------------------------------------------------------------
+
+CBufferMalloc::CBufferMalloc(const CBufferMalloc& Other)
+	: _pData(Other._Size ? n_malloc(Other._Size) : nullptr)
+	, _Size(Other._Size)
+{
+	if (_Size) memcpy(_pData, Other._pData, _Size);
+}
+//---------------------------------------------------------------------
+
+CBufferMalloc& CBufferMalloc::operator =(const CBufferMalloc& Other)
+{
+	if (_pData) n_free(_pData);
+	_Size = Other._Size;
+	_pData = _Size ? n_malloc(_Size) : nullptr;
+	if (_Size) memcpy(_pData, Other._pData, _Size);
+	return *this;
+}
+//---------------------------------------------------------------------
+
+CBufferMalloc& CBufferMalloc::operator =(CBufferMalloc&& Other)
+{
+	if (_pData) n_free(_pData);
+	_pData = Other._pData;
+	_Size = Other._Size;
+	Other._pData = nullptr;
+	Other._Size = 0;
+	return *this;
 }
 //---------------------------------------------------------------------
 

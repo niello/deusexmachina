@@ -138,6 +138,13 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
+	template<typename TValue>
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, TValue& Value, const TValue& BaseValue)
+	{
+		NOT_IMPLEMENTED;
+	}
+	//---------------------------------------------------------------------
+
 	template<typename>
 	struct is_std_vector : std::false_type {};
 

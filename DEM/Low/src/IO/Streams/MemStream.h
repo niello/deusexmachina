@@ -32,7 +32,7 @@ protected:
 
 public:
 
-	CMemStream(); // MRO
+	CMemStream(UPTR InitialBufferSize = 0); // MRO
 	CMemStream(void* pData, UPTR BufferSize, UPTR DataSize = 0); // CFN
 	CMemStream(const void* pData, UPTR BufferSize, UPTR DataSize = 0); // MFN
 	CMemStream(Data::IBuffer& Buffer); // CFN/MFN/MRN, depends on the buffer implementation

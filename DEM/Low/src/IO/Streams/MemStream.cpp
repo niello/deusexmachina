@@ -6,8 +6,8 @@
 namespace IO
 {
 
-CMemStream::CMemStream()
-	: CMemStream(std::make_unique<Data::CBufferMalloc>(0))
+CMemStream::CMemStream(UPTR InitialBufferSize)
+	: CMemStream(std::make_unique<Data::CBufferMalloc>(InitialBufferSize))
 {
 }
 //---------------------------------------------------------------------

@@ -221,6 +221,32 @@ public:
 		}
 	}
 
+	template<typename TCallback>
+	void ForEach(TCallback Callback)
+	{
+		for (CRecord* pRecord : _Records)
+		{
+			while (pRecord)
+			{
+				Callback(pRecord->EntityID, pRecord->Value);
+				pRecord = pRecord->pNext;
+			}
+		}
+	}
+
+	template<typename TCallback>
+	void ForEach(TCallback Callback) const
+	{
+		for (CRecord* pRecord : _Records)
+		{
+			while (pRecord)
+			{
+				Callback(pRecord->EntityID, pRecord->Value);
+				pRecord = pRecord->pNext;
+			}
+		}
+	}
+
 	iterator       begin() { return iterator{ _Records.begin(), _Records.end(), _Records.front() };  }
 	iterator       end() { return iterator(); }
 	const_iterator end() const { return cend(); }

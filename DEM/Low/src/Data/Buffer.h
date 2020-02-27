@@ -29,7 +29,8 @@ public:
 	virtual bool        IsOwning() const = 0;
 
 	uint32_t            GetHash() const { return Hash(GetConstPtr(), GetSize()); }
-	int                 Compare(const IBuffer& Other) const;
+	int                 Compare(const IBuffer& Other) const { return Compare(Other.GetConstPtr(), Other.GetSize()); }
+	int                 Compare(const void* pOtherData, UPTR OtherSize) const;
 
 	bool operator ==(const IBuffer& Other) const { return Compare(Other) != 0; }
 	bool operator !=(const IBuffer& Other) const { return Compare(Other) == 0; }
@@ -87,6 +88,10 @@ private:
 public:
 
 	CBufferMalloc(UPTR Size) : _pData(Size ? n_malloc(Size) : nullptr), _Size(Size) {}
+	CBufferMalloc(const CBufferMalloc& Other);
+	CBufferMalloc(CBufferMalloc&& Other) : _pData(Other._pData), _Size(Other._Size) { Other._pData = nullptr; Other._Size = 0; }
+	CBufferMalloc& operator =(const CBufferMalloc& Other);
+	CBufferMalloc& operator =(CBufferMalloc&& Other);
 
 	virtual ~CBufferMalloc() override { if (_pData) n_free(_pData); }
 
