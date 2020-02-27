@@ -109,10 +109,13 @@ protected:
 		return Component;
 	}
 
-	void SaveComponent(const CIndexRecord& Record)
+	void SaveComponent(const CIndexRecord& Record) const
 	{
 		NOT_IMPLEMENTED;
 		//SaveEntity - skip if no record, not loaded, not saveable or not dirty, get base/T(), calc diff against it and write to diff cache
+		// if modified, diff against base, if new, diff against default-created object
+		// if component is really deleted, not just 'not loaded', write special 'deleted' diff flag (or must be already set?)
+		// if no diff found, release diff buffer with ClearDiffBuffer
 	}
 
 public:
@@ -297,7 +300,7 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		std::vector<std::pair<Data::CBufferMalloc, U64>> BinaryData;
+		std::vector<Data::CBufferMalloc> BinaryData;
 		std::vector<std::pair<HEntity, size_t>> EntityToData;
 		BinaryData.reserve(_IndexByEntity.size());
 		EntityToData.reserve(_IndexByEntity.size());
@@ -319,30 +322,36 @@ public:
 			const void* pComponentData = Intermediate.GetStream().Map();
 			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
 
-			//???use hashes for faster comparison?
+			//???TODO: use hashes for faster comparison?
 			for (size_t i = 0; i < BinaryData.size(); ++i)
-				if (!BinaryData[i].first.Compare(pComponentData, SerializedSize))
+				if (!BinaryData[i].Compare(pComponentData, SerializedSize))
 				{
 					EntityToData.emplace_back(EntityID, i);
 					return;
 				}
 
-			//!!!calculate offsets!
-
 			Data::CBufferMalloc NewBuffer(SerializedSize);
 			memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
-			BinaryData.emplace_back(std::move(NewBuffer), 0);
+			BinaryData.emplace_back(std::move(NewBuffer));
 
 			EntityToData.emplace_back(EntityID, BinaryData.size() - 1);
 		});
 
-		// Save index EntityID -> component data offset
-		Out.Write(static_cast<uint32_t>(EntityToData.size()));
+		// Base offset of component data is current offset plus size of indexing table, written just below
+		const U64 BaseOffset = Out.Tell() + sizeof(U32) + EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64));
+		auto ComponentDataOffset = BaseOffset;
+
+		// Save index table of EntityID -> component data offset
+		Out.Write(static_cast<U32>(EntityToData.size()));
 		for (const auto& Record : EntityToData)
 		{
 			Out.Write(Record.first.Raw);
-			Out.Write(BinaryData[Record.second].second);
+			Out.Write(ComponentDataOffset);
+			ComponentDataOffset += BinaryData[Record.second].GetSize();
 		}
+
+		// Ensure our calculations are correct
+		n_assert(Out.Tell() == BaseOffset);
 
 		// Store component data
 		for (const auto& Record : BinaryData)
@@ -351,24 +360,26 @@ public:
 		return true;
 	}
 
-	// update diffs of all loaded entities, write to Out
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) const override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		//   per component
-		//     if component is data-less, just write a list of entities with deleted component, then with added
-		//     if component is loaded, update diff: load base component, write diff current / base
-		//     if modified, diff against base, if new, diff against default-created object
-		//     if component is really deleted, not just 'not loaded', write special 'deleted' diff flag
-		//     save diff data or 'deleted' flag to the output
-		//     could write deleted components first, then added/modified
+		//???save deleted component list in the first pass? to avoid saving alive bit for each component?!
 
-		for (const auto& Component : _Data)
+		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			// if (Entity.Level != pLevel) continue;
-			//!!!save diff!
-		}
+			//!!!TODO: check if component is saveable and is dirty!
+			if (Record.ComponentHandle) SaveComponent(Record);
+
+			if (Record.BinaryDiffData)
+			{
+				Out.Write(EntityID.Raw);
+				if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
+					Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
+				else
+					Out.GetStream().Write(Record.BinaryDiffData.GetConstPtr(), Record.DiffDataSize);
+			}
+		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
@@ -389,13 +400,23 @@ public:
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
 			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(Record)), EntityID });
-			_Data.GetValueUnsafe(Record.ComponentHandle)->second = EntityID;
 		});
 	}
 
 	virtual void UnloadComponents(CStrID LevelID) override
 	{
-		//UnloadEntity - SaveEntity for what is unloaded (see skips there too!), delete component from storage, clear handle in record
+		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
+		{
+			if (!Record.ComponentHandle) return;
+
+			auto pEntity = _World.GetEntity(EntityID);
+			if (!pEntity || pEntity->LevelID != LevelID) return;
+
+			SaveComponent(Record);
+
+			_Data.Free(Record.ComponentHandle);
+			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE;
+		});
 	}
 
 	auto begin() { return _Data.begin(); }
@@ -410,6 +431,8 @@ public:
 template<typename T>
 class CEmptyComponentStorage : public IComponentStorage
 {
+	// TODO: implement, only entity list is required with base / current bits, or two or three lists?
+	// if component is data-less, on save just write a list of entities with deleted component, then with added
 };
 
 template<typename T>
