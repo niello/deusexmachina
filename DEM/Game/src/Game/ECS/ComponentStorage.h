@@ -34,8 +34,12 @@ public:
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   LoadBase(IO::CBinaryReader& In) = 0;
+	virtual bool   LoadDiff(IO::CBinaryReader& In) = 0;
 	virtual bool   SaveAll(IO::CBinaryWriter& Out) const = 0;
 	virtual bool   SaveDiff(IO::CBinaryWriter& Out) const = 0;
+
+	virtual void   PrepareComponents(CStrID LevelID) = 0;
+	virtual void   UnloadComponents(CStrID LevelID) = 0;
 };
 
 // Conditional pool member for CHandleArrayComponentStorage
@@ -103,6 +107,12 @@ protected:
 		}
 
 		return Component;
+	}
+
+	void SaveComponent(const CIndexRecord& Record)
+	{
+		NOT_IMPLEMENTED;
+		//SaveEntity - skip if no record, not loaded, not saveable or not dirty, get base/T(), calc diff against it and write to diff cache
 	}
 
 public:
@@ -272,6 +282,16 @@ public:
 		return true;
 	}
 
+	virtual bool LoadDiff(IO::CBinaryReader& In) override
+	{
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		//LoadDiff - delete diff data and objects without base, unload components for affected recs, cache new diff binary data, (reload unloaded??? optional?)
+		//!!!if diff data is 'deleted', don't load component! may even force-unload it.
+
+		return true;
+	}
+
 	// This method is primarily suited for saving levels in the editor, not for ingame use. Use SaveDiff to save game.
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
@@ -285,7 +305,7 @@ public:
 		// Choose some reasonable initial size of the buffer to minimize reallocations
 		IO::CBinaryWriter Intermediate(IO::CMemStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512)));
 
-		_IndexByEntity.ForEach([this, &Intermediate](HEntity EntityID, const CIndexRecord& Record)
+		_IndexByEntity.ForEach([&](HEntity EntityID, const CIndexRecord& Record)
 		{
 			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
 
@@ -297,11 +317,11 @@ public:
 				return;
 
 			const void* pComponentData = Intermediate.GetStream().Map();
-			const auto SerializedSize = Intermediate.GetStream().Tell();
+			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
 
 			//???use hashes for faster comparison?
 			for (size_t i = 0; i < BinaryData.size(); ++i)
-				if (!BinaryData[i].Compare(pComponentData, SerializedSize))
+				if (!BinaryData[i].first.Compare(pComponentData, SerializedSize))
 				{
 					EntityToData.emplace_back(EntityID, i);
 					return;
@@ -355,14 +375,28 @@ public:
 		return true;
 	}
 
-	//LoadDiff - delete diff data and objects without base, unload components for affected recs, cache new diff binary data, (reload unloaded??? optional?)
-	//!!!if diff data is 'deleted', don't load component! may even force-unload it.
+	virtual void PrepareComponents(CStrID LevelID) override
+	{
+		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
+		{
+			if (Record.ComponentHandle || Record.Deleted)
+			{
+				n_assert_dbg(!Record.ComponentHandle || !Record.Deleted);
+				return;
+			}
 
-	//???all entities in a level? or different functions for single entity and for level?
-	//!!!first create what will be used right now!
-	//LoadEntity - skip if no record, create base/T(), apply diff on it if present, register and return resulting component, if diff is 'deleted' simply destroy component if loaded and return null
-	//UnloadEntity - SaveEntity for what is unloaded (see skips there too!), delete component from storage, clear handle in record
-	//SaveEntity - skip if no record, not loaded, not saveable or not dirty, get base/T(), calc diff against it and write to diff cache
+			auto pEntity = _World.GetEntity(EntityID);
+			if (!pEntity || pEntity->LevelID != LevelID) return;
+
+			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(Record)), EntityID });
+			_Data.GetValueUnsafe(Record.ComponentHandle)->second = EntityID;
+		});
+	}
+
+	virtual void UnloadComponents(CStrID LevelID) override
+	{
+		//UnloadEntity - SaveEntity for what is unloaded (see skips there too!), delete component from storage, clear handle in record
+	}
 
 	auto begin() { return _Data.begin(); }
 	auto begin() const { return _Data.begin(); }
@@ -372,10 +406,16 @@ public:
 	auto cend() const { return _Data.cend(); }
 };
 
-template<class T>
+// Default storage for empty components (flags)
+template<typename T>
+class CEmptyComponentStorage : public IComponentStorage
+{
+};
+
+template<typename T>
 struct TComponentTraits
 {
-	using TStorage = CHandleArrayComponentStorage<T>;
+	using TStorage = std::conditional_t<std::is_empty_v<T>, CEmptyComponentStorage<T>, CHandleArrayComponentStorage<T>>;
 	using THandle = typename TStorage::CInnerStorage::CHandle;
 };
 
