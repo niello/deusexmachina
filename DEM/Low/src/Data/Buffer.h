@@ -38,6 +38,10 @@ public:
 	bool operator <(const IBuffer& Other) const { return Compare(Other) < 0; }
 	bool operator >=(const IBuffer& Other) const { return Compare(Other) >= 0; }
 	bool operator <=(const IBuffer& Other) const { return Compare(Other) <= 0; }
+
+	operator bool() const { return GetSize() > 0; }
+	operator void*() { return GetPtr(); }
+	operator const void*() const { return GetConstPtr(); }
 };
 
 class CBufferNotOwned : public IBuffer
@@ -87,6 +91,7 @@ private:
 
 public:
 
+	constexpr CBufferMalloc() = default;
 	CBufferMalloc(UPTR Size) : _pData(Size ? n_malloc(Size) : nullptr), _Size(Size) {}
 	CBufferMalloc(const CBufferMalloc& Other);
 	CBufferMalloc(CBufferMalloc&& Other) : _pData(Other._pData), _Size(Other._Size) { Other._pData = nullptr; Other._Size = 0; }

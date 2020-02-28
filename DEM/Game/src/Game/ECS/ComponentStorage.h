@@ -36,14 +36,14 @@ public:
 	virtual bool   LoadBase(IO::CBinaryReader& In) = 0;
 	virtual bool   LoadDiff(IO::CBinaryReader& In) = 0;
 	virtual bool   SaveAll(IO::CBinaryWriter& Out) const = 0;
-	virtual bool   SaveDiff(IO::CBinaryWriter& Out) const = 0;
+	virtual bool   SaveDiff(IO::CBinaryWriter& Out) = 0;
 
 	virtual void   PrepareComponents(CStrID LevelID) = 0;
 	virtual void   UnloadComponents(CStrID LevelID) = 0;
 };
 
 // Conditional pool member for CHandleArrayComponentStorage
-template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _Pool; };
+template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
 struct CStorageNoPool {};
 
 // Default component storage with a handle array for component data and a special map for entity -> component indexing
@@ -72,8 +72,9 @@ protected:
 		std::conditional_t<
 			MAX_DIFF_SIZE <= 512,
 			void*,
-			Data::PBuffer> BinaryDiffData;
+			Data::CBufferMalloc> BinaryDiffData = {};
 
+		U32  DiffDataSize = 0;
 		bool Deleted = false;
 	};
 
@@ -82,11 +83,20 @@ protected:
 
 	void ClearDiffBuffer(CIndexRecord& Record)
 	{
-		if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
-			if (Record.BinaryDiffData)
-				_Pool.Free(Record.BinaryDiffData);
+		if (Record.BinaryDiffData)
+		{
+			if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
+			{
+				_DiffPool.Free(Record.BinaryDiffData);
+				Record.BinaryDiffData = nullptr;
+			}
+			else
+			{
+				Record.BinaryDiffData = Data::CBufferMalloc();
+			}
+		}
 
-		Record.BinaryDiffData = nullptr;
+		Record.DiffDataSize = 0;
 	}
 
 	T LoadComponent(const CIndexRecord& Record) const
@@ -103,19 +113,43 @@ protected:
 			if constexpr (MAX_DIFF_SIZE <= 512)
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component, Component);
 			else
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(*Record.BinaryDiffData)), Component, Component);
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData)), Component, Component);
 		}
 
 		return Component;
 	}
 
-	void SaveComponent(const CIndexRecord& Record) const
+	void SaveComponent(CIndexRecord& Record)
 	{
-		NOT_IMPLEMENTED;
-		//SaveEntity - skip if no record, not loaded, not saveable or not dirty, get base/T(), calc diff against it and write to diff cache
-		// if modified, diff against base, if new, diff against default-created object
-		// if component is really deleted, not just 'not loaded', write special 'deleted' diff flag (or must be already set?)
-		// if no diff found, release diff buffer with ClearDiffBuffer
+		//!!!TODO: check if component is saveable and is dirty!
+
+		n_assert2_dbg(Record.ComponentHandle, "CHandleArrayComponentStorage::SaveComponent() > call only for loaded components");
+
+		const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
+
+		T BaseComponent;
+
+		// If base data is available for this component, load it
+		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
+			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
+
+		if constexpr (MAX_DIFF_SIZE <= 512)
+		{
+			if (!Record.BinaryDiffData) Record.BinaryDiffData = _DiffPool.Allocate();
+			IO::CMemStream DiffStream(Record.BinaryDiffData, MAX_DIFF_SIZE);
+			if (DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent))
+				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
+			else
+				ClearDiffBuffer(Record);
+		}
+		else
+		{
+			IO::CMemStream DiffStream(Record.BinaryDiffData);
+			if (DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent))
+				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
+			else
+				ClearDiffBuffer(Record);
+		}
 	}
 
 public:
@@ -141,7 +175,7 @@ public:
 		if (!pPair) return nullptr;
 
 		pPair->second = EntityID;
-		_IndexByEntity.emplace(EntityID, { Handle, NO_BASE_DATA, nullptr });
+		_IndexByEntity.emplace(EntityID, CIndexRecord{ Handle, NO_BASE_DATA, {} });
 		return &pPair->first;
 	}
 
@@ -267,20 +301,8 @@ public:
 		{
 			const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
 			const auto OffsetInBase = In.Read<U64>();
-			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, { CInnerStorage::INVALID_HANDLE, OffsetInBase, nullptr });
+			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, CIndexRecord{ CInnerStorage::INVALID_HANDLE, OffsetInBase, {} });
 		}
-
-		//!!!separate function must exist to restore actual components from base data pointer and optional diff!
-		// DEM::BinaryFormat::Deserialize(In, *pComponent);
-		// When unloading the level, may delete component and write binary diff to the field or may keep actual component
-		// and build diff from it each save. Caching diff reduces base reading too! If can detect component changes
-		// (at least getting mutable value ref by handle), could skip updating diff. Or explicit 'commit/save' to mark changed?
-		// So, saving binary diffs:
-		// + allows to save diff once for unloaded objects or objects that didnt change
-		// + allows to read base component data only at diff update, not every save
-		// + speedup saves by writing ready pieces of binary data
-		// - require binary storage, sometimes of size unknown at the compile time (cant use pool of ready made chunks)
-		// - don't support HRD diffs
 
 		return true;
 	}
@@ -289,8 +311,14 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		//LoadDiff - delete diff data and objects without base, unload components for affected recs, cache new diff binary data, (reload unloaded??? optional?)
-		//!!!if diff data is 'deleted', don't load component! may even force-unload it.
+		// delete diff data and objects without base (collect EntityIDs in a loop?)
+		// unload components for affected recs, keep for unaffected!
+		// set Deleted flags for records from the first list
+		// cache new diff binary data from In (copy to local RAM buffers) for records from the second list
+
+		//_IndexByEntity.ForEach([](HEntity EntityID, CIndexRecord& Record)
+		//{
+		//});
 
 		return true;
 	}
@@ -305,7 +333,8 @@ public:
 		BinaryData.reserve(_IndexByEntity.size());
 		EntityToData.reserve(_IndexByEntity.size());
 
-		// Choose some reasonable initial size of the buffer to minimize reallocations
+		// Choose some reasonable initial size for the buffer to minimize reallocations.
+		// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
 		IO::CBinaryWriter Intermediate(IO::CMemStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512)));
 
 		_IndexByEntity.ForEach([&](HEntity EntityID, const CIndexRecord& Record)
@@ -338,7 +367,7 @@ public:
 		});
 
 		// Base offset of component data is current offset plus size of indexing table, written just below
-		const U64 BaseOffset = Out.Tell() + sizeof(U32) + EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64));
+		const U64 BaseOffset = Out.GetStream().Tell() + sizeof(U32) + EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64));
 		auto ComponentDataOffset = BaseOffset;
 
 		// Save index table of EntityID -> component data offset
@@ -351,20 +380,29 @@ public:
 		}
 
 		// Ensure our calculations are correct
-		n_assert(Out.Tell() == BaseOffset);
+		n_assert(Out.GetStream().Tell() == BaseOffset);
 
 		// Store component data
 		for (const auto& Record : BinaryData)
-			Out.GetStream().Write(Record.first.GetConstPtr(), Record.first.GetSize());
+			Out.GetStream().Write(Record.GetConstPtr(), Record.GetSize());
 
 		return true;
 	}
 
-	virtual bool SaveDiff(IO::CBinaryWriter& Out) const override
+	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		//???save deleted component list in the first pass? to avoid saving alive bit for each component?!
+		// Save the list of deleted components
+
+		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
+		{
+			if (Record.Deleted) Out.Write(EntityID.Raw);
+		});
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		// Save diff data of added and modified components
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
@@ -377,7 +415,7 @@ public:
 				if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
 					Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
 				else
-					Out.GetStream().Write(Record.BinaryDiffData.GetConstPtr(), Record.DiffDataSize);
+					Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
 			}
 		});
 
