@@ -150,6 +150,20 @@ protected:
 		}
 	}
 
+	// NB: can't embed into lambdas, both branches of if constexpr are compiled for some reason
+	static inline void WriteComponentDiff(IO::CBinaryWriter& Out, HEntity EntityID, const CIndexRecord& Record)
+	{
+		if (Record.BinaryDiffData)
+		{
+			Out.Write(EntityID.Raw);
+			Out.Write(Record.DiffDataSize);
+			if constexpr (USE_DIFF_POOL)
+				Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
+			else
+				Out.GetStream().Write(Record.BinaryDiffData.GetConstPtr(), Record.DiffDataSize);
+		}
+	}
+
 public:
 
 	CHandleArrayComponentStorage(const CGameWorld& World, UPTR InitialCapacity)
@@ -465,16 +479,7 @@ public:
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
 			if (Record.ComponentHandle) SaveComponent(Record);
-
-			if (Record.BinaryDiffData)
-			{
-				Out.Write(EntityID.Raw);
-				Out.Write(Record.DiffDataSize);
-				if constexpr (USE_DIFF_POOL)
-					Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
-				else
-					Out.GetStream().Write(Record.BinaryDiffData.GetPtr(), Record.DiffDataSize);
-			}
+			WriteComponentDiff(Out, EntityID, Record);
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
