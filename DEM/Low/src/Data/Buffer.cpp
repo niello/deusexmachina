@@ -48,24 +48,44 @@ CBufferMalloc& CBufferMalloc::operator =(CBufferMalloc&& Other)
 
 void* CBufferMalloc::Resize(UPTR NewSize)
 {
+	if (_Size == NewSize) return _pData;
+
+	if (!NewSize)
+	{
+		n_free(_pData);
+		_pData = nullptr;
+		return _pData;
+	}
+
 	if (auto pNewData = n_realloc(_pData, NewSize))
 	{
 		_pData = pNewData;
 		_Size = NewSize;
 		return _pData;
 	}
+
 	return nullptr;
 }
 //---------------------------------------------------------------------
 
 void* CBufferMallocAligned::Resize(UPTR NewSize)
 {
+	if (_Size == NewSize) return _pData;
+
+	if (!NewSize)
+	{
+		n_free_aligned(_pData);
+		_pData = nullptr;
+		return _pData;
+	}
+
 	if (auto pNewData = n_realloc_aligned(_pData, NewSize, _Alignment))
 	{
 		_pData = pNewData;
 		_Size = NewSize;
 		return _pData;
 	}
+
 	return nullptr;
 }
 //---------------------------------------------------------------------

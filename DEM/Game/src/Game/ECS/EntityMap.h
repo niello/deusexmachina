@@ -134,7 +134,7 @@ public:
 		clear();
 	}
 
-	void emplace(HEntity EntityID, T&& Value)
+	CRecord* emplace(HEntity EntityID, T&& Value)
 	{
 		n_assert_dbg(EntityID);
 
@@ -147,7 +147,7 @@ public:
 			if (pRecord->EntityID == EntityID)
 			{
 				pRecord->Value = std::move(Value);
-				return;
+				return pRecord;
 			}
 
 			pRecord = pRecord->pNext;
@@ -169,6 +169,8 @@ public:
 		if (Bucket) Bucket->pPrev = pNewRecord;
 		Bucket = pNewRecord;
 		++_Size;
+
+		return pNewRecord;
 	}
 
 	CRecord* find(HEntity EntityID)
@@ -206,6 +208,12 @@ public:
 
 		_Pool.Destroy(pRecord);
 		--_Size;
+	}
+
+	void erase(HEntity EntityID)
+	{
+		if (auto pRecord = find(EntityID))
+			erase(pRecord);
 	}
 
 	void clear()

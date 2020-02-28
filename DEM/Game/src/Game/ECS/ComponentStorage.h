@@ -61,18 +61,16 @@ protected:
 
 	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
 	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
+	constexpr static inline bool USE_DIFF_POOL = (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512);
 
 	struct CIndexRecord
 	{
-		CHandle ComponentHandle;
 		U64     BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
+		CHandle ComponentHandle;
 
 		// Pre-serialized diff allows to unload objects, saving both RAM and savegame time.
 		// For diffs of known small maximum size memory chunks are allocated from the pool.
-		std::conditional_t<
-			MAX_DIFF_SIZE <= 512,
-			void*,
-			Data::CBufferMalloc> BinaryDiffData = {};
+		std::conditional_t<USE_DIFF_POOL, void*, Data::CBufferMalloc> BinaryDiffData = {};
 
 		U32  DiffDataSize = 0;
 		bool Deleted = false;
@@ -85,14 +83,14 @@ protected:
 	{
 		if (Record.BinaryDiffData)
 		{
-			if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
+			if constexpr (USE_DIFF_POOL)
 			{
 				_DiffPool.Free(Record.BinaryDiffData);
 				Record.BinaryDiffData = nullptr;
 			}
 			else
 			{
-				Record.BinaryDiffData = Data::CBufferMalloc();
+				Record.BinaryDiffData.Resize(0);
 			}
 		}
 
@@ -110,7 +108,7 @@ protected:
 		// If diff data is available, apply it on top of base data
 		if (Record.BinaryDiffData)
 		{
-			if constexpr (MAX_DIFF_SIZE <= 512)
+			if constexpr (USE_DIFF_POOL)
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component, Component);
 			else
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData)), Component, Component);
@@ -133,7 +131,7 @@ protected:
 		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
 			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
 
-		if constexpr (MAX_DIFF_SIZE <= 512)
+		if constexpr (USE_DIFF_POOL)
 		{
 			if (!Record.BinaryDiffData) Record.BinaryDiffData = _DiffPool.Allocate();
 			IO::CMemStream DiffStream(Record.BinaryDiffData, MAX_DIFF_SIZE);
@@ -175,7 +173,7 @@ public:
 		if (!pPair) return nullptr;
 
 		pPair->second = EntityID;
-		_IndexByEntity.emplace(EntityID, CIndexRecord{ Handle, NO_BASE_DATA, {} });
+		_IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, Handle, {} });
 		return &pPair->first;
 	}
 
@@ -301,7 +299,7 @@ public:
 		{
 			const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
 			const auto OffsetInBase = In.Read<U64>();
-			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, CIndexRecord{ CInnerStorage::INVALID_HANDLE, OffsetInBase, {} });
+			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, CIndexRecord{ OffsetInBase, CInnerStorage::INVALID_HANDLE, {} });
 		}
 
 		return true;
@@ -311,14 +309,74 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		// delete diff data and objects without base (collect EntityIDs in a loop?)
-		// unload components for affected recs, keep for unaffected!
-		// set Deleted flags for records from the first list
-		// cache new diff binary data from In (copy to local RAM buffers) for records from the second list
+		// Instead of cleaning all up, we only clean old diff data and current states affected by it
 
-		//_IndexByEntity.ForEach([](HEntity EntityID, CIndexRecord& Record)
-		//{
-		//});
+		std::vector<HEntity> RecordsToDelete;
+		RecordsToDelete.reserve(_Data.size() / 4);
+		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
+		{
+			if (Record.BaseDataOffset == NO_BASE_DATA)
+			{
+				// Components without base were created in runtime and must be deleted entirely
+				RecordsToDelete.push_back(EntityID);
+			}
+			else if (Record.BinaryDiffData || Record.Deleted)
+			{
+				// Old diff info must be erased, components deleted in runtime must be restored
+				ClearDiffBuffer(Record);
+				Record.Deleted = false;
+			}
+			else
+			{
+				// This record is already in a base state, can avoid recreation
+				return;
+			}
+
+			// For all records affected a current state becomes inactual and must be unloaded
+			if (Record.ComponentHandle)
+			{
+				_Data.Free(Record.ComponentHandle);
+				Record.ComponentHandle = CInnerStorage::INVALID_HANDLE;
+			}
+		});
+
+		for (auto EntityID : RecordsToDelete)
+			_IndexByEntity.erase(EntityID);
+
+		// Load deleted component list, mark corresponding records as deleted
+
+		HEntity EntityID = { In.Read<CInnerStorage::THandleValue>() };
+		while (EntityID)
+		{
+			if (auto It = _IndexByEntity.find(EntityID))
+				It->Value.Deleted = true;
+			EntityID = { In.Read<CInnerStorage::THandleValue>() };
+		}
+
+		// Load diff data for added and modified components
+
+		EntityID = { In.Read<CInnerStorage::THandleValue>() };
+		while (EntityID)
+		{
+			auto It = _IndexByEntity.find(EntityID);
+			if (!It) It = _IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, CInnerStorage::INVALID_HANDLE, {} });
+			auto& IndexRecord = It->Value;
+
+			In.Read(IndexRecord.DiffDataSize);
+
+			if constexpr (USE_DIFF_POOL)
+			{
+				if (!IndexRecord.BinaryDiffData) IndexRecord.BinaryDiffData = _DiffPool.Allocate();
+			}
+			else
+			{
+				IndexRecord.BinaryDiffData.Resize(IndexRecord.DiffDataSize);
+			}
+
+			In.GetStream().Read(IndexRecord.BinaryDiffData, IndexRecord.DiffDataSize);
+
+			EntityID = { In.Read<CInnerStorage::THandleValue>() };
+		}
 
 		return true;
 	}
@@ -406,16 +464,16 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			//!!!TODO: check if component is saveable and is dirty!
 			if (Record.ComponentHandle) SaveComponent(Record);
 
 			if (Record.BinaryDiffData)
 			{
 				Out.Write(EntityID.Raw);
-				if constexpr (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512)
+				Out.Write(Record.DiffDataSize);
+				if constexpr (USE_DIFF_POOL)
 					Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
 				else
-					Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
+					Out.GetStream().Write(Record.BinaryDiffData.GetPtr(), Record.DiffDataSize);
 			}
 		});
 
