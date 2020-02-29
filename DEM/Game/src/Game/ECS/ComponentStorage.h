@@ -176,6 +176,8 @@ public:
 		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
 	}
 
+	~CHandleArrayComponentStorage() { if constexpr (USE_DIFF_POOL) _DiffPool.Clear(); }
+
 	// TODO: describe as a static interface part
 	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
@@ -409,7 +411,8 @@ public:
 
 		// Choose some reasonable initial size for the buffer to minimize reallocations.
 		// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
-		IO::CBinaryWriter Intermediate(IO::CMemStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512)));
+		IO::CMemStream IntermediateStream(std::min<decltype(MAX_DIFF_SIZE)>(MAX_DIFF_SIZE, 512));
+		IO::CBinaryWriter Intermediate(IntermediateStream);
 
 		_IndexByEntity.ForEach([&](HEntity EntityID, const CIndexRecord& Record)
 		{

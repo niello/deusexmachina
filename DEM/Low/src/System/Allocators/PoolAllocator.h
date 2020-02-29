@@ -33,7 +33,13 @@ protected:
 
 public:
 
-	~CPoolAllocator() { Clear(); }
+#ifdef _DEBUG
+	~CPoolAllocator()
+	{
+		if (CurrAllocatedCount > 0)
+			::Sys::Error("~CPoolAllocator() > %d unreleased records\n", CurrAllocatedCount);
+	}
+#endif
 
 	void* Allocate()
 	{
@@ -86,11 +92,8 @@ public:
 	void Clear()
 	{
 #ifdef _DEBUG
-		if (CurrAllocatedCount > 0)
-		{
-			::Sys::Error("Pool reports %d unreleased records\n", CurrAllocatedCount);
-			CurrAllocatedCount = 0;
-		}
+		// Intentionally clear the pool. Allocated pointers become invalid, but no warning issued.
+		CurrAllocatedCount = 0;
 #endif
 
 		Chunks = nullptr;
