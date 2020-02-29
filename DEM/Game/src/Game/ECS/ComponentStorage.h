@@ -120,6 +120,8 @@ protected:
 	void SaveComponent(CIndexRecord& Record)
 	{
 		//!!!TODO: check if component is saveable and is dirty!
+		//???set dirty on non-const Find()? theonly case when component data can change, plus doesn't involve per-field comparisons
+		//clear dirty flag here
 
 		n_assert2_dbg(Record.ComponentHandle, "CHandleArrayComponentStorage::SaveComponent() > call only for loaded components");
 
@@ -311,7 +313,7 @@ public:
 		const auto Count = In.Read<U32>();
 		for (U32 i = 0; i < Count; ++i)
 		{
-			const auto EntityIDRaw = In.Read<CInnerStorage::THandleValue>();
+			const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
 			const auto OffsetInBase = In.Read<U64>();
 			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, CIndexRecord{ OffsetInBase, CInnerStorage::INVALID_HANDLE, {} });
 		}
@@ -359,17 +361,17 @@ public:
 
 		// Load deleted component list, mark corresponding records as deleted
 
-		HEntity EntityID = { In.Read<CInnerStorage::THandleValue>() };
+		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			if (auto It = _IndexByEntity.find(EntityID))
 				It->Value.Deleted = true;
-			EntityID = { In.Read<CInnerStorage::THandleValue>() };
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		// Load diff data for added and modified components
 
-		EntityID = { In.Read<CInnerStorage::THandleValue>() };
+		EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			auto It = _IndexByEntity.find(EntityID);
@@ -389,7 +391,7 @@ public:
 
 			In.GetStream().Read(IndexRecord.BinaryDiffData, IndexRecord.DiffDataSize);
 
-			EntityID = { In.Read<CInnerStorage::THandleValue>() };
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		return true;
@@ -532,15 +534,151 @@ public:
 template<typename T>
 class CEmptyComponentStorage : public IComponentStorage
 {
-	// TODO: implement, only entity list is required with base / current bits, or two or three lists?
-	// if component is data-less, on save just write a list of entities with deleted component, then with added
+protected:
+
+	std::set<HEntity> _Base;
+	std::set<HEntity> _Actual;
+	T                 _SharedInstance; // It is enough to have one instance of component without data
+
+public:
+
+	CEmptyComponentStorage(const CGameWorld& World, UPTR InitialCapacity)
+		: IComponentStorage(World)
+	{
+		// unordered_set has ::reserve(), custom pooled set may have it to, or use std::set with pool allocator?
+	}
+
+	DEM_FORCE_INLINE T* Add(HEntity EntityID)
+	{
+		_Actual.insert(EntityID);
+		return &_SharedInstance;
+	}
+
+	DEM_FORCE_INLINE bool Remove(HEntity EntityID)
+	{
+		return _Actual.erase(EntityID) > 0;
+	}
+
+	DEM_FORCE_INLINE T* Find(HEntity EntityID)
+	{
+		auto It = _Actual.find(EntityID);
+		return (It == _Actual.cend()) ? nullptr : &_SharedInstance;
+	}
+
+	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
+	{
+		auto It = _Actual.find(EntityID);
+		return (It == _Actual.cend()) ? nullptr : &_SharedInstance;
+	}
+
+	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
+
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
+	{
+		Add(EntityID);
+		return true;
+	}
+
+	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
+	{
+		if (_Actual.find(EntityID) == _Actual.cend()) return false;
+		Out = true;
+		return true;
+	}
+
+	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
+	{
+		const bool HasBase = (_Base.find(EntityID) != _Base.cend());
+		const bool HasActual = (_Actual.find(EntityID) != _Actual.cend());
+		if (HasBase == HasActual) return false;
+
+		if (HasBase) Out = Data::CData();
+		else Out = true;
+
+		return true;
+	}
+
+	virtual bool LoadBase(IO::CBinaryReader& In) override
+	{
+		_Base.clear();
+		_Actual.clear();
+
+		const auto Count = In.Read<U32>();
+		for (U32 i = 0; i < Count; ++i)
+		{
+			const HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+			_Base.insert(EntityID);
+			_Actual.insert(EntityID);
+		}
+
+		return true;
+	}
+
+	virtual bool LoadDiff(IO::CBinaryReader& In) override
+	{
+		_Actual = _Base;
+
+		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		while (EntityID)
+		{
+			_Actual.erase(EntityID);
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		}
+
+		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		while (EntityID)
+		{
+			_Actual.insert(EntityID);
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		}
+
+		return true;
+	}
+
+	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
+	{
+		Out.Write(static_cast<U32>(_Actual.size()));
+		for (HEntity EntityID : _Actual)
+			Out.Write(EntityID.Raw);
+		return true;
+	}
+
+	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
+	{
+		// Save the list of deleted components
+
+		for (HEntity EntityID : _Base)
+			if (_Actual.find(EntityID) == _Actual.cend())
+				Out << EntityID.Raw;
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		// Save the list of added components
+
+		for (HEntity EntityID : _Actual)
+			if (_Base.find(EntityID) == _Base.cend())
+				Out << EntityID.Raw;
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		return true;
+	}
+
+	virtual void PrepareComponents(CStrID LevelID) override {}
+	virtual void UnloadComponents(CStrID LevelID) override {}
+
+	//auto begin() { return _Data.begin(); }
+	//auto begin() const { return _Data.begin(); }
+	//auto cbegin() const { return _Data.cbegin(); }
+	//auto end() { return _Data.end(); }
+	//auto end() const { return _Data.end(); }
+	//auto cend() const { return _Data.cend(); }
 };
 
 template<typename T>
 struct TComponentTraits
 {
 	using TStorage = std::conditional_t<std::is_empty_v<T>, CEmptyComponentStorage<T>, CHandleArrayComponentStorage<T>>;
-	using THandle = typename TStorage::CInnerStorage::CHandle;
 };
 
 template<typename T> using TComponentStoragePtr = typename TComponentTraits<just_type_t<T>>::TStorage*;
