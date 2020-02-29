@@ -45,6 +45,7 @@ public:
 	{
 		H Raw = INVALID_HANDLE_VALUE;
 
+		bool operator <(CHandle Other) const { return Raw < Other.Raw; }
 		bool operator ==(CHandle Other) const { return Raw == Other.Raw; }
 		bool operator !=(CHandle Other) const { return Raw != Other.Raw; }
 		operator bool() const { return Raw != INVALID_HANDLE_VALUE; }
