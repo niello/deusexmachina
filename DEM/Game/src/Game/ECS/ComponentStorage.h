@@ -320,6 +320,9 @@ public:
 			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, CIndexRecord{ OffsetInBase, CInnerStorage::INVALID_HANDLE, {} });
 		}
 
+		auto ComponentDataSkipOffset = In.Read<U64>();
+		In.GetStream().Seek(static_cast<I64>(ComponentDataSkipOffset), IO::ESeekOrigin::Seek_Begin);
+
 		return true;
 	}
 
@@ -404,7 +407,7 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		std::vector<Data::CBufferMalloc> BinaryData;
+		std::vector<std::pair<Data::CBufferMalloc, U64>> BinaryData;
 		std::vector<std::pair<HEntity, size_t>> EntityToData;
 		BinaryData.reserve(_IndexByEntity.size());
 		EntityToData.reserve(_IndexByEntity.size());
@@ -430,7 +433,7 @@ public:
 
 			//???TODO: use hashes for faster comparison?
 			for (size_t i = 0; i < BinaryData.size(); ++i)
-				if (!BinaryData[i].Compare(pComponentData, SerializedSize))
+				if (!BinaryData[i].first.Compare(pComponentData, SerializedSize))
 				{
 					EntityToData.emplace_back(EntityID, i);
 					return;
@@ -438,30 +441,41 @@ public:
 
 			Data::CBufferMalloc NewBuffer(SerializedSize);
 			memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
-			BinaryData.emplace_back(std::move(NewBuffer));
+			BinaryData.emplace_back(std::move(NewBuffer), 0);
 
 			EntityToData.emplace_back(EntityID, BinaryData.size() - 1);
 		});
 
 		// Base offset of component data is current offset plus size of indexing table, written just below
-		const U64 BaseOffset = Out.GetStream().Tell() + sizeof(U32) + EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64));
-		auto ComponentDataOffset = BaseOffset;
+		U64 ComponentDataOffset = Out.GetStream().Tell() +
+			sizeof(U32) +
+			EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64)) +
+			sizeof(U64);
+
+		for (auto& [Buffer, Offset] : BinaryData)
+		{
+			Offset = ComponentDataOffset;
+			ComponentDataOffset += Buffer.GetSize();
+		}
 
 		// Save index table of EntityID -> component data offset
 		Out.Write(static_cast<U32>(EntityToData.size()));
 		for (const auto& Record : EntityToData)
 		{
 			Out.Write(Record.first.Raw);
-			Out.Write(ComponentDataOffset);
-			ComponentDataOffset += BinaryData[Record.second].GetSize();
+			Out.Write(BinaryData[Record.second].second);
 		}
 
-		// Ensure our calculations are correct
-		n_assert(Out.GetStream().Tell() == BaseOffset);
+		// Save component data skip offset
+		Out.Write(ComponentDataOffset);
 
 		// Store component data
-		for (const auto& Record : BinaryData)
-			Out.GetStream().Write(Record.GetConstPtr(), Record.GetSize());
+		for (const auto& [Buffer, Offset] : BinaryData)
+		{
+			// Ensure our calculations are correct
+			n_assert_dbg(Out.GetStream().Tell() == Offset);
+			Out.GetStream().Write(Buffer.GetConstPtr(), Buffer.GetSize());
+		}
 
 		return true;
 	}

@@ -362,7 +362,10 @@ public:
 		_LastFreeIndex = MAX_CAPACITY;
 		_Records.resize(std::min<size_t>(NewInitialSize, MAX_CAPACITY), { _Prototype, 0 });
 		if (auto Size = _Records.size())
+		{
 			AddRangeToFreeList(0, Size - 1);
+			_Records.back().Handle = 0;
+		}
 	}
 
 	// Returns a handle by value pointer. Inversion of GetValue. Unsafe, because the value pointer is not

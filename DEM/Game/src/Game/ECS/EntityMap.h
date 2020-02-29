@@ -218,15 +218,18 @@ public:
 
 	void clear()
 	{
-		for (CRecord* pRecord : _Records)
+		for (CRecord*& pHead : _Records)
 		{
+			CRecord* pRecord = pHead;
 			while (pRecord)
 			{
 				auto pDestroyMe = pRecord;
 				pRecord = pRecord->pNext;
 				_Pool.Destroy(pDestroyMe);
 			}
+			pHead = nullptr;
 		}
+		_Size = 0;
 	}
 
 	template<typename TCallback>

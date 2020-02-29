@@ -78,14 +78,18 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 		CEntity NewEntity;
 		DEM::BinaryFormat::Deserialize(In, NewEntity);
 
-		const auto EntityID = _Entities.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
+		//!!!DBG TMP!
+		const auto EntityID2 = _Entities.AllocateWithHandle(EntityIDRaw, NewEntity);
+		n_assert_dbg(EntityID2 && EntityID2 == HEntity{ EntityIDRaw });
+
+		const auto EntityID = _EntitiesBase.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
 		n_assert_dbg(EntityID && EntityID == HEntity{ EntityIDRaw });
 	}
 
+	// FIXME: decide!
 	// leave actual list empty for now (or just copy? don't want to copy because diff may be loaded next)
+	//???store loading state (none, base, diff) to avoid duplicate work and partially uninitialized state?
 
-	// Components that come from templates aren't saved and therefore won't be loaded here
-	//???or store template data in base file, merged by value, all templated object reference the same offset?
 	const auto ComponentTypeCount = In.Read<uint32_t>();
 	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{
@@ -117,8 +121,7 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 			auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
 
 			HEntity EntityID{ RawHandle };
-			auto pEntity = _Entities.GetValue(EntityID);
-			if (pEntity)
+			if (auto pEntity = _Entities.GetValue(EntityID))
 			{
 				pEntity->Name = EntityParam.GetName();
 				SEntity.TryGet<CStrID>(pEntity->LevelID, sidLevel);
@@ -154,24 +157,29 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 }
 //---------------------------------------------------------------------
 
-//???store loading state (none, base, diff) to avoid duplicate work and partially uninitialized state?
 void CGameWorld::LoadDiff(IO::PStream InStream)
 {
+	NOT_IMPLEMENTED;
+
 	if (!InStream) return;
 
 	IO::CBinaryReader In(*InStream);
 
 	// Clear previous diff info, keep base intact
 	if (_Entities.size()) _Entities.Clear(_EntitiesBase.size());
-	//!!!clear diffs and non-base-added objects in storages!
 
 	// from base list of C0 and diff build actual entity C0 list
 	// read deleted list, don't create actual C0 for these IDs
 	// for each base, if not deleted, copy to actual list
 	// for each added/modified create/apply to active list
 
-	// per component storage
-	//   if diff data for this object is present, copy it into RAM (or restore component?)
+	const auto ComponentTypeCount = In.Read<uint32_t>();
+	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
+	{
+		const auto TypeID = In.Read<CStrID>();
+		if (auto pStorage = FindComponentStorage(TypeID))
+			pStorage->LoadDiff(In);
+	}
 }
 //---------------------------------------------------------------------
 
@@ -189,7 +197,7 @@ void CGameWorld::SaveAll(Data::CParams& Out)
 
 		Data::PParams SEntity = n_new(Data::CParams(4));
 		SEntity->Set(sidID, static_cast<int>(EntityID.Raw));
-		SEntity->Set(sidLevel, static_cast<int>(Entity.LevelID));
+		SEntity->Set(sidLevel, Entity.LevelID);
 		if (Entity.TemplateID) SEntity->Set(sidTpl, Entity.TemplateID);
 		if (!Entity.IsActive) SEntity->Set(sidActive, false);
 
@@ -216,6 +224,7 @@ void CGameWorld::SaveAll(IO::CBinaryWriter& Out)
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
+		//???save only index part in SaveAll? may clear generation counter!
 		Out.Write(EntityID.Raw);
 		DEM::BinaryFormat::Serialize(Out, Entity);
 	}
@@ -318,18 +327,27 @@ void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
+		const auto CurrPos = Out.GetStream().Tell();
 		Out << EntityID.Raw;
 
+		bool HasDiff;
 		if (auto pBaseEntity = _EntitiesBase.GetValue(EntityID))
 		{
 			// Existing entity, save modified part
 			n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
-			DEM::BinaryFormat::SerializeDiff(Out, Entity, *pBaseEntity);
+			HasDiff = DEM::BinaryFormat::SerializeDiff(Out, Entity, *pBaseEntity);
 		}
 		else
 		{
 			// New entity, save diff from default-created entity (better than full data!)
-			DEM::BinaryFormat::SerializeDiff(Out, Entity, CEntity{});
+			HasDiff = DEM::BinaryFormat::SerializeDiff(Out, Entity, CEntity{});
+		}
+
+		if (!HasDiff)
+		{
+			// "Unwrite" entity ID
+			Out.GetStream().Seek(CurrPos, IO::Seek_Begin);
+			Out.GetStream().Truncate();
 		}
 	}
 
@@ -353,6 +371,18 @@ IO::IStream* CGameWorld::GetBaseStream(U64 Offset) const
 	return _BaseStream.Get();
 }
 //---------------------------------------------------------------------
+
+//!!!DBG TMP! Probably not a part of the final API
+void CGameWorld::PrepareEntities(CStrID LevelID)
+{
+	for (const auto& Storage : _Storages)
+		Storage->PrepareComponents(LevelID);
+}
+void CGameWorld::UnloadEntities(CStrID LevelID)
+{
+	for (const auto& Storage : _Storages)
+		Storage->UnloadComponents(LevelID);
+}
 
 // FIXME: make difference between 'non-interactive' and 'interactive same as whole'. AABB::Empty + AABB::Invalid?
 CGameLevel* CGameWorld::CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
@@ -446,14 +476,12 @@ CGameLevel* CGameWorld::FindLevel(CStrID ID) const
 
 HEntity CGameWorld::CreateEntity(CStrID LevelID)
 {
-	if (auto pLevel = FindLevel(LevelID))
+	auto EntityID = _Entities.Allocate();
+	if (auto pEntity = _Entities.GetValueUnsafe(EntityID))
 	{
-		auto EntityID = _Entities.Allocate();
-		if (auto pEntity = _Entities.GetValueUnsafe(EntityID))
-		{
-			pEntity->Level = pLevel;
-			return EntityID;
-		}
+		pEntity->LevelID = LevelID;
+		pEntity->Level = FindLevel(LevelID);
+		return EntityID;
 	}
 
 	return CEntityStorage::INVALID_HANDLE;

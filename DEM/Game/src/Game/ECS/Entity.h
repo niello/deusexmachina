@@ -39,7 +39,7 @@ template<> inline constexpr auto RegisterMembers<Game::CEntity>()
 {
 	return std::make_tuple
 	(
-		Member(1, "LevelID", &Game::CEntity::TemplateID, &Game::CEntity::TemplateID),
+		Member(1, "LevelID", &Game::CEntity::LevelID, &Game::CEntity::LevelID),
 		Member(2, "TemplateID", &Game::CEntity::TemplateID, &Game::CEntity::TemplateID),
 		Member(3, "Name", &Game::CEntity::Name, &Game::CEntity::Name),
 		Member(4, "IsActive", &Game::CEntity::IsActive, &Game::CEntity::IsActive)

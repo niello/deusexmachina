@@ -68,6 +68,10 @@ public:
 
 	IO::IStream* GetBaseStream(U64 Offset) const;
 
+	//!!!DBG TMP! Probably not a part of the final API
+	void PrepareEntities(CStrID LevelID);
+	void UnloadEntities(CStrID LevelID);
+
 	// Update(float dt)
 
 	// SetTimeFactor, <= 0 - pause
@@ -237,7 +241,7 @@ DEM_FORCE_INLINE bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple
 
 // Join-iterator over entities containing a set of components. Components specified by pointer are optional.
 // They are nullptr if not present. It is recommended to specify mandatory ones first. Respects 'const' specifier.
-// Callback args are an entity ref followed by component pointers in the same order as in args.
+// Callback args: entity ID, entity ref, component pointers in the same order as in args.
 // TODO: pass mandatory components by reference into a Callback?
 template<typename TComponent, typename... Components, typename TCallback>
 inline void CGameWorld::ForEachEntityWith(TCallback Callback)
