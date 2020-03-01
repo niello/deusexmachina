@@ -246,11 +246,21 @@ struct BinaryFormat
 				{
 					constexpr auto MemberSize = GetMaxDiffSize<DEM::Meta::TMemberValue<decltype(Member)>>();
 					if constexpr (MemberSize == std::numeric_limits<size_t>().max())
-						Size = MemberSize;
+						Size = std::numeric_limits<size_t>().max();
 					else
 						Size += sizeof(Member.GetCode()) + MemberSize;
 				}
 			});
+
+			// Terminating code
+			if (Size > 0)
+			{
+				if (Size <= (std::numeric_limits<size_t>().max() - sizeof(uint32_t)))
+					Size += sizeof(uint32_t);
+				else
+					Size = std::numeric_limits<size_t>().max();
+			}
+
 			return Size;
 		}
 		else return sizeof(TValue);

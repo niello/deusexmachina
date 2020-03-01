@@ -81,17 +81,17 @@ protected:
 
 	void ClearDiffBuffer(CIndexRecord& Record)
 	{
-		if (Record.BinaryDiffData)
+		if constexpr (USE_DIFF_POOL)
 		{
-			if constexpr (USE_DIFF_POOL)
+			if (Record.BinaryDiffData)
 			{
 				_DiffPool.Free(Record.BinaryDiffData);
 				Record.BinaryDiffData = nullptr;
 			}
-			else
-			{
-				Record.BinaryDiffData.Resize(0);
-			}
+		}
+		else
+		{
+			Record.BinaryDiffData.Resize(0);
 		}
 
 		Record.DiffDataSize = 0;
@@ -111,7 +111,7 @@ protected:
 			if constexpr (USE_DIFF_POOL)
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component);
 			else
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData)), Component);
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData.GetConstPtr(), Record.BinaryDiffData.GetSize())), Component);
 		}
 
 		return Component;
@@ -351,7 +351,7 @@ public:
 				// Components without base were created in runtime and must be deleted entirely
 				RecordsToDelete.push_back(EntityID);
 			}
-			else if (Record.BinaryDiffData || Record.Deleted)
+			else if (Record.DiffDataSize || Record.Deleted)
 			{
 				// Old diff info must be erased, components deleted in runtime must be restored
 				ClearDiffBuffer(Record);
@@ -398,13 +398,13 @@ public:
 			if constexpr (USE_DIFF_POOL)
 			{
 				if (!IndexRecord.BinaryDiffData) IndexRecord.BinaryDiffData = _DiffPool.Allocate();
+				In.GetStream().Read(IndexRecord.BinaryDiffData, IndexRecord.DiffDataSize);
 			}
 			else
 			{
 				IndexRecord.BinaryDiffData.Resize(IndexRecord.DiffDataSize);
+				In.GetStream().Read(IndexRecord.BinaryDiffData.GetPtr(), IndexRecord.DiffDataSize);
 			}
-
-			In.GetStream().Read(IndexRecord.BinaryDiffData, IndexRecord.DiffDataSize);
 
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}

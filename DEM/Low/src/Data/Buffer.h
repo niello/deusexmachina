@@ -38,10 +38,6 @@ public:
 	bool operator <(const IBuffer& Other) const { return Compare(Other) < 0; }
 	bool operator >=(const IBuffer& Other) const { return Compare(Other) >= 0; }
 	bool operator <=(const IBuffer& Other) const { return Compare(Other) <= 0; }
-
-	operator bool() const { return GetSize() > 0; }
-	operator void*() { return GetPtr(); }
-	operator const void*() const { return GetConstPtr(); }
 };
 
 class CBufferNotOwned : public IBuffer
