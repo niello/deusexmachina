@@ -377,7 +377,7 @@ void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 
 		if (!HasDiff)
 		{
-			// "Unwrite" entity ID
+			// "Unwrite" entity ID and any diff data written ahead
 			Out.GetStream().Seek(CurrPos, IO::Seek_Begin);
 			Out.GetStream().Truncate();
 		}

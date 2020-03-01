@@ -130,35 +130,43 @@ protected:
 		T BaseComponent;
 
 		// If base data is available for this component, load it
-		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
-			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
+		auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset);
+		if (pBaseStream) DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
 
+		bool HasDiff;
 		if constexpr (USE_DIFF_POOL)
 		{
 			if (!Record.BinaryDiffData) Record.BinaryDiffData = _DiffPool.Allocate();
 			IO::CMemStream DiffStream(Record.BinaryDiffData, MAX_DIFF_SIZE);
-			if (DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent))
-				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
-			else
-				ClearDiffBuffer(Record);
+			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
+			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
 		}
 		else
 		{
 			// Preallocate buffer
 			// TODO: vector-like allocation strategy inside a CBufferMalloc?
 			if (!Record.BinaryDiffData.GetSize()) Record.BinaryDiffData.Resize(512);
-
 			IO::CMemStream DiffStream(Record.BinaryDiffData);
-			if (DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent))
-			{
-				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
+			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
+			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
+		}
 
+		if (HasDiff || !pBaseStream)
+		{
+			// When HasDiff is false, the component is new but equal to the default one,
+			// and we must save empty diff, but not nothing
+
+			if constexpr (!USE_DIFF_POOL)
+			{
 				// Truncate if too many unused bytes left
 				if (Record.BinaryDiffData.GetSize() - Record.DiffDataSize > 400)
 					Record.BinaryDiffData.Resize(Record.DiffDataSize);
 			}
-			else
-				ClearDiffBuffer(Record);
+		}
+		else
+		{
+			// No diff against the base, component is unchanged, nothing must be saved
+			ClearDiffBuffer(Record);
 		}
 	}
 

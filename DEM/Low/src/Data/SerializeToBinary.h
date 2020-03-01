@@ -79,8 +79,7 @@ struct BinaryFormat
 			});
 
 			// End the list of changed members (much like a trailing \0).
-			// If HasDiff is false, calling code must skip the object entirely instead.
-			if (HasDiff) Output << DEM::Meta::NO_MEMBER_CODE;
+			Output << DEM::Meta::NO_MEMBER_CODE;
 
 			return HasDiff;
 		}
@@ -253,13 +252,10 @@ struct BinaryFormat
 			});
 
 			// Terminating code
-			if (Size > 0)
-			{
-				if (Size <= (std::numeric_limits<size_t>().max() - sizeof(uint32_t)))
-					Size += sizeof(uint32_t);
-				else
-					Size = std::numeric_limits<size_t>().max();
-			}
+			if (Size <= (std::numeric_limits<size_t>().max() - sizeof(uint32_t)))
+				Size += sizeof(uint32_t);
+			else
+				Size = std::numeric_limits<size_t>().max();
 
 			return Size;
 		}
