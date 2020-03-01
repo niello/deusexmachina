@@ -288,8 +288,8 @@ void CGameWorld::SaveDiff(Data::CParams& Out)
 			for (const auto& [ComponentID, Storage] : _StorageMap)
 			{
 				Data::CData SComponent;
-				Storage->SaveComponentToParams(EntityID, SComponent);
-				SEntity->Set(ComponentID, std::move(SComponent));
+				if (Storage->SaveComponentToParams(EntityID, SComponent))
+					SEntity->Set(ComponentID, std::move(SComponent));
 			}
 		}
 
