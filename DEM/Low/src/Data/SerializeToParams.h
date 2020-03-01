@@ -39,6 +39,7 @@ struct ParamsFormat
 			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<TValue>::GetMemberCount())));
 			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value](const auto& Member)
 			{
+				if (!Member.CanSerialize()) return;
 				SerializeKeyValue(*Out, Member.GetName(), Member.GetConstValue(Value));
 			});
 			Output = std::move(Out);
@@ -101,6 +102,7 @@ struct ParamsFormat
 			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<TValue>::GetMemberCount())));
 			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value, &BaseValue](const auto& Member)
 			{
+				if (!Member.CanSerialize()) return;
 				SerializeKeyValueDiff(*Out, Member.GetName(), Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
 			});
 			if (Out->GetCount())
@@ -190,11 +192,12 @@ struct ParamsFormat
 			{
 				DEM::Meta::CMetadata<TValue>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
 				{
+					if (!Member.CanSerialize()) return;
 					if (auto pParam = pParams->Find(CStrID(Member.GetName())))
 					{
 						DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
 						Deserialize(pParam->GetRawValue(), FieldValue);
-						Member.SetValue(Value, FieldValue);
+						Member.SetValue(Value, std::move(FieldValue));
 					}
 				});
 			}

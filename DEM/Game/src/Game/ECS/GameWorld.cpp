@@ -6,6 +6,7 @@
 #include <Resources/Resource.h>
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
+#include <unordered_set>
 
 // TODO: entity templates!
 
@@ -159,8 +160,6 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 
 void CGameWorld::LoadDiff(IO::PStream InStream)
 {
-	NOT_IMPLEMENTED;
-
 	if (!InStream) return;
 
 	IO::CBinaryReader In(*InStream);
@@ -168,11 +167,44 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	// Clear previous diff info, keep base intact
 	if (_Entities.size()) _Entities.Clear(_EntitiesBase.size());
 
-	// from base list of C0 and diff build actual entity C0 list
-	// read deleted list, don't create actual C0 for these IDs
-	// for each base, if not deleted, copy to actual list
-	// for each added/modified create/apply to active list
+	// Read deleted entity list
+	std::unordered_set<HEntity> Deleted;
+	Deleted.reserve(_EntitiesBase.size()); // Cant mark deleted more entities than in base
 
+	HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+	while (EntityID)
+	{
+		Deleted.insert(EntityID);
+		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+	}
+
+	// Read added / modified entity list
+	EntityID = { In.Read<decltype(HEntity::Raw)>() };
+	while (EntityID)
+	{
+		auto pBaseEntity = _EntitiesBase.GetValue(EntityID);
+		CEntity NewEntity = pBaseEntity ? *pBaseEntity : CEntity{};
+		DEM::BinaryFormat::DeserializeDiff(In, NewEntity);
+
+		const auto NewEntityID = _Entities.AllocateWithHandle(EntityID, std::move(NewEntity));
+		n_assert_dbg(NewEntityID && NewEntityID == EntityID);
+
+		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+	}
+
+	// Copy unchanged entities from the base state
+	for (const auto& BaseEntity : _EntitiesBase)
+	{
+		// FIXME: must get for free when iterating an array
+		auto BaseEntityID = _EntitiesBase.GetHandle(&BaseEntity);
+		if (!_Entities.GetValue(BaseEntityID) && Deleted.find(BaseEntityID) == Deleted.cend())
+		{
+			const auto EntityID = _Entities.AllocateWithHandle(BaseEntityID, BaseEntity);
+			n_assert_dbg(EntityID && EntityID == BaseEntityID);
+		}
+	}
+
+	// Load components
 	const auto ComponentTypeCount = In.Read<uint32_t>();
 	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{

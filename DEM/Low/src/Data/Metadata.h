@@ -174,6 +174,9 @@ public:
 	constexpr const char*   GetName() const { return _pName; }
 	constexpr std::uint32_t GetCode() const { return _Code; }
 
+	// TODO: in addition could have per-member constexpr bool "need serialization/need diff/...?"
+	constexpr bool          CanSerialize() const { return _Code != DEM::Meta::NO_MEMBER_CODE; }
+
 private:
 
 	std::uint32_t    _Code = NO_MEMBER_CODE;

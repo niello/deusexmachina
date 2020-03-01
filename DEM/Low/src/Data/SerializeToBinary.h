@@ -59,9 +59,7 @@ struct BinaryFormat
 			bool HasDiff = false;
 			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value, &BaseValue, &HasDiff](const auto& Member)
 			{
-				// Can diff-serialize only members with code, otherwise it couldn't be identified
-				// TODO: in addition could have per-member constexpr bool "need serialization/need diff/...?"
-				if (Member.GetCode() == DEM::Meta::NO_MEMBER_CODE) return;
+				if (!Member.CanSerialize()) return;
 
 				// Write the code to identify the member. If member is equal in both objects, this will be reverted.
 				// TODO: PROFILE! Code is written for each member, but changed % is typically much less than 100.
@@ -91,6 +89,54 @@ struct BinaryFormat
 			Output << Value;
 			return true;
 		}
+		return false;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename TValue>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const std::vector<TValue>& Vector, const std::vector<TValue>& BaseVector)
+	{
+		static_assert(false, "Array diff - as map, but with int keys?");
+		return false;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename TKey, typename TValue>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const std::unordered_map<TKey, TValue>& Map, const std::unordered_map<TKey, TValue>& BaseMap)
+	{
+		/*
+		for (const auto& [Key, Value] : Map)
+		{
+			auto BaseIt = BaseMap.find(Key);
+			if (BaseIt == BaseMap.cend())
+				// Added
+				SerializeKeyValue(*Out, Key, Value);
+			else
+				// Modified
+				SerializeKeyValueDiff(*Out, Key, Value, BaseIt->second);
+		}
+
+		for (const auto& [Key, Value] : BaseMap)
+		{
+			if (Map.find(Key) == Map.cend())
+			{
+				// Deleted
+				if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+					Out->Set(Key, Data::CData());
+				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
+					Out->Set(CStrID(Key.c_str()), Data::CData());
+				else
+					Out->Set(CStrID(Key), Data::CData());
+			}
+		}
+
+		if (Out->GetCount())
+		{
+			Output = std::move(Out);
+			return true;
+		}
+		*/
+
 		return false;
 	}
 	//---------------------------------------------------------------------
@@ -139,9 +185,30 @@ struct BinaryFormat
 	//---------------------------------------------------------------------
 
 	template<typename TValue>
-	static inline void DeserializeDiff(IO::CBinaryReader& Input, TValue& Value, const TValue& BaseValue)
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, TValue& Value)
 	{
-		NOT_IMPLEMENTED;
+		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		{
+			// TODO: PERF, can iterate members once if saved codes are guaranteed to keep the same order as in members
+			auto Code = Input.Read<uint32_t>();
+			while (Code != DEM::Meta::NO_MEMBER_CODE)
+			{
+				DEM::Meta::CMetadata<TValue>::ForEachMember([&Input, &Value, &Code](const auto& Member)
+				{
+					if (!Member.CanSerialize() || Code != Member.GetCode()) return;
+					DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
+					DeserializeDiff(Input, FieldValue);
+					Member.SetValue(Value, std::move(FieldValue));
+				});
+
+				Code = Input.Read<uint32_t>();
+			}
+		}
+		else
+		{
+			// If we're here, there is diff data to load
+			Input >> Value;
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -173,7 +240,7 @@ struct BinaryFormat
 			size_t Size = 0;
 			DEM::Meta::CMetadata<TValue>::ForEachMember([&Size](const auto& Member)
 			{
-				if (Member.GetCode() == DEM::Meta::NO_MEMBER_CODE) return;
+				if (!Member.CanSerialize()) return;
 
 				if (Size < std::numeric_limits<size_t>().max())
 				{
