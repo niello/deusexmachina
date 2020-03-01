@@ -54,7 +54,8 @@ void* CBufferMalloc::Resize(UPTR NewSize)
 	{
 		n_free(_pData);
 		_pData = nullptr;
-		return _pData;
+		_Size = 0;
+		return nullptr;
 	}
 
 	if (auto pNewData = n_realloc(_pData, NewSize))

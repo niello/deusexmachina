@@ -105,7 +105,7 @@ UPTR CMemStream::Read(void* pData, UPTR Size)
 
 UPTR CMemStream::Write(const void* pData, UPTR Size)
 {
-	if (!_pData || _ReadOnly) return 0;
+	if (_ReadOnly || (!_pData && !_pBuffer)) return 0;
 
 	const auto NewSize = _Pos + Size;
 	if (NewSize > _BufferSize)
@@ -137,7 +137,7 @@ UPTR CMemStream::Write(const void* pData, UPTR Size)
 
 UPTR CMemStream::Fill(U8 Value, UPTR Size)
 {
-	if (!_pData || _ReadOnly) return 0;
+	if (_ReadOnly || (!_pData && !_pBuffer)) return 0;
 
 	const auto NewSize = _Pos + Size;
 	if (NewSize > _BufferSize)

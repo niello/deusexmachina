@@ -49,6 +49,7 @@ public:
 		bool operator ==(CHandle Other) const { return Raw == Other.Raw; }
 		bool operator !=(CHandle Other) const { return Raw != Other.Raw; }
 		operator bool() const { return Raw != INVALID_HANDLE_VALUE; }
+		operator H() const { return Raw; }
 	};
 
 	static constexpr CHandle INVALID_HANDLE = { INVALID_HANDLE_VALUE };

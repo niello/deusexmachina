@@ -106,7 +106,7 @@ protected:
 			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
 
 		// If diff data is available, apply it on top of base data
-		if (Record.BinaryDiffData)
+		if (Record.DiffDataSize)
 		{
 			if constexpr (USE_DIFF_POOL)
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component);
@@ -144,9 +144,19 @@ protected:
 		}
 		else
 		{
+			// Preallocate buffer
+			// TODO: vector-like allocation strategy inside a CBufferMalloc?
+			if (!Record.BinaryDiffData.GetSize()) Record.BinaryDiffData.Resize(512);
+
 			IO::CMemStream DiffStream(Record.BinaryDiffData);
 			if (DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent))
+			{
 				Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
+
+				// Truncate if too many unused bytes left
+				if (Record.BinaryDiffData.GetSize() - Record.DiffDataSize > 400)
+					Record.BinaryDiffData.Resize(Record.DiffDataSize);
+			}
 			else
 				ClearDiffBuffer(Record);
 		}
@@ -155,7 +165,7 @@ protected:
 	// NB: can't embed into lambdas, both branches of if constexpr are compiled for some reason
 	static inline void WriteComponentDiff(IO::CBinaryWriter& Out, HEntity EntityID, const CIndexRecord& Record)
 	{
-		if (Record.BinaryDiffData)
+		if (Record.DiffDataSize)
 		{
 			Out.Write(EntityID.Raw);
 			Out.Write(Record.DiffDataSize);
