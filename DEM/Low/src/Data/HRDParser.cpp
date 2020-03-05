@@ -44,18 +44,16 @@ CHRDParser::CHRDParser(): pErr(nullptr)
 }
 //---------------------------------------------------------------------
 
-bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, CString* pErrors)
+bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, CString* pErrors)
 {
+	Result.Clear();
+
 	if (!Buffer) FAIL;
 
 	ZeroIdx = INVALID_INDEX;
 
 	// Allow empty file to be parsed
-	if (!Length)
-	{
-		Result = n_new(CParams);
-		OK;
-	}
+	if (!Length) OK;
 
 	pErr = pErrors;
 	
@@ -79,11 +77,10 @@ bool CHRDParser::ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, C
 		FAIL;
 	}
 	
-	if (Result.IsNullPtr()) Result = n_new(CParams);
 	if (!ParseTokenStream(Tokens, Result))
 	{
 		if (pErr) pErr->Add("Syntax analysis of HRD failed\n");
-		Result = nullptr;
+		Result.Clear();
 		TableID.Clear();
 		TableConst.Clear(); //???always keep "0" const?
 		//Tokens.Clear();
@@ -632,7 +629,7 @@ void CHRDParser::AddConst(CArray<CToken>& Tokens, const CString& Const, EType Ty
 //---------------------------------------------------------------------
 
 // ROOT = { PARAM }
-bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, PParams Output)
+bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, CParams& Output)
 {
 	ParserCursor = 0;
 	while (ParserCursor < Tokens.GetCount() && ParseParam(Tokens, Output))
@@ -642,7 +639,7 @@ bool CHRDParser::ParseTokenStream(const CArray<CToken>& Tokens, PParams Output)
 //---------------------------------------------------------------------
 
 // PARAM = ID [ '=' ] DATA
-bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, PParams Output)
+bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, CParams& Output)
 {
 	CToken& CurrToken = Tokens[ParserCursor];
 	if (CurrToken.Table != TBL_ID)
@@ -680,7 +677,7 @@ bool CHRDParser::ParseParam(const CArray<CToken>& Tokens, PParams Output)
 		}
 
 		//!!!can check duplicates here!
-		Output->Set(CStrID(TableID[CurrToken.Index].CStr()), Data);
+		Output.Set(CStrID(TableID[CurrToken.Index].CStr()), Data);
 		OK;
 	}
 	
@@ -732,12 +729,20 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 
 	if (ParseVector(Tokens, Output)) OK;
 
-	Output = PDataArray(n_new(CDataArray));
-	if (ParseArray(Tokens, Output)) OK;
+	PDataArray Array(n_new(CDataArray));
+	if (ParseArray(Tokens, *Array))
+	{
+		Output = Array;
+		OK;
+	}
 
 	ParserCursor = CursorBackup;
-	Output = PParams(n_new(CParams));
-	if (ParseSection(Tokens, Output)) OK;
+	PParams Section(n_new(CParams));
+	if (ParseSection(Tokens, *Section))
+	{
+		Output = Section;
+		OK;
+	}
 	
 	Output.Clear();
 	ParserCursor = CursorBackup;
@@ -788,7 +793,7 @@ bool CHRDParser::ParseData(const CArray<CToken>& Tokens, CData& Output)
 //---------------------------------------------------------------------
 
 // ARRAY = '[' [ DATA { ',' DATA } ] ']'
-bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, Ptr<CDataArray> Output)
+bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, CDataArray& Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_SQ_BR_OPEN)) FAIL;
 	
@@ -808,7 +813,7 @@ bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, Ptr<CDataArray> Output
 			ParserCursor = CursorBackup;
 			FAIL;
 		}
-		Output->Add(Data);
+		Output.Add(Data);
 	
 		if (ParserCursor >= Tokens.GetCount()) break;
 		
@@ -844,7 +849,7 @@ bool CHRDParser::ParseArray(const CArray<CToken>& Tokens, Ptr<CDataArray> Output
 //---------------------------------------------------------------------
 
 // SECTION = '{' { PARAM } '}'
-bool CHRDParser::ParseSection(const CArray<CToken>& Tokens, PParams Output)
+bool CHRDParser::ParseSection(const CArray<CToken>& Tokens, CParams& Output)
 {
 	if (!Tokens[ParserCursor].IsA(TBL_DLM, DLM_CUR_BR_OPEN)) FAIL;
 	

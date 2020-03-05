@@ -18,10 +18,10 @@ Data::PParams LoadParamsFromHRD(const char* pFileName)
 	auto Buffer = File->ReadAll();
 	if (!Buffer) return nullptr;
 
-	Data::PParams Params;
+	Data::PParams Params(n_new(Data::CParams()));
 	Data::CHRDParser Parser;
 	//CString Errors;
-	return Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params/*, &Errors*/) ?
+	return Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), *Params/*, &Errors*/) ?
 		Params :
 		nullptr;
 }

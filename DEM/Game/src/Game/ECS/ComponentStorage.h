@@ -38,8 +38,8 @@ public:
 	virtual bool   SaveAll(IO::CBinaryWriter& Out) const = 0;
 	virtual bool   SaveDiff(IO::CBinaryWriter& Out) = 0;
 
-	virtual void   PrepareComponents(CStrID LevelID) = 0;
-	virtual void   UnloadComponents(CStrID LevelID) = 0;
+	virtual void   ValidateComponents(CStrID LevelID) = 0;
+	virtual void   InvalidateComponents(CStrID LevelID) = 0;
 };
 
 // Conditional pool member for CHandleArrayComponentStorage
@@ -524,7 +524,7 @@ public:
 		return true;
 	}
 
-	virtual void PrepareComponents(CStrID LevelID) override
+	virtual void ValidateComponents(CStrID LevelID) override
 	{
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
@@ -541,7 +541,7 @@ public:
 		});
 	}
 
-	virtual void UnloadComponents(CStrID LevelID) override
+	virtual void InvalidateComponents(CStrID LevelID) override
 	{
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
@@ -699,8 +699,8 @@ public:
 		return true;
 	}
 
-	virtual void PrepareComponents(CStrID LevelID) override {}
-	virtual void UnloadComponents(CStrID LevelID) override {}
+	virtual void ValidateComponents(CStrID LevelID) override {}
+	virtual void InvalidateComponents(CStrID LevelID) override {}
 
 	//auto begin() { return _Data.begin(); }
 	//auto begin() const { return _Data.begin(); }

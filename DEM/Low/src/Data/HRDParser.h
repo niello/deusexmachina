@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_HRD_PARSER_H__
-#define __DEM_L1_HRD_PARSER_H__
-
 #include <Data/Ptr.h>
 #include <Data/Data.h>
 #include <Data/Array.h>
@@ -10,8 +7,8 @@
 
 namespace Data
 {
-typedef Ptr<class CDataArray> PDataArray;
-typedef Ptr<class CParams> PParams;
+class CDataArray;
+class CParams;
 
 class CHRDParser
 {
@@ -79,20 +76,18 @@ private:
 	void AddConst(CArray<CToken>& Tokens, const CString& Const, EType Type);
 	
 	// Syntax analysis
-	bool ParseTokenStream(const CArray<CToken>& Tokens, PParams Output);
-	bool ParseParam(const CArray<CToken>& Tokens, PParams Output);
+	bool ParseTokenStream(const CArray<CToken>& Tokens, CParams& Output);
+	bool ParseParam(const CArray<CToken>& Tokens, CParams& Output);
 	bool ParseData(const CArray<CToken>& Tokens, CData& Output);
-	bool ParseArray(const CArray<CToken>& Tokens, PDataArray Output);
-	bool ParseSection(const CArray<CToken>& Tokens, PParams Output);
+	bool ParseArray(const CArray<CToken>& Tokens, CDataArray& Output);
+	bool ParseSection(const CArray<CToken>& Tokens, CParams& Output);
 	bool ParseVector(const CArray<CToken>& Tokens, CData& Output);
 
 public:
 
 	CHRDParser();
 
-	bool ParseBuffer(const char* Buffer, UPTR Length, PParams& Result, CString* pErrors = nullptr);
+	bool ParseBuffer(const char* Buffer, UPTR Length, CParams& Result, CString* pErrors = nullptr);
 };
 
 }
-
-#endif

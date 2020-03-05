@@ -404,18 +404,6 @@ IO::IStream* CGameWorld::GetBaseStream(U64 Offset) const
 }
 //---------------------------------------------------------------------
 
-//!!!DBG TMP! Probably not a part of the final API
-void CGameWorld::PrepareEntities(CStrID LevelID)
-{
-	for (const auto& Storage : _Storages)
-		Storage->PrepareComponents(LevelID);
-}
-void CGameWorld::UnloadEntities(CStrID LevelID)
-{
-	for (const auto& Storage : _Storages)
-		Storage->UnloadComponents(LevelID);
-}
-
 // FIXME: make difference between 'non-interactive' and 'interactive same as whole'. AABB::Empty + AABB::Invalid?
 CGameLevel* CGameWorld::CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds, UPTR SubdivisionDepth)
 {
@@ -503,6 +491,20 @@ CGameLevel* CGameWorld::FindLevel(CStrID ID) const
 {
 	auto It = _Levels.find(ID);
 	return (It == _Levels.cend()) ? nullptr : It->second.Get();
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::ValidateLevel(CStrID LevelID)
+{
+	for (const auto& Storage : _Storages)
+		Storage->ValidateComponents(LevelID);
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::InvalidateLevel(CStrID LevelID)
+{
+	for (const auto& Storage : _Storages)
+		Storage->InvalidateComponents(LevelID);
 }
 //---------------------------------------------------------------------
 
