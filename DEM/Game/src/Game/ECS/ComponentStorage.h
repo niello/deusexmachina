@@ -97,13 +97,29 @@ protected:
 		Record.DiffDataSize = 0;
 	}
 
+	bool LoadBaseComponent(const CIndexRecord& Record, T& Component) const
+	{
+		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
+		{
+			// If base data is available for this component, load it (also overrides a template)
+			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
+		}
+		else
+		{
+			// Load component data from the template
+			// TODO: PERF - is worth it? Or always save base data / full diff (for runtime created entities)
+			// instead of storing / using template ID? Will freeze created entity, changes in a template
+			// will not affect it. Need profiling.
+			auto pEntity = _World.GetEntity(EntityID);
+			if (pEntity && pEntity->TemplateID)
+				_World.GetTemplateComponent<T>(pEntity->TemplateID, Component);
+		}
+	}
+
 	T LoadComponent(const CIndexRecord& Record) const
 	{
 		T Component;
-
-		// If base data is available for this component, load it
-		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
-			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
+		LoadBaseComponent(Record, Component);
 
 		// If diff data is available, apply it on top of base data
 		if (Record.DiffDataSize)
@@ -128,10 +144,7 @@ protected:
 		const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
 
 		T BaseComponent;
-
-		// If base data is available for this component, load it
-		auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset);
-		if (pBaseStream) DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
+		const bool HasBase = LoadBaseComponent(Record, BaseComponent);
 
 		bool HasDiff;
 		if constexpr (USE_DIFF_POOL)
@@ -151,22 +164,21 @@ protected:
 			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
 		}
 
-		if (HasDiff || !pBaseStream)
+		if (HasBase && !HasDiff)
 		{
-			// When HasDiff is false, the component is new but equal to the default one,
-			// and we must save empty diff, but not nothing
-
+			// No diff against the base, component is unchanged, nothing must be saved
+			ClearDiffBuffer(Record);
+		}
+		else
+		{
+			// When HasDiff is false, the component is new but equal to the default one, and we
+			// must save empty diff, but not nothing. It is already written in SerializeDiff.
 			if constexpr (!USE_DIFF_POOL)
 			{
 				// Truncate if too many unused bytes left
 				if (Record.BinaryDiffData.GetSize() - Record.DiffDataSize > 400)
 					Record.BinaryDiffData.Resize(Record.DiffDataSize);
 			}
-		}
-		else
-		{
-			// No diff against the base, component is unchanged, nothing must be saved
-			ClearDiffBuffer(Record);
 		}
 	}
 
@@ -310,8 +322,7 @@ public:
 			const T& Component = _Data.GetValueUnsafe(IndexRecord.ComponentHandle)->first;
 
 			T BaseComponent;
-			if (auto pBaseStream = _World.GetBaseStream(IndexRecord.BaseDataOffset))
-				DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), BaseComponent);
+			LoadBaseComponent(IndexRecord, BaseComponent);
 
 			return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 		}

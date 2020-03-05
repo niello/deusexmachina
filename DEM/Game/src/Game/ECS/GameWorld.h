@@ -1,5 +1,8 @@
 #pragma once
 #include <Game/ECS/ComponentStorage.h>
+#include <Game/ECS/EntityTemplate.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 #include <Math/AABB.h>
 #include <typeindex>
 
@@ -10,16 +13,6 @@
 // Multiple isolated worlds can be created, but one is enough for any typical game.
 
 // TODO: move entity management and API into separate object and store it inside? World.Entities().Create(...) etc.
-
-namespace Data
-{
-	class CParams;
-}
-
-namespace Resources
-{
-	class CResourceManager;
-}
 
 namespace DEM::Game
 {
@@ -40,6 +33,7 @@ protected:
 	CEntityStorage                 _EntitiesBase;
 	CEntityStorage                 _Entities;
 	std::vector<PComponentStorage> _Storages;
+	std::vector<CStrID>            _StorageIDs;
 	std::unordered_map<CStrID, IComponentStorage*> _StorageMap;
 
 	// system by type list
@@ -110,6 +104,8 @@ public:
 	const IComponentStorage* FindComponentStorage(CStrID ComponentName) const;
 	IComponentStorage* FindComponentStorage(CStrID ComponentName);
 
+	template<class T> bool  GetTemplateComponent(CStrID TemplateID, T& Out) const;
+
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);
 
@@ -128,6 +124,7 @@ void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Storages.size() <= TypeIndex) _Storages.resize(TypeIndex + 1);
 	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(*this, InitialCapacity);
+	_StorageIDs[TypeIndex] = Name;
 	_StorageMap[Name] = _Storages[TypeIndex].get();
 }
 //---------------------------------------------------------------------
@@ -188,6 +185,23 @@ typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 	if (_Storages.size() <= TypeIndex) return nullptr;
 
 	return static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
+}
+//---------------------------------------------------------------------
+
+template<class T>
+bool CGameWorld::GetTemplateComponent(CStrID TemplateID, T& Out) const
+{
+	// Component type is not registered yet
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
+
+	auto pRsrc = _ResMgr.FindResource(TemplateID);
+	if (!pRsrc) return false;
+	
+	auto pTpl = pRsrc->ValidateObject<CEntityTemplate>();
+	if (!pTpl) return false;
+
+	return pTpl->GetComponent<T>(_StorageIDs[TypeIndex], Out);
 }
 //---------------------------------------------------------------------
 

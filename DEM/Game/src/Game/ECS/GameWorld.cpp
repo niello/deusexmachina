@@ -2,13 +2,9 @@
 #include <Game/GameLevel.h>
 #include <AI/AILevel.h>
 #include <Scene/SceneNode.h>
-#include <Resources/ResourceManager.h>
-#include <Resources/Resource.h>
 #include <IO/BinaryReader.h>
 #include <IO/BinaryWriter.h>
 #include <unordered_set>
-
-// TODO: entity templates!
 
 namespace DEM::Game
 {
