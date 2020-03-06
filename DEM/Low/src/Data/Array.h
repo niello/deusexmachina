@@ -164,6 +164,7 @@ CArray<T>& CArray<T>::operator =(CArray<T>&& Other)
 	Other.pData = nullptr;
 	Other.Allocated = 0;
 	Other.Count = 0;
+	return *this;
 }
 //---------------------------------------------------------------------
 
