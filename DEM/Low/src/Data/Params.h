@@ -74,8 +74,8 @@ public:
 	const CParam&				operator [](CStrID Name) const { return Get(Name); }
 	const CParam&				operator [](IPTR Idx) const { return Params[Idx]; }
 
-	//Save Load binary
-	//Save Load text
+	CParams& operator =(const CParams& Other) { Params = Other.Params; return *this; }
+	CParams& operator =(CParams&& Other) { Params = std::move(Other.Params); return *this; }
 };
 //---------------------------------------------------------------------
 

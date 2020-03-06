@@ -1,5 +1,9 @@
 #include "EntityTemplateLoader.h"
 #include <Game/ECS/EntityTemplate.h>
+#include <Resources/ResourceManager.h>
+#include <IO/BinaryReader.h>
+#include <Data/Buffer.h>
+#include <Data/HRDParser.h>
 
 namespace Resources
 {
@@ -14,47 +18,44 @@ PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
 {
 	if (!pResMgr) return nullptr;
 
-	//const char* pOutSubId;
-	//IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
-	//if (!Stream || !Stream->IsOpened()) return nullptr;
-
-	/*
-	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ, IO::SAP_SEQUENTIAL);
-	if (!File || !File->IsOpened()) return nullptr;
-	auto Buffer = File->ReadAll();
+	// TODO: can support optional multiple templates through sub-ID
+	const char* pOutSubId;
+	Data::PBuffer Buffer;
+	{
+		IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+		if (!Stream || !Stream->IsOpened()) return nullptr;
+		Buffer = Stream->ReadAll();
+	}
 	if (!Buffer) return nullptr;
 
-	Data::PParams Params;
+	// Read params from resource HRD
+	Data::CParams Params;
 	Data::CHRDParser Parser;
-	//CString Errors;
-	return Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params, &Errors) ?
-		Params :
-		nullptr;
+	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
-/////////////////////////////////
-
-	Data::PParams Main = ParamsUtils::LoadParamsFromPRM(CString(pRootPath) + pRelativeFileName);
-	if (!Main) return nullptr;
-
+	// Recurse to base files, merge them into main params
 	CString BaseName;
-	if (!Main->TryGet(BaseName, CStrID("_Base_"))) return Main;
-
-	if (BaseName == pRelativeFileName)
+	const CStrID sidBase("_Base_");
+	while (Params.TryGet(BaseName, sidBase))
 	{
-		::Sys::Error("LoadDescFromPRM() > _Base_ can't be self!");
-		return nullptr;
+		Params.Remove(sidBase);
+
+		{
+			// TODO: can support optional multiple templates through sub-ID
+			const char* pOutBaseSubId;
+			IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutBaseSubId, IO::SAP_SEQUENTIAL);
+			if (!Stream || !Stream->IsOpened()) return nullptr;
+			Buffer = Stream->ReadAll();
+		}
+
+		Data::CParams BaseParams;
+		if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), BaseParams)) return nullptr;
+
+		BaseParams.Merge(Params, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep);
+		Params = std::move(BaseParams);
 	}
 
-	Data::PParams Params = LoadDescFromPRM(pRootPath, BaseName + ".prm");
-	if (!Params) return nullptr;
-
-	Params->Merge(*Main, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep); //!!!can specify merge flags in Desc!
-
-	return Params;
-	
-	*/
-
-	return nullptr;
+	return n_new(DEM::Game::CEntityTemplate(std::move(Params)));
 }
 //---------------------------------------------------------------------
 

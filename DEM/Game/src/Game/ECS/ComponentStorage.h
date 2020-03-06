@@ -97,12 +97,13 @@ protected:
 		Record.DiffDataSize = 0;
 	}
 
-	bool LoadBaseComponent(const CIndexRecord& Record, T& Component) const
+	bool LoadBaseComponent(HEntity EntityID, const CIndexRecord& Record, T& Component) const
 	{
 		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
 		{
 			// If base data is available for this component, load it (also overrides a template)
 			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
+			return true;
 		}
 		else
 		{
@@ -112,14 +113,19 @@ protected:
 			// will not affect it. Need profiling.
 			auto pEntity = _World.GetEntity(EntityID);
 			if (pEntity && pEntity->TemplateID)
+			{
 				_World.GetTemplateComponent<T>(pEntity->TemplateID, Component);
+				return true;
+			}
 		}
+
+		return false;
 	}
 
-	T LoadComponent(const CIndexRecord& Record) const
+	T LoadComponent(HEntity EntityID, const CIndexRecord& Record) const
 	{
 		T Component;
-		LoadBaseComponent(Record, Component);
+		LoadBaseComponent(EntityID, Record, Component);
 
 		// If diff data is available, apply it on top of base data
 		if (Record.DiffDataSize)
@@ -133,7 +139,7 @@ protected:
 		return Component;
 	}
 
-	void SaveComponent(CIndexRecord& Record)
+	void SaveComponent(HEntity EntityID, CIndexRecord& Record)
 	{
 		//!!!TODO: check if component is saveable and is dirty!
 		//???set dirty on non-const Find()? theonly case when component data can change, plus doesn't involve per-field comparisons
@@ -144,7 +150,7 @@ protected:
 		const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
 
 		T BaseComponent;
-		const bool HasBase = LoadBaseComponent(Record, BaseComponent);
+		const bool HasBase = LoadBaseComponent(EntityID, Record, BaseComponent);
 
 		bool HasDiff;
 		if constexpr (USE_DIFF_POOL)
@@ -322,7 +328,7 @@ public:
 			const T& Component = _Data.GetValueUnsafe(IndexRecord.ComponentHandle)->first;
 
 			T BaseComponent;
-			LoadBaseComponent(IndexRecord, BaseComponent);
+			LoadBaseComponent(EntityID, IndexRecord, BaseComponent);
 
 			return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 		}
@@ -453,7 +459,7 @@ public:
 			if (Record.ComponentHandle)
 				DEM::BinaryFormat::Serialize(Intermediate, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
 			else if (!Record.Deleted)
-				DEM::BinaryFormat::Serialize(Intermediate, LoadComponent(Record));
+				DEM::BinaryFormat::Serialize(Intermediate, LoadComponent(EntityID, Record));
 			else
 				return;
 
@@ -526,7 +532,7 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.ComponentHandle) SaveComponent(Record);
+			if (Record.ComponentHandle) SaveComponent(EntityID, Record);
 			WriteComponentDiff(Out, EntityID, Record);
 		});
 
@@ -548,7 +554,7 @@ public:
 			auto pEntity = _World.GetEntity(EntityID);
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
-			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(Record)), EntityID });
+			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, Record)), EntityID });
 		});
 	}
 
@@ -561,7 +567,7 @@ public:
 			auto pEntity = _World.GetEntity(EntityID);
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
-			SaveComponent(Record);
+			SaveComponent(EntityID, Record);
 
 			_Data.Free(Record.ComponentHandle);
 			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE;

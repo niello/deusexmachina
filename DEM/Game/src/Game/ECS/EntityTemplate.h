@@ -20,6 +20,8 @@ public:
 	CEntityTemplate(Data::CParams&& Desc) : _Desc(std::move(Desc)) {}
 	virtual ~CEntityTemplate() override = default;
 
+	virtual bool IsResourceValid() const override { return _Desc.GetCount() > 0; }
+
 	// NB: Out must be default-initialized, because HRD may store diff only
 	template<typename T> bool GetComponent(CStrID ComponentID, T& Out)
 	{

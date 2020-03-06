@@ -105,6 +105,7 @@ public:
 	CIterator	end() const { return pData + Count; }
 
 	CArray<T>&	operator =(const CArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
+	CArray<T>&	operator =(CArray<T>&& Other);
 	T&			operator [](IPTR Idx) const { return At(Idx); }
 	bool		operator ==(const CArray<T>& Other) const;
 	bool		operator !=(const CArray<T>& Other) const { return !(*this == Other); }
@@ -146,6 +147,20 @@ CArray<T>::CArray(CArray<T>&& Other)
 	, GrowSize(Other.GrowSize)
 	, Flags(Other.Flags)
 {
+	Other.pData = nullptr;
+	Other.Allocated = 0;
+	Other.Count = 0;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+CArray<T>& CArray<T>::operator =(CArray<T>&& Other)
+{
+	pData = Other.pData;
+	Allocated = Other.Allocated;
+	Count = Other.Count;
+	GrowSize = Other.GrowSize;
+	Flags = Other.Flags;
 	Other.pData = nullptr;
 	Other.Allocated = 0;
 	Other.Count = 0;
