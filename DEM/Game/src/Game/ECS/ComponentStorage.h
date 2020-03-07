@@ -188,6 +188,20 @@ protected:
 		}
 	}
 
+	void WriteComponentFull(IO::CBinaryWriter& Out, HEntity EntityID, const T& Component) const
+	{
+		// If entity has a template and the component is equal to the template one, skip saving it
+		auto pEntity = _World.GetEntity(EntityID);
+		if (pEntity && pEntity->TemplateID)
+		{
+			T TplComponent;
+			if (_World.GetTemplateComponent<T>(pEntity->TemplateID, TplComponent) && Component == TplComponent)
+				return;
+		}
+
+		DEM::BinaryFormat::Serialize(Out, Component);
+	}
+
 	// NB: can't embed into lambdas, both branches of if constexpr are compiled for some reason
 	static inline void WriteComponentDiff(IO::CBinaryWriter& Out, HEntity EntityID, const CIndexRecord& Record)
 	{
@@ -280,6 +294,7 @@ public:
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 
+	// TODO: entity templates
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -295,6 +310,7 @@ public:
 		return false;
 	}
 
+	// TODO: entity templates
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -361,6 +377,7 @@ public:
 		return true;
 	}
 
+	// TODO: entity templates in Record.BaseDataOffset == NO_BASE_DATA
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
@@ -373,7 +390,7 @@ public:
 		{
 			if (Record.BaseDataOffset == NO_BASE_DATA)
 			{
-				// Components without base were created in runtime and must be deleted entirely
+				// Components without base and template were created in runtime and must be deleted entirely
 				RecordsToDelete.push_back(EntityID);
 			}
 			else if (Record.DiffDataSize || Record.Deleted)
@@ -457,14 +474,14 @@ public:
 			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
 
 			if (Record.ComponentHandle)
-				DEM::BinaryFormat::Serialize(Intermediate, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
+				WriteComponentFull(Intermediate, EntityID, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
 			else if (!Record.Deleted)
-				DEM::BinaryFormat::Serialize(Intermediate, LoadComponent(EntityID, Record));
-			else
-				return;
+				WriteComponentFull(Intermediate, EntityID, LoadComponent(EntityID, Record));
+
+			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
+			if (!SerializedSize) return;
 
 			const void* pComponentData = Intermediate.GetStream().Map();
-			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
 
 			//???TODO: use hashes for faster comparison?
 			for (size_t i = 0; i < BinaryData.size(); ++i)

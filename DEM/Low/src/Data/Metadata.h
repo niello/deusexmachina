@@ -59,6 +59,11 @@ public:
 		return std::apply([Code](auto& ...Members) { return (... || (Members.GetCode() == Code)); }, _Members);
 	}
 
+	static inline constexpr bool IsEqual(const T& a, const T& b)
+	{
+		return std::apply([&a, &b](auto& ...Members) { return (... && (Members.GetConstValue(a) == Members.GetConstValue(b))); }, _Members);
+	}
+
 	template<typename TCallback>
 	static inline constexpr bool WithMember(std::string_view Name, TCallback Callback)
 	{
@@ -232,4 +237,12 @@ inline constexpr auto Member(std::uint32_t Code, const char* pName, T TClass::* 
 	return CMember<TClass, T, T TClass::*, T TClass::*>(Code, pName, pGetter, pSetter);
 }
 
+}
+
+// Default equality comparison for objects with registered metadata.
+// Must be in the global namespace in order to be available everywhere on operator resolution.
+template<typename T>
+inline typename std::enable_if_t<DEM::Meta::CMetadata<T>::IsRegistered, bool> operator ==(const T& a, const T& b)
+{
+	return DEM::Meta::CMetadata<T>::IsEqual(a, b);
 }
