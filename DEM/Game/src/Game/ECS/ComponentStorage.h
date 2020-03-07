@@ -311,7 +311,14 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	// TODO: entity templates (support in CGameWorld?)
+	bool DeserializeComponentFromParams(T& Out, const Data::CData& In) const
+	{
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+		DEM::ParamsFormat::Deserialize(In, Out);
+		return true;
+	}
+	//---------------------------------------------------------------------
+
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -353,24 +360,35 @@ public:
 
 		if (IndexRecord.Deleted)
 		{
-			// Explicitly deleted
+			// Explicitly save as deleted
 			Out = Data::CData();
 			return true;
 		}
 		else
 		{
-			//???FIXME: or read binary diff into a temporary stack object?
-			if (!IndexRecord.ComponentHandle) return false;
-
-			const T& Component = _Data.GetValueUnsafe(IndexRecord.ComponentHandle)->first;
-
 			T BaseComponent;
 			LoadBaseComponent(EntityID, IndexRecord, BaseComponent);
 
-			return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
-		}
+			if (IndexRecord.ComponentHandle)
+			{
+				const T& Component = _Data.GetValueUnsafe(IndexRecord.ComponentHandle)->first;
+				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+			}
+			else
+			{
+				T Component = BaseComponent;
 
-		return false;
+				if (IndexRecord.DiffDataSize)
+				{
+					if constexpr (USE_DIFF_POOL)
+						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.BinaryDiffData, MAX_DIFF_SIZE)), Component);
+					else
+						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.BinaryDiffData.GetConstPtr(), IndexRecord.BinaryDiffData.GetSize())), Component);
+				}
+
+				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+			}
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -684,6 +702,15 @@ public:
 	//---------------------------------------------------------------------
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
+	//---------------------------------------------------------------------
+
+	bool DeserializeComponentFromParams(T& Out, const Data::CData& In) const
+	{
+		// No data to deserialize, Out always is up to date, return value is used for control
+		if (auto pBoolData = pData->As<bool>()) return *pBoolData;
+		else if (auto pParamsData = pData->As<Data::PParams>()) return (*pParamsData).IsValidPtr();
+		return false;
+	}
 	//---------------------------------------------------------------------
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override

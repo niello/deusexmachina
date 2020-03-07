@@ -205,7 +205,10 @@ bool CGameWorld::GetTemplateComponent(CStrID TemplateID, T& Out) const
 	auto pTpl = pRsrc->ValidateObject<CEntityTemplate>();
 	if (!pTpl) return false;
 
-	return pTpl->GetComponent<T>(_StorageIDs[TypeIndex], Out);
+	Data::CData* pData;
+	if (!pTpl->GetDesc().TryGet(pData, _StorageIDs[TypeIndex])) return false;
+
+	return static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get())->DeserializeComponentFromParams(Out, *pData);
 }
 //---------------------------------------------------------------------
 

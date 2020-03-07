@@ -13,11 +13,11 @@ class CResourceLoader: public IResourceCreator
 {
 protected:
 
-	CResourceManager* pResMgr = nullptr;
+	CResourceManager& _ResMgr;
 
 public:
 
-	CResourceLoader(CResourceManager& ResourceManager) : pResMgr(&ResourceManager) {}
+	CResourceLoader(CResourceManager& ResourceManager) : _ResMgr(ResourceManager) {}
 
 	virtual const Core::CRTTI&	GetResultType() const = 0;
 	virtual PResourceObject		CreateResource(CStrID UID) = 0;

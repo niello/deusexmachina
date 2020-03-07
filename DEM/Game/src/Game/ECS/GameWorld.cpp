@@ -45,9 +45,28 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
 		if (!EntityID) continue;
 
+		// Load explicitly declared components
 		for (const auto& Param : SEntity)
 			if (auto pStorage = FindComponentStorage(Param.GetName()))
 				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
+
+		// Load non-overridden components from the template
+		if (NewEntity.TemplateID)
+		{
+			// FIXME: DUPLICATED CODE! See CreateEntity!
+			auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(NewEntity.TemplateID);
+			auto pTpl = Rsrc->ValidateObject<CEntityTemplate>();
+			n_assert2(pTpl, ("CGameWorld::LoadBase() > can't load requested template " + NewEntity.TemplateID.ToString()).c_str());
+			if (pTpl)
+			{
+				for (const auto& Param : pTpl->GetDesc())
+				{
+					if (SEntity.Has(Param.GetName())) continue;
+					if (auto pStorage = FindComponentStorage(Param.GetName()))
+						pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
+				}
+			}
+		}
 	}
 }
 //---------------------------------------------------------------------

@@ -16,10 +16,8 @@ const Core::CRTTI& CTextureLoaderCDLOD::GetResultType() const
 
 PResourceObject CTextureLoaderCDLOD::CreateResource(CStrID UID)
 {
-	if (!pResMgr) return nullptr;
-
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	// Only "HM" sub-id is supported

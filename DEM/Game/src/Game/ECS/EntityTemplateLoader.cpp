@@ -16,13 +16,11 @@ const Core::CRTTI& CEntityTemplateLoader::GetResultType() const
 
 PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
 {
-	if (!pResMgr) return nullptr;
-
-	// TODO: can support optional multiple templates through sub-ID
+	// TODO: can support optional multiple templates in one file through sub-ID
 	const char* pOutSubId;
 	Data::PBuffer Buffer;
 	{
-		IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+		IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
 		if (!Stream || !Stream->IsOpened()) return nullptr;
 		Buffer = Stream->ReadAll();
 	}
@@ -41,9 +39,9 @@ PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
 		Params.Remove(sidBase);
 
 		{
-			// TODO: can support optional multiple templates through sub-ID
+			// TODO: can support optional multiple templates in one file through sub-ID
 			const char* pOutBaseSubId;
-			IO::PStream Stream = pResMgr->CreateResourceStream(BaseName.CStr(), pOutBaseSubId, IO::SAP_SEQUENTIAL);
+			IO::PStream Stream = _ResMgr.CreateResourceStream(BaseName.CStr(), pOutBaseSubId, IO::SAP_SEQUENTIAL);
 			if (!Stream || !Stream->IsOpened()) return nullptr;
 			Buffer = Stream->ReadAll();
 		}

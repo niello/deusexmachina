@@ -245,10 +245,8 @@ const Core::CRTTI& CTextureLoaderDDS::GetResultType() const
 
 PResourceObject CTextureLoaderDDS::CreateResource(CStrID UID)
 {
-	if (!pResMgr) return nullptr;
-
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	U64 FileSize = Stream->GetSize();

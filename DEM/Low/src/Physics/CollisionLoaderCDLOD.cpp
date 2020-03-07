@@ -16,10 +16,8 @@ const Core::CRTTI& CCollisionLoaderCDLOD::GetResultType() const
 // Can also load CDLODData resource and acceletare raycasting with minmax map
 PResourceObject CCollisionLoaderCDLOD::CreateResource(CStrID UID)
 {
-	if (!pResMgr) return nullptr;
-
 	const char* pOutSubId;
-	IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
+	IO::PStream Stream = _ResMgr.CreateResourceStream(UID, pOutSubId, IO::SAP_SEQUENTIAL);
 	if (!Stream || !Stream->IsOpened()) return nullptr;
 
 	// Only "Collision" sub-id is supported
