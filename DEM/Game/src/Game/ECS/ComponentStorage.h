@@ -195,18 +195,17 @@ protected:
 		}
 	}
 
-	void WriteComponentFull(IO::CBinaryWriter& Out, HEntity EntityID, const T& Component) const
+	bool IsComponentEqualToTemplate(HEntity EntityID, const T& Component) const
 	{
-		// If entity has a template and the component is equal to the template one, skip saving it
 		auto pEntity = _World.GetEntity(EntityID);
 		if (pEntity && pEntity->TemplateID)
 		{
 			T TplComponent;
 			if (_World.GetTemplateComponent<T>(pEntity->TemplateID, TplComponent) && Component == TplComponent)
-				return;
+				return true;
 		}
 
-		DEM::BinaryFormat::Serialize(Out, Component);
+		return false;
 	}
 
 	// NB: can't embed into lambdas, both branches of if constexpr are compiled for some reason
@@ -301,7 +300,7 @@ public:
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 
-	// TODO: entity templates
+	// TODO: entity templates (support in CGameWorld?)
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
@@ -317,15 +316,17 @@ public:
 		return false;
 	}
 
-	// TODO: entity templates
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
-			if (auto pComponent = Find(EntityID))
-			{
-				DEM::ParamsFormat::Serialize(Out, *pComponent);
-				return true;
-			}
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		if (auto pComponent = Find(EntityID))
+		{
+			if (IsComponentEqualToTemplate(EntityID, *pComponent)) return false;
+			DEM::ParamsFormat::Serialize(Out, *pComponent);
+			return true;
+		}
+
 		return false;
 	}
 
@@ -481,9 +482,17 @@ public:
 			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
 
 			if (Record.ComponentHandle)
-				WriteComponentFull(Intermediate, EntityID, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
+			{
+				const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
+				if (!IsComponentEqualToTemplate(EntityID, Component))
+					DEM::BinaryFormat::Serialize(Intermediate, Component);
+			}
 			else if (!Record.Deleted)
-				WriteComponentFull(Intermediate, EntityID, LoadComponent(EntityID, Record));
+			{
+				T Component = LoadComponent(EntityID, Record);
+				if (!IsComponentEqualToTemplate(EntityID, Component))
+					DEM::BinaryFormat::Serialize(Intermediate, Component);
+			}
 
 			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
 			if (!SerializedSize) return;
