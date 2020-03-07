@@ -103,6 +103,7 @@ protected:
 
 		Record.DiffDataSize = 0;
 	}
+	//---------------------------------------------------------------------
 
 	bool LoadBaseComponent(HEntity EntityID, const CIndexRecord& Record, T& Component) const
 	{
@@ -128,6 +129,7 @@ protected:
 
 		return false;
 	}
+	//---------------------------------------------------------------------
 
 	T LoadComponent(HEntity EntityID, const CIndexRecord& Record) const
 	{
@@ -145,6 +147,7 @@ protected:
 
 		return Component;
 	}
+	//---------------------------------------------------------------------
 
 	void SaveComponent(HEntity EntityID, CIndexRecord& Record)
 	{
@@ -194,6 +197,7 @@ protected:
 			}
 		}
 	}
+	//---------------------------------------------------------------------
 
 	bool IsComponentEqualToTemplate(HEntity EntityID, const T& Component) const
 	{
@@ -207,6 +211,7 @@ protected:
 
 		return false;
 	}
+	//---------------------------------------------------------------------
 
 	// NB: can't embed into lambdas, both branches of if constexpr are compiled for some reason
 	static inline void WriteComponentDiff(IO::CBinaryWriter& Out, HEntity EntityID, const CIndexRecord& Record)
@@ -221,6 +226,7 @@ protected:
 				Out.GetStream().Write(Record.BinaryDiffData.GetConstPtr(), Record.DiffDataSize);
 		}
 	}
+	//---------------------------------------------------------------------
 
 public:
 
@@ -250,6 +256,7 @@ public:
 		_IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, Handle, {} });
 		return &pPair->first;
 	}
+	//---------------------------------------------------------------------
 
 	// TODO: describe as a static interface part
 	bool Remove(HEntity EntityID)
@@ -277,6 +284,7 @@ public:
 
 		OK;
 	}
+	//---------------------------------------------------------------------
 
 	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
@@ -287,6 +295,7 @@ public:
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		return &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first;
 	}
+	//---------------------------------------------------------------------
 
 	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
@@ -297,8 +306,10 @@ public:
 		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
 		return &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
+	//---------------------------------------------------------------------
 
 	// TODO: entity templates (support in CGameWorld?)
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
@@ -315,6 +326,7 @@ public:
 		}
 		return false;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
@@ -329,6 +341,7 @@ public:
 
 		return false;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
@@ -359,6 +372,7 @@ public:
 
 		return false;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool LoadBase(IO::CBinaryReader& In) override
 	{
@@ -384,6 +398,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	// TODO: entity templates in Record.BaseDataOffset == NO_BASE_DATA
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
@@ -461,6 +476,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	// This method is primarily suited for saving levels in the editor, not for ingame use. Use SaveDiff to save game.
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
@@ -547,6 +563,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
@@ -573,6 +590,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual void ValidateComponents(CStrID LevelID) override
 	{
@@ -590,6 +608,7 @@ public:
 			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, Record)), EntityID });
 		});
 	}
+	//---------------------------------------------------------------------
 
 	virtual void InvalidateComponents(CStrID LevelID) override
 	{
@@ -606,6 +625,7 @@ public:
 			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE;
 		});
 	}
+	//---------------------------------------------------------------------
 
 	auto begin() { return _Data.begin(); }
 	auto begin() const { return _Data.begin(); }
@@ -641,25 +661,30 @@ public:
 		_Actual.insert(EntityID);
 		return &_SharedInstance;
 	}
+	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE bool Remove(HEntity EntityID)
 	{
 		return _Actual.erase(EntityID) > 0;
 	}
+	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
 		auto It = _Actual.find(EntityID);
 		return (It == _Actual.cend()) ? nullptr : &_SharedInstance;
 	}
+	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
 		auto It = _Actual.find(EntityID);
 		return (It == _Actual.cend()) ? nullptr : &_SharedInstance;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
+	//---------------------------------------------------------------------
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
@@ -680,6 +705,7 @@ public:
 		Add(EntityID);
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
@@ -687,6 +713,7 @@ public:
 		Out = true;
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
@@ -699,6 +726,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool LoadBase(IO::CBinaryReader& In) override
 	{
@@ -715,6 +743,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
@@ -736,6 +765,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
@@ -744,6 +774,7 @@ public:
 			Out.Write(EntityID.Raw);
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
@@ -765,6 +796,7 @@ public:
 
 		return true;
 	}
+	//---------------------------------------------------------------------
 
 	virtual void ValidateComponents(CStrID LevelID) override {}
 	virtual void InvalidateComponents(CStrID LevelID) override {}
