@@ -504,17 +504,30 @@ void CGameWorld::InvalidateLevel(CStrID LevelID)
 }
 //---------------------------------------------------------------------
 
-HEntity CGameWorld::CreateEntity(CStrID LevelID)
+HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 {
 	auto EntityID = _Entities.Allocate();
-	if (auto pEntity = _Entities.GetValueUnsafe(EntityID))
+	auto pEntity = _Entities.GetValueUnsafe(EntityID);
+	if (!pEntity) return CEntityStorage::INVALID_HANDLE;
+
+	pEntity->LevelID = LevelID;
+	pEntity->Level = FindLevel(LevelID);
+
+	if (TemplateID)
 	{
-		pEntity->LevelID = LevelID;
-		pEntity->Level = FindLevel(LevelID);
-		return EntityID;
+		auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID);
+		auto pTpl = Rsrc->ValidateObject<CEntityTemplate>();
+		n_assert2(pTpl, ("CGameWorld::CreateEntity() > can't load requested template " + TemplateID.ToString()).c_str());
+		if (!pTpl) return EntityID;
+
+		pEntity->TemplateID = TemplateID;
+
+		for (const auto& Param : pTpl->GetDesc())
+			if (auto pStorage = FindComponentStorage(Param.GetName()))
+				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
 	}
 
-	return CEntityStorage::INVALID_HANDLE;
+	return EntityID;
 }
 //---------------------------------------------------------------------
 

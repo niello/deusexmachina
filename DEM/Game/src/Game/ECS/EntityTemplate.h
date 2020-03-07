@@ -22,6 +22,10 @@ public:
 
 	virtual bool IsResourceValid() const override { return _Desc.GetCount() > 0; }
 
+	const Data::CParams& GetDesc() const { return _Desc; }
+
+	//???is needed? duplicate logic, component storages already implement it in LoadComponentFromParams!
+	//!!!if remove, need to provide component loading WITHOUT registration in the storage!
 	// NB: Out must be default-initialized, because HRD may store diff only
 	template<typename T> bool GetComponent(CStrID ComponentID, T& Out)
 	{

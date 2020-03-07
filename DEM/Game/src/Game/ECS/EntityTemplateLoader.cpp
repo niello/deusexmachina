@@ -43,7 +43,7 @@ PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
 		{
 			// TODO: can support optional multiple templates through sub-ID
 			const char* pOutBaseSubId;
-			IO::PStream Stream = pResMgr->CreateResourceStream(UID, pOutBaseSubId, IO::SAP_SEQUENTIAL);
+			IO::PStream Stream = pResMgr->CreateResourceStream(BaseName.CStr(), pOutBaseSubId, IO::SAP_SEQUENTIAL);
 			if (!Stream || !Stream->IsOpened()) return nullptr;
 			Buffer = Stream->ReadAll();
 		}
@@ -51,7 +51,7 @@ PResourceObject CEntityTemplateLoader::CreateResource(CStrID UID)
 		Data::CParams BaseParams;
 		if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), BaseParams)) return nullptr;
 
-		BaseParams.Merge(Params, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep);
+		BaseParams.Merge(Params, Data::Merge_AddNew | Data::Merge_Replace | Data::Merge_Deep | Data::Merge_DeleteNulls);
 		Params = std::move(BaseParams);
 	}
 

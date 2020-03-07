@@ -27,21 +27,30 @@ void CParams::ToDataDict(CDataDict& Dict) const
 
 void CParams::Merge(const CParams& Other, int Method)
 {
-	for (UPTR i = 0; i < Other.GetCount(); ++i)
+	for (const CParam& Prm : Other)
 	{
-		const CParam& Prm = Other.Get(i);
+		// null value is considered a deleter, not a value, if corresponding flag is set
+		const bool IsDeleter = ((Method & Merge_DeleteNulls) && Prm.GetRawValue().IsVoid());
+
 		CParam* pMyPrm;
 
 		if (TryGet(pMyPrm, Prm.GetName()))
 		{
 			if (Method & Merge_Replace)
 			{
-				if ((Method & Merge_Deep) && Prm.IsA<PParams>() && pMyPrm->IsA<PParams>())
+				if (IsDeleter)
+					Remove(Prm.GetName());
+				else if ((Method & Merge_Deep) && Prm.IsA<PParams>() && pMyPrm->IsA<PParams>())
 					pMyPrm->GetValue<PParams>()->Merge(*Prm.GetValue<PParams>(), Method);
-				else pMyPrm->SetValue(Prm.GetRawValue());
+				else
+					pMyPrm->SetValue(Prm.GetRawValue());
 			}
 		}
-		else if (Method & Merge_AddNew) Params.Add(Prm);
+		else if (Method & Merge_AddNew)
+		{
+			// Don't add deleters, they aren't values
+			if (!IsDeleter) Params.Add(Prm);
+		}
 	}
 }
 //---------------------------------------------------------------------

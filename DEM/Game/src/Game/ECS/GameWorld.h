@@ -83,7 +83,7 @@ public:
 	// LoadEntityTemplate(desc)
 	// CreateEntity(desc)
 
-	HEntity     CreateEntity(CStrID LevelID);
+	HEntity     CreateEntity(CStrID LevelID, CStrID TemplateID = CStrID::Empty);
 	// CreateEntity(template)
 	// CreateEntity(component type list, templated?)
 	// CreateEntity(prototype entity ID for cloning)

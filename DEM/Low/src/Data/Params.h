@@ -14,9 +14,10 @@ namespace Data
 // Can be OR'ed
 enum EMergeMethod
 {
-	Merge_AddNew	= 0x01,	// Adds new fields
-	Merge_Replace	= 0x02,	// Overrides existing fields
-	Merge_Deep		= 0x04	// Merges nested param lists
+	Merge_AddNew      = 0x01, // Adds new fields
+	Merge_Replace     = 0x02, // Overrides existing fields
+	Merge_Deep        = 0x04, // Merges nested param lists
+	Merge_DeleteNulls = 0x08, // Deletes all null fields after merge
 
 	// Deep/TopLevel, only unique array elements
 };

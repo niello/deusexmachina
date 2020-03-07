@@ -17,6 +17,10 @@ namespace DEM::Game
 class CGameWorld;
 typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 
+///////////////////////////////////////////////////////////////////////
+// Component storage interface
+///////////////////////////////////////////////////////////////////////
+
 class IComponentStorage
 {
 protected:
@@ -42,11 +46,14 @@ public:
 	virtual void   InvalidateComponents(CStrID LevelID) = 0;
 };
 
-// Conditional pool member for CHandleArrayComponentStorage
+///////////////////////////////////////////////////////////////////////
+// Default component storage with a handle array for component data and a special map for entity -> component indexing
+///////////////////////////////////////////////////////////////////////
+
+// Conditional pool member
 template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
 struct CStorageNoPool {};
 
-// Default component storage with a handle array for component data and a special map for entity -> component indexing
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage,
 	std::conditional_t<DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512, CStoragePool<T>, CStorageNoPool>
@@ -599,7 +606,10 @@ public:
 	auto cend() const { return _Data.cend(); }
 };
 
+///////////////////////////////////////////////////////////////////////
 // Default storage for empty components (flags)
+///////////////////////////////////////////////////////////////////////
+
 template<typename T>
 class CEmptyComponentStorage : public IComponentStorage
 {
@@ -644,6 +654,20 @@ public:
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
+		// Support bool 'true' or section (empty is enough)
+		if (auto pBoolData = In.As<bool>())
+		{
+			if (!*pBoolData) return false;
+		}
+		else if (auto pParamsData = In.As<Data::PParams>())
+		{
+			if (!*pParamsData) return false;
+		}
+		else
+		{
+			return false;
+		}
+
 		Add(EntityID);
 		return true;
 	}
@@ -743,6 +767,10 @@ public:
 	//auto end() const { return _Data.end(); }
 	//auto cend() const { return _Data.cend(); }
 };
+
+///////////////////////////////////////////////////////////////////////
+// Misc
+///////////////////////////////////////////////////////////////////////
 
 template<typename T>
 struct TComponentTraits
