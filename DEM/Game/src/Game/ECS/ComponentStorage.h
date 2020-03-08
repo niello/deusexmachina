@@ -34,7 +34,7 @@ public:
 
 	virtual bool   RemoveComponent(HEntity EntityID) = 0;
 
-	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
+	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) = 0;
 	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool   LoadBase(IO::CBinaryReader& In) = 0;
@@ -319,19 +319,18 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) override
 	{
-		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
-		{
-			auto pComponent = Find(EntityID);
-			if (!pComponent) pComponent = Add(EntityID);
-			if (pComponent)
-			{
-				DEM::ParamsFormat::Deserialize(In, *pComponent);
-				return true;
-			}
-		}
-		return false;
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		auto It = _IndexByEntity.find(EntityID);
+		if (It && !Replace) return false;
+
+		T* pComponent = It ? &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first : Add(EntityID);
+		if (!pComponent) return false;
+
+		DEM::ParamsFormat::Deserialize(In, *pComponent);
+		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -717,7 +716,7 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool /*Replace*/) override
 	{
 		// Support bool 'true' or section (empty is enough)
 		if (auto pBoolData = In.As<bool>())

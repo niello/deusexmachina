@@ -48,25 +48,10 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 		// Load explicitly declared components
 		for (const auto& Param : SEntity)
 			if (auto pStorage = FindComponentStorage(Param.GetName()))
-				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
+				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue(), true);
 
 		// Load non-overridden components from the template
-		if (NewEntity.TemplateID)
-		{
-			// FIXME: DUPLICATED CODE! See CreateEntity!
-			auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(NewEntity.TemplateID);
-			auto pTpl = Rsrc->ValidateObject<CEntityTemplate>();
-			n_assert2(pTpl, ("CGameWorld::LoadBase() > can't load requested template " + NewEntity.TemplateID.ToString()).c_str());
-			if (pTpl)
-			{
-				for (const auto& Param : pTpl->GetDesc())
-				{
-					if (SEntity.Has(Param.GetName())) continue;
-					if (auto pStorage = FindComponentStorage(Param.GetName()))
-						pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
-				}
-			}
-		}
+		InstantiateTemplate(EntityID, NewEntity.TemplateID);
 	}
 }
 //---------------------------------------------------------------------
@@ -137,7 +122,8 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 			auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
 
 			HEntity EntityID{ RawHandle };
-			if (auto pEntity = _Entities.GetValue(EntityID))
+			auto pEntity = _Entities.GetValue(EntityID);
+			if (pEntity)
 			{
 				pEntity->Name = EntityParam.GetName();
 				SEntity.TryGet<CStrID>(pEntity->LevelID, sidLevel);
@@ -166,8 +152,11 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 				if (ComponentParam.GetRawValue().IsVoid())
 					pStorage->RemoveComponent(EntityID);
 				else
-					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue());
+					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue(), true);
 			}
+
+			// Load non-overridden components from the template
+			InstantiateTemplate(EntityID, pEntity->TemplateID);
 		}
 	}
 }
@@ -226,6 +215,14 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 		const auto TypeID = In.Read<CStrID>();
 		if (auto pStorage = FindComponentStorage(TypeID))
 			pStorage->LoadDiff(In);
+	}
+
+	// Load non-overridden components from templates
+	for (const auto& Entity : _Entities)
+	{
+		// FIXME: must get for free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
+		InstantiateTemplate(EntityID, Entity.TemplateID);
 	}
 }
 //---------------------------------------------------------------------
@@ -523,6 +520,24 @@ void CGameWorld::InvalidateLevel(CStrID LevelID)
 }
 //---------------------------------------------------------------------
 
+bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID)
+{
+	if (!EntityID || !TemplateID) return false;
+
+	auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID);
+	auto pTpl = Rsrc ? Rsrc->ValidateObject<CEntityTemplate>() : nullptr;
+	n_assert2(pTpl, ("CGameWorld::InstantiateTemplate() > can't load requested template " + TemplateID.ToString()).c_str());
+	if (!pTpl) return false;
+
+	// Existing components override the template
+	for (const auto& Param : pTpl->GetDesc())
+		if (auto pStorage = FindComponentStorage(Param.GetName()))
+			pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue(), false);
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 {
 	auto EntityID = _Entities.Allocate();
@@ -532,19 +547,8 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 	pEntity->LevelID = LevelID;
 	pEntity->Level = FindLevel(LevelID);
 
-	if (TemplateID)
-	{
-		auto Rsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID);
-		auto pTpl = Rsrc->ValidateObject<CEntityTemplate>();
-		n_assert2(pTpl, ("CGameWorld::CreateEntity() > can't load requested template " + TemplateID.ToString()).c_str());
-		if (!pTpl) return EntityID;
-
+	if (InstantiateTemplate(EntityID, TemplateID))
 		pEntity->TemplateID = TemplateID;
-
-		for (const auto& Param : pTpl->GetDesc())
-			if (auto pStorage = FindComponentStorage(Param.GetName()))
-				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
-	}
 
 	return EntityID;
 }

@@ -42,6 +42,8 @@ protected:
 	std::unordered_map<CStrID, PGameLevel> _Levels;
 	//???accumulated COIs for levels?
 
+	bool InstantiateTemplate(HEntity EntityID, CStrID TemplateID);
+
 	template<typename TComponent, typename... Components>
 	bool GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Out);
 	template<typename TComponent, typename... Components>
