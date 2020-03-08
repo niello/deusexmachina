@@ -27,6 +27,15 @@ protected:
 	inline static uint32_t ComponentTypeCount = 0;
 	template<class T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
 
+	enum class EState
+	{
+		Stopped = 0, // World is ready (has actual state) but simulation is disabled
+		BaseLoaded,  // Base data is loaded but not applied to an actual state
+		Running      // World is running a simulation, its state is actual
+	};
+
+	EState                         _State = EState::Stopped;
+
 	Resources::CResourceManager&   _ResMgr;
 	IO::PStream                    _BaseStream; // Base data is accessed on demand in RAM or in a mapped file
 
@@ -52,6 +61,9 @@ protected:
 public:
 
 	CGameWorld(Resources::CResourceManager& ResMgr);
+
+	void Start();
+	void Stop();
 
 	void LoadBase(const Data::CParams& In);
 	void LoadBase(IO::PStream InStream);

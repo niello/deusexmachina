@@ -15,10 +15,43 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 }
 //---------------------------------------------------------------------
 
+// TODO: notify systems
+//???how to change state after loading base, diff?
+void CGameWorld::Start()
+{
+	if (_State == EState::Running) return;
+
+	if (_State == EState::BaseLoaded)
+	{
+		// The world is loaded without a diff. Copy base state into the actual one.
+		for (const auto& BaseEntity : _EntitiesBase)
+		{
+			// FIXME: must get for free when iterating an array
+			auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
+
+			const auto RealEntityID = _Entities.AllocateWithHandle(EntityID.Raw, BaseEntity);
+			n_assert_dbg(RealEntityID && RealEntityID == EntityID);
+		}
+	}
+
+	_State = EState::Running;
+}
+//---------------------------------------------------------------------
+
+// TODO: notify systems
+//???how to change state after loading base, diff?
+void CGameWorld::Stop()
+{
+	// Can't start or stop the world in a BaseLoaded state
+	if (_State == EState::Running)
+		_State = EState::Stopped;
+}
+//---------------------------------------------------------------------
+
+// Params loader doesn't support a separate base state. Use for editors and debug only.
+// Diff will be populated with the whole world data.
 void CGameWorld::LoadBase(const Data::CParams& In)
 {
-	// CParams source doesn't support on-demand base access, diff will be populated
-	// with the whole world data. It is acceptable for debug-only functionality.
 	_BaseStream.Reset();
 
 	// Erase all previous data in the world
@@ -53,6 +86,8 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 		// Load non-overridden components from the template
 		InstantiateTemplate(EntityID, NewEntity.TemplateID);
 	}
+
+	_State = EState::Stopped;
 }
 //---------------------------------------------------------------------
 
@@ -79,18 +114,11 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 		CEntity NewEntity;
 		DEM::BinaryFormat::Deserialize(In, NewEntity);
 
-		//!!!DBG TMP!
-		const auto EntityID2 = _Entities.AllocateWithHandle(EntityIDRaw, NewEntity);
-		n_assert_dbg(EntityID2 && EntityID2 == HEntity{ EntityIDRaw });
-
 		const auto EntityID = _EntitiesBase.AllocateWithHandle(EntityIDRaw, std::move(NewEntity));
 		n_assert_dbg(EntityID && EntityID == HEntity{ EntityIDRaw });
 	}
 
-	// FIXME: decide!
-	// leave actual list empty for now (or just copy? don't want to copy because diff may be loaded next)
-	//???store loading state (none, base, diff) to avoid duplicate work and partially uninitialized state?
-
+	// Load base state of components, don't create actual components
 	const auto ComponentTypeCount = In.Read<uint32_t>();
 	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{
@@ -98,6 +126,12 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 		if (auto pStorage = FindComponentStorage(TypeID))
 			pStorage->LoadBase(In);
 	}
+
+	// The primary purpose of this state is an optimization. User either loads a diff,
+	// which initializes an actual world state, or starts the world without the diff,
+	// in which case the actual world state is delay-built as a copy of base state.
+	// Without this state we would possibly redundantly initialize an actual state here.
+	_State = EState::BaseLoaded;
 }
 //---------------------------------------------------------------------
 
@@ -107,6 +141,10 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
 	const CStrID sidActive("Active");
+
+	// Clear previous diff info, keep base intact
+	if (_State != EState::BaseLoaded)
+		_Entities.Clear(_EntitiesBase.size());
 
 	for (const auto& EntityParam : In)
 	{
@@ -138,7 +176,9 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 				NewEntity.IsActive = SEntity.Get(sidActive, true);
 
 				EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
-				pEntity = _Entities.GetValue(EntityID);
+				n_assert_dbg(EntityID);
+
+				pEntity = _Entities.GetValueUnsafe(EntityID);
 				if (!pEntity) continue;
 
 				// TODO: instatiate template, then merge state from saved components
@@ -159,6 +199,8 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 			InstantiateTemplate(EntityID, pEntity->TemplateID);
 		}
 	}
+
+	_State = EState::Stopped;
 }
 //---------------------------------------------------------------------
 
@@ -169,7 +211,8 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	IO::CBinaryReader In(*InStream);
 
 	// Clear previous diff info, keep base intact
-	if (_Entities.size()) _Entities.Clear(_EntitiesBase.size());
+	if (_State != EState::BaseLoaded)
+		_Entities.Clear(_EntitiesBase.size());
 
 	// Read deleted entity list
 	std::unordered_set<HEntity> Deleted;
@@ -224,6 +267,8 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 		auto EntityID = _Entities.GetHandle(&Entity);
 		InstantiateTemplate(EntityID, Entity.TemplateID);
 	}
+
+	_State = EState::Stopped;
 }
 //---------------------------------------------------------------------
 
