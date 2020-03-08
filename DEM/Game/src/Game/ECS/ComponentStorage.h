@@ -657,6 +657,10 @@ public:
 // Default storage for empty components (flags)
 ///////////////////////////////////////////////////////////////////////
 
+// NB: template is embedded into base data, template editing doesn't affect the base, repacking is required
+// FIXME: unify logic with stateful components, editing templates for them affects the base (really need? patches?)
+// FIXME: runtime-created entity also remains 'frozen' even if template changes
+// FIXME: if affecting prebuilt base on template change isn't required, can remove TemplateID field at all (but what about editors?!)
 template<typename T>
 class CEmptyComponentStorage : public IComponentStorage
 {
@@ -760,6 +764,7 @@ public:
 		_Base.clear();
 		_Actual.clear();
 
+		// Components from entity templates are in the list too
 		const auto Count = In.Read<U32>();
 		for (U32 i = 0; i < Count; ++i)
 		{
