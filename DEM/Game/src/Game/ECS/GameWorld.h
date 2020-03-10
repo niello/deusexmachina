@@ -64,15 +64,18 @@ public:
 
 	void Start();
 	void Stop();
+	void FinalizeLoading();
 
+	//void ClearAll();
+	//void ClearDiff();
 	void LoadBase(const Data::CParams& In);
 	void LoadBase(IO::PStream InStream);
 	void LoadDiff(const Data::CParams& In);
 	void LoadDiff(IO::PStream InStream);
-	void SaveAll(Data::CParams& Out);
-	void SaveAll(IO::CBinaryWriter& Out);
-	void SaveDiff(Data::CParams& Out);
-	void SaveDiff(IO::CBinaryWriter& Out);
+	bool SaveAll(Data::CParams& Out);
+	bool SaveAll(IO::CBinaryWriter& Out);
+	bool SaveDiff(Data::CParams& Out);
+	bool SaveDiff(IO::CBinaryWriter& Out);
 
 	IO::IStream* GetBaseStream(U64 Offset) const;
 

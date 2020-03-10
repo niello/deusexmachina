@@ -19,22 +19,11 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 //???how to change state after loading base, diff?
 void CGameWorld::Start()
 {
-	if (_State == EState::Running) return;
-
-	if (_State == EState::BaseLoaded)
+	if (_State != EState::Running)
 	{
-		// The world is loaded without a diff. Copy base state into the actual one.
-		for (const auto& BaseEntity : _EntitiesBase)
-		{
-			// FIXME: must get for free when iterating an array
-			auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
-
-			const auto RealEntityID = _Entities.AllocateWithHandle(EntityID.Raw, BaseEntity);
-			n_assert_dbg(RealEntityID && RealEntityID == EntityID);
-		}
+		FinalizeLoading();
+		_State = EState::Running;
 	}
-
-	_State = EState::Running;
 }
 //---------------------------------------------------------------------
 
@@ -48,11 +37,30 @@ void CGameWorld::Stop()
 }
 //---------------------------------------------------------------------
 
+void CGameWorld::FinalizeLoading()
+{
+	// Only a BaseLoaded state really requires a finalization
+	if (_State != EState::BaseLoaded) return;
+
+	// The world is loaded without a diff. Copy base state into the actual one.
+	for (const auto& BaseEntity : _EntitiesBase)
+	{
+		// FIXME: must get for free when iterating an array
+		auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
+
+		const auto RealEntityID = _Entities.AllocateWithHandle(EntityID.Raw, BaseEntity);
+		n_assert_dbg(RealEntityID && RealEntityID == EntityID);
+	}
+}
+//---------------------------------------------------------------------
+
 // Params loader doesn't support a separate base state. Use for editors and debug only.
 // Diff will be populated with the whole world data.
 void CGameWorld::LoadBase(const Data::CParams& In)
 {
 	_BaseStream.Reset();
+
+	// TODO: notify affected systems / entities about state destruction
 
 	// Erase all previous data in the world
 	_EntitiesBase.Clear(In.GetCount());
@@ -99,6 +107,8 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 
 	const auto EntityCount = In.Read<uint32_t>();
 
+	// TODO: notify affected systems / entities about state destruction
+
 	// Erase all previous data in the world
 	_EntitiesBase.Clear(EntityCount);
 	_Entities.Clear(EntityCount);
@@ -141,6 +151,8 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
 	const CStrID sidActive("Active");
+
+	// TODO: notify affected systems / entities about state destruction
 
 	// Clear previous diff info, keep base intact
 	if (_State != EState::BaseLoaded)
@@ -208,11 +220,13 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 {
 	if (!InStream) return;
 
-	IO::CBinaryReader In(*InStream);
+	// TODO: notify affected systems / entities about state destruction
 
 	// Clear previous diff info, keep base intact
 	if (_State != EState::BaseLoaded)
 		_Entities.Clear(_EntitiesBase.size());
+
+	IO::CBinaryReader In(*InStream);
 
 	// Read deleted entity list
 	std::unordered_set<HEntity> Deleted;
@@ -272,8 +286,10 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveAll(Data::CParams& Out)
+bool CGameWorld::SaveAll(Data::CParams& Out)
 {
+	if (_State == EState::BaseLoaded) return false;
+
 	const CStrID sidID("ID");
 	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
@@ -302,11 +318,15 @@ void CGameWorld::SaveAll(Data::CParams& Out)
 		else
 			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
 	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveAll(IO::CBinaryWriter& Out)
+bool CGameWorld::SaveAll(IO::CBinaryWriter& Out)
 {
+	if (_State == EState::BaseLoaded) return false;
+
 	Out.Write(static_cast<uint32_t>(_Entities.size()));
 	for (const auto& Entity : _Entities)
 	{
@@ -324,11 +344,15 @@ void CGameWorld::SaveAll(IO::CBinaryWriter& Out)
 		Out.Write(ComponentID);
 		Storage->SaveAll(Out);
 	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveDiff(Data::CParams& Out)
+bool CGameWorld::SaveDiff(Data::CParams& Out)
 {
+	if (_State == EState::BaseLoaded) return false;
+
 	const CStrID sidID("ID");
 	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
@@ -393,11 +417,15 @@ void CGameWorld::SaveDiff(Data::CParams& Out)
 				Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
 		}
 	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
+bool CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 {
+	if (_State == EState::BaseLoaded) return false;
+
 	// Save a list of entities deleted from the level
 	for (const auto& BaseEntity : _EntitiesBase)
 	{
@@ -450,6 +478,8 @@ void CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 		Out.Write(ComponentID);
 		Storage->SaveDiff(Out);
 	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
