@@ -238,7 +238,7 @@ public:
 		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
 	}
 
-	~CHandleArrayComponentStorage() { if constexpr (USE_DIFF_POOL) _DiffPool.Clear(); }
+	virtual ~CHandleArrayComponentStorage() override { if constexpr (USE_DIFF_POOL) _DiffPool.Clear(); }
 
 	// TODO: describe as a static interface part
 	// TODO: pass optional precreated component inside?
@@ -665,42 +665,61 @@ class CEmptyComponentStorage : public IComponentStorage
 {
 protected:
 
-	std::set<HEntity> _Base;
-	std::set<HEntity> _Actual;
+	enum
+	{
+		PresentInCurrState = 0x01,
+		PresentInBaseState = 0x02,
+		OverridesTemplate  = 0x04
+	};
+
+	CEntityMap<U8>    _IndexByEntity;  // EntityID to flags
 	T                 _SharedInstance; // It is enough to have one instance of component without data
 
 public:
 
 	CEmptyComponentStorage(const CGameWorld& World, UPTR InitialCapacity)
 		: IComponentStorage(World)
+		, _IndexByEntity(InitialCapacity)
 	{
-		// unordered_set has ::reserve(), custom pooled set may have it to, or use std::set with pool allocator?
 	}
 
 	DEM_FORCE_INLINE T* Add(HEntity EntityID)
 	{
-		_Actual.insert(EntityID);
+		if (auto It = _IndexByEntity.find(EntityID))
+			It->Value |= PresentInCurrState;
+		else
+			_IndexByEntity.emplace(EntityID, PresentInCurrState);
 		return &_SharedInstance;
 	}
 	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE bool Remove(HEntity EntityID)
 	{
-		return _Actual.erase(EntityID) > 0;
+		auto It = _IndexByEntity.find(EntityID);
+		if (!It) return false;
+
+		//???template? remove only if no binding to template?
+		//???or on template change must explicitly process?
+		if (It->Value == PresentInCurrState)
+			_IndexByEntity.erase(It);
+		else
+			It->Value &= ~PresentInCurrState;
+
+		return true;
 	}
 	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
-		auto It = _Actual.find(EntityID);
-		return (It == _Actual.cend()) ? nullptr : &_SharedInstance;
+		auto It = _IndexByEntity.find(EntityID);
+		return (It && (It->Value & PresentInCurrState)) ? &_SharedInstance : nullptr;
 	}
 	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
-		auto It = _Actual.find(EntityID);
-		return (It == _Actual.cend()) ? nullptr : &_SharedInstance;
+		auto It = _IndexByEntity.find(EntityID);
+		return (It && (It->Value & PresentInCurrState)) ? &_SharedInstance : nullptr;
 	}
 	//---------------------------------------------------------------------
 
@@ -739,7 +758,7 @@ public:
 
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
-		if (_Actual.find(EntityID) == _Actual.cend()) return false;
+		if (!Find(EntityID)) return false;
 		Out = true;
 		return true;
 	}
@@ -747,9 +766,12 @@ public:
 
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
-		const bool HasBase = (_Base.find(EntityID) != _Base.cend());
-		const bool HasActual = (_Actual.find(EntityID) != _Actual.cend());
-		if (HasBase == HasActual) return false;
+		auto It = _IndexByEntity.find(EntityID);
+		if (!It) return false;
+
+		const bool HasBase = (It->Value & PresentInBaseState);
+		const bool HasCurr = (It->Value & PresentInCurrState);
+		if (HasBase == HasCurr) return false;
 
 		if (HasBase) Out = Data::CData();
 		else Out = true;
@@ -758,19 +780,30 @@ public:
 	}
 	//---------------------------------------------------------------------
 
+	// All non-explicit components will be registered from template instantiation
 	virtual bool LoadBase(IO::CBinaryReader& In) override
 	{
-		_Base.clear();
-		_Actual.clear();
+		_IndexByEntity.clear();
 
-		// Components from entity templates are in the list too
-		const auto Count = In.Read<U32>();
-		for (U32 i = 0; i < Count; ++i)
+		// Read explicitly deleted list
+		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		while (EntityID)
 		{
-			const HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
-			_Base.insert(EntityID);
-			_Actual.insert(EntityID);
+			n_assert_dbg(!_IndexByEntity.find(EntityID));
+			_IndexByEntity.emplace(EntityID, OverridesTemplate);
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
+
+		// Read explicitly added list
+		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		while (EntityID)
+		{
+			n_assert_dbg(!_IndexByEntity.find(EntityID));
+			_IndexByEntity.emplace(EntityID, OverridesTemplate | PresentInBaseState);
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		}
+
+		// TODO: LoadDiff / FinalizeLoading must actualize PresentInCurrState
 
 		return true;
 	}
@@ -778,19 +811,28 @@ public:
 
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
-		_Actual = _Base;
+		// First set the current state from the base one
+		_IndexByEntity.ForEach([](HEntity EntityID, U8& Flags)
+		{
+			if (Flags & PresentInBaseState)
+				Flags |= PresentInCurrState;
+			else
+				Flags &= ~PresentInCurrState;
+		});
 
+		// Then apply deletions from the diff
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			_Actual.erase(EntityID);
+			Remove(EntityID);
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
+		// And finally apply additions
 		EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			_Actual.insert(EntityID);
+			Add(EntityID);
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
@@ -800,9 +842,24 @@ public:
 
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
-		Out.Write(static_cast<U32>(_Actual.size()));
-		for (HEntity EntityID : _Actual)
-			Out.Write(EntityID.Raw);
+		// Save only records that must override templates. Deleted, than added.
+
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		{
+			if ((Flags & OverridesTemplate) && !(Flags | PresentInCurrState))
+				Out << EntityID.Raw;
+		});
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		{
+			if ((Flags & OverridesTemplate) && (Flags | PresentInCurrState))
+				Out << EntityID.Raw;
+		});
+
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
 		return true;
 	}
 	//---------------------------------------------------------------------
@@ -811,17 +868,21 @@ public:
 	{
 		// Save the list of deleted components
 
-		for (HEntity EntityID : _Base)
-			if (_Actual.find(EntityID) == _Actual.cend())
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		{
+			if ((Flags & PresentInBaseState) && !(Flags & PresentInCurrState))
 				Out << EntityID.Raw;
+		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
 		// Save the list of added components
 
-		for (HEntity EntityID : _Actual)
-			if (_Base.find(EntityID) == _Base.cend())
-				Out << EntityID.Raw;
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		{
+			if (!(Flags & PresentInBaseState) && (Flags & PresentInCurrState))
+			Out << EntityID.Raw;
+		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
 

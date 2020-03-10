@@ -39,7 +39,7 @@ void CGameWorld::Stop()
 
 void CGameWorld::FinalizeLoading()
 {
-	// Only a BaseLoaded state really requires a finalization
+	// Only a BaseLoaded state really requires finalization
 	if (_State != EState::BaseLoaded) return;
 
 	// The world is loaded without a diff. Copy base state into the actual one.
@@ -51,6 +51,8 @@ void CGameWorld::FinalizeLoading()
 		const auto RealEntityID = _Entities.AllocateWithHandle(EntityID.Raw, BaseEntity);
 		n_assert_dbg(RealEntityID && RealEntityID == EntityID);
 	}
+
+	_State = EState::Stopped;
 }
 //---------------------------------------------------------------------
 
