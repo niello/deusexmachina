@@ -51,12 +51,13 @@ public:
 ///////////////////////////////////////////////////////////////////////
 
 // Conditional pool member
+template<typename T> constexpr bool STORAGE_USE_DIFF_POOL = (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512);
 template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
 struct CStorageNoPool {};
 
 template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
 class CHandleArrayComponentStorage : public IComponentStorage,
-	std::conditional_t<DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512, CStoragePool<T>, CStorageNoPool>
+	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>
 {
 public:
 
@@ -68,7 +69,6 @@ protected:
 
 	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
 	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
-	constexpr static inline bool USE_DIFF_POOL = (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512);
 
 	struct CIndexRecord
 	{
@@ -77,10 +77,10 @@ protected:
 
 		// Pre-serialized diff allows to unload objects, saving both RAM and savegame time.
 		// For diffs of known small maximum size memory chunks are allocated from the pool.
-		std::conditional_t<USE_DIFF_POOL, void*, Data::CBufferMalloc> BinaryDiffData = {};
+		std::conditional_t<STORAGE_USE_DIFF_POOL<T>, void*, Data::CBufferMalloc> BinaryDiffData = {};
 
-		U32  DiffDataSize = 0;
-		bool Deleted = false;
+		U32     DiffDataSize = 0;
+		bool    Deleted = false;
 	};
 
 	CInnerStorage            _Data;
@@ -88,7 +88,7 @@ protected:
 
 	void ClearDiffBuffer(CIndexRecord& Record)
 	{
-		if constexpr (USE_DIFF_POOL)
+		if constexpr (STORAGE_USE_DIFF_POOL<T>)
 		{
 			if (Record.BinaryDiffData)
 			{
@@ -139,7 +139,7 @@ protected:
 		// If diff data is available, apply it on top of base data
 		if (Record.DiffDataSize)
 		{
-			if constexpr (USE_DIFF_POOL)
+			if constexpr (STORAGE_USE_DIFF_POOL<T>)
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component);
 			else
 				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData.GetConstPtr(), Record.BinaryDiffData.GetSize())), Component);
@@ -163,7 +163,7 @@ protected:
 		const bool HasBase = LoadBaseComponent(EntityID, Record, BaseComponent);
 
 		bool HasDiff;
-		if constexpr (USE_DIFF_POOL)
+		if constexpr (STORAGE_USE_DIFF_POOL<T>)
 		{
 			if (!Record.BinaryDiffData) Record.BinaryDiffData = _DiffPool.Allocate();
 			IO::CMemStream DiffStream(Record.BinaryDiffData, MAX_DIFF_SIZE);
@@ -189,7 +189,7 @@ protected:
 		{
 			// When HasDiff is false, the component is new but equal to the default one, and we
 			// must save empty diff, but not nothing. It is already written in SerializeDiff.
-			if constexpr (!USE_DIFF_POOL)
+			if constexpr (!STORAGE_USE_DIFF_POOL<T>)
 			{
 				// Truncate if too many unused bytes left
 				if (Record.BinaryDiffData.GetSize() - Record.DiffDataSize > 400)
@@ -220,7 +220,7 @@ protected:
 		{
 			Out.Write(EntityID.Raw);
 			Out.Write(Record.DiffDataSize);
-			if constexpr (USE_DIFF_POOL)
+			if constexpr (STORAGE_USE_DIFF_POOL<T>)
 				Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
 			else
 				Out.GetStream().Write(Record.BinaryDiffData.GetConstPtr(), Record.DiffDataSize);
@@ -238,7 +238,7 @@ public:
 		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
 	}
 
-	virtual ~CHandleArrayComponentStorage() override { if constexpr (USE_DIFF_POOL) _DiffPool.Clear(); }
+	virtual ~CHandleArrayComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
 
 	// TODO: describe as a static interface part
 	// TODO: pass optional precreated component inside?
@@ -379,7 +379,7 @@ public:
 
 				if (IndexRecord.DiffDataSize)
 				{
-					if constexpr (USE_DIFF_POOL)
+					if constexpr (STORAGE_USE_DIFF_POOL<T>)
 						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.BinaryDiffData, MAX_DIFF_SIZE)), Component);
 					else
 						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.BinaryDiffData.GetConstPtr(), IndexRecord.BinaryDiffData.GetSize())), Component);
@@ -477,7 +477,7 @@ public:
 
 			In.Read(IndexRecord.DiffDataSize);
 
-			if constexpr (USE_DIFF_POOL)
+			if constexpr (STORAGE_USE_DIFF_POOL<T>)
 			{
 				if (!IndexRecord.BinaryDiffData) IndexRecord.BinaryDiffData = _DiffPool.Allocate();
 				In.GetStream().Read(IndexRecord.BinaryDiffData, IndexRecord.DiffDataSize);
