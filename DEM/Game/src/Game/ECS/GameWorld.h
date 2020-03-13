@@ -122,6 +122,7 @@ public:
 	IComponentStorage* FindComponentStorage(CStrID ComponentName);
 
 	template<class T> bool  GetTemplateComponent(CStrID TemplateID, T& Out) const;
+	template<class T> bool  HasTemplateComponent(CStrID TemplateID) const;
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);
@@ -214,11 +215,11 @@ bool CGameWorld::GetTemplateComponent(CStrID TemplateID, T& Out) const
 {
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return false;
 
 	auto pRsrc = _ResMgr.FindResource(TemplateID);
 	if (!pRsrc) return false;
-	
+
 	auto pTpl = pRsrc->ValidateObject<CEntityTemplate>();
 	if (!pTpl) return false;
 
@@ -226,6 +227,21 @@ bool CGameWorld::GetTemplateComponent(CStrID TemplateID, T& Out) const
 	if (!pTpl->GetDesc().TryGet(pData, _StorageIDs[TypeIndex])) return false;
 
 	return static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get())->DeserializeComponentFromParams(Out, *pData);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+bool CGameWorld::HasTemplateComponent(CStrID TemplateID) const
+{
+	// Component type is not registered yet
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return false;
+
+	auto pRsrc = _ResMgr.FindResource(TemplateID);
+	if (!pRsrc) return false;
+
+	auto pTpl = pRsrc->ValidateObject<CEntityTemplate>();
+	return pTpl && pTpl->GetDesc().Has(_StorageIDs[TypeIndex]));
 }
 //---------------------------------------------------------------------
 

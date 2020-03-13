@@ -70,6 +70,12 @@ protected:
 	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
 	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
 
+	enum
+	{
+		Deleted = 0x01,           // Record existed in base but was deleted in a current state
+		OverridesTemplate  = 0x02 // Record doesn't use a template, all data is overridden
+	};
+
 	struct CIndexRecord
 	{
 		U64     BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
@@ -80,7 +86,7 @@ protected:
 		std::conditional_t<STORAGE_USE_DIFF_POOL<T>, void*, Data::CBufferMalloc> BinaryDiffData = {};
 
 		U32     DiffDataSize = 0;
-		bool    Deleted = false;
+		U8      Flags = 0;
 	};
 
 	CInnerStorage            _Data;
@@ -102,6 +108,15 @@ protected:
 		}
 
 		Record.DiffDataSize = 0;
+	}
+	//---------------------------------------------------------------------
+
+	bool HasBaseComponent(HEntity EntityID, const CIndexRecord& Record)
+	{
+		// Component has explicit base data, including template diffs
+		if (Record.BaseDataOffset != NO_BASE_DATA) return true;
+
+		// check if template exists and not explicitly erased
 	}
 	//---------------------------------------------------------------------
 
@@ -244,32 +259,42 @@ public:
 	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
 	{
-		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
+		CHandle Handle;
 		if (auto It = _IndexByEntity.find(EntityID))
-			return It->Value.ComponentHandle ? &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first : nullptr;
+		{
+			// Explicit component addition always overrides a template, even for existing components.
+			// If existing component is not loaded, this function doesn't load it and returns nullptr.
+			It->Value.Flags |= OverridesTemplate;
+			Handle = It->Value.ComponentHandle;
+		}
+		else
+		{
+			Handle = _Data.Allocate({ {}, EntityID });
+			if (Handle) _IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, Handle, {}, 0, OverridesTemplate });
+		}
 
-		auto Handle = _Data.Allocate();
-		CPair* pPair = _Data.GetValueUnsafe(Handle);
-		if (!pPair) return nullptr;
-
-		pPair->second = EntityID;
-		_IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, Handle, {} });
-		return &pPair->first;
+		return Handle ? &_Data.GetValueUnsafe(Handle)->first : nullptr;
 	}
 	//---------------------------------------------------------------------
 
 	// TODO: describe as a static interface part
 	bool Remove(HEntity EntityID)
 	{
+		// No record - nothing to remove
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) FAIL;
-		auto& IndexRecord = It->Value;
 
+		// Unload removed component
+		auto& IndexRecord = It->Value;
 		if (IndexRecord.ComponentHandle)
 		{
 			_Data.Free(IndexRecord.ComponentHandle);
 			IndexRecord.ComponentHandle = CInnerStorage::INVALID_HANDLE;
 		}
+
+		// If there is a template, we override it by explicitly deleting the component
+		//!!! A) delete runtime-created objects
+		//!!! B) delete templated components
 
 		if (IndexRecord.BaseDataOffset == NO_BASE_DATA)
 		{
@@ -278,7 +303,7 @@ public:
 		}
 		else
 		{
-			IndexRecord.Deleted = true;
+			IndexRecord.Flags |= Deleted;
 			ClearDiffBuffer(IndexRecord);
 		}
 
