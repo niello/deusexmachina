@@ -121,26 +121,32 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
+	// Restore the component instace from base data
 	bool LoadBaseComponent(HEntity EntityID, const CIndexRecord& Record, T& Component) const
 	{
-		if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
+		if (Record.BaseState == EComponentState::Explicit)
 		{
-			// If base data is available for this component, load it (also overrides a template)
-			DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
-			return true;
-		}
-		else
-		{
-			// Load component data from the template
-			// TODO: PERF - is worth it? Or always save base data / full diff (for runtime created entities)
-			// instead of storing / using template ID? Will freeze created entity, changes in a template
-			// will not affect it. Need profiling.
-			auto pEntity = _World.GetEntity(EntityID);
-			if (pEntity && pEntity->TemplateID)
+			// If base data is available for this component, load it (overrides a template)
+			if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
 			{
-				_World.GetTemplateComponent<T>(pEntity->TemplateID, Component);
+				DEM::BinaryFormat::Deserialize(IO::CBinaryReader(*pBaseStream), Component);
 				return true;
 			}
+		}
+		else if (Record.BaseState == EComponentState::Templated)
+		{
+			// Get the template and apply an optional diff on top of it
+			auto pEntity = _World.GetEntity(EntityID);
+			if (!pEntity || !_World.GetTemplateComponent<T>(pEntity->TemplateID, Component)) return false;
+			if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(*pBaseStream), Component);
+			return true;
+		}
+		else if (Record.State == EComponentState::Templated)
+		{
+			// Runtime-created template components base on templates
+			auto pEntity = _World.GetEntity(EntityID);
+			return pEntity && _World.GetTemplateComponent<T>(pEntity->TemplateID, Component);
 		}
 
 		return false;
@@ -165,10 +171,11 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
+	// Converts a component to binary diff against the base
 	void SaveComponent(HEntity EntityID, CIndexRecord& Record)
 	{
 		//!!!TODO: check if component is saveable and is dirty!
-		//???set dirty on non-const Find()? theonly case when component data can change, plus doesn't involve per-field comparisons
+		//???set dirty on non-const Find()? the only case when component data can change, plus doesn't involve per-field comparisons
 		//clear dirty flag here
 
 		n_assert2_dbg(Record.ComponentHandle, "CHandleArrayComponentStorage::SaveComponent() > call only for loaded components");
@@ -441,43 +448,45 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	// TODO: entity templates in Record.BaseDataOffset == NO_BASE_DATA
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		// Instead of cleaning all up, we only clean old diff data and current states affected by it
+		// Instead of cleaning all up, we only erase all diff data and unload components modified by it
 
 		std::vector<HEntity> RecordsToDelete;
 		RecordsToDelete.reserve(_Data.size() / 4);
 		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
 		{
-			NOT_IMPLEMENTED;
-			//if (Record.BaseDataOffset == NO_BASE_DATA)
-			//{
-			//	// Components without base and template were created in runtime and must be deleted entirely
-			//	RecordsToDelete.push_back(EntityID);
-			//}
-			//else if (Record.DiffDataSize || Record.Deleted)
-			//{
-			//	// Old diff info must be erased, components deleted in runtime must be restored
-			//	ClearDiffBuffer(Record);
-			//	Record.Deleted = false;
-			//}
-			//else
-			//{
-			//	// This record is already in a base state, can avoid recreation
-			//	return;
-			//}
+			// FIXME: would return correct info for runtime-created VS explicitly deleted?
+			// Both have Deleted state and empty base data. Need special base state?
+			// Write IsRuntimeCreated instead of HasBaseComponent? Or is the same?
+			if (HasBaseComponent(EntityID, Record))
+			{
+				// If already in a base state, do nothing. Component is not invalidated.
+				//???what if was not saved to DiffData/State yet, but the component has changed?
+				if (!Record.DiffDataSize && Record.State == Record.BaseState) return; // continue
 
-			// For all records affected a current state becomes inactual and must be unloaded
+				// Erase difference from base
+				ClearDiffBuffer(Record);
+				Record.State = Record.BaseState;
+			}
+			else
+			{
+				// Created at runtime and must be deleted entirely
+				RecordsToDelete.push_back(EntityID);
+			}
+
+			// Unload invalidated component
 			if (Record.ComponentHandle)
 			{
 				_Data.Free(Record.ComponentHandle);
-				Record.ComponentHandle = CInnerStorage::INVALID_HANDLE;
+				Record.ComponentHandle = CInnerStorage::INVALID_HANDLE; //???keep handle to save handle space? is index enough?
 			}
 		});
 
+		// TODO: could load new diffs, removing recreated records from RecordsToDelete, and then delete!
+		// Must then ensure that all diff data is updated in these records!
 		for (auto EntityID : RecordsToDelete)
 			_IndexByEntity.erase(EntityID);
 
@@ -486,9 +495,8 @@ public:
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			NOT_IMPLEMENTED;
-			//if (auto It = _IndexByEntity.find(EntityID))
-			//	It->Value.Deleted = true;
+			if (auto It = _IndexByEntity.find(EntityID))
+				It->Value.State = EComponentState::Deleted;
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
@@ -498,8 +506,10 @@ public:
 		while (EntityID)
 		{
 			auto It = _IndexByEntity.find(EntityID);
-			if (!It) It = _IndexByEntity.emplace(EntityID, CIndexRecord());
+			if (!It) It = _IndexByEntity.emplace(EntityID, CIndexRecord()); // Runtime-created record without base data
 			auto& IndexRecord = It->Value;
+
+			IndexRecord.State = static_cast<EComponentState>(In.Read<U8>()); // Explicit or Templated
 
 			In.Read(IndexRecord.DiffDataSize);
 
@@ -660,8 +670,8 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			NOT_IMPLEMENTED;
-			//if (Record.Deleted) Out.Write(EntityID.Raw);
+			if (Record.State == EComponentState::Deleted)
+				Out.Write(EntityID.Raw);
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
@@ -671,6 +681,7 @@ public:
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
 			if (Record.ComponentHandle) SaveComponent(EntityID, Record);
+			Out.Write(static_cast<U8>(Record.State));
 			WriteComponentDiff(Out, EntityID, Record);
 		});
 
@@ -684,17 +695,21 @@ public:
 	{
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
-			NOT_IMPLEMENTED;
-			//if (Record.ComponentHandle || Record.Deleted)
-			{
-			//	n_assert_dbg(!Record.ComponentHandle || !Record.Deleted);
-				return;
-			}
+			// Already validated
+			if (Record.ComponentHandle) return;
 
+			// Deleted, no component required
+			if (Record.State == EComponentState::Deleted) return;
+
+			// Not in a level being validated
 			auto pEntity = _World.GetEntity(EntityID);
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
+			// Templated component without a template, no component required, even if the diff is present
+			if (Record.State == EComponentState::Templated && !_World.HasTemplateComponent<T>(pEntity->TemplateID)) return;
+
 			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, Record)), EntityID });
+			n_assert_dbg(Record.ComponentHandle);
 		});
 	}
 	//---------------------------------------------------------------------
@@ -703,15 +718,17 @@ public:
 	{
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
+			// Already unloaded
 			if (!Record.ComponentHandle) return;
 
+			// Not in a level being invalidated
 			auto pEntity = _World.GetEntity(EntityID);
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
 			SaveComponent(EntityID, Record);
 
 			_Data.Free(Record.ComponentHandle);
-			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE; //???TODO: keep handle to save handle space?
+			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE; //???TODO: keep handle to save handle space? is index enough?
 		});
 	}
 	//---------------------------------------------------------------------

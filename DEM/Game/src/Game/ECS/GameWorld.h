@@ -214,6 +214,8 @@ typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 template<class T>
 bool CGameWorld::GetTemplateComponent(CStrID TemplateID, T& Out) const
 {
+	if (!TemplateID) return false;
+
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return false;
@@ -234,6 +236,8 @@ bool CGameWorld::GetTemplateComponent(CStrID TemplateID, T& Out) const
 template<class T>
 bool CGameWorld::HasTemplateComponent(CStrID TemplateID) const
 {
+	if (!TemplateID) return false;
+
 	// Component type is not registered yet
 	const auto TypeIndex = ComponentTypeIndex<T>;
 	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return false;
@@ -250,7 +254,7 @@ template<class T>
 bool CGameWorld::HasTemplateComponent(HEntity EntityID) const
 {
 	const CEntity* pEntity = GetEntity(EntityID);
-	return pEntity && pEntity->TemplateID && HasTemplateComponent<T>(pEntity->TemplateID);
+	return pEntity && HasTemplateComponent<T>(pEntity->TemplateID);
 }
 //---------------------------------------------------------------------
 
