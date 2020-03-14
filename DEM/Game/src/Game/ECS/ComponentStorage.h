@@ -459,9 +459,15 @@ public:
 			}
 			else
 			{
-				// If already in a base state, do nothing. Component is not invalidated.
-				//!!!FIXME: what if was not saved to DiffData/State yet, but the component has changed?!
-				if (!Record.DiffDataSize && Record.State == Record.BaseState) return; // continue
+				// If base and current states are the same, component may be unchanged
+				if (Record.State == Record.BaseState)
+				{
+					// Actualize diff data. Component can be changed but not saved yet.
+					if (Record.ComponentHandle) SaveComponent(EntityID, Record);
+
+					// If component is not changed, skip invalidation
+					if (!Record.DiffDataSize) return; // continue
+				}
 
 				// Erase difference from base
 				ClearDiffBuffer(Record);
