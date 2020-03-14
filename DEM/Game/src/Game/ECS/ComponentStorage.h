@@ -23,9 +23,10 @@ typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 
 enum class EComponentState : U8
 {
-	Templated,  // Component is loaded from the template with optional per-instance diff
-	Explicit,   // Component is explicitly added, template will be ignored
-	Deleted     // Component is explicitly deleted, template will be ignored
+	NoBase,    // Component is created at runtime (used only for base state)
+	Templated, // Component is loaded from the template with optional per-instance diff
+	Explicit,  // Component is explicitly added, template will be ignored
+	Deleted    // Component is explicitly deleted, template will be ignored
 };
 
 class IComponentStorage
@@ -83,12 +84,12 @@ protected:
 		// For diffs of known small maximum size memory chunks are allocated from the pool.
 		using TDiffData = std::conditional_t<STORAGE_USE_DIFF_POOL<T>, void*, Data::CBufferMalloc>;
 
-		U64             BaseDataOffset = NO_BASE_DATA;        // For on-demand base data loading, read-only
-		TDiffData       DiffData = {};                        // Diff between base and current components
+		U64             BaseDataOffset = NO_BASE_DATA;       // For on-demand base data loading, read-only
+		TDiffData       DiffData = {};                       // Diff between base and current components
 		U32             DiffDataSize = 0;
 		CHandle         ComponentHandle;
 		EComponentState State = EComponentState::Templated;
-		EComponentState BaseState = EComponentState::Deleted; // For on-demand base data loading, read-only
+		EComponentState BaseState = EComponentState::NoBase; // For on-demand base data loading, read-only
 	};
 
 	CInnerStorage            _Data;
@@ -110,14 +111,6 @@ protected:
 		}
 
 		Record.DiffDataSize = 0;
-	}
-	//---------------------------------------------------------------------
-
-	// Checks if loading base state will create a component for the entity
-	bool HasBaseComponent(HEntity EntityID, const CIndexRecord& Record)
-	{
-		return Record.BaseState == EComponentState::Explicit ||
-			(Record.BaseState == EComponentState::Templated && _World.HasTemplateComponent<T>(EntityID));
 	}
 	//---------------------------------------------------------------------
 
@@ -265,7 +258,7 @@ public:
 		{
 			Handle = _Data.Allocate({ {}, EntityID });
 			if (Handle) _IndexByEntity.emplace(EntityID,
-				CIndexRecord{ NO_BASE_DATA, {}, 0, Handle, EComponentState::Explicit, EComponentState::Deleted });
+				CIndexRecord{ NO_BASE_DATA, {}, 0, Handle, EComponentState::Explicit, EComponentState::NoBase });
 		}
 
 		return Handle ? &_Data.GetValueUnsafe(Handle)->first : nullptr;
@@ -287,16 +280,16 @@ public:
 			IndexRecord.ComponentHandle = CInnerStorage::INVALID_HANDLE;
 		}
 
-		if (HasBaseComponent(EntityID, IndexRecord))
+		if (IndexRecord.BaseSate == EComponentState::NoBase)
+		{
+			// Component won't be restored from base on loading, so can delete all info
+			_IndexByEntity.erase(It);
+		}
+		else
 		{
 			// To track diff properly we can't erase the whole record
 			IndexRecord.State = EComponentState::Deleted;
 			ClearDiffBuffer(IndexRecord);
-		}
-		else
-		{
-			// Component won't be restored from base on loading, so can delete all info
-			_IndexByEntity.erase(It);
 		}
 
 		OK;
@@ -458,10 +451,12 @@ public:
 		RecordsToDelete.reserve(_Data.size() / 4);
 		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
 		{
-			// FIXME: would return correct info for runtime-created VS explicitly deleted?
-			// Both have Deleted state and empty base data. Need special base state?
-			// Write IsRuntimeCreated instead of HasBaseComponent? Or is the same?
-			if (HasBaseComponent(EntityID, Record))
+			if (Record.BaseSate == EComponentState::NoBase)
+			{
+				// Created at runtime and must be deleted entirely
+				RecordsToDelete.push_back(EntityID);
+			}
+			else
 			{
 				// If already in a base state, do nothing. Component is not invalidated.
 				//???what if was not saved to DiffData/State yet, but the component has changed?
@@ -470,11 +465,6 @@ public:
 				// Erase difference from base
 				ClearDiffBuffer(Record);
 				Record.State = Record.BaseState;
-			}
-			else
-			{
-				// Created at runtime and must be deleted entirely
-				RecordsToDelete.push_back(EntityID);
 			}
 
 			// Unload invalidated component
