@@ -155,9 +155,9 @@ protected:
 		if (Record.DiffDataSize)
 		{
 			if constexpr (STORAGE_USE_DIFF_POOL<T>)
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, MAX_DIFF_SIZE)), Component);
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, Record.DiffDataSize)), Component);
 			else
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffData.GetSize())), Component);
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
 		}
 
 		return Component;
@@ -277,7 +277,7 @@ public:
 		if (IndexRecord.ComponentHandle)
 		{
 			_Data.Free(IndexRecord.ComponentHandle);
-			IndexRecord.ComponentHandle = CInnerStorage::INVALID_HANDLE;
+			IndexRecord.ComponentHandle = CHandle();
 		}
 
 		if (IndexRecord.BaseState == EComponentState::NoBase)
@@ -460,7 +460,7 @@ public:
 			else
 			{
 				// If already in a base state, do nothing. Component is not invalidated.
-				//???what if was not saved to DiffData/State yet, but the component has changed?
+				//!!!FIXME: what if was not saved to DiffData/State yet, but the component has changed?!
 				if (!Record.DiffDataSize && Record.State == Record.BaseState) return; // continue
 
 				// Erase difference from base
@@ -472,7 +472,7 @@ public:
 			if (Record.ComponentHandle)
 			{
 				_Data.Free(Record.ComponentHandle);
-				Record.ComponentHandle = CInnerStorage::INVALID_HANDLE; //???keep handle to save handle space? is index enough?
+				Record.ComponentHandle = CHandle(); //???keep handle to save handle space? is index enough?
 			}
 		});
 
@@ -571,7 +571,8 @@ public:
 					
 				if (Record.State == EComponentState::Templated)
 				{
-					// Record is templated and no template is present. Save nothing, ignore possible diff.
+					// Record is templated and no template is present. Diff has no meaning because there is nothing
+					// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
 					T TplComponent;
 					if (!_World.GetTemplateComponent<T>(pEntity->TemplateID, TplComponent)) return; // continue
 
@@ -726,7 +727,7 @@ public:
 			SaveComponent(EntityID, Record);
 
 			_Data.Free(Record.ComponentHandle);
-			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE; //???TODO: keep handle to save handle space? is index enough?
+			Record.ComponentHandle = CHandle(); //???TODO: keep handle to save handle space? is index enough?
 		});
 	}
 	//---------------------------------------------------------------------
