@@ -21,6 +21,13 @@ typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 // Component storage interface
 ///////////////////////////////////////////////////////////////////////
 
+enum class EComponentState : U8
+{
+	Templated,  // Component is loaded from the template with optional per-instance diff
+	Explicit,   // Component is explicitly added, template will be ignored
+	Deleted     // Component is explicitly deleted, template will be ignored
+};
+
 class IComponentStorage
 {
 protected:
@@ -70,23 +77,18 @@ protected:
 	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
 	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
 
-	enum
-	{
-		Deleted = 0x01,           // Record existed in base but was deleted in a current state
-		OverridesTemplate  = 0x02 // Record doesn't use a template, all data is overridden
-	};
-
 	struct CIndexRecord
 	{
-		U64     BaseDataOffset = NO_BASE_DATA;  // Base component data can be loaded on demand when building diffs
-		CHandle ComponentHandle;
-
 		// Pre-serialized diff allows to unload objects, saving both RAM and savegame time.
 		// For diffs of known small maximum size memory chunks are allocated from the pool.
-		std::conditional_t<STORAGE_USE_DIFF_POOL<T>, void*, Data::CBufferMalloc> BinaryDiffData = {};
+		using TDiffData = std::conditional_t<STORAGE_USE_DIFF_POOL<T>, void*, Data::CBufferMalloc>;
 
-		U32     DiffDataSize = 0;
-		U8      Flags = 0;
+		U64             BaseDataOffset = NO_BASE_DATA;        // For on-demand base data loading, read-only
+		TDiffData       DiffData = {};                        // Diff between base and current components
+		U32             DiffDataSize = 0;
+		CHandle         ComponentHandle;
+		EComponentState State = EComponentState::Templated;
+		EComponentState BaseState = EComponentState::Deleted; // For on-demand base data loading, read-only
 	};
 
 	CInnerStorage            _Data;
@@ -96,27 +98,26 @@ protected:
 	{
 		if constexpr (STORAGE_USE_DIFF_POOL<T>)
 		{
-			if (Record.BinaryDiffData)
+			if (Record.DiffData)
 			{
-				_DiffPool.Free(Record.BinaryDiffData);
-				Record.BinaryDiffData = nullptr;
+				_DiffPool.Free(Record.DiffData);
+				Record.DiffData = nullptr;
 			}
 		}
 		else
 		{
-			Record.BinaryDiffData.Resize(0);
+			Record.DiffData.Resize(0);
 		}
 
 		Record.DiffDataSize = 0;
 	}
 	//---------------------------------------------------------------------
 
+	// Checks if loading base state will create a component for the entity
 	bool HasBaseComponent(HEntity EntityID, const CIndexRecord& Record)
 	{
-		// Component has explicit base data, including template diffs
-		if (Record.BaseDataOffset != NO_BASE_DATA) return true;
-
-		// check if template exists and not explicitly erased
+		return Record.BaseState == EComponentState::Explicit ||
+			(Record.BaseState == EComponentState::Templated && _World.HasTemplateComponent<T>(EntityID));
 	}
 	//---------------------------------------------------------------------
 
@@ -155,9 +156,9 @@ protected:
 		if (Record.DiffDataSize)
 		{
 			if constexpr (STORAGE_USE_DIFF_POOL<T>)
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData, MAX_DIFF_SIZE)), Component);
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, MAX_DIFF_SIZE)), Component);
 			else
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.BinaryDiffData.GetConstPtr(), Record.BinaryDiffData.GetSize())), Component);
+				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffData.GetSize())), Component);
 		}
 
 		return Component;
@@ -180,8 +181,8 @@ protected:
 		bool HasDiff;
 		if constexpr (STORAGE_USE_DIFF_POOL<T>)
 		{
-			if (!Record.BinaryDiffData) Record.BinaryDiffData = _DiffPool.Allocate();
-			IO::CMemStream DiffStream(Record.BinaryDiffData, MAX_DIFF_SIZE);
+			if (!Record.DiffData) Record.DiffData = _DiffPool.Allocate();
+			IO::CMemStream DiffStream(Record.DiffData, MAX_DIFF_SIZE);
 			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
 			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
 		}
@@ -189,8 +190,8 @@ protected:
 		{
 			// Preallocate buffer
 			// TODO: vector-like allocation strategy inside a CBufferMalloc?
-			if (!Record.BinaryDiffData.GetSize()) Record.BinaryDiffData.Resize(512);
-			IO::CMemStream DiffStream(Record.BinaryDiffData);
+			if (!Record.DiffData.GetSize()) Record.DiffData.Resize(512);
+			IO::CMemStream DiffStream(Record.DiffData);
 			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
 			Record.DiffDataSize = static_cast<U32>(DiffStream.Tell());
 		}
@@ -207,24 +208,10 @@ protected:
 			if constexpr (!STORAGE_USE_DIFF_POOL<T>)
 			{
 				// Truncate if too many unused bytes left
-				if (Record.BinaryDiffData.GetSize() - Record.DiffDataSize > 400)
-					Record.BinaryDiffData.Resize(Record.DiffDataSize);
+				if (Record.DiffData.GetSize() - Record.DiffDataSize > 400)
+					Record.DiffData.Resize(Record.DiffDataSize);
 			}
 		}
-	}
-	//---------------------------------------------------------------------
-
-	bool IsComponentEqualToTemplate(HEntity EntityID, const T& Component) const
-	{
-		auto pEntity = _World.GetEntity(EntityID);
-		if (pEntity && pEntity->TemplateID)
-		{
-			T TplComponent;
-			if (_World.GetTemplateComponent<T>(pEntity->TemplateID, TplComponent) && Component == TplComponent)
-				return true;
-		}
-
-		return false;
 	}
 	//---------------------------------------------------------------------
 
@@ -236,9 +223,9 @@ protected:
 			Out.Write(EntityID.Raw);
 			Out.Write(Record.DiffDataSize);
 			if constexpr (STORAGE_USE_DIFF_POOL<T>)
-				Out.GetStream().Write(Record.BinaryDiffData, Record.DiffDataSize);
+				Out.GetStream().Write(Record.DiffData, Record.DiffDataSize);
 			else
-				Out.GetStream().Write(Record.BinaryDiffData.GetConstPtr(), Record.DiffDataSize);
+				Out.GetStream().Write(Record.DiffData.GetConstPtr(), Record.DiffDataSize);
 		}
 	}
 	//---------------------------------------------------------------------
@@ -264,13 +251,14 @@ public:
 		{
 			// Explicit component addition always overrides a template, even for existing components.
 			// If existing component is not loaded, this function doesn't load it and returns nullptr.
-			It->Value.Flags |= OverridesTemplate;
+			It->Value.State = EComponentState::Explicit;
 			Handle = It->Value.ComponentHandle;
 		}
 		else
 		{
 			Handle = _Data.Allocate({ {}, EntityID });
-			if (Handle) _IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, Handle, {}, 0, OverridesTemplate });
+			if (Handle) _IndexByEntity.emplace(EntityID,
+				CIndexRecord{ NO_BASE_DATA, {}, 0, Handle, EComponentState::Explicit, EComponentState::Deleted });
 		}
 
 		return Handle ? &_Data.GetValueUnsafe(Handle)->first : nullptr;
@@ -292,19 +280,16 @@ public:
 			IndexRecord.ComponentHandle = CInnerStorage::INVALID_HANDLE;
 		}
 
-		// If there is a template, we override it by explicitly deleting the component
-		//!!! A) delete runtime-created objects
-		//!!! B) delete templated components
-
-		if (IndexRecord.BaseDataOffset == NO_BASE_DATA)
+		if (HasBaseComponent(EntityID, IndexRecord))
 		{
-			// Component not present in a base can be deleted without a trace
-			_IndexByEntity.erase(It);
+			// To track diff properly we can't erase the whole record
+			IndexRecord.State = EComponentState::Deleted;
+			ClearDiffBuffer(IndexRecord);
 		}
 		else
 		{
-			IndexRecord.Flags |= Deleted;
-			ClearDiffBuffer(IndexRecord);
+			// Component won't be restored from base on loading, so can delete all info
+			_IndexByEntity.erase(It);
 		}
 
 		OK;
@@ -365,7 +350,8 @@ public:
 
 		if (auto pComponent = Find(EntityID))
 		{
-			if (IsComponentEqualToTemplate(EntityID, *pComponent)) return false;
+			NOT_IMPLEMENTED;
+			//if (IsComponentEqualToTemplate(EntityID, *pComponent)) return false;
 			DEM::ParamsFormat::Serialize(Out, *pComponent);
 			return true;
 		}
@@ -382,13 +368,14 @@ public:
 		if (!It) return false;
 		const auto& IndexRecord = It->Value;
 
-		if (IndexRecord.Deleted)
+		NOT_IMPLEMENTED;
+		//if (IndexRecord.Deleted)
 		{
 			// Explicitly save as deleted
 			Out = Data::CData();
 			return true;
 		}
-		else
+		//else
 		{
 			T BaseComponent;
 			LoadBaseComponent(EntityID, IndexRecord, BaseComponent);
@@ -405,9 +392,9 @@ public:
 				if (IndexRecord.DiffDataSize)
 				{
 					if constexpr (STORAGE_USE_DIFF_POOL<T>)
-						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.BinaryDiffData, MAX_DIFF_SIZE)), Component);
+						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.DiffData, MAX_DIFF_SIZE)), Component);
 					else
-						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.BinaryDiffData.GetConstPtr(), IndexRecord.BinaryDiffData.GetSize())), Component);
+						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.DiffData.GetConstPtr(), IndexRecord.DiffData.GetSize())), Component);
 				}
 
 				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
@@ -426,15 +413,27 @@ public:
 		_IndexByEntity.clear();
 		_Data.Clear();
 
+		// Load explicitly deleted records. This prevents templated component instantiation.
+		const auto DeletedCount = In.Read<U32>();
+		for (U32 i = 0; i < DeletedCount; ++i)
+		{
+			const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
+			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
+				CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Deleted, EComponentState::Deleted });
+		}
+
 		// We could create base components from data right here, but we will deserialize them on demand instead
-		const auto Count = In.Read<U32>();
-		for (U32 i = 0; i < Count; ++i)
+		const auto IndexCount = In.Read<U32>();
+		for (U32 i = 0; i < IndexCount; ++i)
 		{
 			const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
 			const auto OffsetInBase = In.Read<U64>();
-			_IndexByEntity.emplace(HEntity{ EntityIDRaw }, CIndexRecord{ OffsetInBase, CInnerStorage::INVALID_HANDLE, {} });
+			const auto ComponentState = static_cast<EComponentState>(In.Read<U8>());
+			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
+				CIndexRecord{ OffsetInBase, {}, 0, CHandle(), ComponentState, ComponentState });
 		}
 
+		// Skip binary data for now. Will be accessed through records' OffsetInBase
 		auto ComponentDataSkipOffset = In.Read<U64>();
 		In.GetStream().Seek(static_cast<I64>(ComponentDataSkipOffset), IO::ESeekOrigin::Seek_Begin);
 
@@ -453,22 +452,23 @@ public:
 		RecordsToDelete.reserve(_Data.size() / 4);
 		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.BaseDataOffset == NO_BASE_DATA)
-			{
-				// Components without base and template were created in runtime and must be deleted entirely
-				RecordsToDelete.push_back(EntityID);
-			}
-			else if (Record.DiffDataSize || Record.Deleted)
-			{
-				// Old diff info must be erased, components deleted in runtime must be restored
-				ClearDiffBuffer(Record);
-				Record.Deleted = false;
-			}
-			else
-			{
-				// This record is already in a base state, can avoid recreation
-				return;
-			}
+			NOT_IMPLEMENTED;
+			//if (Record.BaseDataOffset == NO_BASE_DATA)
+			//{
+			//	// Components without base and template were created in runtime and must be deleted entirely
+			//	RecordsToDelete.push_back(EntityID);
+			//}
+			//else if (Record.DiffDataSize || Record.Deleted)
+			//{
+			//	// Old diff info must be erased, components deleted in runtime must be restored
+			//	ClearDiffBuffer(Record);
+			//	Record.Deleted = false;
+			//}
+			//else
+			//{
+			//	// This record is already in a base state, can avoid recreation
+			//	return;
+			//}
 
 			// For all records affected a current state becomes inactual and must be unloaded
 			if (Record.ComponentHandle)
@@ -486,8 +486,9 @@ public:
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			if (auto It = _IndexByEntity.find(EntityID))
-				It->Value.Deleted = true;
+			NOT_IMPLEMENTED;
+			//if (auto It = _IndexByEntity.find(EntityID))
+			//	It->Value.Deleted = true;
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
@@ -497,20 +498,20 @@ public:
 		while (EntityID)
 		{
 			auto It = _IndexByEntity.find(EntityID);
-			if (!It) It = _IndexByEntity.emplace(EntityID, CIndexRecord{ NO_BASE_DATA, CInnerStorage::INVALID_HANDLE, {} });
+			if (!It) It = _IndexByEntity.emplace(EntityID, CIndexRecord());
 			auto& IndexRecord = It->Value;
 
 			In.Read(IndexRecord.DiffDataSize);
 
 			if constexpr (STORAGE_USE_DIFF_POOL<T>)
 			{
-				if (!IndexRecord.BinaryDiffData) IndexRecord.BinaryDiffData = _DiffPool.Allocate();
-				In.GetStream().Read(IndexRecord.BinaryDiffData, IndexRecord.DiffDataSize);
+				if (!IndexRecord.DiffData) IndexRecord.DiffData = _DiffPool.Allocate();
+				In.GetStream().Read(IndexRecord.DiffData, IndexRecord.DiffDataSize);
 			}
 			else
 			{
-				IndexRecord.BinaryDiffData.Resize(IndexRecord.DiffDataSize);
-				In.GetStream().Read(IndexRecord.BinaryDiffData.GetPtr(), IndexRecord.DiffDataSize);
+				IndexRecord.DiffData.Resize(IndexRecord.DiffDataSize);
+				In.GetStream().Read(IndexRecord.DiffData.GetPtr(), IndexRecord.DiffDataSize);
 			}
 
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
@@ -525,10 +526,19 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
+		struct CRecordData
+		{
+			HEntity         EntityID;
+			size_t          BinaryDataIndex;
+			EComponentState ComponentState;
+		};
+
 		std::vector<std::pair<Data::CBufferMalloc, U64>> BinaryData;
-		std::vector<std::pair<HEntity, size_t>> EntityToData;
+		std::vector<CRecordData> EntityToData;
+		std::vector<HEntity> DeletedRecords;
 		BinaryData.reserve(_IndexByEntity.size());
 		EntityToData.reserve(_IndexByEntity.size());
+		DeletedRecords.reserve(_IndexByEntity.size());
 
 		// Choose some reasonable initial size for the buffer to minimize reallocations.
 		// Max diff size is always more than max whole data size due to field IDs, so it is safe to choose it.
@@ -539,21 +549,48 @@ public:
 		{
 			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
 
-			if (Record.ComponentHandle)
+			if (Record.State == EComponentState::Explicit)
 			{
-				const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
-				if (!IsComponentEqualToTemplate(EntityID, Component))
-					DEM::BinaryFormat::Serialize(Intermediate, Component);
+				// Explicit component overrides the template, all its data is saved
+				DEM::BinaryFormat::Serialize(Intermediate,
+					Record.ComponentHandle ?
+					_Data.GetValueUnsafe(Record.ComponentHandle)->first :
+					LoadComponent(EntityID, Record));
 			}
-			else if (!Record.Deleted)
+			else
 			{
-				T Component = LoadComponent(EntityID, Record);
-				if (!IsComponentEqualToTemplate(EntityID, Component))
-					DEM::BinaryFormat::Serialize(Intermediate, Component);
+				// Templated and Deleted records save the difference against the template
+				auto pEntity = _World.GetEntity(EntityID);
+				if (!pEntity || !pEntity->TemplateID) return; // continue
+					
+				if (Record.State == EComponentState::Templated)
+				{
+					// Record is templated and no template is present. Save nothing, ignore possible diff.
+					T TplComponent;
+					if (!_World.GetTemplateComponent<T>(pEntity->TemplateID, TplComponent)) return; // continue
+
+					// Save only the difference against the template, so changes in defaulted fields will be propagated
+					// from templates to instances when template is changed but the world base file is not.
+					const bool HasDiff = DEM::BinaryFormat::SerializeDiff(Intermediate,
+						Record.ComponentHandle ?
+						_Data.GetValueUnsafe(Record.ComponentHandle)->first :
+						LoadComponent(EntityID, Record),
+						TplComponent);
+
+					// Component is equal to template, nothing to save
+					if (!HasDiff) return; // continue
+				}
+				else // EComponentState::Deleted
+				{
+					// Write explicit deletion only if template component is present, otherwise there is nothing to delete
+					if (_World.HasTemplateComponent<T>(pEntity->TemplateID))
+						DeletedRecords.push_back(EntityID);
+					return; // continue
+				}
 			}
 
 			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
-			if (!SerializedSize) return;
+			if (!SerializedSize) return; // continue
 
 			const void* pComponentData = Intermediate.GetStream().Map();
 
@@ -561,7 +598,7 @@ public:
 			for (size_t i = 0; i < BinaryData.size(); ++i)
 				if (!BinaryData[i].first.Compare(pComponentData, SerializedSize))
 				{
-					EntityToData.emplace_back(EntityID, i);
+					EntityToData.push_back({ EntityID, i, Record.State });
 					return;
 				}
 
@@ -569,27 +606,35 @@ public:
 			memcpy(NewBuffer.GetPtr(), pComponentData, SerializedSize);
 			BinaryData.emplace_back(std::move(NewBuffer), 0);
 
-			EntityToData.emplace_back(EntityID, BinaryData.size() - 1);
+			EntityToData.push_back({ EntityID, BinaryData.size() - 1, Record.State });
 		});
 
-		// Base offset of component data is current offset plus size of indexing table, written just below
-		U64 ComponentDataOffset = Out.GetStream().Tell() +
-			sizeof(U32) +
-			EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64)) +
-			sizeof(U64);
+		// Save explicitly deleted components
+		Out.Write(static_cast<U32>(DeletedRecords.size()));
+		for (const auto& EntityID : DeletedRecords)
+			Out.Write(EntityID.Raw);
 
+		// Build EntityID -> component data offset index table for template-overriding components and template diffs.
+		// Base offset of component data is current offset plus size of indexing table, written just below.
+		U64 ComponentDataOffset = Out.GetStream().Tell() +
+			sizeof(U32) + // Index table size
+			EntityToData.size() * (sizeof(decltype(HEntity::Raw)) + sizeof(U64) + sizeof(U8)) + // Index records
+			sizeof(U64); // Resulting ComponentDataOffset for skip
+
+		// Precalculate offsets per binary data record
 		for (auto& [Buffer, Offset] : BinaryData)
 		{
 			Offset = ComponentDataOffset;
 			ComponentDataOffset += Buffer.GetSize();
 		}
 
-		// Save index table of EntityID -> component data offset
+		// Save index table
 		Out.Write(static_cast<U32>(EntityToData.size()));
 		for (const auto& Record : EntityToData)
 		{
-			Out.Write(Record.first.Raw);
-			Out.Write(BinaryData[Record.second].second);
+			Out.Write(Record.EntityID.Raw);
+			Out.Write(BinaryData[Record.BinaryDataIndex].second);
+			Out.Write(static_cast<U8>(Record.ComponentState));
 		}
 
 		// Save component data skip offset
@@ -615,7 +660,8 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.Deleted) Out.Write(EntityID.Raw);
+			NOT_IMPLEMENTED;
+			//if (Record.Deleted) Out.Write(EntityID.Raw);
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
@@ -638,9 +684,10 @@ public:
 	{
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.ComponentHandle || Record.Deleted)
+			NOT_IMPLEMENTED;
+			//if (Record.ComponentHandle || Record.Deleted)
 			{
-				n_assert_dbg(!Record.ComponentHandle || !Record.Deleted);
+			//	n_assert_dbg(!Record.ComponentHandle || !Record.Deleted);
 				return;
 			}
 
@@ -664,7 +711,7 @@ public:
 			SaveComponent(EntityID, Record);
 
 			_Data.Free(Record.ComponentHandle);
-			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE;
+			Record.ComponentHandle = CInnerStorage::INVALID_HANDLE; //???TODO: keep handle to save handle space?
 		});
 	}
 	//---------------------------------------------------------------------
@@ -681,10 +728,6 @@ public:
 // Default storage for empty components (flags)
 ///////////////////////////////////////////////////////////////////////
 
-// NB: template is embedded into base data, template editing doesn't affect the base, repacking is required
-// FIXME: unify logic with stateful components, editing templates for them affects the base (really need? patches?)
-// FIXME: runtime-created entity also remains 'frozen' even if template changes
-// FIXME: if affecting prebuilt base on template change isn't required, can remove TemplateID field at all (but what about editors?!)
 template<typename T>
 class CEmptyComponentStorage : public IComponentStorage
 {
@@ -710,10 +753,12 @@ public:
 
 	DEM_FORCE_INLINE T* Add(HEntity EntityID)
 	{
+		// Explicitly added components always override templates.
+		// Components from templates are created through LoadComponentFromParams.
 		if (auto It = _IndexByEntity.find(EntityID))
-			It->Value |= PresentInCurrState;
+			It->Value |= (PresentInCurrState | OverridesTemplate);
 		else
-			_IndexByEntity.emplace(EntityID, PresentInCurrState);
+			_IndexByEntity.emplace(EntityID, PresentInCurrState | OverridesTemplate);
 		return &_SharedInstance;
 	}
 	//---------------------------------------------------------------------

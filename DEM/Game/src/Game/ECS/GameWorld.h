@@ -123,6 +123,7 @@ public:
 
 	template<class T> bool  GetTemplateComponent(CStrID TemplateID, T& Out) const;
 	template<class T> bool  HasTemplateComponent(CStrID TemplateID) const;
+	template<class T> bool  HasTemplateComponent(HEntity EntityID) const;
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);
@@ -241,7 +242,15 @@ bool CGameWorld::HasTemplateComponent(CStrID TemplateID) const
 	if (!pRsrc) return false;
 
 	auto pTpl = pRsrc->ValidateObject<CEntityTemplate>();
-	return pTpl && pTpl->GetDesc().Has(_StorageIDs[TypeIndex]));
+	return pTpl && pTpl->GetDesc().Has(_StorageIDs[TypeIndex]);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+bool CGameWorld::HasTemplateComponent(HEntity EntityID) const
+{
+	const CEntity* pEntity = GetEntity(EntityID);
+	return pEntity && pEntity->TemplateID && HasTemplateComponent<T>(pEntity->TemplateID);
 }
 //---------------------------------------------------------------------
 
