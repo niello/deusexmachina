@@ -40,18 +40,18 @@ public:
 	IComponentStorage(const CGameWorld& World) : _World(World) {}
 	virtual ~IComponentStorage() = default;
 
-	virtual bool   RemoveComponent(HEntity EntityID) = 0;
+	virtual bool RemoveComponent(HEntity EntityID) = 0;
 
-	virtual bool   LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) = 0;
-	virtual bool   SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
-	virtual bool   SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
-	virtual bool   LoadBase(IO::CBinaryReader& In) = 0;
-	virtual bool   LoadDiff(IO::CBinaryReader& In) = 0;
-	virtual bool   SaveAll(IO::CBinaryWriter& Out) const = 0;
-	virtual bool   SaveDiff(IO::CBinaryWriter& Out) = 0;
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) = 0;
+	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
+	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
+	virtual bool LoadBase(IO::CBinaryReader& In) = 0;
+	virtual bool LoadDiff(IO::CBinaryReader& In) = 0;
+	virtual bool SaveAll(IO::CBinaryWriter& Out) const = 0;
+	virtual bool SaveDiff(IO::CBinaryWriter& Out) = 0;
 
-	virtual void   ValidateComponents(CStrID LevelID) = 0;
-	virtual void   InvalidateComponents(CStrID LevelID) = 0;
+	virtual void ValidateComponents(CStrID LevelID) = 0;
+	virtual void InvalidateComponents(CStrID LevelID) = 0;
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -221,6 +221,7 @@ protected:
 		if (Record.DiffDataSize)
 		{
 			Out.Write(EntityID.Raw);
+			Out.Write(static_cast<U8>(Record.State));
 			Out.Write(Record.DiffDataSize);
 			if constexpr (STORAGE_USE_DIFF_POOL<T>)
 				Out.GetStream().Write(Record.DiffData, Record.DiffDataSize);
@@ -675,8 +676,12 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.State == EComponentState::Deleted)
+			if (Record.State == EComponentState::Deleted &&
+				Record.BaseState != EComponentState::Deleted &&
+				Record.BaseState != EComponentState::NoBase)
+			{
 				Out.Write(EntityID.Raw);
+			}
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
@@ -685,9 +690,11 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.ComponentHandle) SaveComponent(EntityID, Record);
-			Out.Write(static_cast<U8>(Record.State));
-			WriteComponentDiff(Out, EntityID, Record);
+			if (Record.State != EComponentState::Deleted)
+			{
+				if (Record.ComponentHandle) SaveComponent(EntityID, Record);
+				WriteComponentDiff(Out, EntityID, Record);
+			}
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
@@ -776,7 +783,7 @@ public:
 	DEM_FORCE_INLINE T* Add(HEntity EntityID)
 	{
 		// Explicitly added components always override templates.
-		// Components from templates are created through LoadComponentFromParams.
+		// Components from templates are created at template instantiation.
 		if (auto It = _IndexByEntity.find(EntityID))
 			It->Value |= (PresentInCurrState | OverridesTemplate);
 		else
