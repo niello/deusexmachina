@@ -280,7 +280,7 @@ public:
 			IndexRecord.ComponentHandle = CInnerStorage::INVALID_HANDLE;
 		}
 
-		if (IndexRecord.BaseSate == EComponentState::NoBase)
+		if (IndexRecord.BaseState == EComponentState::NoBase)
 		{
 			// Component won't be restored from base on loading, so can delete all info
 			_IndexByEntity.erase(It);
@@ -422,7 +422,8 @@ public:
 				CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Deleted, EComponentState::Deleted });
 		}
 
-		// We could create base components from data right here, but we will deserialize them on demand instead
+		// We could create base components from data right here, but we will deserialize them on demand instead.
+		// NB: purely templated components are not saved in a base, they are created on template instantiation.
 		const auto IndexCount = In.Read<U32>();
 		for (U32 i = 0; i < IndexCount; ++i)
 		{
@@ -451,7 +452,7 @@ public:
 		RecordsToDelete.reserve(_Data.size() / 4);
 		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.BaseSate == EComponentState::NoBase)
+			if (Record.BaseState == EComponentState::NoBase)
 			{
 				// Created at runtime and must be deleted entirely
 				RecordsToDelete.push_back(EntityID);
@@ -496,7 +497,12 @@ public:
 		while (EntityID)
 		{
 			auto It = _IndexByEntity.find(EntityID);
-			if (!It) It = _IndexByEntity.emplace(EntityID, CIndexRecord()); // Runtime-created record without base data
+			if (!It)
+			{
+				// NB: State, DiffData and DiffDataSize will be overwritten below
+				It = _IndexByEntity.emplace(EntityID,
+					CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, EComponentState::NoBase });
+			}
 			auto& IndexRecord = It->Value;
 
 			IndexRecord.State = static_cast<EComponentState>(In.Read<U8>()); // Explicit or Templated
@@ -577,11 +583,13 @@ public:
 						LoadComponent(EntityID, Record),
 						TplComponent);
 
-					// Component is equal to template, nothing to save
+					// Component is equal to template, save nothing. Will be created on template instantiation.
 					if (!HasDiff) return; // continue
 				}
-				else // EComponentState::Deleted
+				else // always EComponentState::Deleted, because State can never be EComponentState::NoBase
 				{
+					n_assert_dbg(Record.State != EComponentState::NoBase);
+
 					// Write explicit deletion only if template component is present, otherwise there is nothing to delete
 					if (_World.HasTemplateComponent<T>(pEntity->TemplateID))
 						DeletedRecords.push_back(EntityID);
