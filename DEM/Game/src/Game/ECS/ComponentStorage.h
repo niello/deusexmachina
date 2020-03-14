@@ -129,17 +129,22 @@ protected:
 		else if (Record.BaseState == EComponentState::Templated)
 		{
 			// Get the template and apply an optional diff on top of it
-			auto pEntity = _World.GetEntity(EntityID);
-			if (!pEntity || !_World.GetTemplateComponent<T>(pEntity->TemplateID, Component)) return false;
-			if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
-				DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(*pBaseStream), Component);
-			return true;
+			if (auto pTplData = _World.GetTemplateComponentData<T>(EntityID))
+			{
+				DEM::ParamsFormat::Deserialize(*pTplData, Component);
+				if (auto pBaseStream = _World.GetBaseStream(Record.BaseDataOffset))
+					DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(*pBaseStream), Component);
+				return true;
+			}
 		}
 		else if (Record.State == EComponentState::Templated)
 		{
 			// Runtime-created template components base on templates
-			auto pEntity = _World.GetEntity(EntityID);
-			return pEntity && _World.GetTemplateComponent<T>(pEntity->TemplateID, Component);
+			if (auto pTplData = _World.GetTemplateComponentData<T>(EntityID))
+			{
+				DEM::ParamsFormat::Deserialize(*pTplData, Component);
+				return true;
+			}
 		}
 
 		return false;
@@ -320,14 +325,6 @@ public:
 	//---------------------------------------------------------------------
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
-	//---------------------------------------------------------------------
-
-	bool DeserializeComponentFromParams(T& Out, const Data::CData& In) const
-	{
-		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
-		DEM::ParamsFormat::Deserialize(In, Out);
-		return true;
-	}
 	//---------------------------------------------------------------------
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) override
@@ -578,18 +575,22 @@ public:
 					
 				if (Record.State == EComponentState::Templated)
 				{
-					// Record is templated and no template is present. Diff has no meaning because there is nothing
+					// If record is templated and no template is present, diff has no meaning because there is nothing
 					// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
-					T TplComponent;
-					if (!_World.GetTemplateComponent<T>(pEntity->TemplateID, TplComponent)) return; // continue
+					bool HasDiff = false;
+					if (auto pTplData = _World.GetTemplateComponentData<T>(pEntity->TemplateID))
+					{
+						T TplComponent;
+						DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
 
-					// Save only the difference against the template, so changes in defaulted fields will be propagated
-					// from templates to instances when template is changed but the world base file is not.
-					const bool HasDiff = DEM::BinaryFormat::SerializeDiff(Intermediate,
-						Record.ComponentHandle ?
-						_Data.GetValueUnsafe(Record.ComponentHandle)->first :
-						LoadComponent(EntityID, Record),
-						TplComponent);
+						// Save only the difference against the template, so changes in defaulted fields will be propagated
+						// from templates to instances when template is changed but the world base file is not.
+						HasDiff = DEM::BinaryFormat::SerializeDiff(Intermediate,
+							Record.ComponentHandle ?
+							_Data.GetValueUnsafe(Record.ComponentHandle)->first :
+							LoadComponent(EntityID, Record),
+							TplComponent);
+					}
 
 					// Component is equal to template, save nothing. Will be created on template instantiation.
 					if (!HasDiff) return; // continue
@@ -599,7 +600,7 @@ public:
 					n_assert_dbg(Record.State != EComponentState::NoBase);
 
 					// Write explicit deletion only if template component is present, otherwise there is nothing to delete
-					if (_World.HasTemplateComponent<T>(pEntity->TemplateID))
+					if (_World.GetTemplateComponentData<T>(pEntity->TemplateID))
 						DeletedRecords.push_back(EntityID);
 					return; // continue
 				}
@@ -718,7 +719,7 @@ public:
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
 			// Templated component without a template, no component required, even if the diff is present
-			if (Record.State == EComponentState::Templated && !_World.HasTemplateComponent<T>(pEntity->TemplateID)) return;
+			if (Record.State == EComponentState::Templated && !_World.GetTemplateComponentData<T>(pEntity->TemplateID)) return;
 
 			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, Record)), EntityID });
 			n_assert_dbg(Record.ComponentHandle);
@@ -823,15 +824,6 @@ public:
 	//---------------------------------------------------------------------
 
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
-	//---------------------------------------------------------------------
-
-	bool DeserializeComponentFromParams(T& Out, const Data::CData& In) const
-	{
-		// No data to deserialize, Out always is up to date, return value is used for control
-		if (auto pBoolData = pData->As<bool>()) return *pBoolData;
-		else if (auto pParamsData = pData->As<Data::PParams>()) return (*pParamsData).IsValidPtr();
-		return false;
-	}
 	//---------------------------------------------------------------------
 
 	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool /*Replace*/) override
