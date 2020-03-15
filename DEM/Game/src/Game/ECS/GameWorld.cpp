@@ -16,7 +16,6 @@ CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 //---------------------------------------------------------------------
 
 // TODO: notify systems
-//???how to change state after loading base, diff?
 void CGameWorld::Start()
 {
 	if (_State != EState::Running)
@@ -28,7 +27,6 @@ void CGameWorld::Start()
 //---------------------------------------------------------------------
 
 // TODO: notify systems
-//???how to change state after loading base, diff?
 void CGameWorld::Stop()
 {
 	// Can't start or stop the world in a BaseLoaded state
@@ -56,28 +54,48 @@ void CGameWorld::FinalizeLoading()
 }
 //---------------------------------------------------------------------
 
+void CGameWorld::ClearAll(UPTR NewInitialCapacity)
+{
+	_BaseStream.Reset();
+	_EntitiesBase.Clear(NewInitialCapacity);
+	_Entities.Clear(NewInitialCapacity);
+	for (auto& Storage : _Storages)
+		Storage->ClearAll();
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::ClearDiff()
+{
+	if (_State != EState::BaseLoaded && !_EntitiesBase.empty())
+	{
+		_Entities.Clear(_EntitiesBase.size());
+		for (auto& Storage : _Storages)
+			Storage->ClearDiff();
+
+		_State = EState::BaseLoaded;
+	}
+}
+//---------------------------------------------------------------------
+
 // Params loader doesn't support a separate base state. Use for editors and debug only.
 // Diff will be populated with the whole world data.
 void CGameWorld::LoadBase(const Data::CParams& In)
 {
-	_BaseStream.Reset();
-
 	// TODO: notify affected systems / entities about state destruction
 
 	// Erase all previous data in the world
-	_EntitiesBase.Clear(In.GetCount());
-	_Entities.Clear(In.GetCount());
-	// FIXME: erase components
+	ClearAll(In.GetCount());
 
 	const CStrID sidID("ID");
 	const CStrID sidLevel("Level");
 	const CStrID sidTpl("Tpl");
 	const CStrID sidActive("Active");
 
+	// Unlike in the binary format, in HRD the world is stored per-entity
 	for (const auto& Param : In)
 	{
 		const auto& SEntity = *Param.GetValue<Data::PParams>();
-		auto RawHandle = SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE);
+		const auto RawHandle = SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE);
 
 		CEntity NewEntity;
 		NewEntity.LevelID = SEntity.Get<CStrID>(sidLevel, CStrID::Empty);
@@ -85,15 +103,16 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 		NewEntity.Name = Param.GetName();
 		NewEntity.IsActive = SEntity.Get(sidActive, true);
 
+		// Create an entity itself
 		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
 		if (!EntityID) continue;
 
 		// Load explicitly declared components
 		for (const auto& Param : SEntity)
 			if (auto pStorage = FindComponentStorage(Param.GetName()))
-				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
+				pStorage->AddFromParams(EntityID, Param.GetRawValue());
 
-		// Load non-overridden components from the template
+		// Load purely templated components
 		InstantiateTemplate(EntityID, NewEntity.TemplateID);
 	}
 
@@ -157,22 +176,23 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 	// TODO: notify affected systems / entities about state destruction
 
 	// Clear previous diff info, keep base intact
-	if (_State != EState::BaseLoaded)
-		_Entities.Clear(_EntitiesBase.size());
+	ClearDiff();
 
 	for (const auto& EntityParam : In)
 	{
 		if (EntityParam.GetRawValue().IsVoid())
 		{
+			// Entity is explicitly deleted. Remove it and all its components.
 			// Deleted entity is always named as __UID. Skip leading "__".
-			auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(EntityParam.GetName().CStr() + 2));
+			const auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(EntityParam.GetName().CStr() + 2));
 			DeleteEntity({ RawHandle });
 		}
 		else
 		{
 			const auto& SEntity = *EntityParam.GetValue<Data::PParams>();
-			auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
+			const auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
 
+			// Entity is created or modified, load its state
 			HEntity EntityID{ RawHandle };
 			auto pEntity = _Entities.GetValue(EntityID);
 			if (pEntity)
@@ -194,10 +214,9 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 
 				pEntity = _Entities.GetValueUnsafe(EntityID);
 				if (!pEntity) continue;
-
-				// TODO: instatiate template, then merge state from saved components
 			}
 
+			// Load component diffs
 			for (const auto& ComponentParam : SEntity)
 			{
 				auto pStorage = FindComponentStorage(ComponentParam.GetName());
@@ -206,10 +225,10 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 				if (ComponentParam.GetRawValue().IsVoid())
 					pStorage->RemoveComponent(EntityID);
 				else
-					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue());
+					pStorage->AddFromParams(EntityID, ComponentParam.GetRawValue());
 			}
 
-			// Load non-overridden components from the template
+			// Load purely templated components
 			InstantiateTemplate(EntityID, pEntity->TemplateID);
 		}
 	}
@@ -276,7 +295,7 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 			pStorage->LoadDiff(In);
 	}
 
-	// Load non-overridden components from templates
+	// Load purely templated components
 	for (const auto& Entity : _Entities)
 	{
 		// FIXME: must get for free when iterating an array

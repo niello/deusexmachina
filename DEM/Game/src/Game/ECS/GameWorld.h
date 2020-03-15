@@ -66,8 +66,8 @@ public:
 	void Stop();
 	void FinalizeLoading();
 
-	//void ClearAll();
-	//void ClearDiff();
+	void ClearAll(UPTR NewInitialCapacity = 0);
+	void ClearDiff();
 	void LoadBase(const Data::CParams& In);
 	void LoadBase(IO::PStream InStream);
 	void LoadDiff(const Data::CParams& In);

@@ -45,13 +45,15 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) = 0;
 	virtual void InstantiateTemplate(HEntity EntityID) = 0;
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
+	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool LoadBase(IO::CBinaryReader& In) = 0;
 	virtual bool LoadDiff(IO::CBinaryReader& In) = 0;
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const = 0;
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) = 0;
+	virtual void ClearAll() = 0;
+	virtual void ClearDiff() = 0;
 
 	virtual void ValidateComponents(CStrID LevelID) = 0;
 	virtual void InvalidateComponents(CStrID LevelID) = 0;
@@ -338,15 +340,35 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
+	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		auto It = _IndexByEntity.find(EntityID);
-		T* pComponent = It ? &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first : Add(EntityID);
-		if (!pComponent) return false;
+		if (!In.IsA<Data::PParams>()) return false;
 
-		DEM::ParamsFormat::Deserialize(In, *pComponent);
+		// Distinguish templated components from explicit
+		const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
+		const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
+
+		// Add a record. Will replace existing one.
+		auto It = _IndexByEntity.find(EntityID);
+		if (It)
+			It->Value.State = State;
+		else
+			It = _IndexByEntity.emplace(EntityID,
+				CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), State, EComponentState::NoBase });
+
+		// Params format isn't supported as an intermediate storage, so we must create a component immediately.
+		// NB: Component must be default-created for LoadBaseComponent to work correctly.
+		T Component;
+		LoadBaseComponent(EntityID, It->Value, Component);
+		DEM::ParamsFormat::Deserialize(In, Component);
+
+		if (It->Value.ComponentHandle)
+			_Data.GetValueUnsafe(It->Value.ComponentHandle)->first = std::move(Component);
+		else
+			It->Value.ComponentHandle = _Data.Allocate({ std::move(Component), EntityID });
+
 		return true;
 	}
 	//---------------------------------------------------------------------
@@ -415,10 +437,7 @@ public:
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		// Erase all existing data, both base and diff
-		for (auto& IndexRecord : _IndexByEntity)
-			ClearDiffBuffer(IndexRecord);
-		_IndexByEntity.clear();
-		_Data.Clear();
+		ClearAll();
 
 		// Load explicitly deleted records. This prevents templated component instantiation.
 		const auto DeletedCount = In.Read<U32>();
@@ -454,45 +473,7 @@ public:
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		// Instead of cleaning all up, we only erase all diff data and unload components modified by it
-
-		std::vector<HEntity> RecordsToDelete;
-		RecordsToDelete.reserve(_Data.size() / 4);
-		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
-		{
-			if (Record.BaseState == EComponentState::NoBase)
-			{
-				// Created at runtime and must be deleted entirely
-				RecordsToDelete.push_back(EntityID);
-			}
-			else
-			{
-				// If base and current states are the same, component may be unchanged
-				if (Record.State == Record.BaseState)
-				{
-					// Actualize diff data. Component can be changed but not saved yet.
-					if (Record.ComponentHandle) SaveComponent(EntityID, Record);
-
-					// If component is not changed, skip invalidation
-					if (!Record.DiffDataSize) return; // continue
-				}
-
-				// Erase difference from base
-				ClearDiffBuffer(Record);
-				Record.State = Record.BaseState;
-			}
-
-			// Unload invalidated component
-			if (Record.ComponentHandle)
-			{
-				_Data.Free(Record.ComponentHandle);
-				Record.ComponentHandle = CHandle(); //???keep handle to save handle space? is index enough?
-			}
-		});
-
-		// TODO: could load new diffs, removing recreated records from RecordsToDelete, and then delete!
-		// Must then ensure that all diff data is updated in these records!
-		for (auto EntityID : RecordsToDelete)
-			_IndexByEntity.erase(EntityID);
+		ClearDiff();
 
 		// Load deleted component list, mark corresponding records as deleted
 
@@ -713,6 +694,58 @@ public:
 	}
 	//---------------------------------------------------------------------
 
+	virtual void ClearAll() override
+	{
+		for (auto& IndexRecord : _IndexByEntity)
+			ClearDiffBuffer(IndexRecord);
+		_IndexByEntity.clear();
+		_Data.Clear();
+	}
+	//---------------------------------------------------------------------
+
+	virtual void ClearDiff() override
+	{
+		std::vector<HEntity> RecordsToDelete;
+		RecordsToDelete.reserve(_Data.size() / 4);
+		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
+		{
+			if (Record.BaseState == EComponentState::NoBase)
+			{
+				// Created at runtime and must be deleted entirely
+				RecordsToDelete.push_back(EntityID);
+			}
+			else
+			{
+				// If base and current states are the same, component may be unchanged
+				if (Record.State == Record.BaseState)
+				{
+					// Actualize diff data. Component may be changed but not saved yet.
+					if (Record.ComponentHandle) SaveComponent(EntityID, Record);
+
+					// If component is not changed, skip invalidation
+					if (!Record.DiffDataSize) return; // continue
+				}
+
+				// Erase difference from base
+				ClearDiffBuffer(Record);
+				Record.State = Record.BaseState;
+			}
+
+			// Unload invalidated component
+			if (Record.ComponentHandle)
+			{
+				_Data.Free(Record.ComponentHandle);
+				Record.ComponentHandle = CHandle(); //???keep handle to save handle space? is index enough?
+			}
+		});
+
+		// TODO: in LoadDiff could load new diffs, removing recreated records from RecordsToDelete, and then delete!
+		// Must then ensure that all diff data is updated in these records!
+		for (auto EntityID : RecordsToDelete)
+			_IndexByEntity.erase(EntityID);
+	}
+	//---------------------------------------------------------------------
+
 	virtual void ValidateComponents(CStrID LevelID) override
 	{
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
@@ -841,7 +874,7 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
+	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		// Support bool 'true' or section (empty is enough)
 		if (auto pBoolData = In.As<bool>())
@@ -993,6 +1026,18 @@ public:
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
 		return true;
+	}
+	//---------------------------------------------------------------------
+
+	virtual void ClearAll() override
+	{
+		NOT_IMPLEMENTED;
+	}
+	//---------------------------------------------------------------------
+
+	virtual void ClearDiff() override
+	{
+		NOT_IMPLEMENTED;
 	}
 	//---------------------------------------------------------------------
 
