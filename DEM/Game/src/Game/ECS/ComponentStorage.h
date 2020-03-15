@@ -379,7 +379,7 @@ public:
 
 		if (auto pComponent = Find(EntityID))
 		{
-			NOT_IMPLEMENTED;
+			NOT_IMPLEMENTED; //!!!don't forget about __UseTpl!
 			//if (IsComponentEqualToTemplate(EntityID, *pComponent)) return false;
 			DEM::ParamsFormat::Serialize(Out, *pComponent);
 			return true;
@@ -397,7 +397,7 @@ public:
 		if (!It) return false;
 		const auto& IndexRecord = It->Value;
 
-		NOT_IMPLEMENTED;
+		NOT_IMPLEMENTED; //!!!don't forget about __UseTpl!
 		//if (IndexRecord.Deleted)
 		{
 			// Explicitly save as deleted

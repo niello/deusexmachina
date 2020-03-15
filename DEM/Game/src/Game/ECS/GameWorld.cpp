@@ -43,7 +43,7 @@ void CGameWorld::FinalizeLoading()
 	// The world is loaded without a diff. Copy base state into the actual one.
 	for (const auto& BaseEntity : _EntitiesBase)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
 
 		const auto RealEntityID = _Entities.AllocateWithHandle(EntityID.Raw, BaseEntity);
@@ -92,28 +92,30 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 	const CStrID sidActive("Active");
 
 	// Unlike in the binary format, in params the world is stored per-entity
-	for (const auto& Param : In)
+	for (const auto& EntityParam : In)
 	{
-		const auto& SEntity = *Param.GetValue<Data::PParams>();
-		const auto RawHandle = SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE);
+		const auto& SEntity = *EntityParam.GetValue<Data::PParams>();
+		const auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
 
 		CEntity NewEntity;
 		NewEntity.LevelID = SEntity.Get<CStrID>(sidLevel, CStrID::Empty);
 		NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
-		NewEntity.Name = Param.GetName();
+		NewEntity.Name = EntityParam.GetName();
 		NewEntity.IsActive = SEntity.Get(sidActive, true);
 
 		// Create an entity itself
-		auto EntityID = _Entities.AllocateWithHandle(static_cast<CEntityStorage::THandleValue>(RawHandle), std::move(NewEntity));
+		auto EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
 		if (!EntityID) continue;
 
+		CEntity* pEntity = _Entities.GetValueUnsafe(EntityID);
+
 		// Load explicitly declared components
-		for (const auto& Param : SEntity)
-			if (auto pStorage = FindComponentStorage(Param.GetName()))
-				pStorage->AddFromParams(EntityID, Param.GetRawValue());
+		for (const auto& ComponentParam : SEntity)
+			if (auto pStorage = FindComponentStorage(ComponentParam.GetName()))
+				pStorage->AddFromParams(EntityID, ComponentParam.GetRawValue());
 
 		// Load purely templated components
-		InstantiateTemplate(EntityID, NewEntity.TemplateID);
+		InstantiateTemplate(EntityID, pEntity->TemplateID);
 	}
 
 	_State = EState::Stopped;
@@ -213,7 +215,6 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 				n_assert_dbg(EntityID);
 
 				pEntity = _Entities.GetValueUnsafe(EntityID);
-				if (!pEntity) continue;
 			}
 
 			// Load component diffs
@@ -277,7 +278,7 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	// Copy unchanged entities from the base state
 	for (const auto& BaseEntity : _EntitiesBase)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto BaseEntityID = _EntitiesBase.GetHandle(&BaseEntity);
 		if (!_Entities.GetValue(BaseEntityID) && Deleted.find(BaseEntityID) == Deleted.cend())
 		{
@@ -298,7 +299,7 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	// Load purely templated components
 	for (const auto& Entity : _Entities)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 		InstantiateTemplate(EntityID, Entity.TemplateID);
 	}
@@ -347,7 +348,7 @@ bool CGameWorld::SaveAll(Data::CParams& Out)
 	// Unlike in the binary format, in params the world is stored per-entity
 	for (const auto& Entity : _Entities)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 		SaveEntityToParams(Out, EntityID, Entity, nullptr);
 	}
@@ -363,7 +364,7 @@ bool CGameWorld::SaveAll(IO::CBinaryWriter& Out)
 	Out.Write(static_cast<uint32_t>(_Entities.size()));
 	for (const auto& Entity : _Entities)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
 		//???save only index part in SaveAll? may clear generation counter!
@@ -389,7 +390,7 @@ bool CGameWorld::SaveDiff(Data::CParams& Out)
 	// Save entities deleted from the level as explicit nulls
 	for (const auto& BaseEntity : _EntitiesBase)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
 		if (!GetEntity(EntityID))
 			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), Data::CData());
@@ -398,7 +399,7 @@ bool CGameWorld::SaveDiff(Data::CParams& Out)
 	// Save modified / added entities and their components
 	for (const auto& Entity : _Entities)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 		SaveEntityToParams(Out, EntityID, Entity, _EntitiesBase.GetValue(EntityID));
 	}
@@ -414,7 +415,7 @@ bool CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 	// Save a list of entities deleted from the level
 	for (const auto& BaseEntity : _EntitiesBase)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _EntitiesBase.GetHandle(&BaseEntity);
 		if (!GetEntity(EntityID))
 			Out << EntityID.Raw;
@@ -426,7 +427,7 @@ bool CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 	// Save diffs for all changed and added entities in actual list
 	for (const auto& Entity : _Entities)
 	{
-		// FIXME: must get for free when iterating an array
+		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
 
 		const auto CurrPos = Out.GetStream().Tell();
