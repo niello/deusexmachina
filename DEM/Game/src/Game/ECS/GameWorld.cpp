@@ -91,7 +91,7 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 	const CStrID sidTpl("Tpl");
 	const CStrID sidActive("Active");
 
-	// Unlike in the binary format, in HRD the world is stored per-entity
+	// Unlike in the binary format, in params the world is stored per-entity
 	for (const auto& Param : In)
 	{
 		const auto& SEntity = *Param.GetValue<Data::PParams>();
@@ -183,7 +183,7 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 		if (EntityParam.GetRawValue().IsVoid())
 		{
 			// Entity is explicitly deleted. Remove it and all its components.
-			// Deleted entity is always named as __UID. Skip leading "__".
+			// Entity is always named as __UID. Skip leading "__".
 			const auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(EntityParam.GetName().CStr() + 2));
 			DeleteEntity({ RawHandle });
 		}
@@ -307,37 +307,49 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 }
 //---------------------------------------------------------------------
 
+// Saves full data or diff only, dependent on whether pBaseEntity is specified or not
+bool CGameWorld::SaveEntityToParams(Data::CParams& Out, HEntity EntityID, const CEntity& Entity, const CEntity* pBaseEntity) const
+{
+	n_assert2(!pBaseEntity || Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change at runtime!");
+
+	Data::CData SEntity;
+	DEM::ParamsFormat::SerializeDiff(SEntity, Entity, pBaseEntity ? *pBaseEntity : CEntity());
+
+	for (const auto& [ComponentID, Storage] : _StorageMap)
+	{
+		Data::CData SComponent;
+
+		const bool HasComponentInfo = pBaseEntity ?
+			Storage->SaveComponentDiffToParams(EntityID, SComponent) :
+			Storage->SaveComponentToParams(EntityID, SComponent);
+
+		if (HasComponentInfo)
+		{
+			if (SEntity.IsVoid()) SEntity = Data::PParams(n_new(Data::CParams()));
+			SEntity.GetValue<Data::PParams>()->Set(ComponentID, std::move(SComponent));
+		}
+	}
+
+	// Diff saving is requested, and no difference detected
+	if (pBaseEntity && SEntity.IsVoid()) return false;
+
+	Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()),
+		SEntity.IsVoid() ? Data::PParams(n_new(Data::CParams())) : std::move(SEntity.GetValue<Data::PParams>()));
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 bool CGameWorld::SaveAll(Data::CParams& Out)
 {
 	if (_State == EState::BaseLoaded) return false;
 
-	const CStrID sidID("ID");
-	const CStrID sidLevel("Level");
-	const CStrID sidTpl("Tpl");
-	const CStrID sidActive("Active");
-
+	// Unlike in the binary format, in params the world is stored per-entity
 	for (const auto& Entity : _Entities)
 	{
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
-
-		Data::PParams SEntity = n_new(Data::CParams(4));
-		SEntity->Set(sidID, static_cast<int>(EntityID.Raw));
-		SEntity->Set(sidLevel, Entity.LevelID);
-		if (Entity.TemplateID) SEntity->Set(sidTpl, Entity.TemplateID);
-		if (!Entity.IsActive) SEntity->Set(sidActive, false);
-
-		for (const auto& [ComponentID, Storage] : _StorageMap)
-		{
-			Data::CData SComponent;
-			if (Storage->SaveComponentToParams(EntityID, SComponent))
-				SEntity->Set(ComponentID, std::move(SComponent));
-		}
-
-		if (Entity.Name)
-			Out.Set(Entity.Name, std::move(SEntity));
-		else
-			Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
+		SaveEntityToParams(Out, EntityID, Entity, nullptr);
 	}
 
 	return true;
@@ -374,11 +386,6 @@ bool CGameWorld::SaveDiff(Data::CParams& Out)
 {
 	if (_State == EState::BaseLoaded) return false;
 
-	const CStrID sidID("ID");
-	const CStrID sidLevel("Level");
-	const CStrID sidTpl("Tpl");
-	const CStrID sidActive("Active");
-
 	// Save entities deleted from the level as explicit nulls
 	for (const auto& BaseEntity : _EntitiesBase)
 	{
@@ -393,50 +400,7 @@ bool CGameWorld::SaveDiff(Data::CParams& Out)
 	{
 		// FIXME: must get for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
-
-		Data::PParams SEntity;
-
-		if (auto pBaseEntity = _EntitiesBase.GetValue(EntityID))
-		{
-			// Existing entity, save modified part
-			n_assert2(Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change in runtime!");
-			if (Entity.LevelID != pBaseEntity->LevelID) SEntity->Set(sidLevel, Entity.LevelID);
-			if (Entity.IsActive != pBaseEntity->IsActive) SEntity->Set(sidActive, Entity.IsActive);
-			for (const auto& [ComponentID, Storage] : _StorageMap)
-			{
-				Data::CData SComponent;
-				if (Storage->SaveComponentDiffToParams(EntityID, SComponent))
-				{
-					if (!SEntity) SEntity = n_new(Data::CParams());
-					SEntity->Set(ComponentID, std::move(SComponent));
-				}
-			}
-		}
-		else
-		{
-			// New entity, save full data
-			SEntity = n_new(Data::CParams());
-			if (Entity.LevelID) SEntity->Set(sidLevel, Entity.LevelID);
-			if (Entity.TemplateID) SEntity->Set(sidTpl, Entity.TemplateID);
-			if (!Entity.IsActive) SEntity->Set(sidActive, false);
-			for (const auto& [ComponentID, Storage] : _StorageMap)
-			{
-				Data::CData SComponent;
-				if (Storage->SaveComponentToParams(EntityID, SComponent))
-					SEntity->Set(ComponentID, std::move(SComponent));
-			}
-		}
-
-		// Save entity only if something changed
-		if (SEntity)
-		{
-			SEntity->Set(sidID, static_cast<int>(EntityID.Raw));
-
-			if (Entity.Name)
-				Out.Set(Entity.Name, std::move(SEntity));
-			else
-				Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()), std::move(SEntity));
-		}
+		SaveEntityToParams(Out, EntityID, Entity, _EntitiesBase.GetValue(EntityID));
 	}
 
 	return true;

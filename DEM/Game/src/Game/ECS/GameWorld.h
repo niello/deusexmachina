@@ -51,6 +51,7 @@ protected:
 	std::unordered_map<CStrID, PGameLevel> _Levels;
 	//???accumulated COIs for levels?
 
+	bool SaveEntityToParams(Data::CParams& Out, HEntity EntityID, const CEntity& Entity, const CEntity* pBaseEntity) const;
 	bool InstantiateTemplate(HEntity EntityID, CStrID TemplateID);
 
 	template<typename TComponent, typename... Components>
