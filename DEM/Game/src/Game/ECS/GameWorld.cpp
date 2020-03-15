@@ -91,7 +91,7 @@ void CGameWorld::LoadBase(const Data::CParams& In)
 		// Load explicitly declared components
 		for (const auto& Param : SEntity)
 			if (auto pStorage = FindComponentStorage(Param.GetName()))
-				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue(), true);
+				pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue());
 
 		// Load non-overridden components from the template
 		InstantiateTemplate(EntityID, NewEntity.TemplateID);
@@ -206,7 +206,7 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 				if (ComponentParam.GetRawValue().IsVoid())
 					pStorage->RemoveComponent(EntityID);
 				else
-					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue(), true);
+					pStorage->LoadComponentFromParams(EntityID, ComponentParam.GetRawValue());
 			}
 
 			// Load non-overridden components from the template
@@ -608,8 +608,13 @@ bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID)
 
 	// Existing components override the template
 	for (const auto& Param : pTpl->GetDesc())
+	{
+		// Template can't request removal of a component
+		n_assert_dbg(!Param.GetRawValue().IsVoid());
+
 		if (auto pStorage = FindComponentStorage(Param.GetName()))
-			pStorage->LoadComponentFromParams(EntityID, Param.GetRawValue(), false);
+			pStorage->InstantiateTemplate(EntityID);
+	}
 
 	return true;
 }

@@ -12,6 +12,8 @@
 // TComponentTraits determine what type of storage which component type uses.
 // Effective and compact handle array storage is used by default.
 
+// TODO: describe static interface, or make all virtual and use explicit static dispatching TStorage::Method where possible?
+
 namespace DEM::Game
 {
 class CGameWorld;
@@ -41,8 +43,9 @@ public:
 	virtual ~IComponentStorage() = default;
 
 	virtual bool RemoveComponent(HEntity EntityID) = 0;
+	virtual void InstantiateTemplate(HEntity EntityID) = 0;
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) = 0;
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const = 0;
 	virtual bool LoadBase(IO::CBinaryReader& In) = 0;
@@ -151,6 +154,7 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
+	// Restores a component from base data and binary diff
 	T LoadComponent(HEntity EntityID, const CIndexRecord& Record) const
 	{
 		T Component;
@@ -248,14 +252,13 @@ public:
 
 	virtual ~CHandleArrayComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
 
-	// TODO: describe as a static interface part
 	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
 	{
 		CHandle Handle;
 		if (auto It = _IndexByEntity.find(EntityID))
 		{
-			// Explicit component addition always overrides a template, even for existing components.
+			// Always set the current state of existing component to requested value.
 			// If existing component is not loaded, this function doesn't load it and returns nullptr.
 			It->Value.State = EComponentState::Explicit;
 			Handle = It->Value.ComponentHandle;
@@ -271,7 +274,6 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	// TODO: describe as a static interface part
 	bool Remove(HEntity EntityID)
 	{
 		// No record - nothing to remove
@@ -302,7 +304,6 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
@@ -313,7 +314,6 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	// TODO: describe as a static interface part
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
 		auto It = _IndexByEntity.find(EntityID);
@@ -324,16 +324,25 @@ public:
 	}
 	//---------------------------------------------------------------------
 
+	//???leave only virtual one and use static dispatch? TStorage::Remove() won't be virtual.
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool Replace) override
+	virtual void InstantiateTemplate(HEntity EntityID) override
+	{
+		// Don't replace existing records, only add purely templated ones, that aren't loaded in LoadBase
+		if (_IndexByEntity.find(EntityID)) return;
+
+		_IndexByEntity.emplace(EntityID,
+			CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, EComponentState::NoBase });
+	}
+	//---------------------------------------------------------------------
+
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
 		auto It = _IndexByEntity.find(EntityID);
-		if (It && !Replace) return false;
-
 		T* pComponent = It ? &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first : Add(EntityID);
 		if (!pComponent) return false;
 
@@ -826,7 +835,13 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In, bool /*Replace*/) override
+	virtual void InstantiateTemplate(HEntity EntityID) override
+	{
+		NOT_IMPLEMENTED;
+	}
+	//---------------------------------------------------------------------
+
+	virtual bool LoadComponentFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		// Support bool 'true' or section (empty is enough)
 		if (auto pBoolData = In.As<bool>())
