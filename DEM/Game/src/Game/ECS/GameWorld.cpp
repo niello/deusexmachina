@@ -56,6 +56,8 @@ void CGameWorld::FinalizeLoading()
 
 void CGameWorld::ClearAll(UPTR NewInitialCapacity)
 {
+	// TODO: notify affected systems / entities about state destruction
+
 	_BaseStream.Reset();
 	_EntitiesBase.Clear(NewInitialCapacity);
 	_Entities.Clear(NewInitialCapacity);
@@ -66,14 +68,84 @@ void CGameWorld::ClearAll(UPTR NewInitialCapacity)
 
 void CGameWorld::ClearDiff()
 {
-	if (_State != EState::BaseLoaded && !_EntitiesBase.empty())
-	{
-		_Entities.Clear(_EntitiesBase.size());
-		for (auto& Storage : _Storages)
-			Storage->ClearDiff();
+	if (_State == EState::BaseLoaded || _EntitiesBase.empty()) return;
 
-		_State = EState::BaseLoaded;
+	// TODO: notify affected systems / entities about state destruction
+
+	_Entities.Clear(_EntitiesBase.size());
+	for (auto& Storage : _Storages)
+		Storage->ClearDiff();
+
+	_State = EState::BaseLoaded;
+}
+//---------------------------------------------------------------------
+
+void CGameWorld::LoadEntityFromParams(const Data::CParam& In, bool Diff)
+{
+	// Entity is always named as __UID. Skip leading "__".
+	const auto RawHandle = static_cast<CEntityStorage::THandleValue>(std::atoi(In.GetName().CStr() + 2));
+
+	HEntity EntityID{ RawHandle };
+	CEntity* pEntity = Diff ? _Entities.GetValue(EntityID) : nullptr;
+	if (!pEntity)
+	{
+		EntityID = _Entities.AllocateWithHandle(RawHandle, {});
+		n_assert_dbg(EntityID);
+
+		pEntity = _Entities.GetValueUnsafe(EntityID);
 	}
+
+	// Load entity diff or full data
+	DEM::ParamsFormat::Deserialize(In.GetRawValue(), *pEntity);
+
+	// Load component diffs or full data
+	const Data::CParams& SEntity = *In.GetValue<Data::PParams>();
+	for (const auto& ComponentParam : SEntity)
+	{
+		auto pStorage = FindComponentStorage(ComponentParam.GetName());
+		if (!pStorage) continue;
+
+		if (ComponentParam.GetRawValue().IsVoid())
+			pStorage->RemoveComponent(EntityID);
+		else
+			pStorage->AddFromParams(EntityID, ComponentParam.GetRawValue());
+	}
+
+	// Load purely templated components
+	InstantiateTemplate(EntityID, pEntity->TemplateID);
+}
+//---------------------------------------------------------------------
+
+// Saves full data or diff only, dependent on whether pBaseEntity is specified or not
+bool CGameWorld::SaveEntityToParams(Data::CParams& Out, HEntity EntityID, const CEntity& Entity, const CEntity* pBaseEntity) const
+{
+	n_assert2(!pBaseEntity || Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change at runtime!");
+
+	Data::CData SEntity;
+	DEM::ParamsFormat::SerializeDiff(SEntity, Entity, pBaseEntity ? *pBaseEntity : CEntity());
+
+	for (const auto& [ComponentID, Storage] : _StorageMap)
+	{
+		Data::CData SComponent;
+
+		const bool HasComponentInfo = pBaseEntity ?
+			Storage->SaveComponentDiffToParams(EntityID, SComponent) :
+			Storage->SaveComponentToParams(EntityID, SComponent);
+
+		if (HasComponentInfo)
+		{
+			if (SEntity.IsVoid()) SEntity = Data::PParams(n_new(Data::CParams()));
+			SEntity.GetValue<Data::PParams>()->Set(ComponentID, std::move(SComponent));
+		}
+	}
+
+	// Diff saving is requested, and no difference detected
+	if (pBaseEntity && SEntity.IsVoid()) return false;
+
+	Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()),
+		SEntity.IsVoid() ? Data::PParams(n_new(Data::CParams())) : std::move(SEntity.GetValue<Data::PParams>()));
+
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -81,42 +153,12 @@ void CGameWorld::ClearDiff()
 // Diff will be populated with the whole world data.
 void CGameWorld::LoadBase(const Data::CParams& In)
 {
-	// TODO: notify affected systems / entities about state destruction
-
 	// Erase all previous data in the world
 	ClearAll(In.GetCount());
 
-	const CStrID sidID("ID");
-	const CStrID sidLevel("Level");
-	const CStrID sidTpl("Tpl");
-	const CStrID sidActive("Active");
-
 	// Unlike in the binary format, in params the world is stored per-entity
 	for (const auto& EntityParam : In)
-	{
-		const auto& SEntity = *EntityParam.GetValue<Data::PParams>();
-		const auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
-
-		CEntity NewEntity;
-		NewEntity.LevelID = SEntity.Get<CStrID>(sidLevel, CStrID::Empty);
-		NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
-		NewEntity.Name = EntityParam.GetName();
-		NewEntity.IsActive = SEntity.Get(sidActive, true);
-
-		// Create an entity itself
-		auto EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
-		if (!EntityID) continue;
-
-		CEntity* pEntity = _Entities.GetValueUnsafe(EntityID);
-
-		// Load explicitly declared components
-		for (const auto& ComponentParam : SEntity)
-			if (auto pStorage = FindComponentStorage(ComponentParam.GetName()))
-				pStorage->AddFromParams(EntityID, ComponentParam.GetRawValue());
-
-		// Load purely templated components
-		InstantiateTemplate(EntityID, pEntity->TemplateID);
-	}
+		LoadEntityFromParams(EntityParam, false);
 
 	_State = EState::Stopped;
 }
@@ -170,13 +212,6 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 
 void CGameWorld::LoadDiff(const Data::CParams& In)
 {
-	const CStrID sidID("ID");
-	const CStrID sidLevel("Level");
-	const CStrID sidTpl("Tpl");
-	const CStrID sidActive("Active");
-
-	// TODO: notify affected systems / entities about state destruction
-
 	// Clear previous diff info, keep base intact
 	ClearDiff();
 
@@ -191,46 +226,7 @@ void CGameWorld::LoadDiff(const Data::CParams& In)
 		}
 		else
 		{
-			const auto& SEntity = *EntityParam.GetValue<Data::PParams>();
-			const auto RawHandle = static_cast<CEntityStorage::THandleValue>(SEntity.Get<int>(sidID, CEntityStorage::INVALID_HANDLE_VALUE));
-
-			// Entity is created or modified, load its state
-			HEntity EntityID{ RawHandle };
-			auto pEntity = _Entities.GetValue(EntityID);
-			if (pEntity)
-			{
-				pEntity->Name = EntityParam.GetName();
-				SEntity.TryGet<CStrID>(pEntity->LevelID, sidLevel);
-				SEntity.TryGet<bool>(pEntity->IsActive, sidActive);
-			}
-			else
-			{
-				CEntity NewEntity;
-				NewEntity.LevelID = SEntity.Get<CStrID>(sidLevel, CStrID::Empty);
-				NewEntity.TemplateID = SEntity.Get<CStrID>(sidTpl, CStrID::Empty);
-				NewEntity.Name = EntityParam.GetName();
-				NewEntity.IsActive = SEntity.Get(sidActive, true);
-
-				EntityID = _Entities.AllocateWithHandle(RawHandle, std::move(NewEntity));
-				n_assert_dbg(EntityID);
-
-				pEntity = _Entities.GetValueUnsafe(EntityID);
-			}
-
-			// Load component diffs
-			for (const auto& ComponentParam : SEntity)
-			{
-				auto pStorage = FindComponentStorage(ComponentParam.GetName());
-				if (!pStorage) continue;
-
-				if (ComponentParam.GetRawValue().IsVoid())
-					pStorage->RemoveComponent(EntityID);
-				else
-					pStorage->AddFromParams(EntityID, ComponentParam.GetRawValue());
-			}
-
-			// Load purely templated components
-			InstantiateTemplate(EntityID, pEntity->TemplateID);
+			LoadEntityFromParams(EntityParam, true);
 		}
 	}
 
@@ -305,39 +301,6 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	}
 
 	_State = EState::Stopped;
-}
-//---------------------------------------------------------------------
-
-// Saves full data or diff only, dependent on whether pBaseEntity is specified or not
-bool CGameWorld::SaveEntityToParams(Data::CParams& Out, HEntity EntityID, const CEntity& Entity, const CEntity* pBaseEntity) const
-{
-	n_assert2(!pBaseEntity || Entity.TemplateID == pBaseEntity->TemplateID, "Entity template must never change at runtime!");
-
-	Data::CData SEntity;
-	DEM::ParamsFormat::SerializeDiff(SEntity, Entity, pBaseEntity ? *pBaseEntity : CEntity());
-
-	for (const auto& [ComponentID, Storage] : _StorageMap)
-	{
-		Data::CData SComponent;
-
-		const bool HasComponentInfo = pBaseEntity ?
-			Storage->SaveComponentDiffToParams(EntityID, SComponent) :
-			Storage->SaveComponentToParams(EntityID, SComponent);
-
-		if (HasComponentInfo)
-		{
-			if (SEntity.IsVoid()) SEntity = Data::PParams(n_new(Data::CParams()));
-			SEntity.GetValue<Data::PParams>()->Set(ComponentID, std::move(SComponent));
-		}
-	}
-
-	// Diff saving is requested, and no difference detected
-	if (pBaseEntity && SEntity.IsVoid()) return false;
-
-	Out.Set(CStrID(("__" + std::to_string(EntityID.Raw)).c_str()),
-		SEntity.IsVoid() ? Data::PParams(n_new(Data::CParams())) : std::move(SEntity.GetValue<Data::PParams>()));
-
-	return true;
 }
 //---------------------------------------------------------------------
 
