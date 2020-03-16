@@ -805,15 +805,14 @@ class CEmptyComponentStorage : public IComponentStorage
 {
 protected:
 
-	enum
+	struct CIndexRecord
 	{
-		PresentInCurrState = 0x01,
-		PresentInBaseState = 0x02,
-		OverridesTemplate  = 0x04
+		EComponentState State = EComponentState::Templated;
+		EComponentState BaseState = EComponentState::NoBase;
 	};
 
-	CEntityMap<U8>    _IndexByEntity;  // EntityID to flags
-	T                 _SharedInstance; // It is enough to have one instance of component without data
+	CEntityMap<CIndexRecord> _IndexByEntity;  // EntityID to flags
+	T                        _SharedInstance; // It is enough to have one instance of component without data
 
 public:
 
@@ -828,9 +827,9 @@ public:
 		// Explicitly added components always override templates.
 		// Components from templates are created at template instantiation.
 		if (auto It = _IndexByEntity.find(EntityID))
-			It->Value |= (PresentInCurrState | OverridesTemplate);
+			It->Value.State = EComponentState::Explicit;
 		else
-			_IndexByEntity.emplace(EntityID, PresentInCurrState | OverridesTemplate);
+			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::NoBase });
 		return &_SharedInstance;
 	}
 	//---------------------------------------------------------------------
@@ -840,12 +839,10 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
 
-		//???template? remove only if no binding to template?
-		//???or on template change must explicitly process?
-		if (It->Value == PresentInCurrState)
+		if (It->Value.BaseState == EComponentState::NoBase)
 			_IndexByEntity.erase(It);
 		else
-			It->Value &= ~PresentInCurrState;
+			It->Value.State = EComponentState::Deleted;
 
 		return true;
 	}
@@ -854,14 +851,14 @@ public:
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		return (It && (It->Value & PresentInCurrState)) ? &_SharedInstance : nullptr;
+		return (It && It->Value.State != EComponentState::Deleted) ? &_SharedInstance : nullptr;
 	}
 	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		return (It && (It->Value & PresentInCurrState)) ? &_SharedInstance : nullptr;
+		return (It && It->Value.State != EComponentState::Deleted) ? &_SharedInstance : nullptr;
 	}
 	//---------------------------------------------------------------------
 
@@ -870,33 +867,42 @@ public:
 
 	virtual void InstantiateTemplate(HEntity EntityID) override
 	{
-		NOT_IMPLEMENTED;
+		// Don't replace existing records, only add purely templated ones, that aren't loaded in LoadBase
+		if (_IndexByEntity.find(EntityID)) return;
+		_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Templated, EComponentState::NoBase });
 	}
 	//---------------------------------------------------------------------
 
+	// FIXME: need explicit saving of templated? There is no tpl diff for empty components!
 	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) override
 	{
-		// Support bool 'true' or section (empty is enough)
+		EComponentState State;
+
+		// Support bool 'true' or section
 		if (auto pBoolData = In.As<bool>())
 		{
 			if (!*pBoolData) return false;
+			State = EComponentState::Explicit;
 		}
 		else if (auto pParamsData = In.As<Data::PParams>())
 		{
-			if (!*pParamsData) return false;
+			const bool Templated = (*pParamsData)->Get(CStrID("__UseTpl"), false);
+			const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
 		}
-		else
-		{
-			return false;
-		}
+		else return false;
 
-		Add(EntityID);
+		if (It = _IndexByEntity.find(EntityID))
+			It->Value.State = State;
+		else
+			_IndexByEntity.emplace(EntityID, CIndexRecord{ State, EComponentState::NoBase });
+
 		return true;
 	}
 	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
+		NOT_IMPLEMENTED;
 		if (!Find(EntityID)) return false;
 		Out = true;
 		return true;
@@ -905,6 +911,7 @@ public:
 
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
+		NOT_IMPLEMENTED;
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
 
@@ -1031,13 +1038,24 @@ public:
 
 	virtual void ClearAll() override
 	{
-		NOT_IMPLEMENTED;
+		_IndexByEntity.clear();
 	}
 	//---------------------------------------------------------------------
 
 	virtual void ClearDiff() override
 	{
-		NOT_IMPLEMENTED;
+		std::vector<HEntity> RecordsToDelete;
+		RecordsToDelete.reserve(_Data.size() / 4);
+		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
+		{
+			if (Record.BaseState == EComponentState::NoBase)
+				RecordsToDelete.push_back(EntityID);
+			else
+				Record.State = Record.BaseState;
+		});
+
+		for (auto EntityID : RecordsToDelete)
+			_IndexByEntity.erase(EntityID);
 	}
 	//---------------------------------------------------------------------
 
