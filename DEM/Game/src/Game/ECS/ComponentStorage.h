@@ -873,22 +873,11 @@ public:
 	}
 	//---------------------------------------------------------------------
 
-	// FIXME: need explicit saving of templated? There is no tpl diff for empty components!
 	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) override
 	{
 		EComponentState State;
-
-		// Support bool 'true' or section
-		if (auto pBoolData = In.As<bool>())
-		{
-			if (!*pBoolData) return false;
-			State = EComponentState::Explicit;
-		}
-		else if (auto pParamsData = In.As<Data::PParams>())
-		{
-			const bool Templated = (*pParamsData)->Get(CStrID("__UseTpl"), false);
-			const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
-		}
+		if (In.IsVoid()) State = EComponentState::Deleted;
+		else if (In.IsA<bool>()) State = In.GetValue<bool>() ? EComponentState::Explicit : EComponentState::Templated;
 		else return false;
 
 		if (It = _IndexByEntity.find(EntityID))
@@ -902,31 +891,32 @@ public:
 
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const override
 	{
-		NOT_IMPLEMENTED;
-		if (!Find(EntityID)) return false;
-		Out = true;
-		return true;
+		auto It = _IndexByEntity.find(EntityID);
+		if (!It) return false;
+		switch (It->Value.State)
+		{
+			case EComponentState::Deleted: Out.Clear(); return true;
+			case EComponentState::Explicit: Out = true; return true;
+		}
+		return false; // Templated records aren't saved to full data
 	}
 	//---------------------------------------------------------------------
 
 	virtual bool SaveComponentDiffToParams(HEntity EntityID, Data::CData& Out) const override
 	{
-		NOT_IMPLEMENTED;
 		auto It = _IndexByEntity.find(EntityID);
-		if (!It) return false;
-
-		const bool HasBase = (It->Value & PresentInBaseState);
-		const bool HasCurr = (It->Value & PresentInCurrState);
-		if (HasBase == HasCurr) return false;
-
-		if (HasBase) Out = Data::CData();
-		else Out = true;
-
-		return true;
+		if (!It || It->Value.BaseState == It->Value.State) return false;
+		if (It->Value.BaseState == EComponentState::NoBase && It->Value.State == EComponentState::Deleted) return false;
+		switch (It->Value.State)
+		{
+			case EComponentState::Deleted: Out.Clear(); return true;
+			case EComponentState::Templated: Out = false; return true;
+			case EComponentState::Explicit: Out = true; return true;
+		}
+		return false;
 	}
 	//---------------------------------------------------------------------
 
-	// All non-explicit components will be registered from template instantiation
 	virtual bool LoadBase(IO::CBinaryReader& In) override
 	{
 		_IndexByEntity.clear();
@@ -936,7 +926,7 @@ public:
 		while (EntityID)
 		{
 			n_assert_dbg(!_IndexByEntity.find(EntityID));
-			_IndexByEntity.emplace(EntityID, OverridesTemplate);
+			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Deleted, EComponentState::Deleted });
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
@@ -945,11 +935,9 @@ public:
 		while (EntityID)
 		{
 			n_assert_dbg(!_IndexByEntity.find(EntityID));
-			_IndexByEntity.emplace(EntityID, OverridesTemplate | PresentInBaseState);
+			_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::Explicit });
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
-
-		// TODO: LoadDiff / FinalizeLoading must actualize PresentInCurrState
 
 		return true;
 	}
@@ -957,14 +945,8 @@ public:
 
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
-		// First set the current state from the base one
-		_IndexByEntity.ForEach([](HEntity EntityID, U8& Flags)
-		{
-			if (Flags & PresentInBaseState)
-				Flags |= PresentInCurrState;
-			else
-				Flags &= ~PresentInCurrState;
-		});
+		// Set the current state from the base one
+		ClearDiff();
 
 		// Then apply deletions from the diff
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
@@ -988,19 +970,19 @@ public:
 
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
-		// Save only records that must override templates. Deleted, than added.
-
-		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		// Explicitly deleted
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, const IndexRecord& Record)
 		{
-			if ((Flags & OverridesTemplate) && !(Flags | PresentInCurrState))
+			if (Record.State == EComponentState::Deleted)
 				Out << EntityID.Raw;
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
-		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		// Explicitly added
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, const IndexRecord& Record)
 		{
-			if ((Flags & OverridesTemplate) && (Flags | PresentInCurrState))
+			if (Record.State == EComponentState::Explicit)
 				Out << EntityID.Raw;
 		});
 
@@ -1012,6 +994,17 @@ public:
 
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
+		//auto It = _IndexByEntity.find(EntityID);
+		//if (!It || It->Value.BaseState == It->Value.State) return false;
+		//if (It->Value.BaseState == EComponentState::NoBase && It->Value.State == EComponentState::Deleted) return false;
+		//switch (It->Value.State)
+		//{
+		//	case EComponentState::Deleted: Out.Clear(); return true;
+		//	case EComponentState::Templated: Out = false; return true;
+		//	case EComponentState::Explicit: Out = true; return true;
+		//}
+		//return false;
+
 		// Save the list of deleted components
 
 		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
