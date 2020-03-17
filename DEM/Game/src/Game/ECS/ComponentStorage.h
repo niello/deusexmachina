@@ -23,12 +23,13 @@ typedef std::unique_ptr<class IComponentStorage> PComponentStorage;
 // Component storage interface
 ///////////////////////////////////////////////////////////////////////
 
+// NB: values are saved to file, don't change them
 enum class EComponentState : U8
 {
-	NoBase,    // Component is created at runtime (used only for base state)
-	Templated, // Component is loaded from the template with optional per-instance diff
-	Explicit,  // Component is explicitly added, template will be ignored
-	Deleted    // Component is explicitly deleted, template will be ignored
+	NoBase = 0, // Component is created at runtime (used only for base state)
+	Templated,  // Component is loaded from the template with optional per-instance diff
+	Explicit,   // Component is explicitly added, template will be ignored
+	Deleted     // Component is explicitly deleted, template will be ignored
 };
 
 class IComponentStorage
@@ -880,7 +881,7 @@ public:
 		else if (In.IsA<bool>()) State = In.GetValue<bool>() ? EComponentState::Explicit : EComponentState::Templated;
 		else return false;
 
-		if (It = _IndexByEntity.find(EntityID))
+		if (auto It = _IndexByEntity.find(EntityID))
 			It->Value.State = State;
 		else
 			_IndexByEntity.emplace(EntityID, CIndexRecord{ State, EComponentState::NoBase });
@@ -945,22 +946,18 @@ public:
 
 	virtual bool LoadDiff(IO::CBinaryReader& In) override
 	{
-		// Set the current state from the base one
 		ClearDiff();
 
-		// Then apply deletions from the diff
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			Remove(EntityID);
-			EntityID = { In.Read<decltype(HEntity::Raw)>() };
-		}
+			const auto ComponentState = static_cast<EComponentState>(In.Read<U8>());
 
-		// And finally apply additions
-		EntityID = { In.Read<decltype(HEntity::Raw)>() };
-		while (EntityID)
-		{
-			Add(EntityID);
+			if (auto It = _IndexByEntity.find(EntityID))
+				It->Value.State = ComponentState;
+			else
+				_IndexByEntity.emplace(EntityID, CIndexRecord{ ComponentState, EComponentState::NoBase });
+
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
@@ -971,7 +968,7 @@ public:
 	virtual bool SaveAll(IO::CBinaryWriter& Out) const override
 	{
 		// Explicitly deleted
-		_IndexByEntity.ForEach([&Out](HEntity EntityID, const IndexRecord& Record)
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, const CIndexRecord& Record)
 		{
 			if (Record.State == EComponentState::Deleted)
 				Out << EntityID.Raw;
@@ -980,7 +977,7 @@ public:
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
 		// Explicitly added
-		_IndexByEntity.ForEach([&Out](HEntity EntityID, const IndexRecord& Record)
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, const CIndexRecord& Record)
 		{
 			if (Record.State == EComponentState::Explicit)
 				Out << EntityID.Raw;
@@ -994,33 +991,13 @@ public:
 
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
-		//auto It = _IndexByEntity.find(EntityID);
-		//if (!It || It->Value.BaseState == It->Value.State) return false;
-		//if (It->Value.BaseState == EComponentState::NoBase && It->Value.State == EComponentState::Deleted) return false;
-		//switch (It->Value.State)
-		//{
-		//	case EComponentState::Deleted: Out.Clear(); return true;
-		//	case EComponentState::Templated: Out = false; return true;
-		//	case EComponentState::Explicit: Out = true; return true;
-		//}
-		//return false;
-
-		// Save the list of deleted components
-
-		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, const CIndexRecord& Record)
 		{
-			if ((Flags & PresentInBaseState) && !(Flags & PresentInCurrState))
-				Out << EntityID.Raw;
-		});
+			if (Record.BaseState == Record.State) return; // continue
+			if (Record.BaseState == EComponentState::NoBase && Record.State == EComponentState::Deleted) return; // continue
 
-		Out << CEntityStorage::INVALID_HANDLE_VALUE;
-
-		// Save the list of added components
-
-		_IndexByEntity.ForEach([&Out](HEntity EntityID, U8& Flags)
-		{
-			if (!(Flags & PresentInBaseState) && (Flags & PresentInCurrState))
-			Out << EntityID.Raw;
+			Out.Write(EntityID.Raw);
+			Out.Write(static_cast<U8>(Record.State));
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
@@ -1038,7 +1015,7 @@ public:
 	virtual void ClearDiff() override
 	{
 		std::vector<HEntity> RecordsToDelete;
-		RecordsToDelete.reserve(_Data.size() / 4);
+		RecordsToDelete.reserve(_IndexByEntity.size() / 4);
 		_IndexByEntity.ForEach([this, &RecordsToDelete](HEntity EntityID, CIndexRecord& Record)
 		{
 			if (Record.BaseState == EComponentState::NoBase)
