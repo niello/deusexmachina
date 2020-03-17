@@ -44,7 +44,7 @@ public:
 	virtual ~IComponentStorage() = default;
 
 	virtual bool RemoveComponent(HEntity EntityID) = 0;
-	virtual void InstantiateTemplate(HEntity EntityID) = 0;
+	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState) = 0;
 
 	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
@@ -331,13 +331,13 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	virtual void InstantiateTemplate(HEntity EntityID) override
+	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState) override
 	{
 		// Don't replace existing records, only add purely templated ones, that aren't loaded in LoadBase
 		if (_IndexByEntity.find(EntityID)) return;
 
 		_IndexByEntity.emplace(EntityID,
-			CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, EComponentState::NoBase });
+			CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, BaseState ? EComponentState::Templated : EComponentState::NoBase });
 	}
 	//---------------------------------------------------------------------
 
@@ -866,11 +866,11 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	virtual void InstantiateTemplate(HEntity EntityID) override
+	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState) override
 	{
 		// Don't replace existing records, only add purely templated ones, that aren't loaded in LoadBase
 		if (_IndexByEntity.find(EntityID)) return;
-		_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Templated, EComponentState::NoBase });
+		_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Templated, BaseState ? EComponentState::Templated : EComponentState::NoBase });
 	}
 	//---------------------------------------------------------------------
 

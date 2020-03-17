@@ -112,7 +112,7 @@ void CGameWorld::LoadEntityFromParams(const Data::CParam& In, bool Diff)
 	}
 
 	// Load purely templated components
-	InstantiateTemplate(EntityID, pEntity->TemplateID);
+	InstantiateTemplate(EntityID, pEntity->TemplateID, !Diff);
 }
 //---------------------------------------------------------------------
 
@@ -193,13 +193,22 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 		n_assert_dbg(EntityID && EntityID == HEntity{ EntityIDRaw });
 	}
 
-	// Load base state of components, don't create actual components
+	// Load base state of components
 	const auto ComponentTypeCount = In.Read<uint32_t>();
 	for (uint32_t i = 0; i < ComponentTypeCount; ++i)
 	{
 		const auto TypeID = In.Read<CStrID>();
 		if (auto pStorage = FindComponentStorage(TypeID))
 			pStorage->LoadBase(In);
+	}
+
+	// Load purely templated components
+	//???can delay to FinalizeLoading / LoadDiff? What about ClearDiff, where NoBase templates are deleted?
+	for (const auto& Entity : _EntitiesBase)
+	{
+		// FIXME: must get EntityID for free when iterating an array
+		auto EntityID = _Entities.GetHandle(&Entity);
+		InstantiateTemplate(EntityID, Entity.TemplateID, true);
 	}
 
 	// The primary purpose of this state is an optimization. User either loads a diff,
@@ -297,7 +306,7 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	{
 		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
-		InstantiateTemplate(EntityID, Entity.TemplateID);
+		InstantiateTemplate(EntityID, Entity.TemplateID, false);
 	}
 
 	_State = EState::Stopped;
@@ -544,7 +553,7 @@ void CGameWorld::InvalidateLevel(CStrID LevelID)
 }
 //---------------------------------------------------------------------
 
-bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID)
+bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool BaseState)
 {
 	if (!EntityID || !TemplateID) return false;
 
@@ -560,7 +569,7 @@ bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID)
 		n_assert_dbg(!Param.GetRawValue().IsVoid());
 
 		if (auto pStorage = FindComponentStorage(Param.GetName()))
-			pStorage->InstantiateTemplate(EntityID);
+			pStorage->InstantiateTemplate(EntityID, BaseState);
 	}
 
 	return true;
@@ -576,7 +585,7 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 	pEntity->LevelID = LevelID;
 	pEntity->Level = FindLevel(LevelID);
 
-	if (InstantiateTemplate(EntityID, TemplateID))
+	if (InstantiateTemplate(EntityID, TemplateID, false))
 		pEntity->TemplateID = TemplateID;
 
 	return EntityID;
