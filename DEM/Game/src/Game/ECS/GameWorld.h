@@ -53,7 +53,7 @@ protected:
 
 	void LoadEntityFromParams(const Data::CParam& In, bool Diff);
 	bool SaveEntityToParams(Data::CParams& Out, HEntity EntityID, const CEntity& Entity, const CEntity* pBaseEntity) const;
-	bool InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool BaseState);
+	bool InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool BaseState, bool Validate);
 
 	template<typename TComponent, typename... Components>
 	bool GetNextStorages(std::tuple<TComponentStoragePtr<TComponent>, TComponentStoragePtr<Components>...>& Out);

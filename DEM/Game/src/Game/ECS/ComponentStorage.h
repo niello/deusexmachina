@@ -44,7 +44,7 @@ public:
 	virtual ~IComponentStorage() = default;
 
 	virtual bool RemoveComponent(HEntity EntityID) = 0;
-	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState) = 0;
+	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState, bool Validate) = 0;
 
 	virtual bool AddFromParams(HEntity EntityID, const Data::CData& In) = 0;
 	virtual bool SaveComponentToParams(HEntity EntityID, Data::CData& Out) const = 0;
@@ -255,6 +255,7 @@ public:
 
 	virtual ~CHandleArrayComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
 
+	// Explicitly adds a component. If templated one is present, detaches it from the template.
 	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
 	{
@@ -277,13 +278,12 @@ public:
 	}
 	//---------------------------------------------------------------------
 
+	// Explicitly deletes a component, overrides a template if it exists
 	bool Remove(HEntity EntityID)
 	{
-		// No record - nothing to remove
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) FAIL;
 
-		// Unload removed component
 		auto& IndexRecord = It->Value;
 		if (IndexRecord.ComponentHandle)
 		{
@@ -291,19 +291,50 @@ public:
 			IndexRecord.ComponentHandle = CHandle();
 		}
 
-		if (IndexRecord.BaseState == EComponentState::NoBase)
-		{
-			// Component won't be restored from base on loading, so can delete all info
+		ClearDiffBuffer(IndexRecord);
+
+		// If record has no template, it can be erased entirely. If component is later added to the template,
+		// it will be instantiated. Can't explicitly delete templated component that is not present.
+		if (IndexRecord.BaseState == EComponentState::NoBase && !_World.GetTemplateComponentData<T>(EntityID))
 			_IndexByEntity.erase(It);
-		}
 		else
-		{
-			// To track diff properly we can't erase the whole record
 			IndexRecord.State = EComponentState::Deleted;
-			ClearDiffBuffer(IndexRecord);
-		}
 
 		OK;
+	}
+	//---------------------------------------------------------------------
+
+	// Restores existing record to templated state or erases it if no template exists.
+	// NB: for full state only (editor), not supported in diffs (savegames). So BaseState is ignored.
+	bool RevertToTemplate(HEntity EntityID)
+	{
+		auto It = _IndexByEntity.find(EntityID);
+
+		//???if has tpl diff, allow erasing or always keep?
+
+		if (_World.GetTemplateComponentData<T>(EntityID))
+		{
+			// Has templated component, setup a record for it
+			if (It)
+				It->Value.State = EComponentState::Templated;
+			else
+				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Templated, EComponentState::NoBase });
+		}
+		else if (It)
+		{
+			//!!!FIXME: DUPLICATED CODE!
+			// No templated component, erase record
+			auto& IndexRecord = It->Value;
+			if (IndexRecord.ComponentHandle)
+			{
+				_Data.Free(IndexRecord.ComponentHandle);
+				IndexRecord.ComponentHandle = CHandle();
+			}
+			ClearDiffBuffer(IndexRecord);
+			_IndexByEntity.erase(It);
+		}
+
+		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -331,13 +362,20 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState) override
+	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState, bool Validate) override
 	{
 		// Don't replace existing records, only add purely templated ones, that aren't loaded in LoadBase
 		if (_IndexByEntity.find(EntityID)) return;
 
-		_IndexByEntity.emplace(EntityID,
+		auto It = _IndexByEntity.emplace(EntityID,
 			CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, BaseState ? EComponentState::Templated : EComponentState::NoBase });
+
+		// Gets here only if template component exists, no additional checks required
+		if (Validate)
+		{
+			It->Value.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, It->Value)), EntityID });
+			n_assert_dbg(It->Value.ComponentHandle);
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -378,15 +416,50 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		if (auto pComponent = Find(EntityID))
+		auto It = _IndexByEntity.find(EntityID);
+		if (!It) return false;
+		const auto& Record = It->Value;
+
+		if (Record.State == EComponentState::Explicit)
 		{
-			NOT_IMPLEMENTED; //!!!don't forget about __UseTpl!
-			//if (IsComponentEqualToTemplate(EntityID, *pComponent)) return false;
-			DEM::ParamsFormat::Serialize(Out, *pComponent);
+			// Explicit component overrides the template, all its data is saved
+			DEM::ParamsFormat::Serialize(Out,
+				Record.ComponentHandle ?
+				_Data.GetValueUnsafe(Record.ComponentHandle)->first :
+				LoadComponent(EntityID, Record));
 			return true;
 		}
+		else
+		{
+			// Templated and Deleted records have meaning only when template exists
+			auto pTplData = _World.GetTemplateComponentData<T>(EntityID);
+			if (!pTplData) return false;
 
-		return false;
+			if (Record.State == EComponentState::Templated)
+			{
+				// If record is templated and no template is present, diff has no meaning because there is nothing
+				// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
+				T TplComponent;
+				DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
+
+				// Save only the difference against the template, so changes in defaulted fields will be propagated
+				// from templates to instances when template is changed but the world base file is not.
+				// If component is equal to template, save nothing. Will be created on template instantiation.
+				return DEM::ParamsFormat::SerializeDiff(Out,
+					Record.ComponentHandle ?
+					_Data.GetValueUnsafe(Record.ComponentHandle)->first :
+					LoadComponent(EntityID, Record),
+					TplComponent);
+			}
+			else // always EComponentState::Deleted, because State can never be EComponentState::NoBase
+			{
+				n_assert_dbg(Record.State != EComponentState::NoBase);
+
+				// Write explicit deletion only if template component is present, otherwise there is nothing to delete
+				Out.Clear();
+				return true;
+			}
+		}
 	}
 	//---------------------------------------------------------------------
 
@@ -396,35 +469,39 @@ public:
 
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
-		const auto& IndexRecord = It->Value;
+		const auto& Record = It->Value;
 
-		NOT_IMPLEMENTED; //!!!don't forget about __UseTpl!
-		//if (IndexRecord.Deleted)
+		if (Record.State == EComponentState::Deleted)
 		{
+			if (Record.BaseState == Record.State) return false;
+
 			// Explicitly save as deleted
 			Out = Data::CData();
 			return true;
 		}
-		//else
+		else
 		{
-			T BaseComponent;
-			LoadBaseComponent(EntityID, IndexRecord, BaseComponent);
+			// Converting explicit components back to templated is not supported in diffs
+			n_assert_dbg(Record.State != EComponentState::Templated || Record.BaseState == EComponentState::NoBase || Record.BaseState == Record.State);
 
-			if (IndexRecord.ComponentHandle)
+			T BaseComponent;
+			LoadBaseComponent(EntityID, Record, BaseComponent);
+
+			if (Record.ComponentHandle)
 			{
-				const T& Component = _Data.GetValueUnsafe(IndexRecord.ComponentHandle)->first;
+				const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
 				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 			}
 			else
 			{
 				T Component = BaseComponent;
 
-				if (IndexRecord.DiffDataSize)
+				if (Record.DiffDataSize)
 				{
 					if constexpr (STORAGE_USE_DIFF_POOL<T>)
-						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.DiffData, MAX_DIFF_SIZE)), Component);
+						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData, Record.DiffDataSize)), Component);
 					else
-						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(IndexRecord.DiffData.GetConstPtr(), IndexRecord.DiffData.GetSize())), Component);
+						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
 				}
 
 				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
@@ -560,28 +637,24 @@ public:
 			}
 			else
 			{
-				// Templated and Deleted records save the difference against the template
-				auto pEntity = _World.GetEntity(EntityID);
-				if (!pEntity || !pEntity->TemplateID) return; // continue
+				// Templated and Deleted records have meaning only when template exists
+				auto pTplData = _World.GetTemplateComponentData<T>(EntityID);
+				if (!pTplData) return; // continue
 					
 				if (Record.State == EComponentState::Templated)
 				{
 					// If record is templated and no template is present, diff has no meaning because there is nothing
 					// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
-					bool HasDiff = false;
-					if (auto pTplData = _World.GetTemplateComponentData<T>(pEntity->TemplateID))
-					{
-						T TplComponent;
-						DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
+					T TplComponent;
+					DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
 
-						// Save only the difference against the template, so changes in defaulted fields will be propagated
-						// from templates to instances when template is changed but the world base file is not.
-						HasDiff = DEM::BinaryFormat::SerializeDiff(Intermediate,
-							Record.ComponentHandle ?
-							_Data.GetValueUnsafe(Record.ComponentHandle)->first :
-							LoadComponent(EntityID, Record),
-							TplComponent);
-					}
+					// Save only the difference against the template, so changes in defaulted fields will be propagated
+					// from templates to instances when template is changed but the world base file is not.
+					const bool HasDiff = DEM::BinaryFormat::SerializeDiff(Intermediate,
+						Record.ComponentHandle ?
+						_Data.GetValueUnsafe(Record.ComponentHandle)->first :
+						LoadComponent(EntityID, Record),
+						TplComponent);
 
 					// Component is equal to template, save nothing. Will be created on template instantiation.
 					if (!HasDiff) return; // continue
@@ -591,8 +664,7 @@ public:
 					n_assert_dbg(Record.State != EComponentState::NoBase);
 
 					// Write explicit deletion only if template component is present, otherwise there is nothing to delete
-					if (_World.GetTemplateComponentData<T>(pEntity->TemplateID))
-						DeletedRecords.push_back(EntityID);
+					DeletedRecords.push_back(EntityID);
 					return; // continue
 				}
 			}
@@ -668,12 +740,8 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
-			if (Record.State == EComponentState::Deleted &&
-				Record.BaseState != EComponentState::Deleted &&
-				Record.BaseState != EComponentState::NoBase)
-			{
+			if (Record.BaseState != Record.State && Record.State == EComponentState::Deleted)
 				Out.Write(EntityID.Raw);
-			}
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
@@ -682,6 +750,10 @@ public:
 
 		_IndexByEntity.ForEach([this, &Out](HEntity EntityID, CIndexRecord& Record)
 		{
+			// Converting explicit components back to templated is not supported in diffs
+			n_assert_dbg(Record.State != EComponentState::Templated || Record.BaseState == EComponentState::NoBase || Record.BaseState == Record.State);
+
+			// State can be equal to BaseState, but some fields may change
 			if (Record.State != EComponentState::Deleted)
 			{
 				if (Record.ComponentHandle) SaveComponent(EntityID, Record);
@@ -728,16 +800,17 @@ public:
 				}
 
 				// Erase difference from base
-				ClearDiffBuffer(Record);
 				Record.State = Record.BaseState;
 			}
 
+			//!!!FIXME: DUPLICATED CODE!
 			// Unload invalidated component
 			if (Record.ComponentHandle)
 			{
 				_Data.Free(Record.ComponentHandle);
 				Record.ComponentHandle = CHandle(); //???keep handle to save handle space? is index enough?
 			}
+			ClearDiffBuffer(Record);
 		});
 
 		// TODO: in LoadDiff could load new diffs, removing recreated records from RecordsToDelete, and then delete!
@@ -891,7 +964,7 @@ public:
 	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
-	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState) override
+	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState, bool /*Validate*/) override
 	{
 		// Don't replace existing records, only add purely templated ones, that aren't loaded in LoadBase
 		if (_IndexByEntity.find(EntityID)) return;

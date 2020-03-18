@@ -112,7 +112,7 @@ void CGameWorld::LoadEntityFromParams(const Data::CParam& In, bool Diff)
 	}
 
 	// Load purely templated components
-	InstantiateTemplate(EntityID, pEntity->TemplateID, !Diff);
+	InstantiateTemplate(EntityID, pEntity->TemplateID, !Diff, false);
 }
 //---------------------------------------------------------------------
 
@@ -208,7 +208,7 @@ void CGameWorld::LoadBase(IO::PStream InStream)
 	{
 		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
-		InstantiateTemplate(EntityID, Entity.TemplateID, true);
+		InstantiateTemplate(EntityID, Entity.TemplateID, true, false);
 	}
 
 	// The primary purpose of this state is an optimization. User either loads a diff,
@@ -306,7 +306,7 @@ void CGameWorld::LoadDiff(IO::PStream InStream)
 	{
 		// FIXME: must get EntityID for free when iterating an array
 		auto EntityID = _Entities.GetHandle(&Entity);
-		InstantiateTemplate(EntityID, Entity.TemplateID, false);
+		InstantiateTemplate(EntityID, Entity.TemplateID, false, false);
 	}
 
 	_State = EState::Stopped;
@@ -553,7 +553,7 @@ void CGameWorld::InvalidateLevel(CStrID LevelID)
 }
 //---------------------------------------------------------------------
 
-bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool BaseState)
+bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool BaseState, bool Validate)
 {
 	if (!EntityID || !TemplateID) return false;
 
@@ -569,7 +569,7 @@ bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool B
 		n_assert_dbg(!Param.GetRawValue().IsVoid());
 
 		if (auto pStorage = FindComponentStorage(Param.GetName()))
-			pStorage->InstantiateTemplate(EntityID, BaseState);
+			pStorage->InstantiateTemplate(EntityID, BaseState, Validate);
 	}
 
 	return true;
@@ -585,7 +585,7 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 	pEntity->LevelID = LevelID;
 	pEntity->Level = FindLevel(LevelID);
 
-	if (InstantiateTemplate(EntityID, TemplateID, false))
+	if (InstantiateTemplate(EntityID, TemplateID, false, true))
 		pEntity->TemplateID = TemplateID;
 
 	return EntityID;
