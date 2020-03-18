@@ -823,10 +823,9 @@ public:
 	{
 	}
 
+	// Explicitly adds a component. If templated one is present, detaches it from the template.
 	DEM_FORCE_INLINE T* Add(HEntity EntityID)
 	{
-		// Explicitly added components always override templates.
-		// Components from templates are created at template instantiation.
 		if (auto It = _IndexByEntity.find(EntityID))
 			It->Value.State = EComponentState::Explicit;
 		else
@@ -835,15 +834,41 @@ public:
 	}
 	//---------------------------------------------------------------------
 
+	// Explicitly deletes a component, overrides a template if it exists
 	DEM_FORCE_INLINE bool Remove(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
 
-		if (It->Value.BaseState == EComponentState::NoBase)
+		// If record has no template, it can be erased entirely. If component is later added to the template,
+		// it will be instantiated. Can't explicitly delete templated component that is not present.
+		if (It->Value.BaseState == EComponentState::NoBase && !_World.GetTemplateComponentData<T>(EntityID))
 			_IndexByEntity.erase(It);
 		else
 			It->Value.State = EComponentState::Deleted;
+
+		return true;
+	}
+	//---------------------------------------------------------------------
+
+	// Restores existing record to templated state or erases it if no template exists.
+	// NB: for full state only (editor), not supported in diffs (savegames). So BaseState is ignored.
+	DEM_FORCE_INLINE bool RevertToTemplate(HEntity EntityID)
+	{
+		auto It = _IndexByEntity.find(EntityID);
+		if (_World.GetTemplateComponentData<T>(EntityID))
+		{
+			// Has templated component, setup a record for it
+			if (It)
+				It->Value.State = EComponentState::Templated;
+			else
+				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Templated, EComponentState::NoBase });
+		}
+		else
+		{
+			// No templated component, erase record
+			if (It) _IndexByEntity.erase(It);
+		}
 
 		return true;
 	}
@@ -878,7 +903,7 @@ public:
 	{
 		EComponentState State;
 		if (In.IsVoid()) State = EComponentState::Deleted;
-		else if (In.IsA<bool>()) State = In.GetValue<bool>() ? EComponentState::Explicit : EComponentState::Templated;
+		else if (In.IsA<bool>()) State = EComponentState::Explicit;
 		else return false;
 
 		if (auto It = _IndexByEntity.find(EntityID))
@@ -899,7 +924,7 @@ public:
 			case EComponentState::Deleted: Out.Clear(); return true;
 			case EComponentState::Explicit: Out = true; return true;
 		}
-		return false; // Templated records aren't saved to full data
+		return false; // Templated records aren't saved, they are instantiated from templates
 	}
 	//---------------------------------------------------------------------
 
@@ -907,12 +932,17 @@ public:
 	{
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It || It->Value.BaseState == It->Value.State) return false;
-		if (It->Value.BaseState == EComponentState::NoBase && It->Value.State == EComponentState::Deleted) return false;
 		switch (It->Value.State)
 		{
 			case EComponentState::Deleted: Out.Clear(); return true;
-			case EComponentState::Templated: Out = false; return true;
 			case EComponentState::Explicit: Out = true; return true;
+			case EComponentState::Templated:
+			{
+				// Templated records aren't saved, they are instantiated from templates.
+				// Revert from explicit to templated component is not supoported in diffs.
+				n_assert(It->Value.BaseState == EComponentState::NoBase);
+				return false;
+			}
 		}
 		return false;
 	}
@@ -948,16 +978,25 @@ public:
 	{
 		ClearDiff();
 
+		// Read explicitly deleted list
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			const auto ComponentState = static_cast<EComponentState>(In.Read<U8>());
-
 			if (auto It = _IndexByEntity.find(EntityID))
-				It->Value.State = ComponentState;
+				It->Value.State = EComponentState::Deleted;
 			else
-				_IndexByEntity.emplace(EntityID, CIndexRecord{ ComponentState, EComponentState::NoBase });
+				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Deleted, EComponentState::NoBase });
+			EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		}
 
+		// Read explicitly added list
+		EntityID = { In.Read<decltype(HEntity::Raw)>() };
+		while (EntityID)
+		{
+			if (auto It = _IndexByEntity.find(EntityID))
+				It->Value.State = EComponentState::Explicit;
+			else
+				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Explicit, EComponentState::NoBase });
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
@@ -991,13 +1030,21 @@ public:
 
 	virtual bool SaveDiff(IO::CBinaryWriter& Out) override
 	{
+		// Templated records aren't saved, they are instantiated from templates.
+		// Revert from explicit to templated component is not supoported in diffs.
+
 		_IndexByEntity.ForEach([&Out](HEntity EntityID, const CIndexRecord& Record)
 		{
-			if (Record.BaseState == Record.State) return; // continue
-			if (Record.BaseState == EComponentState::NoBase && Record.State == EComponentState::Deleted) return; // continue
+			if (Record.BaseState != Record.State && Record.State == EComponentState::Deleted)
+				Out.Write(EntityID.Raw);
+		});
 
-			Out.Write(EntityID.Raw);
-			Out.Write(static_cast<U8>(Record.State));
+		Out << CEntityStorage::INVALID_HANDLE_VALUE;
+
+		_IndexByEntity.ForEach([&Out](HEntity EntityID, const CIndexRecord& Record)
+		{
+			if (Record.BaseState != Record.State && Record.State == EComponentState::Explicit)
+				Out.Write(EntityID.Raw);
 		});
 
 		Out << CEntityStorage::INVALID_HANDLE_VALUE;
