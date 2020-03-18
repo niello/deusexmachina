@@ -445,11 +445,15 @@ public:
 				// Save only the difference against the template, so changes in defaulted fields will be propagated
 				// from templates to instances when template is changed but the world base file is not.
 				// If component is equal to template, save nothing. Will be created on template instantiation.
-				return DEM::ParamsFormat::SerializeDiff(Out,
+				const bool HasDiff = DEM::ParamsFormat::SerializeDiff(Out,
 					Record.ComponentHandle ?
 					_Data.GetValueUnsafe(Record.ComponentHandle)->first :
 					LoadComponent(EntityID, Record),
 					TplComponent);
+
+				if (HasDiff) Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
+
+				return HasDiff;
 			}
 			else // always EComponentState::Deleted, because State can never be EComponentState::NoBase
 			{
@@ -487,10 +491,11 @@ public:
 			T BaseComponent;
 			LoadBaseComponent(EntityID, Record, BaseComponent);
 
+			bool HasDiff;
 			if (Record.ComponentHandle)
 			{
 				const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
-				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+				HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 			}
 			else
 			{
@@ -504,8 +509,13 @@ public:
 						DEM::BinaryFormat::DeserializeDiff(IO::CBinaryReader(IO::CMemStream(Record.DiffData.GetConstPtr(), Record.DiffDataSize)), Component);
 				}
 
-				return DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
+				HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 			}
+
+			if (HasDiff && Record.State == EComponentState::Templated)
+				Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
+
+			return HasDiff;
 		}
 	}
 	//---------------------------------------------------------------------

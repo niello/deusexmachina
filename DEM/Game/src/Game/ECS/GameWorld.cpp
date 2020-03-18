@@ -584,9 +584,10 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 
 	pEntity->LevelID = LevelID;
 	pEntity->Level = FindLevel(LevelID);
+	pEntity->TemplateID = TemplateID; // Used inside InstantiateTemplate // FIXME: pass template data into pStorage->InstantiateTemplate instead of Validate flag?
 
-	if (InstantiateTemplate(EntityID, TemplateID, false, true))
-		pEntity->TemplateID = TemplateID;
+	if (!InstantiateTemplate(EntityID, TemplateID, false, true))
+		pEntity->TemplateID = CStrID::Empty;
 
 	return EntityID;
 }
