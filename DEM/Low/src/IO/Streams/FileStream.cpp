@@ -24,6 +24,14 @@ void CFileStream::Close()
 {
 	n_assert_dbg(IsOpened());
 	if (IsMapped()) Unmap();
+
+	// Truncate file once on close, if required
+	if (TruncatedAt != std::numeric_limits<U64>().max())
+	{
+		FS->Seek(hFile, TruncatedAt, IO::Seek_Begin);
+		FS->Truncate(hFile);
+	}
+
 	FS->CloseFile(hFile);
 	hFile = nullptr;
 }
@@ -39,6 +47,10 @@ UPTR CFileStream::Read(void* pData, UPTR Size)
 UPTR CFileStream::Write(const void* pData, UPTR Size)
 {
 	n_assert_dbg(IsOpened() && !IsMapped() && hFile && (!Size || pData));
+
+	// Reset cached truncation after every write operation
+	TruncatedAt = std::numeric_limits<U64>().max();
+
 	return (Size > 0) ? FS->Write(hFile, pData, Size) : 0;
 }
 //---------------------------------------------------------------------
@@ -54,13 +66,6 @@ U64 CFileStream::Tell() const
 {
 	n_assert_dbg(hFile);
 	return FS->Tell(hFile);
-}
-//---------------------------------------------------------------------
-
-bool CFileStream::Truncate()
-{
-	n_assert_dbg(hFile);
-	return FS->Truncate(hFile);
 }
 //---------------------------------------------------------------------
 

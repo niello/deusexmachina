@@ -15,6 +15,7 @@ protected:
 	CString              FileName;
 	PFileSystem          FS;
 	void*                hFile = nullptr;
+	U64                  TruncatedAt = std::numeric_limits<U64>().max();
 
 public:
 
@@ -26,7 +27,7 @@ public:
 	virtual UPTR	Write(const void* pData, UPTR Size) override;
 	virtual bool	Seek(I64 Offset, ESeekOrigin Origin) override;
 	virtual U64		Tell() const override;
-	virtual bool    Truncate() override;
+	virtual bool    Truncate() override { TruncatedAt = Tell(); return true; } // Truncation in FS can be slow, postpone to closing and do once
 	virtual void	Flush() override;
 	virtual void*	Map() override;
 	virtual void	Unmap() override;

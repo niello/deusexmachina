@@ -66,7 +66,7 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_pointer_t
 	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return Instance.*pGetter; }
 
 	template<typename U>
-	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { Instance.*pSetter = std::forward<U>(Value); }
+	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { Instance.*pSetter = std::move(Value); }
 
 	static inline const T& BestGetConst(TAccessor pGetter, const TClass& Instance) { return ConstRef(pGetter, Instance); }
 	static inline T&       BestGet(TAccessor pSetter, TClass& Instance) { return Ref(pSetter, Instance); }
@@ -83,7 +83,7 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_setter_v<
 	static inline T        Copy(TAccessor, const TClass&) { static_assert(false, "Can't get value with a setter function"); }
 
 	template<typename U>
-	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { (Instance.*pSetter)(std::forward<U>(Value)); }
+	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { (Instance.*pSetter)(std::move(Value)); }
 
 	static inline auto     BestGetConst(TAccessor, const TClass&) { static_assert(false, "Can't get value with a setter function"); }
 	static inline auto     BestGet(TAccessor, TClass&) { static_assert(false, "Can't get value with a setter function"); }
@@ -134,7 +134,7 @@ struct MemberAccess<TClass, T, TAccessor, typename std::enable_if_t<is_mutable_r
 	static inline T        Copy(TAccessor pGetter, const TClass& Instance) { return (Instance.*pGetter)(); }
 
 	template<typename U>
-	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { (Instance.*pSetter)() = std::forward<U>(Value); }
+	static inline void     Set(TAccessor pSetter, TClass& Instance, U&& Value) { (Instance.*pSetter)() = std::move(Value); }
 
 	static inline const T& BestGetConst(TAccessor pGetter, const TClass& Instance) { return ConstRef(pGetter, Instance); }
 	static inline T&       BestGet(TAccessor pSetter, TClass& Instance) { return Ref(pSetter, Instance); }
