@@ -101,6 +101,18 @@ protected:
 	CInnerStorage            _Data;
 	CEntityMap<CIndexRecord> _IndexByEntity;
 
+	void ClearComponent(CIndexRecord& Record)
+	{
+		if (Record.ComponentHandle)
+		{
+			_Data.Free(Record.ComponentHandle);
+			Record.ComponentHandle = CHandle();
+			//???keep handle to save handle space? is index enough? could then use plain array,
+			//not handle array for components, but only if external components references aren't used.
+		}
+	}
+	//---------------------------------------------------------------------
+
 	void ClearDiffBuffer(CIndexRecord& Record)
 	{
 		if constexpr (STORAGE_USE_DIFF_POOL<T>)
@@ -201,7 +213,7 @@ protected:
 		else
 		{
 			// Preallocate buffer
-			// TODO: vector-like allocation strategy inside a CBufferMalloc?
+			// FIXME: need more clever logic? vector-like allocation strategy inside a CBufferMalloc, or std::vector-based buffer?
 			if (!Record.DiffData.GetSize()) Record.DiffData.Resize(512);
 			IO::CMemStream DiffStream(Record.DiffData);
 			HasDiff = DEM::BinaryFormat::SerializeDiff(IO::CBinaryWriter(DiffStream), Component, BaseComponent);
@@ -215,12 +227,13 @@ protected:
 		}
 		else
 		{
-			// When HasDiff is false, the component is new but equal to the default one, and we
-			// must save empty diff, but not nothing. It is already written in SerializeDiff.
+			// When HasDiff is false, the component is new but equal to the default one, and we must
+			// save empty diff, which is not equal to nothing. It is already written in SerializeDiff.
 			if constexpr (!STORAGE_USE_DIFF_POOL<T>)
 			{
 				// Truncate if too many unused bytes left
-				if (Record.DiffData.GetSize() - Record.DiffDataSize > 400)
+				// FIXME: need more clever logic?
+				if (Record.DiffData.GetSize() > Record.DiffDataSize + 400)
 					Record.DiffData.Resize(Record.DiffDataSize);
 			}
 		}
@@ -285,12 +298,7 @@ public:
 		if (!It) FAIL;
 
 		auto& IndexRecord = It->Value;
-		if (IndexRecord.ComponentHandle)
-		{
-			_Data.Free(IndexRecord.ComponentHandle);
-			IndexRecord.ComponentHandle = CHandle();
-		}
-
+		ClearComponent(IndexRecord);
 		ClearDiffBuffer(IndexRecord);
 
 		// If record has no template, it can be erased entirely. If component is later added to the template,
@@ -322,14 +330,9 @@ public:
 		}
 		else if (It)
 		{
-			//!!!FIXME: DUPLICATED CODE!
 			// No templated component, erase record
 			auto& IndexRecord = It->Value;
-			if (IndexRecord.ComponentHandle)
-			{
-				_Data.Free(IndexRecord.ComponentHandle);
-				IndexRecord.ComponentHandle = CHandle();
-			}
+			ClearComponent(IndexRecord);
 			ClearDiffBuffer(IndexRecord);
 			_IndexByEntity.erase(It);
 		}
@@ -813,13 +816,8 @@ public:
 				Record.State = Record.BaseState;
 			}
 
-			//!!!FIXME: DUPLICATED CODE!
 			// Unload invalidated component
-			if (Record.ComponentHandle)
-			{
-				_Data.Free(Record.ComponentHandle);
-				Record.ComponentHandle = CHandle(); //???keep handle to save handle space? is index enough?
-			}
+			ClearComponent(Record);
 			ClearDiffBuffer(Record);
 		});
 
