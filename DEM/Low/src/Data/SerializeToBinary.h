@@ -149,7 +149,7 @@ struct BinaryFormat
 			{
 				DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
 				Deserialize(Input, FieldValue);
-				Member.SetValue(Value, FieldValue);
+				Member.SetValue(Value, std::move(FieldValue));
 			});
 		}
 		else Input >> Value;
