@@ -28,6 +28,8 @@ protected:
 public:
 
 	CGameLevelView(CGameLevel& Level, Frame::CView& View);
+
+	CGameLevel* GetLevel() const { return _Level.Get(); }
 };
 
 }

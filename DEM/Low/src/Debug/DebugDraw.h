@@ -74,7 +74,6 @@ protected:
 	*/
 
 	Frame::PGraphicsResourceManager _GraphicsMgr;
-	Render::PEffect                 _Effect;
 	Render::PMesh                   _Shapes[SHAPE_TYPE_COUNT];
 	Render::PVertexLayout           _ShapeVertexLayout;
 	Render::PVertexBuffer           _ShapeInstanceBuffer;
@@ -88,11 +87,10 @@ protected:
 
 public:
 
-	CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, CStrID EffectUID);
-	CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect&& Effect);
+	CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr);
 	~CDebugDraw();
 
-	void Render(const matrix44& ViewProj);
+	void Render(Render::CEffect& Effect, const matrix44& ViewProj);
 
 	void DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color = vector4::White);
 	void DrawBox(const matrix44& Tfm, const vector4& Color = vector4::White);

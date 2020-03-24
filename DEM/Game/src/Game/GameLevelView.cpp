@@ -48,11 +48,11 @@ void CGameLevelView::Trigger()
 {
 	CStrID OldEntityUnderMouse = EntityUnderMouse;
 
-	if (Level.IsNullPtr() || View->UIContext->IsMouseOverGUI()) HasMouseIsect = false;
+	if (!Level || View->GetUIContext()->IsMouseOverGUI()) HasMouseIsect = false;
 	else
 	{
 		float XRel, YRel;
-		View->UIContext->GetCursorPositionRel(XRel, YRel);
+		View->GetUIContext()->GetCursorPositionRel(XRel, YRel);
 
 		const Frame::CCameraAttribute* pCamera = View->GetCamera();
 		if (pCamera)

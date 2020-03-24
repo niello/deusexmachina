@@ -14,15 +14,8 @@ namespace Debug
 constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 256;
 constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 4096;
 
-CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, CStrID EffectUID)
-	: CDebugDraw(GraphicsMgr, GraphicsMgr.GetEffect(EffectUID))
-{
-}
-//---------------------------------------------------------------------
-
-CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr, Render::PEffect&& Effect)
+CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 	: _GraphicsMgr(&GraphicsMgr)
-	, _Effect(std::move(Effect))
 {
 	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_BoxCCW"), n_new(Resources::CMeshGeneratorBox()));
 	GraphicsMgr.GetResourceManager()->RegisterResource(CStrID("#Mesh_SphereCCW12"), n_new(Resources::CMeshGeneratorSphere(12)));
@@ -63,10 +56,8 @@ CDebugDraw::~CDebugDraw() = default;
 //---------------------------------------------------------------------
 
 // TODO: check visibility, skip invisible
-void CDebugDraw::Render(const matrix44& ViewProj)
+void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 {
-	if (!_Effect) return;
-
 	auto& GPU = *_GraphicsMgr->GetGPU();
 
 	GPU.SetDepthStencilBuffer(nullptr);
@@ -83,7 +74,7 @@ void CDebugDraw::Render(const matrix44& ViewProj)
 
 	if (HasShapes)
 	{
-		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugShape")))
+		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugShape")))
 		{
 			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
 			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
@@ -137,7 +128,7 @@ void CDebugDraw::Render(const matrix44& ViewProj)
 
 	if (!Lines.empty() || !Tris.empty())
 	{
-		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugPrimitive")))
+		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPrimitive")))
 		{
 			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
 			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
@@ -209,7 +200,7 @@ void CDebugDraw::Render(const matrix44& ViewProj)
 	{
 		NOT_IMPLEMENTED;
 
-		if (auto pTech = _Effect->GetTechByInputSet(CStrID("DebugPoint")))
+		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPoint")))
 		{
 			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
 			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);

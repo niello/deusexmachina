@@ -30,6 +30,11 @@ namespace UI
 	typedef Ptr<class CUIContext> PUIContext;
 }
 
+namespace Debug
+{
+	typedef std::unique_ptr<class CDebugDraw> PDebugDraw;
+}
+
 namespace Frame
 {
 class CCameraAttribute;
@@ -55,6 +60,9 @@ protected:
 	PGraphicsResourceManager					_GraphicsMgr;
 	int											_SwapChainID = INVALID_INDEX;
 	CCameraAttribute*							pCamera = nullptr; //???smart ptr?
+
+	UI::PUIContext								_UIContext;
+	Debug::PDebugDraw                           _DebugDraw;
 
 	std::map<CStrID, Render::PRenderTarget>			RTs;
 	std::map<CStrID, Render::PDepthStencilBuffer>	DSBuffers;
@@ -83,7 +91,6 @@ public:
 
 	//???scene start node? if nullptr, render all nodes, else only that and its children
 	Scene::CSPS*								pSPS = nullptr;
-	UI::PUIContext								UIContext;
 
 	Render::CShaderParamStorage					Globals;
 	Render::PSampler							TrilinearCubeSampler; // For IBL
@@ -102,6 +109,7 @@ public:
 	//materials for early depth, occlusion, shadows (?or in phases, predetermined?), or named materials?
 
 	bool							CreateUIContext(CStrID RenderTargetID = CStrID::Empty);
+	bool                            CreateDebugDrawer();
 
 	Render::IRenderable*            GetRenderObject(CRenderableAttribute& Attr);
 	void							UpdateVisibilityCache();
@@ -125,6 +133,8 @@ public:
 	CCameraAttribute*               GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;
 	Render::CGPUDriver*				GetGPU() const;
+	UI::CUIContext*                 GetUIContext() const { return _UIContext.Get(); }
+	Debug::CDebugDraw*              GetDebugDrawer() const { return _DebugDraw.get(); }
 	DEM::Sys::COSWindow*			GetTargetWindow() const;
 	Render::PDisplayDriver			GetTargetDisplay() const;
 	bool							IsFullscreen() const;

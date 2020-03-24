@@ -55,7 +55,14 @@ bool CRenderPhaseGUI::Init(const CRenderPath& Owner, CGraphicsResourceManager& G
 
 bool CRenderPhaseGUI::Render(CView& View)
 {
-	if (!View.UIContext) FAIL;
+	auto pUICtx = View.GetUIContext();
+	if (!pUICtx) FAIL;
+
+	auto pCtx = pUICtx->GetCEGUIContext();
+	if (!pCtx) FAIL;
+
+	CEGUI::Renderer* pRenderer = CEGUI::System::getSingleton().getRenderer();
+	if (!pRenderer) FAIL;
 
 	auto RT = View.GetRenderTarget(RenderTargetID);
 	if (!RT) FAIL;
@@ -71,12 +78,6 @@ bool CRenderPhaseGUI::Render(CView& View)
 	float ViewportRelTop = 0.f;
 	float ViewportRelRight = 1.f;
 	float ViewportRelBottom = 1.f;
-
-	CEGUI::Renderer* pRenderer = CEGUI::System::getSingleton().getRenderer();
-	if (!pRenderer) FAIL;
-
-	auto pCtx = View.UIContext->GetCEGUIContext();
-	if (!pCtx) FAIL;
 
 	if (!DrawMode) OK;
 

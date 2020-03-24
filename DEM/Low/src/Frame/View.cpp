@@ -14,6 +14,7 @@
 #include <Render/DepthStencilBuffer.h>
 #include <Render/Sampler.h>
 #include <Render/SamplerDesc.h>
+#include <Debug/DebugDraw.h>
 #include <UI/UIContext.h>
 #include <UI/UIServer.h>
 #include <System/OSWindow.h>
@@ -89,12 +90,19 @@ bool CView::CreateUIContext(CStrID RenderTargetID)
 	}
 	else FAIL;
 
-	UIContext = pUI->CreateContext(
+	_UIContext = pUI->CreateContext(
 		static_cast<float>(pRT->GetDesc().Width),
 		static_cast<float>(pRT->GetDesc().Height),
 		(pRT == pSwapChainRT) ? GetTargetWindow() : nullptr);
 
-	return UIContext.IsValidPtr();
+	return _UIContext.IsValidPtr();
+}
+//---------------------------------------------------------------------
+
+bool CView::CreateDebugDrawer()
+{
+	_DebugDraw.reset(n_new(Debug::CDebugDraw(*_GraphicsMgr)));
+	return !!_DebugDraw;
 }
 //---------------------------------------------------------------------
 
@@ -232,7 +240,7 @@ UPTR CView::GetMaterialLOD(float SqDistanceToCamera, float ScreenSpaceOccupiedRe
 void CView::Update(float dt)
 {
 	if (_GraphicsMgr) _GraphicsMgr->Update(dt);
-	if (UIContext) UIContext->Update(dt);
+	if (_UIContext) _UIContext->Update(dt);
 }
 //---------------------------------------------------------------------
 
