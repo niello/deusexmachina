@@ -4,6 +4,9 @@
 #include <Scene/SceneNodeValidateResources.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/SceneNodeValidatePhysics.h>
+#include <AI/AILevel.h>
+#include <Resources/ResourceManager.h>
+#include <Resources/Resource.h>
 
 namespace DEM::Game
 {
@@ -29,6 +32,58 @@ CGameLevel::~CGameLevel()
 	// Order of destruction is important
 	_SceneRoot = nullptr;
 	_PhysicsLevel = nullptr;
+}
+//---------------------------------------------------------------------
+
+PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resources::CResourceManager& ResMgr)
+{
+	vector3 Center(vector3::Zero);
+	vector3 Size(512.f, 128.f, 512.f);
+	int SubdivisionDepth = 0;
+
+	In.TryGet(Center, CStrID("Center"));
+	In.TryGet(Size, CStrID("Size"));
+	In.TryGet(SubdivisionDepth, CStrID("SubdivisionDepth"));
+	vector3 InteractiveCenter = In.Get(CStrID("InteractiveCenter"), Center);
+	vector3 InteractiveSize = In.Get(CStrID("InteractiveSize"), Size);
+
+	PGameLevel Level = n_new(CGameLevel(ID, CAABB(Center, Size * 0.5f), CAABB(InteractiveCenter, InteractiveSize * 0.5f), SubdivisionDepth));
+
+	// Load optional scene with static graphics, collision and other attributes. No entity is associated with it.
+	const bool StaticSceneIsUnique = In.Get(CStrID("StaticSceneIsUnique"), true);
+	if (auto StaticScene = In.Get(CStrID("StaticScene"), Data::PParams()))
+	{
+		for (const auto& Param : *StaticScene)
+		{
+			// This resource can be unloaded by the client code when reloading it in the near future is not expected.
+			// The most practical way is to check resources with refcount = 1, they are held by a resource manager only.
+			// Use StaticSceneIsUnique = false if you expect to use the scene in multuple level instances and you
+			// plan to modify it in the runtime (which is not recommended nor typical for _static_ scenes).
+			auto Rsrc = ResMgr.RegisterResource<Scene::CSceneNode>(Param.GetValue<CString>().CStr());
+			if (auto StaticSceneNode = Rsrc->ValidateObject<Scene::CSceneNode>())
+			{
+				if (StaticSceneIsUnique)
+				{
+					// Unregister unique scene from resources to prevent unintended reuse which can cause huge problems
+					Level->GetSceneRoot().AddChild(Param.GetName(), *StaticSceneNode);
+					ResMgr.UnregisterResource(Rsrc->GetUID());
+				}
+				else
+				{
+					Level->GetSceneRoot().AddChild(Param.GetName(), *StaticSceneNode->Clone());
+				}
+			}
+		}
+	}
+
+	// Load navigation map, if present
+	auto NavigationMapID = In.Get(CStrID("NavigationMap"), CString::Empty);
+	if (!NavigationMapID.IsEmpty() && Level->GetAI())
+	{
+		n_verify(Level->GetAI()->LoadNavMesh(NavigationMapID.CStr()));
+	}
+
+	return std::move(Level);
 }
 //---------------------------------------------------------------------
 

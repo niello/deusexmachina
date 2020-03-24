@@ -31,6 +31,11 @@ namespace Resources
 	class CResourceManager;
 }
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace DEM::Game
 {
 typedef Ptr<class CGameLevel> PGameLevel;
@@ -47,6 +52,8 @@ protected:
 	AI::PAILevel           _AILevel;
 
 public:
+
+	static PGameLevel LoadFromDesc(CStrID ID, const Data::CParams& In, Resources::CResourceManager& ResMgr);
 
 	CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	virtual ~CGameLevel() override;

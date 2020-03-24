@@ -1,9 +1,5 @@
 #include "GameWorld.h"
 #include <Game/GameLevel.h>
-#include <AI/AILevel.h>
-#include <Scene/SceneNode.h>
-#include <IO/BinaryReader.h>
-#include <IO/BinaryWriter.h>
 #include <unordered_set>
 
 namespace DEM::Game
@@ -474,61 +470,14 @@ CGameLevel* CGameWorld::LoadLevel(CStrID ID, const Data::CParams& In)
 		return nullptr;
 	}
 
-	vector3 Center(vector3::Zero);
-	vector3 Size(512.f, 128.f, 512.f);
-	int SubdivisionDepth = 0;
+	PGameLevel Level = CGameLevel::LoadFromDesc(ID, In, _ResMgr);
+	if (!Level) return nullptr;
 
-	In.TryGet(Center, CStrID("Center"));
-	In.TryGet(Size, CStrID("Size"));
-	In.TryGet(SubdivisionDepth, CStrID("SubdivisionDepth"));
-	vector3 InteractiveCenter = In.Get(CStrID("InteractiveCenter"), Center);
-	vector3 InteractiveSize = In.Get(CStrID("InteractiveSize"), Size);
-
-	CGameLevel* pLevel;
-	{
-		PGameLevel Level = n_new(DEM::Game::CGameLevel(ID, CAABB(Center, Size * 0.5f), CAABB(InteractiveCenter, InteractiveSize * 0.5f), SubdivisionDepth));
-		pLevel = _Levels.emplace(ID, std::move(Level)).first->second.Get();
-		if (!pLevel) return nullptr;
-	}
-
-	// Load optional scene with static graphics, collision and other attributes. No entity is associated with it.
-	auto StaticSceneID = In.Get(CStrID("StaticScene"), CString::Empty);
-	if (!StaticSceneID.IsEmpty())
-	{
-		// This resource can be unloaded by the client code when reloading it in the near future is not expected.
-		// The most practical way is to check resources with refcount = 1, they are held by a resource manager only.
-		// Use StaticSceneIsUnique = false if you expect to use the scene in multuple level instances and you
-		// plan to modify it in the runtime (which is not recommended nor typical for _static_ scenes).
-		auto Rsrc = _ResMgr.RegisterResource<Scene::CSceneNode>(CStrID(StaticSceneID.CStr()));
-		if (auto StaticSceneNode = Rsrc->ValidateObject<Scene::CSceneNode>())
-		{
-			if (In.Get(CStrID("StaticSceneIsUnique"), true))
-			{
-				// Unregister unique scene from resources to prevent unintended reuse which can cause huge problems
-				pLevel->GetSceneRoot().AddChild(CStrID("StaticScene"), *StaticSceneNode);
-				_ResMgr.UnregisterResource(Rsrc->GetUID());
-			}
-			else
-			{
-				pLevel->GetSceneRoot().AddChild(CStrID("StaticScene"), *StaticSceneNode->Clone());
-			}
-		}
-	}
-
-	// Load navigation map, if present
-	auto NavigationMapID = In.Get(CStrID("NavigationMap"), CString::Empty);
-	if (!NavigationMapID.IsEmpty() && pLevel->GetAI())
-	{
-		n_verify(pLevel->GetAI()->LoadNavMesh(NavigationMapID.CStr()));
-	}
-
-	Data::PParams EntitiesDesc;
-	if (In.TryGet(EntitiesDesc, CStrID("Entities")))
-		LoadBase(*EntitiesDesc);
+	_Levels.emplace(ID, Level);
 
 	// Notify level loaded / activated, validate if automatic
 
-	return pLevel;
+	return Level.Get();
 }
 //---------------------------------------------------------------------
 
