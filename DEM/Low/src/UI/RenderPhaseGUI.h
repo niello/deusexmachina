@@ -1,6 +1,7 @@
 #pragma once
 #include <Frame/RenderPhase.h>
 #include <UI/UIFwd.h>
+#include <UI/CEGUI/DEMShaderWrapper.h>
 
 // Frame rendering phase 
 
@@ -13,8 +14,10 @@ class CRenderPhaseGUI: public CRenderPhase
 
 private:
 
-	CStrID			RenderTargetID;
-	UI::EDrawMode	DrawMode;
+	CStrID                   RenderTargetID;
+	UI::EDrawMode            DrawMode;
+	CEGUI::PDEMShaderWrapper EffectWrapperTextured;
+	//CEGUI::CDEMShaderWrapper EffectWrapperColored;
 
 public:
 

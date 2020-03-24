@@ -2,6 +2,7 @@
 #include <Frame/RenderPhase.h>
 #include <Render/ShaderParamTable.h>
 #include <Data/Dictionary.h>
+#include <Data/FixedArray.h>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
 // Batches are designed to minimize shader state switches.

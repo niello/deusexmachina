@@ -6,6 +6,8 @@
 #include "DEMShaderWrapper.h"
 #include <Render/GPUDriver.h>
 #include <Render/VertexLayout.h>
+#include <Render/SamplerDesc.h>
+#include <Render/Sampler.h>
 #include <CEGUI/System.h>
 #include <CEGUI/Logger.h>
 
@@ -16,7 +18,15 @@ String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina en
 CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect)
 	: GPU(&GPUDriver)
 {
-	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, Effect));
+	//!!!???can define in effect?! default for all materials!
+	Render::CSamplerDesc SampDesc;
+	SampDesc.SetDefaults();
+	SampDesc.AddressU = Render::TexAddr_Clamp;
+	SampDesc.AddressV = Render::TexAddr_Clamp;
+	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
+	Render::PSampler LinearSampler = GPUDriver.CreateSampler(SampDesc);
+
+	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, Effect, LinearSampler));
 
 	//!!!TODO: non-textured shaders!
 	//ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);

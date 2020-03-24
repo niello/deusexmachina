@@ -3,7 +3,6 @@
 
 #include <Render/GPUDriver.h>
 #include <Render/Effect.h>
-#include <Render/SamplerDesc.h>
 #include <Render/Sampler.h>
 #include <UI/CEGUI/DEMRenderer.h>
 #include <UI/CEGUI/DEMTexture.h>
@@ -14,17 +13,11 @@
 namespace CEGUI
 {
 
-CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect)
+CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect, Render::PSampler LinearSampler)
 	: _Renderer(Owner)
 	, _Effect(&Effect)
+	, _LinearSampler(LinearSampler)
 {
-	Render::CSamplerDesc SampDesc;
-	SampDesc.SetDefaults();
-	SampDesc.AddressU = Render::TexAddr_Clamp;
-	SampDesc.AddressV = Render::TexAddr_Clamp;
-	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	_LinearSampler = _Renderer.getGPUDriver()->CreateSampler(SampDesc);
-	n_assert(_LinearSampler.IsValidPtr());
 }
 //---------------------------------------------------------------------
 

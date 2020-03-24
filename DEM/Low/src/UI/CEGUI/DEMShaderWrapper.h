@@ -8,6 +8,7 @@
 namespace CEGUI
 {
 class CDEMRenderer;
+typedef std::unique_ptr<class CDEMShaderWrapper> PDEMShaderWrapper;
 
 class CDEMShaderWrapper: public ShaderWrapper
 {
@@ -27,14 +28,14 @@ protected:
 	Render::PEffect  _Effect;
 	CStrID           _CurrInputSet;
 	CTechCache*      _pCurrCache = nullptr;
-	Render::PSampler _LinearSampler; //???can define in effect?
+	Render::PSampler _LinearSampler; //!!!???can define in effect?!
 
 	std::map<CStrID, CTechCache> _TechCache;
 
 public:
 
-	CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect);
-	virtual ~CDEMShaderWrapper();
+	CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect, Render::PSampler LinearSampler);
+	virtual ~CDEMShaderWrapper() override;
 
 	void         setInputSet(BlendMode BlendMode, bool Clipped, bool Opaque);
 	virtual void prepareForRendering(const ShaderParameterBindings* shaderParameterBindings) override;
