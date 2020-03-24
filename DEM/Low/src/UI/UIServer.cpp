@@ -28,7 +28,7 @@
 namespace UI
 {
 
-CUIServer::CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Data::CParams* pSettings)
+CUIServer::CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings)
 {
 	if (CEGUI::System::getSingletonPtr())
 	{
@@ -39,7 +39,7 @@ CUIServer::CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Dat
 	Logger = n_new(CEGUI::CDEMLogger);
 	Logger->setLoggingLevel(CEGUI::LoggingLevel::Warning); //???to settings?
 
-	Renderer = &CEGUI::CDEMRenderer::create(GPU, Effect);
+	Renderer = &CEGUI::CDEMRenderer::create(GPU);
 
 	//!!!TMP!
 	// TODO: CEGUI implement - get display size from GPU output 0 or don't use display size at all

@@ -6,8 +6,6 @@
 #include "DEMShaderWrapper.h"
 #include <Render/GPUDriver.h>
 #include <Render/VertexLayout.h>
-#include <Render/SamplerDesc.h>
-#include <Render/Sampler.h>
 #include <CEGUI/System.h>
 #include <CEGUI/Logger.h>
 
@@ -15,22 +13,9 @@ namespace CEGUI
 {
 String CDEMRenderer::RendererID("CEGUI::CDEMRenderer - official DeusExMachina engine renderer by DEM team");
 
-CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect)
+CDEMRenderer::CDEMRenderer(Render::CGPUDriver& GPUDriver)
 	: GPU(&GPUDriver)
 {
-	//!!!???can define in effect?! default for all materials!
-	Render::CSamplerDesc SampDesc;
-	SampDesc.SetDefaults();
-	SampDesc.AddressU = Render::TexAddr_Clamp;
-	SampDesc.AddressV = Render::TexAddr_Clamp;
-	SampDesc.Filter = Render::TexFilter_MinMagMip_Linear;
-	Render::PSampler LinearSampler = GPUDriver.CreateSampler(SampDesc);
-
-	ShaderWrapperTextured.reset(new CDEMShaderWrapper(*this, Effect, LinearSampler));
-
-	//!!!TODO: non-textured shaders!
-	//ShaderWrapperColoured = new CDEMShaderWrapper(*ShaderColoured, this);
-
 	//???use Render::VCFmt_UInt8_4_Norm for color? convert on append vertices?
 	Render::CVertexComponent Components[] = {
 			{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_3, 0, 0, false },
@@ -55,18 +40,16 @@ CDEMRenderer::~CDEMRenderer()
 	destroyAllTextures();
 	destroyAllGeometryBuffers();
 
-	ShaderWrapperTextured = nullptr;
-	ShaderWrapperColoured = nullptr;
 	VertexLayoutTextured = nullptr;
 	VertexLayoutColoured = nullptr;
 	GPU = nullptr;
 }
 //--------------------------------------------------------------------
 
-CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect, const int abi)
+CDEMRenderer& CDEMRenderer::create(Render::CGPUDriver& GPUDriver, const int abi)
 {
 	System::performVersionTest(CEGUI_VERSION_ABI, abi, CEGUI_FUNCTION_NAME);
-	return *n_new(CDEMRenderer)(GPUDriver, Effect);
+	return *n_new(CDEMRenderer)(GPUDriver);
 }
 //--------------------------------------------------------------------
 
@@ -107,6 +90,13 @@ void CDEMRenderer::destroyViewportTarget(RenderTarget* target)
 		VPTargets.RemoveAt(Idx);
 		n_delete(target);
 	}
+}
+//---------------------------------------------------------------------
+
+void CDEMRenderer::setEffects(CDEMShaderWrapper* pTextured, CDEMShaderWrapper* pColoured)
+{
+	pShaderWrapperTextured = pTextured;
+	pShaderWrapperColoured = pColoured;
 }
 //---------------------------------------------------------------------
 
@@ -219,11 +209,11 @@ RefCounted<RenderMaterial> CDEMRenderer::createRenderMaterial(const DefaultShade
 {
 	if (shaderType == DefaultShaderType::Textured)
 	{
-		return new RenderMaterial(ShaderWrapperTextured.get());
+		return new RenderMaterial(pShaderWrapperTextured);
 	}
 	else if (shaderType == DefaultShaderType::Solid)
 	{
-		return new RenderMaterial(ShaderWrapperColoured.get());
+		return new RenderMaterial(pShaderWrapperColoured);
 	}
 	else
 	{
@@ -263,6 +253,8 @@ void CDEMRenderer::beginRendering()
 
 void CDEMRenderer::endRendering()
 {
+	pShaderWrapperTextured = nullptr;
+	pShaderWrapperColoured = nullptr;
 }
 //---------------------------------------------------------------------
 

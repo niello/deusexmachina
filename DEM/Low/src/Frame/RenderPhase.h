@@ -13,6 +13,7 @@ namespace Data
 
 namespace Frame
 {
+class CGraphicsResourceManager;
 class CView;
 class CRenderPath;
 
@@ -26,7 +27,7 @@ protected:
 
 public:
 
-	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc) { Name = PhaseName; OK; }
+	virtual bool Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) { Name = PhaseName; OK; }
 	virtual bool Render(CView& View) = 0;
 };
 

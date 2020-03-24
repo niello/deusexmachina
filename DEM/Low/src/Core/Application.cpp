@@ -27,6 +27,7 @@
 #include <Frame/RenderPhaseGlobalSetup.h>
 #include <Frame/RenderPhaseGeometry.h>
 #include <UI/RenderPhaseGUI.h>
+#include <Debug/RenderPhaseDebugDraw.h>
 //
 #include <Render/Model.h>
 #include <Render/ModelRenderer.h>
@@ -613,6 +614,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	Frame::CRenderPhaseGUI::ForceFactoryRegistration();
 	Frame::CRenderPhaseGlobalSetup::ForceFactoryRegistration();
 	Frame::CRenderPhaseGeometry::ForceFactoryRegistration();
+	Frame::CRenderPhaseDebugDraw::ForceFactoryRegistration();
 	Frame::CModelAttribute::ForceFactoryRegistration();
 	Frame::CTerrainAttribute::ForceFactoryRegistration();
 	Frame::CSkyboxAttribute::ForceFactoryRegistration();

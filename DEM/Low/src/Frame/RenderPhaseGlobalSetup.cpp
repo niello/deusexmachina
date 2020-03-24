@@ -24,9 +24,9 @@ bool CRenderPhaseGlobalSetup::Render(CView& View)
 }
 //---------------------------------------------------------------------
 
-bool CRenderPhaseGlobalSetup::Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc)
+bool CRenderPhaseGlobalSetup::Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc)
 {
-	if (!CRenderPhase::Init(Owner, PhaseName, Desc)) FAIL;
+	if (!CRenderPhase::Init(Owner, GfxMgr, PhaseName, Desc)) FAIL;
 
 	// Cache global shader parameter descriptions
 

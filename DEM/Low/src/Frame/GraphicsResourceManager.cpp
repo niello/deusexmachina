@@ -784,7 +784,7 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		CString ClassName = "Frame::CRenderPhase" + PhaseType;
 		Frame::PRenderPhase CurrPhase = Core::CFactory::Instance().Create<Frame::CRenderPhase>(ClassName.CStr());
 
-		if (!CurrPhase || !CurrPhase->Init(*RP.Get(), Prm.GetName(), PhaseDesc)) return nullptr;
+		if (!CurrPhase || !CurrPhase->Init(*RP.Get(), *this, Prm.GetName(), PhaseDesc)) return nullptr;
 
 		Phases[i] = CurrPhase;
 	}
@@ -795,14 +795,11 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 }
 //---------------------------------------------------------------------
 
-bool CGraphicsResourceManager::InitUI(CStrID EffectID, const Data::CParams* pSettings)
+bool CGraphicsResourceManager::InitUI(const Data::CParams* pSettings)
 {
 	if (UIServer || !GPU) FAIL;
 
-	auto Effect = GetEffect(EffectID);
-	if (!Effect) FAIL;
-
-	UIServer.reset(n_new(UI::CUIServer)(*GPU, *Effect, pSettings));
+	UIServer.reset(n_new(UI::CUIServer)(*GPU, pSettings));
 	return !!UIServer;
 }
 //---------------------------------------------------------------------

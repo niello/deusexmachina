@@ -11,7 +11,7 @@ class CDEMGeometryBuffer;
 class CDEMTextureTarget;
 class CDEMViewportTarget;
 class CDEMTexture;
-typedef std::unique_ptr<class CDEMShaderWrapper> PDEMShaderWrapper;
+class CDEMShaderWrapper;
 
 class CDEMRenderer: public Renderer
 {
@@ -29,10 +29,10 @@ protected:
 
 	Render::PVertexLayout				VertexLayoutTextured;
 	Render::PVertexLayout				VertexLayoutColoured;
-	PDEMShaderWrapper					ShaderWrapperTextured;
-	PDEMShaderWrapper					ShaderWrapperColoured;
+	CDEMShaderWrapper*					pShaderWrapperTextured = nullptr;
+	CDEMShaderWrapper*					pShaderWrapperColoured = nullptr;
 
-	CDEMRenderer(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect);
+	CDEMRenderer(Render::CGPUDriver& GPUDriver);
 	virtual ~CDEMRenderer() override;
 
 	static void logTextureCreation(const String& name);
@@ -40,12 +40,14 @@ protected:
 
 public:
 
-	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, Render::CEffect& Effect, const int abi = CEGUI_VERSION_ABI);
+	static CDEMRenderer&	create(Render::CGPUDriver& GPUDriver, const int abi = CEGUI_VERSION_ABI);
 	static void				destroy(CDEMRenderer& renderer);
 
 	Render::CGPUDriver*		getGPUDriver() { return GPU.Get(); }
 	RenderTarget*			createViewportTarget(float width, float height); // TODO: to base class!
 	void					destroyViewportTarget(RenderTarget* target);
+
+	void                    setEffects(CDEMShaderWrapper* pTextured, CDEMShaderWrapper* pColoured);
 
 	// Implement interface from Renderer
 	virtual RenderTarget&	getDefaultRenderTarget() override;

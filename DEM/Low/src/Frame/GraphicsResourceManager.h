@@ -73,7 +73,7 @@ public:
 	Render::PMaterial GetMaterial(CStrID UID);
 	PRenderPath       GetRenderPath(CStrID ID);
 
-	bool              InitUI(CStrID EffectID, const Data::CParams* pSettings = nullptr);
+	bool              InitUI(const Data::CParams* pSettings = nullptr);
 
 	PView             CreateView(CStrID RenderPathID, int SwapChainID = INVALID_INDEX, CStrID SwapChainRenderTargetID = CStrID::Empty);
 

@@ -13,8 +13,8 @@
 namespace CEGUI
 {
 
-CDEMShaderWrapper::CDEMShaderWrapper(CDEMRenderer& Owner, Render::CEffect& Effect, Render::PSampler LinearSampler)
-	: _Renderer(Owner)
+CDEMShaderWrapper::CDEMShaderWrapper(Render::PGPUDriver GPU, Render::CEffect& Effect, Render::PSampler LinearSampler)
+	: _GPU(GPU)
 	, _Effect(&Effect)
 	, _LinearSampler(LinearSampler)
 {
@@ -66,7 +66,7 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 			pLinearSamplerParam,
 			WVPParam,
 			AlphaPercentageParam,
-			Render::CShaderParamStorage(pTech->GetParamTable(), *_Renderer.getGPUDriver())
+			Render::CShaderParamStorage(pTech->GetParamTable(), *_GPU)
 		};
 
 		It = _TechCache.emplace(NewInputSet, std::move(NewCache)).first;
@@ -76,22 +76,18 @@ void CDEMShaderWrapper::setInputSet(BlendMode BlendMode, bool Clipped, bool Opaq
 
 	if (!_pCurrCache || !_pCurrCache->pTech) return;
 
-	Render::CGPUDriver* pGPU = _Renderer.getGPUDriver();
-
 	// FIXME: no multipass support for now, CEGUI does multiple passes in its effects
 	UPTR LightCount = 0;
-	pGPU->SetRenderState(_pCurrCache->pTech->GetPasses(LightCount)[0]);
+	_GPU->SetRenderState(_pCurrCache->pTech->GetPasses(LightCount)[0]);
 
 	if (_pCurrCache && _pCurrCache->pLinearSamplerParam)
-		_pCurrCache->pLinearSamplerParam->Apply(*pGPU, _LinearSampler.Get());
+		_pCurrCache->pLinearSamplerParam->Apply(*_GPU, _LinearSampler.Get());
 }
 //---------------------------------------------------------------------
 
 void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shaderParameterBindings)
 {
 	if (!_pCurrCache || !_pCurrCache->pTech) return;
-
-	Render::CGPUDriver* pGPU = _Renderer.getGPUDriver();
 
 	const ShaderParameterBindings::ShaderParameterBindingsMap& paramMap = shaderParameterBindings->getShaderParameterBindings();
 	for (auto&& param : paramMap)
@@ -103,7 +99,7 @@ void CDEMShaderWrapper::prepareForRendering(const ShaderParameterBindings* shade
 			{
 				const CEGUI::ShaderParameterTexture* pPrm = static_cast<const CEGUI::ShaderParameterTexture*>(param.second);
 				const CEGUI::CDEMTexture* pTex = static_cast<const CEGUI::CDEMTexture*>(pPrm->d_parameterValue);
-				_pCurrCache->pMainTextureParam->Apply(*pGPU, pTex->getTexture());
+				_pCurrCache->pMainTextureParam->Apply(*_GPU, pTex->getTexture());
 			}
 			continue;
 		}

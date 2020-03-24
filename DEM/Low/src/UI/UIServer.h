@@ -24,7 +24,6 @@ namespace Data
 namespace Render
 {
 	class CGPUDriver;
-	class CEffect;
 }
 
 namespace DEM::Sys
@@ -54,7 +53,7 @@ private:
 
 public:
 
-	CUIServer(Render::CGPUDriver& GPU, Render::CEffect& Effect, const Data::CParams* pSettings = nullptr);
+	CUIServer(Render::CGPUDriver& GPU, const Data::CParams* pSettings = nullptr);
 	~CUIServer();
 	
 	// Internal use, set by config

@@ -50,36 +50,6 @@ CUIContext::~CUIContext()
 }
 //---------------------------------------------------------------------
 
-bool CUIContext::Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom)
-{
-	if (!pCtx) FAIL;
-	CEGUI::Renderer* pRenderer = CEGUI::System::getSingleton().getRenderer();
-	if (!pRenderer) FAIL;
-	if (!Mode) OK;
-
-	CEGUI::Rectf ViewportArea(Left, Top, Right, Bottom);
-	if (pCtx->getRenderTarget().getArea() != ViewportArea)
-		pCtx->getRenderTarget().setArea(ViewportArea);
-
-	// FIXME: CEGUI drawMode concept doesn't fully fit into requirements of
-	// opaque/transparent separation, so draw all in a transparent phase for now.
-	if (!(Mode & DrawMode_Transparent)) OK;
-		
-	pRenderer->beginRendering();
-
-	//if (Mode & DrawMode_Opaque)
-	//	pCtx->draw(DrawModeFlagWindowOpaque);
-
-	//if (Mode & DrawMode_Transparent)
-	//	pCtx->draw(CEGUI::DrawModeFlagWindowRegular | CEGUI::DrawModeFlagMouseCursor);
-	pCtx->draw();
-
-	pRenderer->endRendering();
-
-	OK;
-}
-//---------------------------------------------------------------------
-
 void CUIContext::Update(float dt)
 {
 	if (pCtx) pCtx->injectTimePulse(dt);

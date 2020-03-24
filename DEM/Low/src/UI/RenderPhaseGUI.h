@@ -3,7 +3,7 @@
 #include <UI/UIFwd.h>
 #include <UI/CEGUI/DEMShaderWrapper.h>
 
-// Frame rendering phase 
+// Frame rendering phase that draws GUI context
 
 namespace Frame
 {
@@ -16,13 +16,19 @@ private:
 
 	CStrID                   RenderTargetID;
 	UI::EDrawMode            DrawMode;
-	CEGUI::PDEMShaderWrapper EffectWrapperTextured;
-	//CEGUI::CDEMShaderWrapper EffectWrapperColored;
+
+	// FIXME: not good to expose CEGUI here, can fix if tech cache is moved
+	// outside a wrapper, otherwise it is too costly to recreate it each frame
+	//???ideally store the whole GUI renderer here? or at least its shared ref?
+	CEGUI::PDEMShaderWrapper ShaderWrapperTextured;
+	CEGUI::PDEMShaderWrapper ShaderWrapperColored;
 
 public:
 
-	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc);
-	virtual bool Render(CView& View);
+	virtual ~CRenderPhaseGUI() override;
+
+	virtual bool Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) override;
+	virtual bool Render(CView& View) override;
 };
 
 typedef Ptr<CRenderPhaseGUI> PRenderPhaseGUI;

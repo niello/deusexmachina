@@ -43,7 +43,6 @@ public:
 	virtual ~CUIContext() override;
 
 	// Pass absolute viewport coordinates here
-	bool				Render(EDrawMode Mode, float Left, float Top, float Right, float Bottom);
 	void                Update(float dt);
 
 	bool				SubscribeOnInput(Events::CEventDispatcher* pDispatcher, U16 Priority);
@@ -63,6 +62,8 @@ public:
 	bool				GetCursorPosition(float& X, float& Y) const;
 	bool				GetCursorPositionRel(float& X, float& Y) const;
 	bool				IsMouseOverGUI() const;
+
+	CEGUI::GUIContext*	GetCEGUIContext() const { return pCtx; }
 };
 
 typedef Ptr<CUIContext> PUIContext;

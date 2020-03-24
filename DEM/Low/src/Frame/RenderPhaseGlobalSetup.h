@@ -21,8 +21,8 @@ public:
 
 	//virtual ~CRenderPhaseGlobalSetup() {}
 
-	virtual bool Init(const CRenderPath& Owner, CStrID PhaseName, const Data::CParams& Desc);
-	virtual bool Render(CView& View);
+	virtual bool Init(const CRenderPath& Owner, CGraphicsResourceManager& GfxMgr, CStrID PhaseName, const Data::CParams& Desc) override;
+	virtual bool Render(CView& View) override;
 };
 
 }

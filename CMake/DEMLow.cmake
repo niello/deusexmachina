@@ -65,6 +65,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Debug/DebugServer.h
 	DEM/Low/src/Debug/LuaConsole.h
 	DEM/Low/src/Debug/Profiler.h
+	DEM/Low/src/Debug/RenderPhaseDebugDraw.h
 	DEM/Low/src/Debug/WatcherWindow.h
 	DEM/Low/src/Events/Event.h
 	DEM/Low/src/Events/EventBase.h
@@ -332,6 +333,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Debug/DebugDraw.cpp
 	DEM/Low/src/Debug/DebugServer.cpp
 	DEM/Low/src/Debug/LuaConsole.cpp
+	DEM/Low/src/Debug/RenderPhaseDebugDraw.cpp
 	DEM/Low/src/Debug/WatcherWindow.cpp
 	DEM/Low/src/Events/Event.cpp
 	DEM/Low/src/Events/EventDispatcher.cpp
