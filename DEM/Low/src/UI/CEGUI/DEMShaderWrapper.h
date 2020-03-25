@@ -38,6 +38,7 @@ public:
 	virtual ~CDEMShaderWrapper() override;
 
 	void         setInputSet(BlendMode BlendMode, bool Clipped, bool Opaque);
+	void         resetInputSet() { _CurrInputSet = CStrID::Empty; }
 	virtual void prepareForRendering(const ShaderParameterBindings* shaderParameterBindings) override;
 };
 
