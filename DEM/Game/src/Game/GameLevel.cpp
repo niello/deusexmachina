@@ -62,7 +62,10 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 			auto Rsrc = ResMgr.RegisterResource<Scene::CSceneNode>(Param.GetValue<CString>().CStr());
 			if (auto StaticSceneNode = Rsrc->ValidateObject<Scene::CSceneNode>())
 			{
-				if (StaticSceneIsUnique)
+				// If no reuse allowed, ensure it or fall back to shared resource
+				// Rsrc is referenced here and in a resource manager.
+				// StaticSceneNode is referenced inside Rsrc, raw pointer is used here.
+				if (StaticSceneIsUnique && Rsrc->GetRefCount() <= 2 && StaticSceneNode->GetRefCount() <= 1)
 				{
 					// Unregister unique scene from resources to prevent unintended reuse which can cause huge problems
 					Level->GetSceneRoot().AddChild(Param.GetName(), *StaticSceneNode);
@@ -82,6 +85,10 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 	{
 		n_verify(Level->GetAI()->LoadNavMesh(NavigationMapID.CStr()));
 	}
+
+	// TODO: Add to level?
+	// - animation controllers and rigid bodies for static data (separate files or inline descs? .bullet?)
+	// - optional main camera node path
 
 	return std::move(Level);
 }

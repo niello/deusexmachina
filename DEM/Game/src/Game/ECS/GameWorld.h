@@ -90,7 +90,7 @@ public:
 	CGameLevel* CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& In);
 	CGameLevel* FindLevel(CStrID ID) const;
-	void        ValidateLevel(CStrID LevelID);
+	bool        ValidateLevel(CStrID LevelID);
 	void        InvalidateLevel(CStrID LevelID);
 	// SaveLevel(id, out params / delegate)
 	// UnloadLevel(id)

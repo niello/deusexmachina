@@ -673,7 +673,7 @@ bool CApplication::Run(PApplicationState InitialState)
 		FAIL;
 	}
 
-	RequestedState = InitialState;
+	_RequestedState = InitialState;
 
 	return InitialState.IsValidPtr();
 }
@@ -701,20 +701,22 @@ bool CApplication::Update()
 
 	if (!Platform.Update()) FAIL;
 
-	//???render views here or in states? what about video?
-
 	// Update application state
 
-	if (CurrState != RequestedState)
+	while (_CurrState != _RequestedState)
 	{
-		if (CurrState) CurrState->OnExit(RequestedState.Get());
-		if (RequestedState) RequestedState->OnEnter(CurrState.Get());
-		CurrState = RequestedState;
+		// Remember requested state for the case it is changed in OnExit or OnEnter
+		// NB: don't abuse it, because it can lead to infinite loop here!
+		PApplicationState RequestedStateCopy = _RequestedState;
+
+		if (_CurrState) _CurrState->OnExit(RequestedStateCopy.Get());
+		if (RequestedStateCopy) RequestedStateCopy->OnEnter(_CurrState.Get());
+		_CurrState = RequestedStateCopy;
 	}
 
-	if (CurrState)
+	if (_CurrState)
 	{
-		RequestedState = CurrState->Update(FrameTime);
+		_RequestedState = _CurrState->Update(FrameTime);
 		OK;
 	}
 	else FAIL;
@@ -737,13 +739,13 @@ void CApplication::Term()
 void CApplication::RequestState(PApplicationState NewState)
 {
 	n_assert(!NewState || &NewState->GetApplication() == this);
-	RequestedState = NewState;
+	_RequestedState = NewState;
 }
 //---------------------------------------------------------------------
 
 CApplicationState* CApplication::GetCurrentState() const
 {
-	return CurrState.Get();
+	return _CurrState.Get();
 }
 //---------------------------------------------------------------------
 

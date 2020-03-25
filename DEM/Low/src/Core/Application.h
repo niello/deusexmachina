@@ -93,8 +93,8 @@ protected:
 	Input::PInputTranslator UnclaimedInput;
 	Data::PParams InputDesc;
 
-	PApplicationState CurrState;
-	PApplicationState RequestedState;
+	PApplicationState _CurrState;
+	PApplicationState _RequestedState;
 
 	double BaseTime = 0.0;
 	double PrevTime = 0.0;
