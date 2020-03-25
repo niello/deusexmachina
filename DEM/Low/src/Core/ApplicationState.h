@@ -7,10 +7,7 @@
 // This class is not intended to be stateless and can store any data. Therefore
 // it stores its host application because some stored objects may be app-specific.
 
-namespace DEM
-{
-
-namespace Core
+namespace DEM::Core
 {
 class CApplication;
 typedef Ptr<class CApplicationState> PApplicationState;
@@ -18,6 +15,10 @@ typedef Ptr<class CApplicationState> PApplicationState;
 class CApplicationState : public ::Core::CObject
 {
 	RTTI_CLASS_DECL;
+
+protected:
+
+	CApplication& App;
 
 public:
 
@@ -28,11 +29,6 @@ public:
 	virtual CApplicationState*	Update(double FrameTime) { return this; }
 
 	CApplication&				GetApplication() const { return App; }
-
-protected:
-
-	CApplication& App;
 };
 
 }
-};
