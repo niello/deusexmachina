@@ -56,6 +56,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/EntityTemplate.h
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.h
 	DEM/Game/src/Game/ECS/GameWorld.h
+	DEM/Game/src/Game/ECS/Components/SceneComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/Action.h
 	DEM/Game/src/Game/Interaction/ActionContext.h
