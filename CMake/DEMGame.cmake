@@ -130,6 +130,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameLevelView.cpp
 	DEM/Game/src/Game/GameServer.cpp
+	DEM/Game/src/Game/GameState.cpp
 	DEM/Game/src/Game/GameStateManager.cpp
 	DEM/Game/src/Game/Property.cpp
 	DEM/Game/src/Game/ECS/EntityTemplate.cpp
