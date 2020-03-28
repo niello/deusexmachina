@@ -13,9 +13,9 @@ public:
 
 	static const quaternion Identity;
 
-	quaternion(): x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
-	quaternion(float _x, float _y, float _z, float _w): x(_x), y(_y), z(_z), w(_w) {}
-	quaternion(const quaternion& q): x(q.x), y(q.y), z(q.z), w(q.w) {}
+	constexpr quaternion(): x(0.0f), y(0.0f), z(0.0f), w(1.0f) {}
+	constexpr quaternion(float _x, float _y, float _z, float _w): x(_x), y(_y), z(_z), w(_w) {}
+	constexpr quaternion(const quaternion& q): x(q.x), y(q.y), z(q.z), w(q.w) {}
 
 	void				set(float _x, float _y, float _z, float _w) { x = _x; y = _y; z = _z; w = _w; }
 	void				set(const quaternion& q) { x = q.x; y = q.y; z = q.z; w = q.w; }
@@ -128,6 +128,8 @@ public:
         w = fScale1 * A.w + fScale2 * B.w;
     }
 };
+
+DECLARE_TYPE(quaternion, 17) //???need or completely replace with vector4 for CData uses?
 
 // Create a rotation from one vector to an other. Works only with unit vectors.
 // See http://www.martinb.com/maths/algebra/vectors/angleBetween/index.htm for more information.

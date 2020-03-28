@@ -4,6 +4,7 @@
 
 namespace Math
 {
+const CTransformSRT CTransformSRT::Identity = CTransformSRT();
 
 inline void GetDecompositionOrder(float Scales[3], UPTR& First, UPTR& Second, UPTR& Third)
 {

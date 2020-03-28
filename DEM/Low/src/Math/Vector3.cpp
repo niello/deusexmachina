@@ -15,7 +15,7 @@ namespace Data
 DEFINE_TYPE(vector3, vector3::Zero)
 }
 
-vector3::vector3(const vector4& vec): x(vec.x), y(vec.y), z(vec.z)
+constexpr vector3::vector3(const vector4& vec): x(vec.x), y(vec.y), z(vec.z)
 {
 }
 //---------------------------------------------------------------------

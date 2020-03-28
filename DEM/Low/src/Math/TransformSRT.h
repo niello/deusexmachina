@@ -13,11 +13,13 @@ class CTransformSRT
 {
 public:
 
+	static const CTransformSRT Identity;
+
 	vector3		Translation;
 	quaternion	Rotation;	// Don't assign non-unit quaternions!
 	vector3		Scale;
 
-	CTransformSRT(): Scale(1.f, 1.f, 1.f) {}
+	constexpr CTransformSRT(): Scale(1.f, 1.f, 1.f) {}
 	CTransformSRT(const matrix44& Tfm) { FromMatrix(Tfm); }
 
 	bool	FromMatrix(const matrix44& Tfm);
