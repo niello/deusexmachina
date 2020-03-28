@@ -488,22 +488,14 @@ CGameLevel* CGameWorld::FindLevel(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CGameWorld::ValidateLevel(CStrID LevelID)
+void CGameWorld::ValidateComponents(CStrID LevelID)
 {
-	auto pLevel = FindLevel(LevelID);
-	if (!pLevel) FAIL;
-
 	for (const auto& Storage : _Storages)
 		Storage->ValidateComponents(LevelID);
-
-	// Finally validate scene resources and physics
-	pLevel->Validate(_ResMgr);
-
-	OK;
 }
 //---------------------------------------------------------------------
 
-void CGameWorld::InvalidateLevel(CStrID LevelID)
+void CGameWorld::InvalidateComponents(CStrID LevelID)
 {
 	for (const auto& Storage : _Storages)
 		Storage->InvalidateComponents(LevelID);

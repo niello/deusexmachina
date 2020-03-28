@@ -90,8 +90,8 @@ public:
 	CGameLevel* CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& In);
 	CGameLevel* FindLevel(CStrID ID) const;
-	bool        ValidateLevel(CStrID LevelID);
-	void        InvalidateLevel(CStrID LevelID);
+	void        ValidateComponents(CStrID LevelID);
+	void        InvalidateComponents(CStrID LevelID);
 	// SaveLevel(id, out params / delegate)
 	// UnloadLevel(id)
 	// SetLevelActive(bool) - exclude level from updating, maybe even allow to unload its heavy resources?
@@ -130,6 +130,8 @@ public:
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);
+	template<typename TComponent, typename TCallback>
+	void ForEachComponent(TCallback Callback);
 
 	// RegisterSystem<T>(system instance, update priority? or system tells its dependencies and world sorts them? explicit order?)
 	// UnregisterSystem<T>()
@@ -321,6 +323,22 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::cref(Component)), NextComponents));
 			else
 				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::ref(Component)), NextComponents));
+		}
+	}
+}
+//---------------------------------------------------------------------
+
+template<typename TComponent, typename TCallback>
+inline void CGameWorld::ForEachComponent(TCallback Callback)
+{
+	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
+	{
+		for (auto&& [Component, EntityID] : *pStorage)
+		{
+			if constexpr (std::is_const_v<TComponent>)
+				Callback(EntityID, std::cref(Component));
+			else
+				Callback(EntityID, std::ref(Component));
 		}
 	}
 }

@@ -10,7 +10,8 @@ namespace DEM::Game
 
 struct CSceneComponent
 {
-	CStrID AssetID;
+	CStrID      AssetID;
+	std::string ParentPath;
 	// root path - empty = add asset to scene root, NOT instead of scene root
 	// initial SRT //???in a node? instantiate asset inside it, not instead of it?
 
