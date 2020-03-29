@@ -53,6 +53,7 @@
 #include <Render/CDLODData.h>
 #include <Render/CDLODDataLoader.h>
 #include <Physics/CollisionLoaderCDLOD.h>
+#include <Physics/CollisionLoaderHRD.h>
 #include <Physics/CollisionAttribute.h>
 #include <Animation/AnimationClip.h>
 #include <Animation/AnimationLoaderANM.h>
@@ -649,6 +650,7 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CCDLODData::RTTI, n_new(Resources::CCDLODDataLoader(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Render::CTextureData::RTTI, n_new(Resources::CTextureLoaderCDLOD(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("cdlod", &Physics::CCollisionShape::RTTI, n_new(Resources::CCollisionLoaderCDLOD(*ResMgr)));
+	ResMgr->RegisterDefaultCreator("hrd", &Physics::CCollisionShape::RTTI, n_new(Resources::CCollisionLoaderHRD(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("nvx2", &Render::CMeshData::RTTI, n_new(Resources::CMeshLoaderNVX2(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("msh", &Render::CMeshData::RTTI, n_new(Resources::CMeshLoaderMSH(*ResMgr)));
 	ResMgr->RegisterDefaultCreator("skn", &Render::CSkinInfo::RTTI, n_new(Resources::CSkinInfoLoaderSKN(*ResMgr)));
