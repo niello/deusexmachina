@@ -1,7 +1,7 @@
 #include "EntityTemplateLoader.h"
 #include <Game/ECS/EntityTemplate.h>
 #include <Resources/ResourceManager.h>
-#include <IO/BinaryReader.h>
+#include <IO/Stream.h>
 #include <Data/Buffer.h>
 #include <Data/HRDParser.h>
 

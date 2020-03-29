@@ -155,6 +155,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/ClosestNotMeRayResultCallback.h
 	DEM/Low/src/Physics/CollisionAttribute.h
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.h
+	DEM/Low/src/Physics/CollisionLoaderHRD.h
 	DEM/Low/src/Physics/CollisionShape.h
 	DEM/Low/src/Physics/HeightfieldShape.h
 	DEM/Low/src/Physics/MovableCollider.h
@@ -400,6 +401,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Math/Vector4.cpp
 	DEM/Low/src/Physics/CollisionAttribute.cpp
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.cpp
+	DEM/Low/src/Physics/CollisionLoaderHRD.cpp
 	DEM/Low/src/Physics/CollisionShape.cpp
 	DEM/Low/src/Physics/HeightfieldShape.cpp
 	DEM/Low/src/Physics/MovableCollider.cpp
