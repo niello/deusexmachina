@@ -10,12 +10,10 @@ namespace DEM::Game
 
 struct CSceneComponent
 {
-	CStrID            AssetID;
-	std::string       ParentPath;
-	// root path - empty = add asset to scene root, NOT instead of scene root
-	// initial SRT //???in a node? instantiate asset inside it, not instead of it?
-
 	Scene::PSceneNode RootNode;
+
+	CStrID            AssetID;
+	CString           RootPath; // FIXME: use std::string, CData must use it too then
 
 	CSceneComponent() : RootNode(n_new(Scene::CSceneNode())) {}
 
@@ -45,7 +43,8 @@ template<> inline constexpr auto RegisterMembers<Game::CSceneComponent>()
 	return std::make_tuple
 	(
 		Member(1, "AssetID", &Game::CSceneComponent::AssetID, &Game::CSceneComponent::AssetID),
-		Member<Game::CSceneComponent, Math::CTransform>(2, "Transform", &Game::CSceneComponent::GetLocalTransform, &Game::CSceneComponent::SetLocalTransform)
+		Member(2, "RootPath", &Game::CSceneComponent::RootPath, &Game::CSceneComponent::RootPath),
+		Member<Game::CSceneComponent, Math::CTransform>(3, "Transform", &Game::CSceneComponent::GetLocalTransform, &Game::CSceneComponent::SetLocalTransform)
 	);
 }
 

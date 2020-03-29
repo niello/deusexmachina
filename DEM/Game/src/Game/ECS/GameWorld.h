@@ -4,7 +4,6 @@
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
 #include <Math/AABB.h>
-#include <typeindex>
 
 // A complete game world with objects, time and space. Space is subdivided into levels.
 // All levels share the same time. Objects (or entities) can move between levels, but
@@ -25,7 +24,7 @@ protected:
 
 	// Zero-based type index for fast component storage access
 	inline static uint32_t ComponentTypeCount = 0;
-	template<class T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
+	template<typename T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
 
 	enum class EState
 	{

@@ -491,14 +491,16 @@ CGameLevel* CGameWorld::FindLevel(CStrID ID) const
 void CGameWorld::ValidateComponents(CStrID LevelID)
 {
 	for (const auto& Storage : _Storages)
-		Storage->ValidateComponents(LevelID);
+		if (Storage)
+			Storage->ValidateComponents(LevelID);
 }
 //---------------------------------------------------------------------
 
 void CGameWorld::InvalidateComponents(CStrID LevelID)
 {
 	for (const auto& Storage : _Storages)
-		Storage->InvalidateComponents(LevelID);
+		if (Storage)
+			Storage->InvalidateComponents(LevelID);
 }
 //---------------------------------------------------------------------
 
