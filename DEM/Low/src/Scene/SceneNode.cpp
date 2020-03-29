@@ -281,8 +281,10 @@ CSceneNode* CSceneNode::CreateNodeChain(const char* pPath)
 }
 //---------------------------------------------------------------------
 
-bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
+bool CSceneNode::AddChild(CStrID ChildName, PSceneNode Node, bool Replace)
 {
+	if (!Node) return false;
+
 	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
 	if (It != Children.end() && (*It)->GetName() == ChildName)
 	{
@@ -290,10 +292,28 @@ bool CSceneNode::AddChild(CStrID ChildName, CSceneNode& Node, bool Replace)
 		else return *It;
 	}
 
-	if (ChildName) Node.Name = ChildName;
-	Children.insert(It, &Node);
-	Node.SetParent(this);
+	if (ChildName) Node->Name = ChildName;
+	Children.insert(It, Node);
+	Node->SetParent(this);
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool CSceneNode::AddChildAtPath(CStrID ChildName, std::string_view Path, PSceneNode Node, bool Replace)
+{
+	if (!Node) return false;
+
+	auto pParent = this;
+
+	const auto LastDotPos = Path.rfind('.');
+	if (LastDotPos != std::string_view::npos)
+	{
+		//!!!FIXME: need tokenizer for non-null-terminated strings, on views!
+		pParent = CreateNodeChain(std::string(Path.begin(), Path.begin() + LastDotPos).c_str());
+		if (!pParent) return false;
+	}
+
+	return pParent->AddChild(ChildName, Node, Replace);
 }
 //---------------------------------------------------------------------
 

@@ -68,12 +68,12 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 				if (StaticSceneIsUnique && Rsrc->GetRefCount() <= 2 && StaticSceneNode->GetRefCount() <= 1)
 				{
 					// Unregister unique scene from resources to prevent unintended reuse which can cause huge problems
-					Level->GetSceneRoot().AddChild(Param.GetName(), *StaticSceneNode);
+					Level->GetSceneRoot().AddChild(Param.GetName(), StaticSceneNode);
 					ResMgr.UnregisterResource(Rsrc->GetUID());
 				}
 				else
 				{
-					Level->GetSceneRoot().AddChild(Param.GetName(), *StaticSceneNode->Clone());
+					Level->GetSceneRoot().AddChild(Param.GetName(), StaticSceneNode->Clone());
 				}
 			}
 		}

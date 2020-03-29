@@ -82,7 +82,7 @@ bool CPropSceneNode::InternalActivate()
 		// load referenced resources and prepare itself to work.
 		ExistingNode = false;
 
-		PathNode->AddChild(GetEntity()->GetUID(), *Node.Get());
+		PathNode->AddChild(GetEntity()->GetUID(), Node);
 
 		// FIXME: need resource manager from App. Validate here?
 		//Node->AcceptVisitor(Scene::CSceneNodeValidateResources(ResMgr));

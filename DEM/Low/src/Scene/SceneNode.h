@@ -75,7 +75,8 @@ public:
 
 	CSceneNode*				CreateChild(CStrID ChildName, bool Replace = false);
 	CSceneNode*				CreateNodeChain(const char* pPath);
-	bool					AddChild(CStrID ChildName, CSceneNode& Node, bool Replace = false);
+	bool					AddChild(CStrID ChildName, PSceneNode Node, bool Replace = false);
+	bool                    AddChildAtPath(CStrID ChildName, std::string_view Path, PSceneNode Node, bool Replace = false);
 	void					RemoveChild(CSceneNode& Node);
 	void					RemoveChild(UPTR Idx);
 	void					RemoveChild(CStrID ChildName);
