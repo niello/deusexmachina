@@ -31,8 +31,7 @@ private:
 	static constexpr float MAX_LOAD_FACTOR = 1.5f;
 
 	// FIXME: thread safety! can use lock-free pool.
-	// FIXME: review my old pool allocator, maybe less effective than modern ones.
-	static inline CPool<CRecord, 1024> _Pool;
+	CPool<CRecord, 1024>  _Pool;
 
 	std::vector<CRecord*> _Records;
 	size_t                _Size = 0;
