@@ -26,6 +26,19 @@ struct CSceneComponent
 namespace DEM::Meta
 {
 
+template<> inline constexpr auto RegisterClassName<quaternion>() { return "quaternion"; }
+template<> inline constexpr auto RegisterMembers<quaternion>()
+{
+	// FIXME: quaternion diff will be too big! Can forbid diff saving for some types, save always all data in binary!
+	return std::make_tuple
+	(
+		Member(1, "x", &quaternion::x, &quaternion::x),
+		Member(2, "y", &quaternion::y, &quaternion::y),
+		Member(3, "z", &quaternion::z, &quaternion::z),
+		Member(4, "w", &quaternion::w, &quaternion::w)
+	);
+}
+
 template<> inline constexpr auto RegisterClassName<Math::CTransform>() { return "Math::CTransform"; }
 template<> inline constexpr auto RegisterMembers<Math::CTransform>()
 {

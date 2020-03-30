@@ -129,8 +129,6 @@ public:
     }
 };
 
-DECLARE_TYPE(quaternion, 17) //???need or completely replace with vector4 for CData uses?
-
 // Create a rotation from one vector to an other. Works only with unit vectors.
 // See http://www.martinb.com/maths/algebra/vectors/angleBetween/index.htm for more information.
 inline void quaternion::set_from_norm_axes(const vector3& from, const vector3& to)
