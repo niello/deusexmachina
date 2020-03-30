@@ -416,7 +416,6 @@ public:
 		//!!!TODO: need flags, what to export! command-line override must be provided along with .meta params
 
 		Ctx.TaskName = Task.TaskID.CStr();
-		// TODO: replace forbidden characters!
 
 		Ctx.MeshPath = GetPath(Task.Params, "MeshOutput");
 		Ctx.MaterialPath = GetPath(Task.Params, "MaterialOutput");
@@ -450,7 +449,7 @@ public:
 
 		// Finalize and save the scene
 
-		const std::string TaskName = Task.TaskID.ToString();
+		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
 		Data::CParams Result;
 		//if (Nodes.size() == 1)

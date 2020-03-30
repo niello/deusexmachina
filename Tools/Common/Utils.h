@@ -228,10 +228,20 @@ inline void ToUpper(std::string& s)
 }
 //---------------------------------------------------------------------
 
+inline std::string GetValidFileName(const std::string& BaseName)
+{
+	// TODO: std::transform with replacer callback?
+	std::string RsrcName = BaseName;
+	std::replace(RsrcName.begin(), RsrcName.end(), ':', '_');
+	std::replace(RsrcName.begin(), RsrcName.end(), '|', '_');
+	std::replace(RsrcName.begin(), RsrcName.end(), '?', '_');
+	return RsrcName;
+}
+//---------------------------------------------------------------------
+
 inline std::string GetValidResourceName(const std::string& BaseName)
 {
-	// TODO: replace forbidden characters (std::transform with replacer callback?)
-	std::string RsrcName = BaseName;
+	std::string RsrcName = GetValidFileName(BaseName);
 	std::replace(RsrcName.begin(), RsrcName.end(), ' ', '_');
 	std::replace(RsrcName.begin(), RsrcName.end(), '-', '_');
 	ToLower(RsrcName);

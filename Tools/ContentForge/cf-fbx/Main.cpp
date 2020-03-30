@@ -842,11 +842,10 @@ public:
 
 		// Write resulting mesh file
 
-		// TODO: replace forbidden characters (std::transform with replacer callback?)
 		std::string MeshName = pMesh->GetName();
 		if (MeshName.empty()) MeshName = pMesh->GetNode()->GetName();
 		if (MeshName.empty()) MeshName = Ctx.DefaultName; //!!!FIXME: add counter per resource type!
-		ToLower(MeshName);
+		MeshName = GetValidResourceName(MeshName);
 
 		const auto DestPath = Ctx.MeshPath / (MeshName + ".msh");
 
