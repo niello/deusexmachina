@@ -244,6 +244,7 @@ inline std::string GetValidResourceName(const std::string& BaseName)
 	std::string RsrcName = GetValidFileName(BaseName);
 	std::replace(RsrcName.begin(), RsrcName.end(), ' ', '_');
 	std::replace(RsrcName.begin(), RsrcName.end(), '-', '_');
+	std::replace(RsrcName.begin(), RsrcName.end(), '.', '_');
 	ToLower(RsrcName);
 	return RsrcName;
 }
