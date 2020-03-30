@@ -58,7 +58,8 @@ void CGameWorld::ClearAll(UPTR NewInitialCapacity)
 	_EntitiesBase.Clear(NewInitialCapacity);
 	_Entities.Clear(NewInitialCapacity);
 	for (auto& Storage : _Storages)
-		Storage->ClearAll();
+		if (Storage)
+			Storage->ClearAll();
 }
 //---------------------------------------------------------------------
 
