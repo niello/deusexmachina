@@ -794,6 +794,10 @@ public:
 					}
 				}
 
+				constexpr bool RenormalizeWeights = true;
+				if (RenormalizeWeights)
+					NormalizeWeights32x4(Vertex.BlendWeights32[0], Vertex.BlendWeights32[1], Vertex.BlendWeights32[2], Vertex.BlendWeights32[3]);
+
 				Vertices.push_back(std::move(Vertex));
 			}
 		}

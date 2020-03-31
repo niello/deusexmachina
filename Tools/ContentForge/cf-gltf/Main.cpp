@@ -1127,8 +1127,8 @@ public:
 
 		const auto SrcPath = Ctx.SrcFolder / Image.uri;
 
-		const auto RsrcName = GetValidResourceName(fs::path(Image.uri).filename().string());
-		const auto DestPath = Ctx.TexturePath / RsrcName;
+		const auto RsrcName = GetValidResourceName(fs::path(Image.uri).stem().string());
+		const auto DestPath = Ctx.TexturePath / (RsrcName + fs::path(Image.uri).extension().generic_string());
 
 		try
 		{
