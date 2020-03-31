@@ -1126,7 +1126,7 @@ public:
 			CSkeletonACLBinding Skeleton;
 
 			std::vector<acl::RigidBone> Bones;
-			BuildACLSkeleton(pRoot, Skeleton.Nodes, Bones);
+			BuildACLSkeleton(pAnimStack, pRoot, Skeleton.Nodes, Bones);
 
 			assert(Bones.size() <= std::numeric_limits<uint16_t>().max());
 
@@ -1212,8 +1212,17 @@ public:
 			FindSkeletonRoots(pAnimStack, pNode->GetChild(i), SkeletonRoots);
 	}
 
-	void BuildACLSkeleton(FbxNode* pNode, std::vector<FbxNode*>& Nodes, std::vector<acl::RigidBone>& Bones)
+	// Returns number of animated nodes in this subtree
+	size_t BuildACLSkeleton(FbxAnimStack* pAnimStack, FbxNode* pNode, std::vector<FbxNode*>& Nodes, std::vector<acl::RigidBone>& Bones)
 	{
+		size_t AnimatedCount = 0;
+		if (IsPropertyAnimated(pAnimStack, pNode->LclScaling) ||
+			IsPropertyAnimated(pAnimStack, pNode->LclRotation) ||
+			IsPropertyAnimated(pAnimStack, pNode->LclTranslation))
+		{
+			++AnimatedCount;
+		}
+
 		acl::RigidBone Bone;
 		if (Nodes.empty())
 		{
@@ -1234,6 +1243,12 @@ public:
 
 		for (int i = 0; i < pNode->GetChildCount(); ++i)
 		{
+			AnimatedCount += BuildACLSkeleton(pAnimStack, pNode->GetChild(i), Nodes, Bones);
+			/*
+			// This was faster than checking IsPropertyAnimated and using AnimatedCount.
+			// Disabled because some models do not have FbxNodeAttribute::eSkeleton on animated nodes, see for example:
+			// https://www.turbosquid.com/FullPreview/Index.cfm/ID/1049650
+
 			// Traverse only through bones
 			for (int i = 0; i < pNode->GetNodeAttributeCount(); ++i)
 			{
@@ -1243,7 +1258,17 @@ public:
 					break;
 				}
 			}
+			*/
 		}
+
+		if (!AnimatedCount)
+		{
+			// Subtree isn't animated by this clip, discard the node
+			Nodes.pop_back();
+			Bones.pop_back();
+		}
+
+		return AnimatedCount;
 	}
 };
 
