@@ -245,7 +245,17 @@ inline std::string GetValidResourceName(const std::string& BaseName)
 	std::replace(RsrcName.begin(), RsrcName.end(), ' ', '_');
 	std::replace(RsrcName.begin(), RsrcName.end(), '-', '_');
 	std::replace(RsrcName.begin(), RsrcName.end(), '.', '_');
+	std::replace(RsrcName.begin(), RsrcName.end(), '^', '_');
 	ToLower(RsrcName);
+	return RsrcName;
+}
+//---------------------------------------------------------------------
+
+inline std::string GetValidNodeName(const std::string& BaseName)
+{
+	std::string RsrcName = GetValidFileName(BaseName);
+	std::replace(RsrcName.begin(), RsrcName.end(), '.', '_');
+	std::replace(RsrcName.begin(), RsrcName.end(), '^', '_');
 	return RsrcName;
 }
 //---------------------------------------------------------------------

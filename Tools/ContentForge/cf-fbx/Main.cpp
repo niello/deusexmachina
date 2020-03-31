@@ -507,9 +507,10 @@ public:
 		if (!Children.empty())
 			NodeSection.emplace_back(sidChildren, std::move(Children));
 
-		CStrID NodeID = CStrID(pNode->GetName());
+		auto NodeName = GetValidNodeName(pNode->GetName());
+		CStrID NodeID = CStrID(NodeName);
 		if (ParamsUtils::HasParam(Nodes, NodeID))
-			Ctx.Log.LogWarning("Duplicated node overwritten with name " + std::string(pNode->GetName()));
+			Ctx.Log.LogWarning("Duplicated node overwritten with name " + NodeName);
 
 		Nodes.emplace_back(NodeID, std::move(NodeSection));
 
@@ -635,7 +636,7 @@ public:
 				const auto InvLocalBind = (InvMeshWorldMatrix * WorldBindPose).Inverse();
 
 				CBone NewBone;
-				NewBone.ID = pBone->GetName();
+				NewBone.ID = GetValidNodeName(pBone->GetName());
 
 				// Save matrices (both DEM and FBX SDK use column-major)
 				for (int Col = 0; Col < 4; ++Col)
@@ -655,7 +656,6 @@ public:
 		const auto pMaterialElement = pMesh->GetElementMaterial();
 
 		std::map<std::string, CMeshGroup> SubMeshes;
-		size_t MaxBonesPerVertexUsed = 0;
 
 		for (int p = 0; p < PolyCount; ++p)
 		{
@@ -777,8 +777,8 @@ public:
 							BoneOrderNumber = Vertex.BonesUsed;
 
 							++Vertex.BonesUsed;
-							if (Vertex.BonesUsed > MaxBonesPerVertexUsed)
-								MaxBonesPerVertexUsed = Vertex.BonesUsed;
+							if (Vertex.BonesUsed > VertexFormat.BonesPerVertex)
+								VertexFormat.BonesPerVertex = Vertex.BonesUsed;
 						}
 
 						Vertex.BlendIndices[BoneOrderNumber] = BoneIndex;
@@ -887,7 +887,7 @@ public:
 
 		// Write resulting skin file (if skinned)
 
-		if (MaxBonesPerVertexUsed)
+		if (VertexFormat.BonesPerVertex)
 		{
 			const auto DestPath = Ctx.SkinPath / (MeshName + ".skn");
 			if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return false;
@@ -1040,11 +1040,11 @@ public:
 			Thresholds[i].first = Value.value();
 
 			const FbxNode* pChild = pLODGroup->GetNode()->GetChild(i);
-			Thresholds[i].second = pChild ? pChild->GetName() : std::string();
+			Thresholds[i].second = pChild ? GetValidNodeName(pChild->GetName()) : std::string();
 		}
 
 		const FbxNode* pLastChild = pLODGroup->GetNode()->GetChild(pLODGroup->GetNode()->GetChildCount());
-		std::string LastID = pLastChild ? pLastChild->GetName() : std::string();
+		std::string LastID = pLastChild ? GetValidNodeName(pLastChild->GetName()) : std::string();
 
 		if (UseMinMax)
 		{
@@ -1076,7 +1076,7 @@ public:
 
 	bool ExportAnimation(FbxAnimStack* pAnimStack, FbxScene* pScene, CContext& Ctx)
 	{
-		std::string AnimName = GetValidResourceName(pAnimStack->GetName());
+		const std::string AnimName = GetValidResourceName(pAnimStack->GetName());
 
 		const auto LayerCount = pAnimStack->GetMemberCount<FbxAnimLayer>();
 		if (LayerCount <= 0)
@@ -1151,7 +1151,7 @@ public:
 
 			std::vector<std::string> NodeNames(Skeleton.Nodes.size());
 			for (size_t BoneIdx = 0; BoneIdx < Skeleton.Nodes.size(); ++BoneIdx)
-				NodeNames[BoneIdx] = Skeleton.Nodes[BoneIdx]->GetName();
+				NodeNames[BoneIdx] = GetValidNodeName(Skeleton.Nodes[BoneIdx]->GetName());
 
 			uint32_t SampleIndex = 0;
 			FbxTime FrameTime;

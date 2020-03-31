@@ -132,7 +132,7 @@ bool WriteDEMMesh(const fs::path& DestPath, const std::map<std::string, CMeshGro
 	if (VertexFormat.BonesPerVertex)
 	{
 		if (BoneCount > 256)
-			// Could use unsigned, but it is not supported in D3D9. > 32k bones is nonsence anyway.
+			// Could use unsigned, but it is not supported in D3D9. > 32k bones is nonsense anyway.
 			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_SInt16_4, 0, 0);
 		else
 			WriteVertexComponent(File, EVertexComponentSemantic::VCSem_BoneIndices, EVertexComponentFormat::VCFmt_UInt8_4, 0, 0);
