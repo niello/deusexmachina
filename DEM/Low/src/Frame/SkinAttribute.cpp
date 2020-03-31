@@ -51,6 +51,9 @@ void CSkinAttribute::SetupBoneNodes(UPTR ParentIndex, Scene::CSceneNode& ParentN
 	const UPTR BoneCount = _SkinInfo->GetBoneCount();
 	for (UPTR i = 0; i < BoneCount; ++i)
 	{
+		// Reset palette just in case some nodes are not found
+		_pSkinPalette[i].ident();
+
 		auto& pBoneNode = _BoneNodes[i].pNode;
 		if (pBoneNode) continue;
 
