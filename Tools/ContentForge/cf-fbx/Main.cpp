@@ -149,7 +149,7 @@ protected:
 		Data::CParamsSorted       MaterialMap;
 
 		std::unordered_map<const FbxMesh*, CMeshAttrInfo> ProcessedMeshes;
-		std::unordered_map<const FbxMesh*, std::string> ProcessedSkins;
+		std::unordered_map<const FbxMesh*, CSkinAttrInfo> ProcessedSkins;
 	};
 
 	struct CSkeletonACLBinding
@@ -557,15 +557,18 @@ public:
 		// Assemble the skin attribute if required
 
 		auto SkinIt = Ctx.ProcessedSkins.find(pMesh);
-		std::string SkinID = (SkinIt != Ctx.ProcessedSkins.cend()) ? SkinIt->second : std::string{};
-
-		if (!SkinID.empty())
+		if (SkinIt != Ctx.ProcessedSkins.cend())
 		{
-			Data::CParams SkinAttribute;
-			SkinAttribute.emplace_back(CStrID("Class"), 'SKIN'); //std::string("Frame::CSkinAttribute"));
-			SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinID);
-			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
-			Attributes.push_back(std::move(SkinAttribute));
+			if (!SkinIt->second.SkinID.empty())
+			{
+				Data::CParams SkinAttribute;
+				SkinAttribute.emplace_back(CStrID("Class"), 'SKIN'); // Frame::CSkinAttribute
+				SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinIt->second.SkinID);
+				if (!SkinIt->second.RootSearchPath.empty())
+					SkinAttribute.emplace_back(CStrID("RootSearchPath"), SkinIt->second.RootSearchPath);
+				//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
+				Attributes.push_back(std::move(SkinAttribute));
+			}
 		}
 
 		return true;
@@ -802,6 +805,7 @@ public:
 
 		// Establish bone parent-child links and check IDs
 
+		const FbxNode* pRootBone = nullptr;
 		{
 			std::set<std::string> BoneNames;
 			for (size_t i = 0; i < Bones.size(); ++i)
@@ -819,7 +823,9 @@ public:
 				{
 					return Pair.first->GetLink() == pParent;
 				});
-				if (It != BoneClusters.cend())
+				if (It == BoneClusters.cend())
+					pRootBone = pCluster->GetLink(); // What if some bone is skipped? Will it lead to the false root?
+				else
 					Bone.ParentBoneIndex = static_cast<uint16_t>(std::distance(BoneClusters.cbegin(), It));
 
 				// TODO: could calculate optional per-bone AABB. May be also useful for ACL.
@@ -891,8 +897,35 @@ public:
 		{
 			const auto DestPath = Ctx.SkinPath / (MeshName + ".skn");
 			if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return false;
+
+			// Calculate relative path from the skin node to the root joint
+
+			std::string RootSearchPath;
+			if (pMesh->GetNode() != pRootBone)
+			{
+				std::vector<std::string> CurrNodePath;
+				const auto* pCurrNode = pMesh->GetNode();
+				while (pCurrNode)
+				{
+					CurrNodePath.push_back(pCurrNode->GetName());
+					pCurrNode = pCurrNode->GetParent();
+				}
+
+				std::vector<std::string> SkeletonRootNodePath;
+				pCurrNode = pRootBone;
+				while (pCurrNode)
+				{
+					SkeletonRootNodePath.push_back(pCurrNode->GetName());
+					pCurrNode = pCurrNode->GetParent();
+				}
+
+				RootSearchPath = GetRelativeNodePath(std::move(CurrNodePath), std::move(SkeletonRootNodePath));
+			}
+
+			// Remember the skin for node attribute creation
+
 			std::string SkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-			Ctx.ProcessedSkins.emplace(pMesh, std::move(SkinID));
+			Ctx.ProcessedSkins.emplace(pMesh, CSkinAttrInfo{ std::move(SkinID), std::move(RootSearchPath) });
 		}
 
 		return true;

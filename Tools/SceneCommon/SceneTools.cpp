@@ -15,6 +15,35 @@ namespace acl
 
 namespace fs = std::filesystem;
 
+std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std::string>&& To)
+{
+	std::string RelPath;
+
+	while (!From.empty() &&
+		!To.empty() &&
+		From.back() == To.back())
+	{
+		From.pop_back();
+		To.pop_back();
+	}
+
+	for (const auto& NodeID : From)
+	{
+		if (!RelPath.empty()) RelPath += '.';
+		RelPath += '^';
+	}
+
+	To.erase(To.begin());
+	for (auto It = To.crbegin(); It != To.crend(); ++It)
+	{
+		if (!RelPath.empty()) RelPath += '.';
+		RelPath += GetValidNodeName(*It);
+	}
+
+	return RelPath;
+}
+//---------------------------------------------------------------------
+
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices,
 	std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices)
 {

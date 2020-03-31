@@ -33,12 +33,12 @@ static const gltf::Node* GetParentNode(const gltf::Document& Doc, const std::str
 }
 //---------------------------------------------------------------------
 
-static void BuildNodePath(const gltf::Document& Doc, const gltf::Node* pNode, std::vector<std::string>& OutPath)
+static void BuildNodePath(const gltf::Document& Doc, const gltf::Node* pNode, const std::string& TaskName, std::vector<std::string>& OutPath)
 {
 	const gltf::Node* pCurrNode = pNode;
 	while (pCurrNode)
 	{
-		OutPath.push_back(pCurrNode->id);
+		OutPath.push_back(pCurrNode->name.empty() ? TaskName + '_' + pCurrNode->id : pCurrNode->name);
 		pCurrNode = GetParentNode(Doc, pCurrNode->id);
 	}
 }
@@ -247,9 +247,9 @@ protected:
 		std::string               TaskName;
 
 		std::unordered_map<std::string, CMeshAttrInfo> ProcessedMeshes;
+		std::unordered_map<std::string, CSkinAttrInfo> ProcessedSkins;
 		std::unordered_map<std::string, std::string> ProcessedMaterials;
 		std::unordered_map<std::string, std::string> ProcessedTextures;
-		std::unordered_map<std::string, std::string> ProcessedSkins;
 	};
 
 	Data::CSchemeSet          _SceneSchemes;
@@ -492,7 +492,7 @@ public:
 	{
 		const auto& Node = Ctx.Doc.nodes[NodeName];
 
-		std::string NodeID = Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name;
+		std::string NodeID = GetValidNodeName(Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name);
 
 		Ctx.Log.LogDebug("Node " + NodeID);
 
@@ -516,17 +516,16 @@ public:
 
 		if (!Node.skinId.empty())
 		{
-			std::string SkinID;
-			std::string RootSearchPath;
-			if (!ExportSkin(Node, SkinID, RootSearchPath, Ctx)) return false;
-
-			Data::CParams SkinAttribute;
-			SkinAttribute.emplace_back(CStrID("Class"), 'SKIN'); //std::string("Frame::CSkinAttribute"));
-			SkinAttribute.emplace_back(CStrID("SkinInfo"), SkinID);
-			if (!RootSearchPath.empty())
-				SkinAttribute.emplace_back(CStrID("RootSearchPath"), RootSearchPath);
-			//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
-			Attributes.push_back(std::move(SkinAttribute));
+			if (auto pSkinAttrInfo = ExportSkin(Node, Ctx))
+			{
+				Data::CParams SkinAttribute;
+				SkinAttribute.emplace_back(CStrID("Class"), 'SKIN'); // Frame::CSkinAttribute
+				SkinAttribute.emplace_back(CStrID("SkinInfo"), pSkinAttrInfo->SkinID);
+				if (!pSkinAttrInfo->RootSearchPath.empty())
+					SkinAttribute.emplace_back(CStrID("RootSearchPath"), pSkinAttrInfo->RootSearchPath);
+				//SkinAttribute.emplace(CStrID("AutocreateBones"), true);
+				Attributes.push_back(std::move(SkinAttribute));
+			}
 		}
 
 		{
@@ -1149,72 +1148,14 @@ public:
 		return true;
 	}
 
-	bool ExportSkin(const gltf::Node& SkinNode, std::string& OutSkinID, std::string& OutRootSearchPath, CContext& Ctx)
+	CSkinAttrInfo* ExportSkin(const gltf::Node& SkinNode, CContext& Ctx)
 	{
 		auto It = Ctx.ProcessedSkins.find(SkinNode.skinId);
-		if (It != Ctx.ProcessedSkins.cend())
-		{
-			OutSkinID = It->second;
-			return true;
-		}
+		if (It != Ctx.ProcessedSkins.cend()) return &It->second;
 
 		const auto& Skin = Ctx.Doc.skins[SkinNode.skinId];
 
 		Ctx.Log.LogDebug("Skin " + SkinNode.skinId + ": " + Skin.name);
-
-		// Calculate relative path from the skin node to the root joint
-
-		// Since bind matrices are relative to the skeleton root, we must add
-		// a transformation from the mesh node to the skeleton root to each of them.
-		auto MeshToRoot = acl::matrix_identity_32();
-
-		if (SkinNode.id != Skin.skeletonId)
-		{
-			std::vector<std::string> CurrNodePath;
-			BuildNodePath(Ctx.Doc, &SkinNode, CurrNodePath);
-
-			std::vector<std::string> SkeletonRootNodePath;
-			if (!Skin.skeletonId.empty())
-			{
-				BuildNodePath(Ctx.Doc, &Ctx.Doc.nodes[Skin.skeletonId], SkeletonRootNodePath);
-
-				while (!CurrNodePath.empty() &&
-					!SkeletonRootNodePath.empty() &&
-					CurrNodePath.back() == SkeletonRootNodePath.back())
-				{
-					CurrNodePath.pop_back();
-					SkeletonRootNodePath.pop_back();
-				}
-			}
-
-			for (const auto& NodeID : CurrNodePath)
-			{
-				if (!OutRootSearchPath.empty()) OutRootSearchPath += '.';
-				OutRootSearchPath += '^';
-
-				// Accumulate transform from the mesh node to the common parent
-				const auto InvLocalMatrix = acl::matrix_inverse(GetNodeMatrix(Ctx.Doc.nodes[NodeID]));
-				MeshToRoot = acl::matrix_mul(MeshToRoot, InvLocalMatrix);
-			}
-
-			SkeletonRootNodePath.erase(SkeletonRootNodePath.begin());
-			for (auto It = SkeletonRootNodePath.crbegin(); It != SkeletonRootNodePath.crend(); ++It)
-			{
-				const auto& Node = Ctx.Doc.nodes[*It];
-
-				// When not erasing root node itself:
-				//if (It.base() - 1 != SkeletonRootNodePath.cbegin())
-				//{
-					if (!OutRootSearchPath.empty()) OutRootSearchPath += '.';
-
-					OutRootSearchPath += (Node.name.empty() ? Ctx.TaskName + '_' + Node.id : Node.name);
-				//}
-
-				// Accumulate transform from the common parent to the skeleton root
-
-				MeshToRoot = acl::matrix_mul(MeshToRoot, GetNodeMatrix(Node));
-			}
-		}
 
 		// Collect bone info
 
@@ -1239,7 +1180,6 @@ public:
 					NewBone.ParentBoneIndex = static_cast<uint16_t>(std::distance(Skin.jointIds.cbegin(), It));
 			}
 
-			//auto InvBindMatrix = acl::matrix_mul(MeshToRoot, acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix));
 			auto InvBindMatrix = acl::unaligned_load<acl::AffineMatrix_32>(pInvBindMatrix);
 
 			acl::unaligned_write(InvBindMatrix, NewBone.InvLocalBindPose);
@@ -1256,12 +1196,29 @@ public:
 		const auto RsrcName = GetValidResourceName(Skin.name.empty() ? Ctx.TaskName + '_' + SkinNode.skinId : Skin.name);
 		const auto DestPath = Ctx.SkinPath / (RsrcName + ".skn");
 
-		if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return false;
+		if (!WriteDEMSkin(DestPath, Bones, Ctx.Log)) return nullptr;
 
-		OutSkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
-		Ctx.ProcessedSkins.emplace(SkinNode.skinId, OutSkinID);
+		// Calculate relative path from the skin node to the root joint
 
-		return true;
+		std::string RootSearchPath;
+		if (SkinNode.id != Skin.skeletonId)
+		{
+			std::vector<std::string> CurrNodePath;
+			BuildNodePath(Ctx.Doc, &SkinNode, Ctx.TaskName, CurrNodePath);
+
+			std::vector<std::string> SkeletonRootNodePath;
+			if (!Skin.skeletonId.empty())
+				BuildNodePath(Ctx.Doc, &Ctx.Doc.nodes[Skin.skeletonId], Ctx.TaskName, SkeletonRootNodePath);
+
+			RootSearchPath = GetRelativeNodePath(std::move(CurrNodePath), std::move(SkeletonRootNodePath));
+		}
+
+		// Remember the skin for node attribute creation
+
+		std::string SkinID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
+		It = Ctx.ProcessedSkins.emplace(SkinNode.skinId, CSkinAttrInfo{ std::move(SkinID), std::move(RootSearchPath) }).first;
+
+		return &It->second;
 	}
 
 	bool ExportCamera(const std::string& CameraName, CContext& Ctx, Data::CDataArray& Attributes)

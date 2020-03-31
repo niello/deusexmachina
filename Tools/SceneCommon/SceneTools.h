@@ -125,6 +125,12 @@ struct CMeshAttrInfo
 	std::vector<std::string> MaterialIDs; // Per group (submesh)
 };
 
+struct CSkinAttrInfo
+{
+	std::string SkinID;
+	std::string RootSearchPath;
+};
+
 constexpr uint16_t NoParentBone = static_cast<uint16_t>(-1);
 
 // There are a couple of approaches for saving bones:
@@ -180,6 +186,7 @@ inline void NormalizeWeights8x4(uint8_t& w1, uint8_t& w2, uint8_t& w3, uint8_t& 
 }
 //---------------------------------------------------------------------
 
+std::string GetRelativeNodePath(std::vector<std::string>&& From, std::vector<std::string>&& To);
 void ProcessGeometry(const std::vector<CVertex>& RawVertices, const std::vector<unsigned int>& RawIndices, std::vector<CVertex>& Vertices, std::vector<unsigned int>& Indices);
 void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semantic, EVertexComponentFormat Format, uint8_t Index, uint8_t StreamIndex);
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
