@@ -59,13 +59,13 @@ void CGameLevelView::Update(float dt)
 				{
 					if (auto pRB = pPhysicsObject->As<Physics::CRigidBody>())
 					{
-						if (auto pHEntity = std::any_cast<HEntity>(&pRB->UserData()))
+						if (auto pHEntity = std::any_cast<HEntity>(&pPhysicsObject->UserData()))
 							_EntityUnderCursor = *pHEntity;
 						_pNodeUnderCursor = pRB->GetControlledNode();
 					}
 					else
 					{
-						if (auto pPair = std::any_cast<std::pair<HEntity, Physics::CCollisionAttribute*>>(&pRB->UserData()))
+						if (auto pPair = std::any_cast<std::pair<HEntity, Physics::CCollisionAttribute*>>(&pPhysicsObject->UserData()))
 						{
 							_EntityUnderCursor = pPair->first;
 							_pNodeUnderCursor = pPair->second->GetNode();
@@ -78,7 +78,7 @@ void CGameLevelView::Update(float dt)
 
 	if (OldEntityUnderCursor != _EntityUnderCursor)
 	{
-		::Sys::DbgOut((std::to_string(OldEntityUnderCursor) + " -> " + std::to_string(_EntityUnderCursor)).c_str());
+		//::Sys::DbgOut((std::to_string(OldEntityUnderCursor) + " -> " + std::to_string(_EntityUnderCursor) + '\n').c_str());
 
 		//Data::PParams P = n_new(Data::CParams(1));
 		//P->Set<PVOID>(CStrID("LevelViewPtr"), this);
