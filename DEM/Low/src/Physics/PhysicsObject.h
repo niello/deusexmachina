@@ -3,6 +3,7 @@
 #include <Physics/PhysicsMaterial.h>
 #include <Data/StringID.h>
 #include <Math/AABB.h>
+#include <any>
 
 // Base class for all physics objects. Has collision shape and transformation.
 
@@ -23,6 +24,7 @@ protected:
 	PPhysicsLevel      _Level;
 	CStrID             _CollisionGroupID;
 	CStrID             _CollisionMaskID;
+	std::any           _UserData;
 
 	virtual void           AttachToLevelInternal() = 0;
 	virtual void           RemoveFromLevelInternal() = 0;
@@ -46,6 +48,8 @@ public:
 	virtual void           SetActive(bool Active, bool Always = false) = 0;
 	bool                   IsActive() const;
 	CPhysicsLevel*         GetLevel() const { return _Level.Get(); }
+	const std::any&        UserData() const { return _UserData; }
+	std::any&              UserData() { return _UserData; }
 };
 
 typedef Ptr<CPhysicsObject> PPhysicsObject;

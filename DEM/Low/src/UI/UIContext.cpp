@@ -203,7 +203,7 @@ bool CUIContext::GetCursorPositionRel(float& X, float& Y) const
 {
 	if (pCtx)
 	{
-		CEGUI::Sizef CtxSize = pCtx->getRootWindow()->getPixelSize();
+		const auto& CtxSize = pCtx->getSurfaceSize();
 		glm::vec2 CursorPos = pCtx->getCursor().getPosition();
 		X = CursorPos.x / CtxSize.d_width;
 		Y = CursorPos.y / CtxSize.d_height;

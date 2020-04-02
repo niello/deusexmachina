@@ -90,25 +90,6 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	materials - restitution and friction
 	there is a multithreading support
 	*/
-
-	// Initialize collision group IDs
-
-	/* Bullet predefined collision filters as of v2.81 SDK:
-	DefaultFilter = 1,
-	StaticFilter = 2,
-	KinematicFilter = 4,
-	DebrisFilter = 8,
-	SensorTrigger = 16,
-	CharacterFilter = 32,
-	AllFilter = -1
-	*/
-
-	CollisionGroups.SetAlias(CStrID("DefaultFilter"), "Default");
-
-	U16 PickMask = CollisionGroups.GetMask("MousePick");
-	U16 PickTargetMask = CollisionGroups.GetMask("MousePickTarget");
-	CollisionGroups.SetAlias(CStrID("All"), ~PickTargetMask);
-	CollisionGroups.SetAlias(CStrID("AllNoPick"), (~PickTargetMask) & (~PickMask));
 }
 //---------------------------------------------------------------------
 

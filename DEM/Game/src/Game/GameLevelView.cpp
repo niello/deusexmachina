@@ -1,8 +1,15 @@
 #include "GameLevelView.h"
 #include <Game/GameLevel.h>
+#include <Game/ECS/Entity.h>
 #include <Frame/SceneNodePrecreateRenderObjects.h>
 #include <Frame/SceneNodeUpdateInSPS.h>
+#include <Frame/CameraAttribute.h>
+#include <UI/UIContext.h>
+#include <Physics/RigidBody.h>
+#include <Physics/CollisionAttribute.h>
+#include <Physics/PhysicsLevel.h>
 #include <Scene/SceneNode.h>
+#include <Scene/SceneNodeRenderDebug.h>
 
 namespace DEM::Game
 {
@@ -13,6 +20,73 @@ CGameLevelView::CGameLevelView(CGameLevel& Level, Frame::CView& View)
 {
 	_View.pSPS = &_Level->GetSPS();
 	_Level->GetSceneRoot().AcceptVisitor(Frame::CSceneNodePrecreateRenderObjects(_View));
+}
+//---------------------------------------------------------------------
+
+void CGameLevelView::Update(float dt)
+{
+	if (_Level)
+	{
+		if (auto pDebugDraw = _View.GetDebugDrawer())
+		{
+			_Level->GetSceneRoot().AcceptVisitor(Scene::CSceneNodeRenderDebug(*pDebugDraw));
+			_Level->GetPhysics()->RenderDebug(*pDebugDraw);
+		}
+	}
+
+	HEntity OldEntityUnderCursor = _EntityUnderCursor;
+
+	_PointUnderCursor.reset();
+	_pNodeUnderCursor = nullptr;
+	_EntityUnderCursor = HEntity{};
+
+	if (_Level && !_View.GetUIContext()->IsMouseOverGUI())
+	{
+		if (const auto* pCamera = _View.GetCamera())
+		{
+			float XRel, YRel;
+			_View.GetUIContext()->GetCursorPositionRel(XRel, YRel);
+
+			line3 Ray;
+			pCamera->GetRay3D(XRel, YRel, pCamera->GetFarPlane(), Ray);
+
+			vector3 Point;
+			if (auto pPhysicsObject = _Level->GetFirstPickIntersection(Ray, &Point))
+			{
+				_PointUnderCursor = Point;
+
+				if (pPhysicsObject->UserData().has_value())
+				{
+					if (auto pRB = pPhysicsObject->As<Physics::CRigidBody>())
+					{
+						if (auto pHEntity = std::any_cast<HEntity>(&pRB->UserData()))
+							_EntityUnderCursor = *pHEntity;
+						_pNodeUnderCursor = pRB->GetControlledNode();
+					}
+					else
+					{
+						if (auto pPair = std::any_cast<std::pair<HEntity, Physics::CCollisionAttribute*>>(&pRB->UserData()))
+						{
+							_EntityUnderCursor = pPair->first;
+							_pNodeUnderCursor = pPair->second->GetNode();
+						}
+					}
+				}
+			}
+		}
+	}
+
+	if (OldEntityUnderCursor != _EntityUnderCursor)
+	{
+		::Sys::DbgOut((std::to_string(OldEntityUnderCursor) + " -> " + std::to_string(_EntityUnderCursor)).c_str());
+
+		//Data::PParams P = n_new(Data::CParams(1));
+		//P->Set<PVOID>(CStrID("LevelViewPtr"), this);
+		//Game::CEntity* pEntityUnderMouse = GameSrv->GetEntityMgr()->GetEntity(OldEntityUnderMouse);
+		//if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseLeave"), P);
+		//pEntityUnderMouse = GameSrv->GetEntityMgr()->GetEntity(EntityUnderMouse);
+		//if (pEntityUnderMouse) pEntityUnderMouse->FireEvent(CStrID("OnMouseEnter"), P);
+	}
 }
 //---------------------------------------------------------------------
 

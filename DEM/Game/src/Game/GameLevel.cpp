@@ -108,21 +108,24 @@ bool CGameLevel::Validate(Resources::CResourceManager& ResMgr)
 
 void CGameLevel::Update(float dt, const vector3* pCOIArray, UPTR COICount)
 {
-	// Local transforms
-
-	// ... update animations etc (only in entities, may trigger animation system here, which updates CAnimationComponent's)
-
-	// Global transforms
-
 	if (_PhysicsLevel) _PhysicsLevel->Update(dt);
-
-	// ... update other global transform controllers
-
-	// Scene
 
 	_SceneRoot->Update(pCOIArray, COICount);
 
 	_SceneRoot->AcceptVisitor(Frame::CSceneNodeUpdateInSPS(_SPS));
+}
+//---------------------------------------------------------------------
+
+//???write 2 versions, physics-based and mesh-based?
+Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D) const
+{
+	if (!_PhysicsLevel) return nullptr;
+
+	const U16 Group = _PhysicsLevel->CollisionGroups.GetMask("Pick");
+	const U16 Mask = _PhysicsLevel->CollisionGroups.GetMask("All");
+	Physics::PPhysicsObject PhysObj;
+	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
+	return PhysObj.Get();
 }
 //---------------------------------------------------------------------
 
@@ -579,8 +582,8 @@ bool CGameLevel::GetFirstIntersectedEntity(const line3& Ray, vector3* pOutPoint3
 {
 	if (!PhysicsLevel) FAIL;
 
-	U16 Group = PhysicsLevel->CollisionGroups.GetMask("MousePick");
-	U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All|MousePickTarget");
+	U16 Group = PhysicsLevel->CollisionGroups.GetMask("Pick");
+	U16 Mask = PhysicsLevel->CollisionGroups.GetMask("All");
 	Physics::PPhysicsObject PhysObj;
 	if (!PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj)) FAIL;
 

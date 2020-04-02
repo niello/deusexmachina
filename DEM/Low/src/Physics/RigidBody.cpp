@@ -107,6 +107,13 @@ void CRigidBody::SetControlledNode(Scene::CSceneNode* pNode)
 }
 //---------------------------------------------------------------------
 
+Scene::CSceneNode* CRigidBody::GetControlledNode() const
+{
+	auto pMotionState = static_cast<CDynamicMotionState*>(static_cast<btRigidBody*>(_pBtObject)->getMotionState());
+	return pMotionState->GetSceneNode();
+}
+//---------------------------------------------------------------------
+
 void CRigidBody::SetTransform(const matrix44& Tfm)
 {
 	auto pShape = static_cast<CCollisionShape*>(_pBtObject->getCollisionShape()->getUserPointer());

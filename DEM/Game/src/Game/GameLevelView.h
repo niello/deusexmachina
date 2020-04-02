@@ -1,10 +1,18 @@
 #pragma once
 #include <Data/Ptr.h>
+#include <Game/ECS/Entity.h>
+#include <Math/Vector3.h>
+#include <optional>
 
 // Represents a client view of a game location. Manages rendering and input.
 // In MVC pattern it is a view.
 
 //???camera controller here?
+
+namespace Scene
+{
+	class CSceneNode;
+}
 
 namespace Frame
 {
@@ -20,14 +28,20 @@ class CGameLevelView final
 {
 protected:
 
-	PGameLevel    _Level;
-	Frame::CView& _View; //???or hold strong/weak reference?
+	PGameLevel             _Level;
+	Frame::CView&          _View; //???or hold strong/weak reference?
+
+	HEntity                _EntityUnderCursor;
+	Scene::CSceneNode*     _pNodeUnderCursor = nullptr;
+	std::optional<vector3> _PointUnderCursor;
 
 	//???different debug draw options? Physics, separate property types etc?
 
 public:
 
 	CGameLevelView(CGameLevel& Level, Frame::CView& View);
+
+	void Update(float dt);
 
 	CGameLevel* GetLevel() const { return _Level.Get(); }
 };

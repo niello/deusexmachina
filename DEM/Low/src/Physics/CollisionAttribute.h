@@ -37,6 +37,7 @@ public:
 	virtual bool                  ValidateResources(Resources::CResourceManager& ResMgr) override;
 	void                          SetPhysicsLevel(PPhysicsLevel Level);
 	bool                          GetGlobalAABB(CAABB& OutBox) const;
+	CPhysicsObject*               GetCollider() { return _Collider.Get(); }
 };
 
 typedef Ptr<CCollisionAttribute> PCollisionAttribute;

@@ -19,6 +19,7 @@ namespace Scene
 namespace Physics
 {
 	typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
+	class CPhysicsObject;
 }
 
 namespace AI
@@ -58,15 +59,17 @@ public:
 	CGameLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	virtual ~CGameLevel() override;
 
-	bool                    Validate(Resources::CResourceManager& ResMgr);
-	void                    Update(float dt, const vector3* pCOIArray, UPTR COICount);
+	bool                     Validate(Resources::CResourceManager& ResMgr);
+	void                     Update(float dt, const vector3* pCOIArray, UPTR COICount);
 
-	CStrID                  GetID() const { return _ID; }
+	Physics::CPhysicsObject* GetFirstPickIntersection(const line3& Ray, vector3* pOutPoint3D = nullptr) const;
 
-	Scene::CSceneNode&      GetSceneRoot() { return *_SceneRoot.Get(); }
-	Scene::CSPS&            GetSPS() { return _SPS; }
-	Physics::CPhysicsLevel* GetPhysics() const { return _PhysicsLevel.Get(); }
-	AI::CAILevel*           GetAI() const { return _AILevel.Get(); }
+	CStrID                   GetID() const { return _ID; }
+
+	Scene::CSceneNode&       GetSceneRoot() { return *_SceneRoot.Get(); }
+	Scene::CSPS&             GetSPS() { return _SPS; }
+	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
+	AI::CAILevel*            GetAI() const { return _AILevel.Get(); }
 };
 
 }
