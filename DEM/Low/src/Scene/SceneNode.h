@@ -70,7 +70,7 @@ public:
 	void					RemoveFromParent() { if (pParent) pParent->RemoveChild(*this); }
 
 	bool					AcceptVisitor(INodeVisitor& Visitor);
-	bool                    Visit(std::function<bool(CSceneNode& Node)> Visitor);
+	bool                    Visit(const std::function<bool(CSceneNode& Node)>& Visitor);
 
 	CStrID					GetName() const { return Name; }
 
@@ -137,7 +137,7 @@ template<class T> inline T* CSceneNode::FindFirstAttribute() const
 }
 //---------------------------------------------------------------------
 
-inline bool CSceneNode::Visit(std::function<bool(CSceneNode& Node)> Visitor)
+inline bool CSceneNode::Visit(const std::function<bool(CSceneNode& Node)>& Visitor)
 {
 	if (!Visitor(*this)) FAIL;
 	for (const auto& Child : Children)
