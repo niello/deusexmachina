@@ -258,7 +258,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Scene/NodeVisitor.h
 	DEM/Low/src/Scene/SceneNode.h
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.h
-	DEM/Low/src/Scene/SceneNodeRenderDebug.h
 	DEM/Low/src/Scene/SceneNodeValidateResources.h
 	DEM/Low/src/Scene/SPS.h
 	DEM/Low/src/Scripting/EventHandlerScript.h
@@ -488,7 +487,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Scene/NodeAttribute.cpp
 	DEM/Low/src/Scene/SceneNode.cpp
 	DEM/Low/src/Scene/SceneNodeLoaderSCN.cpp
-	DEM/Low/src/Scene/SceneNodeRenderDebug.cpp
 	DEM/Low/src/Scene/SceneNodeValidateResources.cpp
 	DEM/Low/src/Scene/SPS.cpp
 	DEM/Low/src/Scripting/EventHandlerScript.cpp

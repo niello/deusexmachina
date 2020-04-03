@@ -138,7 +138,6 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 #include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Scripting/ScriptObject.h>
-#include <Scene/SceneNodeRenderDebug.h>
 #include <Scene/PropSceneNode.h>
 #include <Physics/PhysicsObject.h>
 #include <AI/AILevel.h>
@@ -559,21 +558,6 @@ bool CGameLevel::OnEvent(Events::CEventDispatcher* pDispatcher, const Events::CE
 	//    (link meshes and lights(here?), sort meshes, batch instances, select lighting code,
 	//     set shared state of instance sets)
 	// - end pass
-//}
-////---------------------------------------------------------------------
-
-////!!!???bool flags what subsystems to render?
-//void CGameLevel::RenderDebug()
-//{
-//	PhysicsLevel->RenderDebug();
-//
-//	FireEvent(CStrID("OnRenderDebug"));
-//
-//	if (SceneRoot.IsValidPtr())
-//	{
-//		Scene::CSceneNodeRenderDebug RD;
-//		SceneRoot->AcceptVisitor(RD);
-//	}
 //}
 ////---------------------------------------------------------------------
 

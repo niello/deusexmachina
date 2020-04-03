@@ -9,7 +9,7 @@
 #include <Physics/CollisionAttribute.h>
 #include <Physics/PhysicsLevel.h>
 #include <Scene/SceneNode.h>
-#include <Scene/SceneNodeRenderDebug.h>
+#include <Debug/DebugDraw.h>
 
 namespace DEM::Game
 {
@@ -29,7 +29,26 @@ void CGameLevelView::Update(float dt)
 	{
 		if (auto pDebugDraw = _View.GetDebugDrawer())
 		{
-			_Level->GetSceneRoot().AcceptVisitor(Scene::CSceneNodeRenderDebug(*pDebugDraw));
+			_Level->GetSceneRoot().Visit([pDebugDraw](Scene::CSceneNode& Node)
+			{
+				if (!Node.IsActive()) OK;
+
+				// Draw nothing for the root, coordinate frames for top-level children and hierarchies for deeper ones
+				if (Node.GetParent())
+				{
+					if (Node.GetParent()->GetParent())
+						pDebugDraw->DrawLine(Node.GetParent()->GetWorldMatrix().Translation(), Node.GetWorldMatrix().Translation(), vector4::White);
+					else
+						pDebugDraw->DrawCoordAxes(Node.GetWorldMatrix());
+				}
+
+				// FIXME: node and attribute must not know about rendering. ISceneDebugDraw?
+				for (UPTR i = 0; i < Node.GetAttributeCount(); ++i)
+					Node.GetAttribute(i)->RenderDebug(*pDebugDraw);
+
+				OK;
+			});
+
 			_Level->GetPhysics()->RenderDebug(*pDebugDraw);
 		}
 	}
