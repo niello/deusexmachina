@@ -335,42 +335,8 @@ public:
 
 		// Finalize and save the scene
 
-		const std::string TaskName = Task.TaskID.ToString();
-
-		Data::CParams Result;
-		//if (Nodes.size() == 1)
-		//{
-		//	// TODO: FBX doesn't have useful data at the root node. Is it a good idea to save its only
-		//	// child as a root instead?
-		//	Result = std::move(Nodes[0].second.GetValue<Data::CParams>());
-		//}
-		//else
-		if (!Nodes.empty())
-		{
-			Result.emplace_back(CStrID("Children"), std::move(Nodes));
-		}
-
-		if (_OutputHRD)
-		{
-			const auto DestPath = OutPath / (TaskName + ".hrd");
-			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
-			{
-				Task.Log.LogError("Error serializing " + TaskName + " to text");
-				return false;
-			}
-		}
-
-		if (_OutputBin)
-		{
-			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".scn");
-			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
-			{
-				Task.Log.LogError("Error serializing " + TaskName + " to binary");
-				return false;
-			}
-		}
-
-		return true;
+		return WriteDEMScene(GetPath(Task.Params, "Output"), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
+			_OutputHRD, _OutputBin, Task.Log);
 	}
 
 	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes)

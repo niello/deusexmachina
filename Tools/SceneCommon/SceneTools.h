@@ -19,6 +19,11 @@ inline float DegToRad(float Deg) { return Deg * 3.1415926535897932385f / 180.0f;
 
 class CThreadSafeLog;
 
+namespace Data
+{
+	typedef std::map<CStringID, class CDataScheme> CSchemeSet;
+}
+
 // TODO: look at fbx2acl for correct FBX animation export
 namespace acl
 {
@@ -192,3 +197,4 @@ void WriteVertexComponent(std::ostream& Stream, EVertexComponentSemantic Semanti
 bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::string, CMeshGroup>& SubMeshes, const CVertexFormat& VertexFormat, size_t BoneCount, CThreadSafeLog& Log);
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
 bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, CThreadSafeLog& Log);
+bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, CThreadSafeLog& Log);

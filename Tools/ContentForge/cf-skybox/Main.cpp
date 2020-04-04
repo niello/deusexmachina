@@ -110,7 +110,7 @@ public:
 	{
 		// TODO: check whether the metafile can be processed by this tool
 
-		const std::string TaskName = Task.TaskID.ToString();
+		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
 		std::string SkyboxFileName = Task.SrcFilePath.filename().generic_string();
 		ToLower(SkyboxFileName);
@@ -264,7 +264,7 @@ public:
 
 		if (_OutputBin)
 		{
-			const auto DestPath = OutPath / (Task.TaskID.ToString() + ".scn");
+			const auto DestPath = OutPath / (TaskName + ".scn");
 			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to binary");

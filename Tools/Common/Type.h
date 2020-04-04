@@ -36,9 +36,9 @@ public:
 	virtual const char*	ToString(const void* pObj) const = 0;
 
 	template<class T>
-	static const CType*	GetType() { /*static_assert(CTypeID<T>::IsDeclared);*/ return CTypeImpl<T>::Type; }
+	static const CType*	GetType() { static_assert(CTypeID<T>::IsDeclared, "Type not declared!"); return CTypeImpl<T>::Type; }
 	template<class T>
-	static int			GetTypeID() { /*static_assert(CTypeID<T>::IsDeclared);*/ return CTypeID<T>::TypeID; }
+	static int			GetTypeID() { static_assert(CTypeID<T>::IsDeclared, "Type not declared!"); return CTypeID<T>::TypeID; }
 };
 
 // Needed only for assertions, can remove when disable asserts
@@ -60,10 +60,10 @@ public:
 	static const CType* Type;
 	static const T		DefaultValue;
 
-	CTypeImpl() { /*static_assert(CTypeID<T>::IsDeclared);*/ /*n_assert(CTypeID<T>::TypeID != INVALID_TYPE_ID);*/ }
-	
+	CTypeImpl() { static_assert(CTypeID<T>::IsDeclared, "Type not declared!"); }
+
 	// Getter for non-virtual type instance (convenience method)
-	static const CTypeImpl<T>*	GetNVType() { /*n_assert(CTypeID<T>::IsDeclared);*/ return (const CTypeImpl<T>*)Type; }
+	static const CTypeImpl<T>*	GetNVType() { static_assert(CTypeID<T>::IsDeclared, "Type not declared!"); return (const CTypeImpl<T>*)Type; }
 
 	virtual void		New(void** pObj) const;
 	virtual void		New(void** pObj, void* const* pSrcObj) const;

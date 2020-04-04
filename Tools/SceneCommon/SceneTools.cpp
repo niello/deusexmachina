@@ -404,3 +404,61 @@ bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& A
 	return true;
 }
 //---------------------------------------------------------------------
+
+// FIXME: to common ancestor of FBX & glTF tools, to have access to a CF tool class data
+// Name = Task.TaskID.ToString()
+// TaskParams = Task.Params
+// DestDir = GetPath(Task.Params, "Output");
+bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes,
+	const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, CThreadSafeLog& Log)
+{
+	const std::string TaskName = GetValidResourceName(Name);
+
+	Data::CParams Result;
+
+	const Data::CParams* pTfmParams;
+	if (ParamsUtils::TryGetParam(pTfmParams, TaskParams, "Transform"))
+	{
+		vector4 Value;
+		if (ParamsUtils::TryGetParam(Value, *pTfmParams, "S"))
+			Result.emplace_back(CStrID("Scale"), Value);
+		if (ParamsUtils::TryGetParam(Value, *pTfmParams, "R"))
+			Result.emplace_back(CStrID("Rotation"), Value);
+		if (ParamsUtils::TryGetParam(Value, *pTfmParams, "T"))
+			Result.emplace_back(CStrID("Translation"), Value);
+	}
+
+	//if (Nodes.size() == 1)
+	//{
+	//	// TODO: Is it a good idea to save its only child as a root instead?
+	//	Result = std::move(Nodes[0].second.GetValue<Data::CParams>());
+	//}
+	//else
+	if (!Nodes.empty())
+	{
+		Result.emplace_back(CStrID("Children"), std::move(Nodes));
+	}
+
+	if (HRD)
+	{
+		const auto DestPath = DestDir / (TaskName + ".hrd");
+		if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
+		{
+			Log.LogError("Error serializing " + TaskName + " to text");
+			return false;
+		}
+	}
+
+	if (Binary)
+	{
+		const auto DestPath = DestDir / (TaskName + ".scn");
+		if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), Schemes))
+		{
+			Log.LogError("Error serializing " + TaskName + " to binary");
+			return false;
+		}
+	}
+
+	return true;
+}
+//---------------------------------------------------------------------
