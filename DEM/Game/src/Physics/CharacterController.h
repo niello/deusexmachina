@@ -34,7 +34,7 @@ protected:
 	//!!!Slide down from where can't climb up and don't slide where can climb!
 	//Slide along vertical obstacles, don't bounce
 
-	ECharacterState	State;
+	ECharacterState	_State = Char_Standing;
 
 	float			_Radius = 0.3f;
 	float			_Height = 1.75f;
@@ -43,24 +43,24 @@ protected:
 	float			MaxClimb; //???recalc to hover?
 	//float			MaxJumpImpulse;		// Maximum jump impulse (mass- and direction-independent)
 	float			MaxLandingImpulse;	//???speed? Maximum impulse the character can handle when landing. When exceeded, falling starts.
-	float			MaxStepDownHeight;	// Maximum height above the ground when character controls itself and doesn't fall
+	float			MaxStepDownHeight = 0.2f;	// Maximum height above the ground when character controls itself and doesn't fall
 	float			Softness;			// Allowed penetration depth //???!!!recalc to bullet collision margin?!
 	float           _Mass = 80.f;
 
 	//???need here? or Bullet can do this? if zero or less, don't use
-	float			MaxAcceleration;
+	float			MaxAcceleration = 0.f;
 
 	bool            _Dirty = true;
 
 	PRigidBody		_Body;
 
-	vector3			ReqLinVel;
-	float			ReqAngVel;
+	vector3			ReqLinVel = vector3::Zero;
+	float			ReqAngVel = 0.f;
 
 public:
 
-	bool			Init(const Data::CParams& Desc);
-	void			Term();
+	CCharacterController();
+	~CCharacterController();
 
 	void            ApplyChanges();
 

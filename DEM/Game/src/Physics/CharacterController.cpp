@@ -1,43 +1,16 @@
 #include "CharacterController.h"
-
 #include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/CollisionShape.h>
 #include <Physics/ClosestNotMeRayResultCallback.h>
-#include <Data/Params.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace Physics
 {
-//FACTORY_CLASS_IMPL(Physics::CCharacterController, 'CCTL', Core::CObject);
-
-bool CCharacterController::Init(const Data::CParams& Desc)
-{
-
-	_Radius = Desc.Get<float>(CStrID("Radius"), 0.3f);
-	_Height = Desc.Get<float>(CStrID("Height"), 1.75f);
-	_Hover = Desc.Get<float>(CStrID("Hover"), 0.2f);
-	MaxAcceleration = Desc.Get<float>(CStrID("MaxAcceleration"), 0.f);
-	MaxStepDownHeight = Desc.Get<float>(CStrID("MaxStepDownHeight"), 0.2f);
-	n_assert_dbg(MaxStepDownHeight >= 0.f);
-	float Mass = Desc.Get<float>(CStrID("Mass"), 80.f);
-
-
-	State = Char_Standing;
-	ReqLinVel = vector3::Zero;
-	ReqAngVel = 0.f;
-
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CCharacterController::Term()
-{
-	_Body = nullptr;
-}
-//---------------------------------------------------------------------
+CCharacterController::CCharacterController() = default;
+CCharacterController::~CCharacterController() = default;
 
 void CCharacterController::ApplyChanges()
 {
@@ -53,7 +26,7 @@ void CCharacterController::ApplyChanges()
 		_Body->GetTransform(Tfm);
 	}
 
-	// FIXME PHYSICS
+	// FIXME PHYSICS - where to set? In component (externally)?
 	CStrID CollisionGroupID("Character");
 	CStrID CollisionMaskID("All");
 
@@ -95,25 +68,25 @@ void CCharacterController::Update()
 	//float DistanceToGround = RayCB.hasHit() ? Pos.y - RayCB.m_hitPointWorld.y() : FLT_MAX;
 	float DistanceToGround = 0.f;
 
-	if (DistanceToGround <= 0.f && State != Char_Standing)
+	if (DistanceToGround <= 0.f && _State != Char_Standing)
 	{
-		if (State == Char_Jumping)
+		if (_State == Char_Jumping)
 		{
 			// send event OnEndJumping (//???through callback?)
 			// reset XZ velocity
 		}
-		else if (State == Char_Falling)
+		else if (_State == Char_Falling)
 		{
 			// send event OnEndFalling (//???through callback?)
 			//???how to prevent character from taking control over itself until it is recovered from a falling?
 		}
 
 		// send event OnStartStanding (//???through callback?)
-		State = Char_Standing;
+		_State = Char_Standing;
 		//???add Char_Laying uncontrolled state after a fall or when on the ground? and then recover
 		//can even change collision shape for this state
 	}
-	else if (DistanceToGround > MaxStepDownHeight && State == Char_Standing)
+	else if (DistanceToGround > MaxStepDownHeight && _State == Char_Standing)
 	{
 		//???controll whole speed or only a vertical component? now the second
 
@@ -137,7 +110,7 @@ void CCharacterController::Update()
 		//???else if VerticalImpulse == 0.f levitate?
 	}
 
-	if (State == Char_Standing)
+	if (_State == Char_Standing)
 	{
 		// FIXME PHYSICS
 		/*
