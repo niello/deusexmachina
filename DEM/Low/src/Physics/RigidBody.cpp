@@ -176,4 +176,10 @@ float CRigidBody::GetInvMass() const
 }
 //---------------------------------------------------------------------
 
+btRigidBody* CRigidBody::GetBtBody() const
+{
+	return static_cast<btRigidBody*>(_pBtObject);
+}
+//---------------------------------------------------------------------
+
 }

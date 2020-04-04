@@ -1,8 +1,5 @@
 #pragma once
-#ifndef __DEM_L2_CHARACTER_CTLR_H__
-#define __DEM_L2_CHARACTER_CTLR_H__
-
-#include <Core/Object.h>
+#include <Data/Ptr.h>
 #include <Math/Vector3.h>
 
 // Character controller is used to drive characters. It gets desired velocities and other commands
@@ -30,7 +27,7 @@ enum ECharacterState
 };
 
 //???subclass rigid body? to access bullet body pointer. or add interfaces for all required data. or add GetBulletBody() to RB.
-class CCharacterController: public Core::CObject
+class CCharacterController
 {
 protected:
 
@@ -39,40 +36,47 @@ protected:
 
 	ECharacterState	State;
 
-	float			Radius;
-	float			Height;
-	float			Hover;	//???is it MaxClimb itself?
+	float			_Radius = 0.3f;
+	float			_Height = 1.75f;
+	float			_Hover = 0.2f;	//???is it MaxClimb itself?
 	float			MaxSlopeAngle;		// In radians //???recalc to cos?
 	float			MaxClimb; //???recalc to hover?
 	//float			MaxJumpImpulse;		// Maximum jump impulse (mass- and direction-independent)
 	float			MaxLandingImpulse;	//???speed? Maximum impulse the character can handle when landing. When exceeded, falling starts.
 	float			MaxStepDownHeight;	// Maximum height above the ground when character controls itself and doesn't fall
 	float			Softness;			// Allowed penetration depth //???!!!recalc to bullet collision margin?!
+	float           _Mass = 80.f;
 
 	//???need here? or Bullet can do this? if zero or less, don't use
 	float			MaxAcceleration;
 
-	PRigidBody		Body;
+	bool            _Dirty = true;
+
+	PRigidBody		_Body;
 
 	vector3			ReqLinVel;
 	float			ReqAngVel;
 
 public:
 
-	~CCharacterController() { Term(); }
-
 	bool			Init(const Data::CParams& Desc);
 	void			Term();
+
+	void            ApplyChanges();
 
 	void			Update();
 
 	void			RequestLinearVelocity(const vector3& Velocity) { ReqLinVel = Velocity; }
 	void			RequestAngularVelocity(float Velocity) { ReqAngVel = Velocity; }
 
-	float			GetRadius() const { return Radius; }
-	float			GetHeight() const { return Height; }
-	float			GetHover() const { return Hover; }
-	CRigidBody*		GetBody() const { return Body.Get(); }
+	void            SetRadius(float Radius) { if (_Radius != Radius) { _Radius = Radius; _Dirty = true; } }
+	void            SetHeight(float Height) { if (_Height != Height) { _Height = Height; _Dirty = true; } }
+	void            SetHover(float Hover) { if (_Hover != Hover) { _Hover = Hover; _Dirty = true; } }
+
+	float			GetRadius() const { return _Radius; }
+	float			GetHeight() const { return _Height; }
+	float			GetHover() const { return _Hover; }
+	CRigidBody*		GetBody() const { return _Body.Get(); }
 	bool			GetLinearVelocity(vector3& Out) const;
 	const vector3&	GetRequestedLinearVelocity() const { return ReqLinVel; }
 	float			GetAngularVelocity() const;
@@ -88,8 +92,4 @@ public:
 	//???StartCrouch, StopCrouch (if can't, now will remember request), IsCrouching?
 };
 
-typedef Ptr<CCharacterController> PCharacterController;
-
 }
-
-#endif

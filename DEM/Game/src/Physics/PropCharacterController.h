@@ -18,7 +18,7 @@ class CPropCharacterController: public Game::CProperty //???derive from physics 
 
 protected:
 
-	Physics::PCharacterController		CharCtlr;
+	Physics::CCharacterController		CharCtlr;
 
 	virtual bool	InternalActivate();
 	virtual void	InternalDeactivate();
@@ -39,9 +39,9 @@ public:
 
 	bool			Enable();
 	void			Disable();
-	bool			IsEnabled() const { return !!CharCtlr; } //NodeCtlr.IsValidPtr() && NodeCtlr->IsActive();
+	bool			IsEnabled() const { return CharCtlr.GetBody(); } //NodeCtlr.IsValidPtr() && NodeCtlr->IsActive();
 
-	Physics::CCharacterController* GetController() const { return CharCtlr.Get(); }
+	Physics::CCharacterController* GetController() { return &CharCtlr; }
 	//!!!WRITE!
 	//void			GetAABB(CAABB& AABB) const { Sys::Error("CPropCharacterController::GetAABB() -> IMPLEMENT ME!!!"); }
 };

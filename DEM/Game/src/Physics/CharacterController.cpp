@@ -15,32 +15,17 @@ namespace Physics
 
 bool CCharacterController::Init(const Data::CParams& Desc)
 {
-	State = Char_Standing;
 
-	Radius = Desc.Get<float>(CStrID("Radius"), 0.3f);
-	Height = Desc.Get<float>(CStrID("Height"), 1.75f);
-	Hover = Desc.Get<float>(CStrID("Hover"), 0.2f);
+	_Radius = Desc.Get<float>(CStrID("Radius"), 0.3f);
+	_Height = Desc.Get<float>(CStrID("Height"), 1.75f);
+	_Hover = Desc.Get<float>(CStrID("Hover"), 0.2f);
 	MaxAcceleration = Desc.Get<float>(CStrID("MaxAcceleration"), 0.f);
 	MaxStepDownHeight = Desc.Get<float>(CStrID("MaxStepDownHeight"), 0.2f);
 	n_assert_dbg(MaxStepDownHeight >= 0.f);
 	float Mass = Desc.Get<float>(CStrID("Mass"), 80.f);
 
-	float CapsuleHeight = Height - Radius - Radius - Hover;
-	n_assert (CapsuleHeight > 0.f);
 
-	vector3 Offset(0.f, (Hover + Height) * 0.5f, 0.f);
-
-	PCollisionShape Shape = CCollisionShape::CreateCapsuleY(Radius, CapsuleHeight, Offset);
-
-	// FIXME PHYSICS
-	const U16 MaskCharacter = -1;// PhysicsSrv->CollisionGroups.GetMask("Character");
-	const U16 MaskAll = -1; // PhysicsSrv->CollisionGroups.GetMask("All");
-
-	// FIXME PHYSICS
-	//Body = n_new(CRigidBody);
-	//Body->Init(*Shape, Mass, MaskCharacter, MaskAll, Offset);
-	//Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
-
+	State = Char_Standing;
 	ReqLinVel = vector3::Zero;
 	ReqAngVel = 0.f;
 
@@ -50,7 +35,38 @@ bool CCharacterController::Init(const Data::CParams& Desc)
 
 void CCharacterController::Term()
 {
-	Body = nullptr;
+	_Body = nullptr;
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::ApplyChanges()
+{
+	if (!_Dirty) return;
+
+	Physics::CPhysicsLevel* pLevel = nullptr;
+	Scene::CSceneNode* pNode = nullptr;
+	matrix44 Tfm;
+	if (_Body)
+	{
+		pLevel = _Body->GetLevel();
+		pNode = _Body->GetControlledNode();
+		_Body->GetTransform(Tfm);
+	}
+
+	// FIXME PHYSICS
+	CStrID CollisionGroupID("Character");
+	CStrID CollisionMaskID("All");
+
+	const float CapsuleHeight = _Height - _Radius - _Radius - _Hover;
+	n_assert (CapsuleHeight > 0.f);
+	const vector3 Offset(0.f, (_Hover + _Height) * 0.5f, 0.f);
+	PCollisionShape Shape = CCollisionShape::CreateCapsuleY(_Radius, CapsuleHeight, Offset);
+
+	_Body = n_new(Physics::CRigidBody(_Mass, *Shape, CollisionGroupID, CollisionMaskID, Tfm));
+	_Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
+
+	if (pNode) _Body->SetControlledNode(pNode);
+	if (pLevel) _Body->AttachToLevel(*pLevel);
 }
 //---------------------------------------------------------------------
 
@@ -68,12 +84,13 @@ void CCharacterController::Update()
 
 	btVector3 BtStart = VectorToBtVector(Pos);
 	btVector3 BtEnd = BtStart;
-	BtStart.m_floats[1] += Height;
+	BtStart.m_floats[1] += _Height;
 	BtEnd.m_floats[1] -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
 
 	// FIXME PHYSICS
 	//CClosestNotMeRayResultCallback RayCB(BtStart, BtEnd, Body->GetBtObject());
 	//Body->GetWorld()->GetBtWorld()->rayTest(BtStart, BtEnd, RayCB);
+	//???_PhysicsLevel->GetClosestRayContact excluding self?
 
 	//float DistanceToGround = RayCB.hasHit() ? Pos.y - RayCB.m_hitPointWorld.y() : FLT_MAX;
 	float DistanceToGround = 0.f;
@@ -102,7 +119,7 @@ void CCharacterController::Update()
 
 		vector3 LinVel;
 		GetLinearVelocity(LinVel);
-		float VerticalImpulse = -Body->GetMass() * LinVel.y; // Inverted to be positive when directed downwards
+		float VerticalImpulse = -_Body->GetMass() * LinVel.y; // Inverted to be positive when directed downwards
 		if (VerticalImpulse > MaxLandingImpulse)
 		{
 			// send event OnEnd[state] (//???through callback?)

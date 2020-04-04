@@ -49,7 +49,7 @@ void CPropCharacterController::InternalDeactivate()
 	CPropSceneNode* pProp = GetEntity()->GetProperty<CPropSceneNode>();
 	if (pProp && pProp->IsActive()) TermSceneNodeModifiers(*pProp);
 
-	CharCtlr = nullptr;
+	//CharCtlr = nullptr;
 
 }
 //---------------------------------------------------------------------
@@ -68,8 +68,8 @@ void CPropCharacterController::CreateController()
 	//???init by entity attrs like R & H instead?
 	//???or take them into account?
 
-	CharCtlr = n_new(Physics::CCharacterController);
-	CharCtlr->Init(*PhysicsDesc);
+	//CharCtlr = n_new(Physics::CCharacterController);
+	//CharCtlr->Init(*PhysicsDesc);
 	// FIXME PHYSICS
 	//	CharCtlr->GetBody()->SetUserData(*(void**)&GetEntity()->GetUID());
 }
@@ -77,7 +77,7 @@ void CPropCharacterController::CreateController()
 
 void CPropCharacterController::InitSceneNodeModifiers(CPropSceneNode& Prop)
 {
-	if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
+	//if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
 
 	Enable();
 }
@@ -85,7 +85,7 @@ void CPropCharacterController::InitSceneNodeModifiers(CPropSceneNode& Prop)
 
 void CPropCharacterController::TermSceneNodeModifiers(CPropSceneNode& Prop)
 {
-	if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
+	//if (!Prop.GetNode() || CharCtlr.IsNullPtr()) return;
 
 	Disable();
 }
@@ -167,7 +167,7 @@ bool CPropCharacterController::OnPropDeactivating(Events::CEventDispatcher* pDis
 bool CPropCharacterController::OnRequestLinearVelocity(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
-	CharCtlr->RequestLinearVelocity(((Events::CEvent&)Event).Params->Get<vector3>(CStrID("Velocity")));
+	CharCtlr.RequestLinearVelocity(((Events::CEvent&)Event).Params->Get<vector3>(CStrID("Velocity")));
 	OK;
 }
 //---------------------------------------------------------------------
@@ -175,7 +175,7 @@ bool CPropCharacterController::OnRequestLinearVelocity(Events::CEventDispatcher*
 bool CPropCharacterController::OnRequestAngularVelocity(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL;
-	CharCtlr->RequestAngularVelocity(((Events::CEvent&)Event).Params->Get<float>(CStrID("Velocity")));
+	CharCtlr.RequestAngularVelocity(((Events::CEvent&)Event).Params->Get<float>(CStrID("Velocity")));
 	OK;
 }
 //---------------------------------------------------------------------
@@ -184,7 +184,7 @@ bool CPropCharacterController::OnRequestAngularVelocity(Events::CEventDispatcher
 bool CPropCharacterController::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
-	CharCtlr->Update();
+	CharCtlr.Update();
 	OK;
 }
 //---------------------------------------------------------------------
@@ -193,7 +193,7 @@ bool CPropCharacterController::AfterPhysicsTick(Events::CEventDispatcher* pDispa
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
 	vector3 LinVel;
-	if (CharCtlr->GetLinearVelocity(LinVel)) GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), LinVel);
+	if (CharCtlr.GetLinearVelocity(LinVel)) GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), LinVel);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -201,7 +201,7 @@ bool CPropCharacterController::AfterPhysicsTick(Events::CEventDispatcher* pDispa
 bool CPropCharacterController::OnSetTransform(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
-	CharCtlr->GetBody()->SetTransform(Tfm);
+	CharCtlr.GetBody()->SetTransform(Tfm);
 	OK;
 }
 //---------------------------------------------------------------------

@@ -4,6 +4,8 @@
 // Dynamic object - rigid body simulated by physics. Can be used
 // as a transformation source for a scene node.
 
+class btRigidBody; // FIXME: hide behind the facade?
+
 namespace Scene
 {
 	class CSceneNode;
@@ -35,6 +37,9 @@ public:
 	virtual void       SetActive(bool Active, bool Always = false) override;
 	float              GetInvMass() const;
 	float              GetMass() const { return 1.f / GetInvMass(); }
+
+	// FIXME: hide behind the facade?
+	btRigidBody*       GetBtBody() const;
 };
 
 typedef Ptr<CRigidBody> PRigidBody;
