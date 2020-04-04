@@ -49,7 +49,7 @@ void CCharacterController::Update(float dt)
 	// Calculate the distance to the nearest object under feet
 	float DistanceToGround = std::numeric_limits<float>().max();
 	{
-		constexpr float GroundProbeLength = 0.5f;
+		constexpr float GroundProbeLength = 3.5f;
 
 		//!!!FIXME! write to the Bullet support:
 		// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
@@ -100,19 +100,18 @@ void CCharacterController::Update(float dt)
 		{
 			// send event OnEnd[state] (//???through callback?)
 			// send event OnStartFalling (//???through callback?)
+			_State = Char_Falling;
 			_Body->SetActive(true);
 		}
 		else if (VerticalImpulse > 0.f)
 		{
 			// send event OnEnd[state] (//???through callback?)
 			// send event OnStartJumping (//???through callback?)
+			_State = Char_Jumping;
 			_Body->SetActive(true);
 		}
 		//???else if VerticalImpulse == 0.f levitate?
 	}
-
-//!!!DBG TMP!
-return;
 
 	if (_State == Char_Standing)
 	{
