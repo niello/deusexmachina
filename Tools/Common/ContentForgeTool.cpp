@@ -290,6 +290,24 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, std::
 }
 //---------------------------------------------------------------------
 
+std::filesystem::path CContentForgeTool::GetPath(const Data::CParams& TaskParams, const char* pPathID) const
+{
+	std::filesystem::path Result;
+
+	std::string PathValue;
+	if (ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
+		Result = PathValue;
+	else if (ParamsUtils::TryGetParam(PathValue, TaskParams, "Output"))
+		Result = PathValue;
+	else return Result;
+
+	if (!_RootDir.empty() && Result.is_relative())
+		Result = _RootDir / Result;
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
 std::filesystem::path CContentForgeTool::ResolvePathAliases(const std::string& Path) const
 {
 	std::string Result = Path;

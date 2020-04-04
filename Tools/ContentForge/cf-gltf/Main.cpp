@@ -339,23 +339,6 @@ public:
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
 	}
 
-	fs::path GetPath(const Data::CParams& TaskParams, const char* pPathID)
-	{
-		fs::path Result;
-
-		std::string PathValue;
-		if (ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
-			Result = PathValue;
-		else if (ParamsUtils::TryGetParam(PathValue, TaskParams, "Output"))
-			Result = PathValue;
-		else return Result;
-
-		if (!_RootDir.empty() && Result.is_relative())
-			Result = fs::path(_RootDir) / Result;
-
-		return Result;
-	}
-
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		const auto Extension = Task.SrcFilePath.extension();

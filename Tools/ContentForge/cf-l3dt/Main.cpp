@@ -114,23 +114,6 @@ public:
 		CLIApp.add_flag("-c,--collision", _NeedCollision, "Add a collision attribute to the asset");
 	}
 
-	fs::path GetPath(const Data::CParams& TaskParams, const char* pPathID)
-	{
-		fs::path Result;
-
-		std::string PathValue;
-		if (ParamsUtils::TryGetParam(PathValue, TaskParams, pPathID))
-			Result = PathValue;
-		else if (ParamsUtils::TryGetParam(PathValue, TaskParams, "Output"))
-			Result = PathValue;
-		else return Result;
-
-		if (!_RootDir.empty() && Result.is_relative())
-			Result = fs::path(_RootDir) / Result;
-
-		return Result;
-	}
-
 	const std::string& GetEffectParamID(const std::string& Alias)
 	{
 		auto It = _EffectParamAliases.find(Alias);
