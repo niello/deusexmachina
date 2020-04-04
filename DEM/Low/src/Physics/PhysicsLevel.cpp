@@ -151,14 +151,14 @@ void CPhysicsLevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 }
 //---------------------------------------------------------------------
 
+// pExclude is optional
 bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
 {
-	n_assert(pBtDynWorld);
+	if (!pBtDynWorld) FAIL;
 
 	const btVector3 BtStart = VectorToBtVector(Start);
 	const btVector3 BtEnd = VectorToBtVector(End);
 
-	// Excluded object is optional
 	CClosestRayResultCallbackWithExclude RayCB(BtStart, BtEnd, pExclude);
 	RayCB.m_collisionFilterGroup = Group;
 	RayCB.m_collisionFilterMask = Mask;
@@ -167,7 +167,7 @@ bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& En
 	if (!RayCB.hasHit()) FAIL;
 
 	if (pOutPos) *pOutPos = BtVectorToVector(RayCB.m_hitPointWorld);
-	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? (CPhysicsObject*)RayCB.m_collisionObject->getUserPointer() : nullptr;
+	if (pOutObj) *pOutObj = RayCB.m_collisionObject ? static_cast<CPhysicsObject*>(RayCB.m_collisionObject->getUserPointer()) : nullptr;
 
 	OK;
 }

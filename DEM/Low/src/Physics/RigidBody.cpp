@@ -162,11 +162,20 @@ void CRigidBody::SetActive(bool Active, bool Always)
 {
 	// Dynamic object activates and deactivates normally
 	if (Always)
+	{
 		_pBtObject->forceActivationState(Active ? DISABLE_DEACTIVATION : DISABLE_SIMULATION);
+	}
 	else if (Active)
+	{
+		// Need to force state first because "Always" states arent't automatically reverted to ACTIVE_TAG.
+		// Nevertheless, call activate() to reset deactivation timer.
+		_pBtObject->forceActivationState(ACTIVE_TAG);
 		_pBtObject->activate();
+	}
 	else
+	{
 		_pBtObject->forceActivationState(WANTS_DEACTIVATION);
+	}
 }
 //---------------------------------------------------------------------
 

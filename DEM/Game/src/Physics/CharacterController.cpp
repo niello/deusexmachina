@@ -6,6 +6,9 @@
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
+//!!!DBG TMP!
+#include <Scene/SceneNode.h>
+
 namespace Physics
 {
 CCharacterController::CCharacterController() = default;
@@ -49,13 +52,13 @@ void CCharacterController::Update(float dt)
 	// Calculate the distance to the nearest object under feet
 	float DistanceToGround = std::numeric_limits<float>().max();
 	{
-		constexpr float GroundProbeLength = 3.5f;
+		constexpr float GroundProbeLength = 0.5f;
 
 		//!!!FIXME! write to the Bullet support:
 		// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
 		// has an outdated transformation here. So we have to access object's world tfm.
 		const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
-		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin());
+		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
 		vector3 Start = Pos;
 		vector3 End = Pos;
 		Start.y += _Height;
@@ -115,8 +118,12 @@ void CCharacterController::Update(float dt)
 
 	if (_State == Char_Standing)
 	{
-		// We want a precise control over the movement, so deny freezing on low speed, if movement is requested
-		_Body->SetActive(true, IsMotionRequested());
+		// We want a precise control over the movement, so deny freezing on low speed
+		// when movement is requested. When idle, allow to deactivate eventually.
+		if (IsMotionRequested())
+			_Body->SetActive(true, true);
+		else if (_Body->IsAlwaysActive())
+			_Body->SetActive(true, false);
 
 		// No angular acceleration limit, set directly
 		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));

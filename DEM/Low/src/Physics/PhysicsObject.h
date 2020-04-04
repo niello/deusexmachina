@@ -47,6 +47,7 @@ public:
 	CStrID                 GetCollisionMask() const { return _CollisionMaskID; }
 	virtual void           SetActive(bool Active, bool Always = false) = 0;
 	bool                   IsActive() const;
+	bool                   IsAlwaysActive() const;
 	CPhysicsLevel*         GetLevel() const { return _Level.Get(); }
 	const std::any&        UserData() const { return _UserData; }
 	std::any&              UserData() { return _UserData; }

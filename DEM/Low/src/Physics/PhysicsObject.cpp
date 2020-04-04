@@ -81,4 +81,10 @@ bool CPhysicsObject::IsActive() const
 }
 //---------------------------------------------------------------------
 
+bool CPhysicsObject::IsAlwaysActive() const
+{
+	return _pBtObject ? (_pBtObject->getActivationState() == DISABLE_DEACTIVATION) : false;
+}
+//---------------------------------------------------------------------
+
 }
