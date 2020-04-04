@@ -45,6 +45,26 @@ public:
 	}
 };
 
+class CClosestRayResultCallbackWithExclude: public btCollisionWorld::ClosestRayResultCallback
+{
+protected:
+
+	Physics::CPhysicsObject* _pExclude = nullptr;
+
+public:
+
+	CClosestRayResultCallbackWithExclude(const btVector3& From, const btVector3& To, Physics::CPhysicsObject* pExclude):
+		ClosestRayResultCallback(From, To), _pExclude(pExclude)
+	{
+	}
+
+	virtual btScalar addSingleResult(btCollisionWorld::LocalRayResult& rayResult, bool normalInWorldSpace) override
+	{
+		if (_pExclude && rayResult.m_collisionObject->getUserPointer() == _pExclude) return 1.f;
+		return ClosestRayResultCallback::addSingleResult(rayResult, normalInWorldSpace);
+	}
+};
+
 namespace Physics
 {
 
@@ -131,13 +151,15 @@ void CPhysicsLevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 }
 //---------------------------------------------------------------------
 
-bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObject* pOutObj) const
+bool CPhysicsLevel::GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos, PPhysicsObject* pOutObj, CPhysicsObject* pExclude) const
 {
 	n_assert(pBtDynWorld);
 
-	btVector3 BtStart = VectorToBtVector(Start);
-	btVector3 BtEnd = VectorToBtVector(End);
-	btCollisionWorld::ClosestRayResultCallback RayCB(BtStart, BtEnd);
+	const btVector3 BtStart = VectorToBtVector(Start);
+	const btVector3 BtEnd = VectorToBtVector(End);
+
+	// Excluded object is optional
+	CClosestRayResultCallbackWithExclude RayCB(BtStart, BtEnd, pExclude);
 	RayCB.m_collisionFilterGroup = Group;
 	RayCB.m_collisionFilterMask = Mask;
 	pBtDynWorld->rayTest(BtStart, BtEnd, RayCB);

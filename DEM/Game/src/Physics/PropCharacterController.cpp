@@ -184,7 +184,7 @@ bool CPropCharacterController::OnRequestAngularVelocity(Events::CEventDispatcher
 bool CPropCharacterController::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
-	CharCtlr.Update();
+	CharCtlr.Update(0.0167f);
 	OK;
 }
 //---------------------------------------------------------------------
@@ -193,7 +193,7 @@ bool CPropCharacterController::AfterPhysicsTick(Events::CEventDispatcher* pDispa
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
 	vector3 LinVel;
-	if (CharCtlr.GetLinearVelocity(LinVel)) GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), LinVel);
+	//if (CharCtlr.GetLinearVelocity(LinVel)) GetEntity()->SetAttr<vector3>(CStrID("LinearVelocity"), LinVel);
 	OK;
 }
 //---------------------------------------------------------------------

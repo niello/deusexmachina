@@ -16,7 +16,6 @@ namespace Debug
 namespace Physics
 {
 typedef Ptr<class CPhysicsLevel> PPhysicsLevel;
-//typedef Ptr<class CCollisionShape> PCollisionShape;
 typedef Ptr<class CPhysicsObject> PPhysicsObject;
 
 class CPhysicsLevel : public Data::CRefCounted
@@ -36,7 +35,7 @@ public:
 	void  Update(float dt);
 	void  RenderDebug(Debug::CDebugDraw& DebugDraw);
 
-	bool  GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr) const;
+	bool  GetClosestRayContact(const vector3& Start, const vector3& End, U16 Group, U16 Mask, vector3* pOutPos = nullptr, PPhysicsObject* pOutObj = nullptr, CPhysicsObject* pExclude = nullptr) const;
 	UPTR  GetAllRayContacts(const vector3& Start, const vector3& End, U16 Group, U16 Mask) const;
 
 	//int GetAllShapeContacts(PCollisionShape Shape, const CFilterSet& ExcludeSet, CArray<PEntity>& Result);

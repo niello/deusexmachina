@@ -3,7 +3,6 @@
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/CollisionShape.h>
-#include <Physics/ClosestNotMeRayResultCallback.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
@@ -40,33 +39,38 @@ void CCharacterController::ApplyChanges()
 
 	if (pNode) _Body->SetControlledNode(pNode);
 	if (pLevel) _Body->AttachToLevel(*pLevel);
+
+	_Dirty = false;
 }
 //---------------------------------------------------------------------
 
-void CCharacterController::Update()
+void CCharacterController::Update(float dt)
 {
-	//!!!FIXME! write to the Bullet support:
-	// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
-	// has an outdated transformation here. So we have to access object's world tfm.
-	vector3 Pos;
-	quaternion Rot;
-	// FIXME PHYSICS
-	//Body->CPhysicsObject::GetTransform(Pos, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	// Calculate the distance to the nearest object under feet
+	float DistanceToGround = std::numeric_limits<float>().max();
+	{
+		constexpr float GroundProbeLength = 0.5f;
 
-	const float GroundProbeLength = 0.5f;
+		//!!!FIXME! write to the Bullet support:
+		// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
+		// has an outdated transformation here. So we have to access object's world tfm.
+		const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
+		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin());
+		vector3 Start = Pos;
+		vector3 End = Pos;
+		Start.y += _Height;
+		End.y -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
 
-	btVector3 BtStart = VectorToBtVector(Pos);
-	btVector3 BtEnd = BtStart;
-	BtStart.m_floats[1] += _Height;
-	BtEnd.m_floats[1] -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
-
-	// FIXME PHYSICS
-	//CClosestNotMeRayResultCallback RayCB(BtStart, BtEnd, Body->GetBtObject());
-	//Body->GetWorld()->GetBtWorld()->rayTest(BtStart, BtEnd, RayCB);
-	//???_PhysicsLevel->GetClosestRayContact excluding self?
-
-	//float DistanceToGround = RayCB.hasHit() ? Pos.y - RayCB.m_hitPointWorld.y() : FLT_MAX;
-	float DistanceToGround = 0.f;
+		// FIXME: improve passing collision flags through interfaces!
+		vector3 ContactPos;
+		if (_Body->GetLevel()->GetClosestRayContact(Start, End,
+			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterGroup,
+			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterMask,
+			&ContactPos, nullptr, _Body.Get()))
+		{
+			DistanceToGround = Pos.y - ContactPos.y;
+		}
+	}
 
 	if (DistanceToGround <= 0.f && _State != Char_Standing)
 	{
@@ -90,46 +94,45 @@ void CCharacterController::Update()
 	{
 		//???controll whole speed or only a vertical component? now the second
 
-		vector3 LinVel;
-		GetLinearVelocity(LinVel);
-		float VerticalImpulse = -_Body->GetMass() * LinVel.y; // Inverted to be positive when directed downwards
+		const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
+		float VerticalImpulse = -_Body->GetMass() * CurrLVel.y(); // Inverted to be positive when directed downwards
 		if (VerticalImpulse > MaxLandingImpulse)
 		{
 			// send event OnEnd[state] (//???through callback?)
 			// send event OnStartFalling (//???through callback?)
-			// FIXME PHYSICS
-			//Body->MakeActive();
+			_Body->SetActive(true);
 		}
 		else if (VerticalImpulse > 0.f)
 		{
 			// send event OnEnd[state] (//???through callback?)
 			// send event OnStartJumping (//???through callback?)
-			// FIXME PHYSICS
-			//Body->MakeActive();
+			_Body->SetActive(true);
 		}
 		//???else if VerticalImpulse == 0.f levitate?
 	}
 
+//!!!DBG TMP!
+return;
+
 	if (_State == Char_Standing)
 	{
-		// FIXME PHYSICS
-		/*
 		// We want a precise control over the movement, so deny freezing on low speed, if movement is requested
-		bool AlwaysActive = Body->IsAlwaysActive();
-		bool HasReq = IsMotionRequested();
-		if (!AlwaysActive && HasReq) Body->MakeAlwaysActive();
-		else if (AlwaysActive && !HasReq) Body->MakeActive();
+		_Body->SetActive(true, IsMotionRequested());
 
 		// No angular acceleration limit, set directly
-		Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
+		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
 
-		const float InvTickTime = 1.f / Body->GetWorld()->GetStepTime();
+		const float InvTickTime = 1.f / _Body->GetLevel()->GetStepTime();
+
+		// TODO: remove if all is OK. Just to verify consistency with old logic.
+		//const float InvTickTime = 1.f / dt;
+		//n_assert_dbg(std::abs(dt - _Body->GetLevel()->GetStepTime()) < 0.000001f);
 
 		//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
 		btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
 		if (MaxAcceleration > 0.f)
 		{
-			const btVector3& CurrLVel = Body->GetBtBody()->getLinearVelocity();
+			const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
 			btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
 			if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
 			{
@@ -137,32 +140,32 @@ void CCharacterController::Update()
 				btScalar AccelMagSq = ReqAccel.length2();
 				if (AccelMagSq > MaxAcceleration * MaxAcceleration)
 					ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
-				Body->GetBtBody()->applyCentralForce(ReqAccel * Body->GetMass());
+				_Body->GetBtBody()->applyCentralForce(ReqAccel * _Body->GetMass());
 			}
-			else Body->GetBtBody()->clearForces(); //???really clear all forces?
+			else _Body->GetBtBody()->clearForces(); //???really clear all forces?
 		}
-		else Body->GetBtBody()->setLinearVelocity(ReqLVel);
+		else _Body->GetBtBody()->setLinearVelocity(ReqLVel);
 
 		// Compensate gravity by a normal force N, as we are standing on the ground
-		Body->GetBtBody()->applyCentralForce(-Body->GetBtBody()->getGravity() * Body->GetMass());
+		_Body->GetBtBody()->applyCentralForce(-_Body->GetBtBody()->getGravity() * _Body->GetMass());
 		//???!!!compensate ALL -y force? no ground penetration may happen
 		//excess force/impulse (force * tick) can be converted into damage or smth!
 
 		// We want to compensate our DistanceToGround in a single simulation step
 		const float ReqVerticalVel = -DistanceToGround * InvTickTime;
-		Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * Body->GetMass(), 0.f));
-		*/
+		_Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * _Body->GetMass(), 0.f));
 	}
 	else
 	{
 		//???need? gravity should keep the body active
-		//if levitating, disable grvity
+		//if levitating, disable gravity
 		//on levitation end, make body active
-		//if (!Body->IsAlwaysActive()) Body->MakeAlwaysActive();
+		_Body->SetActive(true, true);
 	}
 }
 //---------------------------------------------------------------------
 
+/*
 bool CCharacterController::GetLinearVelocity(vector3& Out) const
 {
 	// FIXME PHYSICS
@@ -174,9 +177,10 @@ bool CCharacterController::GetLinearVelocity(vector3& Out) const
 float CCharacterController::GetAngularVelocity() const
 {
 	// FIXME PHYSICS
-//	return Body->GetBtBody()->getAngularVelocity().y();
+//	return _Body->GetBtBody()->getAngularVelocity().y();
 	return 0.f;
 }
 //---------------------------------------------------------------------
+*/
 
 }

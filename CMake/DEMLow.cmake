@@ -152,7 +152,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Math/Vector3EnvelopeCurve.h
 	DEM/Low/src/Math/Vector4.h
 	DEM/Low/src/Physics/BulletConv.h
-	DEM/Low/src/Physics/ClosestNotMeRayResultCallback.h
 	DEM/Low/src/Physics/CollisionAttribute.h
 	DEM/Low/src/Physics/CollisionLoaderCDLOD.h
 	DEM/Low/src/Physics/CollisionLoaderHRD.h

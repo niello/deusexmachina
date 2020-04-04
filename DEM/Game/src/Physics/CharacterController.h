@@ -24,6 +24,7 @@ enum ECharacterState
 	Char_Standing = 0,
 	Char_Jumping,
 	Char_Falling
+	// Laying, Levitating
 };
 
 //???subclass rigid body? to access bullet body pointer. or add interfaces for all required data. or add GetBulletBody() to RB.
@@ -64,7 +65,7 @@ public:
 
 	void            ApplyChanges();
 
-	void			Update();
+	void			Update(float dt);
 
 	void			RequestLinearVelocity(const vector3& Velocity) { ReqLinVel = Velocity; }
 	void			RequestAngularVelocity(float Velocity) { ReqAngVel = Velocity; }
@@ -77,9 +78,9 @@ public:
 	float			GetHeight() const { return _Height; }
 	float			GetHover() const { return _Hover; }
 	CRigidBody*		GetBody() const { return _Body.Get(); }
-	bool			GetLinearVelocity(vector3& Out) const;
+	//vector3		GetLinearVelocity(vector3& Out) const;
 	const vector3&	GetRequestedLinearVelocity() const { return ReqLinVel; }
-	float			GetAngularVelocity() const;
+	//float			GetAngularVelocity() const;
 	float			GetRequestedAngularVelocity() const { return ReqAngVel; }
 	bool			IsMotionRequested() const { return IsLinearMotionRequested() || IsAngularMotionRequested(); }
 	bool			IsLinearMotionRequested() const { return ReqLinVel != vector3::Zero; }
