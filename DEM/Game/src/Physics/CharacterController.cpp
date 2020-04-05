@@ -1,13 +1,9 @@
 #include "CharacterController.h"
-#include <Physics/BulletConv.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/CollisionShape.h>
+#include <Physics/BulletConv.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
-#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
-
-//!!!DBG TMP!
-#include <Scene/SceneNode.h>
 
 namespace Physics
 {
@@ -54,9 +50,8 @@ void CCharacterController::Update(float dt)
 	{
 		constexpr float GroundProbeLength = 0.5f;
 
-		//!!!FIXME! write to the Bullet support:
-		// It is strange, but post-tick callback is called before synchronizeMotionStates(), so the body
-		// has an outdated transformation here. So we have to access object's world tfm.
+		// Post-tick callback is called just before synchronizeMotionStates(), so the body has an outdated motion state
+		// transformation here. Access raw tfm. synchronizeSingleMotionState() could make sense too with dirty flag optimization.
 		const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
 		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
 		vector3 Start = Pos;
@@ -166,7 +161,7 @@ void CCharacterController::Update(float dt)
 		//???need? gravity should keep the body active
 		//if levitating, disable gravity
 		//on levitation end, make body active
-		_Body->SetActive(true, true);
+		//_Body->SetActive(true, true);
 	}
 }
 //---------------------------------------------------------------------

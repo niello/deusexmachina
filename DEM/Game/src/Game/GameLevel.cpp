@@ -151,30 +151,6 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 namespace Game
 {
 
-void PhysicsPreTick(btDynamicsWorld* world, btScalar timeStep)
-{
-	n_assert_dbg(world && world->getWorldUserInfo());
-	Data::PParams P = n_new(Data::CParams(1));
-	P->Set(CStrID("FrameTime"), (float)timeStep);
-	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("BeforePhysicsTick"), P);
-}
-//---------------------------------------------------------------------
-
-void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
-{
-	n_assert_dbg(world && world->getWorldUserInfo());
-	Data::PParams P = n_new(Data::CParams(1));
-	P->Set(CStrID("FrameTime"), (float)timeStep);
-	((CGameLevel*)world->getWorldUserInfo())->FireEvent(CStrID("AfterPhysicsTick"), P);
-
-	//for (int i = 0; i < world->getDispatcher()->getNumManifolds(); ++i)
-	//{
-	//	btPersistentManifold* pManifold = world->getDispatcher()->getManifoldByIndexInternal(i);
-	//	//pManifold->getBody0();
-	//}
-}
-//---------------------------------------------------------------------
-
 CGameLevel::CGameLevel()
 {
 }
@@ -240,9 +216,6 @@ bool CGameLevel::Load(CStrID LevelID, const Data::CParams& Desc)
 
 		//!!!???load .bullet base contents!? useful for static collisions!
 		// .bullet with non-entity data is not a resource, it is more like a level data part!
-
-		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsPreTick, this, true);
-		PhysicsLevel->GetBtWorld()->setInternalTickCallback(PhysicsTick, this, false);
 	}
 
 	// Create AI and navigation layer, if requested

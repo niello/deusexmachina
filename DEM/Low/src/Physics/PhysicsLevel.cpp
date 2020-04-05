@@ -6,7 +6,6 @@
 #include <Math/AABB.h>
 #include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 #include <BulletCollision/BroadphaseCollision/btAxisSweep3.h>
-//#include <BulletCollision/BroadphaseCollision/btDbvtBroadphase.h>
 #include <BulletCollision/CollisionDispatch/btDefaultCollisionConfiguration.h>
 #include <BulletDynamics/ConstraintSolver/btSequentialImpulseConstraintSolver.h>
 
@@ -68,12 +67,45 @@ public:
 namespace Physics
 {
 
+// btActionInterface could be of service, but it is executed just before PhysicsTick, after the simulation step
+void PhysicsPreTick(btDynamicsWorld* world, btScalar timeStep)
+{
+	// Use CMyDiscreteDynamicsWorld::forEachAction()?
+	// Or save the list of tick listeners in the CPhysicsLevel?
+
+	//static_cast<CPhysicsLevel*>(world->getWorldUserInfo())
+
+	// AI::CMotorSystem::Update:
+	// Motor system requests linear and angular velocity from the character controller
+
+	// Physics::CCharacterController::Update:
+	// Character controller drives its rigid body according to state and requested velocities
+}
+//---------------------------------------------------------------------
+
+// btActionInterface could be of service
+void PhysicsTick(btDynamicsWorld* world, btScalar timeStep)
+{
+	//static_cast<CPhysicsLevel*>(world->getWorldUserInfo())
+
+	// Set linear velocity from rigid bodies, including character controllers, to an entity's attribute (need now?)
+
+	// Get physical position and rotation from the character controller
+
+	// AI::CMotorSystem::UpdatePosition():
+	// If eventually reached the destination, reset movement to avoid overshooting the destination
+
+	// AI::CNavSystem::UpdatePosition():
+	// Reflect new character position in a navigation state
+	// Colud update once a frame, based on the motor system state and character controller motion state transformation
+}
+//---------------------------------------------------------------------
+
 CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 {
-	btVector3 Min = VectorToBtVector(Bounds.Min);
-	btVector3 Max = VectorToBtVector(Bounds.Max);
+	const btVector3 Min = VectorToBtVector(Bounds.Min);
+	const btVector3 Max = VectorToBtVector(Bounds.Max);
 	btBroadphaseInterface* pBtBroadPhase = new btAxisSweep3(Min, Max);
-	//btBroadphaseInterface* pBtBroadPhase = new btDbvtBroadphase();
 
 	btDefaultCollisionConfiguration* pBtCollCfg = new btDefaultCollisionConfiguration();
 	btCollisionDispatcher* pBtCollDisp = new btCollisionDispatcher(pBtCollCfg);
@@ -84,6 +116,9 @@ CPhysicsLevel::CPhysicsLevel(const CAABB& Bounds)
 	pBtDynWorld = new CMyDiscreteDynamicsWorld(pBtCollDisp, pBtBroadPhase, pBtSolver, pBtCollCfg);
 
 	pBtDynWorld->setGravity(btVector3(0.f, -9.81f, 0.f));
+
+	pBtDynWorld->setInternalTickCallback(PhysicsPreTick, this, true);
+	pBtDynWorld->setInternalTickCallback(PhysicsTick, this, false);
 
 	//!!!can reimplement with some notifications like FireEvent(OnCollision)!
 	//btGhostPairCallback* pGhostPairCB = new btGhostPairCallback(); //!!!delete!
