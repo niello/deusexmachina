@@ -3,32 +3,26 @@
 #include <Physics/TickListener.h>
 #include <Math/Vector3.h>
 
-// Character controller is used to drive characters. It gets desired velocities and other commands
-// as input and calculates final transform, taking different character properties into account.
-// This is a dynamic implementation, that uses a rigid body and works from physics to scene.
-// Maybe later we will implement a kinematic one too. Kinematic controller is more controllable
-// and is bound to the navmesh, but all the collision detection and response must be processed manually.
-// Character controller represents actor's body
-
-namespace Data
-{
-	class CParams;
-}
+// Character controller suitable for bipedal characters with horizontal, vertical movement
+// and facing direction. Implemented as a dynamic rigid body and therefore has proper
+// collisions, but can be pushed out of navigation mesh.
 
 namespace Physics
 {
 typedef Ptr<class CRigidBody> PRigidBody;
 class CPhysicsLevel;
 
-enum ECharacterState
+enum class ECharacterState
 {
-	Char_Standing = 0,
-	Char_Jumping,
-	Char_Falling
-	// Laying, Levitating
+	Stand = 0, // Stands idle on feet
+	Walk,      // Walks with normal speed
+	Run,       // Runs with high speed
+	Crouch,    // Walks slowly with low profile to be less noticeable
+	Jump,      // Above the ground, falls, controls itself
+	Fall       // Above the ground, falls, control is lost
+	// Lay (or switch to ragdoll?), Levitate
 };
 
-//???subclass rigid body? to access bullet body pointer. or add interfaces for all required data. or add GetBulletBody() to RB.
 class CCharacterController : public ITickListener
 {
 protected:
@@ -36,7 +30,15 @@ protected:
 	//!!!Slide down from where can't climb up and don't slide where can climb!
 	//Slide along vertical obstacles, don't bounce
 
-	ECharacterState	_State = Char_Standing;
+	/*
+	MaxSpeed[AIMvmt_Type_Walk] = 2.5f;
+	MaxSpeed[AIMvmt_Type_Run] = 6.f;
+	MaxSpeed[AIMvmt_Type_Crouch] = 1.f;
+	MaxAngularSpeed = PI;
+	ArriveCoeff = -0.5f / -10.f; // -1/2a = -0.5/a, where a is max brake acceleration and must be negative
+	*/
+
+	ECharacterState	_State = ECharacterState::Stand;
 
 	float			_Radius = 0.3f;
 	float			_Height = 1.75f;
