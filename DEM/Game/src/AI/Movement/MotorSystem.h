@@ -1,8 +1,4 @@
 #pragma once
-#ifndef __DEM_L2_AI_MOTOR_SYSTEM_H__
-#define __DEM_L2_AI_MOTOR_SYSTEM_H__
-
-#include <StdDEM.h>
 #include <AI/ActorFwd.h>
 #include <Data/Ptr.h>
 #include <Math/Vector2.h>
@@ -70,8 +66,8 @@ protected:
 	float				ArriveCoeff;			// -1 / 2 * a, where a is a maximum braking acceleration, a < 0
 
 	//!!!???BB?!
-	float				SqShortStepThreshold;	// Max amount of movement actor can move without facing a destination 
-	float				BigTurnThreshold;		// Max angle (in rad) actor can turn without stopping to move
+	float				SqShortStepThreshold = 1.f * 1.f; // Max amount of movement actor can move without facing a destination 
+	float				BigTurnThreshold = PI / 3.f;      // Max angle (in rad) actor can turn without stopping to move
 
 	vector3				DestPoint;
 	vector3				NextDestPoint;
@@ -80,11 +76,11 @@ protected:
 
 	//???!!!BB?!
 	bool				FaceDest;
-	bool				AvoidObstacles; //???!!!to actor BB flags?!
+	bool				AvoidObstacles = true; //???!!!to actor BB flags?!
 	bool				SmoothSteering; //???!!!to actor BB flags?!
-	bool				AdaptiveVelocitySampling;
-	float				AvoidanceMargin;
-	CMemFactObstacle*	pLastClosestObstacle;
+	bool				AdaptiveVelocitySampling = true;
+	float				AvoidanceMargin = 0.1f;
+	CMemFactObstacle*	pLastClosestObstacle = nullptr;
 	vector2				LastClosestObstaclePos;
 	vector2				LastAvoidDir;
 
@@ -100,7 +96,7 @@ protected:
 
 public:
 
-	CMotorSystem(CActor* Actor);
+	CMotorSystem(CActor* Actor) : pActor(Actor) {}
 
 	void	Init(const Data::CParams* Params);
 	void	Update(float FrameTime);
@@ -116,18 +112,4 @@ public:
 	float	GetMaxSpeed() const;
 };
 
-inline CMotorSystem::CMotorSystem(CActor* Actor):
-	pActor(Actor),
-	SqShortStepThreshold(1.f * 1.f),
-	BigTurnThreshold(PI / 3.f), //0.5f * PI),
-	AvoidObstacles(true),
-	AdaptiveVelocitySampling(true),
-	AvoidanceMargin(0.1f),
-	pLastClosestObstacle(nullptr)
-{
 }
-//---------------------------------------------------------------------
-
-}
-
-#endif

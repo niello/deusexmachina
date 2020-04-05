@@ -7,8 +7,14 @@
 
 namespace Physics
 {
+
 CCharacterController::CCharacterController() = default;
-CCharacterController::~CCharacterController() = default;
+
+CCharacterController::~CCharacterController()
+{
+	if (_Body) RemoveFromLevel();
+}
+//---------------------------------------------------------------------
 
 void CCharacterController::ApplyChanges()
 {
@@ -22,6 +28,8 @@ void CCharacterController::ApplyChanges()
 		pLevel = _Body->GetLevel();
 		pNode = _Body->GetControlledNode();
 		_Body->GetTransform(Tfm);
+
+		RemoveFromLevel();
 	}
 
 	// FIXME PHYSICS - where to set? In component (externally)?
@@ -37,14 +45,34 @@ void CCharacterController::ApplyChanges()
 	_Body->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
 
 	if (pNode) _Body->SetControlledNode(pNode);
-	if (pLevel) _Body->AttachToLevel(*pLevel);
+	if (pLevel) AttachToLevel(*pLevel);
 
 	_Dirty = false;
 }
 //---------------------------------------------------------------------
 
-void CCharacterController::Update(float dt)
+void CCharacterController::AttachToLevel(CPhysicsLevel& Level)
 {
+	if (_Body->GetLevel()) RemoveFromLevel();
+	_Body->AttachToLevel(Level);
+	Level.RegisterTickListener(this);
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::RemoveFromLevel()
+{
+	if (auto pLevel = _Body->GetLevel())
+	{
+		pLevel->UnregisterTickListener(this);
+		_Body->RemoveFromLevel();
+	}
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
+{
+	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
+
 	// Calculate the distance to the nearest object under feet
 	float DistanceToGround = std::numeric_limits<float>().max();
 	{
@@ -61,7 +89,7 @@ void CCharacterController::Update(float dt)
 
 		// FIXME: improve passing collision flags through interfaces!
 		vector3 ContactPos;
-		if (_Body->GetLevel()->GetClosestRayContact(Start, End,
+		if (pLevel->GetClosestRayContact(Start, End,
 			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterGroup,
 			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterMask,
 			&ContactPos, nullptr, _Body.Get()))
@@ -123,11 +151,9 @@ void CCharacterController::Update(float dt)
 		// No angular acceleration limit, set directly
 		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
 
-		const float InvTickTime = 1.f / _Body->GetLevel()->GetStepTime();
-
-		// TODO: remove if all is OK. Just to verify consistency with old logic.
-		//const float InvTickTime = 1.f / dt;
-		//n_assert_dbg(std::abs(dt - _Body->GetLevel()->GetStepTime()) < 0.000001f);
+		// TODO: remove assert if all is OK. Just to verify consistency with old logic.
+		const float InvTickTime = 1.f / dt;
+		n_assert_dbg(std::abs(dt - pLevel->GetStepTime()) < 0.000001f);
 
 		//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
 		btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
@@ -163,6 +189,11 @@ void CCharacterController::Update(float dt)
 		//on levitation end, make body active
 		//_Body->SetActive(true, true);
 	}
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
+{
 }
 //---------------------------------------------------------------------
 

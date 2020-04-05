@@ -167,6 +167,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Physics/SceneNodeValidatePhysics.h
 	DEM/Low/src/Physics/StaticCollider.h
 	DEM/Low/src/Physics/StaticMeshShape.h
+	DEM/Low/src/Physics/TickListener.h
 	DEM/Low/src/Render/CDLODData.h
 	DEM/Low/src/Render/CDLODDataLoader.h
 	DEM/Low/src/Render/ConstantBuffer.h

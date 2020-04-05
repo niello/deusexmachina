@@ -97,9 +97,9 @@ void CGameLevelView::Update(float dt)
 
 	if (OldEntityUnderCursor != _EntityUnderCursor)
 	{
-		//std::string OldStr = OldEntityUnderCursor ? std::to_string(OldEntityUnderCursor) : "<none>";
-		//std::string NewStr = _EntityUnderCursor ? std::to_string(_EntityUnderCursor) : "<none>";
-		//::Sys::DbgOut((OldStr + " -> " + NewStr + '\n').c_str());
+		std::string OldStr = OldEntityUnderCursor ? std::to_string(OldEntityUnderCursor) : "<none>";
+		std::string NewStr = _EntityUnderCursor ? std::to_string(_EntityUnderCursor) : "<none>";
+		::Sys::DbgOut((OldStr + " -> " + NewStr + '\n').c_str());
 
 		//Data::PParams P = n_new(Data::CParams(1));
 		//P->Set<PVOID>(CStrID("LevelViewPtr"), this);

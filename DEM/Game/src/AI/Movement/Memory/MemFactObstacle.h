@@ -13,16 +13,15 @@ class CMemFactObstacle: public CMemFact
 {
 	FACTORY_CLASS_DECL;
 
-protected:
-
 public:
 
 	PStimulus		pSourceStimulus; //???to CMemFact?
 	vector3			Position;
-	float			Radius;
+	float			Radius = 0.f;
 	//???float Height;
 
-	CMemFactObstacle(): Radius(0.f) { /*Type = CStrID("Obstacle");*/ }
+	CMemFactObstacle();
+	virtual ~CMemFactObstacle() override;
 
 	virtual bool Match(const CMemFact& Pattern, Data::CFlags FieldMask) const;
 };

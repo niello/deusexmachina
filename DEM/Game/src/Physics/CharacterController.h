@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Ptr.h>
+#include <Physics/TickListener.h>
 #include <Math/Vector3.h>
 
 // Character controller is used to drive characters. It gets desired velocities and other commands
@@ -28,7 +29,7 @@ enum ECharacterState
 };
 
 //???subclass rigid body? to access bullet body pointer. or add interfaces for all required data. or add GetBulletBody() to RB.
-class CCharacterController
+class CCharacterController : public ITickListener
 {
 protected:
 
@@ -64,8 +65,11 @@ public:
 	~CCharacterController();
 
 	void            ApplyChanges();
+	void            AttachToLevel(CPhysicsLevel& Level);
+	void            RemoveFromLevel();
 
-	void			Update(float dt);
+	virtual void    BeforePhysicsTick(CPhysicsLevel* pLevel, float dt) override;
+	virtual void    AfterPhysicsTick(CPhysicsLevel* pLevel, float dt) override;
 
 	void			RequestLinearVelocity(const vector3& Velocity) { ReqLinVel = Velocity; }
 	void			RequestAngularVelocity(float Velocity) { ReqAngVel = Velocity; }

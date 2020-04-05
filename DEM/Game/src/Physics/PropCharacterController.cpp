@@ -184,7 +184,7 @@ bool CPropCharacterController::OnRequestAngularVelocity(Events::CEventDispatcher
 bool CPropCharacterController::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	if (!IsEnabled()) FAIL; //???or unsubscribe?
-	CharCtlr.Update(0.0167f);
+	//CharCtlr.Update(0.0167f);
 	OK;
 }
 //---------------------------------------------------------------------

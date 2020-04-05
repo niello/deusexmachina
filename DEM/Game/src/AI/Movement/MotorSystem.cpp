@@ -1,10 +1,10 @@
 #include "MotorSystem.h"
-
-#include <AI/AIServer.h>
 #include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <Debug/DebugDraw.h>
+#ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
 #include <DetourObstacleAvoidance.h>
+#endif
 
 #define OBSTACTLE_DETECTOR_MIN		0.1f
 #define	OBSTACLE_PREDICTION_TIME	1.2f
@@ -35,7 +35,6 @@ void CMotorSystem::Init(const Data::CParams* Params)
 }
 //---------------------------------------------------------------------
 
-//!!!update per physics tick!
 void CMotorSystem::Update(float FrameTime)
 {
 	//???where to test movement caps? here, read from BB?
@@ -109,7 +108,7 @@ void CMotorSystem::Update(float FrameTime)
 		Speed *= std::min(LocalArrive, GlobalArrive);
 
 		// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
-		// if frame rate is variable, so abowe we detect if actor crossed destination last frame.
+		// if frame rate is variable, so above we detect if actor crossed destination last frame.
 		if (LocalDist < Speed * FrameTime) Speed = LocalDist / FrameTime;
 
 		vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
