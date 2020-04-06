@@ -77,24 +77,6 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 	//???where to test movement caps? here, read from BB?
 	//like: if new dest & _can't move_, set AIMvmt_Failed
 
-	vector3 LinearVel;
-
-	// Update stuck info
-	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
-	{
-		if (IsStuck())
-		{
-			if (pActor->MvmtState = AIMvmt_DestSet)
-			{
-				pActor->MvmtState = AIMvmt_Stuck;
-				//StuckTime = 0.f; //or StuckTime = CurrTime;
-			}
-			//else StuckTime += FrameTime; //???!!!if we store relative time, not state entering time
-			//if (StuckTime > StuckForTooLongTime) ResetMovement(false);
-		}
-		else pActor->MvmtState = AIMvmt_DestSet;
-	}
-
 	// Check if actor reached or crossed the destination last frame (with some tolerance).
 	// For that we detect point on the last frame movement segment that is the closest to the destination
 	// and check distance (in XZ, + height difference to handle possible navmesh stages).
@@ -118,13 +100,180 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 			}
 		}
 	}
+	*/
 
-	// Check if movement type is not available to the actor
-	if (pActor->MvmtState == AIMvmt_DestSet && MaxSpeed[pActor->MvmtType] <= 0.f)
-		ResetMovement(false);
-
-	if (pActor->MvmtState == AIMvmt_DestSet)
+	// Calculate the distance to the nearest object under feet
+	float DistanceToGround = std::numeric_limits<float>().max();
 	{
+		constexpr float GroundProbeLength = 0.5f;
+
+		// Post-tick callback is called just before synchronizeMotionStates(), so the body has an outdated motion state
+		// transformation here. Access raw tfm. synchronizeSingleMotionState() could make sense too with dirty flag optimization.
+		const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
+		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
+		vector3 Start = Pos;
+		vector3 End = Pos;
+		Start.y += _Height;
+		End.y -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
+
+		// FIXME: improve passing collision flags through interfaces!
+		vector3 ContactPos;
+		if (pLevel->GetClosestRayContact(Start, End,
+			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterGroup,
+			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterMask,
+			&ContactPos, nullptr, _Body.Get()))
+		{
+			DistanceToGround = Pos.y - ContactPos.y;
+		}
+	}
+
+	if (DistanceToGround <= 0.f && _State != ECharacterState::Stand)
+	{
+		if (_State == ECharacterState::Jump)
+		{
+			// send event OnEndJumping (//???through callback?)
+			// reset XZ velocity
+		}
+		else if (_State == ECharacterState::Fall)
+		{
+			// send event OnEndFalling (//???through callback?)
+			//???how to prevent character from taking control over itself until it is recovered from falling?
+			//???add ECharacterState::Lay uncontrolled state after a fall or when on the ground? and then recover
+			//can even change collision shape for this state (ragdoll?)
+		}
+
+		// send event OnStartStanding (//???through callback?)
+		_State = ECharacterState::Stand;
+	}
+	else if (DistanceToGround > MaxStepDownHeight && _State == ECharacterState::Stand)
+	{
+		//???controll whole speed or only a vertical component? now the second
+
+		const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
+		float VerticalImpulse = -_Body->GetMass() * CurrLVel.y(); // Inverted to be positive when directed downwards
+		if (VerticalImpulse > MaxLandingImpulse)
+		{
+			// send event OnEnd[state] (//???through callback?)
+			// send event OnStartFalling (//???through callback?)
+			_State = ECharacterState::Fall;
+			_Body->SetActive(true);
+		}
+		else if (VerticalImpulse > 0.f)
+		{
+			// send event OnEnd[state] (//???through callback?)
+			// send event OnStartJumping (//???through callback?)
+			_State = ECharacterState::Jump;
+			_Body->SetActive(true);
+		}
+		//???else if VerticalImpulse == 0.f levitate?
+	}
+
+	if (_State == ECharacterState::Stand)
+	{
+		/*
+		//!!!only if movement requested!
+		// Check if movement type is not available to the actor
+		if (pActor->MvmtState == AIMvmt_DestSet && MaxSpeed[pActor->MvmtType] <= 0.f)
+			ResetMovement(false);
+
+		// Update stuck info //???or after tick?
+		if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
+		{
+			if (IsStuck())
+			{
+				if (pActor->MvmtState = AIMvmt_DestSet)
+				{
+					pActor->MvmtState = AIMvmt_Stuck;
+					//StuckTime = 0.f; //or StuckTime = CurrTime;
+				}
+				//else StuckTime += FrameTime; //???!!!if we store relative time, not state entering time
+				//if (StuckTime > StuckForTooLongTime) ResetMovement(false);
+			}
+			else pActor->MvmtState = AIMvmt_DestSet;
+		}
+
+		if (pActor->MvmtState == AIMvmt_DestSet)
+		{
+			CalcDesiredLinearVelocity();
+			if (_ObstacleAvoidanceEnabled) AvoidObstacles();
+			if (FaceDest) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
+		}
+
+		if (pActor->FacingState == AIFacing_DirSet)
+			CalcDesiredAngularVelocity();
+		*/
+
+		// We want a precise control over the movement, so deny freezing on low speed
+		// when movement is requested. When idle, allow to deactivate eventually.
+		if (IsMotionRequested())
+			_Body->SetActive(true, true);
+		else if (_Body->IsAlwaysActive())
+			_Body->SetActive(true, false);
+
+		// No angular acceleration limit, set directly
+		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
+
+		const float InvTickTime = 1.f / dt;
+
+		//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
+		btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
+		if (MaxAcceleration > 0.f)
+		{
+			const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
+			btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
+			if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
+			{
+				btVector3 ReqAccel = ReqLVelChange * InvTickTime;
+				btScalar AccelMagSq = ReqAccel.length2();
+				if (AccelMagSq > MaxAcceleration * MaxAcceleration)
+					ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
+				_Body->GetBtBody()->applyCentralForce(ReqAccel * _Body->GetMass());
+			}
+			else _Body->GetBtBody()->clearForces(); //???really clear all forces?
+		}
+		else _Body->GetBtBody()->setLinearVelocity(ReqLVel);
+
+		// Compensate gravity by a normal force N, as we are standing on the ground
+		_Body->GetBtBody()->applyCentralForce(-_Body->GetBtBody()->getGravity() * _Body->GetMass());
+		//???!!!compensate ALL -y force? no ground penetration may happen
+		//excess force/impulse (force * tick) can be converted into damage or smth!
+
+		// We want to compensate our DistanceToGround in a single simulation step
+		const float ReqVerticalVel = -DistanceToGround * InvTickTime;
+		_Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * _Body->GetMass(), 0.f));
+	}
+	else
+	{
+		//???need? gravity should keep the body active
+		//if levitating, disable gravity
+		//on levitation end, make body active
+		//_Body->SetActive(true, true);
+	}
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
+{
+	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
+
+	/*
+	vector3 OldPos = Position;
+	quaternion Rot;
+//FIXME PHYSICS	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	LookatDir = Rot.rotate(vector3::BaseDir);
+
+	if (OldPos != Position)
+	{
+		if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
+			ResetMovement(true);
+	}
+	*/
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::CalcDesiredLinearVelocity()
+{
+	/*
 		float Speed = MaxSpeed[pActor->MvmtType];
 
 		const float SlowDownRadius = ArriveCoeff * Speed * Speed; // S = -v0^2/2a for 0 = v0 + at (stop condition)
@@ -168,8 +317,43 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 
 		LinearVel.set(DesiredDir.x * Speed, 0.f, DesiredDir.y * Speed);
 
-		if (AvoidObstacles)
+		// LinearVel is requested but may be reset in a big turn check
+	
+	*/
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::CalcDesiredAngularVelocity()
+{
+	/*
+		float Angle = vector3::Angle2DNorm(pActor->LookatDir, FaceDir);
+		float AngleAbs = n_fabs(Angle);
+
+		if (AngleAbs < pActor->AngularArrivalTolerance) ResetRotation(true);
+		else
 		{
+			if (MaxAngularSpeed <= 0.f) ResetRotation(false); // We can't rotate
+			else
+			{
+				if (AngleAbs > BigTurnThreshold) LinearVel = vector4::Zero;
+
+				// Start arrive slowdown at 20 degrees to goal
+				float AngularVel = (Angle < 0) ? -MaxAngularSpeed : MaxAngularSpeed;
+				//???clamp to Angle / FrameTime to avoid overshoots for high speeds?
+				if (AngleAbs <= 0.34906585039886591538473815369772f) // 20 deg in rads
+					AngularVel *= AngleAbs * 2.8647889756541160438399077407053f; // 1 / (20 deg in rads)
+
+				// AngularVel is requested!
+			}
+		}
+	
+	*/
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::AvoidObstacles()
+{
+	/*
 			constexpr float ObstacleDetectionMinRadius = 0.1f;
 			constexpr float ObstaclePredictionTime = 1.2f;
 			const float DetectionRadius = ObstacleDetectionMinRadius + Speed * ObstaclePredictionTime;
@@ -307,182 +491,7 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 				pLastClosestObstacle = pClosest;
 			}
 #endif
-		}
-
-		if (FaceDest) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
-	}
-
-	if (pActor->FacingState == AIFacing_DirSet)
-	{
-		float Angle = vector3::Angle2DNorm(pActor->LookatDir, FaceDir);
-		float AngleAbs = n_fabs(Angle);
-
-		if (AngleAbs < pActor->AngularArrivalTolerance) ResetRotation(true);
-		else
-		{
-			if (MaxAngularSpeed <= 0.f) ResetRotation(false); // We can't rotate
-			else
-			{
-				if (AngleAbs > BigTurnThreshold) LinearVel = vector4::Zero;
-
-				// Start arrive slowdown at 20 degrees to goal
-				float AngularVel = (Angle < 0) ? -MaxAngularSpeed : MaxAngularSpeed;
-				//???clamp to Angle / FrameTime to avoid overshoots for high speeds?
-				if (AngleAbs <= 0.34906585039886591538473815369772f) // 20 deg in rads
-					AngularVel *= AngleAbs * 2.8647889756541160438399077407053f; // 1 / (20 deg in rads)
-
-				Data::PParams PAngularVel = n_new(Data::CParams(1));
-				PAngularVel->Set(CStrID("Velocity"), AngularVel);
-				pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
-			}
-		}
-	}
-
-	// Delayed for a big turn check
-	if (pActor->MvmtState == AIMvmt_DestSet)
-	{
-		Data::PParams PLinearVel = n_new(Data::CParams(1));
-		PLinearVel->Set(CStrID("Velocity"), LinearVel);
-		pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
-	}	
-	*/
-
-	// Vertical state control (can't control horizontal movement when not on the ground)
-
-	// Calculate the distance to the nearest object under feet
-	float DistanceToGround = std::numeric_limits<float>().max();
-	{
-		constexpr float GroundProbeLength = 0.5f;
-
-		// Post-tick callback is called just before synchronizeMotionStates(), so the body has an outdated motion state
-		// transformation here. Access raw tfm. synchronizeSingleMotionState() could make sense too with dirty flag optimization.
-		const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
-		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
-		vector3 Start = Pos;
-		vector3 End = Pos;
-		Start.y += _Height;
-		End.y -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
-
-		// FIXME: improve passing collision flags through interfaces!
-		vector3 ContactPos;
-		if (pLevel->GetClosestRayContact(Start, End,
-			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterGroup,
-			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterMask,
-			&ContactPos, nullptr, _Body.Get()))
-		{
-			DistanceToGround = Pos.y - ContactPos.y;
-		}
-	}
-
-	if (DistanceToGround <= 0.f && _State != ECharacterState::Stand)
-	{
-		if (_State == ECharacterState::Jump)
-		{
-			// send event OnEndJumping (//???through callback?)
-			// reset XZ velocity
-		}
-		else if (_State == ECharacterState::Fall)
-		{
-			// send event OnEndFalling (//???through callback?)
-			//???how to prevent character from taking control over itself until it is recovered from a falling?
-		}
-
-		// send event OnStartStanding (//???through callback?)
-		_State = ECharacterState::Stand;
-		//???add ECharacterState::Laying uncontrolled state after a fall or when on the ground? and then recover
-		//can even change collision shape for this state
-	}
-	else if (DistanceToGround > MaxStepDownHeight && _State == ECharacterState::Stand)
-	{
-		//???controll whole speed or only a vertical component? now the second
-
-		const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
-		float VerticalImpulse = -_Body->GetMass() * CurrLVel.y(); // Inverted to be positive when directed downwards
-		if (VerticalImpulse > MaxLandingImpulse)
-		{
-			// send event OnEnd[state] (//???through callback?)
-			// send event OnStartFalling (//???through callback?)
-			_State = ECharacterState::Fall;
-			_Body->SetActive(true);
-		}
-		else if (VerticalImpulse > 0.f)
-		{
-			// send event OnEnd[state] (//???through callback?)
-			// send event OnStartJumping (//???through callback?)
-			_State = ECharacterState::Jump;
-			_Body->SetActive(true);
-		}
-		//???else if VerticalImpulse == 0.f levitate?
-	}
-
-	if (_State == ECharacterState::Stand)
-	{
-		// We want a precise control over the movement, so deny freezing on low speed
-		// when movement is requested. When idle, allow to deactivate eventually.
-		if (IsMotionRequested())
-			_Body->SetActive(true, true);
-		else if (_Body->IsAlwaysActive())
-			_Body->SetActive(true, false);
-
-		// No angular acceleration limit, set directly
-		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
-
-		// TODO: remove assert if all is OK. Just to verify consistency with old logic.
-		const float InvTickTime = 1.f / dt;
-		n_assert_dbg(std::abs(dt - pLevel->GetStepTime()) < 0.000001f);
-
-		//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
-		btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
-		if (MaxAcceleration > 0.f)
-		{
-			const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
-			btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
-			if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
-			{
-				btVector3 ReqAccel = ReqLVelChange * InvTickTime;
-				btScalar AccelMagSq = ReqAccel.length2();
-				if (AccelMagSq > MaxAcceleration * MaxAcceleration)
-					ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
-				_Body->GetBtBody()->applyCentralForce(ReqAccel * _Body->GetMass());
-			}
-			else _Body->GetBtBody()->clearForces(); //???really clear all forces?
-		}
-		else _Body->GetBtBody()->setLinearVelocity(ReqLVel);
-
-		// Compensate gravity by a normal force N, as we are standing on the ground
-		_Body->GetBtBody()->applyCentralForce(-_Body->GetBtBody()->getGravity() * _Body->GetMass());
-		//???!!!compensate ALL -y force? no ground penetration may happen
-		//excess force/impulse (force * tick) can be converted into damage or smth!
-
-		// We want to compensate our DistanceToGround in a single simulation step
-		const float ReqVerticalVel = -DistanceToGround * InvTickTime;
-		_Body->GetBtBody()->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * _Body->GetMass(), 0.f));
-	}
-	else
-	{
-		//???need? gravity should keep the body active
-		//if levitating, disable gravity
-		//on levitation end, make body active
-		//_Body->SetActive(true, true);
-	}
-}
-//---------------------------------------------------------------------
-
-void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
-{
-	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
-
-	/*
-	vector3 OldPos = Position;
-	quaternion Rot;
-//FIXME PHYSICS	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
-	LookatDir = Rot.rotate(vector3::BaseDir);
-
-	if (OldPos != Position)
-	{
-		if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
-			ResetMovement(true);
-	}
+	
 	*/
 }
 //---------------------------------------------------------------------

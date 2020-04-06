@@ -61,6 +61,10 @@ protected:
 	vector3			ReqLinVel = vector3::Zero;
 	float			ReqAngVel = 0.f;
 
+	void CalcDesiredLinearVelocity();
+	void CalcDesiredAngularVelocity();
+	void AvoidObstacles();
+
 public:
 
 	CCharacterController();
