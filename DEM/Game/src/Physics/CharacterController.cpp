@@ -73,9 +73,14 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 {
 	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
 
+	// synchronizeMotionStates() might be not yet called, so we access raw transform.
+	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization.
+	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
+	const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
+
 	// Update vertical state
 
-	const float DistanceToGround = CalcDistanceToGround();
+	const float DistanceToGround = CalcDistanceToGround(Pos);
 	const bool OnGround = IsOnTheGround();
 
 	if (DistanceToGround <= 0.f && !OnGround)
@@ -83,7 +88,6 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 		if (_State == ECharacterState::Jump)
 		{
 			// send event OnEndJumping (//???through callback?)
-			// reset XZ velocity
 		}
 		else if (_State == ECharacterState::Fall)
 		{
@@ -137,8 +141,9 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 			// without a per-tick check.
 			//like: if new dest & _can't move_, set AIMvmt_Failed
 
-			//CalcDesiredLinearVelocity();
-			//if (_ObstacleAvoidanceEnabled) AvoidObstacles();
+			CalcDesiredLinearVelocity(Pos);
+			//!!!Can add separation with neighbours here!
+			if (_ObstacleAvoidanceEnabled) AvoidObstacles();
 			//if (_NeedDestinationFacing) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
 		}
 
@@ -153,12 +158,12 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 			_Body->SetActive(true, false);
 
 		// No angular acceleration limit, set directly
-		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, ReqAngVel, 0.f));
+		_Body->GetBtBody()->setAngularVelocity(btVector3(0.f, _DesiredAngularVelocity, 0.f));
 
 		const float InvTickTime = 1.f / dt;
 
 		//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
-		btVector3 ReqLVel = btVector3(ReqLinVel.x, 0.f, ReqLinVel.z);
+		btVector3 ReqLVel = btVector3(_DesiredLinearVelocity.x, 0.f, _DesiredLinearVelocity.z);
 		if (MaxAcceleration > 0.f)
 		{
 			const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
@@ -242,14 +247,10 @@ void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
 //---------------------------------------------------------------------
 
 // Calculate the distance to the nearest object under feet
-float CCharacterController::CalcDistanceToGround() const
+float CCharacterController::CalcDistanceToGround(const vector3& Pos) const
 {
 	constexpr float GroundProbeLength = 0.5f;
 
-	// synchronizeMotionStates() might be not yet called, so we access raw transform.
-	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization.
-	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
-	const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
 	vector3 Start = Pos;
 	vector3 End = Pos;
 	Start.y += _Height;
@@ -269,55 +270,54 @@ float CCharacterController::CalcDistanceToGround() const
 }
 //---------------------------------------------------------------------
 
-void CCharacterController::CalcDesiredLinearVelocity()
+void CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos)
 {
+	// FIXME:
+	float DistanceToFinalDestination = 0.f;
+	vector3 RequestedPosition;
+	vector3 NextRequestedPosition;
+	bool ArriveRequested = false;
+
 	float Speed = _DesiredSpeed;
 
-	/*
-	// S = -v0^2/2a for 0 = v0 + at (stop condition)
-	const float SlowDownRadius = ArriveCoeff * Speed * Speed;
+	const float DistanceToRequestedPosition = vector3::Distance2D(Pos, RequestedPosition);
 
-	//!!!AISteer_Type_Arrive - set somewhere!
-
-	// Big turn detected or the next traversal action requires stop
-	float LocalArrive = 1.f;
-	float LocalDist = vector3::Distance2D(pActor->Position, DestPoint);
-	if (pActor->SteeringType == AISteer_Type_Arrive && LocalDist < SlowDownRadius)
-		LocalArrive = ((2.f * SlowDownRadius - LocalDist) * LocalDist) / (SlowDownRadius * SlowDownRadius);
-
-	// Path target is near
-	float GlobalArrive = (pActor->DistanceToNavDest < SlowDownRadius) ?
-		((2.f * SlowDownRadius - pActor->DistanceToNavDest) * pActor->DistanceToNavDest) / (SlowDownRadius * SlowDownRadius) :
-		1.f;
-
-	Speed *= std::min(LocalArrive, GlobalArrive);
-
-	// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
-	// if frame rate is variable, so above we detect if actor crossed destination last frame.
-	if (LocalDist < Speed * FrameTime) Speed = LocalDist / FrameTime;
-
-	vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
-
-	if (SmoothSteering && DestPoint != NextDestPoint)
+	// Calculate arrival slowdown if close enough to destination
 	{
-		vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
+		// Always arrive to the final destination, but can also request arrival steering for the current path segment
+		const float Distance = (ArriveRequested && DistanceToRequestedPosition < DistanceToFinalDestination) ?
+			DistanceToRequestedPosition :
+			DistanceToFinalDestination;
 
-		const float SmoothnessCoeff = 0.3f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
-		float Scale = DesiredDir.Length() * SmoothnessCoeff;
-		float DistToNext = ToNext.Length();
-		if (DistToNext > 0.001f) Scale /= DistToNext;
-
-		DesiredDir -= ToNext * Scale;
+		// S = -v0^2/2a for 0 = v0 + at (stop condition)
+		const float SlowDownRadius = _ArriveBrakingCoeff * Speed * Speed;
+		if (Distance < SlowDownRadius)
+			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
 	}
 
-	DesiredDir.norm();
+	//!!!FIXME: what if final direction will not head to the destination?
+	// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
+	// if frame rate is variable, but physics system uses fixed step.
+	const float FrameTime = _Body->GetLevel()->GetStepTime();
+	if (DistanceToRequestedPosition < Speed * FrameTime) Speed = DistanceToRequestedPosition / FrameTime;
 
-	//!!!Separation with neighbours here:
+	_DesiredLinearVelocity.set(RequestedPosition.x - Pos.x, 0.f, RequestedPosition.z - Pos.z);
 
-	LinearVel.set(DesiredDir.x * Speed, 0.f, DesiredDir.y * Speed);
+	const float DirLength = _DesiredLinearVelocity.Length2D();
 
-	// LinearVel is requested but may be reset in a big turn check
-	*/
+	if (_SteeringSmoothness > 0.f && NextRequestedPosition != RequestedPosition)
+	{
+		const vector3 ToNext(NextRequestedPosition.x - Pos.x, 0.f, NextRequestedPosition.z - Pos.z);
+		const float DistToNext = ToNext.Length2D();
+		if (DistToNext > 0.001f)
+		{
+			const float Scale = DirLength * _SteeringSmoothness / DistToNext;
+			_DesiredLinearVelocity -= ToNext * Scale;
+		}
+	}
+
+	if (DirLength > std::numeric_limits<float>().epsilon())
+		_DesiredLinearVelocity *= Speed / DirLength;
 }
 //---------------------------------------------------------------------
 
@@ -349,6 +349,7 @@ void CCharacterController::CalcDesiredAngularVelocity()
 }
 //---------------------------------------------------------------------
 
+//!!!FIXME: what if obstacle is over the destination point? brake and stand stuck until request is failed or location if freed?
 void CCharacterController::AvoidObstacles()
 {
 	/*

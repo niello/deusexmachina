@@ -51,6 +51,9 @@ protected:
 	float           _DesiredSpeed = 0.f;
 	bool            _NeedDestinationFacing = false; //!!!!!for short step only, maybe get rid of the flag?
 	bool            _ObstacleAvoidanceEnabled = false;
+	float           _SteeringSmoothness = 0.3f;
+
+	float           _ArriveBrakingCoeff = -0.5f / -10.f; // -1/2a = -0.5/a, where a is max brake acceleration, a < 0
 
 	float			_Radius = 0.3f;
 	float			_Height = 1.75f;
@@ -70,11 +73,11 @@ protected:
 
 	PRigidBody		_Body;
 
-	vector3			ReqLinVel = vector3::Zero;
-	float			ReqAngVel = 0.f;
+	vector3			_DesiredLinearVelocity = vector3::Zero;
+	float			_DesiredAngularVelocity = 0.f;
 
-	float CalcDistanceToGround() const;
-	void  CalcDesiredLinearVelocity();
+	float CalcDistanceToGround(const vector3& Pos) const;
+	void  CalcDesiredLinearVelocity(const vector3& Pos);
 	void  CalcDesiredAngularVelocity();
 	void  AvoidObstacles();
 
@@ -90,8 +93,8 @@ public:
 	virtual void    BeforePhysicsTick(CPhysicsLevel* pLevel, float dt) override;
 	virtual void    AfterPhysicsTick(CPhysicsLevel* pLevel, float dt) override;
 
-	void			RequestLinearVelocity(const vector3& Velocity) { ReqLinVel = Velocity; }
-	void			RequestAngularVelocity(float Velocity) { ReqAngVel = Velocity; }
+	void			RequestLinearVelocity(const vector3& Velocity) { _DesiredLinearVelocity = Velocity; }
+	void			RequestAngularVelocity(float Velocity) { _DesiredAngularVelocity = Velocity; }
 
 	void            SetRadius(float Radius) { if (_Radius != Radius) { _Radius = Radius; _Dirty = true; } }
 	void            SetHeight(float Height) { if (_Height != Height) { _Height = Height; _Dirty = true; } }
@@ -102,12 +105,12 @@ public:
 	float			GetHover() const { return _Hover; }
 	CRigidBody*		GetBody() const { return _Body.Get(); }
 	//vector3		GetLinearVelocity(vector3& Out) const;
-	const vector3&	GetRequestedLinearVelocity() const { return ReqLinVel; }
+	const vector3&	GetRequestedLinearVelocity() const { return _DesiredLinearVelocity; }
 	//float			GetAngularVelocity() const;
-	float			GetRequestedAngularVelocity() const { return ReqAngVel; }
+	float			GetRequestedAngularVelocity() const { return _DesiredAngularVelocity; }
 	bool			IsMotionRequested() const { return IsLinearMotionRequested() || IsAngularMotionRequested(); }
-	bool			IsLinearMotionRequested() const { return ReqLinVel != vector3::Zero; }
-	bool			IsAngularMotionRequested() const { return ReqAngVel != 0.f; }
+	bool			IsLinearMotionRequested() const { return _DesiredLinearVelocity != vector3::Zero; }
+	bool			IsAngularMotionRequested() const { return _DesiredAngularVelocity != 0.f; }
 	bool            IsOnTheGround() const { return _State != ECharacterState::Jump && _State != ECharacterState::Fall; } // Levitate too!
 
 	//!!!collision callbacks/events! fire from global or from here?

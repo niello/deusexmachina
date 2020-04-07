@@ -96,7 +96,7 @@ void CMotorSystem::Update(float FrameTime)
 
 		// Big turn detected or the next traversal action requires stop
 		float LocalArrive = 1.f;
-		float LocalDist = vector3::Distance2D(pActor->Position, DestPoint);
+		const float LocalDist = vector3::Distance2D(pActor->Position, DestPoint);
 		if (pActor->SteeringType == AISteer_Type_Arrive && LocalDist < SlowDownRadius)
 			LocalArrive = ((2.f * SlowDownRadius - LocalDist) * LocalDist) / (SlowDownRadius * SlowDownRadius);
 
