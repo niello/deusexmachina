@@ -73,61 +73,12 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 {
 	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
 
-	/*
-	//???where to test movement caps? here, read from BB?
-	//like: if new dest & _can't move_, set AIMvmt_Failed
+	// Update vertical state
 
-	// Check if actor reached or crossed the destination last frame (with some tolerance).
-	// For that we detect point on the last frame movement segment that is the closest to the destination
-	// and check distance (in XZ, + height difference to handle possible navmesh stages).
-	//!!!TEST is still useful after steering fixes?
-	if (pActor->MvmtState == AIMvmt_DestSet)
-	{
-		vector3 LinVel;
-		if (pActor->GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity")))
-		{
-			vector3 FrameMovement = LinVel * FrameTime;
-			vector3 PrevPos = pActor->Position - FrameMovement;
-			float t = (FrameMovement.Dot(DestPoint) - FrameMovement.Dot(PrevPos)) / FrameMovement.SqLength();
-			if (t >= 0.f && t <= 1.f)
-			{
-				vector3 Closest = PrevPos + FrameMovement * t;
-				const float Tolerance = pActor->LinearArrivalTolerance * pActor->LinearArrivalTolerance;
-				if (vector3::SqDistance2D(Closest, DestPoint) < Tolerance && n_fabs(Closest.y - DestPoint.y) < pActor->Height)
-				{
-					ResetMovement(true);
-				}
-			}
-		}
-	}
-	*/
+	const float DistanceToGround = CalcDistanceToGround();
+	const bool OnGround = IsOnTheGround();
 
-	// Calculate the distance to the nearest object under feet
-	float DistanceToGround = std::numeric_limits<float>().max();
-	{
-		constexpr float GroundProbeLength = 0.5f;
-
-		// Post-tick callback is called just before synchronizeMotionStates(), so the body has an outdated motion state
-		// transformation here. Access raw tfm. synchronizeSingleMotionState() could make sense too with dirty flag optimization.
-		const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
-		const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
-		vector3 Start = Pos;
-		vector3 End = Pos;
-		Start.y += _Height;
-		End.y -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
-
-		// FIXME: improve passing collision flags through interfaces!
-		vector3 ContactPos;
-		if (pLevel->GetClosestRayContact(Start, End,
-			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterGroup,
-			_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterMask,
-			&ContactPos, nullptr, _Body.Get()))
-		{
-			DistanceToGround = Pos.y - ContactPos.y;
-		}
-	}
-
-	if (DistanceToGround <= 0.f && _State != ECharacterState::Stand)
+	if (DistanceToGround <= 0.f && !OnGround)
 	{
 		if (_State == ECharacterState::Jump)
 		{
@@ -145,12 +96,12 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 		// send event OnStartStanding (//???through callback?)
 		_State = ECharacterState::Stand;
 	}
-	else if (DistanceToGround > MaxStepDownHeight && _State == ECharacterState::Stand)
+	else if (DistanceToGround > MaxStepDownHeight && OnGround)
 	{
 		//???controll whole speed or only a vertical component? now the second
 
-		const btVector3& CurrLVel = _Body->GetBtBody()->getLinearVelocity();
-		float VerticalImpulse = -_Body->GetMass() * CurrLVel.y(); // Inverted to be positive when directed downwards
+		// Y is inverted to be positive when the character moves downwards
+		const float VerticalImpulse = _Body->GetMass() * -_Body->GetBtBody()->getLinearVelocity().y();
 		if (VerticalImpulse > MaxLandingImpulse)
 		{
 			// send event OnEnd[state] (//???through callback?)
@@ -168,40 +119,31 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 		//???else if VerticalImpulse == 0.f levitate?
 	}
 
+	// Update the controller in the current state, including movement requests
+
 	if (_State == ECharacterState::Stand)
 	{
-		/*
-		//!!!only if movement requested!
-		// Check if movement type is not available to the actor
-		if (pActor->MvmtState == AIMvmt_DestSet && MaxSpeed[pActor->MvmtType] <= 0.f)
-			ResetMovement(false);
-
-		// Update stuck info //???or after tick?
-		if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
+		if (_LinearMovementState == EMovementState::Requested)
 		{
-			if (IsStuck())
-			{
-				if (pActor->MvmtState = AIMvmt_DestSet)
-				{
-					pActor->MvmtState = AIMvmt_Stuck;
-					//StuckTime = 0.f; //or StuckTime = CurrTime;
-				}
-				//else StuckTime += FrameTime; //???!!!if we store relative time, not state entering time
-				//if (StuckTime > StuckForTooLongTime) ResetMovement(false);
-			}
-			else pActor->MvmtState = AIMvmt_DestSet;
+			//// Check if movement type is not available to the actor
+			//!!!instead of movement types character controller must know its current speed, set externally with
+			// the movement request. So the speed is not an indicator, it is always valid for the valid request.
+			// Movement must be reset externally if the character lost an ability to move.
+			// May also add explicit 'paralyzed' flag here, but it must not reset the request immediately, it is better
+			// to wait until paralyzation is over and executing the request!
+			//if (MaxSpeed[pActor->MvmtType] <= 0.f)
+			//	ResetMovement(false);
+			//???where to test movement caps? are tem set from external systems? if so, can store inside and react immediately,
+			// without a per-tick check.
+			//like: if new dest & _can't move_, set AIMvmt_Failed
+
+			//CalcDesiredLinearVelocity();
+			//if (_ObstacleAvoidanceEnabled) AvoidObstacles();
+			//if (_NeedDestinationFacing) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
 		}
 
-		if (pActor->MvmtState == AIMvmt_DestSet)
-		{
-			CalcDesiredLinearVelocity();
-			if (_ObstacleAvoidanceEnabled) AvoidObstacles();
-			if (FaceDest) SetFaceDirection(vector3(DesiredDir.x, 0.f, DesiredDir.y));
-		}
-
-		if (pActor->FacingState == AIFacing_DirSet)
+		if (_AngularMovementState == EMovementState::Requested)
 			CalcDesiredAngularVelocity();
-		*/
 
 		// We want a precise control over the movement, so deny freezing on low speed
 		// when movement is requested. When idle, allow to deactivate eventually.
@@ -259,66 +201,122 @@ void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
 	/*
 	vector3 OldPos = Position;
 	quaternion Rot;
-//FIXME PHYSICS	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+
 	LookatDir = Rot.rotate(vector3::BaseDir);
 
 	if (OldPos != Position)
 	{
 		if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
 			ResetMovement(true);
+
+		// Check if actor reached or crossed the destination last frame (with some tolerance).
+		// For that we detect point on the last frame movement segment that is the closest to the destination
+		// and check distance (in XZ, + height difference to handle possible navmesh stages).
+		//!!!TEST is still useful after steering fixes?
+		//if (pActor->MvmtState == AIMvmt_DestSet)
+		//{
+		//	vector3 LinVel;
+		//	if (pActor->GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity")))
+		//	{
+		//		vector3 FrameMovement = LinVel * FrameTime;
+		//		vector3 PrevPos = pActor->Position - FrameMovement;
+		//		float t = (FrameMovement.Dot(DestPoint) - FrameMovement.Dot(PrevPos)) / FrameMovement.SqLength();
+		//		if (t >= 0.f && t <= 1.f)
+		//		{
+		//			vector3 Closest = PrevPos + FrameMovement * t;
+		//			const float Tolerance = pActor->LinearArrivalTolerance * pActor->LinearArrivalTolerance;
+		//			if (vector3::SqDistance2D(Closest, DestPoint) < Tolerance && n_fabs(Closest.y - DestPoint.y) < pActor->Height)
+		//			{
+		//				ResetMovement(true);
+		//			}
+		//		}
+		//	}
+		//}
+
+		// If is stuck, increase stuck timer, and if timer is too high, set Stuck mvmt state, i.e. fail movement.
+		// Maybe this must happen after the tick!
 	}
 	*/
 }
 //---------------------------------------------------------------------
 
+// Calculate the distance to the nearest object under feet
+float CCharacterController::CalcDistanceToGround() const
+{
+	constexpr float GroundProbeLength = 0.5f;
+
+	// synchronizeMotionStates() might be not yet called, so we access raw transform.
+	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization.
+	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
+	const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
+	vector3 Start = Pos;
+	vector3 End = Pos;
+	Start.y += _Height;
+	End.y -= (MaxStepDownHeight + GroundProbeLength); // Falling state detection
+
+	// FIXME: improve passing collision flags through interfaces!
+	vector3 ContactPos;
+	if (_Body->GetLevel()->GetClosestRayContact(Start, End,
+		_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterGroup,
+		_Body->GetBtBody()->getBroadphaseProxy()->m_collisionFilterMask,
+		&ContactPos, nullptr, _Body.Get()))
+	{
+		return Pos.y - ContactPos.y;
+	}
+
+	return std::numeric_limits<float>().max();
+}
+//---------------------------------------------------------------------
+
 void CCharacterController::CalcDesiredLinearVelocity()
 {
+	float Speed = _DesiredSpeed;
+
 	/*
-		float Speed = MaxSpeed[pActor->MvmtType];
+	// S = -v0^2/2a for 0 = v0 + at (stop condition)
+	const float SlowDownRadius = ArriveCoeff * Speed * Speed;
 
-		const float SlowDownRadius = ArriveCoeff * Speed * Speed; // S = -v0^2/2a for 0 = v0 + at (stop condition)
+	//!!!AISteer_Type_Arrive - set somewhere!
 
-		//!!!AISteer_Type_Arrive - set somewhere!
+	// Big turn detected or the next traversal action requires stop
+	float LocalArrive = 1.f;
+	float LocalDist = vector3::Distance2D(pActor->Position, DestPoint);
+	if (pActor->SteeringType == AISteer_Type_Arrive && LocalDist < SlowDownRadius)
+		LocalArrive = ((2.f * SlowDownRadius - LocalDist) * LocalDist) / (SlowDownRadius * SlowDownRadius);
 
-		// Big turn detected or the next traversal action requires stop
-		float LocalArrive = 1.f;
-		float LocalDist = vector3::Distance2D(pActor->Position, DestPoint);
-		if (pActor->SteeringType == AISteer_Type_Arrive && LocalDist < SlowDownRadius)
-			LocalArrive = ((2.f * SlowDownRadius - LocalDist) * LocalDist) / (SlowDownRadius * SlowDownRadius);
+	// Path target is near
+	float GlobalArrive = (pActor->DistanceToNavDest < SlowDownRadius) ?
+		((2.f * SlowDownRadius - pActor->DistanceToNavDest) * pActor->DistanceToNavDest) / (SlowDownRadius * SlowDownRadius) :
+		1.f;
 
-		// Path target is near
-		float GlobalArrive = (pActor->DistanceToNavDest < SlowDownRadius) ?
-			((2.f * SlowDownRadius - pActor->DistanceToNavDest) * pActor->DistanceToNavDest) / (SlowDownRadius * SlowDownRadius) :
-			1.f;
+	Speed *= std::min(LocalArrive, GlobalArrive);
 
-		Speed *= std::min(LocalArrive, GlobalArrive);
+	// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
+	// if frame rate is variable, so above we detect if actor crossed destination last frame.
+	if (LocalDist < Speed * FrameTime) Speed = LocalDist / FrameTime;
 
-		// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
-		// if frame rate is variable, so above we detect if actor crossed destination last frame.
-		if (LocalDist < Speed * FrameTime) Speed = LocalDist / FrameTime;
+	vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
 
-		vector2 DesiredDir(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
+	if (SmoothSteering && DestPoint != NextDestPoint)
+	{
+		vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
 
-		if (SmoothSteering && DestPoint != NextDestPoint)
-		{
-			vector2 ToNext(NextDestPoint.x - pActor->Position.x, NextDestPoint.z - pActor->Position.z);
+		const float SmoothnessCoeff = 0.3f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
+		float Scale = DesiredDir.Length() * SmoothnessCoeff;
+		float DistToNext = ToNext.Length();
+		if (DistToNext > 0.001f) Scale /= DistToNext;
 
-			const float SmoothnessCoeff = 0.3f; //!!!to settings! [0 to 1), [0 - direct, 1) - big curve
-			float Scale = DesiredDir.Length() * SmoothnessCoeff;
-			float DistToNext = ToNext.Length();
-			if (DistToNext > 0.001f) Scale /= DistToNext;
+		DesiredDir -= ToNext * Scale;
+	}
 
-			DesiredDir -= ToNext * Scale;
-		}
+	DesiredDir.norm();
 
-		DesiredDir.norm();
+	//!!!Separation with neighbours here:
 
-		//!!!Separation with neighbours here:
+	LinearVel.set(DesiredDir.x * Speed, 0.f, DesiredDir.y * Speed);
 
-		LinearVel.set(DesiredDir.x * Speed, 0.f, DesiredDir.y * Speed);
-
-		// LinearVel is requested but may be reset in a big turn check
-	
+	// LinearVel is requested but may be reset in a big turn check
 	*/
 }
 //---------------------------------------------------------------------

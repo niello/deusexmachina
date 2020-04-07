@@ -27,6 +27,13 @@ class CCharacterController : public ITickListener
 {
 protected:
 
+	enum class EMovementState : U8
+	{
+		Requested, // Moving to the requested point or rotating to the requested direction
+		Idle,      // Stands idle with the movement request satisfied
+		Stuck      // Stands idle with the movement failed
+	};
+
 	//!!!Slide down from where can't climb up and don't slide where can climb!
 	//Slide along vertical obstacles, don't bounce
 
@@ -39,6 +46,11 @@ protected:
 	*/
 
 	ECharacterState	_State = ECharacterState::Stand;
+	EMovementState  _LinearMovementState = EMovementState::Idle;
+	EMovementState  _AngularMovementState = EMovementState::Idle;
+	float           _DesiredSpeed = 0.f;
+	bool            _NeedDestinationFacing = false; //!!!!!for short step only, maybe get rid of the flag?
+	bool            _ObstacleAvoidanceEnabled = false;
 
 	float			_Radius = 0.3f;
 	float			_Height = 1.75f;
@@ -61,9 +73,10 @@ protected:
 	vector3			ReqLinVel = vector3::Zero;
 	float			ReqAngVel = 0.f;
 
-	void CalcDesiredLinearVelocity();
-	void CalcDesiredAngularVelocity();
-	void AvoidObstacles();
+	float CalcDistanceToGround() const;
+	void  CalcDesiredLinearVelocity();
+	void  CalcDesiredAngularVelocity();
+	void  AvoidObstacles();
 
 public:
 
@@ -95,6 +108,7 @@ public:
 	bool			IsMotionRequested() const { return IsLinearMotionRequested() || IsAngularMotionRequested(); }
 	bool			IsLinearMotionRequested() const { return ReqLinVel != vector3::Zero; }
 	bool			IsAngularMotionRequested() const { return ReqAngVel != 0.f; }
+	bool            IsOnTheGround() const { return _State != ECharacterState::Jump && _State != ECharacterState::Fall; } // Levitate too!
 
 	//!!!collision callbacks/events! fire from global or from here?
 
