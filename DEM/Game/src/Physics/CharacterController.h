@@ -82,10 +82,10 @@ protected:
 	vector3			_DesiredLinearVelocity = vector3::Zero;
 	float			_DesiredAngularVelocity = 0.f;
 
-	float CalcDistanceToGround(const vector3& Pos) const;
-	void  CalcDesiredLinearVelocity(const vector3& Pos);
-	void  CalcDesiredAngularVelocity(const vector3& LookatDir);
-	void  AvoidObstacles();
+	float   CalcDistanceToGround(const vector3& Pos) const;
+	vector3 CalcDesiredLinearVelocity(const vector3& Pos) const;
+	float   CalcDesiredAngularVelocity(float Angle) const;
+	void    AvoidObstacles();
 
 public:
 
