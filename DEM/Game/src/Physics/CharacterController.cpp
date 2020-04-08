@@ -74,9 +74,12 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
 
 	// synchronizeMotionStates() might be not yet called, so we access raw transform.
-	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization.
+	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
+	// then called here it would not do redundant calculations in synchronizeMotionStates.
+	const auto OffsetCompensation = -_Body->GetCollisionShape()->GetOffset();
 	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
-	const vector3 Pos = BtVectorToVector(BodyTfm.getOrigin()) - _Body->GetCollisionShape()->GetOffset();
+	const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
+	const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 
 	// Update vertical state
 
@@ -148,7 +151,7 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 		}
 
 		if (_AngularMovementState == EMovementState::Requested)
-			CalcDesiredAngularVelocity();
+			CalcDesiredAngularVelocity(LookatDir);
 
 		// We want a precise control over the movement, so deny freezing on low speed
 		// when movement is requested. When idle, allow to deactivate eventually.
@@ -212,8 +215,11 @@ void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
 
 	if (OldPos != Position)
 	{
+		constexpr float AngularTolerance = 0.00001f;
+		if (AngleAbs < AngularTolerance) ResetRotation(true);
+	
 		if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
-			ResetMovement(true);
+				ResetMovement(true);
 
 		// Check if actor reached or crossed the destination last frame (with some tolerance).
 		// For that we detect point on the last frame movement segment that is the closest to the destination
@@ -272,22 +278,19 @@ float CCharacterController::CalcDistanceToGround(const vector3& Pos) const
 
 void CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos)
 {
-	// FIXME:
-	float DistanceToFinalDestination = 0.f;
-	vector3 RequestedPosition;
-	vector3 NextRequestedPosition;
-	bool ArriveRequested = false;
+	float Speed = _DesiredLinearSpeed;
 
-	float Speed = _DesiredSpeed;
-
-	const float DistanceToRequestedPosition = vector3::Distance2D(Pos, RequestedPosition);
+	const float DistanceToRequestedPosition = vector3::Distance2D(Pos, _RequestedPosition);
 
 	// Calculate arrival slowdown if close enough to destination
+	// Negative _ArriveAdditionalDistance means that no arrive steering required at all
+	if (_AdditionalArriveDistance >= 0.f)
 	{
-		// Always arrive to the final destination, but can also request arrival steering for the current path segment
-		const float Distance = (ArriveRequested && DistanceToRequestedPosition < DistanceToFinalDestination) ?
-			DistanceToRequestedPosition :
-			DistanceToFinalDestination;
+		// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
+		// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
+		// final destination, and here we calculate effective distance to the destination along the path without
+		// knowledge about the path topology.
+		const float Distance = DistanceToRequestedPosition + _AdditionalArriveDistance;
 
 		// S = -v0^2/2a for 0 = v0 + at (stop condition)
 		const float SlowDownRadius = _ArriveBrakingCoeff * Speed * Speed;
@@ -301,13 +304,14 @@ void CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos)
 	const float FrameTime = _Body->GetLevel()->GetStepTime();
 	if (DistanceToRequestedPosition < Speed * FrameTime) Speed = DistanceToRequestedPosition / FrameTime;
 
-	_DesiredLinearVelocity.set(RequestedPosition.x - Pos.x, 0.f, RequestedPosition.z - Pos.z);
+	_DesiredLinearVelocity.set(_RequestedPosition.x - Pos.x, 0.f, _RequestedPosition.z - Pos.z);
 
 	const float DirLength = _DesiredLinearVelocity.Length2D();
 
-	if (_SteeringSmoothness > 0.f && NextRequestedPosition != RequestedPosition)
+	// If current destination is an intermediate turning point, make the trajectory smooth
+	if (_SteeringSmoothness > 0.f && _NextRequestedPosition != _RequestedPosition)
 	{
-		const vector3 ToNext(NextRequestedPosition.x - Pos.x, 0.f, NextRequestedPosition.z - Pos.z);
+		const vector3 ToNext(_NextRequestedPosition.x - Pos.x, 0.f, _NextRequestedPosition.z - Pos.z);
 		const float DistToNext = ToNext.Length2D();
 		if (DistToNext > 0.001f)
 		{
@@ -321,31 +325,28 @@ void CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos)
 }
 //---------------------------------------------------------------------
 
-void CCharacterController::CalcDesiredAngularVelocity()
+void CCharacterController::CalcDesiredAngularVelocity(const vector3& LookatDir)
 {
-	/*
-		float Angle = vector3::Angle2DNorm(pActor->LookatDir, FaceDir);
-		float AngleAbs = n_fabs(Angle);
+	constexpr float AngularArriveZone = 0.34906585039886591538473815369772f; // 20 degrees in radians
 
-		if (AngleAbs < pActor->AngularArrivalTolerance) ResetRotation(true);
-		else
-		{
-			if (MaxAngularSpeed <= 0.f) ResetRotation(false); // We can't rotate
-			else
-			{
-				if (AngleAbs > BigTurnThreshold) LinearVel = vector4::Zero;
+	const float Angle = vector3::Angle2DNorm(LookatDir, _RequestedLookat);
+	const bool IsNegative = (Angle < 0.f);
+	const float AngleAbs = IsNegative ? -Angle : Angle;
 
-				// Start arrive slowdown at 20 degrees to goal
-				float AngularVel = (Angle < 0) ? -MaxAngularSpeed : MaxAngularSpeed;
-				//???clamp to Angle / FrameTime to avoid overshoots for high speeds?
-				if (AngleAbs <= 0.34906585039886591538473815369772f) // 20 deg in rads
-					AngularVel *= AngleAbs * 2.8647889756541160438399077407053f; // 1 / (20 deg in rads)
+	float Speed = _DesiredAngularSpeed;
 
-				// AngularVel is requested!
-			}
-		}
-	
-	*/
+	// Arrive slowdown
+	if (AngleAbs <= AngularArriveZone)
+		_DesiredAngularVelocity *= AngleAbs / AngularArriveZone;
+
+	// Avoid overshooting
+	const float FrameTime = _Body->GetLevel()->GetStepTime();
+	if (AngleAbs < Speed * FrameTime) Speed = AngleAbs / FrameTime;
+
+	_DesiredAngularVelocity = IsNegative ? -_DesiredAngularSpeed : _DesiredAngularSpeed;
+
+	// Amount of required rotation is too big, actor must stop to perform it
+	if (AngleAbs > _BigTurnThreshold) _DesiredLinearVelocity = vector3::Zero;
 }
 //---------------------------------------------------------------------
 

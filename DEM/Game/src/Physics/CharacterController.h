@@ -48,12 +48,18 @@ protected:
 	ECharacterState	_State = ECharacterState::Stand;
 	EMovementState  _LinearMovementState = EMovementState::Idle;
 	EMovementState  _AngularMovementState = EMovementState::Idle;
-	float           _DesiredSpeed = 0.f;
+	vector3         _RequestedPosition;
+	vector3         _NextRequestedPosition;
+	vector3         _RequestedLookat; //???or float angle along Y is enough?
+	float           _DesiredLinearSpeed = 0.f;
+	float           _DesiredAngularSpeed = 0.f;
 	bool            _NeedDestinationFacing = false; //!!!!!for short step only, maybe get rid of the flag?
 	bool            _ObstacleAvoidanceEnabled = false;
 	float           _SteeringSmoothness = 0.3f;
+	float           _AdditionalArriveDistance = -1.f; // If < 0, no arrive steering requested at all
 
 	float           _ArriveBrakingCoeff = -0.5f / -10.f; // -1/2a = -0.5/a, where a is max brake acceleration, a < 0
+	float           _BigTurnThreshold = PI / 3.f;        // Max angle (in rad) actor can turn without stopping linear movement
 
 	float			_Radius = 0.3f;
 	float			_Height = 1.75f;
@@ -78,7 +84,7 @@ protected:
 
 	float CalcDistanceToGround(const vector3& Pos) const;
 	void  CalcDesiredLinearVelocity(const vector3& Pos);
-	void  CalcDesiredAngularVelocity();
+	void  CalcDesiredAngularVelocity(const vector3& LookatDir);
 	void  AvoidObstacles();
 
 public:
