@@ -136,21 +136,11 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 	{
 		if (_LinearMovementState == EMovementState::Requested)
 		{
-			//// Check if movement type is not available to the actor
-			//!!!instead of movement types character controller must know its current speed, set externally with
-			// the movement request. So the speed is not an indicator, it is always valid for the valid request.
-			// Movement must be reset externally if the character lost an ability to move.
-			// May also add explicit 'paralyzed' flag here, but it must not reset the request immediately, it is better
-			// to wait until paralyzation is over and executing the request!
-			//if (MaxSpeed[pActor->MvmtType] <= 0.f)
-			//	ResetMovement(false);
-			//???where to test movement caps? are tem set from external systems? if so, can store inside and react immediately,
-			// without a per-tick check.
-			//like: if new dest & _can't move_, set AIMvmt_Failed
-
 			_DesiredLinearVelocity = CalcDesiredLinearVelocity(Pos);
-			//!!!Can add separation with neighbours here!
+
+			//!!!Can add separation with neighbours here too!
 			if (_ObstacleAvoidanceEnabled) AvoidObstacles();
+
 			if (_NeedDestinationFacing && _MaxAngularSpeed > 0.f)
 				RequestFacing(_DesiredLinearVelocity);
 		}
@@ -540,26 +530,6 @@ void CCharacterController::SetArrivalParams(bool Enable, float AdditionalDistanc
 
 
 /*
-
-void CMotorSystem::ResetMovement(bool Success)
-{
-	pActor->MvmtState = Success ? AIMvmt_Done : AIMvmt_Failed;
-	Data::PParams PLinearVel = n_new(Data::CParams(1));
-	PLinearVel->Set(CStrID("Velocity"), vector3::Zero);
-	pActor->GetEntity()->FireEvent(CStrID("RequestLinearV"), PLinearVel);
-}
-//---------------------------------------------------------------------
-
-void CMotorSystem::ResetRotation(bool Success)
-{
-	pActor->FacingState = Success ? AIFacing_Done : AIFacing_Failed;
-	Data::PParams PAngularVel = n_new(Data::CParams(1));
-	PAngularVel->Set(CStrID("Velocity"), 0.f);
-	pActor->GetEntity()->FireEvent(CStrID("RequestAngularV"), PAngularVel);
-}
-//---------------------------------------------------------------------
-
-//!!!WRITE IT!
 bool CMotorSystem::IsStuck()
 {
 	// Set Stuck, if:
@@ -574,36 +544,6 @@ bool CMotorSystem::IsStuck()
 	//!!!DON'T forget StuckTime!
 
 	FAIL;
-}
-//---------------------------------------------------------------------
-
-void CMotorSystem::SetDest(const vector3& Dest)
-{
-	if (pActor->IsAtPoint(Dest)) ResetMovement(true);
-	else
-	{
-		DestPoint = Dest;
-		pActor->MvmtState = AIMvmt_DestSet;
-		FaceDest = vector3::SqDistance2D(pActor->Position, DestPoint) > SqShortStepThreshold;
-		//pLastClosestObstacle = nullptr;
-	}
-}
-//---------------------------------------------------------------------
-
-void CMotorSystem::SetFaceDirection(const vector3& Dir)
-{
-	if (pActor->IsLookingAtDir(Dir)) pActor->FacingState = AIFacing_Done;
-	else
-	{
-		FaceDir = Dir;
-		pActor->FacingState = AIFacing_DirSet;
-	}
-}
-//---------------------------------------------------------------------
-
-float CMotorSystem::GetMaxSpeed() const
-{
-	return std::max(MaxSpeed[pActor->MvmtType], 0.f);
 }
 //---------------------------------------------------------------------
 
@@ -669,16 +609,14 @@ void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 
 bool CCharacterController::GetLinearVelocity(vector3& Out) const
 {
-	// FIXME PHYSICS
-//	Out = BtVectorToVector(Body->GetBtBody()->getLinearVelocity());
+	Out = BtVectorToVector(Body->GetBtBody()->getLinearVelocity());
 	OK;
 }
 //---------------------------------------------------------------------
 
 float CCharacterController::GetAngularVelocity() const
 {
-	// FIXME PHYSICS
-//	return _Body->GetBtBody()->getAngularVelocity().y();
+	return _Body->GetBtBody()->getAngularVelocity().y();
 	return 0.f;
 }
 //---------------------------------------------------------------------
