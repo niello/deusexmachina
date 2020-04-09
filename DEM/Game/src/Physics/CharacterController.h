@@ -51,8 +51,8 @@ protected:
 	vector3         _RequestedPosition;
 	vector3         _NextRequestedPosition;
 	vector3         _RequestedLookat; //???or float angle along Y is enough?
-	float           _DesiredLinearSpeed = 0.f;
-	float           _DesiredAngularSpeed = 0.f;
+	float           _MaxLinearSpeed = 3.f;
+	float           _MaxAngularSpeed = PI;
 	bool            _NeedDestinationFacing = false; //!!!!!for short step only, maybe get rid of the flag?
 	bool            _ObstacleAvoidanceEnabled = false;
 	float           _SteeringSmoothness = 0.3f;
@@ -99,8 +99,17 @@ public:
 	virtual void    BeforePhysicsTick(CPhysicsLevel* pLevel, float dt) override;
 	virtual void    AfterPhysicsTick(CPhysicsLevel* pLevel, float dt) override;
 
+	//???separate SetSpeed? to make internal requests like facing movement direction!
+	void            RequestMovement(const vector3& Dest) { RequestMovement(Dest, Dest); }
+	void            RequestMovement(const vector3& Dest, const vector3& NextDest);
+	void            RequestFacing(const vector3& Direction);
 	void			RequestLinearVelocity(const vector3& Velocity) { _DesiredLinearVelocity = Velocity; }
 	void			RequestAngularVelocity(float Velocity) { _DesiredAngularVelocity = Velocity; }
+	void            ResetMovement() { _LinearMovementState = EMovementState::Idle; }
+	void            ResetFacing() { _AngularMovementState = EMovementState::Idle; }
+	void            SetMaxLinearSpeed(float Speed) { _MaxLinearSpeed = std::max(0.f, Speed); }
+	void            SetMaxAngularSpeed(float Speed) { _MaxAngularSpeed = std::max(0.f, Speed); }
+	void            SetArrivalParams(bool Enable, float AdditionalDistance = 0.f);
 
 	void            SetRadius(float Radius) { if (_Radius != Radius) { _Radius = Radius; _Dirty = true; } }
 	void            SetHeight(float Height) { if (_Height != Height) { _Height = Height; _Dirty = true; } }

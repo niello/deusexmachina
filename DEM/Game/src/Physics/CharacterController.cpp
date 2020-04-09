@@ -7,6 +7,8 @@
 
 namespace Physics
 {
+constexpr float SqLinearTolerance = 0.0001f * 0.0001f;
+constexpr float AngularTolerance = 0.0001f;
 
 CCharacterController::CCharacterController() = default;
 
@@ -81,6 +83,8 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 	const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
 	const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 
+	//!!!FIXME: check motion state, maybe it is updated in BeforePhysicsTick!
+
 	// Update vertical state
 
 	const float DistanceToGround = CalcDistanceToGround(Pos);
@@ -147,7 +151,8 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 			_DesiredLinearVelocity = CalcDesiredLinearVelocity(Pos);
 			//!!!Can add separation with neighbours here!
 			if (_ObstacleAvoidanceEnabled) AvoidObstacles();
-			//if (_NeedDestinationFacing) RequestFacing(vector3(DesiredDir.x, 0.f, DesiredDir.y));
+			if (_NeedDestinationFacing && _MaxAngularSpeed > 0.f)
+				RequestFacing(_DesiredLinearVelocity);
 		}
 
 		if (_AngularMovementState == EMovementState::Requested)
@@ -221,7 +226,6 @@ void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
 
 	if (OldPos != Position)
 	{
-		constexpr float AngularTolerance = 0.00001f;
 		if (AngleAbs < AngularTolerance) ResetRotation(true);
 	
 		if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
@@ -284,7 +288,7 @@ float CCharacterController::CalcDistanceToGround(const vector3& Pos) const
 
 vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) const
 {
-	float Speed = _DesiredLinearSpeed;
+	float Speed = _MaxLinearSpeed;
 
 	const float DistanceToRequestedPosition = vector3::Distance2D(Pos, _RequestedPosition);
 
@@ -335,22 +339,22 @@ vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) cons
 
 float CCharacterController::CalcDesiredAngularVelocity(float Angle) const
 {
-	constexpr float AngularArriveZone = 0.34906585039886591538473815369772f; // 20 degrees in radians
+	constexpr float AngularArrivalZone = 0.34906585039886591538473815369772f; // 20 degrees in radians
 
 	const bool IsNegative = (Angle < 0.f);
 	const float AngleAbs = IsNegative ? -Angle : Angle;
 
-	float Speed = _DesiredAngularSpeed;
+	float Speed = _MaxAngularSpeed;
 
 	// Arrive slowdown
-	if (AngleAbs <= AngularArriveZone)
-		Speed *= AngleAbs / AngularArriveZone;
+	if (AngleAbs <= AngularArrivalZone)
+		Speed *= AngleAbs / AngularArrivalZone;
 
 	// Avoid overshooting
 	const float FrameTime = _Body->GetLevel()->GetStepTime();
 	if (AngleAbs < Speed * FrameTime) Speed = AngleAbs / FrameTime;
 
-	return IsNegative ? -_DesiredAngularSpeed : _DesiredAngularSpeed;
+	return IsNegative ? -_MaxAngularSpeed : _MaxAngularSpeed;
 }
 //---------------------------------------------------------------------
 
@@ -499,6 +503,60 @@ void CCharacterController::AvoidObstacles()
 	*/
 }
 //---------------------------------------------------------------------
+
+void CCharacterController::RequestMovement(const vector3& Dest, const vector3& NextDest)
+{
+	//!!!check immediate request satisfaction!
+	// synchronizeMotionStates() might be not yet called, so we access raw transform.
+	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
+	// then called here it would not do redundant calculations in synchronizeMotionStates.
+	const auto OffsetCompensation = -_Body->GetCollisionShape()->GetOffset();
+	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
+	const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
+	const float SqDistance = vector3::SqDistance2D(Dest, Pos);
+	const bool IsDestinationOnTheSameLevel = (std::fabsf(Dest.y - Pos.y) < _Height);
+	if (IsDestinationOnTheSameLevel && SqDistance < SqLinearTolerance)
+	{
+		ResetMovement();
+		return;
+	}
+
+	_LinearMovementState = EMovementState::Requested;
+	_RequestedPosition = Dest;
+	_NextRequestedPosition = NextDest;
+
+	// If the distance is short enough, can move in any direction without turning
+	const float DestFacingThreshold = 1.5f * _Radius;
+	_NeedDestinationFacing =  !IsDestinationOnTheSameLevel || (SqDistance > DestFacingThreshold * DestFacingThreshold);
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::RequestFacing(const vector3& Direction)
+{
+	// synchronizeMotionStates() might be not yet called, so we access raw transform.
+	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
+	// then called here it would not do redundant calculations in synchronizeMotionStates.
+	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
+	const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+	const float Angle = vector3::Angle2DNorm(LookatDir, Direction);
+	if (std::fabsf(Angle) < AngularTolerance)
+	{
+		ResetFacing();
+		return;
+	}
+
+	_AngularMovementState = EMovementState::Requested;
+	_RequestedLookat = Direction; //???TODO: recalculate into an angle along Y?
+}
+//---------------------------------------------------------------------
+
+void CCharacterController::SetArrivalParams(bool Enable, float AdditionalDistance)
+{
+	// _AdditionalArriveDistance < 0.f means no arrive steering
+	_AdditionalArriveDistance = Enable ? AdditionalDistance : -1.f;
+}
+//---------------------------------------------------------------------
+
 
 /*
 
