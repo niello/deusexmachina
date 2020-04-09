@@ -83,7 +83,7 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 	const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
 	const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 
-	//!!!FIXME: check motion state, maybe it is updated in BeforePhysicsTick!
+	//!!!FIXME: check motion state, maybe it is up to date in BeforePhysicsTick!
 
 	// Update vertical state
 
@@ -217,48 +217,29 @@ void CCharacterController::AfterPhysicsTick(CPhysicsLevel* pLevel, float dt)
 {
 	n_assert_dbg(_Body && _Body->GetLevel() == pLevel);
 
-	/*
-	vector3 OldPos = Position;
-	quaternion Rot;
-	pCC->GetController()->GetBody()->Physics::CPhysicsObject::GetTransform(Position, Rot); //!!!need nonvirtual method "GetWorld/PhysicsTransform"!
+	// synchronizeMotionStates() might be not yet called, so we access raw transform.
+	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
+	// then called here it would not do redundant calculations in synchronizeMotionStates.
+	const auto& BodyTfm = _Body->GetBtBody()->getWorldTransform();
 
-	LookatDir = Rot.rotate(vector3::BaseDir);
-
-	if (OldPos != Position)
+	if (_LinearMovementState == EMovementState::Requested)
 	{
-		if (AngleAbs < AngularTolerance) ResetRotation(true);
-	
-		if (pActor->MvmtState == AIMvmt_DestSet && pActor->IsAtPoint(DestPoint))
-				ResetMovement(true);
+		const auto OffsetCompensation = -_Body->GetCollisionShape()->GetOffset();
+		const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
+		const float SqDistance = vector3::SqDistance2D(_RequestedPosition, Pos);
+		const bool IsDestinationOnTheSameLevel = (std::fabsf(_RequestedPosition.y - Pos.y) < _Height);
+		if (IsDestinationOnTheSameLevel && SqDistance < SqLinearTolerance) ResetMovement();
 
-		// Check if actor reached or crossed the destination last frame (with some tolerance).
-		// For that we detect point on the last frame movement segment that is the closest to the destination
-		// and check distance (in XZ, + height difference to handle possible navmesh stages).
-		//!!!TEST is still useful after steering fixes?
-		//if (pActor->MvmtState == AIMvmt_DestSet)
-		//{
-		//	vector3 LinVel;
-		//	if (pActor->GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity")))
-		//	{
-		//		vector3 FrameMovement = LinVel * FrameTime;
-		//		vector3 PrevPos = pActor->Position - FrameMovement;
-		//		float t = (FrameMovement.Dot(DestPoint) - FrameMovement.Dot(PrevPos)) / FrameMovement.SqLength();
-		//		if (t >= 0.f && t <= 1.f)
-		//		{
-		//			vector3 Closest = PrevPos + FrameMovement * t;
-		//			const float Tolerance = pActor->LinearArrivalTolerance * pActor->LinearArrivalTolerance;
-		//			if (vector3::SqDistance2D(Closest, DestPoint) < Tolerance && n_fabs(Closest.y - DestPoint.y) < pActor->Height)
-		//			{
-		//				ResetMovement(true);
-		//			}
-		//		}
-		//	}
-		//}
-
+		// TODO:
 		// If is stuck, increase stuck timer, and if timer is too high, set Stuck mvmt state, i.e. fail movement.
-		// Maybe this must happen after the tick!
 	}
-	*/
+
+	if (_AngularMovementState == EMovementState::Requested)
+	{
+		const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+		const float Angle = vector3::Angle2DNorm(LookatDir, _RequestedLookat);
+		if (std::fabsf(Angle) < AngularTolerance) ResetFacing();
+	}
 }
 //---------------------------------------------------------------------
 

@@ -873,6 +873,8 @@ public:
 	auto end() { return _Data.end(); }
 	auto end() const { return _Data.end(); }
 	auto cend() const { return _Data.cend(); }
+
+	size_t GetComponentCount() const { return _Data.size(); }
 };
 
 ///////////////////////////////////////////////////////////////////////
@@ -1163,6 +1165,8 @@ public:
 	//auto end() { return _Data.end(); }
 	//auto end() const { return _Data.end(); }
 	//auto cend() const { return _Data.cend(); }
+
+	size_t GetComponentCount() const { return _IndexByEntity.size(); }
 };
 
 ///////////////////////////////////////////////////////////////////////

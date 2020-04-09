@@ -114,10 +114,11 @@ public:
 	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
 	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
 
-	template<class T> void  RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
-	template<class T> T*    AddComponent(HEntity EntityID);
-	template<class T> bool  RemoveComponent(HEntity EntityID);
-	template<class T> T*    FindComponent(HEntity EntityID);
+	template<class T> void   RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
+	template<class T> T*     AddComponent(HEntity EntityID);
+	template<class T> bool   RemoveComponent(HEntity EntityID);
+	template<class T> size_t GetComponentCount() const;
+	template<class T> T*     FindComponent(HEntity EntityID);
 	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
 	const IComponentStorage* FindComponentStorage(CStrID ComponentName) const;
 	IComponentStorage* FindComponentStorage(CStrID ComponentName);
@@ -187,6 +188,16 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 
 	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
 	return Storage.Remove(EntityID);
+}
+//---------------------------------------------------------------------
+
+template<class T>
+size_t CGameWorld::GetComponentCount() const
+{
+	const auto TypeIndex = ComponentTypeIndex<T>;
+	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return 0;
+	const auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
+	return Storage.GetComponentCount();
 }
 //---------------------------------------------------------------------
 
