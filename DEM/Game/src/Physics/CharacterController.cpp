@@ -92,19 +92,13 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 
 	if (DistanceToGround <= 0.f && !OnGround)
 	{
-		if (_State == ECharacterState::Jump)
+		if (_State == ECharacterState::Fall)
 		{
-			// send event OnEndJumping (//???through callback?)
-		}
-		else if (_State == ECharacterState::Fall)
-		{
-			// send event OnEndFalling (//???through callback?)
 			//???how to prevent character from taking control over itself until it is recovered from falling?
 			//???add ECharacterState::Lay uncontrolled state after a fall or when on the ground? and then recover
 			//can even change collision shape for this state (ragdoll?)
 		}
 
-		// send event OnStartStanding (//???through callback?)
 		_State = ECharacterState::Stand;
 	}
 	else if (DistanceToGround > MaxStepDownHeight && OnGround)
@@ -115,15 +109,11 @@ void CCharacterController::BeforePhysicsTick(CPhysicsLevel* pLevel, float dt)
 		const float VerticalImpulse = _Body->GetMass() * -_Body->GetBtBody()->getLinearVelocity().y();
 		if (VerticalImpulse > MaxLandingImpulse)
 		{
-			// send event OnEnd[state] (//???through callback?)
-			// send event OnStartFalling (//???through callback?)
 			_State = ECharacterState::Fall;
 			_Body->SetActive(true);
 		}
 		else if (VerticalImpulse > 0.f)
 		{
-			// send event OnEnd[state] (//???through callback?)
-			// send event OnStartJumping (//???through callback?)
 			_State = ECharacterState::Jump;
 			_Body->SetActive(true);
 		}
@@ -528,6 +518,17 @@ void CCharacterController::SetArrivalParams(bool Enable, float AdditionalDistanc
 }
 //---------------------------------------------------------------------
 
+vector3 CCharacterController::GetLinearVelocity() const
+{
+	return _Body ? BtVectorToVector(_Body->GetBtBody()->getLinearVelocity()) : vector3::Zero;
+}
+//---------------------------------------------------------------------
+
+float CCharacterController::GetAngularVelocity() const
+{
+	return _Body ? _Body->GetBtBody()->getAngularVelocity().y() : 0.f;
+}
+//---------------------------------------------------------------------
 
 /*
 bool CMotorSystem::IsStuck()
@@ -603,21 +604,6 @@ void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 	}
 
 	//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
-}
-//---------------------------------------------------------------------
-
-
-bool CCharacterController::GetLinearVelocity(vector3& Out) const
-{
-	Out = BtVectorToVector(Body->GetBtBody()->getLinearVelocity());
-	OK;
-}
-//---------------------------------------------------------------------
-
-float CCharacterController::GetAngularVelocity() const
-{
-	return _Body->GetBtBody()->getAngularVelocity().y();
-	return 0.f;
 }
 //---------------------------------------------------------------------
 */

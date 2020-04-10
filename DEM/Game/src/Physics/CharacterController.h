@@ -119,18 +119,15 @@ public:
 	float			GetHeight() const { return _Height; }
 	float			GetHover() const { return _Hover; }
 	CRigidBody*		GetBody() const { return _Body.Get(); }
-	//vector3		GetLinearVelocity(vector3& Out) const;
+	vector3         GetLinearVelocity() const;
+	float           GetAngularVelocity() const;
 	const vector3&	GetRequestedLinearVelocity() const { return _DesiredLinearVelocity; }
-	//float			GetAngularVelocity() const;
 	float			GetRequestedAngularVelocity() const { return _DesiredAngularVelocity; }
 	bool			IsMotionRequested() const { return IsLinearMotionRequested() || IsAngularMotionRequested(); }
 	bool			IsLinearMotionRequested() const { return _DesiredLinearVelocity != vector3::Zero; }
 	bool			IsAngularMotionRequested() const { return _DesiredAngularVelocity != 0.f; }
 	bool            IsOnTheGround() const { return _State != ECharacterState::Jump && _State != ECharacterState::Fall; } // Levitate too!
 
-	//!!!collision callbacks/events! fire from global or from here?
-
-	//IsOnTheGround / GetGroundInfo / IsFalling
 	//Jump //???Fall if touched the ceiling?
 	//???StartCrouch, StopCrouch (if can't, now will remember request), IsCrouching?
 };
