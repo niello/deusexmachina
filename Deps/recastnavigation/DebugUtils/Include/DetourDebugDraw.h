@@ -21,7 +21,9 @@
 
 #include "DetourNavMesh.h"
 #include "DetourNavMeshQuery.h"
+#ifndef NO_DETOUR_TILE_CACHE_DEBUG_DRAW
 #include "DetourTileCacheBuilder.h"
+#endif
 
 enum DrawNavMeshFlags
 {
@@ -38,11 +40,13 @@ void duDebugDrawNavMeshPortals(struct duDebugDraw* dd, const dtNavMesh& mesh);
 void duDebugDrawNavMeshPolysWithFlags(struct duDebugDraw* dd, const dtNavMesh& mesh, const unsigned short polyFlags, const unsigned int col);
 void duDebugDrawNavMeshPoly(struct duDebugDraw* dd, const dtNavMesh& mesh, dtPolyRef ref, const unsigned int col);
 
+#ifndef NO_DETOUR_TILE_CACHE_DEBUG_DRAW
 void duDebugDrawTileCacheLayerAreas(struct duDebugDraw* dd, const dtTileCacheLayer& layer, const float cs, const float ch);
 void duDebugDrawTileCacheLayerRegions(struct duDebugDraw* dd, const dtTileCacheLayer& layer, const float cs, const float ch);
 void duDebugDrawTileCacheContours(duDebugDraw* dd, const struct dtTileCacheContourSet& lcset,
 								  const float* orig, const float cs, const float ch);
 void duDebugDrawTileCachePolyMesh(duDebugDraw* dd, const struct dtTileCachePolyMesh& lmesh,
 								  const float* orig, const float cs, const float ch);
+#endif
 
 #endif // DETOURDEBUGDRAW_H

@@ -2,6 +2,7 @@
 #include <Utils.h>
 //#include <ParamsUtils.h>
 //#include <CLI11.hpp>
+#include <Recast.h>
 
 namespace fs = std::filesystem;
 
@@ -42,6 +43,12 @@ public:
 		// TODO: check whether the metafile can be processed by this tool
 
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
+
+		rcConfig m_cfg;
+
+		// ...
+
+		rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
 
 		return true;
 	}

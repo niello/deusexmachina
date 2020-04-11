@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 3.8.2) # source_group TREE
 project(DEM-Deps)
 
 # TODO: Detour's DebugDraw.h etc headers must be namespaced into a directory
-# TODO: rename Detour's DebugUtils target!
-# TODO: link only Detour, DetourCrowd & DebugUtils, don't link Recast & DetourTileCache if not used by main code
 # TODO: bullet variables must be with BULLET_ prefix even if we will build it separately
 # TODO: set & hide from GUI unnecessary options of third-party CMake projects
 
@@ -125,18 +123,29 @@ foreach(_TARGET_NAME IN LISTS DEM_BULLET_TARGETS)
 	endif()
 endforeach()
 
-# Dependency: Recast navigation libs
+# Dependency: Detour navigation lib + debug drawing for it
 
 set(RECASTNAVIGATION_DEMO OFF CACHE INTERNAL "" FORCE)
 set(RECASTNAVIGATION_TESTS OFF CACHE INTERNAL "" FORCE)
 set(RECASTNAVIGATION_EXAMPLES OFF CACHE INTERNAL "" FORCE)
 set(RECASTNAVIGATION_STATIC ON CACHE INTERNAL "" FORCE)
 
-add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation" "${CMAKE_CURRENT_BINARY_DIR}/recastnavigation")
-get_all_targets(DEM_RECASTNAV_TARGETS "${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation")
-foreach(_TARGET_NAME IN LISTS DEM_RECASTNAV_TARGETS)
-	set_target_properties(${_TARGET_NAME} PROPERTIES FOLDER "recastnavigation")
-endforeach()
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/Detour" "${CMAKE_CURRENT_BINARY_DIR}/recastnavigation/Detour")
+add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/DetourCrowd" "${CMAKE_CURRENT_BINARY_DIR}/recastnavigation/DetourCrowd")
+set_target_properties(Detour PROPERTIES FOLDER "recastnavigation")
+set_target_properties(DetourCrowd PROPERTIES FOLDER "recastnavigation")
+
+# Instead of using RecastNavigation::DebugUtils with many dependencies, we build only required part
+add_library(DetourDebugUtils STATIC
+	"${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/DebugUtils/Include/DebugDraw.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/DebugUtils/Include/DetourDebugDraw.h"
+	"${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/DebugUtils/Source/DebugDraw.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/DebugUtils/Source/DetourDebugDraw.cpp"
+)
+target_include_directories(DetourDebugUtils PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/recastnavigation/DebugUtils/Include>")
+target_link_libraries(DetourDebugUtils Detour)
+set_target_properties(DetourDebugUtils PROPERTIES FOLDER "recastnavigation")
+target_compile_definitions(DetourDebugUtils PUBLIC NO_DETOUR_TILE_CACHE_DEBUG_DRAW)
 
 # Processing common settings for all dependency targets
 # NB: CEGUI ignores DEM_DEPS_DISABLE_CXX_RTTI because it uses dynamic_cast

@@ -485,6 +485,8 @@ void duDebugDrawNavMeshPoly(duDebugDraw* dd, const dtNavMesh& mesh, dtPolyRef re
 
 }
 
+#ifndef NO_DETOUR_TILE_CACHE_DEBUG_DRAW
+
 static void debugDrawTileCachePortals(struct duDebugDraw* dd, const dtTileCacheLayer& layer, const float cs, const float ch)
 {
 	const int w = (int)layer.header->width;
@@ -860,5 +862,5 @@ void duDebugDrawTileCachePolyMesh(duDebugDraw* dd, const struct dtTileCachePolyM
 	dd->end();
 }
 
-
+#endif
 
