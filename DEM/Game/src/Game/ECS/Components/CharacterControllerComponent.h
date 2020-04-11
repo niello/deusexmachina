@@ -1,5 +1,6 @@
 #pragma once
 #include <Physics/CharacterController.h>
+#include <Physics/RigidBody.h> //!!!FIXME: required to generate _Body destruction, but why in header?!
 #include <Data/Metadata.h>
 
 // Character controller component adds a controllable physics object to the entity
@@ -7,11 +8,10 @@
 namespace DEM::Game
 {
 
+// FIXME: leave only data in component, split into controller, movement and facing requests etc!
 struct CCharacterControllerComponent
 {
 	Physics::CCharacterController Controller;
-
-	////float MaxAcceleration;
 
 	float GetRadius() const { return Controller.GetRadius(); }
 	void  SetRadius(float Radius) { Controller.SetRadius(Radius); }
