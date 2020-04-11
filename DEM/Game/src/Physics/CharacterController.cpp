@@ -7,7 +7,8 @@
 
 namespace Physics
 {
-constexpr float SqLinearTolerance = 0.0001f * 0.0001f;
+// Tolerance shouldn't be too low to avoid float errors
+constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
 constexpr float AngularTolerance = 0.0001f;
 
 CCharacterController::CCharacterController() = default;
@@ -249,9 +250,29 @@ float CCharacterController::CalcDistanceToGround(const vector3& Pos) const
 
 vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) const
 {
-	float Speed = _MaxLinearSpeed;
+	// Calculate desired movement vector
 
-	const float DistanceToRequestedPosition = vector3::Distance2D(Pos, _RequestedPosition);
+	vector3 DesiredMovement(_RequestedPosition.x - Pos.x, 0.f, _RequestedPosition.z - Pos.z);
+
+	// If current destination is an intermediate turning point, make the trajectory smooth
+	if (_SteeringSmoothness > 0.f && _NextRequestedPosition != _RequestedPosition)
+	{
+		const vector3 ToNext(_NextRequestedPosition.x - Pos.x, 0.f, _NextRequestedPosition.z - Pos.z);
+		const float DistanceToNext = ToNext.Length2D();
+		if (DistanceToNext > 0.001f)
+		{
+			const float Scale = DesiredMovement.Length2D() * _SteeringSmoothness / DistanceToNext;
+			DesiredMovement -= ToNext * Scale;
+		}
+	}
+
+	const float RemainingDistance = DesiredMovement.Length2D();
+	if (RemainingDistance <= std::numeric_limits<float>().epsilon())
+		return vector3::Zero;
+
+	// Calculate speed
+
+	float Speed = _MaxLinearSpeed;
 
 	// Calculate arrival slowdown if close enough to destination
 	// Negative _ArriveAdditionalDistance means that no arrive steering required at all
@@ -260,8 +281,8 @@ vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) cons
 		// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
 		// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
 		// final destination, and here we calculate effective distance to the destination along the path without
-		// knowledge about the path topology.
-		const float Distance = DistanceToRequestedPosition + _AdditionalArriveDistance;
+		// path topology information.
+		const float Distance = DesiredMovement.Length2D() + _AdditionalArriveDistance;
 
 		// S = -v0^2/2a for 0 = v0 + at (stop condition)
 		const float SlowDownRadius = _ArriveBrakingCoeff * Speed * Speed;
@@ -269,33 +290,12 @@ vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) cons
 			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
 	}
 
-	//!!!FIXME: what if final direction will not head to the destination?
-	// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
-	// if frame rate is variable, but physics system uses fixed step.
+	// Avoid overshooting, make exactly remaining movement in one frame
 	const float FrameTime = _Body->GetLevel()->GetStepTime();
-	if (DistanceToRequestedPosition < Speed * FrameTime)
-		Speed = DistanceToRequestedPosition / FrameTime;
+	if (RemainingDistance < Speed * FrameTime) return DesiredMovement / FrameTime;
 
-	vector3 Velocity(_RequestedPosition.x - Pos.x, 0.f, _RequestedPosition.z - Pos.z);
-
-	const float DirLength = Velocity.Length2D();
-
-	// If current destination is an intermediate turning point, make the trajectory smooth
-	if (_SteeringSmoothness > 0.f && _NextRequestedPosition != _RequestedPosition)
-	{
-		const vector3 ToNext(_NextRequestedPosition.x - Pos.x, 0.f, _NextRequestedPosition.z - Pos.z);
-		const float DistToNext = ToNext.Length2D();
-		if (DistToNext > 0.001f)
-		{
-			const float Scale = DirLength * _SteeringSmoothness / DistToNext;
-			Velocity -= ToNext * Scale;
-		}
-	}
-
-	if (DirLength > std::numeric_limits<float>().epsilon())
-		Velocity *= Speed / DirLength;
-
-	return Velocity;
+	// Calculate velocity as speed * normalized movement direction
+	return DesiredMovement * (Speed / RemainingDistance);
 }
 //---------------------------------------------------------------------
 
@@ -308,7 +308,7 @@ float CCharacterController::CalcDesiredAngularVelocity(float Angle) const
 
 	float Speed = _MaxAngularSpeed;
 
-	// Arrive slowdown
+	// Calculate arrival slowdown
 	if (AngleAbs <= AngularArrivalZone)
 		Speed *= AngleAbs / AngularArrivalZone;
 
