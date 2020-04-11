@@ -44,6 +44,7 @@ public:
 	void Update(float dt);
 
 	CGameLevel*        GetLevel() const { return _Level.Get(); }
+	Frame::CView&      GetFrameView() const { return _View; }
 
 	bool               HasWorldCursorIntersection() const { return _PointUnderCursor.has_value(); }
 	HEntity            GetEntityUnderCursor() const { return _EntityUnderCursor; }
