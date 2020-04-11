@@ -282,7 +282,7 @@ vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) cons
 		// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
 		// final destination, and here we calculate effective distance to the destination along the path without
 		// path topology information.
-		const float Distance = DesiredMovement.Length2D() + _AdditionalArriveDistance;
+		const float Distance = RemainingDistance + _AdditionalArriveDistance;
 
 		// S = -v0^2/2a for 0 = v0 + at (stop condition)
 		const float SlowDownRadius = _ArriveBrakingCoeff * Speed * Speed;
