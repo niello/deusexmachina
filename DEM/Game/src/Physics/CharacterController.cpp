@@ -312,9 +312,9 @@ float CCharacterController::CalcDesiredAngularVelocity(float Angle) const
 	if (AngleAbs <= AngularArrivalZone)
 		Speed *= AngleAbs / AngularArrivalZone;
 
-	// Avoid overshooting
+	// Avoid overshooting, make exactly remaining rotation in one frame
 	const float FrameTime = _Body->GetLevel()->GetStepTime();
-	if (AngleAbs < Speed * FrameTime) Speed = AngleAbs / FrameTime;
+	if (AngleAbs < Speed * FrameTime) return Angle / FrameTime;
 
 	return IsNegative ? -Speed : Speed;
 }
