@@ -273,7 +273,8 @@ vector3 CCharacterController::CalcDesiredLinearVelocity(const vector3& Pos) cons
 	// Seek overshoot will possibly happen next frame, clamp speed. Overshoot is still possible
 	// if frame rate is variable, but physics system uses fixed step.
 	const float FrameTime = _Body->GetLevel()->GetStepTime();
-	if (DistanceToRequestedPosition < Speed * FrameTime) Speed = DistanceToRequestedPosition / FrameTime;
+	if (DistanceToRequestedPosition < Speed * FrameTime)
+		Speed = DistanceToRequestedPosition / FrameTime;
 
 	vector3 Velocity(_RequestedPosition.x - Pos.x, 0.f, _RequestedPosition.z - Pos.z);
 
@@ -315,7 +316,7 @@ float CCharacterController::CalcDesiredAngularVelocity(float Angle) const
 	const float FrameTime = _Body->GetLevel()->GetStepTime();
 	if (AngleAbs < Speed * FrameTime) Speed = AngleAbs / FrameTime;
 
-	return IsNegative ? -_MaxAngularSpeed : _MaxAngularSpeed;
+	return IsNegative ? -Speed : Speed;
 }
 //---------------------------------------------------------------------
 
@@ -507,7 +508,10 @@ void CCharacterController::RequestFacing(const vector3& Direction)
 	}
 
 	_AngularMovementState = EMovementState::Requested;
-	_RequestedLookat = Direction; //???TODO: recalculate into an angle along Y?
+
+	//???TODO: recalculate into an angle along Y?
+	_RequestedLookat = Direction;
+	_RequestedLookat.norm();
 }
 //---------------------------------------------------------------------
 

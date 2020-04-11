@@ -105,8 +105,8 @@ public:
 	void            RequestFacing(const vector3& Direction);
 	void			RequestLinearVelocity(const vector3& Velocity) { _DesiredLinearVelocity = Velocity; }
 	void			RequestAngularVelocity(float Velocity) { _DesiredAngularVelocity = Velocity; }
-	void            ResetMovement() { _LinearMovementState = EMovementState::Idle; }
-	void            ResetFacing() { _AngularMovementState = EMovementState::Idle; }
+	void            ResetMovement() { _LinearMovementState = EMovementState::Idle; _DesiredLinearVelocity = vector3::Zero; }
+	void            ResetFacing() { _AngularMovementState = EMovementState::Idle; _DesiredAngularVelocity = 0.f; }
 	void            SetMaxLinearSpeed(float Speed) { _MaxLinearSpeed = std::max(0.f, Speed); }
 	void            SetMaxAngularSpeed(float Speed) { _MaxAngularSpeed = std::max(0.f, Speed); }
 	void            SetArrivalParams(bool Enable, float AdditionalDistance = 0.f);
