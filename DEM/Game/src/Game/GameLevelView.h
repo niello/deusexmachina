@@ -43,7 +43,12 @@ public:
 
 	void Update(float dt);
 
-	CGameLevel* GetLevel() const { return _Level.Get(); }
+	CGameLevel*        GetLevel() const { return _Level.Get(); }
+
+	bool               HasWorldCursorIntersection() const { return _PointUnderCursor.has_value(); }
+	HEntity            GetEntityUnderCursor() const { return _EntityUnderCursor; }
+	Scene::CSceneNode* GetSceneNodeUnderCursor() const { return _pNodeUnderCursor; }
+	const vector3&     GetPointUnderCursor() const { return _PointUnderCursor.has_value() ? _PointUnderCursor.value() : vector3::Zero; }
 };
 
 }
