@@ -26,5 +26,6 @@ if __name__ == "__main__":
 	update_src_lists("DEM_CF_GLTF", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-gltf", "src.cmake"))
 	update_src_lists("DEM_CF_L3DT", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-l3dt", "src.cmake"))
 	update_src_lists("DEM_CF_SKY", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-skybox", "src.cmake"))
+	update_src_lists("DEM_CF_NAV", os.path.join(PROJECT_FOLDER, "Tools", "ContentForge", "cf-navmesh", "src.cmake"))
 
 	print("Done updating engine source lists")
