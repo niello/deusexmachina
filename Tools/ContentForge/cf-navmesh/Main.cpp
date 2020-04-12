@@ -54,10 +54,22 @@ public:
 		// add offmesh links
 		// add typed areas
 
-		const float* verts = geom->getMesh()->getVerts();
-		const int nverts = geom->getMesh()->getVertCount();
-		const int* tris = geom->getMesh()->getTris();
-		const int ntris = geom->getMesh()->getTriCount();
+		constexpr int MAX_CONVEXVOL_PTS = 12;
+		struct CConvexVolume
+		{
+			float verts[MAX_CONVEXVOL_PTS*3];
+			float hmin, hmax;
+			int nverts;
+			int areaId;
+		};
+
+		const float* verts = nullptr;
+		const int nverts = 0;
+		const int* tris = nullptr;
+		const int ntris = 0;
+		std::vector<CConvexVolume> vols;
+		float bmax[3];
+		float bmin[3];
 
 		// NB: the code below is copied from RecastDemo (Sample_SoloMesh.cpp) with slight changes
 
@@ -74,12 +86,11 @@ public:
 		const float cellHeight = 0.2f;
 		const float edgeMaxLen = 12.f;
 		const float edgeMaxError = 1.3f;
-		const float edgeMaxError = 1.3f;
 		const float detailSampleDist = 6.f;
 		const float detailSampleMaxError = 1.f;
 
 		//!!!level's interactive bounds must be used! also can use rcCalcBounds
-		const float MaxHorzBound = std::max(bmax.x - bmin.x, bmax.z - bmin.z);
+		const float MaxHorzBound = std::max(bmax[0] - bmin[0], bmax[2] - bmin[2]);
 
 		rcConfig cfg;
 		memset(&cfg, 0, sizeof(cfg));
@@ -111,16 +122,16 @@ public:
 			return false;
 		}
 
-		auto triareas = new unsigned char[ntris];
-		memset(triareas, 0, ntris * sizeof(unsigned char));
-		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, triareas);
-		if (!rcRasterizeTriangles(&ctx, verts, nverts, tris, triareas, ntris, *solid, cfg.walkableClimb))
+		std::unique_ptr<unsigned char[]> triareas(new unsigned char[ntris]);
+		memset(triareas.get(), 0, ntris * sizeof(unsigned char));
+		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, triareas.get());
+		if (!rcRasterizeTriangles(&ctx, verts, nverts, tris, triareas.get(), ntris, *solid, cfg.walkableClimb))
 		{
 			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
 			return false;
 		}
 
-		delete [] triareas;
+		triareas.reset();
 
 		// Step 3. Filter walkables surfaces.
 
@@ -145,9 +156,8 @@ public:
 			return false;
 		}
 
-		const ConvexVolume* vols = m_geom->getConvexVolumes();
-		for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
-			rcMarkConvexPolyArea(&ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *chf);
+		for (const auto& vol : vols)
+			rcMarkConvexPolyArea(&ctx, vol.verts, vol.nverts, vol.hmin, vol.hmax, (unsigned char)vol.areaId, *chf);
 
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
@@ -197,6 +207,7 @@ public:
 		// Update poly flags from areas.
 		for (int i = 0; i < pmesh->npolys; ++i)
 		{
+			/*
 			if (pmesh->areas[i] == RC_WALKABLE_AREA)
 				pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
 
@@ -214,6 +225,7 @@ public:
 			{
 				pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
 			}
+			*/
 		}
 
 		dtNavMeshCreateParams params;
@@ -230,13 +242,15 @@ public:
 		params.detailVertsCount = dmesh->nverts;
 		params.detailTris = dmesh->tris;
 		params.detailTriCount = dmesh->ntris;
-		params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
-		params.offMeshConRad = m_geom->getOffMeshConnectionRads();
-		params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
-		params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
-		params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
-		params.offMeshConUserID = m_geom->getOffMeshConnectionId();
-		params.offMeshConCount = m_geom->getOffMeshConnectionCount();
+		/*
+		params.offMeshConVerts = geom->getOffMeshConnectionVerts();
+		params.offMeshConRad = geom->getOffMeshConnectionRads();
+		params.offMeshConDir = geom->getOffMeshConnectionDirs();
+		params.offMeshConAreas = geom->getOffMeshConnectionAreas();
+		params.offMeshConFlags = geom->getOffMeshConnectionFlags();
+		params.offMeshConUserID = geom->getOffMeshConnectionId();
+		params.offMeshConCount = geom->getOffMeshConnectionCount();
+		*/
 		params.walkableHeight = agentHeight;
 		params.walkableRadius = agentRadius;
 		params.walkableClimb = agentMaxClimb;
@@ -254,7 +268,21 @@ public:
 			return false;
 		}
 
+		// create output folder
 		// save separate nm file for each R+h
+		// Old format was:
+		// Magic
+		// Version
+		// NM count
+		// Per NM:
+		//  R
+		//  h
+		//  Data size
+		//  Data
+		//  Named region count
+		//  Per named convex volume:
+		//   Poly count
+		//   Poly refs
 
 		dtFree(navData);
 			
