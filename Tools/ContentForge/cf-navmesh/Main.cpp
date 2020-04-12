@@ -3,6 +3,8 @@
 //#include <ParamsUtils.h>
 //#include <CLI11.hpp>
 #include <Recast.h>
+#include <DetourNavMesh.h> // For max vertices per polygon constant
+#include <DetourNavMeshBuilder.h>
 
 namespace fs = std::filesystem;
 
@@ -44,12 +46,218 @@ public:
 
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
-		rcConfig m_cfg;
+		//???use level + world or incoming data must be a ready-made list of .scn + root world tfm for each?
+		//can feed from game or editor, usiversal, requires no ECS knowledge and suports ofmeshes well
+		// iterate all scn with static data for the level
+		// collect collision shapes and/or visible geometry
+		// add geometry from static entities (static is a flag in a CSceneComponent)
+		// add offmesh links
+		// add typed areas
 
-		// ...
+		const float* verts = geom->getMesh()->getVerts();
+		const int nverts = geom->getMesh()->getVertCount();
+		const int* tris = geom->getMesh()->getTris();
+		const int ntris = geom->getMesh()->getTriCount();
 
-		rcCalcGridSize(m_cfg.bmin, m_cfg.bmax, m_cfg.cs, &m_cfg.width, &m_cfg.height);
+		// NB: the code below is copied from RecastDemo (Sample_SoloMesh.cpp) with slight changes
 
+		// Step 1. Initialize build config.
+
+		rcContext ctx;
+
+		//!!!build navmesh for each agent's R+h! agent selects all h >= its h and from them the closest R >= its R
+		const float agentHeight = 1.8f;
+		const float agentRadius = 0.3f;
+		const float agentMaxClimb = 0.2f;
+
+		//!!!TODO: most of these things must be in settings!
+		const float cellHeight = 0.2f;
+		const float edgeMaxLen = 12.f;
+		const float edgeMaxError = 1.3f;
+		const float edgeMaxError = 1.3f;
+		const float detailSampleDist = 6.f;
+		const float detailSampleMaxError = 1.f;
+
+		//!!!level's interactive bounds must be used! also can use rcCalcBounds
+		const float MaxHorzBound = std::max(bmax.x - bmin.x, bmax.z - bmin.z);
+
+		rcConfig cfg;
+		memset(&cfg, 0, sizeof(cfg));
+		cfg.cs = MaxHorzBound * 0.00029f; //???how to choose good value?
+		cfg.ch = cellHeight;
+		cfg.walkableSlopeAngle = 60.f;
+		cfg.walkableHeight = (int)ceilf(agentHeight / cfg.ch);
+		cfg.walkableClimb = (int)floorf(agentMaxClimb / cfg.ch);
+		cfg.walkableRadius = (int)ceilf(agentRadius / cfg.cs);
+		cfg.maxEdgeLen = (int)(edgeMaxLen / cfg.cs);
+		cfg.maxSimplificationError = edgeMaxError;
+		cfg.minRegionArea = rcSqr((int)(MaxHorzBound * 0.0075f + 0.5f)); // Note: area = size*size, 0.5f to round 1.5 to 2
+		cfg.mergeRegionArea = (int)rcSqr(20);	// Note: area = size*size
+		cfg.maxVertsPerPoly = DT_VERTS_PER_POLYGON;
+		cfg.detailSampleDist = detailSampleDist < 0.9f ? 0.f : cfg.cs * detailSampleDist;
+		cfg.detailSampleMaxError = cfg.ch * detailSampleMaxError;
+
+		//!!!level's interactive bounds must be used!
+		rcVcopy(cfg.bmin, bmin);
+		rcVcopy(cfg.bmax, bmax);
+		rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
+
+		// Step 2. Rasterize input polygon soup.
+
+		auto solid = rcAllocHeightfield();
+		if (!rcCreateHeightfield(&ctx, *solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
+		{
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
+			return false;
+		}
+
+		auto triareas = new unsigned char[ntris];
+		memset(triareas, 0, ntris * sizeof(unsigned char));
+		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, triareas);
+		if (!rcRasterizeTriangles(&ctx, verts, nverts, tris, triareas, ntris, *solid, cfg.walkableClimb))
+		{
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
+			return false;
+		}
+
+		delete [] triareas;
+
+		// Step 3. Filter walkables surfaces.
+
+		rcFilterLowHangingWalkableObstacles(&ctx, cfg.walkableClimb, *solid);
+		rcFilterLedgeSpans(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid);
+		rcFilterWalkableLowHeightSpans(&ctx, cfg.walkableHeight, *solid);
+
+		// Step 4. Partition walkable surface to simple regions.
+
+		auto chf = rcAllocCompactHeightfield();
+		if (!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid, *chf))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
+			return false;
+		}
+
+		rcFreeHeightField(solid);
+
+		if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
+			return false;
+		}
+
+		const ConvexVolume* vols = m_geom->getConvexVolumes();
+		for (int i  = 0; i < m_geom->getConvexVolumeCount(); ++i)
+			rcMarkConvexPolyArea(&ctx, vols[i].verts, vols[i].nverts, vols[i].hmin, vols[i].hmax, (unsigned char)vols[i].area, *chf);
+
+		if (!rcBuildDistanceField(&ctx, *chf))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
+			return false;
+		}
+
+		if (!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
+			return false;
+		}
+
+		// Step 5. Trace and simplify region contours.
+
+		auto cset = rcAllocContourSet();
+		if (!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
+			return false;
+		}
+
+		// Step 6. Build polygons mesh from contours.
+
+		auto pmesh = rcAllocPolyMesh();
+		if (!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *pmesh))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
+			return false;
+		}
+
+		// Step 7. Create detail mesh which allows to access approximate height on each polygon.
+		//???optional?
+
+		auto dmesh = rcAllocPolyMeshDetail();
+		if (!rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+			return false;
+		}
+
+		rcFreeCompactHeightfield(chf);
+		rcFreeContourSet(cset);
+
+		// (Optional) Step 8. Create Detour data from Recast poly mesh.
+
+		// Update poly flags from areas.
+		for (int i = 0; i < pmesh->npolys; ++i)
+		{
+			if (pmesh->areas[i] == RC_WALKABLE_AREA)
+				pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;
+
+			if (pmesh->areas[i] == SAMPLE_POLYAREA_GROUND ||
+				pmesh->areas[i] == SAMPLE_POLYAREA_GRASS ||
+				pmesh->areas[i] == SAMPLE_POLYAREA_ROAD)
+			{
+				pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK;
+			}
+			else if (pmesh->areas[i] == SAMPLE_POLYAREA_WATER)
+			{
+				pmesh->flags[i] = SAMPLE_POLYFLAGS_SWIM;
+			}
+			else if (pmesh->areas[i] == SAMPLE_POLYAREA_DOOR)
+			{
+				pmesh->flags[i] = SAMPLE_POLYFLAGS_WALK | SAMPLE_POLYFLAGS_DOOR;
+			}
+		}
+
+		dtNavMeshCreateParams params;
+		memset(&params, 0, sizeof(params));
+		params.verts = pmesh->verts;
+		params.vertCount = pmesh->nverts;
+		params.polys = pmesh->polys;
+		params.polyAreas = pmesh->areas;
+		params.polyFlags = pmesh->flags;
+		params.polyCount = pmesh->npolys;
+		params.nvp = pmesh->nvp;
+		params.detailMeshes = dmesh->meshes;
+		params.detailVerts = dmesh->verts;
+		params.detailVertsCount = dmesh->nverts;
+		params.detailTris = dmesh->tris;
+		params.detailTriCount = dmesh->ntris;
+		params.offMeshConVerts = m_geom->getOffMeshConnectionVerts();
+		params.offMeshConRad = m_geom->getOffMeshConnectionRads();
+		params.offMeshConDir = m_geom->getOffMeshConnectionDirs();
+		params.offMeshConAreas = m_geom->getOffMeshConnectionAreas();
+		params.offMeshConFlags = m_geom->getOffMeshConnectionFlags();
+		params.offMeshConUserID = m_geom->getOffMeshConnectionId();
+		params.offMeshConCount = m_geom->getOffMeshConnectionCount();
+		params.walkableHeight = agentHeight;
+		params.walkableRadius = agentRadius;
+		params.walkableClimb = agentMaxClimb;
+		rcVcopy(params.bmin, pmesh->bmin);
+		rcVcopy(params.bmax, pmesh->bmax);
+		params.cs = cfg.cs;
+		params.ch = cfg.ch;
+		params.buildBvTree = true;
+
+		unsigned char* navData = nullptr;
+		int navDataSize = 0;
+		if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
+		{
+			//m_ctx->log(RC_LOG_ERROR, "Could not build Detour navmesh.");
+			return false;
+		}
+
+		// save separate nm file for each R+h
+
+		dtFree(navData);
+			
 		return true;
 	}
 };
