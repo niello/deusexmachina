@@ -63,6 +63,15 @@ public:
 			int areaId;
 		};
 
+		static const int MAX_OFFMESH_CONNECTIONS = 256;
+		float offMeshConVerts[MAX_OFFMESH_CONNECTIONS*3*2];
+		float offMeshConRads[MAX_OFFMESH_CONNECTIONS];
+		unsigned char offMeshConDirs[MAX_OFFMESH_CONNECTIONS];
+		unsigned char offMeshConAreas[MAX_OFFMESH_CONNECTIONS];
+		unsigned short offMeshConFlags[MAX_OFFMESH_CONNECTIONS];
+		unsigned int offMeshConId[MAX_OFFMESH_CONNECTIONS];
+		int offMeshConCount = 0;
+
 		const float* verts = nullptr;
 		const int nverts = 0;
 		const int* tris = nullptr;
@@ -82,19 +91,22 @@ public:
 		const float agentRadius = 0.3f;
 		const float agentMaxClimb = 0.2f;
 
-		//!!!TODO: most of these things must be in settings!
-		const float cellHeight = 0.2f;
-		const float edgeMaxLen = 12.f;
-		const float edgeMaxError = 1.3f;
-		const float detailSampleDist = 6.f;
-		const float detailSampleMaxError = 1.f;
-
 		//!!!level's interactive bounds must be used! also can use rcCalcBounds
 		const float MaxHorzBound = std::max(bmax[0] - bmin[0], bmax[2] - bmin[2]);
 
+		//!!!TODO: most of these things must be in settings!
+		const float cellSize = MaxHorzBound * 0.00029f; //???how to choose good value? demo has 0.1 to 1.0, default 0.3
+		const float cellHeight = 0.2f;
+		const float edgeMaxLen = 12.f;
+		const float edgeMaxError = 1.3f;
+		const int regionMinSize = (int)(MaxHorzBound * 0.0075f + 0.5f); // 0.5f to round 1.5 to 2; demo has 0 to 150, default 8
+		const int regionMergeSize = 20; // demo has 0 to 150, default 20
+		const float detailSampleDist = 6.f;
+		const float detailSampleMaxError = 1.f;
+
 		rcConfig cfg;
 		memset(&cfg, 0, sizeof(cfg));
-		cfg.cs = MaxHorzBound * 0.00029f; //???how to choose good value?
+		cfg.cs = cellSize;
 		cfg.ch = cellHeight;
 		cfg.walkableSlopeAngle = 60.f;
 		cfg.walkableHeight = (int)ceilf(agentHeight / cfg.ch);
@@ -102,8 +114,8 @@ public:
 		cfg.walkableRadius = (int)ceilf(agentRadius / cfg.cs);
 		cfg.maxEdgeLen = (int)(edgeMaxLen / cfg.cs);
 		cfg.maxSimplificationError = edgeMaxError;
-		cfg.minRegionArea = rcSqr((int)(MaxHorzBound * 0.0075f + 0.5f)); // Note: area = size*size, 0.5f to round 1.5 to 2
-		cfg.mergeRegionArea = (int)rcSqr(20);	// Note: area = size*size
+		cfg.minRegionArea = rcSqr(regionMinSize); // Note: area = size*size
+		cfg.mergeRegionArea = rcSqr(regionMergeSize); // Note: area = size*size
 		cfg.maxVertsPerPoly = DT_VERTS_PER_POLYGON;
 		cfg.detailSampleDist = detailSampleDist < 0.9f ? 0.f : cfg.cs * detailSampleDist;
 		cfg.detailSampleMaxError = cfg.ch * detailSampleMaxError;
@@ -144,7 +156,7 @@ public:
 		auto chf = rcAllocCompactHeightfield();
 		if (!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid, *chf))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
 			return false;
 		}
 
@@ -152,7 +164,7 @@ public:
 
 		if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
 			return false;
 		}
 
@@ -161,13 +173,13 @@ public:
 
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
 			return false;
 		}
 
 		if (!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
 			return false;
 		}
 
@@ -176,7 +188,7 @@ public:
 		auto cset = rcAllocContourSet();
 		if (!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
 			return false;
 		}
 
@@ -185,7 +197,7 @@ public:
 		auto pmesh = rcAllocPolyMesh();
 		if (!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *pmesh))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
 			return false;
 		}
 
@@ -195,7 +207,7 @@ public:
 		auto dmesh = rcAllocPolyMeshDetail();
 		if (!rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
 			return false;
 		}
 
@@ -242,15 +254,13 @@ public:
 		params.detailVertsCount = dmesh->nverts;
 		params.detailTris = dmesh->tris;
 		params.detailTriCount = dmesh->ntris;
-		/*
-		params.offMeshConVerts = geom->getOffMeshConnectionVerts();
-		params.offMeshConRad = geom->getOffMeshConnectionRads();
-		params.offMeshConDir = geom->getOffMeshConnectionDirs();
-		params.offMeshConAreas = geom->getOffMeshConnectionAreas();
-		params.offMeshConFlags = geom->getOffMeshConnectionFlags();
-		params.offMeshConUserID = geom->getOffMeshConnectionId();
-		params.offMeshConCount = geom->getOffMeshConnectionCount();
-		*/
+		params.offMeshConVerts = offMeshConVerts;
+		params.offMeshConRad = offMeshConRads;
+		params.offMeshConDir = offMeshConDirs;
+		params.offMeshConAreas = offMeshConAreas;
+		params.offMeshConFlags = offMeshConFlags;
+		params.offMeshConUserID = offMeshConId;
+		params.offMeshConCount = offMeshConCount;
 		params.walkableHeight = agentHeight;
 		params.walkableRadius = agentRadius;
 		params.walkableClimb = agentMaxClimb;
@@ -264,7 +274,7 @@ public:
 		int navDataSize = 0;
 		if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
 		{
-			//m_ctx->log(RC_LOG_ERROR, "Could not build Detour navmesh.");
+			//ctx->log(RC_LOG_ERROR, "Could not build Detour navmesh.");
 			return false;
 		}
 
