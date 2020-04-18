@@ -12,6 +12,16 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/game/levels
 
+// FIXME: to utils!
+struct float3
+{
+	union
+	{
+		struct { float x, y, z; };
+		float v[3];
+	};
+};
+
 class CNavmeshTool : public CContentForgeTool
 {
 protected:
@@ -69,38 +79,67 @@ public:
 		// add offmesh links
 		// add typed areas
 
-		constexpr int MAX_CONVEXVOL_PTS = 12;
 		struct CConvexVolume
 		{
-			float verts[MAX_CONVEXVOL_PTS*3];
+			std::vector<float3> verts;
 			float hmin, hmax;
-			int nverts;
-			int areaId;
+			unsigned char areaId;
 		};
 
-		static const int MAX_OFFMESH_CONNECTIONS = 256;
-		float offMeshConVerts[MAX_OFFMESH_CONNECTIONS*3*2];
-		float offMeshConRads[MAX_OFFMESH_CONNECTIONS];
-		unsigned char offMeshConDirs[MAX_OFFMESH_CONNECTIONS];
-		unsigned char offMeshConAreas[MAX_OFFMESH_CONNECTIONS];
-		unsigned short offMeshConFlags[MAX_OFFMESH_CONNECTIONS];
-		unsigned int offMeshConId[MAX_OFFMESH_CONNECTIONS];
-		int offMeshConCount = 0;
+		struct COffmeshConnection
+		{
+			float3 start;
+			float3 end;
+			float radius;
+			bool isBidirectional;
+			unsigned char areaId;
+			unsigned short flags;
+			unsigned int userId;
+		};
 
-		const float* verts = nullptr;
-		const int nverts = 0;
-		const int* tris = nullptr;
-		const int ntris = 0;
+		std::vector<float3> verts;
+		std::vector<int> tris;
 		std::vector<CConvexVolume> vols;
+		std::vector<COffmeshConnection> offmesh;
 
-		//!!!level's interactive bounds must be used! also can use rcCalcBounds
-		float bmax[3];
-		float bmin[3];
+		// Collect geometry
+
+		Data::CDataArray* pGeometryList;
+		if (ParamsUtils::TryGetParam(pGeometryList, Desc, "Geometry"))
+		{
+			for (const auto& GeometryRecord : *pGeometryList)
+			{
+				// parse world transformation, identity by default
+
+				const auto& GeometryDesc = GeometryRecord.GetValue<Data::CParams>();
+				if (ParamsUtils::HasParam(GeometryDesc, CStrID("Mesh")))
+				{
+					// add mesh geometry
+				}
+				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Terrain")))
+				{
+					if (!ProcessTerrainGeometry(GeometryDesc, verts, tris))
+						Task.Log.LogWarning("Couldn't export terrain geometry");
+				}
+				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Shape")))
+				{
+					// add shape geometry
+				}
+			}
+		}
+
+		const int ntris = tris.size() / 3;
+
+		// TODO: can add optional bounds to config, to use only interactive level part for example
+		float bmax[3] = {};
+		float bmin[3] = {};
+		if (!verts.empty()) rcCalcBounds(verts.data()->v, verts.size(), bmin, bmax);
 
 		// NB: the code below is copied from RecastDemo (Sample_SoloMesh.cpp) with slight changes
 
 		// Step 1. Initialize build config.
 
+		// TODO: attach task log to the context
 		rcContext ctx;
 
 		//!!!build navmesh for each agent's R+h! agent selects all h >= its h and from them the closest R >= its R
@@ -148,10 +187,11 @@ public:
 			return false;
 		}
 
+		// TODO: there is also rcClearUnwalkableTriangles, was used with non-RC_NULL_AREA in old CIDE
 		std::unique_ptr<unsigned char[]> triareas(new unsigned char[ntris]);
 		memset(triareas.get(), 0, ntris * sizeof(unsigned char));
-		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, triareas.get());
-		if (!rcRasterizeTriangles(&ctx, verts, nverts, tris, triareas.get(), ntris, *solid, cfg.walkableClimb))
+		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts.data()->v, verts.size(), tris.data(), ntris, triareas.get());
+		if (!rcRasterizeTriangles(&ctx, verts.data()->v, verts.size(), tris.data(), triareas.get(), ntris, *solid, cfg.walkableClimb))
 		{
 			Task.Log.LogError("buildNavigation: Could not rasterize triangles.");
 			return false;
@@ -183,7 +223,7 @@ public:
 		}
 
 		for (const auto& vol : vols)
-			rcMarkConvexPolyArea(&ctx, vol.verts, vol.nverts, vol.hmin, vol.hmax, (unsigned char)vol.areaId, *chf);
+			rcMarkConvexPolyArea(&ctx, vol.verts.data()->v, vol.verts.size(), vol.hmin, vol.hmax, vol.areaId, *chf);
 
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
@@ -254,6 +294,38 @@ public:
 			*/
 		}
 
+		// Copy offmesh connection data into a format recognizable by Detour navmesh builder
+		std::vector<float> offMeshConVerts;
+		std::vector<float> offMeshConRads;
+		std::vector<unsigned char> offMeshConDirs;
+		std::vector<unsigned char> offMeshConAreas;
+		std::vector<unsigned short> offMeshConFlags;
+		std::vector<unsigned int> offMeshConId;
+		if (!offmesh.empty())
+		{
+			offMeshConVerts.reserve(offmesh.size() * 3 * 2);
+			offMeshConRads.reserve(offmesh.size());
+			offMeshConDirs.reserve(offmesh.size());
+			offMeshConAreas.reserve(offmesh.size());
+			offMeshConFlags.reserve(offmesh.size());
+			offMeshConId.reserve(offmesh.size());
+
+			for (const auto& conn : offmesh)
+			{
+				offMeshConVerts.push_back(conn.start.x);
+				offMeshConVerts.push_back(conn.start.y);
+				offMeshConVerts.push_back(conn.start.z);
+				offMeshConVerts.push_back(conn.end.x);
+				offMeshConVerts.push_back(conn.end.y);
+				offMeshConVerts.push_back(conn.end.z);
+				offMeshConRads.push_back(conn.radius);
+				offMeshConDirs.push_back(conn.isBidirectional ? 1 : 0);
+				offMeshConAreas.push_back(conn.areaId);
+				offMeshConFlags.push_back(conn.flags);
+				offMeshConId.push_back(conn.userId);
+			}
+		}
+
 		dtNavMeshCreateParams params;
 		memset(&params, 0, sizeof(params));
 		params.verts = pmesh->verts;
@@ -268,13 +340,13 @@ public:
 		params.detailVertsCount = dmesh->nverts;
 		params.detailTris = dmesh->tris;
 		params.detailTriCount = dmesh->ntris;
-		params.offMeshConVerts = offMeshConVerts;
-		params.offMeshConRad = offMeshConRads;
-		params.offMeshConDir = offMeshConDirs;
-		params.offMeshConAreas = offMeshConAreas;
-		params.offMeshConFlags = offMeshConFlags;
-		params.offMeshConUserID = offMeshConId;
-		params.offMeshConCount = offMeshConCount;
+		params.offMeshConVerts = offMeshConVerts.data();
+		params.offMeshConRad = offMeshConRads.data();
+		params.offMeshConDir = offMeshConDirs.data();
+		params.offMeshConAreas = offMeshConAreas.data();
+		params.offMeshConFlags = offMeshConFlags.data();
+		params.offMeshConUserID = offMeshConId.data();
+		params.offMeshConCount = offmesh.size();
 		params.walkableHeight = agentHeight;
 		params.walkableRadius = agentRadius;
 		params.walkableClimb = agentMaxClimb;
@@ -311,6 +383,12 @@ public:
 		dtFree(navData);
 			
 		return true;
+	}
+
+	//!!!add transform arg!
+	bool ProcessTerrainGeometry(const Data::CParams& Desc, std::vector<float3>& OutVertices, std::vector<int>& OutIndices)
+	{
+		return false;
 	}
 };
 
