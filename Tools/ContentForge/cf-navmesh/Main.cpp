@@ -412,12 +412,12 @@ public:
 			uint32_t LODCount;
 			uint32_t TotalMinMaxDataCount;
 			float VerticalScale;
-			float Left;
-			float Right;
-			float Bottom;
-			float Top;
-			float MinHeight;
-			float MaxHeight;
+			float MinX;
+			float MaxX;
+			float MinZ;
+			float MaxZ;
+			float MinY;
+			float MaxY;
 		};
 #pragma pack(pop)
 
@@ -430,7 +430,52 @@ public:
 			return false;
 		}
 
-		//File.write(reinterpret_cast<const char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
+		const auto SizeX = Header.MaxX - Header.MinX;
+		const auto SizeZ = Header.MaxZ - Header.MinZ;
+		const auto QuadCountX = Header.Width - 1;
+		const auto QuadCountZ = Header.Height - 1;
+		const auto QuadSizeX = SizeX / static_cast<float>(QuadCountX);
+		const auto QuadSizeZ = SizeZ / static_cast<float>(QuadCountZ);
+		const auto TriCount = QuadCountX * QuadCountZ * 2;
+
+		{
+			std::vector<uint16_t> HeightMap(Header.Width * Header.Height);
+			File.read(reinterpret_cast<char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
+
+			const auto PrevVertexFloatCount = OutVertices.size();
+			OutVertices.resize(PrevVertexFloatCount + 3 * HeightMap.size());
+
+			// FIXME: apply world transform! or generalize in ProcessTask for all geometry types?!
+
+			// Fill vertices
+			float* pCurrVtx = OutVertices.data() + PrevVertexFloatCount;
+			for (uint32_t j = 0; j < Header.Height; ++j)
+			{
+				for (uint32_t i = 0; i < Header.Width; ++i)
+				{
+					*pCurrVtx++ = Header.MinX + i * QuadSizeX;
+					*pCurrVtx++ = (static_cast<int>(HeightMap[j * Header.Width + i]) - 32767) * Header.VerticalScale;
+					*pCurrVtx++ = Header.MinZ + j * QuadSizeZ;
+				}
+			}
+		}
+
+		// Fill indices
+		const auto PrevIndexCount = OutIndices.size();
+		OutIndices.resize(PrevIndexCount + 3 * TriCount);
+		int* pCurrIdx = OutIndices.data() + PrevIndexCount;
+		for (uint32_t j = 0; j < QuadCountZ; ++j)
+		{
+			for (uint32_t i = 0; i < QuadCountX; ++i)
+			{
+				*pCurrIdx++ = j * Header.Width + i;
+				*pCurrIdx++ = (j + 1) * Header.Width + i;
+				*pCurrIdx++ = j * Header.Width + (i + 1);
+				*pCurrIdx++ = j * Header.Width + (i + 1);
+				*pCurrIdx++ = (j + 1) * Header.Width + i;
+				*pCurrIdx++ = (j + 1) * Header.Width + (i + 1);
+			}
+		}
 
 		return true;
 	}
