@@ -1,6 +1,6 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
-//#include <ParamsUtils.h>
+#include <ParamsUtils.h>
 //#include <CLI11.hpp>
 #include <Recast.h>
 #include <DetourNavMesh.h> // For max vertices per polygon constant
@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/FIXME
+// -s src/game/levels
 
 class CNavmeshTool : public CContentForgeTool
 {
@@ -43,8 +43,23 @@ public:
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		// TODO: check whether the metafile can be processed by this tool
+		if (ParamsUtils::GetParam(Task.Params, "Tools", std::string{}) != "cf-navmesh")
+		{
+			// FIXME: skip sliently without error. To CF tool base class???
+			return false;
+		}
 
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
+
+		// Read navmesh source HRD
+
+		Data::CParams Desc;
+		if (!ParamsUtils::LoadParamsFromHRD(Task.SrcFilePath.string().c_str(), Desc))
+		{
+			if (_LogVerbosity >= EVerbosity::Errors)
+				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
+			return false;
+		}
 
 		//???use level + world or incoming data must be a ready-made list of .scn + root world tfm for each?
 		//can feed from game or editor, usiversal, requires no ECS knowledge and suports ofmeshes well
@@ -77,6 +92,8 @@ public:
 		const int* tris = nullptr;
 		const int ntris = 0;
 		std::vector<CConvexVolume> vols;
+
+		//!!!level's interactive bounds must be used! also can use rcCalcBounds
 		float bmax[3];
 		float bmin[3];
 
@@ -87,28 +104,26 @@ public:
 		rcContext ctx;
 
 		//!!!build navmesh for each agent's R+h! agent selects all h >= its h and from them the closest R >= its R
-		const float agentHeight = 1.8f;
-		const float agentRadius = 0.3f;
-		const float agentMaxClimb = 0.2f;
-
-		//!!!level's interactive bounds must be used! also can use rcCalcBounds
-		const float MaxHorzBound = std::max(bmax[0] - bmin[0], bmax[2] - bmin[2]);
+		const float agentHeight = ParamsUtils::GetParam(Desc, "AgentHeight", 1.8f);
+		const float agentRadius = ParamsUtils::GetParam(Desc, "AgentRadius", 0.3f);
+		const float agentMaxClimb = ParamsUtils::GetParam(Desc, "AgentMaxClimb", 0.2f);
+		const float agentWalkableSlope = ParamsUtils::GetParam(Desc, "AgentWalkableSlope", 60.f);
 
 		//!!!TODO: most of these things must be in settings!
-		const float cellSize = MaxHorzBound * 0.00029f; //???how to choose good value? demo has 0.1 to 1.0, default 0.3
-		const float cellHeight = 0.2f;
-		const float edgeMaxLen = 12.f;
-		const float edgeMaxError = 1.3f;
-		const int regionMinSize = (int)(MaxHorzBound * 0.0075f + 0.5f); // 0.5f to round 1.5 to 2; demo has 0 to 150, default 8
-		const int regionMergeSize = 20; // demo has 0 to 150, default 20
-		const float detailSampleDist = 6.f;
-		const float detailSampleMaxError = 1.f;
+		const float cellSize = ParamsUtils::GetParam(Desc, "CellSize", agentRadius / 3.f);
+		const float cellHeight = ParamsUtils::GetParam(Desc, "CellHeight", cellSize);
+		const float edgeMaxLen = ParamsUtils::GetParam(Desc, "EdgeMaxLength", 12.f);
+		const float edgeMaxError = ParamsUtils::GetParam(Desc, "EdgeMaxError", 1.3f);
+		const int regionMinSize = ParamsUtils::GetParam(Desc, "RegionMinSize", 8);
+		const int regionMergeSize = ParamsUtils::GetParam(Desc, "RegionMergeSize", 8);
+		const float detailSampleDist = ParamsUtils::GetParam(Desc, "DetailSampleDistance", 6.f);
+		const float detailSampleMaxError = ParamsUtils::GetParam(Desc, "DetailSampleMaxError", 1.f);
 
 		rcConfig cfg;
 		memset(&cfg, 0, sizeof(cfg));
 		cfg.cs = cellSize;
 		cfg.ch = cellHeight;
-		cfg.walkableSlopeAngle = 60.f;
+		cfg.walkableSlopeAngle = agentWalkableSlope;
 		cfg.walkableHeight = (int)ceilf(agentHeight / cfg.ch);
 		cfg.walkableClimb = (int)floorf(agentMaxClimb / cfg.ch);
 		cfg.walkableRadius = (int)ceilf(agentRadius / cfg.cs);
@@ -120,7 +135,6 @@ public:
 		cfg.detailSampleDist = detailSampleDist < 0.9f ? 0.f : cfg.cs * detailSampleDist;
 		cfg.detailSampleMaxError = cfg.ch * detailSampleMaxError;
 
-		//!!!level's interactive bounds must be used!
 		rcVcopy(cfg.bmin, bmin);
 		rcVcopy(cfg.bmax, bmax);
 		rcCalcGridSize(cfg.bmin, cfg.bmax, cfg.cs, &cfg.width, &cfg.height);
@@ -130,7 +144,7 @@ public:
 		auto solid = rcAllocHeightfield();
 		if (!rcCreateHeightfield(&ctx, *solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create solid heightfield.");
+			Task.Log.LogError("buildNavigation: Could not create solid heightfield.");
 			return false;
 		}
 
@@ -139,7 +153,7 @@ public:
 		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts, nverts, tris, ntris, triareas.get());
 		if (!rcRasterizeTriangles(&ctx, verts, nverts, tris, triareas.get(), ntris, *solid, cfg.walkableClimb))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not rasterize triangles.");
+			Task.Log.LogError("buildNavigation: Could not rasterize triangles.");
 			return false;
 		}
 
@@ -156,7 +170,7 @@ public:
 		auto chf = rcAllocCompactHeightfield();
 		if (!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid, *chf))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build compact data.");
+			Task.Log.LogError("buildNavigation: Could not build compact data.");
 			return false;
 		}
 
@@ -164,7 +178,7 @@ public:
 
 		if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not erode.");
+			Task.Log.LogError("buildNavigation: Could not erode.");
 			return false;
 		}
 
@@ -173,13 +187,13 @@ public:
 
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build distance field.");
+			Task.Log.LogError("buildNavigation: Could not build distance field.");
 			return false;
 		}
 
 		if (!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build watershed regions.");
+			Task.Log.LogError("buildNavigation: Could not build watershed regions.");
 			return false;
 		}
 
@@ -188,7 +202,7 @@ public:
 		auto cset = rcAllocContourSet();
 		if (!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not create contours.");
+			Task.Log.LogError("buildNavigation: Could not create contours.");
 			return false;
 		}
 
@@ -197,7 +211,7 @@ public:
 		auto pmesh = rcAllocPolyMesh();
 		if (!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *pmesh))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not triangulate contours.");
+			Task.Log.LogError("buildNavigation: Could not triangulate contours.");
 			return false;
 		}
 
@@ -207,7 +221,7 @@ public:
 		auto dmesh = rcAllocPolyMeshDetail();
 		if (!rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
 		{
-			//ctx->log(RC_LOG_ERROR, "buildNavigation: Could not build detail mesh.");
+			Task.Log.LogError("buildNavigation: Could not build detail mesh.");
 			return false;
 		}
 
@@ -274,7 +288,7 @@ public:
 		int navDataSize = 0;
 		if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
 		{
-			//ctx->log(RC_LOG_ERROR, "Could not build Detour navmesh.");
+			Task.Log.LogError("Could not build Detour navmesh.");
 			return false;
 		}
 
