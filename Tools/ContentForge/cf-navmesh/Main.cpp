@@ -10,7 +10,7 @@ namespace fs = std::filesystem;
 
 // Set working directory to $(TargetDir)
 // Example args:
-// -s src/game/levels
+// -s src/game/levels --path Data ../../../content
 
 // FIXME: to utils!
 struct float3
@@ -97,7 +97,7 @@ public:
 			unsigned int userId;
 		};
 
-		std::vector<float3> verts;
+		std::vector<float> verts;
 		std::vector<int> tris;
 		std::vector<CConvexVolume> vols;
 		std::vector<COffmeshConnection> offmesh;
@@ -118,7 +118,7 @@ public:
 				}
 				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Terrain")))
 				{
-					if (!ProcessTerrainGeometry(GeometryDesc, verts, tris))
+					if (!ProcessTerrainGeometry(GeometryDesc, verts, tris, Task.Log))
 						Task.Log.LogWarning("Couldn't export terrain geometry");
 				}
 				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Shape")))
@@ -128,12 +128,13 @@ public:
 			}
 		}
 
-		const int ntris = tris.size() / 3;
+		const int nverts = verts.size() / 3; // 3 floats per vertex
+		const int ntris = tris.size() / 3;   // 3 indices per triangle
 
 		// TODO: can add optional bounds to config, to use only interactive level part for example
 		float bmax[3] = {};
 		float bmin[3] = {};
-		if (!verts.empty()) rcCalcBounds(verts.data()->v, verts.size(), bmin, bmax);
+		if (nverts) rcCalcBounds(verts.data(), nverts, bmin, bmax);
 
 		// NB: the code below is copied from RecastDemo (Sample_SoloMesh.cpp) with slight changes
 
@@ -190,8 +191,8 @@ public:
 		// TODO: there is also rcClearUnwalkableTriangles, was used with non-RC_NULL_AREA in old CIDE
 		std::unique_ptr<unsigned char[]> triareas(new unsigned char[ntris]);
 		memset(triareas.get(), 0, ntris * sizeof(unsigned char));
-		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts.data()->v, verts.size(), tris.data(), ntris, triareas.get());
-		if (!rcRasterizeTriangles(&ctx, verts.data()->v, verts.size(), tris.data(), triareas.get(), ntris, *solid, cfg.walkableClimb))
+		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts.data(), nverts, tris.data(), ntris, triareas.get());
+		if (!rcRasterizeTriangles(&ctx, verts.data(), nverts, tris.data(), triareas.get(), ntris, *solid, cfg.walkableClimb))
 		{
 			Task.Log.LogError("buildNavigation: Could not rasterize triangles.");
 			return false;
@@ -386,9 +387,52 @@ public:
 	}
 
 	//!!!add transform arg!
-	bool ProcessTerrainGeometry(const Data::CParams& Desc, std::vector<float3>& OutVertices, std::vector<int>& OutIndices)
+	bool ProcessTerrainGeometry(const Data::CParams& Desc, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
-		return false;
+		const auto ResourceID = ParamsUtils::GetParam(Desc, "Terrain", std::string{});
+		const auto Path = ResolvePathAliases(ResourceID);
+
+		//std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+
+		std::ifstream File(Path, std::ios_base::binary);
+		if (!File)
+		{
+			Log.LogError("Can't open terrain file " + Path.generic_string());
+			return false;
+		}
+
+#pragma pack(push, 1)
+		struct CCDLODHeader
+		{
+			uint32_t Magic;
+			uint32_t Version;
+			uint32_t Width;
+			uint32_t Height;
+			uint32_t PatchSize;
+			uint32_t LODCount;
+			uint32_t TotalMinMaxDataCount;
+			float VerticalScale;
+			float Left;
+			float Right;
+			float Bottom;
+			float Top;
+			float MinHeight;
+			float MaxHeight;
+		};
+#pragma pack(pop)
+
+		CCDLODHeader Header;
+		ReadStream(File, Header);
+
+		if (Header.Magic != 'CDLD' || Header.Version != 0x00010000)
+		{
+			Log.LogError("Incorrect format or version: " + Path.generic_string());
+			return false;
+		}
+
+		//File.write(reinterpret_cast<const char*>(HeightMap.data()), HeightMap.size() * sizeof(uint16_t));
+
+		return true;
 	}
 };
 
