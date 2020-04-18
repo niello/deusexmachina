@@ -22,6 +22,25 @@ struct float3
 	};
 };
 
+class CFRCContext : public rcContext
+{
+public:
+
+	CThreadSafeLog& _Log;
+
+	CFRCContext(CThreadSafeLog& Log) : _Log(Log) {}
+
+	virtual void doLog(const rcLogCategory category, const char* msg, const int len) override
+	{
+		switch (category)
+		{
+			case RC_LOG_PROGRESS: _Log.LogInfo(std::string(msg, len)); break;
+			case RC_LOG_WARNING:  _Log.LogWarning(std::string(msg, len)); break;
+			case RC_LOG_ERROR:    _Log.LogError(std::string(msg, len)); break;
+		}
+	}
+};
+
 class CNavmeshTool : public CContentForgeTool
 {
 protected:
@@ -140,8 +159,7 @@ public:
 
 		// Step 1. Initialize build config.
 
-		// TODO: attach task log to the context
-		rcContext ctx;
+		CFRCContext ctx(Task.Log);
 
 		//!!!build navmesh for each agent's R+h! agent selects all h >= its h and from them the closest R >= its R
 		const float agentHeight = ParamsUtils::GetParam(Desc, "AgentHeight", 1.8f);
