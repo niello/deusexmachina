@@ -174,6 +174,7 @@ public:
 		const float edgeMaxError = ParamsUtils::GetParam(Desc, "EdgeMaxError", 1.3f);
 		const int regionMinSize = ParamsUtils::GetParam(Desc, "RegionMinSize", 8);
 		const int regionMergeSize = ParamsUtils::GetParam(Desc, "RegionMergeSize", 8);
+		const bool buildDetailMesh = ParamsUtils::GetParam(Desc, "BuildDetailMesh", true);
 		const float detailSampleDist = ParamsUtils::GetParam(Desc, "DetailSampleDistance", 6.f);
 		const float detailSampleMaxError = ParamsUtils::GetParam(Desc, "DetailSampleMaxError", 1.f);
 
@@ -199,13 +200,15 @@ public:
 
 		// Step 2. Rasterize input polygon soup.
 
-		auto solid = rcAllocHeightfield();
+		auto rcHeightfieldDeleter = [](rcHeightfield* ptr) { rcFreeHeightField(ptr); };
+		std::unique_ptr<rcHeightfield, decltype(rcHeightfieldDeleter)> solid(rcAllocHeightfield(), rcHeightfieldDeleter);
 		if (!rcCreateHeightfield(&ctx, *solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
 		{
 			Task.Log.LogError("buildNavigation: Could not create solid heightfield.");
 			return false;
 		}
 
+		// TODO: can do per geometry object instead of collecting all geometry at once!
 		// TODO: there is also rcClearUnwalkableTriangles, was used with non-RC_NULL_AREA in old CIDE
 		std::unique_ptr<unsigned char[]> triareas(new unsigned char[ntris]);
 		memset(triareas.get(), 0, ntris * sizeof(unsigned char));
@@ -216,6 +219,10 @@ public:
 			return false;
 		}
 
+		verts.clear();
+		verts.shrink_to_fit();
+		tris.clear();
+		tris.shrink_to_fit();
 		triareas.reset();
 
 		// Step 3. Filter walkables surfaces.
@@ -226,14 +233,15 @@ public:
 
 		// Step 4. Partition walkable surface to simple regions.
 
-		auto chf = rcAllocCompactHeightfield();
+		auto rcCompactHeightfieldDeleter = [](rcCompactHeightfield* ptr) { rcFreeCompactHeightfield(ptr); };
+		std::unique_ptr<rcCompactHeightfield, decltype(rcCompactHeightfieldDeleter)> chf(rcAllocCompactHeightfield(), rcCompactHeightfieldDeleter);
 		if (!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid, *chf))
 		{
 			Task.Log.LogError("buildNavigation: Could not build compact data.");
 			return false;
 		}
 
-		rcFreeHeightField(solid);
+		solid.reset();
 
 		if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf))
 		{
@@ -243,6 +251,9 @@ public:
 
 		for (const auto& vol : vols)
 			rcMarkConvexPolyArea(&ctx, vol.verts.data()->v, vol.verts.size(), vol.hmin, vol.hmax, vol.areaId, *chf);
+
+		vols.clear();
+		vols.shrink_to_fit();
 
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
@@ -258,7 +269,8 @@ public:
 
 		// Step 5. Trace and simplify region contours.
 
-		auto cset = rcAllocContourSet();
+		auto rcContourSetDeleter = [](rcContourSet* ptr) { rcFreeContourSet(ptr); };
+		std::unique_ptr<rcContourSet, decltype(rcContourSetDeleter)> cset(rcAllocContourSet(), rcContourSetDeleter);
 		if (!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset))
 		{
 			Task.Log.LogError("buildNavigation: Could not create contours.");
@@ -267,25 +279,31 @@ public:
 
 		// Step 6. Build polygons mesh from contours.
 
-		auto pmesh = rcAllocPolyMesh();
+		auto rcPolyMeshDeleter = [](rcPolyMesh* ptr) { rcFreePolyMesh(ptr); };
+		std::unique_ptr<rcPolyMesh, decltype(rcPolyMeshDeleter)> pmesh(rcAllocPolyMesh(), rcPolyMeshDeleter);
 		if (!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *pmesh))
 		{
 			Task.Log.LogError("buildNavigation: Could not triangulate contours.");
 			return false;
 		}
 
-		// Step 7. Create detail mesh which allows to access approximate height on each polygon.
-		//???optional?
+		cset.reset();
 
-		auto dmesh = rcAllocPolyMeshDetail();
-		if (!rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
+		// Step 7. Create detail mesh which allows to access approximate height on each polygon.
+
+		auto rcPolyMeshDetailDeleter = [](rcPolyMeshDetail* ptr) { rcFreePolyMeshDetail(ptr); };
+		std::unique_ptr<rcPolyMeshDetail, decltype(rcPolyMeshDetailDeleter)> dmesh(nullptr, rcPolyMeshDetailDeleter);
+		if (buildDetailMesh)
 		{
-			Task.Log.LogError("buildNavigation: Could not build detail mesh.");
-			return false;
+			dmesh.reset(rcAllocPolyMeshDetail());
+			if (!rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
+			{
+				Task.Log.LogError("buildNavigation: Could not build detail mesh.");
+				return false;
+			}
 		}
 
-		rcFreeCompactHeightfield(chf);
-		rcFreeContourSet(cset);
+		chf.reset();
 
 		// (Optional) Step 8. Create Detour data from Recast poly mesh.
 
@@ -343,6 +361,9 @@ public:
 				offMeshConFlags.push_back(conn.flags);
 				offMeshConId.push_back(conn.userId);
 			}
+
+			offmesh.clear();
+			offmesh.shrink_to_fit();
 		}
 
 		dtNavMeshCreateParams params;
@@ -354,11 +375,14 @@ public:
 		params.polyFlags = pmesh->flags;
 		params.polyCount = pmesh->npolys;
 		params.nvp = pmesh->nvp;
-		params.detailMeshes = dmesh->meshes;
-		params.detailVerts = dmesh->verts;
-		params.detailVertsCount = dmesh->nverts;
-		params.detailTris = dmesh->tris;
-		params.detailTriCount = dmesh->ntris;
+		if (dmesh)
+		{
+			params.detailMeshes = dmesh->meshes;
+			params.detailVerts = dmesh->verts;
+			params.detailVertsCount = dmesh->nverts;
+			params.detailTris = dmesh->tris;
+			params.detailTriCount = dmesh->ntris;
+		}
 		params.offMeshConVerts = offMeshConVerts.data();
 		params.offMeshConRad = offMeshConRads.data();
 		params.offMeshConDir = offMeshConDirs.data();
@@ -383,21 +407,35 @@ public:
 			return false;
 		}
 
-		// create output folder
-		// save separate nm file for each R+h
-		// Old format was:
-		// Magic
-		// Version
-		// NM count
-		// Per NM:
-		//  R
-		//  h
-		//  Data size
-		//  Data
-		//  Named region count
-		//  Per named convex volume:
-		//   Poly count
-		//   Poly refs
+		pmesh.reset();
+		dmesh.reset();
+
+		// Write resulting NM file
+		{
+			auto DestPath = GetPath(Task.Params, "Output") / (TaskName + ".nm");
+			fs::create_directories(DestPath.parent_path());
+
+			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
+			if (!File)
+			{
+				Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
+				return false;
+			}
+
+			WriteStream<uint32_t>(File, 'NAVM');     // Format magic value
+			WriteStream<uint32_t>(File, 0x00010000); // Version 0.1.0.0
+			WriteStream(File, agentRadius);
+			WriteStream(File, agentHeight);
+			//???save other agent params too?
+
+			WriteStream<uint32_t>(File, navDataSize);
+			File.write(reinterpret_cast<const char*>(navData), navDataSize);
+
+			// Named region count
+			// Per named convex volume:
+			//  Poly count
+			//  Poly refs
+		}
 
 		dtFree(navData);
 			
