@@ -74,7 +74,7 @@ public:
 		// TODO: check whether the metafile can be processed by this tool
 		if (ParamsUtils::GetParam(Task.Params, "Tools", std::string{}) != "cf-navmesh")
 		{
-			// FIXME: skip sliently without error. To CF tool base class???
+			// FIXME: skip sliently without error. To CF tool base class??? If no tools specified, try in each.
 			return false;
 		}
 
@@ -90,14 +90,6 @@ public:
 			return false;
 		}
 
-		//???use level + world or incoming data must be a ready-made list of .scn + root world tfm for each?
-		//can feed from game or editor, usiversal, requires no ECS knowledge and suports ofmeshes well
-		// iterate all scn with static data for the level
-		// collect collision shapes and/or visible geometry
-		// add geometry from static entities (static is a flag in a CSceneComponent)
-		// add offmesh links
-		// add typed areas
-
 		struct CConvexVolume
 		{
 			std::vector<float3> verts;
@@ -105,24 +97,13 @@ public:
 			unsigned char areaId;
 		};
 
-		struct COffmeshConnection
-		{
-			float3 start;
-			float3 end;
-			float radius;
-			bool isBidirectional;
-			unsigned char areaId;
-			unsigned short flags;
-			unsigned int userId;
-		};
-
 		std::vector<float> verts;
 		std::vector<int> tris;
 		std::vector<CConvexVolume> vols;
-		std::vector<COffmeshConnection> offmesh;
 
 		// Collect geometry
 
+		// FIXME: rasterize trinagles per geometry, don't store all vertices in one array before processing?
 		Data::CDataArray* pGeometryList;
 		if (ParamsUtils::TryGetParam(pGeometryList, Desc, "Geometry"))
 		{
@@ -161,13 +142,11 @@ public:
 
 		CFRCContext ctx(Task.Log);
 
-		//!!!build navmesh for each agent's R+h! agent selects all h >= its h and from them the closest R >= its R
 		const float agentHeight = ParamsUtils::GetParam(Desc, "AgentHeight", 1.8f);
 		const float agentRadius = ParamsUtils::GetParam(Desc, "AgentRadius", 0.3f);
 		const float agentMaxClimb = ParamsUtils::GetParam(Desc, "AgentMaxClimb", 0.2f);
 		const float agentWalkableSlope = ParamsUtils::GetParam(Desc, "AgentWalkableSlope", 60.f);
 
-		//!!!TODO: most of these things must be in settings!
 		const float cellSize = ParamsUtils::GetParam(Desc, "CellSize", agentRadius / 3.f);
 		const float cellHeight = ParamsUtils::GetParam(Desc, "CellHeight", cellSize);
 		const float edgeMaxLen = ParamsUtils::GetParam(Desc, "EdgeMaxLength", 12.f);
@@ -331,39 +310,43 @@ public:
 			*/
 		}
 
-		// Copy offmesh connection data into a format recognizable by Detour navmesh builder
+		// Read offmesh connections
+
 		std::vector<float> offMeshConVerts;
 		std::vector<float> offMeshConRads;
 		std::vector<unsigned char> offMeshConDirs;
 		std::vector<unsigned char> offMeshConAreas;
 		std::vector<unsigned short> offMeshConFlags;
 		std::vector<unsigned int> offMeshConId;
-		if (!offmesh.empty())
+
+		Data::CDataArray* pOffmeshList;
+		if (ParamsUtils::TryGetParam(pOffmeshList, Desc, "OffmeshConnections") && !pOffmeshList->empty())
 		{
-			offMeshConVerts.reserve(offmesh.size() * 3 * 2);
-			offMeshConRads.reserve(offmesh.size());
-			offMeshConDirs.reserve(offmesh.size());
-			offMeshConAreas.reserve(offmesh.size());
-			offMeshConFlags.reserve(offmesh.size());
-			offMeshConId.reserve(offmesh.size());
+			offMeshConVerts.reserve(pOffmeshList->size() * 3 * 2);
+			offMeshConRads.reserve(pOffmeshList->size());
+			offMeshConDirs.reserve(pOffmeshList->size());
+			offMeshConAreas.reserve(pOffmeshList->size());
+			offMeshConFlags.reserve(pOffmeshList->size());
+			offMeshConId.reserve(pOffmeshList->size());
 
-			for (const auto& conn : offmesh)
+			for (const auto& Record : *pOffmeshList)
 			{
-				offMeshConVerts.push_back(conn.start.x);
-				offMeshConVerts.push_back(conn.start.y);
-				offMeshConVerts.push_back(conn.start.z);
-				offMeshConVerts.push_back(conn.end.x);
-				offMeshConVerts.push_back(conn.end.y);
-				offMeshConVerts.push_back(conn.end.z);
-				offMeshConRads.push_back(conn.radius);
-				offMeshConDirs.push_back(conn.isBidirectional ? 1 : 0);
-				offMeshConAreas.push_back(conn.areaId);
-				offMeshConFlags.push_back(conn.flags);
-				offMeshConId.push_back(conn.userId);
-			}
+				const auto& OffmeshDesc = Record.GetValue<Data::CParams>();
+				const auto Start = ParamsUtils::GetParam(OffmeshDesc, "Start", vector4{});
+				const auto End = ParamsUtils::GetParam(OffmeshDesc, "End", vector4{});
 
-			offmesh.clear();
-			offmesh.shrink_to_fit();
+				offMeshConVerts.push_back(Start.x);
+				offMeshConVerts.push_back(Start.y);
+				offMeshConVerts.push_back(Start.z);
+				offMeshConVerts.push_back(End.x);
+				offMeshConVerts.push_back(End.y);
+				offMeshConVerts.push_back(End.z);
+				offMeshConRads.push_back(ParamsUtils::GetParam(OffmeshDesc, "Radius", agentRadius));
+				offMeshConDirs.push_back(ParamsUtils::GetParam(OffmeshDesc, "Bidirectional", true) ? 1 : 0);
+				offMeshConAreas.push_back(ParamsUtils::GetParam<int>(OffmeshDesc, "AreaType", RC_WALKABLE_AREA));
+				offMeshConFlags.push_back(ParamsUtils::GetParam(OffmeshDesc, "Flags", 0)); //???or calc based on area, or combine calc and explicit?
+				offMeshConId.push_back(ParamsUtils::GetParam(OffmeshDesc, "UserID", 0));
+			}
 		}
 
 		dtNavMeshCreateParams params;
@@ -383,13 +366,16 @@ public:
 			params.detailTris = dmesh->tris;
 			params.detailTriCount = dmesh->ntris;
 		}
-		params.offMeshConVerts = offMeshConVerts.data();
-		params.offMeshConRad = offMeshConRads.data();
-		params.offMeshConDir = offMeshConDirs.data();
-		params.offMeshConAreas = offMeshConAreas.data();
-		params.offMeshConFlags = offMeshConFlags.data();
-		params.offMeshConUserID = offMeshConId.data();
-		params.offMeshConCount = offmesh.size();
+		if (!offMeshConRads.empty())
+		{
+			params.offMeshConVerts = offMeshConVerts.data();
+			params.offMeshConRad = offMeshConRads.data();
+			params.offMeshConDir = offMeshConDirs.data();
+			params.offMeshConAreas = offMeshConAreas.data();
+			params.offMeshConFlags = offMeshConFlags.data();
+			params.offMeshConUserID = offMeshConId.data();
+			params.offMeshConCount = offMeshConRads.size();
+		}
 		params.walkableHeight = agentHeight;
 		params.walkableRadius = agentRadius;
 		params.walkableClimb = agentMaxClimb;
