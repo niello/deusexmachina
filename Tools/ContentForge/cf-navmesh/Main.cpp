@@ -1,6 +1,7 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
+#include <Render/RenderEnums.h>
 #include <Recast.h>
 #include <DetourNavMesh.h> // For max vertices per polygon constant
 #include <DetourNavMeshBuilder.h>
@@ -127,7 +128,8 @@ public:
 
 				if (ParamsUtils::HasParam(GeometryDesc, CStrID("Mesh")))
 				{
-					// add mesh geometry
+					if (!ProcessMeshGeometry(GeometryDesc, WorldTfm, verts, tris, Task.Log))
+						Task.Log.LogWarning("Couldn't export mesh geometry");
 				}
 				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Terrain")))
 				{
@@ -438,6 +440,142 @@ public:
 
 		dtFree(navData);
 			
+		return true;
+	}
+
+	// TODO: can optimize by reading mesh once even if it is referenced multiple times
+	bool ProcessMeshGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
+	{
+		const auto ResourceID = ParamsUtils::GetParam(Desc, "Mesh", std::string{});
+		const auto Path = ResolvePathAliases(ResourceID);
+
+		std::ifstream File(Path, std::ios_base::binary);
+		if (!File)
+		{
+			Log.LogError("Can't open mesh file " + Path.generic_string());
+			return false;
+		}
+
+#pragma pack(push, 1)
+		struct CMSHMeshHeader
+		{
+			uint32_t Magic;
+			uint32_t Version;
+			uint32_t GroupCount;
+			uint32_t VertexCount;
+			uint32_t IndexCount;
+			uint8_t  IndexSize;
+			uint32_t VertexComponentCount;
+		};
+		struct CMSHMeshGroup
+		{
+			uint32_t FirstVertex;
+			uint32_t VertexCount;
+			uint32_t FirstIndex;
+			uint32_t IndexCount;
+			uint8_t  TopologyCode;
+			float    AABBMin[3];
+			float    AABBMax[3];
+		};
+		struct CMSHVertexComponent
+		{
+			uint8_t SemanticCode;
+			uint8_t FormatCode;
+			uint8_t Index;
+			uint8_t StreamIndex;
+		};
+#pragma pack(pop)
+
+		CMSHMeshHeader Header;
+		ReadStream(File, Header);
+
+		if (Header.Magic != 'MESH' || Header.Version != 0x00010000)
+		{
+			Log.LogError("Incorrect format or version: " + Path.generic_string());
+			return false;
+		}
+
+		if (!Header.VertexCount)
+		{
+			Log.LogWarning("Empty mesh: " + Path.generic_string());
+			return true;
+		}
+
+		const auto MeshGroupIndex = static_cast<uint32_t>(ParamsUtils::GetParam(Desc, "MeshGroupIndex", 0));
+		if (MeshGroupIndex >= Header.GroupCount)
+		{
+			Log.LogError("No group " + std::to_string(MeshGroupIndex) + " in a mesh: " + Path.generic_string());
+			return false;
+		}
+
+		// Based on a vertex format, calculate offset and stride of the position
+		size_t PositionOffset = 0;
+		size_t VertexStride = 0;
+		for (uint32_t i = 0; i < Header.VertexComponentCount; ++i)
+		{
+			CMSHVertexComponent Component;
+			ReadStream(File, Component);
+
+			if (Component.SemanticCode == VCSem_Position) PositionOffset = VertexStride;
+
+			VertexStride += GetVertexComponentSize(static_cast<EVertexComponentFormat>(Component.FormatCode));
+		}
+
+		CMSHMeshGroup Group;
+		for (uint32_t i = 0; i < Header.GroupCount; ++i)
+		{
+			if (i == MeshGroupIndex)
+			{
+				ReadStream(File, Group);
+				if (!Group.VertexCount)
+				{
+					Log.LogWarning("Empty mesh group " + std::to_string(MeshGroupIndex) + ": " + Path.generic_string());
+					return true;
+				}
+			}
+			else
+			{
+				// Skip other groups
+				ReadStream<CMSHMeshGroup>(File);
+			}
+		}
+
+		uint32_t VertexStartPos, IndexStartPos;
+		ReadStream(File, VertexStartPos);
+		ReadStream(File, IndexStartPos);
+
+		{
+			// Read group vertices as raw bytes
+			std::vector<char> Vertices(Group.VertexCount * VertexStride);
+			File.seekg(VertexStartPos + Group.FirstVertex * VertexStride);
+			File.read(Vertices.data(), Vertices.size() * sizeof(char));
+
+			// Fill vertices
+			const auto PrevVertexFloatCount = OutVertices.size();
+			OutVertices.resize(PrevVertexFloatCount + 3 * Group.VertexCount);
+			float* pCurrVtx = OutVertices.data() + PrevVertexFloatCount;
+			const char* pSrc = Vertices.data() + PositionOffset;
+			for (uint32_t i = 0; i < Group.VertexCount; ++i)
+			{
+				auto pPos = reinterpret_cast<const float*>(pSrc);
+				const auto Vertex = acl::transform_position(WorldTfm, { pPos[0], pPos[1], pPos[2] });
+				*pCurrVtx++ = acl::vector_get_x(Vertex);
+				*pCurrVtx++ = acl::vector_get_y(Vertex);
+				*pCurrVtx++ = acl::vector_get_z(Vertex);
+
+				pSrc += VertexStride;
+			}
+		}
+
+		{
+			// Read group indices as raw bytes
+			std::vector<char> Indices(Group.IndexCount * Header.IndexSize);
+			File.seekg(IndexStartPos + Group.FirstIndex * Header.IndexSize);
+			File.read(Indices.data(), Indices.size() * sizeof(char));
+
+			//if no indices, process vertices only as tri list
+		}
+
 		return true;
 	}
 

@@ -350,7 +350,7 @@ bool CNavMeshBuilder::AddGeometry(const float* pVerts, int VertexCount, const in
 
 	// Find triangles which are walkable based on their slope and rasterize them.
 	// If your input data is multiple meshes, you can transform them here, calculate
-	// the are type for each of the meshes and rasterize them.
+	// the area type for each of the meshes and rasterize them.
 	memset(pAreas, Area, TriCount * sizeof(uchar));
 	if (Area == RC_NULL_AREA)
 		rcMarkWalkableTriangles(&Ctx, Cfg.walkableSlopeAngle, pVerts, VertexCount, pTris, TriCount, pAreas);

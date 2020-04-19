@@ -149,3 +149,26 @@ enum EVertexComponentFormat
 	VCFmt_UInt16_4_Norm,	//> four-component normalized unsigned short (value / 65535.0f)
 	VCFmt_Invalid
 };
+
+inline size_t GetVertexComponentSize(EVertexComponentFormat Format)
+{
+	switch (Format)
+	{
+		case VCFmt_Float32_1:		return 4;
+		case VCFmt_Float32_2:		return 8;
+		case VCFmt_Float32_3:		return 12;
+		case VCFmt_Float32_4:		return 16;
+		case VCFmt_Float16_2:		return 4;
+		case VCFmt_Float16_4:		return 8;
+		case VCFmt_UInt8_4:			return 4;
+		case VCFmt_UInt8_4_Norm:	return 4;
+		case VCFmt_SInt16_2:		return 4;
+		case VCFmt_SInt16_4:		return 8;
+		case VCFmt_SInt16_2_Norm:	return 4;
+		case VCFmt_SInt16_4_Norm:	return 8;
+		case VCFmt_UInt16_2_Norm:	return 4;
+		case VCFmt_UInt16_4_Norm:	return 8;
+	}
+	return 0;
+}
+//---------------------------------------------------------------------
