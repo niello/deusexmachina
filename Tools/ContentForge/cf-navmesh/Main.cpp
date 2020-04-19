@@ -1,10 +1,10 @@
 #include <ContentForgeTool.h>
 #include <Utils.h>
 #include <ParamsUtils.h>
-//#include <CLI11.hpp>
 #include <Recast.h>
 #include <DetourNavMesh.h> // For max vertices per polygon constant
 #include <DetourNavMeshBuilder.h>
+#include <acl/math/transform_32.h> // FIXME: use RTM only when it becomes available as a separate library
 
 namespace fs = std::filesystem;
 
@@ -72,7 +72,7 @@ public:
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
 		// TODO: check whether the metafile can be processed by this tool
-		if (ParamsUtils::GetParam(Task.Params, "Tools", std::string{}) != "cf-navmesh")
+		if (ParamsUtils::GetParam(Task.Params, "Tools", std::string{}) != _Name)
 		{
 			// FIXME: skip sliently without error. To CF tool base class??? If no tools specified, try in each.
 			return false;
@@ -109,16 +109,29 @@ public:
 		{
 			for (const auto& GeometryRecord : *pGeometryList)
 			{
-				// parse world transformation, identity by default
-
 				const auto& GeometryDesc = GeometryRecord.GetValue<Data::CParams>();
+
+				acl::Transform_32 WorldTfm = acl::transform_identity_32();
+
+				const Data::CParams* pTfmParams;
+				if (ParamsUtils::TryGetParam(pTfmParams, GeometryDesc, "Transform"))
+				{
+					vector4 Value;
+					if (ParamsUtils::TryGetParam(Value, *pTfmParams, "S"))
+						WorldTfm.scale = { Value.x, Value.y, Value.z, 0.f };
+					if (ParamsUtils::TryGetParam(Value, *pTfmParams, "R"))
+						WorldTfm.rotation = { Value.x, Value.y, Value.z, Value.w };
+					if (ParamsUtils::TryGetParam(Value, *pTfmParams, "T"))
+						WorldTfm.translation = { Value.x, Value.y, Value.z, 1.f };
+				}
+
 				if (ParamsUtils::HasParam(GeometryDesc, CStrID("Mesh")))
 				{
 					// add mesh geometry
 				}
 				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Terrain")))
 				{
-					if (!ProcessTerrainGeometry(GeometryDesc, verts, tris, Task.Log))
+					if (!ProcessTerrainGeometry(GeometryDesc, WorldTfm, verts, tris, Task.Log))
 						Task.Log.LogWarning("Couldn't export terrain geometry");
 				}
 				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Shape")))
@@ -428,13 +441,10 @@ public:
 		return true;
 	}
 
-	//!!!add transform arg!
-	bool ProcessTerrainGeometry(const Data::CParams& Desc, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
+	bool ProcessTerrainGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
 		const auto ResourceID = ParamsUtils::GetParam(Desc, "Terrain", std::string{});
 		const auto Path = ResolvePathAliases(ResourceID);
-
-		//std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
 		std::ifstream File(Path, std::ios_base::binary);
 		if (!File)
@@ -487,17 +497,22 @@ public:
 			const auto PrevVertexFloatCount = OutVertices.size();
 			OutVertices.resize(PrevVertexFloatCount + 3 * HeightMap.size());
 
-			// FIXME: apply world transform! or generalize in ProcessTask for all geometry types?!
-
 			// Fill vertices
 			float* pCurrVtx = OutVertices.data() + PrevVertexFloatCount;
 			for (uint32_t j = 0; j < Header.Height; ++j)
 			{
 				for (uint32_t i = 0; i < Header.Width; ++i)
 				{
-					*pCurrVtx++ = Header.MinX + i * QuadSizeX;
-					*pCurrVtx++ = (static_cast<int>(HeightMap[j * Header.Width + i]) - 32767) * Header.VerticalScale;
-					*pCurrVtx++ = Header.MinZ + j * QuadSizeZ;
+					const auto Vertex = acl::transform_position(WorldTfm,
+						// Local vertex
+						{
+							Header.MinX + i * QuadSizeX,
+							(static_cast<int>(HeightMap[j * Header.Width + i]) - 32767) * Header.VerticalScale,
+							Header.MinZ + j * QuadSizeZ
+						});
+					*pCurrVtx++ = acl::vector_get_x(Vertex);
+					*pCurrVtx++ = acl::vector_get_y(Vertex);
+					*pCurrVtx++ = acl::vector_get_z(Vertex);
 				}
 			}
 		}
