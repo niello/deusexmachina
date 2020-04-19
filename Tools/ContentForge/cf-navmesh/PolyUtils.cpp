@@ -74,8 +74,8 @@ std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset
 
 	acl::Vector4_32 Center = acl::vector_zero_32();
 	for (auto SrcVertex : SrcVerts)
-		acl::vector_add(Center, SrcVertex);
-	acl::vector_div(Center, { static_cast<float>(SrcCount), static_cast<float>(SrcCount), static_cast<float>(SrcCount) });
+		Center = acl::vector_add(Center, SrcVertex);
+	Center = acl::vector_div(Center, { static_cast<float>(SrcCount), static_cast<float>(SrcCount), static_cast<float>(SrcCount) });
 
 	std::vector<acl::Vector4_32> TmpVerts(SrcCount);
 	for (int i = 0; i < SrcCount; ++i)
@@ -85,7 +85,7 @@ std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset
 		if (Len > 0.f)
 		{
 			const float Coeff = std::max(0.f, Len + Offset) / Len;
-			acl::vector_mul_add(TmpVerts[i], Coeff, Center);
+			TmpVerts[i] = acl::vector_mul_add(TmpVerts[i], Coeff, Center);
 		}
 	}
 
@@ -113,9 +113,9 @@ bool GetPointInPoly(const std::vector<float>& In, float Out[3])
 	if (In.size() < 9) return false;
 
 	acl::Vector4_32 a = { In[0], In[1], In[2], 0.f };
-	acl::vector_add(a, { In[3], In[4], In[5], 0.f });
-	acl::vector_add(a, { In[6], In[7], In[8], 0.f });
-	acl::vector_div(a, acl::vector_set(3.f));
+	a = acl::vector_add(a, { In[3], In[4], In[5], 0.f });
+	a = acl::vector_add(a, { In[6], In[7], In[8], 0.f });
+	a = acl::vector_div(a, acl::vector_set(3.f));
 	Out[0] = acl::vector_get_x(a);
 	Out[1] = acl::vector_get_y(a);
 	Out[2] = acl::vector_get_z(a);
