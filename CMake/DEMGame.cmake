@@ -21,7 +21,9 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Movement/ActionTpls/ActionTplGotoTarget.h
 	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.h
 	DEM/Game/src/AI/Navigation/NavData.h
+	DEM/Game/src/AI/Navigation/NavMesh.h
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.h
+	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.h
 	DEM/Game/src/AI/Navigation/NavSystem.h
 	DEM/Game/src/AI/Navigation/PathEdge.h
 	DEM/Game/src/AI/Navigation/PathRequestQueue.h
@@ -107,7 +109,9 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Movement/Actions/ActionTraversePathEdge.cpp
 	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.cpp
 	DEM/Game/src/AI/Navigation/NavData.cpp
+	DEM/Game/src/AI/Navigation/NavMesh.cpp
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.cpp
+	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
 	DEM/Game/src/AI/Navigation/NavSystem.cpp
 	DEM/Game/src/AI/Navigation/PathRequestQueue.cpp
 	DEM/Game/src/AI/Perception/Perceptor.cpp
