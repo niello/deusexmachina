@@ -3,7 +3,8 @@
 #include <ParamsUtils.h>
 #include <Render/RenderEnums.h>
 #include <Recast.h>
-#include <DetourNavMesh.h> // For max vertices per polygon constant
+#include <DetourNavMesh.h>
+#include <DetourNavMeshQuery.h>
 #include <DetourNavMeshBuilder.h>
 #include <acl/math/transform_32.h> // FIXME: use RTM only when it becomes available as a separate library
 
@@ -13,15 +14,7 @@ namespace fs = std::filesystem;
 // Example args:
 // -s src/game/levels --path Data ../../../content
 
-// FIXME: to utils!
-struct float3
-{
-	union
-	{
-		struct { float x, y, z; };
-		float v[3];
-	};
-};
+std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset);
 
 class CFRCContext : public rcContext
 {
@@ -91,21 +84,14 @@ public:
 			return false;
 		}
 
-		struct CConvexVolume
-		{
-			std::vector<float3> verts;
-			float hmin, hmax;
-			unsigned char areaId;
-		};
+		// Collect geometry
 
 		std::vector<float> verts;
 		std::vector<int> tris;
-		std::vector<CConvexVolume> vols;
-
-		// Collect geometry
 
 		// FIXME: rasterize trinagles per geometry, don't store all vertices in one array before processing?
-		Data::CDataArray* pGeometryList;
+		// rcCalcBounds requires that now, otherwise how do we know navmesh bounds?
+		const Data::CDataArray* pGeometryList;
 		if (ParamsUtils::TryGetParam(pGeometryList, Desc, "Geometry"))
 		{
 			for (const auto& GeometryRecord : *pGeometryList)
@@ -138,7 +124,8 @@ public:
 				}
 				else if (ParamsUtils::HasParam(GeometryDesc, CStrID("Shape")))
 				{
-					// add shape geometry
+					if (!ProcessShapeGeometry(GeometryDesc, WorldTfm, verts, tris, Task.Log))
+						Task.Log.LogWarning("Couldn't export shape geometry");
 				}
 			}
 		}
@@ -203,9 +190,15 @@ public:
 		}
 
 		// TODO: can do per geometry object instead of collecting all geometry at once!
-		// TODO: there is also rcClearUnwalkableTriangles, was used with non-RC_NULL_AREA in old CIDE
+		// TODO: there is also rcClearUnwalkableTriangles, was used with non-RC_NULL_AREA in old CIDE:
+		/* Area is associated with current geometry chunk
+		if (Area == RC_NULL_AREA)
+			rcMarkWalkableTriangles(&Ctx, Cfg.walkableSlopeAngle, pVerts, VertexCount, pTris, TriCount, pAreas);
+		else
+			rcClearUnwalkableTriangles(&Ctx, Cfg.walkableSlopeAngle, pVerts, VertexCount, pTris, TriCount, pAreas);
+		*/
 		std::unique_ptr<unsigned char[]> triareas(new unsigned char[ntris]);
-		memset(triareas.get(), 0, ntris * sizeof(unsigned char));
+		memset(triareas.get(), RC_NULL_AREA, ntris * sizeof(unsigned char));
 		rcMarkWalkableTriangles(&ctx, cfg.walkableSlopeAngle, verts.data(), nverts, tris.data(), ntris, triareas.get());
 		if (!rcRasterizeTriangles(&ctx, verts.data(), nverts, tris.data(), triareas.get(), ntris, *solid, cfg.walkableClimb))
 		{
@@ -243,11 +236,47 @@ public:
 			return false;
 		}
 
-		for (const auto& vol : vols)
-			rcMarkConvexPolyArea(&ctx, vol.verts.data()->v, vol.verts.size(), vol.hmin, vol.hmax, vol.areaId, *chf);
+		struct CRegion
+		{
+			std::vector<float> verts;
+			float hmin;
+			float hmax;
+		};
+		std::map<std::string, CRegion> NamedRegions;
 
-		vols.clear();
-		vols.shrink_to_fit();
+		const Data::CDataArray* pRegionList;
+		if (ParamsUtils::TryGetParam(pRegionList, Desc, "Regions") && !pRegionList->empty())
+		{
+			std::vector<float> verts;
+			for (const auto& Record : *pRegionList)
+			{
+				const auto& RegionDesc = Record.GetValue<Data::CParams>();
+
+				const Data::CDataArray* pVertexList;
+				if (!ParamsUtils::TryGetParam(pVertexList, RegionDesc, "Vertices") || pVertexList->empty()) continue;
+
+				verts.reserve(3 * pVertexList->size());
+				for (const auto& VertexData : *pVertexList)
+				{
+					const auto Vertex = VertexData.GetValue<vector4>();
+					verts.push_back(Vertex.x);
+					verts.push_back(Vertex.y);
+					verts.push_back(Vertex.z);
+				}
+
+				const auto hmin = ParamsUtils::GetParam(RegionDesc, "HeightStart", bmin[1]);
+				const auto hmax = ParamsUtils::GetParam(RegionDesc, "HeightEnd", bmax[1]);
+				const uint8_t areaId = ParamsUtils::GetParam<int>(RegionDesc, "AreaType", RC_WALKABLE_AREA);
+				//???add flags here? how to apply?
+
+				// NB: there are also rcMarkBoxArea, rcMarkCylinderArea
+				rcMarkConvexPolyArea(&ctx, verts.data(), verts.size(), hmin, hmax, areaId, *chf);
+
+				auto ID = ParamsUtils::GetParam(RegionDesc, "ID", std::string{});
+				if (!ID.empty())
+					NamedRegions.emplace(std::move(ID), CRegion{ std::move(verts), hmin, hmax });
+			}
+		}
 
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
@@ -334,7 +363,7 @@ public:
 		std::vector<unsigned short> offMeshConFlags;
 		std::vector<unsigned int> offMeshConId;
 
-		Data::CDataArray* pOffmeshList;
+		const Data::CDataArray* pOffmeshList;
 		if (ParamsUtils::TryGetParam(pOffmeshList, Desc, "OffmeshConnections") && !pOffmeshList->empty())
 		{
 			offMeshConVerts.reserve(pOffmeshList->size() * 3 * 2);
@@ -411,6 +440,39 @@ public:
 		pmesh.reset();
 		dmesh.reset();
 
+		// Process named regions
+
+		if (!NamedRegions.empty())
+		{
+			auto dtNavMeshDeleter = [](dtNavMesh* ptr) { dtFreeNavMesh(ptr); };
+			std::unique_ptr<dtNavMesh, decltype(dtNavMeshDeleter)> NavMesh(dtAllocNavMesh(), dtNavMeshDeleter);
+
+			// Zero flags mean that NavMesh doesn't own navData
+			if (dtStatusFailed(NavMesh->init(navData, navDataSize, 0)))
+			{
+				Task.Log.LogError("Could not load Detour navmesh for named region processing");
+				return false;
+			}
+
+			auto dtNavMeshQueryDeleter = [](dtNavMeshQuery* ptr) { dtFreeNavMeshQuery(ptr); };
+			std::unique_ptr<dtNavMeshQuery, decltype(dtNavMeshQueryDeleter)> pQuery(dtAllocNavMeshQuery(), dtNavMeshQueryDeleter);
+			if (dtStatusFailed(pQuery->init(NavMesh.get(), 512)))
+			{
+				Task.Log.LogError("Could not initialize navmesh query for named region processing");
+				return false;
+			}
+
+			//const dtQueryFilter NavFilter;
+
+			for (const auto& Region : NamedRegions)
+			{
+				//  Poly count
+				//  Poly refs
+			}
+
+			//
+		}
+
 		// Write resulting NM file
 		{
 			auto DestPath = GetPath(Task.Params, "Output") / (TaskName + ".nm");
@@ -432,10 +494,7 @@ public:
 			WriteStream<uint32_t>(File, navDataSize);
 			File.write(reinterpret_cast<const char*>(navData), navDataSize);
 
-			// Named region count
-			// Per named convex volume:
-			//  Poly count
-			//  Poly refs
+			WriteStream(File, static_cast<uint32_t>(NamedRegions.size()));
 		}
 
 		dtFree(navData);
@@ -721,6 +780,12 @@ public:
 		}
 
 		return true;
+	}
+
+	bool ProcessShapeGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
+	{
+		// TODO: add shape geometry
+		return false;
 	}
 };
 
