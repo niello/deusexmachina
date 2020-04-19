@@ -106,3 +106,19 @@ std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset
 	return Result;
 }
 //---------------------------------------------------------------------
+
+bool GetPointInPoly(const std::vector<float>& In, float Out[3])
+{
+	// Need at least 3 vertices, 3 floats each
+	if (In.size() < 9) return false;
+
+	acl::Vector4_32 a = { In[0], In[1], In[2], 0.f };
+	acl::vector_add(a, { In[3], In[4], In[5], 0.f });
+	acl::vector_add(a, { In[6], In[7], In[8], 0.f });
+	acl::vector_div(a, acl::vector_set(3.f));
+	Out[0] = acl::vector_get_x(a);
+	Out[1] = acl::vector_get_y(a);
+	Out[2] = acl::vector_get_z(a);
+	return true;
+}
+//---------------------------------------------------------------------

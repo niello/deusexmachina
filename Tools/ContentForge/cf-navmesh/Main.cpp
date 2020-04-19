@@ -7,6 +7,7 @@
 #include <DetourNavMeshQuery.h>
 #include <DetourNavMeshBuilder.h>
 #include <acl/math/transform_32.h> // FIXME: use RTM only when it becomes available as a separate library
+#include <array>
 
 namespace fs = std::filesystem;
 
@@ -15,6 +16,7 @@ namespace fs = std::filesystem;
 // -s src/game/levels --path Data ../../../content
 
 std::vector<float> OffsetPoly(const float* pSrcVerts, int SrcCount, float Offset);
+bool GetPointInPoly(const std::vector<float>& In, float Out[3]);
 
 class CFRCContext : public rcContext
 {
@@ -442,6 +444,8 @@ public:
 
 		// Process named regions
 
+		std::vector<std::pair<std::string, std::vector<dtPolyRef>>> NamedRegionPolys;
+
 		if (!NamedRegions.empty())
 		{
 			auto dtNavMeshDeleter = [](dtNavMesh* ptr) { dtFreeNavMesh(ptr); };
@@ -462,15 +466,45 @@ public:
 				return false;
 			}
 
-			//const dtQueryFilter NavFilter;
+			const dtQueryFilter NavFilter;
 
-			for (const auto& Region : NamedRegions)
+			NamedRegionPolys.reserve(NamedRegions.size());
+
+			for (const auto& [ID, Region] : NamedRegions)
 			{
-				//  Poly count
-				//  Poly refs
-			}
+				// Slightly reduce region to avoid including neighbour polys
+				auto ReducedRegion = OffsetPoly(Region.verts.data(), Region.verts.size() / 3, -2.0f * cellSize);
 
-			//
+				// Change Recast CW winding to Detour CCW
+				// TODO: check in current lib version
+				std::reverse(ReducedRegion.begin(), ReducedRegion.end());
+
+				float PointInPoly[3];
+				if (!GetPointInPoly(ReducedRegion, PointInPoly))
+				{
+					Task.Log.LogWarning("Degenerate named region: " + ID);
+					continue;
+				}
+
+				dtPolyRef StartPoly;
+				const float Probe[3] = { 0.f, Region.hmax - Region.hmin, 0.f }; //???or half + small value?
+				pQuery->findNearestPoly(PointInPoly, Probe, &NavFilter, &StartPoly, nullptr);
+				if (!StartPoly)
+				{
+					Task.Log.LogWarning("No starting poly found in a named region: " + ID);
+					continue;
+				}
+
+				const int MAX_POLYS = 2048;
+				std::array<dtPolyRef, MAX_POLYS> PolyRefs;
+				int PolyCount = 0;
+
+				const auto SearchResult = pQuery->findPolysAroundShape(StartPoly, ReducedRegion.data(), ReducedRegion.size() / 3,
+					&NavFilter, PolyRefs.data(), nullptr, nullptr, &PolyCount, MAX_POLYS);
+
+				if (dtStatusSucceed(SearchResult) && PolyCount > 0)
+					NamedRegionPolys.emplace_back(ID, std::vector<dtPolyRef>(PolyRefs.begin(), PolyRefs.begin() + PolyCount));
+			}
 		}
 
 		// Write resulting NM file
@@ -494,7 +528,13 @@ public:
 			WriteStream<uint32_t>(File, navDataSize);
 			File.write(reinterpret_cast<const char*>(navData), navDataSize);
 
-			WriteStream(File, static_cast<uint32_t>(NamedRegions.size()));
+			WriteStream(File, static_cast<uint32_t>(NamedRegionPolys.size()));
+			for (const auto& [ID, Polys] : NamedRegionPolys)
+			{
+				WriteStream(File, ID);
+				WriteStream(File, static_cast<uint32_t>(Polys.size()));
+				File.write(reinterpret_cast<const char*>(Polys.data()), Polys.size() * sizeof(dtPolyRef));
+			}
 		}
 
 		dtFree(navData);
