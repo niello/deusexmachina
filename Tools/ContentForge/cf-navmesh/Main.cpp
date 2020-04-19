@@ -443,6 +443,14 @@ public:
 		return true;
 	}
 
+	static inline int GetVertexIndex(const char* pRawData, size_t Stride, size_t Index)
+	{
+		if (!pRawData) return Index;
+		if (Stride == 4) return *reinterpret_cast<const uint32_t*>(pRawData + Stride * Index);
+		if (Stride == 2) return *reinterpret_cast<const uint16_t*>(pRawData + Stride * Index);
+		return -1;
+	}
+
 	// TODO: can optimize by reading mesh once even if it is referenced multiple times
 	bool ProcessMeshGeometry(const Data::CParams& Desc, const acl::Transform_32& WorldTfm, std::vector<float>& OutVertices, std::vector<int>& OutIndices, CThreadSafeLog& Log)
 	{
@@ -522,14 +530,22 @@ public:
 		}
 
 		CMSHMeshGroup Group;
+		size_t TriCount = 0;
 		for (uint32_t i = 0; i < Header.GroupCount; ++i)
 		{
 			if (i == MeshGroupIndex)
 			{
 				ReadStream(File, Group);
-				if (!Group.VertexCount)
+
+				const auto IndexCount = Group.IndexCount ? Group.IndexCount : Group.VertexCount;
+				if (Group.TopologyCode == Prim_TriStrip)
+					TriCount = IndexCount - 2;
+				else if (Group.TopologyCode == Prim_TriList)
+					TriCount = IndexCount / 3;
+
+				if (!Group.VertexCount || !TriCount)
 				{
-					Log.LogWarning("Empty mesh group " + std::to_string(MeshGroupIndex) + ": " + Path.generic_string());
+					Log.LogWarning("Empty or unsupported mesh group " + std::to_string(MeshGroupIndex) + ": " + Path.generic_string());
 					return true;
 				}
 			}
@@ -573,7 +589,39 @@ public:
 			File.seekg(IndexStartPos + Group.FirstIndex * Header.IndexSize);
 			File.read(Indices.data(), Indices.size() * sizeof(char));
 
-			//if no indices, process vertices only as tri list
+			// Copy indices with conversion to TriList
+			// NB: this supports non-indexed geometry too through pSrc == nullptr
+			const auto PrevIndexCount = OutIndices.size();
+			OutIndices.resize(PrevIndexCount + 3 * TriCount);
+			int* pCurrIdx = OutIndices.data() + PrevIndexCount;
+			const char* pSrc = Indices.data();
+			if (Group.TopologyCode == Prim_TriStrip)
+			{
+				bool Odd = true;
+				for (uint32_t i = 0; i < TriCount; ++i, Odd = !Odd)
+				{
+					*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i);
+					if (Odd)
+					{
+						*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i + 1);
+						*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i + 2);
+					}
+					else
+					{
+						*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i + 2);
+						*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i + 1);
+					}
+				}
+			}
+			else if (Group.TopologyCode == Prim_TriList)
+			{
+				for (uint32_t i = 0; i < TriCount; ++i)
+				{
+					*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i * 3);
+					*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i * 3 + 1);
+					*pCurrIdx++ = GetVertexIndex(pSrc, Header.IndexSize, i * 3 + 2);
+				}
+			}
 		}
 
 		return true;
