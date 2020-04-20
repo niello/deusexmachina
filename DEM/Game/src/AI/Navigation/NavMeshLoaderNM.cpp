@@ -34,8 +34,7 @@ PResourceObject CNavMeshLoaderNM::CreateResource(CStrID UID)
 	U32 DataSize;
 	if (!Reader.Read(DataSize) || !DataSize) return nullptr;
 
-	//???how to use this data without duplications and copying?
-	std::vector<uint8_t> RawData(DataSize);
+	std::vector<U8> RawData(DataSize);
 	if (Stream->Read(RawData.data(), DataSize) != DataSize) return nullptr;
 
 	U32 RegionCount;
@@ -50,13 +49,13 @@ PResourceObject CNavMeshLoaderNM::CreateResource(CStrID UID)
 		U32 PolyCount;
 		if (!Reader.Read<U32>(PolyCount)) return nullptr;
 
-		DEM::AI::CNavRegion Region(n_new_array(dtPolyRef, PolyCount));
-		if (Stream->Read(Region.get(), PolyCount * sizeof(dtPolyRef)) != PolyCount * sizeof(dtPolyRef)) return nullptr;
+		DEM::AI::CNavRegion Region(PolyCount);
+		if (Stream->Read(Region.data(), PolyCount * sizeof(dtPolyRef)) != PolyCount * sizeof(dtPolyRef)) return nullptr;
 
 		Regions.emplace(ID, std::move(Region));
 	}
 
-	return n_new(DEM::AI::CNavMesh(/**/));
+	return n_new(DEM::AI::CNavMesh(R, H, std::move(RawData), std::move(Regions)));
 }
 //---------------------------------------------------------------------
 
