@@ -198,6 +198,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 
 	if (!Points.empty())
 	{
+		// TODO: support size!
 		NOT_IMPLEMENTED;
 
 		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPoint")))

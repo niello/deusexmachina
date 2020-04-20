@@ -1,12 +1,15 @@
 #include "GameLevel.h"
-#include <Frame/SceneNodeUpdateInSPS.h>
 #include <Scene/SceneNode.h>
-#include <Scene/SceneNodeValidateResources.h>
 #include <Physics/PhysicsLevel.h>
-#include <Physics/SceneNodeValidatePhysics.h>
-#include <AI/AILevel.h>
+#include <AI/Navigation/NavMesh.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
+#include <Data/DataArray.h>
+
+// TODO: turn visitors into lambdas?
+#include <Frame/SceneNodeUpdateInSPS.h>
+#include <Scene/SceneNodeValidateResources.h>
+#include <Physics/SceneNodeValidatePhysics.h>
 
 namespace DEM::Game
 {
@@ -79,16 +82,22 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 		}
 	}
 
-	// Load navigation map, if present
-	auto NavigationMapID = In.Get(CStrID("NavigationMap"), CString::Empty);
-	if (!NavigationMapID.IsEmpty() && Level->GetAI())
+	// Load navigation meshes, if present
+	if (auto Navigation = In.Get(CStrID("Navigation"), Data::PDataArray()))
 	{
-		n_verify(Level->GetAI()->LoadNavMesh(NavigationMapID.CStr()));
-	}
+		for (const auto& Elm : *Navigation)
+		{
+			const auto& NavDesc = Elm.GetValue<Data::PParams>();
+			const float AgentRadius = NavDesc->Get(CStrID("AgentRadius"), -0.f);
+			const float AgentHeight = NavDesc->Get(CStrID("AgentHeight"), -0.f);
+			const auto NavigationMapID = NavDesc->Get(CStrID("NavMesh"), CString::Empty);
+			auto Rsrc = ResMgr.RegisterResource<DEM::AI::CNavMesh>(NavigationMapID.CStr());
+			if (AgentRadius <= 0.f || AgentHeight <= 0.f || !Rsrc) continue;
 
-	// TODO: Add to level?
-	// - animation controllers and rigid bodies for static data (separate files or inline descs? .bullet?)
-	// - optional main camera node path
+			if (NavDesc->Get(CStrID("Preload"), false))
+				Rsrc->ValidateObject<DEM::AI::CNavMesh>();
+		}
+	}
 
 	return std::move(Level);
 }

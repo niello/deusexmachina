@@ -22,6 +22,8 @@ CResourceManager::~CResourceManager() = default;
 // NB: does not change creator for existing resource
 PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI& RsrcType)
 {
+	if (!pUID || !*pUID) return nullptr;
+
 	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))
@@ -47,6 +49,8 @@ PResource CResourceManager::RegisterResource(const char* pUID, const Core::CRTTI
 // NB: does not change creator for existing resource
 PResource CResourceManager::RegisterResource(const char* pUID, IResourceCreator* pCreator)
 {
+	if (!pUID || !*pUID) return nullptr;
+
 	CStrID UID = pIO ? CStrID(pIO->ResolveAssigns(pUID).CStr()): CStrID(pUID);
 	PResource Rsrc;
 	if (!Registry.Get(UID, Rsrc))

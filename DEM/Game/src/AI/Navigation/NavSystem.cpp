@@ -919,7 +919,7 @@ void CNavSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 		static const vector4 ColorPathCorner(1.f, 0.9f, 0.f, 1.f);
 		static const unsigned int ColorPoly = duRGBA(255, 196, 0, 64);
 
-		CNavMeshDebugDraw DD(DebugDraw);
+		Debug::CNavMeshDebugDraw DD(DebugDraw);
 		for (int i = 0; i < Corridor.getPathCount(); ++i)
 			duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Corridor.getPath()[i], ColorPoly);
 

@@ -1,21 +1,21 @@
 #include "NavMeshDebugDraw.h"
 #include <Debug/DebugDraw.h>
 
-namespace AI
+namespace Debug
 {
 
 void CNavMeshDebugDraw::begin(duDebugDrawPrimitives prim, float size)
 {
 	switch (prim)
 	{
-		case DU_DRAW_POINTS:	PrimType = Render::Prim_PointList; break;
-		case DU_DRAW_LINES:		PrimType = Render::Prim_LineList; break;
-		case DU_DRAW_TRIS:		PrimType = Render::Prim_TriList; break;
-		case DU_DRAW_QUADS:		Sys::Error("CNavMeshDebugDraw::begin -> DU_DRAW_QUADS is not supported for now!"); //N2PrimType = nGfxServer2::TriangleList;
-		default: Sys::Error("CNavMeshDebugDraw::begin -> unknown primitive type");
+		case DU_DRAW_POINTS: _PrimType = Render::Prim_PointList; break;
+		case DU_DRAW_LINES:  _PrimType = Render::Prim_LineList; break;
+		case DU_DRAW_TRIS:   _PrimType = Render::Prim_TriList; break;
+		case DU_DRAW_QUADS:  Sys::Error("CNavMeshDebugDraw::begin() > DU_DRAW_QUADS is not supported for now!"); //Render::Prim_TriList;
+		default: Sys::Error("CNavMeshDebugDraw::begin() > unknown primitive type");
 	}
 
-	Size = size;
+	_Size = size;
 }
 //---------------------------------------------------------------------
 
@@ -30,9 +30,9 @@ void CNavMeshDebugDraw::vertex(const float x, const float y, const float z, unsi
 
 	vector3 Pos(x, y, z);
 
-	switch (PrimType)
+	switch (_PrimType)
 	{
-		case Render::Prim_PointList: _DebugDraw.DrawPoint(Pos, Size, VColor); break;
+		case Render::Prim_PointList: _DebugDraw.DrawPoint(Pos, _Size, VColor); break;
 		case Render::Prim_LineList:  _DebugDraw.AddLineVertex(Pos, VColor); break;
 		case Render::Prim_TriList:   _DebugDraw.AddTriangleVertex(Pos, VColor); break;
 		default: break;
