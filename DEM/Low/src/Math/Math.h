@@ -111,7 +111,7 @@ inline float n_fabs(float val)
 //---------------------------------------------------------------------
 */
 
-inline bool n_fequal(float f0, float f1, float tol)
+inline bool n_fequal(float f0, float f1, float tol = 0.00001f)
 {
 	return n_fabs(f0 - f1) < tol;
 }

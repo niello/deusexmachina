@@ -4,21 +4,33 @@
 
 // Debug draw interface implementation for Detour navigation meshes
 
+class dtNavMeshQuery;
+
+namespace DEM::AI
+{
+	class CNavMesh;
+}
+
 namespace Debug
 {
 class CDebugDraw;
 
-class CNavMeshDebugDraw: public duDebugDraw
+class CNavMeshDebugDraw : public duDebugDraw
 {
 protected:
 
 	Debug::CDebugDraw&         _DebugDraw;
+	dtNavMeshQuery*            _pQuery = nullptr;
 	Render::EPrimitiveTopology _PrimType;
 	float                      _Size;
 
 public:
 
 	CNavMeshDebugDraw(Debug::CDebugDraw& DebugDraw) : _DebugDraw(DebugDraw) {}
+	virtual ~CNavMeshDebugDraw() override;
+
+	void DrawNavMesh(const DEM::AI::CNavMesh& NavMesh);
+	void DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, const vector3& Pos, uint32_t Color);
 
 	virtual void depthMask(bool state) override {}
 	virtual void texture(bool state) override { /*We ignore textures*/ }

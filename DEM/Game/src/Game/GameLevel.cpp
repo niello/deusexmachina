@@ -96,7 +96,17 @@ PGameLevel CGameLevel::LoadFromDesc(CStrID ID, const Data::CParams& In, Resource
 
 			if (NavDesc->Get(CStrID("Preload"), false))
 				Rsrc->ValidateObject<DEM::AI::CNavMesh>();
+
+			Level->_NavData.push_back({ AgentRadius, AgentHeight, std::move(Rsrc) });
 		}
+
+		std::sort(Level->_NavData.begin(), Level->_NavData.end(),
+			[](const CNavMeshRecord& a, const CNavMeshRecord& b)
+		{
+			// Sort by radius, then by height ascending
+			return a.AgentRadius < b.AgentRadius ||
+				(a.AgentRadius == b.AgentRadius && a.AgentHeight < b.AgentHeight);
+		});
 	}
 
 	return std::move(Level);
@@ -135,6 +145,19 @@ Physics::CPhysicsObject* CGameLevel::GetFirstPickIntersection(const line3& Ray, 
 	Physics::PPhysicsObject PhysObj;
 	_PhysicsLevel->GetClosestRayContact(Ray.Start, Ray.End(), Group, Mask, pOutPoint3D, &PhysObj);
 	return PhysObj.Get();
+}
+//---------------------------------------------------------------------
+
+DEM::AI::CNavMesh* CGameLevel::GetNavMesh(float AgentRadius, float AgentHeight) const
+{
+	// Navigation meshes are sorted by agent radius, then by height, so the first
+	// matching navmesh is the best one as it allows the most possible movement.
+	auto It = _NavData.begin();
+	for (; It != _NavData.end(); ++It)
+		if (It->AgentRadius <= AgentRadius && It->AgentHeight <= AgentHeight)
+			break;
+
+	return (It != _NavData.end()) ? It->NavMeshResource->ValidateObject<DEM::AI::CNavMesh>() : nullptr;
 }
 //---------------------------------------------------------------------
 

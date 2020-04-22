@@ -41,6 +41,8 @@ public:
 	float             GetAgentRadius() const { return _AgentRadius; }
 	float             GetAgentHeight() const { return _AgentHeight; }
 	const CNavRegion* FindRegion(CStrID ID) const;
+
+	dtNavMesh*        GetDetourNavMesh() const { return _pNavMesh; }
 };
 
 }

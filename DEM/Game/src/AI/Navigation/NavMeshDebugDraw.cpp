@@ -1,8 +1,45 @@
 #include "NavMeshDebugDraw.h"
+#include <AI/Navigation/NavMesh.h>
 #include <Debug/DebugDraw.h>
+#include <DetourDebugDraw.h>
 
 namespace Debug
 {
+
+CNavMeshDebugDraw::~CNavMeshDebugDraw()
+{
+	if (_pQuery) dtFreeNavMeshQuery(_pQuery);
+}
+//---------------------------------------------------------------------
+
+void CNavMeshDebugDraw::DrawNavMesh(const DEM::AI::CNavMesh& NavMesh)
+{
+	if (auto pDtNavMesh = NavMesh.GetDetourNavMesh())
+	{
+		duDebugDrawNavMesh(this, *pDtNavMesh, DU_DRAWNAVMESH_OFFMESHCONS);
+		//duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
+	}
+}
+//---------------------------------------------------------------------
+
+void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, const vector3& Pos, uint32_t Color)
+{
+	auto pDtNavMesh = NavMesh.GetDetourNavMesh();
+	if (!pDtNavMesh) return;
+
+	const float Extents[3] = { 0.f, 1.f, 0.f };
+	dtPolyRef Ref;
+	float Nearest[3];
+	dtQueryFilter Filter;
+
+	if (!_pQuery) _pQuery = dtAllocNavMeshQuery();
+	if (dtStatusFailed(_pQuery->init(pDtNavMesh, 16))) return;
+	if (dtStatusFailed(_pQuery->findNearestPoly(Pos.v, Extents, &Filter, &Ref, Nearest))) return;
+
+	if (n_fequal(Pos.x, Nearest[0]) && n_fequal(Pos.z, Nearest[2]))
+		duDebugDrawNavMeshPoly(this, *pDtNavMesh, Ref, Color);
+}
+//---------------------------------------------------------------------
 
 void CNavMeshDebugDraw::begin(duDebugDrawPrimitives prim, float size)
 {

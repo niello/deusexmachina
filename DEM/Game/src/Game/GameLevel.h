@@ -27,9 +27,15 @@ namespace AI
 	typedef Ptr<class CAILevel> PAILevel;
 }
 
+namespace DEM::AI
+{
+	class CNavMesh;
+}
+
 namespace Resources
 {
 	class CResourceManager;
+	typedef Ptr<class CResource> PResource;
 }
 
 namespace Data
@@ -45,12 +51,21 @@ class CGameLevel : public Data::CRefCounted
 {
 protected:
 
-	CStrID                 _ID;
+	struct CNavMeshRecord
+	{
+		float                AgentRadius;
+		float                AgentHeight;
+		Resources::PResource NavMeshResource;
+	};
 
-	Scene::PSceneNode      _SceneRoot;
-	Scene::CSPS            _SPS;
-	Physics::PPhysicsLevel _PhysicsLevel;
-	AI::PAILevel           _AILevel;
+	CStrID                      _ID;
+
+	Scene::PSceneNode           _SceneRoot;
+	Scene::CSPS                 _SPS;
+	Physics::PPhysicsLevel      _PhysicsLevel;
+	::AI::PAILevel              _AILevel;
+
+	std::vector<CNavMeshRecord> _NavData; // Sorted by R & H
 
 public:
 
@@ -69,7 +84,8 @@ public:
 	Scene::CSceneNode&       GetSceneRoot() { return *_SceneRoot.Get(); }
 	Scene::CSPS&             GetSPS() { return _SPS; }
 	Physics::CPhysicsLevel*  GetPhysics() const { return _PhysicsLevel.Get(); }
-	AI::CAILevel*            GetAI() const { return _AILevel.Get(); }
+	::AI::CAILevel*          GetAI() const { return _AILevel.Get(); }
+	DEM::AI::CNavMesh*       GetNavMesh(float AgentRadius, float AgentHeight) const;
 };
 
 }
