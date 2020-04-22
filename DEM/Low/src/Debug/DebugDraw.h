@@ -1,9 +1,10 @@
 #pragma once
 #include <Render/RenderFwd.h>
-#include <Math/AABB.h>
 
 // Utility class for drawing common debug shapes. It buffers all shapes and text requested and
 // then can pass them to a renderers. DebugDraw doesn't render anything itself.
+
+class CAABB;
 
 namespace Frame
 {
@@ -84,6 +85,8 @@ protected:
 	std::vector<CDDVertex>		Lines;
 	std::vector<CDDVertex>		Tris;
 	//std::vector<CDDText>		Texts;
+	UPTR                        LineVertexCount = 0;
+	UPTR                        TriVertexCount = 0;
 
 public:
 
@@ -123,13 +126,17 @@ inline void CDebugDraw::DrawPoint(const vector3& Pos, float Size, U32 Color)
 
 inline void CDebugDraw::AddLineVertex(const vector3& Pos, U32 Color)
 {
-	Lines.push_back({ Pos, Color });
+	if (LineVertexCount >= Lines.size())
+		Lines.resize(LineVertexCount + 1000);
+	Lines[LineVertexCount++] = { Pos, Color };
 }
 //---------------------------------------------------------------------
 
 inline void CDebugDraw::AddTriangleVertex(const vector3& Pos, U32 Color)
 {
-	Tris.push_back({ Pos, Color });
+	if (TriVertexCount >= Tris.size())
+		Tris.resize(TriVertexCount + 1000);
+	Tris[TriVertexCount++] = { Pos, Color };
 }
 //---------------------------------------------------------------------
 

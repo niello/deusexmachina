@@ -126,7 +126,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 			ShapeInsts[i].clear();
 	}
 
-	if (!Lines.empty() || !Tris.empty())
+	if (LineVertexCount || TriVertexCount)
 	{
 		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPrimitive")))
 		{
@@ -139,61 +139,55 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 
 			const auto& Passes = pTech->GetPasses();
 
-			if (!Tris.empty())
+			constexpr auto MAX_TRI_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 3) * 3;
+			static_assert(MAX_TRI_VERTICES_PER_DIP > 2);
+			for (UPTR Offset = 0; Offset < TriVertexCount; Offset += MAX_TRI_VERTICES_PER_DIP)
 			{
-				constexpr auto MAX_TRI_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 3) * 3;
-				static_assert(MAX_TRI_VERTICES_PER_DIP > 2);
-				for (UPTR Offset = 0; Offset < Tris.size(); Offset += MAX_TRI_VERTICES_PER_DIP)
+				const UPTR BatchSize = std::min(MAX_TRI_VERTICES_PER_DIP, TriVertexCount - Offset);
+
+				void* pInstData;
+				if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
 				{
-					const UPTR BatchSize = std::min(MAX_TRI_VERTICES_PER_DIP, Tris.size() - Offset);
+					::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
+					return;
+				}
 
-					void* pInstData;
-					if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
-					{
-						::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
-						return;
-					}
+				memcpy(pInstData, Tris.data() + Offset, BatchSize * sizeof(CDDVertex));
+				GPU.UnmapResource(*_PrimitiveBuffer);
 
-					memcpy(pInstData, Tris.data() + Offset, BatchSize * sizeof(CDDVertex));
-					GPU.UnmapResource(*_PrimitiveBuffer);
-
-					for (const auto& Pass : Passes)
-					{
-						GPU.SetRenderState(Pass);
-						GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_TriList, {} });
-					}
+				for (const auto& Pass : Passes)
+				{
+					GPU.SetRenderState(Pass);
+					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_TriList, {} });
 				}
 			}
 
-			if (!Lines.empty())
+			constexpr auto MAX_LINE_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 2) * 2;
+			static_assert(MAX_LINE_VERTICES_PER_DIP > 1);
+			for (UPTR Offset = 0; Offset < LineVertexCount; Offset += MAX_LINE_VERTICES_PER_DIP)
 			{
-				constexpr auto MAX_LINE_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 2) * 2;
-				static_assert(MAX_LINE_VERTICES_PER_DIP > 1);
-				for (UPTR Offset = 0; Offset < Lines.size(); Offset += MAX_LINE_VERTICES_PER_DIP)
+				const UPTR BatchSize = std::min(MAX_LINE_VERTICES_PER_DIP, LineVertexCount - Offset);
+
+				void* pInstData;
+				if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
 				{
-					const UPTR BatchSize = std::min(MAX_LINE_VERTICES_PER_DIP, Lines.size() - Offset);
+					::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
+					return;
+				}
 
-					void* pInstData;
-					if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
-					{
-						::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
-						return;
-					}
+				memcpy(pInstData, Lines.data() + Offset, BatchSize * sizeof(CDDVertex));
+				GPU.UnmapResource(*_PrimitiveBuffer);
 
-					memcpy(pInstData, Lines.data() + Offset, BatchSize * sizeof(CDDVertex));
-					GPU.UnmapResource(*_PrimitiveBuffer);
-
-					for (const auto& Pass : Passes)
-					{
-						GPU.SetRenderState(Pass);
-						GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_LineList, {} });
-					}
+				for (const auto& Pass : Passes)
+				{
+					GPU.SetRenderState(Pass);
+					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_LineList, {} });
 				}
 			}
 		}
 
-		Tris.clear();
-		Lines.clear();
+		LineVertexCount = 0;
+		TriVertexCount = 0;
 	}
 
 	if (!Points.empty())
@@ -285,14 +279,14 @@ void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color)
 
 void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color)
 {
-	vector3 mmm = Box.GetCorner(0);
-	vector3 mMm = Box.GetCorner(1);
-	vector3 MMm = Box.GetCorner(2);
-	vector3 Mmm = Box.GetCorner(3);
-	vector3 MMM = Box.GetCorner(4);
-	vector3 mMM = Box.GetCorner(5);
-	vector3 mmM = Box.GetCorner(6);
-	vector3 MmM = Box.GetCorner(7);
+	const vector3 mmm = Box.GetCorner(0);
+	const vector3 mMm = Box.GetCorner(1);
+	const vector3 MMm = Box.GetCorner(2);
+	const vector3 Mmm = Box.GetCorner(3);
+	const vector3 MMM = Box.GetCorner(4);
+	const vector3 mMM = Box.GetCorner(5);
+	const vector3 mmM = Box.GetCorner(6);
+	const vector3 MmM = Box.GetCorner(7);
 	DrawLine(mmm, Mmm, Color);
 	DrawLine(mmm, mMm, Color);
 	DrawLine(mmm, mmM, Color);
