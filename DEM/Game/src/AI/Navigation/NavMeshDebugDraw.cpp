@@ -27,13 +27,13 @@ void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, cons
 	auto pDtNavMesh = NavMesh.GetDetourNavMesh();
 	if (!pDtNavMesh) return;
 
-	const float Extents[3] = { 0.f, 1.f, 0.f };
+	const float Extents[3] = { 0.f, 10.f, 0.f };
 	dtPolyRef Ref;
 	float Nearest[3];
 	dtQueryFilter Filter;
 
 	if (!_pQuery) _pQuery = dtAllocNavMeshQuery();
-	if (dtStatusFailed(_pQuery->init(pDtNavMesh, 16))) return;
+	if (_pQuery->getAttachedNavMesh() != pDtNavMesh && dtStatusFailed(_pQuery->init(pDtNavMesh, 16))) return;
 	if (dtStatusFailed(_pQuery->findNearestPoly(Pos.v, Extents, &Filter, &Ref, Nearest))) return;
 
 	if (n_fequal(Pos.x, Nearest[0]) && n_fequal(Pos.z, Nearest[2]))

@@ -198,6 +198,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 
 	if (!Points.empty())
 	{
+		/*
 		// TODO: support size!
 		NOT_IMPLEMENTED;
 
@@ -211,10 +212,9 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
 
 			static_assert(MAX_PRIMITIVE_VERTICES_PER_DIP > 0);
-			/*
 			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.GetCount(), Points.Begin(), sizeof(CDDVertex));
-			*/
 		}
+		*/
 
 		Points.clear();
 	}
