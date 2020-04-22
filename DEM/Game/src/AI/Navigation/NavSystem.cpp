@@ -915,9 +915,9 @@ void CNavSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 	// Path polys, path lines with corners as points
 	if (pActor->NavState == AINav_Planning || pActor->NavState == AINav_Following)
 	{
-		static const vector4 ColorPathLine(1.f, 0.75f, 0.5f, 1.f);
-		static const vector4 ColorPathCorner(1.f, 0.9f, 0.f, 1.f);
-		static const unsigned int ColorPoly = duRGBA(255, 196, 0, 64);
+		constexpr auto ColorPathLine = Render::ColorRGBANorm(1.f, 0.75f, 0.5f, 1.f);
+		constexpr auto ColorPathCorner = Render::ColorRGBANorm(1.f, 0.9f, 0.f, 1.f);
+		constexpr auto ColorPoly = Render::ColorRGBA(255, 196, 0, 64);
 
 		Debug::CNavMeshDebugDraw DD(DebugDraw);
 		for (int i = 0; i < Corridor.getPathCount(); ++i)

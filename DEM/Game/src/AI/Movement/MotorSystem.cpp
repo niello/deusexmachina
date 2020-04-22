@@ -382,14 +382,11 @@ float CMotorSystem::GetMaxSpeed() const
 
 void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 {
-	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
-	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
-
 	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
 		DebugDraw.DrawLine(
 			DestPoint,
 			vector3(DestPoint.x, DestPoint.y + 1.f, DestPoint.z),
-			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
+			pActor->MvmtState == AIMvmt_DestSet ? Render::Color_White : Render::Color_Red);
  
 	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
 	for (; It; ++It)
@@ -397,12 +394,9 @@ void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 		CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
 		matrix44 Tfm;
 		Tfm.set_translation(pObstacle->Position);
-		vector4 Color(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
-		if (pObstacle == pLastClosestObstacle)
-		{
-			Color.x = 0.4f;
-			Color.z = 0.9f;
-		}
+		const auto Color = (pObstacle == pLastClosestObstacle) ?
+			Render::ColorRGBANorm(0.4f, 0.f, 0.9f, 0.5f * pObstacle->Confidence) :
+			Render::ColorRGBANorm(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
 		DebugDraw.DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
 	}
 

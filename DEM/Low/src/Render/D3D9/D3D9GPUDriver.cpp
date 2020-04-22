@@ -2155,6 +2155,7 @@ PVertexLayout CD3D9GPUDriver::CreateVertexLayout(const CVertexComponent* pCompon
 				(Component.OffsetInVertex == DEM_VERTEX_COMPONENT_OFFSET_DEFAULT) ? (WORD)StreamOffset[StreamIndex] : (WORD)Component.OffsetInVertex;
 			StreamOffset[StreamIndex] = DeclElement.Offset + Component.GetSize();
 
+			// NB: D3DCOLOR is 31->ARGB->0, but we use 31->ABGR->0, so D3DDECLTYPE_D3DCOLOR is not used
 			switch (Component.Format)
 			{
 				case VCFmt_Float32_1:		DeclElement.Type = D3DDECLTYPE_FLOAT1; break;

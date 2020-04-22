@@ -383,4 +383,25 @@ inline UPTR GetMipLevelCount(UPTR Width, UPTR Height, UPTR BlockSize = 1)
 }
 //---------------------------------------------------------------------
 
+constexpr inline U32 ColorRGBA(U8 r, U8 g, U8 b, U8 a = 255)
+{
+	return ((U32)r) | ((U32)g << 8) | ((U32)b << 16) | ((U32)a << 24);
+}
+//---------------------------------------------------------------------
+
+constexpr inline U32 ColorRGBANorm(float r, float g, float b, float a = 1.f)
+{
+	return ColorRGBA(
+		static_cast<uint8_t>(r * 255.0f + 0.5f),
+		static_cast<uint8_t>(g * 255.0f + 0.5f),
+		static_cast<uint8_t>(b * 255.0f + 0.5f),
+		static_cast<uint8_t>(a * 255.0f + 0.5f));
+}
+//---------------------------------------------------------------------
+
+constexpr inline U32 Color_White = ColorRGBA(255, 255, 255, 255);
+constexpr inline U32 Color_Red = ColorRGBA(255, 0, 0, 255);
+constexpr inline U32 Color_Green = ColorRGBA(0, 255, 0, 255);
+constexpr inline U32 Color_Blue = ColorRGBA(0, 0, 255, 255);
+
 }

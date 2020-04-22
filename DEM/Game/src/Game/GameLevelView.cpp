@@ -37,7 +37,7 @@ void CGameLevelView::Update(float dt)
 				if (Node.GetParent())
 				{
 					if (Node.GetParent()->GetParent())
-						pDebugDraw->DrawLine(Node.GetParent()->GetWorldMatrix().Translation(), Node.GetWorldMatrix().Translation(), vector4::White);
+						pDebugDraw->DrawLine(Node.GetParent()->GetWorldMatrix().Translation(), Node.GetWorldMatrix().Translation(), Render::Color_White);
 					else
 						pDebugDraw->DrawCoordAxes(Node.GetWorldMatrix());
 				}

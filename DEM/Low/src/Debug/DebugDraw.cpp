@@ -11,8 +11,8 @@
 
 namespace Debug
 {
-constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 256;
-constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 4096;
+constexpr UPTR MAX_SHAPE_INSTANCES_PER_DIP = 1024;
+constexpr UPTR MAX_PRIMITIVE_VERTICES_PER_DIP = 65536;
 
 CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 	: _GraphicsMgr(&GraphicsMgr)
@@ -34,7 +34,7 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 		{ Render::VCSem_TexCoord, nullptr, 5, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
 		{ Render::VCSem_TexCoord, nullptr, 6, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
 		{ Render::VCSem_TexCoord, nullptr, 7, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true },
-		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true } };
+		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_UInt8_4_Norm, 1, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, true } };
 
 	_ShapeVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(ShapeComponents, sizeof_array(ShapeComponents));
 
@@ -45,7 +45,7 @@ CDebugDraw::CDebugDraw(Frame::CGraphicsResourceManager& GraphicsMgr)
 	// Position with size in W, color
 	Render::CVertexComponent PrimitiveComponents[] = {
 		{ Render::VCSem_Position, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false },
-		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_Float32_4, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false } };
+		{ Render::VCSem_Color, nullptr, 0, Render::VCFmt_UInt8_4_Norm, 0, DEM_VERTEX_COMPONENT_OFFSET_DEFAULT, false } };
 
 	auto PrimitiveVertexLayout = GraphicsMgr.GetGPU()->CreateVertexLayout(PrimitiveComponents, sizeof_array(PrimitiveComponents));
 	_PrimitiveBuffer = GraphicsMgr.GetGPU()->CreateVertexBuffer(*PrimitiveVertexLayout, MAX_PRIMITIVE_VERTICES_PER_DIP, Render::Access_CPU_Write | Render::Access_GPU_Read);
@@ -223,7 +223,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, const vector4& Color)
+void CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const vector3& P3, U32 Color)
 {
 	AddTriangleVertex(P1, Color);
 	AddTriangleVertex(P2, Color);
@@ -231,13 +231,13 @@ void CDebugDraw::DrawTriangle(const vector3& P1, const vector3& P2, const vector
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawBox(const matrix44& Tfm, const vector4& Color)
+void CDebugDraw::DrawBox(const matrix44& Tfm, U32 Color)
 {
 	ShapeInsts[Box].push_back({ Tfm, Color });
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawSphere(const vector3& Pos, float R, const vector4& Color)
+void CDebugDraw::DrawSphere(const vector3& Pos, float R, U32 Color)
 {
 	ShapeInsts[Sphere].push_back(
 	{
@@ -252,7 +252,7 @@ void CDebugDraw::DrawSphere(const vector3& Pos, float R, const vector4& Color)
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, const vector4& Color)
+void CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, U32 Color)
 {
 	ShapeInsts[Cylinder].push_back(
 	{
@@ -268,7 +268,7 @@ void CDebugDraw::DrawCylinder(const matrix44& Tfm, float R, float Length, const 
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, const vector4& Color)
+void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, U32 Color)
 {
 	DrawSphere(Tfm * vector3(0.0f, Length * -0.5f, 0.0f), R, Color);
 	DrawSphere(Tfm * vector3(0.0f, Length * 0.5f, 0.0f), R, Color);
@@ -276,14 +276,14 @@ void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, const v
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, const vector4& Color)
+void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color)
 {
 	AddLineVertex(P1, Color);
 	AddLineVertex(P2, Color);
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawBoxWireframe(const CAABB& Box, const vector4& Color)
+void CDebugDraw::DrawBoxWireframe(const CAABB& Box, U32 Color)
 {
 	vector3 mmm = Box.GetCorner(0);
 	vector3 mMm = Box.GetCorner(1);
@@ -308,7 +308,7 @@ void CDebugDraw::DrawBoxWireframe(const CAABB& Box, const vector4& Color)
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCount, const vector4& Color)
+void CDebugDraw::DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCount, U32 Color)
 {
 	const float StepInRadians = (2.f * PI) / static_cast<float>(SegmentCount);
 
@@ -328,14 +328,14 @@ void CDebugDraw::DrawCircleXZ(const vector3& Pos, float Radius, float SegmentCou
 
 void CDebugDraw::DrawCoordAxes(const matrix44& Tfm, bool DrawX, bool DrawY, bool DrawZ)
 {
-	if (DrawX) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisX(), vector4::Red);
-	if (DrawY) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisY(), vector4::Green);
-	if (DrawZ) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisZ(), vector4::Blue);
+	if (DrawX) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisX(), Render::Color_Red);
+	if (DrawY) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisY(), Render::Color_Green);
+	if (DrawZ) DrawLine(Tfm.Translation(), Tfm.Translation() + Tfm.AxisZ(), Render::Color_Blue);
 }
 //---------------------------------------------------------------------
 
 /*
-bool CDebugDraw::DrawText(const char* pText, float Left, float Top, const vector4& Color, float Width, bool Wrap, EHAlign HAlign, EVAlign VAlign)
+bool CDebugDraw::DrawText(const char* pText, float Left, float Top, U32 Color, float Width, bool Wrap, EHAlign HAlign, EVAlign VAlign)
 {
 	CDDText* pT = Texts.Reserve(1);
 	pT->Text = pText;
