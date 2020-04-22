@@ -335,6 +335,10 @@ public:
 		// Update poly flags from areas.
 		for (int i = 0; i < pmesh->npolys; ++i)
 		{
+			//!!!DBG TMP! Zero flags pass no filter in detour, so fill with any default for now.
+			if (pmesh->areas[i] == RC_WALKABLE_AREA)
+				pmesh->flags[i] = 1;
+
 			/*
 			if (pmesh->areas[i] == RC_WALKABLE_AREA)
 				pmesh->areas[i] = SAMPLE_POLYAREA_GROUND;

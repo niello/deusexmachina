@@ -27,7 +27,7 @@ void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, cons
 	auto pDtNavMesh = NavMesh.GetDetourNavMesh();
 	if (!pDtNavMesh) return;
 
-	const float Extents[3] = { 0.f, 10.f, 0.f };
+	const float Extents[3] = { 0.f, NavMesh.GetAgentHeight() * 0.5f, 0.f };
 	dtPolyRef Ref;
 	float Nearest[3];
 	dtQueryFilter Filter;

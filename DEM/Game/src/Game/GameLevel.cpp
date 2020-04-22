@@ -154,7 +154,7 @@ DEM::AI::CNavMesh* CGameLevel::GetNavMesh(float AgentRadius, float AgentHeight) 
 	// matching navmesh is the best one as it allows the most possible movement.
 	auto It = _NavData.begin();
 	for (; It != _NavData.end(); ++It)
-		if (It->AgentRadius <= AgentRadius && It->AgentHeight <= AgentHeight)
+		if (AgentRadius <= It->AgentRadius && AgentHeight <= It->AgentHeight)
 			break;
 
 	return (It != _NavData.end()) ? It->NavMeshResource->ValidateObject<DEM::AI::CNavMesh>() : nullptr;
