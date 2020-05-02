@@ -226,19 +226,19 @@ inline float RSqrt(const float Value)
 // Solves ax^2 + bx + c = 0 equation. Returns a number of real roots and optionally root values.
 inline UPTR SolveQuadraticEquation(float a, float b, float c, float* pOutX1 = nullptr, float* pOutX2 = nullptr)
 {
-	float D = b * b - 4.f * a * c;
+	const float D = b * b - 4.f * a * c;
 
 	if (D < 0.f) return 0;
 
-	if (D == 0.f)
+	if (n_fequal(D, 0.f))
 	{
 		if (pOutX1) *pOutX1 = -b / (2.f * a);
 		if (pOutX2) *pOutX2 = *pOutX1;
 		return 1;
 	}
 
-	float SqrtD = n_sqrt(D);
-	float InvDenom = 0.5f / a;
+	const float SqrtD = n_sqrt(D);
+	const float InvDenom = 0.5f / a;
 	if (pOutX1) *pOutX1 = (-b - SqrtD) * InvDenom;
 	if (pOutX2) *pOutX2 = (SqrtD - b) * InvDenom;
 	return 2;

@@ -2,7 +2,6 @@
 #include <StdDEM.h>
 #include <AI/ActorFwd.h>
 #include <AI/Perception/Stimulus.h>
-#include <AI/Navigation/NavData.h>
 #include <AI/Navigation/PathRequestQueue.h>
 
 // AI level is an abstract space (i.e. some of location views, like GfxLevel & PhysicsLevel),
@@ -27,7 +26,6 @@ protected:
 
 	CAABB					Box;
 	CStimulusQT				StimulusQT;		// Quadtree containing stimuli and other AI hints
-	CDict<float, CNavData>	NavData;		// Mapped to maximum radius of agent
 
 	void			QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor, CSensor* pSensor, EClipStatus EClipStatus = Clipped);
 
@@ -37,13 +35,6 @@ public:
 
 	bool			Init(const CAABB& LevelBox, U8 QuadTreeDepth);
 	void			RenderDebug(Debug::CDebugDraw& DebugDraw);
-
-	bool			LoadNavMesh(const char* pFileName);
-	void			UnloadNavMesh();
-	CNavData*		GetNavData(float ActorRadius);
-	dtNavMesh*		GetNavMesh(float ActorRadius);
-	dtNavMeshQuery*	GetSyncNavQuery(float ActorRadius);
-	bool			GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue);
 
 	bool			CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float ActorRadius = 0.f);
 	void			SwitchNavRegionFlags(CStrID ID, bool Set, U16 Flags, float ActorRadius = 0.f);
@@ -66,20 +57,6 @@ typedef Ptr<CAILevel> PAILevel;
 inline void CAILevel::UpdateActorSense(CActor* pActor, CSensor* pSensor)
 {
 	QTNodeUpdateActorsSense(StimulusQT.GetRootNode(), pActor, pSensor);
-}
-//---------------------------------------------------------------------
-
-inline dtNavMesh* CAILevel::GetNavMesh(float ActorRadius)
-{
-	CNavData* pNav = GetNavData(ActorRadius);
-	return pNav ? pNav->pNavMesh : nullptr;
-}
-//---------------------------------------------------------------------
-
-inline dtNavMeshQuery* CAILevel::GetSyncNavQuery(float ActorRadius)
-{
-	CNavData* pNav = GetNavData(ActorRadius);
-	return pNav ? pNav->pNavMeshQuery[0] : nullptr;
 }
 //---------------------------------------------------------------------
 

@@ -13,6 +13,7 @@
 
 namespace AI
 {
+constexpr int MAX_NAV_PATH = 512;
 
 CNavSystem::CNavSystem(CActor* Actor):
 	pActor(Actor),
@@ -79,7 +80,7 @@ void CNavSystem::SetupState()
 	//TopologyOptTime = 0.f;
 	OffMeshRef = 0;
 	TraversingOffMesh = false;
-	pNavQuery = pActor->GetEntity()->GetLevel()->GetAI()->GetSyncNavQuery(pActor->Radius);
+	//pNavQuery = pActor->GetEntity()->GetLevel()->GetAI()->GetSyncNavQuery(pActor->Radius);
 
 	ResetPositionPoly(true);
 	if (!pActor->IsNavSystemIdle()) ResetDestinationPoly();
@@ -248,6 +249,8 @@ void CNavSystem::Update(float FrameTime)
 	{
 		if (PathRequestID == DT_PATHQ_INVALID)
 		{
+			NOT_IMPLEMENTED;
+			/*
 			dtNavMeshQuery* pAsyncQuery;
 			if (pActor->GetEntity()->GetLevel()->GetAI()->GetAsyncNavQuery(pActor->Radius, pAsyncQuery, pProcessingQueue))
 			{
@@ -255,6 +258,7 @@ void CNavSystem::Update(float FrameTime)
 				PathRequestID = pProcessingQueue->Request(Corridor.getLastPoly(), DestRef, Corridor.getTarget(),
 									DestPoint.v, pAsyncQuery, pNavFilter);
 			}
+			*/
 		}
 		else
 		{
@@ -285,6 +289,7 @@ void CNavSystem::Update(float FrameTime)
 						if (PathSize > MAX_NAV_PATH - OldPathSize)
 							PathSize = MAX_NAV_PATH - OldPathSize;
 
+						// FIXME: maybe unnecessary copying!
 						memmove(Path + OldPathSize, Path, sizeof(dtPolyRef) * PathSize);
 						memcpy(Path, Corridor.getPath(), sizeof(dtPolyRef) * OldPathSize);
 						PathSize += OldPathSize;
@@ -371,6 +376,7 @@ void CNavSystem::UpdatePosition()
 		if (pActor->IsNavSystemIdle()) ResetPositionPoly(false);
 		else
 		{
+			//???FIXME: instead of pos comparison use return value of movePosition?
 			Corridor.movePosition(pActor->Position.v, pNavQuery, pNavFilter);
 			if (pActor->Position.x == Corridor.getPos()[0] && pActor->Position.z == Corridor.getPos()[2])
 			{
@@ -789,6 +795,7 @@ bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, 
 // NB: this function can modify OutPos even if failed
 bool CNavSystem::GetNearestValidLocation(CStrID NavRegionID, float Range, vector3& OutPos) const
 {
+	/*
 	if (!pNavQuery) FAIL;
 
 	//???AILevel::GetNavRegion instead?
@@ -800,6 +807,9 @@ bool CNavSystem::GetNearestValidLocation(CStrID NavRegionID, float Range, vector
 	CNavRegion& Region = pNav->Regions.ValueAt(Idx);
 
 	return GetNearestValidLocation(Region.GetPtr(), Region.GetCount(), Range, OutPos);
+	*/
+	NOT_IMPLEMENTED;
+	FAIL;
 }
 //---------------------------------------------------------------------
 

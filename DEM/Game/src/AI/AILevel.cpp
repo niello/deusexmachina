@@ -15,7 +15,6 @@ namespace AI
 
 CAILevel::~CAILevel()
 {
-	UnloadNavMesh();
 }
 //---------------------------------------------------------------------
 
@@ -29,43 +28,7 @@ bool CAILevel::Init(const CAABB& LevelBox, U8 QuadTreeDepth)
 }
 //---------------------------------------------------------------------
 
-bool CAILevel::LoadNavMesh(const char* pFileName)
-{
-	IO::PStream File = IOSrv->CreateStream(pFileName, IO::SAM_READ);
-	if (!File || !File->IsOpened()) FAIL;
-
-	IO::CBinaryReader Reader(*File);
-	if (Reader.Read<int>() != '_NM_') FAIL;
-	int Version = Reader.Read<int>();
-
-	int NMCount = Reader.Read<int>();
-	for (int NMIdx = 0; NMIdx < NMCount; ++NMIdx)
-	{
-		float Radius = Reader.Read<float>();
-		CNavData& New = NavData.Add(Radius);
-		New.AgentRadius = Radius;
-		New.AgentHeight = Reader.Read<float>();
-		if (!New.LoadFromStream(*File))
-		{
-			UnloadNavMesh();
-			FAIL;
-		}
-	}
-
-	EventSrv->FireEvent(CStrID("OnNavMeshDataChanged"));
-	OK;
-}
-//---------------------------------------------------------------------
-
-void CAILevel::UnloadNavMesh()
-{
-	for (UPTR i = 0; i < NavData.GetCount(); ++i)
-		NavData.ValueAt(i).Clear();
-	NavData.Clear();
-	EventSrv->FireEvent(CStrID("OnNavMeshDataChanged"));
-}
-//---------------------------------------------------------------------
-
+/*
 // Checks if all polys or any poly (AllPolys = false) of a nav. region contains specified flags.
 // Now it is enough to contain ANY flag, not all.
 bool CAILevel::CheckNavRegionFlags(CStrID ID, U16 Flags, bool AllPolys, float ActorRadius)
@@ -143,31 +106,7 @@ void CAILevel::SetNavRegionArea(CStrID ID, U8 Area, float ActorRadius)
 		}
 }
 //---------------------------------------------------------------------
-
-CNavData* CAILevel::GetNavData(float ActorRadius)
-{
-	// NavData is assumed to be sorted by key (agent radius) in ascending order
-	for (UPTR i = 0; i < NavData.GetCount(); ++i)
-		if (ActorRadius <= NavData.KeyAt(i))
-			return &NavData.ValueAt(i);
-
-	return nullptr;
-}
-//---------------------------------------------------------------------
-
-bool CAILevel::GetAsyncNavQuery(float ActorRadius, dtNavMeshQuery*& pOutQuery, CPathRequestQueue*& pOutQueue)
-{
-	CNavData* pNav = GetNavData(ActorRadius);
-	if (!pNav) FAIL;
-
-	//!!!Select least loaded thread...
-	UPTR ThreadID = 0;
-
-	pOutQuery = pNav->pNavMeshQuery[ThreadID];
-	pOutQueue = AISrv->GetPathQueue(ThreadID);
-	OK;
-}
-//---------------------------------------------------------------------
+*/
 
 CStimulusNode CAILevel::RegisterStimulus(CStimulus* pStimulus)
 {
@@ -225,6 +164,8 @@ void CAILevel::QTNodeUpdateActorsSense(CStimulusQT::CNode* pNode, CActor* pActor
 
 void CAILevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 {
+	NOT_IMPLEMENTED;
+	/*
 	// Render the first NavMesh (later render navmesh used by the current actor)
 	dtNavMeshQuery* pNavQuery = GetSyncNavQuery(0.f);
 	if (pNavQuery)
@@ -234,8 +175,6 @@ void CAILevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 		duDebugDrawNavMeshPolysWithFlags(&DD, *pNavQuery->getAttachedNavMesh(), NAV_FLAG_LOCKED, duRGBA(240, 16, 16, 32));
 		//duDebugDrawNavMeshBVTree(&DD, *pNavQuery->getAttachedNavMesh());
 
-		NOT_IMPLEMENTED;
-		/*
 		if (GameSrv->HasMouseIntersection())
 		{
 			const float Extents[3] = { 0.f, 1.f, 0.f };
@@ -251,8 +190,8 @@ void CAILevel::RenderDebug(Debug::CDebugDraw& DebugDraw)
 				duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Ref, duRGBA(224, 224, 224, 32));
 			}
 		}
-		*/
 	}
+	*/
 }
 //---------------------------------------------------------------------
 

@@ -32,6 +32,7 @@ CAIServer::CAIServer()
 	pOAParams->adaptiveDepth = 5;
 	ObstacleAvoidanceParams.Add(CStrID::Empty, pOAParams);
 
+	/*
 	dtQueryFilter* pNavFilter = n_new(dtQueryFilter);
 	pNavFilter->setExcludeFlags(NAV_FLAG_LOCKED);
 	NavQueryFilters.Add(CStrID::Empty, pNavFilter);
@@ -40,6 +41,7 @@ CAIServer::CAIServer()
 
 	for (int i = 0; i < DEM_THREAD_COUNT; ++i)
 		n_assert(PathQueues[i].Init(MAX_NAV_PATH)); //???reinit on each level loading?
+	*/
 }
 //---------------------------------------------------------------------
 
