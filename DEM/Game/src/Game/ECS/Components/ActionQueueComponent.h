@@ -20,6 +20,13 @@ struct CActionQueueComponent
 	// execution status of stack top
 
 	// GetCurrentAction<TSupported[...]>()
+
+	CActionQueueComponent() = default;
+	CActionQueueComponent(const CActionQueueComponent& Other) {}
+	CActionQueueComponent& operator =(const CActionQueueComponent& Other)
+	{
+		return *this;
+	}
 };
 
 }

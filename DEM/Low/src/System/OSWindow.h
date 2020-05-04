@@ -1,5 +1,6 @@
 #pragma once
 #include <Events/EventDispatcher.h>
+#include <Core/Object.h>
 #include <Data/Regions.h>
 
 // Operating system window base

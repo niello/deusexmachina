@@ -4,14 +4,12 @@
 #include <string>
 
 // Provides type-safe introspection and serialization info for arbitrary objects
-// Inspired by https://github.com/eliasdaler/MetaStuff
 
-// TODO: CMetadata is a static object itself. Members, Name, IsRegistered etc are fields. return Meta<T>("name").Members(a, b, c, ...)
+// TODO: CMetadata is a static object itself. Members, Name, IsRegistered etc are fields. Register(){ return Meta<T>("name").Members(a, b, c, ...) }
 // TODO: CMember template deduction guides to replace multiple trivial Member(...) factory functions
 // TODO: nicer Extras. CMember(n, g, s, Ex<T>().Min().Max())? or CMemberBase + per-type overloads with embedded extras?
 // TODO: mark empty exras with [[no_unique_address]] in C++20?
 // TODO: avoid duplicating Member() functions for Code+Name and Name-only? One constructor? Code is optional.
-// TODO: better IsRegistered detection? Can register a type without members.
 // TODO: add free function accessors for non-class types? is really needed? CMetadata<int64_t> for example, but what for?
 // TODO: compile-time member access by name, like constexpr size_t CMetadata<T>::MemberName = MemberIndex or like this. Is possible?
 // TODO: implicit support for class hierarchies (or use composition)? Now each meta must register its members even if its base class meta already declared.
@@ -20,7 +18,7 @@ namespace DEM::Meta
 {
 
 // Specialize this for your types
-template<typename T> inline constexpr auto RegisterMembers() { return std::make_tuple(); }
+template<typename T> inline constexpr auto RegisterMembers() { return false; } // return std::tuple instead for your types
 template<typename T> inline constexpr auto RegisterClassName() { return "<no class name specified>"; } // typeid(T).name()
 
 // Specialize this to add more meta info to your types
@@ -36,7 +34,8 @@ private:
 
 public:
 
-	static inline constexpr bool IsRegistered = (std::tuple_size_v<decltype(_Members)> != 0);
+	// Template sets _Members to const bool false, specializations must use std::tuple
+	static inline constexpr bool IsRegistered = !std::is_same_v<decltype(_Members), const bool>;
 
 	static inline constexpr auto   GetClassName() { return RegisterClassName<T>(); }
 	template<size_t Index>
