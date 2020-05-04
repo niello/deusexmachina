@@ -106,8 +106,8 @@ private:
 #define RTTI_CLASS_IMPL(Class, ParentClass) \
 	::Core::CRTTI Class::RTTI(#Class, 0, nullptr, &ParentClass::RTTI, 0);
 
-#define RTTI_ROOT_CLASS_IMPL(Class, FourCC) \
-	::Core::CRTTI Class::RTTI(#Class, FourCC, nullptr, nullptr, 0);
+#define RTTI_ROOT_CLASS_IMPL(Class) \
+	::Core::CRTTI Class::RTTI(#Class, 0, nullptr, nullptr, 0);
 
 //	void* operator new(size_t size) { return RTTI.AllocInstanceMemory(); };
 //	void operator delete(void* p) { RTTI.FreeInstanceMemory(p); };

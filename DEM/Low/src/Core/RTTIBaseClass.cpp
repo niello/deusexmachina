@@ -2,5 +2,5 @@
 
 namespace Core
 {
-RTTI_ROOT_CLASS_IMPL(Core::CRTTIBaseClass, 'RTTI');
+RTTI_ROOT_CLASS_IMPL(Core::CRTTIBaseClass);
 }

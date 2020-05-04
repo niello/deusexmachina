@@ -1,5 +1,5 @@
 #pragma once
-#include <Core/Object.h>
+#include <Core/RTTIBaseClass.h>
 #include <Events/EventID.h>
 
 // Event base class, abstracting fast native events (CEventNative) and flexible parametrized events (CEvent)

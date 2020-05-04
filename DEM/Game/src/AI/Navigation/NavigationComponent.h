@@ -1,13 +1,32 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <Events/EventNative.h>
+#include <Math/Vector3.h>
+#include <DetourPathCorridor.h>
 
 // Navigation component allows an entity to plan path along navigation mesh
 
 namespace DEM::AI
 {
 
+class Navigate: public Events::CEventNative
+{
+	__DeclareNativeEventClass;
+
+public:
+
+	vector3 _Destination;
+
+	Navigate(const vector3& Destination)
+		: _Destination(Destination)
+	{}
+};
+
 struct CNavigationComponent
 {
+	//dtPathCorridor Corridor;
+	int x;
+
 	//???what is here, what is in request?
 
 	//???navmesh query - here or in request?
@@ -20,12 +39,12 @@ struct CNavigationComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<AI::CNavigationComponent>() { return "DEM::Game::CNavigationComponent"; }
-template<> inline constexpr auto RegisterMembers<AI::CNavigationComponent>()
+template<> inline constexpr auto RegisterClassName<DEM::AI::CNavigationComponent>() { return "DEM::AI::CNavigationComponent"; }
+template<> inline constexpr auto RegisterMembers<DEM::AI::CNavigationComponent>()
 {
 	return std::make_tuple
 	(
-		//Member(1, "ClipID", &AI::CNavigationComponent::ClipID, &AI::CNavigationComponent::ClipID),
+		//Member(1, "ClipID", &DEM::AI::CNavigationComponent::ClipID, &AI::CNavigationComponent::ClipID),
 	);
 }
 

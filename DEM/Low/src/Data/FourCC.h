@@ -1,7 +1,4 @@
 #pragma once
-#ifndef __DEM_L1_FOURCC_H__
-#define __DEM_L1_FOURCC_H__
-
 #include <System/System.h>
 
 // FourCC manipulation class
@@ -13,11 +10,11 @@ class CFourCC
 {
 public:
 
-	U32 Code;
+	U32 Code = 0;
 
-	CFourCC(): Code(0) {}
-	CFourCC(I32 IntCode): Code(IntCode) { }
-	CFourCC(U32 IntCode): Code(IntCode) { }
+	CFourCC() = default;
+	CFourCC(I32 IntCode): Code(IntCode) {}
+	CFourCC(U32 IntCode): Code(IntCode) {}
 	CFourCC(const char* pString) { FromString(pString); }
 
 	char		GetChar(U32 Idx) const { n_assert_dbg(Idx < 4); return (Code >> (Idx << 3)) & 0xff; } // Intel endianness
@@ -39,8 +36,7 @@ public:
 // Convert "ABCD" as compiler converts 'ABCD' character constant
 inline void CFourCC::FromString(const char* pString)
 {
-	n_assert_dbg(pString);
-	Code = pString[3] | (pString[2] << 8) | (pString[1] << 16) | (pString[0] << 24);
+	Code = pString ? (pString[3] | (pString[2] << 8) | (pString[1] << 16) | (pString[0] << 24)) : 0;
 }
 //---------------------------------------------------------------------
 
@@ -54,7 +50,7 @@ inline void CFourCC::ToString(char* Out) const
 }
 //---------------------------------------------------------------------
 
-// Thread-unsafe
+// FIXME: thread-unsafe due to static
 inline const char* CFourCC::ToString() const
 {
 	static char GlobalFOURCC[5];
@@ -64,5 +60,3 @@ inline const char* CFourCC::ToString() const
 //---------------------------------------------------------------------
 
 }
-
-#endif

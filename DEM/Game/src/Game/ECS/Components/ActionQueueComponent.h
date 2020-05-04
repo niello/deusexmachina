@@ -1,0 +1,38 @@
+#pragma once
+#include <Events/EventBase.h>
+#include <Data/Metadata.h>
+#include <deque>
+
+// Queue of actions the entity must execute. Execution is performed by systems and may involve
+// different components to store intermediate info. If action is not supported by an entity,
+// it will remain in a queue indefinitely unless some system will clean it up.
+// Action execution may lead to decomposition and additional planning. In this case a nested
+// action will be added to the stack on top of its parent, the current action. All actions
+// in the stack are considered active at the same time, flow is controlled by systems.
+
+namespace DEM::Game
+{
+
+struct CActionQueueComponent
+{
+	std::deque<Events::PEventBase>  Queue;
+	std::vector<Events::PEventBase> Stack;
+	// execution status of stack top
+
+	// GetCurrentAction<TSupported[...]>()
+};
+
+}
+
+namespace DEM::Meta
+{
+
+template<> inline constexpr auto RegisterClassName<Game::CActionQueueComponent>() { return "DEM::Game::CActionQueueComponent"; }
+template<> inline constexpr auto RegisterMembers<Game::CActionQueueComponent>()
+{
+	return std::make_tuple
+	(
+	);
+}
+
+}

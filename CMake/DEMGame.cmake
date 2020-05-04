@@ -60,6 +60,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/EntityTemplate.h
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.h
 	DEM/Game/src/Game/ECS/GameWorld.h
+	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.h
 	DEM/Game/src/Game/ECS/Components/AnimationComponent.h
 	DEM/Game/src/Game/ECS/Components/CharacterControllerComponent.h
 	DEM/Game/src/Game/ECS/Components/RigidBodyComponent.h
@@ -109,6 +110,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Movement/Actions/ActionTraversePathEdge.cpp
 	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.cpp
 	DEM/Game/src/AI/Navigation/NavigationComponent.cpp
+	DEM/Game/src/AI/Navigation/NavigationSystem.cpp
 	DEM/Game/src/AI/Navigation/NavMesh.cpp
 	DEM/Game/src/AI/Navigation/NavMeshDebugDraw.cpp
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
