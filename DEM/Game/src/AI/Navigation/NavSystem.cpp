@@ -39,24 +39,15 @@ inline void CNavSystem::ResetPathRequest()
 }
 //---------------------------------------------------------------------
 
-void CNavSystem::Init(const Data::CParams* Params)
+void CNavSystem::Init()
 {
-	if (Params)
-	{
-		//pNavFilter = AISrv->GetNavQueryFilter(CStrID(Params->Get<CString>(CStrID("NavFilterID"), nullptr).CStr()));
-		Sys::Error("CNavSystem::Init() -> IMPLEMENT ME!!!");
-		
+	pNavFilter = AISrv->GetDefaultNavQueryFilter();
+
 #ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
-		pBoundary = n_new(dtLocalBoundary); //!!!and only if obstacle avoidance enabled!
+	pBoundary = n_new(dtLocalBoundary); //!!!and only if obstacle avoidance enabled!
 #else
-		pBoundary = nullptr;
+	pBoundary = nullptr;
 #endif
-	}
-	else
-	{
-		pNavFilter = AISrv->GetDefaultNavQueryFilter();
-		pBoundary = nullptr;
-	}
 
 	//!!!DBG TMP!
 	EdgeTypeToAction.Add(0, CStrID("SteerToPosition"));
@@ -74,6 +65,7 @@ void CNavSystem::Term()
 }
 //---------------------------------------------------------------------
 
+// When agent or navmesh changed
 void CNavSystem::SetupState()
 {
 	ReplanTime = 0.f;
@@ -770,7 +762,7 @@ bool CNavSystem::IsLocationValid(const vector3& Point) const
 }
 //---------------------------------------------------------------------
 
-// Finds a valid position in range of [MinRande, MaxRange] from Center, that is the closest to the actor.
+// Finds a valid position in range of [MinRange, MaxRange] from Center, that is the closest to the actor.
 // Fails if there is no valid location in the specified zone, or if error occured.
 // NB: this function can modify OutPos even if failed
 bool CNavSystem::GetNearestValidLocation(const vector3& Center, float MinRange, float MaxRange, vector3& OutPos) const

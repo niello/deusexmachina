@@ -15,11 +15,6 @@
 
 //!!!DT_MAX_AREAS as invalid for GetAreaUnderTheFeet!
 
-namespace Data
-{
-	typedef Ptr<class CParams> PParams;
-};
-
 namespace Debug
 {
 	class CDebugDraw;
@@ -82,7 +77,7 @@ public:
 
 	CNavSystem(CActor* Actor);
 
-	void			Init(const Data::CParams* Params);
+	void			Init();
 	void			Term();
 	void			Update(float FrameTime);
 	void			Reset(bool Success);

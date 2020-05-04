@@ -171,7 +171,7 @@ bool CPropActorBrain::InternalActivate()
 
 		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
 		
-		NavSystem.Init(Desc->Get<PParams>(CStrID("Navigation"), nullptr).Get());
+		NavSystem.Init();
 		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), nullptr).Get());
 	}
 
