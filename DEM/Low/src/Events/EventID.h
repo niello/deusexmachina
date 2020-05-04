@@ -13,11 +13,11 @@ struct CEventID
 {
 	union
 	{
-		const char*			ID;
-		const Core::CRTTI*	RTTI;
+		const char*        ID = nullptr; // Pointer to string interned by CStrID
+		const Core::CRTTI* RTTI;
 	};
 
-	CEventID(): ID(nullptr) {}
+	CEventID() = default;
 	CEventID(CStrID _ID): ID(_ID) {}
 	CEventID(const Core::CRTTI* _RTTI): RTTI(_RTTI) {}
 	CEventID(const Core::CRTTI& _RTTI): RTTI(&_RTTI) {}

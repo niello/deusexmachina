@@ -15,11 +15,11 @@ class Navigate: public Events::CEventNative
 
 public:
 
+	//!!!can instead be universal ITarget, with impls like "point", "entity", "nearest ally" etc!
+	//???or navigation is always to point, and point is updated from target externally? strange.
 	vector3 _Destination;
 
-	Navigate(const vector3& Destination)
-		: _Destination(Destination)
-	{}
+	Navigate(const vector3& Destination) : _Destination(Destination) {}
 };
 
 struct CNavigationComponent

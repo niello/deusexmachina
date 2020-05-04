@@ -329,10 +329,7 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 			if constexpr(sizeof...(Components) > 0)
 				if (!GetNextComponents<Components...>(EntityID, NextComponents, NextStorages)) continue;
 
-			if constexpr (std::is_const_v<TComponent>)
-				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::cref(Component)), NextComponents));
-			else
-				std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::ref(Component)), NextComponents));
+			std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::reference_wrapper<TComponent>(Component)), NextComponents));
 		}
 	}
 }
