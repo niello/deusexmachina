@@ -26,8 +26,17 @@ public:
 
 enum class ENavigationState : U8
 {
-	Idle = 0,
-	//
+	Idle = 0,  // No navigation is happening currently
+	Requested, // Destination requested, but no path is planned
+	Planning,  // Quick path built if possible, full path planning is in progress
+	Following  // Full path is planned
+};
+
+enum class ENavigationMode : U8
+{
+	Recovery = 0, // Agent is outside the navmesh and will recovery to the surface unless Idle
+	Surface,      // Agent is on the navmesh surface
+	Offmesh       // Agent is traversing an offmesh connection
 };
 
 struct CNavigationComponent
@@ -36,8 +45,8 @@ struct CNavigationComponent
 	dtNavMeshQuery*      pNavQuery = nullptr;
 	const dtQueryFilter* pNavFilter = nullptr;
 	vector3              Destination;
-	ENavigationState     State;
-	bool                 Offmesh = false; // FIXME: can get from corridor or bake into state enum?
+	ENavigationState     State = ENavigationState::Idle;
+	ENavigationMode      Mode = ENavigationMode::Surface;
 };
 
 }

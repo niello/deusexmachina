@@ -13,6 +13,7 @@ https://github.com/recastnavigation/recastnavigation/commit/57610fa6ef31b3902023
 
 Modifications:
 NO_DETOUR_TILE_CACHE_DEBUG_DRAW compiler definition in DebugDraw
+dtPathCorridor move constructor and assignment operator
 
 Purpose in DEM:
 Navigation mesh, navigation regions, pathfinding
