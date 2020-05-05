@@ -7,58 +7,57 @@
 namespace DEM::AI
 {
 
-void PlanPath(DEM::Game::CGameWorld& World)
+//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
+//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
+
+void ProcessNavigation(DEM::Game::CGameWorld& World)
 {
 	World.ForEachEntityWith<CNavigationComponent, DEM::Game::CActionQueueComponent>(
 		[](auto EntityID, auto& Entity, CNavigationComponent& Navigation, DEM::Game::CActionQueueComponent* pActions)
 	{
-		auto pNavigateAction = pActions->FindActive<Navigate>();
+		if (auto pNavigateAction = pActions->FindActive<Navigate>())
+		{
+			// update time since last replan and other timers, if based on elapsed time
 
-		//!!!if not found, must turn navigation system idle and reset component state!
-		// Check if an actor must navigate now
-		//if (!pNavigateAction) return;
+			// update navigation from current actor position
+			//   if not idle
+			//     if started or ended offmesh traversal and this side is "done", moveOverOffmeshConnection
+			//     else movePosition, if failed update position poly
+			//     check if edge traversal sub-action is done, finalize it
+			//   else
+			//     update position poly
+			//   set position validity flag (real == corridor, in other words real is on navmesh)
 
-		//???can understand that request is the same? or always compare destination? per-frame but still not awfully slow
+			// if is idle or destination changed
+			//   update destination
+			//   if not idle, moveTargetPosition
+			//   update dest poly if needed
+			//   if dest is invalid, fix to navmesh and chande desired destination, may need replan
 
-		// Logic from CNavSystem::SetDestPoint():
-		// if new dest is the same as current and state is not Idle, return
-		// set new dest
-		// if already there, finish Navigate
-		// if has prev target and poly not changed, update target in corridor
-		// else reset dest poly, and if dest OK but pos invalid, reset pos poly
+			// if actor is already at the new destination, finish Navigate action, set idle and exit
 
-		// Logic from CNavSystem::UpdatePosition():
-		// if reached offmesh connection enter circle, moveOverOffmeshConnection (or call it when end traversal action???)
-		// if not offmesh, and idle, reset pos. poly
-		// if not offmesh and not idle, movePosition, reset poly if failed, check arrival to the final dest
+			// if corridor is invalid, trim and fix or even do full replanning
+			// if we are on the navmesh and are nearing corridor end poly which is not target poly and replan time has come, replan
+			// if replan flag is set after all above, we will do replanning this frame
+			// replanning:
+			//   try calc quick path
+			//   if found, use quick path and build remaining part in parallel
+			//   else find from scratch
+			// if quick path was not full:
+			//   if no async request, run one
+			//   else check its status
+			//     if failed, all navigation is failed
+			//     else if done, get result and merge into a quick path and fix curr dest to the final one, setCorridor
+			//     clear request info
+			// if following full path (no planning awaited):
+			//   optimizePathTopology periodicaly (???better on some changes?)
 
-		// Logic from CNavSystem::Update():
-		// count replan time
-		// check and remember pos validity - actual == corridor
-		// if nav system idle, return
-		// process offmesh connection traversal, breaking in the middle etc
-		// if dest invalid, reset target poly, exit if became idle, mark for replanning
-		// if corridor is invalid, trim and fix or even do full replanning
-		// if we are on the navmesh and are nearing corridor end poly which is not target poly and replan time has come, replan
-		// if replan flag is set after all above, we will do replanning this frame
-		// replanning:
-		//   try calc quick path
-		//   if found, use quick path and build remaining part in parallel
-		//   else find from scratch
-		// if quick path was not full:
-		//   if no async request, run one
-		//   else check its status
-		//     if failed, all navigation is failed
-		//     else if done, get result and merge into a quick path and fix curr dest to the final one, setCorridor
-		//     clear request info
-		// if following full path (no planning awaited):
-		//   optimizePathTopology periodicaly (???better on some changes?)
-
-		// EndEdgeTraversal - check if sub-action is finished
-
-		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
-
-		// using context from pNavigation, update path planning and finish with setting up a nested action or with removing Navigate
+			// <process offmesh traversal - where and how?>
+		}
+		else
+		{
+			// if navigation state is not idle, set idle
+		}
 	});
 }
 //---------------------------------------------------------------------

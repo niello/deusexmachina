@@ -29,9 +29,12 @@ struct CActionQueueComponent
 
 	Events::CEventBase* FindActive(Events::CEventID ID)
 	{
+		// Start from the most nested sub-action of the current action
 		for (auto It = Stack.rbegin(); It != Stack.rend(); ++It)
 			if ((*It)->GetID() == ID)
 				return (*It).get();
+
+		// No matching sub-action found, try the current root action
 		return (Queue.empty() || Queue.front()->GetID() != ID) ? nullptr : Queue.front().get();
 	}
 

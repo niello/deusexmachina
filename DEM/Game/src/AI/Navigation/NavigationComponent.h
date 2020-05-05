@@ -19,6 +19,7 @@ public:
 	//???or navigation is always to point, and point is updated from target externally? strange.
 	vector3 _Destination;
 	float   _Speed = 0.f;
+	// MinDistance, MaxDistance
 
 	explicit Navigate(const vector3& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
 };
