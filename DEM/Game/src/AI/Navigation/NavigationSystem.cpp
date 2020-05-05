@@ -23,6 +23,8 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 {
 	const bool PositionChanged = !dtVequal2D(Navigation.Corridor.getPos(), Position.v);
 
+	//???!!!movePosition etc only if not idle?
+
 	if (PositionChanged)
 	{
 		if (Navigation.Mode == ENavigationMode::Offmesh)
@@ -35,33 +37,35 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 			// Try to move along the navmesh surface to the new position
 			if (Navigation.Corridor.movePosition(Position.v, Navigation.pNavQuery, Navigation.pNavFilter))
 			{
-				dtPolyRef Ref = Navigation.Corridor.getFirstPoly();
 				if (dtVequal2D(Position.v, Navigation.Corridor.getPos()))
 				{
-					// we are valid, must set valid state because we could be invalid before
+					Navigation.Mode = ENavigationMode::Surface;
 				}
 				else
 				{
 					// Moved too far or off the navmesh surface
 					const float Extents[3] = { 0.f, pActor->Height, 0.f };
+					dtPolyRef Ref = 0;
 					float Nearest[3];
 					Navigation.pNavQuery->findNearestPoly(Position.v, Extents, Navigation.pNavFilter, &Ref, Nearest);
 
-					if (dtVequal2D(Position.v, Nearest))
+					if (Ref && dtVequal2D(Position.v, Nearest))
 					{
-						// we are valid, must set valid state because we could be invalid before
-						//???reset corridor and replan?
+						// We are on the navmesh, but our corridor needs rebuilding
+						Navigation.Mode = ENavigationMode::Surface;
+						Navigation.Corridor.reset(Ref, Position.v);
+						Replan = true;
 					}
 					else
 					{
-						// invalid and recovery
+						Navigation.Mode = ENavigationMode::Recovery;
 					}
 				}
 			}
 			else
 			{
 				// Invalid starting poly or args
-				// set invalid and recovery
+				Navigation.Mode = ENavigationMode::Recovery;
 			}
 
 			//!!!and/or trigger an offmesh connection here!
@@ -75,6 +79,9 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 		// Position is the same, but poly might become invalid
 		if (!Navigation.pNavQuery->isValidPolyRef(Navigation.Corridor.getFirstPoly(), Navigation.pNavFilter))
 		{
+			// find another poly under the feet, it may be valid
+			//???use fixPathStart or do as above?
+
 			if (Navigation.State == ENavigationState::Idle)
 			{
 				//???end edge traversal? must ensure that offmesh connection will be processed correctly!
@@ -82,9 +89,7 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 			}
 			else
 			{
-				//ag->state = DT_CROWDAGENT_STATE_INVALID;
-				// recover to the nearest position in the corridor
-				//???here or in corner building?
+				Navigation.Mode = ENavigationMode::Recovery;
 			}
 		}
 	}
