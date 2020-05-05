@@ -66,7 +66,7 @@ protected:
 	size_t                  _ElementCount = 0;
 	size_t                  _FirstFreeIndex = MAX_CAPACITY;
 	size_t                  _LastFreeIndex = MAX_CAPACITY;
-	T                       _Prototype;
+	const T                 _Prototype;
 
 	bool IsFull() const { return _LastFreeIndex == MAX_CAPACITY; }
 
@@ -128,7 +128,10 @@ protected:
 		if (Size < MAX_CAPACITY)
 		{
 			// All records are used but an index space is not exhausted
-			_Records.push_back({ _Prototype, INDEX_ALLOCATED });
+			if constexpr (std::is_copy_constructible_v<T>)
+				_Records.push_back({ _Prototype, INDEX_ALLOCATED });
+			else
+				_Records.push_back({ {}, INDEX_ALLOCATED });
 			++_ElementCount;
 			return Size;
 		}
@@ -150,7 +153,10 @@ protected:
 		if (Index >= Size)
 		{
 			// Record[Index] is immediately allocated, all other added records are attached to the free list
-			_Records.resize(Index + 1, { _Prototype, 0 } );
+			if constexpr (std::is_copy_constructible_v<T>)
+				_Records.resize(Index + 1, { _Prototype, 0 } );
+			else
+				_Records.resize(Index + 1);
 			if (Index > Size)
 				AddRangeToFreeList(Size, Index - 1);
 		}
@@ -207,7 +213,10 @@ protected:
 public:
 
 	CHandleArray() = default;
-	CHandleArray(const T& Prototype) : _Prototype(Prototype) {}
+	CHandleArray(const T& Prototype) : _Prototype(Prototype)
+	{
+		static_assert(std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>, "Using prototype requires copyable T");
+	}
 
 	CHandleArray(size_t InitialSize)
 		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY))
@@ -220,6 +229,8 @@ public:
 		: _Records(std::min<size_t>(InitialSize, MAX_CAPACITY), CHandleRec{ Prototype, 0 })
 		, _Prototype(Prototype)
 	{
+		static_assert(std::is_copy_constructible_v<T> && std::is_copy_assignable_v<T>, "Using prototype requires copyable T");
+
 		if (auto Size = _Records.size())
 			AddRangeToFreeList(0, Size - 1);
 	}
@@ -251,7 +262,8 @@ public:
 		if ((Handle.Raw | INDEX_ALLOCATED) != Record.Handle) return false;
 
 		// Clear the record value to default, this clears freed object resources
-		Record.Value = _Prototype;
+		if constexpr (std::is_copy_assignable_v<T>)
+			Record.Value = _Prototype;
 
 		--_ElementCount;
 
@@ -361,7 +373,12 @@ public:
 		_ElementCount = 0;
 		_FirstFreeIndex = MAX_CAPACITY;
 		_LastFreeIndex = MAX_CAPACITY;
-		_Records.resize(std::min<size_t>(NewInitialSize, MAX_CAPACITY), { _Prototype, 0 });
+
+		if constexpr (std::is_copy_constructible_v<T>)
+			_Records.resize(std::min<size_t>(NewInitialSize, MAX_CAPACITY), { _Prototype, 0 });
+		else
+			_Records.resize(std::min<size_t>(NewInitialSize, MAX_CAPACITY));
+
 		if (auto Size = _Records.size())
 		{
 			AddRangeToFreeList(0, Size - 1);
