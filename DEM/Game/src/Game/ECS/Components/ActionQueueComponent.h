@@ -22,8 +22,10 @@ struct CActionQueueComponent
 	// execution status of the most nested current action
 
 	CActionQueueComponent() = default;
-	CActionQueueComponent(const CActionQueueComponent& Other) {}
-	CActionQueueComponent& operator =(const CActionQueueComponent& Other) { return *this; }
+	CActionQueueComponent(const CActionQueueComponent& Other) = delete;
+	CActionQueueComponent& operator =(const CActionQueueComponent& Other) = delete;
+	CActionQueueComponent(CActionQueueComponent&& Other) = default;
+	CActionQueueComponent& operator =(CActionQueueComponent&& Other) = default;
 
 	Events::CEventBase* FindActive(Events::CEventID ID)
 	{

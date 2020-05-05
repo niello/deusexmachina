@@ -17,24 +17,6 @@ struct CAnimationComponent
 	float   CurrTime = 0.f;
 	bool    Looped = false;
 	bool    Play = true;
-
-	CAnimationComponent() = default;
-
-	CAnimationComponent(const CAnimationComponent& Other)
-		: ClipID(Other.ClipID), RelTargetPath(Other.RelTargetPath), Speed(Other.Speed)
-		, CurrTime(Other.CurrTime), Looped(Other.Looped), Play(Other.Play)
-	{}
-
-	CAnimationComponent& operator =(const CAnimationComponent& Other)
-	{
-		ClipID = Other.ClipID;
-		RelTargetPath = Other.RelTargetPath;
-		Speed = Other.Speed;
-		CurrTime = Other.CurrTime;
-		Looped = Other.Looped;
-		Play = Other.Play;
-		return *this;
-	}
 };
 
 }

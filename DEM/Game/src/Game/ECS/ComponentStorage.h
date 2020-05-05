@@ -409,7 +409,7 @@ public:
 		if (It->Value.ComponentHandle)
 			_Data.GetValueUnsafe(It->Value.ComponentHandle)->first = std::move(Component);
 		else
-			It->Value.ComponentHandle = _Data.Allocate({ std::move(Component), EntityID });
+			It->Value.ComponentHandle = _Data.Allocate(std::make_pair<T, HEntity>(std::move(Component), std::move(EntityID)));
 
 		return true;
 	}
@@ -842,7 +842,7 @@ public:
 			// Templated component without a template, no component required, even if the diff is present
 			if (Record.State == EComponentState::Templated && !_World.GetTemplateComponentData<T>(pEntity->TemplateID)) return;
 
-			Record.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, Record)), EntityID });
+			Record.ComponentHandle = _Data.Allocate(std::make_pair<T, HEntity>(std::move(LoadComponent(EntityID, Record)), std::move(EntityID)));
 			n_assert_dbg(Record.ComponentHandle);
 		});
 	}
