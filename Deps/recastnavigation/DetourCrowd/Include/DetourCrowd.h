@@ -122,7 +122,7 @@ struct dtCrowdAgent
 	unsigned char state;
 
 	/// True if the agent has valid path (targetState == DT_CROWDAGENT_TARGET_VALID) and the path does not lead to the requested position, else false.
-	bool partial;
+	//bool partial;
 
 	/// The path corridor the agent is using.
 	dtPathCorridor corridor;

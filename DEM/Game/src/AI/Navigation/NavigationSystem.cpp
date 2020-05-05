@@ -2,7 +2,9 @@
 #include <Game/GameLevel.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
+#include <Game/ECS/Components/SceneComponent.h>
 #include <AI/Navigation/NavigationComponent.h>
+#include <DetourCommon.h>
 
 namespace DEM::AI
 {
@@ -10,29 +12,85 @@ namespace DEM::AI
 //!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
 //???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
 
+static void UpdatePosition(const vector3& Position, CNavigationComponent& Navigation)
+{
+	if (Navigation.State == ENavigationState::Idle)
+	{
+		if (!dtVequal(Navigation.Corridor.getPos(), Position.v))
+		{
+			// reset poly
+			// single-poly corridor: Corridor.reset(Corridor.getFirstPoly(), Corridor.getPos());
+		}
+	}
+	else
+	{
+		//!!!instead of this condition detect entering offmesh connection!
+		if (Navigation.Offmesh)
+		{
+			//???!!!always call moveOverOffmeshConnectionat start? then wait reaching offmesh connection end
+			// if started or ended offmesh traversal and this side is "done", moveOverOffmeshConnection
+		}
+		else
+		{
+			// FIXME: if moved too far AND starting poly changed, better to replan (or check return false?)
+			Navigation.Corridor.movePosition(Position.v, Navigation.pNavQuery, Navigation.pNavFilter);
+			// else movePosition, if failed update position poly
+		}
+
+		// check if edge traversal sub-action is done, finalize it
+		// detect both normal path edge and offmesh connection arrivals
+
+		// DT:
+		// if not on offmesh
+		//   if curr poly invalid, find nearest poly in a recovery radius
+		//     if on found poly, corridor.fixPathStart and replan
+		//     else reset corridor to zero poly and go into invalid state
+	}
+
+	// set position validity flag (real == corridor, in other words real is on navmesh)
+}
+
+static void UpdateDestination(const vector3& Destination, CNavigationComponent& Navigation)
+{
+	const bool TargetChanged = !dtVequal(Navigation.Destination.v, Destination.v);
+
+	// FIXME: poly validity check still must happen!
+	//if (Navigation.State != ENavigationState::Idle && !TargetChanged) return;
+
+	Navigation.Destination = Destination;
+
+	// FIXME: if moved too far AND target poly changed, better to replan (or check return false?)
+	// if not idle, moveTargetPosition
+
+	// update dest poly if needed
+	// if dest is invalid, fix to navmesh and chande desired destination, may need replan
+
+	// DT:
+	// if not on offmesh
+	//   if curr poly invalid, find nearest poly in a recovery radius
+	//     if on found poly, corridor.fixPathStart and replan
+	//     else reset corridor to zero poly and go into invalid state
+}
+
 void ProcessNavigation(DEM::Game::CGameWorld& World)
 {
-	World.ForEachEntityWith<CNavigationComponent, DEM::Game::CActionQueueComponent>(
-		[](auto EntityID, auto& Entity, CNavigationComponent& Navigation, DEM::Game::CActionQueueComponent* pActions)
+	World.ForEachEntityWith<CNavigationComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
+		[](auto EntityID, auto& Entity,
+			CNavigationComponent& Navigation,
+			DEM::Game::CActionQueueComponent* pActions,
+			const DEM::Game::CSceneComponent* pSceneComponent)
 	{
+		if (!pSceneComponent->RootNode) return;
+
 		if (auto pNavigateAction = pActions->FindActive<Navigate>())
 		{
+			//!!!TODO:
 			// update time since last replan and other timers, if based on elapsed time
+			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 
-			// update navigation from current actor position
-			//   if not idle
-			//     if started or ended offmesh traversal and this side is "done", moveOverOffmeshConnection
-			//     else movePosition, if failed update position poly
-			//     check if edge traversal sub-action is done, finalize it
-			//   else
-			//     update position poly
-			//   set position validity flag (real == corridor, in other words real is on navmesh)
-
-			// if is idle or destination changed
-			//   update destination
-			//   if not idle, moveTargetPosition
-			//   update dest poly if needed
-			//   if dest is invalid, fix to navmesh and chande desired destination, may need replan
+			const auto& Position = pSceneComponent->RootNode->GetWorldPosition();
+			UpdatePosition(Position, Navigation);
+			UpdateDestination(pNavigateAction->_Destination, Navigation);
 
 			// if actor is already at the new destination, finish Navigate action, set idle and exit
 
@@ -59,6 +117,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 			// if navigation state is not idle, set idle
 		}
 	});
+
+	// 
 }
 //---------------------------------------------------------------------
 

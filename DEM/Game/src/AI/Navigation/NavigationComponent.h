@@ -24,15 +24,20 @@ public:
 	explicit Navigate(const vector3& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
 };
 
+enum class ENavigationState : U8
+{
+	Idle = 0,
+	//
+};
+
 struct CNavigationComponent
 {
-	dtPathCorridor Corridor;
-
-	//???what is here, what is in request?
-
-	//???navmesh query - here or in request?
-
-	//???need at all, or navigation system must decompose Navigate action from DEM::AI::CActionQueue component?
+	dtPathCorridor       Corridor;
+	dtNavMeshQuery*      pNavQuery = nullptr;
+	const dtQueryFilter* pNavFilter = nullptr;
+	vector3              Destination;
+	ENavigationState     State;
+	bool                 Offmesh = false; // FIXME: can get from corridor or bake into state enum?
 };
 
 }
