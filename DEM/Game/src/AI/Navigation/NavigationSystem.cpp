@@ -4,7 +4,9 @@
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/SceneComponent.h>
 #include <AI/Navigation/NavigationComponent.h>
+#include <AI/Navigation/PathRequestQueue.h>
 #include <DetourCommon.h>
+#include <array>
 
 namespace DEM::AI
 {
@@ -177,10 +179,104 @@ static bool CheckCurrentPath(CNavigationComponent& Navigation)
 }
 //---------------------------------------------------------------------
 
-void ProcessNavigation(DEM::Game::CGameWorld& World, float dt)
+static void RequestPath(CNavigationComponent& Navigation, ::AI::CPathRequestQueue& PathQueue)
+{
+	// Quick synchronous search towards the goal, limited iteration count
+	Navigation.pNavQuery->initSlicedFindPath(Navigation.Corridor.getFirstPoly(), Navigation.TargetRef, Navigation.Corridor.getPos(), Navigation.TargetPos.v, Navigation.pNavFilter);
+	Navigation.pNavQuery->updateSlicedFindPath(20, 0);
+
+	// Try to reuse existing steady path if possible and worthwile
+	std::array<dtPolyRef, 32> Path;
+	int PathSize = 0;
+	dtStatus Status = (Navigation.Corridor.getPathCount() > 10) ?
+		Navigation.pNavQuery->finalizeSlicedFindPathPartial(Navigation.Corridor.getPath(), Navigation.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
+		Navigation.pNavQuery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
+
+	// Setup path corridor
+	const dtPolyRef LastPoly = (dtStatusFailed(Status) || !PathSize) ? 0 : Path[PathSize - 1];
+	if (LastPoly == Navigation.TargetRef)
+	{
+		// Full path
+		Navigation.Corridor.setCorridor(Navigation.TargetPos.v, Path.data(), PathSize);
+		Navigation.State = ENavigationState::Following;
+		Navigation.ReplanTime = 0.f;
+	}
+	else
+	{
+		// Partial path, constrain target position inside the last polygon or reset to agent position
+		float PartialTargetPos[3];
+		if (LastPoly && dtStatusSucceed(Navigation.pNavQuery->closestPointOnPoly(LastPoly, Navigation.TargetPos.v, PartialTargetPos, nullptr)))
+			Navigation.Corridor.setCorridor(PartialTargetPos, Path.data(), PathSize);
+		else
+			Navigation.Corridor.setCorridor(Navigation.Corridor.getPos(), Navigation.Corridor.getPath(), 1);
+
+		Navigation.AsyncTaskID = PathQueue.Request(Navigation.Corridor.getLastPoly(), Navigation.TargetRef, Navigation.Corridor.getTarget(), Navigation.TargetPos.v, Navigation.pNavQuery, Navigation.pNavFilter);
+		if (Navigation.AsyncTaskID)
+			Navigation.State = ENavigationState::Planning;
+	}
+}
+//---------------------------------------------------------------------
+
+static void CheckAsyncPathResult(CNavigationComponent& Navigation, ::AI::CPathRequestQueue& PathQueue)
+{
+	dtStatus Status = PathQueue.GetRequestStatus(Navigation.AsyncTaskID);
+
+	// If failed, can retry because the target location is still valid
+	if (dtStatusFailed(Status)) Navigation.State = ENavigationState::Requested;
+	else if (!dtStatusSucceed(Status)) return;
+
+	std::array<dtPolyRef, 512> Path;
+	int PathSize = 0;
+	n_assert(PathQueue.GetPathSize(Navigation.AsyncTaskID) <= static_cast<int>(Path.size()));
+	Status = PathQueue.GetPathResult(Navigation.AsyncTaskID, Path.data(), PathSize, Path.size());
+
+	// The last ref in the old path should be the same as the location where the request was issued
+	if (dtStatusFailed(Status) || !PathSize || Navigation.Corridor.getLastPoly() != Path[0])
+	{
+		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
+		Navigation.State = ENavigationState::Idle;
+		return;
+	}
+
+	// If path is partial, try to constrain target position inside the last polygon
+	const auto LastRef = Path[PathSize - 1];
+	vector3 PathTarget = Navigation.TargetPos;
+	if (LastRef != Navigation.TargetRef)
+	{
+		if (dtStatusFailed(Navigation.pNavQuery->closestPointOnPoly(LastRef, Navigation.TargetPos.v, PathTarget.v, nullptr)))
+		{
+			// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
+			Navigation.State = ENavigationState::Idle;
+			return;
+		}
+	}
+
+	// Merge result and existing path, removing trackbacks. The agent might have moved whilst
+	// the request is being processed, so the path may have changed.
+	int TotalSize = 0;
+	Status = Navigation.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
+	if (dtStatusDetail(Status, DT_BUFFER_TOO_SMALL))
+	{
+		Navigation.Corridor.extend(TotalSize);
+		Status = Navigation.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
+	}
+
+	if (dtStatusFailed(Status))
+	{
+		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
+		Navigation.State = ENavigationState::Idle;
+		return;
+	}
+
+	Navigation.State = ENavigationState::Following;
+	Navigation.ReplanTime = 0.f;
+}
+//---------------------------------------------------------------------
+
+void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue)
 {
 	World.ForEachEntityWith<CNavigationComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
-		[dt](auto EntityID, auto& Entity,
+		[dt, &PathQueue](auto EntityID, auto& Entity,
 			CNavigationComponent& Navigation,
 			DEM::Game::CActionQueueComponent* pActions,
 			const DEM::Game::CSceneComponent* pSceneComponent)
@@ -220,56 +316,14 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt)
 			{
 				//???!!!TODO: cancel traversal sub-action, if any?!
 
-				// Quick synchronous search towards the goal, limited iteration count
-				Navigation.pNavQuery->initSlicedFindPath(Navigation.Corridor.getFirstPoly(), Navigation.TargetRef, Navigation.Corridor.getPos(), Navigation.TargetPos.v, Navigation.pNavFilter);
-				Navigation.pNavQuery->updateSlicedFindPath(20, 0);
-
-				// Try to reuse existing steady path if possible and worthwile
-				std::array<dtPolyRef, 32> Path;
-				int PathSize = 0;
-				dtStatus Status = (Navigation.Corridor.getPathCount() > 10) ?
-					Navigation.pNavQuery->finalizeSlicedFindPathPartial(Navigation.Corridor.getPath(), Navigation.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
-					Navigation.pNavQuery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
-
-				// Setup path corridor
-				const dtPolyRef LastPoly = (dtStatusFailed(Status) || !PathSize) ? 0 : Path[PathSize - 1];
-				if (LastPoly == Navigation.TargetRef)
-				{
-					// Full path
-					Navigation.Corridor.setCorridor(Navigation.TargetPos, Path.data(), PathSize);
-					Navigation.State = ENavigationState::Following;
-					Navigation.ReplanTime = 0.f;
-				}
-				else
-				{
-					// Partial path, constrain target position inside the last polygon or reset to agent position
-					float PartialTargetPos[3];
-					if (LastPoly && dtStatusSucceed(Navigation.pNavQuery->closestPointOnPoly(LastPoly, Navigation.TargetPos, PartialTargetPos, nullptr)))
-						Navigation.Corridor.setCorridor(PartialTargetPos, Path.data(), PathSize);
-					else
-						Navigation.Corridor.setCorridor(Navigation.Corridor.getPos(), Navigation.Corridor.getFirstPoly(), 1);
-
-					//!!!TODO: use CPathRequestQueue!?
-					Navigation.AsyncTaskID = m_pathq.request(Navigation.Corridor.getLastPoly(), Navigation.TargetRef, Navigation.Corridor.getTarget(), Navigation.TargetPos, Navigation.pNavFilter);
-					if (Navigation.AsyncTaskID)
-						Navigation.State = ENavigationState::Planning;
-				}
+				RequestPath(Navigation, PathQueue);
 			}
 			else if (Navigation.State == ENavigationState::Planning)
 			{
-				//   get request state
-				//   if failed, retry REQUEST if target is valid or set FAILED if not
-				//   else if done
-				//     get result, fail if empty or not retrieved or curr end != new start
-				//     if has curr path, merge with new and remove trackbacks
-				//     set corridor to partial or full path, partial requires target adjusting (FAILED if fail)
-				//     set state VALID
+				CheckAsyncPathResult(Navigation, PathQueue);
 			}
 
-			//!!!async queue runs outside here! or could manage async request inside the agent itself, but multithreading
-			// then will be enabled only if the current function will be dispatched across different threads. Also total
-			// balancing prevents async request to be managed here!!! Need external!
-
+			//???only if corridor is not empty? or checked in findStraightPath?
 			if (Navigation.Mode != ENavigationMode::Offmesh)
 			{
 				//   optimizePathTopology if it is the time and/or necessary events happened

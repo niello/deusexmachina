@@ -52,6 +52,7 @@ public:
 	void		CancelRequest(U16 RequestID);
 	dtStatus	GetRequestStatus(U16 RequestID) const;
 	dtStatus	GetPathResult(U16 RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath);
+	int			GetPathSize(U16 RequestID);
 };
 
 inline CPathRequestQueue::CPathRequestQueue(): NextRequestID(1)

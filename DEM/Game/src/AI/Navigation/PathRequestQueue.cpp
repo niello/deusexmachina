@@ -151,4 +151,13 @@ dtStatus CPathRequestQueue::GetPathResult(U16 RequestID, dtPolyRef* pOutPath, in
 }
 //---------------------------------------------------------------------
 
+int CPathRequestQueue::GetPathSize(U16 RequestID)
+{
+	for (int i = 0; i < MAX_QUEUE; ++i)
+		if (Queue[i].RequestID == RequestID)
+			return Queue[i].PathSize;
+	return 0;
+}
+//---------------------------------------------------------------------
+
 }

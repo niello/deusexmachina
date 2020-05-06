@@ -43,7 +43,12 @@ public:
 	///  @param[in]		maxPath		The maximum path size the corridor can handle.
 	/// @return True if the initialization succeeded.
 	bool init(const int maxPath);
-	
+
+	/// Extends the corridor's path buffer, keeping the data. If maxPath is less than capacity, does nothing.
+	///  @param[in]		maxPath		The new maximum path size the corridor can handle.
+	/// @return True if succeeded.
+	bool extend(const int maxPath);
+
 	/// Resets the path corridor to the specified position.
 	///  @param[in]		ref		The polygon reference containing the position.
 	///  @param[in]		pos		The new position in the corridor. [(x, y, z)]
@@ -83,7 +88,7 @@ public:
 
 	bool trimInvalidPath(dtPolyRef safeRef, const float* safePos,
 						 dtNavMeshQuery* navquery, const dtQueryFilter* filter);
-	
+
 	/// Checks the current corridor path to see if its polygon references remain valid. 
 	///  @param[in]		maxLookAhead	The number of polygons from the beginning of the corridor to search.
 	///  @param[in]		navquery		The query object used to build the corridor.
@@ -111,7 +116,16 @@ public:
 	///  @param[in]		path		The path corridor. [(polyRef) * @p npolys]
 	///  @param[in]		npath		The number of polygons in the path.
 	void setCorridor(const float* target, const dtPolyRef* polys, const int npath);
-	
+
+	/// Appends a new path to the end of the corridor and sets new target. First poly of the new path must
+	/// be equal to the last poly of the existing path. Trackback will be removed.
+	///  @param[in]		target			The target location within the last polygon of the path. [(x, y, z)]
+	///  @param[in]		path			The path corridor. [(polyRef) * @p npolys]
+	///  @param[in]		npath			The number of polygons in the path being appended.
+	///  @param[out]	requiredSize	If buffer was to small, returns size required to accomplish operation.
+	/// @return Returns status with failure details. If failed, corridor is unchanged.
+	dtStatus appendPath(const float* target, const dtPolyRef* polys, const int npath, int* requiredSize);
+
 	/// Gets the current position within the corridor. (In the first polygon.)
 	/// @return The current position within the corridor.
 	inline const float* getPos() const { return m_pos; }

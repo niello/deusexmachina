@@ -223,6 +223,26 @@ bool dtPathCorridor::init(const int maxPath)
 	return true;
 }
 
+bool dtPathCorridor::extend(const int maxPath)
+{
+	if (maxPath <= m_maxPath)
+		return false;
+
+	if (!m_path)
+		return init(maxPath);
+
+	dtPolyRef* newpath = (dtPolyRef*)dtAlloc(sizeof(dtPolyRef)*maxPath, DT_ALLOC_PERM);
+	if (!newpath)
+		return false;
+
+	if (m_npath > 0)
+		memcpy(newpath, m_path, sizeof(dtPolyRef)*m_npath);
+	dtFree(m_path);
+	m_path = newpath;
+	m_maxPath = maxPath;
+	return true;
+}
+
 /// @par
 ///
 /// Essentially, the corridor is set of one polygon in size with the target
@@ -517,6 +537,42 @@ void dtPathCorridor::setCorridor(const float* target, const dtPolyRef* path, con
 	dtVcopy(m_target, target);
 	memcpy(m_path, path, sizeof(dtPolyRef)*npath);
 	m_npath = npath;
+}
+
+dtStatus dtPathCorridor::appendPath(const float* target, const dtPolyRef* polys, const int npath, int* requiredSize)
+{
+	if (!target || !polys || npath <= 0)
+		return DT_FAILURE | DT_INVALID_PARAM;
+
+	if (!m_npath)
+	{
+		setCorridor(target, polys, npath);
+		return DT_SUCCESS;
+	}
+
+	if (polys[0] != m_path[m_npath-1])
+		return DT_FAILURE | DT_INVALID_PARAM;
+
+	// Detect trackback length
+	const int minsize = dtMin(m_npath, npath);
+	int i = 1;
+	while (i < minsize && m_path[m_npath-1-i] == polys[i])
+		++i;
+
+	// Check for available space
+	const int destidx = m_npath - i + 1;
+	const int ncopy = npath - i;
+	if (destidx + ncopy > m_maxPath)
+	{
+		if (requiredSize)
+			*requiredSize = destidx + ncopy;
+		return DT_FAILURE | DT_BUFFER_TOO_SMALL;
+	}
+
+	memcpy(m_path + destidx, polys, sizeof(dtPolyRef)*ncopy);
+	m_npath = destidx + ncopy;
+
+	return DT_SUCCESS;
 }
 
 bool dtPathCorridor::fixPathStart(dtPolyRef safeRef, const float* safePos)
