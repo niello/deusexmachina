@@ -18,7 +18,7 @@ static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFA
 }
 //---------------------------------------------------------------------
 
-static void UpdatePosition(const vector3& Position, CNavigationComponent& Navigation, bool& Replan)
+static void UpdatePosition(const vector3& Position, CNavigationComponent& Navigation)
 {
 	const bool PositionChanged = !dtVequal2D(Navigation.Corridor.getPos(), Position.v);
 
@@ -94,12 +94,13 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 		// Make sure the first polygon is valid, but leave other valid
 		// polygons in the path so that replanner can adjust the path better.
 		Navigation.Corridor.fixPathStart(NearestRef, NearestPos);
-		Replan = true;
+		Navigation.State = ENavigationState::Requested;
+		//!!!FIXME: reset async request if present!
 	}
 }
 //---------------------------------------------------------------------
 
-static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation, bool& Replan)
+static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
@@ -144,20 +145,19 @@ static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation
 			Navigation.Corridor.reset(Navigation.Corridor.getFirstPoly(), Navigation.Corridor.getPos());
 			Navigation.State = ENavigationState::Idle;
 		}
-		return;
 	}
-
-	if (Navigation.State == ENavigationState::Idle)
-		Navigation.State = ENavigationState::Requested;
 	else
-		Replan = true;
+	{
+		Navigation.State = ENavigationState::Requested;
+		//!!!FIXME: reset async request if present!
+	}
 }
 //---------------------------------------------------------------------
 
-void ProcessNavigation(DEM::Game::CGameWorld& World)
+void ProcessNavigation(DEM::Game::CGameWorld& World, float dt)
 {
 	World.ForEachEntityWith<CNavigationComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
-		[](auto EntityID, auto& Entity,
+		[dt](auto EntityID, auto& Entity,
 			CNavigationComponent& Navigation,
 			DEM::Game::CActionQueueComponent* pActions,
 			const DEM::Game::CSceneComponent* pSceneComponent)
@@ -172,40 +172,59 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 
 		if (auto pNavigateAction = pActions->FindActive<Navigate>())
 		{
-			//!!!TODO:
-			// update time since last replan and other timers, if based on elapsed time
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
+			Navigation.ReplanTime += dt;
 
 			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
 			// if succeeded and was offmesh, return to navmesh.
 
-			bool Replan = false;
-
-			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Navigation, Replan);
+			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Navigation);
 
 			//???if position failed Navigate task, early exit?
 
-			UpdateDestination(*pNavigateAction, Navigation, Replan);
+			UpdateDestination(*pNavigateAction, Navigation);
 
 			//???if destination failed Navigate task, early exit?
 
-			// if actor is already at the new destination, finish Navigate action (success), set idle and exit
+			//!!!if actor is already at the new destination, finish Navigate action (success), set idle and exit
 
-			// validate corridor CHECK_LOOKAHEAD polys ahead, if failed replan
-			// if following path not waiting anything, and end is near and it's not target, replan
-			if (Replan)
+			// Check current path validity
+			if (Navigation.State != ENavigationState::Requested)
 			{
-				//???!!!cancel traversal sub-action?!
-				//request replanning
+				constexpr int CHECK_LOOKAHEAD = 10;
+				if (!Navigation.Corridor.isValid(CHECK_LOOKAHEAD, Navigation.pNavQuery, Navigation.pNavFilter))
+				{
+					// Nearby corridor is not valid, replan
+					Navigation.State = ENavigationState::Requested;
+					//!!!FIXME: reset async request if present!
+				}
+				else if (Navigation.State == ENavigationState::Following)
+				{
+					// If the end of the path is near and it is not the requested location, replan
+					constexpr float TARGET_REPLAN_DELAY = 1.0f; // seconds
+					if (Navigation.ReplanTime > TARGET_REPLAN_DELAY &&
+						Navigation.Corridor.getPathCount() < CHECK_LOOKAHEAD &&
+						Navigation.Corridor.getLastPoly() != Navigation.TargetRef)
+					{
+						Navigation.State = ENavigationState::Requested;
+						//!!!FIXME: reset async request if present!
+					}
+				}
 			}
 
-			// if state is REQUEST
-			//  initSlicedFindPath + updateSlicedFindPath(few iterations) for quickpath
-			//  finalizeSlicedFindPath[Partial if replan]
-			//  if finalized and not empty, set corridor to partial or full path, partial requires target adjusting
-			//  else reset corridor to the current position (will wait for full path)
-			//  if full path, set state VALID
-			//  else run async request and set state WAIT_ASYNC_PATH
+			if (Navigation.State = ENavigationState::Requested)
+			{
+				//???!!!cancel traversal sub-action, if any?!
+
+				//!!!instead of Replan flag we check if corridor length is > 1 (at least)!
+
+				//  initSlicedFindPath + updateSlicedFindPath(few iterations) for quickpath
+				//  finalizeSlicedFindPath[Partial if replan]
+				//  if finalized and not empty, set corridor to partial or full path, partial requires target adjusting
+				//  else reset corridor to the current position (will wait for full path)
+				//  if full path, set state VALID
+				//  else run async request and set state WAIT_ASYNC_PATH
+			}
 
 			//!!!async queue runs outside here! or could manage async request inside the agent itself, but multithreading
 			// then will be enabled only if the current function will be dispatched across different threads. Also total
