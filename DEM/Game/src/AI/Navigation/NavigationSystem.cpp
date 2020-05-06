@@ -266,7 +266,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			DEM::Game::CActionQueueComponent* pActions,
 			const DEM::Game::CSceneComponent* pSceneComponent)
 	{
-		if (!pSceneComponent->RootNode) return;
+		if (!pSceneComponent->RootNode || !Navigation.pNavQuery || !Navigation.pNavFilter) return;
 
 		//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
 		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
@@ -309,14 +309,25 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				{
 					// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
 					Navigation.State = ENavigationState::Idle;
-					//???return;
+					return;
 				}
 			}
 
 			//???only if corridor is not empty? or checked in findStraightPath?
 			if (Navigation.Mode != ENavigationMode::Offmesh)
 			{
-				//   optimizePathTopology if it is the time and/or necessary events happened
+				// FIXME: only if necessary events happened? like offsetting from expected position.
+				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
+				//const float OPT_TIME_THR_SEC = 0.5f;
+				//ag->topologyOptTime += dt;
+				//if (ag->topologyOptTime >= OPT_TIME_THR_SEC)
+				//{
+				//	ag->corridor.optimizePathTopology(m_navquery, navFilter);
+				//	ag->topologyOptTime = 0;
+				//}
+
+				//???here or in sub-action? was in sub-action, but they should not know about navigation.
+
 				//   findCorners / findStraightPath
 				//   optimizePathVisibility if it is the time and/or necessary events happened
 				//   if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
