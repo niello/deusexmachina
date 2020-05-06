@@ -205,7 +205,7 @@ static void RequestPath(CNavigationComponent& Navigation, ::AI::CPathRequestQueu
 	{
 		// Partial path, constrain target position inside the last polygon or reset to agent position
 		float PartialTargetPos[3];
-		if (LastPoly && dtStatusSucceed(Navigation.pNavQuery->closestPointOnPoly(LastPoly, Navigation.TargetPos.v, PartialTargetPos, nullptr)))
+		if (LastPoly && dtStatusSucceed(Navigation.pNavQuery->closestPointOnPolyBoundary(LastPoly, Navigation.TargetPos.v, PartialTargetPos)))
 			Navigation.Corridor.setCorridor(PartialTargetPos, Path.data(), PathSize);
 		else
 			Navigation.Corridor.setCorridor(Navigation.Corridor.getPos(), Navigation.Corridor.getPath(), 1);
@@ -217,13 +217,13 @@ static void RequestPath(CNavigationComponent& Navigation, ::AI::CPathRequestQueu
 }
 //---------------------------------------------------------------------
 
-static void CheckAsyncPathResult(CNavigationComponent& Navigation, ::AI::CPathRequestQueue& PathQueue)
+static bool CheckAsyncPathResult(CNavigationComponent& Navigation, ::AI::CPathRequestQueue& PathQueue)
 {
 	dtStatus Status = PathQueue.GetRequestStatus(Navigation.AsyncTaskID);
 
 	// If failed, can retry because the target location is still valid
 	if (dtStatusFailed(Status)) Navigation.State = ENavigationState::Requested;
-	else if (!dtStatusSucceed(Status)) return;
+	else if (!dtStatusSucceed(Status)) return true;
 
 	std::array<dtPolyRef, 512> Path;
 	int PathSize = 0;
@@ -231,25 +231,14 @@ static void CheckAsyncPathResult(CNavigationComponent& Navigation, ::AI::CPathRe
 	Status = PathQueue.GetPathResult(Navigation.AsyncTaskID, Path.data(), PathSize, Path.size());
 
 	// The last ref in the old path should be the same as the location where the request was issued
-	if (dtStatusFailed(Status) || !PathSize || Navigation.Corridor.getLastPoly() != Path[0])
-	{
-		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-		Navigation.State = ENavigationState::Idle;
-		return;
-	}
+	if (dtStatusFailed(Status) || !PathSize || Navigation.Corridor.getLastPoly() != Path[0]) return false;
 
 	// If path is partial, try to constrain target position inside the last polygon
-	const auto LastRef = Path[PathSize - 1];
 	vector3 PathTarget = Navigation.TargetPos;
+	const auto LastRef = Path[PathSize - 1];
 	if (LastRef != Navigation.TargetRef)
-	{
-		if (dtStatusFailed(Navigation.pNavQuery->closestPointOnPoly(LastRef, Navigation.TargetPos.v, PathTarget.v, nullptr)))
-		{
-			// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-			Navigation.State = ENavigationState::Idle;
-			return;
-		}
-	}
+		if (dtStatusFailed(Navigation.pNavQuery->closestPointOnPolyBoundary(LastRef, Navigation.TargetPos.v, PathTarget.v)))
+			return false;
 
 	// Merge result and existing path, removing trackbacks. The agent might have moved whilst
 	// the request is being processed, so the path may have changed.
@@ -261,15 +250,11 @@ static void CheckAsyncPathResult(CNavigationComponent& Navigation, ::AI::CPathRe
 		Status = Navigation.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
 	}
 
-	if (dtStatusFailed(Status))
-	{
-		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-		Navigation.State = ENavigationState::Idle;
-		return;
-	}
+	if (dtStatusFailed(Status)) return false;
 
 	Navigation.State = ENavigationState::Following;
 	Navigation.ReplanTime = 0.f;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -320,7 +305,12 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			}
 			else if (Navigation.State == ENavigationState::Planning)
 			{
-				CheckAsyncPathResult(Navigation, PathQueue);
+				if (!CheckAsyncPathResult(Navigation, PathQueue))
+				{
+					// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
+					Navigation.State = ENavigationState::Idle;
+					//???return;
+				}
 			}
 
 			//???only if corridor is not empty? or checked in findStraightPath?
