@@ -24,7 +24,7 @@ bool CPathRequestQueue::Init(int MaxPath)
 	
 	MaxPathSize = MaxPath;
 	for (int i = 0; i < MAX_QUEUE; ++i)
-		Queue[i].RequestID = DT_PATHQ_INVALID;
+		Queue[i].RequestID = 0;
 	
 	QueueHead = 0;
 	OK;
@@ -41,7 +41,7 @@ void CPathRequestQueue::Update(int MaxIters)
 	{
 		CPathQuery& Query = Queue[QueueHead % MAX_QUEUE];
 		
-		if (Query.RequestID == DT_PATHQ_INVALID)
+		if (Query.RequestID == 0)
 		{
 			++QueueHead;
 			continue;
@@ -52,7 +52,7 @@ void CPathRequestQueue::Update(int MaxIters)
 			++Query.KeepAlive;
 			if (Query.KeepAlive > MAX_KEEP_ALIVE)
 			{
-				Query.RequestID = DT_PATHQ_INVALID;
+				Query.RequestID = 0;
 				Query.Status = 0;
 			}
 			
@@ -80,20 +80,20 @@ void CPathRequestQueue::Update(int MaxIters)
 }
 //---------------------------------------------------------------------
 
-UPTR CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* pStart,
+U16 CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* pStart,
 								 const float* pEnd, dtNavMeshQuery* pNavQuery, const dtQueryFilter* pFilter)
 {
 	n_assert(pStart && pEnd && pNavQuery);
 
 	int i;
 	for (i = 0; i < MAX_QUEUE; ++i)
-		if (Queue[i].RequestID == DT_PATHQ_INVALID) break;
+		if (Queue[i].RequestID == 0) break;
 
-	if (i == MAX_QUEUE) return DT_PATHQ_INVALID;
+	if (i == MAX_QUEUE) return 0;
 	
 	CPathQuery& Query = Queue[i];
 	Query.RequestID = NextRequestID++;
-	if (NextRequestID == DT_PATHQ_INVALID) NextRequestID++;
+	if (NextRequestID == 0) NextRequestID++;
 	dtVcopy(Query.StartPos, pStart);
 	Query.StartRef = RStart;
 	dtVcopy(Query.EndPos, pEnd);
@@ -114,19 +114,19 @@ UPTR CPathRequestQueue::Request(dtPolyRef RStart, dtPolyRef REnd, const float* p
 }
 //---------------------------------------------------------------------
 
-void CPathRequestQueue::CancelRequest(UPTR RequestID)
+void CPathRequestQueue::CancelRequest(U16 RequestID)
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == RequestID)
 		{
 			CPathQuery& Query = Queue[i];
-			Query.RequestID = DT_PATHQ_INVALID;
+			Query.RequestID = 0;
 			Query.Status = 0;
 		}
 }
 //---------------------------------------------------------------------
 
-dtStatus CPathRequestQueue::GetRequestStatus(UPTR RequestID) const
+dtStatus CPathRequestQueue::GetRequestStatus(U16 RequestID) const
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == RequestID)
@@ -135,13 +135,13 @@ dtStatus CPathRequestQueue::GetRequestStatus(UPTR RequestID) const
 }
 //---------------------------------------------------------------------
 
-dtStatus CPathRequestQueue::GetPathResult(UPTR RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath)
+dtStatus CPathRequestQueue::GetPathResult(U16 RequestID, dtPolyRef* pOutPath, int& OutSize, int MaxPath)
 {
 	for (int i = 0; i < MAX_QUEUE; ++i)
 		if (Queue[i].RequestID == RequestID)
 		{
 			CPathQuery& Query = Queue[i];
-			Query.RequestID = DT_PATHQ_INVALID;
+			Query.RequestID = 0;
 			Query.Status = 0;
 			OutSize = dtMin(Query.PathSize, MaxPath);
 			memcpy(pOutPath, Query.pPath, sizeof(dtPolyRef) * OutSize);

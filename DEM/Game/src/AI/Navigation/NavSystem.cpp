@@ -23,7 +23,7 @@ CNavSystem::CNavSystem(CActor* Actor):
 	DestRef(0),
 	OffMeshRef(0),
 	pProcessingQueue(nullptr),
-	PathRequestID(DT_PATHQ_INVALID),
+	PathRequestID(0),
 	TraversingOffMesh(false)
 {
 	Corridor.init(MAX_NAV_PATH);
@@ -35,7 +35,7 @@ inline void CNavSystem::ResetPathRequest()
 	if (!pProcessingQueue) return;
 	pProcessingQueue->CancelRequest(PathRequestID);
 	pProcessingQueue = nullptr;
-	PathRequestID = DT_PATHQ_INVALID;
+	PathRequestID = 0;
 }
 //---------------------------------------------------------------------
 
@@ -239,7 +239,7 @@ void CNavSystem::Update(float FrameTime)
 
 	if (pActor->NavState == AINav_Planning)
 	{
-		if (PathRequestID == DT_PATHQ_INVALID)
+		if (PathRequestID == 0)
 		{
 			NOT_IMPLEMENTED;
 			/*
@@ -260,7 +260,7 @@ void CNavSystem::Update(float FrameTime)
 			if (dtStatusFailed(QueryStatus))
 			{
 				pProcessingQueue = nullptr;
-				PathRequestID = DT_PATHQ_INVALID;
+				PathRequestID = 0;
 				pActor->NavState = AINav_Failed;
 			}
 			else if (dtStatusSucceed(QueryStatus))
@@ -320,7 +320,7 @@ void CNavSystem::Update(float FrameTime)
 
 				ReplanTime = 0.f;
 				pProcessingQueue = nullptr;
-				PathRequestID = DT_PATHQ_INVALID;
+				PathRequestID = 0;
 			}
 		}
 	}

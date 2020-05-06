@@ -47,6 +47,7 @@ struct CNavigationComponent
 	vector3              TargetPos;
 	dtPolyRef            TargetRef = 0;
 	float                ReplanTime = 0.f;
+	U16                  AsyncTaskID = 0;
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface;
 };

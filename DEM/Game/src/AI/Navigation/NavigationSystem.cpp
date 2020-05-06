@@ -95,7 +95,6 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 		// polygons in the path so that replanner can adjust the path better.
 		Navigation.Corridor.fixPathStart(NearestRef, NearestPos);
 		Navigation.State = ENavigationState::Requested;
-		//!!!FIXME: reset async request if present!
 	}
 }
 //---------------------------------------------------------------------
@@ -149,8 +148,32 @@ static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation
 	else
 	{
 		Navigation.State = ENavigationState::Requested;
-		//!!!FIXME: reset async request if present!
 	}
+}
+//---------------------------------------------------------------------
+
+static bool CheckCurrentPath(CNavigationComponent& Navigation)
+{
+	n_assert_dbg(Navigation.State != ENavigationState::Idle);
+
+	// No path - no replanning
+	if (Navigation.State == ENavigationState::Requested || Navigation.State == ENavigationState::Idle) return true;
+
+	// If nearby corridor is not valid, replan
+	constexpr int CHECK_LOOKAHEAD = 10;
+	if (!Navigation.Corridor.isValid(CHECK_LOOKAHEAD, Navigation.pNavQuery, Navigation.pNavFilter)) return false;
+
+	// If the end of the path is near and it is not the requested location, replan
+	constexpr float TARGET_REPLAN_DELAY = 1.0f; // seconds
+	if (Navigation.State == ENavigationState::Following &&
+		Navigation.ReplanTime > TARGET_REPLAN_DELAY &&
+		Navigation.Corridor.getPathCount() < CHECK_LOOKAHEAD &&
+		Navigation.Corridor.getLastPoly() != Navigation.TargetRef)
+	{
+		return false;
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -181,92 +204,80 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt)
 			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Navigation);
 
 			//???if position failed Navigate task, early exit?
+			//!!!if invalid pos (first corridor poly is zero) exit? can't recover from that pos to the corridor.
 
 			UpdateDestination(*pNavigateAction, Navigation);
 
-			//???if destination failed Navigate task, early exit?
+			//???if destination failed Navigate task (incl. zero target poly ref), early exit?
 
 			//!!!if actor is already at the new destination, finish Navigate action (success), set idle and exit
 
-			// Check current path validity
-			if (Navigation.State != ENavigationState::Requested)
-			{
-				constexpr int CHECK_LOOKAHEAD = 10;
-				if (!Navigation.Corridor.isValid(CHECK_LOOKAHEAD, Navigation.pNavQuery, Navigation.pNavFilter))
-				{
-					// Nearby corridor is not valid, replan
-					Navigation.State = ENavigationState::Requested;
-					//!!!FIXME: reset async request if present!
-				}
-				else if (Navigation.State == ENavigationState::Following)
-				{
-					// If the end of the path is near and it is not the requested location, replan
-					constexpr float TARGET_REPLAN_DELAY = 1.0f; // seconds
-					if (Navigation.ReplanTime > TARGET_REPLAN_DELAY &&
-						Navigation.Corridor.getPathCount() < CHECK_LOOKAHEAD &&
-						Navigation.Corridor.getLastPoly() != Navigation.TargetRef)
-					{
-						Navigation.State = ENavigationState::Requested;
-						//!!!FIXME: reset async request if present!
-					}
-				}
-			}
+			// Check current path validity, replan if can't continue using it
+			if (!CheckCurrentPath(Navigation))
+				Navigation.State = ENavigationState::Requested;
 
 			if (Navigation.State = ENavigationState::Requested)
 			{
-				//???!!!cancel traversal sub-action, if any?!
+				//???!!!TODO: cancel traversal sub-action, if any?!
 
-				//!!!instead of Replan flag we check if corridor length is > 1 (at least)!
+				// Quick synchronous search towards the goal, limited iteration count
+				Navigation.pNavQuery->initSlicedFindPath(Navigation.Corridor.getFirstPoly(), Navigation.TargetRef, Navigation.Corridor.getPos(), Navigation.TargetPos.v, Navigation.pNavFilter);
+				Navigation.pNavQuery->updateSlicedFindPath(20, 0);
 
-				//  initSlicedFindPath + updateSlicedFindPath(few iterations) for quickpath
-				//  finalizeSlicedFindPath[Partial if replan]
-				//  if finalized and not empty, set corridor to partial or full path, partial requires target adjusting
-				//  else reset corridor to the current position (will wait for full path)
-				//  if full path, set state VALID
-				//  else run async request and set state WAIT_ASYNC_PATH
+				// Try to reuse existing steady path if possible and worthwile
+				std::array<dtPolyRef, 32> Path;
+				int PathSize = 0;
+				dtStatus Status = (Navigation.Corridor.getPathCount() > 10) ?
+					m_navquery->finalizeSlicedFindPathPartial(Navigation.Corridor.getPath(), Navigation.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
+					m_navquery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
+
+				// Setup path corridor
+				const dtPolyRef LastPoly = (dtStatusFailed(Status) || !PathSize) ? 0 : Path[PathSize - 1];
+				if (LastPoly == Navigation.TargetRef)
+				{
+					// Full path
+					Navigation.Corridor.setCorridor(Navigation.TargetPos, Path.data(), PathSize);
+					Navigation.State = ENavigationState::Following;
+					Navigation.ReplanTime = 0.f;
+				}
+				else
+				{
+					// Partial path, constrain target position inside the last polygon or reset to agent position
+					float PartialTargetPos[3];
+					if (LastPoly && dtStatusSucceed(Navigation.pNavQuery->closestPointOnPoly(LastPoly, Navigation.TargetPos, PartialTargetPos, nullptr)))
+						Navigation.Corridor.setCorridor(PartialTargetPos, Path.data(), PathSize);
+					else
+						Navigation.Corridor.setCorridor(Navigation.Corridor.getPos(), Navigation.Corridor.getFirstPoly(), 1);
+
+					//!!!TODO: use CPathRequestQueue!?
+					Navigation.AsyncTaskID = m_pathq.request(Navigation.Corridor.getLastPoly(), Navigation.TargetRef, Navigation.Corridor.getTarget(), Navigation.TargetPos, Navigation.pNavFilter);
+					if (Navigation.AsyncTaskID)
+						Navigation.State = ENavigationState::Planning;
+				}
+			}
+			else if (Navigation.State == ENavigationState::Planning)
+			{
+				//   get request state
+				//   if failed, retry REQUEST if target is valid or set FAILED if not
+				//   else if done
+				//     get result, fail if empty or not retrieved or curr end != new start
+				//     if has curr path, merge with new and remove trackbacks
+				//     set corridor to partial or full path, partial requires target adjusting (FAILED if fail)
+				//     set state VALID
 			}
 
 			//!!!async queue runs outside here! or could manage async request inside the agent itself, but multithreading
 			// then will be enabled only if the current function will be dispatched across different threads. Also total
 			// balancing prevents async request to be managed here!!! Need external!
 
-			// if state is REQUEST
-			//   ... see above
-			// _else_ if WAIT_ASYNC_PATH (may check only if was not just set!)
-			//   get request state
-			//   if failed, retry REQUEST if target is valid or set FAILED if not
-			//   else if done
-			//     get result, fail if empty or not retrieved or curr end != new start
-			//     if has curr path, merge with new and remove trackbacks
-			//     set corridor to partial or full path, partial requires target adjusting (FAILED if fail)
-			//     set state VALID
-
-			// if on navmesh and has target
-			//   optimizePathTopology if it is the time and/or necessary events happened
-			//   findCorners / findStraightPath
-			//   optimizePathVisibility if it is the time and/or necessary events happened
-			//   if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
-			//   create/update/check sub-action for current edge traversal
-
-			//==============
-
-			// if corridor is invalid, trim and fix or even do full replanning
-			// if we are on the navmesh and are nearing corridor end poly which is not target poly and replan time has come, replan
-			// if replan flag is set after all above, we will do replanning this frame
-			// replanning:
-			//   try calc quick path
-			//   if found, use quick path and build remaining part in parallel
-			//   else find from scratch
-			// if quick path was not full:
-			//   if no async request, run one
-			//   else check its status
-			//     if failed, all navigation is failed
-			//     else if done, get result and merge into a quick path and fix curr dest to the final one, setCorridor
-			//     clear request info
-			// if following full path (no planning awaited):
-			//   optimizePathTopology periodicaly (???better on some changes?)
-
-			// <process offmesh traversal - where and how?>
+			if (Navigation.Mode != ENavigationMode::Offmesh)
+			{
+				//   optimizePathTopology if it is the time and/or necessary events happened
+				//   findCorners / findStraightPath
+				//   optimizePathVisibility if it is the time and/or necessary events happened
+				//   if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
+				//   create/update/check sub-action for current edge traversal
+			}
 		}
 		else if (Navigation.State != ENavigationState::Idle)
 		{
