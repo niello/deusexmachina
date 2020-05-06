@@ -228,8 +228,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt)
 				std::array<dtPolyRef, 32> Path;
 				int PathSize = 0;
 				dtStatus Status = (Navigation.Corridor.getPathCount() > 10) ?
-					m_navquery->finalizeSlicedFindPathPartial(Navigation.Corridor.getPath(), Navigation.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
-					m_navquery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
+					Navigation.pNavQuery->finalizeSlicedFindPathPartial(Navigation.Corridor.getPath(), Navigation.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
+					Navigation.pNavQuery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
 
 				// Setup path corridor
 				const dtPolyRef LastPoly = (dtStatusFailed(Status) || !PathSize) ? 0 : Path[PathSize - 1];
