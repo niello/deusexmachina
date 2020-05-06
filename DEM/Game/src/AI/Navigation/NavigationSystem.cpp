@@ -11,11 +11,9 @@ namespace DEM::AI
 
 //???set height limit to check? agent height is good, must distinguish between different floors.
 //otherwise false equalities may happen!
-static inline bool dtVequal2D(const float* p0, const float* p1)
+static inline bool dtVequal2D(const float* p0, const float* p1, float thr = 1.0f / (16384.0f * 16384.0f))
 {
-	static const float thr = dtSqr(1.0f / 16384.0f);
-	const float d = dtVdist2DSqr(p0, p1);
-	return d < thr;
+	return dtVdist2DSqr(p0, p1) < thr;
 }
 //---------------------------------------------------------------------
 
@@ -23,116 +21,79 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 {
 	const bool PositionChanged = !dtVequal2D(Navigation.Corridor.getPos(), Position.v);
 
-	//???!!!movePosition etc only if not idle?
-
-	if (PositionChanged)
+	if (PositionChanged && Navigation.Mode != ENavigationMode::Offmesh && Navigation.State != ENavigationState::Idle)
 	{
-		if (Navigation.Mode == ENavigationMode::Offmesh)
+		// Agent moves along the navmesh surface or recovers to it, adjust the corridor
+		if (Navigation.Corridor.movePosition(Position.v, Navigation.pNavQuery, Navigation.pNavFilter))
 		{
-			// Not moving along the navmesh surface
-			//!!!if traversing offmesh, must check its poly validity! see (!PositionChanged) below, the same is done!
-		}
-		else
-		{
-			// Try to move along the navmesh surface to the new position
-			if (Navigation.Corridor.movePosition(Position.v, Navigation.pNavQuery, Navigation.pNavFilter))
+			if (dtVequal2D(Position.v, Navigation.Corridor.getPos()))
 			{
-				if (dtVequal2D(Position.v, Navigation.Corridor.getPos()))
-				{
-					Navigation.Mode = ENavigationMode::Surface;
-				}
-				else
-				{
-					// Moved too far or off the navmesh surface
-					const float Extents[3] = { 0.f, pActor->Height, 0.f };
-					dtPolyRef Ref = 0;
-					float Nearest[3];
-					Navigation.pNavQuery->findNearestPoly(Position.v, Extents, Navigation.pNavFilter, &Ref, Nearest);
-
-					if (Ref && dtVequal2D(Position.v, Nearest))
-					{
-						// We are on the navmesh, but our corridor needs rebuilding
-						Navigation.Mode = ENavigationMode::Surface;
-						Navigation.Corridor.reset(Ref, Position.v);
-						Replan = true;
-					}
-					else
-					{
-						Navigation.Mode = ENavigationMode::Recovery;
-					}
-				}
+				// TODO: finish recovery, if was active. Preserve sub-action, if exists.
+				Navigation.Mode = ENavigationMode::Surface;
+				return;
 			}
-			else
-			{
-				// Invalid starting poly or args
-				Navigation.Mode = ENavigationMode::Recovery;
-			}
-
-			//!!!and/or trigger an offmesh connection here!
-			//if triggered offmesh, finish current edge traversal!
-
-			//!!!if corridor pos != agent pos, need to set invalid state and recovery!
 		}
 	}
 	else
 	{
-		// Position is the same, but poly might become invalid
-		if (!Navigation.pNavQuery->isValidPolyRef(Navigation.Corridor.getFirstPoly(), Navigation.pNavFilter))
-		{
-			// find another poly under the feet, it may be valid
-			//???use fixPathStart or do as above?
+		// Agent is idle or moves along the offmesh connection, check the current poly validity
+		if (Navigation.pNavQuery->isValidPolyRef(Navigation.Corridor.getFirstPoly(), Navigation.pNavFilter)) return;
 
-			if (Navigation.State == ENavigationState::Idle)
-			{
-				//???end edge traversal? must ensure that offmesh connection will be processed correctly!
-				Navigation.Corridor.reset(0, Position.v);
-			}
-			else
-			{
-				Navigation.Mode = ENavigationMode::Recovery;
-			}
+		// If offmesh connection became invalid, cancel its traversal and fail navigation task
+		if (Navigation.Mode == ENavigationMode::Offmesh)
+		{
+			// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
+			Navigation.Mode == ENavigationMode::Recovery;
+			return;
 		}
 	}
 
-	// if valid and not idle (and position changed?) (and not replanning?), check current edge traversal end
+	// Our current poly is unknown or invalid, find the nearist valid one
+	const float RecoveryRadius = std::min(pActor->Radius * 2.f, 20.f);
+	const float RecoveryExtents[3] = { RecoveryRadius, pActor->Height, RecoveryRadius };
+	dtPolyRef NearestRef = 0;
+	float NearestPos[3];
+	Navigation.pNavQuery->findNearestPoly(Position.v, RecoveryExtents, Navigation.pNavFilter, &NearestRef, NearestPos);
 
+	if (!NearestRef)
+	{
+		// No poly found in a recovery radius, agent can't recover and needs external position change
+		// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
+		Navigation.Mode == ENavigationMode::Recovery;
+		Navigation.Corridor.reset(0, Position.v);
+		return;
+	}
 
-	///////////////////////////////
+	// Check if our new location is far enough from the navmesh to enable recovery mode
+	if (!dtVequal2D(Position.v, NearestPos, pActor->Radius * 0.1f))
+	{
+		// TODO: must cancel current traversal sub-action even without replanning, if was not already recovering
+		Navigation.Mode == ENavigationMode::Recovery;
+	}
+	else
+	{
+		// TODO: finish recovery, if was active
+		Navigation.Mode == ENavigationMode::Surface;
+	}
 
 	if (Navigation.State == ENavigationState::Idle)
 	{
-		if (PositionChanged)
-		{
-			// reset poly
-			// single-poly corridor: Corridor.reset(Corridor.getFirstPoly(), Corridor.getPos());
-		}
+		Navigation.Corridor.reset(NearestRef, NearestPos);
 	}
 	else
 	{
-		//!!!instead of this condition detect entering offmesh connection!
-		if (Navigation.Mode == ENavigationMode::Offmesh)
-		{
-			//???!!!always call moveOverOffmeshConnectionat start? then wait reaching offmesh connection end
-			// if started or ended offmesh traversal and this side is "done", moveOverOffmeshConnection
-		}
-		else
-		{
-			// FIXME: if moved too far AND starting poly changed, better to replan (or check return false?)
-			Navigation.Corridor.movePosition(Position.v, Navigation.pNavQuery, Navigation.pNavFilter);
-			// else movePosition, if failed update position poly
-		}
+		// TODO: if this doesn't work as intended, may implement the following logic:
+		// 1. Check if the nearest poly is one on our path (or only 1st poly in the corridor, or 1st and 2nd)
+		// 2. If yes, keep corridor without replanning and recover to the nearest pos
+		// 3. Else reset corridor to the new position and replan
+		// Also can recover to the corridor poly that is valid and most close to start.
+		// Must handle possible clipping through thin unwalkable areas.
 
-		// check if edge traversal sub-action is done, finalize it
-		// detect both normal path edge and offmesh connection arrivals
-
-		// DT:
-		// if not on offmesh
-		//   if curr poly invalid, find nearest poly and navmesh point in a target recovery radius
-		//     if not found, reset corridor and drop navigation task
-		//     else remember new destination point (in corridor is enough?) and replan
+		// Make sure the first polygon is valid, but leave other valid
+		// polygons in the path so that replanner can adjust the path better.
+		Navigation.Corridor.fixPathStart(NearestRef, NearestPos);
+		Replan = true;
 	}
-
-	// set position validity flag (real == corridor, in other words real is on navmesh)
 }
 //---------------------------------------------------------------------
 
@@ -173,11 +134,16 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 		//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
 		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
 
+		//!!!recovery subtask can use speed "as fast as possible" or "recovery" type, then character controller can
+		// resolve small length recovery as collision, immediately moving the character to the recovery destination.
+
 		if (auto pNavigateAction = pActions->FindActive<Navigate>())
 		{
 			//!!!TODO:
 			// update time since last replan and other timers, if based on elapsed time
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
+
+			//???check traversal sub-action result before all other?
 
 			bool Replan = false;
 			const auto& Position = pSceneComponent->RootNode->GetWorldPosition();
@@ -192,6 +158,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 			// if following path not waiting anything, and end is near and it's not target, replan
 			if (Replan)
 			{
+				//???!!!cancel traversal sub-action?!
 				//request replanning
 			}
 
@@ -207,7 +174,9 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 			// then will be enabled only if the current function will be dispatched across different threads. Also total
 			// balancing prevents async request to be managed here!!! Need external!
 
-			// if WAIT_ASYNC_PATH (may check only if was not just set!)
+			// if state is REQUEST
+			//   ... see above
+			// _else_ if WAIT_ASYNC_PATH (may check only if was not just set!)
 			//   get request state
 			//   if failed, retry REQUEST if target is valid or set FAILED if not
 			//   else if done
@@ -221,7 +190,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 			//   findCorners / findStraightPath
 			//   optimizePathVisibility if it is the time and/or necessary events happened
 			//   if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
-			//   create sub-action for current edge traversal
+			//   create/update/check sub-action for current edge traversal
 
 			//==============
 
