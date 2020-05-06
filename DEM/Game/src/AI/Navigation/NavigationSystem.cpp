@@ -11,7 +11,8 @@ namespace DEM::AI
 
 //???set height limit to check? agent height is good, must distinguish between different floors.
 //otherwise false equalities may happen!
-static inline bool dtVequal2D(const float* p0, const float* p1, float thr = 1.0f / (16384.0f * 16384.0f))
+constexpr float DEFAULT_EPSILON = 1.0f / (16384.0f * 16384.0f);
+static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFAULT_EPSILON)
 {
 	return dtVdist2DSqr(p0, p1) < thr;
 }
@@ -42,13 +43,13 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 		// If offmesh connection became invalid, cancel its traversal and fail navigation task
 		if (Navigation.Mode == ENavigationMode::Offmesh)
 		{
-			// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
-			Navigation.Mode == ENavigationMode::Recovery;
+			// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
+			Navigation.Mode = ENavigationMode::Recovery;
 			return;
 		}
 	}
 
-	// Our current poly is unknown or invalid, find the nearist valid one
+	// Our current poly is unknown or invalid, find the nearest valid one
 	const float RecoveryRadius = std::min(pActor->Radius * 2.f, 20.f);
 	const float RecoveryExtents[3] = { RecoveryRadius, pActor->Height, RecoveryRadius };
 	dtPolyRef NearestRef = 0;
@@ -58,22 +59,23 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 	if (!NearestRef)
 	{
 		// No poly found in a recovery radius, agent can't recover and needs external position change
-		// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
-		Navigation.Mode == ENavigationMode::Recovery;
+		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
+		Navigation.Mode = ENavigationMode::Recovery;
 		Navigation.Corridor.reset(0, Position.v);
 		return;
 	}
 
 	// Check if our new location is far enough from the navmesh to enable recovery mode
-	if (!dtVequal2D(Position.v, NearestPos, pActor->Radius * 0.1f))
+	const float RecoveryThreshold = pActor->Radius * 0.1f;
+	if (dtVdist2DSqr(Position.v, NearestPos) > RecoveryThreshold * RecoveryThreshold)
 	{
 		// TODO: must cancel current traversal sub-action even without replanning, if was not already recovering
-		Navigation.Mode == ENavigationMode::Recovery;
+		Navigation.Mode = ENavigationMode::Recovery;
 	}
 	else
 	{
 		// TODO: finish recovery, if was active
-		Navigation.Mode == ENavigationMode::Surface;
+		Navigation.Mode = ENavigationMode::Surface;
 	}
 
 	if (Navigation.State == ENavigationState::Idle)
@@ -87,7 +89,7 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 		// 2. If yes, keep corridor without replanning and recover to the nearest pos
 		// 3. Else reset corridor to the new position and replan
 		// Also can recover to the corridor poly that is valid and most close to start.
-		// Must handle possible clipping through thin unwalkable areas.
+		// Must handle possible clipping through thin impassable areas.
 
 		// Make sure the first polygon is valid, but leave other valid
 		// polygons in the path so that replanner can adjust the path better.
@@ -97,27 +99,58 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 }
 //---------------------------------------------------------------------
 
-static void UpdateDestination(const vector3& Destination, CNavigationComponent& Navigation, bool& Replan)
+static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation, bool& Replan)
 {
-	const bool TargetChanged = !dtVequal(Navigation.Destination.v, Destination.v);
+	//!!!FIXME: setting, per Navigate action or per entity!
+	constexpr float MaxTargetOffset = 0.5f;
+	constexpr float MaxTargetOffsetSq = MaxTargetOffset * MaxTargetOffset;
 
-	// FIXME: poly validity check still must happen!
-	//if (Navigation.State != ENavigationState::Idle && !TargetChanged) return;
+	if (Navigation.State != ENavigationState::Idle)
+	{
+		if (dtVequal(Navigation.TargetPos.v, Action._Destination.v))
+		{
+			// Target remains static but we must check its poly validity anyway
+			if (Navigation.pNavQuery->isValidPolyRef(Navigation.TargetRef, Navigation.pNavFilter)) return;
+		}
+		else if (Navigation.State == ENavigationState::Following)
+		{
+			// Planning finished, can adjust moving target in the corridor
+			if (Navigation.Corridor.moveTargetPosition(Action._Destination.v, Navigation.pNavQuery, Navigation.pNavFilter))
+			{
+				// Check if target matches the corridor or moved not too far from it into impassable zone.
+				// Otherwise target is considered teleported and may require replanning (see below).
+				const auto OffsetSq = dtVdist2DSqr(Action._Destination.v, Navigation.Corridor.getTarget());
+				if (OffsetSq < DEFAULT_EPSILON ||
+					(Navigation.TargetRef == Navigation.Corridor.getLastPoly() && OffsetSq <= MaxTargetOffsetSq))
+				{
+					Navigation.TargetRef = Navigation.Corridor.getLastPoly();
+					Navigation.TargetPos = Navigation.Corridor.getTarget();
+					return;
+				}
+			}
+		}
+	}
 
-	Navigation.Destination = Destination;
+	// Target poly is unknown or invalid, find the nearest valid one
+	const float TargetExtents[3] = { MaxTargetOffset, pActor->Height, MaxTargetOffset };
+	Navigation.pNavQuery->findNearestPoly(Action._Destination.v, TargetExtents, Navigation.pNavFilter, &Navigation.TargetRef, Navigation.TargetPos.v);
 
-	// FIXME: if moved too far AND target poly changed, better to replan (or check return false?)
-	// if not idle, moveTargetPosition
-	// else set requested, no replan
+	if (!Navigation.TargetRef || dtVdist2DSqr(Action._Destination.v, Navigation.TargetPos.v) > MaxTargetOffsetSq)
+	{
+		// No poly found in a target radius, navigation task is failed
+		// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
+		if (Navigation.State != ENavigationState::Idle)
+		{
+			Navigation.Corridor.reset(Navigation.Corridor.getFirstPoly(), Navigation.Corridor.getPos());
+			Navigation.State = ENavigationState::Idle;
+		}
+		return;
+	}
 
-	// update dest poly if needed
-	// if dest is invalid, fix to navmesh and chande desired destination, may need replan
-
-	// DT:
-	// if not idle and not on offmesh
-	//   if target poly invalid, find nearest poly in a recovery radius
-	//     if on found poly, corridor.fixPathStart and replan
-	//     else reset corridor to zero poly and go into invalid state
+	if (Navigation.State == ENavigationState::Idle)
+		Navigation.State = ENavigationState::Requested;
+	else
+		Replan = true;
 }
 //---------------------------------------------------------------------
 
@@ -143,16 +176,20 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 			// update time since last replan and other timers, if based on elapsed time
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 
-			//???check traversal sub-action result before all other?
+			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
+			// if succeeded and was offmesh, return to navmesh.
 
 			bool Replan = false;
-			const auto& Position = pSceneComponent->RootNode->GetWorldPosition();
-			UpdatePosition(Position, Navigation, Replan);
-			UpdateDestination(pNavigateAction->_Destination, Navigation, Replan);
+
+			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Navigation, Replan);
+
+			//???if position failed Navigate task, early exit?
+
+			UpdateDestination(*pNavigateAction, Navigation, Replan);
+
+			//???if destination failed Navigate task, early exit?
 
 			// if actor is already at the new destination, finish Navigate action (success), set idle and exit
-			// if navigation failed, finish Navigate action (failure), set idle and exit
-			//???if position is invalid and recovery point not found, finish Navigate action (failure), set idle and exit?
 
 			// validate corridor CHECK_LOOKAHEAD polys ahead, if failed replan
 			// if following path not waiting anything, and end is near and it's not target, replan
@@ -215,6 +252,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World)
 		else if (Navigation.State != ENavigationState::Idle)
 		{
 			// set idle
+			//???need UpdatePosition?
 		}
 	});
 }

@@ -13,7 +13,7 @@ namespace Event
 
 class SetTransform: public Events::CEventNative
 {
-	__DeclareNativeEventClass;
+	NATIVE_EVENT_DECL;
 
 public:
 

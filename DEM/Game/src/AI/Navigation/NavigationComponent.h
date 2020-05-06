@@ -11,7 +11,7 @@ namespace DEM::AI
 
 class Navigate: public Events::CEventNative
 {
-	__DeclareNativeEventClass;
+	NATIVE_EVENT_DECL;
 
 public:
 
@@ -19,7 +19,7 @@ public:
 	//???or navigation is always to point, and point is updated from target externally? strange.
 	vector3 _Destination;
 	float   _Speed = 0.f;
-	// MinDistance, MaxDistance
+	// MinDistance, MaxDistance, MaxTargetOffset
 
 	explicit Navigate(const vector3& Destination, float Speed) : _Destination(Destination), _Speed(Speed) {}
 };
@@ -44,7 +44,8 @@ struct CNavigationComponent
 	dtPathCorridor       Corridor;
 	dtNavMeshQuery*      pNavQuery = nullptr;
 	const dtQueryFilter* pNavFilter = nullptr;
-	vector3              Destination;
+	vector3              TargetPos;
+	dtPolyRef            TargetRef = 0;
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface;
 };
