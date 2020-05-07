@@ -39,7 +39,7 @@ enum class ENavigationMode : U8
 	Offmesh       // Agent is traversing an offmesh connection
 };
 
-struct CNavigationComponent
+struct CNavAgentComponent
 {
 	dtPathCorridor       Corridor;
 	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?
@@ -59,13 +59,13 @@ struct CNavigationComponent
 namespace DEM::Meta
 {
 
-template<> inline constexpr auto RegisterClassName<DEM::AI::CNavigationComponent>() { return "DEM::AI::CNavigationComponent"; }
-template<> inline constexpr auto RegisterMembers<DEM::AI::CNavigationComponent>()
+template<> inline constexpr auto RegisterClassName<DEM::AI::CNavAgentComponent>() { return "DEM::AI::CNavAgentComponent"; }
+template<> inline constexpr auto RegisterMembers<DEM::AI::CNavAgentComponent>()
 {
 	return std::make_tuple
 	(
-		Member(1, "Radius", &DEM::AI::CNavigationComponent::Radius, &AI::CNavigationComponent::Radius),
-		Member(1, "Height", &DEM::AI::CNavigationComponent::Height, &AI::CNavigationComponent::Height)
+		Member(1, "Radius", &DEM::AI::CNavAgentComponent::Radius, &AI::CNavAgentComponent::Radius),
+		Member(2, "Height", &DEM::AI::CNavAgentComponent::Height, &AI::CNavAgentComponent::Height)
 	);
 }
 

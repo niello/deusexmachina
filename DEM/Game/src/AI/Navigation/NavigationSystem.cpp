@@ -3,7 +3,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/SceneComponent.h>
-#include <AI/Navigation/NavigationComponent.h>
+#include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Navigation/PathRequestQueue.h>
 #include <DetourCommon.h>
 #include <array>
@@ -20,19 +20,19 @@ static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFA
 }
 //---------------------------------------------------------------------
 
-static void UpdatePosition(const vector3& Position, CNavigationComponent& Navigation)
+static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 {
-	const bool PositionChanged = !dtVequal2D(Navigation.Corridor.getPos(), Position.v);
+	const bool PositionChanged = !dtVequal2D(Agent.Corridor.getPos(), Position.v);
 
-	if (PositionChanged && Navigation.Mode != ENavigationMode::Offmesh && Navigation.State != ENavigationState::Idle)
+	if (PositionChanged && Agent.Mode != ENavigationMode::Offmesh && Agent.State != ENavigationState::Idle)
 	{
 		// Agent moves along the navmesh surface or recovers to it, adjust the corridor
-		if (Navigation.Corridor.movePosition(Position.v, Navigation.pNavQuery, Navigation.pNavFilter))
+		if (Agent.Corridor.movePosition(Position.v, Agent.pNavQuery, Agent.pNavFilter))
 		{
-			if (dtVequal2D(Position.v, Navigation.Corridor.getPos()))
+			if (dtVequal2D(Position.v, Agent.Corridor.getPos()))
 			{
 				// TODO: finish recovery, if was active. Preserve sub-action, if exists.
-				Navigation.Mode = ENavigationMode::Surface;
+				Agent.Mode = ENavigationMode::Surface;
 				return;
 			}
 		}
@@ -40,49 +40,49 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 	else
 	{
 		// Agent is idle or moves along the offmesh connection, check the current poly validity
-		if (Navigation.pNavQuery->isValidPolyRef(Navigation.Corridor.getFirstPoly(), Navigation.pNavFilter)) return;
+		if (Agent.pNavQuery->isValidPolyRef(Agent.Corridor.getFirstPoly(), Agent.pNavFilter)) return;
 
 		// If offmesh connection became invalid, cancel its traversal and fail navigation task
-		if (Navigation.Mode == ENavigationMode::Offmesh)
+		if (Agent.Mode == ENavigationMode::Offmesh)
 		{
 			// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-			Navigation.Mode = ENavigationMode::Recovery;
+			Agent.Mode = ENavigationMode::Recovery;
 			return;
 		}
 	}
 
 	// Our current poly is unknown or invalid, find the nearest valid one
-	const float RecoveryRadius = std::min(Navigation.Radius * 2.f, 20.f);
-	const float RecoveryExtents[3] = { RecoveryRadius, Navigation.Height, RecoveryRadius };
+	const float RecoveryRadius = std::min(Agent.Radius * 2.f, 20.f);
+	const float RecoveryExtents[3] = { RecoveryRadius, Agent.Height, RecoveryRadius };
 	dtPolyRef NearestRef = 0;
 	float NearestPos[3];
-	Navigation.pNavQuery->findNearestPoly(Position.v, RecoveryExtents, Navigation.pNavFilter, &NearestRef, NearestPos);
+	Agent.pNavQuery->findNearestPoly(Position.v, RecoveryExtents, Agent.pNavFilter, &NearestRef, NearestPos);
 
 	if (!NearestRef)
 	{
 		// No poly found in a recovery radius, agent can't recover and needs external position change
 		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-		Navigation.Mode = ENavigationMode::Recovery;
-		Navigation.Corridor.reset(0, Position.v);
+		Agent.Mode = ENavigationMode::Recovery;
+		Agent.Corridor.reset(0, Position.v);
 		return;
 	}
 
 	// Check if our new location is far enough from the navmesh to enable recovery mode
-	const float RecoveryThreshold = Navigation.Radius * 0.1f;
+	const float RecoveryThreshold = Agent.Radius * 0.1f;
 	if (dtVdist2DSqr(Position.v, NearestPos) > RecoveryThreshold * RecoveryThreshold)
 	{
 		// TODO: must cancel current traversal sub-action even without replanning, if was not already recovering
-		Navigation.Mode = ENavigationMode::Recovery;
+		Agent.Mode = ENavigationMode::Recovery;
 	}
 	else
 	{
 		// TODO: finish recovery, if was active
-		Navigation.Mode = ENavigationMode::Surface;
+		Agent.Mode = ENavigationMode::Surface;
 	}
 
-	if (Navigation.State == ENavigationState::Idle)
+	if (Agent.State == ENavigationState::Idle)
 	{
-		Navigation.Corridor.reset(NearestRef, NearestPos);
+		Agent.Corridor.reset(NearestRef, NearestPos);
 	}
 	else
 	{
@@ -95,38 +95,38 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 
 		// Make sure the first polygon is valid, but leave other valid
 		// polygons in the path so that replanner can adjust the path better.
-		Navigation.Corridor.fixPathStart(NearestRef, NearestPos);
-		Navigation.State = ENavigationState::Requested;
+		Agent.Corridor.fixPathStart(NearestRef, NearestPos);
+		Agent.State = ENavigationState::Requested;
 	}
 }
 //---------------------------------------------------------------------
 
-static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation)
+static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
 	constexpr float MaxTargetOffsetSq = MaxTargetOffset * MaxTargetOffset;
 
-	if (Navigation.State != ENavigationState::Idle)
+	if (Agent.State != ENavigationState::Idle)
 	{
-		if (dtVequal(Navigation.TargetPos.v, Action._Destination.v))
+		if (dtVequal(Agent.TargetPos.v, Action._Destination.v))
 		{
 			// Target remains static but we must check its poly validity anyway
-			if (Navigation.pNavQuery->isValidPolyRef(Navigation.TargetRef, Navigation.pNavFilter)) return;
+			if (Agent.pNavQuery->isValidPolyRef(Agent.TargetRef, Agent.pNavFilter)) return;
 		}
-		else if (Navigation.State == ENavigationState::Following)
+		else if (Agent.State == ENavigationState::Following)
 		{
 			// Planning finished, can adjust moving target in the corridor
-			if (Navigation.Corridor.moveTargetPosition(Action._Destination.v, Navigation.pNavQuery, Navigation.pNavFilter))
+			if (Agent.Corridor.moveTargetPosition(Action._Destination.v, Agent.pNavQuery, Agent.pNavFilter))
 			{
 				// Check if target matches the corridor or moved not too far from it into impassable zone.
 				// Otherwise target is considered teleported and may require replanning (see below).
-				const auto OffsetSq = dtVdist2DSqr(Action._Destination.v, Navigation.Corridor.getTarget());
+				const auto OffsetSq = dtVdist2DSqr(Action._Destination.v, Agent.Corridor.getTarget());
 				if (OffsetSq < DEFAULT_EPSILON ||
-					(Navigation.TargetRef == Navigation.Corridor.getLastPoly() && OffsetSq <= MaxTargetOffsetSq))
+					(Agent.TargetRef == Agent.Corridor.getLastPoly() && OffsetSq <= MaxTargetOffsetSq))
 				{
-					Navigation.TargetRef = Navigation.Corridor.getLastPoly();
-					Navigation.TargetPos = Navigation.Corridor.getTarget();
+					Agent.TargetRef = Agent.Corridor.getLastPoly();
+					Agent.TargetPos = Agent.Corridor.getTarget();
 					return;
 				}
 			}
@@ -134,43 +134,43 @@ static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation
 	}
 
 	// Target poly is unknown or invalid, find the nearest valid one
-	const float TargetExtents[3] = { MaxTargetOffset, Navigation.Height, MaxTargetOffset };
-	Navigation.pNavQuery->findNearestPoly(Action._Destination.v, TargetExtents, Navigation.pNavFilter, &Navigation.TargetRef, Navigation.TargetPos.v);
+	const float TargetExtents[3] = { MaxTargetOffset, Agent.Height, MaxTargetOffset };
+	Agent.pNavQuery->findNearestPoly(Action._Destination.v, TargetExtents, Agent.pNavFilter, &Agent.TargetRef, Agent.TargetPos.v);
 
-	if (!Navigation.TargetRef || dtVdist2DSqr(Action._Destination.v, Navigation.TargetPos.v) > MaxTargetOffsetSq)
+	if (!Agent.TargetRef || dtVdist2DSqr(Action._Destination.v, Agent.TargetPos.v) > MaxTargetOffsetSq)
 	{
 		// No poly found in a target radius, navigation task is failed
 		// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
-		if (Navigation.State != ENavigationState::Idle)
+		if (Agent.State != ENavigationState::Idle)
 		{
-			Navigation.Corridor.reset(Navigation.Corridor.getFirstPoly(), Navigation.Corridor.getPos());
-			Navigation.State = ENavigationState::Idle;
+			Agent.Corridor.reset(Agent.Corridor.getFirstPoly(), Agent.Corridor.getPos());
+			Agent.State = ENavigationState::Idle;
 		}
 	}
 	else
 	{
-		Navigation.State = ENavigationState::Requested;
+		Agent.State = ENavigationState::Requested;
 	}
 }
 //---------------------------------------------------------------------
 
-static bool CheckCurrentPath(CNavigationComponent& Navigation)
+static bool CheckCurrentPath(CNavAgentComponent& Agent)
 {
-	n_assert_dbg(Navigation.State != ENavigationState::Idle);
+	n_assert_dbg(Agent.State != ENavigationState::Idle);
 
 	// No path - no replanning
-	if (Navigation.State == ENavigationState::Requested || Navigation.State == ENavigationState::Idle) return true;
+	if (Agent.State == ENavigationState::Requested || Agent.State == ENavigationState::Idle) return true;
 
 	// If nearby corridor is not valid, replan
 	constexpr int CHECK_LOOKAHEAD = 10;
-	if (!Navigation.Corridor.isValid(CHECK_LOOKAHEAD, Navigation.pNavQuery, Navigation.pNavFilter)) return false;
+	if (!Agent.Corridor.isValid(CHECK_LOOKAHEAD, Agent.pNavQuery, Agent.pNavFilter)) return false;
 
 	// If the end of the path is near and it is not the requested location, replan
 	constexpr float TARGET_REPLAN_DELAY = 1.0f; // seconds
-	if (Navigation.State == ENavigationState::Following &&
-		Navigation.ReplanTime > TARGET_REPLAN_DELAY &&
-		Navigation.Corridor.getPathCount() < CHECK_LOOKAHEAD &&
-		Navigation.Corridor.getLastPoly() != Navigation.TargetRef)
+	if (Agent.State == ENavigationState::Following &&
+		Agent.ReplanTime > TARGET_REPLAN_DELAY &&
+		Agent.Corridor.getPathCount() < CHECK_LOOKAHEAD &&
+		Agent.Corridor.getLastPoly() != Agent.TargetRef)
 	{
 		return false;
 	}
@@ -179,94 +179,94 @@ static bool CheckCurrentPath(CNavigationComponent& Navigation)
 }
 //---------------------------------------------------------------------
 
-static void RequestPath(CNavigationComponent& Navigation, ::AI::CPathRequestQueue& PathQueue)
+static void RequestPath(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
 {
 	// Quick synchronous search towards the goal, limited iteration count
-	Navigation.pNavQuery->initSlicedFindPath(Navigation.Corridor.getFirstPoly(), Navigation.TargetRef, Navigation.Corridor.getPos(), Navigation.TargetPos.v, Navigation.pNavFilter);
-	Navigation.pNavQuery->updateSlicedFindPath(20, 0);
+	Agent.pNavQuery->initSlicedFindPath(Agent.Corridor.getFirstPoly(), Agent.TargetRef, Agent.Corridor.getPos(), Agent.TargetPos.v, Agent.pNavFilter);
+	Agent.pNavQuery->updateSlicedFindPath(20, 0);
 
 	// Try to reuse existing steady path if possible and worthwile
 	std::array<dtPolyRef, 32> Path;
 	int PathSize = 0;
-	dtStatus Status = (Navigation.Corridor.getPathCount() > 10) ?
-		Navigation.pNavQuery->finalizeSlicedFindPathPartial(Navigation.Corridor.getPath(), Navigation.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
-		Navigation.pNavQuery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
+	dtStatus Status = (Agent.Corridor.getPathCount() > 10) ?
+		Agent.pNavQuery->finalizeSlicedFindPathPartial(Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Path.data(), &PathSize, Path.size()) :
+		Agent.pNavQuery->finalizeSlicedFindPath(Path.data(), &PathSize, Path.size());
 
 	// Setup path corridor
 	const dtPolyRef LastPoly = (dtStatusFailed(Status) || !PathSize) ? 0 : Path[PathSize - 1];
-	if (LastPoly == Navigation.TargetRef)
+	if (LastPoly == Agent.TargetRef)
 	{
 		// Full path
-		Navigation.Corridor.setCorridor(Navigation.TargetPos.v, Path.data(), PathSize);
-		Navigation.State = ENavigationState::Following;
-		Navigation.ReplanTime = 0.f;
+		Agent.Corridor.setCorridor(Agent.TargetPos.v, Path.data(), PathSize);
+		Agent.State = ENavigationState::Following;
+		Agent.ReplanTime = 0.f;
 	}
 	else
 	{
 		// Partial path, constrain target position inside the last polygon or reset to agent position
 		float PartialTargetPos[3];
-		if (LastPoly && dtStatusSucceed(Navigation.pNavQuery->closestPointOnPolyBoundary(LastPoly, Navigation.TargetPos.v, PartialTargetPos)))
-			Navigation.Corridor.setCorridor(PartialTargetPos, Path.data(), PathSize);
+		if (LastPoly && dtStatusSucceed(Agent.pNavQuery->closestPointOnPolyBoundary(LastPoly, Agent.TargetPos.v, PartialTargetPos)))
+			Agent.Corridor.setCorridor(PartialTargetPos, Path.data(), PathSize);
 		else
-			Navigation.Corridor.setCorridor(Navigation.Corridor.getPos(), Navigation.Corridor.getPath(), 1);
+			Agent.Corridor.setCorridor(Agent.Corridor.getPos(), Agent.Corridor.getPath(), 1);
 
-		Navigation.AsyncTaskID = PathQueue.Request(Navigation.Corridor.getLastPoly(), Navigation.TargetRef, Navigation.Corridor.getTarget(), Navigation.TargetPos.v, Navigation.pNavQuery, Navigation.pNavFilter);
-		if (Navigation.AsyncTaskID)
-			Navigation.State = ENavigationState::Planning;
+		Agent.AsyncTaskID = PathQueue.Request(Agent.Corridor.getLastPoly(), Agent.TargetRef, Agent.Corridor.getTarget(), Agent.TargetPos.v, Agent.pNavQuery, Agent.pNavFilter);
+		if (Agent.AsyncTaskID)
+			Agent.State = ENavigationState::Planning;
 	}
 }
 //---------------------------------------------------------------------
 
-static bool CheckAsyncPathResult(CNavigationComponent& Navigation, ::AI::CPathRequestQueue& PathQueue)
+static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
 {
-	dtStatus Status = PathQueue.GetRequestStatus(Navigation.AsyncTaskID);
+	dtStatus Status = PathQueue.GetRequestStatus(Agent.AsyncTaskID);
 
 	// If failed, can retry because the target location is still valid
-	if (dtStatusFailed(Status)) Navigation.State = ENavigationState::Requested;
+	if (dtStatusFailed(Status)) Agent.State = ENavigationState::Requested;
 	else if (!dtStatusSucceed(Status)) return true;
 
 	std::array<dtPolyRef, 512> Path;
 	int PathSize = 0;
-	n_assert(PathQueue.GetPathSize(Navigation.AsyncTaskID) <= static_cast<int>(Path.size()));
-	Status = PathQueue.GetPathResult(Navigation.AsyncTaskID, Path.data(), PathSize, Path.size());
+	n_assert(PathQueue.GetPathSize(Agent.AsyncTaskID) <= static_cast<int>(Path.size()));
+	Status = PathQueue.GetPathResult(Agent.AsyncTaskID, Path.data(), PathSize, Path.size());
 
 	// The last ref in the old path should be the same as the location where the request was issued
-	if (dtStatusFailed(Status) || !PathSize || Navigation.Corridor.getLastPoly() != Path[0]) return false;
+	if (dtStatusFailed(Status) || !PathSize || Agent.Corridor.getLastPoly() != Path[0]) return false;
 
 	// If path is partial, try to constrain target position inside the last polygon
-	vector3 PathTarget = Navigation.TargetPos;
+	vector3 PathTarget = Agent.TargetPos;
 	const auto LastRef = Path[PathSize - 1];
-	if (LastRef != Navigation.TargetRef)
-		if (dtStatusFailed(Navigation.pNavQuery->closestPointOnPolyBoundary(LastRef, Navigation.TargetPos.v, PathTarget.v)))
+	if (LastRef != Agent.TargetRef)
+		if (dtStatusFailed(Agent.pNavQuery->closestPointOnPolyBoundary(LastRef, Agent.TargetPos.v, PathTarget.v)))
 			return false;
 
 	// Merge result and existing path, removing trackbacks. The agent might have moved whilst
 	// the request is being processed, so the path may have changed.
 	int TotalSize = 0;
-	Status = Navigation.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
+	Status = Agent.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
 	if (dtStatusDetail(Status, DT_BUFFER_TOO_SMALL))
 	{
-		Navigation.Corridor.extend(TotalSize);
-		Status = Navigation.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
+		Agent.Corridor.extend(TotalSize);
+		Status = Agent.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
 	}
 
 	if (dtStatusFailed(Status)) return false;
 
-	Navigation.State = ENavigationState::Following;
-	Navigation.ReplanTime = 0.f;
+	Agent.State = ENavigationState::Following;
+	Agent.ReplanTime = 0.f;
 	return true;
 }
 //---------------------------------------------------------------------
 
 void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue)
 {
-	World.ForEachEntityWith<CNavigationComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
+	World.ForEachEntityWith<CNavAgentComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
 		[dt, &PathQueue](auto EntityID, auto& Entity,
-			CNavigationComponent& Navigation,
+			CNavAgentComponent& Agent,
 			DEM::Game::CActionQueueComponent* pActions,
 			const DEM::Game::CSceneComponent* pSceneComponent)
 	{
-		if (!pSceneComponent->RootNode || !Navigation.pNavQuery || !Navigation.pNavFilter) return;
+		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.pNavFilter) return;
 
 		//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
 		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
@@ -277,45 +277,52 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		if (auto pNavigateAction = pActions->FindActive<Navigate>())
 		{
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
-			Navigation.ReplanTime += dt;
+			Agent.ReplanTime += dt;
 
 			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
 			// if succeeded and was offmesh, return to navmesh.
 
-			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Navigation);
+			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Agent);
 
 			//???if position failed Navigate task, early exit?
 			//!!!if invalid pos (first corridor poly is zero) exit? can't recover from that pos to the corridor.
 
-			UpdateDestination(*pNavigateAction, Navigation);
+			UpdateDestination(*pNavigateAction, Agent);
 
 			//???if destination failed Navigate task (incl. zero target poly ref), early exit?
 
 			//!!!if actor is already at the new destination, finish Navigate action (success), set idle and exit
 
 			// Check current path validity, replan if can't continue using it
-			if (!CheckCurrentPath(Navigation))
-				Navigation.State = ENavigationState::Requested;
+			if (!CheckCurrentPath(Agent))
+				Agent.State = ENavigationState::Requested;
 
-			if (Navigation.State == ENavigationState::Requested)
+			if (Agent.State == ENavigationState::Requested)
 			{
 				//???!!!TODO: cancel traversal sub-action, if any?!
 
-				RequestPath(Navigation, PathQueue);
+				RequestPath(Agent, PathQueue);
 			}
-			else if (Navigation.State == ENavigationState::Planning)
+			else if (Agent.State == ENavigationState::Planning)
 			{
-				if (!CheckAsyncPathResult(Navigation, PathQueue))
+				if (!CheckAsyncPathResult(Agent, PathQueue))
 				{
 					// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-					Navigation.State = ENavigationState::Idle;
+					Agent.State = ENavigationState::Idle;
 					return;
 				}
 			}
 
-			//???only if corridor is not empty? or checked in findStraightPath?
-			if (Navigation.Mode != ENavigationMode::Offmesh)
+			if (Agent.Mode == ENavigationMode::Recovery)
 			{
+				// Try to return to the navmesh by the shortest path
+
+				// add recovery steering action (might be fast-forwarded by the character controller or executed as normal movement)
+			}
+			else if (Agent.Mode == ENavigationMode::Surface)
+			{
+				//???only if corridor is not empty? or checked in findStraightPath?
+
 				// FIXME: only if necessary events happened? like offsetting from expected position.
 				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
 				//const float OPT_TIME_THR_SEC = 0.5f;
@@ -323,21 +330,43 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				//if (ag->topologyOptTime >= OPT_TIME_THR_SEC)
 				//{
 				//	ag->corridor.optimizePathTopology(m_navquery, navFilter);
-				//	ag->topologyOptTime = 0;
+				//	ag->topologyOptTime = 0.f;
 				//}
 
-				//???here or in sub-action? was in sub-action, but they should not know about navigation.
+				//!!!can return different areas but with the same action! Need smoothing or vertex?
+				//!!!since DT_STRAIGHTPATH_#_CROSSINGS is used, more than 3 corners could be requested!
+				//???request/implement iterative pNavQuery->findNextStraightPathVertex until MaxCount edges are formed?
+				//???use DT_STRAIGHTPATH_ALL_CROSSINGS? can action change where area doesn't change? if controller, it can!
+				//???use special area type for controlled polys? when encountered, know that every poly has its own controller.
+				const int MAX_CORNERS = 3;
+				float CornerVerts[MAX_CORNERS * 3];
+				unsigned char CornerFlags[MAX_CORNERS];
+				dtPolyRef CornerPolys[MAX_CORNERS];
+				int CornerCount;
+				Agent.pNavQuery->findStraightPath(Agent.Corridor.getPos(), Agent.Corridor.getTarget(),
+					Agent.Corridor.getPath(), Agent.Corridor.getPathCount(),
+					CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS, DT_STRAIGHTPATH_AREA_CROSSINGS);
 
-				//   findCorners / findStraightPath
-				//   optimizePathVisibility if it is the time and/or necessary events happened
+				// skip first corner (our pos)
+				// while corners > 0
+				//   skip corner if it is too close to our current position
+
+				// find action or direction change
+				// detect offmesh connection triggering and action
+
+				// FIXME: only if necessary events happened? like offsetting from expected position.
+				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
+				//const float* pNextCorner = &CornerVerts[dtMin(FirstIdx + 1, CornerCount - 1) * 3];
+				//Corridor.optimizePathVisibility(pNextCorner, 30.f * pActor->Radius, pNavQuery, pNavFilter);
+
 				//   if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
 				//   create/update/check sub-action for current edge traversal
 			}
 		}
-		else if (Navigation.State != ENavigationState::Idle)
+		else if (Agent.State != ENavigationState::Idle)
 		{
 			// set idle
-			//???need UpdatePosition?
+			//???need UpdatePosition once? or need UpdatePosition even when no Navigate action?
 		}
 	});
 }

@@ -1,4 +1,4 @@
-#include "NavigationComponent.h"
+#include "NavAgentComponent.h"
 
 namespace DEM::AI
 {
