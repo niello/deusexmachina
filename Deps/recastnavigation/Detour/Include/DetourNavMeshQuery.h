@@ -159,6 +159,26 @@ public:
 	virtual void process(const dtMeshTile* tile, dtPoly** polys, dtPolyRef* refs, int count) = 0;
 };
 
+/// Straight path calculation context for iterative advancement
+/// @ingroup detour
+struct dtStraightPathContext
+{
+	struct PortalVertex
+	{
+		float point[3];
+		int fromIndex;
+		unsigned char flags;
+		dtPolyRef polyRef;
+	};
+
+	PortalVertex left;
+	PortalVertex right;
+
+	float portalApex[3]; // Last apex
+	int currPolyIndex;   // Portal between this and the next polys is not processed
+	bool nextApexRight;  // Remembers portal vertex selection result
+};
+
 /// Provides the ability to perform pathfinding related queries against
 /// a navigation mesh.
 /// @ingroup detour
@@ -208,6 +228,11 @@ public:
 							  const dtPolyRef* path, const int pathSize,
 							  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
 							  int* straightPathCount, const int maxStraightPath, const int options = 0) const;
+
+	dtStatus findNextStraightPathVertex(dtStraightPathContext& ctx, const float* startPos, const float* endPos,
+										const dtPolyRef* path, const int pathSize,
+										float* outVertex, unsigned char* outFlags, unsigned char* outArea, dtPolyRef* outRef,
+										const int options = 0) const;
 
 	///@}
 	/// @name Sliced Pathfinding Functions
@@ -526,16 +551,27 @@ private:
 	dtStatus getEdgeMidPoint(dtPolyRef from, const dtPoly* fromPoly, const dtMeshTile* fromTile,
 							 dtPolyRef to, const dtPoly* toPoly, const dtMeshTile* toTile,
 							 float* mid) const;
-	
+
+	struct dtStraightPathResult
+	{
+		float* verts;
+		unsigned char* flags;
+		dtPolyRef* refs;
+		int* count;
+		int maxCount;
+	};
+
 	// Appends vertex to a straight path
-	dtStatus appendVertex(const float* pos, const unsigned char flags, const dtPolyRef ref,
-						  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
-						  int* straightPathCount, const int maxStraightPath) const;
+	dtStatus appendVertex(const float* pos, const unsigned char flags, const dtPolyRef ref, dtStraightPathResult& result) const;
 
 	// Appends intermediate portal points to a straight path.
-	dtStatus appendPortals(const int startIdx, const int endIdx, const float* endPos, const dtPolyRef* path,
-						   float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
-						   int* straightPathCount, const int maxStraightPath, const int options) const;
+	dtStatus appendPortals(dtStraightPathContext& ctx, const dtPolyRef* path,
+						   dtStraightPathResult& result, const int options) const;
+
+	// Processes left or right side of the portal when building a straight path
+	dtStatus processPortalVertex(dtStraightPathContext& ctx, const dtPolyRef* path,
+								 bool right, const dtStraightPathContext::PortalVertex& nextVertex,
+								 dtStraightPathResult& result, const int options) const;
 
 	// Gets the path leading to the specified end node.
 	dtStatus getPathToNode(struct dtNode* endNode, dtPolyRef* path, int* pathCount, int maxPath) const;
