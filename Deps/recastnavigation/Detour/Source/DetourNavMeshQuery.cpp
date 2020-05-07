@@ -1692,12 +1692,13 @@ dtStatus dtNavMeshQuery::appendPortals(dtStraightPathContext& ctx,
 									   const dtPolyRef* path, dtStraightPathResult& result, const int options) const
 {
 	if (!(options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS)))
+	{
+		ctx.currPolyIndex = ctx.corner.fromIndex;
 		return DT_IN_PROGRESS;
-
-	const dtStraightPathContext::PortalVertex& end = ctx.nextCornerRight ? ctx.right : ctx.left;
+	}
 
 	// Append or update last vertex
-	for (; ctx.currPolyIndex < end.fromIndex; ++ctx.currPolyIndex)
+	for (; ctx.currPolyIndex < ctx.corner.fromIndex; ++ctx.currPolyIndex)
 	{
 		//???FIXME: can any of these polys be invalid? Already found corner by accessing them!
 
@@ -1727,7 +1728,7 @@ dtStatus dtNavMeshQuery::appendPortals(dtStraightPathContext& ctx,
 		
 		// Append intersection
 		float s,t;
-		if (dtIntersectSegSeg2D(ctx.lastCorner, end.point, left, right, s, t))
+		if (dtIntersectSegSeg2D(ctx.lastCorner, ctx.corner.point, left, right, s, t))
 		{
 			float pt[3];
 			dtVlerp(pt, left, right, t);
@@ -1742,12 +1743,13 @@ dtStatus dtNavMeshQuery::appendPortals(dtStraightPathContext& ctx,
 }
 
 dtStatus dtNavMeshQuery::processPortalVertex(dtStraightPathContext& ctx, const dtPolyRef* path,
-											 bool right, const dtStraightPathContext::PortalVertex& nextVertex,
+											 dtStraightPathContext::Corner& rightVertex, dtStraightPathContext::Corner& leftVertex,
+											 bool checkRight, const dtStraightPathContext::Corner& nextVertex,
 											 dtStraightPathResult& result, const int options) const
 {
-	dtStraightPathContext::PortalVertex& currVertex = right ? ctx.right : ctx.left;
-	dtStraightPathContext::PortalVertex& otherVertex = right ? ctx.left : ctx.right;
-	const float areaSign = right ? 1.f : -1.f;
+	dtStraightPathContext::Corner& currVertex = checkRight ? rightVertex : leftVertex;
+	dtStraightPathContext::Corner& otherVertex = checkRight ? leftVertex : rightVertex;
+	const float areaSign = checkRight ? 1.f : -1.f;
 
 	if (dtTriArea2D(ctx.lastCorner, currVertex.point, nextVertex.point) * areaSign > 0.0f)
 		return DT_IN_PROGRESS | DT_PARTIAL_RESULT;
@@ -1760,7 +1762,7 @@ dtStatus dtNavMeshQuery::processPortalVertex(dtStraightPathContext& ctx, const d
 	}
 
 	// Other vertex is selected as the new apex
-	ctx.nextCornerRight = !right;
+	ctx.corner = otherVertex;
 
 	// Append portals along the current straight path segment.
 	dtStatus status = appendPortals(ctx, path, result, options);
@@ -1768,43 +1770,47 @@ dtStatus dtNavMeshQuery::processPortalVertex(dtStraightPathContext& ctx, const d
 		return status;					
 
 	// Append or update vertex
-	const dtStraightPathContext::PortalVertex& vertex = ctx.nextCornerRight ? ctx.right : ctx.left;
-	status = appendVertex(vertex.point, vertex.flags, vertex.polyRef, result);
+	status = appendVertex(ctx.corner.point, ctx.corner.flags, ctx.corner.polyRef, result);
 	if (status != DT_IN_PROGRESS)
 		return status;
 
 	// If reached end of path, return.
-	if (otherVertex.flags == DT_STRAIGHTPATH_END)
+	if (ctx.corner.flags == DT_STRAIGHTPATH_END)
 		return DT_SUCCESS;
 
-	dtVcopy(ctx.lastCorner, otherVertex.point);
-	dtVcopy(currVertex.point, otherVertex.point);
-	currVertex.fromIndex = otherVertex.fromIndex;
+	dtVcopy(ctx.lastCorner, ctx.corner.point);
+	dtVcopy(currVertex.point, ctx.corner.point);
+	currVertex.fromIndex = ctx.corner.fromIndex;
 
 	return DT_IN_PROGRESS;
 }
 
 // Returns whether the new corner is found
-void dtNavMeshQuery::processPortalVertex(dtStraightPathContext& ctx, bool right,
-										 const dtStraightPathContext::PortalVertex& nextVertex) const
+static void checkCornerVertex(dtStraightPathContext& ctx, bool checkRight,
+							  dtStraightPathContext::Corner& rightVertex,
+							  dtStraightPathContext::Corner& leftVertex,
+							  const dtStraightPathContext::Corner& nextVertex)
 {
-	dtStraightPathContext::PortalVertex& currVertex = right ? ctx.right : ctx.left;
-	dtStraightPathContext::PortalVertex& otherVertex = right ? ctx.left : ctx.right;
-	const float areaSign = right ? 1.f : -1.f;
+	dtStraightPathContext::Corner& currVertex = checkRight ? rightVertex : leftVertex;
+	dtStraightPathContext::Corner& otherVertex = checkRight ? leftVertex : rightVertex;
+	const float areaSign = checkRight ? 1.f : -1.f;
 
+	// Checked vertex is less restrictive, ignore
 	if (dtTriArea2D(ctx.lastCorner, currVertex.point, nextVertex.point) * areaSign > 0.0f)
 		return;
 
 	if (dtVequal(ctx.lastCorner, currVertex.point) ||
 		dtTriArea2D(ctx.lastCorner, otherVertex.point, nextVertex.point) * areaSign > 0.0f)
 	{
+		// Checked vertex is more restrictive, overwrite prevoius one
 		currVertex = nextVertex;
-		return;
 	}
-
-	// Other vertex is selected as the new apex
-	ctx.nextCornerFound = true;
-	ctx.nextCornerRight = !right;
+	else
+	{
+		// Other vertex is the next corner
+		ctx.cornerFound = true;
+		ctx.corner = otherVertex;
+	}
 }
 
 static dtStraightPathContext dtCreateStraightPathContext(const float* startPos, const dtPolyRef startRef)
@@ -1813,14 +1819,12 @@ static dtStraightPathContext dtCreateStraightPathContext(const float* startPos, 
 
 	dtVcopy(ctx.lastCorner, startPos);
 	ctx.currPolyIndex = 0;
-	ctx.nextCornerFound = false;
+	ctx.cornerFound = false;
 
-	dtVcopy(ctx.left.point, startPos);
-	ctx.left.polyRef = startRef;
-	ctx.left.fromIndex = 0;
-	ctx.left.flags = 0;
-
-	ctx.right = ctx.left;
+	dtVcopy(ctx.corner.point, startPos);
+	ctx.corner.polyRef = startRef;
+	ctx.corner.fromIndex = 0;
+	ctx.corner.flags = 0;
 
 	return ctx;
 }
@@ -1893,13 +1897,15 @@ dtStatus dtNavMeshQuery::findStraightPath(const float* startPos, const float* en
 	}
 
 	dtStraightPathContext ctx = dtCreateStraightPathContext(closestStartPos, path[0]);
+	dtStraightPathContext::Corner leftVertex = ctx.corner;
+	dtStraightPathContext::Corner rightVertex = ctx.corner;
 
 	dtPolyRef endPolyRef = 0;
 
 	int i = ctx.currPolyIndex;
 	for (; i < pathSize; ++i)
 	{
-		dtStraightPathContext::PortalVertex next;
+		dtStraightPathContext::Corner next;
 		next.fromIndex = i;
 
 		float left[3], right[3];
@@ -1955,12 +1961,12 @@ dtStatus dtNavMeshQuery::findStraightPath(const float* startPos, const float* en
 			
 		// Right vertex.
 		dtVcopy(next.point, right);
-		stat = processPortalVertex(ctx, path, true, next, result, options);
+		stat = processPortalVertex(ctx, path, rightVertex, leftVertex, true, next, result, options);
 		if (dtStatusInProgress(stat) && dtStatusDetail(stat, DT_PARTIAL_RESULT))
 		{
 			// Left vertex.
 			dtVcopy(next.point, left);
-			stat = processPortalVertex(ctx, path, false, next, result, options);
+			stat = processPortalVertex(ctx, path, rightVertex, leftVertex, false, next, result, options);
 		}
 
 		if (!dtStatusInProgress(stat))
@@ -1968,11 +1974,11 @@ dtStatus dtNavMeshQuery::findStraightPath(const float* startPos, const float* en
 	}
 
 	// Prepare the last apex - end point
-	ctx.nextCornerRight = true;
-	dtVcopy(ctx.right.point, closestEndPos);
-	ctx.right.fromIndex = i-1;
-	ctx.right.flags = endPolyRef ? 0 : DT_STRAIGHTPATH_END;
-	ctx.right.polyRef = endPolyRef;
+	ctx.cornerFound = true;
+	dtVcopy(ctx.corner.point, closestEndPos);
+	ctx.corner.fromIndex = i-1;
+	ctx.corner.flags = endPolyRef ? 0 : DT_STRAIGHTPATH_END;
+	ctx.corner.polyRef = endPolyRef;
 
 	// Append portals along the current straight path segment.
 	stat = appendPortals(ctx, path, result, options);
@@ -1980,32 +1986,50 @@ dtStatus dtNavMeshQuery::findStraightPath(const float* startPos, const float* en
 		return stat;
 
 	// Ignore status return value as we're just about to return anyway.
-	const dtStraightPathContext::PortalVertex& vertex = ctx.nextCornerRight ? ctx.right : ctx.left;
-	appendVertex(vertex.point, vertex.flags, vertex.polyRef, result);
+	appendVertex(ctx.corner.point, ctx.corner.flags, ctx.corner.polyRef, result);
 	return DT_SUCCESS | (endPolyRef ? DT_PARTIAL_RESULT : 0) | ((*straightPathCount >= maxStraightPath) ? DT_BUFFER_TOO_SMALL : 0);
 }
 
-dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, const float* endPos,
-													const dtPolyRef* path, const int pathSize,
+// NB: startPos and endPos must lay inside the first and the last path polygon respectively
+dtStatus dtNavMeshQuery::initSlicedStraightPathSearch(const float* startPos, const float* endPos,
+													  const dtPolyRef* path, int pathSize, dtStraightPathContext& ctx) const
+{
+	if (!startPos || !endPos || !path || pathSize <= 0)
+		return DT_FAILURE | DT_INVALID_PARAM;
+
+	dtVcopy(ctx.endPos, endPos);
+	ctx.path = path;
+	ctx.pathSize = pathSize;
+
+	dtVcopy(ctx.lastCorner, startPos);
+	ctx.currPolyIndex = 0;
+	ctx.cornerFound = false;
+
+	dtVcopy(ctx.corner.point, startPos);
+	ctx.corner.polyRef = path[0];
+	ctx.corner.fromIndex = 0;
+	ctx.corner.flags = 0;
+
+	return DT_SUCCESS;
+}
+
+dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx,
 													float* outVertex, unsigned char* outFlags,
 													unsigned char* outArea, dtPolyRef* outRef,
 													const int options) const
 {
-	if (!endPos || !path || pathSize <= 0)
-		return DT_FAILURE | DT_INVALID_PARAM;
-
 	// No corner found, search for the next one
-	if (!ctx.nextCornerFound)
+	if (!ctx.cornerFound)
 	{
 		// Iterations are finished or path data is invalid
-		if (ctx.currPolyIndex >= pathSize)
-			return DT_FAILURE | DT_INVALID_PARAM;
+		if (ctx.currPolyIndex >= ctx.pathSize)
+			return DT_FAILURE;
 
 		// Fast corner case, path is contained inside one poly
-		if (ctx.currPolyIndex == 0 && path[0] == path[pathSize-1])
+		if (ctx.currPolyIndex == 0 && ctx.path[0] == ctx.path[ctx.pathSize-1])
 		{
 			if (outVertex)
-				dtVcopy(outVertex, endPos);
+				dtVcopy(outVertex, ctx.endPos);
 			if (outFlags)
 				*outFlags = DT_STRAIGHTPATH_END;
 			if (outRef)
@@ -2015,19 +2039,22 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 			return DT_SUCCESS;
 		}
 
+		dtStraightPathContext::Corner leftVertex = ctx.corner;
+		dtStraightPathContext::Corner rightVertex = ctx.corner;
+
 		// Walk path poly by poly until the corner or ending is detected
 		int i = ctx.currPolyIndex;
-		for (; i < pathSize; ++i)
+		for (; i < ctx.pathSize; ++i)
 		{
-			dtStraightPathContext::PortalVertex next;
+			dtStraightPathContext::Corner next;
 			next.fromIndex = i;
 
 			float left[3], right[3];
 
-			if (i+1 < pathSize)
+			if (i+1 < ctx.pathSize)
 			{
-				const dtPolyRef currPolyRef = path[i];
-				next.polyRef = path[i+1];
+				const dtPolyRef currPolyRef = ctx.path[i];
+				next.polyRef = ctx.path[i+1];
 
 				// Next portal.
 				unsigned char fromType; // ignored
@@ -2038,14 +2065,13 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 					// Clamp the end point to currPolyRef, and return the path so far.
 
 					// Failure should only happen when the first polygon is invalid.
-					if (dtStatusFailed(closestPointOnPolyBoundary(currPolyRef, endPos, ctx.right.point)))
+					if (dtStatusFailed(closestPointOnPolyBoundary(currPolyRef, ctx.endPos, ctx.corner.point)))
 						return DT_FAILURE | DT_INVALID_PARAM;
 
-					ctx.nextCornerFound = true;
-					ctx.nextCornerRight = true;
-					ctx.right.fromIndex = i-1;
-					ctx.right.flags = DT_STRAIGHTPATH_END; // Only to inform the algorithm internally, will be zeroed out
-					ctx.right.polyRef = currPolyRef;
+					ctx.cornerFound = true;
+					ctx.corner.fromIndex = i-1;
+					ctx.corner.flags = DT_STRAIGHTPATH_END; // Only to inform the algorithm internally, will be zeroed out
+					ctx.corner.polyRef = currPolyRef;
 					break;
 				}
 
@@ -2067,8 +2093,8 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 			else
 			{
 				// End of the path.
-				dtVcopy(left, endPos);
-				dtVcopy(right, endPos);
+				dtVcopy(left, ctx.endPos);
+				dtVcopy(right, ctx.endPos);
 
 				next.polyRef = 0;
 				next.flags = 0;
@@ -2076,38 +2102,37 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 
 			// Right vertex.
 			dtVcopy(next.point, right);
-			processPortalVertex(ctx, true, next);
-			if (ctx.nextCornerFound)
+			checkCornerVertex(ctx, true, rightVertex, leftVertex, next);
+			if (ctx.cornerFound)
 				break;
 
 			// Left vertex.
 			dtVcopy(next.point, left);
-			processPortalVertex(ctx, false, next);
-			if (ctx.nextCornerFound)
+			checkCornerVertex(ctx, false, rightVertex, leftVertex, next);
+			if (ctx.cornerFound)
 				break;
 		}
 	}
 
-	const dtStraightPathContext::PortalVertex& nextCorner = ctx.nextCornerRight ? ctx.right : ctx.left;
 	const bool needCrossings = (options & (DT_STRAIGHTPATH_AREA_CROSSINGS | DT_STRAIGHTPATH_ALL_CROSSINGS));
 
-	// Skip to the new apex if crossings aren't needed
-	if (!needCrossings && ctx.currPolyIndex < nextCorner.fromIndex)
-		ctx.currPolyIndex = nextCorner.fromIndex;
+	// Skip to the new corner if crossings aren't needed
+	if (!needCrossings && ctx.currPolyIndex < ctx.corner.fromIndex)
+		ctx.currPolyIndex = ctx.corner.fromIndex;
 
 	// Return next straight line crossing (poly or area boundary)
-	while (ctx.currPolyIndex < nextCorner.fromIndex)
+	while (ctx.currPolyIndex < ctx.corner.fromIndex)
 	{
 		//???FIXME: can any of these polys be invalid? Already found corner by accessing them!
 
 		// Calculate portal
-		const dtPolyRef from = path[ctx.currPolyIndex];
+		const dtPolyRef from = ctx.path[ctx.currPolyIndex];
 		const dtMeshTile* fromTile = 0;
 		const dtPoly* fromPoly = 0;
 		if (dtStatusFailed(m_nav->getTileAndPolyByRef(from, &fromTile, &fromPoly)))
 			return DT_FAILURE | DT_INVALID_PARAM;
 
-		const dtPolyRef to = path[ctx.currPolyIndex+1];
+		const dtPolyRef to = ctx.path[ctx.currPolyIndex+1];
 		const dtMeshTile* toTile = 0;
 		const dtPoly* toPoly = 0;
 		if (dtStatusFailed(m_nav->getTileAndPolyByRef(to, &toTile, &toPoly)))
@@ -2116,7 +2141,7 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 		float left[3], right[3];
 		if (dtStatusFailed(getPortalPoints(from, fromPoly, fromTile, to, toPoly, toTile, left, right)))
 		{
-			ctx.currPolyIndex = nextCorner.fromIndex;
+			ctx.currPolyIndex = ctx.corner.fromIndex;
 			break;
 		}
 
@@ -2131,7 +2156,7 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 
 		// Append intersection
 		float s, t;
-		if (dtIntersectSegSeg2D(ctx.lastCorner, nextCorner.point, left, right, s, t))
+		if (dtIntersectSegSeg2D(ctx.lastCorner, ctx.corner.point, left, right, s, t))
 		{
 			if (outVertex)
 				dtVlerp(outVertex, left, right, t);
@@ -2145,20 +2170,22 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 		}
 	}
 
-	const bool isEnd = (nextCorner.flags == DT_STRAIGHTPATH_END);
-	const bool isPartialEnd = isEnd && nextCorner.polyRef;
+	const bool isEnd = (ctx.corner.flags == DT_STRAIGHTPATH_END);
+	const bool isPartialEnd = isEnd && ctx.corner.polyRef;
 
 	// Return corner vertex
 	if (outVertex)
-		dtVcopy(outVertex, nextCorner.point);
+		dtVcopy(outVertex, ctx.corner.point);
 	if (outFlags)
-		*outFlags = isPartialEnd ? 0 : nextCorner.flags;
+		*outFlags = isPartialEnd ? 0 : ctx.corner.flags;
 	if (outRef)
-		*outRef = nextCorner.polyRef;
-	if (outArea)
+		*outRef = ctx.corner.polyRef;
+	if (outArea && ctx.corner.polyRef)
 	{
-		//!!!TODO:
-		//*outArea = toPoly->getArea();
+		const dtMeshTile* tile = 0;
+		const dtPoly* poly = 0;
+		if (dtStatusSucceed(m_nav->getTileAndPolyByRef(ctx.corner.polyRef, &tile, &poly)))
+			*outArea = poly->getArea();
 	}
 
 	// We reached the end of the path
@@ -2166,11 +2193,8 @@ dtStatus dtNavMeshQuery::findNextStraightPathVertex(dtStraightPathContext& ctx, 
 		return DT_SUCCESS | (isPartialEnd ? DT_PARTIAL_RESULT : 0);
 
 	// Set processed corner as the current search apex
-	dtStraightPathContext::PortalVertex& otherVertex = ctx.nextCornerRight ? ctx.left : ctx.right;
-	dtVcopy(ctx.lastCorner, nextCorner.point);
-	dtVcopy(otherVertex.point, nextCorner.point);
-	otherVertex.fromIndex = nextCorner.fromIndex;
-	ctx.nextCornerFound = false;
+	dtVcopy(ctx.lastCorner, ctx.corner.point);
+	ctx.cornerFound = false;
 	return DT_IN_PROGRESS;
 }
 

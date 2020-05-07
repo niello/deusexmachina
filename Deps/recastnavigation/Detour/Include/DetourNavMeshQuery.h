@@ -159,11 +159,16 @@ public:
 	virtual void process(const dtMeshTile* tile, dtPoly** polys, dtPolyRef* refs, int count) = 0;
 };
 
-/// Straight path calculation context for iterative advancement
+/// Straight path searching context for iterative advancement.
+/// Initial params are stored inside for consistency between calls.
 /// @ingroup detour
 struct dtStraightPathContext
 {
-	struct PortalVertex
+	float endPos[3];
+	const dtPolyRef* path;
+	int pathSize;
+
+	struct Corner
 	{
 		float point[3];
 		int fromIndex;
@@ -171,13 +176,10 @@ struct dtStraightPathContext
 		dtPolyRef polyRef;
 	};
 
-	PortalVertex left;
-	PortalVertex right;
-
-	float lastCorner[3];  // Used as an apex for portal processing
+	Corner corner;
+	float lastCorner[3];
 	int currPolyIndex;
-	bool nextCornerRight;
-	bool nextCornerFound;
+	bool cornerFound;
 };
 
 /// Provides the ability to perform pathfinding related queries against
@@ -230,8 +232,9 @@ public:
 							  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
 							  int* straightPathCount, const int maxStraightPath, const int options = 0) const;
 
-	dtStatus findNextStraightPathVertex(dtStraightPathContext& ctx, const float* endPos,
-										const dtPolyRef* path, const int pathSize,
+	dtStatus initSlicedStraightPathSearch(const float* startPos, const float* endPos,
+										  const dtPolyRef* path, int pathSize, dtStraightPathContext& ctx) const;
+	dtStatus findNextStraightPathVertex(dtStraightPathContext& ctx,
 										float* outVertex, unsigned char* outFlags, unsigned char* outArea, dtPolyRef* outRef,
 										const int options = 0) const;
 
@@ -571,10 +574,9 @@ private:
 
 	// Processes left or right side of the portal when building a straight path
 	dtStatus processPortalVertex(dtStraightPathContext& ctx, const dtPolyRef* path,
-								 bool right, const dtStraightPathContext::PortalVertex& nextVertex,
+								 dtStraightPathContext::Corner& rightVertex, dtStraightPathContext::Corner& leftVertex,
+								 bool checkRight, const dtStraightPathContext::Corner& nextVertex,
 								 dtStraightPathResult& result, const int options) const;
-	void processPortalVertex(dtStraightPathContext& ctx, bool right,
-							 const dtStraightPathContext::PortalVertex& nextVertex) const;
 
 	// Gets the path leading to the specified end node.
 	dtStatus getPathToNode(struct dtNode* endNode, dtPolyRef* path, int* pathCount, int maxPath) const;
