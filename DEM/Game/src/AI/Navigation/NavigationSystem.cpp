@@ -336,8 +336,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				//!!!can return different areas but with the same action! Need smoothing or vertex?
 				//!!!since DT_STRAIGHTPATH_#_CROSSINGS is used, more than 3 corners could be requested!
 				//???request/implement iterative pNavQuery->findNextStraightPathVertex until MaxCount edges are formed?
-				//???use DT_STRAIGHTPATH_ALL_CROSSINGS? can action change where area doesn't change? if controller, it can!
-				//???use special area type for controlled polys? when encountered, know that every poly has its own controller.
+				//???use special area type for controlled polys? when encountered, use DT_STRAIGHTPATH_ALL_CROSSINGS,
+				//because every poly has its own controller.
 				const int MAX_CORNERS = 3;
 				float CornerVerts[MAX_CORNERS * 3];
 				unsigned char CornerFlags[MAX_CORNERS];
@@ -351,15 +351,16 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				// while corners > 0
 				//   skip corner if it is too close to our current position
 
-				// find action or direction change
-				// detect offmesh connection triggering and action
-
+				// Use the next corner (our immediate target) to optimize the path, because we know that there is a direct way to it
 				// FIXME: only if necessary events happened? like offsetting from expected position.
 				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
 				//const float* pNextCorner = &CornerVerts[dtMin(FirstIdx + 1, CornerCount - 1) * 3];
 				//Corridor.optimizePathVisibility(pNextCorner, 30.f * pActor->Radius, pNavQuery, pNavFilter);
 
-				//   if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
+				// find action or direction change
+
+				// if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
+
 				//   create/update/check sub-action for current edge traversal
 			}
 		}
