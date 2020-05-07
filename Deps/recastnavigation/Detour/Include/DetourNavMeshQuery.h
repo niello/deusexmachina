@@ -174,9 +174,10 @@ struct dtStraightPathContext
 	PortalVertex left;
 	PortalVertex right;
 
-	float portalApex[3]; // Last apex
-	int currPolyIndex;   // Portal between this and the next polys is not processed
-	bool nextApexRight;  // Remembers portal vertex selection result
+	float lastCorner[3];  // Used as an apex for portal processing
+	int currPolyIndex;
+	bool nextCornerRight;
+	bool nextCornerFound;
 };
 
 /// Provides the ability to perform pathfinding related queries against
@@ -229,7 +230,7 @@ public:
 							  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
 							  int* straightPathCount, const int maxStraightPath, const int options = 0) const;
 
-	dtStatus findNextStraightPathVertex(dtStraightPathContext& ctx, const float* startPos, const float* endPos,
+	dtStatus findNextStraightPathVertex(dtStraightPathContext& ctx, const float* endPos,
 										const dtPolyRef* path, const int pathSize,
 										float* outVertex, unsigned char* outFlags, unsigned char* outArea, dtPolyRef* outRef,
 										const int options = 0) const;
@@ -572,6 +573,8 @@ private:
 	dtStatus processPortalVertex(dtStraightPathContext& ctx, const dtPolyRef* path,
 								 bool right, const dtStraightPathContext::PortalVertex& nextVertex,
 								 dtStraightPathResult& result, const int options) const;
+	void processPortalVertex(dtStraightPathContext& ctx, bool right,
+							 const dtStraightPathContext::PortalVertex& nextVertex) const;
 
 	// Gets the path leading to the specified end node.
 	dtStatus getPathToNode(struct dtNode* endNode, dtPolyRef* path, int* pathCount, int maxPath) const;
