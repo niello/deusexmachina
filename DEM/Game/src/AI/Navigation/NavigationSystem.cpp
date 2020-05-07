@@ -52,8 +52,8 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 	}
 
 	// Our current poly is unknown or invalid, find the nearest valid one
-	const float RecoveryRadius = std::min(pActor->Radius * 2.f, 20.f);
-	const float RecoveryExtents[3] = { RecoveryRadius, pActor->Height, RecoveryRadius };
+	const float RecoveryRadius = std::min(Navigation.Radius * 2.f, 20.f);
+	const float RecoveryExtents[3] = { RecoveryRadius, Navigation.Height, RecoveryRadius };
 	dtPolyRef NearestRef = 0;
 	float NearestPos[3];
 	Navigation.pNavQuery->findNearestPoly(Position.v, RecoveryExtents, Navigation.pNavFilter, &NearestRef, NearestPos);
@@ -68,7 +68,7 @@ static void UpdatePosition(const vector3& Position, CNavigationComponent& Naviga
 	}
 
 	// Check if our new location is far enough from the navmesh to enable recovery mode
-	const float RecoveryThreshold = pActor->Radius * 0.1f;
+	const float RecoveryThreshold = Navigation.Radius * 0.1f;
 	if (dtVdist2DSqr(Position.v, NearestPos) > RecoveryThreshold * RecoveryThreshold)
 	{
 		// TODO: must cancel current traversal sub-action even without replanning, if was not already recovering
@@ -134,7 +134,7 @@ static void UpdateDestination(Navigate& Action, CNavigationComponent& Navigation
 	}
 
 	// Target poly is unknown or invalid, find the nearest valid one
-	const float TargetExtents[3] = { MaxTargetOffset, pActor->Height, MaxTargetOffset };
+	const float TargetExtents[3] = { MaxTargetOffset, Navigation.Height, MaxTargetOffset };
 	Navigation.pNavQuery->findNearestPoly(Action._Destination.v, TargetExtents, Navigation.pNavFilter, &Navigation.TargetRef, Navigation.TargetPos.v);
 
 	if (!Navigation.TargetRef || dtVdist2DSqr(Action._Destination.v, Navigation.TargetPos.v) > MaxTargetOffsetSq)
@@ -297,7 +297,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (!CheckCurrentPath(Navigation))
 				Navigation.State = ENavigationState::Requested;
 
-			if (Navigation.State = ENavigationState::Requested)
+			if (Navigation.State == ENavigationState::Requested)
 			{
 				//???!!!TODO: cancel traversal sub-action, if any?!
 

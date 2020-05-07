@@ -42,8 +42,10 @@ enum class ENavigationMode : U8
 struct CNavigationComponent
 {
 	dtPathCorridor       Corridor;
-	dtNavMeshQuery*      pNavQuery = nullptr;
+	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?
 	const dtQueryFilter* pNavFilter = nullptr;
+	float                Radius = 0.3f;
+	float                Height = 1.75f;
 	vector3              TargetPos;
 	dtPolyRef            TargetRef = 0;
 	float                ReplanTime = 0.f;
@@ -62,7 +64,8 @@ template<> inline constexpr auto RegisterMembers<DEM::AI::CNavigationComponent>(
 {
 	return std::make_tuple
 	(
-		//Member(1, "ClipID", &DEM::AI::CNavigationComponent::ClipID, &AI::CNavigationComponent::ClipID),
+		Member(1, "Radius", &DEM::AI::CNavigationComponent::Radius, &AI::CNavigationComponent::Radius),
+		Member(1, "Height", &DEM::AI::CNavigationComponent::Height, &AI::CNavigationComponent::Height)
 	);
 }
 
