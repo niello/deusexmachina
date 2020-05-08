@@ -52,6 +52,7 @@ struct CNavAgentComponent
 	U16                  AsyncTaskID = 0;
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface;
+	U8                   CurrAreaType = 0;
 };
 
 }

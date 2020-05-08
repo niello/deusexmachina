@@ -26,6 +26,8 @@ static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 
 	if (PositionChanged && Agent.Mode != ENavigationMode::Offmesh && Agent.State != ENavigationState::Idle)
 	{
+		const auto PrevPoly = Agent.Corridor.getFirstPoly();
+
 		// Agent moves along the navmesh surface or recovers to it, adjust the corridor
 		if (Agent.Corridor.movePosition(Position.v, Agent.pNavQuery, Agent.pNavFilter))
 		{
@@ -33,6 +35,8 @@ static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 			{
 				// TODO: finish recovery, if was active. Preserve sub-action, if exists.
 				Agent.Mode = ENavigationMode::Surface;
+				if (PrevPoly != Agent.Corridor.getFirstPoly())
+					Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
 				return;
 			}
 		}
@@ -73,11 +77,13 @@ static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 	{
 		// TODO: must cancel current traversal sub-action even without replanning, if was not already recovering
 		Agent.Mode = ENavigationMode::Recovery;
+		Agent.CurrAreaType = 0;
 	}
 	else
 	{
 		// TODO: finish recovery, if was active
 		Agent.Mode = ENavigationMode::Surface;
+		Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(NearestRef, &Agent.CurrAreaType);
 	}
 
 	if (Agent.State == ENavigationState::Idle)
@@ -280,7 +286,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			Agent.ReplanTime += dt;
 
 			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
-			// if succeeded and was offmesh, return to navmesh.
+			// if succeeded and was offmesh, return to navmesh, and only after it update position.
 
 			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Agent);
 
@@ -341,24 +347,34 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 						Agent.Corridor.getPos(), Agent.Corridor.getTarget(),
 						Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
 				{
+					// Get the next target point
 					float Pos[3];
 					unsigned char Flags;
-					unsigned char Area;
+					unsigned char AreaType;
 					dtPolyRef PolyRef;
-
-					//!!!skip corner if it is too close to our current position
-					//!!!find corners where direction or action changes
-
-					dtStatus Status;
-					do
+					dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Pos, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+					if (dtStatusFailed(Status))
 					{
-						Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Pos, &Flags, &Area, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+						// straight path calculation failed
+						//???fail navigation? set Idle?
+						//!!!DUPLICATED CODE, SEE BELOW! can check generated action type to be not empty at the end!
+					}
+
+					// Advance through subsequent points until traversal action is generated
+					while (dtStatusInProgress(Status))
+					{
+						Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Pos, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
 						if (dtStatusFailed(Status))
 							break;
 
 						//if (!dtVequal(&straightPath[((*straightPathCount)-1)*3], pos))
+
+						// find action or direction change
+
+						// if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
 					}
-					while (dtStatusInProgress(Status));
+
+					// create/update/check sub-action for current edge traversal
 				}
 				else
 				{
@@ -366,7 +382,6 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 					//???fail navigation? set Idle?
 				}
 
-				//!!!UpdatePosition must cache area the agent stands in!
 				// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
 				// only when dt is big enough or when the next corner not found in the cache
 
@@ -375,12 +390,6 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
 				//const float* pNextCorner = &CornerVerts[dtMin(FirstIdx + 1, CornerCount - 1) * 3];
 				//Corridor.optimizePathVisibility(pNextCorner, 30.f * pActor->Radius, pNavQuery, pNavFilter);
-
-				// find action or direction change
-
-				// if in trigger range of an offmesh connection, moveOverOffmeshConnection and set OFFMESH state
-
-				//   create/update/check sub-action for current edge traversal
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
