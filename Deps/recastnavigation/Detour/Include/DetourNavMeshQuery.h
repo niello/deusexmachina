@@ -164,21 +164,21 @@ public:
 /// @ingroup detour
 struct dtStraightPathContext
 {
-	float endPos[3];
 	const dtPolyRef* path;
+	float endPos[3];
 	int pathSize;
 
 	struct Corner
 	{
+		dtPolyRef polyRef;
 		float point[3];
 		int fromIndex;
 		unsigned char flags;
-		dtPolyRef polyRef;
 	};
 
-	Corner corner;
 	float lastCorner[3];
 	int currPolyIndex;
+	Corner corner;
 	bool cornerFound;
 };
 
@@ -556,27 +556,15 @@ private:
 							 dtPolyRef to, const dtPoly* toPoly, const dtMeshTile* toTile,
 							 float* mid) const;
 
-	struct dtStraightPathResult
-	{
-		float* verts;
-		unsigned char* flags;
-		dtPolyRef* refs;
-		int* count;
-		int maxCount;
-	};
-
 	// Appends vertex to a straight path
-	dtStatus appendVertex(const float* pos, const unsigned char flags, const dtPolyRef ref, dtStraightPathResult& result) const;
+	dtStatus appendVertex(const float* pos, const unsigned char flags, const dtPolyRef ref,
+						  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
+						  int* straightPathCount, const int maxStraightPath) const;
 
 	// Appends intermediate portal points to a straight path.
-	dtStatus appendPortals(dtStraightPathContext& ctx, const dtPolyRef* path,
-						   dtStraightPathResult& result, const int options) const;
-
-	// Processes left or right side of the portal when building a straight path
-	dtStatus processPortalVertex(dtStraightPathContext& ctx, const dtPolyRef* path,
-								 dtStraightPathContext::Corner& rightVertex, dtStraightPathContext::Corner& leftVertex,
-								 bool checkRight, const dtStraightPathContext::Corner& nextVertex,
-								 dtStraightPathResult& result, const int options) const;
+	dtStatus appendPortals(const int startIdx, const int endIdx, const float* endPos, const dtPolyRef* path,
+						   float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
+						   int* straightPathCount, const int maxStraightPath, const int options) const;
 
 	// Gets the path leading to the specified end node.
 	dtStatus getPathToNode(struct dtNode* endNode, dtPolyRef* path, int* pathCount, int maxPath) const;
