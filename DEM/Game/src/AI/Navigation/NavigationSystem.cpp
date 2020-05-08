@@ -333,23 +333,42 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				//	ag->topologyOptTime = 0.f;
 				//}
 
-				//!!!can return different areas but with the same action! Need smoothing or vertex?
-				//!!!since DT_STRAIGHTPATH_#_CROSSINGS is used, more than 3 corners could be requested!
-				//???request/implement iterative pNavQuery->findNextStraightPathVertex until MaxCount edges are formed?
 				//???use special area type for controlled polys? when encountered, use DT_STRAIGHTPATH_ALL_CROSSINGS,
 				//because every poly has its own controller.
-				const int MAX_CORNERS = 3;
-				float CornerVerts[MAX_CORNERS * 3];
-				unsigned char CornerFlags[MAX_CORNERS];
-				dtPolyRef CornerPolys[MAX_CORNERS];
-				int CornerCount;
-				Agent.pNavQuery->findStraightPath(Agent.Corridor.getPos(), Agent.Corridor.getTarget(),
-					Agent.Corridor.getPath(), Agent.Corridor.getPathCount(),
-					CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS, DT_STRAIGHTPATH_AREA_CROSSINGS);
 
-				// skip first corner (our pos)
-				// while corners > 0
-				//   skip corner if it is too close to our current position
+				dtStraightPathContext Ctx;
+				if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
+						Agent.Corridor.getPos(), Agent.Corridor.getTarget(),
+						Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
+				{
+					float Pos[3];
+					unsigned char Flags;
+					unsigned char Area;
+					dtPolyRef PolyRef;
+
+					//!!!skip corner if it is too close to our current position
+					//!!!find corners where direction or action changes
+
+					dtStatus Status;
+					do
+					{
+						Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Pos, &Flags, &Area, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+						if (dtStatusFailed(Status))
+							break;
+
+						//if (!dtVequal(&straightPath[((*straightPathCount)-1)*3], pos))
+					}
+					while (dtStatusInProgress(Status));
+				}
+				else
+				{
+					// straight path calculation failed
+					//???fail navigation? set Idle?
+				}
+
+				//!!!UpdatePosition must cache area the agent stands in!
+				// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
+				// only when dt is big enough or when the next corner not found in the cache
 
 				// Use the next corner (our immediate target) to optimize the path, because we know that there is a direct way to it
 				// FIXME: only if necessary events happened? like offsetting from expected position.
