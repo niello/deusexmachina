@@ -177,7 +177,8 @@ struct dtStraightPathContext
 	};
 
 	float lastCorner[3];
-	int currPolyIndex;
+	int lastCornerIndex;
+	int i;
 	Corner corner;
 	bool cornerFound;
 };
@@ -228,6 +229,11 @@ public:
 	///  @param[in]		options				Query options. (see: #dtStraightPathOptions)
 	/// @returns The status flags for the query.
 	dtStatus findStraightPath(const float* startPos, const float* endPos,
+							  const dtPolyRef* path, const int pathSize,
+							  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
+							  int* straightPathCount, const int maxStraightPath, const int options = 0) const;
+
+	dtStatus findStraightPathNew(const float* startPos, const float* endPos,
 							  const dtPolyRef* path, const int pathSize,
 							  float* straightPath, unsigned char* straightPathFlags, dtPolyRef* straightPathRefs,
 							  int* straightPathCount, const int maxStraightPath, const int options = 0) const;
