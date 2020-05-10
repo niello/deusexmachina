@@ -1,4 +1,6 @@
 #pragma once
+#include <AI/Navigation/NavAgentSettings.h>
+#include <Data/Ptr.h>
 #include <Data/Metadata.h>
 #include <Events/EventNative.h>
 #include <Math/Vector3.h>
@@ -43,7 +45,8 @@ struct CNavAgentComponent
 {
 	dtPathCorridor       Corridor;
 	dtNavMeshQuery*      pNavQuery = nullptr; //???need per-agent or can use pool in path queue or navmesh?
-	const dtQueryFilter* pNavFilter = nullptr;
+	PNavAgentSettings    Settings;
+	CStrID               SettingsID;
 	float                Radius = 0.3f;
 	float                Height = 1.75f;
 	vector3              TargetPos;
@@ -67,7 +70,8 @@ template<> inline constexpr auto RegisterMembers<DEM::AI::CNavAgentComponent>()
 	return std::make_tuple
 	(
 		Member(1, "Radius", &DEM::AI::CNavAgentComponent::Radius, &AI::CNavAgentComponent::Radius),
-		Member(2, "Height", &DEM::AI::CNavAgentComponent::Height, &AI::CNavAgentComponent::Height)
+		Member(2, "Height", &DEM::AI::CNavAgentComponent::Height, &AI::CNavAgentComponent::Height),
+		Member(3, "Settings", &DEM::AI::CNavAgentComponent::SettingsID, &AI::CNavAgentComponent::SettingsID)
 	);
 }
 

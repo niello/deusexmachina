@@ -269,7 +269,6 @@ public:
 				const auto hmin = ParamsUtils::GetParam(RegionDesc, "HeightStart", bmin[1]);
 				const auto hmax = ParamsUtils::GetParam(RegionDesc, "HeightEnd", bmax[1]);
 				const uint8_t areaId = ParamsUtils::GetParam<int>(RegionDesc, "AreaType", RC_WALKABLE_AREA);
-				//???add flags here? how to apply?
 
 				// NB: there are also rcMarkBoxArea, rcMarkCylinderArea
 				rcMarkConvexPolyArea(&ctx, verts.data(), verts.size(), hmin, hmax, areaId, *chf);
@@ -332,12 +331,14 @@ public:
 
 		// (Optional) Step 8. Create Detour data from Recast poly mesh.
 
+		constexpr unsigned char POLY_FLAGS_DEFAULT_ENABLED = 1;
+
 		// Update poly flags from areas.
 		for (int i = 0; i < pmesh->npolys; ++i)
 		{
 			//!!!DBG TMP! Zero flags pass no filter in detour, so fill with any default for now.
 			if (pmesh->areas[i] == RC_WALKABLE_AREA)
-				pmesh->flags[i] = 1;
+				pmesh->flags[i] = POLY_FLAGS_DEFAULT_ENABLED;
 
 			/*
 			if (pmesh->areas[i] == RC_WALKABLE_AREA)
@@ -394,8 +395,10 @@ public:
 				offMeshConRads.push_back(ParamsUtils::GetParam(OffmeshDesc, "Radius", agentRadius));
 				offMeshConDirs.push_back(ParamsUtils::GetParam(OffmeshDesc, "Bidirectional", true) ? 1 : 0);
 				offMeshConAreas.push_back(ParamsUtils::GetParam<int>(OffmeshDesc, "AreaType", RC_WALKABLE_AREA));
-				offMeshConFlags.push_back(ParamsUtils::GetParam(OffmeshDesc, "Flags", 0)); //???or calc based on area, or combine calc and explicit?
 				offMeshConId.push_back(ParamsUtils::GetParam(OffmeshDesc, "UserID", 0));
+
+				//???or calc based on area, or combine calc and explicit?
+				offMeshConFlags.push_back(ParamsUtils::GetParam(OffmeshDesc, "Flags", POLY_FLAGS_DEFAULT_ENABLED));
 			}
 		}
 
