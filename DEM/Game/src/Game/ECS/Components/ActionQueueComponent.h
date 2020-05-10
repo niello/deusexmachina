@@ -46,6 +46,38 @@ struct CActionQueueComponent
 		auto pAction = FindActive(T::RTTI);
 		return pAction ? static_cast<T*>(pAction) : nullptr;
 	}
+
+	Events::CEventBase* RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent)
+	{
+		// Find parent
+		auto It = std::find_if(Stack.begin(), Stack.end(), [&Parent](const auto& Elm)
+		{
+			return Elm.get() == &Parent;
+		});
+		if (It == Stack.cend()) return nullptr;
+
+		// Check its sub-action, if exists
+		++It;
+		if (It == Stack.cend()) return nullptr;
+
+		// Sub-action is not of requested type, cancel the whole sub-stack of the parent
+		if ((*It)->GetID() != ID)
+		{
+			Stack.erase(It, Stack.end());
+			return nullptr;
+		}
+
+		return It->get();
+	}
+
+	template<typename T>
+	T* RequestSubAction(const Events::CEventBase& Parent)
+	{
+		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+
+		auto pAction = RequestSubAction(T::RTTI, Parent);
+		return pAction ? static_cast<T*>(pAction) : nullptr;
+	}
 };
 
 }
