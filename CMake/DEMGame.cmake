@@ -121,6 +121,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
 	DEM/Game/src/AI/Navigation/NavSystem.cpp
 	DEM/Game/src/AI/Navigation/PathRequestQueue.cpp
+	DEM/Game/src/AI/Navigation/TraversalController.cpp
 	DEM/Game/src/AI/Perception/Perceptor.cpp
 	DEM/Game/src/AI/Perception/Sensor.cpp
 	DEM/Game/src/AI/Perception/Stimulus.cpp

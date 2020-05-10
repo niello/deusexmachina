@@ -39,7 +39,7 @@ public:
 		const CRTTI* pRTTI = GetRTTI(pClassName);
 
 		// FIXME: use Verify instead of duplicating condition!
-		n_assert_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI));
+		n_assert2_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI), CString("No factory type or not a subclass: ") + pClassName);
 		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
 	}
 
@@ -48,7 +48,7 @@ public:
 		const CRTTI* pRTTI = GetRTTI(ClassFourCC);
 
 		// FIXME: use Verify instead of duplicating condition!
-		n_assert_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI));
+		n_assert2_dbg(pRTTI && pRTTI->IsDerivedFrom(T::RTTI), "No factory type or not a subclass");
 		return (pRTTI && pRTTI->IsDerivedFrom(T::RTTI)) ? static_cast<T*>(pRTTI->CreateClassInstance(pParam)) : nullptr;
 	}
 };

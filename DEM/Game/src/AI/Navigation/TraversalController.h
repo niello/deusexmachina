@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/Object.h>
 #include <Game/ECS/Entity.h>
 #include <Events/EventBase.h>
 #include <Math/Vector3.h>
@@ -19,9 +20,12 @@ namespace DEM::Game
 namespace DEM::AI
 {
 struct CNavAgentComponent;
+using PTraversalController = Ptr<class CTraversalController>;
 
-class CTraversalController
+class CTraversalController : public Core::CObject
 {
+	RTTI_CLASS_DECL;
+
 protected:
 
 	//
@@ -30,7 +34,7 @@ public:
 
 	virtual CStrID FindAction(const CNavAgentComponent& Agent, unsigned char AreaType, dtPolyRef Poly, Game::HEntity* pOutSmartObject) = 0;
 	virtual bool   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
-		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
+		const vector3& Dest, const vector3& NextDest, float RemainingDistance, Game::HEntity SmartObject) = 0;
 };
 
 }

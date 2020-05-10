@@ -309,7 +309,9 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 
 	// Calculate the remaining distance to the navigation target
 	//!!!only if required by selected controller, and NOT every frame!
+	float RemainingDistance = 0.f;
 	//curr distance = len(dest - pos) //???what if offmesh?
+	//???curr distance = 0? can use one in a steering, only additional distance is required! FromNextToDestDistance.
 	/*
 	while (dtStatusInProgress(Status))
 	{
@@ -359,7 +361,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	*/
 
 	OutDest = Dest;
-	return pController->PushSubAction(Queue, NavAction, CStrID::Empty, Dest, NextDest, SmartObject);
+	return pController->PushSubAction(Queue, NavAction, CStrID::Empty, Dest, NextDest, RemainingDistance, SmartObject);
 }
 //---------------------------------------------------------------------
 
@@ -467,8 +469,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (Agent.Mode == ENavigationMode::Recovery)
 			{
 				// Try to return to the navmesh by the shortest path
-				auto pController = Agent.Settings->GetRecoveryController();
-				if (!pController || !pController->PushSubAction(*pQueue, *pNavigateAction, CStrID::Empty, CurrPos, CurrPos, {}))
+				auto pController = Agent.Settings->FindController(0, 0);
+				if (!pController || !pController->PushSubAction(*pQueue, *pNavigateAction, CStrID::Empty, CurrPos, CurrPos, 0.f, {}))
 				{
 					// recovery failed
 					//???fail navigation? set Idle?
