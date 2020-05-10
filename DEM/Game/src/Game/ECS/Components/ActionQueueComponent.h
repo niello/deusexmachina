@@ -27,6 +27,12 @@ struct CActionQueueComponent
 	CActionQueueComponent(CActionQueueComponent&& Other) = default;
 	CActionQueueComponent& operator =(CActionQueueComponent&& Other) = default;
 
+	void Reset()
+	{
+		Stack.clear();
+		Queue.clear();
+	}
+
 	Events::CEventBase* FindActive(Events::CEventID ID)
 	{
 		// Start from the most nested sub-action of the current action
@@ -47,18 +53,26 @@ struct CActionQueueComponent
 		return pAction ? static_cast<T*>(pAction) : nullptr;
 	}
 
+	// FIXME: if parent not found, returns null instead of failure
 	Events::CEventBase* RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent)
 	{
+		// If no sub-actions exist at all, exit
+		if (Stack.empty()) return nullptr;
+
 		// Find parent
 		auto It = std::find_if(Stack.begin(), Stack.end(), [&Parent](const auto& Elm)
 		{
 			return Elm.get() == &Parent;
 		});
-		if (It == Stack.cend()) return nullptr;
+		if (It == Stack.cend() && Queue.front().get() != &Parent) return nullptr;
 
 		// Check its sub-action, if exists
-		++It;
-		if (It == Stack.cend()) return nullptr;
+		if (It == Stack.cend()) It = Stack.begin();
+		else
+		{
+			++It;
+			if (It == Stack.cend()) return nullptr;
+		}
 
 		// Sub-action is not of requested type, cancel the whole sub-stack of the parent
 		if ((*It)->GetID() != ID)

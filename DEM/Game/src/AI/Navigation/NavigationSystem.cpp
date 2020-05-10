@@ -168,8 +168,6 @@ static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 
 static bool CheckCurrentPath(CNavAgentComponent& Agent)
 {
-	n_assert_dbg(Agent.State != ENavigationState::Idle);
-
 	// No path - no replanning
 	if (Agent.State == ENavigationState::Requested || Agent.State == ENavigationState::Idle) return true;
 
@@ -238,7 +236,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	const float* pCurrPos = Agent.Corridor.getPos();
 	const auto* pCurrPath = Agent.Corridor.getPath();
 	dtStraightPathContext Ctx;
-	if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
+	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
 			pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
@@ -361,7 +359,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	*/
 
 	OutDest = Dest;
-	return pController->PushSubAction(Queue, NavAction, CStrID::Empty, Dest, NextDest, RemainingDistance, SmartObject);
+	return pController->PushSubAction(Queue, NavAction, ActionID, Dest, NextDest, RemainingDistance, SmartObject);
 }
 //---------------------------------------------------------------------
 
@@ -439,8 +437,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			//!!!if invalid pos (first corridor poly is zero) exit? can't recover from that pos to the corridor.
 
 			UpdateDestination(*pNavigateAction, Agent);
-
-			//???if destination failed Navigate task (incl. zero target poly ref), early exit?
+			if (Agent.State == ENavigationState::Idle) return;
 
 			//!!!if actor is already at the new destination, finish Navigate action (success), set idle and exit
 

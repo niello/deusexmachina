@@ -724,8 +724,6 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 
 		// Fill instance data with patches and quarter-patches to render
 
-		U32 PatchCount = 0, QuarterPatchCount = 0;
-
 		//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
 		if (!pInstances)
 		{
@@ -753,6 +751,8 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		Args.LightIndexBase = pRenderNode->LightIndexBase;
 		Args.LightCount = pRenderNode->LightCount;
 
+		U32 PatchCount = 0;
+		U32 QuarterPatchCount = 0;
 		U8 MaxLightCount = 0;
 		const U32 TopPatchesW = CDLOD.GetTopPatchCountW();
 		const U32 TopPatchesH = CDLOD.GetTopPatchCountH();
