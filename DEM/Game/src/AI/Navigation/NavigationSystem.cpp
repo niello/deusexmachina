@@ -417,40 +417,43 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
 			{
-				//???only if corridor is not empty? or checked in findStraightPath?
+				Agent.PathOptimizationTime += dt;
 
 				// FIXME: only if necessary events happened? like offsetting from expected position.
 				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
-				//const float OPT_TIME_THR_SEC = 0.5f;
-				//ag->topologyOptTime += dt;
-				//if (ag->topologyOptTime >= OPT_TIME_THR_SEC)
-				//{
-				//	ag->corridor.optimizePathTopology(m_navquery, navFilter);
-				//	ag->topologyOptTime = 0.f;
-				//}
-
-				//???use special area type for controlled polys? when encountered, use DT_STRAIGHTPATH_ALL_CROSSINGS,
-				//because every poly has its own controller.
+				// The same for optimizePathVisibility (used below).
+				constexpr float OPT_TIME_THR_SEC = 2.5f;
+				const bool OptimizePath = (Agent.PathOptimizationTime >= OPT_TIME_THR_SEC);
+				if (OptimizePath)
+				{
+					Agent.Corridor.optimizePathTopology(Agent.pNavQuery, Agent.pNavFilter);
+					Agent.PathOptimizationTime = 0.f;
+				}
 
 				vector3 ActionDest;
 				vector3 ActionNextDest;
-				CStrID ActionID = GenerateTraversalAction(Agent, ActionDest, ActionNextDest);
-				if (!ActionID)
+				if (auto ActionID = GenerateTraversalAction(Agent, ActionDest, ActionNextDest))
+				{
+					// get our immediate sub-action from pActions
+					// if type != ActionID, reset the stack to Navigate
+					// if no sub-action now, create one, else get existing
+					// fill dest & next dest in the action, fill other necessary data
+
+					//ActionID;
+					//ActionDest;
+					//ActionNextDest;
+					//!!!for doors etc need poly info to get associated smart object!
+
+					// Use our traversal target to optimize the path, because we know that there is a straight way to it
+					if (OptimizePath)
+						Agent.Corridor.optimizePathVisibility(ActionDest.v, 30.f * Agent.Radius, Agent.pNavQuery, Agent.pNavFilter);
+				}
+				else
 				{
 					// straight path calculation failed
 					//???fail navigation? set Idle?
 					Agent.Mode = ENavigationMode::Surface; // If the reason is an invalid offmesh connection
 				}
-
-				// create/update/check sub-action for current edge traversal
-				//ActionID;
-				//ActionDest;
-				//ActionNextDest;
-
-				// Use our traversal target to optimize the path, because we know that there is a straight way to it
-				// FIXME: only if necessary events happened? like offsetting from expected position.
-				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
-				//Agent.Corridor.optimizePathVisibility(ActionDest.v, 30.f * Agent.Radius, Agent.pNavQuery, Agent.pNavFilter);
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
