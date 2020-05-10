@@ -16,7 +16,7 @@ public:
 
 	vector3 _Dest;
 	vector3 _NextDest;
-	float   _AdditionalDistance = 0.f;
+	float   _AdditionalDistance = 0.f; // Set < 0.f to disable arrival slowdown
 
 	explicit Steer(const vector3& Dest, const vector3& NextDest, float AdditionalDistance)
 		: _Dest(Dest), _NextDest(NextDest), _AdditionalDistance(AdditionalDistance)

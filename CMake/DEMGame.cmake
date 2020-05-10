@@ -11,6 +11,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Memory/MemFact.h
 	DEM/Game/src/AI/Memory/MemSystem.h
 	DEM/Game/src/AI/Movement/MotorSystem.h
+	DEM/Game/src/AI/Movement/SteeringController.h
 	DEM/Game/src/AI/Movement/Actions/ActionFace.h
 	DEM/Game/src/AI/Movement/Actions/ActionFaceTarget.h
 	DEM/Game/src/AI/Movement/Actions/ActionGoto.h
@@ -29,7 +30,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Navigation/NavSystem.h
 	DEM/Game/src/AI/Navigation/PathEdge.h
 	DEM/Game/src/AI/Navigation/PathRequestQueue.h
-	DEM/Game/src/AI/Navigation/SteeringController.h
 	DEM/Game/src/AI/Navigation/TraversalController.h
 	DEM/Game/src/AI/Perception/Perceptor.h
 	DEM/Game/src/AI/Perception/Sensor.h
@@ -104,7 +104,9 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Behaviour/ActionSequence.cpp
 	DEM/Game/src/AI/Memory/MemFact.cpp
 	DEM/Game/src/AI/Memory/MemSystem.cpp
+	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
 	DEM/Game/src/AI/Movement/MotorSystem.cpp
+	DEM/Game/src/AI/Movement/SteeringController.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionFace.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionFaceTarget.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionGoto.cpp
@@ -122,7 +124,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
 	DEM/Game/src/AI/Navigation/NavSystem.cpp
 	DEM/Game/src/AI/Navigation/PathRequestQueue.cpp
-	DEM/Game/src/AI/Navigation/SteeringController.cpp
 	DEM/Game/src/AI/Navigation/TraversalController.cpp
 	DEM/Game/src/AI/Perception/Perceptor.cpp
 	DEM/Game/src/AI/Perception/Sensor.cpp

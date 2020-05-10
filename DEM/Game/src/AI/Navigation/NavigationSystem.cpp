@@ -1,4 +1,3 @@
-#include "NavSystem.h"
 #include <Game/GameLevel.h>
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
@@ -6,7 +5,6 @@
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Navigation/PathRequestQueue.h>
 #include <AI/Navigation/TraversalController.h>
-#include <Core/Factory.h>
 #include <DetourCommon.h>
 #include <array>
 
@@ -229,6 +227,47 @@ static void RequestPath(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& Path
 }
 //---------------------------------------------------------------------
 
+static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
+{
+	dtStatus Status = PathQueue.GetRequestStatus(Agent.AsyncTaskID);
+
+	// If failed, can retry because the target location is still valid
+	if (dtStatusFailed(Status)) Agent.State = ENavigationState::Requested;
+	else if (!dtStatusSucceed(Status)) return true;
+
+	std::array<dtPolyRef, 512> Path;
+	int PathSize = 0;
+	n_assert(PathQueue.GetPathSize(Agent.AsyncTaskID) <= static_cast<int>(Path.size()));
+	Status = PathQueue.GetPathResult(Agent.AsyncTaskID, Path.data(), PathSize, Path.size());
+
+	// The last ref in the old path should be the same as the location where the request was issued
+	if (dtStatusFailed(Status) || !PathSize || Agent.Corridor.getLastPoly() != Path[0]) return false;
+
+	// If path is partial, try to constrain target position inside the last polygon
+	vector3 PathTarget = Agent.TargetPos;
+	const auto LastRef = Path[PathSize - 1];
+	if (LastRef != Agent.TargetRef)
+		if (dtStatusFailed(Agent.pNavQuery->closestPointOnPolyBoundary(LastRef, Agent.TargetPos.v, PathTarget.v)))
+			return false;
+
+	// Merge result and existing path, removing trackbacks. The agent might have moved whilst
+	// the request is being processed, so the path may have changed.
+	int TotalSize = 0;
+	Status = Agent.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
+	if (dtStatusDetail(Status, DT_BUFFER_TOO_SMALL))
+	{
+		Agent.Corridor.extend(TotalSize);
+		Status = Agent.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
+	}
+
+	if (dtStatusFailed(Status)) return false;
+
+	Agent.State = ENavigationState::Following;
+	Agent.ReplanTime = 0.f;
+	return true;
+}
+//---------------------------------------------------------------------
+
 // TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
 static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, vector3& OutDest)
@@ -360,47 +399,6 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 
 	OutDest = Dest;
 	return pController->PushSubAction(Queue, NavAction, ActionID, Dest, NextDest, RemainingDistance, SmartObject);
-}
-//---------------------------------------------------------------------
-
-static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
-{
-	dtStatus Status = PathQueue.GetRequestStatus(Agent.AsyncTaskID);
-
-	// If failed, can retry because the target location is still valid
-	if (dtStatusFailed(Status)) Agent.State = ENavigationState::Requested;
-	else if (!dtStatusSucceed(Status)) return true;
-
-	std::array<dtPolyRef, 512> Path;
-	int PathSize = 0;
-	n_assert(PathQueue.GetPathSize(Agent.AsyncTaskID) <= static_cast<int>(Path.size()));
-	Status = PathQueue.GetPathResult(Agent.AsyncTaskID, Path.data(), PathSize, Path.size());
-
-	// The last ref in the old path should be the same as the location where the request was issued
-	if (dtStatusFailed(Status) || !PathSize || Agent.Corridor.getLastPoly() != Path[0]) return false;
-
-	// If path is partial, try to constrain target position inside the last polygon
-	vector3 PathTarget = Agent.TargetPos;
-	const auto LastRef = Path[PathSize - 1];
-	if (LastRef != Agent.TargetRef)
-		if (dtStatusFailed(Agent.pNavQuery->closestPointOnPolyBoundary(LastRef, Agent.TargetPos.v, PathTarget.v)))
-			return false;
-
-	// Merge result and existing path, removing trackbacks. The agent might have moved whilst
-	// the request is being processed, so the path may have changed.
-	int TotalSize = 0;
-	Status = Agent.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
-	if (dtStatusDetail(Status, DT_BUFFER_TOO_SMALL))
-	{
-		Agent.Corridor.extend(TotalSize);
-		Status = Agent.Corridor.appendPath(PathTarget.v, Path.data(), PathSize, &TotalSize);
-	}
-
-	if (dtStatusFailed(Status)) return false;
-
-	Agent.State = ENavigationState::Following;
-	Agent.ReplanTime = 0.f;
-	return true;
 }
 //---------------------------------------------------------------------
 
