@@ -21,22 +21,22 @@ enum class ECharacterState : U8
 struct CCharacterControllerComponent
 {
 	Physics::CCharacterController Controller;
-	Physics::PRigidBody _Body;
+	Physics::PRigidBody Body;
 
-	float			_Radius = 0.3f;
-	float			_Height = 1.75f;
-	float			_Hover = 0.2f;	//???is it MaxClimb itself?
+	float			Radius = 0.3f;
+	float			Height = 1.75f;
+	float			Hover = 0.2f;	//???is it MaxClimb itself?
 	float			MaxStepDownHeight = 0.2f;	// Maximum height above the ground when character controls itself and doesn't fall
-	float           _MaxLinearSpeed = 3.f;
-	float           _MaxAngularSpeed = PI;
+	float           MaxLinearSpeed = 3.f;
+	float           MaxAngularSpeed = PI;
 	float			MaxAcceleration = 0.f;
 	float			MaxLandingImpulse;	//???speed? Maximum impulse the character can handle when landing. When exceeded, falling starts.
 	//float			MaxJumpImpulse;		// Maximum jump impulse (mass- and direction-independent)
-	float           _BigTurnThreshold = PI / 3.f;        // Max angle (in rad) actor can turn without stopping linear movement
-	float           _SteeringSmoothness = 0.3f;
-	float           _ArriveBrakingCoeff = -0.5f / -10.f; // -1/2a = -0.5/a, where a is max brake acceleration, a < 0
+	float           BigTurnThreshold = PI / 3.f;        // Max angle (in rad) actor can turn without stopping linear movement
+	float           SteeringSmoothness = 0.3f;
+	float           ArriveBrakingCoeff = -0.5f / -10.f; // -1/2a = -0.5/a, where a is max brake acceleration, a < 0
 
-	ECharacterState	_State = ECharacterState::Stand;
+	ECharacterState	State = ECharacterState::Stand;
 
 	float GetRadius() const { return Controller.GetRadius(); }
 	void  SetRadius(float Radius) { Controller.SetRadius(Radius); }
@@ -44,6 +44,8 @@ struct CCharacterControllerComponent
 	void  SetHeight(float Height) { Controller.SetHeight(Height); }
 	float GetHover() const { return Controller.GetHover(); }
 	void  SetHover(float Hover) { Controller.SetHover(Hover); }
+
+	bool IsOnTheGround() const { return State != ECharacterState::Jump && State != ECharacterState::Fall; } // Levitate too!
 };
 
 }

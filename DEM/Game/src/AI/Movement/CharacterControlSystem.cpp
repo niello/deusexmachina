@@ -18,10 +18,10 @@ static float CalcDistanceToGround(const CCharacterControllerComponent& Character
 
 	vector3 Start = Pos;
 	vector3 End = Pos;
-	Start.y += Character._Height;
+	Start.y += Character.Height;
 	End.y -= (Character.MaxStepDownHeight + GroundProbeLength); // Falling state detection
 
-	auto pBody = Character._Body.Get();
+	auto pBody = Character.Body.Get();
 
 	// FIXME: improve passing collision flags through interfaces!
 	const auto* pCollisionProxy = pBody->GetBtBody()->getBroadphaseProxy();
@@ -46,13 +46,13 @@ static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Ch
 	vector3 DesiredMovement(Request._Dest.x - Pos.x, 0.f, Request._Dest.z - Pos.z);
 
 	// If current destination is an intermediate turning point, make the trajectory smooth
-	if (Character._SteeringSmoothness > 0.f && Request._NextDest != Request._Dest)
+	if (Character.SteeringSmoothness > 0.f && Request._NextDest != Request._Dest)
 	{
 		const vector3 ToNext(Request._NextDest.x - Pos.x, 0.f, Request._NextDest.z - Pos.z);
 		const float DistanceToNext = ToNext.Length2D();
 		if (DistanceToNext > 0.001f)
 		{
-			const float Scale = DesiredMovement.Length2D() * Character._SteeringSmoothness / DistanceToNext;
+			const float Scale = DesiredMovement.Length2D() * Character.SteeringSmoothness / DistanceToNext;
 			DesiredMovement -= ToNext * Scale;
 		}
 	}
@@ -63,7 +63,7 @@ static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Ch
 
 	// Calculate speed
 
-	float Speed = Character._MaxLinearSpeed;
+	float Speed = Character.MaxLinearSpeed;
 
 	// Calculate arrival slowdown if close enough to destination
 	// Negative _ArriveAdditionalDistance means that no arrive steering required at all
@@ -76,13 +76,13 @@ static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Ch
 		const float Distance = RemainingDistance + Request._AdditionalDistance;
 
 		// S = -v0^2/2a for 0 = v0 + at (stop condition)
-		const float SlowDownRadius = Character._ArriveBrakingCoeff * Speed * Speed;
+		const float SlowDownRadius = Character.ArriveBrakingCoeff * Speed * Speed;
 		if (Distance < SlowDownRadius)
 			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
 	}
 
 	// Avoid overshooting, make exactly remaining movement in one frame
-	const float FrameTime = Character._Body->GetLevel()->GetStepTime();
+	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
 	if (RemainingDistance < Speed * FrameTime) return DesiredMovement / FrameTime;
 
 	// Calculate velocity as speed * normalized movement direction
@@ -97,14 +97,14 @@ static float CalcDesiredAngularVelocity(const CCharacterControllerComponent& Cha
 	const bool IsNegative = (Angle < 0.f);
 	const float AngleAbs = IsNegative ? -Angle : Angle;
 
-	float Speed = Character._MaxAngularSpeed;
+	float Speed = Character.MaxAngularSpeed;
 
 	// Calculate arrival slowdown
 	if (AngleAbs <= AngularArrivalZone)
 		Speed *= AngleAbs / AngularArrivalZone;
 
 	// Avoid overshooting, make exactly remaining rotation in one frame
-	const float FrameTime = Character._Body->GetLevel()->GetStepTime();
+	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
 	if (AngleAbs < Speed * FrameTime) return Angle / FrameTime;
 
 	return IsNegative ? -Speed : Speed;
@@ -118,7 +118,7 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 			CCharacterControllerComponent& Character,
 			DEM::Game::CActionQueueComponent* pQueue)
 	{
-		auto pBody = Character._Body.Get();
+		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
 		auto pBtBody = pBody->GetBtBody();
@@ -136,18 +136,18 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 		// Update vertical state
 
 		const float DistanceToGround = CalcDistanceToGround(Character, Pos);
-		const bool OnGround = (Character._State != ECharacterState::Jump && Character._State != ECharacterState::Fall);
+		const bool OnGround = Character.IsOnTheGround();
 
 		if (DistanceToGround <= 0.f && !OnGround)
 		{
-			if (Character._State == ECharacterState::Fall)
+			if (Character.State == ECharacterState::Fall)
 			{
 				//???how to prevent character from taking control over itself until it is recovered from falling?
 				//???add ECharacterState::Lay uncontrolled state after a fall or when on the ground? and then recover
 				//can even change collision shape for this state (ragdoll?)
 			}
 
-			Character._State = ECharacterState::Stand;
+			Character.State = ECharacterState::Stand;
 		}
 		else if (DistanceToGround > Character.MaxStepDownHeight && OnGround)
 		{
@@ -157,12 +157,12 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 			const float VerticalImpulse = pBody->GetMass() * -pBtBody->getLinearVelocity().y();
 			if (VerticalImpulse > Character.MaxLandingImpulse)
 			{
-				Character._State = ECharacterState::Fall;
+				Character.State = ECharacterState::Fall;
 				pBody->SetActive(true);
 			}
 			else if (VerticalImpulse > 0.f)
 			{
-				Character._State = ECharacterState::Jump;
+				Character.State = ECharacterState::Jump;
 				pBody->SetActive(true);
 			}
 			//???else if VerticalImpulse == 0.f levitate?
@@ -170,7 +170,7 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 
 		// Update the controller in the current state, including movement requests
 
-		if (Character._State == ECharacterState::Stand)
+		if (Character.State == ECharacterState::Stand)
 		{
 			vector3 DesiredLinearVelocity;
 
@@ -180,13 +180,16 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 				// _NeedDestinationFacing must be determined once, not every frame!
 				//???use different states for it instead of bool? Moving / ShortStep
 
+				//!!!if lookat requested here (RequestFacing below), must finish request
+				//even if stopped moving before! If cancelled movement, cancel facing too.
+
 				DesiredLinearVelocity = CalcDesiredLinearVelocity(Character, Pos, *pSteerAction);
 
 				// See DetourCrowd for impl.
 				//!!!Can add separation with neighbours here too!
 				//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
 
-				if (_NeedDestinationFacing && Character._MaxAngularSpeed > 0.f)
+				if (NeedDestinationFacing && Character.MaxAngularSpeed > 0.f)
 					RequestFacing(DesiredLinearVelocity);
 			}
 
@@ -197,12 +200,12 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 				DesiredAngularVelocity = CalcDesiredAngularVelocity(Angle);
 
 				// Amount of required rotation is too big, actor must stop moving to perform it
-				if (std::fabsf(Angle) > Character._BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
+				if (std::fabsf(Angle) > Character.BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
 			}
 
 			// We want a precise control over the movement, so deny freezing on low speed
 			// when movement is requested. When idle, allow to deactivate eventually.
-			if (IsMotionRequested())
+			if (DesiredLinearVelocity != vector3::Zero || DesiredAngularVelocity != 0.f)
 				pBody->SetActive(true, true);
 			else if (pBody->IsAlwaysActive())
 				pBody->SetActive(true, false);
