@@ -4,7 +4,8 @@
 #include <Events/EventBase.h>
 #include <Math/Vector3.h>
 
-// Controls a path edge traversal by providing appropriate action for the agent
+// Controls a path edge traversal by providing appropriate action for the agent,
+// e.g. Steer (Walk), Swim, Jump, OpenDoor, ClimbLadder etc.
 
 #ifdef DT_POLYREF64
 #error "64-bit navigation poly refs aren't supported for now"
