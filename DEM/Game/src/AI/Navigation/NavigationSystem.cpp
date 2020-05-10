@@ -166,96 +166,6 @@ static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 }
 //---------------------------------------------------------------------
 
-// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
-static CStrID GenerateTraversalAction(CNavAgentComponent& Agent, vector3& Dest, vector3& NextDest)
-{
-	const float* pCurrPos = Agent.Corridor.getPos();
-	const auto* pCurrPath = Agent.Corridor.getPath();
-	dtStraightPathContext Ctx;
-	if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
-			pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
-		return CStrID::Empty;
-
-	unsigned char Flags;
-	unsigned char AreaType;
-	dtPolyRef PolyRef;
-	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-	if (dtStatusFailed(Status)) return CStrID::Empty;
-
-	// If no action available, give an agent a chance to trigger an offmesh connection
-	Game::HEntity SmartObject;
-	auto pController = Agent.Settings->FindController(Agent.CurrAreaType, pCurrPath[0]);
-	auto ActionID = pController ? pController->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject) : CStrID::Empty;
-	if (!ActionID && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return CStrID::Empty;
-
-	// Advance through path points until the traversal action is generated
-	do
-	{
-		// Elongate path edge
-		Dest = NextDest;
-
-		// That was the last edge, finish
-		if (!dtStatusInProgress(Status)) break;
-
-		// Check entering an offmesh connection
-		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
-		{
-			const float DistanceSq = dtVdist2DSqr(pCurrPos, Dest.v);
-			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
-			if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
-			{
-				// Adjust the path over the off-mesh connection.
-				// Path validity check will ensure that bad/blocked connections will be replanned.
-				// NB: for offmesh actions Dest is offmesh start and NextDest is offmesh end
-				dtPolyRef OffmeshRefs[2];
-				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
-				{
-					pController = Agent.Settings->FindController(AreaType, PolyRef);
-					ActionID = pController ? pController->FindAction(Agent, AreaType, PolyRef, &SmartObject) : CStrID::Empty;
-					if (ActionID)
-						Agent.Mode = ENavigationMode::Offmesh;
-				}
-			}
-			break;
-		}
-
-		// The next path edge requires different traversal action, finish
-		Game::HEntity NextSmartObject;
-		auto pNextController = Agent.Settings->FindController(AreaType, PolyRef);
-		auto NextActionID = pNextController ? pNextController->FindAction(Agent, AreaType, PolyRef, &NextSmartObject) : CStrID::Empty;
-		if (ActionID != NextActionID || SmartObject != NextSmartObject) break;
-
-		// Get the next path edge end point
-		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-		if (dtStatusFailed(Status)) break;
-
-		// If next edge changes direction, use its end position for smooth turning and finish
-		constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
-		const vector2 ToCurr(Dest.x - pCurrPos[0], Dest.z - pCurrPos[2]);
-		const vector2 ToNext(NextDest.x - pCurrPos[0], NextDest.z - pCurrPos[2]);
-		const float Dot = ToNext.dot(ToCurr);
-		if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
-			break;
-	}
-	while (true);
-
-	// Calculate the remaining distance to the navigation target
-	//!!!only if required, NOT every frame!
-	/*
-	while (dtStatusInProgress(Status))
-	{
-		//???needed only for arrival braking or for smth else too?
-		// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
-		// only when dt is big enough or when the next corner not found in the cache
-		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ActionNextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-		if (dtStatusFailed(Status)) break;
-	}
-	*/
-
-	return ActionID;
-}
-//---------------------------------------------------------------------
-
 static bool CheckCurrentPath(CNavAgentComponent& Agent)
 {
 	n_assert_dbg(Agent.State != ENavigationState::Idle);
@@ -321,6 +231,138 @@ static void RequestPath(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& Path
 }
 //---------------------------------------------------------------------
 
+// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
+static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
+	const Navigate& NavAction, vector3& OutDest)
+{
+	const float* pCurrPos = Agent.Corridor.getPos();
+	const auto* pCurrPath = Agent.Corridor.getPath();
+	dtStraightPathContext Ctx;
+	if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
+			pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
+		return false;
+
+	vector3 Dest;
+	vector3 NextDest;
+	unsigned char Flags;
+	unsigned char AreaType;
+	dtPolyRef PolyRef;
+	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+	if (dtStatusFailed(Status)) return false;
+
+	// If no action available, give an agent a chance to trigger an offmesh connection
+	Game::HEntity SmartObject;
+	auto pController = Agent.Settings->FindController(Agent.CurrAreaType, pCurrPath[0]);
+	auto ActionID = pController ? pController->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject) : CStrID::Empty;
+	if (!ActionID && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return false;
+
+	// Advance through path points until the traversal action is generated
+	do
+	{
+		// Elongate path edge
+		Dest = NextDest;
+
+		// That was the last edge, finish
+		if (!dtStatusInProgress(Status)) break;
+
+		// Check entering an offmesh connection
+		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
+		{
+			const float DistanceSq = dtVdist2DSqr(pCurrPos, Dest.v);
+			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
+			if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
+			{
+				// Adjust the path over the off-mesh connection.
+				// Path validity check will ensure that bad/blocked connections will be replanned.
+				// NB: for offmesh actions Dest is offmesh start and NextDest is offmesh end
+				dtPolyRef OffmeshRefs[2];
+				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
+				{
+					pController = Agent.Settings->FindController(AreaType, PolyRef);
+					ActionID = pController ? pController->FindAction(Agent, AreaType, PolyRef, &SmartObject) : CStrID::Empty;
+					if (ActionID)
+						Agent.Mode = ENavigationMode::Offmesh;
+				}
+			}
+			break;
+		}
+
+		// The next path edge requires different traversal action, finish
+		Game::HEntity NextSmartObject;
+		auto pNextController = Agent.Settings->FindController(AreaType, PolyRef);
+		auto NextActionID = pNextController ? pNextController->FindAction(Agent, AreaType, PolyRef, &NextSmartObject) : CStrID::Empty;
+		if (ActionID != NextActionID || SmartObject != NextSmartObject) break;
+
+		// Get the next path edge end point
+		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+		if (dtStatusFailed(Status)) break;
+
+		// If next edge changes direction, use its end position for smooth turning and finish
+		constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
+		const vector2 ToCurr(Dest.x - pCurrPos[0], Dest.z - pCurrPos[2]);
+		const vector2 ToNext(NextDest.x - pCurrPos[0], NextDest.z - pCurrPos[2]);
+		const float Dot = ToNext.dot(ToCurr);
+		if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
+			break;
+	}
+	while (true);
+
+	// Calculate the remaining distance to the navigation target
+	//!!!only if required by selected controller, and NOT every frame!
+	//curr distance = len(dest - pos) //???what if offmesh?
+	/*
+	while (dtStatusInProgress(Status))
+	{
+		//???needed only for arrival braking or for smth else too?
+		// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
+		// only when dt is big enough or when the next corner not found in the cache
+		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ActionNextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+		if (dtStatusFailed(Status)) break;
+	}
+	*/
+
+	/*
+	// determine action type by ActionID
+	//???need action factory? or use standard factory? or if !Factory->Registered, create param event?
+	//???or for each area / action ID have some generator that creates required action?
+	//could help to convert poly ref etc into actual data
+	//???per-area controller instead of per-tile? except "controlled" area
+	//return action type to avoid recreation, add Fill(Action&, params) for filling existing actions.
+	Events::CEventID ActionTypeID = ActionID;
+
+	// Create or find existing immediate sub-action of required type
+	Events::CEventBase* pSubAction = nullptr;
+	auto SubIt = ++std::find_if(pActions->Stack.begin(), pActions->Stack.end(), [pNavigateAction](const auto& Elm)
+	{
+		return Elm.get() == pNavigateAction;
+	});
+	if (SubIt != pActions->Stack.end())
+	{
+		// Sub-action type is different, discard the whole sub-stack
+		if ((*SubIt)->GetID() != ActionTypeID)
+		{
+			pActions->Stack.erase(SubIt, pActions->Stack.end());
+			pActions->Stack.push_back(nullptr); // FIXME: instance!
+			//Core::CFactory::Instance().Create
+			pSubAction = pActions->Stack.back().get();
+		}
+		else pSubAction = SubIt->get();
+	}
+	else
+	{
+		pActions->Stack.push_back(nullptr); // FIXME: instance!
+		pSubAction = pActions->Stack.back().get();
+	}
+
+	// fill dest & next dest in the action, fill other necessary data
+	//!!!for doors etc need poly info to get associated smart object!
+	*/
+
+	OutDest = Dest;
+	return pController->PushSubAction(Queue, NavAction, CStrID::Empty, Dest, NextDest, SmartObject);
+}
+//---------------------------------------------------------------------
+
 static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
 {
 	dtStatus Status = PathQueue.GetRequestStatus(Agent.AsyncTaskID);
@@ -367,7 +409,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 	World.ForEachEntityWith<CNavAgentComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
 		[dt, &PathQueue](auto EntityID, auto& Entity,
 			CNavAgentComponent& Agent,
-			DEM::Game::CActionQueueComponent* pActions,
+			DEM::Game::CActionQueueComponent* pQueue,
 			const DEM::Game::CSceneComponent* pSceneComponent)
 	{
 		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
@@ -380,7 +422,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		//!!!recovery subtask can use speed "as fast as possible" or "recovery" type, then character controller can
 		// resolve small length recovery as collision, immediately moving the character to the recovery destination.
 
-		if (auto pNavigateAction = pActions->FindActive<Navigate>())
+		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 			Agent.ReplanTime += dt;
@@ -388,7 +430,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
 			// if succeeded and was offmesh, return to navmesh, and only after it update position.
 
-			UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Agent);
+			const auto& CurrPos = pSceneComponent->RootNode->GetWorldPosition();
+			UpdatePosition(CurrPos, Agent);
 
 			//???if position failed Navigate task, early exit?
 			//!!!if invalid pos (first corridor poly is zero) exit? can't recover from that pos to the corridor.
@@ -424,8 +467,12 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (Agent.Mode == ENavigationMode::Recovery)
 			{
 				// Try to return to the navmesh by the shortest path
-
-				// add recovery steering action (might be fast-forwarded by the character controller or executed as normal movement)
+				auto pController = Agent.Settings->GetRecoveryController();
+				if (!pController || !pController->PushSubAction(*pQueue, *pNavigateAction, CStrID::Empty, CurrPos, CurrPos, {}))
+				{
+					// recovery failed
+					//???fail navigation? set Idle?
+				}
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
 			{
@@ -443,45 +490,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				}
 
 				vector3 ActionDest;
-				vector3 ActionNextDest;
-				if (auto ActionID = GenerateTraversalAction(Agent, ActionDest, ActionNextDest))
+				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, ActionDest))
 				{
-					// determine action type by ActionID
-					//???need action factory? or use standard factory? or if !Factory->Registered, create param event?
-					//???move into GenerateTraversalAction?
-					//???or for each area / action ID have some generator that creates required action?
-					//could help to convert poly ref etc into actual data
-					//???per-area controller instead of per-tile? except "controlled" area
-					//return action type to avoid recreation, add Fill(Action&, params) for filling existing actions.
-					Events::CEventID ActionTypeID = ActionID;
-
-					// Create or find existing immediate sub-action of required type
-					Events::CEventBase* pSubAction = nullptr;
-					auto SubIt = ++std::find_if(pActions->Stack.begin(), pActions->Stack.end(), [pNavigateAction](const auto& Elm)
-					{
-						return Elm.get() == pNavigateAction;
-					});
-					if (SubIt != pActions->Stack.end())
-					{
-						// Sub-action type is different, discard the whole sub-stack
-						if ((*SubIt)->GetID() != ActionTypeID)
-						{
-							pActions->Stack.erase(SubIt, pActions->Stack.end());
-							pActions->Stack.push_back(nullptr); // FIXME: instance!
-							//Core::CFactory::Instance().Create
-							pSubAction = pActions->Stack.back().get();
-						}
-						else pSubAction = SubIt->get();
-					}
-					else
-					{
-						pActions->Stack.push_back(nullptr); // FIXME: instance!
-						pSubAction = pActions->Stack.back().get();
-					}
-
-					// fill dest & next dest in the action, fill other necessary data
-					//!!!for doors etc need poly info to get associated smart object!
-
 					// Use our traversal target to optimize the path, because we know that there is a straight way to it
 					if (OptimizePath && Agent.Mode == ENavigationMode::Surface)
 						Agent.Corridor.optimizePathVisibility(ActionDest.v, 30.f * Agent.Radius, Agent.pNavQuery, pNavFilter);
@@ -495,8 +505,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		}
 		else if (Agent.State != ENavigationState::Idle)
 		{
-			// set idle
-			//???need UpdatePosition once? or need UpdatePosition even when no Navigate action?
+			// set idle, navigation is cancelled
+			//???need UpdatePosition once? or need UpdatePosition even when no Navigate action (outside if-else)?
 		}
 	});
 }

@@ -29,8 +29,8 @@ protected:
 public:
 
 	virtual CStrID FindAction(const CNavAgentComponent& Agent, unsigned char AreaType, dtPolyRef Poly, Game::HEntity* pOutSmartObject) = 0;
-	virtual bool   PushSubAction(Game::CActionQueueComponent& Queue, Events::CEventBase& ParentAction, CStrID Type,
-		const vector3& Dest, const vector3& NextDest, Game::HEntity* pSmartObject) = 0;
+	virtual bool   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
 };
 
 }

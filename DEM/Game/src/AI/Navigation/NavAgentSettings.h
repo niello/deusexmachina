@@ -24,6 +24,7 @@ public:
 	virtual bool          IsResourceValid() const override { return true; }
 
 	CTraversalController* FindController(unsigned char AreaType, dtPolyRef PolyRef) const;
+	CTraversalController* GetRecoveryController() const;
 	const dtQueryFilter*  GetQueryFilter() const { return &Filter; }
 };
 
