@@ -22,7 +22,7 @@ namespace DEM::AI
 struct CNavAgentComponent;
 using PTraversalController = Ptr<class CTraversalController>;
 
-class CTraversalController : public Core::CObject
+class CTraversalController : public ::Core::CObject
 {
 	RTTI_CLASS_DECL;
 

@@ -29,6 +29,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Navigation/NavSystem.h
 	DEM/Game/src/AI/Navigation/PathEdge.h
 	DEM/Game/src/AI/Navigation/PathRequestQueue.h
+	DEM/Game/src/AI/Navigation/SteeringController.h
 	DEM/Game/src/AI/Navigation/TraversalController.h
 	DEM/Game/src/AI/Perception/Perceptor.h
 	DEM/Game/src/AI/Perception/Sensor.h
@@ -121,6 +122,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Navigation/NavMeshLoaderNM.cpp
 	DEM/Game/src/AI/Navigation/NavSystem.cpp
 	DEM/Game/src/AI/Navigation/PathRequestQueue.cpp
+	DEM/Game/src/AI/Navigation/SteeringController.cpp
 	DEM/Game/src/AI/Navigation/TraversalController.cpp
 	DEM/Game/src/AI/Perception/Perceptor.cpp
 	DEM/Game/src/AI/Perception/Sensor.cpp

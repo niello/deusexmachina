@@ -48,6 +48,9 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 
 			const auto& AreaDesc = *Param.GetValue<Data::PParams>();
 
+			Data::PDataArray AreaTypes;
+			if (!AreaDesc.TryGet(AreaTypes, CStrID("AreaTypes")) || AreaTypes->IsEmpty()) continue;
+
 			CString ControllerID;
 			if (!AreaDesc.TryGet(ControllerID, CStrID("Controller"))) continue;
 
@@ -56,9 +59,6 @@ PResourceObject CNavAgentSettingsLoaderHRD::CreateResource(CStrID UID)
 
 			const float Cost = AreaDesc.Get(CStrID("Cost"), 1.f);
 			const bool IsCostOverridden = !n_fequal(Cost, 1.f);
-
-			Data::PDataArray AreaTypes;
-			if (!AreaDesc.TryGet(AreaTypes, CStrID("AreaTypes"))) continue;
 
 			for (const auto& AreaTypeVal : *AreaTypes)
 			{
