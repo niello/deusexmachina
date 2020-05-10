@@ -168,6 +168,88 @@ static CStrID GetTraversalAction(const CNavAgentComponent& Agent, unsigned char 
 }
 //---------------------------------------------------------------------
 
+// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
+static CStrID GenerateTraversalAction(CNavAgentComponent& Agent, vector3& Dest, vector3& NextDest)
+{
+	const float* pCurrPos = Agent.Corridor.getPos();
+	dtStraightPathContext Ctx;
+	if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
+			pCurrPos, Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
+		return CStrID::Empty;
+
+	unsigned char Flags;
+	unsigned char AreaType;
+	dtPolyRef PolyRef;
+	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+	if (dtStatusFailed(Status)) return CStrID::Empty;
+
+	// If no action available, give an agent a chance to trigger an offmesh connection
+	CStrID ActionID = GetTraversalAction(Agent, Agent.CurrAreaType, Agent.Corridor.getPath()[0]);
+	if (!ActionID && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return CStrID::Empty;
+
+	// Advance through path points until the traversal action is generated
+	do
+	{
+		// Elongate path edge
+		Dest = NextDest;
+
+		// That was the last edge, finish
+		if (!dtStatusInProgress(Status)) break;
+
+		// Check entering an offmesh connection
+		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
+		{
+			const float DistanceSq = dtVdist2DSqr(pCurrPos, Dest.v);
+			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
+			if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
+			{
+				// Adjust the path over the off-mesh connection.
+				// Path validity check will ensure that bad/blocked connections will be replanned.
+				// NB: for offmesh actions Dest is offmesh start and NextDest is offmesh end
+				dtPolyRef OffmeshRefs[2];
+				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
+				{
+					ActionID = GetTraversalAction(Agent, AreaType, PolyRef);
+					Agent.Mode = ENavigationMode::Offmesh;
+				}
+			}
+			break;
+		}
+
+		// The next path edge requires different traversal action, finish
+		if (ActionID != GetTraversalAction(Agent, AreaType, PolyRef)) break;
+
+		// Get the next path edge end point
+		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+		if (dtStatusFailed(Status)) break;
+
+		// If next edge changes direction, use its end position for smooth turning and finish
+		constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
+		const vector2 ToCurr(Dest.x - pCurrPos[0], Dest.z - pCurrPos[2]);
+		const vector2 ToNext(NextDest.x - pCurrPos[0], NextDest.z - pCurrPos[2]);
+		const float Dot = ToNext.dot(ToCurr);
+		if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
+			break;
+	}
+	while (true);
+
+	// Calculate the remaining distance to the navigation target
+	//!!!only if required, NOT every frame!
+	/*
+	while (dtStatusInProgress(Status))
+	{
+		//???needed only for arrival braking or for smth else too?
+		// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
+		// only when dt is big enough or when the next corner not found in the cache
+		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ActionNextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+		if (dtStatusFailed(Status)) break;
+	}
+	*/
+
+	return ActionID;
+}
+//---------------------------------------------------------------------
+
 static bool CheckCurrentPath(CNavAgentComponent& Agent)
 {
 	n_assert_dbg(Agent.State != ENavigationState::Idle);
@@ -350,117 +432,25 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				//???use special area type for controlled polys? when encountered, use DT_STRAIGHTPATH_ALL_CROSSINGS,
 				//because every poly has its own controller.
 
-				const float* pCurrPos = Agent.Corridor.getPos();
-
-				CStrID ActionID;
 				vector3 ActionDest;
 				vector3 ActionNextDest;
-
-				dtStraightPathContext Ctx;
-				dtStatus Status = Agent.pNavQuery->initStraightPathSearch(
-					pCurrPos, Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx);
-				if (dtStatusSucceed(Status))
-				{
-					unsigned char Flags;
-					unsigned char AreaType;
-					dtPolyRef PolyRef;
-
-					// Advance through path points until the traversal action is generated
-					bool First = true;
-					do
-					{
-						// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
-						Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ActionNextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-						if (dtStatusFailed(Status)) break;
-
-						if (First)
-						{
-							// NB: even if no action found, we don't fail immediately to give
-							// an agent a chance to trigger an offmesh connection
-							ActionID = GetTraversalAction(Agent, Agent.CurrAreaType, Agent.Corridor.getPath()[0]);
-							ActionDest = ActionNextDest;
-						}
-
-						// Check entering an offmesh connection
-						if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
-						{
-							const float DistanceSq = dtVdist2DSqr(pCurrPos, ActionNextDest.v);
-							const float OffmeshTriggerRadius = Agent.Radius * 2.f;
-							if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
-							{
-								// Adjust the path over the off-mesh connection.
-								// Path validity check will ensure that bad/blocked connections will be replanned.
-								dtPolyRef OffmeshRefs[2];
-								float EndPos[3];
-								if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, ActionNextDest.v, EndPos, Agent.pNavQuery))
-								{
-									// NB: for offmesh actions Dest is offmesh start and NextDest is offmesh end
-									ActionID = GetTraversalAction(Agent, AreaType, PolyRef);
-									ActionDest = ActionNextDest;
-									ActionNextDest = EndPos;
-									Agent.Mode = ENavigationMode::Offmesh;
-								}
-							}
-							break;
-						}
-
-						// The next path edge requires different traversal action, done
-						if (ActionID != GetTraversalAction(Agent, AreaType, PolyRef))
-						{
-							if (!First)
-								ActionNextDest = ActionDest;
-							break;
-						}
-
-						if (!First)
-						{
-							// If next edge changes direction, use its end position for smooth turning and finish
-							constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
-							const vector2 ToCurr(ActionDest.x - pCurrPos[0], ActionDest.z - pCurrPos[2]);
-							const vector2 ToNext(ActionNextDest.x - pCurrPos[0], ActionNextDest.z - pCurrPos[2]);
-							const float Dot = ToNext.dot(ToCurr);
-							if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
-								break;
-
-							// If direction is the same, treat both edges as one longer and continue path building
-							ActionDest = ActionNextDest;
-						}
-
-						First = false;
-					}
-					while (dtStatusInProgress(Status));
-				}
-
+				CStrID ActionID = GenerateTraversalAction(Agent, ActionDest, ActionNextDest);
 				if (!ActionID)
 				{
 					// straight path calculation failed
 					//???fail navigation? set Idle?
-					Agent.Mode == ENavigationMode::Surface; // If the reason is an invalid offmesh connection
+					Agent.Mode = ENavigationMode::Surface; // If the reason is an invalid offmesh connection
 				}
-
-				// Calculate the remaining distance to the navigation target
-				//!!!only if required, NOT every frame!
-				/*
-				while (dtStatusInProgress(Status))
-				{
-					//???needed only for arrival braking or for smth else too?
-					// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
-					// only when dt is big enough or when the next corner not found in the cache
-					Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ActionNextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-					if (dtStatusFailed(Status)) break;
-				}
-				*/
 
 				// create/update/check sub-action for current edge traversal
 				//ActionID;
 				//ActionDest;
 				//ActionNextDest;
 
-				// Use the next corner (our immediate target) to optimize the path, because we know that there is a direct way to it
+				// Use our traversal target to optimize the path, because we know that there is a straight way to it
 				// FIXME: only if necessary events happened? like offsetting from expected position.
 				// The more inaccurate the agent movement, the more beneficial this function becomes. (c) Docs
-				//const float* pNextCorner = &CornerVerts[dtMin(FirstIdx + 1, CornerCount - 1) * 3];
-				//Corridor.optimizePathVisibility(pNextCorner, 30.f * pActor->Radius, pNavQuery, pNavFilter);
+				//Agent.Corridor.optimizePathVisibility(ActionDest.v, 30.f * Agent.Radius, Agent.pNavQuery, Agent.pNavFilter);
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
