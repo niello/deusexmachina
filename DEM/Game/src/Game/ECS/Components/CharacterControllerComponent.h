@@ -11,7 +11,8 @@ namespace DEM::Game
 enum class ECharacterState : U8
 {
 	Stand = 0, // Stands idle on feet
-	Walk,      // Walks with normal speed
+	Walk,      // Moves along the surface, facing the movement direction
+	ShortStep, // Moves a short distance without changing face direction
 	Jump,      // Above the ground, falls, controls itself
 	Fall       // Above the ground, falls, control is lost
 	// Lay (or switch to ragdoll?), Levitate

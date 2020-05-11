@@ -11,6 +11,21 @@
 
 namespace DEM::Game
 {
+// Tolerance shouldn't be too low to avoid float errors
+constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
+constexpr float AngularTolerance = 0.0001f;
+
+//// At very small speeds and physics step sizes body position stops updating because of limited
+//// float precision. LinearSpeed = 0.0007f, StepSize = 0.01f, Pos + LinearSpeed * StepSize = Pos.
+//// So body never reaches the desired destination and we must accept arrival at given tolerance.
+//// The less is this value, the more precise is resulting position, but the more time arrival takes.
+//// Empirical minimum value is somewhere around 0.0008f.
+//// This value is measured in game world meters.
+//// NB: may be square of this value MUST make sense with a single (float) precision.
+//const float LinearArrivalTolerance = 0.009f;
+//
+//// In radians
+//const float AngularArrivalTolerance = 0.005f;
 
 static float CalcDistanceToGround(const CCharacterControllerComponent& Character, const vector3& Pos)
 {
@@ -90,24 +105,86 @@ static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Ch
 }
 //---------------------------------------------------------------------
 
-static float CalcDesiredAngularVelocity(const CCharacterControllerComponent& Character, float Angle)
+static void UpdateVerticalState(CCharacterControllerComponent& Character, float DistanceToGround)
 {
-	constexpr float AngularArrivalZone = 0.34906585039886591538473815369772f; // 20 degrees in radians
+	const bool OnGround = Character.IsOnTheGround();
 
-	const bool IsNegative = (Angle < 0.f);
-	const float AngleAbs = IsNegative ? -Angle : Angle;
+	if (DistanceToGround <= 0.f && !OnGround)
+	{
+		if (Character.State == ECharacterState::Fall)
+		{
+			//???how to prevent character from taking control over itself until it is recovered from falling?
+			//???add ECharacterState::Lay uncontrolled state after a fall or when on the ground? and then recover
+			//can even change collision shape for this state (ragdoll?)
+		}
 
-	float Speed = Character.MaxAngularSpeed;
+		Character.State = ECharacterState::Stand;
+	}
+	else if (DistanceToGround > Character.MaxStepDownHeight && OnGround)
+	{
+		//???control whole speed or only a vertical component? now the second
 
-	// Calculate arrival slowdown
-	if (AngleAbs <= AngularArrivalZone)
-		Speed *= AngleAbs / AngularArrivalZone;
+		// Y is inverted to be positive when the character moves downwards
+		auto pBody = Character.Body.Get();
+		const float VerticalImpulse = pBody->GetMass() * -pBody->GetBtBody()->getLinearVelocity().y();
+		if (VerticalImpulse > Character.MaxLandingImpulse)
+		{
+			Character.State = ECharacterState::Fall;
+			pBody->SetActive(true);
+		}
+		else if (VerticalImpulse > 0.f)
+		{
+			Character.State = ECharacterState::Jump;
+			pBody->SetActive(true);
+		}
+		//???else if VerticalImpulse == 0.f levitate?
+	}
+}
+//---------------------------------------------------------------------
 
-	// Avoid overshooting, make exactly remaining rotation in one frame
-	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
-	if (AngleAbs < Speed * FrameTime) return Angle / FrameTime;
+static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float DistanceToGround,
+	const vector3& DesiredLinearVelocity, float DesiredAngularVelocity, float MaxAcceleration)
+{
+	// We want a precise control over the movement, so deny freezing on low speed
+	// when movement is requested. When idle, allow to deactivate eventually.
+	if (DesiredLinearVelocity != vector3::Zero || DesiredAngularVelocity != 0.f)
+		pBody->SetActive(true, true);
+	else if (pBody->IsAlwaysActive())
+		pBody->SetActive(true, false);
 
-	return IsNegative ? -Speed : Speed;
+	auto pBtBody = pBody->GetBtBody();
+
+	// No angular acceleration limit, set directly
+	pBtBody->setAngularVelocity(btVector3(0.f, DesiredAngularVelocity, 0.f));
+
+	const float InvTickTime = 1.f / dt;
+
+	//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
+	const btVector3 ReqLVel = btVector3(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
+	if (MaxAcceleration > 0.f)
+	{
+		const btVector3& CurrLVel = pBtBody->getLinearVelocity();
+		btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
+		if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
+		{
+			btVector3 ReqAccel = ReqLVelChange * InvTickTime;
+			btScalar AccelMagSq = ReqAccel.length2();
+			if (AccelMagSq > MaxAcceleration * MaxAcceleration)
+				ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
+			pBtBody->applyCentralForce(ReqAccel * pBody->GetMass());
+		}
+		else pBtBody->clearForces(); //???really clear all forces?
+	}
+	else pBtBody->setLinearVelocity(ReqLVel);
+
+	// Compensate gravity by a normal force N, as we are standing on the ground
+	pBtBody->applyCentralForce(-pBtBody->getGravity() * pBody->GetMass());
+	//???!!!compensate ALL -y force? no ground penetration may happen
+	//excess force/impulse (force * tick) can be converted into damage or smth!
+
+	// We want to compensate our DistanceToGround in a single simulation step
+	const float ReqVerticalVel = -DistanceToGround * InvTickTime;
+	pBtBody->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * pBody->GetMass(), 0.f));
 }
 //---------------------------------------------------------------------
 
@@ -129,128 +206,367 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 		const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
 		const auto& BodyTfm = pBtBody->getWorldTransform();
 		const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
-		const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 
 		//!!!FIXME: check motion state, maybe it is up to date in BeforePhysicsTick!
 
 		// Update vertical state
 
 		const float DistanceToGround = CalcDistanceToGround(Character, Pos);
-		const bool OnGround = Character.IsOnTheGround();
-
-		if (DistanceToGround <= 0.f && !OnGround)
-		{
-			if (Character.State == ECharacterState::Fall)
-			{
-				//???how to prevent character from taking control over itself until it is recovered from falling?
-				//???add ECharacterState::Lay uncontrolled state after a fall or when on the ground? and then recover
-				//can even change collision shape for this state (ragdoll?)
-			}
-
-			Character.State = ECharacterState::Stand;
-		}
-		else if (DistanceToGround > Character.MaxStepDownHeight && OnGround)
-		{
-			//???control whole speed or only a vertical component? now the second
-
-			// Y is inverted to be positive when the character moves downwards
-			const float VerticalImpulse = pBody->GetMass() * -pBtBody->getLinearVelocity().y();
-			if (VerticalImpulse > Character.MaxLandingImpulse)
-			{
-				Character.State = ECharacterState::Fall;
-				pBody->SetActive(true);
-			}
-			else if (VerticalImpulse > 0.f)
-			{
-				Character.State = ECharacterState::Jump;
-				pBody->SetActive(true);
-			}
-			//???else if VerticalImpulse == 0.f levitate?
-		}
-
-		// Update the controller in the current state, including movement requests
-
-		if (Character.State == ECharacterState::Stand)
-		{
-			vector3 DesiredLinearVelocity;
-
-			if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
-			{
-				//???set EMovementState::Requested and some initial params if was idle?
-				// _NeedDestinationFacing must be determined once, not every frame!
-				//???use different states for it instead of bool? Moving / ShortStep
-
-				//!!!if lookat requested here (RequestFacing below), must finish request
-				//even if stopped moving before! If cancelled movement, cancel facing too.
-
-				DesiredLinearVelocity = CalcDesiredLinearVelocity(Character, Pos, *pSteerAction);
-
-				// See DetourCrowd for impl.
-				//!!!Can add separation with neighbours here too!
-				//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
-
-				if (NeedDestinationFacing && Character.MaxAngularSpeed > 0.f)
-					RequestFacing(DesiredLinearVelocity);
-			}
-
-			float DesiredAngularVelocity = 0.f;
-			if (_AngularMovementState == EMovementState::Requested)
-			{
-				const float Angle = vector3::Angle2DNorm(LookatDir, _RequestedLookat);
-				DesiredAngularVelocity = CalcDesiredAngularVelocity(Angle);
-
-				// Amount of required rotation is too big, actor must stop moving to perform it
-				if (std::fabsf(Angle) > Character.BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
-			}
-
-			// We want a precise control over the movement, so deny freezing on low speed
-			// when movement is requested. When idle, allow to deactivate eventually.
-			if (DesiredLinearVelocity != vector3::Zero || DesiredAngularVelocity != 0.f)
-				pBody->SetActive(true, true);
-			else if (pBody->IsAlwaysActive())
-				pBody->SetActive(true, false);
-
-			// No angular acceleration limit, set directly
-			pBtBody->setAngularVelocity(btVector3(0.f, DesiredAngularVelocity, 0.f));
-
-			const float InvTickTime = 1.f / dt;
-
-			//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
-			const btVector3 ReqLVel = btVector3(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
-			if (Character.MaxAcceleration > 0.f)
-			{
-				const btVector3& CurrLVel = pBtBody->getLinearVelocity();
-				btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
-				if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
-				{
-					btVector3 ReqAccel = ReqLVelChange * InvTickTime;
-					btScalar AccelMagSq = ReqAccel.length2();
-					if (AccelMagSq > Character.MaxAcceleration * Character.MaxAcceleration)
-						ReqAccel *= (Character.MaxAcceleration / n_sqrt(AccelMagSq));
-					pBtBody->applyCentralForce(ReqAccel * pBody->GetMass());
-				}
-				else pBtBody->clearForces(); //???really clear all forces?
-			}
-			else pBtBody->setLinearVelocity(ReqLVel);
-
-			// Compensate gravity by a normal force N, as we are standing on the ground
-			pBtBody->applyCentralForce(-pBtBody->getGravity() * pBody->GetMass());
-			//???!!!compensate ALL -y force? no ground penetration may happen
-			//excess force/impulse (force * tick) can be converted into damage or smth!
-
-			// We want to compensate our DistanceToGround in a single simulation step
-			const float ReqVerticalVel = -DistanceToGround * InvTickTime;
-			pBtBody->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * pBody->GetMass(), 0.f));
-		}
-		else
+		UpdateVerticalState(Character, DistanceToGround);
+		if (!Character.IsOnTheGround())
 		{
 			//???need? gravity should keep the body active
 			//if levitating, disable gravity
 			//on levitation end, make body active
 			//pBody->SetActive(true, true);
+			return;
+		}
+
+		// Process movement request
+
+		vector3 DesiredLinearVelocity;
+		if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
+		{
+			// Initialize movement from the action
+			if (Character.State == ECharacterState::Stand)
+			{
+				const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
+				const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
+				if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
+				{
+					// Already at the destination
+
+					//!!!TODO: remove action as successfully done!
+				}
+				else
+				{
+					// Start moving
+					const float DestFacingThreshold = 1.5f * Character.Radius;
+					if (IsSameHeightLevel && (SqDistance <= DestFacingThreshold * DestFacingThreshold))
+						Character.State = ECharacterState::ShortStep;
+					else
+						Character.State = ECharacterState::Walk;
+				}
+			}
+
+			// Calculate desired linear velocity
+			if (Character.State != ECharacterState::Stand)
+			{
+				DesiredLinearVelocity = CalcDesiredLinearVelocity(Character, Pos, *pSteerAction);
+
+				// TODO: see DetourCrowd for impl.
+				//!!!Can add separation with neighbours here too!
+				//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
+			}
+		}
+
+		// Process facing request, either explicit or induced by linear movement
+
+		float DesiredAngularVelocity = 0.f;
+		if (Character.MaxAngularSpeed > 0.f)
+		{
+			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+
+			float DesiredRotation = 0.f;
+			if (Character.State == ECharacterState::Walk)
+				DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
+			else if (auto pTurnAction = pQueue->FindActive<DEM::AI::Turn>())
+				DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+
+			const bool IsNegative = (DesiredRotation < 0.f);
+			const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;
+			if (AngleAbs >= AngularTolerance)
+			{
+				constexpr float AngularArrivalZone = 0.34906585f; // 20 degrees in radians
+
+				float Speed = Character.MaxAngularSpeed;
+
+				// Calculate arrival slowdown
+				if (AngleAbs <= AngularArrivalZone)
+					Speed *= AngleAbs / AngularArrivalZone;
+
+				// Avoid overshooting, make exactly remaining rotation in one frame
+				const float FrameTime = Character.Body->GetLevel()->GetStepTime();
+				if (AngleAbs < Speed * FrameTime)
+					DesiredAngularVelocity = DesiredRotation / FrameTime;
+				else
+					DesiredAngularVelocity = IsNegative ? -Speed : Speed;
+
+				// Amount of required rotation is too big, actor must stop moving to perform it
+				if (AngleAbs > Character.BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
+			}
+		}
+
+		UpdateRigidBody(pBody, dt, DistanceToGround, DesiredLinearVelocity, DesiredAngularVelocity, Character.MaxAcceleration);
+	});
+}
+//---------------------------------------------------------------------
+
+void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPhysicsLevel& PhysicsLevel)
+{
+	World.ForEachEntityWith<CCharacterControllerComponent, DEM::Game::CActionQueueComponent>(
+		[&PhysicsLevel](auto EntityID, auto& Entity,
+			CCharacterControllerComponent& Character,
+			DEM::Game::CActionQueueComponent* pQueue)
+	{
+		auto pBody = Character.Body.Get();
+		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
+
+		// synchronizeMotionStates() might be not yet called, so we access raw transform.
+		// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
+		// then called here it would not do redundant calculations in synchronizeMotionStates.
+		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
+
+		if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
+		{
+			// Initialize movement from the action
+			const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
+			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
+			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
+			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
+			if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
+			{
+				//!!!TODO: remove action as successfully done!
+			}
+			else
+			{
+				// TODO:
+				// If is stuck, increase stuck timer, and if timer is too high, set Stuck mvmt state, i.e. fail movement.
+			}
+		}
+
+		if (auto pTurnAction = pQueue->FindActive<DEM::AI::Turn>())
+		{
+			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
+			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+			if (std::fabsf(Angle) < AngularTolerance)
+			{
+				//!!!TODO: remove action as successfully done!
+			}
 		}
 	});
 }
 //---------------------------------------------------------------------
+
+/*
+//!!!FIXME: what if obstacle is over the destination point? brake and stand stuck until request is failed or location if freed?
+void CCharacterController::AvoidObstacles()
+{
+	constexpr float ObstacleDetectionMinRadius = 0.1f;
+	constexpr float ObstaclePredictionTime = 1.2f;
+	const float DetectionRadius = ObstacleDetectionMinRadius + Speed * ObstaclePredictionTime;
+
+#ifdef DETOUR_OBSTACLE_AVOIDANCE // In ActorFwd.h
+	float Range = pActor->Radius + DetectionRadius;
+
+	//???here or global persistent?
+	dtObstacleAvoidanceQuery ObstacleQuery;
+	ObstacleQuery.init(6, 8);
+	//ObstacleQuery.reset();
+	pActor->GetNavSystem().GetObstacles(Range, ObstacleQuery);
+
+	//???pre-filter mem facts? distance < Range, height intersects actor height etc
+	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+	for (; It; ++It)
+	{
+		CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
+		//!!!remember obstacle velocity in the fact and use here!
+		// desired velocity can be get from obstacles-actors only!
+		ObstacleQuery.addCircle(pObstacle->Position.v, pObstacle->Radius, vector3::Zero.v, vector3::Zero.v);
+	}
+
+	//!!!GET AT ACTIVATION AND STORE!
+	const dtObstacleAvoidanceParams* pOAParams = AISrv->GetDefaultObstacleAvoidanceParams();
+
+	if (ObstacleQuery.getObstacleCircleCount() || ObstacleQuery.getObstacleSegmentCount())
+	{
+		vector3 LinearVel;
+		pActor->GetEntity()->GetAttr(LinVel, CStrID("LinearVelocity"));
+		float DesVel[3] = { LinearVel.x, 0.f, LinearVel.z }; // Copy LVel because it is modified inside the call
+		if (AdaptiveVelocitySampling)
+			ObstacleQuery.sampleVelocityAdaptive(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
+													Velocity.v, DesVel, LinearVel.v, pOAParams);
+		else
+			ObstacleQuery.sampleVelocityGrid(pActor->Position.v, pActor->Radius, MaxSpeed[pActor->MvmtType],
+												Velocity.v, DesVel, LinearVel.v, pOAParams);
+	}
+
+#else
+	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+
+	//!!!???dynamic obstacles - take velocity into account!?
+	//!!!read about VO & RVO!
+	//!!!if get stuck avoiding obstacle, try to select far point
+
+	if (It)
+	{
+		CMemFactObstacle* pClosest = nullptr;
+		float MinIsect = FLT_MAX;
+		float MinExpRadius;
+
+		vector2 ActorPos(pActor->Position.x, pActor->Position.z);
+		vector2 ToDest(DestPoint.x - ActorPos.x, DestPoint.z - ActorPos.y);
+		float DistToDest = ToDest.Length();
+		ToDest /= DistToDest;
+		vector2 ActorSide(-ToDest.y, ToDest.x);
+		float ActorRadius = pActor->Radius + AvoidanceMargin;
+
+		float DetectorLength = ActorRadius + DetectionRadius;
+
+		for (; It; ++It)
+		{
+			CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
+
+			// Uncomment if obstacle has Height
+			//if ((pActor->Position.y + pActor->Height < pObstacle->Position.y) ||
+			//	(pObstacle->Position.y + pObstacle->Height < pActor->Position.y))
+			//	continue;
+
+			vector2 FromObstacleToDest(
+				DestPoint.x - pObstacle->Position.x,
+				DestPoint.z - pObstacle->Position.z);
+			float ExpRadius = ActorRadius + pObstacle->Radius;
+			float SqExpRadius = ExpRadius * ExpRadius;
+
+			// Don't avoid obstacles at the destination
+			if (FromObstacleToDest.SqLength() < SqExpRadius) continue;
+
+			vector2 ToObstacle(
+				pObstacle->Position.x - ActorPos.x,
+				pObstacle->Position.z - ActorPos.y);
+			float SqDistToObstacle = ToObstacle.SqLength();
+
+			if (SqDistToObstacle >= DistToDest * DistToDest) continue; 
+
+			float DetectRadius = DetectorLength + pObstacle->Radius;
+
+			if (SqDistToObstacle >= DetectRadius * DetectRadius) continue;
+
+			vector2 LocalPos(pObstacle->Position.x, pObstacle->Position.z);
+			LocalPos.ToLocalAsPoint(ToDest, ActorSide, ActorPos);
+
+			if (LocalPos.x <= 0.f || n_fabs(LocalPos.y) >= ExpRadius) continue;
+
+			float SqrtPart = sqrtf(SqExpRadius - LocalPos.y * LocalPos.y);
+			float Isect = (LocalPos.x <= SqrtPart) ? LocalPos.x + SqrtPart : LocalPos.x - SqrtPart;
+
+			if (Isect < MinIsect)
+			{
+				pClosest = pObstacle;
+				MinIsect = Isect;
+				MinExpRadius = ExpRadius;
+			}
+		}
+
+		if (pClosest)
+		{
+			// Will not work if raduis of obstacle can change. If so, check Radius too.
+			vector2 ObstaclePos(pClosest->Position.x, pClosest->Position.z);
+			if (pClosest == pLastClosestObstacle && LastClosestObstaclePos.isequal(ObstaclePos, 0.01f))
+				ToDest = LastAvoidDir;
+			else
+			{
+				vector2 ToObstacle = ObstaclePos - ActorPos;
+				vector2 ProjDir = ToDest * ToObstacle.dot(ToDest) - ToObstacle;
+				float ProjDirLen = ProjDir.Length();
+				if (ProjDirLen <= TINY)
+				{
+					ProjDir.set(-ToObstacle.y, ToObstacle.x);
+					ProjDirLen = ProjDir.Length();
+				}
+
+				ToDest = ToObstacle + ProjDir * (MinExpRadius / ProjDirLen);
+				ToDest.norm();
+				LastAvoidDir = ToDest;
+			}
+
+			//!!!SPEED needs adjusting to! brake or arrival effect elimination.
+			LinearVel.set(ToDest.x * Speed, 0.f, ToDest.y * Speed);
+
+			LastClosestObstaclePos = ObstaclePos;
+		}
+
+		pLastClosestObstacle = pClosest;
+	}
+#endif
+}
+//---------------------------------------------------------------------
+
+bool CMotorSystem::IsStuck()
+{
+	// Set Stuck, if:
+	// too much time with too little movement, but far enough from the dest (RELATIVELY little movement)
+	// or
+	// too much time with no RELATIVELY significant progress to dest (distance doesn't reduce)
+	// second is more general
+	//!!!if we want to Flee, stuck must check growing of distance to dest, not reduction!
+	//???do we really want to flee sometimes? hm, returning to weapon radius?
+	//may be just take into account reach radii?
+
+	//!!!DON'T forget StuckTime!
+
+	FAIL;
+}
+//---------------------------------------------------------------------
+
+void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
+{
+	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
+	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
+
+	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
+		DebugDraw.DrawLine(
+			DestPoint,
+			vector3(DestPoint.x, DestPoint.y + 1.f, DestPoint.z),
+			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
+ 
+	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
+	for (; It; ++It)
+	{
+		CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
+		matrix44 Tfm;
+		Tfm.set_translation(pObstacle->Position);
+		vector4 Color(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
+		if (pObstacle == pLastClosestObstacle)
+		{
+			Color.x = 0.4f;
+			Color.z = 0.9f;
+		}
+		DebugDraw.DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
+	}
+
+	const char* pMvmt = nullptr;
+	if (pActor->MvmtState == AIMvmt_Failed) pMvmt = "None";
+	else if (pActor->MvmtState == AIMvmt_Done) pMvmt = "Done";
+	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";
+	else if (pActor->MvmtState == AIMvmt_Stuck) pMvmt = "Stuck";
+
+	CString Text;
+	Text.Format("Mvmt state: %s\nFace direction set: %s\n", pMvmt, pActor->FacingState == AIFacing_DirSet ? "true" : "false");
+
+	if (pActor->MvmtState == AIMvmt_DestSet)
+	{
+		vector2 ToDest(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
+
+		CString Text2;
+		Text2.Format("DestPoint: %.4f, %.4f, %.4f\n"
+			"Position: %.4f, %.4f, %.4f\n"
+			"DistToDest: %.4f\n"
+			"MinReach: %.4f\n"
+			"MaxReach: %.4f\n",
+			DestPoint.x,
+			DestPoint.y,
+			DestPoint.z,
+			pActor->Position.x,
+			pActor->Position.y,
+			pActor->Position.z,
+			ToDest.Length());
+		Text += Text2;
+	}
+
+	//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
+}
+//---------------------------------------------------------------------
+*/
 
 }

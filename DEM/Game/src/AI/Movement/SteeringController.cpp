@@ -5,6 +5,7 @@
 namespace DEM::AI
 {
 RTTI_CLASS_IMPL(Steer, Events::CEventNative);
+RTTI_CLASS_IMPL(Turn, Events::CEventNative);
 FACTORY_CLASS_IMPL(DEM::AI::CSteeringController, 'STCL', CTraversalController);
 
 CStrID CSteeringController::FindAction(const CNavAgentComponent&, unsigned char, dtPolyRef, Game::HEntity*)

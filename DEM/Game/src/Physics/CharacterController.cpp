@@ -468,7 +468,6 @@ void CCharacterController::AvoidObstacles()
 
 void CCharacterController::RequestMovement(const vector3& Dest, const vector3& NextDest)
 {
-	//!!!check immediate request satisfaction!
 	// synchronizeMotionStates() might be not yet called, so we access raw transform.
 	// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
 	// then called here it would not do redundant calculations in synchronizeMotionStates.
@@ -533,83 +532,5 @@ float CCharacterController::GetAngularVelocity() const
 	return _Body ? _Body->GetBtBody()->getAngularVelocity().y() : 0.f;
 }
 //---------------------------------------------------------------------
-
-/*
-bool CMotorSystem::IsStuck()
-{
-	// Set Stuck, if:
-	// too much time with too little movement, but far enough from the dest (RELATIVELY little movement)
-	// or
-	// too much time with no RELATIVELY significant progress to dest (distance doesn't reduce)
-	// second is more general
-	//!!!if we want to Flee, stuck must check growing of distance to dest, not reduction!
-	//???do we really want to flee sometimes? hm, returning to weapon radius?
-	//may be just take into account reach radii?
-
-	//!!!DON'T forget StuckTime!
-
-	FAIL;
-}
-//---------------------------------------------------------------------
-
-void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
-{
-	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
-	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
-
-	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
-		DebugDraw.DrawLine(
-			DestPoint,
-			vector3(DestPoint.x, DestPoint.y + 1.f, DestPoint.z),
-			pActor->MvmtState == AIMvmt_DestSet ? ColorNormal : ColorStuck);
- 
-	CMemFactNode It = pActor->GetMemSystem().GetFactsByType(CMemFactObstacle::RTTI);
-	for (; It; ++It)
-	{
-		CMemFactObstacle* pObstacle = (CMemFactObstacle*)It->Get();
-		matrix44 Tfm;
-		Tfm.set_translation(pObstacle->Position);
-		vector4 Color(0.6f, 0.f, 0.8f, 0.5f * pObstacle->Confidence);
-		if (pObstacle == pLastClosestObstacle)
-		{
-			Color.x = 0.4f;
-			Color.z = 0.9f;
-		}
-		DebugDraw.DrawCylinder(Tfm, pObstacle->Radius, 1.f, Color); // pObstacle->Height instead of 1.f
-	}
-
-	const char* pMvmt = nullptr;
-	if (pActor->MvmtState == AIMvmt_Failed) pMvmt = "None";
-	else if (pActor->MvmtState == AIMvmt_Done) pMvmt = "Done";
-	else if (pActor->MvmtState == AIMvmt_DestSet) pMvmt = "DestSet";
-	else if (pActor->MvmtState == AIMvmt_Stuck) pMvmt = "Stuck";
-
-	CString Text;
-	Text.Format("Mvmt state: %s\nFace direction set: %s\n", pMvmt, pActor->FacingState == AIFacing_DirSet ? "true" : "false");
-
-	if (pActor->MvmtState == AIMvmt_DestSet)
-	{
-		vector2 ToDest(DestPoint.x - pActor->Position.x, DestPoint.z - pActor->Position.z);
-
-		CString Text2;
-		Text2.Format("DestPoint: %.4f, %.4f, %.4f\n"
-			"Position: %.4f, %.4f, %.4f\n"
-			"DistToDest: %.4f\n"
-			"MinReach: %.4f\n"
-			"MaxReach: %.4f\n",
-			DestPoint.x,
-			DestPoint.y,
-			DestPoint.z,
-			pActor->Position.x,
-			pActor->Position.y,
-			pActor->Position.z,
-			ToDest.Length());
-		Text += Text2;
-	}
-
-	//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
-}
-//---------------------------------------------------------------------
-*/
 
 }

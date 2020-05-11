@@ -23,6 +23,17 @@ public:
 	{}
 };
 
+class Turn : public Events::CEventNative
+{
+	NATIVE_EVENT_DECL;
+
+public:
+
+	vector3 _LookatDirection;
+
+	explicit Turn(const vector3& LookatDirection) : _LookatDirection(LookatDirection) { _LookatDirection.norm(); }
+};
+
 class CSteeringController : public CTraversalController
 {
 	FACTORY_CLASS_DECL;
