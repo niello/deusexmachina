@@ -1,6 +1,5 @@
 #pragma once
-#include <Physics/CharacterController.h>
-#include <Physics/RigidBody.h> //!!!FIXME: required to generate _Body destruction, but why in header?!
+#include <Physics/RigidBody.h>
 #include <Data/Metadata.h>
 
 // Character controller component adds a controllable physics object to the entity
@@ -15,14 +14,12 @@ enum class ECharacterState : U8
 	ShortStep, // Moves a short distance without changing face direction
 	Jump,      // Above the ground, falls, controls itself
 	Fall       // Above the ground, falls, control is lost
-	// Lay (or switch to ragdoll?), Levitate
+	// Lay (or switch to ragdoll?)
+	// Levitate
 };
 
-// FIXME: leave only data in component, split into controller, movement and facing requests etc!
 struct CCharacterControllerComponent
 {
-	Physics::CCharacterController Controller;
-
 	Physics::PRigidBody Body;
 
 	float			Radius = 0.3f;
@@ -40,14 +37,7 @@ struct CCharacterControllerComponent
 
 	ECharacterState	State = ECharacterState::Stand;
 
-	float GetRadius() const { return Controller.GetRadius(); }
-	void  SetRadius(float Radius) { Controller.SetRadius(Radius); }
-	float GetHeight() const { return Controller.GetHeight(); }
-	void  SetHeight(float Height) { Controller.SetHeight(Height); }
-	float GetHover() const { return Controller.GetHover(); }
-	void  SetHover(float Hover) { Controller.SetHover(Hover); }
-
-	bool IsOnTheGround() const { return State != ECharacterState::Jump && State != ECharacterState::Fall; } // Levitate too!
+	bool IsOnTheGround() const { return State != ECharacterState::Jump && State != ECharacterState::Fall; } // Check Levitate too!
 };
 
 }
@@ -60,9 +50,9 @@ template<> inline constexpr auto RegisterMembers<Game::CCharacterControllerCompo
 {
 	return std::make_tuple
 	(
-		Member<Game::CCharacterControllerComponent, float>(1, "Radius", &Game::CCharacterControllerComponent::GetRadius, &Game::CCharacterControllerComponent::SetRadius),
-		Member<Game::CCharacterControllerComponent, float>(2, "Height", &Game::CCharacterControllerComponent::GetHeight, &Game::CCharacterControllerComponent::SetHeight),
-		Member<Game::CCharacterControllerComponent, float>(3, "Hover", &Game::CCharacterControllerComponent::GetHover, &Game::CCharacterControllerComponent::SetHover)
+		Member(1, "Radius", &Game::CCharacterControllerComponent::Radius, &Game::CCharacterControllerComponent::Radius),
+		Member(2, "Height", &Game::CCharacterControllerComponent::Height, &Game::CCharacterControllerComponent::Height),
+		Member(3, "Hover", &Game::CCharacterControllerComponent::Hover, &Game::CCharacterControllerComponent::Hover)
 	);
 }
 
