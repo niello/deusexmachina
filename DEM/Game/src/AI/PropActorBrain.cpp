@@ -3,7 +3,6 @@
 #include <AI/PropSmartObject.h>
 #include <AI/AIServer.h>
 #include <AI/Behaviour/Action.h>
-#include <Physics/PropCharacterController.h>
 #include <Physics/RigidBody.h>
 #include <Scripting/PropScriptable.h>
 #include <Data/ParamsUtils.h>
@@ -43,7 +42,7 @@ const float CPropActorBrain::LinearArrivalTolerance = 0.009f;
 // In radians
 const float CPropActorBrain::AngularArrivalTolerance = 0.005f;
 
-CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this), MotorSystem(this)
+CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this)//, MotorSystem(this)
 {
 }
 //---------------------------------------------------------------------
@@ -66,10 +65,10 @@ bool CPropActorBrain::InternalActivate()
 	SetNavLocationValid(false);
 	SetAcceptNearestValidDestination(false);
 
-	MvmtState = AIMvmt_Done;
-	MvmtType = AIMvmt_Type_Walk;
-	SteeringType = AISteer_Type_Seek;
-	FacingState = AIFacing_Done;
+	//MvmtState = AIMvmt_Done;
+	//MvmtType = AIMvmt_Type_Walk;
+	//SteeringType = AISteer_Type_Seek;
+	//FacingState = AIFacing_Done;
 
 // END Blackboard
 
@@ -172,7 +171,7 @@ bool CPropActorBrain::InternalActivate()
 		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
 		
 		NavSystem.Init();
-		MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), nullptr).Get());
+		//MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), nullptr).Get());
 	}
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -440,7 +439,7 @@ bool CPropActorBrain::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, c
 	{
 		Position = Tfm.Translation();
 		NavSystem.UpdatePosition();
-		MotorSystem.UpdatePosition();
+		//MotorSystem.UpdatePosition();
 	}
 
 	OK;
@@ -450,7 +449,7 @@ bool CPropActorBrain::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, c
 bool CPropActorBrain::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 #ifndef _EDITOR
-	MotorSystem.Update(((const Events::CEvent&)Event).Params->Get<float>(CStrID("FrameTime")));
+	//MotorSystem.Update(((const Events::CEvent&)Event).Params->Get<float>(CStrID("FrameTime")));
 #endif
 	OK;
 }
@@ -459,6 +458,7 @@ bool CPropActorBrain::BeforePhysicsTick(Events::CEventDispatcher* pDispatcher, c
 // We need to react on subframe transform changes to drive physics correctly
 bool CPropActorBrain::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
+	/*
 	//???or access node controller directly and read subframe data?
 	Prop::CPropCharacterController* pCC = GetEntity()->GetProperty<Prop::CPropCharacterController>();
 	if (!pCC) OK;
@@ -476,6 +476,7 @@ bool CPropActorBrain::AfterPhysicsTick(Events::CEventDispatcher* pDispatcher, co
 		NavSystem.UpdatePosition();
 		MotorSystem.UpdatePosition();
 	}
+	*/
 
 	OK;
 }

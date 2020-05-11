@@ -1,6 +1,7 @@
 #include "ActionTplGotoSmartObj.h"
 
-#include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
+//#include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
+#include <AI/Behaviour/Action.h>
 #include <Core/Factory.h>
 
 namespace AI
@@ -23,9 +24,10 @@ bool CActionTplGotoSmartObj::ValidateContextPreconditions(CActor* pActor, const 
 
 PAction CActionTplGotoSmartObj::CreateInstance(const CWorldState& Context) const
 {
-	PActionGotoSmartObj Act = n_new(CActionGotoSmartObj);
-	Act->Init(Context.GetProp(WSP_AtEntityPos), Context.GetProp(WSP_Action));
-	return Act.Get();
+	//PActionGotoSmartObj Act = n_new(CActionGotoSmartObj);
+	//Act->Init(Context.GetProp(WSP_AtEntityPos), Context.GetProp(WSP_Action));
+	//return Act.Get();
+	return PAction();
 }
 //---------------------------------------------------------------------
 

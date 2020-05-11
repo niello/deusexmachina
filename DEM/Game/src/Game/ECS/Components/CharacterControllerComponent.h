@@ -22,6 +22,7 @@ struct CCharacterControllerComponent
 {
 	Physics::PRigidBody Body;
 
+	float           Mass = 80.f;
 	float			Radius = 0.3f;
 	float			Height = 1.75f;
 	float			Hover = 0.2f;	//???is it MaxClimb itself?

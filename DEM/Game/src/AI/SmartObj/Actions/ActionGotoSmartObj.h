@@ -1,4 +1,5 @@
 #pragma once
+/*
 #include <AI/Movement/Actions/ActionGoto.h>
 #include <Data/StringID.h>
 #include <DetourNavMesh.h> // for PolyCache
@@ -48,3 +49,4 @@ public:
 typedef Ptr<CActionGotoSmartObj> PActionGotoSmartObj;
 
 }
+*/

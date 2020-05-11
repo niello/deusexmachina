@@ -341,6 +341,43 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 }
 //---------------------------------------------------------------------
 
+void UpdateCharacterControllerShape(CCharacterControllerComponent& Character)
+{
+	// FIXME: use dirty flag or check changes in shape & mass?
+	// NB: can reuse body, setCollisionShape + setMass!
+
+	auto pBody = Character.Body.Get();
+
+	Physics::CPhysicsLevel* pLevel = nullptr;
+	Scene::CSceneNode* pNode = nullptr;
+	matrix44 Tfm;
+	if (pBody)
+	{
+		pLevel = pBody->GetLevel();
+		pNode = pBody->GetControlledNode();
+		pBody->GetTransform(Tfm);
+		pBody->RemoveFromLevel();
+	}
+
+	// FIXME PHYSICS - where to set? In component (externally)?
+	CStrID CollisionGroupID("Character");
+	CStrID CollisionMaskID("All");
+
+	const float CapsuleHeight = Character.Height - Character.Radius - Character.Radius - Character.Hover;
+	n_assert(CapsuleHeight > 0.f);
+	const vector3 Offset(0.f, (Character.Hover + Character.Height) * 0.5f, 0.f);
+	auto Shape = Physics::CCollisionShape::CreateCapsuleY(Character.Radius, CapsuleHeight, Offset);
+
+	Character.Body = n_new(Physics::CRigidBody(Character.Mass, *Shape, CollisionGroupID, CollisionMaskID, Tfm));
+	pBody = Character.Body.Get();
+
+	pBody->GetBtBody()->setAngularFactor(btVector3(0.f, 1.f, 0.f));
+
+	if (pNode) pBody->SetControlledNode(pNode);
+	if (pLevel) pBody->AttachToLevel(*pLevel);
+}
+//---------------------------------------------------------------------
+
 /*
 //!!!FIXME: what if obstacle is over the destination point? brake and stand stuck until request is failed or location if freed?
 void CCharacterController::AvoidObstacles()
@@ -558,6 +595,66 @@ void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 	}
 
 	//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
+}
+//---------------------------------------------------------------------
+
+bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	if (!IsEnabled()) OK;
+
+	static const vector4 ColorVel(1.0f, 0.5f, 0.0f, 1.0f);
+	static const vector4 ColorReqVel(0.0f, 1.0f, 1.0f, 1.0f);
+	static const vector4 ColorCapsuleActive(0.0f, 1.0f, 0.0f, 0.5f);
+	static const vector4 ColorCapsuleFrozen(0.0f, 0.0f, 1.0f, 0.5f);
+
+	//const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
+	matrix44 Tfm;
+	vector3 Pos;
+	quaternion Rot;
+	CharCtlr->GetBody()->GetTransform(Pos, Rot);
+	Tfm.FromQuaternion(Rot);
+	Tfm.Translation() = Pos;
+
+	DebugDraw->DrawCoordAxes(Tfm);
+	vector3 LinVel;
+	CharCtlr->GetLinearVelocity(LinVel);
+	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + LinVel, ColorVel);
+	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + CharCtlr->GetRequestedLinearVelocity(), ColorReqVel);
+
+	matrix44 CapsuleTfm = Tfm;
+	// FIXME PHYSICS
+//	CapsuleTfm.translate(CharCtlr->GetBody()->GetShapeOffset());
+	float CapsuleHeight = CharCtlr->GetHeight() - CharCtlr->GetRadius() - CharCtlr->GetRadius() - CharCtlr->GetHover();
+	const vector4& Color = CharCtlr->GetBody()->IsActive() ? ColorCapsuleActive : ColorCapsuleFrozen;
+	DebugDraw->DrawCapsule(CapsuleTfm, CharCtlr->GetRadius(), CapsuleHeight, Color);
+
+	if (GetEntity()->GetUID() == "GG" && CharCtlr->IsMotionRequested()) //!!!write debug focus or smth!
+	{
+		vector3 LVel;
+		CharCtlr->GetLinearVelocity(LVel);
+
+		CString Text;
+		Text.Format("\n\n\n\n\n\n\n\n"
+			"Requested velocity: %.4f, %.4f, %.4f\n"
+			"Actual velocity: %.4f, %.4f, %.4f\n"
+			"Requested angular velocity: %.5f\n"
+			"Actual angular velocity: %.5f\n"
+			"Requested speed: %.4f\n"
+			"Actual speed: %.4f\n",
+			CharCtlr->GetRequestedLinearVelocity().x,
+			CharCtlr->GetRequestedLinearVelocity().y,
+			CharCtlr->GetRequestedLinearVelocity().z,
+			LVel.x,
+			LVel.y,
+			LVel.z,
+			CharCtlr->GetRequestedAngularVelocity(),
+			CharCtlr->GetAngularVelocity(),
+			CharCtlr->GetRequestedLinearVelocity().Length(),
+			LVel.Length());
+		//DebugDraw->DrawText(Text.CStr(), 0.05f, 0.1f);
+	}
+
+	OK;
 }
 //---------------------------------------------------------------------
 */

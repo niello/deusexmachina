@@ -10,14 +10,10 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/Behaviour/ActionSequence.h
 	DEM/Game/src/AI/Memory/MemFact.h
 	DEM/Game/src/AI/Memory/MemSystem.h
-	DEM/Game/src/AI/Movement/MotorSystem.h
 	DEM/Game/src/AI/Movement/SteeringController.h
-	DEM/Game/src/AI/Movement/Actions/ActionFace.h
-	DEM/Game/src/AI/Movement/Actions/ActionFaceTarget.h
 	DEM/Game/src/AI/Movement/Actions/ActionGoto.h
 	DEM/Game/src/AI/Movement/Actions/ActionGotoPosition.h
 	DEM/Game/src/AI/Movement/Actions/ActionGotoTarget.h
-	DEM/Game/src/AI/Movement/Actions/ActionSteerToPosition.h
 	DEM/Game/src/AI/Movement/Actions/ActionTraversePathEdge.h
 	DEM/Game/src/AI/Movement/ActionTpls/ActionTplGotoTarget.h
 	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.h
@@ -78,8 +74,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/Target.h
 	DEM/Game/src/Game/Interaction/TargetEntity.h
 	DEM/Game/src/Game/Interaction/TargetGround.h
-	DEM/Game/src/Physics/CharacterController.h
-	DEM/Game/src/Physics/PropCharacterController.h
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h
@@ -105,14 +99,10 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/Memory/MemFact.cpp
 	DEM/Game/src/AI/Memory/MemSystem.cpp
 	DEM/Game/src/AI/Movement/CharacterControlSystem.cpp
-	DEM/Game/src/AI/Movement/MotorSystem.cpp
 	DEM/Game/src/AI/Movement/SteeringController.cpp
-	DEM/Game/src/AI/Movement/Actions/ActionFace.cpp
-	DEM/Game/src/AI/Movement/Actions/ActionFaceTarget.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionGoto.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionGotoPosition.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionGotoTarget.cpp
-	DEM/Game/src/AI/Movement/Actions/ActionSteerToPosition.cpp
 	DEM/Game/src/AI/Movement/Actions/ActionTraversePathEdge.cpp
 	DEM/Game/src/AI/Movement/Memory/MemFactObstacle.cpp
 	DEM/Game/src/AI/Navigation/NavAgentComponent.cpp
@@ -158,8 +148,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/Interaction/Process.cpp
 	DEM/Game/src/Game/Interaction/TargetEntity.cpp
 	DEM/Game/src/Game/Interaction/TargetGround.cpp
-	DEM/Game/src/Physics/CharacterController.cpp
-	DEM/Game/src/Physics/PropCharacterController.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp

@@ -1,5 +1,5 @@
 #include "ActionGotoSmartObj.h"
-
+/*
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <Game/GameServer.h>
@@ -134,3 +134,4 @@ void CActionGotoSmartObj::Deactivate(CActor* pActor)
 //---------------------------------------------------------------------
 
 }
+*/

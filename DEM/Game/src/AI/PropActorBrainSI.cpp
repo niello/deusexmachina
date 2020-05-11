@@ -54,6 +54,7 @@ int CPropActorBrain_DoAction(lua_State* l)
 	//args: EntityScriptObject's this table, SO ID, Action ID, [Relevance = Absolute, FailOnInterruption = false, ClearQueueOnFailure = false]
 	SETUP_ENT_SI_ARGS(3);
 
+	/*
 	CStrID TargetID = CStrID(lua_tostring(l, 2));
 	CStrID ActionID = CStrID(lua_tostring(l, 3));
 
@@ -75,6 +76,8 @@ int CPropActorBrain_DoAction(lua_State* l)
 	Task.ClearQueueOnFailure = ArgCount >= 6 && lua_toboolean(l, 6) != 0;
 
 	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
+	*/
+
 	return 0;
 }
 //---------------------------------------------------------------------

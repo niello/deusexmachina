@@ -4,7 +4,6 @@
 #include <AI/Perception/Perceptor.h>
 #include <AI/Planning/Goal.h>
 #include <AI/Navigation/NavSystem.h>
-#include <AI/Movement/MotorSystem.h>
 #include <AI/Memory/MemSystem.h>
 #include <Data/Flags.h>
 #include <Data/List.h>
@@ -47,7 +46,7 @@ protected:
 
 	CMemSystem					MemSystem;
 	CNavSystem					NavSystem;
-	CMotorSystem				MotorSystem;
+	//CMotorSystem				MotorSystem;
 	//TargetSystem //???or in goals?
 	//AnimSystem
 	//???BhvSystem/DecisionSystem?
@@ -113,10 +112,10 @@ public:
 	float			NavDestRecoveryTime;	// Time before failing if destination is lost with a chance to be recovered
 
 	// Movement
-	EMovementState	MvmtState;
-	EMovementType	MvmtType;
-	ESteeringType	SteeringType;
-	EFacingState	FacingState;
+	//EMovementState	MvmtState;
+	//EMovementType	MvmtType;
+	//ESteeringType	SteeringType;
+	//EFacingState	FacingState;
 
 // END Blackboard
 	
@@ -148,8 +147,6 @@ public:
 	const CMemSystem&	GetMemSystem() const { return MemSystem; }
 	CNavSystem&			GetNavSystem() { return NavSystem; }
 	const CNavSystem&	GetNavSystem() const { return NavSystem; }
-	CMotorSystem&		GetMotorSystem() { return MotorSystem; }
-	const CMotorSystem&	GetMotorSystem() const { return MotorSystem; }
 
 	const CArray<PSensor>& GetSensors() const { return Sensors; }
 };

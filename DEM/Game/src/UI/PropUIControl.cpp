@@ -499,6 +499,7 @@ bool CPropUIControl::OnExecuteSmartObjAction(Events::CEventDispatcher* pDispatch
 
 	CStrID ActionID = P->Get<CStrID>(CStrID("ActionID"));
 
+	/*
 	//!!!CODE DUPLICATION, see brain SI! to method AISrv->CreateUseSOPlan?
 	PActionGotoSmartObj ActGoto = n_new(CActionGotoSmartObj);
 	ActGoto->Init(GetEntity()->GetUID(), ActionID);
@@ -516,6 +517,7 @@ bool CPropUIControl::OnExecuteSmartObjAction(Events::CEventDispatcher* pDispatch
 	Task.FailOnInterruption = false;
 	Task.ClearQueueOnFailure = true;
 	pActorEnt->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
+	*/
 
 	OK;
 }

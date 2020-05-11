@@ -1,8 +1,8 @@
 #include "ActionWander.h"
 
 #include <Game/GameServer.h>
-#include <AI/Movement/Actions/ActionGoto.h>
-#include <AI/Movement/Actions/ActionFace.h>
+//#include <AI/Movement/Actions/ActionGoto.h>
+//#include <AI/Movement/Actions/ActionFace.h>
 #include <AI/PropActorBrain.h>
 #include <Core/Factory.h>
 
@@ -26,7 +26,7 @@ bool CActionWander::SelectAction(CActor* pActor)
 			// NavSystem automatically clamps a destination to the navmesh
 			Dest *= (Math::RandomFloat() * 11.5f + 3.5f);
 			pActor->GetNavSystem().SetDestPoint(vector3(Dest.x + InitialPos.x, pActor->Position.y, Dest.y + InitialPos.y));
-			CurrAction = n_new(CActionGoto);		
+			//CurrAction = n_new(CActionGoto);		
 			//vector3 Loc;
 			//if (pActor->GetNavSystem().GetRandomValidLocation(15.f, Loc))
 			//{
@@ -36,8 +36,8 @@ bool CActionWander::SelectAction(CActor* pActor)
 		}
 		else
 		{
-			pActor->GetMotorSystem().SetFaceDirection(vector3(Dest.x, 0.f, Dest.y));
-			CurrAction = n_new(CActionFace);
+			//pActor->GetMotorSystem().SetFaceDirection(vector3(Dest.x, 0.f, Dest.y));
+			//CurrAction = n_new(CActionFace);
 		}
 	}
 	else
@@ -47,7 +47,8 @@ bool CActionWander::SelectAction(CActor* pActor)
 		OK;
 	}
 
-	return CurrAction->Activate(pActor);
+	FAIL;
+	//return CurrAction->Activate(pActor);
 }
 //---------------------------------------------------------------------
 
