@@ -15,6 +15,7 @@ namespace DEM::Game
 constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
 constexpr float AngularTolerance = 0.0001f;
 
+// TODO: check this old info, may be still actual, then must adjust current tolerances
 //// At very small speeds and physics step sizes body position stops updating because of limited
 //// float precision. LinearSpeed = 0.0007f, StepSize = 0.01f, Pos + LinearSpeed * StepSize = Pos.
 //// So body never reaches the desired destination and we must accept arrival at given tolerance.
@@ -43,9 +44,9 @@ static float CalcDistanceToGround(const CCharacterControllerComponent& Character
 
 	vector3 ContactPos;
 	if (pBody->GetLevel()->GetClosestRayContact(Start, End,
-			pCollisionProxy->m_collisionFilterGroup,
-			pCollisionProxy->m_collisionFilterMask,
-			&ContactPos, nullptr, pBody))
+		pCollisionProxy->m_collisionFilterGroup,
+		pCollisionProxy->m_collisionFilterMask,
+		&ContactPos, nullptr, pBody))
 	{
 		return Pos.y - ContactPos.y;
 	}
@@ -203,11 +204,9 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 		// synchronizeMotionStates() might be not yet called, so we access raw transform.
 		// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
 		// then called here it would not do redundant calculations in synchronizeMotionStates.
-		const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
 		const auto& BodyTfm = pBtBody->getWorldTransform();
+		const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
 		const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
-
-		//!!!FIXME: check motion state, maybe it is up to date in BeforePhysicsTick!
 
 		// Update vertical state
 
@@ -215,10 +214,8 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 		UpdateVerticalState(Character, DistanceToGround);
 		if (!Character.IsOnTheGround())
 		{
-			//???need? gravity should keep the body active
 			//if levitating, disable gravity
 			//on levitation end, make body active
-			//pBody->SetActive(true, true);
 			return;
 		}
 
@@ -235,8 +232,7 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 				if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
 				{
 					// Already at the destination
-
-					//!!!TODO: remove action as successfully done!
+					pQueue->RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
 				}
 				else
 				{
@@ -254,8 +250,7 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 			{
 				DesiredLinearVelocity = CalcDesiredLinearVelocity(Character, Pos, *pSteerAction);
 
-				// TODO: see DetourCrowd for impl.
-				//!!!Can add separation with neighbours here too!
+				// TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
 				//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
 			}
 		}
@@ -326,7 +321,7 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
 			{
-				//!!!TODO: remove action as successfully done!
+				pQueue->RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
 			}
 			else
 			{
@@ -340,9 +335,7 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < AngularTolerance)
-			{
-				//!!!TODO: remove action as successfully done!
-			}
+				pQueue->RemoveAction(*pTurnAction, DEM::Game::EActionStatus::Succeeded);
 		}
 	});
 }

@@ -22,6 +22,7 @@ enum class ECharacterState : U8
 struct CCharacterControllerComponent
 {
 	Physics::CCharacterController Controller;
+
 	Physics::PRigidBody Body;
 
 	float			Radius = 0.3f;

@@ -14,10 +14,19 @@
 namespace DEM::Game
 {
 
+enum class EActionStatus : U8
+{
+	InProgress = 0,
+	Succeeded,
+	Failed,
+	Cancelled
+};
+
 struct CActionQueueComponent
 {
 	std::deque<Events::PEventBase>  Queue;
 	std::vector<Events::PEventBase> Stack;
+	EActionStatus                   Status = EActionStatus::Succeeded;
 
 	// execution status of the most nested current action
 
@@ -31,6 +40,29 @@ struct CActionQueueComponent
 	{
 		Stack.clear();
 		Queue.clear();
+	}
+
+	bool RemoveAction(const Events::CEventBase& Action, EActionStatus Reason)
+	{
+		if (Queue.empty()) return false;
+
+		if (Queue.front().get() == &Action)
+		{
+			Stack.clear();
+			Queue.pop_front();
+			Status = Reason;
+			return true;
+		}
+
+		auto It = std::find_if(Stack.begin(), Stack.end(), [&Action](const auto& Elm)
+		{
+			return Elm.get() == &Action;
+		});
+		if (It == Stack.cend()) return false;
+
+		Stack.erase(It, Stack.end());
+		Status = Reason;
+		return true;
 	}
 
 	Events::CEventBase* FindActive(Events::CEventID ID)
