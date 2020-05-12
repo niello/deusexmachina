@@ -22,7 +22,10 @@ bool CSteeringController::PushSubAction(Game::CActionQueueComponent& Queue, cons
 	static const CStrID sidSteer("Steer");
 	if (Type != sidSteer) return false;
 
-	if (auto pSteer = Queue.RequestSubAction<Steer>(ParentAction))
+	Steer* pSteer;
+	if (!Queue.RequestSubAction(ParentAction, pSteer)) return false;
+
+	if (pSteer)
 	{
 		pSteer->_Dest = Dest;
 		pSteer->_NextDest = NextDest;

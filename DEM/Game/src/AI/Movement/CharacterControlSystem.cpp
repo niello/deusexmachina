@@ -8,6 +8,7 @@
 #include <Physics/CollisionShape.h>
 #include <Physics/BulletConv.h>
 #include <BulletDynamics/Dynamics/btRigidBody.h>
+#include <BulletDynamics/Dynamics/btDiscreteDynamicsWorld.h>
 
 namespace DEM::Game
 {
@@ -82,7 +83,7 @@ static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Ch
 	float Speed = Character.MaxLinearSpeed;
 
 	// Calculate arrival slowdown if close enough to destination
-	// Negative _ArriveAdditionalDistance means that no arrive steering required at all
+	// Negative _AdditionalDistance means that no arrive steering required at all
 	if (Request._AdditionalDistance >= 0.f)
 	{
 		// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
@@ -108,9 +109,12 @@ static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Ch
 
 static void UpdateVerticalState(CCharacterControllerComponent& Character, float DistanceToGround)
 {
-	const bool OnGround = Character.IsOnTheGround();
+	auto pBody = Character.Body.Get();
+	auto pBtBody = pBody->GetBtBody();
+	bool IsOnGround = Character.IsOnTheGround();
+	const bool WasOnGround = IsOnGround;
 
-	if (DistanceToGround <= 0.f && !OnGround)
+	if (DistanceToGround <= 0.f && !IsOnGround)
 	{
 		if (Character.State == ECharacterState::Fall)
 		{
@@ -120,29 +124,46 @@ static void UpdateVerticalState(CCharacterControllerComponent& Character, float 
 		}
 
 		Character.State = ECharacterState::Stand;
+		IsOnGround = true;
 	}
-	else if (DistanceToGround > Character.MaxStepDownHeight && OnGround)
+	else if (DistanceToGround > Character.MaxStepDownHeight && IsOnGround)
 	{
 		//???control whole speed or only a vertical component? now the second
 
 		// Y is inverted to be positive when the character moves downwards
-		auto pBody = Character.Body.Get();
-		const float VerticalImpulse = pBody->GetMass() * -pBody->GetBtBody()->getLinearVelocity().y();
+		const float VerticalImpulse = pBody->GetMass() * -pBtBody->getLinearVelocity().y();
 		if (VerticalImpulse > Character.MaxLandingImpulse)
 		{
 			Character.State = ECharacterState::Fall;
 			pBody->SetActive(true);
+			IsOnGround = false;
 		}
 		else if (VerticalImpulse > 0.f)
 		{
 			Character.State = ECharacterState::Jump;
 			pBody->SetActive(true);
+			IsOnGround = false;
 		}
 		//???else if VerticalImpulse == 0.f levitate?
+	}
+
+	if (IsOnGround == WasOnGround) return;
+
+	// Character on the ground is bound to the surface and uses no gravity
+	if (IsOnGround)
+	{
+		pBtBody->clearGravity();
+		pBtBody->setGravity(btVector3(0.f, 0.f, 0.f));
+	}
+	else
+	{
+		pBtBody->setGravity(pBody->GetLevel()->GetBtWorld()->getGravity());
+		pBtBody->applyGravity();
 	}
 }
 //---------------------------------------------------------------------
 
+// Used only for on ground (controlled) state
 static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float DistanceToGround,
 	const vector3& DesiredLinearVelocity, float DesiredAngularVelocity, float MaxAcceleration)
 {
@@ -168,22 +189,24 @@ static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float Distance
 		btVector3 ReqLVelChange(ReqLVel.x() - CurrLVel.x(), 0.f, ReqLVel.z() - CurrLVel.z());
 		if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
 		{
+			// Slow down with respect to the maximum deceleration
 			btVector3 ReqAccel = ReqLVelChange * InvTickTime;
 			btScalar AccelMagSq = ReqAccel.length2();
 			if (AccelMagSq > MaxAcceleration * MaxAcceleration)
 				ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
 			pBtBody->applyCentralForce(ReqAccel * pBody->GetMass());
 		}
-		else pBtBody->clearForces(); //???really clear all forces?
+		else
+		{
+			// Keep horizontal velocity
+			const auto& TotalForce = pBtBody->getTotalForce();
+			pBtBody->clearForces();
+			pBtBody->applyCentralForce(btVector3(0.f, TotalForce.y(), 0.f));
+		}
 	}
 	else pBtBody->setLinearVelocity(ReqLVel);
 
-	// Compensate gravity by a normal force N, as we are standing on the ground
-	pBtBody->applyCentralForce(-pBtBody->getGravity() * pBody->GetMass());
-	//???!!!compensate ALL -y force? no ground penetration may happen
-	//excess force/impulse (force * tick) can be converted into damage or smth!
-
-	// We want to compensate our DistanceToGround in a single simulation step
+	// We stand on the ground and want to compensate our DistanceToGround in a single simulation step
 	const float ReqVerticalVel = -DistanceToGround * InvTickTime;
 	pBtBody->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * pBody->GetMass(), 0.f));
 }

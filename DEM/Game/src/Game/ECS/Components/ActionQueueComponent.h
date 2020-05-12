@@ -85,44 +85,48 @@ struct CActionQueueComponent
 		return pAction ? static_cast<T*>(pAction) : nullptr;
 	}
 
-	// FIXME: if parent not found, returns null instead of failure
-	Events::CEventBase* RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent)
+	bool RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent, Events::CEventBase*& pOutSubAction)
 	{
-		// If no sub-actions exist at all, exit
-		if (Stack.empty()) return nullptr;
+		pOutSubAction = nullptr;
 
-		// Find parent
+		// Find parent in active actions, fail if not found
 		auto It = std::find_if(Stack.begin(), Stack.end(), [&Parent](const auto& Elm)
 		{
 			return Elm.get() == &Parent;
 		});
-		if (It == Stack.cend() && Queue.front().get() != &Parent) return nullptr;
+		if (It == Stack.cend() && Queue.front().get() != &Parent) return false;
+
+		// If no sub-actions exist at all, exit
+		if (Stack.empty()) return true;
 
 		// Check its sub-action, if exists
 		if (It == Stack.cend()) It = Stack.begin();
 		else
 		{
 			++It;
-			if (It == Stack.cend()) return nullptr;
+			if (It == Stack.cend()) return true;
 		}
 
 		// Sub-action is not of requested type, cancel the whole sub-stack of the parent
 		if ((*It)->GetID() != ID)
 		{
 			Stack.erase(It, Stack.end());
-			return nullptr;
+			return true;
 		}
 
-		return It->get();
+		pOutSubAction = It->get();
+		return true;
 	}
 
 	template<typename T>
-	T* RequestSubAction(const Events::CEventBase& Parent)
+	bool RequestSubAction(const Events::CEventBase& Parent, T*& pOutSubAction)
 	{
 		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 
-		auto pAction = RequestSubAction(T::RTTI, Parent);
-		return pAction ? static_cast<T*>(pAction) : nullptr;
+		Events::CEventBase* pSubAction;
+		if (!RequestSubAction(T::RTTI, Parent, pSubAction)) return false;
+		pOutSubAction = pSubAction ? static_cast<T*>(pSubAction) : nullptr;
+		return true;
 	}
 };
 
