@@ -56,58 +56,8 @@ static float CalcDistanceToGround(const CCharacterControllerComponent& Character
 }
 //---------------------------------------------------------------------
 
-static vector3 CalcDesiredLinearVelocity(const CCharacterControllerComponent& Character, const vector3& Pos, const DEM::AI::Steer& Request)
-{
-	// Calculate desired movement vector
-
-	vector3 DesiredMovement(Request._Dest.x - Pos.x, 0.f, Request._Dest.z - Pos.z);
-
-	// If current destination is an intermediate turning point, make the trajectory smooth
-	if (Character.SteeringSmoothness > 0.f && Request._NextDest != Request._Dest)
-	{
-		const vector3 ToNext(Request._NextDest.x - Pos.x, 0.f, Request._NextDest.z - Pos.z);
-		const float DistanceToNext = ToNext.Length2D();
-		if (DistanceToNext > 0.001f)
-		{
-			const float Scale = DesiredMovement.Length2D() * Character.SteeringSmoothness / DistanceToNext;
-			DesiredMovement -= ToNext * Scale;
-		}
-	}
-
-	const float RemainingDistance = DesiredMovement.Length2D();
-	if (RemainingDistance <= std::numeric_limits<float>().epsilon())
-		return vector3::Zero;
-
-	// Calculate speed
-
-	float Speed = Character.MaxLinearSpeed;
-
-	// Calculate arrival slowdown if close enough to destination
-	// Negative _AdditionalDistance means that no arrive steering required at all
-	if (Request._AdditionalDistance >= 0.f)
-	{
-		// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
-		// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
-		// final destination, and here we calculate effective distance to the destination along the path without
-		// path topology information.
-		const float Distance = RemainingDistance + Request._AdditionalDistance;
-
-		// S = -v0^2/2a for 0 = v0 + at (stop condition)
-		const float SlowDownRadius = Character.ArriveBrakingCoeff * Speed * Speed;
-		if (Distance < SlowDownRadius)
-			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
-	}
-
-	// Avoid overshooting, make exactly remaining movement in one frame
-	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
-	if (RemainingDistance < Speed * FrameTime) return DesiredMovement / FrameTime;
-
-	// Calculate velocity as speed * normalized movement direction
-	return DesiredMovement * (Speed / RemainingDistance);
-}
-//---------------------------------------------------------------------
-
-static void UpdateVerticalState(CCharacterControllerComponent& Character, float DistanceToGround)
+//???return IsSelfControlled instead of IsOnGround? Levitate is controlled but above the ground.
+static bool UpdateSelfControlState(CCharacterControllerComponent& Character, float DistanceToGround)
 {
 	auto pBody = Character.Body.Get();
 	auto pBtBody = pBody->GetBtBody();
@@ -147,7 +97,7 @@ static void UpdateVerticalState(CCharacterControllerComponent& Character, float 
 		//???else if VerticalImpulse == 0.f levitate?
 	}
 
-	if (IsOnGround == WasOnGround) return;
+	if (IsOnGround == WasOnGround) return IsOnGround;
 
 	// Character on the ground is bound to the surface and uses no gravity
 	if (IsOnGround)
@@ -160,12 +110,137 @@ static void UpdateVerticalState(CCharacterControllerComponent& Character, float 
 		pBtBody->setGravity(pBody->GetLevel()->GetBtWorld()->getGravity());
 		pBtBody->applyGravity();
 	}
+
+	return IsOnGround;
 }
 //---------------------------------------------------------------------
 
-// Used only for on ground (controlled) state
-static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float DistanceToGround,
-	const vector3& DesiredLinearVelocity, float DesiredAngularVelocity, float MaxAcceleration)
+static vector3 ProcessMovement(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, const vector3& Pos)
+{
+	// Move only when explicitly requested
+	auto pSteerAction = Queue.FindActive<DEM::AI::Steer>();
+	if (!pSteerAction) return vector3::Zero;
+
+	// Initialize movement from the action
+	if (Character.State == ECharacterState::Stand)
+	{
+		const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
+		const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
+		if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
+		{
+			// Already at the destination
+			Queue.RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
+			return vector3::Zero;
+		}
+
+		// Start moving
+		const float DestFacingThreshold = 1.5f * Character.Radius;
+		if (IsSameHeightLevel && (SqDistance <= DestFacingThreshold * DestFacingThreshold))
+			Character.State = ECharacterState::ShortStep;
+		else
+			Character.State = ECharacterState::Walk;
+	}
+
+	// Calculate desired movement vector
+
+	vector3 DesiredMovement(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
+
+	// If current destination is an intermediate turning point, make the trajectory smooth
+	if (Character.SteeringSmoothness > 0.f && pSteerAction->_NextDest != pSteerAction->_Dest)
+	{
+		const vector3 ToNext(pSteerAction->_NextDest.x - Pos.x, 0.f, pSteerAction->_NextDest.z - Pos.z);
+		const float DistanceToNext = ToNext.Length2D();
+		if (DistanceToNext > 0.001f)
+		{
+			const float Scale = DesiredMovement.Length2D() * Character.SteeringSmoothness / DistanceToNext;
+			DesiredMovement -= ToNext * Scale;
+		}
+	}
+
+	vector3 DesiredLinearVelocity;
+
+	const float RemainingDistance = DesiredMovement.Length2D();
+	if (RemainingDistance > std::numeric_limits<float>().epsilon())
+	{
+		// Calculate speed
+
+		float Speed = Character.MaxLinearSpeed;
+
+		// Calculate arrival slowdown if close enough to destination
+		// Negative additional distance means that no arrive steering required at all
+		if (pSteerAction->_AdditionalDistance >= 0.f)
+		{
+			// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
+			// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
+			// final destination, and here we calculate effective distance to the destination along the path without
+			// path topology information.
+			const float Distance = RemainingDistance + pSteerAction->_AdditionalDistance;
+
+			// S = -v0^2/2a for 0 = v0 + at (stop condition)
+			const float SlowDownRadius = Character.ArriveBrakingCoeff * Speed * Speed;
+			if (Distance < SlowDownRadius)
+				Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
+		}
+
+		// Avoid overshooting, make exactly remaining movement in one frame
+		const float FrameTime = Character.Body->GetLevel()->GetStepTime();
+		if (RemainingDistance < Speed * FrameTime) DesiredLinearVelocity = DesiredMovement / FrameTime;
+
+		// Calculate velocity as speed * normalized movement direction
+		DesiredLinearVelocity = DesiredMovement * (Speed / RemainingDistance);
+	}
+
+	// TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
+	//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
+
+	return DesiredLinearVelocity;
+}
+//---------------------------------------------------------------------
+
+// Process facing, either explicitly requested or induced by linear movement. Can modify desired linear velocity.
+static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueueComponent& Queue, vector3& DesiredLinearVelocity)
+{
+	// If character can't turn, skip facing
+	if (Character.MaxAngularSpeed <= 0.f) return 0.f;
+
+	auto pBody = Character.Body.Get();
+	auto pBtBody = pBody->GetBtBody();
+
+	const vector3 LookatDir = BtVectorToVector(pBtBody->getWorldTransform().getBasis() * btVector3(0.f, 0.f, -1.f));
+
+	float DesiredRotation = 0.f;
+	if (Character.State == ECharacterState::Walk)
+		DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
+	else if (auto pTurnAction = Queue.FindActive<DEM::AI::Turn>())
+		DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
+
+	const bool IsNegative = (DesiredRotation < 0.f);
+	const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;
+
+	// Already looking at the desired direction
+	if (AngleAbs < AngularTolerance) return 0.f;
+
+	float Speed = Character.MaxAngularSpeed;
+
+	// Calculate arrival slowdown
+	constexpr float AngularArrivalZone = 0.34906585f; // 20 degrees in radians
+	if (AngleAbs <= AngularArrivalZone)
+		Speed *= AngleAbs / AngularArrivalZone;
+
+	// Amount of required rotation is too big, actor must stop moving to perform it
+	if (AngleAbs > Character.BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
+
+	// Avoid overshooting, make exactly remaining rotation in one frame
+	const float FrameTime = pBody->GetLevel()->GetStepTime();
+	if (AngleAbs < Speed * FrameTime)
+		return DesiredRotation / FrameTime;
+	else
+		return IsNegative ? -Speed : Speed;
+}
+//---------------------------------------------------------------------
+
+static void UpdateRigidBodyMovement(Physics::CRigidBody* pBody, float dt, const vector3& DesiredLinearVelocity,
+	float DesiredAngularVelocity, float MaxAcceleration)
 {
 	// We want a precise control over the movement, so deny freezing on low speed
 	// when movement is requested. When idle, allow to deactivate eventually.
@@ -179,8 +254,6 @@ static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float Distance
 	// No angular acceleration limit, set directly
 	pBtBody->setAngularVelocity(btVector3(0.f, DesiredAngularVelocity, 0.f));
 
-	const float InvTickTime = 1.f / dt;
-
 	//???what to do with requested y? perform auto climbing/jumping or deny and wait for an explicit command?
 	const btVector3 ReqLVel = btVector3(DesiredLinearVelocity.x, 0.f, DesiredLinearVelocity.z);
 	if (MaxAcceleration > 0.f)
@@ -190,7 +263,7 @@ static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float Distance
 		if (ReqLVelChange.x() != 0.f || ReqLVelChange.z() != 0.f)
 		{
 			// Slow down with respect to the maximum deceleration
-			btVector3 ReqAccel = ReqLVelChange * InvTickTime;
+			btVector3 ReqAccel = ReqLVelChange / dt;
 			btScalar AccelMagSq = ReqAccel.length2();
 			if (AccelMagSq > MaxAcceleration * MaxAcceleration)
 				ReqAccel *= (MaxAcceleration / n_sqrt(AccelMagSq));
@@ -205,10 +278,6 @@ static void UpdateRigidBody(Physics::CRigidBody* pBody, float dt, float Distance
 		}
 	}
 	else pBtBody->setLinearVelocity(ReqLVel);
-
-	// We stand on the ground and want to compensate our DistanceToGround in a single simulation step
-	const float ReqVerticalVel = -DistanceToGround * InvTickTime;
-	pBtBody->applyCentralImpulse(btVector3(0.f, ReqVerticalVel * pBody->GetMass(), 0.f));
 }
 //---------------------------------------------------------------------
 
@@ -222,100 +291,26 @@ void ProcessCharacterControllers(DEM::Game::CGameWorld& World, Physics::CPhysics
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
-		auto pBtBody = pBody->GetBtBody();
-
-		// synchronizeMotionStates() might be not yet called, so we access raw transform.
-		// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
-		// then called here it would not do redundant calculations in synchronizeMotionStates.
-		const auto& BodyTfm = pBtBody->getWorldTransform();
-		const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
-		const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
-
-		// Update vertical state
+		// Access real physical transform, not an interpolated motion state
+		const auto& Offset = pBody->GetCollisionShape()->GetOffset();
+		const vector3 Pos = BtVectorToVector(pBody->GetBtBody()->getWorldTransform() * btVector3(-Offset.x, -Offset.y, -Offset.z));
 
 		const float DistanceToGround = CalcDistanceToGround(Character, Pos);
-		UpdateVerticalState(Character, DistanceToGround);
-		if (!Character.IsOnTheGround())
+		if (UpdateSelfControlState(Character, DistanceToGround))
 		{
-			//if levitating, disable gravity
-			//on levitation end, make body active
-			return;
+			// Update movement and other self-control
+			vector3 DesiredLinearVelocity = ProcessMovement(Character, *pQueue, Pos);
+			const float DesiredAngularVelocity = ProcessFacing(Character, *pQueue, DesiredLinearVelocity);
+			UpdateRigidBodyMovement(pBody, dt, DesiredLinearVelocity, DesiredAngularVelocity, Character.MaxAcceleration);
+
+			// TODO: not needed when levitate, only when really ion the ground
+			// We stand on the ground and want to compensate our DistanceToGround in a single simulation step
+			pBody->GetBtBody()->applyCentralImpulse(btVector3(0.f, (-DistanceToGround / dt) * pBody->GetMass(), 0.f));
 		}
-
-		// Process movement request
-
-		vector3 DesiredLinearVelocity;
-		if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
+		else
 		{
-			// Initialize movement from the action
-			if (Character.State == ECharacterState::Stand)
-			{
-				const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
-				const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
-				if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
-				{
-					// Already at the destination
-					pQueue->RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
-				}
-				else
-				{
-					// Start moving
-					const float DestFacingThreshold = 1.5f * Character.Radius;
-					if (IsSameHeightLevel && (SqDistance <= DestFacingThreshold * DestFacingThreshold))
-						Character.State = ECharacterState::ShortStep;
-					else
-						Character.State = ECharacterState::Walk;
-				}
-			}
-
-			// Calculate desired linear velocity
-			if (Character.State != ECharacterState::Stand)
-			{
-				DesiredLinearVelocity = CalcDesiredLinearVelocity(Character, Pos, *pSteerAction);
-
-				// TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
-				//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
-			}
+			// TODO: update above the ground (uncontrolled) state
 		}
-
-		// Process facing request, either explicit or induced by linear movement
-
-		float DesiredAngularVelocity = 0.f;
-		if (Character.MaxAngularSpeed > 0.f)
-		{
-			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
-
-			float DesiredRotation = 0.f;
-			if (Character.State == ECharacterState::Walk)
-				DesiredRotation = vector3::Angle2DNorm(LookatDir, DesiredLinearVelocity);
-			else if (auto pTurnAction = pQueue->FindActive<DEM::AI::Turn>())
-				DesiredRotation = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
-
-			const bool IsNegative = (DesiredRotation < 0.f);
-			const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;
-			if (AngleAbs >= AngularTolerance)
-			{
-				constexpr float AngularArrivalZone = 0.34906585f; // 20 degrees in radians
-
-				float Speed = Character.MaxAngularSpeed;
-
-				// Calculate arrival slowdown
-				if (AngleAbs <= AngularArrivalZone)
-					Speed *= AngleAbs / AngularArrivalZone;
-
-				// Avoid overshooting, make exactly remaining rotation in one frame
-				const float FrameTime = Character.Body->GetLevel()->GetStepTime();
-				if (AngleAbs < Speed * FrameTime)
-					DesiredAngularVelocity = DesiredRotation / FrameTime;
-				else
-					DesiredAngularVelocity = IsNegative ? -Speed : Speed;
-
-				// Amount of required rotation is too big, actor must stop moving to perform it
-				if (AngleAbs > Character.BigTurnThreshold) DesiredLinearVelocity = vector3::Zero;
-			}
-		}
-
-		UpdateRigidBody(pBody, dt, DistanceToGround, DesiredLinearVelocity, DesiredAngularVelocity, Character.MaxAcceleration);
 	});
 }
 //---------------------------------------------------------------------
@@ -330,14 +325,12 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 		auto pBody = Character.Body.Get();
 		if (!pBody || pBody->GetLevel() != &PhysicsLevel) return;
 
-		// synchronizeMotionStates() might be not yet called, so we access raw transform.
-		// synchronizeSingleMotionState() could make sense too if it has dirty flag optimization,
-		// then called here it would not do redundant calculations in synchronizeMotionStates.
+		// Access real physical transform, not an interpolated motion state
 		const auto& BodyTfm = pBody->GetBtBody()->getWorldTransform();
 
 		if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
 		{
-			// Initialize movement from the action
+			// Check linear arrival
 			const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
 			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
 			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
@@ -355,6 +348,7 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 
 		if (auto pTurnAction = pQueue->FindActive<DEM::AI::Turn>())
 		{
+			// Check angular arrival
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
 			if (std::fabsf(Angle) < AngularTolerance)
