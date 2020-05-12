@@ -331,8 +331,8 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 		if (auto pSteerAction = pQueue->FindActive<DEM::AI::Steer>())
 		{
 			// Check linear arrival
-			const auto OffsetCompensation = -pBody->GetCollisionShape()->GetOffset();
-			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(OffsetCompensation.x, OffsetCompensation.y, OffsetCompensation.z));
+			const auto& Offset = pBody->GetCollisionShape()->GetOffset();
+			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(-Offset.x, -Offset.y, -Offset.z));
 			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
 			if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
