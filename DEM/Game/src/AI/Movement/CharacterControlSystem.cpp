@@ -157,41 +157,40 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 		}
 	}
 
-	vector3 DesiredLinearVelocity;
+	const float SqRemainingDistance = DesiredMovement.SqLength2D();
 
-	const float RemainingDistance = DesiredMovement.Length2D();
-	if (RemainingDistance > std::numeric_limits<float>().epsilon())
+	// Already at the desired position
+	if (SqRemainingDistance < SqLinearTolerance) return vector3::Zero;
+
+	// Calculate speed
+
+	const float RemainingDistance = n_sqrt(SqRemainingDistance);
+	float Speed = Character.MaxLinearSpeed;
+
+	// Calculate arrival slowdown if close enough to destination
+	// Negative additional distance means that no arrive steering required at all
+	if (pSteerAction->_AdditionalDistance >= 0.f)
 	{
-		// Calculate speed
+		// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
+		// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
+		// final destination, and here we calculate effective distance to the destination along the path without
+		// path topology information.
+		const float Distance = RemainingDistance + pSteerAction->_AdditionalDistance;
 
-		float Speed = Character.MaxLinearSpeed;
-
-		// Calculate arrival slowdown if close enough to destination
-		// Negative additional distance means that no arrive steering required at all
-		if (pSteerAction->_AdditionalDistance >= 0.f)
-		{
-			// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
-			// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
-			// final destination, and here we calculate effective distance to the destination along the path without
-			// path topology information.
-			const float Distance = RemainingDistance + pSteerAction->_AdditionalDistance;
-
-			// S = -v0^2/2a for 0 = v0 + at (stop condition)
-			const float SlowDownRadius = Character.ArriveBrakingCoeff * Speed * Speed;
-			if (Distance < SlowDownRadius)
-				Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
-		}
-
-		// Avoid overshooting, make exactly remaining movement in one frame
-		const float FrameTime = Character.Body->GetLevel()->GetStepTime();
-		if (RemainingDistance < Speed * FrameTime) DesiredLinearVelocity = DesiredMovement / FrameTime;
-
-		// Calculate velocity as speed * normalized movement direction
-		DesiredLinearVelocity = DesiredMovement * (Speed / RemainingDistance);
+		// S = -v0^2/2a for 0 = v0 + at (stop condition)
+		const float SlowDownRadius = Character.ArriveBrakingCoeff * Speed * Speed;
+		if (Distance < SlowDownRadius)
+			Speed *= ((2.f * SlowDownRadius - Distance) * Distance) / (SlowDownRadius * SlowDownRadius);
 	}
 
-	// TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
-	//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
+	// Avoid overshooting, make exactly remaining movement in one frame
+	const float FrameTime = Character.Body->GetLevel()->GetStepTime();
+	vector3 DesiredLinearVelocity = (RemainingDistance < Speed * FrameTime) ?
+		DesiredMovement / FrameTime :
+		DesiredMovement * (Speed / RemainingDistance);
+
+// TODO: neighbour separation, obstacle avoidance (see DetourCrowd for impl.)
+//if (Character._ObstacleAvoidanceEnabled) AvoidObstacles();
 
 	return DesiredLinearVelocity;
 }
