@@ -16,28 +16,43 @@ CStrID CSteeringController::FindAction(const CNavAgentComponent&, unsigned char,
 }
 //---------------------------------------------------------------------
 
-bool CSteeringController::PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
-	const vector3& Dest, const vector3& NextDest, float RemainingDistance, Game::HEntity)
+U8 CSteeringController::PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+	const vector3& Dest, const vector3& NextDest, Game::HEntity)
 {
 	static const CStrID sidSteer("Steer");
 	if (Type != sidSteer) return false;
 
 	Steer* pSteer;
-	if (!Queue.RequestSubAction(ParentAction, pSteer)) return false;
+	if (!Queue.RequestSubAction(ParentAction, pSteer)) return Failure;
 
+	U8 Result = 0;
 	if (pSteer)
 	{
-		pSteer->_Dest = Dest;
+		if (pSteer->_Dest != Dest)
+		{
+			pSteer->_Dest = Dest;
+			Result |= NeedDistanceToTarget;
+		}
 		pSteer->_NextDest = NextDest;
-		pSteer->_AdditionalDistance = RemainingDistance;
 	}
 	else
 	{
 		// TODO: could use pool
-		Queue.Stack.push_back(Events::PEventBase(n_new(Steer(Dest, NextDest, RemainingDistance))));
+		Queue.Stack.push_back(Events::PEventBase(n_new(Steer(Dest, NextDest, -0.f))));
+		Result |= NeedDistanceToTarget;
 	}
 
-	return true;
+	Queue.Status = DEM::Game::EActionStatus::InProgress;
+
+	return Result;
+}
+//---------------------------------------------------------------------
+
+void CSteeringController::SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance)
+{
+	Steer* pSteer;
+	if (Queue.RequestSubAction(ParentAction, pSteer) && pSteer)
+		pSteer->_AdditionalDistance = Distance;
 }
 //---------------------------------------------------------------------
 

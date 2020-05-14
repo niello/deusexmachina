@@ -167,13 +167,13 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	const float RemainingDistance = n_sqrt(SqRemainingDistance);
 	float Speed = Character.MaxLinearSpeed;
 
-	// Calculate arrival slowdown if close enough to destination
-	// Negative additional distance means that no arrive steering required at all
+	// Calculate arrival slowdown if close enough to destination.
+	// Negative additional distance means that no arrive steering is required at all.
 	if (pSteerAction->_AdditionalDistance >= 0.f)
 	{
-		// _AdditionalArriveDistance > 0 enables correct arrival when the current destination is not the final one.
-		// Navigation system sets _AdditionalArriveDistance to the distance from the requested position to the
-		// final destination, and here we calculate effective distance to the destination along the path without
+		// _AdditionalDistance > 0 enables correct arrival when the current destination is not the final one.
+		// Navigation system sets _AdditionalDistance to the distance from the requested position to the final
+		// destination, and here we calculate effective distance to the destination along the path without
 		// path topology information.
 		const float Distance = RemainingDistance + pSteerAction->_AdditionalDistance;
 
@@ -337,6 +337,8 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 			if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
 			{
 				pQueue->RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
+				if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
+					Character.State = ECharacterState::Stand;
 			}
 			else
 			{

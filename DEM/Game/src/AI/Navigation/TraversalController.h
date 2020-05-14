@@ -27,15 +27,20 @@ class CTraversalController : public ::Core::CObject
 {
 	RTTI_CLASS_DECL;
 
-protected:
-
-	//
-
 public:
 
+	// FIXME: ugly API, but it is the best one I came up with to avoid recalculation of full distance to target
+	// PushSubAction result flags
+	enum
+	{
+		Failure              = 0x01,
+		NeedDistanceToTarget = 0x02
+	};
+
 	virtual CStrID FindAction(const CNavAgentComponent& Agent, unsigned char AreaType, dtPolyRef Poly, Game::HEntity* pOutSmartObject) = 0;
-	virtual bool   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
-		const vector3& Dest, const vector3& NextDest, float RemainingDistance, Game::HEntity SmartObject) = 0;
+	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
+	virtual void   SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) {}
 };
 
 }

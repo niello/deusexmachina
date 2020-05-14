@@ -10,6 +10,9 @@
 
 namespace DEM::AI
 {
+//!!!FIXME: DUPLICATION, see CharacterControlSystem!
+// Tolerance shouldn't be too low to avoid float errors
+constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
 
 //???set height limit to check? agent height is good, must distinguish between different floors.
 //otherwise false equalities may happen!
@@ -302,10 +305,11 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 		// That was the last edge, finish
 		if (!dtStatusInProgress(Status)) break;
 
+		const float DistanceSq = dtVdist2DSqr(pCurrPos, Dest.v);
+
 		// Check entering an offmesh connection
 		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 		{
-			const float DistanceSq = dtVdist2DSqr(pCurrPos, Dest.v);
 			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
 			if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
 			{
@@ -322,6 +326,15 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 				}
 			}
 			break;
+		}
+
+		// Close enough to the next path point, assume already traversed
+		//???pController->CanSkipPathPoint(ActionType, SmartObject) instead of !SmartObject?
+		if (!SmartObject && DistanceSq < SqLinearTolerance)
+		{
+			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+			if (dtStatusFailed(Status)) return false;
+			continue;
 		}
 
 		// The next path edge requires different traversal action, finish
@@ -344,61 +357,29 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	}
 	while (true);
 
-	// Calculate the remaining distance to the navigation target
-	//!!!only if required by selected controller, and NOT every frame!
-	float RemainingDistance = 0.f;
-	//curr distance = len(dest - pos) //???what if offmesh?
-	//???curr distance = 0? can use one in a steering, only additional distance is required! FromNextToDestDistance.
-	/*
-	while (dtStatusInProgress(Status))
-	{
-		//???needed only for arrival braking or for smth else too?
-		// Can calculate remaining distance to the target, not every frame, may cache corners and recalculate
-		// only when dt is big enough or when the next corner not found in the cache
-		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, ActionNextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-		if (dtStatusFailed(Status)) break;
-	}
-	*/
-
-	/*
-	// determine action type by ActionID
-	//???need action factory? or use standard factory? or if !Factory->Registered, create param event?
-	//???or for each area / action ID have some generator that creates required action?
-	//could help to convert poly ref etc into actual data
-	//???per-area controller instead of per-tile? except "controlled" area
-	//return action type to avoid recreation, add Fill(Action&, params) for filling existing actions.
-	Events::CEventID ActionTypeID = ActionID;
-
-	// Create or find existing immediate sub-action of required type
-	Events::CEventBase* pSubAction = nullptr;
-	auto SubIt = ++std::find_if(pActions->Stack.begin(), pActions->Stack.end(), [pNavigateAction](const auto& Elm)
-	{
-		return Elm.get() == pNavigateAction;
-	});
-	if (SubIt != pActions->Stack.end())
-	{
-		// Sub-action type is different, discard the whole sub-stack
-		if ((*SubIt)->GetID() != ActionTypeID)
-		{
-			pActions->Stack.erase(SubIt, pActions->Stack.end());
-			pActions->Stack.push_back(nullptr); // FIXME: instance!
-			//Core::CFactory::Instance().Create
-			pSubAction = pActions->Stack.back().get();
-		}
-		else pSubAction = SubIt->get();
-	}
-	else
-	{
-		pActions->Stack.push_back(nullptr); // FIXME: instance!
-		pSubAction = pActions->Stack.back().get();
-	}
-
-	// fill dest & next dest in the action, fill other necessary data
-	//!!!for doors etc need poly info to get associated smart object!
-	*/
-
+	// Push sub-action on top of the navigation action, updating or clearing previous one
 	OutDest = Dest;
-	return pController->PushSubAction(Queue, NavAction, ActionID, Dest, NextDest, RemainingDistance, SmartObject);
+	auto Result = pController->PushSubAction(Queue, NavAction, ActionID, Dest, NextDest, SmartObject);
+	if (Result & CTraversalController::Failure) return false;
+
+	// Some controllers require additional distance from current to final destination
+	if (Result & CTraversalController::NeedDistanceToTarget)
+	{
+		float Distance = vector3::Distance(Dest, NextDest);
+		vector3 PrevPathPoint = NextDest;
+		while (dtStatusInProgress(Status))
+		{
+			vector3 PathPoint;
+			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, PathPoint.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+			if (dtStatusFailed(Status)) break;
+			Distance += vector3::Distance(PrevPathPoint, PathPoint);
+			PrevPathPoint = PathPoint;
+		}
+
+		pController->SetDistanceToTarget(Queue, NavAction, Distance);
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -416,9 +397,6 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 
 		//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
 		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
-
-		//!!!recovery subtask can use speed "as fast as possible" or "recovery" type, then character controller can
-		// resolve small length recovery as collision, immediately moving the character to the recovery destination.
 
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
@@ -465,7 +443,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			{
 				// Try to return to the navmesh by the shortest path
 				auto pController = Agent.Settings->FindController(0, 0);
-				if (!pController || !pController->PushSubAction(*pQueue, *pNavigateAction, CStrID::Empty, CurrPos, CurrPos, 0.f, {}))
+				if (!pController || !pController->PushSubAction(*pQueue, *pNavigateAction, CStrID::Empty, CurrPos, CurrPos, {}))
 				{
 					// recovery failed
 					//???fail navigation? set Idle?

@@ -45,8 +45,9 @@ protected:
 public:
 
 	virtual CStrID FindAction(const CNavAgentComponent& Agent, unsigned char AreaType, dtPolyRef Poly, Game::HEntity* pOutSmartObject) override;
-	virtual bool   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
-		const vector3& Dest, const vector3& NextDest, float RemainingDistance, Game::HEntity SmartObject) override;
+	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) override;
+	virtual void   SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) override;
 };
 
 }
