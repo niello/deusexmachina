@@ -383,10 +383,10 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 }
 //---------------------------------------------------------------------
 
-void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue)
+void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
 	World.ForEachEntityWith<CNavAgentComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
-		[dt, &PathQueue](auto EntityID, auto& Entity,
+		[dt, &PathQueue, NewFrame](auto EntityID, auto& Entity,
 			CNavAgentComponent& Agent,
 			DEM::Game::CActionQueueComponent* pQueue,
 			const DEM::Game::CSceneComponent* pSceneComponent)
@@ -398,19 +398,23 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
 		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
 
+		const auto& CurrPos = pSceneComponent->RootNode->GetWorldPosition();
+		UpdatePosition(CurrPos, Agent);
+
+		//???if our curr poly is 0, fail navigation request (if any), set idle and early exit?
+
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
+			// Multiple physics frames can be processed inside one logic frame. Only character
+			// position and state may change, target remains the same, but might be reached.
+			// So if there is a sub-action, let's just continue executing it.
+			if (!NewFrame && !pQueue->Stack.empty() && pQueue->Stack.back().get() != pNavigateAction) return;
+
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 			Agent.ReplanTime += dt;
 
 			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
 			// if succeeded and was offmesh, return to navmesh, and only after it update position.
-
-			const auto& CurrPos = pSceneComponent->RootNode->GetWorldPosition();
-			UpdatePosition(CurrPos, Agent);
-
-			//???if position failed Navigate task, early exit?
-			//!!!if invalid pos (first corridor poly is zero) exit? can't recover from that pos to the corridor.
 
 			UpdateDestination(*pNavigateAction, Agent);
 			if (Agent.State == ENavigationState::Idle) return;

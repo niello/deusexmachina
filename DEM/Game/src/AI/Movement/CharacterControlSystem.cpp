@@ -121,50 +121,43 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	auto pSteerAction = Queue.FindActive<DEM::AI::Steer>();
 	if (!pSteerAction) return vector3::Zero;
 
+	vector3 DesiredMovement(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
+
+	// Check if already at the desired position
+	const float SqDistanceToDest = DesiredMovement.SqLength2D();
+	const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
+	if (IsSameHeightLevel && SqDistanceToDest < SqLinearTolerance)
+	{
+		Queue.RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
+		Character.State = ECharacterState::Stand;
+		return vector3::Zero;
+	}
+
 	// Initialize movement from the action
 	if (Character.State == ECharacterState::Stand)
 	{
-		const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
-		const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
-		if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
-		{
-			// Already at the destination
-			Queue.RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
-			return vector3::Zero;
-		}
-
-		// Start moving
 		const float DestFacingThreshold = 1.5f * Character.Radius;
-		if (IsSameHeightLevel && (SqDistance <= DestFacingThreshold * DestFacingThreshold))
+		if (IsSameHeightLevel && (SqDistanceToDest <= DestFacingThreshold * DestFacingThreshold))
 			Character.State = ECharacterState::ShortStep;
 		else
 			Character.State = ECharacterState::Walk;
 	}
 
-	// Calculate desired movement vector
-
-	vector3 DesiredMovement(pSteerAction->_Dest.x - Pos.x, 0.f, pSteerAction->_Dest.z - Pos.z);
-
 	// If current destination is an intermediate turning point, make the trajectory smooth
+	float RemainingDistance = n_sqrt(SqDistanceToDest);
 	if (Character.SteeringSmoothness > 0.f && pSteerAction->_NextDest != pSteerAction->_Dest)
 	{
 		const vector3 ToNext(pSteerAction->_NextDest.x - Pos.x, 0.f, pSteerAction->_NextDest.z - Pos.z);
 		const float DistanceToNext = ToNext.Length2D();
 		if (DistanceToNext > 0.001f)
 		{
-			const float Scale = DesiredMovement.Length2D() * Character.SteeringSmoothness / DistanceToNext;
+			const float Scale = RemainingDistance * Character.SteeringSmoothness / DistanceToNext;
 			DesiredMovement -= ToNext * Scale;
+			RemainingDistance = DesiredMovement.Length2D();
 		}
 	}
 
-	const float SqRemainingDistance = DesiredMovement.SqLength2D();
-
-	// Already at the desired position
-	if (SqRemainingDistance < SqLinearTolerance) return vector3::Zero;
-
-	// Calculate speed
-
-	const float RemainingDistance = n_sqrt(SqRemainingDistance);
+	// Move with maximal speed when possible
 	float Speed = Character.MaxLinearSpeed;
 
 	// Calculate arrival slowdown if close enough to destination.
