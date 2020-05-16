@@ -11,7 +11,7 @@
 namespace DEM::AI
 {
 //!!!FIXME: DUPLICATION, see CharacterControlSystem!
-// Tolerance shouldn't be too low to avoid float errors
+//hide inside Steer action factory!
 constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
 
 //???set height limit to check? agent height is good, must distinguish between different floors.

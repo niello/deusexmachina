@@ -12,22 +12,6 @@
 
 namespace DEM::Game
 {
-// Tolerance shouldn't be too low to avoid float errors
-constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
-constexpr float AngularTolerance = 0.0001f;
-
-// TODO: check this old info, may be still actual, then must adjust current tolerances
-//// At very small speeds and physics step sizes body position stops updating because of limited
-//// float precision. LinearSpeed = 0.0007f, StepSize = 0.01f, Pos + LinearSpeed * StepSize = Pos.
-//// So body never reaches the desired destination and we must accept arrival at given tolerance.
-//// The less is this value, the more precise is resulting position, but the more time arrival takes.
-//// Empirical minimum value is somewhere around 0.0008f.
-//// This value is measured in game world meters.
-//// NB: may be square of this value MUST make sense with a single (float) precision.
-//const float LinearArrivalTolerance = 0.009f;
-//
-//// In radians
-//const float AngularArrivalTolerance = 0.005f;
 
 static float CalcDistanceToGround(const CCharacterControllerComponent& Character, const vector3& Pos)
 {
@@ -126,7 +110,7 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 	// Check if already at the desired position
 	const float SqDistanceToDest = DesiredMovement.SqLength2D();
 	const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
-	if (IsSameHeightLevel && SqDistanceToDest < SqLinearTolerance)
+	if (IsSameHeightLevel && SqDistanceToDest < DEM::AI::Steer::SqLinearTolerance)
 	{
 		Queue.RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
 		Character.State = ECharacterState::Stand;
@@ -210,7 +194,7 @@ static float ProcessFacing(CCharacterControllerComponent& Character, CActionQueu
 	const float AngleAbs = IsNegative ? -DesiredRotation : DesiredRotation;
 
 	// Already looking at the desired direction
-	if (AngleAbs < AngularTolerance) return 0.f;
+	if (AngleAbs < DEM::AI::Turn::AngularTolerance) return 0.f;
 
 	float Speed = Character.MaxAngularSpeed;
 
@@ -327,7 +311,7 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 			const vector3 Pos = BtVectorToVector(BodyTfm * btVector3(-Offset.x, -Offset.y, -Offset.z));
 			const float SqDistance = vector3::SqDistance2D(pSteerAction->_Dest, Pos);
 			const bool IsSameHeightLevel = (std::fabsf(pSteerAction->_Dest.y - Pos.y) < Character.Height);
-			if (IsSameHeightLevel && SqDistance < SqLinearTolerance)
+			if (IsSameHeightLevel && SqDistance < DEM::AI::Steer::SqLinearTolerance)
 			{
 				pQueue->RemoveAction(*pSteerAction, DEM::Game::EActionStatus::Succeeded);
 				if (Character.State == ECharacterState::Walk || Character.State == ECharacterState::ShortStep)
@@ -345,7 +329,7 @@ void CheckCharacterControllersArrival(DEM::Game::CGameWorld& World, Physics::CPh
 			// Check angular arrival
 			const vector3 LookatDir = BtVectorToVector(BodyTfm.getBasis() * btVector3(0.f, 0.f, -1.f));
 			const float Angle = vector3::Angle2DNorm(LookatDir, pTurnAction->_LookatDirection);
-			if (std::fabsf(Angle) < AngularTolerance)
+			if (std::fabsf(Angle) < DEM::AI::Turn::AngularTolerance)
 				pQueue->RemoveAction(*pTurnAction, DEM::Game::EActionStatus::Succeeded);
 		}
 	});
