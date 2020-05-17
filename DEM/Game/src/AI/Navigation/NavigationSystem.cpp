@@ -20,7 +20,8 @@ static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFA
 }
 //---------------------------------------------------------------------
 
-static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
+// Returns whether an agent can continue to perform the current navigation task
+static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 {
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
 
@@ -35,26 +36,20 @@ static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 		{
 			if (dtVequal2D(Position.v, Agent.Corridor.getPos()))
 			{
-				// TODO: finish recovery, if was active. Preserve sub-action, if exists.
 				Agent.Mode = ENavigationMode::Surface;
 				if (PrevPoly != Agent.Corridor.getFirstPoly())
 					Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
-				return;
+				return true;
 			}
 		}
 	}
 	else
 	{
 		// Agent is idle or moves along the offmesh connection, check the current poly validity
-		if (Agent.pNavQuery->isValidPolyRef(Agent.Corridor.getFirstPoly(), pNavFilter)) return;
+		if (Agent.pNavQuery->isValidPolyRef(Agent.Corridor.getFirstPoly(), pNavFilter)) return true;
 
 		// If offmesh connection became invalid, cancel its traversal and fail navigation task
-		if (Agent.Mode == ENavigationMode::Offmesh)
-		{
-			// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-			Agent.Mode = ENavigationMode::Recovery;
-			return;
-		}
+		if (Agent.Mode == ENavigationMode::Offmesh) return false;
 	}
 
 	// Our current poly is unknown or invalid, find the nearest valid one
@@ -67,10 +62,8 @@ static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 	if (!NearestRef)
 	{
 		// No poly found in a recovery radius, agent can't recover and needs external position change
-		// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-		Agent.Mode = ENavigationMode::Recovery;
 		Agent.Corridor.reset(0, Position.v);
-		return;
+		return false;
 	}
 
 	// Check if our new location is far enough from the navmesh to enable recovery mode
@@ -106,10 +99,13 @@ static void UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 		Agent.Corridor.fixPathStart(NearestRef, NearestPos);
 		Agent.State = ENavigationState::Requested;
 	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
-static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
+// Returns whether an agent can continue to perform the current navigation task
+static bool UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
@@ -119,10 +115,11 @@ static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 
 	if (Agent.State != ENavigationState::Idle)
 	{
-		if (dtVequal(Agent.TargetPos.v, Action._Destination.v))
+		if (dtVequal2D(Agent.TargetPos.v, Action._Destination.v) &&
+			n_fabs(Agent.TargetPos.y - Action._Destination.y) < Agent.Height)
 		{
 			// Target remains static but we must check its poly validity anyway
-			if (Agent.pNavQuery->isValidPolyRef(Agent.TargetRef, pNavFilter)) return;
+			if (Agent.pNavQuery->isValidPolyRef(Agent.TargetRef, pNavFilter)) return true;
 		}
 		else if (Agent.State == ENavigationState::Following)
 		{
@@ -137,7 +134,7 @@ static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 				{
 					Agent.TargetRef = Agent.Corridor.getLastPoly();
 					Agent.TargetPos = Agent.Corridor.getTarget();
-					return;
+					return true;
 				}
 			}
 		}
@@ -147,20 +144,12 @@ static void UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 	const float TargetExtents[3] = { MaxTargetOffset, Agent.Height, MaxTargetOffset };
 	Agent.pNavQuery->findNearestPoly(Action._Destination.v, TargetExtents, pNavFilter, &Agent.TargetRef, Agent.TargetPos.v);
 
+	// If no poly found in a target radius, navigation task is failed
 	if (!Agent.TargetRef || dtVdist2DSqr(Action._Destination.v, Agent.TargetPos.v) > MaxTargetOffsetSq)
-	{
-		// No poly found in a target radius, navigation task is failed
-		// TODO: fail navigation, cancel traversal sub-action, its system will handle cancelling from the middle
-		if (Agent.State != ENavigationState::Idle)
-		{
-			Agent.Corridor.reset(Agent.Corridor.getFirstPoly(), Agent.Corridor.getPos());
-			Agent.State = ENavigationState::Idle;
-		}
-	}
-	else
-	{
-		Agent.State = ENavigationState::Requested;
-	}
+		return false;
+
+	Agent.State = ENavigationState::Requested;
+	return true;
 }
 //---------------------------------------------------------------------
 
@@ -390,6 +379,20 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 }
 //---------------------------------------------------------------------
 
+static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, DEM::Game::EActionStatus Result)
+{
+	while (auto pNavigateAction = Queue.FindActive<Navigate>())
+		Queue.RemoveAction(*pNavigateAction, Result);
+
+	if (auto CurrPoly = Agent.Corridor.getFirstPoly())
+		Agent.Corridor.reset(CurrPoly, Agent.Corridor.getPos());
+
+	Agent.State = ENavigationState::Idle;
+	if (Agent.Mode == ENavigationMode::Offmesh)
+		Agent.Mode = ENavigationMode::Recovery;
+}
+//---------------------------------------------------------------------
+
 void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathRequestQueue& PathQueue, bool NewFrame)
 {
 	World.ForEachEntityWith<CNavAgentComponent, DEM::Game::CActionQueueComponent, const DEM::Game::CSceneComponent>(
@@ -400,15 +403,20 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 	{
 		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
-		const auto* pNavFilter = Agent.Settings->GetQueryFilter();
+		// Update navigation status from the curent agent position
+		if (!UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Agent))
+		{
+			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+			return;
+		}
 
-		//!!!Set idle: change state, reset intermediate data, handle breaking in the middle of the offmesh connection
-		//???can avoid recalculating straight path edges every frame? do on traversal end or pos changed or corridor invalid?
-
-		const auto& CurrPos = pSceneComponent->RootNode->GetWorldPosition();
-		UpdatePosition(CurrPos, Agent);
-
-		//???if our curr poly is 0, fail navigation request (if any), set idle and early exit?
+		//!!!FIXME: action status is not bound to the last action, need to fix!
+		// If sub-action failed, fail navigation
+		if (pQueue->Status == DEM::Game::EActionStatus::Failed)
+		{
+			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+			return;
+		}
 
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
@@ -420,13 +428,12 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 			Agent.ReplanTime += dt;
 
-			//???check traversal sub-action result before all other? if failed, fail navigation task or replan.
-			// if succeeded and was offmesh, return to navmesh, and only after it update position.
-
-			UpdateDestination(*pNavigateAction, Agent);
-			if (Agent.State == ENavigationState::Idle) return;
-
-			//!!!if actor is already at the new destination, finish Navigate action (success), set idle and exit
+			// Process target location changes and validity
+			if (!UpdateDestination(*pNavigateAction, Agent))
+			{
+				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+				return;
+			}
 
 			// Check current path validity, replan if can't continue using it
 			if (!CheckCurrentPath(Agent))
@@ -435,16 +442,13 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			// Do async path planning
 			if (Agent.State == ENavigationState::Requested)
 			{
-				//???!!!TODO: cancel traversal sub-action, if any?!
-
 				RequestPath(Agent, PathQueue);
 			}
 			else if (Agent.State == ENavigationState::Planning)
 			{
 				if (!CheckAsyncPathResult(Agent, PathQueue))
 				{
-					// TODO: fail navigation, reset corridor, cancel traversal sub-action, its system will handle cancelling from the middle
-					Agent.State = ENavigationState::Idle;
+					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
 					return;
 				}
 			}
@@ -453,15 +457,15 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (Agent.Mode == ENavigationMode::Recovery)
 			{
 				// Try to return to the navmesh by the shortest path
+				const vector3 ValidPos = Agent.Corridor.getPos();
 				auto pAction = Agent.Settings->FindAction(Agent, 0, 0, nullptr);
-				if (!pAction || !pAction->PushSubAction(*pQueue, *pNavigateAction, CurrPos, CurrPos, {}))
-				{
-					// recovery failed
-					//???fail navigation? set Idle?
-				}
+				if (!pAction || !pAction->PushSubAction(*pQueue, *pNavigateAction, ValidPos, ValidPos, {}))
+					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
 			{
+				const auto* pNavFilter = Agent.Settings->GetQueryFilter();
+
 				Agent.PathOptimizationTime += dt;
 
 				// FIXME: only if necessary events happened? like offsetting from expected position.
@@ -475,6 +479,9 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 					Agent.PathOptimizationTime = 0.f;
 				}
 
+				//!!!!!!!!!!!!!!!!!!!!!!!!!
+				//!!!!!!check if the last action is finished successfully, then remove navigation task with success!
+
 				vector3 ActionDest;
 				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, ActionDest))
 				{
@@ -484,15 +491,13 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				}
 				else
 				{
-					// straight path calculation failed
-					//???fail navigation? set Idle?
+					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
 				}
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
 		{
-			// set idle, navigation is cancelled
-			//???need UpdatePosition once? or need UpdatePosition even when no Navigate action (outside if-else)?
+			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Cancelled);
 		}
 	});
 }
