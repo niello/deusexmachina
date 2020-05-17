@@ -1,13 +1,19 @@
 #include "NavAgentSettings.h"
-#include <AI/Navigation/TraversalController.h>
+#include <AI/Navigation/TraversalAction.h>
 
 namespace DEM::AI
 {
 RTTI_CLASS_IMPL(DEM::AI::CNavAgentSettings, Resources::CResourceObject);
 
-CNavAgentSettings::CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DEM::AI::PTraversalController>&& Controllers)
-	: _Controllers(std::move(Controllers))
+CNavAgentSettings::CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DEM::AI::PTraversalAction>&& Actions, std::vector<bool>&& UseSmartObjects)
+	: _Actions(std::move(Actions))
+	, _UseSmartObjects(std::move(UseSmartObjects))
 {
+	if (_Actions.size() > 64) _Actions.resize(64);
+	if (_UseSmartObjects.size() > 64) _UseSmartObjects.resize(64);
+	_Actions.shrink_to_fit();
+	_UseSmartObjects.shrink_to_fit();
+
 	// NB: it is not recommended in Detour docs to use costs less than 1.0
 	for (auto [Area, Cost] : Costs)
 		if (Cost > 1.f)
@@ -20,17 +26,19 @@ CNavAgentSettings::~CNavAgentSettings()
 }
 //---------------------------------------------------------------------
 
-CTraversalController* CNavAgentSettings::FindController(unsigned char AreaType, dtPolyRef PolyRef) const
+CTraversalAction* CNavAgentSettings::FindAction(const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutSmartObject) const
 {
-	if (AreaType > 63 || AreaType >= _Controllers.size()) return nullptr;
+	const bool UseSmart = (AreaType < _UseSmartObjects.size()) ? _UseSmartObjects[AreaType] : false;
+	if (UseSmart)
+	{
+		NOT_IMPLEMENTED;
+		// find smart object
+		// get action (need also agent pos?)
+		// if action found, return it
+	}
 
-	// TODO: per-poly controllers
-	//???could use flag instead of area, but flag must be accessed separately and area is already available.
-	// if (AreaType == AREA_CONTROLLED)
-	//   return FindPolyController(PolyRef);
-	// else
-
-	return _Controllers[AreaType];
+	if (pOutSmartObject) *pOutSmartObject = {};
+	return (AreaType < _Actions.size()) ? _Actions[AreaType] : nullptr;
 }
 //---------------------------------------------------------------------
 

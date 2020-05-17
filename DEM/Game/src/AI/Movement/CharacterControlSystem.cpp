@@ -2,7 +2,7 @@
 #include <Game/ECS/GameWorld.h>
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Game/ECS/Components/CharacterControllerComponent.h>
-#include <AI/Movement/SteeringController.h>
+#include <AI/Movement/SteerAction.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/RigidBody.h>
 #include <Physics/CollisionShape.h>

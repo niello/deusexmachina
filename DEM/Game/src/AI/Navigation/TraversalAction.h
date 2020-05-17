@@ -21,9 +21,9 @@ namespace DEM::Game
 namespace DEM::AI
 {
 struct CNavAgentComponent;
-using PTraversalController = Ptr<class CTraversalController>;
+using PTraversalController = Ptr<class CTraversalAction>;
 
-class CTraversalController : public ::Core::CObject
+class CTraversalAction : public ::Core::CObject
 {
 	RTTI_CLASS_DECL;
 
@@ -37,8 +37,8 @@ public:
 		NeedDistanceToTarget = 0x02
 	};
 
-	virtual CStrID FindAction(const CNavAgentComponent& Agent, unsigned char AreaType, dtPolyRef Poly, Game::HEntity* pOutSmartObject) = 0;
-	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+	virtual bool   CanSkipPathPoint(float SqDistance) const = 0;
+	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
 	virtual void   SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) {}
 };

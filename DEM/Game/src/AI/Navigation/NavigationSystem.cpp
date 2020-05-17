@@ -4,15 +4,12 @@
 #include <Game/ECS/Components/SceneComponent.h>
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Navigation/PathRequestQueue.h>
-#include <AI/Navigation/TraversalController.h>
+#include <AI/Navigation/TraversalAction.h>
 #include <DetourCommon.h>
 #include <array>
 
 namespace DEM::AI
 {
-//!!!FIXME: DUPLICATION, see CharacterControlSystem!
-//hide inside Steer action factory!
-constexpr float SqLinearTolerance = 0.0004f * 0.0004f;
 
 //???set height limit to check? agent height is good, must distinguish between different floors.
 //otherwise false equalities may happen!
@@ -282,7 +279,6 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 			pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
-	vector3 Dest;
 	vector3 NextDest;
 	unsigned char Flags;
 	unsigned char AreaType;
@@ -291,12 +287,13 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	if (dtStatusFailed(Status)) return false;
 
 	// If no action available, give an agent a chance to trigger an offmesh connection
+	//???!!!cache current smart object until poly changes?
 	Game::HEntity SmartObject;
-	auto pController = Agent.Settings->FindController(Agent.CurrAreaType, pCurrPath[0]);
-	auto ActionID = pController ? pController->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject) : CStrID::Empty;
-	if (!ActionID && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return false;
+	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject);
+	if (!pAction && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return false;
 
 	// Advance through path points until the traversal action is generated
+	vector3 Dest;
 	do
 	{
 		// Elongate path edge
@@ -313,35 +310,38 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
 			if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
 			{
+				auto pOffmeshAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
+				if (!pOffmeshAction) break;
+
 				// Adjust the path over the off-mesh connection.
 				// Path validity check will ensure that bad/blocked connections will be replanned.
 				// NB: for offmesh actions Dest is offmesh start and NextDest is offmesh end
 				dtPolyRef OffmeshRefs[2];
 				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
 				{
-					pController = Agent.Settings->FindController(AreaType, PolyRef);
-					ActionID = pController ? pController->FindAction(Agent, AreaType, PolyRef, &SmartObject) : CStrID::Empty;
-					if (ActionID)
-						Agent.Mode = ENavigationMode::Offmesh;
+					pAction = pOffmeshAction;
+					Agent.Mode = ENavigationMode::Offmesh;
 				}
 			}
+
+			//???break always or only at different action? what if offmesh offered steering?
+			//!!!if !pAction, must break!
 			break;
 		}
 
 		// Close enough to the next path point, assume already traversed
-		//???pController->CanSkipPathPoint(ActionType, SmartObject) instead of !SmartObject?
-		if (!SmartObject && DistanceSq < SqLinearTolerance)
+		if (pAction->CanSkipPathPoint(DistanceSq))
 		{
 			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
 			if (dtStatusFailed(Status)) return false;
 			continue;
 		}
 
+		//???pack into pAction->IsContinuableBy/IsSame(pNextAction)?
 		// The next path edge requires different traversal action, finish
 		Game::HEntity NextSmartObject;
-		auto pNextController = Agent.Settings->FindController(AreaType, PolyRef);
-		auto NextActionID = pNextController ? pNextController->FindAction(Agent, AreaType, PolyRef, &NextSmartObject) : CStrID::Empty;
-		if (ActionID != NextActionID || SmartObject != NextSmartObject) break;
+		auto pNextAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &NextSmartObject);
+		if (!pNextAction || pAction->GetRTTI() != pNextAction->GetRTTI() || SmartObject != NextSmartObject) break;
 
 		// Get the next path edge end point
 		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
@@ -357,13 +357,20 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	}
 	while (true);
 
+	if (!pAction) return false;
+
+	// TODO: NEW ACTIONS
+	// create/get action instance by type as sub-action of Navigate
+	// set Dest & NextDest
+	// if need to update distance after dest, calc and set to new action instance distance to the next action / to final target
+
 	// Push sub-action on top of the navigation action, updating or clearing previous one
 	OutDest = Dest;
-	auto Result = pController->PushSubAction(Queue, NavAction, ActionID, Dest, NextDest, SmartObject);
-	if (Result & CTraversalController::Failure) return false;
+	auto Result = pAction->PushSubAction(Queue, NavAction, Dest, NextDest, SmartObject);
+	if (Result & CTraversalAction::Failure) return false;
 
 	// Some controllers require additional distance from current to final destination
-	if (Result & CTraversalController::NeedDistanceToTarget)
+	if (Result & CTraversalAction::NeedDistanceToTarget)
 	{
 		float Distance = vector3::Distance(Dest, NextDest);
 		vector3 PrevPathPoint = NextDest;
@@ -376,7 +383,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 			PrevPathPoint = PathPoint;
 		}
 
-		pController->SetDistanceToTarget(Queue, NavAction, Distance);
+		pAction->SetDistanceToTarget(Queue, NavAction, Distance);
 	}
 
 	return true;
@@ -446,8 +453,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (Agent.Mode == ENavigationMode::Recovery)
 			{
 				// Try to return to the navmesh by the shortest path
-				auto pController = Agent.Settings->FindController(0, 0);
-				if (!pController || !pController->PushSubAction(*pQueue, *pNavigateAction, CStrID::Empty, CurrPos, CurrPos, {}))
+				auto pAction = Agent.Settings->FindAction(Agent, 0, 0, nullptr);
+				if (!pAction || !pAction->PushSubAction(*pQueue, *pNavigateAction, CurrPos, CurrPos, {}))
 				{
 					// recovery failed
 					//???fail navigation? set Idle?

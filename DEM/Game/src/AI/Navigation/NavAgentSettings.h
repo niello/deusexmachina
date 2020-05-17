@@ -1,5 +1,6 @@
 #pragma once
 #include <Resources/ResourceObject.h>
+#include <Game/ECS/Entity.h>
 #include <DetourNavMeshQuery.h>
 #include <map>
 
@@ -7,7 +8,8 @@
 
 namespace DEM::AI
 {
-using PTraversalController = Ptr<class CTraversalController>;
+using PTraversalAction = Ptr<class CTraversalAction>;
+struct CNavAgentComponent;
 
 class CNavAgentSettings : public Resources::CResourceObject
 {
@@ -15,18 +17,19 @@ class CNavAgentSettings : public Resources::CResourceObject
 
 protected:
 
-	dtQueryFilter                              _Filter;
-	std::vector<DEM::AI::PTraversalController> _Controllers;
+	dtQueryFilter                          _Filter;
+	std::vector<DEM::AI::PTraversalAction> _Actions;
+	std::vector<bool>                      _UseSmartObjects;
 
 public:
 
-	CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DEM::AI::PTraversalController>&& Controllers);
+	CNavAgentSettings(std::map<U8, float>&& Costs, std::vector<DEM::AI::PTraversalAction>&& Actions, std::vector<bool>&& UseSmartObjects);
 	virtual ~CNavAgentSettings() override;
 
-	virtual bool          IsResourceValid() const override { return true; }
+	virtual bool         IsResourceValid() const override { return true; }
 
-	CTraversalController* FindController(unsigned char AreaType, dtPolyRef PolyRef) const;
-	const dtQueryFilter*  GetQueryFilter() const { return &_Filter; }
+	CTraversalAction*    FindAction(const CNavAgentComponent& Agent, U8 AreaType, dtPolyRef PolyRef, Game::HEntity* pOutSmartObject) const;
+	const dtQueryFilter* GetQueryFilter() const { return &_Filter; }
 };
 
 typedef Ptr<CNavAgentSettings> PNavAgentSettings;

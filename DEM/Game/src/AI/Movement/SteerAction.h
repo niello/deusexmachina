@@ -1,5 +1,5 @@
 #pragma once
-#include <AI/Navigation/TraversalController.h>
+#include <AI/Navigation/TraversalAction.h>
 #include <Events/EventNative.h>
 
 // Provides steering traversal action, processed by the character controller
@@ -51,7 +51,7 @@ public:
 	explicit Turn(const vector3& LookatDirection) : _LookatDirection(LookatDirection) { _LookatDirection.norm(); }
 };
 
-class CSteeringController : public CTraversalController
+class CSteerAction : public CTraversalAction
 {
 	FACTORY_CLASS_DECL;
 
@@ -61,8 +61,8 @@ protected:
 
 public:
 
-	virtual CStrID FindAction(const CNavAgentComponent& Agent, unsigned char AreaType, dtPolyRef Poly, Game::HEntity* pOutSmartObject) override;
-	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+	virtual bool   CanSkipPathPoint(float SqDistance) const override { return SqDistance < Steer::SqLinearTolerance; }
+	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) override;
 	virtual void   SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) override;
 };

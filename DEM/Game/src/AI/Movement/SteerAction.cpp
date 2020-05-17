@@ -1,4 +1,4 @@
-#include "SteeringController.h"
+#include "SteerAction.h"
 #include <Game/ECS/Components/ActionQueueComponent.h>
 #include <Core/Factory.h>
 
@@ -6,22 +6,11 @@ namespace DEM::AI
 {
 RTTI_CLASS_IMPL(Steer, Events::CEventNative);
 RTTI_CLASS_IMPL(Turn, Events::CEventNative);
-FACTORY_CLASS_IMPL(DEM::AI::CSteeringController, 'STCL', CTraversalController);
+FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STCL', CTraversalAction);
 
-CStrID CSteeringController::FindAction(const CNavAgentComponent&, unsigned char, dtPolyRef, Game::HEntity*)
-{
-	// Only Steer action is supported by this controller
-	static const CStrID sidSteer("Steer");
-	return sidSteer;
-}
-//---------------------------------------------------------------------
-
-U8 CSteeringController::PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, CStrID Type,
+U8 CSteerAction::PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 	const vector3& Dest, const vector3& NextDest, Game::HEntity)
 {
-	static const CStrID sidSteer("Steer");
-	if (Type != sidSteer) return false;
-
 	Steer* pSteer;
 	if (!Queue.RequestSubAction(ParentAction, pSteer)) return Failure;
 
@@ -48,7 +37,7 @@ U8 CSteeringController::PushSubAction(Game::CActionQueueComponent& Queue, const 
 }
 //---------------------------------------------------------------------
 
-void CSteeringController::SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance)
+void CSteerAction::SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance)
 {
 	Steer* pSteer;
 	if (Queue.RequestSubAction(ParentAction, pSteer) && pSteer)
