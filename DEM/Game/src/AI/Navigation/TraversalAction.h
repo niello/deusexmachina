@@ -15,7 +15,7 @@ typedef unsigned int dtPolyRef;
 
 namespace DEM::Game
 {
-	struct CActionQueueComponent;
+	class CActionQueueComponent;
 }
 
 namespace DEM::AI

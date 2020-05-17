@@ -417,20 +417,19 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			return;
 		}
 
-		//!!!FIXME: action status is not bound to the last action, need to fix!
-		// If sub-action failed, fail navigation
-		if (pQueue->Status == DEM::Game::EActionStatus::Failed)
-		{
-			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
-			return;
-		}
-
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
-			// Multiple physics frames can be processed inside one logic frame. Only character
-			// position and state may change, target remains the same, but might be reached.
-			// So if there is a sub-action, let's just continue executing it.
-			if (!NewFrame && !pQueue->Stack.empty() && pQueue->Stack.back().get() != pNavigateAction) return;
+			// If sub-action failed, fail navigation
+			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed)
+			{
+				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+				return;
+			}
+
+			// Multiple physics frames can be processed inside one logic frame. Target remains the
+			// same during the logic frame but might be reached. Character position is already processed.
+			// So if there is a sub-action, let's just continue executing it, without unnecessary update.
+			if (!NewFrame && pQueue->GetActiveStackTop() != pNavigateAction) return;
 
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 			Agent.ReplanTime += dt;
@@ -487,7 +486,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				}
 
 				//!!!!!!!!!!!!!!!!!!!!!!!!!
-				//!!!!!!check if the last action is finished successfully, then remove navigation task with success!
+				//!!!!!!check if THE LAST action is finished successfully, then remove navigation task with success!
 
 				vector3 ActionDest;
 				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, ActionDest))
