@@ -35,9 +35,17 @@ void CNavMeshDebugDraw::DrawNavMeshPolyAt(const DEM::AI::CNavMesh& NavMesh, cons
 	if (!_pQuery) _pQuery = dtAllocNavMeshQuery();
 	if (_pQuery->getAttachedNavMesh() != pDtNavMesh && dtStatusFailed(_pQuery->init(pDtNavMesh, 16))) return;
 	if (dtStatusFailed(_pQuery->findNearestPoly(Pos.v, Extents, &Filter, &Ref, Nearest))) return;
+	if (!n_fequal(Pos.x, Nearest[0]) || !n_fequal(Pos.z, Nearest[2])) return;
 
-	if (n_fequal(Pos.x, Nearest[0]) && n_fequal(Pos.z, Nearest[2]))
-		duDebugDrawNavMeshPoly(this, *pDtNavMesh, Ref, Color);
+	duDebugDrawNavMeshPoly(this, *pDtNavMesh, Ref, Color);
+
+	//!!!DBG TMP!
+	static dtPolyRef PrevRef = 0;
+	if (Ref != PrevRef)
+	{
+		::Sys::DbgOut(("Curr nav poly: " + std::to_string(Ref) + '\n').c_str());
+		PrevRef = Ref;
+	}
 }
 //---------------------------------------------------------------------
 

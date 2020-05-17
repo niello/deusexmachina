@@ -23,6 +23,8 @@ static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFA
 // Returns whether an agent can continue to perform the current navigation task
 static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 {
+	const float RecoveryRadius = std::min(Agent.Radius * 2.f, 20.f);
+	const float SqRecoveryThreshold = Agent.Radius * Agent.Radius * 0.01f; // thr = 0.1 * agent.R
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
 
 	if (Agent.Mode != ENavigationMode::Offmesh &&
@@ -34,11 +36,20 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 		// Agent moves along the navmesh surface or recovers to it, adjust the corridor
 		if (Agent.Corridor.movePosition(Position.v, Agent.pNavQuery, pNavFilter))
 		{
-			if (dtVequal2D(Position.v, Agent.Corridor.getPos()))
+			const float SqDeviationFromCorridor = dtVdist2DSqr(Position.v, Agent.Corridor.getPos());
+			if (SqDeviationFromCorridor <= SqRecoveryThreshold)
 			{
+				// Close enough to be considered being on the navmesh
 				Agent.Mode = ENavigationMode::Surface;
 				if (PrevPoly != Agent.Corridor.getFirstPoly())
 					Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
+				return true;
+			}
+			else if (SqDeviationFromCorridor <= RecoveryRadius)
+			{
+				// Recover to the corridor start to prevent tunneling
+				Agent.Mode = ENavigationMode::Recovery;
+				Agent.CurrAreaType = 0;
 				return true;
 			}
 		}
@@ -53,7 +64,6 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 	}
 
 	// Our current poly is unknown or invalid, find the nearest valid one
-	const float RecoveryRadius = std::min(Agent.Radius * 2.f, 20.f);
 	const float RecoveryExtents[3] = { RecoveryRadius, Agent.Height, RecoveryRadius };
 	dtPolyRef NearestRef = 0;
 	float NearestPos[3];
@@ -67,16 +77,13 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 	}
 
 	// Check if our new location is far enough from the navmesh to enable recovery mode
-	const float RecoveryThreshold = Agent.Radius * 0.1f;
-	if (dtVdist2DSqr(Position.v, NearestPos) > RecoveryThreshold * RecoveryThreshold)
+	if (dtVdist2DSqr(Position.v, NearestPos) > SqRecoveryThreshold)
 	{
-		// TODO: must cancel current traversal sub-action even without replanning, if was not already recovering
 		Agent.Mode = ENavigationMode::Recovery;
 		Agent.CurrAreaType = 0;
 	}
 	else
 	{
-		// TODO: finish recovery, if was active
 		Agent.Mode = ENavigationMode::Surface;
 		Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(NearestRef, &Agent.CurrAreaType);
 	}
@@ -85,7 +92,7 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 	{
 		Agent.Corridor.reset(NearestRef, NearestPos);
 	}
-	else
+	else if (Agent.Corridor.getFirstPoly() != NearestRef)
 	{
 		// TODO: if this doesn't work as intended, may implement the following logic:
 		// 1. Check if the nearest poly is one on our path (or only 1st poly in the corridor, or 1st and 2nd)
@@ -459,7 +466,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				// Try to return to the navmesh by the shortest path
 				const vector3 ValidPos = Agent.Corridor.getPos();
 				auto pAction = Agent.Settings->FindAction(Agent, 0, 0, nullptr);
-				if (!pAction || !pAction->PushSubAction(*pQueue, *pNavigateAction, ValidPos, ValidPos, {}))
+				if (!pAction || (pAction->PushSubAction(*pQueue, *pNavigateAction, ValidPos, ValidPos, {}) & CTraversalAction::Failure))
 					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
