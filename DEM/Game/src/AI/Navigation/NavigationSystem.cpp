@@ -23,9 +23,12 @@ static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFA
 // Returns whether an agent can continue to perform the current navigation task
 static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 {
-	const float RecoveryRadius = std::min(Agent.Radius * 2.f, 20.f);
-	const float SqRecoveryThreshold = Agent.Radius * Agent.Radius * 0.01f; // thr = 0.1 * agent.R
 	const auto* pNavFilter = Agent.Settings->GetQueryFilter();
+	const float RecoveryRadius = std::min(Agent.Radius * 2.f, 20.f);
+
+	// When already recovering, reduce threshold 10 times to avoid jitter on the border
+	const float SqRecoveryThreshold = Agent.Radius * Agent.Radius *
+		(Agent.Mode == ENavigationMode::Recovery) ? 0.0001f : 0.01f;
 
 	if (Agent.Mode != ENavigationMode::Offmesh &&
 		Agent.State != ENavigationState::Idle &&
