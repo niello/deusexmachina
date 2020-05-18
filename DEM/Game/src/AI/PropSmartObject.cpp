@@ -419,7 +419,7 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 	if (GetEntity()->GetAttr<vector3>(Vel, CStrID("LinearVelocity")) && Vel.SqLength2D() > 0.f)
 	{
 		vector3 Dist = Pos - pActor->Position;
-		float MaxSpeed = pActor->GetMotorSystem().GetMaxSpeed();
+		float MaxSpeed = 0.f; //pActor->GetMotorSystem().GetMaxSpeed();
 		float Time;
 
 		if (true) // pActor->TargetPosPredictionMode == Quadratic

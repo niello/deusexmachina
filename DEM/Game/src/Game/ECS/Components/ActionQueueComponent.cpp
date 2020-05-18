@@ -42,26 +42,53 @@ Events::CEventBase* CActionQueueComponent::FindActive(Events::CEventID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CActionQueueComponent::RemoveAction(const Events::CEventBase& Action, EActionStatus Reason)
+bool CActionQueueComponent::FinalizeActiveAction(const Events::CEventBase& Action, EActionStatus Result)
 {
-	if (Queue.empty()) return false;
+	// Result must be a terminal status
+	if (Result == EActionStatus::New || Result == EActionStatus::Active) return false;
 
-	if (Queue.front().get() == &Action)
-	{
-		Stack.clear();
-		Queue.pop_front();
-		Status = Reason;
-		return true;
-	}
-
-	auto It = std::find_if(Stack.begin(), Stack.end(), [&Action](const auto& Elm)
+	// Action must be in active stack
+	auto It = std::find_if(_Stack.begin(), _Stack.end(), [&Action](const auto& Elm)
 	{
 		return Elm.get() == &Action;
 	});
-	if (It == Stack.cend()) return false;
+	if (It == _Stack.cend()) return false;
 
-	Stack.erase(It, Stack.end());
-	Status = Reason;
+	// Cancel all sub-actions and set our (top) action status
+	_Stack.erase(It, _Stack.end());
+	_Status = Result;
+	return true;
+}
+//---------------------------------------------------------------------
+
+bool CActionQueueComponent::RemoveAction(const Events::CEventBase& Action)
+{
+	// If removing active root, clear the whole stack and pop the next action from the queue
+	if (!_Stack.empty() && _Stack.front().get() == &Action)
+	{
+		_Stack.clear();
+		if (!_Queue.empty())
+		{
+			_Stack.push_back(std::move(_Queue.front()));
+			_Queue.pop_front();
+			_Status = EActionStatus::New;
+		}
+		else if (_Status == EActionStatus::New || _Status == EActionStatus::Active)
+		{
+			// If result was not set yet, set success
+			_Status = EActionStatus::Succeeded;
+		}
+		return true;
+	}
+
+	// If action is not current, try to remove from queue
+	auto It = std::find_if(_Queue.begin(), _Queue.end(), [&Action](const auto& Elm)
+	{
+		return Elm.get() == &Action;
+	});
+	if (It == _Queue.cend()) return false;
+
+	_Queue.erase(It);
 	return true;
 }
 //---------------------------------------------------------------------

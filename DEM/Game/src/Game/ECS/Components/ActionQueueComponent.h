@@ -45,6 +45,13 @@ public:
 	Events::CEventBase* EnqueueAction(Events::PEventBase&& Action);
 	Events::CEventBase* FindActive(Events::CEventID ID) const;
 	Events::CEventBase* GetActiveStackTop() const { return _Stack.empty() ? nullptr : _Stack.back().get(); }
+	void                ActivateStack() { if (!_Stack.empty() && _Status == EActionStatus::New) _Status = EActionStatus::Active; }
+	bool                FinalizeActiveAction(const Events::CEventBase& Action, EActionStatus Result);
+	bool                RemoveActiveAction() { if (!_Stack.empty()) RemoveAction(*_Stack.front()); }
+	bool                RemoveAction(const Events::CEventBase& Action);
+
+	// add or update for parent, could always add if using pool, also can select
+	// just freed action of required type on the deleted part of the stack
 
 	template<typename T, typename... TArgs>
 	T* EnqueueAction(TArgs&&... Args)
@@ -66,7 +73,6 @@ public:
 
 	/////////////////////////////
 
-	bool RemoveAction(const Events::CEventBase& Action, EActionStatus Reason);
 	bool RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent, Events::CEventBase*& pOutSubAction);
 
 	template<typename T>
