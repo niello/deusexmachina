@@ -42,6 +42,19 @@ Events::CEventBase* CActionQueueComponent::FindActive(Events::CEventID ID) const
 }
 //---------------------------------------------------------------------
 
+Events::CEventBase* CActionQueueComponent::GetImmediateSubAction(const Events::CEventBase& Parent) const
+{
+	// Parent must be in active stack
+	auto It = std::find_if(_Stack.begin(), _Stack.end(), [&Parent](const auto& Elm)
+	{
+		return Elm.get() == &Parent;
+	});
+	if (It == _Stack.cend()) return nullptr;
+	++It;
+	return (It == _Stack.cend()) ? nullptr : It->get();
+}
+//---------------------------------------------------------------------
+
 bool CActionQueueComponent::FinalizeActiveAction(const Events::CEventBase& Action, EActionStatus Result)
 {
 	// Result must be a terminal status
@@ -93,37 +106,32 @@ bool CActionQueueComponent::RemoveAction(const Events::CEventBase& Action)
 }
 //---------------------------------------------------------------------
 
-bool CActionQueueComponent::RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent, Events::CEventBase*& pOutSubAction)
+// Returns an action object for reuse, if found
+Events::PEventBase CActionQueueComponent::PrepareToPushSubAction(Events::CEventID ID, const Events::CEventBase& Parent)
 {
-	pOutSubAction = nullptr;
+	Events::PEventBase FreeObject;
 
-	// Find parent in active actions, fail if not found
-	auto It = std::find_if(Stack.begin(), Stack.end(), [&Parent](const auto& Elm)
+	// Parent must be in active stack
+	auto SubStart = std::find_if(_Stack.begin(), _Stack.end(), [&Parent](const auto& Elm)
 	{
 		return Elm.get() == &Parent;
 	});
-	if (It == Stack.cend() && Queue.front().get() != &Parent) return false;
+	if (SubStart == _Stack.cend()) return nullptr;
+	++SubStart;
 
-	// If no sub-actions exist at all, exit
-	if (Stack.empty()) return true;
-
-	// Check its sub-action, if exists
-	if (It == Stack.cend()) It = Stack.begin();
-	else
+	// Cancel all sub-actions of the specified parent. If a sub-action of
+	// requested type is being discarded, reuse its object to avoid allocation.
+	for (auto It = SubStart; It != _Stack.end(); ++It)
 	{
-		++It;
-		if (It == Stack.cend()) return true;
+		if (It->get()->GetID() == ID)
+		{
+			FreeObject = std::move(*It);
+			break;
+		}
 	}
+	_Stack.erase(SubStart, _Stack.end());
 
-	// Sub-action is not of requested type, cancel the whole sub-stack of the parent
-	if ((*It)->GetID() != ID)
-	{
-		Stack.erase(It, Stack.end());
-		return true;
-	}
-
-	pOutSubAction = It->get();
-	return true;
+	return FreeObject;
 }
 //---------------------------------------------------------------------
 

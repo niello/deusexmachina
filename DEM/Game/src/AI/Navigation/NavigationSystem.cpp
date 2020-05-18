@@ -266,7 +266,7 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 
 // TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
 static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, vector3& OutDest)
+	const Navigate& NavAction, const vector3& ExactPos, vector3& OutDest)
 {
 	const float* pCurrPos = Agent.Corridor.getPos();
 	const auto* pCurrPath = Agent.Corridor.getPath();
@@ -298,7 +298,8 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 		// That was the last edge, finish
 		if (!dtStatusInProgress(Status)) break;
 
-		const float DistanceSq = dtVdist2DSqr(pCurrPos, Dest.v);
+		// The distance must be calculated from he real agent position, not the projected corridor pos
+		const float DistanceSq = vector3::SqDistance2D(ExactPos, Dest);
 
 		// Check entering an offmesh connection
 		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
@@ -379,7 +380,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 			PrevPathPoint = PathPoint;
 		}
 
-		pAction->SetDistanceToTarget(Queue, NavAction, Distance);
+		pAction->SetDistanceAfterDest(Queue, NavAction, Distance);
 	}
 
 	return true;
@@ -389,7 +390,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, DEM::Game::EActionStatus Result)
 {
 	while (auto pNavigateAction = Queue.FindActive<Navigate>())
-		Queue.RemoveAction(*pNavigateAction, Result);
+		Queue.FinalizeActiveAction(*pNavigateAction, Result);
 
 	if (auto CurrPoly = Agent.Corridor.getFirstPoly())
 		Agent.Corridor.reset(CurrPoly, Agent.Corridor.getPos());
@@ -411,7 +412,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
 		// Update navigation status from the curent agent position
-		if (!UpdatePosition(pSceneComponent->RootNode->GetWorldPosition(), Agent))
+		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
+		if (!UpdatePosition(Pos, Agent))
 		{
 			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
 			return;
@@ -489,7 +491,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				//!!!!!!check if THE LAST action is finished successfully, then remove navigation task with success!
 
 				vector3 ActionDest;
-				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, ActionDest))
+				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, ActionDest))
 				{
 					// Use our traversal target to optimize the path, because we know that there is a straight way to it
 					if (OptimizePath && Agent.Mode == ENavigationMode::Surface)

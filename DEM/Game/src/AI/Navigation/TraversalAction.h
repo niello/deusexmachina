@@ -37,10 +37,10 @@ public:
 		NeedDistanceToTarget = 0x02
 	};
 
-	virtual bool   CanSkipPathPoint(float SqDistance) const = 0;
-	virtual U8     PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
+	virtual bool CanSkipPathPoint(float SqDistance) const = 0;
+	virtual U8   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
-	virtual void   SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) {}
+	virtual void SetDistanceAfterDest(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) {}
 };
 
 }

@@ -31,6 +31,8 @@ protected:
 	std::deque<Events::PEventBase>  _Queue;
 	EActionStatus                   _Status = EActionStatus::Succeeded;
 
+	Events::PEventBase  PrepareToPushSubAction(Events::CEventID ID, const Events::CEventBase& Parent);
+
 public:
 
 	CActionQueueComponent() = default;
@@ -45,13 +47,11 @@ public:
 	Events::CEventBase* EnqueueAction(Events::PEventBase&& Action);
 	Events::CEventBase* FindActive(Events::CEventID ID) const;
 	Events::CEventBase* GetActiveStackTop() const { return _Stack.empty() ? nullptr : _Stack.back().get(); }
+	Events::CEventBase* GetImmediateSubAction(const Events::CEventBase& Parent) const;
 	void                ActivateStack() { if (!_Stack.empty() && _Status == EActionStatus::New) _Status = EActionStatus::Active; }
 	bool                FinalizeActiveAction(const Events::CEventBase& Action, EActionStatus Result);
-	bool                RemoveActiveAction() { if (!_Stack.empty()) RemoveAction(*_Stack.front()); }
+	bool                ClearActiveStack() { if (!_Stack.empty()) RemoveAction(*_Stack.front()); }
 	bool                RemoveAction(const Events::CEventBase& Action);
-
-	// add or update for parent, could always add if using pool, also can select
-	// just freed action of required type on the deleted part of the stack
 
 	template<typename T, typename... TArgs>
 	T* EnqueueAction(TArgs&&... Args)
@@ -71,19 +71,43 @@ public:
 		return pAction ? static_cast<T*>(pAction) : nullptr;
 	}
 
-	/////////////////////////////
-
-	bool RequestSubAction(Events::CEventID ID, const Events::CEventBase& Parent, Events::CEventBase*& pOutSubAction);
-
-	template<typename T>
-	bool RequestSubAction(const Events::CEventBase& Parent, T*& pOutSubAction)
+	template<typename T, typename... TArgs>
+	T* PushSubActionForParent(const Events::CEventBase& Parent, TArgs&&... Args)
 	{
 		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
 
-		Events::CEventBase* pSubAction;
-		if (!RequestSubAction(T::RTTI, Parent, pSubAction)) return false;
-		pOutSubAction = pSubAction ? static_cast<T*>(pSubAction) : nullptr;
-		return true;
+		if (_Stack.empty()) return nullptr; //???or push to root?
+
+		if (auto FreeObject = PrepareToPushSubAction(T::RTTI, Parent))
+		{
+			//if constexpr (sizeof...(TArgs) > 0)
+			{
+				// Recreate object in place
+				T* pReused = static_cast<T*>(FreeObject.get());
+				pReused->~T();
+				n_placement_new(pReused, T(std::forward<TArgs>(Args)...));
+			}
+			_Stack.push_back(std::move(FreeObject));
+		}
+		else
+		{
+			_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
+		}
+
+		_Status = EActionStatus::New;
+
+		return static_cast<T*>(_Stack.back().get());
+	}
+
+	template<typename T, typename... TArgs>
+	T* PushSubActionOnTop(TArgs&&... Args)
+	{
+		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+
+		if (_Stack.empty()) return nullptr; //???or push to root?
+		_Stack.push_back(std::make_unique<T>(std::forward<TArgs>(Args)...));
+		_Status = EActionStatus::New;
+		return static_cast<T*>(_Stack.back().get());
 	}
 };
 

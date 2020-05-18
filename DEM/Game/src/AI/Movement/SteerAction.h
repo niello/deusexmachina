@@ -60,7 +60,7 @@ public:
 	virtual bool CanSkipPathPoint(float SqDistance) const override { return SqDistance < Steer::SqLinearTolerance; }
 	virtual U8   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) override;
-	virtual void SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) override;
+	virtual void SetDistanceAfterDest(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) override;
 };
 
 }

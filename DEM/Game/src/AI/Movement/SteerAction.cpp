@@ -11,36 +11,30 @@ FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STCL', CTraversalAction);
 U8 CSteerAction::PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 	const vector3& Dest, const vector3& NextDest, Game::HEntity)
 {
-	Steer* pSteer;
-	if (!Queue.RequestSubAction(ParentAction, pSteer)) return Failure;
-
-	U8 Result = 0;
-	if (pSteer)
+	// FIXME: is Dest change a good criteria for distance update? Move criteria to navigation?
+	U8 Result = NeedDistanceToTarget;
+	float Distance = -0.f;
+	if (auto pAction = Queue.GetImmediateSubAction(ParentAction))
 	{
-		if (pSteer->_Dest != Dest)
+		if (auto pSteer = pAction->As<Steer>())
 		{
-			pSteer->_Dest = Dest;
-			Result |= NeedDistanceToTarget;
+			if (pSteer->_Dest == Dest)
+			{
+				Result &= ~NeedDistanceToTarget;
+				Distance = pSteer->_AdditionalDistance;
+			}
 		}
-		pSteer->_NextDest = NextDest;
-	}
-	else
-	{
-		// TODO: could use pool
-		Queue.Stack.push_back(Events::PEventBase(n_new(Steer(Dest, NextDest, -0.f))));
-		Result |= NeedDistanceToTarget;
 	}
 
-	Queue.Status = DEM::Game::EActionStatus::InProgress;
-
-	return Result;
+	auto pSteer = Queue.PushSubActionForParent<Steer>(ParentAction, Dest, NextDest, Distance);
+	return pSteer ? Result : Failure;
 }
 //---------------------------------------------------------------------
 
-void CSteerAction::SetDistanceToTarget(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance)
+void CSteerAction::SetDistanceAfterDest(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance)
 {
-	Steer* pSteer;
-	if (Queue.RequestSubAction(ParentAction, pSteer) && pSteer)
+	auto pAction = Queue.GetImmediateSubAction(ParentAction);
+	if (auto pSteer = pAction->As<Steer>())
 		pSteer->_AdditionalDistance = Distance;
 }
 //---------------------------------------------------------------------
