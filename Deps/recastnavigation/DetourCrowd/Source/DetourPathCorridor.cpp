@@ -572,6 +572,8 @@ dtStatus dtPathCorridor::appendPath(const float* target, const dtPolyRef* polys,
 	memcpy(m_path + destidx, polys, sizeof(dtPolyRef)*ncopy);
 	m_npath = destidx + ncopy;
 
+	dtVcopy(m_target, target);
+
 	return DT_SUCCESS;
 }
 
