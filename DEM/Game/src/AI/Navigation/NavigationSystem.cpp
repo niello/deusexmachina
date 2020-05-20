@@ -5,7 +5,10 @@
 #include <AI/Navigation/NavAgentComponent.h>
 #include <AI/Navigation/PathRequestQueue.h>
 #include <AI/Navigation/TraversalAction.h>
+#include <AI/Navigation/NavMeshDebugDraw.h>
+#include <Debug/DebugDraw.h>
 #include <DetourCommon.h>
+#include <DetourDebugDraw.h>
 #include <array>
 
 namespace DEM::AI
@@ -527,6 +530,76 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 }
 //---------------------------------------------------------------------
 
+void RenderDebugNavigation(DEM::Game::CGameWorld& World, Debug::CDebugDraw& DebugDraw)
+{
+	World.ForEachEntityWith<const CNavAgentComponent, const DEM::Game::CSceneComponent>(
+		[&DebugDraw](auto EntityID, auto& Entity,
+			const CNavAgentComponent& Agent,
+			const DEM::Game::CSceneComponent* pSceneComponent)
+	{
+		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
+
+		if (Agent.State == ENavigationState::Planning || Agent.State == ENavigationState::Following)
+		{
+			constexpr auto ColorPathLine = Render::ColorRGBANorm(1.f, 0.75f, 0.5f, 1.f);
+			constexpr auto ColorPathCorner = Render::ColorRGBANorm(1.f, 0.9f, 0.f, 1.f);
+			constexpr auto ColorPoly = Render::ColorRGBA(255, 196, 0, 64);
+
+			const float* pCurrPos = Agent.Corridor.getPos();
+			const auto* pCurrPath = Agent.Corridor.getPath();
+
+			// Path polys
+			Debug::CNavMeshDebugDraw DD(DebugDraw);
+			for (int i = 0; i < Agent.Corridor.getPathCount(); ++i)
+				duDebugDrawNavMeshPoly(&DD, *Agent.pNavQuery->getAttachedNavMesh(), pCurrPath[i], ColorPoly);
+
+			// Straight path
+			dtStraightPathContext Ctx;
+			if (dtStatusSucceed(Agent.pNavQuery->initStraightPathSearch(
+				pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
+			{
+				vector3 From = pSceneComponent->RootNode->GetWorldPosition();
+				vector3 To;
+				dtStatus Status;
+				do
+				{
+					Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, To.v, nullptr, nullptr, nullptr, DT_STRAIGHTPATH_AREA_CROSSINGS);
+					if (dtStatusFailed(Status)) break;
+
+					DebugDraw.DrawLine(From, To, ColorPathLine);
+					DebugDraw.DrawPoint(To, 5, ColorPathCorner);
+					From = To;
+				}
+				while (dtStatusInProgress(Status));
+			}
+		}
+
+		/*
+		const char* pNavStr = nullptr;
+		if (pActor->NavState == AINav_Done) pNavStr = "Done";
+		else if (pActor->NavState == AINav_Failed) pNavStr = "Failed";
+		else if (pActor->NavState == AINav_DestSet) pNavStr = "DestSet";
+		else if (pActor->NavState == AINav_Planning) pNavStr = "Planning";
+		else if (pActor->NavState == AINav_Following) pNavStr = "Following";
+
+		CString Text;
+		Text.Format(
+			"Nav state: %s\n"
+			"Nav location is %s\n"
+			"Curr poly: %d\n"
+			"Dest poly: %d\n"
+			"Destination: %.4f, %.4f, %.4f\n",
+			pNavStr,
+			pActor->IsNavLocationValid() ? "valid" : "invalid",
+			Corridor.getFirstPoly(),
+			DestRef,
+			DestPoint.x, DestPoint.y, DestPoint.z);
+		//DebugDraw->DrawText(Text.CStr(), 0.65f, 0.1f);
+		*/
+	});
+}
+//---------------------------------------------------------------------
+
 }
 
 /*
@@ -744,61 +817,6 @@ bool CNavSystem::GetNearestValidLocation(dtPolyRef* pPolys, int PolyCount, const
 	OutPos = ProjCenter + SegDir * t;
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-void CNavSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
-{
-	if (!pNavQuery) return;
-
-	const char* pNavStr = nullptr;
-	if (pActor->NavState == AINav_Done) pNavStr = "Done";
-	else if (pActor->NavState == AINav_Failed) pNavStr = "Failed";
-	else if (pActor->NavState == AINav_DestSet) pNavStr = "DestSet";
-	else if (pActor->NavState == AINav_Planning) pNavStr = "Planning";
-	else if (pActor->NavState == AINav_Following) pNavStr = "Following";
-
-	CString Text;
-	Text.Format(
-		"Nav state: %s\n"
-		"Nav location is %s\n"
-		"Curr poly: %d\n"
-		"Dest poly: %d\n"
-		"Destination: %.4f, %.4f, %.4f\n",
-		pNavStr,
-		pActor->IsNavLocationValid() ? "valid" : "invalid",
-		Corridor.getFirstPoly(),
-		DestRef,
-		DestPoint.x, DestPoint.y, DestPoint.z);
-	//DebugDraw->DrawText(Text.CStr(), 0.65f, 0.1f);
-
-	// Path polys, path lines with corners as points
-	if (pActor->NavState == AINav_Planning || pActor->NavState == AINav_Following)
-	{
-		constexpr auto ColorPathLine = Render::ColorRGBANorm(1.f, 0.75f, 0.5f, 1.f);
-		constexpr auto ColorPathCorner = Render::ColorRGBANorm(1.f, 0.9f, 0.f, 1.f);
-		constexpr auto ColorPoly = Render::ColorRGBA(255, 196, 0, 64);
-
-		Debug::CNavMeshDebugDraw DD(DebugDraw);
-		for (int i = 0; i < Corridor.getPathCount(); ++i)
-			duDebugDrawNavMeshPoly(&DD, *pNavQuery->getAttachedNavMesh(), Corridor.getPath()[i], ColorPoly);
-
-		const int MAX_CORNERS = 32;
-		float CornerVerts[MAX_CORNERS * 3];
-		unsigned char CornerFlags[MAX_CORNERS];
-		dtPolyRef CornerPolys[MAX_CORNERS];
-		int CornerCount;
-		pNavQuery->findStraightPath(Corridor.getPos(), Corridor.getTarget(), Corridor.getPath(), Corridor.getPathCount(),
-									CornerVerts, CornerFlags, CornerPolys, &CornerCount, MAX_CORNERS, DT_STRAIGHTPATH_AREA_CROSSINGS);
-		vector3 From = pActor->Position;
-		for (int i = 0; i < CornerCount; ++i)
-		{
-			vector3 To = CornerVerts + (i * 3);
-			DebugDraw.DrawLine(From, To, ColorPathLine);
-			DebugDraw.DrawPoint(To, 5, ColorPathCorner);
-			From = To;
-		}
-	}
 }
 //---------------------------------------------------------------------
 
