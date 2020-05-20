@@ -5,8 +5,6 @@
 #include <Scripting/PropScriptable.h>
 #include <AI/AIServer.h>
 #include <AI/Behaviour/ActionSequence.h>
-#include <AI/Movement/Actions/ActionGotoPosition.h>
-#include <AI/Movement/Actions/ActionGotoTarget.h>
 #include <AI/SmartObj/Actions/ActionGotoSmartObj.h>
 #include <AI/SmartObj/Actions/ActionUseSmartObj.h>
 
@@ -91,6 +89,7 @@ int CPropActorBrain_Go(lua_State* l)
 	//!!!get EMovementType MvmtType from params, set to goto action?!
 	//must be in a base CActionGoto class
 
+	/*
 	CTask Task;
 
 	int NextArg;
@@ -116,6 +115,7 @@ int CPropActorBrain_Go(lua_State* l)
 	Task.ClearQueueOnFailure = ArgCount > NextArg + 2 && lua_toboolean(l, NextArg + 2) != 0;
 
 	This->GetEntity()->GetProperty<Prop::CPropActorBrain>()->EnqueueTask(Task);
+	*/
 	return 0;
 }
 //---------------------------------------------------------------------

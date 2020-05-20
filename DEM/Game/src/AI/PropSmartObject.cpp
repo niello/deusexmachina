@@ -480,6 +480,7 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 		OK;
 	}
 
+	/*
 	if (pNavCache)
 	{
 		for (UPTR i = 0; i < pNavCache->GetCount(); ++i)
@@ -496,6 +497,7 @@ bool CPropSmartObject::GetRequiredActorPosition(CStrID ActionID, const AI::CActo
 	{
 		if (!pActor->GetNavSystem().GetNearestValidLocation(Pos, MinRange, MaxRange, OutPos)) FAIL;
 	}
+	*/
 
 	OK;
 }

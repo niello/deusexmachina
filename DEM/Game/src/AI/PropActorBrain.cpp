@@ -42,7 +42,7 @@ const float CPropActorBrain::LinearArrivalTolerance = 0.009f;
 // In radians
 const float CPropActorBrain::AngularArrivalTolerance = 0.005f;
 
-CPropActorBrain::CPropActorBrain(): MemSystem(this), NavSystem(this)//, MotorSystem(this)
+CPropActorBrain::CPropActorBrain(): MemSystem(this)
 {
 }
 //---------------------------------------------------------------------
@@ -60,15 +60,6 @@ bool CPropActorBrain::InternalActivate()
 	//!!!update on R/H attrs change!
 	Radius = GetEntity()->GetAttr<float>(CStrID("Radius"), 0.3f);
 	Height = GetEntity()->GetAttr<float>(CStrID("Height"), 1.75f);
-
-	NavState = AINav_Done;
-	SetNavLocationValid(false);
-	SetAcceptNearestValidDestination(false);
-
-	//MvmtState = AIMvmt_Done;
-	//MvmtType = AIMvmt_Type_Walk;
-	//SteeringType = AISteer_Type_Seek;
-	//FacingState = AIFacing_Done;
 
 // END Blackboard
 
@@ -167,11 +158,6 @@ bool CPropActorBrain::InternalActivate()
 		bool DecMaking = Desc->Get(CStrID("EnableDecisionMaking"), false);
 		Flags.SetTo(AIMind_EnableDecisionMaking, DecMaking);
 		Flags.SetTo(AIMind_SelectAction, DecMaking);
-
-		NavDestRecoveryTime = Desc->Get(CStrID("NavDestRecoveryTime"), 3.f);
-		
-		NavSystem.Init();
-		//MotorSystem.Init(Desc->Get<PParams>(CStrID("Movement"), nullptr).Get());
 	}
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
@@ -202,8 +188,6 @@ void CPropActorBrain::InternalDeactivate()
 
 	CPropScriptable* pProp = GetEntity()->GetProperty<CPropScriptable>();
 	if (pProp && pProp->IsActive()) DisableSI(*pProp);
-
-	NavSystem.Term();
 }
 //---------------------------------------------------------------------
 
@@ -413,8 +397,6 @@ bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const 
 
 #ifndef _EDITOR
 	UpdateBehaviour();
-
-	NavSystem.Update(FrameTime);
 #endif
 
 	if (Plan.IsValidPtr())
@@ -438,8 +420,6 @@ bool CPropActorBrain::OnUpdateTransform(Events::CEventDispatcher* pDispatcher, c
 	if (Position != Tfm.Translation())
 	{
 		Position = Tfm.Translation();
-		NavSystem.UpdatePosition();
-		//MotorSystem.UpdatePosition();
 	}
 
 	OK;
@@ -496,7 +476,7 @@ void CPropActorBrain::FillWorldState(CWorldState& WSCurr) const
 bool CPropActorBrain::OnNavMeshDataChanged(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
 	//!!!test when actor goes somewhere!
-	NavSystem.SetupState();
+	//NavSystem.SetupState();
 	RequestBehaviourUpdate();
 	OK;
 }

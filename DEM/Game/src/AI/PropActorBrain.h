@@ -3,7 +3,6 @@
 #include <AI/Perception/Sensor.h>
 #include <AI/Perception/Perceptor.h>
 #include <AI/Planning/Goal.h>
-#include <AI/Navigation/NavSystem.h>
 #include <AI/Memory/MemSystem.h>
 #include <Data/Flags.h>
 #include <Data/List.h>
@@ -45,7 +44,7 @@ class CPropActorBrain: public Game::CProperty
 protected:
 
 	CMemSystem					MemSystem;
-	CNavSystem					NavSystem;
+	//CNavSystem					NavSystem;
 	//CMotorSystem				MotorSystem;
 	//TargetSystem //???or in goals?
 	//AnimSystem
@@ -106,17 +105,6 @@ public:
 	float			Radius;
 	float			Height;
 
-	// Navigation
-	ENavState		NavState;
-	float			DistanceToNavDest;
-	float			NavDestRecoveryTime;	// Time before failing if destination is lost with a chance to be recovered
-
-	// Movement
-	//EMovementState	MvmtState;
-	//EMovementType	MvmtType;
-	//ESteeringType	SteeringType;
-	//EFacingState	FacingState;
-
 // END Blackboard
 	
 	CPropActorBrain();
@@ -136,17 +124,10 @@ public:
 
 	bool				IsAtPoint(const vector3& Point, float MinDistance = 0.f, float MaxDistance = 0.f) const;
 	bool				IsLookingAtDir(const vector3& Direction) const;
-	bool				IsNavSystemIdle() const { return !!(NavState & NAV_IDLE); }
-	void				SetNavLocationValid(bool Valid) { return Flags.SetTo(AIMind_Nav_IsLocationValid, Valid); }
-	bool				IsNavLocationValid() const { return Flags.Is(AIMind_Nav_IsLocationValid); }
-	void				SetAcceptNearestValidDestination(bool Accept) { return Flags.SetTo(AIMind_Nav_AcceptNearestValidDest, Accept); }
-	bool				DoesAcceptNearestValidDestination() const { return Flags.Is(AIMind_Nav_AcceptNearestValidDest); }
 
 	//???!!!public members instead?!
 	CMemSystem&			GetMemSystem() { return MemSystem; }
 	const CMemSystem&	GetMemSystem() const { return MemSystem; }
-	CNavSystem&			GetNavSystem() { return NavSystem; }
-	const CNavSystem&	GetNavSystem() const { return NavSystem; }
 
 	const CArray<PSensor>& GetSensors() const { return Sensors; }
 };
