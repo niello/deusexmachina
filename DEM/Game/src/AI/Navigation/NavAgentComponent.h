@@ -57,6 +57,7 @@ struct CNavAgentComponent
 	ENavigationState     State = ENavigationState::Idle;
 	ENavigationMode      Mode = ENavigationMode::Surface;
 	U8                   CurrAreaType = 0;
+	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better?
 };
 
 }

@@ -291,6 +291,8 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject);
 	if (!pAction && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return false;
 
+	Agent.IsTraversingLastEdge = !dtStatusInProgress(Status);
+
 	// Advance through path points until the traversal action is generated
 	vector3 Dest;
 	do
@@ -359,11 +361,6 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 
 	if (!pAction) return false;
 
-	// TODO: NEW ACTIONS
-	// create/get action instance by type as sub-action of Navigate
-	// set Dest & NextDest
-	// if need to update distance after dest, calc and set to new action instance distance to the next action / to final target
-
 	// Push sub-action on top of the navigation action, updating or clearing previous one
 	OutDest = Dest;
 	auto Result = pAction->PushSubAction(Queue, NavAction, Dest, NextDest, SmartObject);
@@ -372,6 +369,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	// Some controllers require additional distance from current to final destination
 	if (Result & CTraversalAction::NeedDistanceToTarget)
 	{
+		//!!!!!!FIXME: calc distance to ne next action change, not to the navigation target!
 		float Distance = vector3::Distance(Dest, NextDest);
 		vector3 PrevPathPoint = NextDest;
 		while (dtStatusInProgress(Status))
@@ -424,10 +422,20 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 
 		if (auto pNavigateAction = pQueue->FindActive<Navigate>())
 		{
-			// If sub-action failed, fail navigation
 			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed)
 			{
+				// If sub-action failed, fail navigation
 				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+				return;
+			}
+			else if (Agent.IsTraversingLastEdge && pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
+			{
+				// If the last edge traversed successfully, finish navigation
+				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Succeeded);
+
+				//???where must happen?
+				pQueue->RemoveAction(*pNavigateAction);
+
 				return;
 			}
 
@@ -489,9 +497,6 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 					Agent.Corridor.optimizePathTopology(Agent.pNavQuery, pNavFilter);
 					Agent.PathOptimizationTime = 0.f;
 				}
-
-				//!!!!!!!!!!!!!!!!!!!!!!!!!
-				//!!!!!!check if THE LAST action is finished successfully, then remove navigation task with success!
 
 				vector3 ActionDest;
 				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, ActionDest))

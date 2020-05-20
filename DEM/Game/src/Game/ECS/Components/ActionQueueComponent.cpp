@@ -74,6 +74,7 @@ bool CActionQueueComponent::FinalizeActiveAction(const Events::CEventBase& Actio
 }
 //---------------------------------------------------------------------
 
+// Only for root actions. To remove sub-action, call FinalizeActiveAction or PushSubActionForParent.
 bool CActionQueueComponent::RemoveAction(const Events::CEventBase& Action)
 {
 	// If removing active root, clear the whole stack and pop the next action from the queue
