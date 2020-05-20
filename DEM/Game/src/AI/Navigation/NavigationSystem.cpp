@@ -11,12 +11,10 @@
 namespace DEM::AI
 {
 
-//???set height limit to check? agent height is good, must distinguish between different floors.
-//otherwise false equalities may happen!
-constexpr float DEFAULT_EPSILON = 1.0f / (16384.0f * 16384.0f);
-static inline bool dtVequal2D(const float* p0, const float* p1, float thr = DEFAULT_EPSILON)
+constexpr float EQUALITY_THRESHOLD_SQ = 1.0f / (16384.0f * 16384.0f);
+static inline bool InRange(const float* p0, const float* p1, float AgentHeight, float SqRange)
 {
-	return dtVdist2DSqr(p0, p1) < thr;
+	return dtVdist2DSqr(p0, p1) <= SqRange && std::abs(p0[1] - p1[1]) < AgentHeight;
 }
 //---------------------------------------------------------------------
 
@@ -32,7 +30,7 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 
 	if (Agent.Mode != ENavigationMode::Offmesh &&
 		Agent.State != ENavigationState::Idle &&
-		!dtVequal2D(Agent.Corridor.getPos(), Position.v))
+		!InRange(Agent.Corridor.getPos(), Position.v, Agent.Height, EQUALITY_THRESHOLD_SQ))
 	{
 		const auto PrevPoly = Agent.Corridor.getFirstPoly();
 
@@ -125,8 +123,7 @@ static bool UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 
 	if (Agent.State != ENavigationState::Idle)
 	{
-		if (dtVequal2D(Agent.TargetPos.v, Action._Destination.v) &&
-			n_fabs(Agent.TargetPos.y - Action._Destination.y) < Agent.Height)
+		if (InRange(Agent.TargetPos.v, Action._Destination.v, Agent.Height, EQUALITY_THRESHOLD_SQ))
 		{
 			// Target remains static but we must check its poly validity anyway
 			if (Agent.pNavQuery->isValidPolyRef(Agent.TargetRef, pNavFilter)) return true;
@@ -139,7 +136,7 @@ static bool UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 				// Check if target matches the corridor or moved not too far from it into impassable zone.
 				// Otherwise target is considered teleported and may require replanning (see below).
 				const auto OffsetSq = dtVdist2DSqr(Action._Destination.v, Agent.Corridor.getTarget());
-				if (OffsetSq < DEFAULT_EPSILON ||
+				if (OffsetSq < EQUALITY_THRESHOLD_SQ ||
 					(Agent.TargetRef == Agent.Corridor.getLastPoly() && OffsetSq <= MaxTargetOffsetSq))
 				{
 					Agent.TargetRef = Agent.Corridor.getLastPoly();
@@ -219,9 +216,10 @@ static void RequestPath(CNavAgentComponent& Agent, ::AI::CPathRequestQueue& Path
 		else
 			Agent.Corridor.setCorridor(Agent.Corridor.getPos(), Agent.Corridor.getPath(), 1);
 
+		// Request async path planning
+		if (Agent.AsyncTaskID) PathQueue.CancelRequest(Agent.AsyncTaskID);
 		Agent.AsyncTaskID = PathQueue.Request(Agent.Corridor.getLastPoly(), Agent.TargetRef, Agent.Corridor.getTarget(), Agent.TargetPos.v, Agent.pNavQuery, pNavFilter);
-		if (Agent.AsyncTaskID)
-			Agent.State = ENavigationState::Planning;
+		if (Agent.AsyncTaskID) Agent.State = ENavigationState::Planning;
 	}
 }
 //---------------------------------------------------------------------
@@ -305,12 +303,13 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 
 		// The distance must be calculated from he real agent position, not the projected corridor pos
 		const float DistanceSq = vector3::SqDistance2D(ExactPos, Dest);
+		const bool IsSameLevel = std::abs(ExactPos.y - Dest.y) < Agent.Height;
 
 		// Check entering an offmesh connection
 		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 		{
 			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
-			if (DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
+			if (IsSameLevel && DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
 			{
 				auto pOffmeshAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
 				if (!pOffmeshAction) break;
@@ -332,7 +331,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 		}
 
 		// Close enough to the next path point, assume already traversed
-		if (pAction->CanSkipPathPoint(DistanceSq))
+		if (IsSameLevel && pAction->CanSkipPathPoint(DistanceSq))
 		{
 			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
 			if (dtStatusFailed(Status)) return false;
@@ -369,16 +368,14 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	// Some controllers require additional distance from current to final destination
 	if (Result & CTraversalAction::NeedDistanceToTarget)
 	{
-		//!!!!!!FIXME: calc distance to ne next action change, not to the navigation target!
+		//!!!!!!FIXME: calc distance to the next action change, not to the navigation target!
 		float Distance = vector3::Distance(Dest, NextDest);
-		vector3 PrevPathPoint = NextDest;
 		while (dtStatusInProgress(Status))
 		{
-			vector3 PathPoint;
-			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, PathPoint.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
+			Dest = NextDest;
+			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, 0);
 			if (dtStatusFailed(Status)) break;
-			Distance += vector3::Distance(PrevPathPoint, PathPoint);
-			PrevPathPoint = PathPoint;
+			Distance += vector3::Distance(Dest, NextDest);
 		}
 
 		pAction->SetDistanceAfterDest(Queue, NavAction, Distance);
@@ -388,8 +385,15 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 }
 //---------------------------------------------------------------------
 
-static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, DEM::Game::EActionStatus Result)
+static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
+	::AI::CPathRequestQueue& PathQueue, DEM::Game::EActionStatus Result)
 {
+	if (Agent.AsyncTaskID)
+	{
+		PathQueue.CancelRequest(Agent.AsyncTaskID);
+		Agent.AsyncTaskID = 0;
+	}
+
 	while (auto pNavigateAction = Queue.FindActive<Navigate>())
 		Queue.FinalizeActiveAction(*pNavigateAction, Result);
 
@@ -412,11 +416,15 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 	{
 		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
+		// TODO: if entity is dead, cancel async path request, delete resources and remove navigation component.
+		// When the dead entity becomes component-less, it can be deleted.
+		// TODO: when removing only navigation component, must do the same cleanup!
+
 		// Update navigation status from the curent agent position
 		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
 		{
-			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+			ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			return;
 		}
 
@@ -425,13 +433,13 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (pQueue->GetStatus() == DEM::Game::EActionStatus::Failed)
 			{
 				// If sub-action failed, fail navigation
-				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 				return;
 			}
 			else if (Agent.IsTraversingLastEdge && pQueue->GetStatus() == DEM::Game::EActionStatus::Succeeded)
 			{
 				// If the last edge traversed successfully, finish navigation
-				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Succeeded);
+				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Succeeded);
 
 				//???where must happen?
 				pQueue->RemoveAction(*pNavigateAction);
@@ -450,7 +458,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			// Process target location changes and validity
 			if (!UpdateDestination(*pNavigateAction, Agent))
 			{
-				ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 				return;
 			}
 
@@ -467,7 +475,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			{
 				if (!CheckAsyncPathResult(Agent, PathQueue))
 				{
-					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 					return;
 				}
 			}
@@ -479,7 +487,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				const vector3 ValidPos = Agent.Corridor.getPos();
 				auto pAction = Agent.Settings->FindAction(Agent, 0, 0, nullptr);
 				if (!pAction || (pAction->PushSubAction(*pQueue, *pNavigateAction, ValidPos, ValidPos, {}) & CTraversalAction::Failure))
-					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
 			{
@@ -507,13 +515,13 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 				}
 				else
 				{
-					ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Failed);
+					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 				}
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
 		{
-			ResetNavigation(Agent, *pQueue, DEM::Game::EActionStatus::Cancelled);
+			ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Cancelled);
 		}
 	});
 }
