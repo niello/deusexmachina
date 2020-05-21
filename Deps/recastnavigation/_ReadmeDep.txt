@@ -15,7 +15,9 @@ Modifications:
 NO_DETOUR_TILE_CACHE_DEBUG_DRAW compiler definition in DebugDraw
 dtPathCorridor move constructor and assignment operator
 dtPathCorridor::extend
+dtPathCorridor::shrink
 dtPathCorridor::appendPath
+Iterative straight path building (PR #430)
 
 Purpose in DEM:
 Navigation mesh, navigation regions, pathfinding

@@ -256,6 +256,15 @@ void dtPathCorridor::reset(dtPolyRef ref, const float* pos)
 	m_npath = 1;
 }
 
+void dtPathCorridor::shrink(const float* target, const int newPolyCount)
+{
+	if (m_npath > newPolyCount && newPolyCount >= 0)
+	{
+		m_npath = newPolyCount;
+		dtVcopy(m_target, target);
+	}
+}
+
 /**
 @par
 

@@ -116,7 +116,7 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 //---------------------------------------------------------------------
 
 // Returns whether an agent can continue to perform the current navigation task
-static bool UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
+static bool UpdateDestination(Navigate& Action, CNavAgentComponent& Agent, ::AI::CPathRequestQueue& PathQueue)
 {
 	//!!!FIXME: setting, per Navigate action or per entity!
 	constexpr float MaxTargetOffset = 0.5f;
@@ -157,6 +157,23 @@ static bool UpdateDestination(Navigate& Action, CNavAgentComponent& Agent)
 	// If no poly found in a target radius, navigation task is failed
 	if (!Agent.TargetRef || dtVdist2DSqr(Action._Destination.v, Agent.TargetPos.v) > MaxTargetOffsetSq)
 		return false;
+
+	// If target is in the current corridor, can avoid replanning
+	if (Agent.State != ENavigationState::Idle)
+	{
+		for (int i = 0; i < Agent.Corridor.getPathCount(); ++i)
+			if (Agent.Corridor.getPath()[i] == Agent.TargetRef)
+			{
+				Agent.Corridor.shrink(Agent.TargetPos.v, i + 1);
+				if (Agent.AsyncTaskID)
+				{
+					PathQueue.CancelRequest(Agent.AsyncTaskID);
+					Agent.AsyncTaskID = 0;
+				}
+				Agent.State = ENavigationState::Following;
+				return true;
+			}
+	}
 
 	Agent.State = ENavigationState::Requested;
 	return true;
@@ -459,7 +476,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			Agent.ReplanTime += dt;
 
 			// Process target location changes and validity
-			if (!UpdateDestination(*pNavigateAction, Agent))
+			if (!UpdateDestination(*pNavigateAction, Agent, PathQueue))
 			{
 				ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 				return;

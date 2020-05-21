@@ -53,7 +53,11 @@ public:
 	///  @param[in]		ref		The polygon reference containing the position.
 	///  @param[in]		pos		The new position in the corridor. [(x, y, z)]
 	void reset(dtPolyRef ref, const float* pos);
-	
+
+	/// Shrink corridor to the length specified. If new poly count is not less than current, does nothing.
+	///  @param[in]		newPolyCount	New length of the corridor.
+	void shrink(const float* target, const int newPolyCount);
+
 	/// Finds the corners in the corridor from the position toward the target. (The straightened path.)
 	///  @param[out]	cornerVerts		The corner vertices. [(x, y, z) * cornerCount] [Size: <= maxCorners]
 	///  @param[out]	cornerFlags		The flag for each corner. [(flag) * cornerCount] [Size: <= maxCorners]
