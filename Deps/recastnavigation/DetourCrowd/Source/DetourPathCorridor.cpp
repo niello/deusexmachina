@@ -562,14 +562,12 @@ dtStatus dtPathCorridor::appendPath(const float* target, const dtPolyRef* polys,
 	// Check for available space
 	const int destidx = m_npath - i + 1;
 	const int ncopy = npath - i;
+	if (requiredSize)
+		*requiredSize = destidx + ncopy;
 	if (destidx + ncopy > m_maxPath)
-	{
-		if (requiredSize)
-			*requiredSize = destidx + ncopy;
 		return DT_FAILURE | DT_BUFFER_TOO_SMALL;
-	}
 
-	memcpy(m_path + destidx, polys, sizeof(dtPolyRef)*ncopy);
+	memcpy(m_path + destidx, polys + i, sizeof(dtPolyRef)*ncopy);
 	m_npath = destidx + ncopy;
 
 	dtVcopy(m_target, target);
