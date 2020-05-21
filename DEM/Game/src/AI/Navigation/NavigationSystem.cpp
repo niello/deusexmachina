@@ -291,9 +291,63 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 {
 	const float* pCurrPos = Agent.Corridor.getPos();
 	const auto* pCurrPath = Agent.Corridor.getPath();
+
+	// Try to find a traversal action for our current location
+	Game::HEntity SmartObject;
+	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject);
+	if (!pAction)
+	{
+		//???check even if we have an action?
+		// We can't move over the current location. Check if we are able to trigger a nearby offmesh connection.
+		constexpr int LOOKAHEAD_LIMIT = 10;
+		const auto LookaheadCount = std::min(Agent.Corridor.getPathCount(), LOOKAHEAD_LIMIT);
+		auto pNavMesh = Agent.pNavQuery->getAttachedNavMesh();
+		for (int i = 1; i < LookaheadCount; ++i)
+		{
+			const auto* pConn = pNavMesh->getOffMeshConnectionByRef(pCurrPath[i]);
+			if (!pConn) continue;
+
+			// Replace action with the offmesh one. If not traversable, fail immediately.
+			const dtMeshTile* pTile = nullptr;
+			const dtPoly* pPoly = nullptr;
+			pNavMesh->getTileAndPolyByRefUnsafe(pCurrPath[i], &pTile, &pPoly);
+			auto pOffmeshAction = Agent.Settings->FindAction(Agent, pPoly->getArea(), pCurrPath[i], &SmartObject);
+			if (!pOffmeshAction) return false;
+
+			// Start point is guaranteed to be enterable
+			vector3 Start, End;
+			pNavMesh->getOffMeshConnectionPolyEndPoints(pCurrPath[i - 1], pCurrPath[i], Start.v, End.v);
+
+			// Check whether the connection can be triggered
+			//??use offmesh radius too in GetSqTriggerRadius? 0 for navmesh.
+			if (std::abs(ExactPos.y - Start.y) < Agent.Height &&
+				vector3::SqDistance2D(ExactPos, Start) < pAction->GetSqTriggerRadius(Agent.Radius))
+			{
+				dtPolyRef OffmeshRefs[2];
+				if (Agent.Corridor.moveOverOffmeshConnection(pCurrPath[i], OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
+				{
+					pAction = pOffmeshAction;
+					Agent.Mode = ENavigationMode::Offmesh;
+				}
+			}
+
+			// Stop at the first offmesh connection
+			break;
+		}
+
+		// No action found, fail
+		if (!pAction) return false;
+	}
+
+	// pass all into the action, it will generate dest, next dest and distance by itself
+	//???what if offmesh? already generated points and changed mode. What if steering in offmesh?
+	// in offmesh mode can try to build straight path from new point, the next edge may be the same action.
+	// but in offmesh mode we already have Pos, Start & End. Surface actions only have Pos.
+	// So surface action may get the first dest, and then call the same method as offmesh calls from start.
+
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
-			pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
+		pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
 	vector3 NextDest;
@@ -305,8 +359,6 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 
 	// If no action available, give an agent a chance to trigger an offmesh connection
 	//???!!!TODO: cache current smart object until poly changes?
-	Game::HEntity SmartObject;
-	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject);
 	if (!pAction && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return false;
 
 	Agent.IsTraversingLastEdge = !dtStatusInProgress(Status);
@@ -328,6 +380,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 		// Check entering an offmesh connection
 		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 		{
+			//???must be a connection or at least its area param? or its action param?! like CanSkipPathPoint
 			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
 			if (IsSameLevel && DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
 			{
@@ -384,6 +437,17 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	OutDest = Dest;
 	auto Result = pAction->PushSubAction(Queue, NavAction, Dest, NextDest, SmartObject);
 	if (Result & CTraversalAction::Failure) return false;
+
+	//???when push sub-action, return previous Dest [into on-stack instance via swap?]
+	//float ToNextAction = 0.f;
+	//if (pAction->NeedDistanceToNextAction()) // AND next action not changed (break because of direction)
+	//{
+	//	// if action changed (existing sub not found)
+	//	// if target changed (compare NavAction._Destination and Agent.TargetPos)
+	//	// if path point changed (pAction->DestChanged(sub, Dest) or see above)
+
+	//	// iterate until action is changed
+	//}
 
 	// Some controllers require additional distance from current to final destination
 	if (Result & CTraversalAction::NeedDistanceToTarget)

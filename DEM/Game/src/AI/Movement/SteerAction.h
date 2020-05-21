@@ -57,6 +57,7 @@ class CSteerAction : public CTraversalAction
 
 public:
 
+	virtual float GetSqTriggerRadius(float AgentRadius) const override { return Steer::SqLinearTolerance; }
 	virtual bool CanSkipPathPoint(float SqDistance) const override { return SqDistance < Steer::SqLinearTolerance; }
 	virtual U8   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) override;
