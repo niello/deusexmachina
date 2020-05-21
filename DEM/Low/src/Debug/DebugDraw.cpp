@@ -126,7 +126,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 			ShapeInsts[i].clear();
 	}
 
-	if (LineVertexCount || TriVertexCount)
+	if (LineVertices.Count || TriVertices.Count)
 	{
 		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPrimitive")))
 		{
@@ -141,9 +141,9 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 
 			constexpr auto MAX_TRI_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 3) * 3;
 			static_assert(MAX_TRI_VERTICES_PER_DIP > 2);
-			for (UPTR Offset = 0; Offset < TriVertexCount; Offset += MAX_TRI_VERTICES_PER_DIP)
+			for (UPTR Offset = 0; Offset < TriVertices.Count; Offset += MAX_TRI_VERTICES_PER_DIP)
 			{
-				const UPTR BatchSize = std::min(MAX_TRI_VERTICES_PER_DIP, TriVertexCount - Offset);
+				const UPTR BatchSize = std::min(MAX_TRI_VERTICES_PER_DIP, TriVertices.Count - Offset);
 
 				void* pInstData;
 				if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
@@ -152,7 +152,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 					return;
 				}
 
-				memcpy(pInstData, Tris.data() + Offset, BatchSize * sizeof(CDDVertex));
+				memcpy(pInstData, TriVertices.pData + Offset, BatchSize * sizeof(CDDVertex));
 				GPU.UnmapResource(*_PrimitiveBuffer);
 
 				for (const auto& Pass : Passes)
@@ -164,9 +164,9 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 
 			constexpr auto MAX_LINE_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 2) * 2;
 			static_assert(MAX_LINE_VERTICES_PER_DIP > 1);
-			for (UPTR Offset = 0; Offset < LineVertexCount; Offset += MAX_LINE_VERTICES_PER_DIP)
+			for (UPTR Offset = 0; Offset < LineVertices.Count; Offset += MAX_LINE_VERTICES_PER_DIP)
 			{
-				const UPTR BatchSize = std::min(MAX_LINE_VERTICES_PER_DIP, LineVertexCount - Offset);
+				const UPTR BatchSize = std::min(MAX_LINE_VERTICES_PER_DIP, LineVertices.Count - Offset);
 
 				void* pInstData;
 				if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
@@ -175,7 +175,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 					return;
 				}
 
-				memcpy(pInstData, Lines.data() + Offset, BatchSize * sizeof(CDDVertex));
+				memcpy(pInstData, LineVertices.pData + Offset, BatchSize * sizeof(CDDVertex));
 				GPU.UnmapResource(*_PrimitiveBuffer);
 
 				for (const auto& Pass : Passes)
@@ -186,11 +186,11 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 			}
 		}
 
-		LineVertexCount = 0;
-		TriVertexCount = 0;
+		LineVertices.Count = 0;
+		TriVertices.Count = 0;
 	}
 
-	if (!Points.empty())
+	if (Points.Count)
 	{
 		/*
 		// TODO: support size!
@@ -210,7 +210,7 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 		}
 		*/
 
-		Points.clear();
+		Points.Count = 0;
 	}
 
 	GPU.SetVertexBuffer(0, nullptr);

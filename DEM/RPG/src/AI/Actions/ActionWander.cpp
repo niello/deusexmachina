@@ -25,7 +25,7 @@ bool CActionWander::SelectAction(CActor* pActor)
 		{
 			// NavSystem automatically clamps a destination to the navmesh
 			Dest *= (Math::RandomFloat() * 11.5f + 3.5f);
-			pActor->GetNavSystem().SetDestPoint(vector3(Dest.x + InitialPos.x, pActor->Position.y, Dest.y + InitialPos.y));
+			//pActor->GetNavSystem().SetDestPoint(vector3(Dest.x + InitialPos.x, pActor->Position.y, Dest.y + InitialPos.y));
 			//CurrAction = n_new(CActionGoto);		
 			//vector3 Loc;
 			//if (pActor->GetNavSystem().GetRandomValidLocation(15.f, Loc))

@@ -74,19 +74,40 @@ protected:
 	};
 	*/
 
+	// Optimized for debug builds, where debug rendering is typically used
+	struct CVertexArray final
+	{
+		CDDVertex* pData = nullptr;
+		UPTR       Capacity = 0;
+		UPTR       Count = 0;
+
+		CVertexArray() { if (pData) n_free_aligned(pData); }
+
+		CDDVertex& Add()
+		{
+			if (Count >= Capacity)
+			{
+				constexpr UPTR GROW_SIZE = 1000;
+				pData = static_cast<CDDVertex*>(n_realloc_aligned(pData, (Count + GROW_SIZE) * sizeof(CDDVertex), 16));
+				for (UPTR i = Count; i < Count + GROW_SIZE; ++i)
+					pData[i].Pos.w = 1.f;
+				Capacity = Count + GROW_SIZE;
+			}
+			return pData[Count++];
+		}
+	};
+
 	Frame::PGraphicsResourceManager _GraphicsMgr;
 	Render::PMesh                   _Shapes[SHAPE_TYPE_COUNT];
 	Render::PVertexLayout           _ShapeVertexLayout;
 	Render::PVertexBuffer           _ShapeInstanceBuffer;
 	Render::PVertexBuffer           _PrimitiveBuffer;
 
-	std::vector<CDDShapeInst>	ShapeInsts[SHAPE_TYPE_COUNT];
-	std::vector<CDDVertex>		Points;
-	std::vector<CDDVertex>		Lines;
-	std::vector<CDDVertex>		Tris;
-	//std::vector<CDDText>		Texts;
-	UPTR                        LineVertexCount = 0;
-	UPTR                        TriVertexCount = 0;
+	std::vector<CDDShapeInst> ShapeInsts[SHAPE_TYPE_COUNT];
+	CVertexArray              Points;
+	CVertexArray              LineVertices;
+	CVertexArray              TriVertices;
+	//std::vector<CDDText>    Texts;
 
 public:
 
@@ -110,33 +131,45 @@ public:
 	void DrawGridXZ(); //???or pass arbitrary axes?
 	void DrawCoordAxes(const matrix44& Tfm, bool DrawX = true, bool DrawY = true, bool DrawZ = true);
 
-	void DrawPoint(const vector3& Pos, float Size, U32 Color = Render::Color_White);
+	void DrawPoint(const vector3& Pos, float Size, U32 Color = Render::Color_White) { DrawPoint(Pos.x, Pos.y, Pos.z, Size, Color); }
+	void DrawPoint(float x, float y, float z, float Size, U32 Color = Render::Color_White);
 
-	void AddLineVertex(const vector3& Pos, U32 Color = Render::Color_White);
-	void AddTriangleVertex(const vector3& Pos, U32 Color = Render::Color_White);
+	void AddLineVertex(const vector3& Pos, U32 Color = Render::Color_White) { AddLineVertex(Pos.x, Pos.y, Pos.z, Color); }
+	void AddLineVertex(float x, float y, float z, U32 Color = Render::Color_White);
+	void AddTriangleVertex(const vector3& Pos, U32 Color = Render::Color_White) { AddTriangleVertex(Pos.x, Pos.y, Pos.z, Color); }
+	void AddTriangleVertex(float x, float y, float z, U32 Color = Render::Color_White);
 
 	//bool	DrawText(const char* pText, float Left, float Top, U32 Color = Render::Color_White, float Width = 1.f, bool Wrap = true, EHAlign HAlign = Align_Left, EVAlign VAlign = Align_Top);
 };
 
-inline void CDebugDraw::DrawPoint(const vector3& Pos, float Size, U32 Color)
+inline void CDebugDraw::DrawPoint(float x, float y, float z, float Size, U32 Color)
 {
-	Points.push_back({ vector4(Pos, Size), Color });
+	auto& Vertex = Points.Add();
+	Vertex.Pos.x = x;
+	Vertex.Pos.y = y;
+	Vertex.Pos.z = z;
+	Vertex.Pos.w = Size;
+	Vertex.Color = Color;
 }
 //---------------------------------------------------------------------
 
-inline void CDebugDraw::AddLineVertex(const vector3& Pos, U32 Color)
+inline void CDebugDraw::AddLineVertex(float x, float y, float z, U32 Color)
 {
-	if (LineVertexCount >= Lines.size())
-		Lines.resize(LineVertexCount + 1000);
-	Lines[LineVertexCount++] = { Pos, Color };
+	auto& Vertex = LineVertices.Add();
+	Vertex.Pos.x = x;
+	Vertex.Pos.y = y;
+	Vertex.Pos.z = z;
+	Vertex.Color = Color;
 }
 //---------------------------------------------------------------------
 
-inline void CDebugDraw::AddTriangleVertex(const vector3& Pos, U32 Color)
+inline void CDebugDraw::AddTriangleVertex(float x, float y, float z, U32 Color)
 {
-	if (TriVertexCount >= Tris.size())
-		Tris.resize(TriVertexCount + 1000);
-	Tris[TriVertexCount++] = { Pos, Color };
+	auto& Vertex = TriVertices.Add();
+	Vertex.Pos.x = x;
+	Vertex.Pos.y = y;
+	Vertex.Pos.z = z;
+	Vertex.Color = Color;
 }
 //---------------------------------------------------------------------
 
