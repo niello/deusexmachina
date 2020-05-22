@@ -55,10 +55,6 @@ class CSteerAction : public CTraversalAction
 {
 	FACTORY_CLASS_DECL;
 
-protected:
-
-	bool GenerateAction();
-
 public:
 
 	// When steering through the offmesh connection, must reach the start point first
