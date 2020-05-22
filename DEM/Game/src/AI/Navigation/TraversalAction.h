@@ -1,7 +1,6 @@
 #pragma once
 #include <Core/Object.h>
 #include <Game/ECS/Entity.h>
-#include <Events/EventBase.h>
 #include <Math/Vector3.h>
 
 // Controls a path edge traversal by providing appropriate action for the agent,

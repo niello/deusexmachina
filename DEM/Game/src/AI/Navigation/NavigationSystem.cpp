@@ -285,9 +285,9 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 }
 //---------------------------------------------------------------------
 
-// Return OutStraightLineEnd for corridor visibility optimization
+// Return OutNextTurn for corridor visibility optimization
 static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, const vector3& ExactPos, vector3& OutStraightLineEnd)
+	const Navigate& NavAction, const vector3& ExactPos, vector3& OutNextTurn)
 {
 	// Check if we are able to trigger an offmesh connection at the next corner
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
@@ -300,7 +300,7 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	unsigned char Flags;
 	unsigned char AreaType;
 	dtPolyRef PolyRef;
-	if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, OutStraightLineEnd.v, &Flags, &AreaType, &PolyRef, 0))) return false;
+	if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, OutNextTurn.v, &Flags, &AreaType, &PolyRef, 0))) return false;
 
 	Game::HEntity SmartObject;
 
@@ -311,8 +311,8 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 		if (auto pAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject))
 		{
 			// Check if we are in a trigger range
-			if (std::abs(ExactPos.y - OutStraightLineEnd.y) < Agent.Height &&
-				vector3::SqDistance2D(ExactPos, OutStraightLineEnd) < pAction->GetSqTriggerRadius(Agent.Radius))
+			if (std::abs(ExactPos.y - OutNextTurn.y) < Agent.Height &&
+				vector3::SqDistance2D(ExactPos, OutNextTurn) < pAction->GetSqTriggerRadius(Agent.Radius))
 			{
 				dtPolyRef OffmeshRefs[2];
 				vector3 Start, End;
@@ -455,17 +455,13 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 					Agent.PathOptimizationTime = 0.f;
 				}
 
-				vector3 StraightLineEnd;
-				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, StraightLineEnd))
-				{
-					// Use our traversal target to optimize the path, because we know that there is a straight way to it
-					if (OptimizePath && Agent.Mode == ENavigationMode::Surface)
-						Agent.Corridor.optimizePathVisibility(StraightLineEnd.v, 30.f * Agent.Radius, Agent.pNavQuery, pNavFilter);
-				}
-				else
-				{
+				vector3 NextTurn;
+				if (!GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, NextTurn))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
-				}
+
+				// Optimize path visibility along the [corridor pos -> NextTurn] straight line
+				if (OptimizePath && Agent.Mode == ENavigationMode::Surface)
+					Agent.Corridor.optimizePathVisibility(NextTurn.v, 30.f * Agent.Radius, Agent.pNavQuery, pNavFilter);
 			}
 		}
 		else if (Agent.State != ENavigationState::Idle)
