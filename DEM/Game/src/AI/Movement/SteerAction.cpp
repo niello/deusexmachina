@@ -27,7 +27,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 			std::abs(Pos.y - Dest.y) < Agent.Height &&
 			vector3::SqDistance2D(Pos, Dest) < Steer::SqLinearTolerance;
 
-		// Get the next edge tracersal action
+		// Get the next edge traversal action
 		Game::HEntity SmartObject;
 		auto pNextAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
 		ActionChanged = (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI());
@@ -57,47 +57,65 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 				break;
 		}
 
-		// Elongate path edge
+		// Same action and direction, elongate path edge
 		Dest = NextDest;
 
 		// That was the last edge, its successful traversal will finish the navigate action
 		if (dtStatusSucceed(Status)) Agent.IsTraversingLastEdge = true;
 	}
 
-	if (ActionChanged || Agent.IsTraversingLastEdge)
-	{
-		// no need to calculate distance to action change, it changes right after Dest, additional distance is zero
-	}
-
 	// Try to get existing sub-action of required type
 	auto pSteer = Queue.GetImmediateSubAction<Steer>(NavAction);
 
 	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
-	float AdditionalDistance;
+	float AdditionalDistance = 0.f;
 
-	//!!!target change may also influence this! other criteria too?
-	if (!pSteer || pSteer->_Dest != Dest)
+	// No need to calculate if action changed at Dest
+	if (!ActionChanged && !Agent.IsTraversingLastEdge)
 	{
-		vector3 Prev = Dest;
-		vector3 Curr = NextDest;
-
-		//!!!!!!FIXME: calc distance to the next action change, not to the navigation target!
-		AdditionalDistance = vector3::Distance(Prev, Curr);
-		while (dtStatusInProgress(Status))
+		// Recalculate only when destination changes
+		// TODO: can add other criteria, like final navigation target change
+		if (!pSteer || pSteer->_Dest != Dest)
 		{
-			Prev = Curr;
-			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, nullptr, &AreaType, &PolyRef, 0);
-			if (dtStatusFailed(Status)) break;
-			AdditionalDistance += vector3::Distance(Prev, Curr);
+			vector3 Prev = Dest;
+			vector3 Curr = NextDest;
+			while (true)
+			{
+				AdditionalDistance += vector3::Distance(Prev, Curr);
+
+				// Stop if path ends at Curr
+				if (!dtStatusInProgress(Status)) break;
+
+				// Stop if action changes at Curr
+				Game::HEntity SmartObject;
+				auto pNextAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
+				if (!pNextAction || &CSteerAction::RTTI != pNextAction->GetRTTI()) break;
+
+				// Get end point of the next edge with the same action
+				Prev = Curr;
+				Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, nullptr, &AreaType, &PolyRef, 0);
+				if (dtStatusFailed(Status)) break;
+			}
 		}
+		else
+		{
+			// Use value cached in the action
+			AdditionalDistance = pSteer->_AdditionalDistance;
+		}
+	}
+
+	// Update existing action or push the new one
+	if (pSteer)
+	{
+		pSteer->_Dest = Dest;
+		pSteer->_NextDest = NextDest;
+		pSteer->_AdditionalDistance = AdditionalDistance;
+		return true;
 	}
 	else
 	{
-		AdditionalDistance = pSteer->_AdditionalDistance;
+		return !!Queue.PushSubActionForParent<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 	}
-
-	//???push only if changed? almost all changes are checked here!
-	return !!Queue.PushSubActionForParent<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 }
 //---------------------------------------------------------------------
 
