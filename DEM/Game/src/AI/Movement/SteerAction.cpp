@@ -18,7 +18,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 
 	Agent.IsTraversingLastEdge = dtStatusSucceed(Status);
 
-	vector3 NextDest;
+	vector3 NextDest = Dest;
 	bool ActionChanged = false;
 	while (!Agent.IsTraversingLastEdge)
 	{
@@ -63,8 +63,6 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 		// That was the last edge, its successful traversal will finish the navigate action
 		if (dtStatusSucceed(Status)) Agent.IsTraversingLastEdge = true;
 	}
-
-	//!!!FIXME: bad smoothing, bad slowdown!
 
 	if (ActionChanged || Agent.IsTraversingLastEdge)
 	{
