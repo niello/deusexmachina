@@ -539,6 +539,7 @@ void CMotorSystem::RenderDebug(Debug::CDebugDraw& DebugDraw)
 	static const vector4 ColorNormal(1.0f, 1.0f, 1.0f, 1.0f);
 	static const vector4 ColorStuck(1.0f, 0.0f, 0.0f, 1.0f);
 
+	//???draw cross?
 	if (pActor->MvmtState == AIMvmt_DestSet || pActor->MvmtState == AIMvmt_Stuck)
 		DebugDraw.DrawLine(
 			DestPoint,
@@ -599,14 +600,12 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 
 	static const vector4 ColorVel(1.0f, 0.5f, 0.0f, 1.0f);
 	static const vector4 ColorReqVel(0.0f, 1.0f, 1.0f, 1.0f);
-	static const vector4 ColorCapsuleActive(0.0f, 1.0f, 0.0f, 0.5f);
-	static const vector4 ColorCapsuleFrozen(0.0f, 0.0f, 1.0f, 0.5f);
 
-	//const matrix44& Tfm = GetEntity()->GetAttr<matrix44>(CStrID("Transform"));
-	matrix44 Tfm;
 	vector3 Pos;
 	quaternion Rot;
 	CharCtlr->GetBody()->GetTransform(Pos, Rot);
+
+	matrix44 Tfm;
 	Tfm.FromQuaternion(Rot);
 	Tfm.Translation() = Pos;
 
@@ -616,17 +615,9 @@ bool CPropCharacterController::OnRenderDebug(Events::CEventDispatcher* pDispatch
 	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + LinVel, ColorVel);
 	DebugDraw->DrawLine(Tfm.Translation(), Tfm.Translation() + CharCtlr->GetRequestedLinearVelocity(), ColorReqVel);
 
-	matrix44 CapsuleTfm = Tfm;
-	// FIXME PHYSICS
-//	CapsuleTfm.translate(CharCtlr->GetBody()->GetShapeOffset());
-	float CapsuleHeight = CharCtlr->GetHeight() - CharCtlr->GetRadius() - CharCtlr->GetRadius() - CharCtlr->GetHover();
-	const vector4& Color = CharCtlr->GetBody()->IsActive() ? ColorCapsuleActive : ColorCapsuleFrozen;
-	DebugDraw->DrawCapsule(CapsuleTfm, CharCtlr->GetRadius(), CapsuleHeight, Color);
-
-	if (GetEntity()->GetUID() == "GG" && CharCtlr->IsMotionRequested()) //!!!write debug focus or smth!
+	if (EntityID is in selection && CharCtlr->IsMotionRequested()) //!!!write debug focus or smth!
 	{
-		vector3 LVel;
-		CharCtlr->GetLinearVelocity(LVel);
+		vector3 LVel = CharCtlr->GetLinearVelocity();
 
 		CString Text;
 		Text.Format("\n\n\n\n\n\n\n\n"

@@ -366,10 +366,6 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 	{
 		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
-		// TODO: if entity is dead, cancel async path request, delete resources and remove navigation component.
-		// When the dead entity becomes component-less, it can be deleted.
-		// TODO: when removing only navigation component, must do the same cleanup!
-
 		// Update navigation status from the curent agent position
 		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
