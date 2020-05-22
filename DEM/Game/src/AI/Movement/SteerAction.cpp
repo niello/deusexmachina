@@ -8,10 +8,10 @@ namespace DEM::AI
 {
 RTTI_CLASS_IMPL(Steer, Events::CEventNative);
 RTTI_CLASS_IMPL(Turn, Events::CEventNative);
-FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STCL', CTraversalAction);
+FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STRA', CTraversalAction);
 
 static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue, const Navigate& NavAction,
-	dtStraightPathContext& Ctx, dtStatus Status, U8 AreaType, dtPolyRef PolyRef, const vector3& Pos, vector3 Dest)
+	dtStraightPathContext& Ctx, dtStatus Status, U8 Flags, U8 AreaType, dtPolyRef PolyRef, const vector3& Pos, vector3 Dest)
 {
 	// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
 	int Options = DT_STRAIGHTPATH_AREA_CROSSINGS;
@@ -35,15 +35,15 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 		{
 			// Action changed, we must finish processing. If we are close enough to the next edge start, let the
 			// new action start immediately to avoid regenerating already finished Steer action again and again.
-			// New edge can't be an offmesh connection because we already checked it in the navigation system.
-			if (pNextAction && DestReached)
+			// Don't trigger offmesh connections. If it was possible, navigation system would do that.
+			if (pNextAction && DestReached && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION))
 				return pNextAction->GenerateAction(Agent, SmartObject, Queue, NavAction, Pos);
 
 			break;
 		}
 
 		// Get the next path edge end point
-		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, nullptr, &AreaType, &PolyRef, Options);
+		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, Options);
 		if (dtStatusFailed(Status)) break;
 
 		// If next edge changes direction, use its end position for smooth turning and finish
@@ -77,6 +77,9 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 		// TODO: can add other criteria, like final navigation target change
 		if (!pSteer || pSteer->_Dest != Dest)
 		{
+			// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
+			Options = DT_STRAIGHTPATH_AREA_CROSSINGS;
+
 			vector3 Prev = Dest;
 			vector3 Curr = NextDest;
 			while (true)
@@ -93,7 +96,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 
 				// Get end point of the next edge with the same action
 				Prev = Curr;
-				Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, nullptr, &AreaType, &PolyRef, 0);
+				Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, nullptr, &AreaType, &PolyRef, Options);
 				if (dtStatusFailed(Status)) break;
 			}
 		}
@@ -132,12 +135,13 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 	int Options = DT_STRAIGHTPATH_AREA_CROSSINGS;
 
 	vector3 Dest;
+	unsigned char Flags;
 	unsigned char AreaType;
 	dtPolyRef PolyRef;
-	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, nullptr, &AreaType, &PolyRef, Options);
+	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Dest.v, &Flags, &AreaType, &PolyRef, Options);
 	if (dtStatusFailed(Status)) return false;
 
-	return DoGenerateAction(Agent, Queue, NavAction, Ctx, Status, AreaType, PolyRef, Pos, Dest);
+	return DoGenerateAction(Agent, Queue, NavAction, Ctx, Status, Flags, AreaType, PolyRef, Pos, Dest);
 }
 //---------------------------------------------------------------------
 
@@ -158,7 +162,7 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 	U8 AreaType = 0;
 	Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(PolyRef, &AreaType);
 
-	return DoGenerateAction(Agent, Queue, NavAction, Ctx, DT_IN_PROGRESS, AreaType, PolyRef, Pos, NextDest);
+	return DoGenerateAction(Agent, Queue, NavAction, Ctx, DT_IN_PROGRESS, 0, AreaType, PolyRef, Pos, NextDest);
 }
 //---------------------------------------------------------------------
 
