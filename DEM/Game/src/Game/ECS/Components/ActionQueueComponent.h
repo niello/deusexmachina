@@ -71,6 +71,15 @@ public:
 		return pAction ? static_cast<T*>(pAction) : nullptr;
 	}
 
+	template<typename T>
+	T* GetImmediateSubAction(const Events::CEventBase& Parent) const
+	{
+		static_assert(std::is_base_of_v<Events::CEventBase, T>, "All entity actions must be derived from CEventBase");
+
+		auto pAction = GetImmediateSubAction(Parent);
+		return pAction ? pAction->As<T>() : nullptr;
+	}
+
 	template<typename T, typename... TArgs>
 	T* PushSubActionForParent(const Events::CEventBase& Parent, TArgs&&... Args)
 	{

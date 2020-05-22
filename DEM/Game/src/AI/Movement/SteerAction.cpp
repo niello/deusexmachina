@@ -14,12 +14,11 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 	const Navigate& NavAction, const vector3& Pos)
 {
 	const float* pCurrPos = Agent.Corridor.getPos();
-	const auto* pCurrPath = Agent.Corridor.getPath();
 
 	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
-		pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
+		pCurrPos, Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
 	// TODO: switch to DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
@@ -74,46 +73,35 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 	}
 	while (true);
 
-	// Push sub-action on top of the navigation action, updating or clearing previous one
+	// Try to get existing sub-action of required type
+	auto pSteer = Queue.GetImmediateSubAction<Steer>(NavAction);
 
-	//!!!target change may also influence this! action change implicitly processed.
-	// FIXME: is Dest change a good criteria for distance update? Move criteria to navigation?
-	bool CalcDistance = true;
-	float Distance = -0.f;
-	if (auto pAction = Queue.GetImmediateSubAction(NavAction))
+	// Calculate distance from Dest to next action change point. Used for arrival slowdown.
+	float AdditionalDistance;
+
+	//!!!target change may also influence this! other criteria too?
+	if (!pSteer || pSteer->_Dest != Dest)
 	{
-		if (auto pSteer = pAction->As<Steer>())
-		{
-			if (pSteer->_Dest == Dest)
-			{
-				CalcDistance = false;
-				Distance = pSteer->_AdditionalDistance;
-			}
-		}
-	}
+		vector3 Prev = Dest;
+		vector3 Curr = NextDest;
 
-	auto pSteer = Queue.PushSubActionForParent<Steer>(NavAction, Dest, NextDest, Distance);
-	if (!pSteer) return false;
-
-	// Some controllers require additional distance from current to final destination
-	if (CalcDistance)
-	{
 		//!!!!!!FIXME: calc distance to the next action change, not to the navigation target!
-		float Distance = vector3::Distance(Dest, NextDest);
+		AdditionalDistance = vector3::Distance(Prev, Curr);
 		while (dtStatusInProgress(Status))
 		{
-			Dest = NextDest;
-			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, 0);
+			Prev = Curr;
+			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, Curr.v, &Flags, &AreaType, &PolyRef, 0);
 			if (dtStatusFailed(Status)) break;
-			Distance += vector3::Distance(Dest, NextDest);
+			AdditionalDistance += vector3::Distance(Prev, Curr);
 		}
-
-		auto pAction = Queue.GetImmediateSubAction(NavAction);
-		if (auto pSteer = pAction->As<Steer>())
-			pSteer->_AdditionalDistance = Distance;
+	}
+	else
+	{
+		AdditionalDistance = pSteer->_AdditionalDistance;
 	}
 
-	return true;
+	//???push only if changed? almost all changes are checked here!
+	return !!Queue.PushSubActionForParent<Steer>(NavAction, Dest, NextDest, AdditionalDistance);
 }
 //---------------------------------------------------------------------
 

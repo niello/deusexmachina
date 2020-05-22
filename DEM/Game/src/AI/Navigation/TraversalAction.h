@@ -6,12 +6,6 @@
 // Controls a path edge traversal by providing appropriate action for the agent,
 // e.g. Steer (Walk), Swim, Jump, OpenDoor, ClimbLadder etc.
 
-#ifdef DT_POLYREF64
-#error "64-bit navigation poly refs aren't supported for now"
-#else
-typedef unsigned int dtPolyRef;
-#endif
-
 namespace DEM::Game
 {
 	class CActionQueueComponent;
