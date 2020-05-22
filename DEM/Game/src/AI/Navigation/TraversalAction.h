@@ -41,6 +41,11 @@ public:
 	virtual U8    PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
 		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
 	virtual void  SetDistanceAfterDest(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) {}
+
+	///////////////
+
+	virtual bool GenerateAction(Game::CActionQueueComponent& Queue) = 0;
+	virtual bool GenerateAction(Game::CActionQueueComponent& Queue, const vector3& Dest) = 0;
 };
 
 }

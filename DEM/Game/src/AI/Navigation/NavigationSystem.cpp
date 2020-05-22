@@ -285,59 +285,51 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 }
 //---------------------------------------------------------------------
 
-// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal controller and action
 static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& ExactPos, vector3& OutDest)
 {
-	const float* pCurrPos = Agent.Corridor.getPos();
-	const auto* pCurrPath = Agent.Corridor.getPath();
+	// Check if we are able to trigger an offmesh connection at the next corner
+	dtStraightPathContext Ctx;
+	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
+		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
+		return false;
 
-	// Try to find a traversal action for our current location
+	// Ignore possible action changes, search the corner straight ahead
+	vector3 Dest, NextDest;
+	unsigned char Flags;
+	unsigned char AreaType;
+	dtPolyRef PolyRef;
+	if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, 0))) return false;
+
 	Game::HEntity SmartObject;
-	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, pCurrPath[0], &SmartObject);
-	if (!pAction)
+
+	// If it is an offmesh connection, we may start its traversal
+	if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
 	{
-		//???check even if we have an action?
-		// We can't move over the current location. Check if we are able to trigger a nearby offmesh connection.
-		constexpr int LOOKAHEAD_LIMIT = 10;
-		const auto LookaheadCount = std::min(Agent.Corridor.getPathCount(), LOOKAHEAD_LIMIT);
-		auto pNavMesh = Agent.pNavQuery->getAttachedNavMesh();
-		for (int i = 1; i < LookaheadCount; ++i)
+		// Check if we can traverse this connection
+		if (auto pAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject))
 		{
-			const auto* pConn = pNavMesh->getOffMeshConnectionByRef(pCurrPath[i]);
-			if (!pConn) continue;
-
-			// Replace action with the offmesh one. If not traversable, fail immediately.
-			const dtMeshTile* pTile = nullptr;
-			const dtPoly* pPoly = nullptr;
-			pNavMesh->getTileAndPolyByRefUnsafe(pCurrPath[i], &pTile, &pPoly);
-			auto pOffmeshAction = Agent.Settings->FindAction(Agent, pPoly->getArea(), pCurrPath[i], &SmartObject);
-			if (!pOffmeshAction) return false;
-
-			// Start point is guaranteed to be enterable
-			vector3 Start, End;
-			pNavMesh->getOffMeshConnectionPolyEndPoints(pCurrPath[i - 1], pCurrPath[i], Start.v, End.v);
-
-			// Check whether the connection can be triggered
-			//??use offmesh radius too in GetSqTriggerRadius? 0 for navmesh.
-			if (std::abs(ExactPos.y - Start.y) < Agent.Height &&
-				vector3::SqDistance2D(ExactPos, Start) < pAction->GetSqTriggerRadius(Agent.Radius))
+			// Check if we are in a trigger range
+			if (std::abs(ExactPos.y - NextDest.y) < Agent.Height &&
+				vector3::SqDistance2D(ExactPos, NextDest) < pAction->GetSqTriggerRadius(Agent.Radius))
 			{
 				dtPolyRef OffmeshRefs[2];
-				if (Agent.Corridor.moveOverOffmeshConnection(pCurrPath[i], OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
+				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
 				{
-					pAction = pOffmeshAction;
-					Agent.Mode = ENavigationMode::Offmesh;
+					if (pAction->GenerateAction(Queue, Dest))
+					{
+						Agent.Mode = ENavigationMode::Offmesh;
+						return true;
+					}
+					return false;
 				}
 			}
-
-			// Stop at the first offmesh connection
-			break;
 		}
-
-		// No action found, fail
-		if (!pAction) return false;
 	}
+
+	// We triggered no offmesh connection, let's traverse navmesh surface
+	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &SmartObject);
+	return pAction && pAction->GenerateAction(Queue);
 
 	// pass all into the action, it will generate dest, next dest and distance by itself
 	//???what if offmesh? already generated points and changed mode. What if steering in offmesh?
@@ -345,6 +337,10 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 	// but in offmesh mode we already have Pos, Start & End. Surface actions only have Pos.
 	// So surface action may get the first dest, and then call the same method as offmesh calls from start.
 
+	const float* pCurrPos = Agent.Corridor.getPos();
+	const auto* pCurrPath = Agent.Corridor.getPath();
+
+	// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
 		pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
