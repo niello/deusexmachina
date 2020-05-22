@@ -20,7 +20,9 @@ namespace DEM::Game
 
 namespace DEM::AI
 {
-using PTraversalController = Ptr<class CTraversalAction>;
+using PTraversalAction = Ptr<class CTraversalAction>;
+struct CNavAgentComponent;
+class Navigate;
 
 class CTraversalAction : public ::Core::CObject
 {
@@ -28,24 +30,10 @@ class CTraversalAction : public ::Core::CObject
 
 public:
 
-	// FIXME: ugly API, but it is the best one I came up with to avoid recalculation of full distance to target
-	// PushSubAction result flags
-	enum
-	{
-		Failure              = 0x01,
-		NeedDistanceToTarget = 0x02
-	};
-
 	virtual float GetSqTriggerRadius(float AgentRadius) const = 0;
-	virtual bool  CanSkipPathPoint(float SqDistance) const = 0;
-	virtual U8    PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
-		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) = 0;
-	virtual void  SetDistanceAfterDest(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) {}
-
-	///////////////
-
-	virtual bool GenerateAction(Game::CActionQueueComponent& Queue) = 0;
-	virtual bool GenerateAction(Game::CActionQueueComponent& Queue, const vector3& Dest) = 0;
+	virtual bool  GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& Pos) = 0;
+	virtual bool  GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest) = 0;
+	virtual bool  GenerateRecoveryAction(Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& ValidPos) = 0;
 };
 
 }

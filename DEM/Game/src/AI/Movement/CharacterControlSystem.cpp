@@ -146,7 +146,7 @@ static vector3 ProcessMovement(CCharacterControllerComponent& Character, CAction
 
 	// Calculate arrival slowdown if close enough to destination.
 	// Negative additional distance means that no arrive steering is required at all.
-	if (pSteerAction->_AdditionalDistance >= 0.f)
+	if (!std::signbit(pSteerAction->_AdditionalDistance))
 	{
 		// _AdditionalDistance > 0 enables correct arrival when the current destination is not the final one.
 		// Navigation system sets _AdditionalDistance to the distance from the requested position to the final

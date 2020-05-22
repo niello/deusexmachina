@@ -57,11 +57,11 @@ class CSteerAction : public CTraversalAction
 
 public:
 
-	virtual float GetSqTriggerRadius(float AgentRadius) const override { return Steer::SqLinearTolerance; }
-	virtual bool CanSkipPathPoint(float SqDistance) const override { return SqDistance < Steer::SqLinearTolerance; }
-	virtual U8   PushSubAction(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction,
-		const vector3& Dest, const vector3& NextDest, Game::HEntity SmartObject) override;
-	virtual void SetDistanceAfterDest(Game::CActionQueueComponent& Queue, const Events::CEventBase& ParentAction, float Distance) override;
+	// FIXME: no special reason for this value (2 * R), may be changed in the future!
+	virtual float GetSqTriggerRadius(float AgentRadius) const override { return AgentRadius * 2.f; }
+	virtual bool  GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& Pos) override;
+	virtual bool  GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest) override;
+	virtual bool  GenerateRecoveryAction(Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& ValidPos) override;
 };
 
 }

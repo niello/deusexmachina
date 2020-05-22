@@ -285,21 +285,22 @@ static bool CheckAsyncPathResult(CNavAgentComponent& Agent, ::AI::CPathRequestQu
 }
 //---------------------------------------------------------------------
 
+// Return OutStraightLineEnd for corridor visibility optimization
 static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueueComponent& Queue,
-	const Navigate& NavAction, const vector3& ExactPos, vector3& OutDest)
+	const Navigate& NavAction, const vector3& ExactPos, vector3& OutStraightLineEnd)
 {
 	// Check if we are able to trigger an offmesh connection at the next corner
+	//???add shortcut method to corridor? Agent.Corridor.initStraightPathSearch(Agent.pNavQuery, Ctx);
 	dtStraightPathContext Ctx;
 	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
 		Agent.Corridor.getPos(), Agent.Corridor.getTarget(), Agent.Corridor.getPath(), Agent.Corridor.getPathCount(), Ctx)))
 		return false;
 
-	// Ignore possible action changes, search the corner straight ahead
-	vector3 Dest, NextDest;
+	// Offmesh start is always a corner, so ignore area and poly changes on the way
 	unsigned char Flags;
 	unsigned char AreaType;
 	dtPolyRef PolyRef;
-	if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, 0))) return false;
+	if (dtStatusFailed(Agent.pNavQuery->findNextStraightPathPoint(Ctx, OutStraightLineEnd.v, &Flags, &AreaType, &PolyRef, 0))) return false;
 
 	Game::HEntity SmartObject;
 
@@ -310,158 +311,27 @@ static bool GenerateTraversalAction(CNavAgentComponent& Agent, Game::CActionQueu
 		if (auto pAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject))
 		{
 			// Check if we are in a trigger range
-			if (std::abs(ExactPos.y - NextDest.y) < Agent.Height &&
-				vector3::SqDistance2D(ExactPos, NextDest) < pAction->GetSqTriggerRadius(Agent.Radius))
+			if (std::abs(ExactPos.y - OutStraightLineEnd.y) < Agent.Height &&
+				vector3::SqDistance2D(ExactPos, OutStraightLineEnd) < pAction->GetSqTriggerRadius(Agent.Radius))
 			{
 				dtPolyRef OffmeshRefs[2];
-				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
+				vector3 Start, End;
+				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Start.v, End.v, Agent.pNavQuery))
 				{
-					if (pAction->GenerateAction(Queue, Dest))
+					// Generate action with precalculated path edge
+					if (pAction->GenerateAction(Agent, SmartObject, Queue, NavAction, ExactPos, Start, End))
 					{
 						Agent.Mode = ENavigationMode::Offmesh;
 						return true;
 					}
-					return false;
 				}
 			}
 		}
 	}
 
-	// We triggered no offmesh connection, let's traverse navmesh surface
+	// We triggered no offmesh connection and have no precalculated path edge, let's traverse navmesh surface
 	auto pAction = Agent.Settings->FindAction(Agent, Agent.CurrAreaType, Agent.Corridor.getFirstPoly(), &SmartObject);
-	return pAction && pAction->GenerateAction(Queue);
-
-	// pass all into the action, it will generate dest, next dest and distance by itself
-	//???what if offmesh? already generated points and changed mode. What if steering in offmesh?
-	// in offmesh mode can try to build straight path from new point, the next edge may be the same action.
-	// but in offmesh mode we already have Pos, Start & End. Surface actions only have Pos.
-	// So surface action may get the first dest, and then call the same method as offmesh calls from start.
-
-	const float* pCurrPos = Agent.Corridor.getPos();
-	const auto* pCurrPath = Agent.Corridor.getPath();
-
-	// TODO: use DT_STRAIGHTPATH_ALL_CROSSINGS for controlled area, where each poly can have personal action
-	dtStraightPathContext Ctx;
-	if (dtStatusFailed(Agent.pNavQuery->initStraightPathSearch(
-		pCurrPos, Agent.Corridor.getTarget(), pCurrPath, Agent.Corridor.getPathCount(), Ctx)))
-		return false;
-
-	vector3 NextDest;
-	unsigned char Flags;
-	unsigned char AreaType;
-	dtPolyRef PolyRef;
-	dtStatus Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-	if (dtStatusFailed(Status)) return false;
-
-	// If no action available, give an agent a chance to trigger an offmesh connection
-	//???!!!TODO: cache current smart object until poly changes?
-	if (!pAction && !(Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)) return false;
-
-	Agent.IsTraversingLastEdge = !dtStatusInProgress(Status);
-
-	// Advance through path points until the traversal action is generated
-	vector3 Dest;
-	do
-	{
-		// Elongate path edge
-		Dest = NextDest;
-
-		// That was the last edge, finish
-		if (!dtStatusInProgress(Status)) break;
-
-		// The distance must be calculated from he real agent position, not the projected corridor pos
-		const float DistanceSq = vector3::SqDistance2D(ExactPos, Dest);
-		const bool IsSameLevel = std::abs(ExactPos.y - Dest.y) < Agent.Height;
-
-		// Check entering an offmesh connection
-		if (Flags & DT_STRAIGHTPATH_OFFMESH_CONNECTION)
-		{
-			//???must be a connection or at least its area param? or its action param?! like CanSkipPathPoint
-			const float OffmeshTriggerRadius = Agent.Radius * 2.f;
-			if (IsSameLevel && DistanceSq < OffmeshTriggerRadius * OffmeshTriggerRadius)
-			{
-				auto pOffmeshAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &SmartObject);
-				if (!pOffmeshAction) break;
-
-				// Adjust the path over the off-mesh connection.
-				// Path validity check will ensure that bad/blocked connections will be replanned.
-				// NB: for offmesh actions Dest is offmesh start and NextDest is offmesh end
-				dtPolyRef OffmeshRefs[2];
-				if (Agent.Corridor.moveOverOffmeshConnection(PolyRef, OffmeshRefs, Dest.v, NextDest.v, Agent.pNavQuery))
-				{
-					pAction = pOffmeshAction;
-					Agent.Mode = ENavigationMode::Offmesh;
-				}
-			}
-
-			//???break always or only at different action? what if offmesh offered steering?
-			//!!!if !pAction, must break!
-			break;
-		}
-
-		// Close enough to the next path point, assume already traversed
-		if (IsSameLevel && pAction->CanSkipPathPoint(DistanceSq))
-		{
-			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-			if (dtStatusFailed(Status)) return false;
-			continue;
-		}
-
-		//???pack into pAction->IsContinuableBy/IsSame(pNextAction)?
-		// The next path edge requires different traversal action, finish
-		Game::HEntity NextSmartObject;
-		auto pNextAction = Agent.Settings->FindAction(Agent, AreaType, PolyRef, &NextSmartObject);
-		if (!pNextAction || pAction->GetRTTI() != pNextAction->GetRTTI() || SmartObject != NextSmartObject) break;
-
-		// Get the next path edge end point
-		Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, DT_STRAIGHTPATH_AREA_CROSSINGS);
-		if (dtStatusFailed(Status)) break;
-
-		// If next edge changes direction, use its end position for smooth turning and finish
-		constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
-		const vector2 ToCurr(Dest.x - pCurrPos[0], Dest.z - pCurrPos[2]);
-		const vector2 ToNext(NextDest.x - pCurrPos[0], NextDest.z - pCurrPos[2]);
-		const float Dot = ToNext.dot(ToCurr);
-		if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
-			break;
-	}
-	while (true);
-
-	if (!pAction) return false;
-
-	// Push sub-action on top of the navigation action, updating or clearing previous one
-	OutDest = Dest;
-	auto Result = pAction->PushSubAction(Queue, NavAction, Dest, NextDest, SmartObject);
-	if (Result & CTraversalAction::Failure) return false;
-
-	//???when push sub-action, return previous Dest [into on-stack instance via swap?]
-	//float ToNextAction = 0.f;
-	//if (pAction->NeedDistanceToNextAction()) // AND next action not changed (break because of direction)
-	//{
-	//	// if action changed (existing sub not found)
-	//	// if target changed (compare NavAction._Destination and Agent.TargetPos)
-	//	// if path point changed (pAction->DestChanged(sub, Dest) or see above)
-
-	//	// iterate until action is changed
-	//}
-
-	// Some controllers require additional distance from current to final destination
-	if (Result & CTraversalAction::NeedDistanceToTarget)
-	{
-		//!!!!!!FIXME: calc distance to the next action change, not to the navigation target!
-		float Distance = vector3::Distance(Dest, NextDest);
-		while (dtStatusInProgress(Status))
-		{
-			Dest = NextDest;
-			Status = Agent.pNavQuery->findNextStraightPathPoint(Ctx, NextDest.v, &Flags, &AreaType, &PolyRef, 0);
-			if (dtStatusFailed(Status)) break;
-			Distance += vector3::Distance(Dest, NextDest);
-		}
-
-		pAction->SetDistanceAfterDest(Queue, NavAction, Distance);
-	}
-
-	return true;
+	return pAction && pAction->GenerateAction(Agent, SmartObject, Queue, NavAction, ExactPos);
 }
 //---------------------------------------------------------------------
 
@@ -564,9 +434,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			if (Agent.Mode == ENavigationMode::Recovery)
 			{
 				// Try to return to the navmesh by the shortest path
-				const vector3 ValidPos = Agent.Corridor.getPos();
 				auto pAction = Agent.Settings->FindAction(Agent, 0, 0, nullptr);
-				if (!pAction || (pAction->PushSubAction(*pQueue, *pNavigateAction, ValidPos, ValidPos, {}) & CTraversalAction::Failure))
+				if (!pAction || !pAction->GenerateRecoveryAction(*pQueue, *pNavigateAction, Agent.Corridor.getPos()))
 					ResetNavigation(Agent, *pQueue, PathQueue, DEM::Game::EActionStatus::Failed);
 			}
 			else if (Agent.Mode == ENavigationMode::Surface)
@@ -586,12 +455,12 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 					Agent.PathOptimizationTime = 0.f;
 				}
 
-				vector3 ActionDest;
-				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, ActionDest))
+				vector3 StraightLineEnd;
+				if (GenerateTraversalAction(Agent, *pQueue, *pNavigateAction, Pos, StraightLineEnd))
 				{
 					// Use our traversal target to optimize the path, because we know that there is a straight way to it
 					if (OptimizePath && Agent.Mode == ENavigationMode::Surface)
-						Agent.Corridor.optimizePathVisibility(ActionDest.v, 30.f * Agent.Radius, Agent.pNavQuery, pNavFilter);
+						Agent.Corridor.optimizePathVisibility(StraightLineEnd.v, 30.f * Agent.Radius, Agent.pNavQuery, pNavFilter);
 				}
 				else
 				{
