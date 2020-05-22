@@ -55,10 +55,14 @@ class CSteerAction : public CTraversalAction
 {
 	FACTORY_CLASS_DECL;
 
+protected:
+
+	bool GenerateAction();
+
 public:
 
-	// FIXME: no special reason for this value (2 * R), may be changed in the future!
-	virtual float GetSqTriggerRadius(float AgentRadius) const override { return AgentRadius * 2.f; }
+	// When steering through the offmesh connection, must reach the start point first
+	virtual float GetSqTriggerRadius(float AgentRadius) const override { return Steer::SqLinearTolerance; }
 	virtual bool  GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& Pos) override;
 	virtual bool  GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& Pos, const vector3& Dest, const vector3& NextDest) override;
 	virtual bool  GenerateRecoveryAction(Game::CActionQueueComponent& Queue, const Navigate& NavAction, const vector3& ValidPos) override;

@@ -10,6 +10,33 @@ RTTI_CLASS_IMPL(Steer, Events::CEventNative);
 RTTI_CLASS_IMPL(Turn, Events::CEventNative);
 FACTORY_CLASS_IMPL(DEM::AI::CSteerAction, 'STCL', CTraversalAction);
 
+//???call ElongatePathEdge and make some params in/out?
+bool CSteerAction::GenerateAction()
+{
+	// Need: is N last, Area, PolyRef
+
+	while (true)
+	{
+		// D = N
+		// if N is last point, set agent flag and break
+
+		// nextaction = findaction(Agent, Area, PolyRef)
+		// if action != nextaction
+		//   if P == D, return nextaction->GenerateAction()
+		//   else break
+
+		// N = findnext()
+		// if P != D && dir(P, D) != dir(P, N), break
+	}
+
+	// if isLast or action != nextaction, no need to calculate distance to action change
+
+	// calc distance, generate action
+
+	return false;
+}
+//---------------------------------------------------------------------
+
 bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity SmartObject, Game::CActionQueueComponent& Queue,
 	const Navigate& NavAction, const vector3& Pos)
 {
@@ -65,8 +92,8 @@ bool CSteerAction::GenerateAction(CNavAgentComponent& Agent, Game::HEntity Smart
 
 		// If next edge changes direction, use its end position for smooth turning and finish
 		constexpr float COS_SMALL_ANGLE_SQ = 0.99999f;
-		const vector2 ToCurr(Dest.x - pCurrPos[0], Dest.z - pCurrPos[2]);
-		const vector2 ToNext(NextDest.x - pCurrPos[0], NextDest.z - pCurrPos[2]);
+		const vector2 ToCurr(Dest.x - Pos.x, Dest.z - Pos.z);
+		const vector2 ToNext(NextDest.x - Pos.x, NextDest.z - Pos.z);
 		const float Dot = ToNext.dot(ToCurr);
 		if (Dot * Dot < ToNext.SqLength() * ToCurr.SqLength() * COS_SMALL_ANGLE_SQ)
 			break;
