@@ -1,5 +1,6 @@
 #pragma once
 #include <Game/ECS/EntityMap.h>
+#include <Data/SparseArray.hpp>
 #include <Data/SerializeToParams.h>
 #include <Data/SerializeToBinary.h>
 #include <Data/Buffer.h>
@@ -10,7 +11,6 @@
 // Interface is provided for the game world to handle all storages transparently. In places
 // where the component type is known it is preferable to use static storage type.
 // TComponentTraits determine what type of storage which component type uses.
-// Effective and compact handle array storage is used by default.
 
 // TODO: describe static interface, or make all virtual and use explicit static dispatching TStorage::Method where possible?
 
@@ -61,7 +61,7 @@ public:
 };
 
 ///////////////////////////////////////////////////////////////////////
-// Default component storage with a handle array for component data and a special map for entity -> component indexing
+// Default storage with component vector and a special map for entity -> component indexing
 ///////////////////////////////////////////////////////////////////////
 
 // Conditional pool member for binary diff data (Base/Current)
@@ -69,18 +69,15 @@ template<typename T> constexpr bool STORAGE_USE_DIFF_POOL = (DEM::BinaryFormat::
 template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
 struct CStorageNoPool {};
 
-template<typename T, typename H = uint32_t, size_t IndexBits = 18>
-class CHandleArrayComponentStorage : public IComponentStorage,
+template<typename T>
+class CSparseComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>
 {
 public:
 
-	// Only for internal use. External code can't reference components by handles.
-	// TODO: handles are overkill, indices are enough, but handle array has insertion O(1).
-	// Could use additional stack of free indices instead.
-	using CInnerStorage = Data::CHandleArray<std::pair<T, HEntity>, H, IndexBits, true>;
-	using CHandle = typename CInnerStorage::CHandle;
+	using TInnerStorage = Data::CSparseArray<std::pair<T, HEntity>, U32>;
 
+	constexpr static inline auto INVALID_INDEX = TInnerStorage::INVALID_INDEX;
 	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
 	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
 
@@ -93,22 +90,20 @@ public:
 		U64             BaseDataOffset = NO_BASE_DATA;       // For on-demand base data loading, read-only
 		TDiffData       DiffData = {};                       // Diff between base and current components
 		U32             DiffDataSize = 0;
-		CHandle         ComponentHandle;
+		U32             Index = INVALID_INDEX;               // Index in _Data. Invalid if component is not loaded.
 		EComponentState State = EComponentState::Templated;
 		EComponentState BaseState = EComponentState::NoBase; // For on-demand base data loading, read-only
 	};
 
-	CInnerStorage            _Data;
+	TInnerStorage            _Data;
 	CEntityMap<CIndexRecord> _IndexByEntity;
 
 	void ClearComponent(CIndexRecord& Record)
 	{
-		if (Record.ComponentHandle)
+		if (Record.Index != INVALID_INDEX)
 		{
-			_Data.Free(Record.ComponentHandle);
-			Record.ComponentHandle = CHandle();
-			//???keep handle to save handle space? is index enough? could then use plain array,
-			//not handle array for components, but only if external components references aren't used.
+			_Data.erase(Record.Index);
+			Record.Index = INVALID_INDEX;
 		}
 	}
 	//---------------------------------------------------------------------
@@ -195,9 +190,9 @@ public:
 		//???set dirty on non-const Find()? the only case when component data can change, plus doesn't involve per-field comparisons
 		//clear dirty flag here
 
-		n_assert2_dbg(Record.ComponentHandle, "CHandleArrayComponentStorage::SaveComponent() > call only for loaded components");
+		n_assert2_dbg(Record.Index != INVALID_INDEX, "CSparseComponentStorage::SaveComponent() > call only for loaded components");
 
-		const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
+		const T& Component = _Data[Record.Index].first;
 
 		T BaseComponent;
 		const bool HasBase = LoadBaseComponent(EntityID, Record, BaseComponent);
@@ -258,36 +253,51 @@ public:
 
 public:
 
-	CHandleArrayComponentStorage(const CGameWorld& World, UPTR InitialCapacity)
+	CSparseComponentStorage(const CGameWorld& World, UPTR InitialCapacity)
 		: IComponentStorage(World)
-		, _Data(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
-		, _IndexByEntity(std::min<size_t>(InitialCapacity, CInnerStorage::MAX_CAPACITY))
+		, _Data(std::min<size_t>(InitialCapacity, TInnerStorage::MAX_CAPACITY))
+		, _IndexByEntity(std::min<size_t>(InitialCapacity, TInnerStorage::MAX_CAPACITY))
 	{
-		n_assert_dbg(InitialCapacity <= CInnerStorage::MAX_CAPACITY);
+		n_assert_dbg(InitialCapacity <= TInnerStorage::MAX_CAPACITY);
 	}
 
-	virtual ~CHandleArrayComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
+	virtual ~CSparseComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
 
 	// Explicitly adds a component. If templated one is present, detaches it from the template.
 	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
 	{
-		CHandle Handle;
+		U32 Index = INVALID_INDEX;
 		if (auto It = _IndexByEntity.find(EntityID))
 		{
 			// Always set the current state of existing component to requested value.
 			// If existing component is not loaded, this function doesn't load it and returns nullptr.
 			It->Value.State = EComponentState::Explicit;
-			Handle = It->Value.ComponentHandle;
+			Index = It->Value.Index;
 		}
 		else
 		{
-			Handle = _Data.Allocate({ {}, EntityID });
-			if (Handle) _IndexByEntity.emplace(EntityID,
-				CIndexRecord{ NO_BASE_DATA, {}, 0, Handle, EComponentState::Explicit, EComponentState::NoBase });
+			if (_FreeIndices.empty())
+			{
+				// Our index is 32 bit, prevent adding too many components
+				if (Data.size() + 1 < INVALID_INDEX)
+				{
+					_Data.emplace_back({}, EntityID);
+					Index = static_cast<U32>(_Data.size() - 1);
+				}
+			}
+			else
+			{
+				Index = _FreeIndices.back();
+				_FreeIndices.pop_back();
+				_Data[Index].second = EntityID; // Component is already cleaned up to default-constructed state
+			}
+
+			if (Index != INVALID_INDEX) _IndexByEntity.emplace(EntityID,
+				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase });
 		}
 
-		return Handle ? &_Data.GetValueUnsafe(Handle)->first : nullptr;
+		return (Index != INVALID_INDEX) ? &_Data[Index]->first : nullptr;
 	}
 	//---------------------------------------------------------------------
 
@@ -344,20 +354,16 @@ public:
 	DEM_FORCE_INLINE T* Find(HEntity EntityID)
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (!It || !It->Value.ComponentHandle) return nullptr;
-
-		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
-		return &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first;
+		if (!It || It->Value.Index == INVALID_INDEX) return nullptr;
+		return &_Data[It->Value.Index].first;
 	}
 	//---------------------------------------------------------------------
 
 	DEM_FORCE_INLINE const T* Find(HEntity EntityID) const
 	{
 		auto It = _IndexByEntity.find(EntityID);
-		if (!It || !It->Value.ComponentHandle) return nullptr;
-
-		// NB: GetValueUnsafe is used because _IndexByEntity is guaranteed to be consistent with _Data
-		return &_Data.GetValueUnsafe(It->Value.ComponentHandle)->first;
+		if (!It || It->Value.Index == INVALID_INDEX) return nullptr;
+		return &_Data[It->Value.Index].first;
 	}
 	//---------------------------------------------------------------------
 
@@ -371,13 +377,13 @@ public:
 		if (_IndexByEntity.find(EntityID)) return;
 
 		auto It = _IndexByEntity.emplace(EntityID,
-			CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, BaseState ? EComponentState::Templated : EComponentState::NoBase });
+			CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, BaseState ? EComponentState::Templated : EComponentState::NoBase });
 
 		// Gets here only if template component exists, no additional checks required
 		if (Validate)
 		{
-			It->Value.ComponentHandle = _Data.Allocate({ std::move(LoadComponent(EntityID, It->Value)), EntityID });
-			n_assert_dbg(It->Value.ComponentHandle);
+			It->Value.Index = _Data.insert({ std::move(LoadComponent(EntityID, It->Value)), EntityID });
+			n_assert_dbg(It->Value.Index != INVALID_INDEX);
 		}
 	}
 	//---------------------------------------------------------------------
@@ -398,7 +404,7 @@ public:
 			It->Value.State = State;
 		else
 			It = _IndexByEntity.emplace(EntityID,
-				CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), State, EComponentState::NoBase });
+				CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, State, EComponentState::NoBase });
 
 		// Params format isn't supported as an intermediate storage, so we must create a component immediately.
 		// NB: Component must be default-created for LoadBaseComponent to work correctly.
@@ -406,10 +412,10 @@ public:
 		LoadBaseComponent(EntityID, It->Value, Component);
 		DEM::ParamsFormat::Deserialize(In, Component);
 
-		if (It->Value.ComponentHandle)
-			_Data.GetValueUnsafe(It->Value.ComponentHandle)->first = std::move(Component);
+		if (It->Value.Index != INVALID_INDEX)
+			_Data[It->Value.Index].first = std::move(Component);
 		else
-			It->Value.ComponentHandle = _Data.Allocate(std::make_pair<T, HEntity>(std::move(Component), std::move(EntityID)));
+			It->Value.Index = _Data.insert(std::make_pair<T, HEntity>(std::move(Component), std::move(EntityID)));
 
 		return true;
 	}
@@ -426,8 +432,8 @@ public:
 		if (Record.State == EComponentState::Explicit)
 		{
 			// Explicit component overrides the template, all its data is saved
-			if (Record.ComponentHandle)
-				DEM::ParamsFormat::Serialize(Out, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
+			if (Record.Index != INVALID_INDEX)
+				DEM::ParamsFormat::Serialize(Out, _Data[Record.Index].first);
 			else
 				DEM::ParamsFormat::Serialize(Out, LoadComponent(EntityID, Record));
 			return true;
@@ -448,8 +454,8 @@ public:
 				// Save only the difference against the template, so changes in defaulted fields will be propagated
 				// from templates to instances when template is changed but the world base file is not.
 				// If component is equal to template, save nothing. Will be created on template instantiation.
-				const bool HasDiff = Record.ComponentHandle ?
-					DEM::ParamsFormat::SerializeDiff(Out, _Data.GetValueUnsafe(Record.ComponentHandle)->first, TplComponent) :
+				const bool HasDiff = (Record.Index != INVALID_INDEX) ?
+					DEM::ParamsFormat::SerializeDiff(Out, _Data[Record.Index].first, TplComponent) :
 					DEM::ParamsFormat::SerializeDiff(Out, LoadComponent(EntityID, Record), TplComponent);
 
 				if (HasDiff) Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
@@ -493,9 +499,9 @@ public:
 			LoadBaseComponent(EntityID, Record, BaseComponent);
 
 			bool HasDiff;
-			if (Record.ComponentHandle)
+			if (Record.Index != INVALID_INDEX)
 			{
-				const T& Component = _Data.GetValueUnsafe(Record.ComponentHandle)->first;
+				const T& Component = _Data[Record.Index].first;
 				HasDiff = DEM::ParamsFormat::SerializeDiff(Out, Component, BaseComponent);
 			}
 			else
@@ -535,7 +541,7 @@ public:
 		{
 			const auto EntityIDRaw = In.Read<decltype(HEntity::Raw)>();
 			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
-				CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Deleted, EComponentState::Deleted });
+				CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Deleted, EComponentState::Deleted });
 		}
 
 		// We could create base components from data right here, but we will deserialize them on demand instead.
@@ -547,7 +553,7 @@ public:
 			const auto OffsetInBase = In.Read<U64>();
 			const auto ComponentState = static_cast<EComponentState>(In.Read<U8>());
 			_IndexByEntity.emplace(HEntity{ EntityIDRaw },
-				CIndexRecord{ OffsetInBase, {}, 0, CHandle(), ComponentState, ComponentState });
+				CIndexRecord{ OffsetInBase, {}, 0, INVALID_INDEX, ComponentState, ComponentState });
 		}
 
 		// Skip binary data for now. Will be accessed through records' OffsetInBase
@@ -585,7 +591,7 @@ public:
 			{
 				// NB: State, DiffData and DiffDataSize will be overwritten below
 				It = _IndexByEntity.emplace(EntityID,
-					CIndexRecord{ NO_BASE_DATA, {}, 0, CHandle(), EComponentState::Templated, EComponentState::NoBase });
+					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, EComponentState::NoBase });
 			}
 			auto& IndexRecord = It->Value;
 
@@ -642,8 +648,8 @@ public:
 			if (Record.State == EComponentState::Explicit)
 			{
 				// Explicit component overrides the template, all its data is saved
-				if (Record.ComponentHandle)
-					DEM::BinaryFormat::Serialize(Intermediate, _Data.GetValueUnsafe(Record.ComponentHandle)->first);
+				if (Record.Index != INVALID_INDEX)
+					DEM::BinaryFormat::Serialize(Intermediate, _Data[Record.Index].first);
 				else
 					DEM::BinaryFormat::Serialize(Intermediate, LoadComponent(EntityID, Record));
 			}
@@ -662,8 +668,8 @@ public:
 
 					// Save only the difference against the template, so changes in defaulted fields will be propagated
 					// from templates to instances when template is changed but the world base file is not.
-					const bool HasDiff = Record.ComponentHandle ?
-						DEM::BinaryFormat::SerializeDiff(Intermediate, _Data.GetValueUnsafe(Record.ComponentHandle)->first, TplComponent) :
+					const bool HasDiff = (Record.Index != INVALID_INDEX) ?
+						DEM::BinaryFormat::SerializeDiff(Intermediate, _Data[Record.Index].first, TplComponent) :
 						DEM::BinaryFormat::SerializeDiff(Intermediate, LoadComponent(EntityID, Record), TplComponent);
 
 					// Component is equal to template, save nothing. Will be created on template instantiation.
@@ -766,7 +772,7 @@ public:
 			// State can be equal to BaseState, but some fields may change
 			if (Record.State != EComponentState::Deleted)
 			{
-				if (Record.ComponentHandle) SaveComponent(EntityID, Record);
+				if (Record.Index != INVALID_INDEX) SaveComponent(EntityID, Record);
 				WriteComponentDiff(Out, EntityID, Record);
 			}
 		});
@@ -782,7 +788,7 @@ public:
 		for (auto& IndexRecord : _IndexByEntity)
 			ClearDiffBuffer(IndexRecord);
 		_IndexByEntity.clear();
-		_Data.Clear();
+		_Data.clear();
 	}
 	//---------------------------------------------------------------------
 
@@ -803,7 +809,7 @@ public:
 				if (Record.State == Record.BaseState)
 				{
 					// Actualize diff data. Component may be changed but not saved yet.
-					if (Record.ComponentHandle) SaveComponent(EntityID, Record);
+					if (Record.Index != INVALID_INDEX) SaveComponent(EntityID, Record);
 
 					// If component is not changed, skip invalidation
 					if (!Record.DiffDataSize) return; // continue
@@ -830,7 +836,7 @@ public:
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
 			// Already validated
-			if (Record.ComponentHandle) return;
+			if (Record.Index != INVALID_INDEX) return;
 
 			// Deleted, no component required
 			if (Record.State == EComponentState::Deleted) return;
@@ -842,8 +848,8 @@ public:
 			// Templated component without a template, no component required, even if the diff is present
 			if (Record.State == EComponentState::Templated && !_World.GetTemplateComponentData<T>(pEntity->TemplateID)) return;
 
-			Record.ComponentHandle = _Data.Allocate(std::make_pair<T, HEntity>(std::move(LoadComponent(EntityID, Record)), std::move(EntityID)));
-			n_assert_dbg(Record.ComponentHandle);
+			Record.Index = _Data.insert(std::make_pair<T, HEntity>(std::move(LoadComponent(EntityID, Record)), std::move(EntityID)));
+			n_assert_dbg(Record.Index != INVALID_INDEX);
 		});
 	}
 	//---------------------------------------------------------------------
@@ -853,16 +859,14 @@ public:
 		_IndexByEntity.ForEach([this, LevelID](HEntity EntityID, CIndexRecord& Record)
 		{
 			// Already unloaded
-			if (!Record.ComponentHandle) return;
+			if (Record.Index == INVALID_INDEX) return;
 
 			// Not in a level being invalidated
 			auto pEntity = _World.GetEntity(EntityID);
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
 			SaveComponent(EntityID, Record);
-
-			_Data.Free(Record.ComponentHandle);
-			Record.ComponentHandle = CHandle(); //???TODO: keep handle to save handle space? is index enough?
+			ClearComponent(Record);
 		});
 	}
 	//---------------------------------------------------------------------
@@ -1169,7 +1173,7 @@ public:
 template<typename T>
 struct TComponentTraits
 {
-	using TStorage = std::conditional_t<std::is_empty_v<T>, CEmptyComponentStorage<T>, CHandleArrayComponentStorage<T>>;
+	using TStorage = std::conditional_t<std::is_empty_v<T>, CEmptyComponentStorage<T>, CSparseComponentStorage<T>>;
 };
 
 template<typename T> using TComponentStoragePtr = typename TComponentTraits<just_type_t<T>>::TStorage*;

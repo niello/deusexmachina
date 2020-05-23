@@ -10,7 +10,7 @@
 #define OK				return true
 #define FAIL			return false
 
-#define INVALID_INDEX	(-1)
+constexpr auto INVALID_INDEX = ~static_cast<size_t>(0);
 
 // http://cnicholson.net/2011/01/stupid-c-tricks-a-better-sizeof_array
 template<typename T, size_t N> char (&SIZEOF_ARRAY_REQUIRES_ARRAY_ARGUMENT(T (&)[N]))[N];  
