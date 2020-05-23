@@ -91,7 +91,7 @@ public:
 	template<typename... TArgs>
 	TIndex emplace(TArgs&&... Args)
 	{
-		return insert(std::forward<TArgs>(Args)...);
+		return insert(T(std::forward<TArgs>(Args)...));
 	}
 
 	void erase(TIndex Index)

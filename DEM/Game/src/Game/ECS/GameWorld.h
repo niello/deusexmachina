@@ -162,7 +162,7 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 {
 	if (!EntityID) FAIL;
 	auto pStorage = FindComponentStorage<T>();
-	return pStorage ? pStorage->Remove(EntityID) : false;
+	return pStorage ? pStorage->TComponentTraits<T>::TStorage::RemoveComponent(EntityID) : false;
 }
 //---------------------------------------------------------------------
 

@@ -277,32 +277,17 @@ public:
 		}
 		else
 		{
-			if (_FreeIndices.empty())
-			{
-				// Our index is 32 bit, prevent adding too many components
-				if (Data.size() + 1 < INVALID_INDEX)
-				{
-					_Data.emplace_back({}, EntityID);
-					Index = static_cast<U32>(_Data.size() - 1);
-				}
-			}
-			else
-			{
-				Index = _FreeIndices.back();
-				_FreeIndices.pop_back();
-				_Data[Index].second = EntityID; // Component is already cleaned up to default-constructed state
-			}
-
+			Index = _Data.emplace(T{}, EntityID);
 			if (Index != INVALID_INDEX) _IndexByEntity.emplace(EntityID,
 				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase });
 		}
 
-		return (Index != INVALID_INDEX) ? &_Data[Index]->first : nullptr;
+		return (Index != INVALID_INDEX) ? &_Data[Index].first : nullptr;
 	}
 	//---------------------------------------------------------------------
 
 	// Explicitly deletes a component, overrides a template if it exists
-	bool Remove(HEntity EntityID)
+	virtual bool RemoveComponent(HEntity EntityID) override
 	{
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) FAIL;
@@ -365,10 +350,6 @@ public:
 		if (!It || It->Value.Index == INVALID_INDEX) return nullptr;
 		return &_Data[It->Value.Index].first;
 	}
-	//---------------------------------------------------------------------
-
-	//???leave only virtual one and use static dispatch? TStorage::Remove() won't be virtual.
-	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
 	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState, bool Validate) override
@@ -919,7 +900,7 @@ public:
 	//---------------------------------------------------------------------
 
 	// Explicitly deletes a component, overrides a template if it exists
-	DEM_FORCE_INLINE bool Remove(HEntity EntityID)
+	DEM_FORCE_INLINE virtual bool RemoveComponent(HEntity EntityID) override
 	{
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It) return false;
@@ -970,9 +951,6 @@ public:
 		auto It = _IndexByEntity.find(EntityID);
 		return (It && It->Value.State != EComponentState::Deleted) ? &_SharedInstance : nullptr;
 	}
-	//---------------------------------------------------------------------
-
-	virtual bool RemoveComponent(HEntity EntityID) override { return Remove(EntityID); }
 	//---------------------------------------------------------------------
 
 	virtual void InstantiateTemplate(HEntity EntityID, bool BaseState, bool /*Validate*/) override
