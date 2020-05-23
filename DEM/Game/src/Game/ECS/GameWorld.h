@@ -11,8 +11,6 @@
 // registered here. Designed using an ECS (entity-component-system) pattern.
 // Multiple isolated worlds can be created, but one is enough for any typical game.
 
-// TODO: move entity management and API into separate object and store it inside? World.Entities().Create(...) etc.
-
 namespace DEM::Game
 {
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
@@ -43,9 +41,6 @@ protected:
 	std::vector<PComponentStorage> _Storages;
 	std::vector<CStrID>            _StorageIDs;
 	std::unordered_map<CStrID, IComponentStorage*> _StorageMap;
-
-	// system by type list
-	// fast-access map entity -> components? Component stores entity ID, but need also to find components by entity ID and type
 
 	std::unordered_map<CStrID, PGameLevel> _Levels;
 	//???accumulated COIs for levels?
@@ -80,12 +75,6 @@ public:
 
 	IO::IStream* GetBaseStream(U64 Offset) const;
 
-	// Update(float dt)
-
-	// SetTimeFactor, <= 0 - pause
-	// GetTimeFactor
-	// GetTime
-
 	CGameLevel* CreateLevel(CStrID ID, const CAABB& Bounds, const CAABB& InteractiveBounds = CAABB::Empty, UPTR SubdivisionDepth = 0);
 	CGameLevel* LoadLevel(CStrID ID, const Data::CParams& In);
 	CGameLevel* FindLevel(CStrID ID) const;
@@ -97,12 +86,8 @@ public:
 	// ValidateLevels() - need API? or automatic? resmgr as param or stored inside the world? must be consistent across validations!
 	// AddLevelCOI(id, vector3) - cleared after update
 
-	//???
-	// LoadEntityTemplate(desc)
-	// CreateEntity(desc)
-
 	HEntity     CreateEntity(CStrID LevelID, CStrID TemplateID = CStrID::Empty);
-	// CreateEntity(template)
+	// CreateEntity(template ID)
 	// CreateEntity(component type list, templated?)
 	// CreateEntity(prototype entity ID for cloning)
 	void        DeleteEntity(HEntity EntityID);
@@ -132,10 +117,6 @@ public:
 	void ForEachEntityWith(TCallback Callback);
 	template<typename TComponent, typename TCallback>
 	void ForEachComponent(TCallback Callback);
-
-	// RegisterSystem<T>(system instance, update priority? or system tells its dependencies and world sorts them? explicit order?)
-	// UnregisterSystem<T>()
-	// GetSystem<T>()
 };
 
 template<class T>

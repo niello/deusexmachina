@@ -64,22 +64,22 @@ public:
 // Default component storage with a handle array for component data and a special map for entity -> component indexing
 ///////////////////////////////////////////////////////////////////////
 
-// Conditional pool member
+// Conditional pool member for binary diff data (Base/Current)
 template<typename T> constexpr bool STORAGE_USE_DIFF_POOL = (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512);
 template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
 struct CStorageNoPool {};
 
-template<typename T, typename H = uint32_t, size_t IndexBits = 18, bool ResetOnOverflow = true>
+template<typename T, typename H = uint32_t, size_t IndexBits = 18>
 class CHandleArrayComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>
 {
 public:
 
-	using CPair = std::pair<T, HEntity>;
-	using CInnerStorage = Data::CHandleArray<CPair, H, IndexBits, ResetOnOverflow>;
+	// Only for internal use. External code can't reference components by handles.
+	// TODO: handles are overkill, indices are enough, but handle array has insertion O(1).
+	// Could use additional stack of free indices instead.
+	using CInnerStorage = Data::CHandleArray<std::pair<T, HEntity>, H, IndexBits, true>;
 	using CHandle = typename CInnerStorage::CHandle;
-
-protected:
 
 	constexpr static inline auto NO_BASE_DATA = std::numeric_limits<U64>().max();
 	constexpr static inline auto MAX_DIFF_SIZE = DEM::BinaryFormat::GetMaxDiffSize<T>();
@@ -1158,13 +1158,6 @@ public:
 
 	virtual void ValidateComponents(CStrID LevelID) override {}
 	virtual void InvalidateComponents(CStrID LevelID) override {}
-
-	//auto begin() { return _Data.begin(); }
-	//auto begin() const { return _Data.begin(); }
-	//auto cbegin() const { return _Data.cbegin(); }
-	//auto end() { return _Data.end(); }
-	//auto end() const { return _Data.end(); }
-	//auto cend() const { return _Data.cend(); }
 
 	size_t GetComponentCount() const { return _IndexByEntity.size(); }
 };
