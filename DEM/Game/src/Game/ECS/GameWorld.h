@@ -1,5 +1,6 @@
 #pragma once
 #include <Game/ECS/ComponentStorage.h>
+#include <Game/ECS/DeadComponentStorage.h>
 #include <Game/ECS/EntityTemplate.h>
 #include <Resources/ResourceManager.h>
 #include <Resources/Resource.h>
@@ -24,6 +25,13 @@ protected:
 	inline static uint32_t ComponentTypeCount = 0;
 	template<typename T> inline static const uint32_t ComponentTypeIndex = ComponentTypeCount++;
 
+	struct CComponents
+	{
+		PComponentStorage     Storage;
+		PDeadComponentStorage DeadStorage;
+		CStrID                StorageID;
+	};
+
 	enum class EState
 	{
 		Stopped = 0, // World is ready (has actual state) but simulation is disabled
@@ -38,8 +46,7 @@ protected:
 
 	CEntityStorage                 _EntitiesBase;
 	CEntityStorage                 _Entities;
-	std::vector<PComponentStorage> _Storages;
-	std::vector<CStrID>            _StorageIDs;
+	std::vector<CComponents>       _ComponentRegistry;
 	std::unordered_map<CStrID, IComponentStorage*> _StorageMap;
 
 	std::unordered_map<CStrID, PGameLevel> _Levels;
@@ -99,12 +106,13 @@ public:
 	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
 	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
 
-	template<class T> void   RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
+	template<class T> void   RegisterComponent(CStrID Name, UPTR InitialCapacity = 0, bool ExternalCleanup = false);
 	template<class T> T*     AddComponent(HEntity EntityID);
 	template<class T> bool   RemoveComponent(HEntity EntityID);
 	template<class T> size_t GetComponentCount() const;
 	template<class T> T*     FindComponent(HEntity EntityID);
 	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
+	template<class T> const typename TComponentStoragePtr<T> FindComponentStorage() const;
 	const IComponentStorage* FindComponentStorage(CStrID ComponentName) const;
 	IComponentStorage* FindComponentStorage(CStrID ComponentName);
 
@@ -120,80 +128,68 @@ public:
 };
 
 template<class T>
-void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity)
+void CGameWorld::RegisterComponent(CStrID Name, UPTR InitialCapacity, bool ExternalCleanup)
 {
 	static_assert(std::is_base_of_v<IComponentStorage, TComponentTraits<T>::TStorage>,
 		"CGameWorld::RegisterComponent() > Storage must implement IComponentStorage");
 
 	// Static type is enough for distinguishing between different components, no dynamic RTTI needed
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex)
+	if (_ComponentRegistry.size() <= TypeIndex) _ComponentRegistry.resize(TypeIndex + 1);
+
+	auto& Record = _ComponentRegistry[TypeIndex];
+	Record.Storage = std::make_unique<TComponentTraits<T>::TStorage>(*this, InitialCapacity);
+	Record.StorageID = Name;
+	if constexpr (!std::is_empty_v<T>)
 	{
-		_Storages.resize(TypeIndex + 1);
-		_StorageIDs.resize(TypeIndex + 1);
+		if (ExternalCleanup) Record.DeadStorage = std::make_unique<CDeadComponentStorage<T>>(0);
 	}
-	_Storages[TypeIndex] = std::make_unique<TComponentTraits<T>::TStorage>(*this, InitialCapacity);
-	_StorageIDs[TypeIndex] = Name;
-	_StorageMap[Name] = _Storages[TypeIndex].get();
+	_StorageMap[Name] = Record.Storage.get();
 }
 //---------------------------------------------------------------------
 
 template<class T>
 T* CGameWorld::AddComponent(HEntity EntityID)
 {
-	// Invalid entity ID is forbidden
-	if (!EntityID) return nullptr;
-
-	// Component type is not registered yet
-	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
-
-	//???check entity exists? create if not? or fail?
-
-	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
-	return Storage.Add(EntityID);
+	if (!EntityID || !_Entities.GetValue(EntityID)) return nullptr;
+	auto pStorage = FindComponentStorage<T>();
+	return pStorage ? pStorage->Add(EntityID) : nullptr;
 }
 //---------------------------------------------------------------------
 
 template<class T>
 bool CGameWorld::RemoveComponent(HEntity EntityID)
 {
-	// Invalid entity ID is forbidden
 	if (!EntityID) FAIL;
-
-	// Component type is not registered yet
-	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) FAIL;
-
-	//???check entity exists?
-
-	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
-	return Storage.Remove(EntityID);
+	auto pStorage = FindComponentStorage<T>();
+	return pStorage ? pStorage->Remove(EntityID) : false;
 }
 //---------------------------------------------------------------------
 
 template<class T>
 size_t CGameWorld::GetComponentCount() const
 {
-	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return 0;
-	const auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
-	return Storage.GetComponentCount();
+	auto pStorage = FindComponentStorage<T>();
+	return pStorage ? pStorage->GetComponentCount() : 0;
 }
 //---------------------------------------------------------------------
 
 template<class T>
 T* CGameWorld::FindComponent(HEntity EntityID)
 {
-	// Invalid entity ID is forbidden
 	if (!EntityID) return nullptr;
+	auto pStorage = FindComponentStorage<T>();
+	return pStorage ? pStorage->Find(EntityID) : nullptr;
+}
+//---------------------------------------------------------------------
 
-	// Component type is not registered yet
+template<class T>
+const typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage() const
+{
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
-
-	auto& Storage = *static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
-	return Storage.Find(EntityID);
+	if (_ComponentRegistry.size() <= TypeIndex) return nullptr;
+	auto pStorage = _ComponentRegistry[TypeIndex].Storage.get();
+	return pStorage ? static_cast<TComponentStoragePtr<T>>(pStorage) : nullptr;
 }
 //---------------------------------------------------------------------
 
@@ -201,20 +197,16 @@ template<class T>
 typename TComponentStoragePtr<T> CGameWorld::FindComponentStorage()
 {
 	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex) return nullptr;
-
-	return static_cast<TComponentStoragePtr<T>>(_Storages[TypeIndex].get());
+	if (_ComponentRegistry.size() <= TypeIndex) return nullptr;
+	auto pStorage = _ComponentRegistry[TypeIndex].Storage.get();
+	return pStorage ? static_cast<TComponentStoragePtr<T>>(pStorage) : nullptr;
 }
 //---------------------------------------------------------------------
 
 template<class T>
 const Data::CData* CGameWorld::GetTemplateComponentData(CStrID TemplateID) const
 {
-	if (!TemplateID) return nullptr;
-
-	// Component type is not registered yet
-	const auto TypeIndex = ComponentTypeIndex<T>;
-	if (_Storages.size() <= TypeIndex || !_Storages[TypeIndex]) return nullptr;
+	if (!TemplateID || !FindComponentStorage<T>()) return nullptr;
 
 	auto pRsrc = _ResMgr.FindResource(TemplateID);
 	if (!pRsrc) return nullptr;
@@ -223,7 +215,7 @@ const Data::CData* CGameWorld::GetTemplateComponentData(CStrID TemplateID) const
 	if (!pTpl) return nullptr;
 
 	Data::CData* pData;
-	return pTpl->GetDesc().TryGet(pData, _StorageIDs[TypeIndex]) ? pData : nullptr;
+	return pTpl->GetDesc().TryGet(pData, _ComponentRegistry[ComponentTypeIndex<T>].StorageID) ? pData : nullptr;
 }
 //---------------------------------------------------------------------
 

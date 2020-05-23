@@ -48,6 +48,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/GameStateManager.h
 	DEM/Game/src/Game/Property.h
 	DEM/Game/src/Game/ECS/ComponentStorage.h
+	DEM/Game/src/Game/ECS/DeadComponentStorage.h
 	DEM/Game/src/Game/ECS/Entity.h
 	DEM/Game/src/Game/ECS/EntityMap.h
 	DEM/Game/src/Game/ECS/EntityTemplate.h

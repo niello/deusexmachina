@@ -36,7 +36,7 @@ public:
 	CSparseArray() = default;
 	CSparseArray(size_t InitialCapacity) { _Data.reserve(std::min(InitialCapacity, MAX_CAPACITY)); }
 
-	TIndex insert(T&& Value)
+	TIndex insert(T&& Value = T{})
 	{
 		if (_FreeIndices.empty())
 		{
