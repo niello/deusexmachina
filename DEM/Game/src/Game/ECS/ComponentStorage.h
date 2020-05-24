@@ -75,6 +75,8 @@ template<typename T> struct CStorageDead
 };
 struct CStorageNoDead {};
 
+// ExternalDeinit flag prevents components from being deleted on remove. Use it when the component
+// requires external deinitialization logic, e.g. cancelling async operations or freeing resources.
 template<typename T, bool ExternalDeinit = false>
 class CSparseComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>,
@@ -105,18 +107,18 @@ protected:
 	TInnerStorage            _Data;
 	CEntityMap<CIndexRecord> _IndexByEntity;
 
-	void ClearComponent(CIndexRecord& Record)
+	void ClearComponent(HEntity EntityID, CIndexRecord& Record)
 	{
-		if (Record.Index != INVALID_INDEX)
-		{
-			if constexpr (ExternalDeinit)
-			{
-				NOT_IMPLEMENTED;
-			}
+		if (Record.Index == INVALID_INDEX) return;
 
-			_Data.erase(Record.Index);
-			Record.Index = INVALID_INDEX;
+		if constexpr (ExternalDeinit)
+		{
+			n_assert_dbg(!_DeadIndex.find(EntityID)); // Can't normally happen
+			_DeadIndex.emplace(EntityID, _Dead.insert(std::move(_Data[Record.Index])));
 		}
+
+		_Data.erase(Record.Index);
+		Record.Index = INVALID_INDEX;
 	}
 	//---------------------------------------------------------------------
 
@@ -276,7 +278,6 @@ public:
 	virtual ~CSparseComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
 
 	// Explicitly adds a component. If templated one is present, detaches it from the template.
-	// TODO: pass optional precreated component inside?
 	T* Add(HEntity EntityID)
 	{
 		U32 Index = INVALID_INDEX;
@@ -289,7 +290,19 @@ public:
 		}
 		else
 		{
-			Index = _Data.emplace(T{}, EntityID);
+			if constexpr (ExternalDeinit)
+			{
+				if (auto DeadIt = _DeadIndex.find(EntityID))
+				{
+					// Resurrect dead, but not yet destroyed component
+					Index = _Data.emplace(std::move(_Dead[DeadIt->Value]));
+					_Dead.erase(DeadIt->Value);
+					_DeadIndex.erase(DeadIt);
+				}
+				else Index = _Data.emplace(T{}, EntityID);
+			}
+			else Index = _Data.emplace(T{}, EntityID);
+
 			if (Index != INVALID_INDEX) _IndexByEntity.emplace(EntityID,
 				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase });
 		}
@@ -305,7 +318,7 @@ public:
 		if (!It) FAIL;
 
 		auto& IndexRecord = It->Value;
-		ClearComponent(IndexRecord);
+		ClearComponent(EntityID, IndexRecord);
 		ClearDiffBuffer(IndexRecord);
 
 		// If record has no template, it can be erased entirely. If component is later added to the template,
@@ -340,7 +353,7 @@ public:
 		{
 			// No templated component, erase record
 			auto& IndexRecord = It->Value;
-			ClearComponent(IndexRecord);
+			ClearComponent(EntityID, IndexRecord);
 			ClearDiffBuffer(IndexRecord);
 			_IndexByEntity.erase(It);
 		}
@@ -814,7 +827,7 @@ public:
 			}
 
 			// Unload invalidated component
-			ClearComponent(Record);
+			ClearComponent(EntityID, Record);
 			ClearDiffBuffer(Record);
 		});
 
@@ -860,7 +873,7 @@ public:
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
 			SaveComponent(EntityID, Record);
-			ClearComponent(Record);
+			ClearComponent(EntityID, Record);
 		});
 	}
 	//---------------------------------------------------------------------

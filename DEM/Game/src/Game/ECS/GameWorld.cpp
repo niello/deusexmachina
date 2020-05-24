@@ -57,9 +57,9 @@ void CGameWorld::ClearAll(UPTR NewInitialCapacity)
 	_BaseStream.Reset();
 	_EntitiesBase.Clear(NewInitialCapacity);
 	_Entities.Clear(NewInitialCapacity);
-	for (auto& Record : _ComponentRegistry)
-		if (Record.Storage)
-			Record.Storage->ClearAll();
+	for (auto& Storage : _Storages)
+		if (Storage)
+			Storage->ClearAll();
 }
 //---------------------------------------------------------------------
 
@@ -70,9 +70,9 @@ void CGameWorld::ClearDiff()
 	// TODO: notify affected systems / entities about state destruction
 
 	_Entities.Clear(_EntitiesBase.size());
-	for (auto& Record : _ComponentRegistry)
-		if (Record.Storage)
-			Record.Storage->ClearDiff();
+	for (auto& Storage : _Storages)
+		if (Storage)
+			Storage->ClearDiff();
 
 	_State = EState::BaseLoaded;
 }
@@ -342,7 +342,7 @@ bool CGameWorld::SaveAll(IO::CBinaryWriter& Out)
 		DEM::BinaryFormat::Serialize(Out, Entity);
 	}
 
-	Out.Write(static_cast<uint32_t>(_ComponentRegistry.size()));
+	Out.Write(static_cast<uint32_t>(_Storages.size()));
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
@@ -428,7 +428,7 @@ bool CGameWorld::SaveDiff(IO::CBinaryWriter& Out)
 	Out << CEntityStorage::INVALID_HANDLE_VALUE;
 
 	// Save component diffs per storage
-	Out.Write(static_cast<uint32_t>(_ComponentRegistry.size()));
+	Out.Write(static_cast<uint32_t>(_Storages.size()));
 	for (const auto& [ComponentID, Storage] : _StorageMap)
 	{
 		Out.Write(ComponentID);
@@ -492,17 +492,17 @@ CGameLevel* CGameWorld::FindLevel(CStrID ID) const
 
 void CGameWorld::ValidateComponents(CStrID LevelID)
 {
-	for (auto& Record : _ComponentRegistry)
-		if (Record.Storage)
-			Record.Storage->ValidateComponents(LevelID);
+	for (auto& Storage : _Storages)
+		if (Storage)
+			Storage->ValidateComponents(LevelID);
 }
 //---------------------------------------------------------------------
 
 void CGameWorld::InvalidateComponents(CStrID LevelID)
 {
-	for (auto& Record : _ComponentRegistry)
-		if (Record.Storage)
-			Record.Storage->InvalidateComponents(LevelID);
+	for (auto& Storage : _Storages)
+		if (Storage)
+			Storage->InvalidateComponents(LevelID);
 }
 //---------------------------------------------------------------------
 
@@ -549,9 +549,9 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 void CGameWorld::DeleteEntity(HEntity EntityID)
 {
 	if (!_Entities.Free(EntityID)) return;
-	for (auto& Record : _ComponentRegistry)
-		if (Record.Storage)
-			Record.Storage->RemoveComponent(EntityID);
+	for (auto& Storage : _Storages)
+		if (Storage)
+			Storage->RemoveComponent(EntityID);
 }
 //---------------------------------------------------------------------
 
