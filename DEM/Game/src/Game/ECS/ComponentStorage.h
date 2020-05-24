@@ -12,8 +12,6 @@
 // where the component type is known it is preferable to use static storage type.
 // TComponentTraits determine what type of storage which component type uses.
 
-// TODO: describe static interface, or make all virtual and use explicit static dispatching TStorage::Method where possible?
-
 namespace DEM::Game
 {
 class CGameWorld;
@@ -69,9 +67,18 @@ template<typename T> constexpr bool STORAGE_USE_DIFF_POOL = (DEM::BinaryFormat::
 template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
 struct CStorageNoPool {};
 
-template<typename T>
+// Conditional dead component storage
+template<typename T> struct CStorageDead
+{
+	Data::CSparseArray<std::pair<T, HEntity>, U32> _Dead;
+	CEntityMap<U32>                                _DeadIndex;
+};
+struct CStorageNoDead {};
+
+template<typename T, bool ExternalDeinit = false>
 class CSparseComponentStorage : public IComponentStorage,
-	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>
+	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>,
+	std::conditional_t<ExternalDeinit, CStorageDead<T>, CStorageNoDead>
 {
 protected:
 
@@ -102,6 +109,11 @@ protected:
 	{
 		if (Record.Index != INVALID_INDEX)
 		{
+			if constexpr (ExternalDeinit)
+			{
+				NOT_IMPLEMENTED;
+			}
+
 			_Data.erase(Record.Index);
 			Record.Index = INVALID_INDEX;
 		}
@@ -1143,30 +1155,6 @@ public:
 	virtual void InvalidateComponents(CStrID LevelID) override {}
 
 	size_t GetComponentCount() const { return _IndexByEntity.size(); }
-};
-
-///////////////////////////////////////////////////////////////////////
-// Storage for stateful components which can wait for external deinitialization
-///////////////////////////////////////////////////////////////////////
-
-template<typename T>
-class CSparseComponentStorageWithDead : public CSparseComponentStorage<T>
-{
-	static_assert(!std::is_empty_v<T>, "Empty components have no data to deinitialize");
-
-protected:
-
-	using TDeadStorage = Data::CSparseArray<std::pair<T, HEntity>, U32>;
-
-	TDeadStorage    _Dead;
-	CEntityMap<U32> _DeadIndex;
-
-public:
-
-	CSparseComponentStorageWithDead(const CGameWorld& World, UPTR InitialCapacity)
-		: CSparseComponentStorage<T>(World, InitialCapacity)
-	{
-	}
 };
 
 ///////////////////////////////////////////////////////////////////////

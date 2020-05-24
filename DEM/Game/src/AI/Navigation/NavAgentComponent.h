@@ -69,7 +69,7 @@ namespace DEM::Game
 template<>
 struct TComponentTraits<DEM::AI::CNavAgentComponent>
 {
-	using TStorage = CSparseComponentStorageWithDead<DEM::AI::CNavAgentComponent>;
+	using TStorage = CSparseComponentStorage<DEM::AI::CNavAgentComponent, true>;
 };
 
 }
