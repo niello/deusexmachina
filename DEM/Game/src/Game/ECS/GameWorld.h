@@ -106,20 +106,22 @@ public:
 	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
 	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
 
-	template<class T> void   RegisterComponent(CStrID Name, UPTR InitialCapacity = 0, bool ExternalCleanup = false);
-	template<class T> T*     AddComponent(HEntity EntityID);
-	template<class T> bool   RemoveComponent(HEntity EntityID);
-	template<class T> size_t GetComponentCount() const;
-	template<class T> T*     FindComponent(HEntity EntityID);
-	template<class T> typename TComponentStoragePtr<T> FindComponentStorage();
-	template<class T> const typename TComponentStoragePtr<T> FindComponentStorage() const;
-	const IComponentStorage* FindComponentStorage(CStrID ComponentName) const;
-	IComponentStorage* FindComponentStorage(CStrID ComponentName);
+	template<class T> void        RegisterComponent(CStrID Name, UPTR InitialCapacity = 0, bool ExternalCleanup = false);
+	template<class T> T*          AddComponent(HEntity EntityID);
+	template<class T> bool        RemoveComponent(HEntity EntityID);
+	template<class T> size_t      GetComponentCount() const;
+	template<class T> T*          FindComponent(HEntity EntityID);
+	template<class T>
+	TComponentStoragePtr<T>       FindComponentStorage();
+	template<class T>
+	const TComponentStoragePtr<T> FindComponentStorage() const;
+	const IComponentStorage*      FindComponentStorage(CStrID ComponentName) const;
+	IComponentStorage*            FindComponentStorage(CStrID ComponentName);
 
 	template<class T>
-	const Data::CData*      GetTemplateComponentData(CStrID TemplateID) const;
+	const Data::CData*            GetTemplateComponentData(CStrID TemplateID) const;
 	template<class T>
-	const Data::CData*      GetTemplateComponentData(HEntity EntityID) const;
+	const Data::CData*            GetTemplateComponentData(HEntity EntityID) const;
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);

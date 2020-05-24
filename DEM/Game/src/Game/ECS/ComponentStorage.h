@@ -73,7 +73,7 @@ template<typename T>
 class CSparseComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>
 {
-public:
+protected:
 
 	using TInnerStorage = Data::CSparseArray<std::pair<T, HEntity>, U32>;
 
@@ -321,7 +321,8 @@ public:
 			if (It)
 				It->Value.State = EComponentState::Templated;
 			else
-				_IndexByEntity.emplace(EntityID, CIndexRecord{ EComponentState::Templated, EComponentState::NoBase });
+				_IndexByEntity.emplace(EntityID,
+					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, EComponentState::NoBase });
 		}
 		else if (It)
 		{
@@ -1142,6 +1143,30 @@ public:
 	virtual void InvalidateComponents(CStrID LevelID) override {}
 
 	size_t GetComponentCount() const { return _IndexByEntity.size(); }
+};
+
+///////////////////////////////////////////////////////////////////////
+// Storage for stateful components which can wait for external deinitialization
+///////////////////////////////////////////////////////////////////////
+
+template<typename T>
+class CSparseComponentStorageWithDead : public CSparseComponentStorage<T>
+{
+	static_assert(!std::is_empty_v<T>, "Empty components have no data to deinitialize");
+
+protected:
+
+	using TDeadStorage = Data::CSparseArray<std::pair<T, HEntity>, U32>;
+
+	TDeadStorage    _Dead;
+	CEntityMap<U32> _DeadIndex;
+
+public:
+
+	CSparseComponentStorageWithDead(const CGameWorld& World, UPTR InitialCapacity)
+		: CSparseComponentStorage<T>(World, InitialCapacity)
+	{
+	}
 };
 
 ///////////////////////////////////////////////////////////////////////

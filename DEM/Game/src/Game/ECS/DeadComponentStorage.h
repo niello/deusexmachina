@@ -45,14 +45,16 @@ public:
 		return true;
 	}
 
-	void Resurrect(HEntity EntityID, T& OutAlive)
+	bool Resurrect(HEntity EntityID, T& OutAlive)
 	{
 		if (auto pRecord = _IndexByEntity.find(EntityID))
 		{
 			OutAlive = std::move(_Data[pRecord->Value]);
 			_Data.erase(pRecord->Value);
 			_IndexByEntity.erase(pRecord);
+			return true;
 		}
+		return false;
 	}
 
 	void Remove(HEntity EntityID)

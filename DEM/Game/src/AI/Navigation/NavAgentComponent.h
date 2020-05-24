@@ -1,5 +1,6 @@
 #pragma once
 #include <AI/Navigation/NavAgentSettings.h>
+#include <Game/ECS/ComponentStorage.h>
 #include <Data/Ptr.h>
 #include <Data/Metadata.h>
 #include <Events/EventNative.h>
@@ -58,6 +59,17 @@ struct CNavAgentComponent
 	ENavigationMode      Mode = ENavigationMode::Surface;
 	U8                   CurrAreaType = 0;
 	bool                 IsTraversingLastEdge = false; // FIXME: can rewrite better?
+};
+
+}
+
+namespace DEM::Game
+{
+
+template<>
+struct TComponentTraits<DEM::AI::CNavAgentComponent>
+{
+	using TStorage = CSparseComponentStorageWithDead<DEM::AI::CNavAgentComponent>;
 };
 
 }
