@@ -29,11 +29,14 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 
 	// When already recovering, reduce threshold 10 times to avoid jitter on the border
 	const float SqRecoveryThreshold = Agent.Radius * Agent.Radius *
-		(Agent.Mode == ENavigationMode::Recovery) ? 0.0001f : 0.01f;
+		((Agent.Mode == ENavigationMode::Recovery) ? 0.0001f : 0.01f);
 
-	if (Agent.Mode != ENavigationMode::Offmesh &&
-		Agent.State != ENavigationState::Idle &&
-		!InRange(Agent.Corridor.getPos(), Position.v, Agent.Height, EQUALITY_THRESHOLD_SQ))
+	// Check if we are moving
+	// NB: recovery movement may result in actiual position == corridor position, don't check for inequality in that case
+	if (Agent.State != ENavigationState::Idle &&
+		(Agent.Mode == ENavigationMode::Recovery ||
+			(Agent.Mode == ENavigationMode::Surface &&
+			 !InRange(Agent.Corridor.getPos(), Position.v, Agent.Height, EQUALITY_THRESHOLD_SQ))))
 	{
 		const auto PrevPoly = Agent.Corridor.getFirstPoly();
 
@@ -49,7 +52,7 @@ static bool UpdatePosition(const vector3& Position, CNavAgentComponent& Agent)
 					Agent.pNavQuery->getAttachedNavMesh()->getPolyArea(Agent.Corridor.getFirstPoly(), &Agent.CurrAreaType);
 				return true;
 			}
-			else if (SqDeviationFromCorridor <= RecoveryRadius)
+			else if (SqDeviationFromCorridor <= RecoveryRadius * RecoveryRadius)
 			{
 				// Recover to the corridor start to prevent tunneling
 				Agent.Mode = ENavigationMode::Recovery;
@@ -366,6 +369,8 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 	{
 		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
 
+		const auto PrevMode = Agent.Mode;
+
 		// Update navigation status from the curent agent position
 		const auto& Pos = pSceneComponent->RootNode->GetWorldPosition();
 		if (!UpdatePosition(Pos, Agent))
@@ -396,7 +401,7 @@ void ProcessNavigation(DEM::Game::CGameWorld& World, float dt, ::AI::CPathReques
 			// Multiple physics frames can be processed inside one logic frame. Target remains the
 			// same during the logic frame but might be reached. Character position is already processed.
 			// So if there is a sub-action, let's just continue executing it, without unnecessary update.
-			if (!NewFrame && pQueue->GetActiveStackTop() != pNavigateAction) return;
+			if (!NewFrame && PrevMode == Agent.Mode && pQueue->GetActiveStackTop() != pNavigateAction) return;
 
 			// NB: in Detour replan time increases only when on navmesh (not offmesh, not invalid)
 			Agent.ReplanTime += dt;
