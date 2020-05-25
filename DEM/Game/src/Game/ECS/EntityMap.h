@@ -93,11 +93,16 @@ public:
 		using reference = T&;
 
 		iterator() = default;
-		iterator(TBucket BucketIt, TBucket EndIt, CRecord* pRecord) : _BucketIt(BucketIt), _EndIt(EndIt), _pRecord(pRecord) {}
+		iterator(TBucket BucketIt, TBucket EndIt) : _BucketIt(BucketIt), _EndIt(EndIt)
+		{
+			while (_BucketIt != _EndIt && !*_BucketIt)
+				++_BucketIt;
+			_pRecord = (_BucketIt != _EndIt) ? *_BucketIt : nullptr;
+		}
 		iterator(const iterator& It) = default;
 		iterator& operator =(const iterator& It) = default;
 
-		T&   operator *() const { return _pRecord->Value; }
+		T&   operator *() const { n_assert_dbg(_pRecord); return _pRecord->Value; }
 		T*   operator ->() const { return _pRecord ? &_pRecord->Value : nullptr; }
 		bool operator ==(const iterator Other) const { return _pRecord == Other._pRecord; }
 		bool operator !=(const iterator Other) const { return _pRecord != Other._pRecord; }
@@ -257,10 +262,10 @@ public:
 		}
 	}
 
-	iterator       begin() { return iterator{ _Records.begin(), _Records.end(), _Records.front() };  }
+	iterator       begin() { return iterator{ _Records.begin(), _Records.end() };  }
 	iterator       end() { return iterator(); }
 	const_iterator end() const { return cend(); }
-	const_iterator cbegin() { return iterator{ _Records.begin(), _Records.end(), _Records.front() };  }
+	const_iterator cbegin() { return iterator{ _Records.begin(), _Records.end() };  }
 	const_iterator cend() const { return iterator(); }
 	size_t         size() const { return _Size; }
 	bool           empty() const { return !_Size; }

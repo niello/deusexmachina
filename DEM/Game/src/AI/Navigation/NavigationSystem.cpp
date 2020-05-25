@@ -543,6 +543,24 @@ void RenderDebugNavigation(DEM::Game::CGameWorld& World, Debug::CDebugDraw& Debu
 }
 //---------------------------------------------------------------------
 
+// Need to shutdown async tasks before deleting agent components
+void DestroyNavigation(DEM::Game::CGameWorld& World, ::AI::CPathRequestQueue& PathQueue)
+{
+	World.RemoveAllComponents<DEM::AI::CNavAgentComponent>();
+
+	World.FreeDead<DEM::AI::CNavAgentComponent>([&PathQueue](auto EntityID, DEM::AI::CNavAgentComponent& Agent)
+	{
+		//???delete active navigate tasks?
+
+		if (Agent.AsyncTaskID)
+		{
+			PathQueue.CancelRequest(Agent.AsyncTaskID);
+			Agent.AsyncTaskID = 0;
+		}
+	});
+}
+//---------------------------------------------------------------------
+
 }
 
 /*

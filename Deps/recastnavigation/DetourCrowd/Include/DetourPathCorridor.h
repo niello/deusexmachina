@@ -34,10 +34,10 @@ class dtPathCorridor
 	
 public:
 	dtPathCorridor();
-	dtPathCorridor(dtPathCorridor&&) = default;
+	dtPathCorridor(dtPathCorridor&&);
 	~dtPathCorridor();
 
-	dtPathCorridor& operator=(dtPathCorridor&&) = default;
+	dtPathCorridor& operator=(dtPathCorridor&&);
 
 	/// Allocates the corridor's path buffer. 
 	///  @param[in]		maxPath		The maximum path size the corridor can handle.

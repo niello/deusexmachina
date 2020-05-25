@@ -64,7 +64,12 @@ public:
 
 // Conditional pool member for binary diff data (Base/Current)
 template<typename T> constexpr bool STORAGE_USE_DIFF_POOL = (DEM::BinaryFormat::GetMaxDiffSize<T>() <= 512);
-template<typename T> struct CStoragePool { CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool; };
+template<typename T> struct CStoragePool
+{
+	CPoolAllocator<DEM::BinaryFormat::GetMaxDiffSize<T>()> _DiffPool;
+
+	~CStoragePool() { _DiffPool.Clear(); }
+};
 struct CStorageNoPool {};
 
 // Conditional dead component storage
@@ -72,6 +77,23 @@ template<typename T> struct CStorageDead
 {
 	Data::CSparseArray<std::pair<T, HEntity>, U32> _Dead;
 	CEntityMap<U32>                                _DeadIndex;
+
+	~CStorageDead() { n_assert(_Dead.empty()); }
+
+	void FreeDead(HEntity EntityID)
+	{
+		if (DeadIt = _DeadIndex.find(EntityID))
+		{
+			_Dead.erase(DeadIt->Value);
+			_DeadIndex.erase(DeadIt);
+		}
+	}
+
+	void FreeAllDead()
+	{
+		_Dead.clear();
+		_DeadIndex.clear();
+	}
 };
 struct CStorageNoDead {};
 
@@ -80,7 +102,7 @@ struct CStorageNoDead {};
 template<typename T, bool ExternalDeinit = false>
 class CSparseComponentStorage : public IComponentStorage,
 	std::conditional_t<STORAGE_USE_DIFF_POOL<T>, CStoragePool<T>, CStorageNoPool>,
-	std::conditional_t<ExternalDeinit, CStorageDead<T>, CStorageNoDead>
+	public std::conditional_t<ExternalDeinit, CStorageDead<T>, CStorageNoDead>
 {
 protected:
 
@@ -126,12 +148,13 @@ protected:
 	}
 	//---------------------------------------------------------------------
 
-	void ClearComponent(HEntity EntityID, CIndexRecord& Record)
+	void ClearComponent(CIndexRecord& Record)
 	{
 		if (Record.Index == INVALID_INDEX) return;
 
 		if constexpr (ExternalDeinit)
 		{
+			auto EntityID = _Data[Record.Index].second;
 			n_assert_dbg(!_DeadIndex.find(EntityID)); // Can't normally happen
 			_DeadIndex.emplace(EntityID, _Dead.insert(std::move(_Data[Record.Index])));
 		}
@@ -294,7 +317,7 @@ public:
 		n_assert_dbg(InitialCapacity <= TInnerStorage::MAX_CAPACITY);
 	}
 
-	virtual ~CSparseComponentStorage() override { if constexpr (STORAGE_USE_DIFF_POOL<T>) _DiffPool.Clear(); }
+	virtual ~CSparseComponentStorage() override { if constexpr (ExternalDeinit) { n_assert(_Data.empty()); } }
 
 	// Explicitly adds a component. If templated one is present, detaches it from the template.
 	T* Add(HEntity EntityID)
@@ -337,7 +360,7 @@ public:
 		if (!It) FAIL;
 
 		auto& IndexRecord = It->Value;
-		ClearComponent(EntityID, IndexRecord);
+		ClearComponent(IndexRecord);
 		ClearDiffBuffer(IndexRecord);
 
 		// If record has no template, it can be erased entirely. If component is later added to the template,
@@ -372,7 +395,7 @@ public:
 		{
 			// No templated component, erase record
 			auto& IndexRecord = It->Value;
-			ClearComponent(EntityID, IndexRecord);
+			ClearComponent(IndexRecord);
 			ClearDiffBuffer(IndexRecord);
 			_IndexByEntity.erase(It);
 		}
@@ -827,7 +850,10 @@ public:
 	virtual void ClearAll() override
 	{
 		for (auto& IndexRecord : _IndexByEntity)
+		{
+			if constexpr (ExternalDeinit) ClearComponent(IndexRecord);
 			ClearDiffBuffer(IndexRecord);
+		}
 		_IndexByEntity.clear();
 		_Data.clear();
 	}
@@ -861,7 +887,7 @@ public:
 			}
 
 			// Unload invalidated component
-			ClearComponent(EntityID, Record);
+			ClearComponent(Record);
 			ClearDiffBuffer(Record);
 		});
 
@@ -906,7 +932,7 @@ public:
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
 			SaveComponent(EntityID, Record);
-			ClearComponent(EntityID, Record);
+			ClearComponent(Record);
 		});
 	}
 	//---------------------------------------------------------------------

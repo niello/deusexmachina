@@ -204,6 +204,39 @@ dtPathCorridor::dtPathCorridor() :
 {
 }
 
+dtPathCorridor::dtPathCorridor(dtPathCorridor&& other)
+{
+	dtVcopy(m_pos, other.m_pos);
+	dtVcopy(m_target, other.m_target);
+
+	m_path = other.m_path;
+	m_npath = other.m_npath;
+	m_maxPath = other.m_maxPath;
+
+	other.m_path = nullptr;
+	other.m_npath = 0;
+	other.m_maxPath = 0;
+}
+
+dtPathCorridor& dtPathCorridor::operator=(dtPathCorridor&& other)
+{
+	if (m_path)
+		dtFree(m_path);
+
+	dtVcopy(m_pos, other.m_pos);
+	dtVcopy(m_target, other.m_target);
+
+	m_path = other.m_path;
+	m_npath = other.m_npath;
+	m_maxPath = other.m_maxPath;
+
+	other.m_path = nullptr;
+	other.m_npath = 0;
+	other.m_maxPath = 0;
+
+	return *this;
+}
+
 dtPathCorridor::~dtPathCorridor()
 {
 	dtFree(m_path);

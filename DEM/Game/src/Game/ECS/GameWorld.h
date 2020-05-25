@@ -102,6 +102,7 @@ public:
 	template<class T> void        RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
 	template<class T> T*          AddComponent(HEntity EntityID);
 	template<class T> bool        RemoveComponent(HEntity EntityID);
+	template<class T> void        RemoveAllComponents();
 	template<class T> size_t      GetComponentCount() const;
 	template<class T> T*          FindComponent(HEntity EntityID);
 	template<class T>
@@ -120,6 +121,8 @@ public:
 	void ForEachEntityWith(TCallback Callback);
 	template<typename TComponent, typename TCallback>
 	void ForEachComponent(TCallback Callback);
+	template<typename TComponent, typename TCallback>
+	void FreeDead(TCallback DeinitCallback);
 };
 
 template<class T>
@@ -157,6 +160,14 @@ bool CGameWorld::RemoveComponent(HEntity EntityID)
 	if (!EntityID) FAIL;
 	auto pStorage = FindComponentStorage<T>();
 	return pStorage ? pStorage->TComponentTraits<T>::TStorage::RemoveComponent(EntityID) : false;
+}
+//---------------------------------------------------------------------
+
+template<class T>
+void CGameWorld::RemoveAllComponents()
+{
+	if (auto pStorage = FindComponentStorage<T>())
+		pStorage->TComponentTraits<T>::TStorage::ClearAll();
 }
 //---------------------------------------------------------------------
 
@@ -302,6 +313,7 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 }
 //---------------------------------------------------------------------
 
+// Callback args: entity ID, component [const] ref
 template<typename TComponent, typename TCallback>
 inline void CGameWorld::ForEachComponent(TCallback Callback)
 {
@@ -314,6 +326,21 @@ inline void CGameWorld::ForEachComponent(TCallback Callback)
 			else
 				Callback(EntityID, std::ref(Component));
 		}
+	}
+}
+//---------------------------------------------------------------------
+
+// Delayed deinitialization for components with ExternalDeinit-enabled storage
+// Callback args: entity ID, component ref
+template<typename TComponent, typename TCallback>
+inline void CGameWorld::FreeDead(TCallback DeinitCallback)
+{
+	if (auto pStorage = FindComponentStorage<just_type_t<TComponent>>())
+	{
+		for (auto&& [Component, EntityID] : pStorage->_Dead)
+			DeinitCallback(EntityID, std::ref(Component));
+
+		pStorage->FreeAllDead();
 	}
 }
 //---------------------------------------------------------------------
