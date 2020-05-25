@@ -53,14 +53,13 @@ bool CRenderPath::Render(CView& View)
 		if (!Phase->Render(View))
 		{
 			//???clear tmp view data?
+			pGPU->EndFrame();
 			FAIL;
 		}
 	}
 
 	//???clear tmp view data?
-
 	pGPU->EndFrame();
-
 	OK;
 }
 //---------------------------------------------------------------------
