@@ -107,6 +107,25 @@ protected:
 	TInnerStorage            _Data;
 	CEntityMap<CIndexRecord> _IndexByEntity;
 
+	bool ValidateComponent(HEntity EntityID, CIndexRecord& Record)
+	{
+		n_assert_dbg(Record.Index == INVALID_INDEX);
+
+		if constexpr (ExternalDeinit)
+		{
+			if (_DeadIndex.find(EntityID))
+			{
+				::Sys::Error("CSparseComponentStorage::ValidateComponent() > can't set new component while dead awaits deinitialization");
+				return false;
+			}
+		}
+
+		Record.Index = _Data.emplace(LoadComponent(EntityID, Record), EntityID);
+		n_assert_dbg(Record.Index != INVALID_INDEX);
+		return true;
+	}
+	//---------------------------------------------------------------------
+
 	void ClearComponent(HEntity EntityID, CIndexRecord& Record)
 	{
 		if (Record.Index == INVALID_INDEX) return;
@@ -387,11 +406,7 @@ public:
 			CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, BaseState ? EComponentState::Templated : EComponentState::NoBase });
 
 		// Gets here only if template component exists, no additional checks required
-		if (Validate)
-		{
-			It->Value.Index = _Data.insert({ std::move(LoadComponent(EntityID, It->Value)), EntityID });
-			n_assert_dbg(It->Value.Index != INVALID_INDEX);
-		}
+		if (Validate) ValidateComponent(EntityID, It->Value);
 	}
 	//---------------------------------------------------------------------
 
@@ -401,6 +416,15 @@ public:
 
 		if (!In.IsA<Data::PParams>()) return false;
 
+		if constexpr (ExternalDeinit)
+		{
+			if (_DeadIndex.find(EntityID))
+			{
+				::Sys::Error("CSparseComponentStorage::AddFromParams() > can't set new component while dead awaits deinitialization");
+				return false;
+			}
+		}
+
 		// Distinguish templated components from explicit
 		const bool Templated = In.GetValue<Data::PParams>()->Get(CStrID("__UseTpl"), false);
 		const auto State = Templated ? EComponentState::Templated : EComponentState::Explicit;
@@ -408,10 +432,20 @@ public:
 		// Add a record. Will replace existing one.
 		auto It = _IndexByEntity.find(EntityID);
 		if (It)
+		{
+			if constexpr (ExternalDeinit)
+			{
+				::Sys::Error("CSparseComponentStorage::AddFromParams() > can't replace component which requires external deinitialization");
+				return false;
+			}
+
 			It->Value.State = State;
+		}
 		else
+		{
 			It = _IndexByEntity.emplace(EntityID,
 				CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, State, EComponentState::NoBase });
+		}
 
 		// Params format isn't supported as an intermediate storage, so we must create a component immediately.
 		// NB: Component must be default-created for LoadBaseComponent to work correctly.
@@ -422,7 +456,7 @@ public:
 		if (It->Value.Index != INVALID_INDEX)
 			_Data[It->Value.Index].first = std::move(Component);
 		else
-			It->Value.Index = _Data.insert(std::make_pair<T, HEntity>(std::move(Component), std::move(EntityID)));
+			It->Value.Index = _Data.emplace(std::move(Component), EntityID);
 
 		return true;
 	}
@@ -855,8 +889,7 @@ public:
 			// Templated component without a template, no component required, even if the diff is present
 			if (Record.State == EComponentState::Templated && !_World.GetTemplateComponentData<T>(pEntity->TemplateID)) return;
 
-			Record.Index = _Data.insert(std::make_pair<T, HEntity>(std::move(LoadComponent(EntityID, Record)), std::move(EntityID)));
-			n_assert_dbg(Record.Index != INVALID_INDEX);
+			ValidateComponent(EntityID, Record);
 		});
 	}
 	//---------------------------------------------------------------------
