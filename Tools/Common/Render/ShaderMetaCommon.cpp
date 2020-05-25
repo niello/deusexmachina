@@ -204,6 +204,8 @@ bool GetEffectMaterialParams(CMaterialParams& Out, const std::string& EffectPath
 }
 //---------------------------------------------------------------------
 
+// NB: parameter types are saved because some of them may be not used in some shader formats
+// and reading code must know how to skip them
 bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, const Data::CParams& Values, CThreadSafeLog& Log)
 {
 	const auto CountOffset = Stream.tellp();
@@ -228,7 +230,7 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 			const uint32_t ConstSizeInBytes = ItConst->second.SizeInBytes;
 			if (!ConstSizeInBytes)
 			{
-				Log.LogWarning("Material param '" + ID + "' has zero length, value is skipped");
+				Log.LogWarning("Material constant '" + ID + "' has zero length, value is skipped");
 				continue;
 			}
 
@@ -241,7 +243,7 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 				{
 					if (ValueSizeInBytes = WriteFloatValue(Stream, MaterialParam.second, ConstSizeInBytes))
 					{
-						Log.LogWarning("Material param '" + ID + "' is a float, value must be null, float, int or vector");
+						Log.LogWarning("Material constant '" + ID + "' is a float, value must be null, float, int or vector");
 						return false;
 					}
 					break;
@@ -250,7 +252,7 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 				{
 					if (ValueSizeInBytes = WriteIntValue(Stream, MaterialParam.second, ConstSizeInBytes))
 					{
-						Log.LogWarning("Material param '" + ID + "' is an integer, value must be null, float, int or vector");
+						Log.LogWarning("Material constant '" + ID + "' is an integer, value must be null, float, int or vector");
 						return false;
 					}
 					break;
@@ -259,7 +261,7 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 				{
 					if (ValueSizeInBytes = WriteBoolValue(Stream, MaterialParam.second, ConstSizeInBytes))
 					{
-						Log.LogWarning("Material param '" + ID + "' is a bool, value must be null, bool or int");
+						Log.LogWarning("Material constant '" + ID + "' is a bool, value must be null, bool or int");
 						return false;
 					}
 					break;
@@ -267,45 +269,50 @@ bool WriteMaterialParams(std::ostream& Stream, const CMaterialParams& Table, con
 				case EShaderConstType::Struct:
 				{
 					// TODO: support structures (CParams with recursion)
-					Log.LogWarning("Material param '" + ID + "' is a structure. Structure values are not supported yet.");
+					Log.LogWarning("Material constant '" + ID + "' is a structure. Structure values are not supported yet.");
 					continue;
 				}
 				default:
 				{
-					Log.LogWarning("Material param '" + ID + "' is a constant of unsupported type or register set, value is skipped");
+					Log.LogWarning("Material constant '" + ID + "' is a constant of unsupported type or register set, value is skipped");
 					continue;
 				}
 			}
 
 			WriteStream(Stream, ID);
+			WriteStream(Stream, static_cast<uint8_t>(EMaterialParamType::Constant));
 			WriteStream(Stream, CurrOffset);
 			WriteStream(Stream, ValueSizeInBytes);
 			++Count;
 		}
 		else if (Table.Resources.find(ID) != Table.Resources.cend())
 		{
+			std::string ResourceID;
 			if (MaterialParam.second.IsA<CStrID>())
 			{
-				WriteStream(Stream, ID);
-				WriteStream(Stream, MaterialParam.second.GetValue<CStrID>().ToString());
-				++Count;
+				ResourceID = MaterialParam.second.GetValue<CStrID>().ToString();
 			}
 			else if (MaterialParam.second.IsA<std::string>())
 			{
-				WriteStream(Stream, ID);
-				WriteStream(Stream, MaterialParam.second.GetValue<std::string>());
-				++Count;
+				ResourceID = MaterialParam.second.GetValue<std::string>();
 			}
 			else
 			{
 				Log.LogWarning("Unsupported type for resource '" + ID + "', must be string or string ID");
+				continue;
 			}
+
+			WriteStream(Stream, ID);
+			WriteStream(Stream, static_cast<uint8_t>(EMaterialParamType::Resource));
+			WriteStream(Stream, ResourceID);
+			++Count;
 		}
 		else if (Table.Samplers.find(ID) != Table.Samplers.cend())
 		{
 			if (MaterialParam.second.IsA<Data::CParams>())
 			{
 				WriteStream(Stream, ID);
+				WriteStream(Stream, static_cast<uint8_t>(EMaterialParamType::Sampler));
 				WriteSamplerState(Stream, MaterialParam.second.GetValue<Data::CParams>());
 				++Count;
 			}

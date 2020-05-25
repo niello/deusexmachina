@@ -232,27 +232,44 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 		CStrID ParamID;
 		if (!Reader.Read(ParamID)) FAIL;
 
-		if (MaterialTable.GetConstant(ParamID))
+		enum EMaterialParamType : U8
+		{
+			Constant = 0,
+			Resource = 1,
+			Sampler  = 2
+		};
+
+		U8 ParamType;
+		if (!Reader.Read(ParamType)) FAIL;
+
+		if (ParamType == EMaterialParamType::Constant)
 		{
 			U32 Offset;
 			if (!Reader.Read(Offset)) FAIL;
 			U32 Size;
 			if (!Reader.Read(Size)) FAIL;
-			Out.ConstValues.emplace(ParamID, Render::CShaderConstValue{ (void*)Offset, Size });
+
+			if (MaterialTable.GetConstant(ParamID))
+				Out.ConstValues.emplace(ParamID, Render::CShaderConstValue{ (void*)Offset, Size });
 		}
-		else if (MaterialTable.GetResource(ParamID))
+		else if (ParamType == EMaterialParamType::Resource)
 		{
 			CStrID RUID;
 			if (!Reader.Read(RUID)) FAIL;
-			Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
-			if (Texture.IsNullPtr())
+
+			if (MaterialTable.GetResource(ParamID))
 			{
-				::Sys::Error(("Can't load effect or material texture: " + RUID.ToString()).c_str());
-				FAIL;
+				Render::PTexture Texture = GetTexture(RUID, Render::Access_GPU_Read);
+				if (Texture.IsNullPtr())
+				{
+					::Sys::Error(("Can't load effect or material texture: " + RUID.ToString()).c_str());
+					FAIL;
+				}
+
+				Out.ResourceValues.emplace(ParamID, Texture);
 			}
-			Out.ResourceValues.emplace(ParamID, Texture);
 		}
-		else if (MaterialTable.GetSampler(ParamID))
+		else if (ParamType == EMaterialParamType::Sampler)
 		{
 			Render::CSamplerDesc SamplerDesc;
 
@@ -278,12 +295,21 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 			Reader.Read<U8>(U8Value);
 			SamplerDesc.CmpFunc = (Render::ECmpFunc)U8Value;
 
-			Render::PSampler Sampler = GPU->CreateSampler(SamplerDesc);
-			if (Sampler.IsNullPtr()) FAIL;
-			Out.SamplerValues.emplace(ParamID, Sampler);
+			if (MaterialTable.GetSampler(ParamID))
+			{
+				Render::PSampler Sampler = GPU->CreateSampler(SamplerDesc);
+				if (Sampler.IsNullPtr()) FAIL;
+				Out.SamplerValues.emplace(ParamID, Sampler);
+			}
+		}
+		else
+		{
+			::Sys::Error(("Unknown param type: " + ParamID.ToString()).c_str());
+			FAIL;
 		}
 	}
 
+	// Read all constant data into the single buffer
 	U32 ValueBufferSize;
 	if (!Reader.Read(ValueBufferSize)) FAIL;
 	if (ValueBufferSize)
@@ -291,7 +317,7 @@ bool CGraphicsResourceManager::LoadShaderParamValues(IO::CBinaryReader& Reader, 
 		Out.ConstValueBuffer = std::make_unique<char[]>(ValueBufferSize);
 		Reader.GetStream().Read(Out.ConstValueBuffer.get(), ValueBufferSize);
 
-		// Covert offsets to direct pointers
+		// Convert offsets to direct pointers
 		for (auto& Pair : Out.ConstValues)
 			Pair.second.pData = Out.ConstValueBuffer.get() + (U32)Pair.second.pData;
 	}

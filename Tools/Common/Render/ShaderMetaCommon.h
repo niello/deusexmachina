@@ -14,6 +14,14 @@ enum class EShaderConstType
 	Struct
 };
 
+// Don't change values, thay will be saved to file
+enum EMaterialParamType : uint8_t
+{
+	Constant = 0,
+	Resource = 1,
+	Sampler  = 2
+};
+
 struct CMaterialConst
 {
 	EShaderConstType Type;
