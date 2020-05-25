@@ -67,13 +67,6 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		// TODO: check whether the metafile can be processed by this tool
-		if (ParamsUtils::GetParam(Task.Params, "Tools", std::string{}) != _Name)
-		{
-			// FIXME: skip sliently without error. To CF tool base class??? If no tools specified, try in each.
-			return false;
-		}
-
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
 		// Read navmesh source HRD
@@ -398,7 +391,7 @@ public:
 				offMeshConId.push_back(ParamsUtils::GetParam(OffmeshDesc, "UserID", 0));
 
 				//???or calc based on area, or combine calc and explicit?
-				offMeshConFlags.push_back(ParamsUtils::GetParam(OffmeshDesc, "Flags", POLY_FLAGS_DEFAULT_ENABLED));
+				offMeshConFlags.push_back(ParamsUtils::GetParam<int>(OffmeshDesc, "Flags", POLY_FLAGS_DEFAULT_ENABLED));
 			}
 		}
 

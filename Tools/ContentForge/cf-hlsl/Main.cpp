@@ -97,6 +97,13 @@ public:
 		else if (Type == "Domain") ShaderType = ShaderType_Domain;
 		else return false;
 
+		std::vector<char> SrcFileData;
+		if (!ReadAllFile(Task.SrcFilePath.string().c_str(), SrcFileData))
+		{
+			Task.Log.LogError("Error reading shader source " + Task.SrcFilePath.generic_string());
+			return false;
+		}
+
 		const auto SrcPath = fs::relative(Task.SrcFilePath, _RootDir);
 
 		const std::string TaskID(Task.TaskID.CStr());
@@ -106,7 +113,7 @@ public:
 
 		const auto Code = DEMShaderCompiler::CompileShader(_RootDir.c_str(),
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
-			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, Task.SrcFileData->data(), Task.SrcFileData->size(), &Log);
+			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, SrcFileData.data(), SrcFileData.size(), &Log);
 
 		return Code == DEM_SHADER_COMPILER_SUCCESS;
 	}

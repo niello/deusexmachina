@@ -228,8 +228,6 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		// TODO: check whether the metafile can be processed by this tool
-
 		// Import FBX scene from the source file
 
 		FbxImporter* pImporter = FbxImporter::Create(pFBXManager, "");

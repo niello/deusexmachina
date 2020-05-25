@@ -268,23 +268,21 @@ void CContentForgeTool::ProcessMetafile(const std::filesystem::path& Path, std::
 	auto SrcFilePath = Path;
 	SrcFilePath.replace_extension(); // Remove ".meta"
 
-	auto SrcFileData = std::make_shared<std::vector<char>>();
-	if (!ReadAllFile(SrcFilePath.string().c_str(), *SrcFileData))
-	{
-		if (_LogVerbosity >= EVerbosity::Errors)
-			std::cout << SrcFilePath.generic_string() << " reading error" << LineEnd;
-		return;
-	}
-
 	// Add tasks for this source
 
 	for (auto& Param : Meta)
 	{
+		auto& TaskParams = Param.second.GetValue<Data::CParams>();
+
+		// Check whether the task can be processed by this tool
+		// TODO: split by comma!
+		const std::string ToolList = ParamsUtils::GetParam(TaskParams, "Tools", std::string{});
+		if (!ToolList.empty() && ToolList != _Name) continue;
+
 		CContentForgeTask Task(static_cast<EVerbosity>(_LogVerbosity));
 		Task.SrcFilePath = SrcFilePath;
-		Task.SrcFileData = SrcFileData;
 		Task.TaskID = Param.first;
-		Task.Params = std::move(Param.second.GetValue<Data::CParams>());
+		Task.Params = std::move(TaskParams);
 		_Tasks.push_back(std::move(Task));
 	}
 }

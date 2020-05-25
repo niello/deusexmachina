@@ -108,8 +108,6 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		// TODO: check whether the metafile can be processed by this tool
-
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
 		std::string SkyboxFileName = Task.SrcFilePath.filename().generic_string();

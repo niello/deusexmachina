@@ -37,8 +37,6 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		// TODO: check whether the metafile can be processed by this tool
-
 		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
 		auto DestPath = fs::path(Output) / (TaskID + ".rp");

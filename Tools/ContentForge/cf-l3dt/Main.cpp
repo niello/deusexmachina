@@ -122,8 +122,6 @@ public:
 
 	virtual bool ProcessTask(CContentForgeTask& Task) override
 	{
-		// TODO: check whether the metafile can be processed by this tool
-
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
 		// Validate task params
@@ -146,8 +144,15 @@ public:
 
 		const fs::path SrcFolder = Task.SrcFilePath.parent_path();
 
+		std::vector<char> SrcFileData;
+		if (!ReadAllFile(Task.SrcFilePath.string().c_str(), SrcFileData))
+		{
+			Task.Log.LogError("Error reading shader source " + Task.SrcFilePath.generic_string());
+			return false;
+		}
+
 		pugi::xml_document XMLDoc;
-		auto XMLResult = XMLDoc.load_buffer(Task.SrcFileData->data(), Task.SrcFileData->size());
+		auto XMLResult = XMLDoc.load_buffer(SrcFileData.data(), SrcFileData.size());
 		if (!XMLResult)
 		{
 			Task.Log.LogError(std::string("Error reading L3DT XML: ") + XMLResult.description());
