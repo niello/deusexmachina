@@ -429,14 +429,20 @@ protected:
 	{
 	private:
 
+		static inline T Dummy;
+
+		using TProxy = std::pair<T&, CHandle>;
+
 		std::vector<CHandleRec>& _Storage;
 		internal_it              _It;
+		TProxy                   _Current = { Dummy, {} };
 
 	public:
 
 		using iterator_category = std::bidirectional_iterator_tag;
 
-		using value_type = typename internal_it::value_type;
+		using value_type = std::conditional_t<
+			std::is_const_v<typename internal_it::value_type>, const TProxy, TProxy>;
 		using difference_type = typename internal_it::difference_type;
 		using pointer = value_type*;
 		using reference = value_type&;
@@ -447,22 +453,39 @@ protected:
 			, _It(It)
 		{
 			while (_It != _Storage.end() && !IsAllocated()) ++_It;
-			//UpdatePair();
+			UpdatePair();
 		}
 		iterator_tpl(const iterator_tpl& It) = default;
 		iterator_tpl& operator =(const iterator_tpl& It) = default;
+		iterator_tpl(iterator_tpl&& It) = default;
+		iterator_tpl& operator =(iterator_tpl&& It) = default;
 
-		auto& operator *() const { return _It->Value; }
-		auto* operator ->() const { return &_It->Value; }
-		iterator_tpl& operator ++() { do ++_It; while (_It != _Storage.end() && !IsAllocated()); return *this; }
+		reference operator *() const { return _Current; }
+		pointer operator ->() const { return &_Current; }
+		reference operator *() { return _Current; }
+		pointer operator ->() { return &_Current; }
+		iterator_tpl& operator ++() { do ++_It; while (_It != _Storage.end() && !IsAllocated()); UpdatePair(); return *this; }
 		iterator_tpl operator ++(int) { auto Tmp = *this; ++(*this); return Tmp; }
-		iterator_tpl& operator --() { do --_It; while (_It != _Storage.end() && !IsAllocated()); return *this; }
+		iterator_tpl& operator --() { do --_It; while (_It != _Storage.end() && !IsAllocated()); UpdatePair(); return *this; }
 		iterator_tpl operator --(int) { auto Tmp = *this; --(*this); return Tmp; }
 
 		bool operator ==(const iterator_tpl& Right) const { return _It == Right._It; }
 		bool operator !=(const iterator_tpl& Right) const { return _It != Right._It; }
 
-		bool IsAllocated() const { return (_It->Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED; }
+		bool IsAllocated() const { return (_It->HandleData & INDEX_BITS_MASK) == INDEX_ALLOCATED; }
+
+		void UpdatePair()
+		{
+			if (_It == _Storage.cend())
+			{
+				_Current = { Dummy, {} };
+			}
+			else
+			{
+				const auto Index = static_cast<size_t>(std::distance(_Storage.begin(), _It));
+				_Current = { _It->Value, { (_It->HandleData & REUSE_BITS_MASK) | Index } };
+			}
+		}
 	};
 
 public:

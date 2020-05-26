@@ -620,7 +620,7 @@ public:
 				CIndexRecord{ OffsetInBase, {}, 0, INVALID_INDEX, ComponentState, ComponentState });
 		}
 
-		// Skip binary data for now. Will be accessed through records' OffsetInBase
+		// Skip binary data for now. Will be accessed through records' OffsetInBase.
 		auto ComponentDataSkipOffset = In.Read<U64>();
 		In.GetStream().Seek(static_cast<I64>(ComponentDataSkipOffset), IO::ESeekOrigin::Seek_Begin);
 
