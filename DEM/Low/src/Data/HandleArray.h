@@ -59,7 +59,7 @@ protected:
 	struct CHandleRec
 	{
 		T Value;
-		H Handle = 0; // Index bits store the next free slot index or INDEX_ALLOCATED value, _not_ this slot index
+		H HandleData = 0; // Index bits store the next free slot index or INDEX_ALLOCATED value, _not_ this slot index
 	};
 
 	std::vector<CHandleRec> _Records;
@@ -81,13 +81,13 @@ protected:
 		else
 		{
 			// Link to the end of existing free list
-			auto& PrevFree = _Records[_LastFreeIndex].Handle;
+			auto& PrevFree = _Records[_LastFreeIndex].HandleData;
 			PrevFree = (PrevFree & REUSE_BITS_MASK) | StartIndex;
 		}
 
 		// Keep reuse bits intact
 		for (auto i = StartIndex; i < EndIndex; ++i)
-			_Records[i].Handle = (_Records[i].Handle & REUSE_BITS_MASK) | (i + 1);
+			_Records[i].HandleData = (_Records[i].HandleData & REUSE_BITS_MASK) | (i + 1);
 
 		_LastFreeIndex = EndIndex;
 	}
@@ -95,7 +95,7 @@ protected:
 
 	void ConsumeFirstFreeRecord()
 	{
-		auto& Handle = _Records[_FirstFreeIndex].Handle;
+		auto& HandleData = _Records[_FirstFreeIndex].HandleData;
 
 		if (_FirstFreeIndex == _LastFreeIndex)
 		{
@@ -106,10 +106,10 @@ protected:
 		else
 		{
 			// Set the next free index as the first
-			_FirstFreeIndex = (Handle & INDEX_BITS_MASK);
+			_FirstFreeIndex = (HandleData & INDEX_BITS_MASK);
 		}
 
-		Handle |= INDEX_ALLOCATED;
+		HandleData |= INDEX_ALLOCATED;
 	}
 	//---------------------------------------------------------------------
 
@@ -118,7 +118,7 @@ protected:
 		if (!IsFull())
 		{
 			// Use a free record
-			const H NewHandle = (_Records[_FirstFreeIndex].Handle & REUSE_BITS_MASK) | _FirstFreeIndex;
+			const H NewHandle = (_Records[_FirstFreeIndex].HandleData & REUSE_BITS_MASK) | _FirstFreeIndex;
 			ConsumeFirstFreeRecord();
 			++_ElementCount;
 			return NewHandle;
@@ -163,7 +163,7 @@ protected:
 		else
 		{
 			// Fail if target record is already allocated
-			if ((_Records[Index].Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) return false;
+			if ((_Records[Index].HandleData & INDEX_BITS_MASK) == INDEX_ALLOCATED) return false;
 
 			// Fixup the free list. It is not empty because at least our target record is free.
 			if (Index == _FirstFreeIndex)
@@ -177,7 +177,7 @@ protected:
 				auto PrevIndex = _FirstFreeIndex;
 				do
 				{
-					auto& PrevHandle = _Records[PrevIndex].Handle;
+					auto& PrevHandle = _Records[PrevIndex].HandleData;
 					auto CurrIndex = (PrevHandle & INDEX_BITS_MASK);
 
 					if (CurrIndex == Index)
@@ -190,7 +190,7 @@ protected:
 						else
 						{
 							// Link previous record to the next one, skipping current
-							PrevHandle = (PrevHandle & REUSE_BITS_MASK) | (_Records[CurrIndex].Handle & INDEX_BITS_MASK);
+							PrevHandle = (PrevHandle & REUSE_BITS_MASK) | (_Records[CurrIndex].HandleData & INDEX_BITS_MASK);
 						}
 
 						break;
@@ -203,7 +203,7 @@ protected:
 		}
 
 		// Get reuse counter from the specified handle and mark the record allocated
-		_Records[Index].Handle = (Handle | INDEX_ALLOCATED);
+		_Records[Index].HandleData = (Handle | INDEX_ALLOCATED);
 
 		++_ElementCount;
 		return true;
@@ -259,7 +259,7 @@ public:
 		if (Index >= _Records.size()) return false;
 
 		auto& Record = _Records[Index];
-		if ((Handle.Raw | INDEX_ALLOCATED) != Record.Handle) return false;
+		if ((Handle.Raw | INDEX_ALLOCATED) != Record.HandleData) return false;
 
 		// Clear the record value to default, this clears freed object resources
 		if constexpr (std::is_copy_assignable_v<T>)
@@ -269,7 +269,7 @@ public:
 
 		// Reuse counter of freed record is incremented. Index bits are reset to 0
 		// to clear INDEX_ALLOCATED. Existing handles immediately become invalid.
-		const auto ReuseBits = (Record.Handle & REUSE_BITS_MASK);
+		const auto ReuseBits = (Record.HandleData & REUSE_BITS_MASK);
 		constexpr H LAST_REUSE_VALUE = (REUSE_BITS_MASK - (1 << IndexBits));
 		if (ReuseBits == LAST_REUSE_VALUE)
 		{
@@ -278,18 +278,18 @@ public:
 				// Clear reuse counter. The record is considered free again, but a
 				// very old handle may exist that now becomes incorrectly "valid".
 				// A probability of this is very low in practice.
-				Record.Handle = 0;
+				Record.HandleData = 0;
 			}
 			else
 			{
 				// Don't add this record to the free list. Mark as exhausted.
-				Record.Handle = REUSE_BITS_MASK;
+				Record.HandleData = REUSE_BITS_MASK;
 				return true;
 			}
 		}
 		else
 		{
-			Record.Handle = ReuseBits + (1 << IndexBits);
+			Record.HandleData = ReuseBits + (1 << IndexBits);
 		}
 
 		AddRangeToFreeList(Index, Index);
@@ -304,7 +304,7 @@ public:
 		// Find first allocated record from the end
 		auto Rit = _Records.crbegin();
 		for (; Rit != _Records.crend(); ++Rit)
-			if ((Rit->Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) break;
+			if ((Rit->HandleData & INDEX_BITS_MASK) == INDEX_ALLOCATED) break;
 
 		// base() returns us the first record to delete
 		auto It = Rit.base();
@@ -320,9 +320,9 @@ public:
 			for (size_t i = 0; i < Size; ++i)
 			{
 				// Skip allocated and exhausted records, process free only
-				auto& Handle = _Records[i].Handle;
-				if ((Handle & REUSE_BITS_MASK) == REUSE_BITS_MASK) continue;
-				if ((Handle & INDEX_BITS_MASK) == INDEX_ALLOCATED) continue;
+				auto& HandleData = _Records[i].HandleData;
+				if ((HandleData & REUSE_BITS_MASK) == REUSE_BITS_MASK) continue;
+				if ((HandleData & INDEX_BITS_MASK) == INDEX_ALLOCATED) continue;
 
 				AddRangeToFreeList(i, i);
 			}
@@ -340,10 +340,10 @@ public:
 		const size_t Size = _Records.size();
 		for (size_t i = 0; i < Size; ++i)
 		{
-			auto& Handle = _Records[i].Handle;
-			if ((Handle & REUSE_BITS_MASK) != REUSE_BITS_MASK) continue;
+			auto& HandleData = _Records[i].HandleData;
+			if ((HandleData & REUSE_BITS_MASK) != REUSE_BITS_MASK) continue;
 
-			Handle &= (~REUSE_BITS_MASK);
+			HandleData &= (~REUSE_BITS_MASK);
 			AddRangeToFreeList(i, i);
 		}
 	}
@@ -382,7 +382,7 @@ public:
 		if (auto Size = _Records.size())
 		{
 			AddRangeToFreeList(0, Size - 1);
-			_Records.back().Handle = 0;
+			_Records.back().HandleData = 0;
 		}
 	}
 
@@ -398,15 +398,15 @@ public:
 		auto pRecord = reinterpret_cast<const CHandleRec*>(reinterpret_cast<size_t>(pValue) - offsetof(CHandleRec, Value));
 		auto Index = static_cast<size_t>(pRecord - _Records.data());
 		if (Index >= _Records.size()) return INVALID_HANDLE;
-		if ((pRecord->Handle & INDEX_BITS_MASK) != INDEX_ALLOCATED) return INVALID_HANDLE;
-		const auto ReuseBits = (pRecord->Handle & REUSE_BITS_MASK);
+		if ((pRecord->HandleData & INDEX_BITS_MASK) != INDEX_ALLOCATED) return INVALID_HANDLE;
+		const auto ReuseBits = (pRecord->HandleData & REUSE_BITS_MASK);
 		return (ReuseBits == REUSE_BITS_MASK) ? INVALID_HANDLE : CHandle{ ReuseBits | Index };
 	}
 
 	const T* GetValue(CHandle Handle) const
 	{
 		const auto Index = (Handle.Raw & INDEX_BITS_MASK);
-		const bool IsValid = (Index < _Records.size()) && ((Handle.Raw | INDEX_ALLOCATED) == _Records[Index].Handle);
+		const bool IsValid = (Index < _Records.size()) && ((Handle.Raw | INDEX_ALLOCATED) == _Records[Index].HandleData);
 		return IsValid ? &_Records[Index].Value : nullptr;
 	}
 
