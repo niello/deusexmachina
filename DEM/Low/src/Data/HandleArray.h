@@ -429,8 +429,8 @@ protected:
 	{
 	private:
 
-		internal_it _It;
-		internal_it _ItEnd; // Otherwise we don't know when to stop advancing through free records
+		std::vector<CHandleRec>& _Storage;
+		internal_it              _It;
 
 	public:
 
@@ -438,19 +438,25 @@ protected:
 
 		using value_type = typename internal_it::value_type;
 		using difference_type = typename internal_it::difference_type;
-		using pointer = typename internal_it::pointer;
-		using reference = typename internal_it::reference;
+		using pointer = value_type*;
+		using reference = value_type&;
 
 		iterator_tpl() = default;
-		iterator_tpl(internal_it It, internal_it ItEnd) : _It(It), _ItEnd(ItEnd) {}
+		iterator_tpl(std::vector<CHandleRec> Storage, internal_it It)
+			: _Storage(Storage)
+			, _It(It)
+		{
+			while (_It != _Storage.end() && !IsAllocated()) ++_It;
+			//UpdatePair();
+		}
 		iterator_tpl(const iterator_tpl& It) = default;
 		iterator_tpl& operator =(const iterator_tpl& It) = default;
 
 		auto& operator *() const { return _It->Value; }
 		auto* operator ->() const { return &_It->Value; }
-		iterator_tpl& operator ++() { do ++_It; while (_It != _ItEnd && !IsAllocated()); return *this; }
+		iterator_tpl& operator ++() { do ++_It; while (_It != _Storage.end() && !IsAllocated()); return *this; }
 		iterator_tpl operator ++(int) { auto Tmp = *this; ++(*this); return Tmp; }
-		iterator_tpl& operator --() { do --_It; while (_It != _ItEnd && !IsAllocated()); return *this; }
+		iterator_tpl& operator --() { do --_It; while (_It != _Storage.end() && !IsAllocated()); return *this; }
 		iterator_tpl operator --(int) { auto Tmp = *this; --(*this); return Tmp; }
 
 		bool operator ==(const iterator_tpl& Right) const { return _It == Right._It; }
@@ -464,25 +470,11 @@ public:
 	using iterator = iterator_tpl<typename std::vector<CHandleRec>::iterator>;
 	using const_iterator = iterator_tpl<typename std::vector<CHandleRec>::const_iterator>;
 
-	const_iterator cbegin() const
-	{
-		const_iterator It(_Records.cbegin(), _Records.cend());
-		const_iterator ItEnd(_Records.cend(), _Records.cend());
-		while (It != ItEnd && !It.IsAllocated()) ++It;
-		return It;
-	}
-
-	iterator begin()
-	{
-		iterator It(_Records.begin(), _Records.end());
-		iterator ItEnd(_Records.end(), _Records.end());
-		while (It != ItEnd && !It.IsAllocated()) ++It;
-		return It;
-	}
-
+	const_iterator   cbegin() const { return const_iterator(_Records, _Records.cbegin()); }
+	iterator         begin() { return iterator(_Records, _Records.begin()); }
 	const_iterator   begin() const { return cbegin(); }
-	const_iterator   cend() const { return const_iterator(_Records.cend(), _Records.cend()); }
-	iterator         end() { return iterator(_Records.end(), _Records.end()); }
+	const_iterator   cend() const { return const_iterator(_Records, _Records.cend()); }
+	iterator         end() { return iterator(_Records, _Records.end()); }
 	const_iterator   end() const { return cend(); }
 	size_t           size() const { return _ElementCount; }
 	bool             empty() const { return !_ElementCount; }
