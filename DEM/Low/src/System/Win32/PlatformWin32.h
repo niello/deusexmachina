@@ -2,6 +2,7 @@
 #if DEM_PLATFORM_WIN32
 #include <System/Platform.h>
 #define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <memory>
 #include <vector>

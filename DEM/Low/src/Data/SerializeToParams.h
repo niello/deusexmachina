@@ -1,6 +1,8 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <Data/IterableTraits.h>
 #include <Data/Params.h>
+#include <Data/DataArray.h>
 
 // Serialization of arbitrary data to DEM CData
 
@@ -31,28 +33,28 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void Serialize(Data::CData& Output, const TValue& Value)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline void Serialize(Data::CData& Output, const T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<TValue>::GetMemberCount())));
-			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value](const auto& Member)
+			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<T>::GetMemberCount())));
+			DEM::Meta::CMetadata<T>::ForEachMember([&Out, &Value](const auto& Member)
 			{
 				if (!Member.CanSerialize()) return;
 				SerializeKeyValue(*Out, Member.GetName(), Member.GetConstValue(Value));
 			});
 			Output = std::move(Out);
 		}
-		else if constexpr (Data::CTypeID<TValue>::IsDeclared)
+		else if constexpr (Data::CTypeID<T>::IsDeclared)
 			Output = Value;
 		else
 			static_assert(false, "CData serialization supports only types registered with CTypeID");
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void Serialize(Data::CData& Output, const std::vector<TValue>& Vector)
+	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	static inline void Serialize(Data::CData& Output, const T& Vector)
 	{
 		Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
 		for (const auto& Value : Vector)
@@ -65,8 +67,8 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TKey, typename TValue>
-	static inline void Serialize(Data::CData& Output, const std::unordered_map<TKey, TValue>& Map)
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void Serialize(Data::CData& Output, const T& Map)
 	{
 		Data::PParams Out(n_new(Data::CParams(Map.size())));
 		for (const auto& [Key, Value] : Map)
@@ -183,14 +185,14 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void Deserialize(const Data::CData& Input, TValue& Value)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(const Data::CData& Input, T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
 			if (auto pParamsPtr = Input.As<Data::PParams>())
 			{
-				DEM::Meta::CMetadata<TValue>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
+				DEM::Meta::CMetadata<T>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
 				{
 					if (!Member.CanSerialize()) return;
 					if (auto pParam = pParams->Find(CStrID(Member.GetName())))
@@ -202,15 +204,15 @@ struct ParamsFormat
 				});
 			}
 		}
-		else if constexpr (Data::CTypeID<TValue>::IsDeclared)
-			Value = Input.GetValue<TValue>();
+		else if constexpr (Data::CTypeID<T>::IsDeclared)
+			Value = Input.GetValue<T>();
 		else
 			static_assert(false, "CData deserialization supports only types registered with CTypeID");
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void Deserialize(const Data::CData& Input, std::vector<TValue>& Vector)
+	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(const Data::CData& Input, T& Vector)
 	{
 		Vector.clear();
 		if (auto pArrayPtr = Input.As<Data::PDataArray>())
@@ -226,8 +228,8 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TKey, typename TValue>
-	static inline void Deserialize(const Data::CData& Input, std::unordered_map<TKey, TValue>& Map)
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(const Data::CData& Input, T& Map)
 	{
 		Map.clear();
 		if (auto pParamsPtr = Input.As<Data::PParams>())
@@ -235,12 +237,12 @@ struct ParamsFormat
 			auto pParams = pParamsPtr->Get();
 			for (const auto& Param : *pParams)
 			{
-				TValue Value;
+				typename T::mapped_type Value;
 				Deserialize(Param.GetRawValue(), Value);
 
-				if constexpr (!is_string_compatible_v<TKey>)
+				if constexpr (!is_string_compatible_v<T::key_type>)
 					static_assert(false, "CData deserialization supports only string map keys");
-				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
 					Map.emplace(Param.GetName(), std::move(Value));
 				else
 					Map.emplace(Param.GetName().CStr(), std::move(Value));

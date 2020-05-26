@@ -2,8 +2,6 @@
 #include <Data/Metadata.h>
 #include <IO/BinaryWriter.h>
 #include <IO/BinaryReader.h>
-#include <vector>
-#include <unordered_map>
 
 // Serialization of arbitrary data to binary format
 
