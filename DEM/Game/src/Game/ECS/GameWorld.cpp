@@ -87,7 +87,7 @@ void CGameWorld::LoadEntityFromParams(const Data::CParam& In, bool Diff)
 		EntityID = _Entities.AllocateWithHandle(RawHandle, {});
 		n_assert_dbg(EntityID);
 
-		pEntity = _Entities.GetValueUnsafe(EntityID);
+		pEntity = &_Entities.GetValueUnsafe(EntityID);
 	}
 
 	// Load entity diff or full data
@@ -497,15 +497,14 @@ bool CGameWorld::InstantiateTemplate(HEntity EntityID, CStrID TemplateID, bool B
 HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 {
 	auto EntityID = _Entities.Allocate();
-	auto pEntity = _Entities.GetValueUnsafe(EntityID);
-	if (!pEntity) return CEntityStorage::INVALID_HANDLE;
+	auto& Entity = _Entities.GetValueUnsafe(EntityID);
 
-	pEntity->LevelID = LevelID;
-	pEntity->Level = FindLevel(LevelID);
-	pEntity->TemplateID = TemplateID; // Used inside InstantiateTemplate // FIXME: pass template data into pStorage->InstantiateTemplate instead of Validate flag?
+	Entity.LevelID = LevelID;
+	Entity.Level = FindLevel(LevelID);
+	Entity.TemplateID = TemplateID; // Used inside InstantiateTemplate // FIXME: pass template data into pStorage->InstantiateTemplate instead of Validate flag?
 
 	if (!InstantiateTemplate(EntityID, TemplateID, false, true))
-		pEntity->TemplateID = CStrID::Empty;
+		Entity.TemplateID = CStrID::Empty;
 
 	return EntityID;
 }

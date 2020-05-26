@@ -480,7 +480,7 @@ void RenderDebugNavigation(DEM::Game::CGameWorld& World, Debug::CDebugDraw& Debu
 			const CNavAgentComponent& Agent,
 			const DEM::Game::CSceneComponent* pSceneComponent)
 	{
-		if (!pSceneComponent->RootNode || !Agent.pNavQuery || !Agent.Settings) return;
+		if (!pSceneComponent->RootNode || !Agent.pNavQuery) return;
 
 		if (Agent.State == ENavigationState::Planning || Agent.State == ENavigationState::Following)
 		{

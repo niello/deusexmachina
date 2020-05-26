@@ -86,18 +86,18 @@ public:
 	// ValidateLevels() - need API? or automatic? resmgr as param or stored inside the world? must be consistent across validations!
 	// AddLevelCOI(id, vector3) - cleared after update
 
-	HEntity     CreateEntity(CStrID LevelID, CStrID TemplateID = CStrID::Empty);
+	HEntity        CreateEntity(CStrID LevelID, CStrID TemplateID = CStrID::Empty);
 	// CreateEntity(template ID)
 	// CreateEntity(component type list, templated?)
 	// CreateEntity(prototype entity ID for cloning)
-	void        DeleteEntity(HEntity EntityID);
+	void           DeleteEntity(HEntity EntityID);
 	// MoveEntity(id, level[id?])
-	bool        EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
-	auto        GetEntity(HEntity EntityID) const { return _Entities.GetValue(EntityID); }
-	auto        GetEntityUnsafe(HEntity EntityID) const { return _Entities.GetValueUnsafe(EntityID); }
-	const auto& GetEntities() const { return _Entities; }
-	bool        IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
-	CGameLevel* GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
+	bool           EntityExists(HEntity EntityID) const { return !!_Entities.GetValue(EntityID); }
+	const CEntity* GetEntity(HEntity EntityID) const { return _Entities.GetValue(EntityID); }
+	const CEntity& GetEntityUnsafe(HEntity EntityID) const { return _Entities.GetValueUnsafe(EntityID); }
+	const auto&    GetEntities() const { return _Entities; }
+	bool           IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
+	CGameLevel*    GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
 
 	template<class T> void        RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
 	template<class T> T*          AddComponent(HEntity EntityID);
@@ -119,6 +119,10 @@ public:
 
 	template<typename TComponent, typename... Components, typename TCallback>
 	void ForEachEntityWith(TCallback Callback);
+	template<typename TComponent, typename... Components, typename TCallback>
+	void ForEachEntityInLevelWith(CStrID LevelID, TCallback Callback);
+	template<typename TComponent, typename... Components, typename TCallback, typename TFilter>
+	void ForEachEntityWith(TCallback Callback, TFilter Filter);
 	template<typename TComponent, typename TCallback>
 	void ForEachComponent(TCallback Callback);
 	template<typename TComponent, typename TCallback>
@@ -278,12 +282,36 @@ DEM_FORCE_INLINE bool CGameWorld::GetNextComponents(HEntity EntityID, std::tuple
 }
 //---------------------------------------------------------------------
 
+// Join-iterator over active entities containing a set of components. See ForEachEntityWith(Callback, Filter).
+// Callback args: entity ID, entity ref, component pointers in the same order as in args.
+template<typename TComponent, typename... Components, typename TCallback>
+inline void CGameWorld::ForEachEntityWith(TCallback Callback)
+{
+	ForEachEntityWith<TComponent, Components...>(std::forward<TCallback>(Callback), [](HEntity EntityID, const CEntity& Entity)
+	{
+		return Entity.IsActive;
+	});
+}
+//---------------------------------------------------------------------
+
+// Join-iterator over active entities in a certain level with a set of components. See ForEachEntityWith(Callback, Filter).
+// Callback args: entity ID, entity ref, component pointers in the same order as in args.
+template<typename TComponent, typename... Components, typename TCallback>
+inline void CGameWorld::ForEachEntityInLevelWith(CStrID LevelID, TCallback Callback)
+{
+	ForEachEntityWith<TComponent, Components...>(std::forward<TCallback>(Callback), [LevelID](HEntity EntityID, const CEntity& Entity)
+	{
+		return Entity.IsActive && Entity.LevelID == LevelID;
+	});
+}
+//---------------------------------------------------------------------
+
 // Join-iterator over entities containing a set of components. Components specified by pointer are optional.
 // They are nullptr if not present. It is recommended to specify mandatory ones first. Respects 'const' specifier.
 // Callback args: entity ID, entity ref, component pointers in the same order as in args.
 // TODO: pass mandatory components by reference into a Callback?
-template<typename TComponent, typename... Components, typename TCallback>
-inline void CGameWorld::ForEachEntityWith(TCallback Callback)
+template<typename TComponent, typename... Components, typename TCallback, typename TFilter>
+inline void CGameWorld::ForEachEntityWith(TCallback Callback, TFilter Filter)
 {
 	static_assert(!std::is_pointer_v<TComponent>, "First component in ForEachEntityWith must be mandatory!");
 
@@ -300,14 +328,14 @@ inline void CGameWorld::ForEachEntityWith(TCallback Callback)
 		// TODO: can split into slices and dispatch to different threads (ForEachEntityWith<...>(Start, Count)?)
 		for (auto&& [Component, EntityID] : *pStorage)
 		{
-			auto pEntity = GetEntityUnsafe(EntityID);
-			if (!pEntity || !pEntity->IsActive) continue;
+			auto&& Entity = GetEntityUnsafe(EntityID);
+			if (!Filter(EntityID, Entity)) continue;
 
 			std::tuple<ensure_pointer_t<Components>...> NextComponents;
 			if constexpr(sizeof...(Components) > 0)
 				if (!GetNextComponents<Components...>(EntityID, NextComponents, NextStorages)) continue;
 
-			std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, *pEntity, std::reference_wrapper<TComponent>(Component)), NextComponents));
+			std::apply(std::forward<TCallback>(Callback), std::tuple_cat(std::make_tuple(EntityID, Entity, std::reference_wrapper<TComponent>(Component)), NextComponents));
 		}
 	}
 }
@@ -321,6 +349,7 @@ inline void CGameWorld::ForEachComponent(TCallback Callback)
 	{
 		for (auto&& [Component, EntityID] : *pStorage)
 		{
+			// Prevent accessing mutable reference in callback if read-only component is requested
 			if constexpr (std::is_const_v<TComponent>)
 				Callback(EntityID, std::cref(Component));
 			else
