@@ -220,9 +220,12 @@ struct ParamsFormat
 			auto pArray = pArrayPtr->Get();
 			for (const auto& ValueData : *pArray)
 			{
-				TValue Value;
+				T::value_type Value;
 				Deserialize(ValueData, Value);
-				Vector.push_back(std::move(Value));
+				if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+					Vector.push_back(std::move(Value));
+				else
+					Vector.insert(std::move(Value));
 			}
 		}
 	}
