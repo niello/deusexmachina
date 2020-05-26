@@ -12,12 +12,12 @@ namespace DEM
 
 struct BinaryFormat
 {
-	template<typename TValue>
-	static inline void Serialize(IO::CBinaryWriter& Output, const TValue& Value)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline void Serialize(IO::CBinaryWriter& Output, const T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value](const auto& Member)
+			DEM::Meta::CMetadata<T>::ForEachMember([&Output, &Value](const auto& Member)
 			{
 				Serialize(Output, Member.GetConstValue(Value));
 			});
@@ -26,9 +26,8 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	//???TODO: extend to all iterable?
-	template<typename TValue>
-	static inline void Serialize(IO::CBinaryWriter& Output, const std::vector<TValue>& Vector)
+	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	static inline void Serialize(IO::CBinaryWriter& Output, const T& Vector)
 	{
 		Output << static_cast<uint32_t>(Vector.size());
 		for (const auto& Value : Vector)
@@ -36,9 +35,8 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	//???TODO: extend to all pair-iterable?
-	template<typename TKey, typename TValue>
-	static inline void Serialize(IO::CBinaryWriter& Output, const std::unordered_map<TKey, TValue>& Map)
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void Serialize(IO::CBinaryWriter& Output, const T& Map)
 	{
 		Output << static_cast<uint32_t>(Map.size());
 		for (const auto& [Key, Value] : Map)
@@ -138,12 +136,12 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void Deserialize(IO::CBinaryReader& Input, TValue& Value)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(IO::CBinaryReader& Input, T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			DEM::Meta::CMetadata<TValue>::ForEachMember([&Input, &Value](const auto& Member)
+			DEM::Meta::CMetadata<T>::ForEachMember([&Input, &Value](const auto& Member)
 			{
 				DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
 				Deserialize(Input, FieldValue);
@@ -154,26 +152,40 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void Deserialize(IO::CBinaryReader& Input, std::vector<TValue>& Vector)
+	template<typename T, typename std::enable_if_t<Meta::is_single_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(IO::CBinaryReader& Input, T& Vector)
 	{
 		uint32_t Count;
 		Input >> Count;
-		Vector.resize(Count);
+
+		if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+			Vector.resize(Count);
+
 		for (size_t i = 0; i < Count; ++i)
-			Deserialize(Input, Vector[i]);
+		{
+			if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+			{
+				Deserialize(Input, Vector[i]);
+			}
+			else
+			{
+				typename T::value_type Value;
+				Deserialize(Input, Value);
+				Vector.insert(std::move(Value));
+			}
+		}
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TKey, typename TValue>
-	static inline void Deserialize(IO::CBinaryReader& Input, std::unordered_map<TKey, TValue>& Map)
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void Deserialize(IO::CBinaryReader& Input, T& Map)
 	{
 		uint32_t Count;
 		Input >> Count;
 		for (size_t i = 0; i < Count; ++i)
 		{
-			TKey Key;
-			TValue Value;
+			T::key_type Key;
+			T::mapped_type Value;
 			Deserialize(Input, Key);
 			Deserialize(Input, Value);
 			Map.emplace(std::move(Key), std::move(Value));

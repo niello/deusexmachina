@@ -218,14 +218,23 @@ struct ParamsFormat
 		if (auto pArrayPtr = Input.As<Data::PDataArray>())
 		{
 			auto pArray = pArrayPtr->Get();
-			for (const auto& ValueData : *pArray)
+
+			if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
+				Vector.resize(pArray->GetCount());
+
+			for (size_t i = 0; i < pArray->GetCount(); ++i)
 			{
-				T::value_type Value;
-				Deserialize(ValueData, Value);
+				const auto& ValueData = pArray->At(i);
 				if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
-					Vector.push_back(std::move(Value));
+				{
+					Deserialize(ValueData, Vector[i]);
+				}
 				else
+				{
+					typename T::value_type Value;
+					Deserialize(ValueData, Value);
 					Vector.insert(std::move(Value));
+				}
 			}
 		}
 	}
