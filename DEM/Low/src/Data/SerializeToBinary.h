@@ -92,7 +92,7 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_vector_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Vector, const T& BaseVector)
 	{
-		// 32 bit indices are used
+		// Only 32 bits are saved
 		n_assert_dbg(Vector.size() <= std::numeric_limits<uint32_t>().max() &&
 			BaseVector.size() <= std::numeric_limits<uint32_t>().max());
 
@@ -135,63 +135,24 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T> || Meta::is_std_unordered_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
 	{
-		// Set diff is two lists - added and deleted elements
-		// TODO: profile Set == BaseSet and then DEM::SetDifference(Callback) instead of vector filling
-		std::vector<T::value_type> Added;
-		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
-		std::vector<T::value_type> Deleted;
-		std::set_difference(BaseSet.cbegin(), BaseSet.cend(), Set.cbegin(), Set.cend(), std::back_inserter(Deleted));
+		size_t AddedCount = 0, DeletedCount = 0;
+		SetDifference(Set, BaseSet, [&AddedCount](const auto&) { ++AddedCount; });
+		SetDifference(BaseSet, Set, [&DeletedCount](const auto&) { ++DeletedCount; });
 
-		if (Added.empty() && Deleted.empty()) return false;
+		if (!AddedCount && !DeletedCount) return false;
 
-		// 32 bit indices are used
-		n_assert_dbg(Added.size() <= std::numeric_limits<uint32_t>().max() &&
-			Deleted.size() <= std::numeric_limits<uint32_t>().max());
+		// Only 32 bits are saved
+		n_assert_dbg(AddedCount <= std::numeric_limits<uint32_t>().max() &&
+			DeletedCount <= std::numeric_limits<uint32_t>().max());
 
-		Output << static_cast<uint32_t>(Deleted.size());
-		for (const auto& Value : Deleted)
-			Serialize(Output, Value);
+		Output << static_cast<uint32_t>(DeletedCount);
+		if (DeletedCount) SetDifference(BaseSet, Set, [&Output](const auto& Value) { Serialize(Output, Value); });
 
-		Output << static_cast<uint32_t>(Added.size());
-		for (const auto& Value : Added)
-			Serialize(Output, Value);
-
-		return true;
-	}
-	//---------------------------------------------------------------------
-
-	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
-	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
-	{
-		// Set diff is two lists - added and deleted elements
-		// TODO: profile Set == BaseSet and then DEM::SetDifference(Callback) instead of vector filling
-		std::vector<T::value_type> Added;
-		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)
-		{
-			return BaseSet.find(Value) == BaseSet.cend();
-		});
-		std::vector<T::value_type> Deleted;
-		std::copy_if(BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Deleted), [&Set](const auto& Value)
-		{
-			return Set.find(Value) == Set.cend();
-		});
-
-		if (Added.empty() && Deleted.empty()) return false;
-
-		// 32 bit indices are used
-		n_assert_dbg(Added.size() <= std::numeric_limits<uint32_t>().max() &&
-			Deleted.size() <= std::numeric_limits<uint32_t>().max());
-
-		Output << static_cast<uint32_t>(Deleted.size());
-		for (const auto& Value : Deleted)
-			Serialize(Output, Value);
-
-		Output << static_cast<uint32_t>(Added.size());
-		for (const auto& Value : Added)
-			Serialize(Output, Value);
+		Output << static_cast<uint32_t>(AddedCount);
+		if (AddedCount) SetDifference(Set, BaseSet, [&Output](const auto& Value) { Serialize(Output, Value); });
 
 		return true;
 	}
@@ -310,10 +271,19 @@ struct BinaryFormat
 			{
 				DEM::Meta::CMetadata<T>::ForEachMember([&Input, &Value, &Code](const auto& Member)
 				{
-					if (!Member.CanSerialize() || Code != Member.GetCode()) return;
-					DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
-					DeserializeDiff(Input, FieldValue);
-					Member.SetValue(Value, std::move(FieldValue));
+					if (Member.CanSerialize() && Code == Member.GetCode())
+					{
+						if constexpr (Member.CanGetWritableRef())
+						{
+							DeserializeDiff(Input, Member.GetValueRef(Value));
+						}
+						else
+						{
+							auto FieldValue = Member.GetConstValue(Value);
+							DeserializeDiff(Input, FieldValue);
+							Member.SetValue(Value, std::move(FieldValue));
+						}
+					}
 				});
 
 				Code = Input.Read<uint32_t>();

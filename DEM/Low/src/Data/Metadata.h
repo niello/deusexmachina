@@ -128,6 +128,7 @@ public:
 	constexpr auto&       Extras() const { return _Extras; }
 	static constexpr bool CanRead() { return !std::is_same_v<TGetter, std::nullptr_t>; }
 	static constexpr bool CanWrite() { return !std::is_same_v<TSetter, std::nullptr_t>; }
+	static constexpr bool CanGetWritableRef() { return !is_setter_v<TSetter, TClass, T>; }
 	template<typename U>
 	static constexpr bool Is() { return std::is_same_v<T, U>; }
 

@@ -322,8 +322,16 @@ struct ParamsFormat
 					if (!Member.CanSerialize()) return;
 					if (auto pParam = pParams->Find(CStrID(Member.GetName())))
 					{
-						auto& Field = Member.GetValueRef(Value);
-						DeserializeDiff(pParam->GetRawValue(), Field);
+						if constexpr (Member.CanGetWritableRef())
+						{
+							DeserializeDiff(pParam->GetRawValue(), Member.GetValueRef(Value));
+						}
+						else
+						{
+							auto FieldValue = Member.GetConstValue(Value);
+							DeserializeDiff(pParam->GetRawValue(), FieldValue);
+							Member.SetValue(Value, std::move(FieldValue));
+						}
 					}
 				});
 			}
