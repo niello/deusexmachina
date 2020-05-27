@@ -138,8 +138,8 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
 	{
-		// FIXME: need set_difference with callback instead of output collection!
-		// Set diff is two lists - added and deleted elements.
+		// Set diff is two lists - added and deleted elements
+		// TODO: profile Set == BaseSet and then DEM::SetDifference(Callback) instead of vector filling
 		std::vector<T::value_type> Added;
 		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
 		std::vector<T::value_type> Deleted;
@@ -166,8 +166,8 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
 	{
-		// FIXME: need set_difference with callback instead of output collection!
-		// Set diff is two lists - added and deleted elements.
+		// Set diff is two lists - added and deleted elements
+		// TODO: profile Set == BaseSet and then DEM::SetDifference(Callback) instead of vector filling
 		std::vector<T::value_type> Added;
 		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)
 		{
@@ -200,7 +200,7 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Map, const T& BaseMap)
 	{
-		static_assert(false, "SerializeDiff<is_pair_iterable_v>");
+		//static_assert(false, "SerializeDiff<is_pair_iterable_v>");
 		/*
 		for (const auto& [Key, Value] : Map)
 		{
@@ -371,7 +371,7 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Vector)
 	{
-		static_assert(false, "DeserializeDiff<is_pair_iterable_v>");
+		//static_assert(false, "DeserializeDiff<is_pair_iterable_v>");
 		/*
 		for (const auto& Param : *pParams)
 		{

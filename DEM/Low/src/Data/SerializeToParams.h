@@ -3,6 +3,7 @@
 #include <Data/IterableTraits.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
+#include <Data/Algorithms.h>
 
 // Serialization of arbitrary data to DEM CData
 
@@ -154,79 +155,39 @@ struct ParamsFormat
 			Out->Add(Elm);
 		}
 
-		Output = Out;
+		Output = std::move(Out);
 		return true;
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T> || Meta::is_std_unordered_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
 	{
-		// FIXME: need set_difference with callback instead of output collection!
-		// Set diff is two lists - added and deleted elements.
-		std::vector<T::value_type> Added;
-		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
-		std::vector<T::value_type> Deleted;
-		std::set_difference(BaseSet.cbegin(), BaseSet.cend(), Set.cbegin(), Set.cend(), std::back_inserter(Deleted));
-
-		if (Added.empty() && Deleted.empty()) return false;
-
-		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
-
-		if (!Added.empty())
+		Data::CData Added;
+		Data::CData Deleted;
+		SetDifference(Set, BaseSet, [&Added](const auto& Value)
 		{
-			Data::CData OutAdded;
-			Serialize(OutAdded, Added);
-			Out->Set(CStrID("Added"), std::move(OutAdded));
-		}
-
-		if (!Deleted.empty())
-		{
-			Data::CData OutDeleted;
-			Serialize(OutDeleted, Deleted);
-			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
-		}
-
-		Output = Out;
-		return true;
-	}
-	//---------------------------------------------------------------------
-
-	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
-	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
-	{
-		// FIXME: need set_difference with callback instead of output collection!
-		// Set diff is two lists - added and deleted elements.
-		std::vector<T::value_type> Added;
-		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)
-		{
-			return BaseSet.find(Value) == BaseSet.cend();
+			if (Added.IsVoid()) Added = Data::PDataArray(n_new(Data::CDataArray()));
+			Data::CData ValueData;
+			Serialize(ValueData, Value);
+			Added.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
 		});
-		std::vector<T::value_type> Deleted;
-		std::copy_if(BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Deleted), [&Set](const auto& Value)
+		SetDifference(BaseSet, Set, [&Deleted](const auto& Value)
 		{
-			return Set.find(Value) == Set.cend();
+			if (Deleted.IsVoid()) Deleted = Data::PDataArray(n_new(Data::CDataArray()));
+			Data::CData ValueData;
+			Serialize(ValueData, Value);
+			Deleted.As<Data::PDataArray>()->Get()->Add(std::move(ValueData));
 		});
 
-		if (Added.empty() && Deleted.empty()) return false;
+		if (Added.IsVoid() && Deleted.IsVoid()) return false;
 
-		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+		Data::PParams Out(n_new(Data::CParams((Added.IsVoid() ? 0 : 1) + (Deleted.IsVoid() ? 0 : 1))));
 
-		if (!Added.empty())
-		{
-			Data::CData OutAdded;
-			Serialize(OutAdded, Added);
-			Out->Set(CStrID("Added"), std::move(OutAdded));
-		}
+		if (!Added.IsVoid()) Out->Set(CStrID("Added"), std::move(Added));
+		if (!Deleted.IsVoid()) Out->Set(CStrID("Deleted"), std::move(Deleted));
 
-		if (!Deleted.empty())
-		{
-			Data::CData OutDeleted;
-			Serialize(OutDeleted, Deleted);
-			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
-		}
-
-		Output = Out;
+		Output = std::move(Out);
 		return true;
 	}
 	//---------------------------------------------------------------------
