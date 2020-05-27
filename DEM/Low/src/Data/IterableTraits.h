@@ -1,7 +1,5 @@
 #pragma once
-//#include <utility>
-#include <iterator>
-//#include <type_traits>
+#include <unordered_set>
 
 // Helpers for iterability detection
 
@@ -41,6 +39,18 @@ constexpr bool is_single_iterable_v = is_single_iterable<T>::value;
 
 template<typename T>
 constexpr bool is_not_iterable_v = !is_single_iterable_v<T> && !is_pair_iterable_v<T>;
+
+#define SINGLE_CONTAINER_TRAIT(trait_type) \
+template<typename T> \
+struct is_##trait_type : std::false_type {}; \
+template<typename T> \
+struct is_##trait_type<std::trait_type<T>> : std::true_type {}; \
+template<typename T> \
+constexpr bool is_##trait_type##_v = is_##trait_type<T>::value;
+
+SINGLE_CONTAINER_TRAIT(vector);
+SINGLE_CONTAINER_TRAIT(set);
+SINGLE_CONTAINER_TRAIT(unordered_set);
 
 /*
 // https://stackoverflow.com/questions/13830158/check-if-a-variable-type-is-iterable

@@ -104,6 +104,10 @@ public:
 	CIterator	begin() const { return pData; }
 	CIterator	end() const { return pData + Count; }
 
+	// std::back_inserter support
+	void        push_back(const T& Val) { Add(Val); }
+	void        push_back(T&& Val) { Add(std::move(Val)); }
+
 	CArray<T>&	operator =(const CArray<T>& Other) { if (this != &Other) Copy(Other); return *this; }
 	CArray<T>&	operator =(CArray<T>&& Other);
 	T&			operator [](IPTR Idx) const { return At(Idx); }

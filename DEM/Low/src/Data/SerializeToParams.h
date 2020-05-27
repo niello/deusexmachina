@@ -96,13 +96,13 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline bool SerializeDiff(Data::CData& Output, const TValue& Value, const TValue& BaseValue)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline bool SerializeDiff(Data::CData& Output, const T& Value, const T& BaseValue)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
-			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<TValue>::GetMemberCount())));
-			DEM::Meta::CMetadata<TValue>::ForEachMember([&Out, &Value, &BaseValue](const auto& Member)
+			Data::PParams Out(n_new(Data::CParams(DEM::Meta::CMetadata<T>::GetMemberCount())));
+			DEM::Meta::CMetadata<T>::ForEachMember([&Out, &Value, &BaseValue](const auto& Member)
 			{
 				if (!Member.CanSerialize()) return;
 				SerializeKeyValueDiff(*Out, Member.GetName(), Member.GetConstValue(Value), Member.GetConstValue(BaseValue));
@@ -113,7 +113,7 @@ struct ParamsFormat
 				return true;
 			}
 		}
-		else if constexpr (Data::CTypeID<TValue>::IsDeclared)
+		else if constexpr (Data::CTypeID<T>::IsDeclared)
 		{
 			if (Value != BaseValue)
 			{
@@ -128,25 +128,132 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline bool SerializeDiff(Data::CData& Output, const std::vector<TValue>& Vector, const std::vector<TValue>& BaseVector)
+	template<typename T, typename std::enable_if_t<Meta::is_vector_v<T>>* = nullptr>
+	static inline bool SerializeDiff(Data::CData& Output, const T& Vector, const T& BaseVector)
 	{
-		//???what if count or order changed? iterate the longer one? or maybe always save only curr vector, without diff?
-		static_assert(false, "How to implement array diff? All elements, each one saved as diff? If all skipped, skip array.");
-		//Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
-		//for (const auto& Value : Vector)
-		//{
-		//	Data::CData ValueData;
-		//	Serialize(ValueData, Value);
-		//	Out->Add(std::move(ValueData));
-		//}
-		//Output = std::move(Out);
-		return false;
+		// Vector diff is a vector with length of the new value and nulls for equal elements.
+		Data::PDataArray Out(n_new(Data::CDataArray(Vector.size())));
+
+		// Save new value of element or null if element didn't change
+		bool HasChanges = (Vector.size() != BaseVector.size());
+		const size_t MinSize = std::min(Vector.size(), BaseVector.size());
+		for (size_t i = 0; i < MinSize; ++i)
+		{
+			Data::CData Elm;
+			HasChanges |= SerializeDiff(Elm, Vector[i], BaseVector[i]);
+			Out->Add(Elm);
+		}
+
+		if (!HasChanges) return false;
+
+		// Process added elements. If new array is shorter, deleted elements will be detected from diff length.
+		if (Vector.size() > MinSize)
+		{
+			for (size_t i = MinSize; i < Vector.size(); ++i)
+			{
+				Data::CData Elm;
+				Serialize(Elm, Vector[i]);
+				Out->Add(Elm);
+			}
+		}
+
+		Output = Out;
+		return true;
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TKey, typename TValue>
-	static inline bool SerializeDiff(Data::CData& Output, const std::unordered_map<TKey, TValue>& Map, const std::unordered_map<TKey, TValue>& BaseMap)
+	template<typename T, typename std::enable_if_t<Meta::is_set_v<T>>* = nullptr>
+	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
+	{
+		// Set diff is two lists - added and deleted elements.
+		std::vector<T::value_type> Added;
+		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
+		std::vector<T::value_type> Deleted;
+		std::set_difference(BaseSet.cbegin(), BaseSet.cend(), Set.cbegin(), Set.cend(), std::back_inserter(Deleted));
+
+		if (Added.empty() && Deleted.empty()) return false;
+
+		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+
+		if (!Added.empty())
+		{
+			Data::PDataArray OutAdded(n_new(Data::CDataArray(Added.size())));
+			for (const auto& Value : Added)
+			{
+				Data::CData Elm;
+				Serialize(Elm, Value);
+				OutAdded->Add(Elm);
+			}
+			Out->Set(CStrID("Added"), OutAdded);
+		}
+
+		if (!Deleted.empty())
+		{
+			Data::PDataArray OutDeleted(n_new(Data::CDataArray(Deleted.size())));
+			for (const auto& Value : Deleted)
+			{
+				Data::CData Elm;
+				Serialize(Elm, Value);
+				OutDeleted->Add(Elm);
+			}
+			Out->Set(CStrID("Deleted"), OutDeleted);
+		}
+
+		Output = Out;
+		return true;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_unordered_set_v<T>>* = nullptr>
+	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
+	{
+		// Set diff is two lists - added and deleted elements.
+		std::vector<T::value_type> Added;
+		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)
+		{
+			return BaseSet.find(Value) == BaseSet.cend();
+		});
+		std::vector<T::value_type> Deleted;
+		std::copy_if(BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Deleted), [&Set](const auto& Value)
+		{
+			return Set.find(Value) == Set.cend();
+		});
+
+		if (Added.empty() && Deleted.empty()) return false;
+
+		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+
+		if (!Added.empty())
+		{
+			Data::PDataArray OutAdded(n_new(Data::CDataArray(Added.size())));
+			for (const auto& Value : Added)
+			{
+				Data::CData Elm;
+				Serialize(Elm, Value);
+				OutAdded->Add(Elm);
+			}
+			Out->Set(CStrID("Added"), OutAdded);
+		}
+
+		if (!Deleted.empty())
+		{
+			Data::PDataArray OutDeleted(n_new(Data::CDataArray(Deleted.size())));
+			for (const auto& Value : Deleted)
+			{
+				Data::CData Elm;
+				Serialize(Elm, Value);
+				OutDeleted->Add(Elm);
+			}
+			Out->Set(CStrID("Deleted"), OutDeleted);
+		}
+
+		Output = Out;
+		return true;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline bool SerializeDiff(Data::CData& Output, const T& Map, const T& BaseMap)
 	{
 		Data::PParams Out(n_new(Data::CParams(Map.size())));
 
@@ -166,9 +273,9 @@ struct ParamsFormat
 			if (Map.find(Key) == Map.cend())
 			{
 				// Deleted
-				if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
+				if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<typename T::key_type>>, CStrID>)
 					Out->Set(Key, Data::CData());
-				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
+				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<typename T::key_type>>, std::string>)
 					Out->Set(CStrID(Key.c_str()), Data::CData());
 				else
 					Out->Set(CStrID(Key), Data::CData());
