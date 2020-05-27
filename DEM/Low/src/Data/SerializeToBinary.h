@@ -114,9 +114,9 @@ struct BinaryFormat
 			// Write the index to identify the element. If values are equal in both objects, this will be reverted.
 			// TODO: PROFILE! See writing member code SerializeDiff(in is_not_iterable_v), the same situation.
 			const auto CurrPos = Output.GetStream().Tell();
-			Output << Member.GetCode();
+			Output << static_cast<uint32_t>(i);
 
-			if (!SerializeDiff(Elm, Vector[i], BaseVector[i]))
+			if (!SerializeDiff(Output, Vector[i], BaseVector[i]))
 			{
 				// "Unwrite" index
 				Output.GetStream().Seek(CurrPos, IO::Seek_Begin);
@@ -336,7 +336,7 @@ struct BinaryFormat
 		Vector.resize(NewSize);
 
 		uint32_t ChangedIndex = Input.Read<uint32_t>();
-		while (ChangedIndex < std::numeric_limits<uint32t>().max())
+		while (ChangedIndex < std::numeric_limits<uint32_t>().max())
 		{
 			DeserializeDiff(Input, Vector[ChangedIndex]);
 			ChangedIndex = Input.Read<uint32_t>();
