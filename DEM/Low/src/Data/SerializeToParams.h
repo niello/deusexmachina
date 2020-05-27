@@ -162,6 +162,7 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
 	{
+		// FIXME: need set_difference with callback instead of output collection!
 		// Set diff is two lists - added and deleted elements.
 		std::vector<T::value_type> Added;
 		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
@@ -194,6 +195,7 @@ struct ParamsFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
 	{
+		// FIXME: need set_difference with callback instead of output collection!
 		// Set diff is two lists - added and deleted elements.
 		std::vector<T::value_type> Added;
 		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)

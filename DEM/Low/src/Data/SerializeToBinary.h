@@ -138,6 +138,7 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
 	{
+		// FIXME: need set_difference with callback instead of output collection!
 		// Set diff is two lists - added and deleted elements.
 		std::vector<T::value_type> Added;
 		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
@@ -146,23 +147,18 @@ struct BinaryFormat
 
 		if (Added.empty() && Deleted.empty()) return false;
 
-		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+		// 32 bit indices are used
+		n_assert_dbg(Added.size() <= std::numeric_limits<uint32_t>().max() &&
+			Deleted.size() <= std::numeric_limits<uint32_t>().max());
 
-		if (!Added.empty())
-		{
-			Data::CData OutAdded;
-			Serialize(OutAdded, Added);
-			Out->Set(CStrID("Added"), std::move(OutAdded));
-		}
+		Output << static_cast<uint32_t>(Deleted.size());
+		for (const auto& Value : Deleted)
+			Serialize(Output, Value);
 
-		if (!Deleted.empty())
-		{
-			Data::CData OutDeleted;
-			Serialize(OutDeleted, Deleted);
-			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
-		}
+		Output << static_cast<uint32_t>(Added.size());
+		for (const auto& Value : Added)
+			Serialize(Output, Value);
 
-		Output = Out;
 		return true;
 	}
 	//---------------------------------------------------------------------
@@ -170,6 +166,7 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
 	{
+		// FIXME: need set_difference with callback instead of output collection!
 		// Set diff is two lists - added and deleted elements.
 		std::vector<T::value_type> Added;
 		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)
@@ -184,23 +181,18 @@ struct BinaryFormat
 
 		if (Added.empty() && Deleted.empty()) return false;
 
-		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+		// 32 bit indices are used
+		n_assert_dbg(Added.size() <= std::numeric_limits<uint32_t>().max() &&
+			Deleted.size() <= std::numeric_limits<uint32_t>().max());
 
-		if (!Added.empty())
-		{
-			Data::CData OutAdded;
-			Serialize(OutAdded, Added);
-			Out->Set(CStrID("Added"), std::move(OutAdded));
-		}
+		Output << static_cast<uint32_t>(Deleted.size());
+		for (const auto& Value : Deleted)
+			Serialize(Output, Value);
 
-		if (!Deleted.empty())
-		{
-			Data::CData OutDeleted;
-			Serialize(OutDeleted, Deleted);
-			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
-		}
+		Output << static_cast<uint32_t>(Added.size());
+		for (const auto& Value : Added)
+			Serialize(Output, Value);
 
-		Output = Out;
 		return true;
 	}
 	//---------------------------------------------------------------------
@@ -208,6 +200,7 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Map, const T& BaseMap)
 	{
+		static_assert(false, "SerializeDiff<is_pair_iterable_v>");
 		/*
 		for (const auto& [Key, Value] : Map)
 		{
@@ -269,6 +262,8 @@ struct BinaryFormat
 
 		if constexpr (std::is_same_v<std::vector<T::value_type>, T>)
 			Vector.resize(Count);
+		else
+			Vector.clear();
 
 		for (size_t i = 0; i < Count; ++i)
 		{
@@ -289,6 +284,8 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline void Deserialize(IO::CBinaryReader& Input, T& Map)
 	{
+		Map.clear();
+
 		uint32_t Count;
 		Input >> Count;
 		for (size_t i = 0; i < Count; ++i)
@@ -347,6 +344,60 @@ struct BinaryFormat
 
 		for (size_t i = OldSize; i < NewSize; ++i)
 			Deserialize(Input, Vector[i]);
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T> || Meta::is_std_unordered_set_v<T>>* = nullptr>
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Set)
+	{
+		const auto DeletedSize = Input.Read<uint32_t>();
+		for (size_t i = 0; i < DeletedSize; ++i)
+		{
+			typename T::value_type Value;
+			Deserialize(Input, Value);
+			Set.erase(Value);
+		}
+
+		const auto AddedSize = Input.Read<uint32_t>();
+		for (size_t i = 0; i < AddedSize; ++i)
+		{
+			typename T::value_type Value;
+			Deserialize(Input, Value);
+			Set.insert(Value);
+		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Vector)
+	{
+		static_assert(false, "DeserializeDiff<is_pair_iterable_v>");
+		/*
+		for (const auto& Param : *pParams)
+		{
+			if (Param.GetRawValue().IsVoid())
+			{
+				if constexpr (!is_string_compatible_v<T::key_type>)
+					static_assert(false, "CData deserialization supports only string map keys");
+				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
+					Map.erase(Param.GetName());
+				else
+					Map.erase(Param.GetName().CStr());
+			}
+			else
+			{
+				typename T::mapped_type Value;
+				Deserialize(Param.GetRawValue(), Value);
+
+				if constexpr (!is_string_compatible_v<T::key_type>)
+					static_assert(false, "CData deserialization supports only string map keys");
+				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
+					Map.insert_or_assign(Param.GetName(), std::move(Value));
+				else
+					Map.insert_or_assign(Param.GetName().CStr(), std::move(Value));
+			}
+		}
+		*/
 	}
 	//---------------------------------------------------------------------
 
