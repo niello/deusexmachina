@@ -1,5 +1,6 @@
 #pragma once
 #include <Data/Metadata.h>
+#include <Data/IterableTraits.h>
 #include <IO/BinaryWriter.h>
 #include <IO/BinaryReader.h>
 
@@ -47,13 +48,13 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const TValue& Value, const TValue& BaseValue)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Value, const T& BaseValue)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
 			bool HasDiff = false;
-			DEM::Meta::CMetadata<TValue>::ForEachMember([&Output, &Value, &BaseValue, &HasDiff](const auto& Member)
+			DEM::Meta::CMetadata<T>::ForEachMember([&Output, &Value, &BaseValue, &HasDiff](const auto& Member)
 			{
 				if (!Member.CanSerialize()) return;
 
@@ -88,16 +89,124 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const std::vector<TValue>& Vector, const std::vector<TValue>& BaseVector)
+	template<typename T, typename std::enable_if_t<Meta::is_std_vector_v<T>>* = nullptr>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Vector, const T& BaseVector)
 	{
-		static_assert(false, "Array diff - as map, but with int keys?");
-		return false;
+		// 32 bit indices are used
+		n_assert_dbg(Vector.size() <= std::numeric_limits<uint32_t>().max() &&
+			BaseVector.size() <= std::numeric_limits<uint32_t>().max());
+
+		size_t FirstChange = 0;
+		const size_t MinSize = std::min(Vector.size(), BaseVector.size());
+		for (; FirstChange < MinSize; ++FirstChange)
+			if (Vector[FirstChange] != BaseVector[FirstChange]) break;
+
+		if (FirstChange == MinSize && Vector.size() == BaseVector.size()) return false;
+
+		// Write old array size to ensure for compatibility with base vector passed into diff loading
+		Output << static_cast<uint32_t>(BaseVector.size());
+
+		// Write new array size to load deleted or added tail elements
+		Output << static_cast<uint32_t>(Vector.size());
+
+		for (size_t i = FirstChange; i < MinSize; ++i)
+		{
+			// Write the index to identify the element. If values are equal in both objects, this will be reverted.
+			// TODO: PROFILE! See writing member code SerializeDiff(in is_not_iterable_v), the same situation.
+			const auto CurrPos = Output.GetStream().Tell();
+			Output << Member.GetCode();
+
+			if (!SerializeDiff(Elm, Vector[i], BaseVector[i]))
+			{
+				// "Unwrite" index
+				Output.GetStream().Seek(CurrPos, IO::Seek_Begin);
+				Output.GetStream().Truncate();
+			}
+		}
+
+		// End the list of changed elements (much like a trailing \0).
+		Output << std::numeric_limits<uint32_t>().max();
+
+		// Process added elements. If new array is shorter, deleted elements will be detected from diff length.
+		for (size_t i = MinSize; i < Vector.size(); ++i)
+			Serialize(Output, Vector[i]);
+
+		return true;
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TKey, typename TValue>
-	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const std::unordered_map<TKey, TValue>& Map, const std::unordered_map<TKey, TValue>& BaseMap)
+	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
+	{
+		// Set diff is two lists - added and deleted elements.
+		std::vector<T::value_type> Added;
+		std::set_difference(Set.cbegin(), Set.cend(), BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Added));
+		std::vector<T::value_type> Deleted;
+		std::set_difference(BaseSet.cbegin(), BaseSet.cend(), Set.cbegin(), Set.cend(), std::back_inserter(Deleted));
+
+		if (Added.empty() && Deleted.empty()) return false;
+
+		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+
+		if (!Added.empty())
+		{
+			Data::CData OutAdded;
+			Serialize(OutAdded, Added);
+			Out->Set(CStrID("Added"), std::move(OutAdded));
+		}
+
+		if (!Deleted.empty())
+		{
+			Data::CData OutDeleted;
+			Serialize(OutDeleted, Deleted);
+			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
+		}
+
+		Output = Out;
+		return true;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Set, const T& BaseSet)
+	{
+		// Set diff is two lists - added and deleted elements.
+		std::vector<T::value_type> Added;
+		std::copy_if(Set.cbegin(), Set.cend(), std::back_inserter(Added), [&BaseSet](const auto& Value)
+		{
+			return BaseSet.find(Value) == BaseSet.cend();
+		});
+		std::vector<T::value_type> Deleted;
+		std::copy_if(BaseSet.cbegin(), BaseSet.cend(), std::back_inserter(Deleted), [&Set](const auto& Value)
+		{
+			return Set.find(Value) == Set.cend();
+		});
+
+		if (Added.empty() && Deleted.empty()) return false;
+
+		Data::PParams Out(n_new(Data::CParams((Added.empty() ? 0 : 1) + (Deleted.empty() ? 0 : 1))));
+
+		if (!Added.empty())
+		{
+			Data::CData OutAdded;
+			Serialize(OutAdded, Added);
+			Out->Set(CStrID("Added"), std::move(OutAdded));
+		}
+
+		if (!Deleted.empty())
+		{
+			Data::CData OutDeleted;
+			Serialize(OutDeleted, Deleted);
+			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
+		}
+
+		Output = Out;
+		return true;
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Map, const T& BaseMap)
 	{
 		/*
 		for (const auto& [Key, Value] : Map)
@@ -193,16 +302,16 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename TValue>
-	static inline void DeserializeDiff(IO::CBinaryReader& Input, TValue& Value)
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Value)
 	{
-		if constexpr (DEM::Meta::CMetadata<TValue>::IsRegistered)
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
 		{
 			// TODO: PERF, can iterate members once if saved codes are guaranteed to keep the same order as in members
 			auto Code = Input.Read<uint32_t>();
 			while (Code != DEM::Meta::NO_MEMBER_CODE)
 			{
-				DEM::Meta::CMetadata<TValue>::ForEachMember([&Input, &Value, &Code](const auto& Member)
+				DEM::Meta::CMetadata<T>::ForEachMember([&Input, &Value, &Code](const auto& Member)
 				{
 					if (!Member.CanSerialize() || Code != Member.GetCode()) return;
 					DEM::Meta::TMemberValue<decltype(Member)> FieldValue;
@@ -218,6 +327,26 @@ struct BinaryFormat
 			// If we're here, there is diff data to load
 			Input >> Value;
 		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_std_vector_v<T>>* = nullptr>
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Vector)
+	{
+		const auto OldSize = Input.Read<uint32_t>();
+		const auto NewSize = Input.Read<uint32_t>();
+
+		Vector.resize(NewSize);
+
+		uint32_t ChangedIndex = Input.Read<uint32_t>();
+		while (ChangedIndex < std::numeric_limits<uint32t>().max())
+		{
+			DeserializeDiff(Input, Vector[ChangedIndex]);
+			ChangedIndex = Input.Read<uint32_t>();
+		}
+
+		for (size_t i = OldSize; i < NewSize; ++i)
+			Deserialize(Input, Vector[i]);
 	}
 	//---------------------------------------------------------------------
 

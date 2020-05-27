@@ -147,14 +147,11 @@ struct ParamsFormat
 		if (!HasChanges) return false;
 
 		// Process added elements. If new array is shorter, deleted elements will be detected from diff length.
-		if (Vector.size() > MinSize)
+		for (size_t i = MinSize; i < Vector.size(); ++i)
 		{
-			for (size_t i = MinSize; i < Vector.size(); ++i)
-			{
-				Data::CData Elm;
-				Serialize(Elm, Vector[i]);
-				Out->Add(Elm);
-			}
+			Data::CData Elm;
+			Serialize(Elm, Vector[i]);
+			Out->Add(Elm);
 		}
 
 		Output = Out;
