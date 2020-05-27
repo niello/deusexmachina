@@ -128,7 +128,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_vector_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_std_vector_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Vector, const T& BaseVector)
 	{
 		// Vector diff is a vector with length of the new value and nulls for equal elements.
@@ -162,7 +162,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_set_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
 	{
 		// Set diff is two lists - added and deleted elements.
@@ -177,26 +177,16 @@ struct ParamsFormat
 
 		if (!Added.empty())
 		{
-			Data::PDataArray OutAdded(n_new(Data::CDataArray(Added.size())));
-			for (const auto& Value : Added)
-			{
-				Data::CData Elm;
-				Serialize(Elm, Value);
-				OutAdded->Add(Elm);
-			}
-			Out->Set(CStrID("Added"), OutAdded);
+			Data::CData OutAdded;
+			Serialize(OutAdded, Added);
+			Out->Set(CStrID("Added"), std::move(OutAdded));
 		}
 
 		if (!Deleted.empty())
 		{
-			Data::PDataArray OutDeleted(n_new(Data::CDataArray(Deleted.size())));
-			for (const auto& Value : Deleted)
-			{
-				Data::CData Elm;
-				Serialize(Elm, Value);
-				OutDeleted->Add(Elm);
-			}
-			Out->Set(CStrID("Deleted"), OutDeleted);
+			Data::CData OutDeleted;
+			Serialize(OutDeleted, Deleted);
+			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
 		}
 
 		Output = Out;
@@ -204,7 +194,7 @@ struct ParamsFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename T, typename std::enable_if_t<Meta::is_unordered_set_v<T>>* = nullptr>
+	template<typename T, typename std::enable_if_t<Meta::is_std_unordered_set_v<T>>* = nullptr>
 	static inline bool SerializeDiff(Data::CData& Output, const T& Set, const T& BaseSet)
 	{
 		// Set diff is two lists - added and deleted elements.
@@ -225,26 +215,16 @@ struct ParamsFormat
 
 		if (!Added.empty())
 		{
-			Data::PDataArray OutAdded(n_new(Data::CDataArray(Added.size())));
-			for (const auto& Value : Added)
-			{
-				Data::CData Elm;
-				Serialize(Elm, Value);
-				OutAdded->Add(Elm);
-			}
-			Out->Set(CStrID("Added"), OutAdded);
+			Data::CData OutAdded;
+			Serialize(OutAdded, Added);
+			Out->Set(CStrID("Added"), std::move(OutAdded));
 		}
 
 		if (!Deleted.empty())
 		{
-			Data::PDataArray OutDeleted(n_new(Data::CDataArray(Deleted.size())));
-			for (const auto& Value : Deleted)
-			{
-				Data::CData Elm;
-				Serialize(Elm, Value);
-				OutDeleted->Add(Elm);
-			}
-			Out->Set(CStrID("Deleted"), OutDeleted);
+			Data::CData OutDeleted;
+			Serialize(OutDeleted, Deleted);
+			Out->Set(CStrID("Deleted"), std::move(OutDeleted));
 		}
 
 		Output = Out;
@@ -365,6 +345,113 @@ struct ParamsFormat
 					Map.emplace(Param.GetName(), std::move(Value));
 				else
 					Map.emplace(Param.GetName().CStr(), std::move(Value));
+			}
+		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_not_iterable_v<T>>* = nullptr>
+	static inline void DeserializeDiff(const Data::CData& Input, T& Value)
+	{
+		if constexpr (DEM::Meta::CMetadata<T>::IsRegistered)
+		{
+			if (auto pParamsPtr = Input.As<Data::PParams>())
+			{
+				DEM::Meta::CMetadata<T>::ForEachMember([pParams = pParamsPtr->Get(), &Value](const auto& Member)
+				{
+					if (!Member.CanSerialize()) return;
+					if (auto pParam = pParams->Find(CStrID(Member.GetName())))
+					{
+						auto& Field = Member.GetValueRef(Value);
+						DeserializeDiff(pParam->GetRawValue(), Field);
+					}
+				});
+			}
+		}
+		else if constexpr (Data::CTypeID<T>::IsDeclared)
+			Value = Input.GetValue<T>();
+		else
+			static_assert(false, "CData deserialization supports only types registered with CTypeID");
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_std_vector_v<T>>* = nullptr>
+	static inline void DeserializeDiff(const Data::CData& Input, T& Vector)
+	{
+		if (auto pArrayPtr = Input.As<Data::PDataArray>())
+		{
+			auto pArray = pArrayPtr->Get();
+
+			// Input array size is the new size, discard tail elements as deleted
+			Vector.resize(pArray->GetCount());
+
+			// Only non-null values are changed and must be deserialized
+			for (size_t i = 0; i < Vector.size(); ++i)
+				if (!pArray->At(i).IsVoid())
+					DeserializeDiff(pArray->At(i), Vector[i]);
+		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_std_set_v<T> || Meta::is_std_unordered_set_v<T>>* = nullptr>
+	static inline void DeserializeDiff(const Data::CData& Input, T& Set)
+	{
+		auto pParamsPtr = Input.As<Data::PParams>();
+		if (!pParamsPtr) return;
+
+		Data::PDataArray Deleted;
+		if (pParamsPtr->Get()->TryGet(Deleted, CStrID("Deleted")))
+		{
+			for (const auto& InItem : *Deleted)
+			{
+				typename T::value_type Value;
+				Deserialize(InItem, Value);
+				Set.erase(Value);
+			}
+		}
+
+		Data::PDataArray Added;
+		if (pParamsPtr->Get()->TryGet(Added, CStrID("Added")))
+		{
+			for (const auto& InItem : *Added)
+			{
+				typename T::value_type Value;
+				Deserialize(InItem, Value);
+				Set.insert(std::move(Value));
+			}
+		}
+	}
+	//---------------------------------------------------------------------
+
+	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
+	static inline void DeserializeDiff(const Data::CData& Input, T& Map)
+	{
+		if (auto pParamsPtr = Input.As<Data::PParams>())
+		{
+			auto pParams = pParamsPtr->Get();
+			for (const auto& Param : *pParams)
+			{
+				if (Param.GetRawValue().IsVoid())
+				{
+					if constexpr (!is_string_compatible_v<T::key_type>)
+						static_assert(false, "CData deserialization supports only string map keys");
+					else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
+						Map.erase(Param.GetName());
+					else
+						Map.erase(Param.GetName().CStr());
+				}
+				else
+				{
+					typename T::mapped_type Value;
+					Deserialize(Param.GetRawValue(), Value);
+
+					if constexpr (!is_string_compatible_v<T::key_type>)
+						static_assert(false, "CData deserialization supports only string map keys");
+					else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
+						Map.insert_or_assign(Param.GetName(), std::move(Value));
+					else
+						Map.insert_or_assign(Param.GetName().CStr(), std::move(Value));
+				}
 			}
 		}
 	}

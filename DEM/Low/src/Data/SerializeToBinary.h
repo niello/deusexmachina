@@ -221,26 +221,10 @@ struct BinaryFormat
 	}
 	//---------------------------------------------------------------------
 
-	template<typename>
-	struct is_std_vector : std::false_type {};
-
-	template<typename T, typename V>
-	struct is_std_vector<std::vector<T, V>> : std::true_type {};
-
-	template<typename>
-	struct is_std_map : std::false_type {};
-
-	template<typename T, typename K, typename V>
-	struct is_std_map<std::unordered_map<T, K, V>> : std::true_type {};
-
 	template<typename TValue>
 	static inline constexpr size_t GetMaxDiffSize()
 	{
-		if constexpr (is_std_vector<TValue>::value)
-		{
-			return std::numeric_limits<size_t>().max();
-		}
-		else if constexpr (is_std_map<TValue>::value)
+		if constexpr (Meta::is_single_iterable_v<TValue> || Meta::is_pair_iterable_v<TValue>)
 		{
 			return std::numeric_limits<size_t>().max();
 		}
