@@ -28,6 +28,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Data/FixedArray.h
 	DEM/Low/src/Data/Flags.h
 	DEM/Low/src/Data/FourCC.h
+	DEM/Low/src/Data/FunctionTraits.h
 	DEM/Low/src/Data/HandleArray.h
 	DEM/Low/src/Data/HandleManager.h
 	DEM/Low/src/Data/Hash.h

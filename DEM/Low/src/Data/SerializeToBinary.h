@@ -149,10 +149,20 @@ struct BinaryFormat
 			DeletedCount <= std::numeric_limits<uint32_t>().max());
 
 		Output << static_cast<uint32_t>(DeletedCount);
-		if (DeletedCount) SetDifference(BaseSet, Set, [&Output](const auto& Value) { Serialize(Output, Value); });
+		if (DeletedCount)
+			SetDifference(BaseSet, Set, [&Output, &DeletedCount](const auto& Value)
+			{
+				Serialize(Output, Value);
+				return --DeletedCount > 0;
+			});
 
 		Output << static_cast<uint32_t>(AddedCount);
-		if (AddedCount) SetDifference(Set, BaseSet, [&Output](const auto& Value) { Serialize(Output, Value); });
+		if (AddedCount)
+			SetDifference(Set, BaseSet, [&Output, &AddedCount](const auto& Value)
+			{
+				Serialize(Output, Value);
+				return --AddedCount > 0;
+			});
 
 		return true;
 	}

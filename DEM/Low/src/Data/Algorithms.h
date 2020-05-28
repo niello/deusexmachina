@@ -1,4 +1,5 @@
 #pragma once
+//#include <Data/FunctionTraits.h>
 #include <algorithm>
 #include <set>
 #include <unordered_set>
@@ -21,7 +22,18 @@ void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callbac
 	auto ItCurrB = b.cbegin();
 	while (ItCurrA != a.cend() && ItCurrB != b.cend())
 	{
-		if (*ItCurrA < *ItCurrB) Callback(*ItCurrA++);
+		if (*ItCurrA < *ItCurrB)
+		{
+			if constexpr (std::is_invocable_r_v<bool, TCallback, const T&>)
+			{
+				if (!Callback(*ItCurrA++)) return;
+			}
+			else if constexpr (std::is_invocable_r_v<void, TCallback, const T&>)
+			{
+				Callback(*ItCurrA++);
+			} 
+			else static_assert(false, "Callback must accept const T& and return void or bool");
+		}
 		else
 		{
 			if (!(*ItCurrB < *ItCurrA)) ++ItCurrA;
@@ -29,7 +41,18 @@ void SetDifference(const std::set<T>& a, const std::set<T>& b, TCallback Callbac
 		}
 	}
 
-	while (ItCurrA != a.cend()) Callback(*ItCurrA++);
+	while (ItCurrA != a.cend())
+	{
+		if constexpr (std::is_invocable_r_v<bool, TCallback, const T&>)
+		{
+			if (!Callback(*ItCurrA++)) return;
+		}
+		else if constexpr (std::is_invocable_r_v<void, TCallback, const T&>)
+		{
+			Callback(*ItCurrA++);
+		} 
+		else static_assert(false, "Callback must accept const T& and return void or bool");
+	}
 }
 //---------------------------------------------------------------------
 
