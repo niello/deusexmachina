@@ -82,16 +82,21 @@ void CGameWorld::LoadEntityFromParams(const Data::CParam& In, bool Diff)
 
 	HEntity EntityID{ RawHandle };
 	CEntity* pEntity = Diff ? _Entities.GetValue(EntityID) : nullptr;
-	if (!pEntity)
+	if (pEntity)
+	{
+		// Load entity full data
+		DEM::ParamsFormat::Deserialize(In.GetRawValue(), *pEntity);
+	}
+	else
 	{
 		EntityID = _Entities.AllocateWithHandle(RawHandle, {});
 		n_assert_dbg(EntityID);
 
 		pEntity = &_Entities.GetValueUnsafe(EntityID);
-	}
 
-	// Load entity diff or full data
-	DEM::ParamsFormat::Deserialize(In.GetRawValue(), *pEntity);
+		// Load entity diff data
+		DEM::ParamsFormat::DeserializeDiff(In.GetRawValue(), *pEntity);
+	}
 
 	// Load component diffs or full data
 	const Data::CParams& SEntity = *In.GetValue<Data::PParams>();

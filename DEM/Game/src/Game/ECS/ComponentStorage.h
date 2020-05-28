@@ -474,7 +474,7 @@ public:
 		// NB: Component must be default-created for LoadBaseComponent to work correctly.
 		T Component;
 		LoadBaseComponent(EntityID, It->Value, Component);
-		DEM::ParamsFormat::Deserialize(In, Component);
+		DEM::ParamsFormat::DeserializeDiff(In, Component);
 
 		if (It->Value.Index != INVALID_INDEX)
 			_Data[It->Value.Index].first = std::move(Component);
