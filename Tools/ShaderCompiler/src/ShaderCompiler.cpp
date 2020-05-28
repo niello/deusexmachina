@@ -411,7 +411,7 @@ DEM_DLL_API int DEM_DLLCALL CompileShader(const char* pBasePath, const char* pSr
 		Rec.SrcModifyTimestamp == CurrWriteTime)
 	{
 		if (pLog) pLog->LogInfo("No recompilation required, task skipped");
-		return DEM_SHADER_COMPILER_SUCCESS;
+		return DEM_SHADER_COMPILER_UP_TO_DATE;
 	}
 
 	// We need to do the conversion, so update the description with current details

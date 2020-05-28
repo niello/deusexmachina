@@ -106,7 +106,7 @@ public:
 		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
 	}
 
-	virtual bool ProcessTask(CContentForgeTask& Task) override
+	virtual void ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
@@ -123,7 +123,8 @@ public:
 		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
 		{
 			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		CMaterialParams MtlParamTable;
@@ -132,7 +133,8 @@ public:
 		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
 		{
 			Task.Log.LogError("Error reading material param table for effect " + Path);
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		Data::CParams MtlParams;
@@ -146,7 +148,8 @@ public:
 			if (!fs::copy_file(Task.SrcFilePath, DestPath, fs::copy_options::overwrite_existing, ec))
 			{
 				Task.Log.LogError("Error copying texture from " + Task.SrcFilePath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
-				return false;
+				Task.Result = ETaskResult::Failure;
+				return;
 			}
 
 			MtlParams.emplace_back(CStrID(SkyboxTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
@@ -154,7 +157,8 @@ public:
 		else
 		{
 			Task.Log.LogError("No SkyboxTexture (" + SkyboxTextureID + ") parameter found in a material");
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		{
@@ -164,7 +168,11 @@ public:
 
 			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
-			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log)) return false;
+			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log))
+			{
+				Task.Result = ETaskResult::Failure;
+				return;
+			}
 
 			MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		}
@@ -192,7 +200,8 @@ public:
 				if (RunSubprocess(IEMCmdLine, &Task.Log) != 0)
 				{
 					Task.Log.LogError("Error generating irradiance environment map (IEM)");
-					return false;
+					Task.Result = ETaskResult::Failure;
+					return;
 				}
 			}
 
@@ -219,7 +228,8 @@ public:
 				if (RunSubprocess(PMREMCmdLine, &Task.Log) != 0)
 				{
 					Task.Log.LogError("Error generating prefiltered mipmaped radiance environment map (PMREM)");
-					return false;
+					Task.Result = ETaskResult::Failure;
+					return;
 				}
 			}
 		}
@@ -256,7 +266,8 @@ public:
 			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to text");
-				return false;
+				Task.Result = ETaskResult::Failure;
+				return;
 			}
 		}
 
@@ -266,11 +277,12 @@ public:
 			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to binary");
-				return false;
+				Task.Result = ETaskResult::Failure;
+				return;
 			}
 		}
 
-		return true;
+		Task.Result = ETaskResult::Success;
 	}
 };
 

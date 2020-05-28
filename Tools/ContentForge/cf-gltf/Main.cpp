@@ -339,7 +339,7 @@ public:
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
 	}
 
-	virtual bool ProcessTask(CContentForgeTask& Task) override
+	virtual void ProcessTask(CContentForgeTask& Task) override
 	{
 		const auto Extension = Task.SrcFilePath.extension();
 		const bool IsGLTF = (Extension == ".gltf");
@@ -347,7 +347,8 @@ public:
 		if (!IsGLTF && !IsGLB)
 		{
 			Task.Log.LogWarning("Filename extension must be .gltf or .glb");
-			return false;
+			Task.Result = ETaskResult::NotStarted;
+			return;
 		}
 
 		// Open glTF document
@@ -384,7 +385,8 @@ public:
 		catch (const gltf::GLTFException& e)
 		{
 			Task.Log.LogError("Error deserializing glTF file " + SrcFileName + ":\n" + e.what());
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		// Output file info
@@ -415,7 +417,8 @@ public:
 		else if (Ctx.Doc.scenes.Size() < 1)
 		{
 			Task.Log.LogError("File contains no scenes!");
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		const auto& Scene = Ctx.Doc.scenes[Ctx.Doc.defaultSceneId];
@@ -423,17 +426,26 @@ public:
 		Data::CParams Nodes;
 
 		for (const auto& Node : Scene.nodes)
-			if (!ExportNode(Node, Ctx, Nodes)) return false;
+			if (!ExportNode(Node, Ctx, Nodes))
+			{
+				Task.Result = ETaskResult::Failure;
+				return;
+			}
 
 		// Export animations
 
 		for (const auto& Anim : Ctx.Doc.animations.Elements())
-			if (!ExportAnimation(Anim, Ctx)) return false;
+			if (!ExportAnimation(Anim, Ctx))
+			{
+				Task.Result = ETaskResult::Failure;
+				return;
+			}
 
 		// Finalize and save the scene
 
-		return WriteDEMScene(GetPath(Task.Params, "Output"), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
+		const bool Result = WriteDEMScene(GetPath(Task.Params, "Output"), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
 			_OutputHRD, _OutputBin, Task.Log);
+		Task.Result = Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 
 	bool ExportNode(const std::string& NodeName, CContext& Ctx, Data::CParams& Nodes)

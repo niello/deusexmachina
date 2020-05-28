@@ -19,13 +19,23 @@ struct CVersion
 	uint8_t Patch = 0;
 };
 
+enum ETaskResult
+{
+	NotStarted = 0,
+	Success,
+	Failure,
+	UpToDate,
+
+	COUNT
+};
+
 struct CContentForgeTask
 {
 	std::filesystem::path SrcFilePath;
 	CStrID TaskID;
 	Data::CParams Params;
 	CThreadSafeLog Log;
-	bool Success;
+	ETaskResult Result = ETaskResult::NotStarted;
 
 	CContentForgeTask(EVerbosity LogVerbosity) : Log("", LogVerbosity) {}
 };
@@ -56,7 +66,7 @@ public:
 	virtual int Term() { return 0; }
 	virtual bool SupportsMultithreading() const { return false; }
 	virtual void ProcessCommandLine(CLI::App& CLIApp);
-	virtual bool ProcessTask(CContentForgeTask& Task) = 0;
+	virtual void ProcessTask(CContentForgeTask& Task) = 0;
 
 	int Execute(int argc, const char** argv);
 

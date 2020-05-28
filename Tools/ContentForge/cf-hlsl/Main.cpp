@@ -78,10 +78,14 @@ public:
 		CLIApp.add_flag("-r", _ForceRecompilation, "Force recompilation");
 	}
 
-	virtual bool ProcessTask(CContentForgeTask& Task) override
+	virtual void ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string EntryPoint = ParamsUtils::GetParam<std::string>(Task.Params, "Entry", std::string{});
-		if (EntryPoint.empty()) return false;
+		if (EntryPoint.empty())
+		{
+			Task.Result = ETaskResult::Failure;
+			return;
+		}
 
 		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const int Target = ParamsUtils::GetParam<int>(Task.Params, "Target", 0);
@@ -95,13 +99,18 @@ public:
 		else if (Type == "Geometry") ShaderType = ShaderType_Geometry;
 		else if (Type == "Hull") ShaderType = ShaderType_Hull;
 		else if (Type == "Domain") ShaderType = ShaderType_Domain;
-		else return false;
+		else
+		{
+			Task.Result = ETaskResult::Failure;
+			return;
+		}
 
 		std::vector<char> SrcFileData;
 		if (!ReadAllFile(Task.SrcFilePath.string().c_str(), SrcFileData))
 		{
 			Task.Log.LogError("Error reading shader source " + Task.SrcFilePath.generic_string());
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		const auto SrcPath = fs::relative(Task.SrcFilePath, _RootDir);
@@ -115,7 +124,9 @@ public:
 			SrcPath.string().c_str(), DestPath.string().c_str(), _InputSignaturesDir.c_str(),
 			ShaderType, Target, EntryPoint.c_str(), Defines.c_str(), Debug, _ForceRecompilation, SrcFileData.data(), SrcFileData.size(), &Log);
 
-		return Code == DEM_SHADER_COMPILER_SUCCESS;
+		Task.Result = (Code == DEM_SHADER_COMPILER_SUCCESS) ? ETaskResult::Success :
+			(Code == DEM_SHADER_COMPILER_UP_TO_DATE) ? ETaskResult::UpToDate :
+			ETaskResult::Failure;
 	}
 };
 

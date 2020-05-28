@@ -25,7 +25,7 @@ public:
 		return false;
 	}
 
-	virtual bool ProcessTask(CContentForgeTask& Task) override
+	virtual void ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
@@ -40,14 +40,16 @@ public:
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
 				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		const std::string EffectID = ParamsUtils::GetParam<std::string>(Desc, "Effect", std::string{});
 		if (EffectID.empty())
 		{
 			Task.Log.LogError("Material must reference an effect");
-			return false;
+			Task.Result = ETaskResult::Failure;
+			return;
 		}
 
 		CMaterialParams MaterialParams;
@@ -58,14 +60,19 @@ public:
 			if (!pParams->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'Params' must be a section");
-				return false;
+				Task.Result = ETaskResult::Failure;
+				return;
 			}
 
 			// Get material table from the effect file
 
 			auto Path = ResolvePathAliases(EffectID).generic_string();
 			Task.Log.LogDebug("Opening effect " + Path);
-			if (!GetEffectMaterialParams(MaterialParams, Path, Task.Log)) return false;
+			if (!GetEffectMaterialParams(MaterialParams, Path, Task.Log))
+			{
+				Task.Result = ETaskResult::Failure;
+				return;
+			}
 		}
 
 		// Write resulting file
@@ -74,7 +81,8 @@ public:
 
 		std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
-		return SaveMaterial(File, EffectID, MaterialParams, pParams ? pParams->GetValue<Data::CParams>() : Data::CParams(), Task.Log);
+		const bool Result = SaveMaterial(File, EffectID, MaterialParams, pParams ? pParams->GetValue<Data::CParams>() : Data::CParams(), Task.Log);
+		Task.Result = Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 };
 

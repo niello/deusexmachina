@@ -146,7 +146,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 				Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
 			}
 
-			Task.Success = ProcessTask(Task);
+			ProcessTask(Task);
 		}
 
 		typedef std::function<void(CContentForgeTask& Task)> FJob;
@@ -193,27 +193,42 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 				Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
 			}
 
-			Task.Success = ProcessTask(Task);
+			ProcessTask(Task);
 		}
 	}
 
 	// Flush cached logs to stdout, calculate statistics
 
-	size_t FailedTasks = 0;
+	size_t TasksByResult[ETaskResult::COUNT] = {};
 
 	for (auto& Task : _Tasks)
 	{
-		if (!Task.Success) ++FailedTasks;
+		++TasksByResult[Task.Result];
 
 		const auto LoggedString = Task.Log.GetStream().str();
 		if (!LoggedString.empty())
 			std::cout << LoggedString;
 
 		if (_LogVerbosity >= EVerbosity::Info)
-			std::cout << "Status: " << (Task.Success ? "OK" : "FAIL") << LineEnd << LineEnd;
+		{
+			std::cout << "Status: ";
+			switch (Task.Result)
+			{
+				case ETaskResult::NotStarted: std::cout << "not started"; break;
+				case ETaskResult::Success: std::cout << "OK"; break;
+				case ETaskResult::Failure: std::cout << "FAILED"; break;
+				case ETaskResult::UpToDate: std::cout << "skipped as up to date"; break;
+				default: std::cout << "unknown"; break;
+			}
+			std::cout << LineEnd << LineEnd;
+		}
+			
 	}
 
-	std::cout << "Successful: " << (_Tasks.size() - FailedTasks) << ", Failed: " << FailedTasks << LineEnd << LineEnd;
+	std::cout << _Name << ": successful: " << TasksByResult[ETaskResult::Success] <<
+		", failed: " << TasksByResult[ETaskResult::Failure] <<
+		", up to date: " << TasksByResult[ETaskResult::UpToDate] <<
+		LineEnd << LineEnd;
 
 	// Run custom termination code
 
