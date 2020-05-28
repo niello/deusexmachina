@@ -171,41 +171,68 @@ struct BinaryFormat
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
 	static inline bool SerializeDiff(IO::CBinaryWriter& Output, const T& Map, const T& BaseMap)
 	{
-		//static_assert(false, "SerializeDiff<is_pair_iterable_v>");
-		/*
+		// Can't choose value for termination key, so can't just do k-v-k-v-...-k(term).
+		// Have to calculate how many keys will be in each category in advance.
+		size_t AddedCount = 0, ModifiedCount = 0, DeletedCount = 0;
 		for (const auto& [Key, Value] : Map)
 		{
 			auto BaseIt = BaseMap.find(Key);
-			if (BaseIt == BaseMap.cend())
-				// Added
-				SerializeKeyValue(*Out, Key, Value);
-			else
-				// Modified
-				SerializeKeyValueDiff(*Out, Key, Value, BaseIt->second);
+			if (BaseIt == BaseMap.cend()) ++ AddedCount;
+			else if (BaseIt->second != Value) ++ModifiedCount;
 		}
-
 		for (const auto& [Key, Value] : BaseMap)
+			if (Map.find(Key) == Map.cend()) ++DeletedCount;
+
+		if (!AddedCount && !DeletedCount && !ModifiedCount) return false;
+
+		// Only 32 bits are saved
+		n_assert_dbg(AddedCount <= std::numeric_limits<uint32_t>().max() &&
+			DeletedCount <= std::numeric_limits<uint32_t>().max() &&
+			ModifiedCount <= std::numeric_limits<uint32_t>().max());
+
+		Output << static_cast<uint32_t>(DeletedCount);
+		if (DeletedCount)
 		{
-			if (Map.find(Key) == Map.cend())
+			for (const auto& [Key, Value] : BaseMap)
 			{
-				// Deleted
-				if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, CStrID>)
-					Out->Set(Key, Data::CData());
-				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<TKey>>, std::string>)
-					Out->Set(CStrID(Key.c_str()), Data::CData());
-				else
-					Out->Set(CStrID(Key), Data::CData());
+				if (Map.find(Key) == Map.cend())
+				{
+					Serialize(Output, Key);
+					if (--DeletedCount == 0) break;
+				}
 			}
 		}
 
-		if (Out->GetCount())
+		Output << static_cast<uint32_t>(ModifiedCount);
+		if (ModifiedCount)
 		{
-			Output = std::move(Out);
-			return true;
+			for (const auto& [Key, Value] : Map)
+			{
+				auto BaseIt = BaseMap.find(Key);
+				if (BaseIt != BaseMap.cend() && BaseIt->second != Value)
+				{
+					Serialize(Output, Key);
+					SerializeDiff(Output, Value, BaseIt->second);
+					if (--ModifiedCount == 0) break;
+				}
+			}
 		}
-		*/
 
-		return false;
+		Output << static_cast<uint32_t>(AddedCount);
+		if (AddedCount)
+		{
+			for (const auto& [Key, Value] : Map)
+			{
+				if (BaseMap.find(Key) == BaseMap.cend())
+				{
+					Serialize(Output, Key);
+					Serialize(Output, Value);
+					if (--AddedCount == 0) break;
+				}
+			}
+		}
+
+		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -349,35 +376,45 @@ struct BinaryFormat
 	//---------------------------------------------------------------------
 
 	template<typename T, typename std::enable_if_t<Meta::is_pair_iterable_v<T>>* = nullptr>
-	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Vector)
+	static inline void DeserializeDiff(IO::CBinaryReader& Input, T& Map)
 	{
-		//static_assert(false, "DeserializeDiff<is_pair_iterable_v>");
-		/*
-		for (const auto& Param : *pParams)
+		const auto DeletedSize = Input.Read<uint32_t>();
+		for (size_t i = 0; i < DeletedSize; ++i)
 		{
-			if (Param.GetRawValue().IsVoid())
+			typename T::key_type Key;
+			Deserialize(Input, Key);
+			Map.erase(Key);
+		}
+
+		const auto ModifiedSize = Input.Read<uint32_t>();
+		for (size_t i = 0; i < ModifiedSize; ++i)
+		{
+			typename T::key_type Key;
+			Deserialize(Input, Key);
+
+			auto It = Map.find(Key);
+			if (It != Map.cend())
 			{
-				if constexpr (!is_string_compatible_v<T::key_type>)
-					static_assert(false, "CData deserialization supports only string map keys");
-				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
-					Map.erase(Param.GetName());
-				else
-					Map.erase(Param.GetName().CStr());
+				DeserializeDiff(Input, It->second);
 			}
 			else
 			{
+				// Must not happen normally, but let's handle it
 				typename T::mapped_type Value;
-				Deserialize(Param.GetRawValue(), Value);
-
-				if constexpr (!is_string_compatible_v<T::key_type>)
-					static_assert(false, "CData deserialization supports only string map keys");
-				else if constexpr (std::is_same_v<std::remove_cv_t<std::remove_reference_t<T::key_type>>, CStrID>)
-					Map.insert_or_assign(Param.GetName(), std::move(Value));
-				else
-					Map.insert_or_assign(Param.GetName().CStr(), std::move(Value));
+				DeserializeDiff(Input, Value);
+				Map.emplace(std::move(Key), std::move(Value));
 			}
 		}
-		*/
+
+		const auto AddedSize = Input.Read<uint32_t>();
+		for (size_t i = 0; i < AddedSize; ++i)
+		{
+			typename T::key_type Key;
+			typename T::mapped_type Value;
+			Deserialize(Input, Key);
+			Deserialize(Input, Value);
+			Map.emplace(std::move(Key), std::move(Value));
+		}
 	}
 	//---------------------------------------------------------------------
 
