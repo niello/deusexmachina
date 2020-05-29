@@ -214,23 +214,41 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 
 	if (Points.Count)
 	{
-		/*
-		// TODO: support size!
-		NOT_IMPLEMENTED;
-
-		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPoint")))
+		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPoints")))
 		{
 			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
 			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
+			Globals.SetVector(pTech->GetParamTable().GetConstant(CStrID("RTSize")),
+				vector2(static_cast<float>(pRT->GetDesc().Width), static_cast<float>(pRT->GetDesc().Height)));
 			Globals.Apply();
 
 			GPU.SetVertexLayout(_PrimitiveBuffer->GetVertexLayout());
 			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
 
+			const auto& Passes = pTech->GetPasses();
+
 			static_assert(MAX_PRIMITIVE_VERTICES_PER_DIP > 0);
-			RenderSrv->GetD3DDevice()->DrawPrimitiveUP(D3DPT_POINTLIST, Points.GetCount(), Points.Begin(), sizeof(CDDVertex));
+			for (UPTR Offset = 0; Offset < Points.Count; Offset += MAX_PRIMITIVE_VERTICES_PER_DIP)
+			{
+				const UPTR BatchSize = std::min(MAX_PRIMITIVE_VERTICES_PER_DIP, Points.Count - Offset);
+
+				void* pInstData;
+				if (!GPU.MapResource(&pInstData, *_PrimitiveBuffer, Render::Map_WriteDiscard))
+				{
+					::Sys::Error("CDebugDraw::Render() > can't map primitive VB!");
+					return;
+				}
+
+				memcpy(pInstData, Points.pData + Offset, BatchSize * sizeof(CDDVertex));
+				GPU.UnmapResource(*_PrimitiveBuffer);
+
+				for (const auto& Pass : Passes)
+				{
+					GPU.SetRenderState(Pass);
+					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_PointList, {} });
+				}
+			}
 		}
-		*/
 
 		Points.Count = 0;
 	}
