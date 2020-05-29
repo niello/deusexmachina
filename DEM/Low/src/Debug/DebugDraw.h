@@ -55,7 +55,7 @@ protected:
 
 	struct CDDVertex
 	{
-		vector4 Pos;   // w - point size
+		vector4 Pos;   // w - point or line thickness
 		U32     Color;
 	};
 #pragma pack(pop)
@@ -122,7 +122,7 @@ public:
 	void DrawCylinder(const matrix44& Tfm, float R, float Length, U32 Color = Render::Color_White);
 	void DrawCapsule(const matrix44& Tfm, float R, float Length, U32 Color = Render::Color_White);
 
-	void DrawLine(const vector3& P1, const vector3& P2, U32 Color = Render::Color_White);
+	void DrawLine(const vector3& P1, const vector3& P2, U32 Color = Render::Color_White, float Size = 1.f);
 	void DrawArrow(const vector3& From, const vector3& To, float Radius, U32 Color = Render::Color_White);
 	void DrawCross();
 	void DrawBoxWireframe(const CAABB& Box, U32 Color = Render::Color_White);
@@ -131,18 +131,18 @@ public:
 	void DrawGridXZ(); //???or pass arbitrary axes?
 	void DrawCoordAxes(const matrix44& Tfm, bool DrawX = true, bool DrawY = true, bool DrawZ = true);
 
-	void DrawPoint(const vector3& Pos, float Size, U32 Color = Render::Color_White) { DrawPoint(Pos.x, Pos.y, Pos.z, Size, Color); }
-	void DrawPoint(float x, float y, float z, float Size, U32 Color = Render::Color_White);
+	void DrawPoint(const vector3& Pos, U32 Color = Render::Color_White, float Size = 1.f) { DrawPoint(Pos.x, Pos.y, Pos.z, Color, Size); }
+	void DrawPoint(float x, float y, float z, U32 Color = Render::Color_White, float Size = 1.f);
 
-	void AddLineVertex(const vector3& Pos, U32 Color = Render::Color_White) { AddLineVertex(Pos.x, Pos.y, Pos.z, Color); }
-	void AddLineVertex(float x, float y, float z, U32 Color = Render::Color_White);
+	void AddLineVertex(const vector3& Pos, U32 Color = Render::Color_White, float Size = 1.f) { AddLineVertex(Pos.x, Pos.y, Pos.z, Color, Size); }
+	void AddLineVertex(float x, float y, float z, U32 Color = Render::Color_White, float Size = 1.f);
 	void AddTriangleVertex(const vector3& Pos, U32 Color = Render::Color_White) { AddTriangleVertex(Pos.x, Pos.y, Pos.z, Color); }
 	void AddTriangleVertex(float x, float y, float z, U32 Color = Render::Color_White);
 
 	//bool	DrawText(const char* pText, float Left, float Top, U32 Color = Render::Color_White, float Width = 1.f, bool Wrap = true, EHAlign HAlign = Align_Left, EVAlign VAlign = Align_Top);
 };
 
-inline void CDebugDraw::DrawPoint(float x, float y, float z, float Size, U32 Color)
+inline void CDebugDraw::DrawPoint(float x, float y, float z, U32 Color, float Size)
 {
 	auto& Vertex = Points.Add();
 	Vertex.Pos.x = x;
@@ -153,12 +153,13 @@ inline void CDebugDraw::DrawPoint(float x, float y, float z, float Size, U32 Col
 }
 //---------------------------------------------------------------------
 
-inline void CDebugDraw::AddLineVertex(float x, float y, float z, U32 Color)
+inline void CDebugDraw::AddLineVertex(float x, float y, float z, U32 Color, float Size)
 {
 	auto& Vertex = LineVertices.Add();
 	Vertex.Pos.x = x;
 	Vertex.Pos.y = y;
 	Vertex.Pos.z = z;
+	Vertex.Pos.w = Size;
 	Vertex.Color = Color;
 }
 //---------------------------------------------------------------------

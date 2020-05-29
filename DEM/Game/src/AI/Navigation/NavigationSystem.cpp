@@ -510,7 +510,7 @@ void RenderDebugNavigation(DEM::Game::CGameWorld& World, Debug::CDebugDraw& Debu
 					if (dtStatusFailed(Status)) break;
 
 					DebugDraw.DrawLine(From, To, ColorPathLine);
-					DebugDraw.DrawPoint(To, 5, ColorPathCorner);
+					DebugDraw.DrawPoint(To, ColorPathCorner, 5);
 					From = To;
 				}
 				while (dtStatusInProgress(Status));

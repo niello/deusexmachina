@@ -6,6 +6,7 @@
 #include <Render/Mesh.h>
 #include <Render/Effect.h>
 #include <Render/GPUDriver.h>
+#include <Render/RenderTarget.h>
 #include <Render/ShaderParamStorage.h>
 #include <Render/VertexComponent.h>
 
@@ -59,6 +60,9 @@ CDebugDraw::~CDebugDraw() = default;
 void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 {
 	auto& GPU = *_GraphicsMgr->GetGPU();
+
+	auto pRT = GPU.GetRenderTarget(0);
+	if (!pRT) return;
 
 	GPU.SetDepthStencilBuffer(nullptr);
 
@@ -126,9 +130,9 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 			ShapeInsts[i].clear();
 	}
 
-	if (LineVertices.Count || TriVertices.Count)
+	if (TriVertices.Count)
 	{
-		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugPrimitive")))
+		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugTris")))
 		{
 			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
 			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
@@ -161,6 +165,25 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 					GPU.Draw({ 0, BatchSize, 0, 0, Render::Prim_TriList, {} });
 				}
 			}
+		}
+
+		TriVertices.Count = 0;
+	}
+
+	if (LineVertices.Count)
+	{
+		if (auto pTech = Effect.GetTechByInputSet(CStrID("DebugLines")))
+		{
+			Render::CShaderParamStorage Globals(pTech->GetParamTable(), GPU);
+			Globals.SetMatrix(pTech->GetParamTable().GetConstant(CStrID("ViewProj")), ViewProj);
+			Globals.SetVector(pTech->GetParamTable().GetConstant(CStrID("RTSize")),
+				vector2(static_cast<float>(pRT->GetDesc().Width), static_cast<float>(pRT->GetDesc().Height)));
+			Globals.Apply();
+
+			GPU.SetVertexLayout(_PrimitiveBuffer->GetVertexLayout());
+			GPU.SetVertexBuffer(0, _PrimitiveBuffer);
+
+			const auto& Passes = pTech->GetPasses();
 
 			constexpr auto MAX_LINE_VERTICES_PER_DIP = (MAX_PRIMITIVE_VERTICES_PER_DIP / 2) * 2;
 			static_assert(MAX_LINE_VERTICES_PER_DIP > 1);
@@ -187,7 +210,6 @@ void CDebugDraw::Render(Render::CEffect& Effect, const matrix44& ViewProj)
 		}
 
 		LineVertices.Count = 0;
-		TriVertices.Count = 0;
 	}
 
 	if (Points.Count)
@@ -270,10 +292,10 @@ void CDebugDraw::DrawCapsule(const matrix44& Tfm, float R, float Length, U32 Col
 }
 //---------------------------------------------------------------------
 
-void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color)
+void CDebugDraw::DrawLine(const vector3& P1, const vector3& P2, U32 Color, float Size)
 {
-	AddLineVertex(P1, Color);
-	AddLineVertex(P2, Color);
+	AddLineVertex(P1, Color, Size);
+	AddLineVertex(P2, Color, Size);
 }
 //---------------------------------------------------------------------
 

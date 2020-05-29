@@ -68,8 +68,8 @@ void CNavMeshDebugDraw::vertex(const float x, const float y, const float z, unsi
 {
 	switch (_PrimType)
 	{
-		case Render::Prim_PointList: _DebugDraw.DrawPoint(x, y, z, _Size, color); break;
-		case Render::Prim_LineList:  _DebugDraw.AddLineVertex(x, y, z, color); break;
+		case Render::Prim_PointList: _DebugDraw.DrawPoint(x, y, z, color, _Size); break;
+		case Render::Prim_LineList:  _DebugDraw.AddLineVertex(x, y, z, color, _Size); break;
 		case Render::Prim_TriList:   _DebugDraw.AddTriangleVertex(x, y, z, color); break;
 		default: break;
 	}
