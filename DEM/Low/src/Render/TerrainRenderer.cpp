@@ -443,7 +443,9 @@ CTerrainRenderer::ENodeStatus CTerrainRenderer::ProcessTerrainNode(const CProces
 		}
 		else
 		{
-			const U32 XNext = X << 1, ZNext = Z << 1, NextLOD = LOD - 1;
+			const U32 XNext = X << 1;
+			const U32 ZNext = Z << 1;
+			const U32 NextLOD = LOD - 1;
 
 			ENodeStatus Status = ProcessTerrainNode(Args, XNext, ZNext, NextLOD, NextLODRange, PatchCount, QPatchCount, MaxLightCount, Clip);
 			if (Status != Node_Invisible)
@@ -764,7 +766,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		// Since we allocate instance stream based on maximum light count, we never reallocate it when frame max light count
 		// drops compared to the previous frame, to avoid per-frame VB recreation. Instead we remember the biggest light
 		// count ever requested, allocate VB for it, and live without VB reallocations until more lights are required.
-		// The first unused light index is always equal -1 so no matter how much lights are, all unused ones are ignored.
+		// The first unused light index is always equal to -1 so no matter how much lights are, all unused ones are ignored.
 		// For constant instancing this value never gets used, tech with LightCount = 0 is always selected.
 		if (CurrMaxLightCount > MaxLightCount) MaxLightCount = CurrMaxLightCount;
 
@@ -778,18 +780,10 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 
 		// We sort by LOD (the more is scale, the coarser is LOD), and therefore we
 		// almost sort by distance to the camera, as LOD depends solely on it.
-		struct CPatchInstanceCmp
-		{
-			inline bool operator()(const CPatchInstance& a, const CPatchInstance& b) const
-			{
-				return a.ScaleOffset[0] < b.ScaleOffset[0];
-			}
-		};
-
 		if (PatchCount)
-			std::sort(pInstances, pInstances + PatchCount, CPatchInstanceCmp());
+			std::sort(pInstances, pInstances + PatchCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 		if (QuarterPatchCount)
-			std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, CPatchInstanceCmp());
+			std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 
 		// Select tech for the maximal light count used per-patch
 

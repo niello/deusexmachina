@@ -107,7 +107,7 @@ bool CView::CreateDebugDrawer()
 //---------------------------------------------------------------------
 
 //!!!IRenderable children may now serve as parts of the rendering cache / render nodes!
-Render::IRenderable* CView::GetRenderObject(CRenderableAttribute& Attr)
+Render::IRenderable* CView::GetRenderObject(const CRenderableAttribute& Attr)
 {
 	auto It = _RenderObjects.find(&Attr);
 	if (It == _RenderObjects.cend())
