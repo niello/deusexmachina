@@ -217,7 +217,7 @@ const Data::CData* CGameWorld::GetTemplateComponentData(CStrID TemplateID) const
 {
 	if (!TemplateID || !FindComponentStorage<T>()) return nullptr;
 
-	auto pRsrc = _ResMgr.FindResource(TemplateID);
+	auto pRsrc = _ResMgr.RegisterResource<CEntityTemplate>(TemplateID.CStr());
 	if (!pRsrc) return nullptr;
 
 	auto pTpl = pRsrc->ValidateObject<CEntityTemplate>();
