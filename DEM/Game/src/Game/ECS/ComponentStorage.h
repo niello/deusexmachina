@@ -124,6 +124,7 @@ protected:
 		U32             Index = INVALID_INDEX;               // Index in _Data. Invalid if component is not loaded.
 		EComponentState State = EComponentState::Templated;
 		EComponentState BaseState = EComponentState::NoBase; // For on-demand base data loading, read-only
+		bool            DiffDirty = false;                   // For save optimization
 	};
 
 	TInnerStorage            _Data;
@@ -131,7 +132,7 @@ protected:
 
 	bool ValidateComponent(HEntity EntityID, CIndexRecord& Record)
 	{
-		n_assert_dbg(Record.Index == INVALID_INDEX);
+		n_assert_dbg(Record.Index == INVALID_INDEX && !Record.DiffDirty);
 
 		if constexpr (ExternalDeinit)
 		{
@@ -161,6 +162,7 @@ protected:
 
 		_Data.erase(Record.Index);
 		Record.Index = INVALID_INDEX;
+		Record.DiffDirty = false;
 	}
 	//---------------------------------------------------------------------
 
@@ -240,15 +242,15 @@ protected:
 	//---------------------------------------------------------------------
 
 	// Converts a component to binary diff against the base
-	void SaveComponent(HEntity EntityID, CIndexRecord& Record)
+	void SaveComponent(CIndexRecord& Record)
 	{
-		//!!!TODO: check if component is saveable and is dirty!
-		//???set dirty on non-const Find()? the only case when component data can change, plus doesn't involve per-field comparisons
-		//clear dirty flag here
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		if (!Record.DiffDirty) return;
 
 		n_assert2_dbg(Record.Index != INVALID_INDEX, "CSparseComponentStorage::SaveComponent() > call only for loaded components");
 
-		const T& Component = _Data[Record.Index].first;
+		const auto& [Component, EntityID] = _Data[Record.Index];
 
 		T BaseComponent;
 		const bool HasBase = LoadBaseComponent(EntityID, Record, BaseComponent);
@@ -288,6 +290,8 @@ protected:
 					Record.DiffData.Resize(Record.DiffDataSize);
 			}
 		}
+
+		Record.DiffDirty = false;
 	}
 	//---------------------------------------------------------------------
 
@@ -304,6 +308,63 @@ protected:
 			else
 				Out.GetStream().Write(Record.DiffData.GetConstPtr(), Record.DiffDataSize);
 		}
+	}
+	//---------------------------------------------------------------------
+
+	// Writes full component data
+	template<typename TFormat, typename TOutput>
+	bool WriteComponent(TOutput& Out, HEntity EntityID, const CIndexRecord& Record) const
+	{
+		if (Record.State == EComponentState::Explicit)
+		{
+			// Explicit component overrides the template, all its data is saved
+			if (Record.Index != INVALID_INDEX)
+				TFormat::Serialize(Out, _Data[Record.Index].first);
+			else
+				TFormat::Serialize(Out, LoadComponent(EntityID, Record));
+			return true;
+		}
+		else
+		{
+			// Templated and Deleted records have meaning only when template exists.
+			// If no template, write nothing (nor diff neither explicit deletion).
+			auto pTplData = _World.GetTemplateComponentData<T>(EntityID);
+			if (!pTplData) return false;
+
+			if (Record.State == EComponentState::Templated)
+			{
+				// If record is templated and no template is present, diff has no meaning because there is nothing
+				// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
+				T TplComponent;
+				DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
+
+				// Save only the difference against the template, so changes in defaulted fields will be propagated
+				// from templates to instances when template is changed, even if the world base file is not rebuilt.
+				// If component is equal to template, save nothing. It will be created on template instantiation.
+				return (Record.Index != INVALID_INDEX) ?
+					TFormat::SerializeDiff(Out, _Data[Record.Index].first, TplComponent) :
+					TFormat::SerializeDiff(Out, LoadComponent(EntityID, Record), TplComponent);
+			}
+			else // always EComponentState::Deleted, because State can never be EComponentState::NoBase
+			{
+				// Explicit deletion will be written by the calling code
+				n_assert_dbg(Record.State != EComponentState::NoBase);
+				return true;
+			}
+		}
+	}
+	//---------------------------------------------------------------------
+
+	// When non-const iterator is requested, must mark all instantiated components as dirty.
+	// This must be faster than looking up each one separately from inside the iterator on access.
+	void MarkAllDirty()
+	{
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
+		_IndexByEntity.ForEach([](HEntity, CIndexRecord& Record)
+		{
+			if (Record.Index != INVALID_INDEX) Record.DiffDirty = true;
+		});
 	}
 	//---------------------------------------------------------------------
 
@@ -328,6 +389,7 @@ public:
 			// Always set the current state of existing component to requested value.
 			// If existing component is not loaded, this function doesn't load it and returns nullptr.
 			It->Value.State = EComponentState::Explicit;
+			It->Value.DiffDirty = true;
 			Index = It->Value.Index;
 		}
 		else
@@ -346,7 +408,7 @@ public:
 			else Index = _Data.emplace(T{}, EntityID);
 
 			if (Index != INVALID_INDEX) _IndexByEntity.emplace(EntityID,
-				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase });
+				CIndexRecord{ NO_BASE_DATA, {}, 0, Index, EComponentState::Explicit, EComponentState::NoBase, true });
 		}
 
 		return (Index != INVALID_INDEX) ? &_Data[Index].first : nullptr;
@@ -386,10 +448,15 @@ public:
 		{
 			// Has templated component, setup a record for it
 			if (It)
+			{
 				It->Value.State = EComponentState::Templated;
+				It->Value.DiffDirty = true;
+			}
 			else
+			{
 				_IndexByEntity.emplace(EntityID,
 					CIndexRecord{ NO_BASE_DATA, {}, 0, INVALID_INDEX, EComponentState::Templated, EComponentState::NoBase });
+			}
 		}
 		else if (It)
 		{
@@ -408,6 +475,7 @@ public:
 	{
 		auto It = _IndexByEntity.find(EntityID);
 		if (!It || It->Value.Index == INVALID_INDEX) return nullptr;
+		It->Value.DiffDirty = true;
 		return &_Data[It->Value.Index].first;
 	}
 	//---------------------------------------------------------------------
@@ -481,6 +549,8 @@ public:
 		else
 			It->Value.Index = _Data.emplace(std::move(Component), EntityID);
 
+		It->Value.DiffDirty = true;
+
 		return true;
 	}
 	//---------------------------------------------------------------------
@@ -493,48 +563,16 @@ public:
 		if (!It) return false;
 		const auto& Record = It->Value;
 
-		if (Record.State == EComponentState::Explicit)
-		{
-			// Explicit component overrides the template, all its data is saved
-			if (Record.Index != INVALID_INDEX)
-				DEM::ParamsFormat::Serialize(Out, _Data[Record.Index].first);
-			else
-				DEM::ParamsFormat::Serialize(Out, LoadComponent(EntityID, Record));
-			return true;
-		}
-		else
-		{
-			// Templated and Deleted records have meaning only when template exists
-			auto pTplData = _World.GetTemplateComponentData<T>(EntityID);
-			if (!pTplData) return false;
+		// If there is nothing to write, return immediately
+		if (!WriteComponent<DEM::ParamsFormat>(Out, EntityID, Record)) return false;
 
-			if (Record.State == EComponentState::Templated)
-			{
-				// If record is templated and no template is present, diff has no meaning because there is nothing
-				// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
-				T TplComponent;
-				DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
+		// Perform format-specific part of writing
+		if (Record.State == EComponentState::Templated)
+			Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
+		else if (Record.State == EComponentState::Deleted)
+			Out.Clear();
 
-				// Save only the difference against the template, so changes in defaulted fields will be propagated
-				// from templates to instances when template is changed but the world base file is not.
-				// If component is equal to template, save nothing. Will be created on template instantiation.
-				const bool HasDiff = (Record.Index != INVALID_INDEX) ?
-					DEM::ParamsFormat::SerializeDiff(Out, _Data[Record.Index].first, TplComponent) :
-					DEM::ParamsFormat::SerializeDiff(Out, LoadComponent(EntityID, Record), TplComponent);
-
-				if (HasDiff) Out.GetValue<Data::PParams>()->Set(CStrID("__UseTpl"), true);
-
-				return HasDiff;
-			}
-			else // always EComponentState::Deleted, because State can never be EComponentState::NoBase
-			{
-				n_assert_dbg(Record.State != EComponentState::NoBase);
-
-				// Write explicit deletion only if template component is present, otherwise there is nothing to delete
-				Out.Clear();
-				return true;
-			}
-		}
+		return true;
 	}
 	//---------------------------------------------------------------------
 
@@ -551,7 +589,7 @@ public:
 			if (Record.BaseState == Record.State) return false;
 
 			// Explicitly save as deleted
-			Out = Data::CData();
+			Out.Clear();
 			return true;
 		}
 		else
@@ -620,7 +658,7 @@ public:
 				CIndexRecord{ OffsetInBase, {}, 0, INVALID_INDEX, ComponentState, ComponentState });
 		}
 
-		// Skip binary data for now. Will be accessed through records' OffsetInBase.
+		// Skip binary data for now. Will be accessed on demand through records' OffsetInBase.
 		auto ComponentDataSkipOffset = In.Read<U64>();
 		In.GetStream().Seek(static_cast<I64>(ComponentDataSkipOffset), IO::ESeekOrigin::Seek_Begin);
 
@@ -632,26 +670,28 @@ public:
 	{
 		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
 
-		// Instead of cleaning all up, we only erase all diff data and unload components modified by it
+		// Instead of cleaning all up, we only erase all diff data and unload affected components
 		ClearDiff();
 
-		// Load deleted component list, mark corresponding records as deleted
-
+		// Remove components listed as deleted
 		HEntity EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
-			if (auto It = _IndexByEntity.find(EntityID))
-				It->Value.State = EComponentState::Deleted;
+			RemoveComponent(EntityID);
 			EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		}
 
 		// Load diff data for added and modified components
-
 		EntityID = { In.Read<decltype(HEntity::Raw)>() };
 		while (EntityID)
 		{
 			auto It = _IndexByEntity.find(EntityID);
-			if (!It)
+			if (It)
+			{
+				// Component could be kept loaded by ClearDiff, but now it becomes invalid and must be unloaded
+				ClearComponent(It->Value);
+			}
+			else
 			{
 				// NB: State, DiffData and DiffDataSize will be overwritten below
 				It = _IndexByEntity.emplace(EntityID,
@@ -709,44 +749,14 @@ public:
 		{
 			Intermediate.GetStream().Seek(0, IO::Seek_Begin);
 
-			if (Record.State == EComponentState::Explicit)
+			// If there is nothing to write, skip entity
+			if (!WriteComponent<DEM::BinaryFormat>(Intermediate, EntityID, Record)) return; // continue
+
+			// Perform format-specific part of writing
+			if (Record.State == EComponentState::Deleted)
 			{
-				// Explicit component overrides the template, all its data is saved
-				if (Record.Index != INVALID_INDEX)
-					DEM::BinaryFormat::Serialize(Intermediate, _Data[Record.Index].first);
-				else
-					DEM::BinaryFormat::Serialize(Intermediate, LoadComponent(EntityID, Record));
-			}
-			else
-			{
-				// Templated and Deleted records have meaning only when template exists
-				auto pTplData = _World.GetTemplateComponentData<T>(EntityID);
-				if (!pTplData) return; // continue
-					
-				if (Record.State == EComponentState::Templated)
-				{
-					// If record is templated and no template is present, diff has no meaning because there is nothing
-					// to compare with. So diff is ignored, and record will be purely templated (not saved at all).
-					T TplComponent;
-					DEM::ParamsFormat::Deserialize(*pTplData, TplComponent);
-
-					// Save only the difference against the template, so changes in defaulted fields will be propagated
-					// from templates to instances when template is changed but the world base file is not.
-					const bool HasDiff = (Record.Index != INVALID_INDEX) ?
-						DEM::BinaryFormat::SerializeDiff(Intermediate, _Data[Record.Index].first, TplComponent) :
-						DEM::BinaryFormat::SerializeDiff(Intermediate, LoadComponent(EntityID, Record), TplComponent);
-
-					// Component is equal to template, save nothing. Will be created on template instantiation.
-					if (!HasDiff) return; // continue
-				}
-				else // always EComponentState::Deleted, because State can never be EComponentState::NoBase
-				{
-					n_assert_dbg(Record.State != EComponentState::NoBase);
-
-					// Write explicit deletion only if template component is present, otherwise there is nothing to delete
-					DeletedRecords.push_back(EntityID);
-					return; // continue
-				}
+				DeletedRecords.push_back(EntityID);
+				return; // continue
 			}
 
 			const auto SerializedSize = static_cast<UPTR>(Intermediate.GetStream().Tell());
@@ -836,7 +846,7 @@ public:
 			// State can be equal to BaseState, but some fields may change
 			if (Record.State != EComponentState::Deleted)
 			{
-				if (Record.Index != INVALID_INDEX) SaveComponent(EntityID, Record);
+				if (Record.Index != INVALID_INDEX) SaveComponent(Record);
 				WriteComponentDiff(Out, EntityID, Record);
 			}
 		});
@@ -876,7 +886,7 @@ public:
 				if (Record.State == Record.BaseState)
 				{
 					// Actualize diff data. Component may be changed but not saved yet.
-					if (Record.Index != INVALID_INDEX) SaveComponent(EntityID, Record);
+					if (Record.Index != INVALID_INDEX) SaveComponent(Record);
 
 					// If component is not changed, skip invalidation
 					if (!Record.DiffDataSize) return; // continue
@@ -891,6 +901,7 @@ public:
 			ClearDiffBuffer(Record);
 		});
 
+		// TODO: could use erase/remove_if instead of copying IDs to the array, if CEntityMap will support it.
 		// TODO: in LoadDiff could load new diffs, removing recreated records from RecordsToDelete, and then delete!
 		// Must then ensure that all diff data is updated in these records!
 		for (auto EntityID : RecordsToDelete)
@@ -931,13 +942,13 @@ public:
 			auto pEntity = _World.GetEntity(EntityID);
 			if (!pEntity || pEntity->LevelID != LevelID) return;
 
-			SaveComponent(EntityID, Record);
+			SaveComponent(Record);
 			ClearComponent(Record);
 		});
 	}
 	//---------------------------------------------------------------------
 
-	auto begin() { return _Data.begin(); }
+	auto begin() { MarkAllDirty(); return _Data.begin(); }
 	auto begin() const { return _Data.begin(); }
 	auto cbegin() const { return _Data.cbegin(); }
 	auto end() { return _Data.end(); }
