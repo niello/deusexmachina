@@ -1,21 +1,13 @@
 #pragma once
 #include <Core/RTTIBaseClass.h>
-//#include <Data/Ptr.h>
 
 // An interface class for any renderable objects, like regular models, particle systems, terrain patches etc.
-
-class CAABB;
-
-namespace IO
-{
-	class CBinaryReader;
-}
 
 namespace Render
 {
 typedef std::unique_ptr<class IRenderable> PRenderable;
 
-class IRenderable: public Core::CRTTIBaseClass //???or CObject?
+class IRenderable: public Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL;
 

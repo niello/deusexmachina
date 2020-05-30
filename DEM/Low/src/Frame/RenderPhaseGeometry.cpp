@@ -71,7 +71,7 @@ CRenderPhaseGeometry::~CRenderPhaseGeometry()
 
 bool CRenderPhaseGeometry::Render(CView& View)
 {
-	if (!View.pSPS || !View.GetCamera()) OK;
+	if (!View.GetScene() || !View.GetCamera()) OK;
 
 	if (!View.GetGraphicsManager()) FAIL;
 

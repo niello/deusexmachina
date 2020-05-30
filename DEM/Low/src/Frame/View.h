@@ -61,6 +61,9 @@ protected:
 	int											_SwapChainID = INVALID_INDEX;
 	CCameraAttribute*							pCamera = nullptr; //???smart ptr?
 
+	//???scene start node? if nullptr, render all nodes, else only that and its children
+	Scene::CSPS*								_pSPS = nullptr;
+
 	UI::PUIContext								_UIContext;
 	Debug::PDebugDraw                           _DebugDraw;
 
@@ -89,13 +92,10 @@ public:
 
 	//???add viewport settings here? to render multiple views into one RT
 
-	//???scene start node? if nullptr, render all nodes, else only that and its children
-	Scene::CSPS*								pSPS = nullptr;
-
 	Render::CShaderParamStorage					Globals;
 	Render::PSampler							TrilinearCubeSampler; // For IBL
 
-	CPool<Render::CRenderNode>			RenderNodePool;
+	CPool<Render::CRenderNode>                  RenderNodePool;
 	Render::CRenderQueue        				RenderQueue;	// Cached to avoid per-frame allocations
 	CArray<U16>									LightIndices;	// Cached to avoid per-frame allocations
 
@@ -129,6 +129,8 @@ public:
 	Render::CRenderTarget*			GetRenderTarget(CStrID ID) const;
 	bool							SetDepthStencilBuffer(CStrID ID, Render::PDepthStencilBuffer DS);
 	Render::CDepthStencilBuffer*	GetDepthStencilBuffer(CStrID ID) const;
+	void                            SetScene(Scene::CSPS* pSPS);
+	Scene::CSPS*                    GetScene() const { return _pSPS; }
 	bool							SetCamera(CCameraAttribute* pNewCamera);
 	CCameraAttribute*               GetCamera() const { return pCamera; }
 	CGraphicsResourceManager*		GetGraphicsManager() const;

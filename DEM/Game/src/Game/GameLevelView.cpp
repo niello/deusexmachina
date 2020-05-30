@@ -18,7 +18,7 @@ CGameLevelView::CGameLevelView(CGameLevel& Level, Frame::CView& View)
 	: _Level(&Level)
 	, _View(View)
 {
-	_View.pSPS = &_Level->GetSPS();
+	_View.SetScene(&_Level->GetSPS());
 	_Level->GetSceneRoot().AcceptVisitor(Frame::CSceneNodePrecreateRenderObjects(_View));
 }
 //---------------------------------------------------------------------
@@ -132,7 +132,7 @@ CGameLevelView::~CGameLevelView() {}
 bool CGameLevelView::Setup(CGameLevel& GameLevel, HHandle hView)
 {
 	Level = &GameLevel;
-	View->pSPS = &GameLevel.GetSPS();
+	View->SetScene(&GameLevel.GetSPS());
 	//???fill other fields?
 	DISP_SUBSCRIBE_PEVENT(Level.Get(), OnEntityDeactivated, CGameLevelView, OnEntityDeactivated);
 	OK;

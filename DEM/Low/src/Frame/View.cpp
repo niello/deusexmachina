@@ -129,9 +129,9 @@ void CView::UpdateVisibilityCache()
 {
 	if (!VisibilityCacheDirty) return;
 
-	if (pSPS && pCamera)
+	if (_pSPS && pCamera)
 	{
-		pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
+		_pSPS->QueryObjectsInsideFrustum(pCamera->GetViewProjMatrix(), VisibilityCache);
 
 		for (UPTR i = 0; i < VisibilityCache.GetCount(); /**/)
 		{
@@ -302,6 +302,16 @@ Render::CDepthStencilBuffer* CView::GetDepthStencilBuffer(CStrID ID) const
 {
 	auto It = DSBuffers.find(ID);
 	return (It != DSBuffers.cend()) ? It->second.Get() : nullptr;
+}
+//---------------------------------------------------------------------
+
+void CView::SetScene(Scene::CSPS* pSPS)
+{
+	if (_pSPS == pSPS) return;
+
+	_pSPS = pSPS;
+	_RenderObjects.clear();
+	VisibilityCacheDirty = true;
 }
 //---------------------------------------------------------------------
 
