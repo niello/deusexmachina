@@ -1250,6 +1250,9 @@ struct TComponentTraits
 	using TStorage = std::conditional_t<std::is_empty_v<T>, CEmptyComponentStorage<T>, CSparseComponentStorage<T>>;
 };
 
-template<typename T> using TComponentStoragePtr = typename TComponentTraits<just_type_t<T>>::TStorage*;
+template<typename T>
+using TComponentStoragePtr = std::conditional_t<std::is_const_v<T>,
+	const typename TComponentTraits<just_type_t<T>>::TStorage*,
+	typename TComponentTraits<just_type_t<T>>::TStorage*>;
 
 }
