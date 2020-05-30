@@ -97,7 +97,7 @@ public:
 	const CEntity& GetEntityUnsafe(HEntity EntityID) const { return _Entities.GetValueUnsafe(EntityID); }
 	const auto&    GetEntities() const { return _Entities; }
 	bool           IsEntityActive(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity && pEntity->IsActive; }
-	CGameLevel*    GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->Level.Get() : nullptr; }
+	CStrID         GetEntityLevel(HEntity EntityID) const { auto pEntity = _Entities.GetValue(EntityID); return pEntity ? pEntity->LevelID : CStrID::Empty; }
 
 	template<class T> void        RegisterComponent(CStrID Name, UPTR InitialCapacity = 0);
 	template<class T> T*          AddComponent(HEntity EntityID);

@@ -18,11 +18,10 @@ typedef Ptr<class CGameLevel> PGameLevel;
 
 struct CEntity final
 {
-	CStrID     LevelID;         // Is never empty for a valid entity. Cached level ptr gives access to the world.
-	CStrID     TemplateID;      // Empty if this entity is not created from a template
-	CStrID     Name;            // Useful for editors, debug and scripting. Can be used in serialization.
-	PGameLevel Level;
-	bool       IsActive = true; // TODO: lifecycle flags here too
+	CStrID LevelID;         // Is never empty for a valid entity. Cached level ptr gives access to the world.
+	CStrID TemplateID;      // Empty if this entity is not created from a template
+	CStrID Name;            // Useful for editors, debug and scripting. Can be used in serialization.
+	bool   IsActive = true;
 };
 
 // NB: can't store HEntity inside a CEntity (but could store uint32_t if necessary)

@@ -505,7 +505,6 @@ HEntity CGameWorld::CreateEntity(CStrID LevelID, CStrID TemplateID)
 	auto& Entity = _Entities.GetValueUnsafe(EntityID);
 
 	Entity.LevelID = LevelID;
-	Entity.Level = FindLevel(LevelID);
 	Entity.TemplateID = TemplateID; // Used inside InstantiateTemplate // FIXME: pass template data into pStorage->InstantiateTemplate instead of Validate flag?
 
 	if (!InstantiateTemplate(EntityID, TemplateID, false, true))
