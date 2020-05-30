@@ -188,6 +188,8 @@ protected:
 	// Restore the component instace from base data
 	bool LoadBaseComponent(HEntity EntityID, const CIndexRecord& Record, T& Component) const
 	{
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return false;
+
 		if (Record.BaseState == EComponentState::Explicit)
 		{
 			// If base data is available for this component, load it (overrides a template)
@@ -226,6 +228,8 @@ protected:
 	T LoadComponent(HEntity EntityID, const CIndexRecord& Record) const
 	{
 		T Component;
+		if constexpr (!DEM::Meta::CMetadata<T>::IsRegistered) return Component;
+
 		LoadBaseComponent(EntityID, Record, Component);
 
 		// If diff data is available, apply it on top of base data
