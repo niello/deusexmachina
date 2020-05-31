@@ -382,7 +382,7 @@ bool COSWindowWin32::HandleWindowMessage(UINT uMsg, WPARAM wParam, LPARAM lParam
 		}
 
 		case WM_SETFOCUS:
-			FireEvent(CStrID("OnSetFocus"));
+			FireEvent(CStrID("OnFocusSet"));
 			::ReleaseCapture();
 			break;
 

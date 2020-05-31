@@ -114,8 +114,10 @@ bool CKeyboardWin32::HandleRawInput(const RAWINPUT& Data)
 
 	if (ResultCode == EKey::Key_Invalid || !ResultCode) FAIL;
 
-	if (KbData.Flags & RI_KEY_BREAK) return FireEvent(Event::ButtonUp(this, ResultCode), Events::Event_TermOnHandled) > 0;
-	else return FireEvent(Event::ButtonDown(this, ResultCode), Events::Event_TermOnHandled) > 0;
+	if (KbData.Flags & RI_KEY_BREAK)
+		return FireEvent(Event::ButtonUp(this, ResultCode), Events::Event_TermOnHandled) > 0;
+	else
+		return FireEvent(Event::ButtonDown(this, ResultCode), Events::Event_TermOnHandled) > 0;
 }
 //---------------------------------------------------------------------
 

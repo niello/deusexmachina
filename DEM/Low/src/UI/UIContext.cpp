@@ -35,6 +35,7 @@ CUIContext::CUIContext(float Width, float Height, DEM::Sys::COSWindow* pHostWind
 		const CEGUI::Sizef RectSize(static_cast<float>(WndRect.W), static_cast<float>(WndRect.H));
 		CEGUI::System::getSingleton().notifyDisplaySizeChanged(RectSize);
 
+		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnFocusSet, CUIContext, OnFocusSet);
 		DISP_SUBSCRIBE_PEVENT(pHostWindow, OnToggleFullscreen, CUIContext, OnViewportSizeChanged);
 		DISP_SUBSCRIBE_NEVENT(pHostWindow, OSWindowResized, CUIContext, OnViewportSizeChanged);
 	}
@@ -327,6 +328,14 @@ bool CUIContext::OnTextInput(Events::CEventDispatcher* pDispatcher, const Events
 	for (char Char : Ev.Text)
 		Handled |= pInput->injectChar(Char);
 	return Handled;
+}
+//---------------------------------------------------------------------
+
+bool CUIContext::OnFocusSet(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
+{
+	// Must clear modifiers released while out of focus. Ignore pressed ones.
+	if (pInput) pInput->setModifierKeys(false, false, false);
+	return false;
 }
 //---------------------------------------------------------------------
 
