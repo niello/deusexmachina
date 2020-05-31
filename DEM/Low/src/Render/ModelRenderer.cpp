@@ -9,13 +9,14 @@
 #include <Render/Light.h>
 #include <Render/GPUDriver.h>
 #include <Math/Sphere.h>	//!!!for light testing only, refactor and optimize!
+#include <Data/Params.h>
 #include <Core/Factory.h>
 
 namespace Render
 {
 FACTORY_CLASS_IMPL(Render::CModelRenderer, 'MDLR', Render::IRenderer);
 
-bool CModelRenderer::Init(bool LightingEnabled)
+bool CModelRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 {
 	InstanceDataDecl.SetSize(4);
 
@@ -32,8 +33,7 @@ bool CModelRenderer::Init(bool LightingEnabled)
 		Cmp.PerInstanceData = true;
 	}
 
-	//!!!DBG TMP! //???where to define?
-	MaxInstanceCount = 30;
+	InstanceVBSize = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 30));
 
 	OK;
 }
@@ -255,7 +255,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 
 		bool HardwareInstancing = false;
 		CRenderQueueIterator ItInstEnd = ItCurr + 1;
-		if (!pRenderNode->pSkinPalette)
+		if (!pRenderNode->pSkinPalette && (ConstInstanceDataVS || InstanceVBSize > 1))
 		{
 			while (ItInstEnd != ItEnd &&
 				   (*ItInstEnd)->pRenderer == this &&
@@ -425,13 +425,13 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 			}
 			else
 			{
-				n_assert_dbg(MaxInstanceCount > 1);
+				n_assert_dbg(InstanceVBSize > 1);
 
 				// We create this buffer lazy because for D3D11 possibility is high to use only constant-based instancing
 				if (InstanceVB.IsNullPtr())
 				{
 					PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), InstanceDataDecl.GetCount());
-					InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
+					InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
 				}
 
 				if (!pVLInstanced)
@@ -479,7 +479,7 @@ CRenderQueueIterator CModelRenderer::Render(const CRenderContext& Context, CRend
 					++ItCurr;
 					pRenderNode = *ItCurr;
 
-					if (InstanceCount == MaxInstanceCount)
+					if (InstanceCount == InstanceVBSize)
 					{
 						GPU.UnmapResource(*InstanceVB);
 						for (const auto& Pass : Passes)

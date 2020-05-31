@@ -62,11 +62,7 @@ struct CRenderQueueCmp_Material
 CRenderPhaseGeometry::CRenderPhaseGeometry() = default;
 //---------------------------------------------------------------------
 
-CRenderPhaseGeometry::~CRenderPhaseGeometry()
-{
-	for (UPTR i = 0; i < Renderers.GetCount(); ++i)
-		n_delete(Renderers.ValueAt(i));
-}
+CRenderPhaseGeometry::~CRenderPhaseGeometry() = default;
 //---------------------------------------------------------------------
 
 bool CRenderPhaseGeometry::Render(CView& View)
@@ -117,14 +113,12 @@ bool CRenderPhaseGeometry::Render(CView& View)
 
 		Render::IRenderable* pRenderable = View.GetRenderObject(*pAttr);
 
-		IPTR Idx = Renderers.FindIndex(pRenderable->GetRTTI());
-		if (Idx == INVALID_INDEX) continue;
-		Render::IRenderer* pRenderer = Renderers.ValueAt(Idx);
-		if (!pRenderer) continue;
+		auto ItRenderer = RenderersByObjectType.find(pRenderable->GetRTTI());
+		if (ItRenderer == RenderersByObjectType.cend()) continue;
 
 		Render::CRenderNode* pNode = View.RenderNodePool.Construct();
 		pNode->pRenderable = pRenderable;
-		pNode->pRenderer = pRenderer;
+		pNode->pRenderer = ItRenderer->second;
 		pNode->Transform = pAttr->GetNode()->GetWorldMatrix();
 
 		if (auto pSkinAttr = pAttr->GetNode()->FindFirstAttribute<Frame::CSkinAttribute>())
@@ -161,7 +155,7 @@ bool CRenderPhaseGeometry::Render(CView& View)
 		//if (pAttrRenderable->pSPSRecord->pSPSNode->SharesSpaceWith(*pAttrLight->pSPSRecord->pSPSNode))
 		//if (pAttrRenderable->CheckPotentialIntersection(*pAttrLight / pSPSNode)) // true if some of pSPSNodes is nullptr
 
-		if (!pRenderer->PrepareNode(*pNode, Context))
+		if (!pNode->pRenderer->PrepareNode(*pNode, Context))
 		{
 			View.RenderNodePool.Destroy(pNode);
 			continue;
@@ -362,13 +356,11 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManag
 	Data::CDataArray& RenderersDesc = *Desc.Get<Data::PDataArray>(CStrID("Renderers"));
 	for (UPTR i = 0; i < RenderersDesc.GetCount(); ++i)
 	{
-		Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
+		const Data::CParams& RendererDesc = *RenderersDesc[i].GetValue<Data::PParams>();
 
-		const Core::CRTTI* pObjType = nullptr;
-		const Data::CParam& PrmObject = RendererDesc.Get(CStrID("Object"));
-		if (PrmObject.IsA<int>()) pObjType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(PrmObject.GetValue<int>()));
-		else if (PrmObject.IsA<CString>()) pObjType = Core::CFactory::Instance().GetRTTI(PrmObject.GetValue<CString>());
-		if (!pObjType) FAIL;
+		// Renderer is useful only if it can render something
+		const Data::CParam& PrmObject = RendererDesc.Get(CStrID("Objects"));
+		if (!PrmObject.IsA<Data::PDataArray>() || PrmObject.GetValue<Data::PDataArray>()->IsEmpty()) FAIL;
 
 		const Core::CRTTI* pRendererType = nullptr;
 		const Data::CParam& PrmRenderer = RendererDesc.Get(CStrID("Renderer"));
@@ -376,19 +368,23 @@ bool CRenderPhaseGeometry::Init(const CRenderPath& Owner, CGraphicsResourceManag
 		else if (PrmRenderer.IsA<CString>()) pRendererType = Core::CFactory::Instance().GetRTTI(PrmRenderer.GetValue<CString>());
 		if (!pRendererType) FAIL;
 
-		Render::IRenderer* pRenderer = nullptr;
-		for (UPTR j = 0; j < Renderers.GetCount(); ++j)
-			if (Renderers.ValueAt(j)->GetRTTI() == pRendererType)
-			{
-				pRenderer = Renderers.ValueAt(j);
-				break;
-			}
-		if (!pRenderer)
+		Render::PRenderer Renderer(static_cast<Render::IRenderer*>(pRendererType->CreateClassInstance()));
+		if (!Renderer || !Renderer->Init(EnableLighting, RendererDesc)) FAIL;
+
+		const auto& ObjTypes = *PrmObject.GetValue<Data::PDataArray>();
+		for (const auto& ObjTypeData : ObjTypes)
 		{
-			pRenderer = (Render::IRenderer*)pRendererType->CreateClassInstance();
-			if (!pRenderer->Init(EnableLighting)) FAIL;
+			const Core::CRTTI* pObjType = nullptr;
+			if (ObjTypeData.IsA<int>())
+				pObjType = Core::CFactory::Instance().GetRTTI(static_cast<uint32_t>(ObjTypeData.GetValue<int>()));
+			else if (ObjTypeData.IsA<CString>())
+				pObjType = Core::CFactory::Instance().GetRTTI(ObjTypeData.GetValue<CString>());
+			if (!pObjType) FAIL;
+
+			RenderersByObjectType.emplace(pObjType, Renderer.get());
 		}
-		if (pObjType && pRenderer) Renderers.Add(pObjType, pRenderer);
+
+		Renderers.push_back(std::move(Renderer));
 	}
 
 	//!!!remember only IDs here, load effect in a View, as they reference a GPU!

@@ -8,6 +8,11 @@
 // node as a new head. In case of a render tree, renderer must return node of the same level as a
 // passed node. Therefore, if renderer accepts a render tree node, it must accept all its children.
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace Render
 {
 struct CRenderNode;
@@ -16,6 +21,7 @@ struct CLightRecord;
 class CGPUDriver;
 typedef CArray<CRenderNode*> CRenderQueue;
 typedef CArray<CRenderNode*>::CIterator CRenderQueueIterator;
+using PRenderer = std::unique_ptr<class IRenderer>;
 
 class IRenderer: public Core::CRTTIBaseClass
 {
@@ -33,7 +39,7 @@ public:
 		bool					UsesGlobalLightBuffer;
 	};
 
-	virtual bool                 Init(bool LightingEnabled) = 0;
+	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) = 0;
 	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) = 0;
 	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) = 0;
 };

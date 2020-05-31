@@ -3,9 +3,15 @@
 #include <Render/ShaderParamTable.h>
 #include <Data/Dictionary.h>
 #include <Data/FixedArray.h>
+#include <map>
 
 // Renders geometry batches, instanced when possible. Uses sorting, lights.
 // Batches are designed to minimize shader state switches.
+
+namespace Render
+{
+	using PRenderer = std::unique_ptr<class IRenderer>;
+}
 
 namespace Frame
 {
@@ -23,17 +29,18 @@ protected:
 		Sort_Material
 	};
 
-	ESortingType									SortingType;
-	CFixedArray<CStrID>								RenderTargetIDs;
-	CStrID											DepthStencilID;
-	CDict<const Core::CRTTI*, Render::IRenderer*>	Renderers;
-	CDict<Render::EEffectType, CStrID>				EffectOverrides;
-	bool											EnableLighting = false;
+	ESortingType									 SortingType;
+	CFixedArray<CStrID>								 RenderTargetIDs;
+	CStrID											 DepthStencilID;
+	std::vector<Render::PRenderer>                   Renderers;
+	std::map<const Core::CRTTI*, Render::IRenderer*> RenderersByObjectType;
+	CDict<Render::EEffectType, CStrID>				 EffectOverrides;
+	bool											 EnableLighting = false;
 
-	Render::CShaderConstantParam					ConstGlobalLightBuffer;
-	Render::PResourceParam							RsrcIrradianceMap;
-	Render::PResourceParam							RsrcRadianceEnvMap;
-	Render::PSamplerParam							SampTrilinearCube;
+	Render::CShaderConstantParam					 ConstGlobalLightBuffer;
+	Render::PResourceParam							 RsrcIrradianceMap;
+	Render::PResourceParam							 RsrcRadianceEnvMap;
+	Render::PSamplerParam							 SampTrilinearCube;
 
 public:
 

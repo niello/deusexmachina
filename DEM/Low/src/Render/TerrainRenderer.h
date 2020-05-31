@@ -82,7 +82,9 @@ protected:
 	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
 	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
 	CPatchInstance*							pInstances = nullptr;
-	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
+	U32								        InstanceVBSize = 0;	//???where to define? in a phase? or some setting? or move to CView with a VB?
+	float                                   VisibilityRange = 1000.f;
+	float                                   MorphStartRatio = 0.7f;
 
 	static ENodeStatus	ProcessTerrainNode(const CProcessTerrainNodeArgs& Args, U32 X, U32 Z, U32 LOD, float LODRange, U32& PatchCount, U32& QPatchCount, U8& MaxLightCount, EClipStatus Clip = Clipped);
 	static bool			CheckNodeSphereIntersection(const CLightTestArgs& Args, const sphere& Sphere, U32 X, U32 Z, U32 LOD, UPTR& AABBTestCounter);
@@ -94,7 +96,7 @@ public:
 	CTerrainRenderer();
 	virtual ~CTerrainRenderer() override;
 
-	virtual bool                 Init(bool LightingEnabled) override;
+	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) override;
 	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) override;
 	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) override;
 };

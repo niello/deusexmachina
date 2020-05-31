@@ -24,16 +24,16 @@ protected:
 	static const U32						INSTANCE_BUFFER_STREAM_INDEX = 1;
 	static const U16						MAX_LIGHT_COUNT_PER_OBJECT = 8; //???to setting?
 
-	CFixedArray<CVertexComponent>			InstanceDataDecl;
-	CDict<CVertexLayout*, PVertexLayout>	InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
-	PVertexBuffer							InstanceVB;			//!!!binds an RP to a specific GPU!
-	UPTR									MaxInstanceCount;	//???where to define? in a phase? or some setting? or move to CView with a VB?
+	CFixedArray<CVertexComponent>        InstanceDataDecl;
+	CDict<CVertexLayout*, PVertexLayout> InstancedLayouts;	//!!!duplicate in different instances of the same renderer!
+	PVertexBuffer                        InstanceVB;        //!!!binds an RP to a specific GPU!
+	UPTR                                 InstanceVBSize = 0;
 
 public:
 
-	virtual bool							Init(bool LightingEnabled);
-	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
-	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr);
+	virtual bool							Init(bool LightingEnabled, const Data::CParams& Params) override;
+	virtual bool							PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) override;
+	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) override;
 };
 
 }

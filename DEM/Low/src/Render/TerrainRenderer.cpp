@@ -10,6 +10,7 @@
 #include <Render/Effect.h>
 #include <Render/Sampler.h>
 #include <Math/Sphere.h>
+#include <Data/Params.h>
 #include <Core/Factory.h>
 
 namespace Render
@@ -24,15 +25,16 @@ CTerrainRenderer::~CTerrainRenderer()
 }
 //---------------------------------------------------------------------
 
-bool CTerrainRenderer::Init(bool LightingEnabled)
+bool CTerrainRenderer::Init(bool LightingEnabled, const Data::CParams& Params)
 {
 	HMSamplerDesc.SetDefaults();
 	HMSamplerDesc.AddressU = TexAddr_Clamp;
 	HMSamplerDesc.AddressV = TexAddr_Clamp;
 	HMSamplerDesc.Filter = TexFilter_MinMag_Linear_Mip_Point;
 
-	//!!!DBG TMP! //???where to define?
-	MaxInstanceCount = 128;
+	InstanceVBSize = std::max(0, Params.Get<int>(CStrID("InstanceVBSize"), 128));
+	VisibilityRange = std::max(0.f, Params.Get(CStrID("VisibilityRange"), 1000.f));
+	MorphStartRatio = std::clamp(Params.Get(CStrID("MorphStartRatio"), 0.7f), 0.5f, 0.95f);
 
 	if (LightingEnabled)
 	{
@@ -698,22 +700,20 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			continue;
 		}
 
-		// FIXME: to renderer settings!
-		constexpr float VisibilityRange = 1000.f;
-		constexpr float MorphStartRatio = 0.7f;
-		constexpr UPTR MAX_LOD_COUNT = 32;
+		// Calculate morph constants
 
 		const CCDLODData& CDLOD = *pTerrain->GetCDLODData();
 		const U32 LODCount = CDLOD.GetLODCount();
 
-		// Calculate morph constants
+		constexpr UPTR MAX_LOD_COUNT = 32;
+		n_assert_dbg(LODCount <= MAX_LOD_COUNT);
 
 		//!!!PERF: may recalculate only when LODCount / VisibilityRange changes!
 		float MorphStart = 0.f;
 		float CurrVisRange = VisibilityRange / (float)(1 << (LODCount - 1));
 		float MorphConsts[2 * MAX_LOD_COUNT];
 		float* pCurrMorphConst = MorphConsts;
-		for (U32 j = 0; j < LODCount; ++j)
+		for (U32 j = 0; j < std::min(LODCount, MAX_LOD_COUNT); ++j)
 		{
 			float MorphEnd = j ? CurrVisRange : CurrVisRange * 0.9f;
 			MorphStart = MorphStart + (MorphEnd - MorphStart) * MorphStartRatio;
@@ -729,7 +729,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		//!!!PERF: for D3D11 const instancing can create CB without a RAM copy and update whole!
 		if (!pInstances)
 		{
-			pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * MaxInstanceCount, 16);
+			pInstances = (CPatchInstance*)n_malloc_aligned(sizeof(CPatchInstance) * InstanceVBSize, 16);
 			n_assert_dbg(pInstances);
 		}
 
@@ -745,7 +745,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		Args.pInstances = pInstances;
 		Args.pMorphConsts = MorphConsts;
 		Args.pRenderContext = &Context;
-		Args.MaxInstanceCount = MaxInstanceCount;
+		Args.MaxInstanceCount = InstanceVBSize;
 		Args.AABBMinX = AABBMinX;
 		Args.AABBMinZ = AABBMinZ;
 		Args.ScaleBaseX = AABBSizeX / (float)(CDLOD.GetHeightMapWidth() - 1);
@@ -783,7 +783,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 		if (PatchCount)
 			std::sort(pInstances, pInstances + PatchCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 		if (QuarterPatchCount)
-			std::sort(pInstances + MaxInstanceCount - QuarterPatchCount, pInstances + MaxInstanceCount, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
+			std::sort(pInstances + InstanceVBSize - QuarterPatchCount, pInstances + InstanceVBSize, [](const CPatchInstance& a, const CPatchInstance& b) { return a.ScaleOffset[0] < b.ScaleOffset[0]; });
 
 		// Select tech for the maximal light count used per-patch
 
@@ -934,7 +934,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 				}
 			}
 
-			const CPatchInstance* pQInstances = pInstances + MaxInstanceCount - QuarterPatchCount;
+			const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
 			for (UPTR PatchIdx = 0; PatchIdx < QuarterPatchCount; ++PatchIdx, ++InstanceCount)
 			{
 				const CPatchInstance& CurrPatch = pQInstances[PatchIdx];
@@ -986,7 +986,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			{
 				PVertexLayout VLInstanceData = GPU.CreateVertexLayout(InstanceDataDecl.GetPtr(), DeclSize);
 				InstanceVB = nullptr; // Drop before allocating new buffer
-				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, MaxInstanceCount, Access_CPU_Write | Access_GPU_Read);
+				InstanceVB = GPU.CreateVertexBuffer(*VLInstanceData, InstanceVBSize, Access_CPU_Write | Access_GPU_Read);
 			}
 
 			// Upload instance data to IA stream
@@ -1018,7 +1018,7 @@ CRenderQueueIterator CTerrainRenderer::Render(const CRenderContext& Context, CRe
 			
 			if (QuarterPatchCount)
 			{
-				const CPatchInstance* pQInstances = pInstances + MaxInstanceCount - QuarterPatchCount;
+				const CPatchInstance* pQInstances = pInstances + InstanceVBSize - QuarterPatchCount;
 				if (sizeof(CPatchInstance) == InstanceElementSize)
 				{
 					memcpy(pInstData, pQInstances, InstanceElementSize * QuarterPatchCount);

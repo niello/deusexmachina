@@ -75,6 +75,7 @@ CSPSRecord* CSPS::AddRecord(const CAABB& GlobalBox, CNodeAttribute* pUserData)
 
 void CSPS::QueryObjectsInsideFrustum(const matrix44& ViewProj, CArray<CNodeAttribute*>& OutObjects) const
 {
+	// TODO: oversized and always visible are two different things. Oversized must be AABB-tested, always visible must not.
 	if (OversizedObjects.GetCount())
 		OutObjects.AddArray(OversizedObjects);
 

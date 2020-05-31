@@ -14,9 +14,9 @@ public:
 
 	CSkyboxRenderer();
 
-	virtual bool                 Init(bool LightingEnabled) { OK; }
-	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context);
-	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr);
+	virtual bool                 Init(bool LightingEnabled, const Data::CParams& Params) override { OK; }
+	virtual bool                 PrepareNode(CRenderNode& Node, const CRenderNodeContext& Context) override;
+	virtual CRenderQueueIterator Render(const CRenderContext& Context, CRenderQueue& RenderQueue, CRenderQueueIterator ItCurr) override;
 };
 
 }
