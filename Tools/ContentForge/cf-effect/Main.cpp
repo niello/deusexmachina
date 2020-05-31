@@ -34,7 +34,7 @@ public:
 		return false;
 	}
 
-	virtual void ProcessTask(CContentForgeTask& Task) override
+	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
@@ -49,8 +49,7 @@ public:
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
 				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Get and validate material type
@@ -59,8 +58,7 @@ public:
 		if (!MaterialType)
 		{
 			Task.Log.LogError("Material type not specified, Type = '<string ID>' expected");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Get and validate global and material params
@@ -76,8 +74,7 @@ public:
 			if (!pGlobalParams->IsA<Data::CDataArray>())
 			{
 				Task.Log.LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const auto& GlobalParamsDesc = pGlobalParams->GetValue<Data::CDataArray>();
@@ -86,8 +83,7 @@ public:
 				if (!Data.IsA<CStrID>())
 				{
 					Task.Log.LogError("'GlobalParams' must be an array of CStringID elements (single-quoted strings)");
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				Ctx.GlobalParams.insert(Data.GetValue<CStrID>());
@@ -102,8 +98,7 @@ public:
 			if (!pMaterialParams->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'MaterialParams' must be a section");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			Ctx.MaterialParams = std::move(pMaterialParams->GetValue<Data::CParams>());
@@ -129,16 +124,14 @@ public:
 		if (!ParamsUtils::TryGetParam(pRenderStates, Desc, "RenderStates"))
 		{
 			Task.Log.LogError("'RenderStates' must be a section");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		const Data::CParams* pTechs;
 		if (!ParamsUtils::TryGetParam(pTechs, Desc, "Techniques") || pTechs->empty())
 		{
 			Task.Log.LogError("'Techniques' must be a section and contain at least one input set");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		auto& RenderStateDescs = *pRenderStates;
@@ -150,8 +143,7 @@ public:
 			if (!InputSetDesc.second.IsA<Data::CParams>() || InputSetDesc.second.GetValue<Data::CParams>().empty())
 			{
 				Task.Log.LogError("Input set '" + InputSet.ToString() + "' must be a section containing at least one technique");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const auto& TechDescs = InputSetDesc.second.GetValue<Data::CParams>();
@@ -160,8 +152,7 @@ public:
 				if (!TechDesc.second.IsA<Data::CDataArray>() || TechDesc.second.GetValue<Data::CDataArray>().empty())
 				{
 					Task.Log.LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' must be an array containing at least one render state ID");
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				CTechnique Tech;
@@ -185,16 +176,14 @@ public:
 					{
 						// Can discard only this tech, but for now issue an error and stop
 						Task.Log.LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' uses invalid render state in a pass '" + RenderStateID.CStr() + '\'');
-						Task.Result = ETaskResult::Failure;
-						return;
+						return ETaskResult::Failure;
 					}
 
 					// TODO: allow DXBC+DXIL for D3D12? Will write DXIL as a state format? What if API supports DXIL only?
 					if (Tech.ShaderFormatFourCC && Tech.ShaderFormatFourCC != RS.ShaderFormatFourCC)
 					{
 						Task.Log.LogError("Tech '" + InputSet.ToString() + '.' + TechDesc.first.ToString() + "' has unsupported mix of shader formats.");
-						Task.Result = ETaskResult::Failure;
-						return;
+						return ETaskResult::Failure;
 					}
 
 					Tech.ShaderFormatFourCC = RS.ShaderFormatFourCC;
@@ -234,20 +223,12 @@ public:
 			{
 				case 'DX9C':
 				{
-					if (!WriteParameterTablesForDX9C(Stream, Techs, MaterialParams, Ctx))
-					{
-						Task.Result = ETaskResult::Failure;
-						return;
-					}
+					if (!WriteParameterTablesForDX9C(Stream, Techs, MaterialParams, Ctx)) return ETaskResult::Failure;
 					break;
 				}
 				case 'DXBC':
 				{
-					if (!WriteParameterTablesForDXBC(Stream, Techs, MaterialParams, Ctx))
-					{
-						Task.Result = ETaskResult::Failure;
-						return;
-					}
+					if (!WriteParameterTablesForDXBC(Stream, Techs, MaterialParams, Ctx)) return ETaskResult::Failure;
 					break;
 				}
 				default:
@@ -330,8 +311,7 @@ public:
 		if (SerializedEffect.empty())
 		{
 			Task.Log.LogError("No data serialized for the effect, resource will not be created");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		fs::create_directories(DestPath.parent_path());
@@ -340,8 +320,7 @@ public:
 		if (!File)
 		{
 			Task.Log.LogError("Error opening an output file");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		const auto ShaderFormatCount = static_cast<uint32_t>(SerializedEffect.size());
@@ -371,11 +350,10 @@ public:
 		if (!WriteMaterialParams(File, MaterialParams, Ctx.MaterialParams, Task.Log))
 		{
 			Task.Log.LogError("Error serializing material defaults");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
-		Task.Result = ETaskResult::Success;
+		return ETaskResult::Success;
 	}
 
 private:

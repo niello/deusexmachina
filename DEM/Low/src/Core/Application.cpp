@@ -24,7 +24,6 @@
 // Scene bootstrapper includes
 // TODO: consider incapsulating into methods of relevant subsystems
 #include <Frame/GraphicsResourceManager.h>
-#include <Frame/RenderPhaseGlobalSetup.h>
 #include <Frame/RenderPhaseGeometry.h>
 #include <UI/RenderPhaseGUI.h>
 #include <Debug/RenderPhaseDebugDraw.h>
@@ -613,7 +612,6 @@ Frame::PGraphicsResourceManager CApplication::BootstrapGraphics(Render::PVideoDr
 	// Register render path classes in the factory
 
 	Frame::CRenderPhaseGUI::ForceFactoryRegistration();
-	Frame::CRenderPhaseGlobalSetup::ForceFactoryRegistration();
 	Frame::CRenderPhaseGeometry::ForceFactoryRegistration();
 	Frame::CRenderPhaseDebugDraw::ForceFactoryRegistration();
 	Frame::CModelAttribute::ForceFactoryRegistration();

@@ -36,11 +36,10 @@ CView::CView(CGraphicsResourceManager& GraphicsMgr, CStrID RenderPathID, int Swa
 		return;
 	}
 
-	Globals = Render::CShaderParamStorage(_RenderPath->GetGlobalParamTable(), *GraphicsMgr.GetGPU(), true);
-		
-	// Allocate storage for global shader params
+	// Setup global shader params, allocate storage
 
 	auto& GlobalParams = _RenderPath->GetGlobalParamTable();
+	Globals = Render::CShaderParamStorage(GlobalParams, *GraphicsMgr.GetGPU(), true);
 	for (const auto& Const : GlobalParams.GetConstants())
 		Globals.CreatePermanentConstantBuffer(Const.GetConstantBufferIndex(), Render::Access_CPU_Write | Render::Access_GPU_Read);
 

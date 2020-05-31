@@ -1,6 +1,7 @@
 #include "RenderPath.h"
 #include <Frame/RenderPhase.h>
 #include <Frame/View.h>
+#include <Frame/CameraAttribute.h>
 #include <Render/GPUDriver.h>
 
 namespace Frame
@@ -47,6 +48,20 @@ bool CRenderPath::Render(CView& View)
 	for (const auto& Slot : DSSlots)
 		if (auto pDS = View.GetDepthStencilBuffer(Slot.first))
 			pGPU->ClearDepthStencilBuffer(*pDS, Slot.second.ClearFlags, Slot.second.DepthClearValue, Slot.second.StencilClearValue);
+
+	// Setup global shader params
+
+	//!!!set only when changed!
+	if (View.GetCamera())
+	{
+		View.Globals.SetMatrix(ViewProjection, View.GetCamera()->GetViewProjMatrix());
+		View.Globals.SetVector(CameraPosition, View.GetCamera()->GetPosition());
+	}
+
+	// Might be unbound since the previous frame, so bind even if values didn't change
+	View.Globals.Apply();
+
+	// Do rendering
 
 	for (auto& Phase : Phases)
 	{

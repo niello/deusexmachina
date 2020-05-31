@@ -146,7 +146,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 				Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
 			}
 
-			ProcessTask(Task);
+			Task.Result = ProcessTask(Task);
 		}
 
 		typedef std::function<void(CContentForgeTask& Task)> FJob;
@@ -193,7 +193,7 @@ int CContentForgeTool::Execute(int argc, const char** argv)
 				Task.Log.GetStream() << "Thread: " << std::this_thread::get_id() << Task.Log.GetLineEnd();
 			}
 
-			ProcessTask(Task);
+			Task.Result = ProcessTask(Task);
 		}
 	}
 

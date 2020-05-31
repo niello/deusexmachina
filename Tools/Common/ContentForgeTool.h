@@ -66,7 +66,7 @@ public:
 	virtual int Term() { return 0; }
 	virtual bool SupportsMultithreading() const { return false; }
 	virtual void ProcessCommandLine(CLI::App& CLIApp);
-	virtual void ProcessTask(CContentForgeTask& Task) = 0;
+	virtual ETaskResult ProcessTask(CContentForgeTask& Task) = 0;
 
 	int Execute(int argc, const char** argv);
 

@@ -120,7 +120,7 @@ public:
 		return (It == _EffectParamAliases.cend()) ? Alias : It->second;
 	}
 
-	virtual void ProcessTask(CContentForgeTask& Task) override
+	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
@@ -148,8 +148,7 @@ public:
 		if (!ReadAllFile(Task.SrcFilePath.string().c_str(), SrcFileData))
 		{
 			Task.Log.LogError("Error reading shader source " + Task.SrcFilePath.generic_string());
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		pugi::xml_document XMLDoc;
@@ -157,8 +156,7 @@ public:
 		if (!XMLResult)
 		{
 			Task.Log.LogError(std::string("Error reading L3DT XML: ") + XMLResult.description());
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		auto XMLRoot = XMLDoc.first_child();
@@ -183,8 +181,7 @@ public:
 		if (!XMLMaps)
 		{
 			Task.Log.LogError(std::string("No maps declared in L3DT XML"));
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		fs::path HFPath;
@@ -194,21 +191,18 @@ public:
 			if (HFPath.extension() != ".bt")
 			{
 				Task.Log.LogError(std::string("HF map format must be BT"));
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 			if (!fs::exists(HFPath))
 			{
 				Task.Log.LogError(HFPath.generic_string() + " doesn't exist");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 		}
 		else
 		{
 			Task.Log.LogError(std::string("No HF map declared in L3DT XML"));
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		fs::path TNPath;
@@ -218,21 +212,18 @@ public:
 			if (TNPath.extension() != ".dds")
 			{
 				Task.Log.LogError(std::string("TN map format must be DDS"));
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 			if (!fs::exists(TNPath))
 			{
 				Task.Log.LogError(TNPath.generic_string() + " doesn't exist");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 		}
 		else
 		{
 			Task.Log.LogError(std::string("No TN map declared in L3DT XML"));
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		fs::path SplatMapPath;
@@ -244,14 +235,12 @@ public:
 			if (Ext != ".dds" && Ext != ".tga")
 			{
 				Task.Log.LogError(std::string("Alpha (splatting) map format must be DDS or TGA"));
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 			if (!fs::exists(SplatMapPath))
 			{
 				Task.Log.LogError(SplatMapPath.generic_string() + " doesn't exist");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 			if (!strcmp(XMLAlpha1Map.find_child_by_attribute("name", "MapType").text().as_string(), "BYTE"))
 				Task.Log.LogWarning("Alpha (splatting) map is one channel. Use L3DT Professional to generate one multichannel map. It is freeware now.");
@@ -261,8 +250,7 @@ public:
 		else
 		{
 			Task.Log.LogError(std::string("No Alpha_1 map declared in L3DT XML, use Operations->Alpha maps->Generate maps..."));
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Write CDLOD file
@@ -271,8 +259,7 @@ public:
 		if (!ReadAllFile(HFPath.string().c_str(), HeightfieldFileData))
 		{
 			Task.Log.LogError("HF map reading failed");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		std::string CDLODID;
@@ -400,8 +387,7 @@ public:
 				if (!File)
 				{
 					Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				WriteStream<uint32_t>(File, 'CDLD');        // Format magic value
@@ -434,8 +420,7 @@ public:
 		{
 			// TODO: support different formats
 			assert(false && "Heightfield format not supported");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Generate material
@@ -448,8 +433,7 @@ public:
 		if (EffectIt == _EffectsByType.cend() || EffectIt->second.empty())
 		{
 			Task.Log.LogError("Material type MetallicRoughnessTerrain has no mapped DEM effect file in effect settings");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		CMaterialParams MtlParamTable;
@@ -458,8 +442,7 @@ public:
 		if (!GetEffectMaterialParams(MtlParamTable, Path, Task.Log))
 		{
 			Task.Log.LogError("Error reading material param table for effect " + Path);
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		Data::CParams MtlParams;
@@ -476,8 +459,7 @@ public:
 			if (!fs::copy_file(TNPath, DestPath, fs::copy_options::overwrite_existing, ec))
 			{
 				Task.Log.LogError("Error copying texture from " + TNPath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			MtlParams.emplace_back(CStrID(GeomNormalTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
@@ -495,8 +477,7 @@ public:
 			if (!fs::copy_file(SplatMapPath, DestPath, fs::copy_options::overwrite_existing, ec))
 			{
 				Task.Log.LogError("Error copying texture from " + SplatMapPath.generic_string() + " to " + DestPath.generic_string() + ": " + ec.message());
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			MtlParams.emplace_back(CStrID(SplatMapTextureID), _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string());
@@ -524,11 +505,7 @@ public:
 
 			std::ofstream File(DestPath, std::ios_base::binary | std::ios_base::trunc);
 
-			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log))
-			{
-				Task.Result = ETaskResult::Failure;
-				return;
-			}
+			if (!SaveMaterial(File, EffectIt->second, MtlParamTable, MtlParams, Task.Log)) return ETaskResult::Failure;
 
 			MaterialID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		}
@@ -575,8 +552,7 @@ public:
 			if (!ParamsUtils::SaveParamsToHRD(DestPath.string().c_str(), Result))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to text");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 		}
 
@@ -586,12 +562,11 @@ public:
 			if (!ParamsUtils::SaveParamsByScheme(DestPath.string().c_str(), Result, CStrID("SceneNode"), _SceneSchemes))
 			{
 				Task.Log.LogError("Error serializing " + TaskName + " to binary");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 		}
 
-		Task.Result = ETaskResult::Success;
+		return ETaskResult::Success;
 	}
 };
 

@@ -226,7 +226,7 @@ public:
 		CLIApp.add_flag("-b,--bin", _OutputBin, "Output scenes in a binary format, suitable for loading into the engine");
 	}
 
-	virtual void ProcessTask(CContentForgeTask& Task) override
+	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		// Import FBX scene from the source file
 
@@ -238,8 +238,7 @@ public:
 		{
 			Task.Log.LogError("Failed to create FbxImporter for " + SrcPath + ": " + pImporter->GetStatus().GetErrorString());
 			pImporter->Destroy();
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		if (pImporter->IsFBX())
@@ -255,8 +254,7 @@ public:
 		{
 			Task.Log.LogError("Failed to import " + SrcPath + ": " + pImporter->GetStatus().GetErrorString());
 			pImporter->Destroy();
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		pImporter->Destroy();
@@ -317,8 +315,7 @@ public:
 		for (int i = 0; i < pScene->GetRootNode()->GetChildCount(); ++i)
 			if (!ExportNode(pScene->GetRootNode()->GetChild(i), Ctx, Nodes))
 			{
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 		// Export animations
@@ -331,8 +328,7 @@ public:
 			const auto pAnimStack = static_cast<FbxAnimStack*>(pScene->GetSrcObject<FbxAnimStack>(i));
 			if (!ExportAnimation(pAnimStack, pScene, Ctx))
 			{
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 		}
 
@@ -345,7 +341,7 @@ public:
 
 		const bool Result = WriteDEMScene(GetPath(Task.Params, "Output"), Task.TaskID.ToString(), std::move(Nodes), _SceneSchemes, Task.Params,
 			_OutputHRD, _OutputBin, Task.Log);
-		Task.Result = Result ? ETaskResult::Success : ETaskResult::Failure;
+		return Result ? ETaskResult::Success : ETaskResult::Failure;
 	}
 
 	bool ExportNode(FbxNode* pNode, CContext& Ctx, Data::CParams& Nodes)

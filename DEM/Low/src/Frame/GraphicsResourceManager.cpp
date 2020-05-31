@@ -767,12 +767,29 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		RP->AddDepthStencilSlot(ID, RealClearFlags, DepthClearValue, StencilClearValue);
 	}
 
+	// Read global params binding
+
+	U32 GlobalParamCount;
+	if (!Reader.Read(GlobalParamCount)) return nullptr;
+
+	std::map<std::string, CStrID> GlobalParams;
+	for (U32 i = 0; i < GlobalParamCount; ++i)
+	{
+		std::string Name;
+		if (!Reader.Read(Name)) return nullptr;
+
+		CStrID Value;
+		if (!Reader.Read(Value)) return nullptr;
+
+		GlobalParams.emplace(std::move(Name), std::move(Value));
+	}
+
 	// Read phases
 
 	Data::PParams PhaseDescs = n_new(Data::CParams);
 	if (!Reader.ReadParams(*PhaseDescs)) return nullptr;
 
-	// Read global params compatible with our GPU
+	// Read global params table compatible with our GPU
 
 	U32 ShaderFormatCount;
 	if (!Reader.Read<U32>(ShaderFormatCount)) return nullptr;
@@ -797,7 +814,17 @@ PRenderPath CGraphicsResourceManager::LoadRenderPath(CStrID UID)
 		}
 	}
 
-	// Create phases.
+	// Setup global shader params
+
+	auto It = GlobalParams.find("ViewProjection");
+	if (It != GlobalParams.cend())
+		RP->ViewProjection = RP->Globals->GetConstant(It->second);
+
+	It = GlobalParams.find("CameraPosition");
+	if (It != GlobalParams.cend())
+		RP->CameraPosition = RP->Globals->GetConstant(It->second);
+
+	// Create phases
 	// NB: intentionally created at the end, because they may access global params etc.
 
 	std::vector<PRenderPhase> Phases(PhaseDescs->GetCount());

@@ -65,7 +65,7 @@ public:
 		CContentForgeTool::ProcessCommandLine(CLIApp);
 	}
 
-	virtual void ProcessTask(CContentForgeTask& Task) override
+	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string TaskName = GetValidResourceName(Task.TaskID.ToString());
 
@@ -76,8 +76,7 @@ public:
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
 				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Collect geometry
@@ -182,8 +181,7 @@ public:
 		if (!rcCreateHeightfield(&ctx, *solid, cfg.width, cfg.height, cfg.bmin, cfg.bmax, cfg.cs, cfg.ch))
 		{
 			Task.Log.LogError("buildNavigation: Could not create solid heightfield.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// TODO: can do per geometry object instead of collecting all geometry at once!
@@ -200,8 +198,7 @@ public:
 		if (!rcRasterizeTriangles(&ctx, verts.data(), nverts, tris.data(), triareas.get(), ntris, *solid, cfg.walkableClimb))
 		{
 			Task.Log.LogError("buildNavigation: Could not rasterize triangles.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		verts.clear();
@@ -223,8 +220,7 @@ public:
 		if (!rcBuildCompactHeightfield(&ctx, cfg.walkableHeight, cfg.walkableClimb, *solid, *chf))
 		{
 			Task.Log.LogError("buildNavigation: Could not build compact data.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		solid.reset();
@@ -232,8 +228,7 @@ public:
 		if (!rcErodeWalkableArea(&ctx, cfg.walkableRadius, *chf))
 		{
 			Task.Log.LogError("buildNavigation: Could not erode.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		struct CRegion
@@ -280,15 +275,13 @@ public:
 		if (!rcBuildDistanceField(&ctx, *chf))
 		{
 			Task.Log.LogError("buildNavigation: Could not build distance field.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		if (!rcBuildRegions(&ctx, *chf, 0, cfg.minRegionArea, cfg.mergeRegionArea))
 		{
 			Task.Log.LogError("buildNavigation: Could not build watershed regions.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Step 5. Trace and simplify region contours.
@@ -298,8 +291,7 @@ public:
 		if (!rcBuildContours(&ctx, *chf, cfg.maxSimplificationError, cfg.maxEdgeLen, *cset))
 		{
 			Task.Log.LogError("buildNavigation: Could not create contours.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Step 6. Build polygons mesh from contours.
@@ -309,8 +301,7 @@ public:
 		if (!rcBuildPolyMesh(&ctx, *cset, cfg.maxVertsPerPoly, *pmesh))
 		{
 			Task.Log.LogError("buildNavigation: Could not triangulate contours.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		cset.reset();
@@ -325,8 +316,7 @@ public:
 			if (!rcBuildPolyMeshDetail(&ctx, *pmesh, *chf, cfg.detailSampleDist, cfg.detailSampleMaxError, *dmesh))
 			{
 				Task.Log.LogError("buildNavigation: Could not build detail mesh.");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 		}
 
@@ -446,8 +436,7 @@ public:
 		if (!dtCreateNavMeshData(&params, &navData, &navDataSize))
 		{
 			Task.Log.LogError("Could not build Detour navmesh.");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		pmesh.reset();
@@ -466,8 +455,7 @@ public:
 			if (dtStatusFailed(NavMesh->init(navData, navDataSize, 0)))
 			{
 				Task.Log.LogError("Could not load Detour navmesh for named region processing");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			auto dtNavMeshQueryDeleter = [](dtNavMeshQuery* ptr) { dtFreeNavMeshQuery(ptr); };
@@ -475,8 +463,7 @@ public:
 			if (dtStatusFailed(pQuery->init(NavMesh.get(), 512)))
 			{
 				Task.Log.LogError("Could not initialize navmesh query for named region processing");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const dtQueryFilter NavFilter;
@@ -529,8 +516,7 @@ public:
 			if (!File)
 			{
 				Task.Log.LogError("Error opening an output file " + DestPath.generic_string());
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			WriteStream<uint32_t>(File, 'NAVM');     // Format magic value
@@ -553,7 +539,7 @@ public:
 
 		dtFree(navData);
 
-		Task.Result = ETaskResult::Success;
+		return ETaskResult::Success;
 	}
 
 	static inline int GetVertexIndex(const char* pRawData, size_t Stride, size_t Index)

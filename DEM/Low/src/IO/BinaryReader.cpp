@@ -61,6 +61,26 @@ bool CBinaryReader::ReadString(CString& OutValue)
 }
 //---------------------------------------------------------------------
 
+bool CBinaryReader::ReadString(std::string& OutValue)
+{
+	U16 Len;
+	if (!Read(Len)) FAIL;
+
+	if (Len)
+	{
+		OutValue.resize(Len);
+		if (Stream.Read(OutValue.data(), Len) != Len)
+		{
+			OutValue.clear();
+			FAIL;
+		}
+	}
+	else OutValue.clear();
+
+	OK;
+}
+//---------------------------------------------------------------------
+
 bool CBinaryReader::ReadParams(Data::CParams& OutValue)
 {
 	n_assert_dbg(!OutValue.GetCount());

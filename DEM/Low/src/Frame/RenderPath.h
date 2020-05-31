@@ -50,6 +50,8 @@ public:
 	// FIXME: for loading
 	std::vector<PRenderPhase>           Phases;
 	Render::PShaderParamTable           Globals;
+	Render::CShaderConstantParam        ViewProjection;
+	Render::CShaderConstantParam        CameraPosition;
 
 	CRenderPath();
 	virtual ~CRenderPath() override;

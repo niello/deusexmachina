@@ -35,7 +35,7 @@ public:
 		return false;
 	}
 
-	virtual void ProcessTask(CContentForgeTask& Task) override
+	virtual ETaskResult ProcessTask(CContentForgeTask& Task) override
 	{
 		const std::string Output = ParamsUtils::GetParam<std::string>(Task.Params, "Output", std::string{});
 		const std::string TaskID(Task.TaskID.CStr());
@@ -50,8 +50,7 @@ public:
 		{
 			if (_LogVerbosity >= EVerbosity::Errors)
 				Task.Log.LogError(Task.SrcFilePath.generic_string() + " HRD loading or parsing error");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		// Build and verify global parameter table
@@ -63,8 +62,7 @@ public:
 			if (!pEffectPathes->IsA<Data::CDataArray>())
 			{
 				Task.Log.LogError("'Phases' must be an array of pathes to .eff files");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			// Collect global metadata sources
@@ -75,8 +73,7 @@ public:
 				if (!EffectPathData.IsA<std::string>())
 				{
 					Task.Log.LogError("Wrong data in 'Effects' array, all elements must be strings");
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				auto Path = ResolvePathAliases(EffectPathData.GetValue<std::string>());
@@ -87,22 +84,19 @@ public:
 				if (!File)
 				{
 					Task.Log.LogError("Can't open effect " + Path.generic_string());
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				if (ReadStream<uint32_t>(File) != 'SHFX')
 				{
 					Task.Log.LogError("Wrong effect file format in " + Path.generic_string());
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				if (ReadStream<uint32_t>(File) > 0x00010000)
 				{
 					Task.Log.LogError("Unsupported effect version in " + Path.generic_string());
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				// Skip material type
@@ -132,20 +126,12 @@ public:
 				{
 					case 'DX9C':
 					{
-						if (!BuildGlobalsTableForDX9C(FormatToGlobals.second, &Task.Log))
-						{
-							Task.Result = ETaskResult::Failure;
-							return;
-						}
+						if (!BuildGlobalsTableForDX9C(FormatToGlobals.second, &Task.Log)) return ETaskResult::Failure;
 						break;
 					}
 					case 'DXBC':
 					{
-						if (!BuildGlobalsTableForDXBC(FormatToGlobals.second, &Task.Log))
-						{
-							Task.Result = ETaskResult::Failure;
-							return;
-						}
+						if (!BuildGlobalsTableForDXBC(FormatToGlobals.second, &Task.Log)) return ETaskResult::Failure;
 						break;
 					}
 					default:
@@ -190,8 +176,7 @@ public:
 			if (!pRenderTargets->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'RenderTargets' must be a section");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const auto& RenderTargetsDesc = pRenderTargets->GetValue<Data::CParams>();
@@ -200,8 +185,7 @@ public:
 				if (!RTPair.second.IsA<Data::CParams>())
 				{
 					Task.Log.LogError("Render target '" + RTPair.first.ToString() + "' must be a section");
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				const auto& RTDesc = RTPair.second.GetValue<Data::CParams>();
@@ -229,8 +213,7 @@ public:
 			if (!pDepthStencilBuffers->IsA<Data::CParams>())
 			{
 				Task.Log.LogError("'DepthStencilBuffers' must be a section");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const auto& DepthStencilBuffersDesc = pDepthStencilBuffers->GetValue<Data::CParams>();
@@ -239,8 +222,7 @@ public:
 				if (!DSPair.second.IsA<Data::CParams>())
 				{
 					Task.Log.LogError("Depth-stencil buffer '" + DSPair.first.ToString() + "' must be a section");
-					Task.Result = ETaskResult::Failure;
-					return;
+					return ETaskResult::Failure;
 				}
 
 				const auto& DSDesc = DSPair.second.GetValue<Data::CParams>();
@@ -260,14 +242,49 @@ public:
 			}
 		}
 
+		// Process global params binding
+
+		const Data::CParams* pGlobalParams;
+		if (!ParamsUtils::TryGetParam(pGlobalParams, Desc, "Globals"))
+		{
+			Task.Log.LogError("'Globals' must be a section");
+			return ETaskResult::Failure;
+		}
+
+		std::map<CStrID, std::string> GlobalParams;
+		for (const auto& GlobalPair : *pGlobalParams)
+		{
+			std::string Value;
+			if (GlobalPair.second.IsA<std::string>())
+				Value = GlobalPair.second.GetValue<std::string>();
+			else if (GlobalPair.second.IsA<CStrID>())
+				Value = GlobalPair.second.GetValue<CStrID>().ToString();
+			else
+			{
+				// TODO: can add hardcoded values of non-string types?
+				Task.Log.LogError("Global param '" + GlobalPair.first.ToString() + "' must be a string or string ID");
+				return ETaskResult::Failure;
+			}
+
+			if (Value.empty())
+			{
+				Task.Log.LogWarning("Empty global param '" + GlobalPair.first.ToString() + "' is skipped");
+				continue;
+			}
+
+			//for (const auto& [ShaderFormatCode, Table] : Globals)
+			//	if (!Table.Contains(Value)) Warning()!
+
+			GlobalParams.emplace(GlobalPair.first, std::move(Value));
+		}
+
 		// Process phases
 
 		const Data::CParams* pPhases;
 		if (!ParamsUtils::TryGetParam(pPhases, Desc, "Phases"))
 		{
 			Task.Log.LogError("'Phases' must be a section");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		const auto& PhaseDescs = *pPhases;
@@ -276,8 +293,7 @@ public:
 			if (!PhasePair.second.IsA<Data::CParams>())
 			{
 				Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' must be a section");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const auto& PhaseDesc = PhasePair.second.GetValue<Data::CParams>();
@@ -286,8 +302,7 @@ public:
 			if (Type.empty())
 			{
 				Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' type not specified, Type = \"<string>\" expected");
-				Task.Result = ETaskResult::Failure;
-				return;
+				return ETaskResult::Failure;
 			}
 
 			const Data::CData* pRT;
@@ -299,8 +314,7 @@ public:
 					if (RenderTargets.find(RefID) == RenderTargets.cend())
 					{
 						Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
-						Task.Result = ETaskResult::Failure;
-						return;
+						return ETaskResult::Failure;
 					}
 				}
 				else if (pRT->IsA<Data::CDataArray>())
@@ -310,16 +324,14 @@ public:
 						if (!Ref.IsA<CStrID>())
 						{
 							Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' render target array must contain only string ID elements");
-							Task.Result = ETaskResult::Failure;
-							return;
+							return ETaskResult::Failure;
 						}
 
 						const CStrID RefID = Ref.GetValue<CStrID>();
 						if (RenderTargets.find(RefID) == RenderTargets.cend())
 						{
 							Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown render target '" + RefID.ToString() + '\'');
-							Task.Result = ETaskResult::Failure;
-							return;
+							return ETaskResult::Failure;
 						}
 					}
 				}
@@ -338,8 +350,7 @@ public:
 					if (DepthStencilBuffers.find(RefID) == DepthStencilBuffers.cend())
 					{
 						Task.Log.LogError("Phase '" + PhasePair.first.ToString() + "' references unknown depth-stencil buffer '" + RefID.ToString() + '\'');
-						Task.Result = ETaskResult::Failure;
-						return;
+						return ETaskResult::Failure;
 					}
 				}
 				else if (!pDS->IsVoid())
@@ -357,8 +368,7 @@ public:
 		if (!File)
 		{
 			Task.Log.LogError("Error opening an output file");
-			Task.Result = ETaskResult::Failure;
-			return;
+			return ETaskResult::Failure;
 		}
 
 		const auto ShaderFormatCount = static_cast<uint32_t>(Globals.size());
@@ -384,6 +394,14 @@ public:
 			WriteStream(File, Pair.second.ClearFlags);
 		}
 
+		// Write global params
+		WriteStream<uint32_t>(File, static_cast<uint32_t>(GlobalParams.size()));
+		for (const auto& [Name, Value] : GlobalParams)
+		{
+			WriteStream(File, Name.ToString());
+			WriteStream(File, Value);
+		}
+
 		// Write phases
 		WriteStream(File, PhaseDescs);
 
@@ -402,7 +420,7 @@ public:
 		for (const auto& Pair : Globals)
 			File.write(Pair.second.Result.c_str(), Pair.second.Result.size());
 
-		Task.Result = ETaskResult::Success;
+		return ETaskResult::Success;
 	}
 };
 

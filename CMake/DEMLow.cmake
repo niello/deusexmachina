@@ -90,7 +90,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Frame/RenderPath.h
 	DEM/Low/src/Frame/RenderPhase.h
 	DEM/Low/src/Frame/RenderPhaseGeometry.h
-	DEM/Low/src/Frame/RenderPhaseGlobalSetup.h
 	DEM/Low/src/Frame/SceneNodePrecreateRenderObjects.h
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.h
 	DEM/Low/src/Frame/SkinAttribute.h
@@ -354,7 +353,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Frame/RenderPath.cpp
 	DEM/Low/src/Frame/RenderPhase.cpp
 	DEM/Low/src/Frame/RenderPhaseGeometry.cpp
-	DEM/Low/src/Frame/RenderPhaseGlobalSetup.cpp
 	DEM/Low/src/Frame/SceneNodePrecreateRenderObjects.cpp
 	DEM/Low/src/Frame/SceneNodeUpdateInSPS.cpp
 	DEM/Low/src/Frame/SkinAttribute.cpp
