@@ -1,28 +1,20 @@
 #pragma once
-#ifndef __DEM_L2_GAME_ACTION_H__
-#define __DEM_L2_GAME_ACTION_H__
 
-#include <StdDEM.h>
-
-// Action encapsulates interactional game logic. When player uses
-// some ability on the target, action describes what exactly happens.
-// Action is stateless, all the state is stored in a context.
-// Actions are used only for iteractions involving the game world.
+// 
 
 namespace Game
 {
-struct CActionContext;
 
-class IAction
+class CAction
 {
-protected:
-
 public:
 
-	virtual bool	IsAvailable(const CActionContext& Context) const = 0;
-	virtual bool	Execute(const CActionContext& Context) const = 0;
+	// list of different targets
+	// list of target slots? or instead in the first list store number of slots? is enough?
+	// number of mandatory targets, other slots will be optional
+
+	// A, A, A, B, A, B vs A(4), B(2), easier, but less control over the order
+	// but still can duplicate descs and write A(3), B(1), A(1), B(1). Not really oftenly required?
 };
 
 }
-
-#endif
