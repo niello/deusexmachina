@@ -181,6 +181,12 @@ void CUIContext::HideMouseCursor()
 }
 //---------------------------------------------------------------------
 
+void CUIContext::SetMouseCursor(const char* pImageName)
+{
+	if (pCtx) pCtx->getCursor().setImage(pImageName);
+}
+//---------------------------------------------------------------------
+
 void CUIContext::SetDefaultMouseCursor(const char* pImageName)
 {
 	if (pCtx) pCtx->getCursor().setDefaultImage(pImageName);

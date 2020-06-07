@@ -59,7 +59,8 @@ public:
 	void				HideGUI();
 	void				ShowMouseCursor();
 	void				HideMouseCursor();
-	void				SetDefaultMouseCursor(const char* pImageName); //???also add SetMouseCursor?
+	void				SetMouseCursor(const char* pImageName);
+	void				SetDefaultMouseCursor(const char* pImageName);
 	bool				GetCursorPosition(float& X, float& Y) const;
 	bool				GetCursorPositionRel(float& X, float& Y) const;
 	bool				IsMouseOverGUI() const;
