@@ -4,10 +4,10 @@
 
 // Target for interaction with entities in a game level
 
-namespace Game
+namespace DEM::Game
 {
 
-class CTargetEntity: public ITarget
+class CTargetEntity: public CTarget
 {
 public:
 

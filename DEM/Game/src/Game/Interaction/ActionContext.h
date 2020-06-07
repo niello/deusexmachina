@@ -10,23 +10,26 @@ namespace Scene
 namespace DEM::Game
 {
 class CAbility;
+class CAction;
+class CTarget;
 
 class CActionContext
 {
 public:
 
-	CAbility*            pAbility = nullptr;
-	std::vector<HEntity> Selection;
-	// target slots (filled and not)
-	// number of filled slots?
+	CAbility*             pAbility = nullptr;
+	CAction*              pAction = nullptr;
+	std::vector<HEntity>  SelectedActors;
+	std::vector<CTarget*> SelectedTargets;
+	UPTR                  SelectedTargetCount = 0;
 
 	//???store prev frame intersection? store time over this object? for tooltip.
-	HEntity              EntityUnderCursor;
-	Scene::CSceneNode*   pNodeUnderCursor = nullptr;
-	vector3              PointUnderCursor;
-	bool                 HasSomethingUnderCursor = false;
+	HEntity               EntityUnderCursor;
+	Scene::CSceneNode*    pNodeUnderCursor = nullptr;
+	vector3               PointUnderCursor;
+	bool                  HasWorldUnderCursor = false;
 
-	bool IsSelectedActor(HEntity ID) const { return std::find(Selection.cbegin(), Selection.cend(), ID) != Selection.cend(); }
+	bool IsSelectedActor(HEntity ID) const { return std::find(SelectedActors.cbegin(), SelectedActors.cend(), ID) != SelectedActors.cend(); }
 
 	//???where to process input? under mouse info collection, per-frame update/validation
 	//of current point and already selected targets, input event listening.

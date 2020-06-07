@@ -2,10 +2,10 @@
 
 // 
 
-namespace Game
+namespace DEM::Game
 {
 
-class ITarget
+class CTarget
 {
 public:
 
