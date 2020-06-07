@@ -1,14 +1,13 @@
 #include "MemSystem.h"
 
 #include <AI/PropActorBrain.h>
-#include <Game/GameServer.h> //???separate time source for AI?
 
 namespace AI
 {
 
 void CMemSystem::Update()
 {
-	float Now = (float)GameSrv->GetTime();
+	float Now = 0.f;//(float)GameSrv->GetTime();
 
 	CArray<CSensor*> ValidationSensors;
 

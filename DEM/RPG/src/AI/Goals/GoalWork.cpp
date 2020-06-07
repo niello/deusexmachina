@@ -5,7 +5,6 @@
 #include <AI/Perception/Stimulus.h>
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Memory/MemFactOverseer.h>
-#include <Game/GameServer.h>
 #include <Core/Factory.h>
 
 namespace AI
@@ -47,6 +46,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 		IPTR Idx = WorkActionMap.FindIndex(pSOFact->TypeID);
 		if (Idx != INVALID_INDEX)
 		{
+			/*
 			Game::PEntity Ent = GameSrv->GetEntityMgr()->GetEntity(pSOFact->pSourceStimulus->SourceEntityID);
 			Prop::CPropSmartObject* pSO = Ent->GetProperty<Prop::CPropSmartObject>();
 			n_assert(pSO);
@@ -60,6 +60,7 @@ void CGoalWork::EvalRelevance(CActor* pActor)
 				Relevance = pSOFact->Confidence;
 				Action = CurrAction;
 			}
+			*/
 		}
 	}
 

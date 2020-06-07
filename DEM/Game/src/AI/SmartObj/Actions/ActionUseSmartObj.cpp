@@ -3,7 +3,6 @@
 #include <AI/PropActorBrain.h>
 #include <AI/PropSmartObject.h>
 #include <AI/SmartObj/SmartAction.h>
-#include <Game/GameServer.h>
 #include <Core/Factory.h>
 
 namespace AI
@@ -27,7 +26,7 @@ UPTR CActionUseSmartObj::SetDone(CActor* pActor, Prop::CPropSmartObject* pSO, co
 
 bool CActionUseSmartObj::Activate(CActor* pActor)
 {
-	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = nullptr;//GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO || !pSO->IsActionAvailable(ActionID, pActor)) FAIL;
@@ -92,7 +91,7 @@ bool CActionUseSmartObj::Activate(CActor* pActor)
 UPTR CActionUseSmartObj::Update(CActor* pActor)
 {
 	//!!!IsValid() checks that values, second test may be not necessary!
-	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = nullptr;//GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return Failure;
 	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO) return Failure;
@@ -110,7 +109,7 @@ UPTR CActionUseSmartObj::Update(CActor* pActor)
 		float PrevProgress = Progress;
 		if (ActTpl.ProgressDriver == CSmartAction::PDrv_Duration)
 		{
-			Progress += (float)GameSrv->GetFrameTime();
+			Progress += 0.f;//(float)GameSrv->GetFrameTime();
 			if (ActTpl.TargetState.IsValid() && ActTpl.ManualTransitionControl())
 				pSO->SetTransitionProgress(Progress);
 			IsDone = (Progress >= Duration);
@@ -149,7 +148,7 @@ UPTR CActionUseSmartObj::Update(CActor* pActor)
 
 void CActionUseSmartObj::Deactivate(CActor* pActor)
 {
-	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = nullptr;//GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) return;
 	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	if (!pSO) return;
@@ -205,7 +204,7 @@ void CActionUseSmartObj::Deactivate(CActor* pActor)
 
 bool CActionUseSmartObj::IsValid(CActor* pActor) const
 {
-	Game::CEntity* pSOEntity = GameSrv->GetEntityMgr()->GetEntity(TargetID);
+	Game::CEntity* pSOEntity = nullptr;//GameSrv->GetEntityMgr()->GetEntity(TargetID);
 	if (!pSOEntity || pSOEntity->GetLevel() != pActor->GetEntity()->GetLevel()) FAIL;
 	Prop::CPropSmartObject* pSO = pSOEntity->GetProperty<Prop::CPropSmartObject>();
 	return pSO && pSO->IsActionEnabled(ActionID);

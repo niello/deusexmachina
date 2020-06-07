@@ -4,7 +4,6 @@
 #include <AI/PropSmartObject.h>
 #include <AI/Planning/WorldStateSource.h>
 #include <AI/SmartObj/SmartAction.h>
-#include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Core/Factory.h>
 
@@ -28,7 +27,7 @@ bool CActionTplUseSmartObj::GetPreconditions(CActor* pActor, CWorldState& WS, co
 	// Request additional preconditions from SO action
 	CStrID SOEntityID = WSGoal.GetProp(WSP_UsingSmartObj);
 	CStrID ActionID = WSGoal.GetProp(WSP_Action);
-	Prop::CPropSmartObject* pSO = GameSrv->GetEntityMgr()->GetProperty<Prop::CPropSmartObject>(SOEntityID);
+	Prop::CPropSmartObject* pSO = nullptr;//GameSrv->GetEntityMgr()->GetProperty<Prop::CPropSmartObject>(SOEntityID);
 	if (!pSO) OK;
 
 	const Prop::CPropSmartObject::CAction* pSOAction = pSO->GetAction(ActionID);

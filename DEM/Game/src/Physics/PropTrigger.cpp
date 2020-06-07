@@ -1,7 +1,6 @@
 #include "PropTrigger.h"
 
 #include <Game/Entity.h>
-#include <Game/GameServer.h>
 #include <Game/GameLevel.h>
 #include <Physics/PhysicsLevel.h>
 #include <Physics/CollisionShape.h>
@@ -161,13 +160,13 @@ bool CPropTrigger::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Eve
 		for (UPTR i = 0; i < CurrInsiders.GetCount(); ++i)
 		{
 			CStrID EntityID = CurrInsiders[i];
-			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX && GameSrv->GetEntityMgr()->EntityExists(EntityID))
+			if (NewInsiders.FindIndexSorted(EntityID) == INVALID_INDEX /*&& GameSrv->GetEntityMgr()->EntityExists(EntityID)*/)
 				pScriptObj->RunFunctionOneArg("OnTriggerLeave", CString(EntityID.CStr()));
 		}
 
 	CurrInsiders = NewInsiders;
 
-	float NewTime = (float)GameSrv->GetTime();
+	float NewTime = 0.f;//(float)GameSrv->GetTime();
 	if (Period > 0.f && NewTime - TimeLastTriggered >= Period)
 	{
 		if (pScriptObj)

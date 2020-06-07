@@ -1,6 +1,5 @@
 #include "PropSmartObject.h"
 
-#include <Game/GameServer.h>
 #include <AI/AIServer.h>
 #include <AI/SmartObj/SmartAction.h>
 #include <AI/PropActorBrain.h> // For GetEntity() only
@@ -204,7 +203,7 @@ bool CPropSmartObject::OnLevelSaving(Events::CEventDispatcher* pDispatcher, cons
 
 bool CPropSmartObject::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	float Time = (float)GameSrv->GetFrameTime();
+	float Time = 0.f;//(float)GameSrv->GetFrameTime();
 	if (Time != 0.f) SetTransitionProgress(TrProgress + Time);
 	OK;
 }

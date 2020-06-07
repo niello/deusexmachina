@@ -15,7 +15,7 @@ class CActionWander: public CAction //Sequence
 protected:
 
 	vector2	InitialPos;
-	float	NextActSelectioCTime;
+	float	NextActSelectionTime;
 	PAction	CurrAction;
 
 	bool SelectAction(CActor* pActor);

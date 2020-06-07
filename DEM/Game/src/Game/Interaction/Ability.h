@@ -2,7 +2,7 @@
 
 // 
 
-namespace Game
+namespace DEM::Game
 {
 
 class CAbility

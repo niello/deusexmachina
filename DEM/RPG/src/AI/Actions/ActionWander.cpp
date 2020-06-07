@@ -1,6 +1,5 @@
 #include "ActionWander.h"
 
-#include <Game/GameServer.h>
 //#include <AI/Movement/Actions/ActionGoto.h>
 //#include <AI/Movement/Actions/ActionFace.h>
 #include <AI/PropActorBrain.h>
@@ -43,7 +42,7 @@ bool CActionWander::SelectAction(CActor* pActor)
 	else
 	{
 		CurrAction = nullptr;
-		NextActSelectioCTime = (float)GameSrv->GetTime() + Math::RandomFloat() * 5.f + 5.f;
+		NextActSelectionTime = 0.f;//(float)GameSrv->GetTime() + Math::RandomFloat() * 5.f + 5.f;
 		OK;
 	}
 
@@ -61,11 +60,11 @@ bool CActionWander::Activate(CActor* pActor)
 
 UPTR CActionWander::Update(CActor* pActor)
 {
-	if ((CurrAction.IsValidPtr() && CurrAction->Update(pActor) == Running) ||
-		NextActSelectioCTime > (float)GameSrv->GetTime())
-	{
-		return Running;
-	}
+	//if ((CurrAction.IsValidPtr() && CurrAction->Update(pActor) == Running) ||
+	//	NextActSelectionTime > (float)GameSrv->GetTime())
+	//{
+	//	return Running;
+	//}
 
 	return SelectAction(pActor) ? Running : Failure;
 }

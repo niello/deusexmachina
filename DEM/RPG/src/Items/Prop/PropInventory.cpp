@@ -2,7 +2,6 @@
 
 #include <Items/Prop/PropItem.h>
 #include <Scripting/PropScriptable.h>
-#include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>

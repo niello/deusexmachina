@@ -3,7 +3,6 @@
 #include <AI/PropActorBrain.h>
 #include <AI/Memory/MemFactOverseer.h>
 #include <AI/Stimuli/StimulusVisible.h>
-#include <Game/GameServer.h> //???separate time source for AI?
 #include <Data/DataArray.h>
 #include <Core/Factory.h>
 
@@ -46,7 +45,7 @@ void CPerceptorOverseer::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		pFact->Confidence = Confidence;
 
 		pFact->LastPerceptionTime =
-		pFact->LastUpdateTime = (float)GameSrv->GetTime();
+		pFact->LastUpdateTime = 0.f;//(float)GameSrv->GetTime();
 		pFact->ForgettingFactor = 0.02f;
 	}
 }

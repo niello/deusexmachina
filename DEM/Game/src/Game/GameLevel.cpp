@@ -167,7 +167,6 @@ DEM::AI::CNavMesh* CGameLevel::GetNavMesh(float AgentRadius, float AgentHeight) 
 
 #include <Frame/View.h>
 #include <Frame/CameraAttribute.h>
-#include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Scripting/ScriptObject.h>
 #include <Scene/PropSceneNode.h>
@@ -660,13 +659,6 @@ bool CGameLevel::GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position,
 	////!!!material from CPhysicsObject!
 
 	OK;
-}
-//---------------------------------------------------------------------
-
-bool CGameLevel::HostsEntity(CStrID EntityID) const
-{
-	CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(EntityID);
-	return pEnt && pEnt->GetLevel() == this;
 }
 //---------------------------------------------------------------------
 

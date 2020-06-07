@@ -2,7 +2,6 @@
 
 #include <Game/Entity.h>
 #include <Game/GameLevel.h>
-#include <Game/GameServer.h>
 #include <Events/Subscription.h>
 #include <Scripting/ScriptServer.h>
 #include <Data/Params.h>
@@ -81,8 +80,8 @@ int CEntityScriptObject_AttachProperty(lua_State* l)
 	if (lua_isstring(l, 2))
 	{
 		const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(lua_tostring(l, 2));
-		Game::CProperty* pProp = GameSrv->GetEntityMgr()->AttachProperty(*This->GetEntity(), pRTTI);
-		pProp->Activate();
+		//Game::CProperty* pProp = GameSrv->GetEntityMgr()->AttachProperty(*This->GetEntity(), pRTTI);
+		//pProp->Activate();
 	}
 	return 0;
 }
@@ -95,7 +94,7 @@ int CEntityScriptObject_RemoveProperty(lua_State* l)
 	if (lua_isstring(l, 2))
 	{
 		const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(lua_tostring(l, 2));
-		GameSrv->GetEntityMgr()->RemoveProperty(*This->GetEntity(), pRTTI);
+		//GameSrv->GetEntityMgr()->RemoveProperty(*This->GetEntity(), pRTTI);
 	}
 	return 0;
 }
@@ -119,9 +118,9 @@ int CEntityScriptObject_HasProperty(lua_State* l)
 		ClassName = pPrefix + ClassName;
 
 	const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(ClassName.CStr());
-	Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
+	//Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
-	lua_pushboolean(l, pProp != nullptr);
+	//lua_pushboolean(l, pProp != nullptr);
 	return 1;
 }
 //---------------------------------------------------------------------
@@ -144,9 +143,9 @@ int CEntityScriptObject_IsPropertyActive(lua_State* l)
 		ClassName = pPrefix + ClassName;
 
 	const Core::CRTTI* pRTTI = Core::CFactory::Instance().GetRTTI(ClassName.CStr());
-	Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
+	//Game::CProperty* pProp = GameSrv->GetEntityMgr()->GetProperty(This->GetEntity()->GetUID(), pRTTI);
 
-	lua_pushboolean(l, pProp && pProp->IsActive());
+	//lua_pushboolean(l, pProp && pProp->IsActive());
 	return 1;
 }
 //---------------------------------------------------------------------

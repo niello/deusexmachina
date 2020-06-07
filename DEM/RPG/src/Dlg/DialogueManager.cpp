@@ -2,7 +2,6 @@
 
 #include <Dlg/PropTalking.h>
 #include <Factions/FactionManager.h>
-#include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Data/DataArray.h>
 #include <Data/ParamsUtils.h>
@@ -87,9 +86,9 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 		FAIL;
 	}
 
-	n_assert_dbg(GameSrv->GetEntityMgr()->EntityExists(Initiator));
+	//n_assert_dbg(GameSrv->GetEntityMgr()->EntityExists(Initiator));
 
-	Game::CEntity* pTargetEnt = GameSrv->GetEntityMgr()->GetEntity(Target);
+	Game::CEntity* pTargetEnt = nullptr;//GameSrv->GetEntityMgr()->GetEntity(Target);
 	if (!pTargetEnt)
 	{
 		Sys::Log("Error,Dlg: Entity '%s' doesn't exist\n", Target.CStr());
@@ -111,6 +110,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 
 	CDlgContext NewDlg;
 
+	/*
 	if (TargetIsPlr == InitiatorIsPlr) // Plr-Plr & NPC-NPC
 	{
 		NewDlg.Dlg = GameSrv->GetEntityMgr()->GetEntity(Target)->GetProperty<Prop::CPropTalking>()->GetDialogue();
@@ -149,6 +149,7 @@ bool CDialogueManager::RequestDialogue(CStrID Initiator, CStrID Target, EDlgMode
 			}
 		}
 	}
+	*/
 
 	if (NewDlg.Dlg.IsNullPtr()) FAIL;
 

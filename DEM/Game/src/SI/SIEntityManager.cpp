@@ -1,5 +1,4 @@
 #include <Scripting/ScriptServer.h>
-#include <Game/GameServer.h>
 
 extern "C"
 {
@@ -16,7 +15,7 @@ namespace SI
 int CEntityManager_DeleteEntity(lua_State* l)
 {
 	// Args: Entity ID or alias
-	if (lua_gettop(l) > 0) GameSrv->GetEntityMgr()->DeleteEntity(CStrID(lua_tostring(l, 1)));
+	//if (lua_gettop(l) > 0) GameSrv->GetEntityMgr()->DeleteEntity(CStrID(lua_tostring(l, 1)));
 	return 0;
 }
 //---------------------------------------------------------------------

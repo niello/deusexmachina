@@ -8,7 +8,6 @@
 #include <Events/EventServer.h>
 #include <DetourDebugDraw.h>
 #include <Debug/DebugDraw.h>
-#include <Game/GameServer.h> // For the debug draw only
 
 namespace AI
 {

@@ -2,7 +2,6 @@
 
 #include <Game/Property.h>
 #include <Game/GameLevel.h>
-#include <Game/GameServer.h>
 #include <Events/Subscription.h>
 #include <Data/DataArray.h>
 
@@ -85,7 +84,7 @@ void CEntity::Save(Data::CParams& OutDesc, const Data::CParams* pInitialDesc)
 	if (pInitialDesc) pInitialDesc->TryGet<Data::PDataArray>(InitialProps, CStrID("Props"));
 
 	CArray<CProperty*> Props;
-	GameSrv->GetEntityMgr()->GetPropertiesOfEntity(UID, Props);
+	//GameSrv->GetEntityMgr()->GetPropertiesOfEntity(UID, Props);
 	bool Differs = (Props.GetCount() && InitialProps.IsNullPtr()) || Props.GetCount() != InitialProps->GetCount();
 	if (!Differs && Props.GetCount() && InitialProps.IsValidPtr())
 	{

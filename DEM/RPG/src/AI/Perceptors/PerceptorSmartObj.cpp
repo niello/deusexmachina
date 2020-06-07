@@ -4,7 +4,6 @@
 #include <AI/PropSmartObject.h>
 #include <AI/Memory/MemFactSmartObj.h>
 #include <AI/Stimuli/StimulusVisible.h>
-#include <Game/GameServer.h>
 #include <Core/Factory.h>
 
 namespace AI
@@ -16,10 +15,11 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 	//???special SO stimulus, may be one per action or with action list?
 	if (pStimulus->IsA(CStimulusVisible::RTTI))
 	{
-		Game::PEntity Ent = GameSrv->GetEntityMgr()->GetEntity(pStimulus->SourceEntityID);
-		Prop::CPropSmartObject* pSO = Ent->GetProperty<Prop::CPropSmartObject>();
+		//Game::PEntity Ent = GameSrv->GetEntityMgr()->GetEntity(pStimulus->SourceEntityID);
+		//Prop::CPropSmartObject* pSO = Ent->GetProperty<Prop::CPropSmartObject>();
 
-		if (!pSO) return;
+		//if (!pSO) return;
+		return;
 
 		CMemFactSmartObj Pattern;
 		Pattern.pSourceStimulus = pStimulus;
@@ -28,7 +28,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		{
 			pFact = pActor->GetMemSystem().AddFact<CMemFactSmartObj>();
 			pFact->pSourceStimulus = pStimulus;
-			pFact->TypeID = pSO->GetTypeID();
+			//pFact->TypeID = pSO->GetTypeID();
 			pActor->RequestBehaviourUpdate();
 		}
 
@@ -36,7 +36,7 @@ void CPerceptorSmartObj::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		pFact->Confidence = Confidence;
 
 		pFact->LastPerceptionTime =
-		pFact->LastUpdateTime = (float)GameSrv->GetTime();
+		pFact->LastUpdateTime = 0.f;//(float)GameSrv->GetTime();
 		pFact->ForgettingFactor = 0.005f;
 	}
 }

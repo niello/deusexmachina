@@ -3,7 +3,6 @@
 #include <AI/PropActorBrain.h>
 #include <AI/Movement/Memory/MemFactObstacle.h>
 #include <AI/Stimuli/StimulusVisible.h>
-#include <Game/GameServer.h> //???separate time source for AI?
 #include <Core/Factory.h>
 
 namespace AI
@@ -32,7 +31,7 @@ void CPerceptorObstacle::ProcessStimulus(CActor* pActor, CStimulus* pStimulus, f
 		
 		pFact->Confidence = Confidence; //???prioritize by distance to actor?
 		pFact->LastPerceptionTime =
-		pFact->LastUpdateTime = (float)GameSrv->GetTime(); //???or AI frame number?
+		pFact->LastUpdateTime = 0.f;//(float)GameSrv->GetTime(); //???or AI frame number?
 		pFact->ForgettingFactor = 0.05f; //???!!!different rates for static & moving?!
 		pFact->Position = pStimulus->Position;
 	}

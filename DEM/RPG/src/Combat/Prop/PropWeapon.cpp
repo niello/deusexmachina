@@ -4,7 +4,6 @@
 #include <Combat/Event/ObjDamageDone.h>
 #include <Events/Subscription.h>
 #include <AI/AIServer.h>
-#include <Game/GameServer.h>
 #include <Core/Factory.h>
 
 namespace Prop
@@ -57,7 +56,7 @@ bool CPropWeapon::OnChrStrike(Events::CEventDispatcher* pDispatcher, const Event
 //???destructible prop as arg?
 void CPropWeapon::Strike(Game::CEntity& Target)
 {
-    GetEntity()->SetAttr<float>(CStrID("WpnLastStrikeTime"), (float)GameSrv->GetTime());
+    GetEntity()->SetAttr<float>(CStrID("WpnLastStrikeTime"), 0.f);//(float)GameSrv->GetTime());
 
 	//!!!check hit (accurecy etc)!
 

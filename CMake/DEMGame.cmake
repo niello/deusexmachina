@@ -42,8 +42,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Entity.h
 	DEM/Game/src/Game/EntityManager.h
 	DEM/Game/src/Game/GameLevel.h
-	DEM/Game/src/Game/GameLevelView.h
-	DEM/Game/src/Game/GameServer.h
 	DEM/Game/src/Game/GameState.h
 	DEM/Game/src/Game/GameStateManager.h
 	DEM/Game/src/Game/Property.h
@@ -122,8 +120,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/EntityManager.cpp
 	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
-	DEM/Game/src/Game/GameLevelView.cpp
-	DEM/Game/src/Game/GameServer.cpp
 	DEM/Game/src/Game/GameState.cpp
 	DEM/Game/src/Game/GameStateManager.cpp
 	DEM/Game/src/Game/Property.cpp
@@ -142,7 +138,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Scripting/PropScriptable.cpp
 	DEM/Game/src/Scripting/ScriptObjectSIEx.cpp
 	DEM/Game/src/SI/SIEntityManager.cpp
-	DEM/Game/src/SI/SIGameServer.cpp
 	DEM/Game/src/SI/SINavMesh.cpp
 	DEM/Game/src/UI/PropUIControl.cpp
 	DEM/Game/src/UI/PropUIControlSI.cpp

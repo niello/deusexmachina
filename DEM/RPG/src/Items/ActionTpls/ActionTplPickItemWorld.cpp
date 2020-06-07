@@ -4,7 +4,6 @@
 #include <AI/PropActorBrain.h>
 #include <AI/Perception/Stimulus.h>
 #include <AI/Memory/MemFactSmartObj.h>
-#include <Game/GameServer.h>
 #include <Items/Prop/PropItem.h>
 #include <Core/Factory.h>
 
@@ -40,7 +39,7 @@ bool CActionTplPickItemWorld::ValidateContextPreconditions(CActor* pActor, const
 		CMemFactSmartObj* pSOFact = (CMemFactSmartObj*)It->Get();
 		if (pSOFact->TypeID == CStrID("Item"))
 		{
-			Prop::CPropItem* pItemProp = GameSrv->GetEntityMgr()->GetProperty<Prop::CPropItem>(pSOFact->pSourceStimulus->SourceEntityID);
+			Prop::CPropItem* pItemProp = nullptr;//GameSrv->GetEntityMgr()->GetProperty<Prop::CPropItem>(pSOFact->pSourceStimulus->SourceEntityID);
 			if (pItemProp &&
 				pSOFact->Confidence > MaxConf &&
 				pItemProp->Items.GetItemID() == DesiredItemID)

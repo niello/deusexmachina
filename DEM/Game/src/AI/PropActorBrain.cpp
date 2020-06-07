@@ -7,7 +7,6 @@
 #include <Scripting/PropScriptable.h>
 #include <Data/ParamsUtils.h>
 #include <Data/DataArray.h>
-#include <Game/GameServer.h>
 #include <Game/GameLevel.h>
 #include <Core/Factory.h>
 
@@ -384,7 +383,7 @@ void CPropActorBrain::UpdateBehaviour()
 
 bool CPropActorBrain::OnBeginFrame(Events::CEventDispatcher* pDispatcher, const Events::CEventBase& Event)
 {
-	float FrameTime = (float)GameSrv->GetFrameTime();
+	float FrameTime = 0.f;//(float)GameSrv->GetFrameTime();
 
 	//!!!update for some time, if not updated all return or allow to process next!
 	//!!!only for external (tests external stimuli placed in the level)!

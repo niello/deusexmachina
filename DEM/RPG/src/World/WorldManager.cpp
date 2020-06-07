@@ -1,6 +1,5 @@
 #include "WorldManager.h"
 
-#include <Game/GameServer.h>
 #include <Game/Entity.h>
 #include <Events/EventServer.h>
 #include <Events/Subscription.h>
@@ -48,7 +47,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	CArray<Game::PEntity> Entities(EntityIDs.GetCount(), 0);
 	for (UPTR i = 0; i < EntityIDs.GetCount(); ++i)
 	{
-		Game::CEntity* pEnt = GameSrv->GetEntityMgr()->GetEntity(EntityIDs[i]);
+		Game::CEntity* pEnt = nullptr;//GameSrv->GetEntityMgr()->GetEntity(EntityIDs[i]);
 		if (pEnt)
 		{
 			Entities.Add(pEnt);
@@ -64,12 +63,12 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	{
 		for (UPTR i = 0; i < Entities.GetCount(); ++i)
 			Entities[i]->SetLevel(nullptr);
-		GameSrv->UnloadAllGameLevels();
+		//GameSrv->UnloadAllGameLevels();
 	}
 
-	if (!GameSrv->IsLevelLoaded(LevelID) && !GameSrv->LoadGameLevel(LevelID)) FAIL;
+	//if (!GameSrv->IsLevelLoaded(LevelID) && !GameSrv->LoadGameLevel(LevelID)) FAIL;
 
-	Game::CEntity* pMarker = GameSrv->GetEntityMgr()->GetEntity(MarkerID);
+	Game::CEntity* pMarker = nullptr;//GameSrv->GetEntityMgr()->GetEntity(MarkerID);
 	n_assert(pMarker);
 
 	const matrix44& DestTfm = pMarker->GetAttr<matrix44>(CStrID("Transform"));
@@ -82,7 +81,7 @@ bool CWorldManager::MakeTransition(const CArray<CStrID>& EntityIDs, CStrID Level
 	}
 	else Entities[0]->SetAttr<matrix44>(CStrID("Transform"), DestTfm);
 
-	Game::CGameLevel* pNewLevel = GameSrv->GetLevel(LevelID);
+	Game::CGameLevel* pNewLevel = nullptr;//GameSrv->GetLevel(LevelID);
 	n_assert(pNewLevel);
 	for (UPTR i = 0; i < Entities.GetCount(); ++i)
 		Entities[i]->SetLevel(pNewLevel);

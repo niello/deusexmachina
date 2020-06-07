@@ -160,9 +160,6 @@ public:
 	UPTR					GetEntitiesInPhysSphere(CArray<CEntity*>& Out, const vector3& Center, float Radius) const;
 	bool					GetSurfaceInfoBelow(CSurfaceInfo& Out, const vector3& Position, float ProbeLength = 1000.f) const;
 
-	//Other queries
-	bool					HostsEntity(CStrID EntityID) const;
-
 	CStrID					GetID() const { return ID; }
 	const CString&			GetName() const { return Name; }
 
