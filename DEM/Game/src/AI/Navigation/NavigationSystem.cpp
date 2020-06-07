@@ -347,8 +347,16 @@ static void ResetNavigation(CNavAgentComponent& Agent, Game::CActionQueueCompone
 		Agent.AsyncTaskID = 0;
 	}
 
+	// TODO: special method in Queue for finalizing root and proceeding to the next action in queue?
 	while (auto pNavigateAction = Queue.FindActive<Navigate>())
+	{
 		Queue.FinalizeActiveAction(*pNavigateAction, Result);
+		if (pNavigateAction == Queue.GetActiveStackTop())
+		{
+			Queue.RemoveAction(*pNavigateAction);
+			break;
+		}
+	}
 
 	if (auto CurrPoly = Agent.Corridor.getFirstPoly())
 		Agent.Corridor.reset(CurrPoly, Agent.Corridor.getPos());

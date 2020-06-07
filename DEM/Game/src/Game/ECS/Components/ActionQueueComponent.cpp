@@ -68,6 +68,7 @@ bool CActionQueueComponent::FinalizeActiveAction(const Events::CEventBase& Actio
 	if (It == _Stack.cend()) return false;
 
 	// Cancel all sub-actions and set our (top) action status
+	++It;
 	_Stack.erase(It, _Stack.end());
 	_Status = Result;
 	return true;
