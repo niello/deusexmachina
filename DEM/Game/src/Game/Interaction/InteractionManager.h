@@ -1,6 +1,5 @@
 #pragma once
 #include <Game/Interaction/Ability.h>
-#include <Data/StringID.h>
 #include <map>
 
 // Stores all actions and abilities available in the current game.
