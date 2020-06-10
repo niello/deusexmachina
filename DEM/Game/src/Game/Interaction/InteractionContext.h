@@ -13,7 +13,7 @@ class CAbility;
 class CAction;
 class CTarget;
 
-class CActionContext
+class CInteractionContext
 {
 public:
 

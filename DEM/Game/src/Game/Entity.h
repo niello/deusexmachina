@@ -18,8 +18,6 @@ class CEntity: public Events::CEventDispatcher, public Data::CRefCounted
 
 protected:
 
-	friend class CEntityManager;
-
 	enum
 	{
 		Active						= 0x01,

@@ -13,7 +13,7 @@ public:
 	// may store slot count
 
 	// check if (point, entity, navpoly) under mouse satisfies requirements
-	// pass CActionContext into the check
+	// pass CInteractionContext into the check
 
 	// rendering info? effect/shape, cursor
 };

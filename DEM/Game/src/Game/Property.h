@@ -19,8 +19,6 @@ class CProperty: public Core::CObject
 
 protected:
 
-	friend class CEntityManager;
-
 	CEntity*	pEntity;
 	bool		Active;
 

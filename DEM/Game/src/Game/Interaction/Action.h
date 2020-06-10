@@ -11,6 +11,8 @@ class CAction
 {
 public:
 
+	// can add factory methods to abilities and actions to create from CParams etc
+
 	// list of different targets
 	// list of target slots? or instead in the first list store number of slots? is enough?
 	// number of mandatory targets, other slots will be optional

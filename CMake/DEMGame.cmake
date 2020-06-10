@@ -40,7 +40,6 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/App/AppStateVideo.h
 	DEM/Game/src/App/StateHandler.h
 	DEM/Game/src/Game/Entity.h
-	DEM/Game/src/Game/EntityManager.h
 	DEM/Game/src/Game/GameLevel.h
 	DEM/Game/src/Game/GameState.h
 	DEM/Game/src/Game/GameStateManager.h
@@ -59,7 +58,8 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/Components/SelectableComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/Action.h
-	DEM/Game/src/Game/Interaction/ActionContext.h
+	DEM/Game/src/Game/Interaction/InteractionContext.h
+	DEM/Game/src/Game/Interaction/InteractionManager.h
 	DEM/Game/src/Game/Interaction/Target.h
 	DEM/Game/src/Game/Interaction/TargetEntity.h
 	DEM/Game/src/Physics/PropPhysics.h
@@ -117,7 +117,6 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/App/AppFSM.cpp
 	DEM/Game/src/App/AppStateVideo.cpp
 	DEM/Game/src/App/StateHandler.cpp
-	DEM/Game/src/Game/EntityManager.cpp
 	DEM/Game/src/Game/EntityOld.cpp
 	DEM/Game/src/Game/GameLevel.cpp
 	DEM/Game/src/Game/GameState.cpp
@@ -127,6 +126,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.cpp
+	DEM/Game/src/Game/Interaction/InteractionManager.cpp
 	DEM/Game/src/Game/Interaction/TargetEntity.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
