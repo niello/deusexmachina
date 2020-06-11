@@ -13,6 +13,14 @@ class CAbility;
 class IInteraction;
 class CTarget;
 
+struct CTargetInfo
+{
+	HEntity            Entity;
+	Scene::CSceneNode* pNode = nullptr;
+	vector3            Point;
+	bool               Valid = false;
+};
+
 class CInteractionContext
 {
 public:
@@ -24,10 +32,7 @@ public:
 	UPTR                  SelectedTargetCount = 0;
 
 	//???store prev frame info? store time we are targeted at this object? for tooltip.
-	HEntity               TargetEntity;
-	Scene::CSceneNode*    pTargetNode = nullptr;
-	vector3               TargetPoint;
-	bool                  HasTarget = false;
+	CTargetInfo           Target;
 
 	bool IsSelectedActor(HEntity ID) const { return std::find(SelectedActors.cbegin(), SelectedActors.cend(), ID) != SelectedActors.cend(); }
 
