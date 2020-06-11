@@ -2,12 +2,14 @@
 #include <Game/Interaction/Ability.h>
 #include <map>
 
-// Stores all interactions and abilities available in the current game.
+// Handles interaction of the player player with the game world. All available
+// interactions and abilities available in the current game.
 // External systems access them by ID.
 
 namespace DEM::Game
 {
 using PInteraction = std::unique_ptr<class IInteraction>;
+struct CInteractionContext;
 
 class CInteractionManager
 {
@@ -26,6 +28,12 @@ public:
 
 	const CAbility*     FindAbility(CStrID ID) const;
 	const IInteraction* FindAction(CStrID ID) const;
+
+	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID);
+	bool                UpdateCandidateInteraction(CInteractionContext& Context);
+	bool                AcceptTarget(CInteractionContext& Context);
+	// Revert
+	// Execute(bool Enqueue)
 };
 
 }

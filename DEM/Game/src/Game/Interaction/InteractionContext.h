@@ -9,8 +9,6 @@ namespace Scene
 
 namespace DEM::Game
 {
-class CAbility;
-class IInteraction;
 class CTarget;
 
 struct CTargetInfo
@@ -21,12 +19,10 @@ struct CTargetInfo
 	bool               Valid = false;
 };
 
-class CInteractionContext
+struct CInteractionContext
 {
-public:
-
-	CAbility*             pAbility = nullptr;
-	IInteraction*         pInteraction = nullptr;
+	CStrID                Ability; //???need also ability source? for items! HEntity or what?
+	CStrID                Interaction;
 	std::vector<HEntity>  SelectedActors;
 	std::vector<CTarget*> SelectedTargets;
 	UPTR                  SelectedTargetCount = 0;
@@ -35,10 +31,10 @@ public:
 	CTargetInfo           Target;
 
 	bool IsSelectedActor(HEntity ID) const { return std::find(SelectedActors.cbegin(), SelectedActors.cend(), ID) != SelectedActors.cend(); }
+	bool AreAllTargetsSet() const { return !SelectedTargets.empty() && SelectedTargets.size() == SelectedTargetCount; }
 
 	//???where to process input? under mouse info collection, per-frame update/validation
 	//of current point and already selected targets, input event listening.
-	// DoAction, EnqueueAction =>
 	// SelectTarget (LMB), SelectTargetNoReset (Shift+LMB), RevertLast (Esc), ConfirmPartialAction (Enter)
 };
 
