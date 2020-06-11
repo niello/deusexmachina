@@ -2,30 +2,30 @@
 #include <Game/Interaction/Ability.h>
 #include <map>
 
-// Stores all actions and abilities available in the current game.
+// Stores all interactions and abilities available in the current game.
 // External systems access them by ID.
 
 namespace DEM::Game
 {
-using PAction = std::unique_ptr<class CAction>;
+using PInteraction = std::unique_ptr<class IInteraction>;
 
 class CInteractionManager
 {
 protected:
 
-	std::map<CStrID, CAbility> _Abilities;
-	std::map<CStrID, PAction>  _Actions;
+	std::map<CStrID, CAbility>     _Abilities;
+	std::map<CStrID, PInteraction> _Interactions;
 
 public:
 
 	CInteractionManager();
 	~CInteractionManager();
 
-	bool            RegisterAbility(CStrID ID, CAbility&& Ability);
-	bool            RegisterAction(CStrID ID, PAction&& Action);
+	bool                RegisterAbility(CStrID ID, CAbility&& Ability);
+	bool                RegisterInteraction(CStrID ID, PInteraction&& Interaction);
 
-	const CAbility* FindAbility(CStrID ID) const;
-	const CAction*  FindAction(CStrID ID) const;
+	const CAbility*     FindAbility(CStrID ID) const;
+	const IInteraction* FindAction(CStrID ID) const;
 };
 
 }

@@ -7,7 +7,7 @@ namespace DEM::Game
 {
 class CTarget;
 
-class CAction
+class IInteraction
 {
 public:
 
@@ -20,12 +20,12 @@ public:
 	// A, A, A, B, A, B vs A(4), B(2), easier, but less control over the order
 	// but still can duplicate descs and write A(3), B(1), A(1), B(1). Not really oftenly required?
 
-	UPTR GetMaxTargetCount() const;
+	virtual UPTR GetMaxTargetCount() const = 0;
 
 	//!!!PTarget!
-	CTarget* CreateTarget(UPTR Index) const;
+	virtual CTarget* CreateTarget(UPTR Index) const = 0;
 
-	bool Execute() const;
+	virtual bool Execute() const = 0;
 };
 
 }

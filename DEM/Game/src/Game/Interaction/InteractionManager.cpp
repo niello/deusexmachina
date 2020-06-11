@@ -1,5 +1,5 @@
 #include "InteractionManager.h"
-#include <Game/Interaction/Action.h>
+#include <Game/Interaction/Interaction.h>
 
 namespace DEM::Game
 {
@@ -19,13 +19,13 @@ bool CInteractionManager::RegisterAbility(CStrID ID, CAbility&& Ability)
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::RegisterAction(CStrID ID, PAction&& Action)
+bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interaction)
 {
-	auto It = _Actions.find(ID);
-	if (It == _Actions.cend())
-		_Actions.emplace(ID, std::move(Action));
+	auto It = _Interactions.find(ID);
+	if (It == _Interactions.cend())
+		_Interactions.emplace(ID, std::move(Interaction));
 	else
-		It->second = std::move(Action);
+		It->second = std::move(Interaction);
 
 	return true;
 }
@@ -38,10 +38,10 @@ const CAbility* CInteractionManager::FindAbility(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-const CAction* CInteractionManager::FindAction(CStrID ID) const
+const IInteraction* CInteractionManager::FindAction(CStrID ID) const
 {
-	auto It = _Actions.find(ID);
-	return (It == _Actions.cend()) ? nullptr : It->second.get();
+	auto It = _Interactions.find(ID);
+	return (It == _Interactions.cend()) ? nullptr : It->second.get();
 }
 //---------------------------------------------------------------------
 

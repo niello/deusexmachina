@@ -10,7 +10,7 @@ namespace Scene
 namespace DEM::Game
 {
 class CAbility;
-class CAction;
+class IInteraction;
 class CTarget;
 
 class CInteractionContext
@@ -18,16 +18,16 @@ class CInteractionContext
 public:
 
 	CAbility*             pAbility = nullptr;
-	CAction*              pAction = nullptr;
+	IInteraction*         pInteraction = nullptr;
 	std::vector<HEntity>  SelectedActors;
 	std::vector<CTarget*> SelectedTargets;
 	UPTR                  SelectedTargetCount = 0;
 
-	//???store prev frame intersection? store time over this object? for tooltip.
-	HEntity               EntityUnderCursor;
-	Scene::CSceneNode*    pNodeUnderCursor = nullptr;
-	vector3               PointUnderCursor;
-	bool                  HasWorldUnderCursor = false;
+	//???store prev frame info? store time we are targeted at this object? for tooltip.
+	HEntity               TargetEntity;
+	Scene::CSceneNode*    pTargetNode = nullptr;
+	vector3               TargetPoint;
+	bool                  HasTarget = false;
 
 	bool IsSelectedActor(HEntity ID) const { return std::find(SelectedActors.cbegin(), SelectedActors.cend(), ID) != SelectedActors.cend(); }
 

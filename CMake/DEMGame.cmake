@@ -57,7 +57,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/Components/SceneComponent.h
 	DEM/Game/src/Game/ECS/Components/SelectableComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
-	DEM/Game/src/Game/Interaction/Action.h
+	DEM/Game/src/Game/Interaction/Interaction.h
 	DEM/Game/src/Game/Interaction/InteractionContext.h
 	DEM/Game/src/Game/Interaction/InteractionManager.h
 	DEM/Game/src/Game/Interaction/Target.h

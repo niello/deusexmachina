@@ -8,7 +8,8 @@
 // Examples are:
 // - default interaction (talk with friendly NPC, attack hostile one, walk a navmesh)
 // - character skills (mechanics can be used to repair broken automatons or disarm traps)
-// - abilities and spells (anything from sword attack to mass healing in area)
+// - character abilities and spells (anything from sword attack to mass healing in area)
+// - player interactions (explore object to read its textual description)
 // - editor and cheat tools (select entity, teleport it to point)
 
 namespace Data
