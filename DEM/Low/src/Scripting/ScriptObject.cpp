@@ -175,12 +175,13 @@ UPTR CScriptObject::LoadScript(const char* Buffer, UPTR Length)
 		return Error_Scripting_NoObject;
 	}
 
-	if (Table.IsValid()) lua_remove(l, -2);
-	lua_setfenv(l, -2);
+	//if (Table.IsValid()) lua_remove(l, -2);
+	//lua_setfenv(l, -2);
 
-	UPTR Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, nullptr);
-	if (ExecResultIsError(Result)) Sys::Log("Script is: %s\n", Buffer);
-	return Result;
+	//UPTR Result = RunFunctionInternal("<LOADING NEW SCRIPT>", 0, nullptr);
+	//if (ExecResultIsError(Result)) Sys::Log("Script is: %s\n", Buffer);
+	//return Result;
+	return Error_Scripting_NoObject;
 }
 //---------------------------------------------------------------------
 
@@ -202,8 +203,8 @@ UPTR CScriptObject::PrepareToLuaCall(const char* pFuncName) const
 	}
 
 	// Set env for the case when function is inherited from metatable
-	lua_pushvalue(l, -2);
-	lua_setfenv(l, -2);
+	//lua_pushvalue(l, -2);
+	//lua_setfenv(l, -2);
 
 	return Success;
 }
@@ -289,11 +290,11 @@ void CScriptObject::SetName(const char* NewName)
 
 	if (!ScriptSrv->PlaceObjectOnStack(Name.CStr(), Table.CStr())) return;
 
-	int TableIdx = Table.IsValid() ? -2 : LUA_GLOBALSINDEX;
-	lua_State* l = ScriptSrv->GetLuaState();
-	lua_setfield(l, TableIdx, NewName);
-	lua_pushnil(l);
-	lua_setfield(l, TableIdx, Name.CStr());
+	//int TableIdx = Table.IsValid() ? -2 : LUA_GLOBALSINDEX;
+	//lua_State* l = ScriptSrv->GetLuaState();
+	//lua_setfield(l, TableIdx, NewName);
+	//lua_pushnil(l);
+	//lua_setfield(l, TableIdx, Name.CStr());
 	Name = NewName;
 }
 //---------------------------------------------------------------------

@@ -27,7 +27,7 @@ int RandomInt(lua_State* l)
 {
 	// Args: min, max
 	if (lua_gettop(l) < 2) return 0;
-	lua_pushnumber(l, Math::RandomU32(lua_tointeger(l, 1), lua_tointeger(l, 2)));
+	lua_pushnumber(l, Math::RandomU32((U32)lua_tointeger(l, 1), (U32)lua_tointeger(l, 2)));
 	return 1;
 }
 //---------------------------------------------------------------------

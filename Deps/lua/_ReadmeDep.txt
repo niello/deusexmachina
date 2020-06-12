@@ -9,8 +9,11 @@ MIT License
 https://www.lua.org/license.html
 
 Current version used:
-5.1.5
-https://www.lua.org/ftp/lua-5.1.5.tar.gz
+5.3.5
+https://www.lua.org/ftp/lua-5.3.5.tar.gz
+
+Modifications:
+In lua_rawlen added cast to size_t to remove warning
 
 Purpose in DEM:
-Main scripting language
+General purpose scripting

@@ -22,7 +22,7 @@ int CPropInventory_AddItem(lua_State* l)
 	//args: EntityScriptObject's this table, Item ID, [Count = 1]
 	SETUP_ENT_SI_ARGS(2);
 
-	int Count = (ArgCount > 2 && lua_isnumber(l, 3)) ? lua_tointeger(l, 3) : 1;
+	int Count = (ArgCount > 2 && lua_isnumber(l, 3)) ? (int)lua_tointeger(l, 3) : 1;
 	if (Count > 0)
 	{
 		lua_pushboolean(l,
@@ -38,7 +38,7 @@ int CPropInventory_RemoveItem(lua_State* l)
 	//args: EntityScriptObject's this table, Item ID, [Count = 1], [AsManyAsCan = false]
 	SETUP_ENT_SI_ARGS(2);
 
-	int Count = (ArgCount > 2 && lua_isnumber(l, 3)) ? lua_tointeger(l, 3) : 1;
+	int Count = (ArgCount > 2 && lua_isnumber(l, 3)) ? (int)lua_tointeger(l, 3) : 1;
 	bool AsManyAsCan = (ArgCount > 3 && lua_isboolean(l, 4)) ? lua_toboolean(l, 4) != 0 : false;
 	if (Count > 0)
 	{
@@ -56,7 +56,7 @@ int CPropInventory_HasItem(lua_State* l)
 	//args: EntityScriptObject's this table, Item ID, [Count = 1]
 	SETUP_ENT_SI_ARGS(2);
 
-	int Count = (ArgCount > 2 && lua_isnumber(l, 3)) ? lua_tointeger(l, 3) : 1;
+	int Count = (ArgCount > 2 && lua_isnumber(l, 3)) ? (int)lua_tointeger(l, 3) : 1;
 	if (Count > 0)
 	{
 		lua_pushboolean(l,

@@ -163,11 +163,11 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 		case LUA_TLIGHTUSERDATA:	Result = lua_touserdata(l, StackIdx); OK;
 		case LUA_TNUMBER:
 		{
-			double Value = lua_tonumber(l, StackIdx);
-			int IntValue;
-			lua_number2int(IntValue, Value);
-			if (((double)IntValue) == Value) Result = IntValue;
-			else Result = (float)Value;
+			//double Value = lua_tonumber(l, StackIdx);
+			//int IntValue;
+			//lua_number2int(IntValue, Value);
+			//if (((double)IntValue) == Value) Result = IntValue;
+			//else Result = (float)Value;
 			OK;
 		}
 		case LUA_TTABLE:
@@ -187,7 +187,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 				}
 				else
 				{
-					Key = lua_tointeger(l, -2);
+					Key = (int)lua_tointeger(l, -2);
 					if (Key <= 0)
 					{
 						Sys::Log("CScriptServer::LuaStackToData: Incorrect array index (Idx < 0)\n");
@@ -206,7 +206,7 @@ bool CScriptServer::LuaStackToData(Data::CData& Result, int StackIdx)
 				lua_pushnil(l);
 				while (lua_next(l, StackIdx))
 				{
-					Key = lua_tointeger(l, -2) - 1;
+					Key = (int)lua_tointeger(l, -2) - 1;
 					LuaStackToData(Array->At(Key), -1);
 					lua_pop(l, 1);
 				}
@@ -464,7 +464,7 @@ bool CScriptServer::LoadClass(const char* Name)
 		}
 		
 		lua_pushvalue(l, -2);
-		lua_setfenv(l, -2);
+		//lua_setfenv(l, -2);
 
 		if (lua_pcall(l, 0, 0, 0))
 		{
@@ -519,7 +519,7 @@ bool CScriptServer::CreateObject(CScriptObject& Obj, const char* LuaClassName)
 	if (lua_isfunction(l, -1)) 
 	{
 		lua_pushvalue(l, -2);
-		lua_setfenv(l, -2);
+		//lua_setfenv(l, -2);
 		if (lua_pcall(l, 0, 0, 0))
 		{
 			Sys::Log("Error running %s class constructor for %s: %s\n",
@@ -605,13 +605,13 @@ bool CScriptServer::PlaceObjectOnStack(const char* Name, const char* Table)
 		}
 		TableIdx = -1;
 	}
-	else TableIdx = LUA_GLOBALSINDEX;
+	//else TableIdx = LUA_GLOBALSINDEX;
 
 	lua_getfield(l, TableIdx, Name);
 	if (lua_istable(l, -1) || lua_isuserdata(l, -1)) OK;
 	else
 	{
-		lua_pop(l, (TableIdx == LUA_GLOBALSINDEX) ? 1 : 2);
+		//lua_pop(l, (TableIdx == LUA_GLOBALSINDEX) ? 1 : 2);
 		FAIL;
 	}
 }
@@ -662,7 +662,7 @@ void CScriptServer::RemoveObject(const char* Name, const char* Table)
 	{
 		lua_pop(l, 1);
 		lua_pushnil(l);
-		lua_setfield(l, (Table && *Table) ? -2 : LUA_GLOBALSINDEX, Name);
+		//lua_setfield(l, (Table && *Table) ? -2 : LUA_GLOBALSINDEX, Name);
 		if (Table && *Table) lua_pop(l, 1);
 	}
 }
@@ -691,7 +691,7 @@ bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 		else if (lua_type(l, -2) == LUA_TNUMBER)
 		{
 			New = "[";
-			New += StringUtils::FromInt(lua_tointeger(l, -2));
+			New += StringUtils::FromInt((I32)lua_tointeger(l, -2));
 			New += "]";
 		}
 		else
@@ -708,11 +708,11 @@ bool CScriptServer::GetTableFieldsDebug(CArray<CString>& OutFields)
 			case LUA_TNUMBER:
 			{
 				New += " = ";
-				double Value = lua_tonumber(l, -1);
-				int IntValue;
-				lua_number2int(IntValue, Value);
-				if (((double)IntValue) == Value) New += StringUtils::FromInt(IntValue);
-				else New += StringUtils::FromFloat((float)Value);
+				//double Value = lua_tonumber(l, -1);
+				//int IntValue;
+				//lua_number2int(IntValue, Value);
+				//if (((double)IntValue) == Value) New += StringUtils::FromInt(IntValue);
+				//else New += StringUtils::FromFloat((float)Value);
 				New += " (number)";
 				break;
 			}

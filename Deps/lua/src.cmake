@@ -2,6 +2,7 @@ set(LUA_HEADERS
 	src/lapi.h
 	src/lauxlib.h
 	src/lcode.h
+	src/lctype.h
 	src/ldebug.h
 	src/ldo.h
 	src/lfunc.h
@@ -12,6 +13,7 @@ set(LUA_HEADERS
 	src/lobject.h
 	src/lopcodes.h
 	src/lparser.h
+	src/lprefix.h
 	src/lstate.h
 	src/lstring.h
 	src/ltable.h
@@ -28,7 +30,10 @@ set(LUA_SOURCES
 	src/lapi.c
 	src/lauxlib.c
 	src/lbaselib.c
+	src/lbitlib.c
 	src/lcode.c
+	src/lcorolib.c
+	src/lctype.c
 	src/ldblib.c
 	src/ldebug.c
 	src/ldo.c
@@ -51,11 +56,9 @@ set(LUA_SOURCES
 	src/ltable.c
 	src/ltablib.c
 	src/ltm.c
-	src/lua.c
-	src/luac.c
 	src/lundump.c
+	src/lutf8lib.c
 	src/lvm.c
 	src/lzio.c
-	src/print.c
 )
 
