@@ -10,10 +10,4 @@ CAbility CAbility::CreateFromParams(const Data::CParams& Params)
 }
 //---------------------------------------------------------------------
 
-CStrID CAbility::ChooseAction() const
-{
-	return {};
-}
-//---------------------------------------------------------------------
-
 }

@@ -1,6 +1,7 @@
 #pragma once
 #include <Data/StringID.h>
 #include <vector>
+#include <set>
 
 // Ability is a tool that describes a way to interact with the game. It is kind of
 // context which helps to select the most appropriate action. Some abilities provide
@@ -26,17 +27,20 @@ class CAbility
 {
 protected:
 
+	std::string         IconID;
+	std::string         Name;
+	std::string         Description;
+
 	std::vector<CStrID> Actions;
+	std::set<CStrID>    Tags;
+
+	// scripted condition IsAvailableFor(SelectedActors)
 
 public:
 
 	static CAbility CreateFromParams(const Data::CParams& Params);
 
-	CStrID ChooseAction() const;
-
 	//???need something specific for switchable abilities (on-off) or is controlled from outside?
-
-	// rendering info? icon, cursor
 };
 
 }

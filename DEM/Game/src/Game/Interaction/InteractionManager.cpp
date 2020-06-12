@@ -1,5 +1,6 @@
 #include "InteractionManager.h"
 #include <Game/Interaction/Interaction.h>
+#include <Game/Interaction/InteractionContext.h>
 
 namespace DEM::Game
 {
@@ -45,12 +46,21 @@ const IInteraction* CInteractionManager::FindAction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
+bool CInteractionManager::IsAbilityAvailable(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const
+{
+	auto pAbility = FindAbility(AbilityID);
+	if (!pAbility) return false;
+	// check if actor selection supports an ability
+	return false;
+}
+//---------------------------------------------------------------------
+
 bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID AbilityID)
 {
-	// if not changed, exit
-	// if no ability with ID, fail
-	// check if selected actors support an ability, fail if not?
+	if (Context.Ability == AbilityID) return true;
+	if (!IsAbilityAvailable(AbilityID, Context.SelectedActors)) return false;
 	// if there is another ability and/or candidate action selected, reset them and target slots
+	Context.Ability = AbilityID;
 	// immediately check ability actions for auto-satisfied targets, AcceptTarget if so
 	return false;
 }
@@ -58,44 +68,45 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	// if already has selected action, check if it is still valid, reset if not
-	// if already has selected ability, check if it is still valid, reset if not
-	// if there are targets selected, check if they are still valid, reset if not
-	// if there are no targets selected, select first action in ability that accepts current target
-	return false;
-
-/*
-	if (_InteractionContext.pAbility)
+	if (Context.Interaction)
 	{
-		if (_InteractionContext.pInteraction)
-		{
-			//if action became invalid, _InteractionContext.pAction = nullptr;
-		}
-
-		//if (!_InteractionContext.pAction)
-		//	_InteractionContext.pAction = _InteractionContext.pAbility->ChooseAction();
+		// check if Interaction is still valid, reset if not
 	}
-*/
+
+	if (Context.Ability)
+	{
+		// check if Ability is still valid, reset if not
+	}
+
+	if (Context.SelectedTargetCount)
+	{
+		// check if selecated targets are still valid, reset if not
+	}
+
+	if (!Context.SelectedTargetCount)
+	{
+		// select first action in ability that accepts current target
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 {
-	// if no candidate action, exit
-	// if no target and next action target is not auto-satisfiable (Self, SourceItem etc), exit
-	// if max targets selected
-	// validate current target against candidate action, exit if invalid
-	// if no target slots allocated, allocate for candidate action
-	// add target to the selected list
-	return false;
+	if (!Context.Interaction || Context.SelectedTargetCount == Context.SelectedTargets.size()) return false;
 
-/*
-	if (_InteractionContext.SelectedTargets.empty())
+	// if no target and next action target is not auto-satisfiable (Self, SourceItem etc), exit
+	// validate current target against candidate action, exit if invalid
+
+	if (Context.SelectedTargets.empty())
 	{
-		_InteractionContext.SelectedTargets.resize(_InteractionContext.Interaction->GetMaxTargetCount());
-		_InteractionContext.SelectedTargetCount = 0;
+		//Context.SelectedTargets.resize(Context.Interaction->GetMaxTargetCount());
+		Context.SelectedTargetCount = 0;
 	}
 
+	// add target to the selected list
+/*
 	if (auto Target = _InteractionContext.Interaction->CreateTarget(_InteractionContext.SelectedTargetCount))
 	{
 		_InteractionContext.SelectedTargets[_InteractionContext.SelectedTargetCount] = Target;
@@ -104,6 +115,14 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 			_InteractionContext.Interaction->Execute();
 	}
 */
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue)
+{
+	return false;
 }
 //---------------------------------------------------------------------
 

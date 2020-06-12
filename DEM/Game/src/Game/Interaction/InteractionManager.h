@@ -1,5 +1,6 @@
 #pragma once
 #include <Game/Interaction/Ability.h>
+#include <Game/ECS/Entity.h>
 #include <map>
 
 // Handles interaction of the player player with the game world. All available
@@ -29,11 +30,12 @@ public:
 	const CAbility*     FindAbility(CStrID ID) const;
 	const IInteraction* FindAction(CStrID ID) const;
 
+	bool                IsAbilityAvailable(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
 	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID);
 	bool                UpdateCandidateInteraction(CInteractionContext& Context);
 	bool                AcceptTarget(CInteractionContext& Context);
 	// Revert
-	// Execute(bool Enqueue)
+	bool                ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
 };
 
 }
