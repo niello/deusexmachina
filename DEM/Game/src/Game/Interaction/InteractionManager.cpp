@@ -20,6 +20,45 @@ bool CInteractionManager::RegisterAbility(CStrID ID, CAbility&& Ability)
 }
 //---------------------------------------------------------------------
 
+bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params)
+{
+	CAbility Ability;
+
+	// TODO: read Actions, Icon, Name etc
+	std::string IsAvailable;
+
+	//!!!DBG TMP! use sol::state_view here, pass from outside. Optional?
+	sol::state Lua;
+	Lua.open_libraries(sol::lib::base);
+	Lua["print"] = [](lua_State* L)
+	{
+		const int n = lua_gettop(L); // number of arguments
+		for (int i = 1; i <= n; ++i)
+		{
+			if (i > 1) ::Sys::Log("\t");
+
+			size_t Length;
+			if (auto s = lua_tolstring(L, i, &Length))
+				::Sys::Log(s);
+			else
+				::Sys::Log("<unknown>");
+		}
+		::Sys::Log("\n");
+		return 0;
+	};
+
+	// TODO: pushes the compiled chunk as a Lua function on top of the stack,
+	// need to save anywhere in this Ability's table?
+	if (!IsAvailable.empty())
+	{
+		if (auto LoadedCondition = Lua.load("local SelectedActors = ...; return " + IsAvailable, ID.CStr()))
+			Ability.AvailabilityCondition = LoadedCondition;
+	}
+
+	return RegisterAbility(ID, std::move(Ability));
+}
+//---------------------------------------------------------------------
+
 bool CInteractionManager::RegisterInteraction(CStrID ID, PInteraction&& Interaction)
 {
 	auto It = _Interactions.find(ID);
@@ -50,8 +89,17 @@ bool CInteractionManager::IsAbilityAvailable(CStrID AbilityID, const std::vector
 {
 	auto pAbility = FindAbility(AbilityID);
 	if (!pAbility) return false;
-	// check if actor selection supports an ability
-	return false;
+
+	if (!pAbility->AvailabilityCondition) return true;
+
+	auto Result = pAbility->AvailabilityCondition(SelectedActors);
+	if (!Result.valid())
+	{
+		sol::error Error = Result;
+		::Sys::Error(Error.what());
+	}
+
+	return Result.valid() ? Result : false;
 }
 //---------------------------------------------------------------------
 

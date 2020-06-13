@@ -7,6 +7,11 @@
 // interactions and abilities available in the current game.
 // External systems access them by ID.
 
+namespace Data
+{
+	class CParams;
+}
+
 namespace DEM::Game
 {
 using PInteraction = std::unique_ptr<class IInteraction>;
@@ -25,6 +30,8 @@ public:
 	~CInteractionManager();
 
 	bool                RegisterAbility(CStrID ID, CAbility&& Ability);
+	bool                RegisterAbility(CStrID ID, const Data::CParams& Params);
+	//bool                RegisterAbility(CStrID ID, const IInteraction& SingleInteraction);
 	bool                RegisterInteraction(CStrID ID, PInteraction&& Interaction);
 
 	const CAbility*     FindAbility(CStrID ID) const;

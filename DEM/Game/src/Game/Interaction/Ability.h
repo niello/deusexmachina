@@ -1,6 +1,5 @@
 #pragma once
 #include <Data/StringID.h>
-//#include <sol/forward.hpp>
 #include <sol/sol.hpp>
 #include <vector>
 #include <set>
@@ -15,20 +14,11 @@
 // - player interactions (explore object to read its textual description)
 // - editor and cheat tools (select entity, teleport it to point)
 
-namespace Data
-{
-	class CParams;
-}
-
 namespace DEM::Game
 {
 
-//???make it struct accessible only from the CInteractionManager? With no logic, all logic there too,
-// fed by CInteractionContext objects. Or contexts use manager and implement logic?
-class CAbility
+struct CAbility
 {
-protected:
-
 	std::string         IconID;
 	std::string         Name;
 	std::string         Description;
@@ -36,19 +26,7 @@ protected:
 	std::vector<CStrID> Actions;
 	std::set<CStrID>    Tags;
 
-	// scripted condition IsAvailableFor(SelectedActors)
-	//???load a chunk of code as lua function? need context, not only SelectedActors.
-	//For example, if function is CheckAllHaveSkill(SelectedActors, "Mechanics")
-	//Here we don't know about the second arg.
-	// Add "local SelectedTargets = ...; return " to the condition and it is set for sol3
-	// Store as sol::load_result/protected_function, not as string. Can load precompiled, if ability desc is compiled to PRM
-	sol::protected_function Condition;
-
-public:
-
-	static CAbility CreateFromParams(const Data::CParams& Params);
-
-	//???need something specific for switchable abilities (on-off) or is controlled from outside?
+	sol::function       AvailabilityCondition;
 };
 
 }
