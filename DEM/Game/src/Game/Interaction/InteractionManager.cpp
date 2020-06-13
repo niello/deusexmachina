@@ -197,8 +197,9 @@ const IInteraction* CInteractionManager::ValidateInteraction(const CAbility& Abi
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	// If selected ability became unavailable, reset to default one
 	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
+
+	// If selected ability became unavailable, reset to default one
 	if (!pAbility)
 	{
 		Context.Ability = _DefaultAbility;
@@ -211,10 +212,16 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	// Validate current candidate interaction, if set
 	if (Context.IsInteractionSet())
 	{
-		auto pInteraction = ValidateInteraction(*pAbility, Context.InteractionIndex, Context);
-
-		// If we already started to select targets, stick to the selected interaction
-		if (pInteraction && Context.SelectedTargetCount) return true;
+		if (auto pInteraction = ValidateInteraction(*pAbility, Context.InteractionIndex, Context))
+		{
+			// If we already started to select targets, stick to the selected interaction
+			if (Context.SelectedTargetCount) return true;
+		}
+		else
+		{
+			ResetCandidateInteraction(Context);
+			return false;
+		}
 	}
 
 	// Select first interaction in the current ability that accepts current target
@@ -228,7 +235,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		}
 	}
 
-	Context.InteractionIndex = CInteractionContext::NO_INTERACTION;
+	// No interaction found for the current context state
+	ResetCandidateInteraction(Context);
 	return false;
 }
 //---------------------------------------------------------------------

@@ -8,20 +8,17 @@
 namespace DEM::Game
 {
 struct CTargetInfo;
-class CTarget;
+class ITargetFilter; //ITargetType?
 
 class IInteraction
 {
 public:
 
-	// target: filter object, is mandatory, target count
+	// target: filter object, is optional, target slot count for this record
+	// can mix mandatory and optional - some optional targets may require subsequent mandatory input!
+	//???what if first target is optional? ignore? always set mandatory on load w/warning?
 
-	// list of different targets
-	// list of target slots? or instead in the first list store number of slots? is enough?
-	// number of mandatory targets, other slots will be optional
-
-	// A, A, A, B, A, B vs A(4), B(2), easier, but less control over the order
-	// but still can duplicate descs and write A(3), B(1), A(1), B(1). Not really oftenly required?
+	// Name, Icon, Cursor, Desc?
 
 	virtual U32  GetMaxTargetCount() const = 0;
 

@@ -12,9 +12,10 @@ namespace DEM::Game
 
 struct CTargetInfo
 {
-	HEntity            Entity;
 	Scene::CSceneNode* pNode = nullptr;
 	vector3            Point;
+	HEntity            Entity;
+	//!!!dtPolyRef NavPolyRef;
 	bool               Valid = false;
 };
 
