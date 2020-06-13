@@ -39,7 +39,7 @@ const CAbility* CInteractionManager::FindAbility(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-const IInteraction* CInteractionManager::FindAction(CStrID ID) const
+const IInteraction* CInteractionManager::FindInteraction(CStrID ID) const
 {
 	auto It = _Interactions.find(ID);
 	return (It == _Interactions.cend()) ? nullptr : It->second.get();

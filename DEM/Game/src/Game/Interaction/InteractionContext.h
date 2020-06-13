@@ -27,7 +27,6 @@ struct CInteractionContext
 	std::vector<CTarget*> SelectedTargets;
 	UPTR                  SelectedTargetCount = 0;
 
-	//???store prev frame info? store time we are targeted at this object? for tooltip.
 	CTargetInfo           Target;
 
 	bool IsSelectedActor(HEntity ID) const { return std::find(SelectedActors.cbegin(), SelectedActors.cend(), ID) != SelectedActors.cend(); }

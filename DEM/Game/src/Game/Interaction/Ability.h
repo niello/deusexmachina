@@ -1,5 +1,7 @@
 #pragma once
 #include <Data/StringID.h>
+//#include <sol/forward.hpp>
+#include <sol/sol.hpp>
 #include <vector>
 #include <set>
 
@@ -35,6 +37,12 @@ protected:
 	std::set<CStrID>    Tags;
 
 	// scripted condition IsAvailableFor(SelectedActors)
+	//???load a chunk of code as lua function? need context, not only SelectedActors.
+	//For example, if function is CheckAllHaveSkill(SelectedActors, "Mechanics")
+	//Here we don't know about the second arg.
+	// Add "local SelectedTargets = ...; return " to the condition and it is set for sol3
+	// Store as sol::load_result/protected_function, not as string. Can load precompiled, if ability desc is compiled to PRM
+	sol::protected_function Condition;
 
 public:
 

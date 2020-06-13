@@ -28,13 +28,14 @@ public:
 	bool                RegisterInteraction(CStrID ID, PInteraction&& Interaction);
 
 	const CAbility*     FindAbility(CStrID ID) const;
-	const IInteraction* FindAction(CStrID ID) const;
+	const IInteraction* FindInteraction(CStrID ID) const;
 
 	bool                IsAbilityAvailable(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
 	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID);
 	bool                UpdateCandidateInteraction(CInteractionContext& Context);
 	bool                AcceptTarget(CInteractionContext& Context);
-	// Revert
+	//bool Revert(CInteractionContext& Context);
+	//void Reset(CInteractionContext& Context);
 	bool                ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
 };
 
