@@ -139,28 +139,36 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 {
 	if (Context.Ability == AbilityID) return true;
 	if (!IsAbilityAvailable(AbilityID, Context.SelectedActors)) return false;
-	// if there is another ability and/or candidate action selected, reset them and target slots
+
 	Context.Ability = AbilityID;
+	Context.Interaction = CStrID::Empty;
+	Context.SelectedTargets.clear();
+	Context.SelectedTargetCount = 0;
+
 	// immediately check ability actions for auto-satisfied targets, AcceptTarget if so
+	//???only first interaction(s)? auto targets must not be mixed in one ability with selectable ones,
+	//at least they must go first. If additional condition disables them, it is OK.
+	//it is much like UpdateCandidateInteraction but with auto-confirmation of target
+
 	return false;
 }
 //---------------------------------------------------------------------
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
+	// check if Ability is still valid, reset if not
+	//???set default ability if reset instead of failing? really need to do it externally?
+	if (!Context.Ability) return false;
+
 	if (Context.Interaction)
 	{
+		// check if additional condition from ability is still valid (FIXME: linear search, because order is important)
 		// check if Interaction is still valid, reset if not
-	}
-
-	if (Context.Ability)
-	{
-		// check if Ability is still valid, reset if not
 	}
 
 	if (Context.SelectedTargetCount)
 	{
-		// check if selecated targets are still valid, reset if not
+		// check if selected targets are still valid, reset if not
 	}
 
 	if (!Context.SelectedTargetCount)

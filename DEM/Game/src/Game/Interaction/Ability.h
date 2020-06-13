@@ -4,9 +4,9 @@
 #include <vector>
 #include <set>
 
-// Ability is a tool that describes a way to interact with the game. It is kind of
-// context which helps to select the most appropriate action. Some abilities provide
-// only single action, some can provide lots of them for different targets.
+// Ability is a tool that describes a way to interact with the game. It is a context
+// which helps to select the most appropriate action. Some abilities provide only a
+// single action, some can provide lots of them for different targets.
 // Examples are:
 // - default interaction (talk with friendly NPC, attack hostile one, walk a navmesh)
 // - character skills (mechanics can be used to repair broken automatons or disarm traps)
