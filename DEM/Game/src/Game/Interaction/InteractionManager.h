@@ -23,10 +23,11 @@ protected:
 
 	std::map<CStrID, CAbility>     _Abilities;
 	std::map<CStrID, PInteraction> _Interactions;
+	sol::state_view                _Lua;
 
 public:
 
-	CInteractionManager();
+	CInteractionManager(sol::state_view Lua);
 	~CInteractionManager();
 
 	bool                RegisterAbility(CStrID ID, CAbility&& Ability);

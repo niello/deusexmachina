@@ -1,11 +1,13 @@
 #include "InteractionManager.h"
 #include <Game/Interaction/Interaction.h>
 #include <Game/Interaction/InteractionContext.h>
+#include <Data/Params.h>
+#include <Data/DataArray.h>
 
 namespace DEM::Game
 {
 
-CInteractionManager::CInteractionManager() = default;
+CInteractionManager::CInteractionManager(sol::state_view Lua) : _Lua(std::move(Lua)) {}
 CInteractionManager::~CInteractionManager() = default;
 
 bool CInteractionManager::RegisterAbility(CStrID ID, CAbility&& Ability)
@@ -24,35 +26,52 @@ bool CInteractionManager::RegisterAbility(CStrID ID, const Data::CParams& Params
 {
 	CAbility Ability;
 
-	// TODO: read Actions, Icon, Name etc
-	std::string IsAvailable;
+	Ability.IconID = Params.Get(CStrID("Icon"), CString::Empty);
+	Ability.Name = Params.Get(CStrID("Name"), CString::Empty);
+	Ability.Description = Params.Get(CStrID("Description"), CString::Empty);
+	const std::string IsAvailable = Params.Get(CStrID("IsAvailable"), CString::Empty);
 
-	//!!!DBG TMP! use sol::state_view here, pass from outside. Optional?
-	sol::state Lua;
-	Lua.open_libraries(sol::lib::base);
-	Lua["print"] = [](lua_State* L)
+	Data::PDataArray Tags;
+	if (Params.TryGet<Data::PDataArray>(Tags, CStrID("Tags")))
+		for (const auto& TagData : *Tags)
+			Ability.Tags.insert(CStrID(TagData.GetValue<CString>().CStr()));
+
+	Data::PDataArray Actions;
+	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Actions")))
 	{
-		const int n = lua_gettop(L); // number of arguments
-		for (int i = 1; i <= n; ++i)
+		for (const auto& ActionData : *Actions)
 		{
-			if (i > 1) ::Sys::Log("\t");
+			if (auto pActionStr = ActionData.As<CString>())
+			{
+				Ability.Interactions.emplace_back(CStrID(pActionStr->CStr()), sol::function());
+			}
+			else if (auto pActionDesc = ActionData.As<Data::PParams>())
+			{
+				CString ActID;
+				if ((*pActionDesc)->TryGet<CString>(ActID, CStrID("ID")))
+				{
+					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
+					// need to save anywhere in this Ability's table?
+					sol::function ConditionFunc;
+					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
+					if (!Condition.empty())
+					{
+						auto LoadedCondition = _Lua.load("local Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
+						if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
+					}
 
-			size_t Length;
-			if (auto s = lua_tolstring(L, i, &Length))
-				::Sys::Log(s);
-			else
-				::Sys::Log("<unknown>");
+					Ability.Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
+				}
+			}
 		}
-		::Sys::Log("\n");
-		return 0;
-	};
+	}
 
 	// TODO: pushes the compiled chunk as a Lua function on top of the stack,
 	// need to save anywhere in this Ability's table?
 	if (!IsAvailable.empty())
 	{
-		if (auto LoadedCondition = Lua.load("local SelectedActors = ...; return " + IsAvailable, ID.CStr()))
-			Ability.AvailabilityCondition = LoadedCondition;
+		auto LoadedCondition = _Lua.load("local SelectedActors = ...; return " + IsAvailable, ID.CStr());
+		if (LoadedCondition.valid()) Ability.AvailabilityCondition = LoadedCondition;
 	}
 
 	return RegisterAbility(ID, std::move(Ability));

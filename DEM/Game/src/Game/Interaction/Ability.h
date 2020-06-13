@@ -19,14 +19,15 @@ namespace DEM::Game
 
 struct CAbility
 {
-	std::string         IconID;
-	std::string         Name;
-	std::string         Description;
+	using CRecord = std::pair<CStrID, sol::function>; // Interaction ID -> optional condition
 
-	std::vector<CStrID> Actions;
-	std::set<CStrID>    Tags;
+	std::string          IconID;
+	std::string          Name;
+	std::string          Description;
+	sol::function        AvailabilityCondition;
 
-	sol::function       AvailabilityCondition;
+	std::vector<CRecord> Interactions;
+	std::set<CStrID>     Tags;
 };
 
 }

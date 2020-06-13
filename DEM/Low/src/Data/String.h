@@ -58,12 +58,12 @@ public:
 	bool			ContainsAny(const char* pCharSet) const { return pCharSet && pString && !!strpbrk(pString, pCharSet); }
 	bool			ContainsOnly(const char* pCharSet) const;
 
-	const char*		CStr() const { return pString; }
+	const char*		CStr() const { return pString ? pString : ""; }
 	UPTR			GetLength() const { return Length; }
 	bool			IsEmpty() const { return !pString || !*pString; }
 	bool			IsValid() const { return pString && *pString; }
 
-	operator		const char*() const { return pString; }
+	operator		const char*() const { return pString ? pString : ""; }
 	operator		bool() const { return pString && *pString; }
 
 	//???simplify by using const "" instead of nullptr in CString::pString?
