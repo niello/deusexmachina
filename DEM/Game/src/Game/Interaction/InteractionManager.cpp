@@ -7,8 +7,21 @@
 namespace DEM::Game
 {
 
-CInteractionManager::CInteractionManager(sol::state_view Lua) : _Lua(std::move(Lua)) {}
+CInteractionManager::CInteractionManager(sol::state_view Lua)
+	: _Lua(std::move(Lua))
+{
+	//???right here or call methods from other CPPs? Like CTargetInfo::ScriptInterface(sol::state_view Lua)
+	//!!!needs definition of pointer types!
+	// TODO: add traits for HEntity, add bindings for vector3 and CSceneNode
+	_Lua.new_usertype<CTargetInfo>("TargetInfo",
+		"Entity", &CTargetInfo::Entity,
+		//"Node", &CTargetInfo::pNode,
+		"Point", &CTargetInfo::Point); // there is also &CTargetInfo::Valid
+}
+//---------------------------------------------------------------------
+
 CInteractionManager::~CInteractionManager() = default;
+//---------------------------------------------------------------------
 
 bool CInteractionManager::RegisterAbility(CStrID ID, CAbility&& Ability)
 {
