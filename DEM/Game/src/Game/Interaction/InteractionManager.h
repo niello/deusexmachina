@@ -26,6 +26,8 @@ protected:
 	sol::state_view                _Lua;
 	CStrID                         _DefaultAbility;
 
+	const IInteraction* ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context);
+
 public:
 
 	CInteractionManager(sol::state_view Lua);
@@ -38,14 +40,14 @@ public:
 	void                SetDefaultAbility(CStrID ID) { _DefaultAbility = ID; }
 
 	const CAbility*     FindAbility(CStrID ID) const;
+	const CAbility*     FindAvailableAbility(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
 	const IInteraction* FindInteraction(CStrID ID) const;
 
-	bool                IsAbilityAvailable(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
 	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID);
+	void                ResetCandidateInteraction(CInteractionContext& Context);
 	bool                UpdateCandidateInteraction(CInteractionContext& Context);
 	bool                AcceptTarget(CInteractionContext& Context);
 	//bool Revert(CInteractionContext& Context);
-	//void Reset(CInteractionContext& Context);
 	bool                ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
 };
 

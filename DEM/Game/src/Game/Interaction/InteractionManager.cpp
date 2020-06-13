@@ -110,19 +110,13 @@ const CAbility* CInteractionManager::FindAbility(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-const IInteraction* CInteractionManager::FindInteraction(CStrID ID) const
-{
-	auto It = _Interactions.find(ID);
-	return (It == _Interactions.cend()) ? nullptr : It->second.get();
-}
-//---------------------------------------------------------------------
-
-bool CInteractionManager::IsAbilityAvailable(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const
+// Returns found ability only if it is available for the provided actor selection
+const CAbility* CInteractionManager::FindAvailableAbility(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const
 {
 	auto pAbility = FindAbility(AbilityID);
-	if (!pAbility) return false;
+	if (!pAbility) return nullptr;
 
-	if (!pAbility->AvailabilityCondition) return true;
+	if (!pAbility->AvailabilityCondition) return pAbility;
 
 	auto Result = pAbility->AvailabilityCondition(SelectedActors);
 	if (!Result.valid())
@@ -131,19 +125,26 @@ bool CInteractionManager::IsAbilityAvailable(CStrID AbilityID, const std::vector
 		::Sys::Error(Error.what());
 	}
 
-	return Result.valid() ? Result : false;
+	return (Result.valid() && Result) ? pAbility : nullptr;
+}
+//---------------------------------------------------------------------
+
+const IInteraction* CInteractionManager::FindInteraction(CStrID ID) const
+{
+	auto It = _Interactions.find(ID);
+	return (It == _Interactions.cend()) ? nullptr : It->second.get();
 }
 //---------------------------------------------------------------------
 
 bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID AbilityID)
 {
 	if (Context.Ability == AbilityID) return true;
-	if (!IsAbilityAvailable(AbilityID, Context.SelectedActors)) return false;
+
+	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
+	if (!pAbility) return false;
 
 	Context.Ability = AbilityID;
-	Context.InteractionIndex = CInteractionContext::NO_INTERACTION;
-	Context.SelectedTargets.clear();
-	Context.SelectedTargetCount = 0;
+	ResetCandidateInteraction(Context);
 
 	// immediately check ability actions for auto-satisfied targets, AcceptTarget if so
 	//???only first interaction(s)? auto targets must not be mixed in one ability with selectable ones,
@@ -154,54 +155,76 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 }
 //---------------------------------------------------------------------
 
+void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context)
+{
+	Context.InteractionIndex = CInteractionContext::NO_INTERACTION;
+	Context.SelectedTargets.clear();
+	Context.SelectedTargetCount = 0;
+}
+//---------------------------------------------------------------------
+
+const IInteraction* CInteractionManager::ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context)
+{
+	const auto& [ID, Condition] = Ability.Interactions[Index];
+
+	// Check additional condition from the ability itself
+	if (Condition)
+	{
+		auto Result = Condition(Context.Target);
+		if (!Result.valid())
+		{
+			sol::error Error = Result;
+			::Sys::Error(Error.what());
+			return nullptr;
+		}
+		else if (!Result) return nullptr;
+	}
+
+	// Validate interaction itself
+	auto pInteraction = FindInteraction(ID);
+	if (!pInteraction) return nullptr;
+
+	//???some Lua function for interaction availability check?
+
+	// Validate selected targets, their state might change
+	for (U32 i = 0; i < Context.SelectedTargetCount; ++i)
+		if (!pInteraction->IsTargetValid(i, Context.SelectedTargets[i]))
+			return nullptr;
+
+	return pInteraction;
+}
+//---------------------------------------------------------------------
+
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
 	// If selected ability became unavailable, reset to default one
-	if (!IsAbilityAvailable(Context.Ability, Context.SelectedActors))
-		Context.Ability = _DefaultAbility;
-
-	auto pAbility = FindAbility(Context.Ability);
-	if (!pAbility) return false;
-
-	if (Context.IsInteractionSet())
+	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
+	if (!pAbility)
 	{
-		// check if additional condition from ability is still valid (FIXME: linear search, because order is important)
-		// check if Interaction is still valid, reset if not
+		Context.Ability = _DefaultAbility;
+		ResetCandidateInteraction(Context);
+
+		pAbility = FindAbility(Context.Ability);
+		if (!pAbility) return false;
 	}
 
-	// If we started to select targets, the interaction is fixed
-	if (Context.SelectedTargetCount)
+	// Validate current candidate interaction, if set
+	if (Context.IsInteractionSet())
 	{
-		// check if selected targets are still valid, reset if not
-		// if was NOT reset, return true;
+		auto pInteraction = ValidateInteraction(*pAbility, Context.InteractionIndex, Context);
+
+		// If we already started to select targets, stick to the selected interaction
+		if (pInteraction && Context.SelectedTargetCount) return true;
 	}
 
 	// Select first interaction in the current ability that accepts current target
 	for (U32 i = 0; i < pAbility->Interactions.size(); ++i)
 	{
-		const auto& [ID, Condition] = pAbility->Interactions[i];
-
-		// Check additional condition from the ability itself
-		if (Condition)
+		auto pInteraction = ValidateInteraction(*pAbility, i, Context);
+		if (pInteraction && pInteraction->IsTargetValid(0, Context.Target))
 		{
-			auto Result = Condition(Context.Target);
-			if (!Result.valid())
-			{
-				sol::error Error = Result;
-				::Sys::Error(Error.what());
-				continue;
-			}
-			else if (!Result) continue;
-		}
-
-		// Check current target compatibility with the first target of this interaction
-		if (auto pInteraction = FindInteraction(ID))
-		{
-			if (pInteraction->IsTargetValid(0, Context.Target))
-			{
-				Context.InteractionIndex = i;
-				return true;
-			}
+			Context.InteractionIndex = i;
+			return true;
 		}
 	}
 
