@@ -24,6 +24,7 @@ protected:
 	std::map<CStrID, CAbility>     _Abilities;
 	std::map<CStrID, PInteraction> _Interactions;
 	sol::state_view                _Lua;
+	CStrID                         _DefaultAbility;
 
 public:
 
@@ -34,6 +35,7 @@ public:
 	bool                RegisterAbility(CStrID ID, const Data::CParams& Params);
 	//bool                RegisterAbility(CStrID ID, const IInteraction& SingleInteraction);
 	bool                RegisterInteraction(CStrID ID, PInteraction&& Interaction);
+	void                SetDefaultAbility(CStrID ID) { _DefaultAbility = ID; }
 
 	const CAbility*     FindAbility(CStrID ID) const;
 	const IInteraction* FindInteraction(CStrID ID) const;

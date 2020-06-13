@@ -141,7 +141,7 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 	if (!IsAbilityAvailable(AbilityID, Context.SelectedActors)) return false;
 
 	Context.Ability = AbilityID;
-	Context.Interaction = CStrID::Empty;
+	Context.InteractionIndex = CInteractionContext::NO_INTERACTION;
 	Context.SelectedTargets.clear();
 	Context.SelectedTargetCount = 0;
 
@@ -156,33 +156,63 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 
 bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Context)
 {
-	// check if Ability is still valid, reset if not
-	//???set default ability if reset instead of failing? really need to do it externally?
-	if (!Context.Ability) return false;
+	// If selected ability became unavailable, reset to default one
+	if (!IsAbilityAvailable(Context.Ability, Context.SelectedActors))
+		Context.Ability = _DefaultAbility;
 
-	if (Context.Interaction)
+	auto pAbility = FindAbility(Context.Ability);
+	if (!pAbility) return false;
+
+	if (Context.IsInteractionSet())
 	{
 		// check if additional condition from ability is still valid (FIXME: linear search, because order is important)
 		// check if Interaction is still valid, reset if not
 	}
 
+	// If we started to select targets, the interaction is fixed
 	if (Context.SelectedTargetCount)
 	{
 		// check if selected targets are still valid, reset if not
+		// if was NOT reset, return true;
 	}
 
-	if (!Context.SelectedTargetCount)
+	// Select first interaction in the current ability that accepts current target
+	for (U32 i = 0; i < pAbility->Interactions.size(); ++i)
 	{
-		// select first action in ability that accepts current target
+		const auto& [ID, Condition] = pAbility->Interactions[i];
+
+		// Check additional condition from the ability itself
+		if (Condition)
+		{
+			auto Result = Condition(Context.Target);
+			if (!Result.valid())
+			{
+				sol::error Error = Result;
+				::Sys::Error(Error.what());
+				continue;
+			}
+			else if (!Result) continue;
+		}
+
+		// Check current target compatibility with the first target of this interaction
+		if (auto pInteraction = FindInteraction(ID))
+		{
+			if (pInteraction->IsTargetValid(0, Context.Target))
+			{
+				Context.InteractionIndex = i;
+				return true;
+			}
+		}
 	}
 
-	return true;
+	Context.InteractionIndex = CInteractionContext::NO_INTERACTION;
+	return false;
 }
 //---------------------------------------------------------------------
 
 bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 {
-	if (!Context.Interaction || Context.SelectedTargetCount == Context.SelectedTargets.size()) return false;
+	if (Context.SelectedTargetCount >= Context.SelectedTargets.size()) return false;
 
 	// if no target and next action target is not auto-satisfiable (Self, SourceItem etc), exit
 	// validate current target against candidate action, exit if invalid
