@@ -294,7 +294,7 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 		", Interaction: " + pAbility->Interactions[Context.InteractionIndex].first.CStr() +
 		", Actor: " + std::to_string(*Context.SelectedActors.begin())).c_str());
 
-	return pInteraction->Execute(Enqueue);
+	return pInteraction->Execute(Context, Enqueue);
 }
 //---------------------------------------------------------------------
 

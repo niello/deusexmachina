@@ -8,6 +8,7 @@
 namespace DEM::Game
 {
 using PTargetFilter = std::unique_ptr<class ITargetFilter>;
+struct CInteractionContext;
 
 class CInteraction
 {
@@ -39,7 +40,7 @@ public:
 	const auto&          GetName() const { return _Name; }
 	const std::string&   GetCursorImageID(U32 Index) const; //!!!if target one is empty, return from this class
 
-	virtual bool         Execute(bool Enqueue) const = 0;
+	virtual bool         Execute(CInteractionContext& Context, bool Enqueue) const = 0;
 };
 
 }
