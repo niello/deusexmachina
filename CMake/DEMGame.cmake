@@ -55,11 +55,13 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/ECS/Components/CharacterControllerComponent.h
 	DEM/Game/src/Game/ECS/Components/RigidBodyComponent.h
 	DEM/Game/src/Game/ECS/Components/SceneComponent.h
-	DEM/Game/src/Game/ECS/Components/SelectableComponent.h
 	DEM/Game/src/Game/Interaction/Ability.h
 	DEM/Game/src/Game/Interaction/Interaction.h
 	DEM/Game/src/Game/Interaction/InteractionContext.h
 	DEM/Game/src/Game/Interaction/InteractionManager.h
+	DEM/Game/src/Game/Interaction/SelectableComponent.h
+	DEM/Game/src/Game/Interaction/SelectableTargetFilter.h
+	DEM/Game/src/Game/Interaction/SelectInteraction.h
 	DEM/Game/src/Game/Interaction/TargetFilter.h
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
@@ -127,6 +129,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.cpp
 	DEM/Game/src/Game/Interaction/Interaction.cpp
 	DEM/Game/src/Game/Interaction/InteractionManager.cpp
+	DEM/Game/src/Game/Interaction/SelectInteraction.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp

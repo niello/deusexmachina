@@ -137,7 +137,7 @@ const CInteraction* CInteractionManager::FindInteraction(CStrID ID) const
 }
 //---------------------------------------------------------------------
 
-bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID AbilityID)
+bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID AbilityID, HEntity AbilitySource)
 {
 	if (Context.Ability == AbilityID) return true;
 
@@ -145,9 +145,18 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 	if (!pAbility) return false;
 
 	Context.Ability = AbilityID;
+	Context.AbilitySource = AbilitySource;
 	ResetCandidateInteraction(Context);
 
 	return false;
+}
+//---------------------------------------------------------------------
+
+void CInteractionManager::ResetAbility(CInteractionContext& Context)
+{
+	Context.Ability = CStrID::Empty;
+	Context.AbilitySource = {};
+	ResetCandidateInteraction(Context);
 }
 //---------------------------------------------------------------------
 
@@ -199,6 +208,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	if (!pAbility)
 	{
 		Context.Ability = _DefaultAbility;
+		Context.AbilitySource = {};
 		ResetCandidateInteraction(Context);
 
 		pAbility = FindAbility(Context.Ability);
@@ -219,6 +229,9 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 			return false;
 		}
 	}
+
+	//???if target entity is set, always try smart object first?
+	//it can return its own interaction, then must set it into the context
 
 	// Select first interaction in the current ability that accepts current target
 	for (U32 i = 0; i < pAbility->Interactions.size(); ++i)
@@ -269,15 +282,19 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 
 bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue)
 {
-	//!!!DBG TMP!
+	if (!Context.IsInteractionSet()) return false;
+
 	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
 	if (!pAbility) return false;
+	auto pInteraction = FindInteraction(pAbility->Interactions[Context.InteractionIndex].first);
+	if (!pInteraction) return false;
 
+	//!!!DBG TMP!
 	::Sys::Log(("Ability: " + Context.Ability.ToString() +
 		", Interaction: " + pAbility->Interactions[Context.InteractionIndex].first.CStr() +
 		", Actor: " + std::to_string(*Context.SelectedActors.begin())).c_str());
 
-	return true;
+	return pInteraction->Execute(Enqueue);
 }
 //---------------------------------------------------------------------
 

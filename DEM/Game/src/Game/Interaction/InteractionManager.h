@@ -43,7 +43,8 @@ public:
 	const CAbility*     FindAvailableAbility(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
 	const CInteraction* FindInteraction(CStrID ID) const;
 
-	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID);
+	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID, HEntity AbilitySource = {});
+	void                ResetAbility(CInteractionContext& Context);
 	void                ResetCandidateInteraction(CInteractionContext& Context);
 	bool                UpdateCandidateInteraction(CInteractionContext& Context);
 	bool                AcceptTarget(CInteractionContext& Context);
