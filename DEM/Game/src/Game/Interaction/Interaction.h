@@ -7,24 +7,39 @@
 
 namespace DEM::Game
 {
-struct CTargetInfo;
-class ITargetFilter; //ITargetType?
+using PTargetFilter = std::unique_ptr<class ITargetFilter>;
 
-class IInteraction
+class CInteraction
 {
+protected:
+
+	struct CTargetRecord
+	{
+		PTargetFilter Filter;
+		std::string   CursorImage;
+		U32           Count;
+		bool          Optional; // NB: can have mandatory target after optional
+	};
+
+	std::vector<CTargetRecord> _Targets;
+
+	std::string                _Name;
+	std::string                _CursorImage;
+
+	const CTargetRecord* GetTargetRecord(U32 Index) const;
+
 public:
 
-	// target: filter object, is optional, target slot count for this record
-	// can mix mandatory and optional - some optional targets may require subsequent mandatory input!
-	//???what if first target is optional? ignore? always set mandatory on load w/warning?
+	// AddTarget - or private and only in CScriptableInteraction?
 
-	// Name, Icon, Cursor, Desc?
+	U32                  GetMaxTargetCount() const;
+	const ITargetFilter* GetTargetFilter(U32 Index) const;
+	bool                 IsTargetOptional(U32 Index) const;
 
-	virtual U32  GetMaxTargetCount() const = 0;
+	const auto&          GetName() const { return _Name; }
+	const std::string&   GetCursorImageID(U32 Index) const; //!!!if target one is empty, return from this class
 
-	virtual bool IsTargetValid(U32 SlotIndex, const CTargetInfo& Target) const = 0;
-
-	virtual bool Execute() const = 0;
+	virtual bool         Execute() const = 0;
 };
 
 }

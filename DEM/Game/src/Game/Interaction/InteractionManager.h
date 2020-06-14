@@ -14,7 +14,7 @@ namespace Data
 
 namespace DEM::Game
 {
-using PInteraction = std::unique_ptr<class IInteraction>;
+using PInteraction = std::unique_ptr<class CInteraction>;
 struct CInteractionContext;
 
 class CInteractionManager
@@ -26,7 +26,7 @@ protected:
 	sol::state_view                _Lua;
 	CStrID                         _DefaultAbility;
 
-	const IInteraction* ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context);
+	const CInteraction* ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context);
 
 public:
 
@@ -35,13 +35,13 @@ public:
 
 	bool                RegisterAbility(CStrID ID, CAbility&& Ability);
 	bool                RegisterAbility(CStrID ID, const Data::CParams& Params);
-	//bool                RegisterAbility(CStrID ID, const IInteraction& SingleInteraction);
+	//bool                RegisterAbility(CStrID ID, const CInteraction& SingleInteraction);
 	bool                RegisterInteraction(CStrID ID, PInteraction&& Interaction);
 	void                SetDefaultAbility(CStrID ID) { _DefaultAbility = ID; }
 
 	const CAbility*     FindAbility(CStrID ID) const;
 	const CAbility*     FindAvailableAbility(CStrID AbilityID, const std::vector<HEntity>& SelectedActors) const;
-	const IInteraction* FindInteraction(CStrID ID) const;
+	const CInteraction* FindInteraction(CStrID ID) const;
 
 	bool                SelectAbility(CInteractionContext& Context, CStrID AbilityID);
 	void                ResetCandidateInteraction(CInteractionContext& Context);

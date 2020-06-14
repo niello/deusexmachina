@@ -1,6 +1,7 @@
 #include "InteractionManager.h"
 #include <Game/Interaction/Interaction.h>
 #include <Game/Interaction/InteractionContext.h>
+#include <Game/Interaction/TargetFilter.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 
@@ -129,7 +130,7 @@ const CAbility* CInteractionManager::FindAvailableAbility(CStrID AbilityID, cons
 }
 //---------------------------------------------------------------------
 
-const IInteraction* CInteractionManager::FindInteraction(CStrID ID) const
+const CInteraction* CInteractionManager::FindInteraction(CStrID ID) const
 {
 	auto It = _Interactions.find(ID);
 	return (It == _Interactions.cend()) ? nullptr : It->second.get();
@@ -146,11 +147,6 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 	Context.Ability = AbilityID;
 	ResetCandidateInteraction(Context);
 
-	// immediately check ability actions for auto-satisfied targets, AcceptTarget if so
-	//???only first interaction(s)? auto targets must not be mixed in one ability with selectable ones,
-	//at least they must go first. If additional condition disables them, it is OK.
-	//it is much like UpdateCandidateInteraction but with auto-confirmation of target
-
 	return false;
 }
 //---------------------------------------------------------------------
@@ -163,9 +159,13 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 }
 //---------------------------------------------------------------------
 
-const IInteraction* CInteractionManager::ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context)
+const CInteraction* CInteractionManager::ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context)
 {
 	const auto& [ID, Condition] = Ability.Interactions[Index];
+
+	// Validate interaction itself
+	auto pInteraction = FindInteraction(ID);
+	if (!pInteraction) return nullptr;
 
 	// Check additional condition from the ability itself
 	if (Condition)
@@ -180,15 +180,11 @@ const IInteraction* CInteractionManager::ValidateInteraction(const CAbility& Abi
 		else if (!Result) return nullptr;
 	}
 
-	// Validate interaction itself
-	auto pInteraction = FindInteraction(ID);
-	if (!pInteraction) return nullptr;
-
 	//???some Lua function for interaction availability check?
 
 	// Validate selected targets, their state might change
 	for (U32 i = 0; i < Context.SelectedTargetCount; ++i)
-		if (!pInteraction->IsTargetValid(i, Context.SelectedTargets[i]))
+		if (!pInteraction->GetTargetFilter(i)->IsTargetValid(Context, i))
 			return nullptr;
 
 	return pInteraction;
@@ -228,7 +224,9 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	for (U32 i = 0; i < pAbility->Interactions.size(); ++i)
 	{
 		auto pInteraction = ValidateInteraction(*pAbility, i, Context);
-		if (pInteraction && pInteraction->IsTargetValid(0, Context.Target))
+		if (pInteraction &&
+			pInteraction->GetMaxTargetCount() > 0 &&
+			pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
 		{
 			Context.InteractionIndex = i;
 			return true;
@@ -243,35 +241,43 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 
 bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 {
-	if (Context.SelectedTargetCount >= Context.SelectedTargets.size()) return false;
+	if (!Context.IsInteractionSet()) return false;
 
-	// if no target and next action target is not auto-satisfiable (Self, SourceItem etc), exit
-	// validate current target against candidate action, exit if invalid
+	// FIXME: probably redundant search, may store InteractionID in a context if ability is not required here
+	auto pAbility = FindAbility(Context.Ability);
+	if (!pAbility) return false;
+	auto pInteraction = FindInteraction(pAbility->Interactions[Context.InteractionIndex].first);
+	if (!pInteraction) return false;
 
+	if (Context.SelectedTargetCount >= pInteraction->GetMaxTargetCount()) return false;
+
+	if (!pInteraction->GetTargetFilter(Context.SelectedTargetCount)->IsTargetValid(Context)) return false;
+
+	// If just starget to select targets, allocate slots for them
 	if (Context.SelectedTargets.empty())
 	{
-		//Context.SelectedTargets.resize(Context.Interaction->GetMaxTargetCount());
+		Context.SelectedTargets.resize(pInteraction->GetMaxTargetCount());
 		Context.SelectedTargetCount = 0;
 	}
 
-	// add target to the selected list
-/*
-	if (auto Target = _InteractionContext.Interaction->CreateTarget(_InteractionContext.SelectedTargetCount))
-	{
-		_InteractionContext.SelectedTargets[_InteractionContext.SelectedTargetCount] = Target;
-		++_InteractionContext.SelectedTargetCount;
-		if (_InteractionContext.SelectedTargetCount == _InteractionContext.SelectedTargets.size())
-			_InteractionContext.Interaction->Execute();
-	}
-*/
+	Context.SelectedTargets[Context.SelectedTargetCount] = Context.Target;
+	++Context.SelectedTargetCount;
 
-	return false;
+	return true;
 }
 //---------------------------------------------------------------------
 
 bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool Enqueue)
 {
-	return false;
+	//!!!DBG TMP!
+	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
+	if (!pAbility) return false;
+
+	::Sys::Log(("Ability: " + Context.Ability.ToString() +
+		", Interaction: " + pAbility->Interactions[Context.InteractionIndex].first.CStr() +
+		", Actor: " + std::to_string(*Context.SelectedActors.begin())).c_str());
+
+	return true;
 }
 //---------------------------------------------------------------------
 

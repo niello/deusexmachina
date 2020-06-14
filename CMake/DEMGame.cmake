@@ -60,8 +60,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/Interaction.h
 	DEM/Game/src/Game/Interaction/InteractionContext.h
 	DEM/Game/src/Game/Interaction/InteractionManager.h
-	DEM/Game/src/Game/Interaction/Target.h
-	DEM/Game/src/Game/Interaction/TargetEntity.h
+	DEM/Game/src/Game/Interaction/TargetFilter.h
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h
@@ -126,8 +125,8 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/ECS/EntityTemplateLoader.cpp
 	DEM/Game/src/Game/ECS/GameWorld.cpp
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.cpp
+	DEM/Game/src/Game/Interaction/Interaction.cpp
 	DEM/Game/src/Game/Interaction/InteractionManager.cpp
-	DEM/Game/src/Game/Interaction/TargetEntity.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp
