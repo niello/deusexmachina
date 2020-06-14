@@ -32,7 +32,6 @@ struct CInteractionContext
 
 	CTargetInfo              Target;
 
-	bool IsSelectedActor(HEntity ID) const { return std::find(SelectedActors.cbegin(), SelectedActors.cend(), ID) != SelectedActors.cend(); }
 	bool IsInteractionSet() const { return InteractionIndex != NO_INTERACTION; }
 	bool AreAllTargetsSet() const { return !SelectedTargets.empty() && SelectedTargets.size() == SelectedTargetCount; }
 };

@@ -13,10 +13,18 @@ public:
 
 	virtual bool Execute(CInteractionContext& Context, bool Enqueue) const override
 	{
-		if (!Enqueue) Context.SelectedActors.clear();
-		if (!Context.IsSelectedActor(Context.SelectedTargets[0].Entity))
-			Context.SelectedActors.push_back(Context.SelectedTargets[0].Entity);
-		return true;
+		if (Context.SelectedTargets.empty()) return false;
+
+		if (auto EntityID = Context.SelectedTargets[0].Entity)
+		{
+			auto& Selected = Context.SelectedActors;
+			if (!Enqueue) Selected.clear();
+			if (std::find(Selected.cbegin(), Selected.cend(), EntityID) == Selected.cend())
+				Selected.push_back(EntityID);
+			return true;
+		}
+
+		return false;
 	}
 };
 
