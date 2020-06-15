@@ -41,6 +41,7 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/App/StateHandler.h
 	DEM/Game/src/Game/Entity.h
 	DEM/Game/src/Game/GameLevel.h
+	DEM/Game/src/Game/GameSession.h
 	DEM/Game/src/Game/GameState.h
 	DEM/Game/src/Game/GameStateManager.h
 	DEM/Game/src/Game/Property.h

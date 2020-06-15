@@ -26,11 +26,10 @@ struct CInteractionContext
 	CStrID                   Ability;
 	HEntity                  AbilitySource; // E.g. item
 	U32                      InteractionIndex = NO_INTERACTION;
+	CTargetInfo              Target;
 	std::vector<HEntity>     SelectedActors;
 	std::vector<CTargetInfo> SelectedTargets;
 	U32                      SelectedTargetCount = 0;
-
-	CTargetInfo              Target;
 
 	bool IsInteractionSet() const { return InteractionIndex != NO_INTERACTION; }
 	bool AreAllTargetsSet() const { return !SelectedTargets.empty() && SelectedTargets.size() == SelectedTargetCount; }
