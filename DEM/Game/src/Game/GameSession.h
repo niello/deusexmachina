@@ -29,7 +29,7 @@ protected:
 
 public:
 
-	template<class T> void RegisterFeature(CStrID Name)
+	template<class T, typename... TArgs> T* RegisterFeature(CStrID Name, TArgs&&... Args)
 	{
 		static_assert(std::is_base_of_v<::Core::CRTTIBaseClass, T>,
 			"CGameSession::RegisterFeature() > Feature must be a subclass of CRTTIBaseClass");
@@ -38,8 +38,10 @@ public:
 		if (_Features.size() <= TypeIndex)
 			_Features.resize(TypeIndex + 1);
 
-		_Features[TypeIndex] = std::make_unique<T>();
-		_FeaturesByName.emplace(Name, _Features[TypeIndex].get());
+		_Features[TypeIndex] = std::make_unique<T>(std::forward<TArgs>(Args)...);
+		auto pFeature = _Features[TypeIndex].get();
+		_FeaturesByName.emplace(Name, pFeature);
+		return static_cast<T*>(pFeature);
 
 		// TODO: register in Lua right now? or remember name for delayed Lua state init?
 		//???or hack indexing instead of providing real Lua fields? Will require ID->Feature map here.

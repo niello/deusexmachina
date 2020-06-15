@@ -4,6 +4,7 @@
 
 namespace DEM::Game
 {
+RTTI_CLASS_IMPL(CGameWorld, ::Core::CRTTIBaseClass);
 
 CGameWorld::CGameWorld(Resources::CResourceManager& ResMgr)
 	: _ResMgr(ResMgr)

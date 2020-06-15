@@ -1,4 +1,5 @@
 #pragma once
+#include <Core/RTTIBaseClass.h>
 #include <Game/ECS/ComponentStorage.h>
 #include <Game/ECS/EntityTemplate.h>
 #include <Resources/ResourceManager.h>
@@ -16,8 +17,10 @@ namespace DEM::Game
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
 
-class CGameWorld final
+class CGameWorld final : public ::Core::CRTTIBaseClass // For registration in a CGameSession
 {
+	RTTI_CLASS_DECL;
+
 protected:
 
 	// Zero-based type index for fast component storage access
