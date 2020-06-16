@@ -1,4 +1,5 @@
 #pragma once
+#include <Game/GameSession.h>
 #include <Game/ECS/Entity.h>
 #include <Math/Vector3.h>
 
@@ -16,7 +17,6 @@ struct CTargetInfo
 	Scene::CSceneNode* pNode = nullptr;
 	vector3            Point;
 	HEntity            Entity;
-	//!!!dtPolyRef NavPolyRef;
 	bool               Valid = false;
 };
 

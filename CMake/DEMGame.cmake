@@ -2,6 +2,9 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/AI/ActorFwd.h
 	DEM/Game/src/AI/AILevel.h
 	DEM/Game/src/AI/AIServer.h
+	DEM/Game/src/AI/FormationManager.h
+	DEM/Game/src/AI/MoveInteraction.h
+	DEM/Game/src/AI/PassableTargetFilter.h
 	DEM/Game/src/AI/PropActorBrain.h
 	DEM/Game/src/AI/PropAIHints.h
 	DEM/Game/src/AI/PropSmartObject.h
@@ -78,6 +81,8 @@ set(DEM_L2_GAME_HEADERS
 set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/AI/AILevel.cpp
 	DEM/Game/src/AI/AIServer.cpp
+	DEM/Game/src/AI/FormationManager.cpp
+	DEM/Game/src/AI/MoveInteraction.cpp
 	DEM/Game/src/AI/PropActorBrain.cpp
 	DEM/Game/src/AI/PropActorBrainSI.cpp
 	DEM/Game/src/AI/PropAIHints.cpp

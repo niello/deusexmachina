@@ -2,7 +2,6 @@
 #include <Game/Interaction/TargetFilter.h>
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/SelectableComponent.h>
-#include <Game/GameSession.h>
 #include <Game/ECS/GameWorld.h>
 
 // Accepts only targets selectable by player
