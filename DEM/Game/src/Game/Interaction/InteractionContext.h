@@ -9,6 +9,7 @@ namespace Scene
 
 namespace DEM::Game
 {
+using PGameSession = Ptr<class CGameSession>;
 
 struct CTargetInfo
 {
@@ -23,6 +24,7 @@ struct CInteractionContext
 {
 	static inline constexpr auto NO_INTERACTION = std::numeric_limits<U32>().max();
 
+	PGameSession             Session;
 	CStrID                   Ability;
 	HEntity                  AbilitySource; // E.g. item
 	U32                      InteractionIndex = NO_INTERACTION;

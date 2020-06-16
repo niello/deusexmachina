@@ -16,7 +16,7 @@ protected:
 
 	struct CTargetRecord
 	{
-		PTargetFilter Filter;
+		PTargetFilter Filter; //???TODO: use C++/Lua callable instead?! ITargetFilter is just a functor.
 		std::string   CursorImage;
 		U32           Count;
 		bool          Optional; // NB: can have mandatory target after optional
@@ -31,14 +31,16 @@ protected:
 
 public:
 
-	// AddTarget - or private and only in CScriptableInteraction?
+	virtual ~CInteraction();
+
+	bool AddTarget(PTargetFilter&& Filter, std::string_view CursorImage = {}, U32 Count = 1, bool Optional = false);
 
 	U32                  GetMaxTargetCount() const;
 	const ITargetFilter* GetTargetFilter(U32 Index) const;
 	bool                 IsTargetOptional(U32 Index) const;
 
 	const auto&          GetName() const { return _Name; }
-	const std::string&   GetCursorImageID(U32 Index) const; //!!!if target one is empty, return from this class
+	const std::string&   GetCursorImageID(U32 Index) const;
 
 	virtual bool         Execute(CInteractionContext& Context, bool Enqueue) const = 0;
 };

@@ -1,7 +1,23 @@
 #include "Interaction.h"
+#include <Game/Interaction/TargetFilter.h>
 
 namespace DEM::Game
 {
+CInteraction::~CInteraction() = default;
+
+bool CInteraction::AddTarget(PTargetFilter&& Filter, std::string_view CursorImage, U32 Count, bool Optional)
+{
+	if (!Filter || !Count) return false;
+
+	CTargetRecord Rec;
+	Rec.Filter = std::move(Filter);
+	Rec.CursorImage = CursorImage;
+	Rec.Count = Count;
+	Rec.Optional = Optional;
+	_Targets.push_back(std::move(Rec));
+	return true;
+}
+//---------------------------------------------------------------------
 
 const CInteraction::CTargetRecord* CInteraction::GetTargetRecord(U32 Index) const
 {

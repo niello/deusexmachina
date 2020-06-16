@@ -130,6 +130,7 @@ set(DEM_L2_GAME_SOURCES
 	DEM/Game/src/Game/ECS/Components/ActionQueueComponent.cpp
 	DEM/Game/src/Game/Interaction/Interaction.cpp
 	DEM/Game/src/Game/Interaction/InteractionManager.cpp
+	DEM/Game/src/Game/Interaction/SelectInteraction.cpp
 	DEM/Game/src/Physics/PropPhysics.cpp
 	DEM/Game/src/Physics/PropTrigger.cpp
 	DEM/Game/src/Physics/PropTriggerSI.cpp

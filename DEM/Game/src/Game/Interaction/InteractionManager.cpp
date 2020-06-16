@@ -286,15 +286,30 @@ bool CInteractionManager::ExecuteInteraction(CInteractionContext& Context, bool 
 
 	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
 	if (!pAbility) return false;
-	auto pInteraction = FindInteraction(pAbility->Interactions[Context.InteractionIndex].first);
+	const CStrID InteractionID = pAbility->Interactions[Context.InteractionIndex].first;
+	auto pInteraction = FindInteraction(InteractionID);
 	if (!pInteraction) return false;
 
 	//!!!DBG TMP!
+	std::string Actor = Context.SelectedActors.empty() ? "none" : std::to_string(*Context.SelectedActors.begin());
 	::Sys::Log(("Ability: " + Context.Ability.ToString() +
-		", Interaction: " + pAbility->Interactions[Context.InteractionIndex].first.CStr() +
-		", Actor: " + std::to_string(*Context.SelectedActors.begin())).c_str());
+		", Interaction: " + InteractionID.CStr() +
+		", Actor: " + Actor + "\n").c_str());
 
 	return pInteraction->Execute(Context, Enqueue);
+}
+//---------------------------------------------------------------------
+
+const std::string& CInteractionManager::GetCursorImageID(CInteractionContext& Context) const
+{
+	//!!!DBG TMP!
+	static const std::string EmptyString;
+
+	auto pAbility = FindAbility(Context.Ability);
+	if (!pAbility) return EmptyString;
+	auto pInteraction = FindInteraction(pAbility->Interactions[Context.InteractionIndex].first);
+	if (!pInteraction) return EmptyString;
+	return pInteraction->GetCursorImageID(Context.SelectedTargetCount);
 }
 //---------------------------------------------------------------------
 

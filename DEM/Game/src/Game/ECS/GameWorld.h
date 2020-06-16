@@ -17,7 +17,9 @@ namespace DEM::Game
 typedef std::unique_ptr<class CGameWorld> PGameWorld;
 typedef Ptr<class CGameLevel> PGameLevel;
 
-class CGameWorld final : public ::Core::CRTTIBaseClass // For registration in a CGameSession
+// CRTTIBaseClass for registration in a CGameSession.
+// TODO: make CGameWorldSystem instead? With ECS world, current level, other levels etc inside.
+class CGameWorld final : public ::Core::CRTTIBaseClass
 {
 	RTTI_CLASS_DECL;
 
