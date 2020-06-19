@@ -6,6 +6,7 @@
 #include <acl/core/ansi_allocator.h>
 #include <acl/core/unique_ptr.h>
 #include <acl/algorithm/uniformly_sampled/encoder.h>
+#include <IL/il.h>
 
 namespace acl
 {
@@ -460,5 +461,41 @@ bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name
 	}
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+void InitImageProcessing()
+{
+	ilInit();
+}
+//---------------------------------------------------------------------
+
+void TermImageProcessing()
+{
+	ilShutDown();
+}
+//---------------------------------------------------------------------
+
+std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir,
+	const Data::CParams& TaskParams, CThreadSafeLog& Log)
+{
+	const auto SrcExtension = SrcPath.extension().generic_string();
+
+	const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
+	const auto DestPath = DestDir / (RsrcName + SrcExtension);
+
+	try
+	{
+		// TODO: copy as is for now, but may need format conversion or N one-channel to 1 multi-channel baking
+		fs::create_directories(DestPath.parent_path());
+		fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
+	}
+	catch (fs::filesystem_error& e)
+	{
+		Log.LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + e.what());
+		return {};
+	}
+
+	return DestPath.generic_string();
 }
 //---------------------------------------------------------------------

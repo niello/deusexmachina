@@ -198,3 +198,6 @@ bool WriteDEMMesh(const std::filesystem::path& DestPath, const std::map<std::str
 bool WriteDEMSkin(const std::filesystem::path& DestPath, const std::vector<CBone>& Bones, CThreadSafeLog& Log);
 bool WriteDEMAnimation(const std::filesystem::path& DestPath, acl::IAllocator& ACLAllocator, const acl::AnimationClip& Clip, const std::vector<std::string>& NodeNames, CThreadSafeLog& Log);
 bool WriteDEMScene(const std::filesystem::path& DestDir, const std::string& Name, Data::CParams&& Nodes, const Data::CSchemeSet& Schemes, const Data::CParams& TaskParams, bool HRD, bool Binary, CThreadSafeLog& Log);
+void InitImageProcessing();
+void TermImageProcessing();
+std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir, const Data::CParams& TaskParams, CThreadSafeLog& Log);

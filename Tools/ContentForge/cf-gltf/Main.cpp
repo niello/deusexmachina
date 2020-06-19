@@ -232,6 +232,7 @@ protected:
 	struct CContext
 	{
 		CThreadSafeLog&           Log;
+		Data::CParams&            TaskParams;
 
 		gltf::Document Doc;
 		std::unique_ptr<gltf::GLTFResourceReader> ResourceReader;
@@ -273,10 +274,18 @@ public:
 		// Set default before parsing command line
 		_SchemeFile = "../schemes/scene.dss";
 		_SettingsFile = "../schemes/settings.hrd";
+
+		InitImageProcessing();
+	}
+
+	~CGLTFTool()
+	{
+		TermImageProcessing();
 	}
 
 	virtual bool SupportsMultithreading() const override
 	{
+		// TODO: check DevIL (Init/TermImageProcessing)
 		// TODO: CStringID and multiple tasks writing to one output file
 		return false;
 	}
@@ -352,7 +361,7 @@ public:
 
 		// Open glTF document
 
-		CContext Ctx{ Task.Log };
+		CContext Ctx{ Task.Log, Task.Params };
 
 		Ctx.SrcFolder = Task.SrcFilePath.parent_path();
 
@@ -1074,24 +1083,11 @@ public:
 			return false;
 		}
 
-		Ctx.Log.LogDebug("Texture image " + Image.id + ": " + Image.uri + " (" + Image.name + ')');
+		Ctx.Log.LogDebug("Texture image " + Image.id + ": " + Image.uri + (Image.name.empty() ? "" : ", name: " + Image.name));
 
 		const auto SrcPath = Ctx.SrcFolder / Image.uri;
-
-		const auto RsrcName = GetValidResourceName(fs::path(Image.uri).stem().string());
-		const auto DestPath = Ctx.TexturePath / (RsrcName + fs::path(Image.uri).extension().generic_string());
-
-		try
-		{
-			// TODO: copy as is for now, but may need format conversion or N one-channel to 1 multi-channel baking
-			fs::create_directories(DestPath.parent_path());
-			fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
-		}
-		catch (fs::filesystem_error& e)
-		{
-			Ctx.Log.LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + e.what());
-			return false;
-		}
+		const auto DestPath = WriteTexture(Ctx.SrcFolder / Image.uri, Ctx.TexturePath, Ctx.TaskParams, Ctx.Log);
+		if (DestPath.empty()) return false;
 
 		OutTextureID = _ResourceRoot + fs::relative(DestPath, _RootDir).generic_string();
 		Ctx.ProcessedTextures.emplace(Texture.imageId, OutTextureID);
