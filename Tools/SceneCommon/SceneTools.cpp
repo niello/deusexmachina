@@ -7,6 +7,7 @@
 #include <acl/core/unique_ptr.h>
 #include <acl/algorithm/uniformly_sampled/encoder.h>
 #include <IL/il.h>
+#include <regex>
 
 namespace acl
 {
@@ -479,21 +480,63 @@ void TermImageProcessing()
 std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesystem::path& DestDir,
 	const Data::CParams& TaskParams, CThreadSafeLog& Log)
 {
+	const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
 	const auto SrcExtension = SrcPath.extension().generic_string();
 
-	const auto RsrcName = GetValidResourceName(SrcPath.stem().string());
-	const auto DestPath = DestDir / (RsrcName + SrcExtension);
-
-	try
+	// Search in order for the first matching conversion rule
+	// TODO: preload and store as structs?
+	std::string DestFormat;
+	const Data::CDataArray* pTextures = nullptr;
+	if (ParamsUtils::TryGetParam(pTextures, TaskParams, "Textures"))
 	{
-		// TODO: copy as is for now, but may need format conversion or N one-channel to 1 multi-channel baking
-		fs::create_directories(DestPath.parent_path());
-		fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
+		for (const auto& Data : *pTextures)
+		{
+			const std::regex Rule(ParamsUtils::GetParam(Data.GetValue<Data::CParams>(), "Name", std::string{}));
+			if (std::regex_match(SrcPath.generic_string(), Rule))
+			{
+				DestFormat = ParamsUtils::GetParam(Data.GetValue<Data::CParams>(), "DestFormat", std::string{});
+				break;
+			}
+		}
 	}
-	catch (fs::filesystem_error& e)
+
+	fs::path DestPath = DestDir;
+
+	if (DestFormat.empty())
 	{
-		Log.LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + e.what());
-		return {};
+		// No conversion required, copy file as is
+		DestPath /= (RsrcName + SrcExtension);
+		try
+		{
+			fs::create_directories(DestDir);
+			fs::copy_file(SrcPath, DestPath, fs::copy_options::overwrite_existing);
+		}
+		catch (fs::filesystem_error& e)
+		{
+			Log.LogError("Error copying " + SrcPath.generic_string() + " to " + DestPath.generic_string() + ":\n" + e.what());
+			return {};
+		}
+	}
+	else
+	{
+		//!!!TODO: other extension!
+		DestPath /= (RsrcName + SrcExtension);
+
+		ILuint ImgId;
+		ilGenImages(1, &ImgId);
+		ilBindImage(ImgId);
+
+		if (!ilLoadImage(SrcPath.string().c_str()))
+		{
+			Log.LogError("Can't load " + SrcPath.generic_string() + " for export, error: " + std::to_string(ilGetError()));
+			return {};
+		}
+
+		// TODO: processing
+
+		ilEnable(IL_FILE_OVERWRITE);
+		ilSaveImage(DestPath.string().c_str());
+		ilDeleteImages(1, &ImgId);
 	}
 
 	return DestPath.generic_string();
