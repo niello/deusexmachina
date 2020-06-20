@@ -11,6 +11,10 @@ set_target_properties(meshoptimizer PROPERTIES FOLDER "Deps")
 # Dependency: DevIL
 set(IL_TESTS OFF CACHE INTERNAL "" FORCE)
 set(BUILD_SHARED_LIBS OFF CACHE INTERNAL "" FORCE)
+# For now use libpng from CEGUI
+set(IL_PNG_LIB ON CACHE BOOL "" FORCE) 
+set(PNG_INCLUDE_DIRS "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/include")
+#set(PNG_LIBRARIES ...) # See below
 add_subdirectory("${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/DevIL/DevIL/src-IL" "${CMAKE_CURRENT_BINARY_DIR}/Deps/DevIL/IL")
 set_target_properties(IL PROPERTIES FOLDER "Deps")
 target_compile_definitions(IL PUBLIC IL_STATIC_LIB)
@@ -26,4 +30,11 @@ target_include_directories(SceneCommon PUBLIC
 )
 target_link_libraries(SceneCommon PUBLIC ToolsCommon)
 target_link_libraries(SceneCommon PRIVATE meshoptimizer IL)
+# Instead of setting PNG_LIBRARIES for DevIL, link here to handle debug/release versions
+target_link_libraries(SceneCommon PRIVATE
+	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/libpng_d.lib"
+	optimized "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/libpng.lib"
+	debug "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/zlib_d.lib"
+	optimized "${CMAKE_CURRENT_SOURCE_DIR}/../../Deps/CEGUI/dependencies/lib/static/zlib.lib"
+)
 set_target_properties(SceneCommon PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON) # At least for std::filesystem
