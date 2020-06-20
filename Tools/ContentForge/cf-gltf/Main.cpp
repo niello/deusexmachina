@@ -1468,9 +1468,9 @@ public:
 					{
 						// Get keyframe value without interpolation
 						const auto KeyNumber = IsLastKey ? NextKeyNumber - 1 : NextKeyNumber;
-						Scaling = pScalings[KeyNumber];
-						Rotation = pRotations[KeyNumber];
-						Translation = pTranslations[KeyNumber];
+						if (pScalings) Scaling = pScalings[KeyNumber];
+						if (pRotations) Rotation = pRotations[KeyNumber];
+						if (pTranslations) Translation = pTranslations[KeyNumber];
 					}
 					else
 					{
@@ -1480,9 +1480,9 @@ public:
 						const float PrevTime = *ItPrevKey;
 						const float Factor = (Time - PrevTime) / (*ItNextKey - PrevTime);
 
-						Scaling = LerpVector3(pScalings[NextKeyNumber - 1], pScalings[NextKeyNumber], Factor);
-						Rotation = LerpQuaternion(pRotations[NextKeyNumber - 1], pRotations[NextKeyNumber], Factor);
-						Translation = LerpVector3(pTranslations[NextKeyNumber - 1], pTranslations[NextKeyNumber], Factor);
+						if (pScalings) Scaling = LerpVector3(pScalings[NextKeyNumber - 1], pScalings[NextKeyNumber], Factor);
+						if (pRotations) Rotation = LerpQuaternion(pRotations[NextKeyNumber - 1], pRotations[NextKeyNumber], Factor);
+						if (pTranslations) Translation = LerpVector3(pTranslations[NextKeyNumber - 1], pTranslations[NextKeyNumber], Factor);
 					}
 				}
 
