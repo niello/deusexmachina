@@ -519,9 +519,6 @@ std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesy
 	}
 	else
 	{
-		//!!!TODO: other extension!
-		DestPath /= (RsrcName + SrcExtension);
-
 		ILuint ImgId;
 		ilGenImages(1, &ImgId);
 		ilBindImage(ImgId);
@@ -532,10 +529,39 @@ std::string WriteTexture(const std::filesystem::path& SrcPath, const std::filesy
 			return {};
 		}
 
-		// TODO: processing
-
 		ilEnable(IL_FILE_OVERWRITE);
-		ilSaveImage(DestPath.string().c_str());
+
+		if (DestFormat == "DXT5")
+		{
+			DestPath /= (RsrcName + ".dds");
+			ilSetInteger(IL_DXTC_FORMAT, IL_DXT5);
+			ilSave(IL_DDS, DestPath.string().c_str());
+		}
+		else if (DestFormat == "DXT5nm")
+		{
+			// FIXME: no normal map compression for now. Use NV texture tools or the like?
+			DestPath /= (RsrcName + ".dds");
+			ilSave(IL_DDS, DestPath.string().c_str());
+		}
+		else if (DestFormat == "DDS")
+		{
+			DestPath /= (RsrcName + ".dds");
+			ilSave(IL_DDS, DestPath.string().c_str());
+		}
+		else if (DestFormat == "TGA")
+		{
+			DestPath /= (RsrcName + ".tga");
+			ilSetInteger(IL_TGA_RLE, IL_TRUE); //???!!!per-texture (per-rule) setting?
+			ilSave(IL_TGA, DestPath.string().c_str());
+		}
+		else
+		{
+			Log.LogWarning("Format " + DestFormat + " unknown, used for " + SrcPath.generic_string() + ", will copy as is");
+
+			DestPath /= (RsrcName + SrcExtension);
+			ilSaveImage(DestPath.string().c_str());
+		}
+
 		ilDeleteImages(1, &ImgId);
 	}
 
