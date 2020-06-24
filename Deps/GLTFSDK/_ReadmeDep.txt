@@ -8,10 +8,13 @@ License:
 MIT
 
 Current version used:
-r1.9.3.0+ (master branch at 6d2312c on 2019-08-19)
+r1.9.3.0+ (master branch at 8d12da1 on 2020-05-29)
 
 Purpose in DEM:
 glTF converter part
 
 Changes:
-File layout changed. Samples, tests and nuget package info are stripped out.
+GLTFSDK subfolder is made root.
+Root CMakeLists.txt is merged with GLTFSDK/CMakeLists.txt.
+Samples, tests and nuget package info are stripped out.
+All unused scripts are removed.

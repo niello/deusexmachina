@@ -13,7 +13,7 @@ endif()
 
 add_subdirectory(External/RapidJSON)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/CMake/Modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/Build/CMake/Modules")
 
 include(GLTFPlatform)
 GetGLTFPlatform(Platform)
@@ -30,7 +30,7 @@ find_program(POWERSHELL_PATH NAMES pwsh powershell NO_PACKAGE_ROOT_PATH NO_CMAKE
 
 add_custom_command(
     OUTPUT ${CMAKE_BINARY_DIR}/GeneratedFiles/SchemaJson.h
-    COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass "${CMAKE_CURRENT_LIST_DIR}/Scripts/GenerateSchemaJsonHeader.ps1" -outPath "${CMAKE_BINARY_DIR}/GeneratedFiles"
+    COMMAND ${POWERSHELL_PATH} -ExecutionPolicy Bypass "${CMAKE_CURRENT_LIST_DIR}/GenerateSchemaJsonHeader.ps1" -outPath "${CMAKE_BINARY_DIR}/GeneratedFiles"
     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
     DEPENDS "${schema_deps}"
 )
@@ -56,6 +56,7 @@ endif()
 
 target_include_directories(GLTFSDK
     PUBLIC "${CMAKE_CURRENT_LIST_DIR}/Inc"
+    PRIVATE "${CMAKE_SOURCE_DIR}/Built/Int"
     PRIVATE "${CMAKE_BINARY_DIR}/GeneratedFiles"
 )
 
