@@ -5,7 +5,12 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/AnimationClip.h
 	DEM/Low/src/Animation/AnimationLoaderANM.h
 	DEM/Low/src/Animation/AnimationPlayer.h
+	DEM/Low/src/Animation/PoseOutput.h
+	DEM/Low/src/Animation/PoseTrack.h
+	DEM/Low/src/Animation/Skeleton.h
 	DEM/Low/src/Animation/StaticPose.h
+	DEM/Low/src/Animation/TimelineTrack.h
+	DEM/Low/src/Animation/TimelineTrackGroup.h
 	DEM/Low/src/Animation/TransformSource.h
 	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/ApplicationState.h

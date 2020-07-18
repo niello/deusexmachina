@@ -135,6 +135,7 @@ static inline float NormalizeAnimationCursor(float Time, float Duration, bool Lo
 //---------------------------------------------------------------------
 
 //???use per-bone decompression when many nodes are not bound? May be useful for LOD.
+//!!!can instead use context's skip_bone_*!
 void CAnimationPlayer::Update(float dt)
 {
 	if (_Paused) return;
