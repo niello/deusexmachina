@@ -21,13 +21,24 @@ void CSkeleton::SetRootNode(Scene::CSceneNode* pNode)
 
 U16 CSkeleton::BindNode(CStrID NodeID, U16 ParentPort)
 {
-	// Return root port is no parent is specified
-	if (ParentPort == InvalidPort) return _Nodes.empty() ? InvalidPort : 0;
+	// Root must be set before binding other nodes
+	if (_Nodes.empty() || !_Nodes[0]) return InvalidPort;
 
-	const Scene::CSceneNode* pParent = _Nodes[ParentPort].Get();
-	if (!pParent) return InvalidPort;
+	Scene::CSceneNode* pNode = nullptr;
+	if (ParentPort == InvalidPort)
+	{
+		// When no parent specified, we search by path from the root node.
+		// Empty path is the root node itself, and root port is always 0.
+		// FIXME: either require name matching or always store empty ID for clip root in DEM ACL files!
+		if (!NodeID || NodeID == _Nodes[0]->GetName()) return 0;
+		pNode = _Nodes[0]->FindNodeByPath(NodeID.CStr());
+	}
+	else if (auto pParent = _Nodes[ParentPort].Get())
+	{
+		// When parent is specified, the node is its direct child
+		pNode = pParent->GetChild(NodeID);
+	}
 
-	Scene::CSceneNode* pNode = pParent->GetChild(NodeID);
 	if (!pNode) return InvalidPort;
 
 	// Check if this node is already bound to some port
