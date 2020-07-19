@@ -1,29 +1,32 @@
 #pragma once
-#include <Animation/TransformSource.h>
+#include <Data/Ptr.h>
 #include <acl/algorithm/uniformly_sampled/decoder.h>
 
 // Transformation source that samples an animation clip into the node hierarchy
 
 namespace DEM::Anim
 {
+class IPoseOutput;
 typedef Ptr<class CAnimationClip> PAnimationClip;
 typedef std::unique_ptr<class CAnimationPlayer> PAnimationPlayer;
 typedef std::unique_ptr<class CStaticPose> PStaticPose;
 typedef acl::uniformly_sampled::DecompressionContext<acl::uniformly_sampled::DefaultDecompressionSettings> CACLContext;
 
-class alignas(CACLContext) CAnimationPlayer final : public CTransformSource
+class alignas(CACLContext) CAnimationPlayer final
 {
 protected:
 
-	CACLContext    _Context; // At offset 0
-	PAnimationClip _Clip;
+	CACLContext      _Context; // At offset 0
+	PAnimationClip   _Clip;
+	IPoseOutput*     _pOutput = nullptr; //???PPoseOutput refcounted?
+	std::vector<U16> _PortMapping;
 
-	float          _Speed = 1.f;
-	float          _CurrTime = 0.f;
-	bool           _Paused = true;
-	bool           _Loop = false;
+	float            _Speed = 1.f;
+	float            _CurrTime = 0.f;
+	bool             _Paused = true;
+	bool             _Loop = false;
 
-	void SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& ParentNode);
+	//void SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& ParentNode);
 
 public:
 
@@ -32,14 +35,16 @@ public:
 	CAnimationPlayer();
 	~CAnimationPlayer();
 
-	bool  Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
+	bool  Initialize(IPoseOutput& Output, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
 	void  Reset();
 
+	//???play, stop, pause etc must migrate to timeline?
+	//Update will be split to SetTime and EvaluatePose?
 	void  Update(float dt);
 
 	PStaticPose BakePose(float Time);
 
-	bool  Play() { _Paused = (!_Clip || _Nodes.empty()); return !_Paused; }
+	bool  Play() { _Paused = (!_Clip || !_pOutput); return !_Paused; }
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
 	void  Pause() { _Paused = true; }
 
@@ -48,6 +53,7 @@ public:
 	void  SetCursor(float Time);
 
 	auto* GetClip() const { return _Clip.Get(); }
+	auto* GetOutput() const { return _pOutput; }
 	float GetSpeed() const { return _Speed; }
 	float GetCursor() const { return _CurrTime; }
 	bool  IsLooped() const { return _Loop; }

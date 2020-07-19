@@ -316,7 +316,10 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/AnimationClip.cpp
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationPlayer.cpp
+	DEM/Low/src/Animation/PoseTrack.cpp
+	DEM/Low/src/Animation/Skeleton.cpp
 	DEM/Low/src/Animation/StaticPose.cpp
+	DEM/Low/src/Animation/TimelineTrackGroup.cpp
 	DEM/Low/src/Animation/TransformSource.cpp
 	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/ApplicationState.cpp

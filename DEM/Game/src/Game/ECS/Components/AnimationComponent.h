@@ -1,5 +1,6 @@
 #pragma once
 #include <Animation/AnimationPlayer.h>
+#include <Animation/Skeleton.h>
 #include <Data/Metadata.h>
 
 // Animation component plays a single animation clip on the entity scene hierarchy
@@ -10,6 +11,7 @@ namespace DEM::Game
 struct CAnimationComponent
 {
 	DEM::Anim::PAnimationPlayer Player;
+	DEM::Anim::PSkeleton        Output;
 
 	CStrID  ClipID;
 	CString RelTargetPath; // FIXME: use std::string, CData must use it too then

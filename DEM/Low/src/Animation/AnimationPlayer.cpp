@@ -1,41 +1,77 @@
 #include "AnimationPlayer.h"
 #include <Animation/AnimationClip.h>
 #include <Animation/StaticPose.h>
-#include <Scene/SceneNode.h>
+#include <Animation/PoseOutput.h>
 
 namespace DEM::Anim
 {
 
-struct CScenePoseWriter : acl::OutputWriter
+// Writes to IPoseOutput without port mapping (clip bone index IS the output port index).
+// It is a common case, especially for playing single clip without blending.
+struct COutputPoseWriter : acl::OutputWriter
 {
-	CScenePoseWriter(CTransformSource* pTfmSource)
-		: _pTfmSource(pTfmSource)
+	COutputPoseWriter(IPoseOutput* pOutput)
+		: _pOutput(pOutput)
 	{
-		n_assert_dbg(_pTfmSource);
+		n_assert_dbg(_pOutput);
 	}
 
 	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation)
 	{
-		_pTfmSource->SetRotation(bone_index, quaternion(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation)));
+		_pOutput->SetRotation(bone_index, quaternion(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation)));
 	}
 
 	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
 	{
-		_pTfmSource->SetTranslation(bone_index, vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation)));
+		_pOutput->SetTranslation(bone_index, vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation)));
 	}
 
 	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
 	{
-		_pTfmSource->SetScale(bone_index, vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
+		_pOutput->SetScale(bone_index, vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
 	}
 
-	bool skip_bone_rotation(uint16_t bone_index) const { return !_pTfmSource->IsNodeActive(bone_index); }
-	bool skip_bone_translation(uint16_t bone_index) const { return !_pTfmSource->IsNodeActive(bone_index); }
-	bool skip_bone_scale(uint16_t bone_index) const { return !_pTfmSource->IsNodeActive(bone_index); }
+	bool skip_bone_rotation(uint16_t bone_index) const { return !_pOutput->IsPortActive(bone_index); }
+	bool skip_bone_translation(uint16_t bone_index) const { return !_pOutput->IsPortActive(bone_index); }
+	bool skip_bone_scale(uint16_t bone_index) const { return !_pOutput->IsPortActive(bone_index); }
 
-	CTransformSource* _pTfmSource;
+	IPoseOutput* _pOutput;
 };
 
+// Writes to IPoseOutput with port mapping (clip bone index -> output port index)
+struct COutputPoseWriterMapped : acl::OutputWriter
+{
+	COutputPoseWriterMapped(IPoseOutput* pOutput, const std::vector<U16>& PortMapping)
+		: _pOutput(pOutput)
+		, _PortMapping(PortMapping)
+	{
+		n_assert_dbg(_pOutput);
+	}
+
+	void write_bone_rotation(uint16_t bone_index, const acl::Quat_32& rotation)
+	{
+		_pOutput->SetRotation(_PortMapping[bone_index], quaternion(acl::quat_get_x(rotation), acl::quat_get_y(rotation), acl::quat_get_z(rotation), acl::quat_get_w(rotation)));
+	}
+
+	void write_bone_translation(uint16_t bone_index, const acl::Vector4_32& translation)
+	{
+		_pOutput->SetTranslation(_PortMapping[bone_index], vector3(acl::vector_get_x(translation), acl::vector_get_y(translation), acl::vector_get_z(translation)));
+	}
+
+	void write_bone_scale(uint16_t bone_index, const acl::Vector4_32& scale)
+	{
+		_pOutput->SetScale(_PortMapping[bone_index], vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
+	}
+
+	bool skip_bone_rotation(uint16_t bone_index) const { return !_pOutput->IsPortActive(_PortMapping[bone_index]); }
+	bool skip_bone_translation(uint16_t bone_index) const { return !_pOutput->IsPortActive(_PortMapping[bone_index]); }
+	bool skip_bone_scale(uint16_t bone_index) const { return !_pOutput->IsPortActive(_PortMapping[bone_index]); }
+
+	IPoseOutput* _pOutput;
+	const std::vector<U16>& _PortMapping;
+};
+
+// Writes to the plain array of CTransformSRT
 struct CStaticPoseWriter : acl::OutputWriter
 {
 	CStaticPoseWriter(Math::CTransformSRT* pTransforms)
@@ -66,6 +102,7 @@ struct CStaticPoseWriter : acl::OutputWriter
 CAnimationPlayer::CAnimationPlayer() = default;
 CAnimationPlayer::~CAnimationPlayer() = default;
 
+/*
 void CAnimationPlayer::SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& ParentNode)
 {
 	const auto NodeCount = _Clip->GetNodeCount();
@@ -82,8 +119,9 @@ void CAnimationPlayer::SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& Paren
 	}
 }
 //---------------------------------------------------------------------
+*/
 
-bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Clip, bool Loop, float Speed)
+bool CAnimationPlayer::Initialize(IPoseOutput& Output, PAnimationClip Clip, bool Loop, float Speed)
 {
 	if (!Clip || !Clip->GetNodeCount() || Clip->GetDuration() <= 0.f) return false;
 
@@ -93,6 +131,8 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 	if (_Context.is_dirty(*pClip))
 		_Context.initialize(*pClip);
 
+	_pOutput = &Output;
+
 	if (_Clip != Clip)
 	{
 		// TODO: can compare node mappings and skip if equal
@@ -101,12 +141,28 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 		// Can even store mapping hash inside a clip, compare root & mapping count & hash, then do full comparison!
 		// It will be pretty common to reuse the same player with different clips on the same hierarchy.
 
-		_Nodes.resize(Clip->GetNodeCount());
 		_Clip = std::move(Clip);
 
-		// DEM animation format forces the root to be at position 0
-		_Nodes[0] = &RootNode;
-		SetupChildNodes(0, RootNode);
+		const auto NodeCount = _Clip->GetNodeCount();
+		_PortMapping.clear();
+		_PortMapping.resize(NodeCount, IPoseOutput::InvalidPort);
+
+		bool HasShifts = false;
+		for (UPTR i = 0; i < NodeCount; ++i)
+		{
+			const auto& NodeInfo = _Clip->GetNodeInfo(i);
+
+			//???!!!will parent always be mapped at this point?
+			const U16 ParentPort = (NodeInfo.ParentIndex == CAnimationClip::NoParentIndex) ?
+				IPoseOutput::InvalidPort :
+				_PortMapping[NodeInfo.ParentIndex];
+
+			_PortMapping[i] = Output.BindNode(NodeInfo.ID, ParentPort);
+			HasShifts = HasShifts || (_PortMapping[i] != i);
+		}
+
+		// If clip bone indices directly map to output ports, can skip mapping when decompress pose
+		if (!HasShifts) _PortMapping.clear();
 	}
 
 	_Speed = Speed;
@@ -122,51 +178,53 @@ bool CAnimationPlayer::Initialize(Scene::CSceneNode& RootNode, PAnimationClip Cl
 void CAnimationPlayer::Reset()
 {
 	_Clip = nullptr;
-	_Nodes.clear();
+	_pOutput = nullptr;
 	_CurrTime = 0.f;
 	_Paused = true;
 }
 //---------------------------------------------------------------------
 
-static inline float NormalizeAnimationCursor(float Time, float Duration, bool Loop)
+static inline float NormalizeClipCursor(float Time, float Duration, bool Loop)
 {
 	return Loop ? std::fmodf(Time, Duration) : std::clamp(Time, 0.f, Duration);
 }
 //---------------------------------------------------------------------
 
-//???use per-bone decompression when many nodes are not bound? May be useful for LOD.
-//!!!can instead use context's skip_bone_*!
 void CAnimationPlayer::Update(float dt)
 {
-	if (_Paused) return;
+	if (_Paused || !_pOutput) return;
 
-	_CurrTime = NormalizeAnimationCursor(_CurrTime + dt * _Speed, _Clip->GetDuration(), _Loop);
+	_CurrTime = NormalizeClipCursor(_CurrTime + dt * _Speed, _Clip->GetDuration(), _Loop);
 
 	_Context.seek(_CurrTime, acl::SampleRoundingPolicy::None);
-	_Context.decompress_pose(CScenePoseWriter(this));
+	if (_PortMapping.empty())
+		_Context.decompress_pose(COutputPoseWriter(_pOutput));
+	else
+		_Context.decompress_pose(COutputPoseWriterMapped(_pOutput, _PortMapping));
 }
 //---------------------------------------------------------------------
 
 PStaticPose CAnimationPlayer::BakePose(float Time)
 {
-	if (!_Clip || _Nodes.empty()) return nullptr;
+	if (!_Clip || !_pOutput) return nullptr;
 
-	Time = NormalizeAnimationCursor(Time, _Clip->GetDuration(), _Loop);
+	Time = NormalizeClipCursor(Time, _Clip->GetDuration(), _Loop);
 
-	std::vector<Math::CTransformSRT> Tfms(_Nodes.size());
+	std::vector<Math::CTransformSRT> Tfms(_Clip->GetNodeCount());
 
 	_Context.seek(Time, acl::SampleRoundingPolicy::None);
 	_Context.decompress_pose(CStaticPoseWriter(Tfms.data()));
 
-	auto Nodes = _Nodes;
-	return PStaticPose(n_new(CStaticPose(std::move(Nodes), std::move(Tfms))));
+	//!!!static pose must have a copy of clip's mapping info or clip ref, NOT nodes!
+	//return PStaticPose(n_new(CStaticPose(_Nodes, std::move(Tfms))));
+	return nullptr;
 }
 //---------------------------------------------------------------------
 
 void CAnimationPlayer::SetCursor(float Time)
 {
 	if (!_Clip) return;
-	_CurrTime = NormalizeAnimationCursor(Time, _Clip->GetDuration(), _Loop);
+	_CurrTime = NormalizeClipCursor(Time, _Clip->GetDuration(), _Loop);
 }
 //---------------------------------------------------------------------
 
