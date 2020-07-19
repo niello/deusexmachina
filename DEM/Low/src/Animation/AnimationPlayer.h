@@ -2,7 +2,7 @@
 #include <Data/Ptr.h>
 #include <acl/algorithm/uniformly_sampled/decoder.h>
 
-// Transformation source that samples an animation clip into the node hierarchy
+// Transformation source that samples an animation clip
 
 namespace DEM::Anim
 {

@@ -1,7 +1,7 @@
 #pragma once
 #include <Animation/TransformSource.h>
 
-// Transformation source that applies static transform to the node hierarchy
+// Transformation source that applies static transform
 
 namespace Scene
 {

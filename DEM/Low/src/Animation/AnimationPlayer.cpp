@@ -152,7 +152,8 @@ bool CAnimationPlayer::Initialize(IPoseOutput& Output, PAnimationClip Clip, bool
 		{
 			const auto& NodeInfo = _Clip->GetNodeInfo(i);
 
-			//???!!!will parent always be mapped at this point?
+			// Mapping format guarantees that child nodes will go after their parents,
+			// so when the node is being processed here, its parent already has a port
 			const U16 ParentPort = (NodeInfo.ParentIndex == CAnimationClip::NoParentIndex) ?
 				IPoseOutput::InvalidPort :
 				_PortMapping[NodeInfo.ParentIndex];
