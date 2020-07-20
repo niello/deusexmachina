@@ -32,9 +32,9 @@ struct COutputPoseWriter : acl::OutputWriter
 		_pOutput->SetScale(bone_index, vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
 	}
 
-	bool skip_bone_rotation(uint16_t bone_index) const { return !_pOutput->IsPortActive(bone_index); }
-	bool skip_bone_translation(uint16_t bone_index) const { return !_pOutput->IsPortActive(bone_index); }
-	bool skip_bone_scale(uint16_t bone_index) const { return !_pOutput->IsPortActive(bone_index); }
+	bool skip_bone_rotation(uint16_t bone_index) const { return !_pOutput->IsRotationActive(bone_index); }
+	bool skip_bone_translation(uint16_t bone_index) const { return !_pOutput->IsTranslationActive(bone_index); }
+	bool skip_bone_scale(uint16_t bone_index) const { return !_pOutput->IsScalingActive(bone_index); }
 
 	IPoseOutput* _pOutput;
 };
@@ -64,9 +64,9 @@ struct COutputPoseWriterMapped : acl::OutputWriter
 		_pOutput->SetScale(_PortMapping[bone_index], vector3(acl::vector_get_x(scale), acl::vector_get_y(scale), acl::vector_get_z(scale)));
 	}
 
-	bool skip_bone_rotation(uint16_t bone_index) const { return !_pOutput->IsPortActive(_PortMapping[bone_index]); }
-	bool skip_bone_translation(uint16_t bone_index) const { return !_pOutput->IsPortActive(_PortMapping[bone_index]); }
-	bool skip_bone_scale(uint16_t bone_index) const { return !_pOutput->IsPortActive(_PortMapping[bone_index]); }
+	bool skip_bone_rotation(uint16_t bone_index) const { return !_pOutput->IsRotationActive(_PortMapping[bone_index]); }
+	bool skip_bone_translation(uint16_t bone_index) const { return !_pOutput->IsTranslationActive(_PortMapping[bone_index]); }
+	bool skip_bone_scale(uint16_t bone_index) const { return !_pOutput->IsScalingActive(_PortMapping[bone_index]); }
 
 	IPoseOutput* _pOutput;
 	const std::vector<U16>& _PortMapping;

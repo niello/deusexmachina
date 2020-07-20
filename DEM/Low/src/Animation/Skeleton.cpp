@@ -51,9 +51,10 @@ U16 CSkeleton::BindNode(CStrID NodeID, U16 ParentPort)
 }
 //---------------------------------------------------------------------
 
-bool CSkeleton::IsPortActive(U16 Port) const
+U8 CSkeleton::GetActivePortChannels(U16 Port) const
 {
-	return _Nodes.size() > Port && _Nodes[Port] && _Nodes[Port]->IsActive();
+	const bool NodeActive = (_Nodes.size() > Port && _Nodes[Port] && _Nodes[Port]->IsActive());
+	return NodeActive ? ETransformChannel::All : 0;
 }
 //---------------------------------------------------------------------
 

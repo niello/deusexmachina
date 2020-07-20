@@ -23,7 +23,7 @@ public:
 	void SetRootNode(Scene::CSceneNode* pNode);
 
 	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override;
-	virtual bool IsPortActive(U16 Port) const override;
+	virtual U8   GetActivePortChannels(U16 Port) const override;
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override;
 	virtual void SetRotation(U16 Port, const quaternion& Rotation) override;
