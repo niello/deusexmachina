@@ -1,10 +1,7 @@
 #pragma once
 #include <Resources/ResourceObject.h>
-#include <Data/StringID.h>
 
 // ACL-compressed animation clip. Animates local SRT transform.
-
-//!!!TODO: event tracks!
 
 namespace acl
 {
@@ -13,38 +10,29 @@ namespace acl
 
 namespace DEM::Anim
 {
+using PNodeMapping = Ptr<class CNodeMapping>;
 
 class CAnimationClip: public Resources::CResourceObject
 {
 	RTTI_CLASS_DECL;
 
-public:
-
-	constexpr static U16 NoParentIndex = std::numeric_limits<U16>().max();
-
-	struct CNodeInfo
-	{
-		CStrID ID;
-		U16    ParentIndex = NoParentIndex;
-	};
-
 protected:
 
-	acl::CompressedClip*   _pClip = nullptr;
-	std::vector<CNodeInfo> _NodeMapping;
-	float                  _Duration = 0.f;
+	acl::CompressedClip* _pClip = nullptr;
+	PNodeMapping         _NodeMapping;
+	float                _Duration = 0.f;
 
 public:
 
-	CAnimationClip(acl::CompressedClip* pClip, float Duration, std::vector<CNodeInfo>&& NodeMapping);
+	CAnimationClip(acl::CompressedClip* pClip, float Duration, PNodeMapping&& NodeMapping);
 	virtual ~CAnimationClip() override;
 
 	virtual bool IsResourceValid() const override { return !!_pClip; }
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
-	const UPTR GetNodeCount() const { return _NodeMapping.size(); }
-	const CNodeInfo& GetNodeInfo(UPTR Index) const { return _NodeMapping[Index]; }
+	const CNodeMapping& GetNodeMapping() const { return *_NodeMapping; }
 	float GetDuration() const { return _Duration; }
+	UPTR  GetNodeCount() const;
 };
 
 typedef Ptr<CAnimationClip> PAnimationClip;

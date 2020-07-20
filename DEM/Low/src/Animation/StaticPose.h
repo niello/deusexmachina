@@ -10,17 +10,19 @@ namespace Scene
 
 namespace DEM::Anim
 {
-typedef std::unique_ptr<class CStaticPose> PStaticPose;
+using PStaticPose = std::unique_ptr<class CStaticPose>;
+using PNodeMapping = Ptr<class CNodeMapping>;
 
-class CStaticPose final : public CTransformSource
+class CStaticPose final
 {
 protected:
 
 	std::vector<Math::CTransformSRT> _Transforms;
+	PNodeMapping                     _NodeMapping;
 
 public:
 
-	CStaticPose(std::vector<Scene::PSceneNode>&& Nodes, std::vector<Math::CTransformSRT>&& Transforms);
+	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PNodeMapping&& NodeMapping);
 	~CStaticPose();
 
 	void Apply();

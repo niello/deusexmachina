@@ -5,6 +5,7 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/AnimationClip.h
 	DEM/Low/src/Animation/AnimationLoaderANM.h
 	DEM/Low/src/Animation/AnimationPlayer.h
+	DEM/Low/src/Animation/NodeMapping.h
 	DEM/Low/src/Animation/PoseOutput.h
 	DEM/Low/src/Animation/PoseTrack.h
 	DEM/Low/src/Animation/Skeleton.h
@@ -316,6 +317,7 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/AnimationClip.cpp
 	DEM/Low/src/Animation/AnimationLoaderANM.cpp
 	DEM/Low/src/Animation/AnimationPlayer.cpp
+	DEM/Low/src/Animation/NodeMapping.cpp
 	DEM/Low/src/Animation/PoseTrack.cpp
 	DEM/Low/src/Animation/Skeleton.cpp
 	DEM/Low/src/Animation/StaticPose.cpp

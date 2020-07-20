@@ -1,15 +1,15 @@
 #include "StaticPose.h"
 #include <Animation/AnimationBlender.h>
-#include <Scene/SceneNode.h>
+#include <Animation/NodeMapping.h>
 
 namespace DEM::Anim
 {
 
-CStaticPose::CStaticPose(std::vector<Scene::PSceneNode>&& Nodes, std::vector<Math::CTransformSRT>&& Transforms)
+CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PNodeMapping&& NodeMapping)
 	: _Transforms(std::move(Transforms))
+	, _NodeMapping(std::move(NodeMapping))
 {
-	_Nodes = std::move(Nodes);
-	n_assert_dbg(_Nodes.size() == _Transforms.size());
+	n_assert_dbg(_NodeMapping->GetNodeCount() == _Transforms.size());
 }
 //---------------------------------------------------------------------
 
@@ -18,26 +18,12 @@ CStaticPose::~CStaticPose() = default;
 
 void CStaticPose::Apply()
 {
-	const auto OutputCount = GetTransformCount();
-	for (UPTR i = 0; i < OutputCount; ++i)
-		SetTransform(i, _Transforms[i]);
+	//!!!must have output bound!
+	//if (mapping.empty()) ... else ...
 
-	// TODO: profile if performance problems arise
-/*
-	if (_BlendInfo)
-	{
-		const auto SourceIndex = _BlendInfo->SourceIndex;
-		const auto OutputCount = _BlendInfo->Ports.size();
-		for (UPTR i = 0; i < OutputCount; ++i)
-			_BlendInfo->Blender->SetTransform(SourceIndex, _BlendInfo->Ports[i], _Transforms[i]);
-	}
-	else
-	{
-		const auto OutputCount = _Nodes.size();
-		for (UPTR i = 0; i < OutputCount; ++i)
-			_Nodes[i]->SetLocalTransform(_Transforms[i]);
-	}
-*/
+	//const auto OutputCount = GetTransformCount();
+	//for (UPTR i = 0; i < OutputCount; ++i)
+	//	SetTransform(i, _Transforms[i]);
 }
 //---------------------------------------------------------------------
 

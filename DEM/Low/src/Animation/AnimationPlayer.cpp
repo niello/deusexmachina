@@ -1,7 +1,8 @@
 #include "AnimationPlayer.h"
 #include <Animation/AnimationClip.h>
-#include <Animation/StaticPose.h>
+#include <Animation/NodeMapping.h>
 #include <Animation/PoseOutput.h>
+#include <Animation/StaticPose.h>
 
 namespace DEM::Anim
 {
@@ -123,7 +124,7 @@ void CAnimationPlayer::SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& Paren
 
 bool CAnimationPlayer::Initialize(IPoseOutput& Output, PAnimationClip Clip, bool Loop, float Speed)
 {
-	if (!Clip || !Clip->GetNodeCount() || Clip->GetDuration() <= 0.f) return false;
+	if (!Clip || Clip->GetDuration() <= 0.f) return false;
 
 	const auto* pClip = Clip->GetACLClip();
 	if (!pClip) return false;
@@ -142,28 +143,7 @@ bool CAnimationPlayer::Initialize(IPoseOutput& Output, PAnimationClip Clip, bool
 		// It will be pretty common to reuse the same player with different clips on the same hierarchy.
 
 		_Clip = std::move(Clip);
-
-		const auto NodeCount = _Clip->GetNodeCount();
-		_PortMapping.clear();
-		_PortMapping.resize(NodeCount, IPoseOutput::InvalidPort);
-
-		bool HasShifts = false;
-		for (UPTR i = 0; i < NodeCount; ++i)
-		{
-			const auto& NodeInfo = _Clip->GetNodeInfo(i);
-
-			// Mapping format guarantees that child nodes will go after their parents,
-			// so when the node is being processed here, its parent already has a port
-			const U16 ParentPort = (NodeInfo.ParentIndex == CAnimationClip::NoParentIndex) ?
-				IPoseOutput::InvalidPort :
-				_PortMapping[NodeInfo.ParentIndex];
-
-			_PortMapping[i] = Output.BindNode(NodeInfo.ID, ParentPort);
-			HasShifts = HasShifts || (_PortMapping[i] != i);
-		}
-
-		// If clip bone indices directly map to output ports, can skip mapping when decompress pose
-		if (!HasShifts) _PortMapping.clear();
+		_Clip->GetNodeMapping().Bind(Output, _PortMapping);
 	}
 
 	_Speed = Speed;
