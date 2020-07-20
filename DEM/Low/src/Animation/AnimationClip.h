@@ -30,7 +30,7 @@ public:
 	virtual bool IsResourceValid() const override { return !!_pClip; }
 
 	const acl::CompressedClip* GetACLClip() const { return _pClip; }
-	const CNodeMapping& GetNodeMapping() const { return *_NodeMapping; }
+	CNodeMapping& GetNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
 	float GetDuration() const { return _Duration; }
 	UPTR  GetNodeCount() const;
 };

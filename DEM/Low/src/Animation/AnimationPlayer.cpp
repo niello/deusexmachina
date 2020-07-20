@@ -136,10 +136,8 @@ bool CAnimationPlayer::Initialize(IPoseOutput& Output, PAnimationClip Clip, bool
 
 	if (_Clip != Clip)
 	{
-		// TODO: can compare node mappings and skip if equal
-		// if (_Nodes[0] = &RootNode)
-		//	check all other node IDs and parent indices between clips
-		// Can even store mapping hash inside a clip, compare root & mapping count & hash, then do full comparison!
+		// TODO: can compare node mappings of old and new clip and skip if equal.
+		// Can even store mapping hash, compare root & mapping count & hash, then do full comparison.
 		// It will be pretty common to reuse the same player with different clips on the same hierarchy.
 
 		_Clip = std::move(Clip);
@@ -196,9 +194,7 @@ PStaticPose CAnimationPlayer::BakePose(float Time)
 	_Context.seek(Time, acl::SampleRoundingPolicy::None);
 	_Context.decompress_pose(CStaticPoseWriter(Tfms.data()));
 
-	//!!!static pose must have a copy of clip's mapping info or clip ref, NOT nodes!
-	//return PStaticPose(n_new(CStaticPose(_Nodes, std::move(Tfms))));
-	return nullptr;
+	return PStaticPose(n_new(CStaticPose(std::move(Tfms), &_Clip->GetNodeMapping())));
 }
 //---------------------------------------------------------------------
 

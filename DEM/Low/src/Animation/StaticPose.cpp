@@ -1,6 +1,7 @@
 #include "StaticPose.h"
 #include <Animation/AnimationBlender.h>
 #include <Animation/NodeMapping.h>
+#include <Animation/PoseOutput.h>
 
 namespace DEM::Anim
 {
@@ -16,14 +17,28 @@ CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PNodeMap
 CStaticPose::~CStaticPose() = default;
 //---------------------------------------------------------------------
 
+void CStaticPose::SetOutput(IPoseOutput& Output)
+{
+	_pOutput = &Output;
+	_NodeMapping->Bind(Output, _PortMapping);
+}
+//---------------------------------------------------------------------
+
 void CStaticPose::Apply()
 {
-	//!!!must have output bound!
-	//if (mapping.empty()) ... else ...
+	if (!_pOutput) return;
 
-	//const auto OutputCount = GetTransformCount();
-	//for (UPTR i = 0; i < OutputCount; ++i)
-	//	SetTransform(i, _Transforms[i]);
+	const auto Count = _Transforms.size();
+	if (_PortMapping.empty())
+	{
+		for (UPTR i = 0; i < Count; ++i)
+			_pOutput->SetTransform(i, _Transforms[i]);
+	}
+	else
+	{
+		for (UPTR i = 0; i < Count; ++i)
+			_pOutput->SetTransform(_PortMapping[i], _Transforms[i]);
+	}
 }
 //---------------------------------------------------------------------
 
