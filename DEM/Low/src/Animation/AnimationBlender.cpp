@@ -44,7 +44,7 @@ void CAnimationBlender::Apply()
 			const float SourceWeight = _Sources[SourceIndex]->GetWeight();
 			if (SourceWeight <= 0.f) continue;
 
-			const auto CurrTfm = _Transforms[Offset + SourceIndex];
+			const auto& CurrTfm = _Transforms[Offset + SourceIndex];
 			const U8 ChannelMask = _ChannelMasks[Offset + SourceIndex];
 
 			if ((ChannelMask & ETransformChannel::Scaling) && ScaleWeights < 1.f)
@@ -108,6 +108,7 @@ void CAnimationBlender::Apply()
 			_pOutput->SetTranslation(Port, FinalTfm.Translation);
 	}
 
+	// Source data is blended into the output, no more channels are ready to be blended
 	std::memset(_ChannelMasks.data(), 0, _ChannelMasks.size());
 }
 //---------------------------------------------------------------------
