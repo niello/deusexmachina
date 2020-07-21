@@ -4,11 +4,15 @@
 namespace DEM::Anim
 {
 
+CAnimationBlender::CAnimationBlender() = default;
+CAnimationBlender::CAnimationBlender(U8 SourceCount) { Initialize(SourceCount); }
+CAnimationBlender::~CAnimationBlender() = default;
+
 // NB: this invalidates all current transforms at least for now
 void CAnimationBlender::Initialize(U8 SourceCount)
 {
-	_SourceInfo.resize(SourceCount);
-	_Nodes.clear();
+	_Sources.resize(SourceCount);
+	_PortMapping.clear();
 	_Transforms.clear();
 	_ChannelMasks.clear();
 
@@ -21,8 +25,8 @@ void CAnimationBlender::Initialize(U8 SourceCount)
 
 void CAnimationBlender::Apply()
 {
-	const auto PortCount = _Nodes.size();
-	const auto SourceCount = _SourceInfo.size();
+	const auto PortCount = _PortMapping.size();
+	const auto SourceCount = _Sources.size();
 	if (!PortCount || !SourceCount) return;
 
 	for (UPTR Port = 0; Port < PortCount; ++Port)
@@ -37,33 +41,35 @@ void CAnimationBlender::Apply()
 
 		for (const auto& SourceIndex : _SourcesByPriority)
 		{
-			const float SourceWeight = _SourceInfo[SourceIndex].Weight;
+			const float SourceWeight = _Sources[SourceIndex]->GetWeight();
 			if (SourceWeight <= 0.f) continue;
 
 			const auto CurrTfm = _Transforms[Offset + SourceIndex];
 			const U8 ChannelMask = _ChannelMasks[Offset + SourceIndex];
 
-			if ((ChannelMask & Tfm_Scaling) && ScaleWeights < 1.f)
+			if ((ChannelMask & ETransformChannel::Scaling) && ScaleWeights < 1.f)
 			{
 				const float Weight = std::min(SourceWeight, 1.f - ScaleWeights);
 
 				// Scale is 1.f by default. To blend correctly, we must reset it to zero before applying the first source.
-				if (FinalMask & Tfm_Scaling)
+				if (FinalMask & ETransformChannel::Scaling)
 					FinalTfm.Scale += CurrTfm.Scale * Weight;
 				else
 					FinalTfm.Scale = CurrTfm.Scale * Weight;
 
-				FinalMask |= Tfm_Scaling;
+				FinalMask |= ETransformChannel::Scaling;
 				ScaleWeights += Weight;
 			}
 
-			if ((ChannelMask & Tfm_Rotation) && RotationWeights < 1.f)
+			if ((ChannelMask & ETransformChannel::Rotation) && RotationWeights < 1.f)
 			{
 				const float Weight = std::min(SourceWeight, 1.f - RotationWeights);
 
 				// TODO: check this hardcore stuff for multiple quaternion blending:
 				// https://ntrs.nasa.gov/archive/nasa/casi.ntrs.nasa.gov/20070017872.pdf
-				if (FinalMask & Tfm_Rotation)
+				// Impl: http://wiki.unity3d.com/index.php/Averaging_Quaternions_and_Vectors
+				// Impl: https://github.com/christophhagen/averaging-quaternions/blob/master/averageQuaternions.py
+				if (FinalMask & ETransformChannel::Rotation)
 				{
 					quaternion Q;
 					Q.slerp(quaternion::Identity, CurrTfm.Rotation, Weight);
@@ -74,69 +80,90 @@ void CAnimationBlender::Apply()
 					FinalTfm.Rotation.slerp(quaternion::Identity, CurrTfm.Rotation, Weight);
 				}
 
-				FinalMask |= Tfm_Rotation;
+				FinalMask |= ETransformChannel::Rotation;
 				RotationWeights += Weight;
 			}
 
-			if ((ChannelMask & Tfm_Translation) && TranslationWeights < 1.f)
+			if ((ChannelMask & ETransformChannel::Translation) && TranslationWeights < 1.f)
 			{
 				const float Weight = std::min(SourceWeight, 1.f - TranslationWeights);
 				FinalTfm.Translation += CurrTfm.Translation * Weight;
-				FinalMask |= Tfm_Translation;
+				FinalMask |= ETransformChannel::Translation;
 				TranslationWeights += Weight;
 			}
 		}
 
 		// Apply accumulated transform
 
-		if (FinalMask & Tfm_Scaling)
-			_Nodes[Port]->SetLocalScale(FinalTfm.Scale);
+		if (FinalMask & ETransformChannel::Scaling)
+			_pOutput->SetScale(Port, FinalTfm.Scale);
 
-		if (FinalMask & Tfm_Rotation)
+		if (FinalMask & ETransformChannel::Rotation)
 		{
 			if (RotationWeights < 1.f) FinalTfm.Rotation.normalize();
-			_Nodes[Port]->SetLocalRotation(FinalTfm.Rotation);
+			_pOutput->SetRotation(Port, FinalTfm.Rotation);
 		}
 
-		if (FinalMask & Tfm_Translation)
-			_Nodes[Port]->SetLocalPosition(FinalTfm.Translation);
+		if (FinalMask & ETransformChannel::Translation)
+			_pOutput->SetTranslation(Port, FinalTfm.Translation);
 	}
 
 	std::memset(_ChannelMasks.data(), 0, _ChannelMasks.size());
 }
 //---------------------------------------------------------------------
 
-void CAnimationBlender::SetPriority(U8 Source, U32 Priority)
+void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 {
-	if (Source < _SourceInfo.size() && _SourceInfo[Source].Priority != Priority)
+	if (Source < _Sources.size() && _Sources[Source]->GetPriority() != Priority)
 	{
-		_SourceInfo[Source].Priority = Priority;
+		_Sources[Source]->_Priority = Priority;
 
 		std::sort(_SourcesByPriority.begin(), _SourcesByPriority.end(), [this](UPTR a, UPTR b)
 		{
-			return _SourceInfo[a].Priority > _SourceInfo[b].Priority;
+			return _Sources[a]->GetPriority() > _Sources[b]->GetPriority();
 		});
 	}
 }
 //---------------------------------------------------------------------
 
+void CAnimationBlender::SetWeight(U8 Source, float Weight)
+{
+	if (Source < _Sources.size()) _Sources[Source]->_Weight = Weight;
+}
+//---------------------------------------------------------------------
+
+U16 CAnimationBlenderInput::BindNode(CStrID NodeID, U16 ParentPort)
+{
+	// redirect to blender
+	// blender redirects to output, receives port, then resizes port-dependent arrays if required
+}
+//---------------------------------------------------------------------
+
+U8 CAnimationBlenderInput::GetActivePortChannels(U16 Port) const
+{
+	// request availability from blender output?
+}
+//---------------------------------------------------------------------
+
+/*
 // NB: slow operation
 U32 CAnimationBlender::GetOrCreateNodePort(Scene::CSceneNode* pNode)
 {
-	if (!pNode || _Nodes.size() >= std::numeric_limits<U32>().max())
+	if (!pNode || _PortMapping.size() >= std::numeric_limits<U32>().max())
 		return InvalidPort;
 
-	const auto PortCount = _Nodes.size();
+	const auto PortCount = _PortMapping.size();
 	for (UPTR Port = 0; Port < PortCount; ++Port)
-		if (_Nodes[Port] == pNode)
+		if (_PortMapping[Port] == pNode)
 			return Port;
 
-	_Nodes.push_back(pNode);
-	_Transforms.resize(_Transforms.size() + _SourceInfo.size());
-	_ChannelMasks.resize(_ChannelMasks.size() + _SourceInfo.size());
+	_PortMapping.push_back(pNode);
+	_Transforms.resize(_Transforms.size() + _Sources.size());
+	_ChannelMasks.resize(_ChannelMasks.size() + _Sources.size());
 
-	return static_cast<U32>(_Nodes.size() - 1);
+	return static_cast<U32>(_PortMapping.size() - 1);
 }
 //---------------------------------------------------------------------
+*/
 
 }

@@ -12,7 +12,6 @@ set(DEM_L1_LOW_HEADERS
 	DEM/Low/src/Animation/StaticPose.h
 	DEM/Low/src/Animation/TimelineTrack.h
 	DEM/Low/src/Animation/TimelineTrackGroup.h
-	DEM/Low/src/Animation/TransformSource.h
 	DEM/Low/src/Core/Application.h
 	DEM/Low/src/Core/ApplicationState.h
 	DEM/Low/src/Core/CoreServer.h
@@ -322,7 +321,6 @@ set(DEM_L1_LOW_SOURCES
 	DEM/Low/src/Animation/Skeleton.cpp
 	DEM/Low/src/Animation/StaticPose.cpp
 	DEM/Low/src/Animation/TimelineTrackGroup.cpp
-	DEM/Low/src/Animation/TransformSource.cpp
 	DEM/Low/src/Core/Application.cpp
 	DEM/Low/src/Core/ApplicationState.cpp
 	DEM/Low/src/Core/CoreServer.cpp

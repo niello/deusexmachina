@@ -1,5 +1,6 @@
 #pragma once
-#include <Animation/TransformSource.h>
+#include <Data/Ptr.h>
+#include <Math/TransformSRT.h>
 
 // Transformation source that applies static transform
 
