@@ -5,7 +5,6 @@ namespace DEM::Anim
 {
 
 CAnimationBlender::CAnimationBlender() = default;
-CAnimationBlender::CAnimationBlender(U8 SourceCount) { Initialize(SourceCount); }
 CAnimationBlender::~CAnimationBlender() = default;
 
 // NB: this invalidates all current transforms at least for now
@@ -113,6 +112,26 @@ void CAnimationBlender::Apply()
 }
 //---------------------------------------------------------------------
 
+U16 CAnimationBlender::BindNode(CStrID NodeID, U16 ParentPort)
+{
+	if (!_pOutput) return IPoseOutput::InvalidPort;
+
+	const auto ParentOutputPort = _PortMapping.empty() ? ParentPort : _PortMapping[ParentPort];
+	const auto OutputPort = _pOutput->BindNode(NodeID, ParentOutputPort);
+	if (OutputPort == IPoseOutput::InvalidPort) return IPoseOutput::InvalidPort;
+
+	// find that port in _PortMapping (if it exists)
+	// check if this port is inside the current port count, this will mean that direct mapping is used
+	// if no port, create it / increment port count
+	// if mapping exists, add to mapping
+	// if local port != output port and no mapping, create mapping i -> i for existing ports and add new port mapping record
+	// return local port
+	NOT_IMPLEMENTED;
+
+	return IPoseOutput::InvalidPort;
+}
+//---------------------------------------------------------------------
+
 void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 {
 	if (Source < _Sources.size() && _Sources[Source]->GetPriority() != Priority)
@@ -130,19 +149,6 @@ void CAnimationBlender::SetPriority(U8 Source, U16 Priority)
 void CAnimationBlender::SetWeight(U8 Source, float Weight)
 {
 	if (Source < _Sources.size()) _Sources[Source]->_Weight = Weight;
-}
-//---------------------------------------------------------------------
-
-U16 CAnimationBlenderInput::BindNode(CStrID NodeID, U16 ParentPort)
-{
-	// redirect to blender
-	// blender redirects to output, receives port, then resizes port-dependent arrays if required
-}
-//---------------------------------------------------------------------
-
-U8 CAnimationBlenderInput::GetActivePortChannels(U16 Port) const
-{
-	// request availability from blender output?
 }
 //---------------------------------------------------------------------
 

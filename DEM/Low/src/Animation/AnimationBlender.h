@@ -1,5 +1,6 @@
 #pragma once
 #include <Animation/PoseOutput.h>
+#include <System/System.h>
 
 // Order independent priority+weight animation blender. Accepts only local transformation sources.
 // Animation players and static poses, to name a few. Each animated node is associated with
@@ -28,19 +29,27 @@ protected:
 public:
 
 	CAnimationBlender();
-	CAnimationBlender(U8 SourceCount);
 	~CAnimationBlender();
 
 	void Initialize(U8 SourceCount);
 	void Apply();
 
+	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].get() : nullptr; }
+
+	U16  BindNode(CStrID NodeID, U16 ParentPort);
 	void SetPriority(U8 Source, U16 Priority);
 	void SetWeight(U8 Source, float Weight);
 
+	U8 GetActivePortChannels(U16 Port) const
+	{
+		n_assert_dbg(_pOutput);
+		//???PERF: for speed eliminate _pOutput nullptr check and do once on a caller side?
+		//???cache port channels once a frame before blending, return cached value here?
+		return _pOutput ? _pOutput->GetActivePortChannels(_PortMapping.empty() ? Port : _PortMapping[Port]) : 0;
+	}
+
 	void SetScale(U8 Source, U16 Port, const vector3& Scale)
 	{
-		// FIXME: mapping vector can be empty if mapping is direct!
-		if (Port >= _PortMapping.size()) return;
 		const UPTR Idx = Port * _Sources.size() + Source;
 		_Transforms[Idx].Scale = Scale;
 		_ChannelMasks[Idx] |= ETransformChannel::Scaling;
@@ -48,8 +57,6 @@ public:
 
 	void SetRotation(U8 Source, U16 Port, const quaternion& Rotation)
 	{
-		// FIXME: mapping vector can be empty if mapping is direct!
-		if (Port >= _PortMapping.size()) return;
 		const UPTR Idx = Port * _Sources.size() + Source;
 		_Transforms[Idx].Rotation = Rotation;
 		_ChannelMasks[Idx] |= ETransformChannel::Rotation;
@@ -57,8 +64,6 @@ public:
 
 	void SetTranslation(U8 Source, U16 Port, const vector3& Translation)
 	{
-		// FIXME: mapping vector can be empty if mapping is direct!
-		if (Port >= _PortMapping.size()) return;
 		const UPTR Idx = Port * _Sources.size() + Source;
 		_Transforms[Idx].Translation = Translation;
 		_ChannelMasks[Idx] |= ETransformChannel::Translation;
@@ -66,11 +71,9 @@ public:
 
 	void SetTransform(U8 Source, U16 Port, const Math::CTransformSRT& Tfm)
 	{
-		// FIXME: mapping vector can be empty if mapping is direct!
-		if (Port >= _PortMapping.size()) return;
 		const UPTR Idx = Port * _Sources.size() + Source;
 		_Transforms[Idx] = Tfm;
-		_ChannelMasks[Idx] |= ETransformChannel::All;
+		_ChannelMasks[Idx] = ETransformChannel::All;
 	}
 };
 
@@ -85,8 +88,8 @@ protected:
 
 public:
 
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override;
-	virtual U8   GetActivePortChannels(U16 Port) const override;
+	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return _Blender->BindNode(NodeID, ParentPort); }
+	virtual U8   GetActivePortChannels(U16 Port) const override { return _Blender->GetActivePortChannels(Port); }
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override { _Blender->SetScale(_Index, Port, Scale); }
 	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _Blender->SetRotation(_Index, Port, Rotation); }
