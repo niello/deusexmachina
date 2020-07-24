@@ -25,6 +25,7 @@ protected:
 	std::vector<UPTR>                   _SourcesByPriority;
 	std::vector<Math::CTransformSRT>    _Transforms;   // per node per source
 	std::vector<U8>                     _ChannelMasks; // per node per source
+	U16                                 _PortCount = 0; // for lazy blend matrix allocation
 
 public:
 

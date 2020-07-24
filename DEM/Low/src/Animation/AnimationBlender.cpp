@@ -24,11 +24,12 @@ void CAnimationBlender::Initialize(U8 SourceCount)
 
 void CAnimationBlender::Apply()
 {
-	const auto PortCount = _PortMapping.size();
 	const auto SourceCount = _Sources.size();
-	if (!PortCount || !SourceCount) return;
+	if (!_PortCount || !SourceCount) return;
 
-	for (UPTR Port = 0; Port < PortCount; ++Port)
+	const bool DirectMapping = _PortMapping.empty();
+
+	for (UPTR Port = 0; Port < _PortCount; ++Port)
 	{
 		Math::CTransformSRT FinalTfm;
 		U8 FinalMask = 0;
@@ -94,17 +95,19 @@ void CAnimationBlender::Apply()
 
 		// Apply accumulated transform
 
+		const auto OutputPort = DirectMapping ? Port : _PortMapping[Port];
+
 		if (FinalMask & ETransformChannel::Scaling)
-			_pOutput->SetScale(Port, FinalTfm.Scale);
+			_pOutput->SetScale(OutputPort, FinalTfm.Scale);
 
 		if (FinalMask & ETransformChannel::Rotation)
 		{
 			if (RotationWeights < 1.f) FinalTfm.Rotation.normalize();
-			_pOutput->SetRotation(Port, FinalTfm.Rotation);
+			_pOutput->SetRotation(OutputPort, FinalTfm.Rotation);
 		}
 
 		if (FinalMask & ETransformChannel::Translation)
-			_pOutput->SetTranslation(Port, FinalTfm.Translation);
+			_pOutput->SetTranslation(OutputPort, FinalTfm.Translation);
 	}
 
 	// Source data is blended into the output, no more channels are ready to be blended
@@ -112,23 +115,45 @@ void CAnimationBlender::Apply()
 }
 //---------------------------------------------------------------------
 
+// NB: slow operation, try to bind all your sources once on blender init
 U16 CAnimationBlender::BindNode(CStrID NodeID, U16 ParentPort)
 {
 	if (!_pOutput) return IPoseOutput::InvalidPort;
 
-	const auto ParentOutputPort = _PortMapping.empty() ? ParentPort : _PortMapping[ParentPort];
+	const bool DirectMapping = _PortMapping.empty();
+
+	const auto ParentOutputPort = DirectMapping ? ParentPort : _PortMapping[ParentPort];
 	const auto OutputPort = _pOutput->BindNode(NodeID, ParentOutputPort);
 	if (OutputPort == IPoseOutput::InvalidPort) return IPoseOutput::InvalidPort;
 
-	// find that port in _PortMapping (if it exists)
-	// check if this port is inside the current port count, this will mean that direct mapping is used
-	// if no port, create it / increment port count
-	// if mapping exists, add to mapping
-	// if local port != output port and no mapping, create mapping i -> i for existing ports and add new port mapping record
-	// return local port
-	NOT_IMPLEMENTED;
+	// Check if this output port is alread mapped to our input port
+	if (DirectMapping)
+	{
+		if (OutputPort < _PortCount) return OutputPort;
+	}
+	else
+	{
+		auto It = std::find(_PortMapping.cbegin(), _PortMapping.cend(), OutputPort);
+		if (It != _PortMapping.cend()) return static_cast<U16>(std::distance(_PortMapping.cbegin(), It));
+	}
 
-	return IPoseOutput::InvalidPort;
+	// Allocate new port
+	const auto Port = _PortCount++;
+	if (!DirectMapping || Port != OutputPort)
+	{
+		if (DirectMapping)
+		{
+			// Direct mapping satisfies our data no more, build explicit mapping
+			_PortMapping.resize(Port);
+			for (U16 i = 0; i < Port; ++i)
+				_PortMapping[i] = i;
+		}
+
+		_PortMapping.push_back(OutputPort);
+		n_assert_dbg(_PortMapping.size() == _PortCount);
+	}
+
+	return Port;
 }
 //---------------------------------------------------------------------
 
@@ -151,26 +176,5 @@ void CAnimationBlender::SetWeight(U8 Source, float Weight)
 	if (Source < _Sources.size()) _Sources[Source]->_Weight = Weight;
 }
 //---------------------------------------------------------------------
-
-/*
-// NB: slow operation
-U32 CAnimationBlender::GetOrCreateNodePort(Scene::CSceneNode* pNode)
-{
-	if (!pNode || _PortMapping.size() >= std::numeric_limits<U32>().max())
-		return InvalidPort;
-
-	const auto PortCount = _PortMapping.size();
-	for (UPTR Port = 0; Port < PortCount; ++Port)
-		if (_PortMapping[Port] == pNode)
-			return Port;
-
-	_PortMapping.push_back(pNode);
-	_Transforms.resize(_Transforms.size() + _Sources.size());
-	_ChannelMasks.resize(_ChannelMasks.size() + _Sources.size());
-
-	return static_cast<U32>(_PortMapping.size() - 1);
-}
-//---------------------------------------------------------------------
-*/
 
 }
