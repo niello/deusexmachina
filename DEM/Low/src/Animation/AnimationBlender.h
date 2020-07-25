@@ -82,6 +82,8 @@ class CAnimationBlenderInput : public IPoseOutput
 {
 protected:
 
+	friend class CAnimationBlender; // for write access to weight and priority
+
 	PAnimationBlender _Blender;
 	float             _Weight = 0.f; // Set <= 0.f to deactivate this source
 	U16               _Priority = 0;
