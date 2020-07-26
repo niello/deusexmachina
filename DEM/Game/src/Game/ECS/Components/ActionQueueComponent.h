@@ -53,6 +53,9 @@ public:
 	bool                ClearActiveStack() { if (!_Stack.empty()) RemoveAction(*_Stack.front()); }
 	bool                RemoveAction(const Events::CEventBase& Action);
 
+	//!!!FIXME: REDESIGN! When modify existing but already finished action, must reactivate it.
+	void FIXME_ReactivateAction() { if (!_Stack.empty()) _Status = EActionStatus::Active; }
+
 	template<typename T, typename... TArgs>
 	T* EnqueueAction(TArgs&&... Args)
 	{

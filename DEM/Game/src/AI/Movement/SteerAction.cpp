@@ -113,6 +113,7 @@ static bool DoGenerateAction(CNavAgentComponent& Agent, Game::CActionQueueCompon
 		pSteer->_Dest = Dest;
 		pSteer->_NextDest = NextDest;
 		pSteer->_AdditionalDistance = AdditionalDistance;
+		Queue.FIXME_ReactivateAction();
 		return true;
 	}
 	else

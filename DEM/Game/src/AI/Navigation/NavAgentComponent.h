@@ -37,7 +37,7 @@ enum class ENavigationState : U8
 
 enum class ENavigationMode : U8
 {
-	Recovery = 0, // Agent is outside the navmesh and will recovery to the surface unless Idle
+	Recovery = 0, // Agent is outside the navmesh and will recover to the surface unless Idle
 	Surface,      // Agent is on the navmesh surface
 	Offmesh       // Agent is traversing an offmesh connection
 };
