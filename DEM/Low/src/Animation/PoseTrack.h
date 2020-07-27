@@ -16,7 +16,7 @@ protected:
 
 public:
 
-	// pose clips
+	// pose clips //???unique ptrs? clip itself + start time? end time is from clip duration? start time inside clip?
 
 	// play interval -> play all clips in the interval, passing output or even track itself into them.
 	//???need base class for all clips? may help in editor and for common calculations like clips in interval, rel. time etc.

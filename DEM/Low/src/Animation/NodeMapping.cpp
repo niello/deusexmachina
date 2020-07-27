@@ -19,7 +19,7 @@ CNodeMapping::CNodeMapping(std::vector<CNodeInfo>&& Map)
 }
 //---------------------------------------------------------------------
 
-// NB: if mapping is direct (each index is bound to the port with teh same index),
+// NB: if mapping is direct (each index is bound to the port with the same index),
 // then OutPorts will be cleared and user should write to the output without remapping.
 // It happens quite often with animation clips.
 void CNodeMapping::Bind(IPoseOutput& Output, std::vector<U16>& OutPorts) const

@@ -18,8 +18,6 @@ protected:
 
 	CACLContext      _Context; // At offset 0
 	PAnimationClip   _Clip;
-	IPoseOutput*     _pOutput = nullptr; //???PPoseOutput refcounted?
-	std::vector<U16> _PortMapping;
 
 	float            _Speed = 1.f;
 	float            _CurrTime = 0.f;
@@ -35,16 +33,16 @@ public:
 	CAnimationPlayer();
 	~CAnimationPlayer();
 
-	bool  Initialize(IPoseOutput& Output, PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
+	bool  Initialize(PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
 	void  Reset();
 
 	//???play, stop, pause etc must migrate to timeline?
 	//Update will be split to SetTime and EvaluatePose?
-	void  Update(float dt);
+	void  Update(float dt, IPoseOutput& Output);
 
 	PStaticPose BakePose(float Time);
 
-	bool  Play() { _Paused = (!_Clip || !_pOutput); return !_Paused; }
+	bool  Play() { _Paused = !_Clip; return !_Paused; }
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
 	void  Pause() { _Paused = true; }
 
@@ -53,7 +51,6 @@ public:
 	void  SetCursor(float Time);
 
 	auto* GetClip() const { return _Clip.Get(); }
-	auto* GetOutput() const { return _pOutput; }
 	float GetSpeed() const { return _Speed; }
 	float GetCursor() const { return _CurrTime; }
 	bool  IsLooped() const { return _Loop; }
