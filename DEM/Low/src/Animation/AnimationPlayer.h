@@ -33,8 +33,6 @@ public:
 	CAnimationPlayer();
 	~CAnimationPlayer();
 
-	bool  Initialize(PAnimationClip Clip, bool Loop = false, float Speed = 1.f);
-	void  Reset();
 
 	//???play, stop, pause etc must migrate to timeline?
 	//Update will be split to SetTime and EvaluatePose?
@@ -46,9 +44,11 @@ public:
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
 	void  Pause() { _Paused = true; }
 
+	bool  SetClip(PAnimationClip Clip);
 	void  SetSpeed(float Speed) { _Speed = Speed; }
 	void  SetLooped(bool Loop) { _Loop = Loop; }
 	void  SetCursor(float Time);
+	void  Reset();
 
 	auto* GetClip() const { return _Clip.Get(); }
 	float GetSpeed() const { return _Speed; }

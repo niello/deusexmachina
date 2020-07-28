@@ -66,36 +66,6 @@ struct CStaticPoseWriter : acl::OutputWriter
 CAnimationPlayer::CAnimationPlayer() = default;
 CAnimationPlayer::~CAnimationPlayer() = default;
 
-bool CAnimationPlayer::Initialize(PAnimationClip Clip, bool Loop, float Speed)
-{
-	if (!Clip || Clip->GetDuration() <= 0.f) return false;
-
-	const auto* pACLClip = Clip->GetACLClip();
-	if (!pACLClip) return false;
-
-	if (_Context.is_dirty(*pACLClip))
-		_Context.initialize(*pACLClip);
-
-	_Clip = std::move(Clip);
-
-	_Speed = Speed;
-	_Loop = Loop;
-
-	_CurrTime = 0.f;
-	_Paused = true;
-
-	return true;
-}
-//---------------------------------------------------------------------
-
-void CAnimationPlayer::Reset()
-{
-	_Clip = nullptr;
-	_CurrTime = 0.f;
-	_Paused = true;
-}
-//---------------------------------------------------------------------
-
 static inline float NormalizeClipCursor(float Time, float Duration, bool Loop)
 {
 	return Loop ? std::fmodf(Time, Duration) : std::clamp(Time, 0.f, Duration);
@@ -129,10 +99,37 @@ PStaticPose CAnimationPlayer::BakePose(float Time)
 }
 //---------------------------------------------------------------------
 
+bool CAnimationPlayer::SetClip(PAnimationClip Clip)
+{
+	if (!Clip || Clip->GetDuration() <= 0.f) return false;
+
+	const auto* pACLClip = Clip->GetACLClip();
+	if (!pACLClip) return false;
+
+	if (_Context.is_dirty(*pACLClip))
+		_Context.initialize(*pACLClip);
+
+	_Clip = std::move(Clip);
+
+	_CurrTime = 0.f;
+	_Paused = true;
+
+	return true;
+}
+//---------------------------------------------------------------------
+
 void CAnimationPlayer::SetCursor(float Time)
 {
 	if (!_Clip) return;
 	_CurrTime = NormalizeClipCursor(Time, _Clip->GetDuration(), _Loop);
+}
+//---------------------------------------------------------------------
+
+void CAnimationPlayer::Reset()
+{
+	_Clip = nullptr;
+	_CurrTime = 0.f;
+	_Paused = true;
 }
 //---------------------------------------------------------------------
 
