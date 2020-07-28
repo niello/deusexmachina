@@ -25,24 +25,38 @@ CNodeMapping::CNodeMapping(std::vector<CNodeInfo>&& Map)
 void CNodeMapping::Bind(IPoseOutput& Output, std::vector<U16>& OutPorts) const
 {
 	OutPorts.clear();
-	OutPorts.reserve(_Map.size());
 
-	bool HasShifts = false;
 	for (size_t i = 0; i < _Map.size(); ++i)
 	{
 		const auto& NodeInfo = _Map[i];
 
+		const bool DirectMapping = OutPorts.empty();
+
 		// See guarantee comment in the constructor
-		const U16 ParentPort = (NodeInfo.ParentIndex == NoParentIndex) ?
-			IPoseOutput::InvalidPort :
+		const U16 ParentOutputPort =
+			(NodeInfo.ParentIndex == NoParentIndex) ? IPoseOutput::InvalidPort :
+			DirectMapping ? NodeInfo.ParentIndex :
 			OutPorts[NodeInfo.ParentIndex];
 
-		OutPorts.push_back(Output.BindNode(NodeInfo.ID, ParentPort));
-		HasShifts = HasShifts || (OutPorts.back() != i);
-	}
+		const auto OutputPort = Output.BindNode(NodeInfo.ID, ParentOutputPort);
+		//if (OutputPort == IPoseOutput::InvalidPort) continue with port = IPoseOutput::InvalidPort;
 
-	// If source indices directly map to output ports, can skip mapping when decompress pose
-	if (!HasShifts) OutPorts.clear();
+		// Allocate new port
+		const auto Port = static_cast<U16>(i);
+		if (!DirectMapping || Port != OutputPort)
+		{
+			if (DirectMapping)
+			{
+				// Direct mapping satisfies our data no more, build explicit mapping
+				OutPorts.resize(Port);
+				for (U16 j = 0; j < Port; ++j)
+					OutPorts[j] = j;
+			}
+
+			OutPorts.push_back(OutputPort);
+			n_assert_dbg(OutPorts.size() == (i + 1));
+		}
+	}
 }
 //---------------------------------------------------------------------
 
