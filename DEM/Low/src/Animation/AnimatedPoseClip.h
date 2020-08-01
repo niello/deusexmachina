@@ -1,17 +1,17 @@
 #pragma once
 #include <Animation/PoseClipBase.h>
-#include <Animation/StaticPose.h>
+#include <Animation/AnimationPlayer.h>
 
-// Pose clip that samples the same pose for its entire duration
+// Pose clip that samples a pose from an animation player 
 
 namespace DEM::Anim
 {
 
-class CStaticPoseClip : public CPoseClipBase
+class CAnimatedPoseClip : public CPoseClipBase
 {
 protected:
 
-	PStaticPose _Pose;
+	PAnimationPlayer _Player;
 
 public:
 

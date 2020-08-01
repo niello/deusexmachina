@@ -4,7 +4,7 @@
 namespace DEM::Anim
 {
 
-void CStaticPoseClip::UpdateInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex)
+void CStaticPoseClip::PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex)
 {
 	//ignore time
 	//always sample our static pose into the output

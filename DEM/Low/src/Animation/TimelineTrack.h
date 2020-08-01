@@ -14,7 +14,7 @@ public:
 	//???clips here?
 	// NB: whole timeline looping must be handled in a timeline player
 
-	virtual void PlayInterval(float StartTime, float EndTime) = 0;
+	virtual void PlayInterval(float PrevTime, float CurrTime) = 0;
 
 	// sample for time (or set time, if instanced)
 	// rewinding, skipping etc, with intermediate effects (skip or execute script, skip VFX, set anim frame etc)

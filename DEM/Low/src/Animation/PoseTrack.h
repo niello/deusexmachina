@@ -7,20 +7,25 @@
 namespace DEM::Anim
 {
 using PPoseOutput = std::unique_ptr<class IPoseOutput>;
+using PPoseClipBase = std::unique_ptr<class CPoseClipBase>;
 
 class CPoseTrack : public ITimelineTrack
 {
 protected:
 
-	PPoseOutput Output;
+	PPoseOutput                _Output;
+	std::vector<PPoseClipBase> _Clips; // start time? duration, if overridden (zero if as in anim. clip)? inside or here?
+	//???!!!sort clips by start time?!
 
 public:
 
-	// pose clips //???unique ptrs? clip itself + start time? end time is from clip duration? start time inside clip?
+	CPoseTrack();
+	~CPoseTrack();
 
-	// play interval -> play all clips in the interval, passing output or even track itself into them.
-	//???need base class for all clips? may help in editor and for common calculations like clips in interval, rel. time etc.
+	virtual void PlayInterval(float PrevTime, float CurrTime) override;
 
+	// pose track initialization - map each clip to output, where possible. Even LastPose can be mapped in advance.
+	// recurse through blenders, handle mapped outputs for leaf sources (like in loading now).
 	// when output changes, need to map all our clips to it once
 };
 

@@ -12,12 +12,13 @@ class CPoseClipBase
 {
 protected:
 
-	PPoseOutput Output; //if mapping is direct, this is a track output!
-	//optional mapping right here? Or mapped/non-mapped output subclasses?
+	PPoseOutput Output; // Track output (for direct port mapping) or mapped output
 
 public:
 
-	virtual void UpdateInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) = 0;
+	//virtual BindToOutput
+
+	virtual void PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) = 0;
 };
 
 }
