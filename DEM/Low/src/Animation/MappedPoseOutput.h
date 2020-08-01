@@ -22,7 +22,29 @@ public:
 		, _PortMapping(std::move(PortMapping))
 	{}
 
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return _Output->BindNode(NodeID, _PortMapping[ParentPort]); }
+	// For replacing direct output when first port with indirect mapping is encountered
+	CMappedPoseOutput(PPoseOutput&& Output, UPTR InitialPortCount, U16 FirstIndirectPort)
+		: _Output(std::move(Output))
+	{
+		_PortMapping.resize(InitialPortCount + 1);
+		for (UPTR i = 0; i < InitialPortCount; ++i)
+			_PortMapping[i] = i;
+		_PortMapping[InitialPortCount] = FirstIndirectPort;
+	}
+
+	virtual U16 BindNode(CStrID NodeID, U16 ParentPort) override
+	{
+		const auto OutputPort = _Output->BindNode(NodeID, _PortMapping[ParentPort]);
+
+		// If this output port is already mapped, return existing input port
+		auto It = std::find(_PortMapping.cbegin(), _PortMapping.cend(), OutputPort);
+		if (It != _PortMapping.cend()) return static_cast<U16>(std::distance(_PortMapping.cbegin(), It));
+
+		// Add new output port to mapping
+		_PortMapping.push_back(OutputPort);
+		return static_cast<U16>(_PortMapping.size() - 1);
+	}
+
 	virtual U8   GetActivePortChannels(U16 Port) const override { return _Output->GetActivePortChannels(_PortMapping[Port]); }
 
 	virtual void SetScale(U16 Port, const vector3& Scale) override { return _Output->SetScale(_PortMapping[Port], Scale); }

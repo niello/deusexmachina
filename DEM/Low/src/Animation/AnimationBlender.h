@@ -19,8 +19,7 @@ class CAnimationBlender final
 {
 protected:
 
-	IPoseOutput*                        _pOutput = nullptr; //???PPoseOutput refcounted?
-	std::vector<U16>                    _PortMapping;
+	PPoseOutput                         _Output;
 	std::vector<PAnimationBlenderInput> _Sources;
 	std::vector<UPTR>                   _SourcesByPriority;
 	std::vector<Math::CTransformSRT>    _Transforms;   // per node per source
@@ -43,10 +42,10 @@ public:
 
 	U8 GetActivePortChannels(U16 Port) const
 	{
-		n_assert_dbg(_pOutput);
+		n_assert_dbg(_Output);
 		//???PERF: for speed eliminate _pOutput nullptr check and do once on a caller side?
 		//???cache port channels once a frame before blending, return cached value here?
-		return _pOutput ? _pOutput->GetActivePortChannels(_PortMapping.empty() ? Port : _PortMapping[Port]) : 0;
+		return _Output ? _Output->GetActivePortChannels(Port) : 0;
 	}
 
 	void SetScale(U8 Source, U16 Port, const vector3& Scale)

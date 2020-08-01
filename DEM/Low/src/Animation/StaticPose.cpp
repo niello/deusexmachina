@@ -1,5 +1,4 @@
 #include "StaticPose.h"
-#include <Animation/AnimationBlender.h>
 #include <Animation/NodeMapping.h>
 #include <Animation/PoseOutput.h>
 
@@ -17,28 +16,11 @@ CStaticPose::CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PNodeMap
 CStaticPose::~CStaticPose() = default;
 //---------------------------------------------------------------------
 
-void CStaticPose::SetOutput(IPoseOutput& Output)
+void CStaticPose::Apply(IPoseOutput& Output)
 {
-	_pOutput = &Output;
-	_NodeMapping->Bind(Output, _PortMapping);
-}
-//---------------------------------------------------------------------
-
-void CStaticPose::Apply()
-{
-	if (!_pOutput) return;
-
 	const auto Count = _Transforms.size();
-	if (_PortMapping.empty())
-	{
-		for (UPTR i = 0; i < Count; ++i)
-			_pOutput->SetTransform(i, _Transforms[i]);
-	}
-	else
-	{
-		for (UPTR i = 0; i < Count; ++i)
-			_pOutput->SetTransform(_PortMapping[i], _Transforms[i]);
-	}
+	for (UPTR i = 0; i < Count; ++i)
+		Output.SetTransform(i, _Transforms[i]);
 }
 //---------------------------------------------------------------------
 

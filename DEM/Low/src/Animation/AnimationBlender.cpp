@@ -1,4 +1,5 @@
 #include "AnimationBlender.h"
+#include <Animation/MappedPoseOutput.h>
 #include <Scene/SceneNode.h>
 
 namespace DEM::Anim
@@ -7,11 +8,11 @@ namespace DEM::Anim
 CAnimationBlender::CAnimationBlender() = default;
 CAnimationBlender::~CAnimationBlender() = default;
 
+//???where to set output?
 // NB: this invalidates all current transforms at least for now
 void CAnimationBlender::Initialize(U8 SourceCount)
 {
 	_Sources.resize(SourceCount);
-	_PortMapping.clear();
 	_Transforms.clear();
 	_ChannelMasks.clear();
 
@@ -25,9 +26,15 @@ void CAnimationBlender::Initialize(U8 SourceCount)
 void CAnimationBlender::Apply()
 {
 	const auto SourceCount = _Sources.size();
-	if (!_PortCount || !SourceCount) return;
+	const auto MatrixCellCount = _PortCount * SourceCount;
+	if (!MatrixCellCount) return;
 
-	const bool DirectMapping = _PortMapping.empty();
+	// Allocate blend matrix (sources * ports)
+	if (_Transforms.size() != MatrixCellCount)
+	{
+		_Transforms.resize(MatrixCellCount);
+		_ChannelMasks.resize(MatrixCellCount);
+	}
 
 	for (UPTR Port = 0; Port < _PortCount; ++Port)
 	{
@@ -95,19 +102,17 @@ void CAnimationBlender::Apply()
 
 		// Apply accumulated transform
 
-		const auto OutputPort = DirectMapping ? Port : _PortMapping[Port];
-
 		if (FinalMask & ETransformChannel::Scaling)
-			_pOutput->SetScale(OutputPort, FinalTfm.Scale);
+			_Output->SetScale(Port, FinalTfm.Scale);
 
 		if (FinalMask & ETransformChannel::Rotation)
 		{
 			if (RotationWeights < 1.f) FinalTfm.Rotation.normalize();
-			_pOutput->SetRotation(OutputPort, FinalTfm.Rotation);
+			_Output->SetRotation(Port, FinalTfm.Rotation);
 		}
 
 		if (FinalMask & ETransformChannel::Translation)
-			_pOutput->SetTranslation(OutputPort, FinalTfm.Translation);
+			_Output->SetTranslation(Port, FinalTfm.Translation);
 	}
 
 	// Source data is blended into the output, no more channels are ready to be blended
@@ -118,40 +123,21 @@ void CAnimationBlender::Apply()
 // NB: slow operation, try to bind all your sources once on blender init
 U16 CAnimationBlender::BindNode(CStrID NodeID, U16 ParentPort)
 {
-	if (!_pOutput) return IPoseOutput::InvalidPort;
+	if (!_Output) return IPoseOutput::InvalidPort;
 
-	const bool DirectMapping = _PortMapping.empty();
-
-	const auto ParentOutputPort = DirectMapping ? ParentPort : _PortMapping[ParentPort];
-	const auto OutputPort = _pOutput->BindNode(NodeID, ParentOutputPort);
+	const auto OutputPort = _Output->BindNode(NodeID, ParentPort);
 	if (OutputPort == IPoseOutput::InvalidPort) return IPoseOutput::InvalidPort;
 
-	// Check if this output port is alread mapped to our input port
-	if (DirectMapping)
-	{
-		if (OutputPort < _PortCount) return OutputPort;
-	}
-	else
-	{
-		auto It = std::find(_PortMapping.cbegin(), _PortMapping.cend(), OutputPort);
-		if (It != _PortMapping.cend()) return static_cast<U16>(std::distance(_PortMapping.cbegin(), It));
-	}
+	// Check if this output port is already mapped to our input port
+	if (OutputPort < _PortCount) return OutputPort;
 
-	// Allocate new port
+	// Allocate new port, delay memory allocation to the next Apply() call
 	const auto Port = _PortCount++;
-	if (!DirectMapping || Port != OutputPort)
-	{
-		if (DirectMapping)
-		{
-			// Direct mapping satisfies our data no more, build explicit mapping
-			_PortMapping.resize(Port);
-			for (U16 i = 0; i < Port; ++i)
-				_PortMapping[i] = i;
-		}
 
-		_PortMapping.push_back(OutputPort);
-		n_assert_dbg(_PortMapping.size() == _PortCount);
-	}
+	// When direct mapping satisfies our data no more, build explicit mapping.
+	// This will never happen if mapped output is already created.
+	if (Port != OutputPort)
+		_Output.reset(n_new(CMappedPoseOutput(std::move(_Output), _PortCount, OutputPort)));
 
 	return Port;
 }

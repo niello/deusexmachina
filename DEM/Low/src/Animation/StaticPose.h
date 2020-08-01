@@ -22,8 +22,6 @@ class CStaticPose final
 protected:
 
 	PNodeMapping                     _NodeMapping;
-	IPoseOutput*                     _pOutput = nullptr; //???PPoseOutput refcounted?
-	std::vector<U16>                 _PortMapping;
 	std::vector<Math::CTransformSRT> _Transforms;
 
 public:
@@ -31,8 +29,9 @@ public:
 	CStaticPose(std::vector<Math::CTransformSRT>&& Transforms, PNodeMapping&& NodeMapping);
 	~CStaticPose();
 
-	void SetOutput(IPoseOutput& Output);
-	void Apply();
+	void Apply(IPoseOutput& Output);
+
+	CNodeMapping& GetNodeMapping() const { return *_NodeMapping; } // non-const to create intrusive strong refs
 };
 
 }
