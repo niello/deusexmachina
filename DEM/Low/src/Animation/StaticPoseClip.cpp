@@ -4,6 +4,12 @@
 namespace DEM::Anim
 {
 
+void CStaticPoseClip::BindToOutput(/*IPoseOutput* pOutput*/)
+{
+	// bind static pose to output, save output itself or mapped output
+}
+//---------------------------------------------------------------------
+
 void CStaticPoseClip::PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex)
 {
 	//ignore time

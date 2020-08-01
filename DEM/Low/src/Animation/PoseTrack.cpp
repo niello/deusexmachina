@@ -15,7 +15,7 @@ void CPoseTrack::SetOutput(PPoseOutput&& Output)
 	_Output = std::move(Output);
 
 	for (auto& Clip : _Clips)
-		Clip->BindToOutput(Output.get());
+		Clip->BindToOutput(_Output.get());
 }
 //---------------------------------------------------------------------
 
