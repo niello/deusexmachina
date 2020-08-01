@@ -83,20 +83,22 @@ protected:
 
 	friend class CAnimationBlender; // for write access to weight and priority
 
-	PAnimationBlender _Blender;
-	float             _Weight = 0.f; // Set <= 0.f to deactivate this source
-	U16               _Priority = 0;
-	U8                _Index;
+	CAnimationBlender* _pBlender = nullptr;
+	float              _Weight = 0.f; // Set <= 0.f to deactivate this source
+	U16                _Priority = 0;
+	U8                 _Index;
 
 public:
 
-	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return _Blender->BindNode(NodeID, ParentPort); }
-	virtual U8   GetActivePortChannels(U16 Port) const override { return _Blender->GetActivePortChannels(Port); }
+	CAnimationBlenderInput(CAnimationBlender& Blender, U8 Index) : _pBlender(&Blender), _Index(Index) {}
 
-	virtual void SetScale(U16 Port, const vector3& Scale) override { _Blender->SetScale(_Index, Port, Scale); }
-	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _Blender->SetRotation(_Index, Port, Rotation); }
-	virtual void SetTranslation(U16 Port, const vector3& Translation) override { _Blender->SetTranslation(_Index, Port, Translation); }
-	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { _Blender->SetTransform(_Index, Port, Tfm); }
+	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return _pBlender->BindNode(NodeID, ParentPort); }
+	virtual U8   GetActivePortChannels(U16 Port) const override { return _pBlender->GetActivePortChannels(Port); }
+
+	virtual void SetScale(U16 Port, const vector3& Scale) override { _pBlender->SetScale(_Index, Port, Scale); }
+	virtual void SetRotation(U16 Port, const quaternion& Rotation) override { _pBlender->SetRotation(_Index, Port, Rotation); }
+	virtual void SetTranslation(U16 Port, const vector3& Translation) override { _pBlender->SetTranslation(_Index, Port, Translation); }
+	virtual void SetTransform(U16 Port, const Math::CTransformSRT& Tfm) override { _pBlender->SetTransform(_Index, Port, Tfm); }
 
 	float        GetWeight() const { return _Weight; }
 	U16          GetPriority() const { return _Priority; }

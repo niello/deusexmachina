@@ -8,6 +8,7 @@ namespace DEM::Anim
 {
 using PPoseOutput = std::unique_ptr<class IPoseOutput>;
 using PPoseClipBase = std::unique_ptr<class CPoseClipBase>;
+using PPoseTrack = std::unique_ptr<class CPoseTrack>;
 
 class CPoseTrack : public ITimelineTrack
 {
@@ -21,6 +22,8 @@ public:
 
 	CPoseTrack();
 	~CPoseTrack();
+
+	void         SetOutput(PPoseOutput&& Output);
 
 	virtual void PlayInterval(float PrevTime, float CurrTime) override;
 

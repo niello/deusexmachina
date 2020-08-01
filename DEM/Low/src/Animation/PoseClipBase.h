@@ -5,19 +5,18 @@
 
 namespace DEM::Anim
 {
-using PPoseOutput = std::unique_ptr<class IPoseOutput>;
+class IPoseOutput;
 class CPoseTrack;
 
 class CPoseClipBase
 {
 protected:
 
-	PPoseOutput Output; // Track output (for direct port mapping) or mapped output
+	IPoseOutput* _pOutput = nullptr; // Track output (for direct port mapping) or mapped output
 
 public:
 
-	//virtual BindToOutput
-
+	virtual void BindToOutput(IPoseOutput* pOutput) = 0;
 	virtual void PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) = 0;
 };
 

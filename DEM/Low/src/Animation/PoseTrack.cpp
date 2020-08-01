@@ -8,6 +8,17 @@ namespace DEM::Anim
 CPoseTrack::CPoseTrack() = default;
 CPoseTrack::~CPoseTrack() = default;
 
+void CPoseTrack::SetOutput(PPoseOutput&& Output)
+{
+	if (Output == _Output) return;
+
+	_Output = std::move(Output);
+
+	for (auto& Clip : _Clips)
+		Clip->BindToOutput(Output.get());
+}
+//---------------------------------------------------------------------
+
 void CPoseTrack::PlayInterval(float PrevTime, float CurrTime)
 {
 	//!!!if interval is wrapped when looping, process both parts, but not separately, must not do 2 updates!
