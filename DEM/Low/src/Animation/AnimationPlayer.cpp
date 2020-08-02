@@ -72,17 +72,15 @@ static inline float NormalizeClipCursor(float Time, float Duration, bool Loop)
 }
 //---------------------------------------------------------------------
 
-void CAnimationPlayer::Update(float dt, IPoseOutput& Output)
+void CAnimationPlayer::Apply(IPoseOutput& Output)
 {
-	if (_Paused) return;
-
-	_CurrTime = NormalizeClipCursor(_CurrTime + dt * _Speed, _Clip->GetDuration(), _Loop);
-
+	// FIXME: _Context.seek must happen once in SetCursor / SetClip!
 	_Context.seek(_CurrTime, acl::SampleRoundingPolicy::None);
 	_Context.decompress_pose(COutputPoseWriter(Output));
 }
 //---------------------------------------------------------------------
 
+// TODO: remove, use Apply() with output of type CPoseRecorder
 PStaticPose CAnimationPlayer::BakePose(float Time)
 {
 	if (!_Clip) return nullptr;

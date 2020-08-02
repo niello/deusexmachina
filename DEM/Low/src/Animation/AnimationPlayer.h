@@ -33,11 +33,7 @@ public:
 	CAnimationPlayer();
 	~CAnimationPlayer();
 
-
-	//???play, stop, pause etc must migrate to timeline?
-	//Update will be split to SetTime and EvaluatePose?
-	void  Update(float dt, IPoseOutput& Output);
-
+	void        Apply(IPoseOutput& Output);
 	PStaticPose BakePose(float Time);
 
 	bool  Play() { _Paused = !_Clip; return !_Paused; }

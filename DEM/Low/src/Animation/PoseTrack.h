@@ -15,9 +15,14 @@ class CPoseTrack : public ITimelineTrack
 {
 protected:
 
-	PPoseOutput                _Output;
-	std::vector<PPoseClipBase> _Clips; // start time? duration, if overridden (zero if as in anim. clip)? inside or here?
-	//???!!!sort clips by start time?!
+	struct CClip
+	{
+		PPoseClipBase Clip;
+		float         StartTime;
+	};
+
+	PPoseOutput        _Output;
+	std::vector<CClip> _Clips; // sorted by start time ascending
 
 public:
 

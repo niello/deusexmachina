@@ -19,10 +19,9 @@ void CStaticPoseClip::BindToOutput(const PPoseOutput& Output)
 }
 //---------------------------------------------------------------------
 
-void CStaticPoseClip::PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex)
+void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
 {
-	//ignore time
-	//always sample our static pose into the output
+	if (_Output && _Pose) _Pose->Apply(*_Output);
 }
 //---------------------------------------------------------------------
 

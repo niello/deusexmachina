@@ -20,9 +20,13 @@ void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 }
 //---------------------------------------------------------------------
 
-void CAnimatedPoseClip::PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex)
+void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
 {
-	//sample pose at the current time, can safely ignore previous time
+	if (_Output && _Player)
+	{
+		_Player->SetCursor(CurrTime);
+		_Player->Apply(*_Output);
+	}
 }
 //---------------------------------------------------------------------
 

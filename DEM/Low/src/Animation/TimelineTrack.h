@@ -11,7 +11,7 @@ class ITimelineTrack
 {
 public:
 
-	//???clips here?
+	//???clips here? can make templated by clip type!
 	// NB: whole timeline looping must be handled in a timeline player
 
 	virtual void PlayInterval(float PrevTime, float CurrTime) = 0;
