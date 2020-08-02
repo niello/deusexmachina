@@ -15,6 +15,7 @@ protected:
 
 public:
 
+	virtual void BindToOutput(const PPoseOutput& Output) override;
 	virtual void PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) override;
 };
 

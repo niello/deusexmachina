@@ -6,7 +6,7 @@
 
 namespace DEM::Anim
 {
-using PMappedPoseOutput = std::unique_ptr<class CMappedPoseOutput>;
+using PMappedPoseOutput = Ptr<class CMappedPoseOutput>;
 
 class CMappedPoseOutput : public IPoseOutput
 {

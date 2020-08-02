@@ -1,11 +1,11 @@
 #pragma once
-#include <StdDEM.h>
+#include <Data/Ptr.h>
 
 // A base class for clips on the pose timeline track
 
 namespace DEM::Anim
 {
-using PPoseOutput = std::unique_ptr<class IPoseOutput>;
+using PPoseOutput = Ptr<class IPoseOutput>;
 class CPoseTrack;
 
 class CPoseClipBase
@@ -16,7 +16,7 @@ protected:
 
 public:
 
-	virtual void BindToOutput(/*PPoseOutput&& Output*/) = 0;
+	virtual void BindToOutput(const PPoseOutput& Output) = 0;
 	virtual void PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) = 0;
 };
 

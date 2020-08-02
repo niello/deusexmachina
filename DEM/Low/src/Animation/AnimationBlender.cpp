@@ -137,7 +137,7 @@ U16 CAnimationBlender::BindNode(CStrID NodeID, U16 ParentPort)
 	// When direct mapping satisfies our data no more, build explicit mapping.
 	// This will never happen if mapped output is already created.
 	if (Port != OutputPort)
-		_Output.reset(n_new(CMappedPoseOutput(std::move(_Output), _PortCount, OutputPort)));
+		_Output = n_new(CMappedPoseOutput(std::move(_Output), _PortCount, OutputPort));
 
 	return Port;
 }

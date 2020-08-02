@@ -7,7 +7,7 @@
 
 namespace DEM::Anim
 {
-using PSkeleton = std::unique_ptr<class CSkeleton>;
+using PSkeleton = Ptr<class CSkeleton>;
 
 class CSkeleton : public IPoseOutput
 {

@@ -1,12 +1,13 @@
 #pragma once
 #include <Animation/TimelineTrack.h>
+#include <Data/Ptr.h>
 
 // Track that outputs local SRT transform to an abstract pose output.
 // This is the most common track type, it is used for skeletal animation.
 
 namespace DEM::Anim
 {
-using PPoseOutput = std::unique_ptr<class IPoseOutput>;
+using PPoseOutput = Ptr<class IPoseOutput>;
 using PPoseClipBase = std::unique_ptr<class CPoseClipBase>;
 using PPoseTrack = std::unique_ptr<class CPoseTrack>;
 

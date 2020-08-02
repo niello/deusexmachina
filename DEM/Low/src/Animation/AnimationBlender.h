@@ -12,7 +12,7 @@
 
 namespace DEM::Anim
 {
-using PAnimationBlenderInput = std::unique_ptr<class CAnimationBlenderInput>;
+using PAnimationBlenderInput = Ptr<class CAnimationBlenderInput>;
 using PAnimationBlender = std::unique_ptr<class CAnimationBlender>;
 
 class CAnimationBlender final
@@ -34,7 +34,7 @@ public:
 	void Initialize(U8 SourceCount);
 	void Apply();
 
-	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].get() : nullptr; }
+	auto GetInput(U8 Source) const { return (_Sources.size() > Source) ? _Sources[Source].Get() : nullptr; }
 
 	U16  BindNode(CStrID NodeID, U16 ParentPort);
 	void SetPriority(U8 Source, U16 Priority);
