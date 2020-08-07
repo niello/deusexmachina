@@ -30,6 +30,7 @@ void CPoseTrack::PlayInterval(float PrevTime, float CurrTime)
 	//if end time > duration or < start time, is it a robust sign of looping?
 
 	// search for first and last affected clips, using binary search?
+	// get indices for easier comparison and iteration?
 /*
 	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
 	if (It != Children.end() && (*It)->GetName() == ChildName)

@@ -22,6 +22,7 @@ void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 
 void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
 {
+	//!!!FIXME: sample pose only if CurrTime is inside the clip (>=0 && <= duration)! Otherwise clip is skipped already.
 	if (_Output && _Player)
 	{
 		_Player->SetCursor(CurrTime);
