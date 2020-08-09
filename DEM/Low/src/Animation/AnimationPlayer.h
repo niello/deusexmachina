@@ -24,8 +24,6 @@ protected:
 	bool             _Paused = true;
 	bool             _Loop = false;
 
-	//void SetupChildNodes(U16 ParentIndex, Scene::CSceneNode& ParentNode);
-
 public:
 
 	DEM_ALLOCATE_ALIGNED(alignof(CAnimationPlayer));

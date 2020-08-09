@@ -22,7 +22,7 @@ public:
 	virtual void UpdateBlendParams() = 0;
 
 	virtual void BindToOutput(const PPoseOutput& Output) override;
-	virtual void PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) override;
+	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) override;
 };
 
 }

@@ -1,4 +1,3 @@
-#pragma once
 #include "NodeMapping.h"
 #include <Animation/PoseOutput.h>
 

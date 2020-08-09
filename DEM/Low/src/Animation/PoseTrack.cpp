@@ -1,4 +1,3 @@
-#pragma once
 #include "PoseTrack.h"
 #include <Animation/PoseClipBase.h>
 #include <Animation/PoseOutput.h>
@@ -8,6 +7,7 @@ namespace DEM::Anim
 CPoseTrack::CPoseTrack() = default;
 CPoseTrack::~CPoseTrack() = default;
 
+//!!!recurse through blenders, handle mapped outputs for leaf sources (like in loading now).
 void CPoseTrack::SetOutput(PPoseOutput&& Output)
 {
 	if (Output == _Output) return;
@@ -20,14 +20,22 @@ void CPoseTrack::SetOutput(PPoseOutput&& Output)
 //---------------------------------------------------------------------
 
 //!!!all time conversions here are the same for every clip/track type!
-void CPoseTrack::PlayInterval(float PrevTime, float CurrTime)
+void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 {
 	if (_Clips.empty()) return;
+
+	// CurrTime < PrevTime if playing backwards
+
+	//!!!if player loops multiple times inside the same frame, player must call PlayIntervalmultiple times?
+	//???how to know that this iteration is the last?
 
 	//???convert time to track duration? loop/clamp.
 
 	//!!!if interval is wrapped when looping, process both parts, but not separately, must not do 2 updates!
 	//if end time > duration or < start time, is it a robust sign of looping?
+
+	// lower bound - first not less
+	// upper bound - first greater
 
 	// search for first and last affected clips, using binary search?
 	// get indices for easier comparison and iteration?

@@ -1,4 +1,3 @@
-#pragma once
 #include "AnimatedPoseClip.h"
 #include <Animation/AnimationClip.h>
 #include <Animation/NodeMapping.h>
@@ -20,10 +19,11 @@ void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 }
 //---------------------------------------------------------------------
 
-void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
+void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool IsLast, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
 {
 	//!!!FIXME: sample pose only if CurrTime is inside the clip (>=0 && <= duration)! Otherwise clip is skipped already.
-	if (_Output && _Player)
+	//???IsLast will already check it? Last clip is always current, otherwise it is skipped. Rename to IsCurr?
+	if (IsLast && _Output && _Player)
 	{
 		_Player->SetCursor(CurrTime);
 		_Player->Apply(*_Output);

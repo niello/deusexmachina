@@ -1,4 +1,3 @@
-#pragma once
 #include "Skeleton.h"
 
 namespace DEM::Anim

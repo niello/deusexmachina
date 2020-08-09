@@ -1,4 +1,3 @@
-#pragma once
 #include "StaticPoseClip.h"
 #include <Animation/NodeMapping.h>
 #include <Animation/MappedPoseOutput.h>
@@ -19,9 +18,9 @@ void CStaticPoseClip::BindToOutput(const PPoseOutput& Output)
 }
 //---------------------------------------------------------------------
 
-void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
+void CStaticPoseClip::PlayInterval(float /*PrevTime*/, float /*CurrTime*/, bool IsLast, const CPoseTrack& /*Track*/, UPTR /*ClipIndex*/)
 {
-	if (_Output && _Pose) _Pose->Apply(*_Output);
+	if (IsLast && _Output && _Pose) _Pose->Apply(*_Output);
 }
 //---------------------------------------------------------------------
 

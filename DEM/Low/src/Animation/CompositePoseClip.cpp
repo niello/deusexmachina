@@ -1,4 +1,3 @@
-#pragma once
 #include "CompositePoseClip.h"
 
 namespace DEM::Anim
@@ -10,7 +9,7 @@ void CCompositePoseClip::BindToOutput(const PPoseOutput& Output)
 }
 //---------------------------------------------------------------------
 
-void CCompositePoseClip::PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex)
+void CCompositePoseClip::PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex)
 {
 	// evaluate blend params
 	// evaluate tracks

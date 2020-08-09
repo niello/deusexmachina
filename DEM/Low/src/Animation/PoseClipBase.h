@@ -17,7 +17,7 @@ protected:
 public:
 
 	virtual void BindToOutput(const PPoseOutput& Output) = 0;
-	virtual void PlayInterval(float PrevTime, float CurrTime, const CPoseTrack& Track, UPTR ClipIndex) = 0;
+	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast, const CPoseTrack& Track, UPTR ClipIndex) = 0;
 };
 
 }
