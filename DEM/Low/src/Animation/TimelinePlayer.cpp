@@ -4,6 +4,7 @@
 namespace DEM::Anim
 {
 
+//???what is the best way to handle reversed playback?
 void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 {
 	// Empty timeline, nothing to play
@@ -14,11 +15,12 @@ void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 	// Convert previous time from linear player scale to timeline scale
 	const float PrevLoopIndex = std::trunc(PrevTime / Duration);
 	const float PrevLoopStartTime = PrevLoopIndex * Duration;
-	float SegmentStartTimeTL = _StartTime + PrevTime - PrevLoopStartTime;
 
+	float SegmentStartTimeTL;
 	if (CurrTime > PrevTime)
 	{
 		// Play forward
+		SegmentStartTimeTL = _StartTime + PrevTime - PrevLoopStartTime;
 		float NextLoopStartTime = PrevLoopStartTime + Duration;
 		while (NextLoopStartTime < CurrTime)
 		{
@@ -30,6 +32,7 @@ void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 	else
 	{
 		// Play backward
+		SegmentStartTimeTL = _StartTime + PrevTime - PrevLoopStartTime; //calc from end?
 		/*float NextLoopStartTime = PrevLoopStartTime + Duration;
 		while (NextLoopStartTime < CurrTime)
 		{

@@ -3,8 +3,8 @@
 
 // Plays a set of one or more timeline tracks.
 // Can play the whole timeline (from the start to the last clip end) or a selected interval.
-// Internal player time is zero based, non-negative and monotonically increasing. It is mapped
-// to the selected timeline interval with looping support. Selected interval can be explicitly
+// Internal player time is zero based and monotonically increasing. It is mapped to the
+// selected timeline interval with looping support. Selected interval can be explicitly
 // set behind the last clip end.
 
 namespace DEM::Anim
@@ -23,6 +23,8 @@ protected:
 	float _PrevTime = 0.f;
 	float _CurrTime = 0.f;
 	float _Speed = 1.f;
+
+	//???float _StopTime? When stop playback. How to handle negative (reverse)?
 
 	//???static? or don't pass args?
 	void PlayInterval(float PrevTime, float CurrTime);
