@@ -19,11 +19,11 @@ protected:
 	{
 		PPoseClipBase Clip;
 		float         StartTime;
-		float         EndTime;
+		float         EndTime;   // Must not overlap with the next clip or at least must be less than its end time
 	};
 
 	PPoseOutput        _Output;
-	std::vector<CClip> _Clips; // sorted by start time ascending
+	std::vector<CClip> _Clips; // Sorted by start time ascending
 
 public:
 
