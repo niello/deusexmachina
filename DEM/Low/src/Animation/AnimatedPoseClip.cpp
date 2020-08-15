@@ -23,11 +23,7 @@ void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool Is
 {
 	//!!!FIXME: sample pose only if CurrTime is inside the clip (>=0 && <= duration)! Otherwise clip is skipped already.
 	//???IsLast will already check it? Last clip is always current, otherwise it is skipped. Rename to IsCurr?
-	if (IsLast && _Output && _Player)
-	{
-		_Player->SetCursor(CurrTime);
-		_Player->Apply(*_Output);
-	}
+	if (IsLast && _Output && _Player) _Player->Apply(CurrTime, *_Output);
 }
 //---------------------------------------------------------------------
 

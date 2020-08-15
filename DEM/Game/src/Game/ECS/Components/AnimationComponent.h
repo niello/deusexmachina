@@ -1,5 +1,5 @@
 #pragma once
-#include <Animation/AnimationPlayer.h>
+#include <Animation/AnimationSampler.h>
 #include <Animation/PoseOutput.h>
 #include <Data/Metadata.h>
 
@@ -10,7 +10,7 @@ namespace DEM::Game
 
 struct CAnimationComponent
 {
-	DEM::Anim::PAnimationPlayer Player;
+	DEM::Anim::PAnimationSampler Player;
 	DEM::Anim::PPoseOutput      Output;
 
 	CStrID  ClipID;

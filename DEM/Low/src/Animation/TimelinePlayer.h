@@ -31,6 +31,11 @@ protected:
 
 public:
 
+	void SetTrack(ITimelineTrack* pTrack);
+	void SetStartTime(float Time);
+	void SetEndTime(float Time);
+	void SetSpeed(float Speed);
+
 	//!!!when set timeline track, must update _StartTime to zero and _EndTime to the last clip end!
 
 	// start time (def 0), end time (def inf), loop count (0 - infinite), speed, negative for reverse
@@ -45,6 +50,19 @@ public:
 	// Play, Pause, IsPlaying etc
 
 	//???how to handle multiple loops inside the same frame?
+
+	/*
+
+	bool  Play() { _Paused = !_Clip; return !_Paused; }
+	void  Stop() { _Paused = true; _CurrTime = 0.f; }
+	void  Pause() { _Paused = true; }
+	void  SetSpeed(float Speed) { _Speed = Speed; }
+	void  SetLooped(bool Loop) { _Loop = Loop; }
+	float GetSpeed() const { return _Speed; }
+	bool  IsLooped() const { return _Loop; }
+	bool  IsPlaying() const { return !_Paused; }
+
+	*/
 };
 
 }

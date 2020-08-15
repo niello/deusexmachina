@@ -4,7 +4,7 @@
 
 // Transformation source that applies static transform
 
-// NB: it is data (like CAnimationClip) and a player (like CAnimationPlayer) at the same time
+// NB: it is data (like CAnimationClip) and a player (like CAnimationSampler) at the same time
 
 namespace Scene
 {

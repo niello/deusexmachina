@@ -1,6 +1,6 @@
 #pragma once
 #include <Animation/PoseClipBase.h>
-#include <Animation/AnimationPlayer.h>
+#include <Animation/AnimationSampler.h>
 
 // Pose clip that samples a pose from an animation player 
 
@@ -11,7 +11,7 @@ class CAnimatedPoseClip : public CPoseClipBase
 {
 protected:
 
-	PAnimationPlayer _Player;
+	PAnimationSampler _Player;
 
 	// rename player to sampler
 	// float start, end - normalized. If end > 1, it explicitly defines loop count
