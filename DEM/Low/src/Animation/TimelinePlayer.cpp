@@ -4,6 +4,26 @@
 namespace DEM::Anim
 {
 
+void CTimelinePlayer::SetTrack(ITimelineTrack* pTrack)
+{
+	_pTrack = pTrack;
+	SetStartTime(0.f);
+	SetEndTime(_pTrack ? _pTrack->GetDuration() : 0.f);
+}
+//---------------------------------------------------------------------
+
+void CTimelinePlayer::SetStartTime(float Time)
+{
+	_StartTime = std::clamp(Time, 0.f, _EndTime);
+}
+//---------------------------------------------------------------------
+
+void CTimelinePlayer::SetEndTime(float Time)
+{
+	_EndTime = std::max(Time, _StartTime);
+}
+//---------------------------------------------------------------------
+
 //???what is the best way to handle reversed playback?
 void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 {

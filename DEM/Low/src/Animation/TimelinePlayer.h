@@ -12,7 +12,7 @@ namespace DEM::Anim
 using PTimelinePlayer = std::unique_ptr<class CTimelinePlayer>;
 class ITimelineTrack;
 
-class CTimelinePlayer
+class CTimelinePlayer final
 {
 protected:
 
@@ -34,7 +34,7 @@ public:
 	void SetTrack(ITimelineTrack* pTrack);
 	void SetStartTime(float Time);
 	void SetEndTime(float Time);
-	void SetSpeed(float Speed);
+	void SetSpeed(float Speed) { _Speed = Speed; }
 
 	//!!!when set timeline track, must update _StartTime to zero and _EndTime to the last clip end!
 
@@ -42,7 +42,7 @@ public:
 	//???start, end times - Play() args or player params?
 	//???speed and loop count - Play() args? Not settings of the player itself? Anyway must remember them, but when to set?
 
-	// Update(dt), tracks must be bound to outputs
+	void Update(float dt) { _CurrTime += dt; PlayInterval(_PrevTime, _CurrTime); }
 	//!!!must fix too big times if has looping! can also stop after the last clip (if no current clip was found on any track)!
 
 	// SetTime (move prev and curr), Rewind(dir?) (move curr only to play interval instead of skipping)
@@ -56,7 +56,6 @@ public:
 	bool  Play() { _Paused = !_Clip; return !_Paused; }
 	void  Stop() { _Paused = true; _CurrTime = 0.f; }
 	void  Pause() { _Paused = true; }
-	void  SetSpeed(float Speed) { _Speed = Speed; }
 	void  SetLooped(bool Loop) { _Loop = Loop; }
 	float GetSpeed() const { return _Speed; }
 	bool  IsLooped() const { return _Loop; }

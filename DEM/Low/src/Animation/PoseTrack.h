@@ -19,6 +19,7 @@ protected:
 	{
 		PPoseClipBase Clip;
 		float         StartTime;
+		float         EndTime;
 	};
 
 	PPoseOutput        _Output;
@@ -29,9 +30,10 @@ public:
 	CPoseTrack();
 	~CPoseTrack();
 
-	void         SetOutput(PPoseOutput&& Output);
+	void          SetOutput(PPoseOutput&& Output);
 
-	virtual void PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;
+	virtual float GetDuration() const override;
+	virtual void  PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;
 };
 
 }

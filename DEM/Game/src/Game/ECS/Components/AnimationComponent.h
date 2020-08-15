@@ -1,6 +1,8 @@
 #pragma once
 #include <Animation/AnimationSampler.h>
 #include <Animation/PoseOutput.h>
+#include <Animation/TimelinePlayer.h>
+#include <Animation/TimelineTrack.h>
 #include <Data/Metadata.h>
 
 // Animation component plays a single animation clip on the entity scene hierarchy
@@ -10,8 +12,11 @@ namespace DEM::Game
 
 struct CAnimationComponent
 {
-	DEM::Anim::PAnimationSampler Player;
-	DEM::Anim::PPoseOutput      Output;
+	DEM::Anim::PPoseOutput     Output;
+	DEM::Anim::CTimelinePlayer Player;
+	DEM::Anim::PTimelineTrack  Track;
+
+	DEM::Anim::PAnimationSampler Sampler;
 
 	CStrID  ClipID;
 	CString RelTargetPath; // FIXME: use std::string, CData must use it too then

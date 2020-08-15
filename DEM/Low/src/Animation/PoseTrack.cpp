@@ -14,41 +14,38 @@ void CPoseTrack::SetOutput(PPoseOutput&& Output)
 
 	_Output = std::move(Output);
 
-	for (auto& [Clip, StartTime] : _Clips)
+	for (auto& [Clip, StartTime, EndTime] : _Clips)
 		Clip->BindToOutput(_Output);
 }
 //---------------------------------------------------------------------
 
-//!!!all time conversions here are the same for every clip/track type!
+float CPoseTrack::GetDuration() const
+{
+	return _Clips.empty() ? 0.f : _Clips.back().StartTime + _Clips.back().Clip->GetDuration();
+}
+//---------------------------------------------------------------------
+
+// FIXME: this logic is the same for any clip/track type
 void CPoseTrack::PlayInterval(float PrevTime, float CurrTime, bool IsLast)
 {
 	if (_Clips.empty()) return;
 
+	auto It = std::upper_bound(_Clips.begin(), _Clips.end(), PrevTime, [](float Time, const CClip& Clip) { return Time < Clip.EndTime; });
+	if (It != _Clips.end())
+	{
+		//...
+	}
+
 	// CurrTime < PrevTime if playing backwards
-
-	//!!!if player loops multiple times inside the same frame, player must call PlayIntervalmultiple times?
-	//???how to know that this iteration is the last?
-
-	//???convert time to track duration? loop/clamp.
-
-	//!!!if interval is wrapped when looping, process both parts, but not separately, must not do 2 updates!
-	//if end time > duration or < start time, is it a robust sign of looping?
+	// maybe multiple calls in the same frame
+	// no wrapping, monotone linear space
+	// NB: are both points inclusive? event or action exactly at point will be executed twice then, not good
+	// find clip at prev time, don't play if prev time == clip start/end and a clip is outside the time range
+	// go from this clip to the first clip ending (starting) outside the range
 
 	// lower bound - first not less
 	// upper bound - first greater
-
-	// search for first and last affected clips, using binary search?
-	// get indices for easier comparison and iteration?
-/*
-	auto It = std::lower_bound(Children.begin(), Children.end(), ChildName, [](const PSceneNode& Child, CStrID Name) { return Child->GetName() < Name; });
-	if (It != Children.end() && (*It)->GetName() == ChildName)
-	{
-		if (Replace) It = Children.erase(It);
-		else return *It;
-	}
-
-	PSceneNode Node = n_new(CSceneNode)(ChildName);
-*/
+	// get clip indices for easier comparison and iteration?
 
 	//!!!clips must be sorted by start time!
 	for (size_t i = 0; i < _Clips.size(); ++i)

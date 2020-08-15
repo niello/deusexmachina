@@ -37,17 +37,11 @@ struct COutputPoseWriter : acl::OutputWriter
 // Records a static pose
 class CPoseRecorder : public IPoseOutput
 {
-protected:
-
-	PNodeMapping                     _NodeMapping;
-	std::vector<Math::CTransformSRT> _Transforms;
-
 public:
 
-	CPoseRecorder(PNodeMapping NodeMapping) : _NodeMapping(NodeMapping), _Transforms(NodeMapping->GetNodeCount()) {}
+	std::vector<Math::CTransformSRT> _Transforms;
 
-	// NB: destroys CPoseRecorder state
-	PStaticPose  FlushPose() { return PStaticPose(n_new(CStaticPose(std::move(_Transforms), std::move(_NodeMapping)))); }
+	CPoseRecorder(UPTR Ports) : _Transforms(Ports) {}
 
 	virtual U16  BindNode(CStrID NodeID, U16 ParentPort) override { return InvalidPort; }
 	virtual U8   GetActivePortChannels(U16 Port) const override { return ETransformChannel::All; }
@@ -71,10 +65,9 @@ void CAnimationSampler::Apply(float Time, IPoseOutput& Output)
 PStaticPose CAnimationSampler::BakePose(float Time)
 {
 	if (!_Clip) return nullptr;
-
-	CPoseRecorder Recorder(&_Clip->GetNodeMapping());
+	CPoseRecorder Recorder(_Clip->GetNodeCount());
 	Apply(Time, Recorder);
-	return Recorder.FlushPose();
+	return PStaticPose(n_new(CStaticPose(std::move(Recorder._Transforms), &_Clip->GetNodeMapping())));
 }
 //---------------------------------------------------------------------
 
