@@ -31,6 +31,7 @@ public:
 	~CPoseTrack();
 
 	void          SetOutput(PPoseOutput&& Output);
+	void          AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /*, overlap resolve mode*/);
 
 	virtual float GetDuration() const override;
 	virtual void  PlayInterval(float PrevTime, float CurrTime, bool IsLast) override;

@@ -24,7 +24,6 @@ void CTimelinePlayer::SetEndTime(float Time)
 }
 //---------------------------------------------------------------------
 
-//???what is the best way to handle reversed playback?
 void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 {
 	// Empty timeline, nothing to play

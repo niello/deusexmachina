@@ -19,9 +19,19 @@ void CPoseTrack::SetOutput(PPoseOutput&& Output)
 }
 //---------------------------------------------------------------------
 
+// FIXME: this logic is the same for any clip/track type
+void CPoseTrack::AddClip(PPoseClipBase&& Clip, float StartTime, float Duration /*, overlap resolve mode*/)
+{
+	if (!Clip || Duration <= 0.f) return;
+	auto It = std::lower_bound(_Clips.begin(), _Clips.end(), StartTime, [](const CClip& Clip, float Time) { return Clip.EndTime < Time; });
+	_Clips.insert(It, CClip{ std::move(Clip), StartTime, StartTime + Duration });
+}
+//---------------------------------------------------------------------
+
+// FIXME: this logic is the same for any clip/track type
 float CPoseTrack::GetDuration() const
 {
-	return _Clips.empty() ? 0.f : _Clips.back().StartTime + _Clips.back().Clip->GetDuration();
+	return _Clips.empty() ? 0.f : _Clips.back().EndTime;
 }
 //---------------------------------------------------------------------
 

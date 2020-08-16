@@ -1,5 +1,4 @@
 #pragma once
-#include <Animation/AnimationSampler.h>
 #include <Animation/PoseOutput.h>
 #include <Animation/TimelinePlayer.h>
 #include <Animation/TimelineTrack.h>
@@ -15,8 +14,6 @@ struct CAnimationComponent
 	DEM::Anim::PPoseOutput     Output;
 	DEM::Anim::CTimelinePlayer Player;
 	DEM::Anim::PTimelineTrack  Track;
-
-	DEM::Anim::PAnimationSampler Sampler;
 
 	CStrID  ClipID;
 	CString RelTargetPath; // FIXME: use std::string, CData must use it too then

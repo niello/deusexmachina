@@ -6,12 +6,18 @@
 namespace DEM::Anim
 {
 
+void CAnimatedPoseClip::SetAnimationClip(const PAnimationClip& Clip)
+{
+	_Sampler.SetClip(Clip);
+}
+//---------------------------------------------------------------------
+
 void CAnimatedPoseClip::BindToOutput(const PPoseOutput& Output)
 {
-	if (!_Player || !_Player->GetClip() || _Output == Output) return;
+	if (!_Sampler.GetClip() || _Output == Output) return;
 
 	std::vector<U16> PortMapping;
-	_Player->GetClip()->GetNodeMapping().Bind(*Output, PortMapping);
+	_Sampler.GetClip()->GetNodeMapping().Bind(*Output, PortMapping);
 	if (PortMapping.empty())
 		_Output = Output;
 	else
@@ -23,7 +29,7 @@ void CAnimatedPoseClip::PlayInterval(float /*PrevTime*/, float CurrTime, bool Is
 {
 	//!!!FIXME: sample pose only if CurrTime is inside the clip (>=0 && <= duration)! Otherwise clip is skipped already.
 	//???IsLast will already check it? Last clip is always current, otherwise it is skipped. Rename to IsCurr?
-	if (IsLast && _Output && _Player) _Player->Apply(CurrTime, *_Output);
+	if (IsLast && _Output) _Sampler.Apply(CurrTime, *_Output);
 }
 //---------------------------------------------------------------------
 
