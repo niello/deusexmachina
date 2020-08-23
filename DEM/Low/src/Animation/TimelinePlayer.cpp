@@ -24,7 +24,24 @@ void CTimelinePlayer::SetEndTime(float Time)
 }
 //---------------------------------------------------------------------
 
-void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
+bool CTimelinePlayer::OnLoopEnd()
+{
+	if (_RemainingLoopCount)
+	{
+		--_RemainingLoopCount;
+		if (!_RemainingLoopCount)
+		{
+			Stop();
+			return true;
+		}
+	}
+
+	return false;
+}
+//---------------------------------------------------------------------
+
+//!!!must fix too big times if has looping! can also stop after the last clip (for all nested tracks too)
+void CTimelinePlayer::PlayInterval()
 {
 	// Empty timeline, nothing to play
 	if (!_pTrack || _EndTime <= _StartTime) return;
@@ -32,16 +49,17 @@ void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 	const float Duration = _EndTime - _StartTime;
 
 	// Convert previous time from linear player scale to timeline scale
-	float LoopStartTime = std::floor(PrevTime / Duration) * Duration;
-	float SegmentStartTimeTL = _StartTime + PrevTime - LoopStartTime;
+	float LoopStartTime = std::floor(_PrevTime / Duration) * Duration;
+	float SegmentStartTimeTL = _StartTime + _PrevTime - LoopStartTime;
 
-	if (CurrTime > PrevTime)
+	if (_CurrTime > _PrevTime)
 	{
 		// Play forward
 		LoopStartTime += Duration;
-		while (LoopStartTime < CurrTime)
+		while (LoopStartTime < _CurrTime)
 		{
-			_pTrack->PlayInterval(SegmentStartTimeTL, _EndTime, false);
+			_pTrack->PlayInterval(SegmentStartTimeTL, _EndTime, (_RemainingLoopCount == 1));
+			if (OnLoopEnd()) return;
 			SegmentStartTimeTL = _StartTime;
 			LoopStartTime += Duration;
 		}
@@ -49,20 +67,24 @@ void CTimelinePlayer::PlayInterval(float PrevTime, float CurrTime)
 	else
 	{
 		// Play backward
-		while (LoopStartTime > CurrTime)
+		while (LoopStartTime > _CurrTime)
 		{
-			_pTrack->PlayInterval(SegmentStartTimeTL, _StartTime, false);
+			_pTrack->PlayInterval(SegmentStartTimeTL, _StartTime, (_RemainingLoopCount == 1));
+			if (OnLoopEnd()) return;
 			SegmentStartTimeTL = _EndTime;
 			LoopStartTime -= Duration;
 		}
 	}
 
 	// Convert current time from linear player scale to timeline scale
-	const float CurrLoopStartTime = std::floor(CurrTime / Duration) * Duration;
-	const float CurrTimeTL = _StartTime + CurrTime - CurrLoopStartTime;
+	const float CurrLoopStartTime = std::floor(_CurrTime / Duration) * Duration;
+	const float CurrTimeTL = _StartTime + _CurrTime - CurrLoopStartTime;
 
 	// The last segment ends exactly at the current time
 	_pTrack->PlayInterval(SegmentStartTimeTL, CurrTimeTL, true);
+
+	// Process exact loop end
+	if (LoopStartTime == _CurrTime && OnLoopEnd()) return;
 }
 //---------------------------------------------------------------------
 

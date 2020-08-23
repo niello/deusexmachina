@@ -5,6 +5,8 @@
 // Track that outputs local SRT transform to an abstract pose output.
 // This is the most common track type, it is used for skeletal animation.
 
+// TODO: when clip time changed, need to sort / reinsert
+
 namespace DEM::Anim
 {
 using PPoseOutput = Ptr<class IPoseOutput>;

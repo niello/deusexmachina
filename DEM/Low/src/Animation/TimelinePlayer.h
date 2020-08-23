@@ -18,39 +18,38 @@ protected:
 
 	ITimelineTrack* _pTrack = nullptr; //???refcounted strong?
 
+	U32   _RemainingLoopCount = 0;
+
 	float _StartTime = 0.f; // Timeline interval start
 	float _EndTime = 0.f; // Timeline interval end. Must be strictly greater than _StartTime.
 	float _PrevTime = 0.f;
 	float _CurrTime = 0.f;
 	float _Speed = 1.f;
+	bool  _Paused = true; // Could use _Speed = 0, but Resume() requires us to preserve speed value
 
-	//???static? or don't pass args?
-	void PlayInterval(float PrevTime, float CurrTime);
+	void PlayInterval();
+	bool OnLoopEnd();
 
 public:
 
-	void SetTrack(ITimelineTrack* pTrack);
-	void SetStartTime(float Time);
-	void SetEndTime(float Time);
-	void SetSpeed(float Speed) { _Speed = Speed; }
+	static inline constexpr U32 LOOP_INFINITELY = 0; // For _RemainingLoopCount
 
-	void Update(float dt) { _CurrTime += dt; PlayInterval(_PrevTime, _CurrTime); }
+	void  SetTrack(ITimelineTrack* pTrack);
+	void  SetStartTime(float Time);
+	void  SetEndTime(float Time);
+	void  SetSpeed(float Speed) { _Speed = Speed; }
+	void  SetPaused(bool Paused) { _Paused = Paused; }
 
-	// Need play, pause, speed, reverse, loop and loop limit
-	//???float _StopTime? When stop playback. How to handle negative (reverse)?
-	// SetTime (move prev and curr), Rewind(dir?) (move curr only to play interval instead of skipping)
-	// Play, Pause, IsPlaying etc
-	//!!!must fix too big times if has looping! can also stop after the last clip (if no current clip was found on any track)!
+	bool  Play(U32 LoopCount = 1) { _RemainingLoopCount = LoopCount; _Paused = !_pTrack; return !_Paused; }
+	void  Stop() { /*_RemainingLoopCount = 0;*/ _Paused = true; SetTime(0.f); }
+	void  SetTime(float Time) { _PrevTime = Time; _CurrTime = Time; }
+	void  Rewind(float Time) { _CurrTime = Time; PlayInterval(); } //???what with _RemainingLoopCount? Set to 1?
 
-	/*
-	bool  Play() { _Paused = !_Clip; return !_Paused; }
-	void  Stop() { _Paused = true; _CurrTime = 0.f; }
-	void  Pause() { _Paused = true; }
-	void  SetLooped(bool Loop) { _Loop = Loop; }
+	void  Update(float dt) { if (!_Paused) { _CurrTime += dt * _Speed; PlayInterval(); } }
+
 	float GetSpeed() const { return _Speed; }
-	bool  IsLooped() const { return _Loop; }
+	U32   GetRemainingLoopCount() const { return _RemainingLoopCount; }
 	bool  IsPlaying() const { return !_Paused; }
-	*/
 };
 
 }
