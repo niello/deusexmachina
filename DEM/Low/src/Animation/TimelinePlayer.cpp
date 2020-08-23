@@ -46,13 +46,16 @@ void CTimelinePlayer::PlayInterval()
 	// Empty timeline, nothing to play
 	if (!_pTrack || _EndTime <= _StartTime) return;
 
+	const float PrevTime = _PrevTime;
+	_PrevTime = _CurrTime;
+
 	const float Duration = _EndTime - _StartTime;
 
 	// Convert previous time from linear player scale to timeline scale
-	float LoopStartTime = std::floor(_PrevTime / Duration) * Duration;
-	float SegmentStartTimeTL = _StartTime + _PrevTime - LoopStartTime;
+	float LoopStartTime = std::floor(PrevTime / Duration) * Duration;
+	float SegmentStartTimeTL = _StartTime + PrevTime - LoopStartTime;
 
-	if (_CurrTime > _PrevTime)
+	if (_CurrTime > PrevTime)
 	{
 		// Play forward
 		LoopStartTime += Duration;
