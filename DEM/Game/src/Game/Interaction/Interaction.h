@@ -19,7 +19,7 @@ protected:
 		PTargetFilter Filter; //???TODO: use C++/Lua callable instead?! ITargetFilter is just a functor.
 		std::string   CursorImage;
 		U32           Count;
-		bool          Optional; // NB: can have mandatory target after optional
+		bool          Optional; // NB: can have mandatory and optional targets in mixed order
 	};
 
 	std::vector<CTargetRecord> _Targets;

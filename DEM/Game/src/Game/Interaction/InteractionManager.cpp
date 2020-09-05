@@ -2,6 +2,7 @@
 #include <Game/Interaction/Interaction.h>
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/TargetFilter.h>
+#include <Game/ECS/GameWorld.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
 
@@ -141,8 +142,7 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 {
 	if (Context.Ability == AbilityID) return true;
 
-	auto pAbility = FindAvailableAbility(Context.Ability, Context.SelectedActors);
-	if (!pAbility) return false;
+	if (!FindAvailableAbility(Context.Ability, Context.SelectedActors)) return false;
 
 	Context.Ability = AbilityID;
 	Context.AbilitySource = AbilitySource;
@@ -168,15 +168,13 @@ void CInteractionManager::ResetCandidateInteraction(CInteractionContext& Context
 }
 //---------------------------------------------------------------------
 
-const CInteraction* CInteractionManager::ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context)
+const CInteraction* CInteractionManager::ValidateInteraction(CStrID ID, sol::function Condition, CInteractionContext& Context)
 {
-	const auto& [ID, Condition] = Ability.Interactions[Index];
-
 	// Validate interaction itself
 	auto pInteraction = FindInteraction(ID);
 	if (!pInteraction) return nullptr;
 
-	// Check additional condition from the ability itself
+	// Check additional condition
 	if (Condition)
 	{
 		auto Result = Condition(Context.Target);
@@ -188,8 +186,6 @@ const CInteraction* CInteractionManager::ValidateInteraction(const CAbility& Abi
 		}
 		else if (!Result) return nullptr;
 	}
-
-	//???some Lua function for interaction availability check?
 
 	// Validate selected targets, their state might change
 	for (U32 i = 0; i < Context.SelectedTargetCount; ++i)
@@ -207,10 +203,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	// If selected ability became unavailable, reset to default one
 	if (!pAbility)
 	{
-		Context.Ability = _DefaultAbility;
-		Context.AbilitySource = {};
-		ResetCandidateInteraction(Context);
-
+		SelectAbility(Context, _DefaultAbility, {});
 		pAbility = FindAbility(Context.Ability);
 		if (!pAbility) return false;
 	}
@@ -218,7 +211,8 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	// Validate current candidate interaction, if set
 	if (Context.IsInteractionSet())
 	{
-		if (auto pInteraction = ValidateInteraction(*pAbility, Context.InteractionIndex, Context))
+		const auto& [ID, Condition] = pAbility->Interactions[Context.InteractionIndex];
+		if (auto pInteraction = ValidateInteraction(ID, Condition, Context))
 		{
 			// If we already started to select targets, stick to the selected interaction
 			if (Context.SelectedTargetCount) return true;
@@ -230,13 +224,24 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 		}
 	}
 
-	//???if target entity is set, always try smart object first?
-	//it can return its own interaction, then must set it into the context
+	// If target is a smart object, select first appilcable interaction in it
+	if (Context.Target.Entity)
+	{
+		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
+		{
+			//if (auto pSmart = pWorld->FindComponent<DEM::AI::CSmartObjectComponent>(Context.Target.Entity))
+			{
+				//get a list of interactions there
+				//process the same way as pAbility->Interactions below
+			}
+		}
+	}
 
 	// Select first interaction in the current ability that accepts current target
 	for (U32 i = 0; i < pAbility->Interactions.size(); ++i)
 	{
-		auto pInteraction = ValidateInteraction(*pAbility, i, Context);
+		const auto& [ID, Condition] = pAbility->Interactions[i];
+		auto pInteraction = ValidateInteraction(ID, Condition, Context);
 		if (pInteraction &&
 			pInteraction->GetMaxTargetCount() > 0 &&
 			pInteraction->GetTargetFilter(0)->IsTargetValid(Context))

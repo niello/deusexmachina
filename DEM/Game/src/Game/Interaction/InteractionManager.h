@@ -26,7 +26,7 @@ protected:
 	sol::state_view                _Lua;
 	CStrID                         _DefaultAbility;
 
-	const CInteraction* ValidateInteraction(const CAbility& Ability, U32 Index, CInteractionContext& Context);
+	const CInteraction* ValidateInteraction(CStrID ID, sol::function Condition, CInteractionContext& Context);
 
 public:
 
