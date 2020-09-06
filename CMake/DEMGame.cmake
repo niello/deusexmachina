@@ -67,6 +67,8 @@ set(DEM_L2_GAME_HEADERS
 	DEM/Game/src/Game/Interaction/SelectableTargetFilter.h
 	DEM/Game/src/Game/Interaction/SelectInteraction.h
 	DEM/Game/src/Game/Interaction/TargetFilter.h
+	DEM/Game/src/Game/Objects/SmartObject.h
+	DEM/Game/src/Game/Objects/SmartObjectComponent.h
 	DEM/Game/src/Physics/PropPhysics.h
 	DEM/Game/src/Physics/PropTrigger.h
 	DEM/Game/src/Physics/TriggerContactCallback.h

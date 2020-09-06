@@ -142,7 +142,7 @@ bool CInteractionManager::SelectAbility(CInteractionContext& Context, CStrID Abi
 {
 	if (Context.Ability == AbilityID) return true;
 
-	if (!FindAvailableAbility(Context.Ability, Context.SelectedActors)) return false;
+	if (!FindAvailableAbility(AbilityID, Context.SelectedActors)) return false;
 
 	Context.Ability = AbilityID;
 	Context.AbilitySource = AbilitySource;
@@ -212,7 +212,7 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	if (Context.IsInteractionSet())
 	{
 		const auto& [ID, Condition] = pAbility->Interactions[Context.InteractionIndex];
-		if (auto pInteraction = ValidateInteraction(ID, Condition, Context))
+		if (ValidateInteraction(ID, Condition, Context))
 		{
 			// If we already started to select targets, stick to the selected interaction
 			if (Context.SelectedTargetCount) return true;
