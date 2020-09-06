@@ -2,6 +2,8 @@
 #include <Game/Interaction/Interaction.h>
 #include <Game/Interaction/InteractionContext.h>
 #include <Game/Interaction/TargetFilter.h>
+#include <Game/Objects/SmartObject.h>
+#include <Game/Objects/SmartObjectComponent.h>
 #include <Game/ECS/GameWorld.h>
 #include <Data/Params.h>
 #include <Data/DataArray.h>
@@ -229,10 +231,24 @@ bool CInteractionManager::UpdateCandidateInteraction(CInteractionContext& Contex
 	{
 		if (auto pWorld = Context.Session->FindFeature<CGameWorld>())
 		{
-			//if (auto pSmart = pWorld->FindComponent<DEM::AI::CSmartObjectComponent>(Context.Target.Entity))
+			auto pSmart = pWorld->FindComponent<CSmartObjectComponent>(Context.Target.Entity);
+			if (pSmart && pSmart->Asset)
 			{
-				//get a list of interactions there
-				//process the same way as pAbility->Interactions below
+				if (auto pSmartAsset = pSmart->Asset->ValidateObject<CSmartObject>())
+				{
+					for (U32 i = 0; i < pSmartAsset->GetInteractions().size(); ++i)
+					{
+						const auto& [ID, Condition] = pSmartAsset->GetInteractions()[i];
+						auto pInteraction = ValidateInteraction(ID, Condition, Context);
+						if (pInteraction &&
+							pInteraction->GetMaxTargetCount() > 0 &&
+							pInteraction->GetTargetFilter(0)->IsTargetValid(Context))
+						{
+							Context.InteractionIndex = i;
+							return true;
+						}
+					}
+				}
 			}
 		}
 	}
@@ -282,6 +298,15 @@ bool CInteractionManager::AcceptTarget(CInteractionContext& Context)
 	++Context.SelectedTargetCount;
 
 	return true;
+}
+//---------------------------------------------------------------------
+
+bool CInteractionManager::Revert(CInteractionContext& Context)
+{
+	// while has targets selected, revert one by one
+	// if no targets, revert ability to default one
+	NOT_IMPLEMENTED;
+	return false;
 }
 //---------------------------------------------------------------------
 

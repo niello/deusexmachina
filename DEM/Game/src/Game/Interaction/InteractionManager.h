@@ -48,7 +48,7 @@ public:
 	void                ResetCandidateInteraction(CInteractionContext& Context);
 	bool                UpdateCandidateInteraction(CInteractionContext& Context);
 	bool                AcceptTarget(CInteractionContext& Context);
-	//bool Revert(CInteractionContext& Context);
+	bool                Revert(CInteractionContext& Context);
 	bool                ExecuteInteraction(CInteractionContext& Context, bool Enqueue);
 
 	const std::string&  GetCursorImageID(CInteractionContext& Context) const;

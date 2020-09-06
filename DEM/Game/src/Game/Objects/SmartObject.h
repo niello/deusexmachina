@@ -1,5 +1,5 @@
 #pragma once
-#include <Data/StringID.h>
+#include <Resources/ResourceObject.h>
 #include <sol/sol.hpp>
 #include <vector>
 
@@ -9,7 +9,7 @@
 namespace DEM::Game
 {
 
-class CSmartObject //???is resource?
+class CSmartObject : public Resources::CResourceObject
 {
 protected:
 
@@ -17,10 +17,14 @@ protected:
 	//!!!instance can cache OnEnter etc functions! or not instance, but class?
 	struct CStateRecord
 	{
-		//state logic object
-		//???optional state timeline(resource?)?
-		//map or vector of transitions
+		//state logic object (optional)
+		//timeline asset (optional) + start, end, speed, [loop count - or always infinite for states]
+		//map or vector of transitions:
+		// - target state ID
+		// - timeline asset (optional) + start, end, speed, loop count 
 	};
+
+	//state callback Lua functions cached (OnStateEnter etc)
 
 	std::vector<std::pair<CStrID, CStateRecord>>  States; //!!!sort by ID for fast search!
 	std::vector<std::pair<CStrID, sol::function>> Interactions; // Interaction ID -> optional condition
