@@ -1,5 +1,6 @@
 #pragma once
 #include <Resources/ResourceObject.h>
+#include <Data/StringID.h>
 #include <sol/sol.hpp>
 #include <vector>
 
@@ -8,9 +9,12 @@
 
 namespace DEM::Game
 {
+using PSmartObject = Ptr<class CSmartObject>;
 
 class CSmartObject : public Resources::CResourceObject
 {
+	RTTI_CLASS_DECL;
+
 protected:
 
 	//transitions inside states? no custom logic = scripted OnEnter etc always?
@@ -30,6 +34,8 @@ protected:
 	std::vector<std::pair<CStrID, sol::function>> Interactions; // Interaction ID -> optional condition
 
 public:
+
+	virtual bool IsResourceValid() const override { return !States.empty(); }
 
 	const auto& GetInteractions() const { return Interactions; }
 };

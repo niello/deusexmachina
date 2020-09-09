@@ -18,7 +18,6 @@ protected:
 public:
 
 	CEntityTemplate(Data::CParams&& Desc) : _Desc(std::move(Desc)) {}
-	virtual ~CEntityTemplate() override = default;
 
 	virtual bool IsResourceValid() const override { return _Desc.GetCount() > 0; }
 
