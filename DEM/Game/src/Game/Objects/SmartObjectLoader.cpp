@@ -33,17 +33,24 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	Data::CHRDParser Parser;
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
-	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject());
+	CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
+	const auto Script = Params.Get(CStrID("Script"), CString::Empty);
+
+	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject(DefaultState, Script.CStr()));
 
 	Data::PParams StatesDesc;
 	if (Params.TryGet<Data::PParams>(StatesDesc, CStrID("States")))
 	{
 		for (const auto& StateParam : *StatesDesc)
 		{
+			const auto& StateDesc = *StateParam.GetValue<Data::PParams>();
+
 			// Optional timeline player task
 			DEM::Game::CTimelineTask Task;
-			if (const CStrID TimelineID = Params.Get(CStrID("Timeline"), CStrID::Empty))
+			if (const CStrID TimelineID = StateDesc.Get(CStrID("Timeline"), CStrID::Empty))
 			{
+				//!!!defaults! when speed is negative, invert start and end? (from 1 to 0)
+				//???validate right here?
 				//Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
 				//Task.Speed;
 				//Task.StartTime;
@@ -54,20 +61,18 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 			SmartObject->AddState(StateParam.GetName(), std::move(Task));
 
 			// Transitions from this state
-			//???!!!for validation can load states, then transitions?!
+			//???!!!for integrity validation can load states, then transitions?!
 			Data::PParams TransitionsDesc;
-			if (Params.TryGet<Data::PParams>(TransitionsDesc, CStrID("Transitions")))
+			if (StateDesc.TryGet<Data::PParams>(TransitionsDesc, CStrID("Transitions")))
 			{
 				for (const auto& TransitionParam : *TransitionsDesc)
 				{
+					const auto& TransitionDesc = *TransitionParam.GetValue<Data::PParams>();
+
 					DEM::Game::CTimelineTask Task;
-					if (const CStrID TimelineID = Params.Get(CStrID("Timeline"), CStrID::Empty))
+					if (const CStrID TimelineID = TransitionDesc.Get(CStrID("Timeline"), CStrID::Empty))
 					{
-						//Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
-						//Task.Speed;
-						//Task.StartTime;
-						//Task.EndTime;
-						//Task.LoopCount;
+						// ...
 					}
 
 					SmartObject->AddTransition(StateParam.GetName(), TransitionParam.GetName(), std::move(Task));
@@ -76,25 +81,11 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 		}
 	}
 
-	CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
-	std::string Script = Params.Get(CStrID("Script"), CString::Empty); //???CStrID of ScriptObject resource? Loader requires Lua.
-
 	Data::PDataArray Actions;
 	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Actions")))
-	{
 		for (const auto& ActionData : *Actions)
-		{
 			if (auto pActionStr = ActionData.As<CStrID>())
-			{
-				//Interactions.emplace_back(*pActionStr, sol::function());
-			}
-		}
-	}
-
-	// load TL assets (at least read them as PResource?)? Or force loading? Probably force to make asset ready!
-
-	// load script, compile conditions(?), cache functions - InitScript(sol::state[&/_view] Lua)
-	// conditions may be functions with predefined args?
+				SmartObject->AddInteraction(*pActionStr);
 
 	return SmartObject;
 }

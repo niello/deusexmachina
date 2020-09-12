@@ -38,20 +38,28 @@ protected:
 		std::vector<std::pair<CStrID, CTimelineTask>> Transitions;
 	};
 
+	CStrID        _DefaultState;
+	std::string   _ScriptPath; //???CStrID of ScriptObject resource? Loader requires Lua.
+
 	sol::function _OnStateEnter;
 	sol::function _OnStateStartEntering;
 	sol::function _OnStateExit;
 	sol::function _OnStateStartExiting;
+	sol::function _OnStateUpdate;
 
 	std::vector<CStateRecord> _States; //!!!sort by ID for fast search!
 	std::vector<std::pair<CStrID, sol::function>> _Interactions; // Interaction ID -> optional condition
 
 public:
 
+	CSmartObject(CStrID DefaultState, std::string_view ScriptPath);
+
 	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
+	// TODO: to constructor? Not intended for runtime changes at least for now
 	bool         AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
 	bool         AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
+	bool         AddInteraction(CStrID ID);
 	bool         InitScript(sol::state_view& Lua);
 
 	const auto&  GetInteractions() const { return _Interactions; }
