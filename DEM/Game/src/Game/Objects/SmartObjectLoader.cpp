@@ -33,12 +33,46 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	Data::CHRDParser Parser;
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
-	Data::PParams DescSection;
-	if (Params.TryGet<Data::PParams>(DescSection, CStrID("States")))
+	DEM::Game::PSmartObject SmartObject = n_new(DEM::Game::CSmartObject());
+
+	Data::PParams StatesDesc;
+	if (Params.TryGet<Data::PParams>(StatesDesc, CStrID("States")))
 	{
-		for (const auto& StateParam : *DescSection)
+		for (const auto& StateParam : *StatesDesc)
 		{
-			const CStrID ID = StateParam.GetName();
+			// Optional timeline player task
+			DEM::Game::CTimelineTask Task;
+			if (const CStrID TimelineID = Params.Get(CStrID("Timeline"), CStrID::Empty))
+			{
+				//Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
+				//Task.Speed;
+				//Task.StartTime;
+				//Task.EndTime;
+				//Task.LoopCount;
+			}
+
+			SmartObject->AddState(StateParam.GetName(), std::move(Task));
+
+			// Transitions from this state
+			//???!!!for validation can load states, then transitions?!
+			Data::PParams TransitionsDesc;
+			if (Params.TryGet<Data::PParams>(TransitionsDesc, CStrID("Transitions")))
+			{
+				for (const auto& TransitionParam : *TransitionsDesc)
+				{
+					DEM::Game::CTimelineTask Task;
+					if (const CStrID TimelineID = Params.Get(CStrID("Timeline"), CStrID::Empty))
+					{
+						//Task.Timeline = _ResMgr.RegisterResource<DEM::Anim::CTimelineTrack>(TimelineID.CStr());
+						//Task.Speed;
+						//Task.StartTime;
+						//Task.EndTime;
+						//Task.LoopCount;
+					}
+
+					SmartObject->AddTransition(StateParam.GetName(), TransitionParam.GetName(), std::move(Task));
+				}
+			}
 		}
 	}
 
@@ -50,29 +84,9 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	{
 		for (const auto& ActionData : *Actions)
 		{
-			if (auto pActionStr = ActionData.As<CString>())
+			if (auto pActionStr = ActionData.As<CStrID>())
 			{
-				//Interactions.emplace_back(CStrID(pActionStr->CStr()), sol::function());
-			}
-			else if (auto pActionDesc = ActionData.As<Data::PParams>())
-			{
-				CString ActID;
-				if ((*pActionDesc)->TryGet<CString>(ActID, CStrID("ID")))
-				{
-					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
-					// need to save anywhere in object? Or use object's function name here as condition?
-					//???or force condition to be Can<action name>? when caching, find once.
-					// so don't load them here at all and fill once on init script
-					sol::function ConditionFunc;
-					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
-					if (!Condition.empty())
-					{
-						//auto LoadedCondition = _Lua.load("local Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
-						//if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
-					}
-
-					//Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
-				}
+				//Interactions.emplace_back(*pActionStr, sol::function());
 			}
 		}
 	}
@@ -82,7 +96,7 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	// load script, compile conditions(?), cache functions - InitScript(sol::state[&/_view] Lua)
 	// conditions may be functions with predefined args?
 
-	return n_new(DEM::Game::CSmartObject());
+	return SmartObject;
 }
 //---------------------------------------------------------------------
 

@@ -1,6 +1,5 @@
 #pragma once
-#include <Resources/ResourceObject.h>
-#include <Data/StringID.h>
+#include <Resources/Resource.h>
 #include <sol/sol.hpp>
 #include <vector>
 
@@ -10,6 +9,16 @@
 namespace DEM::Game
 {
 using PSmartObject = Ptr<class CSmartObject>;
+
+//???to timeline player module?
+struct CTimelineTask
+{
+	Resources::PResource Timeline; // nullptr to disable task
+	float                Speed = 1.f;
+	float                StartTime = 0.f;
+	float                EndTime = 1.f; //???use relative time here?
+	U32                  LoopCount = 0;
+};
 
 class CSmartObject : public Resources::CResourceObject
 {
@@ -21,23 +30,31 @@ protected:
 	//!!!instance can cache OnEnter etc functions! or not instance, but class?
 	struct CStateRecord
 	{
-		//state logic object (optional)
-		//timeline asset (optional) + start, end, speed, [loop count - or always infinite for states]
-		//map or vector of transitions:
-		// - target state ID
-		// - timeline asset (optional) + start, end, speed, loop count 
+		CStrID        ID;
+		CTimelineTask TimelineTask;
+
+		// state logic object ptr (optional)
+
+		std::vector<std::pair<CStrID, CTimelineTask>> Transitions;
 	};
 
-	//state callback Lua functions cached (OnStateEnter etc)
+	sol::function _OnStateEnter;
+	sol::function _OnStateStartEntering;
+	sol::function _OnStateExit;
+	sol::function _OnStateStartExiting;
 
-	std::vector<std::pair<CStrID, CStateRecord>>  States; //!!!sort by ID for fast search!
-	std::vector<std::pair<CStrID, sol::function>> Interactions; // Interaction ID -> optional condition
+	std::vector<CStateRecord> _States; //!!!sort by ID for fast search!
+	std::vector<std::pair<CStrID, sol::function>> _Interactions; // Interaction ID -> optional condition
 
 public:
 
-	virtual bool IsResourceValid() const override { return !States.empty(); }
+	virtual bool IsResourceValid() const override { return !_States.empty(); }
 
-	const auto& GetInteractions() const { return Interactions; }
+	bool         AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
+	bool         AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
+	bool         InitScript(sol::state_view& Lua);
+
+	const auto&  GetInteractions() const { return _Interactions; }
 };
 
 }
