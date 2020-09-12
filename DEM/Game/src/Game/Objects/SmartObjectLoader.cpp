@@ -4,6 +4,7 @@
 #include <IO/Stream.h>
 #include <Data/Params.h>
 #include <Data/Buffer.h>
+#include <Data/DataArray.h>
 #include <Data/HRDParser.h>
 
 namespace Resources
@@ -32,11 +33,56 @@ PResourceObject CSmartObjectLoader::CreateResource(CStrID UID)
 	Data::CHRDParser Parser;
 	if (!Parser.ParseBuffer(static_cast<const char*>(Buffer->GetConstPtr()), Buffer->GetSize(), Params)) return nullptr;
 
-	// TODO: parse states, transitions, interactions, load TL assets
-	// load script, cache functions - or store script path and load separately where Lua is available?
+	Data::PParams DescSection;
+	if (Params.TryGet<Data::PParams>(DescSection, CStrID("States")))
+	{
+		for (const auto& StateParam : *DescSection)
+		{
+			const CStrID ID = StateParam.GetName();
+		}
+	}
 
-	return nullptr;
-	//return n_new(DEM::Game::CSmartObject(...));
+	CStrID DefaultState = Params.Get(CStrID("DefaultState"), CStrID::Empty);
+	std::string Script = Params.Get(CStrID("Script"), CString::Empty); //???CStrID of ScriptObject resource? Loader requires Lua.
+
+	Data::PDataArray Actions;
+	if (Params.TryGet<Data::PDataArray>(Actions, CStrID("Actions")))
+	{
+		for (const auto& ActionData : *Actions)
+		{
+			if (auto pActionStr = ActionData.As<CString>())
+			{
+				//Interactions.emplace_back(CStrID(pActionStr->CStr()), sol::function());
+			}
+			else if (auto pActionDesc = ActionData.As<Data::PParams>())
+			{
+				CString ActID;
+				if ((*pActionDesc)->TryGet<CString>(ActID, CStrID("ID")))
+				{
+					// TODO: pushes the compiled chunk as a Lua function on top of the stack,
+					// need to save anywhere in object? Or use object's function name here as condition?
+					//???or force condition to be Can<action name>? when caching, find once.
+					// so don't load them here at all and fill once on init script
+					sol::function ConditionFunc;
+					const std::string Condition = (*pActionDesc)->Get(CStrID("Condition"), CString::Empty);
+					if (!Condition.empty())
+					{
+						//auto LoadedCondition = _Lua.load("local Target = ...; return " + Condition, (ID.CStr() + ActID).CStr());
+						//if (LoadedCondition.valid()) ConditionFunc = LoadedCondition;
+					}
+
+					//Interactions.emplace_back(CStrID(ActID.CStr()), std::move(ConditionFunc));
+				}
+			}
+		}
+	}
+
+	// load TL assets (at least read them as PResource?)? Or force loading? Probably force to make asset ready!
+
+	// load script, compile conditions(?), cache functions - InitScript(sol::state[&/_view] Lua)
+	// conditions may be functions with predefined args?
+
+	return n_new(DEM::Game::CSmartObject());
 }
 //---------------------------------------------------------------------
 
