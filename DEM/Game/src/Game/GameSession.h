@@ -2,6 +2,7 @@
 #include <Core/RTTIBaseClass.h>
 #include <Data/RefCounted.h>
 #include <Data/StringID.h>
+#include <sol/sol.hpp>
 #include <map>
 
 // Central object of the game logic and state. Registers and gives
@@ -26,8 +27,31 @@ protected:
 
 	std::vector<PFeature>                     _Features;
 	std::map<CStrID, ::Core::CRTTIBaseClass*> _FeaturesByName;
+	sol::state                                _ScriptState;
 
 public:
+
+	CGameSession()
+	{
+		_ScriptState.open_libraries(sol::lib::base);
+		_ScriptState["print"] = [](lua_State* L)
+		{
+			::Sys::Log("Lua > ");
+			const int n = lua_gettop(L); // number of arguments
+			for (int i = 1; i <= n; ++i)
+			{
+				if (i > 1) ::Sys::Log("\t");
+				if (auto s = lua_tostring(L, i))
+					::Sys::Log(s);
+				else
+					::Sys::Log("<unknown>");
+			}
+			::Sys::Log("\n");
+			return 0;
+		};
+	}
+
+	sol::state& GetScriptState() { return _ScriptState; }
 
 	template<class T, typename... TArgs> T* RegisterFeature(CStrID Name, TArgs&&... Args)
 	{

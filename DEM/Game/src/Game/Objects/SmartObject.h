@@ -60,7 +60,7 @@ public:
 	bool         AddState(CStrID ID, CTimelineTask&& TimelineTask/*, state logic object ptr (optional)*/);
 	bool         AddTransition(CStrID FromID, CStrID ToID, CTimelineTask&& TimelineTask);
 	bool         AddInteraction(CStrID ID);
-	bool         InitScript(sol::state_view& Lua);
+	bool         InitScript(sol::state& Lua);
 
 	const auto&  GetInteractions() const { return _Interactions; }
 };

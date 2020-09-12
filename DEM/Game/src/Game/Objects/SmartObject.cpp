@@ -56,9 +56,11 @@ bool CSmartObject::AddInteraction(CStrID ID)
 }
 //---------------------------------------------------------------------
 
-bool CSmartObject::InitScript(sol::state_view& Lua)
+bool CSmartObject::InitScript(sol::state& Lua)
 {
-	// load script from path into the named Lua object
+	// create Lua table for the new object
+	// load script from path into this table
+	// save the table as named object in Lua (namespace it like Smart.<MyID>)
 	// cache state functions
 	// cache interaction condition functions
 
