@@ -60,7 +60,7 @@ bool CSmartObject::InitScript(sol::state& Lua)
 {
 	if (_ScriptSource.empty()) return true;
 
-	//???cache env as field? or functions are enough? or don't cache functions, only env?
+	//???cache ScriptObject as field? or functions are enough? or don't cache functions, only env?
 	sol::environment ScriptObject(Lua, sol::create);
 	auto Result = Lua.script(_ScriptSource, ScriptObject /*, chunk name from SO ID*/);
 	if (!Result.valid())
@@ -70,12 +70,34 @@ bool CSmartObject::InitScript(sol::state& Lua)
 		return false;
 	}
 
-	// save the table as named object in Lua (namespace it like Smart.<MyID>)
-	// cache state functions
-	// cache interaction condition functions
+	auto Proxy = ScriptObject["OnStateEnter"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnStateEnter = Proxy;
 
-	NOT_IMPLEMENTED;
-	return false;
+	Proxy = ScriptObject["OnStateStartEntering"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnStateStartEntering = Proxy;
+
+	Proxy = ScriptObject["OnStateExit"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnStateExit = Proxy;
+
+	Proxy = ScriptObject["OnStateStartExiting"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnStateStartExiting = Proxy;
+
+	Proxy = ScriptObject["OnStateUpdate"];
+	if (Proxy.get_type() == sol::type::function)
+		_OnStateUpdate = Proxy;
+
+	for (auto& [ID, Condition] : _Interactions)
+	{
+		Proxy = ScriptObject["Can" + std::string(ID.CStr())];
+		if (Proxy.get_type() == sol::type::function)
+			Condition = Proxy;
+	}
+
+	return true;
 }
 //---------------------------------------------------------------------
 
